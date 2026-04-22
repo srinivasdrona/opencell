@@ -30,6 +30,23 @@ At the end of each session (or when the user says goodbye / wraps up), update th
   - Phase 1→2 gate is BLOCKING — cannot start Phase 2 until all 8 checks pass
   - PySCeS/Tellurium added as reference oracles (not previously in plan)
 
+### Session 2 — 2026-04-22
+- **Duration**: ~3 hours of implementation
+- **What happened**: Built ALL of Phase 1. Scaffolded project, installed deps, implemented core IR, solvers (JAX+SciPy+tau-leaping), engine, resilience (guards/sentinels/crash bundles/checkpoints), data layer (loader/SBML/schemas/contracts), orchestrator (router/panel/pipeline/cost tracker), observation model, validation harness, delta ledger replay, I/O manifests, naked numbers lint, skill profiles, benchmark charter, PR checklist template, tiered CI, data versioning. Switched dev environment from Windows to WSL (Ubuntu 22.04).
+- **Key stats**: 114 tests passing, 7 git commits on `main`, ~4,500 lines of production code
+- **Files created**: 40+ source files (see git log for full list)
+- **Git commits**:
+  1. `90ef686` — feat: scaffold project structure
+  2. `b798adf` — feat: implement core IR, units, compartments, state, environment, resource ledger
+  3. `c1be196` — feat: implement ODE solvers (JAX + SciPy), tau-leaping, sub-model base
+  4. `1ad09f7` — feat: implement engine, guards, sentinels, crash bundle, manifest, checkpoint
+  5. `08f67b0` — feat: implement data layer, orchestrator router/cost tracker, coupling benchmark
+  6. `78945ef` — feat: complete Phase 1 — panel, pipeline, observation, validation, replay, manifests, skills
+  7. (pending) — CI, data versioning, WSL switch docs
+- **Environment switch**: Windows `.venv-opencell` → WSL `.venv-wsl` (Ubuntu 22.04, Python 3.12.13). All 114 tests pass on both. WSL is now primary.
+- **Remaining for Phase 1**: Commit final batch (CI update, data versioning, docs). Then Phase 1→2 Gate (8 analytical checks).
+- **Blockers**: p1-db-access (BRENDA/BioCyc API keys) — needs user action
+
 ## User Profile
 - **GitHub**: sdrona-ms (personal). Do NOT use sdrona_microsoft (enterprise/managed)
 - **Role**: Product manager who codes on the side, biology novice (Wikipedia-level knowledge)
@@ -39,6 +56,7 @@ At the end of each session (or when the user says goodbye / wraps up), update th
 - **Machine**: Lenovo 11EVS09B00, Intel i7-10700, 64GB RAM, NO discrete GPU, E: drive workspace
 - **Python**: Use 3.12 (not 3.14 — too new for JAX/COBRApy)
 - **Corporate env**: Microsoft (fareast.corp.microsoft.com), SSL proxy may cause cert errors
+- **Dev environment**: **WSL (Ubuntu 22.04)** is the primary dev environment as of Session 2. Use `.venv-wsl` venv, NOT `.venv-opencell` (Windows). See "Development Environment" section below.
 
 ## Key Decisions Made (with rationale)
 1. **Cloud-first AI strategy** — local 14B models on CPU are too slow (est. 2-5 tok/s). Cloud for all tiers unless GPU acquired
@@ -64,10 +82,18 @@ At the end of each session (or when the user says goodbye / wraps up), update th
 - **UniProt/GenBank**: Free, open
 - **Karr 2012**: Free on GitHub (~1,900 params) — primary fallback
 
+## Development Environment
+- **Primary**: WSL Ubuntu 22.04 (Python 3.12.13)
+- **Venv**: `.venv-wsl` at `/mnt/e/opencell/.venv-wsl` (or `E:\opencell\.venv-wsl` from Windows)
+- **Activation**: `wsl -d Ubuntu-22.04 -- bash -c "source /mnt/e/opencell/.venv-wsl/bin/activate && cd /mnt/e/opencell && <command>"`
+- **Legacy Windows venv**: `.venv-opencell` — still works but NOT primary. Use only if WSL is unavailable.
+- **Why WSL**: Linux matches CI runners (Ubuntu), JAX GPU support is Linux-only, no Windows path quirks
+- **Same files**: WSL sees `E:\opencell` as `/mnt/e/opencell` — same git repo, same plan.md, no duplication
+- **Caveat**: `/mnt/` I/O is slower than native Linux filesystem. Fine for our codebase size.
+
 ## What's NOT installed yet
 - Ollama (optional — only if GPU acquired)
-- GitHub CLI (needed for repo setup)
-- Python 3.12 venv for project (3.14 is system default)
+- GitHub CLI (needed for repo push)
 
 ## Cross-Model Audit History
 - **Round 1**: Claude Opus 4.6 + GPT-5.2 → 25+ findings, all incorporated
@@ -75,20 +101,24 @@ At the end of each session (or when the user says goodbye / wraps up), update th
 - Full findings in `opencell_tasks.db` → `review_findings` table
 
 ## Project Files
-- `E:\opencell\plan.md` — Master plan (~1120 lines)
-- `E:\opencell\opencell_tasks.db` — Persistent task DB (91 todos, 105 deps, 66 findings)
+- `E:\opencell\plan.md` — Master plan (~1220 lines)
+- `E:\opencell\opencell_tasks.db` — Persistent task DB (101 todos, 127 deps, 66 findings)
 - `E:\opencell\SESSION_CONTEXT.md` — This file
 
 ## First Steps When Resuming
+1. Read this file and plan.md
+2. Activate WSL venv:
+```bash
+wsl -d Ubuntu-22.04 -- bash -c "source /mnt/e/opencell/.venv-wsl/bin/activate && cd /mnt/e/opencell && python -m pytest tests/ -q --tb=short"
+```
+3. Check ready tasks in persistent DB:
 ```python
 import sqlite3
 db = sqlite3.connect(r'E:\opencell\opencell_tasks.db')
-# Check ready tasks
 db.execute("""
     SELECT id, title FROM todos t WHERE t.status = 'pending' AND NOT EXISTS (
         SELECT 1 FROM todo_deps td JOIN todos dep ON td.depends_on = dep.id
         WHERE td.todo_id = t.id AND dep.status != 'done'
     ) ORDER BY id
 """).fetchall()
-# Currently ready: p1-repo-setup, p1-license-audit, p1-db-access
 ```

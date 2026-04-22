@@ -1,5 +1,10 @@
 # OpenCell: Open-Source Whole-Cell Simulation
 
+## Current Status (as of 2026-04-22)
+**Phase 1: COMPLETE** — 114 tests passing, 7 commits on `main`. All infrastructure built.
+**Next**: Phase 1→2 Gate (8 analytical validation checks), then Phase 2 (toy cell sub-models).
+**Dev environment**: WSL Ubuntu 22.04, Python 3.12.13, venv `.venv-wsl`
+
 ## Vision
 Build the first modern, open-source, GPU-accelerated whole-cell computational model — starting with a coupled-solver benchmark ("toy cell", ~50 synthetic genes), scaling to *Mycoplasma genitalium* (~525 genes). Designed to be publishable, extensible, and accessible.
 
