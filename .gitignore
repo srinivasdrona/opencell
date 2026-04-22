@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv*/
+venv*/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+
+# mypy
+.mypy_cache/
+
+# ruff
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data (large files tracked by DVC)
+*.h5
+*.hdf5
+data/raw/
+
+# Simulation outputs
+outputs/
+*.npy
+
+# Secrets
+.env
+*.key
+
+# SQLite databases (except task tracker)
+*.db
+!opencell_tasks.db
+
+# DVC
+/data/*.dvc

@@ -1,0 +1,94 @@
+# OpenCell — Session Context (for AI continuity)
+
+> This file captures context that lives in conversation memory but not in plan.md.
+> Read this at the start of every new session.
+> **UPDATE this file at the end of every session** — it is a living document.
+
+## Session Update Policy
+At the end of each session (or when the user says goodbye / wraps up), update this file with:
+1. What changed this session (decisions, files modified, todos completed)
+2. Any new user preferences or corrections discovered
+3. Updated tool/access status (DB access, installs, API keys)
+4. Current blockers and what's ready next
+5. Anything learned that would be lost without writing it down
+
+## Session Log
+### Session 1 — 2026-04-21
+- **Duration**: ~2 hours of planning and review
+- **What happened**: Initial brainstorming → plan creation → 4 rounds of cross-model critique (Opus 4.6, GPT-5.2, GPT-5.4, Opus 4.7) → incorporated all 66 findings → added resilience techniques → moved sensitivity analysis up → cloud-first AI strategy → persistent task DB → this context file
+- **Key moment**: AI caught fabricating cost estimates and tok/s numbers. Led to credibility policy (mark VERIFIED vs UNVERIFIED)
+- **Files created**: plan.md, opencell_tasks.db, SESSION_CONTEXT.md
+- **No code written yet** — still in planning/review phase
+- **Next**: User will stew on the plan, get DB access, read Karr 2012 paper, then decide start date
+
+### Session 1 (continued) — 2026-04-21
+- **What happened**: Discussed agent skills (bio-researcher, numerical-modeler, etc.), searched for existing frameworks (BioAgents, CrewAI, PySCeS, Tellurium). Decided: lightweight skill profiles as markdown files, no framework dependency. Then explored "what does utter failure look like?" — identified that "confidently wrong" is the most dangerous failure mode. Discovered that NONE of 4 critique rounds (66 findings) caught the need for analytical test cases. Added Phase 1→2 Gate (8 gate checks including hand-calculable micro-model, atom audit, unit trace, reference frame declarations, PySCeS/Tellurium cross-validation, thermodynamic feasibility). Added 6 agent skill profile definitions to AI strategy section.
+- **Key insight**: Sophistication bias — all AI reviewers focused on advanced validation (Sobol, sensitivity analysis, multi-model panels) and missed the most basic check: "can you solve 1 gene on paper?" Caught by PM asking "are we missing rookie mistakes?"
+- **Files updated**: plan.md (added ~100 lines: gate section + skills section), opencell_tasks.db (now 101 todos, 127 deps)
+- **New decisions**: 
+  - Skills are `.github/skills/{name}.md` files, not a framework
+  - Phase 1→2 gate is BLOCKING — cannot start Phase 2 until all 8 checks pass
+  - PySCeS/Tellurium added as reference oracles (not previously in plan)
+
+## User Profile
+- **GitHub**: sdrona-ms (personal). Do NOT use sdrona_microsoft (enterprise/managed)
+- **Role**: Product manager who codes on the side, biology novice (Wikipedia-level knowledge)
+- **Communication style**: Challenges assumptions, catches fabricated numbers, values honesty over confidence
+- **Blog persona**: **Tehol** (the user) and **Bugg** (the AI) — characters from Erikson's *Malazan Book of the Fallen*. All blog posts are written as conversations between them. Tehol is the visionary PM asking the hard questions; Bugg is the competent-but-fallible servant doing the work
+- **Preferences**: Named Python venvs (not generic `.venv`), Windows paths with backslashes
+- **Machine**: Lenovo 11EVS09B00, Intel i7-10700, 64GB RAM, NO discrete GPU, E: drive workspace
+- **Python**: Use 3.12 (not 3.14 — too new for JAX/COBRApy)
+- **Corporate env**: Microsoft (fareast.corp.microsoft.com), SSL proxy may cause cert errors
+
+## Key Decisions Made (with rationale)
+1. **Cloud-first AI strategy** — local 14B models on CPU are too slow (est. 2-5 tok/s). Cloud for all tiers unless GPU acquired
+2. **AI panels are evidence extractors, NOT decision-makers** — critical decisions need human approval
+3. **v1.0 = framework + toy cell benchmark** (publishable standalone). **v2.0 = M. genitalium** (separate timeline TBD)
+4. **Toy cell = coupled-solver benchmark**, NOT a biologically coherent organism. 3 core sub-models (metab + txn + tln), division cut
+5. **Write-exclusion replaced with resource allocation / partition-merge** (Karr 2012 approach)
+6. **Rejected LangChain/LangGraph** — wrong abstraction for scientific simulation pipeline
+7. **Temperature is task-specific** — 0 for code/extraction, 0.3-0.5 for literature search
+8. **Cost estimates are UNVERIFIED** — marked as such in plan. Will refine with actual data from cost_tracker.py
+9. **Sensitivity analysis moved up** — OAT in Phase 2, Morris in Phase 3, Sobol in Phase 6
+
+## Credibility Policy
+- AI (me) was caught fabricating cost estimates and tok/s performance numbers
+- All quantitative claims must be labeled VERIFIED or UNVERIFIED
+- "I don't know" is preferred over plausible-sounding guesses
+- Benchmark before claiming
+
+## Database Access Status
+- **BRENDA**: Registered (dronasrinivas@gmail.com), web portal works, SOAP API failed (activation delay). PASSWORD NEEDS CHANGING (was exposed in earlier chat)
+- **BioCyc**: Not yet accessed, needs subscription (~$100-150/yr) or institutional access
+- **KEGG**: Free API (3 req/s), no redistribution
+- **UniProt/GenBank**: Free, open
+- **Karr 2012**: Free on GitHub (~1,900 params) — primary fallback
+
+## What's NOT installed yet
+- Ollama (optional — only if GPU acquired)
+- GitHub CLI (needed for repo setup)
+- Python 3.12 venv for project (3.14 is system default)
+
+## Cross-Model Audit History
+- **Round 1**: Claude Opus 4.6 + GPT-5.2 → 25+ findings, all incorporated
+- **Round 2**: GPT-5.4 + Claude Opus 4.7 → 54 findings total, all incorporated (23 were initially missed, caught via systematic cross-check)
+- Full findings in `opencell_tasks.db` → `review_findings` table
+
+## Project Files
+- `E:\opencell\plan.md` — Master plan (~1120 lines)
+- `E:\opencell\opencell_tasks.db` — Persistent task DB (91 todos, 105 deps, 66 findings)
+- `E:\opencell\SESSION_CONTEXT.md` — This file
+
+## First Steps When Resuming
+```python
+import sqlite3
+db = sqlite3.connect(r'E:\opencell\opencell_tasks.db')
+# Check ready tasks
+db.execute("""
+    SELECT id, title FROM todos t WHERE t.status = 'pending' AND NOT EXISTS (
+        SELECT 1 FROM todo_deps td JOIN todos dep ON td.depends_on = dep.id
+        WHERE td.todo_id = t.id AND dep.status != 'done'
+    ) ORDER BY id
+""").fetchall()
+# Currently ready: p1-repo-setup, p1-license-audit, p1-db-access
+```

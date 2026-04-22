@@ -1,0 +1,7 @@
+# Decision Index
+
+# All biology/model decisions are stored as YAML files in this directory.
+# CI enforces: PRs changing behavior tied to a decision must reference or supersede it.
+# Format: one YAML file per decision, named descriptively.
+
+decisions: []

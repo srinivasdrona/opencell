@@ -1,0 +1,1222 @@
+# OpenCell: Open-Source Whole-Cell Simulation
+
+## Vision
+Build the first modern, open-source, GPU-accelerated whole-cell computational model — starting with a coupled-solver benchmark ("toy cell", ~50 synthetic genes), scaling to *Mycoplasma genitalium* (~525 genes). Designed to be publishable, extensible, and accessible.
+
+### Deliverable Split
+- **v1.0** — Framework + toy cell benchmark. A standalone publishable result demonstrating the architecture, coupled solvers, and agent workflow. The toy cell is explicitly a *coupled-solver benchmark*, not a biologically coherent cell.
+- **v2.0** — M. genitalium whole-cell model. A separate project phase with its own timeline, gated on v1.0 success. Timeline TBD after v1.0 completion (original 20-week estimate was judged 5-10x too short by independent reviewers).
+
+## Why This Matters
+- **Drug discovery**: simulate how drugs disrupt bacterial metabolism in silico
+- **Synthetic biology**: design minimal genomes computationally before building them
+- **Antibiotic resistance**: model mutation-driven resistance mechanisms
+- **Education**: interactive cell simulation as a teaching/learning tool
+- **Open science**: replace the closed MATLAB Karr 2012 model with a modern Python/JAX implementation anyone can use and extend
+
+## Approach
+- **Language**: Python (NumPy, JAX, SciPy, BioPython, COBRApy, pint)
+- **Architecture**: Modular sub-model system (inspired by Karr et al. 2012, modernized)
+- **Compute**: JAX for CPU-optimized ODE solving; SciPy as reference/fallback for stiff systems; runs on local workstation or Colab GPU
+- **Data**: Published parameter sets (Karr 2012, BRENDA, BioCyc, UniProt, KEGG); versioned via DVC or content-hashed snapshots
+- **Validation**: Compare against Karr 2012 published results AND orthogonal experimental data; split fit targets from held-out validation targets
+- **AI Agents**: Cloud-first multi-model strategy; local models optional with GPU (see below)
+- **Units**: pint library for unit handling at IR boundary from day 1
+
+---
+
+## Project Structure
+
+```
+opencell/
+├── README.md                    # Project overview, quickstart, citation info
+├── LICENSE                      # Apache 2.0
+├── pyproject.toml               # Modern Python packaging (PEP 621)
+├── CONTRIBUTING.md              # Contribution guidelines
+├── CODE_OF_CONDUCT.md           # Community standards
+├── CITATION.cff                 # Citation metadata for academic use
+├── GOVERNANCE.md                # Maintainer roles, decision rules, release policy
+├── SECURITY.md                  # Vulnerability reporting policy
+├── CHANGELOG.md                 # Keep a Changelog format, managed by towncrier
+├── opencell_tasks.db            # Persistent SQLite task/dependency tracker (synced with plan.md)
+├── Dockerfile                   # Reproducible environment (even if running locally)
+├── uv.lock                      # Locked dependency versions (committed to repo)
+│
+├── .github/
+│   ├── copilot-instructions.md  # Agent roles, workflow rules, constraints
+│   ├── workflows/
+│   │   ├── ci.yml               # Tests, linting, type checking
+│   │   ├── docs.yml             # Documentation build
+│   │   └── schema-validate.yml  # Validate data files against JSON Schemas
+│   └── ISSUE_TEMPLATE/
+│       ├── bug_report.md
+│       └── feature_request.md
+│
+├── docs/
+│   ├── architecture.md          # System architecture & design decisions
+│   ├── data-licensing.md        # Database access terms & redistribution rules
+│   ├── blog/                    # Running dev blog (checkpoint entries)
+│   │   ├── index.md             # Blog index (reverse chronological)
+│   │   └── YYYY-MM-DD-title.md  # One entry per day/checkpoint
+│   ├── biology/                 # Biological background for each sub-model
+│   │   ├── metabolism.md        # Rationale, literature refs, modeling choices
+│   │   ├── transcription.md
+│   │   ├── translation.md
+│   │   └── ...
+│   ├── api/                     # Auto-generated API docs (MkDocs)
+│   └── tutorials/
+│       ├── quickstart.md
+│       ├── adding-a-submodel.md
+│       └── parameter-estimation.md
+│
+├── decisions/                   # Versioned expert panel decisions (with invalidation triggers)
+│   ├── metabolism.md            # "Panel chose Michaelis-Menten for X because..."
+│   ├── transcription.md
+│   ├── _decision_index.yaml     # Decision registry: version, triggers, status
+│   └── ...
+│
+├── src/
+│   └── opencell/
+│       ├── __init__.py
+│       │
+│       ├── core/                # Simulation engine
+│       │   ├── __init__.py
+│       │   ├── engine.py        # Main simulation loop & time-stepping
+│       │   ├── state.py         # Cell state container (all molecular counts)
+│       │   ├── ir.py            # Internal Runtime Representation (canonical in-memory model)
+│       │   ├── compartments.py  # Volume, compartmentalization, counts↔concentrations
+│       │   ├── environment.py   # First-class media/environment model (nutrients, pH, temperature)
+│       │   ├── resource_ledger.py # Global resource allocation & partition-merge semantics
+│       │   ├── units.py         # pint-based unit registry & conversion at IR boundary
+│       │   ├── checkpoint.py    # Checkpoint/restart for long simulations
+│       │   ├── manifest.py      # Run manifest: git SHA, seeds, solver version, etc.
+│       │   ├── events.py        # Discrete event handling (division, etc.)
+│       │   ├── guards.py        # Runtime invariants: positivity, bounds, conservation monitors
+│       │   ├── sentinels.py     # Order-of-magnitude sanity checks for key variables
+│       │   ├── crash_bundle.py  # First-bad-step diagnostic capture
+│       │   └── config.py        # Simulation configuration & parameters
+│       │
+│       ├── models/              # Biological sub-models (pluggable)
+│       │   ├── __init__.py
+│       │   ├── base.py          # Abstract sub-model interface
+│       │   ├── metabolism.py    # Metabolic network (FBA/kinetic)
+│       │   ├── transcription.py # mRNA synthesis
+│       │   ├── translation.py   # Protein synthesis
+│       │   ├── replication.py   # DNA replication
+│       │   ├── degradation.py   # mRNA & protein degradation
+│       │   ├── transport.py     # Membrane transport
+│       │   └── division.py      # Cell division & cytokinesis
+│       │
+│       ├── data/                # Data loading & parameter management
+│       │   ├── __init__.py
+│       │   ├── loader.py        # Load YAML params + SBML models
+│       │   ├── sbml_io.py       # SBML import/export via libsbml
+│       │   ├── brenda.py        # BRENDA enzyme kinetics scraper
+│       │   ├── biocyc.py        # BioCyc pathway data parser
+│       │   └── kegg.py          # KEGG pathway mapper
+│       │
+│       ├── estimation/          # ML-based parameter estimation
+│       │   ├── __init__.py
+│       │   ├── kinetics.py      # Estimate missing kinetic parameters
+│       │   └── homology.py      # Transfer parameters from homologs
+│       │
+│       ├── solvers/             # Numerical solvers
+│       │   ├── __init__.py
+│       │   ├── ode.py           # ODE integrators (JAX-based)
+│       │   ├── ode_scipy.py     # SciPy reference/fallback ODE solver (escape hatch for stiff systems)
+│       │   ├── stochastic.py    # Gillespie / tau-leaping
+│       │   └── hybrid.py        # Mixed deterministic-stochastic solver
+│       │
+│       ├── orchestrator/        # AI agent coordination layer
+│       │   ├── __init__.py
+│       │   ├── pipeline.py      # Main workflow: spec → SBML → implement → review
+│       │   ├── panel.py         # Expert panel debate engine (multi-model)
+│       │   ├── router.py        # Model routing: local (Ollama) vs cloud APIs
+│       │   ├── contracts.py     # JSON Schema validation for data files
+│       │   └── cost_tracker.py  # Per-call token/cost logging, budget alerts, CLI reports
+│       │
+│       ├── analysis/            # Post-simulation analysis
+│       │   ├── __init__.py
+│       │   ├── phenotype.py     # Phenotype prediction & comparison
+│       │   ├── sensitivity.py   # Parameter sensitivity analysis (OAT, Morris, Sobol)
+│       │   ├── knockout.py      # Gene knockout simulations
+│       │   └── observation.py   # Observation model: map internal states → experimental assay readouts
+│       │
+│       └── viz/                 # Visualization
+│           ├── __init__.py
+│           ├── dashboard.py     # Interactive simulation dashboard
+│           ├── timeseries.py    # Metabolite/protein time series plots
+│           └── cell_cycle.py    # Cell cycle phase visualization
+│
+├── data/
+│   ├── schemas/                 # JSON Schemas (data contracts)
+│   │   ├── parameter_schema.json    # Enzyme parameter format
+│   │   ├── gene_schema.json         # Gene annotation format
+│   │   ├── reaction_schema.json     # Reaction definition format
+│   │   └── simulation_config.json   # SED-ML-aligned sim config
+│   ├── organisms/
+│   │   ├── toy_cell/            # Toy model (~50 genes)
+│   │   │   ├── genes.yaml       # Gene annotations (validated by gene_schema)
+│   │   │   ├── reactions.yaml   # Reaction defs (validated by reaction_schema)
+│   │   │   ├── parameters.yaml  # Kinetic params (validated by parameter_schema)
+│   │   │   ├── model.sbml       # SBML Level 3 — machine-readable model
+│   │   │   └── README.md
+│   │   └── m_genitalium/        # Full M. genitalium
+│   │       ├── genes.yaml
+│   │       ├── reactions.yaml
+│   │       ├── parameters.yaml
+│   │       ├── model.sbml
+│   │       └── README.md
+│   └── external/                # Downloaded datasets (gitignored)
+│       └── .gitkeep
+│
+├── notebooks/
+│   ├── 01_quickstart.ipynb      # Getting started notebook
+│   ├── 02_toy_cell.ipynb        # Toy cell walkthrough
+│   ├── 03_parameter_sweep.ipynb # Parameter sensitivity
+│   └── 04_drug_simulation.ipynb # Drug target simulation
+│
+├── tests/
+│   ├── conftest.py
+│   ├── unit/
+│   │   ├── test_metabolism.py
+│   │   ├── test_transcription.py
+│   │   ├── test_translation.py
+│   │   ├── test_replication.py
+│   │   ├── test_solvers.py
+│   │   ├── test_ir.py           # Internal representation round-trips
+│   │   └── test_contracts.py    # Schema validation tests
+│   ├── property/                # Property-based tests (Hypothesis)
+│   │   ├── test_conservation.py # Mass/energy conservation invariants
+│   │   ├── test_sbml_roundtrip.py  # SBML import→export→import losslessness
+│   │   └── test_schema_fuzz.py  # Fuzz testing for YAML/JSON parsers
+│   ├── integration/
+│   │   ├── test_toy_cell.py     # Full toy cell cycle
+│   │   ├── test_coupled.py      # Sub-model coupling tests
+│   │   └── test_orchestrator.py # Pipeline workflow tests
+│   ├── regression/
+│   │   ├── golden/              # Frozen-seed golden output snapshots
+│   │   └── test_golden_runs.py  # Deterministic golden run comparison
+│   ├── differential/
+│   │   └── test_vs_scipy.py     # Cross-check our solvers vs SciPy/COPASI
+│   ├── scientific/              # Scientific falsification tests (not just software invariants)
+│   │   ├── test_metamorphic.py  # Metamorphic tests (e.g., 2x nutrients → ≥1.5x growth)
+│   │   ├── test_synthetic_recovery.py  # Generate synthetic data from known params, recover them
+│   │   └── test_rejection.py    # Failure envelope tests — verify model CAN'T produce impossible phenotypes
+│   └── validation/
+│       └── test_karr_comparison.py  # Compare to Karr 2012 results
+│
+├── benchmarks/
+│   └── bench_solvers.py         # Performance benchmarks
+│
+└── .gitignore
+```
+
+---
+
+## Implementation Phases
+
+### Phase 1: Foundation (v1.0 — Weeks 1–3)
+Set up project infrastructure, define the canonical runtime representation, build core simulation engine, validation harness, and data contracts. Orchestrator comes LAST — prove the science works manually first.
+
+**1A — Repo & Environment Setup**
+- **1.1** Initialize repository with project structure, packaging, CI/CD, Dockerfile, `uv.lock`
+- **1.2** Dependency compatibility check — verify JAX, Diffrax, COBRApy, python-libsbml, Hypothesis, pint all install on Python 3.12. If any fail, identify fallback (build from source, pin older version, or use 3.11)
+- **1.3** Set up pre-commit hooks: ruff + mypy + black
+- **1.4** Data licensing audit (WEEK 0 — do first, before coding) — review KEGG, BRENDA, BioCyc, UniProt redistribution terms; document in `docs/data-licensing.md`; establish rules for fetch-scripts vs checked-in artifacts. If any source has blocking license terms, discover now, not Phase 4
+- **1.5** Database access setup (start immediately, runs in parallel with other P1 work):
+  - Register BRENDA account (free, academic email)
+  - Check institutional BioCyc access or begin subscription (~$100-150/yr)
+  - Download Karr 2012 parameter files from GitHub — our fallback data source if DB access is delayed
+  - Configure cloud API keys (Anthropic, OpenAI, xAI, Google)
+  - (Optional) Install Ollama + pull local models IF GPU available
+- **1.6** Declare canonical environment — specify exact OS, Python version, JAX version, hardware profile for reproducibility. Local CPU vs Colab GPU will diverge subtly; document acceptable divergence thresholds
+- **1.7** Write benchmark charter — define what constitutes FAILURE before writing any model code. What phenotype predictions, if wrong, would reject the model? Prevents optimizing toward easiest-to-match criteria
+
+**1B — Internal Runtime Representation (IR)**
+- **1.8** Implement `core/ir.py` — typed internal representation: species IDs, compartment enum, units, stoichiometry matrix (sparse), sub-model read/write permissions via resource allocation / partition-merge semantics (NOT write-exclusion — ATP, ribosomes, tRNAs are written by multiple sub-models). Design IR for extensibility: promoter states, partial complexes, and event queues will emerge; plan for explicit vs lumped vs rule-based state representation NOW
+- **1.9** Implement `core/units.py` — pint-based unit registry. All values entering the IR must pass through unit validation. Catches unit errors at boundary, not deep in solver
+- **1.10** Implement `core/compartments.py` — dynamic volume model, counts↔concentration conversions, compartment hierarchy
+- **1.11** Implement `core/state.py` — cell state container backed by IR: JAX-compatible pytrees/arrays (data-oriented, not Python object graphs)
+- **1.12** Implement `core/environment.py` — first-class media/environment model: nutrient concentrations, pH, temperature, growth medium composition. This is a runtime object, not a config parameter
+- **1.13** Implement `core/resource_ledger.py` — global resource allocation: partition-merge semantics for shared metabolites (ATP, GTP, amino acids). Each sub-model requests resources; ledger allocates proportionally; reconciles at sync points. Based on Karr 2012 approach
+
+**1C — Core Engine & Solvers**
+- **1.14** Implement `core/engine.py` — main simulation loop with configurable time-stepping; explicit float64 policy via `jax.config.update("jax_enable_x64", True)`
+- **1.15** Implement `solvers/ode.py` — JAX-based ODE integrator with adaptive stepping, stiff solver support (BDF/Radau)
+- **1.16** Implement `solvers/ode_scipy.py` — SciPy reference implementation (solve_ivp with BDF). Escape hatch for stiff systems where JAX/Diffrax struggles. Also serves as correctness reference for differential testing
+- **1.17** Implement `solvers/stochastic.py` — tau-leaping stochastic solver. Needed from day 1 for low-copy-number molecules (mRNA, transcription factors). NOT deferred to Phase 3
+- **1.18** Implement `models/base.py` — abstract sub-model interface (initialize, evolve, validate), with declared state-slice read/write contracts via resource ledger. Sub-models declare what they CONSUME and PRODUCE; engine + ledger handle allocation
+- **1.19** Build 2-model coupling benchmark — DummyProducer + DummyConsumer with shared state, operator splitting (Strang symmetric), mass conservation check, stiff-coupling stress test. NOTE: order-independence shuffle test may give false confidence — Strang splitting is only order-2 when operators commute. Document limitations
+
+**1D — Reproducibility & Checkpoint**
+- **1.20** Implement `core/manifest.py` — run manifest emitted at every run: git SHA, `uv.lock` hash, solver version, model/parameter checksums, RNG seeds (centralized PRNGKey schedule), hardware info, wall-clock metrics
+- **1.21** Implement `core/checkpoint.py` — checkpoint/restart: serialize full state + RNG keys + solver internals to HDF5; resume from any checkpoint. NOTE: exact-restart claim is narrowed to same JAX/Diffrax/Python versions only — cross-version bitwise identity is not guaranteed
+
+**1E — Data Layer & Contracts**
+- **1.22** Implement `data/loader.py` — YAML/JSON parameter loading + SBML import
+- **1.23** Implement `data/sbml_io.py` — SBML Level 3 import/export via `python-libsbml`. SBML is the interoperability format; internal IR is canonical. NOTE: SBML round-trip will be lossy for hybrid/stochastic/event semantics — document what survives and what doesn't
+- **1.24** Define JSON Schemas for data contracts (`data/schemas/`) — enhanced with experimental conditions (temperature, pH, strain, growth medium), uncertainty distributions, DOI citations, and transformation provenance. Enforced by CI
+- **1.25** Implement `orchestrator/contracts.py` — JSON Schema validation for all data files, called by CI and by pipeline before any data is committed
+- **1.26** Set up data versioning — DVC or content-hashed snapshots for parameter files. Database parameters change over time; we need to know which version of BRENDA/KEGG data a result was computed against
+
+**1F — Validation Harness & Resilience**
+- **1.27** Build validation harness: conservation invariant checks, per-submodel timing, solver-step stats, structured event logs. NOTE: concrete biological validators (growth rate, essentiality) deferred to Phase 2 — can't test against unknown sub-model API
+- **1.28** Set up tiered CI: fast PR checks (lint + unit + property tests), nightly scientific regression, release-grade benchmarks
+- **1.29** Implement "no naked biology numbers" CI lint — AST/regex check that biological constants in model code reference a parameter ID, not a hardcoded literal. Allowlist: 0, 1, tolerances, array shapes. Tracks "estimated/borrowed parameter budget" per PR — increase requires explicit approval
+- **1.30** Implement `core/guards.py` — runtime invariant monitors:
+  - Concentrations/counts ≥ 0
+  - Occupancies/fractions in [0,1]
+  - Conserved moieties within tolerance
+  - Stoichiometry net mass residual near zero
+  - On first violation: log variable name, module, step, residual size (not just crash)
+- **1.31** Implement `core/sentinels.py` — order-of-magnitude sanity checks. Define broad expected ranges for key variables (cell volume, ATP concentration, ribosome count, doubling time, transcription/translation rates). Catches 10x/1000x mistakes from unit errors, exponent slips, or hallucinated parameters. Ranges are intentionally loose — catch nonsense, not constrain science
+- **1.32** Implement `core/crash_bundle.py` — on first NaN/Inf/assertion failure, capture diagnostic bundle: step index, simulation time, dt, RNG seed, solver stats (accepted/rejected steps), state norm, derivative norm, top-changed variables, violated invariant, last module executed, optional Jacobian condition estimate. Enables bug-class separation:
+  - Exploding solver stats / tiny dt / bad conditioning → numerical bug
+  - Invariant breaks but solver stats normal → biology/model logic bug
+  - Abrupt impossible jump in one module → software bug
+- **1.33** Implement single-step replay / delta ledger debug mode — replay exactly one step from checkpoint, print each module/reaction contribution to Δstate for any species. Shows: starting value → contributions by term/module → ending value → conservation residuals. Fastest path to answering "which module injected nonsense?"
+
+**1G — Orchestrator (after science works manually)**
+- **1.34** Implement `orchestrator/router.py` — ModelRouter with task-specific temperature policy (see Mandatory Policies)
+- **1.35** Implement `orchestrator/panel.py` — ExpertPanel: evidence extractors + draft generators (NOT decision-makers). Panels produce claim graphs with evidence provenance and contradiction detection. Critical decisions require human approval + automated source verification (DOI exists + contains claimed value). Evidence snippets required: every nontrivial biological claim must store quoted excerpt with page/figure/table location alongside DOI. Non-participating moderator pattern included but unvalidated — will run ablation study after Phase 2 to verify it adds value
+- **1.36** Implement `orchestrator/cost_tracker.py` — per-call token/cost logging to SQLite (`opencell_costs.db`), budget thresholds (warn at 50/75/90%), CLI: `opencell costs summary|by-phase|by-tier|by-role`
+- **1.37** Implement `orchestrator/pipeline.py` — main workflow coordinator
+- **1.38** Write `.github/copilot-instructions.md` — declarative agent rules
+- **1.39** Implement `analysis/observation.py` — observation model: defines how internal simulation states map to experimental assay readouts (OD600 → biomass, qPCR → mRNA counts, etc.). Can't validate against experiments without this
+- **1.40** Implement module I/O manifests — each sub-model declares: reads, writes, units, expected timescale, conserved quantities affected. CI checks for: undeclared writes, read/write unit mismatches, changed manifests without reviewer acknowledgement
+- **1.41** Implement structured decision registry (`decisions/_decision_index.yaml`) with supersession lint — CI rule: if a PR changes behavior tied to an active decision, it must reference or supersede it. Prevents silent reversals across sessions
+- **1.42** Define PR "assumption delta" checklist template — every biology/model PR must state: which assumptions changed, which parameters changed, which modules/species affected, which invariants re-run, whether estimated parameter count increased
+- **1.43** Write tests for all Phase 1 components: unit, property-based (Hypothesis), SBML round-trip, schema fuzz, golden-run regression
+
+### Phase 1→2 Gate: Micro-Model Analytical Validation
+**Cannot proceed to Phase 2 until ALL of these pass.** This is the cheapest insurance against "confidently wrong" — if we can't match a hand calculation for 1 gene, we have no business simulating 50.
+
+**Gate 1: Hand-Calculable Micro-Model**
+- **G1.1** Design a 1-gene, 2-reaction analytical system: 1 gene → 1 mRNA → 1 protein, with 1 metabolic reaction consuming ATP. Derive the analytical steady-state solution by hand (on paper or in a notebook). Document in `docs/biology/micro_model_derivation.md`
+- **G1.2** Implement the micro-model using our engine/solvers. Run to steady state. Output must match the hand-derived solution to machine precision (< 1e-12 relative error for deterministic; statistical match for stochastic)
+- **G1.3** Run the micro-model through BOTH our JAX solver AND the SciPy reference solver. Results must agree within tolerance. If they don't, our solver has a bug — stop and fix before anything else
+
+**Gate 2: Atom Audit at Boundaries**
+- **G1.4** Implement `tests/gates/test_atom_balance.py` — count C, N, O, P, S atoms entering and leaving each sub-model per timestep. Net creation/destruction must be zero (within floating-point tolerance). This catches mass leaks at coupling boundaries that per-module conservation checks miss
+
+**Gate 3: Unit Trace Test**
+- **G1.5** Implement `tests/gates/test_unit_trace.py` — feed labeled pint Quantities through the entire pipeline (IR → sub-model → solver → state update → output). Verify dimensional consistency end-to-end. pint at IR boundaries is necessary but not sufficient — this test checks that units survive the entire flow
+
+**Gate 4: Reference Frame Declaration**
+- **G1.6** Every sub-model must explicitly declare its reference frame: per-cell, per-unit-volume, or per-gram-dry-weight. The coupler must perform explicit conversions at sync points. CI check: no sub-model may read state from a different reference frame without an explicit conversion call. Document in each sub-model's I/O manifest (task 1.40)
+
+**Gate 5: Known-Answer Cross-Validation**
+- **G1.7** Use PySCeS or Tellurium to simulate the micro-model (1-gene system). Our output must match their output. They've been validated for decades — if we disagree, we're wrong. Document any discrepancies and root-cause them before proceeding
+
+**Gate 6: Thermodynamic Feasibility Sanity Check**
+- **G1.8** For the micro-model's metabolic reaction, verify that the predicted flux direction is consistent with the Gibbs free energy under the simulated concentrations. This is a preview of the full thermodynamic feasibility filter needed in Phase 2 (task 2.6)
+
+> 🔑 **Why this gate exists**: Four rounds of AI critique (66 findings) missed this entirely. It was caught by asking "what does utter failure look like?" — the answer is confidently wrong foundations that propagate through everything. This gate costs ~1 day and prevents the most expensive class of bugs.
+
+### Phase 2: Toy Cell Sub-Models (v1.0 — Weeks 3–5)
+Build a thin vertical slice for a minimal coupled-solver benchmark. Start with curated data → identifier mapping → units → environment, then implement 3 core sub-models (metabolism + transcription + translation). Division is CUT from toy cell — least tractable, unnecessary for demonstrating solver coupling. Additional sub-models (replication, degradation, transport) added only after the core 3 are coupled and working.
+
+**Pre-Phase 2 Gate — Verify Access Ready:**
+- [ ] BRENDA API access confirmed working
+- [ ] BioCyc programmatic access confirmed (or fallback: use Karr 2012 data + UniProt only)
+- [ ] Karr 2012 parameters loaded and schema-validated
+- [ ] Cloud APIs tested end-to-end via router
+
+**2A — Data Foundation (thin vertical slice — do FIRST)**
+- **2.1** Build identifier reconciliation crosswalk — KEGG ↔ BioCyc ↔ UniProt ↔ GenBank mappings for toy cell gene/protein/metabolite set. This is a hidden blocker if deferred; identifier mismatches cause silent data errors
+- **2.2** Curate toy cell parameters from literature (BRENDA, BioCyc, Karr 2012) — schema-validated via `contracts.py`. Every parameter must have: value, unit (pint-validated), source DOI, uncertainty distribution, experimental conditions
+- **2.3** Minimal calibration/sensitivity spike — identify which parameters are structurally identifiable vs. practically identifiable vs. must be estimated; document in `docs/biology/calibration_notes.md`
+
+**2B — Toy Cell Design**
+- **2.4** Design toy cell gene set — Biology Expert Panel (cloud, evidence extraction mode) selects ~50 genes covering metabolism, transcription, and translation. Gene set must be designed to exercise: FBA+ODE coupling, stochastic+deterministic mixing, and at least one resource contention scenario. Frame honestly: this is a coupled-solver benchmark, not a biologically coherent organism
+- **2.5** Define environment/media for toy cell — nutrient composition, uptake constraints, pH, temperature. Implemented via `core/environment.py`
+
+**2C — Core Sub-Models (3 only, not 7)**
+- **2.6** Implement `models/metabolism.py` — simplified metabolic network (glycolysis core)
+  - Biology spec: `docs/biology/metabolism.md` + `decisions/metabolism.md`
+  - Machine spec: `data/organisms/toy_cell/model.sbml` (metabolism section)
+  - Michaelis-Menten kinetics; FBA via COBRApy treated as offline/episodic (NOT inside JAX inner loop)
+  - FBA-ODE coupling contract: define sync frequency, what triggers re-solve, how fluxes are interpolated between FBA calls
+  - Add thermodynamic feasibility checks: reaction directionality constraints, loopless FBA to prevent thermodynamically impossible cycles
+- **2.7** Implement `models/transcription.py` — RNA polymerase-driven mRNA synthesis
+  - Include polymerization primitive (RNAP elongation at nt/s, not instantaneous)
+  - Stochastic for low-copy mRNAs (tau-leaping from Phase 1)
+- **2.8** Implement `models/translation.py` — ribosome-driven protein synthesis
+  - Include polymerization primitive (ribosome footprint, elongation at aa/s)
+  - Resource contention: ribosomes are shared, allocated via resource ledger
+- **2.9** Write unit tests for each sub-model in isolation + property-based invariant tests + metamorphic tests (e.g., double nutrients → growth should increase)
+- **2.10** Per-sub-model OAT sensitivity analysis — vary each parameter ±10%, measure output change. Identifies which parameters each sub-model actually cares about. Takes minutes, guides curation priority: high-sensitivity params get careful curation, low-sensitivity params get rough estimates
+
+**2D — Additional Sub-Models (after core 3 are coupled)**
+- **2.11** Implement `models/degradation.py` — mRNA and protein turnover
+- **2.12** Implement `models/transport.py` — simplified membrane transport
+- **2.13** (DEFERRED from toy cell) `models/division.py` — added only in Phase 5 for M. genitalium. M. genitalium division biology is poorly understood (not FtsZ-driven), and division is unnecessary for demonstrating solver coupling
+- **2.14** Write unit tests for additional sub-models
+
+### Phase 3: Integration & Toy Cell Simulation (v1.0 — Weeks 5–7)
+Couple sub-models and run complete toy cell benchmark. **Exit criterion: "publishable toy cell" — a standalone result demonstrating coupled solvers, resource allocation, and the framework architecture. This is v1.0.**
+
+- **3.1** Define hybrid solver coupling scheme: operator splitting (Strang symmetric) with fixed synchronization points, explicit event ordering, resource allocation via ledger at each sync point. NOTE: Strang splitting is only order-2 accurate when operators commute; for stiff coupling, accuracy degrades. Document limitations and test with known analytical solutions
+- **3.2** Implement sub-model coupling in engine (shared state via IR, time synchronization, resource allocation/partition-merge via ledger)
+- **3.3** Implement `solvers/hybrid.py` — mixed deterministic-stochastic solver with the proven coupling scheme
+- **3.4** Implement `core/events.py` — discrete events (replication initiation; division deferred to v2.0)
+- **3.5** Run first complete toy cell benchmark simulation (with run manifest + checkpoint)
+- **3.6** Build `viz/timeseries.py` and `viz/cell_cycle.py` for visualization
+- **3.7** Write integration tests validating biological invariants:
+  - Mass conservation, energy balance
+  - Held-out phenotype checks: metabolite trends, RNA/protein ratios, ATP maintenance
+  - Stochastic tests on distributions (not exact traces)
+  - Metamorphic tests: 2x nutrients → growth increases; knock out essential gene → growth stops
+  - Failure envelope tests: verify model CANNOT produce impossible phenotypes (negative concentrations, growth without nutrients)
+- **3.8** Morris screening sensitivity analysis on coupled system — cheap global method (~100-200 simulations) that identifies important vs. unimportant parameters across the whole coupled model. Results directly guide Phase 4 parameter estimation priority
+- **3.9** Create `notebooks/02_toy_cell.ipynb` tutorial
+- **3.10** "Publishable toy cell" milestone gate — v1.0 release. Blog post, documentation, paper draft for JOSS or similar
+
+### Phase 4: Data Pipeline & Parameter Estimation (v2.0 — Weeks 7–9)
+Build automated data curation and ML-based parameter estimation. Gate: v1.0 must be complete first.
+
+- **4.1** Implement `data/brenda.py` — BRENDA enzyme kinetics extraction
+- **4.2** Implement `data/biocyc.py` — pathway and reaction data from BioCyc
+- **4.3** Implement `data/kegg.py` — KEGG pathway mapping
+- **4.4** Build full identifier reconciliation — KEGG ↔ BioCyc ↔ UniProt ↔ GenBank crosswalk for M. genitalium (~525 genes). Extend the toy cell crosswalk from 2.1
+- **4.5** Implement `estimation/kinetics.py` — ML pipeline for missing parameter estimation. Parameters need uncertainty distributions (not point values); use parameter ensembles
+- **4.6** Implement `estimation/homology.py` — transfer parameters from homologous organisms. WARNING: homology transfer is biologically dangerous — apply automatic confidence discounting (uncertainty penalty proportional to evolutionary distance). Never transfer at full confidence
+- **4.7** Curate M. genitalium parameter set (automated + manual review, schema-validated). Auto-generate benchmark-delta reports whenever parameter data changes
+
+### Phase 5: Scale to M. genitalium (v2.0 — Timeline TBD)
+Expand all sub-models to full M. genitalium complexity. This is a separate project phase with its own timeline, gated on v1.0 success.
+
+- **5.0** Karr reproduction study — before claiming to match Karr 2012 results, systematically understand what they did: which parameters they used, which approximations they made, which results they achieved (79% essentiality, not 80%). This is a research task, not a coding task
+- **5.1** Expand metabolic network to full M. genitalium metabolism (~150 reactions)
+  - Add thermodynamic feasibility: reaction directionality, loopless FBA
+  - Add regime-switch modeling: stress responses, stalled metabolism, death states
+- **5.2** Expand transcription model to all ~525 genes with regulation
+- **5.3** Expand translation model with codon-level detail
+  - CRITICAL: M. genitalium uses UGA as tryptophan (not stop codon). Translation model must handle non-standard genetic codes
+- **5.4** Expand replication model with full chromosome
+  - Add macromolecular machinery: replisome with polymerization primitive
+- **5.5** Add protein complexes and macromolecular assembly
+  - Decide state representation: explicit vs lumped vs rule-based for complexes and promoter states (decision from Phase 1 IR design)
+- **5.6** Implement `models/division.py` — cell division for M. genitalium
+  - Biology is poorly understood (not FtsZ-driven). Need explicit partitioning/segregation laws
+  - Document scope limitations honestly
+- **5.7** Implement `analysis/knockout.py` — gene essentiality predictions
+- **5.8** Validate against Karr 2012 results AND orthogonal experimental data
+  - Split fit targets from held-out validation targets
+  - Growth rate, gene essentiality, metabolite levels
+  - Observation model (`analysis/observation.py`) maps internal states to assay readouts
+- **5.9** Performance optimization — JAX JIT compilation, CPU vectorization, optional GPU via Colab
+
+### Phase 6: Analysis, Docs & Publication (v2.0 — Timeline TBD)
+Polish for open-source release and academic publication.
+
+- **6.1** Implement `analysis/sensitivity.py` — global parameter sensitivity analysis with uncertainty propagation (parameter ensembles, not just point values)
+- **6.2** Implement `analysis/phenotype.py` — phenotype prediction pipeline
+- **6.3** Build interactive dashboard (`viz/dashboard.py`)
+- **6.4** Write comprehensive documentation (architecture, tutorials, API docs)
+- **6.5** Create Jupyter notebook tutorials (quickstart, drug simulation)
+- **6.6** Write paper draft (PLOS Computational Biology or Bioinformatics)
+- **6.7** Benchmark performance vs. Karr 2012 MATLAB model
+- **6.8** Release v2.0 on PyPI and GitHub
+
+---
+
+## Development Hardware Profile
+
+| Component | Spec | Implication |
+|---|---|---|
+| **CPU** | Intel i7-10700 (8C/16T @ 2.9GHz) | No discrete GPU — local LLM inference will be slow (UNVERIFIED: est. 2-5 tok/s for 14B, needs benchmarking) |
+| **RAM** | 64 GB DDR4 | Can load models up to ~32B quantized |
+| **GPU** | Intel UHD 630 (integrated) | No CUDA — all LLM inference is CPU-only. Consider buying used RTX 3090 (~$300-400) if local models are needed |
+| **Disk** | ~930 GB (E: drive) | Plenty for models (~50GB), datasets (~5GB), outputs (~50GB) |
+| **Network** | Gigabit Ethernet | Fast enough for cloud API calls |
+
+> ⚠️ **Honesty note**: CPU inference speed estimates above are NOT benchmarked. Actual performance may vary significantly. Cloud-first strategy recommended; local models are optional and only practical with a GPU.
+
+---
+
+## AI Agent Strategy: Cloud-First
+
+### Design Principle
+Use cloud frontier models for all AI agent tasks. Local models are optional and only recommended with a discrete GPU. AI panels are **evidence extractors and draft generators**, NOT scientific decision-makers — critical decisions require human approval with automated source verification.
+
+### Tiered Model Routing
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  TIER 1: Critical Decisions (cloud, multi-model panel)      │
+│  Biology evidence extraction, architecture choices          │
+│  Panel: Claude Opus + GPT-5 + Grok 3 → human approval      │
+│  ~50 decisions across the project                           │
+├─────────────────────────────────────────────────────────────┤
+│  TIER 2: Standard Work (cloud, single model)                │
+│  Sub-model code, tests, docs, parameter extraction          │
+│  Writer: Sonnet/GPT-5 | Reviewer: different cloud model     │
+│  ~200 tasks                                                 │
+├─────────────────────────────────────────────────────────────┤
+│  TIER 3: Routine Work (cloud, cheapest model)               │
+│  Parse data, format YAML, schema validation, boilerplate    │
+│  Agent: Haiku / GPT-4.1-mini                                │
+│  ~2000+ tasks                                               │
+├─────────────────────────────────────────────────────────────┤
+│  TIER 4: Batch (cloud, cheapest model)                      │
+│  Bulk format checks, linting, simple extractions            │
+│  Agent: Haiku / GPT-4.1-mini                                │
+│  ~500 tasks                                                 │
+└─────────────────────────────────────────────────────────────┘
+
+Estimated total LLM cost: NOT VERIFIED — rough estimate $300-600 based on
+approximate token volumes. Will be refined after Phase 1 with actual usage data
+from cost_tracker.py.
+```
+
+### Model-to-Role Assignment
+
+| Role | Primary Model | Fallback/Panel | When |
+|---|---|---|---|
+| **Biology Expert Panel** | Claude Opus + GPT-5 + Grok 3 | Human approval required | Tier 1 — always multi-model |
+| **Math Modeler Panel** | Claude Opus + DeepSeek R1 API | Human approval required | Tier 1 — always multi-model |
+| **Software Engineer** | Sonnet / GPT-5 | Cross-model review (different model) | Tier 2 |
+| **Data Curator** | Haiku / GPT-4.1-mini | Sonnet for complex extractions | Tier 3 |
+| **Literature Agent** | Sonnet / GPT-5 | Gemini 2.5 Pro for long papers | Tier 2, task-specific temp |
+| **Validator** | Sonnet / GPT-5 | Multi-model panel on disagreement | Tier 2 |
+| **Code Review** | Different model than writer | — | Always cross-model |
+
+### Local Model Option (GPU required)
+
+Local models via Ollama are an optional cost optimization, practical only with a discrete GPU (e.g., RTX 3090). On CPU-only hardware (our current setup), 14B models run at an estimated 2-5 tok/s — too slow for interactive use. If a GPU is acquired:
+
+```bash
+# Install Ollama: https://ollama.com
+# Pull models (~30GB total disk):
+ollama pull phi4:14b          # ~8GB  — Tier 3/4 workhorse
+ollama pull qwen3:14b         # ~8GB  — Tier 2 code generation
+ollama pull gemma4:12b        # ~7GB  — Tier 3 literature/extraction
+
+# Without GPU, consider smaller models:
+ollama pull phi4-mini:3.8b    # ~2GB  — faster on CPU but lower quality
+```
+
+### Unified Model Router
+
+```python
+# opencell/agents/router.py
+class ModelRouter:
+    """Route tasks to cheapest model meeting quality requirements."""
+    
+    TIER_MODELS = {
+        Tier.CRITICAL: [                          # Cloud multi-model panel
+            "anthropic/claude-opus-4",
+            "openai/gpt-5", 
+            "xai/grok-3",
+        ],
+        Tier.STANDARD: [                          # Cloud single model + review
+            "anthropic/claude-sonnet-4",           # writer
+            "openai/gpt-5",                        # reviewer (always different)
+        ],
+        Tier.ROUTINE: ["anthropic/claude-haiku"],  # Cloud, cheapest
+        Tier.BULK:    ["openai/gpt-4.1-mini"],     # Cloud, cheapest
+    }
+    
+    def route(self, tier: Tier, needs_web=False, needs_long_ctx=False):
+        if needs_web:   return "xai/grok-3"       # built-in search
+        if needs_long_ctx: return "google/gemini-2.5-pro"  # 1M context
+        return self.TIER_MODELS[tier]
+```
+
+### Expert Panel Architecture
+
+For Tier 1 biological decisions, we run a multi-model evidence extraction panel. **Panels are evidence extractors and draft generators, NOT scientific decision-makers.** Critical decisions require human approval.
+
+```
+Question: "What kinetic law for glucose-6-phosphate isomerase?"
+    │
+    ├──► Claude Opus (persona: "Biochemist")     ──► Evidence + citations + uncertainty
+    ├──► GPT-5 (persona: "Systems Biologist")    ──► Evidence + citations + uncertainty
+    ├──► Grok 3 (persona: "Geneticist" + web)    ──► Evidence + citations + uncertainty
+    │
+    └──► Moderator (NON-PARTICIPATING model, e.g., Gemini 2.5 Pro):
+         Synthesize evidence into claim graph:
+           - Claims with supporting/contradicting DOIs
+           - Contradiction detection (flag conflicting evidence)
+           - Confidence assessment per claim
+           - Draft recommendation for human review
+         
+         AUTO-VERIFY: Check that cited DOIs exist and contain claimed values
+         FLAG FOR HUMAN: if citations are weak, missing, or conflicting
+```
+
+> ⚠️ **Unvalidated pattern**: The non-participating moderator design has no published evidence that it outperforms simple majority vote or weighted averaging. We will run an ablation study after Phase 2 to verify it adds value. If not, simplify to majority vote + human review.
+
+Panel outputs are structured as **claim graphs**:
+```yaml
+claims:
+  - claim: "G6PI follows ordered Bi-Bi mechanism in M. genitalium"
+    evidence_for:
+      - doi: "10.1016/..."
+        excerpt: "Kinetic analysis showed ordered sequential mechanism"
+        species: "M. genitalium"
+        conditions: {temp: 37, pH: 7.4}
+    evidence_against:
+      - doi: "10.1074/..."
+        excerpt: "Random mechanism observed in E. coli homolog"
+        species: "E. coli"
+    confidence: 0.7
+    recommendation: "Use ordered Bi-Bi; flag for experimental verification"
+    human_approved: false  # MUST be true before implementation
+```
+
+Panel decisions are versioned with invalidation triggers. A decision is re-debated ONLY when:
+- New literature contradicts the original evidence (Literature Agent flags)
+- Schema or IR changes affect the decision scope
+- Validation tests fail in ways traced to the decision
+- Organism scope changes (e.g., scaling from toy cell to M. genitalium)
+
+### Agent Skill Profiles
+
+Skills are **specialized prompt profiles with baked-in guardrails** — not a framework, not a dependency. Each skill is a system prompt + tool config + anti-pattern list stored as a markdown/YAML file in `.github/skills/`. When an agent is invoked for a task, the appropriate skill profile is loaded as context.
+
+**Design principle**: Borrow the role-specialization pattern from CrewAI; borrow the knowledge-graph approach from BioAgents; but implement as lightweight instruction files, not a framework dependency.
+
+#### Skill: `bio-researcher`
+- **Purpose**: Literature search, parameter extraction, claim graph construction
+- **System context**: Claim graph schema, organism-specific knowledge (M. genitalium genetic code, metabolic network topology)
+- **Guardrails**:
+  - No naked biology numbers — every value must have DOI, uncertainty, conditions
+  - Temperature locked to 0 for extraction tasks
+  - Evidence snippets required (quoted excerpt with page/figure/table location)
+  - Must flag contradictions between sources
+  - Must state confidence level and basis for each claim
+- **Anti-patterns**: Fabricating plausible-sounding parameter values; citing DOIs without verifying they contain the claimed data; averaging values across species without discounting
+- **Tools**: PubMed API, BRENDA, KEGG, UniProt, DOI verification
+
+#### Skill: `numerical-modeler`
+- **Purpose**: ODE design, solver selection, stability analysis, coupling scheme design
+- **System context**: Diffrax/JAX idioms, SciPy cross-check protocol, stiffness ratio heuristics, operator splitting theory
+- **Guardrails**:
+  - Every solver choice must be compared against SciPy reference on the same problem
+  - Must report condition number / stiffness ratio for coupled systems
+  - Must document time-scale separation assumptions
+  - Must check conservation laws after every coupling step
+- **Anti-patterns**: Choosing explicit solver for stiff system; ignoring operator splitting order conditions; claiming convergence without error analysis
+- **Tools**: JAX, Diffrax, SciPy, PySCeS (for validation), sensitivity analysis utilities
+
+#### Skill: `software-architect`
+- **Purpose**: Code structure, module interfaces, CI/CD, testing strategy
+- **System context**: OpenCell project structure, IR design, module I/O manifest format, PR checklist template
+- **Guardrails**:
+  - Runs lints (ruff, mypy) before declaring done
+  - Enforces pint units at all IR boundaries
+  - Must update module I/O manifest if interface changes
+  - Must run affected gate tests after structural changes
+- **Anti-patterns**: Breaking IR contracts silently; adding dependencies without license check; writing tests that only test the happy path
+- **Tools**: ruff, mypy, pytest, Hypothesis, pre-commit hooks
+
+#### Skill: `data-engineer`
+- **Purpose**: Database access (BRENDA/KEGG/UniProt/BioCyc), parameter validation, data versioning, identifier reconciliation
+- **System context**: Data schemas, identifier crosswalk format, DVC/content-hashing protocol, experimental condition metadata requirements
+- **Guardrails**:
+  - Content-hash every data artifact
+  - Log provenance (source DB, version, access date, query)
+  - Validate against JSON schemas before committing
+  - Flag parameters missing uncertainty distributions
+- **Anti-patterns**: Using parameters without checking species match; mixing data from different DB versions; dropping experimental conditions during extraction
+- **Tools**: BRENDA SOAP/REST API, KEGG REST API, UniProt API, BioCyc API, DVC, pint
+
+#### Skill: `bio-validator`
+- **Purpose**: Cross-check biology numbers, conservation laws, order-of-magnitude sanity, thermodynamic feasibility
+- **System context**: Known biological ranges (sentinel values), conservation law definitions, thermodynamic constraint formulations
+- **Guardrails**:
+  - Reject values outside known biological ranges (with documented ranges)
+  - Flag thermodynamically impossible flux predictions
+  - Check atom balance at every coupling boundary
+  - Compare against published experimental measurements where available
+- **Anti-patterns**: Accepting AI-generated parameter values without independent verification; treating FBA feasibility as biological validity; ignoring temperature/pH dependence of kinetic parameters
+- **Tools**: PySCeS/Tellurium (reference oracles), conservation checkers, sentinel range database
+
+#### Skill: `blog-writer`
+- **Purpose**: Write project blog posts as Tehol-Bugg dialogues
+- **System context**: Character voices (Tehol = witty PM asking sharp questions; Bugg = earnest AI assistant who sweeps up messes), Malazan references, project milestones
+- **Guardrails**:
+  - Must use Tehol/Bugg dialogue format
+  - Keep it fun and accessible — this is outreach, not a paper
+  - No fabricated progress claims — only write about what's actually done
+  - Include at least one honest admission of what went wrong or what we don't know
+- **Anti-patterns**: Dry technical writing; claiming more progress than exists; losing character voice
+
+> **Implementation**: Skills are stored as `.github/skills/{skill-name}.md` files. Task 1.38 (copilot-instructions.md) is expanded to include skill loading logic. Each skill file is ~50-100 lines of structured markdown. No framework dependency.
+
+> **Skill selection**: The orchestrator (task 1.34) selects the appropriate skill based on task type. Multiple skills can be composed for complex tasks (e.g., `bio-researcher` + `data-engineer` for parameter extraction with database access).
+
+### Cost Estimate (UNVERIFIED — will be refined with actual data)
+
+> ⚠️ **Honesty note**: These cost estimates are rough approximations based on assumed token volumes and current API pricing. No arithmetic has been verified against actual usage. The cost_tracker.py module will provide real data after Phase 1. Treat these as order-of-magnitude guides, not budgets.
+
+| Category | Est. Volume | Est. Cost | Confidence |
+|---|---|---|---|
+| Biology panels (Tier 1) | ~50 decisions, ~7K tokens each | ~$150-300 | Low — depends on panel rounds |
+| Math panels (Tier 1) | ~20 decisions, ~7K tokens each | ~$50-100 | Low |
+| Implementation (Tier 2) | ~200 tasks, ~4K tokens each | ~$50-100 | Low |
+| Data curation (Tier 3) | ~2000 tasks, ~1.5K tokens each | ~$2-5 | Medium — cheapest tier |
+| Batch (Tier 4) | ~500 tasks, ~1K tokens each | ~$1-3 | Medium |
+| **Total** | | **~$250-500** | **Low — refine after Phase 1** |
+
+---
+
+## Agent Communication: Dual-Format Specs
+
+### Principle
+Biology decisions are documented in **two formats**: human-readable markdown (rationale, literature references, trade-offs) and machine-readable SBML (exact reactions, kinetics, parameters). The Software Engineer implements from SBML — no ambiguity, no translation errors.
+
+### Spec Flow
+
+```
+Biology Expert Panel (cloud, Tier 1)
+    │
+    ├──► decisions/metabolism.md        ← WHY: rationale, literature, trade-offs
+    │                                      (human-reviewed, cached, never re-debated)
+    │
+    └──► data/organisms/toy_cell/model.sbml  ← WHAT: exact reactions, kinetics
+         (auto-generated from panel decision, machine-readable)
+              │
+              ├──► Data Curator (local, Tier 3): fills in parameter values
+              │    → data/organisms/toy_cell/parameters.yaml (schema-validated)
+              │
+              └──► Software Engineer (local, Tier 2): implements from SBML + params
+                   → src/opencell/models/metabolism.py
+                        │
+                        └──► Cross-Model Reviewer (cloud, Tier 2): reviews code
+```
+
+### Standards Used
+
+| Data Type | Standard | Format | Validator |
+|---|---|---|---|
+| Reactions & kinetics | SBML Level 3 | XML + MathML | `python-libsbml` |
+| Metabolic networks | SBML-FBC | XML | COBRApy |
+| Simulation config | SED-ML | XML | `libsedml` |
+| Gene annotations | UniProt/GenBank | TSV/FASTA | BioPython |
+| Internal parameters | Custom (YAML) | YAML | JSON Schema (CI-enforced) |
+| Simulation output | HDF5 | Binary | Schema-validated |
+
+---
+
+## Conflict Resolution Protocol
+
+### Principle
+**Biology is the primary source of truth, but model assumptions remain falsifiable.** If a numerically unstable ODE system is biologically correct, we fix the numerics — not the biology. However, literature biology is often incomplete, contradictory, or context-specific. When data disagree, we log contradictions, test alternatives empirically, and update assumptions based on evidence.
+
+### Resolution Ladder
+
+```
+Level 1: Math Modeler adapts the solver (~80% of conflicts)
+  ├── Stiff system → switch to implicit solver (BDF/Radau)
+  ├── Timescale mismatch → quasi-steady-state approximation
+  └── No biology changes needed
+
+Level 2: Controlled simplification (~15% of conflicts)
+  ├── Biology Researcher APPROVES a specific approximation
+  ├── e.g., "You may lump these 3 fast reactions into one"
+  ├── e.g., "You may use Hill function instead of full cooperativity"
+  └── Approval documented in decisions/ with justification
+
+Level 3: Empirical arbitration (~4% of conflicts)
+  ├── Implement BOTH approaches
+  ├── Simulate both, compare to experimental phenotype data
+  └── Whichever matches real data better wins
+
+Level 4: Human escalation (~1% of conflicts)
+  ├── Present trade-off to user with clear options
+  └── User decides, decision cached in decisions/
+```
+
+### Rules
+- Math Modeler may NEVER silently change biology
+- All approximations require Biology panel approval
+- All conflict resolutions are documented in `decisions/` with rationale
+- Resolved conflicts are cached — same conflict is never re-adjudicated
+
+---
+
+## Data Contracts (JSON Schemas)
+
+### Principle
+Every data file produced by any agent must pass schema validation before it can be committed. CI rejects malformed data. This prevents agents from breaking each other's assumptions.
+
+### Parameter Schema (example)
+
+```yaml
+# data/organisms/toy_cell/parameters.yaml
+schema_version: "1.0"
+organism: "toy_cell"
+parameters:
+  - enzyme: "glucose_6_phosphate_isomerase"
+    ec_number: "5.3.1.9"
+    kinetic_law: "michaelis_menten"
+    km:
+      value: 0.5
+      unit: "mM"
+      source: "BRENDA"          # BRENDA | BioCyc | literature | estimated
+      evidence: "direct"        # direct | homology | estimated
+      doi: "10.1016/j.jbc.2003.08.012"  # Citation for this measurement
+      uncertainty:
+        distribution: "lognormal"  # normal | lognormal | uniform
+        cv: 0.3                    # Coefficient of variation
+    vmax:
+      value: 120.0
+      unit: "µmol/min/mg"
+      source: "estimated"
+      method: "homology"
+    conditions:                  # Experimental context of measurement
+      temperature_C: 37.0
+      pH: 7.4
+      strain: "M. genitalium G37"
+      growth_medium: "SP-4"
+    confidence: 0.85            # 0.0–1.0, how reliable this value is
+    provenance:                  # How this value was derived
+      raw_value: 125.0
+      normalization: "per_mg_protein"
+      transformation: "Lineweaver-Burk fit"
+```
+
+### JSON Schema (enforced by CI)
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["schema_version", "organism", "parameters"],
+  "properties": {
+    "parameters": {
+      "type": "array",
+      "items": {
+        "required": ["enzyme", "ec_number", "kinetic_law"],
+        "properties": {
+          "enzyme": { "type": "string" },
+          "ec_number": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+\\.\\d+$" },
+          "kinetic_law": { "enum": ["michaelis_menten", "hill", "mass_action", "allosteric"] },
+          "km": {
+            "type": "object",
+            "required": ["value", "unit", "source"],
+            "properties": {
+              "value": { "type": "number", "minimum": 0 },
+              "unit": { "type": "string" },
+              "source": { "enum": ["BRENDA", "BioCyc", "literature", "estimated"] },
+              "evidence": { "enum": ["direct", "homology", "estimated"] }
+            }
+          },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+        }
+      }
+    }
+  }
+}
+```
+
+### Validation Pipeline
+
+```
+Agent produces data file
+    │
+    ├──► contracts.py validates against JSON Schema
+    │    ├── Pass → file accepted
+    │    └── Fail → rejected with specific error, agent must fix
+    │
+    └──► CI (schema-validate.yml) runs on every PR
+         └── Blocks merge if any data file fails validation
+```
+
+---
+
+## Orchestrator: Workflow Coordination
+
+### Two-Layer Architecture
+
+**Layer 1: `.github/copilot-instructions.md`** (declarative rules, lives in repo)
+
+Ensures any Copilot session on the repo automatically knows the workflow:
+- Agent role definitions and boundaries
+- Workflow constraints (no implementation without biology spec)
+- Conflict resolution protocol reference
+- Data contract requirements
+
+**Layer 2: `orchestrator/pipeline.py`** (imperative coordination)
+
+Encodes the full sub-model build workflow:
+
+```python
+class OpenCellOrchestrator:
+    """Coordinates the agent workflow for building sub-models."""
+    
+    async def build_submodel(self, name: str):
+        # Step 1: Biology panel decides modeling approach (Tier 1, cloud)
+        spec = await self.biology_panel.deliberate(
+            f"How should we model {name} in a minimal cell?"
+        )
+        save_decision(f"decisions/{name}.md", spec)
+        
+        # Step 2: Generate SBML from decision (Tier 2)
+        sbml = await self.math_modeler.formulate(spec)
+        validate_sbml(sbml)  # libsbml validation
+        
+        # Step 3: Curate parameters (Tier 3, local)
+        params = await self.data_curator.extract(spec.enzymes)
+        validate_schema(params, "parameter_schema.json")  # contract check
+        
+        # Step 4: Implement code (Tier 2, local)
+        code = await self.engineer.implement(sbml, params)
+        
+        # Step 5: Cross-model review (Tier 2, cloud — different model than writer)
+        review = await self.reviewer.review(code, spec)
+        if review.has_issues:
+            code = await self.engineer.revise(code, review)
+        
+        # Step 6: Validate (Tier 2)
+        results = await self.validator.test(name)
+        
+        return results
+```
+
+### Invocation
+
+```bash
+# Build a single sub-model end-to-end:
+python -m opencell.orchestrator build metabolism
+
+# Run the full pipeline for all toy cell sub-models:
+python -m opencell.orchestrator build-all --organism toy_cell
+
+# Re-run just the data curation step:
+python -m opencell.orchestrator curate --organism toy_cell --submodel metabolism
+```
+
+---
+
+## Key Technical Decisions
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| Language | Python 3.12 | Best scientific ecosystem; 3.14 too new for JAX/COBRApy wheels |
+| Compute strategy | JAX (CPU mode, float64) + SciPy reference/fallback + Colab/cloud GPU fallback | JIT compilation works on CPU; SciPy for stiff escapes; GPU via Colab for heavy runs |
+| Floating point | float64 mandatory for core integrators | JAX defaults to float32 which causes stiff ODE instability |
+| RNG discipline | Centralized PRNGKey schedule | Deterministic per-module/per-timestep key splitting, never naive seeds |
+| Data architecture | Data-oriented (JAX pytrees, sparse arrays) | Avoids Python object graph overhead; enables JIT and vectorization |
+| Internal representation | Typed IR (`core/ir.py`) — canonical in-memory model | SBML is import/export format, not source of truth. Designed for extensibility (promoter states, complexes) |
+| State coupling | Resource allocation / partition-merge via global ledger | NOT write-exclusion — ATP, ribosomes, tRNAs are written by multiple sub-models (Karr 2012 approach) |
+| Unit handling | pint library at IR boundary | Catches unit errors at data entry, not deep in solver |
+| SBML role | Interoperability format (import/export, lossy) | SBML cannot represent all hybrid/stochastic/event behavior cleanly; round-trip is lossy |
+| FBA strategy | Offline/episodic COBRApy, outside JAX inner loop | Crossing Python↔JAX per timestep kills JIT and performance |
+| FBA-ODE coupling | Defined sync frequency, re-solve triggers, flux interpolation | Concrete contract, not vague "operator splitting" |
+| Thermodynamic feasibility | Reaction directionality + loopless FBA | Prevents thermodynamically impossible cycles |
+| Hybrid solver coupling | Strang symmetric operator splitting + sync points + resource reconciliation | Order-2 accurate when operators commute; limitations documented |
+| Environment model | First-class runtime object (`core/environment.py`) | Media composition, nutrients, pH, temperature — not just config params |
+| Observation model | Maps internal states → experimental assay readouts | Can't validate without this; OD600 → biomass, qPCR → mRNA |
+| AI agent infra | Cloud-first via direct API calls; Ollama optional with GPU | No framework overhead; local models impractical on CPU-only hardware |
+| Agent role | Evidence extractors + draft generators, NOT decision-makers | Critical decisions require human approval + automated DOI verification |
+| Agent orchestration | Custom ModelRouter + ExpertPanel (claim graphs) + Pipeline | Tier-based routing, evidence provenance, contradiction detection |
+| Agent temperature | Task-specific (see Mandatory Policies) | Determinism for code/extraction; diversity for literature search |
+| Agent communication | Dual-format: Markdown (rationale) + SBML (machine spec) | Human review + machine interoperability |
+| Expert panel moderator | Non-participating model (unvalidated — ablation study planned) | Prevents moderator bias; will verify adds value after Phase 2 |
+| Decision versioning | Versioned with invalidation triggers + claim graphs | Prevents stale decisions; re-debated only when evidence changes |
+| Conflict resolution | Biology-primary with 4-level escalation ladder | Matches real-world systems biology; assumptions remain falsifiable |
+| Data contracts | JSON Schema (CI-enforced) + experimental conditions | Prevents agents from breaking each other; includes DOI, uncertainty, provenance |
+| Data versioning | DVC or content-hashed snapshots | Database parameters change over time; need version tracking |
+| Parameter uncertainty | Distributions + ensembles, not just point values | Structural/practical identifiability checks required |
+| Homology transfer | Automatic confidence discounting by evolutionary distance | Prevents false confidence from distant homologs |
+| Model exchange format | SBML Level 3 (lossy import/export) | Industry standard, interoperable with COPASI, Tellurium, COBRApy |
+| Simulation description | SED-ML | Standard for reproducible simulation experiments |
+| Metabolic modeling | COBRApy + custom kinetics | FBA for steady-state, kinetic for dynamics |
+| ODE solver | Diffrax (JAX) + SciPy fallback (ode_scipy.py) | JAX for speed, SciPy for correctness reference and stiff fallback |
+| Stochastic solver | Custom tau-leaping (Phase 1, not Phase 3) | For low-copy-number molecules; needed from day 1 |
+| Sensitivity analysis | OAT (Phase 2, per sub-model) → Morris (Phase 3, coupled) → Sobol (Phase 6, publication) | Early sensitivity guides curation priority; don't over-invest in insensitive params |
+| Data format | YAML for parameters, HDF5 for simulation output + checkpoints | Human-readable config, efficient storage + restart |
+| Reproducibility | Run manifests + checkpoint/restart + locked dependencies + canonical environment | Publication-grade reproducibility; cross-version divergence documented |
+| Testing strategy | Unit + property (Hypothesis) + golden-run + differential + stochastic + metamorphic + synthetic recovery + failure envelope | Multi-layered: correctness, invariants, regression, cross-validation, scientific falsification |
+| Runtime guards | Positivity, bounds, conservation monitors + order-of-magnitude sentinels | Catch numerical instability, hallucinated params, unit errors at runtime |
+| Crash diagnostics | First-bad-step crash bundle + single-step replay/delta ledger | Rapid triage: numerical vs biology vs software bug |
+| Anti-hallucination | No naked biology numbers lint + evidence snippets + DOI verification | Prevents smuggling invented params into code; requires quoted evidence |
+| Cross-session coherence | Structured decision registry + supersession lint + PR assumption delta checklist | Prevents silent reversals, forgotten decisions, context misses |
+| CI/CD tiering | Fast PR checks, nightly scientific regression, release benchmarks | Prevents flaky CI while ensuring scientific correctness |
+| Packaging | pyproject.toml (PEP 621) + uv for locking | Modern Python standard with reproducible installs |
+| CI/CD | GitHub Actions | Free for open source |
+| Pre-commit | ruff + mypy + black | Catches style/type issues before CI |
+| Docs | MkDocs + Material theme | Clean, searchable, auto-deploys |
+| License | Apache 2.0 | Permissive, patent protection |
+| Deliverable split | v1.0 = framework + toy cell; v2.0 = M. genitalium | Independent milestones; v1.0 is publishable standalone |
+
+---
+
+## Biological Sub-Models Summary
+
+| Sub-Model | Mathematical Framework | Key Outputs |
+|-----------|----------------------|-------------|
+| Metabolism | FBA + Michaelis-Menten ODEs | Metabolite concentrations, ATP/energy |
+| Transcription | Stochastic (low copy) + ODE (high copy) | mRNA counts per gene |
+| Translation | ODE with ribosome dynamics | Protein counts per gene |
+| DNA Replication | Discrete event + ODE | Replication fork position, completion |
+| Degradation | First-order kinetics | mRNA/protein half-lives |
+| Transport | Michaelis-Menten | Nutrient uptake, waste export |
+| Cell Division | Discrete event triggered by size/DNA | Two daughter cells |
+
+---
+
+## Rejected Alternatives
+
+### LangChain / LangGraph — NOT USED
+
+| Concern | Impact on OpenCell |
+|---|---|
+| **Abstraction mismatch** | They orchestrate LLM conversations, not scientific computations. Our agents route biological decisions, not chat flows |
+| **Determinism** | Designed for creative/flexible agent behavior. We need temperature=0, reproducible, auditable decisions |
+| **Runtime overhead** | Graph traversal and state management consume memory/CPU we need for simulation |
+| **Security** | Critical vulnerabilities disclosed (March 2026 "LangDrained"). Unacceptable for a scientific project |
+| **Dependency weight** | Massive dependency tree on top of our already heavy science stack (JAX, COBRApy, Diffrax) |
+| **Overkill** | Our workflow is a linear pipeline with branching on failure — not a complex agent negotiation graph |
+
+**What we need is simpler:**
+```
+Biology Spec (YAML/SBML) → Math Model → Code (Python/JAX) → Validate → Done
+```
+
+Our custom `pipeline.py` + `router.py` + direct API calls (via `httpx`) gives us full control over determinism, reproducibility, audit trails, and zero framework overhead. If agent complexity grows to 20+ roles with dynamic negotiation, we'll reconsider — but that's a stretch goal problem.
+
+### Other Rejected Frameworks
+
+| Framework | Why Rejected |
+|---|---|
+| **CrewAI** | Higher-level than LangGraph but same category — chat agent orchestration, not scientific pipeline |
+| **AutoGen** | Microsoft's multi-agent framework — good for conversational agents, wrong abstraction for simulation |
+| **Semantic Kernel** | .NET-centric, C# focus — doesn't fit our Python/JAX stack |
+| **LlamaIndex** | RAG-focused — useful for literature search but not for agent orchestration |
+
+---
+
+## Mandatory Policies
+
+These are non-negotiable engineering constraints applied across the entire project.
+
+### Honesty & Credibility
+- **Mark estimates vs. facts**: Every quantitative claim in the plan must be labeled as VERIFIED (benchmarked/cited) or UNVERIFIED (estimate). Do not present guesses as facts
+- **Say "I don't know"**: When data is unavailable, state that explicitly rather than inventing plausible numbers
+- **Benchmark before claiming**: Performance numbers, cost estimates, and timing projections must be measured, not assumed
+
+### Determinism & Reproducibility
+- **Temperature policy is task-specific**, not universal:
+  - `temp=0` for: code generation, parameter extraction, schema validation, format conversion (maximum determinism)
+  - `temp=0.3-0.5` for: literature search, evidence gathering (some diversity helps find more sources)
+  - `temp=0` for: expert panel synthesis, conflict resolution, decision drafts (reproducible reasoning)
+  - All temperature settings are logged in cost_tracker.py for audit
+- **float64 mandatory** for all numerical core code: `jax.config.update("jax_enable_x64", True)` set at module import
+- **Centralized RNG**: Single root `jax.random.PRNGKey(seed)` → deterministic splitting per module, per timestep. Never `numpy.random.seed()` or `random.seed()` in core code
+- **Run manifests**: Every simulation run emits: git SHA, `uv.lock` hash, solver version, model checksum, parameter checksum, all RNG seeds, hardware info, wall-clock timing, AI decision-set version
+- **Locked dependencies**: `uv.lock` committed to repo. `pip install` from lockfile only in CI
+- **Checkpoint/restart**: All long runs checkpoint state + RNG keys + solver internals to HDF5. Resume from any checkpoint. NOTE: exact-restart claim narrowed to same JAX/Diffrax/Python versions only
+- **Canonical environment**: One declared reference environment (OS, Python version, JAX version, hardware) for reproducibility claims. Divergence on other platforms (e.g., Colab GPU) must be characterized and documented
+
+### AI Agent Discipline
+- **Panels are evidence extractors, NOT decision-makers** — critical decisions require human approval
+- **Automated source verification**: DOI exists AND contains claimed value (spot-check automated, full verification for Tier 1)
+- **Claim graphs**: Panel outputs structured as claims with evidence for/against, confidence scores, and contradiction detection
+- **Store full prompts, model IDs, raw outputs** for every LLM call — cloud models change over time
+- **Non-participating moderator** in expert panels — moderator model never also serves as panelist (unvalidated pattern; ablation study after Phase 2)
+- **Human review triggered** automatically when panel citations are weak, missing, or conflicting
+- **Decision invalidation**: Decisions are versioned; re-debated when triggers fire (new literature, failed tests, scope change)
+
+### Data Governance
+- **License audit** for every data source before inclusion (WEEK 0 — KEGG, BRENDA, BioCyc, UniProt)
+- **Data versioning**: DVC or content-hashed snapshots for all parameter files. Auto-generate benchmark-delta reports when data changes
+- **Fetch scripts** for restricted data — never check in data with redistribution restrictions
+- **Provenance records**: Every parameter traces back to: raw value, normalization, transformation, source DOI, experimental conditions
+- **Schema versioning**: Migration strategy for when schemas change; version field in all data files
+- **Identifier reconciliation**: KEGG ↔ BioCyc ↔ UniProt ↔ GenBank crosswalk maintained as first-class artifact
+- **Homology transfer**: Automatic confidence discounting proportional to evolutionary distance. Never full-confidence transfer
+
+### Code Quality
+- **Pre-commit hooks**: ruff + mypy + black — no code enters repo without passing
+- **Tiered CI**: Fast PR checks (lint + unit + property) → nightly scientific regression → release benchmarks
+- **Scientific falsification tests**: Metamorphic tests, synthetic-data recovery, failure envelope tests — not just software invariants
+- **SemVer**: CHANGELOG.md with Keep a Changelog format; deprecation timeline for public APIs
+- **Structured logging**: Per-submodel timing, solver-step stats, conservation residuals, agent decision audit logs
+
+---
+
+## Cross-Model Audit Findings
+
+### Round 1 (April 2026) — Claude Opus 4.6 + GPT-5.2
+
+Plan reviewed independently by Claude Opus 4.6 and GPT-5.2. Key converging findings (both reviewers agreed) and how we addressed them:
+
+#### Blocking Issues — Addressed
+
+| Finding | Both? | Resolution |
+|---|---|---|
+| No canonical runtime representation | ✅ | Added `core/ir.py` — typed IR with species IDs, compartments, units, stoichiometry, r/w permissions |
+| Hybrid solver coupling too vague | ✅ | Specified operator splitting + sync points + mass-balance reconciliation; must prove on toy benchmarks first |
+| Reproducibility underspecified | ✅ | Added run manifests, checkpoint/restart, centralized RNG, locked dependencies — all in Phase 1 |
+| FBA inside JAX is a perf trap | Opus | FBA is now offline/episodic, outside JAX inner loop |
+| Data licensing not addressed | ✅ | Added data governance section + license audit in Phase 1 |
+| "Biology is ground truth" too absolute | Opus | Changed to "biology-primary but falsifiable" with contradiction logs |
+
+#### High-Priority Gaps — Addressed
+
+| Finding | Resolution |
+|---|---|
+| Orchestrator too early, validation too late | Phase 1 reordered: IR → engine → reproducibility → validation → THEN orchestrator |
+| JAX defaults float32 | Mandatory float64 policy added |
+| RNG discipline missing | Centralized PRNGKey schedule added |
+| SBML can't be sole source of truth | IR is canonical; SBML is import/export |
+| Parameter schema too weak | Added: conditions, DOI, uncertainty distributions, provenance |
+| Decision cache unsafe | Versioned decisions with invalidation triggers |
+| Testing too narrow | Added: property-based (Hypothesis), golden-run, differential, stochastic, SBML round-trip |
+| No checkpoint/restart | Added to Phase 1 core |
+| AI panel false consensus risk | Non-participating moderator, mandatory citations, weak-source flagging |
+| No volume/compartment model | Added `core/compartments.py` |
+| Missing project governance | Added GOVERNANCE.md, SECURITY.md, CHANGELOG.md |
+
+#### Accepted but Deferred
+
+| Finding | Disposition |
+|---|---|
+| "Orchestrator should be a separate package" | Keep in-tree during dev; extract later if needed (Stretch Goal C) |
+| "Move parameter estimation earlier" | Minimal calibration spike added to Phase 2; full estimation stays in Phase 4 |
+| "CPU-only local inference may bottleneck" | Cloud-first strategy adopted; local models optional with GPU |
+| "20-week timeline optimistic" | Deliverable split: v1.0 (toy cell) with open timeline, v2.0 (M.gen) timeline TBD |
+
+### Round 2 (April 2026) — GPT-5.4 + Claude Opus 4.7
+
+Second independent review by GPT-5.4 and Claude Opus 4.7. 54 total findings across both rounds; 23 were initially missed in synthesis and later recovered through systematic cross-check.
+
+#### Blocking Issues — Addressed
+
+| Finding | Reviewer(s) | Resolution |
+|---|---|---|
+| Write-exclusion is wrong — ATP, ribosomes, tRNAs written by multiple sub-models | Both | Replaced with resource allocation / partition-merge semantics via `core/resource_ledger.py` (Karr 2012 approach) |
+| AI panels are NOT scientific decision-makers — correlated errors from temp=0 | Both | Demoted to evidence extractors + draft generators; critical decisions require human approval + automated DOI verification |
+| No uncertainty/identifiability program — parameters need distributions | GPT-5.4 | Added uncertainty distributions to parameter schema; structural/practical identifiability checks in calibration spike (2.3) |
+| Missing essential biology — polymerization primitives (RNAP, ribosome, replisome) | Both | Added polymerization primitives to transcription (2.7), translation (2.8), and replication (5.4) |
+| Validation anchored to Karr, not reality | Both | Split fit targets from held-out validation; added orthogonal experimental data requirement; observation model added |
+| 80% essentiality target harder than it sounds — Karr only achieved 79% | Opus 4.7 | Added Karr reproduction study (5.0) before claiming match; tightened success criteria |
+
+#### High-Priority Issues — Addressed
+
+| Finding | Resolution |
+|---|---|
+| Timeline 20 weeks is 5-10x too short for M.gen | Split: v1.0 (framework + toy cell), v2.0 (M.gen with TBD timeline) |
+| Stochastic solver belongs in Phase 1 | Moved tau-leaping to Phase 1 (1.17) |
+| No unit handling | Added pint library at IR boundary from day 1 (1.9) |
+| No environment/media model | Added `core/environment.py` as first-class runtime object (1.12) |
+| No observation model | Added `analysis/observation.py` — state-to-assay mapping (1.34) |
+| No thermodynamic feasibility checks | Added loopless FBA + reaction directionality (2.6) |
+| FBA-ODE coupling needs concrete contract | Defined sync frequency, triggers, interpolation in 2.6 |
+| Build SciPy reference alongside JAX | Added `solvers/ode_scipy.py` (1.16) |
+| No data versioning | Added DVC or content-hashed snapshots (1.26) |
+| Toy cell is coupled-solver benchmark, not biological cell | Framed honestly throughout Phase 2; gene set exercises solver coupling, not biology |
+| Temperature=0 may hurt literature search diversity | Made temperature task-specific (see Mandatory Policies) |
+| M.gen uses UGA as tryptophan (not stop codon) | Flagged in translation model (5.3) |
+| Task numbering duplicates (1.4, 1.5, 1.10) | Fixed — all tasks now uniquely numbered |
+| 14B local models on CPU = 2-5 tok/s, not 8-12 | Switched to cloud-first strategy; local models optional with GPU |
+| Cut division from toy cell | Division deferred to Phase 5 (M.gen only) |
+| Karr reproduction study needed before claiming match | Added as Phase 5.0 prerequisite |
+| Start with thin vertical slice, not 7 submodels | Phase 2 restructured: data→IDs→units→env→3 core submodels |
+| Success criteria are gameable | Added rejection criteria + failure envelopes in testing |
+| Define benchmark charter before coding | Added as Phase 1 task (1.7) |
+| Redesign agents around claim graphs + evidence provenance | Expert panel outputs structured as claim graphs with DOI verification |
+| Validation harness before sub-models = testing unknown API | Concrete biological validators deferred to Phase 2 |
+| Reduce first target to 3 submodels (metab + txn + tln) | Phase 2 restructured: core 3 first, additional 2 after coupling works |
+
+#### Medium-Priority Issues — Addressed
+
+| Finding | Resolution |
+|---|---|
+| Operator splitting order-independence test unreliable for stiff coupling | Documented limitation; Strang splitting accuracy degrades when operators don't commute |
+| Division biology under-specified for M.gen (not FtsZ-driven) | Division deferred to v2.0; scope limitations documented in 5.6 |
+| Non-participating moderator pattern unvalidated | Ablation study planned after Phase 2 |
+| Cost estimate has no arithmetic | Marked as UNVERIFIED; will refine with actual data from cost_tracker.py |
+| Data licensing audit too late | Moved to Week 0 (Phase 1, task 1.4) |
+| No regime-switch / failure-state modeling | Added to Phase 5 (5.1) — stress responses, death states |
+| Tests focus on software, not scientific falsification | Added metamorphic, synthetic-data recovery, and failure envelope tests |
+| No governance for curation/model edits | Added benchmark-delta reports on data changes; DVC versioning |
+| Reproducibility drift across environments | Added canonical environment declaration (1.6) |
+| State representation may explode at scale | IR designed for extensibility; explicit/lumped/rule-based decision in Phase 1 |
+| IR rigidity risk | IR designed with growth in mind; promoter states, complexes anticipated |
+| Homology parameter transfer dangerous without penalties | Added automatic confidence discounting by evolutionary distance |
+| Identifier reconciliation is hidden blocker | Moved to Phase 2 (2.1), before any parameter curation |
+| Checkpoint fragile across Diffrax versions | Exact-restart claim narrowed to same versions only |
+| Growth rate "within 2x" too loose | Tightened (see Success Criteria) |
+| SBML round-trip lossy | Documented what survives and what doesn't (1.23) |
+| Visualization under-scoped | Acknowledged; will expand after v1.0 if needed |
+
+---
+
+## Success Criteria
+
+### v1.0 (Framework + Toy Cell Benchmark)
+1. **Toy cell benchmark runs** — coupled metabolism + transcription + translation with resource allocation, producing biologically plausible trajectories
+2. **Mass and energy conservation** — no matter/energy created or destroyed (validated by property-based tests)
+3. **Solver coupling demonstrated** — FBA+ODE, stochastic+deterministic, resource contention all working
+4. **Reproducible** — deterministic mode gives identical results across runs (golden-run tests); stochastic mode gives consistent distributions
+5. **Run manifest emitted** — every run produces a complete provenance record
+6. **Checkpoint/restart works** — can resume any simulation from checkpoint (same-version only)
+7. **Extensible** — adding a new sub-model requires only implementing the base interface + IR state slice + ledger registration
+8. **Framework published** — v1.0 released on GitHub (sdrona-ms/opencell) with docs, tests, blog
+
+### v2.0 (M. genitalium — Separate Phase, TBD Timeline)
+9. **M. genitalium gene essentiality** — compare against Karr 2012 results and experimental data. NOTE: Karr achieved 79%; our target is ≥75% (not 80%, which would require outperforming the original). Failure envelope: if essentiality falls below 60%, model is rejected
+10. **Growth rate prediction** — within ±30% of measured doubling time (~12h) OR acknowledge as qualitative if data uncertainty is too high. Previous "2x" criterion (6-32h range) was too loose
+11. **Performant** — full M. genitalium cell cycle in <30 minutes on CPU, <10 minutes on GPU (Colab) [UNVERIFIED estimate]
+12. **Observation model works** — can map internal states to at least 3 distinct experimental assay readouts
+13. **Published** — accepted in a peer-reviewed journal
+
+### Rejection Criteria (what constitutes FAILURE)
+- Negative concentrations or negative molecule counts in simulation output
+- Growth in absence of essential nutrients
+- Model cannot be rejected by ANY experimental observation (overfitting)
+- Energy production exceeding thermodynamic limits
+- Parameter sensitivity analysis shows >50% of parameters are unidentifiable AND model still "passes" success criteria (gaming via compensating errors)
+
+---
+
+## Stretch Goals
+
+These are pursued only after Phases 1–6 are complete and published.
+
+### Stretch Goal A: E. coli Whole-Cell Model
+Scale to *Escherichia coli* (~4,300 genes), validating against the Covert Lab's published wcEcoli model.
+
+- **Complexity**: ~8x more genes than M. genitalium, ~2,700 metabolic reactions
+- **Reference**: [CovertLab/WholeCellEcoliRelease](https://github.com/CovertLab/WholeCellEcoliRelease) — published in *Science* (2020), *npj Syst. Bio.* (2022)
+- **What we reuse**: Their published validation data, process list, curated parameter values
+- **What's new**: Our modular architecture, AI-agent-driven modeling, SBML interoperability
+- **Estimated effort**: 6–12 months additional, ~$500–1,000 in cloud AI costs
+- **Publication target**: *Science* or *Nature Methods*
+
+### Stretch Goal B: Yeast (*S. cerevisiae*) Whole-Cell Model
+First-ever complete whole-cell simulation of a eukaryotic organism (~6,000 genes, 7+ organelle compartments).
+
+- **Complexity**: ~500–1,000x harder than M. genitalium (compartmentalization, chromatin, organelle dynamics)
+- **Current state of the art**: Only partial models exist (Yeast9 GEM for metabolism, MIL-CELL for cell cycle)
+- **New challenges**: Spatial modeling (organelle transport), chromatin/histone dynamics, multi-phase cell cycle with checkpoints
+- **Estimated effort**: Multi-year project, likely requiring collaboration with experimental labs
+- **Publication target**: *Cell* or *Nature* — would be a landmark achievement
+
+### Stretch Goal C: Agent Orchestration Framework
+Extract the orchestrator (ModelRouter, ExpertPanel, Pipeline) into a standalone open-source library for AI-driven scientific modeling.
+
+- **Scope**: General-purpose multi-model debate engine with tier-based routing, caching, and conflict resolution
+- **Use cases**: Any computational science project needing expert panel decisions — drug design, climate modeling, materials science
+- **Publication target**: *Nature Methods* or *JOSS* (Journal of Open Source Software)
+
+### Stretch Goal D: Drug & Evolution Simulation (Spin-off Project)
+A spin-off project building on top of OpenCell to simulate drug interactions, predict resistance mutations, and model evolutionary trajectories. Applicable to any organism we model (M. genitalium, E. coli, and beyond).
+
+- **Drug target identification**: Systematic gene knockouts to find essential enzymes with no human homolog (ideal drug targets that won't harm patients)
+- **Drug effect prediction**: Inhibit target enzyme activity (reduce Vmax) and simulate cell cycle — predict whether cell dies, slows, or survives
+- **Resistance mutation scanning**: Modify drug target Km/Vmax to model point mutations, identify which restore growth under drug pressure
+- **Mutation fitness cost**: Compare wild-type vs mutant growth rates without drug — high fitness cost means resistance is unstable and may revert; low cost means it will spread
+- **Evolutionary trajectory prediction**: Wright-Fisher population simulation under drug selection — predict most likely mutation sequence to full resistance
+- **Combination therapy design**: Simulate multi-target inhibition to find drug combinations where resistance to one doesn't save the cell
+- **Compensatory mutation prediction**: After resistance emerges, scan for secondary mutations that restore fitness — predict whether resistant strains will become as fit as wild-type
+- **Applies to**: M. genitalium (azithromycin resistance, novel STI drug targets), E. coli (multi-drug resistance, clinical priority), and any future organism models
+- **Real-world impact**: Pre-screen resistance risk before clinical trials, discover novel drug targets computationally, design resistance-proof therapies
+- **Publication target**: *Nature Microbiology*, *Antimicrobial Agents and Chemotherapy*, or *PNAS*
