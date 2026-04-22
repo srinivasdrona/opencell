@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OpenCell Parameter Schema",
+  "description": "Schema for biological parameters with provenance and uncertainty",
+  "type": "object",
+  "properties": {
+    "parameter_id": {
+      "type": "string",
+      "description": "Unique parameter identifier"
+    },
+    "value": {
+      "type": "number",
+      "description": "Numerical value"
+    },
+    "unit": {
+      "type": "string",
+      "description": "Unit string (pint-compatible)"
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "doi": { "type": "string" },
+        "database": { "type": "string" },
+        "entry_id": { "type": "string" },
+        "evidence_snippet": { "type": "string" },
+        "page_or_figure": { "type": "string" }
+      },
+      "required": ["doi"]
+    },
+    "uncertainty": {
+      "type": "object",
+      "properties": {
+        "distribution": {
+          "type": "string",
+          "enum": ["normal", "lognormal", "uniform", "point"]
+        },
+        "std": { "type": "number" },
+        "lower": { "type": "number" },
+        "upper": { "type": "number" }
+      }
+    },
+    "conditions": {
+      "type": "object",
+      "properties": {
+        "temperature_C": { "type": "number" },
+        "pH": { "type": "number" },
+        "strain": { "type": "string" },
+        "growth_medium": { "type": "string" }
+      }
+    },
+    "species": {
+      "type": "string",
+      "description": "Organism species this parameter is from"
+    },
+    "confidence": {
+      "type": "string",
+      "enum": ["measured", "estimated", "borrowed", "hallucinated"],
+      "description": "How reliable is this value?"
+    }
+  },
+  "required": ["parameter_id", "value", "unit", "source", "confidence"]
+}
