@@ -42,10 +42,13 @@ At the end of each session (or when the user says goodbye / wraps up), update th
   4. `1ad09f7` — feat: implement engine, guards, sentinels, crash bundle, manifest, checkpoint
   5. `08f67b0` — feat: implement data layer, orchestrator router/cost tracker, coupling benchmark
   6. `78945ef` — feat: complete Phase 1 — panel, pipeline, observation, validation, replay, manifests, skills
-  7. (pending) — CI, data versioning, WSL switch docs
+  7. `6c7e516` — chore: switch to WSL, update docs, add CI tiers and data versioning
+  8. `0a4997b` — blog: Day 1 — 4,500 Lines Before Lunch
 - **Environment switch**: Windows `.venv-opencell` → WSL `.venv-wsl` (Ubuntu 22.04, Python 3.12.13). All 114 tests pass on both. WSL is now primary.
-- **Remaining for Phase 1**: Commit final batch (CI update, data versioning, docs). Then Phase 1→2 Gate (8 analytical checks).
+- **Phase 1 status**: COMPLETE (all tasks done except p1-db-access which is blocked on user action)
+- **Not yet pushed to GitHub** — user wants to keep it local for a couple more days
 - **Blockers**: p1-db-access (BRENDA/BioCyc API keys) — needs user action
+- **Next session**: Phase 1→2 Gate (8 analytical validation checks), then Phase 2 (toy cell sub-models)
 
 ## User Profile
 - **GitHub**: sdrona-ms (personal). Do NOT use sdrona_microsoft (enterprise/managed)
