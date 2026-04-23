@@ -49,6 +49,9 @@ class ManifestParameter:
     gene_or_enzyme: str = ""
     cache_files: list[str] = field(default_factory=list)
     notes: str = ""
+    sbml_value: float | None = None     # cross-check anchor from BioModels SBML
+    sbml_id: str = ""                    # original SBML id (audit trail)
+    sbml_kind: str = ""                  # global_parameter | local_parameter | species_initial
 
 
 @dataclass
@@ -62,6 +65,9 @@ class CurationManifest:
     cache_file_sha256: dict[str, str] = field(default_factory=dict)
     manifest_version: str = "0.1"
     source_manifest_path: str = ""
+    pubmed_id: str = ""
+    biomodels_id: str = ""
+    verification: dict = field(default_factory=dict)  # paper.verification block
 
     def cache_files_for(self, p: ManifestParameter) -> list[str]:
         """Per-entry cache files override paper-level."""
@@ -103,8 +109,9 @@ def load_manifest(path: str | Path) -> CurationManifest:
     if "model_slug" not in raw or not raw["model_slug"]:
         raise ManifestValidationError("manifest missing required field: model_slug")
     paper = _validate_dict(raw.get("paper") or {}, "paper")
-    if "doi" not in paper or not paper["doi"]:
-        raise ManifestValidationError("manifest missing required field: paper.doi")
+    paper_doi = paper.get("doi") or ""
+    # NOTE: doi MAY be empty in a draft manifest (verifier or human fills it
+    # before extraction). The runner refuses to extract when doi is empty.
 
     raw_params = raw.get("parameters") or []
     if not isinstance(raw_params, list) or not raw_params:
@@ -136,18 +143,26 @@ def load_manifest(path: str | Path) -> CurationManifest:
             gene_or_enzyme=e.get("gene_or_enzyme", "") or "",
             cache_files=list(e.get("cache_files") or []),
             notes=e.get("notes", "") or "",
+            sbml_value=(e.get("sbml_value") if e.get("sbml_value") is not None else None),
+            sbml_id=e.get("sbml_id", "") or "",
+            sbml_kind=e.get("sbml_kind", "") or "",
         ))
 
-    paper_caches = list(raw.get("cache_files") or [])
+    # Cache files: prefer top-level cache_files; fall back to paper.pdf_cache
+    # (the biomodels_manifest emitter writes the latter form).
+    paper_caches = list(raw.get("cache_files") or paper.get("pdf_cache") or [])
     manifest = CurationManifest(
         model_slug=raw["model_slug"],
-        doi=paper["doi"],
+        doi=paper_doi,
         organism=paper.get("organism", "") or "",
         condition=paper.get("condition", "") or "",
         cache_files=paper_caches,
         parameters=parameters,
         manifest_version=str(raw.get("manifest_version", "0.1")),
         source_manifest_path=str(p),
+        pubmed_id=str(paper.get("pubmed_id", "") or ""),
+        biomodels_id=str(paper.get("biomodels_id", "") or ""),
+        verification=dict(paper.get("verification") or {}),
     )
 
     # Hash all referenced cache files upfront.

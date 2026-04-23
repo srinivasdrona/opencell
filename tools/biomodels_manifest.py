@@ -136,6 +136,7 @@ def main(argv: list[str] | None = None) -> int:
     header = ManifestHeader(
         doi=paper_doi,
         biomodels_id=biomodels_id,
+        pubmed_id=(md.pubmed_id if md else ""),
         pdf_cache=args.pdf_cache,
         organism=organism,
         condition=args.condition,

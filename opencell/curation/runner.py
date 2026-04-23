@@ -15,6 +15,7 @@ from opencell.data.verification import (
 from opencell.extraction import ExtractionResult, ParameterSpec, extract_parameter
 
 from .manifest import CurationManifest, ManifestParameter
+from .value_match import CrossCheck, cross_check
 
 
 @dataclass
@@ -27,6 +28,7 @@ class CurationOutcome:
     extraction: ExtractionResult | None = None
     card: ParameterCard | None = None
     note: str = ""
+    cross_check: CrossCheck | None = None    # PDF-vs-SBML cross-check (when applicable)
 
 
 @dataclass
@@ -67,6 +69,7 @@ def _build_draft_card(
     entry: ManifestParameter,
     manifest: CurationManifest,
     result: ExtractionResult,
+    xc: CrossCheck | None = None,
 ) -> ParameterCard | None:
     rec = result.recommendation
     if rec is None:
@@ -81,6 +84,12 @@ def _build_draft_card(
         trace_lines.append(f"Source: {rec.source_path}")
     if rec.source_sha256:
         trace_lines.append(f"SHA-256: {rec.source_sha256}")
+    if xc is not None:
+        trace_lines.append(
+            f"Cross-check (PDF vs SBML): status={xc.status}"
+            + (f", pdf={xc.pdf_value!r}, sbml={xc.sbml_value!r}, rel_diff={xc.rel_diff:.3g}"
+               if xc.rel_diff is not None else "")
+        )
     trace_lines.append(f"Context: ...{rec.context_window.strip()[:300]}...")
     rationale = "\n".join(trace_lines)
 
@@ -131,6 +140,12 @@ def run_curation(
       extract_fn: dependency injection for tests (default: real pipeline).
     """
     started = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    if not manifest.doi:
+        raise ValueError(
+            "manifest.paper.doi is empty; cannot run curation. "
+            "Run `python tools/verify_paper_pairing.py --manifest <path> --update` "
+            "to auto-fill it from PubMed, or fill it manually."
+        )
     existing = _read_existing_cards(output_cards_path) if output_cards_path else {}
 
     outcomes: list[CurationOutcome] = []
@@ -165,13 +180,28 @@ def run_curation(
         )
         result = extract_fn(spec)
         status = result.status
-        card = _build_draft_card(entry, manifest, result) if status == "RECOMMEND" else None
+        rec = result.recommendation
+        # Cross-check: only run when we have a recommendation and a curated SBML value.
+        xc = cross_check(rec, entry.sbml_value) if (rec is not None or entry.sbml_value is not None) else None
+        # Guardrail: if PDF and SBML disagree, downgrade RECOMMEND -> AMBIGUOUS so
+        # the mismatch is never silently auto-approved as a draft card.
+        downgrade_note = ""
+        if xc is not None and xc.disagrees and status == "RECOMMEND":
+            status = "AMBIGUOUS"
+            downgrade_note = (
+                f"downgraded from RECOMMEND because PDF value "
+                f"{xc.pdf_value!r} disagrees with SBML value {xc.sbml_value!r} "
+                f"(rel_diff={xc.rel_diff:.3g}, tol={xc.rel_tol})"
+            )
+        card = _build_draft_card(entry, manifest, result, xc) if status == "RECOMMEND" else None
         outcomes.append(CurationOutcome(
             parameter_id=entry.parameter_id,
             symbol=entry.symbol,
             status=status,
             extraction=result,
             card=card,
+            cross_check=xc,
+            note=downgrade_note,
         ))
 
     return CurationRun(

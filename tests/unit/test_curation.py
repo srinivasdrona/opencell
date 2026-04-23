@@ -177,14 +177,19 @@ class TestManifestValidation:
             load_manifest(mpath)
 
     def test_missing_doi(self, tmp_path):
+        """A draft manifest may have empty paper.doi (filled later by verifier);
+        load_manifest accepts it but run_curation refuses to extract."""
         mpath = tmp_path / "m.yaml"
         mpath.write_text(yaml.safe_dump({
             "model_slug": "x",
             "paper": {},
+            "cache_files": [],
             "parameters": [{"parameter_id": "a", "symbol": "k"}],
         }))
-        with pytest.raises(ManifestValidationError, match="paper.doi"):
-            load_manifest(mpath)
+        m = load_manifest(mpath)   # no exception
+        assert m.doi == ""
+        with pytest.raises(ValueError, match="paper.doi is empty"):
+            run_curation(m)
 
     def test_empty_parameters(self, tmp_path):
         mpath = tmp_path / "m.yaml"
@@ -277,6 +282,84 @@ class TestRunnerStatusRouting:
         assert cov["RECOMMEND"] == 1
         assert cov["AMBIGUOUS"] == 1
         assert cov["NOT_FOUND"] == 1
+
+
+# ---------------------------------------------------------------------------
+# Cross-check guardrail (PDF↔SBML value match)
+# ---------------------------------------------------------------------------
+
+def _make_manifest_with_sbml(tmp_path: Path, *, sbml_value: float | None) -> Path:
+    """Variant of _make_manifest that emits a sbml_value per entry."""
+    cache = tmp_path / "cache.txt"
+    cache.write_text("dummy")
+    body = {
+        "model_slug": "testmodel",
+        "manifest_version": "0.1",
+        "paper": {"doi": "10.0/test", "organism": "test", "condition": "base"},
+        "cache_files": [str(cache)],
+        "parameters": [{
+            "parameter_id": "p1",
+            "symbol": "kA",
+            "target_unit": "min^-1",
+            "name": "param kA",
+            "sbml_value": sbml_value,
+            "sbml_id": "kA",
+            "sbml_kind": "global_parameter",
+        }],
+    }
+    mpath = tmp_path / "manifest.yaml"
+    mpath.write_text(yaml.safe_dump(body, sort_keys=False))
+    return mpath
+
+
+class TestCrossCheckGuardrail:
+    def test_loads_sbml_value_from_manifest(self, tmp_path):
+        mpath = _make_manifest_with_sbml(tmp_path, sbml_value=4.27)
+        m = load_manifest(mpath)
+        assert m.parameters[0].sbml_value == 4.27
+        assert m.parameters[0].sbml_id == "kA"
+        assert m.parameters[0].sbml_kind == "global_parameter"
+
+    def test_agree_when_pdf_and_sbml_match(self, tmp_path):
+        mpath = _make_manifest_with_sbml(tmp_path, sbml_value=0.5)
+        m = load_manifest(mpath)
+        run = run_curation(m, extract_fn=lambda spec: _result_recommend("kA", 0.5))
+        out = run.outcomes[0]
+        assert out.status == "RECOMMEND"
+        assert out.cross_check is not None
+        assert out.cross_check.status == "AGREE"
+        assert out.card is not None  # still emits draft card
+
+    def test_disagree_downgrades_to_ambiguous(self, tmp_path):
+        """The blocking guardrail: PDF value disagrees → no draft card auto-emitted."""
+        mpath = _make_manifest_with_sbml(tmp_path, sbml_value=0.5)
+        m = load_manifest(mpath)
+        # PDF reports 1.5 but SBML says 0.5 (3x off)
+        run = run_curation(m, extract_fn=lambda spec: _result_recommend("kA", 1.5))
+        out = run.outcomes[0]
+        assert out.status == "AMBIGUOUS"   # downgraded from RECOMMEND
+        assert out.card is None             # no auto-emitted card
+        assert out.cross_check.status == "DISAGREE"
+        assert "downgraded" in out.note.lower()
+        assert "0.5" in out.note and "1.5" in out.note
+
+    def test_no_sbml_value_does_not_block_recommend(self, tmp_path):
+        """When SBML value missing, behave as before (no cross-check enforcement)."""
+        mpath = _make_manifest_with_sbml(tmp_path, sbml_value=None)
+        m = load_manifest(mpath)
+        run = run_curation(m, extract_fn=lambda spec: _result_recommend("kA", 1.5))
+        out = run.outcomes[0]
+        assert out.status == "RECOMMEND"
+        assert out.card is not None
+        assert out.cross_check.status == "NO_SBML"
+
+    def test_card_provenance_records_cross_check(self, tmp_path):
+        mpath = _make_manifest_with_sbml(tmp_path, sbml_value=0.5)
+        m = load_manifest(mpath)
+        run = run_curation(m, extract_fn=lambda spec: _result_recommend("kA", 0.5))
+        rationale = run.outcomes[0].card.selection_rationale
+        assert "Cross-check" in rationale
+        assert "AGREE" in rationale
 
 
 # ---------------------------------------------------------------------------

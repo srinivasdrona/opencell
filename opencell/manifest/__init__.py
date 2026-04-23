@@ -33,6 +33,16 @@ from .emitter import (
     build_manifest,
     write_manifest_yaml,
 )
+from .pairing import (
+    PairingError,
+    PairingVerification,
+    VerifyResult,
+    extract_pubmed_ids,
+    fetch_eutils,
+    normalize_doi,
+    parse_eutils_payload,
+    verify_paper_pairing,
+)
 
 __all__ = [
     "SbmlEntity",
@@ -47,4 +57,12 @@ __all__ = [
     "ManifestHeader",
     "build_manifest",
     "write_manifest_yaml",
+    "PairingError",
+    "PairingVerification",
+    "VerifyResult",
+    "extract_pubmed_ids",
+    "fetch_eutils",
+    "normalize_doi",
+    "parse_eutils_payload",
+    "verify_paper_pairing",
 ]

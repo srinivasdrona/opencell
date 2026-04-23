@@ -27,6 +27,7 @@ class ManifestHeader:
 
     doi: str = ""
     biomodels_id: str = ""
+    pubmed_id: str = ""              # structured; verifier uses this directly
     pdf_cache: list[str] = field(default_factory=list)
     organism: str = ""
     condition: str = ""
@@ -105,6 +106,7 @@ def build_manifest(
         "paper": {
             "doi": header.doi,
             "biomodels_id": header.biomodels_id,
+            "pubmed_id": header.pubmed_id,
             "pdf_cache": header.pdf_cache,
             "organism": header.organism,
             "condition": header.condition,
