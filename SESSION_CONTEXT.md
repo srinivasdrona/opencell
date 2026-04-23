@@ -67,10 +67,26 @@ At the end of each session (or when the user says goodbye / wraps up), update th
 3. **v1.0 = framework + toy cell benchmark** (publishable standalone). **v2.0 = M. genitalium** (separate timeline TBD)
 4. **Toy cell = coupled-solver benchmark**, NOT a biologically coherent organism. 3 core sub-models (metab + txn + tln), division cut
 5. **Write-exclusion replaced with resource allocation / partition-merge** (Karr 2012 approach)
-6. **Rejected LangChain/LangGraph** — wrong abstraction for scientific simulation pipeline
+6. **Rejected LangChain/LangGraph** — wrong abstraction for our 2-person workflow. Documented as DEC-001 with explicit revisit triggers. External reviewer agreed modules are correct, disagreed on implementation strategy. We chose simplicity + zero framework dependency.
 7. **Temperature is task-specific** — 0 for code/extraction, 0.3-0.5 for literature search
 8. **Cost estimates are UNVERIFIED** — marked as such in plan. Will refine with actual data from cost_tracker.py
 9. **Sensitivity analysis moved up** — OAT in Phase 2, Morris in Phase 3, Sobol in Phase 6
+10. **Identifier crosswalk deferred to Phase 2** — toy cell uses synthetic IDs. Documented as DEC-002. Real crosswalk (KEGG↔BioCyc↔UniProt) starts when we pick M. genitalium reactions.
+
+## External Review Findings (Session 3, 2026-04-23)
+An external reviewer provided 5 strategic critiques. Summary of actions:
+
+| Finding | Our Response | Action |
+|---------|-------------|--------|
+| Identifier crosswalk is a sub-project | Agree, but premature for toy cell | DEC-002: defer to Phase 2 |
+| Coupling artifacts from operator splitting | Agree — add sync-interval sweep test | TODO: add to gate tests |
+| AI panel hallucination by consensus | Already addressed — panels are evidence extractors, not decision-makers | No action needed |
+| CPU JAX compilation wall | Known tradeoff — fine for toy cell, Colab T4 for v2.0 | Monitor |
+| LangGraph for orchestration | Rejected — our pipeline is simpler and sufficient | DEC-001 documented |
+| Use `jax.jit` + `lax.scan` for perf | Good tip — Diffrax handles JIT; adopt `lax.scan` in Phase 2 custom loops | Note for Phase 2 |
+| Contract-driven development (Pydantic schemas) | Already built — SubModelContract, IOManifest, JSON Schema validation | No action needed |
+| Data versioning (DVC) | Already built — content-hashed snapshots in `data/versioning.py` | No action needed |
+| Containerization | Already have Dockerfile + manifest.py — need end-to-end golden-run test | TODO: test Docker build |
 
 ## Credibility Policy
 - AI (me) was caught fabricating cost estimates and tok/s performance numbers

@@ -4,4 +4,24 @@
 # CI enforces: PRs changing behavior tied to a decision must reference or supersede it.
 # Format: one YAML file per decision, named descriptively.
 
-decisions: []
+decisions:
+  - id: dec-001
+    title: "Reject LangGraph for orchestration — use lightweight pipeline"
+    file: decisions/dec-001-no-langgraph.md
+    status: active
+    created: 2026-04-23
+    invalidation_triggers:
+      - "Project grows to 5+ autonomous agents running unsupervised"
+      - "Pipeline needs multi-day stateful agentic campaigns without human"
+      - "Team grows beyond 2-3 contributors needing formalized agent coordination"
+    superseded_by: null
+
+  - id: dec-002
+    title: "Identifier crosswalk deferred to Phase 2 (toy cell uses synthetic IDs)"
+    file: decisions/dec-002-crosswalk-phase2.md
+    status: active
+    created: 2026-04-23
+    invalidation_triggers:
+      - "Toy cell needs real biological parameters from multiple databases"
+      - "Phase 2 start — crosswalk tooling becomes prerequisite"
+    superseded_by: null
