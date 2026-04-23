@@ -1,0 +1,26 @@
+# Normalise line endings: store everything as LF in the repo regardless of
+# what the contributor's editor uses on disk. Windows checkouts can still
+# get CRLF if the user wants by setting `core.autocrlf=true` locally.
+* text=auto eol=lf
+
+# Binary types -- never touch these
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.pdf   binary
+*.db    binary
+*.sqlite binary
+*.pkl   binary
+*.npz   binary
+*.npy   binary
+*.xlsx  binary
+*.docx  binary
+
+# Generated / large -- LF is fine but explicit is better
+*.xml   text eol=lf
+*.sbml  text eol=lf
+*.json  text eol=lf
+*.yaml  text eol=lf
+*.yml   text eol=lf
+*.md    text eol=lf
+*.py    text eol=lf
