@@ -38,9 +38,9 @@
   compartment: whole-cell
   gene_or_enzyme: generic constitutive gene (no specific identity)
   status: APPROVED
-  reviewed_by: Srinivas Drona
+  reviewed_by: Drona Srinivas
   reviewed_date: '2026-04-23'
-  approved_by: Srinivas Drona
+  approved_by: Drona Srinivas
   approved_date: '2026-04-23'
   cross_references:
   - source_doi: 10.1201/9781420011432
@@ -76,9 +76,9 @@
   compartment: cytoplasm
   gene_or_enzyme: generic mRNA
   status: APPROVED
-  reviewed_by: Srinivas Drona
+  reviewed_by: Drona Srinivas
   reviewed_date: '2026-04-23'
-  approved_by: Srinivas Drona
+  approved_by: Drona Srinivas
   approved_date: '2026-04-23'
   cross_references:
   - source_doi: 10.1073/pnas.012010399
@@ -125,9 +125,9 @@
   compartment: cytoplasm
   gene_or_enzyme: generic mRNA-protein pair
   status: APPROVED
-  reviewed_by: Srinivas Drona
+  reviewed_by: Drona Srinivas
   reviewed_date: '2026-04-23'
-  approved_by: Srinivas Drona
+  approved_by: Drona Srinivas
   approved_date: '2026-04-23'
   cross_references:
   - source_doi: 10.1201/9781420011432
@@ -170,9 +170,9 @@
   compartment: cytoplasm
   gene_or_enzyme: generic protein
   status: APPROVED
-  reviewed_by: Srinivas Drona
+  reviewed_by: Drona Srinivas
   reviewed_date: '2026-04-23'
-  approved_by: Srinivas Drona
+  approved_by: Drona Srinivas
   approved_date: '2026-04-23'
   cross_references:
   - source_doi: 10.1201/9781420011432
