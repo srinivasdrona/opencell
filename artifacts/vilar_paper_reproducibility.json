@@ -25,11 +25,11 @@
     "MR_max_lt_R_max": true,
     "R_amplitude": [
       800.0,
-      2500.0
+      2200.0
     ],
     "period_hours": [
-      15.0,
-      35.0
+      20.0,
+      28.0
     ]
   },
   "sbml_sha256": "c90ce4978a154f8b40eec291f1c076bdfac173efde2560771214a2d8a5b04a5e",

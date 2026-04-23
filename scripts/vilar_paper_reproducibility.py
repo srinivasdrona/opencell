@@ -94,16 +94,17 @@ def main() -> None:
         "MA_max": float(MA[mask].max()),
     }
 
-    # Reference values: Vilar et al. 2002 PNAS, Figure 2A (deterministic).
-    # Period in the original paper ~24 hours; R amplitude ~1400-1600 molecules.
-    # We capture exact paper numbers by digitizing the figure if needed; the
-    # main qualitative checks are: oscillation period O(10s of hours), R
-    # amplitude O(1000s) molecules, A amplitude smaller than R.
+    # Reference values: Vilar et al. 2002 PNAS, paper text and Fig 2A.
+    # The paper describes the model as a "biological clock with a period
+    # of about 24 h" (page 5988) and Fig 2A shows R oscillating between
+    # ~0 and ~1500 molecules. Our bounds are conservative:
+    #   period_hours: 24 +/- 4 (honest tolerance for "about 24 h")
+    #   R_amplitude:  1500 +/- 700 (Fig 2A is qualitative, not digitized)
     paper_targets = {
-        "period_hours": (15.0, 35.0),
-        "R_amplitude": (800.0, 2500.0),
+        "period_hours": (20.0, 28.0),
+        "R_amplitude": (800.0, 2200.0),
         "A_amplitude_lt_R_amplitude": True,
-        "MR_max_lt_R_max": True,  # mRNA pool is small
+        "MR_max_lt_R_max": True,  # mRNA pool is small (paper emphasizes this)
     }
 
     checks = {

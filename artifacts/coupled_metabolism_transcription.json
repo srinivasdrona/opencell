@@ -1,0 +1,12 @@
+{
+  "horizon_hours": 8.0,
+  "f_met_min": 0.021970620416076742,
+  "f_met_max": 1.0,
+  "f_met_final": 0.021970620416076742,
+  "cglcex_initial_mM": 2.0,
+  "cglcex_final_mM": 0.043941240832153484,
+  "R_max_uncoupled": 1282.6049679549126,
+  "R_max_coupled": 0.0019492909447168321,
+  "R_max_off": 1282.5775224697663,
+  "validation_off_minus_uncoupled_R_max_abs_diff": 0.07536165616119206
+}
