@@ -19,196 +19,175 @@
 # All four cards remain DRAFT until human review tool promotes them.
 
 - parameter_id: thattai2001-k1-transcription-rate
-  name: "Transcription initiation rate (constitutive)"
+  name: Transcription initiation rate (constitutive)
   value: 0.6
-  unit: "min^-1"
+  unit: min^-1
   uncertainty_lower: 0.15
   uncertainty_upper: 1.2
-  uncertainty_type: "range"
-  source_doi: "10.1073/pnas.151588598"
-  source_type: "assumed"
-  source_table: "Figure 1 caption (base case)"
-  original_quote: >-
-    "a transcript initiation rate k_R = 0.01 s^-1"
-    (Fig. 1 caption, p. 8615; range explored in Fig. 1c: 0.0025 to 0.02 s^-1)
+  uncertainty_type: range
+  source_doi: 10.1073/pnas.151588598
+  source_type: assumed
+  source_table: Figure 1 caption (base case)
+  original_quote: '"a transcript initiation rate k_R = 0.01 s^-1" (Fig. 1 caption,
+    p. 8615; range explored in Fig. 1c: 0.0025 to 0.02 s^-1)'
   original_value: 0.01
-  original_unit: "s^-1"
-  transformation: "unit conversion: 0.01 s^-1 × 60 s/min = 0.60 min^-1"
-  organism: "generic prokaryotic gene (illustrative; Thattai 2001 model)"
-  condition: "model parameter (no explicit growth-condition tie)"
-  compartment: "whole-cell"
-  gene_or_enzyme: "generic constitutive gene (no specific identity)"
-  status: DRAFT
-  reviewed_by: ""
-  reviewed_date: ""
-  approved_by: ""
-  approved_date: ""
+  original_unit: s^-1
+  transformation: 'unit conversion: 0.01 s^-1 × 60 s/min = 0.60 min^-1'
+  organism: generic prokaryotic gene (illustrative; Thattai 2001 model)
+  condition: model parameter (no explicit growth-condition tie)
+  compartment: whole-cell
+  gene_or_enzyme: generic constitutive gene (no specific identity)
+  status: REVIEWED
+  reviewed_by: Srinivas Drona
+  reviewed_date: '2026-04-23'
+  approved_by: ''
+  approved_date: ''
   cross_references:
-    - source_doi: "10.1201/9781420011432"
-      value: 1.0
-      unit: "min^-1"
-      agrees: true
-      note: "Alon 2006 Box 1.1 typical ~1 mRNA/min/gene; same OOM."
-  selection_rationale: >-
-    Use Thattai 2001 explicit "base case" value from Fig. 1c caption.
+  - source_doi: 10.1201/9781420011432
+    value: 1.0
+    unit: min^-1
+    agrees: true
+    note: Alon 2006 Box 1.1 typical ~1 mRNA/min/gene; same OOM.
+  selection_rationale: Use Thattai 2001 explicit "base case" value from Fig. 1c caption.
     Range 0.0025–0.02 s^-1 (0.15–1.2 /min) explored in their Fig. 1c.
-  discrepancy_notes: ""
+  discrepancy_notes: ''
   used_in_gate_tests: true
   gate_acknowledged: true
-  acknowledgement_reason: >-
-    Gate tests verify numerical solver agreement with the analytical
-    solution. The mathematical role (transcription rate constant in a
-    linear ODE) matches Thattai's k_R exactly.
-
+  acknowledgement_reason: Gate tests verify numerical solver agreement with the analytical
+    solution. The mathematical role (transcription rate constant in a linear ODE)
+    matches Thattai's k_R exactly.
 - parameter_id: thattai2001-gamma1-mrna-degradation-rate
-  name: "mRNA degradation rate"
-  value: 0.34657359027997264   # ln(2) / 2
-  unit: "min^-1"
-  uncertainty_lower: 0.23      # 3-min half-life (E. coli median)
-  uncertainty_upper: 0.69      # 1-min half-life
-  uncertainty_type: "range"
-  source_doi: "10.1073/pnas.151588598"
-  source_type: "assumed"
-  source_table: "Figure 1 caption (base case)"
-  original_quote: >-
-    "The mRNA half-life is fixed at 2 min."
-    (Fig. 1 caption, p. 8615)
+  name: mRNA degradation rate
+  value: 0.34657359027997264
+  unit: min^-1
+  uncertainty_lower: 0.23
+  uncertainty_upper: 0.69
+  uncertainty_type: range
+  source_doi: 10.1073/pnas.151588598
+  source_type: assumed
+  source_table: Figure 1 caption (base case)
+  original_quote: '"The mRNA half-life is fixed at 2 min." (Fig. 1 caption, p. 8615)'
   original_value: 2.0
-  original_unit: "min (half-life)"
-  transformation: >-
-    half-life → rate constant: gamma_R = ln(2) / t_half = ln(2) / 2 min
-    ≈ 0.34657 min^-1
-  organism: "generic prokaryotic mRNA (illustrative; Thattai 2001 model)"
-  condition: "model parameter (no explicit growth-condition tie)"
-  compartment: "cytoplasm"
-  gene_or_enzyme: "generic mRNA"
-  status: DRAFT
-  reviewed_by: ""
-  reviewed_date: ""
-  approved_by: ""
-  approved_date: ""
+  original_unit: min (half-life)
+  transformation: 'half-life → rate constant: gamma_R = ln(2) / t_half = ln(2) / 2
+    min ≈ 0.34657 min^-1'
+  organism: generic prokaryotic mRNA (illustrative; Thattai 2001 model)
+  condition: model parameter (no explicit growth-condition tie)
+  compartment: cytoplasm
+  gene_or_enzyme: generic mRNA
+  status: REVIEWED
+  reviewed_by: Srinivas Drona
+  reviewed_date: '2026-04-23'
+  approved_by: ''
+  approved_date: ''
   cross_references:
-    - source_doi: "10.1073/pnas.012010399"
-      value: 0.14
-      unit: "min^-1"
-      agrees: true
-      note: "Bernstein 2002 PNAS: median E. coli mRNA half-life ~5 min (gamma ~0.14/min); Thattai uses 2-min half-life — within E. coli range."
-    - source_doi: "10.1201/9781420011432"
-      value: 0.30
-      unit: "min^-1"
-      agrees: true
-      note: "Alon 2006 Box 1.1 typical ~0.3/min (3-min half-life); essentially matches Thattai."
-  selection_rationale: >-
-    Thattai's chosen 2-min mRNA half-life is within the empirical E. coli
-    range (1–10 min, median ~5 min per Bernstein 2002). Use as published.
-  discrepancy_notes: >-
-    Earlier session round mistakenly used gamma=0.023/min (30-min half-life,
-    completely off). Now corrected to ln(2)/2 ≈ 0.347/min from Fig. 1
-    caption "mRNA half-life is fixed at 2 min".
+  - source_doi: 10.1073/pnas.012010399
+    value: 0.14
+    unit: min^-1
+    agrees: true
+    note: 'Bernstein 2002 PNAS: median E. coli mRNA half-life ~5 min (gamma ~0.14/min);
+      Thattai uses 2-min half-life — within E. coli range.'
+  - source_doi: 10.1201/9781420011432
+    value: 0.3
+    unit: min^-1
+    agrees: true
+    note: Alon 2006 Box 1.1 typical ~0.3/min (3-min half-life); essentially matches
+      Thattai.
+  selection_rationale: Thattai's chosen 2-min mRNA half-life is within the empirical
+    E. coli range (1–10 min, median ~5 min per Bernstein 2002). Use as published.
+  discrepancy_notes: Earlier session round mistakenly used gamma=0.023/min (30-min
+    half-life, completely off). Now corrected to ln(2)/2 ≈ 0.347/min from Fig. 1 caption
+    "mRNA half-life is fixed at 2 min".
   used_in_gate_tests: true
   gate_acknowledged: true
-  acknowledgement_reason: >-
-    Mathematical role (first-order mRNA decay rate in linear ODE) matches
-    Thattai's gamma_R exactly.
-
+  acknowledgement_reason: Mathematical role (first-order mRNA decay rate in linear
+    ODE) matches Thattai's gamma_R exactly.
 - parameter_id: thattai2001-k2-translation-rate
-  name: "Translation rate per transcript"
-  value: 6.9314718055994530   # 20 × ln(2)/2
-  unit: "min^-1"
-  uncertainty_lower: 1.73    # b=5
-  uncertainty_upper: 13.86   # b=40
-  uncertainty_type: "range"
-  source_doi: "10.1073/pnas.151588598"
-  source_type: "derived"
-  source_table: "Figure 1 caption (base case)"
-  original_quote: >-
-    "a burst size b = 20" (Fig. 1 caption, p. 8615; range explored
-    in Fig. 1c: 5 to 40). Burst size is defined in the paper as
-    b = k_P / gamma_R (proteins produced per mRNA lifetime).
+  name: Translation rate per transcript
+  value: 6.931471805599453
+  unit: min^-1
+  uncertainty_lower: 1.73
+  uncertainty_upper: 13.86
+  uncertainty_type: range
+  source_doi: 10.1073/pnas.151588598
+  source_type: derived
+  source_table: Figure 1 caption (base case)
+  original_quote: '"a burst size b = 20" (Fig. 1 caption, p. 8615; range explored
+    in Fig. 1c: 5 to 40). Burst size is defined in the paper as b = k_P / gamma_R
+    (proteins produced per mRNA lifetime).'
   original_value: 20.0
-  original_unit: "proteins per mRNA (dimensionless)"
-  transformation: >-
-    derived from b and gamma_R: k_P = b × gamma_R = 20 × ln(2)/2
-    ≈ 6.931 protein/mRNA/min. (Paper does not state k_P directly;
-    only the ratio b is given.)
-  organism: "generic prokaryotic gene (illustrative; Thattai 2001 model)"
-  condition: "model parameter (no explicit growth-condition tie)"
-  compartment: "cytoplasm"
-  gene_or_enzyme: "generic mRNA-protein pair"
-  status: DRAFT
-  reviewed_by: ""
-  reviewed_date: ""
-  approved_by: ""
-  approved_date: ""
+  original_unit: proteins per mRNA (dimensionless)
+  transformation: 'derived from b and gamma_R: k_P = b × gamma_R = 20 × ln(2)/2 ≈
+    6.931 protein/mRNA/min. (Paper does not state k_P directly; only the ratio b is
+    given.)'
+  organism: generic prokaryotic gene (illustrative; Thattai 2001 model)
+  condition: model parameter (no explicit growth-condition tie)
+  compartment: cytoplasm
+  gene_or_enzyme: generic mRNA-protein pair
+  status: REVIEWED
+  reviewed_by: Srinivas Drona
+  reviewed_date: '2026-04-23'
+  approved_by: ''
+  approved_date: ''
   cross_references:
-    - source_doi: "10.1201/9781420011432"
-      value: 10.0
-      unit: "min^-1"
-      agrees: true
-      note: "Alon 2006 Box 1.1 typical ~10 proteins/mRNA/min; same OOM."
-    - source_doi: "10.1073/pnas.151588598"
-      value: 40.0
-      unit: "proteins per mRNA"
-      agrees: true
-      note: "Thattai cites burst sizes 40 (lacZ) and 5 (lacA) from ref. 13; b=20 is mid-range."
-  selection_rationale: >-
-    Use Thattai's "base case" b = 20 (mid-range between cited lacZ=40 and
-    lacA=5). Combined with gamma_R = ln(2)/2 to derive k_P.
-  discrepancy_notes: >-
-    Derived parameter — paper specifies b, not k_P. Numerical value of
-    k_P depends on choice of gamma_R (which is also a derived value from
-    half-life).
+  - source_doi: 10.1201/9781420011432
+    value: 10.0
+    unit: min^-1
+    agrees: true
+    note: Alon 2006 Box 1.1 typical ~10 proteins/mRNA/min; same OOM.
+  - source_doi: 10.1073/pnas.151588598
+    value: 40.0
+    unit: proteins per mRNA
+    agrees: true
+    note: Thattai cites burst sizes 40 (lacZ) and 5 (lacA) from ref. 13; b=20 is mid-range.
+  selection_rationale: Use Thattai's "base case" b = 20 (mid-range between cited lacZ=40
+    and lacA=5). Combined with gamma_R = ln(2)/2 to derive k_P.
+  discrepancy_notes: Derived parameter — paper specifies b, not k_P. Numerical value
+    of k_P depends on choice of gamma_R (which is also a derived value from half-life).
   used_in_gate_tests: true
   gate_acknowledged: true
-  acknowledgement_reason: >-
-    Mathematical role (translation rate per mRNA in linear ODE) matches
-    Thattai's k_P exactly.
-
+  acknowledgement_reason: Mathematical role (translation rate per mRNA in linear ODE)
+    matches Thattai's k_P exactly.
 - parameter_id: thattai2001-gamma2-protein-degradation-rate
-  name: "Protein degradation/dilution rate"
-  value: 0.011552453009332421   # ln(2) / 60
-  unit: "min^-1"
-  uncertainty_lower: 0.00578    # 2-h half-life
-  uncertainty_upper: 0.04621    # 15-min half-life
-  uncertainty_type: "range"
-  source_doi: "10.1073/pnas.151588598"
-  source_type: "assumed"
-  source_table: "Figure 1 caption (base case)"
-  original_quote: >-
-    "a protein half-life ln(2)/g_P = 1 h" (Fig. 1 caption, p. 8615;
-    range explored in Fig. 1c: 15 min to 2 h).
+  name: Protein degradation/dilution rate
+  value: 0.011552453009332421
+  unit: min^-1
+  uncertainty_lower: 0.00578
+  uncertainty_upper: 0.04621
+  uncertainty_type: range
+  source_doi: 10.1073/pnas.151588598
+  source_type: assumed
+  source_table: Figure 1 caption (base case)
+  original_quote: '"a protein half-life ln(2)/g_P = 1 h" (Fig. 1 caption, p. 8615;
+    range explored in Fig. 1c: 15 min to 2 h).'
   original_value: 60.0
-  original_unit: "min (half-life)"
-  transformation: >-
-    half-life → rate constant: gamma_P = ln(2) / t_half = ln(2) / 60 min
-    ≈ 0.011552 min^-1
-  organism: "generic prokaryotic protein (illustrative; Thattai 2001 model)"
-  condition: >-
-    model parameter — interpreted as combined degradation + dilution by
-    cell division (the paper does not separate the two).
-  compartment: "cytoplasm"
-  gene_or_enzyme: "generic protein"
-  status: DRAFT
-  reviewed_by: ""
-  reviewed_date: ""
-  approved_by: ""
-  approved_date: ""
+  original_unit: min (half-life)
+  transformation: 'half-life → rate constant: gamma_P = ln(2) / t_half = ln(2) / 60
+    min ≈ 0.011552 min^-1'
+  organism: generic prokaryotic protein (illustrative; Thattai 2001 model)
+  condition: model parameter — interpreted as combined degradation + dilution by cell
+    division (the paper does not separate the two).
+  compartment: cytoplasm
+  gene_or_enzyme: generic protein
+  status: REVIEWED
+  reviewed_by: Srinivas Drona
+  reviewed_date: '2026-04-23'
+  approved_by: ''
+  approved_date: ''
   cross_references:
-    - source_doi: "10.1201/9781420011432"
-      value: 0.023
-      unit: "min^-1"
-      agrees: true
-      note: "Alon 2006 Box 1.1: stable proteins, dilution-dominated ~0.023/min (30-min doubling). Thattai's 60-min half-life is in the same OOM."
-  selection_rationale: >-
-    Use Thattai's explicit "base case" 1-hour protein half-life. Consistent
-    with E. coli typical doubling time (most proteins are dilution-limited,
+  - source_doi: 10.1201/9781420011432
+    value: 0.023
+    unit: min^-1
+    agrees: true
+    note: 'Alon 2006 Box 1.1: stable proteins, dilution-dominated ~0.023/min (30-min
+      doubling). Thattai''s 60-min half-life is in the same OOM.'
+  selection_rationale: Use Thattai's explicit "base case" 1-hour protein half-life.
+    Consistent with E. coli typical doubling time (most proteins are dilution-limited,
     not actively degraded).
-  discrepancy_notes: >-
-    Earlier session round mistakenly used gamma=0.10/min (~7-min half-life,
-    far too fast). Now corrected to ln(2)/60 ≈ 0.01155/min from explicit
+  discrepancy_notes: Earlier session round mistakenly used gamma=0.10/min (~7-min
+    half-life, far too fast). Now corrected to ln(2)/60 ≈ 0.01155/min from explicit
     paper statement "protein half-life = 1 h".
   used_in_gate_tests: true
   gate_acknowledged: true
-  acknowledgement_reason: >-
-    Mathematical role (first-order protein decay+dilution rate in linear
-    ODE) matches Thattai's gamma_P exactly.
+  acknowledgement_reason: Mathematical role (first-order protein decay+dilution rate
+    in linear ODE) matches Thattai's gamma_P exactly.
