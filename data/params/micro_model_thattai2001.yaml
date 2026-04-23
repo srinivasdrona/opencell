@@ -37,11 +37,11 @@
   condition: model parameter (no explicit growth-condition tie)
   compartment: whole-cell
   gene_or_enzyme: generic constitutive gene (no specific identity)
-  status: REVIEWED
+  status: APPROVED
   reviewed_by: Srinivas Drona
   reviewed_date: '2026-04-23'
-  approved_by: ''
-  approved_date: ''
+  approved_by: Srinivas Drona
+  approved_date: '2026-04-23'
   cross_references:
   - source_doi: 10.1201/9781420011432
     value: 1.0
@@ -75,11 +75,11 @@
   condition: model parameter (no explicit growth-condition tie)
   compartment: cytoplasm
   gene_or_enzyme: generic mRNA
-  status: REVIEWED
+  status: APPROVED
   reviewed_by: Srinivas Drona
   reviewed_date: '2026-04-23'
-  approved_by: ''
-  approved_date: ''
+  approved_by: Srinivas Drona
+  approved_date: '2026-04-23'
   cross_references:
   - source_doi: 10.1073/pnas.012010399
     value: 0.14
@@ -124,11 +124,11 @@
   condition: model parameter (no explicit growth-condition tie)
   compartment: cytoplasm
   gene_or_enzyme: generic mRNA-protein pair
-  status: REVIEWED
+  status: APPROVED
   reviewed_by: Srinivas Drona
   reviewed_date: '2026-04-23'
-  approved_by: ''
-  approved_date: ''
+  approved_by: Srinivas Drona
+  approved_date: '2026-04-23'
   cross_references:
   - source_doi: 10.1201/9781420011432
     value: 10.0
@@ -169,11 +169,11 @@
     division (the paper does not separate the two).
   compartment: cytoplasm
   gene_or_enzyme: generic protein
-  status: REVIEWED
+  status: APPROVED
   reviewed_by: Srinivas Drona
   reviewed_date: '2026-04-23'
-  approved_by: ''
-  approved_date: ''
+  approved_by: Srinivas Drona
+  approved_date: '2026-04-23'
   cross_references:
   - source_doi: 10.1201/9781420011432
     value: 0.023
