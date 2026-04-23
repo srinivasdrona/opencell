@@ -10,6 +10,29 @@ See plan.md "Agent Skill Profiles" section for full definitions.
 
 ## Mandatory Rules
 
+### Execution Environment: WSL is the Source of Truth
+All development, test runs, and scripts for this project run in **WSL**
+with the venv at `/mnt/e/opencell/.venv-wsl`. The Windows-side venv
+(`.venv-opencell`) is incidental, incomplete (e.g. `libroadrunner` is
+Linux-only in our stack), and running pytest there silently skips the
+oracle cross-check tests — which are the whole point of having an
+oracle.
+
+Hard rules for any command that executes Python/pytest/scripts:
+- **Always** wrap with `wsl -e bash -lc "cd /mnt/e/opencell && source
+  .venv-wsl/bin/activate && <command>"`. Never invoke `python` or
+  `pytest` directly from a PowerShell prompt.
+- A passing `pytest` summary that shows `skipped` > 0 must be audited
+  with `-rs` before trusting it. In this project the expected skip
+  count for a correctly-run suite is **5** (Thattai paper-cache tests
+  only). Any number other than 5 means the environment is wrong
+  (usually: you're on the Windows venv and `roadrunner` didn't import).
+- File edits via the `view`/`edit`/`create` tools can use Windows paths
+  (`E:\opencell\...`) -- those are fine, they touch the same filesystem.
+  The WSL-only rule applies to **execution**, not editing.
+- Remember the WSL fs-sync quirk (5-15s) after a Windows-side edit
+  before the file is visible to the Linux venv.
+
 ### State Sync Protocol (canonical state lives in the repo, not the agent)
 Two artifacts MUST be kept in sync between the per-session scratch and the
 repo (which is the durable record across sessions):
