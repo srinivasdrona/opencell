@@ -53,18 +53,38 @@ SYNTHESIS_PRODUCT_SPECIES: tuple[str, ...] = ("MA", "MA", "A", "MR", "MR", "R")
 
 SECONDS_PER_HOUR = 3600.0
 EXTERNAL_GLUCOSE_SPECIES = "cglcex"
+# Chassagnole 2002 / BIOMD0000000051: PTS reaction (sugar phosphotransferase
+# system) is the glucose uptake step. Stoichiometry: cglcex + 65*cpep ->
+# cg6p + 65*cpyr (the 65 multiplier is Chassagnole's accounting for total
+# PEP turnover per glucose entering glycolysis). Flux units are mM/s.
+PTS_REACTION_INDEX: int = 0
+PTS_EXPECTED_PRODUCT: str = "cg6p"
 
 
 def default_f_met(cglcex: float, cglcex0: float) -> float:
-    """Default modulation: clamp of glucose ratio to [0, 1].
+    """Concentration-based modulation: clamp(cglcex/cglcex0, 0, 1).
 
-    Returns 1.0 when external glucose is at or above its initial value
-    (no nutrient stress -> full synthesis), drops to 0.0 when glucose is
-    depleted (no nutrient -> no transcription/translation).
+    Simple and legible but only sees external glucose pool size. Drops
+    to zero only when the cell has actually starved.
     """
     if cglcex0 <= 0.0:
         return 1.0
     return float(np.clip(cglcex / cglcex0, 0.0, 1.0))
+
+
+def f_met_from_uptake_flux(v_pts: float, v_pts0: float) -> float:
+    """Flux-based modulation: clamp(vPTS / vPTS_init, 0, 1).
+
+    More biologically meaningful than concentration: reflects the rate
+    at which carbon is actually entering glycolysis. Drops when:
+      * external glucose depletes (substrate term in PTS rate law)
+      * PEP becomes scarce (cofactor for PTS)
+      * the network is stalled for any reason
+    Initial value is 1.0 (vPTS at t=0 / vPTS at t=0).
+    """
+    if v_pts0 <= 0.0:
+        return 1.0
+    return float(np.clip(v_pts / v_pts0, 0.0, 1.0))
 
 
 @dataclass
@@ -73,6 +93,16 @@ class CoupledMetabolismTranscription:
 
     State layout: ``y = concat([y_met, y_gene])``.
     Composite time is in seconds. Vilar's hour-based RHS is rescaled inside.
+
+    Two coupling signals are supported:
+
+    * ``signal="concentration"`` (default): f_met = clamp(cglcex/cglcex0, 0, 1)
+    * ``signal="uptake_flux"``:           f_met = clamp(vPTS/vPTS0, 0, 1)
+
+    The flux signal is more biologically meaningful — it reflects the rate
+    at which carbon is actually entering the cell, which integrates substrate
+    availability AND network state (PEP cofactor depletion stalls PTS even
+    if glucose is available).
     """
 
     met: MetabolismModel
@@ -81,6 +111,8 @@ class CoupledMetabolismTranscription:
     n_gene: int
     cglcex_index: int
     cglcex_init: float
+    v_pts_init: float
+    signal: str = "concentration"
     synthesis_indices: tuple[int, ...] = SYNTHESIS_REACTION_INDICES
     f_met_fn: Callable[[float, float], float] = field(default=default_f_met)
 
@@ -91,6 +123,7 @@ class CoupledMetabolismTranscription:
         cls,
         met: MetabolismModel | None = None,
         gene: TranscriptionModel | None = None,
+        signal: str = "concentration",
         f_met_fn: Callable[[float, float], float] | None = None,
     ) -> "CoupledMetabolismTranscription":
         met = met if met is not None else MetabolismModel.load()
@@ -118,6 +151,27 @@ class CoupledMetabolismTranscription:
                     f"SYNTHESIS_REACTION_INDICES in opencell/models/coupled.py."
                 )
 
+        # PTS reaction sanity check: confirm r0 is glucose uptake.
+        met_S = met.sbml.stoich
+        met_sp = met.species_ids
+        pts_col = met_S[:, PTS_REACTION_INDEX]
+        produces_g6p = pts_col[met_sp.index(PTS_EXPECTED_PRODUCT)] > 0
+        consumes_glc = pts_col[cglcex_idx] < 0
+        if not (produces_g6p and consumes_glc):
+            raise AssertionError(
+                f"PTS reaction index {PTS_REACTION_INDEX} did not pass the "
+                f"'consumes cglcex, produces cg6p' sanity check. Chassagnole "
+                f"SBML changed; re-curate PTS_REACTION_INDEX in coupled.py."
+            )
+        v_pts0 = float(met.sbml.fluxes(0.0, met.initial_y)[PTS_REACTION_INDEX])
+
+        if signal not in ("concentration", "uptake_flux"):
+            raise ValueError(
+                f"signal must be 'concentration' or 'uptake_flux', got {signal!r}"
+            )
+        if f_met_fn is None:
+            f_met_fn = default_f_met if signal == "concentration" else f_met_from_uptake_flux
+
         return cls(
             met=met,
             gene=gene,
@@ -125,7 +179,9 @@ class CoupledMetabolismTranscription:
             n_gene=gene.n_species,
             cglcex_index=cglcex_idx,
             cglcex_init=cglcex0,
-            f_met_fn=f_met_fn if f_met_fn is not None else default_f_met,
+            v_pts_init=v_pts0,
+            signal=signal,
+            f_met_fn=f_met_fn,
         )
 
     # ----- state surface -----
@@ -156,16 +212,28 @@ class CoupledMetabolismTranscription:
 
     def f_met(self, t_s: float, y: np.ndarray) -> float:
         y_met, _ = self.split(y)
+        if self.signal == "uptake_flux":
+            v_pts = float(self.met.sbml.fluxes(t_s, y_met)[PTS_REACTION_INDEX])
+            return self.f_met_fn(v_pts, self.v_pts_init)
         return self.f_met_fn(float(y_met[self.cglcex_index]), self.cglcex_init)
 
     def rhs(self, t_s: float, y: np.ndarray) -> np.ndarray:
         """Composite dy/dt with t in seconds."""
         y_met, y_gene = self.split(y)
 
-        dy_met = self.met.rhs(t_s, y_met)
+        if self.signal == "uptake_flux":
+            # Compute met fluxes once and reuse for both met-RHS and f_met.
+            # Chassagnole species are concentration-mode in unit-volume
+            # compartments, so dy/dt = S @ v matches met.rhs() exactly.
+            # (Verified by RHS-equality test in tests/integration.)
+            met_fluxes = self.met.sbml.fluxes(t_s, y_met)
+            dy_met = self.met.sbml.stoich @ met_fluxes
+            f = self.f_met_fn(float(met_fluxes[PTS_REACTION_INDEX]), self.v_pts_init)
+        else:
+            dy_met = self.met.rhs(t_s, y_met)
+            f = self.f_met_fn(float(y_met[self.cglcex_index]), self.cglcex_init)
 
         t_h = t_s / SECONDS_PER_HOUR
-        f = self.f_met_fn(float(y_met[self.cglcex_index]), self.cglcex_init)
         gene_fluxes_h = self.gene.fluxes(t_h, y_gene).copy()
         for j in self.synthesis_indices:
             gene_fluxes_h[j] *= f

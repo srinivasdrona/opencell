@@ -163,3 +163,75 @@ def test_glucose_depletion_reduces_synthesis():
         assert end_s < end_f or (end_s == 0.0 and end_f >= 0.0), (
             f"starved {s}={end_s} not less than fed {s}={end_f}"
         )
+
+
+# ---------- uptake_flux signal ----------
+
+def test_uptake_flux_signal_initial_value(coupled):
+    """At t=0 the uptake-flux signal must give f_met == 1.0 exactly."""
+    cb = CoupledMetabolismTranscription.build(
+        met=coupled.met, gene=coupled.gene, signal="uptake_flux"
+    )
+    f0 = cb.f_met(0.0, cb.initial_y)
+    assert f0 == pytest.approx(1.0, abs=1e-12), f"f_met@t0 = {f0}, expected 1.0"
+
+
+def test_uptake_flux_rhs_matches_uncoupled_at_t0(coupled):
+    """At t=0, uptake_flux signal yields f=1, so composite RHS must equal
+    the concentration-signal composite RHS at t=0 (both reproduce uncoupled).
+    """
+    cb_flux = CoupledMetabolismTranscription.build(
+        met=coupled.met, gene=coupled.gene, signal="uptake_flux"
+    )
+    cb_conc = CoupledMetabolismTranscription.build(
+        met=coupled.met, gene=coupled.gene, signal="concentration"
+    )
+    y0 = cb_flux.initial_y
+    np.testing.assert_allclose(cb_flux.rhs(0.0, y0), cb_conc.rhs(0.0, y0),
+                               rtol=1e-12, atol=1e-15)
+
+
+def test_uptake_flux_distinguishes_from_concentration_at_depletion(coupled):
+    """Construct a state where cglcex is half-depleted but PEP is severely
+    drained: the uptake_flux signal should drop further than concentration
+    (PTS rate depends on both substrates).
+    """
+    cb_flux = CoupledMetabolismTranscription.build(
+        met=coupled.met, gene=coupled.gene, signal="uptake_flux"
+    )
+    cb_conc = CoupledMetabolismTranscription.build(
+        met=coupled.met, gene=coupled.gene, signal="concentration"
+    )
+    y = cb_flux.initial_y.copy()
+    midx = coupled.met.species_index()
+    y[midx["cglcex"]] *= 0.5  # half external glucose
+    y[midx["cpep"]] *= 0.05   # 95% PEP drain (PTS cofactor)
+    f_conc = cb_conc.f_met(0.0, y)
+    f_flux = cb_flux.f_met(0.0, y)
+    assert f_conc == pytest.approx(0.5, abs=1e-12)
+    assert f_flux < f_conc, (
+        f"uptake_flux signal {f_flux} did not drop below concentration "
+        f"signal {f_conc} despite PEP drain"
+    )
+
+
+def test_uptake_flux_rhs_equals_concentration_rhs_for_met_block(coupled):
+    """The metabolism block of the composite RHS must be identical between
+    the two signals (signal only affects the gene block scaling).
+    """
+    cb_flux = CoupledMetabolismTranscription.build(
+        met=coupled.met, gene=coupled.gene, signal="uptake_flux"
+    )
+    cb_conc = CoupledMetabolismTranscription.build(
+        met=coupled.met, gene=coupled.gene, signal="concentration"
+    )
+    rng = np.random.default_rng(2)
+    y = cb_flux.initial_y.copy()
+    # Perturb met state to a non-trivial point
+    y[: coupled.n_met] += rng.normal(scale=0.1, size=coupled.n_met) * y[: coupled.n_met]
+    y = np.abs(y)
+    np.testing.assert_allclose(
+        cb_flux.rhs(0.0, y)[: coupled.n_met],
+        cb_conc.rhs(0.0, y)[: coupled.n_met],
+        rtol=1e-12, atol=1e-15,
+    )

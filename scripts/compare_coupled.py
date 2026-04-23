@@ -50,6 +50,9 @@ def _solve(rhs, y0, atols, t_end_s):
 
 def main() -> None:
     coupled = CoupledMetabolismTranscription.build()
+    coupled_flux = CoupledMetabolismTranscription.build(
+        met=coupled.met, gene=coupled.gene, signal="uptake_flux"
+    )
     coupled_off = CoupledMetabolismTranscription.build(
         met=coupled.met, gene=coupled.gene, f_met_fn=lambda c, c0: 1.0
     )
@@ -59,8 +62,9 @@ def main() -> None:
 
     print(f"Integrating to {T_END_HOURS} h cellular time ({T_END_SECONDS:.0f} s)...")
     sol_coupled = _solve(coupled.rhs, y0, atols, T_END_SECONDS)
+    sol_flux = _solve(coupled_flux.rhs, y0, atols, T_END_SECONDS)
     sol_off = _solve(coupled_off.rhs, y0, atols, T_END_SECONDS)
-    assert sol_coupled.success and sol_off.success
+    assert sol_coupled.success and sol_off.success and sol_flux.success
 
     # Uncoupled Vilar reference (gene sub-model only, native hours)
     gene = TranscriptionModel.load()
@@ -97,7 +101,8 @@ def main() -> None:
     ax = axes[0, 0]
     ax.plot(t_plot_h, gene_traj_unc("A", t_plot_h), label="Vilar uncoupled", lw=2)
     ax.plot(t_plot_h, gene_traj(sol_off, "A", t_plot_s), label="coupled, f_met=1", lw=1, ls="--")
-    ax.plot(t_plot_h, gene_traj(sol_coupled, "A", t_plot_s), label="coupled (cglcex-driven)", lw=2, alpha=0.8)
+    ax.plot(t_plot_h, gene_traj(sol_coupled, "A", t_plot_s), label="coupled (concentration)", lw=2, alpha=0.8)
+    ax.plot(t_plot_h, gene_traj(sol_flux, "A", t_plot_s), label="coupled (uptake_flux)", lw=2, alpha=0.8)
     ax.set_ylabel("A (activator, molecules)")
     ax.set_xlabel("time (h)")
     ax.legend(fontsize=8)
@@ -105,7 +110,8 @@ def main() -> None:
     ax = axes[0, 1]
     ax.plot(t_plot_h, gene_traj_unc("R", t_plot_h), label="Vilar uncoupled", lw=2)
     ax.plot(t_plot_h, gene_traj(sol_off, "R", t_plot_s), label="coupled, f_met=1", lw=1, ls="--")
-    ax.plot(t_plot_h, gene_traj(sol_coupled, "R", t_plot_s), label="coupled (cglcex-driven)", lw=2, alpha=0.8)
+    ax.plot(t_plot_h, gene_traj(sol_coupled, "R", t_plot_s), label="coupled (concentration)", lw=2, alpha=0.8)
+    ax.plot(t_plot_h, gene_traj(sol_flux, "R", t_plot_s), label="coupled (uptake_flux)", lw=2, alpha=0.8)
     ax.set_ylabel("R (repressor, molecules)")
     ax.set_xlabel("time (h)")
     ax.legend(fontsize=8)
@@ -121,14 +127,20 @@ def main() -> None:
 
     ax = axes[1, 1]
     cglcex = sol_coupled.sol(t_plot_s)[midx["cglcex"]]
-    f_met_vals = np.clip(cglcex / coupled.cglcex_init, 0.0, 1.0)
+    f_met_conc = np.clip(cglcex / coupled.cglcex_init, 0.0, 1.0)
+    # Re-derive uptake-flux f_met along the trajectory of the flux-coupled run
+    f_met_flux = np.empty_like(t_plot_s)
+    for i, t in enumerate(t_plot_s):
+        y = sol_flux.sol(t)
+        f_met_flux[i] = coupled_flux.f_met(t, y)
     ax2 = ax.twinx()
-    line1, = ax.plot(t_plot_h, cglcex, color="C3", label="cglcex (mM)")
-    line2, = ax2.plot(t_plot_h, f_met_vals, color="C4", ls="--", label="f_met")
+    line0, = ax.plot(t_plot_h, cglcex, color="C3", label="cglcex (mM)")
+    line1, = ax2.plot(t_plot_h, f_met_conc, color="C4", ls="--", label="f_met (concentration)")
+    line2, = ax2.plot(t_plot_h, f_met_flux, color="C5", ls="-.", label="f_met (uptake_flux)")
     ax.set_ylabel("cglcex (mM)", color="C3")
-    ax2.set_ylabel("f_met (synthesis modulation)", color="C4")
+    ax2.set_ylabel("f_met (synthesis modulation)")
     ax.set_xlabel("time (h)")
-    ax.legend(handles=[line1, line2], fontsize=8, loc="upper right")
+    ax.legend(handles=[line0, line1, line2], fontsize=8, loc="upper right")
 
     fig.suptitle(
         f"Metabolism -> transcription coupling (Chassagnole 2002 -> Vilar 2002), "
