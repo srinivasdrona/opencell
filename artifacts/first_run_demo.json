@@ -1,0 +1,39 @@
+{
+  "config": {
+    "t_end_hours": 8.0,
+    "macro_dt_s": 60.0,
+    "n_realisations": 12,
+    "base_seed": 20260423,
+    "signal": "uptake_flux"
+  },
+  "git_sha": "df6c0b1",
+  "wall_seconds_total": 13.428858653001953,
+  "wall_seconds_per_realisation": 1.1190715544168295,
+  "tau_steps_per_realisation_mean": 1515.6666666666667,
+  "f_met_initial": 1.0,
+  "f_met_final_mean": 0.03212828776550712,
+  "f_met_below_0p5_at_hours": 0.016666666666666666,
+  "cglcex_initial_mM": 2.0,
+  "cglcex_final_mean_mM": 0.04394124067675941,
+  "coupled_final_mean": {
+    "MA": 0.25,
+    "MR": 0.0,
+    "A": 0.75,
+    "R": 0.0,
+    "C": 0.0
+  },
+  "coupled_final_std": {
+    "MA": 0.4330127018922193,
+    "MR": 0.0,
+    "A": 1.0103629710818451,
+    "R": 0.0,
+    "C": 0.0
+  },
+  "uncoupled_final_baseline": {
+    "MA": 5.1063630614393185,
+    "MR": 50.227932689211904,
+    "A": 0.09952028222405815,
+    "R": 1282.6049679549126,
+    "C": 1116.1384098062
+  }
+}

@@ -1,6 +1,29 @@
 # OpenCell: Open-Source Whole-Cell Simulation
 
-## Current Status (2026-04-23, ~18h elapsed wall-time, ~28 commits, **387 tests passing**)
+## Current Status (2026-04-23, **397 tests passing**, hybrid solver + first-run demo done)
+
+### Hybrid Solver + First-Run Demo (DONE — Phase 3 capstone)
+
+* `opencell/solvers/hybrid.py` — operator-split lockstep: LSODA on
+  metabolism, tau-leap on the gene network. One-way coupling lets us
+  solve metabolism once over the full horizon (single-pass LSODA),
+  giving a 14× speedup vs per-macro-step restart (1h hybrid_run:
+  2.44s → 0.18s post-warm-up).
+* RNG hygiene: `tau_leap` requires explicit `np.random.Generator`;
+  `hybrid_ensemble` uses `SeedSequence.spawn(n)` so parallel
+  realisations cannot collide. Project-wide rule documented in
+  `.github/copilot-instructions.md` ("Stochastic RNG Discipline").
+* WSL-only execution rule documented (Windows venv silently skips the
+  libroadrunner oracle tests; expected skip count is exactly 5,
+  Thattai paper-cache only).
+* Tests: 5 hybrid + 10 coupled + 11 stochastic = 26 green in WSL.
+* `scripts/demo_first_run.py` — end-to-end artifact:
+  `artifacts/first_run_demo.{png,json}`. 12 stochastic realisations
+  over 8 cellular hours, with deterministic uncoupled baseline as
+  dotted overlay. Shows glucose collapse at t≈72s drives f_met to
+  0.03; coupled ensemble fails to start the gene network while the
+  uncoupled baseline builds R into the thousands. Story: starvation
+  prevents the autoregulatory feedback from engaging.
 
 ### Cross-Model Coupling (DONE — first composition)
 
@@ -8,10 +31,11 @@
   composite ODE on concatenated state. Vilar h^-1 rescaled to s^-1
   internally. f_met=clamp(cglcex/cglcex0, 0, 1) modulates ONLY 6
   synthesis fluxes (curated indices, stoichiometry-asserted).
-* 6 integration tests passing (RHS-equality at f_met=1, synthesis-only
-  modulation, conservation, starved < fed). Full suite 393.
+  Optional `signal="uptake_flux"` uses PTS flux ratio instead.
+* 10 integration tests passing (RHS-equality at f_met=1, synthesis-only
+  modulation, conservation, starved < fed, both signals).
 * Demo `scripts/compare_coupled.py` + artifacts. Shows synthesis
-  collapse as cglcex depletes (2.0 -> 0.044 mM in 8h cellular time).
+  collapse as cglcex depletes (2.0 → 0.044 mM in 8h cellular time).
 * Honest scope flagged: cglcex is external glucose availability,
   not energy state. Architecture demo, not validated biology.
 * Reproducibility scripts updated with paper-cited Vilar bounds and
