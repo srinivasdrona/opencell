@@ -78,6 +78,14 @@ python tools/review_param.py --cards data/params/<model>.yaml
 ```
 to walk DRAFT → REVIEWED → APPROVED with the PDF in hand.
 
+## Shell exit-code gotcha
+
+This CLI returns exit code 0/1/2 to gate downstream steps. If you wrap
+it in a script that pipes the output (e.g. `| tee log.txt`), set
+`set -o pipefail` first or use `${PIPESTATUS[0]}` — otherwise the pipe
+will silently mask the real exit code. See `docs/architecture/shell-exit-codes.md`
+for the full set of traps (including PowerShell's interception of `$?`).
+
 ## Acceptance test
 
 The Thattai 2001 replay test (`tests/unit/test_curation.py`) demonstrates
