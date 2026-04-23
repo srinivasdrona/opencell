@@ -20,6 +20,8 @@
     "csed7p": 6.084712291046754e-09,
     "cxyl5p": 4.912495890619054e-09
   },
+  "mean_species_max_rel": 8.698879997983447e-09,
+  "median_species_max_rel": 5.378704699223362e-09,
   "n_points": 601,
   "sbml_sha256": "28deec2bf55de027f116b46a8b1a75a820b05bdc9c5cd72dcf260bfacba75302",
   "t_end_seconds": 60.0,
