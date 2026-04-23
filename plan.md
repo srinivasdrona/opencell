@@ -1,8 +1,33 @@
 # OpenCell: Open-Source Whole-Cell Simulation
 
-## Current Status (2026-04-23, ~17h elapsed wall-time, ~25 commits, **378 tests passing**)
+## Current Status (2026-04-23, ~18h elapsed wall-time, ~28 commits, **387 tests passing**)
 
-### Metabolism Sub-Model — COMPLETE ✅ (2026-04-23, this checkpoint)
+### Transcription Sub-Model — COMPLETE ✅ (2026-04-23, this checkpoint)
+Second sub-model, first count-based (gene expression):
+
+- **Engine extension**: `opencell.models.sbml_model` now supports
+  per-species `hasOnlySubstanceUnits` (amount-mode species). Initial values
+  handle all four (mode × initialAmount/Concentration) cases correctly
+  (also fixed a latent bug for concentration-mode + initialAmount). `rhs`
+  skips the volume divide for amount-mode species. Chassagnole regression
+  bit-identical (cglcex(60s)=1.318993).
+- **Wrapper** (`opencell/models/transcription.py`): `TranscriptionModel.load()`
+  pins BIOMD0000000035 (Vilar 2002, "Mechanisms of noise resistance in
+  genetic oscillators") and records BioModels ID + DOI 10.1073/pnas.092133899
+  + PMID 11972055 in `provenance()`.
+- **Validation oracle** (libroadrunner) across **all 9 species** over 200
+  time-units (~3 oscillation periods of the activator-repressor limit cycle):
+  - **Worst species max_rel_err: 9.7e-7**
+  - **Median species max_rel_err: 3.0e-7**
+  - Test threshold rtol=1e-3; actual is ~1000× tighter.
+  - Gene-copy conservation `DA+DAp=1`, `DR+DRp=1` enforced and verified.
+- **Demo script**: `scripts/compare_vilar.py --time-units 200` — OC-vs-RR
+  overlay + residual log panel + per-species residuals JSON.
+- **Tests added**: 9 (4 substance-units unit + 5 Vilar oracle integration).
+- **Manifest**: `manifests/vilar2002.draft.yaml` auto-generated from SBML;
+  paper-pairing eutils-verified.
+
+### Metabolism Sub-Model — COMPLETE ✅ (2026-04-23, prior checkpoint)
 First sub-model anchored on real biology, end-to-end working:
 
 - **Engine** (`opencell/models/sbml_model.py`): generic SBML L2/L3 → ODE
@@ -10,7 +35,7 @@ First sub-model anchored on real biology, end-to-end working:
   and `<assignmentRule>` MathML formula to a NumPy callable. Identifiers
   pre-bound via `local_dict` so SBML names like `S`, `E`, `I`, `Q` are not
   silently shadowed by sympy singletons. Loud failure on `<event>`,
-  `<functionDefinition>`, `<rateRule>`, `hasOnlySubstanceUnits=true`.
+  `<functionDefinition>`, `<rateRule>`, `<initialAssignment>`.
   Provenance: SHA-256 of SBML bytes + level/version + topology.
 - **Wrapper** (`opencell/models/metabolism.py`): `MetabolismModel.load()`
   pins BIOMD0000000051 and records BioModels ID + DOI + PMID in

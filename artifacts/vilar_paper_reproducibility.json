@@ -1,0 +1,38 @@
+{
+  "all_checks_pass": true,
+  "biomodels_id": "BIOMD0000000035",
+  "checks": {
+    "A_amplitude_lt_R_amplitude": true,
+    "MR_max_lt_R_max": true,
+    "R_amplitude_in_range": true,
+    "period_hours_in_range": true
+  },
+  "measured": {
+    "A_amplitude": 1374.868597253702,
+    "A_max": 1374.9423453226655,
+    "A_min": 0.07374806896347298,
+    "MA_max": 48.41873388865275,
+    "MR_max": 82.67722771475925,
+    "R_amplitude": 1716.6719942988702,
+    "R_max": 1716.979643845934,
+    "R_min": 0.3076495470638859,
+    "period_hours": 25.55781749051002
+  },
+  "paper_doi": "10.1073/pnas.092133899",
+  "paper_pubmed_id": "11972055",
+  "paper_targets": {
+    "A_amplitude_lt_R_amplitude": true,
+    "MR_max_lt_R_max": true,
+    "R_amplitude": [
+      800.0,
+      2500.0
+    ],
+    "period_hours": [
+      15.0,
+      35.0
+    ]
+  },
+  "sbml_sha256": "c90ce4978a154f8b40eec291f1c076bdfac173efde2560771214a2d8a5b04a5e",
+  "t_end": 1000.0,
+  "transient_dropped_until": 100.0
+}

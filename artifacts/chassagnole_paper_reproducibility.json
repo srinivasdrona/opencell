@@ -1,0 +1,63 @@
+{
+  "all_checks_pass": true,
+  "biomodels_id": "BIOMD0000000051",
+  "initial_condition_checks": {
+    "cf6p": {
+      "paper": 0.6,
+      "rel_err": 0.0,
+      "sbml": 0.6,
+      "within_25pct": true
+    },
+    "cfdp": {
+      "paper": 0.272,
+      "rel_err": 0.0,
+      "sbml": 0.272,
+      "within_25pct": true
+    },
+    "cg6p": {
+      "paper": 3.48,
+      "rel_err": 0.0,
+      "sbml": 3.48,
+      "within_25pct": true
+    },
+    "cgap": {
+      "paper": 0.218,
+      "rel_err": 0.0,
+      "sbml": 0.218,
+      "within_25pct": true
+    },
+    "cpep": {
+      "paper": 2.67,
+      "rel_err": 0.0,
+      "sbml": 2.67,
+      "within_25pct": true
+    },
+    "cpyr": {
+      "paper": 2.67,
+      "rel_err": 0.0,
+      "sbml": 2.67,
+      "within_25pct": true
+    }
+  },
+  "paper_doi": "10.1002/bit.10288",
+  "paper_pubmed_id": "17590932",
+  "physical_sanity": {
+    "all_values_finite": true,
+    "all_values_nonneg": true,
+    "cglcex_monotone_decreasing": true
+  },
+  "pulse_response": {
+    "checks": {
+      "G6P_rises_on_pulse": true,
+      "PEP_drops_on_pulse": true,
+      "PYR_rises_on_pulse": true
+    },
+    "g6p_post_max": 3.667520570068249,
+    "g6p_pre": 3.5275465164168947,
+    "pep_post_min": 1.2433739915495643,
+    "pep_pre": 1.864910663757861,
+    "pyr_post_max": 3.8480864827912926,
+    "pyr_pre": 3.5470394229753626
+  },
+  "sbml_sha256": "28deec2bf55de027f116b46a8b1a75a820b05bdc9c5cd72dcf260bfacba75302"
+}
