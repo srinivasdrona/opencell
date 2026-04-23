@@ -50,6 +50,45 @@ class SbmlEntity:
     notes: str = ""           # short SBML <notes> excerpt if extractable
 
 
+@dataclass
+class SbmlModelMetadata:
+    """Annotations harvested from <model><annotation><rdf:RDF>...</rdf:RDF>.
+
+    All fields are best-effort; absence is normal. Useful for auto-filling
+    a manifest header without forcing the user to retype known facts.
+    """
+
+    model_id: str = ""              # <model id="...">
+    model_name: str = ""            # <model name="...">
+    biomodels_id: str = ""          # extracted from identifiers.org/biomodels.db/
+    pubmed_id: str = ""             # from identifiers.org/pubmed/
+    doi: str = ""                   # from identifiers.org/doi/  (often absent)
+    taxonomy_id: str = ""           # from identifiers.org/taxonomy/
+    organism: str = ""              # mapped from taxonomy_id when known
+    creators: list[str] = field(default_factory=list)
+    notes_excerpt: str = ""         # first ~280 chars of <notes>
+
+
+# NCBI taxonomy id -> human-readable organism name. Small static table for
+# the most common BioModels organisms; extend as needed.
+_TAXONOMY_NAMES = {
+    "562": "Escherichia coli",
+    "511145": "Escherichia coli K-12 MG1655",
+    "83333": "Escherichia coli K-12",
+    "4932": "Saccharomyces cerevisiae",
+    "559292": "Saccharomyces cerevisiae S288C",
+    "9606": "Homo sapiens",
+    "10090": "Mus musculus",
+    "10116": "Rattus norvegicus",
+    "7227": "Drosophila melanogaster",
+    "6239": "Caenorhabditis elegans",
+    "3702": "Arabidopsis thaliana",
+    "1773": "Mycobacterium tuberculosis",
+    "2097": "Mycoplasma genitalium",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Namespace handling
 # ---------------------------------------------------------------------------
@@ -259,3 +298,116 @@ def parse_sbml(sbml_bytes: bytes, *, include_species: bool = True) -> tuple[list
             ))
 
     return entities, udefs
+
+
+# ---------------------------------------------------------------------------
+# Model metadata (MIRIAM annotations)
+# ---------------------------------------------------------------------------
+
+import re as _re
+
+_RDF_RESOURCE_KEY = "{http://www.w3.org/1999/02/22-rdf-syntax-ns#}resource"
+_RDF_LI = "{http://www.w3.org/1999/02/22-rdf-syntax-ns#}li"
+
+_BIOMODELS_RX = _re.compile(r"identifiers\.org/biomodels\.db/(BIOMD\d+)")
+_PUBMED_RX    = _re.compile(r"identifiers\.org/pubmed/(\d+)")
+_DOI_RX       = _re.compile(r"identifiers\.org/doi/([^\s\"]+)")
+_TAXONOMY_RX  = _re.compile(r"identifiers\.org/taxonomy/(\d+)")
+
+
+def _collect_resource_uris(model_elem: ET.Element) -> list[str]:
+    """Walk the <model><annotation> subtree and harvest every rdf:resource URI."""
+    uris: list[str] = []
+    for elem in model_elem.iter():
+        # rdf:li / rdf:Description / bqmodel:* etc. — we only care about the URI attr
+        uri = elem.attrib.get(_RDF_RESOURCE_KEY)
+        if uri:
+            uris.append(uri)
+    return uris
+
+
+def _collect_creators(model_elem: ET.Element) -> list[str]:
+    """Extract 'Given Family' strings from each vCard:N block.
+
+    Robust to either Given-then-Family or Family-then-Given child order.
+    """
+    out: list[str] = []
+    for elem in model_elem.iter():
+        if _localname(elem.tag) != "N":
+            continue
+        given = ""
+        family = ""
+        for child in elem.iter():
+            ln = _localname(child.tag)
+            if ln == "Given":
+                given = (child.text or "").strip()
+            elif ln == "Family":
+                family = (child.text or "").strip()
+        name = " ".join(x for x in (given, family) if x)
+        if name:
+            out.append(name)
+    return out
+
+
+def _extract_notes_excerpt(model_elem: ET.Element, max_len: int = 280) -> str:
+    for elem in model_elem.iter():
+        if _localname(elem.tag) == "notes":
+            text = " ".join((elem.itertext())).strip()
+            text = " ".join(text.split())
+            if len(text) > max_len:
+                text = text[:max_len].rstrip() + "..."
+            return text
+    return ""
+
+
+def extract_metadata(sbml_bytes: bytes) -> SbmlModelMetadata:
+    """Pull MIRIAM-style annotations from <model> for manifest auto-fill.
+
+    Best-effort: missing fields are returned as empty strings. Never raises.
+    """
+    md = SbmlModelMetadata()
+    try:
+        root = ET.fromstring(sbml_bytes)
+    except ET.ParseError:
+        return md
+    # Find <model>
+    model_elem: ET.Element | None = None
+    for e in root.iter():
+        if _localname(e.tag) == "model":
+            model_elem = e
+            break
+    if model_elem is None:
+        return md
+
+    md.model_id = model_elem.attrib.get("id", "")
+    md.model_name = model_elem.attrib.get("name", "")
+    md.notes_excerpt = _extract_notes_excerpt(model_elem)
+    md.creators = _collect_creators(model_elem)
+
+    uris = _collect_resource_uris(model_elem)
+    for uri in uris:
+        if not md.biomodels_id:
+            m = _BIOMODELS_RX.search(uri)
+            if m:
+                md.biomodels_id = m.group(1)
+                continue
+        if not md.pubmed_id:
+            m = _PUBMED_RX.search(uri)
+            if m:
+                md.pubmed_id = m.group(1)
+                continue
+        if not md.doi:
+            m = _DOI_RX.search(uri)
+            if m:
+                md.doi = m.group(1)
+                continue
+        if not md.taxonomy_id:
+            m = _TAXONOMY_RX.search(uri)
+            if m:
+                md.taxonomy_id = m.group(1)
+                continue
+
+    if md.taxonomy_id and md.taxonomy_id in _TAXONOMY_NAMES:
+        md.organism = _TAXONOMY_NAMES[md.taxonomy_id]
+    return md
+

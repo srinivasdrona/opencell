@@ -54,3 +54,6 @@ outputs/
 
 # DVC
 /data/*.dvc
+
+# Working scratch for downloaded papers / SBML (use data/biomodels_reference/ for committed copies)
+.paper_cache/

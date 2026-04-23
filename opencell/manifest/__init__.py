@@ -19,8 +19,10 @@ Resolves <unitDefinition> blocks into human-readable unit strings
 
 from .sbml import (
     SbmlEntity,
+    SbmlModelMetadata,
     SbmlUnit,
     SbmlUnitDefinition,
+    extract_metadata,
     parse_sbml,
     resolve_unit,
     stringify_unit,
@@ -34,8 +36,10 @@ from .emitter import (
 
 __all__ = [
     "SbmlEntity",
+    "SbmlModelMetadata",
     "SbmlUnit",
     "SbmlUnitDefinition",
+    "extract_metadata",
     "parse_sbml",
     "resolve_unit",
     "stringify_unit",

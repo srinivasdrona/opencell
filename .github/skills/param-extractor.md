@@ -91,3 +91,9 @@ Any time a numeric parameter value is needed for a `ParameterCard`. Replaces the
 
 ## Reference test
 `tests/unit/test_extraction.py` re-extracts Thattai 2001 `kR` against the cached PDF text and asserts `raw_value == 0.01` with `raw_unit_normalized == "s^-1"` and locator pointing to the figure-caption region. Recovers the same answer the human-in-the-loop campaign produced.
+
+## Shell exit-code gotcha
+Exit codes (0 RECOMMEND / 1 AMBIGUOUS / 2 NOT_FOUND) are silently masked
+by bash pipes (`| tee`, `| tail`) and by PowerShell's interception of `$?`
+when invoking `wsl bash -lc`. See `docs/architecture/shell-exit-codes.md`
+for safe patterns (`set -o pipefail`, `${PIPESTATUS[0]}`, `subprocess.run`).

@@ -18,6 +18,7 @@ from opencell.manifest import (
     SbmlUnit,
     SbmlUnitDefinition,
     build_manifest,
+    extract_metadata,
     parse_sbml,
     resolve_unit,
     stringify_unit,
@@ -288,3 +289,112 @@ class TestCliEntryPoint:
         # Make sure the CLI script imports cleanly without side effects
         spec_path = Path(__file__).resolve().parents[2] / "tools" / "biomodels_manifest.py"
         assert spec_path.exists()
+
+
+# ---------------------------------------------------------------------------
+# Metadata extraction (MIRIAM annotations)
+# ---------------------------------------------------------------------------
+
+ANNOTATED_SBML = b"""<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level2" level="2" version="1">
+  <model id="Chassagnole2002_test" name="Chassagnole 2002 test">
+    <notes>
+      <body xmlns="http://www.w3.org/1999/xhtml">
+        <p>This is a short notes block describing the model.</p>
+      </body>
+    </notes>
+    <annotation>
+      <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+               xmlns:bqmodel="http://biomodels.net/model-qualifiers/"
+               xmlns:bqbiol="http://biomodels.net/biology-qualifiers/"
+               xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#">
+        <rdf:Description rdf:about="#metaid">
+          <dc:creator xmlns:dc="http://purl.org/dc/elements/1.1/">
+            <rdf:Bag>
+              <rdf:li rdf:parseType="Resource">
+                <vCard:N rdf:parseType="Resource">
+                  <vCard:Family>Snoep</vCard:Family>
+                  <vCard:Given>Jacky</vCard:Given>
+                </vCard:N>
+              </rdf:li>
+            </rdf:Bag>
+          </dc:creator>
+          <bqmodel:is>
+            <rdf:Bag>
+              <rdf:li rdf:resource="http://identifiers.org/biomodels.db/BIOMD0000000051"/>
+            </rdf:Bag>
+          </bqmodel:is>
+          <bqmodel:isDescribedBy>
+            <rdf:Bag>
+              <rdf:li rdf:resource="http://identifiers.org/pubmed/12082140"/>
+            </rdf:Bag>
+          </bqmodel:isDescribedBy>
+          <bqbiol:hasTaxon>
+            <rdf:Bag>
+              <rdf:li rdf:resource="http://identifiers.org/taxonomy/562"/>
+            </rdf:Bag>
+          </bqbiol:hasTaxon>
+        </rdf:Description>
+      </rdf:RDF>
+    </annotation>
+    <listOfParameters>
+      <parameter id="k1" value="1.0"/>
+    </listOfParameters>
+  </model>
+</sbml>
+"""
+
+
+class TestModelMetadata:
+    @pytest.fixture(scope="class")
+    def md(self):
+        return extract_metadata(ANNOTATED_SBML)
+
+    def test_model_id_and_name(self, md):
+        assert md.model_id == "Chassagnole2002_test"
+        assert md.model_name == "Chassagnole 2002 test"
+
+    def test_biomodels_id_extracted(self, md):
+        assert md.biomodels_id == "BIOMD0000000051"
+
+    def test_pubmed_extracted(self, md):
+        assert md.pubmed_id == "12082140"
+
+    def test_taxonomy_to_organism(self, md):
+        assert md.taxonomy_id == "562"
+        assert md.organism == "Escherichia coli"
+
+    def test_creators_extracted(self, md):
+        assert "Jacky Snoep" in md.creators
+
+    def test_notes_excerpt(self, md):
+        assert "short notes block" in md.notes_excerpt
+
+    def test_no_doi_when_absent(self, md):
+        # This SBML has no identifiers.org/doi/ resource, so doi must be empty
+        assert md.doi == ""
+
+    def test_handles_unparseable_sbml(self):
+        # Malformed XML must NOT raise; returns empty metadata
+        md = extract_metadata(b"<not really xml")
+        assert md.biomodels_id == ""
+        assert md.organism == ""
+
+    def test_handles_minimal_sbml(self):
+        # SBML with no annotations at all
+        minimal = b"""<?xml version="1.0"?>
+<sbml xmlns="http://www.sbml.org/sbml/level2" level="2" version="1">
+  <model id="x"/>
+</sbml>
+"""
+        md = extract_metadata(minimal)
+        assert md.model_id == "x"
+        assert md.biomodels_id == ""
+        assert md.pubmed_id == ""
+
+    def test_unmapped_taxonomy_leaves_organism_empty(self):
+        # Unknown taxon id stays as empty organism (note added in CLI layer)
+        sbml = ANNOTATED_SBML.replace(b"taxonomy/562", b"taxonomy/9999999")
+        md = extract_metadata(sbml)
+        assert md.taxonomy_id == "9999999"
+        assert md.organism == ""
