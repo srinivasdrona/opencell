@@ -1,0 +1,33 @@
+{
+  "biomodels_id": "BIOMD0000000051",
+  "max_rel_err_per_species": {
+    "cdhap": 1.5186344500115613e-08,
+    "ce4p": 9.531580310616751e-09,
+    "cf6p": 1.2110775516411003e-08,
+    "cfdp": 2.8386875184329104e-08,
+    "cg1p": 2.2299548000043477e-09,
+    "cg6p": 1.2057042920343867e-08,
+    "cgap": 9.88476503701795e-09,
+    "cglcex": 8.635800297196161e-10,
+    "cpep": 5.2359081389327877e-08,
+    "cpg": 1.9807971645491296e-09,
+    "cpg2": 5.103214368737221e-08,
+    "cpg3": 4.9892602643968095e-08,
+    "cpgp": 4.3941069953152426e-08,
+    "cpyr": 4.26607554052584e-09,
+    "crib5p": 8.880184935913823e-09,
+    "cribu5p": 9.177350079976251e-09,
+    "csed7p": 1.2540798836248017e-08,
+    "cxyl5p": 1.0638315659524294e-08
+  },
+  "mean_species_max_rel": 1.8608852121617567e-08,
+  "median_species_max_rel": 1.1347679289934081e-08,
+  "n_points": 3001,
+  "sbml_sha256": "28deec2bf55de027f116b46a8b1a75a820b05bdc9c5cd72dcf260bfacba75302",
+  "spike_initial_value_mM": 2.0,
+  "spike_post_value_mM": 4.0,
+  "spike_species": "cglcex",
+  "spike_time_seconds": 180.0,
+  "t_end_seconds": 300.0,
+  "worst_species_max_rel": 5.2359081389327877e-08
+}
