@@ -201,18 +201,6 @@ def main() -> None:
     print(f"  median species: max_rel = {np.median(vals):.3e}")
     print(f"  mean species:   max_rel = {vals.mean():.3e}")
 
-    # Locate WHERE the worst error happens
-    print("\nLocating worst-error timepoints:")
-    for sid in ["cpep", "cpyr", "cg6p", "cglcex"]:
-        denom = np.abs(rr_full[sid]) + 1e-12
-        rel = np.abs(ours[sid] - rr_full[sid]) / denom
-        worst_i = int(rel.argmax())
-        print(
-            f"  {sid:8s} worst at t={t_eval[worst_i]:.3f}s  "
-            f"OC={ours[sid][worst_i]:.6f}  RR={rr_full[sid][worst_i]:.6f}  "
-            f"rel_err={rel[worst_i]:.3e}"
-        )
-
     # Pre/post-spike comparison for cglcex and downstream pools
     sp_idx = model.species_index()
     print("\nKey metabolites just before vs just after spike (OpenCell):")

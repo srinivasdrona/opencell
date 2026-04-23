@@ -10,6 +10,42 @@ See plan.md "Agent Skill Profiles" section for full definitions.
 
 ## Mandatory Rules
 
+### State Sync Protocol (canonical state lives in the repo, not the agent)
+Two artifacts MUST be kept in sync between the per-session scratch and the
+repo (which is the durable record across sessions):
+
+| Scratch (per-session)                                              | Canonical (repo, committed)         |
+|--------------------------------------------------------------------|-------------------------------------|
+| `~/.copilot/session-state/<session-id>/plan.md`                    | `E:\opencell\plan.md`               |
+| Session SQL DB (`todos`, `todo_deps` tables)                       | `E:\opencell\opencell_tasks.db`     |
+
+When to sync (any one triggers a full sync of BOTH artifacts):
+1. **End of every checkpoint** (before the runtime auto-checkpoints).
+2. **After completing any todo or marking one blocked** (status changes
+   are the most valuable thing to persist).
+3. **Before the user closes the session or asks "where are we?"** —
+   if a repo-state question is being asked, the repo state had better be current.
+4. **Whenever plan.md has been edited in the session-state copy** and
+   more than ~3 todos have changed status since the last sync.
+
+How to sync:
+- `plan.md`: `Copy-Item` (Windows) or `cp` (WSL) the session-state file
+  over `E:\opencell\plan.md`, then `git add plan.md && git commit`.
+- `opencell_tasks.db`: dump session DB to JSON, replay into the E-drive
+  DB inside a transaction, back up the old DB first. Use the helper
+  pattern in `scripts/sync_tasks_db.py` (build it on first sync) so
+  it's a one-command operation, not ad-hoc Python each time.
+- Commit messages for sync commits should say "Sync plan.md: <what changed>"
+  or "Sync tasks DB: <N> done, <M> pending" so the git log is a
+  human-readable progress journal.
+
+What NOT to sync:
+- Don't push session DB rows for tables the agent doesn't own
+  (e.g., `review_findings` is project-wide and may have been edited
+  by other sessions or tools — leave alone).
+- Don't blindly overwrite if the repo DB has todo IDs unique to it;
+  always run a "what would I lose?" diff first.
+
 ### No Naked Biology Numbers
 Every biological constant in model code MUST reference a parameter ID from the data layer.
 Hardcoded literals allowed ONLY for: 0, 1, tolerances, array shapes.
