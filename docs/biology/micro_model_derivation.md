@@ -67,42 +67,46 @@ feed back to mRNA. The system is analytically solvable in closed form.
 
 ## Parameters
 
-We use values from Thattai & van Oudenaarden (2001), **Table 1 and Figure 2
-legend**. The paper states: *"All rates in units of min⁻¹."*
+Values from Thattai & van Oudenaarden (2001), **Figure 1 caption "base case"**
+(verified against the PDF on 2026-04-23 — the paper has **no** Table 1).
 
-| Parameter | Symbol | Value | Unit | Source | Verification |
-|-----------|--------|-------|------|--------|--------------|
-| Transcription rate | k₁ (α_m) | 0.30 | min⁻¹ | Thattai 2001, Table 1 | UNVERIFIED_WEB |
-| mRNA degradation rate | γ₁ (β_m) | 0.023 | min⁻¹ | Thattai 2001, Table 1 / Fig 2 | UNVERIFIED_WEB |
-| Translation rate | k₂ (α_p) | 5.0 | min⁻¹ | Thattai 2001, Table 1 | UNVERIFIED_WEB |
-| Protein degradation rate | γ₂ (β_p) | 0.10 | min⁻¹ | Thattai 2001, Table 1 | UNVERIFIED_WEB |
+> Verbatim quote (Fig. 1c caption, p. 8615):
+> *"The mRNA half-life is fixed at 2 min. The base case corresponds to a
+> burst size b = 20, a transcript initiation rate k_R = 0.01 s⁻¹ and a
+> protein half-life ln(2)/g_P = 1 h."*
 
-**Notes on parameters:**
-- k₁ has three values in Table 1 (0.15, 0.30, 0.60 min⁻¹). We use 0.30 (middle).
-- γ₁ = 0.023 min⁻¹ → mRNA half-life = ln(2)/0.023 ≈ 30 min. This is notably
-  longer than the "typical E. coli" value of ~3–5 min (Alon 2006 gives β_m ≈ 0.3 min⁻¹).
-  Possible explanation: Thattai may model a specific stable transcript, or include
-  only dilution-driven clearance. **This discrepancy should be resolved by reading
-  the actual PDF.**
-- γ₂ = 0.10 min⁻¹ → protein half-life = ln(2)/0.10 ≈ 6.9 min. This is faster
-  than typical E. coli protein degradation (hours), suggesting it includes both
-  active degradation and dilution, or models a rapidly turned-over protein.
-- **Verification status: UNVERIFIED_WEB** — all values obtained via AI web search,
-  not human-verified against the PDF. The original version of this document
-  contained fabricated "mid-range" values that were 10-20× off from Table 1.
+| Parameter | Symbol | Paper value | Internal value (min⁻¹) | Source | Verification |
+|-----------|--------|-------------|------------------------|--------|--------------|
+| Transcription rate | k_R (α_m) | 0.01 s⁻¹ | **0.60** | Fig. 1 caption | PDF-verified |
+| mRNA decay | γ_R (β_m) | t½ = 2 min | **ln(2)/2 ≈ 0.3466** | Fig. 1 caption | PDF-verified |
+| Translation rate | k_P (α_p) | b = 20 (derived) | **20·ln(2)/2 ≈ 6.9315** | Fig. 1 caption | PDF-verified |
+| Protein decay | γ_P (β_p) | t½ = 1 h | **ln(2)/60 ≈ 0.01155** | Fig. 1 caption | PDF-verified |
 
-**Cross-reference with Alon (2006) Box 1.1 (typical E. coli):**
+**Transformations applied:**
+- k_R: unit conversion s⁻¹ → min⁻¹ (×60).
+- γ_R, γ_P: half-life → first-order rate constant (γ = ln 2 / t½).
+- k_P: derived from burst-size definition b = k_P / γ_R, so k_P = b × γ_R.
+  (The paper does not state k_P directly.)
 
-| Parameter | Thattai 2001 | Alon 2006 | Discrepancy |
-|-----------|-------------|-----------|-------------|
-| α_m | 0.30 /min | ~1 /min | 3× |
-| β_m | 0.023 /min | ~0.3 /min | 13× |
-| α_p | 5.0 /min | ~10 /min | 2× |
-| β_p | 0.10 /min | ~0.023 /min | 4× |
+**Cross-reference with E. coli literature:**
 
-These represent different biological scenarios. Alon describes "typical" rapidly-
-degraded E. coli mRNA; Thattai appears to model a different regime.
-**Resolution requires reading both sources in full.**
+| Parameter | Thattai 2001 | Cross-source | Agreement |
+|-----------|--------------|--------------|-----------|
+| γ_R = 0.347 /min (t½=2 min) | Bernstein 2002 PNAS: median t½ ~5 min (γ≈0.14) | within E. coli range |
+| γ_R = 0.347 /min | Alon 2006 typical β_m ~0.3 /min | matches |
+| γ_P = 0.01155 /min (t½=1 h) | Alon 2006 dilution-dominated ~0.023 /min | same OOM |
+| k_P = 6.93 /min | Alon 2006 typical α_p ~10 /min | same OOM |
+| k_R = 0.6 /min | Alon 2006 typical ~1 /min | same OOM |
+
+**Provenance history (preserved as institutional memory):**
+1. Round 1 (synthetic): values 0.2, 0.5, 0.5, 0.005 — invented; no source.
+2. Round 2 ("Table 1"): values 0.30, 0.023, 5.0, 0.10 — fabricated quote
+   (paper has no Table 1); values 2× to 15× off from real "base case".
+3. Round 3 (this document): values from Fig. 1 caption, PDF in hand.
+
+The Round-2 failure is the canonical example for our parameter-verification
+system: cross-source numerical agreement and confident citations are not
+sufficient evidence — only direct PDF reading by a human is.
 
 **Initial conditions:** m(0) = 0, p(0) = 0 (gene just turned on).
 
@@ -134,22 +138,16 @@ At t → ∞:
 
 | Species | Formula | Value | Unit |
 |---------|---------|-------|------|
-| m* | α_m / β_m | 0.30 / 0.023 = **13.04** | copies/cell |
-| p* | (α_m · α_p) / (β_m · β_p) | (0.30 × 5.0) / (0.023 × 0.10) = **652.2** | copies/cell |
+| m* | k_R / γ_R | 0.60 / 0.34657 ≈ **1.731** | copies/cell |
+| p* | (k_R · k_P) / (γ_R · γ_P) | (0.60 × 6.9315) / (0.34657 × 0.011552) ≈ **1038.7** | copies/cell |
 
 ### Characteristic Timescales
 
 | Process | Formula | Value | Interpretation |
 |---------|---------|-------|----------------|
-| mRNA equilibration | 1/β_m | 43.5 min | mRNA reaches ~63% of steady state |
-| Protein equilibration | 1/β_p | 10.0 min | Protein reaches ~63% of steady state |
-| Timescale separation | β_m/β_p | 0.23× | Unusual — protein turns over *faster* than mRNA |
-
-**Note on timescale separation:** With these Thattai parameters, the protein
-degrades faster than mRNA (β_p > β_m). This is atypical for E. coli but is
-the parameter regime in their paper. The analytical solution still holds —
-the math doesn't care which species is faster. For a more "typical" regime
-(mRNA fast, protein slow), use Alon's parameters.
+| mRNA equilibration | 1/γ_R | 2.89 min | mRNA reaches ~63% of steady state |
+| Protein equilibration | 1/γ_P | 86.6 min | Protein reaches ~63% of steady state |
+| Timescale separation | γ_R/γ_P | 30× | mRNA fast, protein slow (typical E. coli) |
 
 ## Stochastic Benchmark (for tau-leaping validation)
 
@@ -164,15 +162,15 @@ before it degrades).
 
 With our parameters:
 ```
-b = α_p / β_m = 5.0 / 0.023 ≈ 217.4
-Var(p) = 652.2 · (1 + 217.4 / (1 + 0.10/0.023))
-       = 652.2 · (1 + 217.4 / 5.348)
-       = 652.2 · (1 + 40.65)
-       ≈ 652.2 · 41.65
-       ≈ 27,155
+b = k_P / γ_R = 20  (by construction — this is the paper's base case)
+Var(p) = 1038.7 · (1 + 20 / (1 + 0.01155/0.34657))
+       = 1038.7 · (1 + 20 / 1.03333)
+       = 1038.7 · (1 + 19.355)
+       ≈ 1038.7 · 20.355
+       ≈ 21,145
 ```
 
-Fano factor: Var(p)/p* ≈ 27155/652 ≈ 41.6 (highly super-Poissonian, strong
+Fano factor: Var(p)/p* ≈ 21145/1038.7 ≈ 20.36 (highly super-Poissonian, strong
 translational bursting — consistent with high burst size b ≈ 217).
 
 CV (coefficient of variation): √(27155)/652 ≈ 0.253 (25.3% noise).

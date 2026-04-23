@@ -20,22 +20,25 @@ import numpy as np
 class MicroModelParams:
     """Parameters for constitutive gene expression in E. coli.
 
-    Source: Thattai & van Oudenaarden (2001), Table 1 / Figure 2 legend.
+    Source: Thattai & van Oudenaarden (2001), Figure 1 caption "base case".
     DOI: 10.1073/pnas.151588598
-    All rates in min⁻¹ as stated in paper: "All rates in units of min⁻¹".
 
-    Verification status: UNVERIFIED_WEB — values obtained via web search
-    of paper content, not human-verified against PDF. See
-    docs/biology/micro_model_derivation.md for full provenance.
+    Verbatim from Fig. 1 caption (verified against PDF, 2026-04-23):
+      "The mRNA half-life is fixed at 2 min. The base case corresponds to
+       a burst size b = 20, a transcript initiation rate k_R = 0.01 s^-1
+       and a protein half-life ln(2)/g_P = 1 h."
 
-    k₁ has three values in the paper (0.15, 0.30, 0.60); we use 0.30
-    (the middle value) as default.
+    Conversions to min^-1 (units used internally):
+      k_R   = 0.01 s^-1 × 60                  = 0.60 mRNA/min
+      gamma_R = ln(2) / 2 min                 = 0.34657 /min
+      k_P   = b × gamma_R = 20 × 0.34657      = 6.9315 protein/mRNA/min
+      gamma_P = ln(2) / 60 min                = 0.011552 /min
     """
 
-    alpha_m: float = 0.30   # k₁: Transcription rate (mRNA/min) [Table 1: 0.15/0.30/0.60]
-    beta_m: float = 0.023   # γ₁: mRNA degradation rate (1/min) [Table 1 / Fig 2 legend]
-    alpha_p: float = 5.0    # k₂: Translation rate per transcript (protein/mRNA/min) [Table 1]
-    beta_p: float = 0.10    # γ₂: Protein degradation+dilution rate (1/min) [Table 1]
+    alpha_m: float = 0.60         # k_R: transcription init rate (mRNA/min)
+    beta_m: float = math.log(2) / 2.0    # gamma_R: mRNA decay (1/min), 2-min half-life
+    alpha_p: float = 20.0 * math.log(2) / 2.0  # k_P: translation rate (b × gamma_R)
+    beta_p: float = math.log(2) / 60.0   # gamma_P: protein decay (1/min), 1-h half-life
 
     @property
     def m_ss(self) -> float:

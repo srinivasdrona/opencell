@@ -23,7 +23,7 @@ from opencell.models.micro_model import MicroModelParams
 from opencell.solvers.ode import solve_ode, ODESolverConfig
 from opencell.solvers.ode_scipy import solve_ode_scipy
 
-# Published parameters (Thattai 2001, Table 1)
+# Published parameters (Thattai 2001, Figure 1 caption "base case")
 PARAMS = MicroModelParams()
 
 
@@ -51,13 +51,20 @@ class TestGateG12:
 
     @pytest.mark.gate
     def test_steady_state_analytical_values(self) -> None:
-        """Verify analytical steady-state formulas are correct."""
-        # m* = α_m / β_m = 0.30 / 0.023 ≈ 13.04
-        assert PARAMS.m_ss == pytest.approx(0.30 / 0.023, rel=1e-10)
-        # p* = (α_m · α_p) / (β_m · β_p) = (0.30 × 5.0) / (0.023 × 0.10) ≈ 652.2
-        assert PARAMS.p_ss == pytest.approx(
-            (0.30 * 5.0) / (0.023 * 0.10), rel=1e-10
+        """Verify analytical steady-state formulas are correct.
+
+        Base case (Thattai 2001 Fig. 1c):
+          m* = k_R / gamma_R = 0.6 / (ln2/2) ≈ 1.731
+          p* = (k_R · k_P) / (gamma_R · gamma_P)
+             = (0.6 · 20·ln2/2) / ((ln2/2) · (ln2/60)) ≈ 1038.7
+        """
+        import math
+        expected_m = 0.60 / (math.log(2) / 2.0)
+        expected_p = (0.60 * 20.0 * math.log(2) / 2.0) / (
+            (math.log(2) / 2.0) * (math.log(2) / 60.0)
         )
+        assert PARAMS.m_ss == pytest.approx(expected_m, rel=1e-10)
+        assert PARAMS.p_ss == pytest.approx(expected_p, rel=1e-10)
 
     @pytest.mark.gate
     def test_jax_solver_matches_analytical_steady_state(self) -> None:
