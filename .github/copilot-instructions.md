@@ -54,6 +54,19 @@ Hardcoded literals allowed ONLY for: 0, 1, tolerances, array shapes.
 All values entering the IR must pass through pint unit validation.
 Sub-models must declare their reference frame (per-cell, per-volume, per-gDW).
 
+### Stochastic RNG Discipline
+Stochastic primitives (tau-leap, SSA, any sampling helper) **must** accept
+an explicit `np.random.Generator` (or JAX `PRNGKey` if they actually use
+one). Hard rules:
+- **Never** call `np.random.seed()` — it mutates process-global state and
+  silently clobbers any other RNG-using code in the same process.
+- **Never** call unseeded `np.random.<distribution>()` — same reason.
+- Callers derive independent streams via
+  `np.random.SeedSequence(base_seed).spawn(n)`; ensembles must use this
+  (or equivalent) so two parallel realisations cannot collide.
+- A function that takes a JAX key but never uses it is a bug; remove the
+  parameter or use it.
+
 ### Evidence Provenance
 Every nontrivial biological claim must have:
 - DOI citation

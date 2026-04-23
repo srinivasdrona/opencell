@@ -185,8 +185,8 @@ class TestTauLeaping:
         S = np.array([[-1]])  # one species, one reaction (consumes 1)
         y0 = np.array([1000.0])  # start with 1000 molecules
 
-        key = jax.random.PRNGKey(42)
-        result = tau_leap(propensity_fn, S, y0, (0.0, 100.0), key)
+        rng = np.random.default_rng(42)
+        result = tau_leap(propensity_fn, S, y0, (0.0, 100.0), rng)
 
         # After t=100 with k=0.01: expected = 1000*exp(-1) ≈ 368
         final = result.ys[-1, 0]
@@ -203,8 +203,8 @@ class TestTauLeaping:
         S = np.array([[-1]])
         y0 = np.array([10.0])  # low count — tests clamping
 
-        key = jax.random.PRNGKey(123)
-        result = tau_leap(propensity_fn, S, y0, (0.0, 200.0), key)
+        rng = np.random.default_rng(123)
+        result = tau_leap(propensity_fn, S, y0, (0.0, 200.0), rng)
 
         assert np.all(result.ys >= 0), "Negative counts detected!"
 
@@ -217,8 +217,8 @@ class TestTauLeaping:
         S = np.array([[1, -1]])  # species gains from rxn0, loses from rxn1
         y0 = np.array([0.0])  # start empty
 
-        key = jax.random.PRNGKey(7)
-        result = tau_leap(propensity_fn, S, y0, (0.0, 200.0), key)
+        rng = np.random.default_rng(7)
+        result = tau_leap(propensity_fn, S, y0, (0.0, 200.0), rng)
 
         # Steady state: birth/death = 10/0.1 = 100
         final = result.ys[-1, 0]

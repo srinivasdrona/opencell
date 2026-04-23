@@ -8,6 +8,12 @@ Algorithm: Approximate tau-leaping (Cao et al. 2006)
 - Select tau such that no propensity changes by more than a threshold
 - Fire all reactions simultaneously during tau
 - Poisson-distributed number of firings per reaction
+
+RNG hygiene: callers MUST pass an explicit ``np.random.Generator``. No
+global-state mutation (no ``np.random.seed`` or unseeded ``np.random.*``).
+This makes parallel realisations safe and reproducible regardless of what
+else is running in the process. See ``.github/copilot-instructions.md``
+"Stochastic RNG discipline" for the project-wide rule.
 """
 
 from __future__ import annotations
@@ -15,11 +21,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable
 
-import jax
 import jax.numpy as jnp
 import numpy as np
-
-jax.config.update("jax_enable_x64", True)
 
 # Propensity function: given state y, return reaction propensities
 PropensityFn = Callable[[jnp.ndarray], jnp.ndarray]
@@ -60,7 +63,7 @@ def tau_leap(
     stoich_matrix: np.ndarray,
     y0: np.ndarray,
     t_span: tuple[float, float],
-    key: jax.Array,
+    rng: np.random.Generator,
     config: TauLeapConfig | None = None,
     save_every: int = 1,
 ) -> StochasticResult:
@@ -68,10 +71,12 @@ def tau_leap(
 
     Args:
         propensity_fn: Function returning reaction propensities given state
-        stoich_matrix: Stoichiometry matrix (n_species × n_reactions)
+        stoich_matrix: Stoichiometry matrix (n_species x n_reactions)
         y0: Initial state (molecule counts, integer-valued)
         t_span: (t_start, t_end)
-        key: JAX PRNG key
+        rng: numpy ``Generator`` (e.g. ``np.random.default_rng(seed)``).
+            All Poisson draws are sampled from this generator -- no global
+            state is touched.
         config: Solver configuration
         save_every: Save state every N steps
 
@@ -84,7 +89,6 @@ def tau_leap(
     t0, t1 = t_span
     y = np.array(y0, dtype=np.float64)
     S = np.array(stoich_matrix, dtype=np.float64)
-    n_reactions = S.shape[1]
 
     t = t0
     step = 0
@@ -94,26 +98,20 @@ def tau_leap(
     while t < t1:
         props = np.array(propensity_fn(jnp.array(y)), dtype=np.float64)
 
-        # All propensities zero → system is dead
+        # All propensities zero -> system is dead
         if np.sum(props) == 0:
             break
 
-        # Select tau (simplified: use epsilon-based bound)
-        # tau = epsilon * sum(props) / max change rate
-        # Simplified version — proper Cao et al. 2006 is more involved
+        # Select tau (epsilon / a_sum, capped by dt_max and remaining time)
         a_sum = np.sum(props)
         tau = min(config.epsilon / a_sum if a_sum > 0 else config.dt_max, config.dt_max)
         tau = min(tau, t1 - t)
 
-        # Sample number of firings from Poisson
-        key, subkey = jax.random.split(key)
-        expected_firings = props * tau
-        # Use numpy for Poisson since JAX Poisson can be tricky with large means
-        firings = np.random.poisson(expected_firings)
+        # Sample number of firings from Poisson via the supplied Generator
+        firings = rng.poisson(props * tau)
 
         # Update state
-        delta = S @ firings
-        y_new = y + delta
+        y_new = y + S @ firings
 
         # Clamp negatives (tau-leaping can overshoot)
         y_new = np.maximum(y_new, 0.0)
