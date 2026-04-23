@@ -7,6 +7,7 @@ caches (those live in `.paper_cache/`, which is gitignored).
 | File | Source | Acquired |
 |---|---|---|
 | `BIOMD0000000051_chassagnole2002.xml` | `git clone https://github.com/biomodels/BIOMD0000000051.git` | 2026-04-23 |
+| `BIOMD0000000035_vilar2002.xml` | `git clone https://github.com/biomodels/BIOMD0000000035.git` | 2026-04-23 |
 
 ## Why a separate directory?
 

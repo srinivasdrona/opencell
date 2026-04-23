@@ -5,9 +5,11 @@ a Python callable via :func:`sympy.lambdify` (NumPy backend).  This produces
 a deterministic, audit-friendly RHS function suitable for handoff to the
 existing :mod:`opencell.solvers.ode_scipy` integrator.
 
-Supported SBML features (sufficient for BIOMD0000000051 / Chassagnole 2002):
+Supported SBML features (sufficient for BIOMD0000000051 / Chassagnole 2002
+and BIOMD0000000035 / Vilar 2002):
 
-* Dynamic species (concentrations) in named compartments
+* Dynamic species in either concentration mode (default) or amount mode
+  (``hasOnlySubstanceUnits=true``); per-species handling
 * Boundary / constant species (treated as fixed environment)
 * Global parameters (constant or driven by assignment rules)
 * Local parameters per ``<kineticLaw>``
@@ -19,8 +21,7 @@ Explicitly refused (loud failure, never silent best-effort):
 * ``<event>`` elements
 * ``<functionDefinition>`` (we do not unfold custom MathML lambdas yet)
 * ``<rateRule>`` and ``<algebraicRule>``
-* Species with ``hasOnlySubstanceUnits=true`` mixed with concentration species
-  (the conversion ambiguity is not silently resolved)
+* ``<initialAssignment>`` (initial values must be literal in the SBML)
 
 Provenance: every loaded model records the SBML file path and the SHA-256 of
 its bytes so any simulation output can be traced back to the exact source.
@@ -150,13 +151,18 @@ class SbmlOdeModel:
     and species/parameters set by assignment rules are NOT integrated; their
     values are recomputed from ``t`` and ``y`` on every RHS evaluation.
 
-    Time RHS:
+    Time RHS (per-species, depending on its substance/concentration mode):
 
-        dC_i/dt = (1 / V_i) * sum_j stoich[i, j] * flux_j(t, y)
+        amount-mode (hasOnlySubstanceUnits=true):
+            dN_i/dt = sum_j stoich[i, j] * flux_j(t, y)
+        concentration-mode (default):
+            dC_i/dt = (1 / V_i) * sum_j stoich[i, j] * flux_j(t, y)
 
     where ``flux_j`` is the value returned by reaction ``j``'s kinetic law
-    (interpreted as substance/time per SBML L2/L3 convention) and ``V_i`` is
-    the volume of the compartment hosting species ``i``.
+    (in substance/time per SBML L2/L3 convention) and ``V_i`` is the volume
+    of the compartment hosting species ``i``.  In ``y``, amount-mode species
+    store amount (molecule count or mole quantity) and concentration-mode
+    species store concentration.
     """
 
     sbml_path: Path
@@ -166,6 +172,7 @@ class SbmlOdeModel:
 
     species_ids: list[str]
     species_compartment: dict[str, str]
+    species_substance_units: dict[str, bool]  # sid → hasOnlySubstanceUnits
     initial_y: np.ndarray
     compartment_volumes: dict[str, float]
 
@@ -247,24 +254,28 @@ class SbmlOdeModel:
         # ---- Species ----
         dynamic_species: list[str] = []
         species_comp: dict[str, str] = {}
+        species_subs: dict[str, bool] = {}
         initial_vals: list[float] = []
         boundary: dict[str, float] = {}
 
         for i in range(model.getNumSpecies()):
             s = model.getSpecies(i)
             sid = s.getId()
-            init = (
-                s.getInitialConcentration()
-                if s.isSetInitialConcentration()
-                else s.getInitialAmount()
-            )
+            sub_only = bool(s.getHasOnlySubstanceUnits())
+            comp_id = s.getCompartment()
+            vol = comp_volumes.get(comp_id, 1.0)
 
-            if s.getHasOnlySubstanceUnits():
-                # We only support concentration-mode species for now
-                raise NotImplementedError(
-                    f"{sbml_path.name}: species {sid!r} has hasOnlySubstanceUnits=true "
-                    "(amount-mode); only concentration-mode species are supported"
-                )
+            # Resolve initial value into the storage convention for y:
+            #   amount-mode species: y stores AMOUNT
+            #   concentration-mode species: y stores CONCENTRATION
+            if s.isSetInitialConcentration():
+                conc = float(s.getInitialConcentration())
+                init = conc * vol if sub_only else conc
+            elif s.isSetInitialAmount():
+                amt = float(s.getInitialAmount())
+                init = amt if sub_only else (amt / vol)
+            else:
+                init = 0.0
 
             if s.getBoundaryCondition() or s.getConstant():
                 boundary[sid] = float(init)
@@ -274,7 +285,8 @@ class SbmlOdeModel:
                 continue
 
             dynamic_species.append(sid)
-            species_comp[sid] = s.getCompartment()
+            species_comp[sid] = comp_id
+            species_subs[sid] = sub_only
             initial_vals.append(float(init))
 
         # ---- Global parameters ----
@@ -338,6 +350,7 @@ class SbmlOdeModel:
             sbml_version=doc.getVersion(),
             species_ids=dynamic_species,
             species_compartment=species_comp,
+            species_substance_units=species_subs,
             initial_y=np.array(initial_vals, dtype=np.float64),
             compartment_volumes=comp_volumes,
             boundary_species=boundary,
@@ -404,13 +417,18 @@ class SbmlOdeModel:
     def rhs(self, t: float, y: np.ndarray) -> np.ndarray:
         """Right-hand-side of the ODE system: dy/dt at (t, y).
 
+        Per-species: amount-mode species use ``dN/dt = stoich @ fluxes``
+        directly; concentration-mode species divide by compartment volume.
+
         Signature matches :func:`scipy.integrate.solve_ivp` and
         :func:`opencell.solvers.ode_scipy.solve_ode_scipy`.
         """
         flux = self.fluxes(t, y)
         dydt = self.stoich @ flux
-        # Convert substance/time → concentration/time per compartment
+        # Concentration-mode species: convert substance/time → concentration/time
         for k, sid in enumerate(self.species_ids):
+            if self.species_substance_units.get(sid, False):
+                continue  # amount-mode: kinetic law already gives dN/dt
             v = self.compartment_volumes[self.species_compartment[sid]]
             if v != 1.0:
                 dydt[k] /= v
