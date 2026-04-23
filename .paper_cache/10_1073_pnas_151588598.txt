@@ -1,0 +1,14 @@
+Proc Natl Acad Sci U S A 2 pnas PNAS Proceedings of the National Academy of Sciences of the United States of America 0027-8424 1091-6490 
+
+National Academy of Sciences PMC37484 PMC37484.1 37484 37484 11438714 10.1073/pnas.151588598 151588598 5885 1 Biological Sciences Biophysics 
+
+## Intrinsic noise in gene regulatory networks Thattai Mukund van Oudenaarden Alexander * Department of Physics, Room 13-2010, Massachusetts Institute of Technology, 77 Massachusetts Avenue, Cambridge, MA 02139 
+[LABEL] *
+
+To whom reprint requests should be addressed. E-mail: avano@mit.edu . 
+Edited by Peter G. Wolynes, University of California at San Diego, La Jolla, CA, and approved May 18, 2001 
+ 17 7 2001 
+ 3 7 2001 98 15 1233 8614 8619 12 12 2000 
+ 17 01 2002 20 08 2001 27 10 2014 
+ Copyright © 2001, The National Academy of Sciences 2001 
+Cells are intrinsically noisy biochemical reactors: low reactant numbers can lead to significant statistical fluctuations in molecule numbers and reaction rates. Here we use an analytic model to investigate the emergent noise properties of genetic systems. We find for a single gene that noise is essentially determined at the translational level, and that the mean and variance of protein concentration can be independently controlled. The noise strength immediately following single gene induction is almost twice the final steady-state value. We find that fluctuations in the concentrations of a regulatory protein can propagate through a genetic cascade; translational noise control could explain the inefficient translation rates observed for genes encoding such regulatory proteins. For an autoregulatory protein, we demonstrate that negative feedback efficiently decreases system noise. The model can be used to predict the noise characteristics of networks of arbitrary connectivity. The general procedure is further illustrated for an autocatalytic protein and a bistable genetic switch. The analysis of intrinsic noise reveals biological roles of gene network structures and can lead to a deeper understanding of their evolutionary origin. pmc-status-qastatus 0 pmc-status-live yes pmc-status-embargo no pmc-status-released yes pmc-prop-open-access no pmc-prop-olf no pmc-prop-manuscript no pmc-prop-legally-suppressed no pmc-prop-has-pdf yes pmc-prop-has-supplement no pmc-prop-pdf-only no pmc-prop-suppress-copyright no pmc-prop-is-real-version no pmc-prop-is-scanned-article no pmc-prop-preprint no pmc-prop-in-epmc yes
