@@ -2,6 +2,21 @@
 
 ## Current Status (2026-04-23, ~18h elapsed wall-time, ~28 commits, **387 tests passing**)
 
+### Cross-Model Coupling (DONE — first composition)
+
+* `opencell/models/coupled.py` — `CoupledMetabolismTranscription`
+  composite ODE on concatenated state. Vilar h^-1 rescaled to s^-1
+  internally. f_met=clamp(cglcex/cglcex0, 0, 1) modulates ONLY 6
+  synthesis fluxes (curated indices, stoichiometry-asserted).
+* 6 integration tests passing (RHS-equality at f_met=1, synthesis-only
+  modulation, conservation, starved < fed). Full suite 393.
+* Demo `scripts/compare_coupled.py` + artifacts. Shows synthesis
+  collapse as cglcex depletes (2.0 -> 0.044 mM in 8h cellular time).
+* Honest scope flagged: cglcex is external glucose availability,
+  not energy state. Architecture demo, not validated biology.
+* Reproducibility scripts updated with paper-cited Vilar bounds and
+  Chassagnole methodology disclosures.
+
 ### Transcription Sub-Model — COMPLETE ✅ (2026-04-23, this checkpoint)
 Second sub-model, first count-based (gene expression):
 
