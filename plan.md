@@ -1,9 +1,207 @@
 # OpenCell: Open-Source Whole-Cell Simulation
 
-## Current Status (as of 2026-04-22)
-**Phase 1: COMPLETE** — 114 tests passing, 7 commits on `main`. All infrastructure built.
-**Next**: Phase 1→2 Gate (8 analytical validation checks), then Phase 2 (toy cell sub-models).
-**Dev environment**: WSL Ubuntu 22.04, Python 3.12.13, venv `.venv-wsl`
+## Current Status (2026-04-23, ~17h elapsed wall-time, ~25 commits, **378 tests passing**)
+
+### Metabolism Sub-Model — COMPLETE ✅ (2026-04-23, this checkpoint)
+First sub-model anchored on real biology, end-to-end working:
+
+- **Engine** (`opencell/models/sbml_model.py`): generic SBML L2/L3 → ODE
+  translator. libsbml parses; sympy.lambdify compiles every `<kineticLaw>`
+  and `<assignmentRule>` MathML formula to a NumPy callable. Identifiers
+  pre-bound via `local_dict` so SBML names like `S`, `E`, `I`, `Q` are not
+  silently shadowed by sympy singletons. Loud failure on `<event>`,
+  `<functionDefinition>`, `<rateRule>`, `hasOnlySubstanceUnits=true`.
+  Provenance: SHA-256 of SBML bytes + level/version + topology.
+- **Wrapper** (`opencell/models/metabolism.py`): `MetabolismModel.load()`
+  pins BIOMD0000000051 and records BioModels ID + DOI + PMID in
+  `provenance()` so any simulation output traces back to eutils-verified paper.
+- **Validation oracle**: libroadrunner (the de facto SBML simulator;
+  Tellurium ships it). OpenCell agreement with RR across **all 18 species**:
+  - Smooth 60s:   max rel err **2.5e-8**
+  - Smooth 300s:  max rel err **3.3e-8**
+  - **Glucose-spike perturbation (cglcex 2→4 mM at t=180s, run to 300s)**:
+    max rel err **5.2e-8** — biologically correct PEP depletion
+    (1.86→0.71 mM) and pyruvate buildup (3.55→4.59 mM) post-spike.
+  Test threshold is rtol=1e-3; actual is ~5 orders below that.
+- **Demo scripts**:
+  - `scripts/run_chassagnole.py` — single OC run + provenance JSON
+  - `scripts/compare_chassagnole.py --seconds {60,300}` — OC-vs-RR overlay
+    + residual log panel + per-species residuals JSON
+  - `scripts/spike_chassagnole.py` — two-phase spike experiment with same
+    comparison artifacts; also a candidate for a perturbation integration test
+- **Performance characterized**: OC is ~31× slower than RR (427 ms vs 14 ms
+  for 300s sim) — pure-Python flux loop in `sbml_model.fluxes` dominates
+  (52% of time). Not a bottleneck yet (0.4s for 5 min sim); planned remedies
+  if needed: vectorized single-lambdify flux evaluator → cached env →
+  JAX/diffrax backend.
+- **Tests added**: 21 (5 formula compile + 8 Chassagnole load + 4 unsupported-
+  features guards + 4 integration). PySCeS as oracle for this model is
+  blocked by a PySCeS bug on csymbol-time assignment rules; libroadrunner
+  is the cleaner choice and is now declared in the `oracle` extras.
+
+### Correctness Guardrails — COMPLETE ✅ (2026-04-23, prior checkpoint)
+Two new audit-grade guardrails layered onto the parameter pipeline so a
+non-biologist can trust the outputs without manually verifying numbers:
+
+- **Paper-pairing verifier** (`opencell/manifest/pairing.py`,
+  `tools/verify_paper_pairing.py`): calls NCBI eutils on
+  `manifest.paper.pubmed_id`, confirms the resolved DOI matches
+  `manifest.paper.doi` (auto-fills when blank, loud failure / exit-4 on
+  mismatch), writes structured `paper.verification` block back with
+  `verified_at`, title, first_author, year, journal, and SHA-256 of the
+  eutils JSON for offline-reproducible audit. Multiple PMIDs fail closed.
+  29 tests. **Verified end-to-end**: Chassagnole manifest had blank DOI
+  → verifier auto-filled `10.1002/bit.10288`, response_sha256 pinned.
+
+- **PDF↔SBML cross-check guardrail** (`opencell/curation/value_match.py`
+  + runner integration): when a recommendation comes from PDF extraction
+  AND the manifest entry has a curated `sbml_value`, mechanically compares
+  candidate.converted_value vs sbml_value with rel_tol=1% + abs_tol=1e-12.
+  **DISAGREE downgrades RECOMMEND → AMBIGUOUS** so mismatches are NEVER
+  silently auto-emitted as draft cards. Skips when candidate.method ==
+  "biomodels_sbml" (no tautological self-verification). Cross-check is
+  recorded in `CurationOutcome.cross_check` and in `card.selection_rationale`.
+  18 tests (13 value-match + 5 runner integration).
+
+### Schema Reconciliation — COMPLETE ✅
+- Emitter now writes structured `paper.pubmed_id` (not regex-over-notes)
+- Loader accepts `paper.pdf_cache` as fallback for top-level `cache_files`
+- Loader accepts empty `paper.doi` (draft state); runner refuses to extract
+  until verifier or human fills it
+- Loader reads `sbml_value`, `sbml_id`, `sbml_kind` per parameter entry
+- Loader exposes `paper.verification` block
+
+### GitHub-Mirror SBML Source — DOCUMENTED ✅
+BioModels HTTP API returns 403 from many environments (Cloudflare-class WAF).
+Recommended primary source is now the EBI's GitHub mirror:
+`git clone --depth 1 https://github.com/biomodels/<BIOMD_ID>.git`.
+Documented across `tools/biomodels_manifest.py`, `.github/skills/biomodels-manifest.md`,
+and `data/biomodels_reference/README.md`. Permanent reference copy of
+Chassagnole SBML committed at `data/biomodels_reference/BIOMD0000000051_chassagnole2002.xml`.
+
+### Bulk Extraction Pipeline — COMPLETE ✅ (earlier this session)
+Two skills/tools built on top of `param-extractor`, completing the
+deterministic ingestion stack for whole papers:
+
+- **`biomodels-manifest`** (`opencell/manifest/`, `tools/biomodels_manifest.py`):
+  ElementTree-based SBML walker with unit resolution + MIRIAM annotation
+  auto-fill (biomodels_id, pubmed_id, organism via taxonomy lookup).
+  36 tests. Validated end-to-end on real BIOMD0000000051 → 160-entry draft
+  manifest (7 global + 135 local + 18 species, 5 unit definitions).
+
+- **`biology-curator`** (`opencell/curation/`, `tools/curate_params.py`,
+  `.github/skills/biology-curator.md`): per-paper extraction orchestrator.
+  Consumes manifest YAML, runs `param-extractor` per entry, emits 5
+  artifacts: DRAFT cards (RECOMMEND only, now blocked by cross-check on
+  DISAGREE), arbitration queue (AMBIGUOUS), not-found queue, markdown
+  coverage report, JSON run provenance. 28 tests including a Thattai 2001
+  replay that proves both the success path (k_R → 0.6 min⁻¹ matching
+  APPROVED card bit-for-bit) AND the safety guarantee (3 derived params
+  route to NOT_FOUND, never invented). Hard constraints enforced by code:
+  never invents, never auto-promotes, never resolves AMBIGUOUS silently,
+  never overwrites REVIEWED/APPROVED cards even with `--force`.
+
+### Phase 1 — CLOSED ✅
+All Phase-1→Phase-2 gate tests are passing (G1.2–G1.8). 0 regressions across the campaign.
+
+| Gate | Status | What it proves |
+|---|---|---|
+| G1.2 mass action | ✅ 2 tests | JAX implementation matches analytical SS |
+| G1.3 stochastic | ✅ 3 tests | Gillespie matches deterministic mean |
+| G1.4 atom balance | ✅ 3 tests | Conservation in closed/open systems |
+| G1.5 unit trace | ✅ 8 tests | pint Quantities preserved end-to-end |
+| G1.6 reference frames | ✅ 6 tests | Cross-frame detection + round-trip conversions |
+| G1.7 PySCeS oracle | ✅ 4 tests | Independent 20-year-old solver agrees to 1e-3 rtol |
+| G1.8 thermo feasibility | ✅ 6 tests | `ThermoFeasibilityReport` infrastructure for Phase 2 |
+
+### Parameter-Verification System — OPERATIONAL ✅
+- **Schema**: `ParameterCard` v2 with 3-state lifecycle (DRAFT → REVIEWED → APPROVED), 9 deterministic validators, mandatory biological context + provenance trail
+- **Interactive review tool**: `tools/review_param.py` (4 y/n + reviewer name for review; 2 y/n + reviewer name for approve)
+- **Batch helpers**: `tools/batch_review_thattai.sh`, `tools/batch_approve_thattai.sh` for the common case
+- **CI gate**: `ci_gate_check()` fails build if APPROVED params have validation errors or DRAFT params used in gates without acknowledgement
+
+### Thattai 2001 — FULLY VERIFIED ✅ (first paper with 100% APPROVED coverage)
+- 4/4 parameter cards APPROVED by **Drona Srinivas** on 2026-04-23
+- All values traced to **Fig. 1 caption** of the actual PDF (verified with `pypdf` extraction, hashed)
+- Verbatim quote, original-value, original-unit, and transformation trail recorded on every card
+- File: `data/params/micro_model_thattai2001.yaml`
+- **Hallucination history preserved** in `docs/biology/micro_model_derivation.md` (3 rounds: Round 1 invented values, Round 2 invented a non-existent "Table 1", Round 3 used the real Fig. 1 caption)
+
+### Deterministic Parameter Extraction Skill — BUILT ✅ (2026-04-23)
+**The structural fix for the hallucination failure mode.** Replaces the AI-reads-PDF workflow with an auditable evidence-set pipeline.
+
+- **Skill spec**: `.github/skills/param-extractor.md` — hard constraints (never invent, never auto-promote, never resolve ambiguity silently, never fill biological context by inference, cache provenance mandatory)
+- **Library**: `opencell/extraction/` (7 modules)
+  - `candidate.py` — `ExtractionCandidate` / `ExtractionResult` dataclasses with section tagging + rejection-reason audit trail
+  - `text_normalize.py` — pypdf demangling (`s21`→`s^-1`, `kR 5 0.01`→`kR = 0.01`)
+  - `pdf_grep.py` — regex extraction with symbol variants, scoring, English-stop-word filter
+  - `units.py` — pint conversion with full transformation strings
+  - `biomodels.py` — best-effort BioModels SBML lookup (corroboration only, never replacement)
+  - `provenance.py` — SHA-256 file hashing
+  - `pipeline.py` — orchestrator (sources tried in parallel)
+- **CLI**: `tools/extract_param.py` — emits DRAFT cards only; exit codes 0/1/2 for RECOMMEND/AMBIGUOUS/NOT_FOUND
+- **Tests**: `tests/unit/test_extraction.py` (29 tests) covering positive (Thattai), adversarial (refs section, `kR1` boundary, English stop-words eaten as units), provenance, units
+- **Validation**: Re-extracts Thattai 2001 `kR` deterministically → `0.01 s⁻¹` → `0.6 min⁻¹`, matching the human-verified APPROVED value bit-for-bit
+
+### Published-Model Anchoring Strategy (still in force)
+
+**Lesson learned (Round 1+2 hallucinations)**: AI agents fabricated parameter values labeled as "Thattai 2001 Table 1" (a table that does not exist in the paper). The verification system above prevents the *labeling* failure; published-model anchoring prevents the *fabrication* failure by always comparing against a reference simulation.
+
+| Milestone | Published model | Status |
+|---|---|---|
+| Phase 1→2 Gate | Thattai & van Oudenaarden 2001 | ✅ **CLOSED**, all 4 params APPROVED |
+| Phase 2 Toy Cell | **Chassagnole et al. 2002** (E. coli central carbon, BIOMD0000000051) | ✅ **METABOLISM SUB-MODEL COMPLETE** — SBML→ODE engine + Chassagnole wrapper, OC-vs-libroadrunner agreement ~5e-8 across smooth + glucose-spike scenarios. Next: 2nd sub-model (transcription) + resource-ledger coupling. |
+| Phase 3 Multi-Module | **Covert et al. 2008** (integrated E. coli TF + metabolism) | TBD |
+| Phase 4+ Whole Cell | **JCVI-syn3A / Thornburg 2022 Cell** | TBD |
+| (Original Phase 5 target) | Karr 2012 M. genitalium | Optional — JCVI-syn3A is the modern equivalent |
+
+### Honest Status: Where We Are vs A Running Simulation
+
+**What we HAVE:** A bulletproofed, audit-grade parameter sourcing pipeline AND
+a first complete sub-model (metabolism) reading curated SBML directly,
+validated against libroadrunner to ~5e-8 relative across 18 species under
+both smooth (60s, 300s) and perturbation (glucose spike at t=180s)
+scenarios. 378 tests. Performance baseline established (31× slower than
+the C++ oracle but 0.4s for 5 min sim — not yet a bottleneck).
+
+**What we DO NOT have yet (blockers for a multi-module cell):**
+1. ~~Curated Chassagnole parameter set~~ — obviated by direct-SBML pivot
+2. **Other sub-model implementations** — `transcription.py`, `translation.py`,
+   `transport.py`, `degradation.py` do not exist yet. (`metabolism.py` ✅,
+   `micro_model.py` ✅, `base.py` ✅.)
+3. **Sub-model coupling** (`p3-coupling-impl`) — how transcription's protein
+   output feeds metabolism, etc. The resource ledger exists in design only.
+4. **Hybrid solver** (`solvers/hybrid.py`) — pieces (`ode.py`, `stochastic.py`,
+   `ode_scipy.py`) exist; gluing does not
+5. **Cell environment** (`p2-environment`) — initial conditions, medium
+   composition, volumes (Chassagnole has its own embedded environment)
+6. **Gene set definition** (`p2-gene-set`) — which genes are in the toy cell
+7. **Identifier crosswalk** (`p2-id-crosswalk`) — KEGG ↔ BioCyc ↔ EcoCyc.
+   **Blocked on `p1-db-access`** (need API keys / data dumps)
+8. **Multi-module integration run** — even a "Hello World" coupled trajectory
+
+### Immediate Next Steps (in recommended order)
+1. **Write a transcription sub-model** anchored on a curated BioModels entry
+   (candidate: BIOMD0000000091 / Lipniacki 2004 NF-κB or a simpler
+   constitutive transcription model). Same pattern: SBML → `SbmlOdeModel`
+   → wrapper recording paper-pairing.
+2. **Wire metabolism + transcription via the resource ledger** so the two
+   sub-models share at least one species (e.g., ATP). First multi-module
+   coupled integration.
+3. **Build `solvers/hybrid.py`** — operator splitting between the metabolism
+   ODE block and the transcription stochastic block (tau-leaping).
+4. **Phase 2 replan** — the "toy cell as ~50 designed genes" plan should
+   evolve to "toy cell = stitched curated BioModels entries via resource ledger,"
+   which is more tractable and equally publishable as a coupled-solver benchmark.
+5. Resolve `p1-db-access` blocker (KEGG/BioCyc/EcoCyc) — needed for `p2-id-crosswalk`
+
+### Resolved (no longer open)
+- ~~Thattai 2001 parameter discrepancies~~ — resolved Round 3 from actual PDF Fig. 1 caption
+- ~~Remaining Gate tests G1.4–G1.8~~ — all closed
+- ~~Hand-curated parameter extraction~~ — replaced by deterministic skill
+- ~~Manual prune of 160-entry Chassagnole manifest~~ — obviated by the cross-check guardrail (humans only see DISAGREE bucket, not all entries)
+- ~~"How do I trust the SBML/paper pairing"~~ — resolved by `tools/verify_paper_pairing.py` with eutils + response_sha256
+- ~~"How do I trust the PDF-extracted numbers"~~ — resolved by `value_match.cross_check` digit-level diff against curated SBML
 
 ## Vision
 Build the first modern, open-source, GPU-accelerated whole-cell computational model — starting with a coupled-solver benchmark ("toy cell", ~50 synthetic genes), scaling to *Mycoplasma genitalium* (~525 genes). Designed to be publishable, extensible, and accessible.
@@ -294,31 +492,6 @@ Set up project infrastructure, define the canonical runtime representation, buil
 - **1.42** Define PR "assumption delta" checklist template — every biology/model PR must state: which assumptions changed, which parameters changed, which modules/species affected, which invariants re-run, whether estimated parameter count increased
 - **1.43** Write tests for all Phase 1 components: unit, property-based (Hypothesis), SBML round-trip, schema fuzz, golden-run regression
 
-### Phase 1→2 Gate: Micro-Model Analytical Validation
-**Cannot proceed to Phase 2 until ALL of these pass.** This is the cheapest insurance against "confidently wrong" — if we can't match a hand calculation for 1 gene, we have no business simulating 50.
-
-**Gate 1: Hand-Calculable Micro-Model**
-- **G1.1** Design a 1-gene, 2-reaction analytical system: 1 gene → 1 mRNA → 1 protein, with 1 metabolic reaction consuming ATP. Derive the analytical steady-state solution by hand (on paper or in a notebook). Document in `docs/biology/micro_model_derivation.md`
-- **G1.2** Implement the micro-model using our engine/solvers. Run to steady state. Output must match the hand-derived solution to machine precision (< 1e-12 relative error for deterministic; statistical match for stochastic)
-- **G1.3** Run the micro-model through BOTH our JAX solver AND the SciPy reference solver. Results must agree within tolerance. If they don't, our solver has a bug — stop and fix before anything else
-
-**Gate 2: Atom Audit at Boundaries**
-- **G1.4** Implement `tests/gates/test_atom_balance.py` — count C, N, O, P, S atoms entering and leaving each sub-model per timestep. Net creation/destruction must be zero (within floating-point tolerance). This catches mass leaks at coupling boundaries that per-module conservation checks miss
-
-**Gate 3: Unit Trace Test**
-- **G1.5** Implement `tests/gates/test_unit_trace.py` — feed labeled pint Quantities through the entire pipeline (IR → sub-model → solver → state update → output). Verify dimensional consistency end-to-end. pint at IR boundaries is necessary but not sufficient — this test checks that units survive the entire flow
-
-**Gate 4: Reference Frame Declaration**
-- **G1.6** Every sub-model must explicitly declare its reference frame: per-cell, per-unit-volume, or per-gram-dry-weight. The coupler must perform explicit conversions at sync points. CI check: no sub-model may read state from a different reference frame without an explicit conversion call. Document in each sub-model's I/O manifest (task 1.40)
-
-**Gate 5: Known-Answer Cross-Validation**
-- **G1.7** Use PySCeS or Tellurium to simulate the micro-model (1-gene system). Our output must match their output. They've been validated for decades — if we disagree, we're wrong. Document any discrepancies and root-cause them before proceeding
-
-**Gate 6: Thermodynamic Feasibility Sanity Check**
-- **G1.8** For the micro-model's metabolic reaction, verify that the predicted flux direction is consistent with the Gibbs free energy under the simulated concentrations. This is a preview of the full thermodynamic feasibility filter needed in Phase 2 (task 2.6)
-
-> 🔑 **Why this gate exists**: Four rounds of AI critique (66 findings) missed this entirely. It was caught by asking "what does utter failure look like?" — the answer is confidently wrong foundations that propagate through everything. This gate costs ~1 day and prevents the most expensive class of bugs.
-
 ### Phase 2: Toy Cell Sub-Models (v1.0 — Weeks 3–5)
 Build a thin vertical slice for a minimal coupled-solver benchmark. Start with curated data → identifier mapping → units → environment, then implement 3 core sub-models (metabolism + transcription + translation). Division is CUT from toy cell — least tractable, unnecessary for demonstrating solver coupling. Additional sub-models (replication, degradation, transport) added only after the core 3 are coupled and working.
 
@@ -577,82 +750,6 @@ Panel decisions are versioned with invalidation triggers. A decision is re-debat
 - Schema or IR changes affect the decision scope
 - Validation tests fail in ways traced to the decision
 - Organism scope changes (e.g., scaling from toy cell to M. genitalium)
-
-### Agent Skill Profiles
-
-Skills are **specialized prompt profiles with baked-in guardrails** — not a framework, not a dependency. Each skill is a system prompt + tool config + anti-pattern list stored as a markdown/YAML file in `.github/skills/`. When an agent is invoked for a task, the appropriate skill profile is loaded as context.
-
-**Design principle**: Borrow the role-specialization pattern from CrewAI; borrow the knowledge-graph approach from BioAgents; but implement as lightweight instruction files, not a framework dependency.
-
-#### Skill: `bio-researcher`
-- **Purpose**: Literature search, parameter extraction, claim graph construction
-- **System context**: Claim graph schema, organism-specific knowledge (M. genitalium genetic code, metabolic network topology)
-- **Guardrails**:
-  - No naked biology numbers — every value must have DOI, uncertainty, conditions
-  - Temperature locked to 0 for extraction tasks
-  - Evidence snippets required (quoted excerpt with page/figure/table location)
-  - Must flag contradictions between sources
-  - Must state confidence level and basis for each claim
-- **Anti-patterns**: Fabricating plausible-sounding parameter values; citing DOIs without verifying they contain the claimed data; averaging values across species without discounting
-- **Tools**: PubMed API, BRENDA, KEGG, UniProt, DOI verification
-
-#### Skill: `numerical-modeler`
-- **Purpose**: ODE design, solver selection, stability analysis, coupling scheme design
-- **System context**: Diffrax/JAX idioms, SciPy cross-check protocol, stiffness ratio heuristics, operator splitting theory
-- **Guardrails**:
-  - Every solver choice must be compared against SciPy reference on the same problem
-  - Must report condition number / stiffness ratio for coupled systems
-  - Must document time-scale separation assumptions
-  - Must check conservation laws after every coupling step
-- **Anti-patterns**: Choosing explicit solver for stiff system; ignoring operator splitting order conditions; claiming convergence without error analysis
-- **Tools**: JAX, Diffrax, SciPy, PySCeS (for validation), sensitivity analysis utilities
-
-#### Skill: `software-architect`
-- **Purpose**: Code structure, module interfaces, CI/CD, testing strategy
-- **System context**: OpenCell project structure, IR design, module I/O manifest format, PR checklist template
-- **Guardrails**:
-  - Runs lints (ruff, mypy) before declaring done
-  - Enforces pint units at all IR boundaries
-  - Must update module I/O manifest if interface changes
-  - Must run affected gate tests after structural changes
-- **Anti-patterns**: Breaking IR contracts silently; adding dependencies without license check; writing tests that only test the happy path
-- **Tools**: ruff, mypy, pytest, Hypothesis, pre-commit hooks
-
-#### Skill: `data-engineer`
-- **Purpose**: Database access (BRENDA/KEGG/UniProt/BioCyc), parameter validation, data versioning, identifier reconciliation
-- **System context**: Data schemas, identifier crosswalk format, DVC/content-hashing protocol, experimental condition metadata requirements
-- **Guardrails**:
-  - Content-hash every data artifact
-  - Log provenance (source DB, version, access date, query)
-  - Validate against JSON schemas before committing
-  - Flag parameters missing uncertainty distributions
-- **Anti-patterns**: Using parameters without checking species match; mixing data from different DB versions; dropping experimental conditions during extraction
-- **Tools**: BRENDA SOAP/REST API, KEGG REST API, UniProt API, BioCyc API, DVC, pint
-
-#### Skill: `bio-validator`
-- **Purpose**: Cross-check biology numbers, conservation laws, order-of-magnitude sanity, thermodynamic feasibility
-- **System context**: Known biological ranges (sentinel values), conservation law definitions, thermodynamic constraint formulations
-- **Guardrails**:
-  - Reject values outside known biological ranges (with documented ranges)
-  - Flag thermodynamically impossible flux predictions
-  - Check atom balance at every coupling boundary
-  - Compare against published experimental measurements where available
-- **Anti-patterns**: Accepting AI-generated parameter values without independent verification; treating FBA feasibility as biological validity; ignoring temperature/pH dependence of kinetic parameters
-- **Tools**: PySCeS/Tellurium (reference oracles), conservation checkers, sentinel range database
-
-#### Skill: `blog-writer`
-- **Purpose**: Write project blog posts as Tehol-Bugg dialogues
-- **System context**: Character voices (Tehol = witty PM asking sharp questions; Bugg = earnest AI assistant who sweeps up messes), Malazan references, project milestones
-- **Guardrails**:
-  - Must use Tehol/Bugg dialogue format
-  - Keep it fun and accessible — this is outreach, not a paper
-  - No fabricated progress claims — only write about what's actually done
-  - Include at least one honest admission of what went wrong or what we don't know
-- **Anti-patterns**: Dry technical writing; claiming more progress than exists; losing character voice
-
-> **Implementation**: Skills are stored as `.github/skills/{skill-name}.md` files. Task 1.38 (copilot-instructions.md) is expanded to include skill loading logic. Each skill file is ~50-100 lines of structured markdown. No framework dependency.
-
-> **Skill selection**: The orchestrator (task 1.34) selects the appropriate skill based on task type. Multiple skills can be composed for complex tasks (e.g., `bio-researcher` + `data-engineer` for parameter extraction with database access).
 
 ### Cost Estimate (UNVERIFIED — will be refined with actual data)
 
