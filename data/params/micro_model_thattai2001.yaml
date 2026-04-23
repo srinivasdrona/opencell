@@ -1,0 +1,186 @@
+# Parameter Verification Cards — Micro-Model (Constitutive Gene Expression)
+#
+# Source: Thattai & van Oudenaarden (2001) PNAS 98(15), 8614–8619
+# DOI: 10.1073/pnas.151588598
+#
+# IMPORTANT HISTORICAL NOTE:
+# These values were originally fabricated by an AI agent (0.2, 0.5, 0.5, 0.005)
+# and mislabeled as "Table 1 mid-range values". The values below come from a
+# second AI web search that quoted Table 1 / Figure 2 legend verbatim, but
+# have NOT been confirmed against the actual PDF. Status = DRAFT.
+# All four cards are gate-acknowledged because gate tests verify
+# solver-vs-analytical agreement, not biological accuracy.
+
+- parameter_id: thattai2001-k1-transcription-rate
+  name: "Transcription rate (constitutive)"
+  value: 0.30
+  unit: "min^-1"
+  uncertainty_lower: 0.15
+  uncertainty_upper: 0.60
+  uncertainty_type: "range"
+  source_doi: "10.1073/pnas.151588598"
+  source_type: "measured"
+  source_table: "Table 1 / Figure 2 legend"
+  original_quote: >-
+    Table 1: k1 (transcription rate) = 0.15, 0.30, 0.60 min^-1.
+    Figure 2 legend: 'k_1 = 0.15 min^-1 and k_1 = 0.60 min^-1'.
+  original_value: 0.30
+  original_unit: "min^-1"
+  transformation: "none (used as published, middle of three reported values)"
+  organism: "Escherichia coli"
+  condition: "model parameter, not tied to specific growth condition"
+  compartment: "whole-cell"
+  gene_or_enzyme: "generic constitutive gene"
+  status: DRAFT
+  reviewed_by: ""
+  reviewed_date: ""
+  approved_by: ""
+  approved_date: ""
+  cross_references:
+    - source_doi: "10.1201/9781420011432"
+      value: 1.0
+      unit: "min^-1"
+      agrees: false
+      note: "Alon 2006 Box 1.1 typical value ~1 mRNA/min/gene (3x higher)"
+  selection_rationale: >-
+    Used Thattai's middle value (0.30). Resolves to ~13 mRNA/cell at steady
+    state, within plausible E. coli range.
+  discrepancy_notes: >-
+    Alon's 'typical' value is 3x higher. Different model contexts; not
+    necessarily a conflict.
+  used_in_gate_tests: true
+  gate_acknowledged: true
+  acknowledgement_reason: >-
+    Gate tests verify numerical solver agreement with the analytical solution
+    of the ODE system. Any internally consistent parameter set works.
+    DRAFT status must be resolved (PDF verification) before Phase 2.
+
+- parameter_id: thattai2001-gamma1-mrna-degradation-rate
+  name: "mRNA degradation rate"
+  value: 0.023
+  unit: "min^-1"
+  uncertainty_lower: 0.014
+  uncertainty_upper: 0.23
+  uncertainty_type: "order_of_magnitude"
+  source_doi: "10.1073/pnas.151588598"
+  source_type: "measured"
+  source_table: "Table 1 / Figure 2 legend"
+  original_quote: >-
+    Figure 2 legend: 'gamma_1 = 0.023 min^-1'.
+  original_value: 0.023
+  original_unit: "min^-1"
+  transformation: "none (used as published)"
+  organism: "Escherichia coli"
+  condition: "model parameter, not tied to specific growth condition"
+  compartment: "cytoplasm"
+  gene_or_enzyme: "generic mRNA"
+  status: DRAFT
+  reviewed_by: ""
+  reviewed_date: ""
+  approved_by: ""
+  approved_date: ""
+  cross_references:
+    - source_doi: "10.1201/9781420011432"
+      value: 0.30
+      unit: "min^-1"
+      agrees: false
+      note: "Alon 2006 Box 1.1 typical beta_m ~0.3/min (13x faster, 3-min half-life)"
+    - source_doi: "10.1073/pnas.012010399"
+      value: 0.14
+      unit: "min^-1"
+      agrees: false
+      note: "Bernstein 2002 PNAS: median E. coli mRNA half-life ~5 min"
+  selection_rationale: >-
+    Used Thattai's value 0.023/min as published. Acknowledged below in
+    discrepancy_notes that this is unusually low.
+  discrepancy_notes: >-
+    MAJOR DISCREPANCY: gamma_1=0.023/min implies mRNA half-life ~30 min.
+    Typical E. coli mRNA half-life is 3-5 min (gamma ~0.14-0.23/min).
+    Possible explanations: (a) Thattai models a stable transcript, (b) the
+    web search misquoted the value, (c) different conventions. MUST be
+    resolved by reading actual PDF before any Phase 2 use.
+  used_in_gate_tests: true
+  gate_acknowledged: true
+  acknowledgement_reason: >-
+    Gate tests verify numerical solver agreement, not biological accuracy.
+
+- parameter_id: thattai2001-k2-translation-rate
+  name: "Translation rate per transcript"
+  value: 5.0
+  unit: "min^-1"
+  uncertainty_lower: 2.0
+  uncertainty_upper: 20.0
+  uncertainty_type: "order_of_magnitude"
+  source_doi: "10.1073/pnas.151588598"
+  source_type: "measured"
+  source_table: "Table 1 / Figure 2 legend"
+  original_quote: >-
+    Table 1: 'k2 = 5.0 min^-1' (translation rate per transcript).
+    Figure 2 legend: 'k_2 = 5.0 min^-1'.
+  original_value: 5.0
+  original_unit: "min^-1"
+  transformation: "none (used as published)"
+  organism: "Escherichia coli"
+  condition: "model parameter, not tied to specific growth condition"
+  compartment: "cytoplasm"
+  gene_or_enzyme: "generic mRNA-protein pair"
+  status: DRAFT
+  reviewed_by: ""
+  reviewed_date: ""
+  approved_by: ""
+  approved_date: ""
+  cross_references:
+    - source_doi: "10.1201/9781420011432"
+      value: 10.0
+      unit: "min^-1"
+      agrees: true
+      note: "Alon 2006 Box 1.1 typical alpha_p ~10 proteins/mRNA/min (2x higher, same OOM)"
+  selection_rationale: >-
+    Used Thattai's value as published. Within order of magnitude of Alon.
+  discrepancy_notes: ""
+  used_in_gate_tests: true
+  gate_acknowledged: true
+  acknowledgement_reason: >-
+    Gate tests verify numerical solver agreement, not biological accuracy.
+
+- parameter_id: thattai2001-gamma2-protein-degradation-rate
+  name: "Protein degradation/dilution rate"
+  value: 0.10
+  unit: "min^-1"
+  uncertainty_lower: 0.005
+  uncertainty_upper: 0.10
+  uncertainty_type: "order_of_magnitude"
+  source_doi: "10.1073/pnas.151588598"
+  source_type: "measured"
+  source_table: "Table 1 / Figure 2 legend"
+  original_quote: >-
+    Figure 2 legend: 'gamma_2 = 0.10 min^-1'.
+  original_value: 0.10
+  original_unit: "min^-1"
+  transformation: "none (used as published)"
+  organism: "Escherichia coli"
+  condition: "model parameter, includes degradation + dilution"
+  compartment: "cytoplasm"
+  gene_or_enzyme: "generic protein"
+  status: DRAFT
+  reviewed_by: ""
+  reviewed_date: ""
+  approved_by: ""
+  approved_date: ""
+  cross_references:
+    - source_doi: "10.1201/9781420011432"
+      value: 0.023
+      unit: "min^-1"
+      agrees: false
+      note: "Alon 2006 Box 1.1: stable proteins, dilution-dominated (~0.023/min for 30-min doubling)"
+  selection_rationale: >-
+    Used Thattai's value as published.
+  discrepancy_notes: >-
+    NOTABLE: gamma_2=0.10/min implies protein half-life ~6.9 min, much
+    shorter than typical E. coli proteins (hours). Suggests Thattai models
+    an unstable/tagged protein OR includes higher effective clearance.
+    Should be resolved by reading actual PDF.
+  used_in_gate_tests: true
+  gate_acknowledged: true
+  acknowledgement_reason: >-
+    Gate tests verify numerical solver agreement, not biological accuracy.
