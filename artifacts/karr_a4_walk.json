@@ -1,0 +1,66 @@
+{
+  "sha256": "817585b38b95a06200327e516e74468f1444d0254e049e849f94362f4317342d",
+  "walk": [
+    {
+      "path": "None",
+      "shape": [
+        1
+      ],
+      "dtype": "[('s0', 'O'), ('s1', 'O'), ('s2', 'O'), ('arr', 'O')]",
+      "fields": [
+        "s0",
+        "s1",
+        "s2",
+        "arr"
+      ],
+      "children": [
+        {
+          "path": "None.s0",
+          "shape": [
+            1
+          ],
+          "dtype": "object",
+          "sample": null
+        },
+        {
+          "path": "None.s1",
+          "shape": [
+            1
+          ],
+          "dtype": "object",
+          "sample": null
+        },
+        {
+          "path": "None.s2",
+          "shape": [
+            1
+          ],
+          "dtype": "object",
+          "sample": null
+        },
+        {
+          "path": "None.arr",
+          "shape": [
+            1
+          ],
+          "dtype": "object",
+          "sample": null
+        }
+      ]
+    }
+  ],
+  "extracted": {
+    "path": "None.arr[0]",
+    "shape": [
+      6,
+      1
+    ],
+    "dtype": "uint32",
+    "values_first3": [
+      3707764736.0,
+      2.0,
+      1.0
+    ],
+    "n_elements": 6
+  }
+}

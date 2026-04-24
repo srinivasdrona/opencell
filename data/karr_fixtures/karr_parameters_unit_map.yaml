@@ -1,0 +1,156 @@
+# Karr 2012 parameter unit map (A4-followthrough v0.1)
+#
+# parameters.json carries the values; units are NOT in the JSON.
+# This file recovers units by reading the matching .m source files
+# and by cross-referencing Karr 2012 Table S3 / Cell paper.
+#
+# Each entry:
+#   <state_or_process>.<param_name>:
+#     unit: <pint-canonical>
+#     source: <.m file path or paper Table>
+#     comment: <optional>
+#
+# UNVERIFIED entries are tagged loudly and must be reviewed before
+# any kinetic use. The point of A4-followthrough is to surface the
+# ingestion path; full unit recovery is M-phase work.
+#
+# Schema version: 0.1
+schema_version: 0.1
+
+states:
+  Time:
+    cellCycleLength:
+      unit: "s"
+      source: "Time.m line 14: cellCycleLength %length of cell cycle (s)"
+      value_in_parameters_json: 32400.0
+    replicationDuration:
+      unit: "s"
+      source: "Time.m line 16: replicationDuration %Duration of the replication phase of the cell cycle (s)"
+      value_in_parameters_json: 15571.0
+    replicationInitiationDuration:
+      unit: "s"
+      source: "Time.m line 19: replicationInitiationDuration %Duration of the replication initiation phase of the cell cycle (s)"
+      value_in_parameters_json: 12960.0
+    cytokinesisDuration:
+      unit: "s"
+      source: "Time.m line 17: cytokinesisDuration %Duration of the cytokinesis phase of the cell cycle (s)"
+      value_in_parameters_json: 3869.0
+
+  Mass:
+    cellInitialDryWeight:
+      unit: "g"
+      source: "UNVERIFIED — Mass.m not yet inspected, but '3.93e-15 g' matches M.gen literature for dry mass of one cell"
+      value_in_parameters_json: 3.93e-15
+      verified: false
+    cellInitialMassVariation:
+      unit: "dimensionless"
+      source: "UNVERIFIED — fractional CV"
+      value_in_parameters_json: 0.05
+      verified: false
+    fractionWetWeight:
+      unit: "dimensionless"
+      source: "UNVERIFIED — bounded fraction by name"
+      value_in_parameters_json: 0.7
+      verified: false
+
+  MetabolicReaction:
+    meanInitialGrowthRate:
+      unit: "1/s"
+      source: |
+        MetabolicReaction.m line 38: growth %growth rate (cell/s)
+        Inferred: meanInitialGrowthRate is the initial value of growth, same unit.
+      value_in_parameters_json: 2.1393e-05
+      doubling_time_check_s: 32400.0   # ln(2)/2.1393e-5 ≈ 32400 s = matches Time.cellCycleLength ✓
+      cross_check: "ln(2)/value matches Time.cellCycleLength to 3 sig figs"
+    initialGrowthFilterWidth:
+      unit: "dimensionless"
+      source: "UNVERIFIED — fractional tolerance per MetabolicReaction.m line 32 'tolerance of initial growth rate'"
+      value_in_parameters_json: 0.25
+      verified: false
+
+processes:
+  Metabolism:
+    exchangeRateUpperBound_carbon:
+      unit: "mmol/(g*h)"
+      source: "UNVERIFIED — typical FBA flux unit; Karr 2012 Cell Methods §FBA. Likely mmol/(gDW·h)."
+      value_in_parameters_json: 12.0
+      verified: false
+    exchangeRateUpperBound_noncarbon:
+      unit: "mmol/(g*h)"
+      source: "UNVERIFIED — same as above"
+      value_in_parameters_json: 20.0
+      verified: false
+    growthAssociatedMaintenance:
+      unit: "mmol_ATP/g_DW"
+      source: "UNVERIFIED — standard FBA biomass-equation slot"
+      value_in_parameters_json: 59.81
+      verified: false
+    nonGrowthAssociatedMaintenance:
+      unit: "mmol_ATP/(g_DW*h)"
+      source: "UNVERIFIED — standard FBA NGAM"
+      value_in_parameters_json: 8.39
+      verified: false
+
+  Transcription:
+    rnaPolymeraseElongationRate:
+      unit: "nt/s"
+      source: "UNVERIFIED — RNAP elongation rate is universally nt/s"
+      value_in_parameters_json: 50.0
+      verified: false
+
+  Translation:
+    ribosomeElongationRate:
+      unit: "aa/s"
+      source: "UNVERIFIED — ribosome elongation is universally amino acids per second"
+      value_in_parameters_json: 16.0
+      verified: false
+    tmRNABindingProbability:
+      unit: "dimensionless"
+      source: "UNVERIFIED — probability per ribosome per step"
+      value_in_parameters_json: 1.0e-05
+      verified: false
+
+  Replication:
+    dnaPolymeraseElongationRate:
+      unit: "nt/s"
+      source: "UNVERIFIED — DNA pol elongation rate is universally nt/s"
+      value_in_parameters_json: 100.0
+      verified: false
+    okazakiFragmentMeanLength:
+      unit: "nt"
+      source: "UNVERIFIED — Okazaki fragment length in nucleotides"
+      value_in_parameters_json: 1500.0
+      verified: false
+
+# Provenance for the unit map itself
+provenance:
+  parameters_json_source:
+    repo: "github.com/CovertLab/WholeCell"
+    path: "data/parameters.json"
+    sha256_local: "d93c9af3bcaf"  # truncated; full sha in artifacts/karr_a4f_provenance.jsonl
+    bytes: 5238
+  m_source_files_consulted:
+    - "src/+edu/+stanford/+covert/+cell/+sim/+state/Time.m"
+    - "src/+edu/+stanford/+covert/+cell/+sim/+state/MetabolicReaction.m"
+  what_units_came_from_where:
+    fully_recovered_from_m_source:
+      - Time.cellCycleLength
+      - Time.replicationDuration
+      - Time.replicationInitiationDuration
+      - Time.cytokinesisDuration
+      - MetabolicReaction.meanInitialGrowthRate (cross-checked against Time.cellCycleLength)
+    inferred_by_universal_convention:
+      - Transcription.rnaPolymeraseElongationRate (nt/s is universal)
+      - Translation.ribosomeElongationRate (aa/s is universal)
+      - Replication.dnaPolymeraseElongationRate (nt/s is universal)
+    UNVERIFIED_pending_more_m_source:
+      - Mass.* (need Mass.m)
+      - Metabolism.* (need Metabolism.m process source)
+      - MetabolicReaction.initialGrowthFilterWidth
+      - Translation.tmRNABindingProbability
+
+  bounded_tuning_caveat: |
+    Per the A3 bounded-tuning policy, any value tagged verified:false
+    that enters a kinetic model must be flagged in the provenance store
+    with unit="UNKNOWN_*" or unit literal annotated as inferred.
+    Verified values may pass through normally.

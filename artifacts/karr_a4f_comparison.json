@@ -1,0 +1,135 @@
+[
+  {
+    "class": "MetabolicReaction",
+    "expected_state_fields": [
+      "growth",
+      "fluxs"
+    ],
+    "observed_top_struct_fields": [
+      "s0",
+      "s1",
+      "s2",
+      "arr"
+    ],
+    "match": false,
+    "structure": {
+      "None": {
+        "shape": [
+          1
+        ],
+        "dtype": "[('s0', 'O'), ('s1', 'O'), ('s2', 'O'), ('arr', 'O')]",
+        "fields": [
+          "s0",
+          "s1",
+          "s2",
+          "arr"
+        ],
+        "s0_shape": [
+          1
+        ],
+        "s0_dtype": "object",
+        "s1_shape": [
+          1
+        ],
+        "s1_dtype": "object",
+        "s2_shape": [
+          1
+        ],
+        "s2_dtype": "object",
+        "arr_shape": [
+          1
+        ],
+        "arr_dtype": "object"
+      }
+    }
+  },
+  {
+    "class": "Time",
+    "expected_state_fields": [
+      "values"
+    ],
+    "observed_top_struct_fields": [
+      "s0",
+      "s1",
+      "s2",
+      "arr"
+    ],
+    "match": false,
+    "structure": {
+      "None": {
+        "shape": [
+          1
+        ],
+        "dtype": "[('s0', 'O'), ('s1', 'O'), ('s2', 'O'), ('arr', 'O')]",
+        "fields": [
+          "s0",
+          "s1",
+          "s2",
+          "arr"
+        ],
+        "s0_shape": [
+          1
+        ],
+        "s0_dtype": "object",
+        "s1_shape": [
+          1
+        ],
+        "s1_dtype": "object",
+        "s2_shape": [
+          1
+        ],
+        "s2_dtype": "object",
+        "arr_shape": [
+          1
+        ],
+        "arr_dtype": "object"
+      }
+    }
+  },
+  {
+    "class": "Host",
+    "expected_state_fields": [
+      "isBacteriumAdherent",
+      "isTLRActivated",
+      "isNFkBActivated",
+      "isInflammatoryResponseActivated"
+    ],
+    "observed_top_struct_fields": [
+      "s0",
+      "s1",
+      "s2",
+      "arr"
+    ],
+    "match": false,
+    "structure": {
+      "None": {
+        "shape": [
+          1
+        ],
+        "dtype": "[('s0', 'O'), ('s1', 'O'), ('s2', 'O'), ('arr', 'O')]",
+        "fields": [
+          "s0",
+          "s1",
+          "s2",
+          "arr"
+        ],
+        "s0_shape": [
+          1
+        ],
+        "s0_dtype": "object",
+        "s1_shape": [
+          1
+        ],
+        "s1_dtype": "object",
+        "s2_shape": [
+          1
+        ],
+        "s2_dtype": "object",
+        "arr_shape": [
+          1
+        ],
+        "arr_dtype": "object"
+      }
+    }
+  }
+]
