@@ -502,3 +502,39 @@ unblock.
    M0-A persistent-LSODA pattern).
 5. If not met → diagnose discrepancy per "operational failure branch"
    in plan.md (negative result becomes the publication).
+
+
+## Session N+7 (2026-04-25 00:00) — Karr MAT extraction unblocked locally; Mode D published; still 0/4 honest
+
+**User trigger:** `wake up! I installed MATLAB locally in E:/, I hope this will fastrack our data extraction`.
+
+**What changed:**
+
+1. **Local MATLAB R2026a available at `E:\MATLAB\bin\matlab.exe`** (trial license, no CPLEX). Replaces the MATLAB-Online plan in N+6. Run via `& 'E:\MATLAB\bin\matlab.exe' -batch ...`.
+
+2. **Single typo blocked load:** `import import edu.stanford...` on line 134 of `data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/FtsZPolymerization.m`. Older MATLAB tolerated; R2026a rejects. Fixed in place; WholeCell/ is gitignored so the fix is local-only (todo: upstream PR to CovertLab/WholeCell).
+
+3. **Generic walker hung:** `extract_karr_mats.m` from N+6 hit handle-graph cycles (every Process back-references its Simulation; states reference each other). Cycle-detection key was wrong → combinatorial explosion → hang.
+
+4. **Targeted extractor shipped:** `scripts/matlab/extract_karr_targeted.m` (~280 lines) — pulls only named properties (sim.parameters, fittedConstants, options, all 28 processes' getParameters/getFittedConstants, deep dump of Metabolism's 24 named FBA properties + full 174-property manifest, 16 states), bounded depth 4-6. Runs in ~3 min. Outputs `data/m1_sources/karr_flat/sim_fitted_targeted.mat` (362 KB) + `knowledgeBase_targeted.mat` (12 MB), both gitignored, both `scipy.io.loadmat`-readable.
+
+5. **Mode D added to `scripts/m1_validate.py` (schema_v3):** loads `metabolism.fbaReactionStoichiometryMatrix` (376×504), `fbaReactionBounds` (504×2), `fbaObjective` (504-vec) directly from the targeted MAT and maximises biomass via HiGHS.
+
+   - Result: **μ = 0.0109 /h vs Karr published 0.077 /h** — off by ~7×.
+   - Net independent agreement: **still 0/4**. The NGAM/GAM/cellCycleLength values reported by Mode D match Karr's published values **by definition** — they are read from the MAT, not predicted. Honest interpretation now states this in the artifact and report.
+   - Critical insight: the gap is NOT 'iPS189 vs Karr's curated network' — both stoichiometry and bounds are now Karr's own. Likely missing inputs: (a) the 35 small (-5.31e-9) penalty terms in `fbaObjective` dropped during diagnosis, (b) `fbaEnzymeBounds` (kinetic flux ceilings, extracted but not applied), (c) the dynamic nature of Karr's metabolism process (substrate/enzyme amounts update each sim-second from the other 27 processes; static snapshot may not be at biomass-max steady state).
+
+6. **User pushback caught a misleading framing:** I initially described NGAM/GAM/cellCycleLength matching `bit-for-bit`. That is tautological since we read those numbers out of the MAT. Artifact, report and interpretation rewritten to call out what is read vs predicted explicitly.
+
+7. **Tests:** 453/453 still pass under .venv-wsl (11m13s).
+
+**Commits this session:**
+- `6dace00` — phase5: targeted Karr MAT extractor (R2026a) + M1 Mode D — Karr's own fitted FBA, 0/1 independent agreement.
+
+**Todos updated:**
+- `m1-karr-flat-ingest` → done.
+- New: `m1-mode-d-close-gap` (pending). Acceptance: μ within 25% of 0.077/h, OR documented reason why static-snapshot FBA cannot reach published μ.
+- New: `m1-extract-per-process-fixtures` (pending, deferred until M2 begins).
+
+**Where to resume:** investigate Mode D 7× gap. Order of attempts: (i) restore the small-penalty objective terms, (ii) apply `fbaEnzymeBounds` as additional flux ceilings, (iii) check whether the static snapshot is even *meant* to FBA-equilibrate to μ — read the relevant chunk of Karr's `Metabolism.m` `evolveState` method. If none reach 25%, that is itself a valid finding and the M1 acceptance criterion needs revising.
+

@@ -278,10 +278,31 @@ still closes. Validation oracles below are the *additional* checks.
     for simulation).  Authored `scripts/matlab/extract_karr_mats.m`
     + `scripts/matlab/README.md` runbook.  Smoke-tested end-to-end:
     MATLAB → flat MAT v7 → `scipy.io.loadmat` → field access works.
-    User to run it tomorrow on MATLAB Online.  After ingest:
-    re-run `m1_validate.py` against Karr's *fitted* values (biomass
-    composition, kinetics, stoichiometry).  Acceptance: ≥3 of 4 Karr
-    targets agree within 10%.
+  - **2026-04-25 00:00 breakthrough**: user installed MATLAB R2026a
+    locally on `E:\MATLAB\` (trial license, no CPLEX).  Generic
+    extractor hung on Simulation_fitted.mat (handle-graph cycles).
+    Pivoted to `scripts/matlab/extract_karr_targeted.m` — pulls only
+    named properties (28 processes' fitted constants, Metabolism's
+    24 named FBA properties + 174-property manifest, 16 states),
+    bounded depth.  Runs in ~3min; outputs `sim_fitted_targeted.mat`
+    (362 KB) + `knowledgeBase_targeted.mat` (12 MB), both
+    scipy-readable.  Local-only typo fix needed: `import import` →
+    `import` on line 134 of `FtsZPolymerization.m` (R2026a stricter).
+  - **Mode D added to `m1_validate.py`** (schema_v3): solves Karr's
+    own fitted FBA matrices (`fbaReactionStoichiometryMatrix` 376×504,
+    `fbaReactionBounds` 504×2, `fbaObjective` 504-vec) directly via
+    HiGHS.  Result: μ = 0.0109 /h vs Karr published 0.077 /h —
+    **off by ~7×**.  Net independent agreement still **0/4**: the
+    NGAM/GAM/cellCycleLength "matches" reported by Mode D are
+    tautological (read from MAT, not predicted).  Critical insight:
+    the gap is NOT 'iPS189 vs Karr's curated network' (both are now
+    Karr's own).  Likely missing: (a) the 35 small (-5.31e-9)
+    penalty terms in `fbaObjective` dropped during diagnosis, (b)
+    `fbaEnzymeBounds` (kinetic flux ceilings from enzyme×kcat —
+    extracted but not yet applied), (c) the dynamic nature of Karr's
+    metabolism process (substrate/enzyme amounts update each second
+    from the other 27 processes; static snapshot may not be at
+    biomass-max steady state).  Tracked as todo `m1-mode-d-close-gap`.
 - M2: Nucleotide biosynthesis (~15 enzymes). Validation: NTP pool sizes vs
   Karr's reported steady-state.
 - M3: Transcription of metabolic enzymes (RNAP + σ-factor + the genes
