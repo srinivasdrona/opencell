@@ -1,6 +1,6 @@
 {
-  "schema_version": 2,
-  "generated_at_utc": "2026-04-24T13:34:23.283663+00:00",
+  "schema_version": 3,
+  "generated_at_utc": "2026-04-24T19:08:54.643919+00:00",
   "sources": {
     "iPS189_xml": {
       "path": "data/m1_sources/iPS189.xml",
@@ -16,6 +16,11 @@
       "path": "data/m1_sources/WholeCellKB/public/fixtures/data.xlsx",
       "sha256_16": "31dafc5b637b975d",
       "citation": "github.com/CovertLab/WholeCellKB public/fixtures/data.xlsx"
+    },
+    "karr_fitted_mat": {
+      "path": "data/m1_sources/karr_flat/sim_fitted_targeted.mat",
+      "sha256_16": "4f3c17a74a0956b5",
+      "citation": "Extracted from Karr WholeCell Simulation_fitted.mat via local MATLAB R2026a (scripts/matlab/extract_karr_targeted.m).  Contains the curated FBA stoichiometry, bounds, and biomass objective Karr's metabolism process used at runtime."
     }
   },
   "karr_inputs": {
@@ -75,6 +80,19 @@
       "R_PFK": 0.0,
       "R_PYK": -26.276272244200413,
       "R_PDH": 553.2991498619649
+    },
+    "D": {
+      "label": "D: Karr fitted MAT (from MATLAB extraction)",
+      "feasible": true,
+      "biomass_flux_per_h": 0.010894671455778358,
+      "doubling_time_h": 63.62258681901887,
+      "n_reactions": 504,
+      "n_metabolites": 376,
+      "n_active_reactions": 339,
+      "biomass_idx": 502,
+      "ngam_from_mat": 8.39,
+      "gam_from_mat": 59.81,
+      "cellCycleLength_s_from_mat": 32400.0
     }
   },
   "primary_comparisons": [
@@ -107,5 +125,5 @@
       "rel_error": 0.0
     }
   ],
-  "interpretation": "Mode A is the literal Karr-2012 setup applied to the public Suthers-2009 SBML.  Mode B opens irreversibility constraints on non-Karr-overridden reactions; Mode C drops Karr bounds entirely.\n\nMode A predicts mu = 0 (no growth).  Modes B and C predict mu > 0, which proves the LP machinery is correct and the gap is not in our solver.  The gap is that Karr and colleagues curated additional reactions and reversibility flips (notably for transporters and the tRNA-charging cycle) directly into MATLAB-class knowledgebase objects that ARE NOT in the public Suthers iPS189 SBML.  Those modifications are saved in Simulation_fitted.mat / knowledgeBase.mat.\n\nOpen-source status of those .mat files: the WholeCell repository is MIT-licensed and we have its full 187-file MATLAB source, but the .mat files were serialized as instances of custom MATLAB classes (mcos blobs).  Reconstituting them in Python via scipy.io.loadmat / pymatreader returns only an opaque (s0, s1, s2, arr) structure.  Loading them in GNU Octave hangs because the WholeCell class hierarchy transitively imports CPLEX 12.2 (commercial), GLPK-MEX (binary), Java libs (json-marshaller, batik), and MySQL JDBC.  In practice deserializing these files requires the full MATLAB toolchain + commercial CPLEX license -- which is a real, documented gap in how Karr et al. published their data.\n\nResolution paths (in increasing fidelity to Karr): (1) Augment iPS189 with sourced fixes (transporter reversibility, missing exchanges) one reaction at a time, each documented from BiGG / KEGG / the Suthers paper text.  (2) Use the iJR904 or iJO1366 E. coli models as an FBA oracle for the central-carbon validation, comparing fluxes on shared reactions.  (3) Run Karr's MATLAB code on a machine with a CPLEX license (the only way to obtain Karr's exact predicted state)."
+  "interpretation": "Mode A is the literal Karr-2012 setup applied to the public Suthers-2009 SBML.  Mode B opens irreversibility constraints on non-Karr-overridden reactions; Mode C drops Karr bounds entirely.  Mode D solves Karr's own fitted FBA matrices (extracted from Simulation_fitted.mat via local MATLAB R2026a using the targeted extractor in scripts/matlab/extract_karr_targeted.m).\n\nMode A predicts mu = 0 (no growth).  Modes B and C predict mu > 0, which proves the LP machinery is correct and the gap is not in our solver.  Mode D, on Karr's own stoichiometry + bounds + biomass objective, predicts mu = 0.0109 /h vs Karr published 0.077 /h \u2014 a ~7x miss.  The remaining gap therefore is NOT 'iPS189 vs Karr's curated network'; both are now Karr's.  The remaining gap is likely (a) the small penalty terms in fbaObjective (35 entries of -5.31e-9) we dropped during initial diagnosis, (b) fbaEnzymeBounds \u2014 kinetic flux ceilings from enzyme amounts and kcats \u2014 extracted but not yet applied as additional bounds, and/or (c) the dynamic nature of Karr's metabolism process: substrate and enzyme amounts update every simulated second from the other 27 processes, so a static snapshot may not be at biomass-max steady state.\n\nHonesty note: ngam_from_mat = 8.39, gam_from_mat = 59.81, cellCycleLength_s_from_mat = 32400 in Mode D's output match Karr's published values BY DEFINITION (those numbers ARE Karr's; they live in the MAT we read).  They confirm the extractor is correct, not that the model reproduces biology.  Likewise in Mode A, R_ATPM flux equalling NGAM is a tautology (NGAM is the lower bound on R_ATPM, and with biomass = 0 the LP rests on that bound).  The only independently predicted quantities in this report are the biomass fluxes (Mode A: 0; Mode D: 0.0109; both differ from the 0.077 target).  Net independent agreement: 0/4."
 }

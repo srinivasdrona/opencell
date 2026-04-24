@@ -42,6 +42,7 @@ REPO = Path(__file__).resolve().parents[1]
 SBML_PATH = REPO / "data" / "m1_sources" / "iPS189.xml"
 KARR_PARAMS_PATH = REPO / "data" / "m1_sources" / "WholeCell" / "data" / "parameters.json"
 WCKB_XLSX_PATH = REPO / "data" / "m1_sources" / "WholeCellKB" / "public" / "fixtures" / "data.xlsx"
+KARR_FLAT_PATH = REPO / "data" / "m1_sources" / "karr_flat" / "sim_fitted_targeted.mat"
 ART_DIR = REPO / "artifacts"
 DOC_PATH = REPO / "docs" / "phase5" / "M1_validation_report.md"
 
@@ -222,6 +223,63 @@ def pfba(model: dict, objective: str, sense: str = "max",
     return v, obj_val
 
 
+def run_karr_fitted_fba() -> dict:
+    """Mode D: Karr's own fitted FBA system, extracted from
+    Simulation_fitted.mat via MATLAB R2026a (see
+    scripts/matlab/extract_karr_targeted.m).
+
+    Loads Karr's `metabolism.fbaReactionStoichiometryMatrix` (376×504),
+    `fbaReactionBounds` (504×2) and `fbaObjective` (504,) directly from
+    the targeted MAT, replaces ±inf with ±1e6 for HiGHS, and maximises
+    biomass.  No tuning, no synthesis: every input is a property of the
+    Karr Simulation_fitted object.
+    """
+    if not KARR_FLAT_PATH.exists():
+        return {
+            "label": "D: Karr fitted MAT (from MATLAB extraction)",
+            "feasible": False,
+            "error": f"missing {KARR_FLAT_PATH.relative_to(REPO)} — "
+                     "run scripts/matlab/extract_karr_targeted.m first",
+        }
+    from scipy.io import loadmat
+    blob = loadmat(KARR_FLAT_PATH, struct_as_record=False, squeeze_me=True)
+    met = blob["data"].metabolism
+    S = met.fbaReactionStoichiometryMatrix.astype(float)
+    B = met.fbaReactionBounds.astype(float)
+    obj = met.fbaObjective.astype(float)
+    nR = S.shape[1]
+    bio_i = int(np.argmax(obj))  # the +1000 entry
+    BIG = 1e6
+    lb = np.where(B[:, 0] == -np.inf, -BIG, B[:, 0])
+    ub = np.where(B[:, 1] ==  np.inf,  BIG, B[:, 1])
+    bounds = list(zip(lb.tolist(), ub.tolist()))
+    c = np.zeros(nR); c[bio_i] = -1.0
+    from scipy.optimize import linprog
+    res = linprog(c=c, A_eq=S, b_eq=np.zeros(S.shape[0]),
+                  bounds=bounds, method="highs",
+                  options={"presolve": True})
+    if not res.success:
+        return {
+            "label": "D: Karr fitted MAT (from MATLAB extraction)",
+            "feasible": False,
+            "error": res.message,
+        }
+    mu = float(-res.fun)
+    return {
+        "label": "D: Karr fitted MAT (from MATLAB extraction)",
+        "feasible": True,
+        "biomass_flux_per_h": mu,
+        "doubling_time_h": float(np.log(2) / mu) if mu > 1e-12 else None,
+        "n_reactions": nR,
+        "n_metabolites": int(S.shape[0]),
+        "n_active_reactions": int((np.abs(res.x) > 1e-9).sum()),
+        "biomass_idx": bio_i,
+        "ngam_from_mat": float(met.nonGrowthAssociatedMaintenance),
+        "gam_from_mat": float(met.growthAssociatedMaintenance),
+        "cellCycleLength_s_from_mat": float(met.cellCycleLength),
+    }
+
+
 # ----------------------------- main ------------------------------------------
 
 def main() -> None:
@@ -304,6 +362,13 @@ def main() -> None:
     mode_B = run_mode("B: iPS189 fully reversible + Karr bounds + NGAM", model_B)
     mode_C = run_mode("C: iPS189 fully open, no NGAM (feasibility check)", model_C)
 
+    # MODE D — "Karr's fitted FBA system" — extracted from
+    # Simulation_fitted.mat via local MATLAB (R2026a) using the targeted
+    # extractor in scripts/matlab/extract_karr_targeted.m.  This is the
+    # apples-to-apples test: Karr's *own* curated stoichiometry, bounds,
+    # and biomass objective, solved by our LP code.
+    mode_D = run_karr_fitted_fba()
+
     karr_doubling_h = float(np.log(2) / growth_per_h) if growth_per_h > 0 else None
 
     # Build the comparison rows from MODE A (the literal Karr setup).
@@ -351,7 +416,7 @@ def main() -> None:
     ]
 
     artifact = {
-        "schema_version": 2,
+        "schema_version": 3,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "sources": {
             "iPS189_xml": {
@@ -372,6 +437,21 @@ def main() -> None:
                 "citation": "github.com/CovertLab/WholeCellKB "
                             "public/fixtures/data.xlsx",
             },
+            "karr_fitted_mat": (
+                {
+                    "path": str(KARR_FLAT_PATH.relative_to(REPO)),
+                    "sha256_16": sha256_short(KARR_FLAT_PATH),
+                    "citation": "Extracted from Karr WholeCell "
+                                "Simulation_fitted.mat via local MATLAB "
+                                "R2026a (scripts/matlab/extract_karr_targeted.m).  "
+                                "Contains the curated FBA stoichiometry, "
+                                "bounds, and biomass objective Karr's "
+                                "metabolism process used at runtime.",
+                } if KARR_FLAT_PATH.exists() else
+                {"path": str(KARR_FLAT_PATH.relative_to(REPO)),
+                 "sha256_16": None, "citation": "NOT PRESENT — "
+                 "run scripts/matlab/extract_karr_targeted.m"}
+            ),
         },
         "karr_inputs": {
             **karr,
@@ -386,44 +466,43 @@ def main() -> None:
             "method": "pFBA via scipy.optimize.linprog (highs); steady "
                       "state imposed only on non-boundary species",
         },
-        "modes": {"A": mode_A, "B": mode_B, "C": mode_C},
+        "modes": {"A": mode_A, "B": mode_B, "C": mode_C, "D": mode_D},
         "primary_comparisons": comparisons,
         "interpretation": (
             "Mode A is the literal Karr-2012 setup applied to the "
             "public Suthers-2009 SBML.  Mode B opens irreversibility "
             "constraints on non-Karr-overridden reactions; Mode C "
-            "drops Karr bounds entirely.\n\n"
+            "drops Karr bounds entirely.  Mode D solves Karr's own "
+            "fitted FBA matrices (extracted from Simulation_fitted.mat "
+            "via local MATLAB R2026a using the targeted extractor in "
+            "scripts/matlab/extract_karr_targeted.m).\n\n"
             "Mode A predicts mu = 0 (no growth).  Modes B and C "
             "predict mu > 0, which proves the LP machinery is correct "
-            "and the gap is not in our solver.  The gap is that Karr "
-            "and colleagues curated additional reactions and "
-            "reversibility flips (notably for transporters and the "
-            "tRNA-charging cycle) directly into MATLAB-class "
-            "knowledgebase objects that ARE NOT in the public Suthers "
-            "iPS189 SBML.  Those modifications are saved in "
-            "Simulation_fitted.mat / knowledgeBase.mat.\n\n"
-            "Open-source status of those .mat files: the WholeCell "
-            "repository is MIT-licensed and we have its full 187-file "
-            "MATLAB source, but the .mat files were serialized as "
-            "instances of custom MATLAB classes (mcos blobs).  "
-            "Reconstituting them in Python via scipy.io.loadmat / "
-            "pymatreader returns only an opaque (s0, s1, s2, arr) "
-            "structure.  Loading them in GNU Octave hangs because the "
-            "WholeCell class hierarchy transitively imports CPLEX 12.2 "
-            "(commercial), GLPK-MEX (binary), Java libs (json-"
-            "marshaller, batik), and MySQL JDBC.  In practice "
-            "deserializing these files requires the full MATLAB "
-            "toolchain + commercial CPLEX license -- which is a real, "
-            "documented gap in how Karr et al. published their data.\n\n"
-            "Resolution paths (in increasing fidelity to Karr): "
-            "(1) Augment iPS189 with sourced fixes (transporter "
-            "reversibility, missing exchanges) one reaction at a time, "
-            "each documented from BiGG / KEGG / the Suthers paper "
-            "text.  (2) Use the iJR904 or iJO1366 E. coli models as "
-            "an FBA oracle for the central-carbon validation, "
-            "comparing fluxes on shared reactions.  (3) Run Karr's "
-            "MATLAB code on a machine with a CPLEX license (the only "
-            "way to obtain Karr's exact predicted state)."
+            "and the gap is not in our solver.  Mode D, on Karr's own "
+            "stoichiometry + bounds + biomass objective, predicts "
+            "mu = 0.0109 /h vs Karr published 0.077 /h — a ~7x miss.  "
+            "The remaining gap therefore is NOT 'iPS189 vs Karr's "
+            "curated network'; both are now Karr's.  The remaining "
+            "gap is likely (a) the small penalty terms in fbaObjective "
+            "(35 entries of -5.31e-9) we dropped during initial "
+            "diagnosis, (b) fbaEnzymeBounds — kinetic flux ceilings "
+            "from enzyme amounts and kcats — extracted but not yet "
+            "applied as additional bounds, and/or (c) the dynamic "
+            "nature of Karr's metabolism process: substrate and "
+            "enzyme amounts update every simulated second from the "
+            "other 27 processes, so a static snapshot may not be at "
+            "biomass-max steady state.\n\n"
+            "Honesty note: ngam_from_mat = 8.39, gam_from_mat = 59.81, "
+            "cellCycleLength_s_from_mat = 32400 in Mode D's output "
+            "match Karr's published values BY DEFINITION (those numbers "
+            "ARE Karr's; they live in the MAT we read).  They confirm "
+            "the extractor is correct, not that the model reproduces "
+            "biology.  Likewise in Mode A, R_ATPM flux equalling NGAM "
+            "is a tautology (NGAM is the lower bound on R_ATPM, and "
+            "with biomass = 0 the LP rests on that bound).  The only "
+            "independently predicted quantities in this report are the "
+            "biomass fluxes (Mode A: 0; Mode D: 0.0109; both differ "
+            "from the 0.077 target).  Net independent agreement: 0/4."
         ),
     }
 
@@ -458,25 +537,61 @@ def main() -> None:
         f"|±20.0|; `R_ZN2t4` opened for zinc influx (iPS189 SBML "
         f"encodes it as export-only).\n"
     )
-    lines.append("## Three-mode comparison\n")
+    lines.append("## Four-mode comparison\n")
     lines.append(
         "| Mode | Biomass flux (h⁻¹) | Glucose uptake | ATPM | Lactate excretion |"
     )
     lines.append("|---|---:|---:|---:|---:|")
-    for label, mode in [("A", mode_A), ("B", mode_B), ("C", mode_C)]:
+    for label, mode in [("A", mode_A), ("B", mode_B), ("C", mode_C), ("D", mode_D)]:
         if not mode["feasible"]:
             lines.append(f"| **{label}** {mode['label']} | INFEASIBLE | — | — | — |")
             continue
         mu_ = mode["biomass_flux_per_h"]
-        glc = mode["R_EX_glc_D_e_"]
-        atpm = mode["R_ATPM"]
-        lac = mode["R_EX_lac_L_e_"]
+        glc = mode.get("R_EX_glc_D_e_")
+        atpm = mode.get("R_ATPM")
+        lac = mode.get("R_EX_lac_L_e_")
+        glc_s  = "—" if glc  is None else f"{glc:.4g}"
+        atpm_s = "—" if atpm is None else f"{atpm:.4g}"
+        lac_s  = "—" if lac  is None else f"{lac:.4g}"
         lines.append(
             f"| **{label}** {mode['label']} | {mu_:.4g} | "
-            f"{glc:.4g} | {atpm:.4g} | "
-            f"{lac if lac is None else f'{lac:.4g}'} |"
+            f"{glc_s} | {atpm_s} | {lac_s} |"
         )
     lines.append("")
+    if mode_D.get("feasible"):
+        lines.append(
+            f"**Mode D detail**: solved on Karr's own fitted FBA matrix "
+            f"({mode_D['n_metabolites']} metabolites × "
+            f"{mode_D['n_reactions']} reactions), biomass at column "
+            f"{mode_D['biomass_idx']}, "
+            f"{mode_D['n_active_reactions']} reactions active at the "
+            f"optimum.  μ = {mode_D['biomass_flux_per_h']:.4g} /h "
+            f"vs Karr published {growth_per_h:.4g} /h "
+            f"(rel-error "
+            f"{(mode_D['biomass_flux_per_h']-growth_per_h)/growth_per_h:+.1%}).  "
+            f"This is **not a match** — Karr's own stoichiometry and "
+            f"bounds, solved by our LP, predict growth ~7× lower than "
+            f"the published value.\n\n"
+            f"**Caveat — what Mode D does NOT validate.**  The "
+            f"`ngam_from_mat={mode_D['ngam_from_mat']:.2f}`, "
+            f"`gam_from_mat={mode_D['gam_from_mat']:.2f}`, and "
+            f"`cellCycleLength_s_from_mat={mode_D['cellCycleLength_s_from_mat']:.0f}` "
+            f"fields above are *read* directly from the MAT.  They equal "
+            f"Karr's published values by definition (Karr published "
+            f"those numbers because that is what is in the MAT).  They "
+            f"confirm the extractor is correct, **not** that the model "
+            f"reproduces biology.  The only independently-predicted "
+            f"quantity in Mode D is μ, and it is currently 14% of "
+            f"Karr's target.  Likely missing inputs: (a) the small "
+            f"penalty terms in `fbaObjective` "
+            f"(35 entries of −5.31e-9) we dropped during diagnosis, "
+            f"(b) `fbaEnzymeBounds` — kinetic flux ceilings derived "
+            f"from enzyme amounts × kcats, (c) the fact that Karr's "
+            f"metabolism process is dynamic (substrate / enzyme "
+            f"amounts update every second from the other 27 processes) "
+            f"and a single static snapshot may not be at biomass-max "
+            f"steady state.\n"
+        )
     lines.append("## Primary comparison (Mode A — literal Karr setup)\n")
     lines.append(
         "| Metric | Karr target | OpenCell predicted | Rel error | Karr source |"
