@@ -1,0 +1,56 @@
+{
+  "configs": [
+    {
+      "t_end_s": 600.0,
+      "macro_dt_s": 10.0,
+      "n_macro_steps": 60,
+      "hybrid_wall_s": 0.17179567000130191,
+      "restart_wall_s": 3.1769425960083026,
+      "persistent_wall_s": 0.17645077800261788,
+      "restart_overhead_x": 18.492565010423295,
+      "persistent_overhead_x": 1.0270967714220078,
+      "speedup_persist_vs_restart": 18.0046958815969
+    },
+    {
+      "t_end_s": 600.0,
+      "macro_dt_s": 60.0,
+      "n_macro_steps": 10,
+      "hybrid_wall_s": 0.15126613798202015,
+      "restart_wall_s": 0.9106338319834322,
+      "persistent_wall_s": 0.17443587398156524,
+      "restart_overhead_x": 6.020077223705362,
+      "persistent_overhead_x": 1.1531719941332745,
+      "speedup_persist_vs_restart": 5.2204504222547135
+    },
+    {
+      "t_end_s": 3600.0,
+      "macro_dt_s": 60.0,
+      "n_macro_steps": 60,
+      "hybrid_wall_s": 0.16590346102020703,
+      "restart_wall_s": 4.728110371012008,
+      "persistent_wall_s": 0.262340708024567,
+      "restart_overhead_x": 28.499166575169426,
+      "persistent_overhead_x": 1.5812853234726303,
+      "speedup_persist_vs_restart": 18.022785737733248
+    },
+    {
+      "t_end_s": 3600.0,
+      "macro_dt_s": 120.0,
+      "n_macro_steps": 30,
+      "hybrid_wall_s": 0.17660207400331274,
+      "restart_wall_s": 2.81419837201247,
+      "persistent_wall_s": 0.4914835630042944,
+      "restart_overhead_x": 15.935250975363294,
+      "persistent_overhead_x": 2.782999949338506,
+      "speedup_persist_vs_restart": 5.725925715216402
+    }
+  ],
+  "karr_extrapolation": {
+    "ref_config": "1h horizon, 60s macro_dt",
+    "karr_single_realisation_8h_persistent_h": 0.0005829793511657044,
+    "karr_single_realisation_8h_restart_h": 0.01050691193558224,
+    "karr_ensemble_100_runs_persistent_h": 0.05829793511657044,
+    "karr_ensemble_100_runs_restart_h": 1.050691193558224,
+    "comment": "Linear extrapolation; assumes spin-up cost is amortised. M0.5 found per-Process spin-up dominates; persistent path eliminates it."
+  }
+}
