@@ -1,0 +1,96 @@
+{
+  "horizon_s": 600.0,
+  "macro_dt_s": 60.0,
+  "k_ports": 4,
+  "rows": [
+    {
+      "rig": "noop",
+      "n": 1,
+      "wall_s": 0.013,
+      "per_process_s": 0.0126,
+      "per_macro_step_per_process_ms": 1.261
+    },
+    {
+      "rig": "noop",
+      "n": 2,
+      "wall_s": 0.02,
+      "per_process_s": 0.0098,
+      "per_macro_step_per_process_ms": 0.976
+    },
+    {
+      "rig": "noop",
+      "n": 4,
+      "wall_s": 0.03,
+      "per_process_s": 0.0075,
+      "per_macro_step_per_process_ms": 0.748
+    },
+    {
+      "rig": "noop",
+      "n": 8,
+      "wall_s": 0.054,
+      "per_process_s": 0.0067,
+      "per_macro_step_per_process_ms": 0.672
+    },
+    {
+      "rig": "noop",
+      "n": 16,
+      "wall_s": 0.092,
+      "per_process_s": 0.0058,
+      "per_macro_step_per_process_ms": 0.575
+    },
+    {
+      "rig": "noop",
+      "n": 32,
+      "wall_s": 0.179,
+      "per_process_s": 0.0056,
+      "per_macro_step_per_process_ms": 0.561
+    },
+    {
+      "rig": "metab",
+      "n": 1,
+      "wall_s": 15.634,
+      "per_process_s": 15.6345,
+      "per_macro_step_per_process_ms": 1563.448
+    },
+    {
+      "rig": "metab",
+      "n": 2,
+      "wall_s": 30.691,
+      "per_process_s": 15.3457,
+      "per_macro_step_per_process_ms": 1534.57
+    },
+    {
+      "rig": "metab",
+      "n": 4,
+      "wall_s": 61.9,
+      "per_process_s": 15.475,
+      "per_macro_step_per_process_ms": 1547.503
+    },
+    {
+      "rig": "metab",
+      "n": 8,
+      "wall_s": 125.648,
+      "per_process_s": 15.706,
+      "per_macro_step_per_process_ms": 1570.603
+    },
+    {
+      "rig": "metab",
+      "n": 16,
+      "wall_s": 240.808,
+      "per_process_s": 15.0505,
+      "per_macro_step_per_process_ms": 1505.048
+    }
+  ],
+  "summary": {
+    "noop": {
+      "scaling_exponent_b": 0.753,
+      "intercept_a_s": 0.0118,
+      "fit": "wall_s \u2248 a * N^b"
+    },
+    "metab": {
+      "scaling_exponent_b": 0.992,
+      "intercept_a_s": 15.6045,
+      "fit": "wall_s \u2248 a * N^b"
+    }
+  }
+}
