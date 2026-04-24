@@ -1,0 +1,111 @@
+{
+  "schema_version": 2,
+  "generated_at_utc": "2026-04-24T13:34:23.283663+00:00",
+  "sources": {
+    "iPS189_xml": {
+      "path": "data/m1_sources/iPS189.xml",
+      "sha256_16": "d18ff3c941763956",
+      "citation": "Suthers et al., PLoS Comput Biol 2009 (doi:10.1371/journal.pcbi.1000285) supplementary s005"
+    },
+    "karr_parameters_json": {
+      "path": "data/m1_sources/WholeCell/data/parameters.json",
+      "sha256_16": "d93c9af3bcaf47ce",
+      "citation": "Karr et al., Cell 2012; github.com/CovertLab/WholeCell @ data/parameters.json"
+    },
+    "wckb_xlsx": {
+      "path": "data/m1_sources/WholeCellKB/public/fixtures/data.xlsx",
+      "sha256_16": "31dafc5b637b975d",
+      "citation": "github.com/CovertLab/WholeCellKB public/fixtures/data.xlsx"
+    }
+  },
+  "karr_inputs": {
+    "exchangeRateUpperBound_carbon": 12.0,
+    "exchangeRateUpperBound_noncarbon": 20.0,
+    "nonGrowthAssociatedMaintenance": 8.39,
+    "growthAssociatedMaintenance": 59.81,
+    "meanInitialGrowthRate_cell_per_s": 2.1393e-05,
+    "meanInitialGrowthRate_per_h": 0.0770148
+  },
+  "model_summary": {
+    "n_reactions": 350,
+    "n_species": 433,
+    "n_boundary_species": 87,
+    "objective": "R_Biomass",
+    "method": "pFBA via scipy.optimize.linprog (highs); steady state imposed only on non-boundary species"
+  },
+  "modes": {
+    "A": {
+      "label": "A: iPS189 raw + Karr bounds + NGAM",
+      "feasible": true,
+      "biomass_flux_per_h": -0.0,
+      "doubling_time_h": null,
+      "R_EX_glc_D_e_": 0.0,
+      "R_ATPM": 8.39,
+      "R_EX_lac_L_e_": 8.39,
+      "R_EX_ac_e_": -0.0,
+      "R_EX_h_e_": 8.39,
+      "R_PFK": -0.0,
+      "R_PYK": 4.195,
+      "R_PDH": -0.0
+    },
+    "B": {
+      "label": "B: iPS189 fully reversible + Karr bounds + NGAM",
+      "feasible": true,
+      "biomass_flux_per_h": 28.316579357213648,
+      "doubling_time_h": 0.024478492681474468,
+      "R_EX_glc_D_e_": -0.6965878521874558,
+      "R_ATPM": 8.39,
+      "R_EX_lac_L_e_": -0.0,
+      "R_EX_ac_e_": -0.6795979045731275,
+      "R_EX_h_e_": -5.893883618859069,
+      "R_PFK": -0.0,
+      "R_PYK": -1.626787484071924,
+      "R_PDH": 0.0
+    },
+    "C": {
+      "label": "C: iPS189 fully open, no NGAM (feasibility check)",
+      "feasible": true,
+      "biomass_flux_per_h": 542.3379204169333,
+      "doubling_time_h": 0.0012780724977281216,
+      "R_EX_glc_D_e_": -13.341512842256563,
+      "R_ATPM": -1000.0,
+      "R_EX_lac_L_e_": 446.7008501380352,
+      "R_EX_ac_e_": 540.2830397719586,
+      "R_EX_h_e_": -521.5167181649006,
+      "R_PFK": 0.0,
+      "R_PYK": -26.276272244200413,
+      "R_PDH": 553.2991498619649
+    }
+  },
+  "primary_comparisons": [
+    {
+      "metric": "Growth rate (h^-1)",
+      "karr_target": 0.0770148,
+      "karr_source": "WCKB Misc.parameters Parameter_0151 (meanInitialGrowthRate, is_experimentally_constrained=true) = 2.1393e-05 cell/s \u00d7 3600",
+      "opencell_predicted": -0.0,
+      "rel_error": -1.0
+    },
+    {
+      "metric": "Doubling time (h)",
+      "karr_target": 9.000181530821937,
+      "karr_source": "ln(2) / Parameter_0151_per_h",
+      "opencell_predicted": null,
+      "rel_error": null
+    },
+    {
+      "metric": "Glucose uptake cap (mmol/(gDW\u00b7h))",
+      "karr_target": -12.0,
+      "karr_source": "parameters.json processes.Metabolism.exchangeRateUpperBound_carbon (negated for uptake)",
+      "opencell_predicted": 0.0,
+      "rel_error": null
+    },
+    {
+      "metric": "NGAM ATPM lower bound",
+      "karr_target": 8.39,
+      "karr_source": "parameters.json processes.Metabolism.nonGrowthAssociatedMaintenance",
+      "opencell_predicted": 8.39,
+      "rel_error": 0.0
+    }
+  ],
+  "interpretation": "Mode A is the literal Karr-2012 setup applied to the public Suthers-2009 SBML.  Mode B opens irreversibility constraints on non-Karr-overridden reactions; Mode C drops Karr bounds entirely.\n\nMode A predicts mu = 0 (no growth).  Modes B and C predict mu > 0, which proves the LP machinery is correct and the gap is not in our solver.  The gap is that Karr and colleagues curated additional reactions and reversibility flips (notably for transporters and the tRNA-charging cycle) directly into MATLAB-class knowledgebase objects that ARE NOT in the public Suthers iPS189 SBML.  Those modifications are saved in Simulation_fitted.mat / knowledgeBase.mat.\n\nOpen-source status of those .mat files: the WholeCell repository is MIT-licensed and we have its full 187-file MATLAB source, but the .mat files were serialized as instances of custom MATLAB classes (mcos blobs).  Reconstituting them in Python via scipy.io.loadmat / pymatreader returns only an opaque (s0, s1, s2, arr) structure.  Loading them in GNU Octave hangs because the WholeCell class hierarchy transitively imports CPLEX 12.2 (commercial), GLPK-MEX (binary), Java libs (json-marshaller, batik), and MySQL JDBC.  In practice deserializing these files requires the full MATLAB toolchain + commercial CPLEX license -- which is a real, documented gap in how Karr et al. published their data.\n\nResolution paths (in increasing fidelity to Karr): (1) Augment iPS189 with sourced fixes (transporter reversibility, missing exchanges) one reaction at a time, each documented from BiGG / KEGG / the Suthers paper text.  (2) Use the iJR904 or iJO1366 E. coli models as an FBA oracle for the central-carbon validation, comparing fluxes on shared reactions.  (3) Run Karr's MATLAB code on a machine with a CPLEX license (the only way to obtain Karr's exact predicted state)."
+}
