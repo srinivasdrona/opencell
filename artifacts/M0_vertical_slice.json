@@ -1,0 +1,68 @@
+{
+  "rows": [
+    {
+      "horizon_s": 600.0,
+      "macro_dt_s": 60.0,
+      "n_macro_steps": 10,
+      "wall_s": {
+        "hybrid_run": 0.144,
+        "vivarium": 1.155
+      },
+      "overhead_x": 8.0,
+      "diff_passed": true,
+      "level1_fails": 0,
+      "invariants_a_passed": true,
+      "invariants_b_passed": true,
+      "level3_failures": [],
+      "level4_failures": []
+    },
+    {
+      "horizon_s": 600.0,
+      "macro_dt_s": 300.0,
+      "n_macro_steps": 2,
+      "wall_s": {
+        "hybrid_run": 0.141,
+        "vivarium": 0.333
+      },
+      "overhead_x": 2.4,
+      "diff_passed": true,
+      "level1_fails": 0,
+      "invariants_a_passed": true,
+      "invariants_b_passed": true,
+      "level3_failures": [],
+      "level4_failures": []
+    },
+    {
+      "horizon_s": 3600.0,
+      "macro_dt_s": 60.0,
+      "n_macro_steps": 60,
+      "wall_s": {
+        "hybrid_run": 0.176,
+        "vivarium": 4.522
+      },
+      "overhead_x": 25.7,
+      "diff_passed": true,
+      "level1_fails": 0,
+      "invariants_a_passed": true,
+      "invariants_b_passed": true,
+      "level3_failures": [],
+      "level4_failures": []
+    },
+    {
+      "horizon_s": 3600.0,
+      "macro_dt_s": 300.0,
+      "n_macro_steps": 12,
+      "wall_s": {
+        "hybrid_run": 0.163,
+        "vivarium": 1.358
+      },
+      "overhead_x": 8.3,
+      "diff_passed": true,
+      "level1_fails": 0,
+      "invariants_a_passed": true,
+      "invariants_b_passed": true,
+      "level3_failures": [],
+      "level4_failures": []
+    }
+  ]
+}

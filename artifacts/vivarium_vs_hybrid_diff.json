@@ -1,0 +1,55 @@
+{
+  "metabolism_should_match_exactly": {
+    "cglcex_final": {
+      "vivarium": 0.07422797714461563,
+      "hybrid_run": 0.04394124067675941,
+      "abs_diff": 0.030286736467856214,
+      "rel_diff": 0.6892553783506371
+    },
+    "f_met_final": {
+      "vivarium": 0.03482040706679023,
+      "hybrid_run": 0.03212828776550712,
+      "abs_diff": 0.0026921193012831093,
+      "rel_diff": 0.0837928034301711
+    },
+    "max_abs_cglcex_diff_over_traj": 0.1577449081489809
+  },
+  "gene_expected_close_not_identical": {
+    "MA": {
+      "vivarium": 0.16666666666666666,
+      "hybrid_run": 0.25,
+      "abs_diff": 0.08333333333333334,
+      "rel_diff": 0.33333333333333337
+    },
+    "MR": {
+      "vivarium": 0.0,
+      "hybrid_run": 0.0,
+      "abs_diff": 0.0,
+      "rel_diff": 0.0
+    },
+    "A": {
+      "vivarium": 0.16666666666666666,
+      "hybrid_run": 0.75,
+      "abs_diff": 0.5833333333333334,
+      "rel_diff": 0.7777777777777778
+    },
+    "R": {
+      "vivarium": 0.0,
+      "hybrid_run": 0.0,
+      "abs_diff": 0.0,
+      "rel_diff": 0.0
+    },
+    "C": {
+      "vivarium": 0.0,
+      "hybrid_run": 0.0,
+      "abs_diff": 0.0,
+      "rel_diff": 0.0
+    }
+  },
+  "notes": [
+    "Metabolism trajectory must agree to LSODA tolerance (one-way coupling).",
+    "Gene quantities will differ slightly: vivarium has 1-step f_met lag.",
+    "If gene final-mean rel_diff is > ~0.5 for low counts, investigate.",
+    "Wall-time 'vivarium_overhead_ratio' tracked under A8 perf budget."
+  ]
+}
