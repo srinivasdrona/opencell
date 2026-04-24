@@ -1,5 +1,336 @@
 # OpenCell: Open-Source Whole-Cell Simulation
 
+## Strategic Direction (2026-04-24, four rounds of adversarial critique converged)
+
+**The hard problem (single most important framing, GPT-5.4 critique):**
+The hard part of this project is **coupled simulation semantics** — defining
+what it means for two hybrid whole-cell simulations to be "the same enough."
+Subsystem porting is downstream of this. Every other plan element exists to
+serve the semantics question.
+
+**Target:** Validated open M. genitalium whole-cell model in Python on
+`vivarium-core`, reproducing ≥10 of Karr 2012's 28 published phenotypes
+within his error bars *under our bounded-tuning policy* (see Principles).
+A *modern, accessible, reproducible* Python implementation of a model that
+has been locked in MATLAB for over a decade.
+
+**Secondary goal (the methodology contribution, captured-as-byproduct):**
+LLM-assisted scientific software construction as a documented workflow.
+**Not a parallel program** — emerges from M-phase work, written up after
+M4 minimum. Treating L as co-equal to M is self-sabotage for solo effort.
+
+**Chassis decision: build on `vivarium-core` (Apache 2.0, PyPI, ~90 active
+ecosystem repos, wcEcoli's successor moves there).** Our solvers become
+Vivarium Processes. We do *not* build a competing framework. Standalone
+solver modules are kept usable independently with optional Vivarium adapters
+to avoid lock-in.
+
+**Explicitly de-scoped (claims that did not survive critique):**
+- "Differentiable JAX/Diffrax engine" — at WCM scale this is open research,
+  not engineering. We removed JAX from the codebase last week (numpy faster
+  at our scale).
+- "GPU-vectorised drug screens" — workload-dependent, doesn't survive our
+  profiling. CPU ensembles are competitive for hybrid det/stoch.
+- "Autonomous agent that reconciles parameter contradictions" — multi-year
+  research problem. Replaced with human-in-the-loop provenance tooling.
+- "Drug discovery" — overpromise. *In silico target prioritisation* is the
+  honest framing. We are not a pharma pipeline.
+- "First/full eukaryote WCM" — no published precedent exists; no candidate
+  organism has the required curated parameters. Aspirational only.
+
+**Time horizons:** explicitly not tracked. The project takes the time it
+takes. Milestones are gated on quality, not calendar. Visible artefacts
+every few iterations are the rhythm; cadence is whatever sustains
+momentum without forcing premature closure.
+
+**Operational failure branch:** if v0.9 cannot reach ≥10/28 phenotypes
+under the bounded-tuning policy, the deliverable becomes the discrepancy
+analysis itself: where Karr's model is reproducible, where it isn't, what
+that implies about the original. This is a publishable negative result,
+not a failure of the project.
+
+**Key risks (in priority order):**
+1. **Integration debt.** Subsystems built in isolation will not survive
+   coupling. Mitigation: each M-phase subsystem must close a feedback loop
+   with prior subsystems; "done" means the loop closes, not that the
+   subsystem runs alone.
+2. **No diff tool = debugging nightmare.** When Python output diverges
+   from Karr's MATLAB, we need an automated species-by-species,
+   timestep-by-timestep comparator. Mitigation: A5 builds this *before*
+   any subsystem port begins.
+3. **Karr "dark matter".** Original MATLAB has hand-tuned fudge factors
+   not in the published papers. A clean port may fail to reproduce
+   phenotypes for this reason alone. Mitigation: see Project Principle
+   on Karr discrepancies (below). Do not tune to match.
+4. Attrition (>70% failure rate for ambitious solo projects). Mitigation:
+   ship visible artefact every 2-3 months. First-run demo is the pattern.
+5. Scope creep. Mitigation: write *out-of-scope* list per subsystem.
+6. Validation gap (no wet-lab partner). Mitigation: validate against Karr's
+   *published* predictions; mark unvalidated outputs explicitly.
+7. Karr code interpretation. Mitigation: contact wholecellteam@stanford
+   when ambiguous; the original authors are reachable.
+8. Parameter explosion. Mitigation: provenance store from day one; never
+   trust LLM-generated parameters without source-doc cross-check.
+9. **LLM as crutch / verification tax.** If we spend more time auditing
+   LLM output than creating, the LLM provides no leverage. Mitigation:
+   L1/L2 explicitly track verification time and hallucination rate as
+   metrics. If verification ratio exceeds 4:1 we revisit the workflow.
+
+**Project principles (non-negotiable):**
+- **Bounded-tuning policy.** Biological parameters may only be tuned
+  within independently-verified biological ranges (BRENDA/SABIO ranges,
+  primary literature, ranges from independent measurements in related
+  organisms). The range itself must be sourced and recorded in the
+  provenance store *before* any tuning occurs. No range = no tuning.
+  Solver tolerances and numerical step sizes are tunable freely. We
+  publish the discrepancy where ranges cannot accommodate Karr's values.
+- **Coupled-semantics first.** A6 (semantics contract) and M0 (vertical
+  slice) precede subsystem buildout. Component accumulation without
+  proven coupling is anti-pattern.
+- **Loop-closure is the definition of subsystem completion.** A subsystem
+  that runs alone but breaks when coupled is not done.
+- **Append-only provenance from day one.** Minimum normalization (units,
+  IDs, source type, scope, lineage) required at insert; higher-level
+  schema may evolve. "Schema deferred" wholesale is how junk heaps form.
+- **LLM failure modes are first-class outputs.** Any L-track writeup
+  must document where LLMs failed, not just where they succeeded.
+- **Chassagnole + Vilar are coupling torture rigs**, not frozen reference
+  fixtures. Use them to break A5/A6/A7/M0 *before* M. genitalium does.
+
+### Phase Narrative (continuous arc, pre- and post-pivot)
+
+The project arc was always: validate manual sub-models against published
+oracles → integrate them → harden the engine for a real cell → port
+M. genitalium → publish. The 2026-04-24 pivot **does not change the arc**;
+it sharpens what Phases 4-6 actually require, having learned from Phases
+1-3 what coupled simulation actually demands.
+
+| Phase | Theme | Status |
+|---|---|---|
+| 1 | Foundation: solvers, units, oracles, gates, parameter-verification | ✅ Closed |
+| 2 | Toy sub-models against published papers (Chassagnole 2002, Vilar 2002, Thattai-Oudenaarden) | ✅ Closed |
+| 3 | Integration: coupled cell + hybrid det/stoch solver + first-run demo | ✅ Closed |
+| **4** | **Engine hardening on vivarium-core (a1–a8 + m0 + m0.5): semantics contract, multi-level diff, invariants, performance budget, closed-loop vertical slice, multi-Process scaling profiler** | ✅ Closed (2026-04-24) |
+| **5** | **M. genitalium subsystems extending the closed loop (M0-A backlog + M1–M7)** | 🟢 Ready to begin |
+| **6** | **Validation, methodology writeup, stretch goals (E. coli, knockout screens)** | ⏸ Gated on Phase 5 |
+
+Old Phase 4-6 todos (`p4-*`, `p5-*`, `p6-*`) from the pre-pivot plan are
+**superseded** by the Phase 4-6 work below — marked `blocked` in the DB
+with reason "superseded by 2026-04-24 pivot". Kept for traceability.
+
+Todo IDs use short codes (`a1`, `m0`, etc.) for convenience. Mapping:
+**Phase 4 = a1–a8 + m0 + m0.5 (all done)**, **Phase 5 = m0a backlog + m1–m7**, **Phase 6 = l1–l4 + e1–e2 + z1–z2**.
+
+### Project structure impact of vivarium-core
+
+**The existing `opencell/` package layout stays. Vivarium-core is additive,
+not a rewrite.**
+
+What we have works as-is:
+- `opencell/solvers/` (LSODA, tau-leap, hybrid) — keep, expose as
+  Vivarium Processes via thin adapters.
+- `opencell/models/` (sbml_model, chassagnole, transcription, coupled) —
+  keep as standalone biology; wrap in Processes for composition.
+- `opencell/extraction/`, `opencell/curation/`, `opencell/manifest/` —
+  feed the A3 provenance store; structure unchanged.
+- `tests/` (unit, integration, gates, scientific, validation,
+  differential, property) — all keep applying. Add a `tests/vivarium/`
+  for Process-level tests.
+- `scripts/` — paper reproducibility scripts unchanged. New
+  `scripts/vivarium_demo.py` will replicate the first-run demo through
+  Vivarium during A1.
+
+What gets added:
+- `opencell/vivarium/` — Process adapters wrapping our solvers and
+  models. Each adapter is ~50 lines (port specs + `next_update` shim).
+- `opencell/diff/` — multi-level diff tool (A5).
+- `opencell/invariants/` — Karr-independent physics checks (A7).
+- `opencell/provenance/` — append-only parameter store (A3).
+- `data/semantics/` — A6 semantics contract documents.
+
+What we explicitly **do not** restructure:
+- The `models` ↔ `solvers` ↔ `extraction` separation is sound; vivarium
+  Processes sit *on top*, they don't replace internal layering.
+- No mass file moves. No package renames. No import-path changes.
+- Standalone use (without Vivarium) remains a first-class entry point —
+  protects against vendor lock-in.
+
+The optionality is concrete: if Vivarium-core's API churns badly or the
+project moves to process-bigraph (v2.0), we swap `opencell/vivarium/`
+adapters; everything else is untouched.
+
+### Phase 4 — Engine hardening on vivarium-core (active)
+
+**Phase 4 progress (2026-04-24)**
+
+| Todo | Status | Deliverables |
+|---|---|---|
+| **A1 Vivarium-core spike** | ✅ done | `opencell/vivarium/{processes,composite}.py`, `scripts/vivarium_demo.py`, `tests/vivarium/test_vivarium_smoke.py` (8/8), artefacts `vivarium_demo.{png,json}` + `vivarium_vs_hybrid_diff.json`, findings note `docs/phase4/A1_vivarium_spike_findings.md`. **Headline:** Vivarium hosts our biology cleanly; 73× wall-time overhead is dominated by per-macro-step LSODA restart, classified as M0 design question, not Vivarium tax. |
+| **A2 License clearance** | ✅ done | `LICENSES.md`. Critical-path stack (vivarium-core Apache 2.0, libroadrunner Apache 2.0, numpy/scipy/pint/pypdf BSD-3) all CLEAR. COBRApy explicitly avoided for kinetic core (GPL-2.0). Karr WholeCell + WholeCellKB confirmed MIT, ready for A4 ingestion. |
+| **A3 Provenance store v0.1** | ✅ done | `opencell/provenance/store.py` + `__init__.py`. Append-only JSONL, content-addressed event_ids, supersedes chain, bounded-tuning policy enforced at the API level (record_tuned validates range). 9/9 tests including idempotency, no-deletion-API, history-preservation. |
+| **A6 Semantics contract v0.1** | ✅ done | `data/semantics/A6_semantics_contract.md`. Codifies state ontology (5 variable kinds), updater rules, time-unit conventions, the **f_met-lag rule** (Vivarium 1-step lag vs hybrid_run 0-step lag), the **LSODA-restart rule** (~0.1 mM drift per 8h), RNG discipline, 4-level diff equivalence classes with default tolerances. |
+| **A8 Performance budget v0.1** | ✅ done | `docs/phase4/A8_performance_budget.md`. Reference-workload baseline measured (`hybrid_run` 0.45 s/realisation; Vivarium 33 s/realisation = 73×). Per-phase budgets through M7. M0-A/B/C decision menu for the LSODA-restart cost. |
+| **A4 Karr .mat extraction spike** | ✅ done | `scripts/karr_mat_spike.py`, `data/karr_fixtures/MetabolicReaction.mat` (sha256 `817585b3…`), `artifacts/karr_a4_walk.json`, `artifacts/karr_a4_provenance.jsonl`, findings `docs/phase4/A4_karr_extraction_spike.md`. **Headline:** mechanics pass, semantics fail. The `.mat` alone yields opaque uint32 leaves (first leaf = `3707764736`, almost certainly a MATLAB handle, not biology). M-phase ingestion path must read `.m` source first, `.mat` second. |
+| **A5 Simulation Diff Tool (4-level)** | ✅ done | `opencell/diff/multi_level.py` + `__init__.py`. Levels 1-4 per A6 §5: structural (paths/lengths/kinds), invariants (per-engine via A7), trajectory L_inf abs+rel, phenotype scalar. Reports findings at every level — never short-circuits. 18/18 tests including integration test that asserts the tool *correctly surfaces* the A6 §2.3 f_met-lag disagreement. |
+| **A7 Invariant verification module** | ✅ done | `opencell/invariants/core.py` + `__init__.py`. Four checks (non-negativity, bounded fractions, mass conservation, count integrality) + `InvariantSuite` composer. 9/9 tests. Default `abs_tol=1e-9` tolerates floating noise without masking real violations. Consumed by A5 Level 2. |
+| **M0 Closed-loop vertical slice** | ✅ done | `scripts/m0_vertical_slice.py`, `artifacts/M0_vertical_slice.json`, findings `docs/phase4/M0_vertical_slice_findings.md`. **Headlines:** (1) 4/4 (horizon × macro_dt) configurations pass diff Level 1-4 with A7 invariants intact on both engines. (2) **M0-C adopted**: larger macro_dt cuts overhead 25.7×→8.3× at 1h horizon — Vivarium tax is per-macro-step LSODA spin-up, controllable. (3) f_met 1-step lag formalised as known Vivarium parallel-scheduler property under M0 tolerance. **Phase 5 entry conditions all met.** |
+| **M0.5 Multi-Process scaling profiler** | ✅ done | `scripts/m05_multiproc_scaling.py`, `artifacts/M05_multiproc_scaling.json`, findings `docs/phase4/M05_multiproc_scaling.md`. **Crystal-clear headline:** Vivarium scheduler is fine (noop b=0.75 sub-linear). **LSODA spin-up is the wall** (metab b=0.99 linear, 15.6 s/Process regardless of N). Karr-scale single-realisation ≈ 3.3 h per 8h sim — viable on M0-C. Karr-scale ensembles (≥100 realisations) ≈ 14 days — **not viable without M0-A persistent-LSODA, now tracked as Phase 5 backlog item m0a-persist-lsoda.** |
+
+**Phase 4 closed.** Test count: 410 → 437 (+27). All Phase 5 entry conditions documented and met.
+- A1: Vivarium-core spike — install, wrap existing hybrid solver as a
+  Process, reproduce the first-run demo through Vivarium.
+- A2: License clearance for *critical-path only* — vivarium-core
+  (Apache 2.0 ✓), libroadrunner, BiGG iPS189. wcEcoli/syn3A licenses
+  deferred to E1/Z prereqs (not on critical path now).
+- A3: Provenance store v0.1 — append-only event log; minimum normalization
+  on insert (units, IDs, source type/DOI, scope, transformation lineage);
+  higher-level schema deferred but not absent. SBML/SED-ML identifier
+  alignment where applicable. The "Git-for-Parameters" foundation.
+- A4: Karr `.mat` extraction spike — open one file, extract one
+  parameter table into A3 with full provenance. Outcome includes a
+  *meaning recovery* assessment, not just successful array extraction
+  ("we got the numbers but don't know what units/conditions" = fail).
+- A5: **Multi-level Simulation Diff Tool** — naive trajectory diffing
+  fails on hybrid stochastic systems. Build four diff levels:
+    1. **State-mapping diff** — species names/units/topology equivalence
+    2. **Invariant diff** — conservation, non-negativity, accounting
+    3. **Event-log diff** — discrete events (division, replication init)
+    4. **Observable/phenotype diff** — Karr's 28 measurables
+  Hard prereq for M-phase. Built and stress-tested on Chassagnole+Vilar.
+- A6: **Simulation-semantics contract** (NEW, GPT-5.4 surfaced) —
+  explicit document defining state ontology, units, scheduler/update
+  ordering, RNG control, division/partitioning rules, IC generation,
+  phenotype evaluation windows. Without this A5 diffs noise. Drafted
+  before A5 implementation.
+- A7: **Invariant verification module** (NEW) — Karr-independent physics
+  checks: mass balance, charge/redox balance where applicable,
+  non-negativity, volume/concentration consistency, transcription/
+  translation bookkeeping. Runs on every coupled simulation; CI-gated.
+- A8: **Performance budget** (NEW) — wall-clock and memory targets per
+  M-phase. Profiling gates per phase. Karr MATLAB takes ~10h per cell
+  cycle; we should target ≤ that and aim better. CI-scale short
+  integration benchmarks track regression.
+
+### Phase 5 — M. genitalium subsystems extending the closed loop (gated on Phase 4)
+
+**Phase 5 entry status (2026-04-25):** A4-followthrough closed.
+**M-phase ingestion path is de-risked**: Karr's `data/parameters.json`
+→ `data/karr_fixtures/karr_parameters_unit_map.yaml` (unit recovery
+from `.m` source comments) → `ProvenanceStore.record_measured`. Proven
+end-to-end with 18 real parameters in `artifacts/karr_a4f_provenance.jsonl`,
+including a mutual-consistency cross-check
+(`ln(2)/MetabolicReaction.meanInitialGrowthRate = 32400.7s` vs
+`Time.cellCycleLength = 32400.0s`, 0.00% rel err). `.mat` test fixtures
+are MATLAB object dumps (state snapshots, not parameter tables) and are
+not the ingestion source. `data/knowledgeBase.mat` deferred until an
+M-phase subsystem demands a parameter not in `parameters.json`. See
+`docs/phase4/A4F_karr_m_source_followthrough.md`.
+
+**M0: Closed-loop vertical slice (NEW, hard gate before M1).**
+Smallest possible bidirectionally coupled loop on vivarium-core:
+tiny metabolic module (≤5 reactions) ↔ transcription of a couple of its
+enzymes ↔ translation ↔ resource consumption feedback both ways.
+Invariant checks enabled. Observable diff against an analytic or
+hand-computed reference. Not a subsystem — a proof that the engine
+carries the biology under coupling. **No M1+ work begins until M0 holds
+under stress on Chassagnole+Vilar substrate.**
+
+After M0, subsystems extend the closed loop — they are not parallel
+tracks. Each "completes" only when invariants hold and the prior loop
+still closes. Validation oracles below are the *additional* checks.
+
+**Backlog (gated on need, not on M1):**
+- ~~**M0-A Persistent LSODA Process mixin** (`m0a-persist-lsoda`)~~ ✅
+  **done (2026-04-25)**. `opencell/vivarium/persist.py::PersistentMetabolismProcess`.
+  Holds `scipy.integrate.ode(rhs).set_integrator('lsoda')` across
+  `next_update` calls; advances at absolute `t` incrementally; resyncs
+  only on detected external store writes. **Headline:** Vivarium
+  overhead at 1h × 60s drops 28.5× → 1.58× (18× speedup). At 600s × 10s
+  the persistent path is at parity with the `hybrid_run` baseline (1.03×).
+  4 tests: gold-standard match to single-shot full-horizon LSODA
+  (max rel diff < 1e-4 across 18 species, zero resyncs), resync
+  correctness, persistence-vs-restart correctness, speedup sanity guard.
+  A6 LSODA-restart rule revised: applies only at resync boundaries.
+  See `docs/phase4/M0A_persistent_lsoda.md`. Ensembles and sweeps are
+  no longer gated.
+
+**Subsystems (extend the closed loop one at a time):**
+- M1: Central carbon + energy charge (~20-30 enzymes from iPS189 + Karr
+  kinetics). Validation: ATP/ADP ratio matches measured M. genitalium values.
+  **🟡 FBA core green + Karr comparison published 2026-04-25** —
+  `opencell/m1/central_carbon.py` runs pFBA on a 42-rxn central-carbon
+  subnet (12/12 tests pass, no-synthesis guard intact).  `scripts/m1_validate.py`
+  runs pFBA on the FULL 350-reaction iPS189 with Karr's parameters.json
+  bounds + WCKB Misc.parameters growth-rate target (0.077 h⁻¹) and writes
+  `artifacts/M1_validation.json` + `docs/phase5/M1_validation_report.md`
+  with a 3-mode comparison.  Honest finding: under Karr's literal bounds
+  raw iPS189 cannot grow (Mode A μ = 0); with irreversibility relaxed it
+  grows freely (Mode B μ ≈ 542).  Of 4 Karr published targets, **0
+  independent quantities agree** (NGAM "match" is tautological — set as
+  hard `lb`).  The gap is the curated transporter/reversibility fixes
+  Karr's group encoded in their MAT files (serialized MATLAB class
+  instances; require MATLAB stack + CPLEX 12.2 to *run* but only MATLAB
+  itself to *extract*).
+  - **2026-04-24 evening pivot**: dropped the iPS189-self-augmentation
+    path and the iJW145-substitution path (M.pneumoniae, not M.gen) per
+    user "no synthesis" rule.  New approach: extract Karr's fitted MAT
+    files via free MATLAB Online (no CPLEX needed for extraction, only
+    for simulation).  Authored `scripts/matlab/extract_karr_mats.m`
+    + `scripts/matlab/README.md` runbook.  Smoke-tested end-to-end:
+    MATLAB → flat MAT v7 → `scipy.io.loadmat` → field access works.
+    User to run it tomorrow on MATLAB Online.  After ingest:
+    re-run `m1_validate.py` against Karr's *fitted* values (biomass
+    composition, kinetics, stoichiometry).  Acceptance: ≥3 of 4 Karr
+    targets agree within 10%.
+- M2: Nucleotide biosynthesis (~15 enzymes). Validation: NTP pool sizes vs
+  Karr's reported steady-state.
+- M3: Transcription of metabolic enzymes (RNAP + σ-factor + the genes
+  from M1+M2). Validation: mRNA abundance distribution.
+- M4: Translation (ribosome + tRNA synthetases + elongation, abstracted).
+  Closes most important loop: enzymes are *produced*, not parameter-fixed.
+  Validation: protein copies + emergent growth rate.
+- M5: DNA replication + cell cycle (DnaA, polymerase, division trigger).
+  Validation: doubling time ≈ 12h for M. genitalium.
+- M6: Regulation (TFs, attenuation). Validation: induction/repression
+  responses match Karr's predictions.
+- M7: Karr-equivalent v1.0 — union spans Karr's 28 quantitative
+  phenotypes. Validation: replicate ≥10 of them within Karr's error bars.
+
+### Phase 6 — Validation, methodology writeup, stretch goals (gated on Phase 5)
+
+**6a. LLM-for-science methodology (captured-as-byproduct of Phase 5,
+NOT a parallel program)**
+- L1: Real-time methods notes during M-phase — prompting patterns, failure
+  modes, verification time, hallucination rate. Lightweight log, not
+  separate research.
+- L2: LLM-assisted parameter curation captured incrementally as A3/M-phase
+  parameters land. Same provenance store; metric tags on entries.
+- L3: Adversarial critique workflow already documented in
+  copilot-instructions.md; refine as we use it.
+- L4: Methods paper — drafted *after* M4 minimum. No standalone L work
+  before M4. Must document failures explicitly.
+
+**6b. E. coli stretch (after M7)**
+- E1: wcEcoli ingestion — parameter survey, license, ingestion adapter.
+- E2: E. coli sub-systems on the same chassis.
+
+**6c. Aspirational / deferred**
+- Z1: Eukaryote spike (Yeast central carbon + cell cycle, demonstration).
+- Z2: In silico knockout/synthetic-lethality screen on M. genitalium v1.0.
+
+### Coupling torture rigs (active testbeds, not frozen)
+
+- `opencell/models/coupled.py` (Chassagnole + Vilar) — **promoted** from
+  frozen-regression to *active coupling stress substrate*. Used to break
+  A5 (multi-level diff), A6 (semantics contract), A7 (invariants), and
+  M0 (closed-loop vertical slice) **before** M. genitalium does. Cheapest
+  place to discover engine bugs. Not living biology; do not tune for
+  biological match — tune the engine until the toy survives.
+- `scripts/demo_first_run.py` — onboarding demo. Same status: regression
+  artefact, not science.
+
+---
+
 ## Current Status (2026-04-23, **397 tests passing**, hybrid solver + first-run demo done)
 
 ### Hybrid Solver + First-Run Demo (DONE — Phase 3 capstone)
