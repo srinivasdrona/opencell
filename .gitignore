@@ -59,3 +59,15 @@ outputs/
 .paper_cache/
 .git-commit-msg.tmp
 opencell_tasks.db.bak.*
+
+# Third-party upstream clones (re-fetch with: git clone https://github.com/CovertLab/WholeCell data/m1_sources/WholeCell)
+data/m1_sources/WholeCell/
+data/m1_sources/WholeCellKB/
+
+# MATLAB Online extraction outputs (large; only manifest.json is committed for provenance)
+data/m1_sources/karr_flat/*
+!data/m1_sources/karr_flat/manifest.json
+
+# MATLAB extraction scaffolding scratch
+scripts/matlab/_*
+
