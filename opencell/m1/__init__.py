@@ -18,6 +18,12 @@ from .karr_metabolism import (
     DEFAULT_FIXTURE_JSON,
     DEFAULT_BIG,
 )
+from . import calc_flux_bounds
+from .calc_flux_bounds import (
+    M1DynamicsInputs,
+    load_default_dynamics,
+    compute_bounds,
+)
 
 __all__ = [
     "KarrMetabolismModel",
@@ -26,4 +32,8 @@ __all__ = [
     "per_reaction_comparison",
     "DEFAULT_FIXTURE_JSON",
     "DEFAULT_BIG",
+    "calc_flux_bounds",
+    "M1DynamicsInputs",
+    "load_default_dynamics",
+    "compute_bounds",
 ]

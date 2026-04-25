@@ -1,0 +1,147 @@
+{
+  "config": {
+    "t_end_s": 60.0,
+    "time_step_s": 1.0,
+    "condition": 1,
+    "tol_rel": 1e-06,
+    "tol_ntp_rel": 0.02,
+    "tol_aa_rel": 0.02
+  },
+  "wall_seconds": 0.6597513929882552,
+  "n_emit_steps": 61,
+  "model_dimensions_from_attrs": {
+    "n_reactions": 645,
+    "n_rna": 525,
+    "n_protein": 482
+  },
+  "checks": [
+    {
+      "name": "C1_engine_ran",
+      "ok": true,
+      "t_end_emit": 60.0,
+      "t_end_request": 60.0,
+      "n_emit": 61
+    },
+    {
+      "name": "C5_dimensions",
+      "ok": true,
+      "emitted": [
+        645,
+        525,
+        482
+      ],
+      "expected_from_models": [
+        645,
+        525,
+        482
+      ]
+    },
+    {
+      "name": "C6_growth_stable",
+      "ok": true,
+      "growth_per_h_initial": 0.07629369318720244,
+      "growth_per_h_range_after_t1": 0.0
+    },
+    {
+      "name": "C2_steady_state_after_t1",
+      "ok": true,
+      "rna_max_range": 0.0,
+      "rna_worst": null,
+      "prot_max_range": 0.0,
+      "prot_worst": null
+    },
+    {
+      "name": "C3_ntp_writeback_vs_helper",
+      "ok": true,
+      "per_ntp": {
+        "ATP": {
+          "observed_delta": -37583.27072427948,
+          "expected_delta": -37583.27072427952,
+          "rel_err": 1.1615738823097719e-15
+        },
+        "CTP": {
+          "observed_delta": -37583.27072427948,
+          "expected_delta": -37583.27072427952,
+          "rel_err": 1.1615738823097719e-15
+        },
+        "GTP": {
+          "observed_delta": -37583.27072427948,
+          "expected_delta": -37583.27072427952,
+          "rel_err": 1.1615738823097719e-15
+        },
+        "UTP": {
+          "observed_delta": -37583.27072427948,
+          "expected_delta": -37583.27072427952,
+          "rel_err": 1.1615738823097719e-15
+        }
+      },
+      "total_nt_per_s_helper": 2505.551381618635
+    },
+    {
+      "name": "C4_aa_total_writeback_vs_helper",
+      "ok": true,
+      "observed_delta": -2334.3175361982317,
+      "expected_delta": -2334.3175361982317,
+      "rel_err": 0.0,
+      "total_aa_per_s_helper": 38.90529226997053
+    },
+    {
+      "name": "C7_m2v2_conservation_invariant",
+      "ok": true,
+      "total_nt_per_s_from_predictor": 1749.9999999999998,
+      "n_active_x_elong_from_fixture": 1750.0,
+      "rel_err": 1.2992781453898976e-16
+    },
+    {
+      "name": "C8_m3v2_conservation_invariant",
+      "ok": true,
+      "total_aa_per_s_from_predictor": 896.0,
+      "n_active_x_elong_from_fixture": 896.0,
+      "rel_err": 0.0
+    },
+    {
+      "name": "C9_m2v2_cycle_avg_better_than_snapshot",
+      "ok": true,
+      "snapshot": {
+        "n_compared": 522,
+        "median_log2_ratio": -0.9126719473707887,
+        "mean_log2_ratio": -0.6620160116253344,
+        "std_log2_ratio": 1.6030929081345644,
+        "median_abs_log2_ratio": 1.4901214003379497,
+        "p10_log2_ratio": -2.5023675681320814,
+        "p90_log2_ratio": 1.789417122780053,
+        "total_predicted_per_s": 4.155763903244608,
+        "total_karr_per_s": 9.575591607622943
+      },
+      "cycle_2x": {
+        "n_compared": 522,
+        "median_log2_ratio": 0.08732805262921123,
+        "mean_log2_ratio": 0.33798398837466564,
+        "std_log2_ratio": 1.6030929081345644,
+        "median_abs_log2_ratio": 0.9986827138867742,
+        "p10_log2_ratio": -1.5023675681320818,
+        "p90_log2_ratio": 2.789417122780053,
+        "total_predicted_per_s": 8.311527806489217,
+        "total_karr_per_s": 9.575591607622943
+      }
+    },
+    {
+      "name": "C10_m3_v2_over_v1_in_documented_band",
+      "ok": true,
+      "v2_total_aa_per_s": 896.0,
+      "v1_total_aa_per_s": 38.92012754504336,
+      "ratio_v2_v1": 23.02150728984724,
+      "documented_band": [
+        10.0,
+        50.0
+      ]
+    },
+    {
+      "name": "C11_initial_state_matches_models",
+      "ok": true,
+      "rna_max_abs_dev_from_expression": 0.0,
+      "protein_max_abs_dev_from_counts_mature": 0.0
+    }
+  ],
+  "all_pass": true
+}

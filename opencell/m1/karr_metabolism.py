@@ -47,6 +47,7 @@ class KarrMetabolismModel:
     ub: np.ndarray
     obj: np.ndarray
     enz_bounds: np.ndarray
+    catalysis: np.ndarray
     fluxs_stored: np.ndarray
     rxn_wcm_ids_645: list[str]
     fba_col_rxn_wcm: list[str | None]
@@ -87,6 +88,7 @@ def load_default(path: str | Path | None = None) -> KarrMetabolismModel:
         ub=z["ub"],
         obj=z["obj"],
         enz_bounds=z["enz_bounds"],
+        catalysis=z["catalysis"],
         fluxs_stored=z["fluxs_stored"],
         rxn_wcm_ids_645=list(meta["ids"]["reaction_wcm_645"]),
         fba_col_rxn_wcm=list(meta["ids"]["fba_col_to_reaction_wcm"]),

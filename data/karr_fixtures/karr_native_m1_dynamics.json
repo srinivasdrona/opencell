@@ -1,0 +1,229 @@
+{
+  "schema_version": "m1_dynamics_v1",
+  "source_mat": "data/m1_sources/karr_flat/metabolism_dynamics.mat",
+  "matrix_npz": "karr_native_m1_dynamics.npz",
+  "scalars": {
+    "cell_dry_mass": 3.944640855678535e-15,
+    "step_size_sec": 1.0,
+    "compartment_extracellular_0based": 1,
+    "n_substrates": 585,
+    "n_compartments": 3,
+    "n_fba_reactions": 504,
+    "n_fba_substrate_rows_real": 368,
+    "n_external_exchange": 124,
+    "n_internal_limited": 35
+  },
+  "interpretation": {
+    "substrates_snapshot": "(585, 3) snapshot counts; cols=[cytosol, extracellular, membrane]",
+    "substrate_idx_fba_sub0": "(368,) substrate_id index into 585 for each FBA-substrate row",
+    "substrate_idx_fba_cmp0": "(368,) compartment index into 3 for each FBA-substrate row",
+    "substrate_idx_external_exch_0": "indices into 585 (substrate-only); compartment is implicitly extracellular",
+    "substrate_idx_internal_lim_0": "indices into 585 (substrate-only); compartment is implicitly cytosol per MATLAB linear indexing semantics",
+    "bounds_dynamic_no_protein": "(504, 2) MATLAB calcFluxBounds output with applyProteinBounds=false"
+  },
+  "audit": [
+    {
+      "name": "ATP",
+      "in_585": true,
+      "in_fba_substrate_space": true,
+      "compartments_in_fba": [
+        0
+      ]
+    },
+    {
+      "name": "CTP",
+      "in_585": true,
+      "in_fba_substrate_space": true,
+      "compartments_in_fba": [
+        0
+      ]
+    },
+    {
+      "name": "GTP",
+      "in_585": true,
+      "in_fba_substrate_space": true,
+      "compartments_in_fba": [
+        0
+      ]
+    },
+    {
+      "name": "UTP",
+      "in_585": true,
+      "in_fba_substrate_space": true,
+      "compartments_in_fba": [
+        0
+      ]
+    },
+    {
+      "name": "AA_total",
+      "in_585": false,
+      "in_fba_substrate_space": false,
+      "compartments_in_fba": []
+    },
+    {
+      "name": "ALA",
+      "in_585": true,
+      "in_fba_substrate_space": true,
+      "compartments_in_fba": [
+        0
+      ]
+    },
+    {
+      "name": "ARG",
+      "in_585": true,
+      "in_fba_substrate_space": true,
+      "compartments_in_fba": [
+        0
+      ]
+    },
+    {
+      "name": "ASN",
+      "in_585": true,
+      "in_fba_substrate_space": true,
+      "compartments_in_fba": [
+        0
+      ]
+    },
+    {
+      "name": "ASP",
+      "in_585": true,
+      "in_fba_substrate_space": true,
+      "compartments_in_fba": [
+        0
+      ]
+    },
+    {
+      "name": "CYS",
+      "in_585": true,
+      "in_fba_substrate_space": true,
+      "compartments_in_fba": [
+        0
+      ]
+    },
+    {
+      "name": "GLN",
+      "in_585": true,
+      "in_fba_substrate_space": true,
+      "compartments_in_fba": [
+        0,
+        1
+      ]
+    },
+    {
+      "name": "GLU",
+      "in_585": true,
+      "in_fba_substrate_space": true,
+      "compartments_in_fba": [
+        0
+      ]
+    },
+    {
+      "name": "GLY",
+      "in_585": true,
+      "in_fba_substrate_space": true,
+      "compartments_in_fba": [
+        0
+      ]
+    },
+    {
+      "name": "HIS",
+      "in_585": true,
+      "in_fba_substrate_space": true,
+      "compartments_in_fba": [
+        0
+      ]
+    },
+    {
+      "name": "ILE",
+      "in_585": true,
+      "in_fba_substrate_space": true,
+      "compartments_in_fba": [
+        0
+      ]
+    },
+    {
+      "name": "LEU",
+      "in_585": true,
+      "in_fba_substrate_space": true,
+      "compartments_in_fba": [
+        0
+      ]
+    },
+    {
+      "name": "LYS",
+      "in_585": true,
+      "in_fba_substrate_space": true,
+      "compartments_in_fba": [
+        0,
+        1
+      ]
+    },
+    {
+      "name": "MET",
+      "in_585": true,
+      "in_fba_substrate_space": true,
+      "compartments_in_fba": [
+        0
+      ]
+    },
+    {
+      "name": "PHE",
+      "in_585": true,
+      "in_fba_substrate_space": true,
+      "compartments_in_fba": [
+        0,
+        1
+      ]
+    },
+    {
+      "name": "PRO",
+      "in_585": true,
+      "in_fba_substrate_space": true,
+      "compartments_in_fba": [
+        0
+      ]
+    },
+    {
+      "name": "SER",
+      "in_585": true,
+      "in_fba_substrate_space": true,
+      "compartments_in_fba": [
+        0
+      ]
+    },
+    {
+      "name": "THR",
+      "in_585": true,
+      "in_fba_substrate_space": true,
+      "compartments_in_fba": [
+        0
+      ]
+    },
+    {
+      "name": "TRP",
+      "in_585": true,
+      "in_fba_substrate_space": true,
+      "compartments_in_fba": [
+        0,
+        1
+      ]
+    },
+    {
+      "name": "TYR",
+      "in_585": true,
+      "in_fba_substrate_space": true,
+      "compartments_in_fba": [
+        0,
+        1
+      ]
+    },
+    {
+      "name": "VAL",
+      "in_585": true,
+      "in_fba_substrate_space": true,
+      "compartments_in_fba": [
+        0
+      ]
+    }
+  ]
+}
