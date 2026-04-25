@@ -34,6 +34,10 @@ from opencell.vivarium.karr_m1 import (
     KarrMetabolismProcess,
     build_karr_m1_engine,
 )
+from opencell.vivarium.karr_m2 import (
+    KarrTranscriptionProcess,
+    build_karr_m2_engine,
+)
 
 __all__ = [
     "GeneNetworkProcess",
@@ -43,4 +47,6 @@ __all__ = [
     "build_coupled_engine",
     "KarrMetabolismProcess",
     "build_karr_m1_engine",
+    "KarrTranscriptionProcess",
+    "build_karr_m2_engine",
 ]
