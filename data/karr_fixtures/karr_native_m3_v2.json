@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "source_mat": "data/m1_sources/karr_flat/translation_v2_targeted.mat",
+  "matrix_npz": "karr_native_m3_v2.npz",
+  "scalars": {
+    "n_active_ribosomes": 56,
+    "n_stalled_ribosomes": 0,
+    "n_not_exist_ribosomes": 80,
+    "n_total_ribosomes": 136,
+    "ribosome_elongation_rate_aa_per_s": 16.0,
+    "denom_sum_mrna_x_length": 51144.0,
+    "total_aa_polym_per_s_predicted": 896.0
+  },
+  "shapes": {
+    "mrna_counts": [
+      482
+    ],
+    "length_aa": [
+      482
+    ],
+    "synth_predicted_per_s": [
+      482
+    ],
+    "synth_karr_per_s": [
+      482
+    ],
+    "ribosome_state_occupancies_3": [
+      3
+    ],
+    "n_ribosomes_bound_per_mrna": [
+      482
+    ]
+  },
+  "interpretation": {
+    "synth_protein_i": "N_active * elong * mRNA_i / sum_k(mRNA_k * length_k)",
+    "ribosome_state_occupancies_index": [
+      "active",
+      "notExist",
+      "stalled"
+    ],
+    "snapshot_vs_average": "Karr's fitted s = counts_mature * decay is cell-cycle averaged; snapshot N_active is half-cycle. Multiply by ~1.5-2.0 for fair comparison."
+  }
+}
