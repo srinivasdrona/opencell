@@ -39,6 +39,31 @@ from opencell.vivarium.karr_m3 import KarrTranslationProcess
 _M1_SUBSTRATE_DEFAULT = 1.0
 
 
+def compute_baseline_demand_per_s(
+    m2_model: tx.KarrTranscriptionModel,
+    m3_model: tl.KarrTranslationModel,
+    *,
+    condition: int = 1,
+) -> dict[str, float]:
+    """Build the {sid: rate_per_s} map used by M1's pool-replenishment
+    source term.
+
+    Combines un-throttled M2 NTP demand (4 keys) and un-throttled M3
+    per-AA demand (20 keys) at ``synth_scale=1.0``.  This is the rate
+    at which M1 must produce each demand-side substrate to keep the
+    Karr-snapshot pool flat under the actual M2/M3 models attached to
+    the composer (so e.g. ``condition`` and custom models propagate).
+    """
+    ntp = tx.ntp_consumption_per_s(m2_model, condition=condition)
+    aa = tl.aa_consumption_per_s(m3_model)
+    out: dict[str, float] = {
+        s: float(ntp[s]) for s in ("ATP", "CTP", "GTP", "UTP")
+    }
+    for a in m3_model.aa_wcm_ids:
+        out[a] = float(aa[a])
+    return out
+
+
 def build_karr_m1_m2_engine(
     *,
     m1_model: km.KarrMetabolismModel | None = None,
@@ -107,6 +132,7 @@ def build_karr_m1_m2_m3_engine(
     condition: int = 1,
     dynamic_bounds: bool = False,
     enable_throttle: bool = False,
+    enable_pool_replenishment: bool = False,
 ):
     """Build a Vivarium Engine running M1, M2 AND M3 in lockstep (1s tick).
 
@@ -122,6 +148,15 @@ def build_karr_m1_m2_m3_engine(
     their analytical-integrator synthesis scale ``f`` to the per-tick
     pool head-room.  Requires ``dynamic_bounds=True``.  Default off
     keeps the 528-test baseline trajectory unchanged.
+
+    ``enable_pool_replenishment=True`` (Phase C.4) closes the chassis
+    loop: at the end of every tick M1 adds a calibrated source term
+    (un-throttled M2/M3 demand at this composer's ``condition`` /
+    models) to its internal cytosol slice.  Under f=1 drain == replenish
+    so pools stay at Karr's snapshot SS; under throttle-induced
+    starvation pools recover and the throttle eventually unfreezes.
+    Requires ``dynamic_bounds=True``.  Default off keeps the prior
+    pure-drain semantics intact.
     """
     from vivarium.core.engine import Engine
 
@@ -129,6 +164,10 @@ def build_karr_m1_m2_m3_engine(
         raise ValueError(
             "enable_throttle=True requires dynamic_bounds=True "
             "(throttle reads m1_pools which only M1 dynamic mode publishes)"
+        )
+    if enable_pool_replenishment and not dynamic_bounds:
+        raise ValueError(
+            "enable_pool_replenishment=True requires dynamic_bounds=True"
         )
 
     if m1_model is None:
@@ -138,10 +177,18 @@ def build_karr_m1_m2_m3_engine(
     if m3_model is None:
         m3_model = tl.load_default()
 
+    baseline_demand: dict[str, float] | None = None
+    if enable_pool_replenishment:
+        baseline_demand = compute_baseline_demand_per_s(
+            m2_model, m3_model, condition=condition,
+        )
+
     m1_proc = KarrMetabolismProcess({
         "model": m1_model,
         "time_step": time_step_s,
         "dynamic_bounds": dynamic_bounds,
+        "enable_pool_replenishment": enable_pool_replenishment,
+        "baseline_demand_per_s": baseline_demand,
     })
     m2_proc = KarrTranscriptionProcess({
         "model": m2_model,
@@ -227,5 +274,9 @@ def build_karr_m1_m2_m3_engine(
     return engine
 
 
-__all__ = ["build_karr_m1_m2_engine", "build_karr_m1_m2_m3_engine"]
+__all__ = [
+    "build_karr_m1_m2_engine",
+    "build_karr_m1_m2_m3_engine",
+    "compute_baseline_demand_per_s",
+]
 

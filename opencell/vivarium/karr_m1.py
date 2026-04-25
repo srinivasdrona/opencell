@@ -13,22 +13,35 @@ Two operating modes (selected by the ``dynamic_bounds`` parameter):
   tick from a private compartmented substrate state ``(585, 3)``.  M2
   and M3 demand entering the shared ``substrates`` store is *read*
   into the cytosol slice of that internal state every tick, so flux
-  bounds shrink as pools drain — the first piece of real intra-cell
-  feedback.
+  bounds shrink as pools drain.
 
-  Phase C.2 closes part of the loop on the read side: M1 publishes the
-  current cytosol pool counts for the 24 demand-side substrates (4 NTPs
-  + 20 standard AAs that exist in Karr's 585-substrate vocabulary) into
-  a shared ``m1_pools`` store after every tick (set updater, M1 sole
-  writer).  M2 and M3 read that store to throttle their own analytical
-  integrators in Phase C.3.
+  Phase C.2 added the read-side share: M1 publishes the current
+  cytosol pool counts for the 24 demand-side substrates into a shared
+  ``m1_pools`` store after every tick (set updater, M1 sole writer).
+  Phase C.3 added the M2/M3 throttle that consumes that store.
+
+  Phase C.4 (opt-in, ``enable_pool_replenishment=True``) closes the
+  chassis loop with a CALIBRATED-TO-STEADY-STATE source term: at the
+  end of every tick M1 adds a fixed per-second replenishment to its
+  internal cytosol slice for each demand key.  The replenishment rate
+  must be supplied by the caller (composer) via ``baseline_demand_per_s``
+  - typically the un-throttled M2/M3 consumption rate, so under f=1
+  drain == replenish and the pool stays at Karr's snapshot SS.
+  Under throttle-induced starvation drain falls below replenish and
+  pools recover, allowing the throttle to unfreeze on subsequent ticks.
+
+  This is NOT LP-derived: standard FBA enforces ``S @ v == 0`` for
+  internal substrates by construction, so net production is always
+  zero from the LP itself.  Real LP-derived replenishment requires the
+  compartmented (1686, 645) stoichiometry + a unit conversion path
+  (mmol/gDW/h <-> molecules/s); both are deferred to Phase D.
 
   Honest scope (still):
 
-    - M1 does NOT mirror its own FBA flux back to its private
-      ``_sub_state`` — pools only decrease as M2/M3 drain them.  This
-      keeps the throttle conservative; full pool closure requires the
-      585->1686 compartment-resolved stoichiometry and is post-Phase C.
+    - Replenishment is uncapped; under prolonged f<<1 the pool grows
+      unboundedly (documented heuristic, not a true conservation law).
+    - Replenishment is decoupled from FBA growth_per_s; if growth
+      crashes, replenishment does not slow.  Phase D will change this.
     - Enzyme counts are FROZEN at the snapshot (104,) vector.
     - Rule 6 (protein-bound zeroing) is not run.
 """
@@ -73,6 +86,8 @@ class KarrMetabolismProcess(Process):
         "use_full_objective": True,
         "dynamic_bounds": False,
         "dynamics_inputs": None,
+        "enable_pool_replenishment": False,
+        "baseline_demand_per_s": None,
     }
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
@@ -85,6 +100,9 @@ class KarrMetabolismProcess(Process):
         self._sub_ids = self.model.raw["ids"]["substrate_wcm_585"]
 
         self.dynamic_bounds: bool = bool(self.parameters["dynamic_bounds"])
+        self.enable_pool_replenishment: bool = bool(
+            self.parameters["enable_pool_replenishment"]
+        )
         self._sub_state: np.ndarray | None = None
         self._enz_state: np.ndarray | None = None
         self._prev_shared: dict[str, float] | None = None
@@ -92,6 +110,13 @@ class KarrMetabolismProcess(Process):
         self._sub_id_to_idx: dict[str, int] | None = None
         self._fba_reaction_bounds: np.ndarray | None = None
         self._demand_idx_pairs: list[tuple[str, int]] = []
+        self._baseline_demand_per_s: dict[str, float] | None = None
+
+        if self.enable_pool_replenishment and not self.dynamic_bounds:
+            raise ValueError(
+                "enable_pool_replenishment=True requires dynamic_bounds=True "
+                "(replenishment writes to the dynamic-bounds internal state)"
+            )
 
         if self.dynamic_bounds:
             dyn = self.parameters.get("dynamics_inputs")
@@ -114,6 +139,31 @@ class KarrMetabolismProcess(Process):
             # picks up the M2/M3 deltas accumulated during the first
             # boundary application.
             self._prev_shared = {sid: 1.0 for sid in self._sub_ids}
+
+            if self.enable_pool_replenishment:
+                bd = self.parameters["baseline_demand_per_s"]
+                if bd is None:
+                    raise ValueError(
+                        "enable_pool_replenishment=True requires "
+                        "baseline_demand_per_s={sid: rate_per_s, ...} "
+                        "(typically built by the composer from the actual "
+                        "attached M2/M3 models at synth_scale=1.0)"
+                    )
+                missing = [
+                    sid for sid, _ in self._demand_idx_pairs if sid not in bd
+                ]
+                if missing:
+                    raise ValueError(
+                        f"baseline_demand_per_s missing demand keys: {missing}"
+                    )
+                self._baseline_demand_per_s = {
+                    sid: float(bd[sid]) for sid, _ in self._demand_idx_pairs
+                }
+                for sid, rate in self._baseline_demand_per_s.items():
+                    if not np.isfinite(rate) or rate < 0.0:
+                        raise ValueError(
+                            f"baseline_demand_per_s[{sid}]={rate} must be "
+                            f"finite and non-negative")
 
     # ------------------------------------------------------------------
     def ports_schema(self) -> dict[str, Any]:
@@ -253,6 +303,18 @@ class KarrMetabolismProcess(Process):
         for col, rid in enumerate(self.model.fba_col_rxn_wcm):
             if rid is not None:
                 flux_update[rid] = float(v[col])
+
+        # Phase C.4 — calibrated source-term replenishment (opt-in).
+        # Order: drain (above) -> solve FBA (above) -> replenish (here)
+        # -> publish diagnostics + m1_pools (below).  Means FBA bounds
+        # this tick saw the post-drain pool, while m1_pools published
+        # this tick reflects post-replenish — explicitly documented.
+        if self.enable_pool_replenishment:
+            assert self._baseline_demand_per_s is not None
+            for sid, idx in self._demand_idx_pairs:
+                self._sub_state[idx, _CYTOSOL_COMPARTMENT_0] += (
+                    self._baseline_demand_per_s[sid] * timestep
+                )
 
         # Count bounds that differ from static fixture, NaN-safely
         # (both sides may be -inf/+inf where no rule applies).
