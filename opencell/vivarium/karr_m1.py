@@ -14,15 +14,23 @@ Two operating modes (selected by the ``dynamic_bounds`` parameter):
   and M3 demand entering the shared ``substrates`` store is *read*
   into the cytosol slice of that internal state every tick, so flux
   bounds shrink as pools drain — the first piece of real intra-cell
-  feedback.  Honest scope:
+  feedback.
 
-    - Demand coupling is ONE-WAY: M2/M3 write to the shared store and
-      M1 reads.  M1 does NOT mirror its FBA flux back to the shared
-      store (S @ v == 0 by LP construction so a write-back would be a
-      no-op anyway), and M2/M3 still do not read substrate counts.
-    - Enzyme counts are FROZEN at the snapshot (104,) vector; dynamic
-      enzyme counts from M3 protein counts are Phase C.
-    - Rule 6 (protein-bound zeroing) is Phase C; we only run rules 1-5.
+  Phase C.2 closes part of the loop on the read side: M1 publishes the
+  current cytosol pool counts for the 24 demand-side substrates (4 NTPs
+  + 20 standard AAs that exist in Karr's 585-substrate vocabulary) into
+  a shared ``m1_pools`` store after every tick (set updater, M1 sole
+  writer).  M2 and M3 read that store to throttle their own analytical
+  integrators in Phase C.3.
+
+  Honest scope (still):
+
+    - M1 does NOT mirror its own FBA flux back to its private
+      ``_sub_state`` — pools only decrease as M2/M3 drain them.  This
+      keeps the throttle conservative; full pool closure requires the
+      585->1686 compartment-resolved stoichiometry and is post-Phase C.
+    - Enzyme counts are FROZEN at the snapshot (104,) vector.
+    - Rule 6 (protein-bound zeroing) is not run.
 """
 from __future__ import annotations
 
@@ -141,7 +149,26 @@ class KarrMetabolismProcess(Process):
         }
         if self.dynamic_bounds:
             schema["m1_dynamic_diagnostics"] = self._diagnostics_schema()
+            schema["m1_pools"] = self._m1_pools_schema()
         return schema
+
+    def _m1_pools_schema(self) -> dict[str, Any]:
+        """Authoritative schema for the shared ``m1_pools`` store.
+
+        M1 declares all 24 demand keys with the snapshot cytosol value
+        as the default.  M2/M3 may declare a subset (the substrates they
+        actually consume) with matching leaf settings; Vivarium merges
+        same-path subset schemas across processes.
+        """
+        assert self._sub_state is not None
+        return {
+            sid: {
+                "_default": float(self._sub_state[idx, _CYTOSOL_COMPARTMENT_0]),
+                "_updater": "set",
+                "_emit": True,
+            }
+            for sid, idx in self._demand_idx_pairs
+        }
 
     def _diagnostics_schema(self) -> dict[str, Any]:
         keys = [
@@ -241,8 +268,11 @@ class KarrMetabolismProcess(Process):
             "max_ub": float(np.max(bounds[:, 1][np.isfinite(bounds[:, 1])])
                             if np.any(np.isfinite(bounds[:, 1])) else 0.0),
         }
+        m1_pools_update: dict[str, float] = {}
         for sid, idx in self._demand_idx_pairs:
-            diag[f"cyt_{sid}"] = float(self._sub_state[idx, _CYTOSOL_COMPARTMENT_0])
+            cur_cyt = float(self._sub_state[idx, _CYTOSOL_COMPARTMENT_0])
+            diag[f"cyt_{sid}"] = cur_cyt
+            m1_pools_update[sid] = cur_cyt
 
         return {
             "metabolic_reaction": {
@@ -251,6 +281,7 @@ class KarrMetabolismProcess(Process):
                 "growth_per_h": float(info["biomass_flux_per_h"]),
             },
             "m1_dynamic_diagnostics": diag,
+            "m1_pools": m1_pools_update,
         }
 
 
@@ -288,6 +319,7 @@ def build_karr_m1_engine(
         topology["m1_karr"]["m1_dynamic_diagnostics"] = (
             "m1_dynamic_diagnostics",
         )
+        topology["m1_karr"]["m1_pools"] = ("m1_pools",)
 
     rxn_ids = model.rxn_wcm_ids_645
     sub_ids = model.raw["ids"]["substrate_wcm_585"]
@@ -305,6 +337,10 @@ def build_karr_m1_engine(
     if dynamic_bounds:
         initial_state["m1_dynamic_diagnostics"] = {
             k: 0.0 for k in proc._diagnostics_schema()
+        }
+        initial_state["m1_pools"] = {
+            sid: float(proc._sub_state[idx, _CYTOSOL_COMPARTMENT_0])
+            for sid, idx in proc._demand_idx_pairs
         }
 
     engine = Engine(

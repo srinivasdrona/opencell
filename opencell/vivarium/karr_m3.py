@@ -28,6 +28,14 @@ class KarrTranslationProcess(Process):
     and the per-tick delta is ``-rate_a * timestep``.  This replaces
     the v1 ``AA_total`` placeholder and gives M1's dynamic-bounds mode
     real per-AA pool drains aligned with Karr's 585-substrate ID space.
+
+    Phase C.3 throttle (opt-in via ``enable_throttle``):
+      When True the process declares a read view on shared ``m1_pools``
+      (the 20 AA keys) and computes a uniform synthesis-scaling factor
+      ``f = min over aa of clip(pool[aa] / (rate_unscaled[aa] * dt), 0, 1)``.
+      ``f`` is passed to ``step_analytical`` AND to
+      ``aa_consumption_per_s`` so protein evolution and AA-delta emission
+      scale together.  Requires M1 in dynamic-bounds mode.
     """
 
     name = "karr_translation"
@@ -36,6 +44,8 @@ class KarrTranslationProcess(Process):
         "time_step": 1.0,
         "write_substrate_deltas": True,
         "substrate_default": 0.0,
+        "enable_throttle": False,
+        "m1_pool_default": 0.0,
     }
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
@@ -46,6 +56,7 @@ class KarrTranslationProcess(Process):
         self.model: tl.KarrTranslationModel = model
         self.protein_ids = self.model.protein_wcm_ids
         self.aa_ids: tuple[str, ...] = self.model.aa_wcm_ids
+        self.enable_throttle: bool = bool(self.parameters["enable_throttle"])
 
     def ports_schema(self) -> dict[str, Any]:
         ss = self.model.counts_mature
@@ -65,22 +76,63 @@ class KarrTranslationProcess(Process):
             }
             for aa in self.aa_ids
         }
-        return {
+        schema: dict[str, Any] = {
             "protein": {"counts": protein_schema},
             "substrates": substrates_schema,
         }
+        if self.enable_throttle:
+            schema["m1_pools"] = {
+                aa: {
+                    "_default": float(self.parameters["m1_pool_default"]),
+                    "_updater": "set",
+                    "_emit": False,
+                }
+                for aa in self.aa_ids
+            }
+        return schema
+
+    def _compute_throttle(
+        self,
+        m1_pools: dict[str, float],
+        timestep: float,
+    ) -> float:
+        if timestep <= 0.0:
+            raise ValueError(f"throttle requires positive timestep, got {timestep}")
+        rate = tl.aa_consumption_per_s(self.model)
+        f = 1.0
+        for aa in self.aa_ids:
+            req = float(rate[aa]) * timestep
+            if req <= 0.0:
+                continue
+            pool = float(m1_pools.get(aa, 0.0))
+            if not np.isfinite(pool) or not np.isfinite(req):
+                raise RuntimeError(
+                    f"throttle non-finite: pool[{aa}]={pool} req={req}")
+            pool = max(0.0, pool)
+            f_aa = pool / req
+            if f_aa < f:
+                f = f_aa
+        return float(np.clip(f, 0.0, 1.0))
 
     def next_update(self, timestep: float, states: dict) -> dict:
         n = np.array(
             [float(states["protein"]["counts"][p]) for p in self.protein_ids],
             dtype=float,
         )
-        n_next = tl.step_analytical(self.model, n, timestep)
+        if self.enable_throttle:
+            m1_pools = states.get("m1_pools", {})
+            synth_scale = self._compute_throttle(m1_pools, timestep)
+        else:
+            synth_scale = 1.0
+
+        n_next = tl.step_analytical(
+            self.model, n, timestep, synth_scale=synth_scale,
+        )
         n_set = {p: float(n_next[i]) for i, p in enumerate(self.protein_ids)}
 
         update: dict[str, Any] = {"protein": {"counts": n_set}}
         if self.parameters["write_substrate_deltas"]:
-            aa = tl.aa_consumption_per_s(self.model)
+            aa = tl.aa_consumption_per_s(self.model, synth_scale=synth_scale)
             update["substrates"] = {
                 a: -float(aa[a]) * timestep for a in self.aa_ids
             }

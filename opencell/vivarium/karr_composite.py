@@ -106,6 +106,7 @@ def build_karr_m1_m2_m3_engine(
     emit_step_s: float | None = None,
     condition: int = 1,
     dynamic_bounds: bool = False,
+    enable_throttle: bool = False,
 ):
     """Build a Vivarium Engine running M1, M2 AND M3 in lockstep (1s tick).
 
@@ -114,8 +115,21 @@ def build_karr_m1_m2_m3_engine(
     into a private compartmented state, recomputes flux bounds via
     Karr's ``calcFluxBounds`` (rules 1-5) every tick, and emits a
     ``m1_dynamic_diagnostics`` port.
+
+    ``enable_throttle=True`` (Phase C.3) wires the read side of the
+    closed loop: M1 publishes its 24 demand-side cytosol pools into a
+    shared ``m1_pools`` store every tick, and M2/M3 read it to clamp
+    their analytical-integrator synthesis scale ``f`` to the per-tick
+    pool head-room.  Requires ``dynamic_bounds=True``.  Default off
+    keeps the 528-test baseline trajectory unchanged.
     """
     from vivarium.core.engine import Engine
+
+    if enable_throttle and not dynamic_bounds:
+        raise ValueError(
+            "enable_throttle=True requires dynamic_bounds=True "
+            "(throttle reads m1_pools which only M1 dynamic mode publishes)"
+        )
 
     if m1_model is None:
         m1_model = km.load_default()
@@ -134,11 +148,13 @@ def build_karr_m1_m2_m3_engine(
         "time_step": time_step_s,
         "condition": condition,
         "substrate_default": _M1_SUBSTRATE_DEFAULT,
+        "enable_throttle": enable_throttle,
     })
     m3_proc = KarrTranslationProcess({
         "model": m3_model,
         "time_step": time_step_s,
         "substrate_default": _M1_SUBSTRATE_DEFAULT,
+        "enable_throttle": enable_throttle,
     })
 
     rxn_ids = m1_model.rxn_wcm_ids_645
@@ -158,8 +174,20 @@ def build_karr_m1_m2_m3_engine(
         "metabolic_reaction": ("metabolic_reaction",),
         "substrates": ("substrates",),
     }
+    m2_topo: dict[str, tuple[str, ...]] = {
+        "rna": ("rna",),
+        "substrates": ("substrates",),
+    }
+    m3_topo: dict[str, tuple[str, ...]] = {
+        "protein": ("protein",),
+        "substrates": ("substrates",),
+    }
     if dynamic_bounds:
         m1_topo["m1_dynamic_diagnostics"] = ("m1_dynamic_diagnostics",)
+        m1_topo["m1_pools"] = ("m1_pools",)
+    if enable_throttle:
+        m2_topo["m1_pools"] = ("m1_pools",)
+        m3_topo["m1_pools"] = ("m1_pools",)
 
     initial_state: dict[str, Any] = {
         "metabolic_reaction": {
@@ -176,6 +204,11 @@ def build_karr_m1_m2_m3_engine(
         initial_state["m1_dynamic_diagnostics"] = {
             k: 0.0 for k in m1_proc._diagnostics_schema()
         }
+        from opencell.vivarium.karr_m1 import _CYTOSOL_COMPARTMENT_0
+        initial_state["m1_pools"] = {
+            sid: float(m1_proc._sub_state[idx, _CYTOSOL_COMPARTMENT_0])
+            for sid, idx in m1_proc._demand_idx_pairs
+        }
 
     engine = Engine(
         processes={
@@ -185,14 +218,8 @@ def build_karr_m1_m2_m3_engine(
         },
         topology={
             "m1_karr": m1_topo,
-            "m2_karr": {
-                "rna": ("rna",),
-                "substrates": ("substrates",),
-            },
-            "m3_karr": {
-                "protein": ("protein",),
-                "substrates": ("substrates",),
-            },
+            "m2_karr": m2_topo,
+            "m3_karr": m3_topo,
         },
         initial_state=initial_state,
         emit_step=emit_step_s or time_step_s,
