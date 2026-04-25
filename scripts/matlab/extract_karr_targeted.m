@@ -233,6 +233,93 @@ function extract_karr_targeted(wholecellRoot, outDir)
         fprintf('KB load FAIL: %s\n', e.message);
     end
 
+    % --- 9. M3 protein-monomer targeted dump (deep properties) ----------
+    fprintf('\n=== M3 protein dump (sim.state.ProteinMonomer) ===\n');
+    try
+        pmstate = [];
+        for i = 1:numel(sim.states)
+            if strcmp(sim.states{i}.wholeCellModelID,'State_ProteinMonomer')
+                pmstate = sim.states{i}; break;
+            end
+        end
+        if isempty(pmstate)
+            fprintf('  no State_ProteinMonomer found\n');
+        else
+            protOut = struct();
+            % per-form indexs (482 each into 4820 vector)
+            protOut.matureIndexs = pmstate.matureIndexs;
+            protOut.nascentIndexs = pmstate.nascentIndexs;
+            protOut.processedIIndexs = pmstate.processedIIndexs;
+            protOut.processedIIIndexs = pmstate.processedIIIndexs;
+            protOut.foldedIndexs = pmstate.foldedIndexs;
+            protOut.inactivatedIndexs = pmstate.inactivatedIndexs;
+            protOut.boundIndexs = pmstate.boundIndexs;
+            protOut.misfoldedIndexs = pmstate.misfoldedIndexs;
+            protOut.damagedIndexs = pmstate.damagedIndexs;
+            protOut.signalSequenceIndexs = pmstate.signalSequenceIndexs;
+            % full 4820-vec arrays (we slice to mature in Python)
+            protOut.lengths = pmstate.lengths;
+            protOut.halfLives = pmstate.halfLives;
+            protOut.decayRates = pmstate.decayRates;
+            protOut.molecularWeights = pmstate.molecularWeights;
+            protOut.compartments = pmstate.compartments;
+            protOut.counts = pmstate.counts;
+            try, protOut.baseCounts = pmstate.baseCounts; catch, end
+            try, protOut.wholeCellModelIDs = pmstate.wholeCellModelIDs; catch, end
+            try, protOut.names = pmstate.names; catch, end
+            % Walk the 482 KB ProteinMonomer stubs to grab wcm + gene index
+            try
+                skb = load('data/knowledgeBase.mat'); kbobj = skb.knowledgeBase;
+                pms = kbobj.proteinMonomers; nP = numel(pms);
+                wcm = cell(nP,1);
+                geneWcm = cell(nP,1);
+                geneIdx = nan(nP,1);
+                compWcm = cell(nP,1);
+                for i = 1:nP
+                    p = pms(i);
+                    try, wcm{i} = p.wholeCellModelID; catch, end
+                    try
+                        % gene cell ref: {className, idxUint32}
+                        g = p.gene;
+                        if iscell(g) && numel(g)>=2
+                            geneIdx(i) = double(g{2});
+                            geneWcm{i} = kbobj.genes(double(g{2})).wholeCellModelID;
+                        end
+                    catch, end
+                    try
+                        c = p.compartment;
+                        if iscell(c) && numel(c)>=2
+                            compWcm{i} = kbobj.compartments(double(c{2})).wholeCellModelID;
+                        end
+                    catch, end
+                end
+                protOut.kb_wholeCellModelIDs = wcm;
+                protOut.kb_geneWholeCellModelIDs = geneWcm;
+                protOut.kb_geneIndex = geneIdx;
+                protOut.kb_compartmentWholeCellModelIDs = compWcm;
+            catch e
+                fprintf('  KB walk FAIL: %s\n', e.message);
+            end
+            % Process_Translation parameters (live)
+            try
+                for i = 1:numel(sim.processes)
+                    if strcmp(sim.processes{i}.wholeCellModelID,'Process_Translation')
+                        pt = sim.processes{i};
+                        try, protOut.translation_ribosomeElongationRate = pt.ribosomeElongationRate; catch, end
+                        try, protOut.translation_tmRNABindingProbability = pt.tmRNABindingProbability; catch, end
+                        break;
+                    end
+                end
+            catch, end
+            protMat = fullfile(outDir,'proteins_targeted.mat');
+            data = protOut; %#ok<NASGU>
+            save(protMat,'data','-v7');
+            fprintf('[OK] wrote %s (n=%d, fields: lengths/halfLives/decayRates/counts)\n', protMat, numel(protOut.matureIndexs));
+        end
+    catch e
+        fprintf('protein dump FAIL: %s\n', e.message);
+    end
+
     fprintf('\n=== DONE ===\n');
 end
 
