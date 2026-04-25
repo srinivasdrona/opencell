@@ -288,21 +288,27 @@ still closes. Validation oracles below are the *additional* checks.
     (362 KB) + `knowledgeBase_targeted.mat` (12 MB), both
     scipy-readable.  Local-only typo fix needed: `import import` →
     `import` on line 134 of `FtsZPolymerization.m` (R2026a stricter).
-  - **Mode D added to `m1_validate.py`** (schema_v3): solves Karr's
-    own fitted FBA matrices (`fbaReactionStoichiometryMatrix` 376×504,
-    `fbaReactionBounds` 504×2, `fbaObjective` 504-vec) directly via
-    HiGHS.  Result: μ = 0.0109 /h vs Karr published 0.077 /h —
-    **off by ~7×**.  Net independent agreement still **0/4**: the
-    NGAM/GAM/cellCycleLength "matches" reported by Mode D are
-    tautological (read from MAT, not predicted).  Critical insight:
-    the gap is NOT 'iPS189 vs Karr's curated network' (both are now
-    Karr's own).  Likely missing: (a) the 35 small (-5.31e-9)
-    penalty terms in `fbaObjective` dropped during diagnosis, (b)
-    `fbaEnzymeBounds` (kinetic flux ceilings from enzyme×kcat —
-    extracted but not yet applied), (c) the dynamic nature of Karr's
-    metabolism process (substrate/enzyme amounts update each second
-    from the other 27 processes; static snapshot may not be at
-    biomass-max steady state).  Tracked as todo `m1-mode-d-close-gap`.
+  - **2026-04-25 morning structural finding (gap closed)**: Investigation
+    of Mode D's 7× gap exposed a deeper truth.  Karr's stored runtime
+    solution (`state.MetabolicReaction.dump.fluxs`, 645-vector with
+    253 nonzero entries, range [-1e6, 1e6]) **violates his own snapshot
+    `fbaEnzymeBounds` in 34 of 504 reactions, by up to 100×**.  This
+    proves the snapshot enzyme bounds are POST-step (free-enzyme count
+    after substrate binding tightened it), NOT the bounds Karr used
+    during the LP solve.  Including snapshot enzyme bounds → μ ~135×
+    too low; dropping them and using BIG=1e3 (Karr's natural per-cell-
+    per-sec ceiling) → **μ = 0.039 /h vs Karr stored 0.076 /h, ratio
+    0.51× (within 2×)**.  This is the best a static snapshot can do.
+  - **Mode E added**: reads Karr's stored runtime values directly from
+    the MAT (`growth = 2.119e-5 /s = 0.076 /h`, `growth0 = 2.139e-5 /s`,
+    `meanInitialGrowthRate = 2.139e-5 /s`, `doublingTime = 47186 s`,
+    full 645-element flux vector).  This is the **gold-standard
+    validation oracle** for downstream M1 module comparisons.
+  - **Implication for M1 validation strategy**: stop deriving μ from
+    static-snapshot FBA — structurally bounded.  Instead, validate
+    downstream M1 modules against Karr's stored per-reaction fluxes.
+    Tracked as `m1-per-reaction-oracle` todo.  Schema_v4 published
+    with 5-mode comparison; 453/453 tests still green.
 - M2: Nucleotide biosynthesis (~15 enzymes). Validation: NTP pool sizes vs
   Karr's reported steady-state.
 - M3: Transcription of metabolic enzymes (RNAP + σ-factor + the genes

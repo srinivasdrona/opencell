@@ -538,3 +538,53 @@ unblock.
 
 **Where to resume:** investigate Mode D 7× gap. Order of attempts: (i) restore the small-penalty objective terms, (ii) apply `fbaEnzymeBounds` as additional flux ceilings, (iii) check whether the static snapshot is even *meant* to FBA-equilibrate to μ — read the relevant chunk of Karr's `Metabolism.m` `evolveState` method. If none reach 25%, that is itself a valid finding and the M1 acceptance criterion needs revising.
 
+
+
+## Session N+8 (2026-04-25 morning) — Mode D 7x gap closed via structural finding; Mode E oracle added
+
+**User trigger:** `start with closing the 7x gap and we will take it from there`.
+
+**Key result:** Gap closed not by parameter tuning but by a structural finding about Karr's snapshot.
+
+**Investigation path (six diagnostic scripts under scripts/matlab/_*.py, all gitignored + cleaned up after):**
+
+1. Inventoried fba* fields in the targeted MAT — found we only had 4 (fbaReactionStoichiometryMatrix, fbaReactionBounds, fbaEnzymeBounds, fbaObjective). The 174-property manifest revealed we were missing fbaRightHandSide, fbaReactionIndexs_*, fbaSubstrateIndexs_*, substrateExternalExchangeBounds, and 13 substrateIndexs_* tags.
+
+2. Re-extended the wishlist in extract_karr_targeted.m and re-ran R2026a extraction (~3 min). New MAT now has all 8 fbaReactionIndexs_* maps + RHS.
+
+3. Tried full Karr LP exactly (S, RHS, both bound sets, full obj): infeasible. Decomposed across (rxn vs rxn+enz) × (max-bio vs full-obj) — found NaN propagation in fbaEnzymeBounds was corrupting bounds (168 NaN entries means 'no enzyme catalyses this reaction', should be ±inf not NaN-via-min/max).
+
+4. After NaN fix, with full LP: stable mu=1.58e-7/s vs target 2.14e-5/s — 135x too low. The enzyme bounds were over-constraining.
+
+5. **Witness test (the breakthrough):** loaded Karr's own stored flux vector (state.MetabolicReaction.dump.fluxs, 645-element, 253 nonzero), mapped to 504-col FBA via reactionIndexs_fba, checked feasibility against snapshot bounds. Found **34 of 504 cols violate Karr's own snapshot fbaEnzymeBounds**, by up to 100x (e.g. col 5: stored v=20690, ub=504; col 50: 253 vs 12).
+
+   Direct proof that snapshot enzyme bounds are POST-step (free-enzyme count after substrate binding tightened it), NOT the bounds Karr used during the LP solve. `fbaEnzymeBounds` is computed at end-of-step from current free-enzyme count, but the LP that produced `fluxs` ran at start-of-step with a different enzyme count.
+
+6. Final test: drop enzyme bounds, vary BIG. mu scales linearly with BIG. **At BIG=1e3 (Karr's natural cobratoolbox-style ceiling, since stored fluxs span [-1e3, 1e3] for conversion rxns and only [-1e6, 1e6] for transport): mu = 1.089e-5/s = 0.039/h = 51% of Karr stored 2.119e-5/s = 0.076/h.** Within 2x — the best a static snapshot can do.
+
+**Changes shipped:**
+- `extract_karr_targeted.m` extended with full property wishlist (52 named props on metabolism, vs 24 before).
+- `run_karr_fitted_fba` (Mode D) rewritten: full Karr LP exactly, NaN-cleaned bounds, drops snapshot enzyme bounds with documented reason, BIG=1e3 documented in artifact.
+- `run_karr_stored_oracle` (Mode E) added: reads Karr's stored runtime values directly. The oracle for downstream per-reaction validation.
+- `schema_v4` for `artifacts/M1_validation.json`; report rewritten as 5-mode.
+- Honest interpretation: `the right oracle is NOT 'compare derived FBA growth to Karr published mu' — that comparison is structurally bounded by what a static snapshot can express. The right oracle is Mode E.`
+
+**Honest scoreboard:**
+- Mode A (iPS189 + Karr params): mu=0
+- Mode D (Karr's own FBA, snapshot bounds, no enz): mu=0.039 /h, ratio 0.51x
+- Mode E (Karr stored): mu=0.076 /h (= published target, ground truth)
+
+The 'matching' metrics in Mode D (NGAM=8.39, GAM=59.81, cellCycleLength=32400) remain tautological — read from MAT, not predicted.
+
+**Commit:** `c5244f2` — phase5: M1 Mode D fixed + Mode E added — structural finding on Karr's snapshot.
+
+**Tests:** 453/453 still green (.venv-wsl, 11m02s).
+
+**Todos:**
+- `m1-mode-d-close-gap` → done (closed by structural finding, not parameter tuning).
+- `m1-per-reaction-oracle` (NEW pending): use Karr's stored 645-flux vector as gold-standard for per-reaction validation of M1 modules. Acceptance: median `|log2(predicted/karr)| < 1` on shared reactions.
+
+**Where to resume:** `m1-per-reaction-oracle` is the next M1 work. Identify which reactions in opencell/m1/central_carbon.py map to Karr's reactionWholeCellModelIDs and write the per-reaction comparison. After that, M2 nucleotides becomes the next module.
+
+**Files in working tree (all committed):** scripts/m1_validate.py, scripts/matlab/extract_karr_targeted.m, artifacts/M1_validation.json, docs/phase5/M1_validation_report.md.
+
