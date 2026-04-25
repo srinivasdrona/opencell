@@ -338,6 +338,20 @@ still closes. Validation oracles below are the *additional* checks.
     (`m1-vivarium-process` next).  iPS189 module retained for a
     separate cleanup commit (`m1-cleanup-ips189`) to keep diffs
     reviewable.  460 tests (453 + 7 new) pass.
+  - **`m1-vivarium-process` PASSED**: `opencell/vivarium/karr_m1.py`
+    wraps M1 as a 1-second-tick `KarrMetabolismProcess` plus a
+    `build_karr_m1_engine` harness.  Ports: writes `metabolic_reaction.fluxs`
+    (645-dict by WCM ID), `metabolic_reaction.growth_per_{s,h}`; reads
+    `substrates` (585-dict by WCM ID, placeholder).  100-step in-vacuo
+    run completes; biomass stable across ticks (snapshot FBA is
+    time-invariant); all 645 fluxes finite; predicted biomass matches
+    standalone solver to relative tol 1e-9.  Substrate-delta writeback
+    is deliberately deferred (needs fba_sub_idx_substrates -> 1686 count
+    mapping; M2/integrator territory).  464/464 tests pass.
+  - **Chassis is healthy**: M2..M7 can now plug into the same Vivarium
+    Engine using shared `metabolic_reaction.fluxs`, `substrates`,
+    `enzymes`, `rna`, `protein` stores.  Next: start M2 nucleotide
+    biosynthesis as the second Process on this chassis.
 - M2: Nucleotide biosynthesis (~15 enzymes). Validation: NTP pool sizes vs
   Karr's reported steady-state.
 - M3: Transcription of metabolic enzymes (RNAP + σ-factor + the genes

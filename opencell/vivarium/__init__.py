@@ -30,6 +30,10 @@ from opencell.vivarium.processes import (
 )
 from opencell.vivarium.persist import PersistentMetabolismProcess
 from opencell.vivarium.composite import build_coupled_engine
+from opencell.vivarium.karr_m1 import (
+    KarrMetabolismProcess,
+    build_karr_m1_engine,
+)
 
 __all__ = [
     "GeneNetworkProcess",
@@ -37,4 +41,6 @@ __all__ = [
     "PersistentMetabolismProcess",
     "SignalProcess",
     "build_coupled_engine",
+    "KarrMetabolismProcess",
+    "build_karr_m1_engine",
 ]
