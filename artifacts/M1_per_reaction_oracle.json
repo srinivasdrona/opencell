@@ -1,0 +1,2738 @@
+{
+  "schema_version": "v2_karr_native",
+  "kind": "M1_per_reaction_oracle",
+  "module": "opencell.m1.karr_metabolism",
+  "fixture": "data/karr_fixtures/karr_native_m1.json",
+  "lp": {
+    "status": "ok",
+    "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+    "objective_value": 0.010929478881029577,
+    "biomass_flux_per_s": 1.0894671455778339e-05,
+    "biomass_flux_per_h": 0.03922081724080202,
+    "big": 1000.0,
+    "use_full_objective": true,
+    "n_nonzero": 324
+  },
+  "stored_runtime": {
+    "growth_per_s": 2.1192692552000678e-05,
+    "growth_per_h": 0.07629369318720244,
+    "growth0_per_s": 2.1393357961367016e-05,
+    "meanInitialGrowthRate_per_s": 2.1393e-05,
+    "doublingTime_s": 47186.07593378199,
+    "doublingTime_h": 13.107243314939442
+  },
+  "summary": {
+    "n_metabolic_conversion_cols": 336,
+    "n_rows_emitted": 336,
+    "n_comparable": 196,
+    "median_abs_log2_ratio": 0.9599442045485458,
+    "p90_abs_log2_ratio": 9.965784284662087,
+    "n_within_2x": 105,
+    "n_within_8x": 126,
+    "sign_counts": {
+      "agree": 147,
+      "pred_zero_karr_nonzero": 57,
+      "karr_zero_pred_nonzero": 35,
+      "both_zero": 52,
+      "disagree": 45
+    }
+  },
+  "acceptance": {
+    "metric": "median_abs_log2_ratio",
+    "threshold": 1.0,
+    "value": 0.9599442045485458,
+    "passed": true,
+    "n_comparable": 196
+  },
+  "rows": [
+    {
+      "fba_col": 0,
+      "wcm_id": "Aas4",
+      "predicted": 1.34817022875843,
+      "karr_stored": 2.6225074598907803,
+      "log2_abs_ratio": -0.9599442045484831,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 1,
+      "wcm_id": "Aas5",
+      "predicted": 1.030163996437089,
+      "karr_stored": 2.003910713897873,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 2,
+      "wcm_id": "Aas7",
+      "predicted": 0.696588427130888,
+      "karr_stored": 1.3550279539303434,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 3,
+      "wcm_id": "AceE",
+      "predicted": 471.98450095164213,
+      "karr_stored": 5431.671648108105,
+      "log2_abs_ratio": -3.524584879160933,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 4,
+      "wcm_id": "AckA",
+      "predicted": 471.9454853050621,
+      "karr_stored": 5431.59575352,
+      "log2_abs_ratio": -3.5246839832203567,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 5,
+      "wcm_id": "Adk1",
+      "predicted": 22.988832148125024,
+      "karr_stored": 20691.065371683326,
+      "log2_abs_ratio": -9.813859037549635,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 6,
+      "wcm_id": "Adk2",
+      "predicted": 1000.0,
+      "karr_stored": 11952.990987665702,
+      "log2_abs_ratio": -3.5792997627291756,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 7,
+      "wcm_id": "Adk3",
+      "predicted": -1000.0,
+      "karr_stored": -32620.84276752943,
+      "log2_abs_ratio": -5.027722149801329,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 8,
+      "wcm_id": "Adk4",
+      "predicted": -0.0,
+      "karr_stored": 9.032480502442068,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 9,
+      "wcm_id": "AHCYSs",
+      "predicted": 2.654025176572441,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 10,
+      "wcm_id": "Apt",
+      "predicted": 7.668318334210461,
+      "karr_stored": 5.88419812381498,
+      "log2_abs_ratio": 0.38206440506408584,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 11,
+      "wcm_id": "Apts_Ala",
+      "predicted": 4.283747175176323,
+      "karr_stored": 8.332893490410209,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 12,
+      "wcm_id": "Apts_Arg",
+      "predicted": 2.365408324694897,
+      "karr_stored": 4.601274264091207,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 13,
+      "wcm_id": "Apts_Asn",
+      "predicted": 4.915103253242966,
+      "karr_stored": 9.561029217826452,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 14,
+      "wcm_id": "Apts_Asp",
+      "predicted": -0.0,
+      "karr_stored": 6.454332559268682,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 15,
+      "wcm_id": "Apts_Cys",
+      "predicted": 0.788304840687396,
+      "karr_stored": 1.533437900697881,
+      "log2_abs_ratio": -0.9599442045484831,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 16,
+      "wcm_id": "Apts_Gln",
+      "predicted": 3.1193893058023163,
+      "karr_stored": 14.063085675201053,
+      "log2_abs_ratio": -2.172577660277279,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 17,
+      "wcm_id": "Apts_Glu",
+      "predicted": 7.428139293353489,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 18,
+      "wcm_id": "Apts_Gly",
+      "predicted": -0.0,
+      "karr_stored": 7.169539578035619,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 19,
+      "wcm_id": "Apts_His",
+      "predicted": 1.148423487591593,
+      "karr_stored": 2.233953175257659,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 20,
+      "wcm_id": "Apts_Ile",
+      "predicted": 5.819958009687366,
+      "karr_stored": 11.321184054562794,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 21,
+      "wcm_id": "Apts_Leu",
+      "predicted": 7.103279059118439,
+      "karr_stored": 13.817544642993274,
+      "log2_abs_ratio": -0.9599442045484824,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 22,
+      "wcm_id": "Apts_Lys",
+      "predicted": -0.0,
+      "karr_stored": 13.240219690432818,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 23,
+      "wcm_id": "Apts_Met",
+      "predicted": -0.0,
+      "karr_stored": 2.5813508842681627,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 24,
+      "wcm_id": "Apts_Phe",
+      "predicted": -0.0,
+      "karr_stored": 7.640918939026314,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 25,
+      "wcm_id": "Apts_Pro",
+      "predicted": 2.088768311743805,
+      "karr_stored": 4.063144521872639,
+      "log2_abs_ratio": -0.9599442045484824,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 26,
+      "wcm_id": "Apts_Ser",
+      "predicted": -0.0,
+      "karr_stored": 8.137604268994288,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 27,
+      "wcm_id": "Apts_Thr",
+      "predicted": -0.0,
+      "karr_stored": 7.566709770007458,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 28,
+      "wcm_id": "Apts_Trp",
+      "predicted": -0.0,
+      "karr_stored": 1.135167571998244,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 29,
+      "wcm_id": "Apts_Tyr",
+      "predicted": -0.0,
+      "karr_stored": 1472.8290379694804,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 30,
+      "wcm_id": "Apts_Val",
+      "predicted": 4.686662360402296,
+      "karr_stored": 9.116658074747221,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 31,
+      "wcm_id": "ArcC",
+      "predicted": -0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 32,
+      "wcm_id": "AspC1",
+      "predicted": 6.636045186521329,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 33,
+      "wcm_id": "AtpA",
+      "predicted": 1000.0,
+      "karr_stored": -53.900000000000006,
+      "log2_abs_ratio": 4.213570916796944,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 34,
+      "wcm_id": "Cdd1",
+      "predicted": 0.0,
+      "karr_stored": 5.6677528348600354,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 35,
+      "wcm_id": "Cdd2",
+      "predicted": 0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 36,
+      "wcm_id": "CdsA4",
+      "predicted": 0.674085114379215,
+      "karr_stored": 1.31125372994539,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 37,
+      "wcm_id": "CdsA5",
+      "predicted": 0.5150819982185445,
+      "karr_stored": 1.0019553569489363,
+      "log2_abs_ratio": -0.9599442045484824,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 38,
+      "wcm_id": "CdsA7",
+      "predicted": 0.348294213565444,
+      "karr_stored": 0.6775139769651718,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 39,
+      "wcm_id": "Cls1",
+      "predicted": 0.06988640626490877,
+      "karr_stored": 0.13594545990194928,
+      "log2_abs_ratio": -0.9599442045484824,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 40,
+      "wcm_id": "Cls2",
+      "predicted": 0.053955397660169865,
+      "karr_stored": 0.10495590975590603,
+      "log2_abs_ratio": -0.9599442045484824,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 41,
+      "wcm_id": "Cls3",
+      "predicted": 0.036216046900248586,
+      "karr_stored": 0.07044870976799662,
+      "log2_abs_ratio": -0.9599442045484824,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 42,
+      "wcm_id": "CmkA1",
+      "predicted": 1000.0,
+      "karr_stored": 2606.8942717600003,
+      "log2_abs_ratio": -1.3823320724397703,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 43,
+      "wcm_id": "CmkA2",
+      "predicted": 5.622566563358295,
+      "karr_stored": 10.937211371088834,
+      "log2_abs_ratio": -0.9599442045485357,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 44,
+      "wcm_id": "CmkB3",
+      "predicted": 2.913660209850377,
+      "karr_stored": 80.61936179091089,
+      "log2_abs_ratio": -4.790221816714316,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 45,
+      "wcm_id": "Dak1",
+      "predicted": 0.0,
+      "karr_stored": 9.032480502442068,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 46,
+      "wcm_id": "DcdK",
+      "predicted": -1000.0,
+      "karr_stored": -2606.89427176,
+      "log2_abs_ratio": -1.38233207243977,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 47,
+      "wcm_id": "Dck",
+      "predicted": 0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 48,
+      "wcm_id": "DeoC",
+      "predicted": 0.0,
+      "karr_stored": -0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 49,
+      "wcm_id": "DeoD1",
+      "predicted": -0.0,
+      "karr_stored": -240.06784894632358,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 50,
+      "wcm_id": "DeoD2",
+      "predicted": 4.643388623855471,
+      "karr_stored": 253.29045852837226,
+      "log2_abs_ratio": -5.76947089050855,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 51,
+      "wcm_id": "DeoD3",
+      "predicted": -0.0,
+      "karr_stored": -4.190129079606916,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 52,
+      "wcm_id": "DeoD4",
+      "predicted": -0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 53,
+      "wcm_id": "DeoD5",
+      "predicted": -2.654025176572441,
+      "karr_stored": 3.7350934134171873e-25,
+      "log2_abs_ratio": 82.55524010384988,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 54,
+      "wcm_id": "DeoD6",
+      "predicted": -0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 55,
+      "wcm_id": "DeoD8",
+      "predicted": -1000.0,
+      "karr_stored": 0.21359900598890025,
+      "log2_abs_ratio": 12.1928074462797,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 56,
+      "wcm_id": "Dgk1",
+      "predicted": 0.0,
+      "karr_stored": 4.190129079606917,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 57,
+      "wcm_id": "DhfR1",
+      "predicted": -0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 58,
+      "wcm_id": "Eno",
+      "predicted": 538.2196298290761,
+      "karr_stored": 5431.671648107927,
+      "log2_abs_ratio": -3.3351293546438416,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 59,
+      "wcm_id": "Fba",
+      "predicted": -8.339840730458377,
+      "karr_stored": 2717.5171652324107,
+      "log2_abs_ratio": -8.34805360058287,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 60,
+      "wcm_id": "FMETHs",
+      "predicted": -0.0,
+      "karr_stored": -0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 61,
+      "wcm_id": "FolD1",
+      "predicted": 438.29536910170486,
+      "karr_stored": 283.38859209529295,
+      "log2_abs_ratio": 0.6291217526145948,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 62,
+      "wcm_id": "FolD2",
+      "predicted": 438.2531315265278,
+      "karr_stored": 283.3064301,
+      "log2_abs_ratio": 0.6294010533651717,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 63,
+      "wcm_id": "Fre1",
+      "predicted": 2.8786370630886946,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 64,
+      "wcm_id": "Fre2",
+      "predicted": 0.09041146458018946,
+      "karr_stored": 0.17587151478604793,
+      "log2_abs_ratio": -0.9599442045484824,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 65,
+      "wcm_id": "Fre5",
+      "predicted": 8.951484876146225,
+      "karr_stored": 4.190129079606578,
+      "log2_abs_ratio": 1.0951323293466066,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 66,
+      "wcm_id": "Fre6",
+      "predicted": 0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 67,
+      "wcm_id": "FruK1",
+      "predicted": 0.0,
+      "karr_stored": -0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 68,
+      "wcm_id": "FthC",
+      "predicted": 438.2219188019922,
+      "karr_stored": 283.24571402632324,
+      "log2_abs_ratio": 0.6296075203930831,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 69,
+      "wcm_id": "FTHFS",
+      "predicted": 0.0,
+      "karr_stored": -0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 70,
+      "wcm_id": "GalE",
+      "predicted": -0.21201505544258203,
+      "karr_stored": -0.4124190348123734,
+      "log2_abs_ratio": -0.9599442045484822,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 71,
+      "wcm_id": "GalU1",
+      "predicted": 0.21201505544258203,
+      "karr_stored": 0.4124190348123734,
+      "log2_abs_ratio": -0.9599442045484822,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 72,
+      "wcm_id": "GapA",
+      "predicted": 538.2196298290761,
+      "karr_stored": 5431.671648107927,
+      "log2_abs_ratio": -3.3351293546438416,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 73,
+      "wcm_id": "Glf",
+      "predicted": 0.21201505544258203,
+      "karr_stored": 0.41241903481237346,
+      "log2_abs_ratio": -0.9599442045484822,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 74,
+      "wcm_id": "GLNHs",
+      "predicted": 0.0,
+      "karr_stored": 15.990282943633366,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 75,
+      "wcm_id": "GlpK",
+      "predicted": 0.16005785082532722,
+      "karr_stored": 5.910974675216347,
+      "log2_abs_ratio": -5.206730691754347,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 76,
+      "wcm_id": "GlyA3",
+      "predicted": 2.789900925356278,
+      "karr_stored": 0.26431021632326074,
+      "log2_abs_ratio": 3.399909794805903,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 77,
+      "wcm_id": "GlyA4",
+      "predicted": 4.717362673295014,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 78,
+      "wcm_id": "glycosyltransferase_PG160_DAG160",
+      "predicted": 0.05555064847437845,
+      "karr_stored": 0.1080590469350378,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 79,
+      "wcm_id": "glycosyltransferase_PG161_DAG161",
+      "predicted": 0.04278411059795571,
+      "karr_stored": 0.08322513493808628,
+      "log2_abs_ratio": -0.9599442045484822,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 80,
+      "wcm_id": "glycosyltransferase_PG181_DAG181",
+      "predicted": 0.028304443920234526,
+      "karr_stored": 0.05505878541557367,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 81,
+      "wcm_id": "Gmk1",
+      "predicted": 464.5017513355018,
+      "karr_stored": -3448.459706588828,
+      "log2_abs_ratio": -2.8921961685539896,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 82,
+      "wcm_id": "Gmk2",
+      "predicted": 1000.0,
+      "karr_stored": 3452.5636401666666,
+      "log2_abs_ratio": -1.787668007533771,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 83,
+      "wcm_id": "Gmk3",
+      "predicted": -460.2379661904665,
+      "karr_stored": 3452.5636401666666,
+      "log2_abs_ratio": -2.9072161023979453,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 84,
+      "wcm_id": "Gmk4",
+      "predicted": -1000.0,
+      "karr_stored": -3448.37351108706,
+      "log2_abs_ratio": -1.7859160486174037,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 85,
+      "wcm_id": "GpmA",
+      "predicted": 538.2196298290761,
+      "karr_stored": 5431.671648107927,
+      "log2_abs_ratio": -3.3351293546438416,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 86,
+      "wcm_id": "GpsA",
+      "predicted": 2.788225598508511,
+      "karr_stored": -0.17587151478604793,
+      "log2_abs_ratio": 3.98675355679631,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 87,
+      "wcm_id": "HCYSMT",
+      "predicted": 0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 88,
+      "wcm_id": "HinT_AMP_Lysine_MG132",
+      "predicted": 1000.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 89,
+      "wcm_id": "HinT_AMP_Mor_MG132",
+      "predicted": -0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 90,
+      "wcm_id": "HinT_AMP_NH2_MG132",
+      "predicted": -0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 91,
+      "wcm_id": "HinT_GMP_Lysine_MG132",
+      "predicted": -0.0,
+      "karr_stored": -0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 92,
+      "wcm_id": "HinT_GMP_Mor_MG132",
+      "predicted": 1000.0,
+      "karr_stored": -0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 93,
+      "wcm_id": "Hpt1",
+      "predicted": -0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 94,
+      "wcm_id": "Hpt2",
+      "predicted": 4.263785145035262,
+      "karr_stored": 4.103933577838525,
+      "log2_abs_ratio": 0.05512736045167158,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 95,
+      "wcm_id": "LIPASE_DIBUTYRIN_MG310",
+      "predicted": -1000.0,
+      "karr_stored": 1000000.0,
+      "log2_abs_ratio": -9.965784284662087,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 96,
+      "wcm_id": "LIPASE_DIBUTYRIN_MG327",
+      "predicted": -1000.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 97,
+      "wcm_id": "LIPASE_DIBUTYRIN_MG344",
+      "predicted": 1000.0,
+      "karr_stored": -1000000.0,
+      "log2_abs_ratio": -9.965784284662087,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 98,
+      "wcm_id": "LIPASE_METHYL_OCDCEA_MG310",
+      "predicted": -1000.0,
+      "karr_stored": 1000000.0,
+      "log2_abs_ratio": -9.965784284662087,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 99,
+      "wcm_id": "LIPASE_METHYL_OCDCEA_MG327",
+      "predicted": -1000.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 100,
+      "wcm_id": "LIPASE_METHYL_OCDCEA_MG344",
+      "predicted": 1000.0,
+      "karr_stored": -1000000.0,
+      "log2_abs_ratio": -9.965784284662087,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 101,
+      "wcm_id": "LIPASE_MONOBUTYRIN_MG310",
+      "predicted": -1000.0,
+      "karr_stored": 1000000.0,
+      "log2_abs_ratio": -9.965784284662087,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 102,
+      "wcm_id": "LIPASE_MONOBUTYRIN_MG327",
+      "predicted": -0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 103,
+      "wcm_id": "LIPASE_MONOBUTYRIN_MG344",
+      "predicted": 1000.0,
+      "karr_stored": -1000000.0,
+      "log2_abs_ratio": -9.965784284662087,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 104,
+      "wcm_id": "LIPASE_TRIBUTYRIN_MG310",
+      "predicted": -1000.0,
+      "karr_stored": 1000000.0,
+      "log2_abs_ratio": -9.965784284662087,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 105,
+      "wcm_id": "LIPASE_TRIBUTYRIN_MG327",
+      "predicted": 1000.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 106,
+      "wcm_id": "LIPASE_TRIBUTYRIN_MG344",
+      "predicted": 1000.0,
+      "karr_stored": -1000000.0,
+      "log2_abs_ratio": -9.965784284662087,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 107,
+      "wcm_id": "LIPASE_TRILAURIN_MG310",
+      "predicted": -1000.0,
+      "karr_stored": 1000000.0,
+      "log2_abs_ratio": -9.965784284662087,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 108,
+      "wcm_id": "LIPASE_TRILAURIN_MG327",
+      "predicted": -333.3333333333333,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 109,
+      "wcm_id": "LIPASE_TRILAURIN_MG344",
+      "predicted": 1000.0,
+      "karr_stored": -1000000.0,
+      "log2_abs_ratio": -9.965784284662087,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 110,
+      "wcm_id": "LIPASE_TRIMYRISTIN_MG310",
+      "predicted": -1000.0,
+      "karr_stored": 1000000.0,
+      "log2_abs_ratio": -9.965784284662087,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 111,
+      "wcm_id": "LIPASE_TRIMYRISTIN_MG327",
+      "predicted": -333.3333333333333,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 112,
+      "wcm_id": "LIPASE_TRIMYRISTIN_MG344",
+      "predicted": 1000.0,
+      "karr_stored": -1000000.0,
+      "log2_abs_ratio": -9.965784284662087,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 113,
+      "wcm_id": "LIPASE_TRIOLEIN_MG310",
+      "predicted": -1000.0,
+      "karr_stored": 1000000.0,
+      "log2_abs_ratio": -9.965784284662087,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 114,
+      "wcm_id": "LIPASE_TRIOLEIN_MG327",
+      "predicted": 1000.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 115,
+      "wcm_id": "LIPASE_TRIOLEIN_MG344",
+      "predicted": 1000.0,
+      "karr_stored": -1000000.0,
+      "log2_abs_ratio": -9.965784284662087,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 116,
+      "wcm_id": "LIPASE_TRIPALMITIN_MG310",
+      "predicted": -1000.0,
+      "karr_stored": 1000000.0,
+      "log2_abs_ratio": -9.965784284662087,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 117,
+      "wcm_id": "LIPASE_TRIPALMITIN_MG327",
+      "predicted": -332.8839432570805,
+      "karr_stored": -2631.340384896866,
+      "log2_abs_ratio": -2.982706696201283,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 118,
+      "wcm_id": "LIPASE_TRIPALMITIN_MG344",
+      "predicted": 1000.0,
+      "karr_stored": -1000000.0,
+      "log2_abs_ratio": -9.965784284662087,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 119,
+      "wcm_id": "LIPASE_TRISTEARIN_MG310",
+      "predicted": -1000.0,
+      "karr_stored": 1000000.0,
+      "log2_abs_ratio": -9.965784284662087,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 120,
+      "wcm_id": "LIPASE_TRISTEARIN_MG327",
+      "predicted": -333.3333333333333,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 121,
+      "wcm_id": "LIPASE_TRISTEARIN_MG344",
+      "predicted": 1000.0,
+      "karr_stored": -1000000.0,
+      "log2_abs_ratio": -9.965784284662087,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 122,
+      "wcm_id": "LIPASE_TRI_HDCEA_IN_MG310",
+      "predicted": -1000.0,
+      "karr_stored": 1000000.0,
+      "log2_abs_ratio": -9.965784284662087,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 123,
+      "wcm_id": "LIPASE_TRI_HDCEA_IN_MG327",
+      "predicted": 294.09059741099173,
+      "karr_stored": -2631.5465838121972,
+      "log2_abs_ratio": -3.1615783691402166,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 124,
+      "wcm_id": "LIPASE_TRI_HDCEA_IN_MG344",
+      "predicted": 1000.0,
+      "karr_stored": -1000000.0,
+      "log2_abs_ratio": -9.965784284662087,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 125,
+      "wcm_id": "LIPASE_TRI_TTDCEA_IN_MG310",
+      "predicted": -1000.0,
+      "karr_stored": 1000000.0,
+      "log2_abs_ratio": -9.965784284662087,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 126,
+      "wcm_id": "LIPASE_TRI_TTDCEA_IN_MG327",
+      "predicted": -333.3333333333333,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 127,
+      "wcm_id": "LIPASE_TRI_TTDCEA_IN_MG344",
+      "predicted": 1000.0,
+      "karr_stored": -1000000.0,
+      "log2_abs_ratio": -9.965784284662087,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 128,
+      "wcm_id": "LIPASE_TWEEN80_MG310",
+      "predicted": -1000.0,
+      "karr_stored": 1000000.0,
+      "log2_abs_ratio": -9.965784284662087,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 129,
+      "wcm_id": "LIPASE_TWEEN80_MG327",
+      "predicted": -999.3034115728691,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 130,
+      "wcm_id": "LIPASE_TWEEN80_MG344",
+      "predicted": 1000.0,
+      "karr_stored": -1000000.0,
+      "log2_abs_ratio": -9.965784284662087,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 131,
+      "wcm_id": "LIPOYLLYSHs",
+      "predicted": 13.61297939614333,
+      "karr_stored": -0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 132,
+      "wcm_id": "LplA",
+      "predicted": 0.011373370593360313,
+      "karr_stored": 0.022123874707319552,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 133,
+      "wcm_id": "MetF",
+      "predicted": 2.6852379011080445,
+      "karr_stored": 0.06071607367677866,
+      "log2_abs_ratio": 5.466827601450959,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 134,
+      "wcm_id": "METHFHYD",
+      "predicted": 0.04223757517697843,
+      "karr_stored": 0.08216199529293373,
+      "log2_abs_ratio": -0.9599442045484824,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 135,
+      "wcm_id": "MetK",
+      "predicted": 0.26252637182579547,
+      "karr_stored": 0.5106753982879807,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 136,
+      "wcm_id": "MetS",
+      "predicted": 2.654025176572441,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 137,
+      "wcm_id": "MOrx",
+      "predicted": 0.07913542980041663,
+      "karr_stored": 0.1539369810772184,
+      "log2_abs_ratio": -0.9599442045484822,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 138,
+      "wcm_id": "NADD1",
+      "predicted": -0.0,
+      "karr_stored": 0.62752991338862,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 139,
+      "wcm_id": "NADD2",
+      "predicted": 0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 140,
+      "wcm_id": "NadE",
+      "predicted": -0.0,
+      "karr_stored": 0.6275299133886199,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 141,
+      "wcm_id": "NadK",
+      "predicted": 0.06242513876638507,
+      "karr_stored": 0.12143154373785381,
+      "log2_abs_ratio": -0.9599442045483921,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 142,
+      "wcm_id": "NADR1",
+      "predicted": 0.322598566381771,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 143,
+      "wcm_id": "NH3eq",
+      "predicted": 1000.0,
+      "karr_stored": 261.0983548114283,
+      "log2_abs_ratio": 1.9373347276727295,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 144,
+      "wcm_id": "NOX",
+      "predicted": 995.6825284215278,
+      "karr_stored": 10859.080307898705,
+      "log2_abs_ratio": -3.447072296485603,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 145,
+      "wcm_id": "NrdEF_ADP",
+      "predicted": 2.321694311927672,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 146,
+      "wcm_id": "NrdEF_CDP",
+      "predicted": 1.0770240630726886,
+      "karr_stored": 2.0950645398032886,
+      "log2_abs_ratio": -0.9599442045486211,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 147,
+      "wcm_id": "NrdEF_GDP",
+      "predicted": 1.0770240630726886,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 148,
+      "wcm_id": "NrdEF_maintenance",
+      "predicted": 4.475742438073112,
+      "karr_stored": 2.095064539803289,
+      "log2_abs_ratio": 1.0951323293466066,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 149,
+      "wcm_id": "Ohr_H2O2",
+      "predicted": 495.5242575619269,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 150,
+      "wcm_id": "Ohr_rx",
+      "predicted": 495.5242575619269,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 151,
+      "wcm_id": "OsmC_H2O2",
+      "predicted": -0.0,
+      "karr_stored": 139.5536947045805,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 152,
+      "wcm_id": "OsmC_rx",
+      "predicted": 0.0,
+      "karr_stored": 139.5536947045805,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 153,
+      "wcm_id": "PcbX",
+      "predicted": -933.764871122566,
+      "karr_stored": -1000000.0,
+      "log2_abs_ratio": -10.064653065129303,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 154,
+      "wcm_id": "Pdp1",
+      "predicted": 1000.0,
+      "karr_stored": -0.21359900598890022,
+      "log2_abs_ratio": 12.1928074462797,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 155,
+      "wcm_id": "Pdp2",
+      "predicted": -4.643388623855471,
+      "karr_stored": -9.03248050244175,
+      "log2_abs_ratio": -0.9599442045484824,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 156,
+      "wcm_id": "Pdp3",
+      "predicted": -2.654025176572441,
+      "karr_stored": 3.7346193249736785e-25,
+      "log2_abs_ratio": 82.55542323406421,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 157,
+      "wcm_id": "PfkA1",
+      "predicted": 0.0,
+      "karr_stored": 1309.7164437913584,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 158,
+      "wcm_id": "PfkA2",
+      "predicted": 0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 159,
+      "wcm_id": "PfkA3",
+      "predicted": 991.6601592695416,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 160,
+      "wcm_id": "PfkA4",
+      "predicted": 0.0,
+      "karr_stored": 894.1864361610526,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 161,
+      "wcm_id": "PfkA5",
+      "predicted": -1000.0,
+      "karr_stored": 513.61428528,
+      "log2_abs_ratio": 0.961242765838351,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 162,
+      "wcm_id": "Pgi",
+      "predicted": -0.21201505544258203,
+      "karr_stored": 2724.594272975772,
+      "log2_abs_ratio": -13.649587073716408,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 163,
+      "wcm_id": "Pgk1",
+      "predicted": 1000.0,
+      "karr_stored": -72.9340828125,
+      "log2_abs_ratio": 3.7772630320988716,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 164,
+      "wcm_id": "Pgk2",
+      "predicted": 1000.0,
+      "karr_stored": -680.7181062499999,
+      "log2_abs_ratio": 0.5548706107624236,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 165,
+      "wcm_id": "Pgk3",
+      "predicted": 536.0655817029307,
+      "karr_stored": -1.9499999483426411,
+      "log2_abs_ratio": 8.102791613301704,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 166,
+      "wcm_id": "Pgk4",
+      "predicted": -1000.0,
+      "karr_stored": -632.095384375,
+      "log2_abs_ratio": 0.6617858146789355,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 167,
+      "wcm_id": "Pgk5",
+      "predicted": -997.8459518738546,
+      "karr_stored": 6819.369221493769,
+      "log2_abs_ratio": -2.7727492852716535,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 168,
+      "wcm_id": "Pgm",
+      "predicted": -0.21201505544258203,
+      "karr_stored": -0.4124190348123734,
+      "log2_abs_ratio": -0.9599442045484822,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 169,
+      "wcm_id": "PgpA1",
+      "predicted": 0.2016710221306896,
+      "karr_stored": 0.39229746266433785,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 170,
+      "wcm_id": "PgpA2",
+      "predicted": 0.15069490591829543,
+      "karr_stored": 0.29313695444989835,
+      "log2_abs_ratio": -0.9599442045484824,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 171,
+      "wcm_id": "PgpA3",
+      "predicted": 0.1007365377207317,
+      "karr_stored": 0.19595620495156693,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 172,
+      "wcm_id": "PgsA1",
+      "predicted": 0.674085114379215,
+      "karr_stored": 1.31125372994539,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 173,
+      "wcm_id": "PgsA2",
+      "predicted": 0.5150819982185445,
+      "karr_stored": 1.0019553569489363,
+      "log2_abs_ratio": -0.9599442045484824,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 174,
+      "wcm_id": "PgsA3",
+      "predicted": 0.348294213565444,
+      "karr_stored": 0.6775139769651717,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 175,
+      "wcm_id": "PhnW",
+      "predicted": -0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 176,
+      "wcm_id": "PhnX",
+      "predicted": -0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 177,
+      "wcm_id": "PlsC4",
+      "predicted": 0.674085114379215,
+      "karr_stored": 1.31125372994539,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 178,
+      "wcm_id": "PlsC5",
+      "predicted": 0.5150819982185445,
+      "karr_stored": 1.0019553569489363,
+      "log2_abs_ratio": -0.9599442045484824,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 179,
+      "wcm_id": "PlsC7",
+      "predicted": 0.348294213565444,
+      "karr_stored": 0.6775139769651717,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 180,
+      "wcm_id": "PlsX4",
+      "predicted": 0.674085114379215,
+      "karr_stored": 1.31125372994539,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 181,
+      "wcm_id": "PlsX5",
+      "predicted": 0.5150819982185445,
+      "karr_stored": 1.0019553569489366,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 182,
+      "wcm_id": "PlsX7",
+      "predicted": 0.348294213565444,
+      "karr_stored": 0.6775139769651717,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 183,
+      "wcm_id": "PncB",
+      "predicted": 0.0,
+      "karr_stored": 0.62752991338862,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 184,
+      "wcm_id": "Ppa",
+      "predicted": 17.643848579799695,
+      "karr_stored": 21.84882501488231,
+      "log2_abs_ratio": -0.30839041229321934,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 185,
+      "wcm_id": "Ppc",
+      "predicted": 1000.0,
+      "karr_stored": 1000000.0,
+      "log2_abs_ratio": -9.965784284662087,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 186,
+      "wcm_id": "PrsA",
+      "predicted": 12.191738512523624,
+      "karr_stored": 10.615661615042127,
+      "log2_abs_ratio": 0.19970957627353292,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 187,
+      "wcm_id": "pSERpp",
+      "predicted": 11.020732212999773,
+      "karr_stored": -0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 188,
+      "wcm_id": "Pta",
+      "predicted": 471.9454853050621,
+      "karr_stored": 5431.59575352,
+      "log2_abs_ratio": -3.5246839832203567,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 189,
+      "wcm_id": "pTHRpp",
+      "predicted": 12.497102481550474,
+      "karr_stored": -0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 190,
+      "wcm_id": "pTYRpp",
+      "predicted": 0.0,
+      "karr_stored": 16.0,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 191,
+      "wcm_id": "PYDXK",
+      "predicted": 0.031212724535603587,
+      "karr_stored": 0.06071607367677866,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 192,
+      "wcm_id": "Pyk_ADP",
+      "predicted": 1000.0,
+      "karr_stored": -973680.4599098797,
+      "log2_abs_ratio": -9.927304579597887,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 193,
+      "wcm_id": "Pyk_CDP",
+      "predicted": 3.4685184372129174,
+      "karr_stored": 6.747082291482257,
+      "log2_abs_ratio": -0.9599442045484831,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 194,
+      "wcm_id": "Pyk_DADP",
+      "predicted": -1000.0,
+      "karr_stored": 15.172609530391119,
+      "log2_abs_ratio": 6.042386954368661,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 195,
+      "wcm_id": "Pyk_DCDP",
+      "predicted": -997.8459518738546,
+      "karr_stored": -2602.704142680394,
+      "log2_abs_ratio": -1.3831223118767177,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 196,
+      "wcm_id": "Pyk_DGDP",
+      "predicted": 1000.0,
+      "karr_stored": -6815.179092414163,
+      "log2_abs_ratio": -2.768751569333183,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 197,
+      "wcm_id": "Pyk_DTDP",
+      "predicted": 4.643388623855471,
+      "karr_stored": 9.03248050244175,
+      "log2_abs_ratio": -0.9599442045484824,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 198,
+      "wcm_id": "Pyk_GDP",
+      "predicted": 525.040014432012,
+      "karr_stored": 16274.383228669682,
+      "log2_abs_ratio": -4.954031680653777,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 199,
+      "wcm_id": "Pyk_IDP",
+      "predicted": -0.0,
+      "karr_stored": -31094.56094699338,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 200,
+      "wcm_id": "Pyk_UDP",
+      "predicted": -997.0863397901496,
+      "karr_stored": 594.2336470709108,
+      "log2_abs_ratio": 0.746688139340351,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 201,
+      "wcm_id": "RelA1",
+      "predicted": 0.022639924528927317,
+      "karr_stored": 0.044039965949370374,
+      "log2_abs_ratio": -0.9599442045484824,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 202,
+      "wcm_id": "RibF1",
+      "predicted": 0.031212724535597758,
+      "karr_stored": 0.06071607367677872,
+      "log2_abs_ratio": -0.9599442045487535,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 203,
+      "wcm_id": "RibF2",
+      "predicted": 0.031212724535597758,
+      "karr_stored": 0.06071607367677867,
+      "log2_abs_ratio": -0.9599442045487523,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 204,
+      "wcm_id": "Rpe",
+      "predicted": -8.12782567501575,
+      "karr_stored": -7.077107743361417,
+      "log2_abs_ratio": 0.1997095762735332,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 205,
+      "wcm_id": "RpiB",
+      "predicted": 8.12782567501575,
+      "karr_stored": 7.077107743361416,
+      "log2_abs_ratio": 0.1997095762735335,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 206,
+      "wcm_id": "SNGLYPOr",
+      "predicted": 561.7514497260091,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 207,
+      "wcm_id": "TalA",
+      "predicted": -4.063912837507875,
+      "karr_stored": -3.5385538716807083,
+      "log2_abs_ratio": 0.1997095762735332,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 208,
+      "wcm_id": "TatD_dAMP",
+      "predicted": -0.0,
+      "karr_stored": -0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 209,
+      "wcm_id": "TatD_dCMP",
+      "predicted": -0.0,
+      "karr_stored": -0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 210,
+      "wcm_id": "TatD_dGMP",
+      "predicted": -0.0,
+      "karr_stored": -0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 211,
+      "wcm_id": "TatD_dTMP",
+      "predicted": -0.0,
+      "karr_stored": -0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 212,
+      "wcm_id": "Tdk1",
+      "predicted": -0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 213,
+      "wcm_id": "Tdk2",
+      "predicted": 4.643388623855471,
+      "karr_stored": 9.03248050244175,
+      "log2_abs_ratio": -0.9599442045484824,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 214,
+      "wcm_id": "ThyA",
+      "predicted": 0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 215,
+      "wcm_id": "Tkt1",
+      "predicted": -4.063912837507875,
+      "karr_stored": -3.5385538716807083,
+      "log2_abs_ratio": 0.1997095762735332,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 216,
+      "wcm_id": "Tkt2",
+      "predicted": -4.063912837507875,
+      "karr_stored": -3.5385538716807083,
+      "log2_abs_ratio": 0.1997095762735332,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 217,
+      "wcm_id": "TMDPK",
+      "predicted": 0.031212724535603587,
+      "karr_stored": 0.06071607367677866,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 218,
+      "wcm_id": "Tmk",
+      "predicted": 4.643388623855471,
+      "karr_stored": 9.032480502441752,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 219,
+      "wcm_id": "TpiA",
+      "predicted": 550.6233833970423,
+      "karr_stored": 2717.693036747197,
+      "log2_abs_ratio": -2.3032447295249536,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 220,
+      "wcm_id": "TrxB",
+      "predicted": 1000.0,
+      "karr_stored": 283.2975184887676,
+      "log2_abs_ratio": 1.8196101302332233,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 221,
+      "wcm_id": "TXPYDX",
+      "predicted": 0.031212724535603587,
+      "karr_stored": 0.06071607367677866,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 222,
+      "wcm_id": "TXTHM",
+      "predicted": 0.031212724535603587,
+      "karr_stored": 0.060716073676778656,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 223,
+      "wcm_id": "TX_ACAL",
+      "predicted": 4.717362673295014,
+      "karr_stored": -3.2595615428928942e-24,
+      "log2_abs_ratio": 80.2595768829436,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 224,
+      "wcm_id": "TX_ACUP",
+      "predicted": -471.9454853050621,
+      "karr_stored": -5431.595753519999,
+      "log2_abs_ratio": -3.5246839832203563,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 225,
+      "wcm_id": "TX_AD",
+      "predicted": -999.6290954662174,
+      "karr_stored": -7.338411458233697,
+      "log2_abs_ratio": 7.089781285782123,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 226,
+      "wcm_id": "TX_AKG",
+      "predicted": -6.636045186521329,
+      "karr_stored": -0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 227,
+      "wcm_id": "TX_AROP11",
+      "predicted": -998.8328733865134,
+      "karr_stored": -1000000.0,
+      "log2_abs_ratio": -9.96746907581311,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 228,
+      "wcm_id": "TX_AROP12",
+      "predicted": -992.1439617682544,
+      "karr_stored": -1000000.0,
+      "log2_abs_ratio": -9.977162906255735,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 229,
+      "wcm_id": "TX_AROP13",
+      "predicted": -995.6198260345872,
+      "karr_stored": 997046.8623902863,
+      "log2_abs_ratio": -9.967850639900975,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 230,
+      "wcm_id": "TX_AROP21",
+      "predicted": 1000.0,
+      "karr_stored": 1000000.0,
+      "log2_abs_ratio": -9.965784284662087,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 231,
+      "wcm_id": "TX_AROP22",
+      "predicted": 1000.0,
+      "karr_stored": 1000000.0,
+      "log2_abs_ratio": -9.965784284662087,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 232,
+      "wcm_id": "TX_AROP23",
+      "predicted": 1000.0,
+      "karr_stored": -1000000.0,
+      "log2_abs_ratio": -9.965784284662087,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 233,
+      "wcm_id": "TX_CAP",
+      "predicted": -0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 234,
+      "wcm_id": "TX_Cbi_Co",
+      "predicted": 0.07913542980041663,
+      "karr_stored": 0.15393698107721845,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 235,
+      "wcm_id": "TX_Cbi_Ni",
+      "predicted": 0.019586046889993453,
+      "karr_stored": 0.03809945731117471,
+      "log2_abs_ratio": -0.9599442045484831,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 236,
+      "wcm_id": "TX_CL",
+      "predicted": 0.1187034156569295,
+      "karr_stored": 0.23090599868942333,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 237,
+      "wcm_id": "TX_cmnm5s2U",
+      "predicted": -0.0,
+      "karr_stored": -26.0,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 238,
+      "wcm_id": "TX_CO2",
+      "predicted": -405.74937207420805,
+      "karr_stored": -5431.671648108053,
+      "log2_abs_ratio": -3.7427355021383972,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 239,
+      "wcm_id": "TX_COA",
+      "predicted": 0.062425086044697764,
+      "karr_stored": 0.12143144118209442,
+      "log2_abs_ratio": -0.9599442045518879,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 240,
+      "wcm_id": "TX_ComEC_dApdAp",
+      "predicted": 0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 241,
+      "wcm_id": "TX_ComEC_dCpdCp",
+      "predicted": 0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 242,
+      "wcm_id": "TX_ComEC_dGpdGp",
+      "predicted": 0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 243,
+      "wcm_id": "TX_ComEC_dTpdTp",
+      "predicted": 0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 244,
+      "wcm_id": "TX_CYTD",
+      "predicted": 4.0851052371950916,
+      "karr_stored": 13.614241142089373,
+      "log2_abs_ratio": -1.7366714192781776,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 245,
+      "wcm_id": "TX_DA",
+      "predicted": 4.643388623855471,
+      "karr_stored": 262.3229390308143,
+      "log2_abs_ratio": -5.820022129565703,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 246,
+      "wcm_id": "TX_dINS",
+      "predicted": -0.0,
+      "karr_stored": -240.06784894632358,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 247,
+      "wcm_id": "TX_FOR",
+      "predicted": -0.0,
+      "karr_stored": -0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 248,
+      "wcm_id": "TX_FRUPTS",
+      "predicted": -0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 249,
+      "wcm_id": "TX_GL",
+      "predicted": 0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 250,
+      "wcm_id": "TX_GL3P",
+      "predicted": 0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 251,
+      "wcm_id": "TX_GLCPTS",
+      "predicted": 0.0,
+      "karr_stored": 2725.0066920105846,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 252,
+      "wcm_id": "TX_GLNHPQ",
+      "predicted": 0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 253,
+      "wcm_id": "TX_GLUP",
+      "predicted": 0.0,
+      "karr_stored": 5.5996245957904955,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 254,
+      "wcm_id": "TX_Gm",
+      "predicted": -0.0,
+      "karr_stored": -15.0,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 255,
+      "wcm_id": "TX_GN",
+      "predicted": 0.0,
+      "karr_stored": 8.294062657445442,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 256,
+      "wcm_id": "TX_H2O",
+      "predicted": 1000.0,
+      "karr_stored": 5693.747588458384,
+      "log2_abs_ratio": -2.5093785378727795,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 257,
+      "wcm_id": "TX_H2O2",
+      "predicted": -4.63401329767396,
+      "karr_stored": -10579.972918489544,
+      "log2_abs_ratio": -11.156786130007763,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 258,
+      "wcm_id": "TX_HDCA",
+      "predicted": 1.34817022875843,
+      "karr_stored": 2.6225074598907803,
+      "log2_abs_ratio": -0.9599442045484831,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 259,
+      "wcm_id": "TX_HDCEA",
+      "predicted": 1.030163996437089,
+      "karr_stored": 2.003910713897873,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 260,
+      "wcm_id": "TX_k2C",
+      "predicted": -0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 261,
+      "wcm_id": "TX_LIPOATE",
+      "predicted": -13.60160602554997,
+      "karr_stored": 0.022123874707319552,
+      "log2_abs_ratio": 9.263957217230965,
+      "sign": "disagree"
+    },
+    {
+      "fba_col": 262,
+      "wcm_id": "TX_m1G",
+      "predicted": -0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 263,
+      "wcm_id": "TX_m2G",
+      "predicted": -0.0,
+      "karr_stored": -2.0,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 264,
+      "wcm_id": "TX_m62A",
+      "predicted": -0.0,
+      "karr_stored": -3.0,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 265,
+      "wcm_id": "TX_m7G",
+      "predicted": -0.0,
+      "karr_stored": -67.0,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 266,
+      "wcm_id": "TX_MGTA_CA",
+      "predicted": 0.1187034156569295,
+      "karr_stored": 0.23090599868942333,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 267,
+      "wcm_id": "TX_MGTA_CU",
+      "predicted": 0.07913542980041663,
+      "karr_stored": 0.15393698107721845,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 268,
+      "wcm_id": "TX_MGTA_FE2",
+      "predicted": 0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 269,
+      "wcm_id": "TX_MGTA_FE3",
+      "predicted": 0.3588777848039089,
+      "karr_stored": 0.6981015065909525,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 270,
+      "wcm_id": "TX_MGTA_MG",
+      "predicted": 0.2624073285586021,
+      "karr_stored": 0.5104438311983025,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 271,
+      "wcm_id": "TX_MGTA_MN",
+      "predicted": 0.09076834884480263,
+      "karr_stored": 0.17656573842806356,
+      "log2_abs_ratio": -0.9599442045484831,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 272,
+      "wcm_id": "TX_MGTA_MOBD",
+      "predicted": 0.07913542980041663,
+      "karr_stored": 0.1539369810772184,
+      "log2_abs_ratio": -0.9599442045484822,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 273,
+      "wcm_id": "TX_MGTA_ZN",
+      "predicted": 0.10955713496302014,
+      "karr_stored": 0.21311433645095218,
+      "log2_abs_ratio": -0.9599442045484824,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 274,
+      "wcm_id": "TX_NAC",
+      "predicted": -0.0,
+      "karr_stored": 0.62752991338862,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 275,
+      "wcm_id": "TX_NAUP2",
+      "predicted": 0.1016366355075557,
+      "karr_stored": 0.19770710636610936,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 276,
+      "wcm_id": "TX_NH4",
+      "predicted": -999.7032414546288,
+      "karr_stored": -260.5210898025881,
+      "log2_abs_ratio": 1.940099732436887,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 277,
+      "wcm_id": "TX_O2",
+      "predicted": 1000.0,
+      "karr_stored": 10860.867498476353,
+      "log2_abs_ratio": -3.4410674361296407,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 278,
+      "wcm_id": "TX_OA",
+      "predicted": -59.59908369091269,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 279,
+      "wcm_id": "TX_OCDCEA",
+      "predicted": 0.696588427130888,
+      "karr_stored": 1.3550279539303434,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 280,
+      "wcm_id": "TX_OppB_Ala",
+      "predicted": 4.283747175176323,
+      "karr_stored": 8.332893490410209,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 281,
+      "wcm_id": "TX_OppB_Arg",
+      "predicted": 2.365408324694897,
+      "karr_stored": 4.601274264091208,
+      "log2_abs_ratio": -0.9599442045484831,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 282,
+      "wcm_id": "TX_OppB_Asn",
+      "predicted": 4.915103253242966,
+      "karr_stored": 9.561029217826452,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 283,
+      "wcm_id": "TX_OppB_Asp",
+      "predicted": 0.0,
+      "karr_stored": 6.454332559268683,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 284,
+      "wcm_id": "TX_OppB_Cys",
+      "predicted": 0.788304840687396,
+      "karr_stored": 1.5334379006978809,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 285,
+      "wcm_id": "TX_OppB_Gln",
+      "predicted": 3.1193893058023163,
+      "karr_stored": 14.063085675201055,
+      "log2_abs_ratio": -2.1725776602772795,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 286,
+      "wcm_id": "TX_OppB_Glu",
+      "predicted": 7.428139293353489,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 287,
+      "wcm_id": "TX_OppB_Gly",
+      "predicted": 0.0,
+      "karr_stored": 7.16953957803562,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 288,
+      "wcm_id": "TX_OppB_His",
+      "predicted": 1.148423487591593,
+      "karr_stored": 2.233953175257659,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 289,
+      "wcm_id": "TX_OppB_Ile",
+      "predicted": 5.819958009687366,
+      "karr_stored": 11.321184054562794,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 290,
+      "wcm_id": "TX_OppB_Leu",
+      "predicted": 7.103279059118439,
+      "karr_stored": 13.817544642993274,
+      "log2_abs_ratio": -0.9599442045484824,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 291,
+      "wcm_id": "TX_OppB_Lys",
+      "predicted": 0.0,
+      "karr_stored": 13.240219690432818,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 292,
+      "wcm_id": "TX_OppB_Met",
+      "predicted": 0.0,
+      "karr_stored": 2.5813508842681627,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 293,
+      "wcm_id": "TX_OppB_Phe",
+      "predicted": 0.0,
+      "karr_stored": 7.640918939026315,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 294,
+      "wcm_id": "TX_OppB_Pro",
+      "predicted": 2.088768311743805,
+      "karr_stored": 4.06314452187264,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 295,
+      "wcm_id": "TX_OppB_Ser",
+      "predicted": 0.0,
+      "karr_stored": 8.13760426899429,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 296,
+      "wcm_id": "TX_OppB_Thr",
+      "predicted": 0.0,
+      "karr_stored": 7.566709770007459,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 297,
+      "wcm_id": "TX_OppB_Trp",
+      "predicted": 0.0,
+      "karr_stored": 1.1351675719982437,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 298,
+      "wcm_id": "TX_OppB_Tyr",
+      "predicted": 0.0,
+      "karr_stored": 1472.8290379694804,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 299,
+      "wcm_id": "TX_OppB_Val",
+      "predicted": 4.686662360402296,
+      "karr_stored": 9.116658074747221,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 300,
+      "wcm_id": "TX_PHNT",
+      "predicted": 0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 301,
+      "wcm_id": "TX_PIUP1",
+      "predicted": 0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 302,
+      "wcm_id": "TX_PSIURI",
+      "predicted": -0.0,
+      "karr_stored": -84.0,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 303,
+      "wcm_id": "TX_RIBFLV",
+      "predicted": 0.062425449071201344,
+      "karr_stored": 0.12143214735355737,
+      "log2_abs_ratio": -0.959944204548618,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 304,
+      "wcm_id": "TX_s4U",
+      "predicted": -0.0,
+      "karr_stored": -62.0,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 305,
+      "wcm_id": "TX_SO4",
+      "predicted": 0.09891941961423277,
+      "karr_stored": 0.19242148382500365,
+      "log2_abs_ratio": -0.9599442045484824,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 306,
+      "wcm_id": "TX_SPMDUP1",
+      "predicted": 0.5754160443704822,
+      "karr_stored": 1.1193192348507404,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 307,
+      "wcm_id": "TX_SPRDUP2",
+      "predicted": 2.8386098933762685,
+      "karr_stored": 5.521762357825309,
+      "log2_abs_ratio": -0.9599442045484827,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 308,
+      "wcm_id": "TX_STEROL",
+      "predicted": 0.7576381599425037,
+      "karr_stored": 1.47378401033002,
+      "log2_abs_ratio": -0.9599442045484824,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 309,
+      "wcm_id": "TX_THF",
+      "predicted": 0.13587574878383712,
+      "karr_stored": 0.26431021632326074,
+      "log2_abs_ratio": -0.9599442045479247,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 310,
+      "wcm_id": "TX_THY",
+      "predicted": 0.0,
+      "karr_stored": 9.03248050244175,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 311,
+      "wcm_id": "TX_TRK",
+      "predicted": 4.456181374071779,
+      "karr_stored": 8.668318471096864,
+      "log2_abs_ratio": -0.9599442045484824,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 312,
+      "wcm_id": "TX_UHPT1",
+      "predicted": 0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 313,
+      "wcm_id": "TX_Um",
+      "predicted": -0.0,
+      "karr_stored": -15.0,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 314,
+      "wcm_id": "TX_URA",
+      "predicted": -997.0863397901497,
+      "karr_stored": -1.4277997455506684e-17,
+      "log2_abs_ratio": 65.92055858888823,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 315,
+      "wcm_id": "Udk1",
+      "predicted": 2.654025176572441,
+      "karr_stored": 5.667752834860035,
+      "log2_abs_ratio": -1.0945947886682155,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 316,
+      "wcm_id": "Udk2",
+      "predicted": 4.0851052371950916,
+      "karr_stored": 7.946488307229337,
+      "log2_abs_ratio": -0.959944204548556,
+      "sign": "agree"
+    },
+    {
+      "fba_col": 317,
+      "wcm_id": "Upp",
+      "predicted": 0.25963503327790116,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "karr_zero_pred_nonzero"
+    },
+    {
+      "fba_col": 318,
+      "wcm_id": "UshA_AMP",
+      "predicted": 0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 319,
+      "wcm_id": "UshA_cmnm5s2UMP",
+      "predicted": 0.0,
+      "karr_stored": 26.0,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 320,
+      "wcm_id": "UshA_dCMP",
+      "predicted": 0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 321,
+      "wcm_id": "UshA_dTMP",
+      "predicted": 0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 322,
+      "wcm_id": "UshA_dUMP",
+      "predicted": 0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 323,
+      "wcm_id": "UshA_GmMP",
+      "predicted": 0.0,
+      "karr_stored": 15.0,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 324,
+      "wcm_id": "UshA_GMP",
+      "predicted": 0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 325,
+      "wcm_id": "UshA_IMP",
+      "predicted": 0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 326,
+      "wcm_id": "UshA_k2CMP",
+      "predicted": 0.0,
+      "karr_stored": -0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 327,
+      "wcm_id": "UshA_m1GMP",
+      "predicted": 0.0,
+      "karr_stored": -0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 328,
+      "wcm_id": "UshA_m2GMP",
+      "predicted": 0.0,
+      "karr_stored": 2.0,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 329,
+      "wcm_id": "UshA_m62AMP",
+      "predicted": 0.0,
+      "karr_stored": 3.0,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 330,
+      "wcm_id": "UshA_m7GMP",
+      "predicted": 0.0,
+      "karr_stored": 67.0,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 331,
+      "wcm_id": "UshA_PSIURIMP",
+      "predicted": 0.0,
+      "karr_stored": 84.0,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 332,
+      "wcm_id": "UshA_s4UMP",
+      "predicted": 0.0,
+      "karr_stored": 62.0,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 333,
+      "wcm_id": "UshA_UmMP",
+      "predicted": 0.0,
+      "karr_stored": 15.0,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    },
+    {
+      "fba_col": 334,
+      "wcm_id": "YbiV_SNGLYP",
+      "predicted": 0.0,
+      "karr_stored": 0.0,
+      "log2_abs_ratio": null,
+      "sign": "both_zero"
+    },
+    {
+      "fba_col": 335,
+      "wcm_id": "YicP",
+      "predicted": 0.0,
+      "karr_stored": 240.06784894632358,
+      "log2_abs_ratio": null,
+      "sign": "pred_zero_karr_nonzero"
+    }
+  ],
+  "interpretation": "Karr-native per-reaction oracle: opencell.m1.karr_metabolism solves Karr's fitted FBA exactly (S 376x504, RHS 376, full objective with biomass +1000 and 35 parsimony penalties, no enzyme bounds because they are post-step). Predicted fluxes are compared 1:1 against Karr's stored runtime fluxs[645] indexed by reactionWholeCellModelID -- no ID mapping required (iPS189 fully dropped). Acceptance: median |log2(predicted/karr_stored)| < 1.0 over reactions where both fluxes are nonzero. Sign disagreement on a reversible reaction indicates direction inversion under biomass-max vs Karr's runtime context."
+}

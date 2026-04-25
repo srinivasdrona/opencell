@@ -309,6 +309,35 @@ still closes. Validation oracles below are the *additional* checks.
     downstream M1 modules against Karr's stored per-reaction fluxes.
     Tracked as `m1-per-reaction-oracle` todo.  Schema_v4 published
     with 5-mode comparison; 453/453 tests still green.
+  - **2026-04-25 afternoon — M1 pivoted to Karr-native (iPS189 dropped)**:
+    Recognised that `opencell/m1/central_carbon.py` was still built on
+    iPS189 (Suthers 2009 SBML) with Karr params bolted on top — a
+    months-old compromise from before MAT extraction worked.  With
+    Karr's full FBA matrices now in hand, that compromise is moot and
+    actively obstructive (forced an iPS189→Karr-WCM-ID mapping table
+    to even *attempt* per-reaction validation).  Built:
+    `scripts/karr_native_ingest_m1.py` extracts the FBA snapshot
+    (S 376×504, RHS, lb/ub, full obj, enz_bounds, fluxs[645], all
+    index maps, 645 reaction WCM IDs, 585 substrate WCM IDs, 104
+    enzyme WCM IDs, per-FBA-column WCM IDs for the 336 metabolic-
+    conversion cols) into committed fixture
+    `data/karr_fixtures/karr_native_m1.{json,npz}` (~123 kB total).
+    `opencell/m1/karr_metabolism.py` is the new Karr-native model
+    (drops snapshot enzyme bounds, BIG=1e3, full Karr objective with
+    biomass +1000 + 35 parsimony penalties).
+  - **`m1-karr-native-oracle` PASSED**: predicted vs stored per-reaction
+    median |log2 ratio| = **0.96** over 196 comparable reactions
+    (threshold <1.0).  Biomass 0.0392 /h vs stored 0.0763 /h = 0.514×
+    (the structural snapshot ceiling, identical to Mode D).  No ID
+    mapping table required — Karr-vs-Karr.  Per-reaction oracle is now
+    a 7-test pytest module (`tests/m1/test_karr_metabolism.py`) +
+    `artifacts/M1_per_reaction_oracle.json` + 25-row top-disagreement
+    table in `docs/phase5/M1_per_reaction_oracle.md`.
+  - **Strategic effect**: M1 now lives in the same ID space as Karr's
+    other 27 processes, unblocking the vivarium dynamic-loop chassis
+    (`m1-vivarium-process` next).  iPS189 module retained for a
+    separate cleanup commit (`m1-cleanup-ips189`) to keep diffs
+    reviewable.  460 tests (453 + 7 new) pass.
 - M2: Nucleotide biosynthesis (~15 enzymes). Validation: NTP pool sizes vs
   Karr's reported steady-state.
 - M3: Transcription of metabolic enzymes (RNAP + σ-factor + the genes
