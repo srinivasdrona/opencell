@@ -401,9 +401,42 @@ NOT a parallel program)**
 
 ---
 
-## Current Status (2026-04-23, **397 tests passing**, hybrid solver + first-run demo done)
+## Current Status (2026-04-25, **478 tests passing**, central dogma chassis live)
 
-### Hybrid Solver + First-Run Demo (DONE — Phase 3 capstone)
+### Central Dogma Chassis (DONE — M1+M2+M3 composition)
+
+* **M1 Karr-native FBA** (`opencell.m1.karr_metabolism`): 504-FBA, 645-rxn,
+  per-reaction oracle vs Karr's stored fluxs PASSED (median |log2 ratio|
+  = 0.96 over 196 rxns).  Static-snapshot FBA bounded at ~51% of stored
+  growth (proven structural — Karr's snapshot enzyme bounds are
+  post-step; 34/504 of his own stored fluxs violate them).
+* **M2 Karr-native transcription** (`opencell.m2.transcription`): 525
+  genes, dRNA/dt = s − k·RNA closed-form per 1s tick. v1 Karr-prescribed
+  rates (round-trips to expression by construction). v2 = polymerase
+  mechanics deferred.
+* **M3 Karr-native translation** (`opencell.m3.translation`): 482 mature
+  monomers, dN/dt = s − k·N closed-form per 1s tick. v1 prescribed
+  rates from sim.state.ProteinMonomer (lengths, halfLives, decayRates,
+  counts on matureIndexs slice into the 4820-vec state×species). 119
+  immortal essentials handled (k=0 linear branch). Round-trips to
+  counts_mature by construction. v2 = ribosome mechanics deferred.
+* **Vivarium chassis** (`opencell.vivarium.karr_composite`):
+  `build_karr_m1_m2_m3_engine` — all three processes share the
+  `substrates` store. M1 declares all 585 substrate WCM IDs (read-only
+  placeholder); M2 writes accumulating ATP/CTP/GTP/UTP deltas; M3 writes
+  AA_total bulk delta. 4 chassis-composition tests prove growth +
+  RNAs + proteins all flat at SS over 20s and shared-substrate deltas
+  match expected.
+* **Honest gaps still open:**
+  - M1 doesn't yet read substrate writeback into FBA bounds (needs
+    `calcFluxBounds()` port + 585→1686 metabolite×compartment mapping).
+  - Per-AA breakdown stays as bulk AA_total (real per-metabolite mapping
+    deferred to integrator pass).
+  - M2 v2 (polymerase mechanics → independent oracle on synthesisRate)
+    and M3 v2 (ribosome mechanics → independent oracle on synth_rate)
+    not yet built.
+
+### Hybrid Solver + First-Run Demo (DONE — Phase 3 capstone, 397-test era)
 
 * `opencell/solvers/hybrid.py` — operator-split lockstep: LSODA on
   metabolism, tau-leap on the gene network. One-way coupling lets us
