@@ -1,0 +1,19 @@
+
+	Trial License -- for use to evaluate programs for possible purchase as an end-user only.
+
+=== Loading Simulation_fitted.mat ===
+=== Loading knowledgeBase.mat ===
+
+--- State_RnaPolymerase ---
+  class=edu.stanford.covert.cell.sim.state.RNAPolymerase
+
+--- State_Transcript ---
+
+--- Process_Transcription enzymes/polymerases ---
+
+--- KB gene<->TU mapping ---
+  geneTranscriptionUnitMatrix FAIL: Unrecognized method, property, or field 'geneTranscriptionUnitMatrix' for class 'edu.stanford.covert.cell.kb.KnowledgeBase'.
+  walked 335 transcription units
+  walked 525 genes
+
+[OK] wrote E:\opencell\data\m1_sources\karr_flat\transcription_v2_targeted.mat
