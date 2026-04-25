@@ -30,6 +30,22 @@ DEFAULT_FIXTURE_JSON = (
     Path(__file__).resolve().parents[2]
     / "data" / "karr_fixtures" / "karr_native_m3.json"
 )
+DEFAULT_VOCAB_JSON = (
+    Path(__file__).resolve().parents[2]
+    / "data" / "karr_fixtures" / "karr_native_m3_vocab.json"
+)
+
+# 20 standard amino acids in canonical order (Karr's aminoAcidIndexs[:20]).
+# This is the order returned by `aa_consumption_per_s` and mirrored in the
+# M3 Vivarium wrapper schema.  FMET is excluded; M1's substrate vocabulary
+# does carry FMET separately but central-dogma chassis treats FMET demand
+# as MET (initiator-methionine consumption is one-per-protein-per-synth).
+AA_WCM_IDS: tuple[str, ...] = (
+    "ALA", "ARG", "ASN", "ASP", "CYS",
+    "GLN", "GLU", "GLY", "HIS", "ILE",
+    "LEU", "LYS", "MET", "PHE", "PRO",
+    "SER", "THR", "TRP", "TYR", "VAL",
+)
 
 
 @dataclass
@@ -47,6 +63,8 @@ class KarrTranslationModel:
     elongation_rate_aa_per_s: float
     tmrna_binding_probability: float
     counts_meta: dict
+    aa_wcm_ids: tuple[str, ...]
+    aa_col_indices: np.ndarray
     raw: dict = field(repr=False)
 
     @property
@@ -61,10 +79,37 @@ class KarrTranslationModel:
         return self.protein_wcm_ids.index(wcm_id)
 
 
-def load_default(path: str | Path | None = None) -> KarrTranslationModel:
+def _load_aa_vocab(vocab_path: Path) -> tuple[tuple[str, ...], np.ndarray]:
+    """Resolve the 20 standard-AA column indices into base_counts (482, 722).
+
+    Returns (aa_wcm_ids, col_indices) ordered as :data:`AA_WCM_IDS`.  When
+    the side-car vocab JSON is missing we fall back to ``AA_WCM_IDS`` with
+    placeholder col indices = -1, so callers must guard.  Phase C requires
+    the vocab JSON; we raise rather than silently degrade.
+    """
+    if not vocab_path.exists():
+        raise FileNotFoundError(
+            f"M3 amino-acid vocab JSON missing: {vocab_path}.  Run "
+            "`scripts/extract_m3_metabolite_vocab.py` (or rerun the MATLAB "
+            "extractor) to regenerate."
+        )
+    vocab = json.loads(vocab_path.read_text())
+    full_aa_ids = list(vocab["aa_wcm_ids"])
+    full_aa_idx = list(vocab["aminoAcidIndexs_0based"])
+    name_to_col = dict(zip(full_aa_ids, full_aa_idx))
+    cols = np.array([name_to_col[aa] for aa in AA_WCM_IDS], dtype=int)
+    return AA_WCM_IDS, cols
+
+
+def load_default(
+    path: str | Path | None = None,
+    vocab_path: str | Path | None = None,
+) -> KarrTranslationModel:
     p = Path(path) if path is not None else DEFAULT_FIXTURE_JSON
+    vp = Path(vocab_path) if vocab_path is not None else DEFAULT_VOCAB_JSON
     meta = json.loads(p.read_text())
     z = np.load(p.parent / Path(meta["matrix_npz"]).name)
+    aa_ids, aa_cols = _load_aa_vocab(vp)
     return KarrTranslationModel(
         protein_wcm_ids=list(meta["ids"]["protein_wcm_482"]),
         gene_wcm_ids=list(meta["ids"]["gene_wcm_482"]),
@@ -83,6 +128,8 @@ def load_default(path: str | Path | None = None) -> KarrTranslationModel:
             "tmrna_binding_probability"
         ]),
         counts_meta=dict(meta["counts"]),
+        aa_wcm_ids=aa_ids,
+        aa_col_indices=aa_cols,
         raw=meta,
     )
 
@@ -91,18 +138,24 @@ def step_analytical(
     model: KarrTranslationModel,
     protein_counts: np.ndarray,
     dt_s: float,
+    synth_scale: float = 1.0,
 ) -> np.ndarray:
     """Closed-form integration of dN/dt = s - k*N over dt_s seconds.
 
     For genes with k>0:  N(t+dt) = N_ss + (N(t)-N_ss)*exp(-k*dt) where
     N_ss = s/k.  For k=0 (immortal essentials): N(t+dt) = N(t) + s*dt.
+
+    ``synth_scale`` (default 1.0) multiplies the prescribed synthesis
+    rate ``s`` uniformly, intended for substrate-aware throttling of
+    the integrator from the Vivarium chassis.  Throttling is OFF when
+    scale==1.0; scale==0.0 freezes synthesis.
     """
     n = np.asarray(protein_counts, dtype=float).reshape(-1).copy()
     if n.size != model.n_proteins:
         raise ValueError(
             f"protein_counts length {n.size} != n_proteins {model.n_proteins}")
 
-    s = model.synth_rate_per_s
+    s = model.synth_rate_per_s * float(synth_scale)
     k = model.decay_rate_per_s
 
     out = np.empty_like(n)
@@ -117,16 +170,31 @@ def step_analytical(
     return out
 
 
-def aa_consumption_per_s(model: KarrTranslationModel) -> dict[str, float]:
-    """Total amino-acid consumption per second under the prescribed
-    synthesis rates.  Returns a single bulk total plus a placeholder
-    20-AA breakdown derived from base_counts (Karr's per-monomer AA
-    composition) summed over proteins weighted by synthesis rate.
+def aa_consumption_per_s(
+    model: KarrTranslationModel,
+    synth_scale: float = 1.0,
+) -> dict:
+    """Amino-acid consumption per second under the prescribed synthesis rates.
+
+    Returns a dict containing:
+      * one entry per WCM ID in :data:`AA_WCM_IDS` (20 floats), the
+        per-AA consumption rate in molecules/s computed from
+        ``base_counts[:, aa_col]`` weighted by ``synth_rate_per_s``;
+      * ``_total_aa_per_s`` -- bulk total residues/s (= ``Sum_i s_i * length_i``);
+      * ``_per_metabolite_per_s_722`` -- the full 722-vector for callers
+        that need to wire in non-AA metabolite demand later.
+
+    ``synth_scale`` (default 1.0) scales every entry uniformly.
     """
-    total_aa_per_s = float(np.sum(model.synth_rate_per_s * model.length_aa))
-    # base_counts is (482, 722); weight rows by synth rate, sum -> (722,)
-    per_metabolite = (model.synth_rate_per_s[:, None] * model.base_counts).sum(axis=0)
-    return {
-        "_total_aa_per_s": total_aa_per_s,
-        "_per_metabolite_per_s_722": per_metabolite,
+    s = model.synth_rate_per_s * float(synth_scale)
+    total_aa_per_s = float(np.sum(s * model.length_aa))
+    per_metabolite = (s[:, None] * model.base_counts).sum(axis=0)
+
+    out: dict = {
+        aa: float(per_metabolite[col])
+        for aa, col in zip(model.aa_wcm_ids, model.aa_col_indices)
     }
+    out["_total_aa_per_s"] = total_aa_per_s
+    out["_per_metabolite_per_s_722"] = per_metabolite
+    return out
+

@@ -109,18 +109,25 @@ def main() -> dict:
             f"snapshot={snap[ntp]:.1f}, t1={v[0]:.1f}, end={v[-1]:.1f}",
         ))
 
-    # Amino acid pools: M3 currently writes a single bulk AA_total
-    # placeholder (not in Karr's 585 ID space), so M1 receives NO
-    # per-AA demand this Phase B.  Therefore the per-AA pools must
-    # stay exactly at their snapshot values; this is a regression
-    # guard for the Phase C wiring that will introduce per-AA demand.
+    # Amino-acid pools: M3 now writes per-AA negative deltas using the
+    # 20 standard-AA WCM IDs (which already live in M1's 585 substrate
+    # vocabulary), so M1's cytosol pools for those AAs MUST drain or
+    # stay at zero (if the snapshot started empty).  This is the Phase
+    # C handshake: M3 demand reaches the dynamic-bounds chassis.
     for aa in ("ALA", "GLU", "LYS"):
         v = cyt[f"cyt_{aa}"][1:]
-        ok = bool(np.all(v == snap[aa]))
+        non_increasing = bool(np.all(np.diff(v) <= 1e-9))
+        clamp_ok = bool(np.all(v >= 0.0))
+        if snap[aa] > 0.0:
+            ok = non_increasing and clamp_ok and bool(v[-1] < snap[aa])
+            tag = "drained-from-snapshot"
+        else:
+            ok = non_increasing and clamp_ok and bool(v[-1] == 0.0)
+            tag = "snapshot-empty-stays-zero"
         checks.append((
-            f"C4-{aa} (no-demand-stays-flat)",
+            f"C4-{aa} ({tag})",
             ok,
-            f"snapshot={snap[aa]:.1f}, end={v[-1]:.1f}",
+            f"snapshot={snap[aa]:.1f}, t1={v[0]:.1f}, end={v[-1]:.1f}",
         ))
 
     summary = {

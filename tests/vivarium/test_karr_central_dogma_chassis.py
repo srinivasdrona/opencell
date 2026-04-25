@@ -63,7 +63,7 @@ def test_central_dogma_states_stable_at_ss(m1_model, m2_model, m3_model) -> None
 def test_shared_substrates_carry_m2_and_m3_consumption(
     m1_model, m2_model, m3_model,
 ) -> None:
-    """Both NTP keys (from M2) and AA_total (from M3) accumulate
+    """NTP keys (from M2) and per-AA keys (from M3) accumulate
     negative deltas in the SHARED substrates store."""
     eng = build_karr_m1_m2_m3_engine(
         m1_model=m1_model, m2_model=m2_model, m3_model=m3_model,
@@ -80,12 +80,16 @@ def test_shared_substrates_carry_m2_and_m3_consumption(
         rel = abs((a[-1] - a[0]) - expected) / abs(expected)
         assert rel < 0.05, f"{ntp} delta off"
 
-    # AA_total from M3
-    aa = np.asarray(ts["substrates"]["AA_total"], dtype=float)
-    assert aa[-1] < aa[0]
-    expected_aa = -20.0 * tl.aa_consumption_per_s(m3_model)["_total_aa_per_s"]
-    rel = abs((aa[-1] - aa[0]) - expected_aa) / abs(expected_aa)
-    assert rel < 0.05
+    # 20 per-AA keys from M3
+    aa_consum = tl.aa_consumption_per_s(m3_model)
+    for aa in tl.AA_WCM_IDS:
+        series = np.asarray(ts["substrates"][aa], dtype=float)
+        # M2 does not write to AA keys, so any movement is from M3.
+        assert series[-1] < series[0], f"{aa} did not decrement"
+        expected = -20.0 * aa_consum[aa]
+        if abs(expected) > 1e-12:
+            rel = abs((series[-1] - series[0]) - expected) / abs(expected)
+            assert rel < 0.05, f"{aa} delta {series[-1]-series[0]} vs {expected}"
 
 
 def test_dimensionality(m1_model, m2_model, m3_model) -> None:

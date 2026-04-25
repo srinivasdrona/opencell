@@ -98,6 +98,7 @@ def step_analytical(
     rna_counts: np.ndarray,
     dt_s: float,
     condition: int = 1,
+    synth_scale: float = 1.0,
 ) -> np.ndarray:
     """Closed-form integration of dRNA/dt = s - k*RNA over dt_s seconds.
 
@@ -108,13 +109,17 @@ def step_analytical(
     where RNA_ss = s/k.  Genes with k=0 (no decay) integrate as
     RNA(t+dt) = RNA(t) + s*dt.  `condition` selects which expression
     column [0=low, 1=mean, 2=high] of `synthesis_rate_per_s` to use.
+
+    ``synth_scale`` (default 1.0) multiplies the prescribed synthesis
+    rate uniformly, intended for substrate-aware throttling of the
+    integrator from the Vivarium chassis.  scale==0.0 freezes synthesis.
     """
     rna = np.asarray(rna_counts, dtype=float).reshape(-1).copy()
     if rna.size != model.n_genes:
         raise ValueError(
             f"rna_counts length {rna.size} != n_genes {model.n_genes}")
 
-    s_per_s = model.synthesis_rate_per_s[:, condition]
+    s_per_s = model.synthesis_rate_per_s[:, condition] * float(synth_scale)
     k_per_s = model.decay_rate_per_s
 
     out = np.empty_like(rna)
@@ -132,10 +137,11 @@ def step_analytical(
 def ntp_consumption_per_s(
     model: KarrTranscriptionModel,
     condition: int = 1,
+    synth_scale: float = 1.0,
 ) -> dict[str, float]:
     """Total NTP consumption per second under the prescribed rates,
     assuming uniform 1/4 base composition (real composition is M2 v2)."""
-    s_per_s = model.synthesis_rate_per_s[:, condition]
+    s_per_s = model.synthesis_rate_per_s[:, condition] * float(synth_scale)
     total_nt_per_s = float(np.sum(s_per_s * model.length_nt))
     per_ntp = total_nt_per_s / 4.0
     return {

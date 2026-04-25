@@ -20,7 +20,11 @@ def test_process_builds(model: tl.KarrTranslationModel) -> None:
     proc = KarrTranslationProcess({"model": model})
     schema = proc.ports_schema()
     assert len(schema["protein"]["counts"]) == 482
-    assert "AA_total" in schema["substrates"]
+    # M3 declares one substrate key per standard amino acid (20).
+    assert "AA_total" not in schema["substrates"]
+    for aa in tl.AA_WCM_IDS:
+        assert aa in schema["substrates"], f"missing AA key {aa}"
+    assert len(schema["substrates"]) == 20
 
 
 def test_engine_runs_without_drift_at_ss(
@@ -34,11 +38,26 @@ def test_engine_runs_without_drift_at_ss(
         assert np.all(np.isfinite(a)), f"protein {pid} non-finite"
         spread = float(np.max(a[1:]) - np.min(a[1:]))
         assert spread < 1e-3, f"protein {pid} drifted: spread={spread}"
-    aa = np.asarray(ts["substrates"]["AA_total"], dtype=float)
-    assert aa[-1] < 0
-    expected = -20.0 * tl.aa_consumption_per_s(model)["_total_aa_per_s"]
-    rel = abs(aa[-1] - expected) / abs(expected)
-    assert rel < 0.05
+
+    aa_consum = tl.aa_consumption_per_s(model)
+    for aa in tl.AA_WCM_IDS:
+        series = np.asarray(ts["substrates"][aa], dtype=float)
+        assert series[-1] < 0, f"{aa} delta should be negative"
+        expected = -20.0 * aa_consum[aa]
+        if abs(expected) > 1e-12:
+            rel = abs(series[-1] - expected) / abs(expected)
+            assert rel < 0.05, f"{aa} delta {series[-1]} vs expected {expected}"
+
+    # Sum across the 20 per-AA deltas should reconstruct the bulk total.
+    total = sum(
+        float(np.asarray(ts["substrates"][aa])[-1]) for aa in tl.AA_WCM_IDS
+    )
+    expected_total = -20.0 * aa_consum["_total_aa_per_s"]
+    # Bulk total includes FMET (init-Met) and any non-standard residues
+    # captured in length_aa.  Per-AA sum covers 20 standard residues, so
+    # |sum| <= |total|.  Allow a 5% gap (FMET + small modifications).
+    assert abs(total) <= abs(expected_total) * 1.001
+    assert abs(total) > abs(expected_total) * 0.85
 
 
 def test_engine_starting_perturbed_relaxes(

@@ -9,7 +9,11 @@ Topology (shared stores):
   * ``substrates``          -- M1 declares all 585 substrate WCM IDs
                                (read-only placeholder, default 1.0);
                                M2 writes negative ATP/CTP/GTP/UTP deltas;
-                               M3 writes a negative ``AA_total`` bulk delta.
+                               M3 writes per-AA negative deltas keyed by
+                               the 20 standard amino-acid WCM IDs (these
+                               IDs already live inside Karr's 585-substrate
+                               vocabulary, so no extra placeholder key is
+                               required).
                                All three processes share the same store.
   * ``rna``                 -- written by M2 only (525 RNA counts)
   * ``protein``             -- written by M3 only (482 protein counts)
@@ -147,8 +151,8 @@ def build_karr_m1_m2_m3_engine(
     initial_substrates: dict[str, float] = {
         sid: _M1_SUBSTRATE_DEFAULT for sid in sub_ids
     }
-    # M3 declares an AA_total placeholder that's NOT in M1's 585; create it.
-    initial_substrates["AA_total"] = _M1_SUBSTRATE_DEFAULT
+    # M3 now writes per-AA deltas using IDs that are already in M1's 585
+    # substrate vocabulary; no extra placeholder key required.
 
     m1_topo = {
         "metabolic_reaction": ("metabolic_reaction",),

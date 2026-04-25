@@ -187,18 +187,33 @@ def main() -> int:
                 "total_nt_per_s_helper": expected_ntp["_total_nt_per_s"]},
     ))
 
-    # -- C4 AA_total writeback conservation ------------------------------
+    # -- C4 per-AA writeback conservation --------------------------------
     aa_helper = tl.aa_consumption_per_s(m3)
-    aa_series = np.asarray(ts["substrates"]["AA_total"], dtype=float)
-    observed_aa_delta = float(aa_series[-1] - aa_series[0])
-    expected_aa_delta = -(t[-1] - t[0]) * aa_helper["_total_aa_per_s"]
-    aa_rel = _rel_err(observed_aa_delta, expected_aa_delta)
+    per_aa_observed: dict[str, float] = {}
+    per_aa_expected: dict[str, float] = {}
+    per_aa_rel: dict[str, float] = {}
+    aa_ok = True
+    for aa in tl.AA_WCM_IDS:
+        series = np.asarray(ts["substrates"][aa], dtype=float)
+        observed = float(series[-1] - series[0])
+        expected = -(t[-1] - t[0]) * aa_helper[aa]
+        rel = _rel_err(observed, expected) if abs(expected) > 1e-12 else 0.0
+        per_aa_observed[aa] = observed
+        per_aa_expected[aa] = expected
+        per_aa_rel[aa] = rel
+        if rel > TOL_AA_REL:
+            aa_ok = False
+    # Also compute the bulk AA total from the 20 keys for the figure panel.
+    aa_total_series = sum(
+        np.asarray(ts["substrates"][aa], dtype=float) for aa in tl.AA_WCM_IDS
+    )
+    observed_aa_delta = float(aa_total_series[-1] - aa_total_series[0])
     checks.append(_check(
-        "C4_aa_total_writeback_vs_helper",
-        ok=(aa_rel < TOL_AA_REL),
-        detail={"observed_delta": observed_aa_delta,
-                "expected_delta": expected_aa_delta,
-                "rel_err": aa_rel,
+        "C4_aa_per_aa_writeback_vs_helper",
+        ok=aa_ok,
+        detail={"per_aa_observed": per_aa_observed,
+                "per_aa_expected": per_aa_expected,
+                "per_aa_rel_err": per_aa_rel,
                 "total_aa_per_s_helper": aa_helper["_total_aa_per_s"]},
     ))
 
@@ -295,15 +310,16 @@ def main() -> int:
     ax.legend(fontsize=7, loc="lower left", ncol=2)
     ax.grid(alpha=0.3)
 
-    # Panel 2: AA_total
+    # Panel 2: AA total (sum of 20 per-AA series)
     ax = axes[1]
-    ax.plot(t, aa_series, color="tab:purple", lw=1.6, label="AA_total (engine)")
+    ax.plot(t, aa_total_series, color="tab:purple", lw=1.6,
+            label="Sum 20 AAs (engine)")
     aa_slope = -aa_helper["_total_aa_per_s"]
-    ax.plot(t, aa_series[0] + aa_slope * t, color="tab:purple",
+    ax.plot(t, aa_total_series[0] + aa_slope * t, color="tab:purple",
             lw=0.8, ls=":", alpha=0.7,
-            label=f"AA_total predicted ({aa_slope:.4g}/s)")
-    ax.set_ylabel("AA_total (placeholder units)")
-    ax.set_title("C4 AA writeback: solid=engine, dotted=helper")
+            label=f"AA total predicted ({aa_slope:.4g}/s)")
+    ax.set_ylabel("Sum 20 AA deltas (placeholder units)")
+    ax.set_title("C4 AA writeback: solid=engine sum, dotted=helper bulk")
     ax.legend(fontsize=8, loc="lower left")
     ax.grid(alpha=0.3)
 
