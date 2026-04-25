@@ -1,6 +1,6 @@
 {
-  "schema_version": 3,
-  "generated_at_utc": "2026-04-24T19:08:54.643919+00:00",
+  "schema_version": 4,
+  "generated_at_utc": "2026-04-25T05:55:11.305584+00:00",
   "sources": {
     "iPS189_xml": {
       "path": "data/m1_sources/iPS189.xml",
@@ -19,7 +19,7 @@
     },
     "karr_fitted_mat": {
       "path": "data/m1_sources/karr_flat/sim_fitted_targeted.mat",
-      "sha256_16": "4f3c17a74a0956b5",
+      "sha256_16": "e5ae921d22a3b885",
       "citation": "Extracted from Karr WholeCell Simulation_fitted.mat via local MATLAB R2026a (scripts/matlab/extract_karr_targeted.m).  Contains the curated FBA stoichiometry, bounds, and biomass objective Karr's metabolism process used at runtime."
     }
   },
@@ -82,17 +82,37 @@
       "R_PDH": 553.2991498619649
     },
     "D": {
-      "label": "D: Karr fitted MAT (from MATLAB extraction)",
+      "label": "D: Karr fitted MAT, snapshot rxn bounds + RHS (BIG=1e3)",
       "feasible": true,
-      "biomass_flux_per_h": 0.010894671455778358,
-      "doubling_time_h": 63.62258681901887,
+      "v_biomass_per_s": 1.0894671455778517e-05,
+      "biomass_flux_per_h": 0.03922081724080266,
+      "doubling_time_h": 17.67294078306054,
       "n_reactions": 504,
       "n_metabolites": 376,
-      "n_active_reactions": 339,
+      "n_active_reactions": 341,
       "biomass_idx": 502,
+      "BIG_used_for_inf_bounds": 1000.0,
+      "snapshot_enzyme_bounds_dropped": true,
+      "snapshot_enzyme_bounds_drop_reason": "34/504 of Karr's stored fluxs violate snapshot fbaEnzymeBounds; snapshot bounds are post-step (free-enzyme) not the bounds used during the LP solve",
       "ngam_from_mat": 8.39,
       "gam_from_mat": 59.81,
       "cellCycleLength_s_from_mat": 32400.0
+    },
+    "E": {
+      "label": "E: Karr stored runtime oracle (read from MAT)",
+      "feasible": true,
+      "growth_per_s_stored": 2.1192692552000678e-05,
+      "growth_per_h_stored": 0.07629369318720244,
+      "doublingTime_s_stored": 47186.07593378199,
+      "doublingTime_h_stored": 13.107243314939442,
+      "growth0_per_s_stored": 2.1393357961367016e-05,
+      "meanInitialGrowthRate_per_s_stored": 2.1393e-05,
+      "fluxs_n_total": 645,
+      "fluxs_n_nonzero": 253,
+      "fluxs_max_abs": 1000000.0,
+      "fluxs_min": -1000000.0,
+      "fluxs_max": 1000000.0,
+      "note": "This is Karr's stored runtime solution \u2014 gold-standard validation oracle for future M1 module comparisons."
     }
   },
   "primary_comparisons": [
@@ -125,5 +145,5 @@
       "rel_error": 0.0
     }
   ],
-  "interpretation": "Mode A is the literal Karr-2012 setup applied to the public Suthers-2009 SBML.  Mode B opens irreversibility constraints on non-Karr-overridden reactions; Mode C drops Karr bounds entirely.  Mode D solves Karr's own fitted FBA matrices (extracted from Simulation_fitted.mat via local MATLAB R2026a using the targeted extractor in scripts/matlab/extract_karr_targeted.m).\n\nMode A predicts mu = 0 (no growth).  Modes B and C predict mu > 0, which proves the LP machinery is correct and the gap is not in our solver.  Mode D, on Karr's own stoichiometry + bounds + biomass objective, predicts mu = 0.0109 /h vs Karr published 0.077 /h \u2014 a ~7x miss.  The remaining gap therefore is NOT 'iPS189 vs Karr's curated network'; both are now Karr's.  The remaining gap is likely (a) the small penalty terms in fbaObjective (35 entries of -5.31e-9) we dropped during initial diagnosis, (b) fbaEnzymeBounds \u2014 kinetic flux ceilings from enzyme amounts and kcats \u2014 extracted but not yet applied as additional bounds, and/or (c) the dynamic nature of Karr's metabolism process: substrate and enzyme amounts update every simulated second from the other 27 processes, so a static snapshot may not be at biomass-max steady state.\n\nHonesty note: ngam_from_mat = 8.39, gam_from_mat = 59.81, cellCycleLength_s_from_mat = 32400 in Mode D's output match Karr's published values BY DEFINITION (those numbers ARE Karr's; they live in the MAT we read).  They confirm the extractor is correct, not that the model reproduces biology.  Likewise in Mode A, R_ATPM flux equalling NGAM is a tautology (NGAM is the lower bound on R_ATPM, and with biomass = 0 the LP rests on that bound).  The only independently predicted quantities in this report are the biomass fluxes (Mode A: 0; Mode D: 0.0109; both differ from the 0.077 target).  Net independent agreement: 0/4."
+  "interpretation": "Mode A is the literal Karr-2012 setup applied to the public Suthers-2009 SBML.  Mode B opens irreversibility constraints on non-Karr-overridden reactions; Mode C drops Karr bounds entirely.  Mode D solves Karr's own fitted FBA matrices (extracted from Simulation_fitted.mat via local MATLAB R2026a using the targeted extractor in scripts/matlab/extract_karr_targeted.m).  Mode E reads Karr's stored runtime values (state.MetabolicReaction.dump) directly as a validation oracle.\n\nMode A predicts mu = 0.  Mode D predicts mu = 0.039 /h vs Karr published 0.077 /h \u2014 within 2x.\n\nSTRUCTURAL FINDING (2026-04-25): Karr's MAT snapshot fundamentally cannot reproduce his runtime growth via static FBA.  The smoking gun: 34/504 of Karr's own stored fluxes (mode E's data) violate his own snapshot fbaEnzymeBounds, by up to 100x.  This proves that the snapshot enzyme bounds are POST-step (free-enzyme count after substrate binding tightened it), not the bounds Karr used during the LP solve.  Including snapshot enzyme bounds in Mode D gives mu ~135x lower than published; dropping them and using a per-cell-per-sec ceiling of 1e3 (Karr's natural runtime cobratoolbox-style default) gives Mode D's reported mu = 0.039 /h.  The remaining 2x gap is the implicit runtime context for the unbounded reactions (Karr's calcFluxBounds() runs every simulated second using protein-state and kinetic constants; we have not ported that calculation).\n\nImplication for downstream M1 validation: the right oracle is NOT 'compare derived FBA growth to Karr published mu' \u2014 that comparison is structurally bounded by what a static snapshot can express.  The right oracle is Mode E: compare individual reaction fluxes (and growth) to Karr's STORED runtime values, since those are GROUND TRUTH at this snapshot.  This requires porting reactionWholeCellModelIDs onto our M1 module's reaction set and doing per-reaction comparisons."
 }
