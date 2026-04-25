@@ -30,6 +30,7 @@ class KarrTranscriptionProcess(Process):
         "time_step": 1.0,
         "condition": 1,
         "write_substrate_deltas": True,
+        "substrate_default": 0.0,
     }
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
@@ -56,7 +57,7 @@ class KarrTranscriptionProcess(Process):
         }
         substrates_schema = {
             ntp: {
-                "_default": 0.0,
+                "_default": float(self.parameters["substrate_default"]),
                 "_updater": "accumulate",
                 "_emit": True,
             }
