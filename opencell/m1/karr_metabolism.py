@@ -105,6 +105,8 @@ def solve_fba(
     sense: str = "max",
     big: float = DEFAULT_BIG,
     use_full_objective: bool = True,
+    lb_override: np.ndarray | None = None,
+    ub_override: np.ndarray | None = None,
 ) -> tuple[np.ndarray, dict]:
     """Solve Karr's fitted FBA exactly.
 
@@ -112,10 +114,19 @@ def solve_fba(
     objective: +1000 on biomass + 35 small parsimony penalties).
     Set `objective_col` to override and maximise / minimise a single
     column instead.  `big` substitutes for +/-inf in bounds.
+
+    ``lb_override`` / ``ub_override`` (each shape ``(R,)``) replace
+    ``model.lb`` / ``model.ub`` for this solve only; the model itself
+    is never mutated.  Used by the dynamic-bounds chassis loop.
     """
     R = model.n_reactions
-    lb = np.where(np.isfinite(model.lb), model.lb, -big).copy()
-    ub = np.where(np.isfinite(model.ub), model.ub,  big).copy()
+    src_lb = model.lb if lb_override is None else lb_override
+    src_ub = model.ub if ub_override is None else ub_override
+    if src_lb.shape != (R,) or src_ub.shape != (R,):
+        raise ValueError(
+            f"bound override shape mismatch: lb {src_lb.shape}, ub {src_ub.shape}, R={R}")
+    lb = np.where(np.isfinite(src_lb), src_lb, -big).copy()
+    ub = np.where(np.isfinite(src_ub), src_ub,  big).copy()
     lb = np.clip(lb, -big, big)
     ub = np.clip(ub, -big, big)
 

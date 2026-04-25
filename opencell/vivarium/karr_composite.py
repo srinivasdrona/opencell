@@ -101,8 +101,16 @@ def build_karr_m1_m2_m3_engine(
     time_step_s: float = 1.0,
     emit_step_s: float | None = None,
     condition: int = 1,
+    dynamic_bounds: bool = False,
 ):
-    """Build a Vivarium Engine running M1, M2 AND M3 in lockstep (1s tick)."""
+    """Build a Vivarium Engine running M1, M2 AND M3 in lockstep (1s tick).
+
+    ``dynamic_bounds=True`` enables Phase B M1 dynamic-bounds mode:
+    M1 reads M2/M3 NTP/AA demand from the shared ``substrates`` store
+    into a private compartmented state, recomputes flux bounds via
+    Karr's ``calcFluxBounds`` (rules 1-5) every tick, and emits a
+    ``m1_dynamic_diagnostics`` port.
+    """
     from vivarium.core.engine import Engine
 
     if m1_model is None:
@@ -113,7 +121,9 @@ def build_karr_m1_m2_m3_engine(
         m3_model = tl.load_default()
 
     m1_proc = KarrMetabolismProcess({
-        "model": m1_model, "time_step": time_step_s,
+        "model": m1_model,
+        "time_step": time_step_s,
+        "dynamic_bounds": dynamic_bounds,
     })
     m2_proc = KarrTranscriptionProcess({
         "model": m2_model,
@@ -140,6 +150,29 @@ def build_karr_m1_m2_m3_engine(
     # M3 declares an AA_total placeholder that's NOT in M1's 585; create it.
     initial_substrates["AA_total"] = _M1_SUBSTRATE_DEFAULT
 
+    m1_topo = {
+        "metabolic_reaction": ("metabolic_reaction",),
+        "substrates": ("substrates",),
+    }
+    if dynamic_bounds:
+        m1_topo["m1_dynamic_diagnostics"] = ("m1_dynamic_diagnostics",)
+
+    initial_state: dict[str, Any] = {
+        "metabolic_reaction": {
+            "fluxs": {rid: float(m1_model.fluxs_stored[i])
+                      for i, rid in enumerate(rxn_ids)},
+            "growth_per_s": float(m1_model.stored_runtime["growth_per_s"]),
+            "growth_per_h": float(m1_model.stored_runtime["growth_per_h"]),
+        },
+        "substrates": initial_substrates,
+        "rna": {"counts": rna_init},
+        "protein": {"counts": prot_init},
+    }
+    if dynamic_bounds:
+        initial_state["m1_dynamic_diagnostics"] = {
+            k: 0.0 for k in m1_proc._diagnostics_schema()
+        }
+
     engine = Engine(
         processes={
             "m1_karr": m1_proc,
@@ -147,10 +180,7 @@ def build_karr_m1_m2_m3_engine(
             "m3_karr": m3_proc,
         },
         topology={
-            "m1_karr": {
-                "metabolic_reaction": ("metabolic_reaction",),
-                "substrates": ("substrates",),
-            },
+            "m1_karr": m1_topo,
             "m2_karr": {
                 "rna": ("rna",),
                 "substrates": ("substrates",),
@@ -160,17 +190,7 @@ def build_karr_m1_m2_m3_engine(
                 "substrates": ("substrates",),
             },
         },
-        initial_state={
-            "metabolic_reaction": {
-                "fluxs": {rid: float(m1_model.fluxs_stored[i])
-                          for i, rid in enumerate(rxn_ids)},
-                "growth_per_s": float(m1_model.stored_runtime["growth_per_s"]),
-                "growth_per_h": float(m1_model.stored_runtime["growth_per_h"]),
-            },
-            "substrates": initial_substrates,
-            "rna": {"counts": rna_init},
-            "protein": {"counts": prot_init},
-        },
+        initial_state=initial_state,
         emit_step=emit_step_s or time_step_s,
     )
     return engine
