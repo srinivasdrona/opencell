@@ -1,0 +1,40 @@
+{
+  "array_keys": [
+    "fixture/dependentStateNames",
+    "fixture/fittedConstantNames",
+    "fixture/fixedConstantNames",
+    "fixture/mass",
+    "fixture/name",
+    "fixture/optionNames",
+    "fixture/parameterIndexs",
+    "fixture/parameterNames",
+    "fixture/randStream",
+    "fixture/stateNames",
+    "fixture/wholeCellModelID",
+    "fixture/x_class_"
+  ],
+  "manifest": {
+    "arrays_count": 8,
+    "dropped_object_dtype_count": 4,
+    "extraction_status": "extracted_from_matlab_flat",
+    "kind": "state",
+    "mat_format": "v7_flattened_by_matlab",
+    "name": "CellGeometry",
+    "notes": [
+      "dropped 4 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+    ],
+    "scalars_count": 7,
+    "source_path": "data/karr_fixtures/per_process/CellGeometry_flat.mat",
+    "source_sha256": "7f8ef3a6e90d8353f4a7a4080a4b00bb84155dbc53e6b1f42d556876bd7c4599",
+    "source_size_bytes": 760
+  },
+  "scalars": {
+    "fixture/density": 1100,
+    "fixture/dryWeight": 0,
+    "fixture/pinchedDiameter": 2.840467121583285e-07,
+    "fixture/seed": 1,
+    "fixture/verbosity": 0,
+    "fixture/volume": 1.2009482713288303e-17,
+    "fixture/width": 2.840467121583285e-07
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "array_keys": [
+    "fixture/dependentStateNames",
+    "fixture/fittedConstantNames",
+    "fixture/fixedConstantNames",
+    "fixture/name",
+    "fixture/optionNames",
+    "fixture/parameterIndexs",
+    "fixture/parameterNames",
+    "fixture/randStream",
+    "fixture/stateNames",
+    "fixture/wholeCellModelID",
+    "fixture/x_class_"
+  ],
+  "manifest": {
+    "arrays_count": 6,
+    "dropped_object_dtype_count": 5,
+    "extraction_status": "extracted_from_matlab_flat",
+    "kind": "state",
+    "mat_format": "v7_flattened_by_matlab",
+    "name": "Time",
+    "notes": [
+      "dropped 5 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+    ],
+    "scalars_count": 8,
+    "source_path": "data/karr_fixtures/per_process/Time_flat.mat",
+    "source_sha256": "993950068f42d8438175cfd855af5d842dc48fb120ca41a8d34bb32d6a557756",
+    "source_size_bytes": 696
+  },
+  "scalars": {
+    "fixture/cellCycleLength": 32400,
+    "fixture/cytokinesisDuration": 3869,
+    "fixture/dryWeight": 0,
+    "fixture/replicationDuration": 15571,
+    "fixture/replicationInitiationDuration": 12960,
+    "fixture/seed": 1,
+    "fixture/values": 0,
+    "fixture/verbosity": 0
+  }
+}

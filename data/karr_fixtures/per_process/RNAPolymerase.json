@@ -1,0 +1,52 @@
+{
+  "array_keys": [
+    "fixture/chromosome",
+    "fixture/dependentStateNames",
+    "fixture/fittedConstantNames",
+    "fixture/fixedConstantNames",
+    "fixture/name",
+    "fixture/optionNames",
+    "fixture/parameterIndexs",
+    "fixture/parameterNames",
+    "fixture/positionStrands",
+    "fixture/randStream",
+    "fixture/stateExpectations",
+    "fixture/stateNames",
+    "fixture/stateValues",
+    "fixture/states",
+    "fixture/supercoilingBindingProbFoldChange",
+    "fixture/transcriptionFactorBindingProbFoldChange",
+    "fixture/transcripts",
+    "fixture/wholeCellModelID",
+    "fixture/x_class_"
+  ],
+  "manifest": {
+    "arrays_count": 13,
+    "dropped_object_dtype_count": 6,
+    "extraction_status": "extracted_from_matlab_flat",
+    "kind": "state",
+    "mat_format": "v7_flattened_by_matlab",
+    "name": "RNAPolymerase",
+    "notes": [
+      "dropped 6 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+    ],
+    "scalars_count": 12,
+    "source_path": "data/karr_fixtures/per_process/RNAPolymerase_flat.mat",
+    "source_sha256": "df104999557264d248b0f865718d867cbb1299eb7011d6ae78d716cd682c9cfa",
+    "source_size_bytes": 1639
+  },
+  "scalars": {
+    "fixture/activelyTranscribingIndex": 1,
+    "fixture/activelyTranscribingValue": 1,
+    "fixture/dryWeight": 0,
+    "fixture/freeIndex": 4,
+    "fixture/freeValue": -2,
+    "fixture/nonSpecificallyBoundIndex": 3,
+    "fixture/nonSpecificallyBoundValue": -1,
+    "fixture/notExistValue": 0,
+    "fixture/seed": 1,
+    "fixture/specificallyBoundIndex": 2,
+    "fixture/specificallyBoundValue": -3,
+    "fixture/verbosity": 0
+  }
+}

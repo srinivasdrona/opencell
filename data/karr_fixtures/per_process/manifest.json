@@ -1,0 +1,752 @@
+{
+  "fixtures": [
+    {
+      "arrays_count": 89,
+      "dropped_object_dtype_count": 14,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "process",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "ChromosomeCondensation",
+      "notes": [
+        "dropped 14 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "ChromosomeCondensation.json",
+      "out_npz": "ChromosomeCondensation.npz",
+      "scalars_count": 13,
+      "source_path": "data/karr_fixtures/per_process/ChromosomeCondensation_flat.mat",
+      "source_sha256": "d8a5813d3010ac2af315e0ca964be0a8d68d230da02a93ee0d699c1696a96883",
+      "source_size_bytes": 371931
+    },
+    {
+      "arrays_count": 92,
+      "dropped_object_dtype_count": 10,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "process",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "ChromosomeSegregation",
+      "notes": [
+        "dropped 10 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "ChromosomeSegregation.json",
+      "out_npz": "ChromosomeSegregation.npz",
+      "scalars_count": 15,
+      "source_path": "data/karr_fixtures/per_process/ChromosomeSegregation_flat.mat",
+      "source_sha256": "5687460959b1aadaee49b5990b2e92c946c66001f392bec099477a6cbb6bf513",
+      "source_size_bytes": 371337
+    },
+    {
+      "arrays_count": 90,
+      "dropped_object_dtype_count": 13,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "process",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "Cytokinesis",
+      "notes": [
+        "dropped 13 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "Cytokinesis.json",
+      "out_npz": "Cytokinesis.npz",
+      "scalars_count": 14,
+      "source_path": "data/karr_fixtures/per_process/Cytokinesis_flat.mat",
+      "source_sha256": "1906c32e2499481bb6d354447627865609fbafdb5ab9a85e17af1ed703b1d7cb",
+      "source_size_bytes": 371570
+    },
+    {
+      "arrays_count": 120,
+      "dropped_object_dtype_count": 19,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "process",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "DNADamage",
+      "notes": [
+        "dropped 19 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "DNADamage.json",
+      "out_npz": "DNADamage.npz",
+      "scalars_count": 9,
+      "source_path": "data/karr_fixtures/per_process/DNADamage_flat.mat",
+      "source_sha256": "3ed7510504b3f9b246cb5f843983ad214d419698832db612f1366a9b67c404c1",
+      "source_size_bytes": 376544
+    },
+    {
+      "arrays_count": 122,
+      "dropped_object_dtype_count": 17,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "process",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "DNARepair",
+      "notes": [
+        "dropped 17 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "DNARepair.json",
+      "out_npz": "DNARepair.npz",
+      "scalars_count": 52,
+      "source_path": "data/karr_fixtures/per_process/DNARepair_flat.mat",
+      "source_sha256": "bcadae85937f6fd9dbfeb0099fc5f6f43b15e1427a902cf246d4d8479bb974a7",
+      "source_size_bytes": 448946
+    },
+    {
+      "arrays_count": 90,
+      "dropped_object_dtype_count": 14,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "process",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "DNASupercoiling",
+      "notes": [
+        "dropped 14 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "DNASupercoiling.json",
+      "out_npz": "DNASupercoiling.npz",
+      "scalars_count": 35,
+      "source_path": "data/karr_fixtures/per_process/DNASupercoiling_flat.mat",
+      "source_sha256": "9b182eb91761300f3b3f057c9e1ea1155e81d922882980211d08ded6a637540c",
+      "source_size_bytes": 373653
+    },
+    {
+      "arrays_count": 81,
+      "dropped_object_dtype_count": 13,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "process",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "FtsZPolymerization",
+      "notes": [
+        "dropped 13 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "FtsZPolymerization.json",
+      "out_npz": "FtsZPolymerization.npz",
+      "scalars_count": 28,
+      "source_path": "data/karr_fixtures/per_process/FtsZPolymerization_flat.mat",
+      "source_sha256": "33babb02e5ce33023c67db99740c788842ab22518bdf047be132fb426cae8a8b",
+      "source_size_bytes": 340375
+    },
+    {
+      "arrays_count": 89,
+      "dropped_object_dtype_count": 13,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "process",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "HostInteraction",
+      "notes": [
+        "dropped 13 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "HostInteraction.json",
+      "out_npz": "HostInteraction.npz",
+      "scalars_count": 10,
+      "source_path": "data/karr_fixtures/per_process/HostInteraction_flat.mat",
+      "source_sha256": "3da8d8fae1204828b2886cdfb395e7c22644b0ce8704d78456e6a8acb9766776",
+      "source_size_bytes": 340724
+    },
+    {
+      "arrays_count": 93,
+      "dropped_object_dtype_count": 14,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "process",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "MacromolecularComplexation",
+      "notes": [
+        "dropped 14 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "MacromolecularComplexation.json",
+      "out_npz": "MacromolecularComplexation.npz",
+      "scalars_count": 4,
+      "source_path": "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat",
+      "source_sha256": "658e25f30acd8ea84f7bf4b1b2536bf994ad389d9cb575dfeefbf628fe151f01",
+      "source_size_bytes": 350378
+    },
+    {
+      "arrays_count": 125,
+      "dropped_object_dtype_count": 16,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "process",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "Metabolism",
+      "notes": [
+        "dropped 16 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "Metabolism.json",
+      "out_npz": "Metabolism.npz",
+      "scalars_count": 35,
+      "source_path": "data/karr_fixtures/per_process/Metabolism_flat.mat",
+      "source_sha256": "331a90c56aec5af19072ea39d3e5a69977c9986075fe5ec1c645031ac4d1f670",
+      "source_size_bytes": 649716
+    },
+    {
+      "arrays_count": 90,
+      "dropped_object_dtype_count": 12,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "process",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "ProteinActivation",
+      "notes": [
+        "dropped 12 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "ProteinActivation.json",
+      "out_npz": "ProteinActivation.npz",
+      "scalars_count": 4,
+      "source_path": "data/karr_fixtures/per_process/ProteinActivation_flat.mat",
+      "source_sha256": "ea58c5d4ca279e2b10dff12bffe89e04926f4515324f0c13fb677759a4094a52",
+      "source_size_bytes": 340045
+    },
+    {
+      "arrays_count": 99,
+      "dropped_object_dtype_count": 14,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "process",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "ProteinDecay",
+      "notes": [
+        "dropped 14 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "ProteinDecay.json",
+      "out_npz": "ProteinDecay.npz",
+      "scalars_count": 32,
+      "source_path": "data/karr_fixtures/per_process/ProteinDecay_flat.mat",
+      "source_sha256": "020aae58a97fb3ab56eb58eb443d6b189cecf769eb420a3b89eacead47970538",
+      "source_size_bytes": 738486
+    },
+    {
+      "arrays_count": 106,
+      "dropped_object_dtype_count": 17,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "process",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "ProteinFolding",
+      "notes": [
+        "dropped 17 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "ProteinFolding.json",
+      "out_npz": "ProteinFolding.npz",
+      "scalars_count": 20,
+      "source_path": "data/karr_fixtures/per_process/ProteinFolding_flat.mat",
+      "source_sha256": "d91be6c57d1cce69cd16898a6e414fc3cecf9563aa48c67bde732e9caf1ae63c",
+      "source_size_bytes": 355794
+    },
+    {
+      "arrays_count": 98,
+      "dropped_object_dtype_count": 17,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "process",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "ProteinModification",
+      "notes": [
+        "dropped 17 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "ProteinModification.json",
+      "out_npz": "ProteinModification.npz",
+      "scalars_count": 21,
+      "source_path": "data/karr_fixtures/per_process/ProteinModification_flat.mat",
+      "source_sha256": "b89663e37c5ab6a68a8f978e670ecbedf05c5a2af4a5569b4e83d803b2c5807b",
+      "source_size_bytes": 347500
+    },
+    {
+      "arrays_count": 78,
+      "dropped_object_dtype_count": 15,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "process",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "ProteinProcessingI",
+      "notes": [
+        "dropped 15 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "ProteinProcessingI.json",
+      "out_npz": "ProteinProcessingI.npz",
+      "scalars_count": 22,
+      "source_path": "data/karr_fixtures/per_process/ProteinProcessingI_flat.mat",
+      "source_sha256": "0a4ce7ad57266e4c1241f7fba34e6e9a20183855f8f396ca70e7b23d63acd535",
+      "source_size_bytes": 342299
+    },
+    {
+      "arrays_count": 92,
+      "dropped_object_dtype_count": 16,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "process",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "ProteinProcessingII",
+      "notes": [
+        "dropped 16 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "ProteinProcessingII.json",
+      "out_npz": "ProteinProcessingII.npz",
+      "scalars_count": 13,
+      "source_path": "data/karr_fixtures/per_process/ProteinProcessingII_flat.mat",
+      "source_sha256": "a386207b68bc7d306b8385a0a0aa34ea28bc68d2af0f1530da113f80808699af",
+      "source_size_bytes": 345621
+    },
+    {
+      "arrays_count": 87,
+      "dropped_object_dtype_count": 13,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "process",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "ProteinTranslocation",
+      "notes": [
+        "dropped 13 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "ProteinTranslocation.json",
+      "out_npz": "ProteinTranslocation.npz",
+      "scalars_count": 23,
+      "source_path": "data/karr_fixtures/per_process/ProteinTranslocation_flat.mat",
+      "source_sha256": "1c02cba3d4422d7384a3d0c369b4bb02585705b9bed37d72c9c7b87515b0b41d",
+      "source_size_bytes": 343018
+    },
+    {
+      "arrays_count": 92,
+      "dropped_object_dtype_count": 12,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "process",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "RNADecay",
+      "notes": [
+        "dropped 12 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "RNADecay.json",
+      "out_npz": "RNADecay.npz",
+      "scalars_count": 17,
+      "source_path": "data/karr_fixtures/per_process/RNADecay_flat.mat",
+      "source_sha256": "ff50cad3841556964d8c5ed55c0514b7a2ade7be3898cd22a360ba72e53316d3",
+      "source_size_bytes": 522332
+    },
+    {
+      "arrays_count": 102,
+      "dropped_object_dtype_count": 18,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "process",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "RNAModification",
+      "notes": [
+        "dropped 18 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "RNAModification.json",
+      "out_npz": "RNAModification.npz",
+      "scalars_count": 25,
+      "source_path": "data/karr_fixtures/per_process/RNAModification_flat.mat",
+      "source_sha256": "64e096360369eb89005318f006063fcec04ed690c0aa61c0a3c630807a0f449a",
+      "source_size_bytes": 347525
+    },
+    {
+      "arrays_count": 94,
+      "dropped_object_dtype_count": 16,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "process",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "RNAProcessing",
+      "notes": [
+        "dropped 16 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "RNAProcessing.json",
+      "out_npz": "RNAProcessing.npz",
+      "scalars_count": 33,
+      "source_path": "data/karr_fixtures/per_process/RNAProcessing_flat.mat",
+      "source_sha256": "0760c3b23845029039cc1f47020c260cbc52fa5a69595775a291534ca4b28006",
+      "source_size_bytes": 344292
+    },
+    {
+      "arrays_count": 96,
+      "dropped_object_dtype_count": 14,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "process",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "Replication",
+      "notes": [
+        "dropped 14 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "Replication.json",
+      "out_npz": "Replication.npz",
+      "scalars_count": 40,
+      "source_path": "data/karr_fixtures/per_process/Replication_flat.mat",
+      "source_sha256": "a6b55bf9392153c3cddbc9d4407b0bac518870028d6919f91015f7c6a4df1662",
+      "source_size_bytes": 374849
+    },
+    {
+      "arrays_count": 99,
+      "dropped_object_dtype_count": 13,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "process",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "ReplicationInitiation",
+      "notes": [
+        "dropped 13 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "ReplicationInitiation.json",
+      "out_npz": "ReplicationInitiation.npz",
+      "scalars_count": 34,
+      "source_path": "data/karr_fixtures/per_process/ReplicationInitiation_flat.mat",
+      "source_sha256": "ea0a22a435849d31ce84a401a443ec513a724a6fdc6eeb844031b2c1d3855d36",
+      "source_size_bytes": 596021
+    },
+    {
+      "arrays_count": 96,
+      "dropped_object_dtype_count": 16,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "process",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "RibosomeAssembly",
+      "notes": [
+        "dropped 16 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "RibosomeAssembly.json",
+      "out_npz": "RibosomeAssembly.npz",
+      "scalars_count": 17,
+      "source_path": "data/karr_fixtures/per_process/RibosomeAssembly_flat.mat",
+      "source_sha256": "d1b17ea39a9b90fe1dd3ae400e4c976e507aa22802d65f8c2544daeda76020ec",
+      "source_size_bytes": 340519
+    },
+    {
+      "arrays_count": 94,
+      "dropped_object_dtype_count": 17,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "process",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "TerminalOrganelleAssembly",
+      "notes": [
+        "dropped 17 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "TerminalOrganelleAssembly.json",
+      "out_npz": "TerminalOrganelleAssembly.npz",
+      "scalars_count": 18,
+      "source_path": "data/karr_fixtures/per_process/TerminalOrganelleAssembly_flat.mat",
+      "source_sha256": "cdf3c89d8f32cd429d130cc650b01c53f855a520faa796e318dbead75bcbeabe",
+      "source_size_bytes": 341091
+    },
+    {
+      "arrays_count": 100,
+      "dropped_object_dtype_count": 12,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "process",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "Transcription",
+      "notes": [
+        "dropped 12 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "Transcription.json",
+      "out_npz": "Transcription.npz",
+      "scalars_count": 17,
+      "source_path": "data/karr_fixtures/per_process/Transcription_flat.mat",
+      "source_sha256": "de4bab119d2ebf61bdefb4a4c1bedb5ddd589241638f3adfa5a0b6535c7d50b2",
+      "source_size_bytes": 553349
+    },
+    {
+      "arrays_count": 97,
+      "dropped_object_dtype_count": 14,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "process",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "TranscriptionalRegulation",
+      "notes": [
+        "dropped 14 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "TranscriptionalRegulation.json",
+      "out_npz": "TranscriptionalRegulation.npz",
+      "scalars_count": 9,
+      "source_path": "data/karr_fixtures/per_process/TranscriptionalRegulation_flat.mat",
+      "source_sha256": "c553fd09f6f782db0a76fa0513746296a63b2b0096cf49ce7570cf78724a2744",
+      "source_size_bytes": 374502
+    },
+    {
+      "arrays_count": 92,
+      "dropped_object_dtype_count": 15,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "process",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "Translation",
+      "notes": [
+        "dropped 15 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "Translation.json",
+      "out_npz": "Translation.npz",
+      "scalars_count": 34,
+      "source_path": "data/karr_fixtures/per_process/Translation_flat.mat",
+      "source_sha256": "cbc6f5d9808c31f86ae426faab0fe5b50c18f8124cc1a48f0bdb6322e704a85f",
+      "source_size_bytes": 577818
+    },
+    {
+      "arrays_count": 107,
+      "dropped_object_dtype_count": 17,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "process",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "tRNAAminoacylation",
+      "notes": [
+        "dropped 17 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "tRNAAminoacylation.json",
+      "out_npz": "tRNAAminoacylation.npz",
+      "scalars_count": 25,
+      "source_path": "data/karr_fixtures/per_process/tRNAAminoacylation_flat.mat",
+      "source_sha256": "5e7fe972081172c196542029ae76eef939f88dc891b355492a13e3206c3aa3fa",
+      "source_size_bytes": 359822
+    },
+    {
+      "arrays_count": 8,
+      "dropped_object_dtype_count": 4,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "state",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "CellGeometry",
+      "notes": [
+        "dropped 4 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "CellGeometry.json",
+      "out_npz": "CellGeometry.npz",
+      "scalars_count": 7,
+      "source_path": "data/karr_fixtures/per_process/CellGeometry_flat.mat",
+      "source_sha256": "7f8ef3a6e90d8353f4a7a4080a4b00bb84155dbc53e6b1f42d556876bd7c4599",
+      "source_size_bytes": 760
+    },
+    {
+      "arrays_count": 19,
+      "dropped_object_dtype_count": 8,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "state",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "CellMass",
+      "notes": [
+        "dropped 8 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "CellMass.json",
+      "out_npz": "CellMass.npz",
+      "scalars_count": 19,
+      "source_path": "data/karr_fixtures/per_process/CellMass_flat.mat",
+      "source_sha256": "a1865917bfeba9ede6f565c54add85b2f290e38c091e460c01217c4a5781aaa6",
+      "source_size_bytes": 1006113
+    },
+    {
+      "arrays_count": 85,
+      "dropped_object_dtype_count": 11,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "state",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "Chromosome",
+      "notes": [
+        "dropped 11 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "Chromosome.json",
+      "out_npz": "Chromosome.npz",
+      "scalars_count": 83,
+      "source_path": "data/karr_fixtures/per_process/Chromosome_flat.mat",
+      "source_sha256": "e4c05522d28db93e0a3c73dcc7e6a3f9e526c47ef1119aa7c6d5624a7557d602",
+      "source_size_bytes": 31737
+    },
+    {
+      "arrays_count": 6,
+      "dropped_object_dtype_count": 6,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "state",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "FtsZRing",
+      "notes": [
+        "dropped 6 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "FtsZRing.json",
+      "out_npz": "FtsZRing.npz",
+      "scalars_count": 10,
+      "source_path": "data/karr_fixtures/per_process/FtsZRing_flat.mat",
+      "source_sha256": "20d341cf5c2ed10fc383fbad330e3ac8ee4d0c7dabb3b8fc109f9b561a3c4d06",
+      "source_size_bytes": 787
+    },
+    {
+      "arrays_count": 5,
+      "dropped_object_dtype_count": 8,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "state",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "Host",
+      "notes": [
+        "dropped 8 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "Host.json",
+      "out_npz": "Host.npz",
+      "scalars_count": 10,
+      "source_path": "data/karr_fixtures/per_process/Host_flat.mat",
+      "source_sha256": "36902bdac8169002e826ccc3ed35fb700bf22fa950465c7fd1dbd23db86644cd",
+      "source_size_bytes": 708
+    },
+    {
+      "arrays_count": 6,
+      "dropped_object_dtype_count": 7,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "state",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "MetabolicReaction",
+      "notes": [
+        "dropped 7 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "MetabolicReaction.json",
+      "out_npz": "MetabolicReaction.npz",
+      "scalars_count": 7,
+      "source_path": "data/karr_fixtures/per_process/MetabolicReaction_flat.mat",
+      "source_sha256": "fa28891994740761798473db70a7cebf1a987fd0d863d9227f47165725c775e9",
+      "source_size_bytes": 7067
+    },
+    {
+      "arrays_count": 38,
+      "dropped_object_dtype_count": 10,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "state",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "Metabolite",
+      "notes": [
+        "dropped 10 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "Metabolite.json",
+      "out_npz": "Metabolite.npz",
+      "scalars_count": 14,
+      "source_path": "data/karr_fixtures/per_process/Metabolite_flat.mat",
+      "source_sha256": "9da7ce5f6e5a7c62983bdd76c44b11c0ddb1d783edb5866a45adf085d83d6a5f",
+      "source_size_bytes": 32145
+    },
+    {
+      "arrays_count": 12,
+      "dropped_object_dtype_count": 10,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "state",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "Polypeptide",
+      "notes": [
+        "dropped 10 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "Polypeptide.json",
+      "out_npz": "Polypeptide.npz",
+      "scalars_count": 4,
+      "source_path": "data/karr_fixtures/per_process/Polypeptide_flat.mat",
+      "source_sha256": "ba7b4da0606c2c89f246c64c51f392207817469160238c28aabc2c7645f2bc5f",
+      "source_size_bytes": 236334
+    },
+    {
+      "arrays_count": 31,
+      "dropped_object_dtype_count": 6,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "state",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "ProteinComplex",
+      "notes": [
+        "dropped 6 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "ProteinComplex.json",
+      "out_npz": "ProteinComplex.npz",
+      "scalars_count": 8,
+      "source_path": "data/karr_fixtures/per_process/ProteinComplex_flat.mat",
+      "source_sha256": "ca12556ff283f60106213eec85e77fadd068d37d32c8319ec0a06be6257dab13",
+      "source_size_bytes": 57431
+    },
+    {
+      "arrays_count": 24,
+      "dropped_object_dtype_count": 8,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "state",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "ProteinMonomer",
+      "notes": [
+        "dropped 8 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "ProteinMonomer.json",
+      "out_npz": "ProteinMonomer.npz",
+      "scalars_count": 5,
+      "source_path": "data/karr_fixtures/per_process/ProteinMonomer_flat.mat",
+      "source_sha256": "4b59dbd5d2e07bb724ec9145c0f2488062866c8dab208be7de0701cbbca70e27",
+      "source_size_bytes": 177616
+    },
+    {
+      "arrays_count": 13,
+      "dropped_object_dtype_count": 6,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "state",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "RNAPolymerase",
+      "notes": [
+        "dropped 6 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "RNAPolymerase.json",
+      "out_npz": "RNAPolymerase.npz",
+      "scalars_count": 12,
+      "source_path": "data/karr_fixtures/per_process/RNAPolymerase_flat.mat",
+      "source_sha256": "df104999557264d248b0f865718d867cbb1299eb7011d6ae78d716cd682c9cfa",
+      "source_size_bytes": 1639
+    },
+    {
+      "arrays_count": 13,
+      "dropped_object_dtype_count": 7,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "state",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "Ribosome",
+      "notes": [
+        "dropped 7 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "Ribosome.json",
+      "out_npz": "Ribosome.npz",
+      "scalars_count": 9,
+      "source_path": "data/karr_fixtures/per_process/Ribosome_flat.mat",
+      "source_sha256": "3448ae3ca9d24802e4e36ed08919cbc5bb704b1dded140884649e97d7a4becec",
+      "source_size_bytes": 1107
+    },
+    {
+      "arrays_count": 35,
+      "dropped_object_dtype_count": 7,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "state",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "Rna",
+      "notes": [
+        "dropped 7 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "Rna.json",
+      "out_npz": "Rna.npz",
+      "scalars_count": 17,
+      "source_path": "data/karr_fixtures/per_process/Rna_flat.mat",
+      "source_sha256": "67b8bd3ee6965e4220de3f8ca7f9faeeb7f3f5199e7c21eee1b616c1d9a7fc1d",
+      "source_size_bytes": 69263
+    },
+    {
+      "arrays_count": 8,
+      "dropped_object_dtype_count": 8,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "state",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "Stimulus",
+      "notes": [
+        "dropped 8 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "Stimulus.json",
+      "out_npz": "Stimulus.npz",
+      "scalars_count": 3,
+      "source_path": "data/karr_fixtures/per_process/Stimulus_flat.mat",
+      "source_sha256": "130bc7a452a42b028c58bac0b462e0f3cb9e1d7da1f06ba1ef62712efa608982",
+      "source_size_bytes": 985
+    },
+    {
+      "arrays_count": 6,
+      "dropped_object_dtype_count": 5,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "state",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "Time",
+      "notes": [
+        "dropped 5 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "Time.json",
+      "out_npz": "Time.npz",
+      "scalars_count": 8,
+      "source_path": "data/karr_fixtures/per_process/Time_flat.mat",
+      "source_sha256": "993950068f42d8438175cfd855af5d842dc48fb120ca41a8d34bb32d6a557756",
+      "source_size_bytes": 696
+    },
+    {
+      "arrays_count": 15,
+      "dropped_object_dtype_count": 8,
+      "extraction_status": "extracted_from_matlab_flat",
+      "kind": "state",
+      "mat_format": "v7_flattened_by_matlab",
+      "name": "Transcript",
+      "notes": [
+        "dropped 8 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+      ],
+      "out_json": "Transcript.json",
+      "out_npz": "Transcript.npz",
+      "scalars_count": 5,
+      "source_path": "data/karr_fixtures/per_process/Transcript_flat.mat",
+      "source_sha256": "9f78b6b605774953099df2e2bb06b6e55150cd97e32e99de227ab8b439faea74",
+      "source_size_bytes": 174439
+    }
+  ]
+}

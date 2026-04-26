@@ -1,0 +1,40 @@
+{
+  "array_keys": [
+    "fixture/compartment",
+    "fixture/dependentStateNames",
+    "fixture/fittedConstantNames",
+    "fixture/fixedConstantNames",
+    "fixture/name",
+    "fixture/names",
+    "fixture/optionNames",
+    "fixture/parameterIndexs",
+    "fixture/parameterNames",
+    "fixture/randStream",
+    "fixture/setValues",
+    "fixture/stateNames",
+    "fixture/values",
+    "fixture/wholeCellModelID",
+    "fixture/wholeCellModelIDs",
+    "fixture/x_class_"
+  ],
+  "manifest": {
+    "arrays_count": 8,
+    "dropped_object_dtype_count": 8,
+    "extraction_status": "extracted_from_matlab_flat",
+    "kind": "state",
+    "mat_format": "v7_flattened_by_matlab",
+    "name": "Stimulus",
+    "notes": [
+      "dropped 8 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+    ],
+    "scalars_count": 3,
+    "source_path": "data/karr_fixtures/per_process/Stimulus_flat.mat",
+    "source_sha256": "130bc7a452a42b028c58bac0b462e0f3cb9e1d7da1f06ba1ef62712efa608982",
+    "source_size_bytes": 985
+  },
+  "scalars": {
+    "fixture/dryWeight": 0,
+    "fixture/seed": 1,
+    "fixture/verbosity": 0
+  }
+}

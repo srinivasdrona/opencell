@@ -1,0 +1,44 @@
+{
+  "array_keys": [
+    "fixture/dependentStateNames",
+    "fixture/fittedConstantNames",
+    "fixture/fixedConstantNames",
+    "fixture/isTLRActivated",
+    "fixture/name",
+    "fixture/optionNames",
+    "fixture/parameterIndexs",
+    "fixture/parameterNames",
+    "fixture/randStream",
+    "fixture/stateNames",
+    "fixture/tlrIDs",
+    "fixture/wholeCellModelID",
+    "fixture/x_class_"
+  ],
+  "manifest": {
+    "arrays_count": 5,
+    "dropped_object_dtype_count": 8,
+    "extraction_status": "extracted_from_matlab_flat",
+    "kind": "state",
+    "mat_format": "v7_flattened_by_matlab",
+    "name": "Host",
+    "notes": [
+      "dropped 8 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+    ],
+    "scalars_count": 10,
+    "source_path": "data/karr_fixtures/per_process/Host_flat.mat",
+    "source_sha256": "36902bdac8169002e826ccc3ed35fb700bf22fa950465c7fd1dbd23db86644cd",
+    "source_size_bytes": 708
+  },
+  "scalars": {
+    "fixture/dryWeight": 0,
+    "fixture/isBacteriumAdherent": 1,
+    "fixture/isInflammatoryResponseActivated": 1,
+    "fixture/isNFkBActivated": 1,
+    "fixture/nTLRs": 3,
+    "fixture/seed": 1,
+    "fixture/tlrIndexs_1": 1,
+    "fixture/tlrIndexs_2": 2,
+    "fixture/tlrIndexs_6": 3,
+    "fixture/verbosity": 0
+  }
+}

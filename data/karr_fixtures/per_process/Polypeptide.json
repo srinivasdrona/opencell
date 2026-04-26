@@ -1,0 +1,47 @@
+{
+  "array_keys": [
+    "fixture/abortedPolypeptides",
+    "fixture/aminoAcidMolecularWeights",
+    "fixture/boundMRNAs",
+    "fixture/dependentStateNames",
+    "fixture/fittedConstantNames",
+    "fixture/fixedConstantNames",
+    "fixture/monomerAASequences",
+    "fixture/monomerLengths",
+    "fixture/monomerTRNASequences",
+    "fixture/monomerWholeCellModelIDs",
+    "fixture/name",
+    "fixture/nascentMonomerLengths",
+    "fixture/optionNames",
+    "fixture/parameterIndexs",
+    "fixture/parameterNames",
+    "fixture/proteolysisTagAASequence",
+    "fixture/proteolysisTagLengths",
+    "fixture/proteolysisTagTRNASequence",
+    "fixture/randStream",
+    "fixture/stateNames",
+    "fixture/wholeCellModelID",
+    "fixture/x_class_"
+  ],
+  "manifest": {
+    "arrays_count": 12,
+    "dropped_object_dtype_count": 10,
+    "extraction_status": "extracted_from_matlab_flat",
+    "kind": "state",
+    "mat_format": "v7_flattened_by_matlab",
+    "name": "Polypeptide",
+    "notes": [
+      "dropped 10 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+    ],
+    "scalars_count": 4,
+    "source_path": "data/karr_fixtures/per_process/Polypeptide_flat.mat",
+    "source_sha256": "ba7b4da0606c2c89f246c64c51f392207817469160238c28aabc2c7645f2bc5f",
+    "source_size_bytes": 236334
+  },
+  "scalars": {
+    "fixture/proteolysisTagLength": 27,
+    "fixture/proteolysisTagMolecularWeight": 2971.2056000000002,
+    "fixture/seed": 1,
+    "fixture/verbosity": 0
+  }
+}

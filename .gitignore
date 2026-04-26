@@ -71,3 +71,4 @@ data/m1_sources/karr_flat/*
 # MATLAB extraction scaffolding scratch
 scripts/matlab/_*
 
+data/.tmp/
