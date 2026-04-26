@@ -401,7 +401,56 @@ NOT a parallel program)**
 
 ---
 
-## Current Status (2026-04-25, **478 tests passing**, central dogma chassis live)
+## Current Status (2026-04-26, **600 tests passing + 2 xfail**, MATLAB eviction + m2 per-condition shipped)
+
+### Phase E.1c — m2 per-condition snapshots (DONE — merge commit `0fb5df3`)
+
+* `karr_native_m2` schema v4: `counts_mature` is now shape `(525, 3)` (low/mean/high). Per-condition derivation: scale the single fitted-mean snapshot by `expression[:, c] / expression[:, mean]` per gene — no hardcoded values, scales mechanically to the whole-cell model.
+* `opencell/m2/transcription.py`: `KARR_CONDITION_INDEX` mapping + `resolve_condition()`; `calibrated_chassis_model` accepts a condition arg. All consumers (`vivarium/karr_m2.py`, `karr_composite.py`, `analysis/phenotypes.py`) pick the column.
+* Lifts the xfail on `test_compute_baseline_demand_respects_condition`. Suite: 600 passed + 2 xfailed (was 599 + 3).
+* Branch `m2-per-condition-snapshots` (commit `9f8b186`) merged via `0fb5df3`.
+
+### MATLAB Eviction (DONE — every Python workflow runs without MATLAB or .mat)
+
+**Goal achieved:** Future contributors clone the repo and run all 8 ingest scripts, the chassis, and the full test suite without MATLAB or any `.mat` file. MATLAB is now bootstrap-only — required only to add new fields to the archive.
+
+**Shipped (commit `f06b8a0`):**
+- `scripts/build_karr_archive.py` — extracts the consumed-fields whitelist (~100 leaves out of ~4,300 total) from the 8 source `.mat` files (7 v7.0 via `scipy.io.loadmat` + 1 v7.3 via `h5py`) into `data/karr_archive/{karr_archive.npz, karr_archive_strings.json, karr_archive_manifest.json}` (~786 KB compressed; 143 ndarrays + 124 string keys + per-field provenance with sha256).
+- `opencell/_karr_archive.py` — namespace loader. `arc[basename].dotted.path` access; `_StructArray` parallel column-views + per-row iteration; `_NestedStructArray.per_parent(i)` for nested struct arrays.
+- All 8 ingest scripts refactored to use `load_karr_archive()` instead of `loadmat()` / `h5py.File()`. Output fixtures verified byte-identical (modulo `source_*` metadata labels) — see `data/karr_archive/fixture_hashes.json`.
+- `scripts/validate_karr_archive.py` — re-runs every ingest and verifies output sha256 (timestamp-insensitive, hashes array contents not zip metadata).
+- `data/karr_archive/README.md` + `scripts/matlab/README.md` updated — MATLAB explicitly bootstrap-only.
+
+**Lightweight catalog (commit `d8201fc`):** `scripts/dump_karr_mat_inventory.py` walks all 8 `.mat` files and writes `data/karr_archive/full_inventory.json` (4,837 leaf records, 1.5 MB) + `full_inventory_summary.md`. No payloads, just paths/dtypes/shapes/sha256 — discoverability without bloat. Confirms ~5 % of total fields are currently consumed; the other 95 % are now indexed for future subsystems.
+
+### Phase E.1b — Cell Dry Mass + MW Fixture Re-Extract (DONE — commit `65ca7d8` + m2-counts-fix `e6d748a`)
+
+* M1 fixture v2 (`karr_native_m1__v2`): adds `substrate_molecular_weight[585]`, `enzyme_molecular_weight[104]` to npz; State_Mass aggregates (cellInitialDryWeight, cellDry total, rnaWt, dryWeightFractionRNA, 6-compartment splits) to JSON `stored_runtime`.
+* M2 fixture v2 (`karr_native_m2__v2`): adds `rna_molecular_weight[525]` per gene with TU MW lookup + length-based fallback for non-mRNA genes.
+* `opencell/analysis/cell_mass.py`: aggregator computes substrate + RNA + protein mass with per-class breakdown.
+* `phenotypes.py`: `measure_cell_dry_mass` extractor (closed-loop config matching p9). `targets.json`: + `p10_cell_dry_mass_g` (closed_loop, expected_status=fail).
+* m2-counts-fix follow-up (commit `e6d748a`): rewired M2 SS counts to read State_Rna mature counts (784 mol across 347 species) instead of misusing `expression[:, 0]`. Suite went 599+1 → 599+3 (revealed two additional structural xfails).
+
+### Phase E.1a — per-AA Pool Stability (DONE — commit `f94f5eb`)
+
+Phenotype #9: per-AA cytosol pool stability over 20 s under the full Phase C closed loop (dynamic bounds + throttle + calibrated pool replenishment). Real prediction (not a tautology): M3 drains 20 distinct AAs at protein-composition-weighted rates while M1 sources them at calibrated baseline-demand rates — match-up is a stoichiometric+rate test of the closed loop.
+
+### Phase E.0 — Phenotype Validation Harness (DONE — first report shipped, commit `c12d68f`)
+
+* `data/karr_fixtures/karr_phenotype_targets.json` (`karr_phenotype_targets__v1`) — 8 phenotypes initially with documented targets, tolerances, and a `category` field separating non-circular FBA-prediction tests from chassis composition invariants (now extended to 10 with E.1a + E.1b).
+* `opencell/analysis/phenotypes.py` — pure measurement extractors returning `PhenotypeMeasurement(predicted, target, unit, extra)`.
+* `tests/phaseE/test_karr_phenotypes.py` — 10 pytest cases covering FBA prediction (#1–4), chassis wiring (#5–8), closed-loop (#9–10).
+* `scripts/phase_e_report.py` — markdown-table summariser.
+
+**Honest assessment:** 4 fba_prediction tests are real ground-truth comparisons (#1–3 + #9 closed loop); #4 and #10 are documented structural gaps (PTS routes outside FBA; mass coverage incomplete pending D.2 + M5 + substrate-pool init). #5–8 are circular today (M2/M3 v1 round-trip prescribed Karr values by construction) — they become real predictive tests once v2 mechanics replace prescribed rates.
+
+**Next E phase (decision recorded):**
+- E.2 decision artifact (session: `files/e2_decision.md`): **D.2 → v2 chassis swap → M5**. D.2 first because it is a hard prerequisite for both M5 (replisome) and "fully real" v2 mechanics (RNAP/ribosome are complexes). v2 chassis swap second for biggest immediate phenotype delta (4 circular → real). M5 third when chassis is richest.
+
+### Phase D.0 + D.1 (DONE — commit `0cc8d16`)
+
+* D.0: protein-complex composition fixture from MATLAB extract (201 complexes), `opencell/m1/protein_complexes.py` loader with recursive flattening. 20/20 tests.
+* D.1: compartmented S fixture (585×645×3, nnz=2644) + supply-side calibration helper using existing `solve_fba`. 17/17 tests, including TX_GLCPTS PTS uptake spot-check and `test_baseline_NTPs_NOT_supplied_through_FBA` locking in the D.1 spike finding.
 
 ### Central Dogma Chassis (DONE — M1+M2+M3 composition)
 
