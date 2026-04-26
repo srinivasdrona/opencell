@@ -111,14 +111,19 @@ def measure_mrna_total_chassis_wiring(
     m2: tx.KarrTranscriptionModel, condition: int = 1,
 ) -> PhenotypeMeasurement:
     """Wiring fidelity: build the chassis engine, read mRNA counts from
-    its initial state (which the composer populated from m2.expression),
-    and compare the SUM to m2.expression.sum() computed independently.
+    its initial state (which the composer populates from
+    m2.counts_mature -- Karr State_Rna mature cytosol counts), and
+    compare the SUM to m2.counts_mature.sum() computed independently.
     Catches bugs where the composer drops/duplicates genes or mis-maps
-    indices. NOT a biology prediction -- becomes one once M2 v2 lands."""
+    indices. NOT a biology prediction -- becomes one once M2 v2 lands.
+
+    The ``condition`` argument is retained for backwards compat but is
+    no longer consulted: counts_mature is condition-invariant (Karr's
+    snapshot lives in a single condition slice)."""
     engine = _run_engine_for(0)
     state = engine.state.get_value()
     chassis_total = float(sum(state["rna"]["counts"].values()))
-    model_total = float(m2.expression[:, condition].sum())
+    model_total = float(m2.counts_mature.sum())
     return PhenotypeMeasurement(
         name="p5_mrna_total_chassis_wiring",
         predicted=chassis_total,
@@ -126,7 +131,7 @@ def measure_mrna_total_chassis_wiring(
         unit="molecules",
         extra={
             "n_genes_in_chassis": len(state["rna"]["counts"]),
-            "n_genes_in_model": int(m2.expression.shape[0]),
+            "n_genes_in_model": int(m2.counts_mature.shape[0]),
             "condition": condition,
         },
     )

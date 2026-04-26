@@ -76,7 +76,9 @@ def test_shared_substrates_carry_m2_and_m3_consumption(
     for ntp in ("ATP", "CTP", "GTP", "UTP"):
         a = np.asarray(ts["substrates"][ntp], dtype=float)
         assert a[-1] < a[0]
-        expected = -20.0 * tx.ntp_consumption_per_s(m2_model)[ntp]
+        expected = -20.0 * tx.ntp_consumption_per_s(
+            tx.calibrated_chassis_model(m2_model)
+        )[ntp]
         rel = abs((a[-1] - a[0]) - expected) / abs(expected)
         assert rel < 0.05, f"{ntp} delta off"
 

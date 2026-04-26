@@ -42,8 +42,12 @@ def test_engine_runs_100_steps_without_drift(
         a = np.asarray(ts["substrates"][ntp], dtype=float)
         # last sample = sum of -ntp_per_s over 100s
         assert a[-1] < 0, f"{ntp} not consumed: {a[-1]}"
-        # roughly: last ~= - 100s * ntp_per_s
-        expected = -100.0 * tx.ntp_consumption_per_s(model)[ntp]
+        # roughly: last ~= - 100s * ntp_per_s (chassis uses calibrated model
+        # whose synthesis rate yields s/k = counts_mature, so the operative
+        # NTP demand is the calibrated value, not the KB-fitted one).
+        expected = -100.0 * tx.ntp_consumption_per_s(
+            tx.calibrated_chassis_model(model)
+        )[ntp]
         rel = abs(a[-1] - expected) / abs(expected)
         assert rel < 0.05, f"{ntp} consumption off: {a[-1]} vs {expected}"
 
@@ -51,7 +55,9 @@ def test_engine_runs_100_steps_without_drift(
 def test_engine_starting_from_zero_approaches_steady_state(
     model: tx.KarrTranscriptionModel,
 ) -> None:
-    """1800s integration from zero counts: fast genes within 5% of expr."""
+    """1800s integration from zero counts: chassis converges to Karr's
+    State_Rna mature SS counts (counts_mature) for fast-decaying genes
+    that have a non-zero SS count."""
     init = np.zeros(model.n_genes)
     engine = build_karr_m2_engine(
         model=model, time_step_s=1.0, initial_rna_counts=init
@@ -59,12 +65,17 @@ def test_engine_starting_from_zero_approaches_steady_state(
     engine.update(1800.0)
     ts = engine.emitter.get_timeseries()
 
-    expr = model.expression[:, 1]
-    fast = (model.half_life_min > 0) & (model.half_life_min <= 5.0)
+    target = model.counts_mature
+    fast = (
+        (model.half_life_min > 0)
+        & (model.half_life_min <= 5.0)
+        & (target > 0)
+    )
     final = np.array([
         float(ts["rna"]["counts"][gid][-1]) for gid in model.gene_wcm_ids
     ])
-    rel = np.abs(final[fast] - expr[fast]) / np.maximum(expr[fast], 1e-12)
+    rel = np.abs(final[fast] - target[fast]) / np.maximum(target[fast], 1e-12)
     assert float(np.max(rel)) < 0.05, (
-        f"fast genes not at steady state: max rel = {rel.max():.4f}"
+        f"fast genes not at steady state: max rel = {rel.max():.4f} "
+        f"(n_fast={int(fast.sum())})"
     )

@@ -92,7 +92,9 @@ def test_shared_substrates_accumulate_m2_consumption(
         )
         # 20 ticks of negative deltas accumulate; final < initial.
         assert a[-1] < a[0], f"{ntp} did not decrease: {a[0]} -> {a[-1]}"
-        expected_delta = -20.0 * tx.ntp_consumption_per_s(m2_model)[ntp]
+        expected_delta = -20.0 * tx.ntp_consumption_per_s(
+            tx.calibrated_chassis_model(m2_model)
+        )[ntp]
         observed_delta = float(a[-1] - a[0])
         rel = abs(observed_delta - expected_delta) / abs(expected_delta)
         assert rel < 0.05, (

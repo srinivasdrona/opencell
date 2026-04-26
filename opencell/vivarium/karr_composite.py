@@ -54,7 +54,9 @@ def compute_baseline_demand_per_s(
     Karr-snapshot pool flat under the actual M2/M3 models attached to
     the composer (so e.g. ``condition`` and custom models propagate).
     """
-    ntp = tx.ntp_consumption_per_s(m2_model, condition=condition)
+    ntp = tx.ntp_consumption_per_s(
+        tx.calibrated_chassis_model(m2_model), condition=condition,
+    )
     aa = tl.aa_consumption_per_s(m3_model)
     out: dict[str, float] = {
         s: float(ntp[s]) for s in ("ATP", "CTP", "GTP", "UTP")
@@ -92,7 +94,7 @@ def build_karr_m1_m2_engine(
 
     rxn_ids = m1_model.rxn_wcm_ids_645
     sub_ids = m1_model.raw["ids"]["substrate_wcm_585"]
-    rna_init = {g: float(m2_model.expression[i, condition])
+    rna_init = {g: float(m2_model.counts_mature[i])
                 for i, g in enumerate(m2_model.gene_wcm_ids)}
 
     engine = Engine(
@@ -206,7 +208,7 @@ def build_karr_m1_m2_m3_engine(
 
     rxn_ids = m1_model.rxn_wcm_ids_645
     sub_ids = m1_model.raw["ids"]["substrate_wcm_585"]
-    rna_init = {g: float(m2_model.expression[i, condition])
+    rna_init = {g: float(m2_model.counts_mature[i])
                 for i, g in enumerate(m2_model.gene_wcm_ids)}
     prot_init = {p: float(m3_model.counts_mature[i])
                  for i, p in enumerate(m3_model.protein_wcm_ids)}
@@ -279,4 +281,5 @@ __all__ = [
     "build_karr_m1_m2_m3_engine",
     "compute_baseline_demand_per_s",
 ]
+
 

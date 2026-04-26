@@ -27,7 +27,7 @@ OUT_DIR = REPO / "data" / "karr_fixtures"
 JSON_OUT = OUT_DIR / "karr_native_m2.json"
 NPZ_OUT = OUT_DIR / "karr_native_m2.npz"
 
-SCHEMA_VERSION = "karr_native_m2__v2"
+SCHEMA_VERSION = "karr_native_m2__v3"
 
 
 def _scalar(x) -> float:
@@ -103,21 +103,33 @@ def main() -> None:
     for t in gene_types:
         type_counts[t] = type_counts.get(t, 0) + 1
 
-    # ---- E.1b: per-gene RNA molecular weight (Da/mol) ------------------
-    # State_Rna stores 7 forms x 347 mature TUs of MW; KB has the
-    # gene -> TU index map.  For each of our 525 genes we look up its
-    # primary TU, then find that TU's MW in the State_Rna mature slice.
-    # Polycistronic TUs are split equally across their member genes so
-    # that summing per-gene counts * per_gene_mw at SS reconstructs the
-    # TU-level mass correctly when all member-gene counts are equal.
+    # ---- E.1b: per-gene RNA molecular weight + mature counts ----------
+    # Karr's State_Rna mature set uses two naming conventions:
+    #   - mRNA TUs are keyed by TU WCM ID (TU_001, TU_007, ...).
+    #   - non-mRNAs (rRNA / tRNA / sRNA, 43 genes total) are keyed by
+    #     gene WCM ID (MG471, MGrrnA5S, ...) because the WCM names them
+    #     individually after processing.
+    # We therefore look up each gene with a two-tier policy:
+    #   (1) direct gene-WCM match in the mature set (catches all 43
+    #       non-mRNAs + monocistronic mRNAs that are named after their
+    #       single gene).
+    #   (2) TU-WCM lookup, then split TU mature MW / count equally
+    #       across member genes (polycistronic mRNAs).
+    # Counts are taken from State_Rna.counts[matureIndexs, c=0]
+    # (cytosol column).  This replaces the v1 chassis SS that used
+    # KB.expression[:, 1] (a transcription rate, not a count) and was
+    # ~53x over-stated.
     rna_mat = loadmat(str(RNA_MAT), struct_as_record=False, squeeze_me=True)["data"]
     mature_idx_full = np.asarray(rna_mat.matureIndexs, dtype=int).reshape(-1) - 1
     mw_full = np.asarray(rna_mat.molecularWeights, dtype=float).reshape(-1)
-    mature_mw = mw_full[mature_idx_full]
+    counts_full = np.asarray(rna_mat.counts).astype(float)  # (2428, 6) uint8
     state_tu_wcm = [str(x) for x in
                     np.asarray(rna_mat.wholeCellModelIDs, dtype=object).reshape(-1)]
-    mature_tu_wcm = [state_tu_wcm[i] for i in mature_idx_full]
-    state_tu_wcm_to_mw = dict(zip(mature_tu_wcm, mature_mw.tolist()))
+    mature_mw = mw_full[mature_idx_full]
+    mature_counts_cyt = counts_full[mature_idx_full, 0]  # (347,) cytosol
+    mature_wcm = [state_tu_wcm[i] for i in mature_idx_full]
+    state_mature_mw = dict(zip(mature_wcm, mature_mw.tolist()))
+    state_mature_count = dict(zip(mature_wcm, mature_counts_cyt.tolist()))
 
     kb_tu_wcm = [str(x) for x in
                  np.asarray(rna_mat.kb_tu_wholeCellModelIDs, dtype=object).reshape(-1)]
@@ -125,48 +137,75 @@ def main() -> None:
                    np.asarray(rna_mat.kb_gene_wholeCellModelIDs, dtype=object).reshape(-1)]
     gene_to_tu_1based = np.asarray(rna_mat.kb_gene_to_tu_index, dtype=int).reshape(-1)
 
-    # Validate that the M2 gene order matches the KB gene order.
     assert kb_gene_wcm == wcm_ids, (
         "kb gene wcm order != KB.genes order (M2 fixture). "
         f"first mismatch idx={[i for i,(a,b) in enumerate(zip(kb_gene_wcm, wcm_ids)) if a!=b][:3]}"
     )
 
-    # Count member genes per TU (1-based indexing).
+    # Count member genes per TU (1-based indexing), restricted to TUs
+    # whose mature form lives in the State_Rna mature set (we only split
+    # the TU mass/count across member genes when we will actually be
+    # consuming the TU-level value).
     n_tus = len(kb_tu_wcm)
     members_per_tu = np.zeros(n_tus + 1, dtype=int)
-    for tu1 in gene_to_tu_1based:
-        if tu1 > 0:
-            members_per_tu[tu1] += 1
+    for i, tu1 in enumerate(gene_to_tu_1based):
+        if tu1 <= 0 or tu1 > n_tus:
+            continue
+        # Only count this gene as a "TU member" if its TU is what we
+        # would resolve to (i.e., gene wcm not directly in mature set).
+        if wcm_ids[i] in state_mature_mw:
+            continue
+        members_per_tu[tu1] += 1
 
     rna_molecular_weight = np.zeros(n_genes, dtype=float)
+    counts_mature = np.zeros(n_genes, dtype=float)
     rna_mw_provenance: list[str] = []
+    n_direct = 0
+    n_tu_split = 0
+    n_orphan = 0
     for i, (gene, tu1) in enumerate(zip(wcm_ids, gene_to_tu_1based)):
+        # Tier 1: direct gene-WCM match.
+        if gene in state_mature_mw:
+            rna_molecular_weight[i] = state_mature_mw[gene]
+            counts_mature[i] = state_mature_count[gene]
+            rna_mw_provenance.append(f"direct={gene} mw={state_mature_mw[gene]:.0f} cnt={state_mature_count[gene]:.0f}")
+            n_direct += 1
+            continue
+        # Tier 2: TU lookup with member-gene split.
         if tu1 <= 0 or tu1 > n_tus:
             rna_mw_provenance.append("orphan")
+            n_orphan += 1
             continue
         tu_wcm = kb_tu_wcm[tu1 - 1]
-        tu_mw = state_tu_wcm_to_mw.get(tu_wcm, 0.0)
+        tu_mw = state_mature_mw.get(tu_wcm, 0.0)
+        tu_cnt = state_mature_count.get(tu_wcm, 0.0)
         n_members = max(1, int(members_per_tu[tu1]))
-        rna_molecular_weight[i] = tu_mw / n_members
-        rna_mw_provenance.append(
-            f"TU={tu_wcm} mw={tu_mw:.0f} /{n_members}members"
-            if tu_mw > 0 else f"TU={tu_wcm} (not in mature set)"
-        )
+        if tu_mw > 0:
+            rna_molecular_weight[i] = tu_mw / n_members
+            counts_mature[i] = tu_cnt / n_members
+            rna_mw_provenance.append(
+                f"TU={tu_wcm} mw={tu_mw:.0f} cnt={tu_cnt:.1f} /{n_members}members"
+            )
+            n_tu_split += 1
+        else:
+            rna_mw_provenance.append(f"TU={tu_wcm} (not in mature set)")
+            n_orphan += 1
 
-    n_genes_with_mw = int((rna_molecular_weight > 0).sum())
-
-    # For non-mRNA genes (tRNA/rRNA/sRNA) where the State_Rna mature
-    # set doesn't expose a direct TU MW, fall back to a sequence-derived
-    # estimate: length_nt * avg_NMP_MW where avg_NMP_MW = 339.5 Da/NT
-    # (mean of A/C/G/U monophosphate residues in RNA).  rRNA dominates
-    # cell RNA mass so we cannot just zero-out the missing entries.
+    # For genes still missing MW (rare edge case: TU absent from state),
+    # fall back to length-derived MW so chassis arithmetic is stable.
+    # These will have counts_mature = 0 (we genuinely have no SS count).
     AVG_NMP_MW = 339.5
-    n_fallback = 0
+    n_fallback_mw = 0
     for i in range(n_genes):
         if rna_molecular_weight[i] == 0.0 and length_nt[i] > 0:
             rna_molecular_weight[i] = float(length_nt[i]) * AVG_NMP_MW
-            n_fallback += 1
-    n_genes_with_mw_after_fallback = int((rna_molecular_weight > 0).sum())
+            n_fallback_mw += 1
+
+    n_genes_with_mw = int((rna_molecular_weight > 0).sum())
+    n_genes_with_count = int((counts_mature > 0).sum())
+    total_counts_mature = float(counts_mature.sum())
+    rna_mass_da = float((counts_mature * rna_molecular_weight).sum())
+    rna_mass_g = rna_mass_da / 6.02214076e23
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(
@@ -184,6 +223,7 @@ def main() -> None:
         rna_ss_predicted=rna_ss_predicted,
         tu_binding_probabilities=tu_binding,
         rna_molecular_weight=rna_molecular_weight,
+        counts_mature=counts_mature,
     )
 
     JSON_OUT.write_text(json.dumps({
@@ -211,14 +251,24 @@ def main() -> None:
             "rna_ss_predicted": list(rna_ss_predicted.shape),
             "tu_binding_probabilities": list(tu_binding.shape),
             "rna_molecular_weight": list(rna_molecular_weight.shape),
+            "counts_mature": list(counts_mature.shape),
         },
         "rna_mw_coverage": {
-            "n_genes_with_tu_mw": n_genes_with_mw,
-            "n_genes_with_seqlen_fallback": n_fallback,
-            "n_genes_with_mw_total": n_genes_with_mw_after_fallback,
+            "n_genes_direct_match": n_direct,
+            "n_genes_tu_split": n_tu_split,
+            "n_genes_seqlen_fallback": n_fallback_mw,
+            "n_genes_orphan": n_orphan,
+            "n_genes_with_mw_total": n_genes_with_mw,
             "n_genes_total": n_genes,
-            "fraction_total": n_genes_with_mw_after_fallback / n_genes,
-            "policy": "TU MW split equally across member genes; non-mRNA fall back to length_nt * 339.5 Da",
+            "fraction_total": n_genes_with_mw / n_genes,
+            "policy": "Two-tier: (1) direct gene-WCM match in State_Rna mature (covers non-mRNAs + monocistronic), (2) TU-WCM lookup with mass split equally across member genes (polycistronic mRNAs). length-based MW fallback only for genes whose TU is absent from state.",
+        },
+        "counts_mature_summary": {
+            "total_counts": total_counts_mature,
+            "n_genes_with_count": n_genes_with_count,
+            "rna_mass_total_da": rna_mass_da,
+            "rna_mass_total_g": rna_mass_g,
+            "note": "counts_mature[gene] = State_Rna.counts[matureIdx, c=0] resolved per the two-tier policy. Replaces the v1 chassis SS that used KB.expression[:,1] (a transcription rate, ~53x over-stated as a count). Sum of counts_mature should equal Karr's State_Rna mature cytosol total (~784 molecules).",
         },
         "interpretation": (
             "Karr-native M2 transcription fixture. 525 genes (482 mRNA + "

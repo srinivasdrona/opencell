@@ -103,7 +103,7 @@ def test_m2_throttle_zero_when_one_pool_starved():
 def test_m2_throttle_partial_when_one_pool_below_demand():
     """Make ATP exactly 1/4 of one tick's demand: throttle must be 0.25."""
     proc = KarrTranscriptionProcess({"enable_throttle": True})
-    rate = tx.ntp_consumption_per_s(proc.model, condition=proc.condition)
+    rate = tx.ntp_consumption_per_s(proc._chassis_model, condition=proc.condition)
     pools = {ntp: 1.0e12 for ntp in _M2_CONSUMED_SUBSTRATES}
     pools["ATP"] = 0.25 * rate["ATP"] * 1.0
     f = proc._compute_throttle(pools, timestep=1.0)

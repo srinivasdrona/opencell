@@ -175,14 +175,15 @@ def test_p9_aa_pool_stability_over_20s(targets):
 
 
 @pytest.mark.xfail(
-    reason="STRUCTURAL GAP exposed by the cell-mass aggregator: M2 v1 "
-    "wires Karr's expression[:,0] (transcription-rate field, ~41327 "
-    "normalized units) as if it were mature-RNA SS counts. Karr's "
-    "actual SS mature-RNA count is 784 molecules across 347 species. "
-    "Aggregator therefore over-counts RNA mass ~53x -> total ~9.7e-15 g "
-    "vs target 3.94e-15 g (2.46x). Substrate side also bogus (chassis "
-    "seeds 561 non-demand substrates at 1.0 placeholder, not Karr's "
-    "snapshot counts). Will pass once m2-counts-fix lands.",
+    reason="STRUCTURAL GAP -- chassis content incomplete: after the "
+    "E.1b m2-counts-fix the aggregator gives chassis total ~8.4e-16 g "
+    "(21% of Karr's 3.94e-15 g cell dry).  The missing ~79% lives in "
+    "ProteinComplex (ribosomes, RNAP, ~1e-15 g), DNA (chromosome, "
+    "~6e-16 g), lipid membrane, polysaccharides, and per-substrate "
+    "snapshot counts (chassis seeds 561 non-demand substrates at 1.0 "
+    "placeholder).  Pinned xfail until D.2 + M5 + substrate snapshot "
+    "init close the gap (or until p10 is partitioned into per-class "
+    "targets p10a/p10b/p10c).",
     strict=True,
 )
 def test_p10_cell_dry_mass_g(m1_model, m2_model, m3_model, targets):

@@ -48,6 +48,8 @@ class KarrTranscriptionModel:
     synthesis_rate_per_s: np.ndarray
     rna_ss_predicted: np.ndarray
     tu_binding_probabilities: np.ndarray
+    counts_mature: np.ndarray  # (525,) Karr State_Rna mature cytosol counts (E.1b)
+    rna_molecular_weight: np.ndarray  # (525,) Da/mol per gene (E.1b)
     elongation_rate_nt_per_s: float
     counts: dict
     raw: dict = field(repr=False)
@@ -85,6 +87,8 @@ def load_default(path: str | Path | None = None) -> KarrTranscriptionModel:
         synthesis_rate_per_s=syn_s,
         rna_ss_predicted=z["rna_ss_predicted"],
         tu_binding_probabilities=z["tu_binding_probabilities"],
+        counts_mature=z["counts_mature"],
+        rna_molecular_weight=z["rna_molecular_weight"],
         elongation_rate_nt_per_s=float(meta["scalars"][
             "rna_polymerase_elongation_rate_nt_per_s"
         ]),
@@ -151,3 +155,44 @@ def ntp_consumption_per_s(
         "UTP": per_ntp,
         "_total_nt_per_s": total_nt_per_s,
     }
+
+
+def calibrated_chassis_model(
+    model: KarrTranscriptionModel,
+) -> KarrTranscriptionModel:
+    """Return an M2 model whose synthesis rate is recalibrated so that
+    s/k = counts_mature for every gene with k>0.
+
+    Karr's KB synthesis rate, interpreted as "molecules per minute",
+    yields s/k = expression[:,1] (~41327 mRNA SS) -- but Karr's actual
+    State_Rna mature cytosol total is 784.  ``expression`` is a
+    relative microarray field, not an absolute count.  We therefore
+    recalibrate per-gene s so that the chassis arithmetic
+    (step_analytical, ntp_consumption_per_s) is self-consistent with
+    Karr's true SS counts.
+
+    Genes with decay_rate_per_s == 0 keep the original synthesis rate
+    (no analytical SS to enforce).  Used by the chassis Vivarium
+    process and by the composite's pool-replenishment baseline so
+    M1->M2 demand bookkeeping stays balanced.
+
+    Pure M2 oracle tests (round-trip / integrator) continue to call
+    ``step_analytical`` against the un-recalibrated model so that the
+    KB-fitted s/k = expression convention remains testable.
+    """
+    from dataclasses import replace
+    n_genes = model.n_genes
+    n_cond = model.synthesis_rate_per_s.shape[1]
+    new_per_s = np.tile(
+        (model.counts_mature * model.decay_rate_per_s).reshape(n_genes, 1),
+        (1, n_cond),
+    ).astype(float)
+    zero_decay = model.decay_rate_per_s <= 0.0
+    if np.any(zero_decay):
+        new_per_s[zero_decay, :] = model.synthesis_rate_per_s[zero_decay, :]
+    new_per_min = new_per_s * 60.0
+    return replace(
+        model,
+        synthesis_rate_per_s=new_per_s,
+        synthesis_rate_per_min=new_per_min,
+    )

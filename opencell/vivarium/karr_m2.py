@@ -59,11 +59,27 @@ class KarrTranscriptionProcess(Process):
         self.enable_throttle: bool = bool(self.parameters["enable_throttle"])
         self.consumed_substrates: tuple[str, ...] = _M2_CONSUMED_SUBSTRATES
 
+        # E.1b calibration: build a chassis-operative model whose
+        # synthesis rate is recalibrated so dRNA/dt = 0 at counts_mature.
+        # The KB-fitted synthesis rate (model.synthesis_rate_per_s)
+        # interpreted as molecules-per-second yields s/k = expression
+        # column 1 (~41327 total mRNA SS), but Karr's actual State_Rna
+        # mature cytosol total is 784.  Karr's "expression" is a relative
+        # microarray field, NOT an absolute count.  We rescale per-gene
+        # synthesis rate so s/k = counts_mature, preserving SS at the
+        # true Karr count and keeping all downstream NTP-consumption /
+        # throttle arithmetic consistent.  The pure-M2 oracle tests
+        # continue to use the untouched ``model`` (KB convention).
+        self._chassis_model = tx.calibrated_chassis_model(model)
+
     def ports_schema(self) -> dict[str, Any]:
-        # Initial RNA counts: use Karr's stored steady-state (expression
-        # column 1) so the chassis starts coherent with M1 even before
-        # M2 has ticked once.
-        ss = self.model.expression[:, self.condition]
+        # Initial RNA counts: Karr State_Rna mature cytosol counts
+        # (counts_mature, ingested in M2 fixture v3).  This replaces the
+        # v1/v2 wiring that used expression[:, condition] -- a
+        # transcription-rate (per-minute) field, not a count -- which
+        # over-stated SS RNA molecule counts ~53x and broke the cell-mass
+        # aggregator (Phase E.1b finding).
+        ss = self.model.counts_mature
         rna_schema = {
             gid: {
                 "_default": float(ss[i]),
@@ -112,7 +128,7 @@ class KarrTranscriptionProcess(Process):
         if timestep <= 0.0:
             raise ValueError(f"throttle requires positive timestep, got {timestep}")
         # Unscaled rate at synth_scale=1.0 — what we'd consume if free.
-        rate = tx.ntp_consumption_per_s(self.model, condition=self.condition)
+        rate = tx.ntp_consumption_per_s(self._chassis_model, condition=self.condition)
         f = 1.0
         for s in self.consumed_substrates:
             req = float(rate[s]) * timestep
@@ -140,7 +156,7 @@ class KarrTranscriptionProcess(Process):
             synth_scale = 1.0
 
         rna_next = tx.step_analytical(
-            self.model, rna, timestep,
+            self._chassis_model, rna, timestep,
             condition=self.condition, synth_scale=synth_scale,
         )
         rna_set = {g: float(rna_next[i]) for i, g in enumerate(self.gene_ids)}
@@ -148,7 +164,7 @@ class KarrTranscriptionProcess(Process):
         update: dict[str, Any] = {"rna": {"counts": rna_set}}
         if self.parameters["write_substrate_deltas"]:
             ntp = tx.ntp_consumption_per_s(
-                self.model, condition=self.condition, synth_scale=synth_scale,
+                self._chassis_model, condition=self.condition, synth_scale=synth_scale,
             )
             update["substrates"] = {
                 s: -ntp[s] * timestep for s in self.consumed_substrates
