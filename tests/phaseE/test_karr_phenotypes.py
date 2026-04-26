@@ -172,3 +172,27 @@ def test_p9_aa_pool_stability_over_20s(targets):
         f"(worst={m.extra['worst_aa']} drift={m.extra['worst_drift']:.4e}, "
         f"n_aa={m.extra['n_aa']})"
     )
+
+
+@pytest.mark.xfail(
+    reason="STRUCTURAL GAP exposed by the cell-mass aggregator: M2 v1 "
+    "wires Karr's expression[:,0] (transcription-rate field, ~41327 "
+    "normalized units) as if it were mature-RNA SS counts. Karr's "
+    "actual SS mature-RNA count is 784 molecules across 347 species. "
+    "Aggregator therefore over-counts RNA mass ~53x -> total ~9.7e-15 g "
+    "vs target 3.94e-15 g (2.46x). Substrate side also bogus (chassis "
+    "seeds 561 non-demand substrates at 1.0 placeholder, not Karr's "
+    "snapshot counts). Will pass once m2-counts-fix lands.",
+    strict=True,
+)
+def test_p10_cell_dry_mass_g(m1_model, m2_model, m3_model, targets):
+    spec = targets["p10_cell_dry_mass_g"]
+    m = ph.measure_cell_dry_mass(m1_model, m2_model, m3_model)
+    ratio = m.predicted / m.target
+    assert spec["tol_rel_min"] <= ratio <= spec["tol_rel_max"], (
+        f"cell dry mass pred={m.predicted:.4e} g target={m.target:.4e} g "
+        f"ratio={ratio:.4f} outside [{spec['tol_rel_min']}, {spec['tol_rel_max']}] "
+        f"(sub={m.extra['substrate_mass_g']:.4e} g, "
+        f"rna={m.extra['rna_mass_g']:.4e} g, "
+        f"prot={m.extra['protein_mass_g']:.4e} g)"
+    )

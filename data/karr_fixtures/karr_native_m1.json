@@ -1,5 +1,5 @@
 {
-  "schema_version": "karr_native_m1__v1",
+  "schema_version": "karr_native_m1__v2",
   "source_mat": "data/m1_sources/karr_flat/sim_fitted_targeted.mat",
   "matrix_npz": "data/karr_fixtures/karr_native_m1.npz",
   "shapes": {
@@ -23,6 +23,12 @@
     ],
     "fluxs_stored": [
       645
+    ],
+    "substrate_molecular_weight": [
+      585
+    ],
+    "enzyme_molecular_weight": [
+      104
     ]
   },
   "counts": {
@@ -44,7 +50,28 @@
     "growth0_per_s": 2.1393357961367016e-05,
     "meanInitialGrowthRate_per_s": 2.1393e-05,
     "doublingTime_s": 47186.07593378199,
-    "doublingTime_h": 13.107243314939442
+    "doublingTime_h": 13.107243314939442,
+    "cell_initial_dry_weight_g": 3.93e-15,
+    "cell_total_mass_g": 1.3210430984617134e-14,
+    "cell_dry_total_mass_g": 3.944640855678535e-15,
+    "rna_wt_total_g": 1.7152144036805145e-16,
+    "dry_weight_fraction_rna": 0.0929552671058823,
+    "cell_per_compartment_g": [
+      1.2392347738133038e-14,
+      0.0,
+      0.0,
+      7.783822259176419e-16,
+      2.430910118525667e-17,
+      1.539191938119813e-17
+    ],
+    "cell_dry_per_compartment_g": [
+      3.1265576091944386e-15,
+      0.0,
+      0.0,
+      7.783822259176419e-16,
+      2.430910118525667e-17,
+      1.539191938119813e-17
+    ]
   },
   "ids": {
     "reaction_wcm_645": [

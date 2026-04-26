@@ -26,7 +26,7 @@ OUT_DIR = REPO / "data" / "karr_fixtures"
 JSON_OUT = OUT_DIR / "karr_native_m1.json"
 NPZ_OUT = OUT_DIR / "karr_native_m1.npz"
 
-SCHEMA_VERSION = "karr_native_m1__v1"
+SCHEMA_VERSION = "karr_native_m1__v2"
 
 
 def _to_str_list(arr) -> list[str]:
@@ -57,12 +57,31 @@ def main() -> None:
     enz_bounds = np.asarray(met.fbaEnzymeBounds, dtype=float)
     catalysis = np.asarray(met.fbaReactionCatalysisMatrix, dtype=np.uint8)
 
+    # E.1b: per-substrate molecular weight (Da/mol). Shape (585,).
+    substrate_molecular_weight = np.asarray(
+        met.substrateMolecularWeights, dtype=float).reshape(-1)
+    enzyme_molecular_weight = np.asarray(
+        met.enzymeMolecularWeights, dtype=float).reshape(-1)
+
     # Stored runtime values (the Mode E oracle baseline)
     fluxs_stored = np.asarray(mr.dump.fluxs, dtype=float).reshape(-1)
     growth_stored = float(np.asarray(mr.dump.growth).item())
     growth0_stored = float(np.asarray(mr.dump.growth0).item())
     mean_init_growth = float(np.asarray(mr.dump.meanInitialGrowthRate).item())
     doubling_time = float(np.asarray(mr.dump.doublingTime).item())
+
+    # E.1b: State_Mass cell-level aggregates (committed in JSON for the
+    # cell-mass phenotype #9; shape (6,) per compartment c=0 cytosol).
+    mass_dump = m["data"].states.State_Mass.dump
+    cell_per_compartment = np.asarray(mass_dump.cell, dtype=float).reshape(-1)
+    cell_dry_per_compartment = np.asarray(
+        mass_dump.cellDry, dtype=float).reshape(-1)
+    rna_wt_per_compartment = np.asarray(
+        mass_dump.rnaWt, dtype=float).reshape(-1)
+    cell_initial_dry_weight = float(np.asarray(
+        mass_dump.cellInitialDryWeight).item())
+    dry_weight_fraction_rna = float(np.asarray(
+        mass_dump.dryWeightFractionRNA).item())
 
     # Index maps (0-based)
     fba_idx_metab_conv = _to_int_idx(met.fbaReactionIndexs_metabolicConversion)
@@ -126,6 +145,8 @@ def main() -> None:
         fba_sub_idx_substrates=fba_sub_idx_substrates,
         fba_sub_idx_int_exch_constraints=fba_sub_idx_int_exch_constraints,
         rxn_idx_fba=rxn_idx_fba,
+        substrate_molecular_weight=substrate_molecular_weight,
+        enzyme_molecular_weight=enzyme_molecular_weight,
     )
     JSON_OUT.write_text(json.dumps({
         "schema_version": SCHEMA_VERSION,
@@ -138,6 +159,8 @@ def main() -> None:
             "fbaObjective": list(obj.shape),
             "fbaEnzymeBounds": list(enz_bounds.shape),
             "fluxs_stored": list(fluxs_stored.shape),
+            "substrate_molecular_weight": list(substrate_molecular_weight.shape),
+            "enzyme_molecular_weight": list(enzyme_molecular_weight.shape),
         },
         "counts": {
             "n_fba_reactions": n_fba_rxn,
@@ -159,6 +182,13 @@ def main() -> None:
             "meanInitialGrowthRate_per_s": mean_init_growth,
             "doublingTime_s": doubling_time,
             "doublingTime_h": doubling_time / 3600.0,
+            "cell_initial_dry_weight_g": cell_initial_dry_weight,
+            "cell_total_mass_g": float(cell_per_compartment.sum()),
+            "cell_dry_total_mass_g": float(cell_dry_per_compartment.sum()),
+            "rna_wt_total_g": float(rna_wt_per_compartment.sum()),
+            "dry_weight_fraction_rna": dry_weight_fraction_rna,
+            "cell_per_compartment_g": cell_per_compartment.tolist(),
+            "cell_dry_per_compartment_g": cell_dry_per_compartment.tolist(),
         },
         "ids": {
             "reaction_wcm_645": rxn_wcm_ids,

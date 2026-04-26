@@ -253,6 +253,48 @@ def measure_protein_stability(horizon_s: int = 20) -> PhenotypeMeasurement:
     )
 
 
+def measure_cell_dry_mass(
+    m1: km.KarrMetabolismModel,
+    m2: tx.KarrTranscriptionModel,
+    m3: tl.KarrTranslationModel,
+) -> PhenotypeMeasurement:
+    """Phase E phenotype #9: total cell dry mass at t=0.
+
+    Build the chassis (closed loop config matching p9), aggregate
+    substrate + RNA + protein mass via per-molecule MWs from the v2
+    fixtures, divide by Avogadro, compare to Karr's stored
+    State_Mass.cellDry total (~3.945e-15 g).
+
+    Currently expected to FAIL: M2 v1 wires Karr's expression field
+    (transcription rates, normalized 0-3 unit) as if it were SS counts,
+    over-counting RNA molecules ~53x.  Pinned xfail until m2-counts-fix.
+    """
+    from opencell.analysis.cell_mass import compute_cell_mass
+    from opencell.vivarium.karr_composite import build_karr_m1_m2_m3_engine
+
+    engine = build_karr_m1_m2_m3_engine(
+        time_step_s=1.0, emit_step_s=1.0,
+        dynamic_bounds=True,
+        enable_throttle=True,
+        enable_pool_replenishment=True,
+    )
+    state = engine.state.get_value()
+    breakdown = compute_cell_mass(state, m1, m2, m3)
+    target = float(m1.stored_runtime["cell_dry_total_mass_g"])
+    return PhenotypeMeasurement(
+        name="p10_cell_dry_mass_g",
+        predicted=breakdown.total_g,
+        target=target,
+        unit="g",
+        extra={
+            "substrate_mass_g": breakdown.substrate_mass_g,
+            "rna_mass_g": breakdown.rna_mass_g,
+            "protein_mass_g": breakdown.protein_mass_g,
+            **breakdown.extra,
+        },
+    )
+
+
 __all__ = [
     "PhenotypeMeasurement",
     "measure_growth_per_s",
@@ -264,4 +306,5 @@ __all__ = [
     "measure_mrna_stability",
     "measure_protein_stability",
     "measure_aa_pool_stability",
+    "measure_cell_dry_mass",
 ]

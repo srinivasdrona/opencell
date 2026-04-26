@@ -320,7 +320,102 @@ function extract_karr_targeted(wholecellRoot, outDir)
         fprintf('protein dump FAIL: %s\n', e.message);
     end
 
+    % --- 10. M2 RNA-state targeted dump (deep properties) for E.1b cell mass --
+    fprintf('\n=== M2 RNA dump (sim.state.Rna) ===\n');
+    try
+        extract_rna_state(sim, outDir);
+    catch e
+        fprintf('rna dump FAIL: %s\n', e.message);
+    end
+
     fprintf('\n=== DONE ===\n');
+end
+
+
+function out = extract_rna_state(sim, outDir)
+% E.1b extension: dump State_Rna full molecular-weight + form indexes
+% (mature index pulls 525 mature RNA species out of the 5*525 raw vector).
+    out = struct();
+    rnastate = [];
+    for i = 1:numel(sim.states)
+        if strcmp(sim.states{i}.wholeCellModelID,'State_Rna')
+            rnastate = sim.states{i}; break;
+        end
+    end
+    if isempty(rnastate)
+        fprintf('  no State_Rna found\n');
+        return;
+    end
+    rnaOut = struct();
+    % Per-form indexs (each ~525 long; same convention as ProteinMonomer)
+    try, rnaOut.matureIndexs = rnastate.matureIndexs; catch, end
+    try, rnaOut.nascentIndexs = rnastate.nascentIndexs; catch, end
+    try, rnaOut.processedIndexs = rnastate.processedIndexs; catch, end
+    try, rnaOut.intergenicIndexs = rnastate.intergenicIndexs; catch, end
+    try, rnaOut.boundIndexs = rnastate.boundIndexs; catch, end
+    try, rnaOut.misfoldedIndexs = rnastate.misfoldedIndexs; catch, end
+    try, rnaOut.damagedIndexs = rnastate.damagedIndexs; catch, end
+    try, rnaOut.aminoacylatedIndexs = rnastate.aminoacylatedIndexs; catch, end
+    % Per-RNA arrays (full length ~ 5*525 = 2625)
+    try, rnaOut.molecularWeights = rnastate.molecularWeights; catch, end
+    try, rnaOut.lengths = rnastate.lengths; catch, end
+    try, rnaOut.halfLives = rnastate.halfLives; catch, end
+    try, rnaOut.decayRates = rnastate.decayRates; catch, end
+    try, rnaOut.compartments = rnastate.compartments; catch, end
+    try, rnaOut.counts = rnastate.counts; catch, end
+    try, rnaOut.expression = rnastate.expression; catch, end
+    try, rnaOut.wholeCellModelIDs = rnastate.wholeCellModelIDs; catch, end
+    try, rnaOut.names = rnastate.names; catch, end
+    try, rnaOut.types = rnastate.types; catch, end
+    try, rnaOut.baseCounts = rnastate.baseCounts; catch, end
+
+    % Walk KB to expose gene <-> TU index mapping (safeFlatten hits MAX_DEPTH)
+    try
+        skb = load('data/knowledgeBase.mat'); kbobj = skb.knowledgeBase;
+        nGenes = numel(kbobj.genes);
+        nTus = numel(kbobj.transcriptionUnits);
+        gene_wcm = cell(nGenes,1);
+        tu_wcm = cell(nTus,1);
+        gene_to_tu_idx = zeros(nGenes,1,'uint32');
+        for i = 1:nGenes
+            g = kbobj.genes(i);
+            try, gene_wcm{i} = g.wholeCellModelID; catch, end
+            try
+                tuRef = g.transcriptionUnits;
+                if iscell(tuRef) && numel(tuRef)>=2
+                    gene_to_tu_idx(i) = uint32(tuRef{2}(1));  % first TU
+                end
+            catch
+            end
+        end
+        % TU -> contained gene indices
+        tu_to_gene_idxs = cell(nTus,1);
+        for i = 1:nTus
+            t = kbobj.transcriptionUnits(i);
+            try, tu_wcm{i} = t.wholeCellModelID; catch, end
+            try
+                gRef = t.genes;
+                if iscell(gRef) && numel(gRef)>=2
+                    tu_to_gene_idxs{i} = uint32(gRef{2});
+                end
+            catch
+            end
+        end
+        rnaOut.kb_gene_wholeCellModelIDs = gene_wcm;
+        rnaOut.kb_tu_wholeCellModelIDs = tu_wcm;
+        rnaOut.kb_gene_to_tu_index = gene_to_tu_idx;
+        rnaOut.kb_tu_to_gene_indices = tu_to_gene_idxs;
+        fprintf('  gene<->TU map ok: %d genes -> %d TUs\n', nGenes, nTus);
+    catch e
+        fprintf('  gene<->TU walk FAIL: %s\n', e.message);
+    end
+
+    rnaMat = fullfile(outDir,'rnas_targeted.mat');
+    data = rnaOut; %#ok<NASGU>
+    save(rnaMat,'data','-v7');
+    n = 0; try, n = numel(rnaOut.matureIndexs); catch, end
+    fprintf('[OK] wrote %s (n_mature=%d, has fields: molecularWeights/lengths/halfLives/counts + gene<->TU map)\n', rnaMat, n);
+    out = rnaOut;
 end
 
 

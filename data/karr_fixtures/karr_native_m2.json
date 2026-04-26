@@ -1,5 +1,5 @@
 {
-  "schema_version": "karr_native_m2__v1",
+  "schema_version": "karr_native_m2__v2",
   "source_sim_mat": "data/m1_sources/karr_flat/sim_fitted_targeted.mat",
   "source_kb_mat": "data/m1_sources/karr_flat/knowledgeBase_targeted.mat",
   "matrix_npz": "data/karr_fixtures/karr_native_m2.npz",
@@ -2140,7 +2140,18 @@
     ],
     "tu_binding_probabilities": [
       335
+    ],
+    "rna_molecular_weight": [
+      525
     ]
+  },
+  "rna_mw_coverage": {
+    "n_genes_with_tu_mw": 482,
+    "n_genes_with_seqlen_fallback": 43,
+    "n_genes_with_mw_total": 525,
+    "n_genes_total": 525,
+    "fraction_total": 1.0,
+    "policy": "TU MW split equally across member genes; non-mRNA fall back to length_nt * 339.5 Da"
   },
   "interpretation": "Karr-native M2 transcription fixture. 525 genes (482 mRNA + 3 rRNA + 4 sRNA + 36 tRNA per Karr WCKB) with halfLife (min), length_nt, expression(3) and synthesisRate(3) [low / mean / high]. 335 transcriptionUnits with Karr's fitted binding probabilities (the gold-standard fit; Karr fits these to make simulated steady-state expression match observed microarray data). Steady-state RNA count derived as synthesisRate / decay where decay = ln(2)/halfLife. rna_ss_predicted is the column 1 (mean) prediction; the M2 oracle compares this against KB.expression[:, 1]."
 }
