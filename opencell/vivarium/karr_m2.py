@@ -68,18 +68,24 @@ class KarrTranscriptionProcess(Process):
         # microarray field, NOT an absolute count.  We rescale per-gene
         # synthesis rate so s/k = counts_mature, preserving SS at the
         # true Karr count and keeping all downstream NTP-consumption /
-        # throttle arithmetic consistent.  The pure-M2 oracle tests
+        # throttle arithmetic consistent.  ``counts_mature`` is per
+        # condition (low/mean/high), so the calibrated synthesis rate
+        # is also per condition; this process picks the column matching
+        # ``self.condition`` at runtime.  The pure-M2 oracle tests
         # continue to use the untouched ``model`` (KB convention).
         self._chassis_model = tx.calibrated_chassis_model(model)
 
     def ports_schema(self) -> dict[str, Any]:
         # Initial RNA counts: Karr State_Rna mature cytosol counts
-        # (counts_mature, ingested in M2 fixture v3).  This replaces the
-        # v1/v2 wiring that used expression[:, condition] -- a
-        # transcription-rate (per-minute) field, not a count -- which
+        # (counts_mature, ingested in M2 fixture v4 as a per-condition
+        # 2-D array).  We pick the column matching ``self.condition``
+        # so the chassis SS matches the per-condition synthesis rate
+        # used by ``step_analytical`` and ``ntp_consumption_per_s``.
+        # This replaces the v1/v2 wiring that used expression[:, condition]
+        # -- a transcription-rate (per-minute) field, not a count -- which
         # over-stated SS RNA molecule counts ~53x and broke the cell-mass
         # aggregator (Phase E.1b finding).
-        ss = self.model.counts_mature
+        ss = self.model.counts_mature[:, self.condition]
         rna_schema = {
             gid: {
                 "_default": float(ss[i]),

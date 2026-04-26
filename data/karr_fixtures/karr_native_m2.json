@@ -1,5 +1,5 @@
 {
-  "schema_version": "karr_native_m2__v3",
+  "schema_version": "karr_native_m2__v4",
   "source_archive": "data/karr_archive/karr_archive.npz",
   "source_archive_files": [
     "sim_fitted_targeted",
@@ -2149,7 +2149,8 @@
       525
     ],
     "counts_mature": [
-      525
+      525,
+      3
     ]
   },
   "rna_mw_coverage": {
@@ -2163,11 +2164,22 @@
     "policy": "Two-tier: (1) direct gene-WCM match in State_Rna mature (covers non-mRNAs + monocistronic), (2) TU-WCM lookup with mass split equally across member genes (polycistronic mRNAs). length-based MW fallback only for genes whose TU is absent from state."
   },
   "counts_mature_summary": {
-    "total_counts": 784.0,
+    "total_counts_reference": 784.0,
+    "total_counts_per_condition": [
+      795.5663820582512,
+      784.0,
+      817.7481317649867
+    ],
+    "reference_condition_index": 1,
+    "condition_index_map": {
+      "low": 0,
+      "mean": 1,
+      "high": 2
+    },
     "n_genes_with_count": 137,
     "rna_mass_total_da": 42209271.69815166,
     "rna_mass_total_g": 7.009014465173621e-17,
-    "note": "counts_mature[gene] = State_Rna.counts[matureIdx, c=0] resolved per the two-tier policy. Replaces the v1 chassis SS that used KB.expression[:,1] (a transcription rate, ~53x over-stated as a count). Sum of counts_mature should equal Karr's State_Rna mature cytosol total (~784 molecules)."
+    "note": "counts_mature is shape (n_genes, 3) -- per-condition mature cytosol counts (low / mean / high).  The reference column (condition_index_map['mean']) is the State_Rna.counts[matureIdx, c=0] snapshot from sim_fitted_targeted.mat resolved per the two-tier policy; the other two columns are the snapshot scaled per-gene by the ratio expression[:, c]/expression[:, mean].  Sum of the reference column equals Karr's State_Rna mature cytosol total (~784 molecules)."
   },
   "interpretation": "Karr-native M2 transcription fixture. 525 genes (482 mRNA + 3 rRNA + 4 sRNA + 36 tRNA per Karr WCKB) with halfLife (min), length_nt, expression(3) and synthesisRate(3) [low / mean / high]. 335 transcriptionUnits with Karr's fitted binding probabilities (the gold-standard fit; Karr fits these to make simulated steady-state expression match observed microarray data). Steady-state RNA count derived as synthesisRate / decay where decay = ln(2)/halfLife. rna_ss_predicted is the column 1 (mean) prediction; the M2 oracle compares this against KB.expression[:, 1]."
 }

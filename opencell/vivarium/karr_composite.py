@@ -94,7 +94,7 @@ def build_karr_m1_m2_engine(
 
     rxn_ids = m1_model.rxn_wcm_ids_645
     sub_ids = m1_model.raw["ids"]["substrate_wcm_585"]
-    rna_init = {g: float(m2_model.counts_mature[i])
+    rna_init = {g: float(m2_model.counts_mature[i, condition])
                 for i, g in enumerate(m2_model.gene_wcm_ids)}
 
     engine = Engine(
@@ -208,7 +208,7 @@ def build_karr_m1_m2_m3_engine(
 
     rxn_ids = m1_model.rxn_wcm_ids_645
     sub_ids = m1_model.raw["ids"]["substrate_wcm_585"]
-    rna_init = {g: float(m2_model.counts_mature[i])
+    rna_init = {g: float(m2_model.counts_mature[i, condition])
                 for i, g in enumerate(m2_model.gene_wcm_ids)}
     prot_init = {p: float(m3_model.counts_mature[i])
                  for i, p in enumerate(m3_model.protein_wcm_ids)}
