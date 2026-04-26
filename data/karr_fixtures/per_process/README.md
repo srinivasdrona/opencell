@@ -14,7 +14,7 @@ Sources (gitignored upstream clone — re-fetch with
 * 16 state fixtures —
   `data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/*.mat`
 
-## ⚠️ Status: **MCOS payload is unparsed**
+## ⚠️ Status: **MCOS payload is unparsed in committed scaffolding; MATLAB extract path now wired**
 
 Every one of the 44 source `.mat` files is a MATLAB v5 file holding a
 single MCOS-serialized class instance (e.g.
@@ -25,12 +25,50 @@ subsystem blob in MATLAB's undocumented MCOS format.
 `scipy.io.loadmat`, `pymatreader`, and `mat4py` *all* refuse to decode
 MCOS objects — they surface only the opaque pointer
 `(s0='fixture', s1='MCOS', s2=<class>, arr=<6×uint32 pointer>)`.
-Decoding requires either:
 
-* a running MATLAB (explicitly forbidden post-MATLAB-eviction), **or**
-* a custom Python MCOS subsystem decoder (not currently bundled).
+**Two paths to actual data** (use whichever you have access to):
 
-We therefore commit a **best-effort** payload here:
+### Path A — bootstrap once via MATLAB (recommended)
+
+Same pattern as the existing Karr archive bootstrap (MATLAB stays
+*bootstrap-only*, never required for day-to-day Python workflow).
+
+1. On a host with MATLAB available (Windows desktop or MATLAB Online),
+   `cd` to this repo's root and run:
+
+   ```matlab
+   >> run('scripts/matlab/extract_per_process_fixtures.m')
+   ```
+
+   or explicitly:
+
+   ```matlab
+   >> extract_per_process_fixtures('data/m1_sources/WholeCell', ...
+                                   'data/karr_fixtures/per_process')
+   ```
+
+   This writes `<Name>_flat.mat` (one per fixture) into this
+   directory plus `matlab_extract_manifest.json`.
+
+2. Back in WSL/Linux (no MATLAB needed), ingest the flattened files
+   into the canonical per-process scheme:
+
+   ```bash
+   .venv-wsl/bin/python scripts/extract_per_process_fixtures.py --all --from-flat
+   .venv-wsl/bin/python scripts/validate_per_process_fixtures.py --seed
+   ```
+
+   This rewrites `<Name>.json` and `<Name>.npz` with real field data
+   (`extraction_status: "extracted_from_matlab_flat"`) and updates
+   `fixture_hashes.json`.
+
+3. Commit the regenerated `<Name>.{json,npz}`, `manifest.json`,
+   `fixture_hashes.json`, and the `<Name>_flat.mat` files.
+
+### Path B — pure Python placeholder (current state)
+
+Without MATLAB, we commit best-effort placeholders so downstream tests
+can `SkipTest` cleanly:
 
 | File                          | Contents                                                                        |
 | ----------------------------- | ------------------------------------------------------------------------------- |
@@ -80,11 +118,14 @@ expected = arrs["before/state/rnaPolymerase/positionStrands"]
 ## Regenerating
 
 ```bash
-# Extract every fixture (idempotent, deterministic):
+# (Pure-Python placeholders, no real data) — Path B in this README:
 .venv-wsl/bin/python scripts/extract_per_process_fixtures.py --all
 
 # Or one-off:
 .venv-wsl/bin/python scripts/extract_per_process_fixtures.py --name Transcription
+
+# (Real data, after MATLAB extract step) — Path A in this README:
+.venv-wsl/bin/python scripts/extract_per_process_fixtures.py --all --from-flat
 
 # Verify byte-stable output against committed hashes:
 .venv-wsl/bin/python scripts/validate_per_process_fixtures.py

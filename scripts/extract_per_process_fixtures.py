@@ -31,6 +31,13 @@ Usage:
     python scripts/extract_per_process_fixtures.py --all
     python scripts/extract_per_process_fixtures.py --name Transcription
     python scripts/extract_per_process_fixtures.py --name CellMass --kind state
+
+To ingest the MATLAB-flattened outputs from
+`scripts/matlab/extract_per_process_fixtures.m` (which DOES decode the MCOS
+payloads — MATLAB itself understands the format when class definitions are
+on path):
+    python scripts/extract_per_process_fixtures.py --all --from-flat
+    python scripts/extract_per_process_fixtures.py --name Transcription --from-flat
 """
 from __future__ import annotations
 
@@ -202,6 +209,99 @@ def extract_one(src: Path, out_dir: Path) -> dict:
     return entry
 
 
+def extract_one_from_flat(flat_mat: Path, out_dir: Path, kind: str) -> dict:
+    """Ingest a MATLAB-flattened `<Name>_flat.mat` into the per_process scheme.
+
+    The MATLAB script `scripts/matlab/extract_per_process_fixtures.m`
+    deserializes the original MCOS object inside MATLAB (which natively
+    understands MCOS when the +edu class definitions are on path) and
+    writes a v7 .mat with one top-level struct `data` holding the fully
+    flattened object tree (numeric arrays, nested structs, sentinel
+    strings for unhandled types). scipy can read that.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    if not flat_mat.exists():
+        return {
+            "name": flat_mat.stem.removesuffix("_flat"),
+            "extraction_status": "missing_flat_input",
+            "notes": [f"expected {flat_mat} from MATLAB extract step"],
+        }
+
+    name = flat_mat.stem.removesuffix("_flat")
+    sha = _sha256(flat_mat)
+    entry: dict = {
+        "name": name,
+        "source_path": flat_mat.relative_to(REPO_ROOT).as_posix() if flat_mat.is_relative_to(REPO_ROOT) else str(flat_mat),
+        "source_sha256": sha,
+        "source_size_bytes": flat_mat.stat().st_size,
+        "mat_format": "v7_flattened_by_matlab",
+        "extraction_status": "unknown",
+        "notes": [],
+        "kind": kind,
+    }
+
+    try:
+        d = sio.loadmat(str(flat_mat), squeeze_me=False, struct_as_record=False)
+    except Exception as e:
+        entry["extraction_status"] = "scipy_load_failed"
+        entry["notes"].append(f"scipy.io.loadmat raised: {type(e).__name__}: {e}")
+        return entry
+
+    arrays: dict = {}
+    scalars: dict = {}
+    if "data" not in d:
+        entry["extraction_status"] = "no_data_field"
+        entry["notes"].append(
+            "expected top-level struct named 'data'; got: "
+            + ", ".join(k for k in d if not k.startswith("__")))
+        return entry
+
+    try:
+        obj = d["data"]
+        # MATLAB writes the struct nested in a 1x1 object array.
+        obj = obj[0, 0] if hasattr(obj, "shape") and obj.shape == (1, 1) else (
+              obj.flat[0] if hasattr(obj, "size") and obj.size == 1 else obj)
+        _flatten_struct(obj, "", arrays, scalars)
+    except Exception as e:
+        entry["extraction_status"] = "flatten_failed"
+        entry["notes"].append(f"flatten raised: {type(e).__name__}: {e}")
+        return entry
+
+    npz_path = out_dir / f"{name}.npz"
+    if arrays:
+        np.savez(npz_path, **{k.replace("/", "__"): arrays[k] for k in sorted(arrays)})
+    else:
+        np.savez(npz_path, __empty__=np.zeros(0, dtype=np.uint8))
+
+    json_path = out_dir / f"{name}.json"
+    payload = {
+        "manifest": entry,
+        "scalars": {k: scalars[k] for k in sorted(scalars)},
+        "array_keys": sorted(arrays),
+    }
+    entry["extraction_status"] = "extracted_from_matlab_flat"
+    entry["arrays_count"] = len(arrays)
+    entry["scalars_count"] = len(scalars)
+    payload["manifest"] = entry
+    json_path.write_text(json.dumps(payload, indent=2, sort_keys=True, default=_json_default) + "\n",
+                         encoding="utf-8")
+    entry["out_npz"] = npz_path.name
+    entry["out_json"] = json_path.name
+    return entry
+
+
+def _json_default(o):
+    if isinstance(o, (np.integer,)):
+        return int(o)
+    if isinstance(o, (np.floating,)):
+        return float(o)
+    if isinstance(o, np.ndarray):
+        return o.tolist()
+    if isinstance(o, bytes):
+        return o.decode("latin1", "replace")
+    return repr(o)
+
+
 def discover_sources() -> list[tuple[str, Path]]:
     """Return [(kind, path)] for every .mat fixture under +process and +state."""
     out = []
@@ -221,6 +321,12 @@ def main() -> int:
                     help="Where to look when --name is given (default: try both)")
     ap.add_argument("--all", action="store_true", help="Extract every fixture")
     ap.add_argument("--out", default=str(OUT_DIR), help="Output directory")
+    ap.add_argument("--from-flat", action="store_true",
+                    help="Ingest MATLAB-flattened <Name>_flat.mat outputs from "
+                         "scripts/matlab/extract_per_process_fixtures.m instead "
+                         "of attempting MCOS decode in pure Python.")
+    ap.add_argument("--flat-dir", default=str(OUT_DIR),
+                    help="Where to find <Name>_flat.mat files (default: same as --out)")
     args = ap.parse_args()
 
     if not (args.all or args.name):
@@ -242,14 +348,20 @@ def main() -> int:
 
     manifest = {"fixtures": []}
     rc = 0
+    flat_dir = Path(args.flat_dir)
     for kind, p in sources:
-        entry = extract_one(p, out_dir)
-        entry["kind"] = kind
+        if args.from_flat:
+            flat_mat = flat_dir / f"{p.stem}_flat.mat"
+            entry = extract_one_from_flat(flat_mat, out_dir, kind)
+        else:
+            entry = extract_one(p, out_dir)
+            entry["kind"] = kind
         manifest["fixtures"].append(entry)
         status = entry["extraction_status"]
-        flag = "OK" if status in ("extracted", "unparsed_mcos_payload") else "WARN"
+        ok_statuses = ("extracted", "unparsed_mcos_payload", "extracted_from_matlab_flat")
+        flag = "OK" if status in ok_statuses else "WARN"
         print(f"[{flag}] {kind:7s} {p.stem:32s} -> {status}")
-        if status not in ("extracted", "unparsed_mcos_payload", "empty"):
+        if status not in (*ok_statuses, "empty"):
             rc = 1
 
     if args.all:
