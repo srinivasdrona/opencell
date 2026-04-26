@@ -1,0 +1,26 @@
+{
+  "array_keys": [
+    "None/__mcos__/arr"
+  ],
+  "manifest": {
+    "extraction_status": "unparsed_mcos_payload",
+    "function_workspace_bytes": 3720,
+    "mat_format": "v5",
+    "mcos_class": "edu.stanford.covert.cell.sim.state.Host",
+    "name": "Host",
+    "notes": [
+      "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+    ],
+    "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/Host.mat",
+    "source_sha256": "2c2797cb7eb23db62db95dcd72708dcbbfb265a02f1a08ba7182ea264945c981",
+    "source_size_bytes": 1074,
+    "top_level_keys": [
+      "None"
+    ]
+  },
+  "scalars": {
+    "None/__mcos__/s0": "fixture",
+    "None/__mcos__/s1": "MCOS",
+    "None/__mcos__/s2": "edu.stanford.covert.cell.sim.state.Host"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "array_keys": [
+    "None/__mcos__/arr"
+  ],
+  "manifest": {
+    "extraction_status": "unparsed_mcos_payload",
+    "function_workspace_bytes": 68680752,
+    "mat_format": "v5",
+    "mcos_class": "edu.stanford.covert.cell.sim.process.ProteinActivation",
+    "name": "ProteinActivation",
+    "notes": [
+      "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+    ],
+    "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/ProteinActivation.mat",
+    "source_sha256": "f2c77c946085ca93ee2f19eeceb84ed3542442383c0d23df251b7dea51a8c763",
+    "source_size_bytes": 1450247,
+    "top_level_keys": [
+      "None"
+    ]
+  },
+  "scalars": {
+    "None/__mcos__/s0": "fixture",
+    "None/__mcos__/s1": "MCOS",
+    "None/__mcos__/s2": "edu.stanford.covert.cell.sim.process.ProteinActivation"
+  }
+}

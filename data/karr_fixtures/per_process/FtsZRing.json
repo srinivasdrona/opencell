@@ -1,0 +1,26 @@
+{
+  "array_keys": [
+    "None/__mcos__/arr"
+  ],
+  "manifest": {
+    "extraction_status": "unparsed_mcos_payload",
+    "function_workspace_bytes": 6936,
+    "mat_format": "v5",
+    "mcos_class": "edu.stanford.covert.cell.sim.state.FtsZRing",
+    "name": "FtsZRing",
+    "notes": [
+      "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+    ],
+    "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/FtsZRing.mat",
+    "source_sha256": "e241bec8e51771fafabf4359c1ce5bf4d1c91e4d9ff111a3f027400ed4f38c8d",
+    "source_size_bytes": 1454,
+    "top_level_keys": [
+      "None"
+    ]
+  },
+  "scalars": {
+    "None/__mcos__/s0": "fixture",
+    "None/__mcos__/s1": "MCOS",
+    "None/__mcos__/s2": "edu.stanford.covert.cell.sim.state.FtsZRing"
+  }
+}

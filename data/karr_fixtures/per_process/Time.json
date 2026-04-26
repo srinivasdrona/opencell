@@ -1,0 +1,26 @@
+{
+  "array_keys": [
+    "None/__mcos__/arr"
+  ],
+  "manifest": {
+    "extraction_status": "unparsed_mcos_payload",
+    "function_workspace_bytes": 4376,
+    "mat_format": "v5",
+    "mcos_class": "edu.stanford.covert.cell.sim.state.Time",
+    "name": "Time",
+    "notes": [
+      "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+    ],
+    "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/Time.mat",
+    "source_sha256": "17e9e5725e58fef7376e345eeb8fc2c1f56ac784b23bf3b15ebff8e217a57407",
+    "source_size_bytes": 1140,
+    "top_level_keys": [
+      "None"
+    ]
+  },
+  "scalars": {
+    "None/__mcos__/s0": "fixture",
+    "None/__mcos__/s1": "MCOS",
+    "None/__mcos__/s2": "edu.stanford.covert.cell.sim.state.Time"
+  }
+}

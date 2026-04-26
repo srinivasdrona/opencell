@@ -1,0 +1,26 @@
+{
+  "array_keys": [
+    "None/__mcos__/arr"
+  ],
+  "manifest": {
+    "extraction_status": "unparsed_mcos_payload",
+    "function_workspace_bytes": 68760096,
+    "mat_format": "v5",
+    "mcos_class": "edu.stanford.covert.cell.sim.process.RNAProcessing",
+    "name": "RNAProcessing",
+    "notes": [
+      "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+    ],
+    "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/RNAProcessing.mat",
+    "source_sha256": "ac55081780d05d42f3aa0b63937a979c0cf1b5f5fd16ddb36525f0940a17b916",
+    "source_size_bytes": 1452217,
+    "top_level_keys": [
+      "None"
+    ]
+  },
+  "scalars": {
+    "None/__mcos__/s0": "fixture",
+    "None/__mcos__/s1": "MCOS",
+    "None/__mcos__/s2": "edu.stanford.covert.cell.sim.process.RNAProcessing"
+  }
+}

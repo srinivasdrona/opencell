@@ -1,0 +1,26 @@
+{
+  "array_keys": [
+    "None/__mcos__/arr"
+  ],
+  "manifest": {
+    "extraction_status": "unparsed_mcos_payload",
+    "function_workspace_bytes": 54352,
+    "mat_format": "v5",
+    "mcos_class": "edu.stanford.covert.cell.sim.state.MetabolicReaction",
+    "name": "MetabolicReaction",
+    "notes": [
+      "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+    ],
+    "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/MetabolicReaction.mat",
+    "source_sha256": "817585b38b95a06200327e516e74468f1444d0254e049e849f94362f4317342d",
+    "source_size_bytes": 7598,
+    "top_level_keys": [
+      "None"
+    ]
+  },
+  "scalars": {
+    "None/__mcos__/s0": "fixture",
+    "None/__mcos__/s1": "MCOS",
+    "None/__mcos__/s2": "edu.stanford.covert.cell.sim.state.MetabolicReaction"
+  }
+}

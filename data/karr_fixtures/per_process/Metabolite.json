@@ -1,0 +1,26 @@
+{
+  "array_keys": [
+    "None/__mcos__/arr"
+  ],
+  "manifest": {
+    "extraction_status": "unparsed_mcos_payload",
+    "function_workspace_bytes": 643512,
+    "mat_format": "v5",
+    "mcos_class": "edu.stanford.covert.cell.sim.state.Metabolite",
+    "name": "Metabolite",
+    "notes": [
+      "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+    ],
+    "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/Metabolite.mat",
+    "source_sha256": "6b36d584d214bca1e3f2a997250ee61462aff93880ff7e4dccca6772583bde2b",
+    "source_size_bytes": 32797,
+    "top_level_keys": [
+      "None"
+    ]
+  },
+  "scalars": {
+    "None/__mcos__/s0": "fixture",
+    "None/__mcos__/s1": "MCOS",
+    "None/__mcos__/s2": "edu.stanford.covert.cell.sim.state.Metabolite"
+  }
+}

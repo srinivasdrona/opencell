@@ -1,0 +1,26 @@
+{
+  "array_keys": [
+    "None/__mcos__/arr"
+  ],
+  "manifest": {
+    "extraction_status": "unparsed_mcos_payload",
+    "function_workspace_bytes": 8136,
+    "mat_format": "v5",
+    "mcos_class": "edu.stanford.covert.cell.sim.state.Stimulus",
+    "name": "Stimulus",
+    "notes": [
+      "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+    ],
+    "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/Stimulus.mat",
+    "source_sha256": "85e21a1db4f22b8ea85d89471d76dc3c6bd33a4c1c3b12b797a439c6d6d1a14f",
+    "source_size_bytes": 1736,
+    "top_level_keys": [
+      "None"
+    ]
+  },
+  "scalars": {
+    "None/__mcos__/s0": "fixture",
+    "None/__mcos__/s1": "MCOS",
+    "None/__mcos__/s2": "edu.stanford.covert.cell.sim.state.Stimulus"
+  }
+}

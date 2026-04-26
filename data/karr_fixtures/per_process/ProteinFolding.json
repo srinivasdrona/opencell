@@ -1,0 +1,26 @@
+{
+  "array_keys": [
+    "None/__mcos__/arr"
+  ],
+  "manifest": {
+    "extraction_status": "unparsed_mcos_payload",
+    "function_workspace_bytes": 72819456,
+    "mat_format": "v5",
+    "mcos_class": "edu.stanford.covert.cell.sim.process.ProteinFolding",
+    "name": "ProteinFolding",
+    "notes": [
+      "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+    ],
+    "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/ProteinFolding.mat",
+    "source_sha256": "62af7b6d3ef2b936d15cb32d22282b467bb36deb8ddbde67f7e7a91a1a6b2f6c",
+    "source_size_bytes": 1482896,
+    "top_level_keys": [
+      "None"
+    ]
+  },
+  "scalars": {
+    "None/__mcos__/s0": "fixture",
+    "None/__mcos__/s1": "MCOS",
+    "None/__mcos__/s2": "edu.stanford.covert.cell.sim.process.ProteinFolding"
+  }
+}

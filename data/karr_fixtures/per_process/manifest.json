@@ -1,0 +1,840 @@
+{
+  "fixtures": [
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68669112,
+      "kind": "process",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.process.ChromosomeCondensation",
+      "name": "ChromosomeCondensation",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "ChromosomeCondensation.json",
+      "out_npz": "ChromosomeCondensation.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/ChromosomeCondensation.mat",
+      "source_sha256": "8551e9d068ee971080ad75029567d16b0b81ad5616b65a98bd28838915d0965f",
+      "source_size_bytes": 1447944,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68668792,
+      "kind": "process",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.process.ChromosomeSegregation",
+      "name": "ChromosomeSegregation",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "ChromosomeSegregation.json",
+      "out_npz": "ChromosomeSegregation.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/ChromosomeSegregation.mat",
+      "source_sha256": "fe8070a0aec2fe0ff3192c2f4b12270c9f27a2d832c197cc6341a79e5af9a1b5",
+      "source_size_bytes": 1447629,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68668256,
+      "kind": "process",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.process.Cytokinesis",
+      "name": "Cytokinesis",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "Cytokinesis.json",
+      "out_npz": "Cytokinesis.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/Cytokinesis.mat",
+      "source_sha256": "0917e20f97a95dd31e21884fb3120261b0680f4600ae237e55e53c1fe7aada4c",
+      "source_size_bytes": 1447193,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68893496,
+      "kind": "process",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.process.DNADamage",
+      "name": "DNADamage",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "DNADamage.json",
+      "out_npz": "DNADamage.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/DNADamage.mat",
+      "source_sha256": "ca254665d0ed37a021aa0297eac5ea5275c4b743a3e5d1b2488681b89681f4ed",
+      "source_size_bytes": 1453752,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68652840,
+      "kind": "process",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.process.DNARepair",
+      "name": "DNARepair",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "DNARepair.json",
+      "out_npz": "DNARepair.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/DNARepair.mat",
+      "source_sha256": "cad009cac2c077e2b78cd5c0caae51f521c7f4b13613888801474dfe92dd1333",
+      "source_size_bytes": 1445857,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68690328,
+      "kind": "process",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.process.DNASupercoiling",
+      "name": "DNASupercoiling",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "DNASupercoiling.json",
+      "out_npz": "DNASupercoiling.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/DNASupercoiling.mat",
+      "source_sha256": "9722a43ac82ea4952df53eb4dbca7701d72e6767ef63776a00f08e1d82b919a6",
+      "source_size_bytes": 1450135,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68671800,
+      "kind": "process",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.process.FtsZPolymerization",
+      "name": "FtsZPolymerization",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "FtsZPolymerization.json",
+      "out_npz": "FtsZPolymerization.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/FtsZPolymerization.mat",
+      "source_sha256": "3559a3d330fab071d3e146a6f3b594901550020a36918581859801f538077322",
+      "source_size_bytes": 1447985,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68671896,
+      "kind": "process",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.process.HostInteraction",
+      "name": "HostInteraction",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "HostInteraction.json",
+      "out_npz": "HostInteraction.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/HostInteraction.mat",
+      "source_sha256": "aa81b2943a17f1b787eacb52bbabec38e3657f02d0e5413035c63cb16712700b",
+      "source_size_bytes": 1447919,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 69217128,
+      "kind": "process",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.process.MacromolecularComplexation",
+      "name": "MacromolecularComplexation",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "MacromolecularComplexation.json",
+      "out_npz": "MacromolecularComplexation.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/MacromolecularComplexation.mat",
+      "source_sha256": "f36a4f6d319bee92a08b311caf796f134c8b3e3f427d4d20c2ed748aa84c1d96",
+      "source_size_bytes": 1461091,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 92497664,
+      "kind": "process",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.process.Metabolism",
+      "name": "Metabolism",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "Metabolism.json",
+      "out_npz": "Metabolism.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/Metabolism.mat",
+      "source_sha256": "90beeb3f025f7324d7ed2633dca498b261cbcc2f3b33549cd9afa1e7d1d58662",
+      "source_size_bytes": 1613120,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68680752,
+      "kind": "process",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.process.ProteinActivation",
+      "name": "ProteinActivation",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "ProteinActivation.json",
+      "out_npz": "ProteinActivation.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/ProteinActivation.mat",
+      "source_sha256": "f2c77c946085ca93ee2f19eeceb84ed3542442383c0d23df251b7dea51a8c763",
+      "source_size_bytes": 1450247,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 76293896,
+      "kind": "process",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.process.ProteinDecay",
+      "name": "ProteinDecay",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "ProteinDecay.json",
+      "out_npz": "ProteinDecay.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/ProteinDecay.mat",
+      "source_sha256": "127498ed7fddc49ee292c1084180dc661035d0bbd8bf4f54a01599969b99cd5d",
+      "source_size_bytes": 1715811,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 72819456,
+      "kind": "process",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.process.ProteinFolding",
+      "name": "ProteinFolding",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "ProteinFolding.json",
+      "out_npz": "ProteinFolding.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/ProteinFolding.mat",
+      "source_sha256": "62af7b6d3ef2b936d15cb32d22282b467bb36deb8ddbde67f7e7a91a1a6b2f6c",
+      "source_size_bytes": 1482896,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68832008,
+      "kind": "process",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.process.ProteinModification",
+      "name": "ProteinModification",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "ProteinModification.json",
+      "out_npz": "ProteinModification.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/ProteinModification.mat",
+      "source_sha256": "9a1bc0b54071689f299c3e803543837f60910b01b650a984f832107578dfba08",
+      "source_size_bytes": 1455207,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68745448,
+      "kind": "process",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.process.ProteinProcessingI",
+      "name": "ProteinProcessingI",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "ProteinProcessingI.json",
+      "out_npz": "ProteinProcessingI.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/ProteinProcessingI.mat",
+      "source_sha256": "4efac53ee9afc0b3351f65b12017f14558dfc3bb34df7e432b7cad641e62fa5e",
+      "source_size_bytes": 1451098,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68791856,
+      "kind": "process",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.process.ProteinProcessingII",
+      "name": "ProteinProcessingII",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "ProteinProcessingII.json",
+      "out_npz": "ProteinProcessingII.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/ProteinProcessingII.mat",
+      "source_sha256": "a5a1ea44a3f11a9e203b2df2944ac8bed96823c72a894ad0c01635be185ce5e8",
+      "source_size_bytes": 1454034,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68740080,
+      "kind": "process",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.process.ProteinTranslocation",
+      "name": "ProteinTranslocation",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "ProteinTranslocation.json",
+      "out_npz": "ProteinTranslocation.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/ProteinTranslocation.mat",
+      "source_sha256": "cd568e3f34de65c5a15a0c906d5057a0083c93b79cd9a3d1ec2d27715ab31202",
+      "source_size_bytes": 1453129,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 69452048,
+      "kind": "process",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.process.RNADecay",
+      "name": "RNADecay",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "RNADecay.json",
+      "out_npz": "RNADecay.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/RNADecay.mat",
+      "source_sha256": "cddcaf704baa468fc8204e72e42e2893169c84473c08763e9f9945138c1307d8",
+      "source_size_bytes": 1470455,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 69108344,
+      "kind": "process",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.process.RNAModification",
+      "name": "RNAModification",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "RNAModification.json",
+      "out_npz": "RNAModification.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/RNAModification.mat",
+      "source_sha256": "416b877b030489184a5001c9ed97b4ead71b5a74f542167b76f4a883d2749559",
+      "source_size_bytes": 1457658,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68760096,
+      "kind": "process",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.process.RNAProcessing",
+      "name": "RNAProcessing",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "RNAProcessing.json",
+      "out_npz": "RNAProcessing.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/RNAProcessing.mat",
+      "source_sha256": "ac55081780d05d42f3aa0b63937a979c0cf1b5f5fd16ddb36525f0940a17b916",
+      "source_size_bytes": 1452217,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68686304,
+      "kind": "process",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.process.Replication",
+      "name": "Replication",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "Replication.json",
+      "out_npz": "Replication.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/Replication.mat",
+      "source_sha256": "10c8cb261eb0de6f117ba5980a46171f05b519497b23428754f29edd17a57926",
+      "source_size_bytes": 1454370,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68782336,
+      "kind": "process",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.process.ReplicationInitiation",
+      "name": "ReplicationInitiation",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "ReplicationInitiation.json",
+      "out_npz": "ReplicationInitiation.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/ReplicationInitiation.mat",
+      "source_sha256": "e7d02295f4e9bcccdad9ff9d6b3d14a14cba449fbc28ffbff1e8a96bab0445a7",
+      "source_size_bytes": 1467019,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68674928,
+      "kind": "process",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.process.RibosomeAssembly",
+      "name": "RibosomeAssembly",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "RibosomeAssembly.json",
+      "out_npz": "RibosomeAssembly.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/RibosomeAssembly.mat",
+      "source_sha256": "87d92d80d70108648ea516a06fbbb5dedb175375fe4e02482c5a1fa6c2346ac0",
+      "source_size_bytes": 1449423,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68932400,
+      "kind": "process",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.process.TerminalOrganelleAssembly",
+      "name": "TerminalOrganelleAssembly",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "TerminalOrganelleAssembly.json",
+      "out_npz": "TerminalOrganelleAssembly.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/TerminalOrganelleAssembly.mat",
+      "source_sha256": "9cc41a11a599b9df29d958a7d22091203ba70db802608a1d189de24f43bc70fa",
+      "source_size_bytes": 1449470,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68716184,
+      "kind": "process",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.process.Transcription",
+      "name": "Transcription",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "Transcription.json",
+      "out_npz": "Transcription.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/Transcription.mat",
+      "source_sha256": "7a1f995b0570bb5ab319576c3f78a71d0f568033b13952726f1f0e8ed98c23de",
+      "source_size_bytes": 1455959,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68704096,
+      "kind": "process",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.process.TranscriptionalRegulation",
+      "name": "TranscriptionalRegulation",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "TranscriptionalRegulation.json",
+      "out_npz": "TranscriptionalRegulation.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/TranscriptionalRegulation.mat",
+      "source_sha256": "0a9f6a0b881e21e879b66b7ea3760a14e627bd1288d8cdfd4c19d9d7534049de",
+      "source_size_bytes": 1449294,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68691888,
+      "kind": "process",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.process.Translation",
+      "name": "Translation",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "Translation.json",
+      "out_npz": "Translation.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/Translation.mat",
+      "source_sha256": "ed7e358940bbc6273dd061d75d56c092eddec327709e68a664ecab06b2248576",
+      "source_size_bytes": 1450521,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68932896,
+      "kind": "process",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.process.tRNAAminoacylation",
+      "name": "tRNAAminoacylation",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "tRNAAminoacylation.json",
+      "out_npz": "tRNAAminoacylation.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/tRNAAminoacylation.mat",
+      "source_sha256": "d1fb71a9b6f84ff62c5fdc3f52a48a382ce24ed37db5ad3fc2d02d85472afdb2",
+      "source_size_bytes": 1473939,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68719520,
+      "kind": "state",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.state.CellGeometry",
+      "name": "CellGeometry",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "CellGeometry.json",
+      "out_npz": "CellGeometry.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/CellGeometry.mat",
+      "source_sha256": "9634cd025aac7e79c2ba373f18f5a7e6d437893643dd52476e3777d9cac3cd6e",
+      "source_size_bytes": 1454940,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68720272,
+      "kind": "state",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.state.CellMass",
+      "name": "CellMass",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "CellMass.json",
+      "out_npz": "CellMass.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/CellMass.mat",
+      "source_sha256": "6748b8d62f9f4d5036d3cc890e6d6cd3f6fae5495ba0197a918925fd255364dd",
+      "source_size_bytes": 1455676,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68653616,
+      "kind": "state",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.state.Chromosome",
+      "name": "Chromosome",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "Chromosome.json",
+      "out_npz": "Chromosome.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/Chromosome.mat",
+      "source_sha256": "3546024205ef1cecde87bb4c71de5054066cdc60b90b8d3434088ade68c2e4a9",
+      "source_size_bytes": 1445845,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 6936,
+      "kind": "state",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.state.FtsZRing",
+      "name": "FtsZRing",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "FtsZRing.json",
+      "out_npz": "FtsZRing.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/FtsZRing.mat",
+      "source_sha256": "e241bec8e51771fafabf4359c1ce5bf4d1c91e4d9ff111a3f027400ed4f38c8d",
+      "source_size_bytes": 1454,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 3720,
+      "kind": "state",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.state.Host",
+      "name": "Host",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "Host.json",
+      "out_npz": "Host.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/Host.mat",
+      "source_sha256": "2c2797cb7eb23db62db95dcd72708dcbbfb265a02f1a08ba7182ea264945c981",
+      "source_size_bytes": 1074,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 54352,
+      "kind": "state",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.state.MetabolicReaction",
+      "name": "MetabolicReaction",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "MetabolicReaction.json",
+      "out_npz": "MetabolicReaction.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/MetabolicReaction.mat",
+      "source_sha256": "817585b38b95a06200327e516e74468f1444d0254e049e849f94362f4317342d",
+      "source_size_bytes": 7598,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 643512,
+      "kind": "state",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.state.Metabolite",
+      "name": "Metabolite",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "Metabolite.json",
+      "out_npz": "Metabolite.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/Metabolite.mat",
+      "source_sha256": "6b36d584d214bca1e3f2a997250ee61462aff93880ff7e4dccca6772583bde2b",
+      "source_size_bytes": 32797,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 1693056,
+      "kind": "state",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.state.Polypeptide",
+      "name": "Polypeptide",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "Polypeptide.json",
+      "out_npz": "Polypeptide.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/Polypeptide.mat",
+      "source_sha256": "9e6e02e7948f6603fc30010379c9134e1773fddce10cebb946c0b885164b97c4",
+      "source_size_bytes": 338633,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68653232,
+      "kind": "state",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.state.ProteinComplex",
+      "name": "ProteinComplex",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "ProteinComplex.json",
+      "out_npz": "ProteinComplex.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/ProteinComplex.mat",
+      "source_sha256": "1e3394c8bd94dee9291918948a684ec7280f1195123730962cbd11c54ae29601",
+      "source_size_bytes": 1445934,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68653160,
+      "kind": "state",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.state.ProteinMonomer",
+      "name": "ProteinMonomer",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "ProteinMonomer.json",
+      "out_npz": "ProteinMonomer.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/ProteinMonomer.mat",
+      "source_sha256": "553fb8d8ac649d550de855e97783ad38e813db72eba3fcd25154f35ffa9ed6cf",
+      "source_size_bytes": 1445675,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68652920,
+      "kind": "state",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.state.RNAPolymerase",
+      "name": "RNAPolymerase",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "RNAPolymerase.json",
+      "out_npz": "RNAPolymerase.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/RNAPolymerase.mat",
+      "source_sha256": "1ed452a78ff78efecc8dcad0531c765a56fc12c8ae736ea34a8507a7938c8644",
+      "source_size_bytes": 1446558,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68653080,
+      "kind": "state",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.state.Ribosome",
+      "name": "Ribosome",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "Ribosome.json",
+      "out_npz": "Ribosome.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/Ribosome.mat",
+      "source_sha256": "df0792210dde1c466cb6c73a4fadaba32aefc611586affd0b64ec812d4ddab85",
+      "source_size_bytes": 1445713,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68653000,
+      "kind": "state",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.state.Rna",
+      "name": "Rna",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "Rna.json",
+      "out_npz": "Rna.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/Rna.mat",
+      "source_sha256": "c5473774e17a736d87aded3b21fe77cd2952a7b0dd807b9b3d1abacb91ec48b7",
+      "source_size_bytes": 1446562,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 8136,
+      "kind": "state",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.state.Stimulus",
+      "name": "Stimulus",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "Stimulus.json",
+      "out_npz": "Stimulus.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/Stimulus.mat",
+      "source_sha256": "85e21a1db4f22b8ea85d89471d76dc3c6bd33a4c1c3b12b797a439c6d6d1a14f",
+      "source_size_bytes": 1736,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 4376,
+      "kind": "state",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.state.Time",
+      "name": "Time",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "Time.json",
+      "out_npz": "Time.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/Time.mat",
+      "source_sha256": "17e9e5725e58fef7376e345eeb8fc2c1f56ac784b23bf3b15ebff8e217a57407",
+      "source_size_bytes": 1140,
+      "top_level_keys": [
+        "None"
+      ]
+    },
+    {
+      "extraction_status": "unparsed_mcos_payload",
+      "function_workspace_bytes": 68652760,
+      "kind": "state",
+      "mat_format": "v5",
+      "mcos_class": "edu.stanford.covert.cell.sim.state.Transcript",
+      "name": "Transcript",
+      "notes": [
+        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      ],
+      "out_json": "Transcript.json",
+      "out_npz": "Transcript.npz",
+      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/Transcript.mat",
+      "source_sha256": "c9390cc054d4b93bf2ece25ad9d116ff85d870763ffefd49fc85d597ac3ecbb6",
+      "source_size_bytes": 1445952,
+      "top_level_keys": [
+        "None"
+      ]
+    }
+  ]
+}

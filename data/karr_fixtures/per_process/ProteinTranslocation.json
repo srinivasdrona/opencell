@@ -1,0 +1,26 @@
+{
+  "array_keys": [
+    "None/__mcos__/arr"
+  ],
+  "manifest": {
+    "extraction_status": "unparsed_mcos_payload",
+    "function_workspace_bytes": 68740080,
+    "mat_format": "v5",
+    "mcos_class": "edu.stanford.covert.cell.sim.process.ProteinTranslocation",
+    "name": "ProteinTranslocation",
+    "notes": [
+      "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+    ],
+    "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/ProteinTranslocation.mat",
+    "source_sha256": "cd568e3f34de65c5a15a0c906d5057a0083c93b79cd9a3d1ec2d27715ab31202",
+    "source_size_bytes": 1453129,
+    "top_level_keys": [
+      "None"
+    ]
+  },
+  "scalars": {
+    "None/__mcos__/s0": "fixture",
+    "None/__mcos__/s1": "MCOS",
+    "None/__mcos__/s2": "edu.stanford.covert.cell.sim.process.ProteinTranslocation"
+  }
+}

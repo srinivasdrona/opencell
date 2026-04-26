@@ -1,0 +1,26 @@
+{
+  "array_keys": [
+    "None/__mcos__/arr"
+  ],
+  "manifest": {
+    "extraction_status": "unparsed_mcos_payload",
+    "function_workspace_bytes": 69217128,
+    "mat_format": "v5",
+    "mcos_class": "edu.stanford.covert.cell.sim.process.MacromolecularComplexation",
+    "name": "MacromolecularComplexation",
+    "notes": [
+      "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+    ],
+    "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/MacromolecularComplexation.mat",
+    "source_sha256": "f36a4f6d319bee92a08b311caf796f134c8b3e3f427d4d20c2ed748aa84c1d96",
+    "source_size_bytes": 1461091,
+    "top_level_keys": [
+      "None"
+    ]
+  },
+  "scalars": {
+    "None/__mcos__/s0": "fixture",
+    "None/__mcos__/s1": "MCOS",
+    "None/__mcos__/s2": "edu.stanford.covert.cell.sim.process.MacromolecularComplexation"
+  }
+}
