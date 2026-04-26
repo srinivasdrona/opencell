@@ -422,11 +422,16 @@ Standard practice for non-trivial design adopted this session: write → adversa
 
 **v2 verified-true headlines:** 22 ARCHIVE_SPEC extensions real (all `State_Mass.dump.complex.*` paths exist in archive); 158-complex mature subset at threshold ≥1; 10 bound-heavy anchors at threshold ≥1; mature_total = 4006 (cytosol+membrane) vs 3264 (cytosol-only).
 
-### m1 per-process fixture extraction (BLOCKED on MCOS decode)
+### m1 per-process fixture extraction (DONE — `agent/m1-per-process-fixtures` @ `b219c6a`, ready to merge)
 
-**Branch `agent/m1-per-process-fixtures` @ `1a4f92f`:** scaffolding only. Discovery: all 44 source `.mat` files (28 process + 16 state) are MATLAB v5 files containing MCOS-serialized class instances; `scipy.io`, `pymatreader`, `mat4py` all refuse. Committed: `scripts/extract_per_process_fixtures.py` + `scripts/validate_per_process_fixtures.py` + 44 placeholder json+npz pairs flagged `extraction_status: unparsed_mcos_payload`. Validator passes (89/89 byte-identical).
+44/44 fixtures (28 process + 16 state) extracted via MATLAB R2026a on Windows host using `scripts/matlab/extract_per_process_fixtures.m`, ingested into canonical `<Name>.{json,npz}` form via `scripts/extract_per_process_fixtures.py --all --from-flat`. Validation: 89 files, 0 mismatched. Test suite: 578 pass + 4 xfail.
 
-**Unblock decision pending:** (b1) install MATLAB-in-WSL, (b2) one-off extract on Windows host with MATLAB then ingest, (b3) drop per-process oracles entirely. Not on critical path — D.2/v2-swap/M5 do not need these.
+**MCOS decode unblocked (option b2 shipped).** Notable fixes during the run:
+- `.m` walker: original visited-handle cycle protection was broken (monotonic counter as identity key, never deduplicated). Replaced with cycle-cut at MCOS handle boundaries — own properties only; sentinel `<handle:Class:NxM>` for any property whose value is itself an MCOS handle object. Same hang-class as `Simulation_fitted.mat` last session. All 44 fixtures flatten in ~3 min.
+- `--from-flat` ingest: object-dtype arrays from sentinel-laden cell trees ballooned npz (~17 MB each, 105 MB total). Filter applied and `savez_compressed` — 105M → 13M (664 KB npz numeric + 12 MB `_flat.mat` audit trail + 212 KB json). Real numeric tensors (Metabolism stoich, etc.) preserved.
+- `validate_per_process_fixtures.py`: now passes `--from-flat --flat-dir` to re-extract when `_flat.mat` files present in committed dir; `hash_dir` excludes MATLAB-bootstrap inputs.
+
+Per-process oracles now available for downstream D.2/M2/M3/M5. Pre-existing failure in `tests/m1/test_calc_flux_bounds.py` is a worktree-data issue (worktree never had `m1_sources/karr_flat/` populated), not caused by this work.
 
 ### Worktree convention (now standard)
 
