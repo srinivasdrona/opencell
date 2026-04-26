@@ -1,0 +1,69 @@
+{
+  "schema_version": "karr_phenotype_targets__v1",
+  "source": "Karr 2012 + sim_fitted_targeted.mat stored runtime / sim.state.* SS values. Targets reflect Karr's published / extracted ground-truth; tolerances reflect known chassis structural ceilings (e.g., FBA-at-snapshot 0.51x growth ratio per plan and tests/m1/test_karr_metabolism.py).",
+  "rationale": "Phase E.0 first phenotype validation report. 4 FBA prediction tests (non-circular) + 4 chassis wiring/stability checks (catch composer/integrator bugs; become real predictive tests once M2/M3 v2 mechanics replace prescribed-rate models).",
+  "phenotypes": {
+    "p1_growth_per_s": {
+      "category": "fba_prediction",
+      "target": 2.1192692552e-05,
+      "tol_rel_min": 0.40,
+      "tol_rel_max": 1.10,
+      "unit": "1/s",
+      "source": "karr_native_m1.json stored_runtime.growth_per_s",
+      "note": "FBA at static snapshot bounds hits ~0.51x of stored (structural ceiling: Karr's enzyme bounds are post-step). Tolerance is asymmetric: 0.40 floor, 1.10 ceiling."
+    },
+    "p2_doubling_time_h": {
+      "category": "fba_prediction",
+      "target": 13.107243314939442,
+      "tol_rel_min": 0.91,
+      "tol_rel_max": 2.50,
+      "unit": "h",
+      "source": "karr_native_m1.json stored_runtime.doublingTime_h",
+      "note": "Inverse of growth -> at 0.51x growth, doubling is ~1.96x stored. Tolerance accommodates."
+    },
+    "p3_fba_oracle_median_log2_ratio": {
+      "category": "fba_prediction",
+      "target": 0.0,
+      "tol_abs_max": 1.0,
+      "unit": "log2_ratio",
+      "source": "tests/m1/test_karr_metabolism.py per-reaction oracle",
+      "note": "Median |log2(predicted/stored)| over comparable reactions. Existing acceptance: < 1.0."
+    },
+    "p4_glucose_uptake_TX_GLCPTS": {
+      "category": "fba_prediction",
+      "target": 2725.0,
+      "tol_rel_min": 0.20,
+      "tol_rel_max": 5.00,
+      "unit": "molecules_per_s",
+      "source": "karr_native_m1 fluxs_stored[TX_GLCPTS]",
+      "expected_status": "fail",
+      "fail_reason": "STRUCTURAL GAP: TX_GLCPTS is in the 504 FBA col set but Karr's biology routes glucose uptake through non-FBA submodels (PTS sugar phosphotransferase). Under Karr's snapshot bounds the LP solves TX_GLCPTS = 0 because PEP supply is throttled. Test pinned as xfail until M4-M28 wire up the non-FBA PTS process."
+    },
+    "p5_mrna_total_chassis_wiring": {
+      "category": "chassis_wiring",
+      "tol_rel": 0.001,
+      "unit": "molecules",
+      "note": "Wiring-fidelity test: build engine -> read mRNA counts from chassis state -> compare SUM to independently-computed m2.expression.sum(). Catches index/copy/topology bugs in the composer. NOT a biology prediction; becomes one once M2 v2 mechanics replace prescribed-rate model."
+    },
+    "p6_protein_total_chassis_wiring": {
+      "category": "chassis_wiring",
+      "tol_rel": 0.001,
+      "unit": "molecules",
+      "note": "Wiring-fidelity test for M3 -- same shape as p5."
+    },
+    "p7_mrna_stability_over_20s": {
+      "category": "chassis_wiring",
+      "tol_rel": 0.10,
+      "unit": "fraction",
+      "horizon_s": 20,
+      "note": "|sum(mRNA, t=20) - sum(mRNA, t=0)| / sum(mRNA, t=0) < tol. Tests chassis SS stability under the analytical-integrator wrapper. Drift=0 by math at SS; this catches integrator bugs, not biology."
+    },
+    "p8_protein_stability_over_20s": {
+      "category": "chassis_wiring",
+      "tol_rel": 0.10,
+      "unit": "fraction",
+      "horizon_s": 20,
+      "note": "Same shape as p7 for protein counts."
+    }
+  }
+}
