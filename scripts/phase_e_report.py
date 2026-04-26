@@ -55,6 +55,8 @@ def main() -> None:
             lambda: ph.measure_mrna_stability(20)),
         ("p8_protein_stability_over_20s",
             lambda: ph.measure_protein_stability(20)),
+        ("p9_aa_pool_stability_over_20s",
+            lambda: ph.measure_aa_pool_stability(20)),
     ]
 
     rows = []

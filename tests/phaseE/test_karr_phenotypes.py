@@ -13,6 +13,11 @@ truth. Eight phenotypes split into two categories:
                               composer / integrator bugs, NOT biology.
                               Become real predictive tests once M2/M3
                               v2 mechanics replace prescribed rates.
+  closed_loop  (#9)        -- runs the full Phase C loop (dynamic
+                              bounds + throttle + calibrated pool
+                              replenishment) and tests that the M1
+                              source / M3 drain stoichiometry holds
+                              the 20 AA cytosol pools at SS.
 
 Targets and tolerances live in
     data/karr_fixtures/karr_phenotype_targets.json
@@ -153,4 +158,17 @@ def test_p8_protein_stability_over_20s(targets):
         f"protein drift over {spec['horizon_s']}s = {m.predicted:.4e} "
         f"> tol {spec['tol_rel']} (t0={m.extra['total_t0']:.1f}, "
         f"tN={m.extra['total_tN']:.1f})"
+    )
+
+
+# ---------- closed-loop tests (#9) ----------
+
+def test_p9_aa_pool_stability_over_20s(targets):
+    spec = targets["p9_aa_pool_stability_over_20s"]
+    m = ph.measure_aa_pool_stability(horizon_s=spec["horizon_s"])
+    assert m.predicted < spec["tol_rel"], (
+        f"max AA pool drift over {spec['horizon_s']}s = {m.predicted:.4e} "
+        f"> tol {spec['tol_rel']} "
+        f"(worst={m.extra['worst_aa']} drift={m.extra['worst_drift']:.4e}, "
+        f"n_aa={m.extra['n_aa']})"
     )

@@ -64,6 +64,13 @@
       "unit": "fraction",
       "horizon_s": 20,
       "note": "Same shape as p7 for protein counts."
+    },
+    "p9_aa_pool_stability_over_20s": {
+      "category": "closed_loop",
+      "tol_rel": 0.005,
+      "unit": "fraction",
+      "horizon_s": 20,
+      "note": "Phenotype #14: per-AA cytosol pool stability under the full Phase C closed loop (dynamic bounds + throttle + calibrated pool replenishment). max_aa(|delta_pool|/pool) over 20s. Real prediction (not a tautology): M3 drains 20 distinct AAs at protein-composition-weighted rates while M1 sources them at calibrated baseline-demand rates -- match-up is a stoichiometric+rate test of the closed loop, not the analytical SS of any single process."
     }
   }
 }

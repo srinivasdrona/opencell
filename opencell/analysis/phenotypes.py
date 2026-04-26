@@ -177,6 +177,59 @@ def measure_mrna_stability(horizon_s: int = 20) -> PhenotypeMeasurement:
     )
 
 
+def measure_aa_pool_stability(horizon_s: int = 20) -> PhenotypeMeasurement:
+    """Phase E phenotype #14: per-AA cytosol pool stability.
+
+    Build the chassis with the full Phase C closed loop (dynamic
+    bounds + throttle + calibrated pool replenishment), seed each of
+    the 20 AA pools at Karr's snapshot SS, run for ``horizon_s``, and
+    measure the maximum |delta_pool|/pool over the 20 amino acids.
+
+    Under the calibrated replenishment, M3 drain ~= M1 source so pools
+    should hold at SS to within numerical/throttle noise.  This exercises
+    the M1 read-back, M3 per-AA delta write, M1 pool-replenishment
+    source, and the throttle interlock together.
+
+    A failing test here flags either (a) M1/M3 stoichiometric mismatch,
+    (b) replenishment-rate calibration drift relative to drain, or
+    (c) throttle clamping the synthesis below SS.
+    """
+    from opencell.vivarium.karr_composite import build_karr_m1_m2_m3_engine
+    from opencell.m3.translation import AA_WCM_IDS
+
+    engine = build_karr_m1_m2_m3_engine(
+        time_step_s=1.0, emit_step_s=1.0,
+        dynamic_bounds=True,
+        enable_throttle=True,
+        enable_pool_replenishment=True,
+    )
+    init = dict(engine.state.get_value()["m1_pools"])
+    engine.update(horizon_s)
+    final = dict(engine.state.get_value()["m1_pools"])
+
+    drifts: dict[str, float] = {}
+    for aa in AA_WCM_IDS:
+        i = float(init[aa])
+        f = float(final[aa])
+        drifts[aa] = abs(f - i) / i if i > 0 else float("inf")
+    max_drift = max(drifts.values())
+    worst_aa = max(drifts, key=lambda k: drifts[k])
+    return PhenotypeMeasurement(
+        name="p9_aa_pool_stability_over_20s",
+        predicted=max_drift,
+        target=0.0,
+        unit="fraction",
+        extra={
+            "horizon_s": horizon_s,
+            "n_aa": len(drifts),
+            "worst_aa": worst_aa,
+            "worst_drift": max_drift,
+            "drift_by_aa": drifts,
+            "init_pool_by_aa": {aa: float(init[aa]) for aa in AA_WCM_IDS},
+        },
+    )
+
+
 def measure_protein_stability(horizon_s: int = 20) -> PhenotypeMeasurement:
     from opencell.vivarium.karr_composite import build_karr_m1_m2_m3_engine
     engine = build_karr_m1_m2_m3_engine(time_step_s=1.0, emit_step_s=1.0)
@@ -210,4 +263,5 @@ __all__ = [
     "measure_protein_total_chassis_wiring",
     "measure_mrna_stability",
     "measure_protein_stability",
+    "measure_aa_pool_stability",
 ]
