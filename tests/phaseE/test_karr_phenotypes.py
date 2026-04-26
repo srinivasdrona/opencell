@@ -182,8 +182,8 @@ def test_p9_aa_pool_stability_over_20s(targets):
     "~6e-16 g), lipid membrane, polysaccharides, and per-substrate "
     "snapshot counts (chassis seeds 561 non-demand substrates at 1.0 "
     "placeholder).  Pinned xfail until D.2 + M5 + substrate snapshot "
-    "init close the gap (or until p10 is partitioned into per-class "
-    "targets p10a/p10b/p10c).",
+    "init close the gap.  Phase E.1c partitions this into p10a/p10b/p10c "
+    "for fine-grained green/red tracking.",
     strict=True,
 )
 def test_p10_cell_dry_mass_g(m1_model, m2_model, m3_model, targets):
@@ -196,4 +196,118 @@ def test_p10_cell_dry_mass_g(m1_model, m2_model, m3_model, targets):
         f"(sub={m.extra['substrate_mass_g']:.4e} g, "
         f"rna={m.extra['rna_mass_g']:.4e} g, "
         f"prot={m.extra['protein_mass_g']:.4e} g)"
+    )
+
+
+# ---------- Phase E.1c per-class sub-targets (#10a/b/c) ----------
+#
+# Partition phenotype p10 (cell dry mass) into per-class sub-targets so
+# that previously-opaque single-xfail bucket surfaces fine-grained
+# green / red status by mass class.  See top of
+# data/karr_fixtures/karr_phenotype_targets.json p10a/p10b/p10c entries
+# for the source of each target (all derived from the Karr archive
+# arrays at fixture-build time -- no hard-coded values).
+#
+# Karr archive-derived breakdown of cell_dry_total_mass_g (3.945e-15 g):
+#   p10a RNA-class             1.715e-16 g  ( 4.35%)  xfail (mature-only chassis)
+#   p10b ProteinMonomer-class  1.093e-15 g  (27.70%)  pass
+#   p10c residual (everything  2.680e-15 g  (67.95%)  xfail (D.2 + M5 + lipid + pool init)
+#         else: complexes, DNA, lipid, polysaccharide, true substrate pool)
+
+
+@pytest.mark.xfail(
+    reason="STRUCTURAL GAP: chassis tracks only mature mRNA / RNA forms "
+    "(525 genes, ~784 mol, ~7.0e-17 g, ~41% of Karr's full RNA-class "
+    "total of 1.72e-16 g). Karr's State_Rna spans nascent / processed / "
+    "aminoacylated / bound / misfolded / damaged forms across "
+    "cytosol+membrane+terminal-organelle for all 4820 entries; chassis "
+    "collapses these into mature-only at gene level. Predicted/target "
+    "ratio ~0.41 < tol_rel_min=0.50.  Pinned xfail until M2 v2 lands "
+    "per-form RNA tracking.",
+    strict=True,
+)
+def test_p10a_dry_mass_rna_g(m1_model, m2_model, m3_model, targets):
+    spec = targets["p10a_dry_mass_rna_g"]
+    m = ph.measure_dry_mass_rna_g(m1_model, m2_model, m3_model)
+    ratio = m.predicted / m.target if m.target > 0 else float("inf")
+    assert spec["tol_rel_min"] <= ratio <= spec["tol_rel_max"], (
+        f"p10a RNA dry mass pred={m.predicted:.4e} g target={m.target:.4e} g "
+        f"ratio={ratio:.4f} outside [{spec['tol_rel_min']}, {spec['tol_rel_max']}] "
+        f"(n_rnas_with_mw={m.extra['n_rnas_with_mw']}, "
+        f"n_rnas_total={m.extra['n_rnas_total']})"
+    )
+
+
+def test_p10b_dry_mass_protein_monomer_g(m1_model, m2_model, m3_model, targets):
+    spec = targets["p10b_dry_mass_protein_monomer_g"]
+    m = ph.measure_dry_mass_protein_monomer_g(m1_model, m2_model, m3_model)
+    ratio = m.predicted / m.target if m.target > 0 else float("inf")
+    assert spec["tol_rel_min"] <= ratio <= spec["tol_rel_max"], (
+        f"p10b protein monomer dry mass pred={m.predicted:.4e} g "
+        f"target={m.target:.4e} g ratio={ratio:.4f} outside "
+        f"[{spec['tol_rel_min']}, {spec['tol_rel_max']}] "
+        f"(n_proteins_with_mw={m.extra['n_proteins_with_mw']}, "
+        f"n_proteins_total={m.extra['n_proteins_total']})"
+    )
+
+
+@pytest.mark.xfail(
+    reason="AGGREGATE STRUCTURAL GAP: residual bucket = cellDry - RNA - "
+    "ProteinMonomer (~2.68e-15 g, ~68% of cellDry) covers every class "
+    "the archive does NOT expose as a clean per-class subtotal: "
+    "ProteinComplex (ribosomes, RNAP, replisome), DNA chromosome, "
+    "lipid membrane, polysaccharide cell-wall, true substrate pool at "
+    "Karr-snapshot counts.  Chassis predicted = breakdown.substrate_mass_g "
+    "(placeholder substrate counts 1.0 -> ~1e-19 g) << target.  Pinned "
+    "xfail until D.2 + M5 + substrate-pool init land.",
+    strict=True,
+)
+def test_p10c_dry_mass_other_residual_g(m1_model, m2_model, m3_model, targets):
+    spec = targets["p10c_dry_mass_other_residual_g"]
+    m = ph.measure_dry_mass_other_residual_g(m1_model, m2_model, m3_model)
+    ratio = m.predicted / m.target if m.target > 0 else float("inf")
+    assert spec["tol_rel_min"] <= ratio <= spec["tol_rel_max"], (
+        f"p10c other-residual dry mass pred={m.predicted:.4e} g "
+        f"target={m.target:.4e} g ratio={ratio:.4f} outside "
+        f"[{spec['tol_rel_min']}, {spec['tol_rel_max']}] "
+        f"(cell_dry_total={m.extra['cell_dry_total_g']:.4e}, "
+        f"rna_target={m.extra['rna_target_g']:.4e}, "
+        f"prot_monomer_target={m.extra['protein_monomer_target_g']:.4e})"
+    )
+
+
+def test_p10c_other_residual_target_consistency(m1_model, targets):
+    """Anti-fabrication guard: prove the JSON p10a/p10b/p10c targets are
+    archive-derived and consistent with cell_dry_total_mass_g (= p10).
+
+    Asserts:
+      * p10a target == stored_runtime.rna_wt_total_g (exactly).
+      * p10b target == sum(proteins_targeted__counts x molecularWeights) / N_A
+        recomputed live from data/karr_archive/karr_archive.npz.
+      * p10c target == p10_total - p10a - p10b (within float tolerance).
+
+    A drift here means somebody hand-edited a target without re-running
+    the archive derivation; the test fails loudly and points at the
+    offending field.
+    """
+    p10 = targets["p10_cell_dry_mass_g"]["target"]
+    p10a = targets["p10a_dry_mass_rna_g"]["target"]
+    p10b = targets["p10b_dry_mass_protein_monomer_g"]["target"]
+    p10c = targets["p10c_dry_mass_other_residual_g"]["target"]
+
+    rna_stored = float(m1_model.stored_runtime["rna_wt_total_g"])
+    assert p10a == rna_stored, (
+        f"p10a target {p10a!r} != stored_runtime.rna_wt_total_g {rna_stored!r}"
+    )
+
+    derived_prot = ph._karr_archive_protein_monomer_dry_mass_g()
+    assert abs(p10b - derived_prot) < 1e-25, (
+        f"p10b target {p10b!r} != archive-derived protein monomer "
+        f"{derived_prot!r} (diff={p10b - derived_prot:.3e})"
+    )
+
+    expected_p10c = p10 - p10a - p10b
+    assert abs(p10c - expected_p10c) < 1e-22, (
+        f"p10c target {p10c!r} != p10 - p10a - p10b = {expected_p10c!r} "
+        f"(diff={p10c - expected_p10c:.3e})"
     )
