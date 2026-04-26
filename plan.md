@@ -401,7 +401,43 @@ NOT a parallel program)**
 
 ---
 
-## Current Status (2026-04-26, **600 tests passing + 2 xfail**, MATLAB eviction + m2 per-condition shipped)
+## Current Status (2026-04-27, **602 tests passing + 4 xfail**, p10 mass partition shipped; D.2 design v1→v2→v3 critique loop in flight)
+
+### Phase D.2 design rework loop (IN FLIGHT — v1, v2 in branches; v3 next)
+
+Standard practice for non-trivial design adopted this session: write → adversarial critique (Claude Sonnet rubber-duck or GPT-5.4 cross-model) → rework. Two rounds completed for D.2; v3 is the next concrete deliverable.
+
+**Decisions resolved (apply to v3 and beyond):**
+- **Q1 — oracle target:** *hybrid staged oracle*. Interface mature-only (D.2 emits to `mature` port; consumers M2v2/M3v2/M5 own `bound`). Unit-level oracles now: conservation, topo-ordering, competition, per-complex snapshot for the 158-complex mature-supported subset, aggregate mature-only complex dry mass. Integration-level oracle deferred to post-v2-swap+M5: `D.2.mature + Σconsumers.bound ≈ snapshot.total` for the ~10 bound-heavy anchors. Drop the algebraic `J × τ` substitute argument entirely (Karr is not a fitted-rate birth-death process).
+- **Q2 — scope:** *split*. D.2 = MacromolecularComplexation + RibosomeAssembly only. ProteinFolding → D.3, ProteinActivation → D.4 (or fold into M6 regulation, deferred decision). The `chaperones`-field corruption in `karr_protein_complexes.json` is no longer D.2's blocker.
+
+**v1 (`agent/d2-design-doc` @ `fa59925`):** 496 lines. Rubber-duck'd by Claude Sonnet — 3 BLOCKERs (ribosome cost path, oracle path/anchors wrong, MC algorithm collapse), 4 HIGH, 5 open questions.
+
+**v2 (`agent/d2-design-v2` @ `811a707`):** 770 lines + `data/karr_fixtures/d2_mature_subset.json` (158-complex manifest with 10 bound-heavy anchors verified live). Bakes in Q1+Q2. Critiqued by GPT-5.4 — verdict (c) rework, **4 BLOCKERs carried into v3**:
+  1. **Ribosome cost dissolution claim is FALSE.** Costs are NOT in `karr_protein_complexes.json`; v3 must extract from `RibosomeAssembly.m` (Karr forms 30S+50S separately, 2 GTPases for 30S + 4 for 50S, randomized order, no 6× 70S blanket).
+  2. **Scope creep.** Live `complex.formationProcesses` spans 9 process IDs; v3 must whitelist D.2 ownership and explicitly exclude FtsZ/DnaA/holoenzyme/ChromosomeCondensation complexes per Q2.
+  3. **Algorithm bug.** `_emit_update()` only adds new complexes, never emits negative deltas for consumed subcomplexes — would create RNA_POLYMERASE_HOLOENZYME without decrementing parts.
+  4. **Oracle target wrong.** Aggregate dry-mass compares mature-only output (1.155e-15 g) to all-forms `complex.dryWeight` (1.505e-15 g).
+  HIGH carry-overs for v3: add `complex.wholeCellModelIDs` to ARCHIVE_SPEC; reframe Q3 to be about D.2 co-writing `protein.counts`/`rna.counts` with M2/M3 (not `complex.counts`, which is unambiguously `accumulate`).
+
+**v2 verified-true headlines:** 22 ARCHIVE_SPEC extensions real (all `State_Mass.dump.complex.*` paths exist in archive); 158-complex mature subset at threshold ≥1; 10 bound-heavy anchors at threshold ≥1; mature_total = 4006 (cytosol+membrane) vs 3264 (cytosol-only).
+
+### m1 per-process fixture extraction (BLOCKED on MCOS decode)
+
+**Branch `agent/m1-per-process-fixtures` @ `1a4f92f`:** scaffolding only. Discovery: all 44 source `.mat` files (28 process + 16 state) are MATLAB v5 files containing MCOS-serialized class instances; `scipy.io`, `pymatreader`, `mat4py` all refuse. Committed: `scripts/extract_per_process_fixtures.py` + `scripts/validate_per_process_fixtures.py` + 44 placeholder json+npz pairs flagged `extraction_status: unparsed_mcos_payload`. Validator passes (89/89 byte-identical).
+
+**Unblock decision pending:** (b1) install MATLAB-in-WSL, (b2) one-off extract on Windows host with MATLAB then ingest, (b3) drop per-process oracles entirely. Not on critical path — D.2/v2-swap/M5 do not need these.
+
+### Worktree convention (now standard)
+
+Each background agent gets its own `E:\opencell-worktrees\<agent-name>` on `agent/<name>` branch. Adopted after a real branch-switch race in the d2-design-doc + p10-mass-partition parallel run. Active worktrees: `d2-design-v2`, `m1-per-process-fixtures`. Status files at `~/.copilot/session-state/<sid>/files/agent_<name>_status.md`.
+
+### Phase E.1c — p10 mass-target partition (DONE — merge into `36636f6`)
+
+* Branch `agent/p10-mass-partition` @ `0c48ce0`. Splits p10 cell dry mass into 3 archive-derived sub-targets + 1 consistency guard.
+* **p10b protein flips green** (27.7% of cellDry, matches chassis); p10a (RNA, 4.35%) and p10c (residual, 67.95% — DNA + complexes + lipid + substrate-pool init) stay xfail with documented unblock paths.
+* Substrate sub-target NOT created — `snapshot_substrates` units don't decode to cellular counts; documented as blocker.
+* Suite: 602 passed + 4 xfailed (was 600 + 2).
 
 ### Phase E.1c — m2 per-condition snapshots (DONE — merge commit `0fb5df3`)
 
