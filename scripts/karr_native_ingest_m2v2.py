@@ -23,13 +23,15 @@ each gene maps to exactly one TU).
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
-from scipy.io import loadmat
 
 REPO = Path(__file__).resolve().parents[1]
-MAT = REPO / "data" / "m1_sources" / "karr_flat" / "transcription_v2_targeted.mat"
+sys.path.insert(0, str(REPO))
+from opencell._karr_archive import load_karr_archive  # noqa: E402
+
 M2_FIXTURE_JSON = REPO / "data" / "karr_fixtures" / "karr_native_m2.json"
 M2_FIXTURE_NPZ = REPO / "data" / "karr_fixtures" / "karr_native_m2.npz"
 OUT_JSON = REPO / "data" / "karr_fixtures" / "karr_native_m2_v2.json"
@@ -53,12 +55,9 @@ def _to_str_list(arr):
 
 
 def main():
-    if not MAT.exists():
-        raise SystemExit(f"missing {MAT}; run scripts/matlab/extract_karr_m2v2.m first")
-
-    print(f"loading {MAT.name}")
-    raw = loadmat(MAT, squeeze_me=True, struct_as_record=False)
-    d = raw["data"]
+    print("loading transcription_v2_targeted from karr_archive")
+    arc = load_karr_archive()
+    d = arc["transcription_v2_targeted"]
 
     # Mechanism inputs from the v2 dump
     n_active = int(d.rnap_nActive)
@@ -153,7 +152,8 @@ def main():
     # Save fixture
     out_meta = {
         "schema_version": 1,
-        "source_mat": str(MAT.relative_to(REPO).as_posix()),
+        "source_archive": "data/karr_archive/",
+        "source_archive_files": ["transcription_v2_targeted"],
         "matrix_npz": OUT_NPZ.name,
         "scalars": {
             "n_active_rnap": n_active,

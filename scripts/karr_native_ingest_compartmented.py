@@ -30,13 +30,15 @@ Run:
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
-from scipy.io import loadmat
 
 REPO = Path(__file__).resolve().parents[1]
-MAT = REPO / "data" / "m1_sources" / "karr_flat" / "sim_fitted_targeted.mat"
+sys.path.insert(0, str(REPO))
+from opencell._karr_archive import load_karr_archive  # noqa: E402
+
 JSON_OUT = REPO / "data" / "karr_fixtures" / "karr_native_m1_compartmented.json"
 NPZ_OUT  = REPO / "data" / "karr_fixtures" / "karr_native_m1_compartmented.npz"
 
@@ -57,12 +59,8 @@ def _to_struct(rec):
 
 
 def main() -> None:
-    if not MAT.exists():
-        raise FileNotFoundError(
-            f"Run scripts/matlab/extract_karr_targeted.m first; missing {MAT}"
-        )
-    raw = loadmat(MAT, squeeze_me=True, struct_as_record=False)
-    sim = raw["data"]
+    arc = load_karr_archive()
+    sim = arc["sim_fitted_targeted"]
     met = sim.metabolism
 
     S = np.asarray(met.reactionStoichiometryMatrix, dtype=np.int16)  # (585, 645, 3)
@@ -106,7 +104,8 @@ def main() -> None:
 
     out = {
         "schema_version": SCHEMA_VERSION,
-        "source_mat": str(MAT.relative_to(REPO)).replace("\\", "/"),
+        "source_archive": "data/karr_archive/",
+        "source_archive_files": ["sim_fitted_targeted"],
         "matrix_npz": str(NPZ_OUT.relative_to(REPO)).replace("\\", "/"),
         "shapes": {
             "S_compartmented": [585, 645, 3],

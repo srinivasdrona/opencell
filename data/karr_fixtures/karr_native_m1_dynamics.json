@@ -1,6 +1,9 @@
 {
   "schema_version": "m1_dynamics_v1",
-  "source_mat": "data/m1_sources/karr_flat/metabolism_dynamics.mat",
+  "source_archive": "data/karr_archive/",
+  "source_archive_files": [
+    "metabolism_dynamics"
+  ],
   "matrix_npz": "karr_native_m1_dynamics.npz",
   "scalars": {
     "cell_dry_mass": 3.944640855678535e-15,

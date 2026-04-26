@@ -1,7 +1,7 @@
 """Extract Karr's transcription data into a committed fixture.
 
-Reads `data/m1_sources/karr_flat/{sim_fitted,knowledgeBase}_targeted.mat`
-(both gitignored) and writes:
+Reads the canonical Karr archive at ``data/karr_archive/`` (Python-native,
+no MATLAB or .mat dependency) and writes:
   - data/karr_fixtures/karr_native_m2.json (metadata + ID strings)
   - data/karr_fixtures/karr_native_m2.npz  (numeric arrays)
 
@@ -10,19 +10,22 @@ Sole runtime dependency of `opencell.m2.transcription`.
 Run via .venv-wsl:
   wsl bash -lc 'source /mnt/e/opencell/.venv-wsl/bin/activate && \
                 python /mnt/e/opencell/scripts/karr_native_ingest_m2.py'
+
+The archive is built once from raw .mat by ``scripts/build_karr_archive.py``
+(MATLAB only required for re-extracting the .mat in the first place).
 """
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
-from scipy.io import loadmat
 
 REPO = Path(__file__).resolve().parents[1]
-SIM_MAT = REPO / "data" / "m1_sources" / "karr_flat" / "sim_fitted_targeted.mat"
-KB_MAT = REPO / "data" / "m1_sources" / "karr_flat" / "knowledgeBase_targeted.mat"
-RNA_MAT = REPO / "data" / "m1_sources" / "karr_flat" / "rnas_targeted.mat"
+sys.path.insert(0, str(REPO))
+from opencell._karr_archive import load_karr_archive  # noqa: E402
+
 OUT_DIR = REPO / "data" / "karr_fixtures"
 JSON_OUT = OUT_DIR / "karr_native_m2.json"
 NPZ_OUT = OUT_DIR / "karr_native_m2.npz"
@@ -35,17 +38,19 @@ def _scalar(x) -> float:
 
 
 def main() -> None:
-    sim = loadmat(str(SIM_MAT), struct_as_record=False, squeeze_me=True)
-    kb = loadmat(str(KB_MAT), struct_as_record=False, squeeze_me=True)
+    arc = load_karr_archive()
+    sim = arc["sim_fitted_targeted"]
+    kb = arc["knowledgeBase_targeted"]
+    rna_mat = arc["rnas_targeted"]
 
-    pt = sim["data"].processes.Process_Transcription
+    pt = sim.processes.Process_Transcription
     elongation_rate_nt_per_s = _scalar(pt.parameters.rnaPolymeraseElongationRate)
     tu_binding = np.asarray(
         pt.fittedConstants.transcriptionUnitBindingProbabilities, dtype=float
     ).reshape(-1)
     assert tu_binding.size == 335, tu_binding.size
 
-    genes = kb["data"].knowledgeBase.genes
+    genes = kb.knowledgeBase.genes
     n_genes = len(genes)
     assert n_genes == 525, n_genes
 
@@ -119,7 +124,7 @@ def main() -> None:
     # (cytosol column).  This replaces the v1 chassis SS that used
     # KB.expression[:, 1] (a transcription rate, not a count) and was
     # ~53x over-stated.
-    rna_mat = loadmat(str(RNA_MAT), struct_as_record=False, squeeze_me=True)["data"]
+    rna_mat = arc["rnas_targeted"]
     mature_idx_full = np.asarray(rna_mat.matureIndexs, dtype=int).reshape(-1) - 1
     mw_full = np.asarray(rna_mat.molecularWeights, dtype=float).reshape(-1)
     counts_full = np.asarray(rna_mat.counts).astype(float)  # (2428, 6) uint8
@@ -228,8 +233,8 @@ def main() -> None:
 
     JSON_OUT.write_text(json.dumps({
         "schema_version": SCHEMA_VERSION,
-        "source_sim_mat": str(SIM_MAT.relative_to(REPO)),
-        "source_kb_mat": str(KB_MAT.relative_to(REPO)),
+        "source_archive": "data/karr_archive/karr_archive.npz",
+        "source_archive_files": ["sim_fitted_targeted", "knowledgeBase_targeted", "rnas_targeted"],
         "matrix_npz": str(NPZ_OUT.relative_to(REPO)),
         "counts": {
             "n_genes": n_genes,

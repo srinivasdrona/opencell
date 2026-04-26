@@ -1,0 +1,19 @@
+{
+  "karr_native_m1.json": "fb62c4263378354c79da86ed7cfaeddbe623550c26f9dd1a291cfb9e3ac799a8",
+  "karr_native_m1.npz": "8c73ad6b70ca2f5e5b986610cf878860a2b910d4f33afe5548369a8707f3bfa8",
+  "karr_native_m1_compartmented.json": "f9e254cc59e9e51c27b5578bcd491ac0faefabe12d276178b4417f673071fe91",
+  "karr_native_m1_compartmented.npz": "fbc7594319d1e06ef4b8e90f6e159c4213c60e2e35ffef2316f419fe1fe667a9",
+  "karr_native_m1_dynamics.json": "8d4f5f9aa1bc720037da06ab7c671e2bfb547d648c8f0dfeda216612308197f3",
+  "karr_native_m1_dynamics.npz": "01a8643f03cc62babd3659bc1d69d7e2f936cfa10c47a786394f82cca0b33a53",
+  "karr_native_m2.json": "c8a23e7bd33fb80c02982290a2cee9e7e067dc2c8de0ffbe064cdb9e57ade02e",
+  "karr_native_m2.npz": "d8f773a11a71cfd29be6fdcd1ed85f695424a1a5d129fa82e89d63c32f0c86e8",
+  "karr_native_m2_v2.json": "6090a8f71db33a513702530e1f7ffb0c9a6510fd786d9e75aed290ec72514736",
+  "karr_native_m2_v2.npz": "9d470e10a3222c146a5b8f698e88db0235f7a40a9d609fbfb5024e1bbcc47788",
+  "karr_native_m3.json": "75c9d7979ff7e8326f0c057e16fead74246269ba58671fabec59996e2336e4ca",
+  "karr_native_m3.npz": "11c66634aa7de0d3336f13b996aa45f08e9151f3cc8a496c847c38510590e995",
+  "karr_native_m3_v2.json": "e8e3a1425f46736c8c2fb49228d0928ba7f09ad9e2e47a0db6794f346203022a",
+  "karr_native_m3_v2.npz": "b342e5c05d4c35dcb0f707afaf3e9dc38050482636ed6f7c912e75c652f17dc3",
+  "karr_native_m3_vocab.json": "9ece275621ba5604e5de2261fb81ab49089ea0f43f513a73a78f40c06e184556",
+  "karr_phenotype_targets.json": "9320112d3b9dea82d74bef5fdc78283fd87bdb12d632e3b894d2f21c0f51e4be",
+  "karr_protein_complexes.json": "b78e74205db8d232364163d11b00bb06b6ab7da6050d3de78ea547a070a801ff"
+}

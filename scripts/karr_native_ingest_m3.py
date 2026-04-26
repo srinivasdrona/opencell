@@ -10,13 +10,15 @@ Sole runtime dependency of `opencell.m3.translation`.
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
-from scipy.io import loadmat
 
 REPO = Path(__file__).resolve().parents[1]
-PROT_MAT = REPO / "data" / "m1_sources" / "karr_flat" / "proteins_targeted.mat"
+sys.path.insert(0, str(REPO))
+from opencell._karr_archive import load_karr_archive  # noqa: E402
+
 OUT_DIR = REPO / "data" / "karr_fixtures"
 JSON_OUT = OUT_DIR / "karr_native_m3.json"
 NPZ_OUT = OUT_DIR / "karr_native_m3.npz"
@@ -29,8 +31,8 @@ def _scalar(x) -> float:
 
 
 def main() -> None:
-    m = loadmat(str(PROT_MAT), struct_as_record=False, squeeze_me=True)
-    d = m["data"]
+    arc = load_karr_archive()
+    d = arc["proteins_targeted"]
 
     # 482 mature-indexs into the 4820-vec (state forms x species).
     mature_idx_1 = np.asarray(d.matureIndexs, dtype=int).reshape(-1)
@@ -86,7 +88,8 @@ def main() -> None:
 
     JSON_OUT.write_text(json.dumps({
         "schema_version": SCHEMA_VERSION,
-        "source_proteins_mat": str(PROT_MAT.relative_to(REPO)),
+        "source_archive": "data/karr_archive/",
+        "source_archive_files": ["proteins_targeted"],
         "matrix_npz": str(NPZ_OUT.relative_to(REPO)),
         "counts": {
             "n_proteins": n_proteins,

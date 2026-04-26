@@ -16,13 +16,15 @@ stage), so the predictor is gene-aligned 482-vec.
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
-from scipy.io import loadmat
 
 REPO = Path(__file__).resolve().parents[1]
-MAT = REPO / "data" / "m1_sources" / "karr_flat" / "translation_v2_targeted.mat"
+sys.path.insert(0, str(REPO))
+from opencell._karr_archive import load_karr_archive  # noqa: E402
+
 M3_FIXTURE_JSON = REPO / "data" / "karr_fixtures" / "karr_native_m3.json"
 M3_FIXTURE_NPZ = REPO / "data" / "karr_fixtures" / "karr_native_m3.npz"
 OUT_JSON = REPO / "data" / "karr_fixtures" / "karr_native_m3_v2.json"
@@ -30,12 +32,9 @@ OUT_NPZ = REPO / "data" / "karr_fixtures" / "karr_native_m3_v2.npz"
 
 
 def main():
-    if not MAT.exists():
-        raise SystemExit(f"missing {MAT}; run scripts/matlab/extract_karr_m3v2.m first")
-
-    print(f"loading {MAT.name}")
-    raw = loadmat(MAT, squeeze_me=True, struct_as_record=False)
-    d = raw["data"]
+    print("loading translation_v2_targeted from karr_archive")
+    arc = load_karr_archive()
+    d = arc["translation_v2_targeted"]
 
     n_active = int(d.rib_nActive)
     n_stalled = int(getattr(d, "rib_nStalled", 0))
@@ -94,7 +93,8 @@ def main():
     # Save fixture
     out_meta = {
         "schema_version": 1,
-        "source_mat": str(MAT.relative_to(REPO).as_posix()),
+        "source_archive": "data/karr_archive/",
+        "source_archive_files": ["translation_v2_targeted"],
         "matrix_npz": OUT_NPZ.name,
         "scalars": {
             "n_active_ribosomes": n_active,

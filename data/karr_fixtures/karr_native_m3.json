@@ -1,6 +1,9 @@
 {
   "schema_version": "karr_native_m3__v1",
-  "source_proteins_mat": "data/m1_sources/karr_flat/proteins_targeted.mat",
+  "source_archive": "data/karr_archive/",
+  "source_archive_files": [
+    "proteins_targeted"
+  ],
   "matrix_npz": "data/karr_fixtures/karr_native_m3.npz",
   "counts": {
     "n_proteins": 482,

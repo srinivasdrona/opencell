@@ -1,7 +1,11 @@
 {
   "schema_version": "karr_native_m2__v3",
-  "source_sim_mat": "data/m1_sources/karr_flat/sim_fitted_targeted.mat",
-  "source_kb_mat": "data/m1_sources/karr_flat/knowledgeBase_targeted.mat",
+  "source_archive": "data/karr_archive/karr_archive.npz",
+  "source_archive_files": [
+    "sim_fitted_targeted",
+    "knowledgeBase_targeted",
+    "rnas_targeted"
+  ],
   "matrix_npz": "data/karr_fixtures/karr_native_m2.npz",
   "counts": {
     "n_genes": 525,

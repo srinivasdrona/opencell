@@ -1,0 +1,1970 @@
+{
+  "schema_version": "karr_archive__v1",
+  "built_at_utc": "2026-04-26T10:10:40.940485+00:00",
+  "source_dir_relative": "data/m1_sources/karr_flat",
+  "files": {
+    "proteins_targeted": {
+      "consumer": "karr_native_ingest_m3.py",
+      "fields": {
+        "matureIndexs": {
+          "source_path": "matureIndexs",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            482
+          ],
+          "sha256_16": "78b381b023e4baea"
+        },
+        "nascentIndexs": {
+          "source_path": "nascentIndexs",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            482
+          ],
+          "sha256_16": "3f5bb98c9ab93252"
+        },
+        "processedIIndexs": {
+          "source_path": "processedIIndexs",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            482
+          ],
+          "sha256_16": "54b37035091a311f"
+        },
+        "processedIIIndexs": {
+          "source_path": "processedIIIndexs",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            482
+          ],
+          "sha256_16": "7618072fedcefee3"
+        },
+        "foldedIndexs": {
+          "source_path": "foldedIndexs",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            482
+          ],
+          "sha256_16": "afd83f54190f716a"
+        },
+        "inactivatedIndexs": {
+          "source_path": "inactivatedIndexs",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            482
+          ],
+          "sha256_16": "1817b4abe3a8e2c7"
+        },
+        "boundIndexs": {
+          "source_path": "boundIndexs",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            482
+          ],
+          "sha256_16": "afce700f7d35e617"
+        },
+        "misfoldedIndexs": {
+          "source_path": "misfoldedIndexs",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            482
+          ],
+          "sha256_16": "20bf7b1f65a24fe8"
+        },
+        "damagedIndexs": {
+          "source_path": "damagedIndexs",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            482
+          ],
+          "sha256_16": "a0b75ac9f60824ac"
+        },
+        "signalSequenceIndexs": {
+          "source_path": "signalSequenceIndexs",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            482
+          ],
+          "sha256_16": "88a2de1682e76022"
+        },
+        "lengths": {
+          "source_path": "lengths",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            4820
+          ],
+          "sha256_16": "963c5eb3266045ce"
+        },
+        "halfLives": {
+          "source_path": "halfLives",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            4820
+          ],
+          "sha256_16": "74c37de6675b0dee"
+        },
+        "decayRates": {
+          "source_path": "decayRates",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            4820
+          ],
+          "sha256_16": "33f87b7a9fbf2214"
+        },
+        "molecularWeights": {
+          "source_path": "molecularWeights",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            4820
+          ],
+          "sha256_16": "e711c44448aa8cae"
+        },
+        "compartments": {
+          "source_path": "compartments",
+          "kind": "ndarray",
+          "dtype": "uint8",
+          "shape": [
+            4820
+          ],
+          "sha256_16": "53c67e9eb2785305"
+        },
+        "counts": {
+          "source_path": "counts",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            4820,
+            6
+          ],
+          "sha256_16": "a53582bb752947d8"
+        },
+        "baseCounts": {
+          "source_path": "baseCounts",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            4820,
+            722
+          ],
+          "sha256_16": "624a40d669aba808"
+        },
+        "wholeCellModelIDs": {
+          "source_path": "wholeCellModelIDs",
+          "kind": "string_list",
+          "repr_len": 4820
+        },
+        "names": {
+          "source_path": "names",
+          "kind": "string_list",
+          "repr_len": 4820
+        },
+        "kb_wholeCellModelIDs": {
+          "source_path": "kb_wholeCellModelIDs",
+          "kind": "string_list",
+          "repr_len": 482
+        },
+        "kb_geneWholeCellModelIDs": {
+          "source_path": "kb_geneWholeCellModelIDs",
+          "kind": "string_list",
+          "repr_len": 482
+        },
+        "kb_geneIndex": {
+          "source_path": "kb_geneIndex",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            482
+          ],
+          "sha256_16": "4fe8646305f4e494"
+        },
+        "kb_compartmentWholeCellModelIDs": {
+          "source_path": "kb_compartmentWholeCellModelIDs",
+          "kind": "string_list",
+          "repr_len": 482
+        },
+        "translation_ribosomeElongationRate": {
+          "source_path": "translation_ribosomeElongationRate",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "translation_tmRNABindingProbability": {
+          "source_path": "translation_tmRNABindingProbability",
+          "kind": "scalar",
+          "repr_len": 1
+        }
+      }
+    },
+    "rnas_targeted": {
+      "consumer": "karr_native_ingest_m2.py",
+      "fields": {
+        "matureIndexs": {
+          "source_path": "matureIndexs",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            347
+          ],
+          "sha256_16": "041deb9e22bfb84f"
+        },
+        "nascentIndexs": {
+          "source_path": "nascentIndexs",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            335
+          ],
+          "sha256_16": "d25898cf3d10bd6d"
+        },
+        "processedIndexs": {
+          "source_path": "processedIndexs",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            347
+          ],
+          "sha256_16": "57aeb638b776a928"
+        },
+        "intergenicIndexs": {
+          "source_path": "intergenicIndexs",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            11
+          ],
+          "sha256_16": "2f64fdf37477be48"
+        },
+        "boundIndexs": {
+          "source_path": "boundIndexs",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            347
+          ],
+          "sha256_16": "087dc505e41aef18"
+        },
+        "misfoldedIndexs": {
+          "source_path": "misfoldedIndexs",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            347
+          ],
+          "sha256_16": "b5bfe976df5e6247"
+        },
+        "damagedIndexs": {
+          "source_path": "damagedIndexs",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            347
+          ],
+          "sha256_16": "e8d8cc703844e196"
+        },
+        "aminoacylatedIndexs": {
+          "source_path": "aminoacylatedIndexs",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            347
+          ],
+          "sha256_16": "ee824c21d42c892c"
+        },
+        "molecularWeights": {
+          "source_path": "molecularWeights",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            2428
+          ],
+          "sha256_16": "cabcb1c18f30893f"
+        },
+        "lengths": {
+          "source_path": "lengths",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            2428
+          ],
+          "sha256_16": "99a43858b9c698fb"
+        },
+        "halfLives": {
+          "source_path": "halfLives",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            2428
+          ],
+          "sha256_16": "c1809ffac1900b85"
+        },
+        "decayRates": {
+          "source_path": "decayRates",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            2428
+          ],
+          "sha256_16": "44295603b4837c80"
+        },
+        "compartments": {
+          "source_path": "compartments",
+          "kind": "ndarray",
+          "dtype": "uint8",
+          "shape": [
+            0
+          ],
+          "sha256_16": "e3b0c44298fc1c14"
+        },
+        "counts": {
+          "source_path": "counts",
+          "kind": "ndarray",
+          "dtype": "uint8",
+          "shape": [
+            2428,
+            6
+          ],
+          "sha256_16": "15aebde00ef3f648"
+        },
+        "expression": {
+          "source_path": "expression",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            2428
+          ],
+          "sha256_16": "518451f905bca75e"
+        },
+        "wholeCellModelIDs": {
+          "source_path": "wholeCellModelIDs",
+          "kind": "string_list",
+          "repr_len": 2428
+        },
+        "names": {
+          "source_path": "names",
+          "kind": "string_list",
+          "repr_len": 2428
+        },
+        "baseCounts": {
+          "source_path": "baseCounts",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            2428,
+            722
+          ],
+          "sha256_16": "a2d3eb95f155e869"
+        },
+        "kb_gene_wholeCellModelIDs": {
+          "source_path": "kb_gene_wholeCellModelIDs",
+          "kind": "string_list",
+          "repr_len": 525
+        },
+        "kb_tu_wholeCellModelIDs": {
+          "source_path": "kb_tu_wholeCellModelIDs",
+          "kind": "string_list",
+          "repr_len": 335
+        },
+        "kb_gene_to_tu_index": {
+          "source_path": "kb_gene_to_tu_index",
+          "kind": "ndarray",
+          "dtype": "uint32",
+          "shape": [
+            525
+          ],
+          "sha256_16": "488c8ea6548ada66"
+        },
+        "kb_tu_to_gene_indices": {
+          "source_path": "kb_tu_to_gene_indices",
+          "kind": "object_list",
+          "repr_len": 335
+        }
+      }
+    },
+    "protein_complexes": {
+      "consumer": "karr_native_ingest_complexes.py",
+      "fields": {
+        "complex_wids_201": {
+          "source_path": "complex_wids_201",
+          "kind": "string_list",
+          "repr_len": 201
+        },
+        "monomer_wids_482": {
+          "source_path": "monomer_wids_482",
+          "kind": "string_list",
+          "repr_len": 482
+        },
+        "metabolite_wids_722": {
+          "source_path": "metabolite_wids_722",
+          "kind": "string_list",
+          "repr_len": 722
+        },
+        "compartment_wids_6": {
+          "source_path": "compartment_wids_6",
+          "kind": "string_list",
+          "repr_len": 6
+        },
+        "x_source_file": {
+          "source_path": "x_source_file",
+          "kind": "string",
+          "repr_len": 22
+        },
+        "x_matlab_release": {
+          "source_path": "x_matlab_release",
+          "kind": "string",
+          "repr_len": 5
+        },
+        "x_extract_timestamp_utc": {
+          "source_path": "x_extract_timestamp_utc",
+          "kind": "string",
+          "repr_len": 19
+        },
+        "complexes": {
+          "length": 201,
+          "columns": {
+            "wholeCellModelID": {
+              "kind": "string_list",
+              "length": 201
+            },
+            "name": {
+              "kind": "object_list",
+              "length": 201
+            },
+            "idx": {
+              "kind": "ndarray",
+              "dtype": "int64",
+              "shape": [
+                201
+              ],
+              "sha256_16": "3d40a811d6910596"
+            },
+            "numSubunits": {
+              "kind": "ndarray",
+              "dtype": "int64",
+              "shape": [
+                201
+              ],
+              "sha256_16": "5560728cd337269a"
+            },
+            "numDistinctSubunits": {
+              "kind": "ndarray",
+              "dtype": "int64",
+              "shape": [
+                201
+              ],
+              "sha256_16": "1011abc7d6767a9d"
+            },
+            "dnaFootprint": {
+              "kind": "object_list",
+              "length": 201
+            },
+            "density": {
+              "kind": "ndarray",
+              "dtype": "float64",
+              "shape": [
+                201
+              ],
+              "sha256_16": "04a0f6e70b92864b"
+            },
+            "activationRule": {
+              "kind": "object_list",
+              "length": 201
+            },
+            "formation_compartment_wid": {
+              "kind": "string_list",
+              "length": 201
+            }
+          },
+          "nested": {
+            "monomers": {
+              "offsets_key": "protein_complexes__complexes__monomers__offsets",
+              "length": 288,
+              "columns": {
+                "molecule_wid": {
+                  "kind": "string_list",
+                  "length": 288
+                },
+                "coefficient": {
+                  "kind": "ndarray",
+                  "dtype": "int64",
+                  "shape": [
+                    288
+                  ],
+                  "sha256_16": "988938696e37e369"
+                },
+                "compartment_wid": {
+                  "kind": "string_list",
+                  "length": 288
+                },
+                "molecule_idx_1based": {
+                  "kind": "ndarray",
+                  "dtype": "int64",
+                  "shape": [
+                    288
+                  ],
+                  "sha256_16": "ded74ebc79a11b1b"
+                }
+              }
+            },
+            "subcomplexes": {
+              "offsets_key": "protein_complexes__complexes__subcomplexes__offsets",
+              "length": 60,
+              "columns": {
+                "molecule_wid": {
+                  "kind": "string_list",
+                  "length": 60
+                },
+                "coefficient": {
+                  "kind": "ndarray",
+                  "dtype": "int64",
+                  "shape": [
+                    60
+                  ],
+                  "sha256_16": "d8dd3b36c6008343"
+                },
+                "compartment_wid": {
+                  "kind": "string_list",
+                  "length": 60
+                },
+                "molecule_idx_1based": {
+                  "kind": "ndarray",
+                  "dtype": "int64",
+                  "shape": [
+                    60
+                  ],
+                  "sha256_16": "bbcd42118537132d"
+                }
+              }
+            },
+            "metabolites": {
+              "offsets_key": "protein_complexes__complexes__metabolites__offsets",
+              "length": 69,
+              "columns": {
+                "molecule_wid": {
+                  "kind": "string_list",
+                  "length": 69
+                },
+                "coefficient": {
+                  "kind": "ndarray",
+                  "dtype": "int64",
+                  "shape": [
+                    69
+                  ],
+                  "sha256_16": "16a15074550f66a5"
+                },
+                "compartment_wid": {
+                  "kind": "string_list",
+                  "length": 69
+                },
+                "molecule_idx_1based": {
+                  "kind": "ndarray",
+                  "dtype": "int64",
+                  "shape": [
+                    69
+                  ],
+                  "sha256_16": "31deb42396a389f2"
+                }
+              }
+            },
+            "prosthetic": {
+              "offsets_key": "protein_complexes__complexes__prosthetic__offsets",
+              "length": 5,
+              "columns": {
+                "molecule_wid": {
+                  "kind": "string_list",
+                  "length": 5
+                },
+                "coefficient": {
+                  "kind": "ndarray",
+                  "dtype": "int64",
+                  "shape": [
+                    5
+                  ],
+                  "sha256_16": "fa5138c4f532c918"
+                },
+                "compartment_wid": {
+                  "kind": "string_list",
+                  "length": 5
+                },
+                "molecule_idx_1based": {
+                  "kind": "ndarray",
+                  "dtype": "int64",
+                  "shape": [
+                    5
+                  ],
+                  "sha256_16": "edd67a276fdee0bd"
+                }
+              }
+            },
+            "chaperones": {
+              "offsets_key": "protein_complexes__complexes__chaperones__offsets",
+              "length": 46,
+              "columns": {
+                "molecule_wid": {
+                  "kind": "string_list",
+                  "length": 46
+                },
+                "coefficient": {
+                  "kind": "ndarray",
+                  "dtype": "int64",
+                  "shape": [
+                    46
+                  ],
+                  "sha256_16": "9b7019f0cd245ed1"
+                },
+                "compartment_wid": {
+                  "kind": "string_list",
+                  "length": 46
+                },
+                "molecule_idx_1based": {
+                  "kind": "ndarray",
+                  "dtype": "int64",
+                  "shape": [
+                    46
+                  ],
+                  "sha256_16": "f3b83fecf04f375f"
+                }
+              }
+            },
+            "rnas": {
+              "offsets_key": "protein_complexes__complexes__rnas__offsets",
+              "length": 5,
+              "columns": {
+                "molecule_wid": {
+                  "kind": "string_list",
+                  "length": 5
+                },
+                "coefficient": {
+                  "kind": "ndarray",
+                  "dtype": "int64",
+                  "shape": [
+                    5
+                  ],
+                  "sha256_16": "00026c99bfe39e6f"
+                },
+                "compartment_wid": {
+                  "kind": "string_list",
+                  "length": 5
+                },
+                "molecule_idx_1based": {
+                  "kind": "ndarray",
+                  "dtype": "int64",
+                  "shape": [
+                    5
+                  ],
+                  "sha256_16": "22e0ae95e08834c9"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "sim_fitted_targeted": {
+      "consumer": "karr_native_ingest_m1.py + karr_native_ingest_m2.py",
+      "fields": {
+        "parameters.states.Mass.cellInitialDryWeight": {
+          "source_path": "parameters.states.Mass.cellInitialDryWeight",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "parameters.states.Mass.dryWeightFractionRNA": {
+          "source_path": "parameters.states.Mass.dryWeightFractionRNA",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "parameters.states.MetabolicReaction.meanInitialGrowthRate": {
+          "source_path": "parameters.states.MetabolicReaction.meanInitialGrowthRate",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "parameters.states.Time.cellCycleLength": {
+          "source_path": "parameters.states.Time.cellCycleLength",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "parameters.states.RNAPolymerase.stateExpectations": {
+          "source_path": "parameters.states.RNAPolymerase.stateExpectations",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            4
+          ],
+          "sha256_16": "83738530e008c6e7"
+        },
+        "parameters.processes.Transcription.rnaPolymeraseElongationRate": {
+          "source_path": "parameters.processes.Transcription.rnaPolymeraseElongationRate",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "states.State_Mass.dump.cell": {
+          "source_path": "states.State_Mass.dump.cell",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            6
+          ],
+          "sha256_16": "a80c8ab0a8cd6e10"
+        },
+        "states.State_Mass.dump.cellDry": {
+          "source_path": "states.State_Mass.dump.cellDry",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            6
+          ],
+          "sha256_16": "9e645f7519de90f9"
+        },
+        "states.State_Mass.dump.rnaWt": {
+          "source_path": "states.State_Mass.dump.rnaWt",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            6
+          ],
+          "sha256_16": "376c1b1d231ded42"
+        },
+        "states.State_Mass.dump.cellInitialDryWeight": {
+          "source_path": "states.State_Mass.dump.cellInitialDryWeight",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "states.State_Mass.dump.dryWeightFractionRNA": {
+          "source_path": "states.State_Mass.dump.dryWeightFractionRNA",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "states.State_MetabolicReaction.dump.fluxs": {
+          "source_path": "states.State_MetabolicReaction.dump.fluxs",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            645
+          ],
+          "sha256_16": "bc1c953153f3b339"
+        },
+        "states.State_MetabolicReaction.dump.growth": {
+          "source_path": "states.State_MetabolicReaction.dump.growth",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "states.State_MetabolicReaction.dump.growth0": {
+          "source_path": "states.State_MetabolicReaction.dump.growth0",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "states.State_MetabolicReaction.dump.doublingTime": {
+          "source_path": "states.State_MetabolicReaction.dump.doublingTime",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "states.State_MetabolicReaction.dump.meanInitialGrowthRate": {
+          "source_path": "states.State_MetabolicReaction.dump.meanInitialGrowthRate",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "metabolism.reactionStoichiometryMatrix": {
+          "source_path": "metabolism.reactionStoichiometryMatrix",
+          "kind": "ndarray",
+          "dtype": "int16",
+          "shape": [
+            585,
+            645,
+            3
+          ],
+          "sha256_16": "403a529fb51c4661"
+        },
+        "metabolism.reactionWholeCellModelIDs": {
+          "source_path": "metabolism.reactionWholeCellModelIDs",
+          "kind": "string_list",
+          "repr_len": 645
+        },
+        "metabolism.reactionNames": {
+          "source_path": "metabolism.reactionNames",
+          "kind": "string_list",
+          "repr_len": 645
+        },
+        "metabolism.reactionTypes": {
+          "source_path": "metabolism.reactionTypes",
+          "kind": "string_list",
+          "repr_len": 645
+        },
+        "metabolism.substrateWholeCellModelIDs": {
+          "source_path": "metabolism.substrateWholeCellModelIDs",
+          "kind": "string_list",
+          "repr_len": 585
+        },
+        "metabolism.substrateNames": {
+          "source_path": "metabolism.substrateNames",
+          "kind": "string_list",
+          "repr_len": 585
+        },
+        "metabolism.substrateMolecularWeights": {
+          "source_path": "metabolism.substrateMolecularWeights",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            585
+          ],
+          "sha256_16": "6f6200cde7f7579c"
+        },
+        "metabolism.enzymeWholeCellModelIDs": {
+          "source_path": "metabolism.enzymeWholeCellModelIDs",
+          "kind": "string_list",
+          "repr_len": 104
+        },
+        "metabolism.enzymeMolecularWeights": {
+          "source_path": "metabolism.enzymeMolecularWeights",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            104
+          ],
+          "sha256_16": "1709eb71b20f1b3f"
+        },
+        "metabolism.fbaReactionStoichiometryMatrix": {
+          "source_path": "metabolism.fbaReactionStoichiometryMatrix",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            376,
+            504
+          ],
+          "sha256_16": "35ff18574e6fbbed"
+        },
+        "metabolism.fbaRightHandSide": {
+          "source_path": "metabolism.fbaRightHandSide",
+          "kind": "ndarray",
+          "dtype": "uint8",
+          "shape": [
+            376
+          ],
+          "sha256_16": "70d6aad73b9cfd0f"
+        },
+        "metabolism.fbaReactionBounds": {
+          "source_path": "metabolism.fbaReactionBounds",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            504,
+            2
+          ],
+          "sha256_16": "51e7d925e6f573c2"
+        },
+        "metabolism.fbaEnzymeBounds": {
+          "source_path": "metabolism.fbaEnzymeBounds",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            504,
+            2
+          ],
+          "sha256_16": "23342bd829606c0e"
+        },
+        "metabolism.fbaObjective": {
+          "source_path": "metabolism.fbaObjective",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            504
+          ],
+          "sha256_16": "8210a9565a513fe3"
+        },
+        "metabolism.fbaReactionCatalysisMatrix": {
+          "source_path": "metabolism.fbaReactionCatalysisMatrix",
+          "kind": "ndarray",
+          "dtype": "uint8",
+          "shape": [
+            504,
+            104
+          ],
+          "sha256_16": "057f487878d16a13"
+        },
+        "metabolism.fbaReactionIndexs_metabolicConversion": {
+          "source_path": "metabolism.fbaReactionIndexs_metabolicConversion",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            336
+          ],
+          "sha256_16": "c1ffb6d3e9e4ae3e"
+        },
+        "metabolism.fbaReactionIndexs_metaboliteExternalExchange": {
+          "source_path": "metabolism.fbaReactionIndexs_metaboliteExternalExchange",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            124
+          ],
+          "sha256_16": "8a0de036ed33ce4c"
+        },
+        "metabolism.fbaReactionIndexs_metaboliteInternalExchange": {
+          "source_path": "metabolism.fbaReactionIndexs_metaboliteInternalExchange",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            42
+          ],
+          "sha256_16": "13d91cea15bbf366"
+        },
+        "metabolism.fbaReactionIndexs_metaboliteInternalLimitedExchange": {
+          "source_path": "metabolism.fbaReactionIndexs_metaboliteInternalLimitedExchange",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            35
+          ],
+          "sha256_16": "f6db070337d35550"
+        },
+        "metabolism.fbaReactionIndexs_metaboliteInternalUnlimitedExchange": {
+          "source_path": "metabolism.fbaReactionIndexs_metaboliteInternalUnlimitedExchange",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            7
+          ],
+          "sha256_16": "fe172e6a968c590d"
+        },
+        "metabolism.fbaReactionIndexs_biomassProduction": {
+          "source_path": "metabolism.fbaReactionIndexs_biomassProduction",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "metabolism.fbaReactionIndexs_biomassExchange": {
+          "source_path": "metabolism.fbaReactionIndexs_biomassExchange",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "metabolism.fbaSubstrateIndexs_substrates": {
+          "source_path": "metabolism.fbaSubstrateIndexs_substrates",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            368
+          ],
+          "sha256_16": "bf3a2ed9ff8d3e2b"
+        },
+        "metabolism.fbaSubstrateIndexs_metaboliteInternalExchangeConstraints": {
+          "source_path": "metabolism.fbaSubstrateIndexs_metaboliteInternalExchangeConstraints",
+          "kind": "ndarray",
+          "dtype": "uint8",
+          "shape": [
+            7
+          ],
+          "sha256_16": "5704d8985591f4be"
+        },
+        "metabolism.fbaSubstrateIndexs_biomass": {
+          "source_path": "metabolism.fbaSubstrateIndexs_biomass",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "metabolism.reactionIndexs_fba": {
+          "source_path": "metabolism.reactionIndexs_fba",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            336
+          ],
+          "sha256_16": "9aa92ba577441cd1"
+        },
+        "metabolism.substrateIndexs_fba": {
+          "source_path": "metabolism.substrateIndexs_fba",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            368
+          ],
+          "sha256_16": "637a3365649740c5"
+        },
+        "processes.Process_Transcription.fittedConstants.transcriptionUnitBindingProbabilities": {
+          "source_path": "processes.Process_Transcription.fittedConstants.transcriptionUnitBindingProbabilities",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            335
+          ],
+          "sha256_16": "02c4fe03968f4fa2"
+        },
+        "processes.Process_Transcription.parameters.rnaPolymeraseElongationRate": {
+          "source_path": "processes.Process_Transcription.parameters.rnaPolymeraseElongationRate",
+          "kind": "scalar",
+          "repr_len": 1
+        }
+      }
+    },
+    "knowledgeBase_targeted": {
+      "consumer": "karr_native_ingest_m2.py + others",
+      "fields": {
+        "knowledgeBase.genes": {
+          "length": 525,
+          "columns": {
+            "wholeCellModelID": {
+              "kind": "string_list",
+              "length": 525
+            },
+            "name": {
+              "kind": "object_list",
+              "length": 525
+            },
+            "symbol": {
+              "kind": "object_list",
+              "length": 525
+            },
+            "type": {
+              "kind": "string_list",
+              "length": 525
+            },
+            "essential": {
+              "kind": "string_list",
+              "length": 525
+            },
+            "startCoordinate": {
+              "kind": "ndarray",
+              "dtype": "int64",
+              "shape": [
+                525
+              ],
+              "sha256_16": "1250fff595bf94b9"
+            },
+            "endCoordinate": {
+              "kind": "ndarray",
+              "dtype": "int64",
+              "shape": [
+                525
+              ],
+              "sha256_16": "c37a0bbc170319b3"
+            },
+            "direction": {
+              "kind": "ndarray",
+              "dtype": "int64",
+              "shape": [
+                525
+              ],
+              "sha256_16": "be20cd168d899642"
+            },
+            "halfLife": {
+              "kind": "ndarray",
+              "dtype": "float64",
+              "shape": [
+                525
+              ],
+              "sha256_16": "1858477aa83b1de6"
+            },
+            "expression": {
+              "kind": "ndarray",
+              "dtype": "float64",
+              "shape": [
+                525,
+                3
+              ],
+              "sha256_16": "90b4216d7e4254e2"
+            },
+            "synthesisRate": {
+              "kind": "ndarray",
+              "dtype": "float64",
+              "shape": [
+                525,
+                3
+              ],
+              "sha256_16": "4c738740ffdc7970"
+            }
+          },
+          "nested": {}
+        },
+        "knowledgeBase.transcriptionUnits": {
+          "length": 335,
+          "columns": {
+            "wholeCellModelID": {
+              "kind": "string_list",
+              "length": 335
+            },
+            "name": {
+              "kind": "string_list",
+              "length": 335
+            },
+            "startCoordinate": {
+              "kind": "string_list",
+              "length": 335
+            },
+            "endCoordinate": {
+              "kind": "string_list",
+              "length": 335
+            },
+            "direction": {
+              "kind": "string_list",
+              "length": 335
+            }
+          },
+          "nested": {}
+        },
+        "knowledgeBase.parameters": {
+          "length": 154,
+          "columns": {
+            "wholeCellModelID": {
+              "kind": "string_list",
+              "length": 154
+            },
+            "name": {
+              "kind": "string_list",
+              "length": 154
+            },
+            "defaultValue": {
+              "kind": "object_list",
+              "length": 154
+            },
+            "units": {
+              "kind": "string_list",
+              "length": 154
+            },
+            "experimentallyConstrained": {
+              "kind": "ndarray",
+              "dtype": "int64",
+              "shape": [
+                154
+              ],
+              "sha256_16": "42fc28c004182dd0"
+            }
+          },
+          "nested": {}
+        },
+        "knowledgeBase.translationTable": {
+          "kind": "scalar"
+        },
+        "knowledgeBase.taxonomy": {
+          "kind": "string"
+        }
+      }
+    },
+    "transcription_v2_targeted": {
+      "consumer": "karr_native_ingest_m2v2.py",
+      "fields": {
+        "rnap_properties": {
+          "source_path": "rnap_properties",
+          "kind": "string_list",
+          "repr_len": 35
+        },
+        "rnap_activelyTranscribingIndex": {
+          "source_path": "rnap_activelyTranscribingIndex",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "rnap_specificallyBoundIndex": {
+          "source_path": "rnap_specificallyBoundIndex",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "rnap_nonSpecificallyBoundIndex": {
+          "source_path": "rnap_nonSpecificallyBoundIndex",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "rnap_freeIndex": {
+          "source_path": "rnap_freeIndex",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "rnap_activelyTranscribingValue": {
+          "source_path": "rnap_activelyTranscribingValue",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "rnap_specificallyBoundValue": {
+          "source_path": "rnap_specificallyBoundValue",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "rnap_nonSpecificallyBoundValue": {
+          "source_path": "rnap_nonSpecificallyBoundValue",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "rnap_freeValue": {
+          "source_path": "rnap_freeValue",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "rnap_notExistValue": {
+          "source_path": "rnap_notExistValue",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "rnap_stateValues": {
+          "source_path": "rnap_stateValues",
+          "kind": "ndarray",
+          "dtype": "int16",
+          "shape": [
+            4
+          ],
+          "sha256_16": "f831f1e4b25c585c"
+        },
+        "rnap_stateExpectations": {
+          "source_path": "rnap_stateExpectations",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            4
+          ],
+          "sha256_16": "83738530e008c6e7"
+        },
+        "rnap_states": {
+          "source_path": "rnap_states",
+          "kind": "ndarray",
+          "dtype": "int16",
+          "shape": [
+            80
+          ],
+          "sha256_16": "74b7e9cacac652bc"
+        },
+        "rnap_positionStrands": {
+          "source_path": "rnap_positionStrands",
+          "kind": "ndarray",
+          "dtype": "int32",
+          "shape": [
+            80,
+            2
+          ],
+          "sha256_16": "63a923f9b15993e5"
+        },
+        "rnap_transcriptionFactorBindingProbFoldChange": {
+          "source_path": "rnap_transcriptionFactorBindingProbFoldChange",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            335,
+            2
+          ],
+          "sha256_16": "a4c518104f942f48"
+        },
+        "rnap_supercoilingBindingProbFoldChange": {
+          "source_path": "rnap_supercoilingBindingProbFoldChange",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            335,
+            2
+          ],
+          "sha256_16": "250c319901a058ca"
+        },
+        "rnap_stateOccupancies": {
+          "source_path": "rnap_stateOccupancies",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            4
+          ],
+          "sha256_16": "85b8f895d6dbd858"
+        },
+        "rnap_nActive": {
+          "source_path": "rnap_nActive",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "rnap_nSpecificallyBound": {
+          "source_path": "rnap_nSpecificallyBound",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "rnap_nNonSpecificallyBound": {
+          "source_path": "rnap_nNonSpecificallyBound",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "rnap_nFree": {
+          "source_path": "rnap_nFree",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "rnap_dryWeight": {
+          "source_path": "rnap_dryWeight",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "rnap_verbosity": {
+          "source_path": "rnap_verbosity",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "rnap_seed": {
+          "source_path": "rnap_seed",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "rnap_states_vec": {
+          "source_path": "rnap_states_vec",
+          "kind": "ndarray",
+          "dtype": "int16",
+          "shape": [
+            80
+          ],
+          "sha256_16": "74b7e9cacac652bc"
+        },
+        "transcript_properties": {
+          "source_path": "transcript_properties",
+          "kind": "string_list",
+          "repr_len": 31
+        },
+        "tr_transcriptionUnitLengths": {
+          "source_path": "tr_transcriptionUnitLengths",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            335
+          ],
+          "sha256_16": "2a51fc33095eb0e0"
+        },
+        "tr_transcriptionUnitFivePrimeCoordinates": {
+          "source_path": "tr_transcriptionUnitFivePrimeCoordinates",
+          "kind": "ndarray",
+          "dtype": "int32",
+          "shape": [
+            335
+          ],
+          "sha256_16": "13cfecb5dcc88883"
+        },
+        "tr_transcriptionUnitDirections": {
+          "source_path": "tr_transcriptionUnitDirections",
+          "kind": "ndarray",
+          "dtype": "uint8",
+          "shape": [
+            335
+          ],
+          "sha256_16": "30c009baa7bbaf70"
+        },
+        "pt_enzymes": {
+          "source_path": "pt_enzymes",
+          "kind": "ndarray",
+          "dtype": "uint8",
+          "shape": [
+            6
+          ],
+          "sha256_16": "9c3bf74bda27494c"
+        },
+        "pt_boundEnzymes": {
+          "source_path": "pt_boundEnzymes",
+          "kind": "ndarray",
+          "dtype": "uint8",
+          "shape": [
+            6
+          ],
+          "sha256_16": "28b2dd19d5ec036e"
+        },
+        "pt_enzymeWholeCellModelIDs": {
+          "source_path": "pt_enzymeWholeCellModelIDs",
+          "kind": "string_list",
+          "repr_len": 6
+        },
+        "pt_enzymeIndexs_rnaPolymerase": {
+          "source_path": "pt_enzymeIndexs_rnaPolymerase",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "pt_enzymeIndexs_rnaPolymeraseHoloenzyme": {
+          "source_path": "pt_enzymeIndexs_rnaPolymeraseHoloenzyme",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "pt_rnaPolymerases_nActive": {
+          "source_path": "pt_rnaPolymerases_nActive",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "pt_rnaPolymerases_nSpecificallyBound": {
+          "source_path": "pt_rnaPolymerases_nSpecificallyBound",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "pt_rnaPolymerases_nNonSpecificallyBound": {
+          "source_path": "pt_rnaPolymerases_nNonSpecificallyBound",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "pt_rnaPolymerases_nFree": {
+          "source_path": "pt_rnaPolymerases_nFree",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "pt_rnaPolymerases_states": {
+          "source_path": "pt_rnaPolymerases_states",
+          "kind": "ndarray",
+          "dtype": "int16",
+          "shape": [
+            80
+          ],
+          "sha256_16": "74b7e9cacac652bc"
+        },
+        "pt_rnaPolymerases_stateExpectations": {
+          "source_path": "pt_rnaPolymerases_stateExpectations",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            4
+          ],
+          "sha256_16": "83738530e008c6e7"
+        },
+        "pt_rnaPolymerases_activelyTranscribingValue": {
+          "source_path": "pt_rnaPolymerases_activelyTranscribingValue",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "pt_rnaPolymerases_specificallyBoundValue": {
+          "source_path": "pt_rnaPolymerases_specificallyBoundValue",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "pt_rnaPolymerases_nonSpecificallyBoundValue": {
+          "source_path": "pt_rnaPolymerases_nonSpecificallyBoundValue",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "pt_rnaPolymerases_freeValue": {
+          "source_path": "pt_rnaPolymerases_freeValue",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "pt_tr_transcriptionUnitLengths": {
+          "source_path": "pt_tr_transcriptionUnitLengths",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            335
+          ],
+          "sha256_16": "2a51fc33095eb0e0"
+        },
+        "pt_rnaPolymeraseElongationRate": {
+          "source_path": "pt_rnaPolymeraseElongationRate",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "kb_tu_wholeCellModelIDs": {
+          "source_path": "kb_tu_wholeCellModelIDs",
+          "kind": "string_list",
+          "repr_len": 335
+        },
+        "kb_tu_lengths": {
+          "source_path": "kb_tu_lengths",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            335
+          ],
+          "sha256_16": "8265639171b250a5"
+        },
+        "kb_tu_geneWcmIDs": {
+          "source_path": "kb_tu_geneWcmIDs",
+          "kind": "object_list",
+          "repr_len": 335
+        },
+        "kb_geneWholeCellModelIDs_full": {
+          "source_path": "kb_geneWholeCellModelIDs_full",
+          "kind": "string_list",
+          "repr_len": 525
+        }
+      }
+    },
+    "translation_v2_targeted": {
+      "consumer": "karr_native_ingest_m3v2.py",
+      "fields": {
+        "rib_properties": {
+          "source_path": "rib_properties",
+          "kind": "string_list",
+          "repr_len": 33
+        },
+        "rib_activeIndex": {
+          "source_path": "rib_activeIndex",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "rib_notExistIndex": {
+          "source_path": "rib_notExistIndex",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "rib_stalledIndex": {
+          "source_path": "rib_stalledIndex",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "rib_activeValue": {
+          "source_path": "rib_activeValue",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "rib_notExistValue": {
+          "source_path": "rib_notExistValue",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "rib_stalledValue": {
+          "source_path": "rib_stalledValue",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "rib_states": {
+          "source_path": "rib_states",
+          "kind": "ndarray",
+          "dtype": "uint8",
+          "shape": [
+            136
+          ],
+          "sha256_16": "20124f5b63b96104"
+        },
+        "rib_boundMRNAs": {
+          "source_path": "rib_boundMRNAs",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            136
+          ],
+          "sha256_16": "d76b459e91808d35"
+        },
+        "rib_mRNAPositions": {
+          "source_path": "rib_mRNAPositions",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            136
+          ],
+          "sha256_16": "ed0506159ef7ea23"
+        },
+        "rib_tmRNAPositions": {
+          "source_path": "rib_tmRNAPositions",
+          "kind": "ndarray",
+          "dtype": "uint8",
+          "shape": [
+            136
+          ],
+          "sha256_16": "b707241545a34626"
+        },
+        "rib_stateOccupancies": {
+          "source_path": "rib_stateOccupancies",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            3
+          ],
+          "sha256_16": "8ada6f6dd61c432f"
+        },
+        "rib_nActive": {
+          "source_path": "rib_nActive",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "rib_nNotExist": {
+          "source_path": "rib_nNotExist",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "rib_nStalled": {
+          "source_path": "rib_nStalled",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "rib_nMRNAsBound": {
+          "source_path": "rib_nMRNAsBound",
+          "kind": "ndarray",
+          "dtype": "uint8",
+          "shape": [
+            482
+          ],
+          "sha256_16": "2b5e53e7ec1b9f21"
+        },
+        "rib_dryWeight": {
+          "source_path": "rib_dryWeight",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "rib_verbosity": {
+          "source_path": "rib_verbosity",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "rib_seed": {
+          "source_path": "rib_seed",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "rib_states_vec": {
+          "source_path": "rib_states_vec",
+          "kind": "ndarray",
+          "dtype": "uint8",
+          "shape": [
+            136
+          ],
+          "sha256_16": "20124f5b63b96104"
+        },
+        "pt_ribosomeElongationRate": {
+          "source_path": "pt_ribosomeElongationRate",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "pt_enzymeWholeCellModelIDs": {
+          "source_path": "pt_enzymeWholeCellModelIDs",
+          "kind": "string_list",
+          "repr_len": 16
+        },
+        "pt_enzymes": {
+          "source_path": "pt_enzymes",
+          "kind": "ndarray",
+          "dtype": "uint8",
+          "shape": [
+            16
+          ],
+          "sha256_16": "8632d9c5f820965e"
+        },
+        "pt_boundEnzymes": {
+          "source_path": "pt_boundEnzymes",
+          "kind": "ndarray",
+          "dtype": "uint8",
+          "shape": [
+            16
+          ],
+          "sha256_16": "af09c005abe901ea"
+        },
+        "pt_mRNAs": {
+          "source_path": "pt_mRNAs",
+          "kind": "ndarray",
+          "dtype": "uint8",
+          "shape": [
+            482
+          ],
+          "sha256_16": "0e58efd5f558444f"
+        },
+        "pt_freeTRNAs": {
+          "source_path": "pt_freeTRNAs",
+          "kind": "ndarray",
+          "dtype": "uint8",
+          "shape": [
+            36
+          ],
+          "sha256_16": "a611f4397c4f03fd"
+        },
+        "pt_aminoacylatedTRNAs": {
+          "source_path": "pt_aminoacylatedTRNAs",
+          "kind": "ndarray",
+          "dtype": "uint8",
+          "shape": [
+            36
+          ],
+          "sha256_16": "a5e5c68d97d99606"
+        },
+        "pt_polypeptide_monomerLengths": {
+          "source_path": "pt_polypeptide_monomerLengths",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            482
+          ],
+          "sha256_16": "079eb3437010d7c4"
+        },
+        "pt_substrateWholeCellModelIDs": {
+          "source_path": "pt_substrateWholeCellModelIDs",
+          "kind": "string_list",
+          "repr_len": 26
+        },
+        "pt_substrateIndexs_gtp": {
+          "source_path": "pt_substrateIndexs_gtp",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "pt_substrateIndexs_water": {
+          "source_path": "pt_substrateIndexs_water",
+          "kind": "scalar",
+          "repr_len": 1
+        },
+        "rna_matureIndexs": {
+          "source_path": "rna_matureIndexs",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            347
+          ],
+          "sha256_16": "041deb9e22bfb84f"
+        },
+        "rna_processedIndexs": {
+          "source_path": "rna_processedIndexs",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            347
+          ],
+          "sha256_16": "57aeb638b776a928"
+        },
+        "rna_nascentIndexs": {
+          "source_path": "rna_nascentIndexs",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            335
+          ],
+          "sha256_16": "d25898cf3d10bd6d"
+        },
+        "rna_counts": {
+          "source_path": "rna_counts",
+          "kind": "ndarray",
+          "dtype": "uint8",
+          "shape": [
+            2428,
+            6
+          ],
+          "sha256_16": "15aebde00ef3f648"
+        },
+        "rna_lengths": {
+          "source_path": "rna_lengths",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            2428
+          ],
+          "sha256_16": "99a43858b9c698fb"
+        },
+        "poly_monomerLengths": {
+          "source_path": "poly_monomerLengths",
+          "kind": "ndarray",
+          "dtype": "uint16",
+          "shape": [
+            482
+          ],
+          "sha256_16": "079eb3437010d7c4"
+        }
+      }
+    },
+    "metabolism_dynamics": {
+      "consumer": "karr_native_ingest_m1_dynamics.py",
+      "format": "hdf5_v73",
+      "fields": {
+        "snapshot_substrates": {
+          "source_path": "snapshot_substrates",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            3,
+            585
+          ],
+          "sha256_16": "16b4109a00600e69",
+          "note": "hdf5_v73 raw shape; consumers may need .T to restore column-major orientation"
+        },
+        "snapshot_enzymes": {
+          "source_path": "snapshot_enzymes",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            1,
+            104
+          ],
+          "sha256_16": "85995b2217fc39bd",
+          "note": "hdf5_v73 raw shape; consumers may need .T to restore column-major orientation"
+        },
+        "snapshot_cell_dry_mass": {
+          "source_path": "snapshot_cell_dry_mass",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            1,
+            1
+          ],
+          "sha256_16": "ca9dffa5f1849bd4",
+          "note": "hdf5_v73 raw shape; consumers may need .T to restore column-major orientation"
+        },
+        "step_size_sec": {
+          "source_path": "step_size_sec",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            1,
+            1
+          ],
+          "sha256_16": "6c3c396ed6b5c36d",
+          "note": "hdf5_v73 raw shape; consumers may need .T to restore column-major orientation"
+        },
+        "substrate_indexs_fba": {
+          "source_path": "substrate_indexs_fba",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            1,
+            368
+          ],
+          "sha256_16": "29e132452d1b9ed1",
+          "note": "hdf5_v73 raw shape; consumers may need .T to restore column-major orientation"
+        },
+        "substrate_indexs_external_exch": {
+          "source_path": "substrate_indexs_external_exch",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            1,
+            124
+          ],
+          "sha256_16": "6cdd16f0505c9178",
+          "note": "hdf5_v73 raw shape; consumers may need .T to restore column-major orientation"
+        },
+        "substrate_indexs_internal_lim": {
+          "source_path": "substrate_indexs_internal_lim",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            1,
+            35
+          ],
+          "sha256_16": "89e7c08ace08795a",
+          "note": "hdf5_v73 raw shape; consumers may need .T to restore column-major orientation"
+        },
+        "compartment_indexs_extracellular": {
+          "source_path": "compartment_indexs_extracellular",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            1,
+            1
+          ],
+          "sha256_16": "3f710ac088db3336",
+          "note": "hdf5_v73 raw shape; consumers may need .T to restore column-major orientation"
+        },
+        "compartment_indexs_cytosol": {
+          "source_path": "compartment_indexs_cytosol",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            1,
+            1
+          ],
+          "sha256_16": "6c3c396ed6b5c36d",
+          "note": "hdf5_v73 raw shape; consumers may need .T to restore column-major orientation"
+        },
+        "compartment_indexs_membrane": {
+          "source_path": "compartment_indexs_membrane",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            1,
+            1
+          ],
+          "sha256_16": "161f4c0b1a18a050",
+          "note": "hdf5_v73 raw shape; consumers may need .T to restore column-major orientation"
+        },
+        "fba_rxn_idx_metab_conv": {
+          "source_path": "fba_rxn_idx_metab_conv",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            1,
+            336
+          ],
+          "sha256_16": "f4aa0a201d5cb6d3",
+          "note": "hdf5_v73 raw shape; consumers may need .T to restore column-major orientation"
+        },
+        "fba_rxn_idx_external_exch": {
+          "source_path": "fba_rxn_idx_external_exch",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            1,
+            124
+          ],
+          "sha256_16": "123fc1fd52b45caa",
+          "note": "hdf5_v73 raw shape; consumers may need .T to restore column-major orientation"
+        },
+        "fba_rxn_idx_internal_exch": {
+          "source_path": "fba_rxn_idx_internal_exch",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            1,
+            42
+          ],
+          "sha256_16": "8f06859b0c38e621",
+          "note": "hdf5_v73 raw shape; consumers may need .T to restore column-major orientation"
+        },
+        "fba_rxn_idx_internal_lim_exch": {
+          "source_path": "fba_rxn_idx_internal_lim_exch",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            1,
+            35
+          ],
+          "sha256_16": "80432091176688a8",
+          "note": "hdf5_v73 raw shape; consumers may need .T to restore column-major orientation"
+        },
+        "fba_rxn_idx_internal_unlim_exch": {
+          "source_path": "fba_rxn_idx_internal_unlim_exch",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            1,
+            7
+          ],
+          "sha256_16": "842153202bd6e4f2",
+          "note": "hdf5_v73 raw shape; consumers may need .T to restore column-major orientation"
+        },
+        "fba_rxn_idx_biomass_production": {
+          "source_path": "fba_rxn_idx_biomass_production",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            1,
+            1
+          ],
+          "sha256_16": "99988fc337e97d15",
+          "note": "hdf5_v73 raw shape; consumers may need .T to restore column-major orientation"
+        },
+        "fba_rxn_idx_biomass_exchange": {
+          "source_path": "fba_rxn_idx_biomass_exchange",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            1,
+            1
+          ],
+          "sha256_16": "e1cd0fba89bab5fd",
+          "note": "hdf5_v73 raw shape; consumers may need .T to restore column-major orientation"
+        },
+        "bounds_dynamic_no_protein": {
+          "source_path": "bounds_dynamic_no_protein",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            2,
+            504
+          ],
+          "sha256_16": "8de427aa5e41f3c2",
+          "note": "hdf5_v73 raw shape; consumers may need .T to restore column-major orientation"
+        },
+        "bounds_dynamic_with_protein": {
+          "source_path": "bounds_dynamic_with_protein",
+          "kind": "ndarray",
+          "dtype": "float64",
+          "shape": [
+            2,
+            504
+          ],
+          "sha256_16": "8de427aa5e41f3c2",
+          "note": "hdf5_v73 raw shape; consumers may need .T to restore column-major orientation"
+        }
+      }
+    }
+  },
+  "artifacts": {
+    "karr_archive.npz": {
+      "size_bytes": 155071,
+      "sha256": "261b6124fd35580ba395a4697747929f4382636358741e69c5b22f1b848c6c76",
+      "n_arrays": 143
+    },
+    "karr_archive_strings.json": {
+      "size_bytes": 649546,
+      "sha256": "b62b527efdec728d3ce734e5ed72cdb5dea018875422dedbd56fc87706451a9b",
+      "n_keys": 124
+    }
+  }
+}

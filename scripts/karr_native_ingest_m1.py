@@ -1,7 +1,7 @@
 """Extract Karr's fitted FBA matrices into a committable fixture.
 
-Reads `data/m1_sources/karr_flat/sim_fitted_targeted.mat` (gitignored)
-and writes:
+Reads the canonical Karr archive at ``data/karr_archive/`` (Python-native,
+no MATLAB or .mat dependency) and writes:
   - data/karr_fixtures/karr_native_m1.json  (metadata + ID strings)
   - data/karr_fixtures/karr_native_m1.npz   (numeric matrices)
 
@@ -15,13 +15,15 @@ Run via .venv-wsl:
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
-from scipy.io import loadmat
 
 REPO = Path(__file__).resolve().parents[1]
-MAT = REPO / "data" / "m1_sources" / "karr_flat" / "sim_fitted_targeted.mat"
+sys.path.insert(0, str(REPO))
+from opencell._karr_archive import load_karr_archive  # noqa: E402
+
 OUT_DIR = REPO / "data" / "karr_fixtures"
 JSON_OUT = OUT_DIR / "karr_native_m1.json"
 NPZ_OUT = OUT_DIR / "karr_native_m1.npz"
@@ -40,12 +42,10 @@ def _to_int_idx(arr) -> np.ndarray:
 
 
 def main() -> None:
-    if not MAT.exists():
-        raise SystemExit(f"missing {MAT} - run extract_karr_targeted.m first")
-
-    m = loadmat(str(MAT), struct_as_record=False, squeeze_me=True)
-    met = m["data"].metabolism
-    mr = m["data"].states.State_MetabolicReaction
+    arc = load_karr_archive()
+    sim = arc["sim_fitted_targeted"]
+    met = sim.metabolism
+    mr = sim.states.State_MetabolicReaction
 
     # Numeric matrices (committed to .npz)
     S = np.asarray(met.fbaReactionStoichiometryMatrix, dtype=float)
@@ -72,7 +72,7 @@ def main() -> None:
 
     # E.1b: State_Mass cell-level aggregates (committed in JSON for the
     # cell-mass phenotype #9; shape (6,) per compartment c=0 cytosol).
-    mass_dump = m["data"].states.State_Mass.dump
+    mass_dump = sim.states.State_Mass.dump
     cell_per_compartment = np.asarray(mass_dump.cell, dtype=float).reshape(-1)
     cell_dry_per_compartment = np.asarray(
         mass_dump.cellDry, dtype=float).reshape(-1)
@@ -150,7 +150,8 @@ def main() -> None:
     )
     JSON_OUT.write_text(json.dumps({
         "schema_version": SCHEMA_VERSION,
-        "source_mat": str(MAT.relative_to(REPO)),
+        "source_archive": "data/karr_archive/",
+        "source_archive_files": ["sim_fitted_targeted"],
         "matrix_npz": str(NPZ_OUT.relative_to(REPO)),
         "shapes": {
             "S": list(S.shape),

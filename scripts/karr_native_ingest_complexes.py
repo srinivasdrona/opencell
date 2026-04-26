@@ -16,113 +16,88 @@ Run:
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
-from scipy.io import loadmat
 
 REPO = Path(__file__).resolve().parents[1]
-MAT = REPO / "data" / "m1_sources" / "karr_flat" / "protein_complexes.mat"
+sys.path.insert(0, str(REPO))
+from opencell._karr_archive import load_karr_archive  # noqa: E402
+
 OUT = REPO / "data" / "karr_fixtures" / "karr_protein_complexes.json"
 
 SCHEMA_VERSION = "karr_protein_complexes__v1"
 
 
-def _to_dict(rec):
-    """scipy mat_struct -> nested Python dict/list/scalar."""
-    import scipy.io.matlab as mlab
-
-    if isinstance(rec, mlab.mat_struct):
-        return {f: _to_dict(getattr(rec, f)) for f in rec._fieldnames}
-    if isinstance(rec, np.ndarray):
-        if rec.dtype == object:
-            if rec.size == 1:
-                return _to_dict(rec.flat[0])
-            return [_to_dict(x) for x in rec.flat]
-        if rec.size == 1:
-            v = rec.item()
-            return v.item() if hasattr(v, "item") else v
-        return rec.tolist()
-    if isinstance(rec, (np.generic,)):
-        return rec.item()
-    return rec
+def _scalar_to_py(v):
+    if isinstance(v, np.generic):
+        return v.item()
+    return v
 
 
-def _participant(p):
-    """Normalise a participant dict from the MAT extract."""
-    return {
-        "molecule_wid": str(p.get("molecule_wid", "")),
-        "coefficient": float(p.get("coefficient", 0.0)),
-        "compartment_wid": str(p.get("compartment_wid", "")),
-    }
-
-
-def _participants(plist):
-    if plist is None:
+def _participants_from_nested(complexes_sa, nested_name: str, idx: int):
+    """Read complexes[idx].<nested_name> as a list of participant dicts."""
+    nested = getattr(complexes_sa, nested_name, None)
+    if nested is None:
         return []
-    if isinstance(plist, dict):
-        plist = [plist]
+    sub_sa = nested.per_parent(idx)  # _StructArray slice for this parent
     out = []
-    for p in plist:
-        if not isinstance(p, dict):
-            continue
-        wid = str(p.get("molecule_wid", "")).strip()
+    for j in range(len(sub_sa)):
+        wid = str(sub_sa.molecule_wid[j]).strip()
         if not wid:
             continue
-        out.append(_participant(p))
+        out.append({
+            "molecule_wid": wid,
+            "coefficient": float(sub_sa.coefficient[j]),
+            "compartment_wid": str(sub_sa.compartment_wid[j]),
+        })
     return out
 
 
 def main() -> None:
-    if not MAT.exists():
-        raise FileNotFoundError(
-            f"Run scripts/matlab/extract_protein_complexes.m first; missing {MAT}"
-        )
-    raw = loadmat(MAT, squeeze_me=True, struct_as_record=False)
-    data = _to_dict(raw["data"])
-
-    complexes_in = data["complexes"]
-    if isinstance(complexes_in, dict):
-        complexes_in = [complexes_in]
+    arc = load_karr_archive()
+    pc = arc["protein_complexes"]
+    complexes_sa = pc.complexes  # _StructArray length 201
 
     complexes = []
-    for entry in complexes_in:
-        if not isinstance(entry, dict):
-            continue
-        wid = str(entry.get("wholeCellModelID", "")).strip()
+    n = len(complexes_sa)
+    for i in range(n):
+        wid = str(complexes_sa.wholeCellModelID[i]).strip()
         if not wid:
             continue
         complexes.append({
             "wid": wid,
-            "name": str(entry.get("name", "")),
-            "idx_1based": int(entry.get("idx", 0)),
-            "num_subunits": int(entry.get("numSubunits", 0) or 0),
-            "num_distinct_subunits": int(entry.get("numDistinctSubunits", 0) or 0),
-            "dna_footprint": int(entry.get("dnaFootprint", 0) or 0),
-            "density": float(entry.get("density", 0.0) or 0.0),
-            "activation_rule": str(entry.get("activationRule", "") or ""),
-            "formation_compartment_wid": str(entry.get("formation_compartment_wid", "") or ""),
-            "monomers":     _participants(entry.get("monomers")),
-            "subcomplexes": _participants(entry.get("subcomplexes")),
-            "metabolites":  _participants(entry.get("metabolites")),
-            "prosthetic":   _participants(entry.get("prosthetic")),
-            "chaperones":   _participants(entry.get("chaperones")),
-            "rnas":         _participants(entry.get("rnas")),
+            "name": str(complexes_sa.name[i]),
+            "idx_1based": int(_scalar_to_py(complexes_sa.idx[i]) or 0),
+            "num_subunits": int(_scalar_to_py(complexes_sa.numSubunits[i]) or 0),
+            "num_distinct_subunits": int(_scalar_to_py(complexes_sa.numDistinctSubunits[i]) or 0),
+            "dna_footprint": int(_scalar_to_py(complexes_sa.dnaFootprint[i]) or 0),
+            "density": float(_scalar_to_py(complexes_sa.density[i]) or 0.0),
+            "activation_rule": str(complexes_sa.activationRule[i] or "") if str(complexes_sa.activationRule[i] or "") != "[]" else "",
+            "formation_compartment_wid": (str(complexes_sa.formation_compartment_wid[i] or "") if str(complexes_sa.formation_compartment_wid[i] or "") != "[]" else ""),
+            "monomers":     _participants_from_nested(complexes_sa, "monomers", i),
+            "subcomplexes": _participants_from_nested(complexes_sa, "subcomplexes", i),
+            "metabolites":  _participants_from_nested(complexes_sa, "metabolites", i),
+            "prosthetic":   _participants_from_nested(complexes_sa, "prosthetic", i),
+            "chaperones":   _participants_from_nested(complexes_sa, "chaperones", i),
+            "rnas":         _participants_from_nested(complexes_sa, "rnas", i),
         })
 
     out = {
         "schema_version": SCHEMA_VERSION,
-        "source_mat": str(MAT.relative_to(REPO)).replace("\\", "/"),
-        "source_kb_file": data.get("x_source_file", "data/knowledgeBase.mat"),
-        "matlab_release": data.get("x_matlab_release", "unknown"),
-        "extract_timestamp_utc": data.get("x_extract_timestamp_utc", ""),
+        "source_archive": "data/karr_archive/",
+        "source_archive_files": ["protein_complexes"],
+        "source_kb_file": str(getattr(pc, "x_source_file", None) or "data/knowledgeBase.mat"),
+        "matlab_release": str(getattr(pc, "x_matlab_release", None) or "unknown"),
+        "extract_timestamp_utc": str(getattr(pc, "x_extract_timestamp_utc", None) or ""),
         "counts": {
             "n_complexes": len(complexes),
-            "n_monomer_wids_482": len(data.get("monomer_wids_482", [])),
-            "n_metabolite_wids_722": len(data.get("metabolite_wids_722", [])),
-            "n_compartment_wids_6": len(data.get("compartment_wids_6", [])),
+            "n_monomer_wids_482": len(pc.monomer_wids_482 or []),
+            "n_metabolite_wids_722": len(pc.metabolite_wids_722 or []),
+            "n_compartment_wids_6": len(pc.compartment_wids_6 or []),
         },
-        "compartment_wids": [str(x) for x in data.get("compartment_wids_6", [])],
+        "compartment_wids": [str(x) for x in (pc.compartment_wids_6 or [])],
         "complexes": complexes,
         "interpretation": {
             "convention": (

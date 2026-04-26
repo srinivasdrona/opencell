@@ -1,6 +1,9 @@
 {
   "schema_version": 1,
-  "source_mat": "data/m1_sources/karr_flat/translation_v2_targeted.mat",
+  "source_archive": "data/karr_archive/",
+  "source_archive_files": [
+    "translation_v2_targeted"
+  ],
   "matrix_npz": "karr_native_m3_v2.npz",
   "scalars": {
     "n_active_ribosomes": 56,

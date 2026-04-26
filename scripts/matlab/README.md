@@ -1,5 +1,12 @@
 # Karr 2012 `.mat` Extraction — MATLAB Online Runbook
 
+> **MATLAB is BOOTSTRAP-ONLY.** Day-to-day Python workflows (running
+> ingest scripts, the chassis, the test suite) do **not** need MATLAB or
+> any `.mat` file. The committed Python-native archive at
+> `data/karr_archive/` is the single source of truth — see
+> `data/karr_archive/README.md`. You only need MATLAB if you want to
+> **add new fields** to the archive that nobody has extracted before.
+
 **Goal:** deserialize the opaque `MatlabOpaque` blobs in Karr's WholeCell `.mat`
 files into plain structs that `scipy.io.loadmat` can read, WITHOUT synthesizing
 any values.

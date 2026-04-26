@@ -18,13 +18,15 @@ matrix.  Conversion to 0-based:
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
-import h5py
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
-SRC_MAT = ROOT / "data" / "m1_sources" / "karr_flat" / "metabolism_dynamics.mat"
+sys.path.insert(0, str(ROOT))
+from opencell._karr_archive import load_karr_archive  # noqa: E402
+
 OUT_DIR = ROOT / "data" / "karr_fixtures"
 JSON_OUT = OUT_DIR / "karr_native_m1_dynamics.json"
 NPZ_OUT = OUT_DIR / "karr_native_m1_dynamics.npz"
@@ -35,49 +37,35 @@ N_SUB = 585
 N_CMP = 3
 
 
-def _read_dataset(f, key):
-    arr = np.array(f[key])
-    return arr
-
-
 def _to_0based_int(arr):
     return np.asarray(arr, dtype=np.int64).reshape(-1) - 1
 
 
 def main() -> None:
-    print(f"Reading {SRC_MAT}")
-    with h5py.File(SRC_MAT, "r") as f:
-        # H5 v7.3 transposes 2D arrays — restore column-major shape.
-        substrates_585x3 = _read_dataset(f, "snapshot_substrates").T  # (585, 3)
-        enzymes_104 = _read_dataset(f, "snapshot_enzymes").reshape(-1).astype(float)
-        cell_dry_mass = float(_read_dataset(f, "snapshot_cell_dry_mass").item())
-        step_size_sec = float(_read_dataset(f, "step_size_sec").item())
+    print("Reading metabolism_dynamics from karr_archive")
+    arc = load_karr_archive()
+    f = arc["metabolism_dynamics"]
+    # H5 v7.3 transposes 2D arrays — restore column-major shape.
+    substrates_585x3 = np.asarray(f.snapshot_substrates).T  # (585, 3)
+    enzymes_104 = np.asarray(f.snapshot_enzymes).reshape(-1).astype(float)
+    cell_dry_mass = float(np.asarray(f.snapshot_cell_dry_mass).item())
+    step_size_sec = float(np.asarray(f.step_size_sec).item())
 
-        sub_idx_fba_1based = _read_dataset(f, "substrate_indexs_fba").reshape(-1)
-        sub_idx_external_1based = _read_dataset(
-            f, "substrate_indexs_external_exch").reshape(-1)
-        sub_idx_internal_lim_1based = _read_dataset(
-            f, "substrate_indexs_internal_lim").reshape(-1)
-        compartment_extracellular = int(
-            _read_dataset(f, "compartment_indexs_extracellular").item()) - 1
+    sub_idx_fba_1based = np.asarray(f.substrate_indexs_fba).reshape(-1)
+    sub_idx_external_1based = np.asarray(f.substrate_indexs_external_exch).reshape(-1)
+    sub_idx_internal_lim_1based = np.asarray(f.substrate_indexs_internal_lim).reshape(-1)
+    compartment_extracellular = int(np.asarray(f.compartment_indexs_extracellular).item()) - 1
 
-        fba_rxn_idx_metab_conv = _to_0based_int(_read_dataset(
-            f, "fba_rxn_idx_metab_conv"))
-        fba_rxn_idx_external_exch = _to_0based_int(_read_dataset(
-            f, "fba_rxn_idx_external_exch"))
-        fba_rxn_idx_internal_exch = _to_0based_int(_read_dataset(
-            f, "fba_rxn_idx_internal_exch"))
-        fba_rxn_idx_internal_lim_exch = _to_0based_int(_read_dataset(
-            f, "fba_rxn_idx_internal_lim_exch"))
-        fba_rxn_idx_internal_unlim_exch = _to_0based_int(_read_dataset(
-            f, "fba_rxn_idx_internal_unlim_exch"))
-        fba_rxn_idx_biomass_production = _to_0based_int(_read_dataset(
-            f, "fba_rxn_idx_biomass_production"))
-        fba_rxn_idx_biomass_exchange = _to_0based_int(_read_dataset(
-            f, "fba_rxn_idx_biomass_exchange"))
+    fba_rxn_idx_metab_conv = _to_0based_int(np.asarray(f.fba_rxn_idx_metab_conv))
+    fba_rxn_idx_external_exch = _to_0based_int(np.asarray(f.fba_rxn_idx_external_exch))
+    fba_rxn_idx_internal_exch = _to_0based_int(np.asarray(f.fba_rxn_idx_internal_exch))
+    fba_rxn_idx_internal_lim_exch = _to_0based_int(np.asarray(f.fba_rxn_idx_internal_lim_exch))
+    fba_rxn_idx_internal_unlim_exch = _to_0based_int(np.asarray(f.fba_rxn_idx_internal_unlim_exch))
+    fba_rxn_idx_biomass_production = _to_0based_int(np.asarray(f.fba_rxn_idx_biomass_production))
+    fba_rxn_idx_biomass_exchange = _to_0based_int(np.asarray(f.fba_rxn_idx_biomass_exchange))
 
-        bounds_dyn_no_prot = _read_dataset(f, "bounds_dynamic_no_protein").T  # (504,2)
-        bounds_dyn_with_prot = _read_dataset(f, "bounds_dynamic_with_protein").T
+    bounds_dyn_no_prot = np.asarray(f.bounds_dynamic_no_protein).T  # (504,2)
+    bounds_dyn_with_prot = np.asarray(f.bounds_dynamic_with_protein).T
 
     # Convert MATLAB column-major linear indices -> (sub_idx_0, cmp_idx_0)
     lin0 = sub_idx_fba_1based.astype(np.int64) - 1
@@ -154,7 +142,8 @@ def main() -> None:
     )
     JSON_OUT.write_text(json.dumps({
         "schema_version": "m1_dynamics_v1",
-        "source_mat": str(SRC_MAT.relative_to(ROOT)),
+        "source_archive": "data/karr_archive/",
+        "source_archive_files": ["metabolism_dynamics"],
         "matrix_npz": NPZ_OUT.name,
         "scalars": {
             "cell_dry_mass": cell_dry_mass,
