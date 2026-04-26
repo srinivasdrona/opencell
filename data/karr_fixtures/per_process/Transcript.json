@@ -1,26 +1,49 @@
 {
   "array_keys": [
-    "None/__mcos__/arr"
+    "fixture/abortedTranscripts",
+    "fixture/boundTranscriptChromosome",
+    "fixture/boundTranscriptProgress",
+    "fixture/boundTranscriptionUnits",
+    "fixture/chromosome",
+    "fixture/dependentStateNames",
+    "fixture/fittedConstantNames",
+    "fixture/fixedConstantNames",
+    "fixture/name",
+    "fixture/nmpMolecularWeights",
+    "fixture/optionNames",
+    "fixture/parameterIndexs",
+    "fixture/parameterNames",
+    "fixture/randStream",
+    "fixture/stateNames",
+    "fixture/totalBaseCounts",
+    "fixture/transcriptionUnitDirections",
+    "fixture/transcriptionUnitFivePrimeCoordinates",
+    "fixture/transcriptionUnitLengths",
+    "fixture/transcriptionUnitSequences",
+    "fixture/transcriptionUnitWholeCellModelIDs",
+    "fixture/wholeCellModelID",
+    "fixture/x_class_"
   ],
   "manifest": {
-    "extraction_status": "unparsed_mcos_payload",
-    "function_workspace_bytes": 68652760,
-    "mat_format": "v5",
-    "mcos_class": "edu.stanford.covert.cell.sim.state.Transcript",
+    "arrays_count": 15,
+    "dropped_object_dtype_count": 8,
+    "extraction_status": "extracted_from_matlab_flat",
+    "kind": "state",
+    "mat_format": "v7_flattened_by_matlab",
     "name": "Transcript",
     "notes": [
-      "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      "dropped 8 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
     ],
-    "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/Transcript.mat",
-    "source_sha256": "c9390cc054d4b93bf2ece25ad9d116ff85d870763ffefd49fc85d597ac3ecbb6",
-    "source_size_bytes": 1445952,
-    "top_level_keys": [
-      "None"
-    ]
+    "scalars_count": 5,
+    "source_path": "data/karr_fixtures/per_process/Transcript_flat.mat",
+    "source_sha256": "9f78b6b605774953099df2e2bb06b6e55150cd97e32e99de227ab8b439faea74",
+    "source_size_bytes": 174439
   },
   "scalars": {
-    "None/__mcos__/s0": "fixture",
-    "None/__mcos__/s1": "MCOS",
-    "None/__mcos__/s2": "edu.stanford.covert.cell.sim.state.Transcript"
+    "fixture/genomeLength": 580076,
+    "fixture/newTranscriptValue": 1,
+    "fixture/nullTranscriptValue": 0,
+    "fixture/seed": 1,
+    "fixture/verbosity": 0
   }
 }

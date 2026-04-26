@@ -1,26 +1,50 @@
 {
   "array_keys": [
-    "None/__mcos__/arr"
+    "fixture/boundMRNAs",
+    "fixture/chromosome",
+    "fixture/complex",
+    "fixture/dependentStateNames",
+    "fixture/fittedConstantNames",
+    "fixture/fixedConstantNames",
+    "fixture/gene",
+    "fixture/mRNAPositions",
+    "fixture/name",
+    "fixture/optionNames",
+    "fixture/parameterIndexs",
+    "fixture/parameterNames",
+    "fixture/polypeptide",
+    "fixture/randStream",
+    "fixture/rna",
+    "fixture/stateNames",
+    "fixture/states",
+    "fixture/tmRNAPositions",
+    "fixture/wholeCellModelID",
+    "fixture/x_class_"
   ],
   "manifest": {
-    "extraction_status": "unparsed_mcos_payload",
-    "function_workspace_bytes": 68653080,
-    "mat_format": "v5",
-    "mcos_class": "edu.stanford.covert.cell.sim.state.Ribosome",
+    "arrays_count": 13,
+    "dropped_object_dtype_count": 7,
+    "extraction_status": "extracted_from_matlab_flat",
+    "kind": "state",
+    "mat_format": "v7_flattened_by_matlab",
     "name": "Ribosome",
     "notes": [
-      "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      "dropped 7 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
     ],
-    "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/Ribosome.mat",
-    "source_sha256": "df0792210dde1c466cb6c73a4fadaba32aefc611586affd0b64ec812d4ddab85",
-    "source_size_bytes": 1445713,
-    "top_level_keys": [
-      "None"
-    ]
+    "scalars_count": 9,
+    "source_path": "data/karr_fixtures/per_process/Ribosome_flat.mat",
+    "source_sha256": "3448ae3ca9d24802e4e36ed08919cbc5bb704b1dded140884649e97d7a4becec",
+    "source_size_bytes": 1107
   },
   "scalars": {
-    "None/__mcos__/s0": "fixture",
-    "None/__mcos__/s1": "MCOS",
-    "None/__mcos__/s2": "edu.stanford.covert.cell.sim.state.Ribosome"
+    "fixture/activeIndex": 1,
+    "fixture/activeValue": 1,
+    "fixture/dryWeight": 0,
+    "fixture/notExistIndex": 2,
+    "fixture/notExistValue": 0,
+    "fixture/seed": 1,
+    "fixture/stalledIndex": 3,
+    "fixture/stalledValue": -1,
+    "fixture/verbosity": 0
   }
 }

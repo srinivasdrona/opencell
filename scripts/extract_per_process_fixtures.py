@@ -267,11 +267,28 @@ def extract_one_from_flat(flat_mat: Path, out_dir: Path, kind: str) -> dict:
         entry["notes"].append(f"flatten raised: {type(e).__name__}: {e}")
         return entry
 
+    # Filter out object-dtype arrays from npz emission. These are pickled
+    # cell/struct trees that the MATLAB cycle-cut left as sentinel strings;
+    # they balloon disk usage (10-30 MB per fixture) without carrying
+    # real numeric oracle data. Their keys remain in array_keys metadata
+    # and their decoded structure is preserved in the *_flat.mat audit
+    # trail. Numeric tensors (the actual oracle payload) keep going through.
+    dropped_object: list[str] = []
+    numeric_arrays: dict = {}
+    for k, v in arrays.items():
+        if v.dtype == object:
+            dropped_object.append(k)
+        else:
+            numeric_arrays[k] = v
+
     npz_path = out_dir / f"{name}.npz"
-    if arrays:
-        np.savez(npz_path, **{k.replace("/", "__"): arrays[k] for k in sorted(arrays)})
+    if numeric_arrays:
+        np.savez_compressed(
+            npz_path,
+            **{k.replace("/", "__"): numeric_arrays[k] for k in sorted(numeric_arrays)},
+        )
     else:
-        np.savez(npz_path, __empty__=np.zeros(0, dtype=np.uint8))
+        np.savez_compressed(npz_path, __empty__=np.zeros(0, dtype=np.uint8))
 
     json_path = out_dir / f"{name}.json"
     payload = {
@@ -280,8 +297,14 @@ def extract_one_from_flat(flat_mat: Path, out_dir: Path, kind: str) -> dict:
         "array_keys": sorted(arrays),
     }
     entry["extraction_status"] = "extracted_from_matlab_flat"
-    entry["arrays_count"] = len(arrays)
+    entry["arrays_count"] = len(numeric_arrays)
     entry["scalars_count"] = len(scalars)
+    if dropped_object:
+        entry["dropped_object_dtype_count"] = len(dropped_object)
+        entry["notes"].append(
+            f"dropped {len(dropped_object)} object-dtype array(s) from npz "
+            "(cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
+        )
     payload["manifest"] = entry
     json_path.write_text(json.dumps(payload, indent=2, sort_keys=True, default=_json_default) + "\n",
                          encoding="utf-8")

@@ -1,26 +1,43 @@
 {
   "array_keys": [
-    "None/__mcos__/arr"
+    "fixture/dependentStateNames",
+    "fixture/fittedConstantNames",
+    "fixture/fixedConstantNames",
+    "fixture/geometry",
+    "fixture/name",
+    "fixture/optionNames",
+    "fixture/parameterIndexs",
+    "fixture/parameterNames",
+    "fixture/randStream",
+    "fixture/stateNames",
+    "fixture/wholeCellModelID",
+    "fixture/x_class_"
   ],
   "manifest": {
-    "extraction_status": "unparsed_mcos_payload",
-    "function_workspace_bytes": 6936,
-    "mat_format": "v5",
-    "mcos_class": "edu.stanford.covert.cell.sim.state.FtsZRing",
+    "arrays_count": 6,
+    "dropped_object_dtype_count": 6,
+    "extraction_status": "extracted_from_matlab_flat",
+    "kind": "state",
+    "mat_format": "v7_flattened_by_matlab",
     "name": "FtsZRing",
     "notes": [
-      "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      "dropped 6 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
     ],
-    "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/FtsZRing.mat",
-    "source_sha256": "e241bec8e51771fafabf4359c1ce5bf4d1c91e4d9ff111a3f027400ed4f38c8d",
-    "source_size_bytes": 1454,
-    "top_level_keys": [
-      "None"
-    ]
+    "scalars_count": 10,
+    "source_path": "data/karr_fixtures/per_process/FtsZRing_flat.mat",
+    "source_sha256": "20d341cf5c2ed10fc383fbad330e3ac8ee4d0c7dabb3b8fc109f9b561a3c4d06",
+    "source_size_bytes": 787
   },
   "scalars": {
-    "None/__mcos__/s0": "fixture",
-    "None/__mcos__/s1": "MCOS",
-    "None/__mcos__/s2": "edu.stanford.covert.cell.sim.state.FtsZRing"
+    "fixture/dryWeight": 0,
+    "fixture/filamentLengthInNm": 39.130434782608695,
+    "fixture/numEdgesOneStraight": 0,
+    "fixture/numEdgesTwoBent": 0,
+    "fixture/numEdgesTwoStraight": 0,
+    "fixture/numFtsZSubunitsPerFilament": 9,
+    "fixture/numFtsZSubunitsPerNm": 0.23,
+    "fixture/numResidualBent": 0,
+    "fixture/seed": 1,
+    "fixture/verbosity": 0
   }
 }

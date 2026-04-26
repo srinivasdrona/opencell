@@ -1,26 +1,40 @@
 {
   "array_keys": [
-    "None/__mcos__/arr"
+    "fixture/dependentStateNames",
+    "fixture/fittedConstantNames",
+    "fixture/fixedConstantNames",
+    "fixture/mass",
+    "fixture/name",
+    "fixture/optionNames",
+    "fixture/parameterIndexs",
+    "fixture/parameterNames",
+    "fixture/randStream",
+    "fixture/stateNames",
+    "fixture/wholeCellModelID",
+    "fixture/x_class_"
   ],
   "manifest": {
-    "extraction_status": "unparsed_mcos_payload",
-    "function_workspace_bytes": 68719520,
-    "mat_format": "v5",
-    "mcos_class": "edu.stanford.covert.cell.sim.state.CellGeometry",
+    "arrays_count": 8,
+    "dropped_object_dtype_count": 4,
+    "extraction_status": "extracted_from_matlab_flat",
+    "kind": "state",
+    "mat_format": "v7_flattened_by_matlab",
     "name": "CellGeometry",
     "notes": [
-      "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      "dropped 4 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
     ],
-    "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/CellGeometry.mat",
-    "source_sha256": "9634cd025aac7e79c2ba373f18f5a7e6d437893643dd52476e3777d9cac3cd6e",
-    "source_size_bytes": 1454940,
-    "top_level_keys": [
-      "None"
-    ]
+    "scalars_count": 7,
+    "source_path": "data/karr_fixtures/per_process/CellGeometry_flat.mat",
+    "source_sha256": "7f8ef3a6e90d8353f4a7a4080a4b00bb84155dbc53e6b1f42d556876bd7c4599",
+    "source_size_bytes": 760
   },
   "scalars": {
-    "None/__mcos__/s0": "fixture",
-    "None/__mcos__/s1": "MCOS",
-    "None/__mcos__/s2": "edu.stanford.covert.cell.sim.state.CellGeometry"
+    "fixture/density": 1100,
+    "fixture/dryWeight": 0,
+    "fixture/pinchedDiameter": 2.840467121583285e-07,
+    "fixture/seed": 1,
+    "fixture/verbosity": 0,
+    "fixture/volume": 1.2009482713288303e-17,
+    "fixture/width": 2.840467121583285e-07
   }
 }

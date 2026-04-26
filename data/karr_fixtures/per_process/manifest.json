@@ -1,840 +1,752 @@
 {
   "fixtures": [
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68669112,
+      "arrays_count": 89,
+      "dropped_object_dtype_count": 14,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "process",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.process.ChromosomeCondensation",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "ChromosomeCondensation",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 14 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "ChromosomeCondensation.json",
       "out_npz": "ChromosomeCondensation.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/ChromosomeCondensation.mat",
-      "source_sha256": "8551e9d068ee971080ad75029567d16b0b81ad5616b65a98bd28838915d0965f",
-      "source_size_bytes": 1447944,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 13,
+      "source_path": "data/karr_fixtures/per_process/ChromosomeCondensation_flat.mat",
+      "source_sha256": "d8a5813d3010ac2af315e0ca964be0a8d68d230da02a93ee0d699c1696a96883",
+      "source_size_bytes": 371931
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68668792,
+      "arrays_count": 92,
+      "dropped_object_dtype_count": 10,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "process",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.process.ChromosomeSegregation",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "ChromosomeSegregation",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 10 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "ChromosomeSegregation.json",
       "out_npz": "ChromosomeSegregation.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/ChromosomeSegregation.mat",
-      "source_sha256": "fe8070a0aec2fe0ff3192c2f4b12270c9f27a2d832c197cc6341a79e5af9a1b5",
-      "source_size_bytes": 1447629,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 15,
+      "source_path": "data/karr_fixtures/per_process/ChromosomeSegregation_flat.mat",
+      "source_sha256": "5687460959b1aadaee49b5990b2e92c946c66001f392bec099477a6cbb6bf513",
+      "source_size_bytes": 371337
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68668256,
+      "arrays_count": 90,
+      "dropped_object_dtype_count": 13,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "process",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.process.Cytokinesis",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "Cytokinesis",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 13 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "Cytokinesis.json",
       "out_npz": "Cytokinesis.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/Cytokinesis.mat",
-      "source_sha256": "0917e20f97a95dd31e21884fb3120261b0680f4600ae237e55e53c1fe7aada4c",
-      "source_size_bytes": 1447193,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 14,
+      "source_path": "data/karr_fixtures/per_process/Cytokinesis_flat.mat",
+      "source_sha256": "1906c32e2499481bb6d354447627865609fbafdb5ab9a85e17af1ed703b1d7cb",
+      "source_size_bytes": 371570
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68893496,
+      "arrays_count": 120,
+      "dropped_object_dtype_count": 19,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "process",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.process.DNADamage",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "DNADamage",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 19 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "DNADamage.json",
       "out_npz": "DNADamage.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/DNADamage.mat",
-      "source_sha256": "ca254665d0ed37a021aa0297eac5ea5275c4b743a3e5d1b2488681b89681f4ed",
-      "source_size_bytes": 1453752,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 9,
+      "source_path": "data/karr_fixtures/per_process/DNADamage_flat.mat",
+      "source_sha256": "3ed7510504b3f9b246cb5f843983ad214d419698832db612f1366a9b67c404c1",
+      "source_size_bytes": 376544
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68652840,
+      "arrays_count": 122,
+      "dropped_object_dtype_count": 17,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "process",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.process.DNARepair",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "DNARepair",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 17 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "DNARepair.json",
       "out_npz": "DNARepair.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/DNARepair.mat",
-      "source_sha256": "cad009cac2c077e2b78cd5c0caae51f521c7f4b13613888801474dfe92dd1333",
-      "source_size_bytes": 1445857,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 52,
+      "source_path": "data/karr_fixtures/per_process/DNARepair_flat.mat",
+      "source_sha256": "bcadae85937f6fd9dbfeb0099fc5f6f43b15e1427a902cf246d4d8479bb974a7",
+      "source_size_bytes": 448946
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68690328,
+      "arrays_count": 90,
+      "dropped_object_dtype_count": 14,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "process",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.process.DNASupercoiling",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "DNASupercoiling",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 14 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "DNASupercoiling.json",
       "out_npz": "DNASupercoiling.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/DNASupercoiling.mat",
-      "source_sha256": "9722a43ac82ea4952df53eb4dbca7701d72e6767ef63776a00f08e1d82b919a6",
-      "source_size_bytes": 1450135,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 35,
+      "source_path": "data/karr_fixtures/per_process/DNASupercoiling_flat.mat",
+      "source_sha256": "9b182eb91761300f3b3f057c9e1ea1155e81d922882980211d08ded6a637540c",
+      "source_size_bytes": 373653
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68671800,
+      "arrays_count": 81,
+      "dropped_object_dtype_count": 13,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "process",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.process.FtsZPolymerization",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "FtsZPolymerization",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 13 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "FtsZPolymerization.json",
       "out_npz": "FtsZPolymerization.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/FtsZPolymerization.mat",
-      "source_sha256": "3559a3d330fab071d3e146a6f3b594901550020a36918581859801f538077322",
-      "source_size_bytes": 1447985,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 28,
+      "source_path": "data/karr_fixtures/per_process/FtsZPolymerization_flat.mat",
+      "source_sha256": "33babb02e5ce33023c67db99740c788842ab22518bdf047be132fb426cae8a8b",
+      "source_size_bytes": 340375
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68671896,
+      "arrays_count": 89,
+      "dropped_object_dtype_count": 13,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "process",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.process.HostInteraction",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "HostInteraction",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 13 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "HostInteraction.json",
       "out_npz": "HostInteraction.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/HostInteraction.mat",
-      "source_sha256": "aa81b2943a17f1b787eacb52bbabec38e3657f02d0e5413035c63cb16712700b",
-      "source_size_bytes": 1447919,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 10,
+      "source_path": "data/karr_fixtures/per_process/HostInteraction_flat.mat",
+      "source_sha256": "3da8d8fae1204828b2886cdfb395e7c22644b0ce8704d78456e6a8acb9766776",
+      "source_size_bytes": 340724
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 69217128,
+      "arrays_count": 93,
+      "dropped_object_dtype_count": 14,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "process",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.process.MacromolecularComplexation",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "MacromolecularComplexation",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 14 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "MacromolecularComplexation.json",
       "out_npz": "MacromolecularComplexation.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/MacromolecularComplexation.mat",
-      "source_sha256": "f36a4f6d319bee92a08b311caf796f134c8b3e3f427d4d20c2ed748aa84c1d96",
-      "source_size_bytes": 1461091,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 4,
+      "source_path": "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat",
+      "source_sha256": "658e25f30acd8ea84f7bf4b1b2536bf994ad389d9cb575dfeefbf628fe151f01",
+      "source_size_bytes": 350378
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 92497664,
+      "arrays_count": 125,
+      "dropped_object_dtype_count": 16,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "process",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.process.Metabolism",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "Metabolism",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 16 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "Metabolism.json",
       "out_npz": "Metabolism.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/Metabolism.mat",
-      "source_sha256": "90beeb3f025f7324d7ed2633dca498b261cbcc2f3b33549cd9afa1e7d1d58662",
-      "source_size_bytes": 1613120,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 35,
+      "source_path": "data/karr_fixtures/per_process/Metabolism_flat.mat",
+      "source_sha256": "331a90c56aec5af19072ea39d3e5a69977c9986075fe5ec1c645031ac4d1f670",
+      "source_size_bytes": 649716
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68680752,
+      "arrays_count": 90,
+      "dropped_object_dtype_count": 12,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "process",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.process.ProteinActivation",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "ProteinActivation",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 12 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "ProteinActivation.json",
       "out_npz": "ProteinActivation.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/ProteinActivation.mat",
-      "source_sha256": "f2c77c946085ca93ee2f19eeceb84ed3542442383c0d23df251b7dea51a8c763",
-      "source_size_bytes": 1450247,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 4,
+      "source_path": "data/karr_fixtures/per_process/ProteinActivation_flat.mat",
+      "source_sha256": "ea58c5d4ca279e2b10dff12bffe89e04926f4515324f0c13fb677759a4094a52",
+      "source_size_bytes": 340045
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 76293896,
+      "arrays_count": 99,
+      "dropped_object_dtype_count": 14,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "process",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.process.ProteinDecay",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "ProteinDecay",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 14 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "ProteinDecay.json",
       "out_npz": "ProteinDecay.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/ProteinDecay.mat",
-      "source_sha256": "127498ed7fddc49ee292c1084180dc661035d0bbd8bf4f54a01599969b99cd5d",
-      "source_size_bytes": 1715811,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 32,
+      "source_path": "data/karr_fixtures/per_process/ProteinDecay_flat.mat",
+      "source_sha256": "020aae58a97fb3ab56eb58eb443d6b189cecf769eb420a3b89eacead47970538",
+      "source_size_bytes": 738486
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 72819456,
+      "arrays_count": 106,
+      "dropped_object_dtype_count": 17,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "process",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.process.ProteinFolding",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "ProteinFolding",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 17 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "ProteinFolding.json",
       "out_npz": "ProteinFolding.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/ProteinFolding.mat",
-      "source_sha256": "62af7b6d3ef2b936d15cb32d22282b467bb36deb8ddbde67f7e7a91a1a6b2f6c",
-      "source_size_bytes": 1482896,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 20,
+      "source_path": "data/karr_fixtures/per_process/ProteinFolding_flat.mat",
+      "source_sha256": "d91be6c57d1cce69cd16898a6e414fc3cecf9563aa48c67bde732e9caf1ae63c",
+      "source_size_bytes": 355794
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68832008,
+      "arrays_count": 98,
+      "dropped_object_dtype_count": 17,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "process",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.process.ProteinModification",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "ProteinModification",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 17 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "ProteinModification.json",
       "out_npz": "ProteinModification.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/ProteinModification.mat",
-      "source_sha256": "9a1bc0b54071689f299c3e803543837f60910b01b650a984f832107578dfba08",
-      "source_size_bytes": 1455207,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 21,
+      "source_path": "data/karr_fixtures/per_process/ProteinModification_flat.mat",
+      "source_sha256": "b89663e37c5ab6a68a8f978e670ecbedf05c5a2af4a5569b4e83d803b2c5807b",
+      "source_size_bytes": 347500
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68745448,
+      "arrays_count": 78,
+      "dropped_object_dtype_count": 15,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "process",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.process.ProteinProcessingI",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "ProteinProcessingI",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 15 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "ProteinProcessingI.json",
       "out_npz": "ProteinProcessingI.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/ProteinProcessingI.mat",
-      "source_sha256": "4efac53ee9afc0b3351f65b12017f14558dfc3bb34df7e432b7cad641e62fa5e",
-      "source_size_bytes": 1451098,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 22,
+      "source_path": "data/karr_fixtures/per_process/ProteinProcessingI_flat.mat",
+      "source_sha256": "0a4ce7ad57266e4c1241f7fba34e6e9a20183855f8f396ca70e7b23d63acd535",
+      "source_size_bytes": 342299
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68791856,
+      "arrays_count": 92,
+      "dropped_object_dtype_count": 16,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "process",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.process.ProteinProcessingII",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "ProteinProcessingII",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 16 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "ProteinProcessingII.json",
       "out_npz": "ProteinProcessingII.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/ProteinProcessingII.mat",
-      "source_sha256": "a5a1ea44a3f11a9e203b2df2944ac8bed96823c72a894ad0c01635be185ce5e8",
-      "source_size_bytes": 1454034,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 13,
+      "source_path": "data/karr_fixtures/per_process/ProteinProcessingII_flat.mat",
+      "source_sha256": "a386207b68bc7d306b8385a0a0aa34ea28bc68d2af0f1530da113f80808699af",
+      "source_size_bytes": 345621
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68740080,
+      "arrays_count": 87,
+      "dropped_object_dtype_count": 13,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "process",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.process.ProteinTranslocation",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "ProteinTranslocation",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 13 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "ProteinTranslocation.json",
       "out_npz": "ProteinTranslocation.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/ProteinTranslocation.mat",
-      "source_sha256": "cd568e3f34de65c5a15a0c906d5057a0083c93b79cd9a3d1ec2d27715ab31202",
-      "source_size_bytes": 1453129,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 23,
+      "source_path": "data/karr_fixtures/per_process/ProteinTranslocation_flat.mat",
+      "source_sha256": "1c02cba3d4422d7384a3d0c369b4bb02585705b9bed37d72c9c7b87515b0b41d",
+      "source_size_bytes": 343018
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 69452048,
+      "arrays_count": 92,
+      "dropped_object_dtype_count": 12,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "process",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.process.RNADecay",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "RNADecay",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 12 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "RNADecay.json",
       "out_npz": "RNADecay.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/RNADecay.mat",
-      "source_sha256": "cddcaf704baa468fc8204e72e42e2893169c84473c08763e9f9945138c1307d8",
-      "source_size_bytes": 1470455,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 17,
+      "source_path": "data/karr_fixtures/per_process/RNADecay_flat.mat",
+      "source_sha256": "ff50cad3841556964d8c5ed55c0514b7a2ade7be3898cd22a360ba72e53316d3",
+      "source_size_bytes": 522332
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 69108344,
+      "arrays_count": 102,
+      "dropped_object_dtype_count": 18,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "process",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.process.RNAModification",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "RNAModification",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 18 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "RNAModification.json",
       "out_npz": "RNAModification.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/RNAModification.mat",
-      "source_sha256": "416b877b030489184a5001c9ed97b4ead71b5a74f542167b76f4a883d2749559",
-      "source_size_bytes": 1457658,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 25,
+      "source_path": "data/karr_fixtures/per_process/RNAModification_flat.mat",
+      "source_sha256": "64e096360369eb89005318f006063fcec04ed690c0aa61c0a3c630807a0f449a",
+      "source_size_bytes": 347525
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68760096,
+      "arrays_count": 94,
+      "dropped_object_dtype_count": 16,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "process",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.process.RNAProcessing",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "RNAProcessing",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 16 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "RNAProcessing.json",
       "out_npz": "RNAProcessing.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/RNAProcessing.mat",
-      "source_sha256": "ac55081780d05d42f3aa0b63937a979c0cf1b5f5fd16ddb36525f0940a17b916",
-      "source_size_bytes": 1452217,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 33,
+      "source_path": "data/karr_fixtures/per_process/RNAProcessing_flat.mat",
+      "source_sha256": "0760c3b23845029039cc1f47020c260cbc52fa5a69595775a291534ca4b28006",
+      "source_size_bytes": 344292
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68686304,
+      "arrays_count": 96,
+      "dropped_object_dtype_count": 14,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "process",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.process.Replication",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "Replication",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 14 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "Replication.json",
       "out_npz": "Replication.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/Replication.mat",
-      "source_sha256": "10c8cb261eb0de6f117ba5980a46171f05b519497b23428754f29edd17a57926",
-      "source_size_bytes": 1454370,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 40,
+      "source_path": "data/karr_fixtures/per_process/Replication_flat.mat",
+      "source_sha256": "a6b55bf9392153c3cddbc9d4407b0bac518870028d6919f91015f7c6a4df1662",
+      "source_size_bytes": 374849
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68782336,
+      "arrays_count": 99,
+      "dropped_object_dtype_count": 13,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "process",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.process.ReplicationInitiation",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "ReplicationInitiation",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 13 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "ReplicationInitiation.json",
       "out_npz": "ReplicationInitiation.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/ReplicationInitiation.mat",
-      "source_sha256": "e7d02295f4e9bcccdad9ff9d6b3d14a14cba449fbc28ffbff1e8a96bab0445a7",
-      "source_size_bytes": 1467019,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 34,
+      "source_path": "data/karr_fixtures/per_process/ReplicationInitiation_flat.mat",
+      "source_sha256": "ea0a22a435849d31ce84a401a443ec513a724a6fdc6eeb844031b2c1d3855d36",
+      "source_size_bytes": 596021
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68674928,
+      "arrays_count": 96,
+      "dropped_object_dtype_count": 16,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "process",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.process.RibosomeAssembly",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "RibosomeAssembly",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 16 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "RibosomeAssembly.json",
       "out_npz": "RibosomeAssembly.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/RibosomeAssembly.mat",
-      "source_sha256": "87d92d80d70108648ea516a06fbbb5dedb175375fe4e02482c5a1fa6c2346ac0",
-      "source_size_bytes": 1449423,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 17,
+      "source_path": "data/karr_fixtures/per_process/RibosomeAssembly_flat.mat",
+      "source_sha256": "d1b17ea39a9b90fe1dd3ae400e4c976e507aa22802d65f8c2544daeda76020ec",
+      "source_size_bytes": 340519
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68932400,
+      "arrays_count": 94,
+      "dropped_object_dtype_count": 17,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "process",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.process.TerminalOrganelleAssembly",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "TerminalOrganelleAssembly",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 17 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "TerminalOrganelleAssembly.json",
       "out_npz": "TerminalOrganelleAssembly.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/TerminalOrganelleAssembly.mat",
-      "source_sha256": "9cc41a11a599b9df29d958a7d22091203ba70db802608a1d189de24f43bc70fa",
-      "source_size_bytes": 1449470,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 18,
+      "source_path": "data/karr_fixtures/per_process/TerminalOrganelleAssembly_flat.mat",
+      "source_sha256": "cdf3c89d8f32cd429d130cc650b01c53f855a520faa796e318dbead75bcbeabe",
+      "source_size_bytes": 341091
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68716184,
+      "arrays_count": 100,
+      "dropped_object_dtype_count": 12,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "process",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.process.Transcription",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "Transcription",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 12 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "Transcription.json",
       "out_npz": "Transcription.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/Transcription.mat",
-      "source_sha256": "7a1f995b0570bb5ab319576c3f78a71d0f568033b13952726f1f0e8ed98c23de",
-      "source_size_bytes": 1455959,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 17,
+      "source_path": "data/karr_fixtures/per_process/Transcription_flat.mat",
+      "source_sha256": "de4bab119d2ebf61bdefb4a4c1bedb5ddd589241638f3adfa5a0b6535c7d50b2",
+      "source_size_bytes": 553349
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68704096,
+      "arrays_count": 97,
+      "dropped_object_dtype_count": 14,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "process",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.process.TranscriptionalRegulation",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "TranscriptionalRegulation",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 14 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "TranscriptionalRegulation.json",
       "out_npz": "TranscriptionalRegulation.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/TranscriptionalRegulation.mat",
-      "source_sha256": "0a9f6a0b881e21e879b66b7ea3760a14e627bd1288d8cdfd4c19d9d7534049de",
-      "source_size_bytes": 1449294,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 9,
+      "source_path": "data/karr_fixtures/per_process/TranscriptionalRegulation_flat.mat",
+      "source_sha256": "c553fd09f6f782db0a76fa0513746296a63b2b0096cf49ce7570cf78724a2744",
+      "source_size_bytes": 374502
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68691888,
+      "arrays_count": 92,
+      "dropped_object_dtype_count": 15,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "process",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.process.Translation",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "Translation",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 15 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "Translation.json",
       "out_npz": "Translation.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/Translation.mat",
-      "source_sha256": "ed7e358940bbc6273dd061d75d56c092eddec327709e68a664ecab06b2248576",
-      "source_size_bytes": 1450521,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 34,
+      "source_path": "data/karr_fixtures/per_process/Translation_flat.mat",
+      "source_sha256": "cbc6f5d9808c31f86ae426faab0fe5b50c18f8124cc1a48f0bdb6322e704a85f",
+      "source_size_bytes": 577818
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68932896,
+      "arrays_count": 107,
+      "dropped_object_dtype_count": 17,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "process",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.process.tRNAAminoacylation",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "tRNAAminoacylation",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 17 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "tRNAAminoacylation.json",
       "out_npz": "tRNAAminoacylation.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures/tRNAAminoacylation.mat",
-      "source_sha256": "d1fb71a9b6f84ff62c5fdc3f52a48a382ce24ed37db5ad3fc2d02d85472afdb2",
-      "source_size_bytes": 1473939,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 25,
+      "source_path": "data/karr_fixtures/per_process/tRNAAminoacylation_flat.mat",
+      "source_sha256": "5e7fe972081172c196542029ae76eef939f88dc891b355492a13e3206c3aa3fa",
+      "source_size_bytes": 359822
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68719520,
+      "arrays_count": 8,
+      "dropped_object_dtype_count": 4,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "state",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.state.CellGeometry",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "CellGeometry",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 4 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "CellGeometry.json",
       "out_npz": "CellGeometry.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/CellGeometry.mat",
-      "source_sha256": "9634cd025aac7e79c2ba373f18f5a7e6d437893643dd52476e3777d9cac3cd6e",
-      "source_size_bytes": 1454940,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 7,
+      "source_path": "data/karr_fixtures/per_process/CellGeometry_flat.mat",
+      "source_sha256": "7f8ef3a6e90d8353f4a7a4080a4b00bb84155dbc53e6b1f42d556876bd7c4599",
+      "source_size_bytes": 760
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68720272,
+      "arrays_count": 19,
+      "dropped_object_dtype_count": 8,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "state",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.state.CellMass",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "CellMass",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 8 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "CellMass.json",
       "out_npz": "CellMass.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/CellMass.mat",
-      "source_sha256": "6748b8d62f9f4d5036d3cc890e6d6cd3f6fae5495ba0197a918925fd255364dd",
-      "source_size_bytes": 1455676,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 19,
+      "source_path": "data/karr_fixtures/per_process/CellMass_flat.mat",
+      "source_sha256": "a1865917bfeba9ede6f565c54add85b2f290e38c091e460c01217c4a5781aaa6",
+      "source_size_bytes": 1006113
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68653616,
+      "arrays_count": 85,
+      "dropped_object_dtype_count": 11,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "state",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.state.Chromosome",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "Chromosome",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 11 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "Chromosome.json",
       "out_npz": "Chromosome.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/Chromosome.mat",
-      "source_sha256": "3546024205ef1cecde87bb4c71de5054066cdc60b90b8d3434088ade68c2e4a9",
-      "source_size_bytes": 1445845,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 83,
+      "source_path": "data/karr_fixtures/per_process/Chromosome_flat.mat",
+      "source_sha256": "e4c05522d28db93e0a3c73dcc7e6a3f9e526c47ef1119aa7c6d5624a7557d602",
+      "source_size_bytes": 31737
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 6936,
+      "arrays_count": 6,
+      "dropped_object_dtype_count": 6,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "state",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.state.FtsZRing",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "FtsZRing",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 6 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "FtsZRing.json",
       "out_npz": "FtsZRing.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/FtsZRing.mat",
-      "source_sha256": "e241bec8e51771fafabf4359c1ce5bf4d1c91e4d9ff111a3f027400ed4f38c8d",
-      "source_size_bytes": 1454,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 10,
+      "source_path": "data/karr_fixtures/per_process/FtsZRing_flat.mat",
+      "source_sha256": "20d341cf5c2ed10fc383fbad330e3ac8ee4d0c7dabb3b8fc109f9b561a3c4d06",
+      "source_size_bytes": 787
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 3720,
+      "arrays_count": 5,
+      "dropped_object_dtype_count": 8,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "state",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.state.Host",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "Host",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 8 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "Host.json",
       "out_npz": "Host.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/Host.mat",
-      "source_sha256": "2c2797cb7eb23db62db95dcd72708dcbbfb265a02f1a08ba7182ea264945c981",
-      "source_size_bytes": 1074,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 10,
+      "source_path": "data/karr_fixtures/per_process/Host_flat.mat",
+      "source_sha256": "36902bdac8169002e826ccc3ed35fb700bf22fa950465c7fd1dbd23db86644cd",
+      "source_size_bytes": 708
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 54352,
+      "arrays_count": 6,
+      "dropped_object_dtype_count": 7,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "state",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.state.MetabolicReaction",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "MetabolicReaction",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 7 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "MetabolicReaction.json",
       "out_npz": "MetabolicReaction.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/MetabolicReaction.mat",
-      "source_sha256": "817585b38b95a06200327e516e74468f1444d0254e049e849f94362f4317342d",
-      "source_size_bytes": 7598,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 7,
+      "source_path": "data/karr_fixtures/per_process/MetabolicReaction_flat.mat",
+      "source_sha256": "fa28891994740761798473db70a7cebf1a987fd0d863d9227f47165725c775e9",
+      "source_size_bytes": 7067
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 643512,
+      "arrays_count": 38,
+      "dropped_object_dtype_count": 10,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "state",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.state.Metabolite",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "Metabolite",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 10 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "Metabolite.json",
       "out_npz": "Metabolite.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/Metabolite.mat",
-      "source_sha256": "6b36d584d214bca1e3f2a997250ee61462aff93880ff7e4dccca6772583bde2b",
-      "source_size_bytes": 32797,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 14,
+      "source_path": "data/karr_fixtures/per_process/Metabolite_flat.mat",
+      "source_sha256": "9da7ce5f6e5a7c62983bdd76c44b11c0ddb1d783edb5866a45adf085d83d6a5f",
+      "source_size_bytes": 32145
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 1693056,
+      "arrays_count": 12,
+      "dropped_object_dtype_count": 10,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "state",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.state.Polypeptide",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "Polypeptide",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 10 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "Polypeptide.json",
       "out_npz": "Polypeptide.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/Polypeptide.mat",
-      "source_sha256": "9e6e02e7948f6603fc30010379c9134e1773fddce10cebb946c0b885164b97c4",
-      "source_size_bytes": 338633,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 4,
+      "source_path": "data/karr_fixtures/per_process/Polypeptide_flat.mat",
+      "source_sha256": "ba7b4da0606c2c89f246c64c51f392207817469160238c28aabc2c7645f2bc5f",
+      "source_size_bytes": 236334
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68653232,
+      "arrays_count": 31,
+      "dropped_object_dtype_count": 6,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "state",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.state.ProteinComplex",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "ProteinComplex",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 6 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "ProteinComplex.json",
       "out_npz": "ProteinComplex.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/ProteinComplex.mat",
-      "source_sha256": "1e3394c8bd94dee9291918948a684ec7280f1195123730962cbd11c54ae29601",
-      "source_size_bytes": 1445934,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 8,
+      "source_path": "data/karr_fixtures/per_process/ProteinComplex_flat.mat",
+      "source_sha256": "ca12556ff283f60106213eec85e77fadd068d37d32c8319ec0a06be6257dab13",
+      "source_size_bytes": 57431
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68653160,
+      "arrays_count": 24,
+      "dropped_object_dtype_count": 8,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "state",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.state.ProteinMonomer",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "ProteinMonomer",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 8 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "ProteinMonomer.json",
       "out_npz": "ProteinMonomer.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/ProteinMonomer.mat",
-      "source_sha256": "553fb8d8ac649d550de855e97783ad38e813db72eba3fcd25154f35ffa9ed6cf",
-      "source_size_bytes": 1445675,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 5,
+      "source_path": "data/karr_fixtures/per_process/ProteinMonomer_flat.mat",
+      "source_sha256": "4b59dbd5d2e07bb724ec9145c0f2488062866c8dab208be7de0701cbbca70e27",
+      "source_size_bytes": 177616
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68652920,
+      "arrays_count": 13,
+      "dropped_object_dtype_count": 6,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "state",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.state.RNAPolymerase",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "RNAPolymerase",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 6 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "RNAPolymerase.json",
       "out_npz": "RNAPolymerase.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/RNAPolymerase.mat",
-      "source_sha256": "1ed452a78ff78efecc8dcad0531c765a56fc12c8ae736ea34a8507a7938c8644",
-      "source_size_bytes": 1446558,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 12,
+      "source_path": "data/karr_fixtures/per_process/RNAPolymerase_flat.mat",
+      "source_sha256": "df104999557264d248b0f865718d867cbb1299eb7011d6ae78d716cd682c9cfa",
+      "source_size_bytes": 1639
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68653080,
+      "arrays_count": 13,
+      "dropped_object_dtype_count": 7,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "state",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.state.Ribosome",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "Ribosome",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 7 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "Ribosome.json",
       "out_npz": "Ribosome.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/Ribosome.mat",
-      "source_sha256": "df0792210dde1c466cb6c73a4fadaba32aefc611586affd0b64ec812d4ddab85",
-      "source_size_bytes": 1445713,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 9,
+      "source_path": "data/karr_fixtures/per_process/Ribosome_flat.mat",
+      "source_sha256": "3448ae3ca9d24802e4e36ed08919cbc5bb704b1dded140884649e97d7a4becec",
+      "source_size_bytes": 1107
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68653000,
+      "arrays_count": 35,
+      "dropped_object_dtype_count": 7,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "state",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.state.Rna",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "Rna",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 7 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "Rna.json",
       "out_npz": "Rna.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/Rna.mat",
-      "source_sha256": "c5473774e17a736d87aded3b21fe77cd2952a7b0dd807b9b3d1abacb91ec48b7",
-      "source_size_bytes": 1446562,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 17,
+      "source_path": "data/karr_fixtures/per_process/Rna_flat.mat",
+      "source_sha256": "67b8bd3ee6965e4220de3f8ca7f9faeeb7f3f5199e7c21eee1b616c1d9a7fc1d",
+      "source_size_bytes": 69263
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 8136,
+      "arrays_count": 8,
+      "dropped_object_dtype_count": 8,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "state",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.state.Stimulus",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "Stimulus",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 8 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "Stimulus.json",
       "out_npz": "Stimulus.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/Stimulus.mat",
-      "source_sha256": "85e21a1db4f22b8ea85d89471d76dc3c6bd33a4c1c3b12b797a439c6d6d1a14f",
-      "source_size_bytes": 1736,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 3,
+      "source_path": "data/karr_fixtures/per_process/Stimulus_flat.mat",
+      "source_sha256": "130bc7a452a42b028c58bac0b462e0f3cb9e1d7da1f06ba1ef62712efa608982",
+      "source_size_bytes": 985
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 4376,
+      "arrays_count": 6,
+      "dropped_object_dtype_count": 5,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "state",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.state.Time",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "Time",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 5 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "Time.json",
       "out_npz": "Time.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/Time.mat",
-      "source_sha256": "17e9e5725e58fef7376e345eeb8fc2c1f56ac784b23bf3b15ebff8e217a57407",
-      "source_size_bytes": 1140,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 8,
+      "source_path": "data/karr_fixtures/per_process/Time_flat.mat",
+      "source_sha256": "993950068f42d8438175cfd855af5d842dc48fb120ca41a8d34bb32d6a557756",
+      "source_size_bytes": 696
     },
     {
-      "extraction_status": "unparsed_mcos_payload",
-      "function_workspace_bytes": 68652760,
+      "arrays_count": 15,
+      "dropped_object_dtype_count": 8,
+      "extraction_status": "extracted_from_matlab_flat",
       "kind": "state",
-      "mat_format": "v5",
-      "mcos_class": "edu.stanford.covert.cell.sim.state.Transcript",
+      "mat_format": "v7_flattened_by_matlab",
       "name": "Transcript",
       "notes": [
-        "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+        "dropped 8 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
       ],
       "out_json": "Transcript.json",
       "out_npz": "Transcript.npz",
-      "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/Transcript.mat",
-      "source_sha256": "c9390cc054d4b93bf2ece25ad9d116ff85d870763ffefd49fc85d597ac3ecbb6",
-      "source_size_bytes": 1445952,
-      "top_level_keys": [
-        "None"
-      ]
+      "scalars_count": 5,
+      "source_path": "data/karr_fixtures/per_process/Transcript_flat.mat",
+      "source_sha256": "9f78b6b605774953099df2e2bb06b6e55150cd97e32e99de227ab8b439faea74",
+      "source_size_bytes": 174439
     }
   ]
 }

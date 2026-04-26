@@ -39,10 +39,11 @@ def sha256_file(p: Path) -> str:
 
 def hash_dir(d: Path) -> dict[str, str]:
     out = {}
-    # Exclude human-maintained docs; only hash auto-generated extraction outputs.
-    skip = {"README.md", "fixture_hashes.json"}
+    # Exclude human-maintained docs and MATLAB-bootstrap inputs; only hash
+    # Python-emitted extraction outputs (.npz + .json + manifest.json).
+    skip = {"README.md", "fixture_hashes.json", "matlab_extract_manifest.json"}
     for p in sorted(d.glob("*")):
-        if p.is_file() and p.name not in skip:
+        if p.is_file() and p.name not in skip and not p.name.endswith("_flat.mat"):
             out[p.name] = sha256_file(p)
     return out
 
@@ -50,6 +51,13 @@ def hash_dir(d: Path) -> dict[str, str]:
 def reextract(target: Path) -> None:
     target.mkdir(parents=True, exist_ok=True)
     cmd = [sys.executable, str(EXTRACT_SCRIPT), "--all", "--out", str(target)]
+    # If the committed payload was produced from MATLAB-flattened inputs
+    # (the supported path post-2026-04-27), point the re-extract at those
+    # same _flat.mat files. Detect by presence of any *_flat.mat in the
+    # committed dir.
+    flats_present = any(COMMITTED_DIR.glob("*_flat.mat"))
+    if flats_present:
+        cmd += ["--from-flat", "--flat-dir", str(COMMITTED_DIR)]
     res = subprocess.run(cmd, capture_output=True, text=True)
     if res.returncode != 0:
         print("re-extraction failed:", res.returncode, file=sys.stderr)

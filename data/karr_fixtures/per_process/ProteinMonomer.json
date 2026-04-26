@@ -1,26 +1,58 @@
 {
   "array_keys": [
-    "None/__mcos__/arr"
+    "fixture/baseCounts",
+    "fixture/boundIndexs",
+    "fixture/chromosome",
+    "fixture/compartment",
+    "fixture/compartments",
+    "fixture/counts",
+    "fixture/damagedIndexs",
+    "fixture/dependentStateNames",
+    "fixture/fittedConstantNames",
+    "fixture/fixedConstantNames",
+    "fixture/foldedIndexs",
+    "fixture/halfLives",
+    "fixture/inactivatedIndexs",
+    "fixture/lengths",
+    "fixture/matureIndexs",
+    "fixture/misfoldedIndexs",
+    "fixture/molecularWeights",
+    "fixture/name",
+    "fixture/names",
+    "fixture/nascentIndexs",
+    "fixture/optionNames",
+    "fixture/parameterIndexs",
+    "fixture/parameterNames",
+    "fixture/processedIIIndexs",
+    "fixture/processedIIndexs",
+    "fixture/randStream",
+    "fixture/ribosome",
+    "fixture/signalSequenceIndexs",
+    "fixture/stateNames",
+    "fixture/wholeCellModelID",
+    "fixture/wholeCellModelIDs",
+    "fixture/x_class_"
   ],
   "manifest": {
-    "extraction_status": "unparsed_mcos_payload",
-    "function_workspace_bytes": 68653160,
-    "mat_format": "v5",
-    "mcos_class": "edu.stanford.covert.cell.sim.state.ProteinMonomer",
+    "arrays_count": 24,
+    "dropped_object_dtype_count": 8,
+    "extraction_status": "extracted_from_matlab_flat",
+    "kind": "state",
+    "mat_format": "v7_flattened_by_matlab",
     "name": "ProteinMonomer",
     "notes": [
-      "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      "dropped 8 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
     ],
-    "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/ProteinMonomer.mat",
-    "source_sha256": "553fb8d8ac649d550de855e97783ad38e813db72eba3fcd25154f35ffa9ed6cf",
-    "source_size_bytes": 1445675,
-    "top_level_keys": [
-      "None"
-    ]
+    "scalars_count": 5,
+    "source_path": "data/karr_fixtures/per_process/ProteinMonomer_flat.mat",
+    "source_sha256": "4b59dbd5d2e07bb724ec9145c0f2488062866c8dab208be7de0701cbbca70e27",
+    "source_size_bytes": 177616
   },
   "scalars": {
-    "None/__mcos__/s0": "fixture",
-    "None/__mcos__/s1": "MCOS",
-    "None/__mcos__/s2": "edu.stanford.covert.cell.sim.state.ProteinMonomer"
+    "fixture/macromoleculeStateInitializationVariation": 2.9,
+    "fixture/minimumAverageExpression": 12,
+    "fixture/seed": 1,
+    "fixture/translationFactorIndexs": 24,
+    "fixture/verbosity": 0
   }
 }

@@ -1,26 +1,47 @@
 {
   "array_keys": [
-    "None/__mcos__/arr"
+    "fixture/abortedPolypeptides",
+    "fixture/aminoAcidMolecularWeights",
+    "fixture/boundMRNAs",
+    "fixture/dependentStateNames",
+    "fixture/fittedConstantNames",
+    "fixture/fixedConstantNames",
+    "fixture/monomerAASequences",
+    "fixture/monomerLengths",
+    "fixture/monomerTRNASequences",
+    "fixture/monomerWholeCellModelIDs",
+    "fixture/name",
+    "fixture/nascentMonomerLengths",
+    "fixture/optionNames",
+    "fixture/parameterIndexs",
+    "fixture/parameterNames",
+    "fixture/proteolysisTagAASequence",
+    "fixture/proteolysisTagLengths",
+    "fixture/proteolysisTagTRNASequence",
+    "fixture/randStream",
+    "fixture/stateNames",
+    "fixture/wholeCellModelID",
+    "fixture/x_class_"
   ],
   "manifest": {
-    "extraction_status": "unparsed_mcos_payload",
-    "function_workspace_bytes": 1693056,
-    "mat_format": "v5",
-    "mcos_class": "edu.stanford.covert.cell.sim.state.Polypeptide",
+    "arrays_count": 12,
+    "dropped_object_dtype_count": 10,
+    "extraction_status": "extracted_from_matlab_flat",
+    "kind": "state",
+    "mat_format": "v7_flattened_by_matlab",
     "name": "Polypeptide",
     "notes": [
-      "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      "dropped 10 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
     ],
-    "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/Polypeptide.mat",
-    "source_sha256": "9e6e02e7948f6603fc30010379c9134e1773fddce10cebb946c0b885164b97c4",
-    "source_size_bytes": 338633,
-    "top_level_keys": [
-      "None"
-    ]
+    "scalars_count": 4,
+    "source_path": "data/karr_fixtures/per_process/Polypeptide_flat.mat",
+    "source_sha256": "ba7b4da0606c2c89f246c64c51f392207817469160238c28aabc2c7645f2bc5f",
+    "source_size_bytes": 236334
   },
   "scalars": {
-    "None/__mcos__/s0": "fixture",
-    "None/__mcos__/s1": "MCOS",
-    "None/__mcos__/s2": "edu.stanford.covert.cell.sim.state.Polypeptide"
+    "fixture/proteolysisTagLength": 27,
+    "fixture/proteolysisTagMolecularWeight": 2971.2056000000002,
+    "fixture/seed": 1,
+    "fixture/verbosity": 0
   }
 }

@@ -1,26 +1,67 @@
 {
   "array_keys": [
-    "None/__mcos__/arr"
+    "fixture/cell",
+    "fixture/cellDry",
+    "fixture/chromosome",
+    "fixture/compartment",
+    "fixture/complex",
+    "fixture/dependentStateNames",
+    "fixture/dnaWt",
+    "fixture/fittedConstantNames",
+    "fixture/fixedConstantNames",
+    "fixture/media",
+    "fixture/metabolite",
+    "fixture/metaboliteWt",
+    "fixture/monomer",
+    "fixture/name",
+    "fixture/optionNames",
+    "fixture/parameterIndexs",
+    "fixture/parameterNames",
+    "fixture/proteinWt",
+    "fixture/randStream",
+    "fixture/rna",
+    "fixture/rnaWt",
+    "fixture/stateNames",
+    "fixture/states",
+    "fixture/total",
+    "fixture/waterWt",
+    "fixture/wholeCellModelID",
+    "fixture/x_class_"
   ],
   "manifest": {
-    "extraction_status": "unparsed_mcos_payload",
-    "function_workspace_bytes": 68720272,
-    "mat_format": "v5",
-    "mcos_class": "edu.stanford.covert.cell.sim.state.CellMass",
+    "arrays_count": 19,
+    "dropped_object_dtype_count": 8,
+    "extraction_status": "extracted_from_matlab_flat",
+    "kind": "state",
+    "mat_format": "v7_flattened_by_matlab",
     "name": "CellMass",
     "notes": [
-      "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      "dropped 8 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
     ],
-    "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/CellMass.mat",
-    "source_sha256": "6748b8d62f9f4d5036d3cc890e6d6cd3f6fae5495ba0197a918925fd255364dd",
-    "source_size_bytes": 1455676,
-    "top_level_keys": [
-      "None"
-    ]
+    "scalars_count": 19,
+    "source_path": "data/karr_fixtures/per_process/CellMass_flat.mat",
+    "source_sha256": "a1865917bfeba9ede6f565c54add85b2f290e38c091e460c01217c4a5781aaa6",
+    "source_size_bytes": 1006113
   },
   "scalars": {
-    "None/__mcos__/s0": "fixture",
-    "None/__mcos__/s1": "MCOS",
-    "None/__mcos__/s2": "edu.stanford.covert.cell.sim.state.CellMass"
+    "fixture/cellInitialDryWeight": 3.93e-15,
+    "fixture/cellInitialMassVariation": 0.05,
+    "fixture/dryWeight": 0,
+    "fixture/dryWeightFractionCarbohydrate": 0.00516418150588235,
+    "fixture/dryWeightFractionDNA": 0.1688,
+    "fixture/dryWeightFractionIon": 0.00980392156862745,
+    "fixture/dryWeightFractionLipid": 0.0568059965647059,
+    "fixture/dryWeightFractionNucleotide": 0.01833748,
+    "fixture/dryWeightFractionPolyamine": 0.01323529411764706,
+    "fixture/dryWeightFractionProtein": 0.619701780705882,
+    "fixture/dryWeightFractionRNA": 0.0929552671058823,
+    "fixture/dryWeightFractionVitamin": 0.01519607843137255,
+    "fixture/fractionWetWeight": 0.7,
+    "fixture/initialBiomassConcentration": 0.003,
+    "fixture/initialFractionAAsInMonomers": 0.99,
+    "fixture/initialFractionNTPsInRNAs": 1,
+    "fixture/seed": 1,
+    "fixture/timeAveragedCellWeight": 1.4427,
+    "fixture/verbosity": 0
   }
 }

@@ -1,26 +1,44 @@
 {
   "array_keys": [
-    "None/__mcos__/arr"
+    "fixture/dependentStateNames",
+    "fixture/fittedConstantNames",
+    "fixture/fixedConstantNames",
+    "fixture/isTLRActivated",
+    "fixture/name",
+    "fixture/optionNames",
+    "fixture/parameterIndexs",
+    "fixture/parameterNames",
+    "fixture/randStream",
+    "fixture/stateNames",
+    "fixture/tlrIDs",
+    "fixture/wholeCellModelID",
+    "fixture/x_class_"
   ],
   "manifest": {
-    "extraction_status": "unparsed_mcos_payload",
-    "function_workspace_bytes": 3720,
-    "mat_format": "v5",
-    "mcos_class": "edu.stanford.covert.cell.sim.state.Host",
+    "arrays_count": 5,
+    "dropped_object_dtype_count": 8,
+    "extraction_status": "extracted_from_matlab_flat",
+    "kind": "state",
+    "mat_format": "v7_flattened_by_matlab",
     "name": "Host",
     "notes": [
-      "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      "dropped 8 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
     ],
-    "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/Host.mat",
-    "source_sha256": "2c2797cb7eb23db62db95dcd72708dcbbfb265a02f1a08ba7182ea264945c981",
-    "source_size_bytes": 1074,
-    "top_level_keys": [
-      "None"
-    ]
+    "scalars_count": 10,
+    "source_path": "data/karr_fixtures/per_process/Host_flat.mat",
+    "source_sha256": "36902bdac8169002e826ccc3ed35fb700bf22fa950465c7fd1dbd23db86644cd",
+    "source_size_bytes": 708
   },
   "scalars": {
-    "None/__mcos__/s0": "fixture",
-    "None/__mcos__/s1": "MCOS",
-    "None/__mcos__/s2": "edu.stanford.covert.cell.sim.state.Host"
+    "fixture/dryWeight": 0,
+    "fixture/isBacteriumAdherent": 1,
+    "fixture/isInflammatoryResponseActivated": 1,
+    "fixture/isNFkBActivated": 1,
+    "fixture/nTLRs": 3,
+    "fixture/seed": 1,
+    "fixture/tlrIndexs_1": 1,
+    "fixture/tlrIndexs_2": 2,
+    "fixture/tlrIndexs_6": 3,
+    "fixture/verbosity": 0
   }
 }

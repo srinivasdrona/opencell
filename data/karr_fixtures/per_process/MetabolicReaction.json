@@ -1,26 +1,41 @@
 {
   "array_keys": [
-    "None/__mcos__/arr"
+    "fixture/dependentStateNames",
+    "fixture/fittedConstantNames",
+    "fixture/fixedConstantNames",
+    "fixture/fluxs",
+    "fixture/name",
+    "fixture/optionNames",
+    "fixture/parameterIndexs",
+    "fixture/parameterNames",
+    "fixture/randStream",
+    "fixture/reactionWholeCellModelIDs",
+    "fixture/stateNames",
+    "fixture/wholeCellModelID",
+    "fixture/x_class_"
   ],
   "manifest": {
-    "extraction_status": "unparsed_mcos_payload",
-    "function_workspace_bytes": 54352,
-    "mat_format": "v5",
-    "mcos_class": "edu.stanford.covert.cell.sim.state.MetabolicReaction",
+    "arrays_count": 6,
+    "dropped_object_dtype_count": 7,
+    "extraction_status": "extracted_from_matlab_flat",
+    "kind": "state",
+    "mat_format": "v7_flattened_by_matlab",
     "name": "MetabolicReaction",
     "notes": [
-      "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      "dropped 7 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
     ],
-    "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/MetabolicReaction.mat",
-    "source_sha256": "817585b38b95a06200327e516e74468f1444d0254e049e849f94362f4317342d",
-    "source_size_bytes": 7598,
-    "top_level_keys": [
-      "None"
-    ]
+    "scalars_count": 7,
+    "source_path": "data/karr_fixtures/per_process/MetabolicReaction_flat.mat",
+    "source_sha256": "fa28891994740761798473db70a7cebf1a987fd0d863d9227f47165725c775e9",
+    "source_size_bytes": 7067
   },
   "scalars": {
-    "None/__mcos__/s0": "fixture",
-    "None/__mcos__/s1": "MCOS",
-    "None/__mcos__/s2": "edu.stanford.covert.cell.sim.state.MetabolicReaction"
+    "fixture/dryWeight": 0,
+    "fixture/growth": 2.1192692552000678e-05,
+    "fixture/growth0": 2.1393357961367016e-05,
+    "fixture/initialGrowthFilterWidth": 0.25,
+    "fixture/meanInitialGrowthRate": 2.1393e-05,
+    "fixture/seed": 1,
+    "fixture/verbosity": 0
   }
 }

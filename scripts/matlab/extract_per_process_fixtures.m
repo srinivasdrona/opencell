@@ -173,12 +173,21 @@ function r = relpath(fullPath, root)
 end
 
 function out = flattenAny(x, depth, visited)
-% Recursively flatten any MATLAB value into Python-friendly plain values.
-% Handles structs, cells, MCOS objects, containers.Map, and primitives.
-% Replaces unhandled types (function handles, java, opaque) with sentinel
-% strings — never synthesizes numeric values.
+% Flatten a MATLAB value into a plain (numeric/cell/struct) tree.
+%
+% Strategy (post handle-graph-cycle lessons learned):
+%   * Primitives, structs, cells, containers.Map -> recurse normally.
+%   * MCOS handle objects -> walk only own (declared) properties, and
+%     for any property whose VALUE is itself a handle object, emit a
+%     sentinel string instead of recursing. This stops the
+%     cross-references between Process <-> Simulation <-> State <->
+%     Reaction <-> ... that otherwise blow up combinatorially.
+%   * Function handles / java / unhandled -> sentinel string.
+%
+% `visited` is kept as a parameter for API stability but is not used
+% by the new strategy (we cut at handle boundaries instead).
 
-    if depth > 25
+    if depth > 6
         out = '<MAX_DEPTH>';
         return;
     end
@@ -234,55 +243,14 @@ function out = flattenAny(x, depth, visited)
     end
 
     if isobject(x)
-        % Handle object cycle protection (best-effort; MATLAB doesn't expose
-        % object identity directly).
-        if numel(x) == 1 && isa(x, 'handle')
-            addrKey = sprintf('obj_%s_%d', class(x), visitedCount(visited));
-            if isKey(visited, addrKey)
-                out = sprintf('<cycle:%s>', class(x));
-                return;
-            end
-            visited(addrKey) = true; %#ok<NASGU>
-        end
-
         if numel(x) > 1
             out = cell(size(x));
             for k = 1:numel(x)
-                out{k} = flattenAny(x(k), depth+1, visited);
+                out{k} = flattenAnyInner(x(k), depth+1);
             end
             return;
         end
-
-        out = struct();
-        out.x_class_ = class(x);
-
-        % Try struct(obj) first (works for most handle classes).
-        try
-            s = struct(x);
-            fns = fieldnames(s);
-            for f = 1:numel(fns)
-                out.(fns{f}) = flattenAny(s.(fns{f}), depth+1, visited);
-            end
-            return;
-        catch
-        end
-
-        % Metaclass fallback: walk all properties incl. hidden.
-        try
-            mc = metaclass(x);
-            for p = 1:numel(mc.PropertyList)
-                prop = mc.PropertyList(p);
-                if prop.Dependent && ~prop.HasDefault, continue; end
-                try
-                    val = x.(prop.Name);
-                    out.(prop.Name) = flattenAny(val, depth+1, visited);
-                catch e
-                    out.(prop.Name) = sprintf('<unreadable:%s>', e.identifier);
-                end
-            end
-        catch e
-            out.x_error_ = sprintf('metaclass failed: %s', e.message);
-        end
+        out = flattenAnyInner(x, depth);
         return;
     end
 
@@ -293,12 +261,80 @@ function out = flattenAny(x, depth, visited)
     end
 end
 
-function n = visitedCount(v)
+function out = flattenAnyInner(x, depth)
+% Walk the own (non-inherited from handle/MException etc.) properties
+% of an MCOS instance. Skip properties whose VALUE is itself an MCOS
+% handle object — emit a sentinel instead. This is the cycle-cut.
+
+    out = struct();
+    out.x_class_ = class(x);
+
     try
-        n = v.Count + 1;
-    catch
-        n = 0;
+        mc = metaclass(x);
+    catch e
+        out.x_error_ = sprintf('metaclass failed: %s', e.message);
+        return;
     end
+
+    for p = 1:numel(mc.PropertyList)
+        prop = mc.PropertyList(p);
+        % Skip inherited handle plumbing (Listeners etc.).
+        if ~strcmp(prop.DefiningClass.Name, mc.Name)
+            % Allow direct ancestors in the same package tree but skip
+            % everything inherited from handle/dynamicprops/MException.
+            if any(strcmp(prop.DefiningClass.Name, ...
+                    {'handle','dynamicprops','matlab.mixin.Copyable', ...
+                     'matlab.mixin.SetGet'}))
+                continue;
+            end
+        end
+        if prop.Dependent && ~prop.HasDefault, continue; end
+        if strcmp(prop.GetAccess, 'private') || strcmp(prop.GetAccess, 'protected')
+            % Often these are computed on demand; skip to be safe.
+            continue;
+        end
+        name = prop.Name;
+        try
+            val = x.(name);
+        catch e
+            out.(safeFieldName(name)) = sprintf('<unreadable:%s>', e.identifier);
+            continue;
+        end
+
+        % CYCLE-CUT: any property pointing to another MCOS handle object
+        % (or array thereof) gets sentinel'd, not recursed.
+        if isHandleObjectLike(val)
+            out.(safeFieldName(name)) = sprintf('<handle:%s:%dx%d>', ...
+                class(val), size(val,1), size(val,2));
+            continue;
+        end
+
+        try
+            out.(safeFieldName(name)) = flattenAny(val, depth+1, []);
+        catch e
+            out.(safeFieldName(name)) = sprintf('<flatten-error:%s>', e.message);
+        end
+    end
+end
+
+function tf = isHandleObjectLike(v)
+% A value we should NOT recurse into (would re-enter the MCOS web).
+% containers.Map, function_handle, java are handled elsewhere; here
+% we cut MCOS handle classes specifically.
+    tf = false;
+    if isa(v, 'function_handle'), return; end
+    if isa(v, 'containers.Map'), return; end
+    if ~isobject(v), return; end
+    if isa(v, 'handle')
+        % It's an MCOS handle: cut.
+        tf = true;
+    end
+end
+
+function n = safeFieldName(name)
+% MATLAB struct fields cannot start with 'x_' clashing with our
+% sentinels; pass-through otherwise.
+    n = matlab.lang.makeValidName(name);
 end
 
 function h = sha256OfFile(p)

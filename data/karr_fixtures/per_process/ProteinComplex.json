@@ -1,26 +1,66 @@
 {
   "array_keys": [
-    "None/__mcos__/arr"
+    "fixture/baseCounts",
+    "fixture/boundIndexs",
+    "fixture/chromosome",
+    "fixture/compartment",
+    "fixture/compartments",
+    "fixture/counts",
+    "fixture/damagedIndexs",
+    "fixture/dependentStateNames",
+    "fixture/dnaAPolymerIndexs",
+    "fixture/dnaPolymeraseIndexs",
+    "fixture/fittedConstantNames",
+    "fixture/fixedConstantNames",
+    "fixture/formationProcesses",
+    "fixture/ftsZRing",
+    "fixture/halfLives",
+    "fixture/inactivatedIndexs",
+    "fixture/lengths",
+    "fixture/matureIndexs",
+    "fixture/misfoldedIndexs",
+    "fixture/molecularWeights",
+    "fixture/name",
+    "fixture/names",
+    "fixture/nascentIndexs",
+    "fixture/optionNames",
+    "fixture/parameterIndexs",
+    "fixture/parameterNames",
+    "fixture/proteinComplexComposition",
+    "fixture/randStream",
+    "fixture/replisomeIndexs",
+    "fixture/ribosome",
+    "fixture/rnaPolymerase",
+    "fixture/rnaPolymeraseIndexs",
+    "fixture/stateNames",
+    "fixture/translationFactorIndexs",
+    "fixture/wholeCellModelID",
+    "fixture/wholeCellModelIDs",
+    "fixture/x_class_"
   ],
   "manifest": {
-    "extraction_status": "unparsed_mcos_payload",
-    "function_workspace_bytes": 68653232,
-    "mat_format": "v5",
-    "mcos_class": "edu.stanford.covert.cell.sim.state.ProteinComplex",
+    "arrays_count": 31,
+    "dropped_object_dtype_count": 6,
+    "extraction_status": "extracted_from_matlab_flat",
+    "kind": "state",
+    "mat_format": "v7_flattened_by_matlab",
     "name": "ProteinComplex",
     "notes": [
-      "MCOS-serialized MATLAB class object; field-level decode requires MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + MCOS pointer preserved so a future decoder can re-extract."
+      "dropped 6 object-dtype array(s) from npz (cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
     ],
-    "source_path": "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures/ProteinComplex.mat",
-    "source_sha256": "1e3394c8bd94dee9291918948a684ec7280f1195123730962cbd11c54ae29601",
-    "source_size_bytes": 1445934,
-    "top_level_keys": [
-      "None"
-    ]
+    "scalars_count": 8,
+    "source_path": "data/karr_fixtures/per_process/ProteinComplex_flat.mat",
+    "source_sha256": "ca12556ff283f60106213eec85e77fadd068d37d32c8319ec0a06be6257dab13",
+    "source_size_bytes": 57431
   },
   "scalars": {
-    "None/__mcos__/s0": "fixture",
-    "None/__mcos__/s1": "MCOS",
-    "None/__mcos__/s2": "edu.stanford.covert.cell.sim.state.ProteinComplex"
+    "fixture/ftsZGDPIndexs": 93,
+    "fixture/ftsZGTPIndexs": 94,
+    "fixture/minimumAverageExpression": 12,
+    "fixture/ribosome30SIndexs": 196,
+    "fixture/ribosome50SIndexs": 198,
+    "fixture/ribosome70SIndexs": 199,
+    "fixture/seed": 1,
+    "fixture/verbosity": 0
   }
 }
