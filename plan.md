@@ -401,7 +401,7 @@ NOT a parallel program)**
 
 ---
 
-## Current Status (2026-04-27, **602 tests passing + 4 xfail**, p10 mass partition shipped; D.2 design v1→v2→v3 critique loop in flight)
+## Current Status (2026-04-27, **602+ tests on main + 70/70 m1**, p10 mass partition shipped; m1 per-process fixtures merged; D.2 design v1→v2→v3 critique loop in flight)
 
 ### Phase D.2 design rework loop (IN FLIGHT — v1, v2 in branches; v3 next)
 
@@ -422,16 +422,16 @@ Standard practice for non-trivial design adopted this session: write → adversa
 
 **v2 verified-true headlines:** 22 ARCHIVE_SPEC extensions real (all `State_Mass.dump.complex.*` paths exist in archive); 158-complex mature subset at threshold ≥1; 10 bound-heavy anchors at threshold ≥1; mature_total = 4006 (cytosol+membrane) vs 3264 (cytosol-only).
 
-### m1 per-process fixture extraction (DONE — `agent/m1-per-process-fixtures` @ `b219c6a`, ready to merge)
+### m1 per-process fixture extraction (DONE — merged to main as `bd4d9f8`)
 
-44/44 fixtures (28 process + 16 state) extracted via MATLAB R2026a on Windows host using `scripts/matlab/extract_per_process_fixtures.m`, ingested into canonical `<Name>.{json,npz}` form via `scripts/extract_per_process_fixtures.py --all --from-flat`. Validation: 89 files, 0 mismatched. Test suite: 578 pass + 4 xfail.
+44/44 fixtures (28 process + 16 state) extracted via MATLAB R2026a on Windows host using `scripts/matlab/extract_per_process_fixtures.m`, ingested into canonical `<Name>.{json,npz}` form via `scripts/extract_per_process_fixtures.py --all --from-flat`. Validation: 89 files, 0 mismatched. m1 test suite: 70/70 pass on main.
 
 **MCOS decode unblocked (option b2 shipped).** Notable fixes during the run:
 - `.m` walker: original visited-handle cycle protection was broken (monotonic counter as identity key, never deduplicated). Replaced with cycle-cut at MCOS handle boundaries — own properties only; sentinel `<handle:Class:NxM>` for any property whose value is itself an MCOS handle object. Same hang-class as `Simulation_fitted.mat` last session. All 44 fixtures flatten in ~3 min.
 - `--from-flat` ingest: object-dtype arrays from sentinel-laden cell trees ballooned npz (~17 MB each, 105 MB total). Filter applied and `savez_compressed` — 105M → 13M (664 KB npz numeric + 12 MB `_flat.mat` audit trail + 212 KB json). Real numeric tensors (Metabolism stoich, etc.) preserved.
 - `validate_per_process_fixtures.py`: now passes `--from-flat --flat-dir` to re-extract when `_flat.mat` files present in committed dir; `hash_dir` excludes MATLAB-bootstrap inputs.
 
-Per-process oracles now available for downstream D.2/M2/M3/M5. Pre-existing failure in `tests/m1/test_calc_flux_bounds.py` is a worktree-data issue (worktree never had `m1_sources/karr_flat/` populated), not caused by this work.
+Per-process oracles now available for downstream D.2/M2/M3/M5. **Direct unblock for D.2 v3 BLOCKER #1 (ribosome cost):** `RibosomeAssembly_flat.mat` now committed — v3 can extract cost path empirically instead of asserting from `karr_protein_complexes.json` (which doesn't carry it). Branch deleted, worktree removed.
 
 ### Worktree convention (now standard)
 

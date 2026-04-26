@@ -588,3 +588,47 @@ The 'matching' metrics in Mode D (NGAM=8.39, GAM=59.81, cellCycleLength=32400) r
 
 **Files in working tree (all committed):** scripts/m1_validate.py, scripts/matlab/extract_karr_targeted.m, artifacts/M1_validation.json, docs/phase5/M1_validation_report.md.
 
+
+## Session N+9 (2026-04-26 → 2026-04-27) — phenotype harness reclassified, p10 mass partition, MATLAB eviction archived, multi-agent D.2 v2 + critique, m1 MCOS unblocked
+
+**Headline:** Phase E.0 phenotype harness re-scoped (`phase_e0_complete` from earlier checkpoint was over-claimed); Phase E.1b cell mass MW fixture extracted; Phase E.1b m2-counts-fix shipped; **Phase E.1c p10 cell dry mass partition shipped** (p10a/b/c sub-targets, +5 tests); MATLAB eviction archive infrastructure + complete eviction; multi-agent parallel work proven (D.2 design + p10 partition + m1 per-process fixtures simultaneously); **Phase D.2 design v1→v2 critique loop** (Claude Sonnet on v1, GPT-5.4 on v2; v3 still pending — 4 BLOCKERs documented); **m1 per-process MCOS fixtures unblocked** via Windows MATLAB R2026a one-off extract.
+
+### M1 per-process MCOS fixtures — the big unblock
+
+**Discovery (early in window):** all 44 source `.mat` files (28 process + 16 state under `WholeCell/src_test/+edu/.../+process/fixtures/` and `+state/fixtures/`) are MATLAB v5 containers wrapping MCOS-serialized class instances. scipy/pymatreader/mat4py all refuse — MCOS deserialization requires class definitions on MATLAB path. Initial scaffolding committed 44 placeholder json+npz pairs flagged `extraction_status: unparsed_mcos_payload`.
+
+**Decision flow:** user pushed back on the "blocker" framing — same .mat container as past Karr extractions, just different payload type. Past extractions worked because those files contained plain structs (scipy can decode); per-process fixtures contain MCOS class objects (need MATLAB on path). MATLAB has never been on WSL — past extractions were one-off Windows-host extracts (the same bootstrap pattern). Resolved as **option (b2)**: write a focused `.m` script, user runs once on Windows MATLAB host, agents in WSL ingest the flattened outputs.
+
+**Two-stage pipeline shipped:**
+1. `scripts/matlab/extract_per_process_fixtures.m` — standalone `.m` script. Walks 44 fixture .mats, uses MATLAB metaclass introspection to flatten MCOS instances into v7 plain-struct .mat files (`<Name>_flat.mat`). Self-contained, MATLAB-Online-Basic-tier safe.
+2. `scripts/extract_per_process_fixtures.py --from-flat` — Python ingest mode. Loads flattened `.mat`, walks via existing `_flatten_struct()`, emits canonical `<Name>.{npz,json}`.
+
+**First MATLAB run hung on `ChromosomeCondensation` for 11+ min CPU.** Same hang-class as `Simulation_fitted.mat` from earlier sessions. Diagnosis: the `.m` walker's visited-handle cycle protection was broken — used a monotonic counter as the identity key, so every object got a unique key and cycle detection never fired. The metaclass walker chased Process→Simulation→State handle webs forever. **Fix:** cycle-cut at MCOS handle boundaries — own properties only, sentinel `<handle:Class:NxM>` for any property whose value is itself an MCOS handle object. Skip private/protected getters and inherited handle plumbing (Listeners, Copyable, etc.). After fix, all 44 fixtures flatten in ~3 min.
+
+**Second issue:** raw ingest output was 105 MB (npz files 17-39 MB each, mostly Metabolism + CellMass + ReplicationInitiation). Profiled — bloat came from object-dtype arrays carrying pickled cell/struct trees laden with `<handle:>` sentinels. Filtered object-dtype arrays out of npz emission (their keys remain in `array_keys` metadata, full payload preserved in `_flat.mat` audit trail), switched to `savez_compressed`. Result: **105 MB → 13 MB** (664 KB real numeric tensors + 12 MB `_flat.mat` audit + 212 KB json metadata). Real data preserved (Metabolism stoichiometry 6.7 MB intact, etc.).
+
+**Validator update:** now passes `--from-flat --flat-dir` to the re-extract subprocess when `_flat.mat` files are present in committed dir; `hash_dir` excludes MATLAB-bootstrap inputs (`_flat.mat`, `matlab_extract_manifest.json`).
+
+**Final state:** 89 files, 0 mismatched. m1 test suite 70/70 on main. Branch `agent/m1-per-process-fixtures` (commits `1a4f92f` → `611bb0e` → `b219c6a`) merged as **`bd4d9f8`** (no-ff merge). Branch deleted, worktree removed.
+
+**Direct downstream unblock:** D.2 v3 BLOCKER #1 (ribosome cost path) — `RibosomeAssembly_flat.mat` now in repo, can extract cost path empirically instead of asserting from `karr_protein_complexes.json`. BLOCKERs #2/#3 also benefit from `MacromolecularComplexation_flat.mat`.
+
+### D.2 design loop in flight (still pending v3)
+
+`agent/d2-design-doc` @ `fa59925` (v1, 496 lines) — Claude Sonnet rubber-duck'd, 3 BLOCKERs. `agent/d2-design-v2` @ `811a707` (v2, 770 lines + `data/karr_fixtures/d2_mature_subset.json` 158-complex manifest with 10 bound-heavy anchors) — GPT-5.4 critiqued, verdict (c) rework, 4 carry-over BLOCKERs into v3. v3 is still pending; was the binding constraint on Karr-equivalent v1.0 before m1 fixtures landed, still is.
+
+### Phase E.1c p10 mass partition shipped
+
+`agent/p10-mass-partition` merged as `36636f6`. Partitions p10 cell dry mass into per-class sub-targets (p10a/b/c). +5 tests. Test suite 602 pass + 4 xfail at merge time.
+
+### Multi-agent parallel work (proven this window)
+
+3 background tasks running in parallel: D.2 design (sequential v1→v2), p10 partition, m1 per-process fixtures. Worktree convention now standard: each agent gets `E:\opencell-worktrees\<name>\`, stays self-contained, never commits to main directly. After-action: pattern works; bottleneck is reviewer attention not agent throughput.
+
+### Critique loop now standard practice
+
+For non-trivial design work: write → adversarial critique (Sonnet rubber-duck and/or GPT-5.4 cross-model) → rework. D.2 has gone v1 → v2 → v3 needed; pattern adds 1-2 ship-units of latency per major design but catches BLOCKER-class bugs early.
+
+**Where to resume:** D.2 design v3 rework. With m1 fixtures merged, BLOCKER #1 (ribosome cost) can now be answered empirically from `RibosomeAssembly_flat.mat`. After v3 ships and is implementable, the remaining critical-path queue is: `d2-complex-assembly` (implement) → `v2-chassis-swap` (M2v2/M3v2 mechanism Processes replacing v1 prescribed) → `m5-replication-cellcycle` → `m6-regulation` → `m7-karr-validation`.
+
+**Files committed in this window:** `data/karr_fixtures/per_process/{Name}.{npz,json,_flat.mat}` (44×3 + manifests + hashes), `scripts/matlab/extract_per_process_fixtures.m`, `scripts/extract_per_process_fixtures.py` (with `--from-flat`), `scripts/validate_per_process_fixtures.py` (updated). MATLAB eviction commits also shipped earlier in window (see checkpoints 035-038 in session-state).
