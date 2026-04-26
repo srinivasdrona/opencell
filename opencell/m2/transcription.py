@@ -33,6 +33,30 @@ DEFAULT_FIXTURE_JSON = (
     / "data" / "karr_fixtures" / "karr_native_m2.json"
 )
 
+# Karr's KB carries 3 growth-condition expression columns: low / mean /
+# high.  This mapping is the single source of truth for the
+# Vivarium chassis (and any future consumer) when picking a column out
+# of any per-condition array on ``KarrTranscriptionModel`` (e.g.
+# ``synthesis_rate_per_s``, ``counts_mature``, ``expression``).
+# Column 1 is the reference column the State_Rna snapshot was fit at
+# (see ``scripts/karr_native_ingest_m2.py``).
+KARR_CONDITION_INDEX: dict[str, int] = {"low": 0, "mean": 1, "high": 2}
+KARR_REFERENCE_CONDITION: str = "mean"
+
+
+def resolve_condition(condition: int | str) -> int:
+    """Map a friendly condition name (``"low"`` / ``"mean"`` / ``"high"``)
+    to its column index, or pass an integer index through unchanged."""
+    if isinstance(condition, str):
+        try:
+            return KARR_CONDITION_INDEX[condition]
+        except KeyError as e:
+            raise ValueError(
+                f"unknown condition {condition!r}; "
+                f"expected one of {sorted(KARR_CONDITION_INDEX)} or an int"
+            ) from e
+    return int(condition)
+
 
 @dataclass
 class KarrTranscriptionModel:
@@ -48,7 +72,7 @@ class KarrTranscriptionModel:
     synthesis_rate_per_s: np.ndarray
     rna_ss_predicted: np.ndarray
     tu_binding_probabilities: np.ndarray
-    counts_mature: np.ndarray  # (525,) Karr State_Rna mature cytosol counts (E.1b)
+    counts_mature: np.ndarray  # (525, 3) Karr State_Rna mature cytosol counts per condition (E.1b + per-condition snapshots)
     rna_molecular_weight: np.ndarray  # (525,) Da/mol per gene (E.1b)
     elongation_rate_nt_per_s: float
     counts: dict
@@ -123,7 +147,7 @@ def step_analytical(
         raise ValueError(
             f"rna_counts length {rna.size} != n_genes {model.n_genes}")
 
-    s_per_s = model.synthesis_rate_per_s[:, condition] * float(synth_scale)
+    s_per_s = model.synthesis_rate_per_s[:, resolve_condition(condition)] * float(synth_scale)
     k_per_s = model.decay_rate_per_s
 
     out = np.empty_like(rna)
@@ -145,7 +169,7 @@ def ntp_consumption_per_s(
 ) -> dict[str, float]:
     """Total NTP consumption per second under the prescribed rates,
     assuming uniform 1/4 base composition (real composition is M2 v2)."""
-    s_per_s = model.synthesis_rate_per_s[:, condition] * float(synth_scale)
+    s_per_s = model.synthesis_rate_per_s[:, resolve_condition(condition)] * float(synth_scale)
     total_nt_per_s = float(np.sum(s_per_s * model.length_nt))
     per_ntp = total_nt_per_s / 4.0
     return {
@@ -171,6 +195,15 @@ def calibrated_chassis_model(
     (step_analytical, ntp_consumption_per_s) is self-consistent with
     Karr's true SS counts.
 
+    ``counts_mature`` is shape (n_genes, n_conditions) -- the State_Rna
+    mature snapshot scaled to each Karr condition by per-gene
+    ``expression`` ratios (see ``scripts/karr_native_ingest_m2.py``) --
+    so the recalibrated ``synthesis_rate_per_s`` is also per-condition:
+    ``s[:, c] = counts_mature[:, c] * decay_rate_per_s``.  The
+    chassis selects a column at runtime via the ``condition`` parameter
+    on ``step_analytical`` / ``ntp_consumption_per_s``, identically to
+    the original (KB-fitted) per-condition synthesis rate.
+
     Genes with decay_rate_per_s == 0 keep the original synthesis rate
     (no analytical SS to enforce).  Used by the chassis Vivarium
     process and by the composite's pool-replenishment baseline so
@@ -182,11 +215,19 @@ def calibrated_chassis_model(
     """
     from dataclasses import replace
     n_genes = model.n_genes
-    n_cond = model.synthesis_rate_per_s.shape[1]
-    new_per_s = np.tile(
-        (model.counts_mature * model.decay_rate_per_s).reshape(n_genes, 1),
-        (1, n_cond),
-    ).astype(float)
+    counts_mature = np.asarray(model.counts_mature, dtype=float)
+    if counts_mature.ndim != 2 or counts_mature.shape[0] != n_genes:
+        raise ValueError(
+            f"counts_mature must be (n_genes={n_genes}, n_conditions); "
+            f"got shape {counts_mature.shape}"
+        )
+    n_cond = counts_mature.shape[1]
+    if model.synthesis_rate_per_s.shape != (n_genes, n_cond):
+        raise ValueError(
+            f"synthesis_rate_per_s {model.synthesis_rate_per_s.shape} "
+            f"is incompatible with counts_mature {counts_mature.shape}"
+        )
+    new_per_s = counts_mature * model.decay_rate_per_s.reshape(n_genes, 1)
     zero_decay = model.decay_rate_per_s <= 0.0
     if np.any(zero_decay):
         new_per_s[zero_decay, :] = model.synthesis_rate_per_s[zero_decay, :]

@@ -65,7 +65,7 @@ def test_engine_starting_from_zero_approaches_steady_state(
     engine.update(1800.0)
     ts = engine.emitter.get_timeseries()
 
-    target = model.counts_mature
+    target = model.counts_mature[:, 1]  # default condition=1 (mean)
     fast = (
         (model.half_life_min > 0)
         & (model.half_life_min <= 5.0)

@@ -30,7 +30,19 @@ OUT_DIR = REPO / "data" / "karr_fixtures"
 JSON_OUT = OUT_DIR / "karr_native_m2.json"
 NPZ_OUT = OUT_DIR / "karr_native_m2.npz"
 
-SCHEMA_VERSION = "karr_native_m2__v3"
+SCHEMA_VERSION = "karr_native_m2__v4"
+
+# Karr's KB.genes.expression has 3 condition columns: low / mean / high.
+# `sim_fitted_targeted.mat` -- the only State_Rna snapshot we possess --
+# was produced by Karr's fit at the *mean* condition (column 1 of
+# expression / synthesisRate is the canonical "mean" used everywhere
+# else in this ingest, see ``rna_ss_predicted`` derivation below).  We
+# therefore treat column 1 as the snapshot's reference condition and
+# scale the snapshot per-gene by the expression ratio
+# ``expression[:, c] / expression[:, REF]`` to produce per-condition
+# mature counts.  This is fully data-derived (no hardcoded values).
+KARR_CONDITION_INDEX: dict[str, int] = {"low": 0, "mean": 1, "high": 2}
+KARR_REFERENCE_CONDITION_INDEX: int = KARR_CONDITION_INDEX["mean"]
 
 
 def _scalar(x) -> float:
@@ -207,9 +219,31 @@ def main() -> None:
             n_fallback_mw += 1
 
     n_genes_with_mw = int((rna_molecular_weight > 0).sum())
-    n_genes_with_count = int((counts_mature > 0).sum())
-    total_counts_mature = float(counts_mature.sum())
-    rna_mass_da = float((counts_mature * rna_molecular_weight).sum())
+    # Per-condition mature counts (525, 3): scale the single State_Rna
+    # snapshot (which is the fitted *mean* condition) by per-gene
+    # expression ratios.  Genes whose reference-column expression is 0
+    # (and whose snapshot count is therefore also 0 by construction)
+    # are left at 0 across all three conditions -- no division.
+    ref_expr = expression[:, KARR_REFERENCE_CONDITION_INDEX]
+    n_conditions = expression.shape[1]
+    counts_mature_per_condition = np.zeros((n_genes, n_conditions), dtype=float)
+    for c in range(n_conditions):
+        with np.errstate(divide="ignore", invalid="ignore"):
+            ratio = np.where(ref_expr > 0, expression[:, c] / ref_expr, 0.0)
+        counts_mature_per_condition[:, c] = counts_mature * ratio
+    # Sanity: reference column must equal the original 1-D snapshot
+    # exactly (ratio==1 wherever ref>0; both arrays are 0 elsewhere).
+    assert np.allclose(
+        counts_mature_per_condition[:, KARR_REFERENCE_CONDITION_INDEX],
+        counts_mature,
+    ), "reference column must reproduce the snapshot"
+    counts_mature_snapshot_1d = counts_mature.copy()
+    counts_mature = counts_mature_per_condition
+
+    n_genes_with_count = int((counts_mature_snapshot_1d > 0).sum())
+    total_counts_mature_per_condition = counts_mature.sum(axis=0).tolist()
+    total_counts_mature = float(counts_mature_snapshot_1d.sum())
+    rna_mass_da = float((counts_mature_snapshot_1d * rna_molecular_weight).sum())
     rna_mass_g = rna_mass_da / 6.02214076e23
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -269,11 +303,23 @@ def main() -> None:
             "policy": "Two-tier: (1) direct gene-WCM match in State_Rna mature (covers non-mRNAs + monocistronic), (2) TU-WCM lookup with mass split equally across member genes (polycistronic mRNAs). length-based MW fallback only for genes whose TU is absent from state.",
         },
         "counts_mature_summary": {
-            "total_counts": total_counts_mature,
+            "total_counts_reference": total_counts_mature,
+            "total_counts_per_condition": total_counts_mature_per_condition,
+            "reference_condition_index": KARR_REFERENCE_CONDITION_INDEX,
+            "condition_index_map": KARR_CONDITION_INDEX,
             "n_genes_with_count": n_genes_with_count,
             "rna_mass_total_da": rna_mass_da,
             "rna_mass_total_g": rna_mass_g,
-            "note": "counts_mature[gene] = State_Rna.counts[matureIdx, c=0] resolved per the two-tier policy. Replaces the v1 chassis SS that used KB.expression[:,1] (a transcription rate, ~53x over-stated as a count). Sum of counts_mature should equal Karr's State_Rna mature cytosol total (~784 molecules).",
+            "note": (
+                "counts_mature is shape (n_genes, 3) -- per-condition mature "
+                "cytosol counts (low / mean / high).  The reference column "
+                "(condition_index_map['mean']) is the State_Rna.counts[matureIdx, c=0] "
+                "snapshot from sim_fitted_targeted.mat resolved per the two-tier "
+                "policy; the other two columns are the snapshot scaled per-gene "
+                "by the ratio expression[:, c]/expression[:, mean].  Sum of the "
+                "reference column equals Karr's State_Rna mature cytosol total "
+                "(~784 molecules)."
+            ),
         },
         "interpretation": (
             "Karr-native M2 transcription fixture. 525 genes (482 mRNA + "
