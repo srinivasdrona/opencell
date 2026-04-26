@@ -1,0 +1,6055 @@
+{
+  "schema_version": "karr_protein_complexes__v1",
+  "source_mat": "data/m1_sources/karr_flat/protein_complexes.mat",
+  "source_kb_file": "data/knowledgeBase.mat",
+  "matlab_release": "2026a",
+  "extract_timestamp_utc": "2026-04-26T10:23:08",
+  "counts": {
+    "n_complexes": 201,
+    "n_monomer_wids_482": 482,
+    "n_metabolite_wids_722": 722,
+    "n_compartment_wids_6": 6
+  },
+  "compartment_wids": [
+    "c",
+    "d",
+    "e",
+    "m",
+    "tc",
+    "tm"
+  ],
+  "complexes": [
+    {
+      "wid": "DNA_GYRASE",
+      "name": "DNA gyrase",
+      "idx_1based": 1,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 140,
+      "density": 1.35,
+      "activation_rule": "!ciprofloxacin & !difloxacin & !sparfloxacin",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_003_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_004_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "DNA_POLYMERASE_2CORE_BETA_CLAMP_GAMMA_COMPLEX_PRIMASE",
+      "name": "DNA polymerase (2) core, \u00ce\u00b2-clamp, \u00ce\u00b3-complex, and primase",
+      "idx_1based": 2,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 49,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_001_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_250_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [
+        {
+          "molecule_wid": "DNA_POLYMERASE_CORE",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "DNA_POLYMERASE_GAMMA_COMPLEX",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "DNA_POLYMERASE_CORE",
+      "name": "DNA-directed DNA polymerase",
+      "idx_1based": 3,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 24,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_031_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_261_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "DNA_POLYMERASE_CORE_BETA_CLAMP_GAMMA_COMPLEX",
+      "name": "DNA polymerase core, &beta;-clamp, and &gamma;-complex",
+      "idx_1based": 4,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 49,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_001_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [
+        {
+          "molecule_wid": "DNA_POLYMERASE_CORE",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "DNA_POLYMERASE_GAMMA_COMPLEX",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "DNA_POLYMERASE_CORE_BETA_CLAMP_PRIMASE",
+      "name": "DNA polymerase core, &beta;-clamp, and primase",
+      "idx_1based": 5,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 49,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_001_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_250_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [
+        {
+          "molecule_wid": "DNA_POLYMERASE_CORE",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "DNA_POLYMERASE_GAMMA_COMPLEX",
+      "name": "DNA-directed DNA polymerase gamma complex",
+      "idx_1based": 6,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 26,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_007_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_315_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_419_MONOMER",
+          "coefficient": 4.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "DNA_POLYMERASE_HOLOENZYME",
+      "name": "DNA-directed DNA polymerase holoenzyme",
+      "idx_1based": 7,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_001_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [
+        {
+          "molecule_wid": "DNA_POLYMERASE_CORE",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "DNA_POLYMERASE_GAMMA_COMPLEX",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_0001_048",
+      "name": "signal recognition particle",
+      "idx_1based": 8,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_048_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": [
+        {
+          "molecule_wid": "MG_0001",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ]
+    },
+    {
+      "wid": "MG_0003_465",
+      "name": "ribonuclease P",
+      "idx_1based": 9,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_465_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": [
+        {
+          "molecule_wid": "MG_0003",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ]
+    },
+    {
+      "wid": "MG_001_DIMER",
+      "name": "DNA polymerase III, beta clamp",
+      "idx_1based": 10,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 25,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_001_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_005_DIMER",
+      "name": "seryl-tRNA synthetase",
+      "idx_1based": 11,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_005_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_006_DIMER",
+      "name": "thymidylate kinase",
+      "idx_1based": 12,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_006_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_008_379_TETRAMER",
+      "name": "tRNA uridine 5-carboxymethylaminomethyl modification enzyme",
+      "idx_1based": 13,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_008_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_379_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_013_DIMER",
+      "name": "methylenetetrahydrofolate dehydrogenase/methylenetetrahydrofolate cyclohydrolase",
+      "idx_1based": 14,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_013_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_014_015_DIMER",
+      "name": "multidrug ABC transporter",
+      "idx_1based": 15,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "m",
+      "monomers": [
+        {
+          "molecule_wid": "MG_014_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "m"
+        },
+        {
+          "molecule_wid": "MG_015_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "m"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_019_DIMER",
+      "name": "chaperone protein DnaJ",
+      "idx_1based": 16,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_019_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_021_DIMER",
+      "name": "methionyl-tRNA synthetase",
+      "idx_1based": 17,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_021_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_023_DIMER",
+      "name": "fructose-1,6-bisphosphate aldolase, class II",
+      "idx_1based": 18,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_023_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_029_DIMER",
+      "name": "DJ-1/PfpI family protein",
+      "idx_1based": 19,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_029_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_030_TRIMER",
+      "name": "uracil phosphoribosyltransferase",
+      "idx_1based": 20,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_030_MONOMER",
+          "coefficient": 3.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_033_TETRAMER",
+      "name": "glycerol uptake facilitator",
+      "idx_1based": 21,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "m",
+      "monomers": [
+        {
+          "molecule_wid": "MG_033_MONOMER",
+          "coefficient": 4.0,
+          "compartment_wid": "m"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_034_DIMER",
+      "name": "thymidine kinase",
+      "idx_1based": 22,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_034_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_035_DIMER",
+      "name": "histidyl-tRNA synthetase",
+      "idx_1based": 23,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_035_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_036_DIMER",
+      "name": "aspartyl-tRNA synthetase",
+      "idx_1based": 24,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_036_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_038_TETRAMER",
+      "name": "glycerol kinase",
+      "idx_1based": 25,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_038_MONOMER",
+          "coefficient": 4.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [
+        {
+          "molecule_wid": "ZN",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_039_DIMER",
+      "name": "FAD-dependent glycerol-3-phosphate dehydrogenase, putative",
+      "idx_1based": 26,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_039_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_040_119_120_121_PENTAMER",
+      "name": "Monosaccharide (riboside/galactoside) ABC transporter",
+      "idx_1based": 27,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "m",
+      "monomers": [
+        {
+          "molecule_wid": "MG_040_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "e"
+        },
+        {
+          "molecule_wid": "MG_119_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_120_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "m"
+        },
+        {
+          "molecule_wid": "MG_121_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "m"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_041_062_429_PENTAMER",
+      "name": "PTS system, fructose-specific",
+      "idx_1based": 28,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "m",
+      "monomers": [
+        {
+          "molecule_wid": "MG_041_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_062_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "m"
+        },
+        {
+          "molecule_wid": "MG_429_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_041_069_429_PENTAMER",
+      "name": "PTS system, glucose-specific",
+      "idx_1based": 29,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "m",
+      "monomers": [
+        {
+          "molecule_wid": "MG_041_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_069_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "m"
+        },
+        {
+          "molecule_wid": "MG_429_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_042_043_044_045_PENTAMER",
+      "name": "spermidine/putrescine (polyamine) ABC transporter",
+      "idx_1based": 30,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "m",
+      "monomers": [
+        {
+          "molecule_wid": "MG_042_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_043_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "m"
+        },
+        {
+          "molecule_wid": "MG_044_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "m"
+        },
+        {
+          "molecule_wid": "MG_045_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "e"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_046_DIMER",
+      "name": "metalloendopeptidase",
+      "idx_1based": 31,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_046_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_047_TETRAMER",
+      "name": "S-adenosylmethionine synthetase",
+      "idx_1based": 32,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_047_MONOMER",
+          "coefficient": 4.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_049_HEXAMER",
+      "name": "purine nucleoside phosphorylase",
+      "idx_1based": 33,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_049_MONOMER",
+          "coefficient": 6.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_051_DIMER",
+      "name": "pyrimidine-nucleoside phosphorylase",
+      "idx_1based": 34,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_051_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_052_DIMER",
+      "name": "cytidine deaminase",
+      "idx_1based": 35,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_052_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_053_TRIMER",
+      "name": "phosphoglucomutase/phosphomannomutase, putative",
+      "idx_1based": 36,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_053_MONOMER",
+          "coefficient": 3.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_055_170_277_464_476_20MER",
+      "name": "preprotein translocase",
+      "idx_1based": 37,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "m",
+      "monomers": [
+        {
+          "molecule_wid": "MG_055_MONOMER",
+          "coefficient": 4.0,
+          "compartment_wid": "m"
+        },
+        {
+          "molecule_wid": "MG_476_MONOMER",
+          "coefficient": 4.0,
+          "compartment_wid": "m"
+        },
+        {
+          "molecule_wid": "MG_170_MONOMER",
+          "coefficient": 4.0,
+          "compartment_wid": "m"
+        },
+        {
+          "molecule_wid": "MG_277_MONOMER",
+          "coefficient": 4.0,
+          "compartment_wid": "m"
+        },
+        {
+          "molecule_wid": "MG_464_MONOMER",
+          "coefficient": 4.0,
+          "compartment_wid": "m"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_058_HEXAMER",
+      "name": "ribose-phosphate pyrophosphokinase",
+      "idx_1based": 38,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_058_MONOMER",
+          "coefficient": 6.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_063_DIMER",
+      "name": "1-phosphofructokinase, putative",
+      "idx_1based": 39,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_063_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_064_065_TETRAMER",
+      "name": "ABC transporter",
+      "idx_1based": 40,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "m",
+      "monomers": [
+        {
+          "molecule_wid": "MG_064_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "m"
+        },
+        {
+          "molecule_wid": "MG_065_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_066_DIMER",
+      "name": "transketolase",
+      "idx_1based": 41,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_066_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_072_DIMER",
+      "name": "preprotein translocase, SecA subunit",
+      "idx_1based": 42,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_072_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_073_206_421_TETRAMER",
+      "name": "DNA incision complex",
+      "idx_1based": 43,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 18,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_073_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_206_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_421_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_077_078_079_080_321_PENTAMER",
+      "name": "oligopeptide ABC transporter",
+      "idx_1based": 44,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "m",
+      "monomers": [
+        {
+          "molecule_wid": "MG_077_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "m"
+        },
+        {
+          "molecule_wid": "MG_078_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "m"
+        },
+        {
+          "molecule_wid": "MG_079_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_080_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_321_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "e"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_084_TETRAMER",
+      "name": "tRNA(Ile)-lysidine synthetase",
+      "idx_1based": 45,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_084_MONOMER",
+          "coefficient": 4.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_085_HEXAMER",
+      "name": "HPr(Ser) kinase/phosphatase",
+      "idx_1based": 46,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "G6P>5",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_085_MONOMER",
+          "coefficient": 6.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_089_DIMER",
+      "name": "translation elongation factor G",
+      "idx_1based": 47,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_089_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_091_OCTAMER",
+      "name": "single-strand binding protein family, octamer",
+      "idx_1based": 48,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 145,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [],
+      "subcomplexes": [
+        {
+          "molecule_wid": "MG_091_TETRAMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_091_TETRAMER",
+      "name": "single-strand binding protein family, tetramer",
+      "idx_1based": 49,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 72,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_091_MONOMER",
+          "coefficient": 4.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_094_HEXAMER",
+      "name": "replicative DNA helicase",
+      "idx_1based": 50,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 20,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_094_MONOMER",
+          "coefficient": 6.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_098_099_100_TRIMER",
+      "name": "glutamyl-tRNA(Gln) and/or aspartyl-tRNA(Asn) amidotransferase",
+      "idx_1based": 51,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_098_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_099_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_100_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_102_DIMER",
+      "name": "thioredoxin-disulfide reductase",
+      "idx_1based": 52,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_102_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_102_DIMER_ox",
+      "name": "oxidized thioredoxin-disulfide reductase",
+      "idx_1based": 53,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [],
+      "subcomplexes": [
+        {
+          "molecule_wid": "MG_102_DIMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [
+        {
+          "molecule_wid": "H",
+          "coefficient": -4.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_105_OCTAMER",
+      "name": "putative DNA integrity scanning protein",
+      "idx_1based": 54,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 35,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_105_MONOMER",
+          "coefficient": 8.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_106_DIMER",
+      "name": "peptide deformylase",
+      "idx_1based": 55,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_106_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_107_DIMER",
+      "name": "guanylate kinase",
+      "idx_1based": 56,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_107_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_109_DIMER",
+      "name": "serine/threonine protein kinase, putative",
+      "idx_1based": 57,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "m",
+      "monomers": [
+        {
+          "molecule_wid": "MG_109_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "m"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_111_DIMER",
+      "name": "glucose-6-phosphate isomerase",
+      "idx_1based": 58,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_111_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_112_DIMER",
+      "name": "ribulose-phosphate 3-epimerase",
+      "idx_1based": 59,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_112_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_113_DIMER",
+      "name": "asparaginyl-tRNA synthetase",
+      "idx_1based": 60,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_113_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_114_DIMER",
+      "name": "CDP-diacylglycerol--glycerol-3-phosphate 3-phosphatidyltransferase",
+      "idx_1based": 61,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "m",
+      "monomers": [
+        {
+          "molecule_wid": "MG_114_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "m"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_118_DIMER",
+      "name": "UDP-glucose 4-epimerase",
+      "idx_1based": 62,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_118_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_123_DIMER",
+      "name": "arginine deaminase",
+      "idx_1based": 63,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "m",
+      "monomers": [
+        {
+          "molecule_wid": "MG_123_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "m"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_124_MONOMER_ox",
+      "name": "oxidized thioredoxin",
+      "idx_1based": 64,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_124_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [
+        {
+          "molecule_wid": "H",
+          "coefficient": -2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_126_DIMER",
+      "name": "tryptophanyl-tRNA synthetase",
+      "idx_1based": 65,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_126_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_127_MONOMER_ox",
+      "name": "oxidized Spx subfamily protein",
+      "idx_1based": 66,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_127_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [
+        {
+          "molecule_wid": "H",
+          "coefficient": -2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_128_HEXAMER",
+      "name": "inorganic polyphosphate/ATP-NAD kinase, probable",
+      "idx_1based": 67,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_128_MONOMER",
+          "coefficient": 6.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_132_DIMER",
+      "name": "purine nucleoside phosphoramidase",
+      "idx_1based": 68,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_132_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_136_DIMER",
+      "name": "lysyl-tRNA synthetase",
+      "idx_1based": 69,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_136_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_137_DIMER",
+      "name": "UDP-galactopyranose mutase",
+      "idx_1based": 70,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_137_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_139_DIMER",
+      "name": "ribonuclease J",
+      "idx_1based": 71,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_139_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_179_180_181_TETRAMER",
+      "name": "metal ion (cobalt) ABC transporter",
+      "idx_1based": 72,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "m",
+      "monomers": [
+        {
+          "molecule_wid": "MG_179_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_180_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_181_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "m"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_182_DIMER",
+      "name": "Pseudouridylate synthase",
+      "idx_1based": 73,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_182_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_184_DIMER",
+      "name": "adenine-specific DNA modification methylase",
+      "idx_1based": 74,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 6,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_184_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_186_187_188_189_PENTAMER",
+      "name": "Oligosaccharide or polyol ABC transporter",
+      "idx_1based": 75,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "m",
+      "monomers": [
+        {
+          "molecule_wid": "MG_186_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "e"
+        },
+        {
+          "molecule_wid": "MG_187_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_188_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "m"
+        },
+        {
+          "molecule_wid": "MG_189_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "m"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_194_195_TETRAMER",
+      "name": "phenylalanyl-tRNA synthetase",
+      "idx_1based": 76,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_194_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_195_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [
+        {
+          "molecule_wid": "MG",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_201_DIMER",
+      "name": "co-chaperone GrpE",
+      "idx_1based": 77,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_201_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_203_204_TETRAMER",
+      "name": "topoisomerase IV",
+      "idx_1based": 78,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 34,
+      "density": 1.35,
+      "activation_rule": "!ciprofloxacin & !difloxacin & !sparfloxacin",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_203_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_204_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_205_DIMER",
+      "name": "heat-inducible transcription repressor HrcA, putative",
+      "idx_1based": 79,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 33,
+      "density": 1.35,
+      "activation_rule": "temperature>=43",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_205_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_208_DIMER",
+      "name": "glycoprotease family protein",
+      "idx_1based": 80,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_208_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_213_214_298_6MER",
+      "name": "chromosome segregation protein SMC",
+      "idx_1based": 81,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 630,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_213_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_214_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_298_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_213_214_298_6MER_ADP",
+      "name": "Chromosome Segregation Protein SMC with SCP Proteins-ADP",
+      "idx_1based": 82,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 630,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [],
+      "subcomplexes": [
+        {
+          "molecule_wid": "MG_213_214_298_6MER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [
+        {
+          "molecule_wid": "ADP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_215_TETRAMER",
+      "name": "6-phosphofructokinase",
+      "idx_1based": 83,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_215_MONOMER",
+          "coefficient": 4.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_216_TETRAMER",
+      "name": "pyruvate kinase",
+      "idx_1based": 84,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_216_MONOMER",
+          "coefficient": 4.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_221_OCTAMER",
+      "name": "mraZ protein",
+      "idx_1based": 85,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 85,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_221_MONOMER",
+          "coefficient": 8.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_224_2MER_GTP",
+      "name": "cell division protein ftsZ activated 2mer",
+      "idx_1based": 86,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [],
+      "subcomplexes": [
+        {
+          "molecule_wid": "MG_224_MONOMER_GTP",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_224_3MER_GTP",
+      "name": "cell division protein ftsZ activated 3mer",
+      "idx_1based": 87,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [],
+      "subcomplexes": [
+        {
+          "molecule_wid": "MG_224_2MER_GTP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_224_MONOMER_GTP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_224_4MER_GTP",
+      "name": "cell division protein ftsZ activated 4mer",
+      "idx_1based": 88,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [],
+      "subcomplexes": [
+        {
+          "molecule_wid": "MG_224_3MER_GTP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_224_MONOMER_GTP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_224_5MER_GTP",
+      "name": "cell division protein ftsZ activated 5mer",
+      "idx_1based": 89,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [],
+      "subcomplexes": [
+        {
+          "molecule_wid": "MG_224_4MER_GTP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_224_MONOMER_GTP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_224_6MER_GTP",
+      "name": "cell division protein ftsZ activated 6mer",
+      "idx_1based": 90,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [],
+      "subcomplexes": [
+        {
+          "molecule_wid": "MG_224_5MER_GTP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_224_MONOMER_GTP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_224_7MER_GTP",
+      "name": "cell division protein ftsZ activated 7mer",
+      "idx_1based": 91,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [],
+      "subcomplexes": [
+        {
+          "molecule_wid": "MG_224_6MER_GTP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_224_MONOMER_GTP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_224_8MER_GTP",
+      "name": "cell division protein ftsZ activated 8mer",
+      "idx_1based": 92,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [],
+      "subcomplexes": [
+        {
+          "molecule_wid": "MG_224_7MER_GTP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_224_MONOMER_GTP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_224_9MER_GDP",
+      "name": "cell division protein ftsZ deactivated 9mer",
+      "idx_1based": 93,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [],
+      "subcomplexes": [
+        {
+          "molecule_wid": "MG_224_9MER_GTP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [
+        {
+          "molecule_wid": "H",
+          "coefficient": -9.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "H2O",
+          "coefficient": 9.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "PI",
+          "coefficient": -9.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_224_9MER_GTP",
+      "name": "cell division protein ftsZ activated 9mer",
+      "idx_1based": 94,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [],
+      "subcomplexes": [
+        {
+          "molecule_wid": "MG_224_8MER_GTP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_224_MONOMER_GTP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_224_MONOMER_GDP",
+      "name": "cell division protein ftsZ hydrolysed",
+      "idx_1based": 95,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_224_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [
+        {
+          "molecule_wid": "GDP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_224_MONOMER_GTP",
+      "name": "cell division protein ftsZ activated",
+      "idx_1based": 96,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_224_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [
+        {
+          "molecule_wid": "GTP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_225_DIMER",
+      "name": "amino acid transporter",
+      "idx_1based": 97,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "m",
+      "monomers": [
+        {
+          "molecule_wid": "MG_225_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "m"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_226_DIMER",
+      "name": "amino acid transporter",
+      "idx_1based": 98,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "m",
+      "monomers": [
+        {
+          "molecule_wid": "MG_226_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "m"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_227_DIMER",
+      "name": "thymidylate synthase",
+      "idx_1based": 99,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_227_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_228_TETRAMER",
+      "name": "dihydrofolate reductase",
+      "idx_1based": 100,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_228_MONOMER",
+          "coefficient": 4.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_229_231_TETRAMER",
+      "name": "ribonucleoside-diphosphate reductase",
+      "idx_1based": 101,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_229_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_231_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_229_231_TETRAMER_ox",
+      "name": "oxidized ribonucleoside-diphosphate reductase",
+      "idx_1based": 102,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [],
+      "subcomplexes": [
+        {
+          "molecule_wid": "MG_229_231_TETRAMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [
+        {
+          "molecule_wid": "H",
+          "coefficient": -4.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "O2",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_239_HEXAMER",
+      "name": "ATP-dependent protease La",
+      "idx_1based": 103,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_239_MONOMER",
+          "coefficient": 6.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [
+        {
+          "molecule_wid": "MG",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_240_HEXAMER",
+      "name": "nicotinamide-nucleotide adenylyltransferase/conserved hypothetical protein",
+      "idx_1based": 104,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_240_MONOMER",
+          "coefficient": 6.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_244_DIMER",
+      "name": "3-5' helicase",
+      "idx_1based": 105,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 15,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_244_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_251_DIMER",
+      "name": "glycyl-tRNA synthetase",
+      "idx_1based": 106,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_251_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_252_DIMER",
+      "name": "23S rRNA methyltransferase",
+      "idx_1based": 107,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_252_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_259_TETRAMER",
+      "name": "modification methylase",
+      "idx_1based": 108,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_259_MONOMER",
+          "coefficient": 4.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_265_DIMER",
+      "name": "sugar phosphatase",
+      "idx_1based": 109,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_265_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_271_272_273_274_192MER",
+      "name": "pyruvate dehydrogenase",
+      "idx_1based": 110,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_271_MONOMER",
+          "coefficient": 12.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_272_MONOMER",
+          "coefficient": 60.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_273_MONOMER",
+          "coefficient": 60.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_274_MONOMER",
+          "coefficient": 60.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_271_272_273_274_192MER_ox",
+      "name": "oxidized dihydrolipoamide dehydrogenase",
+      "idx_1based": 111,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [],
+      "subcomplexes": [
+        {
+          "molecule_wid": "MG_271_272_273_274_192MER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [
+        {
+          "molecule_wid": "H",
+          "coefficient": -24.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_275_TETRAMER",
+      "name": "NADH oxidase",
+      "idx_1based": 112,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "m",
+      "monomers": [
+        {
+          "molecule_wid": "MG_275_MONOMER",
+          "coefficient": 4.0,
+          "compartment_wid": "m"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_276_DIMER",
+      "name": "adenine phosphoribosyltransferase",
+      "idx_1based": 113,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_276_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_278_DIMER",
+      "name": "GTP pyrophosphokinase",
+      "idx_1based": 114,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_278_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_283_DIMER",
+      "name": "prolyl-tRNA synthetase",
+      "idx_1based": 115,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_283_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_287_MONOMER_ACP",
+      "name": "holo acyl carrier protein",
+      "idx_1based": 116,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_287_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [
+        {
+          "molecule_wid": "COA",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "H",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "PAP",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_287_MONOMER_ddcaACP",
+      "name": "Dodecanoyl-ACP (n-C12:0ACP)",
+      "idx_1based": 117,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_287_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [
+        {
+          "molecule_wid": "AMP",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "ATP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "COA",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "DDCA",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "H",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "PAP",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "PPI",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_287_MONOMER_hdeACP",
+      "name": "cis-hexadec-9-enoyl-[acyl-carrier protein] (n-C16:1)",
+      "idx_1based": 118,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_287_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [
+        {
+          "molecule_wid": "AMP",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "ATP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "COA",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "H",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "HDCEA",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "PAP",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "PPI",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_287_MONOMER_myrsACP",
+      "name": "Myristoyl-ACP (n-C14:0ACP)",
+      "idx_1based": 119,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_287_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [
+        {
+          "molecule_wid": "AMP",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "ATP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "COA",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "H",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "PAP",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "PPI",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "TTDCA",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_287_MONOMER_ocdcaACP",
+      "name": "Octadecanoyl-ACP (n-C18:0ACP)",
+      "idx_1based": 120,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_287_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [
+        {
+          "molecule_wid": "AMP",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "ATP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "COA",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "H",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "OCDCA",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "PAP",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "PPI",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_287_MONOMER_octeACP",
+      "name": "cis-octadec-11-enoyl-[acyl-carrier protein] (n-C18:1)",
+      "idx_1based": 121,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_287_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [
+        {
+          "molecule_wid": "AMP",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "ATP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "COA",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "H",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "OCDCEA",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "PAP",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "PPI",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_287_MONOMER_palmACP",
+      "name": "Palmitoyl-ACP (n-C16:0ACP)",
+      "idx_1based": 122,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_287_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [
+        {
+          "molecule_wid": "AMP",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "ATP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "COA",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "H",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "HDCA",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "PAP",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "PPI",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_287_MONOMER_tdeACP",
+      "name": "cis-tetradec-7-enoyl-[acyl-carrier protein] (n-C14:1)",
+      "idx_1based": 123,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_287_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [
+        {
+          "molecule_wid": "AMP",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "ATP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "COA",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "H",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "PAP",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "PPI",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "TTDCEA",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_289_290_291_PENTAMER",
+      "name": "phosphonate ABC transporter",
+      "idx_1based": 124,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "m",
+      "monomers": [
+        {
+          "molecule_wid": "MG_289_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "e"
+        },
+        {
+          "molecule_wid": "MG_290_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_291_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "m"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_292_TETRAMER",
+      "name": "alanyl-tRNA synthetase",
+      "idx_1based": 125,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_292_MONOMER",
+          "coefficient": 4.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_293_DIMER",
+      "name": "glycerophosphoryl diester phosphodiesterase family protein",
+      "idx_1based": 126,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_293_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_295_MONOMER_ox",
+      "name": "oxidized tRNA U34 sulfurtransferase",
+      "idx_1based": 127,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_295_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [
+        {
+          "molecule_wid": "H",
+          "coefficient": -2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_299_DIMER",
+      "name": "phosphate acetyltransferase",
+      "idx_1based": 128,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_299_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_301_TETRAMER",
+      "name": "glyceraldehyde-3-phosphate dehydrogenase, type I",
+      "idx_1based": 129,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_301_MONOMER",
+          "coefficient": 4.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_302_303_304_TETRAMER",
+      "name": "metal ion (cobalt) ABC transporter",
+      "idx_1based": 130,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "m",
+      "monomers": [
+        {
+          "molecule_wid": "MG_302_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "m"
+        },
+        {
+          "molecule_wid": "MG_303_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_304_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_316_DIMER",
+      "name": "DNA internalization-related competence protein ComEC/Rec2",
+      "idx_1based": 131,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "m",
+      "monomers": [
+        {
+          "molecule_wid": "MG_316_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "m"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_322_323_TETRAMER",
+      "name": "potassium uptake protein, TrkH family, putative",
+      "idx_1based": 132,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "m",
+      "monomers": [
+        {
+          "molecule_wid": "MG_322_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "m"
+        },
+        {
+          "molecule_wid": "MG_323_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_333_DIMER",
+      "name": "FMN-dependent NADH-azoreductase, putative",
+      "idx_1based": 133,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_333_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_336_DIMER",
+      "name": "cysteine desulfurase",
+      "idx_1based": 134,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_336_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_346_DIMER",
+      "name": "23S rRNA methyltransferase",
+      "idx_1based": 135,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_346_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_347_DIMER",
+      "name": "tRNA (guanine-N(7)-)-methyltransferase",
+      "idx_1based": 136,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_347_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_349_HEXAMER",
+      "name": "Replication initiation/membrane attachment protein",
+      "idx_1based": 137,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_349_MONOMER",
+          "coefficient": 6.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_351_HEXAMER",
+      "name": "inorganic pyrophosphatase",
+      "idx_1based": 138,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_351_MONOMER",
+          "coefficient": 6.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_352_DIMER",
+      "name": "Holliday junction endonuclease",
+      "idx_1based": 139,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 28,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_352_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_353_DIMER",
+      "name": "DNA-binding protein HU, putative",
+      "idx_1based": 140,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 30,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_353_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_355_HEXAMER",
+      "name": "ATP-dependent Clp protease, ATPase subunit",
+      "idx_1based": 141,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_355_MONOMER",
+          "coefficient": 6.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_357_DIMER",
+      "name": "acetate kinase",
+      "idx_1based": 142,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_357_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_358_359_10MER",
+      "name": "Holliday junction DNA helicase",
+      "idx_1based": 143,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 52,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_358_MONOMER",
+          "coefficient": 4.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_359_MONOMER",
+          "coefficient": 6.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_367_DIMER",
+      "name": "ribonuclease III",
+      "idx_1based": 144,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_367_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [
+        {
+          "molecule_wid": "MG",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_368_DIMER",
+      "name": "fatty acid/phospholipid synthesis protein PlsX",
+      "idx_1based": 145,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_368_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_369_DIMER",
+      "name": "DAK2 phosphatase domain protein",
+      "idx_1based": 146,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_369_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_372_DIMER",
+      "name": "thiamine biosynthesis/tRNA modification protein ThiI",
+      "idx_1based": 147,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_372_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_375_DIMER",
+      "name": "threonyl-tRNA synthetase",
+      "idx_1based": 148,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_375_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_376_HEXAMER",
+      "name": "[]",
+      "idx_1based": 149,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_376_MONOMER",
+          "coefficient": 6.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_382_TETRAMER",
+      "name": "uridine kinase",
+      "idx_1based": 150,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_382_MONOMER",
+          "coefficient": 4.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_383_DIMER",
+      "name": "NH(3)-dependent NAD+ synthetase, putative",
+      "idx_1based": 151,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_383_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_385_DIMER",
+      "name": "glycerophosphoryl diester phosphodiesterase family protein",
+      "idx_1based": 152,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_385_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_390_DIMER",
+      "name": "toxin ABC transporter, ATP-binding/permease protein",
+      "idx_1based": 153,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "m",
+      "monomers": [
+        {
+          "molecule_wid": "MG_390_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "m"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_391_HEXAMER",
+      "name": "cytosol aminopeptidase",
+      "idx_1based": 154,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_391_MONOMER",
+          "coefficient": 6.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_392_393_21MER",
+      "name": "GroEL-GroES chaperonin complex",
+      "idx_1based": 155,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_392_MONOMER",
+          "coefficient": 14.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_393_MONOMER",
+          "coefficient": 7.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [
+        {
+          "molecule_wid": "A3MP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "ACAL",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "AD",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "AMP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "AMP_VAL",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "ApAp",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "ARG",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "ArgArg",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "ASP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "aza8AD",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "aza8dA",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "CDPDG181",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "chloroacetaldehyde",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "CO2",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "dApdAp",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "dhpdUMP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "dRibose5P_dRibose5P",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "dT64dT_dewar",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "dTMP64dCMP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "e5dCMP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "e6AD",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "epsilon1N6dAMP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "f5dU",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "f5dUMP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "f5URA",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "FAPydGMP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "G6P",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "GalCer16",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "GalGalCer16",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "GalGalDAG181",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "GlcGalGalDAG161",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "GlcGlcDAG161",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "GlcGlcDAG181",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "GlcGlcGlcDAG160",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "glchm5dU",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "GLU",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "GPI",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "HDCA",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "HIS",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "hm5URA",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "ho5dC",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "ho5URA",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "hydrogen_radical",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "lomefloxacin",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "LysLys",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "m2G",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "rnas": []
+    },
+    {
+      "wid": "MG_394_TETRAMER",
+      "name": "serine hydroxymethyltransferase",
+      "idx_1based": 156,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_394_MONOMER",
+          "coefficient": 4.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_396_DIMER",
+      "name": "ribose 5-phosphate isomerase B",
+      "idx_1based": 157,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_396_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_398_399_400_401_402_403_404_405_22MER",
+      "name": "H(+)-transporting two-sector ATPase",
+      "idx_1based": 158,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "m",
+      "monomers": [
+        {
+          "molecule_wid": "MG_398_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_399_MONOMER",
+          "coefficient": 3.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_400_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_401_MONOMER",
+          "coefficient": 3.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_402_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_403_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "m"
+        },
+        {
+          "molecule_wid": "MG_404_MONOMER",
+          "coefficient": 10.0,
+          "compartment_wid": "m"
+        },
+        {
+          "molecule_wid": "MG_405_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "m"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_407_DIMER",
+      "name": "enolase",
+      "idx_1based": 159,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_407_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_409_DIMER",
+      "name": "phosphate transport system regulatory protein PhoU, putative",
+      "idx_1based": 160,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "PI>20",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_409_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_410_411_412_PENTAMER",
+      "name": "phosphate ABC transporter",
+      "idx_1based": 161,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "m",
+      "monomers": [
+        {
+          "molecule_wid": "MG_410_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_411_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "m"
+        },
+        {
+          "molecule_wid": "MG_412_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "e"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_425_DIMER",
+      "name": "ATP-dependent RNA helicase",
+      "idx_1based": 162,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_425_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_427_DIMER",
+      "name": "osmotically inducible peroxidase",
+      "idx_1based": 163,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_427_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_427_DIMER_ox",
+      "name": "oxidized osmotically inducible peroxidase",
+      "idx_1based": 164,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [],
+      "subcomplexes": [
+        {
+          "molecule_wid": "MG_427_DIMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [
+        {
+          "molecule_wid": "H",
+          "coefficient": -4.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_428_DIMER",
+      "name": "LuxR bacterial regulatory protein, putative",
+      "idx_1based": 165,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 28,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_428_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_431_DIMER",
+      "name": "triosephosphate isomerase",
+      "idx_1based": 166,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_431_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_433_DIMER",
+      "name": "translation elongation factor Ts",
+      "idx_1based": 167,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_433_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_434_HEXAMER",
+      "name": "uridylate kinase",
+      "idx_1based": 168,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_434_MONOMER",
+          "coefficient": 6.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_437_DIMER",
+      "name": "phosphatidate cytidylyltransferase",
+      "idx_1based": 169,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "m",
+      "monomers": [
+        {
+          "molecule_wid": "MG_437_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "m"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_445_DIMER",
+      "name": "tRNA (guanine-N1)-methyltransferase",
+      "idx_1based": 170,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_445_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_451_DIMER",
+      "name": "translation elongation factor Tu",
+      "idx_1based": 171,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_451_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_453_TETRAMER",
+      "name": "UTP-glucose-1-phosphate uridylyltransferase",
+      "idx_1based": 172,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_453_MONOMER",
+          "coefficient": 4.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_454_DIMER",
+      "name": "thiol-dependent peroxidase",
+      "idx_1based": 173,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_454_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_454_DIMER_ox",
+      "name": "oxidized thiol-dependent peroxidase",
+      "idx_1based": 174,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [],
+      "subcomplexes": [
+        {
+          "molecule_wid": "MG_454_DIMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [
+        {
+          "molecule_wid": "H",
+          "coefficient": -4.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_455_DIMER",
+      "name": "tyrosyl-tRNA synthetase",
+      "idx_1based": 175,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_455_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_457_HEXAMER",
+      "name": "ATP-dependent metalloprotease FtsH",
+      "idx_1based": 176,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "m",
+      "monomers": [
+        {
+          "molecule_wid": "MG_457_MONOMER",
+          "coefficient": 6.0,
+          "compartment_wid": "m"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [
+        {
+          "molecule_wid": "ZN",
+          "coefficient": -1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_458_TETRAMER",
+      "name": "hypoxanthine phosphoribosyltransferase",
+      "idx_1based": 177,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_458_MONOMER",
+          "coefficient": 4.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_460_TETRAMER",
+      "name": "L-lactate dehydrogenase/malate dehydrogenase",
+      "idx_1based": 178,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_460_MONOMER",
+          "coefficient": 4.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_467_468_526_TETRAMER",
+      "name": "salivaricin A ABC transporter",
+      "idx_1based": 179,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "m",
+      "monomers": [
+        {
+          "molecule_wid": "MG_467_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_468_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "m"
+        },
+        {
+          "molecule_wid": "MG_526_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_469_1MER_ADP",
+      "name": "DnaA-ADP",
+      "idx_1based": 180,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 11,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_469_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [
+        {
+          "molecule_wid": "ADP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_469_1MER_ATP",
+      "name": "DnaA-ATP",
+      "idx_1based": 181,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 11,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_469_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [
+        {
+          "molecule_wid": "ATP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_469_2MER_1ATP_ADP",
+      "name": "DnaA 2mer-(1)ATP-(1)ADP",
+      "idx_1based": 182,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 11,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [],
+      "subcomplexes": [
+        {
+          "molecule_wid": "MG_469_1MER_ADP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_469_1MER_ATP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_469_2MER_ATP",
+      "name": "DnaA-ATP 2mer",
+      "idx_1based": 183,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 11,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [],
+      "subcomplexes": [
+        {
+          "molecule_wid": "MG_469_1MER_ATP",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_469_3MER_2ATP_ADP",
+      "name": "DnaA 3mer-(2)ATP-(1)ADP",
+      "idx_1based": 184,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 11,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [],
+      "subcomplexes": [
+        {
+          "molecule_wid": "MG_469_1MER_ADP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_469_2MER_ATP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_469_3MER_ATP",
+      "name": "DnaA-ATP 3mer",
+      "idx_1based": 185,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 11,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [],
+      "subcomplexes": [
+        {
+          "molecule_wid": "MG_469_1MER_ATP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_469_2MER_ATP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_469_4MER_3ATP_ADP",
+      "name": "DnaA 4mer-(3)ATP-(1)ADP",
+      "idx_1based": 186,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 11,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [],
+      "subcomplexes": [
+        {
+          "molecule_wid": "MG_469_1MER_ADP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_469_3MER_ATP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_469_4MER_ATP",
+      "name": "DnaA-ATP 4mer",
+      "idx_1based": 187,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 11,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [],
+      "subcomplexes": [
+        {
+          "molecule_wid": "MG_469_1MER_ATP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_469_3MER_ATP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_469_5MER_4ATP_ADP",
+      "name": "DnaA 5mer-(4)ATP-(1)ADP",
+      "idx_1based": 188,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 11,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [],
+      "subcomplexes": [
+        {
+          "molecule_wid": "MG_469_1MER_ADP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_469_4MER_ATP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_469_5MER_ATP",
+      "name": "DnaA-ATP 5mer",
+      "idx_1based": 189,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 11,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [],
+      "subcomplexes": [
+        {
+          "molecule_wid": "MG_469_1MER_ATP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_469_4MER_ATP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_469_6MER_5ATP_ADP",
+      "name": "DnaA 6mer-(5)ATP-(1)ADP",
+      "idx_1based": 190,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 11,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [],
+      "subcomplexes": [
+        {
+          "molecule_wid": "MG_469_1MER_ADP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_469_5MER_ATP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_469_6MER_ATP",
+      "name": "DnaA-ATP 6mer",
+      "idx_1based": 191,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 11,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [],
+      "subcomplexes": [
+        {
+          "molecule_wid": "MG_469_1MER_ATP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_469_5MER_ATP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_469_7MER_6ATP_ADP",
+      "name": "DnaA 7mer-(6)ATP-(1)ADP",
+      "idx_1based": 192,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 11,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [],
+      "subcomplexes": [
+        {
+          "molecule_wid": "MG_469_1MER_ADP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_469_6MER_ATP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_469_7MER_ATP",
+      "name": "DnaA-ATP 7mer",
+      "idx_1based": 193,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 11,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [],
+      "subcomplexes": [
+        {
+          "molecule_wid": "MG_469_1MER_ATP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_469_6MER_ATP",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "MG_482_DIMER",
+      "name": "holo-(acyl-carrier-protein) synthase",
+      "idx_1based": 194,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_482_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "REPLISOME",
+      "name": "Replisome",
+      "idx_1based": 195,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_001_MONOMER",
+          "coefficient": 4.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_250_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [
+        {
+          "molecule_wid": "DNA_POLYMERASE_CORE",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "DNA_POLYMERASE_GAMMA_COMPLEX",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_094_HEXAMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "RIBOSOME_30S",
+      "name": "30S ribosomal subunit",
+      "idx_1based": 196,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "!gentamicin & !spectinomycin & !streptomycin & !tetracycline",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_070_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_087_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_088_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_090_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_092_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_150_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_155_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_157_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_160_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_164_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_165_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_168_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_175_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_176_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_481_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_311_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_522_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_417_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_424_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_446_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": [
+        {
+          "molecule_wid": "MGrrnA16S",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ]
+    },
+    {
+      "wid": "RIBOSOME_30S_IF3",
+      "name": "30S ribosomal subunit - translation initiation factor IF-3 complex",
+      "idx_1based": 197,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_196_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [
+        {
+          "molecule_wid": "RIBOSOME_30S",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "RIBOSOME_50S",
+      "name": "50S ribosomal subunit",
+      "idx_1based": 198,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "!azithromycin & !chloramphenicol & !clarithromycin & !clindamycin & !erythromycin & !lincomycin & !pristinamycin",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_473_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_081_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_082_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_093_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_151_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_152_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_153_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_154_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_156_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_158_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_159_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_161_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_162_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_163_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_166_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_167_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_169_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_174_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_178_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_197_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_198_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_232_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_234_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_257_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_325_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_361_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_362_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_363_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_418_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_426_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_444_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_466_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": [
+        {
+          "molecule_wid": "MGrrnA23S",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MGrrnA5S",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ]
+    },
+    {
+      "wid": "RIBOSOME_70S",
+      "name": "70S ribosome",
+      "idx_1based": 199,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 0,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [],
+      "subcomplexes": [
+        {
+          "molecule_wid": "RIBOSOME_30S",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "RIBOSOME_50S",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "RNA_POLYMERASE",
+      "name": "DNA-directed RNA polymerase",
+      "idx_1based": 200,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 75,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_022_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_177_MONOMER",
+          "coefficient": 2.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_340_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        },
+        {
+          "molecule_wid": "MG_341_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    },
+    {
+      "wid": "RNA_POLYMERASE_HOLOENZYME",
+      "name": "DNA-directed RNA polymerase holoenzyme",
+      "idx_1based": 201,
+      "num_subunits": 0,
+      "num_distinct_subunits": 6,
+      "dna_footprint": 75,
+      "density": 1.35,
+      "activation_rule": "",
+      "formation_compartment_wid": "c",
+      "monomers": [
+        {
+          "molecule_wid": "MG_249_MONOMER",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "subcomplexes": [
+        {
+          "molecule_wid": "RNA_POLYMERASE",
+          "coefficient": 1.0,
+          "compartment_wid": "c"
+        }
+      ],
+      "metabolites": [],
+      "prosthetic": [],
+      "chaperones": [],
+      "rnas": []
+    }
+  ],
+  "interpretation": {
+    "convention": "Each complex appears in its own biosynthesis as the +1 product. Reactant participants (monomers, sub-complexes, metabolites, prosthetic groups, RNAs, chaperone substrates) carry positive stoichiometric coefficients indicating how many copies are required to assemble one complex. Negative coefficients (rare) indicate net release.",
+    "compartments": "c=Cytosol, d=DNA, e=Extracellular, m=Membrane, tc=Terminal Organelle Cytosol, tm=Terminal Organelle Membrane",
+    "monomers": "molecule_wid is a ProteinMonomer WCM ID (e.g. MG_003_MONOMER)",
+    "subcomplexes": "molecule_wid is another complex WCM ID (e.g. RIBOSOME_30S inside RIBOSOME_70S)",
+    "metabolites": "molecule_wid is a Metabolite WCM ID; covers metal/cofactor binding (Mg2+, ADP, ATP, etc).",
+    "prosthetic": "covalently-bound prosthetic groups",
+    "chaperones": "chaperone substrate participants (typically empty for our complexes)",
+    "rnas": "Gene-level WCM IDs of rRNAs / tRNAs incorporated into the complex"
+  }
+}
