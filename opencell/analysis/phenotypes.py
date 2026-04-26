@@ -261,21 +261,14 @@ def measure_protein_stability(horizon_s: int = 20) -> PhenotypeMeasurement:
     )
 
 
-def measure_cell_dry_mass(
+def _build_chassis_mass_breakdown(
     m1: km.KarrMetabolismModel,
     m2: tx.KarrTranscriptionModel,
     m3: tl.KarrTranslationModel,
-) -> PhenotypeMeasurement:
-    """Phase E phenotype #9: total cell dry mass at t=0.
-
-    Build the chassis (closed loop config matching p9), aggregate
-    substrate + RNA + protein mass via per-molecule MWs from the v2
-    fixtures, divide by Avogadro, compare to Karr's stored
-    State_Mass.cellDry total (~3.945e-15 g).
-
-    Currently expected to FAIL: M2 v1 wires Karr's expression field
-    (transcription rates, normalized 0-3 unit) as if it were SS counts,
-    over-counting RNA molecules ~53x.  Pinned xfail until m2-counts-fix.
+):
+    """Helper: build the Phase C closed-loop chassis at t=0 and return
+    the per-class CellMassBreakdown.  Centralised so p10/p10a/p10b/p10c
+    extractors share one engine-construction code path.
     """
     from opencell.analysis.cell_mass import compute_cell_mass
     from opencell.vivarium.karr_composite import build_karr_m1_m2_m3_engine
@@ -287,7 +280,51 @@ def measure_cell_dry_mass(
         enable_pool_replenishment=True,
     )
     state = engine.state.get_value()
-    breakdown = compute_cell_mass(state, m1, m2, m3)
+    return compute_cell_mass(state, m1, m2, m3)
+
+
+def _karr_archive_protein_monomer_dry_mass_g() -> float:
+    """Derive Karr's State_ProteinMonomer total dry mass (grams) from
+    the raw archive arrays.
+
+    Formula:
+        sum_p (sum_c proteins_targeted.counts[p, c]) * proteins_targeted.molecularWeights[p] / N_A
+
+    Sums across all 4820 monomer rows (10 forms x 482 genes x 6 compartments
+    flattened) and across all 6 compartment columns.  Karr's archive does
+    NOT publish a State_Mass.proteinMonomerWt subtotal directly, so we
+    recompute it from the same counts + MW arrays State_Mass.calcMass()
+    consumes in MATLAB.
+
+    No hard-coded value: the result is purely a function of the archive
+    arrays, computed at runtime.
+    """
+    from pathlib import Path
+    npz_path = (
+        Path(__file__).resolve().parents[2]
+        / "data" / "karr_archive" / "karr_archive.npz"
+    )
+    z = np.load(npz_path, allow_pickle=True)
+    counts = np.asarray(z["proteins_targeted__counts"], dtype=np.float64)
+    mw = np.asarray(z["proteins_targeted__molecularWeights"], dtype=np.float64)
+    AVOGADRO = 6.02214076e23
+    return float((counts.sum(axis=1) * mw).sum() / AVOGADRO)
+
+
+def measure_cell_dry_mass(
+    m1: km.KarrMetabolismModel,
+    m2: tx.KarrTranscriptionModel,
+    m3: tl.KarrTranslationModel,
+) -> PhenotypeMeasurement:
+    """Phase E phenotype #10 (total): chassis total cell dry mass vs
+    Karr's State_Mass.cellDry total (~3.945e-15 g).
+
+    Currently expected to FAIL on the aggregate -- the per-class
+    sub-targets p10a/p10b/p10c provide a fine-grained breakdown
+    (Phase E.1c partition) showing which classes the chassis already
+    matches and which still need D.2/M5/substrate-pool-init to close.
+    """
+    breakdown = _build_chassis_mass_breakdown(m1, m2, m3)
     target = float(m1.stored_runtime["cell_dry_total_mass_g"])
     return PhenotypeMeasurement(
         name="p10_cell_dry_mass_g",
@@ -299,6 +336,133 @@ def measure_cell_dry_mass(
             "rna_mass_g": breakdown.rna_mass_g,
             "protein_mass_g": breakdown.protein_mass_g,
             **breakdown.extra,
+        },
+    )
+
+
+def measure_dry_mass_rna_g(
+    m1: km.KarrMetabolismModel,
+    m2: tx.KarrTranscriptionModel,
+    m3: tl.KarrTranslationModel,
+) -> PhenotypeMeasurement:
+    """Phase E.1c sub-target p10a: chassis RNA-class dry mass vs
+    Karr's State_Mass.rnaWt total (~1.715e-16 g, ~4.35% of cellDry).
+
+    Target source: stored_runtime.rna_wt_total_g, which the m1 ingest
+    pipeline derives from sim.state.State_Mass.dump.rnaWt (sum across
+    6 compartments) and which equals
+    sum(rnas_targeted.counts x rnas_targeted.molecularWeights) / N_A
+    over the 2428-entry full RNA state matrix (verified at fixture-build
+    time).  No hard-coded value.
+
+    Chassis predicted: aggregator's RNA contribution -- breakdown.rna_mass_g
+    over the M2 mature-only state (525 genes, ~784 mol post-E.1b m2-counts-fix).
+    Because chassis tracks only mature mRNA forms (no nascent/processed/...,
+    rRNA/tRNA aggregated under mature pseudo-counts), predicted is ~41% of
+    Karr's total RNA mass at t=0 -- below the [0.50, 1.50] tolerance band
+    -> xfail until M2 v2 / RNA-form coverage lands.
+    """
+    breakdown = _build_chassis_mass_breakdown(m1, m2, m3)
+    target = float(m1.stored_runtime["rna_wt_total_g"])
+    return PhenotypeMeasurement(
+        name="p10a_dry_mass_rna_g",
+        predicted=breakdown.rna_mass_g,
+        target=target,
+        unit="g",
+        extra={
+            "n_rnas_with_mw": breakdown.extra["n_rnas_with_mw"],
+            "n_rnas_total": breakdown.extra["n_rnas_total"],
+            "rna_da": breakdown.extra["rna_da"],
+        },
+    )
+
+
+def measure_dry_mass_protein_monomer_g(
+    m1: km.KarrMetabolismModel,
+    m2: tx.KarrTranscriptionModel,
+    m3: tl.KarrTranslationModel,
+) -> PhenotypeMeasurement:
+    """Phase E.1c sub-target p10b: chassis ProteinMonomer-class dry mass
+    vs Karr's State_ProteinMonomer total (~1.093e-15 g, ~27.70% of cellDry).
+
+    Target source: derived at runtime from the archive arrays
+    proteins_targeted.counts (4820 x 6) x proteins_targeted.molecularWeights (4820)
+    summed across all forms / compartments and divided by Avogadro
+    (see _karr_archive_protein_monomer_dry_mass_g).  Karr's archive
+    does not publish a State_Mass.proteinWt subtotal; we recompute it
+    from the same arrays State_Mass.calcMass() consumes in MATLAB.
+    No hard-coded value.
+
+    Chassis predicted: aggregator's protein contribution --
+    breakdown.protein_mass_g over m3.counts_mature (16177 mol).  At
+    t=0 chassis hits ~70% of Karr's monomer total, well within the
+    [0.50, 1.50] tolerance band -> green.  This is the largest Phase
+    E.1c win: a previously-opaque xfail becomes a green sub-target.
+    """
+    breakdown = _build_chassis_mass_breakdown(m1, m2, m3)
+    target = _karr_archive_protein_monomer_dry_mass_g()
+    return PhenotypeMeasurement(
+        name="p10b_dry_mass_protein_monomer_g",
+        predicted=breakdown.protein_mass_g,
+        target=target,
+        unit="g",
+        extra={
+            "n_proteins_with_mw": breakdown.extra["n_proteins_with_mw"],
+            "n_proteins_total": breakdown.extra["n_proteins_total"],
+            "protein_da": breakdown.extra["protein_da"],
+        },
+    )
+
+
+def measure_dry_mass_other_residual_g(
+    m1: km.KarrMetabolismModel,
+    m2: tx.KarrTranscriptionModel,
+    m3: tl.KarrTranslationModel,
+) -> PhenotypeMeasurement:
+    """Phase E.1c sub-target p10c: 'everything else' dry mass --
+    Karr's cellDry total minus the RNA and ProteinMonomer subtotals.
+
+    Target = cell_dry_total_mass_g - rna_wt_total_g - protein_monomer_dry_mass_g
+           ~= 2.68e-15 g, ~67.95% of cellDry.
+
+    This residual aggregates every mass class the archive does NOT
+    expose as a clean per-class subtotal:
+      * State_ProteinComplex (ribosomes, RNAP, replisome, ATP synthase, ...)
+      * State_Chromosome / DNA polymer
+      * State_Metabolite intracellular pool (ions, NTPs, AAs, lipid IDs,
+        polysaccharide IDs) at Karr's snapshot counts
+      * lipid membrane mass, polysaccharide cell-wall mass
+
+    Why a residual rather than per-class targets?  The archive's
+    snapshot_substrates (3 x 585) is in MATLAB-FBA-input units (mixed
+    counts/concentration-x-volume; cytosol H2O at 1.4e14 'count') --
+    not directly interpretable as cellular molecule counts -- and there
+    are no archive arrays for DNA, lipid, polysaccharide, or
+    ProteinComplex counts/MW.  Until D.2 (complex assembly), M5 (DNA),
+    and a substrate-pool-init pass land, this residual stays ~0 from
+    the chassis side and the test is pinned xfail as a single bucket
+    rather than fabricating per-class numbers.
+
+    Chassis predicted: breakdown.substrate_mass_g (the only chassis
+    contribution outside RNA / ProteinMonomer; today equals
+    sum(placeholder=1.0 x substrate MW) / N_A ~= 1e-19 g).
+    """
+    breakdown = _build_chassis_mass_breakdown(m1, m2, m3)
+    total = float(m1.stored_runtime["cell_dry_total_mass_g"])
+    rna = float(m1.stored_runtime["rna_wt_total_g"])
+    prot_mon = _karr_archive_protein_monomer_dry_mass_g()
+    target = total - rna - prot_mon
+    return PhenotypeMeasurement(
+        name="p10c_dry_mass_other_residual_g",
+        predicted=breakdown.substrate_mass_g,
+        target=target,
+        unit="g",
+        extra={
+            "cell_dry_total_g": total,
+            "rna_target_g": rna,
+            "protein_monomer_target_g": prot_mon,
+            "n_substrates_with_mw": breakdown.extra["n_substrates_with_mw"],
+            "n_substrates_total": breakdown.extra["n_substrates_total"],
         },
     )
 
@@ -315,4 +479,7 @@ __all__ = [
     "measure_protein_stability",
     "measure_aa_pool_stability",
     "measure_cell_dry_mass",
+    "measure_dry_mass_rna_g",
+    "measure_dry_mass_protein_monomer_g",
+    "measure_dry_mass_other_residual_g",
 ]

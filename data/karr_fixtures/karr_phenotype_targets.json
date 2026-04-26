@@ -80,7 +80,37 @@
       "unit": "g",
       "source": "sim.state.State_Mass.dump.cellDry total (sim_fitted_targeted.mat) ingested into karr_native_m1.json stored_runtime.cell_dry_total_mass_g",
       "expected_status": "fail",
-      "fail_reason": "STRUCTURAL GAP -- CHASSIS CONTENT INCOMPLETE: after the E.1b m2-counts-fix the aggregator now reads correct mature RNA counts (784 mol, 7.0e-17 g) and protein counts (16177 mol, 7.66e-16 g), but chassis total is only 8.38e-16 g vs Karr's 3.945e-15 g (21%). The missing ~79% lives in chassis content the M1+M2+M3 v1 trio does not yet represent: ProteinComplex (ribosomes, RNAP, replisome, ~1e-15 g), DNA (chromosome, ~6e-16 g), lipid membrane, polysaccharides, metabolite pool at Karr-snapshot counts (chassis seeds 561 non-demand substrates at 1.0 placeholder, not Karr's per-substrate snapshot). Pinned xfail until D.2 (complex assembly), M5 (DNA replication), and substrate-pool init from Karr snapshot land. Will flip green once dry-mass coverage closes the structural gap, OR once we partition into per-class targets (p10a substrate, p10b RNA, p10c protein) -- whichever arrives first."
+      "fail_reason": "STRUCTURAL GAP -- CHASSIS CONTENT INCOMPLETE: after the E.1b m2-counts-fix the aggregator now reads correct mature RNA counts (784 mol, 7.0e-17 g) and protein counts (16177 mol, 7.66e-16 g), but chassis total is only 8.38e-16 g vs Karr's 3.945e-15 g (21%). The missing ~79% lives in chassis content the M1+M2+M3 v1 trio does not yet represent: ProteinComplex (ribosomes, RNAP, replisome, ~1e-15 g), DNA (chromosome, ~6e-16 g), lipid membrane, polysaccharides, metabolite pool at Karr-snapshot counts (chassis seeds 561 non-demand substrates at 1.0 placeholder, not Karr's per-substrate snapshot). Pinned xfail until D.2 (complex assembly), M5 (DNA replication), and substrate-pool init from Karr snapshot land. The Phase E.1c partition (p10a/p10b/p10c) provides the fine-grained breakdown showing which classes already match (p10b protein monomer green) and which still need closure (p10a RNA, p10c residual)."
+    },
+    "p10a_dry_mass_rna_g": {
+      "category": "closed_loop",
+      "target": 1.7152144036805145e-16,
+      "tol_rel_min": 0.50,
+      "tol_rel_max": 1.50,
+      "unit": "g",
+      "source": "karr_native_m1.json stored_runtime.rna_wt_total_g, derived from sim.state.State_Mass.dump.rnaWt sum across 6 compartments. Equivalent to sum(rnas_targeted__counts[2428,6] x rnas_targeted__molecularWeights[2428]) / N_A over the full RNA state matrix in data/karr_archive/karr_archive.npz (verified at fixture-build to within float round-off ~3e-23 g).",
+      "expected_status": "fail",
+      "fail_reason": "STRUCTURAL GAP: chassis tracks only mature mRNA (525 genes, ~784 mol post-E.1b m2-counts-fix, ~7.0e-17 g, ~41% of Karr's RNA-class total). Karr's State_Rna includes nascent / processed / aminoacylated / bound / misfolded / damaged forms across cytosol+membrane+terminal-organelle for all 4820 entries; chassis representation collapses these into mature-only at gene level. Pinned xfail until M2 v2 lands per-form RNA tracking. Predicted/target ratio ~0.41 < tol_rel_min=0.50."
+    },
+    "p10b_dry_mass_protein_monomer_g": {
+      "category": "closed_loop",
+      "target": 1.09267249433439e-15,
+      "tol_rel_min": 0.50,
+      "tol_rel_max": 1.50,
+      "unit": "g",
+      "source": "Derived at runtime from data/karr_archive/karr_archive.npz arrays proteins_targeted__counts (4820, 6) x proteins_targeted__molecularWeights (4820), summed across all monomer forms / compartments and divided by N_A. Karr's archive does not publish a State_Mass.proteinWt subtotal; we recompute it from the same counts+MW arrays State_Mass.calcMass() consumes in MATLAB. See opencell.analysis.phenotypes._karr_archive_protein_monomer_dry_mass_g for the helper.",
+      "expected_status": "pass",
+      "pass_reason": "Phase E.1b protein monomer aggregator reads m3.counts_mature (16177 mol) x m3.molecular_weight, giving ~7.66e-16 g (~70% of Karr's monomer total). Karr's full State_ProteinMonomer counts include nascent/processed/folded/inactivated/bound/misfolded/damaged/signalSequence forms (10x per gene), so chassis mature-only undershoots but stays inside [0.50, 1.50]. This is the largest p10 partition win: the previously-opaque p10 xfail surfaces a green sub-target."
+    },
+    "p10c_dry_mass_other_residual_g": {
+      "category": "closed_loop",
+      "target": 2.6804468915543883e-15,
+      "tol_rel_min": 0.50,
+      "tol_rel_max": 1.50,
+      "unit": "g",
+      "source": "Computed at runtime as cell_dry_total_mass_g - rna_wt_total_g - protein_monomer_dry_mass_g, i.e., (sim.state.State_Mass.dump.cellDry total) - (stored_runtime.rna_wt_total_g) - (sum(proteins_targeted__counts x molecularWeights)/N_A). All three inputs come from data/karr_archive/karr_archive.npz / karr_native_m1.json stored_runtime; no hard-coded value.",
+      "expected_status": "fail",
+      "fail_reason": "AGGREGATE STRUCTURAL GAP: this residual buckets every class the archive does NOT expose as a per-class subtotal -- State_ProteinComplex (ribosomes, RNAP, replisome, ATP synthase, ~1e-15 g), State_Chromosome / DNA polymer (~6e-16 g), State_Metabolite intracellular pool at Karr-snapshot counts (ions, NTPs, AAs, lipid IDs, polysaccharide IDs), lipid membrane, polysaccharide cell-wall. Why a residual rather than per-class targets? The archive's snapshot_substrates (3 compartments x 585 substrates) is in MATLAB-FBA-input units (mixed counts / concentration-x-volume; cytosol H2O at 1.4e14 'count') -- not directly interpretable as cellular molecule counts -- and there are no archive arrays for DNA / lipid / polysaccharide / ProteinComplex counts+MW. Documenting the blocker rather than fabricating numbers. Chassis predicted = breakdown.substrate_mass_g (placeholder substrate counts = 1.0 -> ~1e-19 g) << target ~2.68e-15 g. Pinned xfail until D.2 (complex assembly), M5 (DNA replication), and substrate-pool init from Karr snapshot land. The total-vs-derived consistency is unit-tested in test_p10c_other_residual_target_consistency."
     }
   }
 }
