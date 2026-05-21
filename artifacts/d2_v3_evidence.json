@@ -1,0 +1,125 @@
+{
+  "inputs": {
+    "ribosome_flat_mat": "data/karr_fixtures/per_process/RibosomeAssembly_flat.mat",
+    "macromolecular_complexation_flat_mat": "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat",
+    "protein_complex_flat_mat": "data/karr_fixtures/per_process/ProteinComplex_flat.mat",
+    "metabolite_flat_mat": "data/karr_fixtures/per_process/Metabolite_flat.mat"
+  },
+  "blocker_1_ribosome_costs": {
+    "status": "extracted",
+    "source_fields": {
+      "substrateWholeCellModelIDs": [
+        "GTP",
+        "GDP",
+        "PI",
+        "H2O",
+        "H"
+      ],
+      "substrateIndexs": {
+        "gtp": 1,
+        "gdp": 2,
+        "phosphate": 3,
+        "water": 4,
+        "hydrogen": 5
+      },
+      "enzymeWholeCellModelIDs": [
+        "MG_329_MONOMER",
+        "MG_335_MONOMER",
+        "MG_387_MONOMER",
+        "MG_384_MONOMER",
+        "MG_143_MONOMER",
+        "MG_442_MONOMER"
+      ],
+      "enzymeIndexs_30S_assembly_gtpase": [
+        3,
+        5
+      ],
+      "enzymeIndexs_50S_assembly_gtpase": [
+        1,
+        2,
+        4,
+        6
+      ],
+      "gtpases_30S_named": [
+        "MG_387_MONOMER",
+        "MG_143_MONOMER"
+      ],
+      "gtpases_50S_named": [
+        "MG_329_MONOMER",
+        "MG_335_MONOMER",
+        "MG_384_MONOMER",
+        "MG_442_MONOMER"
+      ],
+      "complexWholeCellModelIDs": [
+        "RIBOSOME_30S",
+        "RIBOSOME_50S"
+      ],
+      "complexIndexs": {
+        "30S": 1,
+        "50S": 2
+      }
+    },
+    "interpretation": {
+      "thirty_vs_fifty_split": "30S uses 2 assembly GTPases, 50S uses 4 assembly GTPases.",
+      "must_not_use_blanket_6x": true,
+      "note": "RibosomeAssembly fixture explicitly carries 30S/50S split signals. Apply per-step costs, do not collapse into a blanket 6x claim."
+    }
+  },
+  "blocker_2_scope_ownership": {
+    "status": "extracted",
+    "formation_process_histogram_named": {
+      "Process_MacromolecularComplexation": 882,
+      "Process_Metabolism": 96,
+      "Process_ReplicationInitiation": 84,
+      "Process_FtsZPolymerization": 66,
+      "Process_Replication": 42,
+      "Process_RibosomeAssembly": 12,
+      "Process_Translation": 12,
+      "Process_ChromosomeCondensation": 6,
+      "Process_Transcription": 6
+    },
+    "formation_process_whitelist_for_D2": [
+      "Process_MacromolecularComplexation",
+      "Process_RibosomeAssembly"
+    ],
+    "formation_process_explicit_exclusions": [
+      "Process_FtsZPolymerization",
+      "Process_DnaApolymerization (represented via Process_ReplicationInitiation in this fixture set)",
+      "Process_TranscriptionalRegulation/Transcription",
+      "Process_ChromosomeCondensation"
+    ],
+    "ribosome_related_process_ownership": {
+      "Process_RibosomeAssembly": [
+        "RIBOSOME_30S",
+        "RIBOSOME_50S"
+      ],
+      "Process_Translation": [
+        "RIBOSOME_30S_IF3",
+        "RIBOSOME_70S"
+      ]
+    },
+    "note": "Build scope from snapshot ownership fields. Do not absorb non-whitelisted processes into D.2."
+  },
+  "blocker_3_emit_conservation": {
+    "status": "unknown",
+    "reason": "Design-level check; emit schema must include +product and -consumed-subcomplex deltas."
+  },
+  "blocker_4_oracle_target": {
+    "status": "extracted",
+    "source_fields": {
+      "counts": "ProteinComplex_flat.fixture.counts",
+      "molecularWeights": "ProteinComplex_flat.fixture.molecularWeights",
+      "matureIndexs": "ProteinComplex_flat.fixture.matureIndexs",
+      "boundIndexs": "ProteinComplex_flat.fixture.boundIndexs"
+    },
+    "mass_targets_g": {
+      "mature_only": 1.1549598107588903e-15,
+      "bound_only": 3.4246226409443805e-16,
+      "all_forms_total": 1.5052832188811208e-15
+    },
+    "interpretation": {
+      "oracle_rule": "Compare D.2 mature output to mature-only target; all-forms total is integration-stage target.",
+      "must_not_compare_mature_to_all_forms": true
+    }
+  }
+}

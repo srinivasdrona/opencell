@@ -54,8 +54,16 @@ e922bb4  Blog 2026-04-27: the cycle counter that never fired
 
 ## 2. Active threads (in priority order)
 
-### 2A. D.2 design v3 rework — TOP PRIORITY, not yet started
-- **Todo:** `d2-design-v3-rework` (pending)
+### 2A. D.2 design v3 rework — TOP PRIORITY, IN PROGRESS (updated 2026-05-22)
+- **Todo:** `d2-design-v3-rework` (pending, active)
+- **Current status:** started on branch/worktree `agent/d2-design-v3` with source-truth methodology shift.
+- **Evidence generated:** `artifacts/d2_v3_evidence.{json,md}` from `_flat.mat` sources.
+- **Design docs added/updated:** `docs/design/d2_v3_compliance_checklist_2026-05-22.md`, `docs/design/d2_v3_source_truth_working_spec.md`, and v3 section at top of `docs/design/d2_complex_assembly.md`.
+
+### 2A.1 Tomorrow first three things
+1. Open `agent/d2-design-v3` HEAD on GitHub and use that permalink for critique context.
+2. Run two critique passes in parallel: Sonnet (hand-wavy/missing-citation pass) and GPT-5.4 (BLOCKER-fix verification + new BLOCKER hunt). Log both via `scripts/log_llm_interaction.py`.
+3. If critique is minor-only, merge v3 and mark `d2-design-v3-rework` done; if critique returns BLOCKERs, do v4 on the same branch before any D.2 implementation.
 - **Input:** `docs/design/d2_complex_assembly.md` (v2, on main) has 4 BLOCKERs called out in its own table near the top
 - **Output:** a v3 design that fixes those 4 BLOCKERs; same file, same location; preserves v2 as a section labeled "Superseded approach" rather than deleted
 - **Critical anti-pattern**: this is a *design* deliverable, NOT a code deliverable. Do NOT create `opencell/processes/d2_complex_assembly.py` or any other implementation file. Implementation happens only after v3 design is approved.

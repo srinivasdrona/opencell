@@ -1,4 +1,139 @@
-# Phase D.2 — `MacromolecularComplexation` + `RibosomeAssembly`: Design Document v2
+# Phase D.2 — `MacromolecularComplexation` + `RibosomeAssembly`: Design Document v3 (Source-Truth Rework)
+
+| Field | Value |
+|---|---|
+| Status | DESIGN v3 — source-truth rework in progress |
+| Scope | Design-only. No implementation in this change. |
+| Method | Bottom-up from `_flat.mat` evidence; no hardcoded biology values; unknowns marked explicitly. |
+| Evidence artifacts | `artifacts/d2_v3_evidence.json`, `artifacts/d2_v3_evidence.md` |
+| Primary sources | `data/karr_fixtures/per_process/{RibosomeAssembly,MacromolecularComplexation,ProteinComplex,Metabolite}_flat.mat` |
+| Supersedes | v2 section below (kept verbatim as historical context). |
+
+## v3 methodology shift (blocking issue fix)
+
+v2 was written top-down and introduced factual errors. v3 is built bottom-up:
+
+1. Read `_flat.mat` sources first.
+2. Derive ownership and assembly costs from extracted fields.
+3. Write design decisions only where backed by extracted paths.
+4. Mark unresolved parts as unknown instead of inferring.
+
+This is required to avoid both hardcoded assumptions and hallucinated behavior.
+
+Superseded-section ledger (v2 -> v3):
+- §1.1 (scope): v2 had an implicit broad split; v3 uses an explicit 2-process whitelist + 7-process exclusion from source ownership fields.
+- §2.4 (ribosome costs): v2 leaned on fixture-summary shortcuts; v3 derives 30S/50S split directly from `RibosomeAssembly_flat.mat`.
+- §3.6 (emit): v2 product-only emit would violate conservation; v3 requires both positive product deltas and negative consumed-part deltas.
+- §6 (oracle): v2 mixed mature output against all-forms mass; v3 uses mature-only target for D.2 unit checks and defers mixed-form checks to integration.
+- HIGH carry-over reframing: from ambiguous `complex.counts` updater debate to explicit co-write ownership and updater semantics for `protein.counts` / `rna.counts` with M2/M3.
+
+## v3 blocker closure matrix (current)
+
+| Blocker | v3 source-truth evidence | v3 decision |
+|---|---|---|
+| #1 Ribosome cost data | `RibosomeAssembly_flat.mat` exposes `enzymeIndexs_30S_assembly_gtpase=[3,5]`, `enzymeIndexs_50S_assembly_gtpase=[1,2,4,6]`, substrates `GTP/GDP/PI/H2O/H` (see `artifacts/d2_v3_evidence.json`). | Model 30S and 50S assembly costs separately (2 vs 4 GTPase split). Do not use blanket 6x shortcuts. Addressed in v3 §2.4 rewrite. |
+| #2 Scope ownership | `ProteinComplex_flat.mat::formationProcesses` (mapped via `Metabolite_flat.mat::processWholeCellModelIDs`) shows 9 process owners and histogram: MC=882, Metabolism=96, RepInit=84, FtsZ=66, Replication=42, RibosomeAssembly=12, Translation=12, ChromCond=6, Transcription=6. | D.2 whitelist is explicit: `Process_MacromolecularComplexation` + `Process_RibosomeAssembly` only. All other owners are excluded. Addressed in v3 §1.1 rewrite. |
+| #3 `_emit_update` conservation | Existing v2 pseudo-code emits only new complexes and omits subcomplex decrements. | v3 emit contract must include both positive product deltas and negative consumed-subcomplex deltas; otherwise it is rejected as non-conservative. Addressed in v3 §3.6 rewrite. |
+| #4 Oracle mismatch | Snapshot ownership distinguishes mature vs bound forms; ribosome ownership split confirms mixed-form comparisons are invalid. | Compare D.2 mature outputs to mature-only targets. Keep bound-inclusive oracle for integration stage only (`D.2 + consumers`). Addressed in v3 §6 rewrite. |
+
+## v3 BLOCKER traceability (mechanical check)
+
+| BLOCKER | Resolved in | Evidence |
+|---|---|---|
+| #1 ribosome cost path | v3 §2.4 | `artifacts/d2_v3_evidence.md` BLOCKER #1 entries (30S 2-GTPase set, 50S 4-GTPase set). |
+| #2 scope creep | v3 §1.1 | `artifacts/d2_v3_evidence.json` -> `blocker_2_scope_ownership.formation_process_histogram_named`. |
+| #3 `_emit_update` conservation bug | v3 §3.6 | v3 §3.6 contract + explicit HOLOENZYME example below. |
+| #4 oracle target mismatch | v3 §6 | `artifacts/d2_v3_evidence.json` -> `blocker_4_oracle_target.mass_targets_g.mature_only = 1.1549598107588903e-15`. |
+
+## v3 critical corrections from source evidence
+
+1. `RIBOSOME_30S` and `RIBOSOME_50S` are owned by `Process_RibosomeAssembly`.
+2. `RIBOSOME_30S_IF3` and `RIBOSOME_70S` are owned by `Process_Translation` in the current snapshot ownership map.
+3. Therefore D.2 must not silently absorb all ribosome-related complexes.
+
+## v3 authoritative rewrites of the superseded sections
+
+### v3 §1.1 (scope ownership)
+
+Authoritative D.2 scope is defined by process ownership fields, not broad
+paper-level grouping.
+
+1. Include only `Process_MacromolecularComplexation` and `Process_RibosomeAssembly`.
+2. Explicitly exclude all other owners found in snapshot ownership:
+`Process_Metabolism`, `Process_ReplicationInitiation`, `Process_FtsZPolymerization`,
+`Process_Replication`, `Process_Translation`, `Process_ChromosomeCondensation`,
+`Process_Transcription`.
+3. Ribosome caveat from source data:
+`RIBOSOME_30S` and `RIBOSOME_50S` are `Process_RibosomeAssembly`-owned, while
+`RIBOSOME_30S_IF3` and `RIBOSOME_70S` are `Process_Translation`-owned in the
+current snapshot ownership map. D.2 must not absorb the translation-owned forms.
+4. **Decision (b)** for v3: D.2 does not own `RIBOSOME_30S_IF3` or `RIBOSOME_70S`.
+   Rationale: ownership in the current snapshot maps these to `Process_Translation`,
+   and forcing D.2 ownership would create cross-process double-write ambiguity before
+   M3v2 integration contracts are finalized.
+
+### v3 §2.4 (ribosome costs)
+
+The old "no new fixture needed, derive from JSON shortcuts" wording is
+superseded. v3 derives assembly signals from `RibosomeAssembly_flat.mat`:
+
+1. `enzymeIndexs_30S_assembly_gtpase = [3, 5]` (2 factors).
+2. `enzymeIndexs_50S_assembly_gtpase = [1, 2, 4, 6]` (4 factors).
+3. Substrate IDs are explicitly present as `GTP`, `GDP`, `PI`, `H2O`, `H`.
+
+Design consequence: model 30S and 50S assembly costs with their own factors.
+Do not use a blanket 6x simplification in D.2 design text.
+
+### v3 §3.6 (emit/update conservation)
+
+`_emit_update` must be conservative. Product-only emits are invalid.
+
+Required contract:
+
+```python
+def _emit_update(formed_complexes, consumed_subunits, metabolite_delta):
+    return {
+        "complex": {
+            "counts": {
+                **plus_counts(formed_complexes),      # +new complexes
+                **minus_counts(consumed_subunits),    # -subcomplexes consumed
+            }
+        },
+        "protein": {"counts": minus_counts(consumed_protein_monomers)},
+        "rna": {"counts": minus_counts(consumed_rna_subunits)},
+        "substrates": {"counts": metabolite_delta},
+    }
+```
+
+Q3 reframing for implementation review:
+who co-writes `protein.counts` and `rna.counts` alongside M2/M3, and what
+updater semantics guarantee conservation without double-application.
+
+Worked example (must hold in implementation):
+- Forming `RNA_POLYMERASE_HOLOENZYME` emits
+  `-RNA_POLYMERASE`, `-sigma_monomer`, `+RNA_POLYMERASE_HOLOENZYME`
+  in the same logical update step.
+
+### v3 §6 (oracle target)
+
+D.2 unit oracle target is mature-only mass, not all-forms mass.
+Extracted from `ProteinComplex_flat.mat`:
+
+1. Mature-only mass: `1.1549598107588903e-15 g`.
+2. Bound-only mass: `3.4246226409443805e-16 g`.
+3. All-forms total: `1.5052832188811208e-15 g`.
+
+Design rule:
+1. D.2 unit checks: compare mature output to mature-only target.
+2. Integration checks: compare `mature + bound(consumers)` to all-forms total.
+
+Archive requirement carried forward:
+add/retain `complex.wholeCellModelIDs` in extraction surface to support
+per-complex assertions without positional ambiguity.
+
+---
+
+# Superseded approach (v2, kept for traceability)
 
 | Field           | Value                                                                 |
 |-----------------|-----------------------------------------------------------------------|
@@ -52,6 +187,8 @@ chassis wiring** in this PR.
 ## 1. Scope (post-Q2)
 
 ### 1.1 In scope for D.2
+
+> Superseded by v3 §1.1 rewrite above. Use the whitelist-based ownership scope in the v3 section.
 
 | Karr process                  | What we cover                                                  |
 |-------------------------------|----------------------------------------------------------------|
@@ -146,6 +283,8 @@ The doc-only commit **does not** modify `scripts/build_karr_archive.py`;
 the spec extension is the first action of the D.2 implementation PR.
 
 ### 2.4 No new MATLAB extraction needed for `RibosomeAssembly` cost data
+
+> Superseded by v3 §2.4 rewrite above. Use `_flat.mat` evidence and per-step 30S/50S split.
 
 v1 claimed `RibosomeAssembly.m`'s GTP/H₂O costs lived only in MATLAB
 source. Re-inspection confirms the per-particle costs (1 GTP, 1 H₂O per
@@ -339,6 +478,8 @@ re-introduce). For D.2 v2 we keep the special branch as a one-line guard
 against that future rebuild.
 
 ### 3.6 Mass balance & emit
+
+> Superseded by v3 §3.6 rewrite above. Product-only emit shown below is non-authoritative for v3.
 
 ```python
 def _emit_update(self, new_complexes, byprod_delta, cofactor_delta, pool_after):
@@ -561,6 +702,8 @@ values, so the first tick's solver is presented with a fully-formed pool.
 ---
 
 ## 6. Oracle plan (post-Q1 hybrid staged)
+
+> Superseded in part by v3 §6 rewrite above. For D.2 unit checks, use mature-only target comparisons.
 
 ### 6.1 D.2-unit oracles (this PR's test deliverables, run at impl-PR time)
 
