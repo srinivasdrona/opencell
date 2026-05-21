@@ -5,8 +5,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
-
 from opencell.provenance.llm_log import (
     DEFAULT_LOG_PATH,
     LlmLog,
@@ -15,8 +13,8 @@ from opencell.provenance.llm_log import (
 )
 
 
-def _make_record(**overrides) -> LlmLog:
-    base = dict(
+def _make_record(**overrides: object) -> LlmLog:
+    base: dict[str, object] = dict(
         role="main_agent",
         model="claude-opus-4.7",
         task_summary="test task",
@@ -26,17 +24,17 @@ def _make_record(**overrides) -> LlmLog:
     return LlmLog(**base)  # type: ignore[arg-type]
 
 
-def test_log_default_path_is_under_data_provenance():
+def test_log_default_path_is_under_data_provenance() -> None:
     assert DEFAULT_LOG_PATH.as_posix().endswith("data/provenance/llm_interactions.jsonl")
 
 
-def test_event_id_is_deterministic():
+def test_event_id_is_deterministic() -> None:
     a = _make_record(timestamp_utc="2026-05-21T14:00:00+00:00")
     b = _make_record(timestamp_utc="2026-05-21T14:00:00+00:00")
     assert a.compute_event_id() == b.compute_event_id()
 
 
-def test_event_id_changes_with_content():
+def test_event_id_changes_with_content() -> None:
     a = _make_record(timestamp_utc="2026-05-21T14:00:00+00:00")
     b = _make_record(
         timestamp_utc="2026-05-21T14:00:00+00:00",
@@ -45,7 +43,7 @@ def test_event_id_changes_with_content():
     assert a.compute_event_id() != b.compute_event_id()
 
 
-def test_log_interaction_writes_jsonl_line(tmp_path: Path):
+def test_log_interaction_writes_jsonl_line(tmp_path: Path) -> None:
     log = tmp_path / "events.jsonl"
     rec = _make_record(linked_todo="x1", linked_commits=["abc123"])
     event_id = log_interaction(rec, log_path=log)
@@ -65,7 +63,7 @@ def test_log_interaction_writes_jsonl_line(tmp_path: Path):
     assert payload["verification_status"] == "pending"
 
 
-def test_log_interaction_appends(tmp_path: Path):
+def test_log_interaction_appends(tmp_path: Path) -> None:
     log = tmp_path / "events.jsonl"
     log_interaction(_make_record(task_summary="first"), log_path=log)
     log_interaction(_make_record(task_summary="second"), log_path=log)
@@ -74,12 +72,12 @@ def test_log_interaction_appends(tmp_path: Path):
     assert [r["task_summary"] for r in records] == ["first", "second"]
 
 
-def test_iter_log_returns_empty_when_missing(tmp_path: Path):
+def test_iter_log_returns_empty_when_missing(tmp_path: Path) -> None:
     log = tmp_path / "nonexistent.jsonl"
     assert list(iter_log(log_path=log)) == []
 
 
-def test_unknown_optional_fields_serialize_as_null(tmp_path: Path):
+def test_unknown_optional_fields_serialize_as_null(tmp_path: Path) -> None:
     log = tmp_path / "events.jsonl"
     log_interaction(_make_record(), log_path=log)
     record = json.loads(log.read_text(encoding="utf-8").splitlines()[0])
@@ -88,7 +86,7 @@ def test_unknown_optional_fields_serialize_as_null(tmp_path: Path):
         assert record[k] is None
 
 
-def test_supersedes_chain(tmp_path: Path):
+def test_supersedes_chain(tmp_path: Path) -> None:
     log = tmp_path / "events.jsonl"
     first_id = log_interaction(_make_record(task_summary="initial"), log_path=log)
     correction = _make_record(

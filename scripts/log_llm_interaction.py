@@ -88,8 +88,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--supersedes",
                    help="event_id of a prior record this one corrects/replaces")
 
-    p.add_argument("--log-path",
-                   help="Override the JSONL log path (default: data/provenance/llm_interactions.jsonl)")
+    p.add_argument(
+        "--log-path",
+        help="Override the JSONL log path "
+             "(default: data/provenance/llm_interactions.jsonl)",
+    )
     p.add_argument("--dry-run", action="store_true",
                    help="Print the record that would be written but do not append")
     return p
