@@ -8,6 +8,40 @@ inside WSL after cloning.
 
 ---
 
+## ⚠️ DO NOT run Python from PowerShell — use WSL
+
+This project's hard rule (see `.github/copilot-instructions.md` →
+"Execution Environment: WSL is the Source of Truth"): all Python,
+pytest, and script execution happens **inside WSL**, never from a
+PowerShell prompt.
+
+The Windows-side venv is incidental and will silently break things
+because the oracle stack (`libroadrunner`, `tellurium`, `pysces`) is
+Linux-only. Symptoms of a wrong-venv invocation include:
+
+- `ModuleNotFoundError: No module named 'vivarium.core'` (or similar)
+  even though the package is listed in `pyproject.toml`
+- `pytest` summary showing `skipped > 5` — the expected skip count for
+  a correctly-run suite is **exactly 5** (Thattai paper-cache tests).
+  Any other number means you're on the wrong environment.
+
+**Correct invocation pattern:**
+
+```powershell
+wsl -e bash -lc "cd /mnt/<drive>/opencell && source .venv-wsl/bin/activate && <command>"
+```
+
+**Wrong invocation pattern (will fail or silently mislead):**
+
+```powershell
+D:\opencell\venvs\opencell\Scripts\python.exe -m pytest tests\m1
+```
+
+If you don't have WSL yet, install it first (`wsl --install -d Ubuntu`,
+then reboot) before proceeding past §2.
+
+---
+
 ## 0. Prerequisites
 
 | Component | Version | Notes |
