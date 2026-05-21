@@ -2,7 +2,7 @@
 
 ## Maintainers
 
-- **Srinivas Drona** (@sdrona-ms) — Project lead, sole maintainer
+- **Srinivas Drona** (@srinivasdrona) — Project lead, sole maintainer
 
 ## Decision Process
 

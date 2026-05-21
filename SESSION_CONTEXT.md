@@ -64,7 +64,7 @@ Backfilled retroactively because earlier policy said "every session" not "every 
 - **CP 6 — Parameter verification system and PDF fetch.** Param-verification harness + PDF ingestion harness. First end-to-end pull of a kinetic constant from a paper PDF into the verification queue.
 - **CP 7 — Phase 1 gates closed, Thattai APPROVED.** All 8 gate checks passed. Thattai-Oudenaarden 2001 toy gene network validated as the first analytic oracle. Phase 1 officially closed; Phase 2 entry granted.
 - **CP 8 — Param-extractor skill and SBML manifest tool.** `param-extractor` agent skill profile shipped. SBML manifest tool generates checked-in manifests from source SBML (provenance pre-cursor).
-- **CP 9 — SBML metadata auto-fill and GitHub mirror.** Metadata auto-fill walker for SBML annotations. Repo mirrored to GitHub (sdrona-ms account).
+- **CP 9 — SBML metadata auto-fill and GitHub mirror.** Metadata auto-fill walker for SBML annotations. Repo mirrored to GitHub (srinivasdrona account).
 - **CP 10 — Correctness guardrails + pivot to direct SBML simulation.** Correctness guardrails layer (mass balance, sign checks, conservation). **Pivot:** drop hand-coded RHS for Chassagnole; use libroadrunner to simulate the original SBML directly. Reduces translation-error surface area to zero for vetted SBML models.
 - **CP 11 — Metabolism sub-model with SBML simulation.** Chassagnole 2002 fully integrated via libroadrunner SBML path. Reproduces published steady-state cglcex / pyruvate / ATP within tolerance. First "publication oracle" passed end-to-end.
 - **CP 12 — Vilar transcription model selected.** Vilar 2002 stochastic gene network selected as the second oracle. Engine extension for stochastic-on-deterministic coupling identified as next blocker.
@@ -184,7 +184,7 @@ Backfilled retroactively because earlier policy said "every session" not "every 
 - **Next session**: User picks Option B (M0-A persist-LSODA, ensemble enabler) or Option A (M1 central carbon + energy charge, first real subsystem). Ingestion path is de-risked either way.
 
 
-- **GitHub**: sdrona-ms (personal). Do NOT use sdrona_microsoft (enterprise/managed)
+- **GitHub**: srinivasdrona (personal). Do NOT use sdrona_microsoft (enterprise/managed)
 - **Role**: Product manager who codes on the side, biology novice (Wikipedia-level knowledge)
 - **Communication style**: Challenges assumptions, catches fabricated numbers, values honesty over confidence
 - **Blog persona**: **Tehol** (the user) and **Bugg** (the AI) — characters from Erikson's *Malazan Book of the Fallen*. All blog posts are written as conversations between them. Tehol is the visionary PM asking the hard questions; Bugg is the competent-but-fallible servant doing the work

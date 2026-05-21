@@ -16,7 +16,7 @@ OpenCell is an open-source, GPU-accelerated whole-cell simulation framework buil
 
 ```bash
 # Clone
-git clone https://github.com/sdrona-ms/opencell.git
+git clone https://github.com/srinivasdrona/opencell.git
 cd opencell
 
 # Create virtual environment (Python 3.12 required)
@@ -72,6 +72,6 @@ If you use OpenCell in your research, please cite:
   title = {OpenCell: Open-Source Whole-Cell Simulation},
   author = {Drona, Srinivas},
   year = {2026},
-  url = {https://github.com/sdrona-ms/opencell}
+  url = {https://github.com/srinivasdrona/opencell}
 }
 ```

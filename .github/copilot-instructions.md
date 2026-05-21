@@ -1,5 +1,20 @@
 # OpenCell — Copilot Instructions
 
+<!-- pm-os:inheritance:start -->
+## PM OS — session bootstrap (mandatory, read first)
+
+**At session start, view these three files before doing any work:**
+- `D:\OneDrive - Microsoft\.pm-os\PREFERENCES.md` — operator working style, scaling philosophy, auto-onboarding policy
+- `D:\OneDrive - Microsoft\.pm-os\DECISIONS.md` — cross-project decision log
+- `D:\OneDrive - Microsoft\.pm-os\INBOX.md` — capture-first items pending processing
+
+Templates (read on demand): `D:\OneDrive - Microsoft\.pm-os\templates\` — `prd.md`, `experiment.md`, `retro.md`.
+
+Project alias: `opencell`   |   Type: `research`
+
+> Path note: hardcoded absolute paths above are correct for this machine. On a different machine the profile lives at `$env:OneDrive\.pm-os` — resolve via PowerShell rather than relying on `%OneDrive%` in markdown (it isn't expanded).
+<!-- pm-os:inheritance:end -->
+
 ## Project Context
 OpenCell is an open-source whole-cell simulation in Python/JAX.
 This file defines agent behavior for all AI-assisted work on this project.
@@ -118,3 +133,4 @@ CI enforces: changing behavior tied to a decision must reference or supersede it
 - Say "I don't know" rather than fabricate
 - Benchmark before claiming performance numbers
 - Cite sources for all biological facts
+

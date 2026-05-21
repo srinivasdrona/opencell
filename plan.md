@@ -1849,7 +1849,7 @@ Second independent review by GPT-5.4 and Claude Opus 4.7. 54 total findings acro
 5. **Run manifest emitted** — every run produces a complete provenance record
 6. **Checkpoint/restart works** — can resume any simulation from checkpoint (same-version only)
 7. **Extensible** — adding a new sub-model requires only implementing the base interface + IR state slice + ledger registration
-8. **Framework published** — v1.0 released on GitHub (sdrona-ms/opencell) with docs, tests, blog
+8. **Framework published** — v1.0 released on GitHub (srinivasdrona/opencell) with docs, tests, blog
 
 ### v2.0 (M. genitalium — Separate Phase, TBD Timeline)
 9. **M. genitalium gene essentiality** — compare against Karr 2012 results and experimental data. NOTE: Karr achieved 79%; our target is ≥75% (not 80%, which would require outperforming the original). Failure envelope: if essentiality falls below 60%, model is rejected

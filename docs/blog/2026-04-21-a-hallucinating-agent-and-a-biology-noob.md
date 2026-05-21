@@ -108,4 +108,4 @@
 
 ---
 
-*This is post 1 of the OpenCell dev blog. Follow along at [github.com/sdrona-ms/opencell](https://github.com/sdrona-ms/opencell). We'll post when something interesting happens — like the first time our solver explodes, or the first time Bugg confidently recommends a kinetic law that doesn't exist.*
+*This is post 1 of the OpenCell dev blog. Follow along at [github.com/srinivasdrona/opencell](https://github.com/srinivasdrona/opencell). We'll post when something interesting happens — like the first time our solver explodes, or the first time Bugg confidently recommends a kinetic law that doesn't exist.*

@@ -62,10 +62,10 @@ oracle = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/sdrona-ms/opencell"
-Documentation = "https://sdrona-ms.github.io/opencell"
-Repository = "https://github.com/sdrona-ms/opencell"
-Issues = "https://github.com/sdrona-ms/opencell/issues"
+Homepage = "https://github.com/srinivasdrona/opencell"
+Documentation = "https://srinivasdrona.github.io/opencell"
+Repository = "https://github.com/srinivasdrona/opencell"
+Issues = "https://github.com/srinivasdrona/opencell/issues"
 
 [project.scripts]
 opencell = "opencell.cli:main"
