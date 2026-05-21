@@ -1,0 +1,1243 @@
+{
+  "schema": "d2_mature_subset__v1",
+  "source_mat": "sim_fitted_targeted.mat",
+  "source_path": "data.states.State_Mass.dump.complex",
+  "threshold_mature_count": 1,
+  "n_total_complexes": 201,
+  "n_in_subset": 158,
+  "global_aggregates": {
+    "mature_sum": 4006,
+    "bound_sum": 454,
+    "nascent_sum": 0,
+    "misfolded_sum": 0,
+    "damaged_sum": 0,
+    "complex_dryweight_g": 1.5052829606743867e-15,
+    "complex_dryweight_per_compartment_g": [
+      1.2009382645152208e-15,
+      0.0,
+      0.0,
+      3.0434469615916594e-16,
+      0.0,
+      0.0
+    ]
+  },
+  "mature_subset_wids": [
+    "DNA_GYRASE",
+    "DNA_POLYMERASE_CORE",
+    "DNA_POLYMERASE_GAMMA_COMPLEX",
+    "MG_0001_048",
+    "MG_0003_465",
+    "MG_005_DIMER",
+    "MG_006_DIMER",
+    "MG_008_379_TETRAMER",
+    "MG_013_DIMER",
+    "MG_014_015_DIMER",
+    "MG_019_DIMER",
+    "MG_021_DIMER",
+    "MG_023_DIMER",
+    "MG_029_DIMER",
+    "MG_030_TRIMER",
+    "MG_033_TETRAMER",
+    "MG_034_DIMER",
+    "MG_035_DIMER",
+    "MG_036_DIMER",
+    "MG_038_TETRAMER",
+    "MG_039_DIMER",
+    "MG_040_119_120_121_PENTAMER",
+    "MG_041_062_429_PENTAMER",
+    "MG_041_069_429_PENTAMER",
+    "MG_042_043_044_045_PENTAMER",
+    "MG_046_DIMER",
+    "MG_047_TETRAMER",
+    "MG_049_HEXAMER",
+    "MG_051_DIMER",
+    "MG_052_DIMER",
+    "MG_053_TRIMER",
+    "MG_055_170_277_464_476_20MER",
+    "MG_058_HEXAMER",
+    "MG_063_DIMER",
+    "MG_064_065_TETRAMER",
+    "MG_066_DIMER",
+    "MG_072_DIMER",
+    "MG_073_206_421_TETRAMER",
+    "MG_077_078_079_080_321_PENTAMER",
+    "MG_084_TETRAMER",
+    "MG_089_DIMER",
+    "MG_091_TETRAMER",
+    "MG_094_HEXAMER",
+    "MG_098_099_100_TRIMER",
+    "MG_102_DIMER",
+    "MG_105_OCTAMER",
+    "MG_106_DIMER",
+    "MG_107_DIMER",
+    "MG_109_DIMER",
+    "MG_111_DIMER",
+    "MG_112_DIMER",
+    "MG_113_DIMER",
+    "MG_114_DIMER",
+    "MG_118_DIMER",
+    "MG_123_DIMER",
+    "MG_126_DIMER",
+    "MG_128_HEXAMER",
+    "MG_132_DIMER",
+    "MG_136_DIMER",
+    "MG_137_DIMER",
+    "MG_139_DIMER",
+    "MG_179_180_181_TETRAMER",
+    "MG_182_DIMER",
+    "MG_184_DIMER",
+    "MG_186_187_188_189_PENTAMER",
+    "MG_194_195_TETRAMER",
+    "MG_201_DIMER",
+    "MG_203_204_TETRAMER",
+    "MG_208_DIMER",
+    "MG_213_214_298_6MER",
+    "MG_213_214_298_6MER_ADP",
+    "MG_215_TETRAMER",
+    "MG_216_TETRAMER",
+    "MG_221_OCTAMER",
+    "MG_224_2MER_GTP",
+    "MG_224_3MER_GTP",
+    "MG_224_4MER_GTP",
+    "MG_224_5MER_GTP",
+    "MG_224_6MER_GTP",
+    "MG_224_7MER_GTP",
+    "MG_224_8MER_GTP",
+    "MG_224_9MER_GTP",
+    "MG_224_MONOMER_GDP",
+    "MG_224_MONOMER_GTP",
+    "MG_225_DIMER",
+    "MG_226_DIMER",
+    "MG_227_DIMER",
+    "MG_228_TETRAMER",
+    "MG_229_231_TETRAMER",
+    "MG_239_HEXAMER",
+    "MG_240_HEXAMER",
+    "MG_244_DIMER",
+    "MG_251_DIMER",
+    "MG_252_DIMER",
+    "MG_259_TETRAMER",
+    "MG_265_DIMER",
+    "MG_271_272_273_274_192MER",
+    "MG_275_TETRAMER",
+    "MG_276_DIMER",
+    "MG_278_DIMER",
+    "MG_283_DIMER",
+    "MG_289_290_291_PENTAMER",
+    "MG_292_TETRAMER",
+    "MG_293_DIMER",
+    "MG_299_DIMER",
+    "MG_301_TETRAMER",
+    "MG_302_303_304_TETRAMER",
+    "MG_316_DIMER",
+    "MG_322_323_TETRAMER",
+    "MG_333_DIMER",
+    "MG_336_DIMER",
+    "MG_346_DIMER",
+    "MG_347_DIMER",
+    "MG_349_HEXAMER",
+    "MG_351_HEXAMER",
+    "MG_352_DIMER",
+    "MG_353_DIMER",
+    "MG_355_HEXAMER",
+    "MG_357_DIMER",
+    "MG_358_359_10MER",
+    "MG_367_DIMER",
+    "MG_368_DIMER",
+    "MG_369_DIMER",
+    "MG_372_DIMER",
+    "MG_375_DIMER",
+    "MG_376_HEXAMER",
+    "MG_382_TETRAMER",
+    "MG_383_DIMER",
+    "MG_385_DIMER",
+    "MG_390_DIMER",
+    "MG_391_HEXAMER",
+    "MG_392_393_21MER",
+    "MG_394_TETRAMER",
+    "MG_396_DIMER",
+    "MG_398_399_400_401_402_403_404_405_22MER",
+    "MG_407_DIMER",
+    "MG_409_DIMER",
+    "MG_410_411_412_PENTAMER",
+    "MG_425_DIMER",
+    "MG_427_DIMER",
+    "MG_428_DIMER",
+    "MG_431_DIMER",
+    "MG_433_DIMER",
+    "MG_434_HEXAMER",
+    "MG_437_DIMER",
+    "MG_445_DIMER",
+    "MG_451_DIMER",
+    "MG_453_TETRAMER",
+    "MG_454_DIMER",
+    "MG_455_DIMER",
+    "MG_457_HEXAMER",
+    "MG_458_TETRAMER",
+    "MG_460_TETRAMER",
+    "MG_467_468_526_TETRAMER",
+    "MG_469_1MER_ATP",
+    "MG_482_DIMER",
+    "RIBOSOME_30S",
+    "RIBOSOME_50S"
+  ],
+  "per_complex": [
+    {
+      "wid": "DNA_GYRASE",
+      "mature": 3,
+      "bound": 47
+    },
+    {
+      "wid": "DNA_POLYMERASE_2CORE_BETA_CLAMP_GAMMA_COMPLEX_PRIMASE",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "DNA_POLYMERASE_CORE",
+      "mature": 26,
+      "bound": 0
+    },
+    {
+      "wid": "DNA_POLYMERASE_CORE_BETA_CLAMP_GAMMA_COMPLEX",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "DNA_POLYMERASE_CORE_BETA_CLAMP_PRIMASE",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "DNA_POLYMERASE_GAMMA_COMPLEX",
+      "mature": 14,
+      "bound": 0
+    },
+    {
+      "wid": "DNA_POLYMERASE_HOLOENZYME",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_0001_048",
+      "mature": 29,
+      "bound": 0
+    },
+    {
+      "wid": "MG_0003_465",
+      "mature": 25,
+      "bound": 0
+    },
+    {
+      "wid": "MG_001_DIMER",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_005_DIMER",
+      "mature": 118,
+      "bound": 0
+    },
+    {
+      "wid": "MG_006_DIMER",
+      "mature": 134,
+      "bound": 0
+    },
+    {
+      "wid": "MG_008_379_TETRAMER",
+      "mature": 18,
+      "bound": 0
+    },
+    {
+      "wid": "MG_013_DIMER",
+      "mature": 9,
+      "bound": 0
+    },
+    {
+      "wid": "MG_014_015_DIMER",
+      "mature": 21,
+      "bound": 0
+    },
+    {
+      "wid": "MG_019_DIMER",
+      "mature": 25,
+      "bound": 0
+    },
+    {
+      "wid": "MG_021_DIMER",
+      "mature": 20,
+      "bound": 0
+    },
+    {
+      "wid": "MG_023_DIMER",
+      "mature": 127,
+      "bound": 0
+    },
+    {
+      "wid": "MG_029_DIMER",
+      "mature": 21,
+      "bound": 0
+    },
+    {
+      "wid": "MG_030_TRIMER",
+      "mature": 15,
+      "bound": 0
+    },
+    {
+      "wid": "MG_033_TETRAMER",
+      "mature": 16,
+      "bound": 0
+    },
+    {
+      "wid": "MG_034_DIMER",
+      "mature": 23,
+      "bound": 0
+    },
+    {
+      "wid": "MG_035_DIMER",
+      "mature": 19,
+      "bound": 0
+    },
+    {
+      "wid": "MG_036_DIMER",
+      "mature": 21,
+      "bound": 0
+    },
+    {
+      "wid": "MG_038_TETRAMER",
+      "mature": 15,
+      "bound": 0
+    },
+    {
+      "wid": "MG_039_DIMER",
+      "mature": 12,
+      "bound": 0
+    },
+    {
+      "wid": "MG_040_119_120_121_PENTAMER",
+      "mature": 44,
+      "bound": 0
+    },
+    {
+      "wid": "MG_041_062_429_PENTAMER",
+      "mature": 17,
+      "bound": 0
+    },
+    {
+      "wid": "MG_041_069_429_PENTAMER",
+      "mature": 8,
+      "bound": 0
+    },
+    {
+      "wid": "MG_042_043_044_045_PENTAMER",
+      "mature": 18,
+      "bound": 0
+    },
+    {
+      "wid": "MG_046_DIMER",
+      "mature": 21,
+      "bound": 0
+    },
+    {
+      "wid": "MG_047_TETRAMER",
+      "mature": 13,
+      "bound": 0
+    },
+    {
+      "wid": "MG_049_HEXAMER",
+      "mature": 21,
+      "bound": 0
+    },
+    {
+      "wid": "MG_051_DIMER",
+      "mature": 59,
+      "bound": 0
+    },
+    {
+      "wid": "MG_052_DIMER",
+      "mature": 32,
+      "bound": 0
+    },
+    {
+      "wid": "MG_053_TRIMER",
+      "mature": 23,
+      "bound": 0
+    },
+    {
+      "wid": "MG_055_170_277_464_476_20MER",
+      "mature": 13,
+      "bound": 0
+    },
+    {
+      "wid": "MG_058_HEXAMER",
+      "mature": 8,
+      "bound": 0
+    },
+    {
+      "wid": "MG_063_DIMER",
+      "mature": 20,
+      "bound": 0
+    },
+    {
+      "wid": "MG_064_065_TETRAMER",
+      "mature": 16,
+      "bound": 0
+    },
+    {
+      "wid": "MG_066_DIMER",
+      "mature": 24,
+      "bound": 0
+    },
+    {
+      "wid": "MG_072_DIMER",
+      "mature": 13,
+      "bound": 0
+    },
+    {
+      "wid": "MG_073_206_421_TETRAMER",
+      "mature": 16,
+      "bound": 0
+    },
+    {
+      "wid": "MG_077_078_079_080_321_PENTAMER",
+      "mature": 7,
+      "bound": 0
+    },
+    {
+      "wid": "MG_084_TETRAMER",
+      "mature": 18,
+      "bound": 0
+    },
+    {
+      "wid": "MG_085_HEXAMER",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_089_DIMER",
+      "mature": 65,
+      "bound": 68
+    },
+    {
+      "wid": "MG_091_OCTAMER",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_091_TETRAMER",
+      "mature": 65,
+      "bound": 0
+    },
+    {
+      "wid": "MG_094_HEXAMER",
+      "mature": 36,
+      "bound": 0
+    },
+    {
+      "wid": "MG_098_099_100_TRIMER",
+      "mature": 139,
+      "bound": 0
+    },
+    {
+      "wid": "MG_102_DIMER",
+      "mature": 22,
+      "bound": 0
+    },
+    {
+      "wid": "MG_102_DIMER_ox",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_105_OCTAMER",
+      "mature": 11,
+      "bound": 0
+    },
+    {
+      "wid": "MG_106_DIMER",
+      "mature": 22,
+      "bound": 0
+    },
+    {
+      "wid": "MG_107_DIMER",
+      "mature": 25,
+      "bound": 0
+    },
+    {
+      "wid": "MG_109_DIMER",
+      "mature": 34,
+      "bound": 0
+    },
+    {
+      "wid": "MG_111_DIMER",
+      "mature": 18,
+      "bound": 0
+    },
+    {
+      "wid": "MG_112_DIMER",
+      "mature": 19,
+      "bound": 0
+    },
+    {
+      "wid": "MG_113_DIMER",
+      "mature": 18,
+      "bound": 0
+    },
+    {
+      "wid": "MG_114_DIMER",
+      "mature": 19,
+      "bound": 0
+    },
+    {
+      "wid": "MG_118_DIMER",
+      "mature": 12,
+      "bound": 0
+    },
+    {
+      "wid": "MG_123_DIMER",
+      "mature": 11,
+      "bound": 0
+    },
+    {
+      "wid": "MG_124_MONOMER_ox",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_126_DIMER",
+      "mature": 13,
+      "bound": 0
+    },
+    {
+      "wid": "MG_127_MONOMER_ox",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_128_HEXAMER",
+      "mature": 9,
+      "bound": 0
+    },
+    {
+      "wid": "MG_132_DIMER",
+      "mature": 14,
+      "bound": 0
+    },
+    {
+      "wid": "MG_136_DIMER",
+      "mature": 23,
+      "bound": 0
+    },
+    {
+      "wid": "MG_137_DIMER",
+      "mature": 25,
+      "bound": 0
+    },
+    {
+      "wid": "MG_139_DIMER",
+      "mature": 10,
+      "bound": 0
+    },
+    {
+      "wid": "MG_179_180_181_TETRAMER",
+      "mature": 14,
+      "bound": 0
+    },
+    {
+      "wid": "MG_182_DIMER",
+      "mature": 13,
+      "bound": 0
+    },
+    {
+      "wid": "MG_184_DIMER",
+      "mature": 29,
+      "bound": 0
+    },
+    {
+      "wid": "MG_186_187_188_189_PENTAMER",
+      "mature": 18,
+      "bound": 0
+    },
+    {
+      "wid": "MG_194_195_TETRAMER",
+      "mature": 27,
+      "bound": 0
+    },
+    {
+      "wid": "MG_201_DIMER",
+      "mature": 11,
+      "bound": 0
+    },
+    {
+      "wid": "MG_203_204_TETRAMER",
+      "mature": 12,
+      "bound": 0
+    },
+    {
+      "wid": "MG_205_DIMER",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_208_DIMER",
+      "mature": 24,
+      "bound": 0
+    },
+    {
+      "wid": "MG_213_214_298_6MER",
+      "mature": 5,
+      "bound": 0
+    },
+    {
+      "wid": "MG_213_214_298_6MER_ADP",
+      "mature": 3,
+      "bound": 78
+    },
+    {
+      "wid": "MG_215_TETRAMER",
+      "mature": 18,
+      "bound": 0
+    },
+    {
+      "wid": "MG_216_TETRAMER",
+      "mature": 19,
+      "bound": 0
+    },
+    {
+      "wid": "MG_221_OCTAMER",
+      "mature": 12,
+      "bound": 0
+    },
+    {
+      "wid": "MG_224_2MER_GTP",
+      "mature": 1,
+      "bound": 0
+    },
+    {
+      "wid": "MG_224_3MER_GTP",
+      "mature": 1,
+      "bound": 0
+    },
+    {
+      "wid": "MG_224_4MER_GTP",
+      "mature": 2,
+      "bound": 0
+    },
+    {
+      "wid": "MG_224_5MER_GTP",
+      "mature": 3,
+      "bound": 0
+    },
+    {
+      "wid": "MG_224_6MER_GTP",
+      "mature": 5,
+      "bound": 0
+    },
+    {
+      "wid": "MG_224_7MER_GTP",
+      "mature": 8,
+      "bound": 0
+    },
+    {
+      "wid": "MG_224_8MER_GTP",
+      "mature": 12,
+      "bound": 0
+    },
+    {
+      "wid": "MG_224_9MER_GDP",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_224_9MER_GTP",
+      "mature": 20,
+      "bound": 0
+    },
+    {
+      "wid": "MG_224_MONOMER_GDP",
+      "mature": 3,
+      "bound": 0
+    },
+    {
+      "wid": "MG_224_MONOMER_GTP",
+      "mature": 6,
+      "bound": 0
+    },
+    {
+      "wid": "MG_225_DIMER",
+      "mature": 15,
+      "bound": 0
+    },
+    {
+      "wid": "MG_226_DIMER",
+      "mature": 14,
+      "bound": 0
+    },
+    {
+      "wid": "MG_227_DIMER",
+      "mature": 22,
+      "bound": 0
+    },
+    {
+      "wid": "MG_228_TETRAMER",
+      "mature": 15,
+      "bound": 0
+    },
+    {
+      "wid": "MG_229_231_TETRAMER",
+      "mature": 30,
+      "bound": 0
+    },
+    {
+      "wid": "MG_229_231_TETRAMER_ox",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_239_HEXAMER",
+      "mature": 14,
+      "bound": 0
+    },
+    {
+      "wid": "MG_240_HEXAMER",
+      "mature": 13,
+      "bound": 0
+    },
+    {
+      "wid": "MG_244_DIMER",
+      "mature": 8,
+      "bound": 0
+    },
+    {
+      "wid": "MG_251_DIMER",
+      "mature": 14,
+      "bound": 0
+    },
+    {
+      "wid": "MG_252_DIMER",
+      "mature": 9,
+      "bound": 0
+    },
+    {
+      "wid": "MG_259_TETRAMER",
+      "mature": 48,
+      "bound": 0
+    },
+    {
+      "wid": "MG_265_DIMER",
+      "mature": 40,
+      "bound": 0
+    },
+    {
+      "wid": "MG_271_272_273_274_192MER",
+      "mature": 11,
+      "bound": 0
+    },
+    {
+      "wid": "MG_271_272_273_274_192MER_ox",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_275_TETRAMER",
+      "mature": 242,
+      "bound": 0
+    },
+    {
+      "wid": "MG_276_DIMER",
+      "mature": 24,
+      "bound": 0
+    },
+    {
+      "wid": "MG_278_DIMER",
+      "mature": 16,
+      "bound": 0
+    },
+    {
+      "wid": "MG_283_DIMER",
+      "mature": 14,
+      "bound": 0
+    },
+    {
+      "wid": "MG_287_MONOMER_ACP",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_287_MONOMER_ddcaACP",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_287_MONOMER_hdeACP",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_287_MONOMER_myrsACP",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_287_MONOMER_ocdcaACP",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_287_MONOMER_octeACP",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_287_MONOMER_palmACP",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_287_MONOMER_tdeACP",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_289_290_291_PENTAMER",
+      "mature": 15,
+      "bound": 0
+    },
+    {
+      "wid": "MG_292_TETRAMER",
+      "mature": 18,
+      "bound": 0
+    },
+    {
+      "wid": "MG_293_DIMER",
+      "mature": 33,
+      "bound": 0
+    },
+    {
+      "wid": "MG_295_MONOMER_ox",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_299_DIMER",
+      "mature": 22,
+      "bound": 0
+    },
+    {
+      "wid": "MG_301_TETRAMER",
+      "mature": 15,
+      "bound": 0
+    },
+    {
+      "wid": "MG_302_303_304_TETRAMER",
+      "mature": 16,
+      "bound": 0
+    },
+    {
+      "wid": "MG_316_DIMER",
+      "mature": 21,
+      "bound": 0
+    },
+    {
+      "wid": "MG_322_323_TETRAMER",
+      "mature": 10,
+      "bound": 0
+    },
+    {
+      "wid": "MG_333_DIMER",
+      "mature": 15,
+      "bound": 0
+    },
+    {
+      "wid": "MG_336_DIMER",
+      "mature": 15,
+      "bound": 0
+    },
+    {
+      "wid": "MG_346_DIMER",
+      "mature": 13,
+      "bound": 0
+    },
+    {
+      "wid": "MG_347_DIMER",
+      "mature": 11,
+      "bound": 0
+    },
+    {
+      "wid": "MG_349_HEXAMER",
+      "mature": 13,
+      "bound": 0
+    },
+    {
+      "wid": "MG_351_HEXAMER",
+      "mature": 11,
+      "bound": 0
+    },
+    {
+      "wid": "MG_352_DIMER",
+      "mature": 18,
+      "bound": 0
+    },
+    {
+      "wid": "MG_353_DIMER",
+      "mature": 16,
+      "bound": 0
+    },
+    {
+      "wid": "MG_355_HEXAMER",
+      "mature": 13,
+      "bound": 0
+    },
+    {
+      "wid": "MG_357_DIMER",
+      "mature": 54,
+      "bound": 0
+    },
+    {
+      "wid": "MG_358_359_10MER",
+      "mature": 13,
+      "bound": 0
+    },
+    {
+      "wid": "MG_367_DIMER",
+      "mature": 13,
+      "bound": 0
+    },
+    {
+      "wid": "MG_368_DIMER",
+      "mature": 14,
+      "bound": 0
+    },
+    {
+      "wid": "MG_369_DIMER",
+      "mature": 14,
+      "bound": 0
+    },
+    {
+      "wid": "MG_372_DIMER",
+      "mature": 108,
+      "bound": 0
+    },
+    {
+      "wid": "MG_375_DIMER",
+      "mature": 124,
+      "bound": 0
+    },
+    {
+      "wid": "MG_376_HEXAMER",
+      "mature": 16,
+      "bound": 0
+    },
+    {
+      "wid": "MG_382_TETRAMER",
+      "mature": 10,
+      "bound": 0
+    },
+    {
+      "wid": "MG_383_DIMER",
+      "mature": 16,
+      "bound": 0
+    },
+    {
+      "wid": "MG_385_DIMER",
+      "mature": 10,
+      "bound": 0
+    },
+    {
+      "wid": "MG_390_DIMER",
+      "mature": 16,
+      "bound": 0
+    },
+    {
+      "wid": "MG_391_HEXAMER",
+      "mature": 35,
+      "bound": 0
+    },
+    {
+      "wid": "MG_392_393_21MER",
+      "mature": 13,
+      "bound": 0
+    },
+    {
+      "wid": "MG_394_TETRAMER",
+      "mature": 14,
+      "bound": 0
+    },
+    {
+      "wid": "MG_396_DIMER",
+      "mature": 27,
+      "bound": 0
+    },
+    {
+      "wid": "MG_398_399_400_401_402_403_404_405_22MER",
+      "mature": 11,
+      "bound": 0
+    },
+    {
+      "wid": "MG_407_DIMER",
+      "mature": 34,
+      "bound": 0
+    },
+    {
+      "wid": "MG_409_DIMER",
+      "mature": 16,
+      "bound": 0
+    },
+    {
+      "wid": "MG_410_411_412_PENTAMER",
+      "mature": 17,
+      "bound": 0
+    },
+    {
+      "wid": "MG_425_DIMER",
+      "mature": 9,
+      "bound": 0
+    },
+    {
+      "wid": "MG_427_DIMER",
+      "mature": 17,
+      "bound": 0
+    },
+    {
+      "wid": "MG_427_DIMER_ox",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_428_DIMER",
+      "mature": 8,
+      "bound": 2
+    },
+    {
+      "wid": "MG_431_DIMER",
+      "mature": 25,
+      "bound": 0
+    },
+    {
+      "wid": "MG_433_DIMER",
+      "mature": 54,
+      "bound": 68
+    },
+    {
+      "wid": "MG_434_HEXAMER",
+      "mature": 14,
+      "bound": 0
+    },
+    {
+      "wid": "MG_437_DIMER",
+      "mature": 13,
+      "bound": 0
+    },
+    {
+      "wid": "MG_445_DIMER",
+      "mature": 107,
+      "bound": 0
+    },
+    {
+      "wid": "MG_451_DIMER",
+      "mature": 71,
+      "bound": 68
+    },
+    {
+      "wid": "MG_453_TETRAMER",
+      "mature": 9,
+      "bound": 0
+    },
+    {
+      "wid": "MG_454_DIMER",
+      "mature": 29,
+      "bound": 0
+    },
+    {
+      "wid": "MG_454_DIMER_ox",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_455_DIMER",
+      "mature": 95,
+      "bound": 0
+    },
+    {
+      "wid": "MG_457_HEXAMER",
+      "mature": 70,
+      "bound": 0
+    },
+    {
+      "wid": "MG_458_TETRAMER",
+      "mature": 17,
+      "bound": 0
+    },
+    {
+      "wid": "MG_460_TETRAMER",
+      "mature": 13,
+      "bound": 0
+    },
+    {
+      "wid": "MG_467_468_526_TETRAMER",
+      "mature": 26,
+      "bound": 0
+    },
+    {
+      "wid": "MG_469_1MER_ADP",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_469_1MER_ATP",
+      "mature": 2,
+      "bound": 23
+    },
+    {
+      "wid": "MG_469_2MER_1ATP_ADP",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_469_2MER_ATP",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_469_3MER_2ATP_ADP",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_469_3MER_ATP",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_469_4MER_3ATP_ADP",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_469_4MER_ATP",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_469_5MER_4ATP_ADP",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_469_5MER_ATP",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_469_6MER_5ATP_ADP",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_469_6MER_ATP",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_469_7MER_6ATP_ADP",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "MG_469_7MER_ATP",
+      "mature": 0,
+      "bound": 4
+    },
+    {
+      "wid": "MG_482_DIMER",
+      "mature": 13,
+      "bound": 0
+    },
+    {
+      "wid": "REPLISOME",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "RIBOSOME_30S",
+      "mature": 25,
+      "bound": 0
+    },
+    {
+      "wid": "RIBOSOME_30S_IF3",
+      "mature": 0,
+      "bound": 0
+    },
+    {
+      "wid": "RIBOSOME_50S",
+      "mature": 12,
+      "bound": 0
+    },
+    {
+      "wid": "RIBOSOME_70S",
+      "mature": 0,
+      "bound": 56
+    },
+    {
+      "wid": "RNA_POLYMERASE",
+      "mature": 0,
+      "bound": 40
+    },
+    {
+      "wid": "RNA_POLYMERASE_HOLOENZYME",
+      "mature": 0,
+      "bound": 0
+    }
+  ],
+  "bound_heavy_anchors": [
+    {
+      "wid": "MG_213_214_298_6MER_ADP",
+      "mature": 3,
+      "bound": 78
+    },
+    {
+      "wid": "MG_089_DIMER",
+      "mature": 65,
+      "bound": 68
+    },
+    {
+      "wid": "MG_433_DIMER",
+      "mature": 54,
+      "bound": 68
+    },
+    {
+      "wid": "MG_451_DIMER",
+      "mature": 71,
+      "bound": 68
+    },
+    {
+      "wid": "RIBOSOME_70S",
+      "mature": 0,
+      "bound": 56
+    },
+    {
+      "wid": "DNA_GYRASE",
+      "mature": 3,
+      "bound": 47
+    },
+    {
+      "wid": "RNA_POLYMERASE",
+      "mature": 0,
+      "bound": 40
+    },
+    {
+      "wid": "MG_469_1MER_ATP",
+      "mature": 2,
+      "bound": 23
+    },
+    {
+      "wid": "MG_469_7MER_ATP",
+      "mature": 0,
+      "bound": 4
+    },
+    {
+      "wid": "MG_428_DIMER",
+      "mature": 8,
+      "bound": 2
+    }
+  ]
+}
