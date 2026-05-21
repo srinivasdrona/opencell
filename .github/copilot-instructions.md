@@ -112,6 +112,43 @@ Every nontrivial biological claim must have:
 - Experimental conditions (temperature, pH, strain, medium)
 - Uncertainty distribution
 
+### LLM Interaction Logging
+Significant LLM exchanges that shape the repo MUST be logged to
+`data/provenance/llm_interactions.jsonl` via `scripts/log_llm_interaction.py`.
+The forward-capture log is the methodology audit trail for the L4 paper
+and any later reproducibility claims.
+
+**What to log** (cumulative — log if ANY apply):
+- Cross-model critique exchanges (e.g., Opus reviewed by GPT-5.4 or vice versa)
+- Sub-agent / background-agent dispatches that produced committed artifacts
+- Design decisions that change scope, architecture, or strategy
+- Reversals of prior decisions ("we previously decided X; now Y because Z")
+- Bug-pattern derivations worth naming (MCOS handle-cycle, etc.)
+
+**What NOT to log**: routine view/grep/edit work, debug iterations within
+a single coherent task, anything the system prompt forbids verbatim.
+
+**How to log** — single CLI invocation, idempotent on content:
+
+```bash
+python scripts/log_llm_interaction.py \
+    --role main_agent \
+    --model claude-opus-4.7 \
+    --task-summary "<one line>" \
+    --output-summary "<what was produced>" \
+    --linked-todo <todo-id> \
+    --linked-commits <sha1>,<sha2> \
+    --linked-artifacts <path1>,<path2> \
+    --verification-status verified \
+    --verification-notes "<test counts, hash matches>"
+```
+
+**Cadence**: log at the same moment you commit. A commit that is
+LLM-influenced should be accompanied by a log entry referencing its SHA.
+See `opencell/provenance/llm_log.py` for the full schema. Append-only,
+content-addressed (`event_id = sha256:<hex>`); corrections happen via a
+new entry with `--supersedes <prior-event-id>`.
+
 ### Temperature Policy
 - Temperature 0: code generation, parameter extraction, data formatting
 - Temperature 0.3-0.5: literature search, hypothesis generation
