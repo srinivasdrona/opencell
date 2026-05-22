@@ -401,7 +401,32 @@ NOT a parallel program)**
 
 ---
 
-## Current Status (2026-05-22, **610+ tests on main**, p10 mass partition shipped; m1 per-process fixtures merged; **D.2 strategy decision: Option A3 staged Karr-faithful — d2-stub is next-actionable**)
+## Current Status (2026-05-22 evening, **610+ tests on main + 168 in m1+m2+m3+d2+vivarium**, **A3 steps 1+2 merged to main**; Karr primary-source extracts available; **A3 step 3 is next-actionable**)
+
+### Today's headline (2026-05-22)
+
+- **A3 step 1 (d2-stub) shipped** — `agent/d2-stub` @ `1643c51` merged to main as `5812a4a`. 149 D.2-owned WIDs registered (147 MC + 2 RibosomeAssembly).
+- **A3 step 2 (v2-chassis-swap-dynamic-pool-discipline) shipped** — `agent/v2-chassis-swap-dynamic-pool-discipline` @ `0723624` merged to main as `461209e`. M2v2/M3v2 wired with per-tick `complex.counts` reads (no caching). Phenotype promotion test passes.
+- **Karr execution plan written** — `docs/design/karr_execution_plan_2026-05-22.md`. After reading the Karr 2012 paper end-to-end via PMC, mapped OpenCell against Karr's full 28-process architecture: currently 6/28 (21%) implemented after A3. v1.0 timeline revised to ~9 months (was undershooting at ~3 months).
+- **Karr per-process extracts merged** — `docs/karr_extracts/` on main as `400a8dc`. 34 markdown files extracted verbatim from Karr's MATLAB `.m` headers (28 process docstrings + 5 architecture pieces + INDEX). These are the primary-source input for A3 step 3 and Phases B/C/D.
+- **Primary-Source Discipline rule added** to `.github/copilot-instructions.md` as `c3773b3` — bakes in the lesson from D.2 v1→v2→v3 (don't design from derived sources) and today's Karr Data S1 Cloudflare detour (don't fetch what's already on disk).
+- **`scripts/codex_status.ps1` added** — live diagnostic for Codex delegations; no more waiting blind on long tasks.
+- **`delegate-to-codex` skill updated** with 6 improvements: corrected `resume --last` syntax, `--dangerously-bypass-approvals-and-sandbox` documentation, decomposition heuristic, mandatory progress contract, live visibility section, source-selection-is-orchestrator's-job principle.
+
+### Next-actionable: A3 step 3 — `d2-real-plus-protein-decay-light-joint-design`
+
+Jointly design + implement D.2-real (real `MacromolecularComplexation` + `RibosomeAssembly` 30S/50S) AND ProteinDecay-light (minimum-viable decay covering the ~132 long-tail complexes that v2-chassis-swap consumers don't sink). Karr-fidelity is non-negotiable.
+
+**Primary sources for the design** (all on main now):
+- `docs/karr_extracts/process/21_ProteinDecay.md` — Karr's ProteinDecay docstring
+- `docs/karr_extracts/process/23_MacromolecularComplexation.md` — MC docstring
+- `docs/karr_extracts/process/24_RibosomeAssembly.md` — RibosomeAssembly docstring
+- `docs/karr_extracts/architecture/03_variable_allocation.md` — Karr's variable-allocation algorithm
+- `docs/karr_extracts/architecture/04_fitConstants.md` — Karr's parameter reconciliation
+- `data/karr_fixtures/per_process/{MacromolecularComplexation,RibosomeAssembly,ProteinDecay}_flat.mat`
+- `data/m1_sources/WholeCell/src/+edu/.../+process/{MacromolecularComplexation,RibosomeAssembly,ProteinDecay}.m` — when extracts need deeper context
+
+**Estimated effort:** 3–4 weeks (1 week joint design + cross-model critique, 2–3 weeks implementation).
 
 ### D.2 strategy decision (RESOLVED — Option A3)
 
