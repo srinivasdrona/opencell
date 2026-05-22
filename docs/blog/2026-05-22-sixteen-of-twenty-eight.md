@@ -6,101 +6,71 @@
 
 **Tehol:** Bugg, you appear to be smiling.
 
-**Bugg:** A consequence of progress, sir, and possibly low blood sugar.
+**Bugg:** A consequence of progress, sir. Sixteen of twenty-eight Karr processes are now on main, the chassis assembles complexes and degrades them and transcribes RNA and translates protein and charges its tRNAs and folds its peptides, and the mass balance held for two thousand ticks of simulated biology.
 
-**Tehol:** Quantify the progress.
+**Tehol:** Two thousand ticks being.
 
-**Bugg:** Sixteen of twenty-eight Karr processes, with mass balance holding over two thousand ticks. The chassis assembles complexes, degrades them, transcribes RNA, translates protein, charges tRNAs, folds peptides, modifies their N-termini, translocates the membrane ones, activates the regulated ones, and decays the lot. In approximately the proportions one would expect.
+**Bugg:** Approximately thirty-three minutes of cellular existence, simulated in a third of a minute of wall-clock. Sixty per second when nothing is on fire.
 
-**Tehol:** And the original schedule estimated this in?
+**Tehol:** And the eighteen weeks the schedule had reserved for this.
 
-**Bugg:** Eighteen weeks.
+**Bugg:** Compressed somewhat, sir.
 
-**Tehol:** Bugg.
+**Tehol:** *Somewhat.*
 
-**Bugg:** Yes sir.
+**Bugg:** I delegated eleven implementation tasks in parallel. While Codex wrote the second, I was drafting the third. While the third ran, I was drafting the fourth. By the eighth I was simply trying to keep them apart by their git worktree names, which is when you walked in and observed the smiling.
 
-**Tehol:** I am not certain whether to congratulate you or to inquire about the schedule's relationship to reality.
+**Tehol:** Eleven concurrent things.
 
-**Bugg:** A line of inquiry I have so far declined to pursue.
+**Bugg:** At one point, yes. I had to write a small diagnostic just to keep track of which of them had finished, which had stalled, and which had quietly given up on the wrong Python interpreter without telling me.
 
----
+**Tehol:** Define "quietly given up on the wrong Python interpreter."
 
-## What changed
+**Bugg:** Three of the eleven defaulted to the Windows-native Python, which lacks the editable install of the project they were trying to test. They then spent half an hour each attempting to install missing dependencies into that interpreter, hit a transitive build failure, attempted to build a workaround for a different library entirely, and eventually wrote diagnostic status files insisting that the project was uninstallable.
 
-**Bugg:** The pattern.
+**Tehol:** Was it.
 
-**Tehol:** Elaborate.
+**Bugg:** The same tests passed in twenty-six seconds when I ran them through the correct interpreter. The lesson is now baked into the orchestrator's standing instructions in a paragraph I expect to read out loud to myself the next time I am tempted to skip it.
 
-**Bugg:** Yesterday I delegated to Codex one task at a time. Today I delegated eleven Phase B turns concurrently. While Codex implemented turn two, I designed turn three. While turn three ran, I designed turn four. By turn ten, I was four turns ahead and the bottleneck had become my willingness to stay awake.
+**Tehol:** A pattern, then. The cheap fixes you nearly missed.
 
-**Tehol:** You ran ten of these — what was the word — sessions in parallel.
+**Bugg:** Speaking of which. I had been about to assume — and the design document had argued, at some length — that two Vivarium processes could write to the same state leaf with different update semantics. One emitting an absolute count, another emitting a delta, the framework reconciling them sensibly tick by tick.
 
-**Bugg:** At one point, eleven. Each in its own git worktree, with its own Vivarium chassis fragment, its own scratchpad, and its own quietly fatal misunderstanding of which Python interpreter it was meant to use.
+**Tehol:** Would it have.
 
-**Tehol:** Ah.
+**Bugg:** No. I wrote a fifty-line test before committing to that assumption and discovered that whichever updater type was declared last would silently overwrite the other and apply to all writes. The order of declaration would matter. Mass conservation would break invisibly. Nothing would alert me.
 
-**Bugg:** Three of them spent half an hour on a Windows interpreter that lacked the editable install of the project they were trying to test. I had not told them which interpreter to use. They had inferred. Incorrectly.
+**Tehol:** Nothing.
 
-**Tehol:** And the lesson, encoded somewhere.
+**Bugg:** Nothing. A warning, perhaps, if one were reading the log. Otherwise the simulation would have continued, untroubled by its own corruption, possibly for weeks before any phenotype check caught it. I converted two processes to emit deltas instead. Eighty lines of new code, no broken tests, and a decision logged for everything we ship from this day forward.
 
-**Bugg:** Encoded in the orchestrator's standing instructions, sir. Every future delegation now begins with a paragraph informing the executor that WSL is not optional.
+**Tehol:** A near miss.
 
----
+**Bugg:** A near miss that cost half an hour to discover and would have cost months to debug.
 
-## The probe that mattered
+**Tehol:** And the MATLAB matter.
 
-**Tehol:** What did you nearly get wrong.
+**Bugg:** The temporary license expires in a few days, so I had a separate Codex session running in parallel with the chassis work, extracting reference data from Karr's original simulation. One full cell cycle. Twenty-eight per-process traces. Twenty-three initialisation snapshots. Two fitted-constant tables. Roughly eighteen megabytes of ground truth that we could not otherwise produce and would have lost when the license expired.
 
-**Bugg:** I had been about to assume that two Vivarium processes could write to the same state leaf with different update semantics — one absolute, one relative — and that the framework would reconcile them sensibly.
+**Tehol:** A door closing.
 
-**Tehol:** Would it?
+**Bugg:** A door closing.
 
-**Bugg:** No. It would silently elect whichever updater type was declared last and apply it to all updates. The order of declaration would matter. Mass conservation would break invisibly. The simulation would continue, untroubled by its own corruption.
+**Tehol:** And what does the chassis still not do.
 
-**Tehol:** And the discovery was made by?
-
-**Bugg:** A fifty-line test that took half an hour to write. The findings persuaded me to convert two existing processes to emit deltas rather than absolutes. Tedious, but not invasive — eighty lines of new code, no broken tests.
-
-**Tehol:** A small probe averting a large catastrophe.
-
-**Bugg:** A pattern I shall be repeating.
-
----
-
-## The MATLAB Hour
-
-**Tehol:** And the license.
-
-**Bugg:** The temporary MATLAB license expires in days. So I asked Codex, in parallel with the chassis work, to extract everything I might plausibly want. One full Karr cell cycle, twenty-eight per-process traces, twenty-three initialisation snapshots, two fitted-constant tables. Roughly eighteen megabytes of ground truth that we could not otherwise produce.
-
-**Tehol:** Before the door closed.
-
-**Bugg:** Before the door closed.
-
----
-
-## What the chassis cannot yet do
-
-**Tehol:** Be specific about the gaps.
-
-**Bugg:** It cannot replicate its chromosome. It cannot divide. It cannot interact with a host. Twelve of the twenty-eight processes remain unwritten. The first of them, replication initiation, is now in main; the largest, replication itself, awaits design tomorrow. I will not promise the same compression of timeline again — DNA mechanics involve states that persist across the cell cycle and discrete events that fire once or twice in nine hours. The Codex pipeline was made for fast, similar things. Slow, dissimilar things are next.
+**Bugg:** Replicate its chromosome. Divide. Interact with a host. Twelve of the twenty-eight processes remain unwritten. Tomorrow I begin on replication, which is the largest single process Karr modelled, and I do not expect the same compression of timeline. The pipeline I built today works on fast, similar things — process variants that share an architectural pattern. The DNA mechanics involve discrete events that fire once or twice in nine hours of biology, states that persist across the entire cell cycle, and a chromosome that has to be aware of its own topology. Different shape of problem. Slower thinking required.
 
 **Tehol:** A note of humility creeping in.
 
 **Bugg:** Earned, sir.
 
----
+**Tehol:** So — sixteen of twenty-eight.
 
-## Bottom line
+**Bugg:** A small, briefly-living, partly-functioning organism made of NumPy arrays. It metabolises, it transcribes, it translates, it complexes, it decays, it folds, it charges its tRNAs, it modifies its own peptides. It is not yet alive in any sense that would satisfy a biologist. But it does, for thirty-three minutes of simulated time, manage not to fall apart.
 
-**Tehol:** The summary, then.
+**Tehol:** Tomorrow.
 
-**Bugg:** Sixteen of twenty-eight. The chassis does not yet live, but it metabolises, transcribes, translates, complexes, decays. It charges its tRNAs and folds its peptides. It runs at sixty ticks per second and stays in steady state for thirty-three minutes of biological time.
-
-**Tehol:** Which is to say.
-
-**Bugg:** Which is to say I have a small, briefly-living, partly-functioning organism made of NumPy arrays. Tomorrow I give it a chromosome.
+**Bugg:** Tomorrow I give it a chromosome.
 
 ---
 
