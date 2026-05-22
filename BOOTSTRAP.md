@@ -123,6 +123,12 @@ sqlite3 opencell_tasks.db                                                      \
     "SELECT id, title, status FROM todos WHERE status='pending' ORDER BY id"
 ```
 
+Install the Copilot LLM-log pre-commit guard:
+
+```bash
+ln -sf ../../scripts/hooks/check_llm_log_on_commit.py .git/hooks/pre-commit
+```
+
 Recent agent-session checkpoints (decision history, technical context) live
 **outside the repo** in `~/.copilot/session-state/<session-id>/checkpoints/`
 on the original machine. On a fresh machine these are not available unless
