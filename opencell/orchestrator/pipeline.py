@@ -12,9 +12,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from opencell.orchestrator.panel import ExpertPanel, ClaimGraph
-from opencell.orchestrator.router import ModelRouter, TaskType, Tier
 from opencell.orchestrator.cost_tracker import CostTracker
+from opencell.orchestrator.panel import ExpertPanel
+from opencell.orchestrator.router import ModelRouter, TaskType, Tier
 
 logger = logging.getLogger(__name__)
 
@@ -63,36 +63,38 @@ class OpenCellPipeline:
 
         # Step 1: Biology panel deliberation
         logger.info(f"Step 1: Biology panel for {name}")
-        claim_graph = self.panel.deliberate(
-            f"How should we model {name} in a minimal cell?"
+        claim_graph = self.panel.deliberate(f"How should we model {name} in a minimal cell?")
+        results.append(
+            PipelineResult(
+                step="biology_panel",
+                success=True,
+                output=claim_graph,
+            )
         )
-        results.append(PipelineResult(
-            step="biology_panel",
-            success=True,
-            output=claim_graph,
-        ))
 
         if claim_graph.needs_human_review:
-            logger.warning(
-                f"Panel output for {name} needs human review before proceeding"
-            )
+            logger.warning(f"Panel output for {name} needs human review before proceeding")
 
         # Step 2: Route to appropriate model for implementation
         model, temp = self.router.route(Tier.STANDARD, TaskType.CODE_GENERATION)
         logger.info(f"Step 2: Implementation routed to {model.provider}/{model.model_id}")
-        results.append(PipelineResult(
-            step="model_routing",
-            success=True,
-            output={"model": f"{model.provider}/{model.model_id}", "temperature": temp},
-        ))
+        results.append(
+            PipelineResult(
+                step="model_routing",
+                success=True,
+                output={"model": f"{model.provider}/{model.model_id}", "temperature": temp},
+            )
+        )
 
         # Steps 3-6 are placeholders — real implementation calls cloud APIs
         for step_name in ["data_curation", "implementation", "review", "validation"]:
-            results.append(PipelineResult(
-                step=step_name,
-                success=True,
-                output=f"Placeholder — {step_name} not yet connected to APIs",
-            ))
+            results.append(
+                PipelineResult(
+                    step=step_name,
+                    success=True,
+                    output=f"Placeholder — {step_name} not yet connected to APIs",
+                )
+            )
 
         return results
 

@@ -3,13 +3,11 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from opencell.diff import DiffSpec, run_diff
 
 
-def _synthetic_traj(*, cglcex_final=0.05, f_met_final=0.03,
-                    ma_final=2, n_steps=50, scale=1.0):
+def _synthetic_traj(*, cglcex_final=0.05, f_met_final=0.03, ma_final=2, n_steps=50, scale=1.0):
     times = np.linspace(0, 8 * 3600, n_steps)
     cglcex = np.linspace(2.0, cglcex_final, n_steps) * scale
     f_met = np.linspace(1.0, f_met_final, n_steps) * scale
@@ -34,21 +32,21 @@ def _spec():
     )
 
 
-def test_identical_trajectories_pass():
+def test_identical_trajectories_pass() -> None:
     a = _synthetic_traj()
     b = _synthetic_traj()
     rep = run_diff(a, b, spec=_spec())
     assert rep.passed, rep.summary()
 
 
-def test_within_tolerance_passes():
+def test_within_tolerance_passes() -> None:
     a = _synthetic_traj(cglcex_final=0.05)
     b = _synthetic_traj(cglcex_final=0.06)  # diff 0.01 mM, within 0.2 abs tol
     rep = run_diff(a, b, spec=_spec())
     assert rep.passed
 
 
-def test_outside_tolerance_fails_level3():
+def test_outside_tolerance_fails_level3() -> None:
     a = _synthetic_traj(cglcex_final=0.05)
     # cglcex shifted scale → max abs diff > 0.2 mM trajectory tolerance.
     b = _synthetic_traj(cglcex_final=0.05, scale=1.5)
@@ -58,7 +56,7 @@ def test_outside_tolerance_fails_level3():
     assert len(fails) >= 1
 
 
-def test_invariants_catch_negative_concentration():
+def test_invariants_catch_negative_concentration() -> None:
     a = _synthetic_traj()
     b = _synthetic_traj()
     b["metabolites"]["cglcex"] = b["metabolites"]["cglcex"].copy()
@@ -69,7 +67,7 @@ def test_invariants_catch_negative_concentration():
     assert rep.level2_b_invariants.violation_count >= 1
 
 
-def test_invariants_catch_count_fractional():
+def test_invariants_catch_count_fractional() -> None:
     a = _synthetic_traj()
     b = _synthetic_traj()
     b["gene_state"]["MA"] = b["gene_state"]["MA"].copy()
@@ -79,7 +77,7 @@ def test_invariants_catch_count_fractional():
     assert rep.level2_b_invariants.violation_count >= 1
 
 
-def test_structural_required_paths():
+def test_structural_required_paths() -> None:
     a = _synthetic_traj()
     b = _synthetic_traj()
     del b["signal"]
@@ -90,16 +88,15 @@ def test_structural_required_paths():
     assert any("missing" in f.message for f in fails)
 
 
-def test_phenotype_diff_within_loose_tol():
+def test_phenotype_diff_within_loose_tol() -> None:
     a = _synthetic_traj(cglcex_final=0.05, f_met_final=0.03)
     b = _synthetic_traj(cglcex_final=0.07, f_met_final=0.035)
-    rep = run_diff(a, b, spec=_spec(),
-                   phenotype_abs_tol=1e-3, phenotype_rel_tol=0.6)
+    rep = run_diff(a, b, spec=_spec(), phenotype_abs_tol=1e-3, phenotype_rel_tol=0.6)
     p_fails = [f for f in rep.level4_findings if f.severity == "fail"]
     assert len(p_fails) == 0, [f.message for f in p_fails]
 
 
-def test_summary_renders_for_pass_and_fail():
+def test_summary_renders_for_pass_and_fail() -> None:
     a = _synthetic_traj()
     b = _synthetic_traj(cglcex_final=0.05)
     rep_pass = run_diff(a, b, spec=_spec())
@@ -109,7 +106,7 @@ def test_summary_renders_for_pass_and_fail():
     assert "FAIL" in rep_fail.summary()
 
 
-def test_real_engines_produce_consistent_diff():
+def test_real_engines_produce_consistent_diff() -> None:
     """Integration test: run hybrid_run + vivarium engine briefly and
     verify the diff tool correctly surfaces the known semantic
     differences from A6 (f_met-lag and LSODA-restart drift).
@@ -120,7 +117,7 @@ def test_real_engines_produce_consistent_diff():
     be updated to assert PASS instead of FAIL.
     """
     from opencell.models.coupled import (
-        SECONDS_PER_HOUR, CoupledMetabolismTranscription,
+        CoupledMetabolismTranscription,
     )
     from opencell.solvers.hybrid import hybrid_run
     from opencell.vivarium import build_coupled_engine

@@ -16,6 +16,9 @@ Hard constraints (enforced by code, not policy):
   * never modifies cards already at REVIEWED or APPROVED status
 """
 
+from .emitter import (
+    write_outputs,
+)
 from .manifest import (
     CurationManifest,
     ManifestParameter,
@@ -26,9 +29,6 @@ from .runner import (
     CurationOutcome,
     CurationRun,
     run_curation,
-)
-from .emitter import (
-    write_outputs,
 )
 
 __all__ = [

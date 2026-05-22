@@ -2,6 +2,7 @@
 extract a single parameter into the A3 provenance store with full
 provenance + meaning-recovery assessment.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -11,7 +12,6 @@ from pathlib import Path
 
 import numpy as np
 import scipy.io
-
 
 MAT = Path("data/karr_fixtures/MetabolicReaction.mat")
 
@@ -28,7 +28,7 @@ def describe(name: str, v, depth: int = 0) -> dict:
             children = []
             squeezed = v.squeeze()
             if squeezed.ndim == 0:
-                rec = squeezed.item() if isinstance(squeezed, np.ndarray) else squeezed
+                squeezed.item() if isinstance(squeezed, np.ndarray) else squeezed
                 for fname in v.dtype.names:
                     sub = squeezed[fname] if isinstance(squeezed, np.void) else v[fname]
                     children.append(describe(f"{name}.{fname}", sub, depth + 1))
@@ -61,7 +61,7 @@ def main() -> int:
     print(f"sha256: {sha}\n")
 
     raw = scipy.io.loadmat(str(MAT), squeeze_me=False, struct_as_record=True)
-    keys = [k for k in raw.keys() if not k.startswith("__")]
+    keys = [k for k in raw if not k.startswith("__")]
     print(f"top-level keys: {keys}\n")
 
     walk = []
@@ -121,7 +121,7 @@ def main() -> int:
     store = ProvenanceStore(store_path)
 
     if extracted is not None:
-        ev = store.record_measured(
+        store.record_measured(
             param_name=f"karr2012.MetabolicReaction.{extracted['path']}",
             value=extracted["values_first3"][0],
             unit="UNKNOWN_unit_not_recoverable_from_mat_alone",

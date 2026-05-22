@@ -6,6 +6,7 @@ Usage:
     python scripts/validate_karr_archive.py
     python scripts/validate_karr_archive.py --update  # refresh expected hashes
 """
+
 from __future__ import annotations
 
 import argparse
@@ -41,13 +42,17 @@ def _sha256(path: Path) -> str:
 
 
 def _fixture_paths() -> list[Path]:
-    return sorted(p for p in FIXTURE_DIR.glob("karr_*")
-                  if p.suffix in (".json", ".npz") and ".bak" not in p.name)
+    return sorted(
+        p
+        for p in FIXTURE_DIR.glob("karr_*")
+        if p.suffix in (".json", ".npz") and ".bak" not in p.name
+    )
 
 
 def _hash_npz_arrays(path: Path) -> str:
     """Stable hash over npz array contents (insensitive to zip metadata)."""
     import numpy as np
+
     h = hashlib.sha256()
     with np.load(path, allow_pickle=True) as nz:
         for k in sorted(nz.files):
@@ -63,8 +68,7 @@ def _hash_json_payload(path: Path) -> str:
     """Hash of JSON content excluding `source_*` metadata keys."""
     data = json.loads(path.read_text())
     if isinstance(data, dict):
-        data = {k: v for k, v in data.items()
-                if not k.startswith("source_")}
+        data = {k: v for k, v in data.items() if not k.startswith("source_")}
     return hashlib.sha256(json.dumps(data, sort_keys=True).encode()).hexdigest()
 
 
@@ -74,20 +78,25 @@ def _hash_fixture(path: Path) -> str:
     return _hash_json_payload(path)
 
 
-def main():
+def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--update", action="store_true",
-                    help="Refresh expected hashes from current fixtures.")
-    ap.add_argument("--skip-rerun", action="store_true",
-                    help="Skip re-running ingest scripts; just hash existing fixtures.")
+    ap.add_argument(
+        "--update", action="store_true", help="Refresh expected hashes from current fixtures."
+    )
+    ap.add_argument(
+        "--skip-rerun",
+        action="store_true",
+        help="Skip re-running ingest scripts; just hash existing fixtures.",
+    )
     args = ap.parse_args()
 
     if not args.skip_rerun:
         print("Re-running all ingest scripts from archive...")
         for s in INGEST_SCRIPTS:
             print(f"  -> {s}")
-            r = subprocess.run([sys.executable, str(REPO / "scripts" / s)],
-                               capture_output=True, text=True)
+            r = subprocess.run(
+                [sys.executable, str(REPO / "scripts" / s)], capture_output=True, text=True
+            )
             if r.returncode != 0:
                 print(f"FAIL: {s}\nstderr:\n{r.stderr}")
                 sys.exit(1)
@@ -110,7 +119,7 @@ def main():
     bad = []
     for name, h in sorted(actual.items()):
         exp = expected.get(name)
-        ok = (exp == h)
+        ok = exp == h
         flag = "OK  " if ok else "FAIL"
         print(f"  [{flag}] {name}  {h[:16]}")
         if not ok:

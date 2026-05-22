@@ -138,7 +138,9 @@ def _load_fixture(path: str | Path) -> dict[str, Any]:
         "tu_wids": tu_wids,
         "tf_promoter_affinity": affinity,
         "tf_tu_fold_change": fold_change,
-        "n_relationships": int(np.count_nonzero((affinity > 0.0) | (np.abs(fold_change - 1.0) > _FLOAT_TOL))),
+        "n_relationships": int(
+            np.count_nonzero((affinity > 0.0) | (np.abs(fold_change - 1.0) > _FLOAT_TOL))
+        ),
     }
 
 

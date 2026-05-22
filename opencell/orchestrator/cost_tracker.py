@@ -9,7 +9,6 @@ from __future__ import annotations
 import logging
 import sqlite3
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -81,10 +80,17 @@ class CostTracker:
              duration_ms, success, notes)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
-                record.timestamp, record.model_id, record.tier,
-                record.task_type, record.phase, record.input_tokens,
-                record.output_tokens, record.estimated_cost_usd,
-                record.duration_ms, int(record.success), record.notes,
+                record.timestamp,
+                record.model_id,
+                record.tier,
+                record.task_type,
+                record.phase,
+                record.input_tokens,
+                record.output_tokens,
+                record.estimated_cost_usd,
+                record.duration_ms,
+                int(record.success),
+                record.notes,
             ),
         )
         conn.commit()

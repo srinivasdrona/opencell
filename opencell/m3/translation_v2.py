@@ -45,6 +45,7 @@ The full closure -- mechanism rate vs *cell-cycle-averaged* per-protein
 production -- requires substrate writeback + mRNA dynamics + immortal
 dilution, which is the M5 / cell-cycle work, not v2.
 """
+
 from __future__ import annotations
 
 import json
@@ -54,21 +55,20 @@ from pathlib import Path
 import numpy as np
 
 DEFAULT_FIXTURE_JSON = (
-    Path(__file__).resolve().parents[2]
-    / "data" / "karr_fixtures" / "karr_native_m3_v2.json"
+    Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "karr_native_m3_v2.json"
 )
 
 
 @dataclass
 class RibosomeMechanismInputs:
-    mrna_counts: np.ndarray              # (n_proteins,) snapshot mRNA copies
-    length_aa: np.ndarray                # (n_proteins,) aa per protein
-    n_active_ribosomes: int              # snapshot
-    n_total_ribosomes: int               # snapshot (active + stalled + notExist)
+    mrna_counts: np.ndarray  # (n_proteins,) snapshot mRNA copies
+    length_aa: np.ndarray  # (n_proteins,) aa per protein
+    n_active_ribosomes: int  # snapshot
+    n_total_ribosomes: int  # snapshot (active + stalled + notExist)
     elongation_rate_aa_per_s: float
     ribosome_state_occupancies: np.ndarray  # (3,) [active, notExist, stalled]
     n_ribosomes_bound_per_mrna: np.ndarray  # (n_proteins,) snapshot
-    karr_v1_synth_per_s: np.ndarray      # (n_proteins,) decay-balanced lower bound
+    karr_v1_synth_per_s: np.ndarray  # (n_proteins,) decay-balanced lower bound
     raw: dict = field(repr=False)
 
     @property

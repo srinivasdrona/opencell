@@ -7,8 +7,7 @@ Design principle: data-oriented (flat arrays), not Python object graphs.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+from dataclasses import dataclass
 
 import jax
 import jax.numpy as jnp
@@ -124,9 +123,7 @@ class CellState:
             for i in range(self.registry.size):
                 if float(self.counts[i]) < 0:
                     sp_id = self.registry.id_at(i)
-                    violations.append(
-                        f"{sp_id}: count = {float(self.counts[i]):.6e}"
-                    )
+                    violations.append(f"{sp_id}: count = {float(self.counts[i]):.6e}")
         return violations
 
     def split_rng(self) -> tuple[jax.Array, jax.Array]:

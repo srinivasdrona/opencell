@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import sys
 from copy import deepcopy
 from pathlib import Path
-import sys
 from typing import Any
 
 import pytest
@@ -53,7 +53,9 @@ def test_fixture_loads() -> None:
         + len(process.lipoprotein_wids)
         + len(process.extracellular_wids)
     ) == 117
-    assert all(process.destination_by_wid[wid] == "membrane" for wid in process.integral_membrane_wids)
+    assert all(
+        process.destination_by_wid[wid] == "membrane" for wid in process.integral_membrane_wids
+    )
     assert all(process.destination_by_wid[wid] == "membrane" for wid in process.lipoprotein_wids)
     assert all(
         process.destination_by_wid[wid] == "extracellular" for wid in process.extracellular_wids
@@ -114,9 +116,7 @@ def test_atp_consumption_per_translocation() -> None:
     state = _base_state(process)
     wid_integral = process.integral_membrane_wids[0]
     wid_extracellular = process.extracellular_wids[0]
-    atp_need = (
-        process.atp_cost_by_wid[wid_integral] + process.atp_cost_by_wid[wid_extracellular]
-    )
+    atp_need = process.atp_cost_by_wid[wid_integral] + process.atp_cost_by_wid[wid_extracellular]
 
     state["protein"]["counts"][wid_integral] = 1.0
     state["protein"]["counts"][wid_extracellular] = 1.0
@@ -213,4 +213,3 @@ def test_deterministic_with_seed() -> None:
     update_1 = process_1.next_update(1.0, state)
     update_2 = process_2.next_update(1.0, state_2)
     assert update_1 == update_2
-

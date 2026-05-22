@@ -28,14 +28,14 @@ def coupled() -> CoupledMetabolismTranscription:
     return CoupledMetabolismTranscription.build()
 
 
-def test_hybrid_seed_reproducible(coupled):
+def test_hybrid_seed_reproducible(coupled) -> None:
     r1 = hybrid_run(coupled, t_end_s=600.0, macro_dt_s=60.0, seed=42)
     r2 = hybrid_run(coupled, t_end_s=600.0, macro_dt_s=60.0, seed=42)
     np.testing.assert_array_equal(r1.y_gene, r2.y_gene)
     np.testing.assert_allclose(r1.y_met, r2.y_met, rtol=0, atol=0)
 
 
-def test_hybrid_f_met_zero_blocks_synthesis(coupled):
+def test_hybrid_f_met_zero_blocks_synthesis(coupled) -> None:
     """No synthesis -> MA/MR/A/R never grow above their IC (all 0)."""
     cb_off = CoupledMetabolismTranscription.build(
         met=coupled.met, gene=coupled.gene, f_met_fn=lambda c, c0: 0.0
@@ -51,7 +51,7 @@ def test_hybrid_f_met_zero_blocks_synthesis(coupled):
     np.testing.assert_array_equal(DA + DAp, np.ones_like(DA))
 
 
-def test_hybrid_f_met_one_matches_uncoupled_in_mean(coupled):
+def test_hybrid_f_met_one_matches_uncoupled_in_mean(coupled) -> None:
     """Forced f_met=1 with a small ensemble: ensemble mean of R should
     track the uncoupled deterministic Vilar trajectory order-of-magnitude.
 
@@ -62,15 +62,21 @@ def test_hybrid_f_met_one_matches_uncoupled_in_mean(coupled):
         met=coupled.met, gene=coupled.gene, f_met_fn=lambda c, c0: 1.0
     )
     t_end = 7200.0  # 2 cellular hours
-    runs = hybrid_ensemble(cb_on, t_end_s=t_end, macro_dt_s=60.0,
-                           n_realisations=8, base_seed=1)
+    runs = hybrid_ensemble(cb_on, t_end_s=t_end, macro_dt_s=60.0, n_realisations=8, base_seed=1)
     gidx = coupled.gene.species_index()
     R_end = np.array([r.y_gene[-1, gidx["R"]] for r in runs])
     R_mean = R_end.mean()
 
     gene = TranscriptionModel.load()
-    sol = solve_ivp(gene.rhs, (0.0, t_end / 3600.0), gene.initial_y,
-                    method="LSODA", atol=1e-3, rtol=1e-6, max_step=0.05)
+    sol = solve_ivp(
+        gene.rhs,
+        (0.0, t_end / 3600.0),
+        gene.initial_y,
+        method="LSODA",
+        atol=1e-3,
+        rtol=1e-6,
+        max_step=0.05,
+    )
     R_det_end = sol.y[gidx["R"], -1]
 
     # R can be 0 in early oscillation phase, so use absolute tolerance for the
@@ -85,18 +91,24 @@ def test_hybrid_f_met_one_matches_uncoupled_in_mean(coupled):
         )
 
 
-def test_hybrid_default_coupling_throttles_synthesis(coupled):
+def test_hybrid_default_coupling_throttles_synthesis(coupled) -> None:
     """Default cglcex coupling over enough horizon to deplete glucose:
     ensemble-mean R must be much smaller than uncoupled deterministic R."""
     t_end = 3 * 3600.0
-    runs = hybrid_ensemble(coupled, t_end_s=t_end, macro_dt_s=60.0,
-                           n_realisations=2, base_seed=10)
+    runs = hybrid_ensemble(coupled, t_end_s=t_end, macro_dt_s=60.0, n_realisations=2, base_seed=10)
     gidx = coupled.gene.species_index()
     R_end_mean = np.mean([r.y_gene[-1, gidx["R"]] for r in runs])
 
     gene = TranscriptionModel.load()
-    sol = solve_ivp(gene.rhs, (0.0, t_end / 3600.0), gene.initial_y,
-                    method="LSODA", atol=1e-3, rtol=1e-6, max_step=0.05)
+    sol = solve_ivp(
+        gene.rhs,
+        (0.0, t_end / 3600.0),
+        gene.initial_y,
+        method="LSODA",
+        atol=1e-3,
+        rtol=1e-6,
+        max_step=0.05,
+    )
     R_det_unc = sol.y[gidx["R"], -1]
 
     # Coupled should be at least 5x smaller (real value at 5h is ~1e-3 vs ~1e3)
@@ -109,7 +121,7 @@ def test_hybrid_default_coupling_throttles_synthesis(coupled):
     assert f_min < 0.1, f"f_met never dropped (min={f_min}); coupling not biting"
 
 
-def test_hybrid_ensemble_shows_intrinsic_noise(coupled):
+def test_hybrid_ensemble_shows_intrinsic_noise(coupled) -> None:
     """At fixed f_met=1, two runs with different seeds should give
     different gene trajectories (otherwise tau-leap is broken)."""
     cb_on = CoupledMetabolismTranscription.build(

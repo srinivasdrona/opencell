@@ -14,6 +14,7 @@ Current complex-count dependency and provenance:
   shared ``complex.counts`` port each tick to stay compatible with the
   dynamic-pool contract once D.2-real lands.
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -124,9 +125,7 @@ class KarrTranslationV2Process(Process):
 
         update: dict[str, Any] = {
             "protein": {
-                "counts": {
-                    pid: float(protein_next[i]) for i, pid in enumerate(self.protein_ids)
-                }
+                "counts": {pid: float(protein_next[i]) for i, pid in enumerate(self.protein_ids)}
             }
         }
 
@@ -134,8 +133,6 @@ class KarrTranslationV2Process(Process):
             per_metabolite = (synth_per_s[:, None] * self.kinetics_model.base_counts).sum(axis=0)
             update["substrates"] = {
                 aa: -float(per_metabolite[col]) * timestep
-                for aa, col in zip(
-                    self.aa_ids, self.kinetics_model.aa_col_indices, strict=False
-                )
+                for aa, col in zip(self.aa_ids, self.kinetics_model.aa_col_indices, strict=False)
             }
         return update

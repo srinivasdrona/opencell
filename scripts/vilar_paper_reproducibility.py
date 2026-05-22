@@ -24,7 +24,6 @@ import numpy as np
 from opencell.models.transcription import TranscriptionModel
 from opencell.solvers.ode_scipy import ScipySolverConfig, solve_ode_scipy
 
-
 T_END = 1000.0  # cover many oscillation periods to measure period reliably
 N = 100001  # fine grid (10 pts / time-unit)
 
@@ -118,9 +117,7 @@ def main() -> None:
             <= measured["R_amplitude"]
             <= paper_targets["R_amplitude"][1]
         ),
-        "A_amplitude_lt_R_amplitude": (
-            measured["A_amplitude"] < measured["R_amplitude"]
-        ),
+        "A_amplitude_lt_R_amplitude": (measured["A_amplitude"] < measured["R_amplitude"]),
         "MR_max_lt_R_max": measured["MR_max"] < measured["R_max"],
     }
 
@@ -140,9 +137,9 @@ def main() -> None:
     ax1.set_xlabel("time (h)")
     ax1.set_ylabel("molecule count")
     ax1.set_title(
-        f"Vilar 2002 deterministic limit cycle\n"
-        f"Measured period = {measured['period_hours']:.1f} h"
-        if measured["period_hours"] else "Vilar 2002 (no period detected)"
+        f"Vilar 2002 deterministic limit cycle\nMeasured period = {measured['period_hours']:.1f} h"
+        if measured["period_hours"]
+        else "Vilar 2002 (no period detected)"
     )
     ax1.legend()
     ax1.grid(alpha=0.3)

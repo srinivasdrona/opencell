@@ -217,8 +217,7 @@ class KarrRibosomeAssemblyProcess(Process):
     def _build_gtpase_pool(self, states: dict[str, Any]) -> dict[str, int]:
         counts = states.get("protein", {}).get("counts", {})
         return {
-            wid: max(0, int(math.floor(float(counts.get(wid, 0.0)))))
-            for wid in self.gtpase_wids
+            wid: max(0, int(math.floor(float(counts.get(wid, 0.0))))) for wid in self.gtpase_wids
         }
 
     def _particle_resource_limits(

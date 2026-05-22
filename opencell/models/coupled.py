@@ -35,14 +35,13 @@ Example:
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Callable
 
 import numpy as np
 
 from opencell.models.metabolism import MetabolismModel
 from opencell.models.transcription import TranscriptionModel
-
 
 # Vilar 2002 / BIOMD0000000035: indices of the 6 synthesis reactions in the
 # stoichiometry matrix as exposed by SbmlOdeModel. Curated once, asserted at
@@ -125,7 +124,7 @@ class CoupledMetabolismTranscription:
         gene: TranscriptionModel | None = None,
         signal: str = "concentration",
         f_met_fn: Callable[[float, float], float] | None = None,
-    ) -> "CoupledMetabolismTranscription":
+    ) -> CoupledMetabolismTranscription:
         met = met if met is not None else MetabolismModel.load()
         gene = gene if gene is not None else TranscriptionModel.load()
 
@@ -141,7 +140,9 @@ class CoupledMetabolismTranscription:
         # product-only synthesis with stoichiometry +1 on the expected species.
         S = gene.sbml.stoich
         sp = gene.species_ids
-        for j, expected_product in zip(SYNTHESIS_REACTION_INDICES, SYNTHESIS_PRODUCT_SPECIES):
+        for j, expected_product in zip(
+            SYNTHESIS_REACTION_INDICES, SYNTHESIS_PRODUCT_SPECIES, strict=False
+        ):
             col = S[:, j]
             nonzero = [(sp[i], int(col[i])) for i in range(len(sp)) if col[i] != 0]
             if nonzero != [(expected_product, 1)]:
@@ -166,9 +167,7 @@ class CoupledMetabolismTranscription:
         v_pts0 = float(met.sbml.fluxes(0.0, met.initial_y)[PTS_REACTION_INDEX])
 
         if signal not in ("concentration", "uptake_flux"):
-            raise ValueError(
-                f"signal must be 'concentration' or 'uptake_flux', got {signal!r}"
-            )
+            raise ValueError(f"signal must be 'concentration' or 'uptake_flux', got {signal!r}")
         if f_met_fn is None:
             f_met_fn = default_f_met if signal == "concentration" else f_met_from_uptake_flux
 
@@ -196,17 +195,13 @@ class CoupledMetabolismTranscription:
     def species_layout(self) -> dict[str, list[str]]:
         return {"metabolism": list(self.met.species_ids), "gene": list(self.gene.species_ids)}
 
-    def vector_atols(
-        self, met_atol: float = 1e-9, gene_atol: float = 1e-3
-    ) -> np.ndarray:
+    def vector_atols(self, met_atol: float = 1e-9, gene_atol: float = 1e-3) -> np.ndarray:
         """Per-state atol vector for stiff solvers.
 
         Mixed-magnitude state: metabolism is mM (~1e-3 to ~1e0), gene is
         molecule counts (DA ~ 1, R ~ 1e3). Per GPT-5 critique.
         """
-        return np.concatenate(
-            [np.full(self.n_met, met_atol), np.full(self.n_gene, gene_atol)]
-        )
+        return np.concatenate([np.full(self.n_met, met_atol), np.full(self.n_gene, gene_atol)])
 
     # ----- composite RHS -----
 

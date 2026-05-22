@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import sys
 from copy import deepcopy
 from pathlib import Path
-import sys
 from typing import Any
 
 import numpy as np
@@ -31,10 +31,7 @@ from opencell.vivarium.karr_transcriptional_regulation import (
 def _empty_tr_state(process: KarrTranscriptionalRegulationProcess) -> dict[str, Any]:
     return {
         "protein": {"counts": {tf: 0.0 for tf in process.tf_wids}},
-        "tf_binding": {
-            tf: {tu: 0.0 for tu in process.tu_wids}
-            for tf in process.tf_wids
-        },
+        "tf_binding": {tf: {tu: 0.0 for tu in process.tu_wids} for tf in process.tf_wids},
     }
 
 
@@ -240,6 +237,8 @@ def test_no_regression_m2v3_without_regulation() -> None:
     update_v2 = v2.next_update(1.0, state)
     update_v3 = v3.next_update(1.0, state)
     v2_abs = np.array([float(update_v2["rna"]["counts"][gid]) for gid in v2.gene_ids], dtype=float)
-    v3_delta = np.array([float(update_v3["rna"]["counts"][gid]) for gid in v3.gene_ids], dtype=float)
+    v3_delta = np.array(
+        [float(update_v3["rna"]["counts"][gid]) for gid in v3.gene_ids], dtype=float
+    )
 
     np.testing.assert_allclose(prior + v3_delta, v2_abs, rtol=0.0, atol=1e-9)

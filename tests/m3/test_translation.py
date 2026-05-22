@@ -1,4 +1,5 @@
 """Tests for M3 Karr-native translation module."""
+
 from __future__ import annotations
 
 import numpy as np

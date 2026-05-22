@@ -11,7 +11,6 @@ from pathlib import Path
 import numpy as np
 from scipy.io import loadmat
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PER_PROCESS = REPO_ROOT / "data" / "karr_fixtures" / "per_process"
 MC_FLAT = PER_PROCESS / "MacromolecularComplexation_flat.mat"
@@ -77,9 +76,7 @@ def live_formation_process_counts() -> CountSet:
         idx = int(idx)
         prev = wid_to_proc.get(wid)
         if prev is not None and prev != idx:
-            raise ValueError(
-                f"Ambiguous formationProcesses for {wid}: saw both {prev} and {idx}"
-            )
+            raise ValueError(f"Ambiguous formationProcesses for {wid}: saw both {prev} and {idx}")
         wid_to_proc[wid] = idx
 
     mc: set[str] = set()
@@ -108,7 +105,9 @@ def _format_diff(left: set[str], right: set[str], left_name: str, right_name: st
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--show-sets", action="store_true", help="Print sorted WID sets for source 2 and 3")
+    parser.add_argument(
+        "--show-sets", action="store_true", help="Print sorted WID sets for source 2 and 3"
+    )
     args = parser.parse_args()
 
     claim_mc, claim_ra = docstring_claim_counts()

@@ -68,7 +68,9 @@ class KarrProteinModificationProcess(Process):
 
         self.required_modifications = np.sum(self.reaction_modification, axis=0).astype(np.int64)
         if np.any(self.required_modifications <= 0):
-            raise ValueError("Filtered proteins must each require at least one modification reaction")
+            raise ValueError(
+                "Filtered proteins must each require at least one modification reaction"
+            )
 
     def _load_fixture(self, path: str | Path) -> None:
         resolved = _resolve_fixture_path(path)
@@ -93,9 +95,7 @@ class KarrProteinModificationProcess(Process):
         self.unmodified_monomer_wids = [
             all_unmodified_wids[idx] for idx in self.active_protein_indices
         ]
-        self.modified_monomer_wids = [
-            all_modified_wids[idx] for idx in self.active_protein_indices
-        ]
+        self.modified_monomer_wids = [all_modified_wids[idx] for idx in self.active_protein_indices]
         self.reaction_modification = full_reaction_modification[:, self.active_protein_indices]
 
         if self.reaction_stoich.shape[1] != self.reaction_catalysis.shape[0]:

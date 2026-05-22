@@ -5,15 +5,12 @@ import tempfile
 from pathlib import Path
 
 import jax
-import jax.numpy as jnp
 import numpy as np
-import pytest
 
 jax.config.update("jax_enable_x64", True)
 
-from opencell.core.compartments import CellGeometry
+from opencell.core.checkpoint import load_checkpoint, save_checkpoint
 from opencell.core.crash_bundle import CrashBundle, capture_crash_bundle
-from opencell.core.checkpoint import save_checkpoint, load_checkpoint
 from opencell.core.engine import Engine, EngineConfig
 from opencell.core.guards import Guards
 from opencell.core.ir import (
@@ -24,25 +21,35 @@ from opencell.core.ir import (
     SpeciesInfo,
 )
 from opencell.core.manifest import RunManifest
-from opencell.core.sentinels import BACTERIAL_SENTINELS, check_sentinel, check_all_sentinels
+from opencell.core.sentinels import check_all_sentinels, check_sentinel
 from opencell.core.state import CellState
 from opencell.models.base import DummyConsumer, DummyProducer
 
 
 def make_simple_registry() -> IRSpeciesRegistry:
     reg = IRSpeciesRegistry()
-    reg.register(SpeciesInfo(
-        id="A", name="Species A", compartment=Compartment.CYTOPLASM,
-        molecule_type=MoleculeType.METABOLITE,
-        reference_frame=ReferenceFrame.PER_CELL,
-        molar_mass_da=100.0, atom_counts={"C": 5, "H": 10},
-    ))
-    reg.register(SpeciesInfo(
-        id="B", name="Species B", compartment=Compartment.CYTOPLASM,
-        molecule_type=MoleculeType.METABOLITE,
-        reference_frame=ReferenceFrame.PER_CELL,
-        molar_mass_da=100.0, atom_counts={"C": 5, "H": 10},
-    ))
+    reg.register(
+        SpeciesInfo(
+            id="A",
+            name="Species A",
+            compartment=Compartment.CYTOPLASM,
+            molecule_type=MoleculeType.METABOLITE,
+            reference_frame=ReferenceFrame.PER_CELL,
+            molar_mass_da=100.0,
+            atom_counts={"C": 5, "H": 10},
+        )
+    )
+    reg.register(
+        SpeciesInfo(
+            id="B",
+            name="Species B",
+            compartment=Compartment.CYTOPLASM,
+            molecule_type=MoleculeType.METABOLITE,
+            reference_frame=ReferenceFrame.PER_CELL,
+            molar_mass_da=100.0,
+            atom_counts={"C": 5, "H": 10},
+        )
+    )
     return reg
 
 
@@ -75,9 +82,11 @@ class TestEngine:
             @property
             def contract(self):
                 from opencell.core.ir import SubModelContract
+
                 return SubModelContract(
                     sub_model_id=self.id,
-                    reads={"A"}, writes={"A", "B"},
+                    reads={"A"},
+                    writes={"A", "B"},
                     reference_frame=ReferenceFrame.PER_CELL,
                 )
 
@@ -150,10 +159,12 @@ class TestSentinels:
         assert check_sentinel("unknown_variable", 42.0) is None
 
     def test_check_all(self) -> None:
-        warnings = check_all_sentinels({
-            "cell_volume_fL": 0.07,
-            "atp_concentration_mM": 999.0,  # too high
-        })
+        warnings = check_all_sentinels(
+            {
+                "cell_volume_fL": 0.07,
+                "atp_concentration_mM": 999.0,  # too high
+            }
+        )
         assert len(warnings) == 1
         assert "ATP" in warnings[0]
 
@@ -165,7 +176,8 @@ class TestCrashBundle:
 
     def test_classify_biology(self) -> None:
         b = CrashBundle(
-            state_norm=100.0, derivative_norm=10.0,
+            state_norm=100.0,
+            derivative_norm=10.0,
             violated_invariant="positivity",
             solver_stats={"rejected_steps": 0},
         )
@@ -182,7 +194,9 @@ class TestCrashBundle:
 
     def test_capture_function(self) -> None:
         bundle = capture_crash_bundle(
-            step=10, time_s=0.5, dt=0.01,
+            step=10,
+            time_s=0.5,
+            dt=0.01,
             state_array=np.array([100.0, 50.0, -1.0]),
             derivative_array=np.array([0.0, 1.0, -100.0]),
             species_ids=["A", "B", "C"],

@@ -23,7 +23,6 @@ from opencell.models.sbml_model import (  # noqa: E402
     _compile_formula,
 )
 
-
 CHASSAGNOLE_PATH = (
     Path(__file__).resolve().parents[2]
     / "data"
@@ -38,25 +37,25 @@ CHASSAGNOLE_PATH = (
 
 
 class TestCompileFormula:
-    def test_simple_arithmetic(self):
+    def test_simple_arithmetic(self) -> None:
         cf = _compile_formula("a + b * c")
         assert set(cf.symbols) == {"a", "b", "c"}
         # symbols are sorted; pass values in that order
         vals = {"a": 1.0, "b": 2.0, "c": 3.0}
         assert cf.fn(*[vals[s] for s in cf.symbols]) == pytest.approx(7.0)
 
-    def test_pow_function(self):
+    def test_pow_function(self) -> None:
         cf = _compile_formula("pow(x, n)")
         vals = {"x": 2.0, "n": 3.0}
         assert cf.fn(*[vals[s] for s in cf.symbols]) == pytest.approx(8.0)
 
-    def test_michaelis_menten(self):
+    def test_michaelis_menten(self) -> None:
         # NB: 'S' would collide with sympy.S singleton without local_dict
         cf = _compile_formula("Vmax * S / (Km + S)")
         vals = {"Vmax": 10.0, "Km": 1.0, "S": 1.0}
         assert cf.fn(*[vals[s] for s in cf.symbols]) == pytest.approx(5.0)
 
-    def test_sympy_singleton_names_not_shadowed(self):
+    def test_sympy_singleton_names_not_shadowed(self) -> None:
         # All of S, E, I, Q, O, N would silently become sympy singletons
         # (S→Singleton, E→exp(1), I→sqrt(-1), Q→Rationals) without protection.
         cf = _compile_formula("S + E + I + N + O + Q")
@@ -65,7 +64,7 @@ class TestCompileFormula:
         vals = {"S": 1.0, "E": 2.0, "I": 3.0, "N": 4.0, "O": 5.0, "Q": 6.0}
         assert cf.fn(*[vals[s] for s in cf.symbols]) == pytest.approx(21.0)
 
-    def test_invalid_formula_raises(self):
+    def test_invalid_formula_raises(self) -> None:
         with pytest.raises(ValueError, match="Failed to parse"):
             _compile_formula("a +/ b", context="test")
 
@@ -84,14 +83,14 @@ class TestLoadChassagnole:
     def model(self) -> SbmlOdeModel:
         return SbmlOdeModel.from_file(CHASSAGNOLE_PATH)
 
-    def test_topology(self, model: SbmlOdeModel):
+    def test_topology(self, model: SbmlOdeModel) -> None:
         # Chassagnole 2002 BIOMD0000000051 ground truth
         assert model.n_species == 18
         assert model.n_reactions == 48
         assert len(model.rules) == 7  # cofactor forcing functions
         assert set(model.compartment_volumes) == {"extracellular", "cytosol"}
 
-    def test_provenance_includes_sha256(self, model: SbmlOdeModel):
+    def test_provenance_includes_sha256(self, model: SbmlOdeModel) -> None:
         prov = model.provenance()
         assert len(prov["sbml_sha256"]) == 64
         assert prov["sbml_level"] == 2
@@ -99,35 +98,35 @@ class TestLoadChassagnole:
         assert prov["n_reactions"] == 48
         assert prov["n_assignment_rules"] == 7
 
-    def test_initial_y_shape(self, model: SbmlOdeModel):
+    def test_initial_y_shape(self, model: SbmlOdeModel) -> None:
         assert model.initial_y.shape == (18,)
         assert model.initial_y.dtype == np.float64
         assert np.all(model.initial_y > 0)
 
-    def test_species_index_round_trip(self, model: SbmlOdeModel):
+    def test_species_index_round_trip(self, model: SbmlOdeModel) -> None:
         idx = model.species_index()
         assert len(idx) == 18
         for sid in model.species_ids:
             assert idx[sid] == model.species_ids.index(sid)
 
-    def test_rhs_finite_at_initial(self, model: SbmlOdeModel):
+    def test_rhs_finite_at_initial(self, model: SbmlOdeModel) -> None:
         dy = model.rhs(0.0, model.initial_y)
         assert dy.shape == (18,)
         assert np.all(np.isfinite(dy))
 
-    def test_fluxes_shape(self, model: SbmlOdeModel):
+    def test_fluxes_shape(self, model: SbmlOdeModel) -> None:
         f = model.fluxes(0.0, model.initial_y)
         assert f.shape == (48,)
         assert np.all(np.isfinite(f))
 
-    def test_assignment_rules_evaluated(self, model: SbmlOdeModel):
+    def test_assignment_rules_evaluated(self, model: SbmlOdeModel) -> None:
         # The 7 cofactors should be present in env (catp, cadp, ...)
         env = model._build_env(0.0, model.initial_y)
         for cofactor in ("catp", "cadp", "camp", "cnadp", "cnadph", "cnad", "cnadh"):
             assert cofactor in env
             assert np.isfinite(env[cofactor])
 
-    def test_rhs_changes_with_time(self, model: SbmlOdeModel):
+    def test_rhs_changes_with_time(self, model: SbmlOdeModel) -> None:
         # Cofactors are time-driven, so RHS at t=0 vs t=10 should differ
         dy0 = model.rhs(0.0, model.initial_y)
         dy10 = model.rhs(10.0, model.initial_y)
@@ -155,7 +154,7 @@ class TestUnsupportedFeatures:
         p.write_text(sbml)
         return p
 
-    def test_event_raises(self, tmp_path: Path):
+    def test_event_raises(self, tmp_path: Path) -> None:
         body = """
     <listOfSpecies><species id="s" compartment="c" initialConcentration="1"/></listOfSpecies>
     <listOfEvents>
@@ -197,12 +196,12 @@ class TestUnsupportedFeatures:
         p.write_text(sbml)
         return p
 
-    def test_function_definition_raises(self, tmp_path: Path):
+    def test_function_definition_raises(self, tmp_path: Path) -> None:
         p = self._write_sbml_with_funcdef(tmp_path)
         with pytest.raises(NotImplementedError, match="functionDefinition"):
             SbmlOdeModel.from_file(p)
 
-    def test_rate_rule_raises(self, tmp_path: Path):
+    def test_rate_rule_raises(self, tmp_path: Path) -> None:
         body = """
     <listOfSpecies><species id="s" compartment="c" initialConcentration="1"/></listOfSpecies>
     <listOfRules>
@@ -215,7 +214,7 @@ class TestUnsupportedFeatures:
         with pytest.raises(NotImplementedError, match="rule type"):
             SbmlOdeModel.from_file(p)
 
-    def test_missing_file_raises(self, tmp_path: Path):
+    def test_missing_file_raises(self, tmp_path: Path) -> None:
         with pytest.raises(FileNotFoundError):
             SbmlOdeModel.from_file(tmp_path / "does_not_exist.xml")
 
@@ -257,7 +256,7 @@ class TestSubstanceUnitsSpecies:
         p.write_text(sbml)
         return p
 
-    def test_initial_values_per_mode(self, tmp_path: Path):
+    def test_initial_values_per_mode(self, tmp_path: Path) -> None:
         m = SbmlOdeModel.from_file(self._write_mixed(tmp_path, vol=2.0))
         idx = {s: i for i, s in enumerate(m.species_ids)}
         # N stored as amount: 10
@@ -267,7 +266,7 @@ class TestSubstanceUnitsSpecies:
         assert m.species_substance_units["N"] is True
         assert m.species_substance_units["C"] is False
 
-    def test_rhs_no_volume_divide_for_amount_mode(self, tmp_path: Path):
+    def test_rhs_no_volume_divide_for_amount_mode(self, tmp_path: Path) -> None:
         m = SbmlOdeModel.from_file(self._write_mixed(tmp_path, vol=2.0))
         idx = {s: i for i, s in enumerate(m.species_ids)}
         dydt = m.rhs(0.0, m.initial_y)
@@ -276,7 +275,7 @@ class TestSubstanceUnitsSpecies:
         # dC/dt = -(0.2 * 5 * 2) / 2 = -1.0  (with /V)
         assert dydt[idx["C"]] == pytest.approx(-1.0)
 
-    def test_initial_concentration_with_amount_mode(self, tmp_path: Path):
+    def test_initial_concentration_with_amount_mode(self, tmp_path: Path) -> None:
         # Amount-mode species given initialConcentration must be multiplied
         # by compartment volume before being stored as amount.
         sbml = """<?xml version="1.0" encoding="UTF-8"?>
@@ -300,7 +299,7 @@ class TestSubstanceUnitsSpecies:
         # 4 conc * 3 vol = 12 amount
         assert m.initial_y[0] == pytest.approx(12.0)
 
-    def test_vilar_loads_and_oscillates(self, tmp_path: Path):
+    def test_vilar_loads_and_oscillates(self, tmp_path: Path) -> None:
         # Real-world: BIOMD0000000035 (Vilar 2002) has all-amount-mode species.
         # Verify it loads, integrates, and shows oscillatory behavior.
         vilar_path = (

@@ -19,7 +19,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any
 
 import jax.numpy as jnp
 import numpy as np
@@ -164,15 +163,11 @@ class IRSpeciesRegistry:
 
     def species_by_compartment(self, compartment: Compartment) -> list[str]:
         """Species IDs in a given compartment."""
-        return [
-            sid for sid, info in self._species.items() if info.compartment == compartment
-        ]
+        return [sid for sid, info in self._species.items() if info.compartment == compartment]
 
     def species_by_type(self, mol_type: MoleculeType) -> list[str]:
         """Species IDs of a given molecule type."""
-        return [
-            sid for sid, info in self._species.items() if info.molecule_type == mol_type
-        ]
+        return [sid for sid, info in self._species.items() if info.molecule_type == mol_type]
 
 
 @dataclass

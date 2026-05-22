@@ -53,7 +53,7 @@ def time_rhs(rhs_fn, y0, n=N_RHS_TIMING_CALLS) -> float:
 class CountingRHS:
     """Wraps a RHS to count invocations during integration."""
 
-    def __init__(self, rhs):
+    def __init__(self, rhs) -> None:
         self.rhs = rhs
         self.calls = 0
 
@@ -66,8 +66,13 @@ def integrate(rhs_fn, y0, atol, t_end_s, max_step=60.0):
     counter = CountingRHS(rhs_fn)
     t0 = time.perf_counter()
     sol = solve_ivp(
-        counter, (0.0, t_end_s), y0,
-        method="LSODA", atol=atol, rtol=1e-6, max_step=max_step,
+        counter,
+        (0.0, t_end_s),
+        y0,
+        method="LSODA",
+        atol=atol,
+        rtol=1e-6,
+        max_step=max_step,
     )
     wall = time.perf_counter() - t0
     return sol, wall, counter.calls
@@ -84,23 +89,26 @@ def main() -> None:
     atol_coupled = cb_conc.vector_atols()
 
     # ----- RHS evaluation timing -----
-    print("\n[1] RHS evaluation cost (mean of {:,} calls)".format(N_RHS_TIMING_CALLS))
+    print(f"\n[1] RHS evaluation cost (mean of {N_RHS_TIMING_CALLS:,} calls)")
     t_met = time_rhs(met.rhs, met.initial_y)
     t_gene = time_rhs(gene.rhs, gene.initial_y)
     t_conc = time_rhs(cb_conc.rhs, y0_coupled)
     t_flux = time_rhs(cb_flux.rhs, y0_coupled)
-    print(f"  metabolism alone   : {t_met*1e6:7.2f} us/call")
-    print(f"  gene alone         : {t_gene*1e6:7.2f} us/call")
-    print(f"  coupled (conc)     : {t_conc*1e6:7.2f} us/call  ({t_conc/(t_met+t_gene):.2f}x sum)")
-    print(f"  coupled (uptake)   : {t_flux*1e6:7.2f} us/call  ({t_flux/(t_met+t_gene):.2f}x sum)")
+    print(f"  metabolism alone   : {t_met * 1e6:7.2f} us/call")
+    print(f"  gene alone         : {t_gene * 1e6:7.2f} us/call")
+    print(
+        f"  coupled (conc)     : {t_conc * 1e6:7.2f} us/call  ({t_conc / (t_met + t_gene):.2f}x sum)"
+    )
+    print(
+        f"  coupled (uptake)   : {t_flux * 1e6:7.2f} us/call  ({t_flux / (t_met + t_gene):.2f}x sum)"
+    )
 
     # ----- 8-hour integration timing -----
     print(f"\n[2] LSODA integration to {T_END_HOURS:.0f} h cellular ({T_END_SECONDS:.0f} s)")
-    sol_m, w_m, c_m = integrate(met.rhs, met.initial_y,
-                                np.full(met.n_species, 1e-9), T_END_SECONDS)
-    sol_g, w_g, c_g = integrate(gene.rhs, gene.initial_y,
-                                np.full(gene.n_species, 1e-3), T_END_HOURS,
-                                max_step=0.05)
+    sol_m, w_m, c_m = integrate(met.rhs, met.initial_y, np.full(met.n_species, 1e-9), T_END_SECONDS)
+    sol_g, w_g, c_g = integrate(
+        gene.rhs, gene.initial_y, np.full(gene.n_species, 1e-3), T_END_HOURS, max_step=0.05
+    )
     sol_c, w_c, c_c = integrate(cb_conc.rhs, y0_coupled, atol_coupled, T_END_SECONDS)
     sol_f, w_f, c_f = integrate(cb_flux.rhs, y0_coupled, atol_coupled, T_END_SECONDS)
 

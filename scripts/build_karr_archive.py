@@ -14,11 +14,13 @@ Re-run this only when extract_karr_targeted.m is modified (i.e. when ingestion
 needs a NEW field not yet in the archive). Day-to-day Python work never touches
 MATLAB or .mat.
 """
+
 from __future__ import annotations
+
 import hashlib
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
@@ -46,70 +48,123 @@ ARCHIVE_SPEC = {
     # m3 (translation): all 25 fields are flat arrays under data.* -- take all.
     "proteins_targeted": {
         "fields": [
-            "matureIndexs", "nascentIndexs", "processedIIndexs", "processedIIIndexs",
-            "foldedIndexs", "inactivatedIndexs", "boundIndexs", "misfoldedIndexs",
-            "damagedIndexs", "signalSequenceIndexs",
-            "lengths", "halfLives", "decayRates", "molecularWeights",
-            "compartments", "counts", "baseCounts",
-            "wholeCellModelIDs", "names",
-            "kb_wholeCellModelIDs", "kb_geneWholeCellModelIDs", "kb_geneIndex",
+            "matureIndexs",
+            "nascentIndexs",
+            "processedIIndexs",
+            "processedIIIndexs",
+            "foldedIndexs",
+            "inactivatedIndexs",
+            "boundIndexs",
+            "misfoldedIndexs",
+            "damagedIndexs",
+            "signalSequenceIndexs",
+            "lengths",
+            "halfLives",
+            "decayRates",
+            "molecularWeights",
+            "compartments",
+            "counts",
+            "baseCounts",
+            "wholeCellModelIDs",
+            "names",
+            "kb_wholeCellModelIDs",
+            "kb_geneWholeCellModelIDs",
+            "kb_geneIndex",
             "kb_compartmentWholeCellModelIDs",
-            "translation_ribosomeElongationRate", "translation_tmRNABindingProbability",
+            "translation_ribosomeElongationRate",
+            "translation_tmRNABindingProbability",
         ],
         "consumer": "karr_native_ingest_m3.py",
     },
     # m2 (transcription) State_Rna: all 22 fields needed for MW/counts re-extract.
     "rnas_targeted": {
         "fields": [
-            "matureIndexs", "nascentIndexs", "processedIndexs", "intergenicIndexs",
-            "boundIndexs", "misfoldedIndexs", "damagedIndexs", "aminoacylatedIndexs",
-            "molecularWeights", "lengths", "halfLives", "decayRates",
-            "compartments", "counts", "expression",
-            "wholeCellModelIDs", "names", "baseCounts",
-            "kb_gene_wholeCellModelIDs", "kb_tu_wholeCellModelIDs",
-            "kb_gene_to_tu_index", "kb_tu_to_gene_indices",
+            "matureIndexs",
+            "nascentIndexs",
+            "processedIndexs",
+            "intergenicIndexs",
+            "boundIndexs",
+            "misfoldedIndexs",
+            "damagedIndexs",
+            "aminoacylatedIndexs",
+            "molecularWeights",
+            "lengths",
+            "halfLives",
+            "decayRates",
+            "compartments",
+            "counts",
+            "expression",
+            "wholeCellModelIDs",
+            "names",
+            "baseCounts",
+            "kb_gene_wholeCellModelIDs",
+            "kb_tu_wholeCellModelIDs",
+            "kb_gene_to_tu_index",
+            "kb_tu_to_gene_indices",
         ],
         "consumer": "karr_native_ingest_m2.py",
     },
     # m1 protein-complexes: 4 top-level + struct array of 201 complexes (flatten).
     "protein_complexes": {
         "fields": [
-            "complex_wids_201", "monomer_wids_482",
-            "metabolite_wids_722", "compartment_wids_6",
-            "x_source_file", "x_matlab_release", "x_extract_timestamp_utc",
+            "complex_wids_201",
+            "monomer_wids_482",
+            "metabolite_wids_722",
+            "compartment_wids_6",
+            "x_source_file",
+            "x_matlab_release",
+            "x_extract_timestamp_utc",
         ],
         "struct_arrays": {
             "complexes": {
                 "scalars": [
-                    "wholeCellModelID", "name", "idx", "numSubunits",
-                    "numDistinctSubunits", "dnaFootprint", "density",
-                    "activationRule", "formation_compartment_wid",
+                    "wholeCellModelID",
+                    "name",
+                    "idx",
+                    "numSubunits",
+                    "numDistinctSubunits",
+                    "dnaFootprint",
+                    "density",
+                    "activationRule",
+                    "formation_compartment_wid",
                 ],
                 "nested_struct_arrays": {
                     # complexes[i].monomers[j] etc. are all struct arrays
                     "monomers": [
-                        "molecule_wid", "coefficient",
-                        "compartment_wid", "molecule_idx_1based",
+                        "molecule_wid",
+                        "coefficient",
+                        "compartment_wid",
+                        "molecule_idx_1based",
                     ],
                     "subcomplexes": [
-                        "molecule_wid", "coefficient",
-                        "compartment_wid", "molecule_idx_1based",
+                        "molecule_wid",
+                        "coefficient",
+                        "compartment_wid",
+                        "molecule_idx_1based",
                     ],
                     "metabolites": [
-                        "molecule_wid", "coefficient",
-                        "compartment_wid", "molecule_idx_1based",
+                        "molecule_wid",
+                        "coefficient",
+                        "compartment_wid",
+                        "molecule_idx_1based",
                     ],
                     "prosthetic": [
-                        "molecule_wid", "coefficient",
-                        "compartment_wid", "molecule_idx_1based",
+                        "molecule_wid",
+                        "coefficient",
+                        "compartment_wid",
+                        "molecule_idx_1based",
                     ],
                     "chaperones": [
-                        "molecule_wid", "coefficient",
-                        "compartment_wid", "molecule_idx_1based",
+                        "molecule_wid",
+                        "coefficient",
+                        "compartment_wid",
+                        "molecule_idx_1based",
                     ],
                     "rnas": [
-                        "molecule_wid", "coefficient",
-                        "compartment_wid", "molecule_idx_1based",
+                        "molecule_wid",
+                        "coefficient",
+                        "compartment_wid",
+                        "molecule_idx_1based",
                     ],
                 },
             },
@@ -177,20 +232,34 @@ ARCHIVE_SPEC = {
         "struct_arrays": {
             "knowledgeBase.genes": {
                 "scalars": [
-                    "wholeCellModelID", "name", "symbol", "type", "essential",
-                    "startCoordinate", "endCoordinate", "direction",
-                    "halfLife", "expression", "synthesisRate",
+                    "wholeCellModelID",
+                    "name",
+                    "symbol",
+                    "type",
+                    "essential",
+                    "startCoordinate",
+                    "endCoordinate",
+                    "direction",
+                    "halfLife",
+                    "expression",
+                    "synthesisRate",
                 ],
             },
             "knowledgeBase.transcriptionUnits": {
                 "scalars": [
-                    "wholeCellModelID", "name", "startCoordinate", "endCoordinate",
+                    "wholeCellModelID",
+                    "name",
+                    "startCoordinate",
+                    "endCoordinate",
                     "direction",
                 ],
             },
             "knowledgeBase.parameters": {
                 "scalars": [
-                    "wholeCellModelID", "name", "defaultValue", "units",
+                    "wholeCellModelID",
+                    "name",
+                    "defaultValue",
+                    "units",
                     "experimentallyConstrained",
                 ],
             },
@@ -201,30 +270,55 @@ ARCHIVE_SPEC = {
     # ---- m2 v2 (RNA polymerase mechanics) — flat .mat, take all fields ----
     "transcription_v2_targeted": {
         "fields": [
-            "rnap_properties", "rnap_activelyTranscribingIndex",
-            "rnap_specificallyBoundIndex", "rnap_nonSpecificallyBoundIndex",
-            "rnap_freeIndex", "rnap_activelyTranscribingValue",
-            "rnap_specificallyBoundValue", "rnap_nonSpecificallyBoundValue",
-            "rnap_freeValue", "rnap_notExistValue", "rnap_stateValues",
-            "rnap_stateExpectations", "rnap_states", "rnap_positionStrands",
+            "rnap_properties",
+            "rnap_activelyTranscribingIndex",
+            "rnap_specificallyBoundIndex",
+            "rnap_nonSpecificallyBoundIndex",
+            "rnap_freeIndex",
+            "rnap_activelyTranscribingValue",
+            "rnap_specificallyBoundValue",
+            "rnap_nonSpecificallyBoundValue",
+            "rnap_freeValue",
+            "rnap_notExistValue",
+            "rnap_stateValues",
+            "rnap_stateExpectations",
+            "rnap_states",
+            "rnap_positionStrands",
             "rnap_transcriptionFactorBindingProbFoldChange",
-            "rnap_supercoilingBindingProbFoldChange", "rnap_stateOccupancies",
-            "rnap_nActive", "rnap_nSpecificallyBound", "rnap_nNonSpecificallyBound",
-            "rnap_nFree", "rnap_dryWeight", "rnap_verbosity", "rnap_seed",
+            "rnap_supercoilingBindingProbFoldChange",
+            "rnap_stateOccupancies",
+            "rnap_nActive",
+            "rnap_nSpecificallyBound",
+            "rnap_nNonSpecificallyBound",
+            "rnap_nFree",
+            "rnap_dryWeight",
+            "rnap_verbosity",
+            "rnap_seed",
             "rnap_states_vec",
-            "transcript_properties", "tr_transcriptionUnitLengths",
-            "tr_transcriptionUnitFivePrimeCoordinates", "tr_transcriptionUnitDirections",
-            "pt_enzymes", "pt_boundEnzymes", "pt_enzymeWholeCellModelIDs",
-            "pt_enzymeIndexs_rnaPolymerase", "pt_enzymeIndexs_rnaPolymeraseHoloenzyme",
-            "pt_rnaPolymerases_nActive", "pt_rnaPolymerases_nSpecificallyBound",
-            "pt_rnaPolymerases_nNonSpecificallyBound", "pt_rnaPolymerases_nFree",
-            "pt_rnaPolymerases_states", "pt_rnaPolymerases_stateExpectations",
+            "transcript_properties",
+            "tr_transcriptionUnitLengths",
+            "tr_transcriptionUnitFivePrimeCoordinates",
+            "tr_transcriptionUnitDirections",
+            "pt_enzymes",
+            "pt_boundEnzymes",
+            "pt_enzymeWholeCellModelIDs",
+            "pt_enzymeIndexs_rnaPolymerase",
+            "pt_enzymeIndexs_rnaPolymeraseHoloenzyme",
+            "pt_rnaPolymerases_nActive",
+            "pt_rnaPolymerases_nSpecificallyBound",
+            "pt_rnaPolymerases_nNonSpecificallyBound",
+            "pt_rnaPolymerases_nFree",
+            "pt_rnaPolymerases_states",
+            "pt_rnaPolymerases_stateExpectations",
             "pt_rnaPolymerases_activelyTranscribingValue",
             "pt_rnaPolymerases_specificallyBoundValue",
             "pt_rnaPolymerases_nonSpecificallyBoundValue",
             "pt_rnaPolymerases_freeValue",
-            "pt_tr_transcriptionUnitLengths", "pt_rnaPolymeraseElongationRate",
-            "kb_tu_wholeCellModelIDs", "kb_tu_lengths", "kb_tu_geneWcmIDs",
+            "pt_tr_transcriptionUnitLengths",
+            "pt_rnaPolymeraseElongationRate",
+            "kb_tu_wholeCellModelIDs",
+            "kb_tu_lengths",
+            "kb_tu_geneWcmIDs",
             "kb_geneWholeCellModelIDs_full",
         ],
         "consumer": "karr_native_ingest_m2v2.py",
@@ -232,19 +326,43 @@ ARCHIVE_SPEC = {
     # ---- m3 v2 (ribosome mechanics) — flat .mat, take all fields ----
     "translation_v2_targeted": {
         "fields": [
-            "rib_properties", "rib_activeIndex", "rib_notExistIndex",
-            "rib_stalledIndex", "rib_activeValue", "rib_notExistValue",
-            "rib_stalledValue", "rib_states", "rib_boundMRNAs", "rib_mRNAPositions",
-            "rib_tmRNAPositions", "rib_stateOccupancies", "rib_nActive",
-            "rib_nNotExist", "rib_nStalled", "rib_nMRNAsBound", "rib_dryWeight",
-            "rib_verbosity", "rib_seed", "rib_states_vec",
-            "pt_ribosomeElongationRate", "pt_enzymeWholeCellModelIDs",
-            "pt_enzymes", "pt_boundEnzymes", "pt_mRNAs", "pt_freeTRNAs",
-            "pt_aminoacylatedTRNAs", "pt_polypeptide_monomerLengths",
-            "pt_substrateWholeCellModelIDs", "pt_substrateIndexs_gtp",
+            "rib_properties",
+            "rib_activeIndex",
+            "rib_notExistIndex",
+            "rib_stalledIndex",
+            "rib_activeValue",
+            "rib_notExistValue",
+            "rib_stalledValue",
+            "rib_states",
+            "rib_boundMRNAs",
+            "rib_mRNAPositions",
+            "rib_tmRNAPositions",
+            "rib_stateOccupancies",
+            "rib_nActive",
+            "rib_nNotExist",
+            "rib_nStalled",
+            "rib_nMRNAsBound",
+            "rib_dryWeight",
+            "rib_verbosity",
+            "rib_seed",
+            "rib_states_vec",
+            "pt_ribosomeElongationRate",
+            "pt_enzymeWholeCellModelIDs",
+            "pt_enzymes",
+            "pt_boundEnzymes",
+            "pt_mRNAs",
+            "pt_freeTRNAs",
+            "pt_aminoacylatedTRNAs",
+            "pt_polypeptide_monomerLengths",
+            "pt_substrateWholeCellModelIDs",
+            "pt_substrateIndexs_gtp",
             "pt_substrateIndexs_water",
-            "rna_matureIndexs", "rna_processedIndexs", "rna_nascentIndexs",
-            "rna_counts", "rna_lengths", "poly_monomerLengths",
+            "rna_matureIndexs",
+            "rna_processedIndexs",
+            "rna_nascentIndexs",
+            "rna_counts",
+            "rna_lengths",
+            "poly_monomerLengths",
         ],
         "consumer": "karr_native_ingest_m3v2.py",
     },
@@ -252,17 +370,25 @@ ARCHIVE_SPEC = {
     "metabolism_dynamics": {
         "format": "hdf5_v73",  # marker; processed via h5py path below
         "fields": [
-            "snapshot_substrates", "snapshot_enzymes", "snapshot_cell_dry_mass",
+            "snapshot_substrates",
+            "snapshot_enzymes",
+            "snapshot_cell_dry_mass",
             "step_size_sec",
-            "substrate_indexs_fba", "substrate_indexs_external_exch",
+            "substrate_indexs_fba",
+            "substrate_indexs_external_exch",
             "substrate_indexs_internal_lim",
-            "compartment_indexs_extracellular", "compartment_indexs_cytosol",
+            "compartment_indexs_extracellular",
+            "compartment_indexs_cytosol",
             "compartment_indexs_membrane",
-            "fba_rxn_idx_metab_conv", "fba_rxn_idx_external_exch",
-            "fba_rxn_idx_internal_exch", "fba_rxn_idx_internal_lim_exch",
-            "fba_rxn_idx_internal_unlim_exch", "fba_rxn_idx_biomass_production",
+            "fba_rxn_idx_metab_conv",
+            "fba_rxn_idx_external_exch",
+            "fba_rxn_idx_internal_exch",
+            "fba_rxn_idx_internal_lim_exch",
+            "fba_rxn_idx_internal_unlim_exch",
+            "fba_rxn_idx_biomass_production",
             "fba_rxn_idx_biomass_exchange",
-            "bounds_dynamic_no_protein", "bounds_dynamic_with_protein",
+            "bounds_dynamic_no_protein",
+            "bounds_dynamic_with_protein",
         ],
         "consumer": "karr_native_ingest_m1_dynamics.py",
     },
@@ -272,6 +398,7 @@ ARCHIVE_SPEC = {
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _resolve(node, dotted_path: str):
     """Walk a dotted path under a mat_struct (matlab.mio5_params.mat_struct)."""
@@ -284,7 +411,11 @@ def _resolve(node, dotted_path: str):
 def _to_serializable(value):
     """Convert a leaf to either an ndarray (for npz) or a JSON-safe object."""
     if isinstance(value, np.ndarray):
-        if value.dtype == object and value.size > 0 and isinstance(value.flat[0], (str, bytes, np.str_)):
+        if (
+            value.dtype == object
+            and value.size > 0
+            and isinstance(value.flat[0], (str, bytes, np.str_))
+        ):
             return [str(x) for x in value.flat], "string_list"
         if value.dtype == object:
             # Mixed object array; coerce each element via tolist.
@@ -359,6 +490,7 @@ def _coerce_column(values, name: str):
 # Main extraction loop
 # ---------------------------------------------------------------------------
 
+
 def main() -> int:
     if not SRC.exists():
         print(f"ERROR: source dir {SRC} not found. Run MATLAB extraction first.", file=sys.stderr)
@@ -368,7 +500,7 @@ def main() -> int:
     strings_payload: dict[str, object] = {}
     manifest = {
         "schema_version": "karr_archive__v1",
-        "built_at_utc": datetime.now(timezone.utc).isoformat(),
+        "built_at_utc": datetime.now(UTC).isoformat(),
         "source_dir_relative": str(SRC.relative_to(ROOT)),
         "files": {},
     }
@@ -393,8 +525,10 @@ def main() -> int:
                     key = f"{basename}__{fpath}"
                     npz_payload[key] = arr
                     file_manifest[fpath] = {
-                        "source_path": fpath, "kind": "ndarray",
-                        "dtype": str(arr.dtype), "shape": list(arr.shape),
+                        "source_path": fpath,
+                        "kind": "ndarray",
+                        "dtype": str(arr.dtype),
+                        "shape": list(arr.shape),
                         "sha256_16": _sha256_array(arr),
                         "note": "hdf5_v73 raw shape; consumers may need .T to restore column-major orientation",
                     }
@@ -418,7 +552,8 @@ def main() -> int:
             payload, kind = _to_serializable(val)
             key = f"{basename}__{fpath.replace('.', '__')}"
             entry = {
-                "source_path": fpath, "kind": kind,
+                "source_path": fpath,
+                "kind": kind,
             }
             if kind == "ndarray":
                 npz_payload[key] = payload
@@ -485,7 +620,9 @@ def main() -> int:
                         col_entry["shape"] = list(arr_out.shape)
                         col_entry["sha256_16"] = _sha256_array(arr_out)
                     else:
-                        strings_payload[key] = arr_out if isinstance(arr_out, list) else list(arr_out)
+                        strings_payload[key] = (
+                            arr_out if isinstance(arr_out, list) else list(arr_out)
+                        )
                         col_entry["length"] = len(arr_out)
                     nested_entry["columns"][s] = col_entry
                 sa_entry["nested"][nf] = nested_entry
@@ -502,8 +639,10 @@ def main() -> int:
             if kind == "ndarray":
                 npz_payload[key] = payload
                 file_manifest[sc] = {
-                    "kind": "ndarray", "dtype": str(payload.dtype),
-                    "shape": list(payload.shape), "sha256_16": _sha256_array(payload),
+                    "kind": "ndarray",
+                    "dtype": str(payload.dtype),
+                    "shape": list(payload.shape),
+                    "sha256_16": _sha256_array(payload),
                 }
             else:
                 strings_payload[key] = payload
@@ -527,17 +666,25 @@ def main() -> int:
     npz_sha = hashlib.sha256(npz_path.read_bytes()).hexdigest()
     strings_sha = hashlib.sha256(strings_path.read_bytes()).hexdigest()
     manifest["artifacts"] = {
-        "karr_archive.npz": {"size_bytes": npz_path.stat().st_size, "sha256": npz_sha,
-                              "n_arrays": len(npz_payload)},
-        "karr_archive_strings.json": {"size_bytes": strings_path.stat().st_size,
-                                       "sha256": strings_sha, "n_keys": len(strings_payload)},
+        "karr_archive.npz": {
+            "size_bytes": npz_path.stat().st_size,
+            "sha256": npz_sha,
+            "n_arrays": len(npz_payload),
+        },
+        "karr_archive_strings.json": {
+            "size_bytes": strings_path.stat().st_size,
+            "sha256": strings_sha,
+            "n_keys": len(strings_payload),
+        },
     }
     with open(manifest_path, "w") as f:
         json.dump(manifest, f, indent=2, default=str)
 
     print()
-    print(f"Wrote {npz_path}  ({npz_path.stat().st_size/1024:.1f} KB, {len(npz_payload)} arrays)")
-    print(f"Wrote {strings_path}  ({strings_path.stat().st_size/1024:.1f} KB, {len(strings_payload)} keys)")
+    print(f"Wrote {npz_path}  ({npz_path.stat().st_size / 1024:.1f} KB, {len(npz_payload)} arrays)")
+    print(
+        f"Wrote {strings_path}  ({strings_path.stat().st_size / 1024:.1f} KB, {len(strings_payload)} keys)"
+    )
     print(f"Wrote {manifest_path}")
     return 0
 

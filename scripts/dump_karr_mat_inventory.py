@@ -13,6 +13,7 @@ ARCHIVE_SPEC in scripts/build_karr_archive.py) consume that exact path.
 This is a discovery tool: "does Karr have field X?" — never reads the full
 payload of large arrays beyond what's needed for shape/dtype/sample/sha256.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -20,12 +21,13 @@ import importlib.util
 import json
 import sys
 import traceback
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
 from scipy.io import loadmat
 from scipy.io.matlab import mat_struct
+
 try:
     from scipy.io.matlab import MatlabFunction, MatlabOpaque
 except ImportError:  # older scipy
@@ -52,6 +54,7 @@ STRUCT_ARRAY_ROW_LIMIT = 0  # walk only row 0 for schema discovery
 # ---------------------------------------------------------------------------
 # Load ARCHIVE_SPEC from build_karr_archive.py to derive consumed_by mapping.
 # ---------------------------------------------------------------------------
+
 
 def _load_archive_spec() -> dict:
     spec_path = ROOT / "scripts" / "build_karr_archive.py"
@@ -93,6 +96,7 @@ def _build_consumed_index(archive_spec: dict) -> dict[str, dict[str, list[str]]]
 # ---------------------------------------------------------------------------
 # Path / sample / sha helpers
 # ---------------------------------------------------------------------------
+
 
 def _strip_indices(path: str) -> str:
     """Remove '[N]' segments so 'a.b[0].c' -> 'a.b.c' for matching against spec."""
@@ -152,6 +156,7 @@ def _sha256_of(arr: np.ndarray) -> str | None:
 # Classify a value
 # ---------------------------------------------------------------------------
 
+
 def _classify(value) -> str:
     if value is None:
         return "empty"
@@ -206,8 +211,14 @@ def _make_leaf(source_file: str, path: str, value, consumed_index_for_file) -> d
         rec["sha256"] = _sha256_of(arr)
         rec["sample"] = _sample_preview(arr, "ndarray")
     elif kind == "string":
-        s = value if isinstance(value, str) else (
-            value.decode("utf-8", "replace") if isinstance(value, bytes) else str(np.asarray(value).flat[0])
+        s = (
+            value
+            if isinstance(value, str)
+            else (
+                value.decode("utf-8", "replace")
+                if isinstance(value, bytes)
+                else str(np.asarray(value).flat[0])
+            )
         )
         rec["dtype"] = "str"
         rec["shape"] = [len(s)]
@@ -228,9 +239,7 @@ def _make_leaf(source_file: str, path: str, value, consumed_index_for_file) -> d
         if isinstance(value, np.ndarray):
             rec["dtype"] = str(value.dtype)
             rec["shape"] = list(value.shape)
-    elif kind == "function_handle":
-        rec["dtype"] = type(value).__name__
-    elif kind == "object":
+    elif kind == "function_handle" or kind == "object":
         rec["dtype"] = type(value).__name__
     else:
         rec["dtype"] = type(value).__name__
@@ -242,7 +251,10 @@ def _make_leaf(source_file: str, path: str, value, consumed_index_for_file) -> d
 # Walkers
 # ---------------------------------------------------------------------------
 
-def _walk_struct(value, path: str, source_file: str, consumed_idx, leaves: list, errors: list):
+
+def _walk_struct(
+    value, path: str, source_file: str, consumed_idx, leaves: list, errors: list
+) -> None:
     """Recursively walk a mat_struct, emitting a leaf for every field."""
     try:
         for name in value._fieldnames:
@@ -257,17 +269,28 @@ def _walk_struct(value, path: str, source_file: str, consumed_idx, leaves: list,
         errors.append(f"{source_file}:{path}: struct walk failed: {e!r}\n{traceback.format_exc()}")
 
 
-def _walk_value(value, path: str, source_file: str, consumed_idx, leaves: list, errors: list):
+def _walk_value(
+    value, path: str, source_file: str, consumed_idx, leaves: list, errors: list
+) -> None:
     """Emit a leaf and, if struct/struct_array, recurse into row-0 schema."""
     try:
         leaf = _make_leaf(source_file, path, value, consumed_idx)
     except Exception as e:
         errors.append(f"{source_file}:{path}: classify failed: {e!r}")
-        leaves.append({
-            "source_file": source_file, "path": path, "kind": "unknown",
-            "dtype": None, "shape": None, "nbytes": 0, "sha256": None,
-            "sample": None, "consumed_by": [], "error": repr(e),
-        })
+        leaves.append(
+            {
+                "source_file": source_file,
+                "path": path,
+                "kind": "unknown",
+                "dtype": None,
+                "shape": None,
+                "nbytes": 0,
+                "sha256": None,
+                "sample": None,
+                "consumed_by": [],
+                "error": repr(e),
+            }
+        )
         return
 
     leaves.append(leaf)
@@ -289,6 +312,7 @@ def _walk_value(value, path: str, source_file: str, consumed_idx, leaves: list, 
 # v7.0 .mat (scipy.io.loadmat) walker
 # ---------------------------------------------------------------------------
 
+
 def walk_mat_v7(path: Path, consumed_idx, errors: list) -> list[dict]:
     leaves: list[dict] = []
     md = loadmat(str(path), struct_as_record=False, squeeze_me=True)
@@ -298,13 +322,16 @@ def walk_mat_v7(path: Path, consumed_idx, errors: list) -> list[dict]:
         try:
             _walk_value(value, var_name, path.name, consumed_idx, leaves, errors)
         except Exception as e:
-            errors.append(f"{path.name}:{var_name}: top-level walk failed: {e!r}\n{traceback.format_exc()}")
+            errors.append(
+                f"{path.name}:{var_name}: top-level walk failed: {e!r}\n{traceback.format_exc()}"
+            )
     return leaves
 
 
 # ---------------------------------------------------------------------------
 # v7.3 .mat (HDF5) walker
 # ---------------------------------------------------------------------------
+
 
 def walk_mat_v73(path: Path, consumed_idx, errors: list) -> list[dict]:
     leaves: list[dict] = []
@@ -313,7 +340,8 @@ def walk_mat_v73(path: Path, consumed_idx, errors: list) -> list[dict]:
         return leaves
 
     with h5py.File(str(path), "r") as f:
-        def visit(name, obj):
+
+        def visit(name, obj) -> None:
             try:
                 if isinstance(obj, h5py.Dataset):
                     dotted = name.replace("/", ".")
@@ -350,7 +378,8 @@ def walk_mat_v73(path: Path, consumed_idx, errors: list) -> list[dict]:
 # Summary writer
 # ---------------------------------------------------------------------------
 
-def write_summary(all_leaves: list[dict], errors: list[str]):
+
+def write_summary(all_leaves: list[dict], errors: list[str]) -> None:
     by_file: dict[str, list[dict]] = {}
     for L in all_leaves:
         by_file.setdefault(L["source_file"], []).append(L)
@@ -358,8 +387,8 @@ def write_summary(all_leaves: list[dict], errors: list[str]):
     lines: list[str] = []
     lines.append("# Karr .mat Full Inventory Summary")
     lines.append("")
-    lines.append(f"Generated: {datetime.now(timezone.utc).isoformat()}")
-    lines.append(f"Source dir: `data/m1_sources/karr_flat/`")
+    lines.append(f"Generated: {datetime.now(UTC).isoformat()}")
+    lines.append("Source dir: `data/m1_sources/karr_flat/`")
     lines.append(f"Total leaves: **{len(all_leaves)}** across **{len(by_file)}** files")
     lines.append("")
     total_consumed = sum(1 for L in all_leaves if L["consumed_by"])
@@ -378,7 +407,7 @@ def write_summary(all_leaves: list[dict], errors: list[str]):
         lines.append("")
         lines.append(f"- Leaves: **{len(leaves)}**  (consumed: {consumed_here})")
         lines.append(f"- Total ndarray bytes: **{total_bytes:,}**")
-        lines.append(f"- Kinds: " + ", ".join(f"`{k}`={v}" for k, v in sorted(kinds.items())))
+        lines.append("- Kinds: " + ", ".join(f"`{k}`={v}" for k, v in sorted(kinds.items())))
         lines.append("")
         top = sorted(leaves, key=lambda L: L.get("nbytes") or 0, reverse=True)[:20]
         lines.append("### Top-20 largest leaves")
@@ -408,7 +437,8 @@ def write_summary(all_leaves: list[dict], errors: list[str]):
 # Main
 # ---------------------------------------------------------------------------
 
-def main():
+
+def main() -> int:
     if not SRC.exists():
         print(f"ERROR: source dir not found: {SRC}", file=sys.stderr)
         return 2

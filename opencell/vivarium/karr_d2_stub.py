@@ -21,9 +21,7 @@ from scipy.io import loadmat
 from vivarium.core.process import Process
 
 _LOGGER = logging.getLogger(__name__)
-_FIXTURE_DIR = (
-    Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "per_process"
-)
+_FIXTURE_DIR = Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "per_process"
 _PROTEIN_COMPLEX_FLAT = _FIXTURE_DIR / "ProteinComplex_flat.mat"
 _MACROMOLECULAR_COMPLEXATION_FLAT = _FIXTURE_DIR / "MacromolecularComplexation_flat.mat"
 _RIBOSOME_ASSEMBLY_FLAT = _FIXTURE_DIR / "RibosomeAssembly_flat.mat"
@@ -79,9 +77,7 @@ class KarrD2StubProcess(Process):
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
         super().__init__(parameters)
         protein_complex_path = Path(self.parameters["protein_complex_path"])
-        macromolecular_complexation_path = Path(
-            self.parameters["macromolecular_complexation_path"]
-        )
+        macromolecular_complexation_path = Path(self.parameters["macromolecular_complexation_path"])
         ribosome_assembly_path = Path(self.parameters["ribosome_assembly_path"])
 
         self.d2_owned_wids = _derive_d2_owned_wids(
@@ -112,10 +108,7 @@ class KarrD2StubProcess(Process):
     def ports_schema(self) -> dict[str, Any]:
         return {
             "complex": {
-                "counts": {
-                    wid: dict(schema)
-                    for wid, schema in self._complex_counts_schema.items()
-                }
+                "counts": {wid: dict(schema) for wid, schema in self._complex_counts_schema.items()}
             }
         }
 
@@ -127,4 +120,3 @@ class KarrD2StubProcess(Process):
 __all__ = [
     "KarrD2StubProcess",
 ]
-

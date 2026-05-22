@@ -40,9 +40,7 @@ def _derive_expected_snapshot() -> tuple[tuple[str, ...], dict[str, float]]:
     pc = _load_fixture(_PROTEIN_COMPLEX_FLAT)
 
     d2_wids = set(np.asarray(mc.complexWholeCellModelIDs, dtype=object).ravel().astype(str))
-    d2_wids.update(
-        np.asarray(ra.complexWholeCellModelIDs, dtype=object).ravel().astype(str)
-    )
+    d2_wids.update(np.asarray(ra.complexWholeCellModelIDs, dtype=object).ravel().astype(str))
     d2_wids_sorted = tuple(sorted(d2_wids))
 
     form_wids = np.asarray(pc.wholeCellModelIDs, dtype=object).ravel().astype(str)
@@ -59,10 +57,7 @@ def _derive_expected_snapshot() -> tuple[tuple[str, ...], dict[str, float]]:
             continue
         mature_count_by_wid[form_wids[row]] = float(counts[row, col])
 
-    expected = {
-        wid: float(mature_count_by_wid.get(wid, 0.0))
-        for wid in d2_wids_sorted
-    }
+    expected = {wid: float(mature_count_by_wid.get(wid, 0.0)) for wid in d2_wids_sorted}
     return d2_wids_sorted, expected
 
 
@@ -83,4 +78,3 @@ def test_d2_stub_seeds_defaults_and_stays_static() -> None:
 
     for wid in d2_wids:
         assert float(complex_counts_t1[wid]) == pytest.approx(expected[wid])
-

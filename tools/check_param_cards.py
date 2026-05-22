@@ -1,4 +1,5 @@
 """Smoke test: load and audit parameter cards."""
+
 from __future__ import annotations
 
 import sys

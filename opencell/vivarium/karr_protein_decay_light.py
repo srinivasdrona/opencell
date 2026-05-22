@@ -19,9 +19,7 @@ import numpy as np
 from scipy.io import loadmat
 from vivarium.core.process import Process
 
-_FIXTURE_DIR = (
-    Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "per_process"
-)
+_FIXTURE_DIR = Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "per_process"
 _PROTEIN_DECAY_FLAT = _FIXTURE_DIR / "ProteinDecay_flat.mat"
 _MACROMOLECULAR_COMPLEXATION_FLAT = _FIXTURE_DIR / "MacromolecularComplexation_flat.mat"
 _LN2 = math.log(2.0)
@@ -36,7 +34,8 @@ def _fixture_wids(values: object) -> list[str]:
 
 
 def _fixture_state_by_class(
-    fixture: object, class_name: str  # noqa: ANN401 - matlab struct dynamic
+    fixture: object,
+    class_name: str,  # noqa: ANN401 - matlab struct dynamic
 ) -> object:  # noqa: ANN401 - matlab struct dynamic
     for state in np.asarray(fixture.states, dtype=object).ravel():
         if getattr(state, "x_class_", "") == class_name:
@@ -210,9 +209,7 @@ class ProteinDecayLightProcess(Process):
         rna_deltas = self.protein_complex_rna_composition @ n_decay
 
         complex_update = {
-            wid: float(-n_decay[i])
-            for i, wid in enumerate(self.complex_wids)
-            if n_decay[i] > 0
+            wid: float(-n_decay[i]) for i, wid in enumerate(self.complex_wids) if n_decay[i] > 0
         }
         protein_update = {
             wid: float(monomer_deltas[i])
@@ -220,9 +217,7 @@ class ProteinDecayLightProcess(Process):
             if monomer_deltas[i] != 0
         }
         rna_update = {
-            wid: float(rna_deltas[i])
-            for i, wid in enumerate(self.rna_wids)
-            if rna_deltas[i] != 0
+            wid: float(rna_deltas[i]) for i, wid in enumerate(self.rna_wids) if rna_deltas[i] != 0
         }
 
         consume_atp_h2o = bool(self.parameters["consume_atp_h2o"])

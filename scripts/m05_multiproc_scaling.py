@@ -16,6 +16,7 @@ Method:
 Both swept over N ∈ {1, 2, 4, 8, 16, 32}; fixed horizon 600s, macro_dt 60s
 (10 macro steps). We measure wall time and derive overhead per Process.
 """
+
 from __future__ import annotations
 
 import json
@@ -30,16 +31,16 @@ from vivarium.core.process import Process
 from opencell.models.coupled import CoupledMetabolismTranscription
 from opencell.vivarium.processes import MetabolismProcess
 
-
 HORIZON_S = 600.0
 MACRO_DT_S = 60.0
 N_VALUES_NOOP = [1, 2, 4, 8, 16, 32]
-N_VALUES_METAB = [1, 2, 4, 8, 16]   # n=32 takes >10 min; the curve is clear by 16
-K_PORTS = 4   # floats read+written per noop Process
+N_VALUES_METAB = [1, 2, 4, 8, 16]  # n=32 takes >10 min; the curve is clear by 16
+K_PORTS = 4  # floats read+written per noop Process
 
 
 class NoopProcess(Process):
     """Reads K floats, writes K back. No biology, no solver."""
+
     name = "noop"
     defaults: dict[str, Any] = {"k": K_PORTS, "idx": 0}
 
@@ -47,8 +48,7 @@ class NoopProcess(Process):
         k = self.parameters["k"]
         return {
             "store": {
-                f"x{i}": {"_default": 0.0, "_updater": "set", "_emit": False}
-                for i in range(k)
+                f"x{i}": {"_default": 0.0, "_updater": "set", "_emit": False} for i in range(k)
             }
         }
 
@@ -100,14 +100,17 @@ def main() -> int:
             per_proc = wall / n
             per_step_per_proc = per_proc / (HORIZON_S / MACRO_DT_S)
             row = {
-                "rig": label, "n": n,
+                "rig": label,
+                "n": n,
                 "wall_s": round(wall, 3),
                 "per_process_s": round(per_proc, 4),
                 "per_macro_step_per_process_ms": round(per_step_per_proc * 1000, 3),
             }
             rows.append(row)
-            print(f"[{label} n={n:>3}] wall={wall:7.3f}s  per_proc={per_proc:7.4f}s  "
-                  f"per_step_per_proc={per_step_per_proc*1000:6.2f}ms")
+            print(
+                f"[{label} n={n:>3}] wall={wall:7.3f}s  per_proc={per_proc:7.4f}s  "
+                f"per_step_per_proc={per_step_per_proc * 1000:6.2f}ms"
+            )
 
     # Compute scaling exponent (log-log fit) for each rig
     summary = {}
@@ -125,10 +128,18 @@ def main() -> int:
 
     out = Path("artifacts/M05_multiproc_scaling.json")
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps({
-        "horizon_s": HORIZON_S, "macro_dt_s": MACRO_DT_S,
-        "k_ports": K_PORTS, "rows": rows, "summary": summary,
-    }, indent=2))
+    out.write_text(
+        json.dumps(
+            {
+                "horizon_s": HORIZON_S,
+                "macro_dt_s": MACRO_DT_S,
+                "k_ports": K_PORTS,
+                "rows": rows,
+                "summary": summary,
+            },
+            indent=2,
+        )
+    )
     print(f"\n{json.dumps(summary, indent=2)}")
     print(f"\nwrote {out}")
     return 0

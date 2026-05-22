@@ -24,20 +24,16 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-
 import roadrunner
 
 from opencell.models.metabolism import MetabolismModel
 from opencell.solvers.ode_scipy import ScipySolverConfig, solve_ode_scipy
 
-
 HIGHLIGHT = ["cglcex", "cg6p", "cf6p", "cfdp", "cgap", "cpep", "cpyr"]
 COLORS = plt.cm.tab10.colors  # type: ignore[attr-defined]
 
 
-def run_opencell(
-    model: MetabolismModel, t_eval: np.ndarray, t_end: float
-) -> dict[str, np.ndarray]:
+def run_opencell(model: MetabolismModel, t_eval: np.ndarray, t_end: float) -> dict[str, np.ndarray]:
     res = solve_ode_scipy(
         model.rhs,
         model.initial_y,
@@ -81,10 +77,7 @@ def plot_one(
         ax.plot(t, series[sid], color=COLORS[k], linewidth=1.6, label=sid)
     ax.set_xlabel("time (s)")
     ax.set_ylabel("concentration (mM)")
-    ax.set_title(
-        f"{title} — {duration_label} simulation\n"
-        f"BIOMD0000000051 SHA-256 {sha_short}"
-    )
+    ax.set_title(f"{title} — {duration_label} simulation\nBIOMD0000000051 SHA-256 {sha_short}")
     ax.grid(alpha=0.3)
     ax.legend(loc="best", fontsize=9)
     fig.tight_layout()
@@ -102,14 +95,16 @@ def plot_overlay(
     duration_label: str,
 ) -> None:
     fig, (ax_top, ax_bot) = plt.subplots(
-        2, 1, figsize=(10, 8), sharex=True,
+        2,
+        1,
+        figsize=(10, 8),
+        sharex=True,
         gridspec_kw={"height_ratios": [3, 2]},
     )
     for k, sid in enumerate(HIGHLIGHT):
         c = COLORS[k]
         ax_top.plot(t, rr[sid], color=c, linewidth=2.5, alpha=0.35, label=f"{sid} (RR)")
-        ax_top.plot(t, ours[sid], color=c, linewidth=1.0, linestyle="--",
-                    label=f"{sid} (OpenCell)")
+        ax_top.plot(t, ours[sid], color=c, linewidth=1.0, linestyle="--", label=f"{sid} (OpenCell)")
     ax_top.set_ylabel("concentration (mM)")
     ax_top.set_title(
         f"OpenCell (dashed) vs libroadrunner (thick translucent) — Chassagnole 2002 "
@@ -138,10 +133,13 @@ def plot_overlay(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--seconds", type=float, default=60.0,
-                        help="Simulated end time in seconds")
-    parser.add_argument("--points", type=int, default=None,
-                        help="Number of output time points (default: 10*seconds + 1)")
+    parser.add_argument("--seconds", type=float, default=60.0, help="Simulated end time in seconds")
+    parser.add_argument(
+        "--points",
+        type=int,
+        default=None,
+        help="Number of output time points (default: 10*seconds + 1)",
+    )
     args = parser.parse_args()
 
     t_end = float(args.seconds)
@@ -166,16 +164,26 @@ def main() -> None:
     plot_one(
         "OpenCell (libsbml + sympy + LSODA)",
         out_dir / f"chassagnole_opencell_{secs_label}.png",
-        t_eval, ours, sha_short, duration_label,
+        t_eval,
+        ours,
+        sha_short,
+        duration_label,
     )
     plot_one(
         "libroadrunner (CVODE)",
         out_dir / f"chassagnole_roadrunner_{secs_label}.png",
-        t_rr, rr_full, sha_short, duration_label,
+        t_rr,
+        rr_full,
+        sha_short,
+        duration_label,
     )
     plot_overlay(
         out_dir / f"chassagnole_overlay_{secs_label}.png",
-        t_eval, ours, rr_full, sha_short, duration_label,
+        t_eval,
+        ours,
+        rr_full,
+        sha_short,
+        duration_label,
     )
 
     print("\nMax relative difference per species:")

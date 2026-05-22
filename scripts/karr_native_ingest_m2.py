@@ -14,6 +14,7 @@ Run via .venv-wsl:
 The archive is built once from raw .mat by ``scripts/build_karr_archive.py``
 (MATLAB only required for re-extracting the .mat in the first place).
 """
+
 from __future__ import annotations
 
 import json
@@ -75,26 +76,24 @@ def main() -> None:
     direction: np.ndarray = np.zeros(n_genes, dtype=np.int8)
     start_coord: np.ndarray = np.zeros(n_genes, dtype=np.int32)
     end_coord: np.ndarray = np.zeros(n_genes, dtype=np.int32)
-    expression: np.ndarray = np.zeros((n_genes, 3), dtype=float)   # 3-col: low / mean / high
+    expression: np.ndarray = np.zeros((n_genes, 3), dtype=float)  # 3-col: low / mean / high
     synthesis_rate: np.ndarray = np.zeros((n_genes, 3), dtype=float)
     essential: list[str] = []
 
     for i, g in enumerate(genes):
-        wcm_ids.append(str(getattr(g, "wholeCellModelID")))
-        symbols.append(str(getattr(g, "symbol")))
-        gene_types.append(str(getattr(g, "type")))
-        half_life[i] = _scalar(getattr(g, "halfLife"))
-        s = int(_scalar(getattr(g, "startCoordinate")))
-        e = int(_scalar(getattr(g, "endCoordinate")))
+        wcm_ids.append(str(g.wholeCellModelID))
+        symbols.append(str(g.symbol))
+        gene_types.append(str(g.type))
+        half_life[i] = _scalar(g.halfLife)
+        s = int(_scalar(g.startCoordinate))
+        e = int(_scalar(g.endCoordinate))
         start_coord[i] = s
         end_coord[i] = e
         length_nt[i] = abs(e - s) + 1
-        direction[i] = int(_scalar(getattr(g, "direction")))
-        expression[i, :] = np.asarray(getattr(g, "expression"), dtype=float).reshape(-1)[:3]
-        synthesis_rate[i, :] = np.asarray(
-            getattr(g, "synthesisRate"), dtype=float
-        ).reshape(-1)[:3]
-        essential.append(str(getattr(g, "essential")))
+        direction[i] = int(_scalar(g.direction))
+        expression[i, :] = np.asarray(g.expression, dtype=float).reshape(-1)[:3]
+        synthesis_rate[i, :] = np.asarray(g.synthesisRate, dtype=float).reshape(-1)[:3]
+        essential.append(str(g.essential))
 
     # Karr WCKB convention: halfLife is in MINUTES, synthesisRate is in
     # transcripts per MINUTE.  At steady state: RNA = synthesisRate / decay
@@ -140,23 +139,24 @@ def main() -> None:
     mature_idx_full = np.asarray(rna_mat.matureIndexs, dtype=int).reshape(-1) - 1
     mw_full = np.asarray(rna_mat.molecularWeights, dtype=float).reshape(-1)
     counts_full = np.asarray(rna_mat.counts).astype(float)  # (2428, 6) uint8
-    state_tu_wcm = [str(x) for x in
-                    np.asarray(rna_mat.wholeCellModelIDs, dtype=object).reshape(-1)]
+    state_tu_wcm = [str(x) for x in np.asarray(rna_mat.wholeCellModelIDs, dtype=object).reshape(-1)]
     mature_mw = mw_full[mature_idx_full]
     mature_counts_cyt = counts_full[mature_idx_full, 0]  # (347,) cytosol
     mature_wcm = [state_tu_wcm[i] for i in mature_idx_full]
-    state_mature_mw = dict(zip(mature_wcm, mature_mw.tolist()))
-    state_mature_count = dict(zip(mature_wcm, mature_counts_cyt.tolist()))
+    state_mature_mw = dict(zip(mature_wcm, mature_mw.tolist(), strict=False))
+    state_mature_count = dict(zip(mature_wcm, mature_counts_cyt.tolist(), strict=False))
 
-    kb_tu_wcm = [str(x) for x in
-                 np.asarray(rna_mat.kb_tu_wholeCellModelIDs, dtype=object).reshape(-1)]
-    kb_gene_wcm = [str(x) for x in
-                   np.asarray(rna_mat.kb_gene_wholeCellModelIDs, dtype=object).reshape(-1)]
+    kb_tu_wcm = [
+        str(x) for x in np.asarray(rna_mat.kb_tu_wholeCellModelIDs, dtype=object).reshape(-1)
+    ]
+    kb_gene_wcm = [
+        str(x) for x in np.asarray(rna_mat.kb_gene_wholeCellModelIDs, dtype=object).reshape(-1)
+    ]
     gene_to_tu_1based = np.asarray(rna_mat.kb_gene_to_tu_index, dtype=int).reshape(-1)
 
     assert kb_gene_wcm == wcm_ids, (
         "kb gene wcm order != KB.genes order (M2 fixture). "
-        f"first mismatch idx={[i for i,(a,b) in enumerate(zip(kb_gene_wcm, wcm_ids)) if a!=b][:3]}"
+        f"first mismatch idx={[i for i, (a, b) in enumerate(zip(kb_gene_wcm, wcm_ids, strict=False)) if a != b][:3]}"
     )
 
     # Count member genes per TU (1-based indexing), restricted to TUs
@@ -180,12 +180,14 @@ def main() -> None:
     n_direct = 0
     n_tu_split = 0
     n_orphan = 0
-    for i, (gene, tu1) in enumerate(zip(wcm_ids, gene_to_tu_1based)):
+    for i, (gene, tu1) in enumerate(zip(wcm_ids, gene_to_tu_1based, strict=False)):
         # Tier 1: direct gene-WCM match.
         if gene in state_mature_mw:
             rna_molecular_weight[i] = state_mature_mw[gene]
             counts_mature[i] = state_mature_count[gene]
-            rna_mw_provenance.append(f"direct={gene} mw={state_mature_mw[gene]:.0f} cnt={state_mature_count[gene]:.0f}")
+            rna_mw_provenance.append(
+                f"direct={gene} mw={state_mature_mw[gene]:.0f} cnt={state_mature_count[gene]:.0f}"
+            )
             n_direct += 1
             continue
         # Tier 2: TU lookup with member-gene split.
@@ -265,88 +267,102 @@ def main() -> None:
         counts_mature=counts_mature,
     )
 
-    JSON_OUT.write_text(json.dumps({
-        "schema_version": SCHEMA_VERSION,
-        "source_archive": "data/karr_archive/karr_archive.npz",
-        "source_archive_files": ["sim_fitted_targeted", "knowledgeBase_targeted", "rnas_targeted"],
-        "matrix_npz": str(NPZ_OUT.relative_to(REPO)),
-        "counts": {
-            "n_genes": n_genes,
-            "n_transcription_units": int(tu_binding.size),
-            "type_counts": type_counts,
-        },
-        "scalars": {
-            "rna_polymerase_elongation_rate_nt_per_s": elongation_rate_nt_per_s,
-        },
-        "ids": {
-            "gene_wcm_525": wcm_ids,
-            "gene_symbols_525": symbols,
-            "gene_types_525": gene_types,
-            "gene_essential_525": essential,
-        },
-        "shapes": {
-            "expression": list(expression.shape),
-            "synthesis_rate": list(synthesis_rate.shape),
-            "rna_ss_predicted": list(rna_ss_predicted.shape),
-            "tu_binding_probabilities": list(tu_binding.shape),
-            "rna_molecular_weight": list(rna_molecular_weight.shape),
-            "counts_mature": list(counts_mature.shape),
-        },
-        "rna_mw_coverage": {
-            "n_genes_direct_match": n_direct,
-            "n_genes_tu_split": n_tu_split,
-            "n_genes_seqlen_fallback": n_fallback_mw,
-            "n_genes_orphan": n_orphan,
-            "n_genes_with_mw_total": n_genes_with_mw,
-            "n_genes_total": n_genes,
-            "fraction_total": n_genes_with_mw / n_genes,
-            "policy": "Two-tier: (1) direct gene-WCM match in State_Rna mature (covers non-mRNAs + monocistronic), (2) TU-WCM lookup with mass split equally across member genes (polycistronic mRNAs). length-based MW fallback only for genes whose TU is absent from state.",
-        },
-        "counts_mature_summary": {
-            "total_counts_reference": total_counts_mature,
-            "total_counts_per_condition": total_counts_mature_per_condition,
-            "reference_condition_index": KARR_REFERENCE_CONDITION_INDEX,
-            "condition_index_map": KARR_CONDITION_INDEX,
-            "n_genes_with_count": n_genes_with_count,
-            "rna_mass_total_da": rna_mass_da,
-            "rna_mass_total_g": rna_mass_g,
-            "note": (
-                "counts_mature is shape (n_genes, 3) -- per-condition mature "
-                "cytosol counts (low / mean / high).  The reference column "
-                "(condition_index_map['mean']) is the State_Rna.counts[matureIdx, c=0] "
-                "snapshot from sim_fitted_targeted.mat resolved per the two-tier "
-                "policy; the other two columns are the snapshot scaled per-gene "
-                "by the ratio expression[:, c]/expression[:, mean].  Sum of the "
-                "reference column equals Karr's State_Rna mature cytosol total "
-                "(~784 molecules)."
-            ),
-        },
-        "interpretation": (
-            "Karr-native M2 transcription fixture. 525 genes (482 mRNA + "
-            "3 rRNA + 4 sRNA + 36 tRNA per Karr WCKB) with halfLife (min), "
-            "length_nt, expression(3) and synthesisRate(3) [low / mean / "
-            "high]. 335 transcriptionUnits with Karr's fitted "
-            "binding probabilities (the gold-standard fit; Karr fits these "
-            "to make simulated steady-state expression match observed "
-            "microarray data). Steady-state RNA count derived as "
-            "synthesisRate / decay where decay = ln(2)/halfLife. "
-            "rna_ss_predicted is the column 1 (mean) prediction; the "
-            "M2 oracle compares this against KB.expression[:, 1]."
-        ),
-    }, indent=2))
+    JSON_OUT.write_text(
+        json.dumps(
+            {
+                "schema_version": SCHEMA_VERSION,
+                "source_archive": "data/karr_archive/karr_archive.npz",
+                "source_archive_files": [
+                    "sim_fitted_targeted",
+                    "knowledgeBase_targeted",
+                    "rnas_targeted",
+                ],
+                "matrix_npz": str(NPZ_OUT.relative_to(REPO)),
+                "counts": {
+                    "n_genes": n_genes,
+                    "n_transcription_units": int(tu_binding.size),
+                    "type_counts": type_counts,
+                },
+                "scalars": {
+                    "rna_polymerase_elongation_rate_nt_per_s": elongation_rate_nt_per_s,
+                },
+                "ids": {
+                    "gene_wcm_525": wcm_ids,
+                    "gene_symbols_525": symbols,
+                    "gene_types_525": gene_types,
+                    "gene_essential_525": essential,
+                },
+                "shapes": {
+                    "expression": list(expression.shape),
+                    "synthesis_rate": list(synthesis_rate.shape),
+                    "rna_ss_predicted": list(rna_ss_predicted.shape),
+                    "tu_binding_probabilities": list(tu_binding.shape),
+                    "rna_molecular_weight": list(rna_molecular_weight.shape),
+                    "counts_mature": list(counts_mature.shape),
+                },
+                "rna_mw_coverage": {
+                    "n_genes_direct_match": n_direct,
+                    "n_genes_tu_split": n_tu_split,
+                    "n_genes_seqlen_fallback": n_fallback_mw,
+                    "n_genes_orphan": n_orphan,
+                    "n_genes_with_mw_total": n_genes_with_mw,
+                    "n_genes_total": n_genes,
+                    "fraction_total": n_genes_with_mw / n_genes,
+                    "policy": "Two-tier: (1) direct gene-WCM match in State_Rna mature (covers non-mRNAs + monocistronic), (2) TU-WCM lookup with mass split equally across member genes (polycistronic mRNAs). length-based MW fallback only for genes whose TU is absent from state.",
+                },
+                "counts_mature_summary": {
+                    "total_counts_reference": total_counts_mature,
+                    "total_counts_per_condition": total_counts_mature_per_condition,
+                    "reference_condition_index": KARR_REFERENCE_CONDITION_INDEX,
+                    "condition_index_map": KARR_CONDITION_INDEX,
+                    "n_genes_with_count": n_genes_with_count,
+                    "rna_mass_total_da": rna_mass_da,
+                    "rna_mass_total_g": rna_mass_g,
+                    "note": (
+                        "counts_mature is shape (n_genes, 3) -- per-condition mature "
+                        "cytosol counts (low / mean / high).  The reference column "
+                        "(condition_index_map['mean']) is the State_Rna.counts[matureIdx, c=0] "
+                        "snapshot from sim_fitted_targeted.mat resolved per the two-tier "
+                        "policy; the other two columns are the snapshot scaled per-gene "
+                        "by the ratio expression[:, c]/expression[:, mean].  Sum of the "
+                        "reference column equals Karr's State_Rna mature cytosol total "
+                        "(~784 molecules)."
+                    ),
+                },
+                "interpretation": (
+                    "Karr-native M2 transcription fixture. 525 genes (482 mRNA + "
+                    "3 rRNA + 4 sRNA + 36 tRNA per Karr WCKB) with halfLife (min), "
+                    "length_nt, expression(3) and synthesisRate(3) [low / mean / "
+                    "high]. 335 transcriptionUnits with Karr's fitted "
+                    "binding probabilities (the gold-standard fit; Karr fits these "
+                    "to make simulated steady-state expression match observed "
+                    "microarray data). Steady-state RNA count derived as "
+                    "synthesisRate / decay where decay = ln(2)/halfLife. "
+                    "rna_ss_predicted is the column 1 (mean) prediction; the "
+                    "M2 oracle compares this against KB.expression[:, 1]."
+                ),
+            },
+            indent=2,
+        )
+    )
 
     print(f"wrote {JSON_OUT.relative_to(REPO)} ({JSON_OUT.stat().st_size:,} B)")
     print(f"wrote {NPZ_OUT.relative_to(REPO)} ({NPZ_OUT.stat().st_size:,} B)")
-    print(f"genes: {n_genes} ({type_counts}); TUs: {tu_binding.size}; "
-          f"elongation rate: {elongation_rate_nt_per_s} nt/s")
+    print(
+        f"genes: {n_genes} ({type_counts}); TUs: {tu_binding.size}; "
+        f"elongation rate: {elongation_rate_nt_per_s} nt/s"
+    )
     # Spot-check
     print(f"sample (gene 0 = {wcm_ids[0]}, {symbols[0]}, {gene_types[0]}):")
-    print(f"  halfLife={half_life[0]:.3f} min, decay={decay_rate_per_min[0]:.4g} /min,"
-          f" length={length_nt[0]} nt")
-    print(f"  expression=({expression[0,0]:.3g}, {expression[0,1]:.3g}, "
-          f"{expression[0,2]:.3g})")
-    print(f"  synthesisRate=({synthesis_rate[0,0]:.3g}, "
-          f"{synthesis_rate[0,1]:.3g}, {synthesis_rate[0,2]:.3g}) /min")
+    print(
+        f"  halfLife={half_life[0]:.3f} min, decay={decay_rate_per_min[0]:.4g} /min,"
+        f" length={length_nt[0]} nt"
+    )
+    print(f"  expression=({expression[0, 0]:.3g}, {expression[0, 1]:.3g}, {expression[0, 2]:.3g})")
+    print(
+        f"  synthesisRate=({synthesis_rate[0, 0]:.3g}, "
+        f"{synthesis_rate[0, 1]:.3g}, {synthesis_rate[0, 2]:.3g}) /min"
+    )
     print(f"  rna_ss_predicted={rna_ss_predicted[0]:.3g}")
 
 

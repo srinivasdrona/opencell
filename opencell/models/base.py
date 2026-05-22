@@ -8,11 +8,6 @@ SubModelContract; the engine + resource ledger handle allocation.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import Any
-
-import jax.numpy as jnp
-import numpy as np
 
 from opencell.core.ir import ReferenceFrame, SubModelContract
 from opencell.core.state import CellState
@@ -64,9 +59,7 @@ class SubModel(ABC):
         for species_id in self.contract.writes:
             count = state.get_count(species_id)
             if count < 0:
-                violations.append(
-                    f"[{self.id}] {species_id}: negative count {count:.6e}"
-                )
+                violations.append(f"[{self.id}] {species_id}: negative count {count:.6e}")
         return violations
 
 

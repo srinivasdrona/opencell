@@ -45,7 +45,7 @@ import argparse
 import os
 import shutil
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -63,10 +63,7 @@ SKIP_NAMES = {
 
 def session_state_root() -> Path:
     """Return ``~/.copilot/session-state`` on the current OS."""
-    if os.name == "nt":
-        base = Path(os.environ.get("USERPROFILE", str(Path.home())))
-    else:
-        base = Path.home()
+    base = Path(os.environ.get("USERPROFILE", str(Path.home()))) if os.name == "nt" else Path.home()
     return base / ".copilot" / "session-state"
 
 
@@ -141,7 +138,7 @@ def archive_session(session_dir: Path, dry_run: bool = False) -> int:
         # Write a tiny manifest so the archive is self-describing.
         manifest = dst_dir / "ARCHIVE.md"
         manifest.parent.mkdir(parents=True, exist_ok=True)
-        now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        now = datetime.now(UTC).isoformat(timespec="seconds")
         manifest.write_text(
             f"# Session archive: `{session_id}`\n\n"
             f"- Archived at: {now}\n"
@@ -157,12 +154,18 @@ def archive_session(session_dir: Path, dry_run: bool = False) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     grp = parser.add_mutually_exclusive_group()
     grp.add_argument("--session-id", help="Archive exactly this session id")
-    grp.add_argument("--all", action="store_true", help="Archive every session that touched this repo")
+    grp.add_argument(
+        "--all", action="store_true", help="Archive every session that touched this repo"
+    )
     grp.add_argument("--list", action="store_true", help="List candidate sessions and exit")
-    parser.add_argument("--dry-run", action="store_true", help="Report what would be copied; write nothing")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Report what would be copied; write nothing"
+    )
     args = parser.parse_args(argv)
 
     root = session_state_root()

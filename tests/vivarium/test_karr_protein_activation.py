@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from pathlib import Path
 import sys
+from pathlib import Path
 from typing import Any
 
 # Ensure pytest imports from this worktree even if another editable install exists.
@@ -31,9 +31,7 @@ def _base_state(process: KarrProteinActivationProcess) -> dict[str, Any]:
     return {
         "substrates": {wid: 0.0 for wid in process.substrate_wids},
         "stimuli": {wid: 0.0 for wid in process.stimuli_wids},
-        "protein": {
-            "activity": {wid: 0 for wid in process.regulated_protein_wids}
-        },
+        "protein": {"activity": {wid: 0 for wid in process.regulated_protein_wids}},
     }
 
 

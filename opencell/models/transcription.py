@@ -34,7 +34,6 @@ import numpy as np
 
 from opencell.models.sbml_model import SbmlOdeModel
 
-
 # Canonical location of the curated SBML inside the repo
 DEFAULT_SBML_PATH = (
     Path(__file__).resolve().parents[2]
@@ -42,11 +41,7 @@ DEFAULT_SBML_PATH = (
     / "biomodels_reference"
     / "BIOMD0000000035_vilar2002.xml"
 )
-DEFAULT_MANIFEST_PATH = (
-    Path(__file__).resolve().parents[2]
-    / "manifests"
-    / "vilar2002.draft.yaml"
-)
+DEFAULT_MANIFEST_PATH = Path(__file__).resolve().parents[2] / "manifests" / "vilar2002.draft.yaml"
 BIOMODELS_ID = "BIOMD0000000035"
 PAPER_DOI = "10.1073/pnas.092133899"
 PAPER_PMID = "11972055"
@@ -150,9 +145,7 @@ class TranscriptionModel:
                 "biomodels_id": self.biomodels_id,
                 "paper_doi": self.paper_doi,
                 "paper_pubmed_id": self.paper_pubmed_id,
-                "manifest_sidecar": (
-                    str(self.manifest_path) if self.manifest_path else None
-                ),
+                "manifest_sidecar": (str(self.manifest_path) if self.manifest_path else None),
             }
         )
         return out

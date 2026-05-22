@@ -9,7 +9,6 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Any
 
 import jax
 import jax.numpy as jnp
@@ -97,9 +96,7 @@ class Engine:
         for sm in self.sub_models:
             errors = sm.contract.validate_against_registry(self.registry)
             if errors:
-                raise ValueError(
-                    f"Sub-model '{sm.id}' contract errors: {errors}"
-                )
+                raise ValueError(f"Sub-model '{sm.id}' contract errors: {errors}")
 
     def run(self, initial_state: CellState) -> SimulationResult:
         """Run the simulation from initial state to t_end."""
@@ -125,9 +122,7 @@ class Engine:
                 for sm in self.sub_models:
                     derivs = sm.compute_derivatives(t, state)
                     for species_id, rate in derivs.items():
-                        all_derivatives[species_id] = (
-                            all_derivatives.get(species_id, 0.0) + rate
-                        )
+                        all_derivatives[species_id] = all_derivatives.get(species_id, 0.0) + rate
 
                 # Forward Euler update (will be replaced with proper splitting)
                 new_counts = np.array(state.counts, dtype=np.float64)
@@ -158,9 +153,7 @@ class Engine:
                     violations = state.validate_positivity()
                     step_result.positivity_violations = violations
                     if violations:
-                        logger.warning(
-                            f"Step {step_num}: positivity violations: {violations}"
-                        )
+                        logger.warning(f"Step {step_num}: positivity violations: {violations}")
 
                 steps.append(step_result)
                 states.append(state)
@@ -168,8 +161,7 @@ class Engine:
 
                 if step_num % self.config.log_interval == 0:
                     logger.info(
-                        f"Step {step_num}: t={t:.2f}s, "
-                        f"wall={step_result.wall_time_ms:.1f}ms"
+                        f"Step {step_num}: t={t:.2f}s, wall={step_result.wall_time_ms:.1f}ms"
                     )
 
         except Exception as e:

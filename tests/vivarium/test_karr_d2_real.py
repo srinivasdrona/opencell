@@ -25,18 +25,11 @@ def _load_snapshot_state(process: KarrD2RealProcess) -> dict[str, Any]:
 
     return {
         "substrates": {
-            wid: float(substrate_counts[idx])
-            for idx, wid in enumerate(process.substrate_wids)
+            wid: float(substrate_counts[idx]) for idx, wid in enumerate(process.substrate_wids)
         },
-        "complex": {
-            "counts": {wid: 0.0 for wid in process.complex_wids}
-        },
-        "requests": {
-            process.name: {wid: 0.0 for wid in process.substrate_wids}
-        },
-        "substrates_allocated": {
-            process.name: {wid: 0.0 for wid in process.substrate_wids}
-        },
+        "complex": {"counts": {wid: 0.0 for wid in process.complex_wids}},
+        "requests": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
+        "substrates_allocated": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
     }
 
 
@@ -139,10 +132,12 @@ def test_integration_with_allocation_step() -> None:
     p = KarrD2RealProcess({"rng_seed": 0})
     snapshot = _load_snapshot_state(p)
 
-    alloc_step = KarrAllocationStep({
-        "consumer_processes": [(p.name, list(p.substrate_wids))],
-        "substrate_wids": list(p.substrate_wids),
-    })
+    alloc_step = KarrAllocationStep(
+        {
+            "consumer_processes": [(p.name, list(p.substrate_wids))],
+            "substrate_wids": list(p.substrate_wids),
+        }
+    )
     alloc_input = {
         "substrates": dict(snapshot["substrates"]),
         "requests": {p.name: {wid: 0.0 for wid in p.substrate_wids}},
@@ -158,4 +153,3 @@ def test_integration_with_allocation_step() -> None:
     }
     d2_update = p.next_update(1.0, snapshot)
     assert sum(d2_update["complex"]["counts"].values()) > 0.0
-

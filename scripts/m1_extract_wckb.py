@@ -1,4 +1,5 @@
 """Extract M1-relevant values from WholeCellKB data.xlsx."""
+
 import openpyxl
 
 XLSX = r"E:\opencell\data\m1_sources\WholeCellKB\public\fixtures\data.xlsx"
@@ -29,4 +30,3 @@ hdr_rows = list(ws4.iter_rows(values_only=True, max_row=2))
 print("=== Misc. parameters: all columns ===")
 for i in range(len(hdr_rows[0])):
     print(f"  [{i:2}] section={hdr_rows[0][i]!r}  name={hdr_rows[1][i]!r}")
-

@@ -17,16 +17,6 @@ Resolves <unitDefinition> blocks into human-readable unit strings
 (e.g. ``mole/(litre*second)``).
 """
 
-from .sbml import (
-    SbmlEntity,
-    SbmlModelMetadata,
-    SbmlUnit,
-    SbmlUnitDefinition,
-    extract_metadata,
-    parse_sbml,
-    resolve_unit,
-    stringify_unit,
-)
 from .emitter import (
     ManifestEntry,
     ManifestHeader,
@@ -42,6 +32,16 @@ from .pairing import (
     normalize_doi,
     parse_eutils_payload,
     verify_paper_pairing,
+)
+from .sbml import (
+    SbmlEntity,
+    SbmlModelMetadata,
+    SbmlUnit,
+    SbmlUnitDefinition,
+    extract_metadata,
+    parse_sbml,
+    resolve_unit,
+    stringify_unit,
 )
 
 __all__ = [

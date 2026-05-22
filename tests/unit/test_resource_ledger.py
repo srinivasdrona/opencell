@@ -1,7 +1,5 @@
 """Tests for core/resource_ledger.py — Partition-merge resource allocation."""
 
-import pytest
-
 from opencell.core.resource_ledger import ResourceLedger
 
 

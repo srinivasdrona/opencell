@@ -3,13 +3,9 @@
 from __future__ import annotations
 
 import datetime as _dt
-import io
 import sys
 from pathlib import Path
 from unittest import mock
-
-import pytest
-import yaml
 
 # Make tools/ importable.
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -24,10 +20,10 @@ from opencell.data.verification import (  # noqa: E402
     load_cards_from_yaml,
 )
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 def _make_draft(**overrides) -> ParameterCard:
     defaults = dict(
@@ -47,8 +43,15 @@ def _make_draft(**overrides) -> ParameterCard:
         compartment="cytoplasm",
         gene_or_enzyme="generic",
         status=VerificationStatus.DRAFT,
-        cross_references=[{"source_doi": "10.1000/other", "value": 1.2,
-                           "unit": "1/s", "agrees": True, "note": "ok"}],
+        cross_references=[
+            {
+                "source_doi": "10.1000/other",
+                "value": 1.2,
+                "unit": "1/s",
+                "agrees": True,
+                "note": "ok",
+            }
+        ],
         selection_rationale="Used as published.",
     )
     defaults.update(overrides)
@@ -65,8 +68,7 @@ def _make_reviewed(**overrides) -> ParameterCard:
     return _make_draft(**base)
 
 
-def _write_yaml(tmp_path: Path, cards: list[ParameterCard],
-                header: str = "") -> Path:
+def _write_yaml(tmp_path: Path, cards: list[ParameterCard], header: str = "") -> Path:
     p = tmp_path / "params.yaml"
     review_param._save_cards(cards, p, header=header)
     return p
@@ -76,7 +78,8 @@ def _write_yaml(tmp_path: Path, cards: list[ParameterCard],
 # list
 # ---------------------------------------------------------------------------
 
-def test_list_shows_all_cards(tmp_path, capsys):
+
+def test_list_shows_all_cards(tmp_path, capsys) -> None:
     cards = [
         _make_draft(parameter_id="p-1"),
         _make_draft(parameter_id="p-2"),
@@ -92,7 +95,7 @@ def test_list_shows_all_cards(tmp_path, capsys):
     assert "REVIEWED" in out
 
 
-def test_list_status_filter(tmp_path, capsys):
+def test_list_status_filter(tmp_path, capsys) -> None:
     cards = [
         _make_draft(parameter_id="p-1"),
         _make_reviewed(parameter_id="p-2"),
@@ -105,11 +108,14 @@ def test_list_status_filter(tmp_path, capsys):
     assert "p-2" not in out
 
 
-def test_list_gate_only_filter(tmp_path, capsys):
+def test_list_gate_only_filter(tmp_path, capsys) -> None:
     cards = [
-        _make_draft(parameter_id="p-gate", used_in_gate_tests=True,
-                    gate_acknowledged=True,
-                    acknowledgement_reason="solver test"),
+        _make_draft(
+            parameter_id="p-gate",
+            used_in_gate_tests=True,
+            gate_acknowledged=True,
+            acknowledgement_reason="solver test",
+        ),
         _make_draft(parameter_id="p-nogate"),
     ]
     p = _write_yaml(tmp_path, cards)
@@ -124,21 +130,21 @@ def test_list_gate_only_filter(tmp_path, capsys):
 # show
 # ---------------------------------------------------------------------------
 
-def test_show_formats_all_fields(tmp_path, capsys):
+
+def test_show_formats_all_fields(tmp_path, capsys) -> None:
     cards = [_make_draft()]
     p = _write_yaml(tmp_path, cards)
     rc = review_param.main(["show", str(p), "p-test-1"])
     out = capsys.readouterr().out
     assert rc == 0
-    for label in ("Identity", "Value", "Provenance", "Context",
-                  "Verification", "Cross-refs"):
+    for label in ("Identity", "Value", "Provenance", "Context", "Verification", "Cross-refs"):
         assert label in out
     assert "p-test-1" in out
     assert "10.1000/example" in out
     assert "E. coli" in out
 
 
-def test_show_reports_validation_issues(tmp_path, capsys):
+def test_show_reports_validation_issues(tmp_path, capsys) -> None:
     # missing unit → ERROR
     card = _make_draft(unit="")
     p = _write_yaml(tmp_path, [card])
@@ -149,7 +155,7 @@ def test_show_reports_validation_issues(tmp_path, capsys):
     assert "unit" in out
 
 
-def test_show_unknown_param_id(tmp_path, capsys):
+def test_show_unknown_param_id(tmp_path, capsys) -> None:
     p = _write_yaml(tmp_path, [_make_draft()])
     rc = review_param.main(["show", str(p), "no-such-id"])
     assert rc == 2
@@ -159,7 +165,8 @@ def test_show_unknown_param_id(tmp_path, capsys):
 # review
 # ---------------------------------------------------------------------------
 
-def test_review_happy_path(tmp_path, capsys):
+
+def test_review_happy_path(tmp_path, capsys) -> None:
     p = _write_yaml(tmp_path, [_make_draft()])
     answers = ["y", "y", "y", "y", "Bob"]
     with mock.patch("builtins.input", side_effect=answers):
@@ -171,7 +178,7 @@ def test_review_happy_path(tmp_path, capsys):
     assert cards[0].reviewed_date == _dt.date.today().isoformat()
 
 
-def test_review_aborts_on_no_quote(tmp_path, capsys):
+def test_review_aborts_on_no_quote(tmp_path, capsys) -> None:
     p = _write_yaml(tmp_path, [_make_draft()])
     # DOI=y, quote=n → abort
     answers = ["y", "n"]
@@ -183,10 +190,9 @@ def test_review_aborts_on_no_quote(tmp_path, capsys):
     assert cards[0].reviewed_by == ""
 
 
-def test_review_updates_reviewed_fields(tmp_path):
+def test_review_updates_reviewed_fields(tmp_path) -> None:
     p = _write_yaml(tmp_path, [_make_draft()])
-    with mock.patch("builtins.input",
-                    side_effect=["y", "y", "y", "y", "Carol"]):
+    with mock.patch("builtins.input", side_effect=["y", "y", "y", "y", "Carol"]):
         rc = review_param.main(["review", str(p), "p-test-1"])
     assert rc == 0
     cards = load_cards_from_yaml(p)
@@ -194,13 +200,13 @@ def test_review_updates_reviewed_fields(tmp_path):
     assert cards[0].reviewed_date == _dt.date.today().isoformat()
 
 
-def test_review_aborts_on_unknown_param(tmp_path):
+def test_review_aborts_on_unknown_param(tmp_path) -> None:
     p = _write_yaml(tmp_path, [_make_draft()])
     rc = review_param.main(["review", str(p), "no-such"])
     assert rc == 2
 
 
-def test_review_skips_already_reviewed(tmp_path, capsys):
+def test_review_skips_already_reviewed(tmp_path, capsys) -> None:
     p = _write_yaml(tmp_path, [_make_reviewed()])
     rc = review_param.main(["review", str(p), "p-test-1"])
     out = capsys.readouterr().out
@@ -212,7 +218,8 @@ def test_review_skips_already_reviewed(tmp_path, capsys):
 # approve
 # ---------------------------------------------------------------------------
 
-def test_approve_refuses_if_draft(tmp_path, capsys):
+
+def test_approve_refuses_if_draft(tmp_path, capsys) -> None:
     p = _write_yaml(tmp_path, [_make_draft()])
     rc = review_param.main(["approve", str(p), "p-test-1"])
     err = capsys.readouterr().err
@@ -220,7 +227,7 @@ def test_approve_refuses_if_draft(tmp_path, capsys):
     assert "REVIEWED" in err
 
 
-def test_approve_happy_path(tmp_path):
+def test_approve_happy_path(tmp_path) -> None:
     # Reviewed card with real uncertainty bounds and cross-refs already present
     p = _write_yaml(tmp_path, [_make_reviewed()])
     # organism=y, role=y, approver=Dave
@@ -238,7 +245,8 @@ def test_approve_happy_path(tmp_path):
 # audit
 # ---------------------------------------------------------------------------
 
-def test_audit_exit_code_zero_on_clean_cards(tmp_path):
+
+def test_audit_exit_code_zero_on_clean_cards(tmp_path) -> None:
     # All-APPROVED card; not gate-tested so no gate violations.
     card = _make_reviewed(
         status=VerificationStatus.APPROVED,
@@ -250,7 +258,7 @@ def test_audit_exit_code_zero_on_clean_cards(tmp_path):
     assert rc == 0
 
 
-def test_audit_exit_code_one_on_gate_violation(tmp_path, capsys):
+def test_audit_exit_code_one_on_gate_violation(tmp_path, capsys) -> None:
     # DRAFT card used in gate tests without acknowledgement → CI gate fails.
     card = _make_draft(used_in_gate_tests=True, gate_acknowledged=False)
     p = _write_yaml(tmp_path, [card])
@@ -264,7 +272,8 @@ def test_audit_exit_code_one_on_gate_violation(tmp_path, capsys):
 # YAML round-trip
 # ---------------------------------------------------------------------------
 
-def test_yaml_roundtrip_preserves_all_fields(tmp_path):
+
+def test_yaml_roundtrip_preserves_all_fields(tmp_path) -> None:
     original = _make_draft(
         original_value=1.0,
         original_unit="1/s",

@@ -26,7 +26,7 @@ def ureg() -> pint.UnitRegistry:
 class ConversionResult:
     converted_value: float
     converted_unit: str
-    transformation: str   # e.g. "0.01 s^-1 × 60 s/min = 0.60 min^-1"
+    transformation: str  # e.g. "0.01 s^-1 × 60 s/min = 0.60 min^-1"
     success: bool
     error: str = ""
 
@@ -73,6 +73,9 @@ def units_compatible(a: str, b: str) -> bool:
         return False
     try:
         u = ureg()
-        return u(_normalize_unit_for_pint(a)).dimensionality == u(_normalize_unit_for_pint(b)).dimensionality
+        return (
+            u(_normalize_unit_for_pint(a)).dimensionality
+            == u(_normalize_unit_for_pint(b)).dimensionality
+        )
     except Exception:
         return False

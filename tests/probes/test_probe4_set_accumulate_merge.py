@@ -52,15 +52,11 @@ class WriterComposer(Composer):
 
     def generate_processes(self, config):
         return {
-            name: WriterProcess(writer_config)
-            for name, writer_config in config["writers"].items()
+            name: WriterProcess(writer_config) for name, writer_config in config["writers"].items()
         }
 
     def generate_topology(self, config):
-        return {
-            name: {"protein": ("protein",)}
-            for name in config["writers"].keys()
-        }
+        return {name: {"protein": ("protein",)} for name in config["writers"]}
 
 
 def run_single_tick(writers: Sequence[tuple[str, dict]]) -> int:
@@ -77,7 +73,7 @@ def run_single_tick(writers: Sequence[tuple[str, dict]]) -> int:
     return int(engine.emitter.get_timeseries()["protein"]["counts"]["X"][-1])
 
 
-def test_set_plus_accumulate_three_way_merge():
+def test_set_plus_accumulate_three_way_merge() -> None:
     # Observed behavior (vivarium-core 1.6.5):
     # Schema conflict warns but does not raise. The later schema assignment
     # for `_updater` wins for this leaf, and updates are then applied in
@@ -93,7 +89,7 @@ def test_set_plus_accumulate_three_way_merge():
     assert final_value == 175
 
 
-def test_process_registration_order_matters():
+def test_process_registration_order_matters() -> None:
     # Observed behavior (vivarium-core 1.6.5):
     # Reversing process registration changes the result, so order matters.
     baseline = run_single_tick(
@@ -116,7 +112,7 @@ def test_process_registration_order_matters():
     assert reversed_order != baseline
 
 
-def test_set_only_two_writers():
+def test_set_only_two_writers() -> None:
     # Observed behavior (vivarium-core 1.6.5):
     # With two `set` writers on the same leaf in one tick, the later writer
     # in registration order wins.
@@ -130,7 +126,7 @@ def test_set_only_two_writers():
     assert final_value == 70
 
 
-def test_accumulate_only_two_writers():
+def test_accumulate_only_two_writers() -> None:
     # Observed behavior (vivarium-core 1.6.5):
     # Pure `accumulate` merges are additive from the shared initial state.
     final_value = run_single_tick(
@@ -143,7 +139,7 @@ def test_accumulate_only_two_writers():
     assert final_value == 95
 
 
-def test_set_zero_plus_negative_accumulate():
+def test_set_zero_plus_negative_accumulate() -> None:
     # Observed behavior (vivarium-core 1.6.5):
     # In this registration order, resolved updater semantics yield 90,
     # not -10, so `set: 0` does not behave like a hard reset followed by

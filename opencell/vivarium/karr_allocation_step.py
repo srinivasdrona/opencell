@@ -1,4 +1,5 @@
 """Vivarium Step implementing Karr's proportional fair-share allocation."""
+
 from __future__ import annotations
 
 import math
@@ -83,8 +84,7 @@ class KarrAllocationStep(Step):
         for wid in all_requested_wids:
             supply = max(0.0, float(substrates.get(wid, 0.0)))
             total_demand = sum(
-                max(0.0, float(requests[proc_name].get(wid, 0.0)))
-                for proc_name in requests
+                max(0.0, float(requests[proc_name].get(wid, 0.0))) for proc_name in requests
             )
             scale = min(1.0, supply / total_demand) if total_demand > 0.0 else 0.0
 
@@ -94,4 +94,3 @@ class KarrAllocationStep(Step):
                 allocations.setdefault(proc_name, {})[wid] = float(allocated)
 
         return {"substrates_allocated": allocations}
-

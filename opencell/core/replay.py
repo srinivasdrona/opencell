@@ -11,9 +11,6 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any
-
-import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +52,7 @@ class StepReplay:
             sign = "+" if d.delta >= 0 else ""
             lines.append(f"    {sign}{d.delta:.6e}  ← {d.module_id} {d.description}")
         total_delta = sum(d.delta for d in contribs)
-        lines.append(f"    ----------")
+        lines.append("    ----------")
         lines.append(f"    Δ = {total_delta:.6e}")
         lines.append(f"  → {self.species_end.get(species_id, '?'):.6f}")
         if species_id in self.conservation_residuals:
@@ -93,14 +90,18 @@ class DeltaLedger:
         """Record a single module's contribution to a species."""
         if self._current is None:
             raise RuntimeError("No step in progress — call begin_step first")
-        self._current.deltas.append(DeltaEntry(
-            module_id=module_id,
-            species_id=species_id,
-            delta=delta,
-            description=description,
-        ))
+        self._current.deltas.append(
+            DeltaEntry(
+                module_id=module_id,
+                species_id=species_id,
+                delta=delta,
+                description=description,
+            )
+        )
 
-    def end_step(self, state: dict[str, float], residuals: dict[str, float] | None = None) -> StepReplay:
+    def end_step(
+        self, state: dict[str, float], residuals: dict[str, float] | None = None
+    ) -> StepReplay:
         """Finalize the current step."""
         if self._current is None:
             raise RuntimeError("No step in progress")

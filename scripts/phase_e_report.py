@@ -6,6 +6,7 @@ the pytest-based assertions in tests/phaseE/.
 
 Usage:  python scripts/phase_e_report.py
 """
+
 from __future__ import annotations
 
 import json
@@ -33,7 +34,7 @@ def main() -> None:
         spec_root = json.load(f)
     specs = spec_root["phenotypes"]
 
-    print(f"# Phase E.0 — Phenotype Validation Report")
+    print("# Phase E.0 — Phenotype Validation Report")
     print(f"\nTargets fixture: {TARGETS.relative_to(ROOT)}")
     print(f"Schema:          {spec_root['schema_version']}\n")
 
@@ -44,21 +45,14 @@ def main() -> None:
     extractors = [
         ("p1_growth_per_s", lambda: ph.measure_growth_per_s(m1)),
         ("p2_doubling_time_h", lambda: ph.measure_doubling_time_h(m1)),
-        ("p3_fba_oracle_median_log2_ratio",
-            lambda: ph.measure_fba_oracle_median_log2(m1)),
+        ("p3_fba_oracle_median_log2_ratio", lambda: ph.measure_fba_oracle_median_log2(m1)),
         ("p4_glucose_uptake_TX_GLCPTS", lambda: ph.measure_glucose_uptake(m1)),
-        ("p5_mrna_total_chassis_wiring",
-            lambda: ph.measure_mrna_total_chassis_wiring(m2)),
-        ("p6_protein_total_chassis_wiring",
-            lambda: ph.measure_protein_total_chassis_wiring(m3)),
-        ("p7_mrna_stability_over_20s",
-            lambda: ph.measure_mrna_stability(20)),
-        ("p8_protein_stability_over_20s",
-            lambda: ph.measure_protein_stability(20)),
-        ("p9_aa_pool_stability_over_20s",
-            lambda: ph.measure_aa_pool_stability(20)),
-        ("p10_cell_dry_mass_g",
-            lambda: ph.measure_cell_dry_mass(m1, m2, m3)),
+        ("p5_mrna_total_chassis_wiring", lambda: ph.measure_mrna_total_chassis_wiring(m2)),
+        ("p6_protein_total_chassis_wiring", lambda: ph.measure_protein_total_chassis_wiring(m3)),
+        ("p7_mrna_stability_over_20s", lambda: ph.measure_mrna_stability(20)),
+        ("p8_protein_stability_over_20s", lambda: ph.measure_protein_stability(20)),
+        ("p9_aa_pool_stability_over_20s", lambda: ph.measure_aa_pool_stability(20)),
+        ("p10_cell_dry_mass_g", lambda: ph.measure_cell_dry_mass(m1, m2, m3)),
     ]
 
     rows = []
@@ -70,8 +64,9 @@ def main() -> None:
             target = m.target
             unit = m.unit
         except Exception as e:
-            rows.append((key, "ERROR", "-", "-", "-", spec.get("category", "?"),
-                         f"{type(e).__name__}: {e}"))
+            rows.append(
+                (key, "ERROR", "-", "-", "-", spec.get("category", "?"), f"{type(e).__name__}: {e}")
+            )
             continue
 
         # Status logic mirrors the test assertions.
@@ -94,10 +89,23 @@ def main() -> None:
             detail = f"drift={predicted:.3e}"
 
         if spec.get("expected_status") == "fail":
-            status = f"XFAIL (expected; {spec.get('fail_reason', '')[:80]}...)" if status == "FAIL" else f"UNEXPECTED PASS"
+            status = (
+                f"XFAIL (expected; {spec.get('fail_reason', '')[:80]}...)"
+                if status == "FAIL"
+                else "UNEXPECTED PASS"
+            )
 
-        rows.append((key, status, fmt(predicted), fmt(target) if target is not None else "-",
-                     unit, spec.get("category", "?"), detail))
+        rows.append(
+            (
+                key,
+                status,
+                fmt(predicted),
+                fmt(target) if target is not None else "-",
+                unit,
+                spec.get("category", "?"),
+                detail,
+            )
+        )
 
     # Render markdown table.
     print("| # | Phenotype | Status | Predicted | Target | Unit | Category | Detail |")
@@ -112,7 +120,9 @@ def main() -> None:
     n_fail = sum(1 for r in rows if r[1] == "FAIL")
     n_xfail = sum(1 for r in rows if r[1].startswith("XFAIL"))
     n_err = sum(1 for r in rows if r[1] == "ERROR")
-    print(f"\n**Summary: {n_pass} pass, {n_fail} fail, {n_xfail} xfail (expected), {n_err} error / {len(rows)} total.**")
+    print(
+        f"\n**Summary: {n_pass} pass, {n_fail} fail, {n_xfail} xfail (expected), {n_err} error / {len(rows)} total.**"
+    )
 
 
 if __name__ == "__main__":

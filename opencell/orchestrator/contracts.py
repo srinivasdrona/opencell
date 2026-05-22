@@ -51,6 +51,7 @@ def validate_parameter_file(filepath: str | Path) -> list[str]:
     with open(filepath) as f:
         if filepath.suffix in (".yml", ".yaml"):
             import yaml
+
             data = yaml.safe_load(f)
         else:
             data = json.load(f)

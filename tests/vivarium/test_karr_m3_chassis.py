@@ -1,4 +1,5 @@
 """Smoke tests for the Karr-native M3 vivarium chassis."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -49,9 +50,7 @@ def test_engine_runs_without_drift_at_ss(
             assert rel < 0.05, f"{aa} delta {series[-1]} vs expected {expected}"
 
     # Sum across the 20 per-AA deltas should reconstruct the bulk total.
-    total = sum(
-        float(np.asarray(ts["substrates"][aa])[-1]) for aa in tl.AA_WCM_IDS
-    )
+    total = sum(float(np.asarray(ts["substrates"][aa])[-1]) for aa in tl.AA_WCM_IDS)
     expected_total = -20.0 * aa_consum["_total_aa_per_s"]
     # Bulk total includes FMET (init-Met) and any non-standard residues
     # captured in length_aa.  Per-AA sum covers 20 standard residues, so
@@ -66,18 +65,14 @@ def test_engine_starting_perturbed_relaxes(
     """Start at 1.5x mature counts; after 5 e-foldings of the slowest
     decayed protein, decayed species should be back near steady state."""
     init = 1.5 * model.counts_mature
-    engine = build_karr_m3_engine(
-        model=model, time_step_s=10.0, initial_protein_counts=init
-    )
+    engine = build_karr_m3_engine(model=model, time_step_s=10.0, initial_protein_counts=init)
     have_decay = model.decay_rate_per_s > 0
     k_min = float(np.min(model.decay_rate_per_s[have_decay]))
     duration = 5.0 / k_min
     engine.update(duration)
     ts = engine.emitter.get_timeseries()
     # Sample final
-    final = np.array([
-        float(ts["protein"]["counts"][p][-1]) for p in model.protein_wcm_ids
-    ])
+    final = np.array([float(ts["protein"]["counts"][p][-1]) for p in model.protein_wcm_ids])
     rel = np.abs(final[have_decay] - model.counts_mature[have_decay]) / np.maximum(
         model.counts_mature[have_decay], 1.0
     )

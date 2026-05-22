@@ -24,6 +24,7 @@ read them back into its FBA bounds (that requires Karr's
 calcFluxBounds() port + the 585->1686 metabolite-x-compartment count
 mapping, both deferred to the integrator pass).
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
@@ -52,9 +53,6 @@ from opencell.vivarium.karr_protein_modification import KarrProteinModificationP
 from opencell.vivarium.karr_protein_processing_i import KarrProteinProcessingIProcess
 from opencell.vivarium.karr_protein_processing_ii import KarrProteinProcessingIIProcess
 from opencell.vivarium.karr_protein_translocation import KarrProteinTranslocationProcess
-from opencell.vivarium.karr_ribosome_assembly import KarrRibosomeAssemblyProcess
-from opencell.vivarium.karr_rna_modification import KarrRNAModificationProcess
-from opencell.vivarium.karr_rna_processing import KarrRNAProcessingProcess
 from opencell.vivarium.karr_request_calculators import (
     RequestCalculatorD2,
     RequestCalculatorPD,
@@ -63,6 +61,9 @@ from opencell.vivarium.karr_request_calculators import (
     RequestCalculatorRNAPathway,
     RequestCalculatorTRNA,
 )
+from opencell.vivarium.karr_ribosome_assembly import KarrRibosomeAssemblyProcess
+from opencell.vivarium.karr_rna_modification import KarrRNAModificationProcess
+from opencell.vivarium.karr_rna_processing import KarrRNAProcessingProcess
 from opencell.vivarium.karr_transcriptional_regulation import (
     KarrTranscriptionalRegulationProcess,
 )
@@ -91,12 +92,11 @@ def compute_baseline_demand_per_s(
     the composer (so e.g. ``condition`` and custom models propagate).
     """
     ntp = tx.ntp_consumption_per_s(
-        tx.calibrated_chassis_model(m2_model), condition=condition,
+        tx.calibrated_chassis_model(m2_model),
+        condition=condition,
     )
     aa = tl.aa_consumption_per_s(m3_model)
-    out: dict[str, float] = {
-        s: float(ntp[s]) for s in ("ATP", "CTP", "GTP", "UTP")
-    }
+    out: dict[str, float] = {s: float(ntp[s]) for s in ("ATP", "CTP", "GTP", "UTP")}
     for a in m3_model.aa_wcm_ids:
         out[a] = float(aa[a])
     return out
@@ -118,20 +118,26 @@ def build_karr_m1_m2_engine(
     if m2_model is None:
         m2_model = tx.load_default()
 
-    m1_proc = KarrMetabolismProcess({
-        "model": m1_model, "time_step": time_step_s,
-    })
-    m2_proc = KarrTranscriptionProcess({
-        "model": m2_model,
-        "time_step": time_step_s,
-        "condition": condition,
-        "substrate_default": _M1_SUBSTRATE_DEFAULT,
-    })
+    m1_proc = KarrMetabolismProcess(
+        {
+            "model": m1_model,
+            "time_step": time_step_s,
+        }
+    )
+    m2_proc = KarrTranscriptionProcess(
+        {
+            "model": m2_model,
+            "time_step": time_step_s,
+            "condition": condition,
+            "substrate_default": _M1_SUBSTRATE_DEFAULT,
+        }
+    )
 
     rxn_ids = m1_model.rxn_wcm_ids_645
     sub_ids = m1_model.raw["ids"]["substrate_wcm_585"]
-    rna_init = {g: float(m2_model.counts_mature[i, condition])
-                for i, g in enumerate(m2_model.gene_wcm_ids)}
+    rna_init = {
+        g: float(m2_model.counts_mature[i, condition]) for i, g in enumerate(m2_model.gene_wcm_ids)
+    }
 
     engine = Engine(
         processes={"m1_karr": m1_proc, "m2_karr": m2_proc},
@@ -147,8 +153,7 @@ def build_karr_m1_m2_engine(
         },
         initial_state={
             "metabolic_reaction": {
-                "fluxs": {rid: float(m1_model.fluxs_stored[i])
-                          for i, rid in enumerate(rxn_ids)},
+                "fluxs": {rid: float(m1_model.fluxs_stored[i]) for i, rid in enumerate(rxn_ids)},
                 "growth_per_s": float(m1_model.stored_runtime["growth_per_s"]),
                 "growth_per_h": float(m1_model.stored_runtime["growth_per_h"]),
             },
@@ -204,9 +209,7 @@ def build_karr_m1_m2_m3_engine(
             "(throttle reads m1_pools which only M1 dynamic mode publishes)"
         )
     if enable_pool_replenishment and not dynamic_bounds:
-        raise ValueError(
-            "enable_pool_replenishment=True requires dynamic_bounds=True"
-        )
+        raise ValueError("enable_pool_replenishment=True requires dynamic_bounds=True")
 
     if m1_model is None:
         m1_model = km.load_default()
@@ -218,41 +221,49 @@ def build_karr_m1_m2_m3_engine(
     baseline_demand: dict[str, float] | None = None
     if enable_pool_replenishment:
         baseline_demand = compute_baseline_demand_per_s(
-            m2_model, m3_model, condition=condition,
+            m2_model,
+            m3_model,
+            condition=condition,
         )
 
-    m1_proc = KarrMetabolismProcess({
-        "model": m1_model,
-        "time_step": time_step_s,
-        "dynamic_bounds": dynamic_bounds,
-        "enable_pool_replenishment": enable_pool_replenishment,
-        "baseline_demand_per_s": baseline_demand,
-    })
-    m2_proc = KarrTranscriptionProcess({
-        "model": m2_model,
-        "time_step": time_step_s,
-        "condition": condition,
-        "substrate_default": _M1_SUBSTRATE_DEFAULT,
-        "enable_throttle": enable_throttle,
-    })
-    m3_proc = KarrTranslationProcess({
-        "model": m3_model,
-        "time_step": time_step_s,
-        "substrate_default": _M1_SUBSTRATE_DEFAULT,
-        "enable_throttle": enable_throttle,
-    })
+    m1_proc = KarrMetabolismProcess(
+        {
+            "model": m1_model,
+            "time_step": time_step_s,
+            "dynamic_bounds": dynamic_bounds,
+            "enable_pool_replenishment": enable_pool_replenishment,
+            "baseline_demand_per_s": baseline_demand,
+        }
+    )
+    m2_proc = KarrTranscriptionProcess(
+        {
+            "model": m2_model,
+            "time_step": time_step_s,
+            "condition": condition,
+            "substrate_default": _M1_SUBSTRATE_DEFAULT,
+            "enable_throttle": enable_throttle,
+        }
+    )
+    m3_proc = KarrTranslationProcess(
+        {
+            "model": m3_model,
+            "time_step": time_step_s,
+            "substrate_default": _M1_SUBSTRATE_DEFAULT,
+            "enable_throttle": enable_throttle,
+        }
+    )
     d2_proc = KarrD2StubProcess()
 
     rxn_ids = m1_model.rxn_wcm_ids_645
     sub_ids = m1_model.raw["ids"]["substrate_wcm_585"]
-    rna_init = {g: float(m2_model.counts_mature[i, condition])
-                for i, g in enumerate(m2_model.gene_wcm_ids)}
-    prot_init = {p: float(m3_model.counts_mature[i])
-                 for i, p in enumerate(m3_model.protein_wcm_ids)}
-
-    initial_substrates: dict[str, float] = {
-        sid: _M1_SUBSTRATE_DEFAULT for sid in sub_ids
+    rna_init = {
+        g: float(m2_model.counts_mature[i, condition]) for i, g in enumerate(m2_model.gene_wcm_ids)
     }
+    prot_init = {
+        p: float(m3_model.counts_mature[i]) for i, p in enumerate(m3_model.protein_wcm_ids)
+    }
+
+    initial_substrates: dict[str, float] = {sid: _M1_SUBSTRATE_DEFAULT for sid in sub_ids}
     # M3 now writes per-AA deltas using IDs that are already in M1's 585
     # substrate vocabulary; no extra placeholder key required.
 
@@ -280,8 +291,7 @@ def build_karr_m1_m2_m3_engine(
 
     initial_state: dict[str, Any] = {
         "metabolic_reaction": {
-            "fluxs": {rid: float(m1_model.fluxs_stored[i])
-                      for i, rid in enumerate(rxn_ids)},
+            "fluxs": {rid: float(m1_model.fluxs_stored[i]) for i, rid in enumerate(rxn_ids)},
             "growth_per_s": float(m1_model.stored_runtime["growth_per_s"]),
             "growth_per_h": float(m1_model.stored_runtime["growth_per_h"]),
         },
@@ -296,10 +306,9 @@ def build_karr_m1_m2_m3_engine(
         },
     }
     if dynamic_bounds:
-        initial_state["m1_dynamic_diagnostics"] = {
-            k: 0.0 for k in m1_proc._diagnostics_schema()
-        }
+        initial_state["m1_dynamic_diagnostics"] = {k: 0.0 for k in m1_proc._diagnostics_schema()}
         from opencell.vivarium.karr_m1 import _CYTOSOL_COMPARTMENT_0
+
         initial_state["m1_pools"] = {
             sid: float(m1_proc._sub_state[idx, _CYTOSOL_COMPARTMENT_0])
             for sid, idx in m1_proc._demand_idx_pairs
@@ -347,9 +356,7 @@ def build_karr_chassis_v2(
     from vivarium.core.engine import Engine
 
     if enable_pool_replenishment and not dynamic_bounds:
-        raise ValueError(
-            "enable_pool_replenishment=True requires dynamic_bounds=True"
-        )
+        raise ValueError("enable_pool_replenishment=True requires dynamic_bounds=True")
 
     if m1_model is None:
         m1_model = km.load_default()
@@ -365,43 +372,50 @@ def build_karr_chassis_v2(
     baseline_demand: dict[str, float] | None = None
     if enable_pool_replenishment:
         baseline_demand = compute_baseline_demand_per_s(
-            m2_model, m3_model, condition=condition,
+            m2_model,
+            m3_model,
+            condition=condition,
         )
 
-    m1_proc = KarrMetabolismProcess({
-        "model": m1_model,
-        "time_step": time_step_s,
-        "dynamic_bounds": dynamic_bounds,
-        "enable_pool_replenishment": enable_pool_replenishment,
-        "baseline_demand_per_s": baseline_demand,
-    })
-    m2_proc = KarrTranscriptionV2Process({
-        "kinetics_model": tx.calibrated_chassis_model(m2_model),
-        "mechanism_inputs": m2_mechanism_inputs,
-        "time_step": time_step_s,
-        "substrate_default": _M1_SUBSTRATE_DEFAULT,
-    })
-    m3_proc = KarrTranslationV2Process({
-        "kinetics_model": m3_model,
-        "mechanism_inputs": m3_mechanism_inputs,
-        "time_step": time_step_s,
-        "substrate_default": _M1_SUBSTRATE_DEFAULT,
-    })
+    m1_proc = KarrMetabolismProcess(
+        {
+            "model": m1_model,
+            "time_step": time_step_s,
+            "dynamic_bounds": dynamic_bounds,
+            "enable_pool_replenishment": enable_pool_replenishment,
+            "baseline_demand_per_s": baseline_demand,
+        }
+    )
+    m2_proc = KarrTranscriptionV2Process(
+        {
+            "kinetics_model": tx.calibrated_chassis_model(m2_model),
+            "mechanism_inputs": m2_mechanism_inputs,
+            "time_step": time_step_s,
+            "substrate_default": _M1_SUBSTRATE_DEFAULT,
+        }
+    )
+    m3_proc = KarrTranslationV2Process(
+        {
+            "kinetics_model": m3_model,
+            "mechanism_inputs": m3_mechanism_inputs,
+            "time_step": time_step_s,
+            "substrate_default": _M1_SUBSTRATE_DEFAULT,
+        }
+    )
     d2_proc = KarrD2StubProcess()
 
     rxn_ids = m1_model.rxn_wcm_ids_645
     sub_ids = m1_model.raw["ids"]["substrate_wcm_585"]
-    rna_init = {g: float(m2_model.counts_mature[i, condition])
-                for i, g in enumerate(m2_model.gene_wcm_ids)}
-    prot_init = {p: float(m3_model.counts_mature[i])
-                 for i, p in enumerate(m3_model.protein_wcm_ids)}
-
-    initial_substrates: dict[str, float] = {
-        sid: _M1_SUBSTRATE_DEFAULT for sid in sub_ids
+    rna_init = {
+        g: float(m2_model.counts_mature[i, condition]) for i, g in enumerate(m2_model.gene_wcm_ids)
     }
+    prot_init = {
+        p: float(m3_model.counts_mature[i]) for i, p in enumerate(m3_model.protein_wcm_ids)
+    }
+
+    initial_substrates: dict[str, float] = {sid: _M1_SUBSTRATE_DEFAULT for sid in sub_ids}
     complex_counts: dict[str, float] = {
-        wid: float(d2_proc._complex_counts_schema[wid]["_default"])
-        for wid in d2_proc.d2_owned_wids
+        wid: float(d2_proc._complex_counts_schema[wid]["_default"]) for wid in d2_proc.d2_owned_wids
     }
     if "RIBOSOME_70S" not in complex_counts:
         complex_counts["RIBOSOME_70S"] = float(m3_mechanism_inputs.n_active_ribosomes)
@@ -429,8 +443,7 @@ def build_karr_chassis_v2(
 
     initial_state: dict[str, Any] = {
         "metabolic_reaction": {
-            "fluxs": {rid: float(m1_model.fluxs_stored[i])
-                      for i, rid in enumerate(rxn_ids)},
+            "fluxs": {rid: float(m1_model.fluxs_stored[i]) for i, rid in enumerate(rxn_ids)},
             "growth_per_s": float(m1_model.stored_runtime["growth_per_s"]),
             "growth_per_h": float(m1_model.stored_runtime["growth_per_h"]),
         },
@@ -440,10 +453,9 @@ def build_karr_chassis_v2(
         "complex": {"counts": complex_counts},
     }
     if dynamic_bounds:
-        initial_state["m1_dynamic_diagnostics"] = {
-            k: 0.0 for k in m1_proc._diagnostics_schema()
-        }
+        initial_state["m1_dynamic_diagnostics"] = {k: 0.0 for k in m1_proc._diagnostics_schema()}
         from opencell.vivarium.karr_m1 import _CYTOSOL_COMPARTMENT_0
+
         initial_state["m1_pools"] = {
             sid: float(m1_proc._sub_state[idx, _CYTOSOL_COMPARTMENT_0])
             for sid, idx in m1_proc._demand_idx_pairs
@@ -492,9 +504,7 @@ def build_karr_chassis_v3(
     from vivarium.core.engine import Engine
 
     if enable_pool_replenishment and not dynamic_bounds:
-        raise ValueError(
-            "enable_pool_replenishment=True requires dynamic_bounds=True"
-        )
+        raise ValueError("enable_pool_replenishment=True requires dynamic_bounds=True")
 
     if m1_model is None:
         m1_model = km.load_default()
@@ -510,28 +520,36 @@ def build_karr_chassis_v3(
     baseline_demand: dict[str, float] | None = None
     if enable_pool_replenishment:
         baseline_demand = compute_baseline_demand_per_s(
-            m2_model, m3_model, condition=condition,
+            m2_model,
+            m3_model,
+            condition=condition,
         )
 
-    m1_proc = KarrMetabolismProcess({
-        "model": m1_model,
-        "time_step": time_step_s,
-        "dynamic_bounds": dynamic_bounds,
-        "enable_pool_replenishment": enable_pool_replenishment,
-        "baseline_demand_per_s": baseline_demand,
-    })
-    m2_proc = KarrTranscriptionV3Process({
-        "kinetics_model": tx.calibrated_chassis_model(m2_model),
-        "mechanism_inputs": m2_mechanism_inputs,
-        "time_step": time_step_s,
-        "substrate_default": _M1_SUBSTRATE_DEFAULT,
-    })
-    m3_proc = KarrTranslationV3Process({
-        "kinetics_model": m3_model,
-        "mechanism_inputs": m3_mechanism_inputs,
-        "time_step": time_step_s,
-        "substrate_default": _M1_SUBSTRATE_DEFAULT,
-    })
+    m1_proc = KarrMetabolismProcess(
+        {
+            "model": m1_model,
+            "time_step": time_step_s,
+            "dynamic_bounds": dynamic_bounds,
+            "enable_pool_replenishment": enable_pool_replenishment,
+            "baseline_demand_per_s": baseline_demand,
+        }
+    )
+    m2_proc = KarrTranscriptionV3Process(
+        {
+            "kinetics_model": tx.calibrated_chassis_model(m2_model),
+            "mechanism_inputs": m2_mechanism_inputs,
+            "time_step": time_step_s,
+            "substrate_default": _M1_SUBSTRATE_DEFAULT,
+        }
+    )
+    m3_proc = KarrTranslationV3Process(
+        {
+            "kinetics_model": m3_model,
+            "mechanism_inputs": m3_mechanism_inputs,
+            "time_step": time_step_s,
+            "substrate_default": _M1_SUBSTRATE_DEFAULT,
+        }
+    )
     d2_proc = KarrD2RealProcess({"time_step": time_step_s})
     decay_proc = ProteinDecayLightProcess({"time_step": time_step_s})
 
@@ -540,26 +558,28 @@ def build_karr_chassis_v3(
         | set(d2_proc.substrate_wids)
         | set(decay_proc.substrate_wids)
     )
-    allocation_step = KarrAllocationStep({
-        "consumer_processes": [
-            ("karr_d2_real", list(d2_proc.substrate_wids)),
-            ("karr_protein_decay_light", ["ATP", "H2O"]),
-        ],
-        "substrate_wids": allocation_substrates,
-    })
+    allocation_step = KarrAllocationStep(
+        {
+            "consumer_processes": [
+                ("karr_d2_real", list(d2_proc.substrate_wids)),
+                ("karr_protein_decay_light", ["ATP", "H2O"]),
+            ],
+            "substrate_wids": allocation_substrates,
+        }
+    )
     req_d2 = RequestCalculatorD2({"d2_real_proc": d2_proc})
     req_pd = RequestCalculatorPD({"pd_light_proc": decay_proc})
 
     rxn_ids = m1_model.rxn_wcm_ids_645
     m1_sub_ids = [str(wid) for wid in m1_model.raw["ids"]["substrate_wcm_585"]]
-    rna_init = {g: float(m2_model.counts_mature[i, condition])
-                for i, g in enumerate(m2_model.gene_wcm_ids)}
-    prot_init = {p: float(m3_model.counts_mature[i])
-                 for i, p in enumerate(m3_model.protein_wcm_ids)}
-
-    initial_substrates: dict[str, float] = {
-        sid: 0.0 for sid in allocation_substrates
+    rna_init = {
+        g: float(m2_model.counts_mature[i, condition]) for i, g in enumerate(m2_model.gene_wcm_ids)
     }
+    prot_init = {
+        p: float(m3_model.counts_mature[i]) for i, p in enumerate(m3_model.protein_wcm_ids)
+    }
+
+    initial_substrates: dict[str, float] = {sid: 0.0 for sid in allocation_substrates}
     for sid in m1_sub_ids:
         initial_substrates[sid] = _M1_SUBSTRATE_DEFAULT
     # Seed D.2's free-monomer substrate pool from M3's mature monomer snapshot.
@@ -626,8 +646,7 @@ def build_karr_chassis_v3(
 
     initial_state: dict[str, Any] = {
         "metabolic_reaction": {
-            "fluxs": {rid: float(m1_model.fluxs_stored[i])
-                      for i, rid in enumerate(rxn_ids)},
+            "fluxs": {rid: float(m1_model.fluxs_stored[i]) for i, rid in enumerate(rxn_ids)},
             "growth_per_s": float(m1_model.stored_runtime["growth_per_s"]),
             "growth_per_h": float(m1_model.stored_runtime["growth_per_h"]),
         },
@@ -637,10 +656,9 @@ def build_karr_chassis_v3(
         "complex": {"counts": complex_counts},
     }
     if dynamic_bounds:
-        initial_state["m1_dynamic_diagnostics"] = {
-            k: 0.0 for k in m1_proc._diagnostics_schema()
-        }
+        initial_state["m1_dynamic_diagnostics"] = {k: 0.0 for k in m1_proc._diagnostics_schema()}
         from opencell.vivarium.karr_m1 import _CYTOSOL_COMPARTMENT_0
+
         initial_state["m1_pools"] = {
             sid: float(m1_proc._sub_state[idx, _CYTOSOL_COMPARTMENT_0])
             for sid, idx in m1_proc._demand_idx_pairs
@@ -691,9 +709,7 @@ def build_karr_chassis_v4(
     from vivarium.core.engine import Engine
 
     if enable_pool_replenishment and not dynamic_bounds:
-        raise ValueError(
-            "enable_pool_replenishment=True requires dynamic_bounds=True"
-        )
+        raise ValueError("enable_pool_replenishment=True requires dynamic_bounds=True")
 
     if m1_model is None:
         m1_model = km.load_default()
@@ -709,28 +725,36 @@ def build_karr_chassis_v4(
     baseline_demand: dict[str, float] | None = None
     if enable_pool_replenishment:
         baseline_demand = compute_baseline_demand_per_s(
-            m2_model, m3_model, condition=condition,
+            m2_model,
+            m3_model,
+            condition=condition,
         )
 
-    m1_proc = KarrMetabolismProcess({
-        "model": m1_model,
-        "time_step": time_step_s,
-        "dynamic_bounds": dynamic_bounds,
-        "enable_pool_replenishment": enable_pool_replenishment,
-        "baseline_demand_per_s": baseline_demand,
-    })
-    m2_proc = KarrTranscriptionV3Process({
-        "kinetics_model": tx.calibrated_chassis_model(m2_model),
-        "mechanism_inputs": m2_mechanism_inputs,
-        "time_step": time_step_s,
-        "substrate_default": _M1_SUBSTRATE_DEFAULT,
-    })
-    m3_proc = KarrTranslationV3Process({
-        "kinetics_model": m3_model,
-        "mechanism_inputs": m3_mechanism_inputs,
-        "time_step": time_step_s,
-        "substrate_default": _M1_SUBSTRATE_DEFAULT,
-    })
+    m1_proc = KarrMetabolismProcess(
+        {
+            "model": m1_model,
+            "time_step": time_step_s,
+            "dynamic_bounds": dynamic_bounds,
+            "enable_pool_replenishment": enable_pool_replenishment,
+            "baseline_demand_per_s": baseline_demand,
+        }
+    )
+    m2_proc = KarrTranscriptionV3Process(
+        {
+            "kinetics_model": tx.calibrated_chassis_model(m2_model),
+            "mechanism_inputs": m2_mechanism_inputs,
+            "time_step": time_step_s,
+            "substrate_default": _M1_SUBSTRATE_DEFAULT,
+        }
+    )
+    m3_proc = KarrTranslationV3Process(
+        {
+            "kinetics_model": m3_model,
+            "mechanism_inputs": m3_mechanism_inputs,
+            "time_step": time_step_s,
+            "substrate_default": _M1_SUBSTRATE_DEFAULT,
+        }
+    )
     d2_proc = KarrD2RealProcess({"time_step": time_step_s})
     decay_proc = ProteinDecayLightProcess({"time_step": time_step_s})
     trna_proc = KarrTRNAAminoacylationProcess({"time_step": time_step_s})
@@ -787,51 +811,57 @@ def build_karr_chassis_v4(
         | {p_trans_proc.atp_wid}
         | set(p_activation_proc.substrate_wids)
     )
-    allocation_step = KarrAllocationStep({
-        "consumer_processes": [
-            ("karr_d2_real", list(d2_proc.substrate_wids)),
-            ("karr_protein_decay_light", ["ATP", "H2O"]),
-            (
-                ribasm_proc.name,
-                [ribasm_proc.substrate_wid_gtp, ribasm_proc.substrate_wid_h2o],
-            ),
-            (trna_proc.name, trna_consumed),
-            (rna_proc.name, rna_proc_consumed),
-            (rna_mod_proc.name, rna_mod_consumed),
-            (pp1_proc.name, [pp1_proc.substrate_wids[pp1_proc.substrate_idx_water]]),
-            (pp2_proc.name, pp2_consumed),
-            (p_mod_proc.name, p_mod_consumed),
-            (p_fold_proc.name, p_fold_consumed),
-            (p_trans_proc.name, [p_trans_proc.atp_wid]),
-        ],
-        "substrate_wids": allocation_substrates,
-    })
+    allocation_step = KarrAllocationStep(
+        {
+            "consumer_processes": [
+                ("karr_d2_real", list(d2_proc.substrate_wids)),
+                ("karr_protein_decay_light", ["ATP", "H2O"]),
+                (
+                    ribasm_proc.name,
+                    [ribasm_proc.substrate_wid_gtp, ribasm_proc.substrate_wid_h2o],
+                ),
+                (trna_proc.name, trna_consumed),
+                (rna_proc.name, rna_proc_consumed),
+                (rna_mod_proc.name, rna_mod_consumed),
+                (pp1_proc.name, [pp1_proc.substrate_wids[pp1_proc.substrate_idx_water]]),
+                (pp2_proc.name, pp2_consumed),
+                (p_mod_proc.name, p_mod_consumed),
+                (p_fold_proc.name, p_fold_consumed),
+                (p_trans_proc.name, [p_trans_proc.atp_wid]),
+            ],
+            "substrate_wids": allocation_substrates,
+        }
+    )
     req_d2 = RequestCalculatorD2({"d2_real_proc": d2_proc})
     req_pd = RequestCalculatorPD({"pd_light_proc": decay_proc})
     req_ribasm = RequestCalculatorRibAsm({"ribasm_proc": ribasm_proc})
     req_trna = RequestCalculatorTRNA({"trna_proc": trna_proc})
-    req_rna = RequestCalculatorRNAPathway({
-        "rna_processing_proc": rna_proc,
-        "rna_modification_proc": rna_mod_proc,
-    })
-    req_protein = RequestCalculatorProteinPathway({
-        "protein_processing_i_proc": pp1_proc,
-        "protein_processing_ii_proc": pp2_proc,
-        "protein_modification_proc": p_mod_proc,
-        "protein_folding_proc": p_fold_proc,
-        "protein_translocation_proc": p_trans_proc,
-    })
+    req_rna = RequestCalculatorRNAPathway(
+        {
+            "rna_processing_proc": rna_proc,
+            "rna_modification_proc": rna_mod_proc,
+        }
+    )
+    req_protein = RequestCalculatorProteinPathway(
+        {
+            "protein_processing_i_proc": pp1_proc,
+            "protein_processing_ii_proc": pp2_proc,
+            "protein_modification_proc": p_mod_proc,
+            "protein_folding_proc": p_fold_proc,
+            "protein_translocation_proc": p_trans_proc,
+        }
+    )
 
     rxn_ids = m1_model.rxn_wcm_ids_645
     m1_sub_ids = [str(wid) for wid in m1_model.raw["ids"]["substrate_wcm_585"]]
-    rna_init = {g: float(m2_model.counts_mature[i, condition])
-                for i, g in enumerate(m2_model.gene_wcm_ids)}
-    prot_init = {p: float(m3_model.counts_mature[i])
-                 for i, p in enumerate(m3_model.protein_wcm_ids)}
-
-    initial_substrates: dict[str, float] = {
-        sid: 0.0 for sid in allocation_substrates
+    rna_init = {
+        g: float(m2_model.counts_mature[i, condition]) for i, g in enumerate(m2_model.gene_wcm_ids)
     }
+    prot_init = {
+        p: float(m3_model.counts_mature[i]) for i, p in enumerate(m3_model.protein_wcm_ids)
+    }
+
+    initial_substrates: dict[str, float] = {sid: 0.0 for sid in allocation_substrates}
     for sid in m1_sub_ids:
         initial_substrates[sid] = _M1_SUBSTRATE_DEFAULT
     for wid, cnt in prot_init.items():
@@ -841,9 +871,7 @@ def build_karr_chassis_v4(
         if wid in initial_substrates:
             initial_substrates[wid] = max(initial_substrates[wid], cnt)
 
-    aminoacylated_init: dict[str, float] = {
-        wid: 0.0 for wid in trna_proc.aminoacylated_rna_wids
-    }
+    aminoacylated_init: dict[str, float] = {wid: 0.0 for wid in trna_proc.aminoacylated_rna_wids}
     for wid in trna_proc.free_rna_wids:
         total = max(0.0, float(rna_init.get(wid, 0.0)))
         free = total / 3.0
@@ -851,12 +879,8 @@ def build_karr_chassis_v4(
         rna_init[wid] = free
         if wid in aminoacylated_init:
             aminoacylated_init[wid] = charged
-    rna_modified_init: dict[str, float] = {
-        wid: 0.0 for wid in rna_mod_proc.modified_rna_wids
-    }
-    tx_rate_fold_init: dict[str, float] = {
-        tu_wid: 1.0 for tu_wid in m2_proc.tu_wids
-    }
+    rna_modified_init: dict[str, float] = {wid: 0.0 for wid in rna_mod_proc.modified_rna_wids}
+    tx_rate_fold_init: dict[str, float] = {tu_wid: 1.0 for tu_wid in m2_proc.tu_wids}
     trna_gene_wids = set(trna_proc.free_rna_wids)
     for gidx, gene_wid in enumerate(m2_proc.gene_ids):
         if gene_wid in trna_gene_wids:
@@ -864,35 +888,22 @@ def build_karr_chassis_v4(
 
     protein_unprocessed_init = {
         wid: float(prot_init.get(wid, 0.0))
-        for wid in sorted(set(pp1_proc.unprocessed_monomer_wids) | set(pp2_proc.unprocessed_monomer_wids))
+        for wid in sorted(
+            set(pp1_proc.unprocessed_monomer_wids) | set(pp2_proc.unprocessed_monomer_wids)
+        )
     }
     protein_unfolded_init = {
-        wid: float(prot_init.get(wid, 0.0))
-        for wid in p_fold_proc.unfolded_monomer_wids
+        wid: float(prot_init.get(wid, 0.0)) for wid in p_fold_proc.unfolded_monomer_wids
     }
     protein_unmodified_init = {
-        wid: float(prot_init.get(wid, 0.0))
-        for wid in p_mod_proc.unmodified_monomer_wids
+        wid: float(prot_init.get(wid, 0.0)) for wid in p_mod_proc.unmodified_monomer_wids
     }
-    protein_processed_init = {
-        wid: 0.0 for wid in pp2_proc.processed_monomer_wids
-    }
-    protein_signal_seq_init = {
-        wid: 0.0 for wid in pp2_proc.signal_sequence_monomer_wids
-    }
-    protein_modified_init = {
-        wid: 0.0 for wid in p_mod_proc.modified_monomer_wids
-    }
-    protein_enzyme_init = {
-        wid: float(prot_init.get(wid, 0.0))
-        for wid in pp2_proc.enzyme_wids
-    }
-    protein_location_init = {
-        wid: "cytoplasm" for wid in p_trans_proc.translocatable_wids
-    }
-    protein_activity_init = {
-        wid: 0 for wid in p_activation_proc.regulated_protein_wids
-    }
+    protein_processed_init = {wid: 0.0 for wid in pp2_proc.processed_monomer_wids}
+    protein_signal_seq_init = {wid: 0.0 for wid in pp2_proc.signal_sequence_monomer_wids}
+    protein_modified_init = {wid: 0.0 for wid in p_mod_proc.modified_monomer_wids}
+    protein_enzyme_init = {wid: float(prot_init.get(wid, 0.0)) for wid in pp2_proc.enzyme_wids}
+    protein_location_init = {wid: "cytoplasm" for wid in p_trans_proc.translocatable_wids}
+    protein_activity_init = {wid: 0 for wid in p_activation_proc.regulated_protein_wids}
 
     complex_counts = {
         "RNA_POLYMERASE": float(m2_mechanism_inputs.n_active_rnap),
@@ -1042,8 +1053,7 @@ def build_karr_chassis_v4(
 
     initial_state: dict[str, Any] = {
         "metabolic_reaction": {
-            "fluxs": {rid: float(m1_model.fluxs_stored[i])
-                      for i, rid in enumerate(rxn_ids)},
+            "fluxs": {rid: float(m1_model.fluxs_stored[i]) for i, rid in enumerate(rxn_ids)},
             "growth_per_s": float(m1_model.stored_runtime["growth_per_s"]),
             "growth_per_h": float(m1_model.stored_runtime["growth_per_h"]),
         },
@@ -1068,16 +1078,14 @@ def build_karr_chassis_v4(
         "complex": {"counts": complex_counts},
         "stimuli": {wid: 0.0 for wid in p_activation_proc.stimuli_wids},
         "activation_substrates": {
-            wid: float(initial_substrates.get(wid, 0.0))
-            for wid in p_activation_proc.substrate_wids
+            wid: float(initial_substrates.get(wid, 0.0)) for wid in p_activation_proc.substrate_wids
         },
         "tx_rate_fold_change": tx_rate_fold_init,
     }
     if dynamic_bounds:
-        initial_state["m1_dynamic_diagnostics"] = {
-            k: 0.0 for k in m1_proc._diagnostics_schema()
-        }
+        initial_state["m1_dynamic_diagnostics"] = {k: 0.0 for k in m1_proc._diagnostics_schema()}
         from opencell.vivarium.karr_m1 import _CYTOSOL_COMPARTMENT_0
+
         initial_state["m1_pools"] = {
             sid: float(m1_proc._sub_state[idx, _CYTOSOL_COMPARTMENT_0])
             for sid, idx in m1_proc._demand_idx_pairs

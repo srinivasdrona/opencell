@@ -41,7 +41,6 @@ from opencell.models.coupled import SECONDS_PER_HOUR, CoupledMetabolismTranscrip
 from opencell.models.transcription import TranscriptionModel
 from opencell.solvers.hybrid import hybrid_ensemble
 
-
 ARTIFACT_DIR = Path("artifacts")
 ARTIFACT_DIR.mkdir(exist_ok=True)
 
@@ -56,7 +55,10 @@ def _git_sha() -> str | None:
     try:
         out = subprocess.run(
             ["git", "rev-parse", "--short", "HEAD"],
-            capture_output=True, text=True, check=True, timeout=2,
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=2,
         )
         return out.stdout.strip()
     except Exception:
@@ -78,8 +80,14 @@ def _uncoupled_baseline(ts_h: np.ndarray) -> dict[str, np.ndarray]:
     metabolism never throttled it (f_met == 1 always)."""
     gene = TranscriptionModel.load()
     sol = solve_ivp(
-        gene.rhs, (0.0, ts_h[-1]), gene.initial_y,
-        method="LSODA", t_eval=ts_h, atol=1e-3, rtol=1e-6, max_step=0.05,
+        gene.rhs,
+        (0.0, ts_h[-1]),
+        gene.initial_y,
+        method="LSODA",
+        t_eval=ts_h,
+        atol=1e-3,
+        rtol=1e-6,
+        max_step=0.05,
     )
     if not sol.success:
         raise RuntimeError(f"baseline solve failed: {sol.message}")
@@ -93,8 +101,10 @@ def main() -> None:
     gidx = coupled.gene.species_index()
     midx = coupled.met.species_index()
 
-    print(f"Running {N_REALISATIONS} hybrid realisations over {T_END_HOURS} h "
-          f"(macro_dt={MACRO_DT_S}s, base_seed={BASE_SEED})...")
+    print(
+        f"Running {N_REALISATIONS} hybrid realisations over {T_END_HOURS} h "
+        f"(macro_dt={MACRO_DT_S}s, base_seed={BASE_SEED})..."
+    )
     wall_start = time.perf_counter()
     runs = hybrid_ensemble(
         coupled,
@@ -110,8 +120,7 @@ def main() -> None:
     cglcex = np.array([r.y_met[:, midx["cglcex"]] for r in runs])
     f_met = np.array([r.f_met_history for r in runs])
     series = {
-        s: np.array([r.y_gene[:, gidx[s]] for r in runs])
-        for s in ("MA", "MR", "A", "R", "C")
+        s: np.array([r.y_gene[:, gidx[s]] for r in runs]) for s in ("MA", "MR", "A", "R", "C")
     }
 
     cglcex_stats = _ensemble_stats(cglcex)
@@ -128,33 +137,35 @@ def main() -> None:
     fig, axes = plt.subplots(3, 1, figsize=(10.0, 10.5), sharex=True)
 
     ax = axes[0]
-    ax.plot(ts_h, cglcex_stats["mean"], color="tab:blue", lw=1.8,
-            label="external glucose")
+    ax.plot(ts_h, cglcex_stats["mean"], color="tab:blue", lw=1.8, label="external glucose")
     ax.set_ylabel("glucose cglcex (mM)", color="tab:blue")
     ax.tick_params(axis="y", labelcolor="tab:blue")
     ax.set_ylim(bottom=0)
     ax2 = ax.twinx()
-    ax2.plot(ts_h, f_met_stats["mean"], color="tab:red", lw=1.8, ls="--",
-             label="f_met (PTS / PTS_init)")
+    ax2.plot(
+        ts_h, f_met_stats["mean"], color="tab:red", lw=1.8, ls="--", label="f_met (PTS / PTS_init)"
+    )
     ax2.set_ylabel("f_met (dimensionless)", color="tab:red")
     ax2.tick_params(axis="y", labelcolor="tab:red")
     ax2.set_ylim(0, 1.05)
     if t_throttle_h is not None:
         ax.axvline(t_throttle_h, color="black", lw=0.8, ls=":", alpha=0.6)
-        ax.text(t_throttle_h, ax.get_ylim()[1] * 0.95,
-                f" f_met<0.5\n at t={t_throttle_h:.2f}h",
-                fontsize=8, va="top")
+        ax.text(
+            t_throttle_h,
+            ax.get_ylim()[1] * 0.95,
+            f" f_met<0.5\n at t={t_throttle_h:.2f}h",
+            fontsize=8,
+            va="top",
+        )
     ax.set_title("Metabolism: glucose depletion drags the coupling signal toward zero")
     ax.grid(alpha=0.3)
 
     ax = axes[1]
     for s, color in [("MA", "tab:green"), ("MR", "tab:purple")]:
         st = stats[s]
-        ax.plot(ts_h, st["mean"], color=color, lw=1.6,
-                label=f"{s} coupled mean")
+        ax.plot(ts_h, st["mean"], color=color, lw=1.6, label=f"{s} coupled mean")
         ax.fill_between(ts_h, st["p10"], st["p90"], color=color, alpha=0.18)
-        ax.plot(ts_h, baseline[s], color=color, lw=1.4, ls=":",
-                label=f"{s} uncoupled (det.)")
+        ax.plot(ts_h, baseline[s], color=color, lw=1.4, ls=":", label=f"{s} uncoupled (det.)")
     ax.set_ylabel("mRNA molecules / cell")
     ax.set_title(
         f"Vilar mRNA: {N_REALISATIONS} stochastic realisations vs "
@@ -167,11 +178,9 @@ def main() -> None:
     ax = axes[2]
     for s, color in [("A", "tab:orange"), ("R", "tab:brown"), ("C", "tab:gray")]:
         st = stats[s]
-        ax.plot(ts_h, st["mean"], color=color, lw=1.6,
-                label=f"{s} coupled mean")
+        ax.plot(ts_h, st["mean"], color=color, lw=1.6, label=f"{s} coupled mean")
         ax.fill_between(ts_h, st["p10"], st["p90"], color=color, alpha=0.18)
-        ax.plot(ts_h, baseline[s], color=color, lw=1.4, ls=":",
-                label=f"{s} uncoupled (det.)")
+        ax.plot(ts_h, baseline[s], color=color, lw=1.4, ls=":", label=f"{s} uncoupled (det.)")
     ax.set_xlabel("time (cellular hours)")
     ax.set_ylabel("protein molecules / cell  (symlog)")
     ax.set_yscale("symlog", linthresh=1.0)
@@ -204,9 +213,7 @@ def main() -> None:
         "git_sha": _git_sha(),
         "wall_seconds_total": wall_s,
         "wall_seconds_per_realisation": wall_s / N_REALISATIONS,
-        "tau_steps_per_realisation_mean": float(
-            np.mean([r.n_tau_steps for r in runs])
-        ),
+        "tau_steps_per_realisation_mean": float(np.mean([r.n_tau_steps for r in runs])),
         "f_met_initial": float(f_met_stats["mean"][0]),
         "f_met_final_mean": f_met_stats["final_mean"],
         "f_met_below_0p5_at_hours": t_throttle_h,
@@ -222,14 +229,21 @@ def main() -> None:
 
     print("")
     print("Headline:")
-    print(f"  f_met:          {summary['f_met_initial']:.3f}  ->  "
-          f"{summary['f_met_final_mean']:.3f}")
-    print(f"  glucose (mM):   {summary['cglcex_initial_mM']:.3f}  ->  "
-          f"{summary['cglcex_final_mean_mM']:.3f}")
-    print(f"  R coupled:      mean {summary['coupled_final_mean']['R']:.1f}  "
-          f"vs uncoupled baseline {summary['uncoupled_final_baseline']['R']:.1f}")
-    print(f"  A coupled:      mean {summary['coupled_final_mean']['A']:.1f}  "
-          f"vs uncoupled baseline {summary['uncoupled_final_baseline']['A']:.1f}")
+    print(
+        f"  f_met:          {summary['f_met_initial']:.3f}  ->  {summary['f_met_final_mean']:.3f}"
+    )
+    print(
+        f"  glucose (mM):   {summary['cglcex_initial_mM']:.3f}  ->  "
+        f"{summary['cglcex_final_mean_mM']:.3f}"
+    )
+    print(
+        f"  R coupled:      mean {summary['coupled_final_mean']['R']:.1f}  "
+        f"vs uncoupled baseline {summary['uncoupled_final_baseline']['R']:.1f}"
+    )
+    print(
+        f"  A coupled:      mean {summary['coupled_final_mean']['A']:.1f}  "
+        f"vs uncoupled baseline {summary['uncoupled_final_baseline']['A']:.1f}"
+    )
 
 
 if __name__ == "__main__":

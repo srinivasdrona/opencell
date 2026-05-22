@@ -25,7 +25,7 @@ def coupled():
     return CoupledMetabolismTranscription.build(signal="uptake_flux")
 
 
-def test_metabolism_process_ports(coupled):
+def test_metabolism_process_ports(coupled) -> None:
     proc = MetabolismProcess({"coupled": coupled})
     schema = proc.ports_schema()
     assert "metabolites" in schema
@@ -35,19 +35,19 @@ def test_metabolism_process_ports(coupled):
     assert schema["signal"]["v_pts"]["_updater"] == "set"
 
 
-def test_signal_process_ports(coupled):
+def test_signal_process_ports(coupled) -> None:
     proc = SignalProcess({"coupled": coupled})
     schema = proc.ports_schema()
     assert schema["signal"]["f_met"]["_updater"] == "set"
     assert schema["signal"]["f_met"]["_default"] == 1.0
 
 
-def test_gene_network_requires_explicit_rng(coupled):
+def test_gene_network_requires_explicit_rng(coupled) -> None:
     with pytest.raises(ValueError, match="explicit 'rng'"):
         GeneNetworkProcess({"coupled": coupled, "rng": None})
 
 
-def test_gene_network_ports(coupled):
+def test_gene_network_ports(coupled) -> None:
     rng = np.random.default_rng(0)
     proc = GeneNetworkProcess({"coupled": coupled, "rng": rng})
     schema = proc.ports_schema()
@@ -56,7 +56,7 @@ def test_gene_network_ports(coupled):
     assert schema["signal"]["f_met"]["_updater"] == "set"
 
 
-def test_engine_runs_short_horizon(coupled):
+def test_engine_runs_short_horizon(coupled) -> None:
     eng = build_coupled_engine(coupled=coupled, macro_dt_s=60.0, seed=7)
     eng.update(120.0)
     ts = eng.emitter.get_timeseries()
@@ -69,7 +69,7 @@ def test_engine_runs_short_horizon(coupled):
     assert f_met.max() <= 1.0 + 1e-9
 
 
-def test_engine_couples_observably(coupled):
+def test_engine_couples_observably(coupled) -> None:
     """Long enough run that f_met must drop below 1 if coupling works."""
     eng = build_coupled_engine(coupled=coupled, macro_dt_s=60.0, seed=11)
     eng.update(1800.0)
@@ -80,7 +80,7 @@ def test_engine_couples_observably(coupled):
     assert cglcex[-1] < cglcex[0], "glucose should deplete"
 
 
-def test_engine_rng_determinism(coupled):
+def test_engine_rng_determinism(coupled) -> None:
     """Same seed must give identical gene trajectories."""
     e1 = build_coupled_engine(coupled=coupled, macro_dt_s=60.0, seed=1)
     e1.update(600.0)
@@ -91,7 +91,7 @@ def test_engine_rng_determinism(coupled):
     np.testing.assert_array_equal(ma1, ma1b)
 
 
-def test_topology_uses_separate_process_keys(coupled):
+def test_topology_uses_separate_process_keys(coupled) -> None:
     """Regression: process keys must not collide with store path leaves
     (Vivarium places each process at the store path equal to its key)."""
     eng = build_coupled_engine(coupled=coupled, macro_dt_s=60.0, seed=0)

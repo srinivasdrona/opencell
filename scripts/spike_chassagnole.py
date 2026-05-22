@@ -27,12 +27,10 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-
 import roadrunner
 
 from opencell.models.metabolism import MetabolismModel
 from opencell.solvers.ode_scipy import ScipySolverConfig, solve_ode_scipy
-
 
 T_END = 300.0
 T_SPIKE = 180.0
@@ -58,8 +56,11 @@ def run_opencell_with_spike(
     # Phase 1: 0 -> spike_time
     t_eval_phase1 = t_eval[t_eval <= spike_time]
     res1 = solve_ode_scipy(
-        model.rhs, model.initial_y, (0.0, spike_time),
-        config=cfg, t_eval=t_eval_phase1,
+        model.rhs,
+        model.initial_y,
+        (0.0, spike_time),
+        config=cfg,
+        t_eval=t_eval_phase1,
     )
     if not res1.success:
         raise SystemExit(f"OpenCell phase 1 failed: {res1.message}")
@@ -71,8 +72,11 @@ def run_opencell_with_spike(
     # Phase 2: spike_time -> T_END  (continue from spiked state)
     t_eval_phase2 = t_eval[t_eval > spike_time]
     res2 = solve_ode_scipy(
-        model.rhs, y_after_spike, (spike_time, t_eval[-1]),
-        config=cfg, t_eval=t_eval_phase2,
+        model.rhs,
+        y_after_spike,
+        (spike_time, t_eval[-1]),
+        config=cfg,
+        t_eval=t_eval_phase2,
     )
     if not res2.success:
         raise SystemExit(f"OpenCell phase 2 failed: {res2.message}")
@@ -96,8 +100,8 @@ def run_roadrunner_with_spike(
     rr.integrator.relative_tolerance = 1e-10
     rr.integrator.absolute_tolerance = 1e-12
 
-    t_phase1 = t_eval[t_eval <= spike_time]   # ..., 179.9, 180.0
-    t_phase2 = t_eval[t_eval > spike_time]    # 180.1, ..., 300.0
+    t_phase1 = t_eval[t_eval <= spike_time]  # ..., 179.9, 180.0
+    t_phase2 = t_eval[t_eval > spike_time]  # 180.1, ..., 300.0
 
     # Phase 1: sample at exactly t_phase1
     res1 = rr.simulate(0.0, spike_time, len(t_phase1))
@@ -148,17 +152,25 @@ def main() -> None:
 
     # Overlay plot with spike marker
     fig, (ax_top, ax_bot) = plt.subplots(
-        2, 1, figsize=(10, 8), sharex=True,
+        2,
+        1,
+        figsize=(10, 8),
+        sharex=True,
         gridspec_kw={"height_ratios": [3, 2]},
     )
     for k, sid in enumerate(HIGHLIGHT):
         c = COLORS[k]
-        ax_top.plot(t_eval, rr_full[sid], color=c, linewidth=2.5, alpha=0.35,
-                    label=f"{sid} (RR)")
-        ax_top.plot(t_eval, ours[sid], color=c, linewidth=1.0, linestyle="--",
-                    label=f"{sid} (OpenCell)")
-    ax_top.axvline(T_SPIKE, color="black", linestyle=":", linewidth=1.5,
-                   label=f"glucose spike (x{SPIKE_MULTIPLIER:.0f})")
+        ax_top.plot(t_eval, rr_full[sid], color=c, linewidth=2.5, alpha=0.35, label=f"{sid} (RR)")
+        ax_top.plot(
+            t_eval, ours[sid], color=c, linewidth=1.0, linestyle="--", label=f"{sid} (OpenCell)"
+        )
+    ax_top.axvline(
+        T_SPIKE,
+        color="black",
+        linestyle=":",
+        linewidth=1.5,
+        label=f"glucose spike (x{SPIKE_MULTIPLIER:.0f})",
+    )
     ax_top.set_ylabel("concentration (mM)")
     ax_top.set_title(
         f"OpenCell (dashed) vs libroadrunner (thick) - Chassagnole 2002 with glucose spike\n"
@@ -209,7 +221,7 @@ def main() -> None:
     end_idx = -1
     print(f"  {'species':>8s}  {'t<180s':>10s}  {'t=180+':>10s}  {'t=300s':>10s}")
     for sid in ["cglcex", "cg6p", "cf6p", "cfdp", "cpep", "cpyr"]:
-        i = sp_idx[sid]
+        sp_idx[sid]
         print(
             f"  {sid:>8s}  {ours[sid][pre_idx]:>10.4f}  "
             f"{ours[sid][post_idx]:>10.4f}  {ours[sid][end_idx]:>10.4f}"

@@ -39,6 +39,7 @@ on path):
     python scripts/extract_per_process_fixtures.py --all --from-flat
     python scripts/extract_per_process_fixtures.py --name Transcription --from-flat
 """
+
 from __future__ import annotations
 
 import argparse
@@ -51,9 +52,15 @@ import numpy as np
 import scipy.io as sio
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SRC_PROCESS = REPO_ROOT / "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures"
-SRC_STATE   = REPO_ROOT / "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures"
-OUT_DIR     = REPO_ROOT / "data/karr_fixtures/per_process"
+SRC_PROCESS = (
+    REPO_ROOT
+    / "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+process/fixtures"
+)
+SRC_STATE = (
+    REPO_ROOT
+    / "data/m1_sources/WholeCell/src_test/+edu/+stanford/+covert/+cell/+sim/+state/fixtures"
+)
+OUT_DIR = REPO_ROOT / "data/karr_fixtures/per_process"
 
 
 def _sha256(p: Path) -> str:
@@ -85,8 +92,7 @@ def _flatten_struct(obj, prefix: str, arrays: dict, scalars: dict) -> None:
     """
     if hasattr(obj, "_fieldnames"):
         for fn in obj._fieldnames:
-            _flatten_struct(getattr(obj, fn), f"{prefix}/{fn}" if prefix else fn,
-                            arrays, scalars)
+            _flatten_struct(getattr(obj, fn), f"{prefix}/{fn}" if prefix else fn, arrays, scalars)
         return
     if isinstance(obj, np.ndarray):
         if obj.dtype == object and obj.size == 1:
@@ -98,8 +104,10 @@ def _flatten_struct(obj, prefix: str, arrays: dict, scalars: dict) -> None:
         # bytes/strings stored as object array
         if obj.dtype == object:
             try:
-                vals = [b.decode("latin1", "replace") if isinstance(b, (bytes, bytearray)) else b
-                        for b in obj.flat]
+                vals = [
+                    b.decode("latin1", "replace") if isinstance(b, (bytes, bytearray)) else b
+                    for b in obj.flat
+                ]
                 if all(isinstance(v, str) for v in vals):
                     scalars[prefix] = vals if len(vals) > 1 else vals[0]
                     return
@@ -135,7 +143,8 @@ def extract_one(src: Path, out_dir: Path) -> dict:
     if mat_version == "v7.3":
         entry["extraction_status"] = "blocked_v73_hdf5"
         entry["notes"].append(
-            "MAT v7.3 (HDF5) — current toolchain only attempts v5; needs h5py walker.")
+            "MAT v7.3 (HDF5) — current toolchain only attempts v5; needs h5py walker."
+        )
         return entry
 
     try:
@@ -181,7 +190,8 @@ def extract_one(src: Path, out_dir: Path) -> dict:
         entry["notes"].append(
             "MCOS-serialized MATLAB class object; field-level decode requires "
             "MATLAB or a custom MCOS subsystem decoder. Source .mat sha256 + "
-            "MCOS pointer preserved so a future decoder can re-extract.")
+            "MCOS pointer preserved so a future decoder can re-extract."
+        )
     else:
         entry["extraction_status"] = "extracted" if (arrays or scalars) else "empty"
 
@@ -200,8 +210,7 @@ def extract_one(src: Path, out_dir: Path) -> dict:
         "scalars": {k: scalars[k] for k in sorted(scalars)},
         "array_keys": sorted(arrays),
     }
-    json_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n",
-                         encoding="utf-8")
+    json_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     # Use basenames only so output is location-independent (validation
     # re-extracts to a temp dir; hashes must match the committed payload).
     entry["out_npz"] = npz_path.name
@@ -231,7 +240,9 @@ def extract_one_from_flat(flat_mat: Path, out_dir: Path, kind: str) -> dict:
     sha = _sha256(flat_mat)
     entry: dict = {
         "name": name,
-        "source_path": flat_mat.relative_to(REPO_ROOT).as_posix() if flat_mat.is_relative_to(REPO_ROOT) else str(flat_mat),
+        "source_path": flat_mat.relative_to(REPO_ROOT).as_posix()
+        if flat_mat.is_relative_to(REPO_ROOT)
+        else str(flat_mat),
         "source_sha256": sha,
         "source_size_bytes": flat_mat.stat().st_size,
         "mat_format": "v7_flattened_by_matlab",
@@ -253,14 +264,18 @@ def extract_one_from_flat(flat_mat: Path, out_dir: Path, kind: str) -> dict:
         entry["extraction_status"] = "no_data_field"
         entry["notes"].append(
             "expected top-level struct named 'data'; got: "
-            + ", ".join(k for k in d if not k.startswith("__")))
+            + ", ".join(k for k in d if not k.startswith("__"))
+        )
         return entry
 
     try:
         obj = d["data"]
         # MATLAB writes the struct nested in a 1x1 object array.
-        obj = obj[0, 0] if hasattr(obj, "shape") and obj.shape == (1, 1) else (
-              obj.flat[0] if hasattr(obj, "size") and obj.size == 1 else obj)
+        obj = (
+            obj[0, 0]
+            if hasattr(obj, "shape") and obj.shape == (1, 1)
+            else (obj.flat[0] if hasattr(obj, "size") and obj.size == 1 else obj)
+        )
         _flatten_struct(obj, "", arrays, scalars)
     except Exception as e:
         entry["extraction_status"] = "flatten_failed"
@@ -306,8 +321,10 @@ def extract_one_from_flat(flat_mat: Path, out_dir: Path, kind: str) -> dict:
             "(cycle-cut sentinel/cell trees); see <Name>_flat.mat for full payload."
         )
     payload["manifest"] = entry
-    json_path.write_text(json.dumps(payload, indent=2, sort_keys=True, default=_json_default) + "\n",
-                         encoding="utf-8")
+    json_path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, default=_json_default) + "\n",
+        encoding="utf-8",
+    )
     entry["out_npz"] = npz_path.name
     entry["out_json"] = json_path.name
     return entry
@@ -340,16 +357,25 @@ def discover_sources() -> list[tuple[str, Path]]:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--name", help="Single fixture name (e.g. Transcription)")
-    ap.add_argument("--kind", choices=("process", "state"),
-                    help="Where to look when --name is given (default: try both)")
+    ap.add_argument(
+        "--kind",
+        choices=("process", "state"),
+        help="Where to look when --name is given (default: try both)",
+    )
     ap.add_argument("--all", action="store_true", help="Extract every fixture")
     ap.add_argument("--out", default=str(OUT_DIR), help="Output directory")
-    ap.add_argument("--from-flat", action="store_true",
-                    help="Ingest MATLAB-flattened <Name>_flat.mat outputs from "
-                         "scripts/matlab/extract_per_process_fixtures.m instead "
-                         "of attempting MCOS decode in pure Python.")
-    ap.add_argument("--flat-dir", default=str(OUT_DIR),
-                    help="Where to find <Name>_flat.mat files (default: same as --out)")
+    ap.add_argument(
+        "--from-flat",
+        action="store_true",
+        help="Ingest MATLAB-flattened <Name>_flat.mat outputs from "
+        "scripts/matlab/extract_per_process_fixtures.m instead "
+        "of attempting MCOS decode in pure Python.",
+    )
+    ap.add_argument(
+        "--flat-dir",
+        default=str(OUT_DIR),
+        help="Where to find <Name>_flat.mat files (default: same as --out)",
+    )
     args = ap.parse_args()
 
     if not (args.all or args.name):
@@ -391,9 +417,11 @@ def main() -> int:
         manifest["fixtures"].sort(key=lambda e: (e["kind"], e["name"]))
         manifest_path = out_dir / "manifest.json"
         manifest_path.write_text(
-            json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-        print(f"\nWrote {manifest_path.relative_to(REPO_ROOT)} "
-              f"({len(manifest['fixtures'])} fixtures)")
+            json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+        print(
+            f"\nWrote {manifest_path.relative_to(REPO_ROOT)} ({len(manifest['fixtures'])} fixtures)"
+        )
 
     return rc
 

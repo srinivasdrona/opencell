@@ -21,16 +21,15 @@ Used by:
 This module performs no MAT access; the JSON fixture is the sole runtime
 input.
 """
+
 from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterable
 
 DEFAULT_FIXTURE_JSON = (
-    Path(__file__).resolve().parents[2]
-    / "data" / "karr_fixtures" / "karr_protein_complexes.json"
+    Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "karr_protein_complexes.json"
 )
 
 SCHEMA_VERSION = "karr_protein_complexes__v1"

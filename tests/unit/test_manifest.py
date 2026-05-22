@@ -26,7 +26,6 @@ from opencell.manifest import (
 )
 from opencell.manifest.sbml import _format_unit_token
 
-
 # ---------------------------------------------------------------------------
 # Synthetic fixture (mimics Chassagnole BIOMD0000000051 style)
 # ---------------------------------------------------------------------------
@@ -97,18 +96,19 @@ SYNTHETIC_SBML = b"""<?xml version="1.0" encoding="UTF-8"?>
 # Unit formatting
 # ---------------------------------------------------------------------------
 
+
 class TestUnitFormatting:
-    def test_format_simple_mole(self):
+    def test_format_simple_mole(self) -> None:
         # mole with scale -3 = millimole
         assert _format_unit_token(SbmlUnit(kind="mole", scale=-3)) == "mmol"
 
-    def test_format_litre(self):
+    def test_format_litre(self) -> None:
         assert _format_unit_token(SbmlUnit(kind="litre")) == "L"
 
-    def test_format_second_inverse(self):
+    def test_format_second_inverse(self) -> None:
         assert _format_unit_token(SbmlUnit(kind="second", exponent=-1)) == "s^-1"
 
-    def test_stringify_mmol_per_L_per_s(self):
+    def test_stringify_mmol_per_L_per_s(self) -> None:
         ud = SbmlUnitDefinition(
             id="substance_per_volume_per_time",
             units=[
@@ -125,7 +125,7 @@ class TestUnitFormatting:
         # Two negative-exponent units => denominator group with parens
         assert s == "mmol/(L*s)"
 
-    def test_stringify_single_denom_no_parens(self):
+    def test_stringify_single_denom_no_parens(self) -> None:
         ud = SbmlUnitDefinition(
             id="conc_per_time",
             units=[SbmlUnit(kind="mole", scale=-3), SbmlUnit(kind="second", exponent=-1)],
@@ -133,31 +133,29 @@ class TestUnitFormatting:
         # Single denom -> "mmol/s" not "mmol/(s)"
         assert stringify_unit(ud) == "mmol/s"
 
-    def test_stringify_dimensionless(self):
+    def test_stringify_dimensionless(self) -> None:
         ud = SbmlUnitDefinition(id="dim", units=[SbmlUnit(kind="dimensionless")])
         assert stringify_unit(ud) == "1"
 
-    def test_stringify_empty_falls_back_to_id(self):
+    def test_stringify_empty_falls_back_to_id(self) -> None:
         ud = SbmlUnitDefinition(id="weird")
         assert stringify_unit(ud) == "weird"
 
 
 class TestUnitResolution:
-    def test_resolve_user_defined(self):
-        ud = SbmlUnitDefinition(
-            id="x", units=[SbmlUnit(kind="second", exponent=-1)]
-        )
+    def test_resolve_user_defined(self) -> None:
+        ud = SbmlUnitDefinition(id="x", units=[SbmlUnit(kind="second", exponent=-1)])
         # Single denominator-only unit renders as "1/s"
         assert resolve_unit("x", {"x": ud}) == "1/s"
 
-    def test_resolve_builtin_kind(self):
+    def test_resolve_builtin_kind(self) -> None:
         assert resolve_unit("mole", {}) == "mol"
         assert resolve_unit("second", {}) == "s"
 
-    def test_resolve_unknown_falls_back(self):
+    def test_resolve_unknown_falls_back(self) -> None:
         assert resolve_unit("mystery_unit", {}) == "mystery_unit"
 
-    def test_resolve_empty(self):
+    def test_resolve_empty(self) -> None:
         assert resolve_unit("", {}) == ""
 
 
@@ -165,31 +163,32 @@ class TestUnitResolution:
 # SBML parsing
 # ---------------------------------------------------------------------------
 
+
 class TestSbmlParsing:
     @pytest.fixture(scope="class")
     def parsed(self):
         return parse_sbml(SYNTHETIC_SBML)
 
-    def test_parse_returns_entities_and_units(self, parsed):
+    def test_parse_returns_entities_and_units(self, parsed) -> None:
         entities, udefs = parsed
         assert entities
         assert "substance_per_volume_per_time" in udefs
         assert udefs["substance_per_volume_per_time"].units
 
-    def test_global_parameters_extracted(self, parsed):
+    def test_global_parameters_extracted(self, parsed) -> None:
         entities, _ = parsed
         globals_ = [e for e in entities if e.kind == "global_parameter"]
         ids = {e.sbml_id for e in globals_}
         assert ids == {"rmaxPGI", "KPGIeqG6P"}
 
-    def test_global_parameter_value_and_unit(self, parsed):
+    def test_global_parameter_value_and_unit(self, parsed) -> None:
         entities, _ = parsed
         rmax = next(e for e in entities if e.sbml_id == "rmaxPGI")
         assert rmax.value == pytest.approx(650.988)
         assert rmax.units_resolved == "mmol/(L*s)"
         assert rmax.kind == "global_parameter"
 
-    def test_local_parameters_extracted(self, parsed):
+    def test_local_parameters_extracted(self, parsed) -> None:
         entities, _ = parsed
         locals_ = [e for e in entities if e.kind == "local_parameter"]
         # 3 local params total: 2 in PGI, 1 in PFK
@@ -197,7 +196,7 @@ class TestSbmlParsing:
         # And they carry their parent reaction id
         assert {e.parent_reaction for e in locals_} == {"PGI", "PFK"}
 
-    def test_local_kcat_value(self, parsed):
+    def test_local_kcat_value(self, parsed) -> None:
         entities, _ = parsed
         kcats = [e for e in entities if e.sbml_id == "kcat_local"]
         # Two kcat_local entries, one per reaction
@@ -205,7 +204,7 @@ class TestSbmlParsing:
         values = sorted(e.value for e in kcats)
         assert values == [50.0, 100.0]
 
-    def test_species_initials_extracted_by_default(self, parsed):
+    def test_species_initials_extracted_by_default(self, parsed) -> None:
         entities, _ = parsed
         species = [e for e in entities if e.kind == "species_initial"]
         ids = {e.sbml_id for e in species}
@@ -214,7 +213,7 @@ class TestSbmlParsing:
         assert g6p.value == pytest.approx(3.48)
         assert g6p.compartment == "cytoplasm"
 
-    def test_species_skipped_when_disabled(self):
+    def test_species_skipped_when_disabled(self) -> None:
         entities, _ = parse_sbml(SYNTHETIC_SBML, include_species=False)
         assert all(e.kind != "species_initial" for e in entities)
 
@@ -222,6 +221,7 @@ class TestSbmlParsing:
 # ---------------------------------------------------------------------------
 # Manifest emission
 # ---------------------------------------------------------------------------
+
 
 class TestManifestEmission:
     @pytest.fixture
@@ -235,37 +235,37 @@ class TestManifestEmission:
         )
         return build_manifest(entities, header=header, model_slug="chassagnole_test")
 
-    def test_manifest_has_metadata(self, manifest):
+    def test_manifest_has_metadata(self, manifest) -> None:
         assert manifest["model_slug"] == "chassagnole_test"
         assert manifest["paper"]["doi"] == "10.1002/bit.10288"
         assert manifest["paper"]["biomodels_id"] == "BIOMD0000000051"
         assert manifest["manifest_version"] == "0.1"
         assert "generated_on" in manifest
 
-    def test_manifest_entries_count(self, manifest):
+    def test_manifest_entries_count(self, manifest) -> None:
         # 2 global + 3 local + 2 species = 7
         assert len(manifest["parameters"]) == 7
 
-    def test_parameter_id_slugified(self, manifest):
+    def test_parameter_id_slugified(self, manifest) -> None:
         ids = {p["parameter_id"] for p in manifest["parameters"]}
         assert "chassagnole_test-rmaxpgi" in ids
 
-    def test_local_param_id_disambiguated_by_reaction(self, manifest):
+    def test_local_param_id_disambiguated_by_reaction(self, manifest) -> None:
         # kcat_local appears in two reactions; ids must collide-resolve
-        ids = [p["parameter_id"] for p in manifest["parameters"]
-               if "kcat_local" in p["parameter_id"]]
+        ids = [
+            p["parameter_id"] for p in manifest["parameters"] if "kcat_local" in p["parameter_id"]
+        ]
         assert len(ids) == 2
         assert len(set(ids)) == 2  # all unique
         # At least one should have a reaction suffix
         assert any("pgi" in i or "pfk" in i for i in ids)
 
-    def test_target_unit_carried_through(self, manifest):
-        rmax = next(p for p in manifest["parameters"]
-                    if p["sbml_id"] == "rmaxPGI")
+    def test_target_unit_carried_through(self, manifest) -> None:
+        rmax = next(p for p in manifest["parameters"] if p["sbml_id"] == "rmaxPGI")
         assert rmax["target_unit"] == "mmol/(L*s)"
         assert rmax["sbml_value"] == pytest.approx(650.988)
 
-    def test_yaml_round_trip(self, manifest, tmp_path):
+    def test_yaml_round_trip(self, manifest, tmp_path) -> None:
         out = tmp_path / "test_manifest.yaml"
         write_manifest_yaml(manifest, out)
         assert out.exists()
@@ -273,7 +273,7 @@ class TestManifestEmission:
         assert loaded["model_slug"] == manifest["model_slug"]
         assert len(loaded["parameters"]) == len(manifest["parameters"])
 
-    def test_required_fields_always_present(self, manifest):
+    def test_required_fields_always_present(self, manifest) -> None:
         for p in manifest["parameters"]:
             assert "parameter_id" in p
             assert "symbol" in p
@@ -284,8 +284,9 @@ class TestManifestEmission:
 # CLI smoke-ish test (import only — full subprocess in integration)
 # ---------------------------------------------------------------------------
 
+
 class TestCliEntryPoint:
-    def test_cli_module_importable(self):
+    def test_cli_module_importable(self) -> None:
         # Make sure the CLI script imports cleanly without side effects
         spec_path = Path(__file__).resolve().parents[2] / "tools" / "biomodels_manifest.py"
         assert spec_path.exists()
@@ -350,37 +351,37 @@ class TestModelMetadata:
     def md(self):
         return extract_metadata(ANNOTATED_SBML)
 
-    def test_model_id_and_name(self, md):
+    def test_model_id_and_name(self, md) -> None:
         assert md.model_id == "Chassagnole2002_test"
         assert md.model_name == "Chassagnole 2002 test"
 
-    def test_biomodels_id_extracted(self, md):
+    def test_biomodels_id_extracted(self, md) -> None:
         assert md.biomodels_id == "BIOMD0000000051"
 
-    def test_pubmed_extracted(self, md):
+    def test_pubmed_extracted(self, md) -> None:
         assert md.pubmed_id == "12082140"
 
-    def test_taxonomy_to_organism(self, md):
+    def test_taxonomy_to_organism(self, md) -> None:
         assert md.taxonomy_id == "562"
         assert md.organism == "Escherichia coli"
 
-    def test_creators_extracted(self, md):
+    def test_creators_extracted(self, md) -> None:
         assert "Jacky Snoep" in md.creators
 
-    def test_notes_excerpt(self, md):
+    def test_notes_excerpt(self, md) -> None:
         assert "short notes block" in md.notes_excerpt
 
-    def test_no_doi_when_absent(self, md):
+    def test_no_doi_when_absent(self, md) -> None:
         # This SBML has no identifiers.org/doi/ resource, so doi must be empty
         assert md.doi == ""
 
-    def test_handles_unparseable_sbml(self):
+    def test_handles_unparseable_sbml(self) -> None:
         # Malformed XML must NOT raise; returns empty metadata
         md = extract_metadata(b"<not really xml")
         assert md.biomodels_id == ""
         assert md.organism == ""
 
-    def test_handles_minimal_sbml(self):
+    def test_handles_minimal_sbml(self) -> None:
         # SBML with no annotations at all
         minimal = b"""<?xml version="1.0"?>
 <sbml xmlns="http://www.sbml.org/sbml/level2" level="2" version="1">
@@ -392,7 +393,7 @@ class TestModelMetadata:
         assert md.biomodels_id == ""
         assert md.pubmed_id == ""
 
-    def test_unmapped_taxonomy_leaves_organism_empty(self):
+    def test_unmapped_taxonomy_leaves_organism_empty(self) -> None:
         # Unknown taxon id stays as empty organism (note added in CLI layer)
         sbml = ANNOTATED_SBML.replace(b"taxonomy/562", b"taxonomy/9999999")
         md = extract_metadata(sbml)

@@ -31,9 +31,10 @@ from __future__ import annotations
 
 import hashlib
 import re
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import numpy as np
 
@@ -48,21 +49,56 @@ except ImportError as exc:  # pragma: no cover - import guard
 import sympy
 from sympy.parsing.sympy_parser import parse_expr
 
-
 # Identifier tokens we must NOT shadow with bare Symbols — these are SBML
 # infix functions/constants that sympy already understands correctly.
 _SBML_RESERVED = frozenset(
     {
-        "pow", "exp", "log", "log10", "ln", "sqrt", "abs",
-        "sin", "cos", "tan", "asin", "acos", "atan",
-        "sinh", "cosh", "tanh", "asinh", "acosh", "atanh",
-        "sec", "csc", "cot",
-        "floor", "ceiling", "factorial",
-        "min", "max", "piecewise",
-        "and", "or", "not", "xor", "true", "false",
-        "gt", "lt", "geq", "leq", "eq", "neq",
-        "pi", "exponentiale", "infinity", "notanumber",
-        "True", "False",
+        "pow",
+        "exp",
+        "log",
+        "log10",
+        "ln",
+        "sqrt",
+        "abs",
+        "sin",
+        "cos",
+        "tan",
+        "asin",
+        "acos",
+        "atan",
+        "sinh",
+        "cosh",
+        "tanh",
+        "asinh",
+        "acosh",
+        "atanh",
+        "sec",
+        "csc",
+        "cot",
+        "floor",
+        "ceiling",
+        "factorial",
+        "min",
+        "max",
+        "piecewise",
+        "and",
+        "or",
+        "not",
+        "xor",
+        "true",
+        "false",
+        "gt",
+        "lt",
+        "geq",
+        "leq",
+        "eq",
+        "neq",
+        "pi",
+        "exponentiale",
+        "infinity",
+        "notanumber",
+        "True",
+        "False",
     }
 )
 _IDENT_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
@@ -220,17 +256,11 @@ class SbmlOdeModel:
 
         # ---- Refuse unsupported features (loud failure) ----
         if model.getNumEvents() > 0:
-            raise NotImplementedError(
-                f"{sbml_path.name}: <event> elements not yet supported"
-            )
+            raise NotImplementedError(f"{sbml_path.name}: <event> elements not yet supported")
         if model.getNumFunctionDefinitions() > 0:
-            raise NotImplementedError(
-                f"{sbml_path.name}: <functionDefinition> not yet supported"
-            )
+            raise NotImplementedError(f"{sbml_path.name}: <functionDefinition> not yet supported")
         if model.getNumInitialAssignments() > 0:
-            raise NotImplementedError(
-                f"{sbml_path.name}: <initialAssignment> not yet supported"
-            )
+            raise NotImplementedError(f"{sbml_path.name}: <initialAssignment> not yet supported")
         for i in range(model.getNumRules()):
             rule = model.getRule(i)
             if not rule.isAssignment():

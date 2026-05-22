@@ -7,8 +7,7 @@ from typing import Any
 import numpy as np
 import pytest
 from vivarium.core.engine import Engine
-from vivarium.core.process import Process
-from vivarium.core.process import Step
+from vivarium.core.process import Process, Step
 
 # Ensure pytest imports from this worktree even if another editable install exists.
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -38,18 +37,15 @@ def _build_state(
     idx_30s = process.complex_index_by_wid["RIBOSOME_30S"]
     idx_50s = process.complex_index_by_wid["RIBOSOME_50S"]
 
-    rna_needed = (
-        process.protein_complex_rna_composition[:, idx_30s] * int(n_30s_capacity)
-        + process.protein_complex_rna_composition[:, idx_50s] * int(n_50s_capacity)
-    )
-    monomer_needed = (
-        process.protein_complex_monomer_composition[:, idx_30s] * int(n_30s_capacity)
-        + process.protein_complex_monomer_composition[:, idx_50s] * int(n_50s_capacity)
-    )
-    gtpase_needed = (
-        process.complexation_catalysis[:, idx_30s] * int(n_30s_capacity)
-        + process.complexation_catalysis[:, idx_50s] * int(n_50s_capacity)
-    )
+    rna_needed = process.protein_complex_rna_composition[:, idx_30s] * int(
+        n_30s_capacity
+    ) + process.protein_complex_rna_composition[:, idx_50s] * int(n_50s_capacity)
+    monomer_needed = process.protein_complex_monomer_composition[:, idx_30s] * int(
+        n_30s_capacity
+    ) + process.protein_complex_monomer_composition[:, idx_50s] * int(n_50s_capacity)
+    gtpase_needed = process.complexation_catalysis[:, idx_30s] * int(
+        n_30s_capacity
+    ) + process.complexation_catalysis[:, idx_50s] * int(n_50s_capacity)
 
     protein_counts = {wid: 0.0 for wid in process.protein_state_wids}
     for i, wid in enumerate(process.monomer_subunit_wids):
@@ -66,9 +62,7 @@ def _build_state(
     return {
         "substrates": substrates,
         "rna": {
-            "counts": {
-                wid: float(rna_needed[i]) for i, wid in enumerate(process.rna_subunit_wids)
-            }
+            "counts": {wid: float(rna_needed[i]) for i, wid in enumerate(process.rna_subunit_wids)}
         },
         "protein": {"counts": protein_counts},
         "complex": {"counts": {wid: 0.0 for wid in process.complex_wids}},
@@ -197,10 +191,12 @@ def test_mass_conservation() -> None:
     )
     expected_rna = -(p.protein_complex_rna_composition @ formed)
     expected_monomer = -(p.protein_complex_monomer_composition @ formed)
-    hydrolysis = int(sum(
-        int(formed[p.complex_index_by_wid[wid]]) * p.n_gtpases_per_particle[wid]
-        for wid in p.complex_wids
-    ))
+    hydrolysis = int(
+        sum(
+            int(formed[p.complex_index_by_wid[wid]]) * p.n_gtpases_per_particle[wid]
+            for wid in p.complex_wids
+        )
+    )
 
     observed_rna = np.asarray(
         [int(update["rna"]["counts"].get(wid, 0.0)) for wid in p.rna_subunit_wids],
@@ -235,10 +231,14 @@ def test_integration_with_chassis_v3() -> None:
 
     ribasm = KarrRibosomeAssemblyProcess({"rng_seed": 0})
     request_calc = RequestCalculatorRibAsm({"ribasm_proc": ribasm})
-    allocation = KarrAllocationStep({
-        "consumer_processes": [(ribasm.name, [ribasm.substrate_wid_gtp, ribasm.substrate_wid_h2o])],
-        "substrate_wids": list(ribasm.substrate_wids),
-    })
+    allocation = KarrAllocationStep(
+        {
+            "consumer_processes": [
+                (ribasm.name, [ribasm.substrate_wid_gtp, ribasm.substrate_wid_h2o])
+            ],
+            "substrate_wids": list(ribasm.substrate_wids),
+        }
+    )
 
     initial_state = _build_state(
         ribasm,
@@ -305,17 +305,23 @@ def test_steady_state_ribosome_count() -> None:
             return {}
 
     ribasm = KarrRibosomeAssemblyProcess({"rng_seed": 0})
-    decay = ProteinDecayLightProcess({
-        "rng_seed": 1,
-        "complex_wid_filter": ["RIBOSOME_30S", "RIBOSOME_50S"],
-        "complex_half_lives": {"RIBOSOME_30S": 400.0, "RIBOSOME_50S": 400.0},
-        "consume_atp_h2o": False,
-    })
+    decay = ProteinDecayLightProcess(
+        {
+            "rng_seed": 1,
+            "complex_wid_filter": ["RIBOSOME_30S", "RIBOSOME_50S"],
+            "complex_half_lives": {"RIBOSOME_30S": 400.0, "RIBOSOME_50S": 400.0},
+            "consume_atp_h2o": False,
+        }
+    )
     request_calc = RequestCalculatorRibAsm({"ribasm_proc": ribasm})
-    allocation = KarrAllocationStep({
-        "consumer_processes": [(ribasm.name, [ribasm.substrate_wid_gtp, ribasm.substrate_wid_h2o])],
-        "substrate_wids": list(ribasm.substrate_wids),
-    })
+    allocation = KarrAllocationStep(
+        {
+            "consumer_processes": [
+                (ribasm.name, [ribasm.substrate_wid_gtp, ribasm.substrate_wid_h2o])
+            ],
+            "substrate_wids": list(ribasm.substrate_wids),
+        }
+    )
 
     initial_state = _build_state(
         ribasm,

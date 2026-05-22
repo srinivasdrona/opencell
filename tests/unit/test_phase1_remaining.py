@@ -10,20 +10,19 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from opencell.analysis.observation import AssayDefinition, ObservationModel, od600_assay, qpcr_assay
+from opencell.analysis.observation import ObservationModel, od600_assay, qpcr_assay
+from opencell.core.io_manifests import IOManifest, ManifestRegistry
+from opencell.core.replay import DeltaLedger
 from opencell.core.validation import (
     ValidationHarness,
     mass_conservation_validator,
     positivity_validator,
-    doubling_time_validator,
 )
-from opencell.core.replay import DeltaLedger, StepReplay
-from opencell.core.io_manifests import IOManifest, ManifestRegistry
 from opencell.orchestrator.panel import Claim, ClaimGraph, Confidence, EvidenceItem, ExpertPanel
 from opencell.orchestrator.pipeline import OpenCellPipeline
 
-
 # ── Observation Model tests ──
+
 
 class TestObservationModel:
     def test_register_and_observe(self) -> None:
@@ -72,6 +71,7 @@ class TestObservationModel:
 
 
 # ── Validation Harness tests ──
+
 
 class TestValidationHarness:
     def test_mass_conservation_pass(self) -> None:
@@ -122,6 +122,7 @@ class TestValidationHarness:
 
 # ── Delta Ledger / Replay tests ──
 
+
 class TestDeltaLedger:
     def test_record_and_report(self) -> None:
         ledger = DeltaLedger()
@@ -157,6 +158,7 @@ class TestDeltaLedger:
 
 # ── I/O Manifests tests ──
 
+
 class TestManifestRegistry:
     def test_register_and_check(self) -> None:
         reg = ManifestRegistry()
@@ -184,6 +186,7 @@ class TestManifestRegistry:
 
 # ── Panel tests ──
 
+
 class TestPanel:
     def test_deliberate_returns_claim_graph(self) -> None:
         panel = ExpertPanel()
@@ -194,11 +197,13 @@ class TestPanel:
 
     def test_claim_graph_unverified_dois(self) -> None:
         graph = ClaimGraph(question="test")
-        graph.claims.append(Claim(
-            claim_text="Test claim",
-            evidence_for=[EvidenceItem(doi="10.1016/test", excerpt="...")],
-            confidence=Confidence.HIGH,
-        ))
+        graph.claims.append(
+            Claim(
+                claim_text="Test claim",
+                evidence_for=[EvidenceItem(doi="10.1016/test", excerpt="...")],
+                confidence=Confidence.HIGH,
+            )
+        )
         dois = graph.unverified_dois()
         assert "10.1016/test" in dois
 
@@ -210,6 +215,7 @@ class TestPanel:
 
 
 # ── Pipeline tests ──
+
 
 class TestPipeline:
     def test_build_submodel(self, tmp_path: Path) -> None:

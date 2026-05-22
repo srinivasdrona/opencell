@@ -72,9 +72,7 @@ def _run_ordered_m3(order: tuple[str, str]) -> np.ndarray:
     )
     engine.update(1.0)
     ts = engine.emitter.get_timeseries()
-    return np.array(
-        [float(ts["protein"]["counts"][pid][-1]) for pid in kinetics.protein_wcm_ids]
-    )
+    return np.array([float(ts["protein"]["counts"][pid][-1]) for pid in kinetics.protein_wcm_ids])
 
 
 def test_delta_equals_v2_absolute() -> None:

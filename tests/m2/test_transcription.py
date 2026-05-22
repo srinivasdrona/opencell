@@ -1,4 +1,5 @@
 """Tests for M2 Karr-native transcription module."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -49,9 +50,7 @@ def test_steady_state_round_trip_to_expression(
     diff = np.abs(ss[have_decay] - expr[have_decay])
     rel = diff / np.maximum(np.abs(expr[have_decay]), 1e-12)
     median_rel = float(np.median(rel))
-    assert median_rel < 1e-6, (
-        f"steady-state round-trip broken: median rel diff = {median_rel:g}"
-    )
+    assert median_rel < 1e-6, f"steady-state round-trip broken: median rel diff = {median_rel:g}"
 
 
 def test_step_analytical_reaches_steady_state(

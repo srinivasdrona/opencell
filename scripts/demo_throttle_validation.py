@@ -21,6 +21,7 @@ Outputs
 * `artifacts/demo_throttle_validation.json` - summary stats + delta
 * `artifacts/demo_throttle_validation.png` - 4-panel comparison
 """
+
 from __future__ import annotations
 
 import json
@@ -90,8 +91,13 @@ def main() -> dict:
     growth_max_abs_diff_rep = float(np.max(np.abs(growth_rep - growth_off)))
 
     # AA pool comparison (M3-driven keys).
-    aa_keys = [k for k in off["cyt"] if k.startswith("cyt_") and len(k) == 7
-               and k[4:] in ("ALA", "GLU", "LYS", "MET", "TRP", "CYS")]
+    aa_keys = [
+        k
+        for k in off["cyt"]
+        if k.startswith("cyt_")
+        and len(k) == 7
+        and k[4:] in ("ALA", "GLU", "LYS", "MET", "TRP", "CYS")
+    ]
     aa_diff: dict = {}
     for k in aa_keys:
         aa = k[4:]
@@ -118,29 +124,41 @@ def main() -> dict:
     summary = {
         "t_end_s": T_END_S,
         "growth_per_s": {
-            "off": {"min": float(growth_off.min()),
-                    "mean": float(growth_off.mean()),
-                    "max": float(growth_off.max())},
-            "on":  {"min": float(growth_on.min()),
-                    "mean": float(growth_on.mean()),
-                    "max": float(growth_on.max())},
-            "rep": {"min": float(growth_rep.min()),
-                    "mean": float(growth_rep.mean()),
-                    "max": float(growth_rep.max())},
+            "off": {
+                "min": float(growth_off.min()),
+                "mean": float(growth_off.mean()),
+                "max": float(growth_off.max()),
+            },
+            "on": {
+                "min": float(growth_on.min()),
+                "mean": float(growth_on.mean()),
+                "max": float(growth_on.max()),
+            },
+            "rep": {
+                "min": float(growth_rep.min()),
+                "mean": float(growth_rep.mean()),
+                "max": float(growth_rep.max()),
+            },
             "max_abs_diff_on_vs_off": growth_max_abs_diff_on,
             "max_abs_diff_rep_vs_off": growth_max_abs_diff_rep,
         },
         "rna_total_count": {
-            "off_t0": float(rna_off[0]), "off_end": float(rna_off[-1]),
-            "on_t0":  float(rna_on[0]),  "on_end":  float(rna_on[-1]),
-            "rep_t0": float(rna_rep[0]), "rep_end": float(rna_rep[-1]),
+            "off_t0": float(rna_off[0]),
+            "off_end": float(rna_off[-1]),
+            "on_t0": float(rna_on[0]),
+            "on_end": float(rna_on[-1]),
+            "rep_t0": float(rna_rep[0]),
+            "rep_end": float(rna_rep[-1]),
             "delta_pct_on": float(rna_delta_pct_on),
             "delta_pct_rep": float(rna_delta_pct_rep),
         },
         "protein_total_count": {
-            "off_t0": float(prot_off[0]), "off_end": float(prot_off[-1]),
-            "on_t0":  float(prot_on[0]),  "on_end":  float(prot_on[-1]),
-            "rep_t0": float(prot_rep[0]), "rep_end": float(prot_rep[-1]),
+            "off_t0": float(prot_off[0]),
+            "off_end": float(prot_off[-1]),
+            "on_t0": float(prot_on[0]),
+            "on_end": float(prot_on[-1]),
+            "rep_t0": float(prot_rep[0]),
+            "rep_end": float(prot_rep[-1]),
             "delta_pct_on": float(prot_delta_pct_on),
             "delta_pct_rep": float(prot_delta_pct_rep),
         },
@@ -153,37 +171,39 @@ def main() -> dict:
 
     try:
         import matplotlib.pyplot as plt  # noqa: WPS433
+
         fig, axes = plt.subplots(2, 2, figsize=(11, 7), sharex=True)
         t = np.arange(off["growth"].size)
         axes[0, 0].plot(t, off["growth"], "b-", label="off")
         axes[0, 0].plot(t, on["growth"], "r--", label="throttle")
         axes[0, 0].plot(t, rep["growth"], "g-.", label="t+replenish")
         axes[0, 0].set_title("growth_per_s")
-        axes[0, 0].legend(); axes[0, 0].grid(True, alpha=0.3)
+        axes[0, 0].legend()
+        axes[0, 0].grid(True, alpha=0.3)
 
         axes[0, 1].plot(t[: rna_off.size], rna_off, "b-", label="off")
         axes[0, 1].plot(t[: rna_on.size], rna_on, "r--", label="throttle")
         axes[0, 1].plot(t[: rna_rep.size], rna_rep, "g-.", label="t+replenish")
         axes[0, 1].set_title("total RNA count (525 genes)")
-        axes[0, 1].legend(); axes[0, 1].grid(True, alpha=0.3)
+        axes[0, 1].legend()
+        axes[0, 1].grid(True, alpha=0.3)
 
         axes[1, 0].plot(t[: prot_off.size], prot_off, "b-", label="off")
         axes[1, 0].plot(t[: prot_on.size], prot_on, "r--", label="throttle")
         axes[1, 0].plot(t[: prot_rep.size], prot_rep, "g-.", label="t+replenish")
         axes[1, 0].set_title("total protein count (482 monomers)")
         axes[1, 0].set_xlabel("emit step")
-        axes[1, 0].legend(); axes[1, 0].grid(True, alpha=0.3)
+        axes[1, 0].legend()
+        axes[1, 0].grid(True, alpha=0.3)
 
-        for ntp, color in zip(("ATP", "CTP", "GTP", "UTP"), "kbrg"):
-            axes[1, 1].plot(t, off["cyt"][f"cyt_{ntp}"], color + "-",
-                            label=f"{ntp} off", alpha=0.5)
-            axes[1, 1].plot(t, on["cyt"][f"cyt_{ntp}"], color + "--",
-                            label=f"{ntp} thr", alpha=0.7)
-            axes[1, 1].plot(t, rep["cyt"][f"cyt_{ntp}"], color + ":",
-                            label=f"{ntp} rep", alpha=0.9)
+        for ntp, color in zip(("ATP", "CTP", "GTP", "UTP"), "kbrg", strict=False):
+            axes[1, 1].plot(t, off["cyt"][f"cyt_{ntp}"], color + "-", label=f"{ntp} off", alpha=0.5)
+            axes[1, 1].plot(t, on["cyt"][f"cyt_{ntp}"], color + "--", label=f"{ntp} thr", alpha=0.7)
+            axes[1, 1].plot(t, rep["cyt"][f"cyt_{ntp}"], color + ":", label=f"{ntp} rep", alpha=0.9)
         axes[1, 1].set_title("cytosol NTP pools")
         axes[1, 1].set_xlabel("emit step")
-        axes[1, 1].legend(fontsize=6, ncol=3); axes[1, 1].grid(True, alpha=0.3)
+        axes[1, 1].legend(fontsize=6, ncol=3)
+        axes[1, 1].grid(True, alpha=0.3)
 
         fig.suptitle("Phase C.3/C.4 throttle validation: off / throttle / t+replenish")
         fig.tight_layout()

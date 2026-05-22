@@ -51,7 +51,9 @@ def _seed_log(log_path: Path) -> None:
     )
 
 
-def test_log_subcommand_constructs_llm_record(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_log_subcommand_constructs_llm_record(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     captured: dict[str, object] = {}
 
     def _fake_log_interaction(record: LlmLog, log_path: str | None = None) -> str:
@@ -125,7 +127,9 @@ def test_query_subcommand_filters_by_model_role_since(
     assert payloads[0]["role"] == "main_agent"
 
 
-def test_stats_subcommand_counts_correctly(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_stats_subcommand_counts_correctly(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     log_path = tmp_path / "events.jsonl"
     _seed_log(log_path)
 

@@ -41,10 +41,21 @@ CONTEXT_RADIUS = 150
 
 # Definitional language anchors — boost score
 _DEFINITIONAL_PHRASES = [
-    "fixed at", "base case", "set to", "we use", "we set", "default",
-    "corresponds to", "is taken to be", "is taken as", "we choose",
-    "we assume", "parameter values", "model parameter",
-    "value of", "estimated to be",
+    "fixed at",
+    "base case",
+    "set to",
+    "we use",
+    "we set",
+    "default",
+    "corresponds to",
+    "is taken to be",
+    "is taken as",
+    "we choose",
+    "we assume",
+    "parameter values",
+    "model parameter",
+    "value of",
+    "estimated to be",
 ]
 
 # References-section markers
@@ -57,18 +68,58 @@ _CAPTION_PHRASES = ["fig.", "figure ", "fig ", "table "]
 # because they immediately follow a number ("0.5 in our model", "5 of the").
 # Treat any of these as "no unit found".
 _NON_UNIT_TOKENS = {
-    "a", "an", "the", "in", "of", "for", "to", "by", "with", "at",
-    "is", "are", "was", "were", "be", "been", "being",
-    "and", "or", "but", "as", "if", "then", "than",
-    "we", "our", "this", "these", "that", "those", "such",
-    "from", "into", "out", "on", "off", "up", "down",
-    "no", "not", "all", "any", "each", "every", "some",
+    "a",
+    "an",
+    "the",
+    "in",
+    "of",
+    "for",
+    "to",
+    "by",
+    "with",
+    "at",
+    "is",
+    "are",
+    "was",
+    "were",
+    "be",
+    "been",
+    "being",
+    "and",
+    "or",
+    "but",
+    "as",
+    "if",
+    "then",
+    "than",
+    "we",
+    "our",
+    "this",
+    "these",
+    "that",
+    "those",
+    "such",
+    "from",
+    "into",
+    "out",
+    "on",
+    "off",
+    "up",
+    "down",
+    "no",
+    "not",
+    "all",
+    "any",
+    "each",
+    "every",
+    "some",
 }
 
 
 # ---------------------------------------------------------------------------
 # Symbol normalization for matching
 # ---------------------------------------------------------------------------
+
 
 def symbol_variants(symbol: str) -> list[str]:
     """Generate plausible regex-escaped variants of a symbol as it might
@@ -104,10 +155,11 @@ def symbol_variants(symbol: str) -> list[str]:
 # Section tagging
 # ---------------------------------------------------------------------------
 
+
 def classify_section(text: str, position: int) -> SectionType:
     """Heuristically classify the document section containing `position`."""
     # Look 600 chars back for nearest section marker
-    back = text[max(0, position - 600):position].lower()
+    back = text[max(0, position - 600) : position].lower()
     if any(p in back for p in _CAPTION_PHRASES):
         return SectionType.CAPTION
     if any(p in back for p in _REFS_PHRASES):
@@ -118,6 +170,7 @@ def classify_section(text: str, position: int) -> SectionType:
 # ---------------------------------------------------------------------------
 # Scoring
 # ---------------------------------------------------------------------------
+
 
 def score_candidate(
     *,
@@ -166,7 +219,11 @@ def score_candidate(
         components["unit_compatible"] = 0.3
         score += 0.3
 
-    if raw_unit_normalized and target_unit and raw_unit_normalized.replace(" ", "") == target_unit.replace(" ", ""):
+    if (
+        raw_unit_normalized
+        and target_unit
+        and raw_unit_normalized.replace(" ", "") == target_unit.replace(" ", "")
+    ):
         components["unit_exact_match"] = 0.1
         score += 0.1
 
@@ -176,6 +233,7 @@ def score_candidate(
 # ---------------------------------------------------------------------------
 # Main grep
 # ---------------------------------------------------------------------------
+
 
 def _line_for_offset(text: str, offset: int) -> int:
     """1-based line number containing the given character offset."""
@@ -187,7 +245,7 @@ class GrepConfig:
     target_unit: str = ""
     context_radius: int = CONTEXT_RADIUS
     min_score_for_survival: float = 0.3  # below this → mark rejected
-    require_unit: bool = True            # if True, hits with no unit are rejected
+    require_unit: bool = True  # if True, hits with no unit are rejected
 
 
 def grep_for_symbol(
@@ -206,7 +264,7 @@ def grep_for_symbol(
     candidates: list[ExtractionCandidate] = []
     seen_spans: set[tuple[int, int]] = set()
 
-    from .units import units_compatible, convert
+    from .units import convert, units_compatible
 
     for variant in symbol_variants(symbol):
         sym_re = re.escape(variant)
@@ -242,7 +300,8 @@ def grep_for_symbol(
 
             # Unit compatibility check (advisory; feeds score only)
             units_compat = (
-                bool(cfg.target_unit) and bool(raw_unit_norm)
+                bool(cfg.target_unit)
+                and bool(raw_unit_norm)
                 and units_compatible(raw_unit_norm, cfg.target_unit)
             )
 

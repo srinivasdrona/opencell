@@ -28,12 +28,10 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-
 import roadrunner
 
 from opencell.models.transcription import TranscriptionModel
 from opencell.solvers.ode_scipy import ScipySolverConfig, solve_ode_scipy
-
 
 # Highlight the proteins + repressor mRNA — these carry the oscillation signal.
 HIGHLIGHT = ["A", "R", "C", "MA", "MR"]
@@ -87,10 +85,7 @@ def plot_one(
         ax.plot(t, series[sid], color=COLORS[k], linewidth=1.6, label=sid)
     ax.set_xlabel("time (h)")
     ax.set_ylabel("molecule count")
-    ax.set_title(
-        f"{title} — {duration_label} simulation\n"
-        f"BIOMD0000000035 SHA-256 {sha_short}"
-    )
+    ax.set_title(f"{title} — {duration_label} simulation\nBIOMD0000000035 SHA-256 {sha_short}")
     ax.grid(alpha=0.3)
     ax.legend(loc="best", fontsize=9)
     fig.tight_layout()
@@ -108,14 +103,16 @@ def plot_overlay(
     duration_label: str,
 ) -> None:
     fig, (ax_top, ax_bot) = plt.subplots(
-        2, 1, figsize=(10, 8), sharex=True,
+        2,
+        1,
+        figsize=(10, 8),
+        sharex=True,
         gridspec_kw={"height_ratios": [3, 2]},
     )
     for k, sid in enumerate(HIGHLIGHT):
         c = COLORS[k]
         ax_top.plot(t, rr[sid], color=c, linewidth=2.5, alpha=0.35, label=f"{sid} (RR)")
-        ax_top.plot(t, ours[sid], color=c, linewidth=1.0, linestyle="--",
-                    label=f"{sid} (OpenCell)")
+        ax_top.plot(t, ours[sid], color=c, linewidth=1.0, linestyle="--", label=f"{sid} (OpenCell)")
     ax_top.set_ylabel("molecule count")
     ax_top.set_title(
         f"OpenCell (dashed) vs libroadrunner (thick translucent) — Vilar 2002 "
@@ -144,10 +141,15 @@ def plot_overlay(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--time-units", type=float, default=200.0,
-                        help="Simulated end time (hours per Vilar 2002)")
-    parser.add_argument("--points", type=int, default=None,
-                        help="Number of output time points (default: 10*time_units + 1)")
+    parser.add_argument(
+        "--time-units", type=float, default=200.0, help="Simulated end time (hours per Vilar 2002)"
+    )
+    parser.add_argument(
+        "--points",
+        type=int,
+        default=None,
+        help="Number of output time points (default: 10*time_units + 1)",
+    )
     args = parser.parse_args()
 
     t_end = float(args.time_units)
@@ -172,16 +174,26 @@ def main() -> None:
     plot_one(
         "OpenCell (libsbml + sympy + LSODA)",
         out_dir / f"vilar_opencell_{tu_label}.png",
-        t_eval, ours, sha_short, duration_label,
+        t_eval,
+        ours,
+        sha_short,
+        duration_label,
     )
     plot_one(
         "libroadrunner (CVODE)",
         out_dir / f"vilar_roadrunner_{tu_label}.png",
-        t_rr, rr_full, sha_short, duration_label,
+        t_rr,
+        rr_full,
+        sha_short,
+        duration_label,
     )
     plot_overlay(
         out_dir / f"vilar_overlay_{tu_label}.png",
-        t_eval, ours, rr_full, sha_short, duration_label,
+        t_eval,
+        ours,
+        rr_full,
+        sha_short,
+        duration_label,
     )
 
     print("\nMax relative difference per species (denom = |RR| + 1e-3):")

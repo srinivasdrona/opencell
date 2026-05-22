@@ -28,9 +28,7 @@ def _build_state(
     complex_counts = complex_counts or {}
     return {
         "complex": {
-            "counts": {
-                wid: float(complex_counts.get(wid, 0.0)) for wid in process.complex_wids
-            }
+            "counts": {wid: float(complex_counts.get(wid, 0.0)) for wid in process.complex_wids}
         },
         "substrates": {wid: 0.0 for wid in process.substrate_wids},
         "protein": {"counts": {wid: 0.0 for wid in process.protein_wids}},
@@ -89,10 +87,9 @@ def test_deterministic_poisson(default_process: ProteinDecayLightProcess) -> Non
 
 
 def test_mass_conservation_per_complex(default_process: ProteinDecayLightProcess) -> None:
-    total_subunits = (
-        default_process.protein_complex_monomer_composition.sum(axis=0)
-        + default_process.protein_complex_rna_composition.sum(axis=0)
-    )
+    total_subunits = default_process.protein_complex_monomer_composition.sum(
+        axis=0
+    ) + default_process.protein_complex_rna_composition.sum(axis=0)
     idx = int(np.where(total_subunits > 0)[0][0])
     wid = default_process.complex_wids[idx]
     process = ProteinDecayLightProcess({"complex_wid_filter": [wid]})
@@ -126,9 +123,9 @@ def test_atp_h2o_accounting(default_process: ProteinDecayLightProcess) -> None:
         for state in states
         if getattr(state, "x_class_", "") == "edu.stanford.covert.cell.sim.state.ProteinComplex"
     ][0]
-    all_complex_wids = np.asarray(
-        protein_complex_state.wholeCellModelIDs, dtype=object
-    ).ravel().astype(str)
+    all_complex_wids = (
+        np.asarray(protein_complex_state.wholeCellModelIDs, dtype=object).ravel().astype(str)
+    )
     all_complex_decay_reactions = np.asarray(fixture.complexDecayReactions, dtype=np.int64)
     atp_idx = int(fixture.substrateIndexs_atp) - 1
     idx = int(np.where(all_complex_decay_reactions[atp_idx] != 0)[0][0])

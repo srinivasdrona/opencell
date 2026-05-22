@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import sys
 from copy import deepcopy
 from pathlib import Path
-import sys
 from typing import Any
 
 import numpy as np
@@ -46,9 +46,7 @@ def _build_state(
             "counts": protein_counts,
             "unfolded_counts": {wid: 0.0 for wid in process.unfolded_monomer_wids},
         },
-        "substrates_allocated": {
-            process.name: {wid: 0.0 for wid in process.substrate_wids}
-        },
+        "substrates_allocated": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
     }
     for wid, value in substrate_overrides.items():
         state["substrates"][wid] = float(value)
@@ -59,9 +57,7 @@ def _build_state(
     return state
 
 
-def _row_requirements(
-    process: KarrProteinFoldingProcess, monomer_idx: int
-) -> dict[str, int]:
+def _row_requirements(process: KarrProteinFoldingProcess, monomer_idx: int) -> dict[str, int]:
     row = process.protein_prosthetic_matrix[monomer_idx]
     return {
         process.substrate_wids[sidx]: int(coeff)
@@ -157,7 +153,15 @@ def test_no_ions_no_binding() -> None:
     state = _build_state(
         p,
         unfolded_overrides=unfolded,
-        substrate_overrides={"FE2": 0.0, "K": 0.0, "MG": 0.0, "MN": 0.0, "NA": 0.0, "ZN": 0.0, "ATP": 10_000.0},
+        substrate_overrides={
+            "FE2": 0.0,
+            "K": 0.0,
+            "MG": 0.0,
+            "MN": 0.0,
+            "NA": 0.0,
+            "ZN": 0.0,
+            "ATP": 10_000.0,
+        },
         enzyme_overrides={wid: 500.0 for wid in p.enzyme_wids},
     )
     update = p.next_update(1.0, state)

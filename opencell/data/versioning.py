@@ -9,7 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -25,7 +25,9 @@ def hash_file(filepath: Path) -> str:
     return h.hexdigest()
 
 
-def hash_directory(dirpath: Path, extensions: tuple[str, ...] = (".yaml", ".yml", ".json", ".sbml")) -> dict[str, str]:
+def hash_directory(
+    dirpath: Path, extensions: tuple[str, ...] = (".yaml", ".yml", ".json", ".sbml")
+) -> dict[str, str]:
     """Hash all data files in a directory."""
     hashes = {}
     for f in sorted(dirpath.rglob("*")):
@@ -57,7 +59,7 @@ def create_snapshot(
 
     snapshot = {
         "version": version_hash,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "files": hashes,
         "metadata": metadata or {},
     }

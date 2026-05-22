@@ -15,6 +15,7 @@ matrix.  Conversion to 0-based:
     sub0 = (linear_1based - 1) % 585
     cmp0 = (linear_1based - 1) // 585
 """
+
 from __future__ import annotations
 
 import json
@@ -74,8 +75,8 @@ def main() -> None:
     assert sub0_fba.size == 368
     assert cmp0_fba.max() < N_CMP and cmp0_fba.min() >= 0
 
-    sub_idx_external_0 = (sub_idx_external_1based.astype(np.int64) - 1)
-    sub_idx_internal_lim_0 = (sub_idx_internal_lim_1based.astype(np.int64) - 1)
+    sub_idx_external_0 = sub_idx_external_1based.astype(np.int64) - 1
+    sub_idx_internal_lim_0 = sub_idx_internal_lim_1based.astype(np.int64) - 1
     assert sub_idx_external_0.max() < N_SUB
     assert sub_idx_internal_lim_0.max() < N_SUB
 
@@ -87,26 +88,48 @@ def main() -> None:
     # The 368 (sub_idx, cmp_idx) FBA-substrate pairs.  Build a per-substrate
     # set of compartments that ARE represented in the FBA system.
     sub_to_cmps: dict[int, set[int]] = {}
-    for s, c in zip(sub0_fba.tolist(), cmp0_fba.tolist()):
+    for s, c in zip(sub0_fba.tolist(), cmp0_fba.tolist(), strict=False):
         sub_to_cmps.setdefault(int(s), set()).add(int(c))
 
     def classify(name: str) -> dict:
         if name not in sub_ids:
-            return {"name": name, "in_585": False,
-                    "in_fba_substrate_space": False,
-                    "compartments_in_fba": []}
+            return {
+                "name": name,
+                "in_585": False,
+                "in_fba_substrate_space": False,
+                "compartments_in_fba": [],
+            }
         i = sub_ids.index(name)
         cmps = sorted(sub_to_cmps.get(i, set()))
-        return {"name": name, "in_585": True,
-                "in_fba_substrate_space": len(cmps) > 0,
-                "compartments_in_fba": cmps}
+        return {
+            "name": name,
+            "in_585": True,
+            "in_fba_substrate_space": len(cmps) > 0,
+            "compartments_in_fba": cmps,
+        }
 
-    audit_species = (
-        ["ATP", "CTP", "GTP", "UTP", "AA_total"]
-        + ["ALA", "ARG", "ASN", "ASP", "CYS", "GLN", "GLU", "GLY",
-           "HIS", "ILE", "LEU", "LYS", "MET", "PHE", "PRO", "SER",
-           "THR", "TRP", "TYR", "VAL"]
-    )
+    audit_species = ["ATP", "CTP", "GTP", "UTP", "AA_total"] + [
+        "ALA",
+        "ARG",
+        "ASN",
+        "ASP",
+        "CYS",
+        "GLN",
+        "GLU",
+        "GLY",
+        "HIS",
+        "ILE",
+        "LEU",
+        "LYS",
+        "MET",
+        "PHE",
+        "PRO",
+        "SER",
+        "THR",
+        "TRP",
+        "TYR",
+        "VAL",
+    ]
     audit = [classify(n) for n in audit_species]
 
     # Quick console summary
@@ -117,8 +140,10 @@ def main() -> None:
             flag = "  <- NOT IN 585 ID SPACE"
         elif not a["in_fba_substrate_space"]:
             flag = "  <- in 585 but NOT mapped by S (M1 cannot see it)"
-        print(f"  {a['name']:8s}  in_585={a['in_585']!s:5s}  "
-              f"fba_cmps={a['compartments_in_fba']}{flag}")
+        print(
+            f"  {a['name']:8s}  in_585={a['in_585']!s:5s}  "
+            f"fba_cmps={a['compartments_in_fba']}{flag}"
+        )
 
     # ---- Save ---------------------------------------------------------
     OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -140,32 +165,38 @@ def main() -> None:
         bounds_dynamic_no_protein=bounds_dyn_no_prot,
         bounds_dynamic_with_protein=bounds_dyn_with_prot,
     )
-    JSON_OUT.write_text(json.dumps({
-        "schema_version": "m1_dynamics_v1",
-        "source_archive": "data/karr_archive/",
-        "source_archive_files": ["metabolism_dynamics"],
-        "matrix_npz": NPZ_OUT.name,
-        "scalars": {
-            "cell_dry_mass": cell_dry_mass,
-            "step_size_sec": step_size_sec,
-            "compartment_extracellular_0based": compartment_extracellular,
-            "n_substrates": N_SUB,
-            "n_compartments": N_CMP,
-            "n_fba_reactions": 504,
-            "n_fba_substrate_rows_real": int(sub0_fba.size),
-            "n_external_exchange": int(sub_idx_external_0.size),
-            "n_internal_limited": int(sub_idx_internal_lim_0.size),
-        },
-        "interpretation": {
-            "substrates_snapshot": "(585, 3) snapshot counts; cols=[cytosol, extracellular, membrane]",
-            "substrate_idx_fba_sub0": "(368,) substrate_id index into 585 for each FBA-substrate row",
-            "substrate_idx_fba_cmp0": "(368,) compartment index into 3 for each FBA-substrate row",
-            "substrate_idx_external_exch_0": "indices into 585 (substrate-only); compartment is implicitly extracellular",
-            "substrate_idx_internal_lim_0": "indices into 585 (substrate-only); compartment is implicitly cytosol per MATLAB linear indexing semantics",
-            "bounds_dynamic_no_protein": "(504, 2) MATLAB calcFluxBounds output with applyProteinBounds=false",
-        },
-        "audit": audit,
-    }, indent=2, default=float))
+    JSON_OUT.write_text(
+        json.dumps(
+            {
+                "schema_version": "m1_dynamics_v1",
+                "source_archive": "data/karr_archive/",
+                "source_archive_files": ["metabolism_dynamics"],
+                "matrix_npz": NPZ_OUT.name,
+                "scalars": {
+                    "cell_dry_mass": cell_dry_mass,
+                    "step_size_sec": step_size_sec,
+                    "compartment_extracellular_0based": compartment_extracellular,
+                    "n_substrates": N_SUB,
+                    "n_compartments": N_CMP,
+                    "n_fba_reactions": 504,
+                    "n_fba_substrate_rows_real": int(sub0_fba.size),
+                    "n_external_exchange": int(sub_idx_external_0.size),
+                    "n_internal_limited": int(sub_idx_internal_lim_0.size),
+                },
+                "interpretation": {
+                    "substrates_snapshot": "(585, 3) snapshot counts; cols=[cytosol, extracellular, membrane]",
+                    "substrate_idx_fba_sub0": "(368,) substrate_id index into 585 for each FBA-substrate row",
+                    "substrate_idx_fba_cmp0": "(368,) compartment index into 3 for each FBA-substrate row",
+                    "substrate_idx_external_exch_0": "indices into 585 (substrate-only); compartment is implicitly extracellular",
+                    "substrate_idx_internal_lim_0": "indices into 585 (substrate-only); compartment is implicitly cytosol per MATLAB linear indexing semantics",
+                    "bounds_dynamic_no_protein": "(504, 2) MATLAB calcFluxBounds output with applyProteinBounds=false",
+                },
+                "audit": audit,
+            },
+            indent=2,
+            default=float,
+        )
+    )
     print(f"\nWrote {JSON_OUT}")
     print(f"Wrote {NPZ_OUT}")
 
