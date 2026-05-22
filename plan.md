@@ -401,34 +401,107 @@ NOT a parallel program)**
 
 ---
 
-## Current Status (2026-05-22 evening, **610+ tests on main + 168 in m1+m2+m3+d2+vivarium**, **A3 steps 1+2 merged to main**; Karr primary-source extracts available; **A3 step 3 is next-actionable**)
+## Current Status (2026-05-22 end-of-day, **~720 tests passing**, Phase B FEATURE-COMPLETE, Phase C T1 shipped)
 
-### Today's headline (2026-05-22)
+### Today's headline result (2026-05-22, full session)
 
-- **A3 step 1 (d2-stub) shipped** — `agent/d2-stub` @ `1643c51` merged to main as `5812a4a`. 149 D.2-owned WIDs registered (147 MC + 2 RibosomeAssembly).
-- **A3 step 2 (v2-chassis-swap-dynamic-pool-discipline) shipped** — `agent/v2-chassis-swap-dynamic-pool-discipline` @ `0723624` merged to main as `461209e`. M2v2/M3v2 wired with per-tick `complex.counts` reads (no caching). Phenotype promotion test passes.
-- **Karr execution plan written** — `docs/design/karr_execution_plan_2026-05-22.md`. After reading the Karr 2012 paper end-to-end via PMC, mapped OpenCell against Karr's full 28-process architecture: currently 6/28 (21%) implemented after A3. v1.0 timeline revised to ~9 months (was undershooting at ~3 months).
-- **Karr per-process extracts merged** — `docs/karr_extracts/` on main as `400a8dc`. 34 markdown files extracted verbatim from Karr's MATLAB `.m` headers (28 process docstrings + 5 architecture pieces + INDEX). These are the primary-source input for A3 step 3 and Phases B/C/D.
-- **Primary-Source Discipline rule added** to `.github/copilot-instructions.md` as `c3773b3` — bakes in the lesson from D.2 v1→v2→v3 (don't design from derived sources) and today's Karr Data S1 Cloudflare detour (don't fetch what's already on disk).
-- **`scripts/codex_status.ps1` added** — live diagnostic for Codex delegations; no more waiting blind on long tasks.
-- **`delegate-to-codex` skill updated** with 6 improvements: corrected `resume --last` syntax, `--dangerously-bypass-approvals-and-sandbox` documentation, decomposition heuristic, mandatory progress contract, live visibility section, source-selection-is-orchestrator's-job principle.
+**Phase A3.3 + Phase B + Phase C T1 all shipped in a single day** via Codex-orchestrator pattern with up to 10 parallel sessions. 16 of 28 Karr processes covered (~57%). chassis_v3 (6 processes, 1.26% drift on 1000-tick ratchet) and chassis_v4 (17 processes, all 10 integration tests pass including 2000-tick extended ratchet) merged to main. Phase C started with pc-t1 ReplicationInitiation.
 
-### Next-actionable: A3 step 3 — `d2-real-plus-protein-decay-light-joint-design`
+### Phase A3.3 — chassis_v3 with ratchet closure ✅
 
-Jointly design + implement D.2-real (real `MacromolecularComplexation` + `RibosomeAssembly` 30S/50S) AND ProteinDecay-light (minimum-viable decay covering the ~132 long-tail complexes that v2-chassis-swap consumers don't sink). Karr-fidelity is non-negotiable.
+- ✅ Probe 4: empirically proved Vivarium mixed `set`+`accumulate` same-leaf is broken (order-sensitive)
+- ✅ Probe 5: closed OPEN-4 (SeedSequence determinism verified bit-identical across runs)
+- ✅ OPEN-1 resolved: 149 D.2-owned WIDs canonical
+- ✅ OPEN-2 resolved: existing `resource_ledger.py` dormant; new `KarrAllocationStep` built
+- ✅ A3.3 T1-T5 all merged: M2v3 + M3v3 delta-emit, KarrAllocationStep, KarrD2Real, ProteinDecay-light, build_karr_chassis_v3
 
-**Primary sources for the design** (all on main now):
-- `docs/karr_extracts/process/21_ProteinDecay.md` — Karr's ProteinDecay docstring
-- `docs/karr_extracts/process/23_MacromolecularComplexation.md` — MC docstring
-- `docs/karr_extracts/process/24_RibosomeAssembly.md` — RibosomeAssembly docstring
-- `docs/karr_extracts/architecture/03_variable_allocation.md` — Karr's variable-allocation algorithm
-- `docs/karr_extracts/architecture/04_fitConstants.md` — Karr's parameter reconciliation
-- `data/karr_fixtures/per_process/{MacromolecularComplexation,RibosomeAssembly,ProteinDecay}_flat.mat`
-- `data/m1_sources/WholeCell/src/+edu/.../+process/{MacromolecularComplexation,RibosomeAssembly,ProteinDecay}.m` — when extracts need deeper context
+### Phase B — RNA + protein maturation pathway ✅ (11/11 turns + chassis_v4 merged)
 
-**Estimated effort:** 3–4 weeks (1 week joint design + cross-model critique, 2–3 weeks implementation).
+- ✅ pb-t1: tRNAAminoacylation (charged-tRNA steady-state 70% ≈ Karr's expected 67%)
+- ✅ pb-t2: RibosomeAssembly (GTP-dependent all-or-nothing)
+- ✅ pb-t3: TranscriptionalRegulation + M2v3 fold-change wiring
+- ✅ pb-t4: RNAProcessing (mass-action cleavage kinetics)
+- ✅ pb-t5: RNAModification (per-RNA completion counter)
+- ✅ pb-t6: ProteinProcessingI (deformylation + N-Met cleavage)
+- ✅ pb-t7: ProteinProcessingII (lipoprotein DAG transfer)
+- ✅ pb-t8: ProteinModification (3-enzyme covalent mods)
+- ✅ pb-t9: ProteinFolding (ion binding + chaperone folding)
+- ✅ pb-t10: ProteinTranslocation (SRP + direct path; new protein.location store)
+- ✅ pb-t11: ProteinActivation (6 boolean rules; new protein.activity store)
+- ✅ pb-final: build_karr_chassis_v4 + 2000-tick extended ratchet (all 10 integration tests pass)
 
-### D.2 strategy decision (RESOLVED — Option A3)
+### Phase C — DNA + cell cycle (1/10 turns shipped, T2-T10 + final designed)
+
+- ✅ pc-t1: ReplicationInitiation (9-substep DnaA-ATP polymer dynamics at OriC)
+- 📝 Designs committed: pc-t2 through pc-t10 + pc-final at `docs/design/pc_turn*.md` and `docs/design/phase_c_overview.md`
+- ⏳ pc-t2 (Replication) is the next major design — needs careful work before launch (largest Karr process)
+
+### MATLAB extraction (test-license window expiring) ✅
+
+- ✅ `metabolism_dynamics.mat` regenerated; 3 perturbation tests now PASS (previously SKIP)
+- ✅ 28 per-process bit-identical evolveState traces at `data/m1_sources/karr_native/per_process_traces/` (17.92 MB, gitignored)
+- ✅ 23 initial-state snapshots at `data/m1_sources/karr_native/initial_states/`
+- ✅ `fitted_constants.mat` (2 processes had `fittedConstantNames` defined — Metabolism + Transcription)
+- 🟢 Full cell-cycle reference trajectory (`cell_cycle_trajectory.mat`) — long sequential MATLAB run still in flight; will be the Phase E validation gold standard
+- ✅ MATLAB extraction infrastructure committed: `scripts/matlab/` with `karr_bootstrap.m` + 7 modular extraction scripts
+
+### LLM-log refinements (9 of 14 items done in 2 batches) ✅
+
+- Batch 1 (5 items): schema_version, secrets-scrub, portable-paths, design-spec doc, tag-vocabulary doc
+- Batch 2 (4 items): query/stats/report CLI, CLI tests, pre-commit hook, file rotation/sharding
+
+### Decisions logged (cross-cutting impact)
+
+1. **`vivarium-all-accumulate-no-set`** — every per-tick Vivarium writer uses `_updater: "accumulate"`. `set` banned for multi-writer leaves. Forces delta-emit conversion of any "compute and emit absolute count" Process. Caught empirically by Probe 4.
+
+2. **`v1-trajectory-buckets`** — four explicit buckets for post-v1.0 scope: Karr-known-incomplete (v1.x), biology-beyond-Karr (v2+), validation-and-organism-scaling (v3+), OpenCell-specific-tooling (parallel). Future scope decisions must declare bucket.
+
+### Skill / tooling improvements
+
+- `codex_status.ps1`: stale-STATUS detection via stdout/HEAD mtime comparison
+- `delegate-to-codex` skill v3: WSL-venv-only Python mandate (after 30 min wasted on `py -3.12` phantom dependency errors), tool-availability fallback, commit-or-stop semantics, stale-STATUS overwrite as first action
+- Primary-Source Discipline rule (already on `c3773b3`)
+
+### Test state at end-of-day
+
+- A3.3 unit tests: 32 pass
+- Probes: 6 pass (probe 4 + probe 5)
+- Phase B per-turn: ~85 pass
+- Phase B integration (chassis_v4): 10 pass
+- Phase C T1: 9 pass
+- LLM-log: 36 pass (was 8 before today)
+- M1 calc_flux_bounds: 13 pass (3 previously SKIP)
+- Pre-existing: 620 pass, 0 fail
+- **Total: ~720 tests passing, 0 failures, 0 unexpected SKIPs**
+
+### v1.0 trajectory recalibrated
+
+| Phase | Status | Wall (orig est / actual today) |
+|---|---|---|
+| A3.3 | ✅ DONE | 6 weeks / 1 day |
+| B | ✅ DONE | 12 weeks / 1 day |
+| C (1/10 turns) | 🟡 in progress | 14 weeks / a few days at this pace |
+| D (1 process) | ⏳ | 3 weeks / 1 day |
+| E (validation) | ⏳ | 4 weeks / 2-4 weeks (wet/dry can't accelerate) |
+| **Total to v1.0** | | **~4-6 weeks from today** (down from 9 months) |
+
+### Currently in flight (overnight)
+
+- **matlab-cell-cycle-v3**: Karr's WCM full ~32400-tick run; will be Phase E gold standard
+- **lint-debt**: auto-fixing 1101 pre-existing ruff errors → bring CI from advisory to strict
+
+### Codex orchestration patterns proven today
+
+- **Pipelined design + execution**: while Codex implements Turn N, I design Turn N+1. ~5x throughput vs sequential.
+- **Up to 10 parallel Codex sessions** at peak.
+- **Pre-staged prompts** in `docs/codex_prompts/` for batch launches.
+- **Worktree-per-task** with junctions for shared data.
+
+### Historical sections (kept for provenance — not active work)
+
+Sections below cover earlier phases: D.2 design rework loop (v1-v4 critique rounds), MCOS extraction blockers, p10 mass partition. All superseded by A3.3 + Phase B turns.
+
+### Phase D.2 design rework loop (HISTORICAL — superseded by A3.3 joint design)
 
 After 4 D.2 design rounds (v1 Sonnet → v2 GPT-5.4 → v3 Opus 4.6+GPT-5.5 → v4 three-way Opus 4.6+GPT-5.5+Sonnet 4.6) all returning REWORK verdicts, the v4 critique surfaced an architectural BLOCKER (unbounded-growth ratchet under M3 monomer replenishment + greedy assembler + no decay sink). Karr-source inspection confirmed the real architecture: M3 Translation → MC+RibosomeAssembly → ProteinDecay as a closed loop; each individual process is unbounded but the LOOP bounds itself (ProteinDecay_flat.mat has 53 decay reactions × 1206 form-entries; 3 proteases + misfolding).
 
