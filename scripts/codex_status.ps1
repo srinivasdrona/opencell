@@ -81,11 +81,48 @@ if (Test-Path $log) {
     Get-Content $log -Tail 8 | ForEach-Object { Write-Host "  $_" -ForegroundColor DarkGray }
 }
 
-# 4. STATUS
+# 4. STATUS — with stale-detection
 Write-Host ""
 if (Test-Path $status) {
     $stItem = Get-Item $status
-    Write-Host "STATUS.md            : written $($stItem.LastWriteTime) ($('{0:N0}' -f $stItem.Length) bytes) — TASK COMPLETE" -ForegroundColor Green
+    $stale = $false
+    $reason = $null
+
+    # Compare STATUS mtime against latest stdout activity. If stdout was written
+    # AFTER STATUS, the STATUS file is from a prior run (worktree inheritance,
+    # carry-over from a previous task on the same branch). Codex may have failed
+    # silently and never updated STATUS.
+    if (Test-Path $log) {
+        $logMtime = (Get-Item $log).LastWriteTime
+        if ($logMtime -gt $stItem.LastWriteTime) {
+            $stale = $true
+            $reason = "stdout activity ($($logMtime.ToString('HH:mm:ss'))) is newer than STATUS.md ($($stItem.LastWriteTime.ToString('HH:mm:ss')))"
+        }
+    }
+
+    # Also flag if STATUS is older than the worktree's most-recent commit. A
+    # legitimate completion writes STATUS AFTER doing the work; if STATUS
+    # predates the latest commit, it's almost certainly inherited.
+    if (-not $stale) {
+        try {
+            $headTs = git -C $Repo log -1 --format=%cI 2>$null
+            if ($headTs) {
+                $headDt = [datetime]::Parse($headTs)
+                if ($headDt -gt $stItem.LastWriteTime) {
+                    $stale = $true
+                    $reason = "HEAD commit ($($headDt.ToString('HH:mm:ss'))) is newer than STATUS.md ($($stItem.LastWriteTime.ToString('HH:mm:ss')))"
+                }
+            }
+        } catch { }
+    }
+
+    if ($stale) {
+        Write-Host "STATUS.md            : EXISTS BUT STALE — $reason" -ForegroundColor Red
+        Write-Host "  WARNING: STATUS predates current activity. Codex may have failed silently." -ForegroundColor Red
+        Write-Host "  Action: read STATUS contents to confirm it matches the CURRENT task before trusting." -ForegroundColor Red
+    } else {
+        Write-Host "STATUS.md            : written $($stItem.LastWriteTime) ($('{0:N0}' -f $stItem.Length) bytes) — TASK COMPLETE" -ForegroundColor Green
+    }
 } else {
     Write-Host "STATUS.md            : not yet written — task in flight" -ForegroundColor Yellow
 }
