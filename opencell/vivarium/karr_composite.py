@@ -31,6 +31,7 @@ from typing import Any
 from opencell.m1 import karr_metabolism as km
 from opencell.m2 import transcription as tx
 from opencell.m3 import translation as tl
+from opencell.vivarium.karr_d2_stub import KarrD2StubProcess
 from opencell.vivarium.karr_m1 import KarrMetabolismProcess
 from opencell.vivarium.karr_m2 import KarrTranscriptionProcess
 from opencell.vivarium.karr_m3 import KarrTranslationProcess
@@ -205,6 +206,7 @@ def build_karr_m1_m2_m3_engine(
         "substrate_default": _M1_SUBSTRATE_DEFAULT,
         "enable_throttle": enable_throttle,
     })
+    d2_proc = KarrD2StubProcess()
 
     rxn_ids = m1_model.rxn_wcm_ids_645
     sub_ids = m1_model.raw["ids"]["substrate_wcm_585"]
@@ -231,6 +233,9 @@ def build_karr_m1_m2_m3_engine(
         "protein": ("protein",),
         "substrates": ("substrates",),
     }
+    d2_topo: dict[str, tuple[str, ...]] = {
+        "complex": ("complex",),
+    }
     if dynamic_bounds:
         m1_topo["m1_dynamic_diagnostics"] = ("m1_dynamic_diagnostics",)
         m1_topo["m1_pools"] = ("m1_pools",)
@@ -248,6 +253,12 @@ def build_karr_m1_m2_m3_engine(
         "substrates": initial_substrates,
         "rna": {"counts": rna_init},
         "protein": {"counts": prot_init},
+        "complex": {
+            "counts": {
+                wid: float(d2_proc._complex_counts_schema[wid]["_default"])
+                for wid in d2_proc.d2_owned_wids
+            },
+        },
     }
     if dynamic_bounds:
         initial_state["m1_dynamic_diagnostics"] = {
@@ -264,11 +275,13 @@ def build_karr_m1_m2_m3_engine(
             "m1_karr": m1_proc,
             "m2_karr": m2_proc,
             "m3_karr": m3_proc,
+            "d2_stub": d2_proc,
         },
         topology={
             "m1_karr": m1_topo,
             "m2_karr": m2_topo,
             "m3_karr": m3_topo,
+            "d2_stub": d2_topo,
         },
         initial_state=initial_state,
         emit_step=emit_step_s or time_step_s,
@@ -281,5 +294,4 @@ __all__ = [
     "build_karr_m1_m2_m3_engine",
     "compute_baseline_demand_per_s",
 ]
-
 
