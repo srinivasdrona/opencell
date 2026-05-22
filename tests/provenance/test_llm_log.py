@@ -32,8 +32,8 @@ def _make_record(**overrides: object) -> LlmLog:
     return LlmLog(**base)  # type: ignore[arg-type]
 
 
-def test_log_default_path_is_under_data_provenance() -> None:
-    assert DEFAULT_LOG_PATH.as_posix().endswith("data/provenance/llm_interactions.jsonl")
+def test_log_default_path_is_under_opencell_provenance() -> None:
+    assert DEFAULT_LOG_PATH.as_posix().endswith("opencell/provenance/llm_interactions.jsonl")
 
 
 def test_event_id_is_deterministic() -> None:
@@ -196,3 +196,43 @@ def test_find_repo_root_raises_without_markers(tmp_path: Path) -> None:
         match=r"Could not find repo root: no \.git or pyproject\.toml in any parent directory",
     ):
         llm_log_module._find_repo_root(start=nested)
+
+
+def test_rotation_to_monthly_shards_is_idempotent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    log = tmp_path / "llm_interactions.jsonl"
+    monkeypatch.setattr(llm_log_module, "ROTATE_ENTRY_THRESHOLD", 2)
+
+    log_interaction(
+        _make_record(task_summary="jan-1", timestamp_utc="2026-01-05T10:00:00+00:00"),
+        log_path=log,
+    )
+    log_interaction(
+        _make_record(task_summary="jan-2", timestamp_utc="2026-01-10T10:00:00+00:00"),
+        log_path=log,
+    )
+    log_interaction(
+        _make_record(task_summary="feb-1", timestamp_utc="2026-02-03T10:00:00+00:00"),
+        log_path=log,
+    )
+
+    header = json.loads(log.read_text(encoding="utf-8"))
+    assert header == {"rotated": True, "shards": "llm_interactions/"}
+    assert (tmp_path / "llm_interactions" / "2026-01.jsonl").exists()
+    assert (tmp_path / "llm_interactions" / "2026-02.jsonl").exists()
+
+    tasks = [rec["task_summary"] for rec in iter_log(log_path=log)]
+    assert tasks == ["jan-1", "jan-2", "feb-1"]
+
+    llm_log_module._rotate_to_shards(log)
+    tasks_after_second_rotation = [rec["task_summary"] for rec in iter_log(log_path=log)]
+    assert tasks_after_second_rotation == ["jan-1", "jan-2", "feb-1"]
+
+    log_interaction(
+        _make_record(task_summary="mar-1", timestamp_utc="2026-03-02T10:00:00+00:00"),
+        log_path=log,
+    )
+    assert (tmp_path / "llm_interactions" / "2026-03.jsonl").exists()
+    all_tasks = [rec["task_summary"] for rec in iter_log(log_path=log)]
+    assert all_tasks == ["jan-1", "jan-2", "feb-1", "mar-1"]
