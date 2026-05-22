@@ -122,4 +122,70 @@ class RequestCalculatorPD(Step):
         }
 
 
-__all__ = ["RequestCalculatorD2", "RequestCalculatorPD"]
+class RequestCalculatorRibAsm(Step):
+    """Compute RibosomeAssembly GTP/H2O request from current subunit state."""
+
+    name = "request_calculator_ribasm"
+    defaults: dict[str, Any] = {"ribasm_proc": None}
+
+    def __init__(self, parameters: dict[str, Any] | None = None) -> None:
+        super().__init__(parameters)
+        ribasm_proc = self.parameters.get("ribasm_proc")
+        if ribasm_proc is None:
+            raise ValueError("RequestCalculatorRibAsm requires parameter: ribasm_proc")
+        self._ribasm_proc = ribasm_proc
+
+    def ports_schema(self) -> dict[str, Any]:
+        return {
+            "substrates": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self._ribasm_proc.substrate_wids
+            },
+            "rna": {
+                "counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
+                    for wid in self._ribasm_proc.rna_subunit_wids
+                }
+            },
+            "protein": {
+                "counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                    for wid in self._ribasm_proc.protein_state_wids
+                }
+            },
+            "requests": {
+                self._ribasm_proc.name: {
+                    self._ribasm_proc.substrate_wid_gtp: {
+                        "_default": 0.0,
+                        "_updater": "set",
+                        "_emit": False,
+                    },
+                    self._ribasm_proc.substrate_wid_h2o: {
+                        "_default": 0.0,
+                        "_updater": "set",
+                        "_emit": False,
+                    },
+                }
+            },
+        }
+
+    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        del timestep
+        formable = self._ribasm_proc.estimate_formable_without_substrates(states)
+        hydrolysis_events = sum(
+            int(formable.get(particle_wid, 0))
+            * int(self._ribasm_proc.n_gtpases_per_particle[particle_wid])
+            for particle_wid in self._ribasm_proc.complex_wids
+        )
+        request = float(max(0, hydrolysis_events))
+        return {
+            "requests": {
+                self._ribasm_proc.name: {
+                    self._ribasm_proc.substrate_wid_gtp: request,
+                    self._ribasm_proc.substrate_wid_h2o: request,
+                }
+            }
+        }
+
+
+__all__ = ["RequestCalculatorD2", "RequestCalculatorPD", "RequestCalculatorRibAsm"]

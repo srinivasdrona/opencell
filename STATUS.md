@@ -1,32 +1,48 @@
-Phase B Turn 1 (tRNAAminoacylation) completed at 2026-05-22 22:23:02 +05:30
+Phase B Turn 2 (RibosomeAssembly) completed at 2026-05-22 22:40:08 +05:30
 
-Implemented:
-- opencell/vivarium/karr_trna_aminoacylation.py
-- tests/vivarium/test_karr_trna_aminoacylation.py
+Implemented
+- opencell/vivarium/karr_ribosome_assembly.py
+  - Added KarrRibosomeAssemblyProcess (name: karr_ribosome_assembly)
+  - Loads data/karr_fixtures/per_process/RibosomeAssembly_flat.mat
+  - Extracts RNA/monomer composition, catalysis matrix, substrate/enzyme/complex WIDs
+  - Tracks 6 GTPases: EngA=MG_329_MONOMER, EngB=MG_335_MONOMER, Era=MG_387_MONOMER, Obg=MG_384_MONOMER, RbfA=MG_143_MONOMER, RbgA=MG_442_MONOMER
+  - Supports 2 particle outputs: RIBOSOME_30S, RIBOSOME_50S
+  - ports_schema implemented per design; assembly outputs use accumulate updater
+  - next_update implements randomized per-particle order and all-or-nothing formation limit:
+    min(rna_limit, monomer_limit, gtpase_limit, gtp_limit, h2o_limit)
+  - Applies deltas: consume RNA/monomers/GTP/H2O and produce complexes/GDP/PI/H
 
-Key metrics:
-- Charged-tRNA steady-state fraction after 100 ticks at dt=1s (ATP-limited scenario): 0.6998 (~70.0%, target ~67% ±5%)
-- ATP consumption rate in ATP-limited test: 100 ATP/tick (100 ATP consumed in one 1s tick)
+- opencell/vivarium/karr_request_calculators.py
+  - Added RequestCalculatorRibAsm(Step)
+  - Computes GTP/H2O requests as sum(max_formable_without_substrates * n_gtpases_per_particle)
 
-Verification:
-1) Import check:
-   wsl -e bash -lc "/mnt/e/opencell/.venv-wsl/bin/python -c 'from opencell.vivarium.karr_trna_aminoacylation import KarrTRNAAminoacylationProcess; p = KarrTRNAAminoacylationProcess({}); print(len(p.free_rna_wids))'"
-   Result: 37
+- tests/vivarium/test_karr_ribosome_assembly.py
+  - Added 9 tests per design plan:
+    1) fixture load
+    2) no subunits -> no assembly
+    3) no GTP -> no assembly
+    4) one formation consumes expected GTP/H2O
+    5) GDP/PI/H byproducts exact
+    6) randomization affects scarcity outcome
+    7) mass conservation on RNA/monomer/substrate deltas
+    8) allocation + ribasm integration smoke (chassis-guarded)
+    9) 500-tick ribosome+decay bounded/non-zero steady-state behavior
 
-2) Targeted tests:
-   wsl -e bash -lc "cd /mnt/e/opencell-worktrees/pb-t1-trna && /mnt/e/opencell/.venv-wsl/bin/pytest tests/vivarium/test_karr_trna_aminoacylation.py -v"
-   Result: 9 passed
+Verification
+- Import check (WSL venv): PASS
+  - /mnt/e/opencell/.venv-wsl/bin/python -c 'from opencell.vivarium.karr_ribosome_assembly import KarrRibosomeAssemblyProcess'
+- Targeted new tests: PASS
+  - pytest tests/vivarium/test_karr_ribosome_assembly.py -v
+  - Result: 9 passed
+- Vivarium subset regression: PASS
+  - pytest tests/vivarium -q
+  - Result: 111 passed
 
-3) Vivarium regression slice:
-   wsl -e bash -lc "cd /mnt/e/opencell-worktrees/pb-t1-trna && /mnt/e/opencell/.venv-wsl/bin/pytest tests/vivarium -q"
-   Result: 102 passed
-
-4) Broad suite command requested:
-   wsl -e bash -lc "cd /mnt/e/opencell-worktrees/pb-t1-trna && /mnt/e/opencell/.venv-wsl/bin/pytest tests/ --ignore=tests/probes --ignore=tests/integration -q"
-   Result: 616 passed, 5 failed, 11 skipped, 4 xfailed
-   Failing tests:
-   - tests/m1/test_calc_flux_bounds.py::test_perturbation_panel_p1_matches_oracle (missing data/m1_sources/karr_flat/metabolism_dynamics.mat)
-   - tests/m1/test_calc_flux_bounds.py::test_perturbation_panel_p2_matches_oracle (same missing file)
-   - tests/m1/test_calc_flux_bounds.py::test_perturbation_panel_p3_matches_oracle (same missing file)
-   - tests/unit/test_curation.py::TestLockedProtection::test_approved_card_never_overwritten
-   - tests/unit/test_curation.py::TestLockedProtection::test_draft_re_extracted_with_force
+Key metrics
+- Controlled single-tick assembly (test_mass_conservation scenario):
+  - Formation rate: 30S=3 particles/tick, 50S=2 particles/tick
+  - GTP consumption: 14 molecules/tick (with matching H2O consumption 14/tick)
+  - Byproducts: GDP=14/tick, PI=14/tick, H=14/tick
+- Scarcity/randomization check:
+  - seed=0 path: 2x30S formed (4 GTP consumed)
+  - seed=3 path: 1x50S formed (4 GTP consumed)
