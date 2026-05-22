@@ -1,32 +1,54 @@
-Phase B Turn 1 (tRNAAminoacylation) completed at 2026-05-22 22:23:02 +05:30
+Phase B Turn 3 (TranscriptionalRegulation) COMPLETE
+Date: 2026-05-22
 
 Implemented:
-- opencell/vivarium/karr_trna_aminoacylation.py
-- tests/vivarium/test_karr_trna_aminoacylation.py
+- Added opencell/vivarium/karr_transcriptional_regulation.py
+  - KarrTranscriptionalRegulationProcess (name: karr_transcriptional_regulation)
+  - Loads data/karr_fixtures/per_process/TranscriptionalRegulation_flat.mat
+  - Extracts TF WIDs, regulated TU WIDs, TF-promoter affinity matrix, TF-TU fold-change matrix
+  - Ports:
+    - protein.counts.<TF> (accumulate, read-only usage)
+    - tf_binding.<TF>.<TU> (accumulate, emit=True)
+    - tx_rate_fold_change.<TU> (set, emit=True)
+  - next_update:
+    - enforces free-copy constraint per TF (including unbinding if copies drop)
+    - stochastically binds free TF copies to unoccupied promoters weighted by affinity
+    - enforces max 1 copy per (TF, TU)
+    - sets absolute tx_rate_fold_change per TU as multiplicative product of bound TF effects
 
-Key metrics:
-- Charged-tRNA steady-state fraction after 100 ticks at dt=1s (ATP-limited scenario): 0.6998 (~70.0%, target ~67% ±5%)
-- ATP consumption rate in ATP-limited test: 100 ATP/tick (100 ATP consumed in one 1s tick)
+- Modified opencell/vivarium/karr_m2_v3.py
+  - Added optional tx_rate_fold_change read port to schema (defaults 1.0, updater set)
+  - Applies fold-change multipliers to synthesis rates in next_update
+  - Backward-compatible behavior preserved when regulation port is unwired
 
-Verification:
-1) Import check:
-   wsl -e bash -lc "/mnt/e/opencell/.venv-wsl/bin/python -c 'from opencell.vivarium.karr_trna_aminoacylation import KarrTRNAAminoacylationProcess; p = KarrTRNAAminoacylationProcess({}); print(len(p.free_rna_wids))'"
-   Result: 37
+- Added tests/vivarium/test_karr_transcriptional_regulation.py (9 tests)
+- Updated tests/vivarium/test_karr_m2_v3.py (8 tests total, including fold-change wiring coverage)
 
-2) Targeted tests:
-   wsl -e bash -lc "cd /mnt/e/opencell-worktrees/pb-t1-trna && /mnt/e/opencell/.venv-wsl/bin/pytest tests/vivarium/test_karr_trna_aminoacylation.py -v"
-   Result: 9 passed
+Fixture-derived network metrics:
+- TF species: 5
+- Regulated TU set extracted from fixture: 26
+- TF-TU relationships extracted: 30
 
-3) Vivarium regression slice:
-   wsl -e bash -lc "cd /mnt/e/opencell-worktrees/pb-t1-trna && /mnt/e/opencell/.venv-wsl/bin/pytest tests/vivarium -q"
-   Result: 102 passed
+Key metric:
+- Steady-state TF binding fraction after 100 ticks (10 copies per TF, seed=0): 0.54
 
-4) Broad suite command requested:
-   wsl -e bash -lc "cd /mnt/e/opencell-worktrees/pb-t1-trna && /mnt/e/opencell/.venv-wsl/bin/pytest tests/ --ignore=tests/probes --ignore=tests/integration -q"
-   Result: 616 passed, 5 failed, 11 skipped, 4 xfailed
-   Failing tests:
-   - tests/m1/test_calc_flux_bounds.py::test_perturbation_panel_p1_matches_oracle (missing data/m1_sources/karr_flat/metabolism_dynamics.mat)
-   - tests/m1/test_calc_flux_bounds.py::test_perturbation_panel_p2_matches_oracle (same missing file)
-   - tests/m1/test_calc_flux_bounds.py::test_perturbation_panel_p3_matches_oracle (same missing file)
-   - tests/unit/test_curation.py::TestLockedProtection::test_approved_card_never_overwritten
-   - tests/unit/test_curation.py::TestLockedProtection::test_draft_re_extracted_with_force
+Verification commands and results:
+1) import check
+   - /mnt/e/opencell/.venv-wsl/bin/python -c 'from opencell.vivarium.karr_transcriptional_regulation import KarrTranscriptionalRegulationProcess'
+   - PASS
+
+2) pytest tests/vivarium/test_karr_transcriptional_regulation.py -v
+   - PASS (9 passed)
+
+3) pytest tests/vivarium/test_karr_m2_v3.py -v
+   - PASS (8 passed)
+
+4) pytest tests/vivarium -q
+   - PASS (115 passed)
+
+Changed files:
+- opencell/vivarium/karr_transcriptional_regulation.py
+- opencell/vivarium/karr_m2_v3.py
+- tests/vivarium/test_karr_transcriptional_regulation.py
+- tests/vivarium/test_karr_m2_v3.py
+- STATUS.md
