@@ -82,3 +82,9 @@ STATUS.md
 .codex_prompt.md
 .codex_stdout.log
 
+
+# Karr-native MATLAB extractions (large; reproducible from regen scripts)
+data/m1_sources/karr_native/*
+!data/m1_sources/karr_native/.gitkeep
+!data/m1_sources/karr_native/README.md
+
