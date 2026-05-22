@@ -20,10 +20,16 @@ scripts_dir = fileparts(matlab_dir);
 repo_root = fileparts(scripts_dir);
 fprintf('[karr_bootstrap] repo root: %s\n', repo_root);
 
-% Karr WCM source tree
+% Karr WCM source tree — try current worktree first, fall back to main checkout
 wcm_root = fullfile(repo_root, 'data', 'm1_sources', 'WholeCell');
 if ~exist(wcm_root, 'dir')
-    error('Karr WCM source not found at: %s', wcm_root);
+    fallback = 'E:\opencell\data\m1_sources\WholeCell';
+    if exist(fallback, 'dir')
+        fprintf('[karr_bootstrap] worktree WCM missing, using main checkout: %s\n', fallback);
+        wcm_root = fallback;
+    else
+        error('Karr WCM source not found at: %s (and fallback %s also missing)', wcm_root, fallback);
+    end
 end
 
 % Set up WCM paths
