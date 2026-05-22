@@ -1,0 +1,35 @@
+{
+  "probe": "probe1_accumulate",
+  "single_writer": {
+    "expected_final_x": 112,
+    "observed_final_x": 112.0,
+    "step_trace": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "parameters_persist_write_ok": true,
+    "parameters_persist_error": "",
+    "timeseries_len": 6
+  },
+  "two_writers_same_port": {
+    "expected_final_x_if_summed": 112,
+    "observed_final_x": 112.0,
+    "acc1_step_trace": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "acc2_step_trace": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ]
+  }
+}

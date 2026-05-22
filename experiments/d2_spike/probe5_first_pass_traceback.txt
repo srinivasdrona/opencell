@@ -1,0 +1,24 @@
+Probe 5 first-pass traceback (captured from opencell-codex session log)
+Source: C:\Users\sdrona\.codex\sessions\2026\05\21\rollout-2026-05-21T23-37-51-019e4bb8-edc4-79e1-b85e-4b5d92d2a09d.jsonl
+Timestamp: 2026-05-22T07:10:35.527Z
+
+Traceback (most recent call last):
+  File "<stdin>", line 9, in <module>
+  File "/mnt/e/opencell/.venv-wsl/lib/python3.12/site-packages/vivarium/core/engine.py", line 876, in update
+    self.run_for(
+  File "/mnt/e/opencell/.venv-wsl/lib/python3.12/site-packages/vivarium/core/engine.py", line 946, in run_for
+    store, states = self._process_state(path)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/e/opencell/.venv-wsl/lib/python3.12/site-packages/vivarium/core/engine.py", line 689, in _process_state
+    assert isinstance(store.value, Process)
+AssertionError
+
+Associated first-pass probe result:
+- probe: probe5_third_process
+- base_loc: 285
+- probe_loc: 53
+- added_loc: -232
+- engine_run_ok: false
+- engine_run_error: "AssertionError()"
+- wall_seconds: 29.867570255000004
+- timeseries_time_points: 0

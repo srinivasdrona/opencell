@@ -1,0 +1,25 @@
+{
+  "probe": "probe3_visibility",
+  "writer_then_reader": {
+    "order": "writer_then_reader",
+    "reader_observed_per_tick": [
+      100.0,
+      200.0,
+      200.0,
+      200.0,
+      200.0
+    ],
+    "final_protein_A": 200.0
+  },
+  "reader_then_writer": {
+    "order": "reader_then_writer",
+    "reader_observed_per_tick": [
+      100.0,
+      200.0,
+      200.0,
+      200.0,
+      200.0
+    ],
+    "final_protein_A": 200.0
+  }
+}

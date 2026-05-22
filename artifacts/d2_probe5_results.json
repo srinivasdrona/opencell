@@ -1,0 +1,13 @@
+{
+  "probe": "probe5_third_process",
+  "base_composer_file": "opencell/vivarium/karr_composite.py",
+  "probe_composer_file": "experiments/d2_spike/karr_composite_4process.py",
+  "base_loc": 285,
+  "probe_loc": 92,
+  "added_loc": -193,
+  "protein_decay_stub_token_hits": 3,
+  "engine_run_ok": true,
+  "engine_run_error": "",
+  "wall_seconds": 27.48148359000004,
+  "timeseries_time_points": 6
+}

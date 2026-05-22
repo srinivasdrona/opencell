@@ -1,0 +1,115 @@
+{
+  "probe": "probe2_step",
+  "step": {
+    "kind": "step",
+    "d2_observed_protein_per_tick": [
+      100.0,
+      190.0,
+      190.0,
+      190.0,
+      190.0
+    ],
+    "reconcile_observed_per_tick": [
+      {
+        "protein": 100.0,
+        "consumed": 0.0
+      },
+      {
+        "protein": 200.0,
+        "consumed": 10.0
+      },
+      {
+        "protein": 200.0,
+        "consumed": 10.0
+      },
+      {
+        "protein": 200.0,
+        "consumed": 10.0
+      },
+      {
+        "protein": 200.0,
+        "consumed": 10.0
+      },
+      {
+        "protein": 200.0,
+        "consumed": 10.0
+      }
+    ],
+    "execution_log": [
+      "reconcile_step",
+      "m3",
+      "d2",
+      "reconcile_step",
+      "m3",
+      "d2",
+      "reconcile_step",
+      "m3",
+      "d2",
+      "reconcile_step",
+      "m3",
+      "d2",
+      "reconcile_step",
+      "m3",
+      "d2",
+      "reconcile_step"
+    ],
+    "final_protein_A": 190.0,
+    "final_d2_consumed_A": 0.0
+  },
+  "deriver": {
+    "kind": "deriver",
+    "d2_observed_protein_per_tick": [
+      100.0,
+      190.0,
+      190.0,
+      190.0,
+      190.0
+    ],
+    "reconcile_observed_per_tick": [
+      {
+        "protein": 100.0,
+        "consumed": 0.0
+      },
+      {
+        "protein": 200.0,
+        "consumed": 10.0
+      },
+      {
+        "protein": 200.0,
+        "consumed": 10.0
+      },
+      {
+        "protein": 200.0,
+        "consumed": 10.0
+      },
+      {
+        "protein": 200.0,
+        "consumed": 10.0
+      },
+      {
+        "protein": 200.0,
+        "consumed": 10.0
+      }
+    ],
+    "execution_log": [
+      "reconcile_deriver",
+      "m3",
+      "d2",
+      "reconcile_deriver",
+      "m3",
+      "d2",
+      "reconcile_deriver",
+      "m3",
+      "d2",
+      "reconcile_deriver",
+      "m3",
+      "d2",
+      "reconcile_deriver",
+      "m3",
+      "d2",
+      "reconcile_deriver"
+    ],
+    "final_protein_A": 190.0,
+    "final_d2_consumed_A": 0.0
+  }
+}
