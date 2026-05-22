@@ -242,11 +242,37 @@ Previous plan's "v1.0 by end August 2026" estimate (~14 weeks from today) was un
 
 The Karr paper makes several architectural decisions we should adopt explicitly:
 
-### 6.1 Variable allocation step (the "resource ledger")
+### 6.1 Variable allocation step (the "resource ledger") — UPDATED 2026-05-22
 
 > "the common inputs to the sub-models were computationally allocated at the beginning of each time step" (paper § Sub-model Integration)
 
-OpenCell has a partial `resource_ledger.py` (per `p1-ledger` in plan.md). I haven't deeply audited it against Karr's allocation strategy. **This is a piece that may need rework as we add processes that compete for the same substrates** (e.g., RNA polymerase competing for NTPs across Transcription + replication).
+**Karr's actual allocation algorithm**, now extracted verbatim from `evolveState.m` (see `docs/karr_extracts/architecture/01_simulation_loop.md`):
+
+```matlab
+% Step 1: each process declares its metabolite requirements for this tick
+for i = 1:nProcesses
+    r = processes{i}.calcResourceRequirements_Current();
+    requirements(:, i) = r(...);
+end
+
+% Step 2: clip negative requirements to zero
+requirements = max(0, requirements);
+
+% Step 3: compute proportional fair share
+% For each metabolite m, if total_requested(m) > available(m),
+% scale each process's allocation down by the same fraction
+tmp = mets.counts(:) ./ max(1, sum(requirements, 2));
+allocations = max(0, fix(requirements .* tmp(:, ones(nProcesses, 1))));
+```
+
+This is **proportional fair-share allocation under contention**, done every tick before any process's `evolveState` runs.
+
+Implication for OpenCell:
+- The current `resource_ledger.py` (per `p1-ledger`) was built without this algorithm visible. It needs auditing against this verbatim source.
+- The pattern matters most when ≥2 processes compete for the same metabolite (e.g., transcription + replication both consuming NTPs).
+- D.2-real + ProteinDecay-light (A3 step 3) will be the first OpenCell composition where allocation contention can occur (D.2 consumes GTP/H₂O for ribosome assembly; M2v2 already consumes NTPs). The A3.3 design must address allocation explicitly.
+
+Action: audit `opencell/core/resource_ledger.py` against this algorithm before A3.3 implementation. If it doesn't match the proportional-fair-share pattern, either align it or document the divergence as a Karr-fidelity deviation.
 
 ### 6.2 Parameter reconciliation as a final integration step
 
