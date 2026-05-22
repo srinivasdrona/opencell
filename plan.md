@@ -401,26 +401,41 @@ NOT a parallel program)**
 
 ---
 
-## Current Status (2026-04-27, **602+ tests on main + 70/70 m1**, p10 mass partition shipped; m1 per-process fixtures merged; D.2 design v1→v2→v3 critique loop in flight)
+## Current Status (2026-05-22, **610+ tests on main**, p10 mass partition shipped; m1 per-process fixtures merged; **D.2 v3 REJECTED by convergent Opus 4.6 + GPT-5.5 critique; v4 design + execution plan ready for review on `agent/d2-design-v3`**)
 
-### Phase D.2 design rework loop (IN FLIGHT — v1, v2 in branches; v3 next)
+### Phase D.2 design rework loop (v3 → v4 in flight)
 
-Standard practice for non-trivial design adopted this session: write → adversarial critique (Claude Sonnet rubber-duck or GPT-5.4 cross-model) → rework. Two rounds completed for D.2; v3 is the next concrete deliverable.
+Standard practice for non-trivial design: write → adversarial cross-model critique → rework. Four rounds completed for D.2; v4 is on `agent/d2-design-v3` awaiting its own critique.
 
-**Decisions resolved (apply to v3 and beyond):**
-- **Q1 — oracle target:** *hybrid staged oracle*. Interface mature-only (D.2 emits to `mature` port; consumers M2v2/M3v2/M5 own `bound`). Unit-level oracles now: conservation, topo-ordering, competition, per-complex snapshot for the 158-complex mature-supported subset, aggregate mature-only complex dry mass. Integration-level oracle deferred to post-v2-swap+M5: `D.2.mature + Σconsumers.bound ≈ snapshot.total` for the ~10 bound-heavy anchors. Drop the algebraic `J × τ` substitute argument entirely (Karr is not a fitted-rate birth-death process).
-- **Q2 — scope:** *split*. D.2 = MacromolecularComplexation + RibosomeAssembly only. ProteinFolding → D.3, ProteinActivation → D.4 (or fold into M6 regulation, deferred decision). The `chaperones`-field corruption in `karr_protein_complexes.json` is no longer D.2's blocker.
+**Decisions resolved (apply to v4 and beyond):**
+- **Q1 — oracle target:** hybrid staged (D.2 emits mature only; consumers own bound). CLOSED.
+- **Q2 — scope:** split. D.2 = MC + RibosomeAssembly only. ProteinFolding → D.3. CLOSED.
+- **Q3 — `complex.counts` updater:** `accumulate` (signed). v3 hedge removed in v4. CLOSED.
+- **Q4 — co-write semantics with M2/M3:** **one-tick-lag pattern** — D.2 reads previous-tick monomer/RNA counts, writes consumption to separate `d2_consumed_*` ports, chassis composer reconciles at tick boundary. CLOSED in v4.
+- **Q5 — RIBOSOME_30S_IF3 / 70S ownership:** Decision (b): NOT D.2's. `Process_Translation`-owned in source-truth fixture; deferred to M3v2. CLOSED in v3, propagated through v4.
+- **Q6 — Free/bound decomposition migration:** DEFERRED. M5/M6 are the forcing function.
+- **Q7 — Snapshot `protein.counts` free-only assumption:** DEFERRED to v4-prerequisite verification script.
 
-**v1 (`agent/d2-design-doc` @ `fa59925`):** 496 lines. Rubber-duck'd by Claude Sonnet — 3 BLOCKERs (ribosome cost path, oracle path/anchors wrong, MC algorithm collapse), 4 HIGH, 5 open questions.
+**v1 (`agent/d2-design-doc` @ `fa59925`):** 496 lines. Sonnet rubber-duck → 3 BLOCKERs, 4 HIGH, 5 open questions.
 
-**v2 (`agent/d2-design-v2` @ `811a707`):** 770 lines + `data/karr_fixtures/d2_mature_subset.json` (158-complex manifest with 10 bound-heavy anchors verified live). Bakes in Q1+Q2. Critiqued by GPT-5.4 — verdict (c) rework, **4 BLOCKERs carried into v3**:
-  1. **Ribosome cost dissolution claim is FALSE.** Costs are NOT in `karr_protein_complexes.json`; v3 must extract from `RibosomeAssembly.m` (Karr forms 30S+50S separately, 2 GTPases for 30S + 4 for 50S, randomized order, no 6× 70S blanket).
-  2. **Scope creep.** Live `complex.formationProcesses` spans 9 process IDs; v3 must whitelist D.2 ownership and explicitly exclude FtsZ/DnaA/holoenzyme/ChromosomeCondensation complexes per Q2.
-  3. **Algorithm bug.** `_emit_update()` only adds new complexes, never emits negative deltas for consumed subcomplexes — would create RNA_POLYMERASE_HOLOENZYME without decrementing parts.
-  4. **Oracle target wrong.** Aggregate dry-mass compares mature-only output (1.155e-15 g) to all-forms `complex.dryWeight` (1.505e-15 g).
-  HIGH carry-overs for v3: add `complex.wholeCellModelIDs` to ARCHIVE_SPEC; reframe Q3 to be about D.2 co-writing `protein.counts`/`rna.counts` with M2/M3 (not `complex.counts`, which is unambiguously `accumulate`).
+**v2 (`agent/d2-design-v2` @ `811a707`):** 770 lines + `data/karr_fixtures/d2_mature_subset.json`. GPT-5.4 critique → 4 BLOCKERs.
 
-**v2 verified-true headlines:** 22 ARCHIVE_SPEC extensions real (all `State_Mass.dump.complex.*` paths exist in archive); 158-complex mature subset at threshold ≥1; 10 bound-heavy anchors at threshold ≥1; mature_total = 4006 (cytosol+membrane) vs 3264 (cytosol-only).
+**v3 (`agent/d2-design-v3` @ `10bf5f0`, then handover @ `0c01a02`):** 914 lines + evidence extractor + JSON artifact (`d2_v3_evidence.{json,md}`) + compliance checklist + source-truth working spec. **Methodology shift:** bottom-up from `_flat.mat` fixtures (`scripts/d2_extract_v3_evidence.py`). All 4 v2 BLOCKERs addressed in §1.1, §2.4, §3.6, §6. **LLM log entry:** `sha256:c6ef222...`.
+
+**v3 critique (2026-05-22, Opus 4.6 + GPT-5.5 parallel) → REWORK verdict.** See `docs/design/d2_v3_critique_2026-05-22.md` for full findings. Convergent root cause: v3 fixed the methodology but did not propagate Decision (b) and the new §3.6 contract through §3.1, §3.5, §3.6 residual code, §5.4 chassis claims. **6 BLOCKERs** carried into v4:
+  1. **Ribosome contradiction.** §3.5 still builds RIBOSOME_70S despite §1.1 Decision (b) excluding it; §3.1 flag list still includes all 4 ribosome forms. Both reviewers, independently.
+  2. **Blanket 6× GTP/H₂O cost** in §3.5 despite §2.4 banning it. (Opus.)
+  3. **§3.6 emit code internally contradicts itself** — supersession note misdescribes what it supersedes. (Both.)
+  4. **Updater conflict with M2/M3.** M2/M3 use `_updater: set` on `rna.counts`/`protein.counts`; v3's "Vivarium handles this naturally" is empirically false. (GPT-5.5, fixture-verified.)
+  5. **Cofactors decremented from local pool, never emitted to substrates.** GTP/H₂O literally vanish. (GPT-5.5.)
+  6. **Cold-start overbuild** under current `set` semantics. (GPT-5.5.)
+  Plus 5 HIGH (project-rule compliance: pint, RNG spawn, DOI, naked numbers; updater hedge; worked-example absence; per-compartment oracle target uses all-forms not mature-only) and 11 MED/LOW.
+
+**v4 (`agent/d2-design-v3` @ next commit):** see `docs/design/d2_complex_assembly_v4.md`. 1500 lines, 13 sections, plus a §11 propagation-checklist as the anti-pattern guard for v5-shouldn't-happen. Execution plan in §13 phases work into Phase A (design approval, this PR) → B (prereqs incl. snapshot verification) → C (implementation, ~17h) → D (chassis wiring + p10 phenotype) → E (chain reaction unblocking v2-chassis-swap, M5, M6).
+
+**v2 verified-true headlines (still valid for v4):** 22 ARCHIVE_SPEC extensions real; 158-complex mature subset; 10 bound-heavy anchors; mature_total = 4006 (cytosol+membrane).
+
+**v3 verified-true headlines (independently confirmed by GPT-5.5):** 30S GTPases = `[Era, RbfA]` (2 factors); 50S GTPases = `[EngA, EngB, Obg, RbgA]` (4 factors); 9-way ownership histogram = `[882, 96, 84, 66, 42, 12, 12, 6, 6]`; mature-only mass = `1.1549598107588903e-15 g`; subcomplex DAG 60 edges acyclic, 9 in 158-mature subset.
 
 ### m1 per-process fixture extraction (DONE — merged to main as `bd4d9f8`)
 
