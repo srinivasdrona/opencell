@@ -84,7 +84,17 @@ for i = 1:numel(process_names)
     end
 
     % Run n_ticks of evolveState on this process
-    sim.randStream.seed = uint32(0);  % deterministic
+    % Seed RNG deterministically — Simulation class API varies across WCM versions
+    try
+        if ismethod(sim, 'applyOptions') && ismethod(sim, 'seedRandStream')
+            sim.applyOptions('seed', uint32(0));
+            sim.seedRandStream();
+        elseif isprop(sim, 'randStream') && ~isempty(sim.randStream)
+            sim.randStream.seed = uint32(0);
+        end
+    catch seed_err
+        fprintf('[trace] WARN could not seed RNG for %s: %s\n', pname, seed_err.message);
+    end
     for t = 1:n_ticks
         % Snapshot before
         proc.copyFromState();
