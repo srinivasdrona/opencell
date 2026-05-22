@@ -29,7 +29,13 @@ _RNAP_COUNT_WID = "RNA_POLYMERASE"
 
 
 class KarrTranscriptionV3Process(Process):
-    """Mechanism-driven transcription wrapper for the central-dogma chassis."""
+    """Mechanism-driven transcription wrapper for the central-dogma chassis.
+
+    Optional regulation input:
+    - Reads ``tx_rate_fold_change`` as a per-transcription-unit multiplier.
+    - When this port is not wired, synthesis remains bit-identical to the
+      pre-regulation implementation.
+    """
 
     name = "karr_transcription_v3"
     defaults: dict[str, Any] = {
@@ -52,6 +58,9 @@ class KarrTranscriptionV3Process(Process):
         self.kinetics_model: tx.KarrTranscriptionModel = kinetics_model
         self.mechanism_inputs: tx_v2.MechanismInputs = mechanism_inputs
         self.gene_ids = self.kinetics_model.gene_wcm_ids
+        self.tu_wids = tuple(f"TU_{idx + 1:03d}" for idx in range(len(self.gene_ids)))
+        self._gene_idx_by_wid = {wid: idx for idx, wid in enumerate(self.gene_ids)}
+        self._tu_idx_by_wid = {wid: idx for idx, wid in enumerate(self.tu_wids)}
         if len(self.gene_ids) != self.mechanism_inputs.n_genes:
             raise ValueError(
                 "M2 v2 wrapper expects matching gene dimensions: "
@@ -91,6 +100,10 @@ class KarrTranscriptionV3Process(Process):
                     }
                 }
             },
+            "tx_rate_fold_change": {
+                tu_wid: {"_default": 1.0, "_updater": "set", "_emit": False}
+                for tu_wid in self.tu_wids
+            },
         }
 
     def _step_rna(self, rna: np.ndarray, synth_per_s: np.ndarray, dt_s: float) -> np.ndarray:
@@ -119,6 +132,25 @@ class KarrTranscriptionV3Process(Process):
         synth_gene_per_s = tx_v2.predict_gene_synthesis_per_s(
             self.mechanism_inputs, n_active=n_active_rnap
         )
+        fold_changes = states.get("tx_rate_fold_change", {})
+        if fold_changes:
+            multipliers = np.ones_like(synth_gene_per_s, dtype=float)
+            for tu_wid, raw_multiplier in fold_changes.items():
+                idx: int | None = None
+                if tu_wid in self._gene_idx_by_wid:
+                    idx = self._gene_idx_by_wid[tu_wid]
+                elif tu_wid in self._tu_idx_by_wid:
+                    idx = self._tu_idx_by_wid[tu_wid]
+                elif isinstance(tu_wid, str) and tu_wid.startswith("TU_"):
+                    try:
+                        parsed = int(tu_wid[3:]) - 1
+                    except ValueError:
+                        parsed = -1
+                    if 0 <= parsed < multipliers.size:
+                        idx = parsed
+                if idx is not None:
+                    multipliers[idx] = float(raw_multiplier)
+            synth_gene_per_s = synth_gene_per_s * multipliers
         rna_next = self._step_rna(rna, synth_gene_per_s, timestep)
 
         update: dict[str, Any] = {
