@@ -25,10 +25,17 @@ for i = 1:numel(process_names)
         continue;
     end
 
-    try
-        proc = sim.process(pname);
-    catch err
-        fprintf('[init] WARN process %s not loadable: %s\n', pname, err.message);
+    % Look up process by iterating cell array
+    target_id = ['Process_' pname];
+    proc = [];
+    for k = 1:numel(sim.processes)
+        if strcmp(sim.processes{k}.wholeCellModelID, target_id)
+            proc = sim.processes{k};
+            break;
+        end
+    end
+    if isempty(proc)
+        fprintf('[init] WARN process %s not found in sim\n', pname);
         continue;
     end
 

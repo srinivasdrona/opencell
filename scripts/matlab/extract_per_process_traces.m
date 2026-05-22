@@ -46,10 +46,17 @@ for i = 1:numel(process_names)
         continue;
     end
 
-    try
-        proc = sim.process(pname);
-    catch err
-        fprintf('[trace] WARN process %s not found in sim: %s\n', pname, err.message);
+    % Look up process by iterating cell array (sim is a loaded struct, not a class instance)
+    target_id = ['Process_' pname];
+    proc = [];
+    for k = 1:numel(sim.processes)
+        if strcmp(sim.processes{k}.wholeCellModelID, target_id)
+            proc = sim.processes{k};
+            break;
+        end
+    end
+    if isempty(proc)
+        fprintf('[trace] WARN process %s not found in sim\n', pname);
         continue;
     end
 
