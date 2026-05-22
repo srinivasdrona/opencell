@@ -1,36 +1,32 @@
-A3.3 Turn 5 completed at 2026-05-22 21:45 IST
+Phase B Turn 1 (tRNAAminoacylation) completed at 2026-05-22 22:23:02 +05:30
 
-Implemented
-- Added `build_karr_chassis_v3(...)` in `opencell/vivarium/karr_composite.py`
-- Added new request calculator module: `opencell/vivarium/karr_request_calculators.py`
-  - `RequestCalculatorD2(Step)` (zero requests for `karr_d2_real`)
-  - `RequestCalculatorPD(Step)` (ATP/H2O request from expected decay)
-- Added integration suite: `tests/integration/test_karr_chassis_v3.py` (8 tests)
+Implemented:
+- opencell/vivarium/karr_trna_aminoacylation.py
+- tests/vivarium/test_karr_trna_aminoacylation.py
 
-Verification
-1) Import check (worktree code)
-- `wsl -e bash -lc "cd /mnt/e/opencell-worktrees/a33-integration && PYTHONPATH=/mnt/e/opencell-worktrees/a33-integration /mnt/e/opencell/.venv-wsl/bin/python -c 'from opencell.vivarium.karr_composite import build_karr_chassis_v3'"`
-- Result: PASS
+Key metrics:
+- Charged-tRNA steady-state fraction after 100 ticks at dt=1s (ATP-limited scenario): 0.6998 (~70.0%, target ~67% ±5%)
+- ATP consumption rate in ATP-limited test: 100 ATP/tick (100 ATP consumed in one 1s tick)
 
-2) New integration tests
-- `wsl -e bash -lc "cd /mnt/e/opencell-worktrees/a33-integration && PYTHONPATH=/mnt/e/opencell-worktrees/a33-integration /mnt/e/opencell/.venv-wsl/bin/pytest tests/integration/test_karr_chassis_v3.py -v"`
-- Result: 8 passed
-  - test_chassis_v3_builds: PASSED
-  - test_chassis_v3_10_ticks: PASSED
-  - test_chassis_v3_ratchet_closure_steady_state: PASSED
-  - test_v2_chassis_still_works: PASSED
-  - test_chassis_v3_all_writers_accumulate: PASSED
-  - test_allocation_step_constrains_under_scarcity: PASSED
-  - test_d2_and_decay_both_active: PASSED
-  - test_emit_step_records_complex_trajectories: PASSED
+Verification:
+1) Import check:
+   wsl -e bash -lc "/mnt/e/opencell/.venv-wsl/bin/python -c 'from opencell.vivarium.karr_trna_aminoacylation import KarrTRNAAminoacylationProcess; p = KarrTRNAAminoacylationProcess({}); print(len(p.free_rna_wids))'"
+   Result: 37
 
-3) A3.3 Turn 1-4 regression set
-- `wsl -e bash -lc "cd /mnt/e/opencell-worktrees/a33-integration && PYTHONPATH=/mnt/e/opencell-worktrees/a33-integration /mnt/e/opencell/.venv-wsl/bin/pytest tests/vivarium/test_karr_m2_v3.py tests/vivarium/test_karr_m3_v3.py tests/vivarium/test_karr_allocation_step.py tests/vivarium/test_karr_d2_real.py tests/vivarium/test_karr_protein_decay_light.py -v"`
-- Result: 32 passed
+2) Targeted tests:
+   wsl -e bash -lc "cd /mnt/e/opencell-worktrees/pb-t1-trna && /mnt/e/opencell/.venv-wsl/bin/pytest tests/vivarium/test_karr_trna_aminoacylation.py -v"
+   Result: 9 passed
 
-Performance + Ratchet headline
-- 1000 ticks measured via 100 batches of `engine.update(10.0)`
-- elapsed_s=16.211921
-- chassis tick rate=61.683 ticks/s
-- ratchet steady-state outcome=PASS
-- worst top-10 drift=1.26% (wid=RNA_POLYMERASE, mid=34.433, late=34.000)
+3) Vivarium regression slice:
+   wsl -e bash -lc "cd /mnt/e/opencell-worktrees/pb-t1-trna && /mnt/e/opencell/.venv-wsl/bin/pytest tests/vivarium -q"
+   Result: 102 passed
+
+4) Broad suite command requested:
+   wsl -e bash -lc "cd /mnt/e/opencell-worktrees/pb-t1-trna && /mnt/e/opencell/.venv-wsl/bin/pytest tests/ --ignore=tests/probes --ignore=tests/integration -q"
+   Result: 616 passed, 5 failed, 11 skipped, 4 xfailed
+   Failing tests:
+   - tests/m1/test_calc_flux_bounds.py::test_perturbation_panel_p1_matches_oracle (missing data/m1_sources/karr_flat/metabolism_dynamics.mat)
+   - tests/m1/test_calc_flux_bounds.py::test_perturbation_panel_p2_matches_oracle (same missing file)
+   - tests/m1/test_calc_flux_bounds.py::test_perturbation_panel_p3_matches_oracle (same missing file)
+   - tests/unit/test_curation.py::TestLockedProtection::test_approved_card_never_overwritten
+   - tests/unit/test_curation.py::TestLockedProtection::test_draft_re_extracted_with_force
