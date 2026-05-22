@@ -1,4 +1,5 @@
 """Vivarium Process wrapper for Karr-native M2 transcription."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -7,7 +8,6 @@ import numpy as np
 from vivarium.core.process import Process
 
 from opencell.m2 import transcription as tx
-
 
 _M2_CONSUMED_SUBSTRATES: tuple[str, ...] = ("ATP", "CTP", "GTP", "UTP")
 
@@ -142,8 +142,7 @@ class KarrTranscriptionProcess(Process):
                 continue
             pool = float(m1_pools.get(s, 0.0))
             if not np.isfinite(pool) or not np.isfinite(req):
-                raise RuntimeError(
-                    f"throttle non-finite: pool[{s}]={pool} req={req}")
+                raise RuntimeError(f"throttle non-finite: pool[{s}]={pool} req={req}")
             pool = max(0.0, pool)
             f_s = pool / req
             if f_s < f:
@@ -162,19 +161,22 @@ class KarrTranscriptionProcess(Process):
             synth_scale = 1.0
 
         rna_next = tx.step_analytical(
-            self._chassis_model, rna, timestep,
-            condition=self.condition, synth_scale=synth_scale,
+            self._chassis_model,
+            rna,
+            timestep,
+            condition=self.condition,
+            synth_scale=synth_scale,
         )
         rna_set = {g: float(rna_next[i]) for i, g in enumerate(self.gene_ids)}
 
         update: dict[str, Any] = {"rna": {"counts": rna_set}}
         if self.parameters["write_substrate_deltas"]:
             ntp = tx.ntp_consumption_per_s(
-                self._chassis_model, condition=self.condition, synth_scale=synth_scale,
+                self._chassis_model,
+                condition=self.condition,
+                synth_scale=synth_scale,
             )
-            update["substrates"] = {
-                s: -ntp[s] * timestep for s in self.consumed_substrates
-            }
+            update["substrates"] = {s: -ntp[s] * timestep for s in self.consumed_substrates}
         return update
 
 
@@ -184,7 +186,7 @@ def build_karr_m2_engine(
     time_step_s: float = 1.0,
     emit_step_s: float | None = None,
     initial_rna_counts: np.ndarray | None = None,
-):
+) -> object:
     """Build a Vivarium Engine running just M2 (transcription)."""
     from vivarium.core.engine import Engine
 
@@ -194,11 +196,9 @@ def build_karr_m2_engine(
     schema = proc.ports_schema()
 
     if initial_rna_counts is None:
-        rna_init = {g: schema["rna"]["counts"][g]["_default"]
-                    for g in model.gene_wcm_ids}
+        rna_init = {g: schema["rna"]["counts"][g]["_default"] for g in model.gene_wcm_ids}
     else:
-        rna_init = {g: float(initial_rna_counts[i])
-                    for i, g in enumerate(model.gene_wcm_ids)}
+        rna_init = {g: float(initial_rna_counts[i]) for i, g in enumerate(model.gene_wcm_ids)}
 
     engine = Engine(
         processes={"m2_karr": proc},

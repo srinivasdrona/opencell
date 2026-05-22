@@ -49,7 +49,7 @@ from opencell.manifest.pairing import (  # noqa: E402
 )
 
 
-def _write_back(manifest_path: Path, manifest_data: dict, result) -> None:
+def _write_back(manifest_path: Path, manifest_data: dict, result: object) -> None:
     """Persist verification block (and possibly doi) back to the YAML file."""
     paper = manifest_data.setdefault("paper", {})
     if result.auto_filled_doi:
@@ -69,14 +69,22 @@ def main(argv: list[str] | None = None) -> int:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     p.add_argument("--manifest", required=True, help="Path to manifest YAML")
-    p.add_argument("--cache-dir", default=".paper_cache",
-                   help="Directory for cached eutils responses (default: .paper_cache)")
-    p.add_argument("--offline", action="store_true",
-                   help="Use only cached responses; never touch the network")
-    p.add_argument("--refresh", action="store_true",
-                   help="Force re-fetch from NCBI even if a cache exists")
-    p.add_argument("--update", action="store_true",
-                   help="Write paper.verification (and auto-filled doi) back to the manifest")
+    p.add_argument(
+        "--cache-dir",
+        default=".paper_cache",
+        help="Directory for cached eutils responses (default: .paper_cache)",
+    )
+    p.add_argument(
+        "--offline", action="store_true", help="Use only cached responses; never touch the network"
+    )
+    p.add_argument(
+        "--refresh", action="store_true", help="Force re-fetch from NCBI even if a cache exists"
+    )
+    p.add_argument(
+        "--update",
+        action="store_true",
+        help="Write paper.verification (and auto-filled doi) back to the manifest",
+    )
     args = p.parse_args(argv)
 
     manifest_path = Path(args.manifest)
@@ -100,8 +108,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     except Exception as e:  # noqa: BLE001 (CLI surface)
         print(f"error: eutils fetch failed: {e}", file=sys.stderr)
-        print("       hint: re-run with --offline if a cached response exists",
-              file=sys.stderr)
+        print("       hint: re-run with --offline if a cached response exists", file=sys.stderr)
         return 3
 
     print(result.message)

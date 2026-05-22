@@ -20,6 +20,7 @@ RNA polymerase counts, transcriptionUnitBindingProbabilities, and the
 elongation rate, then compare against Karr's fitted s_i as an
 independent oracle.
 """
+
 from __future__ import annotations
 
 import json
@@ -29,8 +30,7 @@ from pathlib import Path
 import numpy as np
 
 DEFAULT_FIXTURE_JSON = (
-    Path(__file__).resolve().parents[2]
-    / "data" / "karr_fixtures" / "karr_native_m2.json"
+    Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "karr_native_m2.json"
 )
 
 # Karr's KB carries 3 growth-condition expression columns: low / mean /
@@ -72,7 +72,9 @@ class KarrTranscriptionModel:
     synthesis_rate_per_s: np.ndarray
     rna_ss_predicted: np.ndarray
     tu_binding_probabilities: np.ndarray
-    counts_mature: np.ndarray  # (525, 3) Karr State_Rna mature cytosol counts per condition (E.1b + per-condition snapshots)
+    # (525, 3) Karr State_Rna mature cytosol counts per condition
+    # (E.1b + per-condition snapshots).
+    counts_mature: np.ndarray
     rna_molecular_weight: np.ndarray  # (525,) Da/mol per gene (E.1b)
     elongation_rate_nt_per_s: float
     counts: dict
@@ -113,9 +115,7 @@ def load_default(path: str | Path | None = None) -> KarrTranscriptionModel:
         tu_binding_probabilities=z["tu_binding_probabilities"],
         counts_mature=z["counts_mature"],
         rna_molecular_weight=z["rna_molecular_weight"],
-        elongation_rate_nt_per_s=float(meta["scalars"][
-            "rna_polymerase_elongation_rate_nt_per_s"
-        ]),
+        elongation_rate_nt_per_s=float(meta["scalars"]["rna_polymerase_elongation_rate_nt_per_s"]),
         counts=dict(meta["counts"]),
         raw=meta,
     )
@@ -144,14 +144,13 @@ def step_analytical(
     """
     rna = np.asarray(rna_counts, dtype=float).reshape(-1).copy()
     if rna.size != model.n_genes:
-        raise ValueError(
-            f"rna_counts length {rna.size} != n_genes {model.n_genes}")
+        raise ValueError(f"rna_counts length {rna.size} != n_genes {model.n_genes}")
 
     s_per_s = model.synthesis_rate_per_s[:, resolve_condition(condition)] * float(synth_scale)
     k_per_s = model.decay_rate_per_s
 
     out = np.empty_like(rna)
-    no_decay = (k_per_s <= 0.0)
+    no_decay = k_per_s <= 0.0
     if np.any(~no_decay):
         idx = ~no_decay
         ss = s_per_s[idx] / k_per_s[idx]
@@ -214,6 +213,7 @@ def calibrated_chassis_model(
     KB-fitted s/k = expression convention remains testable.
     """
     from dataclasses import replace
+
     n_genes = model.n_genes
     counts_mature = np.asarray(model.counts_mature, dtype=float)
     if counts_mature.ndim != 2 or counts_mature.shape[0] != n_genes:

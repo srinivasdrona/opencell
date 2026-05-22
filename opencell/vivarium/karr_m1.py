@@ -45,9 +45,9 @@ Two operating modes (selected by the ``dynamic_bounds`` parameter):
     - Enzyme counts are FROZEN at the snapshot (104,) vector.
     - Rule 6 (protein-bound zeroing) is not run.
 """
+
 from __future__ import annotations
 
-from dataclasses import replace
 from typing import Any
 
 import numpy as np
@@ -56,18 +56,36 @@ from vivarium.core.process import Process
 from opencell.m1 import calc_flux_bounds as cfb
 from opencell.m1 import karr_metabolism as km
 
-
 # Substrate WCM IDs that the central-dogma chassis writes into the
 # shared `substrates` store and that M1 must drain into its internal
 # cytosol slice every tick.  Pulled from the Karr 585-ID space at runtime
 # so we never hard-code the set; ``AA_total`` is intentionally NOT here
 # (it is M3's placeholder bulk key, not in Karr's ID space).
 _KARR_DEMAND_KEYS: tuple[str, ...] = (
-    "ATP", "CTP", "GTP", "UTP",
-    "ALA", "ARG", "ASN", "ASP", "CYS",
-    "GLN", "GLU", "GLY", "HIS", "ILE",
-    "LEU", "LYS", "MET", "PHE", "PRO",
-    "SER", "THR", "TRP", "TYR", "VAL",
+    "ATP",
+    "CTP",
+    "GTP",
+    "UTP",
+    "ALA",
+    "ARG",
+    "ASN",
+    "ASP",
+    "CYS",
+    "GLN",
+    "GLU",
+    "GLY",
+    "HIS",
+    "ILE",
+    "LEU",
+    "LYS",
+    "MET",
+    "PHE",
+    "PRO",
+    "SER",
+    "THR",
+    "TRP",
+    "TYR",
+    "VAL",
 )
 _CYTOSOL_COMPARTMENT_0 = 0
 
@@ -100,9 +118,7 @@ class KarrMetabolismProcess(Process):
         self._sub_ids = self.model.raw["ids"]["substrate_wcm_585"]
 
         self.dynamic_bounds: bool = bool(self.parameters["dynamic_bounds"])
-        self.enable_pool_replenishment: bool = bool(
-            self.parameters["enable_pool_replenishment"]
-        )
+        self.enable_pool_replenishment: bool = bool(self.parameters["enable_pool_replenishment"])
         self._sub_state: np.ndarray | None = None
         self._enz_state: np.ndarray | None = None
         self._prev_shared: dict[str, float] | None = None
@@ -126,9 +142,12 @@ class KarrMetabolismProcess(Process):
             self._sub_state = dyn.substrates_snapshot.copy()
             self._enz_state = dyn.enzymes_snapshot.copy()
             self._sub_id_to_idx = {sid: i for i, sid in enumerate(self._sub_ids)}
-            self._fba_reaction_bounds = np.column_stack([
-                self.model.lb, self.model.ub,
-            ]).astype(float)
+            self._fba_reaction_bounds = np.column_stack(
+                [
+                    self.model.lb,
+                    self.model.ub,
+                ]
+            ).astype(float)
             self._demand_idx_pairs = [
                 (sid, self._sub_id_to_idx[sid])
                 for sid in _KARR_DEMAND_KEYS
@@ -149,21 +168,17 @@ class KarrMetabolismProcess(Process):
                         "(typically built by the composer from the actual "
                         "attached M2/M3 models at synth_scale=1.0)"
                     )
-                missing = [
-                    sid for sid, _ in self._demand_idx_pairs if sid not in bd
-                ]
+                missing = [sid for sid, _ in self._demand_idx_pairs if sid not in bd]
                 if missing:
-                    raise ValueError(
-                        f"baseline_demand_per_s missing demand keys: {missing}"
-                    )
+                    raise ValueError(f"baseline_demand_per_s missing demand keys: {missing}")
                 self._baseline_demand_per_s = {
                     sid: float(bd[sid]) for sid, _ in self._demand_idx_pairs
                 }
                 for sid, rate in self._baseline_demand_per_s.items():
                     if not np.isfinite(rate) or rate < 0.0:
                         raise ValueError(
-                            f"baseline_demand_per_s[{sid}]={rate} must be "
-                            f"finite and non-negative")
+                            f"baseline_demand_per_s[{sid}]={rate} must be finite and non-negative"
+                        )
 
     # ------------------------------------------------------------------
     def ports_schema(self) -> dict[str, Any]:
@@ -230,10 +245,7 @@ class KarrMetabolismProcess(Process):
         ]
         for sid, _ in self._demand_idx_pairs:
             keys.append(f"cyt_{sid}")
-        return {
-            k: {"_default": 0.0, "_updater": "set", "_emit": True}
-            for k in keys
-        }
+        return {k: {"_default": 0.0, "_updater": "set", "_emit": True} for k in keys}
 
     # ------------------------------------------------------------------
     def next_update(self, timestep: float, states: dict) -> dict:
@@ -325,10 +337,16 @@ class KarrMetabolismProcess(Process):
             "growth_per_s": float(info["biomass_flux_per_s"]),
             "biomass_flux_per_s": float(info["biomass_flux_per_s"]),
             "n_active_bounds_changed": float(n_changed),
-            "min_lb": float(np.min(bounds[:, 0][np.isfinite(bounds[:, 0])])
-                            if np.any(np.isfinite(bounds[:, 0])) else 0.0),
-            "max_ub": float(np.max(bounds[:, 1][np.isfinite(bounds[:, 1])])
-                            if np.any(np.isfinite(bounds[:, 1])) else 0.0),
+            "min_lb": float(
+                np.min(bounds[:, 0][np.isfinite(bounds[:, 0])])
+                if np.any(np.isfinite(bounds[:, 0]))
+                else 0.0
+            ),
+            "max_ub": float(
+                np.max(bounds[:, 1][np.isfinite(bounds[:, 1])])
+                if np.any(np.isfinite(bounds[:, 1]))
+                else 0.0
+            ),
         }
         m1_pools_update: dict[str, float] = {}
         for sid, idx in self._demand_idx_pairs:
@@ -353,7 +371,7 @@ def build_karr_m1_engine(
     time_step_s: float = 1.0,
     emit_step_s: float | None = None,
     dynamic_bounds: bool = False,
-):
+) -> object:
     """Build a Vivarium Engine running just M1 (Karr metabolism).
 
     This is the chassis-tick smoke harness.  No other processes -
@@ -365,11 +383,13 @@ def build_karr_m1_engine(
     if model is None:
         model = km.load_default()
 
-    proc = KarrMetabolismProcess({
-        "model": model,
-        "time_step": time_step_s,
-        "dynamic_bounds": dynamic_bounds,
-    })
+    proc = KarrMetabolismProcess(
+        {
+            "model": model,
+            "time_step": time_step_s,
+            "dynamic_bounds": dynamic_bounds,
+        }
+    )
     processes = {"m1_karr": proc}
     topology = {
         "m1_karr": {
@@ -378,28 +398,21 @@ def build_karr_m1_engine(
         }
     }
     if dynamic_bounds:
-        topology["m1_karr"]["m1_dynamic_diagnostics"] = (
-            "m1_dynamic_diagnostics",
-        )
+        topology["m1_karr"]["m1_dynamic_diagnostics"] = ("m1_dynamic_diagnostics",)
         topology["m1_karr"]["m1_pools"] = ("m1_pools",)
 
     rxn_ids = model.rxn_wcm_ids_645
     sub_ids = model.raw["ids"]["substrate_wcm_585"]
     initial_state: dict[str, Any] = {
         "metabolic_reaction": {
-            "fluxs": {
-                rid: float(model.fluxs_stored[i])
-                for i, rid in enumerate(rxn_ids)
-            },
+            "fluxs": {rid: float(model.fluxs_stored[i]) for i, rid in enumerate(rxn_ids)},
             "growth_per_s": float(model.stored_runtime["growth_per_s"]),
             "growth_per_h": float(model.stored_runtime["growth_per_h"]),
         },
         "substrates": {sid: 1.0 for sid in sub_ids},
     }
     if dynamic_bounds:
-        initial_state["m1_dynamic_diagnostics"] = {
-            k: 0.0 for k in proc._diagnostics_schema()
-        }
+        initial_state["m1_dynamic_diagnostics"] = {k: 0.0 for k in proc._diagnostics_schema()}
         initial_state["m1_pools"] = {
             sid: float(proc._sub_state[idx, _CYTOSOL_COMPARTMENT_0])
             for sid, idx in proc._demand_idx_pairs

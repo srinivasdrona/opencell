@@ -30,6 +30,7 @@ See ``.github/copilot-instructions.md`` "Stochastic RNG discipline".
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 
 import numpy as np
@@ -59,7 +60,9 @@ class HybridResult:
     n_tau_steps: int
 
 
-def _gene_propensity_factory(coupled: CoupledMetabolismTranscription, f_met_value: float):
+def _gene_propensity_factory(
+    coupled: CoupledMetabolismTranscription, f_met_value: float
+) -> Callable[[np.ndarray], np.ndarray]:
     """Build a propensity function for the gene network at a fixed f_met.
 
     Vilar's SBML kineticLaws are in **hour^-1** (the SBML's native time unit).
@@ -72,7 +75,7 @@ def _gene_propensity_factory(coupled: CoupledMetabolismTranscription, f_met_valu
     n_r = gene.n_reactions
     inv_seconds_per_hour = 1.0 / SECONDS_PER_HOUR
 
-    def propensity(y_arr):
+    def propensity(y_arr: np.ndarray) -> np.ndarray:
         y_np = np.asarray(y_arr, dtype=np.float64)
         v_per_h = gene.fluxes(0.0, y_np)
         v_per_s = v_per_h * inv_seconds_per_hour
@@ -137,8 +140,13 @@ def hybrid_run(
     # so solve it once over the full horizon and sample at macro boundaries.
     # This avoids restarting LSODA n_macro times (~75% speedup vs per-step).
     sol = solve_ivp(
-        coupled.met.rhs, (0.0, t_end_s), y_met0,
-        method="LSODA", atol=met_atol, rtol=met_rtol, t_eval=ts,
+        coupled.met.rhs,
+        (0.0, t_end_s),
+        y_met0,
+        method="LSODA",
+        atol=met_atol,
+        rtol=met_rtol,
+        t_eval=ts,
     )
     if not sol.success:
         raise RuntimeError(f"metabolism LSODA failed: {sol.message}")
@@ -196,7 +204,7 @@ def hybrid_ensemble(
     macro_dt_s: float,
     n_realisations: int,
     base_seed: int = 0,
-    **kwargs,
+    **kwargs: object,
 ) -> list[HybridResult]:
     """Convenience: run ``n_realisations`` independent realisations.
 
@@ -207,7 +215,6 @@ def hybrid_ensemble(
     seq = np.random.SeedSequence(base_seed)
     children = seq.spawn(n_realisations)
     return [
-        hybrid_run(coupled, t_end_s, macro_dt_s,
-                   rng=np.random.default_rng(child), **kwargs)
+        hybrid_run(coupled, t_end_s, macro_dt_s, rng=np.random.default_rng(child), **kwargs)
         for child in children
     ]

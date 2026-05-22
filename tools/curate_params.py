@@ -37,7 +37,7 @@ from opencell.curation import (  # noqa: E402
 )
 
 
-def _print_summary(run, paths: dict[str, Path]) -> None:
+def _print_summary(run: object, paths: dict[str, Path]) -> None:
     cov = run.coverage
     print("=" * 72)
     print(f"CURATION SUMMARY  model={run.model_slug}  doi={run.doi}")
@@ -45,8 +45,14 @@ def _print_summary(run, paths: dict[str, Path]) -> None:
     print(f"  started:   {run.started_at}")
     print(f"  finished:  {run.finished_at}")
     print(f"  total:     {cov.get('TOTAL', 0)}")
-    for k in ("RECOMMEND", "AMBIGUOUS", "NOT_FOUND", "ALL_REJECTED",
-              "SKIPPED_EXISTS", "SKIPPED_LOCKED"):
+    for k in (
+        "RECOMMEND",
+        "AMBIGUOUS",
+        "NOT_FOUND",
+        "ALL_REJECTED",
+        "SKIPPED_EXISTS",
+        "SKIPPED_LOCKED",
+    ):
         n = cov.get(k, 0)
         if n:
             print(f"    {k:<16} {n}")
@@ -61,14 +67,20 @@ def _print_summary(run, paths: dict[str, Path]) -> None:
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Biology-curator: per-paper extraction.")
     p.add_argument("--manifest", required=True, help="Path to manifest YAML")
-    p.add_argument("--output-cards", required=True,
-                   help="Path to cards YAML to write/append DRAFT cards into")
-    p.add_argument("--output-dir", required=True,
-                   help="Directory for queues, coverage report, provenance")
-    p.add_argument("--force", action="store_true",
-                   help="Re-extract DRAFT entries already present (REVIEWED/APPROVED always protected)")
-    p.add_argument("--no-biomodels", action="store_true",
-                   help="Skip BioModels lookup (offline mode)")
+    p.add_argument(
+        "--output-cards", required=True, help="Path to cards YAML to write/append DRAFT cards into"
+    )
+    p.add_argument(
+        "--output-dir", required=True, help="Directory for queues, coverage report, provenance"
+    )
+    p.add_argument(
+        "--force",
+        action="store_true",
+        help="Re-extract DRAFT entries already present (REVIEWED/APPROVED always protected)",
+    )
+    p.add_argument(
+        "--no-biomodels", action="store_true", help="Skip BioModels lookup (offline mode)"
+    )
     args = p.parse_args(argv)
 
     manifest = load_manifest(args.manifest)

@@ -11,6 +11,7 @@ Categories:
   chassis_invariant -- round-trip / stability checks; circular today,
                        become real once M2/M3 v2 mechanics land.
 """
+
 from __future__ import annotations
 
 import math
@@ -27,6 +28,7 @@ from opencell.m3 import translation as tl
 @dataclass(frozen=True)
 class PhenotypeMeasurement:
     """Result of one extractor: (value, target, status_message)."""
+
     name: str
     predicted: float
     target: float | None
@@ -35,6 +37,7 @@ class PhenotypeMeasurement:
 
 
 # ---------- FBA prediction phenotypes ----------
+
 
 def measure_growth_per_s(m1: km.KarrMetabolismModel) -> PhenotypeMeasurement:
     v, info = km.solve_fba(m1)
@@ -98,9 +101,11 @@ def measure_glucose_uptake(m1: km.KarrMetabolismModel) -> PhenotypeMeasurement:
 
 # ---------- chassis composition invariants ----------
 
-def _run_engine_for(horizon_s: int):
+
+def _run_engine_for(horizon_s: int) -> object:
     """Helper: build chassis engine and run for horizon_s; return engine."""
     from opencell.vivarium.karr_composite import build_karr_m1_m2_m3_engine
+
     engine = build_karr_m1_m2_m3_engine(time_step_s=1.0, emit_step_s=1.0)
     if horizon_s > 0:
         engine.update(horizon_s)
@@ -108,7 +113,8 @@ def _run_engine_for(horizon_s: int):
 
 
 def measure_mrna_total_chassis_wiring(
-    m2: tx.KarrTranscriptionModel, condition: int = 1,
+    m2: tx.KarrTranscriptionModel,
+    condition: int = 1,
 ) -> PhenotypeMeasurement:
     """Wiring fidelity: build the chassis engine, read mRNA counts from
     its initial state (which the composer populates from
@@ -164,12 +170,17 @@ def measure_mrna_stability(horizon_s: int = 20) -> PhenotypeMeasurement:
     """Run M1+M2+M3 chassis for `horizon_s` seconds at default config and
     measure relative drift in total mRNA count."""
     from opencell.vivarium.karr_composite import build_karr_m1_m2_m3_engine
+
     engine = build_karr_m1_m2_m3_engine(time_step_s=1.0, emit_step_s=1.0)
     engine.update(horizon_s)
     ts = engine.emitter.get_timeseries()
     rna_counts = ts["rna"]["counts"]  # dict gene -> [vals over time]
-    total = np.array([sum(vals[t] for vals in rna_counts.values())
-                      for t in range(len(next(iter(rna_counts.values()))))])
+    total = np.array(
+        [
+            sum(vals[t] for vals in rna_counts.values())
+            for t in range(len(next(iter(rna_counts.values()))))
+        ]
+    )
     drift = float(abs(total[-1] - total[0]) / total[0]) if total[0] > 0 else float("inf")
     return PhenotypeMeasurement(
         name="p7_mrna_stability_over_20s",
@@ -202,11 +213,12 @@ def measure_aa_pool_stability(horizon_s: int = 20) -> PhenotypeMeasurement:
     (b) replenishment-rate calibration drift relative to drain, or
     (c) throttle clamping the synthesis below SS.
     """
-    from opencell.vivarium.karr_composite import build_karr_m1_m2_m3_engine
     from opencell.m3.translation import AA_WCM_IDS
+    from opencell.vivarium.karr_composite import build_karr_m1_m2_m3_engine
 
     engine = build_karr_m1_m2_m3_engine(
-        time_step_s=1.0, emit_step_s=1.0,
+        time_step_s=1.0,
+        emit_step_s=1.0,
         dynamic_bounds=True,
         enable_throttle=True,
         enable_pool_replenishment=True,
@@ -240,12 +252,17 @@ def measure_aa_pool_stability(horizon_s: int = 20) -> PhenotypeMeasurement:
 
 def measure_protein_stability(horizon_s: int = 20) -> PhenotypeMeasurement:
     from opencell.vivarium.karr_composite import build_karr_m1_m2_m3_engine
+
     engine = build_karr_m1_m2_m3_engine(time_step_s=1.0, emit_step_s=1.0)
     engine.update(horizon_s)
     ts = engine.emitter.get_timeseries()
     prot_counts = ts["protein"]["counts"]
-    total = np.array([sum(vals[t] for vals in prot_counts.values())
-                      for t in range(len(next(iter(prot_counts.values()))))])
+    total = np.array(
+        [
+            sum(vals[t] for vals in prot_counts.values())
+            for t in range(len(next(iter(prot_counts.values()))))
+        ]
+    )
     drift = float(abs(total[-1] - total[0]) / total[0]) if total[0] > 0 else float("inf")
     return PhenotypeMeasurement(
         name="p8_protein_stability_over_20s",
@@ -265,7 +282,7 @@ def _build_chassis_mass_breakdown(
     m1: km.KarrMetabolismModel,
     m2: tx.KarrTranscriptionModel,
     m3: tl.KarrTranslationModel,
-):
+) -> object:
     """Helper: build the Phase C closed-loop chassis at t=0 and return
     the per-class CellMassBreakdown.  Centralised so p10/p10a/p10b/p10c
     extractors share one engine-construction code path.
@@ -274,7 +291,8 @@ def _build_chassis_mass_breakdown(
     from opencell.vivarium.karr_composite import build_karr_m1_m2_m3_engine
 
     engine = build_karr_m1_m2_m3_engine(
-        time_step_s=1.0, emit_step_s=1.0,
+        time_step_s=1.0,
+        emit_step_s=1.0,
         dynamic_bounds=True,
         enable_throttle=True,
         enable_pool_replenishment=True,
@@ -300,10 +318,8 @@ def _karr_archive_protein_monomer_dry_mass_g() -> float:
     arrays, computed at runtime.
     """
     from pathlib import Path
-    npz_path = (
-        Path(__file__).resolve().parents[2]
-        / "data" / "karr_archive" / "karr_archive.npz"
-    )
+
+    npz_path = Path(__file__).resolve().parents[2] / "data" / "karr_archive" / "karr_archive.npz"
     z = np.load(npz_path, allow_pickle=True)
     counts = np.asarray(z["proteins_targeted__counts"], dtype=np.float64)
     mw = np.asarray(z["proteins_targeted__molecularWeights"], dtype=np.float64)

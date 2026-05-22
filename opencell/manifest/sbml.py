@@ -8,20 +8,20 @@ can and tag the rest as `unresolved`.
 
 from __future__ import annotations
 
+import re as _re
 from dataclasses import dataclass, field
-from typing import Iterable
 from xml.etree import ElementTree as ET
-
 
 # ---------------------------------------------------------------------------
 # Data classes
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class SbmlUnit:
     """One <unit> inside a <unitDefinition>."""
 
-    kind: str            # "mole", "litre", "second", ...
+    kind: str  # "mole", "litre", "second", ...
     exponent: int = 1
     scale: int = 0
     multiplier: float = 1.0
@@ -41,13 +41,13 @@ class SbmlEntity:
 
     sbml_id: str
     value: float | None
-    units_ref: str            # the `units` attribute as written in the SBML
-    units_resolved: str       # human-readable string after lookup
-    kind: str                 # "global_parameter" | "local_parameter" | "species_initial"
-    parent_reaction: str = "" # for local_parameter: the enclosing reaction id
-    name: str = ""            # SBML <... name="..."> if present
-    compartment: str = ""     # for species
-    notes: str = ""           # short SBML <notes> excerpt if extractable
+    units_ref: str  # the `units` attribute as written in the SBML
+    units_resolved: str  # human-readable string after lookup
+    kind: str  # "global_parameter" | "local_parameter" | "species_initial"
+    parent_reaction: str = ""  # for local_parameter: the enclosing reaction id
+    name: str = ""  # SBML <... name="..."> if present
+    compartment: str = ""  # for species
+    notes: str = ""  # short SBML <notes> excerpt if extractable
 
 
 @dataclass
@@ -58,15 +58,15 @@ class SbmlModelMetadata:
     a manifest header without forcing the user to retype known facts.
     """
 
-    model_id: str = ""              # <model id="...">
-    model_name: str = ""            # <model name="...">
-    biomodels_id: str = ""          # extracted from identifiers.org/biomodels.db/
-    pubmed_id: str = ""             # from identifiers.org/pubmed/
-    doi: str = ""                   # from identifiers.org/doi/  (often absent)
-    taxonomy_id: str = ""           # from identifiers.org/taxonomy/
-    organism: str = ""              # mapped from taxonomy_id when known
+    model_id: str = ""  # <model id="...">
+    model_name: str = ""  # <model name="...">
+    biomodels_id: str = ""  # extracted from identifiers.org/biomodels.db/
+    pubmed_id: str = ""  # from identifiers.org/pubmed/
+    doi: str = ""  # from identifiers.org/doi/  (often absent)
+    taxonomy_id: str = ""  # from identifiers.org/taxonomy/
+    organism: str = ""  # mapped from taxonomy_id when known
     creators: list[str] = field(default_factory=list)
-    notes_excerpt: str = ""         # first ~280 chars of <notes>
+    notes_excerpt: str = ""  # first ~280 chars of <notes>
 
 
 # NCBI taxonomy id -> human-readable organism name. Small static table for
@@ -88,10 +88,10 @@ _TAXONOMY_NAMES = {
 }
 
 
-
 # ---------------------------------------------------------------------------
 # Namespace handling
 # ---------------------------------------------------------------------------
+
 
 def _localname(tag: str) -> str:
     """Return tag without namespace prefix."""
@@ -112,22 +112,60 @@ def _direct_children_local(parent: ET.Element, name: str) -> list[ET.Element]:
 
 # SBML built-in unit kinds (subset most relevant for biology)
 _SI_PREFIX = {
-    -24: "y", -21: "z", -18: "a", -15: "f", -12: "p",
-    -9: "n", -6: "u", -3: "m", -2: "c", -1: "d",
-    0: "", 1: "da", 2: "h", 3: "k", 6: "M", 9: "G",
+    -24: "y",
+    -21: "z",
+    -18: "a",
+    -15: "f",
+    -12: "p",
+    -9: "n",
+    -6: "u",
+    -3: "m",
+    -2: "c",
+    -1: "d",
+    0: "",
+    1: "da",
+    2: "h",
+    3: "k",
+    6: "M",
+    9: "G",
 }
 
 # Map SBML kind names to short symbols
 _KIND_SYMBOL = {
-    "mole": "mol", "litre": "L", "liter": "L", "second": "s",
-    "metre": "m", "meter": "m", "kilogram": "kg", "gram": "g",
-    "ampere": "A", "kelvin": "K", "candela": "cd",
-    "becquerel": "Bq", "coulomb": "C", "farad": "F", "henry": "H",
-    "hertz": "Hz", "joule": "J", "katal": "kat", "lumen": "lm",
-    "lux": "lx", "newton": "N", "ohm": "Ohm", "pascal": "Pa",
-    "radian": "rad", "siemens": "S", "sievert": "Sv", "steradian": "sr",
-    "tesla": "T", "volt": "V", "watt": "W", "weber": "Wb",
-    "dimensionless": "1", "item": "item", "avogadro": "avogadro",
+    "mole": "mol",
+    "litre": "L",
+    "liter": "L",
+    "second": "s",
+    "metre": "m",
+    "meter": "m",
+    "kilogram": "kg",
+    "gram": "g",
+    "ampere": "A",
+    "kelvin": "K",
+    "candela": "cd",
+    "becquerel": "Bq",
+    "coulomb": "C",
+    "farad": "F",
+    "henry": "H",
+    "hertz": "Hz",
+    "joule": "J",
+    "katal": "kat",
+    "lumen": "lm",
+    "lux": "lx",
+    "newton": "N",
+    "ohm": "Ohm",
+    "pascal": "Pa",
+    "radian": "rad",
+    "siemens": "S",
+    "sievert": "Sv",
+    "steradian": "sr",
+    "tesla": "T",
+    "volt": "V",
+    "watt": "W",
+    "weber": "Wb",
+    "dimensionless": "1",
+    "item": "item",
+    "avogadro": "avogadro",
 }
 
 
@@ -188,6 +226,7 @@ def resolve_unit(units_ref: str, definitions: dict[str, SbmlUnitDefinition]) -> 
 # Walker
 # ---------------------------------------------------------------------------
 
+
 def _parse_unit_element(elem: ET.Element) -> SbmlUnit:
     return SbmlUnit(
         kind=elem.attrib.get("kind", ""),
@@ -203,7 +242,9 @@ def _parse_unit_definitions(root: ET.Element) -> dict[str, SbmlUnitDefinition]:
         if _localname(ud.tag) != "unitDefinition":
             continue
         uid = ud.attrib.get("id", "")
-        units = [_parse_unit_element(u) for u in ud.iter() if _localname(u.tag) == "unit" and u is not ud]
+        units = [
+            _parse_unit_element(u) for u in ud.iter() if _localname(u.tag) == "unit" and u is not ud
+        ]
         out[uid] = SbmlUnitDefinition(id=uid, units=units)
     return out
 
@@ -217,7 +258,9 @@ def _to_float(s: str | None) -> float | None:
         return None
 
 
-def parse_sbml(sbml_bytes: bytes, *, include_species: bool = True) -> tuple[list[SbmlEntity], dict[str, SbmlUnitDefinition]]:
+def parse_sbml(
+    sbml_bytes: bytes, *, include_species: bool = True
+) -> tuple[list[SbmlEntity], dict[str, SbmlUnitDefinition]]:
     """Parse an SBML byte-string and return (entities, unit_definitions).
 
     Entities include global parameters, local kinetic-law parameters, and
@@ -261,19 +304,28 @@ def parse_sbml(sbml_bytes: bytes, *, include_species: bool = True) -> tuple[list
             reaction = _ancestor_local(elem, "reaction")
             rxn_id = reaction.attrib.get("id", "") if reaction is not None else ""
             kind = "local_parameter"
-            entities.append(SbmlEntity(
-                sbml_id=sbml_id, value=value,
-                units_ref=units_ref,
-                units_resolved=resolve_unit(units_ref, udefs),
-                kind=kind, parent_reaction=rxn_id, name=name,
-            ))
+            entities.append(
+                SbmlEntity(
+                    sbml_id=sbml_id,
+                    value=value,
+                    units_ref=units_ref,
+                    units_resolved=resolve_unit(units_ref, udefs),
+                    kind=kind,
+                    parent_reaction=rxn_id,
+                    name=name,
+                )
+            )
         else:
-            entities.append(SbmlEntity(
-                sbml_id=sbml_id, value=value,
-                units_ref=units_ref,
-                units_resolved=resolve_unit(units_ref, udefs),
-                kind="global_parameter", name=name,
-            ))
+            entities.append(
+                SbmlEntity(
+                    sbml_id=sbml_id,
+                    value=value,
+                    units_ref=units_ref,
+                    units_resolved=resolve_unit(units_ref, udefs),
+                    kind="global_parameter",
+                    name=name,
+                )
+            )
 
     # 2) species (optional)
     if include_species:
@@ -288,14 +340,17 @@ def parse_sbml(sbml_bytes: bytes, *, include_species: bool = True) -> tuple[list
                 value = _to_float(elem.attrib.get("initialAmount"))
             if value is None:
                 continue  # nothing to record
-            entities.append(SbmlEntity(
-                sbml_id=sbml_id, value=value,
-                units_ref=units_ref,
-                units_resolved=resolve_unit(units_ref, udefs),
-                kind="species_initial",
-                compartment=elem.attrib.get("compartment", ""),
-                name=elem.attrib.get("name", ""),
-            ))
+            entities.append(
+                SbmlEntity(
+                    sbml_id=sbml_id,
+                    value=value,
+                    units_ref=units_ref,
+                    units_resolved=resolve_unit(units_ref, udefs),
+                    kind="species_initial",
+                    compartment=elem.attrib.get("compartment", ""),
+                    name=elem.attrib.get("name", ""),
+                )
+            )
 
     return entities, udefs
 
@@ -304,15 +359,13 @@ def parse_sbml(sbml_bytes: bytes, *, include_species: bool = True) -> tuple[list
 # Model metadata (MIRIAM annotations)
 # ---------------------------------------------------------------------------
 
-import re as _re
-
 _RDF_RESOURCE_KEY = "{http://www.w3.org/1999/02/22-rdf-syntax-ns#}resource"
 _RDF_LI = "{http://www.w3.org/1999/02/22-rdf-syntax-ns#}li"
 
 _BIOMODELS_RX = _re.compile(r"identifiers\.org/biomodels\.db/(BIOMD\d+)")
-_PUBMED_RX    = _re.compile(r"identifiers\.org/pubmed/(\d+)")
-_DOI_RX       = _re.compile(r"identifiers\.org/doi/([^\s\"]+)")
-_TAXONOMY_RX  = _re.compile(r"identifiers\.org/taxonomy/(\d+)")
+_PUBMED_RX = _re.compile(r"identifiers\.org/pubmed/(\d+)")
+_DOI_RX = _re.compile(r"identifiers\.org/doi/([^\s\"]+)")
+_TAXONOMY_RX = _re.compile(r"identifiers\.org/taxonomy/(\d+)")
 
 
 def _collect_resource_uris(model_elem: ET.Element) -> list[str]:
@@ -352,7 +405,7 @@ def _collect_creators(model_elem: ET.Element) -> list[str]:
 def _extract_notes_excerpt(model_elem: ET.Element, max_len: int = 280) -> str:
     for elem in model_elem.iter():
         if _localname(elem.tag) == "notes":
-            text = " ".join((elem.itertext())).strip()
+            text = " ".join(elem.itertext()).strip()
             text = " ".join(text.split())
             if len(text) > max_len:
                 text = text[:max_len].rstrip() + "..."
@@ -410,4 +463,3 @@ def extract_metadata(sbml_bytes: bytes) -> SbmlModelMetadata:
     if md.taxonomy_id and md.taxonomy_id in _TAXONOMY_NAMES:
         md.organism = _TAXONOMY_NAMES[md.taxonomy_id]
     return md
-

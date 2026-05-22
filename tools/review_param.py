@@ -23,9 +23,8 @@ import argparse
 import datetime as _dt
 import os
 import sys
-from dataclasses import fields as _dc_fields
+from collections.abc import Iterable, Sequence
 from pathlib import Path
-from typing import Iterable, Sequence
 
 import yaml
 
@@ -44,10 +43,10 @@ from opencell.data.verification import (  # noqa: E402
     validate_card,
 )
 
-
 # ---------------------------------------------------------------------------
 # Colour helpers (ANSI; auto-disabled when not a TTY or NO_COLOR is set)
 # ---------------------------------------------------------------------------
+
 
 def _color_enabled() -> bool:
     if os.environ.get("NO_COLOR"):
@@ -56,14 +55,14 @@ def _color_enabled() -> bool:
 
 
 _C = {
-    "reset":  "\033[0m",
-    "bold":   "\033[1m",
-    "red":    "\033[31m",
-    "green":  "\033[32m",
+    "reset": "\033[0m",
+    "bold": "\033[1m",
+    "red": "\033[31m",
+    "green": "\033[32m",
     "yellow": "\033[33m",
-    "blue":   "\033[34m",
-    "cyan":   "\033[36m",
-    "grey":   "\033[90m",
+    "blue": "\033[34m",
+    "cyan": "\033[36m",
+    "grey": "\033[90m",
 }
 
 
@@ -76,6 +75,7 @@ def c(text: str, color: str) -> str:
 # ---------------------------------------------------------------------------
 # YAML preservation
 # ---------------------------------------------------------------------------
+
 
 def _read_header_comments(path: Path) -> str:
     """Return the leading block of ``#`` comments / blank lines from a file.
@@ -100,8 +100,7 @@ def _save_cards(cards: list[ParameterCard], path: Path, header: str = "") -> Non
     """Write cards to ``path``, preserving an optional leading comment header."""
     path.parent.mkdir(parents=True, exist_ok=True)
     data = [card.to_dict() for card in cards]
-    body = yaml.dump(data, default_flow_style=False, sort_keys=False,
-                     allow_unicode=True)
+    body = yaml.dump(data, default_flow_style=False, sort_keys=False, allow_unicode=True)
     with open(path, "w", encoding="utf-8") as fh:
         if header:
             fh.write(header)
@@ -114,6 +113,7 @@ def _save_cards(cards: list[ParameterCard], path: Path, header: str = "") -> Non
 # Common helpers
 # ---------------------------------------------------------------------------
 
+
 def _find_card(cards: list[ParameterCard], param_id: str) -> ParameterCard | None:
     for card in cards:
         if card.parameter_id == param_id:
@@ -123,7 +123,7 @@ def _find_card(cards: list[ParameterCard], param_id: str) -> ParameterCard | Non
 
 def _status_color(status: VerificationStatus) -> str:
     return {
-        VerificationStatus.DRAFT:    "yellow",
+        VerificationStatus.DRAFT: "yellow",
         VerificationStatus.REVIEWED: "cyan",
         VerificationStatus.APPROVED: "green",
     }[status]
@@ -160,6 +160,7 @@ def _ask_yes_no_edit(prompt: str) -> str:
 # `list` subcommand
 # ---------------------------------------------------------------------------
 
+
 def cmd_list(args: argparse.Namespace) -> int:
     cards = load_cards_from_yaml(args.yaml_file)
 
@@ -175,21 +176,18 @@ def cmd_list(args: argparse.Namespace) -> int:
 
     # Determine column widths
     rows = [
-        (card.parameter_id, card.status.value, str(card.value),
-         card.unit, card.organism)
+        (card.parameter_id, card.status.value, str(card.value), card.unit, card.organism)
         for card in cards
     ]
     headers = ("parameter_id", "status", "value", "unit", "organism")
-    widths = [
-        max(len(h), *(len(r[i]) for r in rows)) for i, h in enumerate(headers)
-    ]
+    widths = [max(len(h), *(len(r[i]) for r in rows)) for i, h in enumerate(headers)]
 
     def fmt(parts: Sequence[str]) -> str:
         return "  ".join(p.ljust(widths[i]) for i, p in enumerate(parts))
 
     print(c(fmt(headers), "bold"))
     print(c("  ".join("-" * w for w in widths), "grey"))
-    for card, row in zip(cards, rows):
+    for card, row in zip(cards, rows, strict=False):
         colored = list(row)
         colored[1] = c(row[1], _status_color(card.status))
         # use raw (uncoloured) widths for layout, then patch in colour
@@ -205,39 +203,41 @@ def cmd_list(args: argparse.Namespace) -> int:
 
 _GROUPS: list[tuple[str, tuple[str, ...]]] = [
     ("Identity", ("parameter_id", "name")),
-    ("Value", ("value", "unit", "uncertainty_lower", "uncertainty_upper",
-               "uncertainty_type")),
-    ("Provenance", ("source_doi", "source_type", "source_table",
-                    "original_quote", "original_value", "original_unit",
-                    "transformation")),
+    ("Value", ("value", "unit", "uncertainty_lower", "uncertainty_upper", "uncertainty_type")),
+    (
+        "Provenance",
+        (
+            "source_doi",
+            "source_type",
+            "source_table",
+            "original_quote",
+            "original_value",
+            "original_unit",
+            "transformation",
+        ),
+    ),
     ("Context", ("organism", "condition", "compartment", "gene_or_enzyme")),
-    ("Verification", ("status", "reviewed_by", "reviewed_date",
-                      "approved_by", "approved_date")),
-    ("Cross-refs", ("cross_references", "selection_rationale",
-                    "discrepancy_notes")),
-    ("Gate", ("used_in_gate_tests", "gate_acknowledged",
-              "acknowledgement_reason")),
+    ("Verification", ("status", "reviewed_by", "reviewed_date", "approved_by", "approved_date")),
+    ("Cross-refs", ("cross_references", "selection_rationale", "discrepancy_notes")),
+    ("Gate", ("used_in_gate_tests", "gate_acknowledged", "acknowledgement_reason")),
 ]
 
 
-def _is_empty(value) -> bool:
+def _is_empty(value: object) -> bool:
     if value is None:
         return True
     if isinstance(value, str) and value.strip() == "":
         return True
-    if isinstance(value, (list, dict)) and len(value) == 0:
-        return True
-    return False
+    return bool(isinstance(value, (list, dict)) and len(value) == 0)
 
 
-def _format_value(value) -> str:
+def _format_value(value: object) -> str:
     if isinstance(value, VerificationStatus):
         return value.value
     if isinstance(value, list):
         if not value:
             return "[]"
-        return yaml.dump(value, default_flow_style=False,
-                         sort_keys=False).rstrip()
+        return yaml.dump(value, default_flow_style=False, sort_keys=False).rstrip()
     return str(value)
 
 
@@ -270,8 +270,7 @@ def cmd_show(args: argparse.Namespace) -> int:
     cards = load_cards_from_yaml(args.yaml_file)
     card = _find_card(cards, args.param_id)
     if card is None:
-        print(c(f"error: no card with parameter_id={args.param_id!r}", "red"),
-              file=sys.stderr)
+        print(c(f"error: no card with parameter_id={args.param_id!r}", "red"), file=sys.stderr)
         return 2
 
     _print_card(card)
@@ -282,8 +281,7 @@ def cmd_show(args: argparse.Namespace) -> int:
     else:
         print(c(f"Validation issues ({len(issues)}):", "bold"))
         for iss in issues:
-            color = {"ERROR": "red", "WARNING": "yellow",
-                     "INFO": "blue"}[iss.severity.value]
+            color = {"ERROR": "red", "WARNING": "yellow", "INFO": "blue"}[iss.severity.value]
             tag = c(f"[{iss.severity.value}]", color)
             print(f"  {tag} {iss.field}: {iss.message}")
     return 0
@@ -292,6 +290,7 @@ def cmd_show(args: argparse.Namespace) -> int:
 # ---------------------------------------------------------------------------
 # `review` subcommand
 # ---------------------------------------------------------------------------
+
 
 def _ask_multiline(prompt: str) -> str:
     """Read a multi-line block. Terminate with a single ``.`` on its own line
@@ -321,29 +320,23 @@ def cmd_review(args: argparse.Namespace) -> int:
     cards = load_cards_from_yaml(path)
     card = _find_card(cards, args.param_id)
     if card is None:
-        print(c(f"error: no card with parameter_id={args.param_id!r}", "red"),
-              file=sys.stderr)
+        print(c(f"error: no card with parameter_id={args.param_id!r}", "red"), file=sys.stderr)
         return 2
 
     _print_card(card)
 
     if card.status is not VerificationStatus.DRAFT:
-        print(c(f"Card is already {card.status.value}; nothing to review.",
-                "yellow"))
+        print(c(f"Card is already {card.status.value}; nothing to review.", "yellow"))
         return 0
 
     print(c("--- REVIEW CHECKLIST ---", "bold"))
 
     # (a) DOI opened
-    if not _ask_yes_no(
-        f"Did you open the source DOI ({card.source_doi or '<missing>'})?"
-    ):
+    if not _ask_yes_no(f"Did you open the source DOI ({card.source_doi or '<missing>'})?"):
         return _abort("Reviewer did not open the source DOI.")
 
     # (b) Original quote matches
-    quote_choice = _ask_yes_no_edit(
-        "Does the original_quote match the paper exactly?"
-    )
+    quote_choice = _ask_yes_no_edit("Does the original_quote match the paper exactly?")
     if quote_choice == "n":
         return _abort("original_quote does not match the paper.")
     if quote_choice == "edit":
@@ -370,9 +363,14 @@ def cmd_review(args: argparse.Namespace) -> int:
     if unit_choice == "n":
         return _abort("Unit is incorrect.")
     if unit_choice == "edit":
-        print(c("WARNING: changing the unit is the most common source of "
+        print(
+            c(
+                "WARNING: changing the unit is the most common source of "
                 "fabricated parameters. Make sure the new unit matches the "
-                "paper exactly.", "yellow"))
+                "paper exactly.",
+                "yellow",
+            )
+        )
         new_unit = _ask("New unit: ").strip()
         if not new_unit:
             return _abort("Empty replacement unit.")
@@ -402,8 +400,13 @@ def cmd_review(args: argparse.Namespace) -> int:
 
     header = _read_header_comments(path)
     _save_cards(cards, path, header=header)
-    print(c(f"OK: {card.parameter_id} promoted DRAFT → REVIEWED "
-            f"by {reviewer} on {card.reviewed_date}.", "green"))
+    print(
+        c(
+            f"OK: {card.parameter_id} promoted DRAFT → REVIEWED "
+            f"by {reviewer} on {card.reviewed_date}.",
+            "green",
+        )
+    )
     return 0
 
 
@@ -411,18 +414,20 @@ def cmd_review(args: argparse.Namespace) -> int:
 # `approve` subcommand
 # ---------------------------------------------------------------------------
 
+
 def cmd_approve(args: argparse.Namespace) -> int:
     path = Path(args.yaml_file)
     cards = load_cards_from_yaml(path)
     card = _find_card(cards, args.param_id)
     if card is None:
-        print(c(f"error: no card with parameter_id={args.param_id!r}", "red"),
-              file=sys.stderr)
+        print(c(f"error: no card with parameter_id={args.param_id!r}", "red"), file=sys.stderr)
         return 2
 
     if card.status is not VerificationStatus.REVIEWED:
-        print(c(f"Must be REVIEWED first (current status: {card.status.value}).",
-                "red"), file=sys.stderr)
+        print(
+            c(f"Must be REVIEWED first (current status: {card.status.value}).", "red"),
+            file=sys.stderr,
+        )
         return 1
 
     _print_card(card)
@@ -430,8 +435,7 @@ def cmd_approve(args: argparse.Namespace) -> int:
     print(c("--- APPROVAL CHECKLIST ---", "bold"))
 
     if not _ask_yes_no(
-        f"Does organism={card.organism!r} match the model context this "
-        f"will be used in?"
+        f"Does organism={card.organism!r} match the model context this will be used in?"
     ):
         return _abort("Organism mismatch with target model.")
 
@@ -445,12 +449,15 @@ def cmd_approve(args: argparse.Namespace) -> int:
     needs_real_bounds = (
         card.uncertainty_lower is None
         or card.uncertainty_upper is None
-        or (card.uncertainty_lower == card.value
-            and card.uncertainty_upper == card.value)
+        or (card.uncertainty_lower == card.value and card.uncertainty_upper == card.value)
     )
     if needs_real_bounds:
-        print(c("Uncertainty bounds are missing or trivial (== value). "
-                "Please provide real bounds.", "yellow"))
+        print(
+            c(
+                "Uncertainty bounds are missing or trivial (== value). Please provide real bounds.",
+                "yellow",
+            )
+        )
         try:
             lower = float(_ask("uncertainty_lower: ").strip())
             upper = float(_ask("uncertainty_upper: ").strip())
@@ -463,8 +470,7 @@ def cmd_approve(args: argparse.Namespace) -> int:
 
     # Cross references
     if not card.cross_references:
-        print(c("No cross_references on this card. Please add at least one.",
-                "yellow"))
+        print(c("No cross_references on this card. Please add at least one.", "yellow"))
         xref_doi = _ask("cross_reference DOI: ").strip()
         try:
             xref_value = float(_ask("cross_reference value: ").strip())
@@ -473,13 +479,15 @@ def cmd_approve(args: argparse.Namespace) -> int:
         xref_unit = _ask("cross_reference unit: ").strip()
         agrees = _ask_yes_no("Does the cross-reference agree with this value?")
         xref_note = _ask("cross_reference note: ").strip()
-        card.cross_references.append({
-            "source_doi": xref_doi,
-            "value": xref_value,
-            "unit": xref_unit,
-            "agrees": agrees,
-            "note": xref_note,
-        })
+        card.cross_references.append(
+            {
+                "source_doi": xref_doi,
+                "value": xref_value,
+                "unit": xref_unit,
+                "agrees": agrees,
+                "note": xref_note,
+            }
+        )
 
     # Selection rationale
     if not card.selection_rationale.strip():
@@ -519,14 +527,20 @@ def cmd_approve(args: argparse.Namespace) -> int:
 
     header = _read_header_comments(path)
     _save_cards(cards, path, header=header)
-    print(c(f"OK: {card.parameter_id} promoted REVIEWED → APPROVED "
-            f"by {approver} on {card.approved_date}.", "green"))
+    print(
+        c(
+            f"OK: {card.parameter_id} promoted REVIEWED → APPROVED "
+            f"by {approver} on {card.approved_date}.",
+            "green",
+        )
+    )
     return 0
 
 
 # ---------------------------------------------------------------------------
 # `audit` and `audit-all`
 # ---------------------------------------------------------------------------
+
 
 def _coverage_bar(approved: int, total: int, width: int = 20) -> str:
     if total == 0:
@@ -568,8 +582,7 @@ def cmd_audit_all(args: argparse.Namespace) -> int:
         try:
             cards = load_cards_from_yaml(f)
         except Exception as exc:  # pragma: no cover - defensive
-            rows.append((str(f.relative_to(root)), "ERR", "-", "-", "-",
-                         f"load failed: {exc}"))
+            rows.append((str(f.relative_to(root)), "ERR", "-", "-", "-", f"load failed: {exc}"))
             overall_ok = False
             continue
         report = audit_parameters(cards)
@@ -580,17 +593,18 @@ def cmd_audit_all(args: argparse.Namespace) -> int:
         approved += report.approved
         draft += report.draft
         reviewed += report.reviewed
-        rows.append((
-            str(f.relative_to(root)),
-            str(report.total),
-            str(report.draft),
-            str(report.reviewed),
-            str(report.approved),
-            "PASS" if ok else "FAIL",
-        ))
+        rows.append(
+            (
+                str(f.relative_to(root)),
+                str(report.total),
+                str(report.draft),
+                str(report.reviewed),
+                str(report.approved),
+                "PASS" if ok else "FAIL",
+            )
+        )
 
-    widths = [max(len(h), *(len(r[i]) for r in rows))
-              for i, h in enumerate(headers)]
+    widths = [max(len(h), *(len(r[i]) for r in rows)) for i, h in enumerate(headers)]
 
     def fmt(parts: Sequence[str]) -> str:
         return "  ".join(p.ljust(widths[i]) for i, p in enumerate(parts))
@@ -602,14 +616,14 @@ def cmd_audit_all(args: argparse.Namespace) -> int:
     print()
     print(_coverage_bar(approved, total))
     print(f"DRAFT={draft}  REVIEWED={reviewed}  APPROVED={approved}  total={total}")
-    print(c(f"Overall: {'PASS' if overall_ok else 'FAIL'}",
-            "green" if overall_ok else "red"))
+    print(c(f"Overall: {'PASS' if overall_ok else 'FAIL'}", "green" if overall_ok else "red"))
     return 0 if overall_ok else 1
 
 
 # ---------------------------------------------------------------------------
 # argparse wiring
 # ---------------------------------------------------------------------------
+
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
@@ -629,14 +643,12 @@ def build_parser() -> argparse.ArgumentParser:
     ps.add_argument("param_id")
     ps.set_defaults(func=cmd_show)
 
-    pr = sub.add_parser("review",
-                        help="Interactively promote DRAFT → REVIEWED.")
+    pr = sub.add_parser("review", help="Interactively promote DRAFT → REVIEWED.")
     pr.add_argument("yaml_file")
     pr.add_argument("param_id")
     pr.set_defaults(func=cmd_review)
 
-    pa = sub.add_parser("approve",
-                        help="Interactively promote REVIEWED → APPROVED.")
+    pa = sub.add_parser("approve", help="Interactively promote REVIEWED → APPROVED.")
     pa.add_argument("yaml_file")
     pa.add_argument("param_id")
     pa.set_defaults(func=cmd_approve)
@@ -645,8 +657,7 @@ def build_parser() -> argparse.ArgumentParser:
     pad.add_argument("yaml_file")
     pad.set_defaults(func=cmd_audit)
 
-    paa = sub.add_parser("audit-all",
-                         help="Audit every YAML file under data/params/.")
+    paa = sub.add_parser("audit-all", help="Audit every YAML file under data/params/.")
     paa.add_argument("--root", default="data/params")
     paa.set_defaults(func=cmd_audit_all)
 

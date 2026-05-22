@@ -7,8 +7,8 @@ Always uses float64 for numerical stability.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable
 
 import diffrax
 import jax
@@ -18,7 +18,7 @@ from jax.typing import ArrayLike
 jax.config.update("jax_enable_x64", True)
 
 # Type alias for ODE right-hand-side function: f(t, y, args) -> dy/dt
-RHSFn = Callable[[float, ArrayLike, Any], ArrayLike]
+RHSFn = Callable[[float, ArrayLike, object], ArrayLike]
 
 
 @dataclass(frozen=True)
@@ -66,7 +66,7 @@ class ODEResult:
 
     ts: jax.Array
     ys: jax.Array
-    stats: dict[str, Any]
+    stats: dict[str, object]
     success: bool
 
 
@@ -74,7 +74,7 @@ def solve_ode(
     rhs: RHSFn,
     y0: ArrayLike,
     t_span: tuple[float, float],
-    args: Any = None,
+    args: object | None = None,
     config: ODESolverConfig | None = None,
     saveat: ArrayLike | None = None,
 ) -> ODEResult:

@@ -34,21 +34,21 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from collections.abc import Iterator
+from dataclasses import asdict, dataclass
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Iterator, Literal
-
+from typing import Literal
 
 EVENT_KINDS = Literal["measured", "computed", "ingested", "tuned", "superseded_by"]
 SOURCE_KINDS = Literal[
-    "primary_literature",     # DOI of paper
-    "secondary_literature",   # DOI of review
-    "database",               # BRENDA / SABIO / BiGG entry
-    "model_artifact",         # MATLAB .mat / SBML file
-    "estimation",             # parameter-estimation run
-    "expert_judgment",        # human assertion (must say who and why)
-    "default_assumption",    # placeholder pending real source
+    "primary_literature",  # DOI of paper
+    "secondary_literature",  # DOI of review
+    "database",  # BRENDA / SABIO / BiGG entry
+    "model_artifact",  # MATLAB .mat / SBML file
+    "estimation",  # parameter-estimation run
+    "expert_judgment",  # human assertion (must say who and why)
+    "default_assumption",  # placeholder pending real source
 ]
 
 
@@ -60,23 +60,28 @@ class ProvenanceEvent:
     every other field). Two identical events collapse to one record;
     accidental double-write is harmless.
     """
+
     param_name: str
-    value: Any                     # number, list, or null
-    unit: str                      # canonical (e.g. "mM", "1/s", "mM/s"); empty "" if dimensionless
-    source_kind: str               # SOURCE_KINDS
-    source_ref: str                # DOI / URL / file SHA / "expert:NAME"
-    scope: dict[str, str]          # e.g. {"organism": "E.coli", "model": "Chassagnole2002", "variable": "Vmax_PGI"}
-    transformation_lineage: list[str]  # ["Table 2 row 4 raw 1.5e-3 mol/m3/s", "convert to mM/s -> 1.5"]
-    event_kind: str                # EVENT_KINDS
-    timestamp_utc: str             # ISO 8601
-    recorded_by: str               # "human:Drona" or "agent:param-extractor v1"
+    value: object  # number, list, or null
+    unit: str  # canonical (e.g. "mM", "1/s", "mM/s"); empty "" if dimensionless
+    source_kind: str  # SOURCE_KINDS
+    source_ref: str  # DOI / URL / file SHA / "expert:NAME"
+    scope: dict[
+        str, str
+    ]  # e.g. {"organism": "E.coli", "model": "Chassagnole2002", "variable": "Vmax_PGI"}
+    transformation_lineage: list[
+        str
+    ]  # ["Table 2 row 4 raw 1.5e-3 mol/m3/s", "convert to mM/s -> 1.5"]
+    event_kind: str  # EVENT_KINDS
+    timestamp_utc: str  # ISO 8601
+    recorded_by: str  # "human:Drona" or "agent:param-extractor v1"
     notes: str = ""
-    allowed_range: list[float] | None = None    # [low, high] in same unit
+    allowed_range: list[float] | None = None  # [low, high] in same unit
     tuning_justification: str = ""
     supersedes: str | None = None  # event_id of superseded record
-    event_id: str = ""             # filled in by ``finalize``
+    event_id: str = ""  # filled in by ``finalize``
 
-    def finalize(self) -> "ProvenanceEvent":
+    def finalize(self) -> ProvenanceEvent:
         """Compute ``event_id`` from all other fields and return a new
         frozen dataclass with it set."""
         d = asdict(self)
@@ -100,7 +105,7 @@ class ProvenanceStore:
     ``os.write`` with O_APPEND to retain atomicity.
     """
 
-    def __init__(self, path: str | Path):
+    def __init__(self, path: str | Path) -> None:
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         if not self.path.exists():
@@ -132,8 +137,13 @@ class ProvenanceStore:
         return event
 
     def record_measured(
-        self, *, param_name: str, value: Any, unit: str,
-        source_ref: str, scope: dict[str, str],
+        self,
+        *,
+        param_name: str,
+        value: object,
+        unit: str,
+        source_ref: str,
+        scope: dict[str, str],
         transformation_lineage: list[str],
         recorded_by: str,
         source_kind: str = "primary_literature",
@@ -143,19 +153,29 @@ class ProvenanceStore:
         """Convenience: record a value measured in a primary source."""
         return self.record(
             ProvenanceEvent(
-                param_name=param_name, value=value, unit=unit,
-                source_kind=source_kind, source_ref=source_ref,
-                scope=scope, transformation_lineage=transformation_lineage,
+                param_name=param_name,
+                value=value,
+                unit=unit,
+                source_kind=source_kind,
+                source_ref=source_ref,
+                scope=scope,
+                transformation_lineage=transformation_lineage,
                 event_kind="measured",
                 timestamp_utc=_utcnow_iso(),
                 recorded_by=recorded_by,
-                notes=notes, allowed_range=allowed_range,
+                notes=notes,
+                allowed_range=allowed_range,
             )
         )
 
     def record_tuned(
-        self, *, param_name: str, value: Any, unit: str,
-        scope: dict[str, str], allowed_range: list[float],
+        self,
+        *,
+        param_name: str,
+        value: object,
+        unit: str,
+        scope: dict[str, str],
+        allowed_range: list[float],
         tuning_justification: str,
         supersedes: str,
         recorded_by: str,
@@ -177,14 +197,18 @@ class ProvenanceStore:
             )
         return self.record(
             ProvenanceEvent(
-                param_name=param_name, value=value, unit=unit,
-                source_kind="estimation", source_ref="tuning_run",
+                param_name=param_name,
+                value=value,
+                unit=unit,
+                source_kind="estimation",
+                source_ref="tuning_run",
                 scope=scope,
                 transformation_lineage=transformation_lineage or [],
                 event_kind="tuned",
                 timestamp_utc=_utcnow_iso(),
                 recorded_by=recorded_by,
-                notes=notes, allowed_range=allowed_range,
+                notes=notes,
+                allowed_range=allowed_range,
                 tuning_justification=tuning_justification,
                 supersedes=supersedes,
             )
@@ -206,20 +230,21 @@ class ProvenanceStore:
     def all(self) -> list[ProvenanceEvent]:
         return list(self)
 
-    def query(self, *, param_name: str | None = None,
-              scope_filter: dict[str, str] | None = None) -> list[ProvenanceEvent]:
+    def query(
+        self, *, param_name: str | None = None, scope_filter: dict[str, str] | None = None
+    ) -> list[ProvenanceEvent]:
         out = []
         for ev in self:
             if param_name is not None and ev.param_name != param_name:
                 continue
-            if scope_filter:
-                if not all(ev.scope.get(k) == v for k, v in scope_filter.items()):
-                    continue
+            if scope_filter and not all(ev.scope.get(k) == v for k, v in scope_filter.items()):
+                continue
             out.append(ev)
         return out
 
-    def current(self, param_name: str,
-                scope_filter: dict[str, str] | None = None) -> ProvenanceEvent | None:
+    def current(
+        self, param_name: str, scope_filter: dict[str, str] | None = None
+    ) -> ProvenanceEvent | None:
         """Return the most recent non-superseded event for the parameter.
 
         Resolution rule: walk events newest-first; skip any event that
@@ -247,4 +272,4 @@ class ProvenanceStore:
 
 
 def _utcnow_iso() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")

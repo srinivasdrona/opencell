@@ -28,7 +28,6 @@ from __future__ import annotations
 import hashlib
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
 
 import yaml
 
@@ -49,9 +48,9 @@ class ManifestParameter:
     gene_or_enzyme: str = ""
     cache_files: list[str] = field(default_factory=list)
     notes: str = ""
-    sbml_value: float | None = None     # cross-check anchor from BioModels SBML
-    sbml_id: str = ""                    # original SBML id (audit trail)
-    sbml_kind: str = ""                  # global_parameter | local_parameter | species_initial
+    sbml_value: float | None = None  # cross-check anchor from BioModels SBML
+    sbml_id: str = ""  # original SBML id (audit trail)
+    sbml_kind: str = ""  # global_parameter | local_parameter | species_initial
 
 
 @dataclass
@@ -81,7 +80,7 @@ class CurationManifest:
 _REQUIRED_PARAM_FIELDS = ("parameter_id", "symbol")
 
 
-def _validate_dict(d: Any, path: str) -> dict:
+def _validate_dict(d: object, path: str) -> dict[str, object]:
     if not isinstance(d, dict):
         raise ManifestValidationError(f"{path}: expected mapping, got {type(d).__name__}")
     return d
@@ -123,30 +122,28 @@ def load_manifest(path: str | Path) -> CurationManifest:
         e = _validate_dict(entry, f"parameters[{i}]")
         for f in _REQUIRED_PARAM_FIELDS:
             if not e.get(f):
-                raise ManifestValidationError(
-                    f"parameters[{i}]: missing required field {f!r}"
-                )
+                raise ManifestValidationError(f"parameters[{i}]: missing required field {f!r}")
         pid = e["parameter_id"]
         if pid in seen_ids:
-            raise ManifestValidationError(
-                f"parameters[{i}]: duplicate parameter_id {pid!r}"
-            )
+            raise ManifestValidationError(f"parameters[{i}]: duplicate parameter_id {pid!r}")
         seen_ids.add(pid)
-        parameters.append(ManifestParameter(
-            parameter_id=pid,
-            symbol=e["symbol"],
-            target_unit=e.get("target_unit", "") or "",
-            name=e.get("name", "") or "",
-            organism=e.get("organism", "") or paper.get("organism", "") or "",
-            condition=e.get("condition", "") or paper.get("condition", "") or "",
-            compartment=e.get("compartment", "") or "",
-            gene_or_enzyme=e.get("gene_or_enzyme", "") or "",
-            cache_files=list(e.get("cache_files") or []),
-            notes=e.get("notes", "") or "",
-            sbml_value=(e.get("sbml_value") if e.get("sbml_value") is not None else None),
-            sbml_id=e.get("sbml_id", "") or "",
-            sbml_kind=e.get("sbml_kind", "") or "",
-        ))
+        parameters.append(
+            ManifestParameter(
+                parameter_id=pid,
+                symbol=e["symbol"],
+                target_unit=e.get("target_unit", "") or "",
+                name=e.get("name", "") or "",
+                organism=e.get("organism", "") or paper.get("organism", "") or "",
+                condition=e.get("condition", "") or paper.get("condition", "") or "",
+                compartment=e.get("compartment", "") or "",
+                gene_or_enzyme=e.get("gene_or_enzyme", "") or "",
+                cache_files=list(e.get("cache_files") or []),
+                notes=e.get("notes", "") or "",
+                sbml_value=(e.get("sbml_value") if e.get("sbml_value") is not None else None),
+                sbml_id=e.get("sbml_id", "") or "",
+                sbml_kind=e.get("sbml_kind", "") or "",
+            )
+        )
 
     # Cache files: prefer top-level cache_files; fall back to paper.pdf_cache
     # (the biomodels_manifest emitter writes the latter form).

@@ -40,9 +40,7 @@ def _slug(doi: str) -> str:
 
 
 def _http_get(url: str, accept: str = "*/*", timeout: int = 60) -> bytes:
-    req = urllib.request.Request(
-        url, headers={"User-Agent": USER_AGENT, "Accept": accept}
-    )
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": accept})
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         return resp.read()
 
@@ -51,7 +49,8 @@ def doi_to_pmcid(doi: str) -> str | None:
     """Resolve a DOI to a PMC ID via NCBI's ID Converter API."""
     url = (
         "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/"
-        + "?ids=" + urllib.parse.quote(doi)
+        + "?ids="
+        + urllib.parse.quote(doi)
         + "&format=json"
     )
     try:
@@ -70,7 +69,8 @@ def fetch_pmc_xml(pmcid: str) -> str:
     pmc_num = pmcid.replace("PMC", "")
     url = (
         "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
-        + "?db=pmc&id=" + pmc_num
+        + "?db=pmc&id="
+        + pmc_num
         + "&rettype=xml"
     )
     return _http_get(url, accept="application/xml").decode("utf-8", errors="replace")
@@ -118,10 +118,8 @@ def extract_pdf_text(pdf_path: Path) -> str:
     """Extract text from a local PDF using pypdf."""
     try:
         import pypdf
-    except ImportError:
-        raise RuntimeError(
-            "pypdf is not installed. Run: pip install pypdf"
-        )
+    except ImportError as err:
+        raise RuntimeError("pypdf is not installed. Run: pip install pypdf") from err
     reader = pypdf.PdfReader(str(pdf_path))
     parts = []
     for i, page in enumerate(reader.pages, start=1):
@@ -193,8 +191,7 @@ def grep_text(text: str, pattern: str, context: int = 2) -> list[str]:
             start = max(0, i - context)
             end = min(len(lines), i + context + 1)
             chunk = "\n".join(
-                f"{j+1:5d}{'>' if j == i else ' '} {lines[j]}"
-                for j in range(start, end)
+                f"{j + 1:5d}{'>' if j == i else ' '} {lines[j]}" for j in range(start, end)
             )
             hits.append(chunk)
     return hits
@@ -203,7 +200,9 @@ def grep_text(text: str, pattern: str, context: int = 2) -> list[str]:
 def main() -> int:
     ap = argparse.ArgumentParser(description="Fetch a paper by DOI and extract text.")
     ap.add_argument("doi", help="DOI, e.g., 10.1073/pnas.151588598")
-    ap.add_argument("--pdf", type=Path, help="Path to a locally-downloaded PDF (overrides web fetch)")
+    ap.add_argument(
+        "--pdf", type=Path, help="Path to a locally-downloaded PDF (overrides web fetch)"
+    )
     ap.add_argument("--grep", help="Regex pattern to search for in extracted text")
     ap.add_argument("--context", type=int, default=2, help="Lines of context around grep hits")
     ap.add_argument("--output", help="Write full text to this file")

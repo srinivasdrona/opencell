@@ -23,6 +23,7 @@ every variable's units, default, updater, and emit policy to be stated.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
 import numpy as np
@@ -95,7 +96,9 @@ class MetabolismProcess(Process):
             dtype=np.float64,
         )
         sol = solve_ivp(
-            self.met.rhs, (0.0, timestep), y0,
+            self.met.rhs,
+            (0.0, timestep),
+            y0,
             method="LSODA",
             atol=self.parameters["atol"],
             rtol=self.parameters["rtol"],
@@ -227,13 +230,13 @@ class GeneNetworkProcess(Process):
             },
         }
 
-    def _propensity_factory(self, f_met: float):
+    def _propensity_factory(self, f_met: float) -> Callable[[np.ndarray], np.ndarray]:
         synth_set = self._synth_set
         n_r = self._n_r
         inv_sph = self._inv_seconds_per_hour
         gene = self.gene
 
-        def propensity(y_arr):
+        def propensity(y_arr: np.ndarray) -> np.ndarray:
             v_per_h = gene.fluxes(0.0, np.asarray(y_arr, dtype=np.float64))
             v_per_s = v_per_h * inv_sph
             scaled = v_per_s.copy()
@@ -252,7 +255,8 @@ class GeneNetworkProcess(Process):
         f_met = float(states["signal"]["f_met"])
         tau_dt_max = self.parameters["tau_dt_max"] or timestep
         config = TauLeapConfig(
-            epsilon=self.parameters["epsilon"], dt_max=tau_dt_max,
+            epsilon=self.parameters["epsilon"],
+            dt_max=tau_dt_max,
         )
         seg = tau_leap(
             propensity_fn=self._propensity_factory(f_met),
@@ -264,9 +268,4 @@ class GeneNetworkProcess(Process):
             save_every=10**9,
         )
         y_end = seg.ys[-1]
-        return {
-            "gene_state": {
-                s: float(y_end[i] - y0[i])
-                for s, i in self._species_idx.items()
-            }
-        }
+        return {"gene_state": {s: float(y_end[i] - y0[i]) for s, i in self._species_idx.items()}}

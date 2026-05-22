@@ -20,6 +20,7 @@ processes M4-M28), so a per-tick LP-derived replenishment would yield
 zero signal for the substrates the chassis actually cares about. The
 SS calibration is honest and useful as a sanity check.
 """
+
 from __future__ import annotations
 
 import json
@@ -30,7 +31,9 @@ import numpy as np
 
 DEFAULT_FIXTURE_JSON = (
     Path(__file__).resolve().parents[2]
-    / "data" / "karr_fixtures" / "karr_native_m1_compartmented.json"
+    / "data"
+    / "karr_fixtures"
+    / "karr_native_m1_compartmented.json"
 )
 
 SCHEMA_VERSION = "karr_native_m1_compartmented__v1"
@@ -104,7 +107,7 @@ def load_default(path: str | Path | None = None) -> CompartmentedStoichiometryMo
             f"Schema version mismatch: fixture={raw['schema_version']!r} "
             f"expected={SCHEMA_VERSION!r}"
         )
-    npz_path = (p.parent / Path(raw["matrix_npz"]).name)
+    npz_path = p.parent / Path(raw["matrix_npz"]).name
     npz = np.load(npz_path)
     S = np.asarray(npz["S_compartmented"])
     S_agg = np.asarray(npz["S_aggregate"])
@@ -123,10 +126,11 @@ def load_default(path: str | Path | None = None) -> CompartmentedStoichiometryMo
 
 # ---- supply-side calibration helper ----
 
+
 def compute_lp_supply_baseline(
-    model_m1,
+    model_m1: object,
     *,
-    compartmented=None,
+    compartmented: CompartmentedStoichiometryModel | None = None,
     condition: int = 1,
     bounds_mode: str = "no_protein",
 ) -> dict[tuple[str, str], float]:
@@ -166,10 +170,13 @@ def compute_lp_supply_baseline(
 
     dyn_npz = np.load(
         Path(__file__).resolve().parents[2]
-        / "data" / "karr_fixtures" / "karr_native_m1_dynamics.npz"
+        / "data"
+        / "karr_fixtures"
+        / "karr_native_m1_dynamics.npz"
     )
     bounds_key = (
-        "bounds_dynamic_no_protein" if bounds_mode == "no_protein"
+        "bounds_dynamic_no_protein"
+        if bounds_mode == "no_protein"
         else "bounds_dynamic_with_protein"
     )
     bounds = np.asarray(dyn_npz[bounds_key])
@@ -183,9 +190,7 @@ def compute_lp_supply_baseline(
     rxn_wids_645 = compartmented.reaction_wids_645
     fba_col_rxn = list(model_m1.fba_col_rxn_wcm)
     if len(fba_col_rxn) != v_504.size:
-        raise RuntimeError(
-            f"fba_col_rxn_wcm len={len(fba_col_rxn)} != v.size={v_504.size}"
-        )
+        raise RuntimeError(f"fba_col_rxn_wcm len={len(fba_col_rxn)} != v.size={v_504.size}")
 
     v_645 = np.zeros(645, dtype=np.float64)
     for col, wid in enumerate(fba_col_rxn):
@@ -202,9 +207,7 @@ def compute_lp_supply_baseline(
     net_flux_per_s_per_k = np.einsum("srk,r->sk", compartmented.S.astype(np.float64), v_645)
 
     # Convert to molecules/s/cell.
-    net_flux_molecules_per_s = compartmented.mmol_per_gdwh_to_molecules_per_s(
-        net_flux_per_s_per_k
-    )
+    net_flux_molecules_per_s = compartmented.mmol_per_gdwh_to_molecules_per_s(net_flux_per_s_per_k)
 
     out: dict[tuple[str, str], float] = {}
     nz = np.argwhere(np.abs(net_flux_molecules_per_s) > 1e-9)

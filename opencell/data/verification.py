@@ -20,16 +20,16 @@ from __future__ import annotations
 
 import enum
 import re
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
 import yaml
 
-
 # ---------------------------------------------------------------------------
 # Verification status enum (3 states)
 # ---------------------------------------------------------------------------
+
 
 class VerificationStatus(enum.Enum):
     """Simplified three-state lifecycle.
@@ -67,6 +67,7 @@ _DOI_RE = re.compile(r"^10\.\d{4,9}/\S+$")
 # ---------------------------------------------------------------------------
 # Parameter card dataclass
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class ParameterCard:
@@ -148,6 +149,7 @@ class ParameterCard:
 # Validation issue
 # ---------------------------------------------------------------------------
 
+
 class Severity(enum.Enum):
     ERROR = "ERROR"
     WARNING = "WARNING"
@@ -165,13 +167,17 @@ class ValidationIssue:
 # Deterministic validators
 # ---------------------------------------------------------------------------
 
+
 def _check_doi_format(card: ParameterCard) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     if card.source_doi and not _DOI_RE.match(card.source_doi):
-        issues.append(ValidationIssue(
-            "source_doi", Severity.ERROR,
-            f"DOI '{card.source_doi}' does not match expected format 10.NNNN/..."
-        ))
+        issues.append(
+            ValidationIssue(
+                "source_doi",
+                Severity.ERROR,
+                f"DOI '{card.source_doi}' does not match expected format 10.NNNN/...",
+            )
+        )
     return issues
 
 
@@ -193,34 +199,47 @@ def _check_value_range(card: ParameterCard) -> list[ValidationIssue]:
     """Basic physical sanity: concentrations ≥ 0, rates finite, etc."""
     issues: list[ValidationIssue] = []
     import math
+
     if math.isnan(card.value) or math.isinf(card.value):
         issues.append(ValidationIssue("value", Severity.ERROR, "value must be finite"))
-    if card.uncertainty_lower is not None and card.uncertainty_upper is not None:
-        if card.uncertainty_lower > card.uncertainty_upper:
-            issues.append(ValidationIssue(
-                "uncertainty_lower", Severity.ERROR,
-                "uncertainty_lower must be ≤ uncertainty_upper"
-            ))
+    if (
+        card.uncertainty_lower is not None
+        and card.uncertainty_upper is not None
+        and card.uncertainty_lower > card.uncertainty_upper
+    ):
+        issues.append(
+            ValidationIssue(
+                "uncertainty_lower",
+                Severity.ERROR,
+                "uncertainty_lower must be ≤ uncertainty_upper",
+            )
+        )
     return issues
 
 
 def _check_uncertainty_type(card: ParameterCard) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     if card.uncertainty_type not in VALID_UNCERTAINTY_TYPES:
-        issues.append(ValidationIssue(
-            "uncertainty_type", Severity.ERROR,
-            f"uncertainty_type '{card.uncertainty_type}' not in {VALID_UNCERTAINTY_TYPES}"
-        ))
+        issues.append(
+            ValidationIssue(
+                "uncertainty_type",
+                Severity.ERROR,
+                f"uncertainty_type '{card.uncertainty_type}' not in {VALID_UNCERTAINTY_TYPES}",
+            )
+        )
     return issues
 
 
 def _check_source_type(card: ParameterCard) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     if card.source_type not in VALID_SOURCE_TYPES:
-        issues.append(ValidationIssue(
-            "source_type", Severity.ERROR,
-            f"source_type '{card.source_type}' not in {VALID_SOURCE_TYPES}"
-        ))
+        issues.append(
+            ValidationIssue(
+                "source_type",
+                Severity.ERROR,
+                f"source_type '{card.source_type}' not in {VALID_SOURCE_TYPES}",
+            )
+        )
     return issues
 
 
@@ -229,15 +248,21 @@ def _check_context(card: ParameterCard) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     if card.status in (VerificationStatus.REVIEWED, VerificationStatus.APPROVED):
         if not card.organism:
-            issues.append(ValidationIssue(
-                "organism", Severity.ERROR,
-                "organism is required for REVIEWED/APPROVED parameters"
-            ))
+            issues.append(
+                ValidationIssue(
+                    "organism",
+                    Severity.ERROR,
+                    "organism is required for REVIEWED/APPROVED parameters",
+                )
+            )
         if not card.condition:
-            issues.append(ValidationIssue(
-                "condition", Severity.ERROR,
-                "condition is required for REVIEWED/APPROVED parameters"
-            ))
+            issues.append(
+                ValidationIssue(
+                    "condition",
+                    Severity.ERROR,
+                    "condition is required for REVIEWED/APPROVED parameters",
+                )
+            )
     return issues
 
 
@@ -246,15 +271,21 @@ def _check_reviewed_fields(card: ParameterCard) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     if card.status in (VerificationStatus.REVIEWED, VerificationStatus.APPROVED):
         if not card.reviewed_by:
-            issues.append(ValidationIssue(
-                "reviewed_by", Severity.ERROR,
-                "reviewed_by is required for REVIEWED/APPROVED parameters"
-            ))
+            issues.append(
+                ValidationIssue(
+                    "reviewed_by",
+                    Severity.ERROR,
+                    "reviewed_by is required for REVIEWED/APPROVED parameters",
+                )
+            )
         if not card.reviewed_date:
-            issues.append(ValidationIssue(
-                "reviewed_date", Severity.ERROR,
-                "reviewed_date is required for REVIEWED/APPROVED parameters"
-            ))
+            issues.append(
+                ValidationIssue(
+                    "reviewed_date",
+                    Severity.ERROR,
+                    "reviewed_date is required for REVIEWED/APPROVED parameters",
+                )
+            )
     return issues
 
 
@@ -263,25 +294,35 @@ def _check_approved_fields(card: ParameterCard) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     if card.status is VerificationStatus.APPROVED:
         if card.uncertainty_lower is None or card.uncertainty_upper is None:
-            issues.append(ValidationIssue(
-                "uncertainty_lower", Severity.ERROR,
-                "APPROVED parameters must have uncertainty bounds"
-            ))
+            issues.append(
+                ValidationIssue(
+                    "uncertainty_lower",
+                    Severity.ERROR,
+                    "APPROVED parameters must have uncertainty bounds",
+                )
+            )
         if not card.cross_references:
-            issues.append(ValidationIssue(
-                "cross_references", Severity.WARNING,
-                "APPROVED parameters should have ≥1 cross-reference"
-            ))
+            issues.append(
+                ValidationIssue(
+                    "cross_references",
+                    Severity.WARNING,
+                    "APPROVED parameters should have ≥1 cross-reference",
+                )
+            )
         if not card.approved_by:
-            issues.append(ValidationIssue(
-                "approved_by", Severity.ERROR,
-                "approved_by is required for APPROVED parameters"
-            ))
+            issues.append(
+                ValidationIssue(
+                    "approved_by", Severity.ERROR, "approved_by is required for APPROVED parameters"
+                )
+            )
         if not card.approved_date:
-            issues.append(ValidationIssue(
-                "approved_date", Severity.ERROR,
-                "approved_date is required for APPROVED parameters"
-            ))
+            issues.append(
+                ValidationIssue(
+                    "approved_date",
+                    Severity.ERROR,
+                    "approved_date is required for APPROVED parameters",
+                )
+            )
     return issues
 
 
@@ -290,15 +331,21 @@ def _check_transformation(card: ParameterCard) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     if card.original_value is not None:
         if not card.transformation:
-            issues.append(ValidationIssue(
-                "transformation", Severity.WARNING,
-                "original_value is set but transformation is not documented"
-            ))
+            issues.append(
+                ValidationIssue(
+                    "transformation",
+                    Severity.WARNING,
+                    "original_value is set but transformation is not documented",
+                )
+            )
         if not card.original_unit:
-            issues.append(ValidationIssue(
-                "original_unit", Severity.WARNING,
-                "original_value is set but original_unit is missing"
-            ))
+            issues.append(
+                ValidationIssue(
+                    "original_unit",
+                    Severity.WARNING,
+                    "original_value is set but original_unit is missing",
+                )
+            )
     return issues
 
 
@@ -320,6 +367,7 @@ def validate_card(card: ParameterCard) -> list[ValidationIssue]:
 # ---------------------------------------------------------------------------
 # YAML I/O
 # ---------------------------------------------------------------------------
+
 
 def save_cards_to_yaml(cards: list[ParameterCard], path: str | Path) -> None:
     """Write a list of parameter cards to a YAML file."""
@@ -345,6 +393,7 @@ def load_cards_from_yaml(path: str | Path) -> list[ParameterCard]:
 # ---------------------------------------------------------------------------
 # Audit report
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class AuditReport:
@@ -383,7 +432,9 @@ class AuditReport:
             f"Approved coverage: {self.coverage_pct:.1f}%",
             f"Cross-ref coverage: {self.cross_ref_coverage}/{self.total}",
         ]
-        errors = [(pid, iss) for pid, iss in self.validation_issues if iss.severity is Severity.ERROR]
+        errors = [
+            (pid, iss) for pid, iss in self.validation_issues if iss.severity is Severity.ERROR
+        ]
         if errors:
             lines.append("")
             lines.append(f"✗ Validation errors: {len(errors)}")
@@ -447,6 +498,7 @@ def audit_parameters(cards: list[ParameterCard]) -> AuditReport:
 # CI gate check
 # ---------------------------------------------------------------------------
 
+
 def ci_gate_check(cards: list[ParameterCard]) -> tuple[bool, str]:
     """Return (pass, message) for CI integration.
 
@@ -473,8 +525,7 @@ def ci_gate_check(cards: list[ParameterCard]) -> tuple[bool, str]:
         messages.append(f"FAIL: {len(approved_errors)} validation error(s) on APPROVED parameters")
 
     # Missing required fields (unit) on any card → fail
-    missing_required = [(pid, iss) for pid, iss in errors
-                        if iss.field in ("parameter_id", "unit")]
+    missing_required = [(pid, iss) for pid, iss in errors if iss.field in ("parameter_id", "unit")]
     if missing_required:
         fail = True
         messages.append(f"FAIL: {len(missing_required)} card(s) missing required fields")

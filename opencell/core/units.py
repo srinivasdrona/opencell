@@ -9,8 +9,6 @@ shared across the entire simulation.
 
 from __future__ import annotations
 
-from typing import Any
-
 import pint
 
 # Singleton unit registry — all OpenCell code must use this instance
@@ -54,7 +52,7 @@ class StandardUnits:
 
 
 def validate_quantity(
-    value: Any,
+    value: object,
     expected_dimensionality: str,
     label: str = "value",
 ) -> pint.Quantity:
