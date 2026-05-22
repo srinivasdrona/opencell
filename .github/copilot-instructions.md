@@ -112,6 +112,71 @@ Every nontrivial biological claim must have:
 - Experimental conditions (temperature, pH, strain, medium)
 - Uncertainty distribution
 
+### Primary-Source Discipline (the source-selection checklist)
+
+The most expensive mistakes in this project — D.2 design rounds v1→v2→v3, the
+Karr Data S1 fetch detour — all share one root cause: **designing/extracting
+from a derived source when a more primary source was available**. To prevent
+recurrence, every "fetch" or "extract" or "design from X" decision must pass
+this checklist BEFORE doing the work.
+
+**The hierarchy of primary sources for this project:**
+
+1. **The actual MATLAB code** (`data/m1_sources/WholeCell/src/+edu/.../+process/*.m`,
+   `+state/*.m`, `Simulation.m`, etc.). This is the highest-fidelity primary
+   source because it is what actually ran in Karr 2012. Class-level `%`
+   docstrings contain structured Biology / Knowledge Base / Representation /
+   Simulation / Algorithm sections. Read these BEFORE any other source.
+2. **The fixture data** (`data/karr_fixtures/per_process/*_flat.mat`). Encodes
+   actual runtime values for every parameter, state variable, and matrix.
+   Use to verify any claim about counts, indices, or compositions.
+3. **The published paper main text** (Karr 2012, PMC3413483 printable HTML).
+   Architectural framing. Use to understand the 28-process structure and
+   the validation phenotypes.
+4. **The supplementary methods (Data S1)** — useful for parameter
+   justifications and reconstruction details. NOTE: Cloudflare-gated on
+   cell.com; use PMC supplementary files or SimTK whole-cell project
+   downloads if you genuinely need it. **Almost always (1) covers what you'd
+   need (4) for.**
+5. **Derived summaries** (our `karr_protein_complexes.json`, our design docs,
+   our blog posts). LOWEST fidelity. NEVER design from these alone; they may
+   be wrong or stale.
+
+**Pre-fetch checklist (must answer all 4 BEFORE invoking curl / wget / browser /
+Codex web tasks):**
+
+- [ ] **What is the actual primary source?** Not "what does the prompt suggest";
+      what is THE thing being modeled? For Karr-fidelity work, the answer is
+      almost always the MATLAB code or the fixture, not a PDF.
+- [ ] **Do we already have it locally?** Run `find /mnt/e/opencell -type f -iname
+      '*<keyword>*'` against the question's keywords. Check `data/m1_sources/`,
+      `data/karr_fixtures/`, `data/karr_archive/`, `data/biomodels_reference/`,
+      `.paper_cache/`, and any existing extracts under `docs/karr_extracts/` or
+      `docs/karr_data_s1/`. Audit BEFORE fetching.
+- [ ] **Is the source we're tempted to fetch network-gated?** Cell journal,
+      Springer, Elsevier, NIH-restricted, paywall-rate-limited APIs all fight
+      back. If the answer is yes, find an equivalent at an open source (PMC,
+      SimTK, PubMed Central, GitHub, BioModels, EuropePMC) BEFORE engaging
+      with the gated source. **NEVER spend Codex tokens fighting Cloudflare.**
+- [ ] **Will an extract derived from the next-best source be sufficient?** A
+      `%`-docstring extract from a `.m` file is usually as good as the PDF
+      that documents it. If yes, skip the fetch entirely.
+
+**Failure modes this prevents:**
+
+- Designing from JSON fixture summaries when MATLAB source exists (v2→v3 D.2)
+- Re-deriving algorithm steps from paper main text when the .m header has them
+  verbatim (the original Data S1 fetch task)
+- Burning Codex tokens (and wall time) on Cloudflare-gated fetches
+- Network dependencies in workflows that should be offline
+
+**Codex-delegation interaction:**
+
+When delegating extraction or fetch tasks to Codex, the orchestrator MUST run
+the pre-fetch checklist FIRST and tell Codex which source to read. Codex is
+good at extraction; not architected to question whether the requested source
+is the right one. The architect's job is source selection.
+
 ### LLM Interaction Logging
 Significant LLM exchanges that shape the repo MUST be logged to
 `data/provenance/llm_interactions.jsonl` via `scripts/log_llm_interaction.py`.
