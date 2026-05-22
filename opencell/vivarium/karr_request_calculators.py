@@ -7,6 +7,22 @@ import numpy as np
 from vivarium.core.process import Step
 
 
+def _consumed_wids_from_stoich(substrate_wids: list[str], stoich: np.ndarray) -> list[str]:
+    consumed_idx = np.flatnonzero(np.any(np.asarray(stoich, dtype=np.int64) < 0, axis=1))
+    return [substrate_wids[int(idx)] for idx in consumed_idx]
+
+
+def _request_from_available(
+    substrate_state: dict[str, Any],
+    target_wids: list[str],
+    *,
+    active: bool,
+) -> dict[str, float]:
+    if not active:
+        return {wid: 0.0 for wid in target_wids}
+    return {wid: max(0.0, float(substrate_state.get(wid, 0.0))) for wid in target_wids}
+
+
 class RequestCalculatorD2(Step):
     """Emit D.2-real metabolite requests.
 
@@ -188,4 +204,294 @@ class RequestCalculatorRibAsm(Step):
         }
 
 
-__all__ = ["RequestCalculatorD2", "RequestCalculatorPD", "RequestCalculatorRibAsm"]
+class RequestCalculatorTRNA(Step):
+    """Compute allocation request for tRNA aminoacylation metabolites."""
+
+    name = "request_calculator_trna"
+    defaults: dict[str, Any] = {"trna_proc": None}
+
+    def __init__(self, parameters: dict[str, Any] | None = None) -> None:
+        super().__init__(parameters)
+        trna_proc = self.parameters.get("trna_proc")
+        if trna_proc is None:
+            raise ValueError("RequestCalculatorTRNA requires parameter: trna_proc")
+        self._trna_proc = trna_proc
+        self._consumed_substrate_wids = _consumed_wids_from_stoich(
+            self._trna_proc.substrate_wids,
+            self._trna_proc.reaction_stoich,
+        )
+
+    def ports_schema(self) -> dict[str, Any]:
+        return {
+            "substrates": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self._trna_proc.substrate_wids
+            },
+            "rna": {
+                "counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
+                    for wid in self._trna_proc.free_rna_wids
+                }
+            },
+            "requests": {
+                self._trna_proc.name: {
+                    wid: {"_default": 0.0, "_updater": "set", "_emit": False}
+                    for wid in self._trna_proc.substrate_wids
+                }
+            },
+        }
+
+    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        del timestep
+        free_total = sum(
+            max(0.0, float(states.get("rna", {}).get("counts", {}).get(wid, 0.0)))
+            for wid in self._trna_proc.free_rna_wids
+        )
+        substrate_state = states.get("substrates", {})
+        requests = {wid: 0.0 for wid in self._trna_proc.substrate_wids}
+        active = free_total > 0.0
+        if active:
+            for wid in self._consumed_substrate_wids:
+                avail = max(0.0, float(substrate_state.get(wid, 0.0)))
+                if wid == "ATP":
+                    requests[wid] = max(25.0, avail * 25.0)
+                else:
+                    requests[wid] = avail
+        return {"requests": {self._trna_proc.name: requests}}
+
+
+class RequestCalculatorRNAPathway(Step):
+    """Compute shared requests for RNAProcessing + RNAModification."""
+
+    name = "request_calculator_rna_pathway"
+    defaults: dict[str, Any] = {"rna_processing_proc": None, "rna_modification_proc": None}
+
+    def __init__(self, parameters: dict[str, Any] | None = None) -> None:
+        super().__init__(parameters)
+        self._rp_proc = self.parameters.get("rna_processing_proc")
+        self._rm_proc = self.parameters.get("rna_modification_proc")
+        if self._rp_proc is None or self._rm_proc is None:
+            raise ValueError(
+                "RequestCalculatorRNAPathway requires rna_processing_proc and rna_modification_proc"
+            )
+        self._rp_consumed = _consumed_wids_from_stoich(
+            self._rp_proc.substrate_wids, self._rp_proc.reaction_stoich
+        )
+        self._rm_consumed = _consumed_wids_from_stoich(
+            self._rm_proc.substrate_wids, self._rm_proc.reaction_stoich
+        )
+
+    def ports_schema(self) -> dict[str, Any]:
+        return {
+            "substrates": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in sorted(set(self._rp_proc.substrate_wids) | set(self._rm_proc.substrate_wids))
+            },
+            "rna": {
+                "counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
+                    for wid in sorted(set(self._rp_proc.rna_wids) | set(self._rm_proc.unmodified_rna_wids))
+                }
+            },
+            "requests": {
+                self._rp_proc.name: {
+                    wid: {"_default": 0.0, "_updater": "set", "_emit": False}
+                    for wid in self._rp_proc.substrate_wids
+                },
+                self._rm_proc.name: {
+                    wid: {"_default": 0.0, "_updater": "set", "_emit": False}
+                    for wid in self._rm_proc.substrate_wids
+                },
+            },
+        }
+
+    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        del timestep
+        substrate_state = states.get("substrates", {})
+        rna_counts = states.get("rna", {}).get("counts", {})
+        rp_active = any(float(rna_counts.get(wid, 0.0)) > 0.0 for wid in self._rp_proc.unprocessed_rna_wids)
+        rm_active = any(float(rna_counts.get(wid, 0.0)) > 0.0 for wid in self._rm_proc.unmodified_rna_wids)
+
+        rp_request = {wid: 0.0 for wid in self._rp_proc.substrate_wids}
+        rp_request.update(
+            _request_from_available(substrate_state, self._rp_consumed, active=rp_active)
+        )
+        rm_request = {wid: 0.0 for wid in self._rm_proc.substrate_wids}
+        rm_request.update(
+            _request_from_available(substrate_state, self._rm_consumed, active=rm_active)
+        )
+        return {
+            "requests": {
+                self._rp_proc.name: rp_request,
+                self._rm_proc.name: rm_request,
+            }
+        }
+
+
+class RequestCalculatorProteinPathway(Step):
+    """Compute shared requests for protein maturation pathway processes."""
+
+    name = "request_calculator_protein_pathway"
+    defaults: dict[str, Any] = {
+        "protein_processing_i_proc": None,
+        "protein_processing_ii_proc": None,
+        "protein_modification_proc": None,
+        "protein_folding_proc": None,
+        "protein_translocation_proc": None,
+    }
+
+    def __init__(self, parameters: dict[str, Any] | None = None) -> None:
+        super().__init__(parameters)
+        self._pp1_proc = self.parameters.get("protein_processing_i_proc")
+        self._pp2_proc = self.parameters.get("protein_processing_ii_proc")
+        self._pm_proc = self.parameters.get("protein_modification_proc")
+        self._pf_proc = self.parameters.get("protein_folding_proc")
+        self._pt_proc = self.parameters.get("protein_translocation_proc")
+        if any(p is None for p in (self._pp1_proc, self._pp2_proc, self._pm_proc, self._pf_proc, self._pt_proc)):
+            raise ValueError("RequestCalculatorProteinPathway requires all protein pathway process parameters")
+
+        self._pp2_consumed = _consumed_wids_from_stoich(
+            self._pp2_proc.substrate_wids, self._pp2_proc.reaction_stoich
+        )
+        self._pm_consumed = _consumed_wids_from_stoich(
+            self._pm_proc.substrate_wids, self._pm_proc.reaction_stoich
+        )
+
+    def ports_schema(self) -> dict[str, Any]:
+        all_substrate_wids = sorted(
+            set(self._pp1_proc.substrate_wids)
+            | set(self._pp2_proc.substrate_wids)
+            | set(self._pm_proc.substrate_wids)
+            | set(self._pf_proc.substrate_wids)
+            | {self._pt_proc.atp_wid}
+        )
+        return {
+            "substrates": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in all_substrate_wids
+            },
+            "protein": {
+                "counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                    for wid in sorted(
+                        set(self._pp1_proc.enzyme_wids)
+                        | set(self._pp2_proc.enzyme_wids)
+                        | set(self._pm_proc.enzyme_wids)
+                        | set(self._pf_proc.enzyme_wids)
+                        | set(self._pt_proc.protein_count_wids)
+                    )
+                },
+                "unprocessed_counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                    for wid in sorted(
+                        set(self._pp1_proc.unprocessed_monomer_wids)
+                        | set(self._pp2_proc.unprocessed_monomer_wids)
+                    )
+                },
+                "unfolded_counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                    for wid in self._pf_proc.unfolded_monomer_wids
+                },
+                "unmodified_counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                    for wid in self._pm_proc.unmodified_monomer_wids
+                },
+                "location": {
+                    wid: {"_default": "cytoplasm", "_updater": "set", "_emit": False}
+                    for wid in self._pt_proc.translocatable_wids
+                },
+            },
+            "requests": {
+                self._pp1_proc.name: {
+                    wid: {"_default": 0.0, "_updater": "set", "_emit": False}
+                    for wid in self._pp1_proc.substrate_wids
+                },
+                self._pp2_proc.name: {
+                    wid: {"_default": 0.0, "_updater": "set", "_emit": False}
+                    for wid in self._pp2_proc.substrate_wids
+                },
+                self._pm_proc.name: {
+                    wid: {"_default": 0.0, "_updater": "set", "_emit": False}
+                    for wid in self._pm_proc.substrate_wids
+                },
+                self._pf_proc.name: {
+                    wid: {"_default": 0.0, "_updater": "set", "_emit": False}
+                    for wid in self._pf_proc.substrate_wids
+                },
+                self._pt_proc.name: {
+                    self._pt_proc.atp_wid: {"_default": 0.0, "_updater": "set", "_emit": False}
+                },
+            },
+        }
+
+    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        del timestep
+        substrate_state = states.get("substrates", {})
+        protein_state = states.get("protein", {})
+        counts_state = protein_state.get("counts", {})
+        unprocessed_state = protein_state.get("unprocessed_counts", {})
+        unfolded_state = protein_state.get("unfolded_counts", {})
+        unmodified_state = protein_state.get("unmodified_counts", {})
+        location_state = protein_state.get("location", {})
+
+        pp1_active = any(float(unprocessed_state.get(wid, 0.0)) > 0.0 for wid in self._pp1_proc.unprocessed_monomer_wids)
+        pp2_active = any(float(unprocessed_state.get(wid, 0.0)) > 0.0 for wid in self._pp2_proc.lipoprotein_wids)
+        pm_active = any(float(unmodified_state.get(wid, 0.0)) > 0.0 for wid in self._pm_proc.unmodified_monomer_wids)
+        pf_active = any(float(unfolded_state.get(wid, 0.0)) > 0.0 for wid in self._pf_proc.unfolded_monomer_wids)
+        pt_active = any(
+            float(counts_state.get(wid, 0.0)) > 0.0 and str(location_state.get(wid, "cytoplasm")) == "cytoplasm"
+            for wid in self._pt_proc.translocatable_wids
+        )
+
+        pp1_req = {wid: 0.0 for wid in self._pp1_proc.substrate_wids}
+        pp1_req[self._pp1_proc.substrate_wids[self._pp1_proc.substrate_idx_water]] = (
+            max(0.0, float(substrate_state.get(self._pp1_proc.substrate_wids[self._pp1_proc.substrate_idx_water], 0.0)))
+            if pp1_active
+            else 0.0
+        )
+
+        pp2_req = {wid: 0.0 for wid in self._pp2_proc.substrate_wids}
+        pp2_req.update(_request_from_available(substrate_state, self._pp2_consumed, active=pp2_active))
+
+        pm_req = {wid: 0.0 for wid in self._pm_proc.substrate_wids}
+        pm_req.update(_request_from_available(substrate_state, self._pm_consumed, active=pm_active))
+
+        pf_req = {
+            wid: (
+                max(0.0, float(substrate_state.get(wid, 0.0)))
+                if pf_active and (
+                    wid == self._pf_proc.substrate_wids[self._pf_proc.substrate_idx_atp]
+                    or wid == self._pf_proc.substrate_wids[self._pf_proc.substrate_idx_fe2]
+                    or wid == self._pf_proc.substrate_wids[self._pf_proc.substrate_idx_mg]
+                    or wid == self._pf_proc.substrate_wids[self._pf_proc.substrate_idx_zinc]
+                )
+                else 0.0
+            )
+            for wid in self._pf_proc.substrate_wids
+        }
+
+        pt_req = {
+            self._pt_proc.atp_wid: (
+                max(0.0, float(substrate_state.get(self._pt_proc.atp_wid, 0.0))) if pt_active else 0.0
+            )
+        }
+
+        return {
+            "requests": {
+                self._pp1_proc.name: pp1_req,
+                self._pp2_proc.name: pp2_req,
+                self._pm_proc.name: pm_req,
+                self._pf_proc.name: pf_req,
+                self._pt_proc.name: pt_req,
+            }
+        }
+
+
+__all__ = [
+    "RequestCalculatorD2",
+    "RequestCalculatorPD",
+    "RequestCalculatorRibAsm",
+    "RequestCalculatorTRNA",
+    "RequestCalculatorRNAPathway",
+    "RequestCalculatorProteinPathway",
+]
