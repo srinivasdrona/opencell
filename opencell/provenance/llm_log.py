@@ -58,6 +58,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 from collections.abc import Iterable
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
@@ -82,6 +83,24 @@ VerificationStatus = Literal[
 ]
 
 DEFAULT_LOG_PATH = Path("data") / "provenance" / "llm_interactions.jsonl"
+# Canonical tag vocabulary reference: docs/llm_log_tag_vocabulary.md
+
+_REPO_ROOT_CACHE: Path | None = None
+
+_SECRET_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("aws_access_key", re.compile(r"AKIA[0-9A-Z]{16}")),
+    (
+        "aws_secret_access_key",
+        re.compile(
+            r'secret_access_key"?\s*[:=]\s*"?[A-Za-z0-9/+=]{40}"?',
+            flags=re.IGNORECASE,
+        ),
+    ),
+    ("github_pat", re.compile(r"ghp_[A-Za-z0-9]{36,}")),
+    ("openai_api_key", re.compile(r"sk-[A-Za-z0-9]{20,}")),
+    ("azure_storage_sas_sig", re.compile(r"\?sig=[A-Za-z0-9%]{20,}")),
+    ("generic_bearer_token", re.compile(r"Bearer [A-Za-z0-9._-]{20,}")),
+)
 
 
 @dataclass
@@ -89,13 +108,15 @@ class LlmLog:
     """One LLM interaction record.
 
     Fields with default ``None`` are optional. ``event_id`` and ``timestamp_utc``
-    are filled in by ``log_interaction`` if left as default.
+    are filled in by ``log_interaction`` if left as default. ``schema_version``
+    supports forward-migration of the serialized event format.
     """
 
     role: Role
     model: str
     task_summary: str
     output_summary: str
+    schema_version: str = "1.0.0"
 
     prompt_summary: str | None = None
     decision_impact: str | None = None
@@ -138,10 +159,37 @@ def _resolve_path(path: Path | str | None) -> Path:
         path = DEFAULT_LOG_PATH
     p = Path(path)
     if not p.is_absolute():
-        # Resolve relative to the repo root (parent of opencell/).
-        repo_root = Path(__file__).resolve().parents[2]
+        repo_root = _find_repo_root()
         p = repo_root / p
     return p
+
+
+def _find_repo_root(start: Path | None = None) -> Path:
+    global _REPO_ROOT_CACHE
+    if start is None and _REPO_ROOT_CACHE is not None:
+        return _REPO_ROOT_CACHE
+
+    probe = (start if start is not None else Path(__file__)).resolve()
+    if probe.is_file():
+        probe = probe.parent
+
+    for candidate in (probe, *probe.parents):
+        if (candidate / ".git").is_dir() or (candidate / "pyproject.toml").is_file():
+            if start is None:
+                _REPO_ROOT_CACHE = candidate
+            return candidate
+
+    raise RuntimeError(
+        "Could not find repo root: no .git or pyproject.toml in any parent directory"
+    )
+
+
+def _raise_if_likely_secret(field_name: str, value: str | None) -> None:
+    if not value:
+        return
+    for pattern_name, pattern in _SECRET_PATTERNS:
+        if pattern.search(value):
+            raise ValueError(f"Likely secret in {field_name}: {pattern_name}")
 
 
 def log_interaction(record: LlmLog, log_path: Path | str | None = None) -> str:
@@ -154,6 +202,9 @@ def log_interaction(record: LlmLog, log_path: Path | str | None = None) -> str:
         record.timestamp_utc = _now_iso()
     if not record.event_id:
         record.event_id = record.compute_event_id()
+
+    _raise_if_likely_secret("prompt_summary", record.prompt_summary)
+    _raise_if_likely_secret("output_summary", record.output_summary)
 
     p = _resolve_path(log_path)
     p.parent.mkdir(parents=True, exist_ok=True)
