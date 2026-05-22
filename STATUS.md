@@ -1,93 +1,36 @@
-A3.3 Turn 1 completed at 2026-05-22 21:09:35 +05:30
+A3.3 Turn 5 completed at 2026-05-22 21:45 IST
 
-Summary
-- Implemented M2v3 + M3v3 delta-emit conversion by addition (v2 files untouched).
-- Added 4 new files:
-  1) opencell/vivarium/karr_m2_v3.py (121 LOC)
-  2) opencell/vivarium/karr_m3_v3.py (122 LOC)
-  3) tests/vivarium/test_karr_m2_v3.py (105 LOC)
-  4) tests/vivarium/test_karr_m3_v3.py (107 LOC)
-- New tests added: 8 total (4 in each new test module).
+Implemented
+- Added `build_karr_chassis_v3(...)` in `opencell/vivarium/karr_composite.py`
+- Added new request calculator module: `opencell/vivarium/karr_request_calculators.py`
+  - `RequestCalculatorD2(Step)` (zero requests for `karr_d2_real`)
+  - `RequestCalculatorPD(Step)` (ATP/H2O request from expected decay)
+- Added integration suite: `tests/integration/test_karr_chassis_v3.py` (8 tests)
 
-Environment note
-- Windows Python lacked `vivarium`; verification was run through WSL venv:
-  - /mnt/e/opencell/.venv-wsl/bin/python
-  - /mnt/e/opencell/.venv-wsl/bin/pytest
-- During full-suite run, worktree lacked `data/m1_sources/karr_flat`; created a local junction to existing dataset at `E:\opencell\data\m1_sources\karr_flat` so the required command could run successfully.
+Verification
+1) Import check (worktree code)
+- `wsl -e bash -lc "cd /mnt/e/opencell-worktrees/a33-integration && PYTHONPATH=/mnt/e/opencell-worktrees/a33-integration /mnt/e/opencell/.venv-wsl/bin/python -c 'from opencell.vivarium.karr_composite import build_karr_chassis_v3'"`
+- Result: PASS
 
-Verification step 1
-Command:
-python -c "from opencell.vivarium.karr_m2_v3 import KarrTranscriptionV3Process; KarrTranscriptionV3Process({}).ports_schema()"
-Executed as:
-wsl bash -lc 'cd /mnt/e/opencell-worktrees/a33-m2m3-v3 && PYTHONPATH=/mnt/e/opencell-worktrees/a33-m2m3-v3 /mnt/e/opencell/.venv-wsl/bin/python -c "from opencell.vivarium.karr_m2_v3 import KarrTranscriptionV3Process; KarrTranscriptionV3Process({}).ports_schema(); print(\"m2v3 ports_schema ok\")"'
-Output:
-m2v3 ports_schema ok
+2) New integration tests
+- `wsl -e bash -lc "cd /mnt/e/opencell-worktrees/a33-integration && PYTHONPATH=/mnt/e/opencell-worktrees/a33-integration /mnt/e/opencell/.venv-wsl/bin/pytest tests/integration/test_karr_chassis_v3.py -v"`
+- Result: 8 passed
+  - test_chassis_v3_builds: PASSED
+  - test_chassis_v3_10_ticks: PASSED
+  - test_chassis_v3_ratchet_closure_steady_state: PASSED
+  - test_v2_chassis_still_works: PASSED
+  - test_chassis_v3_all_writers_accumulate: PASSED
+  - test_allocation_step_constrains_under_scarcity: PASSED
+  - test_d2_and_decay_both_active: PASSED
+  - test_emit_step_records_complex_trajectories: PASSED
 
-Verification step 2
-Command:
-python -c "from opencell.vivarium.karr_m3_v3 import KarrTranslationV3Process; KarrTranslationV3Process({}).ports_schema()"
-Executed as:
-wsl bash -lc 'cd /mnt/e/opencell-worktrees/a33-m2m3-v3 && PYTHONPATH=/mnt/e/opencell-worktrees/a33-m2m3-v3 /mnt/e/opencell/.venv-wsl/bin/python -c "from opencell.vivarium.karr_m3_v3 import KarrTranslationV3Process; KarrTranslationV3Process({}).ports_schema(); print(\"m3v3 ports_schema ok\")"'
-Output:
-m3v3 ports_schema ok
+3) A3.3 Turn 1-4 regression set
+- `wsl -e bash -lc "cd /mnt/e/opencell-worktrees/a33-integration && PYTHONPATH=/mnt/e/opencell-worktrees/a33-integration /mnt/e/opencell/.venv-wsl/bin/pytest tests/vivarium/test_karr_m2_v3.py tests/vivarium/test_karr_m3_v3.py tests/vivarium/test_karr_allocation_step.py tests/vivarium/test_karr_d2_real.py tests/vivarium/test_karr_protein_decay_light.py -v"`
+- Result: 32 passed
 
-Verification step 3
-Command:
-pytest tests/vivarium/test_karr_m2_v3.py tests/vivarium/test_karr_m3_v3.py -v
-Executed as:
-wsl bash -lc 'cd /mnt/e/opencell-worktrees/a33-m2m3-v3 && PYTHONPATH=/mnt/e/opencell-worktrees/a33-m2m3-v3 /mnt/e/opencell/.venv-wsl/bin/pytest tests/vivarium/test_karr_m2_v3.py tests/vivarium/test_karr_m3_v3.py -v'
-Full output:
-============================= test session starts ==============================
-platform linux -- Python 3.12.13, pytest-9.0.3, pluggy-1.6.0 -- /mnt/e/opencell/.venv-wsl/bin/python3.12
-cachedir: .pytest_cache
-hypothesis profile 'default'
-rootdir: /mnt/e/opencell-worktrees/a33-m2m3-v3
-configfile: pyproject.toml
-plugins: anyio-4.13.0, hypothesis-6.152.1, jaxtyping-0.3.9, cov-7.1.0
-collecting ... collected 8 items
-
-tests/vivarium/test_karr_m2_v3.py::test_delta_equals_v2_absolute PASSED  [ 12%]
-tests/vivarium/test_karr_m2_v3.py::test_schema_only_accumulate PASSED    [ 25%]
-tests/vivarium/test_karr_m2_v3.py::test_order_insensitivity PASSED       [ 37%]
-tests/vivarium/test_karr_m2_v3.py::test_substrate_delta_unchanged PASSED [ 50%]
-tests/vivarium/test_karr_m3_v3.py::test_delta_equals_v2_absolute PASSED  [ 62%]
-tests/vivarium/test_karr_m3_v3.py::test_schema_only_accumulate PASSED    [ 75%]
-tests/vivarium/test_karr_m3_v3.py::test_order_insensitivity PASSED       [ 87%]
-tests/vivarium/test_karr_m3_v3.py::test_substrate_delta_unchanged PASSED [100%]
-
-============================== 8 passed in 31.78s ==============================
-
-Verification step 4
-Command:
-pytest tests/ -x --ignore=tests/probes -q
-Executed as:
-wsl bash -lc 'cd /mnt/e/opencell-worktrees/a33-m2m3-v3 && PYTHONPATH=/mnt/e/opencell-worktrees/a33-m2m3-v3 /mnt/e/opencell/.venv-wsl/bin/pytest tests/ -x --ignore=tests/probes -q'
-Full output:
-........................................................................ [ 11%]
-........................................................................ [ 22%]
-.......................x.....xx.x....................................... [ 34%]
-.........................sss............................................ [ 45%]
-..............ssssssss.................................................. [ 57%]
-........................................................................ [ 68%]
-........................................................................ [ 80%]
-........................................................................ [ 91%]
-...................................................                      [100%]
-=============================== warnings summary ===============================
-tests/gates/test_g17_pysces_oracle.py::TestGateG17PyscesOracle::test_pysces_recovers_analytical_steady_state
-  /mnt/e/opencell/.venv-wsl/lib/python3.12/site-packages/pysces/PyscesModel.py:4051: ODEintWarning: Integration successful.
-    sim_res, infodict = scipy.integrate.odeint(
-
--- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-612 passed, 11 skipped, 4 xfailed, 1 warning in 853.01s (0:14:13)
-
-Verification step 5
-Command:
-git diff --stat HEAD -- opencell/vivarium/karr_m2_v2.py opencell/vivarium/karr_m3_v2.py
-Output:
-(no output)
-
-Acceptance gate check
-- [x] Verification steps passed
-- [x] Added two new source files + two new test files
-- [x] v2 files unchanged
-- [x] Commit message used: a33-t1: M2v3 + M3v3 delta-emit (accumulate updater)
+Performance + Ratchet headline
+- 1000 ticks measured via 100 batches of `engine.update(10.0)`
+- elapsed_s=16.211921
+- chassis tick rate=61.683 ticks/s
+- ratchet steady-state outcome=PASS
+- worst top-10 drift=1.26% (wid=RNA_POLYMERASE, mid=34.433, late=34.000)
