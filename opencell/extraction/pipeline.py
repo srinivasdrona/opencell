@@ -13,10 +13,10 @@ from .pdf_grep import GrepConfig, grep_file
 class ParameterSpec:
     """Inputs for a single extraction run."""
 
-    symbol: str                         # symbol as written in the paper, e.g. "k_R"
+    symbol: str  # symbol as written in the paper, e.g. "k_R"
     doi: str = ""
-    target_unit: str = ""               # the unit you want the final value in
-    name: str = ""                      # human-readable parameter name
+    target_unit: str = ""  # the unit you want the final value in
+    name: str = ""  # human-readable parameter name
     organism: str = ""
     condition: str = ""
     cache_files: list[str] = field(default_factory=list)  # PDF text caches
@@ -52,6 +52,7 @@ def extract_parameter(spec: ParameterSpec) -> ExtractionResult:
         result.methods_attempted.append("biomodels_sbml")
         try:
             from .biomodels import extract_from_biomodels
+
             result.candidates.extend(extract_from_biomodels(spec.doi, spec.symbol))
         except Exception as e:  # pragma: no cover — defensive
             result.notes.append(f"biomodels lookup failed: {e}")

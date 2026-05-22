@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import sys
 from copy import deepcopy
 from pathlib import Path
-import sys
 from typing import Any
 
 import numpy as np
@@ -85,10 +85,14 @@ def test_mass_conservation() -> None:
     unprocessed = np.array([state["rna"]["counts"][w] for w in p.unprocessed_rna_wids], dtype=float)
     substrates = np.array([state["substrates"][w] for w in p.substrate_wids], dtype=float)
     enzymes = np.array([state["protein"]["counts"][w] for w in p.enzyme_wids], dtype=float)
-    flux = p._compute_reaction_fluxes(unprocessed=unprocessed, substrates=substrates, enzymes=enzymes, dt=1.0)
+    flux = p._compute_reaction_fluxes(
+        unprocessed=unprocessed, substrates=substrates, enzymes=enzymes, dt=1.0
+    )
 
     update = p.next_update(1.0, state)
-    observed_sub = np.array([int(update["substrates"].get(w, 0.0)) for w in p.substrate_wids], dtype=np.int64)
+    observed_sub = np.array(
+        [int(update["substrates"].get(w, 0.0)) for w in p.substrate_wids], dtype=np.int64
+    )
     expected_sub = p.reaction_stoich @ flux
     np.testing.assert_array_equal(observed_sub, expected_sub)
 

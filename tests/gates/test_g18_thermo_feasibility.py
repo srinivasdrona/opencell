@@ -65,13 +65,9 @@ def check_directionality(
             continue
         report.n_irreversible += 1
         if direction is ReactionDirection.IRREVERSIBLE_FORWARD and flux < -zero_tol:
-            report.violations.append(
-                f"{rxn}: forward-only but flux = {flux:.3g} < 0"
-            )
+            report.violations.append(f"{rxn}: forward-only but flux = {flux:.3g} < 0")
         elif direction is ReactionDirection.IRREVERSIBLE_REVERSE and flux > zero_tol:
-            report.violations.append(
-                f"{rxn}: reverse-only but flux = {flux:.3g} > 0"
-            )
+            report.violations.append(f"{rxn}: reverse-only but flux = {flux:.3g} > 0")
     return report
 
 
@@ -93,7 +89,7 @@ class TestGateG18ThermoFeasibility:
         assert report.n_irreversible == 0
 
     def test_forward_only_with_negative_flux_flagged(self) -> None:
-        fluxes = {"pyk": -0.5}    # pyruvate kinase reversing — not allowed
+        fluxes = {"pyk": -0.5}  # pyruvate kinase reversing — not allowed
         directions = {"pyk": ReactionDirection.IRREVERSIBLE_FORWARD}
         report = check_directionality(fluxes, directions)
         assert not report.feasible
@@ -118,9 +114,9 @@ class TestGateG18ThermoFeasibility:
         Running the check with no directionality constraints is expected
         to be trivially feasible."""
         micro_fluxes = {
-            "transcription": 0.60,    # mRNA synth
-            "mrna_decay": 0.60,        # at SS matches synth
-            "translation": 4.16,       # SS: k_P * m_ss
+            "transcription": 0.60,  # mRNA synth
+            "mrna_decay": 0.60,  # at SS matches synth
+            "translation": 4.16,  # SS: k_P * m_ss
             "protein_decay": 4.16,
         }
         report = check_directionality(micro_fluxes, directions={})

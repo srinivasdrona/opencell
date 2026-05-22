@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import sys
 from dataclasses import replace
 from pathlib import Path
-import sys
 
 import numpy as np
 import pytest
@@ -202,7 +202,9 @@ def test_unknown_fold_change_key_is_ignored() -> None:
     noisy_state["tx_rate_fold_change"] = {"NOT_A_TU": 99.0}
     noisy_update = v3.next_update(1.0, noisy_state)
     for gid in v3.gene_ids[:10]:
-        assert noisy_update["rna"]["counts"][gid] == pytest.approx(base_update["rna"]["counts"][gid])
+        assert noisy_update["rna"]["counts"][gid] == pytest.approx(
+            base_update["rna"]["counts"][gid]
+        )
 
 
 def test_unity_fold_change_dict_matches_unwired() -> None:

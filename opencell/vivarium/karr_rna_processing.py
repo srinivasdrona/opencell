@@ -126,7 +126,7 @@ class KarrRNAProcessingProcess(Process):
                 last_pidx = pidx
         anchors.append((n_reactions, n_processed))
 
-        for (r0, p0), (r1, p1) in zip(anchors[:-1], anchors[1:]):
+        for (r0, p0), (r1, p1) in zip(anchors[:-1], anchors[1:], strict=False):
             missing = list(range(r0 + 1, r1))
             if not missing:
                 continue
@@ -165,7 +165,7 @@ class KarrRNAProcessingProcess(Process):
                 continue
 
             if len(un_idx) == len(pr_idx):
-                for ridx, pidx in zip(un_idx, pr_idx):
+                for ridx, pidx in zip(un_idx, pr_idx, strict=False):
                     outputs[ridx].add(pidx)
                 continue
 
@@ -192,7 +192,11 @@ class KarrRNAProcessingProcess(Process):
                 out.append(int(v) - 1)
             except (TypeError, ValueError):
                 continue
-        return [i for i in out if 0 <= i < len(self.unprocessed_rna_wids) or 0 <= i < len(self.processed_rna_wids)]
+        return [
+            i
+            for i in out
+            if 0 <= i < len(self.unprocessed_rna_wids) or 0 <= i < len(self.processed_rna_wids)
+        ]
 
     def ports_schema(self) -> dict[str, Any]:
         return {
@@ -351,7 +355,9 @@ class KarrRNAProcessingProcess(Process):
             raise ValueError(f"enzyme vector too short: {enz.size} < {len(self.enzyme_wids)}")
 
         catalytic_enzymes = np.clip(enz[: len(self.enzyme_wids)], a_min=0.0, a_max=None)
-        limits = np.full(self.reaction_catalysis.shape[0], float(_UNBOUNDED_LIMIT), dtype=np.float64)
+        limits = np.full(
+            self.reaction_catalysis.shape[0], float(_UNBOUNDED_LIMIT), dtype=np.float64
+        )
         for ridx in range(self.reaction_catalysis.shape[0]):
             req = self.reaction_catalysis[ridx]
             active = req > 0.0

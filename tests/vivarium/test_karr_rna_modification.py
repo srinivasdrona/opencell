@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import sys
 from copy import deepcopy
 from pathlib import Path
-import sys
 from typing import Any
 
 import numpy as np
@@ -50,7 +50,9 @@ def _load_snapshot_state(process: KarrRNAModificationProcess) -> dict[str, Any]:
         enzymes = rng.integers(1, 100, size=len(process.enzyme_wids)).astype(float)
 
     return {
-        "substrates": {wid: float(substrates[idx]) for idx, wid in enumerate(process.substrate_wids)},
+        "substrates": {
+            wid: float(substrates[idx]) for idx, wid in enumerate(process.substrate_wids)
+        },
         "rna": {
             "counts": {
                 wid: float(unmodified[idx]) for idx, wid in enumerate(process.unmodified_rna_wids)
@@ -64,7 +66,9 @@ def _load_snapshot_state(process: KarrRNAModificationProcess) -> dict[str, Any]:
         },
         "requests": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
         "substrates_allocated": {
-            process.name: {wid: float(substrates[idx]) for idx, wid in enumerate(process.substrate_wids)}
+            process.name: {
+                wid: float(substrates[idx]) for idx, wid in enumerate(process.substrate_wids)
+            }
         },
     }
 
@@ -82,7 +86,9 @@ def _apply_update(
         state["rna"]["counts"][wid] = float(state["rna"]["counts"][wid] + float(delta))
 
     for wid, delta in update.get("rna", {}).get("modified_counts", {}).items():
-        state["rna"]["modified_counts"][wid] = float(state["rna"]["modified_counts"][wid] + float(delta))
+        state["rna"]["modified_counts"][wid] = float(
+            state["rna"]["modified_counts"][wid] + float(delta)
+        )
 
 
 def _single_target_state(process: KarrRNAModificationProcess, target_idx: int) -> dict[str, Any]:
@@ -140,7 +146,9 @@ def test_mass_conservation() -> None:
     p = KarrRNAModificationProcess({"rng_seed": 42})
     state = _load_snapshot_state(p)
 
-    unmodified = np.array([state["rna"]["counts"][wid] for wid in p.unmodified_rna_wids], dtype=np.float64)
+    unmodified = np.array(
+        [state["rna"]["counts"][wid] for wid in p.unmodified_rna_wids], dtype=np.float64
+    )
     substrates = np.array([state["substrates"][wid] for wid in p.substrate_wids], dtype=np.float64)
     enzymes = np.array([state["protein"]["counts"][wid] for wid in p.enzyme_wids], dtype=np.float64)
     flux = p._compute_reaction_fluxes(
@@ -152,20 +160,29 @@ def test_mass_conservation() -> None:
 
     update = p.next_update(1.0, state)
     observed_sub = np.array(
-        [int(update.get("substrates", {}).get(wid, 0.0)) for wid in p.substrate_wids], dtype=np.int64
+        [int(update.get("substrates", {}).get(wid, 0.0)) for wid in p.substrate_wids],
+        dtype=np.int64,
     )
     expected_sub = p.reaction_stoich @ flux
     np.testing.assert_array_equal(observed_sub, expected_sub)
 
     unmodified_delta = np.array(
-        [int(update.get("rna", {}).get("counts", {}).get(wid, 0.0)) for wid in p.unmodified_rna_wids],
+        [
+            int(update.get("rna", {}).get("counts", {}).get(wid, 0.0))
+            for wid in p.unmodified_rna_wids
+        ],
         dtype=np.int64,
     )
     modified_delta = np.array(
-        [int(update.get("rna", {}).get("modified_counts", {}).get(wid, 0.0)) for wid in p.modified_rna_wids],
+        [
+            int(update.get("rna", {}).get("modified_counts", {}).get(wid, 0.0))
+            for wid in p.modified_rna_wids
+        ],
         dtype=np.int64,
     )
-    np.testing.assert_array_equal(unmodified_delta + modified_delta, np.zeros_like(unmodified_delta))
+    np.testing.assert_array_equal(
+        unmodified_delta + modified_delta, np.zeros_like(unmodified_delta)
+    )
 
 
 def test_full_modification_transitions_state() -> None:

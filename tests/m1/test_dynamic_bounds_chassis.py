@@ -9,6 +9,7 @@ Honest scope of these tests (mirrors the implementation):
   own production back to the shared store.  None of those are exercised
   here.
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -18,9 +19,9 @@ from opencell.m1 import calc_flux_bounds as cfb
 from opencell.m1 import karr_metabolism as km
 from opencell.vivarium.karr_composite import build_karr_m1_m2_m3_engine
 from opencell.vivarium.karr_m1 import (
-    KarrMetabolismProcess,
     _CYTOSOL_COMPARTMENT_0,
     _KARR_DEMAND_KEYS,
+    KarrMetabolismProcess,
     build_karr_m1_engine,
 )
 
@@ -28,7 +29,7 @@ from opencell.vivarium.karr_m1 import (
 # ----------------------------------------------------------------------
 # Regression guard: dynamic_bounds=False is unchanged
 # ----------------------------------------------------------------------
-def test_static_mode_default_and_unchanged_schema():
+def test_static_mode_default_and_unchanged_schema() -> None:
     proc = KarrMetabolismProcess()
     assert proc.dynamic_bounds is False
     schema = proc.ports_schema()
@@ -36,14 +37,14 @@ def test_static_mode_default_and_unchanged_schema():
     assert set(schema) == {"metabolic_reaction", "substrates"}
 
 
-def test_static_mode_engine_emits_no_diagnostics_port():
+def test_static_mode_engine_emits_no_diagnostics_port() -> None:
     eng = build_karr_m1_engine()
     eng.update(2.0)
     ts = eng.emitter.get_timeseries()
     assert "m1_dynamic_diagnostics" not in ts
 
 
-def test_static_mode_two_tick_flux_unchanged():
+def test_static_mode_two_tick_flux_unchanged() -> None:
     """Static-mode result is reproducible (no hidden state drift)."""
     eng_a = build_karr_m1_engine()
     eng_b = build_karr_m1_engine()
@@ -51,14 +52,13 @@ def test_static_mode_two_tick_flux_unchanged():
     eng_b.update(2.0)
     ts_a = eng_a.emitter.get_timeseries()
     ts_b = eng_b.emitter.get_timeseries()
-    assert ts_a["metabolic_reaction"]["growth_per_s"] == \
-        ts_b["metabolic_reaction"]["growth_per_s"]
+    assert ts_a["metabolic_reaction"]["growth_per_s"] == ts_b["metabolic_reaction"]["growth_per_s"]
 
 
 # ----------------------------------------------------------------------
 # Purity of compute_bounds (Phase B relies on this every tick)
 # ----------------------------------------------------------------------
-def test_compute_bounds_does_not_mutate_inputs():
+def test_compute_bounds_does_not_mutate_inputs() -> None:
     dyn = cfb.load_default_dynamics()
     m = km.load_default()
     sub_before = dyn.substrates_snapshot.copy()
@@ -85,7 +85,7 @@ def test_compute_bounds_does_not_mutate_inputs():
     np.testing.assert_array_equal(fbab, fbab_before)
 
 
-def test_solve_fba_overrides_do_not_mutate_model():
+def test_solve_fba_overrides_do_not_mutate_model() -> None:
     m = km.load_default()
     lb_before = m.lb.copy()
     ub_before = m.ub.copy()
@@ -101,7 +101,7 @@ def test_solve_fba_overrides_do_not_mutate_model():
 # ----------------------------------------------------------------------
 # Dynamic mode: schema & first-tick parity with MATLAB oracle
 # ----------------------------------------------------------------------
-def test_dynamic_mode_schema_includes_diagnostics():
+def test_dynamic_mode_schema_includes_diagnostics() -> None:
     proc = KarrMetabolismProcess({"dynamic_bounds": True})
     assert proc.dynamic_bounds is True
     schema = proc.ports_schema()
@@ -113,14 +113,14 @@ def test_dynamic_mode_schema_includes_diagnostics():
         assert f"cyt_{key}" in diag
 
 
-def test_dynamic_mode_initial_internal_state_matches_snapshot():
+def test_dynamic_mode_initial_internal_state_matches_snapshot() -> None:
     proc = KarrMetabolismProcess({"dynamic_bounds": True})
     dyn = cfb.load_default_dynamics()
     np.testing.assert_array_equal(proc._sub_state, dyn.substrates_snapshot)
     np.testing.assert_array_equal(proc._enz_state, dyn.enzymes_snapshot)
 
 
-def test_dynamic_mode_first_tick_bounds_match_matlab_oracle():
+def test_dynamic_mode_first_tick_bounds_match_matlab_oracle() -> None:
     """At t=0, with snapshot state and no demand drained yet, the bounds
     that the chassis derives must equal MATLAB's bounds_dynamic_no_protein.
     This is the only way Phase B can be trusted: the in-process bound
@@ -140,14 +140,17 @@ def test_dynamic_mode_first_tick_bounds_match_matlab_oracle():
         apply_protein_bounds=False,
     )
     np.testing.assert_allclose(
-        bounds, dyn.bounds_dynamic_no_protein_oracle, atol=0, rtol=0,
+        bounds,
+        dyn.bounds_dynamic_no_protein_oracle,
+        atol=0,
+        rtol=0,
     )
 
 
 # ----------------------------------------------------------------------
 # Demand coupling: shared-store deltas drain internal cytosol pools
 # ----------------------------------------------------------------------
-def test_dynamic_mode_drains_cytosol_from_shared_store_delta():
+def test_dynamic_mode_drains_cytosol_from_shared_store_delta() -> None:
     proc = KarrMetabolismProcess({"dynamic_bounds": True})
     proc.ports_schema()  # initialise prev_shared on first tick path
 
@@ -161,15 +164,14 @@ def test_dynamic_mode_drains_cytosol_from_shared_store_delta():
 
     out = proc.next_update(
         timestep=1.0,
-        states={"substrates": fake_shared,
-                "metabolic_reaction": {}},
+        states={"substrates": fake_shared, "metabolic_reaction": {}},
     )
     atp_after = float(proc._sub_state[atp_idx, _CYTOSOL_COMPARTMENT_0])
     assert atp_after == pytest.approx(atp0 - 100.0, abs=1e-9)
     assert out["m1_dynamic_diagnostics"]["cyt_ATP"] == pytest.approx(atp_after)
 
 
-def test_dynamic_mode_clamps_cytosol_at_zero():
+def test_dynamic_mode_clamps_cytosol_at_zero() -> None:
     proc = KarrMetabolismProcess({"dynamic_bounds": True})
     atp_idx = proc._sub_id_to_idx["ATP"]
     atp0 = float(proc._sub_state[atp_idx, _CYTOSOL_COMPARTMENT_0])
@@ -180,13 +182,12 @@ def test_dynamic_mode_clamps_cytosol_at_zero():
 
     proc.next_update(
         timestep=1.0,
-        states={"substrates": fake_shared,
-                "metabolic_reaction": {}},
+        states={"substrates": fake_shared, "metabolic_reaction": {}},
     )
     assert proc._sub_state[atp_idx, _CYTOSOL_COMPARTMENT_0] == 0.0
 
 
-def test_dynamic_mode_isolated_from_shared_store_for_non_demand_keys():
+def test_dynamic_mode_isolated_from_shared_store_for_non_demand_keys() -> None:
     """Mutations to substrates that are NOT NTPs/AAs must not touch M1's
     internal compartmented state.  This guards against accidental Phase C
     over-reach."""
@@ -200,8 +201,7 @@ def test_dynamic_mode_isolated_from_shared_store_for_non_demand_keys():
 
     proc.next_update(
         timestep=1.0,
-        states={"substrates": fake_shared,
-                "metabolic_reaction": {}},
+        states={"substrates": fake_shared, "metabolic_reaction": {}},
     )
     assert proc._sub_state[idx, _CYTOSOL_COMPARTMENT_0] == before
 
@@ -209,7 +209,7 @@ def test_dynamic_mode_isolated_from_shared_store_for_non_demand_keys():
 # ----------------------------------------------------------------------
 # End-to-end: M1+M2+M3 with dynamic bounds for 60 simulated seconds
 # ----------------------------------------------------------------------
-def test_dynamic_mode_end_to_end_60s_growth_positive():
+def test_dynamic_mode_end_to_end_60s_growth_positive() -> None:
     eng = build_karr_m1_m2_m3_engine(dynamic_bounds=True)
     eng.update(60.0)
     ts = eng.emitter.get_timeseries()
@@ -223,7 +223,7 @@ def test_dynamic_mode_end_to_end_60s_growth_positive():
     assert np.all(growth[1:] > 0.0)
 
 
-def test_dynamic_mode_end_to_end_atp_drains_under_m2_demand():
+def test_dynamic_mode_end_to_end_atp_drains_under_m2_demand() -> None:
     """Over 30 s the cytosol ATP tracked by M1 must monotonically
     decrease as M2 transcription writes negative ATP deltas.  This is
     the demand-coupling ground truth: M1 sees M2's draw."""
@@ -237,7 +237,8 @@ def test_dynamic_mode_end_to_end_atp_drains_under_m2_demand():
     assert real.size >= 29
     # Strictly non-increasing within numerical tolerance.
     diffs = np.diff(real)
-    assert np.all(diffs <= 1e-6), \
+    assert np.all(diffs <= 1e-6), (
         f"cyt_ATP not non-increasing under M2 demand: max diff {diffs.max()}"
+    )
     # And at least some draw happened.
     assert real[-1] < real[0]

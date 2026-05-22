@@ -15,10 +15,7 @@ This ensures mass conservation and prevents double-counting.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
-
-import numpy as np
+from dataclasses import dataclass
 
 
 @dataclass

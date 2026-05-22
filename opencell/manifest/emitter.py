@@ -7,19 +7,19 @@ will attempt to extract via the ``param-extractor`` skill.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
-from typing import Iterable
 
 import yaml
 
 from .sbml import SbmlEntity
 
-
 # ---------------------------------------------------------------------------
 # Manifest data classes
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class ManifestHeader:
@@ -27,7 +27,7 @@ class ManifestHeader:
 
     doi: str = ""
     biomodels_id: str = ""
-    pubmed_id: str = ""              # structured; verifier uses this directly
+    pubmed_id: str = ""  # structured; verifier uses this directly
     pdf_cache: list[str] = field(default_factory=list)
     organism: str = ""
     condition: str = ""
@@ -39,12 +39,12 @@ class ManifestEntry:
     """One parameter the curator will try to extract."""
 
     parameter_id: str
-    symbol: str                # symbol as written in paper (defaults to sbml_id; humans should refine)
+    symbol: str  # symbol as written in paper (defaults to sbml_id; humans should refine)
     name: str = ""
-    target_unit: str = ""      # resolved unit string from SBML
-    sbml_id: str = ""          # the original SBML id (audit trail)
+    target_unit: str = ""  # resolved unit string from SBML
+    sbml_id: str = ""  # the original SBML id (audit trail)
     sbml_value: float | None = None  # the curated SBML value (cross-check anchor)
-    sbml_kind: str = ""        # global_parameter | local_parameter | species_initial
+    sbml_kind: str = ""  # global_parameter | local_parameter | species_initial
     parent_reaction: str = ""
     compartment: str = ""
     gene_or_enzyme: str = ""
@@ -60,6 +60,7 @@ class ManifestEntry:
 # ---------------------------------------------------------------------------
 # Conversions
 # ---------------------------------------------------------------------------
+
 
 def _slugify(s: str) -> str:
     """Normalize SBML id into a parameter_id-friendly slug."""

@@ -27,6 +27,7 @@ Run:
   cd /mnt/e/opencell && source .venv-wsl/bin/activate && \
       python scripts/karr_native_ingest_compartmented.py
 """
+
 from __future__ import annotations
 
 import json
@@ -40,7 +41,7 @@ sys.path.insert(0, str(REPO))
 from opencell._karr_archive import load_karr_archive  # noqa: E402
 
 JSON_OUT = REPO / "data" / "karr_fixtures" / "karr_native_m1_compartmented.json"
-NPZ_OUT  = REPO / "data" / "karr_fixtures" / "karr_native_m1_compartmented.npz"
+NPZ_OUT = REPO / "data" / "karr_fixtures" / "karr_native_m1_compartmented.npz"
 
 SCHEMA_VERSION = "karr_native_m1_compartmented__v1"
 
@@ -113,7 +114,9 @@ def main() -> None:
         },
         "compartment_wids_3": COMPARTMENT_WIDS_3,
         "compartment_index_map": {
-            "c": 0, "e": 1, "m": 2,
+            "c": 0,
+            "e": 1,
+            "m": 2,
         },
         "ids": {
             "substrate_wcm_585": sub_wids,
@@ -130,14 +133,14 @@ def main() -> None:
         "cell_dry_mass_g": CELL_DRY_MASS_G,
         "interpretation": {
             "S": "S_compartmented[s, r, k] = signed stoichiometric coefficient "
-                 "of substrate s in reaction r in compartment k. Positive = "
-                 "produced; negative = consumed. dtype int16.",
+            "of substrate s in reaction r in compartment k. Positive = "
+            "produced; negative = consumed. dtype int16.",
             "compartments": "k=0:Cytosol, k=1:Extracellular, k=2:Membrane "
-                            "(3 of Karr's 6 KB compartments; the others -- "
-                            "DNA, Terminal Organelle Cytosol, Terminal "
-                            "Organelle Membrane -- carry no metabolic flux).",
+            "(3 of Karr's 6 KB compartments; the others -- "
+            "DNA, Terminal Organelle Cytosol, Terminal "
+            "Organelle Membrane -- carry no metabolic flux).",
             "S_aggregate": "Convenience sum over compartment dim; useful for "
-                           "compartment-agnostic stoichiometry queries.",
+            "compartment-agnostic stoichiometry queries.",
             "honest_scope": (
                 "This fixture provides per-compartment per-substrate "
                 "stoichiometry for the 645-reaction superset. Of those, "

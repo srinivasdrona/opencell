@@ -1,4 +1,5 @@
 """Smoke tests for the Karr-native M1 metabolism module."""
+
 from __future__ import annotations
 
 import math
@@ -49,9 +50,7 @@ def test_lp_solves_and_biomass_within_2x_of_stored(
     pred_h = info["biomass_flux_per_h"]
     stored_h = model.stored_runtime["growth_per_h"]
     ratio = pred_h / stored_h
-    assert 0.45 < ratio < 0.6, (
-        f"expected static-snapshot ceiling around 0.51x, got {ratio:.3f}x"
-    )
+    assert 0.45 < ratio < 0.6, f"expected static-snapshot ceiling around 0.51x, got {ratio:.3f}x"
 
 
 def test_per_reaction_oracle_passes(model: km.KarrMetabolismModel) -> None:
@@ -71,9 +70,7 @@ def test_per_reaction_oracle_passes(model: km.KarrMetabolismModel) -> None:
 
     assert len(log2_abs) >= 100, f"too few comparable rxns: {len(log2_abs)}"
     median = float(np.median(log2_abs))
-    assert median < 1.0, (
-        f"per-reaction median |log2 ratio|={median:.3f} exceeds 1.0 threshold"
-    )
+    assert median < 1.0, f"per-reaction median |log2 ratio|={median:.3f} exceeds 1.0 threshold"
 
 
 def test_lookup_helpers(model: km.KarrMetabolismModel) -> None:

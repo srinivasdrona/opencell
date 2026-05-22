@@ -16,6 +16,7 @@ Run via .venv-wsl:
   wsl bash -lc 'source /mnt/e/opencell/.venv-wsl/bin/activate && \
                 python /mnt/e/opencell/scripts/m1_per_reaction_oracle.py'
 """
+
 from __future__ import annotations
 
 import json
@@ -89,8 +90,7 @@ def main() -> None:
         "lp": info,
         "stored_runtime": model.stored_runtime,
         "summary": {
-            "n_metabolic_conversion_cols": sum(
-                1 for x in model.fba_col_rxn_wcm if x is not None),
+            "n_metabolic_conversion_cols": sum(1 for x in model.fba_col_rxn_wcm if x is not None),
             "n_rows_emitted": len(rows_all),
             "n_comparable": len(log2_ratios),
             "median_abs_log2_ratio": median_abs,
@@ -129,7 +129,7 @@ def main() -> None:
         f"- Total nonzero predicted fluxes: `{info['n_nonzero']}`",
         "",
         "## Acceptance",
-        f"- Metric: `median |log2(predicted/karr_stored)|`",
+        "- Metric: `median |log2(predicted/karr_stored)|`",
         f"- Threshold: `< {ACCEPTANCE_THRESHOLD}`",
         f"- Value: `{median_abs}`",
         f"- Comparable reactions (both nonzero): `{len(log2_ratios)}`",
@@ -166,11 +166,15 @@ def main() -> None:
     print(f"wrote {OUT_JSON.relative_to(REPO)}")
     print(f"wrote {OUT_MD.relative_to(REPO)}")
     ratio = info["biomass_flux_per_h"] / model.stored_runtime["growth_per_h"]
-    print(f"\nbiomass = {info['biomass_flux_per_h']:.4f} /h "
-          f"(stored {model.stored_runtime['growth_per_h']:.4f} /h, "
-          f"ratio {ratio:.3f}x)")
-    print(f"per-reaction: median |log2 ratio| = {median_abs} "
-          f"over {len(log2_ratios)} reactions; passed = {acceptance['passed']}")
+    print(
+        f"\nbiomass = {info['biomass_flux_per_h']:.4f} /h "
+        f"(stored {model.stored_runtime['growth_per_h']:.4f} /h, "
+        f"ratio {ratio:.3f}x)"
+    )
+    print(
+        f"per-reaction: median |log2 ratio| = {median_abs} "
+        f"over {len(log2_ratios)} reactions; passed = {acceptance['passed']}"
+    )
 
 
 if __name__ == "__main__":

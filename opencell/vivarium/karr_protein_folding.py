@@ -103,9 +103,7 @@ class KarrProteinFoldingProcess(Process):
         self.substrate_idx_mg = _parse_zero_based_index(fx["substrateIndexs_mg"])
         self.substrate_idx_zinc = _parse_zero_based_index(fx["substrateIndexs_zinc"])
 
-        self.enzyme_idx_trigger_factor = _parse_zero_based_index(
-            fx["enzymeIndexs_triggerFactor"]
-        )
+        self.enzyme_idx_trigger_factor = _parse_zero_based_index(fx["enzymeIndexs_triggerFactor"])
         self.enzyme_idx_dnaK = _parse_zero_based_index(fx["enzymeIndexs_dnaK"])
         self.enzyme_idx_dnaJ = _parse_zero_based_index(fx["enzymeIndexs_dnaJ"])
         self.enzyme_idx_grpE = _parse_zero_based_index(fx["enzymeIndexs_grpE"])
@@ -162,7 +160,9 @@ class KarrProteinFoldingProcess(Process):
         substrate_state = states.get("substrates", {})
         substrate_counts = np.asarray(
             [
-                self._allocated_or_free(wid, allocated_state=allocated_state, fallback_state=substrate_state)
+                self._allocated_or_free(
+                    wid, allocated_state=allocated_state, fallback_state=substrate_state
+                )
                 for wid in self.substrate_wids
             ],
             dtype=np.float64,
@@ -170,7 +170,10 @@ class KarrProteinFoldingProcess(Process):
         substrate_pool = np.floor(np.clip(substrate_counts, a_min=0.0, a_max=None)).astype(np.int64)
 
         unfolded_pool = np.asarray(
-            [float(states["protein"]["unfolded_counts"].get(wid, 0.0)) for wid in self.unfolded_monomer_wids],
+            [
+                float(states["protein"]["unfolded_counts"].get(wid, 0.0))
+                for wid in self.unfolded_monomer_wids
+            ],
             dtype=np.float64,
         )
         unfolded_pool = np.floor(np.clip(unfolded_pool, a_min=0.0, a_max=None)).astype(np.int64)

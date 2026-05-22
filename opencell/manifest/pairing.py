@@ -25,7 +25,7 @@ import re
 import urllib.error
 import urllib.request
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -35,8 +35,7 @@ _DOI_RX = re.compile(r"10\.\d{4,9}/[\w.\-;()/:]+", re.IGNORECASE)
 _PUBMED_NOTES_RX = re.compile(r"pubmed[:\s]\s*(\d+)", re.IGNORECASE)
 
 EUTILS_ESUMMARY_URL = (
-    "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi"
-    "?db=pubmed&id={pmid}&retmode=json"
+    "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id={pmid}&retmode=json"
 )
 
 
@@ -67,6 +66,7 @@ class PairingVerification:
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def normalize_doi(d: str) -> str:
     """Lowercase + strip 'doi:'/'https://doi.org/'/whitespace prefixes."""
     if not d:
@@ -74,7 +74,7 @@ def normalize_doi(d: str) -> str:
     s = d.strip().lower()
     for prefix in ("https://doi.org/", "http://doi.org/", "doi:"):
         if s.startswith(prefix):
-            s = s[len(prefix):].strip()
+            s = s[len(prefix) :].strip()
     return s
 
 
@@ -162,7 +162,7 @@ def parse_eutils_payload(payload: dict, pubmed_id: str) -> PairingVerification:
     first_author = (authors[0].get("name") if authors else "") or ""
     return PairingVerification(
         source="ncbi-eutils",
-        verified_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        verified_at=datetime.now(UTC).isoformat(timespec="seconds"),
         pubmed_id=pubmed_id,
         doi=doi,
         title=(record.get("title") or "").strip(),
@@ -176,12 +176,13 @@ def parse_eutils_payload(payload: dict, pubmed_id: str) -> PairingVerification:
 # Top-level verify
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class VerifyResult:
     ok: bool
     message: str
     verification: PairingVerification | None = None
-    auto_filled_doi: str = ""           # populated when manifest doi was blank
+    auto_filled_doi: str = ""  # populated when manifest doi was blank
     pubmed_ids_found: list[str] = field(default_factory=list)
 
 
@@ -245,8 +246,10 @@ def verify_paper_pairing(
                 message=f"pubmed:{pmid} has no DOI in eutils; cannot auto-fill",
             )
         auto_filled = ver.doi
-        msg = (f"OK: manifest.paper.doi was empty; auto-filled from "
-               f"eutils → {auto_filled} ({'cached' if cached else 'fetched'})")
+        msg = (
+            f"OK: manifest.paper.doi was empty; auto-filled from "
+            f"eutils → {auto_filled} ({'cached' if cached else 'fetched'})"
+        )
         return VerifyResult(
             ok=True,
             verification=ver,
@@ -271,6 +274,7 @@ def verify_paper_pairing(
         ok=True,
         verification=ver,
         pubmed_ids_found=[pmid],
-        message=(f"OK: pubmed:{pmid} matches manifest.paper.doi "
-                 f"({'cached' if cached else 'fetched'})"),
+        message=(
+            f"OK: pubmed:{pmid} matches manifest.paper.doi ({'cached' if cached else 'fetched'})"
+        ),
     )

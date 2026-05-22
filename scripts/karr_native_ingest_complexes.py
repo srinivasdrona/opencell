@@ -13,6 +13,7 @@ Run:
   cd /mnt/e/opencell && source .venv-wsl/bin/activate && \
       python scripts/karr_native_ingest_complexes.py
 """
+
 from __future__ import annotations
 
 import json
@@ -47,11 +48,13 @@ def _participants_from_nested(complexes_sa, nested_name: str, idx: int):
         wid = str(sub_sa.molecule_wid[j]).strip()
         if not wid:
             continue
-        out.append({
-            "molecule_wid": wid,
-            "coefficient": float(sub_sa.coefficient[j]),
-            "compartment_wid": str(sub_sa.compartment_wid[j]),
-        })
+        out.append(
+            {
+                "molecule_wid": wid,
+                "coefficient": float(sub_sa.coefficient[j]),
+                "compartment_wid": str(sub_sa.compartment_wid[j]),
+            }
+        )
     return out
 
 
@@ -66,23 +69,33 @@ def main() -> None:
         wid = str(complexes_sa.wholeCellModelID[i]).strip()
         if not wid:
             continue
-        complexes.append({
-            "wid": wid,
-            "name": str(complexes_sa.name[i]),
-            "idx_1based": int(_scalar_to_py(complexes_sa.idx[i]) or 0),
-            "num_subunits": int(_scalar_to_py(complexes_sa.numSubunits[i]) or 0),
-            "num_distinct_subunits": int(_scalar_to_py(complexes_sa.numDistinctSubunits[i]) or 0),
-            "dna_footprint": int(_scalar_to_py(complexes_sa.dnaFootprint[i]) or 0),
-            "density": float(_scalar_to_py(complexes_sa.density[i]) or 0.0),
-            "activation_rule": str(complexes_sa.activationRule[i] or "") if str(complexes_sa.activationRule[i] or "") != "[]" else "",
-            "formation_compartment_wid": (str(complexes_sa.formation_compartment_wid[i] or "") if str(complexes_sa.formation_compartment_wid[i] or "") != "[]" else ""),
-            "monomers":     _participants_from_nested(complexes_sa, "monomers", i),
-            "subcomplexes": _participants_from_nested(complexes_sa, "subcomplexes", i),
-            "metabolites":  _participants_from_nested(complexes_sa, "metabolites", i),
-            "prosthetic":   _participants_from_nested(complexes_sa, "prosthetic", i),
-            "chaperones":   _participants_from_nested(complexes_sa, "chaperones", i),
-            "rnas":         _participants_from_nested(complexes_sa, "rnas", i),
-        })
+        complexes.append(
+            {
+                "wid": wid,
+                "name": str(complexes_sa.name[i]),
+                "idx_1based": int(_scalar_to_py(complexes_sa.idx[i]) or 0),
+                "num_subunits": int(_scalar_to_py(complexes_sa.numSubunits[i]) or 0),
+                "num_distinct_subunits": int(
+                    _scalar_to_py(complexes_sa.numDistinctSubunits[i]) or 0
+                ),
+                "dna_footprint": int(_scalar_to_py(complexes_sa.dnaFootprint[i]) or 0),
+                "density": float(_scalar_to_py(complexes_sa.density[i]) or 0.0),
+                "activation_rule": str(complexes_sa.activationRule[i] or "")
+                if str(complexes_sa.activationRule[i] or "") != "[]"
+                else "",
+                "formation_compartment_wid": (
+                    str(complexes_sa.formation_compartment_wid[i] or "")
+                    if str(complexes_sa.formation_compartment_wid[i] or "") != "[]"
+                    else ""
+                ),
+                "monomers": _participants_from_nested(complexes_sa, "monomers", i),
+                "subcomplexes": _participants_from_nested(complexes_sa, "subcomplexes", i),
+                "metabolites": _participants_from_nested(complexes_sa, "metabolites", i),
+                "prosthetic": _participants_from_nested(complexes_sa, "prosthetic", i),
+                "chaperones": _participants_from_nested(complexes_sa, "chaperones", i),
+                "rnas": _participants_from_nested(complexes_sa, "rnas", i),
+            }
+        )
 
     out = {
         "schema_version": SCHEMA_VERSION,

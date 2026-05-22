@@ -1,4 +1,5 @@
 """Smoke tests for A3 step 2 v2 chassis composition."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -54,9 +55,7 @@ def test_v2_wrappers_read_dynamic_complex_counts_each_tick(monkeypatch: pytest.M
         n_active: int | float | None = None,
         mrna_counts: np.ndarray | None = None,
     ) -> np.ndarray:
-        m3_reads.append(
-            float(inputs.n_active_ribosomes if n_active is None else n_active)
-        )
+        m3_reads.append(float(inputs.n_active_ribosomes if n_active is None else n_active))
         return orig_m3_predict(inputs, n_active=n_active, mrna_counts=mrna_counts)
 
     monkeypatch.setattr(tx_v2, "predict_gene_synthesis_per_s", _spy_m2_predict)

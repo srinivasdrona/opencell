@@ -50,13 +50,13 @@ class TestGateG16ReferenceFrame:
     def test_frame_mismatch_is_detected(self) -> None:
         """A sub-model declaring PER_VOLUME reading a PER_CELL species
         must produce a validation error."""
-        reg = build_benchmark_registry()   # A and B are PER_CELL
+        reg = build_benchmark_registry()  # A and B are PER_CELL
 
         bad_contract = SubModelContract(
             sub_model_id="bad_consumer",
             reads={"A"},
             writes={"B"},
-            reference_frame=ReferenceFrame.PER_VOLUME,   # mismatch
+            reference_frame=ReferenceFrame.PER_VOLUME,  # mismatch
         )
         errors = bad_contract.validate_against_registry(reg)
         assert errors, "Expected frame mismatch error, got none"
@@ -71,16 +71,24 @@ class TestGateG16ReferenceFrame:
         a sub-model declaring either frame should fail.
         """
         reg = IRSpeciesRegistry()
-        reg.register(SpeciesInfo(
-            id="A", name="A", compartment=Compartment.CYTOPLASM,
-            molecule_type=MoleculeType.METABOLITE,
-            reference_frame=ReferenceFrame.PER_CELL,
-        ))
-        reg.register(SpeciesInfo(
-            id="B", name="B", compartment=Compartment.CYTOPLASM,
-            molecule_type=MoleculeType.METABOLITE,
-            reference_frame=ReferenceFrame.PER_VOLUME,
-        ))
+        reg.register(
+            SpeciesInfo(
+                id="A",
+                name="A",
+                compartment=Compartment.CYTOPLASM,
+                molecule_type=MoleculeType.METABOLITE,
+                reference_frame=ReferenceFrame.PER_CELL,
+            )
+        )
+        reg.register(
+            SpeciesInfo(
+                id="B",
+                name="B",
+                compartment=Compartment.CYTOPLASM,
+                molecule_type=MoleculeType.METABOLITE,
+                reference_frame=ReferenceFrame.PER_VOLUME,
+            )
+        )
         contract = SubModelContract(
             sub_model_id="mixed",
             reads={"A"},
@@ -93,12 +101,14 @@ class TestGateG16ReferenceFrame:
     def test_convert_reference_frame_round_trip_per_volume(self) -> None:
         """PER_CELL → PER_VOLUME → PER_CELL is the identity (within fp)."""
         count = Q_(1000.0, "dimensionless")
-        vol_L = 1e-15   # 1 fL
+        vol_L = 1e-15  # 1 fL
         dry_g = 1e-12
-        per_vol = convert_reference_frame(count, "per_cell", "per_volume",
-                                          cell_volume_L=vol_L, dry_weight_g=dry_g)
-        round_trip = convert_reference_frame(per_vol, "per_volume", "per_cell",
-                                              cell_volume_L=vol_L, dry_weight_g=dry_g)
+        per_vol = convert_reference_frame(
+            count, "per_cell", "per_volume", cell_volume_L=vol_L, dry_weight_g=dry_g
+        )
+        round_trip = convert_reference_frame(
+            per_vol, "per_volume", "per_cell", cell_volume_L=vol_L, dry_weight_g=dry_g
+        )
         assert round_trip.magnitude == pytest.approx(count.magnitude, rel=1e-12)
 
     def test_convert_reference_frame_round_trip_per_gdw(self) -> None:
@@ -106,15 +116,21 @@ class TestGateG16ReferenceFrame:
         count = Q_(500.0, "dimensionless")
         vol_L = 1e-15
         dry_g = 1e-12
-        per_gdw = convert_reference_frame(count, "per_cell", "per_gDW",
-                                           cell_volume_L=vol_L, dry_weight_g=dry_g)
-        round_trip = convert_reference_frame(per_gdw, "per_gDW", "per_cell",
-                                              cell_volume_L=vol_L, dry_weight_g=dry_g)
+        per_gdw = convert_reference_frame(
+            count, "per_cell", "per_gDW", cell_volume_L=vol_L, dry_weight_g=dry_g
+        )
+        round_trip = convert_reference_frame(
+            per_gdw, "per_gDW", "per_cell", cell_volume_L=vol_L, dry_weight_g=dry_g
+        )
         assert round_trip.magnitude == pytest.approx(count.magnitude, rel=1e-12)
 
     def test_unknown_frame_raises(self) -> None:
         """An unrecognized frame label must fail loudly, not silently."""
         with pytest.raises(ValueError):
-            convert_reference_frame(Q_(1.0, "dimensionless"),
-                                     "per_cell", "per_phlogiston",
-                                     cell_volume_L=1e-15, dry_weight_g=1e-12)
+            convert_reference_frame(
+                Q_(1.0, "dimensionless"),
+                "per_cell",
+                "per_phlogiston",
+                cell_volume_L=1e-15,
+                dry_weight_g=1e-12,
+            )

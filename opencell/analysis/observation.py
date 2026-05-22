@@ -13,8 +13,8 @@ Examples:
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable
 
 import numpy as np
 
@@ -94,13 +94,11 @@ class ObservationModel:
         rng: np.random.Generator | None = None,
     ) -> dict[str, float]:
         """Compute all registered observations."""
-        return {
-            name: self.observe(name, state, add_noise, rng)
-            for name in self._assays
-        }
+        return {name: self.observe(name, state, add_noise, rng) for name in self._assays}
 
 
 # ── Built-in assay definitions ──
+
 
 def od600_assay(
     extinction_coeff: float = 1.0,
@@ -110,6 +108,7 @@ def od600_assay(
 
     OD600 = extinction_coeff * path_length * biomass_concentration
     """
+
     def transform(state: dict[str, float]) -> float:
         biomass = state.get("biomass", 0.0)
         return extinction_coeff * path_length_cm * biomass
@@ -127,6 +126,7 @@ def od600_assay(
 
 def qpcr_assay(gene_id: str, amplification_efficiency: float = 0.95) -> AssayDefinition:
     """qPCR assay for mRNA quantification."""
+
     def transform(state: dict[str, float]) -> float:
         mrna = state.get(f"mRNA_{gene_id}", 0.0)
         return mrna * amplification_efficiency

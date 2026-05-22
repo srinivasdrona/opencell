@@ -55,7 +55,7 @@ def _run_process(proc, t_end_s: float, macro_dt_s: float, store_y0: np.ndarray):
     return np.array(traj)
 
 
-def test_persistent_matches_single_shot_full_horizon(coupled):
+def test_persistent_matches_single_shot_full_horizon(coupled) -> None:
     """The strongest correctness test. No external writes, so the
     persistent integrator should reproduce a single full-horizon LSODA
     call to LSODA tolerance — proving the model is autonomous and that
@@ -70,15 +70,17 @@ def test_persistent_matches_single_shot_full_horizon(coupled):
     final_persistent = traj_persistent[-1]
 
     sol = solve_ivp(
-        coupled.met.rhs, (0.0, t_end), y0,
-        method="LSODA", atol=1e-9, rtol=1e-6,
+        coupled.met.rhs,
+        (0.0, t_end),
+        y0,
+        method="LSODA",
+        atol=1e-9,
+        rtol=1e-6,
     )
     assert sol.success
     final_single_shot = sol.y[:, -1]
 
-    rel_diff = np.abs(final_persistent - final_single_shot) / (
-        np.abs(final_single_shot) + 1e-30
-    )
+    rel_diff = np.abs(final_persistent - final_single_shot) / (np.abs(final_single_shot) + 1e-30)
     max_rel = float(rel_diff.max())
     assert max_rel < 1e-4, (
         f"persistent path drifted from single-shot full-horizon LSODA: "
@@ -88,7 +90,7 @@ def test_persistent_matches_single_shot_full_horizon(coupled):
     assert proc.step_count == int(round(t_end / macro_dt))
 
 
-def test_persistent_close_to_restart(coupled):
+def test_persistent_close_to_restart(coupled) -> None:
     """Persistent and restart paths both target the same biology, but
     persistent is the more accurate one (proven against single-shot gold
     standard above). Here we (a) check they agree at the order of the
@@ -106,8 +108,12 @@ def test_persistent_close_to_restart(coupled):
     traj_r = _run_process(p_restart, t_end, macro_dt, y0)
 
     sol = solve_ivp(
-        coupled.met.rhs, (0.0, t_end), y0,
-        method="LSODA", atol=1e-9, rtol=1e-6,
+        coupled.met.rhs,
+        (0.0, t_end),
+        y0,
+        method="LSODA",
+        atol=1e-9,
+        rtol=1e-6,
     )
     assert sol.success
     gold = sol.y[:, -1]
@@ -130,7 +136,7 @@ def test_persistent_close_to_restart(coupled):
     )
 
 
-def test_external_write_triggers_resync(coupled):
+def test_external_write_triggers_resync(coupled) -> None:
     """Mutate the store between two persistent calls; the segment after
     the mutation must equal a fresh LSODA solve from the mutated state.
     """
@@ -161,7 +167,9 @@ def test_external_write_triggers_resync(coupled):
         coupled.met.rhs,
         (t_before_write_step, t_before_write_step + 60.0),
         perturbed_state,
-        method="LSODA", atol=1e-9, rtol=1e-6,
+        method="LSODA",
+        atol=1e-9,
+        rtol=1e-6,
     )
     assert sol.success
     ref = sol.y[:, -1]
@@ -169,12 +177,11 @@ def test_external_write_triggers_resync(coupled):
     actual = np.array([update["metabolites"][s] for s in species])
     rel = np.abs(actual - ref) / (np.abs(ref) + 1e-30)
     assert rel.max() < 1e-4, (
-        f"post-resync segment did not match fresh LSODA solve: "
-        f"max rel diff = {rel.max():.3e}"
+        f"post-resync segment did not match fresh LSODA solve: max rel diff = {rel.max():.3e}"
     )
 
 
-def test_persistent_is_faster_than_restart(coupled):
+def test_persistent_is_faster_than_restart(coupled) -> None:
     """Sanity guard against accidental regressions. The persistent path
     should be measurably faster than the restart path at small macro_dt
     where spin-up dominates wall time. Quantitative benchmark with
@@ -186,9 +193,17 @@ def test_persistent_is_faster_than_restart(coupled):
 
     # Warm import / JIT effects: do a tiny throwaway call first.
     PersistentMetabolismProcess({"coupled": coupled}).next_update(
-        1.0, {"metabolites": {s: float(y0[i]) for i, s in enumerate(
-            CoupledMetabolismTranscription.build(signal="uptake_flux").met.species_index().keys()
-        )}}
+        1.0,
+        {
+            "metabolites": {
+                s: float(y0[i])
+                for i, s in enumerate(
+                    CoupledMetabolismTranscription.build(signal="uptake_flux")
+                    .met.species_index()
+                    .keys()
+                )
+            }
+        },
     )
 
     p_persist = PersistentMetabolismProcess({"coupled": coupled})
@@ -205,5 +220,5 @@ def test_persistent_is_faster_than_restart(coupled):
     # CI flakiness; real speedup at macro_dt=10s should be >>2x.
     assert dt_persist < dt_restart / 1.5, (
         f"persistent path is not faster: persistent={dt_persist:.3f}s, "
-        f"restart={dt_restart:.3f}s, ratio={dt_restart/dt_persist:.2f}x"
+        f"restart={dt_restart:.3f}s, ratio={dt_restart / dt_persist:.2f}x"
     )

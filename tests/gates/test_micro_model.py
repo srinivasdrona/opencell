@@ -11,16 +11,15 @@ References:
 
 from __future__ import annotations
 
-import numpy as np
-import pytest
-
 import jax
 import jax.numpy as jnp
+import numpy as np
+import pytest
 
 jax.config.update("jax_enable_x64", True)
 
 from opencell.models.micro_model import MicroModelParams
-from opencell.solvers.ode import solve_ode, ODESolverConfig
+from opencell.solvers.ode import ODESolverConfig, solve_ode
 from opencell.solvers.ode_scipy import solve_ode_scipy
 
 # Published parameters (Thattai 2001, Figure 1 caption "base case")
@@ -46,6 +45,7 @@ def _micro_model_rhs_jax(t, y, args):
 
 # ── Gate G1.2: Deterministic solver matches analytical solution ──
 
+
 class TestGateG12:
     """G1.2: Simulation must match hand-derived analytical solution."""
 
@@ -59,6 +59,7 @@ class TestGateG12:
              = (0.6 · 20·ln2/2) / ((ln2/2) · (ln2/60)) ≈ 1038.7
         """
         import math
+
         expected_m = 0.60 / (math.log(2) / 2.0)
         expected_p = (0.60 * 20.0 * math.log(2) / 2.0) / (
             (math.log(2) / 2.0) * (math.log(2) / 60.0)
@@ -76,8 +77,12 @@ class TestGateG12:
         t_eval = jnp.linspace(0.0, 2000.0, 201)
         config = ODESolverConfig(method="tsit5")
         result = solve_ode(
-            _micro_model_rhs_jax, y0, t_span=(0.0, 2000.0),
-            args=args, config=config, saveat=t_eval,
+            _micro_model_rhs_jax,
+            y0,
+            t_span=(0.0, 2000.0),
+            args=args,
+            config=config,
+            saveat=t_eval,
         )
 
         final_m = float(result.ys[-1, 0])
@@ -99,8 +104,12 @@ class TestGateG12:
         t_eval = jnp.linspace(0.0, 500.0, 501)
         config = ODESolverConfig(method="tsit5")
         result = solve_ode(
-            _micro_model_rhs_jax, y0, t_span=(0.0, 500.0),
-            args=args, config=config, saveat=t_eval,
+            _micro_model_rhs_jax,
+            y0,
+            t_span=(0.0, 500.0),
+            args=args,
+            config=config,
+            saveat=t_eval,
         )
 
         ts = np.array(result.ts)
@@ -144,6 +153,7 @@ class TestGateG12:
 
 # ── Gate G1.3: Cross-solver validation ──
 
+
 class TestGateG13:
     """G1.3: JAX and SciPy solvers must agree on the same problem."""
 
@@ -160,19 +170,26 @@ class TestGateG13:
 
         config = ODESolverConfig(method="tsit5")
         result_jax = solve_ode(
-            _micro_model_rhs_jax, y0_jax, t_span=(0.0, 500.0),
-            args=args, config=config, saveat=t_eval_jax,
+            _micro_model_rhs_jax,
+            y0_jax,
+            t_span=(0.0, 500.0),
+            args=args,
+            config=config,
+            saveat=t_eval_jax,
         )
 
         def rhs(t, y):
             return _micro_model_rhs(t, y, PARAMS)
 
         result_scipy = solve_ode_scipy(
-            rhs, y0_scipy, t_span=(0.0, 500.0), t_eval=t_eval_np,
+            rhs,
+            y0_scipy,
+            t_span=(0.0, 500.0),
+            t_eval=t_eval_np,
         )
 
-        ys_jax = np.array(result_jax.ys)        # (n_steps, n_species)
-        ys_scipy = result_scipy.ys.T             # transpose to (n_steps, n_species)
+        ys_jax = np.array(result_jax.ys)  # (n_steps, n_species)
+        ys_scipy = result_scipy.ys.T  # transpose to (n_steps, n_species)
 
         # Compare at all shared timepoints (skip first few where both ≈ 0)
         for i in range(5, len(t_eval_np)):
@@ -193,6 +210,7 @@ class TestGateG13:
 
 # ── Stochastic validation ──
 
+
 class TestMicroModelStochastic:
     """Validate tau-leaping against analytical noise statistics."""
 
@@ -211,18 +229,23 @@ class TestMicroModelStochastic:
             # Propensities: [transcription, mRNA_deg, translation, protein_deg]
             def propensities(state):
                 m, p = state
-                return np.array([
-                    PARAMS.alpha_m,         # R1: ∅ → m
-                    PARAMS.beta_m * m,      # R2: m → ∅
-                    PARAMS.alpha_p * m,     # R3: m → m + p
-                    PARAMS.beta_p * p,      # R4: p → ∅
-                ])
+                return np.array(
+                    [
+                        PARAMS.alpha_m,  # R1: ∅ → m
+                        PARAMS.beta_m * m,  # R2: m → ∅
+                        PARAMS.alpha_p * m,  # R3: m → m + p
+                        PARAMS.beta_p * p,  # R4: p → ∅
+                    ]
+                )
 
             # Stoichiometry matrix: [m, p] × [R1, R2, R3, R4]
-            stoich = np.array([
-                [+1, -1,  0,  0],  # m
-                [ 0,  0, +1, -1],  # p
-            ], dtype=float)
+            stoich = np.array(
+                [
+                    [+1, -1, 0, 0],  # m
+                    [0, 0, +1, -1],  # p
+                ],
+                dtype=float,
+            )
 
             state = np.array([0.0, 0.0])
             t = 0.0

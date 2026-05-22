@@ -146,9 +146,7 @@ class TestStoichiometryMatrix:
 
         reg = IRSpeciesRegistry()
         reg.register(make_atp())
-        rxn = ReactionInfo(
-            id="r1", name="r1", stoichiometry={"atp_c": -1}
-        )
+        rxn = ReactionInfo(id="r1", name="r1", stoichiometry={"atp_c": -1})
         S = StoichiometryMatrix.from_reactions([rxn], reg)
         jax_S = S.as_jax
         assert jax_S.shape == (1, 1)

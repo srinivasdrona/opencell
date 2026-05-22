@@ -28,7 +28,9 @@ SBML_NS_L3 = "http://www.sbml.org/sbml/level3/version1/core"
 
 
 def _http_get(url: str) -> bytes | None:
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/json,application/xml"})
+    req = urllib.request.Request(
+        url, headers={"User-Agent": USER_AGENT, "Accept": "application/json,application/xml"}
+    )
     try:
         with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
             return resp.read()
@@ -101,16 +103,18 @@ def extract_from_biomodels(doi: str, symbol: str) -> list[ExtractionCandidate]:
             continue
         for pid, value, units in parse_sbml_parameters(sbml):
             if pid.replace("_", "").lower() == sym_norm or pid.lower() == symbol.lower():
-                candidates.append(ExtractionCandidate(
-                    raw_value=value,
-                    raw_unit=units,
-                    raw_unit_normalized=units,
-                    method="biomodels_sbml",
-                    locator=f"BioModels:{biomd_id}/parameter[@id='{pid}']",
-                    context_window=f"<parameter id='{pid}' value='{value}' units='{units}'/>",
-                    section_type=SectionType.SBML,
-                    score=0.7,  # curated SBML is high-confidence
-                    score_components={"sbml_curated": 0.7},
-                    source_path=f"biomodels://{biomd_id}",
-                ))
+                candidates.append(
+                    ExtractionCandidate(
+                        raw_value=value,
+                        raw_unit=units,
+                        raw_unit_normalized=units,
+                        method="biomodels_sbml",
+                        locator=f"BioModels:{biomd_id}/parameter[@id='{pid}']",
+                        context_window=f"<parameter id='{pid}' value='{value}' units='{units}'/>",
+                        section_type=SectionType.SBML,
+                        score=0.7,  # curated SBML is high-confidence
+                        score_components={"sbml_curated": 0.7},
+                        source_path=f"biomodels://{biomd_id}",
+                    )
+                )
     return candidates

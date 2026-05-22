@@ -61,20 +61,21 @@ def build_coupled_engine(
     if rng is None:
         rng = np.random.default_rng(seed)
 
-    met_cls = (
-        PersistentMetabolismProcess if persistent_metabolism else MetabolismProcess
-    )
+    met_cls = PersistentMetabolismProcess if persistent_metabolism else MetabolismProcess
     met_proc = met_cls(
-        {"coupled": coupled, "atol": met_atol, "rtol": met_rtol,
-         "time_step": macro_dt_s}
+        {"coupled": coupled, "atol": met_atol, "rtol": met_rtol, "time_step": macro_dt_s}
     )
     sig_proc = SignalProcess(
-        {"coupled": coupled, "signal_type": coupled.signal,
-         "time_step": macro_dt_s}
+        {"coupled": coupled, "signal_type": coupled.signal, "time_step": macro_dt_s}
     )
     gene_proc = GeneNetworkProcess(
-        {"coupled": coupled, "rng": rng, "epsilon": epsilon,
-         "tau_dt_max": macro_dt_s, "time_step": macro_dt_s}
+        {
+            "coupled": coupled,
+            "rng": rng,
+            "epsilon": epsilon,
+            "tau_dt_max": macro_dt_s,
+            "time_step": macro_dt_s,
+        }
     )
 
     # Process keys must NOT collide with store paths; Vivarium places each

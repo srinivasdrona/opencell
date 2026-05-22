@@ -15,18 +15,16 @@ If NO: we need a deterministic construction keyed by
 
 Run with: pytest tests/probes/test_probe5_seedsequence.py -v
 """
-from __future__ import annotations
 
-import numpy as np
-import pytest
+from __future__ import annotations
 
 from opencell.vivarium.karr_d2_real import KarrD2RealProcess
 from opencell.vivarium.karr_protein_decay_light import ProteinDecayLightProcess
 
-
 # =============================================================================
 # Helpers — synthesize a deterministic input state for D.2-real
 # =============================================================================
+
 
 def _make_d2_state(p: KarrD2RealProcess, base_value: int = 100) -> dict:
     """Build a starting state for D.2-real.
@@ -61,7 +59,8 @@ def _make_pd_state(p: ProteinDecayLightProcess) -> dict:
 # Test 1: D.2-real one-tick determinism
 # =============================================================================
 
-def test_d2_real_one_tick_same_seed_same_output():
+
+def test_d2_real_one_tick_same_seed_same_output() -> None:
     """Two D.2-real instances with the same rng_seed give bit-identical
     output on a single tick from the same starting state."""
     p1 = KarrD2RealProcess({"rng_seed": 42})
@@ -82,7 +81,8 @@ def test_d2_real_one_tick_same_seed_same_output():
 # Test 2: D.2-real multi-tick determinism
 # =============================================================================
 
-def test_d2_real_ten_ticks_same_seed_same_trajectory():
+
+def test_d2_real_ten_ticks_same_seed_same_trajectory() -> None:
     """Ten ticks of D.2-real with same seed produce bit-identical trajectories.
 
     This catches the subtle case where one-tick determinism holds but
@@ -116,7 +116,8 @@ def test_d2_real_ten_ticks_same_seed_same_trajectory():
 # Test 3: D.2-real different seeds → different outputs
 # =============================================================================
 
-def test_d2_real_different_seeds_different_output():
+
+def test_d2_real_different_seeds_different_output() -> None:
     """Sanity: different seeds should produce different outputs (otherwise
     determinism is trivial — RNG isn't being used at all)."""
     p1 = KarrD2RealProcess({"rng_seed": 1})
@@ -143,7 +144,8 @@ def test_d2_real_different_seeds_different_output():
 # Test 4: ProteinDecay-light one-tick determinism
 # =============================================================================
 
-def test_protein_decay_light_one_tick_same_seed_same_output():
+
+def test_protein_decay_light_one_tick_same_seed_same_output() -> None:
     """Two ProteinDecay-light instances with same seed produce identical decay."""
     p1 = ProteinDecayLightProcess({"rng_seed": 99})
     p2 = ProteinDecayLightProcess({"rng_seed": 99})
@@ -161,7 +163,8 @@ def test_protein_decay_light_one_tick_same_seed_same_output():
 # Test 5: ProteinDecay-light multi-tick determinism
 # =============================================================================
 
-def test_protein_decay_light_ten_ticks_same_seed_same_trajectory():
+
+def test_protein_decay_light_ten_ticks_same_seed_same_trajectory() -> None:
     """Ten ticks of ProteinDecay-light with same seed produce identical decay."""
     p1 = ProteinDecayLightProcess({"rng_seed": 13})
     p2 = ProteinDecayLightProcess({"rng_seed": 13})
@@ -186,7 +189,8 @@ def test_protein_decay_light_ten_ticks_same_seed_same_trajectory():
 # Test 6: RNG independence across two processes with same seed
 # =============================================================================
 
-def test_d2_and_pd_same_seed_independent_rng_streams():
+
+def test_d2_and_pd_same_seed_independent_rng_streams() -> None:
     """D.2-real and ProteinDecay-light with same numeric seed should NOT
     share state — they each have their own rng. Confirm by inspecting that
     their first .integers() calls produce different values."""
@@ -198,9 +202,7 @@ def test_d2_and_pd_same_seed_independent_rng_streams():
     v1 = p1._rng.integers(0, 1_000_000)
     v2 = p2._rng.integers(0, 1_000_000)
     # Same numpy version + same seed + same draw type → same value
-    assert v1 == v2, (
-        "Fresh RNGs with same seed produced different values — numpy version mismatch?"
-    )
+    assert v1 == v2, "Fresh RNGs with same seed produced different values — numpy version mismatch?"
     # But after one process consumes RNG, the other should be unaffected
     p1._rng.integers(0, 1_000_000)  # consume from p1
     v1_after = p1._rng.integers(0, 1_000_000)

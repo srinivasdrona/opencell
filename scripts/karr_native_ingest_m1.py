@@ -12,6 +12,7 @@ Run via .venv-wsl:
   wsl bash -lc 'source /mnt/e/opencell/.venv-wsl/bin/activate && \
                 python /mnt/e/opencell/scripts/karr_native_ingest_m1.py'
 """
+
 from __future__ import annotations
 
 import json
@@ -58,10 +59,8 @@ def main() -> None:
     catalysis = np.asarray(met.fbaReactionCatalysisMatrix, dtype=np.uint8)
 
     # E.1b: per-substrate molecular weight (Da/mol). Shape (585,).
-    substrate_molecular_weight = np.asarray(
-        met.substrateMolecularWeights, dtype=float).reshape(-1)
-    enzyme_molecular_weight = np.asarray(
-        met.enzymeMolecularWeights, dtype=float).reshape(-1)
+    substrate_molecular_weight = np.asarray(met.substrateMolecularWeights, dtype=float).reshape(-1)
+    enzyme_molecular_weight = np.asarray(met.enzymeMolecularWeights, dtype=float).reshape(-1)
 
     # Stored runtime values (the Mode E oracle baseline)
     fluxs_stored = np.asarray(mr.dump.fluxs, dtype=float).reshape(-1)
@@ -74,14 +73,10 @@ def main() -> None:
     # cell-mass phenotype #9; shape (6,) per compartment c=0 cytosol).
     mass_dump = sim.states.State_Mass.dump
     cell_per_compartment = np.asarray(mass_dump.cell, dtype=float).reshape(-1)
-    cell_dry_per_compartment = np.asarray(
-        mass_dump.cellDry, dtype=float).reshape(-1)
-    rna_wt_per_compartment = np.asarray(
-        mass_dump.rnaWt, dtype=float).reshape(-1)
-    cell_initial_dry_weight = float(np.asarray(
-        mass_dump.cellInitialDryWeight).item())
-    dry_weight_fraction_rna = float(np.asarray(
-        mass_dump.dryWeightFractionRNA).item())
+    cell_dry_per_compartment = np.asarray(mass_dump.cellDry, dtype=float).reshape(-1)
+    rna_wt_per_compartment = np.asarray(mass_dump.rnaWt, dtype=float).reshape(-1)
+    cell_initial_dry_weight = float(np.asarray(mass_dump.cellInitialDryWeight).item())
+    dry_weight_fraction_rna = float(np.asarray(mass_dump.dryWeightFractionRNA).item())
 
     # Index maps (0-based)
     fba_idx_metab_conv = _to_int_idx(met.fbaReactionIndexs_metabolicConversion)
@@ -95,7 +90,7 @@ def main() -> None:
         met.fbaSubstrateIndexs_metaboliteInternalExchangeConstraints
     )
 
-    rxn_idx_fba = _to_int_idx(met.reactionIndexs_fba)        # (336,) -> 645 space
+    rxn_idx_fba = _to_int_idx(met.reactionIndexs_fba)  # (336,) -> 645 space
 
     # Names (645 reactions, 585 substrates, 104 enzymes)
     rxn_wcm_ids = _to_str_list(met.reactionWholeCellModelIDs)
@@ -134,8 +129,13 @@ def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(
         NPZ_OUT,
-        S=S, RHS=RHS, lb=lb, ub=ub, obj=obj,
-        enz_bounds=enz_bounds, catalysis=catalysis,
+        S=S,
+        RHS=RHS,
+        lb=lb,
+        ub=ub,
+        obj=obj,
+        enz_bounds=enz_bounds,
+        catalysis=catalysis,
         fluxs_stored=fluxs_stored,
         fba_idx_metab_conv=fba_idx_metab_conv,
         fba_idx_ext_exch=fba_idx_ext_exch,
@@ -148,74 +148,78 @@ def main() -> None:
         substrate_molecular_weight=substrate_molecular_weight,
         enzyme_molecular_weight=enzyme_molecular_weight,
     )
-    JSON_OUT.write_text(json.dumps({
-        "schema_version": SCHEMA_VERSION,
-        "source_archive": "data/karr_archive/",
-        "source_archive_files": ["sim_fitted_targeted"],
-        "matrix_npz": str(NPZ_OUT.relative_to(REPO)),
-        "shapes": {
-            "S": list(S.shape),
-            "RHS": list(RHS.shape),
-            "fbaReactionBounds": list(bounds.shape),
-            "fbaObjective": list(obj.shape),
-            "fbaEnzymeBounds": list(enz_bounds.shape),
-            "fluxs_stored": list(fluxs_stored.shape),
-            "substrate_molecular_weight": list(substrate_molecular_weight.shape),
-            "enzyme_molecular_weight": list(enzyme_molecular_weight.shape),
-        },
-        "counts": {
-            "n_fba_reactions": n_fba_rxn,
-            "n_fba_substrates": n_fba_sub,
-            "n_metabolic_conversion_cols": n_metab_conv,
-            "n_external_exchange_cols": int(fba_idx_ext_exch.size),
-            "n_internal_exchange_cols": int(fba_idx_int_exch.size),
-            "n_reactions_total": len(rxn_wcm_ids),
-            "n_substrates_total": len(sub_wcm_ids),
-            "n_enzymes_total": len(enz_wcm_ids),
-            "fluxs_nonzero": int((fluxs_stored != 0).sum()),
-        },
-        "biomass_col": biomass_col,
-        "biomass_objective_coefficient": float(obj[biomass_col]),
-        "stored_runtime": {
-            "growth_per_s": growth_stored,
-            "growth_per_h": growth_stored * 3600.0,
-            "growth0_per_s": growth0_stored,
-            "meanInitialGrowthRate_per_s": mean_init_growth,
-            "doublingTime_s": doubling_time,
-            "doublingTime_h": doubling_time / 3600.0,
-            "cell_initial_dry_weight_g": cell_initial_dry_weight,
-            "cell_total_mass_g": float(cell_per_compartment.sum()),
-            "cell_dry_total_mass_g": float(cell_dry_per_compartment.sum()),
-            "rna_wt_total_g": float(rna_wt_per_compartment.sum()),
-            "dry_weight_fraction_rna": dry_weight_fraction_rna,
-            "cell_per_compartment_g": cell_per_compartment.tolist(),
-            "cell_dry_per_compartment_g": cell_dry_per_compartment.tolist(),
-        },
-        "ids": {
-            "reaction_wcm_645": rxn_wcm_ids,
-            "reaction_names_645": rxn_names,
-            "reaction_types_645": rxn_types,
-            "substrate_wcm_585": sub_wcm_ids,
-            "substrate_names_585": sub_names,
-            "enzyme_wcm_104": enz_wcm_ids,
-            "fba_col_to_reaction_wcm": fba_col_rxn_wcm_id,
-        },
-        "interpretation": (
-            "Karr-native FBA snapshot: 376 substrates x 504 reactions. "
-            "504 fba cols = 336 metabolic-conversion + 124 external-exchange "
-            "+ 42 internal-exchange (35 limited + 7 unlimited). Biomass at "
-            f"col {biomass_col} with obj=+{float(obj[biomass_col]):.0f}. "
-            "Per-FBA-column reaction WCM IDs are present only for the 336 "
-            "metabolicConversion cols (others are substrate-scoped exchange "
-            "pseudo-reactions). Stored runtime growth = "
-            f"{growth_stored*3600:.4f} /h is the Mode E oracle ground truth."
-        ),
-    }, indent=2))
+    JSON_OUT.write_text(
+        json.dumps(
+            {
+                "schema_version": SCHEMA_VERSION,
+                "source_archive": "data/karr_archive/",
+                "source_archive_files": ["sim_fitted_targeted"],
+                "matrix_npz": str(NPZ_OUT.relative_to(REPO)),
+                "shapes": {
+                    "S": list(S.shape),
+                    "RHS": list(RHS.shape),
+                    "fbaReactionBounds": list(bounds.shape),
+                    "fbaObjective": list(obj.shape),
+                    "fbaEnzymeBounds": list(enz_bounds.shape),
+                    "fluxs_stored": list(fluxs_stored.shape),
+                    "substrate_molecular_weight": list(substrate_molecular_weight.shape),
+                    "enzyme_molecular_weight": list(enzyme_molecular_weight.shape),
+                },
+                "counts": {
+                    "n_fba_reactions": n_fba_rxn,
+                    "n_fba_substrates": n_fba_sub,
+                    "n_metabolic_conversion_cols": n_metab_conv,
+                    "n_external_exchange_cols": int(fba_idx_ext_exch.size),
+                    "n_internal_exchange_cols": int(fba_idx_int_exch.size),
+                    "n_reactions_total": len(rxn_wcm_ids),
+                    "n_substrates_total": len(sub_wcm_ids),
+                    "n_enzymes_total": len(enz_wcm_ids),
+                    "fluxs_nonzero": int((fluxs_stored != 0).sum()),
+                },
+                "biomass_col": biomass_col,
+                "biomass_objective_coefficient": float(obj[biomass_col]),
+                "stored_runtime": {
+                    "growth_per_s": growth_stored,
+                    "growth_per_h": growth_stored * 3600.0,
+                    "growth0_per_s": growth0_stored,
+                    "meanInitialGrowthRate_per_s": mean_init_growth,
+                    "doublingTime_s": doubling_time,
+                    "doublingTime_h": doubling_time / 3600.0,
+                    "cell_initial_dry_weight_g": cell_initial_dry_weight,
+                    "cell_total_mass_g": float(cell_per_compartment.sum()),
+                    "cell_dry_total_mass_g": float(cell_dry_per_compartment.sum()),
+                    "rna_wt_total_g": float(rna_wt_per_compartment.sum()),
+                    "dry_weight_fraction_rna": dry_weight_fraction_rna,
+                    "cell_per_compartment_g": cell_per_compartment.tolist(),
+                    "cell_dry_per_compartment_g": cell_dry_per_compartment.tolist(),
+                },
+                "ids": {
+                    "reaction_wcm_645": rxn_wcm_ids,
+                    "reaction_names_645": rxn_names,
+                    "reaction_types_645": rxn_types,
+                    "substrate_wcm_585": sub_wcm_ids,
+                    "substrate_names_585": sub_names,
+                    "enzyme_wcm_104": enz_wcm_ids,
+                    "fba_col_to_reaction_wcm": fba_col_rxn_wcm_id,
+                },
+                "interpretation": (
+                    "Karr-native FBA snapshot: 376 substrates x 504 reactions. "
+                    "504 fba cols = 336 metabolic-conversion + 124 external-exchange "
+                    "+ 42 internal-exchange (35 limited + 7 unlimited). Biomass at "
+                    f"col {biomass_col} with obj=+{float(obj[biomass_col]):.0f}. "
+                    "Per-FBA-column reaction WCM IDs are present only for the 336 "
+                    "metabolicConversion cols (others are substrate-scoped exchange "
+                    "pseudo-reactions). Stored runtime growth = "
+                    f"{growth_stored * 3600:.4f} /h is the Mode E oracle ground truth."
+                ),
+            },
+            indent=2,
+        )
+    )
 
     print(f"wrote {JSON_OUT.relative_to(REPO)} ({JSON_OUT.stat().st_size:,} B)")
     print(f"wrote {NPZ_OUT.relative_to(REPO)} ({NPZ_OUT.stat().st_size:,} B)")
-    print(f"S: {S.shape}, biomass_col={biomass_col}, "
-          f"stored growth={growth_stored*3600:.4f} /h")
+    print(f"S: {S.shape}, biomass_col={biomass_col}, stored growth={growth_stored * 3600:.4f} /h")
 
 
 if __name__ == "__main__":

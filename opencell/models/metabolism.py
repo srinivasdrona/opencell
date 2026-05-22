@@ -21,14 +21,13 @@ paper-pairing block (DOI 10.1002/bit.10288, PMID 17590932).
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 
 from opencell.models.sbml_model import SbmlOdeModel
-
 
 # Canonical location of the curated SBML inside the repo
 DEFAULT_SBML_PATH = (
@@ -38,9 +37,7 @@ DEFAULT_SBML_PATH = (
     / "BIOMD0000000051_chassagnole2002.xml"
 )
 DEFAULT_MANIFEST_PATH = (
-    Path(__file__).resolve().parents[2]
-    / "manifests"
-    / "chassagnole2002.draft.yaml"
+    Path(__file__).resolve().parents[2] / "manifests" / "chassagnole2002.draft.yaml"
 )
 BIOMODELS_ID = "BIOMD0000000051"
 PAPER_DOI = "10.1002/bit.10288"
@@ -137,9 +134,7 @@ class MetabolismModel:
                 "biomodels_id": self.biomodels_id,
                 "paper_doi": self.paper_doi,
                 "paper_pubmed_id": self.paper_pubmed_id,
-                "manifest_sidecar": (
-                    str(self.manifest_path) if self.manifest_path else None
-                ),
+                "manifest_sidecar": (str(self.manifest_path) if self.manifest_path else None),
             }
         )
         return out

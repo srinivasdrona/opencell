@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Callable
 
 from opencell.data.verification import (
     ParameterCard,
@@ -24,11 +24,13 @@ class CurationOutcome:
 
     parameter_id: str
     symbol: str
-    status: str   # RECOMMEND | AMBIGUOUS | NOT_FOUND | ALL_REJECTED | SKIPPED_EXISTS | SKIPPED_LOCKED
+    status: (
+        str  # RECOMMEND | AMBIGUOUS | NOT_FOUND | ALL_REJECTED | SKIPPED_EXISTS | SKIPPED_LOCKED
+    )
     extraction: ExtractionResult | None = None
     card: ParameterCard | None = None
     note: str = ""
-    cross_check: CrossCheck | None = None    # PDF-vs-SBML cross-check (when applicable)
+    cross_check: CrossCheck | None = None  # PDF-vs-SBML cross-check (when applicable)
 
 
 @dataclass
@@ -75,7 +77,7 @@ def _build_draft_card(
     if rec is None:
         return None
     trace_lines = [
-        f"Auto-extracted by opencell.curation on {datetime.now(timezone.utc).date()}.",
+        f"Auto-extracted by opencell.curation on {datetime.now(UTC).date()}.",
         f"Method: {rec.method}",
         f"Locator: {rec.locator}",
         f"Score: {rec.score:.2f} (components: {rec.score_components})",
@@ -87,8 +89,11 @@ def _build_draft_card(
     if xc is not None:
         trace_lines.append(
             f"Cross-check (PDF vs SBML): status={xc.status}"
-            + (f", pdf={xc.pdf_value!r}, sbml={xc.sbml_value!r}, rel_diff={xc.rel_diff:.3g}"
-               if xc.rel_diff is not None else "")
+            + (
+                f", pdf={xc.pdf_value!r}, sbml={xc.sbml_value!r}, rel_diff={xc.rel_diff:.3g}"
+                if xc.rel_diff is not None
+                else ""
+            )
         )
     trace_lines.append(f"Context: ...{rec.context_window.strip()[:300]}...")
     rationale = "\n".join(trace_lines)
@@ -139,7 +144,7 @@ def run_curation(
       use_biomodels: passed through to ParameterSpec.
       extract_fn: dependency injection for tests (default: real pipeline).
     """
-    started = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    started = datetime.now(UTC).isoformat(timespec="seconds")
     if not manifest.doi:
         raise ValueError(
             "manifest.paper.doi is empty; cannot run curation. "
@@ -152,20 +157,24 @@ def run_curation(
     for entry in manifest.parameters:
         prior = existing.get(entry.parameter_id)
         if prior is not None and prior.status in _LOCKED_STATUSES:
-            outcomes.append(CurationOutcome(
-                parameter_id=entry.parameter_id,
-                symbol=entry.symbol,
-                status="SKIPPED_LOCKED",
-                note=f"existing card has status {prior.status.value}; refusing to overwrite",
-            ))
+            outcomes.append(
+                CurationOutcome(
+                    parameter_id=entry.parameter_id,
+                    symbol=entry.symbol,
+                    status="SKIPPED_LOCKED",
+                    note=f"existing card has status {prior.status.value}; refusing to overwrite",
+                )
+            )
             continue
         if prior is not None and not force:
-            outcomes.append(CurationOutcome(
-                parameter_id=entry.parameter_id,
-                symbol=entry.symbol,
-                status="SKIPPED_EXISTS",
-                note="existing DRAFT card present; pass force=True to re-extract",
-            ))
+            outcomes.append(
+                CurationOutcome(
+                    parameter_id=entry.parameter_id,
+                    symbol=entry.symbol,
+                    status="SKIPPED_EXISTS",
+                    note="existing DRAFT card present; pass force=True to re-extract",
+                )
+            )
             continue
 
         spec = ParameterSpec(
@@ -182,7 +191,11 @@ def run_curation(
         status = result.status
         rec = result.recommendation
         # Cross-check: only run when we have a recommendation and a curated SBML value.
-        xc = cross_check(rec, entry.sbml_value) if (rec is not None or entry.sbml_value is not None) else None
+        xc = (
+            cross_check(rec, entry.sbml_value)
+            if (rec is not None or entry.sbml_value is not None)
+            else None
+        )
         # Guardrail: if PDF and SBML disagree, downgrade RECOMMEND -> AMBIGUOUS so
         # the mismatch is never silently auto-approved as a draft card.
         downgrade_note = ""
@@ -194,21 +207,23 @@ def run_curation(
                 f"(rel_diff={xc.rel_diff:.3g}, tol={xc.rel_tol})"
             )
         card = _build_draft_card(entry, manifest, result, xc) if status == "RECOMMEND" else None
-        outcomes.append(CurationOutcome(
-            parameter_id=entry.parameter_id,
-            symbol=entry.symbol,
-            status=status,
-            extraction=result,
-            card=card,
-            cross_check=xc,
-            note=downgrade_note,
-        ))
+        outcomes.append(
+            CurationOutcome(
+                parameter_id=entry.parameter_id,
+                symbol=entry.symbol,
+                status=status,
+                extraction=result,
+                card=card,
+                cross_check=xc,
+                note=downgrade_note,
+            )
+        )
 
     return CurationRun(
         model_slug=manifest.model_slug,
         doi=manifest.doi,
         started_at=started,
-        finished_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        finished_at=datetime.now(UTC).isoformat(timespec="seconds"),
         outcomes=outcomes,
         cache_file_sha256=dict(manifest.cache_file_sha256),
         manifest_path=manifest.source_manifest_path,

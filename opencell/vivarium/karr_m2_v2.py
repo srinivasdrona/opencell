@@ -14,6 +14,7 @@ Current complex-count dependency and provenance:
   and default counts come from ``ProteinComplex_flat.mat`` via
   :class:`opencell.vivarium.karr_d2_stub.KarrD2StubProcess`.
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -106,9 +107,7 @@ class KarrTranscriptionV2Process(Process):
         return out
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
-        rna = np.array(
-            [float(states["rna"]["counts"][gid]) for gid in self.gene_ids], dtype=float
-        )
+        rna = np.array([float(states["rna"]["counts"][gid]) for gid in self.gene_ids], dtype=float)
 
         complex_counts = states.get("complex", {}).get("counts", {})
         # DYNAMIC: read per-tick; do not cache. d2-stub writes nothing today but D.2-real will.
@@ -122,18 +121,12 @@ class KarrTranscriptionV2Process(Process):
         rna_next = self._step_rna(rna, synth_gene_per_s, timestep)
 
         update: dict[str, Any] = {
-            "rna": {
-                "counts": {
-                    gid: float(rna_next[i]) for i, gid in enumerate(self.gene_ids)
-                }
-            }
+            "rna": {"counts": {gid: float(rna_next[i]) for i, gid in enumerate(self.gene_ids)}}
         }
         if self.parameters["write_substrate_deltas"]:
             total_nt = tx_v2.total_nt_polymerization_per_s(
                 self.mechanism_inputs, n_active=n_active_rnap
             )
             per_ntp = total_nt / 4.0
-            update["substrates"] = {
-                ntp: -per_ntp * timestep for ntp in self.consumed_substrates
-            }
+            update["substrates"] = {ntp: -per_ntp * timestep for ntp in self.consumed_substrates}
         return update

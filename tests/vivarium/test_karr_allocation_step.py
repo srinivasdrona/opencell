@@ -1,4 +1,5 @@
 """Unit and wiring tests for KarrAllocationStep."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -182,4 +183,3 @@ def test_multi_wid_independent_allocation() -> None:
     assert allocated["consumer_b"]["ATP"] == 4.0
     assert allocated["consumer_a"]["GTP"] == 2.0
     assert allocated["consumer_b"]["GTP"] == 6.0
-

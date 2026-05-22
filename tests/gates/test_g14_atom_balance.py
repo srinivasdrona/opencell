@@ -45,7 +45,7 @@ class TestGateG14AtomBalance:
         totals cannot change.
         """
         reg = build_benchmark_registry()
-        producer = Producer(rate=0.0)       # closed system
+        producer = Producer(rate=0.0)  # closed system
         consumer = Consumer(rate_constant=0.1)
 
         state = CellState.initialize(reg, {"A": 100.0, "B": 0.0})
@@ -59,9 +59,7 @@ class TestGateG14AtomBalance:
         final_atoms = final.total_atoms()
 
         for element in ("C", "H", "O"):
-            assert final_atoms[element] == pytest.approx(
-                initial_atoms[element], rel=1e-6
-            ), (
+            assert final_atoms[element] == pytest.approx(initial_atoms[element], rel=1e-6), (
                 f"Atom {element} not conserved: "
                 f"initial={initial_atoms[element]}, final={final_atoms[element]}"
             )
@@ -92,6 +90,5 @@ class TestGateG14AtomBalance:
             expected_delta = prod_rate * t_end * n_per_A
             observed_delta = final_atoms[element] - initial_atoms[element]
             assert observed_delta == pytest.approx(expected_delta, rel=1e-3), (
-                f"Atom {element}: expected influx {expected_delta}, "
-                f"got delta {observed_delta}"
+                f"Atom {element}: expected influx {expected_delta}, got delta {observed_delta}"
             )

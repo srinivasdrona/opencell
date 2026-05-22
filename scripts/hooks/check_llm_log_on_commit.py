@@ -53,7 +53,9 @@ def _has_today_entry(log_path: Path) -> bool:
 def main() -> int:
     try:
         repo_root = Path(_git_output("rev-parse", "--show-toplevel"))
-        staged_files = [line for line in _git_output("diff", "--cached", "--name-only").splitlines() if line]
+        staged_files = [
+            line for line in _git_output("diff", "--cached", "--name-only").splitlines() if line
+        ]
     except subprocess.CalledProcessError as exc:
         print(f"[llm-log-check] Unable to query git state: {exc}", file=sys.stderr)
         return 0

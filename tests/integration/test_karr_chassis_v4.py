@@ -1,4 +1,5 @@
 """Integration coverage for Phase-B v4 chassis wiring + ratchet closure."""
+
 from __future__ import annotations
 
 import sys
@@ -89,7 +90,9 @@ def _charged_fraction_series(
     free_series = np.zeros(len(ts["time"]), dtype=np.float64)
     charged_series = np.zeros(len(ts["time"]), dtype=np.float64)
     for wid in trna_free_wids:
-        free_series += np.asarray(ts["rna"]["counts"].get(wid, np.zeros(len(ts["time"]))), dtype=np.float64)
+        free_series += np.asarray(
+            ts["rna"]["counts"].get(wid, np.zeros(len(ts["time"]))), dtype=np.float64
+        )
     for wid in trna_charged_wids:
         charged_series += np.asarray(
             ts["rna"]["aminoacylated_counts"].get(wid, np.zeros(len(ts["time"]))),
@@ -114,7 +117,9 @@ def _seed_protein_pathway_inputs(engine: Any) -> None:
     pfold = engine.processes["karr_protein_folding"]
     ptrans = engine.processes["karr_protein_translocation"]
 
-    for wid in set(pp1.enzyme_wids) | set(pp2.enzyme_wids) | set(pmod.enzyme_wids) | set(pfold.enzyme_wids):
+    for wid in (
+        set(pp1.enzyme_wids) | set(pp2.enzyme_wids) | set(pmod.enzyme_wids) | set(pfold.enzyme_wids)
+    ):
         engine.state.set_path(("protein", "counts", wid), 5_000.0)
     for wid in pp2.enzyme_wids:
         engine.state.set_path(("protein", "enzyme_counts", wid), 5_000.0)
@@ -154,14 +159,18 @@ def _seed_rna_pathway_inputs(engine: Any) -> None:
     for wid in ribasm.rna_subunit_wids:
         engine.state.set_path(("rna", "counts", wid), 500.0)
 
-    for wid in set(rna_proc.enzyme_wids) | set(rna_mod.enzyme_wids) | set(ribasm.protein_state_wids):
+    for wid in (
+        set(rna_proc.enzyme_wids) | set(rna_mod.enzyme_wids) | set(ribasm.protein_state_wids)
+    ):
         engine.state.set_path(("protein", "counts", wid), 2_000.0)
     for wid in ribasm.monomer_subunit_wids:
         engine.state.set_path(("protein", "counts", wid), 2_000.0)
 
     _boost_common_substrates(
         engine,
-        list(set(rna_proc.substrate_wids) | set(rna_mod.substrate_wids) | set(ribasm.substrate_wids)),
+        list(
+            set(rna_proc.substrate_wids) | set(rna_mod.substrate_wids) | set(ribasm.substrate_wids)
+        ),
     )
 
 
@@ -277,7 +286,9 @@ def test_chassis_v4_full_protein_pipeline_10_ticks(
     assert after_unmodified <= before_unmodified
     assert after_modified >= before_modified
     assert "activity" in after["protein"]
-    assert len(after["protein"]["activity"]) == len(engine.processes["karr_protein_activation"].regulated_protein_wids)
+    assert len(after["protein"]["activity"]) == len(
+        engine.processes["karr_protein_activation"].regulated_protein_wids
+    )
 
 
 def test_chassis_v4_full_rna_pipeline_10_ticks(
@@ -290,17 +301,15 @@ def test_chassis_v4_full_rna_pipeline_10_ticks(
 
     before = engine.state.get_value()
     before_modified = sum(float(v) for v in before["rna"].get("modified_counts", {}).values())
-    before_rib = (
-        float(before["complex"]["counts"].get("RIBOSOME_30S", 0.0))
-        + float(before["complex"]["counts"].get("RIBOSOME_50S", 0.0))
+    before_rib = float(before["complex"]["counts"].get("RIBOSOME_30S", 0.0)) + float(
+        before["complex"]["counts"].get("RIBOSOME_50S", 0.0)
     )
 
     engine.update(10.0)
     after = engine.state.get_value()
     after_modified = sum(float(v) for v in after["rna"].get("modified_counts", {}).values())
-    after_rib = (
-        float(after["complex"]["counts"].get("RIBOSOME_30S", 0.0))
-        + float(after["complex"]["counts"].get("RIBOSOME_50S", 0.0))
+    after_rib = float(after["complex"]["counts"].get("RIBOSOME_30S", 0.0)) + float(
+        after["complex"]["counts"].get("RIBOSOME_50S", 0.0)
     )
 
     assert after_modified >= before_modified
@@ -313,8 +322,12 @@ def test_chassis_v4_ribosome_assembly_consumes_gtpases(
     m2_model: tx.KarrTranscriptionModel,
     m3_model: tl.KarrTranslationModel,
 ) -> None:
-    engine_low = build_karr_chassis_v4(m1_model, m2_model, m3_model, time_step_s=1.0, emit_step_s=1.0)
-    engine_high = build_karr_chassis_v4(m1_model, m2_model, m3_model, time_step_s=1.0, emit_step_s=1.0)
+    engine_low = build_karr_chassis_v4(
+        m1_model, m2_model, m3_model, time_step_s=1.0, emit_step_s=1.0
+    )
+    engine_high = build_karr_chassis_v4(
+        m1_model, m2_model, m3_model, time_step_s=1.0, emit_step_s=1.0
+    )
 
     for eng in (engine_low, engine_high):
         _seed_rna_pathway_inputs(eng)
@@ -362,20 +375,26 @@ def test_chassis_v4_extended_ratchet_closure(v4_long_run: dict[str, Any]) -> Non
 
     drifts_complex: dict[str, float] = {}
     for wid in top_complex:
-        series = np.asarray(ts["complex"]["counts"].get(wid, np.zeros_like(ts_time)), dtype=np.float64)
+        series = np.asarray(
+            ts["complex"]["counts"].get(wid, np.zeros_like(ts_time)), dtype=np.float64
+        )
         mid = _series_mean_in_window(ts_time, series, 800.0, 1200.0)
         late = _series_mean_in_window(ts_time, series, 1500.0, 2000.0)
         drifts_complex[wid] = abs(late - mid) / max(1.0, abs(mid))
 
     drifts_protein: dict[str, float] = {}
     for wid in top_protein:
-        series = np.asarray(ts["protein"]["counts"].get(wid, np.zeros_like(ts_time)), dtype=np.float64)
+        series = np.asarray(
+            ts["protein"]["counts"].get(wid, np.zeros_like(ts_time)), dtype=np.float64
+        )
         mid = _series_mean_in_window(ts_time, series, 800.0, 1200.0)
         late = _series_mean_in_window(ts_time, series, 1500.0, 2000.0)
         drifts_protein[wid] = abs(late - mid) / max(1.0, abs(mid))
 
     trna_proc = engine.processes["karr_trna_aminoacylation"]
-    frac_series = _charged_fraction_series(ts, trna_proc.free_rna_wids, trna_proc.aminoacylated_rna_wids)
+    frac_series = _charged_fraction_series(
+        ts, trna_proc.free_rna_wids, trna_proc.aminoacylated_rna_wids
+    )
     frac_mid = _series_mean_in_window(ts_time, frac_series, 800.0, 1200.0)
     frac_late = _series_mean_in_window(ts_time, frac_series, 1500.0, 2000.0)
     frac_drift = abs(frac_late - frac_mid) / max(1e-9, abs(frac_mid))

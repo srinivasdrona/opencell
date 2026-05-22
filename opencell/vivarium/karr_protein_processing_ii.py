@@ -79,7 +79,9 @@ class KarrProteinProcessingIIProcess(Process):
         self.enzyme_wids = _parse_wid_array(fx["enzymeWholeCellModelIDs"])
         self.unprocessed_monomer_wids = _parse_wid_array(fx["unprocessedMonomerWholeCellModelIDs"])
         self.processed_monomer_wids = _parse_wid_array(fx["processedMonomerWholeCellModelIDs"])
-        self.signal_sequence_monomer_wids = _parse_wid_array(fx["signalSequenceMonomerWholeCellModelIDs"])
+        self.signal_sequence_monomer_wids = _parse_wid_array(
+            fx["signalSequenceMonomerWholeCellModelIDs"]
+        )
 
         self.substrate_index_water = _parse_index_1based(fx["substrateIndexs_water"])
         self.substrate_index_dag = _parse_index_1based(fx["substrateIndexs_diacylglycerolCys"])
@@ -88,14 +90,20 @@ class KarrProteinProcessingIIProcess(Process):
             fx["enzymeIndexs_diacylglycerylTransferase"]
         )
 
-        lipoprotein_indices = np.asarray(fx["lipoproteinMonomerIndexs"][0, 0], dtype=np.int64).reshape(-1)
+        lipoprotein_indices = np.asarray(
+            fx["lipoproteinMonomerIndexs"][0, 0], dtype=np.int64
+        ).reshape(-1)
         self.lipoprotein_indices = lipoprotein_indices - 1
         self.lipoprotein_wids = [
             self.unprocessed_monomer_wids[int(i)] for i in self.lipoprotein_indices
         ]
 
-        dag_rate = float(np.asarray(fx["lipoproteinDiacylglycerylTransferaseSpecificRate"][0, 0]).reshape(-1)[0])
-        cleave_rate = float(np.asarray(fx["lipoproteinSignalPeptidaseSpecificRate"][0, 0]).reshape(-1)[0])
+        dag_rate = float(
+            np.asarray(fx["lipoproteinDiacylglycerylTransferaseSpecificRate"][0, 0]).reshape(-1)[0]
+        )
+        cleave_rate = float(
+            np.asarray(fx["lipoproteinSignalPeptidaseSpecificRate"][0, 0]).reshape(-1)[0]
+        )
 
         n_sub = len(self.substrate_wids)
         n_lipo = len(self.lipoprotein_indices)
@@ -111,7 +119,9 @@ class KarrProteinProcessingIIProcess(Process):
 
         self.reaction_catalysis = np.zeros((n_rxn, n_enz), dtype=np.uint8)
         self.reaction_catalysis[self._dag_reaction_index, self.enzyme_index_dag_transferase] = 1
-        self.reaction_catalysis[self._cleavage_reaction_index, self.enzyme_index_signal_peptidase] = 1
+        self.reaction_catalysis[
+            self._cleavage_reaction_index, self.enzyme_index_signal_peptidase
+        ] = 1
 
         self.reaction_modification = np.zeros((n_rxn, n_lipo), dtype=np.uint8)
         self.reaction_modification[self._dag_reaction_index, np.arange(n_lipo)] = 1
@@ -235,10 +245,12 @@ class KarrProteinProcessingIIProcess(Process):
                 processed_wid = self.processed_monomer_wids[pidx]
                 signal_wid = self.signal_sequence_monomer_wids[pidx]
 
-                unprocessed_update[unprocessed_wid] = unprocessed_update.get(unprocessed_wid, 0.0) - float(
+                unprocessed_update[unprocessed_wid] = unprocessed_update.get(
+                    unprocessed_wid, 0.0
+                ) - float(completed)
+                processed_update[processed_wid] = processed_update.get(processed_wid, 0.0) + float(
                     completed
                 )
-                processed_update[processed_wid] = processed_update.get(processed_wid, 0.0) + float(completed)
                 signal_update[signal_wid] = signal_update.get(signal_wid, 0.0) + float(completed)
 
             if unprocessed_update or processed_update or signal_update:
@@ -260,7 +272,9 @@ class KarrProteinProcessingIIProcess(Process):
         n_rxn = self.reaction_stoich.shape[1]
         reaction_fluxes = np.zeros(n_rxn, dtype=np.int64)
         substrate_pool = np.floor(np.clip(substrates, a_min=0.0, a_max=None)).astype(np.int64)
-        unprocessed_pool = np.floor(np.clip(unprocessed_lipoproteins, a_min=0.0, a_max=None)).astype(np.int64)
+        unprocessed_pool = np.floor(
+            np.clip(unprocessed_lipoproteins, a_min=0.0, a_max=None)
+        ).astype(np.int64)
         enzyme_remaining = np.floor(
             np.clip(self._enzyme_limit(enzymes=enzymes, dt=dt), a_min=0.0, a_max=None)
         ).astype(np.int64)
@@ -273,7 +287,9 @@ class KarrProteinProcessingIIProcess(Process):
                 n_events=min(
                     self._substrate_limit_for_reaction(substrate_pool, ridx),
                     int(enzyme_remaining[ridx]),
-                    int(dag_available[ridx // 2] if ridx % 2 == 0 else cleavage_available[ridx // 2]),
+                    int(
+                        dag_available[ridx // 2] if ridx % 2 == 0 else cleavage_available[ridx // 2]
+                    ),
                 ),
                 reaction_fluxes=reaction_fluxes,
                 substrate_pool=substrate_pool,
@@ -352,7 +368,9 @@ class KarrProteinProcessingIIProcess(Process):
         n_rxn = self.reaction_stoich.shape[1]
         residual_limit = np.zeros(n_rxn, dtype=np.int64)
         for ridx in range(n_rxn):
-            target_limit = int(dag_available[ridx // 2] if ridx % 2 == 0 else cleavage_available[ridx // 2])
+            target_limit = int(
+                dag_available[ridx // 2] if ridx % 2 == 0 else cleavage_available[ridx // 2]
+            )
             residual_limit[ridx] = min(
                 self._substrate_limit_for_reaction(substrate_pool, ridx),
                 int(enzyme_remaining[ridx]),

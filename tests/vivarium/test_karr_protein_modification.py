@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import sys
 from copy import deepcopy
 from pathlib import Path
-import sys
 from typing import Any
 
 import numpy as np
@@ -136,7 +136,9 @@ def test_partial_modification_no_transition() -> None:
 
     atp_idx = process.substrate_wids.index("ATP")
     target_rxn_idx = np.flatnonzero(process.reaction_modification[:, target_idx] > 0)
-    atp_required_total = int(np.sum(-np.minimum(0, process.reaction_stoich[atp_idx, target_rxn_idx])))
+    atp_required_total = int(
+        np.sum(-np.minimum(0, process.reaction_stoich[atp_idx, target_rxn_idx]))
+    )
     limited_atp = float(max(1, atp_required_total - 1))
     state["substrates"]["ATP"] = limited_atp
     state["substrates_allocated"][process.name]["ATP"] = limited_atp
@@ -159,11 +161,18 @@ def test_mass_conservation() -> None:
         state["protein"]["unmodified_counts"][wid] = 1.0
 
     unmodified = np.asarray(
-        [state["protein"]["unmodified_counts"][wid] for wid in expected_process.unmodified_monomer_wids],
+        [
+            state["protein"]["unmodified_counts"][wid]
+            for wid in expected_process.unmodified_monomer_wids
+        ],
         dtype=np.float64,
     )
-    substrates = np.asarray([state["substrates"][wid] for wid in expected_process.substrate_wids], dtype=np.float64)
-    enzymes = np.asarray([state["protein"]["counts"][wid] for wid in expected_process.enzyme_wids], dtype=np.float64)
+    substrates = np.asarray(
+        [state["substrates"][wid] for wid in expected_process.substrate_wids], dtype=np.float64
+    )
+    enzymes = np.asarray(
+        [state["protein"]["counts"][wid] for wid in expected_process.enzyme_wids], dtype=np.float64
+    )
     expected_flux = expected_process._sample_reaction_fluxes(
         unmodified=unmodified,
         substrates=substrates,
@@ -174,7 +183,10 @@ def test_mass_conservation() -> None:
 
     observed_update = observed_process.next_update(1.0, deepcopy(state))
     observed_substrate_delta = np.asarray(
-        [int(observed_update.get("substrates", {}).get(wid, 0.0)) for wid in observed_process.substrate_wids],
+        [
+            int(observed_update.get("substrates", {}).get(wid, 0.0))
+            for wid in observed_process.substrate_wids
+        ],
         dtype=np.int64,
     )
     np.testing.assert_array_equal(observed_substrate_delta, expected_substrate_delta)

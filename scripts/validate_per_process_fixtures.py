@@ -12,12 +12,12 @@ Run after editing `extract_per_process_fixtures.py` to regenerate hashes:
     python scripts/validate_per_process_fixtures.py --seed
     python scripts/validate_per_process_fixtures.py        # verify
 """
+
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -68,8 +68,11 @@ def reextract(target: Path) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--seed", action="store_true",
-                    help="Write fixture_hashes.json from current committed payload")
+    ap.add_argument(
+        "--seed",
+        action="store_true",
+        help="Write fixture_hashes.json from current committed payload",
+    )
     args = ap.parse_args()
 
     if args.seed:
@@ -77,8 +80,7 @@ def main() -> int:
             print(f"missing: {COMMITTED_DIR}", file=sys.stderr)
             return 2
         h = hash_dir(COMMITTED_DIR)
-        HASH_FILE.write_text(json.dumps(h, indent=2, sort_keys=True) + "\n",
-                             encoding="utf-8")
+        HASH_FILE.write_text(json.dumps(h, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         print(f"wrote {HASH_FILE.relative_to(REPO_ROOT)} ({len(h)} entries)")
         return 0
 
@@ -98,8 +100,8 @@ def main() -> int:
 
     rc = 0
     missing = sorted(set(expected) - set(actual))
-    extra   = sorted(set(actual) - set(expected))
-    common  = sorted(set(expected) & set(actual))
+    extra = sorted(set(actual) - set(expected))
+    common = sorted(set(expected) & set(actual))
 
     for name in missing:
         print(f"MISSING in re-extraction: {name}")
@@ -114,8 +116,10 @@ def main() -> int:
         print(f"  actual   {actual[name]}")
         rc = 1
 
-    print(f"\n{len(common)} files compared, {len(mismatched)} mismatched, "
-          f"{len(missing)} missing, {len(extra)} unexpected")
+    print(
+        f"\n{len(common)} files compared, {len(mismatched)} mismatched, "
+        f"{len(missing)} missing, {len(extra)} unexpected"
+    )
     if rc == 0:
         print("OK: per-process fixture payload matches committed hashes.")
     return rc

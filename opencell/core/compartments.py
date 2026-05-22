@@ -8,11 +8,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-import jax.numpy as jnp
 import numpy as np
 
 from opencell.core.ir import Compartment
-from opencell.core.units import Q_, ureg
 
 
 @dataclass

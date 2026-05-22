@@ -18,6 +18,7 @@ correctness + extraction sanity, not independent biology.
 **M3 v2** (deferred) will derive s_i from ribosome counts x mRNA_i x
 elongation rate / length_i and validate against Karr's fitted s_i.
 """
+
 from __future__ import annotations
 
 import json
@@ -27,12 +28,10 @@ from pathlib import Path
 import numpy as np
 
 DEFAULT_FIXTURE_JSON = (
-    Path(__file__).resolve().parents[2]
-    / "data" / "karr_fixtures" / "karr_native_m3.json"
+    Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "karr_native_m3.json"
 )
 DEFAULT_VOCAB_JSON = (
-    Path(__file__).resolve().parents[2]
-    / "data" / "karr_fixtures" / "karr_native_m3_vocab.json"
+    Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "karr_native_m3_vocab.json"
 )
 
 # 20 standard amino acids in canonical order (Karr's aminoAcidIndexs[:20]).
@@ -41,10 +40,26 @@ DEFAULT_VOCAB_JSON = (
 # does carry FMET separately but central-dogma chassis treats FMET demand
 # as MET (initiator-methionine consumption is one-per-protein-per-synth).
 AA_WCM_IDS: tuple[str, ...] = (
-    "ALA", "ARG", "ASN", "ASP", "CYS",
-    "GLN", "GLU", "GLY", "HIS", "ILE",
-    "LEU", "LYS", "MET", "PHE", "PRO",
-    "SER", "THR", "TRP", "TYR", "VAL",
+    "ALA",
+    "ARG",
+    "ASN",
+    "ASP",
+    "CYS",
+    "GLN",
+    "GLU",
+    "GLY",
+    "HIS",
+    "ILE",
+    "LEU",
+    "LYS",
+    "MET",
+    "PHE",
+    "PRO",
+    "SER",
+    "THR",
+    "TRP",
+    "TYR",
+    "VAL",
 )
 
 
@@ -96,7 +111,7 @@ def _load_aa_vocab(vocab_path: Path) -> tuple[tuple[str, ...], np.ndarray]:
     vocab = json.loads(vocab_path.read_text())
     full_aa_ids = list(vocab["aa_wcm_ids"])
     full_aa_idx = list(vocab["aminoAcidIndexs_0based"])
-    name_to_col = dict(zip(full_aa_ids, full_aa_idx))
+    name_to_col = dict(zip(full_aa_ids, full_aa_idx, strict=False))
     cols = np.array([name_to_col[aa] for aa in AA_WCM_IDS], dtype=int)
     return AA_WCM_IDS, cols
 
@@ -121,12 +136,8 @@ def load_default(
         counts_mature=z["counts_mature"],
         synth_rate_per_s=z["synth_rate_per_s"],
         base_counts=z["base_counts"],
-        elongation_rate_aa_per_s=float(meta["scalars"][
-            "ribosome_elongation_rate_aa_per_s"
-        ]),
-        tmrna_binding_probability=float(meta["scalars"][
-            "tmrna_binding_probability"
-        ]),
+        elongation_rate_aa_per_s=float(meta["scalars"]["ribosome_elongation_rate_aa_per_s"]),
+        tmrna_binding_probability=float(meta["scalars"]["tmrna_binding_probability"]),
         counts_meta=dict(meta["counts"]),
         aa_wcm_ids=aa_ids,
         aa_col_indices=aa_cols,
@@ -152,14 +163,13 @@ def step_analytical(
     """
     n = np.asarray(protein_counts, dtype=float).reshape(-1).copy()
     if n.size != model.n_proteins:
-        raise ValueError(
-            f"protein_counts length {n.size} != n_proteins {model.n_proteins}")
+        raise ValueError(f"protein_counts length {n.size} != n_proteins {model.n_proteins}")
 
     s = model.synth_rate_per_s * float(synth_scale)
     k = model.decay_rate_per_s
 
     out = np.empty_like(n)
-    no_decay = (k <= 0.0)
+    no_decay = k <= 0.0
     if np.any(~no_decay):
         idx = ~no_decay
         ss = s[idx] / k[idx]
@@ -192,9 +202,8 @@ def aa_consumption_per_s(
 
     out: dict = {
         aa: float(per_metabolite[col])
-        for aa, col in zip(model.aa_wcm_ids, model.aa_col_indices)
+        for aa, col in zip(model.aa_wcm_ids, model.aa_col_indices, strict=False)
     }
     out["_total_aa_per_s"] = total_aa_per_s
     out["_per_metabolite_per_s_722"] = per_metabolite
     return out
-

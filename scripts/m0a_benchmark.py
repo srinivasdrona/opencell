@@ -11,6 +11,7 @@ Outputs:
 Usage:
     python scripts/m0a_benchmark.py
 """
+
 from __future__ import annotations
 
 import json
@@ -24,7 +25,9 @@ from opencell.solvers.hybrid import hybrid_run
 from opencell.vivarium.composite import build_coupled_engine
 
 
-def time_engine_run(coupled, t_end_s: float, macro_dt_s: float, persistent: bool, seed: int = 7) -> float:
+def time_engine_run(
+    coupled, t_end_s: float, macro_dt_s: float, persistent: bool, seed: int = 7
+) -> float:
     rng = np.random.default_rng(seed)
     engine = build_coupled_engine(
         coupled=coupled,
@@ -55,7 +58,9 @@ def main() -> int:
     ]
 
     results = []
-    print(f"{'t_end':>7} {'macro_dt':>9} {'hybrid_s':>10} {'restart_s':>11} {'persist_s':>11} {'restart_x':>10} {'persist_x':>10} {'speedup':>9}")
+    print(
+        f"{'t_end':>7} {'macro_dt':>9} {'hybrid_s':>10} {'restart_s':>11} {'persist_s':>11} {'restart_x':>10} {'persist_x':>10} {'speedup':>9}"
+    )
     print("-" * 95)
     for t_end, macro_dt in configs:
         # Warm-up: hybrid first
@@ -66,18 +71,22 @@ def main() -> int:
         restart_overhead = t_restart / t_hybrid
         persist_overhead = t_persist / t_hybrid
         speedup = t_restart / t_persist
-        results.append({
-            "t_end_s": t_end,
-            "macro_dt_s": macro_dt,
-            "n_macro_steps": int(round(t_end / macro_dt)),
-            "hybrid_wall_s": t_hybrid,
-            "restart_wall_s": t_restart,
-            "persistent_wall_s": t_persist,
-            "restart_overhead_x": restart_overhead,
-            "persistent_overhead_x": persist_overhead,
-            "speedup_persist_vs_restart": speedup,
-        })
-        print(f"{t_end:>7.0f} {macro_dt:>9.0f} {t_hybrid:>10.3f} {t_restart:>11.3f} {t_persist:>11.3f} {restart_overhead:>9.2f}x {persist_overhead:>9.2f}x {speedup:>8.2f}x")
+        results.append(
+            {
+                "t_end_s": t_end,
+                "macro_dt_s": macro_dt,
+                "n_macro_steps": int(round(t_end / macro_dt)),
+                "hybrid_wall_s": t_hybrid,
+                "restart_wall_s": t_restart,
+                "persistent_wall_s": t_persist,
+                "restart_overhead_x": restart_overhead,
+                "persistent_overhead_x": persist_overhead,
+                "speedup_persist_vs_restart": speedup,
+            }
+        )
+        print(
+            f"{t_end:>7.0f} {macro_dt:>9.0f} {t_hybrid:>10.3f} {t_restart:>11.3f} {t_persist:>11.3f} {restart_overhead:>9.2f}x {persist_overhead:>9.2f}x {speedup:>8.2f}x"
+        )
 
     # Extrapolate to Karr-scale ensemble (100 realisations × 8h sim)
     # Per M0.5: per-Process LSODA spin-up dominates.
@@ -99,32 +108,43 @@ def main() -> int:
     print("\n=== Extrapolation to Karr-scale (single metabolism Process) ===")
     print(f"  8h single realisation, restart    : {karr_single_restart_h:>6.2f} h")
     print(f"  8h single realisation, persistent : {karr_single_persist_h:>6.2f} h")
-    print(f"  100-run ensemble, restart         : {karr_ensemble_restart_h:>6.1f} h ({karr_ensemble_restart_h/24:.1f} days)")
-    print(f"  100-run ensemble, persistent      : {karr_ensemble_persist_h:>6.1f} h ({karr_ensemble_persist_h/24:.1f} days)")
+    print(
+        f"  100-run ensemble, restart         : {karr_ensemble_restart_h:>6.1f} h ({karr_ensemble_restart_h / 24:.1f} days)"
+    )
+    print(
+        f"  100-run ensemble, persistent      : {karr_ensemble_persist_h:>6.1f} h ({karr_ensemble_persist_h / 24:.1f} days)"
+    )
 
     # Persist results
     artifacts = Path("artifacts")
     artifacts.mkdir(exist_ok=True)
     out_path = artifacts / "M0A_persistent_lsoda.json"
-    out_path.write_text(json.dumps({
-        "configs": results,
-        "karr_extrapolation": extrap,
-    }, indent=2))
+    out_path.write_text(
+        json.dumps(
+            {
+                "configs": results,
+                "karr_extrapolation": extrap,
+            },
+            indent=2,
+        )
+    )
     print(f"\nWrote {out_path}")
 
     # Plot if matplotlib is available
     try:
         import matplotlib
+
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
+
         labels = [f"{int(r['t_end_s'])}s/{int(r['macro_dt_s'])}s" for r in results]
         x = np.arange(len(labels))
         rest = [r["restart_overhead_x"] for r in results]
         per = [r["persistent_overhead_x"] for r in results]
         fig, ax = plt.subplots(figsize=(8, 4.5))
         w = 0.35
-        ax.bar(x - w/2, rest, w, label="restart (current)", color="tab:red", alpha=0.85)
-        ax.bar(x + w/2, per, w, label="persistent (M0-A)", color="tab:green", alpha=0.85)
+        ax.bar(x - w / 2, rest, w, label="restart (current)", color="tab:red", alpha=0.85)
+        ax.bar(x + w / 2, per, w, label="persistent (M0-A)", color="tab:green", alpha=0.85)
         ax.axhline(1.0, color="black", linestyle="--", alpha=0.5, label="hybrid baseline (1×)")
         ax.set_xticks(x)
         ax.set_xticklabels(labels)

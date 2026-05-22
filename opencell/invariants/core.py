@@ -25,8 +25,8 @@ Design rules:
 
 from __future__ import annotations
 
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
-from typing import Any, Callable, Sequence
 
 import numpy as np
 
@@ -34,6 +34,7 @@ import numpy as np
 @dataclass
 class InvariantViolation:
     """Single violation found by an invariant check."""
+
     invariant: str
     variable: str
     timestep_index: int
@@ -51,6 +52,7 @@ class InvariantReport:
     ``checks`` is an error — an invariant must run on something or
     declare it has nothing to check.
     """
+
     invariant: str
     checks: list[str] = field(default_factory=list)
     violations: list[InvariantViolation] = field(default_factory=list)
@@ -64,6 +66,7 @@ class InvariantReport:
 @dataclass
 class InvariantSuiteReport:
     """Aggregated report across multiple invariants."""
+
     suite_name: str
     reports: list[InvariantReport] = field(default_factory=list)
 
@@ -76,10 +79,12 @@ class InvariantSuiteReport:
         return sum(len(r.violations) for r in self.reports)
 
     def summary(self) -> str:
-        lines = [f"InvariantSuite '{self.suite_name}': "
-                 f"{'PASS' if self.passed else 'FAIL'} "
-                 f"({self.violation_count} violations across "
-                 f"{len(self.reports)} checks)"]
+        lines = [
+            f"InvariantSuite '{self.suite_name}': "
+            f"{'PASS' if self.passed else 'FAIL'} "
+            f"({self.violation_count} violations across "
+            f"{len(self.reports)} checks)"
+        ]
         for r in self.reports:
             status = "ok" if r.passed else f"{len(r.violations)} violations"
             lines.append(f"  - {r.invariant}: {status}")
@@ -92,8 +97,11 @@ class InvariantSuiteReport:
 
 
 def check_non_negativity(
-    *, times: np.ndarray, values: dict[str, np.ndarray],
-    abs_tol: float = 1e-9, name: str = "non_negativity",
+    *,
+    times: np.ndarray,
+    values: dict[str, np.ndarray],
+    abs_tol: float = 1e-9,
+    name: str = "non_negativity",
 ) -> InvariantReport:
     """All declared variables must be >= -abs_tol at every timestep.
 
@@ -110,9 +118,12 @@ def check_non_negativity(
             idx = int(np.argmin(traj))
             report.violations.append(
                 InvariantViolation(
-                    invariant=name, variable=var,
-                    timestep_index=idx, time_value=float(times[idx]),
-                    measured=float(worst), bound=-abs_tol,
+                    invariant=name,
+                    variable=var,
+                    timestep_index=idx,
+                    time_value=float(times[idx]),
+                    measured=float(worst),
+                    bound=-abs_tol,
                     detail=f"min value {worst:.3e} below -abs_tol={abs_tol}",
                 )
             )
@@ -120,9 +131,12 @@ def check_non_negativity(
 
 
 def check_bounded(
-    *, times: np.ndarray, values: dict[str, np.ndarray],
+    *,
+    times: np.ndarray,
+    values: dict[str, np.ndarray],
     bounds: dict[str, tuple[float, float]],
-    abs_tol: float = 1e-9, name: str = "bounded",
+    abs_tol: float = 1e-9,
+    name: str = "bounded",
 ) -> InvariantReport:
     """Each declared variable must lie within its [lo, hi] bound."""
     report = InvariantReport(invariant=name)
@@ -135,9 +149,12 @@ def check_bounded(
             idx = int(np.argmin(traj))
             report.violations.append(
                 InvariantViolation(
-                    invariant=name, variable=var,
-                    timestep_index=idx, time_value=float(times[idx]),
-                    measured=float(traj[idx]), bound=lo,
+                    invariant=name,
+                    variable=var,
+                    timestep_index=idx,
+                    time_value=float(times[idx]),
+                    measured=float(traj[idx]),
+                    bound=lo,
                     detail=f"below lower bound by {lo - traj[idx]:.3e}",
                 )
             )
@@ -145,9 +162,12 @@ def check_bounded(
             idx = int(np.argmax(traj))
             report.violations.append(
                 InvariantViolation(
-                    invariant=name, variable=var,
-                    timestep_index=idx, time_value=float(times[idx]),
-                    measured=float(traj[idx]), bound=hi,
+                    invariant=name,
+                    variable=var,
+                    timestep_index=idx,
+                    time_value=float(times[idx]),
+                    measured=float(traj[idx]),
+                    bound=hi,
                     detail=f"above upper bound by {traj[idx] - hi:.3e}",
                 )
             )
@@ -155,9 +175,12 @@ def check_bounded(
 
 
 def check_conservation(
-    *, times: np.ndarray, values: dict[str, np.ndarray],
+    *,
+    times: np.ndarray,
+    values: dict[str, np.ndarray],
     groups: dict[str, Sequence[str]],
-    abs_tol: float = 1e-6, rel_tol: float = 1e-4,
+    abs_tol: float = 1e-6,
+    rel_tol: float = 1e-4,
     name: str = "conservation",
 ) -> InvariantReport:
     """For each named group, the sum of group members must be constant.
@@ -171,12 +194,8 @@ def check_conservation(
         present = [m for m in members if m in values]
         if not present:
             continue
-        report.checks.append(
-            f"group '{group_name}' = sum({', '.join(present)})"
-        )
-        stacked = np.array(
-            [np.asarray(values[m], dtype=np.float64) for m in present]
-        )
+        report.checks.append(f"group '{group_name}' = sum({', '.join(present)})")
+        stacked = np.array([np.asarray(values[m], dtype=np.float64) for m in present])
         totals = stacked.sum(axis=0)
         ref = totals[0]
         deviations = totals - ref
@@ -186,9 +205,12 @@ def check_conservation(
             idx = int(np.argmax(np.abs(deviations)))
             report.violations.append(
                 InvariantViolation(
-                    invariant=name, variable=group_name,
-                    timestep_index=idx, time_value=float(times[idx]),
-                    measured=float(totals[idx]), bound=float(ref),
+                    invariant=name,
+                    variable=group_name,
+                    timestep_index=idx,
+                    time_value=float(times[idx]),
+                    measured=float(totals[idx]),
+                    bound=float(ref),
                     detail=(
                         f"sum drifted by {deviations[idx]:.3e} "
                         f"(threshold {threshold:.3e}, members={present})"
@@ -199,8 +221,11 @@ def check_conservation(
 
 
 def check_count_integrality(
-    *, times: np.ndarray, values: dict[str, np.ndarray],
-    abs_tol: float = 1e-9, name: str = "count_integrality",
+    *,
+    times: np.ndarray,
+    values: dict[str, np.ndarray],
+    abs_tol: float = 1e-9,
+    name: str = "count_integrality",
 ) -> InvariantReport:
     """Stochastic count variables must remain integer-valued.
 
@@ -218,9 +243,12 @@ def check_count_integrality(
             idx = int(np.argmax(residual))
             report.violations.append(
                 InvariantViolation(
-                    invariant=name, variable=var,
-                    timestep_index=idx, time_value=float(times[idx]),
-                    measured=float(traj[idx]), bound=float(np.round(traj[idx])),
+                    invariant=name,
+                    variable=var,
+                    timestep_index=idx,
+                    time_value=float(times[idx]),
+                    measured=float(traj[idx]),
+                    bound=float(np.round(traj[idx])),
                     detail=f"non-integer residual {worst:.3e}",
                 )
             )
@@ -239,10 +267,11 @@ class InvariantSuite:
     Each entry is a callable returning an ``InvariantReport``. The suite
     runs them in order and aggregates results.
     """
+
     name: str
     checks: list[Callable[[], InvariantReport]] = field(default_factory=list)
 
-    def add(self, fn: Callable[[], InvariantReport]) -> "InvariantSuite":
+    def add(self, fn: Callable[[], InvariantReport]) -> InvariantSuite:
         self.checks.append(fn)
         return self
 

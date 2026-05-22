@@ -16,6 +16,7 @@ Honest scope:
   -> publish m1_pools.  So `m1_pools` published this tick is
   POST-replenish; `growth_per_s` reported this tick is PRE-replenish.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -27,16 +28,15 @@ from opencell.vivarium.karr_composite import (
     compute_baseline_demand_per_s,
 )
 from opencell.vivarium.karr_m1 import (
-    KarrMetabolismProcess,
     _CYTOSOL_COMPARTMENT_0,
-    _KARR_DEMAND_KEYS,
+    KarrMetabolismProcess,
 )
 
 
 # ----------------------------------------------------------------------
 # Composer wires baseline-demand correctly from the attached models
 # ----------------------------------------------------------------------
-def test_compute_baseline_demand_combines_m2_and_m3():
+def test_compute_baseline_demand_combines_m2_and_m3() -> None:
     m2 = tx.load_default()
     m3 = tl.load_default()
     bd = compute_baseline_demand_per_s(m2, m3, condition=1)
@@ -53,7 +53,7 @@ def test_compute_baseline_demand_combines_m2_and_m3():
         assert bd[a] == pytest.approx(float(aa[a]), rel=1e-12)
 
 
-def test_compute_baseline_demand_respects_condition():
+def test_compute_baseline_demand_respects_condition() -> None:
     m2 = tx.load_default()
     m3 = tl.load_default()
     bd0 = compute_baseline_demand_per_s(m2, m3, condition=0)
@@ -66,56 +66,67 @@ def test_compute_baseline_demand_respects_condition():
 # ----------------------------------------------------------------------
 # Process-level guards
 # ----------------------------------------------------------------------
-def test_replenishment_requires_dynamic_bounds():
+def test_replenishment_requires_dynamic_bounds() -> None:
     with pytest.raises(ValueError, match="dynamic_bounds=True"):
-        KarrMetabolismProcess({
-            "enable_pool_replenishment": True,
-            "baseline_demand_per_s": {"ATP": 1.0},
-        })
+        KarrMetabolismProcess(
+            {
+                "enable_pool_replenishment": True,
+                "baseline_demand_per_s": {"ATP": 1.0},
+            }
+        )
 
 
-def test_replenishment_requires_baseline_map():
+def test_replenishment_requires_baseline_map() -> None:
     with pytest.raises(ValueError, match="baseline_demand_per_s"):
-        KarrMetabolismProcess({
-            "dynamic_bounds": True,
-            "enable_pool_replenishment": True,
-        })
+        KarrMetabolismProcess(
+            {
+                "dynamic_bounds": True,
+                "enable_pool_replenishment": True,
+            }
+        )
 
 
-def test_replenishment_rejects_missing_keys():
+def test_replenishment_rejects_missing_keys() -> None:
     with pytest.raises(ValueError, match="missing demand keys"):
-        KarrMetabolismProcess({
-            "dynamic_bounds": True,
-            "enable_pool_replenishment": True,
-            # Only one key -> 23 missing.
-            "baseline_demand_per_s": {"ATP": 1.0},
-        })
+        KarrMetabolismProcess(
+            {
+                "dynamic_bounds": True,
+                "enable_pool_replenishment": True,
+                # Only one key -> 23 missing.
+                "baseline_demand_per_s": {"ATP": 1.0},
+            }
+        )
 
 
-def test_replenishment_rejects_negative_rate():
+def test_replenishment_rejects_negative_rate() -> None:
     bd = compute_baseline_demand_per_s(
-        tx.load_default(), tl.load_default(), condition=1,
+        tx.load_default(),
+        tl.load_default(),
+        condition=1,
     )
     bd["ATP"] = -1.0
     with pytest.raises(ValueError, match="must be"):
-        KarrMetabolismProcess({
-            "dynamic_bounds": True,
-            "enable_pool_replenishment": True,
-            "baseline_demand_per_s": bd,
-        })
+        KarrMetabolismProcess(
+            {
+                "dynamic_bounds": True,
+                "enable_pool_replenishment": True,
+                "baseline_demand_per_s": bd,
+            }
+        )
 
 
-def test_composer_rejects_replenishment_without_dynamic_bounds():
+def test_composer_rejects_replenishment_without_dynamic_bounds() -> None:
     with pytest.raises(ValueError, match="dynamic_bounds=True"):
         build_karr_m1_m2_m3_engine(
-            dynamic_bounds=False, enable_pool_replenishment=True,
+            dynamic_bounds=False,
+            enable_pool_replenishment=True,
         )
 
 
 # ----------------------------------------------------------------------
 # Replenishment behaviour - end to end
 # ----------------------------------------------------------------------
-def test_replenishment_off_baseline_unchanged():
+def test_replenishment_off_baseline_unchanged() -> None:
     """Default off keeps the pre-C.4 trajectory intact (covered by the
     existing 543-test baseline; this test just guards the entry point)."""
     eng = build_karr_m1_m2_m3_engine(
@@ -128,7 +139,7 @@ def test_replenishment_off_baseline_unchanged():
     assert "m1_pools" in state
 
 
-def test_replenishment_balances_baseline_drain_to_within_one_tick_offset():
+def test_replenishment_balances_baseline_drain_to_within_one_tick_offset() -> None:
     """Throttle off (M2/M3 demand at baseline) + replenishment on:
     pool stays at snapshot to within ONE TICK of replenishment offset.
 
@@ -172,12 +183,11 @@ def test_replenishment_balances_baseline_drain_to_within_one_tick_offset():
         # And NOT growing proportionally with ticks (4x more ticks
         # should not produce 4x more drift).
         assert abs(drift_20) < 4.0 * abs(drift_5) + 1e-6, (
-            f"{sid}: drift growing with ticks - "
-            f"drift_5={drift_5} drift_20={drift_20}"
+            f"{sid}: drift growing with ticks - drift_5={drift_5} drift_20={drift_20}"
         )
 
 
-def test_replenishment_unfreezes_throttled_starvation_after_one_tick_lag():
+def test_replenishment_unfreezes_throttled_starvation_after_one_tick_lag() -> None:
     """Phase C.4 raison d'etre: with throttle on and CTP/UTP=0 in the
     snapshot, M2 freezes on tick 0 (f=0).  Replenishment on top
     increases m1_pools[CTP], m1_pools[UTP] by `baseline_demand * dt`
@@ -230,17 +240,21 @@ def test_replenishment_unfreezes_throttled_starvation_after_one_tick_lag():
     )
 
 
-def test_replenishment_under_no_demand_grows_at_baseline_rate():
+def test_replenishment_under_no_demand_grows_at_baseline_rate() -> None:
     """With M2/M3 demand-write disabled and replenishment on, the pool
     grows at exactly baseline_demand_per_s * t (no drain on the input
     side, full replenish on the output side)."""
-    m1_proc = KarrMetabolismProcess({
-        "dynamic_bounds": True,
-        "enable_pool_replenishment": True,
-        "baseline_demand_per_s": compute_baseline_demand_per_s(
-            tx.load_default(), tl.load_default(), condition=1,
-        ),
-    })
+    m1_proc = KarrMetabolismProcess(
+        {
+            "dynamic_bounds": True,
+            "enable_pool_replenishment": True,
+            "baseline_demand_per_s": compute_baseline_demand_per_s(
+                tx.load_default(),
+                tl.load_default(),
+                condition=1,
+            ),
+        }
+    )
     atp_idx = m1_proc._sub_id_to_idx["ATP"]
     atp_baseline = m1_proc._baseline_demand_per_s["ATP"]
     atp_t0 = float(m1_proc._sub_state[atp_idx, _CYTOSOL_COMPARTMENT_0])
@@ -256,7 +270,7 @@ def test_replenishment_under_no_demand_grows_at_baseline_rate():
     assert atp_t1 == pytest.approx(atp_t0 + atp_baseline, rel=1e-9)
 
 
-def test_replenishment_emits_post_replenish_pools_in_m1_pools():
+def test_replenishment_emits_post_replenish_pools_in_m1_pools() -> None:
     """Document semantics: m1_pools published this tick reflects the
     POST-replenish state, while growth_per_s reflects PRE-replenish FBA.
     """

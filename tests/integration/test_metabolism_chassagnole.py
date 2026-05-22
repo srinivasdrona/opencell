@@ -18,17 +18,14 @@ The test is skipped when libroadrunner is not installed.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import numpy as np
 import pytest
 
 roadrunner = pytest.importorskip("roadrunner")
 libsbml = pytest.importorskip("libsbml")
 
-from opencell.models.metabolism import MetabolismModel, DEFAULT_SBML_PATH  # noqa: E402
-from opencell.solvers.ode_scipy import solve_ode_scipy, ScipySolverConfig  # noqa: E402
-
+from opencell.models.metabolism import DEFAULT_SBML_PATH, MetabolismModel  # noqa: E402
+from opencell.solvers.ode_scipy import ScipySolverConfig, solve_ode_scipy  # noqa: E402
 
 pytestmark = pytest.mark.skipif(
     not DEFAULT_SBML_PATH.exists(),
@@ -88,7 +85,7 @@ class TestChassagnoleAgreement:
         model: MetabolismModel,
         opencell_trajectory: dict[str, np.ndarray],
         roadrunner_trajectory: dict[str, np.ndarray],
-    ):
+    ) -> None:
         failures: list[str] = []
         for sid in model.species_ids:
             ours = opencell_trajectory[sid]
@@ -105,7 +102,7 @@ class TestChassagnoleAgreement:
         self,
         model: MetabolismModel,
         opencell_trajectory: dict[str, np.ndarray],
-    ):
+    ) -> None:
         for sid in model.species_ids:
             assert np.all(opencell_trajectory[sid] >= -ATOL_AGREEMENT), (
                 f"Negative concentration in {sid}: {opencell_trajectory[sid]}"
@@ -114,18 +111,17 @@ class TestChassagnoleAgreement:
     def test_initial_conditions_match(
         self,
         model: MetabolismModel,
-    ):
+    ) -> None:
         rr = roadrunner.RoadRunner(str(model.sbml.sbml_path))
         for i, sid in enumerate(model.species_ids):
             rr_init = rr[f"init([{sid}])"]
             assert model.initial_y[i] == pytest.approx(rr_init, rel=1e-9), (
-                f"Initial value mismatch for {sid}: "
-                f"ours={model.initial_y[i]}, rr={rr_init}"
+                f"Initial value mismatch for {sid}: ours={model.initial_y[i]}, rr={rr_init}"
             )
 
 
 class TestMetabolismProvenance:
-    def test_provenance_contains_paper_pairing(self, model: MetabolismModel):
+    def test_provenance_contains_paper_pairing(self, model: MetabolismModel) -> None:
         prov = model.provenance()
         assert prov["biomodels_id"] == "BIOMD0000000051"
         assert prov["paper_doi"] == "10.1002/bit.10288"

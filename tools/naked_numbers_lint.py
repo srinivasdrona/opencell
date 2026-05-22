@@ -1,4 +1,4 @@
-""""No naked biology numbers" lint.
+""" "No naked biology numbers" lint.
 
 AST/regex check that biological constants in model code reference
 a parameter ID, not a hardcoded literal. Catches smuggled parameters.
@@ -9,13 +9,11 @@ Allowlist: 0, 0.0, 1, 1.0, -1, -1.0, tolerances (1e-*), array shapes.
 from __future__ import annotations
 
 import ast
-import re
 import sys
 from pathlib import Path
 
-
 # Numbers that are always OK (structural, not biological)
-ALLOWLIST = {0, 0.0, 1, 1.0, -1, -1.0, 2, 2.0, 0.5, 100.0}
+ALLOWLIST = {0, 1, -1, -1.0, 2, 2.0, 0.5, 100.0}
 
 
 def check_file(filepath: Path) -> list[str]:

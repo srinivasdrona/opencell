@@ -14,23 +14,20 @@ full trajectory (not just the endpoint).
 
 from __future__ import annotations
 
-import os
 import shutil
 import tempfile
 from pathlib import Path
 
-import numpy as np
-import pytest
-
 import jax
 import jax.numpy as jnp
+import numpy as np
+import pytest
 
 jax.config.update("jax_enable_x64", True)
 
 from opencell.models.micro_model import MicroModelParams
-from opencell.solvers.ode import solve_ode, ODESolverConfig
+from opencell.solvers.ode import ODESolverConfig, solve_ode
 from opencell.solvers.ode_scipy import solve_ode_scipy
-
 
 PARAMS = MicroModelParams()
 PSC_FILE = Path(__file__).parent / "micro_model_oracle.psc"
@@ -38,19 +35,23 @@ PSC_FILE = Path(__file__).parent / "micro_model_oracle.psc"
 
 def _micro_model_rhs(t, y, params: MicroModelParams):
     m, p = y[0], y[1]
-    return np.array([
-        params.alpha_m - params.beta_m * m,
-        params.alpha_p * m - params.beta_p * p,
-    ])
+    return np.array(
+        [
+            params.alpha_m - params.beta_m * m,
+            params.alpha_p * m - params.beta_p * p,
+        ]
+    )
 
 
 def _micro_model_rhs_jax(t, y, args):
     m, p = y[0], y[1]
     alpha_m, beta_m, alpha_p, beta_p = args
-    return jnp.array([
-        alpha_m - beta_m * m,
-        alpha_p * m - beta_p * p,
-    ])
+    return jnp.array(
+        [
+            alpha_m - beta_m * m,
+            alpha_p * m - beta_p * p,
+        ]
+    )
 
 
 @pytest.fixture(scope="module")
@@ -115,7 +116,9 @@ class TestGateG17PyscesOracle:
         y0 = np.array([0.0, 0.0])
         result = solve_ode_scipy(
             lambda t, y: _micro_model_rhs(t, y, PARAMS),
-            y0, t_span=(0.0, 500.0), t_eval=t_py,
+            y0,
+            t_span=(0.0, 500.0),
+            t_eval=t_py,
         )
         m_sci = result.ys[0]
         p_sci = result.ys[1]
@@ -134,9 +137,11 @@ class TestGateG17PyscesOracle:
         args = (PARAMS.alpha_m, PARAMS.beta_m, PARAMS.alpha_p, PARAMS.beta_p)
         config = ODESolverConfig(method="tsit5")
         result = solve_ode(
-            _micro_model_rhs_jax, y0,
+            _micro_model_rhs_jax,
+            y0,
             t_span=(0.0, 500.0),
-            args=args, config=config,
+            args=args,
+            config=config,
             saveat=jnp.array(t_py),
         )
         m_jax = np.array(result.ys[:, 0])

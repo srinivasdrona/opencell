@@ -12,7 +12,7 @@ import json
 import platform
 import subprocess
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -49,7 +49,9 @@ class RunManifest:
         try:
             result = subprocess.run(
                 ["git", "rev-parse", "HEAD"],
-                capture_output=True, text=True, timeout=5,
+                capture_output=True,
+                text=True,
+                timeout=5,
             )
             if result.returncode == 0:
                 git_sha = result.stdout.strip()
@@ -57,7 +59,7 @@ class RunManifest:
             pass
 
         return cls(
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             git_sha=git_sha,
             python_version=platform.python_version(),
             jax_version=jax.__version__,
@@ -74,7 +76,7 @@ class RunManifest:
         """Save manifest to JSON."""
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
-        ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         filepath = output_dir / f"manifest_{ts}.json"
         with open(filepath, "w") as f:
             json.dump(self.__dict__, f, indent=2)

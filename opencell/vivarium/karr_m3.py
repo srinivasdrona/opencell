@@ -1,4 +1,5 @@
 """Vivarium Process wrapper for Karr-native M3 translation."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -106,8 +107,7 @@ class KarrTranslationProcess(Process):
                 continue
             pool = float(m1_pools.get(aa, 0.0))
             if not np.isfinite(pool) or not np.isfinite(req):
-                raise RuntimeError(
-                    f"throttle non-finite: pool[{aa}]={pool} req={req}")
+                raise RuntimeError(f"throttle non-finite: pool[{aa}]={pool} req={req}")
             pool = max(0.0, pool)
             f_aa = pool / req
             if f_aa < f:
@@ -126,16 +126,17 @@ class KarrTranslationProcess(Process):
             synth_scale = 1.0
 
         n_next = tl.step_analytical(
-            self.model, n, timestep, synth_scale=synth_scale,
+            self.model,
+            n,
+            timestep,
+            synth_scale=synth_scale,
         )
         n_set = {p: float(n_next[i]) for i, p in enumerate(self.protein_ids)}
 
         update: dict[str, Any] = {"protein": {"counts": n_set}}
         if self.parameters["write_substrate_deltas"]:
             aa = tl.aa_consumption_per_s(self.model, synth_scale=synth_scale)
-            update["substrates"] = {
-                a: -float(aa[a]) * timestep for a in self.aa_ids
-            }
+            update["substrates"] = {a: -float(aa[a]) * timestep for a in self.aa_ids}
         return update
 
 
@@ -145,7 +146,7 @@ def build_karr_m3_engine(
     time_step_s: float = 1.0,
     emit_step_s: float | None = None,
     initial_protein_counts: np.ndarray | None = None,
-):
+) -> object:
     """Build a Vivarium Engine running just M3 (translation)."""
     from vivarium.core.engine import Engine
 
@@ -155,11 +156,11 @@ def build_karr_m3_engine(
     schema = proc.ports_schema()
 
     if initial_protein_counts is None:
-        prot_init = {p: schema["protein"]["counts"][p]["_default"]
-                     for p in model.protein_wcm_ids}
+        prot_init = {p: schema["protein"]["counts"][p]["_default"] for p in model.protein_wcm_ids}
     else:
-        prot_init = {p: float(initial_protein_counts[i])
-                     for i, p in enumerate(model.protein_wcm_ids)}
+        prot_init = {
+            p: float(initial_protein_counts[i]) for i, p in enumerate(model.protein_wcm_ids)
+        }
 
     engine = Engine(
         processes={"m3_karr": proc},
@@ -176,4 +177,3 @@ def build_karr_m3_engine(
         emit_step=emit_step_s or time_step_s,
     )
     return engine
-

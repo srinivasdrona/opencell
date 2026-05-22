@@ -9,12 +9,11 @@ Uses scipy.integrate.solve_ivp with BDF method for stiff systems.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable
 
 import numpy as np
 from scipy.integrate import solve_ivp
-
 
 RHSFn = Callable[[float, np.ndarray], np.ndarray]
 

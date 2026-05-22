@@ -35,10 +35,10 @@ class MicroModelParams:
       gamma_P = ln(2) / 60 min                = 0.011552 /min
     """
 
-    alpha_m: float = 0.60         # k_R: transcription init rate (mRNA/min)
-    beta_m: float = math.log(2) / 2.0    # gamma_R: mRNA decay (1/min), 2-min half-life
+    alpha_m: float = 0.60  # k_R: transcription init rate (mRNA/min)
+    beta_m: float = math.log(2) / 2.0  # gamma_R: mRNA decay (1/min), 2-min half-life
     alpha_p: float = 20.0 * math.log(2) / 2.0  # k_P: translation rate (b × gamma_R)
-    beta_p: float = math.log(2) / 60.0   # gamma_P: protein decay (1/min), 1-h half-life
+    beta_p: float = math.log(2) / 60.0  # gamma_P: protein decay (1/min), 1-h half-life
 
     @property
     def m_ss(self) -> float:
@@ -74,7 +74,9 @@ class MicroModelParams:
         exp_m = np.exp(-self.beta_m * t)
         return self.m_ss * (1 - exp_m) + m0 * exp_m
 
-    def p_exact(self, t: float | np.ndarray, m0: float = 0.0, p0: float = 0.0) -> float | np.ndarray:
+    def p_exact(
+        self, t: float | np.ndarray, m0: float = 0.0, p0: float = 0.0
+    ) -> float | np.ndarray:
         """Exact analytical protein time course (Alon Box 1.1).
 
         For m0=0, p0=0, β_m ≠ β_p:
@@ -86,14 +88,12 @@ class MicroModelParams:
         delta_beta = self.beta_m - self.beta_p
 
         # Alon (2006) Box 1.1 exact solution
-        p_particular = p_ss * (
-            1 + (self.beta_p * exp_m - self.beta_m * exp_p) / delta_beta
-        )
+        p_particular = p_ss * (1 + (self.beta_p * exp_m - self.beta_m * exp_p) / delta_beta)
 
         # Add homogeneous solution for nonzero initial conditions
         if m0 != 0.0 or p0 != 0.0:
             # Contribution from m0 ≠ 0
-            m_homo = (m0 - self.m_ss) * exp_m
+            (m0 - self.m_ss) * exp_m
             p_from_m0 = self.alpha_p * (m0 - self.m_ss) / delta_beta * (exp_p - exp_m)
             p_particular = p_particular + p_from_m0 + p0 * exp_p
             # Remove the p0=0 assumption baked into p_particular

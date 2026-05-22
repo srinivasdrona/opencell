@@ -26,6 +26,7 @@ The harness is designed so that adding new phenotypes (e.g. #9 cell
 mass, #14 per-AA pool stability in E.1a/E.1b) is a one-line
 parametrize entry plus an extractor.
 """
+
 from __future__ import annotations
 
 import json
@@ -39,8 +40,7 @@ from opencell.m2 import transcription as tx
 from opencell.m3 import translation as tl
 
 TARGETS_PATH = (
-    Path(__file__).resolve().parents[2]
-    / "data" / "karr_fixtures" / "karr_phenotype_targets.json"
+    Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "karr_phenotype_targets.json"
 )
 
 
@@ -69,7 +69,8 @@ def m3_model():
 
 # ---------- FBA prediction tests (#1-4) ----------
 
-def test_p1_growth_per_s(m1_model, targets):
+
+def test_p1_growth_per_s(m1_model, targets) -> None:
     spec = targets["p1_growth_per_s"]
     m = ph.measure_growth_per_s(m1_model)
     ratio = m.predicted / m.target
@@ -79,7 +80,7 @@ def test_p1_growth_per_s(m1_model, targets):
     )
 
 
-def test_p2_doubling_time_h(m1_model, targets):
+def test_p2_doubling_time_h(m1_model, targets) -> None:
     spec = targets["p2_doubling_time_h"]
     m = ph.measure_doubling_time_h(m1_model)
     ratio = m.predicted / m.target
@@ -89,7 +90,7 @@ def test_p2_doubling_time_h(m1_model, targets):
     )
 
 
-def test_p3_fba_oracle_median_log2(m1_model, targets):
+def test_p3_fba_oracle_median_log2(m1_model, targets) -> None:
     spec = targets["p3_fba_oracle_median_log2_ratio"]
     m = ph.measure_fba_oracle_median_log2(m1_model)
     assert m.predicted <= spec["tol_abs_max"], (
@@ -105,7 +106,7 @@ def test_p3_fba_oracle_median_log2(m1_model, targets):
     "Will pass once M4-M28 wire up the non-FBA PTS process.",
     strict=True,
 )
-def test_p4_glucose_uptake_TX_GLCPTS(m1_model, targets):
+def test_p4_glucose_uptake_TX_GLCPTS(m1_model, targets) -> None:
     spec = targets["p4_glucose_uptake_TX_GLCPTS"]
     m = ph.measure_glucose_uptake(m1_model)
     if m.target == 0:
@@ -119,7 +120,8 @@ def test_p4_glucose_uptake_TX_GLCPTS(m1_model, targets):
 
 # ---------- chassis composition invariants (#5-8) ----------
 
-def test_p5_mrna_total_chassis_wiring(m2_model, targets):
+
+def test_p5_mrna_total_chassis_wiring(m2_model, targets) -> None:
     spec = targets["p5_mrna_total_chassis_wiring"]
     m = ph.measure_mrna_total_chassis_wiring(m2_model)
     rel_err = abs(m.predicted - m.target) / m.target
@@ -131,7 +133,7 @@ def test_p5_mrna_total_chassis_wiring(m2_model, targets):
     )
 
 
-def test_p6_protein_total_chassis_wiring(m3_model, targets):
+def test_p6_protein_total_chassis_wiring(m3_model, targets) -> None:
     spec = targets["p6_protein_total_chassis_wiring"]
     m = ph.measure_protein_total_chassis_wiring(m3_model)
     rel_err = abs(m.predicted - m.target) / m.target
@@ -141,7 +143,7 @@ def test_p6_protein_total_chassis_wiring(m3_model, targets):
     )
 
 
-def test_p7_mrna_stability_over_20s(targets):
+def test_p7_mrna_stability_over_20s(targets) -> None:
     spec = targets["p7_mrna_stability_over_20s"]
     m = ph.measure_mrna_stability(horizon_s=spec["horizon_s"])
     assert m.predicted < spec["tol_rel"], (
@@ -151,7 +153,7 @@ def test_p7_mrna_stability_over_20s(targets):
     )
 
 
-def test_p8_protein_stability_over_20s(targets):
+def test_p8_protein_stability_over_20s(targets) -> None:
     spec = targets["p8_protein_stability_over_20s"]
     m = ph.measure_protein_stability(horizon_s=spec["horizon_s"])
     assert m.predicted < spec["tol_rel"], (
@@ -163,7 +165,8 @@ def test_p8_protein_stability_over_20s(targets):
 
 # ---------- closed-loop tests (#9) ----------
 
-def test_p9_aa_pool_stability_over_20s(targets):
+
+def test_p9_aa_pool_stability_over_20s(targets) -> None:
     spec = targets["p9_aa_pool_stability_over_20s"]
     m = ph.measure_aa_pool_stability(horizon_s=spec["horizon_s"])
     assert m.predicted < spec["tol_rel"], (
@@ -186,7 +189,7 @@ def test_p9_aa_pool_stability_over_20s(targets):
     "for fine-grained green/red tracking.",
     strict=True,
 )
-def test_p10_cell_dry_mass_g(m1_model, m2_model, m3_model, targets):
+def test_p10_cell_dry_mass_g(m1_model, m2_model, m3_model, targets) -> None:
     spec = targets["p10_cell_dry_mass_g"]
     m = ph.measure_cell_dry_mass(m1_model, m2_model, m3_model)
     ratio = m.predicted / m.target
@@ -226,7 +229,7 @@ def test_p10_cell_dry_mass_g(m1_model, m2_model, m3_model, targets):
     "per-form RNA tracking.",
     strict=True,
 )
-def test_p10a_dry_mass_rna_g(m1_model, m2_model, m3_model, targets):
+def test_p10a_dry_mass_rna_g(m1_model, m2_model, m3_model, targets) -> None:
     spec = targets["p10a_dry_mass_rna_g"]
     m = ph.measure_dry_mass_rna_g(m1_model, m2_model, m3_model)
     ratio = m.predicted / m.target if m.target > 0 else float("inf")
@@ -238,7 +241,7 @@ def test_p10a_dry_mass_rna_g(m1_model, m2_model, m3_model, targets):
     )
 
 
-def test_p10b_dry_mass_protein_monomer_g(m1_model, m2_model, m3_model, targets):
+def test_p10b_dry_mass_protein_monomer_g(m1_model, m2_model, m3_model, targets) -> None:
     spec = targets["p10b_dry_mass_protein_monomer_g"]
     m = ph.measure_dry_mass_protein_monomer_g(m1_model, m2_model, m3_model)
     ratio = m.predicted / m.target if m.target > 0 else float("inf")
@@ -262,7 +265,7 @@ def test_p10b_dry_mass_protein_monomer_g(m1_model, m2_model, m3_model, targets):
     "xfail until D.2 + M5 + substrate-pool init land.",
     strict=True,
 )
-def test_p10c_dry_mass_other_residual_g(m1_model, m2_model, m3_model, targets):
+def test_p10c_dry_mass_other_residual_g(m1_model, m2_model, m3_model, targets) -> None:
     spec = targets["p10c_dry_mass_other_residual_g"]
     m = ph.measure_dry_mass_other_residual_g(m1_model, m2_model, m3_model)
     ratio = m.predicted / m.target if m.target > 0 else float("inf")
@@ -276,7 +279,7 @@ def test_p10c_dry_mass_other_residual_g(m1_model, m2_model, m3_model, targets):
     )
 
 
-def test_p10c_other_residual_target_consistency(m1_model, targets):
+def test_p10c_other_residual_target_consistency(m1_model, targets) -> None:
     """Anti-fabrication guard: prove the JSON p10a/p10b/p10c targets are
     archive-derived and consistent with cell_dry_total_mass_g (= p10).
 

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import sys
 from copy import deepcopy
 from pathlib import Path
-import sys
 from typing import Any
 
 import numpy as np
@@ -52,32 +52,21 @@ def _load_snapshot_state(process: KarrTRNAAminoacylationProcess) -> dict[str, An
 
     return {
         "substrates": {
-            wid: float(substrates[idx])
-            for idx, wid in enumerate(process.substrate_wids)
+            wid: float(substrates[idx]) for idx, wid in enumerate(process.substrate_wids)
         },
         "rna": {
-            "counts": {
-                wid: float(free_rna[idx])
-                for idx, wid in enumerate(process.free_rna_wids)
-            },
+            "counts": {wid: float(free_rna[idx]) for idx, wid in enumerate(process.free_rna_wids)},
             "aminoacylated_counts": {
-                wid: float(amino_rna[idx])
-                for idx, wid in enumerate(process.aminoacylated_rna_wids)
+                wid: float(amino_rna[idx]) for idx, wid in enumerate(process.aminoacylated_rna_wids)
             },
         },
         "protein": {
-            "counts": {
-                wid: float(enzymes[idx])
-                for idx, wid in enumerate(process.enzyme_wids)
-            }
+            "counts": {wid: float(enzymes[idx]) for idx, wid in enumerate(process.enzyme_wids)}
         },
-        "requests": {
-            process.name: {wid: 0.0 for wid in process.substrate_wids}
-        },
+        "requests": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
         "substrates_allocated": {
             process.name: {
-                wid: float(substrates[idx])
-                for idx, wid in enumerate(process.substrate_wids)
+                wid: float(substrates[idx]) for idx, wid in enumerate(process.substrate_wids)
             }
         },
     }
@@ -104,8 +93,7 @@ def _apply_update(
 def _charged_fraction(state: dict[str, Any], process: KarrTRNAAminoacylationProcess) -> float:
     free = sum(float(state["rna"]["counts"][wid]) for wid in process.free_rna_wids)
     charged = sum(
-        float(state["rna"]["aminoacylated_counts"][wid])
-        for wid in process.aminoacylated_rna_wids
+        float(state["rna"]["aminoacylated_counts"][wid]) for wid in process.aminoacylated_rna_wids
     )
     total = free + charged
     return float(charged / total) if total > 0.0 else 0.0
@@ -159,7 +147,10 @@ def test_mass_conservation() -> None:
         [int(update["rna"]["counts"].get(wid, 0.0)) for wid in p.free_rna_wids], dtype=np.int64
     )
     charged_delta = np.array(
-        [int(update["rna"]["aminoacylated_counts"].get(wid, 0.0)) for wid in p.aminoacylated_rna_wids],
+        [
+            int(update["rna"]["aminoacylated_counts"].get(wid, 0.0))
+            for wid in p.aminoacylated_rna_wids
+        ],
         dtype=np.int64,
     )
     np.testing.assert_array_equal(free_delta + charged_delta, np.zeros_like(free_delta))
@@ -260,9 +251,7 @@ def test_integration_with_chassis_v3() -> None:
                 wid: float(chassis_state.get("rna", {}).get("counts", {}).get(wid, 0.0))
                 for wid in process.free_rna_wids
             },
-            "aminoacylated_counts": {
-                wid: 0.0 for wid in process.aminoacylated_rna_wids
-            },
+            "aminoacylated_counts": {wid: 0.0 for wid in process.aminoacylated_rna_wids},
         },
         "protein": {
             "counts": {
@@ -270,12 +259,8 @@ def test_integration_with_chassis_v3() -> None:
                 for wid in process.enzyme_wids
             }
         },
-        "requests": {
-            process.name: {wid: 0.0 for wid in process.substrate_wids}
-        },
-        "substrates_allocated": {
-            process.name: {wid: 0.0 for wid in process.substrate_wids}
-        },
+        "requests": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
+        "substrates_allocated": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
     }
     update = process.next_update(1.0, state)
     assert isinstance(update, dict)

@@ -140,11 +140,17 @@ def _configure_log_parser(subparser: argparse.ArgumentParser) -> None:
         help="Downstream effect (e.g. 'unblocked d2-design-v3-rework BLOCKER #1')",
     )
     subparser.add_argument("--linked-todo", help="Single todo id this exchange relates to")
-    subparser.add_argument("--linked-commits", help="Comma-separated commit SHAs produced by this exchange")
-    subparser.add_argument("--linked-artifacts", help="Comma-separated artifact paths produced/touched")
+    subparser.add_argument(
+        "--linked-commits", help="Comma-separated commit SHAs produced by this exchange"
+    )
+    subparser.add_argument(
+        "--linked-artifacts", help="Comma-separated artifact paths produced/touched"
+    )
     subparser.add_argument("--tags", help="Comma-separated free-form tags")
 
-    subparser.add_argument("--verification-status", default="pending", choices=_VERIFICATION_STATUSES)
+    subparser.add_argument(
+        "--verification-status", default="pending", choices=_VERIFICATION_STATUSES
+    )
     subparser.add_argument(
         "--verification-notes",
         help="How the output was validated (test counts, hash matches, etc.)",
@@ -154,7 +160,9 @@ def _configure_log_parser(subparser: argparse.ArgumentParser) -> None:
     subparser.add_argument("--tokens-in", type=int, help="Input tokens if known")
     subparser.add_argument("--tokens-out", type=int, help="Output tokens if known")
     subparser.add_argument("--session-id", help="Copilot CLI session id, if known")
-    subparser.add_argument("--supersedes", help="event_id of a prior record this one corrects/replaces")
+    subparser.add_argument(
+        "--supersedes", help="event_id of a prior record this one corrects/replaces"
+    )
 
     subparser.add_argument(
         "--log-path",

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import sys
 from copy import deepcopy
 from pathlib import Path
-import sys
 from typing import Any
 
 import numpy as np
@@ -22,7 +22,9 @@ from opencell.vivarium.karr_protein_processing_i import KarrProteinProcessingIPr
 
 
 def _blank_state(process: KarrProteinProcessingIProcess) -> dict[str, Any]:
-    protein_counts_wids = list(dict.fromkeys([*process.processed_monomer_wids, *process.enzyme_wids]))
+    protein_counts_wids = list(
+        dict.fromkeys([*process.processed_monomer_wids, *process.enzyme_wids])
+    )
     return {
         "substrates": {wid: 0.0 for wid in process.substrate_wids},
         "protein": {
@@ -58,7 +60,8 @@ def test_fixture_loads() -> None:
     schema = p.ports_schema()
     assert all(leaf["_updater"] == "accumulate" for leaf in schema["substrates"].values())
     assert all(
-        leaf["_updater"] == "accumulate" for leaf in schema["protein"]["unprocessed_counts"].values()
+        leaf["_updater"] == "accumulate"
+        for leaf in schema["protein"]["unprocessed_counts"].values()
     )
     assert all(leaf["_updater"] == "accumulate" for leaf in schema["protein"]["counts"].values())
 

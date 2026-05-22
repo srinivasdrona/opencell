@@ -18,6 +18,7 @@ were proven inconsistent with Karr's own stored fluxs (34/504 cols
 violate them by up to 100x).  See Session N+8 / commit c5244f2.
 The bounds are exposed for inspection but excluded from the LP.
 """
+
 from __future__ import annotations
 
 import json
@@ -28,8 +29,7 @@ import numpy as np
 from scipy.optimize import linprog
 
 DEFAULT_FIXTURE_JSON = (
-    Path(__file__).resolve().parents[2]
-    / "data" / "karr_fixtures" / "karr_native_m1.json"
+    Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "karr_native_m1.json"
 )
 
 # Default flux ceiling used when relaxing infinities for HiGHS.  Set to
@@ -124,9 +124,10 @@ def solve_fba(
     src_ub = model.ub if ub_override is None else ub_override
     if src_lb.shape != (R,) or src_ub.shape != (R,):
         raise ValueError(
-            f"bound override shape mismatch: lb {src_lb.shape}, ub {src_ub.shape}, R={R}")
+            f"bound override shape mismatch: lb {src_lb.shape}, ub {src_ub.shape}, R={R}"
+        )
     lb = np.where(np.isfinite(src_lb), src_lb, -big).copy()
-    ub = np.where(np.isfinite(src_ub), src_ub,  big).copy()
+    ub = np.where(np.isfinite(src_ub), src_ub, big).copy()
     lb = np.clip(lb, -big, big)
     ub = np.clip(ub, -big, big)
 
@@ -138,11 +139,14 @@ def solve_fba(
         col = model.biomass_col if objective_col is None else int(objective_col)
         c[col] = sign
 
-    bounds = list(zip(lb.tolist(), ub.tolist()))
+    bounds = list(zip(lb.tolist(), ub.tolist(), strict=False))
 
     res = linprog(
-        c=c, A_eq=model.S, b_eq=model.RHS,
-        bounds=bounds, method="highs",
+        c=c,
+        A_eq=model.S,
+        b_eq=model.RHS,
+        bounds=bounds,
+        method="highs",
         options={"presolve": True},
     )
     if not res.success:
@@ -180,10 +184,12 @@ def per_reaction_comparison(
         karr = float(model.fluxs_stored[idx_645])
         if nonzero_only and abs(pred) < tol and abs(karr) < tol:
             continue
-        out.append({
-            "fba_col": col,
-            "wcm_id": wcm,
-            "predicted": pred,
-            "karr_stored": karr,
-        })
+        out.append(
+            {
+                "fba_col": col,
+                "wcm_id": wcm,
+                "predicted": pred,
+                "karr_stored": karr,
+            }
+        )
     return out

@@ -18,8 +18,8 @@ else is running in the process. See ``.github/copilot-instructions.md``
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable
 
 import jax.numpy as jnp
 import numpy as np

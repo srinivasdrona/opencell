@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 import yaml
 
@@ -18,16 +18,19 @@ from opencell.data.verification import (
 from .runner import CurationOutcome, CurationRun
 
 
-def _merge_cards(existing: list[ParameterCard], new_cards: list[ParameterCard]) -> list[ParameterCard]:
+def _merge_cards(
+    existing: list[ParameterCard], new_cards: list[ParameterCard]
+) -> list[ParameterCard]:
     """Replace DRAFTs in-place by parameter_id; never overwrite REVIEWED/APPROVED."""
     locked_ids = {
-        c.parameter_id for c in existing
+        c.parameter_id
+        for c in existing
         if c.status in (VerificationStatus.REVIEWED, VerificationStatus.APPROVED)
     }
     by_id = {c.parameter_id: c for c in existing}
     for card in new_cards:
         if card.parameter_id in locked_ids:
-            continue   # defense-in-depth; runner should already have skipped
+            continue  # defense-in-depth; runner should already have skipped
         by_id[card.parameter_id] = card
     return list(by_id.values())
 
@@ -98,8 +101,14 @@ def render_coverage_md(run: CurationRun) -> str:
     def pct(n: int) -> str:
         return f"{(100.0 * n / total):.1f}%" if total else "0.0%"
 
-    order = ["RECOMMEND", "AMBIGUOUS", "NOT_FOUND", "ALL_REJECTED",
-            "SKIPPED_EXISTS", "SKIPPED_LOCKED"]
+    order = [
+        "RECOMMEND",
+        "AMBIGUOUS",
+        "NOT_FOUND",
+        "ALL_REJECTED",
+        "SKIPPED_EXISTS",
+        "SKIPPED_LOCKED",
+    ]
     lines = [
         f"# Curation Coverage — {run.model_slug}",
         "",
@@ -167,14 +176,18 @@ def run_to_provenance(run: CurationRun) -> dict:
                 "note": o.note,
                 "exit_code": _exit_code_for(o.status),
                 "recommended_value": (
-                    (o.extraction.recommendation.converted_value
-                     or o.extraction.recommendation.raw_value)
+                    (
+                        o.extraction.recommendation.converted_value
+                        or o.extraction.recommendation.raw_value
+                    )
                     if o.extraction is not None and o.extraction.recommendation is not None
                     else None
                 ),
                 "recommended_unit": (
-                    (o.extraction.recommendation.converted_unit
-                     or o.extraction.recommendation.raw_unit_normalized)
+                    (
+                        o.extraction.recommendation.converted_unit
+                        or o.extraction.recommendation.raw_unit_normalized
+                    )
                     if o.extraction is not None and o.extraction.recommendation is not None
                     else None
                 ),

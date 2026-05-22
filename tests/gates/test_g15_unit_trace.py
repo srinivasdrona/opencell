@@ -18,7 +18,6 @@ import pytest
 
 from opencell.core.units import (
     Q_,
-    ureg,
     validate_positive,
     validate_quantity,
 )
@@ -35,8 +34,12 @@ class TestGateG15UnitTrace:
         k_P = Q_(20.0 * math.log(2) / 2.0, "1/minute")
         gamma_P = Q_(math.log(2) / 60.0, "1/minute")
 
-        for label, value in (("k_R", k_R), ("gamma_R", gamma_R),
-                              ("k_P", k_P), ("gamma_P", gamma_P)):
+        for label, value in (
+            ("k_R", k_R),
+            ("gamma_R", gamma_R),
+            ("k_P", k_P),
+            ("gamma_P", gamma_P),
+        ):
             validate_quantity(value, "1/[time]", label=label)
             validate_positive(value, label=label)
 
@@ -47,7 +50,7 @@ class TestGateG15UnitTrace:
 
     def test_wrong_dimensionality_rejected(self) -> None:
         """A Quantity with the wrong dimensions must fail loudly."""
-        k_wrong = Q_(0.60, "meter / second")   # velocity, not rate
+        k_wrong = Q_(0.60, "meter / second")  # velocity, not rate
         with pytest.raises(pint.DimensionalityError):
             validate_quantity(k_wrong, "1/[time]", label="k_R")
 
@@ -76,9 +79,7 @@ class TestGateG15UnitTrace:
         half_life = Q_(2.0, "minute")
         gamma = math.log(2) / half_life
         assert gamma.check("1/[time]")
-        assert gamma.to("1/minute").magnitude == pytest.approx(
-            math.log(2) / 2.0
-        )
+        assert gamma.to("1/minute").magnitude == pytest.approx(math.log(2) / 2.0)
 
     def test_cross_unit_sum_rejected_by_pint(self) -> None:
         """Adding a rate and a half-life must fail dimensionally."""
@@ -89,8 +90,8 @@ class TestGateG15UnitTrace:
 
     def test_concentration_to_copies_requires_volume(self) -> None:
         """Converting between reference frames requires explicit volume."""
-        conc = Q_(1.0, "micromolar")    # per_volume frame
-        vol_fL = Q_(1.0, "femtoliter")   # E. coli-scale volume
+        conc = Q_(1.0, "micromolar")  # per_volume frame
+        vol_fL = Q_(1.0, "femtoliter")  # E. coli-scale volume
         n_molecules = (conc * vol_fL).to("mol") * Q_(6.022e23, "1/mol")
         # At 1 µM in 1 fL, roughly 602 molecules
         assert 500 < n_molecules.to_reduced_units().magnitude < 700

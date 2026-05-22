@@ -11,12 +11,9 @@ For stiff coupling, accuracy degrades. Document limitations.
 from __future__ import annotations
 
 import jax
-import jax.numpy as jnp
-import numpy as np
 
 jax.config.update("jax_enable_x64", True)
 
-from opencell.core.compartments import CellGeometry
 from opencell.core.engine import Engine, EngineConfig
 from opencell.core.ir import (
     Compartment,
@@ -87,24 +84,28 @@ class Consumer(SubModel):
 def build_benchmark_registry() -> IRSpeciesRegistry:
     """Build species registry for the coupling benchmark."""
     reg = IRSpeciesRegistry()
-    reg.register(SpeciesInfo(
-        id="A",
-        name="Substrate A",
-        compartment=Compartment.CYTOPLASM,
-        molecule_type=MoleculeType.METABOLITE,
-        reference_frame=ReferenceFrame.PER_CELL,
-        molar_mass_da=100.0,
-        atom_counts={"C": 5, "H": 10, "O": 2},
-    ))
-    reg.register(SpeciesInfo(
-        id="B",
-        name="Product B",
-        compartment=Compartment.CYTOPLASM,
-        molecule_type=MoleculeType.METABOLITE,
-        reference_frame=ReferenceFrame.PER_CELL,
-        molar_mass_da=100.0,
-        atom_counts={"C": 5, "H": 10, "O": 2},
-    ))
+    reg.register(
+        SpeciesInfo(
+            id="A",
+            name="Substrate A",
+            compartment=Compartment.CYTOPLASM,
+            molecule_type=MoleculeType.METABOLITE,
+            reference_frame=ReferenceFrame.PER_CELL,
+            molar_mass_da=100.0,
+            atom_counts={"C": 5, "H": 10, "O": 2},
+        )
+    )
+    reg.register(
+        SpeciesInfo(
+            id="B",
+            name="Product B",
+            compartment=Compartment.CYTOPLASM,
+            molecule_type=MoleculeType.METABOLITE,
+            reference_frame=ReferenceFrame.PER_CELL,
+            molar_mass_da=100.0,
+            atom_counts={"C": 5, "H": 10, "O": 2},
+        )
+    )
     return reg
 
 

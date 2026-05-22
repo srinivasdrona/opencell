@@ -1,4 +1,5 @@
 """Smoke tests for the Karr-native M2 vivarium chassis."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -45,9 +46,7 @@ def test_engine_runs_100_steps_without_drift(
         # roughly: last ~= - 100s * ntp_per_s (chassis uses calibrated model
         # whose synthesis rate yields s/k = counts_mature, so the operative
         # NTP demand is the calibrated value, not the KB-fitted one).
-        expected = -100.0 * tx.ntp_consumption_per_s(
-            tx.calibrated_chassis_model(model)
-        )[ntp]
+        expected = -100.0 * tx.ntp_consumption_per_s(tx.calibrated_chassis_model(model))[ntp]
         rel = abs(a[-1] - expected) / abs(expected)
         assert rel < 0.05, f"{ntp} consumption off: {a[-1]} vs {expected}"
 
@@ -59,23 +58,14 @@ def test_engine_starting_from_zero_approaches_steady_state(
     State_Rna mature SS counts (counts_mature) for fast-decaying genes
     that have a non-zero SS count."""
     init = np.zeros(model.n_genes)
-    engine = build_karr_m2_engine(
-        model=model, time_step_s=1.0, initial_rna_counts=init
-    )
+    engine = build_karr_m2_engine(model=model, time_step_s=1.0, initial_rna_counts=init)
     engine.update(1800.0)
     ts = engine.emitter.get_timeseries()
 
     target = model.counts_mature[:, 1]  # default condition=1 (mean)
-    fast = (
-        (model.half_life_min > 0)
-        & (model.half_life_min <= 5.0)
-        & (target > 0)
-    )
-    final = np.array([
-        float(ts["rna"]["counts"][gid][-1]) for gid in model.gene_wcm_ids
-    ])
+    fast = (model.half_life_min > 0) & (model.half_life_min <= 5.0) & (target > 0)
+    final = np.array([float(ts["rna"]["counts"][gid][-1]) for gid in model.gene_wcm_ids])
     rel = np.abs(final[fast] - target[fast]) / np.maximum(target[fast], 1e-12)
     assert float(np.max(rel)) < 0.05, (
-        f"fast genes not at steady state: max rel = {rel.max():.4f} "
-        f"(n_fast={int(fast.sum())})"
+        f"fast genes not at steady state: max rel = {rel.max():.4f} (n_fast={int(fast.sum())})"
     )

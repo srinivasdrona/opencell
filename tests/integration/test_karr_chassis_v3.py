@@ -1,4 +1,5 @@
 """Integration coverage for the A3.3 v3 chassis + ratchet closure."""
+
 from __future__ import annotations
 
 from typing import Any

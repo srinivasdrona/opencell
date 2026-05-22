@@ -1,6 +1,7 @@
 """Find Karr's actual parameter source (knowledge base, XLS, or
 hardcoded constants in .m files). The .mat fixtures are STATE
 snapshots; M-phase ingestion needs PARAMETERS."""
+
 import json
 import urllib.request
 
@@ -14,7 +15,8 @@ with urllib.request.urlopen(req, timeout=15) as r:
 # Look for parameter sources
 print("=== knowledge base / parameter files ===")
 candidates = [
-    t for t in data["tree"]
+    t
+    for t in data["tree"]
     if any(s in t["path"].lower() for s in ["knowledge", "parameter", "kineticconstant"])
     or t["path"].endswith((".xls", ".xlsx", ".xml", ".csv", ".tsv"))
 ]
@@ -27,4 +29,4 @@ top_dirs = sorted({t["path"].split("/")[0] for t in data["tree"] if "/" in t["pa
 for d in top_dirs:
     n = sum(1 for t in data["tree"] if t["path"].startswith(d + "/"))
     sz = sum(t.get("size", 0) for t in data["tree"] if t["path"].startswith(d + "/"))
-    print(f"  {sz/1024/1024:>8.1f} MB  {n:>5} files  {d}")
+    print(f"  {sz / 1024 / 1024:>8.1f} MB  {n:>5} files  {d}")

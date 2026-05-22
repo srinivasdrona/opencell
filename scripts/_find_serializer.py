@@ -1,4 +1,5 @@
 """Find Karr's serializer / fixture-builder source."""
+
 import json
 import urllib.request
 
@@ -10,12 +11,10 @@ with urllib.request.urlopen(req, timeout=15) as r:
     data = json.load(r)
 
 candidates = [
-    t for t in data["tree"]
-    if t["path"].endswith(".m") and (
-        "Sparse" in t["path"]
-        or "serial" in t["path"].lower()
-        or "fixture" in t["path"].lower()
-    )
+    t
+    for t in data["tree"]
+    if t["path"].endswith(".m")
+    and ("Sparse" in t["path"] or "serial" in t["path"].lower() or "fixture" in t["path"].lower())
 ]
 print(f"candidates: {len(candidates)}")
 for f in sorted(candidates, key=lambda x: x.get("size", 0))[:30]:

@@ -60,6 +60,7 @@ from opencell.manifest import (  # noqa: E402
 def _maybe_download(biomd_id: str, dest: Path) -> bool:
     """Best-effort download.  Returns True if dest now contains valid SBML."""
     from opencell.extraction.biomodels import download_sbml
+
     sbml = download_sbml(biomd_id)
     if not sbml or not sbml.lstrip().startswith(b"<"):
         return False
@@ -73,7 +74,7 @@ def main(argv: list[str] | None = None) -> int:
         description="SBML -> parameter-extraction-manifest",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="If BioModels API is blocked, try: "
-               "git clone https://github.com/biomodels/<BIOMD_ID>.git",
+        "git clone https://github.com/biomodels/<BIOMD_ID>.git",
     )
     p.add_argument("--sbml-path", help="Path to local SBML XML file (preferred)")
     p.add_argument("--biomodels-id", default="", help="BioModels ID (e.g. BIOMD0000000051)")
@@ -81,11 +82,16 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--paper-doi", default="", help="Source paper DOI")
     p.add_argument("--organism", default="")
     p.add_argument("--condition", default="")
-    p.add_argument("--pdf-cache", action="append", default=[], help="Path(s) to PDF text cache (repeatable)")
+    p.add_argument(
+        "--pdf-cache", action="append", default=[], help="Path(s) to PDF text cache (repeatable)"
+    )
     p.add_argument("--model-slug", default="", help="Short identifier for parameter_id prefixing")
     p.add_argument("--no-species", action="store_true", help="Skip species initial concentrations")
-    p.add_argument("--no-auto-metadata", action="store_true",
-                   help="Disable MIRIAM-annotation auto-fill of paper.doi/biomodels_id/organism")
+    p.add_argument(
+        "--no-auto-metadata",
+        action="store_true",
+        help="Disable MIRIAM-annotation auto-fill of paper.doi/biomodels_id/organism",
+    )
     p.add_argument("--output", required=True, help="Output YAML path")
     args = p.parse_args(argv)
 
@@ -97,14 +103,17 @@ def main(argv: list[str] | None = None) -> int:
             print(f"[ok] downloaded SBML to {dl}", file=sys.stderr)
         else:
             print(f"[fail] could not download SBML for {args.biomodels_id}", file=sys.stderr)
-            print(f"       try the GitHub mirror instead:", file=sys.stderr)
-            print(f"       git clone https://github.com/biomodels/{args.biomodels_id}.git",
-                  file=sys.stderr)
+            print("       try the GitHub mirror instead:", file=sys.stderr)
+            print(
+                f"       git clone https://github.com/biomodels/{args.biomodels_id}.git",
+                file=sys.stderr,
+            )
             return 3
 
     if sbml_path is None or not sbml_path.exists():
-        print("error: provide --sbml-path or working --biomodels-id + --download-to",
-              file=sys.stderr)
+        print(
+            "error: provide --sbml-path or working --biomodels-id + --download-to", file=sys.stderr
+        )
         return 2
 
     sbml_bytes = sbml_path.read_bytes()
@@ -161,7 +170,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  auto-filled from SBML: {', '.join(auto_filled)}")
     if md and md.pubmed_id and not paper_doi:
         print(f"  NOTE: SBML has pubmed:{md.pubmed_id} but no DOI annotation;")
-        print(f"        look up the DOI manually and rerun with --paper-doi")
+        print("        look up the DOI manually and rerun with --paper-doi")
     print()
     print("NEXT STEPS:")
     print("  1. Open the YAML and prune entries you don't need")
@@ -173,4 +182,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

@@ -1,4 +1,5 @@
 """Vivarium Step helpers that compute per-tick allocation requests."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -39,9 +40,7 @@ class RequestCalculatorD2(Step):
         if d2_real_proc is None:
             raise ValueError("RequestCalculatorD2 requires parameter: d2_real_proc")
         self._d2_real_proc = d2_real_proc
-        self._zero_requests = {
-            wid: 0.0 for wid in self._d2_real_proc.substrate_wids
-        }
+        self._zero_requests = {wid: 0.0 for wid in self._d2_real_proc.substrate_wids}
 
     def ports_schema(self) -> dict[str, Any]:
         return {
@@ -95,11 +94,7 @@ class RequestCalculatorPD(Step):
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         if not bool(self._pd_light_proc.parameters["consume_atp_h2o"]):
-            return {
-                "requests": {
-                    "karr_protein_decay_light": {"ATP": 0.0, "H2O": 0.0}
-                }
-            }
+            return {"requests": {"karr_protein_decay_light": {"ATP": 0.0, "H2O": 0.0}}}
 
         complex_counts = np.asarray(
             [
@@ -285,12 +280,16 @@ class RequestCalculatorRNAPathway(Step):
         return {
             "substrates": {
                 wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
-                for wid in sorted(set(self._rp_proc.substrate_wids) | set(self._rm_proc.substrate_wids))
+                for wid in sorted(
+                    set(self._rp_proc.substrate_wids) | set(self._rm_proc.substrate_wids)
+                )
             },
             "rna": {
                 "counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
-                    for wid in sorted(set(self._rp_proc.rna_wids) | set(self._rm_proc.unmodified_rna_wids))
+                    for wid in sorted(
+                        set(self._rp_proc.rna_wids) | set(self._rm_proc.unmodified_rna_wids)
+                    )
                 }
             },
             "requests": {
@@ -309,8 +308,12 @@ class RequestCalculatorRNAPathway(Step):
         del timestep
         substrate_state = states.get("substrates", {})
         rna_counts = states.get("rna", {}).get("counts", {})
-        rp_active = any(float(rna_counts.get(wid, 0.0)) > 0.0 for wid in self._rp_proc.unprocessed_rna_wids)
-        rm_active = any(float(rna_counts.get(wid, 0.0)) > 0.0 for wid in self._rm_proc.unmodified_rna_wids)
+        rp_active = any(
+            float(rna_counts.get(wid, 0.0)) > 0.0 for wid in self._rp_proc.unprocessed_rna_wids
+        )
+        rm_active = any(
+            float(rna_counts.get(wid, 0.0)) > 0.0 for wid in self._rm_proc.unmodified_rna_wids
+        )
 
         rp_request = {wid: 0.0 for wid in self._rp_proc.substrate_wids}
         rp_request.update(
@@ -347,8 +350,13 @@ class RequestCalculatorProteinPathway(Step):
         self._pm_proc = self.parameters.get("protein_modification_proc")
         self._pf_proc = self.parameters.get("protein_folding_proc")
         self._pt_proc = self.parameters.get("protein_translocation_proc")
-        if any(p is None for p in (self._pp1_proc, self._pp2_proc, self._pm_proc, self._pf_proc, self._pt_proc)):
-            raise ValueError("RequestCalculatorProteinPathway requires all protein pathway process parameters")
+        if any(
+            p is None
+            for p in (self._pp1_proc, self._pp2_proc, self._pm_proc, self._pf_proc, self._pt_proc)
+        ):
+            raise ValueError(
+                "RequestCalculatorProteinPathway requires all protein pathway process parameters"
+            )
 
         self._pp2_consumed = _consumed_wids_from_stoich(
             self._pp2_proc.substrate_wids, self._pp2_proc.reaction_stoich
@@ -434,24 +442,44 @@ class RequestCalculatorProteinPathway(Step):
         unmodified_state = protein_state.get("unmodified_counts", {})
         location_state = protein_state.get("location", {})
 
-        pp1_active = any(float(unprocessed_state.get(wid, 0.0)) > 0.0 for wid in self._pp1_proc.unprocessed_monomer_wids)
-        pp2_active = any(float(unprocessed_state.get(wid, 0.0)) > 0.0 for wid in self._pp2_proc.lipoprotein_wids)
-        pm_active = any(float(unmodified_state.get(wid, 0.0)) > 0.0 for wid in self._pm_proc.unmodified_monomer_wids)
-        pf_active = any(float(unfolded_state.get(wid, 0.0)) > 0.0 for wid in self._pf_proc.unfolded_monomer_wids)
+        pp1_active = any(
+            float(unprocessed_state.get(wid, 0.0)) > 0.0
+            for wid in self._pp1_proc.unprocessed_monomer_wids
+        )
+        pp2_active = any(
+            float(unprocessed_state.get(wid, 0.0)) > 0.0 for wid in self._pp2_proc.lipoprotein_wids
+        )
+        pm_active = any(
+            float(unmodified_state.get(wid, 0.0)) > 0.0
+            for wid in self._pm_proc.unmodified_monomer_wids
+        )
+        pf_active = any(
+            float(unfolded_state.get(wid, 0.0)) > 0.0 for wid in self._pf_proc.unfolded_monomer_wids
+        )
         pt_active = any(
-            float(counts_state.get(wid, 0.0)) > 0.0 and str(location_state.get(wid, "cytoplasm")) == "cytoplasm"
+            float(counts_state.get(wid, 0.0)) > 0.0
+            and str(location_state.get(wid, "cytoplasm")) == "cytoplasm"
             for wid in self._pt_proc.translocatable_wids
         )
 
         pp1_req = {wid: 0.0 for wid in self._pp1_proc.substrate_wids}
         pp1_req[self._pp1_proc.substrate_wids[self._pp1_proc.substrate_idx_water]] = (
-            max(0.0, float(substrate_state.get(self._pp1_proc.substrate_wids[self._pp1_proc.substrate_idx_water], 0.0)))
+            max(
+                0.0,
+                float(
+                    substrate_state.get(
+                        self._pp1_proc.substrate_wids[self._pp1_proc.substrate_idx_water], 0.0
+                    )
+                ),
+            )
             if pp1_active
             else 0.0
         )
 
         pp2_req = {wid: 0.0 for wid in self._pp2_proc.substrate_wids}
-        pp2_req.update(_request_from_available(substrate_state, self._pp2_consumed, active=pp2_active))
+        pp2_req.update(
+            _request_from_available(substrate_state, self._pp2_consumed, active=pp2_active)
+        )
 
         pm_req = {wid: 0.0 for wid in self._pm_proc.substrate_wids}
         pm_req.update(_request_from_available(substrate_state, self._pm_consumed, active=pm_active))
@@ -459,7 +487,8 @@ class RequestCalculatorProteinPathway(Step):
         pf_req = {
             wid: (
                 max(0.0, float(substrate_state.get(wid, 0.0)))
-                if pf_active and (
+                if pf_active
+                and (
                     wid == self._pf_proc.substrate_wids[self._pf_proc.substrate_idx_atp]
                     or wid == self._pf_proc.substrate_wids[self._pf_proc.substrate_idx_fe2]
                     or wid == self._pf_proc.substrate_wids[self._pf_proc.substrate_idx_mg]
@@ -472,7 +501,9 @@ class RequestCalculatorProteinPathway(Step):
 
         pt_req = {
             self._pt_proc.atp_wid: (
-                max(0.0, float(substrate_state.get(self._pt_proc.atp_wid, 0.0))) if pt_active else 0.0
+                max(0.0, float(substrate_state.get(self._pt_proc.atp_wid, 0.0)))
+                if pt_active
+                else 0.0
             )
         }
 

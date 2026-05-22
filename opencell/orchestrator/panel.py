@@ -118,7 +118,7 @@ class ExpertPanel:
 
         In production, checks doi.org resolution.
         """
-        if not doi or not doi.startswith("10."):
+        if not doi:
             return False
         # Placeholder — real implementation hits doi.org API
-        return True
+        return doi.startswith("10.")

@@ -1,4 +1,5 @@
 """Chassis-composition smoke tests: M1 + M2 ticking together."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -24,7 +25,9 @@ def test_engine_builds_and_runs(
     m2_model: tx.KarrTranscriptionModel,
 ) -> None:
     eng = build_karr_m1_m2_engine(
-        m1_model=m1_model, m2_model=m2_model, time_step_s=1.0,
+        m1_model=m1_model,
+        m2_model=m2_model,
+        time_step_s=1.0,
     )
     eng.update(10.0)
     ts = eng.emitter.get_timeseries()
@@ -41,7 +44,9 @@ def test_m1_growth_stable_under_composition(
     (M2 writes into substrates, but M1 ignores the placeholder counts
     in this chassis tick, so growth stays at the FBA solve)."""
     eng = build_karr_m1_m2_engine(
-        m1_model=m1_model, m2_model=m2_model, time_step_s=1.0,
+        m1_model=m1_model,
+        m2_model=m2_model,
+        time_step_s=1.0,
     )
     eng.update(20.0)
     ts = eng.emitter.get_timeseries()
@@ -59,7 +64,9 @@ def test_m2_rna_stable_at_steady_state_under_composition(
     """M2 starts at expression steady state; should remain there under
     composition (M1 doesn't perturb M2's stores in this chassis tick)."""
     eng = build_karr_m1_m2_engine(
-        m1_model=m1_model, m2_model=m2_model, time_step_s=1.0,
+        m1_model=m1_model,
+        m2_model=m2_model,
+        time_step_s=1.0,
     )
     eng.update(20.0)
     ts = eng.emitter.get_timeseries()
@@ -78,7 +85,9 @@ def test_shared_substrates_accumulate_m2_consumption(
     M1 also lives), proving the topology wires both processes into the
     same store rather than creating parallel stores."""
     eng = build_karr_m1_m2_engine(
-        m1_model=m1_model, m2_model=m2_model, time_step_s=1.0,
+        m1_model=m1_model,
+        m2_model=m2_model,
+        time_step_s=1.0,
     )
     eng.update(20.0)
     ts = eng.emitter.get_timeseries()
@@ -87,16 +96,12 @@ def test_shared_substrates_accumulate_m2_consumption(
     # exist in state but don't appear in timeseries.
     for ntp in ("ATP", "CTP", "GTP", "UTP"):
         a = np.asarray(ts["substrates"][ntp], dtype=float)
-        assert a[0] == pytest.approx(1.0), (
-            f"{ntp} initial != M1's default 1.0: {a[0]}"
-        )
+        assert a[0] == pytest.approx(1.0), f"{ntp} initial != M1's default 1.0: {a[0]}"
         # 20 ticks of negative deltas accumulate; final < initial.
         assert a[-1] < a[0], f"{ntp} did not decrease: {a[0]} -> {a[-1]}"
-        expected_delta = -20.0 * tx.ntp_consumption_per_s(
-            tx.calibrated_chassis_model(m2_model)
-        )[ntp]
+        expected_delta = (
+            -20.0 * tx.ntp_consumption_per_s(tx.calibrated_chassis_model(m2_model))[ntp]
+        )
         observed_delta = float(a[-1] - a[0])
         rel = abs(observed_delta - expected_delta) / abs(expected_delta)
-        assert rel < 0.05, (
-            f"{ntp} delta off: {observed_delta} vs {expected_delta}"
-        )
+        assert rel < 0.05, f"{ntp} delta off: {observed_delta} vs {expected_delta}"

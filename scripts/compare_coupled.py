@@ -101,8 +101,16 @@ def main() -> None:
     ax = axes[0, 0]
     ax.plot(t_plot_h, gene_traj_unc("A", t_plot_h), label="Vilar uncoupled", lw=2)
     ax.plot(t_plot_h, gene_traj(sol_off, "A", t_plot_s), label="coupled, f_met=1", lw=1, ls="--")
-    ax.plot(t_plot_h, gene_traj(sol_coupled, "A", t_plot_s), label="coupled (concentration)", lw=2, alpha=0.8)
-    ax.plot(t_plot_h, gene_traj(sol_flux, "A", t_plot_s), label="coupled (uptake_flux)", lw=2, alpha=0.8)
+    ax.plot(
+        t_plot_h,
+        gene_traj(sol_coupled, "A", t_plot_s),
+        label="coupled (concentration)",
+        lw=2,
+        alpha=0.8,
+    )
+    ax.plot(
+        t_plot_h, gene_traj(sol_flux, "A", t_plot_s), label="coupled (uptake_flux)", lw=2, alpha=0.8
+    )
     ax.set_ylabel("A (activator, molecules)")
     ax.set_xlabel("time (h)")
     ax.legend(fontsize=8)
@@ -110,8 +118,16 @@ def main() -> None:
     ax = axes[0, 1]
     ax.plot(t_plot_h, gene_traj_unc("R", t_plot_h), label="Vilar uncoupled", lw=2)
     ax.plot(t_plot_h, gene_traj(sol_off, "R", t_plot_s), label="coupled, f_met=1", lw=1, ls="--")
-    ax.plot(t_plot_h, gene_traj(sol_coupled, "R", t_plot_s), label="coupled (concentration)", lw=2, alpha=0.8)
-    ax.plot(t_plot_h, gene_traj(sol_flux, "R", t_plot_s), label="coupled (uptake_flux)", lw=2, alpha=0.8)
+    ax.plot(
+        t_plot_h,
+        gene_traj(sol_coupled, "R", t_plot_s),
+        label="coupled (concentration)",
+        lw=2,
+        alpha=0.8,
+    )
+    ax.plot(
+        t_plot_h, gene_traj(sol_flux, "R", t_plot_s), label="coupled (uptake_flux)", lw=2, alpha=0.8
+    )
     ax.set_ylabel("R (repressor, molecules)")
     ax.set_xlabel("time (h)")
     ax.legend(fontsize=8)
@@ -120,7 +136,14 @@ def main() -> None:
     ax.plot(t_plot_h, gene_traj_unc("MA", t_plot_h), label="MA uncoupled", lw=2)
     ax.plot(t_plot_h, gene_traj(sol_coupled, "MA", t_plot_s), label="MA coupled", lw=2, alpha=0.8)
     ax.plot(t_plot_h, gene_traj_unc("MR", t_plot_h), label="MR uncoupled", lw=2, ls=":")
-    ax.plot(t_plot_h, gene_traj(sol_coupled, "MR", t_plot_s), label="MR coupled", lw=2, ls=":", alpha=0.8)
+    ax.plot(
+        t_plot_h,
+        gene_traj(sol_coupled, "MR", t_plot_s),
+        label="MR coupled",
+        lw=2,
+        ls=":",
+        alpha=0.8,
+    )
     ax.set_ylabel("mRNA (molecules)")
     ax.set_xlabel("time (h)")
     ax.legend(fontsize=8)
@@ -134,9 +157,9 @@ def main() -> None:
         y = sol_flux.sol(t)
         f_met_flux[i] = coupled_flux.f_met(t, y)
     ax2 = ax.twinx()
-    line0, = ax.plot(t_plot_h, cglcex, color="C3", label="cglcex (mM)")
-    line1, = ax2.plot(t_plot_h, f_met_conc, color="C4", ls="--", label="f_met (concentration)")
-    line2, = ax2.plot(t_plot_h, f_met_flux, color="C5", ls="-.", label="f_met (uptake_flux)")
+    (line0,) = ax.plot(t_plot_h, cglcex, color="C3", label="cglcex (mM)")
+    (line1,) = ax2.plot(t_plot_h, f_met_conc, color="C4", ls="--", label="f_met (concentration)")
+    (line2,) = ax2.plot(t_plot_h, f_met_flux, color="C5", ls="-.", label="f_met (uptake_flux)")
     ax.set_ylabel("cglcex (mM)", color="C3")
     ax2.set_ylabel("f_met (synthesis modulation)")
     ax.set_xlabel("time (h)")
@@ -152,6 +175,7 @@ def main() -> None:
     print(f"Wrote {out_png}")
 
     # Numerical summary
+    f_met_vals = f_met_conc
     summary = {
         "horizon_hours": T_END_HOURS,
         "f_met_min": float(f_met_vals.min()),

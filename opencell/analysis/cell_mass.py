@@ -26,6 +26,7 @@ MW provenance:
 Returns grams (not Daltons) so the result can be compared directly
 against Karr's State_Mass.cellDry value (~3.94e-15 g for M. genitalium).
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -43,6 +44,7 @@ AVOGADRO = 6.02214076e23
 @dataclass(frozen=True)
 class CellMassBreakdown:
     """Per-class mass contributions in grams, plus the total."""
+
     substrate_mass_g: float
     rna_mass_g: float
     protein_mass_g: float
@@ -52,15 +54,14 @@ class CellMassBreakdown:
 
 def _load_substrate_mw(m1: km.KarrMetabolismModel) -> dict[str, float]:
     sub_ids = list(m1.raw["ids"]["substrate_wcm_585"])
-    mw_arr = np.load(m1.raw["matrix_npz"].replace("data/karr_fixtures/", "data/karr_fixtures/")
-                     ) if False else None  # no-op; placeholder kept for clarity
+    np.load(
+        m1.raw["matrix_npz"].replace("data/karr_fixtures/", "data/karr_fixtures/")
+    ) if False else None  # no-op; placeholder kept for clarity
     # Re-load the npz directly to pick up the v2 substrate_molecular_weight
     # field without expanding KarrMetabolismModel's dataclass surface.
     from pathlib import Path
-    npz_path = (
-        Path(__file__).resolve().parents[2]
-        / "data" / "karr_fixtures" / "karr_native_m1.npz"
-    )
+
+    npz_path = Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "karr_native_m1.npz"
     z = np.load(npz_path)
     if "substrate_molecular_weight" not in z.files:
         raise RuntimeError(
@@ -69,30 +70,24 @@ def _load_substrate_mw(m1: km.KarrMetabolismModel) -> dict[str, float]:
     arr = np.asarray(z["substrate_molecular_weight"], dtype=float).reshape(-1)
     if arr.size != len(sub_ids):
         raise RuntimeError(
-            f"substrate_molecular_weight size {arr.size} != "
-            f"substrate_wcm_585 size {len(sub_ids)}"
+            f"substrate_molecular_weight size {arr.size} != substrate_wcm_585 size {len(sub_ids)}"
         )
-    return dict(zip(sub_ids, arr.tolist()))
+    return dict(zip(sub_ids, arr.tolist(), strict=False))
 
 
 def _load_rna_mw(m2: tx.KarrTranscriptionModel) -> dict[str, float]:
     from pathlib import Path
-    npz_path = (
-        Path(__file__).resolve().parents[2]
-        / "data" / "karr_fixtures" / "karr_native_m2.npz"
-    )
+
+    npz_path = Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "karr_native_m2.npz"
     z = np.load(npz_path)
     if "rna_molecular_weight" not in z.files:
-        raise RuntimeError(
-            "M2 fixture missing rna_molecular_weight (need karr_native_m2__v2)."
-        )
+        raise RuntimeError("M2 fixture missing rna_molecular_weight (need karr_native_m2__v2).")
     arr = np.asarray(z["rna_molecular_weight"], dtype=float).reshape(-1)
     if arr.size != len(m2.gene_wcm_ids):
         raise RuntimeError(
-            f"rna_molecular_weight size {arr.size} != "
-            f"gene_wcm_ids size {len(m2.gene_wcm_ids)}"
+            f"rna_molecular_weight size {arr.size} != gene_wcm_ids size {len(m2.gene_wcm_ids)}"
         )
-    return dict(zip(m2.gene_wcm_ids, arr.tolist()))
+    return dict(zip(m2.gene_wcm_ids, arr.tolist(), strict=False))
 
 
 def _load_protein_mw(m3: tl.KarrTranslationModel) -> dict[str, float]:
@@ -102,7 +97,7 @@ def _load_protein_mw(m3: tl.KarrTranslationModel) -> dict[str, float]:
             f"protein molecular_weight size {arr.size} != "
             f"protein_wcm_ids size {len(m3.protein_wcm_ids)}"
         )
-    return dict(zip(m3.protein_wcm_ids, arr.tolist()))
+    return dict(zip(m3.protein_wcm_ids, arr.tolist(), strict=False))
 
 
 def compute_cell_mass(

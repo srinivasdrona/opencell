@@ -92,9 +92,7 @@ class KarrProteinTranslocationProcess(Process):
         self.atp_wid = self.substrate_wids[atp_substrate_idx]
 
         srp_idx = _as_scalar_int(fx["enzymeIndexs_signalRecognitionParticle"]) - 1
-        srp_receptor_idx = _as_scalar_int(
-            fx["enzymeIndexs_signalRecognitionParticleReceptor"]
-        ) - 1
+        srp_receptor_idx = _as_scalar_int(fx["enzymeIndexs_signalRecognitionParticleReceptor"]) - 1
         atpase_idx = _as_scalar_int(fx["enzymeIndexs_translocaseATPase"]) - 1
         pore_idx = _as_scalar_int(fx["enzymeIndexs_translocasePore"]) - 1
 
@@ -184,9 +182,7 @@ class KarrProteinTranslocationProcess(Process):
                 },
             },
             "requests": {
-                self.name: {
-                    self.atp_wid: {"_default": 0.0, "_updater": "set", "_emit": False}
-                }
+                self.name: {self.atp_wid: {"_default": 0.0, "_updater": "set", "_emit": False}}
             },
             "substrates_allocated": {
                 self.name: {
@@ -230,7 +226,9 @@ class KarrProteinTranslocationProcess(Process):
         srp_receptor_remaining = _read_nonnegative_count(
             protein_counts_state, self.srp_receptor_wid
         )
-        atpase_remaining = _read_nonnegative_count(protein_counts_state, self.translocase_atpase_wid)
+        atpase_remaining = _read_nonnegative_count(
+            protein_counts_state, self.translocase_atpase_wid
+        )
         pore_remaining = _read_nonnegative_count(protein_counts_state, self.translocase_pore_wid)
 
         translocated_counts: dict[str, int] = {}
@@ -279,8 +277,7 @@ class KarrProteinTranslocationProcess(Process):
             return {}
 
         atp_spent = sum(
-            translocated_counts[wid] * int(self.atp_cost_by_wid[wid])
-            for wid in translocated_counts
+            translocated_counts[wid] * int(self.atp_cost_by_wid[wid]) for wid in translocated_counts
         )
         location_update = {wid: self.destination_by_wid[wid] for wid in translocated_counts}
 

@@ -33,6 +33,7 @@ half of Karr's fitted rates (median log2 ratio = -0.91, |log2| = 1.49);
 multiplying by 2 brings the agreement to median = +0.09, |log2| = 0.99,
 in the same ballpark as M1's per-reaction oracle (0.96).
 """
+
 from __future__ import annotations
 
 import json
@@ -42,22 +43,22 @@ from pathlib import Path
 import numpy as np
 
 DEFAULT_FIXTURE_JSON = (
-    Path(__file__).resolve().parents[2]
-    / "data" / "karr_fixtures" / "karr_native_m2_v2.json"
+    Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "karr_native_m2_v2.json"
 )
 
 
 @dataclass
 class MechanismInputs:
     """Per-TU mechanism inputs from Karr's snapshot."""
+
     tu_wcm_ids: list[str]
     gene_wcm_ids: list[str]
-    tu_lengths_nt: np.ndarray            # (n_tu,)
-    p_bind_bare: np.ndarray              # (n_tu,) Karr's fittedConstants
-    tu_gene_incidence: np.ndarray        # (n_tu, n_genes) int8 0/1
+    tu_lengths_nt: np.ndarray  # (n_tu,)
+    p_bind_bare: np.ndarray  # (n_tu,) Karr's fittedConstants
+    tu_gene_incidence: np.ndarray  # (n_tu, n_genes) int8 0/1
     elongation_rate_nt_per_s: float
-    n_active_rnap: int                   # snapshot
-    n_total_rnap: int                    # snapshot
+    n_active_rnap: int  # snapshot
+    n_total_rnap: int  # snapshot
     rnap_state_expectations: np.ndarray  # (4,) [active, specBound, nonSpec, free]
     karr_fitted_synth_per_s: np.ndarray  # (n_genes,) gene-level oracle target
     raw: dict = field(repr=False)

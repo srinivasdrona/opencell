@@ -17,12 +17,10 @@ import numpy as np
 import pytest
 
 from opencell.models.coupled import (
-    CoupledMetabolismTranscription,
     SECONDS_PER_HOUR,
     SYNTHESIS_REACTION_INDICES,
+    CoupledMetabolismTranscription,
 )
-from opencell.models.metabolism import MetabolismModel
-from opencell.models.transcription import TranscriptionModel
 
 
 @pytest.fixture(scope="module")
@@ -30,7 +28,7 @@ def coupled() -> CoupledMetabolismTranscription:
     return CoupledMetabolismTranscription.build()
 
 
-def test_initial_layout_round_trip(coupled):
+def test_initial_layout_round_trip(coupled) -> None:
     y0 = coupled.initial_y
     assert y0.shape == (coupled.n_met + coupled.n_gene,)
     y_met, y_gene = coupled.split(y0)
@@ -38,7 +36,7 @@ def test_initial_layout_round_trip(coupled):
     np.testing.assert_array_equal(y_gene, coupled.gene.initial_y)
 
 
-def test_f_met_one_equals_uncoupled_rhs(coupled):
+def test_f_met_one_equals_uncoupled_rhs(coupled) -> None:
     """At f_met=1 the composite RHS must equal stacked uncoupled RHSs."""
     coupled_one = CoupledMetabolismTranscription.build(
         met=coupled.met, gene=coupled.gene, f_met_fn=lambda c, c0: 1.0
@@ -58,7 +56,7 @@ def test_f_met_one_equals_uncoupled_rhs(coupled):
     np.testing.assert_allclose(dy_composite[coupled.n_met :], dy_gene_s, rtol=1e-12, atol=1e-15)
 
 
-def test_only_synthesis_fluxes_modulated(coupled):
+def test_only_synthesis_fluxes_modulated(coupled) -> None:
     """Setting f_met=0 must zero exactly the 6 synthesis fluxes; others unchanged."""
     coupled_zero = CoupledMetabolismTranscription.build(
         met=coupled.met, gene=coupled.gene, f_met_fn=lambda c, c0: 0.0
@@ -87,7 +85,7 @@ def test_only_synthesis_fluxes_modulated(coupled):
         assert actual[j] == 0.0
 
 
-def test_stoichiometry_assertion_catches_wrong_reaction():
+def test_stoichiometry_assertion_catches_wrong_reaction() -> None:
     """If we curate the wrong index, build() must reject it."""
     from opencell.models import coupled as cmod
 
@@ -97,13 +95,13 @@ def test_stoichiometry_assertion_catches_wrong_reaction():
     cmod.SYNTHESIS_PRODUCT_SPECIES = ("MA",) + orig_products[1:]
     try:
         with pytest.raises(AssertionError, match="product-only"):
-            CoupledMetabolismTranscription.build()
+            cmod.CoupledMetabolismTranscription.build()
     finally:
         cmod.SYNTHESIS_REACTION_INDICES = orig
         cmod.SYNTHESIS_PRODUCT_SPECIES = orig_products
 
 
-def test_short_integration_runs_and_conserves_genes(coupled):
+def test_short_integration_runs_and_conserves_genes(coupled) -> None:
     """Integrate ~1 hour cellular time; check finiteness + gene conservation."""
     from scipy.integrate import solve_ivp
 
@@ -131,7 +129,7 @@ def test_short_integration_runs_and_conserves_genes(coupled):
     np.testing.assert_allclose(DR + DRp, 1.0, atol=1e-6)
 
 
-def test_glucose_depletion_reduces_synthesis():
+def test_glucose_depletion_reduces_synthesis() -> None:
     """With a knock-out f_met (forced to 0), MA/MR/A/R should not accumulate.
 
     Compares against an f_met=1 (full synthesis) run over the same horizon
@@ -167,7 +165,8 @@ def test_glucose_depletion_reduces_synthesis():
 
 # ---------- uptake_flux signal ----------
 
-def test_uptake_flux_signal_initial_value(coupled):
+
+def test_uptake_flux_signal_initial_value(coupled) -> None:
     """At t=0 the uptake-flux signal must give f_met == 1.0 exactly."""
     cb = CoupledMetabolismTranscription.build(
         met=coupled.met, gene=coupled.gene, signal="uptake_flux"
@@ -176,7 +175,7 @@ def test_uptake_flux_signal_initial_value(coupled):
     assert f0 == pytest.approx(1.0, abs=1e-12), f"f_met@t0 = {f0}, expected 1.0"
 
 
-def test_uptake_flux_rhs_matches_uncoupled_at_t0(coupled):
+def test_uptake_flux_rhs_matches_uncoupled_at_t0(coupled) -> None:
     """At t=0, uptake_flux signal yields f=1, so composite RHS must equal
     the concentration-signal composite RHS at t=0 (both reproduce uncoupled).
     """
@@ -187,11 +186,10 @@ def test_uptake_flux_rhs_matches_uncoupled_at_t0(coupled):
         met=coupled.met, gene=coupled.gene, signal="concentration"
     )
     y0 = cb_flux.initial_y
-    np.testing.assert_allclose(cb_flux.rhs(0.0, y0), cb_conc.rhs(0.0, y0),
-                               rtol=1e-12, atol=1e-15)
+    np.testing.assert_allclose(cb_flux.rhs(0.0, y0), cb_conc.rhs(0.0, y0), rtol=1e-12, atol=1e-15)
 
 
-def test_uptake_flux_distinguishes_from_concentration_at_depletion(coupled):
+def test_uptake_flux_distinguishes_from_concentration_at_depletion(coupled) -> None:
     """Construct a state where cglcex is half-depleted but PEP is severely
     drained: the uptake_flux signal should drop further than concentration
     (PTS rate depends on both substrates).
@@ -205,7 +203,7 @@ def test_uptake_flux_distinguishes_from_concentration_at_depletion(coupled):
     y = cb_flux.initial_y.copy()
     midx = coupled.met.species_index()
     y[midx["cglcex"]] *= 0.5  # half external glucose
-    y[midx["cpep"]] *= 0.05   # 95% PEP drain (PTS cofactor)
+    y[midx["cpep"]] *= 0.05  # 95% PEP drain (PTS cofactor)
     f_conc = cb_conc.f_met(0.0, y)
     f_flux = cb_flux.f_met(0.0, y)
     assert f_conc == pytest.approx(0.5, abs=1e-12)
@@ -215,7 +213,7 @@ def test_uptake_flux_distinguishes_from_concentration_at_depletion(coupled):
     )
 
 
-def test_uptake_flux_rhs_equals_concentration_rhs_for_met_block(coupled):
+def test_uptake_flux_rhs_equals_concentration_rhs_for_met_block(coupled) -> None:
     """The metabolism block of the composite RHS must be identical between
     the two signals (signal only affects the gene block scaling).
     """
@@ -233,5 +231,6 @@ def test_uptake_flux_rhs_equals_concentration_rhs_for_met_block(coupled):
     np.testing.assert_allclose(
         cb_flux.rhs(0.0, y)[: coupled.n_met],
         cb_conc.rhs(0.0, y)[: coupled.n_met],
-        rtol=1e-12, atol=1e-15,
+        rtol=1e-12,
+        atol=1e-15,
     )

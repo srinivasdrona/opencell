@@ -20,17 +20,15 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Optional
 
 from opencell.extraction.candidate import ExtractionCandidate
-
 
 # Status constants (use strings, not Enum, to keep YAML/JSON round-trip simple)
 AGREE = "AGREE"
 DISAGREE = "DISAGREE"
-NO_SBML = "NO_SBML"                  # manifest entry has no sbml_value to compare against
-NO_PDF_VALUE = "NO_PDF_VALUE"        # no PDF-derived recommendation
-NO_UNIT_MATCH = "NO_UNIT_MATCH"      # PDF candidate not convertible to entry's target_unit
+NO_SBML = "NO_SBML"  # manifest entry has no sbml_value to compare against
+NO_PDF_VALUE = "NO_PDF_VALUE"  # no PDF-derived recommendation
+NO_UNIT_MATCH = "NO_UNIT_MATCH"  # PDF candidate not convertible to entry's target_unit
 SKIPPED_SAME_SOURCE = "SKIPPED_SAME_SOURCE"  # recommendation came from the SBML itself
 
 
@@ -43,9 +41,9 @@ class CrossCheck:
     """Outcome of a single PDF-vs-SBML value comparison."""
 
     status: str
-    pdf_value: Optional[float] = None
-    sbml_value: Optional[float] = None
-    rel_diff: Optional[float] = None     # |pdf - sbml| / |sbml|, when both present
+    pdf_value: float | None = None
+    sbml_value: float | None = None
+    rel_diff: float | None = None  # |pdf - sbml| / |sbml|, when both present
     rel_tol: float = 0.01
     abs_tol: float = 1e-12
     note: str = ""
@@ -98,8 +96,9 @@ def cross_check(
     if candidate.method in _SBML_DERIVED_METHODS:
         return CrossCheck(
             status=SKIPPED_SAME_SOURCE,
-            pdf_value=candidate.converted_value if candidate.converted_value is not None
-                      else candidate.raw_value,
+            pdf_value=candidate.converted_value
+            if candidate.converted_value is not None
+            else candidate.raw_value,
             sbml_value=float(sbml_value),
             rel_tol=rel_tol,
             abs_tol=abs_tol,
@@ -114,8 +113,10 @@ def cross_check(
             sbml_value=float(sbml_value),
             rel_tol=rel_tol,
             abs_tol=abs_tol,
-            note=(f"PDF candidate raw_unit={candidate.raw_unit!r} not convertible "
-                  f"to manifest target_unit; cannot perform numeric comparison"),
+            note=(
+                f"PDF candidate raw_unit={candidate.raw_unit!r} not convertible "
+                f"to manifest target_unit; cannot perform numeric comparison"
+            ),
         )
 
     pdf_f = float(pdf_value)

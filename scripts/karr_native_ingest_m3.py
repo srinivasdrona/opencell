@@ -7,6 +7,7 @@ and writes:
 
 Sole runtime dependency of `opencell.m3.translation`.
 """
+
 from __future__ import annotations
 
 import json
@@ -50,12 +51,12 @@ def main() -> None:
 
     # Slice to mature
     length_aa = lengths_4820[midx].astype(np.int32)
-    half_life_s = half_lives_4820[midx]      # seconds; inf for non-decayed
+    half_life_s = half_lives_4820[midx]  # seconds; inf for non-decayed
     decay_rate_per_s = decay_rates_4820[midx]
     molecular_weight = mol_w_4820[midx]
     compartment = compartments_4820[midx]
-    counts_mature = counts_4820[midx, 0]      # column 0 = mature initial counts
-    base_counts = base_counts_4820[midx, :]   # (482, 722) - per-monomer base composition
+    counts_mature = counts_4820[midx, 0]  # column 0 = mature initial counts
+    base_counts = base_counts_4820[midx, :]  # (482, 722) - per-monomer base composition
 
     # Synthesis rate at steady state: dN/dt = s - k*N = 0  =>  s = k*N
     synth_rate_per_s = counts_mature * decay_rate_per_s
@@ -86,60 +87,70 @@ def main() -> None:
         base_counts=base_counts,
     )
 
-    JSON_OUT.write_text(json.dumps({
-        "schema_version": SCHEMA_VERSION,
-        "source_archive": "data/karr_archive/",
-        "source_archive_files": ["proteins_targeted"],
-        "matrix_npz": str(NPZ_OUT.relative_to(REPO)),
-        "counts": {
-            "n_proteins": n_proteins,
-            "n_immortal_halflife_inf": int(np.isinf(half_life_s).sum()),
-            "n_zero_initial_count": int((counts_mature == 0).sum()),
-            "compartment_histogram": comp_hist,
-        },
-        "scalars": {
-            "ribosome_elongation_rate_aa_per_s": elongation_rate_aa_per_s,
-            "tmrna_binding_probability": tmrna_binding,
-            "total_mature_counts": float(counts_mature.sum()),
-            "total_synth_rate_per_s_at_ss": float(synth_rate_per_s.sum()),
-            "total_aa_polymerization_per_s_at_ss": float(
-                np.sum(synth_rate_per_s * length_aa)),
-        },
-        "ids": {
-            "protein_wcm_482": wcm_ids,
-            "gene_wcm_482": gene_wcm_ids,
-            "compartment_wcm_482": comp_wcm_ids,
-        },
-        "shapes": {
-            "length_aa": list(length_aa.shape),
-            "half_life_s": list(half_life_s.shape),
-            "counts_mature": list(counts_mature.shape),
-            "base_counts": list(base_counts.shape),
-        },
-        "interpretation": (
-            "Karr-native M3 translation fixture. 482 protein monomers "
-            "extracted from sim.state.ProteinMonomer with the matureIndexs "
-            "slice (each species has 10 maturation forms; only mature is "
-            "tracked here). halfLife is in SECONDS (inf for non-decayed "
-            "essential proteins, mapped to decay_rate=0). counts_mature is "
-            "Karr's fitted initial count for the mature form. "
-            "synth_rate_per_s = counts_mature * decay_rate_per_s by Karr's "
-            "fitting convention (dN/dt = s - k*N = 0 at steady state). "
-            "Ribosome elongation rate = 16 aa/s. base_counts is per-monomer "
-            "composition over Karr's 722 metabolite vocabulary (rows=mature "
-            "monomers, cols=metabolites; non-zero where AA is consumed in "
-            "polymerization)."
-        ),
-    }, indent=2))
+    JSON_OUT.write_text(
+        json.dumps(
+            {
+                "schema_version": SCHEMA_VERSION,
+                "source_archive": "data/karr_archive/",
+                "source_archive_files": ["proteins_targeted"],
+                "matrix_npz": str(NPZ_OUT.relative_to(REPO)),
+                "counts": {
+                    "n_proteins": n_proteins,
+                    "n_immortal_halflife_inf": int(np.isinf(half_life_s).sum()),
+                    "n_zero_initial_count": int((counts_mature == 0).sum()),
+                    "compartment_histogram": comp_hist,
+                },
+                "scalars": {
+                    "ribosome_elongation_rate_aa_per_s": elongation_rate_aa_per_s,
+                    "tmrna_binding_probability": tmrna_binding,
+                    "total_mature_counts": float(counts_mature.sum()),
+                    "total_synth_rate_per_s_at_ss": float(synth_rate_per_s.sum()),
+                    "total_aa_polymerization_per_s_at_ss": float(
+                        np.sum(synth_rate_per_s * length_aa)
+                    ),
+                },
+                "ids": {
+                    "protein_wcm_482": wcm_ids,
+                    "gene_wcm_482": gene_wcm_ids,
+                    "compartment_wcm_482": comp_wcm_ids,
+                },
+                "shapes": {
+                    "length_aa": list(length_aa.shape),
+                    "half_life_s": list(half_life_s.shape),
+                    "counts_mature": list(counts_mature.shape),
+                    "base_counts": list(base_counts.shape),
+                },
+                "interpretation": (
+                    "Karr-native M3 translation fixture. 482 protein monomers "
+                    "extracted from sim.state.ProteinMonomer with the matureIndexs "
+                    "slice (each species has 10 maturation forms; only mature is "
+                    "tracked here). halfLife is in SECONDS (inf for non-decayed "
+                    "essential proteins, mapped to decay_rate=0). counts_mature is "
+                    "Karr's fitted initial count for the mature form. "
+                    "synth_rate_per_s = counts_mature * decay_rate_per_s by Karr's "
+                    "fitting convention (dN/dt = s - k*N = 0 at steady state). "
+                    "Ribosome elongation rate = 16 aa/s. base_counts is per-monomer "
+                    "composition over Karr's 722 metabolite vocabulary (rows=mature "
+                    "monomers, cols=metabolites; non-zero where AA is consumed in "
+                    "polymerization)."
+                ),
+            },
+            indent=2,
+        )
+    )
 
     print(f"wrote {JSON_OUT.relative_to(REPO)} ({JSON_OUT.stat().st_size:,} B)")
     print(f"wrote {NPZ_OUT.relative_to(REPO)} ({NPZ_OUT.stat().st_size:,} B)")
-    print(f"proteins: {n_proteins}; total mature counts: {counts_mature.sum():.0f}; "
-          f"elong: {elongation_rate_aa_per_s} aa/s")
+    print(
+        f"proteins: {n_proteins}; total mature counts: {counts_mature.sum():.0f}; "
+        f"elong: {elongation_rate_aa_per_s} aa/s"
+    )
     print(f"sample (prot 0 = {wcm_ids[0]} from gene {gene_wcm_ids[0]}):")
-    print(f"  len={length_aa[0]} aa, halfLife={half_life_s[0]:.4g} s, "
-          f"decay={decay_rate_per_s[0]:.4g} /s, count_mature={counts_mature[0]:.0f}, "
-          f"synth_at_ss={synth_rate_per_s[0]:.4g} /s")
+    print(
+        f"  len={length_aa[0]} aa, halfLife={half_life_s[0]:.4g} s, "
+        f"decay={decay_rate_per_s[0]:.4g} /s, count_mature={counts_mature[0]:.0f}, "
+        f"synth_at_ss={synth_rate_per_s[0]:.4g} /s"
+    )
 
 
 if __name__ == "__main__":

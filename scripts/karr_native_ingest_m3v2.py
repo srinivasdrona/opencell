@@ -13,6 +13,7 @@ analysis as M2 v2 then gives
 Each protein has exactly one mRNA species (no operons at the translation
 stage), so the predictor is gene-aligned 482-vec.
 """
+
 from __future__ import annotations
 
 import json
@@ -31,7 +32,7 @@ OUT_JSON = REPO / "data" / "karr_fixtures" / "karr_native_m3_v2.json"
 OUT_NPZ = REPO / "data" / "karr_fixtures" / "karr_native_m3_v2.npz"
 
 
-def main():
+def main() -> None:
     print("loading translation_v2_targeted from karr_archive")
     arc = load_karr_archive()
     d = arc["translation_v2_targeted"]
@@ -42,20 +43,24 @@ def main():
     n_total = n_active + n_stalled + n_not_exist
     state_occ = np.asarray(d.rib_stateOccupancies, dtype=float).ravel()
     elong_aa_per_s = float(d.pt_ribosomeElongationRate)
-    mrna_counts = np.asarray(d.pt_mRNAs, dtype=float).ravel()      # (482,)
+    mrna_counts = np.asarray(d.pt_mRNAs, dtype=float).ravel()  # (482,)
     length_aa = np.asarray(d.pt_polypeptide_monomerLengths, dtype=float).ravel()  # (482,)
     n_mrnas_bound = np.asarray(d.rib_nMRNAsBound, dtype=int).ravel()  # (482,)
 
-    print(f"  N_active_ribosomes={n_active} (stalled={n_stalled} notExist={n_not_exist} total={n_total})")
+    print(
+        f"  N_active_ribosomes={n_active} (stalled={n_stalled} notExist={n_not_exist} total={n_total})"
+    )
     print(f"  state_occupancies[active,notExist,stalled]={state_occ}")
     print(f"  elongation={elong_aa_per_s} aa/s, n_proteins={mrna_counts.size}")
     print(f"  total mRNAs in cell = {int(mrna_counts.sum())}")
-    print(f"  total ribosomes bound to mRNAs = {int(n_mrnas_bound.sum())} (sanity vs nActive={n_active})")
+    print(
+        f"  total ribosomes bound to mRNAs = {int(n_mrnas_bound.sum())} (sanity vs nActive={n_active})"
+    )
 
     # M3 v1 oracle target: synth_rate_per_s = counts_mature * decay
     z3 = np.load(M3_FIXTURE_NPZ)
     karr_synth = z3["synth_rate_per_s"]  # (482,)
-    counts_mature = z3["counts_mature"]
+    z3["counts_mature"]
     length_aa_v1 = z3["length_aa"]
     if not np.array_equal(length_aa.astype(int), length_aa_v1.astype(int)):
         # cross-check: lengths from process and state should match
@@ -70,25 +75,40 @@ def main():
     total_aa_polym_predicted = float(np.sum(synth_predicted * length_aa))
 
     # Oracle
-    valid = (karr_synth > 0) & (synth_predicted > 0) & np.isfinite(karr_synth) & np.isfinite(synth_predicted)
+    valid = (
+        (karr_synth > 0)
+        & (synth_predicted > 0)
+        & np.isfinite(karr_synth)
+        & np.isfinite(synth_predicted)
+    )
     log2r = np.log2(synth_predicted[valid] / karr_synth[valid])
     print()
     print("=== M3 v2 oracle: ribosome mechanism vs Karr fitted ===")
-    print(f"  comparable proteins: {int(valid.sum())} (excludes {int((~valid).sum())} with zero rate)")
-    print(f"  log2 ratio: median={np.median(log2r):+.3f}  mean={np.mean(log2r):+.3f}  std={np.std(log2r):.3f}")
-    print(f"  log2 ratio: 10pct={np.percentile(log2r,10):+.3f}  90pct={np.percentile(log2r,90):+.3f}")
+    print(
+        f"  comparable proteins: {int(valid.sum())} (excludes {int((~valid).sum())} with zero rate)"
+    )
+    print(
+        f"  log2 ratio: median={np.median(log2r):+.3f}  mean={np.mean(log2r):+.3f}  std={np.std(log2r):.3f}"
+    )
+    print(
+        f"  log2 ratio: 10pct={np.percentile(log2r, 10):+.3f}  90pct={np.percentile(log2r, 90):+.3f}"
+    )
     print(f"  median |log2 ratio| = {np.median(np.abs(log2r)):.3f}")
     print(f"  total synth (mech) = {np.sum(synth_predicted):.4f} per s")
     print(f"  total synth (Karr) = {np.sum(karr_synth):.4f} per s")
-    print(f"  total AA polym (mech) = {total_aa_polym_predicted:.2f} aa/s "
-          f"(invariant: N_active*elong = {n_active*elong_aa_per_s:.0f})")
+    print(
+        f"  total AA polym (mech) = {total_aa_polym_predicted:.2f} aa/s "
+        f"(invariant: N_active*elong = {n_active * elong_aa_per_s:.0f})"
+    )
 
     # Cell-cycle averaging exploration (analog of M2 v2)
     for scale in [1.0, 1.5, 2.0]:
         s = synth_predicted * scale
         valid_s = (karr_synth > 0) & (s > 0)
         log2r_s = np.log2(s[valid_s] / karr_synth[valid_s])
-        print(f"  scale={scale:.2f}: median={np.median(log2r_s):+.3f}  median|log2|={np.median(np.abs(log2r_s)):.3f}")
+        print(
+            f"  scale={scale:.2f}: median={np.median(log2r_s):+.3f}  median|log2|={np.median(np.abs(log2r_s)):.3f}"
+        )
 
     # Save fixture
     out_meta = {

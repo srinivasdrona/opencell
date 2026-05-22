@@ -61,10 +61,14 @@ class KarrRNAModificationProcess(Process):
 
         row_sums = np.sum(self.reaction_modification, axis=1)
         if not np.all(row_sums == 1):
-            raise ValueError("reactionModificationMatrix must have exactly one target RNA per reaction")
+            raise ValueError(
+                "reactionModificationMatrix must have exactly one target RNA per reaction"
+            )
         self._reaction_target_idx = np.argmax(self.reaction_modification, axis=1).astype(np.int64)
 
-        self.required_reactions_per_rna = np.sum(self.reaction_modification, axis=0).astype(np.int64)
+        self.required_reactions_per_rna = np.sum(self.reaction_modification, axis=0).astype(
+            np.int64
+        )
         self._n_completed = np.zeros(len(self.unmodified_rna_wids), dtype=np.int64)
 
     def _load_fixture(self, path: str | Path) -> None:
@@ -75,10 +79,12 @@ class KarrRNAModificationProcess(Process):
         all_unmodified = _parse_wid_array(fx["unmodifiedRNAWholeCellModelIDs"])
         all_modified = _parse_wid_array(fx["modifiedRNAWholeCellModelIDs"])
 
-        raw_reaction_modification = np.asarray(fx["reactionModificationMatrix"][0, 0], dtype=np.uint8)
-        self._active_rna_indices = np.flatnonzero(np.sum(raw_reaction_modification, axis=0) > 0).astype(
-            np.int64
+        raw_reaction_modification = np.asarray(
+            fx["reactionModificationMatrix"][0, 0], dtype=np.uint8
         )
+        self._active_rna_indices = np.flatnonzero(
+            np.sum(raw_reaction_modification, axis=0) > 0
+        ).astype(np.int64)
         if self._active_rna_indices.size == 0:
             raise ValueError("No active RNA modification targets found in fixture")
 
@@ -146,7 +152,10 @@ class KarrRNAModificationProcess(Process):
             dtype=np.float64,
         )
         modified_rna = np.asarray(
-            [float(states["rna"].get("modified_counts", {}).get(wid, 0.0)) for wid in self.modified_rna_wids],
+            [
+                float(states["rna"].get("modified_counts", {}).get(wid, 0.0))
+                for wid in self.modified_rna_wids
+            ],
             dtype=np.float64,
         )
         enzymes = np.asarray(

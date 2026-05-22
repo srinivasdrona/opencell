@@ -51,7 +51,6 @@ from opencell.models.coupled import (
     CoupledMetabolismTranscription,
 )
 
-
 # Tolerance for "did the store change vs my cached state" check.
 # Tighter than LSODA's own tolerances: any change of size > rel 1e-12
 # is treated as an external write requiring resync.
@@ -153,9 +152,7 @@ class PersistentMetabolismProcess(Process):
         t_target = self._t + timestep
         y_end = self._integrator.integrate(t_target)
         if not self._integrator.successful():
-            raise RuntimeError(
-                f"PersistentMetabolismProcess LSODA failed at t={t_target}"
-            )
+            raise RuntimeError(f"PersistentMetabolismProcess LSODA failed at t={t_target}")
 
         self._t = t_target
         self._cached_y = y_end.copy()

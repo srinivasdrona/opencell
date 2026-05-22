@@ -8,11 +8,9 @@ to Phase 2 when the sub-model API is known.
 from __future__ import annotations
 
 import logging
-import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable
-
-import numpy as np
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -80,21 +78,25 @@ class ValidationHarness:
                 result = validator(context)
                 report.results.append(result)
             except Exception as e:
-                report.results.append(ValidationResult(
-                    name=name,
-                    passed=False,
-                    message=f"Validator crashed: {e}",
-                    severity="error",
-                ))
+                report.results.append(
+                    ValidationResult(
+                        name=name,
+                        passed=False,
+                        message=f"Validator crashed: {e}",
+                        severity="error",
+                    )
+                )
         return report
 
 
 # ── Built-in validators ──
 
+
 def mass_conservation_validator(
     tolerance: float = 1e-6,
 ) -> Callable[[dict[str, Any]], ValidationResult]:
     """Check that total mass is conserved across a simulation."""
+
     def validate(ctx: dict[str, Any]) -> ValidationResult:
         initial_mass = ctx.get("initial_total_mass", 0.0)
         final_mass = ctx.get("final_total_mass", 0.0)
@@ -114,11 +116,13 @@ def mass_conservation_validator(
             value=residual,
             threshold=tolerance,
         )
+
     return validate
 
 
 def positivity_validator() -> Callable[[dict[str, Any]], ValidationResult]:
     """Check that all species counts are non-negative."""
+
     def validate(ctx: dict[str, Any]) -> ValidationResult:
         counts = ctx.get("final_counts", {})
         negatives = {k: v for k, v in counts.items() if v < 0}
@@ -134,6 +138,7 @@ def positivity_validator() -> Callable[[dict[str, Any]], ValidationResult]:
             passed=True,
             message="All counts non-negative",
         )
+
     return validate
 
 
@@ -145,6 +150,7 @@ def doubling_time_validator(
 
     This is a Phase 2+ validator — needs actual growth data.
     """
+
     def validate(ctx: dict[str, Any]) -> ValidationResult:
         dt_hours = ctx.get("doubling_time_hours")
         if dt_hours is None:
@@ -164,4 +170,5 @@ def doubling_time_validator(
             value=dt_hours,
             threshold=expected_hours,
         )
+
     return validate

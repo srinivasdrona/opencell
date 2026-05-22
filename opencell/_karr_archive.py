@@ -11,7 +11,8 @@ Usage:
 Each "<file>" key returns a `_Namespace` whose attribute access walks the
 dotted path used in the original .mat (e.g., the m2 ingest pattern
 ``sim["data"].processes.Process_Transcription.fittedConstants.transcriptionUnitBindingProbabilities``
-becomes ``arc["sim_fitted_targeted"].processes.Process_Transcription.fittedConstants.transcriptionUnitBindingProbabilities``).
+becomes
+``arc["sim_fitted_targeted"].processes.Process_Transcription.fittedConstants.transcriptionUnitBindingProbabilities``).
 
 For struct arrays (e.g. KB.genes is an array of 525 gene structs in MATLAB),
 the archive stores parallel columns: ``arc["knowledgeBase_targeted"].knowledgeBase.genes``
@@ -23,9 +24,11 @@ The archive is built by ``scripts/build_karr_archive.py`` from the raw .mat
 files. After that one-time build, ``load_karr_archive()`` runs anywhere with
 zero MATLAB and zero .mat dependency.
 """
+
 from __future__ import annotations
 
 import json
+from collections.abc import Iterator
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -40,13 +43,14 @@ DEFAULT_MANIFEST = ROOT / "data" / "karr_archive" / "karr_archive_manifest.json"
 
 class _StructArrayRow:
     """Per-row view of a struct array, mimicking MATLAB struct attribute access."""
+
     __slots__ = ("_parent", "_idx")
 
-    def __init__(self, parent: "_StructArray", idx: int):
+    def __init__(self, parent: _StructArray, idx: int) -> None:
         self._parent = parent
         self._idx = idx
 
-    def __getattr__(self, name: str) -> Any:
+    def __getattr__(self, name: str) -> object:
         col = self._parent._columns.get(name)
         if col is None:
             raise AttributeError(name)
@@ -61,8 +65,12 @@ class _StructArray:
     iteration / indexing returns _StructArrayRow views.
     """
 
-    def __init__(self, columns: dict[str, Any], length: int,
-                 nested: dict[str, "_NestedStructArray"] | None = None):
+    def __init__(
+        self,
+        columns: dict[str, Any],
+        length: int,
+        nested: dict[str, _NestedStructArray] | None = None,
+    ) -> None:
         self._columns = columns
         self._length = length
         self._nested = nested or {}
@@ -70,7 +78,7 @@ class _StructArray:
     def __len__(self) -> int:
         return self._length
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[_StructArrayRow]:
         for i in range(self._length):
             yield _StructArrayRow(self, i)
 
@@ -81,7 +89,7 @@ class _StructArray:
             raise IndexError(idx)
         return _StructArrayRow(self, idx)
 
-    def __getattr__(self, name: str):
+    def __getattr__(self, name: str) -> object:
         if name in self._columns:
             return self._columns[name]
         if name in self._nested:
@@ -93,11 +101,11 @@ class _NestedStructArray:
     """Nested struct array (e.g. complex.monomers): length-N parent with
     flat sub-columns and an offsets array carving sub-rows back to parents."""
 
-    def __init__(self, columns: dict[str, Any], offsets: np.ndarray):
+    def __init__(self, columns: dict[str, Any], offsets: np.ndarray) -> None:
         self._columns = columns
         self._offsets = offsets
 
-    def per_parent(self, parent_idx: int) -> "_StructArray":
+    def per_parent(self, parent_idx: int) -> _StructArray:
         """Return the sub struct-array belonging to parent row `parent_idx`."""
         lo = int(self._offsets[parent_idx])
         hi = int(self._offsets[parent_idx + 1])
@@ -109,7 +117,7 @@ class _NestedStructArray:
                 cols[k] = v[lo:hi]
         return _StructArray(cols, hi - lo)
 
-    def __getattr__(self, name: str):
+    def __getattr__(self, name: str) -> object:
         if name in self._columns:
             return self._columns[name]
         raise AttributeError(name)
@@ -117,21 +125,22 @@ class _NestedStructArray:
 
 class _Namespace:
     """Tree node mirroring nested struct attribute access."""
+
     __slots__ = ("_d",)
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._d: dict[str, Any] = {}
 
-    def _set(self, key: str, val: Any) -> None:
+    def _set(self, key: str, val: object) -> None:
         self._d[key] = val
 
-    def __getattr__(self, name: str):
+    def __getattr__(self, name: str) -> object:
         if name == "_d":
             raise AttributeError(name)
         try:
             return self._d[name]
-        except KeyError:
-            raise AttributeError(name)
+        except KeyError as err:
+            raise AttributeError(name) from err
 
     def __contains__(self, name: str) -> bool:
         return name in self._d
@@ -140,7 +149,7 @@ class _Namespace:
         return f"_Namespace(keys={sorted(self._d.keys())})"
 
 
-def _walk_set(root: _Namespace, dotted: str, value: Any) -> None:
+def _walk_set(root: _Namespace, dotted: str, value: object) -> None:
     parts = dotted.split("__")
     cur = root
     for p in parts[:-1]:
@@ -158,7 +167,12 @@ def _walk_set(root: _Namespace, dotted: str, value: Any) -> None:
     cur._set(parts[-1], value)
 
 
-def _build_struct_arrays(file_root: _Namespace, file_manifest: dict, npz, strings) -> None:
+def _build_struct_arrays(
+    file_root: _Namespace,
+    file_manifest: dict[str, object],
+    npz: dict[str, np.ndarray],
+    strings: dict[str, object],
+) -> None:
     """Reconstruct _StructArray objects from the flat columnar storage."""
     prefix = file_manifest.get("__prefix__")  # set by caller (basename)
     for fpath, entry in file_manifest.items():
@@ -188,16 +202,16 @@ def _build_struct_arrays(file_root: _Namespace, file_manifest: dict, npz, string
         _walk_set(file_root, fpath.replace(".", "__"), sa)
 
 
-def _load_npz_lazy(path: Path):
+def _load_npz_lazy(path: Path) -> dict[str, np.ndarray]:
     """Load all arrays into a plain dict (small archive, eager load is fine)."""
     with np.load(path, allow_pickle=True) as nz:
         return {k: nz[k] for k in nz.files}
 
 
 @lru_cache(maxsize=1)
-def load_karr_archive(npz_path: str | None = None,
-                      strings_path: str | None = None,
-                      manifest_path: str | None = None) -> dict[str, _Namespace]:
+def load_karr_archive(
+    npz_path: str | None = None, strings_path: str | None = None, manifest_path: str | None = None
+) -> dict[str, _Namespace]:
     """Load the Karr archive once per process; return {basename: _Namespace}."""
     npz_p = Path(npz_path) if npz_path else DEFAULT_NPZ
     strings_p = Path(strings_path) if strings_path else DEFAULT_STRINGS

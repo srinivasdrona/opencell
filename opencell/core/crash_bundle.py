@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -72,17 +72,19 @@ class CrashBundle:
         """Save crash bundle to JSON file."""
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
-        filename = f"crash_bundle_{self.step}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.json"
+        filename = f"crash_bundle_{self.step}_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}.json"
         filepath = output_dir / filename
 
         data = {
-            "timestamp": self.timestamp or datetime.now(timezone.utc).isoformat(),
+            "timestamp": self.timestamp or datetime.now(UTC).isoformat(),
             "step": self.step,
             "time_s": self.time_s,
             "dt": self.dt,
             "rng_seed": self.rng_seed,
             "state_norm": self.state_norm if np.isfinite(self.state_norm) else str(self.state_norm),
-            "derivative_norm": self.derivative_norm if np.isfinite(self.derivative_norm) else str(self.derivative_norm),
+            "derivative_norm": self.derivative_norm
+            if np.isfinite(self.derivative_norm)
+            else str(self.derivative_norm),
             "top_changed": self.top_changed,
             "violated_invariant": self.violated_invariant,
             "last_module": self.last_module,
@@ -124,14 +126,16 @@ def capture_crash_bundle(
         top_indices = np.argsort(abs_derivs)[-top_n:][::-1]
         for idx in top_indices:
             if idx < len(species_ids):
-                top_changed.append({
-                    "species": species_ids[idx],
-                    "value": float(state_array[idx]),
-                    "derivative": float(derivative_array[idx]),
-                })
+                top_changed.append(
+                    {
+                        "species": species_ids[idx],
+                        "value": float(state_array[idx]),
+                        "derivative": float(derivative_array[idx]),
+                    }
+                )
 
     bundle = CrashBundle(
-        timestamp=datetime.now(timezone.utc).isoformat(),
+        timestamp=datetime.now(UTC).isoformat(),
         step=step,
         time_s=time_s,
         dt=dt,

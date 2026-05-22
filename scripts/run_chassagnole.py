@@ -22,7 +22,6 @@ import numpy as np
 from opencell.models.metabolism import MetabolismModel
 from opencell.solvers.ode_scipy import ScipySolverConfig, solve_ode_scipy
 
-
 HIGHLIGHT_SPECIES = ["cglcex", "cg6p", "cf6p", "cfdp", "cgap", "cpep", "cpyr"]
 
 
@@ -73,6 +72,7 @@ def main() -> None:
 
     try:
         import matplotlib
+
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
     except ImportError:

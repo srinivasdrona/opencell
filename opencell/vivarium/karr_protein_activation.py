@@ -7,9 +7,10 @@ into pure callables of the form `rule(signal_counts) -> bool`.
 from __future__ import annotations
 
 import ast
-from pathlib import Path
 import re
-from typing import Any, Callable
+from collections.abc import Callable
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 from scipy.io import loadmat
@@ -127,7 +128,9 @@ class KarrProteinActivationProcess(Process):
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
         super().__init__(parameters)
         fixture_path = _resolve_fixture_path(self.parameters["fixture_path"])
-        fixture = loadmat(str(fixture_path), squeeze_me=True, struct_as_record=False)["data"].fixture
+        fixture = loadmat(str(fixture_path), squeeze_me=True, struct_as_record=False)[
+            "data"
+        ].fixture
 
         self.substrate_wids = _parse_wid_array(fixture.substrateWholeCellModelIDs)
         self.stimuli_wids = _parse_wid_array(fixture.stimuliWholeCellModelIDs)
@@ -143,7 +146,9 @@ class KarrProteinActivationProcess(Process):
 
         self.rule_strings: dict[str, str] = {}
         self.rules: dict[str, Callable[[dict[str, float]], bool]] = {}
-        self.regulated_protein_wids = [wid for wid in _REGULATED_PROTEINS if wid in self.substrate_wids]
+        self.regulated_protein_wids = [
+            wid for wid in _REGULATED_PROTEINS if wid in self.substrate_wids
+        ]
         if len(self.regulated_protein_wids) != len(_REGULATED_PROTEINS):
             missing = sorted(set(_REGULATED_PROTEINS) - set(self.regulated_protein_wids))
             raise ValueError(f"Missing regulated proteins in fixture: {missing}")
@@ -196,8 +201,7 @@ class KarrProteinActivationProcess(Process):
         return {
             "protein": {
                 "activity": {
-                    wid: int(self.rules[wid](signals))
-                    for wid in self.regulated_protein_wids
+                    wid: int(self.rules[wid](signals)) for wid in self.regulated_protein_wids
                 }
             }
         }

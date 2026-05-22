@@ -20,6 +20,7 @@ constituent gene's mRNA, so for gene i in TU j we have
 synth_gene_i = synth_TU_j summed over TUs containing i (in M.g essentially
 each gene maps to exactly one TU).
 """
+
 from __future__ import annotations
 
 import json
@@ -54,7 +55,7 @@ def _to_str_list(arr):
     return out
 
 
-def main():
+def main() -> None:
     print("loading transcription_v2_targeted from karr_archive")
     arc = load_karr_archive()
     d = arc["transcription_v2_targeted"]
@@ -69,23 +70,26 @@ def main():
     elong = float(d.pt_rnaPolymeraseElongationRate)
     tu_lengths = np.asarray(d.tr_transcriptionUnitLengths, dtype=float).ravel()  # 335
     tu_wcm_ids = _to_str_list(d.kb_tu_wholeCellModelIDs)
-    tu_gene_wcm_ids = [_to_str_list(g) if not isinstance(g, str) else [g]
-                       for g in d.kb_tu_geneWcmIDs]
+    tu_gene_wcm_ids = [
+        _to_str_list(g) if not isinstance(g, str) else [g] for g in d.kb_tu_geneWcmIDs
+    ]
     gene_order_525 = _to_str_list(d.kb_geneWholeCellModelIDs_full)
 
     n_tu = tu_lengths.size
     n_genes = len(gene_order_525)
-    print(f"  N_active_RNAP={n_active} (specBound={n_spec} nonSpec={n_nonspec} free={n_free} total={n_total})")
+    print(
+        f"  N_active_RNAP={n_active} (specBound={n_spec} nonSpec={n_nonspec} free={n_free} total={n_total})"
+    )
     print(f"  state_exp={state_exp}")
     print(f"  elongation={elong} nt/s,  n_TU={n_tu},  n_genes={n_genes}")
 
     # Existing v1 fixture: P_bind (335) + Karr's fitted gene-level rates
     z1 = np.load(M2_FIXTURE_NPZ)
     p_bind_tu = z1["tu_binding_probabilities"].astype(float)  # (335,)
-    syn_per_s_genes = z1["synthesis_rate_per_s"][:, 1]        # mean condition (525,)
-    gene_lengths = z1["length_nt"].astype(float)              # (525,)
-    decay_per_s = z1["decay_rate_per_s"].astype(float)        # (525,)
-    expression = z1["expression"][:, 1]                       # (525,)
+    syn_per_s_genes = z1["synthesis_rate_per_s"][:, 1]  # mean condition (525,)
+    gene_lengths = z1["length_nt"].astype(float)  # (525,)
+    decay_per_s = z1["decay_rate_per_s"].astype(float)  # (525,)
+    expression = z1["expression"][:, 1]  # (525,)
     if p_bind_tu.size != n_tu:
         raise RuntimeError(f"P_bind size {p_bind_tu.size} != n_TU {n_tu}")
 
@@ -94,7 +98,7 @@ def main():
     gene_types_525 = list(m2_meta["ids"]["gene_types_525"])
     if gene_wcm_525 != gene_order_525:
         # Re-permute the v2 gene order to match v1 ordering
-        idx_map = {g: i for i, g in enumerate(gene_order_525)}
+        {g: i for i, g in enumerate(gene_order_525)}
         # we'll keep gene_wcm_525 as the canonical order
         print("  [info] gene order differs between v1 and v2 dump; will align by WCM ID")
 
@@ -114,7 +118,9 @@ def main():
                 n_unmapped += 1
             else:
                 tu_gene_incidence[j, i] = 1
-    print(f"  TU-gene incidence built; {n_polycistronic}/{n_tu} polycistronic, {n_unmapped} unmapped genes")
+    print(
+        f"  TU-gene incidence built; {n_polycistronic}/{n_tu} polycistronic, {n_unmapped} unmapped genes"
+    )
 
     # Sanity: each gene should be in exactly one TU (typical for M.g)
     genes_per_count = tu_gene_incidence.sum(axis=0)
@@ -134,20 +140,30 @@ def main():
     synth_gene_per_s_karr = syn_per_s_genes  # (525,)
 
     # Compare on genes that are in exactly one TU (clean comparison)
-    valid = (genes_per_count == 1) & np.isfinite(synth_gene_per_s_karr) \
-        & (synth_gene_per_s_karr > 0) & (synth_gene_per_s_predicted > 0)
+    valid = (
+        (genes_per_count == 1)
+        & np.isfinite(synth_gene_per_s_karr)
+        & (synth_gene_per_s_karr > 0)
+        & (synth_gene_per_s_predicted > 0)
+    )
     ratio = synth_gene_per_s_predicted[valid] / synth_gene_per_s_karr[valid]
     log2r = np.log2(ratio)
     print()
     print("=== M2 v2 oracle: mechanism vs Karr fitted ===")
     print(f"  comparable genes: {int(valid.sum())} (in exactly 1 TU, both rates>0)")
-    print(f"  log2 ratio:  median={np.median(log2r):+.3f}  |  mean={np.mean(log2r):+.3f}  |  std={np.std(log2r):.3f}")
-    print(f"  log2 ratio:  10pct={np.percentile(log2r,10):+.3f}  90pct={np.percentile(log2r,90):+.3f}")
+    print(
+        f"  log2 ratio:  median={np.median(log2r):+.3f}  |  mean={np.mean(log2r):+.3f}  |  std={np.std(log2r):.3f}"
+    )
+    print(
+        f"  log2 ratio:  10pct={np.percentile(log2r, 10):+.3f}  90pct={np.percentile(log2r, 90):+.3f}"
+    )
     print(f"  median |log2 ratio| = {np.median(np.abs(log2r)):.3f}")
     print(f"  total synth (mech)  = {np.sum(synth_gene_per_s_predicted):.4f} per s")
     print(f"  total synth (Karr)  = {np.sum(synth_gene_per_s_karr):.4f} per s")
-    print(f"  total NT polym (mech) = {np.sum(synth_tu_per_s * tu_lengths):.2f} nt/s "
-          f"(expected ~ N_active*elong = {n_active*elong:.0f})")
+    print(
+        f"  total NT polym (mech) = {np.sum(synth_tu_per_s * tu_lengths):.2f} nt/s "
+        f"(expected ~ N_active*elong = {n_active * elong:.0f})"
+    )
 
     # Save fixture
     out_meta = {
@@ -181,7 +197,12 @@ def main():
         "interpretation": {
             "synth_TU_j": "N_active * elongation_rate * P_bind_j / sum_k(P_bind_k * length_k)",
             "synth_gene_i": "sum over TUs containing gene i of synth_TU_j",
-            "rnap_state_expectations_index": ["activelyTranscribing", "specificallyBound", "nonSpecificallyBound", "free"],
+            "rnap_state_expectations_index": [
+                "activelyTranscribing",
+                "specificallyBound",
+                "nonSpecificallyBound",
+                "free",
+            ],
         },
     }
     OUT_JSON.write_text(json.dumps(out_meta, indent=2))

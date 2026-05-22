@@ -20,15 +20,12 @@ Two layers of tests:
 from __future__ import annotations
 
 import json
-import textwrap
 from pathlib import Path
 
 import pytest
 import yaml
 
 from opencell.curation import (
-    CurationManifest,
-    ManifestParameter,
     ManifestValidationError,
     load_manifest,
     run_curation,
@@ -36,7 +33,6 @@ from opencell.curation import (
 )
 from opencell.curation.emitter import (
     render_coverage_md,
-    run_to_provenance,
     write_cards_yaml,
     write_queue,
 )
@@ -47,14 +43,13 @@ from opencell.data.verification import (
 )
 from opencell.extraction import (
     ExtractionResult,
-    ParameterSpec,
 )
 from opencell.extraction.candidate import ExtractionCandidate, SectionType
-
 
 # ---------------------------------------------------------------------------
 # Helpers: synthesize ExtractionResult objects
 # ---------------------------------------------------------------------------
+
 
 def _result_recommend(symbol: str, value: float, unit: str = "min^-1") -> ExtractionResult:
     cand = ExtractionCandidate(
@@ -109,10 +104,12 @@ def _result_ambiguous(symbol: str) -> ExtractionResult:
         converted_unit="min^-1",
         transformation="x60",
     )
-    c1 = ExtractionCandidate(raw_value=0.01, locator="L1", context_window="ctx1",
-                             converted_value=0.6, **common)
-    c2 = ExtractionCandidate(raw_value=0.02, locator="L2", context_window="ctx2",
-                             converted_value=1.2, **common)
+    c1 = ExtractionCandidate(
+        raw_value=0.01, locator="L1", context_window="ctx1", converted_value=0.6, **common
+    )
+    c2 = ExtractionCandidate(
+        raw_value=0.02, locator="L2", context_window="ctx2", converted_value=1.2, **common
+    )
     return ExtractionResult(
         parameter_symbol=symbol,
         parameter_doi="10.0/test",
@@ -154,8 +151,9 @@ def _make_manifest(tmp_path: Path, *, ids_and_symbols: list[tuple[str, str]]) ->
 # Manifest validation
 # ---------------------------------------------------------------------------
 
+
 class TestManifestValidation:
-    def test_loads_valid_manifest(self, tmp_path):
+    def test_loads_valid_manifest(self, tmp_path) -> None:
         mpath = _make_manifest(tmp_path, ids_and_symbols=[("p1", "kA")])
         m = load_manifest(mpath)
         assert m.model_slug == "testmodel"
@@ -163,60 +161,76 @@ class TestManifestValidation:
         assert len(m.parameters) == 1
         assert m.parameters[0].organism == "test organism"  # inherits from paper
 
-    def test_missing_file_raises(self, tmp_path):
+    def test_missing_file_raises(self, tmp_path) -> None:
         with pytest.raises(ManifestValidationError, match="not found"):
             load_manifest(tmp_path / "nope.yaml")
 
-    def test_missing_model_slug(self, tmp_path):
+    def test_missing_model_slug(self, tmp_path) -> None:
         mpath = tmp_path / "m.yaml"
-        mpath.write_text(yaml.safe_dump({
-            "paper": {"doi": "10.0/x"},
-            "parameters": [{"parameter_id": "a", "symbol": "k"}],
-        }))
+        mpath.write_text(
+            yaml.safe_dump(
+                {
+                    "paper": {"doi": "10.0/x"},
+                    "parameters": [{"parameter_id": "a", "symbol": "k"}],
+                }
+            )
+        )
         with pytest.raises(ManifestValidationError, match="model_slug"):
             load_manifest(mpath)
 
-    def test_missing_doi(self, tmp_path):
+    def test_missing_doi(self, tmp_path) -> None:
         """A draft manifest may have empty paper.doi (filled later by verifier);
         load_manifest accepts it but run_curation refuses to extract."""
         mpath = tmp_path / "m.yaml"
-        mpath.write_text(yaml.safe_dump({
-            "model_slug": "x",
-            "paper": {},
-            "cache_files": [],
-            "parameters": [{"parameter_id": "a", "symbol": "k"}],
-        }))
-        m = load_manifest(mpath)   # no exception
+        mpath.write_text(
+            yaml.safe_dump(
+                {
+                    "model_slug": "x",
+                    "paper": {},
+                    "cache_files": [],
+                    "parameters": [{"parameter_id": "a", "symbol": "k"}],
+                }
+            )
+        )
+        m = load_manifest(mpath)  # no exception
         assert m.doi == ""
         with pytest.raises(ValueError, match="paper.doi is empty"):
             run_curation(m)
 
-    def test_empty_parameters(self, tmp_path):
+    def test_empty_parameters(self, tmp_path) -> None:
         mpath = tmp_path / "m.yaml"
-        mpath.write_text(yaml.safe_dump({
-            "model_slug": "x",
-            "paper": {"doi": "10.0/x"},
-            "parameters": [],
-        }))
+        mpath.write_text(
+            yaml.safe_dump(
+                {
+                    "model_slug": "x",
+                    "paper": {"doi": "10.0/x"},
+                    "parameters": [],
+                }
+            )
+        )
         with pytest.raises(ManifestValidationError, match="non-empty"):
             load_manifest(mpath)
 
-    def test_duplicate_parameter_ids(self, tmp_path):
+    def test_duplicate_parameter_ids(self, tmp_path) -> None:
         mpath = _make_manifest(tmp_path, ids_and_symbols=[("p1", "kA"), ("p1", "kB")])
         with pytest.raises(ManifestValidationError, match="duplicate parameter_id"):
             load_manifest(mpath)
 
-    def test_missing_required_field(self, tmp_path):
+    def test_missing_required_field(self, tmp_path) -> None:
         mpath = tmp_path / "m.yaml"
-        mpath.write_text(yaml.safe_dump({
-            "model_slug": "x",
-            "paper": {"doi": "10.0/x"},
-            "parameters": [{"parameter_id": "a"}],   # symbol missing
-        }))
+        mpath.write_text(
+            yaml.safe_dump(
+                {
+                    "model_slug": "x",
+                    "paper": {"doi": "10.0/x"},
+                    "parameters": [{"parameter_id": "a"}],  # symbol missing
+                }
+            )
+        )
         with pytest.raises(ManifestValidationError, match="missing required field 'symbol'"):
             load_manifest(mpath)
 
-    def test_cache_file_hashed_when_present(self, tmp_path):
+    def test_cache_file_hashed_when_present(self, tmp_path) -> None:
         mpath = _make_manifest(tmp_path, ids_and_symbols=[("p1", "kA")])
         m = load_manifest(mpath)
         # Exactly one cache file referenced
@@ -224,7 +238,7 @@ class TestManifestValidation:
         sha = next(iter(m.cache_file_sha256.values()))
         assert len(sha) == 64  # sha256 hex
 
-    def test_missing_cache_file_no_hash(self, tmp_path):
+    def test_missing_cache_file_no_hash(self, tmp_path) -> None:
         # Reference a non-existent cache file -- should NOT raise but also NOT hash.
         cache_missing = str(tmp_path / "nope.txt")
         body = {
@@ -243,8 +257,9 @@ class TestManifestValidation:
 # Runner status routing
 # ---------------------------------------------------------------------------
 
+
 class TestRunnerStatusRouting:
-    def test_recommend_produces_card(self, tmp_path):
+    def test_recommend_produces_card(self, tmp_path) -> None:
         mpath = _make_manifest(tmp_path, ids_and_symbols=[("p1", "kA")])
         m = load_manifest(mpath)
         run = run_curation(m, extract_fn=lambda spec: _result_recommend("kA", 0.5))
@@ -253,24 +268,29 @@ class TestRunnerStatusRouting:
         assert run.outcomes[0].card.status == VerificationStatus.DRAFT
         assert run.outcomes[0].card.value == 0.5
 
-    def test_not_found_no_card(self, tmp_path):
+    def test_not_found_no_card(self, tmp_path) -> None:
         mpath = _make_manifest(tmp_path, ids_and_symbols=[("p1", "kA")])
         m = load_manifest(mpath)
         run = run_curation(m, extract_fn=lambda spec: _result_not_found("kA"))
         assert run.coverage["NOT_FOUND"] == 1
         assert run.outcomes[0].card is None
 
-    def test_ambiguous_no_card(self, tmp_path):
+    def test_ambiguous_no_card(self, tmp_path) -> None:
         mpath = _make_manifest(tmp_path, ids_and_symbols=[("p1", "kA")])
         m = load_manifest(mpath)
         run = run_curation(m, extract_fn=lambda spec: _result_ambiguous("kA"))
         assert run.coverage["AMBIGUOUS"] == 1
         assert run.outcomes[0].card is None
 
-    def test_mixed_run(self, tmp_path):
-        mpath = _make_manifest(tmp_path, ids_and_symbols=[
-            ("p1", "kA"), ("p2", "kB"), ("p3", "kC"),
-        ])
+    def test_mixed_run(self, tmp_path) -> None:
+        mpath = _make_manifest(
+            tmp_path,
+            ids_and_symbols=[
+                ("p1", "kA"),
+                ("p2", "kB"),
+                ("p3", "kC"),
+            ],
+        )
         m = load_manifest(mpath)
         results = {
             "kA": _result_recommend("kA", 1.0),
@@ -288,6 +308,7 @@ class TestRunnerStatusRouting:
 # Cross-check guardrail (PDF↔SBML value match)
 # ---------------------------------------------------------------------------
 
+
 def _make_manifest_with_sbml(tmp_path: Path, *, sbml_value: float | None) -> Path:
     """Variant of _make_manifest that emits a sbml_value per entry."""
     cache = tmp_path / "cache.txt"
@@ -297,15 +318,17 @@ def _make_manifest_with_sbml(tmp_path: Path, *, sbml_value: float | None) -> Pat
         "manifest_version": "0.1",
         "paper": {"doi": "10.0/test", "organism": "test", "condition": "base"},
         "cache_files": [str(cache)],
-        "parameters": [{
-            "parameter_id": "p1",
-            "symbol": "kA",
-            "target_unit": "min^-1",
-            "name": "param kA",
-            "sbml_value": sbml_value,
-            "sbml_id": "kA",
-            "sbml_kind": "global_parameter",
-        }],
+        "parameters": [
+            {
+                "parameter_id": "p1",
+                "symbol": "kA",
+                "target_unit": "min^-1",
+                "name": "param kA",
+                "sbml_value": sbml_value,
+                "sbml_id": "kA",
+                "sbml_kind": "global_parameter",
+            }
+        ],
     }
     mpath = tmp_path / "manifest.yaml"
     mpath.write_text(yaml.safe_dump(body, sort_keys=False))
@@ -313,14 +336,14 @@ def _make_manifest_with_sbml(tmp_path: Path, *, sbml_value: float | None) -> Pat
 
 
 class TestCrossCheckGuardrail:
-    def test_loads_sbml_value_from_manifest(self, tmp_path):
+    def test_loads_sbml_value_from_manifest(self, tmp_path) -> None:
         mpath = _make_manifest_with_sbml(tmp_path, sbml_value=4.27)
         m = load_manifest(mpath)
         assert m.parameters[0].sbml_value == 4.27
         assert m.parameters[0].sbml_id == "kA"
         assert m.parameters[0].sbml_kind == "global_parameter"
 
-    def test_agree_when_pdf_and_sbml_match(self, tmp_path):
+    def test_agree_when_pdf_and_sbml_match(self, tmp_path) -> None:
         mpath = _make_manifest_with_sbml(tmp_path, sbml_value=0.5)
         m = load_manifest(mpath)
         run = run_curation(m, extract_fn=lambda spec: _result_recommend("kA", 0.5))
@@ -330,20 +353,20 @@ class TestCrossCheckGuardrail:
         assert out.cross_check.status == "AGREE"
         assert out.card is not None  # still emits draft card
 
-    def test_disagree_downgrades_to_ambiguous(self, tmp_path):
+    def test_disagree_downgrades_to_ambiguous(self, tmp_path) -> None:
         """The blocking guardrail: PDF value disagrees → no draft card auto-emitted."""
         mpath = _make_manifest_with_sbml(tmp_path, sbml_value=0.5)
         m = load_manifest(mpath)
         # PDF reports 1.5 but SBML says 0.5 (3x off)
         run = run_curation(m, extract_fn=lambda spec: _result_recommend("kA", 1.5))
         out = run.outcomes[0]
-        assert out.status == "AMBIGUOUS"   # downgraded from RECOMMEND
-        assert out.card is None             # no auto-emitted card
+        assert out.status == "AMBIGUOUS"  # downgraded from RECOMMEND
+        assert out.card is None  # no auto-emitted card
         assert out.cross_check.status == "DISAGREE"
         assert "downgraded" in out.note.lower()
         assert "0.5" in out.note and "1.5" in out.note
 
-    def test_no_sbml_value_does_not_block_recommend(self, tmp_path):
+    def test_no_sbml_value_does_not_block_recommend(self, tmp_path) -> None:
         """When SBML value missing, behave as before (no cross-check enforcement)."""
         mpath = _make_manifest_with_sbml(tmp_path, sbml_value=None)
         m = load_manifest(mpath)
@@ -353,7 +376,7 @@ class TestCrossCheckGuardrail:
         assert out.card is not None
         assert out.cross_check.status == "NO_SBML"
 
-    def test_card_provenance_records_cross_check(self, tmp_path):
+    def test_card_provenance_records_cross_check(self, tmp_path) -> None:
         mpath = _make_manifest_with_sbml(tmp_path, sbml_value=0.5)
         m = load_manifest(mpath)
         run = run_curation(m, extract_fn=lambda spec: _result_recommend("kA", 0.5))
@@ -366,8 +389,11 @@ class TestCrossCheckGuardrail:
 # Locked-status protection
 # ---------------------------------------------------------------------------
 
+
 class TestLockedProtection:
-    def _seed_card(self, path: Path, *, status: VerificationStatus, value: float = 99.0) -> ParameterCard:
+    def _seed_card(
+        self, path: Path, *, status: VerificationStatus, value: float = 99.0
+    ) -> ParameterCard:
         card = ParameterCard(
             parameter_id="p1",
             name="seeded",
@@ -384,7 +410,7 @@ class TestLockedProtection:
         save_cards_to_yaml([card], path)
         return card
 
-    def test_approved_card_never_overwritten(self, tmp_path):
+    def test_approved_card_never_overwritten(self, tmp_path) -> None:
         mpath = _make_manifest(tmp_path, ids_and_symbols=[("p1", "kA")])
         cards_path = tmp_path / "cards.yaml"
         self._seed_card(cards_path, status=VerificationStatus.APPROVED, value=42.0)
@@ -393,44 +419,58 @@ class TestLockedProtection:
         run = run_curation(
             m,
             output_cards_path=cards_path,
-            force=True,   # even with force!
+            force=True,  # even with force!
             extract_fn=lambda spec: _result_recommend("kA", 0.5),
         )
         assert run.outcomes[0].status == "SKIPPED_LOCKED"
         # File on disk must still hold the APPROVED 42.0
         from opencell.data.verification import load_cards_from_yaml
+
         cards = load_cards_from_yaml(cards_path)
         assert cards[0].value == 42.0
         assert cards[0].status == VerificationStatus.APPROVED
 
-    def test_reviewed_card_protected(self, tmp_path):
+    def test_reviewed_card_protected(self, tmp_path) -> None:
         mpath = _make_manifest(tmp_path, ids_and_symbols=[("p1", "kA")])
         cards_path = tmp_path / "cards.yaml"
         self._seed_card(cards_path, status=VerificationStatus.REVIEWED)
         m = load_manifest(mpath)
-        run = run_curation(m, output_cards_path=cards_path, force=True,
-                           extract_fn=lambda spec: _result_recommend("kA", 0.5))
+        run = run_curation(
+            m,
+            output_cards_path=cards_path,
+            force=True,
+            extract_fn=lambda spec: _result_recommend("kA", 0.5),
+        )
         assert run.outcomes[0].status == "SKIPPED_LOCKED"
 
-    def test_draft_skipped_without_force(self, tmp_path):
+    def test_draft_skipped_without_force(self, tmp_path) -> None:
         mpath = _make_manifest(tmp_path, ids_and_symbols=[("p1", "kA")])
         cards_path = tmp_path / "cards.yaml"
         self._seed_card(cards_path, status=VerificationStatus.DRAFT)
         m = load_manifest(mpath)
-        run = run_curation(m, output_cards_path=cards_path, force=False,
-                           extract_fn=lambda spec: _result_recommend("kA", 0.5))
+        run = run_curation(
+            m,
+            output_cards_path=cards_path,
+            force=False,
+            extract_fn=lambda spec: _result_recommend("kA", 0.5),
+        )
         assert run.outcomes[0].status == "SKIPPED_EXISTS"
 
-    def test_draft_re_extracted_with_force(self, tmp_path):
+    def test_draft_re_extracted_with_force(self, tmp_path) -> None:
         mpath = _make_manifest(tmp_path, ids_and_symbols=[("p1", "kA")])
         cards_path = tmp_path / "cards.yaml"
         self._seed_card(cards_path, status=VerificationStatus.DRAFT, value=99.0)
         m = load_manifest(mpath)
-        run = run_curation(m, output_cards_path=cards_path, force=True,
-                           extract_fn=lambda spec: _result_recommend("kA", 0.5))
+        run = run_curation(
+            m,
+            output_cards_path=cards_path,
+            force=True,
+            extract_fn=lambda spec: _result_recommend("kA", 0.5),
+        )
         assert run.outcomes[0].status == "RECOMMEND"
         write_cards_yaml(run, cards_path)
         from opencell.data.verification import load_cards_from_yaml
+
         cards = load_cards_from_yaml(cards_path)
         assert cards[0].value == 0.5  # overwritten
         assert cards[0].status == VerificationStatus.DRAFT
@@ -440,11 +480,17 @@ class TestLockedProtection:
 # Outputs: queues, coverage, provenance
 # ---------------------------------------------------------------------------
 
+
 class TestOutputs:
-    def test_full_write_outputs(self, tmp_path):
-        mpath = _make_manifest(tmp_path, ids_and_symbols=[
-            ("p1", "kA"), ("p2", "kB"), ("p3", "kC"),
-        ])
+    def test_full_write_outputs(self, tmp_path) -> None:
+        mpath = _make_manifest(
+            tmp_path,
+            ids_and_symbols=[
+                ("p1", "kA"),
+                ("p2", "kB"),
+                ("p3", "kC"),
+            ],
+        )
         results = {
             "kA": _result_recommend("kA", 1.0),
             "kB": _result_ambiguous("kB"),
@@ -460,6 +506,7 @@ class TestOutputs:
         # Cards file: 1 DRAFT card
         assert paths["cards"].exists()
         from opencell.data.verification import load_cards_from_yaml
+
         cards = load_cards_from_yaml(paths["cards"])
         assert len(cards) == 1
         assert cards[0].parameter_id == "p1"
@@ -489,7 +536,7 @@ class TestOutputs:
         # cache_file_sha256 carried through
         assert len(prov["cache_file_sha256"]) == 1
 
-    def test_empty_queue_removes_stale_file(self, tmp_path):
+    def test_empty_queue_removes_stale_file(self, tmp_path) -> None:
         mpath = _make_manifest(tmp_path, ids_and_symbols=[("p1", "kA")])
         m = load_manifest(mpath)
         # First run: 1 NOT_FOUND -> queue file written
@@ -502,15 +549,27 @@ class TestOutputs:
         write_queue(run2.outcomes, nf_path, kind="NOT_FOUND")
         assert not nf_path.exists()
 
-    def test_coverage_md_contains_breakdown(self):
+    def test_coverage_md_contains_breakdown(self) -> None:
         from opencell.curation.runner import CurationOutcome, CurationRun
+
         run = CurationRun(
-            model_slug="x", doi="10/x", started_at="t0", finished_at="t1",
+            model_slug="x",
+            doi="10/x",
+            started_at="t0",
+            finished_at="t1",
             outcomes=[
-                CurationOutcome(parameter_id="a", symbol="kA", status="RECOMMEND",
-                               extraction=_result_recommend("kA", 1.0)),
-                CurationOutcome(parameter_id="b", symbol="kB", status="NOT_FOUND",
-                               extraction=_result_not_found("kB")),
+                CurationOutcome(
+                    parameter_id="a",
+                    symbol="kA",
+                    status="RECOMMEND",
+                    extraction=_result_recommend("kA", 1.0),
+                ),
+                CurationOutcome(
+                    parameter_id="b",
+                    symbol="kB",
+                    status="NOT_FOUND",
+                    extraction=_result_not_found("kB"),
+                ),
             ],
         )
         md = render_coverage_md(run)
@@ -525,8 +584,7 @@ class TestOutputs:
 THATTAI_CACHE = Path(__file__).resolve().parents[2] / ".paper_cache" / "thattai2001_full.txt"
 
 
-@pytest.mark.skipif(not THATTAI_CACHE.exists(),
-                    reason="Requires .paper_cache/thattai2001_full.txt")
+@pytest.mark.skipif(not THATTAI_CACHE.exists(), reason="Requires .paper_cache/thattai2001_full.txt")
 class TestThattaiReplay:
     """End-to-end: real extractor on real Thattai PDF cache.
 
@@ -547,45 +605,64 @@ class TestThattaiReplay:
             },
             "cache_files": [str(THATTAI_CACHE)],
             "parameters": [
-                {"parameter_id": "thattai-kR", "symbol": "kR",
-                 "target_unit": "min^-1", "name": "Transcription rate"},
-                {"parameter_id": "thattai-gammaR", "symbol": "gammaR",
-                 "target_unit": "min^-1", "name": "mRNA degradation"},
-                {"parameter_id": "thattai-kP", "symbol": "kP",
-                 "target_unit": "min^-1", "name": "Translation rate"},
-                {"parameter_id": "thattai-gammaP", "symbol": "gammaP",
-                 "target_unit": "min^-1", "name": "Protein degradation"},
+                {
+                    "parameter_id": "thattai-kR",
+                    "symbol": "kR",
+                    "target_unit": "min^-1",
+                    "name": "Transcription rate",
+                },
+                {
+                    "parameter_id": "thattai-gammaR",
+                    "symbol": "gammaR",
+                    "target_unit": "min^-1",
+                    "name": "mRNA degradation",
+                },
+                {
+                    "parameter_id": "thattai-kP",
+                    "symbol": "kP",
+                    "target_unit": "min^-1",
+                    "name": "Translation rate",
+                },
+                {
+                    "parameter_id": "thattai-gammaP",
+                    "symbol": "gammaP",
+                    "target_unit": "min^-1",
+                    "name": "Protein degradation",
+                },
             ],
         }
         mpath = tmp_path / "manifest.yaml"
         mpath.write_text(yaml.safe_dump(body, sort_keys=False))
         return load_manifest(mpath)
 
-    def test_kR_recommend_matches_approved_value(self, manifest):
+    def test_kR_recommend_matches_approved_value(self, manifest) -> None:
         run = run_curation(manifest, use_biomodels=False)
         # Find k_R outcome
         kr = next(o for o in run.outcomes if o.parameter_id == "thattai-kR")
-        assert kr.status == "RECOMMEND", \
-            f"k_R should be RECOMMEND, got {kr.status}"
+        assert kr.status == "RECOMMEND", f"k_R should be RECOMMEND, got {kr.status}"
         assert kr.card is not None
         # Bit-for-bit match with approved gold card
         assert kr.card.value == pytest.approx(0.6, rel=1e-9)
         assert kr.card.unit == "min^-1"
         assert kr.card.status == VerificationStatus.DRAFT  # never auto-promotes
 
-    def test_derived_params_never_auto_emitted(self, manifest):
+    def test_derived_params_never_auto_emitted(self, manifest) -> None:
         run = run_curation(manifest, use_biomodels=False)
         # The three derived params (gammaR, kP, gammaP) cannot be extracted
         # by the deterministic extractor (they require math the tool refuses
         # to do). They MUST land in non-RECOMMEND statuses.
-        derived = [o for o in run.outcomes
-                   if o.parameter_id in ("thattai-gammaR", "thattai-kP", "thattai-gammaP")]
+        derived = [
+            o
+            for o in run.outcomes
+            if o.parameter_id in ("thattai-gammaR", "thattai-kP", "thattai-gammaP")
+        ]
         for o in derived:
-            assert o.status != "RECOMMEND", \
+            assert o.status != "RECOMMEND", (
                 f"{o.parameter_id} must NOT auto-emit (status={o.status})"
+            )
             assert o.card is None
 
-    def test_full_outputs_written(self, manifest, tmp_path):
+    def test_full_outputs_written(self, manifest, tmp_path) -> None:
         run = run_curation(manifest, use_biomodels=False)
         cards_path = tmp_path / "cards.yaml"
         out_dir = tmp_path / "out"
@@ -593,6 +670,7 @@ class TestThattaiReplay:
 
         # cards.yaml has exactly 1 DRAFT (k_R only)
         from opencell.data.verification import load_cards_from_yaml
+
         cards = load_cards_from_yaml(cards_path)
         assert len(cards) == 1
         assert cards[0].parameter_id == "thattai-kR"

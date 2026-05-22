@@ -3,19 +3,11 @@
 from __future__ import annotations
 
 import json
-import tempfile
 from pathlib import Path
 
 import pytest
 import yaml
 
-from opencell.data.loader import (
-    load_json,
-    load_parameters,
-    load_yaml,
-    validate_parameter_entry,
-)
-from opencell.data.sbml_io import export_sbml, import_sbml
 from opencell.core.ir import (
     Compartment,
     IRSpeciesRegistry,
@@ -24,12 +16,19 @@ from opencell.core.ir import (
     ReferenceFrame,
     SpeciesInfo,
 )
+from opencell.data.loader import (
+    load_json,
+    load_parameters,
+    load_yaml,
+    validate_parameter_entry,
+)
+from opencell.data.sbml_io import export_sbml, import_sbml
 from opencell.orchestrator.contracts import validate_data, validate_parameter_file
-from opencell.orchestrator.router import ModelRouter, TaskType, Tier
 from opencell.orchestrator.cost_tracker import APICallRecord, CostTracker
-
+from opencell.orchestrator.router import ModelRouter, TaskType, Tier
 
 # ── Loader tests ──
+
 
 class TestLoader:
     def test_load_yaml(self, tmp_path: Path) -> None:
@@ -84,21 +83,28 @@ class TestLoader:
 
 # ── SBML I/O tests ──
 
+
 class TestSBMLIO:
     def _build_registry(self) -> tuple[IRSpeciesRegistry, list[ReactionInfo], dict[str, float]]:
         reg = IRSpeciesRegistry()
-        reg.register(SpeciesInfo(
-            id="glucose", name="Glucose",
-            compartment=Compartment.CYTOPLASM,
-            molecule_type=MoleculeType.METABOLITE,
-            reference_frame=ReferenceFrame.PER_CELL,
-        ))
-        reg.register(SpeciesInfo(
-            id="atp", name="ATP",
-            compartment=Compartment.CYTOPLASM,
-            molecule_type=MoleculeType.METABOLITE,
-            reference_frame=ReferenceFrame.PER_CELL,
-        ))
+        reg.register(
+            SpeciesInfo(
+                id="glucose",
+                name="Glucose",
+                compartment=Compartment.CYTOPLASM,
+                molecule_type=MoleculeType.METABOLITE,
+                reference_frame=ReferenceFrame.PER_CELL,
+            )
+        )
+        reg.register(
+            SpeciesInfo(
+                id="atp",
+                name="ATP",
+                compartment=Compartment.CYTOPLASM,
+                molecule_type=MoleculeType.METABOLITE,
+                reference_frame=ReferenceFrame.PER_CELL,
+            )
+        )
         reactions = [
             ReactionInfo(
                 id="glycolysis_step1",
@@ -142,6 +148,7 @@ class TestSBMLIO:
 
 
 # ── Contracts tests ──
+
 
 class TestContracts:
     def test_valid_parameter(self) -> None:
@@ -187,6 +194,7 @@ class TestContracts:
 
 # ── Router tests ──
 
+
 class TestRouter:
     def test_route_critical(self) -> None:
         router = ModelRouter()
@@ -217,6 +225,7 @@ class TestRouter:
 
 
 # ── Cost Tracker tests ──
+
 
 class TestCostTracker:
     def test_log_and_summary(self, tmp_path: Path) -> None:
@@ -249,12 +258,17 @@ class TestCostTracker:
         db = tmp_path / "costs.db"
         tracker = CostTracker(db)
         for tier in ["CRITICAL", "ROUTINE"]:
-            tracker.log_call(APICallRecord(
-                timestamp="2026-04-22T10:00:00Z",
-                model_id="claude-haiku", tier=tier,
-                task_type="TEST", phase="Phase 1",
-                input_tokens=100, output_tokens=50,
-                estimated_cost_usd=0.001,
-            ))
+            tracker.log_call(
+                APICallRecord(
+                    timestamp="2026-04-22T10:00:00Z",
+                    model_id="claude-haiku",
+                    tier=tier,
+                    task_type="TEST",
+                    phase="Phase 1",
+                    input_tokens=100,
+                    output_tokens=50,
+                    estimated_cost_usd=0.001,
+                )
+            )
         results = tracker.by_tier()
         assert len(results) == 2

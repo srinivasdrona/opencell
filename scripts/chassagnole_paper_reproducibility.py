@@ -45,14 +45,13 @@ import numpy as np
 from opencell.models.metabolism import MetabolismModel
 from opencell.solvers.ode_scipy import ScipySolverConfig, solve_ode_scipy
 
-
 PAPER_STEADY_STATE = {
-    "cg6p":  3.48,
-    "cf6p":  0.60,
-    "cfdp":  0.272,
-    "cgap":  0.218,
-    "cpep":  2.67,
-    "cpyr":  2.67,
+    "cg6p": 3.48,
+    "cf6p": 0.60,
+    "cfdp": 0.272,
+    "cgap": 0.218,
+    "cpep": 2.67,
+    "cpyr": 2.67,
 }
 # Tolerance: 25% — Chassagnole Table 4 values were measured experimentally
 # with their own uncertainty; the SBML may use values from a different draft.
@@ -82,7 +81,9 @@ def main() -> None:
             "within_25pct": bool(ok),
         }
         marker = "PASS" if ok else "FAIL"
-        print(f"  [{marker}] {sid:6s}  sbml={sim_val:6.3f}  paper={paper_val:6.3f}  rel_err={rel_err:5.2%}")
+        print(
+            f"  [{marker}] {sid:6s}  sbml={sim_val:6.3f}  paper={paper_val:6.3f}  rel_err={rel_err:5.2%}"
+        )
 
     # --- Check 2: All intracellular metabolites stay positive + finite ---
     # The SBML initial conditions are the published steady-state values
@@ -93,19 +94,23 @@ def main() -> None:
     # decline is monotone in the substrate (glucose limitation).
     print("\nCheck 2: Physical sanity over 300s (positive, finite, no oscillations)")
     res = solve_ode_scipy(
-        model.rhs, model.initial_y, (0.0, 300.0),
+        model.rhs,
+        model.initial_y,
+        (0.0, 300.0),
         config=ScipySolverConfig(method="LSODA", rtol=1e-9, atol=1e-12),
         t_eval=np.linspace(0.0, 300.0, 3001),
     )
     all_finite = bool(np.all(np.isfinite(res.ys)))
     all_nonneg = bool(np.all(res.ys >= -1e-9))
-    intracellular = [s for s in model.species_ids if s != "cglcex"]
+    [s for s in model.species_ids if s != "cglcex"]
     # cglcex must be monotone non-increasing (substrate consumption)
     glc_traj = res.ys[idx["cglcex"]]
     cglcex_monotone_decreasing = bool(np.all(np.diff(glc_traj) <= 1e-9))
     print(f"  [{'PASS' if all_finite else 'FAIL'}] all values finite")
     print(f"  [{'PASS' if all_nonneg else 'FAIL'}] all values non-negative")
-    print(f"  [{'PASS' if cglcex_monotone_decreasing else 'FAIL'}] cglcex monotone non-increasing (substrate consumed)")
+    print(
+        f"  [{'PASS' if cglcex_monotone_decreasing else 'FAIL'}] cglcex monotone non-increasing (substrate consumed)"
+    )
     sanity_checks = {
         "all_values_finite": all_finite,
         "all_values_nonneg": all_nonneg,
@@ -122,7 +127,9 @@ def main() -> None:
     g6p_i = idx["cg6p"]
 
     res1 = solve_ode_scipy(
-        model.rhs, model.initial_y, (0.0, 180.0),
+        model.rhs,
+        model.initial_y,
+        (0.0, 180.0),
         config=ScipySolverConfig(method="LSODA", rtol=1e-9, atol=1e-12),
         t_eval=np.linspace(0.0, 180.0, 1801),
     )
@@ -130,13 +137,15 @@ def main() -> None:
     pep_pre = y_pre[pep_i]
     pyr_pre = y_pre[pyr_i]
     g6p_pre = y_pre[g6p_i]
-    glc_pre = y_pre[gi]
+    y_pre[gi]
 
     y_pulse = y_pre.copy()
     y_pulse[gi] *= 2.0  # double extracellular glucose
 
     res2 = solve_ode_scipy(
-        model.rhs, y_pulse, (180.0, 300.0),
+        model.rhs,
+        y_pulse,
+        (180.0, 300.0),
         config=ScipySolverConfig(method="LSODA", rtol=1e-9, atol=1e-12),
         t_eval=np.linspace(180.0, 300.0, 1201),
     )
@@ -181,9 +190,11 @@ def main() -> None:
     fig.savefig(out, dpi=150)
     print(f"\nWrote {out}")
 
-    all_checks = {**{f"ic_{k}": v["within_25pct"] for k, v in ic_checks.items() if "within_25pct" in v},
-                  **sanity_checks,
-                  **pulse_checks}
+    all_checks = {
+        **{f"ic_{k}": v["within_25pct"] for k, v in ic_checks.items() if "within_25pct" in v},
+        **sanity_checks,
+        **pulse_checks,
+    }
     summary = {
         "biomodels_id": model.biomodels_id,
         "paper_doi": model.paper_doi,

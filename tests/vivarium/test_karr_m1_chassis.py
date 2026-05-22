@@ -1,7 +1,6 @@
 """Smoke tests for the Karr-native M1 vivarium Process chassis."""
-from __future__ import annotations
 
-import math
+from __future__ import annotations
 
 import numpy as np
 import pytest
@@ -33,17 +32,14 @@ def test_single_update_matches_standalone_solver(
     schema = proc.ports_schema()
     initial = {
         "metabolic_reaction": {
-            "fluxs": {k: v["_default"] for k, v in
-                      schema["metabolic_reaction"]["fluxs"].items()},
+            "fluxs": {k: v["_default"] for k, v in schema["metabolic_reaction"]["fluxs"].items()},
             "growth_per_s": schema["metabolic_reaction"]["growth_per_s"]["_default"],
             "growth_per_h": schema["metabolic_reaction"]["growth_per_h"]["_default"],
         },
         "substrates": {k: v["_default"] for k, v in schema["substrates"].items()},
     }
     upd = proc.next_update(1.0, initial)
-    standalone_v, standalone_info = km.solve_fba(
-        model, use_full_objective=True, sense="max"
-    )
+    standalone_v, standalone_info = km.solve_fba(model, use_full_objective=True, sense="max")
     assert upd["metabolic_reaction"]["growth_per_h"] == pytest.approx(
         standalone_info["biomass_flux_per_h"], rel=1e-9
     )

@@ -48,9 +48,12 @@ class KarrProteinProcessingIProcess(Process):
         self.unprocessed_monomer_wids = _parse_wid_array(fx["unprocessedMonomerWholeCellModelIDs"])
         self.processed_monomer_wids = _parse_wid_array(fx["processedMonomerWholeCellModelIDs"])
 
-        self.met_cleavage_mask = np.asarray(
-            fx["nascentMonomerNTerminalMethionineCleavages"][0, 0], dtype=np.uint8
-        ).reshape(-1) > 0
+        self.met_cleavage_mask = (
+            np.asarray(
+                fx["nascentMonomerNTerminalMethionineCleavages"][0, 0], dtype=np.uint8
+            ).reshape(-1)
+            > 0
+        )
 
         self.deformylase_specific_rate = float(
             np.asarray(fx["deformylaseSpecificRate"][0, 0], dtype=np.float64).reshape(-1)[0]
@@ -76,8 +79,7 @@ class KarrProteinProcessingIProcess(Process):
         )
 
         self.enzyme_idx_deformylase = (
-            int(np.asarray(fx["enzymeIndexs_deformylase"][0, 0], dtype=np.int64).reshape(-1)[0])
-            - 1
+            int(np.asarray(fx["enzymeIndexs_deformylase"][0, 0], dtype=np.int64).reshape(-1)[0]) - 1
         )
         self.enzyme_idx_methionine_aminopeptidase = (
             int(
@@ -151,9 +153,7 @@ class KarrProteinProcessingIProcess(Process):
 
         deformylase_limit = int(
             np.floor(
-                max(0.0, enzymes[self.enzyme_idx_deformylase])
-                * self.deformylase_specific_rate
-                * dt
+                max(0.0, enzymes[self.enzyme_idx_deformylase]) * self.deformylase_specific_rate * dt
             )
         )
         methionine_aminopeptidase_limit = int(

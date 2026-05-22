@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any
 
 import libsbml
 
@@ -106,12 +105,14 @@ def import_sbml(
             ref = rxn.getProduct(j)
             stoich[ref.getSpecies()] = stoich.get(ref.getSpecies(), 0) + ref.getStoichiometry()
 
-        reactions.append(ReactionInfo(
-            id=rxn.getId(),
-            name=rxn.getName() or rxn.getId(),
-            stoichiometry=stoich,
-            reversible=rxn.getReversible(),
-        ))
+        reactions.append(
+            ReactionInfo(
+                id=rxn.getId(),
+                name=rxn.getName() or rxn.getId(),
+                stoichiometry=stoich,
+                reversible=rxn.getReversible(),
+            )
+        )
 
     logger.info(
         f"Imported SBML: {model.getNumSpecies()} species, "

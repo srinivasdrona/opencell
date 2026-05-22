@@ -23,13 +23,11 @@ Design rules (Phase 4 / A1):
   carries the ``rng`` reference; we never touch numpy global state.
 """
 
-from opencell.vivarium.processes import (
-    GeneNetworkProcess,
-    MetabolismProcess,
-    SignalProcess,
-)
-from opencell.vivarium.persist import PersistentMetabolismProcess
 from opencell.vivarium.composite import build_coupled_engine
+from opencell.vivarium.karr_composite import (
+    build_karr_m1_m2_engine,
+    build_karr_m1_m2_m3_engine,
+)
 from opencell.vivarium.karr_m1 import (
     KarrMetabolismProcess,
     build_karr_m1_engine,
@@ -42,9 +40,11 @@ from opencell.vivarium.karr_m3 import (
     KarrTranslationProcess,
     build_karr_m3_engine,
 )
-from opencell.vivarium.karr_composite import (
-    build_karr_m1_m2_engine,
-    build_karr_m1_m2_m3_engine,
+from opencell.vivarium.persist import PersistentMetabolismProcess
+from opencell.vivarium.processes import (
+    GeneNetworkProcess,
+    MetabolismProcess,
+    SignalProcess,
 )
 
 __all__ = [

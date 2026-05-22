@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import sys
 from copy import deepcopy
 from pathlib import Path
-import sys
 from typing import Any
 
 import numpy as np
@@ -44,7 +44,11 @@ def _build_state(
     target_wid = process.unprocessed_monomer_wids[target_idx]
     unprocessed[target_wid] = float(target_lipoprotein_count)
 
-    non_lipo_idx = next(i for i in range(len(process.unprocessed_monomer_wids)) if i not in set(process.lipoprotein_indices.tolist()))
+    non_lipo_idx = next(
+        i
+        for i in range(len(process.unprocessed_monomer_wids))
+        if i not in set(process.lipoprotein_indices.tolist())
+    )
     non_lipo_wid = process.unprocessed_monomer_wids[non_lipo_idx]
     unprocessed[non_lipo_wid] = float(non_lipoprotein_count)
 
@@ -88,7 +92,10 @@ def test_fixture_loads() -> None:
     assert len(p.lipoprotein_indices) > 0
     assert p.reaction_stoich.shape == (len(p.substrate_wids), 2 * len(p.lipoprotein_indices))
     assert p.reaction_catalysis.shape == (2 * len(p.lipoprotein_indices), len(p.enzyme_wids))
-    assert p.reaction_modification.shape == (2 * len(p.lipoprotein_indices), len(p.lipoprotein_indices))
+    assert p.reaction_modification.shape == (
+        2 * len(p.lipoprotein_indices),
+        len(p.lipoprotein_indices),
+    )
     assert np.all(p.required_reactions == 2)
 
 
@@ -96,7 +103,11 @@ def test_non_lipoprotein_unaffected() -> None:
     p = KarrProteinProcessingIIProcess({"rng_seed": 7})
     state = _build_state(p, target_lipoprotein_count=1.0, non_lipoprotein_count=7.0)
 
-    non_lipo_idx = next(i for i in range(len(p.unprocessed_monomer_wids)) if i not in set(p.lipoprotein_indices.tolist()))
+    non_lipo_idx = next(
+        i
+        for i in range(len(p.unprocessed_monomer_wids))
+        if i not in set(p.lipoprotein_indices.tolist())
+    )
     non_lipo_wid = p.unprocessed_monomer_wids[non_lipo_idx]
     before = float(state["protein"]["unprocessed_counts"][non_lipo_wid])
 
@@ -109,7 +120,9 @@ def test_non_lipoprotein_unaffected() -> None:
 
 def test_dag_transfer_then_cleave() -> None:
     p = KarrProteinProcessingIIProcess({"rng_seed": 11})
-    state = _build_state(p, target_lipoprotein_count=1.0, dag_enzyme=20_000.0, cleavage_enzyme=20_000.0)
+    state = _build_state(
+        p, target_lipoprotein_count=1.0, dag_enzyme=20_000.0, cleavage_enzyme=20_000.0
+    )
     target_idx = int(p.lipoprotein_indices[0])
     target_wid = p.unprocessed_monomer_wids[target_idx]
 
@@ -155,7 +168,9 @@ def test_mass_conservation() -> None:
         cleavage_enzyme=40_000.0,
     )
 
-    substrates = np.asarray([state["substrates"][wid] for wid in p.substrate_wids], dtype=np.float64)
+    substrates = np.asarray(
+        [state["substrates"][wid] for wid in p.substrate_wids], dtype=np.float64
+    )
     unprocessed_all = np.asarray(
         [state["protein"]["unprocessed_counts"][wid] for wid in p.unprocessed_monomer_wids],
         dtype=np.float64,
@@ -174,13 +189,16 @@ def test_mass_conservation() -> None:
 
     update = p.next_update(1.0, state)
     observed_sub = np.array(
-        [int(update.get("substrates", {}).get(wid, 0.0)) for wid in p.substrate_wids], dtype=np.int64
+        [int(update.get("substrates", {}).get(wid, 0.0)) for wid in p.substrate_wids],
+        dtype=np.int64,
     )
     expected_sub = p.reaction_stoich @ flux
     np.testing.assert_array_equal(observed_sub, expected_sub)
 
     matured = sum(float(v) for v in update.get("protein", {}).get("processed_counts", {}).values())
-    signal = sum(float(v) for v in update.get("protein", {}).get("signal_sequence_counts", {}).values())
+    signal = sum(
+        float(v) for v in update.get("protein", {}).get("signal_sequence_counts", {}).values()
+    )
     assert signal == matured
 
 

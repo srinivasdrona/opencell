@@ -34,7 +34,6 @@ from opencell.solvers.ode_scipy import (  # noqa: E402
     solve_ode_scipy,
 )
 
-
 pytestmark = pytest.mark.skipif(
     not DEFAULT_SBML_PATH.exists(),
     reason="Vilar reference SBML not present",
@@ -82,9 +81,7 @@ def roadrunner_trajectory(model: TranscriptionModel) -> dict[str, np.ndarray]:
     sample_idx = np.searchsorted(dense_t, T_EVAL)
     for sid in model.species_ids:
         if sid not in cols:
-            raise AssertionError(
-                f"Species {sid!r} missing from roadrunner output (cols={cols})"
-            )
+            raise AssertionError(f"Species {sid!r} missing from roadrunner output (cols={cols})")
         j = cols.index(sid)
         out[sid] = np.asarray(result[sample_idx, j])
     return out
@@ -96,7 +93,7 @@ class TestVilarAgreement:
         model: TranscriptionModel,
         opencell_trajectory: dict[str, np.ndarray],
         roadrunner_trajectory: dict[str, np.ndarray],
-    ):
+    ) -> None:
         failures: list[str] = []
         for sid in model.species_ids:
             ours = opencell_trajectory[sid]
@@ -113,7 +110,7 @@ class TestVilarAgreement:
         self,
         model: TranscriptionModel,
         opencell_trajectory: dict[str, np.ndarray],
-    ):
+    ) -> None:
         for sid in model.species_ids:
             assert np.all(opencell_trajectory[sid] >= -ATOL_AGREEMENT), (
                 f"Negative count in {sid}: {opencell_trajectory[sid]}"
@@ -123,26 +120,25 @@ class TestVilarAgreement:
         self,
         model: TranscriptionModel,
         opencell_trajectory: dict[str, np.ndarray],
-    ):
+    ) -> None:
         # Single-copy genes: DA + DAp = 1 and DR + DRp = 1 at every sample
         da = opencell_trajectory["DA"] + opencell_trajectory["DAp"]
         dr = opencell_trajectory["DR"] + opencell_trajectory["DRp"]
         np.testing.assert_allclose(da, 1.0, rtol=1e-6, atol=1e-9)
         np.testing.assert_allclose(dr, 1.0, rtol=1e-6, atol=1e-9)
 
-    def test_initial_conditions_match(self, model: TranscriptionModel):
+    def test_initial_conditions_match(self, model: TranscriptionModel) -> None:
         rr = roadrunner.RoadRunner(str(model.sbml.sbml_path))
         for i, sid in enumerate(model.species_ids):
             # Amount-mode: OpenCell stores amount; ask roadrunner for init amount.
             rr_init = rr[f"init({sid})"]
             assert model.initial_y[i] == pytest.approx(rr_init, rel=1e-9, abs=1e-12), (
-                f"Initial value mismatch for {sid}: "
-                f"ours={model.initial_y[i]}, rr={rr_init}"
+                f"Initial value mismatch for {sid}: ours={model.initial_y[i]}, rr={rr_init}"
             )
 
 
 class TestTranscriptionProvenance:
-    def test_provenance_contains_paper_pairing(self, model: TranscriptionModel):
+    def test_provenance_contains_paper_pairing(self, model: TranscriptionModel) -> None:
         prov = model.provenance()
         assert prov["biomodels_id"] == "BIOMD0000000035"
         assert prov["paper_doi"] == "10.1073/pnas.092133899"

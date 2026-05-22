@@ -4,17 +4,15 @@ Includes differential testing: JAX and SciPy solvers must agree
 on the same problem (Gate G1.3 preview).
 """
 
-import numpy as np
-import pytest
-
 import jax
 import jax.numpy as jnp
+import numpy as np
 
 jax.config.update("jax_enable_x64", True)
 
 from opencell.solvers.ode import ODESolverConfig, solve_ode
 from opencell.solvers.ode_scipy import ScipySolverConfig, solve_ode_scipy
-from opencell.solvers.stochastic import TauLeapConfig, tau_leap
+from opencell.solvers.stochastic import tau_leap
 
 
 # Simple exponential decay: dy/dt = -k*y, solution: y(t) = y0 * exp(-k*t)
@@ -58,8 +56,7 @@ class TestJAXSolver:
             return jnp.array([dA, dB])
 
         y0 = jnp.array([100.0, 0.0])
-        result = solve_ode(rhs, y0, (0.0, 50.0), args={"k": 0.1},
-                          saveat=jnp.array([50.0]))
+        result = solve_ode(rhs, y0, (0.0, 50.0), args={"k": 0.1}, saveat=jnp.array([50.0]))
 
         A_final = float(result.ys[-1, 0])
         B_final = float(result.ys[-1, 1])
@@ -85,7 +82,10 @@ class TestScipySolver:
         t_eval = np.linspace(0.0, 10.0, 50)
 
         result = solve_ode_scipy(
-            decay_rhs_scipy, y0, (0.0, 10.0), t_eval=t_eval,
+            decay_rhs_scipy,
+            y0,
+            (0.0, 10.0),
+            t_eval=t_eval,
         )
 
         assert result.success
@@ -160,11 +160,16 @@ class TestJAXvsSciPyCrossValidation:
         t_eval = np.linspace(0.0, 20.0, 50)
 
         jax_result = solve_ode(
-            rhs_jax, jnp.array([100.0, 0.0]), (0.0, 20.0),
-            args=None, saveat=jnp.array(t_eval),
+            rhs_jax,
+            jnp.array([100.0, 0.0]),
+            (0.0, 20.0),
+            args=None,
+            saveat=jnp.array(t_eval),
         )
         scipy_result = solve_ode_scipy(
-            rhs_scipy, np.array([100.0, 0.0]), (0.0, 20.0),
+            rhs_scipy,
+            np.array([100.0, 0.0]),
+            (0.0, 20.0),
             t_eval=t_eval,
         )
 

@@ -15,9 +15,7 @@ import numpy as np
 from scipy.io import loadmat
 from vivarium.core.process import Process
 
-_DEFAULT_FIXTURE_PATH = (
-    "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
-)
+_DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
 _MC_ITERATION_LIMIT = 10_000
 
 
@@ -62,16 +60,10 @@ def _load_fixture(path: str | Path) -> dict[str, Any]:
     complex_composition = np.asarray(fx["complexComposition"][0, 0], dtype=np.int64)
 
     cn_outer = fx["complexNetworks"][0, 0]
-    networks = [
-        np.asarray(cn_outer[idx, 0], dtype=np.int64) for idx in range(cn_outer.shape[0])
-    ]
+    networks = [np.asarray(cn_outer[idx, 0], dtype=np.int64) for idx in range(cn_outer.shape[0])]
 
-    substrates2net = np.asarray(
-        fx["substrates2complexNetworks"][0, 0], dtype=np.int64
-    ).reshape(-1)
-    complexes2net = np.asarray(
-        fx["complexs2complexNetworks"][0, 0], dtype=np.int64
-    ).reshape(-1)
+    substrates2net = np.asarray(fx["substrates2complexNetworks"][0, 0], dtype=np.int64).reshape(-1)
+    complexes2net = np.asarray(fx["complexs2complexNetworks"][0, 0], dtype=np.int64).reshape(-1)
 
     return {
         "substrate_wids": substrate_wids,
@@ -264,4 +256,3 @@ __all__ = [
     "_load_fixture",
     "_per_cluster_mc",
 ]
-

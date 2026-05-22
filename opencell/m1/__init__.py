@@ -10,19 +10,20 @@ The previous iPS189 (Suthers 2009) baseline was retired on 2026-04-25
 once Karr's MAT extraction shipped; see Session N+8 in
 ``SESSION_CONTEXT.md`` for the rationale.
 """
-from .karr_metabolism import (
-    KarrMetabolismModel,
-    load_default,
-    solve_fba,
-    per_reaction_comparison,
-    DEFAULT_FIXTURE_JSON,
-    DEFAULT_BIG,
-)
+
 from . import calc_flux_bounds
 from .calc_flux_bounds import (
     M1DynamicsInputs,
-    load_default_dynamics,
     compute_bounds,
+    load_default_dynamics,
+)
+from .karr_metabolism import (
+    DEFAULT_BIG,
+    DEFAULT_FIXTURE_JSON,
+    KarrMetabolismModel,
+    load_default,
+    per_reaction_comparison,
+    solve_fba,
 )
 
 __all__ = [

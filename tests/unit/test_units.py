@@ -1,11 +1,10 @@
 """Tests for core/units.py — Unit registry and validation."""
 
-import pytest
 import pint
+import pytest
 
 from opencell.core.units import (
     Q_,
-    StandardUnits,
     convert_reference_frame,
     ureg,
     validate_positive,
@@ -72,8 +71,11 @@ class TestReferenceFrameConversion:
         # 1000 molecules in 1e-15 L → concentration
         count = Q_(1000, "copies")
         result = convert_reference_frame(
-            count, "per_cell", "per_volume",
-            cell_volume_L=1e-15, dry_weight_g=1e-14,
+            count,
+            "per_cell",
+            "per_volume",
+            cell_volume_L=1e-15,
+            dry_weight_g=1e-14,
         )
         # Should be count / volume
         assert result.magnitude > 0
@@ -81,8 +83,11 @@ class TestReferenceFrameConversion:
     def test_same_frame_noop(self) -> None:
         q = Q_(100, "copies")
         result = convert_reference_frame(
-            q, "per_cell", "per_cell",
-            cell_volume_L=1e-15, dry_weight_g=1e-14,
+            q,
+            "per_cell",
+            "per_cell",
+            cell_volume_L=1e-15,
+            dry_weight_g=1e-14,
         )
         assert result.magnitude == 100
 
@@ -91,10 +96,6 @@ class TestReferenceFrameConversion:
         vol_L = 1e-15
         dw_g = 1e-14
 
-        per_vol = convert_reference_frame(
-            original, "per_cell", "per_volume", vol_L, dw_g
-        )
-        back = convert_reference_frame(
-            per_vol, "per_volume", "per_cell", vol_L, dw_g
-        )
+        per_vol = convert_reference_frame(original, "per_cell", "per_volume", vol_L, dw_g)
+        back = convert_reference_frame(per_vol, "per_volume", "per_cell", vol_L, dw_g)
         assert abs(back.magnitude - original.magnitude) < 1e-6

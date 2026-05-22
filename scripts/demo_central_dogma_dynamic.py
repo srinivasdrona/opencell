@@ -26,6 +26,7 @@ Outputs:
 * `artifacts/demo_central_dogma_dynamic.png` — trajectories of growth
   rate and four representative cytosol pools.
 """
+
 from __future__ import annotations
 
 import json
@@ -46,8 +47,7 @@ def proc_snapshot_pools(engine) -> dict[str, float]:
     hard-coded numbers)."""
     proc = engine.processes["m1_karr"]
     return {
-        sid: float(proc._dyn.substrates_snapshot[idx, 0])
-        for sid, idx in proc._demand_idx_pairs
+        sid: float(proc._dyn.substrates_snapshot[idx, 0]) for sid, idx in proc._demand_idx_pairs
     }
 
 
@@ -71,18 +71,21 @@ def main() -> dict:
     # ------- self-consistency checks (no hard-coded numbers) --------
     checks: list[tuple[str, bool, str]] = []
 
-    checks.append((
-        "C1: growth_per_s strictly positive on every tick",
-        bool(np.all(growth_real > 0.0)),
-        f"min={growth_real.min():.3e}, max={growth_real.max():.3e}",
-    ))
+    checks.append(
+        (
+            "C1: growth_per_s strictly positive on every tick",
+            bool(np.all(growth_real > 0.0)),
+            f"min={growth_real.min():.3e}, max={growth_real.max():.3e}",
+        )
+    )
 
-    checks.append((
-        "C2: dynamic bounds actually differ from static",
-        bool(np.all(n_changed_real > 0)),
-        f"n_changed range [{int(n_changed_real.min())}, "
-        f"{int(n_changed_real.max())}]",
-    ))
+    checks.append(
+        (
+            "C2: dynamic bounds actually differ from static",
+            bool(np.all(n_changed_real > 0)),
+            f"n_changed range [{int(n_changed_real.min())}, {int(n_changed_real.max())}]",
+        )
+    )
 
     # NTP cytosol pools.  In Karr's fitted snapshot, ATP and GTP have
     # nonzero cytosol counts (~36k each); CTP and UTP cytosol counts are
@@ -103,11 +106,13 @@ def main() -> dict:
         else:
             ok = non_increasing and clamp_ok and bool(v[-1] == 0.0)
             tag = "snapshot-empty-stays-zero"
-        checks.append((
-            f"C3-{ntp} ({tag})",
-            ok,
-            f"snapshot={snap[ntp]:.1f}, t1={v[0]:.1f}, end={v[-1]:.1f}",
-        ))
+        checks.append(
+            (
+                f"C3-{ntp} ({tag})",
+                ok,
+                f"snapshot={snap[ntp]:.1f}, t1={v[0]:.1f}, end={v[-1]:.1f}",
+            )
+        )
 
     # Amino-acid pools: M3 now writes per-AA negative deltas using the
     # 20 standard-AA WCM IDs (which already live in M1's 585 substrate
@@ -124,11 +129,13 @@ def main() -> dict:
         else:
             ok = non_increasing and clamp_ok and bool(v[-1] == 0.0)
             tag = "snapshot-empty-stays-zero"
-        checks.append((
-            f"C4-{aa} ({tag})",
-            ok,
-            f"snapshot={snap[aa]:.1f}, t1={v[0]:.1f}, end={v[-1]:.1f}",
-        ))
+        checks.append(
+            (
+                f"C4-{aa} ({tag})",
+                ok,
+                f"snapshot={snap[aa]:.1f}, t1={v[0]:.1f}, end={v[-1]:.1f}",
+            )
+        )
 
     summary = {
         "t_end_s": T_END_S,
@@ -143,12 +150,9 @@ def main() -> dict:
             "max": int(n_changed_real.max()),
         },
         "cytosol_first_last": {
-            k.replace("cyt_", ""): {"t0": float(v[1]), "tend": float(v[-1])}
-            for k, v in cyt.items()
+            k.replace("cyt_", ""): {"t0": float(v[1]), "tend": float(v[-1])} for k, v in cyt.items()
         },
-        "checks": [
-            {"name": n, "passed": p, "detail": d} for n, p, d in checks
-        ],
+        "checks": [{"name": n, "passed": p, "detail": d} for n, p, d in checks],
         "all_checks_passed": all(p for _, p, _ in checks),
     }
 
@@ -157,6 +161,7 @@ def main() -> dict:
 
     try:
         import matplotlib.pyplot as plt  # noqa: WPS433
+
         fig, axes = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
         t = np.arange(growth.size)
         axes[0].plot(t, growth, "b-")

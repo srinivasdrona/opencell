@@ -47,12 +47,12 @@ from opencell.extraction import (  # noqa: E402
     extract_parameter,
 )
 
-
 # ---------------------------------------------------------------------------
 # Reporting
 # ---------------------------------------------------------------------------
 
-def _print_candidate(idx: int, c, *, indent: str = "  ") -> None:
+
+def _print_candidate(idx: int, c: object, *, indent: str = "  ") -> None:
     status = "✗" if c.rejected else "✓"
     line = f"{indent}[{idx}] {status} value={c.raw_value!r} unit={c.raw_unit_normalized!r}"
     line += f"  score={c.score:.2f}  method={c.method}"
@@ -116,6 +116,7 @@ def print_report(result: ExtractionResult) -> None:
 # Card emission
 # ---------------------------------------------------------------------------
 
+
 def build_draft_card(args: argparse.Namespace, result: ExtractionResult) -> ParameterCard | None:
     """Build a DRAFT ParameterCard from the recommended candidate, if any."""
     rec = result.recommendation
@@ -164,12 +165,15 @@ def build_draft_card(args: argparse.Namespace, result: ExtractionResult) -> Para
 # CLI
 # ---------------------------------------------------------------------------
 
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Deterministic parameter extraction.")
     p.add_argument("--doi", required=True, help="Source DOI, e.g. 10.1073/pnas.151588598")
     p.add_argument("--symbol", required=True, help="Symbol as written in paper, e.g. kR or k_R")
     p.add_argument("--target-unit", default="", help="Desired output unit (e.g. min^-1)")
-    p.add_argument("--pdf-cache", action="append", default=[], help="Path to cached PDF text (repeatable)")
+    p.add_argument(
+        "--pdf-cache", action="append", default=[], help="Path to cached PDF text (repeatable)"
+    )
     p.add_argument("--no-biomodels", action="store_true", help="Skip BioModels lookup")
     p.add_argument("--parameter-id", default="", help="parameter_id for emitted DRAFT card")
     p.add_argument("--name", default="", help="Human-readable parameter name")
@@ -177,7 +181,11 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--condition", default="", help="Experimental/model condition")
     p.add_argument("--compartment", default="", help="Cellular compartment")
     p.add_argument("--gene", default="", help="Gene or enzyme identity")
-    p.add_argument("--output-yaml", default="", help="If set and recommendation exists, append DRAFT card to this YAML file")
+    p.add_argument(
+        "--output-yaml",
+        default="",
+        help="If set and recommendation exists, append DRAFT card to this YAML file",
+    )
     args = p.parse_args(argv)
 
     spec = ParameterSpec(
@@ -200,6 +208,7 @@ def main(argv: list[str] | None = None) -> int:
             existing = []
             if out.exists():
                 from opencell.data.verification import load_cards_from_yaml
+
                 existing = load_cards_from_yaml(out)
             existing.append(card)
             save_cards_to_yaml(existing, out)

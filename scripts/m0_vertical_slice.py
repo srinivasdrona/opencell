@@ -7,6 +7,7 @@ A6-defined coupling torture rig. Resolves the LSODA-restart decision
 
 Outcome: docs/phase4/M0_vertical_slice_findings.md.
 """
+
 from __future__ import annotations
 
 import json
@@ -20,9 +21,8 @@ from opencell.models.coupled import CoupledMetabolismTranscription
 from opencell.solvers.hybrid import hybrid_run
 from opencell.vivarium import build_coupled_engine
 
-
-HORIZONS_S = [600.0, 3600.0]   # 10 min and 1 h
-MACRO_DTS_S = [60.0, 300.0]    # M0-default vs M0-C "larger macro_dt"
+HORIZONS_S = [600.0, 3600.0]  # 10 min and 1 h
+MACRO_DTS_S = [60.0, 300.0]  # M0-default vs M0-C "larger macro_dt"
 
 
 def run_one(horizon_s: float, macro_dt_s: float, seed: int = 99) -> dict:
@@ -69,21 +69,29 @@ def run_one(horizon_s: float, macro_dt_s: float, seed: int = 99) -> dict:
         "overhead_x": round(viv_wall / max(hyb_wall, 1e-6), 1),
         "diff_passed": rep.passed,
         "level1_fails": sum(1 for f in rep.level1_findings if f.severity == "fail"),
-        "invariants_a_passed": (rep.level2_a_invariants.passed
-                                if rep.level2_a_invariants else None),
-        "invariants_b_passed": (rep.level2_b_invariants.passed
-                                if rep.level2_b_invariants else None),
+        "invariants_a_passed": (
+            rep.level2_a_invariants.passed if rep.level2_a_invariants else None
+        ),
+        "invariants_b_passed": (
+            rep.level2_b_invariants.passed if rep.level2_b_invariants else None
+        ),
         "level3_failures": [
-            {"path": list(f.detail.get("path", [])),
-             "L_inf_abs": f.detail.get("L_inf_abs"),
-             "tol_abs": f.detail.get("tol_abs")}
-            for f in rep.level3_findings if f.severity == "fail"
+            {
+                "path": list(f.detail.get("path", [])),
+                "L_inf_abs": f.detail.get("L_inf_abs"),
+                "tol_abs": f.detail.get("tol_abs"),
+            }
+            for f in rep.level3_findings
+            if f.severity == "fail"
         ],
         "level4_failures": [
-            {"name": f.detail.get("name"),
-             "value_a": f.detail.get("value_a"),
-             "value_b": f.detail.get("value_b")}
-            for f in rep.level4_findings if f.severity == "fail"
+            {
+                "name": f.detail.get("name"),
+                "value_a": f.detail.get("value_a"),
+                "value_b": f.detail.get("value_b"),
+            }
+            for f in rep.level4_findings
+            if f.severity == "fail"
         ],
     }
 

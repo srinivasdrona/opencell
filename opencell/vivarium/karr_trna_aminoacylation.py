@@ -62,7 +62,9 @@ class KarrTRNAAminoacylationProcess(Process):
 
         row_sums = np.sum(self.reaction_modification, axis=1)
         if not np.all(row_sums == 1):
-            raise ValueError("reactionModificationMatrix must have exactly one target RNA per reaction")
+            raise ValueError(
+                "reactionModificationMatrix must have exactly one target RNA per reaction"
+            )
         self._reaction_target_idx = np.argmax(self.reaction_modification, axis=1).astype(np.int64)
 
     def _load_fixture(self, path: str | Path) -> None:
