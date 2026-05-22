@@ -26,15 +26,22 @@ mapping, both deferred to the integrator pass).
 """
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from opencell.m1 import karr_metabolism as km
 from opencell.m2 import transcription as tx
+from opencell.m2 import transcription_v2 as tx_v2
 from opencell.m3 import translation as tl
+from opencell.m3 import translation_v2 as tl_v2
 from opencell.vivarium.karr_d2_stub import KarrD2StubProcess
 from opencell.vivarium.karr_m1 import KarrMetabolismProcess
 from opencell.vivarium.karr_m2 import KarrTranscriptionProcess
+from opencell.vivarium.karr_m2_v2 import KarrTranscriptionV2Process
 from opencell.vivarium.karr_m3 import KarrTranslationProcess
+from opencell.vivarium.karr_m3_v2 import KarrTranslationV2Process
+
+if TYPE_CHECKING:
+    from vivarium.core.engine import Engine
 
 
 _M1_SUBSTRATE_DEFAULT = 1.0
@@ -74,7 +81,7 @@ def build_karr_m1_m2_engine(
     time_step_s: float = 1.0,
     emit_step_s: float | None = None,
     condition: int = 1,
-):
+) -> Engine:
     """Build a Vivarium Engine running M1 and M2 in lockstep (1s tick)."""
     from vivarium.core.engine import Engine
 
@@ -136,7 +143,7 @@ def build_karr_m1_m2_m3_engine(
     dynamic_bounds: bool = False,
     enable_throttle: bool = False,
     enable_pool_replenishment: bool = False,
-):
+) -> Engine:
     """Build a Vivarium Engine running M1, M2 AND M3 in lockstep (1s tick).
 
     ``dynamic_bounds=True`` enables Phase B M1 dynamic-bounds mode:
@@ -289,9 +296,153 @@ def build_karr_m1_m2_m3_engine(
     return engine
 
 
+def build_karr_chassis_v2(
+    *,
+    m1_model: km.KarrMetabolismModel | None = None,
+    m2_model: tx.KarrTranscriptionModel | None = None,
+    m3_model: tl.KarrTranslationModel | None = None,
+    m2_mechanism_inputs: tx_v2.MechanismInputs | None = None,
+    m3_mechanism_inputs: tl_v2.RibosomeMechanismInputs | None = None,
+    time_step_s: float = 1.0,
+    emit_step_s: float | None = None,
+    condition: int = 1,
+    dynamic_bounds: bool = False,
+    enable_pool_replenishment: bool = False,
+) -> Engine:
+    """Build the A3 v2 chassis (M1 + M2v2 + M3v2 + d2-stub).
+
+    Use this builder for forward-modeling work where M2/M3 should be
+    mechanism-driven and read ``complex.counts`` every tick. Keep using
+    :func:`build_karr_m1_m2_m3_engine` for legacy regression tests that
+    still target v1 prescribed-rate behavior.
+    """
+    from vivarium.core.engine import Engine
+
+    if enable_pool_replenishment and not dynamic_bounds:
+        raise ValueError(
+            "enable_pool_replenishment=True requires dynamic_bounds=True"
+        )
+
+    if m1_model is None:
+        m1_model = km.load_default()
+    if m2_model is None:
+        m2_model = tx.load_default()
+    if m3_model is None:
+        m3_model = tl.load_default()
+    if m2_mechanism_inputs is None:
+        m2_mechanism_inputs = tx_v2.load_default()
+    if m3_mechanism_inputs is None:
+        m3_mechanism_inputs = tl_v2.load_default()
+
+    baseline_demand: dict[str, float] | None = None
+    if enable_pool_replenishment:
+        baseline_demand = compute_baseline_demand_per_s(
+            m2_model, m3_model, condition=condition,
+        )
+
+    m1_proc = KarrMetabolismProcess({
+        "model": m1_model,
+        "time_step": time_step_s,
+        "dynamic_bounds": dynamic_bounds,
+        "enable_pool_replenishment": enable_pool_replenishment,
+        "baseline_demand_per_s": baseline_demand,
+    })
+    m2_proc = KarrTranscriptionV2Process({
+        "kinetics_model": tx.calibrated_chassis_model(m2_model),
+        "mechanism_inputs": m2_mechanism_inputs,
+        "time_step": time_step_s,
+        "substrate_default": _M1_SUBSTRATE_DEFAULT,
+    })
+    m3_proc = KarrTranslationV2Process({
+        "kinetics_model": m3_model,
+        "mechanism_inputs": m3_mechanism_inputs,
+        "time_step": time_step_s,
+        "substrate_default": _M1_SUBSTRATE_DEFAULT,
+    })
+    d2_proc = KarrD2StubProcess()
+
+    rxn_ids = m1_model.rxn_wcm_ids_645
+    sub_ids = m1_model.raw["ids"]["substrate_wcm_585"]
+    rna_init = {g: float(m2_model.counts_mature[i, condition])
+                for i, g in enumerate(m2_model.gene_wcm_ids)}
+    prot_init = {p: float(m3_model.counts_mature[i])
+                 for i, p in enumerate(m3_model.protein_wcm_ids)}
+
+    initial_substrates: dict[str, float] = {
+        sid: _M1_SUBSTRATE_DEFAULT for sid in sub_ids
+    }
+    complex_counts: dict[str, float] = {
+        wid: float(d2_proc._complex_counts_schema[wid]["_default"])
+        for wid in d2_proc.d2_owned_wids
+    }
+    if "RIBOSOME_70S" not in complex_counts:
+        complex_counts["RIBOSOME_70S"] = float(m3_mechanism_inputs.n_active_ribosomes)
+
+    m1_topo = {
+        "metabolic_reaction": ("metabolic_reaction",),
+        "substrates": ("substrates",),
+    }
+    m2_topo: dict[str, tuple[str, ...]] = {
+        "rna": ("rna",),
+        "substrates": ("substrates",),
+        "complex": ("complex",),
+    }
+    m3_topo: dict[str, tuple[str, ...]] = {
+        "protein": ("protein",),
+        "substrates": ("substrates",),
+        "complex": ("complex",),
+    }
+    d2_topo: dict[str, tuple[str, ...]] = {
+        "complex": ("complex",),
+    }
+    if dynamic_bounds:
+        m1_topo["m1_dynamic_diagnostics"] = ("m1_dynamic_diagnostics",)
+        m1_topo["m1_pools"] = ("m1_pools",)
+
+    initial_state: dict[str, Any] = {
+        "metabolic_reaction": {
+            "fluxs": {rid: float(m1_model.fluxs_stored[i])
+                      for i, rid in enumerate(rxn_ids)},
+            "growth_per_s": float(m1_model.stored_runtime["growth_per_s"]),
+            "growth_per_h": float(m1_model.stored_runtime["growth_per_h"]),
+        },
+        "substrates": initial_substrates,
+        "rna": {"counts": rna_init},
+        "protein": {"counts": prot_init},
+        "complex": {"counts": complex_counts},
+    }
+    if dynamic_bounds:
+        initial_state["m1_dynamic_diagnostics"] = {
+            k: 0.0 for k in m1_proc._diagnostics_schema()
+        }
+        from opencell.vivarium.karr_m1 import _CYTOSOL_COMPARTMENT_0
+        initial_state["m1_pools"] = {
+            sid: float(m1_proc._sub_state[idx, _CYTOSOL_COMPARTMENT_0])
+            for sid, idx in m1_proc._demand_idx_pairs
+        }
+
+    engine = Engine(
+        processes={
+            "m1_karr": m1_proc,
+            "m2_karr": m2_proc,
+            "m3_karr": m3_proc,
+            "d2_stub": d2_proc,
+        },
+        topology={
+            "m1_karr": m1_topo,
+            "m2_karr": m2_topo,
+            "m3_karr": m3_topo,
+            "d2_stub": d2_topo,
+        },
+        initial_state=initial_state,
+        emit_step=emit_step_s or time_step_s,
+    )
+    return engine
+
+
 __all__ = [
+    "build_karr_chassis_v2",
     "build_karr_m1_m2_engine",
     "build_karr_m1_m2_m3_engine",
     "compute_baseline_demand_per_s",
 ]
-
