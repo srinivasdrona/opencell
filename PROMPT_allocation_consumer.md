@@ -1,13 +1,31 @@
-# PROMPT — v6 allocation-consumer enrollment
+# PROMPT — v6 allocation-consumer enrollment (v1.0 BLOCK-RELEASE)
+
+## Why this is now BLOCK-RELEASE for v1.0
+
+This was originally queued as a v1.x cleanup. Phase E.1's 32400-tick chassis_v6 trajectory (committed at `fdea8a2` on `agent/pe-1-real-match`, fixture at `data/phase_e/v6_trajectory_32400s.pkl`) shows the bypass is **catastrophic to substrate accounting**:
+
+| Observable | t=0 | t=100s | t=16200s (half) | t=32400s (end) |
+|---|---|---|---|---|
+| `atp_pool` | 1.0 | **-43,750** | **-5,751,050** | **-10,211,500** |
+| `gtp_pool` | 1.0 | (mirrors ATP) | -5,751,049 | -10,211,499 |
+| `dntp_pool_total` | 4.0 | **0** | 0 | 0 |
+| `cell_dry_mass_g` | 8.2e-16 | (still ≥0) | -1.8e-14 | **-3.4e-14** (negative) |
+| `replication_state_code` | 0 | 0 | 0 | 0 (**never initiated**) |
+| `fork_position_norm` | 0 | 0 | 0 | 0 |
+| `division_detected` | — | — | — | **False** |
+
+Avg ATP drain is **315 units/tick**, sustained from tick 100 onward. The dNTP pool empties at tick 100 and never recovers, which is the proximate cause of "replication never initiated" — ReplicationInitiation's DnaA-ATP threshold check can't proceed when both ATP and dNTPs are unaccounted-for and underwater. Meanwhile mRNA grows 3.7× and protein 5.6× (plausible-looking ratios) because the *production* machinery is correct, just unbounded by allocation.
+
+This is exactly the failure mode the `KarrAllocationStep` request/allocate cycle exists to prevent. v1.0 cannot ship until fixed.
 
 ## Scope (one Codex turn)
 
-chassis_v6 wired RnaDecay and HostInteraction into the topology but did NOT enroll them as `KarrAllocationStep` consumers (deliberately deferred during the v6 turn to avoid emitting new UserWarnings against restricted modules). This turn enrolls them properly and confirms full mass-balance accounting across all allocation consumers.
+chassis_v6 wired RnaDecay and HostInteraction into the topology but did NOT enroll them as `KarrAllocationStep` consumers. This turn enrolls them properly and confirms full mass-balance accounting across all allocation consumers, with the E.1 trajectory as the regression target.
 
-**Token budget**: 60k. **Checkpoints**: 4. **Worktree**: `E:\opencell-worktrees\allocation-consumer` (branch `agent/allocation-consumer-enrollment`).
+**Token budget**: 60k. **Checkpoints**: 4. **Worktree**: `E:\opencell-worktrees\allocation-consumer` (already staged at `agent/allocation-consumer-enrollment` from main HEAD `e4ea870`).
 
 **DO NOT START** until both pre-conditions hold:
-1. E.1 has merged to main (so the v6 trajectory fixture is banked and won't be invalidated by this turn).
+1. E.1 has merged to main (the v6 trajectory fixture must be banked as the BEFORE-baseline that this turn improves on).
 2. skip-drift audit has merged (so test count baseline is stable).
 
 ## Pre-reading (in this order)
@@ -53,7 +71,13 @@ chassis_v6 wired RnaDecay and HostInteraction into the topology but did NOT enro
 2. No new UserWarnings introduced.
 3. Full suite pass count unchanged from pre-turn baseline (currently 877 + whatever skip-drift recovered).
 4. `docs/design/allocation_consumer_enrollment.md` documents the Karr-source citation for every consumed WID per process.
-5. STATUS.md final block: files changed, test results, mass-balance check (substrate deltas sum to ~0 over a 1000-tick run of chassis_v6).
+5. **Trajectory regression (the critical gate)**: re-run `scripts/phase_e1_real_match.py --max-ticks 32400` against the fixed chassis. The new pickle must show:
+   - `atp_pool` stays ≥0 for the full run (was: hit -10.2M)
+   - `dntp_pool_total` does NOT collapse to 0 at tick 100 (was: empty from tick 100 onward)
+   - `cell_dry_mass_g` stays ≥0 (was: negative from tick 1100)
+   - `replication_state_code` advances past 0 at some point in the run, OR a written justification explains why ReplicationInitiation's threshold still isn't met (with Karr citation for expected timing)
+   - Save the new pickle as `data/phase_e/v6_trajectory_32400s_post_alloc.pkl` and check it into git (or git-LFS if size grows past 1MB) alongside the original for diff.
+6. STATUS.md final block: files changed, test results, the before/after table for the 6 observables above, mass-balance check (substrate deltas sum to ~0 over a 1000-tick run of chassis_v6).
 
 ## Out of scope (DO NOT do)
 - Do not modify allocation algorithm (Karr proportional fair-share is locked).
