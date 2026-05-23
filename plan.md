@@ -401,17 +401,28 @@ NOT a parallel program)**
 
 ---
 
-## Current Status (2026-05-24 00:45 IST, **903 tests passing**, fix + audit Codex sessions IN FLIGHT)
+## Current Status (2026-05-24 00:55 IST, **903 tests passing**, fix + audit Codex v2 relaunched with auto-handoff)
 
-### Active Codex sessions
+### Compaction-failure recovery (both prior sessions died at ~200k tokens)
+
+- **Cascade-fix v2 (PID 18496)** died at 212k tokens, 25 min in. Salvaged: typo fix in `karr_transcription_v3.py` (commit `67cd1e4`).
+- **Audit v1 (PID 12072)** died at 196k tokens, ~6 min in. NO findings committed.
+- Root cause: Azure remote-compaction throttle ("high demand"). Documented in DECISIONS.md as `codex-compaction-failure-policy` (2026-05-23). Original PROMPTs were too broad and lacked self-imposed token ceiling.
+- **Mitigation in v3**: scope-narrowed PROMPTs (`CONTINUE_PROMPT.md` in each worktree), explicit 130k token auto-handoff protocol (HANDOVER.md + commit + exit), incremental commits after each sub-step.
+
+### Active Codex sessions (v3 relaunch, 00:53 IST)
 
 | Session | PID | Worktree | Branch | Launched | Expected | Waiter shellId |
 |---|---|---|---|---|---|---|
-| substrate-cascade-fix | 18496 | `E:\opencell-worktrees\substrate-cascade-fix` | `agent/substrate-cascade-fix` | 00:40 | ~2-3 hr | `wait-cascade-fix-v2` |
-| bypass-precondition-audit | 12072 | `E:\opencell-worktrees\bypass-precondition-audit` | `agent/bypass-precondition-audit` | 00:43 | ~60-90 min | `wait-audit-exit` |
+| substrate-cascade-fix v3 | 5284 | `E:\opencell-worktrees\substrate-cascade-fix` | `agent/substrate-cascade-fix` | 00:53 | ~60-90 min (scope-narrowed) | `wait-cascade-fix-v3` |
+| bypass-precondition-audit v2 | 6420 | `E:\opencell-worktrees\bypass-precondition-audit` | `agent/bypass-precondition-audit` | 00:53 | ~45-60 min | `wait-audit-v2` |
 
-- **fix**: implements Bug 1 (bypass), Bug 2 (M1 production), Bug 3 (initial conditions), Bug 4 (protein_folding K/MN/NA), then 100t + 500t canary + full suite. PROMPT at repo root `PROMPT_substrate_cascade_fix.md`.
-- **audit**: read-only hunt for other instances of bypass-with-implicit-precondition patterns (Patterns A-F). PROMPT at repo root `PROMPT_bypass_precondition_audit.md`. Output to `docs/audits/bypass_precondition_audit.md` in worktree.
+- **cascade-fix v3 scope (narrowed)**: Bug 1 polish (transcription_v3, 90% pre-done) + Bug 2 (translation_v3) + Bug 3 (chassis_v6 wiring). **Deferred to next session**: Bug 4 (metabolism production), initial conditions, protein_folding K/MN/NA. PROMPT at `CONTINUE_PROMPT.md` in worktree.
+- **audit v2**: same Pattern A-F hunt, but commits findings to `docs/audits/bypass_precondition_audit.md` after EACH pattern (not just at end). PROMPT at `CONTINUE_PROMPT.md` in worktree.
+
+### Launch lesson (2026-05-24, captured in DECISIONS.md)
+
+`pwsh -Command "..."` mangles quoted arguments. Use launcher script files instead: write `.launch.ps1` per worktree, invoke via `Start-Process pwsh -ArgumentList @("-NoProfile","-File",".launch.ps1")`.
 
 ### Diagnostic worktree (read-only, not yet merged)
 
