@@ -53,9 +53,9 @@ from opencell.vivarium.karr_metabolism import KarrMetabolismProcess
 from opencell.vivarium.karr_transcription import KarrTranscriptionProcess
 from opencell.vivarium.karr_transcription_v2 import KarrTranscriptionV2Process
 from opencell.vivarium.karr_transcription_v3 import KarrTranscriptionV3Process
-from opencell.vivarium.karr_m3 import KarrTranslationProcess
-from opencell.vivarium.karr_m3_v2 import KarrTranslationV2Process
-from opencell.vivarium.karr_m3_v3 import KarrTranslationV3Process
+from opencell.vivarium.karr_translation import KarrTranslationProcess
+from opencell.vivarium.karr_translation_v2 import KarrTranslationV2Process
+from opencell.vivarium.karr_translation_v3 import KarrTranslationV3Process
 from opencell.vivarium.karr_protein_activation import KarrProteinActivationProcess
 from opencell.vivarium.karr_protein_decay_light import ProteinDecayLightProcess
 from opencell.vivarium.karr_protein_folding import KarrProteinFoldingProcess
@@ -1791,6 +1791,7 @@ __all__ = [
     "build_karr_m1_m2_m3_engine",
     "compute_baseline_demand_per_s",
 ]
+
 
 
 

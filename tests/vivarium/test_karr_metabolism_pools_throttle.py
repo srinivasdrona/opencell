@@ -28,7 +28,7 @@ from opencell.vivarium.karr_transcription import (
     _M2_CONSUMED_SUBSTRATES,
     KarrTranscriptionProcess,
 )
-from opencell.vivarium.karr_m3 import KarrTranslationProcess
+from opencell.vivarium.karr_translation import KarrTranslationProcess
 
 
 # ----------------------------------------------------------------------
@@ -252,5 +252,6 @@ def test_throttle_on_with_starved_atp_freezes_m2_synthesis() -> None:
         assert sub_after[ntp] == pytest.approx(sub_before[ntp], abs=1e-9), (
             f"NTP {ntp} substrate moved under M2 f=0: {sub_before[ntp]} -> {sub_after[ntp]}"
         )
+
 
 

@@ -8,8 +8,8 @@ from vivarium.core.engine import Engine
 
 from opencell.m3 import translation as tl
 from opencell.m3 import translation_v2 as tl_v2
-from opencell.vivarium.karr_m3_v2 import KarrTranslationV2Process
-from opencell.vivarium.karr_m3_v3 import KarrTranslationV3Process
+from opencell.vivarium.karr_translation_v2 import KarrTranslationV2Process
+from opencell.vivarium.karr_translation_v3 import KarrTranslationV3Process
 
 
 def _collect_updaters(node):
@@ -132,3 +132,4 @@ def test_substrate_delta_unchanged() -> None:
     assert update_v2["substrates"]["GLY"] == pytest.approx(-46.88127639605819)
     assert update_v3["substrates"]["ALA"] == pytest.approx(update_v2["substrates"]["ALA"])
     assert update_v3["substrates"]["GLY"] == pytest.approx(update_v2["substrates"]["GLY"])
+

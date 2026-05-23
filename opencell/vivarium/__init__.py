@@ -36,7 +36,7 @@ from opencell.vivarium.karr_transcription import (
     KarrTranscriptionProcess,
     build_karr_m2_engine,
 )
-from opencell.vivarium.karr_m3 import (
+from opencell.vivarium.karr_translation import (
     KarrTranslationProcess,
     build_karr_m3_engine,
 )
@@ -62,5 +62,6 @@ __all__ = [
     "build_karr_m1_m2_engine",
     "build_karr_m1_m2_m3_engine",
 ]
+
 
 

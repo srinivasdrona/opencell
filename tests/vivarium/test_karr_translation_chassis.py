@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from opencell.m3 import translation as tl
-from opencell.vivarium.karr_m3 import (
+from opencell.vivarium.karr_translation import (
     KarrTranslationProcess,
     build_karr_m3_engine,
 )
@@ -77,3 +77,4 @@ def test_engine_starting_perturbed_relaxes(
         model.counts_mature[have_decay], 1.0
     )
     assert float(np.max(rel)) < 1e-2
+
