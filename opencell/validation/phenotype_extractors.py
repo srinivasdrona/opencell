@@ -35,6 +35,34 @@ def _state_series(trajectory: Trajectory, key: str) -> np.ndarray | None:
     return np.asarray(values, dtype=np.float64)
 
 
+def _state_mapping_series(trajectory: Trajectory, key: str) -> list[dict[str, float]] | None:
+    snaps = _snapshots(trajectory)
+    if not snaps:
+        return None
+    out: list[dict[str, float]] = []
+    found = False
+    for snap in snaps:
+        state = snap.get("state", {})
+        if not isinstance(state, dict):
+            out.append({})
+            continue
+        raw = state.get(key)
+        if not isinstance(raw, dict):
+            out.append({})
+            continue
+        found = True
+        clean: dict[str, float] = {}
+        for metabolite_id, value in raw.items():
+            try:
+                clean[str(metabolite_id)] = float(value)
+            except (TypeError, ValueError):
+                continue
+        out.append(clean)
+    if not found:
+        return None
+    return out
+
+
 def _time_series(trajectory: Trajectory) -> np.ndarray | None:
     snaps = _snapshots(trajectory)
     if not snaps:
@@ -199,9 +227,19 @@ def extract_kp12(trajectory: Trajectory) -> float | None:
     return duration if duration >= 0.0 else float("nan")
 
 
-def extract_kp13(_trajectory: Trajectory) -> float | None:
-    # Requires ftsz/cytokinesis stores not emitted in schema-v1 snapshots.
-    return None
+def extract_kp13(trajectory: Trajectory) -> float | None:
+    start = _state_series(trajectory, "cytokinesis_start_tick_s")
+    complete = _state_series(trajectory, "cytokinesis_complete_tick_s")
+    if start is None or complete is None:
+        return None
+    start_s = _first_finite(start)
+    complete_s = _first_finite(complete)
+    if start_s is None or complete_s is None:
+        # No observed cytokinesis transition in this trajectory window.
+        return 0.0
+    if complete_s < start_s:
+        return 0.0
+    return float(complete_s - start_s)
 
 
 def extract_kp14(trajectory: Trajectory) -> float | None:
@@ -228,24 +266,65 @@ def extract_kp16(trajectory: Trajectory) -> float | None:
     return float(1.0 + max(last, 0.0))
 
 
-def extract_kp17(_trajectory: Trajectory) -> float | None:
-    # Requires explicit DNA and total mass series not emitted in schema-v1 snapshots.
-    return None
+def extract_kp17(trajectory: Trajectory) -> float | None:
+    dna_mass = _state_series(trajectory, "dna_mass_g")
+    total_ref = _state_series(trajectory, "cell_dry_mass_reference_g")
+    if dna_mass is None or total_ref is None:
+        return None
+    dna0 = _first_finite(dna_mass)
+    total0 = _first_finite(total_ref)
+    if dna0 is None or total0 is None or total0 <= 0.0:
+        return float("nan")
+    return float(dna0 / total0)
 
 
-def extract_kp18(_trajectory: Trajectory) -> float | None:
-    # Requires explicit RNA mass and total mass series not emitted in schema-v1 snapshots.
-    return None
+def extract_kp18(trajectory: Trajectory) -> float | None:
+    rna_mass = _state_series(trajectory, "rna_mass_g")
+    total_ref = _state_series(trajectory, "cell_dry_mass_reference_g")
+    if rna_mass is None or total_ref is None:
+        return None
+    rna0 = _first_finite(rna_mass)
+    total0 = _first_finite(total_ref)
+    if rna0 is None or total0 is None or total0 <= 0.0:
+        return float("nan")
+    return float(rna0 / total0)
 
 
-def extract_kp19(_trajectory: Trajectory) -> float | None:
-    # Requires explicit protein mass and total mass series not emitted in schema-v1 snapshots.
-    return None
+def extract_kp19(trajectory: Trajectory) -> float | None:
+    protein_mass = _state_series(trajectory, "protein_mass_g")
+    total_ref = _state_series(trajectory, "cell_dry_mass_reference_g")
+    if protein_mass is None or total_ref is None:
+        return None
+    protein0 = _first_finite(protein_mass)
+    total0 = _first_finite(total_ref)
+    if protein0 is None or total0 is None or total0 <= 0.0:
+        return float("nan")
+    return float(protein0 / total0)
 
 
-def extract_kp20(_trajectory: Trajectory) -> float | None:
-    # Requires 30-metabolite concentration profile not emitted in schema-v1 snapshots.
-    return None
+def extract_kp20(trajectory: Trajectory) -> float | None:
+    pools_series = _state_mapping_series(trajectory, "metabolite_pools")
+    if pools_series is None:
+        return None
+    non_empty = [entry for entry in pools_series if entry]
+    if len(non_empty) < 2:
+        return float("nan")
+    baseline = non_empty[0]
+    latest = non_empty[-1]
+    log_ratios: list[float] = []
+    for metabolite_id, baseline_value in baseline.items():
+        current_value = latest.get(metabolite_id)
+        if current_value is None:
+            continue
+        if baseline_value <= 0.0 or current_value <= 0.0:
+            continue
+        ratio = current_value / baseline_value
+        if ratio <= 0.0 or (not np.isfinite(ratio)):
+            continue
+        log_ratios.append(abs(float(np.log10(ratio))))
+    if not log_ratios:
+        return float("nan")
+    return float(np.mean(np.asarray(log_ratios, dtype=np.float64)))
 
 
 def extract_kp21(_trajectory: Trajectory) -> float | None:

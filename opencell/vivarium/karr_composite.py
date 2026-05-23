@@ -79,6 +79,7 @@ from opencell.vivarium.karr_rna_decay import RnaDecayLightProcess
 from opencell.vivarium.karr_rna_modification import KarrRNAModificationProcess
 from opencell.vivarium.karr_rna_processing import KarrRNAProcessingProcess
 from opencell.vivarium.karr_host_interaction import KarrHostInteractionProcess
+from opencell.vivarium.karr_observability_step import KarrObservabilityStep
 from opencell.vivarium.karr_terminal_organelle_assembly import (
     KarrTerminalOrganelleAssemblyProcess,
 )
@@ -1905,6 +1906,23 @@ def build_karr_chassis_v6(
             "substrate_wids": substrate_wids,
         }
     )
+    steps["karr_observability_step"] = KarrObservabilityStep(
+        {
+            "m1_model": processes["karr_metabolism"].model,
+            "m2_model": processes["karr_transcription"].kinetics_model,
+            "m3_model": processes["karr_translation"].kinetics_model,
+            "genome_half_bp": float(processes["karr_replication"].terc_position_bp),
+        }
+    )
+    topology["karr_observability_step"] = {
+        "rna": ("rna",),
+        "protein": ("protein",),
+        "chromosome": ("chromosome",),
+        "cell": ("cell",),
+        "substrates": ("substrates",),
+        "phenotype_observables": ("phenotype_observables",),
+    }
+    flow["karr_observability_step"] = [("karr_allocation_step",)]
 
     chromosome_state = initial_state.setdefault("chromosome", {})
     chromosome_state.pop("damage_sites", None)
