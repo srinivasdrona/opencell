@@ -187,6 +187,7 @@ def test_bounded_by_counts(default_process: ProteinDecayLightProcess) -> None:
 
 
 def test_integration_with_d2_real() -> None:
-    pytest.importorskip("opencell.vivarium.karr_d2_real")
+    pytest.importorskip("opencell.vivarium.karr_macromolecular_complexation")
     process = ProteinDecayLightProcess({})
     assert 0 < len(process.complex_wids) <= 147
+

@@ -68,7 +68,7 @@ def test_chassis_v3_builds(
     assert "karr_metabolism" in engine.processes
     assert "karr_transcription_v3" in engine.processes
     assert "karr_translation_v3" in engine.processes
-    assert "karr_d2_real" in engine.processes
+    assert "karr_macromolecular_complexation" in engine.processes
     assert "karr_protein_decay_light" in engine.processes
     assert "request_calculator_d2" in engine.steps
     assert "request_calculator_pd" in engine.steps
@@ -119,7 +119,7 @@ def test_chassis_v3_ratchet_closure_steady_state(
     state0 = engine.state.get_value()
     top10 = _top_complex_wids(state0, n=10)
     if len(top10) < 10:
-        candidates = list(engine.processes["karr_d2_real"].complex_wids)
+        candidates = list(engine.processes["karr_macromolecular_complexation"].complex_wids)
         top10 = (top10 + [wid for wid in candidates if wid not in top10])[:10]
     assert len(top10) == 10
 
@@ -170,7 +170,7 @@ def test_chassis_v3_all_writers_accumulate(
     p_m1 = engine.processes["karr_metabolism"].ports_schema()
     p_m2 = engine.processes["karr_transcription_v3"].ports_schema()
     p_m3 = engine.processes["karr_translation_v3"].ports_schema()
-    p_d2 = engine.processes["karr_d2_real"].ports_schema()
+    p_d2 = engine.processes["karr_macromolecular_complexation"].ports_schema()
     p_pd = engine.processes["karr_protein_decay_light"].ports_schema()
 
     _assert_branch_accumulate(p_m1["substrates"])
@@ -189,11 +189,11 @@ def test_chassis_v3_all_writers_accumulate(
     step_req_pd = engine.steps["request_calculator_pd"].ports_schema()
     step_alloc = engine.steps["karr_allocation_step"].ports_schema()
 
-    any_d2_leaf = next(iter(step_req_d2["requests"]["karr_d2_real"].values()))
+    any_d2_leaf = next(iter(step_req_d2["requests"]["karr_macromolecular_complexation"].values()))
     assert any_d2_leaf["_updater"] == "set"
     assert step_req_pd["requests"]["karr_protein_decay_light"]["ATP"]["_updater"] == "set"
     assert step_req_pd["requests"]["karr_protein_decay_light"]["H2O"]["_updater"] == "set"
-    any_alloc_req_leaf = next(iter(step_alloc["requests"]["karr_d2_real"].values()))
+    any_alloc_req_leaf = next(iter(step_alloc["requests"]["karr_macromolecular_complexation"].values()))
     assert any_alloc_req_leaf["_updater"] == "set"
     any_alloc_out_leaf = next(
         iter(step_alloc["substrates_allocated"]["karr_protein_decay_light"].values())
@@ -219,19 +219,19 @@ def test_allocation_step_constrains_under_scarcity(
         {
             "substrates": {"ATP": 5.0, "H2O": 4.0},
             "requests": {
-                "karr_d2_real": {"ATP": 40.0, "H2O": 20.0},
+                "karr_macromolecular_complexation": {"ATP": 40.0, "H2O": 20.0},
                 "karr_protein_decay_light": {"ATP": 60.0, "H2O": 30.0},
             },
             "substrates_allocated": {
-                "karr_d2_real": {"ATP": 0.0, "H2O": 0.0},
+                "karr_macromolecular_complexation": {"ATP": 0.0, "H2O": 0.0},
                 "karr_protein_decay_light": {"ATP": 0.0, "H2O": 0.0},
             },
         },
     )
     allocated = update["substrates_allocated"]
-    assert allocated["karr_d2_real"]["ATP"] == 2.0
+    assert allocated["karr_macromolecular_complexation"]["ATP"] == 2.0
     assert allocated["karr_protein_decay_light"]["ATP"] == 3.0
-    assert allocated["karr_d2_real"]["H2O"] == 1.0
+    assert allocated["karr_macromolecular_complexation"]["H2O"] == 1.0
     assert allocated["karr_protein_decay_light"]["H2O"] == 2.0
 
 
@@ -247,7 +247,7 @@ def test_d2_and_decay_both_active(
         time_step_s=1.0,
         emit_step_s=1.0,
     )
-    d2_proc = engine.processes["karr_d2_real"]
+    d2_proc = engine.processes["karr_macromolecular_complexation"]
     pd_proc = engine.processes["karr_protein_decay_light"]
 
     for wid in d2_proc.substrate_wids:
@@ -301,10 +301,11 @@ def test_emit_step_records_complex_trajectories(
     assert "complex" in ts
     assert "counts" in ts["complex"]
     assert len(ts["complex"]["counts"]) > 0
-    wid = engine.processes["karr_d2_real"].complex_wids[0]
+    wid = engine.processes["karr_macromolecular_complexation"].complex_wids[0]
     assert wid in ts["complex"]["counts"]
     series = np.asarray(ts["complex"]["counts"][wid], dtype=float)
     assert len(series) == len(ts["time"])
     assert len(series) == 6
     assert np.all(np.isfinite(series))
+
 

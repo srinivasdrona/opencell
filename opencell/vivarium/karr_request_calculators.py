@@ -51,7 +51,7 @@ class RequestCalculatorD2(Step):
                 }
             },
             "requests": {
-                "karr_d2_real": {
+                "karr_macromolecular_complexation": {
                     wid: {"_default": 0.0, "_updater": "set", "_emit": False}
                     for wid in self._d2_real_proc.substrate_wids
                 }
@@ -60,7 +60,7 @@ class RequestCalculatorD2(Step):
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         del timestep, states
-        return {"requests": {"karr_d2_real": dict(self._zero_requests)}}
+        return {"requests": {"karr_macromolecular_complexation": dict(self._zero_requests)}}
 
 
 class RequestCalculatorPD(Step):
@@ -526,3 +526,4 @@ __all__ = [
     "RequestCalculatorRNAPathway",
     "RequestCalculatorProteinPathway",
 ]
+

@@ -18,7 +18,7 @@ Run with: pytest tests/probes/test_probe5_seedsequence.py -v
 
 from __future__ import annotations
 
-from opencell.vivarium.karr_d2_real import KarrD2RealProcess
+from opencell.vivarium.karr_macromolecular_complexation import MacromolecularComplexationProcess
 from opencell.vivarium.karr_protein_decay_light import ProteinDecayLightProcess
 
 # =============================================================================
@@ -26,7 +26,7 @@ from opencell.vivarium.karr_protein_decay_light import ProteinDecayLightProcess
 # =============================================================================
 
 
-def _make_d2_state(p: KarrD2RealProcess, base_value: int = 100) -> dict:
+def _make_d2_state(p: MacromolecularComplexationProcess, base_value: int = 100) -> dict:
     """Build a starting state for D.2-real.
 
     Substrates seeded to base_value, complexes start at zero, allocations zero
@@ -35,8 +35,8 @@ def _make_d2_state(p: KarrD2RealProcess, base_value: int = 100) -> dict:
     return {
         "substrates": {wid: float(base_value) for wid in p.substrate_wids},
         "complex": {"counts": {wid: 0.0 for wid in p.complex_wids}},
-        "requests": {"karr_d2_real": {wid: 0.0 for wid in p.substrate_wids}},
-        "substrates_allocated": {"karr_d2_real": {wid: 0.0 for wid in p.substrate_wids}},
+        "requests": {"karr_macromolecular_complexation": {wid: 0.0 for wid in p.substrate_wids}},
+        "substrates_allocated": {"karr_macromolecular_complexation": {wid: 0.0 for wid in p.substrate_wids}},
     }
 
 
@@ -63,8 +63,8 @@ def _make_pd_state(p: ProteinDecayLightProcess) -> dict:
 def test_d2_real_one_tick_same_seed_same_output() -> None:
     """Two D.2-real instances with the same rng_seed give bit-identical
     output on a single tick from the same starting state."""
-    p1 = KarrD2RealProcess({"rng_seed": 42})
-    p2 = KarrD2RealProcess({"rng_seed": 42})
+    p1 = MacromolecularComplexationProcess({"rng_seed": 42})
+    p2 = MacromolecularComplexationProcess({"rng_seed": 42})
 
     state = _make_d2_state(p1, base_value=200)
     u1 = p1.next_update(1.0, state)
@@ -89,8 +89,8 @@ def test_d2_real_ten_ticks_same_seed_same_trajectory() -> None:
     state drift accumulates across ticks (e.g., if rng state isn't carried
     forward consistently).
     """
-    p1 = KarrD2RealProcess({"rng_seed": 7})
-    p2 = KarrD2RealProcess({"rng_seed": 7})
+    p1 = MacromolecularComplexationProcess({"rng_seed": 7})
+    p2 = MacromolecularComplexationProcess({"rng_seed": 7})
 
     state1 = _make_d2_state(p1, base_value=500)
     state2 = _make_d2_state(p2, base_value=500)
@@ -120,8 +120,8 @@ def test_d2_real_ten_ticks_same_seed_same_trajectory() -> None:
 def test_d2_real_different_seeds_different_output() -> None:
     """Sanity: different seeds should produce different outputs (otherwise
     determinism is trivial — RNG isn't being used at all)."""
-    p1 = KarrD2RealProcess({"rng_seed": 1})
-    p2 = KarrD2RealProcess({"rng_seed": 2})
+    p1 = MacromolecularComplexationProcess({"rng_seed": 1})
+    p2 = MacromolecularComplexationProcess({"rng_seed": 2})
 
     state = _make_d2_state(p1, base_value=200)
     u1 = p1.next_update(1.0, state)
@@ -133,8 +133,8 @@ def test_d2_real_different_seeds_different_output() -> None:
         # If 200 subunits is enough for all complexes to fully form deterministically,
         # MC sampling may not differentiate. Retry with lower availability.
         state_low = _make_d2_state(p1, base_value=5)
-        u1 = KarrD2RealProcess({"rng_seed": 1}).next_update(1.0, state_low)
-        u2 = KarrD2RealProcess({"rng_seed": 2}).next_update(1.0, state_low)
+        u1 = MacromolecularComplexationProcess({"rng_seed": 1}).next_update(1.0, state_low)
+        u2 = MacromolecularComplexationProcess({"rng_seed": 2}).next_update(1.0, state_low)
         differs = u1["complex"]["counts"] != u2["complex"]["counts"]
 
     assert differs, "Different seeds produced identical output — RNG may not be used"
@@ -194,7 +194,7 @@ def test_d2_and_pd_same_seed_independent_rng_streams() -> None:
     """D.2-real and ProteinDecay-light with same numeric seed should NOT
     share state — they each have their own rng. Confirm by inspecting that
     their first .integers() calls produce different values."""
-    p1 = KarrD2RealProcess({"rng_seed": 5})
+    p1 = MacromolecularComplexationProcess({"rng_seed": 5})
     p2 = ProteinDecayLightProcess({"rng_seed": 5})
 
     # Both have ._rng; both seeded with 5; both untouched.
@@ -210,3 +210,4 @@ def test_d2_and_pd_same_seed_independent_rng_streams() -> None:
     # p2's stream should match its own original v2's *successor*, NOT p1's now-shifted state
     # If they were sharing state, v2_after would == v1_after
     assert v1_after != v2_after, "RNG streams are sharing state (bug)"
+

@@ -146,10 +146,10 @@ def _per_cluster_mc(
     return formed
 
 
-class KarrD2RealProcess(Process):
+class MacromolecularComplexationProcess(Process):
     """Real D.2 process: complexation from free subunit pools."""
 
-    name = "karr_d2_real"
+    name = "karr_macromolecular_complexation"
     defaults: dict[str, Any] = {
         "fixture_path": _DEFAULT_FIXTURE_PATH,
         "rng_seed": 0,
@@ -251,8 +251,9 @@ class KarrD2RealProcess(Process):
 
 
 __all__ = [
-    "KarrD2RealProcess",
+    "MacromolecularComplexationProcess",
     "_closed_form_bounds",
     "_load_fixture",
     "_per_cluster_mc",
 ]
+

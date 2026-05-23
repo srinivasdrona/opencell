@@ -206,7 +206,7 @@ def test_chassis_v4_builds(
         "karr_metabolism",
         "karr_transcription_v3",
         "karr_translation_v3",
-        "karr_d2_real",
+        "karr_macromolecular_complexation",
         "karr_protein_decay_light",
         "karr_trna_aminoacylation",
         "karr_ribosome_assembly",
@@ -441,7 +441,7 @@ def test_chassis_v4_all_writers_accumulate(
     p_m1 = engine.processes["karr_metabolism"].ports_schema()
     p_m2 = engine.processes["karr_transcription_v3"].ports_schema()
     p_m3 = engine.processes["karr_translation_v3"].ports_schema()
-    p_d2 = engine.processes["karr_d2_real"].ports_schema()
+    p_d2 = engine.processes["karr_macromolecular_complexation"].ports_schema()
     p_pd = engine.processes["karr_protein_decay_light"].ports_schema()
     p_trna = engine.processes["karr_trna_aminoacylation"].ports_schema()
     p_ribasm = engine.processes["karr_ribosome_assembly"].ports_schema()
@@ -492,4 +492,5 @@ def test_chassis_v4_tick_rate(
     elapsed = time.perf_counter() - start
     ticks_per_s = 100.0 / max(elapsed, 1e-9)
     assert ticks_per_s > 5.0, f"tick_rate={ticks_per_s:.2f} ticks/s"
+
 

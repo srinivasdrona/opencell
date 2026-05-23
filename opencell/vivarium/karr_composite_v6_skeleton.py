@@ -38,7 +38,7 @@ CHASSIS_V6_EXPECTED_PROCESS_KEYS: tuple[str, ...] = (
     "karr_protein_activation",
     "karr_protein_decay_light",
     "karr_protein_translocation",
-    "karr_d2_real",
+    "karr_macromolecular_complexation",
     "karr_ribosome_assembly",
     "karr_ftsz_polymerization",
     "karr_cytokinesis",
@@ -75,4 +75,5 @@ __all__ = [
     "CHASSIS_V6_EXPECTED_PROCESS_KEYS",
     "build_karr_chassis_v6",
 ]
+
 

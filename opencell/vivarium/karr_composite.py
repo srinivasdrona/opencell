@@ -43,8 +43,8 @@ from opencell.vivarium.karr_chromosome_condensation import (
 )
 from opencell.vivarium.karr_chromosome_segregation import KarrChromosomeSegregationProcess
 from opencell.vivarium.karr_cytokinesis import KarrCytokinesisProcess
-from opencell.vivarium.karr_d2_real import KarrD2RealProcess
-from opencell.vivarium.karr_d2_stub import KarrD2StubProcess
+from opencell.vivarium.karr_macromolecular_complexation import MacromolecularComplexationProcess
+from opencell.vivarium.karr_macromolecular_complexation_stub import MacromolecularComplexationStubProcess
 from opencell.vivarium.karr_dna_damage import KarrDNADamageProcess
 from opencell.vivarium.karr_dna_repair import KarrDNARepairProcess
 from opencell.vivarium.karr_dna_supercoiling import KarrDNASupercoilingProcess
@@ -267,7 +267,7 @@ def build_karr_m1_m2_m3_engine(
             "enable_throttle": enable_throttle,
         }
     )
-    d2_proc = KarrD2StubProcess()
+    d2_proc = MacromolecularComplexationStubProcess()
 
     rxn_ids = m1_model.rxn_wcm_ids_645
     sub_ids = m1_model.raw["ids"]["substrate_wcm_585"]
@@ -417,7 +417,7 @@ def build_karr_chassis_v2(
             "substrate_default": _M1_SUBSTRATE_DEFAULT,
         }
     )
-    d2_proc = KarrD2StubProcess()
+    d2_proc = MacromolecularComplexationStubProcess()
 
     rxn_ids = m1_model.rxn_wcm_ids_645
     sub_ids = m1_model.raw["ids"]["substrate_wcm_585"]
@@ -565,7 +565,7 @@ def build_karr_chassis_v3(
             "substrate_default": _M1_SUBSTRATE_DEFAULT,
         }
     )
-    d2_proc = KarrD2RealProcess({"time_step": time_step_s})
+    d2_proc = MacromolecularComplexationProcess({"time_step": time_step_s})
     decay_proc = ProteinDecayLightProcess({"time_step": time_step_s})
 
     allocation_substrates = sorted(
@@ -576,7 +576,7 @@ def build_karr_chassis_v3(
     allocation_step = KarrAllocationStep(
         {
             "consumer_processes": [
-                ("karr_d2_real", list(d2_proc.substrate_wids)),
+                ("karr_macromolecular_complexation", list(d2_proc.substrate_wids)),
                 ("karr_protein_decay_light", ["ATP", "H2O"]),
             ],
             "substrate_wids": allocation_substrates,
@@ -630,7 +630,7 @@ def build_karr_chassis_v3(
             "substrates": ("substrates",),
             "complex": ("complex",),
         },
-        "karr_d2_real": {
+        "karr_macromolecular_complexation": {
             "substrates": ("substrates",),
             "complex": ("complex",),
             "requests": ("_internal_requests",),
@@ -684,7 +684,7 @@ def build_karr_chassis_v3(
             "karr_metabolism": m1_proc,
             "karr_transcription_v3": m2_proc,
             "karr_translation_v3": m3_proc,
-            "karr_d2_real": d2_proc,
+            "karr_macromolecular_complexation": d2_proc,
             "karr_protein_decay_light": decay_proc,
         },
         steps={
@@ -771,7 +771,7 @@ def build_karr_chassis_v4(
             "substrate_default": _M1_SUBSTRATE_DEFAULT,
         }
     )
-    d2_proc = KarrD2RealProcess({"time_step": time_step_s})
+    d2_proc = MacromolecularComplexationProcess({"time_step": time_step_s})
     decay_proc = ProteinDecayLightProcess({"time_step": time_step_s})
     trna_proc = KarrTRNAAminoacylationProcess({"time_step": time_step_s})
     ribasm_proc = KarrRibosomeAssemblyProcess({"time_step": time_step_s})
@@ -832,7 +832,7 @@ def build_karr_chassis_v4(
     allocation_step = KarrAllocationStep(
         {
             "consumer_processes": [
-                ("karr_d2_real", list(d2_proc.substrate_wids)),
+                ("karr_macromolecular_complexation", list(d2_proc.substrate_wids)),
                 ("karr_protein_decay_light", ["ATP", "H2O"]),
                 (
                     ribasm_proc.name,
@@ -952,7 +952,7 @@ def build_karr_chassis_v4(
             "substrates": ("substrates",),
             "complex": ("complex",),
         },
-        "karr_d2_real": {
+        "karr_macromolecular_complexation": {
             "substrates": ("substrates",),
             "complex": ("complex",),
             "requests": ("_internal_requests_d2",),
@@ -1128,7 +1128,7 @@ def build_karr_chassis_v4(
             "karr_metabolism": m1_proc,
             "karr_transcription_v3": m2_proc,
             "karr_translation_v3": m3_proc,
-            "karr_d2_real": d2_proc,
+            "karr_macromolecular_complexation": d2_proc,
             "karr_protein_decay_light": decay_proc,
             "karr_trna_aminoacylation": trna_proc,
             "karr_ribosome_assembly": ribasm_proc,
@@ -1239,7 +1239,7 @@ def build_karr_chassis_v5(
             "substrate_default": _M1_SUBSTRATE_DEFAULT,
         }
     )
-    d2_proc = KarrD2RealProcess({"time_step": time_step_s})
+    d2_proc = MacromolecularComplexationProcess({"time_step": time_step_s})
     decay_proc = ProteinDecayLightProcess({"time_step": time_step_s})
     trna_proc = KarrTRNAAminoacylationProcess({"time_step": time_step_s})
     ribasm_proc = KarrRibosomeAssemblyProcess({"time_step": time_step_s})
@@ -1325,7 +1325,7 @@ def build_karr_chassis_v5(
     allocation_step = KarrAllocationStep(
         {
             "consumer_processes": [
-                ("karr_d2_real", list(d2_proc.substrate_wids)),
+                ("karr_macromolecular_complexation", list(d2_proc.substrate_wids)),
                 ("karr_protein_decay_light", ["ATP", "H2O"]),
                 (
                     ribasm_proc.name,
@@ -1458,7 +1458,7 @@ def build_karr_chassis_v5(
             "substrates": ("substrates",),
             "complex": ("complex",),
         },
-        "karr_d2_real": {
+        "karr_macromolecular_complexation": {
             "substrates": ("substrates",),
             "complex": ("complex",),
             "requests": ("_internal_requests_d2",),
@@ -1725,7 +1725,7 @@ def build_karr_chassis_v5(
             "karr_metabolism": m1_proc,
             "karr_transcription_v3": m2_proc,
             "karr_translation_v3": m3_proc,
-            "karr_d2_real": d2_proc,
+            "karr_macromolecular_complexation": d2_proc,
             "karr_protein_decay_light": decay_proc,
             "karr_trna_aminoacylation": trna_proc,
             "karr_ribosome_assembly": ribasm_proc,
@@ -1791,6 +1791,7 @@ __all__ = [
     "build_karr_m1_m2_m3_engine",
     "compute_baseline_demand_per_s",
 ]
+
 
 
 

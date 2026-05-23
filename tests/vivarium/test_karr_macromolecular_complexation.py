@@ -7,14 +7,14 @@ from typing import Any
 import numpy as np
 import pytest
 
-from opencell.vivarium.karr_d2_real import (
-    KarrD2RealProcess,
+from opencell.vivarium.karr_macromolecular_complexation import (
+    MacromolecularComplexationProcess,
     _closed_form_bounds,
     _per_cluster_mc,
 )
 
 
-def _load_snapshot_state(process: KarrD2RealProcess) -> dict[str, Any]:
+def _load_snapshot_state(process: MacromolecularComplexationProcess) -> dict[str, Any]:
     """Load or synthesize a realistic D.2 state snapshot for one tick tests.
 
     A dedicated D.2 snapshot fixture is not guaranteed in all worktrees, so this
@@ -34,7 +34,7 @@ def _load_snapshot_state(process: KarrD2RealProcess) -> dict[str, Any]:
 
 
 def test_fixture_loads() -> None:
-    p = KarrD2RealProcess({})
+    p = MacromolecularComplexationProcess({})
     assert len(p.complex_wids) == 147
     assert len(p.substrate_wids) == 210
     assert p.complex_composition.shape == (210, 147)
@@ -44,7 +44,7 @@ def test_fixture_loads() -> None:
 
 
 def test_no_subunits_no_complexes() -> None:
-    p = KarrD2RealProcess({})
+    p = MacromolecularComplexationProcess({})
     states = {
         "substrates": {wid: 0.0 for wid in p.substrate_wids},
         "complex": {"counts": {wid: 0.0 for wid in p.complex_wids}},
@@ -58,7 +58,7 @@ def test_no_subunits_no_complexes() -> None:
 
 
 def test_mass_conservation() -> None:
-    p = KarrD2RealProcess({"rng_seed": 42})
+    p = MacromolecularComplexationProcess({"rng_seed": 42})
     states = _load_snapshot_state(p)
     update = p.next_update(1.0, states)
 
@@ -75,7 +75,7 @@ def test_mass_conservation() -> None:
 
 
 def test_cluster1_closed_form() -> None:
-    p = KarrD2RealProcess({"rng_seed": 0})
+    p = MacromolecularComplexationProcess({"rng_seed": 0})
     states = _load_snapshot_state(p)
     update = p.next_update(1.0, states)
 
@@ -95,11 +95,11 @@ def test_cluster1_closed_form() -> None:
 
 
 def test_cluster2_mc_deterministic() -> None:
-    p1 = KarrD2RealProcess({"rng_seed": 42})
+    p1 = MacromolecularComplexationProcess({"rng_seed": 42})
     s1 = _load_snapshot_state(p1)
     u1 = p1.next_update(1.0, s1)
 
-    p2 = KarrD2RealProcess({"rng_seed": 42})
+    p2 = MacromolecularComplexationProcess({"rng_seed": 42})
     s2 = _load_snapshot_state(p2)
     u2 = p2.next_update(1.0, s2)
 
@@ -117,7 +117,7 @@ def test_ub_zero_safety_filter() -> None:
 
 
 def test_one_tick_from_snapshot() -> None:
-    p = KarrD2RealProcess({"rng_seed": 0})
+    p = MacromolecularComplexationProcess({"rng_seed": 0})
     states = _load_snapshot_state(p)
     update = p.next_update(1.0, states)
 
@@ -129,7 +129,7 @@ def test_integration_with_allocation_step() -> None:
     pytest.importorskip("opencell.vivarium.karr_allocation_step")
     from opencell.vivarium.karr_allocation_step import KarrAllocationStep
 
-    p = KarrD2RealProcess({"rng_seed": 0})
+    p = MacromolecularComplexationProcess({"rng_seed": 0})
     snapshot = _load_snapshot_state(p)
 
     alloc_step = KarrAllocationStep(
@@ -153,3 +153,4 @@ def test_integration_with_allocation_step() -> None:
     }
     d2_update = p.next_update(1.0, snapshot)
     assert sum(d2_update["complex"]["counts"].values()) > 0.0
+

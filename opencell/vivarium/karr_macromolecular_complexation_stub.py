@@ -64,10 +64,10 @@ def _mature_count_by_wid(protein_complex_path: Path) -> dict[str, float]:
     return out
 
 
-class KarrD2StubProcess(Process):
+class MacromolecularComplexationStubProcess(Process):
     """Seed `complex.counts` defaults from Karr snapshot fixtures."""
 
-    name = "karr_d2_stub"
+    name = "karr_macromolecular_complexation_stub"
     defaults: dict[str, Any] = {
         "protein_complex_path": str(_PROTEIN_COMPLEX_FLAT),
         "macromolecular_complexation_path": str(_MACROMOLECULAR_COMPLEXATION_FLAT),
@@ -99,7 +99,7 @@ class KarrD2StubProcess(Process):
 
         if missing_wids:
             _LOGGER.warning(
-                "KarrD2StubProcess: %d D.2-owned WIDs missing mature snapshot "
+                "MacromolecularComplexationStubProcess: %d D.2-owned WIDs missing mature snapshot "
                 "counts; defaulting to 0 (%s)",
                 len(missing_wids),
                 ",".join(sorted(missing_wids)),
@@ -118,5 +118,6 @@ class KarrD2StubProcess(Process):
 
 
 __all__ = [
-    "KarrD2StubProcess",
+    "MacromolecularComplexationStubProcess",
 ]
+

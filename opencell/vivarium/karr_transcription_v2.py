@@ -12,7 +12,7 @@ Current complex-count dependency and provenance:
   The WID is in D.2 ownership seeds derived from
   ``MacromolecularComplexation_flat.mat`` / ``RibosomeAssembly_flat.mat``
   and default counts come from ``ProteinComplex_flat.mat`` via
-  :class:`opencell.vivarium.karr_d2_stub.KarrD2StubProcess`.
+  :class:`opencell.vivarium.karr_macromolecular_complexation_stub.MacromolecularComplexationStubProcess`.
 """
 
 from __future__ import annotations
@@ -130,3 +130,4 @@ class KarrTranscriptionV2Process(Process):
             per_ntp = total_nt / 4.0
             update["substrates"] = {ntp: -per_ntp * timestep for ntp in self.consumed_substrates}
         return update
+

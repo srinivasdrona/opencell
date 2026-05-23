@@ -33,7 +33,7 @@ Tick/order legend:
 | Metabolism | `opencell/vivarium/karr_metabolism.py` | `metabolic_reaction`, `substrates` | `substrates` | produces/consumes broad metabolite pool (585 WIDs) | upstream demand from all consumers via shared `substrates` | `P` |
 | Transcription (v3) | `opencell/vivarium/karr_transcription_v3.py` | `rna`, `substrates` | `complex`, `tx_rate_fold_change`, `substrates` | ATP/CTP/GTP/UTP | RNAP availability (`complex`), regulation fold-change | `P` |
 | Translation (v3) | `opencell/vivarium/karr_translation_v3.py` | `protein`, `substrates` | `rna`, `complex`, `substrates` | ATP/GTP + amino acids | ribosome counts (`complex`), transcript abundance (`rna`) | `P` |
-| MacromolecularComplexation (D2 real) | `opencell/vivarium/karr_d2_real.py` | `complex` (+ internal requests) | `substrates`, `complex`, `substrates_allocated` | ATP/GTP/H2O classically allocated | shared substrates and complex counts | `P` |
+| MacromolecularComplexation (D2 real) | `opencell/vivarium/karr_macromolecular_complexation.py` | `complex` (+ internal requests) | `substrates`, `complex`, `substrates_allocated` | ATP/GTP/H2O classically allocated | shared substrates and complex counts | `P` |
 | ProteinDecay-light | `opencell/vivarium/karr_protein_decay_light.py` | `protein`, `rna`, `complex`, `substrates` (+ internal requests) | `complex`, `substrates_allocated` | ATP/H2O | shared complex counts; allocation result | `P` |
 | tRNAAminoacylation | `opencell/vivarium/karr_trna_aminoacylation.py` | `rna`, `substrates` | `rna`, `protein`, `substrates_allocated` | ATP + amino acids and cofactors | tRNA pools (`rna`), synthetases (`protein`) | `P` |
 | RibosomeAssembly | `opencell/vivarium/karr_ribosome_assembly.py` | `complex`, `rna`, `protein`, `substrates` | `rna`, `protein`, `substrates_allocated` | GTP/H2O | rRNA + ribosomal proteins | `P` |
@@ -326,6 +326,7 @@ Suggested uplift sequence:
 3. confirm canonical chromosome coordinate schema (`left/right nt` vs richer region-index representation)
 4. confirm target tick windows from per-process traces for replication completion and division
 5. decide where to host final `CellCycleCoordinator` (inside `karr_composite.py` or dedicated module)
+
 
 
 
