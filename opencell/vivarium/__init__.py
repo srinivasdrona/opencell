@@ -25,6 +25,8 @@ Design rules (Phase 4 / A1):
 
 from opencell.vivarium.composite import build_coupled_engine
 from opencell.vivarium.karr_composite import (
+    CHASSIS_V6_EXPECTED_PROCESS_KEYS,
+    build_karr_chassis_v6,
     build_karr_m1_m2_engine,
     build_karr_m1_m2_m3_engine,
 )
@@ -61,7 +63,8 @@ __all__ = [
     "build_karr_m3_engine",
     "build_karr_m1_m2_engine",
     "build_karr_m1_m2_m3_engine",
+    "build_karr_chassis_v6",
+    "CHASSIS_V6_EXPECTED_PROCESS_KEYS",
 ]
-
 
 

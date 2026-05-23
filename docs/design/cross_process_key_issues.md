@@ -13,25 +13,25 @@
 
 ## CPK-002
 - Severity: BLOCKER-NEEDS-DESIGN
-- Leaf path: `chromosome.damage_sites`
+- Leaf path: `chromosome.damage_events_cumulative` + `chromosome.repair_events_cumulative`
 - Processes involved: `pc-t6` (`karr_dna_damage.py`), `pc-t7` (`karr_dna_repair.py`)
 - What each says:
-  - `pc-t6` declares `_updater: "accumulate"` and appends newly created lesions.
-  - `pc-t7` declares `_updater: "set"` and writes a replacement list after removing repaired lesions.
-- Proposed fix: orchestrator design call to pick one canonical representation/update protocol (recommended: map/set semantics with one updater contract), then align both processes and tests together.
+  - `pc-t6` now appends damage events to `chromosome.damage_events_cumulative` with `_updater: "accumulate"`.
+  - `pc-t7` now appends repair events to `chromosome.repair_events_cumulative` with `_updater: "accumulate"`.
+- Proposed fix: split ownership into cumulative event streams and derive current unresolved damage via `chromosome_views.current_damage_sites()`.
 - Confidence: HIGH
-- Status: NOT PATCHED (requires process-logic changes, not schema-only).
+- Status: RESOLVED (patched in v6 turn).
 
 ## CPK-003
 - Severity: BLOCKER-NEEDS-DESIGN
-- Leaf path: `chromosome.fork_position_bp.*` vs `chromosome.fork_positions`
+- Leaf path: `chromosome.fork_position_bp.*`
 - Processes involved: `pc-t2` (`karr_replication.py`), `pc-t6` (`karr_dna_damage.py`)
 - What each says:
   - `pc-t2` declares/writes `chromosome.fork_position_bp.left/right`.
-  - `pc-t6` declares/reads `chromosome.fork_positions`.
-- Proposed fix: choose one canonical fork-position path and apply a coordinated declaration + logic alignment in both processes.
+  - `pc-t6` now declares/reads `chromosome.fork_position_bp.left/right`.
+- Proposed fix: align on canonical fork-position path used by replication (`fork_position_bp`).
 - Confidence: HIGH
-- Status: NOT PATCHED (schema-only changes are insufficient).
+- Status: RESOLVED (patched in v6 turn).
 
 ## CPK-004
 - Severity: BLOCKER-NEEDS-DESIGN

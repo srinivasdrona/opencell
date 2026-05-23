@@ -36,8 +36,8 @@ _MODULE_SPECS = (
 
 _TARGET_PORTS = {"chromosome", "cell", "substrates", "requests", "substrates_allocated"}
 
-# Known unresolved cross-process design blocker (see docs/design/cross_process_key_issues.md).
-_KNOWN_UPDATER_CONFLICT_ALLOWLIST = {"chromosome.damage_sites"}
+# Keep empty by default; cross-process key conflicts should be fixed, not allowlisted.
+_KNOWN_UPDATER_CONFLICT_ALLOWLIST: set[str] = set()
 
 
 def _flatten_schema(node: Any, prefix: list[str]) -> list[tuple[list[str], Any, Any]]:
@@ -166,4 +166,3 @@ def test_substrate_keys_are_consistent_case() -> None:
 
     mixed = {k: sorted(v) for k, v in case_map.items() if len(v) > 1}
     assert not mixed, f"Mixed-case substrate/request tokens detected: {mixed}"
-

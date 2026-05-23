@@ -67,3 +67,24 @@ def test_v6_short_run_100s() -> None:
     dry_mass_proxy = protein_total + rna_total + complex_total
 
     assert dry_mass_proxy[-1] > dry_mass_proxy[0] * 0.99
+
+
+def test_v6_cpk_002_resolved() -> None:
+    composite = build_karr_chassis_v6(time_step_s=1.0, emit_step_s=1.0)
+    chrom_damage_schema = composite["processes"]["karr_dna_damage"].ports_schema()["chromosome"]
+    chrom_repair_schema = composite["processes"]["karr_dna_repair"].ports_schema()["chromosome"]
+
+    assert "damage_events_cumulative" in chrom_damage_schema
+    assert "repair_events_cumulative" in chrom_damage_schema
+    assert "damage_events_cumulative" in chrom_repair_schema
+    assert "repair_events_cumulative" in chrom_repair_schema
+
+
+def test_v6_cpk_003_resolved() -> None:
+    from opencell.vivarium.karr_dna_damage import KarrDNADamageProcess
+
+    proc = KarrDNADamageProcess({})
+    ports = proc.ports_schema()
+    chrom = ports.get("chromosome", {})
+    assert "fork_position_bp" in chrom
+    assert "fork_positions" not in chrom

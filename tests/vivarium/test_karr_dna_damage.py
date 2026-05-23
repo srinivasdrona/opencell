@@ -19,6 +19,7 @@ if "opencell" in sys.modules:
                 del sys.modules[mod_name]
 
 from opencell.vivarium.karr_dna_damage import KarrDNADamageProcess
+from opencell.vivarium.chromosome_views import current_damage_sites
 
 
 class _FixedPoissonRng:
@@ -42,12 +43,13 @@ class _FixedPoissonRng:
 
 def _base_state(
     replication_state: str = "idle",
-    fork_positions: dict[str, int | None] | None = None,
+    fork_position_bp: dict[str, int | None] | None = None,
 ) -> dict[str, Any]:
     return {
         "chromosome": {
-            "damage_sites": [],
-            "fork_positions": fork_positions or {"left": None, "right": None},
+            "damage_events_cumulative": [],
+            "repair_events_cumulative": [],
+            "fork_position_bp": fork_position_bp or {"left": None, "right": None},
             "replication_stall_flag": 0.0,
             "replication_state": replication_state,
         }
@@ -56,8 +58,10 @@ def _base_state(
 
 def _apply_update(state: dict[str, Any], update: dict[str, Any]) -> None:
     chrom_update = update.get("chromosome", {})
-    if "damage_sites" in chrom_update:
-        state["chromosome"]["damage_sites"].extend(list(chrom_update["damage_sites"]))
+    if "damage_events_cumulative" in chrom_update:
+        state["chromosome"]["damage_events_cumulative"].extend(
+            list(chrom_update["damage_events_cumulative"])
+        )
     if "replication_stall_flag" in chrom_update:
         state["chromosome"]["replication_stall_flag"] = float(
             state["chromosome"]["replication_stall_flag"] + float(chrom_update["replication_stall_flag"])
@@ -123,7 +127,7 @@ def test_one_tick_damage_delta_sign() -> None:
         }
     )
     update = process.next_update(1.0, _base_state())
-    new_sites = update.get("chromosome", {}).get("damage_sites", [])
+    new_sites = update.get("chromosome", {}).get("damage_events_cumulative", [])
     assert len(new_sites) > 0
     for site in new_sites:
         assert int(site["position"]) > 0
@@ -161,11 +165,11 @@ def test_replication_stall_flag_on_fork_hit() -> None:
     )
     state = _base_state(
         replication_state="elongating",
-        fork_positions={"left": 10101, "right": 250000},
+        fork_position_bp={"left": 10101, "right": 250000},
     )
     update = process.next_update(1.0, state)
     assert update["chromosome"]["replication_stall_flag"] == 1.0
-    assert update["chromosome"]["damage_sites"][0]["position"] == 10101
+    assert update["chromosome"]["damage_events_cumulative"][0]["position"] == 10101
 
 
 def test_100_tick_total_damage_within_20_percent_of_expectation() -> None:
@@ -184,7 +188,7 @@ def test_100_tick_total_damage_within_20_percent_of_expectation() -> None:
         total = 0.0
         for _ in range(100):
             update = process.next_update(1.0, state)
-            total += float(len(update.get("chromosome", {}).get("damage_sites", [])))
+            total += float(len(update.get("chromosome", {}).get("damage_events_cumulative", [])))
             _apply_update(state, update)
         totals.append(total)
 
@@ -210,11 +214,11 @@ def test_no_nan_no_negative_regression() -> None:
     for _ in range(100):
         update = process.next_update(1.0, state)
         _apply_update(state, update)
-        sites = state["chromosome"]["damage_sites"]
+        sites = current_damage_sites(state)
         assert len(sites) >= previous_count
         previous_count = len(sites)
 
-    for site in state["chromosome"]["damage_sites"]:
+    for site in current_damage_sites(state):
         pos = float(site["position"])
         assert np.isfinite(pos)
         assert int(pos) > 0

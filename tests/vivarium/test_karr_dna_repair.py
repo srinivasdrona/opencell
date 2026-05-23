@@ -21,6 +21,7 @@ if "opencell" in sys.modules:
                 del sys.modules[mod_name]
 
 from opencell.vivarium.karr_dna_repair import KarrDNARepairProcess
+from opencell.vivarium.chromosome_views import current_damage_sites
 
 
 def _base_state(
@@ -33,7 +34,8 @@ def _base_state(
     damage_sites = damage_sites or []
     return {
         "chromosome": {
-            "damage_sites": damage_sites,
+            "damage_events_cumulative": damage_sites,
+            "repair_events_cumulative": [],
             "repair_count": 0.0,
             "repair_count_by_pathway": {pathway: 0.0 for pathway in ("ber", "ner", "hr", "nhej_like")},
         },
@@ -52,8 +54,10 @@ def _apply_update(
     process: KarrDNARepairProcess,
 ) -> None:
     chrom = update.get("chromosome", {})
-    if "damage_sites" in chrom:
-        state["chromosome"]["damage_sites"] = deepcopy(chrom["damage_sites"])
+    if "repair_events_cumulative" in chrom:
+        state["chromosome"]["repair_events_cumulative"].extend(
+            deepcopy(chrom["repair_events_cumulative"])
+        )
     if "repair_count" in chrom:
         state["chromosome"]["repair_count"] = float(state["chromosome"]["repair_count"]) + float(
             chrom["repair_count"]
@@ -119,7 +123,7 @@ def test_one_tick_run_produces_positive_repair_delta() -> None:
     update = process.next_update(1.0, state)
 
     assert update["chromosome"]["repair_count"] > 0.0
-    assert len(update["chromosome"]["damage_sites"]) < len(damage_sites)
+    assert len(update["chromosome"]["repair_events_cumulative"]) > 0
     assert any(float(v) < 0.0 for v in update.get("substrates", {}).values())
 
 
@@ -159,7 +163,7 @@ def test_pathway_routing_and_counts() -> None:
     assert by_pathway["ner"] == pytest.approx(1.0)
     assert by_pathway["hr"] == pytest.approx(1.0)
     assert by_pathway["nhej_like"] == pytest.approx(1.0)
-    assert len(update["chromosome"]["damage_sites"]) == 0
+    assert len(update["chromosome"]["repair_events_cumulative"]) == 5
 
 
 def test_steady_state_100_ticks_matches_trace_quiescent() -> None:
@@ -199,4 +203,4 @@ def test_no_nan_or_negative_regression() -> None:
             np.isfinite(value) and value >= 0.0 for value in state["chromosome"]["repair_count_by_pathway"].values()
         )
         assert all(np.isfinite(value) and value >= -1e-9 for value in state["substrates"].values())
-        assert len(state["chromosome"]["damage_sites"]) >= 0
+        assert len(current_damage_sites(state)) >= 0
