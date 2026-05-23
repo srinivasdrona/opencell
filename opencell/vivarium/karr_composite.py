@@ -74,8 +74,10 @@ from opencell.vivarium.karr_request_calculators import (
 from opencell.vivarium.karr_ribosome_assembly import KarrRibosomeAssemblyProcess
 from opencell.vivarium.karr_replication import KarrReplicationProcess
 from opencell.vivarium.karr_replication_initiation import KarrReplicationInitiationProcess
+from opencell.vivarium.karr_rna_decay import RnaDecayLightProcess
 from opencell.vivarium.karr_rna_modification import KarrRNAModificationProcess
 from opencell.vivarium.karr_rna_processing import KarrRNAProcessingProcess
+from opencell.vivarium.karr_host_interaction import KarrHostInteractionProcess
 from opencell.vivarium.karr_terminal_organelle_assembly import (
     KarrTerminalOrganelleAssemblyProcess,
 )
@@ -89,6 +91,37 @@ if TYPE_CHECKING:
 
 
 _M1_SUBSTRATE_DEFAULT = 1.0
+
+CHASSIS_V6_EXPECTED_PROCESS_KEYS: tuple[str, ...] = (
+    "karr_replication",
+    "karr_replication_initiation",
+    "karr_dna_supercoiling",
+    "karr_chromosome_condensation",
+    "karr_chromosome_segregation",
+    "karr_dna_damage",
+    "karr_dna_repair",
+    "karr_ftsz_polymerization",
+    "karr_cytokinesis",
+    "karr_terminal_organelle_assembly",
+    "karr_cell_cycle_coordinator",
+    "karr_host_interaction",
+    "karr_rna_decay",
+    "karr_rna_processing",
+    "karr_rna_modification",
+    "karr_trna_aminoacylation",
+    "karr_ribosome_assembly",
+    "karr_protein_processing_i",
+    "karr_protein_processing_ii",
+    "karr_protein_folding",
+    "karr_protein_modification",
+    "karr_protein_translocation",
+    "karr_protein_activation",
+    "karr_protein_decay_light",
+    "karr_macromolecular_complexation",
+    "karr_metabolism",
+    "karr_transcription",
+    "karr_translation",
+)
 
 
 def compute_baseline_demand_per_s(
@@ -1791,7 +1824,6 @@ __all__ = [
     "build_karr_m1_m2_m3_engine",
     "compute_baseline_demand_per_s",
 ]
-
 
 
 
