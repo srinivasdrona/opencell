@@ -164,7 +164,7 @@ class KarrCytokinesisProcess(Process):
             "chromosome": {
                 "segregation_progress": {
                     "_default": 0.0,
-                    "_updater": "set",
+                    "_updater": "accumulate",
                     "_emit": True,
                 }
             },
