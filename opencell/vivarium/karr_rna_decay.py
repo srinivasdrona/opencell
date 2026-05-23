@@ -198,7 +198,7 @@ class RnaDecayLightProcess(Process):
             },
             "substrates_allocated": {
                 self.name: {
-                    "H2O": {"_default": 0.0, "_updater": "accumulate", "_emit": False},
+                    "H2O": {"_default": 0.0, "_emit": False},
                 }
             },
         }
@@ -216,6 +216,8 @@ class RnaDecayLightProcess(Process):
         sampled_decay = self._rng.poisson(expected).astype(np.int64)
         sampled_decay = np.minimum(sampled_decay, rna_counts)
 
+        # Karr RNADecay hydrolysis uses water as the sole reactant;
+        # allocation bounds this H2O requirement each tick.
         raw_h2o_need = float(np.dot(self.water_need_per_decay, sampled_decay))
         allocated_h2o = max(
             0.0,
@@ -264,4 +266,3 @@ class RnaDecayLightProcess(Process):
 
 
 __all__ = ["RnaDecayLightProcess"]
-

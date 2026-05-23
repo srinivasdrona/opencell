@@ -21,6 +21,7 @@ def _default_consumer_processes() -> list[tuple[str, list[str]]]:
     return [
         ("d2_real", ["ATP", "GTP", "H2O"]),
         ("protein_decay_light", ["ATP", "H2O"]),
+        ("karr_rna_decay", ["H2O"]),
     ]
 
 

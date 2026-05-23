@@ -183,3 +183,10 @@ def test_multi_wid_independent_allocation() -> None:
     assert allocated["consumer_b"]["ATP"] == 4.0
     assert allocated["consumer_a"]["GTP"] == 2.0
     assert allocated["consumer_b"]["GTP"] == 6.0
+
+
+def test_default_consumers_include_rna_decay_h2o() -> None:
+    step = KarrAllocationStep()
+    consumers = dict(step.parameters["consumer_processes"])
+    assert "karr_rna_decay" in consumers
+    assert consumers["karr_rna_decay"] == ["H2O"]
