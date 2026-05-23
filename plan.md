@@ -401,7 +401,21 @@ NOT a parallel program)**
 
 ---
 
-## Current Status (2026-05-24 01:10 IST, **903 tests passing + cascade-fix tests passing, BUT 100t canary UNCHANGED**)
+## Current Status (2026-05-24 01:21 IST, hyp-validation done, fix-did-not-execute in flight)
+
+### Hypothesis validation results (PID 20388, completed 01:20)
+
+- **H1 REFUTED** — drift is monotonic (-437.5/tick for ATP, every tick) NOT a tick-1 cliff. Init at 1.0 is additive only.
+- **H2 REFUTED** — substrate store has 805 keys, all 585 expected M1 wids present at tick 0.
+- **H5 REFUTED** — no `set` updater on shared substrates port.
+- **H7 CONFIRMED** — chassis_v6 has **29 processes, not 28**. Extra: `karr_transcriptional_regulation`.
+- **H8 REFUTED** — wid naming consistent across modules.
+
+**Smoking gun in the data**: deltas are CONSTANT per tick (-437.5 ATP/tick at tick 1, tick 2, tick 5, ... tick 100). The consumer is not even partially throttled by allocation. Full unmodified consumption every tick. The fix is being structurally bypassed at runtime even though tests pass.
+
+### fix-did-not-execute Codex (PID 16308, running)
+
+Checking C1 (canary imports main not worktree), C2 (parameter override silently failed), C3 (double-wiring), C4 (allocation flow order). Most likely C1 or C2 given the identical-to-pre-fix numerics.
 
 ### 🚨 ALARMING RESULT: cascade-fix v3 had ZERO measurable impact on the cascade
 
