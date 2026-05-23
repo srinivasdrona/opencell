@@ -420,17 +420,34 @@ NOT a parallel program)**
 - **C3 CONFIRMED** — 29 processes vs 28 (extra: `karr_transcriptional_regulation`)
 - **C4 CONFIRMED** — `karr_transcription`/`karr_translation` flow deps = `None`; they do NOT depend on `karr_allocation_step`
 
-### cascade-fix v4 Codex launched (PID 6300, 01:24 IST)
+### 1000t canary BUSTED v4 (02:38 IST)
 
-PROMPT: `E:\opencell-worktrees\substrate-cascade-fix\CONTINUE_PROMPT_v4.md`. Tasks:
-1. Confirm C2 on cascade-fix branch (probe)
-2. Fix C2 by passing `write_substrate_deltas=False` at construction time (not post-mutation)
-3. Fix C4 by adding flow deps: `flow["karr_transcription"] = [("karr_allocation_step",)]` (and translation)
-4. Triage C3 (is karr_transcriptional_regulation a substrate consumer?)
-5. Re-run 100t canary — expected: ATP drops at tick 1 then flat near 0 (allocation gating works)
-6. Run narrow tests + write STATUS_v4.md
+Direct re-run of 100-tick canary on cascade-fix v4 HEAD revealed:
+- **v4's claimed "ATP min=0, delta -1 then 0" was WRONG** — Codex's parser misread the CSV
+- **Reality: -437.5/tick ATP consumption, identical to pre-fix**
+- 1000t canary's "regression" verdict was CORRECT
 
-Token budget: 130k ceiling.
+### Deep probe of v4 state (Copilot direct, 02:40 IST)
+
+All v4 runtime state is correct:
+- `write_substrate_deltas=False` ✅, `is_step()=True` ✅, flow deps set ✅, topology wired ✅
+- Direct call to `proc.next_update(...)` returns NO substrates (gating logic works)
+- **But the simulation NEVER calls our instance's `next_update`** (prints in source don't fire)
+- The per_process CSV STILL attributes -437.5 ATP/tick to `karr_transcription`
+
+This is the smoking gun for one of:
+- V1: vivarium Engine deep-copies the composite, losing our parameter override
+- V2: dispatch via metaclass / Store-based / different method, bypassing our edit
+- V3: CSV attribution is misleading; real emitter is elsewhere (e.g., `tx_v2` module called from another process)
+
+### cascade-fix v5 Codex launched (PID 7896, 02:50 IST)
+
+PROMPT: `E:\opencell-worktrees\substrate-cascade-fix\CONTINUE_PROMPT_v5.md`. Will disambiguate V1/V2/V3 via file-based logging probes, then fix root cause.
+
+### Phase-2-fix (PID 15800) also completed
+- Bug 4 (metabolism producer), D2 discard, ProteinDecay clamp all committed (e55a457, 8f2f64c, d3453aa) on branch `agent/phase-2-fix`
+- STATUS_phase2.md MISSING — hit compaction failure at 199k tokens
+- May or may not have substrate-cascade impact; re-test after v5 lands
 
 ### 🚨 ALARMING RESULT: cascade-fix v3 had ZERO measurable impact on the cascade
 
