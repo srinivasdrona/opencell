@@ -39,6 +39,7 @@ from opencell.m3 import translation_v2 as tl_v2
 from opencell.vivarium.karr_allocation_step import KarrAllocationStep
 from opencell.vivarium.karr_d2_real import KarrD2RealProcess
 from opencell.vivarium.karr_d2_stub import KarrD2StubProcess
+from opencell.vivarium.karr_ftsz_polymerization import KarrFtsZPolymerizationProcess
 from opencell.vivarium.karr_m1 import KarrMetabolismProcess
 from opencell.vivarium.karr_m2 import KarrTranscriptionProcess
 from opencell.vivarium.karr_m2_v2 import KarrTranscriptionV2Process
@@ -768,6 +769,7 @@ def build_karr_chassis_v4(
     p_fold_proc = KarrProteinFoldingProcess({"time_step": time_step_s})
     p_trans_proc = KarrProteinTranslocationProcess({"time_step": time_step_s})
     p_activation_proc = KarrProteinActivationProcess({"time_step": time_step_s})
+    ftsz_proc = KarrFtsZPolymerizationProcess({"time_step": time_step_s})
 
     trna_consumed = [
         trna_proc.substrate_wids[int(i)]
@@ -810,6 +812,7 @@ def build_karr_chassis_v4(
         | set(p_fold_consumed)
         | {p_trans_proc.atp_wid}
         | set(p_activation_proc.substrate_wids)
+        | {ftsz_proc.gtp_wid}
     )
     allocation_step = KarrAllocationStep(
         {
@@ -828,6 +831,7 @@ def build_karr_chassis_v4(
                 (p_mod_proc.name, p_mod_consumed),
                 (p_fold_proc.name, p_fold_consumed),
                 (p_trans_proc.name, [p_trans_proc.atp_wid]),
+                (ftsz_proc.name, [ftsz_proc.gtp_wid]),
             ],
             "substrate_wids": allocation_substrates,
         }
@@ -1015,6 +1019,12 @@ def build_karr_chassis_v4(
             "stimuli": ("stimuli",),
             "protein": ("protein",),
         },
+        "karr_ftsz_polymerization": {
+            "cell": ("cell",),
+            "substrates": ("substrates",),
+            "requests": ("requests",),
+            "substrates_allocated": ("substrates_allocated",),
+        },
         "request_calculator_d2": {
             "complex": ("complex",),
             "requests": ("requests",),
@@ -1081,6 +1091,13 @@ def build_karr_chassis_v4(
             wid: float(initial_substrates.get(wid, 0.0)) for wid in p_activation_proc.substrate_wids
         },
         "tx_rate_fold_change": tx_rate_fold_init,
+        "cell": {
+            "ftsz_ring_count": float(ftsz_proc.initial_ring_count),
+            "ftsz_ring_complete": bool(
+                ftsz_proc.initial_ring_count
+                >= int(ftsz_proc.parameters["ring_complete_threshold"])
+            ),
+        },
     }
     if dynamic_bounds:
         initial_state["m1_dynamic_diagnostics"] = {k: 0.0 for k in m1_proc._diagnostics_schema()}
@@ -1109,6 +1126,7 @@ def build_karr_chassis_v4(
             "karr_protein_folding": p_fold_proc,
             "karr_protein_translocation": p_trans_proc,
             "karr_protein_activation": p_activation_proc,
+            "karr_ftsz_polymerization": ftsz_proc,
         },
         steps={
             "request_calculator_d2": req_d2,
