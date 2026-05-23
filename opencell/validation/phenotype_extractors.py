@@ -245,9 +245,16 @@ def extract_kp18(trajectory: Trajectory) -> float | None:
     return float(rna0 / total0)
 
 
-def extract_kp19(_trajectory: Trajectory) -> float | None:
-    # Requires explicit protein mass and total mass series not emitted in schema-v1 snapshots.
-    return None
+def extract_kp19(trajectory: Trajectory) -> float | None:
+    protein_mass = _state_series(trajectory, "protein_mass_g")
+    total_ref = _state_series(trajectory, "cell_dry_mass_reference_g")
+    if protein_mass is None or total_ref is None:
+        return None
+    protein0 = _first_finite(protein_mass)
+    total0 = _first_finite(total_ref)
+    if protein0 is None or total0 is None or total0 <= 0.0:
+        return float("nan")
+    return float(protein0 / total0)
 
 
 def extract_kp20(_trajectory: Trajectory) -> float | None:

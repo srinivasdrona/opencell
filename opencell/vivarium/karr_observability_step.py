@@ -15,6 +15,7 @@ from vivarium.core.process import Step
 from opencell.analysis.cell_mass import AVOGADRO
 from opencell.m1 import karr_metabolism as km
 from opencell.m2 import transcription as tx
+from opencell.m3 import translation as tl
 
 
 def _load_rna_mw(m2_model: tx.KarrTranscriptionModel) -> dict[str, float]:
@@ -40,6 +41,16 @@ def _mass_from_counts(counts: dict[str, Any], mw_by_wid: dict[str, float]) -> fl
     return float(total_da / AVOGADRO)
 
 
+def _load_protein_mw(m3_model: tl.KarrTranslationModel) -> dict[str, float]:
+    arr = np.asarray(m3_model.molecular_weight, dtype=float).reshape(-1)
+    if arr.size != len(m3_model.protein_wcm_ids):
+        raise RuntimeError(
+            "protein molecular_weight size "
+            f"{arr.size} != protein_wcm_ids size {len(m3_model.protein_wcm_ids)}"
+        )
+    return dict(zip(m3_model.protein_wcm_ids, arr.tolist(), strict=False))
+
+
 class KarrObservabilityStep(Step):
     """Emit aggregate observables used by Phase E phenotype scorecards."""
 
@@ -47,6 +58,7 @@ class KarrObservabilityStep(Step):
     defaults: dict[str, Any] = {
         "m1_model": None,
         "m2_model": None,
+        "m3_model": None,
     }
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
@@ -57,11 +69,17 @@ class KarrObservabilityStep(Step):
         m2_model = self.parameters.get("m2_model")
         if m2_model is None:
             m2_model = tx.load_default()
+        m3_model = self.parameters.get("m3_model")
+        if m3_model is None:
+            m3_model = tl.load_default()
 
         self.m1_model: km.KarrMetabolismModel = m1_model
         self.m2_model: tx.KarrTranscriptionModel = m2_model
+        self.m3_model: tl.KarrTranslationModel = m3_model
         self.rna_mw_by_wid = _load_rna_mw(self.m2_model)
+        self.protein_mw_by_wid = _load_protein_mw(self.m3_model)
         self._rna_wids = tuple(self.m2_model.gene_wcm_ids)
+        self._protein_wids = tuple(self.m3_model.protein_wcm_ids)
         self.cell_dry_mass_reference_g = float(self.m1_model.stored_runtime["cell_dry_total_mass_g"])
 
     def ports_schema(self) -> dict[str, Any]:
@@ -79,8 +97,19 @@ class KarrObservabilityStep(Step):
                 "aminoacylated_counts": counts_schema,
                 "modified_counts": counts_schema,
             },
+            "protein": {
+                "counts": {
+                    wid: {
+                        "_default": 0.0,
+                        "_updater": "accumulate",
+                        "_emit": False,
+                    }
+                    for wid in self._protein_wids
+                }
+            },
             "phenotype_observables": {
                 "rna_mass_g": {"_default": 0.0, "_updater": "set", "_emit": True},
+                "protein_mass_g": {"_default": 0.0, "_updater": "set", "_emit": True},
                 "cell_dry_mass_reference_g": {
                     "_default": self.cell_dry_mass_reference_g,
                     "_updater": "set",
@@ -95,16 +124,19 @@ class KarrObservabilityStep(Step):
         rna_counts = rna.get("counts", {})
         aminoacylated_counts = rna.get("aminoacylated_counts", {})
         modified_counts = rna.get("modified_counts", {})
+        protein_counts = states.get("protein", {}).get("counts", {})
 
         rna_mass_g = (
             _mass_from_counts(rna_counts, self.rna_mw_by_wid)
             + _mass_from_counts(aminoacylated_counts, self.rna_mw_by_wid)
             + _mass_from_counts(modified_counts, self.rna_mw_by_wid)
         )
+        protein_mass_g = _mass_from_counts(protein_counts, self.protein_mw_by_wid)
 
         return {
             "phenotype_observables": {
                 "rna_mass_g": float(rna_mass_g),
+                "protein_mass_g": float(protein_mass_g),
                 "cell_dry_mass_reference_g": float(self.cell_dry_mass_reference_g),
             }
         }

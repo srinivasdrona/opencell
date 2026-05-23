@@ -102,6 +102,7 @@ def _extract_observables(
         "dntp_pool_total": dntp_pool_total,
         "division_event_timestamp_s": float(tick_s if division_detected else np.nan),
         "rna_mass_g": float(phenotype_obs.get("rna_mass_g", np.nan)),
+        "protein_mass_g": float(phenotype_obs.get("protein_mass_g", np.nan)),
         "cell_dry_mass_reference_g": float(phenotype_obs.get("cell_dry_mass_reference_g", np.nan)),
     }
 

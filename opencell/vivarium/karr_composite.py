@@ -1910,10 +1910,12 @@ def build_karr_chassis_v6(
         {
             "m1_model": processes["karr_metabolism"].model,
             "m2_model": processes["karr_transcription"].kinetics_model,
+            "m3_model": processes["karr_translation"].kinetics_model,
         }
     )
     topology["karr_observability_step"] = {
         "rna": ("rna",),
+        "protein": ("protein",),
         "phenotype_observables": ("phenotype_observables",),
     }
     flow["karr_observability_step"] = [("karr_allocation_step",)]
