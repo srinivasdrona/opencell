@@ -401,28 +401,46 @@ NOT a parallel program)**
 
 ---
 
-## Current Status (2026-05-24 00:55 IST, **903 tests passing**, fix + audit Codex v2 relaunched with auto-handoff)
+## Current Status (2026-05-24 01:10 IST, **903 tests passing + cascade-fix tests passing, BUT 100t canary UNCHANGED**)
 
-### Compaction-failure recovery (both prior sessions died at ~200k tokens)
+### 🚨 ALARMING RESULT: cascade-fix v3 had ZERO measurable impact on the cascade
 
-- **Cascade-fix v2 (PID 18496)** died at 212k tokens, 25 min in. Salvaged: typo fix in `karr_transcription_v3.py` (commit `67cd1e4`).
-- **Audit v1 (PID 12072)** died at 196k tokens, ~6 min in. NO findings committed.
-- Root cause: Azure remote-compaction throttle ("high demand"). Documented in DECISIONS.md as `codex-compaction-failure-policy` (2026-05-23). Original PROMPTs were too broad and lacked self-imposed token ceiling.
-- **Mitigation in v3**: scope-narrowed PROMPTs (`CONTINUE_PROMPT.md` in each worktree), explicit 130k token auto-handoff protocol (HANDOVER.md + commit + exit), incremental commits after each sub-step.
+Cascade-fix v3 completed cleanly:
+- Bug 1 (transcription_v3 allocation-aware): commits `07dcd7c`
+- Bug 2 (translation_v3 allocation-aware): commit `297d30c`
+- Bug 3 (chassis_v6 wiring): commit `a1740ba`
+- All targeted tests pass: 17 (process tests) + 6 (integration) + 4 (chassis)
+- **100-tick canary FAIL with IDENTICAL pre-fix numbers**: `ATP=-43750`, `LEU=-8982.83`
 
-### Active Codex sessions (v3 relaunch, 00:53 IST)
+`-43750 = -437.5/tick × 100 ticks` means consumption proceeded at FULL rate every tick — allocation gating is still being bypassed in practice. Working hypotheses for why:
+1. **H1** (init at 1.0 means tick-1 cliff regardless of gating)
+2. **Wiring drift** (override didn't take effect — process kept old write_substrate_deltas=True after rename)
+3. **Bug 4 dominates** so completely that even perfect 1+2+3 doesn't move the needle
 
-| Session | PID | Worktree | Branch | Launched | Expected | Waiter shellId |
-|---|---|---|---|---|---|---|
-| substrate-cascade-fix v3 | 5284 | `E:\opencell-worktrees\substrate-cascade-fix` | `agent/substrate-cascade-fix` | 00:53 | ~60-90 min (scope-narrowed) | `wait-cascade-fix-v3` |
-| bypass-precondition-audit v2 | 6420 | `E:\opencell-worktrees\bypass-precondition-audit` | `agent/bypass-precondition-audit` | 00:53 | ~45-60 min | `wait-audit-v2` |
+### Active Codex sessions (post-audit completion)
 
-- **cascade-fix v3 scope (narrowed)**: Bug 1 polish (transcription_v3, 90% pre-done) + Bug 2 (translation_v3) + Bug 3 (chassis_v6 wiring). **Deferred to next session**: Bug 4 (metabolism production), initial conditions, protein_folding K/MN/NA. PROMPT at `CONTINUE_PROMPT.md` in worktree.
-- **audit v2**: same Pattern A-F hunt, but commits findings to `docs/audits/bypass_precondition_audit.md` after EACH pattern (not just at end). PROMPT at `CONTINUE_PROMPT.md` in worktree.
+| Session | PID | Worktree | Status | Waiter |
+|---|---|---|---|---|
+| ✅ bypass-precondition-audit v2 | 6420 | `E:\opencell-worktrees\bypass-precondition-audit` | DONE — 8 HIGH, 1 MED findings | exited 01:06 |
+| ✅ substrate-cascade-fix v3 | 5284 | `E:\opencell-worktrees\substrate-cascade-fix` | DONE — code merged-ready, CANARY FAIL | exited 01:07 |
+| 🟡 hypothesis-validation | 20388 | `E:\opencell-worktrees\hypothesis-validation` | RUNNING — H1/H2/H5/H7/H8 read-only checks | `wait-hyp-v2` |
 
-### Launch lesson (2026-05-24, captured in DECISIONS.md)
+### Audit findings (8 HIGH, 1 MED) — `E:\opencell-worktrees\bypass-precondition-audit\docs\audits\bypass_precondition_audit.md`
 
-`pwsh -Command "..."` mangles quoted arguments. Use launcher script files instead: write `.launch.ps1` per worktree, invoke via `Start-Process pwsh -ArgumentList @("-NoProfile","-File",".launch.ps1")`.
+Already covered by cascade-fix v3 (5 HIGH): transcription/translation B/C/E patterns.
+
+**NEW findings cascade-fix did NOT address**:
+- HIGH B `karr_macromolecular_complexation.py:203` — D2 explicitly discards `substrates_allocated`, consumes raw
+- HIGH D `karr_metabolism.py:267` — producer-silence (Bug 4 deferred)
+- MED B `karr_protein_decay_light.py:193` — no allocation clamp
+
+**Audit also REFUTED H6** (Pattern F clean — no `_v3` reference mismatches).
+
+### Next decisions (pending hyp-validation results)
+
+If H1 confirms (cliff at tick 1): fix initial conditions FIRST, then re-run canary before chasing more bypasses.
+If wiring-drift confirms: re-investigate Bug 3 override mechanism (Process.parameters may be immutable post-__init__).
+If neither: Bug 4 (metabolism production) becomes the only path forward.
 
 ### Diagnostic worktree (read-only, not yet merged)
 
