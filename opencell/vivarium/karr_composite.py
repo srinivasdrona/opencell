@@ -1831,11 +1831,7 @@ def build_karr_chassis_v6(
     enable_pool_replenishment: bool = False,
     host_adhesion_gates_division: bool = False,
 ) -> Any:
-    """Build the Phase-D v6 composite core (v5 + RNA decay + canonical key map).
-
-    Checkpoint 4 intentionally wires the core set first. HostInteraction and
-    terminal-organelle wiring are added in checkpoint 5.
-    """
+    """Build the Phase-D v6 composite (v5 + RNA decay + HostInteraction)."""
     del host_adhesion_gates_division
 
     from vivarium.core.composer import Composite
@@ -1879,14 +1875,19 @@ def build_karr_chassis_v6(
     topology["karr_cell_cycle_coordinator"] = topology.pop("cell_cycle_coordinator")
     flow.pop("cell_cycle_coordinator", None)
 
-    # Checkpoint 4 core wiring excludes terminal-organelle and host modules.
-    processes.pop("karr_terminal_organelle_assembly", None)
-    topology.pop("karr_terminal_organelle_assembly", None)
-
     rna_decay_proc = RnaDecayLightProcess({"time_step": time_step_s})
     processes["karr_rna_decay"] = rna_decay_proc
     topology["karr_rna_decay"] = {
         "rna": ("rna",),
+        "substrates": ("substrates",),
+        "requests": ("requests",),
+        "substrates_allocated": ("substrates_allocated",),
+    }
+    host_interaction_proc = KarrHostInteractionProcess({"time_step": time_step_s})
+    processes["karr_host_interaction"] = host_interaction_proc
+    topology["karr_host_interaction"] = {
+        "cell": ("cell",),
+        "protein": ("protein",),
         "substrates": ("substrates",),
         "requests": ("requests",),
         "substrates_allocated": ("substrates_allocated",),
@@ -1896,6 +1897,8 @@ def build_karr_chassis_v6(
     consumer_processes = list(allocation_step.parameters["consumer_processes"])
     if not any(proc_name == rna_decay_proc.name for proc_name, _ in consumer_processes):
         consumer_processes.append((rna_decay_proc.name, ["H2O"]))
+    if not any(proc_name == host_interaction_proc.name for proc_name, _ in consumer_processes):
+        consumer_processes.append((host_interaction_proc.name, [host_interaction_proc.atp_wid]))
     substrate_wids = sorted(set(allocation_step.parameters["substrate_wids"]) | {"H2O"})
     steps["karr_allocation_step"] = KarrAllocationStep(
         {
@@ -1928,5 +1931,3 @@ __all__ = [
     "build_karr_m1_m2_m3_engine",
     "compute_baseline_demand_per_s",
 ]
-
-
