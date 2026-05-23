@@ -1895,10 +1895,6 @@ def build_karr_chassis_v6(
 
     allocation_step = steps["karr_allocation_step"]
     consumer_processes = list(allocation_step.parameters["consumer_processes"])
-    if not any(proc_name == rna_decay_proc.name for proc_name, _ in consumer_processes):
-        consumer_processes.append((rna_decay_proc.name, ["H2O"]))
-    if not any(proc_name == host_interaction_proc.name for proc_name, _ in consumer_processes):
-        consumer_processes.append((host_interaction_proc.name, [host_interaction_proc.atp_wid]))
     substrate_wids = sorted(set(allocation_step.parameters["substrate_wids"]) | {"H2O"})
     steps["karr_allocation_step"] = KarrAllocationStep(
         {
