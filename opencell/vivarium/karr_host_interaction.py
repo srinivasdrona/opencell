@@ -6,11 +6,9 @@ Primary source:
 Karr-light v1 scope:
 - Aggregate stochastic adhesion/unbinding events (not per-receptor docking)
 - Terminal organelle + adhesin readiness gating
-- ATP usage through KarrAllocationStep request/allocation contract
 
 Deferred to v2:
 - Full host signaling cascade (TLR / NF-kB / inflammatory response)
-- Explicit hydrolysis coproduct bookkeeping for ATP usage
 """
 
 from __future__ import annotations
@@ -24,7 +22,6 @@ from vivarium.core.process import Process
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/HostInteraction_flat.mat"
 _DEFAULT_TRACE_PATH = "data/m1_sources/karr_native/per_process_traces/HostInteraction_100ticks.mat"
-_ATP_WID = "ATP"
 
 
 def _resolve_path(path: str | Path) -> Path:
@@ -167,7 +164,6 @@ class KarrHostInteractionProcess(Process):
         "attach_threshold": 0.60,
         "bind_rate_per_s": 0.08,
         "unbind_rate_per_s": 0.02,
-        "atp_per_binding_event": 1.0,
         "use_trace_rates": True,
     }
 
@@ -175,7 +171,6 @@ class KarrHostInteractionProcess(Process):
         explicit_params = parameters or {}
         super().__init__(parameters)
         self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
-        self.atp_wid = _ATP_WID
         self._load_fixture(self.parameters["fixture_path"])
 
         bind_rate = float(self.parameters["bind_rate_per_s"])
@@ -196,7 +191,6 @@ class KarrHostInteractionProcess(Process):
             1e-9, float(self.parameters["terminal_organelle_saturation_count"])
         )
         self.attach_threshold = float(np.clip(float(self.parameters["attach_threshold"]), 0.0, 1.0))
-        self.atp_per_binding_event = max(0.0, float(self.parameters["atp_per_binding_event"]))
 
     def _load_fixture(self, path: str | Path) -> None:
         resolved = _resolve_path(path)
@@ -233,19 +227,6 @@ class KarrHostInteractionProcess(Process):
                     for wid in required_wids
                 }
             },
-            "substrates": {
-                self.atp_wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True},
-            },
-            "requests": {
-                self.name: {
-                    self.atp_wid: {"_default": 0.0, "_updater": "set", "_emit": False},
-                }
-            },
-            "substrates_allocated": {
-                self.name: {
-                    self.atp_wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False},
-                }
-            },
         }
 
     def _expression_fraction(self, wids: list[str], counts_state: dict[str, Any]) -> float:
@@ -257,17 +238,6 @@ class KarrHostInteractionProcess(Process):
             current = max(0.0, float(counts_state.get(wid, 0.0)))
             fractions.append(float(np.clip(current / ref, 0.0, 1.0)))
         return float(min(fractions))
-
-    def _allocated_or_state(
-        self,
-        allocated_state: dict[str, Any],
-        substrate_state: dict[str, Any],
-        wid: str,
-    ) -> float:
-        allocated = float(allocated_state.get(wid, 0.0))
-        if allocated > 0.0:
-            return allocated
-        return float(substrate_state.get(wid, 0.0))
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         dt = float(timestep) if timestep > 0.0 else float(self.parameters["time_step"])
@@ -298,25 +268,14 @@ class KarrHostInteractionProcess(Process):
         proposed_bind = int(min(self._rng.poisson(expected_bind), free_sites)) if free_sites > 0 else 0
         proposed_unbind = int(min(self._rng.poisson(expected_unbind), prev_bound)) if prev_bound > 0 else 0
 
-        requested_atp = float(proposed_bind) * self.atp_per_binding_event
-        allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
-        substrate_state = states.get("substrates", {})
-        available_atp = max(0.0, self._allocated_or_state(allocated_state, substrate_state, self.atp_wid))
-
-        if self.atp_per_binding_event > 0.0:
-            max_bind_from_atp = int(np.floor(available_atp / self.atp_per_binding_event))
-        else:
-            max_bind_from_atp = proposed_bind
-        applied_bind = min(proposed_bind, max_bind_from_atp)
+        applied_bind = proposed_bind
 
         next_bound = int(np.clip(prev_bound + applied_bind - proposed_unbind, 0, self.max_adhesion_bonds))
         next_strength = float(next_bound) / float(self.max_adhesion_bonds)
         strength_delta = float(next_strength - prev_strength)
         next_attached = bool(next_strength >= self.attach_threshold)
 
-        update: dict[str, Any] = {
-            "requests": {self.name: {self.atp_wid: requested_atp}},
-        }
+        update: dict[str, Any] = {}
         cell_update: dict[str, Any] = {}
         if abs(strength_delta) > 0.0:
             cell_update["host_adhesion_strength"] = strength_delta
@@ -324,10 +283,6 @@ class KarrHostInteractionProcess(Process):
             cell_update["host_attached"] = next_attached
         if cell_update:
             update["cell"] = cell_update
-
-        atp_consumed = float(applied_bind) * self.atp_per_binding_event
-        if atp_consumed > 0.0:
-            update["substrates"] = {self.atp_wid: -atp_consumed}
 
         return update
 

@@ -1888,9 +1888,6 @@ def build_karr_chassis_v6(
     topology["karr_host_interaction"] = {
         "cell": ("cell",),
         "protein": ("protein",),
-        "substrates": ("substrates",),
-        "requests": ("requests",),
-        "substrates_allocated": ("substrates_allocated",),
     }
 
     allocation_step = steps["karr_allocation_step"]

@@ -35,4 +35,5 @@ Fixture evidence from `HostInteraction_flat.mat`:
 
 Enrollment decision:
 - Karr HostInteraction has no shared-substrate consumer list to enroll.
-- OpenCell's current host process behavior will be evaluated separately in Checkpoint 3 against this source-of-truth inventory.
+- OpenCell `karr_host_interaction` was updated in this turn to remove its prior ATP proxy request/consumption path and now writes only host/cell-state deltas.
+- Therefore `karr_host_interaction` is **N/A for KarrAllocationStep consumer enrollment** in v6.
