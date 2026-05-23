@@ -401,20 +401,53 @@ NOT a parallel program)**
 
 ---
 
-## Current Status (2026-05-23 late evening, **903 tests passing**, Buckets A+B MERGED, BLOCK-RELEASE v1.0 still OPEN)
+## Current Status (2026-05-24 00:30 IST, **903 tests passing**, ROOT CAUSE IDENTIFIED, fix Codex not yet launched)
 
 ### Today's headline result
 
-**M4 milestone hit + first integrated validation pass complete + first failed root-cause hypothesis.** chassis_v6 (full 28-process composite) merged. Phase E.1 (real Karr trajectory match), E.2 (28-KP phenotype scorecard), Bucket A (allocation-consumer enrollment), and Bucket B (observability extensions) all merged to main. Scorecard moved **6/28 → 9/28 PASS** thanks to Bucket B. **Critical finding**: the allocation-bypass theory of E.1 was **wrong** — Bucket A enrolled `karr_rna_decay` correctly (structurally good, 100% allocation integrity), but the 32400-tick before/after trajectories are **bit-identical** on ATP/dNTP/mass/replication. A 2.6M-unit net substrate leak persists across the shared store from a still-unidentified source. v1.0 BLOCK-RELEASE remains open.
+**M4 milestone hit + first integrated validation pass complete + ROOT CAUSE OF SUBSTRATE CASCADE IDENTIFIED.** chassis_v6 (full 28-process composite) merged. Phase E.1, E.2, Bucket A (allocation-consumer enrollment), Bucket B (observability extensions) all merged to main. Scorecard moved 6/28 → 9/28 PASS. After Bucket A's allocation-bypass diagnosis was refuted (32400-tick before/after trajectories were bit-identical), a fanout of 5 parallel explore agents in ~5 min identified the **actual** root cause: `karr_transcription_v3` and `karr_translation_v3` (renamed to `karr_transcription` / `karr_translation` in chassis_v6) **are not enrolled in `KarrAllocationStep.consumer_processes`** but emit `{"substrates": {NTP/AA: -consumption}}` deltas directly via the `write_substrate_deltas=True` default parameter. Meanwhile `karr_metabolism` emits **zero** substrate deltas (no production side). The cascade is consumption without a source.
 
-### Tonight's merges (2026-05-23 ~22:00)
-- ✅ **Bucket A merged** (`5fefe4a`): rna_decay allocation enrollment + host_interaction test-fixture cleanup. Allocation integrity = 100% (max_overalloc=0). All narrow + full-suite tests green.
+### ROOT CAUSE (2026-05-24 00:30) — confirmed by static analysis, Codex per-tick confirmation in flight
+
+**Three contributing facts** all simultaneously true in chassis_v6:
+
+1. **`karr_transcription_v3` (renamed to `karr_transcription`) is NOT in `consumer_processes`** at `karr_composite.py:1362-1388` (v5 base list) nor added at `1894-1907` (v6 rebuild). But it IS wired into the engine at `karr_composite.py:1761`. It defaults to `write_substrate_deltas=True` (`karr_transcription_v3.py:46`) and emits `{"substrates": {ntp: -per_ntp * timestep for ntp in self.consumed_substrates}}` at line 165 — ungated NTP consumption.
+
+2. **`karr_translation_v3` (renamed to `karr_translation`) is similarly NOT in `consumer_processes`** but IS wired at `karr_composite.py:1762`. Same `write_substrate_deltas=True` default (`karr_translation_v3.py:39`), same direct delta emission at line 137 — ungated AA consumption.
+
+3. **`karr_metabolism` emits ZERO substrate deltas.** In both static and dynamic modes it returns `fluxs`, `growth_per_s`, and `m1_pools` diagnostics — never `{"substrates": {...}}`. Reads `states["substrates"]` to set FBA bounds (`karr_metabolism.py:281-287`) but never writes back. The production side that should refill NTPs/AAs at the rate M2/M3 consume them is structurally absent.
+
+**Math fit**: combined transcription + translation NTP/AA consumption easily produces the observed ~315 ATP units/tick drain. ATP, GTP, all dNTPs go negative because none have a source.
+
+### Why prior debugging failed
+
+- **Bucket A's rna_decay enrollment** affected only H2O (a tiny per-tick consumer); the big consumers (transcription_v3, translation_v3) were never touched. Bucket A fixed ~5% of the problem so trajectories were essentially identical pre/post.
+- **No mass-balance regression test exists.** ~900 tests in the suite, zero assert `sum(substrate_deltas) ≈ 0` over time or substrates remain ≥ 0. Allocation-integrity tests confirmed the cycle is clean but said nothing about non-enrolled processes.
+- **Narrow process tests use fixture-injected substrates** (`state["substrates_allocated"][p.name][p.atp_wid] = 5_000.0`), which masks any consumption imbalance.
+- **The leak was present from chassis_v5 day one** (`write_substrate_deltas=True` defaults are weeks old) but no integrated v5 trajectory was ever compared against Karr's `cell_cycle_trajectory.mat`. E.1 was the first such comparison; the leak surfaced immediately.
+
+### Fix path (next Codex session)
+
+Clear, scoped fix — NOT a diagnostic ticket:
+
+1. **Disable `write_substrate_deltas`** on `karr_transcription_v3` and `karr_translation_v3` at the chassis_v6 construction sites (parameter override).
+2. **Enroll them in `consumer_processes`** with their NTP/AA wids (similar to how `karr_replication` was enrolled with `[*rep_proc.dntp_wids, rep_proc.atp_wid]`).
+3. **Audit that they read `substrates_allocated[self.name]`** correctly inside their `next_update` — if not, wire it.
+4. **Decide on metabolism production side**:
+   - (a) v1.0 quick: enable `enable_pool_replenishment=True` on metabolism (heuristic source-term in internal state, may not flow to shared substrates — needs verification)
+   - (b) v1.0 proper: translate FBA solution flux → substrate deltas in metabolism's return update
+   - (c) v2 deferred: full M1 first-principles biochemistry
+
+Option (b) is the cleanest v1.0 close. Option (a) is the smallest possible change but may not fix it.
+
+### Tonight's diagnostic Codex (substrate-leak-diagnosis)
+
+Currently running (PID 16100, launched 00:02:30). Will produce per-process substrate delta CSV from a 100-tick instrumented run. **Now a confirmation oracle, not a discovery tool** — explore agents already pinned the root cause statically. If Codex's CSV doesn't show transcription_v3 + translation_v3 as the top consumers and metabolism with zero substrate-store emission, we've misread something and need to re-examine. Let it run.
+
+### Tonight's merges (2026-05-23 ~22:00, completed before root-cause discovery)
+- ✅ **Bucket A merged** (`5fefe4a`): rna_decay allocation enrollment + host_interaction test-fixture cleanup. Allocation integrity = 100%. **Did NOT close BLOCK-RELEASE** (root cause was elsewhere).
 - ✅ **Bucket B merged** (`3fd9edd`): observability schema extended; 5 BLOCKED KPs lifted (KP17/19/20 PASS, KP13/18 FAIL with diagnostic signal). E2_scorecard regenerated.
-- ✅ **Test baseline**: 903 passed / 0 skipped / 4 xfailed (was 896 / 0 / 4 pre-merge; +7 net from Bucket B's new tests minus A's host_interaction consolidation).
-- ❌ **BLOCK-RELEASE v1.0 OPEN**: substrate leak (-2.6M units) source unidentified. Allocation-bypass diagnosis was incomplete.
-
-### Open diagnostic ticket (next session)
-Need per-process substrate delta instrumentation on a short-tick run (~100 ticks) to identify which process(es) actually drain ATP/dNTPs outside the allocation cycle. Candidates not yet ruled out: metabolism (FBA bound enforcement), transcription/translation (cost accounting), DNA replication (dNTP draw timing), terminal organelle assembly. NEW Codex session to be launched next sitting.
+- ✅ **Test baseline**: 903 passed / 0 skipped / 4 xfailed.
 
 ### v1.0 scope decision (logged today)
 
