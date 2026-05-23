@@ -37,8 +37,17 @@ from opencell.m2 import transcription_v2 as tx_v2
 from opencell.m3 import translation as tl
 from opencell.m3 import translation_v2 as tl_v2
 from opencell.vivarium.karr_allocation_step import KarrAllocationStep
+from opencell.vivarium.karr_cell_cycle_coordinator import CellCycleCoordinator
+from opencell.vivarium.karr_chromosome_condensation import (
+    KarrChromosomeCondensationProcess,
+)
+from opencell.vivarium.karr_chromosome_segregation import KarrChromosomeSegregationProcess
+from opencell.vivarium.karr_cytokinesis import KarrCytokinesisProcess
 from opencell.vivarium.karr_d2_real import KarrD2RealProcess
 from opencell.vivarium.karr_d2_stub import KarrD2StubProcess
+from opencell.vivarium.karr_dna_damage import KarrDNADamageProcess
+from opencell.vivarium.karr_dna_repair import KarrDNARepairProcess
+from opencell.vivarium.karr_dna_supercoiling import KarrDNASupercoilingProcess
 from opencell.vivarium.karr_ftsz_polymerization import KarrFtsZPolymerizationProcess
 from opencell.vivarium.karr_m1 import KarrMetabolismProcess
 from opencell.vivarium.karr_m2 import KarrTranscriptionProcess
@@ -63,8 +72,13 @@ from opencell.vivarium.karr_request_calculators import (
     RequestCalculatorTRNA,
 )
 from opencell.vivarium.karr_ribosome_assembly import KarrRibosomeAssemblyProcess
+from opencell.vivarium.karr_replication import KarrReplicationProcess
+from opencell.vivarium.karr_replication_initiation import KarrReplicationInitiationProcess
 from opencell.vivarium.karr_rna_modification import KarrRNAModificationProcess
 from opencell.vivarium.karr_rna_processing import KarrRNAProcessingProcess
+from opencell.vivarium.karr_terminal_organelle_assembly import (
+    KarrTerminalOrganelleAssemblyProcess,
+)
 from opencell.vivarium.karr_transcriptional_regulation import (
     KarrTranscriptionalRegulationProcess,
 )
@@ -689,6 +703,7 @@ def build_karr_chassis_v3(
         topology=topology,
         initial_state=initial_state,
         emit_step=emit_step_s or time_step_s,
+        display_info=False,
     )
     return engine
 
@@ -1160,7 +1175,615 @@ def build_karr_chassis_v4(
     return engine
 
 
+
+def build_karr_chassis_v5(
+    m1_model: km.KarrMetabolismModel | None = None,
+    m2_model: tx.KarrTranscriptionModel | None = None,
+    m3_model: tl.KarrTranslationModel | None = None,
+    *,
+    m2_mechanism_inputs: tx_v2.MechanismInputs | None = None,
+    m3_mechanism_inputs: tl_v2.RibosomeMechanismInputs | None = None,
+    time_step_s: float = 1.0,
+    emit_step_s: float | None = None,
+    condition: int = 1,
+    dynamic_bounds: bool = False,
+    enable_pool_replenishment: bool = False,
+) -> Engine:
+    """Build the Phase-C chassis v5 with integrated replication/cell-cycle processes."""
+    from vivarium.core.engine import Engine
+
+    if enable_pool_replenishment and not dynamic_bounds:
+        raise ValueError("enable_pool_replenishment=True requires dynamic_bounds=True")
+
+    if m1_model is None:
+        m1_model = km.load_default()
+    if m2_model is None:
+        m2_model = tx.load_default()
+    if m3_model is None:
+        m3_model = tl.load_default()
+    if m2_mechanism_inputs is None:
+        m2_mechanism_inputs = tx_v2.load_default()
+    if m3_mechanism_inputs is None:
+        m3_mechanism_inputs = tl_v2.load_default()
+
+    baseline_demand: dict[str, float] | None = None
+    if enable_pool_replenishment:
+        baseline_demand = compute_baseline_demand_per_s(
+            m2_model,
+            m3_model,
+            condition=condition,
+        )
+
+    m1_proc = KarrMetabolismProcess(
+        {
+            "model": m1_model,
+            "time_step": time_step_s,
+            "dynamic_bounds": dynamic_bounds,
+            "enable_pool_replenishment": enable_pool_replenishment,
+            "baseline_demand_per_s": baseline_demand,
+        }
+    )
+    m2_proc = KarrTranscriptionV3Process(
+        {
+            "kinetics_model": tx.calibrated_chassis_model(m2_model),
+            "mechanism_inputs": m2_mechanism_inputs,
+            "time_step": time_step_s,
+            "substrate_default": _M1_SUBSTRATE_DEFAULT,
+        }
+    )
+    m3_proc = KarrTranslationV3Process(
+        {
+            "kinetics_model": m3_model,
+            "mechanism_inputs": m3_mechanism_inputs,
+            "time_step": time_step_s,
+            "substrate_default": _M1_SUBSTRATE_DEFAULT,
+        }
+    )
+    d2_proc = KarrD2RealProcess({"time_step": time_step_s})
+    decay_proc = ProteinDecayLightProcess({"time_step": time_step_s})
+    trna_proc = KarrTRNAAminoacylationProcess({"time_step": time_step_s})
+    ribasm_proc = KarrRibosomeAssemblyProcess({"time_step": time_step_s})
+    tx_reg_proc = KarrTranscriptionalRegulationProcess({"time_step": time_step_s})
+    rna_proc = KarrRNAProcessingProcess({"time_step": time_step_s})
+    rna_mod_proc = KarrRNAModificationProcess({"time_step": time_step_s})
+    pp1_proc = KarrProteinProcessingIProcess({"time_step": time_step_s})
+    pp2_proc = KarrProteinProcessingIIProcess({"time_step": time_step_s})
+    p_mod_proc = KarrProteinModificationProcess({"time_step": time_step_s})
+    p_fold_proc = KarrProteinFoldingProcess({"time_step": time_step_s})
+    p_trans_proc = KarrProteinTranslocationProcess({"time_step": time_step_s})
+    p_activation_proc = KarrProteinActivationProcess({"time_step": time_step_s})
+
+    rep_init_proc = KarrReplicationInitiationProcess({"time_step": time_step_s})
+    rep_proc = KarrReplicationProcess({"time_step": time_step_s})
+    supercoil_proc = KarrDNASupercoilingProcess({"time_step": time_step_s})
+    condensation_proc = KarrChromosomeCondensationProcess({"time_step": time_step_s})
+    segregation_proc = KarrChromosomeSegregationProcess({"time_step": time_step_s})
+    dna_damage_proc = KarrDNADamageProcess({"time_step": time_step_s})
+    dna_repair_proc = KarrDNARepairProcess({"time_step": time_step_s})
+    ftsz_proc = KarrFtsZPolymerizationProcess({"time_step": time_step_s})
+    cytokinesis_proc = KarrCytokinesisProcess({"time_step": time_step_s})
+    terminal_organelle_proc = KarrTerminalOrganelleAssemblyProcess({"time_step": time_step_s})
+
+    coordinator_step = CellCycleCoordinator(
+        {
+            "time_step": time_step_s,
+            "terc_position_bp": float(rep_proc.terc_position_bp),
+        }
+    )
+
+    trna_consumed = [
+        trna_proc.substrate_wids[int(i)]
+        for i in np.flatnonzero(np.any(trna_proc.reaction_stoich < 0, axis=1))
+    ]
+    rna_proc_consumed = [
+        rna_proc.substrate_wids[int(i)]
+        for i in np.flatnonzero(np.any(rna_proc.reaction_stoich < 0, axis=1))
+    ]
+    rna_mod_consumed = [
+        rna_mod_proc.substrate_wids[int(i)]
+        for i in np.flatnonzero(np.any(rna_mod_proc.reaction_stoich < 0, axis=1))
+    ]
+    pp2_consumed = [
+        pp2_proc.substrate_wids[int(i)]
+        for i in np.flatnonzero(np.any(pp2_proc.reaction_stoich < 0, axis=1))
+    ]
+    p_mod_consumed = [
+        p_mod_proc.substrate_wids[int(i)]
+        for i in np.flatnonzero(np.any(p_mod_proc.reaction_stoich < 0, axis=1))
+    ]
+    p_fold_consumed = [
+        p_fold_proc.substrate_wids[p_fold_proc.substrate_idx_atp],
+        p_fold_proc.substrate_wids[p_fold_proc.substrate_idx_fe2],
+        p_fold_proc.substrate_wids[p_fold_proc.substrate_idx_mg],
+        p_fold_proc.substrate_wids[p_fold_proc.substrate_idx_zinc],
+    ]
+
+    allocation_substrates = sorted(
+        set(m1_model.raw["ids"]["substrate_wcm_585"])
+        | set(d2_proc.substrate_wids)
+        | set(decay_proc.substrate_wids)
+        | set(trna_consumed)
+        | set(ribasm_proc.substrate_wids)
+        | set(rna_proc_consumed)
+        | set(rna_mod_consumed)
+        | {pp1_proc.substrate_wids[pp1_proc.substrate_idx_water]}
+        | set(pp2_consumed)
+        | set(p_mod_consumed)
+        | set(p_fold_consumed)
+        | {p_trans_proc.atp_wid}
+        | set(p_activation_proc.substrate_wids)
+        | {rep_init_proc.atp_wid, rep_init_proc.water_wid}
+        | set(rep_proc.dntp_wids)
+        | {rep_proc.atp_wid}
+        | {supercoil_proc.atp_wid}
+        | {condensation_proc.atp_wid, condensation_proc.water_wid}
+        | {segregation_proc.gtp_wid, segregation_proc.h2o_wid}
+        | set(dna_repair_proc.tracked_substrates)
+        | {ftsz_proc.gtp_wid}
+        | {cytokinesis_proc.gtp_wid}
+    )
+    allocation_step = KarrAllocationStep(
+        {
+            "consumer_processes": [
+                ("karr_d2_real", list(d2_proc.substrate_wids)),
+                ("karr_protein_decay_light", ["ATP", "H2O"]),
+                (
+                    ribasm_proc.name,
+                    [ribasm_proc.substrate_wid_gtp, ribasm_proc.substrate_wid_h2o],
+                ),
+                (trna_proc.name, trna_consumed),
+                (rna_proc.name, rna_proc_consumed),
+                (rna_mod_proc.name, rna_mod_consumed),
+                (pp1_proc.name, [pp1_proc.substrate_wids[pp1_proc.substrate_idx_water]]),
+                (pp2_proc.name, pp2_consumed),
+                (p_mod_proc.name, p_mod_consumed),
+                (p_fold_proc.name, p_fold_consumed),
+                (p_trans_proc.name, [p_trans_proc.atp_wid]),
+                (rep_init_proc.name, [rep_init_proc.atp_wid, rep_init_proc.water_wid]),
+                (rep_proc.name, [*rep_proc.dntp_wids, rep_proc.atp_wid]),
+                (supercoil_proc.name, [supercoil_proc.atp_wid]),
+                (
+                    condensation_proc.name,
+                    [condensation_proc.atp_wid, condensation_proc.water_wid],
+                ),
+                (
+                    segregation_proc.name,
+                    [segregation_proc.gtp_wid, segregation_proc.h2o_wid],
+                ),
+                (dna_repair_proc.name, list(dna_repair_proc.tracked_substrates)),
+                (ftsz_proc.name, [ftsz_proc.gtp_wid]),
+                (cytokinesis_proc.name, [cytokinesis_proc.gtp_wid]),
+            ],
+            "substrate_wids": allocation_substrates,
+        }
+    )
+    req_d2 = RequestCalculatorD2({"d2_real_proc": d2_proc})
+    req_pd = RequestCalculatorPD({"pd_light_proc": decay_proc})
+    req_ribasm = RequestCalculatorRibAsm({"ribasm_proc": ribasm_proc})
+    req_trna = RequestCalculatorTRNA({"trna_proc": trna_proc})
+    req_rna = RequestCalculatorRNAPathway(
+        {
+            "rna_processing_proc": rna_proc,
+            "rna_modification_proc": rna_mod_proc,
+        }
+    )
+    req_protein = RequestCalculatorProteinPathway(
+        {
+            "protein_processing_i_proc": pp1_proc,
+            "protein_processing_ii_proc": pp2_proc,
+            "protein_modification_proc": p_mod_proc,
+            "protein_folding_proc": p_fold_proc,
+            "protein_translocation_proc": p_trans_proc,
+        }
+    )
+
+    rxn_ids = m1_model.rxn_wcm_ids_645
+    m1_sub_ids = [str(wid) for wid in m1_model.raw["ids"]["substrate_wcm_585"]]
+    rna_init = {
+        g: float(m2_model.counts_mature[i, condition]) for i, g in enumerate(m2_model.gene_wcm_ids)
+    }
+    prot_init = {
+        p: float(m3_model.counts_mature[i]) for i, p in enumerate(m3_model.protein_wcm_ids)
+    }
+
+    initial_substrates: dict[str, float] = {sid: 0.0 for sid in allocation_substrates}
+    for sid in m1_sub_ids:
+        initial_substrates[sid] = _M1_SUBSTRATE_DEFAULT
+    for wid, cnt in prot_init.items():
+        if wid in initial_substrates:
+            initial_substrates[wid] = max(initial_substrates[wid], cnt)
+    for wid, cnt in rna_init.items():
+        if wid in initial_substrates:
+            initial_substrates[wid] = max(initial_substrates[wid], cnt)
+
+    aminoacylated_init: dict[str, float] = {wid: 0.0 for wid in trna_proc.aminoacylated_rna_wids}
+    for wid in trna_proc.free_rna_wids:
+        total = max(0.0, float(rna_init.get(wid, 0.0)))
+        free = total / 3.0
+        charged = total - free
+        rna_init[wid] = free
+        if wid in aminoacylated_init:
+            aminoacylated_init[wid] = charged
+    rna_modified_init: dict[str, float] = {wid: 0.0 for wid in rna_mod_proc.modified_rna_wids}
+    tx_rate_fold_init: dict[str, float] = {tu_wid: 1.0 for tu_wid in m2_proc.tu_wids}
+    trna_gene_wids = set(trna_proc.free_rna_wids)
+    for gidx, gene_wid in enumerate(m2_proc.gene_ids):
+        if gene_wid in trna_gene_wids:
+            tx_rate_fold_init[f"TU_{gidx + 1:03d}"] = 0.0
+
+    protein_unprocessed_init = {
+        wid: float(prot_init.get(wid, 0.0))
+        for wid in sorted(
+            set(pp1_proc.unprocessed_monomer_wids) | set(pp2_proc.unprocessed_monomer_wids)
+        )
+    }
+    protein_unfolded_init = {
+        wid: float(prot_init.get(wid, 0.0)) for wid in p_fold_proc.unfolded_monomer_wids
+    }
+    protein_unmodified_init = {
+        wid: float(prot_init.get(wid, 0.0)) for wid in p_mod_proc.unmodified_monomer_wids
+    }
+    protein_processed_init = {wid: 0.0 for wid in pp2_proc.processed_monomer_wids}
+    protein_signal_seq_init = {wid: 0.0 for wid in pp2_proc.signal_sequence_monomer_wids}
+    protein_modified_init = {wid: 0.0 for wid in p_mod_proc.modified_monomer_wids}
+    protein_enzyme_init = {wid: float(prot_init.get(wid, 0.0)) for wid in pp2_proc.enzyme_wids}
+    protein_location_init = {wid: "cytoplasm" for wid in p_trans_proc.translocatable_wids}
+    protein_activity_init = {wid: 0 for wid in p_activation_proc.regulated_protein_wids}
+
+    complex_counts = {
+        "RNA_POLYMERASE": float(m2_mechanism_inputs.n_active_rnap),
+        "RIBOSOME_70S": float(m3_mechanism_inputs.n_active_ribosomes),
+    }
+    for wid in ribasm_proc.complex_wids:
+        complex_counts.setdefault(wid, 0.0)
+
+    m1_topo = {
+        "metabolic_reaction": ("metabolic_reaction",),
+        "substrates": ("substrates",),
+    }
+    if dynamic_bounds:
+        m1_topo["m1_dynamic_diagnostics"] = ("m1_dynamic_diagnostics",)
+        m1_topo["m1_pools"] = ("m1_pools",)
+
+    topology: dict[str, dict[str, tuple[str, ...]]] = {
+        "karr_m1": m1_topo,
+        "karr_transcription_v3": {
+            "rna": ("rna",),
+            "substrates": ("substrates",),
+            "complex": ("complex",),
+            "tx_rate_fold_change": ("tx_rate_fold_change",),
+        },
+        "karr_translation_v3": {
+            "protein": ("protein",),
+            "substrates": ("substrates",),
+            "complex": ("complex",),
+        },
+        "karr_d2_real": {
+            "substrates": ("substrates",),
+            "complex": ("complex",),
+            "requests": ("_internal_requests_d2",),
+            "substrates_allocated": ("_internal_substrates_allocated_d2",),
+        },
+        "karr_protein_decay_light": {
+            "complex": ("complex",),
+            "substrates": ("substrates",),
+            "protein": ("protein",),
+            "rna": ("rna",),
+            "requests": ("_internal_requests_pd",),
+            "substrates_allocated": ("_internal_substrates_allocated_pd",),
+        },
+        "karr_trna_aminoacylation": {
+            "substrates": ("substrates",),
+            "rna": ("rna",),
+            "protein": ("protein",),
+            "requests": ("_internal_requests_trna",),
+            "substrates_allocated": ("substrates_allocated",),
+        },
+        "karr_ribosome_assembly": {
+            "substrates": ("substrates",),
+            "rna": ("rna",),
+            "protein": ("protein",),
+            "complex": ("complex",),
+            "requests": ("_internal_requests_ribasm",),
+            "substrates_allocated": ("substrates_allocated",),
+        },
+        "karr_transcriptional_regulation": {
+            "protein": ("protein",),
+            "tf_binding": ("tf_binding",),
+            "tx_rate_fold_change": ("tx_rate_fold_change",),
+        },
+        "karr_rna_processing": {
+            "substrates": ("substrates",),
+            "rna": ("rna",),
+            "protein": ("protein",),
+            "requests": ("_internal_requests_rna_proc",),
+            "substrates_allocated": ("substrates_allocated",),
+        },
+        "karr_rna_modification": {
+            "substrates": ("substrates",),
+            "rna": ("rna",),
+            "protein": ("protein",),
+            "requests": ("_internal_requests_rna_mod",),
+            "substrates_allocated": ("substrates_allocated",),
+        },
+        "karr_protein_processing_i": {
+            "substrates": ("substrates",),
+            "protein": ("protein",),
+            "requests": ("_internal_requests_pp1",),
+            "substrates_allocated": ("substrates_allocated",),
+        },
+        "karr_protein_processing_ii": {
+            "substrates": ("substrates",),
+            "protein": ("protein",),
+            "requests": ("_internal_requests_pp2",),
+            "substrates_allocated": ("substrates_allocated",),
+        },
+        "karr_protein_modification": {
+            "substrates": ("substrates",),
+            "protein": ("protein",),
+            "requests": ("_internal_requests_pmod",),
+            "substrates_allocated": ("substrates_allocated",),
+        },
+        "karr_protein_folding": {
+            "substrates": ("substrates",),
+            "protein": ("protein",),
+            "substrates_allocated": ("substrates_allocated",),
+        },
+        "karr_protein_translocation": {
+            "substrates": ("substrates",),
+            "protein": ("protein",),
+            "requests": ("_internal_requests_ptrans",),
+            "substrates_allocated": ("substrates_allocated",),
+        },
+        "karr_protein_activation": {
+            "substrates": ("activation_substrates",),
+            "stimuli": ("stimuli",),
+            "protein": ("protein",),
+        },
+        "karr_replication_initiation": {
+            "chromosome": ("chromosome",),
+            "protein": ("protein",),
+            "substrates": ("substrates",),
+            "requests": ("requests",),
+            "substrates_allocated": ("substrates_allocated",),
+        },
+        "karr_replication": {
+            "chromosome": ("chromosome",),
+            "substrates": ("substrates",),
+            "requests": ("requests",),
+            "substrates_allocated": ("substrates_allocated",),
+        },
+        "karr_dna_supercoiling": {
+            "chromosome": ("chromosome",),
+            "protein": ("protein",),
+            "substrates": ("substrates",),
+            "requests": ("requests",),
+            "substrates_allocated": ("substrates_allocated",),
+        },
+        "karr_chromosome_condensation": {
+            "chromosome": ("chromosome",),
+            "substrates": ("substrates",),
+            "requests": ("requests",),
+            "substrates_allocated": ("substrates_allocated",),
+        },
+        "karr_chromosome_segregation": {
+            "chromosome": ("chromosome",),
+            "protein": ("protein",),
+            "substrates": ("substrates",),
+            "requests": ("requests",),
+            "substrates_allocated": ("substrates_allocated",),
+        },
+        "karr_dna_damage": {
+            "chromosome": ("chromosome",),
+        },
+        "karr_dna_repair": {
+            "chromosome": ("chromosome",),
+            "protein": ("protein",),
+            "substrates": ("substrates",),
+            "requests": ("requests",),
+            "substrates_allocated": ("substrates_allocated",),
+        },
+        "karr_ftsz_polymerization": {
+            "cell": ("cell",),
+            "substrates": ("substrates",),
+            "requests": ("requests",),
+            "substrates_allocated": ("substrates_allocated",),
+        },
+        "karr_cytokinesis": {
+            "cell": ("cell",),
+            "chromosome": ("chromosome",),
+            "substrates": ("substrates",),
+            "requests": ("requests",),
+            "substrates_allocated": ("substrates_allocated",),
+        },
+        "karr_terminal_organelle_assembly": {
+            "protein": ("protein",),
+            "cell": ("cell",),
+        },
+        "request_calculator_d2": {
+            "complex": ("complex",),
+            "requests": ("requests",),
+        },
+        "request_calculator_pd": {
+            "complex": ("complex",),
+            "requests": ("requests",),
+        },
+        "request_calculator_ribasm": {
+            "substrates": ("substrates",),
+            "rna": ("rna",),
+            "protein": ("protein",),
+            "requests": ("requests",),
+        },
+        "request_calculator_trna": {
+            "substrates": ("substrates",),
+            "rna": ("rna",),
+            "requests": ("requests",),
+        },
+        "request_calculator_rna_pathway": {
+            "substrates": ("substrates",),
+            "rna": ("rna",),
+            "requests": ("requests",),
+        },
+        "request_calculator_protein_pathway": {
+            "substrates": ("substrates",),
+            "protein": ("protein",),
+            "requests": ("requests",),
+        },
+        "karr_allocation_step": {
+            "substrates": ("substrates",),
+            "requests": ("requests",),
+            "substrates_allocated": ("substrates_allocated",),
+        },
+        "cell_cycle_coordinator": {
+            "chromosome": ("chromosome",),
+            "cell": ("cell",),
+        },
+    }
+
+    initial_state: dict[str, Any] = {
+        "metabolic_reaction": {
+            "fluxs": {rid: float(m1_model.fluxs_stored[i]) for i, rid in enumerate(rxn_ids)},
+            "growth_per_s": float(m1_model.stored_runtime["growth_per_s"]),
+            "growth_per_h": float(m1_model.stored_runtime["growth_per_h"]),
+        },
+        "substrates": initial_substrates,
+        "rna": {
+            "counts": rna_init,
+            "aminoacylated_counts": aminoacylated_init,
+            "modified_counts": rna_modified_init,
+        },
+        "protein": {
+            "counts": prot_init,
+            "unprocessed_counts": protein_unprocessed_init,
+            "unfolded_counts": protein_unfolded_init,
+            "unmodified_counts": protein_unmodified_init,
+            "processed_counts": protein_processed_init,
+            "signal_sequence_counts": protein_signal_seq_init,
+            "modified_counts": protein_modified_init,
+            "enzyme_counts": protein_enzyme_init,
+            "location": protein_location_init,
+            "activity": protein_activity_init,
+        },
+        "complex": {"counts": complex_counts},
+        "stimuli": {wid: 0.0 for wid in p_activation_proc.stimuli_wids},
+        "activation_substrates": {
+            wid: float(initial_substrates.get(wid, 0.0)) for wid in p_activation_proc.substrate_wids
+        },
+        "tx_rate_fold_change": tx_rate_fold_init,
+        "chromosome": {
+            "replication_state": "idle",
+            "fork_position_bp": {"left": 0.0, "right": 0.0},
+            "fork_positions": {"left": 0.0, "right": 0.0},
+            "events": {"replication_complete": 0.0},
+            "supercoil_density": float(supercoil_proc.equilibrium_sigma),
+            "supercoiled": True,
+            "smc_bound_count": float(condensation_proc.trace_anchor_bound),
+            "condensation_level": float(condensation_proc.default_condensation_level),
+            "forks_passing": False,
+            "segregation_progress": 0.0,
+            "segregation_complete": False,
+            "daughter_pole_positions": {"left": 0.0, "right": 0.0},
+            "cell_cycle_event": "none",
+            "damage_sites": [],
+            "replication_stall_flag": 0.0,
+            "repair_count": 0.0,
+            "repair_count_by_pathway": {
+                "ber": 0.0,
+                "ner": 0.0,
+                "hr": 0.0,
+                "nhej_like": 0.0,
+            },
+        },
+        "cell": {
+            "ftsz_ring_count": float(ftsz_proc.initial_ring_count),
+            "ftsz_ring_complete": bool(
+                ftsz_proc.initial_ring_count
+                >= int(ftsz_proc.parameters["ring_complete_threshold"])
+            ),
+            "cycle_phase": "idle",
+            "gate_allow_cytokinesis": False,
+            "division_progress": 0.0,
+            "division_complete": False,
+            "division_event_count": 0.0,
+            "terminal_organelle_count": 0.0,
+            "terminal_organelle_components_assembled": {
+                wid: 0.0 for wid in terminal_organelle_proc.component_wids
+            },
+        },
+    }
+    if dynamic_bounds:
+        initial_state["m1_dynamic_diagnostics"] = {k: 0.0 for k in m1_proc._diagnostics_schema()}
+        from opencell.vivarium.karr_m1 import _CYTOSOL_COMPARTMENT_0
+
+        initial_state["m1_pools"] = {
+            sid: float(m1_proc._sub_state[idx, _CYTOSOL_COMPARTMENT_0])
+            for sid, idx in m1_proc._demand_idx_pairs
+        }
+
+    engine = Engine(
+        processes={
+            "karr_m1": m1_proc,
+            "karr_transcription_v3": m2_proc,
+            "karr_translation_v3": m3_proc,
+            "karr_d2_real": d2_proc,
+            "karr_protein_decay_light": decay_proc,
+            "karr_trna_aminoacylation": trna_proc,
+            "karr_ribosome_assembly": ribasm_proc,
+            "karr_transcriptional_regulation": tx_reg_proc,
+            "karr_rna_processing": rna_proc,
+            "karr_rna_modification": rna_mod_proc,
+            "karr_protein_processing_i": pp1_proc,
+            "karr_protein_processing_ii": pp2_proc,
+            "karr_protein_modification": p_mod_proc,
+            "karr_protein_folding": p_fold_proc,
+            "karr_protein_translocation": p_trans_proc,
+            "karr_protein_activation": p_activation_proc,
+            "karr_replication_initiation": rep_init_proc,
+            "karr_replication": rep_proc,
+            "karr_dna_supercoiling": supercoil_proc,
+            "karr_chromosome_condensation": condensation_proc,
+            "karr_chromosome_segregation": segregation_proc,
+            "karr_dna_damage": dna_damage_proc,
+            "karr_dna_repair": dna_repair_proc,
+            "karr_ftsz_polymerization": ftsz_proc,
+            "karr_cytokinesis": cytokinesis_proc,
+            "karr_terminal_organelle_assembly": terminal_organelle_proc,
+        },
+        steps={
+            "request_calculator_d2": req_d2,
+            "request_calculator_pd": req_pd,
+            "request_calculator_ribasm": req_ribasm,
+            "request_calculator_trna": req_trna,
+            "request_calculator_rna_pathway": req_rna,
+            "request_calculator_protein_pathway": req_protein,
+            "karr_allocation_step": allocation_step,
+            "cell_cycle_coordinator": coordinator_step,
+        },
+        flow={
+            "request_calculator_d2": [],
+            "request_calculator_pd": [],
+            "request_calculator_ribasm": [],
+            "request_calculator_trna": [],
+            "request_calculator_rna_pathway": [],
+            "request_calculator_protein_pathway": [],
+            "karr_allocation_step": [
+                ("request_calculator_d2",),
+                ("request_calculator_pd",),
+                ("request_calculator_ribasm",),
+                ("request_calculator_trna",),
+                ("request_calculator_rna_pathway",),
+                ("request_calculator_protein_pathway",),
+            ],
+            "cell_cycle_coordinator": [("karr_allocation_step",)],
+        },
+        topology=topology,
+        initial_state=initial_state,
+        emit_step=emit_step_s or time_step_s,
+    )
+    return engine
+
 __all__ = [
+    "build_karr_chassis_v5",
     "build_karr_chassis_v4",
     "build_karr_chassis_v3",
     "build_karr_chassis_v2",
@@ -1168,3 +1791,4 @@ __all__ = [
     "build_karr_m1_m2_m3_engine",
     "compute_baseline_demand_per_s",
 ]
+
