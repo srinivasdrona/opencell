@@ -53,7 +53,7 @@ This keeps base behavior faithful to current extract evidence while preserving a
 
 Proposed process key skeleton (exact names can be normalized when `pc-final` merges):
 
-1. `karr_m1`
+1. `karr_metabolism`
 2. `karr_replication_initiation`
 3. `karr_replication`
 4. `karr_dna_damage`
@@ -75,7 +75,7 @@ Proposed process key skeleton (exact names can be normalized when `pc-final` mer
 20. `karr_protein_activation`
 21. `karr_protein_decay_light`
 22. `karr_protein_translocation`
-23. `karr_d2_real`
+23. `karr_macromolecular_complexation`
 24. `karr_ribosome_assembly`
 25. `karr_ftsz_polymerization`
 26. `karr_cytokinesis`
@@ -218,3 +218,4 @@ Practical CI budget recommendation for the full-cycle test:
 2. Confirm whether `CellCycleCoordinator` should keep host adhesion as non-gating in v1 (recommended) or add optional gate immediately.
 3. Confirm canonical `KP01..KP28` labels for Phase E scorecard so pe-1 comparator and pd-final tests share IDs.
 4. Confirm exact process key names expected by `pc-final` for phase-C and RNADecay processes before implementation starts.
+
