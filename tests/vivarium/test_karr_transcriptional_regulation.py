@@ -21,8 +21,8 @@ if "opencell" in sys.modules:
 
 from opencell.m2 import transcription as tx
 from opencell.m2 import transcription_v2 as tx_v2
-from opencell.vivarium.karr_m2_v2 import KarrTranscriptionV2Process
-from opencell.vivarium.karr_m2_v3 import KarrTranscriptionV3Process
+from opencell.vivarium.karr_transcription_v2 import KarrTranscriptionV2Process
+from opencell.vivarium.karr_transcription_v3 import KarrTranscriptionV3Process
 from opencell.vivarium.karr_transcriptional_regulation import (
     KarrTranscriptionalRegulationProcess,
 )
@@ -242,3 +242,4 @@ def test_no_regression_m2v3_without_regulation() -> None:
     )
 
     np.testing.assert_allclose(prior + v3_delta, v2_abs, rtol=0.0, atol=1e-9)
+

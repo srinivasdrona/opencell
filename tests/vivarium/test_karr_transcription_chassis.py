@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from opencell.m2 import transcription as tx
-from opencell.vivarium.karr_m2 import (
+from opencell.vivarium.karr_transcription import (
     KarrTranscriptionProcess,
     build_karr_m2_engine,
 )
@@ -69,3 +69,4 @@ def test_engine_starting_from_zero_approaches_steady_state(
     assert float(np.max(rel)) < 0.05, (
         f"fast genes not at steady state: max rel = {rel.max():.4f} (n_fast={int(fast.sum())})"
     )
+

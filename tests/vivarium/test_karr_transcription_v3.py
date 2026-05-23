@@ -21,8 +21,8 @@ if "opencell" in sys.modules:
 
 from opencell.m2 import transcription as tx
 from opencell.m2 import transcription_v2 as tx_v2
-from opencell.vivarium.karr_m2_v2 import KarrTranscriptionV2Process
-from opencell.vivarium.karr_m2_v3 import KarrTranscriptionV3Process
+from opencell.vivarium.karr_transcription_v2 import KarrTranscriptionV2Process
+from opencell.vivarium.karr_transcription_v3 import KarrTranscriptionV3Process
 
 
 def _collect_updaters(node):
@@ -222,3 +222,4 @@ def test_unity_fold_change_dict_matches_unwired() -> None:
     ones_update = v3.next_update(1.0, ones_state)
     for gid in v3.gene_ids[:10]:
         assert ones_update["rna"]["counts"][gid] == pytest.approx(base_update["rna"]["counts"][gid])
+

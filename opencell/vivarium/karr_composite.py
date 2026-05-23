@@ -50,9 +50,9 @@ from opencell.vivarium.karr_dna_repair import KarrDNARepairProcess
 from opencell.vivarium.karr_dna_supercoiling import KarrDNASupercoilingProcess
 from opencell.vivarium.karr_ftsz_polymerization import KarrFtsZPolymerizationProcess
 from opencell.vivarium.karr_metabolism import KarrMetabolismProcess
-from opencell.vivarium.karr_m2 import KarrTranscriptionProcess
-from opencell.vivarium.karr_m2_v2 import KarrTranscriptionV2Process
-from opencell.vivarium.karr_m2_v3 import KarrTranscriptionV3Process
+from opencell.vivarium.karr_transcription import KarrTranscriptionProcess
+from opencell.vivarium.karr_transcription_v2 import KarrTranscriptionV2Process
+from opencell.vivarium.karr_transcription_v3 import KarrTranscriptionV3Process
 from opencell.vivarium.karr_m3 import KarrTranslationProcess
 from opencell.vivarium.karr_m3_v2 import KarrTranslationV2Process
 from opencell.vivarium.karr_m3_v3 import KarrTranslationV3Process
@@ -1791,5 +1791,6 @@ __all__ = [
     "build_karr_m1_m2_m3_engine",
     "compute_baseline_demand_per_s",
 ]
+
 
 
