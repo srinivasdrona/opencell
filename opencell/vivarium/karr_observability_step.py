@@ -97,6 +97,9 @@ class KarrObservabilityStep(Step):
         self.dna_mass_fraction = float(configured_dna_mass_fraction)
         self.genome_half_bp = max(float(self.parameters.get("genome_half_bp", 290_038.0)), 1.0)
         self._base_dna_mass_g = self.cell_dry_mass_reference_g * self.dna_mass_fraction
+        self._elapsed_s = 0.0
+        self._cytokinesis_start_s = float("nan")
+        self._cytokinesis_complete_s = float("nan")
 
     def ports_schema(self) -> dict[str, Any]:
         counts_schema = {
@@ -130,10 +133,21 @@ class KarrObservabilityStep(Step):
                     "right": {"_default": 0.0, "_updater": "accumulate", "_emit": False},
                 },
             },
+            "cell": {
+                "cycle_phase": {"_default": "idle", "_updater": "set", "_emit": False},
+                "division_progress": {"_default": 0.0, "_updater": "accumulate", "_emit": False},
+                "division_complete": {"_default": False, "_updater": "set", "_emit": False},
+            },
             "phenotype_observables": {
                 "rna_mass_g": {"_default": 0.0, "_updater": "set", "_emit": True},
                 "protein_mass_g": {"_default": 0.0, "_updater": "set", "_emit": True},
                 "dna_mass_g": {"_default": self._base_dna_mass_g, "_updater": "set", "_emit": True},
+                "cytokinesis_start_tick_s": {"_default": float("nan"), "_updater": "set", "_emit": True},
+                "cytokinesis_complete_tick_s": {
+                    "_default": float("nan"),
+                    "_updater": "set",
+                    "_emit": True,
+                },
                 "cell_dry_mass_reference_g": {
                     "_default": self.cell_dry_mass_reference_g,
                     "_updater": "set",
@@ -143,13 +157,15 @@ class KarrObservabilityStep(Step):
         }
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
-        del timestep
+        dt = max(float(timestep), 0.0)
+        current_time_s = self._elapsed_s + dt
         rna = states.get("rna", {})
         rna_counts = rna.get("counts", {})
         aminoacylated_counts = rna.get("aminoacylated_counts", {})
         modified_counts = rna.get("modified_counts", {})
         protein_counts = states.get("protein", {}).get("counts", {})
         chromosome = states.get("chromosome", {})
+        cell = states.get("cell", {})
 
         rna_mass_g = (
             _mass_from_counts(rna_counts, self.rna_mw_by_wid)
@@ -165,12 +181,28 @@ class KarrObservabilityStep(Step):
         if replication_state == "complete":
             fork_progress = 1.0
         dna_mass_g = self._base_dna_mass_g * (1.0 + fork_progress)
+        division_progress = float(cell.get("division_progress", 0.0))
+        division_complete = bool(cell.get("division_complete", False))
+        cycle_phase = str(cell.get("cycle_phase", "idle")).strip().lower()
+        cytokinesis_started = (cycle_phase == "dividing") or (division_progress > 0.0)
+        if not np.isfinite(self._cytokinesis_start_s) and cytokinesis_started:
+            self._cytokinesis_start_s = float(current_time_s)
+        cytokinesis_complete = division_complete or (cycle_phase == "divided")
+        if (
+            np.isfinite(self._cytokinesis_start_s)
+            and (not np.isfinite(self._cytokinesis_complete_s))
+            and cytokinesis_complete
+        ):
+            self._cytokinesis_complete_s = float(current_time_s)
+        self._elapsed_s = current_time_s
 
         return {
             "phenotype_observables": {
                 "rna_mass_g": float(rna_mass_g),
                 "protein_mass_g": float(protein_mass_g),
                 "dna_mass_g": float(dna_mass_g),
+                "cytokinesis_start_tick_s": float(self._cytokinesis_start_s),
+                "cytokinesis_complete_tick_s": float(self._cytokinesis_complete_s),
                 "cell_dry_mass_reference_g": float(self.cell_dry_mass_reference_g),
             }
         }

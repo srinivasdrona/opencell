@@ -199,9 +199,16 @@ def extract_kp12(trajectory: Trajectory) -> float | None:
     return duration if duration >= 0.0 else float("nan")
 
 
-def extract_kp13(_trajectory: Trajectory) -> float | None:
-    # Requires ftsz/cytokinesis stores not emitted in schema-v1 snapshots.
-    return None
+def extract_kp13(trajectory: Trajectory) -> float | None:
+    start = _state_series(trajectory, "cytokinesis_start_tick_s")
+    complete = _state_series(trajectory, "cytokinesis_complete_tick_s")
+    if start is None or complete is None:
+        return None
+    start_s = _first_finite(start)
+    complete_s = _first_finite(complete)
+    if start_s is None or complete_s is None or complete_s < start_s:
+        return float("nan")
+    return float(complete_s - start_s)
 
 
 def extract_kp14(trajectory: Trajectory) -> float | None:

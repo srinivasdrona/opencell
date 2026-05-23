@@ -104,6 +104,10 @@ def _extract_observables(
         "rna_mass_g": float(phenotype_obs.get("rna_mass_g", np.nan)),
         "protein_mass_g": float(phenotype_obs.get("protein_mass_g", np.nan)),
         "dna_mass_g": float(phenotype_obs.get("dna_mass_g", np.nan)),
+        "cytokinesis_start_tick_s": float(phenotype_obs.get("cytokinesis_start_tick_s", np.nan)),
+        "cytokinesis_complete_tick_s": float(
+            phenotype_obs.get("cytokinesis_complete_tick_s", np.nan)
+        ),
         "cell_dry_mass_reference_g": float(phenotype_obs.get("cell_dry_mass_reference_g", np.nan)),
     }
 

@@ -109,11 +109,11 @@ KARR_REFERENCE_VALUES: dict[str, KarrReferenceValue] = {
         notes="No local machine-readable value found.",
     ),
     "KP13": KarrReferenceValue(
-        value=None,
-        citation="TODO: Karr 2012 Fig 3c cytokinesis duration",
+        value=3869.0,
+        citation="parameters.states.Time.cytokinesisDuration",
         sourced_by=_SOURCED_BY,
         sourced_at=_SOURCED_AT,
-        notes="No local machine-readable value found.",
+        source_path="data/karr_fixtures/parameters.json",
     ),
     "KP14": KarrReferenceValue(
         value=0.5,

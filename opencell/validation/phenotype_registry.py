@@ -117,7 +117,7 @@ _SPECS: tuple[dict[str, Any], ...] = (
         "bucket": "karr-known-incomplete",
         "comparator": "ratio_band",
         "disposition_todo_id": "E2-V1_1-KP13-CYTOKINESIS-TRACE",
-        "notes": "Needs ftsz/cytokinesis state traces in emitter schema v1.1.",
+        "notes": "Legacy fixtures may miss cytokinesis timestamp observables.",
     },
     {
         "id": "KP14",
