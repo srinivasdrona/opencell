@@ -401,11 +401,20 @@ NOT a parallel program)**
 
 ---
 
-## Current Status (2026-05-23 evening, **896 tests passing**, chassis_v6 SHIPPED, E.1 + E.2 MERGED, allocation-consumer + observability-ext Codex sessions running)
+## Current Status (2026-05-23 late evening, **903 tests passing**, Buckets A+B MERGED, BLOCK-RELEASE v1.0 still OPEN)
 
 ### Today's headline result
 
-**M4 milestone hit + first integrated validation pass complete.** chassis_v6 (full 28-process composite) merged. Phase E.1 (real Karr trajectory match) and Phase E.2 (28-KP phenotype scorecard) both merged to main. The integrated whole-cell runs for 32400 ticks; E.2 scores **6/28 PASS, 9 FAIL, 13 BLOCKED** on the pre-fix chassis. The 9 FAILs all trace to a single root cause — the allocation-bypass cascade — and an allocation-consumer Codex session is currently fixing it. In parallel, an observability-extension Codex session is lifting 5 tractable BLOCKEDs.
+**M4 milestone hit + first integrated validation pass complete + first failed root-cause hypothesis.** chassis_v6 (full 28-process composite) merged. Phase E.1 (real Karr trajectory match), E.2 (28-KP phenotype scorecard), Bucket A (allocation-consumer enrollment), and Bucket B (observability extensions) all merged to main. Scorecard moved **6/28 → 9/28 PASS** thanks to Bucket B. **Critical finding**: the allocation-bypass theory of E.1 was **wrong** — Bucket A enrolled `karr_rna_decay` correctly (structurally good, 100% allocation integrity), but the 32400-tick before/after trajectories are **bit-identical** on ATP/dNTP/mass/replication. A 2.6M-unit net substrate leak persists across the shared store from a still-unidentified source. v1.0 BLOCK-RELEASE remains open.
+
+### Tonight's merges (2026-05-23 ~22:00)
+- ✅ **Bucket A merged** (`5fefe4a`): rna_decay allocation enrollment + host_interaction test-fixture cleanup. Allocation integrity = 100% (max_overalloc=0). All narrow + full-suite tests green.
+- ✅ **Bucket B merged** (`3fd9edd`): observability schema extended; 5 BLOCKED KPs lifted (KP17/19/20 PASS, KP13/18 FAIL with diagnostic signal). E2_scorecard regenerated.
+- ✅ **Test baseline**: 903 passed / 0 skipped / 4 xfailed (was 896 / 0 / 4 pre-merge; +7 net from Bucket B's new tests minus A's host_interaction consolidation).
+- ❌ **BLOCK-RELEASE v1.0 OPEN**: substrate leak (-2.6M units) source unidentified. Allocation-bypass diagnosis was incomplete.
+
+### Open diagnostic ticket (next session)
+Need per-process substrate delta instrumentation on a short-tick run (~100 ticks) to identify which process(es) actually drain ATP/dNTPs outside the allocation cycle. Candidates not yet ruled out: metabolism (FBA bound enforcement), transcription/translation (cost accounting), DNA replication (dNTP draw timing), terminal organelle assembly. NEW Codex session to be launched next sitting.
 
 ### v1.0 scope decision (logged today)
 
@@ -482,16 +491,26 @@ E.1's fixture is already committed at `fdea8a2` on `agent/pe-1-real-match`; Code
 
 **Phase E sequencing locked**: `E.1 merge ✅ → E.2 launch (BEFORE-fix scorecard) ✅ → allocation-consumer Codex turn 🟢 (Bucket A, in flight) → observability extensions for tractable BLOCKEDs 🟡 (Bucket B, queued behind A's cp1) → E.2 re-run (AFTER-fix scorecard) → E.3 launch (classify residual discrepancies) → release gate`. Expected post-fix E.2 result: ~16-22 of 28 PASS (clears the ≥10/28 acceptance gate).
 
-### Bucket A — allocation-consumer enrollment (in flight, 2026-05-23 18:27)
+### Bucket A — allocation-consumer enrollment ✅ MERGED (`5fefe4a`, 2026-05-23 22:23)
 
 - Worktree: `E:\opencell-worktrees\allocation-consumer`, branch `agent/allocation-consumer-enrollment`
-- Rebased onto `29f4aaa` (current main post-skeleton-deletion); Codex PID 66844 launched 18:27:42
-- Token budget: 60k · 4 checkpoints expected
-- Scope: enroll `karr_rna_decay` + `karr_host_interaction` as `KarrAllocationStep` consumers; ATP/dNTP/mass must stay ≥0 across 32400-tick run; produces `v6_trajectory_32400s_post_alloc.pkl` for E.2 re-run
+- Token spend: ~113k · 4 checkpoints completed in ~107 min
+- **Structural finding**: only `karr_rna_decay` needed enrollment. `karr_host_interaction` was already inside the cycle; its appearance of bypass was stale test-fixture `substrates_allocated` injection cruft (now pruned, -49 lines).
+- **Diagnostic finding** (negative result): 32400-tick before/after trajectories are **identical** on ATP/dNTP/cell_dry_mass/replication. The cascade is NOT caused by the rna_decay bypass. Net substrate delta still -2.6M units. **BLOCK-RELEASE v1.0 NOT closed.**
 
-### Bucket B — observability extensions (queued, draft `PROMPT_observability_extension.md` committed `63c10de`)
+### Bucket B — observability extensions ✅ MERGED (`3fd9edd`, 2026-05-23 22:25)
 
-Will branch off Bucket A's first commit to avoid `karr_composite.py` conflict (different sections, but safer). Scope: KP13 (cytokinesis-trace), KP17 (DNA-mass), KP18 (RNA-mass), KP19 (protein-mass), KP20 (metabolite-profile). Token budget: 50k. Out of scope: KP15 (hard biology), KP21 (overlaps Bucket A), KP25/26 (KO-sweep harness), KP27/28 (host_interaction, owned by A), KP03/04 (FBA flux extraction, separate turn).
+- Worktree: `E:\opencell-worktrees\observability-extension`, branch `agent/observability-extension`
+- Token spend: ~165k · 6 checkpoints completed in ~43 min
+- New module: `opencell/vivarium/karr_observability_step.py` — emits rna_mass_g, protein_mass_g, dna_mass_g, cytokinesis_start/complete_tick_s, per-species metabolite_pools
+- **E.2 scorecard delta**: 6/28 PASS → 9/28 PASS, 13 BLOCKED → 8 BLOCKED
+- Per-KP transitions:
+  - KP13 cytokinesis-duration:  BLOCKED → **FAIL** (0.0s observed; division never completes — downstream of substrate leak)
+  - KP17 DNA-mass:              BLOCKED → **PASS** ✅
+  - KP18 RNA-mass:              BLOCKED → **FAIL** (measurable, value off Karr; transcription/decay rate fit)
+  - KP19 protein-mass:          BLOCKED → **PASS** ✅
+  - KP20 metabolite-profile:    BLOCKED → **PASS** ✅
+- KP13/KP18 FAILs are diagnostic signal for v1.1 follow-up tickets, not BLOCK-RELEASE items.
 
 ### Skip-drift audit ✅
 
