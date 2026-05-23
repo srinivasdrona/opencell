@@ -223,7 +223,14 @@ def compare_full_trajectory(
         karr_values = karr_values[:n]
         valid = np.isfinite(op_values) & np.isfinite(karr_values)
         if not np.any(valid):
-            metrics = _empty_metrics("FAIL")
+            has_op = bool(np.any(np.isfinite(op_values)))
+            has_karr = bool(np.any(np.isfinite(karr_values)))
+            if not has_op and has_karr:
+                metrics = _empty_metrics("MISSING_OPENCELL")
+            elif has_op and not has_karr:
+                metrics = _empty_metrics("MISSING_KARR")
+            else:
+                metrics = _empty_metrics("FAIL")
             metrics["n_snapshots_compared"] = 0
             out[observable] = metrics
             continue
