@@ -133,10 +133,9 @@ class KarrDNADamageProcess(Process):
                     "_updater": "accumulate",
                     "_emit": True,
                 },
-                "fork_positions": {
-                    "_default": {"left": None, "right": None},
-                    "_updater": "set",
-                    "_emit": False,
+                "fork_position_bp": {
+                    "left": {"_default": None, "_updater": "accumulate", "_emit": False},
+                    "right": {"_default": None, "_updater": "accumulate", "_emit": False},
                 },
                 "replication_stall_flag": {
                     "_default": 0.0,
@@ -252,14 +251,11 @@ class KarrDNADamageProcess(Process):
         if replication_state in {"idle", "initiating", "complete"}:
             return set()
 
-        raw = chromosome_state.get("fork_positions", {})
-        candidates: list[object]
+        raw = chromosome_state.get("fork_position_bp", {})
         if isinstance(raw, dict):
-            candidates = [raw.get("left"), raw.get("right"), raw.get("left_fork"), raw.get("right_fork")]
-        elif isinstance(raw, (list, tuple)):
-            candidates = list(raw)
+            candidates: list[object] = [raw.get("left"), raw.get("right")]
         else:
-            candidates = [raw]
+            candidates = [None, None]
 
         out: set[int] = set()
         for value in candidates:
