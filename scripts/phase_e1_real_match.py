@@ -82,6 +82,7 @@ def _extract_observables(
 
     replication_label = str(chromosome.get("replication_state", "idle"))
     replication_state_code = _REPLICATION_CODE_MAP.get(replication_label, 0.0)
+    phenotype_obs = state.get("phenotype_observables", {})
 
     dntp_pool_total = float(
         substrates.get("DATP", 0.0)
@@ -100,6 +101,8 @@ def _extract_observables(
         "gtp_pool": float(substrates.get("GTP", np.nan)),
         "dntp_pool_total": dntp_pool_total,
         "division_event_timestamp_s": float(tick_s if division_detected else np.nan),
+        "rna_mass_g": float(phenotype_obs.get("rna_mass_g", np.nan)),
+        "cell_dry_mass_reference_g": float(phenotype_obs.get("cell_dry_mass_reference_g", np.nan)),
     }
 
 
