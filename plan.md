@@ -401,183 +401,177 @@ NOT a parallel program)**
 
 ---
 
-## Current Status (2026-05-22 end-of-day, **~720 tests passing**, Phase B FEATURE-COMPLETE, Phase C T1 shipped)
+## Current Status (2026-05-23 evening, **877 tests passing**, chassis_v6 SHIPPED, Phase E.1 in flight)
 
-### Today's headline result (2026-05-22, full session)
+### Today's headline result
 
-**Phase A3.3 + Phase B + Phase C T1 all shipped in a single day** via Codex-orchestrator pattern with up to 10 parallel sessions. 16 of 28 Karr processes covered (~57%). chassis_v3 (6 processes, 1.26% drift on 1000-tick ratchet) and chassis_v4 (17 processes, all 10 integration tests pass including 2000-tick extended ratchet) merged to main. Phase C started with pc-t1 ReplicationInitiation.
+**M4 milestone hit: chassis_v6 (full 28-process composite) merged to main.** Phase C complete (all 10 PC-turns + chassis_v5), Phase D complete (HostInteraction + chassis_v6 with CPK-002/003 bundled fixes), naming-drift rename to canonical biology names complete, all four Phase E milestone designs drafted, and Phase E.1 (real trajectory match vs Karr) currently executing on Codex. Two parallel Codex sessions running cleanly side-by-side.
 
-### Phase A3.3 — chassis_v3 with ratchet closure ✅
+### Phase C — DNA replication + cell cycle ✅
 
-- ✅ Probe 4: empirically proved Vivarium mixed `set`+`accumulate` same-leaf is broken (order-sensitive)
-- ✅ Probe 5: closed OPEN-4 (SeedSequence determinism verified bit-identical across runs)
-- ✅ OPEN-1 resolved: 149 D.2-owned WIDs canonical
-- ✅ OPEN-2 resolved: existing `resource_ledger.py` dormant; new `KarrAllocationStep` built
-- ✅ A3.3 T1-T5 all merged: M2v3 + M3v3 delta-emit, KarrAllocationStep, KarrD2Real, ProteinDecay-light, build_karr_chassis_v3
+All 10 turns + final chassis shipped (across the gap day and today's salvage cycles):
 
-### Phase B — RNA + protein maturation pathway ✅ (11/11 turns + chassis_v4 merged)
+- ✅ pc-t1: ReplicationInitiation · pc-t2: Replication · pc-t3: DnaSupercoiling
+- ✅ pc-t4: ChromosomeCondensation · pc-t5: ChromosomeSegregation
+- ✅ pc-t6: DnaDamage · pc-t7: DnaRepair · pc-t8: FtsZPolymerization
+- ✅ pc-t9: Cytokinesis · pc-t10: TerminalOrganelleAssembly
+- ✅ pc-final: build_karr_chassis_v5 (27 processes wired, CellCycleCoordinator added)
+- ✅ audit-cross-process-keys: full key-matrix audit; CPK-001 patched
+- ✅ rna-decay: RnaDecay #13 added (process count to 28)
+- ✅ fix-set-accumulate-warnings: single-declaration substrates_allocated leaves
 
-- ✅ pb-t1: tRNAAminoacylation (charged-tRNA steady-state 70% ≈ Karr's expected 67%)
-- ✅ pb-t2: RibosomeAssembly (GTP-dependent all-or-nothing)
-- ✅ pb-t3: TranscriptionalRegulation + M2v3 fold-change wiring
-- ✅ pb-t4: RNAProcessing (mass-action cleavage kinetics)
-- ✅ pb-t5: RNAModification (per-RNA completion counter)
-- ✅ pb-t6: ProteinProcessingI (deformylation + N-Met cleavage)
-- ✅ pb-t7: ProteinProcessingII (lipoprotein DAG transfer)
-- ✅ pb-t8: ProteinModification (3-enzyme covalent mods)
-- ✅ pb-t9: ProteinFolding (ion binding + chaperone folding)
-- ✅ pb-t10: ProteinTranslocation (SRP + direct path; new protein.location store)
-- ✅ pb-t11: ProteinActivation (6 boolean rules; new protein.activity store)
-- ✅ pb-final: build_karr_chassis_v4 + 2000-tick extended ratchet (all 10 integration tests pass)
+### Phase D — Final integration to v6 ✅
 
-### Phase C — DNA + cell cycle (1/10 turns shipped, T2-T10 + final designed)
+- ✅ pd-t1: HostInteraction process (re-merged as `8dd146d` after 41809db lost content; lesson encoded as upcoming SESSION_CONTEXT rule 9)
+- ✅ pd-final-chassis-v6: `build_karr_chassis_v6` shipped (commit `51aac1e`, 7 checkpoints, ~43 min, 145k tokens)
+  - 28 process keys exposed via `CHASSIS_V6_EXPECTED_PROCESS_KEYS`
+  - **Bundled with CPK-002 fix**: `chromosome.damage_sites` split into `damage_events_cumulative` + `repair_events_cumulative` (each accumulate-owned); derived view via `chromosome_views.current_damage_sites()`
+  - **Bundled with CPK-003 fix**: `karr_dna_damage` now reads canonical `chromosome.fork_position_bp.left/right`
+  - 5 v6 smoke tests + CPK regression tests all pass; full suite green
 
-- ✅ pc-t1: ReplicationInitiation (9-substep DnaA-ATP polymer dynamics at OriC)
-- 📝 Designs committed: pc-t2 through pc-t10 + pc-final at `docs/design/pc_turn*.md` and `docs/design/phase_c_overview.md`
-- ⏳ pc-t2 (Replication) is the next major design — needs careful work before launch (largest Karr process)
+### Naming-drift rename ✅
 
-### MATLAB extraction (test-license window expiring) ✅
+Canonicalized all karr_* modules to biological names (commit `cf6a1ad`, ~14 min Codex):
 
-- ✅ `metabolism_dynamics.mat` regenerated; 3 perturbation tests now PASS (previously SKIP)
-- ✅ 28 per-process bit-identical evolveState traces at `data/m1_sources/karr_native/per_process_traces/` (17.92 MB, gitignored)
-- ✅ 23 initial-state snapshots at `data/m1_sources/karr_native/initial_states/`
-- ✅ `fitted_constants.mat` (2 processes had `fittedConstantNames` defined — Metabolism + Transcription)
-- 🟢 Full cell-cycle reference trajectory (`cell_cycle_trajectory.mat`) — long sequential MATLAB run still in flight; will be the Phase E validation gold standard
-- ✅ MATLAB extraction infrastructure committed: `scripts/matlab/` with `karr_bootstrap.m` + 7 modular extraction scripts
+- `karr_m1` → `karr_metabolism`
+- `karr_m2{,_v2,_v3}` → `karr_transcription{,_v2,_v3}`
+- `karr_m3{,_v2,_v3}` → `karr_translation{,_v2,_v3}`
+- `karr_d2_real` → `karr_macromolecular_complexation` (class `MacromolecularComplexationProcess`)
+- `karr_d2_stub` → `karr_macromolecular_complexation_stub`
+- Legacy public builder APIs (`build_karr_m1_m2_engine`, etc.) preserved for backward-compat
 
-### LLM-log refinements (9 of 14 items done in 2 batches) ✅
+### Phase E — Validation against Karr (in flight)
 
-- Batch 1 (5 items): schema_version, secrets-scrub, portable-paths, design-spec doc, tag-vocabulary doc
-- Batch 2 (4 items): query/stats/report CLI, CLI tests, pre-commit hook, file rotation/sharding
+All four per-milestone designs drafted and merged to main (`be3d8fa`, `1b40b15`, `2884029`):
 
-### Decisions logged (cross-cutting impact)
+- 📝 `docs/design/phase_e2_phenotype_scorecard.md` — 28-KP table, bucketed tolerances, fixture caching
+- 📝 `docs/design/phase_e3_discrepancy_analysis.md` — 7-rule classifier, v1.1 todo emission
+- 📝 `docs/design/phase_e_final_release_gate.md` — 7 hard gates G1-G7 for v1.0
+- 📝 `docs/design/cpk_dispositions_2026-05-23.md` — CPK-002/003 design calls (now landed in v6)
 
-1. **`vivarium-all-accumulate-no-set`** — every per-tick Vivarium writer uses `_updater: "accumulate"`. `set` banned for multi-writer leaves. Forces delta-emit conversion of any "compute and emit absolute count" Process. Caught empirically by Probe 4.
+**E.1 Codex session active**: PID 73788, 130k budget, 5 checkpoints. Runs chassis_v6 for 32400 ticks vs Karr's `cell_cycle_trajectory.mat`. Critical deliverable = `data/phase_e/v6_trajectory_32400s.pkl` fixture that E.2 will consume. Acceptance is *framework correctness* (≥1 observable passes), NOT fidelity.
 
-2. **`v1-trajectory-buckets`** — four explicit buckets for post-v1.0 scope: Karr-known-incomplete (v1.x), biology-beyond-Karr (v2+), validation-and-organism-scaling (v3+), OpenCell-specific-tooling (parallel). Future scope decisions must declare bucket.
+### Phase E.1 first findings (mid-flight, pre-merge — 17:30 IST)
 
-### Skill / tooling improvements
+E.1's fixture is already committed at `fdea8a2` on `agent/pe-1-real-match`; Codex is currently running checkpoint-5 full-suite verify. Pre-merge inspection of the pickle reveals chassis_v6 ran the full 32400 ticks without crashing (framework ✓) but biology is broken in three diagnosed ways, all cascading from a single root cause.
 
-- `codex_status.ps1`: stale-STATUS detection via stdout/HEAD mtime comparison
-- `delegate-to-codex` skill v3: WSL-venv-only Python mandate (after 30 min wasted on `py -3.12` phantom dependency errors), tool-availability fallback, commit-or-stop semantics, stale-STATUS overwrite as first action
-- Primary-Source Discipline rule (already on `c3773b3`)
+**Headline numbers** (from `data/phase_e/v6_trajectory_32400s.pkl`):
+- `atp_pool`: 1.0 → -10.21M (crosses zero at tick 100, drains 315 units/tick)
+- `gtp_pool`: mirrors ATP
+- `dntp_pool_total`: 4.0 → 0 by tick 100 (never recovers)
+- `cell_dry_mass_g`: 8.2e-16 → -3.4e-14 (negative from tick 1100)
+- `replication_state_code`: stuck at 0 (idle) all 325 snapshots
+- `fork_position_norm`: stuck at 0.0
+- `division_detected`: False
+- mRNA: 339 → 1261 (3.7×, plausible shape — plateaus ~tick 8100)
+- Protein: 16272 → 91127 (5.6×, plausible ratio)
 
-### Test state at end-of-day
+**Root cause**: the `karr_rna_decay` + `karr_host_interaction` allocation-bypass (known gap from chassis_v6 turn) consumes ATP/dNTP/H2O outside the KarrAllocationStep request/grant cycle. Over 32400 ticks the unbookmarked drain compounds to ~10M units. Replication never initiates because DnaA-ATP threshold can't be met when both ATP and dNTPs are underwater (CASCADE from the substrate bug, not an independent failure).
 
-- A3.3 unit tests: 32 pass
-- Probes: 6 pass (probe 4 + probe 5)
-- Phase B per-turn: ~85 pass
-- Phase B integration (chassis_v4): 10 pass
-- Phase C T1: 9 pass
-- LLM-log: 36 pass (was 8 before today)
-- M1 calc_flux_bounds: 13 pass (3 previously SKIP)
-- Pre-existing: 620 pass, 0 fail
-- **Total: ~720 tests passing, 0 failures, 0 unexpected SKIPs**
+**This is the failure mode E.2 was designed to expose.** Production machinery (transcription, translation) is largely correct — ratios are biologically plausible. Substrate-accounting backbone is broken.
 
-### v1.0 trajectory recalibrated
+**Consequence**: `allocation-consumer-enrollment` is **promoted from v1.x cleanup to v1.0 BLOCK-RELEASE**. v1.0 cannot ship until ATP/dNTP/mass stay non-negative across the 32400-tick run and replication advances past the idle state. `PROMPT_allocation_consumer.md` has been revised post-E.1 with these as the explicit regression target.
 
-| Phase | Status | Wall (orig est / actual today) |
+**Phase E sequencing locked**: `E.1 merge → E.2 launch (BEFORE-fix scorecard) → E.3 launch (classify cascade) → allocation-consumer Codex turn → E.2 re-run (AFTER-fix scorecard) → E.3 re-classify → release gate`. Expected pre-fix E.2 result: ~8-12 of 28 PASS; expected post-fix: ~18-22 of 28 PASS (clears the ≥10/28 acceptance gate by comfortable margin).
+
+Full analysis in `docs/phase_e/E1_findings_pre_merge.md` (commit `e4ea870`+).
+
+### Audit + cleanup sessions ✅
+
+All read-only forensics shipped clean bills of health (no hidden landmines blocking v6/E):
+
+- ✅ audit-merges-historical: only `41809db` was a real defect; 7 suspect 2-parent merges all false alarms (STATUS.md noise)
+- ✅ audit-phase-b-fleet: only RNADecay was historically dropped; recovered via `c0640a1`
+- ⏳ skip-drift-audit (PID 3320, running): investigating 11 tests that went pass→skip after rename
+
+### Tolerance philosophy (decided today, logged as todo `per-kp-tolerance-calibration`)
+
+**Reject global threshold ratchet** (e.g. "v6→20%→10%"). Karr's own ensemble has 30-50% CV on many KPs; claiming <10% on those is meaningless. **Tolerances are per-KP-bucketed**, not global:
+
+| Stage | Action | Tolerance posture |
 |---|---|---|
-| A3.3 | ✅ DONE | 6 weeks / 1 day |
-| B | ✅ DONE | 12 weeks / 1 day |
-| C (1/10 turns) | 🟡 in progress | 14 weeks / a few days at this pace |
-| D (1 process) | ⏳ | 3 weeks / 1 day |
-| E (validation) | ⏳ | 4 weeks / 2-4 weeks (wet/dry can't accelerate) |
-| **Total to v1.0** | | **~4-6 weeks from today** (down from 9 months) |
+| v6 ships | "runs 32400 ticks without exploding" | 30% global (development aid) |
+| E.2 first pass | Measure 28 KPs vs Karr; assign provisional bucket | Bucketed (0.1% tooling / 30% validation / 0.4-2.5× karr-incomplete / qualitative beyond-Karr) |
+| E.3 classifier | Diagnose each miss: bug / calibration drift / Karr-incomplete / beyond-Karr | Bucket assignments solidified |
+| v1.0 release | Ship with per-KP tolerances, NOT one number | G5 gate: ≥10/28 in validation bucket pass; zero tooling-bucket fails |
+| v1.1+ ratchet | Each release tightens specific KPs as fixes land | Targeted, evidence-driven |
 
-### Currently in flight (overnight)
+### Test state mid-day
 
-- **matlab-cell-cycle-v3**: Karr's WCM full ~32400-tick run; will be Phase E gold standard
-- **lint-debt**: auto-fixing 1101 pre-existing ruff errors → bring CI from advisory to strict
+- Pre-rename baseline: 883 pass / 9 skip / 4 xfail / 0 fail
+- Post-rename: 872 pass / 20 skip / 4 xfail / 0 fail (11 pass→skip drift; under audit)
+- **Post-chassis_v6 (current main, commit `51aac1e`)**: **877 pass / 20 skip / 4 xfail / 0 fail** (+5 v6 smoke tests)
+- 0 failures, zero new UserWarnings introduced by v6
+- 5 pre-existing warnings (`protein.counts.X` set-vs-accumulate) deferred to v1.1
 
-### Codex orchestration patterns proven today
+### v1.0 trajectory (recalibrated again)
 
-- **Pipelined design + execution**: while Codex implements Turn N, I design Turn N+1. ~5x throughput vs sequential.
-- **Up to 10 parallel Codex sessions** at peak.
-- **Pre-staged prompts** in `docs/codex_prompts/` for batch launches.
-- **Worktree-per-task** with junctions for shared data.
+- ✅ Phase A3.3: DONE (1 day; original 6 weeks)
+- ✅ Phase B: DONE (1 day; original 12 weeks)
+- ✅ Phase C: DONE (yesterday + early today; ~3 days at today's pace)
+- ✅ Phase D: DONE (today; ~6 hours)
+- 🟡 Phase E: E.1 running now; E.2-E.3 + release gate next
+- **Realistic v1.0 estimate: 1-2 weeks** (was 4-6 weeks at yesterday's projection)
 
-### Historical sections (kept for provenance — not active work)
+### Known follow-ups (logged as todos, non-blocking for E.1)
 
-Sections below cover earlier phases: D.2 design rework loop (v1-v4 critique rounds), MCOS extraction blockers, p10 mass partition. All superseded by A3.3 + Phase B turns.
+- `skip-drift-audit-post-rename` — Codex session running now
+- `v6-allocation-consumer-enrollment` — RnaDecay + HostInteraction wired in v6 topology but not enrolled as `KarrAllocationStep` consumers (Codex deliberately scoped out to avoid touching restricted modules). Fix queued post-E.1.
+- `per-kp-tolerance-calibration` — bucket assignments after E.2 baseline measured
+- WSL-native ext4 migration (~60-90 min, defers to post-Phase E)
+- Pre-existing `protein.counts.X` collision warnings (deferred to v1.1)
+
+### Operational lessons earned today (to bake into SESSION_CONTEXT)
+
+- **Rule 9**: merge-conflict resolution requires `git rm <conflicted-file> + git merge --continue`, not the previous force-add pattern (lesson from 41809db re-merge)
+- **Rule 10**: rename-before-wire — always canonicalize module/class names BEFORE final composite wiring lands, otherwise renames force double-touch downstream
+- **Rule 11**: estimation calibration — Copilot-side design work defaults to 5-10 min (not 30-45); Codex sessions anchor to observed throughput (naming-drift: 14 min for 80-file rename, not 60-90 min)
+- **Codex flag correction**: launch with `codex exec --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check < PROMPT.md` (not the non-existent `--full-auto`); explicitly inherit `AZURE_OPENAI_API_KEY` from User scope before `Start-Process`
+
+### Post-v1.0 framing (logged as `v1-trajectory-buckets`)
+
+Four buckets for post-v1.0 scope: Karr-known-incomplete (v1.x), biology-beyond-Karr (v2+), validation-and-organism-scaling (v3+), OpenCell-specific-tooling (parallel). Future scope decisions must declare bucket.
+
+### Historical sections (kept for provenance, not active work)
+
+The sections below describe earlier phases — Phase D.2 design rework, MCOS extraction, p10 partition. All superseded by A3.3 and Phase B turns.
 
 ### Phase D.2 design rework loop (HISTORICAL — superseded by A3.3 joint design)
 
-After 4 D.2 design rounds (v1 Sonnet → v2 GPT-5.4 → v3 Opus 4.6+GPT-5.5 → v4 three-way Opus 4.6+GPT-5.5+Sonnet 4.6) all returning REWORK verdicts, the v4 critique surfaced an architectural BLOCKER (unbounded-growth ratchet under M3 monomer replenishment + greedy assembler + no decay sink). Karr-source inspection confirmed the real architecture: M3 Translation → MC+RibosomeAssembly → ProteinDecay as a closed loop; each individual process is unbounded but the LOOP bounds itself (ProteinDecay_flat.mat has 53 decay reactions × 1206 form-entries; 3 proteases + misfolding).
+Standard practice for non-trivial design adopted this session: write → adversarial critique (Claude Sonnet rubber-duck or GPT-5.4 cross-model) → rework. Two rounds completed for D.2; v3 is the next concrete deliverable.
 
-Strategy critique (Opus 4.6 + GPT-5.5 parallel) produced split recommendations. Decision spike (`agent/d2-spike` @ `672eb58`) ran 5 empirical Vivarium probes; findings in `artifacts/d2_spike_findings.md`. Probe 5 first-pass `AssertionError` on a trivial 4-process composer was the deciding evidence: integration risk surfaces from wiring not design; distributing it across 3 PRs is safer than concentrating in one 6-week joint design.
+**Decisions resolved (apply to v3 and beyond):**
+- **Q1 — oracle target:** *hybrid staged oracle*. Interface mature-only; unit-level oracles = conservation + topo + competition + 158-complex mature-supported subset + aggregate mature-only complex dry mass. Integration-level oracle (`D.2.mature + Σconsumers.bound ≈ snapshot.total` for ~10 bound-heavy anchors) deferred to post-v2-swap+M5. Drop the `J × τ` algebraic substitute argument.
+- **Q2 — scope:** *split*. D.2 = MacromolecularComplexation + RibosomeAssembly only. ProteinFolding → D.3, ProteinActivation → D.4/M6 (deferred). chaperones-field corruption is no longer D.2's blocker.
 
-**Karr-fidelity is non-negotiable** — the project's purpose is reproducing Karr 2012 in Python. This rules out target-clamp controllers or decay-absorbed-into-D.2 variants. **Option A3 = staged Karr-faithful:**
+**Branches:**
+- `agent/d2-design-doc` @ `fa59925` — v1, 496 lines, superseded.
+- `agent/d2-design-v2` @ `811a707` — v2, 770 lines + `data/karr_fixtures/d2_mature_subset.json`. Critiqued by GPT-5.4: rework with **4 BLOCKERs** for v3:
+  1. Ribosome cost dissolution claim FALSE — must extract from `RibosomeAssembly.m` (30S+50S separately, 2/4 GTPases, randomized order).
+  2. Scope creep — must whitelist D.2 ownership via `complex.formationProcesses` (live: 9 process IDs), exclude FtsZ/DnaA/holoenzyme/ChromCond.
+  3. `_emit_update()` never emits negative deltas for consumed subcomplexes.
+  4. Aggregate dry-mass oracle compares mature-only output to all-forms target (1.155e-15g vs 1.505e-15g).
+  HIGH: add `complex.wholeCellModelIDs` to ARCHIVE_SPEC; reframe Q3 to D.2 ↔ M2/M3 protein/rna co-write.
 
-```
-Step 1. d2-stub                                       (~1 day)
-        Snapshot-loader Process providing complex.counts store; writes
-        nothing. ~30 LOC. Transient infrastructure; replaced in step 3.
+**v2 verified-true headlines:** 22 ARCHIVE_SPEC paths real; 158 mature-supported subset; 10 bound-heavy anchors; mature_total = 4006 (cytosol+membrane) vs 3264 (cytosol-only).
 
-Step 2. v2-chassis-swap-dynamic-pool-discipline       (~1 week)
-        Wire shipped M2v2 (f9daac4) + M3v2 (0244f36) into chassis,
-        replacing v1 prescribed-rate Processes. CRITICAL DISCIPLINE:
-        consumer contracts read complex.counts.<wid> per-tick (no
-        caching, no constant assumption) — anticipates D.2-real. Per
-        Opus 4.6 strategy critique mitigation: this discipline is
-        what prevents A3 from requiring a second chassis-swap when
-        D.2-real ships in step 3.
+### m1 per-process fixture extraction (BLOCKED on MCOS decode)
 
-Step 3. d2-real-plus-protein-decay-light-joint-design (~3-4 weeks)
-        Jointly design + ship D.2-real (full greedy stoichiometric
-        solver per Karr MacromolecularComplexation.m + RibosomeAssembly.m,
-        replacing d2-stub) AND ProteinDecay-light (minimum-viable decay
-        process covering the ~132 long-tail complexes that v2-chassis-
-        swap consumers don't sink). v4 doc on agent/d2-design-v3 @
-        7d3e7b6 is the input for D.2 portion. Source-truth methodology
-        from v3 retained: bottom-up from _flat.mat, machine-readable
-        JSON evidence artifact, cross-model critique gate before merge.
-```
-
-The 3 steps replace what was previously `d2-design-v3-rework` + `d2-complex-assembly` + `v2-chassis-swap` (all now marked superseded/blocked).
-
-**Architectural decisions baked in (non-negotiable for all 3 steps):**
-- Decision (b): D.2 does NOT own `RIBOSOME_30S_IF3` or `RIBOSOME_70S` (`Process_Translation`-owned per source-truth fixture)
-- 30S = 2 GTPases (Era, RbfA); 50S = 4 GTPases (EngA, EngB, Obg, RbgA); no blanket 6× cost
-- Q1 hybrid staged oracle: D.2 emits mature only; consumers own bound
-- Q3 `_updater: accumulate` (signed) for `complex.counts`
-- Substrate topology: align to existing flat `substrates.<wid>` (Probe 4 (c))
-- One-tick-lag is start-of-tick default per Probe 3 (v4 §5.4 "M2/M3 run first" was empirically wrong)
-
-**Source-truth ground facts (verified by GPT-5.5 + spike):**
-- 30S GTPases = `[Era, RbfA]` (2 factors); 50S GTPases = `[EngA, EngB, Obg, RbgA]` (4 factors)
-- 9-way ownership histogram = `[882, 96, 84, 66, 42, 12, 12, 6, 6]`
-- Mature-only mass target = `1.1549598107588903e-15 g` (vs all-forms `1.5052832188811208e-15 g`)
-- Subcomplex DAG: 60 edges, acyclic; 9 in 158-mature subset
-- `_updater: accumulate` semantics verified (Probe 1); Step/Deriver reconciliation works (Probe 2); same-tick visibility = start-of-tick (Probe 3); mixed substrate topology works (Probe 4)
-
-**LLM Interaction Log entries** (in `data/provenance/llm_interactions.jsonl`):
-- v3 rework: `sha256:c6ef222...`
-- v3 Opus 4.6 critique: `sha256:e3369c58...` (REJECTED)
-- v3 GPT-5.5 critique: `sha256:d1f4d7f3...` (REJECTED)
-- (v4 critiques + spike findings + A3 decision pending below)
-
-### m1 per-process fixture extraction (DONE — merged to main as `bd4d9f8`)
-
-44/44 fixtures (28 process + 16 state) extracted via MATLAB R2026a on Windows host using `scripts/matlab/extract_per_process_fixtures.m`, ingested into canonical `<Name>.{json,npz}` form via `scripts/extract_per_process_fixtures.py --all --from-flat`. Validation: 89 files, 0 mismatched. m1 test suite: 70/70 pass on main.
-
-**MCOS decode unblocked (option b2 shipped).** Notable fixes during the run:
-- `.m` walker: original visited-handle cycle protection was broken (monotonic counter as identity key, never deduplicated). Replaced with cycle-cut at MCOS handle boundaries — own properties only; sentinel `<handle:Class:NxM>` for any property whose value is itself an MCOS handle object. Same hang-class as `Simulation_fitted.mat` last session. All 44 fixtures flatten in ~3 min.
-- `--from-flat` ingest: object-dtype arrays from sentinel-laden cell trees ballooned npz (~17 MB each, 105 MB total). Filter applied and `savez_compressed` — 105M → 13M (664 KB npz numeric + 12 MB `_flat.mat` audit trail + 212 KB json). Real numeric tensors (Metabolism stoich, etc.) preserved.
-- `validate_per_process_fixtures.py`: now passes `--from-flat --flat-dir` to re-extract when `_flat.mat` files present in committed dir; `hash_dir` excludes MATLAB-bootstrap inputs.
-
-Per-process oracles now available for downstream D.2/M2/M3/M5. **Direct unblock for D.2 v3 BLOCKER #1 (ribosome cost):** `RibosomeAssembly_flat.mat` now committed — v3 can extract cost path empirically instead of asserting from `karr_protein_complexes.json` (which doesn't carry it). Branch deleted, worktree removed.
+`agent/m1-per-process-fixtures` @ `1a4f92f`: scaffolding only. All 44 source `.mat`s are MATLAB MCOS-serialized class instances; pure-Python decoders refuse. Committed extract+validate scripts + 44 placeholders flagged `extraction_status: unparsed_mcos_payload`. Unblock options: (b1) MATLAB-in-WSL, (b2) one-off Windows-host MATLAB extract + ingest, (b3) drop per-process oracles. Not on critical path.
 
 ### Worktree convention (now standard)
 
-Each background agent gets its own `E:\opencell-worktrees\<agent-name>` on `agent/<name>` branch. Adopted after a real branch-switch race in the d2-design-doc + p10-mass-partition parallel run. Active worktrees: `d2-design-v2`, `m1-per-process-fixtures`. Status files at `~/.copilot/session-state/<sid>/files/agent_<name>_status.md`.
+Each background agent gets its own `E:\opencell-worktrees\<agent-name>` on `agent/<name>` branch. Adopted after a branch-switch race in d2-design-doc + p10-mass-partition parallel run. Active: `d2-design-v2`, `m1-per-process-fixtures`. Status files at `~/.copilot/session-state/<sid>/files/agent_<name>_status.md`.
 
 ### Phase E.1c — p10 mass-target partition (DONE — merge into `36636f6`)
 
-* Branch `agent/p10-mass-partition` @ `0c48ce0`. Splits p10 cell dry mass into 3 archive-derived sub-targets + 1 consistency guard.
-* **p10b protein flips green** (27.7% of cellDry, matches chassis); p10a (RNA, 4.35%) and p10c (residual, 67.95% — DNA + complexes + lipid + substrate-pool init) stay xfail with documented unblock paths.
-* Substrate sub-target NOT created — `snapshot_substrates` units don't decode to cellular counts; documented as blocker.
-* Suite: 602 passed + 4 xfailed (was 600 + 2).
+p10b protein flips green (27.7% of cellDry); p10a RNA + p10c residual stay xfail with documented unblock paths. Substrate sub-target deferred. Suite: 602 passed + 4 xfailed.
+
+---
+
+## (Pre-checkpoint snapshot below — 2026-04-26)
+
+### Phase E.1c — m2 per-condition snapshots (DONE — merge commit `0fb5df3`)
 
 ### Phase E.1c — m2 per-condition snapshots (DONE — merge commit `0fb5df3`)
 
@@ -588,45 +582,75 @@ Each background agent gets its own `E:\opencell-worktrees\<agent-name>` on `agen
 
 ### MATLAB Eviction (DONE — every Python workflow runs without MATLAB or .mat)
 
-**Goal achieved:** Future contributors clone the repo and run all 8 ingest scripts, the chassis, and the full test suite without MATLAB or any `.mat` file. MATLAB is now bootstrap-only — required only to add new fields to the archive.
+**Goal achieved:** Future contributors clone the repo and run all 8 ingest
+scripts, the chassis, and the full test suite (599 + 3 xfail) without
+MATLAB or any `.mat` file. MATLAB is now bootstrap-only — required only
+to add new fields to the archive.
 
-**Shipped (commit `f06b8a0`):**
-- `scripts/build_karr_archive.py` — extracts the consumed-fields whitelist (~100 leaves out of ~4,300 total) from the 8 source `.mat` files (7 v7.0 via `scipy.io.loadmat` + 1 v7.3 via `h5py`) into `data/karr_archive/{karr_archive.npz, karr_archive_strings.json, karr_archive_manifest.json}` (~786 KB compressed; 143 ndarrays + 124 string keys + per-field provenance with sha256).
-- `opencell/_karr_archive.py` — namespace loader. `arc[basename].dotted.path` access; `_StructArray` parallel column-views + per-row iteration; `_NestedStructArray.per_parent(i)` for nested struct arrays.
-- All 8 ingest scripts refactored to use `load_karr_archive()` instead of `loadmat()` / `h5py.File()`. Output fixtures verified byte-identical (modulo `source_*` metadata labels) — see `data/karr_archive/fixture_hashes.json`.
-- `scripts/validate_karr_archive.py` — re-runs every ingest and verifies output sha256 (timestamp-insensitive, hashes array contents not zip metadata).
-- `data/karr_archive/README.md` + `scripts/matlab/README.md` updated — MATLAB explicitly bootstrap-only.
+**Shipped:**
+- `scripts/build_karr_archive.py` — extracts the consumed-fields whitelist
+  (~100 leaves out of ~4300 total) from the 8 source `.mat` files (7 v7.0
+  via `scipy.io.loadmat` + 1 v7.3 via `h5py`) into the committed archive
+  `data/karr_archive/{karr_archive.npz, karr_archive_strings.json,
+  karr_archive_manifest.json}` (~786 KB compressed, 143 ndarrays + 124
+  string keys + per-field provenance).
+- `opencell/_karr_archive.py` — namespace loader. `arc[basename].dotted.path`
+  attribute access; `_StructArray` exposes parallel column-views and
+  per-row iteration; `_NestedStructArray.per_parent(i)` for nested struct
+  arrays (e.g. `complexes[i].monomers[j]`).
+- All 8 ingest scripts refactored to use `load_karr_archive()` instead of
+  `loadmat()` / `h5py.File()`. Output fixtures verified byte-identical
+  (modulo `source_*` metadata labels) — see
+  `data/karr_archive/fixture_hashes.json`.
+- `scripts/validate_karr_archive.py` — re-runs every ingest and verifies
+  output sha256 matches committed hashes (timestamp-insensitive, hashes
+  array contents not zip metadata).
+- `data/karr_archive/README.md` + `scripts/matlab/README.md` updated —
+  MATLAB explicitly marked bootstrap-only.
 
-**Lightweight catalog (commit `d8201fc`):** `scripts/dump_karr_mat_inventory.py` walks all 8 `.mat` files and writes `data/karr_archive/full_inventory.json` (4,837 leaf records, 1.5 MB) + `full_inventory_summary.md`. No payloads, just paths/dtypes/shapes/sha256 — discoverability without bloat. Confirms ~5 % of total fields are currently consumed; the other 95 % are now indexed for future subsystems.
+**Verification:** 599 passed + 3 xfailed (unchanged from pre-eviction
+baseline). Every fixture re-derived from the archive matches its
+committed hash.
 
-### Phase E.1b — Cell Dry Mass + MW Fixture Re-Extract (DONE — commit `65ca7d8` + m2-counts-fix `e6d748a`)
+### Phase E.1b — Cell Dry Mass + MW Fixture Re-Extract (DONE — commit `65ca7d8`)
+* M1 fixture v2 (`karr_native_m1__v2`): adds `substrate_molecular_weight[585]`, `enzyme_molecular_weight[104]` to npz; State_Mass aggregates (cellInitialDryWeight=3.93e-15 g, cellDry total=3.94e-15 g, rnaWt, dryWeightFractionRNA, 6-compartment splits) to JSON `stored_runtime`.
+* M2 fixture v2 (`karr_native_m2__v2`): adds `rna_molecular_weight[525]` per gene. Policy: TU MW via gene→TU map then State_Rna mature MW (482 mRNAs); for 43 non-mRNA genes (tRNA/rRNA/sRNA where mature TU absent) fall back to `length_nt × 339.5 Da/NT` so rRNA mass is not dropped.
+* `opencell/analysis/cell_mass.py`: aggregator computes substrate + RNA + protein mass (Da → g via Avogadro) with per-class breakdown.
+* `phenotypes.py`: + `measure_cell_dry_mass` extractor (closed-loop config matching p9).
+* `targets.json`: + `p10_cell_dry_mass_g` (closed_loop, expected_status=fail).
+* Test pinned `xfail(strict=True)` documenting the chassis bug below.
 
-* M1 fixture v2 (`karr_native_m1__v2`): adds `substrate_molecular_weight[585]`, `enzyme_molecular_weight[104]` to npz; State_Mass aggregates (cellInitialDryWeight, cellDry total, rnaWt, dryWeightFractionRNA, 6-compartment splits) to JSON `stored_runtime`.
-* M2 fixture v2 (`karr_native_m2__v2`): adds `rna_molecular_weight[525]` per gene with TU MW lookup + length-based fallback for non-mRNA genes.
-* `opencell/analysis/cell_mass.py`: aggregator computes substrate + RNA + protein mass with per-class breakdown.
-* `phenotypes.py`: `measure_cell_dry_mass` extractor (closed-loop config matching p9). `targets.json`: + `p10_cell_dry_mass_g` (closed_loop, expected_status=fail).
-* m2-counts-fix follow-up (commit `e6d748a`): rewired M2 SS counts to read State_Rna mature counts (784 mol across 347 species) instead of misusing `expression[:, 0]`. Suite went 599+1 → 599+3 (revealed two additional structural xfails).
+**Honest finding (E.1b's contribution):** the aggregator surfaced a real M2 v1 chassis bug. M2 wires Karr's `expression[:,0]` (transcription-rate field, ~41327 normalized units) as if it were mature-RNA SS counts. Karr's actual SS mature-RNA count is **784 molecules across 347 mature species (cytosol)**. Aggregator therefore over-counts RNA mass ~53× → total ~9.7e-15 g vs target 3.94e-15 g (2.46×). Substrate side also bogus (chassis seeds 561 non-demand substrates at 1.0 placeholder vs Karr's snapshot counts). New todo `m2-counts-fix` tracks the M2 re-wiring; flips p10 green. Same pattern as p4 (PTS gap) — phenotype harness keeps surfacing structural gaps, exactly as designed.
 
-### Phase E.1a — per-AA Pool Stability (DONE — commit `f94f5eb`)
+### Phase E.0 — Phenotype Validation Harness (DONE — first report shipped)
 
-Phenotype #9: per-AA cytosol pool stability over 20 s under the full Phase C closed loop (dynamic bounds + throttle + calibrated pool replenishment). Real prediction (not a tautology): M3 drains 20 distinct AAs at protein-composition-weighted rates while M1 sources them at calibrated baseline-demand rates — match-up is a stoichiometric+rate test of the closed loop.
 
-### Phase E.0 — Phenotype Validation Harness (DONE — first report shipped, commit `c12d68f`)
+* `data/karr_fixtures/karr_phenotype_targets.json` (`karr_phenotype_targets__v1`) -- 8 phenotypes with documented targets, tolerances, and a `category` field separating non-circular FBA-prediction tests from chassis composition invariants.
+* `opencell/analysis/phenotypes.py` -- pure measurement extractors (one per phenotype) returning `PhenotypeMeasurement(predicted, target, unit, extra)` for uniform reporting.
+* `tests/phaseE/test_karr_phenotypes.py` -- 8 pytest cases. #4 (TX_GLCPTS) marked `xfail(strict=True)` documenting the structural gap that PTS glucose uptake lives in non-FBA submodels (expected to flip green when M4-M28 land).
+* `scripts/phase_e_report.py` -- markdown-table summariser. First report:
 
-* `data/karr_fixtures/karr_phenotype_targets.json` (`karr_phenotype_targets__v1`) — 8 phenotypes initially with documented targets, tolerances, and a `category` field separating non-circular FBA-prediction tests from chassis composition invariants (now extended to 10 with E.1a + E.1b).
-* `opencell/analysis/phenotypes.py` — pure measurement extractors returning `PhenotypeMeasurement(predicted, target, unit, extra)`.
-* `tests/phaseE/test_karr_phenotypes.py` — 10 pytest cases covering FBA prediction (#1–4), chassis wiring (#5–8), closed-loop (#9–10).
-* `scripts/phase_e_report.py` — markdown-table summariser.
+| # | Phenotype | Status | Predicted | Target | Detail |
+|---|---|---|---|---|---|
+| 1 | growth_per_s | PASS | 1.09e-5 | 2.12e-5 | 0.514x (matches known structural ceiling) |
+| 2 | doubling_time_h | PASS | 17.67h | 13.11h | 1.348x |
+| 3 | fba_oracle_median_log2 | PASS | 0.96 | <=1.0 | over 196 nonzero rxns |
+| 4 | glc_uptake_TX_GLCPTS | XFAIL | 0 | 2725 | structural gap, needs M4-M28 |
+| 5 | mrna_total_roundtrip | PASS | 41327 | 41327 | exact (M2 v1 prescriptive) |
+| 6 | protein_total_roundtrip | PASS | 16177 | 16177 | exact (M3 v1 prescriptive) |
+| 7 | mrna_stability_20s | PASS | 0 drift | <0.10 | chassis SS holds |
+| 8 | protein_stability_20s | PASS | 0 drift | <0.10 | chassis SS holds |
 
-**Honest assessment:** 4 fba_prediction tests are real ground-truth comparisons (#1–3 + #9 closed loop); #4 and #10 are documented structural gaps (PTS routes outside FBA; mass coverage incomplete pending D.2 + M5 + substrate-pool init). #5–8 are circular today (M2/M3 v1 round-trip prescribed Karr values by construction) — they become real predictive tests once v2 mechanics replace prescribed rates.
+**Honest assessment:** 3 fba_prediction tests are real ground-truth comparisons (#1-3); #4 is a documented structural gap. #5-8 are circular today (M2/M3 v1 round-trip prescribed Karr values by construction) -- they become real predictive tests once v2 mechanics replace prescribed rates. With #4 as the meaningful "fail" surfacing the PTS gap, the report quantifies how much of Karr's biology the chassis currently captures via M1 alone.
 
-**Next E phase (decision recorded):**
-- E.2 decision artifact (session: `files/e2_decision.md`): **D.2 → v2 chassis swap → M5**. D.2 first because it is a hard prerequisite for both M5 (replisome) and "fully real" v2 mechanics (RNAP/ribosome are complexes). v2 chassis swap second for biggest immediate phenotype delta (4 circular → real). M5 third when chassis is richest.
+**Next E phases:**
+- E.1a: per-AA pool stability test (#14) -- chassis already exposes per-AA via Phase C.1; just needs test wiring.
+- E.1b: MW fixture re-extract + mass aggregator + cell mass test (#9) -- requires MATLAB re-run of `extract_karr_targeted.m` to add `kb.metabolites.molecularWeight` and `kb.transcriptionUnits.molecularWeight`.
+- E.2: decision point on D.2 (complex assembly) vs M5 (replication) vs v2 mechanics, driven by the 10-phenotype report from E.0 + E.1.
 
-### Phase D.0 + D.1 (DONE — commit `0cc8d16`)
-
+### Phase D.0 + D.1 (DONE -- 0cc8d16)
 * D.0: protein-complex composition fixture from MATLAB extract (201 complexes), `opencell/m1/protein_complexes.py` loader with recursive flattening. 20/20 tests.
-* D.1: compartmented S fixture (585×645×3, nnz=2644) + supply-side calibration helper using existing `solve_fba`. 17/17 tests, including TX_GLCPTS PTS uptake spot-check and `test_baseline_NTPs_NOT_supplied_through_FBA` locking in the D.1 spike finding.
+* D.1: compartmented S fixture (585x645x3, nnz=2644) + supply-side calibration helper using existing `solve_fba`. 17/17 tests, including TX_GLCPTS PTS uptake spot-check and `test_baseline_NTPs_NOT_supplied_through_FBA` locking in the D.1 spike finding.
 
 ### Central Dogma Chassis (DONE — M1+M2+M3 composition)
 
@@ -1984,7 +2008,7 @@ Second independent review by GPT-5.4 and Claude Opus 4.7. 54 total findings acro
 5. **Run manifest emitted** — every run produces a complete provenance record
 6. **Checkpoint/restart works** — can resume any simulation from checkpoint (same-version only)
 7. **Extensible** — adding a new sub-model requires only implementing the base interface + IR state slice + ledger registration
-8. **Framework published** — v1.0 released on GitHub (srinivasdrona/opencell) with docs, tests, blog
+8. **Framework published** — v1.0 released on GitHub (sdrona-ms/opencell) with docs, tests, blog
 
 ### v2.0 (M. genitalium — Separate Phase, TBD Timeline)
 9. **M. genitalium gene essentiality** — compare against Karr 2012 results and experimental data. NOTE: Karr achieved 79%; our target is ≥75% (not 80%, which would require outperforming the original). Failure envelope: if essentiality falls below 60%, model is rejected
