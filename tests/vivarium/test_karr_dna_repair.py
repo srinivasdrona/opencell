@@ -106,7 +106,7 @@ def test_process_instantiates_with_defaults() -> None:
     assert schema["chromosome"]["repair_count"]["_updater"] == "accumulate"
     assert schema["chromosome"]["repair_count_by_pathway"]["ber"]["_updater"] == "accumulate"
     assert schema["requests"][process.name]["ATP"]["_updater"] == "set"
-    assert schema["substrates_allocated"][process.name]["ATP"]["_updater"] == "accumulate"
+    assert "_updater" not in schema["substrates_allocated"][process.name]["ATP"]
 
 
 def test_one_tick_run_produces_positive_repair_delta() -> None:
@@ -200,4 +200,3 @@ def test_no_nan_or_negative_regression() -> None:
         )
         assert all(np.isfinite(value) and value >= -1e-9 for value in state["substrates"].values())
         assert len(state["chromosome"]["damage_sites"]) >= 0
-

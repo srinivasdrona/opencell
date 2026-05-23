@@ -181,7 +181,7 @@ class KarrCytokinesisProcess(Process):
                 self.name: {
                     self.gtp_wid: {
                         "_default": 0.0,
-                        "_updater": "accumulate",
+
                         "_emit": False,
                     },
                 }

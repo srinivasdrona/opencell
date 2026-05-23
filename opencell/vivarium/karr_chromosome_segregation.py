@@ -198,12 +198,12 @@ class KarrChromosomeSegregationProcess(Process):
                 self.name: {
                     self.gtp_wid: {
                         "_default": 0.0,
-                        "_updater": "accumulate",
+
                         "_emit": False,
                     },
                     self.h2o_wid: {
                         "_default": 0.0,
-                        "_updater": "accumulate",
+
                         "_emit": False,
                     },
                 }

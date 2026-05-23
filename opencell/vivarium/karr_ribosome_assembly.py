@@ -188,12 +188,12 @@ class KarrRibosomeAssemblyProcess(Process):
                 self.name: {
                     self.substrate_wid_gtp: {
                         "_default": 0.0,
-                        "_updater": "accumulate",
+
                         "_emit": False,
                     },
                     self.substrate_wid_h2o: {
                         "_default": 0.0,
-                        "_updater": "accumulate",
+
                         "_emit": False,
                     },
                 }

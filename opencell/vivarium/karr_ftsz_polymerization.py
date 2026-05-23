@@ -173,7 +173,7 @@ class KarrFtsZPolymerizationProcess(Process):
             },
             "substrates_allocated": {
                 self.name: {
-                    self.gtp_wid: {"_default": 0.0, "_updater": "set", "_emit": False},
+                    self.gtp_wid: {"_default": 0.0, "_emit": False},
                 }
             },
         }

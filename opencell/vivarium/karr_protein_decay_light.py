@@ -176,8 +176,8 @@ class ProteinDecayLightProcess(Process):
             },
             "substrates_allocated": {
                 "karr_protein_decay_light": {
-                    "ATP": {"_default": 0.0, "_updater": "accumulate", "_emit": False},
-                    "H2O": {"_default": 0.0, "_updater": "accumulate", "_emit": False},
+                    "ATP": {"_default": 0.0, "_emit": False},
+                    "H2O": {"_default": 0.0, "_emit": False},
                 }
             },
         }
