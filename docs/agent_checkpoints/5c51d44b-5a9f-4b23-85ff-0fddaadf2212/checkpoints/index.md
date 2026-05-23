@@ -44,3 +44,8 @@ Checkpoints are listed in chronological order. Checkpoint 1 is the oldest, highe
 | 37 | Multi-agent parallel + D.2 design rework | 037-multi-agent-parallel-d-2-desig.md |
 | 38 | Wiring MATLAB MCOS extract path | 038-wiring-matlab-mcos-extract-pat.md |
 | 39 | m1 fixtures merged, LLM-research practice critique | 039-m1-fixtures-merged-llm-researc.md |
+| 40 | A3 steps 1+2 shipped; A3.3 design drafted | 040-a3-steps-1-2-shipped-a3-3-desi.md |
+| 41 | A3.3 complete; Phase B T1 launched | 041-a3-3-complete-pb-t1-launched.md |
+| 41 | Phase B + lint-debt + MATLAB all shipped | 041-phase-b-lint-debt-matlab-all-s.md |
+| 42 | Launching Phase C Codex fleet | 042-launching-phase-c-codex-fleet.md |
+| 43 | Phase C fleet shipped, integration in flight | 043-phase-c-fleet-shipped-integrat.md |

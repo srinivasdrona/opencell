@@ -1,12 +1,37 @@
-# Handover — OpenCell, end of session 5c51d44b
+# Handover — OpenCell, session 5c51d44b (UPDATED 2026-05-22 01:16 IST)
 
-**Date:** 2026-05-21 (session may continue across model/subscription changes)
 **Prior session ID:** `5c51d44b-5a9f-4b23-85ff-0fddaadf2212`
-**Origin:** `https://github.com/srinivasdrona/opencell` (main = `0d0881c`)
+**Origin:** `https://github.com/srinivasdrona/opencell` (main = `a14e5c2`; active branch = `agent/d2-design-v3` @ `6269a4c`)
 
 ---
 
-## 0. First three things the next agent must do
+## ⚡ TOMORROW MORNING — do these in order, before anything else
+
+1. **Open** https://github.com/srinivasdrona/opencell/tree/agent/d2-design-v3/docs/design/d2_complex_assembly.md — read v3 end-to-end (~1 hr). Also skim `artifacts/d2_v3_evidence.md` for the extracted facts the design rests on.
+
+2. **Two parallel cross-model critiques** (the gate that has caught every prior round):
+   - **Claude Sonnet rubber-duck.** Prompt: *"Read this design doc. List every claim that should have a citation but doesn't, every algorithm step without a worked example, every oracle target whose units I haven't double-checked. Don't be polite — find what's wrong."*
+   - **GPT-5.4 cross-model.** Prompt: *"v2 of this design had 4 BLOCKERs called out at the top. For each one, independently verify v3 actually fixes it (not just rephrases it). Then look for new BLOCKERs we haven't named yet. Pay particular attention to the open finding about RIBOSOME_30S_IF3 / RIBOSOME_70S ownership decision (b)."*
+   - Log BOTH via:
+     ```bash
+     python scripts/log_llm_interaction.py \
+       --role cross_model_critique --model <sonnet|gpt-5.4> \
+       --task-summary "D.2 v3 design critique — <model>" \
+       --output-summary "<verdict + N BLOCKERs surfaced>" \
+       --linked-commits 10bf5f0 \
+       --linked-todo d2-design-v3-rework \
+       --supersedes sha256:c6ef222365dee48d8772e9f59d3f9fc313738e4e94d6d45a6e07c691297045a2 \
+       --tags d2,design,critique-round-3 \
+       --verification-status <verified|rejected|pending>
+     ```
+
+3. **Two outcomes, decide accordingly:**
+   - **(i) minor / approved:** Merge `agent/d2-design-v3` → `main` (no-ff). Mark `d2-design-v3-rework` done in BOTH `session DB` and `opencell_tasks.db`. Unblock `d2-complex-assembly` (implementation phase). Delete the worktree.
+   - **(ii) new BLOCKERs surfaced:** v4 rework on the same branch — NEW commits, not amend. Re-run the same two critiques on v4. Don't be afraid of a v4; cheaper than implementing the wrong v3.
+
+---
+
+## 0. First three things the next agent must do (if not the same operator)
 
 1. **Read these files in order** (do not skip):
    - `.github/copilot-instructions.md` — WSL-execution rule, LLM Interaction Logging rule, State Sync Protocol
@@ -54,8 +79,16 @@ e922bb4  Blog 2026-04-27: the cycle counter that never fired
 
 ## 2. Active threads (in priority order)
 
-### 2A. D.2 design v3 rework — TOP PRIORITY, not yet started
-- **Todo:** `d2-design-v3-rework` (pending)
+### 2A. D.2 design v3 rework — TOP PRIORITY, IN PROGRESS (updated 2026-05-22)
+- **Todo:** `d2-design-v3-rework` (pending, active)
+- **Current status:** started on branch/worktree `agent/d2-design-v3` with source-truth methodology shift.
+- **Evidence generated:** `artifacts/d2_v3_evidence.{json,md}` from `_flat.mat` sources.
+- **Design docs added/updated:** `docs/design/d2_v3_compliance_checklist_2026-05-22.md`, `docs/design/d2_v3_source_truth_working_spec.md`, and v3 section at top of `docs/design/d2_complex_assembly.md`.
+
+### 2A.1 Tomorrow first three things
+1. Open `agent/d2-design-v3` HEAD on GitHub and use that permalink for critique context.
+2. Run two critique passes in parallel: Sonnet (hand-wavy/missing-citation pass) and GPT-5.4 (BLOCKER-fix verification + new BLOCKER hunt). Log both via `scripts/log_llm_interaction.py`.
+3. If critique is minor-only, merge v3 and mark `d2-design-v3-rework` done; if critique returns BLOCKERs, do v4 on the same branch before any D.2 implementation.
 - **Input:** `docs/design/d2_complex_assembly.md` (v2, on main) has 4 BLOCKERs called out in its own table near the top
 - **Output:** a v3 design that fixes those 4 BLOCKERs; same file, same location; preserves v2 as a section labeled "Superseded approach" rather than deleted
 - **Critical anti-pattern**: this is a *design* deliverable, NOT a code deliverable. Do NOT create `opencell/processes/d2_complex_assembly.py` or any other implementation file. Implementation happens only after v3 design is approved.
