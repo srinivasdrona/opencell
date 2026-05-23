@@ -76,7 +76,7 @@ def test_process_instantiates_with_defaults() -> None:
     assert schema["cell"]["division_progress"]["_updater"] == "accumulate"
     assert schema["cell"]["division_complete"]["_updater"] == "set"
     assert schema["requests"][process.name][process.gtp_wid]["_updater"] == "set"
-    assert schema["substrates_allocated"][process.name][process.gtp_wid]["_updater"] == "accumulate"
+    assert "_updater" not in schema["substrates_allocated"][process.name][process.gtp_wid]
 
 
 def test_dependency_gating_blocks_progress() -> None:

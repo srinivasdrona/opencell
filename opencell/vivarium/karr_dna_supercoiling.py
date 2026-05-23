@@ -194,7 +194,7 @@ class KarrDNASupercoilingProcess(Process):
             },
             "substrates_allocated": {
                 self.name: {
-                    self.atp_wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False},
+                    self.atp_wid: {"_default": 0.0, "_emit": False},
                 }
             },
         }

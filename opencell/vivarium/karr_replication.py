@@ -167,7 +167,7 @@ class KarrReplicationProcess(Process):
             },
             "substrates_allocated": {
                 self.name: {
-                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                    wid: {"_default": 0.0, "_emit": False}
                     for wid in request_wids
                 }
             },
