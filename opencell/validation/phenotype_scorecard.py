@@ -295,7 +295,11 @@ def make_stdout_summary(rows: list[ScorecardRow]) -> str:
 
 def _git_sha() -> str:
     try:
-        out = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], text=True)
+        out = subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        )
         return out.strip()
     except Exception:
         return "unknown"
