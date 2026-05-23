@@ -26,6 +26,7 @@ _OBSERVABLE_KIND: dict[str, str] = {
     "division_event_timestamp_s": "signal",
 }
 
+SCAFFOLD_OBSERVABLES: tuple[str, ...] = tuple(_OBSERVABLE_KIND.keys())
 KARR_28_PHENOTYPE_IDS: tuple[str, ...] = tuple(f"p{i}" for i in range(1, 29))
 
 
@@ -153,4 +154,106 @@ def compare_trajectories(
     }
 
 
-__all__ = ["KARR_28_PHENOTYPE_IDS", "compare_trajectories"]
+def _extract_observable_series(trajectory: dict[str, Any]) -> dict[str, np.ndarray]:
+    observables = trajectory.get("observables")
+    if isinstance(observables, dict):
+        return {name: _to_array(values) for name, values in observables.items()}
+
+    snapshots = trajectory.get("snapshots", [])
+    if not isinstance(snapshots, list):
+        return {}
+
+    collected: dict[str, list[float]] = {}
+    for snapshot in snapshots:
+        state = snapshot.get("state", {})
+        if not isinstance(state, dict):
+            continue
+        for observable in SCAFFOLD_OBSERVABLES:
+            if observable in state:
+                collected.setdefault(observable, []).append(float(state[observable]))
+    return {
+        observable: np.asarray(values, dtype=np.float64)
+        for observable, values in collected.items()
+    }
+
+
+def _empty_metrics(status: str) -> dict[str, Any]:
+    return {
+        "L_inf_abs": float(np.nan),
+        "L_inf_rel": float(np.nan),
+        "L2_abs": float(np.nan),
+        "L2_rel": float(np.nan),
+        "mean_abs": float(np.nan),
+        "n_snapshots_compared": 0,
+        "status": status,
+    }
+
+
+def compare_full_trajectory(
+    opencell_trajectory: dict[str, Any],
+    karr_trajectory: dict[str, Any],
+    alignment: str = "snapshot_index",
+) -> dict[str, dict[str, Any]]:
+    """Compare full trajectories by snapshot index for scaffold observables."""
+    if alignment != "snapshot_index":
+        raise ValueError(f"Unsupported alignment mode: {alignment}")
+
+    op_obs_all = _extract_observable_series(opencell_trajectory)
+    karr_obs_all = _extract_observable_series(karr_trajectory)
+
+    out: dict[str, dict[str, Any]] = {}
+    for observable in SCAFFOLD_OBSERVABLES:
+        if observable not in karr_obs_all:
+            out[observable] = _empty_metrics("MISSING_KARR")
+            continue
+        if observable not in op_obs_all:
+            out[observable] = _empty_metrics("MISSING_OPENCELL")
+            continue
+
+        op_values = _to_array(op_obs_all[observable])
+        karr_values = _to_array(karr_obs_all[observable])
+
+        n = min(op_values.size, karr_values.size)
+        if n <= 0:
+            status = "MISSING_OPENCELL" if op_values.size <= 0 else "MISSING_KARR"
+            out[observable] = _empty_metrics(status)
+            continue
+
+        op_values = op_values[:n]
+        karr_values = karr_values[:n]
+        valid = np.isfinite(op_values) & np.isfinite(karr_values)
+        if not np.any(valid):
+            metrics = _empty_metrics("FAIL")
+            metrics["n_snapshots_compared"] = 0
+            out[observable] = metrics
+            continue
+
+        op_valid = op_values[valid]
+        karr_valid = karr_values[valid]
+        abs_err = np.abs(op_valid - karr_valid)
+        denom = np.maximum(np.abs(karr_valid), 1e-12)
+        rel_err = abs_err / denom
+
+        kind = _OBSERVABLE_KIND.get(observable, "count")
+        rel_tol = _A6_REL_TOL_BY_KIND.get(kind, _A6_REL_TOL_BY_KIND["count"])
+        l_inf_rel = float(np.max(rel_err))
+        status = "PASS" if l_inf_rel <= rel_tol else "FAIL"
+
+        out[observable] = {
+            "L_inf_abs": float(np.max(abs_err)),
+            "L_inf_rel": l_inf_rel,
+            "L2_abs": float(np.sqrt(np.mean(abs_err**2))),
+            "L2_rel": float(np.sqrt(np.mean(rel_err**2))),
+            "mean_abs": float(np.mean(abs_err)),
+            "n_snapshots_compared": int(np.count_nonzero(valid)),
+            "status": status,
+        }
+    return out
+
+
+__all__ = [
+    "KARR_28_PHENOTYPE_IDS",
+    "SCAFFOLD_OBSERVABLES",
+    "compare_full_trajectory",
+    "compare_trajectories",
+]
