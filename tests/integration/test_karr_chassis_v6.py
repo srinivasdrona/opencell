@@ -88,3 +88,12 @@ def test_v6_cpk_003_resolved() -> None:
     chrom = ports.get("chromosome", {})
     assert "fork_position_bp" in chrom
     assert "fork_positions" not in chrom
+
+
+def test_v6_allocation_consumers_include_rna_decay_not_host_interaction() -> None:
+    composite = build_karr_chassis_v6(time_step_s=1.0, emit_step_s=1.0)
+    allocation = composite["steps"]["karr_allocation_step"]
+    consumers = dict(allocation.parameters["consumer_processes"])
+
+    assert consumers.get("karr_rna_decay") == ["H2O"]
+    assert "karr_host_interaction" not in consumers

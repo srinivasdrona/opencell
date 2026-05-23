@@ -1891,7 +1891,13 @@ def build_karr_chassis_v6(
     }
 
     allocation_step = steps["karr_allocation_step"]
-    consumer_processes = list(allocation_step.parameters["consumer_processes"])
+    consumer_map: dict[str, list[str]] = {
+        str(proc_name): [str(wid) for wid in wids]
+        for proc_name, wids in allocation_step.parameters["consumer_processes"]
+    }
+    existing_rna_wids = consumer_map.get(rna_decay_proc.name, [])
+    consumer_map[rna_decay_proc.name] = sorted(set(existing_rna_wids) | {"H2O"})
+    consumer_processes = [(proc_name, wids) for proc_name, wids in consumer_map.items()]
     substrate_wids = sorted(set(allocation_step.parameters["substrate_wids"]) | {"H2O"})
     steps["karr_allocation_step"] = KarrAllocationStep(
         {

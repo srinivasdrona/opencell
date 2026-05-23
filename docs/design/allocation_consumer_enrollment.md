@@ -37,3 +37,29 @@ Enrollment decision:
 - Karr HostInteraction has no shared-substrate consumer list to enroll.
 - OpenCell `karr_host_interaction` was updated in this turn to remove its prior ATP proxy request/consumption path and now writes only host/cell-state deltas.
 - Therefore `karr_host_interaction` is **N/A for KarrAllocationStep consumer enrollment** in v6.
+
+## Post-change regression summary
+Trajectory rerun command:
+- `scripts/phase_e1_real_match.py --max-ticks 32400 --out data/phase_e/v6_trajectory_32400s_post_alloc.pkl`
+
+Key observables at required checkpoints (BEFORE fixture vs POST-ALLOC rerun):
+
+| Observable | t=0 | t=100s | t=16200s | t=32400s |
+|---|---:|---:|---:|---:|
+| `atp_pool` (before) | 1.0 | -43,750 | -5,751,050 | -10,211,500 |
+| `atp_pool` (post) | 1.0 | -43,750 | -5,751,050 | -10,211,500 |
+| `gtp_pool` (before) | 1.0 | -43,749 | -5,751,049 | -10,211,499 |
+| `gtp_pool` (post) | 1.0 | -43,749 | -5,751,049 | -10,211,499 |
+| `dntp_pool_total` (before) | 4.0 | 0 | 0 | 0 |
+| `dntp_pool_total` (post) | 4.0 | 0 | 0 | 0 |
+| `cell_dry_mass_g` (before) | 8.204e-16 | 9.059e-16 | -1.815e-14 | -3.386e-14 |
+| `cell_dry_mass_g` (post) | 8.204e-16 | 9.059e-16 | -1.815e-14 | -3.386e-14 |
+| `replication_state_code` (before) | 0 | 0 | 0 | 0 |
+| `replication_state_code` (post) | 0 | 0 | 0 | 0 |
+| `fork_position_norm` (before) | 0 | 0 | 0 | 0 |
+| `fork_position_norm` (post) | 0 | 0 | 0 | 0 |
+
+Notes:
+- `division_detected` remains `False` at 32400s in both runs.
+- `mrna_total_count_estimate` and `protein_total_count_estimate` folds are unchanged (3.724x and 5.600x respectively).
+- Allocation arithmetic integrity over 1000 ticks remains strict (`max_overalloc = 0`, no negative allocations), but net substrate delta over 1000 ticks is still strongly negative (`-2,621,067.87`), so the larger substrate-accounting defect persists beyond this enrollment delta.
