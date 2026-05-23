@@ -228,9 +228,16 @@ def extract_kp16(trajectory: Trajectory) -> float | None:
     return float(1.0 + max(last, 0.0))
 
 
-def extract_kp17(_trajectory: Trajectory) -> float | None:
-    # Requires explicit DNA and total mass series not emitted in schema-v1 snapshots.
-    return None
+def extract_kp17(trajectory: Trajectory) -> float | None:
+    dna_mass = _state_series(trajectory, "dna_mass_g")
+    total_ref = _state_series(trajectory, "cell_dry_mass_reference_g")
+    if dna_mass is None or total_ref is None:
+        return None
+    dna0 = _first_finite(dna_mass)
+    total0 = _first_finite(total_ref)
+    if dna0 is None or total0 is None or total0 <= 0.0:
+        return float("nan")
+    return float(dna0 / total0)
 
 
 def extract_kp18(trajectory: Trajectory) -> float | None:

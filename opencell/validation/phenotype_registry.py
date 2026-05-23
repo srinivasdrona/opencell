@@ -145,7 +145,7 @@ _SPECS: tuple[dict[str, Any], ...] = (
         "label": "DNA mass fraction",
         "bucket": "validation-and-organism-scaling",
         "disposition_todo_id": "E2-V1_1-KP17-DNA-MASS",
-        "notes": "Needs explicit DNA mass and total mass trajectories.",
+        "notes": "Legacy fixtures may miss phenotype_observables.dna_mass_g emission.",
     },
     {
         "id": "KP18",

@@ -6,6 +6,7 @@ without mutating any biology stores.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
@@ -51,6 +52,13 @@ def _load_protein_mw(m3_model: tl.KarrTranslationModel) -> dict[str, float]:
     return dict(zip(m3_model.protein_wcm_ids, arr.tolist(), strict=False))
 
 
+def _load_dna_mass_fraction_default() -> float:
+    params_path = Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "parameters.json"
+    with params_path.open(encoding="utf-8") as f:
+        raw = json.load(f)
+    return float(raw["states"]["Mass"]["dryWeightFractionDNA"])
+
+
 class KarrObservabilityStep(Step):
     """Emit aggregate observables used by Phase E phenotype scorecards."""
 
@@ -59,6 +67,8 @@ class KarrObservabilityStep(Step):
         "m1_model": None,
         "m2_model": None,
         "m3_model": None,
+        "genome_half_bp": 290_038.0,
+        "dna_mass_fraction": None,
     }
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
@@ -81,6 +91,12 @@ class KarrObservabilityStep(Step):
         self._rna_wids = tuple(self.m2_model.gene_wcm_ids)
         self._protein_wids = tuple(self.m3_model.protein_wcm_ids)
         self.cell_dry_mass_reference_g = float(self.m1_model.stored_runtime["cell_dry_total_mass_g"])
+        configured_dna_mass_fraction = self.parameters.get("dna_mass_fraction")
+        if configured_dna_mass_fraction is None:
+            configured_dna_mass_fraction = _load_dna_mass_fraction_default()
+        self.dna_mass_fraction = float(configured_dna_mass_fraction)
+        self.genome_half_bp = max(float(self.parameters.get("genome_half_bp", 290_038.0)), 1.0)
+        self._base_dna_mass_g = self.cell_dry_mass_reference_g * self.dna_mass_fraction
 
     def ports_schema(self) -> dict[str, Any]:
         counts_schema = {
@@ -107,9 +123,17 @@ class KarrObservabilityStep(Step):
                     for wid in self._protein_wids
                 }
             },
+            "chromosome": {
+                "replication_state": {"_default": "idle", "_updater": "set", "_emit": False},
+                "fork_position_bp": {
+                    "left": {"_default": 0.0, "_updater": "accumulate", "_emit": False},
+                    "right": {"_default": 0.0, "_updater": "accumulate", "_emit": False},
+                },
+            },
             "phenotype_observables": {
                 "rna_mass_g": {"_default": 0.0, "_updater": "set", "_emit": True},
                 "protein_mass_g": {"_default": 0.0, "_updater": "set", "_emit": True},
+                "dna_mass_g": {"_default": self._base_dna_mass_g, "_updater": "set", "_emit": True},
                 "cell_dry_mass_reference_g": {
                     "_default": self.cell_dry_mass_reference_g,
                     "_updater": "set",
@@ -125,6 +149,7 @@ class KarrObservabilityStep(Step):
         aminoacylated_counts = rna.get("aminoacylated_counts", {})
         modified_counts = rna.get("modified_counts", {})
         protein_counts = states.get("protein", {}).get("counts", {})
+        chromosome = states.get("chromosome", {})
 
         rna_mass_g = (
             _mass_from_counts(rna_counts, self.rna_mw_by_wid)
@@ -132,11 +157,20 @@ class KarrObservabilityStep(Step):
             + _mass_from_counts(modified_counts, self.rna_mw_by_wid)
         )
         protein_mass_g = _mass_from_counts(protein_counts, self.protein_mw_by_wid)
+        fork = chromosome.get("fork_position_bp", {})
+        left_fork = abs(float(fork.get("left", 0.0)))
+        right_fork = abs(float(fork.get("right", 0.0)))
+        fork_progress = float(np.clip(max(left_fork, right_fork) / self.genome_half_bp, 0.0, 1.0))
+        replication_state = str(chromosome.get("replication_state", "idle")).strip().lower()
+        if replication_state == "complete":
+            fork_progress = 1.0
+        dna_mass_g = self._base_dna_mass_g * (1.0 + fork_progress)
 
         return {
             "phenotype_observables": {
                 "rna_mass_g": float(rna_mass_g),
                 "protein_mass_g": float(protein_mass_g),
+                "dna_mass_g": float(dna_mass_g),
                 "cell_dry_mass_reference_g": float(self.cell_dry_mass_reference_g),
             }
         }

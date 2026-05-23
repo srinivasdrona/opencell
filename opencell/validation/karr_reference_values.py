@@ -137,11 +137,11 @@ KARR_REFERENCE_VALUES: dict[str, KarrReferenceValue] = {
         source_path="docs/design/phase_e2_phenotype_scorecard.md",
     ),
     "KP17": KarrReferenceValue(
-        value=None,
-        citation="TODO: Karr supplement table S4 DNA mass fraction",
+        value=0.1688,
+        citation="parameters.states.Mass.dryWeightFractionDNA",
         sourced_by=_SOURCED_BY,
         sourced_at=_SOURCED_AT,
-        notes="No local machine-readable S4 table found.",
+        source_path="data/karr_fixtures/parameters.json",
     ),
     "KP18": KarrReferenceValue(
         value=0.043482143658563135,
