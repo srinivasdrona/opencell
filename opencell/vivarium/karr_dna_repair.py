@@ -22,6 +22,8 @@ import numpy as np
 from scipy.io import loadmat
 from vivarium.core.process import Process
 
+from opencell.vivarium.chromosome_views import current_damage_sites
+
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/DNARepair_flat.mat"
 
 _PATHWAYS = ("ber", "ner", "hr", "nhej_like")
@@ -233,8 +235,8 @@ class KarrDNARepairProcess(Process):
     def ports_schema(self) -> dict[str, Any]:
         return {
             "chromosome": {
-                # Sparse lesion set; repaired sites are removed atomically via set-update.
-                "damage_sites": {"_default": [], "_updater": "set", "_emit": True},
+                "damage_events_cumulative": {"_default": [], "_updater": "accumulate", "_emit": True},
+                "repair_events_cumulative": {"_default": [], "_updater": "accumulate", "_emit": True},
                 "repair_count": {"_default": 0.0, "_updater": "accumulate", "_emit": True},
                 "repair_count_by_pathway": {
                     pathway: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
@@ -268,8 +270,7 @@ class KarrDNARepairProcess(Process):
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         dt = float(timestep) if timestep > 0 else float(self.parameters["time_step"])
 
-        chromosome = states.get("chromosome", {})
-        damage_sites = self._canonical_damage_sites(chromosome.get("damage_sites", []))
+        damage_sites = self._canonical_damage_sites(current_damage_sites(states))
 
         enzyme_counts = self._enzyme_counts(states)
         desired_repairs, indices_by_pathway = self._desired_repairs(
@@ -302,11 +303,12 @@ class KarrDNARepairProcess(Process):
 
         if consumed_total > 0:
             repaired_indices = self._sample_repaired_indices(indices_by_pathway, actual_repairs)
-            remaining_sites = [
-                site.payload for idx, site in enumerate(damage_sites) if idx not in repaired_indices
+            repair_events = [
+                self._repair_event_from_site(damage_sites[idx].payload)
+                for idx in sorted(repaired_indices)
             ]
             update["chromosome"] = {
-                "damage_sites": remaining_sites,
+                "repair_events_cumulative": repair_events,
                 "repair_count": float(consumed_total),
                 "repair_count_by_pathway": {
                     pathway: float(actual_repairs[pathway])
@@ -369,8 +371,26 @@ class KarrDNARepairProcess(Process):
                 site_id = str(site_raw)
             payload["damage_type"] = damage_type
             payload["site_id"] = site_id
+            payload.setdefault("id", site_id)
             normalized.append(_DamageSite(site_id=site_id, damage_type=damage_type, payload=payload))
         return normalized
+
+    def _repair_event_from_site(self, site: dict[str, Any]) -> dict[str, Any]:
+        site_id = str(site.get("id", site.get("site_id", "")))
+        if not site_id:
+            damage_type = str(site.get("damage_type", site.get("kind", "unknown")))
+            if "position" in site:
+                site_id = f"{damage_type}@{site['position']}"
+            else:
+                site_id = damage_type
+        event = {
+            "id": site_id,
+            "site_id": site_id,
+            "damage_type": str(site.get("damage_type", site.get("kind", "unknown"))),
+        }
+        if "position" in site:
+            event["position"] = site["position"]
+        return event
 
     def _enzyme_counts(self, states: dict[str, Any]) -> dict[str, float]:
         protein_counts = states.get("protein", {}).get("counts", {})
@@ -537,4 +557,3 @@ class KarrDNARepairProcess(Process):
 
 
 __all__ = ["KarrDNARepairProcess"]
-

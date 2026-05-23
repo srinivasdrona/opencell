@@ -18,6 +18,8 @@ import numpy as np
 from scipy.io import loadmat
 from vivarium.core.process import Process
 
+from opencell.vivarium.chromosome_views import current_damage_sites
+
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/DNADamage_flat.mat"
 _DEFAULT_TRACE_PATH = "data/m1_sources/karr_native/per_process_traces/DNADamage_100ticks.mat"
 _DEFAULT_SEQUENCE_LENGTH_NT = 580_076
@@ -121,7 +123,12 @@ class KarrDNADamageProcess(Process):
     def ports_schema(self) -> dict[str, Any]:
         return {
             "chromosome": {
-                "damage_sites": {
+                "damage_events_cumulative": {
+                    "_default": [],
+                    "_updater": "accumulate",
+                    "_emit": True,
+                },
+                "repair_events_cumulative": {
                     "_default": [],
                     "_updater": "accumulate",
                     "_emit": True,
@@ -151,9 +158,7 @@ class KarrDNADamageProcess(Process):
             return {}
 
         chromosome_state = states.get("chromosome", {})
-        existing_sites = chromosome_state.get("damage_sites", [])
-        if not isinstance(existing_sites, list):
-            existing_sites = []
+        existing_sites = current_damage_sites(states)
         occupied_positions = _coerce_position_set(existing_sites)
         fork_positions = self._active_fork_positions(chromosome_state)
 
@@ -172,8 +177,11 @@ class KarrDNADamageProcess(Process):
                 n_events=n_events,
                 occupied_positions=occupied_positions,
             )
-            for pos in sampled_positions:
+            for event_idx, pos in enumerate(sampled_positions):
+                site_id = f"{kind}@{int(pos)}@tick{self._tick_index}@{event_idx}"
                 damage = {
+                    "id": site_id,
+                    "site_id": site_id,
                     "position": int(pos),
                     "kind": str(kind),
                     "age_ticks": 0,
@@ -186,7 +194,7 @@ class KarrDNADamageProcess(Process):
             return {}
 
         fork_hit = self._fork_hit(new_sites, fork_positions)
-        chromosome_update: dict[str, Any] = {"damage_sites": new_sites}
+        chromosome_update: dict[str, Any] = {"damage_events_cumulative": new_sites}
         if fork_hit:
             chromosome_update["replication_stall_flag"] = 1.0
 
