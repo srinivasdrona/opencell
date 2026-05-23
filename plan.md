@@ -413,9 +413,24 @@ NOT a parallel program)**
 
 **Smoking gun in the data**: deltas are CONSTANT per tick (-437.5 ATP/tick at tick 1, tick 2, tick 5, ... tick 100). The consumer is not even partially throttled by allocation. Full unmodified consumption every tick. The fix is being structurally bypassed at runtime even though tests pass.
 
-### fix-did-not-execute Codex (PID 16308, running)
+### fix-did-not-execute results (01:21 IST)
 
-Checking C1 (canary imports main not worktree), C2 (parameter override silently failed), C3 (double-wiring), C4 (allocation flow order). Most likely C1 or C2 given the identical-to-pre-fix numerics.
+- **C1 REFUTED** — imports do resolve to the correct worktree
+- **C2 CONFIRMED** — `proc.parameters["write_substrate_deltas"] = False` has NO runtime effect (vivarium Process freezes parameters post-init)
+- **C3 CONFIRMED** — 29 processes vs 28 (extra: `karr_transcriptional_regulation`)
+- **C4 CONFIRMED** — `karr_transcription`/`karr_translation` flow deps = `None`; they do NOT depend on `karr_allocation_step`
+
+### cascade-fix v4 Codex launched (PID 6300, 01:24 IST)
+
+PROMPT: `E:\opencell-worktrees\substrate-cascade-fix\CONTINUE_PROMPT_v4.md`. Tasks:
+1. Confirm C2 on cascade-fix branch (probe)
+2. Fix C2 by passing `write_substrate_deltas=False` at construction time (not post-mutation)
+3. Fix C4 by adding flow deps: `flow["karr_transcription"] = [("karr_allocation_step",)]` (and translation)
+4. Triage C3 (is karr_transcriptional_regulation a substrate consumer?)
+5. Re-run 100t canary — expected: ATP drops at tick 1 then flat near 0 (allocation gating works)
+6. Run narrow tests + write STATUS_v4.md
+
+Token budget: 130k ceiling.
 
 ### 🚨 ALARMING RESULT: cascade-fix v3 had ZERO measurable impact on the cascade
 
