@@ -420,7 +420,25 @@ NOT a parallel program)**
 - **C3 CONFIRMED** — 29 processes vs 28 (extra: `karr_transcriptional_regulation`)
 - **C4 CONFIRMED** — `karr_transcription`/`karr_translation` flow deps = `None`; they do NOT depend on `karr_allocation_step`
 
-### 1000t canary BUSTED v4 (02:38 IST)
+### Phase-2-combined validated 100t + 1000t (03:24 IST)
+
+Codex (PID 4604, HEAD `58bfe21`) rebased onto cascade-fix HEAD `f13d517` cleanly, 60/60 tests pass, both canaries clean:
+- ATP cum: +1,397,399 over 1000 ticks (~1397/tick growth) — production now flows from metabolism (Bug 4 commits work as intended)
+- All NTPs / AAs healthy
+- **Conservation holds**: `unattributed_delta` cumulative ~1e-8 across ALL 805 substrates over 1000 ticks
+- Codex verdict: `clean-ready-for-32400t`
+
+### 14 substrates with negative cumulative drain (potential 32400t blockers)
+
+Three hit exactly **-1,000,000** (looks floor-clamped): `AD`, `NH3`, `URA`. Others:
+- `ADP` -1.4M (mirrors ATP gain — energy cycle, expected)
+- `GDP` -516K (mirrors GTP gain — expected)
+- `H` (proton) -1.7M
+- `PI` (inorganic phosphate) -1.4M (mirrors PPi → 2Pi → consumed)
+- `AHCYS` -2.6K, `GN` -4.3K, `LIPOYLLYS` -13.6K
+- `pSER` -11K, `pTHR` -12K, `SNGLYP` -562K, `THY` -4.6K
+
+Action: launch analyst Codex to (a) check initial pool size for each, (b) determine if drains are stoichiometric/expected vs floor-clamping bugs, (c) extrapolate to 32400t, (d) recommend proceed-now vs fix-first.
 
 Direct re-run of 100-tick canary on cascade-fix v4 HEAD revealed:
 - **v4's claimed "ATP min=0, delta -1 then 0" was WRONG** — Codex's parser misread the CSV
