@@ -27,6 +27,7 @@ mapping, both deferred to the integrator pass).
 
 from __future__ import annotations
 
+from copy import deepcopy
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -1815,7 +1816,110 @@ def build_karr_chassis_v5(
     )
     return engine
 
+
+def build_karr_chassis_v6(
+    m1_model: km.KarrMetabolismModel | None = None,
+    m2_model: tx.KarrTranscriptionModel | None = None,
+    m3_model: tl.KarrTranslationModel | None = None,
+    *,
+    m2_mechanism_inputs: tx_v2.MechanismInputs | None = None,
+    m3_mechanism_inputs: tl_v2.RibosomeMechanismInputs | None = None,
+    time_step_s: float = 1.0,
+    emit_step_s: float | None = None,
+    condition: int = 1,
+    dynamic_bounds: bool = False,
+    enable_pool_replenishment: bool = False,
+    host_adhesion_gates_division: bool = False,
+) -> Any:
+    """Build the Phase-D v6 composite core (v5 + RNA decay + canonical key map).
+
+    Checkpoint 4 intentionally wires the core set first. HostInteraction and
+    terminal-organelle wiring are added in checkpoint 5.
+    """
+    del host_adhesion_gates_division
+
+    from vivarium.core.composer import Composite
+
+    base_engine = build_karr_chassis_v5(
+        m1_model=m1_model,
+        m2_model=m2_model,
+        m3_model=m3_model,
+        m2_mechanism_inputs=m2_mechanism_inputs,
+        m3_mechanism_inputs=m3_mechanism_inputs,
+        time_step_s=time_step_s,
+        emit_step_s=emit_step_s,
+        condition=condition,
+        dynamic_bounds=dynamic_bounds,
+        enable_pool_replenishment=enable_pool_replenishment,
+    )
+
+    processes = dict(base_engine.processes)
+    steps = dict(base_engine.steps)
+    flow = {key: list(deps) for key, deps in base_engine.flow.items()}
+    topology: dict[str, dict[str, tuple[str, ...]] | tuple[str, ...]] = {}
+    for proc_key, proc_topology in base_engine.topology.items():
+        if isinstance(proc_topology, dict):
+            topology[proc_key] = dict(proc_topology)
+        else:
+            topology[proc_key] = proc_topology
+    initial_state = deepcopy(base_engine.initial_state)
+
+    # Canonical process-key map expected by chassis_v6 integration gates.
+    for old_key, new_key in (
+        ("karr_transcription_v3", "karr_transcription"),
+        ("karr_translation_v3", "karr_translation"),
+    ):
+        processes[new_key] = processes.pop(old_key)
+        topology[new_key] = topology.pop(old_key)
+
+    # Promote coordinator from step inventory to process inventory so it is
+    # visible in the process-key scorecard while preserving existing class logic.
+    coordinator_step = steps.pop("cell_cycle_coordinator")
+    processes["karr_cell_cycle_coordinator"] = coordinator_step
+    topology["karr_cell_cycle_coordinator"] = topology.pop("cell_cycle_coordinator")
+    flow.pop("cell_cycle_coordinator", None)
+
+    # Checkpoint 4 core wiring excludes terminal-organelle and host modules.
+    processes.pop("karr_terminal_organelle_assembly", None)
+    topology.pop("karr_terminal_organelle_assembly", None)
+
+    rna_decay_proc = RnaDecayLightProcess({"time_step": time_step_s})
+    processes["karr_rna_decay"] = rna_decay_proc
+    topology["karr_rna_decay"] = {
+        "rna": ("rna",),
+        "substrates": ("substrates",),
+        "requests": ("requests",),
+        "substrates_allocated": ("substrates_allocated",),
+    }
+
+    allocation_step = steps["karr_allocation_step"]
+    consumer_processes = list(allocation_step.parameters["consumer_processes"])
+    if not any(proc_name == rna_decay_proc.name for proc_name, _ in consumer_processes):
+        consumer_processes.append((rna_decay_proc.name, ["H2O"]))
+    substrate_wids = sorted(set(allocation_step.parameters["substrate_wids"]) | {"H2O"})
+    steps["karr_allocation_step"] = KarrAllocationStep(
+        {
+            "consumer_processes": consumer_processes,
+            "substrate_wids": substrate_wids,
+        }
+    )
+
+    chromosome_state = initial_state.setdefault("chromosome", {})
+    chromosome_state.pop("damage_sites", None)
+    chromosome_state.setdefault("damage_events_cumulative", [])
+    chromosome_state.setdefault("repair_events_cumulative", [])
+
+    return Composite(
+        processes=processes,
+        steps=steps,
+        flow=flow,
+        topology=topology,
+        state=initial_state,
+    )
+
 __all__ = [
+    "CHASSIS_V6_EXPECTED_PROCESS_KEYS",
+    "build_karr_chassis_v6",
     "build_karr_chassis_v5",
     "build_karr_chassis_v4",
     "build_karr_chassis_v3",
@@ -1824,7 +1928,5 @@ __all__ = [
     "build_karr_m1_m2_m3_engine",
     "compute_baseline_demand_per_s",
 ]
-
-
 
 
