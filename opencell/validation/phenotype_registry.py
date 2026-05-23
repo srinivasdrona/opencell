@@ -168,7 +168,7 @@ _SPECS: tuple[dict[str, Any], ...] = (
         "comparator": "threshold_max",
         "rel_tol": 1.0,
         "disposition_todo_id": "E2-V1_1-KP20-METABOLITE-PROFILE",
-        "notes": "Needs 30-metabolite panel + volume trajectory.",
+        "notes": "Legacy fixtures may miss phenotype_observables.metabolite_pools.",
     },
     {
         "id": "KP21",

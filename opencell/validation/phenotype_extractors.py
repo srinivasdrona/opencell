@@ -35,6 +35,34 @@ def _state_series(trajectory: Trajectory, key: str) -> np.ndarray | None:
     return np.asarray(values, dtype=np.float64)
 
 
+def _state_mapping_series(trajectory: Trajectory, key: str) -> list[dict[str, float]] | None:
+    snaps = _snapshots(trajectory)
+    if not snaps:
+        return None
+    out: list[dict[str, float]] = []
+    found = False
+    for snap in snaps:
+        state = snap.get("state", {})
+        if not isinstance(state, dict):
+            out.append({})
+            continue
+        raw = state.get(key)
+        if not isinstance(raw, dict):
+            out.append({})
+            continue
+        found = True
+        clean: dict[str, float] = {}
+        for metabolite_id, value in raw.items():
+            try:
+                clean[str(metabolite_id)] = float(value)
+            except (TypeError, ValueError):
+                continue
+        out.append(clean)
+    if not found:
+        return None
+    return out
+
+
 def _time_series(trajectory: Trajectory) -> np.ndarray | None:
     snaps = _snapshots(trajectory)
     if not snaps:
@@ -271,9 +299,29 @@ def extract_kp19(trajectory: Trajectory) -> float | None:
     return float(protein0 / total0)
 
 
-def extract_kp20(_trajectory: Trajectory) -> float | None:
-    # Requires 30-metabolite concentration profile not emitted in schema-v1 snapshots.
-    return None
+def extract_kp20(trajectory: Trajectory) -> float | None:
+    pools_series = _state_mapping_series(trajectory, "metabolite_pools")
+    if pools_series is None:
+        return None
+    non_empty = [entry for entry in pools_series if entry]
+    if len(non_empty) < 2:
+        return float("nan")
+    baseline = non_empty[0]
+    latest = non_empty[-1]
+    log_ratios: list[float] = []
+    for metabolite_id, baseline_value in baseline.items():
+        current_value = latest.get(metabolite_id)
+        if current_value is None:
+            continue
+        if baseline_value <= 0.0 or current_value <= 0.0:
+            continue
+        ratio = current_value / baseline_value
+        if ratio <= 0.0 or (not np.isfinite(ratio)):
+            continue
+        log_ratios.append(abs(float(np.log10(ratio))))
+    if not log_ratios:
+        return float("nan")
+    return float(np.mean(np.asarray(log_ratios, dtype=np.float64)))
 
 
 def extract_kp21(_trajectory: Trajectory) -> float | None:

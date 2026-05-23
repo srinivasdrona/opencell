@@ -108,6 +108,7 @@ def _extract_observables(
         "cytokinesis_complete_tick_s": float(
             phenotype_obs.get("cytokinesis_complete_tick_s", np.nan)
         ),
+        "metabolite_pools": dict(phenotype_obs.get("metabolite_pools", {})),
         "cell_dry_mass_reference_g": float(phenotype_obs.get("cell_dry_mass_reference_g", np.nan)),
     }
 

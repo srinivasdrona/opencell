@@ -90,6 +90,7 @@ class KarrObservabilityStep(Step):
         self.protein_mw_by_wid = _load_protein_mw(self.m3_model)
         self._rna_wids = tuple(self.m2_model.gene_wcm_ids)
         self._protein_wids = tuple(self.m3_model.protein_wcm_ids)
+        self._substrate_wids = tuple(str(wid) for wid in self.m1_model.raw["ids"]["substrate_wcm_585"])
         self.cell_dry_mass_reference_g = float(self.m1_model.stored_runtime["cell_dry_total_mass_g"])
         configured_dna_mass_fraction = self.parameters.get("dna_mass_fraction")
         if configured_dna_mass_fraction is None:
@@ -138,6 +139,14 @@ class KarrObservabilityStep(Step):
                 "division_progress": {"_default": 0.0, "_updater": "accumulate", "_emit": False},
                 "division_complete": {"_default": False, "_updater": "set", "_emit": False},
             },
+            "substrates": {
+                wid: {
+                    "_default": 0.0,
+                    "_updater": "accumulate",
+                    "_emit": False,
+                }
+                for wid in self._substrate_wids
+            },
             "phenotype_observables": {
                 "rna_mass_g": {"_default": 0.0, "_updater": "set", "_emit": True},
                 "protein_mass_g": {"_default": 0.0, "_updater": "set", "_emit": True},
@@ -147,6 +156,14 @@ class KarrObservabilityStep(Step):
                     "_default": float("nan"),
                     "_updater": "set",
                     "_emit": True,
+                },
+                "metabolite_pools": {
+                    wid: {
+                        "_default": 0.0,
+                        "_updater": "set",
+                        "_emit": False,
+                    }
+                    for wid in self._substrate_wids
                 },
                 "cell_dry_mass_reference_g": {
                     "_default": self.cell_dry_mass_reference_g,
@@ -166,6 +183,7 @@ class KarrObservabilityStep(Step):
         protein_counts = states.get("protein", {}).get("counts", {})
         chromosome = states.get("chromosome", {})
         cell = states.get("cell", {})
+        substrates = states.get("substrates", {})
 
         rna_mass_g = (
             _mass_from_counts(rna_counts, self.rna_mw_by_wid)
@@ -195,6 +213,7 @@ class KarrObservabilityStep(Step):
         ):
             self._cytokinesis_complete_s = float(current_time_s)
         self._elapsed_s = current_time_s
+        metabolite_pools = {wid: float(substrates.get(wid, 0.0)) for wid in self._substrate_wids}
 
         return {
             "phenotype_observables": {
@@ -203,6 +222,7 @@ class KarrObservabilityStep(Step):
                 "dna_mass_g": float(dna_mass_g),
                 "cytokinesis_start_tick_s": float(self._cytokinesis_start_s),
                 "cytokinesis_complete_tick_s": float(self._cytokinesis_complete_s),
+                "metabolite_pools": metabolite_pools,
                 "cell_dry_mass_reference_g": float(self.cell_dry_mass_reference_g),
             }
         }

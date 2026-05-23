@@ -1919,6 +1919,7 @@ def build_karr_chassis_v6(
         "protein": ("protein",),
         "chromosome": ("chromosome",),
         "cell": ("cell",),
+        "substrates": ("substrates",),
         "phenotype_observables": ("phenotype_observables",),
     }
     flow["karr_observability_step"] = [("karr_allocation_step",)]
