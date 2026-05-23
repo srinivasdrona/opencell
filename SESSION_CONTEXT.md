@@ -62,6 +62,20 @@ Commit aggressively at meaningful checkpoints — do NOT batch all work into a s
 ### 8. STATUS.md is a live log
 Append a one-line progress entry to STATUS.md (with UTC timestamp) at each meaningful step (read complete, design drafted, narrow tests green, commit pushed). Don't wait until the end. The orchestrator polls this file to spot stalled sessions.
 
+### 9. Merge conflict resolution: rm + merge --continue
+When `git merge` hits a conflict on a file you do not own (or that another branch already deleted/moved), the resolution is `git rm <path>` (or `git checkout --theirs <path>` if you want the incoming version) followed by `git merge --continue`. Do NOT manually `git add` a hand-edited copy of the conflicted file — that's how content silently gets dropped from the merge (single-parent merge artifact). Lesson encoded after `41809db` lost HostInteraction content; recovered as `8dd146d` via clean re-merge.
+
+### 10. Rename-before-wire
+Always canonicalize module / class / file names BEFORE final composite wiring lands. If you discover a naming inconsistency partway through (e.g., `karr_m1` vs `karr_metabolism`), STOP and finish the rename first, then wire. Renaming after a 28-process composite is wired forces double-touch on every consumer file and inflates the diff 3-5×. The naming-drift rename today (commit `cf6a1ad`) was the right pattern: 14-min focused Codex rename across 80 files, then wiring afterwards landed cleanly.
+
+### 11. Estimation anchor
+Anchor time estimates to observed Codex throughput, NOT human-developer intuition. Reference points from this codebase:
+- Focused rename (≤80 files, mechanical): ~10-15 min
+- Single-process Karr port + narrow tests: ~20-30 min
+- Integration turn (chassis-vN + smoke + regression tests): ~40-60 min, 100-150k tokens
+- Pure design document (no code): ~5-10 min
+Copilot-side strategy/design work defaults to 5-10 min for a single artifact. Calendar-week estimates for AI-orchestrated work erode trust and are almost always wrong by 10-20×.
+
 ## Reference files to read FIRST (every session)
 1. `opencell/vivarium/karr_replication_initiation.py` — Phase C v1 pattern (DNA state, allocation, accumulate)
 2. `opencell/vivarium/karr_allocation_step.py` — request/allocate protocol
