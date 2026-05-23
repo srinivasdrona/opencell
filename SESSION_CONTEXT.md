@@ -50,9 +50,17 @@ shape for a Phase C process.
 NEVER exit without writing STATUS.md. If you got stuck — say so, with the
 specific error and what you tried. A partial STATUS is always better than none.
 
-### 6. No regressions
-Before commit, run the FULL test suite via WSL pytest. Phase A+B+C-T1 must
-remain green (~720 tests currently pass; 0 fail; 11 skip; 4 xfail).
+### 6. No regressions, but narrow first
+Inner-loop verify: NARROW pytest only (`pytest -x tests/vivarium/test_<your_file>.py -W error::UserWarning`). Iterate fast.
+Final pre-commit smoke: run the targeted directory you touched (e.g., `pytest -x tests/vivarium/`), NOT the full suite. The orchestrator runs the full suite on main after merge.
+Baseline as of 2026-05-23: 864 pass / 0 fail / 9 skip / 4 xfail. Do not regress.
+
+### 7. Token budget + checkpoint commits
+Most prompts should declare an explicit budget (most ≤60k tokens; integration sessions up to 150k). If you cross the budget, STOP and append to STATUS.md.
+Commit aggressively at meaningful checkpoints — do NOT batch all work into a single commit at the end. Azure remote-compaction throttles silently around 150-200k tokens; an uncommitted session looks like a silent exit even when real work survives on disk.
+
+### 8. STATUS.md is a live log
+Append a one-line progress entry to STATUS.md (with UTC timestamp) at each meaningful step (read complete, design drafted, narrow tests green, commit pushed). Don't wait until the end. The orchestrator polls this file to spot stalled sessions.
 
 ## Reference files to read FIRST (every session)
 1. `opencell/vivarium/karr_replication_initiation.py` — Phase C v1 pattern (DNA state, allocation, accumulate)
