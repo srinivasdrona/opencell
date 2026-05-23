@@ -12,6 +12,15 @@
 
 This scorecard is the **BEFORE-fix baseline** captured on the known broken chassis_v6 (allocation-bypass cascade from E.1). Failures and blocked rows are expected inputs to E.3. A second E.2 run will be produced after the allocation-consumer fix lands.
 
+## v1 vs v2 framing (READ BEFORE INTERPRETING PASSES)
+
+OpenCell v1.0 is scoped as **"Karr-on-Vivarium with prescribed parameters"** — kinetic rates, half-lives, expression levels, and FBA bounds are taken verbatim from Karr's WCKB fixtures. The validation oracle is therefore *numerical correctness of the integration* (28 processes, allocation cycle, topology preserved), NOT independent biology.
+
+- A v1.0 PASS row means: "our integration of Karr's parameters into Vivarium reproduces the Karr-published value within tolerance."
+- It does **not** mean: "we derived this rate from first-principles biophysics."
+- KP07/08/09 short-horizon stability passes are partly tautological under v1 — the parameters were fit to make these hold.
+- v2 (per-submodel direction, not a single milestone): each submodel earns v2 status when its rates are derived from molecular counts × biophysics, and Karr's fitted values become a cross-check oracle instead of the parameter source. See decision log entry `v1-prescribed-rates-v2-first-principles` (2026-05-23, `D:\OneDrive - Microsoft\.pm-os\DECISIONS.md`).
+
 ## Per-KP detail
 
 | KP | Label | Bucket | Opencell | Karr | rel_err | Status | Disposition |

@@ -401,11 +401,15 @@ NOT a parallel program)**
 
 ---
 
-## Current Status (2026-05-23 evening, **877 tests passing**, chassis_v6 SHIPPED, Phase E.1 in flight)
+## Current Status (2026-05-23 evening, **896 tests passing**, chassis_v6 SHIPPED, E.1 + E.2 MERGED, allocation-consumer + observability-ext Codex sessions running)
 
 ### Today's headline result
 
-**M4 milestone hit: chassis_v6 (full 28-process composite) merged to main.** Phase C complete (all 10 PC-turns + chassis_v5), Phase D complete (HostInteraction + chassis_v6 with CPK-002/003 bundled fixes), naming-drift rename to canonical biology names complete, all four Phase E milestone designs drafted, and Phase E.1 (real trajectory match vs Karr) currently executing on Codex. Two parallel Codex sessions running cleanly side-by-side.
+**M4 milestone hit + first integrated validation pass complete.** chassis_v6 (full 28-process composite) merged. Phase E.1 (real Karr trajectory match) and Phase E.2 (28-KP phenotype scorecard) both merged to main. The integrated whole-cell runs for 32400 ticks; E.2 scores **6/28 PASS, 9 FAIL, 13 BLOCKED** on the pre-fix chassis. The 9 FAILs all trace to a single root cause — the allocation-bypass cascade — and an allocation-consumer Codex session is currently fixing it. In parallel, an observability-extension Codex session is lifting 5 tractable BLOCKEDs.
+
+### v1.0 scope decision (logged today)
+
+OpenCell v1.0 is explicitly **"Karr-on-Vivarium with prescribed parameters"** — kinetic rates / half-lives / FBA bounds are taken verbatim from Karr's WCKB fixtures. Validation oracle = integration correctness, NOT independent biology. v2 = per-submodel direction (transcription/translation tractable, metabolism hard, host_interaction effectively impossible without new data). See `D:\OneDrive - Microsoft\.pm-os\DECISIONS.md` entry `v1-prescribed-rates-v2-first-principles`.
 
 ### Phase C — DNA replication + cell cycle ✅
 
@@ -440,7 +444,7 @@ Canonicalized all karr_* modules to biological names (commit `cf6a1ad`, ~14 min 
 - `karr_d2_stub` → `karr_macromolecular_complexation_stub`
 - Legacy public builder APIs (`build_karr_m1_m2_engine`, etc.) preserved for backward-compat
 
-### Phase E — Validation against Karr (in flight)
+### Phase E — Validation against Karr (E.1 + E.2 MERGED; allocation-fix + observability-ext in flight)
 
 All four per-milestone designs drafted and merged to main (`be3d8fa`, `1b40b15`, `2884029`):
 
@@ -449,7 +453,11 @@ All four per-milestone designs drafted and merged to main (`be3d8fa`, `1b40b15`,
 - 📝 `docs/design/phase_e_final_release_gate.md` — 7 hard gates G1-G7 for v1.0
 - 📝 `docs/design/cpk_dispositions_2026-05-23.md` — CPK-002/003 design calls (now landed in v6)
 
-**E.1 Codex session active**: PID 73788, 130k budget, 5 checkpoints. Runs chassis_v6 for 32400 ticks vs Karr's `cell_cycle_trajectory.mat`. Critical deliverable = `data/phase_e/v6_trajectory_32400s.pkl` fixture that E.2 will consume. Acceptance is *framework correctness* (≥1 observable passes), NOT fidelity.
+**E.1 ✅ MERGED** (commit `92f6c9a`): chassis_v6 ran full 32400 ticks vs Karr's `cell_cycle_trajectory.mat`. 1/9 observables PASS (cell_dry_mass shape OK in early ticks before going negative). Critical deliverable banked: `data/phase_e/v6_trajectory_32400s.pkl` (40996 bytes, 325 snapshots).
+
+**E.2 ✅ MERGED** (commit `0208de7`): 28-KP phenotype scorecard implemented, `docs/phase_e/E2_scorecard.md` generated from cached E.1 trajectory (no rebuild). Pre-fix verdict: `E2_PASS=6/28, FAIL=9, BLOCKED=13`. PASSes: KP07/08/09 (mRNA/protein/AA stability), KP22/23/24 (qualitative phenotypes). FAILs: substrate/mass/replication cascade. BLOCKEDs: chassis-doesn't-emit-this-schema (each carries a v1.1 TODO id).
+
+**E.3 not yet launched** — design ready at `docs/design/phase_e3_discrepancy_analysis.md`; deferred until AFTER allocation-consumer fix so it classifies post-cascade-fix discrepancies, not the cascade itself.
 
 ### Phase E.1 first findings (mid-flight, pre-merge — 17:30 IST)
 
@@ -468,13 +476,29 @@ E.1's fixture is already committed at `fdea8a2` on `agent/pe-1-real-match`; Code
 
 **Root cause**: the `karr_rna_decay` + `karr_host_interaction` allocation-bypass (known gap from chassis_v6 turn) consumes ATP/dNTP/H2O outside the KarrAllocationStep request/grant cycle. Over 32400 ticks the unbookmarked drain compounds to ~10M units. Replication never initiates because DnaA-ATP threshold can't be met when both ATP and dNTPs are underwater (CASCADE from the substrate bug, not an independent failure).
 
-**This is the failure mode E.2 was designed to expose.** Production machinery (transcription, translation) is largely correct — ratios are biologically plausible. Substrate-accounting backbone is broken.
+**This is the failure mode E.2 was designed to expose** — and E.2 exposed it cleanly (6/28 PASS predicted, 6/28 PASS actual on the same fingerprint of failing KPs).
 
 **Consequence**: `allocation-consumer-enrollment` is **promoted from v1.x cleanup to v1.0 BLOCK-RELEASE**. v1.0 cannot ship until ATP/dNTP/mass stay non-negative across the 32400-tick run and replication advances past the idle state. `PROMPT_allocation_consumer.md` has been revised post-E.1 with these as the explicit regression target.
 
-**Phase E sequencing locked**: `E.1 merge → E.2 launch (BEFORE-fix scorecard) → E.3 launch (classify cascade) → allocation-consumer Codex turn → E.2 re-run (AFTER-fix scorecard) → E.3 re-classify → release gate`. Expected pre-fix E.2 result: ~8-12 of 28 PASS; expected post-fix: ~18-22 of 28 PASS (clears the ≥10/28 acceptance gate by comfortable margin).
+**Phase E sequencing locked**: `E.1 merge ✅ → E.2 launch (BEFORE-fix scorecard) ✅ → allocation-consumer Codex turn 🟢 (Bucket A, in flight) → observability extensions for tractable BLOCKEDs 🟡 (Bucket B, queued behind A's cp1) → E.2 re-run (AFTER-fix scorecard) → E.3 launch (classify residual discrepancies) → release gate`. Expected post-fix E.2 result: ~16-22 of 28 PASS (clears the ≥10/28 acceptance gate).
 
-Full analysis in `docs/phase_e/E1_findings_pre_merge.md` (commit `e4ea870`+).
+### Bucket A — allocation-consumer enrollment (in flight, 2026-05-23 18:27)
+
+- Worktree: `E:\opencell-worktrees\allocation-consumer`, branch `agent/allocation-consumer-enrollment`
+- Rebased onto `29f4aaa` (current main post-skeleton-deletion); Codex PID 66844 launched 18:27:42
+- Token budget: 60k · 4 checkpoints expected
+- Scope: enroll `karr_rna_decay` + `karr_host_interaction` as `KarrAllocationStep` consumers; ATP/dNTP/mass must stay ≥0 across 32400-tick run; produces `v6_trajectory_32400s_post_alloc.pkl` for E.2 re-run
+
+### Bucket B — observability extensions (queued, draft `PROMPT_observability_extension.md` committed `63c10de`)
+
+Will branch off Bucket A's first commit to avoid `karr_composite.py` conflict (different sections, but safer). Scope: KP13 (cytokinesis-trace), KP17 (DNA-mass), KP18 (RNA-mass), KP19 (protein-mass), KP20 (metabolite-profile). Token budget: 50k. Out of scope: KP15 (hard biology), KP21 (overlaps Bucket A), KP25/26 (KO-sweep harness), KP27/28 (host_interaction, owned by A), KP03/04 (FBA flux extraction, separate turn).
+
+### Skip-drift audit ✅
+
+Independent Codex session (PID 3320, `agent/skip-drift-audit`) confirmed zero rename-caused skip drift. The historical "11 pass→skip" pattern was Thattai paper-cache environmental, not rename-related. Per user direction:
+- Deleted 9 stale skeleton tests (`test_karr_chassis_v{5,6}_skeleton.py`) + 2 orphan modules (`karr_composite_v{5,6}_skeleton.py`) — commit `29f4aaa`
+- Documented the 11 Thattai-cache skips as intentional in `docs/testing/known_skips.md`
+- Test baseline moved from 877→896 on main repo (Thattai cache IS present here; the 11 skip only manifests in fresh worktree clones)
 
 ### Audit + cleanup sessions ✅
 
