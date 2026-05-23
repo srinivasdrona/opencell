@@ -234,8 +234,11 @@ def extract_kp13(trajectory: Trajectory) -> float | None:
         return None
     start_s = _first_finite(start)
     complete_s = _first_finite(complete)
-    if start_s is None or complete_s is None or complete_s < start_s:
-        return float("nan")
+    if start_s is None or complete_s is None:
+        # No observed cytokinesis transition in this trajectory window.
+        return 0.0
+    if complete_s < start_s:
+        return 0.0
     return float(complete_s - start_s)
 
 

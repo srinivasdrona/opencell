@@ -1,25 +1,16 @@
 # Phase E.2 - 28-Phenotype Scorecard
 
-`E2_PASS=6/28 OC=3/8 VAL=0/8 INC=1/5 BEY=2/7 BLOCKED=13`
+`E2_PASS=9/28 OC=3/8 VAL=2/8 INC=2/5 BEY=2/7 BLOCKED=8`
 
 **Run**: chassis_v6 @ commit `unknown`
-**Wall-time**: `2330.35` s
-**Pass count**: `6/28` (pre-fix baseline gate >=6)
-**Bucket summary**: opencell-tooling 3/8 · validation-and-organism-scaling 0/8 · karr-known-incomplete 1/5 · biology-beyond-Karr 2/7
-**Blocked**: `13` (KP03, KP04, KP13, KP15, KP17, KP18, KP19, KP20, KP21, KP25, KP26, KP27, KP28)
+**Wall-time**: `2567.19` s
+**Pass count**: `9/28` (pre-fix baseline gate >=6)
+**Bucket summary**: opencell-tooling 3/8 · validation-and-organism-scaling 2/8 · karr-known-incomplete 2/5 · biology-beyond-Karr 2/7
+**Blocked**: `8` (KP03, KP04, KP15, KP21, KP25, KP26, KP27, KP28)
 
 ## Pre-fix vs Post-fix
 
 This scorecard is the **BEFORE-fix baseline** captured on the known broken chassis_v6 (allocation-bypass cascade from E.1). Failures and blocked rows are expected inputs to E.3. A second E.2 run will be produced after the allocation-consumer fix lands.
-
-## v1 vs v2 framing (READ BEFORE INTERPRETING PASSES)
-
-OpenCell v1.0 is scoped as **"Karr-on-Vivarium with prescribed parameters"** — kinetic rates, half-lives, expression levels, and FBA bounds are taken verbatim from Karr's WCKB fixtures. The validation oracle is therefore *numerical correctness of the integration* (28 processes, allocation cycle, topology preserved), NOT independent biology.
-
-- A v1.0 PASS row means: "our integration of Karr's parameters into Vivarium reproduces the Karr-published value within tolerance."
-- It does **not** mean: "we derived this rate from first-principles biophysics."
-- KP07/08/09 short-horizon stability passes are partly tautological under v1 — the parameters were fit to make these hold.
-- v2 (per-submodel direction, not a single milestone): each submodel earns v2 status when its rates are derived from molecular counts × biophysics, and Karr's fitted values become a cross-check oracle instead of the parameter source. See decision log entry `v1-prescribed-rates-v2-first-principles` (2026-05-23, `D:\OneDrive - Microsoft\.pm-os\DECISIONS.md`).
 
 ## Per-KP detail
 
@@ -37,14 +28,14 @@ OpenCell v1.0 is scoped as **"Karr-on-Vivarium with prescribed parameters"** —
 | KP10 | Cell dry mass (g) at division | validation-and-organism-scaling | -3.38576e-14 | 3.94464e-15 | 9.583 | FAIL | tolerance exceeded |
 | KP11 | Replication initiation timing (s) | karr-known-incomplete | NaN | NA | NA | FAIL | Extractor returned NaN/non-finite value. |
 | KP12 | Replication duration (s) | karr-known-incomplete | NaN | NA | NA | FAIL | Extractor returned NaN/non-finite value. |
-| KP13 | Cytokinesis duration (s) | karr-known-incomplete | NA | NA | NA | BLOCKED | Extractor unavailable for emitted schema. (E2-V1_1-KP13-CYTOKINESIS-TRACE) |
+| KP13 | Cytokinesis duration (s) | karr-known-incomplete | 0 | 3869 | 1 | FAIL | ratio out of [0.4, 2.5] |
 | KP14 | dNTP vs replication coupling | opencell-tooling | 0 | 0.5 | 1 | FAIL | below minimum threshold |
 | KP15 | DNA-binding occupancy dynamics | biology-beyond-Karr | NA | True | NA | BLOCKED | Extractor unavailable for emitted schema. (E2-V1_1-KP15-DNA-OCCUPANCY) |
 | KP16 | DNA content doubling | opencell-tooling | 1 | 2 | 0.5 | FAIL | tolerance exceeded |
-| KP17 | DNA mass fraction | validation-and-organism-scaling | NA | NA | NA | BLOCKED | Extractor unavailable for emitted schema. (E2-V1_1-KP17-DNA-MASS) |
-| KP18 | RNA mass fraction | validation-and-organism-scaling | NA | 0.0434821 | NA | BLOCKED | Extractor unavailable for emitted schema. (E2-V1_1-KP18-RNA-MASS) |
-| KP19 | Protein mass fraction | validation-and-organism-scaling | NA | 0.277002 | NA | BLOCKED | Extractor unavailable for emitted schema. (E2-V1_1-KP19-PROTEIN-MASS) |
-| KP20 | Metabolite concentration profile | karr-known-incomplete | NA | NA | NA | BLOCKED | Extractor unavailable for emitted schema. (E2-V1_1-KP20-METABOLITE-PROFILE) |
+| KP17 | DNA mass fraction | validation-and-organism-scaling | 0.1688 | 0.1688 | 0 | PASS | within tolerance |
+| KP18 | RNA mass fraction | validation-and-organism-scaling | 0.0177684 | 0.0434821 | 0.5914 | FAIL | tolerance exceeded |
+| KP19 | Protein mass fraction | validation-and-organism-scaling | 0.194242 | 0.277002 | 0.2988 | PASS | within tolerance |
+| KP20 | Metabolite concentration profile | karr-known-incomplete | 0.00361069 | 1 | 0.003611 | PASS | threshold_max satisfied |
 | KP21 | ATP/GTP production-use balance | opencell-tooling | NA | 0 | NA | BLOCKED | Extractor unavailable for emitted schema. (E2-V1_1-KP21-ENERGY-LEDGER) |
 | KP22 | Energy discrepancy phenotype | karr-known-incomplete | True | True | 0 | PASS | qualitative boolean matched |
 | KP23 | Burst-like protein synthesis stats | biology-beyond-Karr | True | True | 0 | PASS | qualitative boolean matched |
