@@ -290,6 +290,16 @@ def _log_progress(log_file: Any, message: str) -> None:
     log_file.flush()
 
 
+def _open_progress_log(log_path: Path, out_dir: Path) -> tuple[Any, Path]:
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        return log_path.open("a", encoding="utf-8"), log_path
+    except PermissionError:
+        fallback = out_dir / ".codex_run_seed42.log"
+        fallback.parent.mkdir(parents=True, exist_ok=True)
+        return fallback.open("a", encoding="utf-8"), fallback
+
+
 def _compress_if_large(path: Path, threshold_bytes: int = 500 * 1024 * 1024) -> Path:
     if not path.exists() or path.stat().st_size <= threshold_bytes:
         return path
@@ -351,13 +361,14 @@ def run_full_cycle(
 
     aa_ids = tuple(str(wid) for wid in composite.processes["karr_translation"].aa_ids)
     mass_estimator = MassEstimator.build(m1_model, m2_model, m3_model)
+    progress_log_fh, progress_log_actual_path = _open_progress_log(log_path, out_dir)
 
     with (
         key_path.open("w", newline="", encoding="utf-8") as key_f,
         full_path.open("w", newline="", encoding="utf-8") as full_f,
         conservation_path.open("w", newline="", encoding="utf-8") as cons_f,
         replication_path.open("w", newline="", encoding="utf-8") as repl_f,
-        log_path.open("a", encoding="utf-8") as log_f,
+        progress_log_fh as log_f,
     ):
         key_w = csv.writer(key_f)
         full_w = csv.writer(full_f)
@@ -595,6 +606,7 @@ def run_full_cycle(
             "division_event_json": str(division_path),
             "conservation_csv": str(conservation_path),
             "process_traces_dir": str(out_dir / "process_traces"),
+            "progress_log_path": str(progress_log_actual_path),
         },
         "sampling": {
             "substrates_full_every_n_ticks": int(full_stride),
