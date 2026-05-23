@@ -23,8 +23,8 @@ docs/phase_e/
   E2_scorecard.md            # output artifact, written by scorecard.py
 tests/validation/
   test_e2_phenotype_scorecard.py
-  fixtures/
-    chassis_v6_32400_trajectory.pkl  # cached run, ~5-20 MB; rebuilt by conftest if missing
+data/phase_e/
+  v6_trajectory_32400s.pkl  # canonical E.1 fixture (schema_version=1)
 ```
 
 ## 3. PhenotypeDef dataclass
@@ -116,12 +116,14 @@ by:
 
 Running 32400 ticks takes ~10-18 min. Tests can't tolerate that on every call.
 Strategy:
-- `tests/validation/fixtures/conftest.py` defines `@pytest.fixture(scope="session")`
-- Loads from `chassis_v6_32400_trajectory.pkl` if present
-- Else runs chassis_v6 and pickles the result (slow path; only first run or after invalidation)
-- Invalidation marker: `chassis_v6.git_sha` stored in fixture metadata; mismatched sha → rebuild
-
-The fixture file is gitignored (size; we don't want it in repo). CI builds it on first run.
+- Provide helper `load_v6_trajectory_fixture()` in E.2 implementation.
+- Loader path is fixed to `data/phase_e/v6_trajectory_32400s.pkl`.
+- Loader validates E.1 schema contract before returning:
+  - `chassis == "v6"`
+  - `schema_version == 1`
+  - top-level keys include `snapshots`, `wall_time_s`, `ticks_completed`, `division_detected`
+  - each snapshot has `{tick, time_s, state}` with 9 scaffold observables under `state`
+- If the fixture is missing, E.2 may trigger `scripts/phase_e1_real_match.py` once and then cache.
 
 ## 8. Scorecard output format
 
