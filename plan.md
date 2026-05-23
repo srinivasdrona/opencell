@@ -420,6 +420,37 @@ NOT a parallel program)**
 - **C3 CONFIRMED** — 29 processes vs 28 (extra: `karr_transcriptional_regulation`)
 - **C4 CONFIRMED** — `karr_transcription`/`karr_translation` flow deps = `None`; they do NOT depend on `karr_allocation_step`
 
+### Phase-3 drain triage complete (03:36 IST)
+
+Codex (HEAD `df9428b`, STATUS at `STATUS_phase3_drain_triage.md`) characterized the 14 drainers:
+
+**Resolution of -1M mystery**: NOT a floor clamp, NOT a one-shot bug. It's a steady **-1000/tick** M1 metabolic sink (AD `TX_AD ~ -999.6`, NH3 `NH3eq = -1000`, URA `DeoD8 = -1000`). Initial pool was `1.0` placeholder, not `1e6`. So `-1M` = -1000/tick × 1000 ticks. Coincidence.
+
+**All 14 drains**: 100% owned by `karr_metabolism` (with +24 H from protein_modification — negligible). Conservation perfect for every one.
+
+**Classification**:
+- 6 STOICHIOMETRIC (energy/redox cycle expected): H, PI, ADP, GDP (mirror ATP/GTP production)
+- 8 UNKNOWN (steady metabolic sinks, no replenisher in shared store): AD, NH3, URA, SNGLYP, LIPOYLLYS, pTHR, pSER, THY, GN, AHCYS
+
+**32,400t linear extrapolation**: all 8 UNKNOWNs would project deep negative. Not a crash (conservation holds, ATP/AAs healthy) but a diagnostic eyesore.
+
+**Codex recommendation: FIX_BEFORE_32400T**. Architectural reason: chassis_v6 exposes all 585 M1 species into the shared cross-process substrate ledger when only true cross-process resources (NTPs, AAs, etc.) should live there. M1-internal species (AD, URA, AHCYS, etc.) should be private/internal diagnostics.
+
+### Decision point — paused for user
+
+Two paths:
+- **Path A (architectural)**: refactor chassis to restrict shared `substrates` writes to allocation-keyed cross-process resources only. Bigger change. Per Codex recommendation.
+- **Path B (pragmatic)**: kick off 32,400-tick now. Cascade is solved (ATP grows, AAs conserved, conservation holds). The negative M1-internals are pre-existing chassis design debt, not introduced by recent fixes. Cell-growth signals are clean. Accept diagnostic noise for now; do architectural cleanup separately.
+- **Path C**: minimal whitelist — add regression test that ignores known M1-internal species, run 32,400-tick. Smaller than A, less hygienic than B.
+
+Currently no Codex running. Awaiting user direction.
+
+### Current branch state
+
+- `agent/substrate-cascade-fix` HEAD `f13d517` — cascade fix validated, ready to merge to main
+- `agent/phase-2-fix` HEAD `df9428b` — phase-2 + cascade-fix rebased + drain-triage docs, validated, ready to merge after cascade-fix
+- 32,400-tick run NOT yet triggered
+
 ### Phase-2-combined validated 100t + 1000t (03:24 IST)
 
 Codex (PID 4604, HEAD `58bfe21`) rebased onto cascade-fix HEAD `f13d517` cleanly, 60/60 tests pass, both canaries clean:
