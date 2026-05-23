@@ -401,7 +401,28 @@ NOT a parallel program)**
 
 ---
 
-## Current Status (2026-05-24 00:30 IST, **903 tests passing**, ROOT CAUSE IDENTIFIED, fix Codex not yet launched)
+## Current Status (2026-05-24 00:45 IST, **903 tests passing**, fix + audit Codex sessions IN FLIGHT)
+
+### Active Codex sessions
+
+| Session | PID | Worktree | Branch | Launched | Expected | Waiter shellId |
+|---|---|---|---|---|---|---|
+| substrate-cascade-fix | 18496 | `E:\opencell-worktrees\substrate-cascade-fix` | `agent/substrate-cascade-fix` | 00:40 | ~2-3 hr | `wait-cascade-fix-v2` |
+| bypass-precondition-audit | 12072 | `E:\opencell-worktrees\bypass-precondition-audit` | `agent/bypass-precondition-audit` | 00:43 | ~60-90 min | `wait-audit-exit` |
+
+- **fix**: implements Bug 1 (bypass), Bug 2 (M1 production), Bug 3 (initial conditions), Bug 4 (protein_folding K/MN/NA), then 100t + 500t canary + full suite. PROMPT at repo root `PROMPT_substrate_cascade_fix.md`.
+- **audit**: read-only hunt for other instances of bypass-with-implicit-precondition patterns (Patterns A-F). PROMPT at repo root `PROMPT_bypass_precondition_audit.md`. Output to `docs/audits/bypass_precondition_audit.md` in worktree.
+
+### Diagnostic worktree (read-only, not yet merged)
+
+- `E:\opencell-worktrees\substrate-leak-diagnosis` (branch `agent/substrate-leak-diagnosis`) — contains the 100-tick instrumented run that confirmed root cause. Files of interest: `STATUS.md`, `docs/diagnostics/substrate_leak_report.md`, `data/diagnostics/*.csv`. The diagnostic script `scripts/diagnose_substrate_leak.py` is the verification harness used by the fix Codex. Decision: keep this worktree until fix lands and final verification matches; then merge diagnostic-only changes to main.
+
+### Cross-checks completed
+
+- ✅ **GPT-5.5 independent analysis** (`files/gpt55_independent_leak_analysis.md` in session): converged on same root cause; added contract-ambiguity framing, initial-conditions bug, and protein_folding K/MN/NA mismatch as keepers.
+- ✅ **Codex per-tick empirical confirmation**: PID 16100 100-tick instrumented probe matched static hypothesis exactly. `unattributed_delta=0` proves no hidden mutation. `karr_transcription` -43,750 each NTP, `karr_translation` -89,451 AAs, `karr_metabolism` 0 substrate emissions.
+
+## Status (frozen pre-fix, 2026-05-24 00:30 IST, **903 tests passing**, ROOT CAUSE IDENTIFIED, fix Codex not yet launched)
 
 ### Today's headline result
 
