@@ -49,7 +49,7 @@ from opencell.vivarium.karr_dna_damage import KarrDNADamageProcess
 from opencell.vivarium.karr_dna_repair import KarrDNARepairProcess
 from opencell.vivarium.karr_dna_supercoiling import KarrDNASupercoilingProcess
 from opencell.vivarium.karr_ftsz_polymerization import KarrFtsZPolymerizationProcess
-from opencell.vivarium.karr_m1 import KarrMetabolismProcess
+from opencell.vivarium.karr_metabolism import KarrMetabolismProcess
 from opencell.vivarium.karr_m2 import KarrTranscriptionProcess
 from opencell.vivarium.karr_m2_v2 import KarrTranscriptionV2Process
 from opencell.vivarium.karr_m2_v3 import KarrTranscriptionV3Process
@@ -322,7 +322,7 @@ def build_karr_m1_m2_m3_engine(
     }
     if dynamic_bounds:
         initial_state["m1_dynamic_diagnostics"] = {k: 0.0 for k in m1_proc._diagnostics_schema()}
-        from opencell.vivarium.karr_m1 import _CYTOSOL_COMPARTMENT_0
+        from opencell.vivarium.karr_metabolism import _CYTOSOL_COMPARTMENT_0
 
         initial_state["m1_pools"] = {
             sid: float(m1_proc._sub_state[idx, _CYTOSOL_COMPARTMENT_0])
@@ -469,7 +469,7 @@ def build_karr_chassis_v2(
     }
     if dynamic_bounds:
         initial_state["m1_dynamic_diagnostics"] = {k: 0.0 for k in m1_proc._diagnostics_schema()}
-        from opencell.vivarium.karr_m1 import _CYTOSOL_COMPARTMENT_0
+        from opencell.vivarium.karr_metabolism import _CYTOSOL_COMPARTMENT_0
 
         initial_state["m1_pools"] = {
             sid: float(m1_proc._sub_state[idx, _CYTOSOL_COMPARTMENT_0])
@@ -619,7 +619,7 @@ def build_karr_chassis_v3(
         m1_topo["m1_pools"] = ("m1_pools",)
 
     topology: dict[str, dict[str, tuple[str, ...]]] = {
-        "karr_m1": m1_topo,
+        "karr_metabolism": m1_topo,
         "karr_transcription_v3": {
             "rna": ("rna",),
             "substrates": ("substrates",),
@@ -672,7 +672,7 @@ def build_karr_chassis_v3(
     }
     if dynamic_bounds:
         initial_state["m1_dynamic_diagnostics"] = {k: 0.0 for k in m1_proc._diagnostics_schema()}
-        from opencell.vivarium.karr_m1 import _CYTOSOL_COMPARTMENT_0
+        from opencell.vivarium.karr_metabolism import _CYTOSOL_COMPARTMENT_0
 
         initial_state["m1_pools"] = {
             sid: float(m1_proc._sub_state[idx, _CYTOSOL_COMPARTMENT_0])
@@ -681,7 +681,7 @@ def build_karr_chassis_v3(
 
     engine = Engine(
         processes={
-            "karr_m1": m1_proc,
+            "karr_metabolism": m1_proc,
             "karr_transcription_v3": m2_proc,
             "karr_translation_v3": m3_proc,
             "karr_d2_real": d2_proc,
@@ -940,7 +940,7 @@ def build_karr_chassis_v4(
         m1_topo["m1_pools"] = ("m1_pools",)
 
     topology: dict[str, dict[str, tuple[str, ...]]] = {
-        "karr_m1": m1_topo,
+        "karr_metabolism": m1_topo,
         "karr_transcription_v3": {
             "rna": ("rna",),
             "substrates": ("substrates",),
@@ -1116,7 +1116,7 @@ def build_karr_chassis_v4(
     }
     if dynamic_bounds:
         initial_state["m1_dynamic_diagnostics"] = {k: 0.0 for k in m1_proc._diagnostics_schema()}
-        from opencell.vivarium.karr_m1 import _CYTOSOL_COMPARTMENT_0
+        from opencell.vivarium.karr_metabolism import _CYTOSOL_COMPARTMENT_0
 
         initial_state["m1_pools"] = {
             sid: float(m1_proc._sub_state[idx, _CYTOSOL_COMPARTMENT_0])
@@ -1125,7 +1125,7 @@ def build_karr_chassis_v4(
 
     engine = Engine(
         processes={
-            "karr_m1": m1_proc,
+            "karr_metabolism": m1_proc,
             "karr_transcription_v3": m2_proc,
             "karr_translation_v3": m3_proc,
             "karr_d2_real": d2_proc,
@@ -1446,7 +1446,7 @@ def build_karr_chassis_v5(
         m1_topo["m1_pools"] = ("m1_pools",)
 
     topology: dict[str, dict[str, tuple[str, ...]]] = {
-        "karr_m1": m1_topo,
+        "karr_metabolism": m1_topo,
         "karr_transcription_v3": {
             "rna": ("rna",),
             "substrates": ("substrates",),
@@ -1713,7 +1713,7 @@ def build_karr_chassis_v5(
     }
     if dynamic_bounds:
         initial_state["m1_dynamic_diagnostics"] = {k: 0.0 for k in m1_proc._diagnostics_schema()}
-        from opencell.vivarium.karr_m1 import _CYTOSOL_COMPARTMENT_0
+        from opencell.vivarium.karr_metabolism import _CYTOSOL_COMPARTMENT_0
 
         initial_state["m1_pools"] = {
             sid: float(m1_proc._sub_state[idx, _CYTOSOL_COMPARTMENT_0])
@@ -1722,7 +1722,7 @@ def build_karr_chassis_v5(
 
     engine = Engine(
         processes={
-            "karr_m1": m1_proc,
+            "karr_metabolism": m1_proc,
             "karr_transcription_v3": m2_proc,
             "karr_translation_v3": m3_proc,
             "karr_d2_real": d2_proc,
@@ -1791,4 +1791,5 @@ __all__ = [
     "build_karr_m1_m2_m3_engine",
     "compute_baseline_demand_per_s",
 ]
+
 

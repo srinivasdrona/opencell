@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 
 CHASSIS_V6_EXPECTED_PROCESS_KEYS: tuple[str, ...] = (
-    "karr_m1",
+    "karr_metabolism",
     "karr_replication_initiation",
     "karr_replication",
     "karr_dna_damage",
@@ -75,3 +75,4 @@ __all__ = [
     "CHASSIS_V6_EXPECTED_PROCESS_KEYS",
     "build_karr_chassis_v6",
 ]
+

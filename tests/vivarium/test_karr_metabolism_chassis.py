@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from opencell.m1 import karr_metabolism as km
-from opencell.vivarium.karr_m1 import (
+from opencell.vivarium.karr_metabolism import (
     KarrMetabolismProcess,
     build_karr_m1_engine,
 )
@@ -83,3 +83,4 @@ def test_engine_biomass_matches_standalone(
     ts = engine.emitter.get_timeseries()
     g = float(ts["metabolic_reaction"]["growth_per_h"][-1])
     assert g == pytest.approx(info["biomass_flux_per_h"], rel=1e-9)
+

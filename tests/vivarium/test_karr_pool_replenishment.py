@@ -27,7 +27,7 @@ from opencell.vivarium.karr_composite import (
     build_karr_m1_m2_m3_engine,
     compute_baseline_demand_per_s,
 )
-from opencell.vivarium.karr_m1 import (
+from opencell.vivarium.karr_metabolism import (
     _CYTOSOL_COMPARTMENT_0,
     KarrMetabolismProcess,
 )
@@ -288,3 +288,4 @@ def test_replenishment_emits_post_replenish_pools_in_m1_pools() -> None:
             float(proc._sub_state[idx, _CYTOSOL_COMPARTMENT_0]),
             abs=1e-9,
         )
+

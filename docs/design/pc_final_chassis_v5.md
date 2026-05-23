@@ -30,7 +30,7 @@ Tick/order legend:
 
 | Name | Module path | Ports written | Ports read | Substrate consumption | Depends on (state from other process) | Ticks/order |
 |---|---|---|---|---|---|---|
-| Metabolism | `opencell/vivarium/karr_m1.py` | `metabolic_reaction`, `substrates` | `substrates` | produces/consumes broad metabolite pool (585 WIDs) | upstream demand from all consumers via shared `substrates` | `P` |
+| Metabolism | `opencell/vivarium/karr_metabolism.py` | `metabolic_reaction`, `substrates` | `substrates` | produces/consumes broad metabolite pool (585 WIDs) | upstream demand from all consumers via shared `substrates` | `P` |
 | Transcription (v3) | `opencell/vivarium/karr_m2_v3.py` | `rna`, `substrates` | `complex`, `tx_rate_fold_change`, `substrates` | ATP/CTP/GTP/UTP | RNAP availability (`complex`), regulation fold-change | `P` |
 | Translation (v3) | `opencell/vivarium/karr_m3_v3.py` | `protein`, `substrates` | `rna`, `complex`, `substrates` | ATP/GTP + amino acids | ribosome counts (`complex`), transcript abundance (`rna`) | `P` |
 | MacromolecularComplexation (D2 real) | `opencell/vivarium/karr_d2_real.py` | `complex` (+ internal requests) | `substrates`, `complex`, `substrates_allocated` | ATP/GTP/H2O classically allocated | shared substrates and complex counts | `P` |
@@ -326,3 +326,4 @@ Suggested uplift sequence:
 3. confirm canonical chromosome coordinate schema (`left/right nt` vs richer region-index representation)
 4. confirm target tick windows from per-process traces for replication completion and division
 5. decide where to host final `CellCycleCoordinator` (inside `karr_composite.py` or dedicated module)
+

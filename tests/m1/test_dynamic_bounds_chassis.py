@@ -18,7 +18,7 @@ import pytest
 from opencell.m1 import calc_flux_bounds as cfb
 from opencell.m1 import karr_metabolism as km
 from opencell.vivarium.karr_composite import build_karr_m1_m2_m3_engine
-from opencell.vivarium.karr_m1 import (
+from opencell.vivarium.karr_metabolism import (
     _CYTOSOL_COMPARTMENT_0,
     _KARR_DEMAND_KEYS,
     KarrMetabolismProcess,
@@ -242,3 +242,4 @@ def test_dynamic_mode_end_to_end_atp_drains_under_m2_demand() -> None:
     )
     # And at least some draw happened.
     assert real[-1] < real[0]
+

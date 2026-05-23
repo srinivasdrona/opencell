@@ -65,7 +65,7 @@ def test_chassis_v3_builds(
         emit_step_s=1.0,
     )
     assert engine is not None
-    assert "karr_m1" in engine.processes
+    assert "karr_metabolism" in engine.processes
     assert "karr_transcription_v3" in engine.processes
     assert "karr_translation_v3" in engine.processes
     assert "karr_d2_real" in engine.processes
@@ -167,7 +167,7 @@ def test_chassis_v3_all_writers_accumulate(
         emit_step_s=1.0,
     )
 
-    p_m1 = engine.processes["karr_m1"].ports_schema()
+    p_m1 = engine.processes["karr_metabolism"].ports_schema()
     p_m2 = engine.processes["karr_transcription_v3"].ports_schema()
     p_m3 = engine.processes["karr_translation_v3"].ports_schema()
     p_d2 = engine.processes["karr_d2_real"].ports_schema()
@@ -307,3 +307,4 @@ def test_emit_step_records_complex_trajectories(
     assert len(series) == len(ts["time"])
     assert len(series) == 6
     assert np.all(np.isfinite(series))
+

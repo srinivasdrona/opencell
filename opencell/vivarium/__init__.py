@@ -28,7 +28,7 @@ from opencell.vivarium.karr_composite import (
     build_karr_m1_m2_engine,
     build_karr_m1_m2_m3_engine,
 )
-from opencell.vivarium.karr_m1 import (
+from opencell.vivarium.karr_metabolism import (
     KarrMetabolismProcess,
     build_karr_m1_engine,
 )
@@ -62,3 +62,4 @@ __all__ = [
     "build_karr_m1_m2_engine",
     "build_karr_m1_m2_m3_engine",
 ]
+

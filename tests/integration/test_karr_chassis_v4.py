@@ -203,7 +203,7 @@ def test_chassis_v4_builds(
     engine = build_karr_chassis_v4(m1_model, m2_model, m3_model, time_step_s=1.0, emit_step_s=1.0)
     assert engine is not None
     expected_processes = {
-        "karr_m1",
+        "karr_metabolism",
         "karr_transcription_v3",
         "karr_translation_v3",
         "karr_d2_real",
@@ -438,7 +438,7 @@ def test_chassis_v4_all_writers_accumulate(
 ) -> None:
     engine = build_karr_chassis_v4(m1_model, m2_model, m3_model, time_step_s=1.0, emit_step_s=1.0)
 
-    p_m1 = engine.processes["karr_m1"].ports_schema()
+    p_m1 = engine.processes["karr_metabolism"].ports_schema()
     p_m2 = engine.processes["karr_transcription_v3"].ports_schema()
     p_m3 = engine.processes["karr_translation_v3"].ports_schema()
     p_d2 = engine.processes["karr_d2_real"].ports_schema()
@@ -492,3 +492,4 @@ def test_chassis_v4_tick_rate(
     elapsed = time.perf_counter() - start
     ticks_per_s = 100.0 / max(elapsed, 1e-9)
     assert ticks_per_s > 5.0, f"tick_rate={ticks_per_s:.2f} ticks/s"
+
