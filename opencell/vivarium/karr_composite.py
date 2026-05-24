@@ -1888,7 +1888,11 @@ def build_karr_chassis_v6(
         ("karr_translation_v3", "karr_translation"),
     ):
         processes[new_key] = processes.pop(old_key)
+        processes[new_key].name = new_key
         topology[new_key] = topology.pop(old_key)
+        # Bug 1 fix: do NOT mark as Step. Step marking causes timestep=0 in
+        # Vivarium's engine (_calculate_update(path, step, 0)), silencing
+        # biology. TX/TL must remain Processes with real dt.
 
     # Promote coordinator from step inventory to process inventory so it is
     # visible in the process-key scorecard while preserving existing class logic.
