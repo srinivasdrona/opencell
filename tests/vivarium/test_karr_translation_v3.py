@@ -72,7 +72,9 @@ def _run_ordered_m3(order: tuple[str, str]) -> np.ndarray:
     )
     engine.update(1.0)
     ts = engine.emitter.get_timeseries()
-    return np.array([float(ts["protein"]["counts"][pid][-1]) for pid in kinetics.protein_wcm_ids])
+    return np.array(
+        [float(ts["protein"]["unprocessed_counts"][pid][-1]) for pid in kinetics.protein_wcm_ids]
+    )
 
 
 def test_delta_equals_v2_absolute() -> None:
@@ -93,7 +95,9 @@ def test_delta_equals_v2_absolute() -> None:
     update_v3 = v3.next_update(1.0, state)
 
     v2_abs = np.array([float(update_v2["protein"]["counts"][pid]) for pid in v2.protein_ids])
-    v3_delta = np.array([float(update_v3["protein"]["counts"][pid]) for pid in v3.protein_ids])
+    v3_delta = np.array(
+        [float(update_v3["protein"]["unprocessed_counts"][pid]) for pid in v3.protein_ids]
+    )
 
     np.testing.assert_allclose(prior + v3_delta, v2_abs, rtol=0.0, atol=1e-9)
 
@@ -101,7 +105,7 @@ def test_delta_equals_v2_absolute() -> None:
 def test_schema_only_accumulate() -> None:
     schema = KarrTranslationV3Process({}).ports_schema()
 
-    for leaf in schema["protein"]["counts"].values():
+    for leaf in schema["protein"]["unprocessed_counts"].values():
         assert leaf["_updater"] == "accumulate"
 
     updaters = set(_collect_updaters(schema))
@@ -132,4 +136,3 @@ def test_substrate_delta_unchanged() -> None:
     assert update_v2["substrates"]["GLY"] == pytest.approx(-46.88127639605819)
     assert update_v3["substrates"]["ALA"] == pytest.approx(update_v2["substrates"]["ALA"])
     assert update_v3["substrates"]["GLY"] == pytest.approx(update_v2["substrates"]["GLY"])
-

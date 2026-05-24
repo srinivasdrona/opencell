@@ -176,7 +176,7 @@ def test_chassis_v3_all_writers_accumulate(
     _assert_branch_accumulate(p_m1["substrates"])
     _assert_branch_accumulate(p_m2["rna"]["counts"])
     _assert_branch_accumulate(p_m2["substrates"])
-    _assert_branch_accumulate(p_m3["protein"]["counts"])
+    _assert_branch_accumulate(p_m3["protein"]["unprocessed_counts"])
     _assert_branch_accumulate(p_m3["substrates"])
     _assert_branch_accumulate(p_d2["complex"]["counts"])
     _assert_branch_accumulate(p_d2["substrates"])
@@ -307,5 +307,4 @@ def test_emit_step_records_complex_trajectories(
     assert len(series) == len(ts["time"])
     assert len(series) == 6
     assert np.all(np.isfinite(series))
-
 
