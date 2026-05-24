@@ -1849,7 +1849,7 @@ def build_karr_chassis_v6(
     time_step_s: float = 1.0,
     emit_step_s: float | None = None,
     condition: int = 1,
-    dynamic_bounds: bool = False,
+    dynamic_bounds: bool = True,
     enable_pool_replenishment: bool = False,
     host_adhesion_gates_division: bool = False,
 ) -> Any:
