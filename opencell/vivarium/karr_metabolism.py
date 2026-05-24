@@ -153,11 +153,15 @@ class KarrMetabolismProcess(Process):
                 for sid in _KARR_DEMAND_KEYS
                 if sid in self._sub_id_to_idx
             ]
-            # Initialise tracker against the schema default (1.0) rather
-            # than first-observed shared state, so the first tick already
-            # picks up the M2/M3 deltas accumulated during the first
-            # boundary application.
-            self._prev_shared = {sid: 1.0 for sid in self._sub_ids}
+            # Bug 6c: lazy init.  Setting _prev_shared eagerly here (e.g.
+            # to the schema default 1.0) relies on the snapshot happening
+            # to equal the schema default, and silently corrupts the
+            # tick-0 delta if any process has already written a non-default
+            # value to ``substrates`` before M1's first update.  Defer
+            # population to the first ``_dynamic_update`` call where we
+            # have an authoritative view of ``shared`` -> delta is
+            # structurally zero on the first tick.
+            self._prev_shared: dict | None = None
 
             if self.enable_pool_replenishment:
                 bd = self.parameters["baseline_demand_per_s"]
@@ -279,6 +283,22 @@ class KarrMetabolismProcess(Process):
         assert self._fba_reaction_bounds is not None
 
         shared = states.get("substrates", {})
+        if self._prev_shared is None:
+            # First tick: seed tracker from observed shared state so
+            # delta is exactly zero by construction.  Fall back to the
+            # M1 sub_state for any sid missing from ``shared`` (should
+            # not happen in practice but keeps the invariant total).
+            self._prev_shared = {
+                sid: float(
+                    shared.get(
+                        sid,
+                        self._sub_state[
+                            self._sub_id_to_idx[sid], _CYTOSOL_COMPARTMENT_0
+                        ],
+                    )
+                )
+                for sid in self._sub_ids
+            }
         for sid, idx in self._demand_idx_pairs:
             cur = float(shared.get(sid, self._prev_shared[sid]))
             delta = cur - self._prev_shared[sid]

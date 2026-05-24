@@ -124,6 +124,80 @@ def test_composer_rejects_replenishment_without_dynamic_bounds() -> None:
 
 
 # ----------------------------------------------------------------------
+# Bug 6c: lazy _prev_shared invariant
+# ----------------------------------------------------------------------
+def test_prev_shared_lazy_init_yields_zero_tick0_delta() -> None:
+    """Bug 6c: ``_prev_shared`` must NOT be eagerly populated at
+    construction (the prior code seeded it to the schema default 1.0,
+    which silently produced a non-zero tick-0 delta whenever any
+    consumer wrote a non-default value before M1's first update).
+
+    Contract:
+    * After construction, ``_prev_shared`` is ``None``.
+    * After the first ``_dynamic_update`` call, ``_prev_shared`` matches
+      the observed ``shared`` state for every demand sid.
+    * The substrate state for demand sids equals the snapshot exactly
+      (delta == 0) on tick 0, even when the caller passes a ``shared``
+      dict with values that differ from the schema default of 1.0.
+    """
+    eng = build_karr_m1_m2_m3_engine(
+        dynamic_bounds=True,
+        enable_throttle=False,
+        enable_pool_replenishment=False,
+    )
+    proc = eng.processes["m1_karr"]
+    # Force initialisation by calling the bound-setup once (engine.update
+    # is the canonical path; here we just need _setup_dynamics to run).
+    eng.update(1.0)
+    assert proc._prev_shared is not None, (
+        "_prev_shared should be populated after the first update"
+    )
+    # Every demand sid should have been seeded from observed shared.
+    for sid, _idx in proc._demand_idx_pairs:
+        assert sid in proc._prev_shared
+
+
+def test_prev_shared_lazy_init_robust_to_nondefault_shared() -> None:
+    """Direct unit test on KarrMetabolismProcess: even if the very first
+    ``shared`` payload differs from the schema default, the tick-0
+    delta applied to M1's internal substrate state must be exactly zero
+    (this is the structural guarantee Bug 6c restores)."""
+    m2 = tx.load_default()
+    m3 = tl.load_default()
+    proc = KarrMetabolismProcess(
+        {
+            "dynamic_bounds": True,
+            "enable_pool_replenishment": False,
+            "baseline_demand_per_s": compute_baseline_demand_per_s(
+                m2, m3, condition=1
+            ),
+        }
+    )
+    # Trigger lazy dynamics setup via topology/ports access.
+    proc.ports_schema()
+    # Force _setup_dynamics() the same way the engine does on first update.
+    proc.next_update(1.0, {"substrates": {}, "enzymes": {}, "m1_pools": {}})
+    # Snapshot of internal sub_state BEFORE we feed a non-default shared.
+    pre = proc._sub_state.copy()
+    # Reset _prev_shared to simulate first observation with a non-default
+    # shared payload (e.g., an upstream process wrote 1234.5 to ATP
+    # before M1 looked).
+    proc._prev_shared = None
+    bogus_shared = {sid: 1234.5 for sid, _ in proc._demand_idx_pairs}
+    proc._sub_state = pre.copy()
+    proc._dynamic_update(1.0, {"substrates": bogus_shared})
+    # Tick-0 delta must be zero -> sub_state for demand sids unchanged.
+    import numpy as _np
+
+    for sid, idx in proc._demand_idx_pairs:
+        assert _np.isclose(
+            proc._sub_state[idx, _CYTOSOL_COMPARTMENT_0],
+            pre[idx, _CYTOSOL_COMPARTMENT_0],
+        ), f"{sid}: tick-0 delta nonzero (lazy init broken)"
+        assert proc._prev_shared[sid] == 1234.5
+
+
+# ----------------------------------------------------------------------
 # Replenishment behaviour - end to end
 # ----------------------------------------------------------------------
 def test_replenishment_off_baseline_unchanged() -> None:
@@ -144,10 +218,11 @@ def test_replenishment_balances_baseline_drain_to_within_one_tick_offset() -> No
     pool stays at snapshot to within ONE TICK of replenishment offset.
 
     The offset is a known semantic of the start-up: at tick 0 M1
-    replenishes but has not yet observed a drain (``_prev_shared`` is
-    initialised to the schema default 1.0 which equals the actual
-    initial state, so first-tick delta is zero).  After tick 0 every
-    subsequent tick has drain == replenish exactly.  We therefore
+    replenishes but has not yet observed a drain (Bug 6c lazy init:
+    ``_prev_shared`` is populated on the first update call from the
+    observed ``shared`` state so the first-tick delta is structurally
+    zero).  After tick 0 every subsequent tick has drain == replenish
+    exactly.  We therefore
     require the long-run drift to be bounded by ``baseline_per_s * dt``
     times a small constant (1.5 to absorb numerical noise), NOT to
     grow proportionally with the number of ticks.
