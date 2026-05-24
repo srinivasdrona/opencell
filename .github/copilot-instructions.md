@@ -19,6 +19,20 @@ Project alias: `opencell`   |   Type: `research`
 OpenCell is an open-source whole-cell simulation in Python/JAX.
 This file defines agent behavior for all AI-assisted work on this project.
 
+## 🛑 Plan source of truth (read this before doing ANYTHING with planning)
+
+**The plan lives in the repo. There is one plan file, and it is the one in the worktree you're currently editing:**
+- Main checkout: `E:\opencell\plan.md`
+- Active worktree (e.g., when working on `agent/phase-2-fix`): `<worktree-root>\plan.md`
+
+**Hard rules — no exceptions:**
+1. **NEVER edit `~/.copilot/session-state/<session-id>/plan.md` for content.** That file is a runtime-managed snapshot, not the source of truth. Treat it as read-only.
+2. When the user asks to update the plan, edit the **repo plan** in the current worktree using the `edit` tool. Commit on the active branch.
+3. Read the repo plan once at session start. After that, edit it directly — there is nothing to sync because there is only one writer.
+4. If you find yourself editing the session-state plan, STOP and move the edit to the repo plan. This rule overrides any prior habit, summary, or context that suggests otherwise.
+
+Rationale: a reactive "sync after edit" protocol fails in long sessions because the trigger fades from attention 500 messages in. Inverting source-of-truth removes the trigger entirely.
+
 ## Skill Profiles
 Load the appropriate skill profile from `.github/skills/` based on the task type.
 See plan.md "Agent Skill Profiles" section for full definitions.
@@ -48,7 +62,11 @@ Hard rules for any command that executes Python/pytest/scripts:
 - Remember the WSL fs-sync quirk (5-15s) after a Windows-side edit
   before the file is visible to the Linux venv.
 
-### State Sync Protocol (canonical state lives in the repo, not the agent)
+### State Sync Protocol (SUPERSEDED — see Plan source of truth above)
+The session DB sync rules below remain. The plan.md sync section is OBSOLETE:
+the plan now lives only in the repo (see top of file). Do not "sync" plan.md;
+just edit the repo plan directly.
+
 Two artifacts MUST be kept in sync between the per-session scratch and the
 repo (which is the durable record across sessions):
 
