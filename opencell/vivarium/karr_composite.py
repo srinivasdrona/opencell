@@ -7,7 +7,7 @@ many seconds without crashing.
 Topology (shared stores):
   * ``metabolic_reaction``  -- written by M1 only (645 fluxs + growth scalars)
   * ``substrates``          -- M1 declares all 585 substrate WCM IDs
-                               (read-only placeholder, default 1.0);
+                               seeded from Karr's cytosol snapshot;
                                M2 writes negative ATP/CTP/GTP/UTP deltas;
                                M3 writes per-AA negative deltas keyed by
                                the 20 standard amino-acid WCM IDs (these
@@ -19,7 +19,7 @@ Topology (shared stores):
   * ``protein``             -- written by M3 only (482 protein counts)
 
 Substrate writeback is still chassis-grade only:  M2/M3's per-tick
-deltas are decremented from the placeholder counts; M1 does not yet
+deltas are decremented from the shared counts; M1 does not yet
 read them back into its FBA bounds (that requires Karr's
 calcFluxBounds() port + the 585->1686 metabolite-x-compartment count
 mapping, both deferred to the integrator pass).
@@ -32,6 +32,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
+from opencell.m1 import calc_flux_bounds as cfb
 from opencell.m1 import karr_metabolism as km
 from opencell.m2 import transcription as tx
 from opencell.m2 import transcription_v2 as tx_v2
@@ -93,6 +94,25 @@ if TYPE_CHECKING:
 
 
 _M1_SUBSTRATE_DEFAULT = 1.0
+_KARR_CYTOSOL_COMPARTMENT_0 = 0
+
+
+def _load_karr_initial_substrate_counts(
+    m1_model: km.KarrMetabolismModel,
+) -> dict[str, float]:
+    """Map Karr's 585 substrate IDs to cytosol counts from the dynamics snapshot."""
+    dyn = cfb.load_default_dynamics()
+    sub_ids = [str(wid) for wid in m1_model.raw["ids"]["substrate_wcm_585"]]
+    if dyn.substrates_snapshot.shape[0] != len(sub_ids):
+        raise ValueError(
+            "Karr dynamics substrate snapshot row count "
+            f"{dyn.substrates_snapshot.shape[0]} != substrate ID count {len(sub_ids)}"
+        )
+    return {
+        sid: float(dyn.substrates_snapshot[idx, _KARR_CYTOSOL_COMPARTMENT_0])
+        for idx, sid in enumerate(sub_ids)
+    }
+
 
 CHASSIS_V6_EXPECTED_PROCESS_KEYS: tuple[str, ...] = (
     "karr_replication",
@@ -1421,9 +1441,10 @@ def build_karr_chassis_v5(
         p: float(m3_model.counts_mature[i]) for i, p in enumerate(m3_model.protein_wcm_ids)
     }
 
+    karr_initial_counts = _load_karr_initial_substrate_counts(m1_model)
     initial_substrates: dict[str, float] = {sid: 0.0 for sid in allocation_substrates}
     for sid in m1_sub_ids:
-        initial_substrates[sid] = _M1_SUBSTRATE_DEFAULT
+        initial_substrates[sid] = karr_initial_counts.get(sid, _M1_SUBSTRATE_DEFAULT)
     for wid, cnt in prot_init.items():
         if wid in initial_substrates:
             initial_substrates[wid] = max(initial_substrates[wid], cnt)
