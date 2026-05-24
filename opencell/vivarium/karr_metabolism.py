@@ -48,6 +48,7 @@ Two operating modes (selected by the ``dynamic_bounds`` parameter):
 
 from __future__ import annotations
 
+import os
 from typing import Any
 
 import numpy as np
@@ -90,6 +91,18 @@ _KARR_DEMAND_KEYS: tuple[str, ...] = (
 _CYTOSOL_COMPARTMENT_0 = 0
 
 
+def _read_env_bool(name: str) -> bool | None:
+    val = os.getenv(name)
+    if val is None:
+        return None
+    norm = val.strip().lower()
+    if norm in {"1", "true", "t", "yes", "y", "on"}:
+        return True
+    if norm in {"0", "false", "f", "no", "n", "off"}:
+        return False
+    return None
+
+
 class KarrMetabolismProcess(Process):
     """1-second FBA tick of Karr's fitted snapshot.
 
@@ -104,6 +117,7 @@ class KarrMetabolismProcess(Process):
         "use_full_objective": True,
         "dynamic_bounds": False,
         "dynamics_inputs": None,
+        "enable_lp_writeback": True,
         "enable_pool_replenishment": False,
         "baseline_demand_per_s": None,
     }
@@ -118,6 +132,12 @@ class KarrMetabolismProcess(Process):
         self._sub_ids = self.model.raw["ids"]["substrate_wcm_585"]
 
         self.dynamic_bounds: bool = bool(self.parameters["dynamic_bounds"])
+        env_lp_writeback = _read_env_bool("OPENCELL_ENABLE_LP_WRITEBACK")
+        self.enable_lp_writeback: bool = (
+            env_lp_writeback
+            if env_lp_writeback is not None
+            else bool(self.parameters["enable_lp_writeback"])
+        )
         self.enable_pool_replenishment: bool = bool(self.parameters["enable_pool_replenishment"])
         self._sub_state: np.ndarray | None = None
         self._enz_state: np.ndarray | None = None
@@ -126,6 +146,10 @@ class KarrMetabolismProcess(Process):
         self._sub_id_to_idx: dict[str, int] | None = None
         self._fba_reaction_bounds: np.ndarray | None = None
         self._demand_idx_pairs: list[tuple[str, int]] = []
+        self._fba_row_sub: np.ndarray | None = None
+        self._fba_row_cmp: np.ndarray | None = None
+        self._demand_writeback_rows: dict[int, np.ndarray] = {}
+        self._demand_sub_ids: dict[int, str] = {}
         self._baseline_demand_per_s: dict[str, float] | None = None
         self._bug6b_clamped_reactions_total: int = 0
 
@@ -154,6 +178,18 @@ class KarrMetabolismProcess(Process):
                 for sid in _KARR_DEMAND_KEYS
                 if sid in self._sub_id_to_idx
             ]
+            # Bug 6a Stage 1: cache FBA-row lookups once for demand-key
+            # writeback (and Bug 6b headroom clamping).
+            self._fba_row_sub = self._dyn.substrate_idx_fba_sub0
+            self._fba_row_cmp = self._dyn.substrate_idx_fba_cmp0
+            self._demand_sub_ids = {sid_idx: sid for sid, sid_idx in self._demand_idx_pairs}
+            for sid_idx in self._demand_sub_ids:
+                rows = np.where(
+                    (self._fba_row_sub == sid_idx)
+                    & (self._fba_row_cmp == _CYTOSOL_COMPARTMENT_0)
+                )[0]
+                if rows.size:
+                    self._demand_writeback_rows[sid_idx] = rows
             # Bug 6c: lazy init.  Setting _prev_shared eagerly here (e.g.
             # to the schema default 1.0) relies on the snapshot happening
             # to equal the schema default, and silently corrupts the
@@ -248,10 +284,13 @@ class KarrMetabolismProcess(Process):
             "min_lb",
             "max_ub",
             "bug6b_clamped_reactions",
+            "bug6a_writeback_total_positive",
         ]
+        schema = {k: {"_default": 0.0, "_updater": "set", "_emit": True} for k in keys}
+        schema["bug6a_writeback_keys"] = {"_default": [], "_updater": "set", "_emit": True}
         for sid, _ in self._demand_idx_pairs:
-            keys.append(f"cyt_{sid}")
-        return {k: {"_default": 0.0, "_updater": "set", "_emit": True} for k in keys}
+            schema[f"cyt_{sid}"] = {"_default": 0.0, "_updater": "set", "_emit": True}
+        return schema
 
     # ------------------------------------------------------------------
     def next_update(self, timestep: float, states: dict) -> dict:
@@ -323,17 +362,14 @@ class KarrMetabolismProcess(Process):
         # compute_bounds only constrains exchange-index reactions; demand pools
         # can still be driven negative by non-exchange consumers/producers.
         S = self.model.S
-        fba_row_sub = self._dyn.substrate_idx_fba_sub0
-        fba_row_cmp = self._dyn.substrate_idx_fba_cmp0
+        assert self._fba_row_sub is not None
+        assert self._fba_row_cmp is not None
         clamped = 0
 
-        for _, sid_idx in self._demand_idx_pairs:
+        for sid_idx, rows in self._demand_writeback_rows.items():
             pool_f = float(self._sub_state[sid_idx, _CYTOSOL_COMPARTMENT_0])
             if pool_f <= 0.0:
                 continue
-            rows = np.where(
-                (fba_row_sub == sid_idx) & (fba_row_cmp == _CYTOSOL_COMPARTMENT_0)
-            )[0]
             for r in rows:
                 sto = S[r, :]
                 consume_j = np.where(sto < 0.0)[0]
@@ -368,6 +404,17 @@ class KarrMetabolismProcess(Process):
             ub_override=bounds[:, 1],
         )
 
+        # Bug 6a Stage 1: positive-delta writeback to shared substrates,
+        # demand keys only. Feature-gated to support canary A/Bs.
+        substrate_delta: dict[str, float] = {}
+        if self.enable_lp_writeback:
+            row_net_rates = S @ v
+            for sid_idx, rows in self._demand_writeback_rows.items():
+                sid = self._demand_sub_ids[sid_idx]
+                rate = float(np.sum(row_net_rates[rows]))
+                if rate > 0.0:
+                    substrate_delta[sid] = rate * float(timestep)
+
         flux_update = {rid: 0.0 for rid in self._rxn_ids}
         for col, rid in enumerate(self.model.fba_col_rxn_wcm):
             if rid is not None:
@@ -390,7 +437,7 @@ class KarrMetabolismProcess(Process):
         bnd_lb_diff = np.not_equal(bounds[:, 0], self.model.lb)
         bnd_ub_diff = np.not_equal(bounds[:, 1], self.model.ub)
         n_changed = int(bnd_lb_diff.sum() + bnd_ub_diff.sum())
-        diag: dict[str, float] = {
+        diag: dict[str, Any] = {
             "growth_per_s": float(info["biomass_flux_per_s"]),
             "biomass_flux_per_s": float(info["biomass_flux_per_s"]),
             "n_active_bounds_changed": float(n_changed),
@@ -405,6 +452,8 @@ class KarrMetabolismProcess(Process):
                 else 0.0
             ),
             "bug6b_clamped_reactions": float(self._bug6b_clamped_reactions_total),
+            "bug6a_writeback_total_positive": float(sum(substrate_delta.values())),
+            "bug6a_writeback_keys": list(substrate_delta.keys()),
         }
         m1_pools_update: dict[str, float] = {}
         for sid, idx in self._demand_idx_pairs:
@@ -420,6 +469,7 @@ class KarrMetabolismProcess(Process):
             },
             "m1_dynamic_diagnostics": diag,
             "m1_pools": m1_pools_update,
+            "substrates": substrate_delta,
         }
 
 

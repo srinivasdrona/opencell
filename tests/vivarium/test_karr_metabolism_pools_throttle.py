@@ -246,12 +246,11 @@ def test_throttle_on_with_starved_atp_freezes_m2_synthesis() -> None:
     # publish overwrites m1_pools but M2's own substrate writes are
     # the deltas we're checking.
     for ntp in ("ATP", "CTP", "GTP", "UTP"):
-        # M2 contribution is 0; only M1 dynamic-mode side-effects can
-        # touch substrates and M1 does not write substrates.  So delta
-        # should be 0.  M3's writes are AA keys, disjoint from NTPs.
-        assert sub_after[ntp] == pytest.approx(sub_before[ntp], abs=1e-9), (
-            f"NTP {ntp} substrate moved under M2 f=0: {sub_before[ntp]} -> {sub_after[ntp]}"
+        # M2 contribution is 0. In Bug 6a Stage 1 M1 may write positive
+        # LP-derived supply to demand keys, so NTP deltas must be
+        # non-negative (never additional drain).
+        assert sub_after[ntp] >= sub_before[ntp] - 1e-9, (
+            f"NTP {ntp} unexpectedly drained under M2 f=0: {sub_before[ntp]} -> {sub_after[ntp]}"
         )
-
 
 
