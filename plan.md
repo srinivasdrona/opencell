@@ -401,7 +401,159 @@ NOT a parallel program)**
 
 ---
 
-## Current Status (2026-05-24 01:21 IST, hyp-validation done, fix-did-not-execute in flight)
+## Current Status (2026-05-24 ~08:55, **THREE BUGS ROOT-CAUSED, ONE IS OUR REGRESSION, TEST-FIRST FIX SEQUENCE**)
+
+### TL;DR
+The 4-seed × 32,400t ensemble surfaced (not fixed) **three serious bugs** the 1000t canary missed:
+1. **TX/TL run at timestep=0** — `karr_transcription.csv` and `karr_translation.csv` have ZERO rows across 32,400 ticks. Root cause: `_mark_instance_as_step(processes[new_key])` at `karr_composite.py:1873`, introduced 7 hours before discovery in commit `b51819d` ("Step 6: align v6 consumer step identity"). **This is our own self-regression** — we diagnosed `is_step==True → timestep=0` in `artifacts/cascade_fix_v5/step1_verdict.md` and then introduced it in the very next commit.
+2. **Substrate init = 1.0** — `_M1_SUBSTRATE_DEFAULT = 1.0` at line 96 + `_updater: accumulate` on substrates store ⇒ ATP/AD/URA start at value `1`, then accumulate deltas. AD ends at -29,999,999 (1000/tick drain × 30k ticks).
+3. **Static metabolism** — `dynamic_bounds: bool = False` at line 1831. Metabolism emits constant flux every tick, identical across all 4 seeds to 10 decimal places.
+
+Conservation holding at 3.6e-9 was metabolism-only-in-a-closed-loop math, not biology. The cascade-fix work passed a math check, not a biology check.
+
+### What's running now (4 Codex sessions, 2026-05-24 08:55)
+| Session | PID | Worktree | Task |
+|---|---|---|---|
+| **Biology-firing test author** | 18832 | `biology-firing-test` | Author `test_chassis_v6_biology_firing.py` — 6 assertions across central dogma / substrate sanity / metabolism dynamics. Must FAIL on current HEAD as proof it's a valid canary. |
+| **Bug 1 constraint analysis** | 20808 | `bug1-constraint` | Read-only: what test/flow-dep motivated `_mark_instance_as_step`? What breaks if we remove it? Rate fix candidates. |
+| **Bug 2 init pipeline trace** | 16000 | `bug2-init-trace` | Read-only: where SHOULD Karr initial substrate counts come from? Is there a disconnected init path? `_updater: accumulate` semantics audit. |
+| **Bug 3 dynamic FBA feasibility** | 4608 | `bug3-fba-feasibility` | Read-only: is `_dynamic_update` implemented + tested? Can we just flip the flag? Risk matrix. |
+
+Expected: ~8 min for test author, ~10-15 min for the three investigations.
+
+### Fix sequence (decided 2026-05-24 08:42, replaces all prior cascade-fix sequencing)
+**Front-load investment to raise per-fix confidence from ~30% to ~70%:**
+1. **Biology-firing test** authored + verified to FAIL on current HEAD. (in flight)
+2. **Three read-only investigations** complete with file:line citations. (in flight)
+3. **Bug 1 fix** with corrected understanding of flow-dep constraint, validated by biology test going green on TX/TL assertions. NEVER batch with bugs 2/3.
+4. **Bug 2 fix** with init pipeline corrected, validated by substrate-sanity assertions going green.
+5. **Bug 3 fix** only if Q2 in `STATUS_bug3_fba_feasibility.md` says dynamic path is real; otherwise file as separate workstream.
+6. **Then** re-run 32,400t ensemble against the 28-KP scorecard.
+
+### Why the cascade-fix conservation check was misleading
+- Metabolism in static mode + TX/TL at dt=0 + substrate accumulate semantics = a closed deterministic ledger that trivially balances.
+- The 1000t canary only checked substrate-cascade math, not "is biology firing".
+- V4 lesson reinforced: **always verify Codex metrics against raw CSV.** Three diagnostic Codex sessions returned correct ROOT CAUSE lines; raw-CSV verification confirmed them in 5 min.
+
+### Reference data verdict (from karr-triage)
+- Local `cell_cycle_trajectory.mat` is real 324-snapshot series but **compartment-unresolvable** (no metaboliteIDs lookup).
+- Per-process `*_100ticks.mat` are 100-tick slices, not full-cycle.
+- Verdict: `local-data-insufficient` → grade against published Karr 2012 figure-level targets, not local MAT.
+- But this is moot until bugs are fixed.
+
+---
+
+## Prior Status (2026-05-24 ~05:25, ENSEMBLE RUNNING + REFERENCE INFRASTRUCTURE FOUND)
+
+### What's running right now (5 parallel Codex sessions)
+| Session | PID | Worktree | Status |
+|---|---|---|---|
+| **Ensemble seed=42** | 21384 | `phase-2-fix` | Running 32,400-tick |
+| **Ensemble seed=43** | 8236 | `run-seed-43` | Running 32,400-tick |
+| **Ensemble seed=44** | 22272 | `run-seed-44` | Running 32,400-tick |
+| **Ensemble seed=45** | 22152 | `run-seed-45` | Running 32,400-tick |
+| **Karr-triage** | 7772 | `karr-triage` | Investigating static-trajectory anomaly |
+
+Expected wall-clock: 9-16 hours for ensemble (CPU contention with 4 parallel runs).
+
+### Critical finding: reference infrastructure already exists (Copilot search, 05:23)
+The PASS_CRITERIA_32400t.md draft (18 criteria) was reinventing what we already have:
+- **`data/karr_fixtures/karr_phenotype_targets.json`** — **28-KP scorecard with tolerances** (KP01-KP28).
+- **`opencell/validation/karr_reference_values.py`** — populated `KARR_REFERENCE_VALUES` dict for all 28 KPs.
+- **`opencell/validation/trajectory_compare.py`** + **`karr_trajectory.py`** — comparison tooling already built.
+- **`tests/phaseE/test_karr_phenotypes.py`** — phenotype tests likely already wired.
+- **`data/karr_fixtures/per_process/*_flat.mat`** — 44 per-process flat dumps (CellMass 1MB, Metabolism 0.6MB, Translation 0.55MB, etc.) — likely the REAL per-tick trajectory data, not the static `cell_cycle_trajectory.mat`.
+- **`data/phase_e/v6_trajectory_32400s.pkl`** + `_post_alloc.pkl` — previous 32,400-tick OpenCell runs (pre-cascade-fix; useful for delta).
+
+Documented in `E:\opencell\REFERENCE_INFRASTRUCTURE_INVENTORY.md`. The grading prompt (`PROMPT_grade_32400t.md`) has been rewritten to use the 28-KP scorecard, not the reinvented 18 criteria.
+
+### Earlier reference-extraction (Karr-reference Codex, completed 05:14)
+- Verdict: `partial-with-gaps`. 36 quantity CSVs at `E:\opencell-worktrees\karr-reference\data\reference\`.
+- **Caveat**: the extracted trajectories show near-static values (ATP 46→1, mass +0.28%, no division). This is either bad aggregation or wrong source file. Karr-triage is investigating.
+
+### Sequence & Gates (revised after finding existing infrastructure)
+1. ⏳ Ensemble runs complete (4 seeds) — wall-clock ~9-16hr.
+2. ⏳ Karr-triage completes → decide whether `cell_cycle_trajectory.mat` is salvageable or use `per_process/*_flat.mat`.
+3. **GATE 1 (coverage)**: confirm KP01-KP28 are reachable from our ensemble outputs.
+4. **GATE 2 (pre-flight grading)**: launch grading Codex against existing 28-KP scorecard + any new per-tick refs from triage.
+5. **GATE 3 (interpretation)** — based on ensemble scorecard:
+   - PASS (≥21/28): ship the result. Refactor A becomes v1.1 hygiene.
+   - PARTIAL with conservation FAILs: Path A justified by data → refactor → re-run.
+   - PARTIAL with biology FAILs in B/D-tier: real biology gap. Different work.
+   - FAIL across tiers: post-mortem before more work.
+6. Possibly: refactor A → re-run ensemble → re-grade.
+
+### Hardcoding audit (2026-05-24, in response to user question)
+- ❌ No `clip`/`clamp`/floor on substrate counts in production code.
+- ❌ No "if negative → small positive" anywhere in simulation path.
+- ⚠️ `max(0.0, allocated.get(...))` patterns in consumer processes are defensive clamps on **allocator grants** (no-op if allocator is sane).
+- ⚠️ **Drainer whitelist IS a thumb on the scale for diagnostics** (not for biology): could let a real failure slip past unflagged at tick 18,000+. Path A is the real fix.
+- ⚠️ Regression-test threshold `cum_store_delta < -100 over 100t` could mask a slow drain.
+- ⚠️ Old PASS_CRITERIA bands (±20% / ±50%) superseded by the 28-KP scorecard's per-KP tolerances.
+
+### Worktrees & branches
+| Worktree | Branch | HEAD | State |
+|---|---|---|---|
+| `E:\opencell-worktrees\substrate-cascade-fix` | `agent/substrate-cascade-fix` | `f13d517` | Cascade fix validated |
+| `E:\opencell-worktrees\phase-2-fix` | `agent/phase-2-fix` | `4c2c389` | Seed=42 running |
+| `E:\opencell-worktrees\run-seed-43` | `agent/run-seed-43` | `fecd178` | Seed=43 running |
+| `E:\opencell-worktrees\run-seed-44` | `agent/run-seed-44` | `6001e97` | Seed=44 running |
+| `E:\opencell-worktrees\run-seed-45` | `agent/run-seed-45` | `99cb880` | Seed=45 running |
+| `E:\opencell-worktrees\karr-reference` | `agent/karr-reference` | `faaa4f1` | Partial extraction done |
+| `E:\opencell-worktrees\karr-triage` | `agent/karr-triage` | `9240cdb` | Investigating static-trajectory anomaly |
+
+### Risks still open
+- 4 parallel CPU-bound runs may extend wall-clock to 16hr+ from baseline ~9hr.
+- `cell_cycle_trajectory.mat` may be unsalvageable; per_process/*_flat.mat extraction needed.
+- Drainer whitelist may quietly hide a substrate's biological role at full cycle scale.
+- Karr supplements (`.xls`) on disk are anti-bot HTML placeholders, not real data.
+
+---
+
+## Prior status (2026-05-24 ~04:50, PASS-CRITERIA PIVOT — cascade fixed, now benchmarking before claiming victory)
+
+### Pivot rationale (the soul-searching moment, 2026-05-24)
+After 10 days of plumbing (cascade fix v5, phase-2 rebase, drain triage, Phase-C whitelist) we asked: *if biology holds at 32,400t, does that mean anything?* Honest answer: **no, not without comparison to Karr 2012's published trajectories.** "ATP growing at 1397/tick" sounds great until you ask "is that the right number?" Decision: extract Karr reference trajectories + define quantitative pass criteria BEFORE the 32,400-tick run, so the run produces a scorecard, not a vibe.
+
+### What's done (cascade fix arc, 2026-05-23 → 05-24)
+- ✅ **Cascade fix v5** — V4 root cause was an import-path divergence (sys.path bug, `diagnose_substrate_leak.py` was importing from main repo not worktree). Raw CSV verified: 100t ATP cum drift = -1, AAs perfectly conserved.
+- ✅ **Phase-2 combined rebased on cascade-fix** (HEAD `58bfe21`): 60/60 tests, `|unattributed_delta|` ~1e-8, ATP grows ~1397/tick from metabolism production (verified in raw CSV, not a clamp).
+- ✅ **Drain triage**: 14 negative-drain substrates characterized. 6 stoichiometric (H/PI/ADP/GDP — expected energy cycle). 8 M1-internal (AD, NH3, URA, SNGLYP, LIPOYLLYS, pTHR, pSER, THY, GN, AHCYS — owned by `karr_metabolism`, drain at steady ~1000/tick from M1 sinks with no replenisher in chassis).
+- ✅ **Phase-C whitelist** (HEAD `b9de5a9`): `opencell/vivarium/known_metabolite_drainers.py` + regression test `test_chassis_v6_substrate_drainers.py`. **DIAGNOSTIC-ONLY** — NOT imported by simulation code. Verdict: `ready-for-32400t`.
+
+### Hardcoding audit (2026-05-24, in response to user question)
+- ❌ No `clip`/`clamp`/floor on substrate counts in production code.
+- ❌ No "if negative → small positive" anywhere in simulation path.
+- ⚠️ `max(0.0, allocated.get(...))` patterns in consumer processes are defensive clamps on **allocator grants** (allocations can't be negative). No-op if allocator is sane. Doesn't manufacture biology.
+- ⚠️ **Drainer whitelist IS a thumb on the scale for diagnostics** (not for biology): if a whitelisted substrate crashes to zero at tick 18,000 and breaks downstream biology, our regression test won't flag it. Path A (store-semantics refactor) is the real fix; whitelist is triage so we can benchmark today.
+- ⚠️ Regression-test threshold `cum_store_delta < -100 over 100t` could mask a real-biology substrate draining at -99/100t.
+- ⚠️ PASS_CRITERIA bands (±20% PASS, ±50% PARTIAL) are wide; Karr-ref extraction will let us tighten to ±1σ of Karr's own variance.
+
+### In flight (2026-05-24 04:49)
+- 🟡 **Karr-reference Codex** (PID 20556, branch `agent/karr-reference`): extracting trajectories from local `E:\opencell\data\m1_sources\karr_native\cell_cycle_trajectory.mat` (100MB, MATLAB v7.3 HDF5, ~325 snapshots over 32,400 ticks). Output: per-quantity CSVs at `data/reference/karr_2012_<q>.csv` + manifest + overview PNG + STATUS. (V1 of this Codex wasted cycles trying to scrape simtk.org; killed and relaunched with local-data prompt.)
+- 📄 **PASS_CRITERIA_32400t.md** drafted at `E:\opencell\PASS_CRITERIA_32400t.md`: 18 criteria across 6 tiers (A. cell growth, B. energy, C. replication, D. translation, E. conservation, F. performance). 3-tier scoring (PASS/PARTIAL/FAIL). OVERALL PASS = ≥14/18 PASS AND zero FAIL in A1/A2/E3. Numerical bands pending Karr-ref extraction.
+
+### Next (sequenced)
+1. ⏳ Karr-ref Codex completes → review STATUS, tighten PASS_CRITERIA bands to ±1σ Karr.
+2. 🔜 Launch 32,400-tick run Codex on `agent/phase-2-fix` HEAD `b9de5a9`.
+3. 🔜 Quantitative grading Codex parses CSV + Karr ref → scorecard → verdict.
+
+### Risks still open
+- Karr tick = 1s; some of our processes step at 2s. Time-alignment needed before grading.
+- Karr `snapshots` group structure unknown (`#refs#`-indirect); Codex must explore.
+- 32,400-tick run is ~9 hours wall-clock in diagnostic mode. May need lighter diagnostic.
+- Drainer whitelist may quietly hide one substrate's biological role; Path A still owed.
+
+### Worktrees & branches
+| Worktree | Branch | HEAD | State |
+|---|---|---|---|
+| `E:\opencell-worktrees\substrate-cascade-fix` | `agent/substrate-cascade-fix` | `f13d517` | Cascade fix validated |
+| `E:\opencell-worktrees\phase-2-fix` | `agent/phase-2-fix` | `b9de5a9` | Phase-C done, ready-for-32400t |
+| `E:\opencell-worktrees\karr-reference` | `agent/karr-reference` | (Codex active) | Extracting reference trajectories |
+
+---
+
+## Prior Status (2026-05-24 01:21 IST, hyp-validation done, fix-did-not-execute in flight)
 
 ### Hypothesis validation results (PID 20388, completed 01:20)
 
