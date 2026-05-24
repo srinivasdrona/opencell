@@ -70,6 +70,21 @@ class KarrTranscriptionV3Process(Process):
 
         self.consumed_substrates: tuple[str, ...] = _M2_CONSUMED_SUBSTRATES
         self._fallback_n_active_rnap = int(self.mechanism_inputs.n_active_rnap)
+        target_total_per_s = float(np.sum(self.kinetics_model.synthesis_rate_per_s[:, 1]))
+        pred_total_per_s = float(
+            np.sum(
+                tx_v2.predict_gene_synthesis_per_s(
+                    self.mechanism_inputs,
+                    n_active=self._fallback_n_active_rnap,
+                )
+            )
+        )
+        if pred_total_per_s <= 0.0 or not np.isfinite(pred_total_per_s):
+            raise ValueError(
+                "Bug 7: mechanism predicted total synthesis non-positive "
+                f"({pred_total_per_s}); cannot derive calibration scale."
+            )
+        self._mechanism_scale: float = target_total_per_s / pred_total_per_s
 
     def ports_schema(self) -> dict[str, Any]:
         rna_ss = self.kinetics_model.counts_mature[:, 1]
@@ -150,6 +165,10 @@ class KarrTranscriptionV3Process(Process):
                 if idx is not None:
                     multipliers[idx] = float(raw_multiplier)
             synth_gene_per_s = synth_gene_per_s * multipliers
+        # Bug 7: calibrate mechanism rate to Karr chassis target.
+        # Scaling preserves relative TU distribution but anchors the
+        # global total to kinetics_model.synthesis_rate_per_s.
+        synth_gene_per_s = synth_gene_per_s * self._mechanism_scale
         rna_next = self._step_rna(rna, synth_gene_per_s, timestep)
 
         update: dict[str, Any] = {
@@ -161,7 +180,7 @@ class KarrTranscriptionV3Process(Process):
             total_nt = tx_v2.total_nt_polymerization_per_s(
                 self.mechanism_inputs, n_active=n_active_rnap
             )
+            total_nt = total_nt * self._mechanism_scale
             per_ntp = total_nt / 4.0
             update["substrates"] = {ntp: -per_ntp * timestep for ntp in self.consumed_substrates}
         return update
-

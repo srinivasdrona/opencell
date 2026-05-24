@@ -94,8 +94,14 @@ class KarrProteinProcessingIIProcess(Process):
             fx["lipoproteinMonomerIndexs"][0, 0], dtype=np.int64
         ).reshape(-1)
         self.lipoprotein_indices = lipoprotein_indices - 1
+        self.secreted_indices = (
+            np.asarray(fx["secretedMonomerIndexs"][0, 0], dtype=np.int64).reshape(-1) - 1
+        )
+        self.non_lipo_non_cleaved_indices = (
+            np.asarray(fx["unprocessedMonomerIndexs"][0, 0], dtype=np.int64).reshape(-1) - 1
+        )
         self.lipoprotein_wids = [
-            self.unprocessed_monomer_wids[int(i)] for i in self.lipoprotein_indices
+            self.processed_monomer_wids[int(i)] for i in self.lipoprotein_indices
         ]
 
         dag_rate = float(
@@ -138,11 +144,11 @@ class KarrProteinProcessingIIProcess(Process):
                 for wid in self.substrate_wids
             },
             "protein": {
-                "unprocessed_counts": {
-                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
-                    for wid in self.unprocessed_monomer_wids
-                },
                 "processed_counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
+                    for wid in self.processed_monomer_wids
+                },
+                "unfolded_counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
                     for wid in self.processed_monomer_wids
                 },
@@ -182,14 +188,15 @@ class KarrProteinProcessingIIProcess(Process):
             ],
             dtype=np.float64,
         )
-        unprocessed_all = np.asarray(
+        output_wids = self.processed_monomer_wids
+        processed_all = np.asarray(
             [
-                float(states["protein"].get("unprocessed_counts", {}).get(wid, 0.0))
-                for wid in self.unprocessed_monomer_wids
+                float(states["protein"].get("processed_counts", {}).get(wid, 0.0))
+                for wid in output_wids
             ],
             dtype=np.float64,
         )
-        lipoprotein_unprocessed = unprocessed_all[self.lipoprotein_indices]
+        lipoprotein_processed = processed_all[self.lipoprotein_indices]
         enzymes = np.asarray(
             [
                 float(states["protein"].get("enzyme_counts", {}).get(wid, 0.0))
@@ -198,31 +205,59 @@ class KarrProteinProcessingIIProcess(Process):
             dtype=np.float64,
         )
 
-        if lipoprotein_unprocessed.sum() <= 0.0:
+        if processed_all.sum() <= 0.0:
             return {}
 
-        reaction_fluxes = self._compute_reaction_fluxes(
-            unprocessed_lipoproteins=lipoprotein_unprocessed,
-            substrates=substrates,
-            enzymes=enzymes,
-            dt=float(self.parameters["time_step"]),
-        )
-        if not np.any(reaction_fluxes > 0):
-            return {}
+        substrate_delta = np.zeros(len(self.substrate_wids), dtype=np.int64)
+        processed_delta = np.zeros(len(output_wids), dtype=np.int64)
+        unfolded_delta = np.zeros(len(output_wids), dtype=np.int64)
+        signal_update: dict[str, float] = {}
 
-        substrate_delta = self.reaction_stoich @ reaction_fluxes
-        dag_flux = reaction_fluxes[self._dag_reaction_index]
-        cleavage_flux = reaction_fluxes[self._cleavage_reaction_index]
+        pass_through_counts = np.floor(
+            np.clip(processed_all[self.non_lipo_non_cleaved_indices], a_min=0.0, a_max=None)
+        ).astype(np.int64)
+        if np.any(pass_through_counts > 0):
+            processed_delta[self.non_lipo_non_cleaved_indices] -= pass_through_counts
+            unfolded_delta[self.non_lipo_non_cleaved_indices] += pass_through_counts
 
-        self._n_completed += self.reaction_modification.T @ reaction_fluxes
-        self._n_dagged_pending += dag_flux - cleavage_flux
-        self._n_dagged_pending = np.clip(self._n_dagged_pending, a_min=0, a_max=None)
+        if lipoprotein_processed.sum() > 0.0:
+            reaction_fluxes = self._compute_reaction_fluxes(
+                processed_lipoproteins=lipoprotein_processed,
+                substrates=substrates,
+                enzymes=enzymes,
+                dt=float(self.parameters["time_step"]),
+            )
+        else:
+            reaction_fluxes = np.zeros(self.reaction_stoich.shape[1], dtype=np.int64)
 
-        completion_capacity = np.floor_divide(self._n_completed, self.required_reactions)
-        completed_now = np.minimum.reduce(
-            [completion_capacity, cleavage_flux, lipoprotein_unprocessed.astype(np.int64)]
-        )
-        self._n_completed -= completed_now * self.required_reactions
+        if np.any(reaction_fluxes > 0):
+            substrate_delta += self.reaction_stoich @ reaction_fluxes
+            dag_flux = reaction_fluxes[self._dag_reaction_index]
+            cleavage_flux = reaction_fluxes[self._cleavage_reaction_index]
+
+            self._n_completed += self.reaction_modification.T @ reaction_fluxes
+            self._n_dagged_pending += dag_flux - cleavage_flux
+            self._n_dagged_pending = np.clip(self._n_dagged_pending, a_min=0, a_max=None)
+
+            completion_capacity = np.floor_divide(self._n_completed, self.required_reactions)
+            lipoprotein_processed_int = np.floor(
+                np.clip(lipoprotein_processed, a_min=0.0, a_max=None)
+            ).astype(np.int64)
+            completed_now = np.minimum.reduce(
+                [completion_capacity, cleavage_flux, lipoprotein_processed_int]
+            )
+            self._n_completed -= completed_now * self.required_reactions
+
+            for lidx, completed in enumerate(completed_now):
+                if completed <= 0:
+                    continue
+                pidx = int(self.lipoprotein_indices[lidx])
+                processed_wid = output_wids[pidx]
+                signal_wid = self.signal_sequence_monomer_wids[pidx]
+
+                processed_delta[pidx] -= int(completed)
+                unfolded_delta[pidx] += int(completed)
+                signal_update[signal_wid] = signal_update.get(signal_wid, 0.0) + float(completed)
 
         update: dict[str, Any] = {}
         substrate_update = {
@@ -233,38 +268,27 @@ class KarrProteinProcessingIIProcess(Process):
         if substrate_update:
             update["substrates"] = substrate_update
 
-        if np.any(completed_now > 0):
-            unprocessed_update: dict[str, float] = {}
-            processed_update: dict[str, float] = {}
-            signal_update: dict[str, float] = {}
-            for lidx, completed in enumerate(completed_now):
-                if completed <= 0:
-                    continue
-                pidx = int(self.lipoprotein_indices[lidx])
-                unprocessed_wid = self.unprocessed_monomer_wids[pidx]
-                processed_wid = self.processed_monomer_wids[pidx]
-                signal_wid = self.signal_sequence_monomer_wids[pidx]
-
-                unprocessed_update[unprocessed_wid] = unprocessed_update.get(
-                    unprocessed_wid, 0.0
-                ) - float(completed)
-                processed_update[processed_wid] = processed_update.get(processed_wid, 0.0) + float(
-                    completed
-                )
-                signal_update[signal_wid] = signal_update.get(signal_wid, 0.0) + float(completed)
-
-            if unprocessed_update or processed_update or signal_update:
-                update["protein"] = {
-                    "unprocessed_counts": unprocessed_update,
-                    "processed_counts": processed_update,
-                    "signal_sequence_counts": signal_update,
-                }
+        processed_update = {
+            wid: float(processed_delta[i]) for i, wid in enumerate(output_wids) if processed_delta[i] != 0
+        }
+        unfolded_update = {
+            wid: float(unfolded_delta[i]) for i, wid in enumerate(output_wids) if unfolded_delta[i] != 0
+        }
+        protein_update: dict[str, dict[str, float]] = {}
+        if processed_update:
+            protein_update["processed_counts"] = processed_update
+        if unfolded_update:
+            protein_update["unfolded_counts"] = unfolded_update
+        if signal_update:
+            protein_update["signal_sequence_counts"] = signal_update
+        if protein_update:
+            update["protein"] = protein_update
 
         return update
 
     def _compute_reaction_fluxes(
         self,
-        unprocessed_lipoproteins: np.ndarray,
+        processed_lipoproteins: np.ndarray,
         substrates: np.ndarray,
         enzymes: np.ndarray,
         dt: float,
@@ -272,13 +296,13 @@ class KarrProteinProcessingIIProcess(Process):
         n_rxn = self.reaction_stoich.shape[1]
         reaction_fluxes = np.zeros(n_rxn, dtype=np.int64)
         substrate_pool = np.floor(np.clip(substrates, a_min=0.0, a_max=None)).astype(np.int64)
-        unprocessed_pool = np.floor(
-            np.clip(unprocessed_lipoproteins, a_min=0.0, a_max=None)
+        processed_pool = np.floor(
+            np.clip(processed_lipoproteins, a_min=0.0, a_max=None)
         ).astype(np.int64)
         enzyme_remaining = np.floor(
             np.clip(self._enzyme_limit(enzymes=enzymes, dt=dt), a_min=0.0, a_max=None)
         ).astype(np.int64)
-        dag_available = np.maximum(unprocessed_pool - self._n_dagged_pending, 0).astype(np.int64)
+        dag_available = np.maximum(processed_pool - self._n_dagged_pending, 0).astype(np.int64)
         cleavage_available = np.clip(self._n_dagged_pending, a_min=0, a_max=None).astype(np.int64)
 
         for ridx in range(n_rxn):

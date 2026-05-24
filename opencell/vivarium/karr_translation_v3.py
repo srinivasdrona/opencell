@@ -64,7 +64,7 @@ class KarrTranslationV3Process(Process):
     def ports_schema(self) -> dict[str, Any]:
         return {
             "protein": {
-                "counts": {
+                "unprocessed_counts": {
                     pid: {
                         "_default": float(self.kinetics_model.counts_mature[i]),
                         "_updater": "accumulate",
@@ -105,8 +105,13 @@ class KarrTranslationV3Process(Process):
         return out
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        protein_state = states.get("protein", {})
+        counts_state = protein_state.get("counts", protein_state.get("unprocessed_counts", {}))
         counts = np.array(
-            [float(states["protein"]["counts"][pid]) for pid in self.protein_ids],
+            [
+                float(counts_state.get(pid, self.kinetics_model.counts_mature[i]))
+                for i, pid in enumerate(self.protein_ids)
+            ],
             dtype=float,
         )
 
@@ -125,7 +130,7 @@ class KarrTranslationV3Process(Process):
 
         update: dict[str, Any] = {
             "protein": {
-                "counts": {
+                "unprocessed_counts": {
                     pid: float(protein_next[i] - counts[i])
                     for i, pid in enumerate(self.protein_ids)
                 }

@@ -95,10 +95,6 @@ class KarrProteinProcessingIProcess(Process):
             wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
             for wid in self.processed_monomer_wids
         }
-        for wid in self.enzyme_wids:
-            processed_schema.setdefault(
-                wid, {"_default": 0.0, "_updater": "accumulate", "_emit": False}
-            )
 
         return {
             "substrates": {
@@ -110,7 +106,11 @@ class KarrProteinProcessingIProcess(Process):
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
                     for wid in self.unprocessed_monomer_wids
                 },
-                "counts": processed_schema,
+                "processed_counts": processed_schema,
+                "counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                    for wid in self.enzyme_wids
+                },
             },
             "requests": {
                 self.name: {
@@ -233,7 +233,7 @@ class KarrProteinProcessingIProcess(Process):
         if unprocessed_updates or processed_updates:
             update["protein"] = {
                 "unprocessed_counts": unprocessed_updates,
-                "counts": processed_updates,
+                "processed_counts": processed_updates,
             }
 
         return update

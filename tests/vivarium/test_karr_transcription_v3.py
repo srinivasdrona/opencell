@@ -88,27 +88,25 @@ def _run_ordered_m2(order: tuple[str, str]) -> np.ndarray:
     return np.array([float(ts["rna"]["counts"][gid][-1]) for gid in kinetics.gene_wcm_ids])
 
 
-def test_delta_equals_v2_absolute() -> None:
+def test_delta_matches_scaled_mechanism_step() -> None:
     kinetics = tx.calibrated_chassis_model(tx.load_default())
     mechanism_inputs = tx_v2.load_default()
-
-    v2 = KarrTranscriptionV2Process(
-        {"kinetics_model": kinetics, "mechanism_inputs": mechanism_inputs}
-    )
     v3 = KarrTranscriptionV3Process(
         {"kinetics_model": kinetics, "mechanism_inputs": mechanism_inputs}
     )
 
-    state = _make_m2_state(v2)
-    prior = np.array([float(state["rna"]["counts"][gid]) for gid in v2.gene_ids])
+    state = _make_m2_state(v3)
+    prior = np.array([float(state["rna"]["counts"][gid]) for gid in v3.gene_ids])
+    n_active = float(state["complex"]["counts"]["RNA_POLYMERASE"])
+    synth_gene_per_s = (
+        tx_v2.predict_gene_synthesis_per_s(mechanism_inputs, n_active=n_active) * v3._mechanism_scale
+    )
+    expected_abs = v3._step_rna(prior, synth_gene_per_s, 1.0)
 
-    update_v2 = v2.next_update(1.0, state)
     update_v3 = v3.next_update(1.0, state)
-
-    v2_abs = np.array([float(update_v2["rna"]["counts"][gid]) for gid in v2.gene_ids])
     v3_delta = np.array([float(update_v3["rna"]["counts"][gid]) for gid in v3.gene_ids])
 
-    np.testing.assert_allclose(prior + v3_delta, v2_abs, rtol=0.0, atol=1e-9)
+    np.testing.assert_allclose(prior + v3_delta, expected_abs, rtol=0.0, atol=1e-9)
 
 
 def test_schema_only_accumulate() -> None:
@@ -132,7 +130,7 @@ def test_order_insensitivity() -> None:
     np.testing.assert_allclose(ab, ba, rtol=0.0, atol=1e-9)
 
 
-def test_substrate_delta_unchanged() -> None:
+def test_substrate_delta_scaled_from_v2() -> None:
     kinetics = tx.calibrated_chassis_model(tx.load_default())
     mechanism_inputs = tx_v2.load_default()
     v2 = KarrTranscriptionV2Process(
@@ -146,10 +144,10 @@ def test_substrate_delta_unchanged() -> None:
     update_v2 = v2.next_update(1.0, state)
     update_v3 = v3.next_update(1.0, state)
 
-    assert update_v2["substrates"]["ATP"] == pytest.approx(-437.49999999999994)
-    assert update_v2["substrates"]["GTP"] == pytest.approx(-437.49999999999994)
-    assert update_v3["substrates"]["ATP"] == pytest.approx(update_v2["substrates"]["ATP"])
-    assert update_v3["substrates"]["GTP"] == pytest.approx(update_v2["substrates"]["GTP"])
+    for ntp in ("ATP", "CTP", "GTP", "UTP"):
+        assert update_v3["substrates"][ntp] == pytest.approx(
+            update_v2["substrates"][ntp] * v3._mechanism_scale
+        )
 
 
 def test_fold_change_tu_key_scales_target_gene_only() -> None:
@@ -222,4 +220,3 @@ def test_unity_fold_change_dict_matches_unwired() -> None:
     ones_update = v3.next_update(1.0, ones_state)
     for gid in v3.gene_ids[:10]:
         assert ones_update["rna"]["counts"][gid] == pytest.approx(base_update["rna"]["counts"][gid])
-

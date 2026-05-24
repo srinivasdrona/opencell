@@ -48,6 +48,7 @@ Two operating modes (selected by the ``dynamic_bounds`` parameter):
 
 from __future__ import annotations
 
+import os
 from typing import Any
 
 import numpy as np
@@ -90,6 +91,18 @@ _KARR_DEMAND_KEYS: tuple[str, ...] = (
 _CYTOSOL_COMPARTMENT_0 = 0
 
 
+def _read_env_bool(name: str) -> bool | None:
+    val = os.getenv(name)
+    if val is None:
+        return None
+    norm = val.strip().lower()
+    if norm in {"1", "true", "t", "yes", "y", "on"}:
+        return True
+    if norm in {"0", "false", "f", "no", "n", "off"}:
+        return False
+    return None
+
+
 class KarrMetabolismProcess(Process):
     """1-second FBA tick of Karr's fitted snapshot.
 
@@ -104,6 +117,7 @@ class KarrMetabolismProcess(Process):
         "use_full_objective": True,
         "dynamic_bounds": False,
         "dynamics_inputs": None,
+        "enable_lp_writeback": True,
         "enable_pool_replenishment": False,
         "baseline_demand_per_s": None,
     }
@@ -118,6 +132,12 @@ class KarrMetabolismProcess(Process):
         self._sub_ids = self.model.raw["ids"]["substrate_wcm_585"]
 
         self.dynamic_bounds: bool = bool(self.parameters["dynamic_bounds"])
+        env_lp_writeback = _read_env_bool("OPENCELL_ENABLE_LP_WRITEBACK")
+        self.enable_lp_writeback: bool = (
+            env_lp_writeback
+            if env_lp_writeback is not None
+            else bool(self.parameters["enable_lp_writeback"])
+        )
         self.enable_pool_replenishment: bool = bool(self.parameters["enable_pool_replenishment"])
         self._sub_state: np.ndarray | None = None
         self._enz_state: np.ndarray | None = None
@@ -126,7 +146,14 @@ class KarrMetabolismProcess(Process):
         self._sub_id_to_idx: dict[str, int] | None = None
         self._fba_reaction_bounds: np.ndarray | None = None
         self._demand_idx_pairs: list[tuple[str, int]] = []
+        self._fba_row_sub: np.ndarray | None = None
+        self._fba_row_cmp: np.ndarray | None = None
+        self._demand_writeback_rows: dict[int, np.ndarray] = {}
+        self._demand_sub_ids: dict[int, str] = {}
+        self._cytosol_rows: np.ndarray = np.empty(0, dtype=np.int64)
+        self._cyt_row_to_sid: dict[int, str] = {}
         self._baseline_demand_per_s: dict[str, float] | None = None
+        self._bug6b_clamped_reactions_total: int = 0
 
         if self.enable_pool_replenishment and not self.dynamic_bounds:
             raise ValueError(
@@ -153,11 +180,34 @@ class KarrMetabolismProcess(Process):
                 for sid in _KARR_DEMAND_KEYS
                 if sid in self._sub_id_to_idx
             ]
-            # Initialise tracker against the schema default (1.0) rather
-            # than first-observed shared state, so the first tick already
-            # picks up the M2/M3 deltas accumulated during the first
-            # boundary application.
-            self._prev_shared = {sid: 1.0 for sid in self._sub_ids}
+            # Cache FBA row lookups once.
+            self._fba_row_sub = self._dyn.substrate_idx_fba_sub0
+            self._fba_row_cmp = self._dyn.substrate_idx_fba_cmp0
+            self._demand_sub_ids = {sid_idx: sid for sid, sid_idx in self._demand_idx_pairs}
+            for sid_idx in self._demand_sub_ids:
+                rows = np.where(
+                    (self._fba_row_sub == sid_idx)
+                    & (self._fba_row_cmp == _CYTOSOL_COMPARTMENT_0)
+                )[0]
+                if rows.size:
+                    self._demand_writeback_rows[sid_idx] = rows
+            # Bug 6a Stage 2: LP writeback now spans all mapped cytosol rows.
+            self._cytosol_rows = np.where(self._fba_row_cmp == _CYTOSOL_COMPARTMENT_0)[0]
+            self._cyt_row_to_sid = {}
+            for r in self._cytosol_rows:
+                sid_idx = int(self._fba_row_sub[r])
+                if sid_idx < 0 or sid_idx >= len(self._sub_ids):
+                    continue
+                self._cyt_row_to_sid[int(r)] = self._sub_ids[sid_idx]
+            # Bug 6c: lazy init.  Setting _prev_shared eagerly here (e.g.
+            # to the schema default 1.0) relies on the snapshot happening
+            # to equal the schema default, and silently corrupts the
+            # tick-0 delta if any process has already written a non-default
+            # value to ``substrates`` before M1's first update.  Defer
+            # population to the first ``_dynamic_update`` call where we
+            # have an authoritative view of ``shared`` -> delta is
+            # structurally zero on the first tick.
+            self._prev_shared: dict | None = None
 
             if self.enable_pool_replenishment:
                 bd = self.parameters["baseline_demand_per_s"]
@@ -242,10 +292,17 @@ class KarrMetabolismProcess(Process):
             "n_active_bounds_changed",
             "min_lb",
             "max_ub",
+            "bug6b_clamped_reactions",
+            "bug6a_writeback_total_positive",
+            "bug6a_s2_atp_lp_delta",
+            "bug6a_s2_total_neg_writeback",
+            "bug6a_s2_total_pos_writeback",
         ]
+        schema = {k: {"_default": 0.0, "_updater": "set", "_emit": True} for k in keys}
+        schema["bug6a_writeback_keys"] = {"_default": [], "_updater": "set", "_emit": True}
         for sid, _ in self._demand_idx_pairs:
-            keys.append(f"cyt_{sid}")
-        return {k: {"_default": 0.0, "_updater": "set", "_emit": True} for k in keys}
+            schema[f"cyt_{sid}"] = {"_default": 0.0, "_updater": "set", "_emit": True}
+        return schema
 
     # ------------------------------------------------------------------
     def next_update(self, timestep: float, states: dict) -> dict:
@@ -279,6 +336,22 @@ class KarrMetabolismProcess(Process):
         assert self._fba_reaction_bounds is not None
 
         shared = states.get("substrates", {})
+        if self._prev_shared is None:
+            # First tick: seed tracker from observed shared state so
+            # delta is exactly zero by construction.  Fall back to the
+            # M1 sub_state for any sid missing from ``shared`` (should
+            # not happen in practice but keeps the invariant total).
+            self._prev_shared = {
+                sid: float(
+                    shared.get(
+                        sid,
+                        self._sub_state[
+                            self._sub_id_to_idx[sid], _CYTOSOL_COMPARTMENT_0
+                        ],
+                    )
+                )
+                for sid in self._sub_ids
+            }
         for sid, idx in self._demand_idx_pairs:
             cur = float(shared.get(sid, self._prev_shared[sid]))
             delta = cur - self._prev_shared[sid]
@@ -297,6 +370,38 @@ class KarrMetabolismProcess(Process):
             dyn=self._dyn,
             apply_protein_bounds=False,
         )
+        # Bug 6b: stoichiometric demand-pool headroom caps.
+        # compute_bounds only constrains exchange-index reactions; demand pools
+        # can still be driven negative by non-exchange consumers/producers.
+        S = self.model.S
+        assert self._fba_row_sub is not None
+        assert self._fba_row_cmp is not None
+        clamped = 0
+
+        for sid_idx, rows in self._demand_writeback_rows.items():
+            pool_f = float(self._sub_state[sid_idx, _CYTOSOL_COMPARTMENT_0])
+            if pool_f <= 0.0:
+                continue
+            for r in rows:
+                sto = S[r, :]
+                consume_j = np.where(sto < 0.0)[0]
+                produce_j = np.where(sto > 0.0)[0]
+                if consume_j.size:
+                    cap_ub = pool_f / (-sto[consume_j] * timestep)
+                    bounds[consume_j, 1] = np.minimum(bounds[consume_j, 1], cap_ub)
+                if produce_j.size:
+                    cap_lb = -pool_f / (sto[produce_j] * timestep)
+                    bounds[produce_j, 0] = np.maximum(bounds[produce_j, 0], cap_lb)
+
+        infeasible = bounds[:, 0] > bounds[:, 1]
+        if infeasible.any():
+            mid = 0.5 * (bounds[infeasible, 0] + bounds[infeasible, 1])
+            bounds[infeasible, 0] = mid
+            bounds[infeasible, 1] = mid
+            clamped = int(infeasible.sum())
+        if clamped:
+            self._bug6b_clamped_reactions_total += clamped
+
         if not np.all(np.isfinite(bounds) | np.isinf(bounds)):
             raise RuntimeError("dynamic bounds contain NaN")
         if np.any(bounds[:, 0] > bounds[:, 1] + 1e-9):
@@ -310,6 +415,18 @@ class KarrMetabolismProcess(Process):
             lb_override=bounds[:, 0],
             ub_override=bounds[:, 1],
         )
+
+        # Bug 6a Stage 2: signed writeback across all mapped cytosol rows.
+        substrate_delta: dict[str, float] = {}
+        if self.enable_lp_writeback:
+            rates = S[self._cytosol_rows, :] @ v
+            for r_idx, rate in zip(self._cytosol_rows, rates, strict=False):
+                sid = self._cyt_row_to_sid.get(int(r_idx))
+                if sid is None:
+                    continue
+                delta = float(rate) * float(timestep)
+                if abs(delta) > 0.0:
+                    substrate_delta[sid] = substrate_delta.get(sid, 0.0) + delta
 
         flux_update = {rid: 0.0 for rid in self._rxn_ids}
         for col, rid in enumerate(self.model.fba_col_rxn_wcm):
@@ -333,7 +450,9 @@ class KarrMetabolismProcess(Process):
         bnd_lb_diff = np.not_equal(bounds[:, 0], self.model.lb)
         bnd_ub_diff = np.not_equal(bounds[:, 1], self.model.ub)
         n_changed = int(bnd_lb_diff.sum() + bnd_ub_diff.sum())
-        diag: dict[str, float] = {
+        writeback_pos = float(sum(d for d in substrate_delta.values() if d > 0.0))
+        writeback_neg = float(sum(d for d in substrate_delta.values() if d < 0.0))
+        diag: dict[str, Any] = {
             "growth_per_s": float(info["biomass_flux_per_s"]),
             "biomass_flux_per_s": float(info["biomass_flux_per_s"]),
             "n_active_bounds_changed": float(n_changed),
@@ -347,6 +466,12 @@ class KarrMetabolismProcess(Process):
                 if np.any(np.isfinite(bounds[:, 1]))
                 else 0.0
             ),
+            "bug6b_clamped_reactions": float(self._bug6b_clamped_reactions_total),
+            "bug6a_writeback_total_positive": writeback_pos,
+            "bug6a_writeback_keys": list(substrate_delta.keys()),
+            "bug6a_s2_atp_lp_delta": float(substrate_delta.get("ATP", 0.0)),
+            "bug6a_s2_total_neg_writeback": writeback_neg,
+            "bug6a_s2_total_pos_writeback": writeback_pos,
         }
         m1_pools_update: dict[str, float] = {}
         for sid, idx in self._demand_idx_pairs:
@@ -362,6 +487,7 @@ class KarrMetabolismProcess(Process):
             },
             "m1_dynamic_diagnostics": diag,
             "m1_pools": m1_pools_update,
+            "substrates": substrate_delta,
         }
 
 

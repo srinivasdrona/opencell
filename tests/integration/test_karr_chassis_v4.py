@@ -456,7 +456,7 @@ def test_chassis_v4_all_writers_accumulate(
     _assert_branch_accumulate(p_m1["substrates"])
     _assert_branch_accumulate(p_m2["rna"]["counts"])
     _assert_branch_accumulate(p_m2["substrates"])
-    _assert_branch_accumulate(p_m3["protein"]["counts"])
+    _assert_branch_accumulate(p_m3["protein"]["unprocessed_counts"])
     _assert_branch_accumulate(p_m3["substrates"])
     _assert_branch_accumulate(p_d2["complex"]["counts"])
     _assert_branch_accumulate(p_d2["substrates"])
@@ -469,7 +469,10 @@ def test_chassis_v4_all_writers_accumulate(
     _assert_branch_accumulate(p_rna_proc["rna"]["counts"])
     _assert_branch_accumulate(p_rna_mod["rna"]["counts"])
     _assert_branch_accumulate(p_pp1["protein"]["unprocessed_counts"])
-    _assert_branch_accumulate(p_pp2["protein"]["unprocessed_counts"])
+    _assert_branch_accumulate(p_pp2["protein"]["processed_counts"])
+    _assert_branch_accumulate(p_pp2["protein"]["unfolded_counts"])
+    _assert_branch_accumulate(p_pp2["protein"]["signal_sequence_counts"])
+    _assert_branch_accumulate(p_pp2["protein"]["enzyme_counts"])
     _assert_branch_accumulate(p_pmod["protein"]["unmodified_counts"])
     _assert_branch_accumulate(p_pfold["protein"]["unfolded_counts"])
     _assert_branch_accumulate(p_ptrans["protein"]["counts"])
@@ -492,5 +495,3 @@ def test_chassis_v4_tick_rate(
     elapsed = time.perf_counter() - start
     ticks_per_s = 100.0 / max(elapsed, 1e-9)
     assert ticks_per_s > 5.0, f"tick_rate={ticks_per_s:.2f} ticks/s"
-
-

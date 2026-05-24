@@ -7,7 +7,7 @@ many seconds without crashing.
 Topology (shared stores):
   * ``metabolic_reaction``  -- written by M1 only (645 fluxs + growth scalars)
   * ``substrates``          -- M1 declares all 585 substrate WCM IDs
-                               (read-only placeholder, default 1.0);
+                               seeded from Karr's cytosol snapshot;
                                M2 writes negative ATP/CTP/GTP/UTP deltas;
                                M3 writes per-AA negative deltas keyed by
                                the 20 standard amino-acid WCM IDs (these
@@ -19,7 +19,7 @@ Topology (shared stores):
   * ``protein``             -- written by M3 only (482 protein counts)
 
 Substrate writeback is still chassis-grade only:  M2/M3's per-tick
-deltas are decremented from the placeholder counts; M1 does not yet
+deltas are decremented from the shared counts; M1 does not yet
 read them back into its FBA bounds (that requires Karr's
 calcFluxBounds() port + the 585->1686 metabolite-x-compartment count
 mapping, both deferred to the integrator pass).
@@ -32,6 +32,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
+from opencell.m1 import calc_flux_bounds as cfb
 from opencell.m1 import karr_metabolism as km
 from opencell.m2 import transcription as tx
 from opencell.m2 import transcription_v2 as tx_v2
@@ -93,6 +94,25 @@ if TYPE_CHECKING:
 
 
 _M1_SUBSTRATE_DEFAULT = 1.0
+_KARR_CYTOSOL_COMPARTMENT_0 = 0
+
+
+def _load_karr_initial_substrate_counts(
+    m1_model: km.KarrMetabolismModel,
+) -> dict[str, float]:
+    """Map Karr's 585 substrate IDs to cytosol counts from the dynamics snapshot."""
+    dyn = cfb.load_default_dynamics()
+    sub_ids = [str(wid) for wid in m1_model.raw["ids"]["substrate_wcm_585"]]
+    if dyn.substrates_snapshot.shape[0] != len(sub_ids):
+        raise ValueError(
+            "Karr dynamics substrate snapshot row count "
+            f"{dyn.substrates_snapshot.shape[0]} != substrate ID count {len(sub_ids)}"
+        )
+    return {
+        sid: float(dyn.substrates_snapshot[idx, _KARR_CYTOSOL_COMPARTMENT_0])
+        for idx, sid in enumerate(sub_ids)
+    }
+
 
 CHASSIS_V6_EXPECTED_PROCESS_KEYS: tuple[str, ...] = (
     "karr_replication",
@@ -941,14 +961,12 @@ def build_karr_chassis_v4(
             tx_rate_fold_init[f"TU_{gidx + 1:03d}"] = 0.0
 
     protein_unprocessed_init = {
-        wid: float(prot_init.get(wid, 0.0))
+        wid: 0.0
         for wid in sorted(
             set(pp1_proc.unprocessed_monomer_wids) | set(pp2_proc.unprocessed_monomer_wids)
         )
     }
-    protein_unfolded_init = {
-        wid: float(prot_init.get(wid, 0.0)) for wid in p_fold_proc.unfolded_monomer_wids
-    }
+    protein_unfolded_init = {wid: 0.0 for wid in p_fold_proc.unfolded_monomer_wids}
     protein_unmodified_init = {
         wid: float(prot_init.get(wid, 0.0)) for wid in p_mod_proc.unmodified_monomer_wids
     }
@@ -1421,9 +1439,10 @@ def build_karr_chassis_v5(
         p: float(m3_model.counts_mature[i]) for i, p in enumerate(m3_model.protein_wcm_ids)
     }
 
+    karr_initial_counts = _load_karr_initial_substrate_counts(m1_model)
     initial_substrates: dict[str, float] = {sid: 0.0 for sid in allocation_substrates}
     for sid in m1_sub_ids:
-        initial_substrates[sid] = _M1_SUBSTRATE_DEFAULT
+        initial_substrates[sid] = karr_initial_counts.get(sid, _M1_SUBSTRATE_DEFAULT)
     for wid, cnt in prot_init.items():
         if wid in initial_substrates:
             initial_substrates[wid] = max(initial_substrates[wid], cnt)
@@ -1828,7 +1847,7 @@ def build_karr_chassis_v6(
     time_step_s: float = 1.0,
     emit_step_s: float | None = None,
     condition: int = 1,
-    dynamic_bounds: bool = False,
+    dynamic_bounds: bool = True,
     enable_pool_replenishment: bool = False,
     host_adhesion_gates_division: bool = False,
 ) -> Any:
@@ -1867,7 +1886,11 @@ def build_karr_chassis_v6(
         ("karr_translation_v3", "karr_translation"),
     ):
         processes[new_key] = processes.pop(old_key)
+        processes[new_key].name = new_key
         topology[new_key] = topology.pop(old_key)
+        # Bug 1 fix: do NOT mark as Step. Step marking causes timestep=0 in
+        # Vivarium's engine (_calculate_update(path, step, 0)), silencing
+        # biology. TX/TL must remain Processes with real dt.
 
     # Promote coordinator from step inventory to process inventory so it is
     # visible in the process-key scorecard while preserving existing class logic.
