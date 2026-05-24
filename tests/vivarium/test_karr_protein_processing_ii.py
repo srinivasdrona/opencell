@@ -35,22 +35,18 @@ def _build_state(
     substrates[process.substrate_wids[process.substrate_index_dag]] = float(dag_available)
     substrates[process.substrate_wids[process.substrate_index_water]] = float(water_available)
 
-    unprocessed = {wid: 0.0 for wid in process.unprocessed_monomer_wids}
     processed = {wid: 0.0 for wid in process.processed_monomer_wids}
+    unfolded = {wid: 0.0 for wid in process.processed_monomer_wids}
     signal = {wid: 0.0 for wid in process.signal_sequence_monomer_wids}
     enzymes = {wid: 0.0 for wid in process.enzyme_wids}
 
     target_idx = int(process.lipoprotein_indices[0])
-    target_wid = process.unprocessed_monomer_wids[target_idx]
-    unprocessed[target_wid] = float(target_lipoprotein_count)
+    target_wid = process.processed_monomer_wids[target_idx]
+    processed[target_wid] = float(target_lipoprotein_count)
 
-    non_lipo_idx = next(
-        i
-        for i in range(len(process.unprocessed_monomer_wids))
-        if i not in set(process.lipoprotein_indices.tolist())
-    )
-    non_lipo_wid = process.unprocessed_monomer_wids[non_lipo_idx]
-    unprocessed[non_lipo_wid] = float(non_lipoprotein_count)
+    non_lipo_idx = int(process.non_lipo_non_cleaved_indices[0])
+    non_lipo_wid = process.processed_monomer_wids[non_lipo_idx]
+    processed[non_lipo_wid] = float(non_lipoprotein_count)
 
     enzymes[process.enzyme_wids[process.enzyme_index_dag_transferase]] = float(dag_enzyme)
     enzymes[process.enzyme_wids[process.enzyme_index_signal_peptidase]] = float(cleavage_enzyme)
@@ -58,8 +54,8 @@ def _build_state(
     return {
         "substrates": substrates,
         "protein": {
-            "unprocessed_counts": unprocessed,
             "processed_counts": processed,
+            "unfolded_counts": unfolded,
             "signal_sequence_counts": signal,
             "enzyme_counts": enzymes,
         },
@@ -77,7 +73,7 @@ def _apply_update(
         state["substrates"][wid] = float(state["substrates"].get(wid, 0.0) + float(delta))
         state["substrates_allocated"][process.name][wid] = float(state["substrates"][wid])
 
-    for store_name in ("unprocessed_counts", "processed_counts", "signal_sequence_counts"):
+    for store_name in ("processed_counts", "unfolded_counts", "signal_sequence_counts"):
         for wid, delta in update.get("protein", {}).get(store_name, {}).items():
             state["protein"][store_name][wid] = float(
                 state["protein"][store_name].get(wid, 0.0) + float(delta)
@@ -99,23 +95,18 @@ def test_fixture_loads() -> None:
     assert np.all(p.required_reactions == 2)
 
 
-def test_non_lipoprotein_unaffected() -> None:
+def test_non_lipoprotein_pass_through_to_unfolded() -> None:
     p = KarrProteinProcessingIIProcess({"rng_seed": 7})
-    state = _build_state(p, target_lipoprotein_count=1.0, non_lipoprotein_count=7.0)
+    state = _build_state(p, target_lipoprotein_count=0.0, non_lipoprotein_count=7.0)
 
-    non_lipo_idx = next(
-        i
-        for i in range(len(p.unprocessed_monomer_wids))
-        if i not in set(p.lipoprotein_indices.tolist())
-    )
-    non_lipo_wid = p.unprocessed_monomer_wids[non_lipo_idx]
-    before = float(state["protein"]["unprocessed_counts"][non_lipo_wid])
+    non_lipo_idx = int(p.non_lipo_non_cleaved_indices[0])
+    non_lipo_wid = p.processed_monomer_wids[non_lipo_idx]
 
     update = p.next_update(1.0, state)
     _apply_update(state, update, p)
 
-    assert float(state["protein"]["unprocessed_counts"][non_lipo_wid]) == before
-    assert non_lipo_wid not in update.get("protein", {}).get("processed_counts", {})
+    assert float(state["protein"]["processed_counts"][non_lipo_wid]) == 0.0
+    assert float(state["protein"]["unfolded_counts"][non_lipo_wid]) == 7.0
 
 
 def test_dag_transfer_then_cleave() -> None:
@@ -124,16 +115,16 @@ def test_dag_transfer_then_cleave() -> None:
         p, target_lipoprotein_count=1.0, dag_enzyme=20_000.0, cleavage_enzyme=20_000.0
     )
     target_idx = int(p.lipoprotein_indices[0])
-    target_wid = p.unprocessed_monomer_wids[target_idx]
+    target_wid = p.processed_monomer_wids[target_idx]
 
     for _ in range(2):
         update = p.next_update(1.0, state)
         _apply_update(state, update, p)
-        if float(state["protein"]["processed_counts"][target_wid]) >= 1.0:
+        if float(state["protein"]["unfolded_counts"][target_wid]) >= 1.0:
             break
 
-    assert float(state["protein"]["unprocessed_counts"][target_wid]) == 0.0
-    assert float(state["protein"]["processed_counts"][target_wid]) == 1.0
+    assert float(state["protein"]["processed_counts"][target_wid]) == 0.0
+    assert float(state["protein"]["unfolded_counts"][target_wid]) == 1.0
     assert int(p._n_completed[0]) == 0
 
 
@@ -148,12 +139,13 @@ def test_partial_progress_no_transition() -> None:
         water_available=100.0,
     )
     target_idx = int(p.lipoprotein_indices[0])
-    target_wid = p.unprocessed_monomer_wids[target_idx]
+    target_wid = p.processed_monomer_wids[target_idx]
 
     update = p.next_update(1.0, state)
 
     assert update.get("substrates", {}).get(p.substrate_wids[p.substrate_index_dag], 0.0) < 0.0
     assert update.get("protein", {}).get("processed_counts", {}).get(target_wid, 0.0) == 0.0
+    assert update.get("protein", {}).get("unfolded_counts", {}).get(target_wid, 0.0) == 0.0
     assert int(p._n_completed[0]) == 1
 
 
@@ -171,17 +163,17 @@ def test_mass_conservation() -> None:
     substrates = np.asarray(
         [state["substrates"][wid] for wid in p.substrate_wids], dtype=np.float64
     )
-    unprocessed_all = np.asarray(
-        [state["protein"]["unprocessed_counts"][wid] for wid in p.unprocessed_monomer_wids],
+    processed_all = np.asarray(
+        [state["protein"]["processed_counts"][wid] for wid in p.processed_monomer_wids],
         dtype=np.float64,
     )
-    lipoprotein_unprocessed = unprocessed_all[p.lipoprotein_indices]
+    lipoprotein_processed = processed_all[p.lipoprotein_indices]
     enzymes = np.asarray(
         [state["protein"]["enzyme_counts"][wid] for wid in p.enzyme_wids],
         dtype=np.float64,
     )
     flux = p._compute_reaction_fluxes(
-        unprocessed_lipoproteins=lipoprotein_unprocessed,
+        processed_lipoproteins=lipoprotein_processed,
         substrates=substrates,
         enzymes=enzymes,
         dt=1.0,
@@ -195,11 +187,11 @@ def test_mass_conservation() -> None:
     expected_sub = p.reaction_stoich @ flux
     np.testing.assert_array_equal(observed_sub, expected_sub)
 
-    matured = sum(float(v) for v in update.get("protein", {}).get("processed_counts", {}).values())
+    unfolded = sum(float(v) for v in update.get("protein", {}).get("unfolded_counts", {}).values())
     signal = sum(
         float(v) for v in update.get("protein", {}).get("signal_sequence_counts", {}).values()
     )
-    assert signal == matured
+    assert signal == unfolded
 
 
 def test_no_dag_no_action() -> None:

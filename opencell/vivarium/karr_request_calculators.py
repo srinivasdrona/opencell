@@ -396,6 +396,10 @@ class RequestCalculatorProteinPathway(Step):
                         | set(self._pp2_proc.unprocessed_monomer_wids)
                     )
                 },
+                "processed_counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                    for wid in self._pp2_proc.processed_monomer_wids
+                },
                 "unfolded_counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                     for wid in self._pf_proc.unfolded_monomer_wids
@@ -438,6 +442,7 @@ class RequestCalculatorProteinPathway(Step):
         protein_state = states.get("protein", {})
         counts_state = protein_state.get("counts", {})
         unprocessed_state = protein_state.get("unprocessed_counts", {})
+        processed_state = protein_state.get("processed_counts", {})
         unfolded_state = protein_state.get("unfolded_counts", {})
         unmodified_state = protein_state.get("unmodified_counts", {})
         location_state = protein_state.get("location", {})
@@ -447,7 +452,7 @@ class RequestCalculatorProteinPathway(Step):
             for wid in self._pp1_proc.unprocessed_monomer_wids
         )
         pp2_active = any(
-            float(unprocessed_state.get(wid, 0.0)) > 0.0 for wid in self._pp2_proc.lipoprotein_wids
+            float(processed_state.get(wid, 0.0)) > 0.0 for wid in self._pp2_proc.lipoprotein_wids
         )
         pm_active = any(
             float(unmodified_state.get(wid, 0.0)) > 0.0
@@ -526,4 +531,3 @@ __all__ = [
     "RequestCalculatorRNAPathway",
     "RequestCalculatorProteinPathway",
 ]
-

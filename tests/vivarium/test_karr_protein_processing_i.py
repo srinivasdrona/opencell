@@ -22,14 +22,12 @@ from opencell.vivarium.karr_protein_processing_i import KarrProteinProcessingIPr
 
 
 def _blank_state(process: KarrProteinProcessingIProcess) -> dict[str, Any]:
-    protein_counts_wids = list(
-        dict.fromkeys([*process.processed_monomer_wids, *process.enzyme_wids])
-    )
     return {
         "substrates": {wid: 0.0 for wid in process.substrate_wids},
         "protein": {
             "unprocessed_counts": {wid: 0.0 for wid in process.unprocessed_monomer_wids},
-            "counts": {wid: 0.0 for wid in protein_counts_wids},
+            "processed_counts": {wid: 0.0 for wid in process.processed_monomer_wids},
+            "counts": {wid: 0.0 for wid in process.enzyme_wids},
         },
         "requests": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
         "substrates_allocated": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
@@ -63,6 +61,10 @@ def test_fixture_loads() -> None:
         leaf["_updater"] == "accumulate"
         for leaf in schema["protein"]["unprocessed_counts"].values()
     )
+    assert all(
+        leaf["_updater"] == "accumulate"
+        for leaf in schema["protein"]["processed_counts"].values()
+    )
     assert all(leaf["_updater"] == "accumulate" for leaf in schema["protein"]["counts"].values())
 
 
@@ -90,7 +92,7 @@ def test_deformylase_always_required() -> None:
 
     state["protein"]["counts"]["MG_106_DIMER"] = 1.0
     update = p.next_update(1.0, state)
-    assert float(update["protein"]["counts"][non_cleavage_wid]) == 10.0
+    assert float(update["protein"]["processed_counts"][non_cleavage_wid]) == 10.0
 
 
 def test_met_cleavage_subset() -> None:
@@ -106,14 +108,14 @@ def test_met_cleavage_subset() -> None:
     no_map_state["protein"]["counts"]["MG_106_DIMER"] = 2.0
     no_map_state["protein"]["counts"]["MG_172_MONOMER"] = 0.0
     no_map_update = p.next_update(1.0, no_map_state)
-    assert float(no_map_update["protein"]["counts"].get(cleavage_wid, 0.0)) == 0.0
-    assert float(no_map_update["protein"]["counts"].get(non_cleavage_wid, 0.0)) == 5.0
+    assert float(no_map_update["protein"]["processed_counts"].get(cleavage_wid, 0.0)) == 0.0
+    assert float(no_map_update["protein"]["processed_counts"].get(non_cleavage_wid, 0.0)) == 5.0
     assert float(no_map_update["substrates"].get(met_wid, 0.0)) == 0.0
 
     with_map_state = deepcopy(no_map_state)
     with_map_state["protein"]["counts"]["MG_172_MONOMER"] = 1.0
     with_map_update = p.next_update(1.0, with_map_state)
-    assert float(with_map_update["protein"]["counts"].get(cleavage_wid, 0.0)) == 5.0
+    assert float(with_map_update["protein"]["processed_counts"].get(cleavage_wid, 0.0)) == 5.0
     assert float(with_map_update["substrates"].get(met_wid, 0.0)) == 5.0
 
 
@@ -132,7 +134,7 @@ def test_mass_conservation() -> None:
         state["protein"]["unprocessed_counts"][p.unprocessed_monomer_wids[int(idx)]] = 9.0
 
     update = p.next_update(1.0, state)
-    processed_deltas = update["protein"]["counts"]
+    processed_deltas = update["protein"]["processed_counts"]
     total_processed = float(sum(processed_deltas.values()))
     total_unprocessed_delta = float(sum(update["protein"]["unprocessed_counts"].values()))
     assert total_unprocessed_delta == -total_processed
@@ -165,7 +167,7 @@ def test_enzyme_kinetics_limit() -> None:
     state["protein"]["counts"]["MG_172_MONOMER"] = 1.0
 
     update = p.next_update(1.0, state)
-    assert float(update["protein"]["counts"][cleavage_wid]) == 6.0
+    assert float(update["protein"]["processed_counts"][cleavage_wid]) == 6.0
 
 
 def test_deterministic_with_seed() -> None:
