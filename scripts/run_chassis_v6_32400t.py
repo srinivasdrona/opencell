@@ -219,6 +219,13 @@ class DiagnosticCollector:
         for f in self.process_trace_files.values():
             f.close()
 
+    def clear_pending_commands(self) -> None:
+        for entity in self._entities.values():
+            if hasattr(entity, "_pending_command"):
+                entity._pending_command = None
+            if hasattr(entity, "_command_result"):
+                entity._command_result = None
+
     def _seed_entities(self, *, seed: int) -> None:
         names = sorted(self._entities.keys())
         children = np.random.SeedSequence(int(seed)).spawn(len(names))
@@ -537,6 +544,7 @@ def run_full_cycle(
                     if (not is_memory_error) or update_attempt >= max(0, int(memory_retry_attempts)):
                         raise
                     update_attempt += 1
+                    diagnostics.clear_pending_commands()
                     gc.collect()
                     msg = (
                         f"[seed={seed}] memory-retry tick={tick}/{ticks} "
