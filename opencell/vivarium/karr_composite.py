@@ -961,14 +961,12 @@ def build_karr_chassis_v4(
             tx_rate_fold_init[f"TU_{gidx + 1:03d}"] = 0.0
 
     protein_unprocessed_init = {
-        wid: float(prot_init.get(wid, 0.0))
+        wid: 0.0
         for wid in sorted(
             set(pp1_proc.unprocessed_monomer_wids) | set(pp2_proc.unprocessed_monomer_wids)
         )
     }
-    protein_unfolded_init = {
-        wid: float(prot_init.get(wid, 0.0)) for wid in p_fold_proc.unfolded_monomer_wids
-    }
+    protein_unfolded_init = {wid: 0.0 for wid in p_fold_proc.unfolded_monomer_wids}
     protein_unmodified_init = {
         wid: float(prot_init.get(wid, 0.0)) for wid in p_mod_proc.unmodified_monomer_wids
     }
