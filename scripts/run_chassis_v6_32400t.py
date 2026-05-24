@@ -337,6 +337,8 @@ def run_full_cycle(
     full_stride: int,
     conservation_stride: int,
     process_trace_stride: int,
+    memory_retry_attempts: int,
+    memory_retry_sleep_s: float,
 ) -> dict[str, Any]:
     random.seed(seed)
     np.random.seed(seed)
@@ -525,7 +527,24 @@ def run_full_cycle(
             do_conservation = tick % max(1, int(conservation_stride)) == 0
             before = _snapshot_substrates(engine) if do_conservation else {}
             diagnostics.set_tick(tick)
-            engine.update(timestep_s)
+            update_attempt = 0
+            while True:
+                try:
+                    engine.update(timestep_s)
+                    break
+                except Exception as exc:
+                    is_memory_error = isinstance(exc, MemoryError) or exc.__class__.__name__ == "ArrayMemoryError"
+                    if (not is_memory_error) or update_attempt >= max(0, int(memory_retry_attempts)):
+                        raise
+                    update_attempt += 1
+                    gc.collect()
+                    msg = (
+                        f"[seed={seed}] memory-retry tick={tick}/{ticks} "
+                        f"attempt={update_attempt}/{memory_retry_attempts} "
+                        f"sleep_s={memory_retry_sleep_s:.1f} err={exc.__class__.__name__}"
+                    )
+                    _log_progress(log_f, msg)
+                    time.sleep(float(memory_retry_sleep_s))
             state = _snapshot_runtime_state(engine)
             after = {str(k): _to_float(v) for k, v in state.get("substrates", {}).items()}
 
@@ -684,6 +703,8 @@ def main() -> None:
     parser.add_argument("--full-stride", type=int, default=DEFAULT_FULL_STRIDE)
     parser.add_argument("--conservation-stride", type=int, default=DEFAULT_CONSERVATION_STRIDE)
     parser.add_argument("--process-trace-stride", type=int, default=DEFAULT_PROCESS_TRACE_STRIDE)
+    parser.add_argument("--memory-retry-attempts", type=int, default=120)
+    parser.add_argument("--memory-retry-sleep-s", type=float, default=30.0)
     parser.add_argument("--fresh", action="store_true", help="delete out-dir before run")
     args = parser.parse_args()
 
@@ -700,6 +721,8 @@ def main() -> None:
         full_stride=int(args.full_stride),
         conservation_stride=int(args.conservation_stride),
         process_trace_stride=int(args.process_trace_stride),
+        memory_retry_attempts=int(args.memory_retry_attempts),
+        memory_retry_sleep_s=float(args.memory_retry_sleep_s),
     )
     manifest["files"] = _gather_file_sizes(args.out_dir)
     with (args.out_dir / "manifest.json").open("w", encoding="utf-8") as f:
