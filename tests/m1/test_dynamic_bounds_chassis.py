@@ -152,19 +152,24 @@ def test_dynamic_mode_first_tick_bounds_match_matlab_oracle() -> None:
 # ----------------------------------------------------------------------
 def test_dynamic_mode_drains_cytosol_from_shared_store_delta() -> None:
     proc = KarrMetabolismProcess({"dynamic_bounds": True})
-    proc.ports_schema()  # initialise prev_shared on first tick path
 
     atp_idx = proc._sub_id_to_idx["ATP"]
     atp0 = float(proc._sub_state[atp_idx, _CYTOSOL_COMPARTMENT_0])
 
-    # Shared store appearance: M2 has accumulated -100 ATP demand since
-    # init.  Initial shared default was 1.0 across the board.
-    fake_shared = {sid: 1.0 for sid in proc._sub_ids}
-    fake_shared["ATP"] = 1.0 - 100.0
+    base_shared = {sid: 1.0 for sid in proc._sub_ids}
+    # Bug 6c lazy-init contract: first tick seeds _prev_shared from
+    # observed shared state, so delta is structurally zero.
+    proc.next_update(
+        timestep=1.0,
+        states={"substrates": base_shared, "metabolic_reaction": {}},
+    )
 
     out = proc.next_update(
         timestep=1.0,
-        states={"substrates": fake_shared, "metabolic_reaction": {}},
+        states={
+            "substrates": {**base_shared, "ATP": base_shared["ATP"] - 100.0},
+            "metabolic_reaction": {},
+        },
     )
     atp_after = float(proc._sub_state[atp_idx, _CYTOSOL_COMPARTMENT_0])
     assert atp_after == pytest.approx(atp0 - 100.0, abs=1e-9)
@@ -176,13 +181,19 @@ def test_dynamic_mode_clamps_cytosol_at_zero() -> None:
     atp_idx = proc._sub_id_to_idx["ATP"]
     atp0 = float(proc._sub_state[atp_idx, _CYTOSOL_COMPARTMENT_0])
 
-    fake_shared = {sid: 1.0 for sid in proc._sub_ids}
-    # Drain twice the initial pool: should clamp at 0.
-    fake_shared["ATP"] = 1.0 - 10 * atp0
+    base_shared = {sid: 1.0 for sid in proc._sub_ids}
+    # First tick seeds prev_shared; second tick applies delta.
+    proc.next_update(
+        timestep=1.0,
+        states={"substrates": base_shared, "metabolic_reaction": {}},
+    )
 
     proc.next_update(
         timestep=1.0,
-        states={"substrates": fake_shared, "metabolic_reaction": {}},
+        states={
+            "substrates": {**base_shared, "ATP": base_shared["ATP"] - 10 * atp0},
+            "metabolic_reaction": {},
+        },
     )
     assert proc._sub_state[atp_idx, _CYTOSOL_COMPARTMENT_0] == 0.0
 
@@ -242,4 +253,3 @@ def test_dynamic_mode_end_to_end_atp_drains_under_m2_demand() -> None:
     )
     # And at least some draw happened.
     assert real[-1] < real[0]
-

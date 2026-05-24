@@ -127,6 +127,7 @@ class KarrMetabolismProcess(Process):
         self._fba_reaction_bounds: np.ndarray | None = None
         self._demand_idx_pairs: list[tuple[str, int]] = []
         self._baseline_demand_per_s: dict[str, float] | None = None
+        self._bug6b_clamped_reactions_total: int = 0
 
         if self.enable_pool_replenishment and not self.dynamic_bounds:
             raise ValueError(
@@ -246,6 +247,7 @@ class KarrMetabolismProcess(Process):
             "n_active_bounds_changed",
             "min_lb",
             "max_ub",
+            "bug6b_clamped_reactions",
         ]
         for sid, _ in self._demand_idx_pairs:
             keys.append(f"cyt_{sid}")
@@ -317,6 +319,41 @@ class KarrMetabolismProcess(Process):
             dyn=self._dyn,
             apply_protein_bounds=False,
         )
+        # Bug 6b: stoichiometric demand-pool headroom caps.
+        # compute_bounds only constrains exchange-index reactions; demand pools
+        # can still be driven negative by non-exchange consumers/producers.
+        S = self.model.S
+        fba_row_sub = self._dyn.substrate_idx_fba_sub0
+        fba_row_cmp = self._dyn.substrate_idx_fba_cmp0
+        clamped = 0
+
+        for _, sid_idx in self._demand_idx_pairs:
+            pool_f = float(self._sub_state[sid_idx, _CYTOSOL_COMPARTMENT_0])
+            if pool_f <= 0.0:
+                continue
+            rows = np.where(
+                (fba_row_sub == sid_idx) & (fba_row_cmp == _CYTOSOL_COMPARTMENT_0)
+            )[0]
+            for r in rows:
+                sto = S[r, :]
+                consume_j = np.where(sto < 0.0)[0]
+                produce_j = np.where(sto > 0.0)[0]
+                if consume_j.size:
+                    cap_ub = pool_f / (-sto[consume_j] * timestep)
+                    bounds[consume_j, 1] = np.minimum(bounds[consume_j, 1], cap_ub)
+                if produce_j.size:
+                    cap_lb = -pool_f / (sto[produce_j] * timestep)
+                    bounds[produce_j, 0] = np.maximum(bounds[produce_j, 0], cap_lb)
+
+        infeasible = bounds[:, 0] > bounds[:, 1]
+        if infeasible.any():
+            mid = 0.5 * (bounds[infeasible, 0] + bounds[infeasible, 1])
+            bounds[infeasible, 0] = mid
+            bounds[infeasible, 1] = mid
+            clamped = int(infeasible.sum())
+        if clamped:
+            self._bug6b_clamped_reactions_total += clamped
+
         if not np.all(np.isfinite(bounds) | np.isinf(bounds)):
             raise RuntimeError("dynamic bounds contain NaN")
         if np.any(bounds[:, 0] > bounds[:, 1] + 1e-9):
@@ -367,6 +404,7 @@ class KarrMetabolismProcess(Process):
                 if np.any(np.isfinite(bounds[:, 1]))
                 else 0.0
             ),
+            "bug6b_clamped_reactions": float(self._bug6b_clamped_reactions_total),
         }
         m1_pools_update: dict[str, float] = {}
         for sid, idx in self._demand_idx_pairs:
