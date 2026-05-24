@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import gc
 import gzip
 import json
 import math
@@ -74,6 +75,23 @@ def _snapshot_substrates(engine: Engine) -> dict[str, float]:
         for wid, value in substrates.items():
             out[str(wid)] = _to_float(value, default=0.0)
     return out
+
+
+def _get_store_dict(engine: Engine, path: tuple[str, ...]) -> dict[str, Any]:
+    store = engine.state.get_path(path)
+    value = store.get_value() if store is not None else {}
+    return value if isinstance(value, dict) else {}
+
+
+def _snapshot_runtime_state(engine: Engine) -> dict[str, Any]:
+    return {
+        "substrates": _get_store_dict(engine, ("substrates",)),
+        "rna": _get_store_dict(engine, ("rna",)),
+        "protein": _get_store_dict(engine, ("protein",)),
+        "chromosome": _get_store_dict(engine, ("chromosome",)),
+        "cell": _get_store_dict(engine, ("cell",)),
+        "phenotype_observables": _get_store_dict(engine, ("phenotype_observables",)),
+    }
 
 
 def _collect_leaf_updaters(node: Any) -> dict[str, str]:
@@ -491,9 +509,9 @@ def run_full_cycle(
             )
 
         t_start = time.time()
-        state = engine.state.get_value()
+        state = _snapshot_runtime_state(engine)
         write_key_row(0, state)
-        initial_substrates = _snapshot_substrates(engine)
+        initial_substrates = {str(k): _to_float(v) for k, v in state.get("substrates", {}).items()}
         write_full_rows(0, initial_substrates)
         write_replication_row(0, state, "none")
 
@@ -504,11 +522,12 @@ def run_full_cycle(
         max_abs_unattributed = 0.0
 
         for tick in range(1, ticks + 1):
-            before = _snapshot_substrates(engine)
+            do_conservation = tick % max(1, int(conservation_stride)) == 0
+            before = _snapshot_substrates(engine) if do_conservation else {}
             diagnostics.set_tick(tick)
             engine.update(timestep_s)
-            after = _snapshot_substrates(engine)
-            state = engine.state.get_value()
+            state = _snapshot_runtime_state(engine)
+            after = {str(k): _to_float(v) for k, v in state.get("substrates", {}).items()}
 
             atp, total_mass, final_rna_total, final_protein_total = write_key_row(tick, state)
             write_full_rows(tick, after)
@@ -528,7 +547,7 @@ def run_full_cycle(
                 repl_event = "completion" if repl_event == "none" else "initiation+completion"
             write_replication_row(tick, state, repl_event)
 
-            if tick % max(1, int(conservation_stride)) == 0:
+            if do_conservation:
                 all_substrates = set(before) | set(after) | set(diagnostics.per_tick_process_sums)
                 time_s = tick * timestep_s
                 for wid in sorted(all_substrates):
@@ -567,6 +586,7 @@ def run_full_cycle(
                     f"eta={_format_duration(eta_s) if math.isfinite(eta_s) else 'inf'}"
                 )
                 _log_progress(log_f, msg)
+                gc.collect()
 
         wall_time_s = float(time.time() - t_start)
         division_payload = {
