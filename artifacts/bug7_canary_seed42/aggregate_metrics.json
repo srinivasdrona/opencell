@@ -1,0 +1,8 @@
+{
+  "mrna_total_t2500": 723.597722602,
+  "mrna_total_t5000": 699.139300627,
+  "seed": 42,
+  "target_t_inf": 784.0,
+  "ticks": 5000,
+  "trending_down_2500_to_5000": true
+}

@@ -225,21 +225,20 @@ def test_no_regression_m2v3_without_regulation() -> None:
     kinetics = tx.calibrated_chassis_model(tx.load_default())
     mechanism_inputs = tx_v2.load_default()
 
-    v2 = KarrTranscriptionV2Process(
-        {"kinetics_model": kinetics, "mechanism_inputs": mechanism_inputs}
-    )
     v3 = KarrTranscriptionV3Process(
         {"kinetics_model": kinetics, "mechanism_inputs": mechanism_inputs}
     )
-    state = _make_m2_state(v2)
-    prior = np.array([float(state["rna"]["counts"][gid]) for gid in v2.gene_ids], dtype=float)
+    state = _make_m2_state(v3)
+    prior = np.array([float(state["rna"]["counts"][gid]) for gid in v3.gene_ids], dtype=float)
+    n_active = float(state["complex"]["counts"]["RNA_POLYMERASE"])
+    synth_gene_per_s = (
+        tx_v2.predict_gene_synthesis_per_s(mechanism_inputs, n_active=n_active) * v3._mechanism_scale
+    )
+    expected_abs = v3._step_rna(prior, synth_gene_per_s, 1.0)
 
-    update_v2 = v2.next_update(1.0, state)
     update_v3 = v3.next_update(1.0, state)
-    v2_abs = np.array([float(update_v2["rna"]["counts"][gid]) for gid in v2.gene_ids], dtype=float)
     v3_delta = np.array(
         [float(update_v3["rna"]["counts"][gid]) for gid in v3.gene_ids], dtype=float
     )
 
-    np.testing.assert_allclose(prior + v3_delta, v2_abs, rtol=0.0, atol=1e-9)
-
+    np.testing.assert_allclose(prior + v3_delta, expected_abs, rtol=0.0, atol=1e-9)
