@@ -116,6 +116,7 @@ class KarrMetabolismProcess(Process):
         "big": km.DEFAULT_BIG,
         "use_full_objective": True,
         "dynamic_bounds": False,
+        "use_allocator_budget": False,
         "dynamics_inputs": None,
         "enable_lp_writeback": True,
         "enable_pool_replenishment": False,
@@ -132,6 +133,7 @@ class KarrMetabolismProcess(Process):
         self._sub_ids = self.model.raw["ids"]["substrate_wcm_585"]
 
         self.dynamic_bounds: bool = bool(self.parameters["dynamic_bounds"])
+        self.use_allocator_budget: bool = bool(self.parameters["use_allocator_budget"])
         env_lp_writeback = _read_env_bool("OPENCELL_ENABLE_LP_WRITEBACK")
         self.enable_lp_writeback: bool = (
             env_lp_writeback
@@ -152,6 +154,8 @@ class KarrMetabolismProcess(Process):
         self._demand_sub_ids: dict[int, str] = {}
         self._cytosol_rows: np.ndarray = np.empty(0, dtype=np.int64)
         self._cyt_row_to_sid: dict[int, str] = {}
+        self.allocation_substrate_wids: tuple[str, ...] = tuple()
+        self._last_allocation_demand: dict[str, float] = {}
         self._baseline_demand_per_s: dict[str, float] | None = None
         self._bug6b_clamped_reactions_total: int = 0
 
@@ -199,6 +203,10 @@ class KarrMetabolismProcess(Process):
                 if sid_idx < 0 or sid_idx >= len(self._sub_ids):
                     continue
                 self._cyt_row_to_sid[int(r)] = self._sub_ids[sid_idx]
+            self.allocation_substrate_wids = tuple(sorted(set(self._cyt_row_to_sid.values())))
+            self._last_allocation_demand = {
+                sid: 0.0 for sid in self.allocation_substrate_wids
+            }
             # Bug 6c: lazy init.  Setting _prev_shared eagerly here (e.g.
             # to the schema default 1.0) relies on the snapshot happening
             # to equal the schema default, and silently corrupts the
@@ -265,6 +273,13 @@ class KarrMetabolismProcess(Process):
         if self.dynamic_bounds:
             schema["m1_dynamic_diagnostics"] = self._diagnostics_schema()
             schema["m1_pools"] = self._m1_pools_schema()
+        if self.use_allocator_budget:
+            schema["substrates_allocated"] = {
+                self.name: {
+                    sid: {"_default": 0.0, "_emit": False}
+                    for sid in self.allocation_substrate_wids
+                }
+            }
         return schema
 
     def _m1_pools_schema(self) -> dict[str, Any]:
@@ -427,6 +442,24 @@ class KarrMetabolismProcess(Process):
                 delta = float(rate) * float(timestep)
                 if abs(delta) > 0.0:
                     substrate_delta[sid] = substrate_delta.get(sid, 0.0) + delta
+
+        raw_negative_demand = {sid: -delta for sid, delta in substrate_delta.items() if delta < 0.0}
+        if self._last_allocation_demand:
+            for sid in self._last_allocation_demand:
+                self._last_allocation_demand[sid] = max(0.0, float(raw_negative_demand.get(sid, 0.0)))
+
+        if self.use_allocator_budget:
+            allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
+            allocated_delta: dict[str, float] = {}
+            for sid, delta in substrate_delta.items():
+                if delta >= 0.0:
+                    allocated_delta[sid] = delta
+                    continue
+                alloc_budget = max(0.0, float(allocated_state.get(sid, 0.0)))
+                consumed = min(-delta, alloc_budget)
+                if consumed > 0.0:
+                    allocated_delta[sid] = -consumed
+            substrate_delta = allocated_delta
 
         flux_update = {rid: 0.0 for rid in self._rxn_ids}
         for col, rid in enumerate(self.model.fba_col_rxn_wcm):
