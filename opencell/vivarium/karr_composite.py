@@ -410,7 +410,6 @@ def build_karr_m1_m2_m3_engine(
     m1_topo = {
         "metabolic_reaction": ("metabolic_reaction",),
         "substrates": ("substrates",),
-        "substrates_allocated": ("substrates_allocated",),
     }
     m2_topo: dict[str, tuple[str, ...]] = {
         "rna": ("rna",),
@@ -564,7 +563,6 @@ def build_karr_chassis_v2(
     m1_topo = {
         "metabolic_reaction": ("metabolic_reaction",),
         "substrates": ("substrates",),
-        "substrates_allocated": ("substrates_allocated",),
     }
     m2_topo: dict[str, tuple[str, ...]] = {
         "rna": ("rna",),
@@ -740,7 +738,6 @@ def build_karr_chassis_v3(
     m1_topo = {
         "metabolic_reaction": ("metabolic_reaction",),
         "substrates": ("substrates",),
-        "substrates_allocated": ("substrates_allocated",),
     }
     if dynamic_bounds:
         m1_topo["m1_dynamic_diagnostics"] = ("m1_dynamic_diagnostics",)
@@ -1074,14 +1071,12 @@ def build_karr_chassis_v4(
             "rna": ("rna",),
             "substrates": ("substrates",),
             "complex": ("complex",),
-            "substrates_allocated": ("substrates_allocated",),
             "tx_rate_fold_change": ("tx_rate_fold_change",),
         },
         "karr_translation_v3": {
             "protein": ("protein",),
             "substrates": ("substrates",),
             "complex": ("complex",),
-            "substrates_allocated": ("substrates_allocated",),
         },
         "karr_macromolecular_complexation": {
             "substrates": ("substrates",),
@@ -2122,4 +2117,3 @@ __all__ = [
     "build_karr_m1_m2_m3_engine",
     "compute_baseline_demand_per_s",
 ]
-
