@@ -88,3 +88,9 @@ data/m1_sources/karr_native/*
 !data/m1_sources/karr_native/.gitkeep
 !data/m1_sources/karr_native/README.md
 
+
+# Codex agent artifacts (per delegate-to-codex skill v2)
+STATUS_*.md
+codex_*.log
+.merge_baseline_sha.txt
+HANDOFF_AUTO.md
