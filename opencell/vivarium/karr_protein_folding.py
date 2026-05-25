@@ -237,9 +237,7 @@ class KarrProteinFoldingProcess(Process):
         fallback_state: dict[str, Any],
     ) -> float:
         allocated_value = float(allocated_state.get(wid, 0.0))
-        if allocated_value > 0.0:
-            return allocated_value
-        return float(fallback_state.get(wid, 0.0))
+        return max(0.0, allocated_value)
 
     def _phase1_ion_binding(
         self,

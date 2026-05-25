@@ -217,9 +217,7 @@ class KarrChromosomeSegregationProcess(Process):
         wid: str,
     ) -> float:
         allocated = float(allocated_state.get(wid, 0.0))
-        if allocated > 0.0:
-            return allocated
-        return float(substrate_state.get(wid, 0.0))
+        return max(0.0, allocated)
 
     def _gates_satisfied(
         self,

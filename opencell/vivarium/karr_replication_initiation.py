@@ -278,9 +278,7 @@ class KarrReplicationInitiationProcess(Process):
         wid: str,
     ) -> float:
         allocated = float(allocated_state.get(wid, 0.0))
-        if allocated > 0.0:
-            return allocated
-        return float(substrate_state.get(wid, 0.0))
+        return max(0.0, allocated)
 
     def _sync_internal_state(self, free_dnaa: int, site_totals: np.ndarray) -> None:
         if not self._initialized:

@@ -240,12 +240,9 @@ class KarrProteinProcessingIProcess(Process):
 
     def _read_allocated_or_baseline_substrates(self, states: dict[str, Any]) -> np.ndarray:
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
-        substrate_state = states.get("substrates", {})
         return np.asarray(
             [
-                float(allocated_state.get(wid, 0.0))
-                if float(allocated_state.get(wid, 0.0)) > 0.0
-                else float(substrate_state.get(wid, 0.0))
+                max(0.0, float(allocated_state.get(wid, 0.0)))
                 for wid in self.substrate_wids
             ],
             dtype=np.float64,
