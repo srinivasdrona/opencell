@@ -1,0 +1,43 @@
+from __future__ import annotations
+
+from typing import Any
+
+from opencell.vivarium.karr_protein_modification import KarrProteinModificationProcess
+
+
+class _GuardedSubstrates(dict[str, float]):
+    def __init__(self, values: dict[str, float], blocked_wids: list[str]) -> None:
+        super().__init__(values)
+        self._blocked_wids = set(blocked_wids)
+
+    def get(self, key: str, default: Any = None) -> Any:
+        if key in self._blocked_wids:
+            raise AssertionError(f"strict-zero violation: global substrate read for {key}")
+        return super().get(key, default)
+
+
+def test_karr_protein_modification_strict_zero_no_global_fallback() -> None:
+    process = KarrProteinModificationProcess({"rng_seed": 7})
+    blocked_wids = list(process.substrate_wids)
+    target_wid = process.unmodified_monomer_wids[0]
+
+    substrate_values = {wid: 10_000.0 for wid in process.substrate_wids}
+    guarded_substrates = _GuardedSubstrates(substrate_values, blocked_wids)
+
+    state = {
+        "substrates": guarded_substrates,
+        "protein": {
+            "counts": {wid: 2_000.0 for wid in process.enzyme_wids},
+            "unmodified_counts": {wid: 0.0 for wid in process.unmodified_monomer_wids},
+            "modified_counts": {wid: 0.0 for wid in process.modified_monomer_wids},
+        },
+        "requests": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
+        "substrates_allocated": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
+    }
+    state["protein"]["unmodified_counts"][target_wid] = 1.0
+
+    update = process.next_update(1.0, state)
+
+    substrate_delta = update.get("substrates", {})
+    for wid in process.substrate_wids:
+        assert abs(float(substrate_delta.get(wid, 0.0))) <= 1.0e-12
