@@ -89,7 +89,29 @@ class KarrProteinTranslocationProcess(Process):
         self.monomer_wids = _parse_wid_array(fx["monomerWholeCellModelIDs"])
 
         atp_substrate_idx = _as_scalar_int(fx["substrateIndexs_atp"]) - 1
+        gtp_substrate_idx = _as_scalar_int(fx["substrateIndexs_gtp"]) - 1
+        adp_substrate_idx = _as_scalar_int(fx["substrateIndexs_adp"]) - 1
+        gdp_substrate_idx = _as_scalar_int(fx["substrateIndexs_gdp"]) - 1
+        pi_substrate_idx = _as_scalar_int(fx["substrateIndexs_phosphate"]) - 1
+        h2o_substrate_idx = _as_scalar_int(fx["substrateIndexs_water"]) - 1
+        h_substrate_idx = _as_scalar_int(fx["substrateIndexs_hydrogen"]) - 1
         self.atp_wid = self.substrate_wids[atp_substrate_idx]
+        self.gtp_wid = self.substrate_wids[gtp_substrate_idx]
+        self.adp_wid = self.substrate_wids[adp_substrate_idx]
+        self.gdp_wid = self.substrate_wids[gdp_substrate_idx]
+        self.pi_wid = self.substrate_wids[pi_substrate_idx]
+        self.h2o_wid = self.substrate_wids[h2o_substrate_idx]
+        self.h_wid = self.substrate_wids[h_substrate_idx]
+        self.request_wids = (self.atp_wid, self.gtp_wid, self.h2o_wid)
+        self.vector_wids = (
+            self.atp_wid,
+            self.gtp_wid,
+            self.adp_wid,
+            self.gdp_wid,
+            self.pi_wid,
+            self.h2o_wid,
+            self.h_wid,
+        )
 
         srp_idx = _as_scalar_int(fx["enzymeIndexs_signalRecognitionParticle"]) - 1
         srp_receptor_idx = _as_scalar_int(fx["enzymeIndexs_signalRecognitionParticleReceptor"]) - 1
@@ -106,6 +128,9 @@ class KarrProteinTranslocationProcess(Process):
         monomer_compartments = _as_vector(fx["monomerCompartments"]).astype(np.int64)
         monomer_srp_pathways = _as_vector(fx["monomerSRPPathways"]).astype(np.int64)
         aa_per_atp = float(_as_vector(fx["preproteinTranslocase_aaTranslocatedPerATP"])[0])
+        self.srp_gtp_cost_per_monomer = int(
+            max(0.0, np.floor(float(_as_vector(fx["SRP_GTPUsedPerMonomer"])[0])))
+        )
 
         self.destination_by_wid: dict[str, str] = {}
         self.destination_class_by_wid: dict[str, str] = {}
@@ -182,21 +207,23 @@ class KarrProteinTranslocationProcess(Process):
                 },
             },
             "requests": {
-                self.name: {self.atp_wid: {"_default": 0.0, "_updater": "set", "_emit": False}}
+                self.name: {
+                    wid: {"_default": 0.0, "_updater": "set", "_emit": False}
+                    for wid in self.request_wids
+                }
             },
             "substrates_allocated": {
                 self.name: {
-                    self.atp_wid: {"_default": 0.0, "_emit": False}
+                    wid: {"_default": 0.0, "_emit": False} for wid in self.vector_wids
                 }
             },
         }
 
-    def _available_atp(self, states: dict[str, Any]) -> int:
+    def _available_substrate(self, states: dict[str, Any], wid: str) -> int:
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
-        allocated_atp = float(allocated_state.get(self.atp_wid, 0.0))
-        if allocated_atp > 0.0:
-            return int(max(0.0, np.floor(allocated_atp)))
-        return int(max(0.0, np.floor(float(states["substrates"].get(self.atp_wid, 0.0)))))
+        if wid in allocated_state:
+            return int(max(0.0, np.floor(float(allocated_state.get(wid, 0.0)))))
+        return int(max(0.0, np.floor(float(states["substrates"].get(wid, 0.0)))))
 
     def _ordered_wids(self, wids: list[str]) -> list[str]:
         if len(wids) <= 1:
@@ -218,8 +245,10 @@ class KarrProteinTranslocationProcess(Process):
         if not cytoplasmic_counts:
             return {}
 
-        atp_remaining = self._available_atp(states)
-        if atp_remaining <= 0:
+        atp_remaining = self._available_substrate(states, self.atp_wid)
+        gtp_remaining = self._available_substrate(states, self.gtp_wid)
+        h2o_remaining = self._available_substrate(states, self.h2o_wid)
+        if atp_remaining <= 0 or h2o_remaining <= 0:
             return {}
 
         srp_remaining = _read_nonnegative_count(protein_counts_state, self.srp_wid)
@@ -232,13 +261,19 @@ class KarrProteinTranslocationProcess(Process):
         pore_remaining = _read_nonnegative_count(protein_counts_state, self.translocase_pore_wid)
 
         translocated_counts: dict[str, int] = {}
+        atp_spent = 0
+        gtp_spent = 0
 
         def attempt_phase(candidates: list[str], needs_srp: bool) -> None:
             nonlocal atp_remaining
+            nonlocal gtp_remaining
+            nonlocal h2o_remaining
             nonlocal srp_remaining
             nonlocal srp_receptor_remaining
             nonlocal atpase_remaining
             nonlocal pore_remaining
+            nonlocal atp_spent
+            nonlocal gtp_spent
 
             for wid in self._ordered_wids(candidates):
                 count = int(cytoplasmic_counts.get(wid, 0))
@@ -246,7 +281,9 @@ class KarrProteinTranslocationProcess(Process):
                     continue
 
                 atp_need = count * int(self.atp_cost_by_wid[wid])
-                if atp_need > atp_remaining:
+                gtp_need = count * int(self.srp_gtp_cost_per_monomer) if needs_srp else 0
+                hydrolysis_need = atp_need + gtp_need
+                if atp_need > atp_remaining or gtp_need > gtp_remaining or hydrolysis_need > h2o_remaining:
                     continue
                 if atpase_remaining < count or pore_remaining < count:
                     continue
@@ -255,8 +292,12 @@ class KarrProteinTranslocationProcess(Process):
 
                 translocated_counts[wid] = count
                 atp_remaining -= atp_need
+                gtp_remaining -= gtp_need
+                h2o_remaining -= hydrolysis_need
                 atpase_remaining -= count
                 pore_remaining -= count
+                atp_spent += atp_need
+                gtp_spent += gtp_need
                 if needs_srp:
                     srp_remaining -= count
                     srp_receptor_remaining -= count
@@ -276,14 +317,22 @@ class KarrProteinTranslocationProcess(Process):
         if not translocated_counts:
             return {}
 
-        atp_spent = sum(
-            translocated_counts[wid] * int(self.atp_cost_by_wid[wid]) for wid in translocated_counts
-        )
+        hydrolysis_spent = atp_spent + gtp_spent
         location_update = {wid: self.destination_by_wid[wid] for wid in translocated_counts}
 
         update: dict[str, Any] = {"protein": {"location": location_update}}
         if atp_spent > 0:
-            update["substrates"] = {self.atp_wid: -float(atp_spent)}
+            substrate_update: dict[str, float] = {
+                self.atp_wid: -float(atp_spent),
+                self.adp_wid: float(atp_spent),
+                self.pi_wid: float(hydrolysis_spent),
+                self.h2o_wid: -float(hydrolysis_spent),
+                self.h_wid: float(hydrolysis_spent),
+            }
+            if gtp_spent > 0:
+                substrate_update[self.gtp_wid] = -float(gtp_spent)
+                substrate_update[self.gdp_wid] = float(gtp_spent)
+            update["substrates"] = substrate_update
         return update
 
 

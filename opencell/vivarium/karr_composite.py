@@ -880,7 +880,7 @@ def build_karr_chassis_v4(
         | set(pp2_consumed)
         | set(p_mod_consumed)
         | set(p_fold_consumed)
-        | {p_trans_proc.atp_wid}
+        | set(p_trans_proc.vector_wids)
         | set(p_activation_proc.substrate_wids)
         | {ftsz_proc.gtp_wid}
     )
@@ -900,7 +900,7 @@ def build_karr_chassis_v4(
                 (pp2_proc.name, pp2_consumed),
                 (p_mod_proc.name, p_mod_consumed),
                 (p_fold_proc.name, p_fold_consumed),
-                (p_trans_proc.name, [p_trans_proc.atp_wid]),
+                (p_trans_proc.name, list(p_trans_proc.vector_wids)),
                 (ftsz_proc.name, [ftsz_proc.gtp_wid]),
             ],
             "substrate_wids": allocation_substrates,
@@ -1363,7 +1363,7 @@ def build_karr_chassis_v5(
         | set(pp2_consumed)
         | set(p_mod_consumed)
         | set(p_fold_consumed)
-        | {p_trans_proc.atp_wid}
+        | set(p_trans_proc.vector_wids)
         | set(p_activation_proc.substrate_wids)
         | {rep_init_proc.atp_wid, rep_init_proc.water_wid}
         | set(rep_proc.dntp_wids)
@@ -1391,7 +1391,7 @@ def build_karr_chassis_v5(
                 (pp2_proc.name, pp2_consumed),
                 (p_mod_proc.name, p_mod_consumed),
                 (p_fold_proc.name, p_fold_consumed),
-                (p_trans_proc.name, [p_trans_proc.atp_wid]),
+                (p_trans_proc.name, list(p_trans_proc.vector_wids)),
                 (rep_init_proc.name, [rep_init_proc.atp_wid, rep_init_proc.water_wid]),
                 (rep_proc.name, [*rep_proc.dntp_wids, rep_proc.atp_wid]),
                 (supercoil_proc.name, [supercoil_proc.atp_wid, supercoil_proc.h2o_wid]),

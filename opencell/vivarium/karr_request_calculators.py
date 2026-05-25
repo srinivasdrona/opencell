@@ -371,7 +371,7 @@ class RequestCalculatorProteinPathway(Step):
             | set(self._pp2_proc.substrate_wids)
             | set(self._pm_proc.substrate_wids)
             | set(self._pf_proc.substrate_wids)
-            | {self._pt_proc.atp_wid}
+            | set(self._pt_proc.request_wids)
         )
         return {
             "substrates": {
@@ -431,7 +431,8 @@ class RequestCalculatorProteinPathway(Step):
                     for wid in self._pf_proc.substrate_wids
                 },
                 self._pt_proc.name: {
-                    self._pt_proc.atp_wid: {"_default": 0.0, "_updater": "set", "_emit": False}
+                    wid: {"_default": 0.0, "_updater": "set", "_emit": False}
+                    for wid in self._pt_proc.request_wids
                 },
             },
         }
@@ -505,11 +506,8 @@ class RequestCalculatorProteinPathway(Step):
         }
 
         pt_req = {
-            self._pt_proc.atp_wid: (
-                max(0.0, float(substrate_state.get(self._pt_proc.atp_wid, 0.0)))
-                if pt_active
-                else 0.0
-            )
+            wid: (max(0.0, float(substrate_state.get(wid, 0.0))) if pt_active else 0.0)
+            for wid in self._pt_proc.request_wids
         }
 
         return {
