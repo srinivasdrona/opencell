@@ -1,0 +1,23 @@
+{
+  "process_name": "Translation",
+  "monitors": [
+    {
+      "observable": "protein.unprocessed_counts.MG_001_MONOMER",
+      "expected_state": "should_change_within_window",
+      "window_ticks": 10,
+      "biological_justification": "Active translation should produce newly synthesized (unprocessed) polypeptides over short windows."
+    },
+    {
+      "observable": "substrates.ALA",
+      "expected_state": "should_change_within_window",
+      "window_ticks": 2,
+      "biological_justification": "Alanine is consumed during peptide elongation and should decrease when translation is active."
+    },
+    {
+      "observable": "substrates.MET",
+      "expected_state": "should_change_within_window",
+      "window_ticks": 2,
+      "biological_justification": "Methionine demand is mandatory for translated polypeptides and must be reflected in substrate pools."
+    }
+  ]
+}
