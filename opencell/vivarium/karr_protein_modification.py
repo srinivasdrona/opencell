@@ -145,12 +145,9 @@ class KarrProteinModificationProcess(Process):
         dt = float(timestep) if timestep > 0 else float(self.parameters["time_step"])
 
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
-        substrate_state = states.get("substrates", {})
         substrates = np.asarray(
             [
-                float(allocated_state.get(wid, 0.0))
-                if float(allocated_state.get(wid, 0.0)) > 0.0
-                else float(substrate_state.get(wid, 0.0))
+                max(0.0, float(allocated_state.get(wid, 0.0)))
                 for wid in self.substrate_wids
             ],
             dtype=np.float64,

@@ -221,6 +221,7 @@ class KarrFtsZPolymerizationProcess(Process):
         substrate_state: dict[str, Any],
         wid: str,
     ) -> float:
+        # Canonical strict-zero pattern: explicit zero grant stays zero; only missing keys fall back.
         if wid in allocated_state:
             return float(allocated_state.get(wid, 0.0))
         return float(substrate_state.get(wid, 0.0))

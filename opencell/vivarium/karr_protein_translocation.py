@@ -194,9 +194,7 @@ class KarrProteinTranslocationProcess(Process):
     def _available_atp(self, states: dict[str, Any]) -> int:
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
         allocated_atp = float(allocated_state.get(self.atp_wid, 0.0))
-        if allocated_atp > 0.0:
-            return int(max(0.0, np.floor(allocated_atp)))
-        return int(max(0.0, np.floor(float(states["substrates"].get(self.atp_wid, 0.0)))))
+        return int(max(0.0, np.floor(allocated_atp)))
 
     def _ordered_wids(self, wids: list[str]) -> list[str]:
         if len(wids) <= 1:

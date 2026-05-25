@@ -183,9 +183,7 @@ class KarrReplicationProcess(Process):
         wid: str,
     ) -> int:
         allocated = float(allocated_state.get(wid, 0.0))
-        if allocated > 0.0:
-            return _read_nonnegative_int(allocated)
-        return _read_nonnegative_int(substrate_state.get(wid, 0.0))
+        return _read_nonnegative_int(allocated)
 
     def _partition_counts(self, total: int) -> np.ndarray:
         if total <= 0:
