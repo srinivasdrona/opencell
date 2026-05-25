@@ -29,6 +29,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from copy import deepcopy
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -155,6 +156,10 @@ CHASSIS_V6_RUNTIME_IDENTITY_LEGACY_KEYS: tuple[str, ...] = (
     "karr_transcription_v3",
     "karr_translation_v3",
 )
+_TRANSLATION_FIXTURE_NPZ_PATH = (
+    Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "per_process" / "Translation.npz"
+)
+_TRANSLATION_FIXTURE_MONOMERS_KEY = "fixture__monomers"
 
 
 def _resolve_process_map(chassis: Any) -> Mapping[str, Any]:
@@ -195,6 +200,17 @@ def assert_chassis_runtime_identity(chassis: Any) -> None:
         raise AssertionError(
             "Chassis runtime identity guardrail failed:\n - " + "\n - ".join(failures)
         )
+
+
+def _load_translation_fixture_monomers() -> np.ndarray:
+    if not _TRANSLATION_FIXTURE_NPZ_PATH.exists():
+        raise FileNotFoundError(f"Translation fixture companion NPZ not found: {_TRANSLATION_FIXTURE_NPZ_PATH}")
+    with np.load(_TRANSLATION_FIXTURE_NPZ_PATH, allow_pickle=False) as payload:
+        if _TRANSLATION_FIXTURE_MONOMERS_KEY not in payload:
+            raise KeyError(
+                f"Missing '{_TRANSLATION_FIXTURE_MONOMERS_KEY}' in {_TRANSLATION_FIXTURE_NPZ_PATH}"
+            )
+        return np.asarray(payload[_TRANSLATION_FIXTURE_MONOMERS_KEY], dtype=float).reshape(-1)
 
 
 def compute_baseline_demand_per_s(
@@ -1292,6 +1308,7 @@ def build_karr_chassis_v5(
     condition: int = 1,
     dynamic_bounds: bool = False,
     enable_pool_replenishment: bool = False,
+    seed_from_fixture: bool = True,
 ) -> Engine:
     """Build the Phase-C chassis v5 with integrated replication/cell-cycle processes."""
     from vivarium.core.engine import Engine
@@ -1516,11 +1533,35 @@ def build_karr_chassis_v5(
         if gene_wid in trna_gene_wids:
             tx_rate_fold_init[f"TU_{gidx + 1:03d}"] = 0.0
 
+    # Track-A5 decision: keep non-fixture seeding as an explicit opt-out for
+    # debugging/non-replay experiments, but default to fixture-aligned t=0 parity.
+    if seed_from_fixture:
+        fixture_monomers = _load_translation_fixture_monomers()
+        n_fixture = int(fixture_monomers.size)
+        n_model = len(m3_model.protein_wcm_ids)
+        if n_fixture != n_model:
+            raise ValueError(
+                "Translation fixture/model monomer dimension mismatch: "
+                f"fixture={n_fixture} model={n_model}"
+            )
+        protein_unprocessed_seed = {
+            pid: float(fixture_monomers[idx]) for idx, pid in enumerate(m3_model.protein_wcm_ids)
+        }
+    else:
+        protein_unprocessed_seed = {
+            pid: float(prot_init.get(pid, 0.0)) for pid in m3_model.protein_wcm_ids
+        }
+
+    unprocessed_monomer_wids = set(pp1_proc.unprocessed_monomer_wids) | set(
+        pp2_proc.unprocessed_monomer_wids
+    )
+    if seed_from_fixture:
+        # Ensure every translation monomer is explicitly initialized so ports-schema
+        # defaults cannot reintroduce non-zero counts_mature values.
+        unprocessed_monomer_wids |= set(m3_model.protein_wcm_ids)
     protein_unprocessed_init = {
-        wid: float(prot_init.get(wid, 0.0))
-        for wid in sorted(
-            set(pp1_proc.unprocessed_monomer_wids) | set(pp2_proc.unprocessed_monomer_wids)
-        )
+        wid: float(protein_unprocessed_seed.get(wid, 0.0))
+        for wid in sorted(unprocessed_monomer_wids)
     }
     protein_unfolded_init = {
         wid: float(prot_init.get(wid, 0.0)) for wid in p_fold_proc.unfolded_monomer_wids
@@ -1901,6 +1942,7 @@ def build_karr_chassis_v6(
     dynamic_bounds: bool = True,
     enable_pool_replenishment: bool = False,
     host_adhesion_gates_division: bool = False,
+    seed_from_fixture: bool = True,
 ) -> Any:
     """Build the Phase-D v6 composite (v5 + RNA decay + HostInteraction)."""
     del host_adhesion_gates_division
@@ -1918,6 +1960,7 @@ def build_karr_chassis_v6(
         condition=condition,
         dynamic_bounds=dynamic_bounds,
         enable_pool_replenishment=enable_pool_replenishment,
+        seed_from_fixture=seed_from_fixture,
     )
 
     processes = dict(base_engine.processes)
