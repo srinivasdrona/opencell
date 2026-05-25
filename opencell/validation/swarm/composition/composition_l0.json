@@ -1,0 +1,254 @@
+[
+  {
+    "process_name": "ChromosomeCondensation",
+    "runtime_class_in_chassis": "KarrChromosomeCondensationProcess",
+    "runtime_file": "opencell/vivarium/karr_chromosome_condensation.py",
+    "class_a_audited_class": "KarrChromosomeCondensationProcess",
+    "class_a_audited_file": "opencell/vivarium/karr_chromosome_condensation.py",
+    "mismatch": false,
+    "notes": null
+  },
+  {
+    "process_name": "ChromosomeSegregation",
+    "runtime_class_in_chassis": "KarrChromosomeSegregationProcess",
+    "runtime_file": "opencell/vivarium/karr_chromosome_segregation.py",
+    "class_a_audited_class": "KarrChromosomeSegregationProcess",
+    "class_a_audited_file": "opencell/vivarium/karr_chromosome_segregation.py",
+    "mismatch": false,
+    "notes": null
+  },
+  {
+    "process_name": "Cytokinesis",
+    "runtime_class_in_chassis": "KarrCytokinesisProcess",
+    "runtime_file": "opencell/vivarium/karr_cytokinesis.py",
+    "class_a_audited_class": "KarrCytokinesisProcess",
+    "class_a_audited_file": "opencell/vivarium/karr_cytokinesis.py",
+    "mismatch": false,
+    "notes": null
+  },
+  {
+    "process_name": "DNADamage",
+    "runtime_class_in_chassis": "KarrDNADamageProcess",
+    "runtime_file": "opencell/vivarium/karr_dna_damage.py",
+    "class_a_audited_class": "KarrDNADamageProcess",
+    "class_a_audited_file": "opencell/vivarium/karr_dna_damage.py",
+    "mismatch": false,
+    "notes": null
+  },
+  {
+    "process_name": "DNARepair",
+    "runtime_class_in_chassis": "KarrDNARepairProcess",
+    "runtime_file": "opencell/vivarium/karr_dna_repair.py",
+    "class_a_audited_class": "KarrDNARepairProcess",
+    "class_a_audited_file": "opencell/vivarium/karr_dna_repair.py",
+    "mismatch": false,
+    "notes": null
+  },
+  {
+    "process_name": "DNASupercoiling",
+    "runtime_class_in_chassis": "KarrDNASupercoilingProcess",
+    "runtime_file": "opencell/vivarium/karr_dna_supercoiling.py",
+    "class_a_audited_class": "KarrDNASupercoilingProcess",
+    "class_a_audited_file": "opencell/vivarium/karr_dna_supercoiling.py",
+    "mismatch": false,
+    "notes": null
+  },
+  {
+    "process_name": "FtsZPolymerization",
+    "runtime_class_in_chassis": "KarrFtsZPolymerizationProcess",
+    "runtime_file": "opencell/vivarium/karr_ftsz_polymerization.py",
+    "class_a_audited_class": "KarrFtsZPolymerizationProcess",
+    "class_a_audited_file": "opencell/vivarium/karr_ftsz_polymerization.py",
+    "mismatch": false,
+    "notes": null
+  },
+  {
+    "process_name": "HostInteraction",
+    "runtime_class_in_chassis": "KarrHostInteractionProcess",
+    "runtime_file": "opencell/vivarium/karr_host_interaction.py",
+    "class_a_audited_class": "KarrHostInteractionProcess",
+    "class_a_audited_file": "opencell/vivarium/karr_host_interaction.py",
+    "mismatch": false,
+    "notes": null
+  },
+  {
+    "process_name": "MacromolecularComplexation",
+    "runtime_class_in_chassis": "MacromolecularComplexationProcess",
+    "runtime_file": "opencell/vivarium/karr_macromolecular_complexation.py",
+    "class_a_audited_class": "MacromolecularComplexationProcess",
+    "class_a_audited_file": "opencell/vivarium/karr_macromolecular_complexation.py",
+    "mismatch": false,
+    "notes": null
+  },
+  {
+    "process_name": "Metabolism",
+    "runtime_class_in_chassis": "KarrMetabolismProcess",
+    "runtime_file": "opencell/vivarium/karr_metabolism.py",
+    "class_a_audited_class": "KarrMetabolismProcess",
+    "class_a_audited_file": "opencell/vivarium/karr_metabolism.py",
+    "mismatch": false,
+    "notes": null
+  },
+  {
+    "process_name": "ProteinActivation",
+    "runtime_class_in_chassis": "KarrProteinActivationProcess",
+    "runtime_file": "opencell/vivarium/karr_protein_activation.py",
+    "class_a_audited_class": "KarrProteinActivationProcess",
+    "class_a_audited_file": "opencell/vivarium/karr_protein_activation.py",
+    "mismatch": false,
+    "notes": null
+  },
+  {
+    "process_name": "ProteinDecay",
+    "runtime_class_in_chassis": "ProteinDecayLightProcess",
+    "runtime_file": "opencell/vivarium/karr_protein_decay_light.py",
+    "class_a_audited_class": "ProteinDecayLightProcess",
+    "class_a_audited_file": "opencell/vivarium/karr_protein_decay_light.py",
+    "mismatch": false,
+    "notes": null
+  },
+  {
+    "process_name": "ProteinFolding",
+    "runtime_class_in_chassis": "KarrProteinFoldingProcess",
+    "runtime_file": "opencell/vivarium/karr_protein_folding.py",
+    "class_a_audited_class": "KarrProteinFoldingProcess",
+    "class_a_audited_file": "opencell/vivarium/karr_protein_folding.py",
+    "mismatch": false,
+    "notes": null
+  },
+  {
+    "process_name": "ProteinModification",
+    "runtime_class_in_chassis": "KarrProteinModificationProcess",
+    "runtime_file": "opencell/vivarium/karr_protein_modification.py",
+    "class_a_audited_class": "KarrProteinModificationProcess",
+    "class_a_audited_file": "opencell/vivarium/karr_protein_modification.py",
+    "mismatch": false,
+    "notes": null
+  },
+  {
+    "process_name": "ProteinProcessingI",
+    "runtime_class_in_chassis": "KarrProteinProcessingIProcess",
+    "runtime_file": "opencell/vivarium/karr_protein_processing_i.py",
+    "class_a_audited_class": "KarrProteinProcessingIProcess",
+    "class_a_audited_file": "opencell/vivarium/karr_protein_processing_i.py",
+    "mismatch": false,
+    "notes": null
+  },
+  {
+    "process_name": "ProteinProcessingII",
+    "runtime_class_in_chassis": "KarrProteinProcessingIIProcess",
+    "runtime_file": "opencell/vivarium/karr_protein_processing_ii.py",
+    "class_a_audited_class": "KarrProteinProcessingIIProcess",
+    "class_a_audited_file": "opencell/vivarium/karr_protein_processing_ii.py",
+    "mismatch": false,
+    "notes": null
+  },
+  {
+    "process_name": "ProteinTranslocation",
+    "runtime_class_in_chassis": "KarrProteinTranslocationProcess",
+    "runtime_file": "opencell/vivarium/karr_protein_translocation.py",
+    "class_a_audited_class": "KarrProteinTranslocationProcess",
+    "class_a_audited_file": "opencell/vivarium/karr_protein_translocation.py",
+    "mismatch": false,
+    "notes": null
+  },
+  {
+    "process_name": "RNADecay",
+    "runtime_class_in_chassis": "RnaDecayLightProcess",
+    "runtime_file": "opencell/vivarium/karr_rna_decay.py",
+    "class_a_audited_class": "RnaDecayLightProcess",
+    "class_a_audited_file": "opencell/vivarium/karr_rna_decay.py",
+    "mismatch": false,
+    "notes": null
+  },
+  {
+    "process_name": "RNAModification",
+    "runtime_class_in_chassis": "KarrRNAModificationProcess",
+    "runtime_file": "opencell/vivarium/karr_rna_modification.py",
+    "class_a_audited_class": "KarrRNAModificationProcess",
+    "class_a_audited_file": "opencell/vivarium/karr_rna_modification.py",
+    "mismatch": false,
+    "notes": null
+  },
+  {
+    "process_name": "RNAProcessing",
+    "runtime_class_in_chassis": "KarrRNAProcessingProcess",
+    "runtime_file": "opencell/vivarium/karr_rna_processing.py",
+    "class_a_audited_class": "KarrRNAProcessingProcess",
+    "class_a_audited_file": "opencell/vivarium/karr_rna_processing.py",
+    "mismatch": false,
+    "notes": null
+  },
+  {
+    "process_name": "Replication",
+    "runtime_class_in_chassis": "KarrReplicationProcess",
+    "runtime_file": "opencell/vivarium/karr_replication.py",
+    "class_a_audited_class": "KarrReplicationProcess",
+    "class_a_audited_file": "opencell/vivarium/karr_replication.py",
+    "mismatch": false,
+    "notes": null
+  },
+  {
+    "process_name": "ReplicationInitiation",
+    "runtime_class_in_chassis": "KarrReplicationInitiationProcess",
+    "runtime_file": "opencell/vivarium/karr_replication_initiation.py",
+    "class_a_audited_class": "KarrReplicationInitiationProcess",
+    "class_a_audited_file": "opencell/vivarium/karr_replication_initiation.py",
+    "mismatch": false,
+    "notes": null
+  },
+  {
+    "process_name": "RibosomeAssembly",
+    "runtime_class_in_chassis": "KarrRibosomeAssemblyProcess",
+    "runtime_file": "opencell/vivarium/karr_ribosome_assembly.py",
+    "class_a_audited_class": "KarrRibosomeAssemblyProcess",
+    "class_a_audited_file": "opencell/vivarium/karr_ribosome_assembly.py",
+    "mismatch": false,
+    "notes": null
+  },
+  {
+    "process_name": "TerminalOrganelleAssembly",
+    "runtime_class_in_chassis": "KarrTerminalOrganelleAssemblyProcess",
+    "runtime_file": "opencell/vivarium/karr_terminal_organelle_assembly.py",
+    "class_a_audited_class": "KarrTerminalOrganelleAssemblyProcess",
+    "class_a_audited_file": "opencell/vivarium/karr_terminal_organelle_assembly.py",
+    "mismatch": false,
+    "notes": null
+  },
+  {
+    "process_name": "Transcription",
+    "runtime_class_in_chassis": "KarrTranscriptionV3Process",
+    "runtime_file": "opencell/vivarium/karr_transcription_v3.py",
+    "class_a_audited_class": "KarrTranscriptionProcess",
+    "class_a_audited_file": "opencell/vivarium/karr_transcription.py",
+    "mismatch": true,
+    "notes": "v6 renames *_v3 keys to canonical karr_transcription/karr_translation at karr_composite.py:1885-1890; RUNTIME_IDENTITY_MISMATCH"
+  },
+  {
+    "process_name": "TranscriptionalRegulation",
+    "runtime_class_in_chassis": "KarrTranscriptionalRegulationProcess",
+    "runtime_file": "opencell/vivarium/karr_transcriptional_regulation.py",
+    "class_a_audited_class": "KarrTranscriptionalRegulationProcess",
+    "class_a_audited_file": "opencell/vivarium/karr_transcriptional_regulation.py",
+    "mismatch": false,
+    "notes": null
+  },
+  {
+    "process_name": "Translation",
+    "runtime_class_in_chassis": "KarrTranslationV3Process",
+    "runtime_file": "opencell/vivarium/karr_translation_v3.py",
+    "class_a_audited_class": "KarrTranslationProcess",
+    "class_a_audited_file": "opencell/vivarium/karr_translation.py",
+    "mismatch": true,
+    "notes": "v6 renames *_v3 keys to canonical karr_transcription/karr_translation at karr_composite.py:1885-1890; RUNTIME_IDENTITY_MISMATCH"
+  },
+  {
+    "process_name": "tRNAAminoacylation",
+    "runtime_class_in_chassis": "KarrTRNAAminoacylationProcess",
+    "runtime_file": "opencell/vivarium/karr_trna_aminoacylation.py",
+    "class_a_audited_class": "KarrTRNAAminoacylationProcess",
+    "class_a_audited_file": "opencell/vivarium/karr_trna_aminoacylation.py",
+    "mismatch": false,
+    "notes": null
+  }
+]

@@ -1,0 +1,968 @@
+[
+  {
+    "process_name": "ChromosomeCondensation",
+    "stores": [
+      {
+        "store_name": "chromosome",
+        "declared_type": "chromosome",
+        "classification": "state",
+        "classification_evidence": "port \"chromosome\" maps to store \"chromosome\" (opencell/vivarium/karr_composite.py:1618); store referenced by 10 process(es): karr_cell_cycle_coordinator, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_damage, karr_dna_repair, karr_dna_supercoiling, karr_observability_step, karr_replication, karr_replication_initiation.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "requests",
+        "declared_type": "requests",
+        "classification": "resource",
+        "classification_evidence": "port \"requests\" maps to store \"requests\" (opencell/vivarium/karr_composite.py:1620); store referenced by 16 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_replication, karr_replication_initiation, karr_rna_decay, request_calculator_d2, request_calculator_pd, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates",
+        "declared_type": "substrates",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates\" maps to store \"substrates\" (opencell/vivarium/karr_composite.py:1619); store referenced by 29 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_macromolecular_complexation, karr_metabolism, karr_observability_step, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_transcription, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates_allocated",
+        "declared_type": "substrates_allocated",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates_allocated\" maps to store \"substrates_allocated\" (opencell/vivarium/karr_composite.py:1621); store referenced by 19 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_trna_aminoacylation.",
+        "classification_confidence": "HIGH"
+      }
+    ],
+    "misclassifications": []
+  },
+  {
+    "process_name": "ChromosomeSegregation",
+    "stores": [
+      {
+        "store_name": "chromosome",
+        "declared_type": "chromosome",
+        "classification": "state",
+        "classification_evidence": "port \"chromosome\" maps to store \"chromosome\" (opencell/vivarium/karr_composite.py:1624); store referenced by 10 process(es): karr_cell_cycle_coordinator, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_damage, karr_dna_repair, karr_dna_supercoiling, karr_observability_step, karr_replication, karr_replication_initiation.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "protein",
+        "declared_type": "protein",
+        "classification": "state",
+        "classification_evidence": "port \"protein\" maps to store \"protein\" (opencell/vivarium/karr_composite.py:1625); store referenced by 22 process(es): karr_chromosome_segregation, karr_dna_repair, karr_dna_supercoiling, karr_host_interaction, karr_observability_step, karr_protein_activation, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication_initiation, karr_ribosome_assembly, karr_rna_modification, karr_rna_processing, karr_terminal_organelle_assembly, karr_transcriptional_regulation, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "requests",
+        "declared_type": "requests",
+        "classification": "resource",
+        "classification_evidence": "port \"requests\" maps to store \"requests\" (opencell/vivarium/karr_composite.py:1627); store referenced by 16 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_replication, karr_replication_initiation, karr_rna_decay, request_calculator_d2, request_calculator_pd, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates",
+        "declared_type": "substrates",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates\" maps to store \"substrates\" (opencell/vivarium/karr_composite.py:1626); store referenced by 29 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_macromolecular_complexation, karr_metabolism, karr_observability_step, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_transcription, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates_allocated",
+        "declared_type": "substrates_allocated",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates_allocated\" maps to store \"substrates_allocated\" (opencell/vivarium/karr_composite.py:1628); store referenced by 19 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_trna_aminoacylation.",
+        "classification_confidence": "HIGH"
+      }
+    ],
+    "misclassifications": []
+  },
+  {
+    "process_name": "Cytokinesis",
+    "stores": [
+      {
+        "store_name": "cell",
+        "declared_type": "cell",
+        "classification": "state",
+        "classification_evidence": "port \"cell\" maps to store \"cell\" (opencell/vivarium/karr_composite.py:1647); store referenced by 6 process(es): karr_cell_cycle_coordinator, karr_cytokinesis, karr_ftsz_polymerization, karr_host_interaction, karr_observability_step, karr_terminal_organelle_assembly.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "chromosome",
+        "declared_type": "chromosome",
+        "classification": "state",
+        "classification_evidence": "port \"chromosome\" maps to store \"chromosome\" (opencell/vivarium/karr_composite.py:1648); store referenced by 10 process(es): karr_cell_cycle_coordinator, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_damage, karr_dna_repair, karr_dna_supercoiling, karr_observability_step, karr_replication, karr_replication_initiation.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "requests",
+        "declared_type": "requests",
+        "classification": "resource",
+        "classification_evidence": "port \"requests\" maps to store \"requests\" (opencell/vivarium/karr_composite.py:1650); store referenced by 16 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_replication, karr_replication_initiation, karr_rna_decay, request_calculator_d2, request_calculator_pd, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates",
+        "declared_type": "substrates",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates\" maps to store \"substrates\" (opencell/vivarium/karr_composite.py:1649); store referenced by 29 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_macromolecular_complexation, karr_metabolism, karr_observability_step, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_transcription, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates_allocated",
+        "declared_type": "substrates_allocated",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates_allocated\" maps to store \"substrates_allocated\" (opencell/vivarium/karr_composite.py:1651); store referenced by 19 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_trna_aminoacylation.",
+        "classification_confidence": "HIGH"
+      }
+    ],
+    "misclassifications": []
+  },
+  {
+    "process_name": "DNADamage",
+    "stores": [
+      {
+        "store_name": "chromosome",
+        "declared_type": "chromosome",
+        "classification": "state",
+        "classification_evidence": "port \"chromosome\" maps to store \"chromosome\" (opencell/vivarium/karr_composite.py:1631); store referenced by 10 process(es): karr_cell_cycle_coordinator, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_damage, karr_dna_repair, karr_dna_supercoiling, karr_observability_step, karr_replication, karr_replication_initiation.",
+        "classification_confidence": "HIGH"
+      }
+    ],
+    "misclassifications": []
+  },
+  {
+    "process_name": "DNARepair",
+    "stores": [
+      {
+        "store_name": "chromosome",
+        "declared_type": "chromosome",
+        "classification": "state",
+        "classification_evidence": "port \"chromosome\" maps to store \"chromosome\" (opencell/vivarium/karr_composite.py:1634); store referenced by 10 process(es): karr_cell_cycle_coordinator, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_damage, karr_dna_repair, karr_dna_supercoiling, karr_observability_step, karr_replication, karr_replication_initiation.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "protein",
+        "declared_type": "protein",
+        "classification": "state",
+        "classification_evidence": "port \"protein\" maps to store \"protein\" (opencell/vivarium/karr_composite.py:1635); store referenced by 22 process(es): karr_chromosome_segregation, karr_dna_repair, karr_dna_supercoiling, karr_host_interaction, karr_observability_step, karr_protein_activation, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication_initiation, karr_ribosome_assembly, karr_rna_modification, karr_rna_processing, karr_terminal_organelle_assembly, karr_transcriptional_regulation, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "requests",
+        "declared_type": "requests",
+        "classification": "resource",
+        "classification_evidence": "port \"requests\" maps to store \"requests\" (opencell/vivarium/karr_composite.py:1637); store referenced by 16 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_replication, karr_replication_initiation, karr_rna_decay, request_calculator_d2, request_calculator_pd, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates",
+        "declared_type": "substrates",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates\" maps to store \"substrates\" (opencell/vivarium/karr_composite.py:1636); store referenced by 29 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_macromolecular_complexation, karr_metabolism, karr_observability_step, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_transcription, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates_allocated",
+        "declared_type": "substrates_allocated",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates_allocated\" maps to store \"substrates_allocated\" (opencell/vivarium/karr_composite.py:1638); store referenced by 19 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_trna_aminoacylation.",
+        "classification_confidence": "HIGH"
+      }
+    ],
+    "misclassifications": []
+  },
+  {
+    "process_name": "DNASupercoiling",
+    "stores": [
+      {
+        "store_name": "chromosome",
+        "declared_type": "chromosome",
+        "classification": "state",
+        "classification_evidence": "port \"chromosome\" maps to store \"chromosome\" (opencell/vivarium/karr_composite.py:1611); store referenced by 10 process(es): karr_cell_cycle_coordinator, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_damage, karr_dna_repair, karr_dna_supercoiling, karr_observability_step, karr_replication, karr_replication_initiation.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "protein",
+        "declared_type": "protein",
+        "classification": "state",
+        "classification_evidence": "port \"protein\" maps to store \"protein\" (opencell/vivarium/karr_composite.py:1612); store referenced by 22 process(es): karr_chromosome_segregation, karr_dna_repair, karr_dna_supercoiling, karr_host_interaction, karr_observability_step, karr_protein_activation, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication_initiation, karr_ribosome_assembly, karr_rna_modification, karr_rna_processing, karr_terminal_organelle_assembly, karr_transcriptional_regulation, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "requests",
+        "declared_type": "requests",
+        "classification": "resource",
+        "classification_evidence": "port \"requests\" maps to store \"requests\" (opencell/vivarium/karr_composite.py:1614); store referenced by 16 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_replication, karr_replication_initiation, karr_rna_decay, request_calculator_d2, request_calculator_pd, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates",
+        "declared_type": "substrates",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates\" maps to store \"substrates\" (opencell/vivarium/karr_composite.py:1613); store referenced by 29 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_macromolecular_complexation, karr_metabolism, karr_observability_step, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_transcription, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates_allocated",
+        "declared_type": "substrates_allocated",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates_allocated\" maps to store \"substrates_allocated\" (opencell/vivarium/karr_composite.py:1615); store referenced by 19 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_trna_aminoacylation.",
+        "classification_confidence": "HIGH"
+      }
+    ],
+    "misclassifications": []
+  },
+  {
+    "process_name": "FtsZPolymerization",
+    "stores": [
+      {
+        "store_name": "cell",
+        "declared_type": "cell",
+        "classification": "state",
+        "classification_evidence": "port \"cell\" maps to store \"cell\" (opencell/vivarium/karr_composite.py:1641); store referenced by 6 process(es): karr_cell_cycle_coordinator, karr_cytokinesis, karr_ftsz_polymerization, karr_host_interaction, karr_observability_step, karr_terminal_organelle_assembly.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "requests",
+        "declared_type": "requests",
+        "classification": "resource",
+        "classification_evidence": "port \"requests\" maps to store \"requests\" (opencell/vivarium/karr_composite.py:1643); store referenced by 16 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_replication, karr_replication_initiation, karr_rna_decay, request_calculator_d2, request_calculator_pd, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates",
+        "declared_type": "substrates",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates\" maps to store \"substrates\" (opencell/vivarium/karr_composite.py:1642); store referenced by 29 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_macromolecular_complexation, karr_metabolism, karr_observability_step, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_transcription, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates_allocated",
+        "declared_type": "substrates_allocated",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates_allocated\" maps to store \"substrates_allocated\" (opencell/vivarium/karr_composite.py:1644); store referenced by 19 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_trna_aminoacylation.",
+        "classification_confidence": "HIGH"
+      }
+    ],
+    "misclassifications": []
+  },
+  {
+    "process_name": "HostInteraction",
+    "stores": [
+      {
+        "store_name": "cell",
+        "declared_type": "cell",
+        "classification": "state",
+        "classification_evidence": "port \"cell\" maps to store \"cell\" (opencell/vivarium/karr_composite.py); store referenced by 6 process(es): karr_cell_cycle_coordinator, karr_cytokinesis, karr_ftsz_polymerization, karr_host_interaction, karr_observability_step, karr_terminal_organelle_assembly.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "protein",
+        "declared_type": "protein",
+        "classification": "state",
+        "classification_evidence": "port \"protein\" maps to store \"protein\" (opencell/vivarium/karr_composite.py); store referenced by 22 process(es): karr_chromosome_segregation, karr_dna_repair, karr_dna_supercoiling, karr_host_interaction, karr_observability_step, karr_protein_activation, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication_initiation, karr_ribosome_assembly, karr_rna_modification, karr_rna_processing, karr_terminal_organelle_assembly, karr_transcriptional_regulation, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm.",
+        "classification_confidence": "HIGH"
+      }
+    ],
+    "misclassifications": []
+  },
+  {
+    "process_name": "MacromolecularComplexation",
+    "stores": [
+      {
+        "store_name": "complex",
+        "declared_type": "complex",
+        "classification": "state",
+        "classification_evidence": "port \"complex\" maps to store \"complex\" (opencell/vivarium/karr_composite.py:1517); store referenced by 7 process(es): karr_macromolecular_complexation, karr_protein_decay_light, karr_ribosome_assembly, karr_transcription, karr_translation, request_calculator_d2, request_calculator_pd.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "_internal_requests_d2",
+        "declared_type": "requests",
+        "classification": "resource",
+        "classification_evidence": "port \"requests\" maps to store \"_internal_requests_d2\" (opencell/vivarium/karr_composite.py:1518); store referenced by 1 process(es): karr_macromolecular_complexation.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates",
+        "declared_type": "substrates",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates\" maps to store \"substrates\" (opencell/vivarium/karr_composite.py:1516); store referenced by 29 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_macromolecular_complexation, karr_metabolism, karr_observability_step, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_transcription, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "_internal_substrates_allocated_d2",
+        "declared_type": "substrates_allocated",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates_allocated\" maps to store \"_internal_substrates_allocated_d2\" (opencell/vivarium/karr_composite.py:1519); store referenced by 1 process(es): karr_macromolecular_complexation.",
+        "classification_confidence": "HIGH"
+      }
+    ],
+    "misclassifications": []
+  },
+  {
+    "process_name": "Metabolism",
+    "stores": [
+      {
+        "store_name": "m1_dynamic_diagnostics",
+        "declared_type": "m1_dynamic_diagnostics",
+        "classification": "telemetry",
+        "classification_evidence": "port \"m1_dynamic_diagnostics\" maps to store \"m1_dynamic_diagnostics\" (opencell/vivarium/karr_composite.py); store referenced by 1 process(es): karr_metabolism.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "m1_pools",
+        "declared_type": "m1_pools",
+        "classification": "telemetry",
+        "classification_evidence": "port \"m1_pools\" maps to store \"m1_pools\" (opencell/vivarium/karr_composite.py); store referenced by 1 process(es): karr_metabolism.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "metabolic_reaction",
+        "declared_type": "metabolic_reaction",
+        "classification": "telemetry",
+        "classification_evidence": "port \"metabolic_reaction\" maps to store \"metabolic_reaction\" (opencell/vivarium/karr_composite.py); store referenced by 1 process(es): karr_metabolism.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates",
+        "declared_type": "substrates",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates\" maps to store \"substrates\" (opencell/vivarium/karr_composite.py); store referenced by 29 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_macromolecular_complexation, karr_metabolism, karr_observability_step, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_transcription, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      }
+    ],
+    "misclassifications": [
+      {
+        "store_name": "metabolic_reaction",
+        "reclassification": "telemetry",
+        "previous_framing": "read-port-unpowered cluster entry in reducer narrative",
+        "evidence": "Store is writer-only in composed topology for decision inputs; Metabolism class-a D4 also labels it writer-only telemetry (swarm_report.md:68-72; Metabolism/findings.json D4)."
+      }
+    ]
+  },
+  {
+    "process_name": "ProteinActivation",
+    "stores": [
+      {
+        "store_name": "protein",
+        "declared_type": "protein",
+        "classification": "state",
+        "classification_evidence": "port \"protein\" maps to store \"protein\" (opencell/vivarium/karr_composite.py:1595); store referenced by 22 process(es): karr_chromosome_segregation, karr_dna_repair, karr_dna_supercoiling, karr_host_interaction, karr_observability_step, karr_protein_activation, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication_initiation, karr_ribosome_assembly, karr_rna_modification, karr_rna_processing, karr_terminal_organelle_assembly, karr_transcriptional_regulation, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "stimuli",
+        "declared_type": "stimuli",
+        "classification": "state",
+        "classification_evidence": "port \"stimuli\" maps to store \"stimuli\" (opencell/vivarium/karr_composite.py:1594); store referenced by 1 process(es): karr_protein_activation.",
+        "classification_confidence": "MEDIUM"
+      },
+      {
+        "store_name": "activation_substrates",
+        "declared_type": "substrates",
+        "classification": "state",
+        "classification_evidence": "port \"substrates\" maps to store \"activation_substrates\" (opencell/vivarium/karr_composite.py:1593); store referenced by 1 process(es): karr_protein_activation.",
+        "classification_confidence": "MEDIUM"
+      }
+    ],
+    "misclassifications": []
+  },
+  {
+    "process_name": "ProteinDecay",
+    "stores": [
+      {
+        "store_name": "complex",
+        "declared_type": "complex",
+        "classification": "state",
+        "classification_evidence": "port \"complex\" maps to store \"complex\" (opencell/vivarium/karr_composite.py:1522); store referenced by 7 process(es): karr_macromolecular_complexation, karr_protein_decay_light, karr_ribosome_assembly, karr_transcription, karr_translation, request_calculator_d2, request_calculator_pd.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "protein",
+        "declared_type": "protein",
+        "classification": "state",
+        "classification_evidence": "port \"protein\" maps to store \"protein\" (opencell/vivarium/karr_composite.py:1524); store referenced by 22 process(es): karr_chromosome_segregation, karr_dna_repair, karr_dna_supercoiling, karr_host_interaction, karr_observability_step, karr_protein_activation, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication_initiation, karr_ribosome_assembly, karr_rna_modification, karr_rna_processing, karr_terminal_organelle_assembly, karr_transcriptional_regulation, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "_internal_requests_pd",
+        "declared_type": "requests",
+        "classification": "resource",
+        "classification_evidence": "port \"requests\" maps to store \"_internal_requests_pd\" (opencell/vivarium/karr_composite.py:1526); store referenced by 1 process(es): karr_protein_decay_light.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "rna",
+        "declared_type": "rna",
+        "classification": "state",
+        "classification_evidence": "port \"rna\" maps to store \"rna\" (opencell/vivarium/karr_composite.py:1525); store referenced by 11 process(es): karr_observability_step, karr_protein_decay_light, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_transcription, karr_trna_aminoacylation, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates",
+        "declared_type": "substrates",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates\" maps to store \"substrates\" (opencell/vivarium/karr_composite.py:1523); store referenced by 29 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_macromolecular_complexation, karr_metabolism, karr_observability_step, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_transcription, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "_internal_substrates_allocated_pd",
+        "declared_type": "substrates_allocated",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates_allocated\" maps to store \"_internal_substrates_allocated_pd\" (opencell/vivarium/karr_composite.py:1527); store referenced by 1 process(es): karr_protein_decay_light.",
+        "classification_confidence": "HIGH"
+      }
+    ],
+    "misclassifications": []
+  },
+  {
+    "process_name": "ProteinFolding",
+    "stores": [
+      {
+        "store_name": "protein",
+        "declared_type": "protein",
+        "classification": "state",
+        "classification_evidence": "port \"protein\" maps to store \"protein\" (opencell/vivarium/karr_composite.py:1583); store referenced by 22 process(es): karr_chromosome_segregation, karr_dna_repair, karr_dna_supercoiling, karr_host_interaction, karr_observability_step, karr_protein_activation, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication_initiation, karr_ribosome_assembly, karr_rna_modification, karr_rna_processing, karr_terminal_organelle_assembly, karr_transcriptional_regulation, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates",
+        "declared_type": "substrates",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates\" maps to store \"substrates\" (opencell/vivarium/karr_composite.py:1582); store referenced by 29 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_macromolecular_complexation, karr_metabolism, karr_observability_step, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_transcription, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates_allocated",
+        "declared_type": "substrates_allocated",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates_allocated\" maps to store \"substrates_allocated\" (opencell/vivarium/karr_composite.py:1584); store referenced by 19 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_trna_aminoacylation.",
+        "classification_confidence": "HIGH"
+      }
+    ],
+    "misclassifications": []
+  },
+  {
+    "process_name": "ProteinModification",
+    "stores": [
+      {
+        "store_name": "protein",
+        "declared_type": "protein",
+        "classification": "state",
+        "classification_evidence": "port \"protein\" maps to store \"protein\" (opencell/vivarium/karr_composite.py:1577); store referenced by 22 process(es): karr_chromosome_segregation, karr_dna_repair, karr_dna_supercoiling, karr_host_interaction, karr_observability_step, karr_protein_activation, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication_initiation, karr_ribosome_assembly, karr_rna_modification, karr_rna_processing, karr_terminal_organelle_assembly, karr_transcriptional_regulation, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "_internal_requests_pmod",
+        "declared_type": "requests",
+        "classification": "state",
+        "classification_evidence": "port \"requests\" maps to store \"_internal_requests_pmod\" (opencell/vivarium/karr_composite.py:1578); store referenced by 1 process(es): karr_protein_modification.",
+        "classification_confidence": "MEDIUM"
+      },
+      {
+        "store_name": "substrates",
+        "declared_type": "substrates",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates\" maps to store \"substrates\" (opencell/vivarium/karr_composite.py:1576); store referenced by 29 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_macromolecular_complexation, karr_metabolism, karr_observability_step, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_transcription, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates_allocated",
+        "declared_type": "substrates_allocated",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates_allocated\" maps to store \"substrates_allocated\" (opencell/vivarium/karr_composite.py:1579); store referenced by 19 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_trna_aminoacylation.",
+        "classification_confidence": "HIGH"
+      }
+    ],
+    "misclassifications": []
+  },
+  {
+    "process_name": "ProteinProcessingI",
+    "stores": [
+      {
+        "store_name": "protein",
+        "declared_type": "protein",
+        "classification": "state",
+        "classification_evidence": "port \"protein\" maps to store \"protein\" (opencell/vivarium/karr_composite.py:1565); store referenced by 22 process(es): karr_chromosome_segregation, karr_dna_repair, karr_dna_supercoiling, karr_host_interaction, karr_observability_step, karr_protein_activation, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication_initiation, karr_ribosome_assembly, karr_rna_modification, karr_rna_processing, karr_terminal_organelle_assembly, karr_transcriptional_regulation, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "_internal_requests_pp1",
+        "declared_type": "requests",
+        "classification": "state",
+        "classification_evidence": "port \"requests\" maps to store \"_internal_requests_pp1\" (opencell/vivarium/karr_composite.py:1566); store referenced by 1 process(es): karr_protein_processing_i.",
+        "classification_confidence": "MEDIUM"
+      },
+      {
+        "store_name": "substrates",
+        "declared_type": "substrates",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates\" maps to store \"substrates\" (opencell/vivarium/karr_composite.py:1564); store referenced by 29 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_macromolecular_complexation, karr_metabolism, karr_observability_step, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_transcription, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates_allocated",
+        "declared_type": "substrates_allocated",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates_allocated\" maps to store \"substrates_allocated\" (opencell/vivarium/karr_composite.py:1567); store referenced by 19 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_trna_aminoacylation.",
+        "classification_confidence": "HIGH"
+      }
+    ],
+    "misclassifications": []
+  },
+  {
+    "process_name": "ProteinProcessingII",
+    "stores": [
+      {
+        "store_name": "protein",
+        "declared_type": "protein",
+        "classification": "state",
+        "classification_evidence": "port \"protein\" maps to store \"protein\" (opencell/vivarium/karr_composite.py:1571); store referenced by 22 process(es): karr_chromosome_segregation, karr_dna_repair, karr_dna_supercoiling, karr_host_interaction, karr_observability_step, karr_protein_activation, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication_initiation, karr_ribosome_assembly, karr_rna_modification, karr_rna_processing, karr_terminal_organelle_assembly, karr_transcriptional_regulation, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "_internal_requests_pp2",
+        "declared_type": "requests",
+        "classification": "state",
+        "classification_evidence": "port \"requests\" maps to store \"_internal_requests_pp2\" (opencell/vivarium/karr_composite.py:1572); store referenced by 1 process(es): karr_protein_processing_ii.",
+        "classification_confidence": "MEDIUM"
+      },
+      {
+        "store_name": "substrates",
+        "declared_type": "substrates",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates\" maps to store \"substrates\" (opencell/vivarium/karr_composite.py:1570); store referenced by 29 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_macromolecular_complexation, karr_metabolism, karr_observability_step, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_transcription, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates_allocated",
+        "declared_type": "substrates_allocated",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates_allocated\" maps to store \"substrates_allocated\" (opencell/vivarium/karr_composite.py:1573); store referenced by 19 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_trna_aminoacylation.",
+        "classification_confidence": "HIGH"
+      }
+    ],
+    "misclassifications": []
+  },
+  {
+    "process_name": "ProteinTranslocation",
+    "stores": [
+      {
+        "store_name": "protein",
+        "declared_type": "protein",
+        "classification": "state",
+        "classification_evidence": "port \"protein\" maps to store \"protein\" (opencell/vivarium/karr_composite.py:1588); store referenced by 22 process(es): karr_chromosome_segregation, karr_dna_repair, karr_dna_supercoiling, karr_host_interaction, karr_observability_step, karr_protein_activation, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication_initiation, karr_ribosome_assembly, karr_rna_modification, karr_rna_processing, karr_terminal_organelle_assembly, karr_transcriptional_regulation, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "_internal_requests_ptrans",
+        "declared_type": "requests",
+        "classification": "state",
+        "classification_evidence": "port \"requests\" maps to store \"_internal_requests_ptrans\" (opencell/vivarium/karr_composite.py:1589); store referenced by 1 process(es): karr_protein_translocation.",
+        "classification_confidence": "MEDIUM"
+      },
+      {
+        "store_name": "substrates",
+        "declared_type": "substrates",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates\" maps to store \"substrates\" (opencell/vivarium/karr_composite.py:1587); store referenced by 29 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_macromolecular_complexation, karr_metabolism, karr_observability_step, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_transcription, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates_allocated",
+        "declared_type": "substrates_allocated",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates_allocated\" maps to store \"substrates_allocated\" (opencell/vivarium/karr_composite.py:1590); store referenced by 19 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_trna_aminoacylation.",
+        "classification_confidence": "HIGH"
+      }
+    ],
+    "misclassifications": []
+  },
+  {
+    "process_name": "RNADecay",
+    "stores": [
+      {
+        "store_name": "requests",
+        "declared_type": "requests",
+        "classification": "resource",
+        "classification_evidence": "port \"requests\" maps to store \"requests\" (opencell/vivarium/karr_composite.py); store referenced by 16 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_replication, karr_replication_initiation, karr_rna_decay, request_calculator_d2, request_calculator_pd, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "rna",
+        "declared_type": "rna",
+        "classification": "state",
+        "classification_evidence": "port \"rna\" maps to store \"rna\" (opencell/vivarium/karr_composite.py); store referenced by 11 process(es): karr_observability_step, karr_protein_decay_light, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_transcription, karr_trna_aminoacylation, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates",
+        "declared_type": "substrates",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates\" maps to store \"substrates\" (opencell/vivarium/karr_composite.py); store referenced by 29 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_macromolecular_complexation, karr_metabolism, karr_observability_step, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_transcription, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates_allocated",
+        "declared_type": "substrates_allocated",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates_allocated\" maps to store \"substrates_allocated\" (opencell/vivarium/karr_composite.py); store referenced by 19 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_trna_aminoacylation.",
+        "classification_confidence": "HIGH"
+      }
+    ],
+    "misclassifications": []
+  },
+  {
+    "process_name": "RNAModification",
+    "stores": [
+      {
+        "store_name": "protein",
+        "declared_type": "protein",
+        "classification": "state",
+        "classification_evidence": "port \"protein\" maps to store \"protein\" (opencell/vivarium/karr_composite.py:1559); store referenced by 22 process(es): karr_chromosome_segregation, karr_dna_repair, karr_dna_supercoiling, karr_host_interaction, karr_observability_step, karr_protein_activation, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication_initiation, karr_ribosome_assembly, karr_rna_modification, karr_rna_processing, karr_terminal_organelle_assembly, karr_transcriptional_regulation, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "_internal_requests_rna_mod",
+        "declared_type": "requests",
+        "classification": "state",
+        "classification_evidence": "port \"requests\" maps to store \"_internal_requests_rna_mod\" (opencell/vivarium/karr_composite.py:1560); store referenced by 1 process(es): karr_rna_modification.",
+        "classification_confidence": "MEDIUM"
+      },
+      {
+        "store_name": "rna",
+        "declared_type": "rna",
+        "classification": "state",
+        "classification_evidence": "port \"rna\" maps to store \"rna\" (opencell/vivarium/karr_composite.py:1558); store referenced by 11 process(es): karr_observability_step, karr_protein_decay_light, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_transcription, karr_trna_aminoacylation, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates",
+        "declared_type": "substrates",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates\" maps to store \"substrates\" (opencell/vivarium/karr_composite.py:1557); store referenced by 29 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_macromolecular_complexation, karr_metabolism, karr_observability_step, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_transcription, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates_allocated",
+        "declared_type": "substrates_allocated",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates_allocated\" maps to store \"substrates_allocated\" (opencell/vivarium/karr_composite.py:1561); store referenced by 19 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_trna_aminoacylation.",
+        "classification_confidence": "HIGH"
+      }
+    ],
+    "misclassifications": []
+  },
+  {
+    "process_name": "RNAProcessing",
+    "stores": [
+      {
+        "store_name": "protein",
+        "declared_type": "protein",
+        "classification": "state",
+        "classification_evidence": "port \"protein\" maps to store \"protein\" (opencell/vivarium/karr_composite.py:1552); store referenced by 22 process(es): karr_chromosome_segregation, karr_dna_repair, karr_dna_supercoiling, karr_host_interaction, karr_observability_step, karr_protein_activation, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication_initiation, karr_ribosome_assembly, karr_rna_modification, karr_rna_processing, karr_terminal_organelle_assembly, karr_transcriptional_regulation, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "_internal_requests_rna_proc",
+        "declared_type": "requests",
+        "classification": "state",
+        "classification_evidence": "port \"requests\" maps to store \"_internal_requests_rna_proc\" (opencell/vivarium/karr_composite.py:1553); store referenced by 1 process(es): karr_rna_processing.",
+        "classification_confidence": "MEDIUM"
+      },
+      {
+        "store_name": "rna",
+        "declared_type": "rna",
+        "classification": "state",
+        "classification_evidence": "port \"rna\" maps to store \"rna\" (opencell/vivarium/karr_composite.py:1551); store referenced by 11 process(es): karr_observability_step, karr_protein_decay_light, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_transcription, karr_trna_aminoacylation, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates",
+        "declared_type": "substrates",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates\" maps to store \"substrates\" (opencell/vivarium/karr_composite.py:1550); store referenced by 29 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_macromolecular_complexation, karr_metabolism, karr_observability_step, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_transcription, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates_allocated",
+        "declared_type": "substrates_allocated",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates_allocated\" maps to store \"substrates_allocated\" (opencell/vivarium/karr_composite.py:1554); store referenced by 19 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_trna_aminoacylation.",
+        "classification_confidence": "HIGH"
+      }
+    ],
+    "misclassifications": []
+  },
+  {
+    "process_name": "Replication",
+    "stores": [
+      {
+        "store_name": "chromosome",
+        "declared_type": "chromosome",
+        "classification": "state",
+        "classification_evidence": "port \"chromosome\" maps to store \"chromosome\" (opencell/vivarium/karr_composite.py:1605); store referenced by 10 process(es): karr_cell_cycle_coordinator, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_damage, karr_dna_repair, karr_dna_supercoiling, karr_observability_step, karr_replication, karr_replication_initiation.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "requests",
+        "declared_type": "requests",
+        "classification": "resource",
+        "classification_evidence": "port \"requests\" maps to store \"requests\" (opencell/vivarium/karr_composite.py:1607); store referenced by 16 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_replication, karr_replication_initiation, karr_rna_decay, request_calculator_d2, request_calculator_pd, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates",
+        "declared_type": "substrates",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates\" maps to store \"substrates\" (opencell/vivarium/karr_composite.py:1606); store referenced by 29 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_macromolecular_complexation, karr_metabolism, karr_observability_step, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_transcription, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates_allocated",
+        "declared_type": "substrates_allocated",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates_allocated\" maps to store \"substrates_allocated\" (opencell/vivarium/karr_composite.py:1608); store referenced by 19 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_trna_aminoacylation.",
+        "classification_confidence": "HIGH"
+      }
+    ],
+    "misclassifications": []
+  },
+  {
+    "process_name": "ReplicationInitiation",
+    "stores": [
+      {
+        "store_name": "chromosome",
+        "declared_type": "chromosome",
+        "classification": "state",
+        "classification_evidence": "port \"chromosome\" maps to store \"chromosome\" (opencell/vivarium/karr_composite.py:1598); store referenced by 10 process(es): karr_cell_cycle_coordinator, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_damage, karr_dna_repair, karr_dna_supercoiling, karr_observability_step, karr_replication, karr_replication_initiation.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "protein",
+        "declared_type": "protein",
+        "classification": "state",
+        "classification_evidence": "port \"protein\" maps to store \"protein\" (opencell/vivarium/karr_composite.py:1599); store referenced by 22 process(es): karr_chromosome_segregation, karr_dna_repair, karr_dna_supercoiling, karr_host_interaction, karr_observability_step, karr_protein_activation, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication_initiation, karr_ribosome_assembly, karr_rna_modification, karr_rna_processing, karr_terminal_organelle_assembly, karr_transcriptional_regulation, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "requests",
+        "declared_type": "requests",
+        "classification": "resource",
+        "classification_evidence": "port \"requests\" maps to store \"requests\" (opencell/vivarium/karr_composite.py:1601); store referenced by 16 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_replication, karr_replication_initiation, karr_rna_decay, request_calculator_d2, request_calculator_pd, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates",
+        "declared_type": "substrates",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates\" maps to store \"substrates\" (opencell/vivarium/karr_composite.py:1600); store referenced by 29 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_macromolecular_complexation, karr_metabolism, karr_observability_step, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_transcription, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates_allocated",
+        "declared_type": "substrates_allocated",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates_allocated\" maps to store \"substrates_allocated\" (opencell/vivarium/karr_composite.py:1602); store referenced by 19 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_trna_aminoacylation.",
+        "classification_confidence": "HIGH"
+      }
+    ],
+    "misclassifications": []
+  },
+  {
+    "process_name": "RibosomeAssembly",
+    "stores": [
+      {
+        "store_name": "complex",
+        "declared_type": "complex",
+        "classification": "state",
+        "classification_evidence": "port \"complex\" maps to store \"complex\" (opencell/vivarium/karr_composite.py:1540); store referenced by 7 process(es): karr_macromolecular_complexation, karr_protein_decay_light, karr_ribosome_assembly, karr_transcription, karr_translation, request_calculator_d2, request_calculator_pd.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "protein",
+        "declared_type": "protein",
+        "classification": "state",
+        "classification_evidence": "port \"protein\" maps to store \"protein\" (opencell/vivarium/karr_composite.py:1539); store referenced by 22 process(es): karr_chromosome_segregation, karr_dna_repair, karr_dna_supercoiling, karr_host_interaction, karr_observability_step, karr_protein_activation, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication_initiation, karr_ribosome_assembly, karr_rna_modification, karr_rna_processing, karr_terminal_organelle_assembly, karr_transcriptional_regulation, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "_internal_requests_ribasm",
+        "declared_type": "requests",
+        "classification": "state",
+        "classification_evidence": "port \"requests\" maps to store \"_internal_requests_ribasm\" (opencell/vivarium/karr_composite.py:1541); store referenced by 1 process(es): karr_ribosome_assembly.",
+        "classification_confidence": "MEDIUM"
+      },
+      {
+        "store_name": "rna",
+        "declared_type": "rna",
+        "classification": "state",
+        "classification_evidence": "port \"rna\" maps to store \"rna\" (opencell/vivarium/karr_composite.py:1538); store referenced by 11 process(es): karr_observability_step, karr_protein_decay_light, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_transcription, karr_trna_aminoacylation, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates",
+        "declared_type": "substrates",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates\" maps to store \"substrates\" (opencell/vivarium/karr_composite.py:1537); store referenced by 29 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_macromolecular_complexation, karr_metabolism, karr_observability_step, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_transcription, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates_allocated",
+        "declared_type": "substrates_allocated",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates_allocated\" maps to store \"substrates_allocated\" (opencell/vivarium/karr_composite.py:1542); store referenced by 19 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_trna_aminoacylation.",
+        "classification_confidence": "HIGH"
+      }
+    ],
+    "misclassifications": []
+  },
+  {
+    "process_name": "TerminalOrganelleAssembly",
+    "stores": [
+      {
+        "store_name": "cell",
+        "declared_type": "cell",
+        "classification": "state",
+        "classification_evidence": "port \"cell\" maps to store \"cell\" (opencell/vivarium/karr_composite.py:1655); store referenced by 6 process(es): karr_cell_cycle_coordinator, karr_cytokinesis, karr_ftsz_polymerization, karr_host_interaction, karr_observability_step, karr_terminal_organelle_assembly.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "protein",
+        "declared_type": "protein",
+        "classification": "state",
+        "classification_evidence": "port \"protein\" maps to store \"protein\" (opencell/vivarium/karr_composite.py:1654); store referenced by 22 process(es): karr_chromosome_segregation, karr_dna_repair, karr_dna_supercoiling, karr_host_interaction, karr_observability_step, karr_protein_activation, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication_initiation, karr_ribosome_assembly, karr_rna_modification, karr_rna_processing, karr_terminal_organelle_assembly, karr_transcriptional_regulation, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm.",
+        "classification_confidence": "HIGH"
+      }
+    ],
+    "misclassifications": []
+  },
+  {
+    "process_name": "Transcription",
+    "stores": [
+      {
+        "store_name": "complex",
+        "declared_type": "complex",
+        "classification": "state",
+        "classification_evidence": "port \"complex\" maps to store \"complex\" (opencell/vivarium/karr_composite.py:1507); store referenced by 7 process(es): karr_macromolecular_complexation, karr_protein_decay_light, karr_ribosome_assembly, karr_transcription, karr_translation, request_calculator_d2, request_calculator_pd. renamed to karr_transcription in build_karr_chassis_v6 (karr_composite.py:1885,1890).",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "rna",
+        "declared_type": "rna",
+        "classification": "state",
+        "classification_evidence": "port \"rna\" maps to store \"rna\" (opencell/vivarium/karr_composite.py:1505); store referenced by 11 process(es): karr_observability_step, karr_protein_decay_light, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_transcription, karr_trna_aminoacylation, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna. renamed to karr_transcription in build_karr_chassis_v6 (karr_composite.py:1885,1890).",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates",
+        "declared_type": "substrates",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates\" maps to store \"substrates\" (opencell/vivarium/karr_composite.py:1506); store referenced by 29 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_macromolecular_complexation, karr_metabolism, karr_observability_step, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_transcription, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna. renamed to karr_transcription in build_karr_chassis_v6 (karr_composite.py:1885,1890).",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "tx_rate_fold_change",
+        "declared_type": "tx_rate_fold_change",
+        "classification": "state",
+        "classification_evidence": "port \"tx_rate_fold_change\" maps to store \"tx_rate_fold_change\" (opencell/vivarium/karr_composite.py:1508); store referenced by 2 process(es): karr_transcription, karr_transcriptional_regulation. renamed to karr_transcription in build_karr_chassis_v6 (karr_composite.py:1885,1890).",
+        "classification_confidence": "HIGH"
+      }
+    ],
+    "misclassifications": []
+  },
+  {
+    "process_name": "TranscriptionalRegulation",
+    "stores": [
+      {
+        "store_name": "protein",
+        "declared_type": "protein",
+        "classification": "state",
+        "classification_evidence": "port \"protein\" maps to store \"protein\" (opencell/vivarium/karr_composite.py:1545); store referenced by 22 process(es): karr_chromosome_segregation, karr_dna_repair, karr_dna_supercoiling, karr_host_interaction, karr_observability_step, karr_protein_activation, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication_initiation, karr_ribosome_assembly, karr_rna_modification, karr_rna_processing, karr_terminal_organelle_assembly, karr_transcriptional_regulation, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "tf_binding",
+        "declared_type": "tf_binding",
+        "classification": "telemetry",
+        "classification_evidence": "port \"tf_binding\" maps to store \"tf_binding\" (opencell/vivarium/karr_composite.py:1546); store referenced by 1 process(es): karr_transcriptional_regulation.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "tx_rate_fold_change",
+        "declared_type": "tx_rate_fold_change",
+        "classification": "state",
+        "classification_evidence": "port \"tx_rate_fold_change\" maps to store \"tx_rate_fold_change\" (opencell/vivarium/karr_composite.py:1547); store referenced by 2 process(es): karr_transcription, karr_transcriptional_regulation.",
+        "classification_confidence": "HIGH"
+      }
+    ],
+    "misclassifications": []
+  },
+  {
+    "process_name": "Translation",
+    "stores": [
+      {
+        "store_name": "complex",
+        "declared_type": "complex",
+        "classification": "state",
+        "classification_evidence": "port \"complex\" maps to store \"complex\" (opencell/vivarium/karr_composite.py:1513); store referenced by 7 process(es): karr_macromolecular_complexation, karr_protein_decay_light, karr_ribosome_assembly, karr_transcription, karr_translation, request_calculator_d2, request_calculator_pd. renamed to karr_translation in build_karr_chassis_v6 (karr_composite.py:1886,1890).",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "protein",
+        "declared_type": "protein",
+        "classification": "state",
+        "classification_evidence": "port \"protein\" maps to store \"protein\" (opencell/vivarium/karr_composite.py:1511); store referenced by 22 process(es): karr_chromosome_segregation, karr_dna_repair, karr_dna_supercoiling, karr_host_interaction, karr_observability_step, karr_protein_activation, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication_initiation, karr_ribosome_assembly, karr_rna_modification, karr_rna_processing, karr_terminal_organelle_assembly, karr_transcriptional_regulation, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm. renamed to karr_translation in build_karr_chassis_v6 (karr_composite.py:1886,1890).",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates",
+        "declared_type": "substrates",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates\" maps to store \"substrates\" (opencell/vivarium/karr_composite.py:1512); store referenced by 29 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_macromolecular_complexation, karr_metabolism, karr_observability_step, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_transcription, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna. renamed to karr_translation in build_karr_chassis_v6 (karr_composite.py:1886,1890).",
+        "classification_confidence": "HIGH"
+      }
+    ],
+    "misclassifications": []
+  },
+  {
+    "process_name": "tRNAAminoacylation",
+    "stores": [
+      {
+        "store_name": "protein",
+        "declared_type": "protein",
+        "classification": "state",
+        "classification_evidence": "port \"protein\" maps to store \"protein\" (opencell/vivarium/karr_composite.py:1532); store referenced by 22 process(es): karr_chromosome_segregation, karr_dna_repair, karr_dna_supercoiling, karr_host_interaction, karr_observability_step, karr_protein_activation, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication_initiation, karr_ribosome_assembly, karr_rna_modification, karr_rna_processing, karr_terminal_organelle_assembly, karr_transcriptional_regulation, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "_internal_requests_trna",
+        "declared_type": "requests",
+        "classification": "state",
+        "classification_evidence": "port \"requests\" maps to store \"_internal_requests_trna\" (opencell/vivarium/karr_composite.py:1533); store referenced by 1 process(es): karr_trna_aminoacylation.",
+        "classification_confidence": "MEDIUM"
+      },
+      {
+        "store_name": "rna",
+        "declared_type": "rna",
+        "classification": "state",
+        "classification_evidence": "port \"rna\" maps to store \"rna\" (opencell/vivarium/karr_composite.py:1531); store referenced by 11 process(es): karr_observability_step, karr_protein_decay_light, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_transcription, karr_trna_aminoacylation, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates",
+        "declared_type": "substrates",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates\" maps to store \"substrates\" (opencell/vivarium/karr_composite.py:1530); store referenced by 29 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_macromolecular_complexation, karr_metabolism, karr_observability_step, karr_protein_decay_light, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_transcription, karr_translation, karr_trna_aminoacylation, request_calculator_protein_pathway, request_calculator_ribasm, request_calculator_rna_pathway, request_calculator_trna.",
+        "classification_confidence": "HIGH"
+      },
+      {
+        "store_name": "substrates_allocated",
+        "declared_type": "substrates_allocated",
+        "classification": "resource",
+        "classification_evidence": "port \"substrates_allocated\" maps to store \"substrates_allocated\" (opencell/vivarium/karr_composite.py:1534); store referenced by 19 process(es): karr_allocation_step, karr_chromosome_condensation, karr_chromosome_segregation, karr_cytokinesis, karr_dna_repair, karr_dna_supercoiling, karr_ftsz_polymerization, karr_protein_folding, karr_protein_modification, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_translocation, karr_replication, karr_replication_initiation, karr_ribosome_assembly, karr_rna_decay, karr_rna_modification, karr_rna_processing, karr_trna_aminoacylation.",
+        "classification_confidence": "HIGH"
+      }
+    ],
+    "misclassifications": []
+  }
+]
