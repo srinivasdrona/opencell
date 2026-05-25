@@ -462,6 +462,69 @@ Track A (TX/TL allocator enrollment, the B1 fix)
 
 Single mega-PR for swarm Class A test files + report — 28 PRs would be process overhead with no review value.
 
+### Audit-and-ratchet progress (2026-05-25)
+
+**5-gap hardening locked** (decision `swarm-pilot-five-gap-hardening`): Sprint 0.5 chassis canary, Class A.5 boundary auditors, mandatory reducer spot-check, Track A scope protection, typed findings.json schema. PR plan revised: 1 PR for reducer artifacts + 4 PRs × 7 processes for test files.
+
+**Class A swarm complete (28/28):**
+- Phased rollout: pilot 2 → scale 8 → remainder 18, fired via `scripts/swarm/launch_class_a.py`
+- All 28 contract-clean (findings.json + 2 test files + activity_monitor.json + STATUS.md)
+- All 28 schema-conformant (`bug_class`, `severity`, `blocks_b1`, `citation`, `raw_fixture_check`)
+- **181 findings total · 98 HIGH · 19 `blocks_b1`** (Track-A relevant)
+- Single commit per audit branch `swarm/class-a/<ProcessName>` off `852da97`
+
+**Sprint 0.5 canary complete** (`swarm/sprint0-chassis-canary`): `chassis_canary.py` + `ChassisCanaryFailed` + 3 bootstrap monitors + 4 integration tests, all passing. Bonus: canary's full-suite run surfaced pre-existing failure `test_b1_substrate_sanity_no_negative_core_substrates` (ATP/GTP → −140k at 5000s).
+
+**Reducer complete** (`swarm/reducer`): 5 artifacts shipped, spot-check 4 confirmed / 0 refuted / 1 inconclusive (seed 20260525). Key cross-process patterns:
+- `allocator-bypass` cluster: **all 28 processes**. Root cause appears to be `_allocated_or_state` falling back to raw `substrates` when allocation == 0 — a single helper used across 5+ Karr processes. Strong Track-A candidate.
+- `t=0-init-mismatch` cluster: **all 28 processes**.
+- `fixture-replay-blocked` cluster: 20 / 28 processes (replay harness needs I/O channelization).
+- `m3-vs-vivarium-duplication` cluster: 7 central-dogma processes.
+- `missing-enzyme-gating` cluster: 7 processes.
+- `read-port-unpowered` cluster: 4 processes (structurally present but runtime-unpowered).
+
+**Class B scope proposed by reducer** (5 audits):
+1. `Class-B-allocator-contract-audit`
+2. `Class-B-fixture-replay-fidelity-audit`
+3. `Class-B-t0-initialization-parity-audit`
+4. `Class-B-enzyme-gate-consistency-audit`
+5. `Class-B-central-dogma-semantics-audit`
+
+**Next gates**: GPT-5.5 critique on reducer artifacts → operator triage → PR consolidation → Class B fleet OR direct Track-A start (operator choice).
+
+### Critique resolution and Track-A lock (2026-05-25, evening)
+
+GPT-5.5 critique on reducer triggered the EXIT RULE: the "allocator-bypass" cluster was symptom-shaped, mixing 5 distinct seams. Class B was paused; restructured the audit into a **7-layer contract taxonomy** (L0 runtime identity, L1 store classification, L2 enrollment topology, L3 resource-vector completeness, L4 default-key identity, L5 helper zero-grant semantics, L6 request-calc correctness, L7 fixture provenance). Full reasoning in `DECISIONS.md` → `swarm-contract-taxonomy-v1`.
+
+**Secondary audits (3 fired, all complete, all merged to main):**
+- `swarm/composition` (L0/L1/L2/L7) — `opencell/validation/swarm/composition/composition_audit.md`
+- `swarm/allocator-completeness` (L3/L4/L6) — `opencell/validation/swarm/allocator/allocator_audit.md`
+- `swarm/l5-semantics` (L5 strict-zero) — `opencell/validation/swarm/l5/zero_grant_contract_recommendation.md`
+
+**Tertiary audits (4 fired, all complete, all merged):**
+- `swarm/class-a-v3/Transcription` and `swarm/class-a-v3/Translation` (v3 biology re-audit on canonical runtime classes)
+- `swarm/fixture-investigation` (root-causes 28/28 single-snapshot fixtures, recommends Option B)
+- `swarm/audit-consolidation` (`opencell/validation/swarm/consolidated/CONSOLIDATED_AUDIT_REPORT.md`)
+
+**Track-A locked at 5 layer-scoped PRs (~710-1100 LOC total):**
+
+| PR | Layer | Scope | Est LOC | Deps | Status |
+|---|---|---|---:|---|---|
+| **A1** | L5 | Strict-zero contract at 13 helper/inline fallback sites (FtsZ already correct, skipped) | 180-260 | none | fired |
+| **A5** | L0 | TX/TL v3 runtime-identity guardrails + TL t=0 monomer fix | 70-130 | none | fired |
+| **A3** | L4/L6 | `d2_real` drift, ProteinDecay key drift, MacromolecularComplexation zero-demand path | 120-200 | A1 | pending |
+| **A4** | L3 | DNASupercoiling H2O + ProteinTranslocation full vector | 120-190 | A1 | pending |
+| **A2** | L2 | Metabolism + TX/TL v3 allocator enrollment | 220-320 | A1, A5 | pending |
+
+**Three false-positives killed**: Metabolism `metabolic_reaction` (telemetry, L1 reclassified), DNADamage enrollment (model-parity only, no runtime substrate traffic), Metabolism M1 t=0 (smoke harness only, not v5/v6).
+
+**Deferred (not blocking Track-A):**
+- Fixture pipeline rebuild — Option B (~200 LOC): reuse `scripts/matlab/extract_per_process_traces.m` + Python converter. Schedule after Track-A.
+- Central-dogma re-audit on canonical runtime classes — after A5.
+- DNADamage model-parity decision.
+
+**Operator locks**: no more audits this phase; all code work stays in Codex; Copilot is planner/orchestrator only.
+
 ### Sprint 0 strategic context
 
 Convergent finding across all three Phase 0 research agents: the most portable patterns are (1) `ASSERT_POSITIVE_COUNTS` runtime guards at allocator boundaries, (2) `data_predicates` invariant library, (3) per-process biology-firing tests using `simulate_process`, (4) solver replay for differential validation, (5) `find_limiting_metabolites` + `expected_set` for "beautiful corpse" detection. Sprint 0 ships patterns 1, 2, 4 as foundation; the swarm pilot's 28 class-A agents will author patterns 3 and 5 across all 28 processes.
