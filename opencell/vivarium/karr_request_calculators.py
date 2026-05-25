@@ -7,6 +7,8 @@ from typing import Any
 import numpy as np
 from vivarium.core.process import Step
 
+from opencell.m3 import translation_v2 as tl_v2
+
 
 def _consumed_wids_from_stoich(substrate_wids: list[str], stoich: np.ndarray) -> list[str]:
     consumed_idx = np.flatnonzero(np.any(np.asarray(stoich, dtype=np.int64) < 0, axis=1))
@@ -523,6 +525,146 @@ class RequestCalculatorProteinPathway(Step):
         }
 
 
+class RequestCalculatorTranscription(Step):
+    """Compute allocator requests for mechanism-driven transcription."""
+
+    name = "request_calculator_transcription"
+    defaults: dict[str, Any] = {"transcription_proc": None}
+
+    def __init__(self, parameters: dict[str, Any] | None = None) -> None:
+        super().__init__(parameters)
+        tx_proc = self.parameters.get("transcription_proc")
+        if tx_proc is None:
+            raise ValueError("RequestCalculatorTranscription requires parameter: transcription_proc")
+        self._tx_proc = tx_proc
+        self._request_wids = list(self._tx_proc.allocation_substrate_wids)
+
+    def ports_schema(self) -> dict[str, Any]:
+        return {
+            "complex": {
+                "counts": {
+                    "RNA_POLYMERASE": {
+                        "_default": float(self._tx_proc._fallback_n_active_rnap),
+                        "_updater": "accumulate",
+                        "_emit": False,
+                    }
+                }
+            },
+            "requests": {
+                self._tx_proc.name: {
+                    wid: {"_default": 0.0, "_updater": "set", "_emit": False}
+                    for wid in self._request_wids
+                }
+            },
+        }
+
+    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        if not (
+            bool(self._tx_proc.parameters.get("write_substrate_deltas", True))
+            and bool(self._tx_proc.parameters.get("use_allocator_budget", False))
+        ):
+            return {"requests": {self._tx_proc.name: {wid: 0.0 for wid in self._request_wids}}}
+
+        n_active = float(
+            states.get("complex", {})
+            .get("counts", {})
+            .get("RNA_POLYMERASE", self._tx_proc._fallback_n_active_rnap)
+        )
+        n_active = max(0.0, n_active)
+        total_nt = self._tx_proc._predict_total_nt_polymerization_per_s(n_active)
+        per_ntp_need = max(0.0, total_nt / 4.0 * float(timestep))
+        requests = {wid: per_ntp_need for wid in self._request_wids}
+        return {"requests": {self._tx_proc.name: requests}}
+
+
+class RequestCalculatorTranslation(Step):
+    """Compute allocator requests for mechanism-driven translation."""
+
+    name = "request_calculator_translation"
+    defaults: dict[str, Any] = {"translation_proc": None}
+
+    def __init__(self, parameters: dict[str, Any] | None = None) -> None:
+        super().__init__(parameters)
+        tl_proc = self.parameters.get("translation_proc")
+        if tl_proc is None:
+            raise ValueError("RequestCalculatorTranslation requires parameter: translation_proc")
+        self._tl_proc = tl_proc
+        self._request_wids = list(self._tl_proc.allocation_substrate_wids)
+
+    def ports_schema(self) -> dict[str, Any]:
+        return {
+            "complex": {
+                "counts": {
+                    "RIBOSOME_70S": {
+                        "_default": float(self._tl_proc._fallback_n_active_ribosomes),
+                        "_updater": "accumulate",
+                        "_emit": False,
+                    }
+                }
+            },
+            "requests": {
+                self._tl_proc.name: {
+                    wid: {"_default": 0.0, "_updater": "set", "_emit": False}
+                    for wid in self._request_wids
+                }
+            },
+        }
+
+    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        if not (
+            bool(self._tl_proc.parameters.get("write_substrate_deltas", True))
+            and bool(self._tl_proc.parameters.get("use_allocator_budget", False))
+        ):
+            return {"requests": {self._tl_proc.name: {wid: 0.0 for wid in self._request_wids}}}
+
+        n_active = float(
+            states.get("complex", {})
+            .get("counts", {})
+            .get("RIBOSOME_70S", self._tl_proc._fallback_n_active_ribosomes)
+        )
+        n_active = max(0.0, n_active)
+        rates = tl_v2.predict_synthesis_per_s(self._tl_proc.mechanism_inputs, n_active=n_active)
+        need_by_aa = self._tl_proc._predict_substrate_need(rates, timestep)
+        requests = {wid: max(0.0, float(need_by_aa.get(wid, 0.0))) for wid in self._request_wids}
+        return {"requests": {self._tl_proc.name: requests}}
+
+
+class RequestCalculatorMetabolism(Step):
+    """Emit allocator requests for dynamic-bounds metabolism substrate demand."""
+
+    name = "request_calculator_metabolism"
+    defaults: dict[str, Any] = {"metabolism_proc": None}
+
+    def __init__(self, parameters: dict[str, Any] | None = None) -> None:
+        super().__init__(parameters)
+        m1_proc = self.parameters.get("metabolism_proc")
+        if m1_proc is None:
+            raise ValueError("RequestCalculatorMetabolism requires parameter: metabolism_proc")
+        self._m1_proc = m1_proc
+        self._request_wids = list(self._m1_proc.allocation_substrate_wids)
+
+    def ports_schema(self) -> dict[str, Any]:
+        return {
+            "requests": {
+                self._m1_proc.name: {
+                    wid: {"_default": 0.0, "_updater": "set", "_emit": False}
+                    for wid in self._request_wids
+                }
+            }
+        }
+
+    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        del timestep, states
+        if not bool(self._m1_proc.use_allocator_budget):
+            return {"requests": {self._m1_proc.name: {wid: 0.0 for wid in self._request_wids}}}
+
+        requests = {
+            wid: max(0.0, float(self._m1_proc._last_allocation_demand.get(wid, 0.0)))
+            for wid in self._request_wids
+        }
+        return {"requests": {self._m1_proc.name: requests}}
+
+
 __all__ = [
     "RequestCalculatorD2",
     "RequestCalculatorPD",
@@ -530,4 +672,7 @@ __all__ = [
     "RequestCalculatorTRNA",
     "RequestCalculatorRNAPathway",
     "RequestCalculatorProteinPathway",
+    "RequestCalculatorTranscription",
+    "RequestCalculatorTranslation",
+    "RequestCalculatorMetabolism",
 ]
