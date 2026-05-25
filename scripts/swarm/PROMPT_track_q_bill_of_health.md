@@ -19,8 +19,9 @@ First action: overwrite `STATUS_q.md` with `# 2026-05-25T<now>Z track-q pre-ense
 
 ## Repo state assumptions
 - Repo root: `/mnt/e/opencell` (WSL) or `E:\opencell` (Windows). You're on Windows; use WSL for pytest via `/mnt/e/opencell/.venv-wsl/bin/python`.
-- Current branch: `main`. Current HEAD: `437b3b9` (tests: re-harden Bug 6a/6b post-Track-A).
-- Working tree: should be clean. Verify with `git status --porcelain`; if non-empty STOP and report. Codex artifacts (STATUS_*.md, codex_*.log, .merge_baseline_sha.txt, HANDOFF_AUTO.md) are gitignored as of `f4e4e67`.
+- Current branch: `main`. HEAD should be at or descended from `437b3b9` (the Bug 6a/6b hardening). Run `git log --oneline -5` and record HEAD in STATUS; do NOT abort if HEAD is a later commit.
+- Working tree may contain untracked pre-session artifacts (scripts/launch_*.ps1, PROMPT_*.md drafts, .codex_q_pid.txt, etc.) and a modified `scripts/swarm/CLASS_A_TEMPLATE.md` — these are pre-existing and EXPECTED. Do NOT abort on a dirty tree. Just record `git status --porcelain` output verbatim in STATUS for the record, then proceed.
+- The ONLY condition that should make you stop is if there are unstaged modifications to files under `opencell/`, `tests/`, or `pyproject.toml` / `setup.cfg` / `conftest.py` — anything that could affect the test run itself. In that case STOP and report.
 
 ## Sweep scope and execution order
 Run each bucket as a separate pytest invocation so we can attribute failures cleanly. Use this exact order (cheapest → most expensive):
