@@ -1368,7 +1368,7 @@ def build_karr_chassis_v5(
         | {rep_init_proc.atp_wid, rep_init_proc.water_wid}
         | set(rep_proc.dntp_wids)
         | {rep_proc.atp_wid}
-        | {supercoil_proc.atp_wid}
+        | {supercoil_proc.atp_wid, supercoil_proc.h2o_wid}
         | {condensation_proc.atp_wid, condensation_proc.water_wid}
         | {segregation_proc.gtp_wid, segregation_proc.h2o_wid}
         | set(dna_repair_proc.tracked_substrates)
@@ -1394,7 +1394,7 @@ def build_karr_chassis_v5(
                 (p_trans_proc.name, [p_trans_proc.atp_wid]),
                 (rep_init_proc.name, [rep_init_proc.atp_wid, rep_init_proc.water_wid]),
                 (rep_proc.name, [*rep_proc.dntp_wids, rep_proc.atp_wid]),
-                (supercoil_proc.name, [supercoil_proc.atp_wid]),
+                (supercoil_proc.name, [supercoil_proc.atp_wid, supercoil_proc.h2o_wid]),
                 (
                     condensation_proc.name,
                     [condensation_proc.atp_wid, condensation_proc.water_wid],
@@ -1971,3 +1971,4 @@ __all__ = [
     "build_karr_m1_m2_m3_engine",
     "compute_baseline_demand_per_s",
 ]
+

@@ -27,11 +27,13 @@ def _base_state(
     sigma: float,
     replication_state: str = "idle",
     atp: float = 10_000.0,
+    h2o: float | None = None,
     gyrase_count: float = 3.0,
     topoiv_count: float = 12.0,
 ) -> dict[str, Any]:
     substrates = {wid: 0.0 for wid in process.substrate_wids}
     substrates[process.atp_wid] = float(atp)
+    substrates[process.h2o_wid] = float(atp if h2o is None else h2o)
     substrates[process.adp_wid] = 0.0
     substrates[process.pi_wid] = 0.0
 
@@ -48,8 +50,18 @@ def _base_state(
             }
         },
         "substrates": substrates,
-        "requests": {process.name: {process.atp_wid: float(atp)}},
-        "substrates_allocated": {process.name: {process.atp_wid: float(atp)}},
+        "requests": {
+            process.name: {
+                process.atp_wid: float(atp),
+                process.h2o_wid: float(atp if h2o is None else h2o),
+            }
+        },
+        "substrates_allocated": {
+            process.name: {
+                process.atp_wid: float(atp),
+                process.h2o_wid: float(atp if h2o is None else h2o),
+            }
+        },
     }
 
 
@@ -74,8 +86,10 @@ def _apply_update(process: KarrDNASupercoilingProcess, state: dict[str, Any], up
         )
 
     if process.name in update.get("requests", {}):
-        req = float(update["requests"][process.name].get(process.atp_wid, 0.0))
-        state["requests"][process.name][process.atp_wid] = req
+        req_atp = float(update["requests"][process.name].get(process.atp_wid, 0.0))
+        req_h2o = float(update["requests"][process.name].get(process.h2o_wid, 0.0))
+        state["requests"][process.name][process.atp_wid] = req_atp
+        state["requests"][process.name][process.h2o_wid] = req_h2o
 
 
 def _advance_tick(process: KarrDNASupercoilingProcess, state: dict[str, Any]) -> dict[str, Any]:
@@ -83,8 +97,13 @@ def _advance_tick(process: KarrDNASupercoilingProcess, state: dict[str, Any]) ->
     _apply_update(process, state, update)
 
     request_atp = max(0.0, float(state["requests"][process.name].get(process.atp_wid, 0.0)))
+    request_h2o = max(0.0, float(state["requests"][process.name].get(process.h2o_wid, 0.0)))
     available_atp = max(0.0, float(state["substrates"].get(process.atp_wid, 0.0)))
+    available_h2o = max(0.0, float(state["substrates"].get(process.h2o_wid, 0.0)))
     state["substrates_allocated"][process.name][process.atp_wid] = float(min(request_atp, available_atp))
+    state["substrates_allocated"][process.name][process.h2o_wid] = float(
+        min(request_h2o, available_h2o)
+    )
     return update
 
 
@@ -94,6 +113,7 @@ def test_process_instantiates_with_defaults() -> None:
     assert p.gyrase_wid == "DNA_GYRASE"
     assert p.topoiv_wid == "MG_203_204_TETRAMER"
     assert p.atp_wid == "ATP"
+    assert p.h2o_wid == "H2O"
     assert p.gyrase_activity_rate > 0.0
     assert p.topoiv_activity_rate > 0.0
     assert p.equilibrium_sigma == pytest.approx(-0.06, rel=1e-6)

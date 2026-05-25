@@ -121,10 +121,12 @@ class KarrDNASupercoilingProcess(Process):
         self.substrate_index_atp = int(_coerce_scalar(fx.substrateIndexs_atp)) - 1
         self.substrate_index_adp = int(_coerce_scalar(fx.substrateIndexs_adp)) - 1
         self.substrate_index_pi = int(_coerce_scalar(fx.substrateIndexs_phosphate)) - 1
+        self.substrate_index_h2o = int(_coerce_scalar(fx.substrateIndexs_water)) - 1
 
         self.atp_wid = self.substrate_wids[self.substrate_index_atp]
         self.adp_wid = self.substrate_wids[self.substrate_index_adp]
         self.pi_wid = self.substrate_wids[self.substrate_index_pi]
+        self.h2o_wid = self.substrate_wids[self.substrate_index_h2o]
 
         gyrase_idx = int(_coerce_scalar(fx.enzymeIndexs_gyrase)) - 1
         topoiv_idx = int(_coerce_scalar(fx.enzymeIndexs_topoIV)) - 1
@@ -190,11 +192,13 @@ class KarrDNASupercoilingProcess(Process):
             "requests": {
                 self.name: {
                     self.atp_wid: {"_default": 0.0, "_updater": "set", "_emit": False},
+                    self.h2o_wid: {"_default": 0.0, "_updater": "set", "_emit": False},
                 }
             },
             "substrates_allocated": {
                 self.name: {
                     self.atp_wid: {"_default": 0.0, "_emit": False},
+                    self.h2o_wid: {"_default": 0.0, "_emit": False},
                 }
             },
         }
@@ -216,6 +220,8 @@ class KarrDNASupercoilingProcess(Process):
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
         substrate_state = states.get("substrates", {})
         available_atp = self._allocated_or_state(allocated_state, substrate_state, self.atp_wid)
+        available_h2o = self._allocated_or_state(allocated_state, substrate_state, self.h2o_wid)
+        hydrolysis_budget = min(available_atp, available_h2o)
 
         rep_load_events = self._replication_supercoil_load_events(replication_state, dt)
         rep_sigma_delta = rep_load_events / self.linking_number_relaxed
@@ -261,7 +267,7 @@ class KarrDNASupercoilingProcess(Process):
         gyrase_events, topoiv_events = self._limit_events_by_atp(
             gyrase_events=gyrase_events,
             topoiv_events=topoiv_events,
-            available_atp=available_atp,
+            available_atp=hydrolysis_budget,
             mode=mode,
         )
 
@@ -281,19 +287,21 @@ class KarrDNASupercoilingProcess(Process):
             + float(topoiv_events) * self.topoiv_atp_cost
         )
 
+        request_need = self._atp_request(
+            sigma=sigma_after_rep,
+            replication_state=replication_state,
+            gyrase_count=gyrase_count,
+            topoiv_count=topoiv_count,
+            dt=dt,
+        )
         update: dict[str, Any] = {
             "chromosome": {
                 "supercoiled": bool(sigma_next < 0.0),
             },
             "requests": {
                 self.name: {
-                    self.atp_wid: self._atp_request(
-                        sigma=sigma_after_rep,
-                        replication_state=replication_state,
-                        gyrase_count=gyrase_count,
-                        topoiv_count=topoiv_count,
-                        dt=dt,
-                    )
+                    self.atp_wid: request_need,
+                    self.h2o_wid: request_need,
                 }
             },
         }
@@ -313,9 +321,8 @@ class KarrDNASupercoilingProcess(Process):
         substrate_state: dict[str, Any],
         wid: str,
     ) -> float:
-        allocated = float(allocated_state.get(wid, 0.0))
-        if allocated > 0.0:
-            return allocated
+        if wid in allocated_state:
+            return max(0.0, float(allocated_state.get(wid, 0.0)))
         return float(substrate_state.get(wid, 0.0))
 
     def _replication_supercoil_load_events(self, replication_state: str, dt: float) -> int:
@@ -467,6 +474,7 @@ class KarrDNASupercoilingProcess(Process):
             return {}
         return {
             self.atp_wid: float(-atp_used),
+            self.h2o_wid: float(-atp_used),
             self.adp_wid: float(atp_used),
             self.pi_wid: float(atp_used),
         }
