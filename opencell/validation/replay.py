@@ -21,6 +21,7 @@ import numpy as np
 from scipy.io import loadmat
 
 _DEFAULT_FIXTURE_ROOT = Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "per_process"
+_REPLAY_FIXTURE_ROOT = Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "per_process_replay"
 
 _INPUT_HINTS = (
     "state_before",
@@ -56,7 +57,7 @@ class KarrReplayFixture:
     metadata: dict[str, Any]
 
 
-def _resolve_fixture_path(process_name: str, root: Path) -> Path:
+def _normalize_process_name(process_name: str) -> str:
     base = process_name.strip()
     if not base:
         raise ValueError("process_name must be non-empty")
@@ -69,7 +70,11 @@ def _resolve_fixture_path(process_name: str, root: Path) -> Path:
         stem = base[:-4]
     else:
         stem = base
+    return stem
 
+
+def _resolve_fixture_path(process_name: str, root: Path) -> Path:
+    stem = _normalize_process_name(process_name)
     path = root / f"{stem}_flat.mat"
     if not path.exists():
         raise FileNotFoundError(f"Per-process fixture not found: {path}")
@@ -89,13 +94,14 @@ def _load_companion_json(path: Path) -> dict[str, Any]:
     return payload if isinstance(payload, dict) else {}
 
 
-def _load_companion_npz(path: Path) -> dict[str, np.ndarray]:
+def _load_companion_npz(path: Path, *, normalize_keys: bool = True) -> dict[str, np.ndarray]:
     if not path.exists():
         return {}
     out: dict[str, np.ndarray] = {}
     with np.load(path, allow_pickle=False) as payload:
         for key in payload.files:
-            out[_normalize_array_key(key)] = np.asarray(payload[key])
+            normalized = _normalize_array_key(key) if normalize_keys else key
+            out[normalized] = np.asarray(payload[key])
     return out
 
 
@@ -207,7 +213,16 @@ def _split_inputs_outputs(
     return inputs, outputs, unclassified_series
 
 
-def load_per_process_fixture(process_name: str, root: Path = _DEFAULT_FIXTURE_ROOT) -> KarrReplayFixture:
+def _select_default_fixture_root(process_name: str) -> Path:
+    stem = _normalize_process_name(process_name)
+    replay_npz = _REPLAY_FIXTURE_ROOT / f"{stem}.npz"
+    replay_json = _REPLAY_FIXTURE_ROOT / f"{stem}.json"
+    if replay_npz.exists() and replay_json.exists():
+        return _REPLAY_FIXTURE_ROOT
+    return _DEFAULT_FIXTURE_ROOT
+
+
+def load_per_process_fixture(process_name: str, root: Path | None = None) -> KarrReplayFixture:
     """Load one per-process fixture from ``data/karr_fixtures/per_process``.
 
     Input/output split heuristic:
@@ -216,19 +231,29 @@ def load_per_process_fixture(process_name: str, root: Path = _DEFAULT_FIXTURE_RO
     - If no clear split is available (common in current flattened fixtures), inputs/outputs
       may be empty and process-specific tests should provide explicit key mappings.
     """
+    fixture_root = Path(root) if root is not None else _select_default_fixture_root(process_name)
+    base = _normalize_process_name(process_name)
+    replay_json_path = fixture_root / f"{base}.json"
+    replay_npz_path = fixture_root / f"{base}.npz"
+    replay_has_artifacts = replay_json_path.exists() and replay_npz_path.exists()
+    legacy_mat_path = fixture_root / f"{base}_flat.mat"
 
-    fixture_root = Path(root)
-    fixture_path = _resolve_fixture_path(process_name, fixture_root)
-    stem = fixture_path.stem
-    if stem.endswith("_flat"):
-        base = stem[:-5]
+    if replay_has_artifacts and not legacy_mat_path.exists():
+        fixture_path = replay_npz_path
+        companion_json = _load_companion_json(replay_json_path)
+        arrays = _load_companion_npz(replay_npz_path, normalize_keys=False)
+        companion_json_path = replay_json_path
+        companion_npz_path = replay_npz_path
     else:
-        base = stem
+        fixture_path = _resolve_fixture_path(process_name, fixture_root)
+        stem = fixture_path.stem
+        if stem.endswith("_flat"):
+            base = stem[:-5]
+        companion_json_path = fixture_path.with_name(f"{base}.json")
+        companion_npz_path = fixture_path.with_name(f"{base}.npz")
+        companion_json = _load_companion_json(companion_json_path)
+        arrays = _load_companion_npz(companion_npz_path)
 
-    companion_json_path = fixture_path.with_name(f"{base}.json")
-    companion_npz_path = fixture_path.with_name(f"{base}.npz")
-    companion_json = _load_companion_json(companion_json_path)
-    arrays = _load_companion_npz(companion_npz_path)
     n_ticks = _infer_n_ticks(arrays, companion_json)
     inputs, outputs, unclassified = _split_inputs_outputs(arrays, n_ticks=n_ticks)
 
