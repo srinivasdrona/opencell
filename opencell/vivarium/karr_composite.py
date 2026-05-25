@@ -27,6 +27,7 @@ mapping, both deferred to the integrator pass).
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any
 
@@ -144,6 +145,56 @@ CHASSIS_V6_EXPECTED_PROCESS_KEYS: tuple[str, ...] = (
     "karr_transcription",
     "karr_translation",
 )
+
+CHASSIS_V6_RUNTIME_IDENTITY_EXPECTED_CLASS_NAMES: dict[str, str] = {
+    # Composition L0 currently flags only these runtime identity promotions.
+    "karr_transcription": "KarrTranscriptionV3Process",
+    "karr_translation": "KarrTranslationV3Process",
+}
+CHASSIS_V6_RUNTIME_IDENTITY_LEGACY_KEYS: tuple[str, ...] = (
+    "karr_transcription_v3",
+    "karr_translation_v3",
+)
+
+
+def _resolve_process_map(chassis: Any) -> Mapping[str, Any]:
+    if isinstance(chassis, Mapping):
+        maybe_processes = chassis.get("processes")
+        if isinstance(maybe_processes, Mapping):
+            return maybe_processes
+        return chassis
+    maybe_processes = getattr(chassis, "processes", None)
+    if isinstance(maybe_processes, Mapping):
+        return maybe_processes
+    raise TypeError(
+        "Expected a chassis/composite with a process mapping (mapping['processes'] or .processes)."
+    )
+
+
+def assert_chassis_runtime_identity(chassis: Any) -> None:
+    """Fail fast when v6 TX/TL runtime classes drift from the audited v3 bindings."""
+    process_map = _resolve_process_map(chassis)
+    failures: list[str] = []
+
+    for key, expected_cls_name in CHASSIS_V6_RUNTIME_IDENTITY_EXPECTED_CLASS_NAMES.items():
+        proc = process_map.get(key)
+        if proc is None:
+            failures.append(f"missing process key '{key}'")
+            continue
+        observed_cls_name = proc.__class__.__name__
+        if observed_cls_name != expected_cls_name:
+            failures.append(
+                f"{key}: expected class {expected_cls_name}, observed {observed_cls_name}"
+            )
+
+    for legacy_key in CHASSIS_V6_RUNTIME_IDENTITY_LEGACY_KEYS:
+        if legacy_key in process_map:
+            failures.append(f"legacy process key '{legacy_key}' should not exist in v6 runtime map")
+
+    if failures:
+        raise AssertionError(
+            "Chassis runtime identity guardrail failed:\n - " + "\n - ".join(failures)
+        )
 
 
 def compute_baseline_demand_per_s(
@@ -1951,6 +2002,7 @@ def build_karr_chassis_v6(
     chromosome_state.pop("damage_sites", None)
     chromosome_state.setdefault("damage_events_cumulative", [])
     chromosome_state.setdefault("repair_events_cumulative", [])
+    assert_chassis_runtime_identity(processes)
 
     return Composite(
         processes=processes,
@@ -1962,6 +2014,7 @@ def build_karr_chassis_v6(
 
 __all__ = [
     "CHASSIS_V6_EXPECTED_PROCESS_KEYS",
+    "assert_chassis_runtime_identity",
     "build_karr_chassis_v6",
     "build_karr_chassis_v5",
     "build_karr_chassis_v4",
