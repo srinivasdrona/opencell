@@ -1,11 +1,11 @@
-# Track-A1 Blocker
+# Track-A1 Blocker — RESOLVED (2026-05-25)
 
-## Blocking condition
-I completed the strict-zero code/test changes and the strict-zero test pack passes, but the required broader validation runs are blocked by environment dependency incompatibilities:
+## Original blocking condition
+Codex agent used the default `python` (Python 3.14) which has broken `vivarium`/`pint`/`numpy`/`jax` deps in this repo.
 
-- `pytest tests/unit -v` fails during collection because `jax` is not installed (`ModuleNotFoundError: No module named 'jax'`).
-- `vivarium` import path fails against the installed `pint`/`numpy`/Python 3.14 combination (examples include `numpy` lacking `cumproduct`, missing `pint.quantity`/`pint.unit`, and `pint` dataclass initialization errors).
-- The 10-tick chassis smoke run fails at import time for the same `vivarium`/`pint` incompatibility.
+## Resolution
+Use `py -3.12` (Python 3.12.10) which has clean deps. Validated by operator:
+- `py -3.12 -m pytest tests/unit -k strict_zero -q` -> 15 passed
+- `py -3.12 -m pytest tests/unit -q --ignore=tests/gates` -> 369 passed, 11 skipped, 0 regressions
 
-## Unblocking question
-Can you provide (or allow me to install) a test-compatible environment matching the project’s expected matrix (for example Python 3.11 with compatible `numpy`/`pint` and `jax`) so I can run the full unit suite and chassis 10-tick smoke exactly as mandated?
+The A5 agent had already used `py -3.12` and passed 354 tests. Future Track-A delegations to Codex should pin `py -3.12` in the prompt.
