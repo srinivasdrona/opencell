@@ -401,47 +401,45 @@ NOT a parallel program)**
 
 ---
 
-## Current Status (2026-05-25 ~22:00 IST, **ALL 7 SWARM BRANCHES LANDED & READY TO MERGE TO MAIN**)
+## Current Status (2026-05-25 ~22:50 IST, **TRACK-A SWARM LANDED ON MAIN**)
 
 ### TL;DR
-Track-A 5 layer-scoped PRs (A1-A5), Track-B replay fixtures, and Track-L LLM log backfill — **all 7 branches authored and committed by detached Codex agents this evening**. Nothing on `main` yet beyond the swarm prompt commits; merge is the next step.
+All 7 swarm branches merged to `main` at HEAD `2151d35`. Final gates: unit suite `381/381 passed`, **B1 substrate sanity GREEN** (the central blocker that motivated the 7-layer audit), L3 integration spot-check `4/4`. Contract-layer chapter is closed; next is the M-phase ensemble (4-seed × 32,400-tick) graded against the 28-KP Karr scorecard.
 
-The session also produced a meta-lesson: A2 and L initially died on Azure compaction errors *before* committing because the launcher wrapper omitted `-o STATUS_<track>.md` and the prompts lacked an explicit commit-per-chunk preamble + token-budget contract. Both retried cleanly under the **hardened v2 prompt template** (decision `codex-prompt-template-v2-commit-discipline`, 2026-05-25). That template is now the default in the `delegate-to-codex` skill.
+### Merges landed (in order)
 
-### Branches ready to merge (all clean, none on main)
+| Step | Merge commit | Branch | Layer |
+|---|---|---|---|
+| 1 | `e4b22c4` | `track-a/L5-strict-zero` (A1) | L5 strict-zero rollout |
+| 2 | `4a650dd` | `track-a/L0-tx-tl-v3-fitness` (A5) | L0 runtime-identity guards + TL t=0 |
+| 3 | `6bb5972` | `track-a/L4-L6-keys-request` (A3) | L4 default-key + L6 request calc |
+| 4 | `3164f7e` | `track-a/L3-vectors` (A4) | **manual resolve — preserved L5 strict-zero in helpers** |
+| 5 | `cda0509` | `track-a/L2-enrollment` (A2) | L2 direct-writer enrollment |
+| 6 | `bfb89c2` | `track-b/replay-fixtures` | replay pipeline (independent) |
+| 7 | `2151d35` | `track-l/log-backfill` | 13 retrospective LLM-interaction JSONL entries |
 
-| Track | Branch | Tip SHA | Commits | Status | LOC scope |
-|---|---|---|---|---|---|
-| A1 | `track-a/L5-strict-zero` | `c8875db` | 1 | clean, py-3.12 env-fix landed | strict-zero rollout, 13 sites |
-| A5 | `track-a/L0-tx-tl-v3-fitness` | `d2d1758` | 2 | clean | TX/TL runtime guards + TL t=0 monomer fix |
-| A3 | `track-a/L4-L6-keys-request` | `a4d2bf4` | 3 | clean | L4 default-key drift + L6 MacromolComplex |
-| A4 | `track-a/L3-vectors` | `44d83b4` | 3 | clean | DNASupercoiling H2O + ProteinTranslocation vec |
-| A2 | `track-a/L2-enrollment` | `7f8b440` | 3 | clean (rescued v2) | Request calc surface + composite wiring + 4 integration tests, **B1 substrate sanity test confirmed green inside rescue** |
-| B  | `track-b/replay-fixtures` | `e42ba0c` | 4 | clean, 355 passed/11 skipped baseline | MATLAB→Python fixture converter |
-| L  | `track-l/log-backfill` | `33d3ea0` | 4 | clean, 13 retrospective JSONL entries (6 required + 4 failure + 3 methodology) | data/provenance/llm_interactions.jsonl backfill |
+### Merge-train story (for the post-mortem)
+- Track-M v1 correctly aborted at step 4 (L3-vectors vs A1) on a genuine semantic conflict — L3 reintroduced a fallback to bulk `substrate_state` that A1 had explicitly ripped out across 16 files. The new decision `l5-strict-zero-is-canonical` (2026-05-25) makes the verdict binding for future merge-time conflict resolution.
+- Manual resolve preserved L3's vector-accounting additions (H2O/GTP/H+ bookkeeping in DNASupercoiling and ProteinTranslocation) while keeping strict-zero in the `_allocated_or_state` and `_available_substrate` helpers.
+- Track-M v2 picked up from step 5 and landed the remaining 3 branches + ran all 3 final gates cleanly.
+- Hardened Codex prompt template (commit-discipline + 200k/150k token budget + STATUS via `-o`) survived 4 retries this session with zero work loss.
 
-### Locked merge order (next step)
+### Next step: M-phase ensemble prep
 
-`A1 → A5 → A3 → A4 → A2 → B → L`, each as `--no-ff` so reverts stay atomic per layer.
+Pre-ensemble checklist (none of these block the next ensemble itself; they're hygiene):
+1. Re-harden NTP non-negativity asserts in `tests/integration/test_bug6a_stage2_canary.py:94-135`
+2. Confirm Bug 6b's `clamped_reactions` becomes non-zero in a smoke run
+3. (Deferred) Bug 8 + Bug 9 — let the post-ensemble scorecard prioritize
 
-Order rationale:
-- A1 (L5 strict-zero) must precede A3 — A3's key-drift fixes assume strict-zero semantics
-- A1 must precede A4 — vector completeness assumes no fallback writes
-- A1 + A5 must precede A2 — A2 enrolls processes that A5 just guard-rail-ed
-- B and L are file-independent of Track-A; they go last by convention
+Then:
+4. Launch 4-seed × 32,400-tick ensemble
+5. Grade against 28-KP scorecard (currently 9/28 pre-Track-A; **M7 target ≥10/28**)
+6. README rewrite (deferred to M7 / v1.0)
 
-Post-merge verification gate (all on main HEAD after merge):
-1. `wsl -e bash -lc "cd /mnt/e/opencell && /mnt/e/opencell/.venv-wsl/bin/pytest tests/unit -q --ignore=tests/gates"` — expected ≥355 passed, no regressions vs Track-B baseline
-2. `... pytest tests/integration/test_b1_substrate_sanity.py -v --ignore=tests/gates` — must be green (was the B1 blocker)
-3. Re-harden NTP non-negativity asserts in `tests/integration/test_bug6a_stage2_canary.py:94-135`
-4. Confirm Bug 6b's `clamped_reactions` becomes non-zero in a smoke run
+---
 
-### After merge gate clears
-
-5. (Optional, deferred) Bug 8 + Bug 9 — skip pre-ensemble; let scorecard prioritize
-6. Launch 4-seed × 32,400-tick ensemble
-7. Grade against 28-KP scorecard (currently 9/28 pre-Track-A; target ≥10/28 for M7)
-8. Log `swarm-track-a-landed` decision
+## Prior Status (2026-05-25 ~22:00 IST, all 7 swarm branches authored, not yet merged)
+[Archived — superseded by post-merge status above. See git log for the branch tips at authoring time.]
 
 ### Hardened-template lesson (2026-05-25, evening)
 
