@@ -401,7 +401,86 @@ NOT a parallel program)**
 
 ---
 
-## Current Status (2026-05-25 ~13:45 IST, **SPRINT 0 LANDED ON BRANCHES; AUDIT-AND-RATCHET PHASE BEGINS**)
+## Current Status (2026-05-25 ~22:00 IST, **ALL 7 SWARM BRANCHES LANDED & READY TO MERGE TO MAIN**)
+
+### TL;DR
+Track-A 5 layer-scoped PRs (A1-A5), Track-B replay fixtures, and Track-L LLM log backfill — **all 7 branches authored and committed by detached Codex agents this evening**. Nothing on `main` yet beyond the swarm prompt commits; merge is the next step.
+
+The session also produced a meta-lesson: A2 and L initially died on Azure compaction errors *before* committing because the launcher wrapper omitted `-o STATUS_<track>.md` and the prompts lacked an explicit commit-per-chunk preamble + token-budget contract. Both retried cleanly under the **hardened v2 prompt template** (decision `codex-prompt-template-v2-commit-discipline`, 2026-05-25). That template is now the default in the `delegate-to-codex` skill.
+
+### Branches ready to merge (all clean, none on main)
+
+| Track | Branch | Tip SHA | Commits | Status | LOC scope |
+|---|---|---|---|---|---|
+| A1 | `track-a/L5-strict-zero` | `c8875db` | 1 | clean, py-3.12 env-fix landed | strict-zero rollout, 13 sites |
+| A5 | `track-a/L0-tx-tl-v3-fitness` | `d2d1758` | 2 | clean | TX/TL runtime guards + TL t=0 monomer fix |
+| A3 | `track-a/L4-L6-keys-request` | `a4d2bf4` | 3 | clean | L4 default-key drift + L6 MacromolComplex |
+| A4 | `track-a/L3-vectors` | `44d83b4` | 3 | clean | DNASupercoiling H2O + ProteinTranslocation vec |
+| A2 | `track-a/L2-enrollment` | `7f8b440` | 3 | clean (rescued v2) | Request calc surface + composite wiring + 4 integration tests, **B1 substrate sanity test confirmed green inside rescue** |
+| B  | `track-b/replay-fixtures` | `e42ba0c` | 4 | clean, 355 passed/11 skipped baseline | MATLAB→Python fixture converter |
+| L  | `track-l/log-backfill` | `33d3ea0` | 4 | clean, 13 retrospective JSONL entries (6 required + 4 failure + 3 methodology) | data/provenance/llm_interactions.jsonl backfill |
+
+### Locked merge order (next step)
+
+`A1 → A5 → A3 → A4 → A2 → B → L`, each as `--no-ff` so reverts stay atomic per layer.
+
+Order rationale:
+- A1 (L5 strict-zero) must precede A3 — A3's key-drift fixes assume strict-zero semantics
+- A1 must precede A4 — vector completeness assumes no fallback writes
+- A1 + A5 must precede A2 — A2 enrolls processes that A5 just guard-rail-ed
+- B and L are file-independent of Track-A; they go last by convention
+
+Post-merge verification gate (all on main HEAD after merge):
+1. `wsl -e bash -lc "cd /mnt/e/opencell && /mnt/e/opencell/.venv-wsl/bin/pytest tests/unit -q --ignore=tests/gates"` — expected ≥355 passed, no regressions vs Track-B baseline
+2. `... pytest tests/integration/test_b1_substrate_sanity.py -v --ignore=tests/gates` — must be green (was the B1 blocker)
+3. Re-harden NTP non-negativity asserts in `tests/integration/test_bug6a_stage2_canary.py:94-135`
+4. Confirm Bug 6b's `clamped_reactions` becomes non-zero in a smoke run
+
+### After merge gate clears
+
+5. (Optional, deferred) Bug 8 + Bug 9 — skip pre-ensemble; let scorecard prioritize
+6. Launch 4-seed × 32,400-tick ensemble
+7. Grade against 28-KP scorecard (currently 9/28 pre-Track-A; target ≥10/28 for M7)
+8. Log `swarm-track-a-landed` decision
+
+### Hardened-template lesson (2026-05-25, evening)
+
+Three repeats of "Codex died mid-context" failure mode (Karr Cloudflare detour, stale-STATUS inheritance, today's A2/L compaction deaths) converged into a single decision: `codex-prompt-template-v2-commit-discipline`. Locked rules now in `delegate-to-codex/SKILL.md`:
+1. Launcher uses `-o STATUS_<track>.md`
+2. Commit each green chunk immediately (max one uncommitted chunk)
+3. Token budget 200k hard ceiling, **75% = 150k handoff threshold** (50k buffer for graceful exit, not extra work)
+4. Per-worktree `SESSION_CONTEXT.md` for multi-turn delegations
+5. p9-only source policy for backfill tasks (no whole-file ingestion of transcripts)
+
+A2 rescue and L v2 backfill both landed clean on first retry under the new template — empirical proof the template addresses the right failure class.
+
+### Critique resolution and Track-A lock (2026-05-25, afternoon — context preserved below)
+
+GPT-5.5 critique on reducer triggered the EXIT RULE: the "allocator-bypass" cluster was symptom-shaped, mixing 5 distinct seams. Class B was paused; restructured the audit into a **7-layer contract taxonomy** (L0 runtime identity, L1 store classification, L2 enrollment topology, L3 resource-vector completeness, L4 default-key identity, L5 helper zero-grant semantics, L6 request-calc correctness, L7 fixture provenance). Full reasoning in `DECISIONS.md` → `swarm-contract-taxonomy-v1`.
+
+**Secondary audits (3 fired, all complete, all merged to main):**
+- `swarm/composition` (L0/L1/L2/L7) — `opencell/validation/swarm/composition/composition_audit.md`
+- `swarm/allocator-completeness` (L3/L4/L6) — `opencell/validation/swarm/allocator/allocator_audit.md`
+- `swarm/l5-semantics` (L5 strict-zero) — `opencell/validation/swarm/l5/zero_grant_contract_recommendation.md`
+
+**Tertiary audits (4 fired, all complete, all merged):**
+- `swarm/class-a-v3/Transcription` and `swarm/class-a-v3/Translation` (v3 biology re-audit on canonical runtime classes)
+- `swarm/fixture-investigation` (root-causes 28/28 single-snapshot fixtures, recommends Option B)
+- `swarm/audit-consolidation` (`opencell/validation/swarm/consolidated/CONSOLIDATED_AUDIT_REPORT.md`)
+
+**Three false-positives killed**: Metabolism `metabolic_reaction` (telemetry, L1 reclassified), DNADamage enrollment (model-parity only, no runtime substrate traffic), Metabolism M1 t=0 (smoke harness only, not v5/v6).
+
+**Deferred (not blocking Track-A merge):**
+- Fixture pipeline rebuild — Option B already shipped in Track-B branch (~200 LOC); merge will land it.
+- Central-dogma re-audit on canonical runtime classes — after Track-A lands.
+- DNADamage model-parity decision.
+- README rewrite — deferred to M7 / v1.0 release. Surgical patch deferred for now (no audience pressure, no PRs to coordinate).
+
+**Operator locks (still active)**: no more audits this phase; all code work stays in Codex; Copilot is planner/orchestrator only.
+
+---
+
+## Prior Status (2026-05-25 ~13:45 IST, **SPRINT 0 LANDED ON BRANCHES; AUDIT-AND-RATCHET PHASE BEGINS**)
 
 ### TL;DR
 After Day 10 wrap (Bug 5 + Bug 6 landed on `main` at `40f96c5`), three research agents (vEcoli infra, wcEcoli methodology, WCM validation literature 2018-2026) converged on five durable Covert Lab validation patterns. The literature also confirmed nobody in the field has a MATLAB→Python differential test harness — our per-process `*_flat.mat` fixtures uniquely enable this.
