@@ -97,17 +97,25 @@ def test_bug6a_stage2_chassis_v6_canary_120_ticks() -> None:
     except Exception as exc:  # pragma: no cover - failure path asserts runtime health
         pytest.fail(f"120-tick chassis_v6 canary raised unexpectedly: {exc!r}")
 
-    # NTP non-negativity is diagnostic-only at this stage. Stage 2 writeback works
-    # correctly (M1 contributes its net LP flux), but TX (M2v3) and TL (M3v3) are
-    # not yet enrolled in the allocator and drain the shared pool unconstrained.
-    # Closing this gap is Track A (TX/TL allocator enrollment). Until then we
-    # capture and report the minima but do not assert non-negativity.
+    # Post-Track-A (allocator enrollment for TX v3 + TL v3, L2 layer), the
+    # shared NTP pools must stay non-negative across the 120-tick canary. TX/TL
+    # now consume via `substrates_allocated` direct writers rather than
+    # draining the shared pool unconstrained, so M1's signed writeback should
+    # produce only the positive (production) stream and no negative writeback.
+    # Pre-Track-A this was diagnostic-only; with the swarm landed (HEAD 2151d35,
+    # 2026-05-25) it is the closing gate.
     min_ntp = stats["min_ntp"]
     print(
-        "[bug6a stage2 diag] min_ntp (pending Track A): "
+        "[bug6a stage2 gate] min_ntp post-Track-A: "
         f"ATP={min_ntp['ATP']:.6g} CTP={min_ntp['CTP']:.6g} "
         f"GTP={min_ntp['GTP']:.6g} UTP={min_ntp['UTP']:.6g}"
     )
+    _NTP_FLOOR = -1e-9  # numerical-noise tolerance for fp64 LP residuals
+    for sid in ("ATP", "CTP", "GTP", "UTP"):
+        assert min_ntp[sid] >= _NTP_FLOOR, (
+            f"NTP {sid} dropped below allocator-mediated floor: "
+            f"min={min_ntp[sid]!r} (tolerance {_NTP_FLOOR})"
+        )
 
     m1_atp_lp_deltas = stats["m1_atp_lp_deltas"]
     writeback_neg = stats["writeback_neg"]
@@ -117,9 +125,17 @@ def test_bug6a_stage2_chassis_v6_canary_120_ticks() -> None:
     assert np.all(np.isfinite(writeback_pos))
     assert np.all(writeback_neg <= 1e-12)
     assert np.all(writeback_pos >= -1e-12)
-    # Stage 2 should expose signed writeback (negative and positive streams).
-    assert np.any(writeback_neg < 0.0)
-    assert np.any(writeback_pos > 0.0)
+    # Post-Track-A invariant: M1's signed writeback collapses to a purely
+    # additive stream because TX/TL consumption flows through the allocator
+    # (substrates_allocated direct writers), not through M1's net flux.
+    # Negative writeback (pre-A2 artifact) must NOT appear; positive writeback
+    # (M1 production) must still fire on most ticks.
+    assert np.all(writeback_neg >= -1e-12), (
+        "Negative writeback resurfaced; allocator enrollment may be broken."
+    )
+    assert np.any(writeback_pos > 0.0), (
+        "M1 positive writeback (production) disappeared; M1 LP solve broken."
+    )
 
     assert np.isfinite(float(stats["m1_atp_lp_sum"]))
     assert np.isfinite(float(stats["m2_atp_sum"]))
