@@ -27,7 +27,9 @@ mapping, both deferred to the integrator pass).
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from copy import deepcopy
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -144,6 +146,71 @@ CHASSIS_V6_EXPECTED_PROCESS_KEYS: tuple[str, ...] = (
     "karr_transcription",
     "karr_translation",
 )
+
+CHASSIS_V6_RUNTIME_IDENTITY_EXPECTED_CLASS_NAMES: dict[str, str] = {
+    # Composition L0 currently flags only these runtime identity promotions.
+    "karr_transcription": "KarrTranscriptionV3Process",
+    "karr_translation": "KarrTranslationV3Process",
+}
+CHASSIS_V6_RUNTIME_IDENTITY_LEGACY_KEYS: tuple[str, ...] = (
+    "karr_transcription_v3",
+    "karr_translation_v3",
+)
+_TRANSLATION_FIXTURE_NPZ_PATH = (
+    Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "per_process" / "Translation.npz"
+)
+_TRANSLATION_FIXTURE_MONOMERS_KEY = "fixture__monomers"
+
+
+def _resolve_process_map(chassis: Any) -> Mapping[str, Any]:
+    if isinstance(chassis, Mapping):
+        maybe_processes = chassis.get("processes")
+        if isinstance(maybe_processes, Mapping):
+            return maybe_processes
+        return chassis
+    maybe_processes = getattr(chassis, "processes", None)
+    if isinstance(maybe_processes, Mapping):
+        return maybe_processes
+    raise TypeError(
+        "Expected a chassis/composite with a process mapping (mapping['processes'] or .processes)."
+    )
+
+
+def assert_chassis_runtime_identity(chassis: Any) -> None:
+    """Fail fast when v6 TX/TL runtime classes drift from the audited v3 bindings."""
+    process_map = _resolve_process_map(chassis)
+    failures: list[str] = []
+
+    for key, expected_cls_name in CHASSIS_V6_RUNTIME_IDENTITY_EXPECTED_CLASS_NAMES.items():
+        proc = process_map.get(key)
+        if proc is None:
+            failures.append(f"missing process key '{key}'")
+            continue
+        observed_cls_name = proc.__class__.__name__
+        if observed_cls_name != expected_cls_name:
+            failures.append(
+                f"{key}: expected class {expected_cls_name}, observed {observed_cls_name}"
+            )
+
+    for legacy_key in CHASSIS_V6_RUNTIME_IDENTITY_LEGACY_KEYS:
+        if legacy_key in process_map:
+            failures.append(f"legacy process key '{legacy_key}' should not exist in v6 runtime map")
+
+    if failures:
+        raise AssertionError(
+            "Chassis runtime identity guardrail failed:\n - " + "\n - ".join(failures)
+        )
+
+
+def _load_translation_fixture_monomers() -> np.ndarray:
+    if not _TRANSLATION_FIXTURE_NPZ_PATH.exists():
+        raise FileNotFoundError(f"Translation fixture companion NPZ not found: {_TRANSLATION_FIXTURE_NPZ_PATH}")
+    with np.load(_TRANSLATION_FIXTURE_NPZ_PATH, allow_pickle=False) as payload:
+        if _TRANSLATION_FIXTURE_MONOMERS_KEY not in payload:
+            raise KeyError(
+                f"Missing '{_TRANSLATION_FIXTURE_MONOMERS_KEY}' in {_TRANSLATION_FIXTURE_NPZ_PATH}"
+            )
+        return np.asarray(payload[_TRANSLATION_FIXTURE_MONOMERS_KEY], dtype=float).reshape(-1)
 
 
 def compute_baseline_demand_per_s(
@@ -1241,6 +1308,7 @@ def build_karr_chassis_v5(
     condition: int = 1,
     dynamic_bounds: bool = False,
     enable_pool_replenishment: bool = False,
+    seed_from_fixture: bool = True,
 ) -> Engine:
     """Build the Phase-C chassis v5 with integrated replication/cell-cycle processes."""
     from vivarium.core.engine import Engine
@@ -1465,11 +1533,35 @@ def build_karr_chassis_v5(
         if gene_wid in trna_gene_wids:
             tx_rate_fold_init[f"TU_{gidx + 1:03d}"] = 0.0
 
+    # Track-A5 decision: keep non-fixture seeding as an explicit opt-out for
+    # debugging/non-replay experiments, but default to fixture-aligned t=0 parity.
+    if seed_from_fixture:
+        fixture_monomers = _load_translation_fixture_monomers()
+        n_fixture = int(fixture_monomers.size)
+        n_model = len(m3_model.protein_wcm_ids)
+        if n_fixture != n_model:
+            raise ValueError(
+                "Translation fixture/model monomer dimension mismatch: "
+                f"fixture={n_fixture} model={n_model}"
+            )
+        protein_unprocessed_seed = {
+            pid: float(fixture_monomers[idx]) for idx, pid in enumerate(m3_model.protein_wcm_ids)
+        }
+    else:
+        protein_unprocessed_seed = {
+            pid: float(prot_init.get(pid, 0.0)) for pid in m3_model.protein_wcm_ids
+        }
+
+    unprocessed_monomer_wids = set(pp1_proc.unprocessed_monomer_wids) | set(
+        pp2_proc.unprocessed_monomer_wids
+    )
+    if seed_from_fixture:
+        # Ensure every translation monomer is explicitly initialized so ports-schema
+        # defaults cannot reintroduce non-zero counts_mature values.
+        unprocessed_monomer_wids |= set(m3_model.protein_wcm_ids)
     protein_unprocessed_init = {
-        wid: float(prot_init.get(wid, 0.0))
-        for wid in sorted(
-            set(pp1_proc.unprocessed_monomer_wids) | set(pp2_proc.unprocessed_monomer_wids)
-        )
+        wid: float(protein_unprocessed_seed.get(wid, 0.0))
+        for wid in sorted(unprocessed_monomer_wids)
     }
     protein_unfolded_init = {
         wid: float(prot_init.get(wid, 0.0)) for wid in p_fold_proc.unfolded_monomer_wids
@@ -1850,6 +1942,7 @@ def build_karr_chassis_v6(
     dynamic_bounds: bool = True,
     enable_pool_replenishment: bool = False,
     host_adhesion_gates_division: bool = False,
+    seed_from_fixture: bool = True,
 ) -> Any:
     """Build the Phase-D v6 composite (v5 + RNA decay + HostInteraction)."""
     del host_adhesion_gates_division
@@ -1867,6 +1960,7 @@ def build_karr_chassis_v6(
         condition=condition,
         dynamic_bounds=dynamic_bounds,
         enable_pool_replenishment=enable_pool_replenishment,
+        seed_from_fixture=seed_from_fixture,
     )
 
     processes = dict(base_engine.processes)
@@ -1951,6 +2045,7 @@ def build_karr_chassis_v6(
     chromosome_state.pop("damage_sites", None)
     chromosome_state.setdefault("damage_events_cumulative", [])
     chromosome_state.setdefault("repair_events_cumulative", [])
+    assert_chassis_runtime_identity(processes)
 
     return Composite(
         processes=processes,
@@ -1962,6 +2057,7 @@ def build_karr_chassis_v6(
 
 __all__ = [
     "CHASSIS_V6_EXPECTED_PROCESS_KEYS",
+    "assert_chassis_runtime_identity",
     "build_karr_chassis_v6",
     "build_karr_chassis_v5",
     "build_karr_chassis_v4",
