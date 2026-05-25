@@ -2,12 +2,57 @@
 
 from __future__ import annotations
 
-import math
 from typing import Any
 
+import numpy as np
 from vivarium.core.process import Step
 
 from opencell.m1 import karr_metabolism as km
+
+# Runtime correctness guards (CovertLab pattern; see
+# CovertLab/WholeCellEcoliRelease/wholecell/states/bulk_molecules.py).
+# Set to False ONLY for performance benchmarking; default-on in all
+# normal sim runs so allocation bugs surface at the first offending tick.
+ASSERT_POSITIVE_COUNTS = True
+
+
+class NegativeCountsError(RuntimeError):
+    """Raised when the allocator detects a negative molecule count in
+    requests, allocations, or the post-allocation unallocated pool.
+
+    The exception message names the offending molecule index (or name,
+    if available), the responsible process (if identifiable at the
+    checkpoint), and which checkpoint fired (request / allocation /
+    unallocated)."""
+
+
+def _format_matrix_offenders(
+    counts: np.ndarray,
+    process_names: list[str],
+    molecule_names: list[str],
+) -> str:
+    offender_indices = np.argwhere(counts < 0)
+    offender_strings: list[str] = []
+    for proc_idx, mol_idx in offender_indices[:5]:
+        proc_name = process_names[int(proc_idx)]
+        molecule_name = molecule_names[int(mol_idx)]
+        value = float(counts[int(proc_idx), int(mol_idx)])
+        offender_strings.append(f"{proc_name}/{molecule_name}={value:g}")
+    if len(offender_indices) > 5:
+        offender_strings.append(f"... (+{len(offender_indices) - 5} more)")
+    return ", ".join(offender_strings)
+
+
+def _format_unallocated_offenders(counts: np.ndarray, molecule_names: list[str]) -> str:
+    offender_indices = np.where(counts < 0)[0]
+    offender_strings: list[str] = []
+    for mol_idx in offender_indices[:5]:
+        molecule_name = molecule_names[int(mol_idx)]
+        value = float(counts[int(mol_idx)])
+        offender_strings.append(f"process=<aggregate>/{molecule_name}={value:g}")
+    if len(offender_indices) > 5:
+        offender_strings.append(f"... (+{len(offender_indices) - 5} more)")
+    return ", ".join(offender_strings)
 
 
 def _default_substrate_wids() -> list[str]:
@@ -77,21 +122,68 @@ class KarrAllocationStep(Step):
         substrates = states.get("substrates", {})
         requests = states.get("requests", {})
 
+        process_names = list(requests.keys())
         all_requested_wids: set[str] = set()
         for reqs_by_wid in requests.values():
             all_requested_wids.update(reqs_by_wid.keys())
+        molecule_names = sorted(all_requested_wids)
 
-        allocations: dict[str, dict[str, float]] = {}
-        for wid in all_requested_wids:
-            supply = max(0.0, float(substrates.get(wid, 0.0)))
-            total_demand = sum(
-                max(0.0, float(requests[proc_name].get(wid, 0.0))) for proc_name in requests
+        if not process_names or not molecule_names:
+            return {"substrates_allocated": {}}
+
+        counts_requested = np.zeros((len(process_names), len(molecule_names)), dtype=np.float64)
+        for proc_idx, proc_name in enumerate(process_names):
+            reqs_by_wid = requests.get(proc_name, {})
+            for mol_idx, molecule_name in enumerate(molecule_names):
+                counts_requested[proc_idx, mol_idx] = float(reqs_by_wid.get(molecule_name, 0.0))
+
+        if ASSERT_POSITIVE_COUNTS and np.any(counts_requested < 0):
+            offenders = _format_matrix_offenders(
+                counts_requested,
+                process_names,
+                molecule_names,
             )
-            scale = min(1.0, supply / total_demand) if total_demand > 0.0 else 0.0
+            raise NegativeCountsError(
+                f"Negative count(s) in counts_requested at checkpoint=request: {offenders}"
+            )
 
-            for proc_name in requests:
-                req = max(0.0, float(requests[proc_name].get(wid, 0.0)))
-                allocated = math.floor(req * scale)
-                allocations.setdefault(proc_name, {})[wid] = float(allocated)
+        counts_available = np.array(
+            [max(0.0, float(substrates.get(wid, 0.0))) for wid in molecule_names],
+            dtype=np.float64,
+        )
+        counts_requested_clamped = np.maximum(counts_requested, 0.0)
+        total_demand = counts_requested_clamped.sum(axis=0)
+        counts_scale = np.divide(
+            counts_available,
+            total_demand,
+            out=np.zeros_like(total_demand),
+            where=total_demand > 0.0,
+        )
+        counts_scale = np.minimum(1.0, counts_scale)
+        counts_allocated = np.floor(counts_requested_clamped * counts_scale)
 
+        if ASSERT_POSITIVE_COUNTS and np.any(counts_allocated < 0):
+            offenders = _format_matrix_offenders(
+                counts_allocated,
+                process_names,
+                molecule_names,
+            )
+            raise NegativeCountsError(
+                f"Negative count(s) in counts_allocated at checkpoint=allocation: {offenders}"
+            )
+
+        counts_unallocated = counts_available - counts_allocated.sum(axis=0)
+        if ASSERT_POSITIVE_COUNTS and np.any(counts_unallocated < 0):
+            offenders = _format_unallocated_offenders(counts_unallocated, molecule_names)
+            raise NegativeCountsError(
+                f"Negative count(s) in counts_unallocated at checkpoint=unallocated: {offenders}"
+            )
+
+        allocations = {
+            proc_name: {
+                molecule_name: float(counts_allocated[proc_idx, mol_idx])
+                for mol_idx, molecule_name in enumerate(molecule_names)
+            }
+            for proc_idx, proc_name in enumerate(process_names)
+        }
         return {"substrates_allocated": allocations}
