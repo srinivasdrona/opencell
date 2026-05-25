@@ -44,6 +44,7 @@ class KarrTranscriptionV3Process(Process):
         "mechanism_inputs": None,
         "time_step": 1.0,
         "write_substrate_deltas": True,
+        "use_allocator_budget": False,
         "substrate_default": 0.0,
     }
 
@@ -69,6 +70,7 @@ class KarrTranscriptionV3Process(Process):
             )
 
         self.consumed_substrates: tuple[str, ...] = _M2_CONSUMED_SUBSTRATES
+        self.allocation_substrate_wids: tuple[str, ...] = self.consumed_substrates
         self._fallback_n_active_rnap = int(self.mechanism_inputs.n_active_rnap)
         target_total_per_s = float(np.sum(self.kinetics_model.synthesis_rate_per_s[:, 1]))
         pred_total_per_s = float(
@@ -88,7 +90,7 @@ class KarrTranscriptionV3Process(Process):
 
     def ports_schema(self) -> dict[str, Any]:
         rna_ss = self.kinetics_model.counts_mature[:, 1]
-        return {
+        schema: dict[str, Any] = {
             "rna": {
                 "counts": {
                     gid: {
@@ -121,6 +123,13 @@ class KarrTranscriptionV3Process(Process):
                 for tu_wid in self.tu_wids
             },
         }
+        if bool(self.parameters["use_allocator_budget"]):
+            schema["substrates_allocated"] = {
+                self.name: {
+                    wid: {"_default": 0.0, "_emit": False} for wid in self.allocation_substrate_wids
+                }
+            }
+        return schema
 
     def _step_rna(self, rna: np.ndarray, synth_per_s: np.ndarray, dt_s: float) -> np.ndarray:
         decay = self.kinetics_model.decay_rate_per_s
@@ -132,6 +141,30 @@ class KarrTranscriptionV3Process(Process):
             out[idx] = ss + (rna[idx] - ss) * np.exp(-decay[idx] * dt_s)
         if np.any(no_decay):
             out[no_decay] = rna[no_decay] + synth_per_s[no_decay] * dt_s
+        return out
+
+    def _predict_total_nt_polymerization_per_s(self, n_active_rnap: float) -> float:
+        total_nt = tx_v2.total_nt_polymerization_per_s(
+            self.mechanism_inputs,
+            n_active=n_active_rnap,
+        )
+        return float(total_nt * self._mechanism_scale)
+
+    def _allocated_ntp_deltas(
+        self,
+        timestep: float,
+        states: dict[str, Any],
+        n_active_rnap: float,
+    ) -> dict[str, float]:
+        total_nt = self._predict_total_nt_polymerization_per_s(n_active_rnap)
+        per_ntp_need = max(0.0, total_nt / 4.0 * float(timestep))
+        allocated = states.get("substrates_allocated", {}).get(self.name, {})
+        out: dict[str, float] = {}
+        for ntp in self.consumed_substrates:
+            budget = max(0.0, float(allocated.get(ntp, 0.0)))
+            consumed = min(per_ntp_need, budget)
+            if consumed > 0.0:
+                out[ntp] = -consumed
         return out
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
@@ -177,10 +210,14 @@ class KarrTranscriptionV3Process(Process):
             }
         }
         if self.parameters["write_substrate_deltas"]:
-            total_nt = tx_v2.total_nt_polymerization_per_s(
-                self.mechanism_inputs, n_active=n_active_rnap
-            )
-            total_nt = total_nt * self._mechanism_scale
-            per_ntp = total_nt / 4.0
-            update["substrates"] = {ntp: -per_ntp * timestep for ntp in self.consumed_substrates}
+            if bool(self.parameters["use_allocator_budget"]):
+                substrate_update = self._allocated_ntp_deltas(timestep, states, n_active_rnap)
+            else:
+                total_nt = self._predict_total_nt_polymerization_per_s(n_active_rnap)
+                per_ntp = max(0.0, total_nt / 4.0) * float(timestep)
+                substrate_update = {
+                    ntp: -per_ntp for ntp in self.consumed_substrates if per_ntp > 0.0
+                }
+            if substrate_update:
+                update["substrates"] = substrate_update
         return update

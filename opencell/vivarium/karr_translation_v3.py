@@ -37,6 +37,7 @@ class KarrTranslationV3Process(Process):
         "mechanism_inputs": None,
         "time_step": 1.0,
         "write_substrate_deltas": True,
+        "use_allocator_budget": False,
         "substrate_default": 0.0,
     }
 
@@ -59,10 +60,11 @@ class KarrTranslationV3Process(Process):
             )
 
         self.aa_ids = self.kinetics_model.aa_wcm_ids
+        self.allocation_substrate_wids: tuple[str, ...] = tuple(self.aa_ids)
         self._fallback_n_active_ribosomes = int(self.mechanism_inputs.n_active_ribosomes)
 
     def ports_schema(self) -> dict[str, Any]:
-        return {
+        schema: dict[str, Any] = {
             "protein": {
                 "unprocessed_counts": {
                     pid: {
@@ -91,6 +93,13 @@ class KarrTranslationV3Process(Process):
                 }
             },
         }
+        if bool(self.parameters["use_allocator_budget"]):
+            schema["substrates_allocated"] = {
+                self.name: {
+                    wid: {"_default": 0.0, "_emit": False} for wid in self.allocation_substrate_wids
+                }
+            }
+        return schema
 
     def _step_protein(self, counts: np.ndarray, synth_per_s: np.ndarray, dt_s: float) -> np.ndarray:
         decay = self.kinetics_model.decay_rate_per_s
@@ -102,6 +111,33 @@ class KarrTranslationV3Process(Process):
             out[idx] = ss + (counts[idx] - ss) * np.exp(-decay[idx] * dt_s)
         if np.any(no_decay):
             out[no_decay] = counts[no_decay] + synth_per_s[no_decay] * dt_s
+        return out
+
+    def _predict_substrate_need(
+        self,
+        synth_per_s: np.ndarray,
+        timestep: float,
+    ) -> dict[str, float]:
+        per_metabolite = (synth_per_s[:, None] * self.kinetics_model.base_counts).sum(axis=0)
+        return {
+            aa: max(0.0, float(per_metabolite[col]) * float(timestep))
+            for aa, col in zip(self.aa_ids, self.kinetics_model.aa_col_indices, strict=False)
+        }
+
+    def _allocated_aa_deltas(
+        self,
+        need_by_aa: dict[str, float],
+        states: dict[str, Any],
+    ) -> dict[str, float]:
+        allocated = states.get("substrates_allocated", {}).get(self.name, {})
+        out: dict[str, float] = {}
+        for aa, need in need_by_aa.items():
+            if need <= 0.0:
+                continue
+            budget = max(0.0, float(allocated.get(aa, 0.0)))
+            consumed = min(need, budget)
+            if consumed > 0.0:
+                out[aa] = -consumed
         return out
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
@@ -138,9 +174,11 @@ class KarrTranslationV3Process(Process):
         }
 
         if self.parameters["write_substrate_deltas"]:
-            per_metabolite = (synth_per_s[:, None] * self.kinetics_model.base_counts).sum(axis=0)
-            update["substrates"] = {
-                aa: -float(per_metabolite[col]) * timestep
-                for aa, col in zip(self.aa_ids, self.kinetics_model.aa_col_indices, strict=False)
-            }
+            need_by_aa = self._predict_substrate_need(synth_per_s, timestep)
+            if bool(self.parameters["use_allocator_budget"]):
+                substrate_update = self._allocated_aa_deltas(need_by_aa, states)
+            else:
+                substrate_update = {aa: -need for aa, need in need_by_aa.items() if need > 0.0}
+            if substrate_update:
+                update["substrates"] = substrate_update
         return update
