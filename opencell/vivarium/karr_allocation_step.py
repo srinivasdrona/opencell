@@ -64,8 +64,8 @@ def _default_substrate_wids() -> list[str]:
 def _default_consumer_processes() -> list[tuple[str, list[str]]]:
     """Default consumers expected for A3.3 allocation integration."""
     return [
-        ("d2_real", ["ATP", "GTP", "H2O"]),
-        ("protein_decay_light", ["ATP", "H2O"]),
+        ("karr_macromolecular_complexation", ["ATP", "GTP", "H2O"]),
+        ("karr_protein_decay_light", ["ATP", "H2O"]),
         ("karr_rna_decay", ["H2O"]),
     ]
 

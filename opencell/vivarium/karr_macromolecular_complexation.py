@@ -198,15 +198,16 @@ class MacromolecularComplexationProcess(Process):
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         del timestep
-        # Wiring read for allocation-store compatibility (values are not used by
-        # Karr D.2's zero-request requirement path in this turn).
-        _ = states.get("substrates_allocated", {}).get(self.name, {})
+        allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
 
         sub_counts = np.array(
-            [float(states["substrates"][wid]) for wid in self.substrate_wids],
+            [float(allocated_state.get(wid, 0.0)) for wid in self.substrate_wids],
             dtype=np.float64,
         )
         sub_counts = np.floor(np.clip(sub_counts, a_min=0.0, a_max=None)).astype(np.int64)
+        if not np.any(sub_counts > 0):
+            return {"substrates": {}, "complex": {"counts": {}}}
+
         new_complexes = np.zeros(len(self.complex_wids), dtype=np.int64)
 
         for cluster_idx, _ in enumerate(self.networks, start=1):
@@ -256,4 +257,3 @@ __all__ = [
     "_load_fixture",
     "_per_cluster_mc",
 ]
-
