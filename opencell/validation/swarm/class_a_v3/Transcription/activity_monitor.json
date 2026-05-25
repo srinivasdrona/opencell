@@ -1,0 +1,17 @@
+{
+  "process_name": "Transcription",
+  "monitors": [
+    {
+      "observable": "substrates.ATP",
+      "expected_state": "should_change_within_window",
+      "window_ticks": 1,
+      "biological_justification": "Transcription elongation consumes NTPs immediately once RNAP activity is nonzero, so ATP demand should appear in the first tick."
+    },
+    {
+      "observable": "rna.counts.MG_001",
+      "expected_state": "should_change_within_window",
+      "window_ticks": 3,
+      "biological_justification": "Active transcription should update mature RNA abundance for at least one representative gene over short windows."
+    }
+  ]
+}
