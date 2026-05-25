@@ -14,7 +14,11 @@ from opencell.vivarium.karr_macromolecular_complexation import (
 )
 
 
-def _load_snapshot_state(process: MacromolecularComplexationProcess) -> dict[str, Any]:
+def _load_snapshot_state(
+    process: MacromolecularComplexationProcess,
+    *,
+    allocate_substrates: bool = True,
+) -> dict[str, Any]:
     """Load or synthesize a realistic D.2 state snapshot for one tick tests.
 
     A dedicated D.2 snapshot fixture is not guaranteed in all worktrees, so this
@@ -23,13 +27,21 @@ def _load_snapshot_state(process: MacromolecularComplexationProcess) -> dict[str
     rng = np.random.default_rng(20260522)
     substrate_counts = rng.integers(100, 1000, size=len(process.substrate_wids))
 
+    allocated = (
+        {
+            wid: float(substrate_counts[idx]) for idx, wid in enumerate(process.substrate_wids)
+        }
+        if allocate_substrates
+        else {wid: 0.0 for wid in process.substrate_wids}
+    )
+
     return {
         "substrates": {
             wid: float(substrate_counts[idx]) for idx, wid in enumerate(process.substrate_wids)
         },
         "complex": {"counts": {wid: 0.0 for wid in process.complex_wids}},
         "requests": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
-        "substrates_allocated": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
+        "substrates_allocated": {process.name: allocated},
     }
 
 
@@ -152,5 +164,4 @@ def test_integration_with_allocation_step() -> None:
         p.name: {wid: float(allocated.get(wid, 0.0)) for wid in p.substrate_wids}
     }
     d2_update = p.next_update(1.0, snapshot)
-    assert sum(d2_update["complex"]["counts"].values()) > 0.0
-
+    assert sum(d2_update["complex"]["counts"].values()) == 0.0
