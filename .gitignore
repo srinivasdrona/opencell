@@ -94,3 +94,6 @@ STATUS_*.md
 codex_*.log
 .merge_baseline_sha.txt
 HANDOFF_AUTO.md
+
+probe_*.log
+
