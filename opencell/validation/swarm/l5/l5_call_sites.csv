@@ -1,0 +1,27 @@
+file,line,calling_function,substrate(s)_involved,helper_name_or_inline,fallback_target_store,surrounding_logic_summary
+opencell/vivarium/karr_chromosome_condensation.py,244,next_update,ATP|H2O,_allocated_or_state,states["substrates"],Reads ATP and H2O through helper before binding events; zero allocation still reads global substrate pool.
+opencell/vivarium/karr_chromosome_condensation.py,326,_allocated_or_state,per_wid,_allocated_or_state (definition),substrate_state argument,Returns allocated when >0 else substrate_state wid.
+opencell/vivarium/karr_chromosome_segregation.py,272,next_update,GTP|H2O,_allocated_or_state,states["substrates"],Reads GTP and H2O through helper before segregation progression; zero allocation can still expose global pool.
+opencell/vivarium/karr_chromosome_segregation.py,213,_allocated_or_state,per_wid,_allocated_or_state (definition),substrate_state argument,Returns allocated when >0 else substrate_state wid.
+opencell/vivarium/karr_cytokinesis.py,205,next_update,GTP,_allocated_or_state,states["substrates"],Reads available GTP through helper and converts to progress budget; zero allocation falls back to global substrate.
+opencell/vivarium/karr_cytokinesis.py,265,_allocated_or_state,per_wid,_allocated_or_state (definition),substrate_state argument,Returns allocated when >0 else substrate_state wid.
+opencell/vivarium/karr_dna_repair.py,286,next_update,ATP|DATP|DCTP|DGTP|DTTP,_allocated_or_state,states["substrates"],Builds available map for tracked substrates via helper; zero allocation can still permit repair via global pool.
+opencell/vivarium/karr_dna_repair.py,547,_allocated_or_state,per_wid,_allocated_or_state (definition),substrate_state argument,Returns allocated when >0 else max(0 substrate_state wid).
+opencell/vivarium/karr_dna_supercoiling.py,218,next_update,ATP,_allocated_or_state,states["substrates"],Reads ATP availability through helper before ATP-limited topoisomerase events.
+opencell/vivarium/karr_dna_supercoiling.py,310,_allocated_or_state,per_wid,_allocated_or_state (definition),substrate_state argument,Returns allocated when >0 else substrate_state wid.
+opencell/vivarium/karr_replication.py,270,next_update,DATP|DCTP|DGTP|DTTP|ATP,_allocated_or_state,states["substrates"],Builds available substrate dict via helper before fork scaling; zero allocation can still read global pool.
+opencell/vivarium/karr_replication.py,179,_allocated_or_state,per_wid,_allocated_or_state (definition),substrate_state argument,Returns allocated when >0 else substrate_state wid as nonnegative int.
+opencell/vivarium/karr_replication_initiation.py,212,next_update,ATP|H2O,_allocated_or_state,states["substrates"],Reads ATP and water through helper before DnaA activation and hydrolysis steps.
+opencell/vivarium/karr_replication_initiation.py,274,_allocated_or_state,per_wid,_allocated_or_state (definition),substrate_state argument,Returns allocated when >0 else substrate_state wid.
+opencell/vivarium/karr_protein_folding.py,163,next_update,process substrate_wids,_allocated_or_free,fallback_state (=states["substrates"]),Builds substrate_counts with helper; zero allocated value falls back to global substrates.
+opencell/vivarium/karr_protein_folding.py,234,_allocated_or_free,per_wid,_allocated_or_free (definition),fallback_state argument,Returns allocated when >0 else fallback_state wid.
+opencell/vivarium/karr_protein_modification.py,151,next_update,process substrate_wids,inline allocated_if_positive_else_state,states["substrates"],Inline ternary uses allocated only when >0 else global substrate_state.
+opencell/vivarium/karr_protein_processing_i.py,246,_read_allocated_or_baseline_substrates,process substrate_wids,inline allocated_if_positive_else_state,states["substrates"],Inline ternary uses allocated only when >0 else global substrate_state.
+opencell/vivarium/karr_protein_processing_ii.py,184,next_update,process substrate_wids,inline allocated_if_positive_else_state,states["substrates"],Inline ternary uses allocated only when >0 else global substrate_state.
+opencell/vivarium/karr_protein_translocation.py,194,_available_atp,ATP,_available_atp,states["substrates"],Reads allocated ATP and falls back to global ATP when allocated_atp <= 0.
+opencell/vivarium/karr_protein_translocation.py,221,next_update,ATP,_available_atp call,states["substrates"],next_update budgets translocation ATP through fallback helper.
+opencell/vivarium/karr_rna_modification.py,143,next_update,process substrate_wids,inline allocated_if_positive_else_state,states["substrates"],Inline ternary uses allocated only when >0 else global substrate_state.
+opencell/vivarium/karr_rna_processing.py,246,next_update,process substrate_wids,inline allocated_if_positive_else_state,states["substrates"],Inline ternary uses allocated only when >0 else global substrate_state.
+opencell/vivarium/karr_trna_aminoacylation.py,129,next_update,process substrate_wids,inline allocated_if_positive_else_state,states["substrates"],Inline ternary uses allocated only when >0 else global substrate_state.
+opencell/vivarium/karr_ftsz_polymerization.py,193,next_update,GTP,_allocated_or_state,states["substrates"],Presence-based fallback reads global pool only when allocation key is absent; explicit zero key stays zero.
+opencell/vivarium/karr_ftsz_polymerization.py,218,_allocated_or_state,per_wid,_allocated_or_state (definition),substrate_state argument,Returns allocated when key exists else substrate_state wid.
