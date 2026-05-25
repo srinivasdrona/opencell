@@ -46,7 +46,7 @@ header. Do not trust an inherited STATUS.
    ```
    cd E:\opencell
    git status
-   git --no-pager log --oneline -1   # should show 0b4048b (plan update) or newer
+   git --no-pager log --oneline -1   # should show fc03db5 (merge prompt commit) or newer
    ```
    If not on main or working tree dirty, STOP and write STATUS "BLOCKED — repo not on clean main".
 
@@ -191,4 +191,4 @@ Write `STATUS_m.md` with one of these outcomes:
 - Status file: `E:\opencell\STATUS_m.md`
 - Baseline SHA file: `E:\opencell\.merge_baseline_sha.txt`
 - Codex log: will be at `E:\opencell\codex_m.log`
-- Pre-merge main HEAD: should be `0b4048b` (plan update) — if not, STOP.
+- Pre-merge main HEAD: should be `fc03db5` (this merge prompt commit) — if not, STOP.
