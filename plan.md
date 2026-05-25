@@ -401,7 +401,76 @@ NOT a parallel program)**
 
 ---
 
-## Current Status (2026-05-25 ~00:30 IST, **BUG 5 + BUG 6 LANDED ON MAIN; TRACK A IS THE B1 BLOCKER**)
+## Current Status (2026-05-25 ~13:45 IST, **SPRINT 0 LANDED ON BRANCHES; AUDIT-AND-RATCHET PHASE BEGINS**)
+
+### TL;DR
+After Day 10 wrap (Bug 5 + Bug 6 landed on `main` at `40f96c5`), three research agents (vEcoli infra, wcEcoli methodology, WCM validation literature 2018-2026) converged on five durable Covert Lab validation patterns. The literature also confirmed nobody in the field has a MATLAB→Python differential test harness — our per-process `*_flat.mat` fixtures uniquely enable this.
+
+**Sprint 0 complete** (three branches, ready to merge):
+| Branch | SHA | What it ships |
+|---|---|---|
+| `sprint0/predicates` | `0757402` | `opencell/validation/predicates.py` — vEcoli's `data_predicates` ported verbatim (10 public predicate functions + tests) |
+| `sprint0/allocator-guards` | `38fe273` | `ASSERT_POSITIVE_COUNTS` + `NegativeCountsError` in `KarrAllocationStep` (3 checkpoints; would have caught Bug 1, Bug 2 at first tick) |
+| `sprint0/replay-harness` | `1b79452` | `opencell/validation/replay.py` — generic solver-replay harness over `data/karr_fixtures/per_process/*_flat.mat` + smoke test |
+
+These now form the foundation for the **audit-and-ratchet phase** (decision `swarm-audit-before-track-a`, 2026-05-25).
+
+### Audit-and-ratchet phase plan
+
+```
+Sprint 0 (DONE)
+   ├ predicates.py    ← vEcoli pattern
+   ├ allocator guards ← wcEcoli pattern (3-checkpoint negative-count)
+   └ replay harness   ← wcEcoli pattern (solver-replay differential)
+        │
+        ▼
+[merge sprint0 trio → main]
+        │
+        ▼
+Swarm pilot — Class A: 28 per-process auditors (findings-only, parallel batches)
+   each agent produces:
+   (1) findings.json     — diagnostic findings
+   (2) test_<p>_biology_fires.py — invariants via simulate_process
+   (3) test_<p>_matches_karr.py  — solver-replay against fixture
+   (4) activity_monitor.json — observables for global expected_active_set
+        │
+        ▼
+Reducer (1 agent)
+   produces:
+   - swarm_report.md
+   - expected_active_set.json
+   - bugs_to_fix.md
+   - class_b_scope_proposal.md   ← scope informed by Class A findings
+        │
+        ▼
+GPT-5.5 critique gate  ← per decision swarm-pilot-cross-model-critique-gate
+   sharp 3-Q prompt: structural flaws / wrong-redundant seams / symptoms of deeper bugs
+        │
+        ▼
+Operator + Copilot review session  → locks Class B scope
+        │
+        ▼
+Class B fleet (TBD count, scope from review) → Reducer round 2 → final swarm_report
+        │
+        ▼
+Triage gate (operator + Copilot)  → fix-fleet queue
+        │
+        ▼
+Track A (TX/TL allocator enrollment, the B1 fix)
+   benefits inherited:  guards + replay + prioritized bug context
+```
+
+Single mega-PR for swarm Class A test files + report — 28 PRs would be process overhead with no review value.
+
+### Sprint 0 strategic context
+
+Convergent finding across all three Phase 0 research agents: the most portable patterns are (1) `ASSERT_POSITIVE_COUNTS` runtime guards at allocator boundaries, (2) `data_predicates` invariant library, (3) per-process biology-firing tests using `simulate_process`, (4) solver replay for differential validation, (5) `find_limiting_metabolites` + `expected_set` for "beautiful corpse" detection. Sprint 0 ships patterns 1, 2, 4 as foundation; the swarm pilot's 28 class-A agents will author patterns 3 and 5 across all 28 processes.
+
+Decisions recorded today: `swarm-audit-before-track-a`, `swarm-pilot-cross-model-critique-gate` (both cross-cutting, 2026-05-25).
+
+---
+
+## Prior Status (2026-05-25 ~00:30 IST, **BUG 5 + BUG 6 LANDED ON MAIN; TRACK A IS THE B1 BLOCKER**)
 
 ### TL;DR
 All four Bug 5 commits (protein maturation pipeline) and all three Bug 6
