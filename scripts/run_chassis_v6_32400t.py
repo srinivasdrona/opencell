@@ -37,6 +37,8 @@ from opencell.m1 import karr_metabolism as km
 from opencell.m2 import transcription as tx
 from opencell.m3 import translation as tl
 from opencell.vivarium.karr_composite import build_karr_chassis_v6
+from scripts.canary_csvs_to_e2_pkl import build_e2_payload
+from scripts.canary_csvs_to_e2_pkl import write_payload
 
 DEFAULT_OUT_DIR = ROOT / "artifacts" / "run_32400t_seed42"
 DEFAULT_LOG_PATH = ROOT / ".codex_run_seed42.log"
@@ -626,6 +628,13 @@ def run_full_cycle(
             json.dump(division_payload, f, indent=2, sort_keys=True)
             f.write("\n")
 
+    trajectory_pkl_path = out_dir / "trajectory.pkl"
+    trajectory_payload = build_e2_payload(
+        out_dir,
+        reference_fixture=ROOT / "data" / "phase_e" / "v6_trajectory_32400s.pkl",
+    )
+    write_payload(trajectory_payload, trajectory_pkl_path)
+
     diagnostics.close()
 
     full_path = _compress_if_large(full_path)
@@ -653,6 +662,7 @@ def run_full_cycle(
             "division_event_json": str(division_path),
             "conservation_csv": str(conservation_path),
             "process_traces_dir": str(out_dir / "process_traces"),
+            "trajectory_pkl": str(trajectory_pkl_path),
             "progress_log_path": str(progress_log_actual_path),
         },
         "sampling": {
@@ -685,7 +695,7 @@ def run_full_cycle(
 def _run_git_rev_parse() -> str:
     import subprocess
 
-    out = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True)
+    out = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True)
     return out.strip()
 
 
