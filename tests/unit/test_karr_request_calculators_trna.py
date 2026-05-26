@@ -28,17 +28,10 @@ from opencell.vivarium.karr_request_calculators import RequestCalculatorTRNA
 from opencell.vivarium.karr_trna_aminoacylation import KarrTRNAAminoacylationProcess
 
 
-@pytest.mark.parametrize("karr_parity_mode", [False, True])
-def test_request_calculator_trna_karr_parity_mode_gates_atp_floor(
-    karr_parity_mode: bool,
-) -> None:
+def test_request_calculator_trna_atp_request_scales_with_availability() -> None:
+    """Karr-parity formula: ATP request = avail * 25.0 (no NGAM floor)."""
     trna_proc = KarrTRNAAminoacylationProcess({"time_step": 1.0})
-    calc = RequestCalculatorTRNA(
-        {
-            "trna_proc": trna_proc,
-            "karr_parity_mode": karr_parity_mode,
-        }
-    )
+    calc = RequestCalculatorTRNA({"trna_proc": trna_proc})
 
     substrate_state = {wid: 0.0 for wid in trna_proc.substrate_wids}
     substrate_state["ATP"] = 0.2
@@ -58,10 +51,6 @@ def test_request_calculator_trna_karr_parity_mode_gates_atp_floor(
     )
     requests = update["requests"][trna_proc.name]
 
-    if karr_parity_mode:
-        assert requests["ATP"] == pytest.approx(5.0, rel=0.0, abs=1e-12)
-    else:
-        assert requests["ATP"] == pytest.approx(25.0, rel=0.0, abs=1e-12)
-
+    assert requests["ATP"] == pytest.approx(5.0, rel=0.0, abs=1e-12)
     if non_atp_consumed is not None:
         assert requests[non_atp_consumed] == pytest.approx(7.0, rel=0.0, abs=1e-12)

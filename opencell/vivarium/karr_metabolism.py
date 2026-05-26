@@ -48,9 +48,7 @@ Two operating modes (selected by the ``dynamic_bounds`` parameter):
 
 from __future__ import annotations
 
-import json
 import os
-from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -91,18 +89,6 @@ _KARR_DEMAND_KEYS: tuple[str, ...] = (
     "VAL",
 )
 _CYTOSOL_COMPARTMENT_0 = 0
-_SECONDS_PER_HOUR = 3600.0
-_AVOGADRO = 6.02214076e23
-_ATPM_ID_CANDIDATES: tuple[str, ...] = (
-    "ATPM",
-    "R_ATPM",
-    "ATP_MAINT",
-    "ATP_MAINTENANCE",
-)
-_ATPM_ID_PATTERNS: tuple[str, ...] = (
-    "ATPM",
-    "ATP_MAINT",
-)
 
 
 def _read_env_bool(name: str) -> bool | None:
@@ -135,8 +121,6 @@ class KarrMetabolismProcess(Process):
         "enable_lp_writeback": True,
         "enable_pool_replenishment": False,
         "baseline_demand_per_s": None,
-        "parameters_fixture_path": None,
-        "karr_parity_mode": True,
     }
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
@@ -150,7 +134,6 @@ class KarrMetabolismProcess(Process):
 
         self.dynamic_bounds: bool = bool(self.parameters["dynamic_bounds"])
         self.use_allocator_budget: bool = bool(self.parameters["use_allocator_budget"])
-        self.karr_parity_mode: bool = bool(self.parameters.get("karr_parity_mode", True))
         env_lp_writeback = _read_env_bool("OPENCELL_ENABLE_LP_WRITEBACK")
         self.enable_lp_writeback: bool = (
             env_lp_writeback
@@ -175,10 +158,6 @@ class KarrMetabolismProcess(Process):
         self._last_allocation_demand: dict[str, float] = {}
         self._baseline_demand_per_s: dict[str, float] | None = None
         self._bug6b_clamped_reactions_total: int = 0
-        self._ngam_mmol_per_gdw_h: float = self._load_ngam_mmol_per_gdw_h(
-            self.parameters.get("parameters_fixture_path")
-        )
-        self._atpm_fba_col: int | None = None
 
         if self.enable_pool_replenishment and not self.dynamic_bounds:
             raise ValueError(
@@ -237,7 +216,6 @@ class KarrMetabolismProcess(Process):
             # have an authoritative view of ``shared`` -> delta is
             # structurally zero on the first tick.
             self._prev_shared: dict | None = None
-            self._atpm_fba_col = self._resolve_atpm_fba_col()
 
             if self.enable_pool_replenishment:
                 bd = self.parameters["baseline_demand_per_s"]
@@ -259,76 +237,6 @@ class KarrMetabolismProcess(Process):
                         raise ValueError(
                             f"baseline_demand_per_s[{sid}]={rate} must be finite and non-negative"
                         )
-
-    @staticmethod
-    def _default_parameters_fixture_path() -> Path:
-        return Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "parameters.json"
-
-    def _load_ngam_mmol_per_gdw_h(self, fixture_path: str | Path | None) -> float:
-        path = Path(fixture_path) if fixture_path is not None else self._default_parameters_fixture_path()
-        doc = json.loads(path.read_text())
-        metabolism = doc.get("processes", {}).get("Metabolism", {})
-        return float(metabolism.get("nonGrowthAssociatedMaintenance", 0.0))
-
-    def _resolve_atpm_fba_col(self) -> int | None:
-        for rid in _ATPM_ID_CANDIDATES:
-            col = self.model.fba_col_for_wcm_id(rid)
-            if col is not None:
-                return int(col)
-
-        for rid in self.model.rxn_wcm_ids_645:
-            norm = rid.upper()
-            if any(tok in norm for tok in _ATPM_ID_PATTERNS):
-                col = self.model.fba_col_for_wcm_id(rid)
-                if col is not None:
-                    return int(col)
-
-        # Fixture fallback: infer the ATP-maintenance surrogate from the
-        # strongest ATP-hydrolysis signature when ATPM IDs are absent.
-        if self._sub_id_to_idx is None or self._fba_row_sub is None or self._fba_row_cmp is None:
-            return None
-        required = ("ATP", "H2O", "ADP", "PI", "H")
-        rows: dict[str, int] = {}
-        for sid in required:
-            sid_idx = self._sub_id_to_idx.get(sid)
-            if sid_idx is None:
-                return None
-            fba_rows = np.where(
-                (self._fba_row_sub == sid_idx) & (self._fba_row_cmp == _CYTOSOL_COMPARTMENT_0)
-            )[0]
-            if fba_rows.size == 0:
-                return None
-            rows[sid] = int(fba_rows[0])
-
-        candidates: list[tuple[float, int]] = []
-        for col, rid in enumerate(self.model.fba_col_rxn_wcm):
-            atp = float(self.model.S[rows["ATP"], col])
-            h2o = float(self.model.S[rows["H2O"], col])
-            adp = float(self.model.S[rows["ADP"], col])
-            pi = float(self.model.S[rows["PI"], col])
-            h = float(self.model.S[rows["H"], col])
-            if not (atp < 0.0 and h2o < 0.0 and adp > 0.0 and pi > 0.0 and h > 0.0):
-                continue
-            # Prefer unnamed pseudo-reactions (exchange/biomass space) over
-            # named transport reactions when ATPM is not explicitly present.
-            score = -atp + (1e12 if rid is None else 0.0)
-            candidates.append((score, col))
-
-        if not candidates:
-            return None
-        candidates.sort(reverse=True)
-        return int(candidates[0][1])
-
-    def _atpm_lb_floor_for_tick(self, timestep: float) -> float:
-        tick_s = float(timestep)
-        if tick_s <= 0.0:
-            tick_s = float(self.parameters.get("time_step", 0.0))
-        if tick_s <= 0.0 or self._dyn is None:
-            return 0.0
-        ngam_mmol_tick = (
-            self._ngam_mmol_per_gdw_h * float(self._dyn.cell_dry_mass) * tick_s / _SECONDS_PER_HOUR
-        )
-        return max(0.0, ngam_mmol_tick * 1e-3 * _AVOGADRO)
 
     # ------------------------------------------------------------------
     def ports_schema(self) -> dict[str, Any]:
@@ -514,38 +422,14 @@ class KarrMetabolismProcess(Process):
         if np.any(bounds[:, 0] > bounds[:, 1] + 1e-9):
             raise RuntimeError("dynamic bounds: lower > upper")
 
-        lb_override = bounds[:, 0].copy()
-        floor_applied = False
-        if (not self.karr_parity_mode) and self._atpm_fba_col is not None:
-            atpm_col = int(self._atpm_fba_col)
-            atpm_floor = self._atpm_lb_floor_for_tick(float(timestep))
-            atpm_ub = float(bounds[atpm_col, 1])
-            if np.isfinite(atpm_ub):
-                atpm_floor = min(atpm_floor, atpm_ub)
-            base_lb = float(lb_override[atpm_col])
-            lb_override[atpm_col] = max(base_lb, atpm_floor)
-            floor_applied = bool(lb_override[atpm_col] > base_lb + 1e-15)
-
-        try:
-            v, info = km.solve_fba(
-                self.model,
-                use_full_objective=self.parameters["use_full_objective"],
-                sense="max",
-                big=self.parameters["big"],
-                lb_override=lb_override,
-                ub_override=bounds[:, 1],
-            )
-        except RuntimeError:
-            if not floor_applied:
-                raise
-            v, info = km.solve_fba(
-                self.model,
-                use_full_objective=self.parameters["use_full_objective"],
-                sense="max",
-                big=self.parameters["big"],
-                lb_override=bounds[:, 0],
-                ub_override=bounds[:, 1],
-            )
+        v, info = km.solve_fba(
+            self.model,
+            use_full_objective=self.parameters["use_full_objective"],
+            sense="max",
+            big=self.parameters["big"],
+            lb_override=bounds[:, 0],
+            ub_override=bounds[:, 1],
+        )
 
         # Bug 6a Stage 2: signed writeback across all mapped cytosol rows.
         substrate_delta: dict[str, float] = {}

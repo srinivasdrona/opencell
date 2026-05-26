@@ -208,7 +208,7 @@ class RequestCalculatorTRNA(Step):
     """Compute allocation request for tRNA aminoacylation metabolites."""
 
     name = "request_calculator_trna"
-    defaults: dict[str, Any] = {"trna_proc": None, "karr_parity_mode": True}
+    defaults: dict[str, Any] = {"trna_proc": None}
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
         super().__init__(parameters)
@@ -216,7 +216,6 @@ class RequestCalculatorTRNA(Step):
         if trna_proc is None:
             raise ValueError("RequestCalculatorTRNA requires parameter: trna_proc")
         self._trna_proc = trna_proc
-        self.karr_parity_mode = bool(self.parameters.get("karr_parity_mode", True))
         self._consumed_substrate_wids = _consumed_wids_from_stoich(
             self._trna_proc.substrate_wids,
             self._trna_proc.reaction_stoich,
@@ -255,10 +254,8 @@ class RequestCalculatorTRNA(Step):
             for wid in self._consumed_substrate_wids:
                 avail = max(0.0, float(substrate_state.get(wid, 0.0)))
                 if wid == "ATP":
-                    if self.karr_parity_mode:
-                        requests[wid] = avail * 25.0
-                    else:
-                        requests[wid] = max(25.0, avail * 25.0)
+                    # Karr-parity: scale request with availability (no floor).
+                    requests[wid] = avail * 25.0
                 else:
                     requests[wid] = avail
         return {"requests": {self._trna_proc.name: requests}}

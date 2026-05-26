@@ -77,8 +77,6 @@ class KarrAllocationStep(Step):
     defaults: dict[str, Any] = {
         "consumer_processes": _default_consumer_processes(),
         "substrate_wids": _default_substrate_wids(),
-        "enforce_ngam_at_allocator": True,
-        "karr_parity_mode": True,
     }
 
     def ports_schema(self) -> dict[str, Any]:
@@ -121,14 +119,6 @@ class KarrAllocationStep(Step):
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         del timestep
-        enforce_ngam_at_allocator = bool(self.parameters.get("enforce_ngam_at_allocator", True))
-        if bool(self.parameters.get("karr_parity_mode", True)):
-            enforce_ngam_at_allocator = False
-
-        # Keep the allocator-side NGAM toggle reachable for rollback scenarios.
-        # Current allocator logic has no direct NGAM floor injection.
-        if enforce_ngam_at_allocator:
-            pass
 
         substrates = states.get("substrates", {})
         requests = states.get("requests", {})
