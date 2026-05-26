@@ -77,3 +77,12 @@ def test_request_calculator_metabolism_scales_with_tick() -> None:
 
     assert req_1s > 0.0
     assert req_5s == pytest.approx(req_1s * 5.0, rel=1e-12, abs=1e-9)
+
+
+def test_request_calculator_metabolism_uses_process_time_step_when_step_dt_zero() -> None:
+    calc = _build_calc()
+
+    req_0s = float(calc.next_update(0.0, {})["requests"][calc._m1_proc.name]["ATP"])
+    req_1s = float(calc.next_update(1.0, {})["requests"][calc._m1_proc.name]["ATP"])
+
+    assert req_0s == pytest.approx(req_1s, rel=1e-12, abs=1e-9)

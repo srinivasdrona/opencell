@@ -662,6 +662,10 @@ class RequestCalculatorMetabolism(Step):
         self._include_growth_coupled_gam = bool(self.parameters.get("include_growth_coupled_gam", True))
         self._cell_dry_mass_g = self._resolve_cell_dry_mass_g(params_doc)
         self._growth_rate_per_s = self._resolve_growth_rate_per_s(params_doc)
+        self._tick_s_default = max(
+            0.0,
+            float(getattr(self._m1_proc, "parameters", {}).get("time_step", 0.0)),
+        )
 
     def ports_schema(self) -> dict[str, Any]:
         return {
@@ -735,6 +739,8 @@ class RequestCalculatorMetabolism(Step):
 
     def _atp_floor_request_for_tick(self, timestep: float) -> float:
         tick = max(0.0, float(timestep))
+        if tick <= 0.0:
+            tick = self._tick_s_default
         ngam_mmol = (
             self._ngam_mmol_per_gdw_h
             * self._cell_dry_mass_g
