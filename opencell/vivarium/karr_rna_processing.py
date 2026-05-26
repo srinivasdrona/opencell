@@ -240,6 +240,7 @@ class KarrRNAProcessingProcess(Process):
             return {}
 
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
+        # Strict-zero allocator contract: do not fallback to global substrate pools.
         substrates = np.asarray(
             [
                 max(0.0, float(allocated_state.get(wid, 0.0)))

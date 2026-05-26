@@ -213,7 +213,6 @@ class KarrChromosomeSegregationProcess(Process):
     def _allocated_or_state(
         self,
         allocated_state: dict[str, Any],
-        substrate_state: dict[str, Any],
         wid: str,
     ) -> float:
         allocated = float(allocated_state.get(wid, 0.0))
@@ -266,9 +265,8 @@ class KarrChromosomeSegregationProcess(Process):
         )
 
         allocated = states.get("substrates_allocated", {}).get(self.name, {})
-        substrate_state = states.get("substrates", {})
-        gtp_available = self._allocated_or_state(allocated, substrate_state, self.gtp_wid)
-        h2o_available = self._allocated_or_state(allocated, substrate_state, self.h2o_wid)
+        gtp_available = self._allocated_or_state(allocated, self.gtp_wid)
+        h2o_available = self._allocated_or_state(allocated, self.h2o_wid)
         max_events = min(
             int(math.floor(max(0.0, gtp_available) / self.gtp_cost)),
             int(math.floor(max(0.0, h2o_available) / self.gtp_cost)),

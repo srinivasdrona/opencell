@@ -240,6 +240,7 @@ class KarrProteinProcessingIProcess(Process):
 
     def _read_allocated_or_baseline_substrates(self, states: dict[str, Any]) -> np.ndarray:
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
+        # Strict-zero allocator contract: do not fallback to global substrate pools.
         return np.asarray(
             [
                 max(0.0, float(allocated_state.get(wid, 0.0)))

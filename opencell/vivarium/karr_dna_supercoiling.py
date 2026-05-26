@@ -218,9 +218,8 @@ class KarrDNASupercoilingProcess(Process):
         topoiv_count = max(0.0, float(protein_counts.get(self.topoiv_wid, 0.0)))
 
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
-        substrate_state = states.get("substrates", {})
-        available_atp = self._allocated_or_state(allocated_state, substrate_state, self.atp_wid)
-        available_h2o = self._allocated_or_state(allocated_state, substrate_state, self.h2o_wid)
+        available_atp = self._allocated_or_state(allocated_state, self.atp_wid)
+        available_h2o = self._allocated_or_state(allocated_state, self.h2o_wid)
         hydrolysis_budget = min(available_atp, available_h2o)
 
         rep_load_events = self._replication_supercoil_load_events(replication_state, dt)
@@ -318,7 +317,6 @@ class KarrDNASupercoilingProcess(Process):
     def _allocated_or_state(
         self,
         allocated_state: dict[str, Any],
-        substrate_state: dict[str, Any],
         wid: str,
     ) -> float:
         allocated = float(allocated_state.get(wid, 0.0))

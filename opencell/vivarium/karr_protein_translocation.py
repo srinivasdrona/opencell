@@ -219,8 +219,8 @@ class KarrProteinTranslocationProcess(Process):
             },
         }
 
-    def _available_substrate(self, states: dict[str, Any], wid: str) -> int:
-        allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
+    def _available_substrate(self, allocated_state: dict[str, Any], wid: str) -> int:
+        # Strict-zero allocator contract: only allocated budget is readable here.
         allocated = float(allocated_state.get(wid, 0.0))
         return int(max(0.0, np.floor(allocated)))
 
@@ -234,6 +234,7 @@ class KarrProteinTranslocationProcess(Process):
         del timestep
         protein_counts_state = states.get("protein", {}).get("counts", {})
         location_state = states.get("protein", {}).get("location", {})
+        allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
 
         cytoplasmic_counts = {
             wid: _read_nonnegative_count(protein_counts_state, wid)
@@ -244,9 +245,9 @@ class KarrProteinTranslocationProcess(Process):
         if not cytoplasmic_counts:
             return {}
 
-        atp_remaining = self._available_substrate(states, self.atp_wid)
-        gtp_remaining = self._available_substrate(states, self.gtp_wid)
-        h2o_remaining = self._available_substrate(states, self.h2o_wid)
+        atp_remaining = self._available_substrate(allocated_state, self.atp_wid)
+        gtp_remaining = self._available_substrate(allocated_state, self.gtp_wid)
+        h2o_remaining = self._available_substrate(allocated_state, self.h2o_wid)
         if atp_remaining <= 0 or h2o_remaining <= 0:
             return {}
 
