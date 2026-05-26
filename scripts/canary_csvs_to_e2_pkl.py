@@ -8,9 +8,19 @@ import csv
 import json
 import math
 import pickle
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from opencell.data.substrate_mass_classes import (
+    AVOGADRO,
+    build_substrate_mass_class_lookup,
+)
 
 DEFAULT_REFERENCE_FIXTURE = Path("data/phase_e/v6_trajectory_32400s.pkl")
 DEFAULT_SNAPSHOT_STRIDE = 100
@@ -63,6 +73,13 @@ class HeaderInspection:
     replication_events: list[str]
     conservation: list[str]
     process_traces: dict[str, list[str]]
+
+
+@dataclass(frozen=True)
+class PolymerMassByTick:
+    dna_da: float
+    rna_da: float
+    protein_da: float
 
 
 def _to_float(value: Any, default: float = float("nan")) -> float:
@@ -148,6 +165,57 @@ def _load_replication_points(path: Path) -> list[ReplicationPoint]:
             )
     points.sort(key=lambda p: p.tick)
     return points
+
+
+def _load_polymer_masses_by_tick(path: Path, target_ticks: list[int]) -> dict[int, PolymerMassByTick]:
+    selected = {int(t) for t in target_ticks}
+    if not selected:
+        return {}
+
+    lookup = build_substrate_mass_class_lookup()
+    sums: dict[int, dict[str, float]] = {
+        tick: {"dna": 0.0, "rna": 0.0, "protein": 0.0}
+        for tick in selected
+    }
+
+    with path.open("r", encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f)
+        required = {"tick", "substrate", "count"}
+        missing = sorted(required - set(reader.fieldnames or []))
+        if missing:
+            raise ValueError(f"{path} missing required columns: {missing}")
+
+        for row in reader:
+            tick = _to_int(row.get("tick"), default=-1)
+            if tick not in selected:
+                continue
+
+            substrate = str(row.get("substrate", "")).strip()
+            if not substrate:
+                continue
+
+            klass = lookup.polymer_class(substrate)
+            if klass not in {"dna", "rna", "protein"}:
+                continue
+
+            mw = lookup.mw_g_per_mol(substrate)
+            if not math.isfinite(mw) or mw <= 0.0:
+                continue
+
+            count = _to_float(row.get("count"), default=float("nan"))
+            if not math.isfinite(count):
+                continue
+            sums[tick][klass] += float(count) * float(mw)
+
+    masses: dict[int, PolymerMassByTick] = {}
+    for tick in selected:
+        tick_sums = sums[tick]
+        masses[tick] = PolymerMassByTick(
+            dna_da=float(tick_sums["dna"]),
+            rna_da=float(tick_sums["rna"]),
+            protein_da=float(tick_sums["protein"]),
+        )
+    return masses
 
 
 def _replication_state_code(state: str, complete_flag: float) -> int:
@@ -275,6 +343,7 @@ def build_e2_payload(input_dir: Path, *, reference_fixture: Path = DEFAULT_REFER
     all_ticks = sorted(key_rows)
     snapshot_ticks = _select_snapshot_ticks(all_ticks, reference_fixture)
     replication_lookup = _build_replication_lookup(replication_points, snapshot_ticks)
+    polymer_masses = _load_polymer_masses_by_tick(input_dir / "substrates_full.csv", snapshot_ticks)
 
     pool_columns = [col for col in headers.key_substrates if col not in _NON_POOL_COLUMNS]
 
@@ -286,6 +355,7 @@ def build_e2_payload(input_dir: Path, *, reference_fixture: Path = DEFAULT_REFER
     for tick in snapshot_ticks:
         row = key_rows[tick]
         rep_code, fork_norm = replication_lookup.get(tick, (0, 0.0))
+        mass_da = polymer_masses.get(tick, PolymerMassByTick(0.0, 0.0, 0.0))
 
         division_timestamp_s = float("nan")
         if division_reached and math.isfinite(division_time_s):
@@ -310,9 +380,9 @@ def build_e2_payload(input_dir: Path, *, reference_fixture: Path = DEFAULT_REFER
             "division_event_timestamp_s": float(division_timestamp_s),
             "cytokinesis_start_tick_s": float("nan"),
             "cytokinesis_complete_tick_s": float("nan"),
-            "dna_mass_g": float("nan"),
-            "rna_mass_g": float("nan"),
-            "protein_mass_g": float("nan"),
+            "dna_mass_g": float(mass_da.dna_da / AVOGADRO),
+            "rna_mass_g": float(mass_da.rna_da / AVOGADRO),
+            "protein_mass_g": float(mass_da.protein_da / AVOGADRO),
             "cell_dry_mass_reference_g": _to_float(row.get("cell_dry_mass_g"), default=float("nan")),
             "metabolite_pools": metabolite_pools,
         }
