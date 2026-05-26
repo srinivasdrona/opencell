@@ -71,6 +71,7 @@ from opencell.vivarium.karr_request_calculators import (
     RequestCalculatorD2,
     RequestCalculatorMetabolism,
     RequestCalculatorPD,
+    RequestCalculatorPTransloc,
     RequestCalculatorProteinPathway,
     RequestCalculatorRibAsm,
     RequestCalculatorRNAPathway,
@@ -700,6 +701,7 @@ def build_karr_chassis_v3(
     )
     d2_proc = MacromolecularComplexationProcess({"time_step": time_step_s})
     decay_proc = ProteinDecayLightProcess({"time_step": time_step_s})
+    p_trans_proc = KarrProteinTranslocationProcess({"time_step": time_step_s})
 
     allocation_substrates = sorted(
         set(m1_model.raw["ids"]["substrate_wcm_585"])
@@ -708,12 +710,14 @@ def build_karr_chassis_v3(
         | set(m3_proc.allocation_substrate_wids)
         | set(d2_proc.substrate_wids)
         | set(decay_proc.substrate_wids)
+        | set(p_trans_proc.allocation_substrate_wids)
     )
     consumer_processes: list[tuple[str, list[str]]] = [
         (m2_proc.name, list(m2_proc.allocation_substrate_wids)),
         (m3_proc.name, list(m3_proc.allocation_substrate_wids)),
         ("karr_macromolecular_complexation", list(d2_proc.substrate_wids)),
         ("karr_protein_decay_light", ["ATP", "H2O"]),
+        (p_trans_proc.name, list(p_trans_proc.allocation_substrate_wids)),
     ]
     if m1_proc.allocation_substrate_wids:
         consumer_processes.insert(0, (m1_proc.name, list(m1_proc.allocation_substrate_wids)))
@@ -728,6 +732,9 @@ def build_karr_chassis_v3(
     req_metabolism = RequestCalculatorMetabolism({"metabolism_proc": m1_proc})
     req_transcription = RequestCalculatorTranscription({"transcription_proc": m2_proc})
     req_translation = RequestCalculatorTranslation({"translation_proc": m3_proc})
+    req_protein_translocation = RequestCalculatorPTransloc(
+        {"protein_translocation_proc": p_trans_proc}
+    )
 
     rxn_ids = m1_model.rxn_wcm_ids_645
     m1_sub_ids = [str(wid) for wid in m1_model.raw["ids"]["substrate_wcm_585"]]
@@ -791,6 +798,12 @@ def build_karr_chassis_v3(
             "requests": ("_internal_requests",),
             "substrates_allocated": ("_internal_substrates_allocated",),
         },
+        "karr_protein_translocation": {
+            "substrates": ("substrates",),
+            "protein": ("protein",),
+            "requests": ("_internal_requests_ptrans",),
+            "substrates_allocated": ("substrates_allocated",),
+        },
         "request_calculator_d2": {
             "complex": ("complex",),
             "requests": ("requests",),
@@ -810,6 +823,11 @@ def build_karr_chassis_v3(
             "complex": ("complex",),
             "requests": ("requests",),
         },
+        "request_calculator_protein_translocation": {
+            "substrates": ("substrates",),
+            "protein": ("protein",),
+            "requests": ("requests",),
+        },
         "karr_allocation_step": {
             "substrates": ("substrates",),
             "requests": ("requests",),
@@ -825,7 +843,10 @@ def build_karr_chassis_v3(
         },
         "substrates": initial_substrates,
         "rna": {"counts": rna_init},
-        "protein": {"counts": prot_init},
+        "protein": {
+            "counts": prot_init,
+            "location": {wid: "cytoplasm" for wid in p_trans_proc.translocatable_wids},
+        },
         "complex": {"counts": complex_counts},
     }
     if dynamic_bounds:
@@ -844,6 +865,7 @@ def build_karr_chassis_v3(
             "karr_translation_v3": m3_proc,
             "karr_macromolecular_complexation": d2_proc,
             "karr_protein_decay_light": decay_proc,
+            "karr_protein_translocation": p_trans_proc,
         },
         steps={
             "request_calculator_d2": req_d2,
@@ -851,6 +873,7 @@ def build_karr_chassis_v3(
             "request_calculator_metabolism": req_metabolism,
             "request_calculator_transcription": req_transcription,
             "request_calculator_translation": req_translation,
+            "request_calculator_protein_translocation": req_protein_translocation,
             "karr_allocation_step": allocation_step,
         },
         flow={
@@ -859,12 +882,14 @@ def build_karr_chassis_v3(
             "request_calculator_metabolism": [],
             "request_calculator_transcription": [],
             "request_calculator_translation": [],
+            "request_calculator_protein_translocation": [],
             "karr_allocation_step": [
                 ("request_calculator_d2",),
                 ("request_calculator_pd",),
                 ("request_calculator_metabolism",),
                 ("request_calculator_transcription",),
                 ("request_calculator_translation",),
+                ("request_calculator_protein_translocation",),
             ],
         },
         topology=topology,
@@ -999,7 +1024,7 @@ def build_karr_chassis_v4(
         | set(pp2_consumed)
         | set(p_mod_consumed)
         | set(p_fold_consumed)
-        | set(p_trans_proc.vector_wids)
+        | set(p_trans_proc.allocation_substrate_wids)
         | set(p_activation_proc.substrate_wids)
         | {ftsz_proc.gtp_wid}
     )
@@ -1019,7 +1044,7 @@ def build_karr_chassis_v4(
         (pp2_proc.name, pp2_consumed),
         (p_mod_proc.name, p_mod_consumed),
         (p_fold_proc.name, p_fold_consumed),
-        (p_trans_proc.name, list(p_trans_proc.vector_wids)),
+        (p_trans_proc.name, list(p_trans_proc.allocation_substrate_wids)),
         (ftsz_proc.name, [ftsz_proc.gtp_wid]),
     ]
     if m1_proc.allocation_substrate_wids:
@@ -1057,6 +1082,9 @@ def build_karr_chassis_v4(
     )
     req_transcription = RequestCalculatorTranscription({"transcription_proc": m2_proc})
     req_translation = RequestCalculatorTranslation({"translation_proc": m3_proc})
+    req_protein_translocation = RequestCalculatorPTransloc(
+        {"protein_translocation_proc": p_trans_proc}
+    )
 
     rxn_ids = m1_model.rxn_wcm_ids_645
     m1_sub_ids = [str(wid) for wid in m1_model.raw["ids"]["substrate_wcm_585"]]
@@ -1268,6 +1296,11 @@ def build_karr_chassis_v4(
             "complex": ("complex",),
             "requests": ("requests",),
         },
+        "request_calculator_protein_translocation": {
+            "substrates": ("substrates",),
+            "protein": ("protein",),
+            "requests": ("requests",),
+        },
         "karr_allocation_step": {
             "substrates": ("substrates",),
             "requests": ("requests",),
@@ -1352,6 +1385,7 @@ def build_karr_chassis_v4(
             "request_calculator_metabolism": req_metabolism,
             "request_calculator_transcription": req_transcription,
             "request_calculator_translation": req_translation,
+            "request_calculator_protein_translocation": req_protein_translocation,
             "karr_allocation_step": allocation_step,
         },
         flow={
@@ -1364,6 +1398,7 @@ def build_karr_chassis_v4(
             "request_calculator_metabolism": [],
             "request_calculator_transcription": [],
             "request_calculator_translation": [],
+            "request_calculator_protein_translocation": [],
             "karr_allocation_step": [
                 ("request_calculator_d2",),
                 ("request_calculator_pd",),
@@ -1374,6 +1409,7 @@ def build_karr_chassis_v4(
                 ("request_calculator_metabolism",),
                 ("request_calculator_transcription",),
                 ("request_calculator_translation",),
+                ("request_calculator_protein_translocation",),
             ],
         },
         topology=topology,
@@ -1529,7 +1565,7 @@ def build_karr_chassis_v5(
         | set(pp2_consumed)
         | set(p_mod_consumed)
         | set(p_fold_consumed)
-        | set(p_trans_proc.vector_wids)
+        | set(p_trans_proc.allocation_substrate_wids)
         | set(p_activation_proc.substrate_wids)
         | {rep_init_proc.atp_wid, rep_init_proc.water_wid}
         | set(rep_proc.dntp_wids)
@@ -1560,7 +1596,7 @@ def build_karr_chassis_v5(
                 (pp2_proc.name, pp2_consumed),
                 (p_mod_proc.name, p_mod_consumed),
                 (p_fold_proc.name, p_fold_consumed),
-                (p_trans_proc.name, list(p_trans_proc.vector_wids)),
+                (p_trans_proc.name, list(p_trans_proc.allocation_substrate_wids)),
                 (rep_init_proc.name, [rep_init_proc.atp_wid, rep_init_proc.water_wid]),
                 (rep_proc.name, [*rep_proc.dntp_wids, rep_proc.atp_wid]),
                 (supercoil_proc.name, [supercoil_proc.atp_wid, supercoil_proc.h2o_wid]),
@@ -1606,6 +1642,9 @@ def build_karr_chassis_v5(
     )
     req_transcription = RequestCalculatorTranscription({"transcription_proc": m2_proc})
     req_translation = RequestCalculatorTranslation({"translation_proc": m3_proc})
+    req_protein_translocation = RequestCalculatorPTransloc(
+        {"protein_translocation_proc": p_trans_proc}
+    )
 
     rxn_ids = m1_model.rxn_wcm_ids_645
     m1_sub_ids = [str(wid) for wid in m1_model.raw["ids"]["substrate_wcm_585"]]
@@ -1887,6 +1926,11 @@ def build_karr_chassis_v5(
             "protein": ("protein",),
             "requests": ("requests",),
         },
+        "request_calculator_protein_translocation": {
+            "substrates": ("substrates",),
+            "protein": ("protein",),
+            "requests": ("requests",),
+        },
         "request_calculator_metabolism": {
             "requests": ("requests",),
         },
@@ -2025,6 +2069,7 @@ def build_karr_chassis_v5(
             "request_calculator_trna": req_trna,
             "request_calculator_rna_pathway": req_rna,
             "request_calculator_protein_pathway": req_protein,
+            "request_calculator_protein_translocation": req_protein_translocation,
             "request_calculator_metabolism": req_metabolism,
             "request_calculator_transcription": req_transcription,
             "request_calculator_translation": req_translation,
@@ -2038,6 +2083,7 @@ def build_karr_chassis_v5(
             "request_calculator_trna": [],
             "request_calculator_rna_pathway": [],
             "request_calculator_protein_pathway": [],
+            "request_calculator_protein_translocation": [],
             "request_calculator_metabolism": [],
             "request_calculator_transcription": [],
             "request_calculator_translation": [],
@@ -2048,6 +2094,7 @@ def build_karr_chassis_v5(
                 ("request_calculator_trna",),
                 ("request_calculator_rna_pathway",),
                 ("request_calculator_protein_pathway",),
+                ("request_calculator_protein_translocation",),
                 ("request_calculator_metabolism",),
                 ("request_calculator_transcription",),
                 ("request_calculator_translation",),
