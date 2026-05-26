@@ -1,4 +1,41 @@
-"""Vivarium Process port of Karr's ProteinTranslocation flow."""
+"""Karr protein translocation -- Karr-light port of MATLAB +process/ProteinTranslocation.m
+
+SCOPE DECLARATION (non-parity)
+==============================
+
+This module is a **deliberate scope reduction** of Karr's MATLAB
+`ProteinTranslocation.m::evolveState`. It is NOT a faithful per-line port.
+
+Karr-light reductions vs `ProteinTranslocation.m::evolveState`:
+
+  1. Enzyme capacity computed from raw enzyme counts. MATLAB scales by
+     `translocaseSpecificRate * stepSizeSec` first.
+  2. Two ordered phases (SRP-class then direct-class). MATLAB uses one mixed
+     event queue with `randperm(totalCopies)`.
+  3. Species-batch consumption. MATLAB consumes per-monomer-copy with partial
+     progress; this module accepts/rejects all copies of a species at once.
+  4. `continue` on insufficiency. MATLAB breaks at first infeasible sampled
+     monomer.
+  5. Decrements enzyme-count proxies; MATLAB decrements capacity variables in
+     `aa-translocated` units.
+  6. Writes only `protein.location`. MATLAB moves monomer counts between
+     cytosol and destination compartments explicitly.
+  7. Ignores `timestep` (`del timestep`). MATLAB scales capacity by `stepSizeSec`.
+
+Preserved:
+  - SRP/direct pathway split for type sorting.
+  - GTP-per-monomer fixture loading.
+
+OpenCell additions (axis-C ✗; remove or gate during P3 cleanup):
+  - `max(0, np.floor(SRP_GTPUsedPerMonomer))` extra floor at line 132.
+  - `max(1, monomer_len)` at line 175.
+  - `max(1, ceil(monomer_len / aa_per_atp))` at line 176.
+
+Audit: Track-P2 (2026-05-26). Karr-light status: declared.
+
+---
+
+Vivarium Process port of Karr's ProteinTranslocation flow."""
 
 from __future__ import annotations
 
