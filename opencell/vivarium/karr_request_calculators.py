@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Any
 
 import numpy as np
 from vivarium.core.process import Step
 
+from opencell.m1.compartmented import AVOGADRO, SECONDS_PER_HOUR
 from opencell.m3 import translation_v2 as tl_v2
 
 
@@ -631,7 +634,13 @@ class RequestCalculatorMetabolism(Step):
     """Emit allocator requests for dynamic-bounds metabolism substrate demand."""
 
     name = "request_calculator_metabolism"
-    defaults: dict[str, Any] = {"metabolism_proc": None}
+    defaults: dict[str, Any] = {
+        "metabolism_proc": None,
+        "parameters_fixture_path": None,
+        "include_growth_coupled_gam": True,
+        "cell_dry_mass_g": None,
+        "growth_rate_per_s": None,
+    }
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
         super().__init__(parameters)
@@ -640,6 +649,19 @@ class RequestCalculatorMetabolism(Step):
             raise ValueError("RequestCalculatorMetabolism requires parameter: metabolism_proc")
         self._m1_proc = m1_proc
         self._request_wids = list(self._m1_proc.allocation_substrate_wids)
+        self._atp_wid = "ATP" if "ATP" in self._request_wids else None
+
+        params_doc = self._load_parameters_fixture_doc(self.parameters.get("parameters_fixture_path"))
+        metabolism_params = params_doc.get("processes", {}).get("Metabolism", {})
+        self._ngam_mmol_per_gdw_h = float(
+            metabolism_params.get("nonGrowthAssociatedMaintenance", 0.0)
+        )
+        self._gam_mmol_per_mmol_biomass = float(
+            metabolism_params.get("growthAssociatedMaintenance", 0.0)
+        )
+        self._include_growth_coupled_gam = bool(self.parameters.get("include_growth_coupled_gam", True))
+        self._cell_dry_mass_g = self._resolve_cell_dry_mass_g(params_doc)
+        self._growth_rate_per_s = self._resolve_growth_rate_per_s(params_doc)
 
     def ports_schema(self) -> dict[str, Any]:
         return {
@@ -652,7 +674,7 @@ class RequestCalculatorMetabolism(Step):
         }
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
-        del timestep, states
+        del states
         if not bool(self._m1_proc.use_allocator_budget):
             return {"requests": {self._m1_proc.name: {wid: 0.0 for wid in self._request_wids}}}
 
@@ -660,7 +682,75 @@ class RequestCalculatorMetabolism(Step):
             wid: max(0.0, float(self._m1_proc._last_allocation_demand.get(wid, 0.0)))
             for wid in self._request_wids
         }
+        if self._atp_wid is not None:
+            requests[self._atp_wid] = max(
+                requests[self._atp_wid],
+                self._atp_floor_request_for_tick(float(timestep)),
+            )
         return {"requests": {self._m1_proc.name: requests}}
+
+    @staticmethod
+    def _default_parameters_fixture_path() -> Path:
+        return Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "parameters.json"
+
+    @classmethod
+    def _load_parameters_fixture_doc(cls, fixture_path: str | Path | None) -> dict[str, Any]:
+        path = Path(fixture_path) if fixture_path is not None else cls._default_parameters_fixture_path()
+        payload = json.loads(path.read_text())
+        if not isinstance(payload, dict):
+            raise ValueError(f"Invalid parameters fixture payload at {path}")
+        return payload
+
+    def _resolve_cell_dry_mass_g(self, params_doc: dict[str, Any]) -> float:
+        explicit = self.parameters.get("cell_dry_mass_g")
+        if explicit is not None:
+            return max(0.0, float(explicit))
+
+        model = getattr(self._m1_proc, "model", None)
+        if model is not None:
+            stored_runtime = getattr(model, "stored_runtime", {})
+            if isinstance(stored_runtime, dict):
+                for key in ("cell_dry_total_mass_g", "cell_initial_dry_weight_g"):
+                    if key in stored_runtime:
+                        return max(0.0, float(stored_runtime[key]))
+
+        mass_state = params_doc.get("states", {}).get("Mass", {})
+        return max(0.0, float(mass_state.get("cellInitialDryWeight", 0.0)))
+
+    def _resolve_growth_rate_per_s(self, params_doc: dict[str, Any]) -> float:
+        explicit = self.parameters.get("growth_rate_per_s")
+        if explicit is not None:
+            return max(0.0, float(explicit))
+
+        model = getattr(self._m1_proc, "model", None)
+        if model is not None:
+            stored_runtime = getattr(model, "stored_runtime", {})
+            if isinstance(stored_runtime, dict):
+                for key in ("meanInitialGrowthRate_per_s", "growth0_per_s", "growth_per_s"):
+                    if key in stored_runtime:
+                        return max(0.0, float(stored_runtime[key]))
+
+        met_state = params_doc.get("states", {}).get("MetabolicReaction", {})
+        return max(0.0, float(met_state.get("meanInitialGrowthRate", 0.0)))
+
+    def _atp_floor_request_for_tick(self, timestep: float) -> float:
+        tick = max(0.0, float(timestep))
+        ngam_mmol = (
+            self._ngam_mmol_per_gdw_h
+            * self._cell_dry_mass_g
+            * tick
+            / float(SECONDS_PER_HOUR)
+        )
+        gam_mmol = 0.0
+        if self._include_growth_coupled_gam:
+            gam_mmol = (
+                self._gam_mmol_per_mmol_biomass
+                * self._growth_rate_per_s
+                * self._cell_dry_mass_g
+                * tick
+            )
+        total_mmol = max(0.0, ngam_mmol + gam_mmol)
+        return total_mmol * 1e-3 * float(AVOGADRO)
 
 
 __all__ = [
