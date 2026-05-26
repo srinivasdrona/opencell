@@ -1,4 +1,40 @@
-"""Vivarium Process wrapper for Karr-native M1 metabolism.
+"""Karr metabolism -- Karr-light port of MATLAB +process/Metabolism.m
+
+SCOPE DECLARATION (non-parity)
+==============================
+
+This module is a **deliberate scope reduction** of Karr's MATLAB
+`Metabolism.m::evolveState`. It is NOT a faithful per-line port.
+
+Karr-light reductions vs `Metabolism.m::evolveState`:
+
+  1. Static-mode (default) skips per-tick substrate writeback. MATLAB
+     `evolveState` always writes uptake/recycling/new-production/unaccounted-ATP
+     stoichiometry; static mode here only writes `fluxs` and `growth`.
+  2. Dynamic mode writes a 24-key subset of substrates; MATLAB writes the full
+     substrate matrix each tick.
+  3. Maintenance is encoded as an LP-bound term (`atpm_col` lower bound). MATLAB
+     applies maintenance as an explicit ATP/H2O -> ADP/PI/H stoichiometric update.
+     After Phase P0 NGAM removal, the LP-bound term is gated behind
+     `karr_parity_mode`.
+  4. LP writeback collapses staged substrate updates (external exchange / internal
+     exchange / new production / unaccounted energy) into a single `S @ v` aggregate.
+  5. Molecule-count updates are deterministic float writes (`accumulate`). MATLAB
+     uses `randStream.stochasticRound` everywhere.
+
+Preserved:
+  - LP solve over Karr's stoichiometric matrix.
+  - Flux publication interface.
+
+OpenCell additions:
+  - `_atp_floor_request_for_tick` (removed in Phase P0 unless gated).
+  - allocation-port indirection.
+
+Audit: Track-P2 (2026-05-26). Karr-light status: declared.
+
+---
+
+Vivarium Process wrapper for Karr-native M1 metabolism.
 
 Two operating modes (selected by the ``dynamic_bounds`` parameter):
 
