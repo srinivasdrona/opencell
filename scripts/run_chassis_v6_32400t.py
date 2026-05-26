@@ -110,6 +110,40 @@ def _collect_leaf_updaters(node: Any) -> dict[str, str]:
     return out
 
 
+def _topology_path_tuple(path: Any) -> tuple[str, ...]:
+    if isinstance(path, (tuple, list)):
+        return tuple(str(part) for part in path)
+    return ()
+
+
+def _iter_numeric_leaf_writes(node: Any, prefix: tuple[str, ...] = ()) -> list[tuple[tuple[str, ...], float]]:
+    if isinstance(node, dict):
+        out: list[tuple[tuple[str, ...], float]] = []
+        for key, value in node.items():
+            out.extend(_iter_numeric_leaf_writes(value, prefix + (str(key),)))
+        return out
+    if prefix and isinstance(node, (int, float, np.number)):
+        return [(prefix, float(node))]
+    return []
+
+
+def _nested_get(mapping: Any, path: tuple[str, ...], default: Any = 0.0) -> Any:
+    current = mapping
+    for key in path:
+        if not isinstance(current, dict):
+            return default
+        if key in current:
+            current = current[key]
+            continue
+        if key.lstrip("-").isdigit():
+            int_key = int(key)
+            if int_key in current:
+                current = current[int_key]
+                continue
+        return default
+    return current
+
+
 def _division_detected(state: dict[str, Any]) -> bool:
     cell = state.get("cell", {})
     if bool(cell.get("division_complete", False)):
@@ -244,17 +278,21 @@ class DiagnosticCollector:
     def _patch_entities(self) -> None:
         for entity_name, entity_obj in self._entities.items():
             topology_entry = self._composite.topology.get(entity_name, {})
-            shared_substrate_port = (
-                isinstance(topology_entry, dict)
-                and tuple(topology_entry.get("substrates", ())) == ("substrates",)
-            )
-            substrate_updaters: dict[str, str] = {}
-            if shared_substrate_port:
-                try:
-                    schema = entity_obj.ports_schema()
-                    substrate_updaters = _collect_leaf_updaters(schema.get("substrates", {}))
-                except Exception:
-                    substrate_updaters = {}
+            shared_ports: dict[str, tuple[str, ...]] = {}
+            if isinstance(topology_entry, dict):
+                for port_name, store_path in topology_entry.items():
+                    path_tuple = _topology_path_tuple(store_path)
+                    if path_tuple:
+                        shared_ports[str(port_name)] = path_tuple
+
+            port_updaters: dict[str, dict[str, str]] = {}
+            try:
+                schema = entity_obj.ports_schema()
+                if isinstance(schema, dict):
+                    for port_name in schema:
+                        port_updaters[str(port_name)] = _collect_leaf_updaters(schema.get(port_name, {}))
+            except Exception:
+                port_updaters = {}
             original_next_update = entity_obj.next_update
 
             def wrapped_next_update(
@@ -263,8 +301,8 @@ class DiagnosticCollector:
                 *,
                 _entity_name: str = entity_name,
                 _original: Any = original_next_update,
-                _shared: bool = shared_substrate_port,
-                _updaters: dict[str, str] = substrate_updaters,
+                _shared_ports: dict[str, tuple[str, ...]] = shared_ports,
+                _port_updaters: dict[str, dict[str, str]] = port_updaters,
             ) -> dict[str, Any]:
                 tick = int(self._current_tick["tick"])
                 try:
@@ -275,30 +313,38 @@ class DiagnosticCollector:
 
                 if update is None:
                     update = {}
-                if not (_shared and isinstance(update, dict)):
+                if not (isinstance(update, dict) and _shared_ports):
                     return update
 
-                port_update = update.get("substrates", {})
-                if not isinstance(port_update, dict):
-                    return update
-                current_substrates = states.get("substrates", {})
                 writer = self.process_trace_writers[_entity_name]
-                for wid, raw_value in port_update.items():
-                    if not isinstance(raw_value, (int, float, np.number)):
+                for port_name, port_update in update.items():
+                    port_name_str = str(port_name)
+                    store_path = _shared_ports.get(port_name_str)
+                    if store_path is None or not isinstance(port_update, dict):
                         continue
-                    wid_str = str(wid)
-                    raw = float(raw_value)
-                    updater = _updaters.get(wid_str, "accumulate")
-                    if updater == "set":
-                        baseline = _to_float(current_substrates.get(wid_str, 0.0), default=0.0)
-                        delta = raw - baseline
-                    else:
-                        delta = raw
-                    if delta == 0.0:
-                        continue
-                    self.per_tick_process_sums[wid_str] += float(delta)
-                    if tick % self._process_trace_stride == 0:
-                        writer.writerow([tick, _entity_name, wid_str, f"{delta:.12g}"])
+
+                    current_port_state: dict[str, Any] = {}
+                    if isinstance(states, dict):
+                        raw_port_state = states.get(port_name_str, {})
+                        if isinstance(raw_port_state, dict):
+                            current_port_state = raw_port_state
+                    updaters = _port_updaters.get(port_name_str, {})
+
+                    for key_path, raw in _iter_numeric_leaf_writes(port_update):
+                        wid_str = key_path[-1]
+                        updater = updaters.get(wid_str, "accumulate")
+                        if updater == "set":
+                            baseline = _to_float(_nested_get(current_port_state, key_path, default=0.0), default=0.0)
+                            delta = raw - baseline
+                        else:
+                            delta = raw
+                        if delta == 0.0:
+                            continue
+                        # Keep conservation accounting on substrate writes only.
+                        if store_path and store_path[0] == "substrates":
+                            self.per_tick_process_sums[wid_str] += float(delta)
+                        if tick % self._process_trace_stride == 0:
+                            writer.writerow([tick, _entity_name, wid_str, f"{delta:.12g}"])
                 return update
 
             entity_obj.next_update = wrapped_next_update
@@ -628,14 +674,14 @@ def run_full_cycle(
             json.dump(division_payload, f, indent=2, sort_keys=True)
             f.write("\n")
 
+    diagnostics.close()
+
     trajectory_pkl_path = out_dir / "trajectory.pkl"
     trajectory_payload = build_e2_payload(
         out_dir,
         reference_fixture=ROOT / "data" / "phase_e" / "v6_trajectory_32400s.pkl",
     )
     write_payload(trajectory_payload, trajectory_pkl_path)
-
-    diagnostics.close()
 
     full_path = _compress_if_large(full_path)
 
