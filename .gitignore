@@ -97,3 +97,7 @@ HANDOFF_AUTO.md
 
 probe_*.log
 
+
+PROMPT_*.md
+.codex_*_pid.txt
+
