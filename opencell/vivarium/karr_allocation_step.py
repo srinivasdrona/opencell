@@ -15,6 +15,12 @@ from opencell.m1 import karr_metabolism as km
 # normal sim runs so allocation bugs surface at the first offending tick.
 ASSERT_POSITIVE_COUNTS = True
 
+# Back-compat aliases observed in composition/allocator audits.
+KEY_ALIASES: dict[str, str] = {
+    "d2_real": "karr_macromolecular_complexation",
+    "protein_decay_light": "karr_protein_decay_light",
+}
+
 
 class NegativeCountsError(RuntimeError):
     """Raised when the allocator detects a negative molecule count in
@@ -70,6 +76,41 @@ def _default_consumer_processes() -> list[tuple[str, list[str]]]:
     ]
 
 
+def _canonical_process_key(process_key: str) -> str:
+    key = str(process_key)
+    return KEY_ALIASES.get(key, key)
+
+
+def _normalize_consumer_processes(
+    consumers: list[tuple[str, list[str]]],
+) -> list[tuple[str, list[str]]]:
+    merged: dict[str, list[str]] = {}
+    for proc_name, wids in consumers:
+        canonical_name = _canonical_process_key(str(proc_name))
+        canonical_wids = merged.setdefault(canonical_name, [])
+        seen = set(canonical_wids)
+        for wid in wids:
+            wid_str = str(wid)
+            if wid_str in seen:
+                continue
+            canonical_wids.append(wid_str)
+            seen.add(wid_str)
+    return list(merged.items())
+
+
+def _normalize_requests(requests: dict[str, Any]) -> dict[str, dict[str, float]]:
+    normalized: dict[str, dict[str, float]] = {}
+    for proc_name, reqs_by_wid in requests.items():
+        canonical_name = _canonical_process_key(str(proc_name))
+        canonical_reqs = normalized.setdefault(canonical_name, {})
+        if not isinstance(reqs_by_wid, dict):
+            continue
+        for wid, raw_value in reqs_by_wid.items():
+            wid_str = str(wid)
+            canonical_reqs[wid_str] = canonical_reqs.get(wid_str, 0.0) + float(raw_value)
+    return normalized
+
+
 class KarrAllocationStep(Step):
     """Allocate shared substrates by Karr's per-WID proportional fair share."""
 
@@ -80,7 +121,12 @@ class KarrAllocationStep(Step):
     }
 
     def ports_schema(self) -> dict[str, Any]:
-        consumers = self.parameters["consumer_processes"]
+        consumers = _normalize_consumer_processes(
+            [
+                (str(proc_name), [str(wid) for wid in wids])
+                for proc_name, wids in self.parameters["consumer_processes"]
+            ]
+        )
         substrate_wids = self.parameters["substrate_wids"]
         return {
             "substrates": {
@@ -121,7 +167,7 @@ class KarrAllocationStep(Step):
         del timestep
 
         substrates = states.get("substrates", {})
-        requests = states.get("requests", {})
+        requests = _normalize_requests(states.get("requests", {}))
 
         process_names = list(requests.keys())
         all_requested_wids: set[str] = set()

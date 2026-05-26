@@ -222,13 +222,23 @@ class ProteinDecayLightProcess(Process):
 
         consume_atp_h2o = bool(self.parameters["consume_atp_h2o"])
         if consume_atp_h2o:
-            substrate_update = {
-                wid: float(sub_deltas[i])
-                for i, wid in enumerate(self.substrate_wids)
-                if sub_deltas[i] != 0
-            }
             atp_need = float(abs(sub_deltas[self.substrate_index_atp]))
             h2o_need = float(abs(sub_deltas[self.substrate_index_water]))
+            if atp_need > 0.0 or h2o_need > 0.0:
+                substrate_update = {
+                    wid: float(sub_deltas[i])
+                    for i, wid in enumerate(self.substrate_wids)
+                    if sub_deltas[i] != 0
+                }
+            else:
+                # Fixture extraction currently yields all-zero ATP/H2O rows for
+                # filtered complexes. Avoid negative direct substrate writes when
+                # allocator demand is zero for this tick.
+                substrate_update = {
+                    wid: float(sub_deltas[i])
+                    for i, wid in enumerate(self.substrate_wids)
+                    if sub_deltas[i] > 0
+                }
         else:
             substrate_update = {}
             atp_need = 0.0
