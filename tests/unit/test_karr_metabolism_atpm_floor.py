@@ -26,6 +26,7 @@ if not hasattr(vivarium_process_module, "Step"):
 
     vivarium_process_module.Step = Step
 
+from opencell.m1 import calc_flux_bounds as cfb
 from opencell.m1 import karr_metabolism as km
 from opencell.vivarium.karr_metabolism import KarrMetabolismProcess
 
@@ -33,28 +34,64 @@ from opencell.vivarium.karr_metabolism import KarrMetabolismProcess
 PARAMS_FIXTURE = Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "parameters.json"
 
 
-def _build_dynamic_proc() -> KarrMetabolismProcess:
+def _build_dynamic_proc(*, karr_parity_mode: bool) -> KarrMetabolismProcess:
     return KarrMetabolismProcess(
         {
             "model": km.load_default(),
             "dynamic_bounds": True,
             "use_allocator_budget": False,
+            "karr_parity_mode": karr_parity_mode,
         }
     )
 
 
 def test_dynamic_process_loads_ngam_from_parameters_fixture() -> None:
-    proc = _build_dynamic_proc()
+    proc = _build_dynamic_proc(karr_parity_mode=False)
     params = json.loads(PARAMS_FIXTURE.read_text())
     expected = float(params["processes"]["Metabolism"]["nonGrowthAssociatedMaintenance"])
     assert proc._ngam_mmol_per_gdw_h == pytest.approx(expected, rel=0.0, abs=0.0)
 
 
-def test_dynamic_update_applies_atpm_floor_to_lb_override(monkeypatch: pytest.MonkeyPatch) -> None:
-    proc = _build_dynamic_proc()
+@pytest.mark.parametrize("karr_parity_mode", [False, True])
+def test_dynamic_update_gates_atpm_floor_on_karr_parity_mode(
+    monkeypatch: pytest.MonkeyPatch,
+    karr_parity_mode: bool,
+) -> None:
+    proc = _build_dynamic_proc(karr_parity_mode=karr_parity_mode)
     assert proc._atpm_fba_col is not None
 
     captured: dict[str, np.ndarray] = {}
+    forced_bounds = np.column_stack(
+        [
+            np.zeros(proc.model.n_reactions, dtype=float),
+            np.full(proc.model.n_reactions, np.inf, dtype=float),
+        ]
+    )
+    forced_bounds[int(proc._atpm_fba_col), 1] = 1e12
+
+    def _fake_compute_bounds(
+        substrates: np.ndarray,
+        enzymes: np.ndarray,
+        cell_dry_mass: float,
+        step_size_sec: float,
+        catalysis: np.ndarray,
+        enz_bounds: np.ndarray,
+        fba_reaction_bounds: np.ndarray,
+        dyn: cfb.M1DynamicsInputs,
+        apply_protein_bounds: bool = False,
+    ) -> np.ndarray:
+        del (
+            substrates,
+            enzymes,
+            cell_dry_mass,
+            step_size_sec,
+            catalysis,
+            enz_bounds,
+            fba_reaction_bounds,
+            dyn,
+            apply_protein_bounds,
+        )
+        return forced_bounds.copy()
 
     def _fake_solve_fba(
         model: km.KarrMetabolismModel,
@@ -82,6 +119,7 @@ def test_dynamic_update_applies_atpm_floor_to_lb_override(monkeypatch: pytest.Mo
             "n_nonzero": 0,
         }
 
+    monkeypatch.setattr(cfb, "compute_bounds", _fake_compute_bounds)
     monkeypatch.setattr(km, "solve_fba", _fake_solve_fba)
 
     shared_substrates = {sid: 1.0 for sid in proc._sub_ids}
@@ -94,4 +132,8 @@ def test_dynamic_update_applies_atpm_floor_to_lb_override(monkeypatch: pytest.Mo
     floor = float(proc._atpm_lb_floor_for_tick(1.0))
 
     assert lb_val <= ub_val + 1e-9
-    assert lb_val >= min(floor, ub_val) - 1e-9
+    if karr_parity_mode:
+        assert lb_val == pytest.approx(0.0, rel=0.0, abs=1e-12)
+        assert lb_val < floor
+    else:
+        assert lb_val >= min(floor, ub_val) - 1e-9

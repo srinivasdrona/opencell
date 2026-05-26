@@ -845,6 +845,8 @@ def build_karr_chassis_v4(
     condition: int = 1,
     dynamic_bounds: bool = False,
     enable_pool_replenishment: bool = False,
+    enforce_ngam_at_allocator: bool = True,
+    karr_parity_mode: bool = True,
 ) -> Engine:
     """Build the Phase-B chassis v4 with RNA/protein maturation processes."""
     from vivarium.core.engine import Engine
@@ -878,6 +880,7 @@ def build_karr_chassis_v4(
             "dynamic_bounds": dynamic_bounds,
             "enable_pool_replenishment": enable_pool_replenishment,
             "baseline_demand_per_s": baseline_demand,
+            "karr_parity_mode": karr_parity_mode,
         }
     )
     m2_proc = KarrTranscriptionV3Process(
@@ -974,12 +977,21 @@ def build_karr_chassis_v4(
                 (ftsz_proc.name, [ftsz_proc.gtp_wid]),
             ],
             "substrate_wids": allocation_substrates,
+            "enforce_ngam_at_allocator": (
+                False if karr_parity_mode else bool(enforce_ngam_at_allocator)
+            ),
+            "karr_parity_mode": karr_parity_mode,
         }
     )
     req_d2 = RequestCalculatorD2({"d2_real_proc": d2_proc})
     req_pd = RequestCalculatorPD({"pd_light_proc": decay_proc})
     req_ribasm = RequestCalculatorRibAsm({"ribasm_proc": ribasm_proc})
-    req_trna = RequestCalculatorTRNA({"trna_proc": trna_proc})
+    req_trna = RequestCalculatorTRNA(
+        {
+            "trna_proc": trna_proc,
+            "karr_parity_mode": karr_parity_mode,
+        }
+    )
     req_rna = RequestCalculatorRNAPathway(
         {
             "rna_processing_proc": rna_proc,
@@ -995,7 +1007,12 @@ def build_karr_chassis_v4(
             "protein_translocation_proc": p_trans_proc,
         }
     )
-    req_metabolism = RequestCalculatorMetabolism({"metabolism_proc": m1_proc})
+    req_metabolism = RequestCalculatorMetabolism(
+        {
+            "metabolism_proc": m1_proc,
+            "karr_parity_mode": karr_parity_mode,
+        }
+    )
     req_transcription = RequestCalculatorTranscription({"transcription_proc": m2_proc})
     req_translation = RequestCalculatorTranslation({"translation_proc": m3_proc})
 
@@ -1316,6 +1333,8 @@ def build_karr_chassis_v5(
     dynamic_bounds: bool = False,
     enable_pool_replenishment: bool = False,
     seed_from_fixture: bool = True,
+    enforce_ngam_at_allocator: bool = True,
+    karr_parity_mode: bool = True,
 ) -> Engine:
     """Build the Phase-C chassis v5 with integrated replication/cell-cycle processes."""
     from vivarium.core.engine import Engine
@@ -1350,6 +1369,7 @@ def build_karr_chassis_v5(
             "use_allocator_budget": True,
             "enable_pool_replenishment": enable_pool_replenishment,
             "baseline_demand_per_s": baseline_demand,
+            "karr_parity_mode": karr_parity_mode,
         }
     )
     m2_proc = KarrTranscriptionV3Process(
@@ -1492,12 +1512,21 @@ def build_karr_chassis_v5(
                 (cytokinesis_proc.name, [cytokinesis_proc.gtp_wid]),
             ],
             "substrate_wids": allocation_substrates,
+            "enforce_ngam_at_allocator": (
+                False if karr_parity_mode else bool(enforce_ngam_at_allocator)
+            ),
+            "karr_parity_mode": karr_parity_mode,
         }
     )
     req_d2 = RequestCalculatorD2({"d2_real_proc": d2_proc})
     req_pd = RequestCalculatorPD({"pd_light_proc": decay_proc})
     req_ribasm = RequestCalculatorRibAsm({"ribasm_proc": ribasm_proc})
-    req_trna = RequestCalculatorTRNA({"trna_proc": trna_proc})
+    req_trna = RequestCalculatorTRNA(
+        {
+            "trna_proc": trna_proc,
+            "karr_parity_mode": karr_parity_mode,
+        }
+    )
     req_rna = RequestCalculatorRNAPathway(
         {
             "rna_processing_proc": rna_proc,
@@ -1513,7 +1542,12 @@ def build_karr_chassis_v5(
             "protein_translocation_proc": p_trans_proc,
         }
     )
-    req_metabolism = RequestCalculatorMetabolism({"metabolism_proc": m1_proc})
+    req_metabolism = RequestCalculatorMetabolism(
+        {
+            "metabolism_proc": m1_proc,
+            "karr_parity_mode": karr_parity_mode,
+        }
+    )
     req_transcription = RequestCalculatorTranscription({"transcription_proc": m2_proc})
     req_translation = RequestCalculatorTranslation({"translation_proc": m3_proc})
 
@@ -1986,6 +2020,8 @@ def build_karr_chassis_v6(
     enable_pool_replenishment: bool = False,
     host_adhesion_gates_division: bool = False,
     seed_from_fixture: bool = True,
+    enforce_ngam_at_allocator: bool = True,
+    karr_parity_mode: bool = True,
 ) -> Any:
     """Build the Phase-D v6 composite (v5 + RNA decay + HostInteraction)."""
     del host_adhesion_gates_division
@@ -2004,6 +2040,8 @@ def build_karr_chassis_v6(
         dynamic_bounds=dynamic_bounds,
         enable_pool_replenishment=enable_pool_replenishment,
         seed_from_fixture=seed_from_fixture,
+        enforce_ngam_at_allocator=enforce_ngam_at_allocator,
+        karr_parity_mode=karr_parity_mode,
     )
 
     processes = dict(base_engine.processes)
@@ -2071,6 +2109,10 @@ def build_karr_chassis_v6(
         {
             "consumer_processes": consumer_processes,
             "substrate_wids": substrate_wids,
+            "enforce_ngam_at_allocator": (
+                False if karr_parity_mode else bool(enforce_ngam_at_allocator)
+            ),
+            "karr_parity_mode": karr_parity_mode,
         }
     )
     steps["karr_observability_step"] = KarrObservabilityStep(

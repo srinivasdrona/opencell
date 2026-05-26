@@ -136,6 +136,7 @@ class KarrMetabolismProcess(Process):
         "enable_pool_replenishment": False,
         "baseline_demand_per_s": None,
         "parameters_fixture_path": None,
+        "karr_parity_mode": True,
     }
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
@@ -149,6 +150,7 @@ class KarrMetabolismProcess(Process):
 
         self.dynamic_bounds: bool = bool(self.parameters["dynamic_bounds"])
         self.use_allocator_budget: bool = bool(self.parameters["use_allocator_budget"])
+        self.karr_parity_mode: bool = bool(self.parameters.get("karr_parity_mode", True))
         env_lp_writeback = _read_env_bool("OPENCELL_ENABLE_LP_WRITEBACK")
         self.enable_lp_writeback: bool = (
             env_lp_writeback
@@ -514,7 +516,7 @@ class KarrMetabolismProcess(Process):
 
         lb_override = bounds[:, 0].copy()
         floor_applied = False
-        if self._atpm_fba_col is not None:
+        if (not self.karr_parity_mode) and self._atpm_fba_col is not None:
             atpm_col = int(self._atpm_fba_col)
             atpm_floor = self._atpm_lb_floor_for_tick(float(timestep))
             atpm_ub = float(bounds[atpm_col, 1])
