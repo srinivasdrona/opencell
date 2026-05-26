@@ -706,6 +706,8 @@ class RequestCalculatorMetabolism(Step):
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         del states
+        if not self._request_wids:
+            return {"requests": {}}
         if not bool(self._m1_proc.use_allocator_budget):
             return {"requests": {self._m1_proc.name: {wid: 0.0 for wid in self._request_wids}}}
 
