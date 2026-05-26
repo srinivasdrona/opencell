@@ -1,4 +1,37 @@
-"""Vivarium Process port of Karr DNARepair with Karr-light pathway aggregation.
+"""Karr DNA repair -- Karr-light port of MATLAB +process/DNARepair.m
+
+SCOPE DECLARATION (non-parity)
+==============================
+
+This module is a **deliberate scope reduction** of Karr's MATLAB
+`DNARepair.m::evolveState`. It is NOT a faithful per-line port.
+
+Karr-light reductions vs `DNARepair.m::evolveState`:
+
+  1. NHEJ-like aggregation. MATLAB models distinct NER/HR/MMR pathways with
+     pathway-specific enzymes and substrates; this module collapses them into
+     an aggregate "repair" rate.
+  2. No per-substep execution ordering. MATLAB orders binding / nicking / patch
+     synthesis / ligation per damage site; this module updates all sites in
+     one tick.
+  3. Missing pathway coverage. MATLAB includes recA-driven HR initiation,
+     mismatch repair MutS/MutL; this module omits these branches.
+  4. Substrate accounting depth reduced. MATLAB consumes ATP/dNTPs/cofactors for
+     each repair event; this module uses an aggregate ATP debit.
+
+Preserved:
+  - High-level damage -> repair throughput rate.
+  - Damage site count tracking.
+
+OpenCell additions:
+  - Silent guards/floors at lines 172, 207, 215, 400, 402 (axis-C ✗; remove or gate).
+  - allocation-port indirection.
+
+Audit: Track-P2 (2026-05-26). Karr-light status: declared.
+
+---
+
+Vivarium Process port of Karr DNARepair with Karr-light pathway aggregation.
 
 Karr-light v1 scope:
 - Repair queued damage sites by pathway (BER, NER, HR, NHEJ-like fallback).
