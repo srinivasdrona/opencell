@@ -1,4 +1,38 @@
-"""Vivarium Process wrapper for M3 v2 mechanism-based translation.
+"""Karr translation v2 -- Karr-light port of MATLAB +process/Translation.m
+
+SCOPE DECLARATION (non-parity)
+==============================
+
+This module is a **deliberate scope reduction** of Karr's MATLAB
+`Translation.m::evolveState`. It is NOT a faithful per-line port.
+This declaration also applies to `karr_translation_v3.py` and
+`karr_translation.py`.
+
+Karr-light reductions vs `Translation.m::evolveState`:
+
+  1. Coarse, deterministic rate wrapper. No event ordering. MATLAB shuffles
+     subfunctions per tick with `randperm`.
+  2. No stochastic draws. MATLAB uses `stochasticRound` and `randsample` for
+     ribosome-event scheduling.
+  3. Full substrate write-back semantics absent. MATLAB updates GTP/ATP/H2O/PI/H
+     pools alongside polymerization; this module updates only the limited subset
+     in the allocation contract.
+  4. No per-codon sequence chemistry. MATLAB iterates codons; this module uses
+     aggregate rate * dt.
+
+Preserved:
+  - Overall translation-rate intent (residues/sec * ribosomes).
+  - Output contract for downstream modules.
+
+OpenCell additions:
+  - n_active_ribosomes clamp (axis-C ✗ at line 159; remove or gate during P3 cleanup).
+  - allocation-port indirection.
+
+Audit: Track-P2 (2026-05-26). Karr-light status: declared.
+
+---
+
+Vivarium Process wrapper for M3 v2 mechanism-based translation.
 
 Dynamic-pool discipline (A3 step 2, non-negotiable):
 - Read consumer inputs from ``complex.counts.<wid>`` inside every
