@@ -76,6 +76,95 @@ Anchor time estimates to observed Codex throughput, NOT human-developer intuitio
 - Pure design document (no code): ~5-10 min
 Copilot-side strategy/design work defaults to 5-10 min for a single artifact. Calendar-week estimates for AI-orchestrated work erode trust and are almost always wrong by 10-20×.
 
+### 12. Verify source-physics constraints at EVERY clamping layer
+When a constraint exists in the source physics (e.g., NGAM ATP-maintenance floor in Karr's
+FBA LP), do not assume that enforcing it at the canonical layer is sufficient. Trace the
+flow end-to-end and verify the constraint is enforced at every layer that can clamp the
+quantity to zero. In v5+ chassis the ATP flow has TWO gates:
+- `RequestCalculatorMetabolism.next_update` → tells the allocator how much ATP M1 wants
+- `karr_metabolism.py` LP solve → uses the allocated budget
+
+A constraint applied only at the LP is silently zeroed by the request layer if the request
+is zero. The 2026-05-26 NGAM audit (commit `613d36c`) caught the LP gap but the deferral
+reasoning ("dynamic_bounds will implicitly enforce NGAM") covered only the LP layer and
+missed that `use_allocator_budget=True` interposes an earlier gate. Decision:
+`ngam-explicit-floor-in-allocator-request` (2026-05-26).
+
+**Worked example — 5 gates on M1's ATP flow (in tick order):**
+1. `RequestCalculatorMetabolism.next_update` → returns 0 unless explicit floor is added.
+2. `KarrAllocationStep` request-clamp (`karr_allocation_step.py:154`) → `max(0, request)`.
+3. `KarrAllocationStep` pool-scale + floor (`:160-163`) → if `total_demand > pool`,
+   scales proportionally; `np.floor` zeros any sub-1-molecule request.
+4. `KarrMetabolismProcess._dynamic_update` "Bug 6b" clamp (`karr_metabolism.py:394-418`) →
+   silently clamps infeasible reactions; increments `bug6b_clamped_reactions_total` without
+   surfacing to the chassis.
+5. LP `lb`/`ub` arrays (`m1/karr_metabolism.py`) → no explicit ATPM lower bound; the LP
+   can solve to zero ATPM flux even when the chassis "wants" maintenance.
+
+A constraint enforced only at one of these gates is silently nullified by the others.
+The same 5-gate structure applies (with gates 4/5 absent) to all 9 allocator-coupled
+processes: D2, PD, RibAsm, TRNA, RNAPathway, ProteinPathway, Transcription, Translation,
+Metabolism. Each maintenance-class or always-on flux must be audited at gate 1.
+
+**Population-driven vs system-level constraints (Track-N3 finding, 2026-05-26):** Most
+process-level requests are naturally self-floored because their formula has the shape
+`sum(active_population_i × rate_i × dt)` — whenever a population (RNAPs, ribosomes,
+decaying complexes) is non-empty, the request is non-zero. Track-N3 audited the 8
+sibling RequestCalculators (D2, PD, RibAsm, TRNA, RNAPathway, ProteinPathway,
+Transcription, Translation) and found **none** of them was missing a floor of the NGAM
+class. They divide cleanly into `FLOOR_PRESENT` (population-driven: PD, Transcription,
+Translation) and `NO_FLOOR_NEEDED` (event-driven: D2, RibAsm, TRNA, RNAPathway,
+ProteinPathway). **Metabolism is uniquely vulnerable** because NGAM is a system-level
+constant tied to cell mass, with no population carrier. Lesson: when adding a new
+process to the chassis, classify its consumption pattern. Population-driven = safe by
+construction. Event-driven = safe. System-level = explicit floor needed at gate 1
+(request) AND gate 5 (LP lb) AND any other downstream constraint surface.
+
+### 13. Invariant-delta block on architectural changes
+Any PR or task that adds a new layer of indirection (a new mediator, a new config flag
+that changes the active code path, a new composer/wrapper, a new request/grant gate)
+must include a one-paragraph **invariant-delta block** before the work lands:
+
+```
+Invariant delta:
+- Prior architecture guaranteed: <list 3-5 invariants the old code held>
+- This change preserves: <which ones survive>
+- This change weakens / removes: <which ones do not — and why>
+- Deferred gap (if any): <named issue + owner + intended close>
+```
+
+This is cheap (~3 min) and catches the class of failure where the new layer silently
+nullifies a prior guarantee. Examples we missed and would have caught:
+- `use_allocator_budget=True` introduction: should have flagged "LP-layer NGAM
+  enforcement is now conditional on allocator handing through enough ATP" — exactly
+  the Track-N/N2 root cause.
+- Phase C chassis composer assembly (Day 10): should have flagged "individual process
+  tests assert shape but composer can produce a wired-and-silent chassis" — exactly
+  the Day-10 silent-chassis failure.
+
+### 14. Pre-mortem before any multi-agent fanout
+Before launching a swarm of >3 parallel agents on related work, write a 5-line
+**pre-mortem**: "if the integration of these N agents' outputs is broken, what are
+the top 3 most likely silent failure modes?" Log answers as expected-checks the
+integration smoke test must explicitly assert. This is the discipline whose absence
+caused Day 10 (13 agents in parallel, no integration-flow assertion ever written).
+
+### 15. Symmetry-break awareness
+Whenever you find one component that is structurally different from its siblings
+(e.g., system-level vs population-driven, single-instance vs many-instance,
+externally-driven vs self-driven), **the asymmetric one is the most likely site of
+a class-of-bug-that-doesn't-affect-the-others.** Audit it first, separately, with
+its own checklist. Track-N3 demonstrated this: Metabolism is the only system-level
+process in a sea of population-driven processes; it was the only one with the NGAM-
+class miss.
+
+### 16. End-to-end smoke before declaring a layer "done"
+A new layer is not done when its unit tests pass. It is done when an end-to-end
+run through the layer produces output that an outside observer would call sensible.
+For OpenCell that means: substrate pool deltas non-zero, transcription log non-empty,
+ATP balance within tolerance over a multi-tick window. Wire that smoke before
+declaring a layer ready for downstream consumers.
+
 ## Reference files to read FIRST (every session)
 1. `opencell/vivarium/karr_replication_initiation.py` — Phase C v1 pattern (DNA state, allocation, accumulate)
 2. `opencell/vivarium/karr_allocation_step.py` — request/allocate protocol
