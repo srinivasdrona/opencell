@@ -123,4 +123,4 @@ def test_zero_rnap_yields_zero_synth_and_zero_drain() -> None:
 
     deltas = np.array(list(update["rna"]["counts"].values()), dtype=float)
     assert np.all(deltas <= 0.0)
-    assert float(sum(update["substrates"].values())) == 0.0
+    assert float(sum(update.get("substrates", {}).values())) == 0.0
