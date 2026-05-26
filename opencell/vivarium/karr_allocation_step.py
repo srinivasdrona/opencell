@@ -70,6 +70,45 @@ def _default_consumer_processes() -> list[tuple[str, list[str]]]:
     ]
 
 
+_L3_REQUIRED_VECTOR_MEMBERS: dict[str, tuple[str, ...]] = {
+    # Track-A A4 / allocator_audit L3:
+    # - DNASupercoiling must request/allocate ATP+H2O
+    # - ProteinTranslocation must carry full ATP/GTP hydrolysis vector
+    #   (ATP/GTP/ADP/GDP/Pi/H2O/H) in allocator request+allocation schemas.
+    "karr_dna_supercoiling": ("ATP", "H2O"),
+    "karr_protein_translocation": ("ATP", "GTP", "ADP", "GDP", "PI", "H2O", "H"),
+}
+
+
+def _dedupe_preserve_order(items: list[str]) -> list[str]:
+    seen: set[str] = set()
+    out: list[str] = []
+    for item in items:
+        key = str(item)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(key)
+    return out
+
+
+def _normalize_consumer_process_vectors(
+    consumer_processes: list[tuple[str, list[str]]],
+) -> list[tuple[str, list[str]]]:
+    normalized: list[tuple[str, list[str]]] = []
+    for proc_name_raw, raw_wids in consumer_processes:
+        proc_name = str(proc_name_raw)
+        wids = _dedupe_preserve_order([str(wid) for wid in raw_wids])
+        required = _L3_REQUIRED_VECTOR_MEMBERS.get(proc_name, ())
+        # Vector-completeness hardening (A4): only augments consumers already
+        # present in this step; no process enrollment is performed here.
+        for wid in required:
+            if wid not in wids:
+                wids.append(wid)
+        normalized.append((proc_name, wids))
+    return normalized
+
+
 class KarrAllocationStep(Step):
     """Allocate shared substrates by Karr's per-WID proportional fair share."""
 
@@ -78,6 +117,11 @@ class KarrAllocationStep(Step):
         "consumer_processes": _default_consumer_processes(),
         "substrate_wids": _default_substrate_wids(),
     }
+
+    def __init__(self, parameters: dict[str, Any] | None = None) -> None:
+        super().__init__(parameters)
+        configured = list(self.parameters["consumer_processes"])
+        self.parameters["consumer_processes"] = _normalize_consumer_process_vectors(configured)
 
     def ports_schema(self) -> dict[str, Any]:
         consumers = self.parameters["consumer_processes"]
