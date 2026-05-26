@@ -655,6 +655,105 @@ class RequestCalculatorTranslation(_SafeDtMixin, Step):
         return {"requests": {self._tl_proc.name: requests}}
 
 
+class RequestCalculatorPTransloc(_SafeDtMixin, Step):
+    """Compute allocator requests for protein translocation substrate demand."""
+
+    name = "request_calculator_protein_translocation"
+    defaults: dict[str, Any] = {"protein_translocation_proc": None}
+
+    def __init__(self, parameters: dict[str, Any] | None = None) -> None:
+        super().__init__(parameters)
+        pt_proc = self.parameters.get("protein_translocation_proc")
+        if pt_proc is None:
+            raise ValueError(
+                "RequestCalculatorPTransloc requires parameter: protein_translocation_proc"
+            )
+        self._pt_proc = pt_proc
+        self._proc = pt_proc
+        self._request_wids = list(self._pt_proc.allocation_substrate_wids)
+        self._atp_wid = str(self._pt_proc.atp_wid)
+        self._gtp_wid = str(self._pt_proc.gtp_wid)
+        self._h2o_wid = str(self._pt_proc.h2o_wid)
+
+    def ports_schema(self) -> dict[str, Any]:
+        return {
+            "substrates": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self._request_wids
+            },
+            "protein": {
+                "counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                    for wid in sorted(set(self._pt_proc.protein_count_wids))
+                },
+                "unprocessed_counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                    for wid in self._pt_proc.translocatable_wids
+                },
+                "location": {
+                    wid: {"_default": "cytoplasm", "_updater": "set", "_emit": False}
+                    for wid in self._pt_proc.translocatable_wids
+                },
+            },
+            "requests": {
+                self._pt_proc.name: {
+                    wid: {"_default": 0.0, "_updater": "set", "_emit": False}
+                    for wid in self._request_wids
+                }
+            },
+        }
+
+    @staticmethod
+    def _read_nonnegative_count(state: dict[str, Any], wid: str) -> int:
+        return int(max(0.0, np.floor(float(state.get(wid, 0.0)))))
+
+    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        del timestep
+        protein_state = states.get("protein", {})
+        counts_state = protein_state.get("counts", {})
+        queue_counts_state = protein_state.get("unprocessed_counts", counts_state)
+        location_state = protein_state.get("location", {})
+        substrate_state = states.get("substrates", {})
+        requests = {wid: 0.0 for wid in self._request_wids}
+
+        pending: dict[str, int] = {
+            wid: self._read_nonnegative_count(queue_counts_state, wid)
+            for wid in self._pt_proc.translocatable_wids
+            if str(location_state.get(wid, "cytoplasm")) == "cytoplasm"
+            and self._read_nonnegative_count(queue_counts_state, wid) > 0
+        }
+        if not pending:
+            pending = {
+                wid: self._read_nonnegative_count(queue_counts_state, wid)
+                for wid in self._pt_proc.translocatable_wids
+                if self._read_nonnegative_count(queue_counts_state, wid) > 0
+            }
+        if not pending:
+            return {"requests": {self._pt_proc.name: requests}}
+
+        atp_need = 0.0
+        gtp_need = 0.0
+        for wid, count in pending.items():
+            atp_need += float(count) * float(self._pt_proc.atp_cost_by_wid.get(wid, 0))
+            if self._pt_proc.pathway_by_wid.get(wid) == "srp":
+                gtp_need += float(count) * float(self._pt_proc.srp_gtp_cost_per_monomer)
+
+        hydrolysis_need = atp_need + gtp_need
+        requests[self._atp_wid] = max(
+            max(0.0, atp_need),
+            max(0.0, float(substrate_state.get(self._atp_wid, 0.0))),
+        )
+        requests[self._gtp_wid] = max(
+            max(0.0, gtp_need),
+            max(0.0, float(substrate_state.get(self._gtp_wid, 0.0))),
+        )
+        requests[self._h2o_wid] = max(
+            max(0.0, hydrolysis_need),
+            max(0.0, float(substrate_state.get(self._h2o_wid, 0.0))),
+        )
+        return {"requests": {self._pt_proc.name: requests}}
+
+
 class RequestCalculatorMetabolism(Step):
     """Emit allocator requests for dynamic-bounds metabolism substrate demand."""
 
@@ -797,5 +896,6 @@ __all__ = [
     "RequestCalculatorProteinPathway",
     "RequestCalculatorTranscription",
     "RequestCalculatorTranslation",
+    "RequestCalculatorPTransloc",
     "RequestCalculatorMetabolism",
 ]
