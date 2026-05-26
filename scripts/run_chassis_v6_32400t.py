@@ -685,7 +685,7 @@ def run_full_cycle(
 def _run_git_rev_parse() -> str:
     import subprocess
 
-    out = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True)
+    out = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True)
     return out.strip()
 
 
