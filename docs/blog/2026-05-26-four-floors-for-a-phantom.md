@@ -74,4 +74,8 @@
 
 ---
 
-*Written while a 32,400-tick v6 trajectory runs in the background, validating the post-strip state of the chassis. Source decisions: `c1-false-positive-piecewise-constant-lp` and its parent `p0-phantom-invariant-eliminated-via-parity-flag` in the cross-project decision log. Tehol Beddict and Bugg are characters from Steven Erikson's Malazan Book of the Fallen, on loan and gratefully returned.*
+---
+
+*Postscript, 16:14. The canary landed. Thirty-two thousand four hundred ticks in twenty-one wall-clock minutes. ATP stayed flat at the LP fixed point, as predicted. Protein count rose from sixteen thousand two hundred and seventy-two to twenty-seven thousand four hundred and fifty-three — translation, which had been silent only yesterday, was firing through the entire cell cycle. Replication state machine alive, mass up three-point-seven percent, division still not reached. The strip did not break biology; it removed code that had not been helping it. Branch merged into main, four audit commits and one blog post in a single arc.*
+
+*Written while the canary ran. Source decisions: `c1-false-positive-piecewise-constant-lp` and its parent `p0-phantom-invariant-eliminated-via-parity-flag` in the cross-project decision log. Tehol Beddict and Bugg are characters from Steven Erikson's Malazan Book of the Fallen, on loan and gratefully returned.*
