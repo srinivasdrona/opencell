@@ -1,4 +1,72 @@
-"""Vivarium Process port of Karr's Replication (Karr-LIGHT v1).
+"""Karr replication -- Karr-light port of MATLAB +process/Replication.m
+
+SCOPE DECLARATION (non-parity)
+==============================
+
+This module is a **deliberate scope reduction** of Karr's MATLAB
+`Replication.m::evolveState`. It is NOT a faithful per-line port.
+This declaration is paired with `karr_replication_initiation.py`.
+
+Karr-light reductions vs `Replication.m` + `ReplicationInitiation.m::evolveState`:
+
+ReplicationInitiation:
+  1. DnaA complex identity tracking collapsed. MATLAB tracks ATP/ADP n-mer state
+     of each bound DnaA polymer (1mer through 7mer); this module tracks
+     aggregate site counts and projects ATP/ADP composition each tick.
+  2. Rate-weighted binding-site sampling replaced with uniform free-site pick.
+     MATLAB uses `bindProteinToChromosome(.., bindingRates, ..)` with box-specific
+     rates (8mer/9mer/R5/cooperativity); this module uses uniform Bernoulli.
+  3. `stochasticRound` and weighted `randsample` replaced with deterministic
+     rate * dt or per-site Bernoulli.
+  4. Release modeled as independent binomial drops per site; MATLAB models
+     release as explicit complex-state transitions (N-mer -> N-1mer + monomer)
+     with R1-4 layer protection logic.
+  5. Polymerization uses per-site Bernoulli; MATLAB uses global weighted
+     `randsample` over rate fields with explicit cooperativity.
+  6. Inactivation acts on free DnaA-ATP monomers; MATLAB targets free
+     DnaA_polymer_ATP and dissociates into ADP monomers with water-limited adjust.
+  7. ADP-reactivation step omits ATP -> ADP substrate bookkeeping that MATLAB
+     performs explicitly.
+  8. Aggregate-state write-back only; MATLAB writes detailed ATP/ADP n-mer
+     species per tick.
+
+Replication:
+  9. Explicit `replication_state` string state machine (idle/initiating/elongating/
+     complete) replaces MATLAB's physical-state-driven activity detection.
+  10. Deterministic single ordered fork-advance loop replaces MATLAB's
+      `randperm`-shuffled per-tick subfunction execution.
+  11. Per-tick missing substeps: ligation, SSB dissociation/rebinding, Okazaki
+      initiation/termination, replisome teardown.
+  12. Only `dNTP + ATP` consumed; MATLAB also consumes water and produces
+      ADP / phosphate / hydrogen / diphosphate as side products.
+  13. dNTP demand from global GC fraction; MATLAB uses strand-position
+      sequence counting.
+  14. Single global limiting scale; MATLAB computes per-strand limits from
+      accessibility / SSB / collision / topology, then enforces substrate limits.
+  15. Writes only `fork_position_bp` and completion; MATLAB writes chromosome
+      unwound/polymerized regions, strand breaks, enzyme complex state.
+
+Preserved:
+  - High-level initiation step order (activate -> inactivate -> polymerize ->
+    bind -> release -> reactivate).
+  - terC-position termination logic.
+  - DnaA fixture parameter set.
+
+OpenCell additions (axis-A invariant-source debt, mostly resolved in Phase P0):
+  - `kd1ADP`, `k_inact` enforced (declared-only in MATLAB; gated by `karr_parity_mode`).
+  - `kb2ATP` / `kb2ADP` not loaded (incomplete affinity-class coverage; left as
+    documented reduction).
+  - `r5_binding_boost` heuristic instead of Karr's `realmax` near-deterministic trigger.
+  - allocation-port indirection.
+
+For Karr-parity replication studies, this module is NOT suitable. Use the
+MATLAB original via the +sim/+process/Replication.m source path.
+
+Audit: Track-P2 (2026-05-26). Karr-light status: declared.
+
+---
+
+Vivarium Process port of Karr's Replication (Karr-LIGHT v1).
 
 Karr-LIGHT v1 scope:
 - consumes initiation state from pc-t1 via ``chromosome.replication_state``

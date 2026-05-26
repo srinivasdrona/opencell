@@ -1,4 +1,20 @@
-"""Vivarium Process port of Karr's replication initiation gate logic."""
+"""Karr replication initiation -- Karr-light port of MATLAB +process/ReplicationInitiation.m
+
+SCOPE DECLARATION (non-parity)
+==============================
+
+This module is a **deliberate scope reduction** of Karr's MATLAB
+`ReplicationInitiation.m::evolveState`. It is NOT a faithful per-line port.
+
+The combined replication-family scope declaration (covering both
+`Replication.m` and `ReplicationInitiation.m`) is maintained in
+`opencell/vivarium/karr_replication.py` and applies to this file.
+
+Audit: Track-P2 (2026-05-26). Karr-light status: declared.
+
+---
+
+Vivarium Process port of Karr's replication initiation gate logic."""
 
 from __future__ import annotations
 
