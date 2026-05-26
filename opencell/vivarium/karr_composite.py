@@ -150,10 +150,13 @@ CHASSIS_V6_EXPECTED_PROCESS_KEYS: tuple[str, ...] = (
     "karr_translation",
 )
 
-CHASSIS_V6_RUNTIME_IDENTITY_EXPECTED_CLASS_NAMES: dict[str, str] = {
+CHASSIS_V6_RUNTIME_IDENTITY_EXPECTED_CLASSES: dict[str, type[Any]] = {
     # Composition L0 currently flags only these runtime identity promotions.
-    "karr_transcription": "KarrTranscriptionV3Process",
-    "karr_translation": "KarrTranslationV3Process",
+    "karr_transcription": KarrTranscriptionV3Process,
+    "karr_translation": KarrTranslationV3Process,
+}
+CHASSIS_V6_RUNTIME_IDENTITY_EXPECTED_CLASS_QUALNAMES: dict[str, str] = {
+    key: cls.__qualname__ for key, cls in CHASSIS_V6_RUNTIME_IDENTITY_EXPECTED_CLASSES.items()
 }
 CHASSIS_V6_RUNTIME_IDENTITY_LEGACY_KEYS: tuple[str, ...] = (
     "karr_transcription_v3",
@@ -184,15 +187,17 @@ def assert_chassis_runtime_identity(chassis: Any) -> None:
     process_map = _resolve_process_map(chassis)
     failures: list[str] = []
 
-    for key, expected_cls_name in CHASSIS_V6_RUNTIME_IDENTITY_EXPECTED_CLASS_NAMES.items():
+    for key, expected_cls in CHASSIS_V6_RUNTIME_IDENTITY_EXPECTED_CLASSES.items():
         proc = process_map.get(key)
         if proc is None:
             failures.append(f"missing process key '{key}'")
             continue
-        observed_cls_name = proc.__class__.__name__
-        if observed_cls_name != expected_cls_name:
+        observed_cls = proc.__class__
+        if observed_cls is not expected_cls:
+            expected_class_path = f"{expected_cls.__module__}.{expected_cls.__qualname__}"
+            observed_class_path = f"{observed_cls.__module__}.{observed_cls.__qualname__}"
             failures.append(
-                f"{key}: expected class {expected_cls_name}, observed {observed_cls_name}"
+                f"{key}: expected class {expected_class_path}, observed {observed_class_path}"
             )
 
     for legacy_key in CHASSIS_V6_RUNTIME_IDENTITY_LEGACY_KEYS:
@@ -1359,6 +1364,8 @@ def build_karr_chassis_v5(
             "baseline_demand_per_s": baseline_demand,
         }
     )
+    # L0 runtime-identity invariant (S03/S04): v5/v6 canonical chassis binds
+    # TX/TL to the v3 process classes, never the legacy wrapper classes.
     m2_proc = KarrTranscriptionV3Process(
         {
             "kinetics_model": tx.calibrated_chassis_model(m2_model),
@@ -2000,7 +2007,13 @@ def build_karr_chassis_v6(
     seed_from_fixture: bool = True,
     karr_parity_mode: bool = True,
 ) -> Any:
-    """Build the Phase-D v6 composite (v5 + RNA decay + HostInteraction)."""
+    """Build the Phase-D v6 composite (v5 + RNA decay + HostInteraction).
+
+    Runtime-identity invariant: TX/TL keys in the returned process map must
+    point to the canonical v3 runtime classes (`KarrTranscriptionV3Process`
+    and `KarrTranslationV3Process`) under canonical keys
+    (`karr_transcription`, `karr_translation`).
+    """
     del host_adhesion_gates_division
 
     from vivarium.core.composer import Composite
@@ -2032,6 +2045,8 @@ def build_karr_chassis_v6(
     initial_state = deepcopy(base_engine.initial_state)
 
     # Canonical process-key map expected by chassis_v6 integration gates.
+    # Runtime-identity guardrail below enforces that remapped keys still point
+    # to canonical v3 classes rather than legacy wrapper classes.
     for old_key, new_key in (
         ("karr_transcription_v3", "karr_transcription"),
         ("karr_translation_v3", "karr_translation"),
