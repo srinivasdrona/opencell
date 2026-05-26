@@ -74,8 +74,32 @@
 
 ---
 
+*Postscript, written at sixteen-fourteen.*
+
 ---
 
-*Postscript, 16:14. The canary landed. Thirty-two thousand four hundred ticks in twenty-one wall-clock minutes. ATP stayed flat at the LP fixed point, as predicted. Protein count rose from sixteen thousand two hundred and seventy-two to twenty-seven thousand four hundred and fifty-three — translation, which had been silent only yesterday, was firing through the entire cell cycle. Replication state machine alive, mass up three-point-seven percent, division still not reached. The strip did not break biology; it removed code that had not been helping it. Branch merged into main, four audit commits and one blog post in a single arc.*
+**Bugg:** Sir, I apologise for the second interruption. The canary has landed.
+
+**Tehol:** And the appetite?
+
+**Bugg:** Intact, sir. Thirty-two thousand four hundred ticks in twenty-one wall-clock minutes. The metabolism held its fixed point as predicted — ATP flat across the run, the LP solving to the same number every tick on short horizons, exactly the piecewise-constant behaviour we now understand to be a property of the solver and not a defect of the cell.
+
+**Tehol:** And the rest of the cell.
+
+**Bugg:** Awake, sir. Protein count rose from sixteen thousand two hundred and seventy-two to twenty-seven thousand four hundred and fifty-three across the cell cycle. Translation, which on yesterday's run had not fired once, was firing throughout. The replication state machine logged thirty-two thousand four hundred rows of fork progression. Cell mass rose by three-point-seven percent. The dNTP pool drained twenty-two percent, consistent with replication consuming substrate.
+
+**Tehol:** Division.
+
+**Bugg:** Not yet, sir. A separate matter, pre-existing, for a separate day.
+
+**Tehol:** So the strip removed nothing that the cell was using.
+
+**Bugg:** Precisely, sir. It removed code that was not helping. Four commits and a blog post are now on the main branch. The arc is closed.
+
+**Tehol:** Then go and eat something, Bugg. You have earned a quiet supper.
+
+**Bugg:** I will, sir. The next gate is the validation scorecard, but it can wait until morning.
+
+---
 
 *Written while the canary ran. Source decisions: `c1-false-positive-piecewise-constant-lp` and its parent `p0-phantom-invariant-eliminated-via-parity-flag` in the cross-project decision log. Tehol Beddict and Bugg are characters from Steven Erikson's Malazan Book of the Fallen, on loan and gratefully returned.*
