@@ -97,3 +97,9 @@ HANDOFF_AUTO.md
 
 probe_*.log
 
+
+# P3 reference doc (do not commit)
+P3_KARR_LIGHT_DECLARATIONS.md
+PROMPT_*.md
+.codex_*_pid.txt
+
