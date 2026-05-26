@@ -103,6 +103,7 @@ def test_ion_binding_first_then_chaperone() -> None:
         p,
         unfolded_overrides={wid: 1.0},
         substrate_overrides=substrates,
+        allocated_overrides=substrates,
         enzyme_overrides=enzymes,
     )
     update = p.next_update(1.0, state)
@@ -119,6 +120,7 @@ def test_ion_binding_first_then_chaperone() -> None:
         p,
         unfolded_overrides={wid: 1.0},
         substrate_overrides=missing,
+        allocated_overrides=missing,
         enzyme_overrides=enzymes,
     )
     blocked_update = p.next_update(1.0, blocked_state)
@@ -181,6 +183,7 @@ def test_atp_consumption_per_chaperone_cycle() -> None:
         p,
         unfolded_overrides={wid: float(n_fold)},
         substrate_overrides={"ATP": float(n_fold * 4)},
+        allocated_overrides={"ATP": float(n_fold * 4)},
         enzyme_overrides={wid_: 20.0 for wid_ in p.enzyme_wids},
     )
     update = p.next_update(1.0, state)
