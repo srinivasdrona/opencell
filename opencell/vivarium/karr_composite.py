@@ -845,6 +845,7 @@ def build_karr_chassis_v4(
     condition: int = 1,
     dynamic_bounds: bool = False,
     enable_pool_replenishment: bool = False,
+    karr_parity_mode: bool = True,
 ) -> Engine:
     """Build the Phase-B chassis v4 with RNA/protein maturation processes."""
     from vivarium.core.engine import Engine
@@ -995,7 +996,12 @@ def build_karr_chassis_v4(
             "protein_translocation_proc": p_trans_proc,
         }
     )
-    req_metabolism = RequestCalculatorMetabolism({"metabolism_proc": m1_proc})
+    req_metabolism = RequestCalculatorMetabolism(
+        {
+            "metabolism_proc": m1_proc,
+            "karr_parity_mode": karr_parity_mode,
+        }
+    )
     req_transcription = RequestCalculatorTranscription({"transcription_proc": m2_proc})
     req_translation = RequestCalculatorTranslation({"translation_proc": m3_proc})
 
@@ -1316,6 +1322,7 @@ def build_karr_chassis_v5(
     dynamic_bounds: bool = False,
     enable_pool_replenishment: bool = False,
     seed_from_fixture: bool = True,
+    karr_parity_mode: bool = True,
 ) -> Engine:
     """Build the Phase-C chassis v5 with integrated replication/cell-cycle processes."""
     from vivarium.core.engine import Engine
@@ -1513,7 +1520,12 @@ def build_karr_chassis_v5(
             "protein_translocation_proc": p_trans_proc,
         }
     )
-    req_metabolism = RequestCalculatorMetabolism({"metabolism_proc": m1_proc})
+    req_metabolism = RequestCalculatorMetabolism(
+        {
+            "metabolism_proc": m1_proc,
+            "karr_parity_mode": karr_parity_mode,
+        }
+    )
     req_transcription = RequestCalculatorTranscription({"transcription_proc": m2_proc})
     req_translation = RequestCalculatorTranslation({"translation_proc": m3_proc})
 
@@ -1986,6 +1998,7 @@ def build_karr_chassis_v6(
     enable_pool_replenishment: bool = False,
     host_adhesion_gates_division: bool = False,
     seed_from_fixture: bool = True,
+    karr_parity_mode: bool = True,
 ) -> Any:
     """Build the Phase-D v6 composite (v5 + RNA decay + HostInteraction)."""
     del host_adhesion_gates_division
@@ -2004,6 +2017,7 @@ def build_karr_chassis_v6(
         dynamic_bounds=dynamic_bounds,
         enable_pool_replenishment=enable_pool_replenishment,
         seed_from_fixture=seed_from_fixture,
+        karr_parity_mode=karr_parity_mode,
     )
 
     processes = dict(base_engine.processes)

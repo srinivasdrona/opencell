@@ -254,7 +254,8 @@ class RequestCalculatorTRNA(Step):
             for wid in self._consumed_substrate_wids:
                 avail = max(0.0, float(substrate_state.get(wid, 0.0)))
                 if wid == "ATP":
-                    requests[wid] = max(25.0, avail * 25.0)
+                    # Karr-parity: scale request with availability (no floor).
+                    requests[wid] = avail * 25.0
                 else:
                     requests[wid] = avail
         return {"requests": {self._trna_proc.name: requests}}
@@ -640,6 +641,7 @@ class RequestCalculatorMetabolism(Step):
         "include_growth_coupled_gam": True,
         "cell_dry_mass_g": None,
         "growth_rate_per_s": None,
+        "karr_parity_mode": True,
     }
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
@@ -648,6 +650,7 @@ class RequestCalculatorMetabolism(Step):
         if m1_proc is None:
             raise ValueError("RequestCalculatorMetabolism requires parameter: metabolism_proc")
         self._m1_proc = m1_proc
+        self.karr_parity_mode = bool(self.parameters.get("karr_parity_mode", True))
         self._request_wids = list(self._m1_proc.allocation_substrate_wids)
         self._atp_wid = "ATP" if "ATP" in self._request_wids else None
 
@@ -686,7 +689,7 @@ class RequestCalculatorMetabolism(Step):
             wid: max(0.0, float(self._m1_proc._last_allocation_demand.get(wid, 0.0)))
             for wid in self._request_wids
         }
-        if self._atp_wid is not None:
+        if self._atp_wid is not None and not self.karr_parity_mode:
             requests[self._atp_wid] = max(
                 requests[self._atp_wid],
                 self._atp_floor_request_for_tick(float(timestep)),

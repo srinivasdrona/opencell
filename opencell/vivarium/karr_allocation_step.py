@@ -119,6 +119,7 @@ class KarrAllocationStep(Step):
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         del timestep
+
         substrates = states.get("substrates", {})
         requests = states.get("requests", {})
 
