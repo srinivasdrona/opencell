@@ -31,7 +31,6 @@ RNG_SEED = 0
 CORE_SUBSTRATES: tuple[str, ...] = ("AD", "URA", "ATP", "GTP", "H2O")
 ORIC_SITE_KEYS: tuple[str, ...] = ("R1", "R2", "R3", "R4", "R5")
 ATP_BURN_IN_TICKS = 10
-ATP_DYNAMIC_STD_MIN = 1e-6
 C1_PERTURB_WARMUP_TICKS = 50
 C1_PERTURB_PULSE_TICKS = 40
 C1_PERTURB_RECOVERY_TICKS = 40
@@ -221,29 +220,6 @@ def test_b2_substrate_sanity_core_initialization_not_all_unit_values(
     assert max_core_initial > 100.0, (
         "B2 substrate sanity check failed: no core substrate started above 100 at t=0; "
         f"core_initial={core_initial}."
-    )
-
-
-@pytest.mark.xfail(
-    strict=False,
-    reason="superseded by C1-Karr-valid variant under karr_parity_mode=True; tracked for cleanup",
-)
-def test_c1_metabolism_dynamic_response_atp_delta_not_constant(biology_run: BiologyRun) -> None:
-    """C1: catches static-flux metabolism by requiring non-constant ATP deltas after warm-up."""
-    atp = _timeseries(biology_run.engine)["atp"]
-    assert atp.size > ATP_BURN_IN_TICKS + 2, (
-        "C1 setup failed: ATP timeseries too short to evaluate dynamic response; "
-        f"len={atp.size}."
-    )
-
-    delta = np.diff(atp[ATP_BURN_IN_TICKS:])
-    delta_std = float(np.std(delta))
-
-    assert delta_std > ATP_DYNAMIC_STD_MIN, (
-        "C1 metabolism dynamic-response check failed: ATP delta-per-tick remained effectively "
-        "constant after warm-up; "
-        f"std={delta_std:.12g}, burn_in_ticks={ATP_BURN_IN_TICKS}, "
-        f"first_delta={float(delta[0]):.12g}, last_delta={float(delta[-1]):.12g}."
     )
 
 
