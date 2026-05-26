@@ -60,7 +60,9 @@ No path in code computes `dna_mass_g/rna_mass_g/protein_mass_g` from `cell_dry_m
 9. **Branch push status**
 - Pushed with force lease:
   - `git push -u origin fix/nan-mass-fractions --force-with-lease`
-  - remote update: `cf713f3...ba74a24 (forced update)`
+  - remote updates:
+    - `cf713f3...ba74a24 (forced update)`
+    - `ba74a24..f6997e4`
 
 10. **Anything weird**
 - `parameters.json` has mass fractions and scalar mass params, but not the needed per-substrate MW vector.
