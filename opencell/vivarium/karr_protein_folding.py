@@ -157,12 +157,9 @@ class KarrProteinFoldingProcess(Process):
         del timestep
 
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
-        substrate_state = states.get("substrates", {})
         substrate_counts = np.asarray(
             [
-                self._allocated_or_free(
-                    wid, allocated_state=allocated_state, fallback_state=substrate_state
-                )
+                self._allocated_or_free(wid, allocated_state=allocated_state)
                 for wid in self.substrate_wids
             ],
             dtype=np.float64,
@@ -234,7 +231,6 @@ class KarrProteinFoldingProcess(Process):
     def _allocated_or_free(
         wid: str,
         allocated_state: dict[str, Any],
-        fallback_state: dict[str, Any],
     ) -> float:
         allocated_value = float(allocated_state.get(wid, 0.0))
         return max(0.0, allocated_value)

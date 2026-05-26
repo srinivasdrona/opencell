@@ -281,9 +281,8 @@ class KarrDNARepairProcess(Process):
         requests = self._substrate_needs_for_repairs(desired_repairs)
 
         allocated = states.get("substrates_allocated", {}).get(self.name, {})
-        substrates = states.get("substrates", {})
         available = {
-            wid: self._allocated_or_state(allocated, substrates, wid) for wid in self.tracked_substrates
+            wid: self._allocated_or_state(allocated, wid) for wid in self.tracked_substrates
         }
         actual_repairs = self._bounded_repairs(desired_repairs=desired_repairs, available=available)
 
@@ -547,7 +546,6 @@ class KarrDNARepairProcess(Process):
     def _allocated_or_state(
         self,
         allocated_state: dict[str, Any],
-        substrate_state: dict[str, Any],
         wid: str,
     ) -> float:
         allocated = float(allocated_state.get(wid, 0.0))

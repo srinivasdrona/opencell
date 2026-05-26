@@ -179,7 +179,6 @@ class KarrReplicationProcess(Process):
     def _allocated_or_state(
         self,
         allocated_state: dict[str, Any],
-        substrate_state: dict[str, Any],
         wid: str,
     ) -> int:
         allocated = float(allocated_state.get(wid, 0.0))
@@ -263,9 +262,8 @@ class KarrReplicationProcess(Process):
             return update
 
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
-        substrate_state = states.get("substrates", {})
         available = {
-            wid: self._allocated_or_state(allocated_state, substrate_state, wid)
+            wid: self._allocated_or_state(allocated_state, wid)
             for wid in zero_requests
         }
 

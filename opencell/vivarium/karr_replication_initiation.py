@@ -208,9 +208,8 @@ class KarrReplicationInitiationProcess(Process):
         start_bound_total = (self._bound_atp + self._bound_adp).copy()
 
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
-        substrate_state = states.get("substrates", {})
-        available_atp = self._allocated_or_state(allocated_state, substrate_state, self.atp_wid)
-        available_water = self._allocated_or_state(allocated_state, substrate_state, self.water_wid)
+        available_atp = self._allocated_or_state(allocated_state, self.atp_wid)
+        available_water = self._allocated_or_state(allocated_state, self.water_wid)
         substrate_delta: dict[str, int] = {}
 
         # 1) activateFreeDnaA
@@ -274,7 +273,6 @@ class KarrReplicationInitiationProcess(Process):
     def _allocated_or_state(
         self,
         allocated_state: dict[str, Any],
-        substrate_state: dict[str, Any],
         wid: str,
     ) -> float:
         allocated = float(allocated_state.get(wid, 0.0))
