@@ -38,6 +38,16 @@ def _sum_count_timeseries(counts_ts: dict[str, list[float]]) -> np.ndarray:
     return totals
 
 
+def _sum_state_counts(state: dict[str, object], store: str) -> float:
+    store_data = state.get(store, {})
+    if not isinstance(store_data, dict):
+        return 0.0
+    counts = store_data.get("counts", {})
+    if not isinstance(counts, dict):
+        return 0.0
+    return float(sum(float(value) for value in counts.values()))
+
+
 def test_v6_builds() -> None:
     composite = build_karr_chassis_v6(time_step_s=1.0, emit_step_s=1.0)
     proc_keys = set(composite["processes"].keys())
@@ -58,15 +68,22 @@ def test_v6_one_tick() -> None:
 @pytest.mark.slow
 def test_v6_short_run_100s() -> None:
     engine = _build_engine()
+    initial_state = engine.state.get_value()
     engine.update(100.0)
-    ts = engine.emitter.get_timeseries()
+    final_state = engine.state.get_value()
 
-    protein_total = _sum_count_timeseries(ts["protein"]["counts"])
-    rna_total = _sum_count_timeseries(ts["rna"]["counts"])
-    complex_total = _sum_count_timeseries(ts["complex"]["counts"])
-    dry_mass_proxy = protein_total + rna_total + complex_total
+    dry_mass_proxy_initial = (
+        _sum_state_counts(initial_state, "protein")
+        + _sum_state_counts(initial_state, "rna")
+        + _sum_state_counts(initial_state, "complex")
+    )
+    dry_mass_proxy_final = (
+        _sum_state_counts(final_state, "protein")
+        + _sum_state_counts(final_state, "rna")
+        + _sum_state_counts(final_state, "complex")
+    )
 
-    assert dry_mass_proxy[-1] > dry_mass_proxy[0] * 0.99
+    assert dry_mass_proxy_final > dry_mass_proxy_initial * 0.99
 
 
 def test_v6_cpk_002_resolved() -> None:
