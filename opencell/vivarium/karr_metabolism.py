@@ -512,12 +512,21 @@ class KarrMetabolismProcess(Process):
         if np.any(bounds[:, 0] > bounds[:, 1] + 1e-9):
             raise RuntimeError("dynamic bounds: lower > upper")
 
+        lb_override = bounds[:, 0].copy()
+        if self._atpm_fba_col is not None:
+            atpm_col = int(self._atpm_fba_col)
+            atpm_floor = self._atpm_lb_floor_for_tick(float(timestep))
+            atpm_ub = float(bounds[atpm_col, 1])
+            if np.isfinite(atpm_ub):
+                atpm_floor = min(atpm_floor, atpm_ub)
+            lb_override[atpm_col] = max(float(lb_override[atpm_col]), atpm_floor)
+
         v, info = km.solve_fba(
             self.model,
             use_full_objective=self.parameters["use_full_objective"],
             sense="max",
             big=self.parameters["big"],
-            lb_override=bounds[:, 0],
+            lb_override=lb_override,
             ub_override=bounds[:, 1],
         )
 
