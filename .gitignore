@@ -4,3 +4,7 @@ PROMPT_*.md
 codex_*.log
 STATUS_*.md
 
+
+PROMPT_*.md
+.codex_*_pid.txt
+
