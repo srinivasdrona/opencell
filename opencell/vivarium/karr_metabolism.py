@@ -513,22 +513,37 @@ class KarrMetabolismProcess(Process):
             raise RuntimeError("dynamic bounds: lower > upper")
 
         lb_override = bounds[:, 0].copy()
+        floor_applied = False
         if self._atpm_fba_col is not None:
             atpm_col = int(self._atpm_fba_col)
             atpm_floor = self._atpm_lb_floor_for_tick(float(timestep))
             atpm_ub = float(bounds[atpm_col, 1])
             if np.isfinite(atpm_ub):
                 atpm_floor = min(atpm_floor, atpm_ub)
-            lb_override[atpm_col] = max(float(lb_override[atpm_col]), atpm_floor)
+            base_lb = float(lb_override[atpm_col])
+            lb_override[atpm_col] = max(base_lb, atpm_floor)
+            floor_applied = bool(lb_override[atpm_col] > base_lb + 1e-15)
 
-        v, info = km.solve_fba(
-            self.model,
-            use_full_objective=self.parameters["use_full_objective"],
-            sense="max",
-            big=self.parameters["big"],
-            lb_override=lb_override,
-            ub_override=bounds[:, 1],
-        )
+        try:
+            v, info = km.solve_fba(
+                self.model,
+                use_full_objective=self.parameters["use_full_objective"],
+                sense="max",
+                big=self.parameters["big"],
+                lb_override=lb_override,
+                ub_override=bounds[:, 1],
+            )
+        except RuntimeError:
+            if not floor_applied:
+                raise
+            v, info = km.solve_fba(
+                self.model,
+                use_full_objective=self.parameters["use_full_objective"],
+                sense="max",
+                big=self.parameters["big"],
+                lb_override=bounds[:, 0],
+                ub_override=bounds[:, 1],
+            )
 
         # Bug 6a Stage 2: signed writeback across all mapped cytosol rows.
         substrate_delta: dict[str, float] = {}
