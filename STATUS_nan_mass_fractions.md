@@ -56,6 +56,8 @@ No path in code computes `dna_mass_g/rna_mass_g/protein_mass_g` from `cell_dry_m
 - `98abcf1` - `feat(data): substrate mass-class classification + MW lookup`
 - `4d3ce32` - `feat(bridge): compute dna/rna/protein mass from substrate counts × MW (no tautology)`
 - `ba74a24` - `phase-e: regenerate post-strip pkl with substrate-derived mass fractions`
+- `f6997e4` - `docs: record nan-mass-fractions redo status`
+- `25f658f` - `docs: update nan-mass-fractions push status`
 
 9. **Branch push status**
 - Pushed with force lease:
@@ -63,6 +65,7 @@ No path in code computes `dna_mass_g/rna_mass_g/protein_mass_g` from `cell_dry_m
   - remote updates:
     - `cf713f3...ba74a24 (forced update)`
     - `ba74a24..f6997e4`
+    - `f6997e4..25f658f`
 
 10. **Anything weird**
 - `parameters.json` has mass fractions and scalar mass params, but not the needed per-substrate MW vector.
