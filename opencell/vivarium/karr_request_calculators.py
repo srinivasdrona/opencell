@@ -29,6 +29,27 @@ def _request_from_available(
     return {wid: max(0.0, float(substrate_state.get(wid, 0.0))) for wid in target_wids}
 
 
+class _SafeDtMixin:
+    def _safe_dt(self, timestep: float, eps: float | None = None) -> float:
+        """Return a strictly-positive effective dt for substrate-demand scaling.
+
+        Per RC-shared PR (2026-05-26): Vivarium Step.timestep can legitimately
+        arrive as 0.0 between composite scheduling cycles. Naive `* timestep`
+        scaling then collapses substrate demand to 0 and suppresses requests.
+
+        Strategy: prefer the wrapped process's configured `time_step` when
+        available; otherwise floor the incoming timestep at `eps` (default 1.0 s).
+        """
+
+        configured = getattr(getattr(self, "_proc", None), "parameters", {}).get("time_step")
+        if configured is not None:
+            configured_dt = float(configured)
+            if configured_dt > 0.0:
+                return configured_dt
+        floor = 1.0 if eps is None else float(eps)
+        return max(floor, float(timestep))
+
+
 class RequestCalculatorD2(Step):
     """Emit D.2-real metabolite requests.
 
@@ -68,7 +89,7 @@ class RequestCalculatorD2(Step):
         return {"requests": {"karr_macromolecular_complexation": dict(self._zero_requests)}}
 
 
-class RequestCalculatorPD(Step):
+class RequestCalculatorPD(_SafeDtMixin, Step):
     """Estimate ProteinDecay-light ATP/H2O requirements for this tick."""
 
     name = "request_calculator_pd"
@@ -80,6 +101,7 @@ class RequestCalculatorPD(Step):
         if pd_light_proc is None:
             raise ValueError("RequestCalculatorPD requires parameter: pd_light_proc")
         self._pd_light_proc = pd_light_proc
+        self._proc = pd_light_proc
 
     def ports_schema(self) -> dict[str, Any]:
         return {
@@ -109,7 +131,7 @@ class RequestCalculatorPD(Step):
             dtype=np.float64,
         )
         rates = self._pd_light_proc._complex_rates_per_s()
-        expected_decays = rates * complex_counts * float(timestep)
+        expected_decays = rates * complex_counts * self._safe_dt(timestep)
 
         atp_req = float(
             abs(
@@ -527,7 +549,7 @@ class RequestCalculatorProteinPathway(Step):
         }
 
 
-class RequestCalculatorTranscription(Step):
+class RequestCalculatorTranscription(_SafeDtMixin, Step):
     """Compute allocator requests for mechanism-driven transcription."""
 
     name = "request_calculator_transcription"
@@ -539,6 +561,7 @@ class RequestCalculatorTranscription(Step):
         if tx_proc is None:
             raise ValueError("RequestCalculatorTranscription requires parameter: transcription_proc")
         self._tx_proc = tx_proc
+        self._proc = tx_proc
         self._request_wids = list(self._tx_proc.allocation_substrate_wids)
 
     def ports_schema(self) -> dict[str, Any]:
@@ -574,12 +597,12 @@ class RequestCalculatorTranscription(Step):
         )
         n_active = max(0.0, n_active)
         total_nt = self._tx_proc._predict_total_nt_polymerization_per_s(n_active)
-        per_ntp_need = max(0.0, total_nt / 4.0 * float(timestep))
+        per_ntp_need = max(0.0, total_nt / 4.0 * self._safe_dt(timestep))
         requests = {wid: per_ntp_need for wid in self._request_wids}
         return {"requests": {self._tx_proc.name: requests}}
 
 
-class RequestCalculatorTranslation(Step):
+class RequestCalculatorTranslation(_SafeDtMixin, Step):
     """Compute allocator requests for mechanism-driven translation."""
 
     name = "request_calculator_translation"
@@ -591,6 +614,7 @@ class RequestCalculatorTranslation(Step):
         if tl_proc is None:
             raise ValueError("RequestCalculatorTranslation requires parameter: translation_proc")
         self._tl_proc = tl_proc
+        self._proc = tl_proc
         self._request_wids = list(self._tl_proc.allocation_substrate_wids)
 
     def ports_schema(self) -> dict[str, Any]:
@@ -626,7 +650,7 @@ class RequestCalculatorTranslation(Step):
         )
         n_active = max(0.0, n_active)
         rates = tl_v2.predict_synthesis_per_s(self._tl_proc.mechanism_inputs, n_active=n_active)
-        need_by_aa = self._tl_proc._predict_substrate_need(rates, timestep)
+        need_by_aa = self._tl_proc._predict_substrate_need(rates, self._safe_dt(timestep))
         requests = {wid: max(0.0, float(need_by_aa.get(wid, 0.0))) for wid in self._request_wids}
         return {"requests": {self._tl_proc.name: requests}}
 
