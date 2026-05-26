@@ -1,4 +1,38 @@
-"""Vivarium Process wrapper for M2 v2 mechanism-based transcription.
+"""Karr transcription v3 -- Karr-light port of MATLAB +process/Transcription.m
+
+SCOPE DECLARATION (non-parity)
+==============================
+
+This module is a **deliberate scope reduction** of Karr's MATLAB
+`Transcription.m::evolveState`. It is NOT a faithful per-line port.
+This declaration also applies to `karr_transcription_v2.py` and
+`karr_transcription.py`.
+
+Karr-light reductions vs `Transcription.m::evolveState`:
+
+  1. No RNAP state-machine transitions. MATLAB tracks RNAP states explicitly
+     (free / promoter-bound / elongating / terminated); this module uses an
+     aggregate active-RNAP count.
+  2. No stochastic draws. MATLAB samples promoter occupancy and elongation events
+     stochastically; this module uses deterministic rate * dt.
+  3. No sequence-accurate substrate chemistry. NTP demand here is computed from a
+     composition approximation; MATLAB computes per-position NTP usage.
+  4. No enzyme occupancy writebacks. MATLAB writes RNAP positions and template
+     state; this module emits only aggregate transcript counts.
+
+Preserved:
+  - RNAP-driven transcription intent.
+  - Promoter binding rate parameters.
+
+OpenCell additions:
+  - NTP demand floors at lines 160, 217 (axis-C ✗; remove or gate during P3 cleanup).
+  - allocation-port indirection.
+
+Audit: Track-P2 (2026-05-26). Karr-light status: declared.
+
+---
+
+Vivarium Process wrapper for M2 v2 mechanism-based transcription.
 
 Dynamic-pool discipline (A3 step 2, non-negotiable):
 - Read consumer inputs from ``complex.counts.<wid>`` inside every
