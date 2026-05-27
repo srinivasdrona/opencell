@@ -149,6 +149,7 @@ CHASSIS_V6_EXPECTED_PROCESS_KEYS: tuple[str, ...] = (
     "karr_metabolism",
     "karr_transcription",
     "karr_translation",
+    "karr_transcriptional_regulation",
 )
 
 CHASSIS_V6_RUNTIME_IDENTITY_EXPECTED_CLASSES: dict[str, type[Any]] = {
