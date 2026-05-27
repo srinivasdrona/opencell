@@ -45,6 +45,7 @@ State, as a falsifiable prediction, what observable will change when your fix la
 - "The test passes because the assertion is about a structural property (a key exists) that does not actually exercise the behavior."
 - "The fix satisfies the literal directive in the prompt by editing the test rather than the code under test."
 - "The fix changes the read path but leaves the old write path intact, so a future regression in the old path still ships silently."
+- "The fix is correct in the file I edited but breaks a sibling caller / sibling builder (undefined name, signature mismatch, removed import) that no test in this PR runs."
 
 If after honest reflection you cannot name a plausible inversion failure mode, say so explicitly. Do not skip silently. **An empty Beat 4 is allowed; a missing Beat 4 is not.**
 
