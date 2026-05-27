@@ -25,3 +25,24 @@ This document captures Phase E.2 KPs that cannot be extracted from the current w
 ```
 
 - Disposition TODO: `E2-V1_1-KP15-DNA-OCCUPANCY`
+
+## KP27 - Host adhesion competence
+
+- Status: `NEEDS_EMITTER`
+- Why extractor cannot run: no host-interaction adhesion boolean is emitted in `trajectory.pkl` snapshots and `process_traces/karr_host_interaction.csv` is header-only in this artifact.
+- Required emitter field(s): `snapshots[*].state.host.is_bacterium_adherent`
+- Minimum expected schema:
+
+```json
+{
+  "tick": 1200,
+  "time_s": 1200.0,
+  "state": {
+    "host": {
+      "is_bacterium_adherent": true
+    }
+  }
+}
+```
+
+- Disposition TODO: `E2-V1_1-KP27-HOST-ADHESION`
