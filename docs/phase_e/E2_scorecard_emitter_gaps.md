@@ -46,3 +46,26 @@ This document captures Phase E.2 KPs that cannot be extracted from the current w
 ```
 
 - Disposition TODO: `E2-V1_1-KP27-HOST-ADHESION`
+
+## KP28 - Host immune activation cascade
+
+- Status: `NEEDS_EMITTER`
+- Why extractor cannot run: the required host immune activation booleans are not emitted in snapshot state and are absent from sibling process traces.
+- Required emitter field(s): `snapshots[*].state.host.is_tlr_activated`, `snapshots[*].state.host.is_nfkb_activated`, `snapshots[*].state.host.is_inflammatory_response_activated`
+- Minimum expected schema:
+
+```json
+{
+  "tick": 1200,
+  "time_s": 1200.0,
+  "state": {
+    "host": {
+      "is_tlr_activated": true,
+      "is_nfkb_activated": true,
+      "is_inflammatory_response_activated": true
+    }
+  }
+}
+```
+
+- Disposition TODO: `E2-V1_1-KP28-HOST-IMMUNE-CASCADE`
