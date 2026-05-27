@@ -34,7 +34,7 @@ Before launching any codex audit / class-A / class-B / dead-process session on a
 - **Probe baseline** (200 ticks, seed 42): `E:\opencell\artifacts\probe_full_traces_20260526_190830\`
 - **Karr 2012 MATLAB mirror**: `E:\opencell-mirrors\WholeCell\src\+edu\+stanford\+covert\+cell\+sim\+process\<Process>.m`
 - **wcEcoli mirror**: `E:\opencell-mirrors\wcEcoli\models\ecoli\processes\`
-- **Probe state machine summary**: `C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\PROCESS_STATUS_ALL_28.md`
+- **Probe state machine summary**: `C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\PROCESS_STATUS_ALL_29.md`
 - **Companion CSV (per-process paths)**: `E:\opencell\PROCESS_ARTIFACT_INDEX.csv`
 
 ---
