@@ -9,9 +9,8 @@ def _first_before_series_shape(process_name: str) -> tuple[int, ...]:
     assert fixture.inputs, "expected at least one resolved input channel"
     assert fixture.outputs, "expected at least one resolved output channel"
 
-    before_keys = [key for key in fixture.inputs if key.startswith("state_before__")]
-    assert before_keys, "expected at least one state_before__<prop> input channel"
-    return fixture.inputs[before_keys[0]].shape
+    assert "substrates" in fixture.inputs
+    return fixture.inputs["substrates"].shape
 
 
 def test_replay_fixture_loaded_cytokinesis() -> None:
