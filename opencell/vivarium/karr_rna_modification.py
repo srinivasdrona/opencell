@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -10,6 +11,7 @@ from scipy.io import loadmat
 from vivarium.core.process import Process
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/RNAModification_flat.mat"
+_D2_COMPLEX_FIXTURE_PATH = "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
 _MAX_STOCHASTIC_ITERATIONS = 10_000
 
 
@@ -43,6 +45,14 @@ def _parse_wid_array(cell_array: np.ndarray) -> list[str]:
     return out
 
 
+@lru_cache(maxsize=1)
+def _load_d2_complex_wids(path: str = _D2_COMPLEX_FIXTURE_PATH) -> frozenset[str]:
+    resolved = _resolve_fixture_path(path)
+    mat = loadmat(str(resolved))
+    fx = mat["data"]["fixture"][0, 0]
+    return frozenset(_parse_wid_array(fx["complexWholeCellModelIDs"]))
+
+
 class KarrRNAModificationProcess(Process):
     """Karr Process_RNAModification with internal per-RNA completion counters."""
 
@@ -57,6 +67,10 @@ class KarrRNAModificationProcess(Process):
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
         super().__init__(parameters)
         self._load_fixture(self.parameters["fixture_path"])
+        self._d2_complex_wids = _load_d2_complex_wids()
+        self.complex_enzyme_wids = [wid for wid in self.enzyme_wids if wid in self._d2_complex_wids]
+        self.monomer_enzyme_wids = [wid for wid in self.enzyme_wids if wid not in self._d2_complex_wids]
+        self._complex_enzyme_wid_set = set(self.complex_enzyme_wids)
         self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
 
         row_sums = np.sum(self.reaction_modification, axis=1)
@@ -117,7 +131,13 @@ class KarrRNAModificationProcess(Process):
             "protein": {
                 "counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
-                    for wid in self.enzyme_wids
+                    for wid in self.monomer_enzyme_wids
+                }
+            },
+            "complex": {
+                "counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                    for wid in self.complex_enzyme_wids
                 }
             },
             "requests": {
@@ -142,6 +162,9 @@ class KarrRNAModificationProcess(Process):
         protein_state = states.get("protein", {})
         if not isinstance(protein_state, dict):
             protein_state = {}
+        complex_state = states.get("complex", {})
+        if not isinstance(complex_state, dict):
+            complex_state = {}
 
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
         # Strict-zero allocator contract: do not fallback to global substrate pools.
@@ -182,8 +205,20 @@ class KarrRNAModificationProcess(Process):
         protein_count_store = protein_state.get("counts", {})
         if not isinstance(protein_count_store, dict):
             protein_count_store = {}
+        complex_count_store = complex_state.get("counts", {})
+        if not isinstance(complex_count_store, dict):
+            complex_count_store = {}
+        self._require_declared_enzyme_inputs(
+            protein_count_store=protein_count_store,
+            complex_count_store=complex_count_store,
+        )
         enzymes = np.asarray(
-            [float(protein_count_store.get(wid, 0.0)) for wid in self.enzyme_wids],
+            [
+                float(complex_count_store[wid])
+                if wid in self._complex_enzyme_wid_set
+                else float(protein_count_store[wid])
+                for wid in self.enzyme_wids
+            ],
             dtype=np.float64,
         )
 
@@ -241,6 +276,25 @@ class KarrRNAModificationProcess(Process):
         # Keep explicit read-path for modified store in tests and engines.
         _ = modified_rna
         return update
+
+    def _require_declared_enzyme_inputs(
+        self,
+        protein_count_store: dict[str, Any],
+        complex_count_store: dict[str, Any],
+    ) -> None:
+        missing_monomers = [wid for wid in self.monomer_enzyme_wids if wid not in protein_count_store]
+        missing_complexes = [wid for wid in self.complex_enzyme_wids if wid not in complex_count_store]
+        if not missing_monomers and not missing_complexes:
+            return
+
+        parts: list[str] = []
+        if missing_monomers:
+            parts.append(f"protein.counts missing {missing_monomers}")
+        if missing_complexes:
+            parts.append(f"complex.counts missing {missing_complexes}")
+        raise ValueError(
+            "KarrRNAModificationProcess missing declared enzyme inputs: " + "; ".join(parts)
+        )
 
     def _compute_reaction_fluxes(
         self,

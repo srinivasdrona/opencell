@@ -160,9 +160,11 @@ def _seed_rna_pathway_inputs(engine: Any) -> None:
         engine.state.set_path(("rna", "counts", wid), 500.0)
 
     for wid in (
-        set(rna_proc.enzyme_wids) | set(rna_mod.enzyme_wids) | set(ribasm.protein_state_wids)
+        set(rna_proc.enzyme_wids) | set(rna_mod.monomer_enzyme_wids) | set(ribasm.protein_state_wids)
     ):
         engine.state.set_path(("protein", "counts", wid), 2_000.0)
+    for wid in rna_mod.complex_enzyme_wids:
+        engine.state.set_path(("complex", "counts", wid), 2_000.0)
     for wid in ribasm.monomer_subunit_wids:
         engine.state.set_path(("protein", "counts", wid), 2_000.0)
 
