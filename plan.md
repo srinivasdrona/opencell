@@ -407,6 +407,64 @@ NOT a parallel program)**
 
 ---
 
+## Current Status (2026-05-27 ~13:25 IST, **WAVE-2 BASE ADVANCED, PHASE-4 KANBAN ACTIVE, L4 TRACK-A UNBLOCKED**)
+
+### TL;DR
+`trackA/wave2-base` advanced from `2e185ff` → **`488b563`** since this morning. **6 tracks merged today** (tRNA probe, Track-A scorecard, trajectory-pilot, optionB-flat chromosome flats, MATLAB manifest, orchestration-model doc). **2 codex sessions in flight**: PP1 fix-only (PID 34288, integration sweep on retry) and RNAProcessing Option-4 defer (PID 28528 launcher, just fired ~13:25). Per-process fidelity now tracked via `PROCESS_STATUS_ALL_28.md` (28-row living matrix, source of biology truth). PM orchestration moved into **Phase 4 multi-stage kanban + codex-foreman pattern** (logged today in `docs/ORCHESTRATION_MODEL.md` + cross-project `DECISIONS.md`).
+
+### L4 Methods paper — Track A is now UNBLOCKED (decision pending)
+The 10:55 status said "decide after scorecard." Scorecard has landed. Status now:
+- **L4 Track A (port + fidelity)**: gating dependency (scorecard) → ✅ done. Remaining gates: (a) close ≥6 of 10 unclosed-dead processes to lift "9 closed" → "15+ closed" baseline; (b) get tRNA aminoacylation writing (was the wave-2 rate-limiter — AA depletion to 1 → translation stall); (c) Bug 9 (protein decay enrollment) and Bug 8 (TL energy) to tighten the energy/mass scorecard before publication.
+- **Operator decision pending**: commit to L4 Track A (port + fidelity, ~2 weeks of close-the-loop work) or L4 Track B (port + division, 6-10 weeks). Recommended: Track A — the wave-2 baseline is already publishable as "honest snapshot of a port" and the 10 dead processes are now individually scoped (PROCESS_STATUS_ALL_28 + 8 swarm-dead diagnose worktrees, 5 actively triaging or queued).
+- **Not yet started**: the `l4-methods-paper` todo (pending bucket). Will queue as a parallel docs lane once 2-3 more biology closures land.
+
+### Commits landed since 10:55 IST (this morning's wave-2 baseline)
+
+| Commit | Branch | What |
+|---|---|---|
+| `1f63cb3` | trackF/trna-probe | tRNA aminoacylation probe + fix |
+| `593e694` | trackF/karr-fidelity-trackA | Karr fidelity scorecard harness + integration test |
+| (merge to wave2-base) | | |
+| `4b2f1db` | trackF/trajectory-fixtures | 4-process flat-file chromosome fixtures (Option B) |
+| `a7f3525` | wave2-base | merge trajectory-pilot + flat-file fixtures |
+| `f1cd01e` | docs/matlab-manifest | MATLAB file manifest (161 .mat + 562 .m, 5-stream coverage map, 3 license-blocker classes) |
+| `488b563` | wave2-base | merge MATLAB manifest |
+| `d7ab8f6` | wave2-base | `docs/ORCHESTRATION_MODEL.md` (PM phase 0→4 progression) + plan.md pointer |
+
+### In flight (2026-05-27 ~13:25 IST)
+1. **PP1 triage fix-only** (`E:\opencell-worktrees\triage-protein-processing-i`, PID 34288, branch `triage/protein-processing-i`) — commits 1/3 (fix: deformylase + aminopeptidase enzyme seeding) and 2/3 (integration guard) landed at 12:37. Commit 3/3 (STATUS) pending after integration sweep retry. Will become the literal template for PP2 + ProteinModification fanout (template-after-lander discipline).
+2. **RNAProcessing Option-4 defer** (`E:\opencell-worktrees\triage-rna-processing-defer`, launcher PID 28528, branch `triage/rna-processing-defer`) — fired 13:25. Verdict (e) "legitimate downstream gate"; will land 3 commits (DEFER docstring + sentinel comment, wave3 Option-1 spec doc, regression test).
+
+### Process-level fidelity — input side
+Canonical: `PROCESS_STATUS_ALL_28.md` (session file → to be promoted to `docs/phase_e/PROCESS_STATUS_ALL_28.md` as the live tracker post-PP1). Current bucket counts:
+- **9 closed** (writing real data): Metabolism, DNARepair, ChromosomeCondensation, Transcription, RNADecay, Translation, ProteinFolding, ProteinTranslocation, FtsZPolymerization
+- **2 partial**: RNAModification, ProteinDecay-light
+- **10 unclosed-dead** with diagnose evidence: tRNAAminoacylation (probe fired today), ProteinProcessingI (PP1 fix in flight), ProteinProcessingII (queued behind PP1 template), ProteinModification (queued behind PP1 template), MacromolecularComplexation, RNAProcessing (Option-4 defer in flight), RibosomeAssembly, ReplicationInitiation, Replication, CellCycleCoordinator
+- **2 deferred**: HostInteraction, TerminalOrganelleAssembly
+
+### PM orchestration — Phase 4 active
+Logged 2026-05-27 in `docs/ORCHESTRATION_MODEL.md` + `.pm-os/DECISIONS.md` (slug `orchestration-model-progression-phase-0-to-4`). Five phases captured: Phase 0 (pure main) → 1 (main + design) → 2 (main + codex) → 3 (kanban with worktree-per-track) → **4 (multi-stage kanban + conflict-pair detection + codex-foreman, current)** → 5 (peer Copilot PMs, deferred). Queen-pass cadence runs at every meaningful turn; 4-slot codex ceiling enforced.
+
+### MATLAB picture — clarified today
+`docs/phase_e/MATLAB_FILE_MANIFEST.md` (21.7 KB / 232 lines) inventories the full local corpus:
+- **161 .mat** files (150 probed via `scipy.io.loadmat`, 11 size-listed only)
+- **562 .m** sources (538 WholeCell mirror at `E:\opencell-mirrors\WholeCell` → symlinked into `data/m1_sources/WholeCell`)
+- **3 true license-blocker classes** (Bucket A): new simulation generation, regeneration of missing/truncated artifacts, new-field extraction from MCOS when no flattened/archive surrogate
+- **Important non-blockers**: PP2 + ProteinModification triage inputs already on disk (flat fixtures + 100-tick traces); RNAProcessing/RibosomeAssembly/MacromolecularComplexation diagnoses don't need new MATLAB runs
+- **Confirmed**: Karr 2012 supplement xls/xlsx files are HTML download stubs (placeholders), not real spreadsheets
+
+### Bug 8 / Bug 9 status
+Both still pending. Bug 9 (protein decay enrollment) — `swarm-dead-protein_decay_light` branch exists but has **no STATUS** (diagnose never completed). Promoting to design-codex (diagnose first, then A6-pattern enrollment fix). Bug 8 (TL energy: +GTP, +4 ATP-eq/AA) — still gated on PP1 + tRNA closures so the magnitude isn't conflated with other deltas.
+
+### Next decisions / queue
+1. **PP1 lands → fire PP2 + ProteinModification fanout** using PP1 STATUS as literal template (codex-foreman pattern, mechanical fanout).
+2. **L4 Track A vs Track B**: ready to decide; recommend Track A. Pending operator commit.
+3. **Bug 9 diagnose codex**: queue once a slot frees (currently 2/4 in use).
+4. **build_replay_fixtures `max_diff=0` investigation**: small investigation track, queue once PP1 lands.
+5. **MATLAB-restored runs (wishlist)**: when license is restored, `docs/phase_e/MATLAB_FILE_MANIFEST.md` Section 4 lists the exact runs to do — 5 truncated process re-extractions + missing init-state .mat for 5 processes.
+
+---
+
 ## Current Status (2026-05-27 10:55 IST, **WAVE-2 PRs LANDED + 4-SEED ENSEMBLE COMPLETE**)
 
 ### TL;DR
