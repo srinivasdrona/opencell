@@ -407,10 +407,12 @@ NOT a parallel program)**
 
 ---
 
-## Current Status (2026-05-27 ~13:25 IST, **WAVE-2 BASE ADVANCED, PHASE-4 KANBAN ACTIVE, L4 TRACK-A UNBLOCKED**)
+## Current Status (2026-05-27 ~15:40 IST, **POST-QUEEN-PASS, WAVE-2 BASE @ `0b97542`, PTRANSLOC NEXT**)
 
 ### TL;DR
-`trackA/wave2-base` advanced from `2e185ff` → **`488b563`** since this morning. **6 tracks merged today** (tRNA probe, Track-A scorecard, trajectory-pilot, optionB-flat chromosome flats, MATLAB manifest, orchestration-model doc). **2 codex sessions in flight**: PP1 fix-only (PID 34288, integration sweep on retry) and RNAProcessing Option-4 defer (PID 28528 launcher, just fired ~13:25). Per-process fidelity now tracked via `PROCESS_STATUS_ALL_28.md` (28-row living matrix, source of biology truth). PM orchestration moved into **Phase 4 multi-stage kanban + codex-foreman pattern** (logged today in `docs/ORCHESTRATION_MODEL.md` + cross-project `DECISIONS.md`).
+`trackA/wave2-base` advanced from `488b563` → `7c0ad75` (plan/docs corrections) → **`0b97542`** (queen-pass merge of 6 branches). Today's full march: 6 morning merges + the queen-pass merge of 6 codex-output branches (rna-processing-defer, protein-processing-i, adapter-keys-5way, extractor-schemas-8, phenotype-scorecard-wave2, kp20-regression). 1 conflict resolved (phenotype_scorecard.py, toward strict-superset side). 27/27 smoke tests green. Pushed to origin. **Scorecard moves 6/28 → 7/28 PASS, 0 BLOCKED**. **PP1 revived** (canary trace 35B → 24,840B / 525 lines at 1000t). **KP20 root cause identified**: deterministic across all 4 seeds — AA pools hit floor `1.0` at t=99-571s + GTP collapse, driven by `RequestCalculatorPTransloc` `max(need, current_pool)` allocator-request semantics.
+
+**Next track committed**: **fix `RequestCalculatorPTransloc` before wave-3.** PP1 is downstream of translation; translation is starved by AA collapse upstream; wave-3-with-PP1-only would conflate "PP1 alive" with "energetics stable" and waste a baseline. Both fixes ride into wave-3 together. New `queen-pass-merge` skill formalised under `%USERPROFILE%\.copilot\skills\` from this pass.
 
 ### L4 Methods paper — Track A is unblocked but pre-conditions are weaker than yesterday's read
 The 10:55 status said "decide after scorecard." Scorecard has landed (`docs/phase_e/karr_fidelity_scorecard.md`). Headline read:
@@ -473,9 +475,11 @@ This nuance strengthens the methods paper: it cleanly separates the "port qualit
 | `488b563` | wave2-base | merge MATLAB manifest |
 | `d7ab8f6` | wave2-base | `docs/ORCHESTRATION_MODEL.md` (PM phase 0→4 progression) + plan.md pointer |
 
-### In flight (2026-05-27 ~13:25 IST)
-1. **PP1 triage fix-only** (`E:\opencell-worktrees\triage-protein-processing-i`, PID 34288, branch `triage/protein-processing-i`) — commits 1/3 (fix: deformylase + aminopeptidase enzyme seeding) and 2/3 (integration guard) landed at 12:37. Commit 3/3 (STATUS) pending after integration sweep retry. Will become the literal template for PP2 + ProteinModification fanout (template-after-lander discipline).
-2. **RNAProcessing Option-4 defer** (`E:\opencell-worktrees\triage-rna-processing-defer`, launcher PID 28528, branch `triage/rna-processing-defer`) — fired 13:25. Verdict (e) "legitimate downstream gate"; will land 3 commits (DEFER docstring + sentinel comment, wave3 Option-1 spec doc, regression test).
+### In flight (2026-05-27 ~15:40 IST)
+- **None.** All 3 codex sessions from prior batch (PP1, KP20, extractor-schemas-8) completed cleanly and merged in the queen-pass. 4-slot codex ceiling free.
+
+### Next track — RequestCalculatorPTransloc (committed, not yet fired)
+Diagnose: `docs/phase_e/KP20_regression_investigation.md` lines 44-53, 59. Suspect commit `9a677b7` (A6 PTransloc enrollment): `max(need, current_pool)` request semantics produce near-full ATP/GTP requests from early ticks (tick-10 trace: ATP=36,139 / GTP=35,870). Likely interacts with A4 (`82ae251`, L3 vector members) and A3 (`b2863dc`, key normalization). Fix path: audit + cap request generation, verify AA pool no longer pins at 1.0. Then wave-3 ensemble (4 seeds × 32,400s) carries both PP1 + PTransloc fixes.
 
 ### Process-level fidelity — input side
 Canonical: `docs/phase_e/PROCESS_STATUS_ALL_28.md` (promoted from session-state 14:14 IST; this is now the source-of-truth tracker). Current bucket counts:
