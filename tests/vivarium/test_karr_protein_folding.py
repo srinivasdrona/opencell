@@ -18,6 +18,7 @@ if "opencell" in sys.modules:
             if mod_name == "opencell" or mod_name.startswith("opencell."):
                 del sys.modules[mod_name]
 
+from opencell.vivarium.karr_composite import build_karr_chassis_v6
 from opencell.vivarium.karr_protein_folding import KarrProteinFoldingProcess
 
 
@@ -33,12 +34,17 @@ def _build_state(
     enzyme_overrides = enzyme_overrides or {}
     allocated_overrides = allocated_overrides or {}
 
-    count_wids = list(dict.fromkeys([*process.folded_monomer_wids, *process.enzyme_wids]))
+    count_wids = list(dict.fromkeys([*process.folded_monomer_wids, *process.protein_enzyme_wids]))
     protein_counts = {wid: 0.0 for wid in count_wids}
-    for wid in process.enzyme_wids:
+    for wid in process.protein_enzyme_wids:
         protein_counts[wid] = 100.0
+    complex_enzyme_wids = set(process.complex_enzyme_wids)
+    complex_counts = {wid: 100.0 for wid in process.complex_enzyme_wids}
     for wid, value in enzyme_overrides.items():
-        protein_counts[wid] = float(value)
+        if wid in complex_enzyme_wids:
+            complex_counts[wid] = float(value)
+        else:
+            protein_counts[wid] = float(value)
 
     state = {
         "substrates": {wid: 1_000.0 for wid in process.substrate_wids},
@@ -46,6 +52,7 @@ def _build_state(
             "counts": protein_counts,
             "unfolded_counts": {wid: 0.0 for wid in process.unfolded_monomer_wids},
         },
+        "complex": {"counts": complex_counts},
         "substrates_allocated": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
     }
     for wid, value in substrate_overrides.items():
@@ -87,6 +94,33 @@ def test_no_unfolded_no_action() -> None:
     p = KarrProteinFoldingProcess({})
     update = p.next_update(1.0, _build_state(p))
     assert update == {}
+
+
+def test_chassis_seeded_complex_chaperone_controls_folding() -> None:
+    composite = build_karr_chassis_v6(time_step_s=1.0, emit_step_s=1.0)
+    p = composite["processes"]["karr_protein_folding"]
+    state = deepcopy(composite["state"])
+
+    assert p.complex_enzyme_wids
+    complex_wid = p.complex_enzyme_wids[0]
+    assert float(state["complex"]["counts"][complex_wid]) > 0.0
+
+    idx = int(np.flatnonzero(~p.ion_required_mask & p.chaperone_dependent_mask)[0])
+    wid = p.unfolded_monomer_wids[idx]
+    atp_wid = p.substrate_wids[p.substrate_idx_atp]
+
+    state["protein"]["unfolded_counts"] = {u_wid: 0.0 for u_wid in p.unfolded_monomer_wids}
+    state["protein"]["unfolded_counts"][wid] = 1.0
+    state["substrates_allocated"] = {p.name: {u_wid: 0.0 for u_wid in p.substrate_wids}}
+    state["substrates_allocated"][p.name][atp_wid] = 4.0
+
+    update = p.next_update(1.0, deepcopy(state))
+    assert update["protein"]["counts"][wid] == 1.0
+
+    blocked_state = deepcopy(state)
+    blocked_state["complex"]["counts"][complex_wid] = 0.0
+    blocked_update = p.next_update(1.0, blocked_state)
+    assert wid not in blocked_update.get("protein", {}).get("counts", {})
 
 
 def test_ion_binding_first_then_chaperone() -> None:

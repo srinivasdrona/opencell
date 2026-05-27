@@ -1154,6 +1154,8 @@ def build_karr_chassis_v4(
     }
     for wid in ribasm_proc.complex_wids:
         complex_counts.setdefault(wid, 0.0)
+    for wid in p_fold_proc.complex_enzyme_wids:
+        complex_counts.setdefault(wid, float(p_fold_proc.enzyme_initial_counts_by_wid.get(wid, 0.0)))
 
     m1_topo = {
         "metabolic_reaction": ("metabolic_reaction",),
@@ -1248,6 +1250,7 @@ def build_karr_chassis_v4(
         "karr_protein_folding": {
             "substrates": ("substrates",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "substrates_allocated": ("substrates_allocated",),
         },
         "karr_protein_translocation": {
@@ -1752,6 +1755,8 @@ def build_karr_chassis_v5(
     }
     for wid in ribasm_proc.complex_wids:
         complex_counts.setdefault(wid, 0.0)
+    for wid in p_fold_proc.complex_enzyme_wids:
+        complex_counts.setdefault(wid, float(p_fold_proc.enzyme_initial_counts_by_wid.get(wid, 0.0)))
 
     m1_topo = {
         "metabolic_reaction": ("metabolic_reaction",),
@@ -1846,6 +1851,7 @@ def build_karr_chassis_v5(
         "karr_protein_folding": {
             "substrates": ("substrates",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "substrates_allocated": ("substrates_allocated",),
         },
         "karr_protein_translocation": {
