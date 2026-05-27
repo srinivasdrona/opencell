@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "n_ticks": 100,
+    "process_name": "RNAModification",
+    "rng_seed": 0,
+    "snapshot_properties": [
+      "boundEnzymes",
+      "enzymes",
+      "modifiedRNAs",
+      "substrates",
+      "unmodifiedRNAs"
+    ],
+    "source_mat": "data/m1_sources/karr_native/per_process_traces/RNAModification_100ticks.mat",
+    "schema_version": 1
+  }
+}

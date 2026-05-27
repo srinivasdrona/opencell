@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "n_ticks": 100,
+    "process_name": "ProteinTranslocation",
+    "rng_seed": 0,
+    "snapshot_properties": [
+      "boundEnzymes",
+      "enzymes",
+      "monomers",
+      "substrates"
+    ],
+    "source_mat": "data/m1_sources/karr_native/per_process_traces/ProteinTranslocation_100ticks.mat",
+    "schema_version": 1
+  }
+}
