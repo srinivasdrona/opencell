@@ -62,6 +62,15 @@ def _orient_matrix(mat: np.ndarray, n_tf: int, n_tu: int) -> np.ndarray:
     raise ValueError(f"Cannot orient matrix of shape {matrix.shape} to ({n_tf}, {n_tu})")
 
 
+def _orient_other_activities(mat: np.ndarray, n_tu: int, n_tf: int) -> np.ndarray:
+    matrix = np.asarray(mat, dtype=np.float64)
+    if matrix.shape == (n_tu, n_tf):
+        return matrix.T
+    if matrix.shape == (n_tf, n_tu):
+        return matrix
+    raise ValueError(f"Cannot orient otherActivities of shape {matrix.shape} to ({n_tf}, {n_tu})")
+
+
 def _load_fixture(path: str | Path) -> dict[str, Any]:
     resolved = _resolve_fixture_path(path)
     mat = loadmat(str(resolved))
@@ -90,6 +99,11 @@ def _load_fixture(path: str | Path) -> dict[str, Any]:
         fold_change_full = _orient_matrix(
             _as_field_matrix(fx, "tfTuFoldChangeMatrix"), n_tf=n_tf, n_tu=n_tu_all
         )
+        other_activities_full = np.ones((n_tf, n_tu_all), dtype=np.float64)
+        if "otherActivities" in names:
+            other_activities_full = _orient_other_activities(
+                _as_field_matrix(fx, "otherActivities"), n_tu=n_tu_all, n_tf=n_tf
+            )
     else:
         required_sparse = {"tfIndexs", "tuIndexs", "tfAffinities", "tfActivities"}
         if not required_sparse.issubset(names):
@@ -113,18 +127,21 @@ def _load_fixture(path: str | Path) -> dict[str, Any]:
             affinity_full[tf_i, tu_i] = max(affinity_full[tf_i, tu_i], float(a_raw))
             fold_change_full[tf_i, tu_i] = float(c_raw)
 
-        # Flat fixture exposes a dense "otherActivities" matrix for additional
-        # TF/TU fold-change relationships not represented in sparse arrays.
+        other_activities_full = np.ones((n_tf, n_tu_all), dtype=np.float64)
         if "otherActivities" in names:
-            other = np.asarray(_as_field_matrix(fx, "otherActivities"), dtype=np.float64)
-            if other.shape == (n_tu_all, n_tf):
-                rows, cols = np.where(np.abs(other - 1.0) > _FLOAT_TOL)
-                for tu_i, tf_i in zip(rows, cols, strict=False):
-                    fold_change_full[tf_i, tu_i] = float(other[tu_i, tf_i])
-                    if affinity_full[tf_i, tu_i] <= 0.0:
-                        affinity_full[tf_i, tu_i] = 1.0
+            other_activities_full = _orient_other_activities(
+                _as_field_matrix(fx, "otherActivities"), n_tu=n_tu_all, n_tf=n_tf
+            )
 
-    relationship_mask = (affinity_full > 0.0) | (np.abs(fold_change_full - 1.0) > _FLOAT_TOL)
+    # Karr applies otherActivities for TF-presence effects that are distinct
+    # from promoter-bound TF fold changes; avoid double-counting when overlaps exist.
+    other_activities_full = np.where(affinity_full > 0.0, 1.0, other_activities_full)
+
+    relationship_mask = (
+        (affinity_full > 0.0)
+        | (np.abs(fold_change_full - 1.0) > _FLOAT_TOL)
+        | (np.abs(other_activities_full - 1.0) > _FLOAT_TOL)
+    )
     tu_keep = np.flatnonzero(np.any(relationship_mask, axis=0))
     if tu_keep.size == 0:
         raise ValueError("No regulated transcription units discovered in fixture")
@@ -132,14 +149,20 @@ def _load_fixture(path: str | Path) -> dict[str, Any]:
     tu_wids = [tu_all_wids[idx] for idx in tu_keep.tolist()]
     affinity = affinity_full[:, tu_keep]
     fold_change = fold_change_full[:, tu_keep]
+    other_activities = other_activities_full[:, tu_keep]
 
     return {
         "tf_wids": tf_wids,
         "tu_wids": tu_wids,
         "tf_promoter_affinity": affinity,
         "tf_tu_fold_change": fold_change,
+        "tf_other_activities": other_activities,
         "n_relationships": int(
-            np.count_nonzero((affinity > 0.0) | (np.abs(fold_change - 1.0) > _FLOAT_TOL))
+            np.count_nonzero(
+                (affinity > 0.0)
+                | (np.abs(fold_change - 1.0) > _FLOAT_TOL)
+                | (np.abs(other_activities - 1.0) > _FLOAT_TOL)
+            )
         ),
     }
 
@@ -161,6 +184,7 @@ class KarrTranscriptionalRegulationProcess(Process):
         self.tu_wids: list[str] = fixture["tu_wids"]
         self.tf_promoter_affinity: np.ndarray = fixture["tf_promoter_affinity"]
         self.tf_tu_fold_change: np.ndarray = fixture["tf_tu_fold_change"]
+        self.tf_other_activities: np.ndarray = fixture["tf_other_activities"]
         self.n_relationships: int = fixture["n_relationships"]
 
         self._n_tf = len(self.tf_wids)
@@ -241,6 +265,19 @@ class KarrTranscriptionalRegulationProcess(Process):
 
         bound_effects = np.where(binding > 0, self.tf_tu_fold_change, 1.0)
         fold_change_total = np.prod(bound_effects, axis=0, dtype=np.float64)
+
+        tf_present = np.asarray(
+            [
+                max(0.0, float(protein_counts.get(tf_wid, 0.0))) > 0.0
+                for tf_wid in self.tf_wids
+            ],
+            dtype=bool,
+        )
+        if np.any(tf_present):
+            other_effects = np.where(tf_present[:, np.newaxis], self.tf_other_activities, 1.0)
+            fold_change_total = fold_change_total * np.prod(
+                other_effects, axis=0, dtype=np.float64
+            )
 
         tf_binding_update: dict[str, dict[str, float]] = {}
         for tf_i, tf_wid in enumerate(self.tf_wids):

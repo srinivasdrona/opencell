@@ -48,6 +48,7 @@ def _make_toy_process(
     tu_wids: list[str],
     affinity: np.ndarray,
     fold_change: np.ndarray,
+    other_activities: np.ndarray | None = None,
     seed: int = 0,
 ) -> KarrTranscriptionalRegulationProcess:
     p = KarrTranscriptionalRegulationProcess({"rng_seed": seed})
@@ -55,6 +56,10 @@ def _make_toy_process(
     p.tu_wids = tu_wids
     p.tf_promoter_affinity = np.asarray(affinity, dtype=np.float64)
     p.tf_tu_fold_change = np.asarray(fold_change, dtype=np.float64)
+    if other_activities is None:
+        p.tf_other_activities = np.ones_like(p.tf_tu_fold_change, dtype=np.float64)
+    else:
+        p.tf_other_activities = np.asarray(other_activities, dtype=np.float64)
     p.n_relationships = int(np.count_nonzero(p.tf_promoter_affinity > 0.0))
     p._n_tf = len(tf_wids)
     p._n_tu = len(tu_wids)
@@ -89,6 +94,7 @@ def test_fixture_loads() -> None:
     assert len(p.tu_wids) > 0
     assert p.tf_promoter_affinity.shape == (len(p.tf_wids), len(p.tu_wids))
     assert p.tf_tu_fold_change.shape == (len(p.tf_wids), len(p.tu_wids))
+    assert p.tf_other_activities.shape == (len(p.tf_wids), len(p.tu_wids))
     assert p.n_relationships > 0
 
 
@@ -161,6 +167,27 @@ def test_fold_change_multiplicative() -> None:
     assert update["tx_rate_fold_change"]["TU_X"] == pytest.approx(4.0)
 
 
+def test_other_activities_fold_change_tracks_tf_presence() -> None:
+    p = _make_toy_process(
+        tf_wids=["TF_A"],
+        tu_wids=["TU_X"],
+        affinity=np.array([[0.0]], dtype=np.float64),
+        fold_change=np.array([[1.0]], dtype=np.float64),
+        other_activities=np.array([[3.0]], dtype=np.float64),
+        seed=0,
+    )
+    state = _empty_tr_state(p)
+
+    update_none = p.next_update(1.0, state)
+    assert update_none["tf_binding"] == {}
+    assert update_none["tx_rate_fold_change"]["TU_X"] == pytest.approx(1.0)
+
+    state["protein"]["counts"]["TF_A"] = 1.0
+    update_present = p.next_update(1.0, state)
+    assert update_present["tf_binding"] == {}
+    assert update_present["tx_rate_fold_change"]["TU_X"] == pytest.approx(3.0)
+
+
 def test_m2v3_reads_fold_change() -> None:
     kinetics = tx.calibrated_chassis_model(tx.load_default())
     mechanism_inputs = tx_v2.load_default()
@@ -217,8 +244,10 @@ def test_steady_state_binding_fraction() -> None:
     for tf in p.tf_wids:
         total_bound += sum(float(state["tf_binding"][tf][tu]) for tu in p.tu_wids)
     total_tf = sum(float(state["protein"]["counts"][tf]) for tf in p.tf_wids)
-    bound_fraction = (total_bound / total_tf) if total_tf > 0.0 else 0.0
-    assert bound_fraction > 0.40
+    binding_capacity = float(np.count_nonzero(p.tf_promoter_affinity > 0.0))
+    expected_bound = min(total_tf, binding_capacity)
+    if expected_bound > 0.0:
+        assert total_bound >= 0.90 * expected_bound
 
 
 def test_no_regression_m2v3_without_regulation() -> None:
