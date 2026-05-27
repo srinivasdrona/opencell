@@ -117,6 +117,7 @@ markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "scientific: scientific validation tests",
     "gate: Phase 1->2 gate tests (must all pass before Phase 2)",
+    "trajectory_derived: replay fixtures derived from whole-trajectory (integration-coupled) snapshots",
 ]
 
 [tool.hatch.build.targets.wheel]
