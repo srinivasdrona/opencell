@@ -186,8 +186,32 @@ def test_bounded_by_counts(default_process: ProteinDecayLightProcess) -> None:
             assert observed_decay == have
 
 
+def test_missing_complex_port_defaults_to_zero_counts(
+    default_process: ProteinDecayLightProcess,
+) -> None:
+    subset = default_process.complex_wids[:3]
+    process = ProteinDecayLightProcess({"complex_wid_filter": subset, "rng_seed": 17})
+    process._rng = _FixedPoissonRng([10_000])
+
+    state = {
+        "substrates": {wid: 0.0 for wid in process.substrate_wids},
+        "protein": {"counts": {wid: 0.0 for wid in process.protein_wids}},
+        "rna": {"counts": {wid: 0.0 for wid in process.rna_wids}},
+        "requests": {"karr_protein_decay_light": {"ATP": 0.0, "H2O": 0.0}},
+        "substrates_allocated": {"karr_protein_decay_light": {"ATP": 0.0, "H2O": 0.0}},
+    }
+
+    update = process.next_update(1.0, state)
+
+    assert update.get("complex", {}).get("counts", {}) == {}
+    assert update.get("substrates", {}) == {}
+    assert update.get("protein", {}).get("counts", {}) == {}
+    assert update.get("rna", {}).get("counts", {}) == {}
+    assert update["requests"]["karr_protein_decay_light"]["ATP"] == 0.0
+    assert update["requests"]["karr_protein_decay_light"]["H2O"] == 0.0
+
+
 def test_integration_with_d2_real() -> None:
     pytest.importorskip("opencell.vivarium.karr_macromolecular_complexation")
     process = ProteinDecayLightProcess({})
     assert 0 < len(process.complex_wids) <= 147
-

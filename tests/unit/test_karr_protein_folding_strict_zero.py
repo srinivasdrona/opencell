@@ -44,3 +44,28 @@ def test_karr_protein_folding_strict_zero_no_global_fallback() -> None:
     substrate_delta = update.get("substrates", {})
     for wid in process.substrate_wids:
         assert abs(float(substrate_delta.get(wid, 0.0))) <= 1.0e-12
+
+
+def test_karr_protein_folding_accepts_unfolded_monomers_replay_key() -> None:
+    process = KarrProteinFoldingProcess({"rng_seed": 5})
+
+    candidate_idx = np.flatnonzero(
+        (~process.ion_required_mask) & (~process.chaperone_dependent_mask)
+    )
+    assert candidate_idx.size > 0
+    ridx = int(candidate_idx[0])
+    target_wid = process.unfolded_monomer_wids[ridx]
+    count_wids = list(dict.fromkeys([*process.folded_monomer_wids, *process.enzyme_wids]))
+
+    legacy_unfolded = np.zeros(len(process.unfolded_monomer_wids), dtype=np.float64)
+    legacy_unfolded[ridx] = 1.0
+    state = {
+        "substrates": {wid: 0.0 for wid in process.substrate_wids},
+        "protein": {"counts": {wid: 100.0 for wid in count_wids}},
+        "unfoldedMonomers": legacy_unfolded,
+        "substrates_allocated": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
+    }
+
+    update = process.next_update(1.0, state)
+
+    assert update["protein"]["unfolded_counts"][target_wid] == -1.0

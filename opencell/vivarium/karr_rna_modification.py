@@ -136,6 +136,13 @@ class KarrRNAModificationProcess(Process):
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         del timestep
+        rna_state = states.get("rna", {})
+        if not isinstance(rna_state, dict):
+            rna_state = {}
+        protein_state = states.get("protein", {})
+        if not isinstance(protein_state, dict):
+            protein_state = {}
+
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
         # Strict-zero allocator contract: do not fallback to global substrate pools.
         substrates = np.asarray(
@@ -145,19 +152,38 @@ class KarrRNAModificationProcess(Process):
             ],
             dtype=np.float64,
         )
+        unmodified_store = rna_state.get("counts", {})
+        if not isinstance(unmodified_store, dict):
+            unmodified_store = {}
+        if not unmodified_store:
+            unmodified_store = self._legacy_vector_to_wid_counts(
+                states.get("unmodifiedRNAs"),
+                self.unmodified_rna_wids,
+            )
         unmodified_rna = np.asarray(
-            [float(states["rna"]["counts"].get(wid, 0.0)) for wid in self.unmodified_rna_wids],
+            [float(unmodified_store.get(wid, 0.0)) for wid in self.unmodified_rna_wids],
             dtype=np.float64,
         )
+        modified_store = rna_state.get("modified_counts", {})
+        if not isinstance(modified_store, dict):
+            modified_store = {}
+        if not modified_store:
+            modified_store = self._legacy_vector_to_wid_counts(
+                states.get("modifiedRNAs"),
+                self.modified_rna_wids,
+            )
         modified_rna = np.asarray(
             [
-                float(states["rna"].get("modified_counts", {}).get(wid, 0.0))
+                float(modified_store.get(wid, 0.0))
                 for wid in self.modified_rna_wids
             ],
             dtype=np.float64,
         )
+        protein_count_store = protein_state.get("counts", {})
+        if not isinstance(protein_count_store, dict):
+            protein_count_store = {}
         enzymes = np.asarray(
-            [float(states["protein"]["counts"].get(wid, 0.0)) for wid in self.enzyme_wids],
+            [float(protein_count_store.get(wid, 0.0)) for wid in self.enzyme_wids],
             dtype=np.float64,
         )
 
@@ -319,6 +345,21 @@ class KarrRNAModificationProcess(Process):
         enzyme_remaining[chosen] -= 1
         reaction_remaining[chosen] -= 1
         return True
+
+    @staticmethod
+    def _legacy_vector_to_wid_counts(
+        values: Any,
+        wids: list[str],
+    ) -> dict[str, float]:
+        if values is None:
+            return {}
+        try:
+            flat = np.asarray(values, dtype=np.float64).reshape(-1)
+        except (TypeError, ValueError):
+            return {}
+        if flat.size != len(wids):
+            return {}
+        return {wid: float(flat[idx]) for idx, wid in enumerate(wids)}
 
 
 __all__ = ["KarrRNAModificationProcess"]

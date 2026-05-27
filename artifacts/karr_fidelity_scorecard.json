@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-05-27T04:48:36+00:00",
+  "generated_at_utc": "2026-05-27T08:22:58+00:00",
   "thresholds": {
     "pass_rel_lt": 1e-06,
     "pass_abs_lt": 1e-09,
@@ -15,6 +15,16 @@
       "max_abs": 0.0,
       "max_rel": 0.0,
       "top_disagreement_property": "boundEnzymes"
+    },
+    {
+      "process_name": "ChromosomeCondensation_from_flat",
+      "status": "SKIP",
+      "reason": "No process-class mapping found.",
+      "n_ticks_tested": 0,
+      "properties_compared": 0,
+      "max_abs": null,
+      "max_rel": null,
+      "top_disagreement_property": null
     },
     {
       "process_name": "ChromosomeSegregation",
@@ -65,6 +75,16 @@
       "max_abs": 0.0,
       "max_rel": 0.0,
       "top_disagreement_property": "boundEnzymes"
+    },
+    {
+      "process_name": "DnaSupercoiling_from_flat",
+      "status": "SKIP",
+      "reason": "No process-class mapping found.",
+      "n_ticks_tested": 0,
+      "properties_compared": 0,
+      "max_abs": null,
+      "max_rel": null,
+      "top_disagreement_property": null
     },
     {
       "process_name": "FtsZPolymerization",
@@ -119,7 +139,7 @@
     {
       "process_name": "ProteinDecay",
       "status": "SKIP",
-      "reason": "Replay execution failed: 'complex'",
+      "reason": "Structural mismatch: no comparable properties.",
       "n_ticks_tested": 0,
       "properties_compared": 0,
       "max_abs": null,
@@ -128,23 +148,23 @@
     },
     {
       "process_name": "ProteinFolding",
-      "status": "SKIP",
-      "reason": "Replay execution failed: 'unfolded_counts'",
-      "n_ticks_tested": 0,
-      "properties_compared": 0,
-      "max_abs": null,
-      "max_rel": null,
-      "top_disagreement_property": null
+      "status": "PASS",
+      "reason": "",
+      "n_ticks_tested": 1,
+      "properties_compared": 5,
+      "max_abs": 0.0,
+      "max_rel": 0.0,
+      "top_disagreement_property": "boundEnzymes"
     },
     {
       "process_name": "ProteinModification",
-      "status": "SKIP",
-      "reason": "Replay execution failed: 'unmodified_counts'",
-      "n_ticks_tested": 0,
-      "properties_compared": 0,
-      "max_abs": null,
-      "max_rel": null,
-      "top_disagreement_property": null
+      "status": "PASS",
+      "reason": "",
+      "n_ticks_tested": 1,
+      "properties_compared": 5,
+      "max_abs": 0.0,
+      "max_rel": 0.0,
+      "top_disagreement_property": "boundEnzymes"
     },
     {
       "process_name": "ProteinProcessingI",
@@ -187,14 +207,24 @@
       "top_disagreement_property": null
     },
     {
-      "process_name": "RNAModification",
+      "process_name": "RNADecay_from_trajectory",
       "status": "SKIP",
-      "reason": "Replay execution failed: 'rna'",
+      "reason": "No process-class mapping found.",
       "n_ticks_tested": 0,
       "properties_compared": 0,
       "max_abs": null,
       "max_rel": null,
       "top_disagreement_property": null
+    },
+    {
+      "process_name": "RNAModification",
+      "status": "PASS",
+      "reason": "",
+      "n_ticks_tested": 1,
+      "properties_compared": 5,
+      "max_abs": 0.0,
+      "max_rel": 0.0,
+      "top_disagreement_property": "boundEnzymes"
     },
     {
       "process_name": "RNAProcessing",
@@ -220,6 +250,46 @@
       "process_name": "ReplicationInitiation",
       "status": "SKIP",
       "reason": "1-tick mirror (states_before == states_after); awaiting Track-B MATLAB re-extract.",
+      "n_ticks_tested": 0,
+      "properties_compared": 0,
+      "max_abs": null,
+      "max_rel": null,
+      "top_disagreement_property": null
+    },
+    {
+      "process_name": "ReplicationInitiation_from_flat",
+      "status": "SKIP",
+      "reason": "No process-class mapping found.",
+      "n_ticks_tested": 0,
+      "properties_compared": 0,
+      "max_abs": null,
+      "max_rel": null,
+      "top_disagreement_property": null
+    },
+    {
+      "process_name": "ReplicationInitiation_from_trajectory",
+      "status": "SKIP",
+      "reason": "No process-class mapping found.",
+      "n_ticks_tested": 0,
+      "properties_compared": 0,
+      "max_abs": null,
+      "max_rel": null,
+      "top_disagreement_property": null
+    },
+    {
+      "process_name": "Replication_from_flat",
+      "status": "SKIP",
+      "reason": "No process-class mapping found.",
+      "n_ticks_tested": 0,
+      "properties_compared": 0,
+      "max_abs": null,
+      "max_rel": null,
+      "top_disagreement_property": null
+    },
+    {
+      "process_name": "Replication_from_trajectory",
+      "status": "SKIP",
+      "reason": "No process-class mapping found.",
       "n_ticks_tested": 0,
       "properties_compared": 0,
       "max_abs": null,
@@ -257,6 +327,16 @@
       "top_disagreement_property": null
     },
     {
+      "process_name": "Transcription_from_trajectory",
+      "status": "SKIP",
+      "reason": "No process-class mapping found.",
+      "n_ticks_tested": 0,
+      "properties_compared": 0,
+      "max_abs": null,
+      "max_rel": null,
+      "top_disagreement_property": null
+    },
+    {
       "process_name": "TranscriptionalRegulation",
       "status": "PASS",
       "reason": "",
@@ -277,14 +357,24 @@
       "top_disagreement_property": null
     },
     {
-      "process_name": "tRNAAminoacylation",
+      "process_name": "Translation_from_trajectory",
       "status": "SKIP",
-      "reason": "Replay execution failed: 'rna'",
+      "reason": "No process-class mapping found.",
       "n_ticks_tested": 0,
       "properties_compared": 0,
       "max_abs": null,
       "max_rel": null,
       "top_disagreement_property": null
+    },
+    {
+      "process_name": "tRNAAminoacylation",
+      "status": "PASS",
+      "reason": "",
+      "n_ticks_tested": 1,
+      "properties_compared": 2,
+      "max_abs": 0.0,
+      "max_rel": 0.0,
+      "top_disagreement_property": "boundEnzymes"
     }
   ]
 }
