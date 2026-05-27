@@ -156,6 +156,10 @@ class KarrProteinFoldingProcess(Process):
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         del timestep
 
+        protein_state = states.get("protein", {})
+        if not isinstance(protein_state, dict):
+            protein_state = {}
+
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
         substrate_counts = np.asarray(
             [
@@ -166,9 +170,18 @@ class KarrProteinFoldingProcess(Process):
         )
         substrate_pool = np.floor(np.clip(substrate_counts, a_min=0.0, a_max=None)).astype(np.int64)
 
+        unfolded_store = protein_state.get("unfolded_counts", {})
+        if not isinstance(unfolded_store, dict):
+            unfolded_store = {}
+        if not unfolded_store:
+            unfolded_store = self._legacy_vector_to_wid_counts(
+                states.get("unfoldedMonomers"),
+                self.unfolded_monomer_wids,
+            )
+
         unfolded_pool = np.asarray(
             [
-                float(states["protein"]["unfolded_counts"].get(wid, 0.0))
+                float(unfolded_store.get(wid, 0.0))
                 for wid in self.unfolded_monomer_wids
             ],
             dtype=np.float64,
@@ -178,8 +191,11 @@ class KarrProteinFoldingProcess(Process):
         if unfolded_pool.sum() <= 0:
             return {}
 
+        count_store = protein_state.get("counts", {})
+        if not isinstance(count_store, dict):
+            count_store = {}
         enzyme_pool = np.asarray(
-            [float(states["protein"]["counts"].get(wid, 0.0)) for wid in self.enzyme_wids],
+            [float(count_store.get(wid, 0.0)) for wid in self.enzyme_wids],
             dtype=np.float64,
         )
         enzyme_pool = np.floor(np.clip(enzyme_pool, a_min=0.0, a_max=None)).astype(np.int64)
@@ -234,6 +250,21 @@ class KarrProteinFoldingProcess(Process):
     ) -> float:
         allocated_value = float(allocated_state.get(wid, 0.0))
         return max(0.0, allocated_value)
+
+    @staticmethod
+    def _legacy_vector_to_wid_counts(
+        values: Any,
+        wids: list[str],
+    ) -> dict[str, float]:
+        if values is None:
+            return {}
+        try:
+            flat = np.asarray(values, dtype=np.float64).reshape(-1)
+        except (TypeError, ValueError):
+            return {}
+        if flat.size != len(wids):
+            return {}
+        return {wid: float(flat[idx]) for idx, wid in enumerate(wids)}
 
     def _phase1_ion_binding(
         self,
