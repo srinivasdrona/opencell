@@ -38,6 +38,7 @@ _REQUIRED_STATE_KEYS = {
     "division_event_timestamp_s",
 }
 
+# Designed deferrals (see disposition_todo_id: E2-V1_1-KP25-KO-SWEEP / E2-V1_1-KP26-KO-CLASS).
 _DEFERRED_KPS = {"KP25", "KP26"}
 _EMITTER_GAP_KPS = {"KP15", "KP27", "KP28"}
 _ENERGY_BALANCE_SUBSTRATES = {"ATP", "GTP"}
