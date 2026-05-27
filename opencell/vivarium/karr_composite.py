@@ -1752,6 +1752,8 @@ def build_karr_chassis_v5(
     }
     for wid in ribasm_proc.complex_wids:
         complex_counts.setdefault(wid, 0.0)
+    for wid in dna_repair_proc.complex_enzyme_wids:
+        complex_counts.setdefault(wid, float(dna_repair_proc.enzyme_defaults.get(wid, 0.0)))
 
     m1_topo = {
         "metabolic_reaction": ("metabolic_reaction",),
@@ -1898,6 +1900,7 @@ def build_karr_chassis_v5(
         "karr_dna_repair": {
             "chromosome": ("chromosome",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "substrates": ("substrates",),
             "requests": ("requests",),
             "substrates_allocated": ("substrates_allocated",),
