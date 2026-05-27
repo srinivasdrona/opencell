@@ -1,73 +1,40 @@
-# STATUS Track-B Trajectory Fixtures
+Implemented on branch `trackF/trajectory-fixtures` in commit `bac5276` (`feat(validation): add trajectory-derived replay fixtures for truncated processes`).
 
-Date: 2026-05-27
-Branch: `trackF/trajectory-fixtures`
+### Delivered
+- New builder script: [scripts/build_replay_fixtures_from_trajectory.py](E:/opencell-worktrees/trackB-trajectory-fixtures/scripts/build_replay_fixtures_from_trajectory.py)
+- New quality test: [tests/unit/test_replay_fixture_quality_from_trajectory.py](E:/opencell-worktrees/trackB-trajectory-fixtures/tests/unit/test_replay_fixture_quality_from_trajectory.py)
+- New trajectory fixture README: [README_trajectory_fixtures.md](E:/opencell-worktrees/trackB-trajectory-fixtures/data/karr_fixtures/per_process_replay/README_trajectory_fixtures.md)
+- New status report: [STATUS_trackB_trajectory.md](E:/opencell-worktrees/trackB-trajectory-fixtures/STATUS_trackB_trajectory.md)
+- 5 generated fixtures:
+  - [Transcription_from_trajectory.npz](E:/opencell-worktrees/trackB-trajectory-fixtures/data/karr_fixtures/per_process_replay/Transcription_from_trajectory.npz)
+  - [Translation_from_trajectory.npz](E:/opencell-worktrees/trackB-trajectory-fixtures/data/karr_fixtures/per_process_replay/Translation_from_trajectory.npz)
+  - [RNADecay_from_trajectory.npz](E:/opencell-worktrees/trackB-trajectory-fixtures/data/karr_fixtures/per_process_replay/RNADecay_from_trajectory.npz)
+  - [Replication_from_trajectory.npz](E:/opencell-worktrees/trackB-trajectory-fixtures/data/karr_fixtures/per_process_replay/Replication_from_trajectory.npz)
+  - [ReplicationInitiation_from_trajectory.npz](E:/opencell-worktrees/trackB-trajectory-fixtures/data/karr_fixtures/per_process_replay/ReplicationInitiation_from_trajectory.npz)
 
-## Scope completed
+### Verification
+- Ran:
+  - `py -3.12 scripts/build_replay_fixtures_from_trajectory.py --all-truncated`
+  - `py -3.12 -m pytest tests/unit/test_replay_fixture_quality_from_trajectory.py -v`
+- Result: **5/5 tests passed**.
+- Extracted regime: `324` snapshots, `323` pairs, uniform `effective_dt_sec = 100.0`.
 
-- Added `scripts/build_replay_fixtures_from_trajectory.py` (no MATLAB dependency).
-- Generated 5 trajectory-derived replay fixtures:
-  - `Transcription_from_trajectory.npz`
-  - `Translation_from_trajectory.npz`
-  - `RNADecay_from_trajectory.npz`
-  - `Replication_from_trajectory.npz`
-  - `ReplicationInitiation_from_trajectory.npz`
-- Added trajectory-derived quality test:
-  - `tests/unit/test_replay_fixture_quality_from_trajectory.py`
-- Added trajectory fixture framing doc:
-  - `data/karr_fixtures/per_process_replay/README_trajectory_fixtures.md`
+### Notes captured
+- Documented isolated-vs-integration validation framing and tolerance guidance.
+- Documented trajectory limitation: missing RNA/ProteinMonomer count channels in this export; extractor falls back to flat-fixture baseline for those channels.
+- Existing truncated `_100ticks.mat` files were not modified.
 
-## Extraction summary
-
-All 5 processes extracted from `cell_cycle_trajectory.mat` with:
-
-- `n_snapshots = 324`
-- `n_pairs = 323`
-- `effective_dt_sec` regime: uniform `100.0` seconds between snapshots
-
-| Process | n_snapshots | n_pairs | dt regime (s) | fixture size (bytes) | substrate max abs delta |
-|---|---:|---:|---|---:|---:|
-| Transcription | 324 | 323 | [100.0] | 10580 | 41174.0 |
-| Translation | 324 | 323 | [100.0] | 16526 | 41174.0 |
-| RNADecay | 324 | 323 | [100.0] | 22963 | 41174.0 |
-| Replication | 324 | 323 | [100.0] | 7717 | 41174.0 |
-| ReplicationInitiation | 324 | 323 | [100.0] | 6426 | 41174.0 |
-
-## Known anomalies / limitations
-
-Trajectory export includes dynamic `Metabolite_counts` and `ProteinComplex_counts`, but does not include `Rna_counts` or `ProteinMonomer_counts` channels used by some enzyme/bound-enzyme mappings.
-
-Applied behavior in extractor:
-
-- Missing trajectory channels fall back to per-process flat fixture baseline vectors.
-- This primarily affects RNA/monomer-dependent enzyme channels.
-- Substrate channels remain trajectory-dynamic and non-trivial across all 5 processes.
-
-Process-specific notes:
-
-- `Transcription`: monomer enzyme/bound-enzyme components are baseline fallback.
-- `Translation`: RNA + monomer enzyme/bound-enzyme components are baseline fallback; `monomers` channel remains baseline (all-zero vector in flat fixture).
-- `RNADecay`: monomer enzyme/bound-enzyme components are baseline fallback.
-- `Replication`: monomer enzyme/bound-enzyme components are baseline fallback; complex components are trajectory-dynamic.
-- `ReplicationInitiation`: monomer enzyme/bound-enzyme components are baseline fallback; complex components are trajectory-dynamic.
-
-## Validation status
-
-Command:
-
-```powershell
-py -3.12 -m pytest tests/unit/test_replay_fixture_quality_from_trajectory.py -v
-```
-
-Result:
-
-- 5 collected
-- 5 passed
-- 0 failed
-
-## Notes for future MATLAB rerun
-
-When MATLAB access is restored, rerun `scripts/matlab/extract_per_process_traces_fix.m` to regenerate isolated per-tick fixtures and cross-compare:
-
-- isolated evidence channel (`*_100ticks.mat`)
-- integration-coupled trajectory channel (`*_from_trajectory.npz`)
+### Option B follow-up
+- Added flat snapshot builder: [scripts/build_replay_fixtures_from_flat.py](E:/opencell-worktrees/trackB-trajectory-fixtures/scripts/build_replay_fixtures_from_flat.py)
+- Added flat fixture quality test: [tests/unit/test_replay_fixture_quality_from_flat.py](E:/opencell-worktrees/trackB-trajectory-fixtures/tests/unit/test_replay_fixture_quality_from_flat.py)
+- Added flat fixture README: [README_flat_fixtures.md](E:/opencell-worktrees/trackB-trajectory-fixtures/data/karr_fixtures/per_process_replay/README_flat_fixtures.md)
+- Added trajectory-script warning for Replication/ReplicationInitiation chromosome-state gap in [build_replay_fixtures_from_trajectory.py](E:/opencell-worktrees/trackB-trajectory-fixtures/scripts/build_replay_fixtures_from_trajectory.py)
+- Generated flat-derived fixtures:
+  - [Replication_from_flat.npz](E:/opencell-worktrees/trackB-trajectory-fixtures/data/karr_fixtures/per_process_replay/Replication_from_flat.npz) — 4,024 bytes
+  - [ReplicationInitiation_from_flat.npz](E:/opencell-worktrees/trackB-trajectory-fixtures/data/karr_fixtures/per_process_replay/ReplicationInitiation_from_flat.npz) — 18,131 bytes
+  - [ChromosomeCondensation_from_flat.npz](E:/opencell-worktrees/trackB-trajectory-fixtures/data/karr_fixtures/per_process_replay/ChromosomeCondensation_from_flat.npz) — 2,197 bytes
+  - [DnaSupercoiling_from_flat.npz](E:/opencell-worktrees/trackB-trajectory-fixtures/data/karr_fixtures/per_process_replay/DnaSupercoiling_from_flat.npz) — 2,698 bytes
+- Verification run (WSL venv):
+  - `python -m pytest tests/unit/test_replay_fixture_quality_from_flat.py tests/unit/test_replay_fixture_quality_from_trajectory.py -v`
+  - Result: **9/9 passed**
+- Chromosome-state coverage gap is now closed for the four chromosome-focused replay fixtures via flat snapshot-oracle outputs and explicit chromosome payload capture (`initial__chromosome`).

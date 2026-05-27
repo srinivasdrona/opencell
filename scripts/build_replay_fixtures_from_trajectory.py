@@ -1,5 +1,7 @@
 """Build per-process replay fixtures from the cell-cycle trajectory snapshot file.
 
+Warning: for Replication and ReplicationInitiation, chromosome-internal state is not captured in trajectory deltas; use <Process>_from_flat.npz as the primary oracle.
+
 Usage:
     py -3.12 scripts/build_replay_fixtures_from_trajectory.py --all-truncated
     py -3.12 scripts/build_replay_fixtures_from_trajectory.py --process Transcription
