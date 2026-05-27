@@ -27,6 +27,7 @@ mapping, both deferred to the integrator pass).
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Mapping
 from copy import deepcopy
 from pathlib import Path
@@ -101,6 +102,7 @@ if TYPE_CHECKING:
 
 _M1_SUBSTRATE_DEFAULT = 1.0
 _KARR_CYTOSOL_COMPARTMENT_0 = 0
+_LOGGER = logging.getLogger(__name__)
 
 
 def _load_karr_initial_substrate_counts(
@@ -117,6 +119,14 @@ def _load_karr_initial_substrate_counts(
     return {
         sid: float(dyn.substrates_snapshot[idx, _KARR_CYTOSOL_COMPARTMENT_0])
         for idx, sid in enumerate(sub_ids)
+    }
+
+
+def _load_d2_mature_complex_counts_snapshot() -> dict[str, float]:
+    """Load canonical mature complex counts from the D2 stub snapshot path."""
+    d2_stub = MacromolecularComplexationStubProcess({})
+    return {
+        wid: float(d2_stub._complex_counts_schema[wid]["_default"]) for wid in d2_stub.d2_owned_wids
     }
 
 
@@ -989,6 +999,11 @@ def build_karr_chassis_v4(
             "complex_wids": sorted(tx_reg_complex_wids),
         }
     )
+    tx_reg_tf_complex_wids = sorted(
+        wid
+        for wid in tx_reg_proc.tf_wids
+        if getattr(tx_reg_proc, "_tf_wid_source", {}).get(wid) == "complex"
+    )
     rna_proc = KarrRNAProcessingProcess({"time_step": time_step_s})
     rna_mod_proc = KarrRNAModificationProcess({"time_step": time_step_s})
     pp1_proc = KarrProteinProcessingIProcess({"time_step": time_step_s})
@@ -1159,12 +1174,28 @@ def build_karr_chassis_v4(
     protein_location_init = {wid: "cytoplasm" for wid in p_trans_proc.translocatable_wids}
     protein_activity_init = {wid: 0 for wid in p_activation_proc.regulated_protein_wids}
 
+    mature_complex_counts = _load_d2_mature_complex_counts_snapshot()
     complex_counts = {
-        "RNA_POLYMERASE": float(m2_mechanism_inputs.n_active_rnap),
-        "RIBOSOME_70S": float(m3_mechanism_inputs.n_active_ribosomes),
+        wid: float(mature_complex_counts.get(wid, 0.0)) for wid in sorted(tx_reg_complex_wids)
     }
-    for wid in ribasm_proc.complex_wids:
-        complex_counts.setdefault(wid, 0.0)
+    complex_counts["RNA_POLYMERASE"] = max(
+        complex_counts.get("RNA_POLYMERASE", 0.0),
+        float(m2_mechanism_inputs.n_active_rnap),
+    )
+    complex_counts["RIBOSOME_70S"] = max(
+        complex_counts.get("RIBOSOME_70S", 0.0),
+        float(m3_mechanism_inputs.n_active_ribosomes),
+    )
+    missing_tx_reg_complex_wids = sorted(
+        wid for wid in tx_reg_tf_complex_wids if wid not in mature_complex_counts
+    )
+    if missing_tx_reg_complex_wids:
+        _LOGGER.warning(
+            "build_karr_chassis_v4: %d tx-reg TF complex WIDs missing mature complex snapshot; "
+            "seeding zero defaults (%s)",
+            len(missing_tx_reg_complex_wids),
+            ",".join(missing_tx_reg_complex_wids),
+        )
 
     m1_topo = {
         "metabolic_reaction": ("metabolic_reaction",),
@@ -1535,6 +1566,11 @@ def build_karr_chassis_v5(
             "complex_wids": sorted(tx_reg_complex_wids),
         }
     )
+    tx_reg_tf_complex_wids = sorted(
+        wid
+        for wid in tx_reg_proc.tf_wids
+        if getattr(tx_reg_proc, "_tf_wid_source", {}).get(wid) == "complex"
+    )
     rna_proc = KarrRNAProcessingProcess({"time_step": time_step_s})
     rna_mod_proc = KarrRNAModificationProcess({"time_step": time_step_s})
     pp1_proc = KarrProteinProcessingIProcess({"time_step": time_step_s})
@@ -1768,12 +1804,28 @@ def build_karr_chassis_v5(
     protein_location_init = {wid: "cytoplasm" for wid in p_trans_proc.translocatable_wids}
     protein_activity_init = {wid: 0 for wid in p_activation_proc.regulated_protein_wids}
 
+    mature_complex_counts = _load_d2_mature_complex_counts_snapshot()
     complex_counts = {
-        "RNA_POLYMERASE": float(m2_mechanism_inputs.n_active_rnap),
-        "RIBOSOME_70S": float(m3_mechanism_inputs.n_active_ribosomes),
+        wid: float(mature_complex_counts.get(wid, 0.0)) for wid in sorted(tx_reg_complex_wids)
     }
-    for wid in ribasm_proc.complex_wids:
-        complex_counts.setdefault(wid, 0.0)
+    complex_counts["RNA_POLYMERASE"] = max(
+        complex_counts.get("RNA_POLYMERASE", 0.0),
+        float(m2_mechanism_inputs.n_active_rnap),
+    )
+    complex_counts["RIBOSOME_70S"] = max(
+        complex_counts.get("RIBOSOME_70S", 0.0),
+        float(m3_mechanism_inputs.n_active_ribosomes),
+    )
+    missing_tx_reg_complex_wids = sorted(
+        wid for wid in tx_reg_tf_complex_wids if wid not in mature_complex_counts
+    )
+    if missing_tx_reg_complex_wids:
+        _LOGGER.warning(
+            "build_karr_chassis_v5: %d tx-reg TF complex WIDs missing mature complex snapshot; "
+            "seeding zero defaults (%s)",
+            len(missing_tx_reg_complex_wids),
+            ",".join(missing_tx_reg_complex_wids),
+        )
 
     m1_topo = {
         "metabolic_reaction": ("metabolic_reaction",),
