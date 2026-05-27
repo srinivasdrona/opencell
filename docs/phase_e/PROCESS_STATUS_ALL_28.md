@@ -1,112 +1,136 @@
-# All-28 Process Status — 2026-05-26 20:19 IST
+# All-28 Process Status - 2026-05-27 16:10 IST (L1 consolidation)
 
-Coverage matrix across all 28 Karr M. genitalium processes + 8 request_calculators.
-Format extends the wave-2 11-column coverage table.
+Updated 2026-05-27 by L1 consolidation audit. Now the canonical source-of-truth tracker for all per-process Karr-fidelity artifacts. **Table 1** = per-process L1-L5 status (the headline view). **Table 2** = per-process artifact links (Karr extract, fixtures, P2 swarm, class-A, PB design). L2-L5 columns reserved for future audits - all 28 rows show `â€”` for those today. Per L-axis discipline locked in `plan.md` 2026-05-27.
 
-## Legend
+Global links: [P2 master synthesis](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_master.md), [Track-A consolidated audit](opencell/validation/swarm/consolidated/CONSOLIDATED_AUDIT_REPORT.md), [Track-A findings index](opencell/validation/swarm/consolidated/findings_index.csv).
 
-- **Probe state** from `E:\opencell\artifacts\probe_full_traces_20260526_190830\entity_call_stats.csv` (200 ticks, seed 42).
-  - ✅ ALIVE = `nonempty_returns == 200`
-  - ⚠️ PARTIAL = `1 ≤ nonempty < 200`
-  - ❌ DEAD = `nonempty == 0`
-- **Class-A** = `swarm-class-a-<P>` worktree exists with `findings.json` + `STATUS.md` (5–8 findings each)
-- **PB design** = `docs/design/pb_turnN_<process>.md` exists
-- **Audit row** = listed in `findings_index.csv` (R01–R19, S01–S10)
-- **Karr fixture** = `data/karr_fixtures/per_process/<P>.json/.npz/.mat` exists
-- **Wave-N verdict** = a–f taxonomy from DEAD_PROCESS_TEMPLATE
-- **Next** = current routed workstream
+## Table 1 - Per-process L-axis status
 
-## Master matrix — 28 Karr processes
+| # | Process | L1 | L2 | L3 | L4 | L5 | Wave2-base 32400t |
+|---:|---|---|---|---|---|---|---|
+| 1 | `karr_replication` | ðŸŸ¡ GATED | â€” | â€” | â€” | â€” | DEAD |
+| 2 | `karr_replication_initiation` | ðŸŸ¡ GATED | â€” | â€” | â€” | â€” | DEAD |
+| 3 | `karr_dna_supercoiling` | ðŸŸ¡ GATED | â€” | â€” | â€” | â€” | DEAD |
+| 4 | `karr_chromosome_condensation` | ðŸŸ¢ FIRING | â€” | â€” | â€” | â€” | FIRING |
+| 5 | `karr_chromosome_segregation` | ðŸŸ¡ GATED | â€” | â€” | â€” | â€” | DEAD |
+| 6 | `karr_dna_damage` | ðŸŸ¡ GATED | â€” | â€” | â€” | â€” | DEAD |
+| 7 | `karr_dna_repair` | ðŸŸ¢ FIRING | â€” | â€” | â€” | â€” | FIRING |
+| 8 | `karr_ftsz_polymerization` | ðŸŸ¢ FIRING | â€” | â€” | â€” | â€” | FIRING |
+| 9 | `karr_cytokinesis` | ðŸŸ¡ GATED | â€” | â€” | â€” | â€” | DEAD |
+| 10 | `karr_terminal_organelle_assembly` | ðŸŸ¡ GATED | â€” | â€” | â€” | â€” | DEAD |
+| 11 | `karr_cell_cycle_coordinator` | ðŸ”´ STUB | â€” | â€” | â€” | â€” | DEAD |
+| 12 | `karr_host_interaction` | ðŸŸ¡ GATED | â€” | â€” | â€” | â€” | DEAD |
+| 13 | `karr_rna_decay` | ðŸŸ¢ FIRING | â€” | â€” | â€” | â€” | FIRING |
+| 14 | `karr_rna_processing` | ðŸŸ¡ GATED | â€” | â€” | â€” | â€” | DEAD |
+| 15 | `karr_rna_modification` | ðŸŸ¢ FIRING | â€” | â€” | â€” | â€” | FIRING |
+| 16 | `karr_trna_aminoacylation` | ðŸŸ¡ GATED | â€” | â€” | â€” | â€” | DEAD |
+| 17 | `karr_ribosome_assembly` | ðŸŸ¡ GATED | â€” | â€” | â€” | â€” | DEAD |
+| 18 | `karr_protein_processing_i` | ðŸŸ¡ GATED | â€” | â€” | â€” | â€” | DEAD |
+| 19 | `karr_protein_processing_ii` | ðŸŸ¡ GATED | â€” | â€” | â€” | â€” | DEAD |
+| 20 | `karr_protein_folding` | ðŸŸ¢ FIRING | â€” | â€” | â€” | â€” | FIRING |
+| 21 | `karr_protein_modification` | ðŸŸ¡ GATED | â€” | â€” | â€” | â€” | DEAD |
+| 22 | `karr_protein_translocation` | ðŸŸ¢ FIRING | â€” | â€” | â€” | â€” | FIRING |
+| 23 | `karr_protein_activation` | ðŸ”´ STUB | â€” | â€” | â€” | â€” | DEAD |
+| 24 | `karr_protein_decay_light` | ðŸŸ¢ FIRING | â€” | â€” | â€” | â€” | FIRING |
+| 25 | `karr_macromolecular_complexation` | ðŸŸ¡ GATED | â€” | â€” | â€” | â€” | DEAD |
+| 26 | `karr_metabolism` | ðŸŸ¢ FIRING | â€” | â€” | â€” | â€” | FIRING |
+| 27 | `karr_transcription` | ðŸŸ¢ FIRING | â€” | â€” | â€” | â€” | FIRING |
+| 28 | `karr_translation` | ðŸŸ¢ FIRING | â€” | â€” | â€” | â€” | FIRING |
 
-| # | Process | Karr ext | PB des | Class-A | Audit (R/S) | Layer→PR | Karr fxt | Probe | Wave-1 verdict | Wave-2v2 | Next action |
-|--:|---|:-:|:-:|:-:|---|---|:-:|:-:|---|:-:|---|
-| 01 | Metabolism | ✅ | — | ✅ | R08, S05 | L2→**A2**, L1→def | ✅ | ✅ ALIVE | — | — | A2 PR |
-| 02 | ReplicationInitiation | ✅ | — | ✅ | R15 | L5→**A1** | ✅ | ✅ ALIVE | — | — | A1 PR |
-| 03 | Replication | ✅ | — | ✅ | R14 | L5→**A1** | ✅ | ✅ ALIVE | — | — | A1 PR |
-| 04 | DNADamage | ✅ | — | ✅ | R04 | L2→deferred | ✅ | ⚠️ 86/200 | — | — | scope decision |
-| 05 | DNARepair | ✅ | — | ✅ | R05 | L5→**A1** | ✅ | ✅ ALIVE | — | — | A1 PR |
-| 06 | DNASupercoiling | ✅ | — | ✅ | R06, S07 | L3→**A4**, L5→**A1** | ✅ | ✅ ALIVE | — | — | A1+A4 PRs |
-| 07 | ChromosomeCondensation | ✅ | — | ✅ | R01 | L5→**A1** | ✅ | ✅ ALIVE | — | — | A1 PR |
-| 08 | ChromosomeSegregation | ✅ | — | ✅ | R02 | L5→**A1** | ✅ | ✅ ALIVE | — | — | A1 PR |
-| 09 | Transcription | ✅ | — | ✅ | R16, S03 | L2→**A2**, L0→**A5** | ✅ | ✅ ALIVE | — | — | A2+A5 PRs |
-| 10 | TranscriptionalRegulation | ✅ | pb_turn3 | ✅ | (none) | — | ✅ | ✅ ALIVE | — | — | Phase-B port |
-| 11 | RNAProcessing | ✅ | pb_turn4 | ✅ | R13 | L5→**A1** | ✅ | ❌ DEAD | (e) downstream gate (gene-ID vs TU-ID) | — | A1 + ID fix |
-| 12 | RNAModification | ✅ | pb_turn5 | ✅ | S10 | L5→**A1** | ✅ | ⚠️ 1/200 | — | — | A1 + downstream of RNAProcessing |
-| 13 | RNADecay | ✅ | — | ✅ | (none) | — | ✅ | ✅ ALIVE | — | — | Phase-B port |
-| 14 | tRNAAminoacylation | ✅ | pb_turn1 | ✅ | R18 | L5→**A1** | ✅ | ⚠️ 1/200 | — | — | A1; downstream of tRNA pipeline |
-| 15 | Translation | ✅ | — | ✅ | R17, S04 | L2→**A2**, L0→**A5** | ✅ | ✅ ALIVE | — | — | A2+A5 PRs |
-| 16 | ProteinProcessingI | ✅ | pb_turn6 | ✅ | R12 | L5→**A1** | ✅ | ❌ DEAD | **(c) wrong wiring** — MG_106_DIMER not seeded in protein.counts | — | A1 + seed fix |
-| 17 | ProteinProcessingII | ✅ | pb_turn7 | ✅ | S08 | L5→**A1** | ✅ | ❌ DEAD | — | 🟡 **running (consolidator PID 33776)** | consolidator verdict |
-| 18 | ProteinModification | ✅ | pb_turn8 | ✅ | R11 | L5→**A1** | ✅ | ❌ DEAD | — | 🟡 **running** | consolidator verdict |
-| 19 | ProteinFolding | ✅ | pb_turn9 | ✅ | R10 | L5→**A1** | ✅ | ✅ ALIVE | — | — | A1 PR |
-| 20 | ProteinActivation | ✅ | pb_turn11 | ✅ | (none) | — | ✅ | ✅ ALIVE | — | — | Phase-B port |
-| 21 | ProteinDecay | ✅ | — | ✅ | R09, R19 | L2→**A3**, L4→**A3** | ✅ | ✅ ALIVE | — | 🟡 **running** (decay_light) | consolidator verdict |
-| 22 | ProteinTranslocation | ✅ | pb_turn10 | ✅ | S01, S09 | L3→**A4**, L5→**A1** | ✅ | ❌ DEAD | — | 🟡 **running** | consolidator verdict |
-| 23 | MacromolecularComplexation | ✅ | — | ✅ | R07, S02 | L6→**A3**, L4→**A3** | ✅ | ✅ ALIVE¹ | — | 🟡 **running** | consolidator verdict |
-| 24 | RibosomeAssembly | ✅ | pb_turn2 | ✅ | (none) | — | ✅ | ❌ DEAD | — | 🟡 **running** | consolidator verdict |
-| 25 | FtsZPolymerization | ✅ | — | ✅ | (none) | — | ✅ | ✅ ALIVE | — | — | Phase-B port |
-| 26 | Cytokinesis | ✅ | — | ✅ | R03 | L5→**A1** | ✅ | ✅ ALIVE | — | — | A1 PR |
-| 27 | HostInteraction | ✅ | — | ✅ | (none) | — | ✅ | ❌ DEAD | — | — | **GAP — no audit, no probe explanation** |
-| 28 | TerminalOrganelleAssembly | ✅ | — | ✅ | (none) | — | ✅ | ❌ DEAD | — | — | **GAP — no audit, no probe explanation** |
+L1-green processes (FIRING + GATED): karr_replication, karr_replication_initiation, karr_dna_supercoiling, karr_chromosome_condensation, karr_chromosome_segregation, karr_dna_damage, karr_dna_repair, karr_ftsz_polymerization, karr_cytokinesis, karr_terminal_organelle_assembly, karr_host_interaction, karr_rna_decay, karr_rna_processing, karr_rna_modification, karr_trna_aminoacylation, karr_ribosome_assembly, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_folding, karr_protein_modification, karr_protein_translocation, karr_protein_decay_light, karr_macromolecular_complexation, karr_metabolism, karr_transcription, karr_translation
 
-¹ Probe reports 200/200 nonempty for MacromolecularComplexation but R07+S02 prove the requests are biologically zero (consume-with-zero-demand). The probe's "nonempty" check counts dict length, not biological liveness — so this passes a syntactic check while failing a semantic one. Consolidator will reconcile.
+Wave2 evidence source for `FIRING/DEAD`: `E:/opencell/artifacts/ensemble_wave2_20260527_023611/seed_{42,43,44,45}/manifest.json` process trace `size_bytes` (header-only traces are 35 bytes).
 
-## Request-calculator status (separate layer)
+## Table 2 - Per-process artifact links
 
-| Calculator | Probe (calls/nonempty) | Wave-1 verdict | Wave-2v2 | Notes |
-|---|---|---|:-:|---|
-| request_calculator_metabolism | 201/201 | — | — | Likely alive; A2 dependency |
-| request_calculator_transcription | 201/201 | **(b) Buggy** — demand × Step.timestep, dt can be 0 | — | Wave-1 STATUS in `swarm-dead-rc_transcription` |
-| **request_calculator_translation** | 201/201 | — | 🟡 **running (PID 4296)** | Greenfield — primed with same timestep-zero hypothesis |
-| request_calculator_trna | 201/201 | — | — | Likely same pattern; check after rc_translation lands |
-| request_calculator_rna_pathway | 201/201 | — | — | Same |
-| request_calculator_protein_pathway | 201/201 | — | — | Same |
-| request_calculator_ribasm | 201/201 | — | — | Same |
-| request_calculator_pd | 201/201 | — | — | Same |
-| request_calculator_d2 | 201/201 | — | — | Same |
+| # | Process | Karr extract | Karr fixture | P2 A/B/C | Class-A | PB design | L1 gap notes |
+|---:|---|---|---|---|---|---|---|
+| 1 | `karr_replication` | [03_Replication.md](docs/karr_extracts/process/03_Replication.md) | âœ… ([json](data/karr_fixtures/per_process/Replication.json), [npz](data/karr_fixtures/per_process/Replication.npz), [flat.mat](data/karr_fixtures/per_process/Replication_flat.mat)) | [A:6âœ—](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_rpl_a.md) \| [B:14âœ—](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_rpl_b.md) \| [C:1âœ—](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_rpl_c.md) | [findings.json](E:/opencell-worktrees/swarm-class-a-Replication/opencell/validation/swarm/class_a/Replication/findings.json) | â€” | code opencell/vivarium/karr_replication.py:215; gate: replication never leaves idle because initiation preconditions (ATP/dNTP/fork state) stay unmet; Karr extract gap: no per-nucleotide/polymerase event queue. Trace bytes: 42/43/44/45 = 35/35/35/35. |
+| 2 | `karr_replication_initiation` | [02_ReplicationInitiation.md](docs/karr_extracts/process/02_ReplicationInitiation.md) | âœ… ([json](data/karr_fixtures/per_process/ReplicationInitiation.json), [npz](data/karr_fixtures/per_process/ReplicationInitiation.npz), [flat.mat](data/karr_fixtures/per_process/ReplicationInitiation_flat.mat)) | [A:6âœ—](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_rpl_a.md) \| [B:14âœ—](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_rpl_b.md) \| [C:1âœ—](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_rpl_c.md) | [findings.json](E:/opencell-worktrees/swarm-class-a-ReplicationInitiation/opencell/validation/swarm/class_a/ReplicationInitiation/findings.json) | â€” | code opencell/vivarium/karr_replication_initiation.py:189; gate: DnaA-ATP/supercoiling initiation preconditions never complete in wave2; Karr extract gap: reduced oriC occupancy + ATP/ADP cycling detail. Trace bytes: 42/43/44/45 = 35/35/35/35. |
+| 3 | `karr_dna_supercoiling` | [06_DNASupercoiling.md](docs/karr_extracts/process/06_DNASupercoiling.md) | âœ… ([json](data/karr_fixtures/per_process/DNASupercoiling.json), [npz](data/karr_fixtures/per_process/DNASupercoiling.npz), [flat.mat](data/karr_fixtures/per_process/DNASupercoiling_flat.mat)) | [A:0âœ—](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_dnasc_a.md) \| â€” \| â€” | [findings.json](E:/opencell-worktrees/swarm-class-a-DNASupercoiling/opencell/validation/swarm/class_a/DNASupercoiling/findings.json) | â€” | code opencell/vivarium/karr_dna_supercoiling.py:206; gate: no elongating forks/no active twist perturbation in current run; Karr extract gap: chromosome-wide superhelical coupling remains simplified. Trace bytes: 42/43/44/45 = 35/35/35/35. |
+| 4 | `karr_chromosome_condensation` | [07_ChromosomeCondensation.md](docs/karr_extracts/process/07_ChromosomeCondensation.md) | âœ… ([json](data/karr_fixtures/per_process/ChromosomeCondensation.json), [npz](data/karr_fixtures/per_process/ChromosomeCondensation.npz), [flat.mat](data/karr_fixtures/per_process/ChromosomeCondensation_flat.mat)) | â€” \\| â€” \\| â€” | [findings.json](E:/opencell-worktrees/swarm-class-a-ChromosomeCondensation/opencell/validation/swarm/class_a/ChromosomeCondensation/findings.json) | â€” | code opencell/vivarium/karr_chromosome_condensation.py:228; firing in all 4 seeds; Karr extract gap: reduced SMC occupancy/region-specific mechanics. Trace bytes: 42/43/44/45 = 220061/220061/220061/220061. |
+| 5 | `karr_chromosome_segregation` | [08_ChromosomeSegregation.md](docs/karr_extracts/process/08_ChromosomeSegregation.md) | âœ… ([json](data/karr_fixtures/per_process/ChromosomeSegregation.json), [npz](data/karr_fixtures/per_process/ChromosomeSegregation.npz), [flat.mat](data/karr_fixtures/per_process/ChromosomeSegregation_flat.mat)) | â€” \\| â€” \\| â€” | [findings.json](E:/opencell-worktrees/swarm-class-a-ChromosomeSegregation/opencell/validation/swarm/class_a/ChromosomeSegregation/findings.json) | â€” | code opencell/vivarium/karr_chromosome_segregation.py:247; gate: segregation requires replication-complete/forks-passing state that never arrives; Karr extract gap: no force-balance or per-origin choreography. Trace bytes: 42/43/44/45 = 35/35/35/35. |
+| 6 | `karr_dna_damage` | [04_DNADamage.md](docs/karr_extracts/process/04_DNADamage.md) | âœ… ([json](data/karr_fixtures/per_process/DNADamage.json), [npz](data/karr_fixtures/per_process/DNADamage.npz), [flat.mat](data/karr_fixtures/per_process/DNADamage_flat.mat)) | â€” \\| â€” \\| â€” | [findings.json](E:/opencell-worktrees/swarm-class-a-DNADamage/opencell/validation/swarm/class_a/DNADamage/findings.json) | â€” | code opencell/vivarium/karr_dna_damage.py:153; gate: stochastic hazard path is effectively silent under current chromosome/fork state; Karr extract gap: reduced lesion channel coverage. Trace bytes: 42/43/44/45 = 35/35/35/35. |
+| 7 | `karr_dna_repair` | [05_DNARepair.md](docs/karr_extracts/process/05_DNARepair.md) | âœ… ([json](data/karr_fixtures/per_process/DNARepair.json), [npz](data/karr_fixtures/per_process/DNARepair.npz), [flat.mat](data/karr_fixtures/per_process/DNARepair_flat.mat)) | [A:0âœ—](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_rep_a.md) \| [B:9âœ—](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_rep_b.md) \| [C:5âœ—](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_rep_c.md) | [findings.json](E:/opencell-worktrees/swarm-class-a-DNARepair/opencell/validation/swarm/class_a/DNARepair/findings.json) | â€” | code opencell/vivarium/karr_dna_repair.py:270; firing in all 4 seeds; Karr extract gap: pathway execution is aggregated (BER/NER/HR/NHEJ-like), not full per-lesion mechanics. Trace bytes: 42/43/44/45 = 449208/445148/452768/447777. |
+| 8 | `karr_ftsz_polymerization` | [25_FtsZPolymerization.md](docs/karr_extracts/process/25_FtsZPolymerization.md) | âœ… ([json](data/karr_fixtures/per_process/FtsZPolymerization.json), [npz](data/karr_fixtures/per_process/FtsZPolymerization.npz), [flat.mat](data/karr_fixtures/per_process/FtsZPolymerization_flat.mat)) | â€” \\| â€” \\| â€” | [findings.json](E:/opencell-worktrees/swarm-class-a-FtsZPolymerization/opencell/validation/swarm/class_a/FtsZPolymerization/findings.json) | â€” | code opencell/vivarium/karr_ftsz_polymerization.py:181; firing in all 4 seeds; Karr extract gap: coarse ring-mass dynamics, no explicit filament treadmilling/Min-system detail. Trace bytes: 42/43/44/45 = 32621/35219/35711/32836. |
+| 9 | `karr_cytokinesis` | [26_Cytokinesis.md](docs/karr_extracts/process/26_Cytokinesis.md) | âœ… ([json](data/karr_fixtures/per_process/Cytokinesis.json), [npz](data/karr_fixtures/per_process/Cytokinesis.npz), [flat.mat](data/karr_fixtures/per_process/Cytokinesis_flat.mat)) | â€” \\| â€” \\| â€” | [findings.json](E:/opencell-worktrees/swarm-class-a-Cytokinesis/opencell/validation/swarm/class_a/Cytokinesis/findings.json) | â€” | code opencell/vivarium/karr_cytokinesis.py:191; gate: gate_allow_cytokinesis never flips because upstream replication/segregation chain is blocked; Karr extract gap: septation mechanics are simplified. Trace bytes: 42/43/44/45 = 35/35/35/35. |
+| 10 | `karr_terminal_organelle_assembly` | [28_TerminalOrganelleAssembly.md](docs/karr_extracts/process/28_TerminalOrganelleAssembly.md) | âœ… ([json](data/karr_fixtures/per_process/TerminalOrganelleAssembly.json), [npz](data/karr_fixtures/per_process/TerminalOrganelleAssembly.npz), [flat.mat](data/karr_fixtures/per_process/TerminalOrganelleAssembly_flat.mat)) | â€” \\| â€” \\| â€” | [findings.json](E:/opencell-worktrees/swarm-class-a-TerminalOrganelleAssembly/opencell/validation/swarm/class_a/TerminalOrganelleAssembly/findings.json) | â€” | code opencell/vivarium/karr_terminal_organelle_assembly.py:225; gate: required component activity never reaches assembly thresholds; Karr extract gap: full compartment localization/pole migration deferred (module header). Trace bytes: 42/43/44/45 = 35/35/35/35. |
+| 11 | `karr_cell_cycle_coordinator` | â€” (no direct Karr extract for this OpenCell shim) | N/A (no direct Karr fixture) | â€” \\| â€” \\| â€” | â€” | â€” | code opencell/vivarium/karr_cell_cycle_coordinator.py:64; OpenCell coordination shim (Step) with no direct Karr process extract/fixture counterpart, so not L1-Karr-green by source-parity contract. Trace bytes: 42/43/44/45 = 35/35/35/35. |
+| 12 | `karr_host_interaction` | [27_HostInteraction.md](docs/karr_extracts/process/27_HostInteraction.md) | âœ… ([json](data/karr_fixtures/per_process/HostInteraction.json), [npz](data/karr_fixtures/per_process/HostInteraction.npz), [flat.mat](data/karr_fixtures/per_process/HostInteraction_flat.mat)) | â€” \\| â€” \\| â€” | [findings.json](E:/opencell-worktrees/swarm-class-a-HostInteraction/opencell/validation/swarm/class_a/HostInteraction/findings.json) | â€” | code opencell/vivarium/karr_host_interaction.py:242; gate: adhesin/terminal-organelle readiness remains below attach threshold; Karr extract gap: host signaling cascade is explicitly deferred in file header. Trace bytes: 42/43/44/45 = 35/35/35/35. |
+| 13 | `karr_rna_decay` | [13_RNADecay.md](docs/karr_extracts/process/13_RNADecay.md) | âœ… ([json](data/karr_fixtures/per_process/RNADecay.json), [npz](data/karr_fixtures/per_process/RNADecay.npz), [flat.mat](data/karr_fixtures/per_process/RNADecay_flat.mat)) | [A:1âœ—](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_rnadecay_a.md) \| â€” \| â€” | [findings.json](E:/opencell-worktrees/swarm-class-a-RNADecay/opencell/validation/swarm/class_a/RNADecay/findings.json) | â€” | code opencell/vivarium/karr_rna_decay.py:206; firing in all 4 seeds; Karr extract gap: bulk-rate decay approximation versus richer cleavage/exonuclease state progression. Trace bytes: 42/43/44/45 = 7585/8194/7740/7897. |
+| 14 | `karr_rna_processing` | [11_RNAProcessing.md](docs/karr_extracts/process/11_RNAProcessing.md) | âœ… ([json](data/karr_fixtures/per_process/RNAProcessing.json), [npz](data/karr_fixtures/per_process/RNAProcessing.npz), [flat.mat](data/karr_fixtures/per_process/RNAProcessing_flat.mat)) | â€” \\| â€” \\| â€” | [findings.json](E:/opencell-worktrees/swarm-class-a-RNAProcessing/opencell/validation/swarm/class_a/RNAProcessing/findings.json) | [pb_turn4_rna_processing.md](docs/design/pb_turn4_rna_processing.md) | code opencell/vivarium/karr_rna_processing.py:254; gate: unprocessed RNA substrate pool remains empty, so process early-exits; Karr extract gap: reduced maturation stage granularity. Trace bytes: 42/43/44/45 = 35/35/35/35. |
+| 15 | `karr_rna_modification` | [12_RNAModification.md](docs/karr_extracts/process/12_RNAModification.md) | âœ… ([json](data/karr_fixtures/per_process/RNAModification.json), [npz](data/karr_fixtures/per_process/RNAModification.npz), [flat.mat](data/karr_fixtures/per_process/RNAModification_flat.mat)) | â€” \\| â€” \\| â€” | [findings.json](E:/opencell-worktrees/swarm-class-a-RNAModification/opencell/validation/swarm/class_a/RNAModification/findings.json) | [pb_turn5_rna_modification.md](docs/design/pb_turn5_rna_modification.md) | code opencell/vivarium/karr_rna_modification.py:137; sparse but non-empty firing in all 4 seeds; Karr extract gap: aggregate modification events, no full site-by-site chemistry. Trace bytes: 42/43/44/45 = 201/365/365/197. |
+| 16 | `karr_trna_aminoacylation` | [14_tRNAAminoacylation.md](docs/karr_extracts/process/14_tRNAAminoacylation.md) | âœ… ([json](data/karr_fixtures/per_process/tRNAAminoacylation.json), [npz](data/karr_fixtures/per_process/tRNAAminoacylation.npz), [flat.mat](data/karr_fixtures/per_process/tRNAAminoacylation_flat.mat)) | [A:0âœ—](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_trna_a.md) \| â€” \| â€” | [findings.json](E:/opencell-worktrees/swarm-class-a-tRNAAminoacylation/opencell/validation/swarm/class_a/tRNAAminoacylation/findings.json) | [pb_turn1_trna_aminoacylation.md](docs/design/pb_turn1_trna_aminoacylation.md) | code opencell/vivarium/karr_trna_aminoacylation.py:128; gate: charging stalls under upstream substrate/allocation starvation; Karr extract gap: full stochastic charging cycle still compressed. Trace bytes: 42/43/44/45 = 35/35/35/35. |
+| 17 | `karr_ribosome_assembly` | [24_RibosomeAssembly.md](docs/karr_extracts/process/24_RibosomeAssembly.md) | âœ… ([json](data/karr_fixtures/per_process/RibosomeAssembly.json), [npz](data/karr_fixtures/per_process/RibosomeAssembly.npz), [flat.mat](data/karr_fixtures/per_process/RibosomeAssembly_flat.mat)) | [A:0âœ“](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_ribasm_a.md) \| â€” \| â€” | [findings.json](E:/opencell-worktrees/swarm-class-a-RibosomeAssembly/opencell/validation/swarm/class_a/RibosomeAssembly/findings.json) | [pb_turn2_ribosome_assembly.md](docs/design/pb_turn2_ribosome_assembly.md) | code opencell/vivarium/karr_ribosome_assembly.py:309; gate: allocated GTP/H2O and precursor pools remain insufficient; Karr extract gap: intermediary assembly-state transitions are compressed. Trace bytes: 42/43/44/45 = 35/35/35/35. |
+| 18 | `karr_protein_processing_i` | [16_ProteinProcessingI.md](docs/karr_extracts/process/16_ProteinProcessingI.md) | âœ… ([json](data/karr_fixtures/per_process/ProteinProcessingI.json), [npz](data/karr_fixtures/per_process/ProteinProcessingI.npz), [flat.mat](data/karr_fixtures/per_process/ProteinProcessingI_flat.mat)) | â€” \\| â€” \\| â€” | [findings.json](E:/opencell-worktrees/swarm-class-a-ProteinProcessingI/opencell/validation/swarm/class_a/ProteinProcessingI/findings.json) | [pb_turn6_protein_processing_i.md](docs/design/pb_turn6_protein_processing_i.md) | code opencell/vivarium/karr_protein_processing_i.py:129; gate: no viable unprocessed substrate + allocation path in wave2; Karr extract gap: reduced peptidase-pathway detail. Trace bytes: 42/43/44/45 = 35/35/35/35. |
+| 19 | `karr_protein_processing_ii` | [17_ProteinProcessingII.md](docs/karr_extracts/process/17_ProteinProcessingII.md) | âœ… ([json](data/karr_fixtures/per_process/ProteinProcessingII.json), [npz](data/karr_fixtures/per_process/ProteinProcessingII.npz), [flat.mat](data/karr_fixtures/per_process/ProteinProcessingII_flat.mat)) | â€” \\| â€” \\| â€” | [findings.json](E:/opencell-worktrees/swarm-class-a-ProteinProcessingII/opencell/validation/swarm/class_a/ProteinProcessingII/findings.json) | [pb_turn7_protein_processing_ii.md](docs/design/pb_turn7_protein_processing_ii.md) | code opencell/vivarium/karr_protein_processing_ii.py:178; gate: upstream processing-I outputs and allocations stay near-zero; Karr extract gap: downstream maturation branch detail is reduced. Trace bytes: 42/43/44/45 = 35/35/35/35. |
+| 20 | `karr_protein_folding` | [19_ProteinFolding.md](docs/karr_extracts/process/19_ProteinFolding.md) | âœ… ([json](data/karr_fixtures/per_process/ProteinFolding.json), [npz](data/karr_fixtures/per_process/ProteinFolding.npz), [flat.mat](data/karr_fixtures/per_process/ProteinFolding_flat.mat)) | â€” \\| â€” \\| â€” | [findings.json](E:/opencell-worktrees/swarm-class-a-ProteinFolding/opencell/validation/swarm/class_a/ProteinFolding/findings.json) | [pb_turn9_protein_folding.md](docs/design/pb_turn9_protein_folding.md) | code opencell/vivarium/karr_protein_folding.py:156; firing in all 4 seeds; Karr extract gap: coarse aggregate folding flow (not full chaperone state machine). Trace bytes: 42/43/44/45 = 75745/77211/75377/77342. |
+| 21 | `karr_protein_modification` | [18_ProteinModification.md](docs/karr_extracts/process/18_ProteinModification.md) | âœ… ([json](data/karr_fixtures/per_process/ProteinModification.json), [npz](data/karr_fixtures/per_process/ProteinModification.npz), [flat.mat](data/karr_fixtures/per_process/ProteinModification_flat.mat)) | â€” \\| â€” \\| â€” | [findings.json](E:/opencell-worktrees/swarm-class-a-ProteinModification/opencell/validation/swarm/class_a/ProteinModification/findings.json) | [pb_turn8_protein_modification.md](docs/design/pb_turn8_protein_modification.md) | code opencell/vivarium/karr_protein_modification.py:144; gate: modified-substrate and cofactor allocations remain unavailable; Karr extract gap: PTM network condensed to aggregate reactions. Trace bytes: 42/43/44/45 = 35/35/35/35. |
+| 22 | `karr_protein_translocation` | [22_ProteinTranslocation.md](docs/karr_extracts/process/22_ProteinTranslocation.md) | âœ… ([json](data/karr_fixtures/per_process/ProteinTranslocation.json), [npz](data/karr_fixtures/per_process/ProteinTranslocation.npz), [flat.mat](data/karr_fixtures/per_process/ProteinTranslocation_flat.mat)) | [A:0âœ—](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_ptl_a.md) \| [B:8âœ—](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_ptl_b.md) \| [C:3âœ—](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_ptl_c.md) | [findings.json](E:/opencell-worktrees/swarm-class-a-ProteinTranslocation/opencell/validation/swarm/class_a/ProteinTranslocation/findings.json) | [pb_turn10_protein_translocation.md](docs/design/pb_turn10_protein_translocation.md) | code opencell/vivarium/karr_protein_translocation.py:250; firing in all 4 seeds; Karr extract gap: species-batch movement replaces full per-event translocase choreography. Trace bytes: 42/43/44/45 = 1683244/1683181/1674354/1683957. |
+| 23 | `karr_protein_activation` | [20_ProteinActivation.md](docs/karr_extracts/process/20_ProteinActivation.md) | âœ… ([json](data/karr_fixtures/per_process/ProteinActivation.json), [npz](data/karr_fixtures/per_process/ProteinActivation.npz), [flat.mat](data/karr_fixtures/per_process/ProteinActivation_flat.mat)) | â€” \\| â€” \\| â€” | [findings.json](E:/opencell-worktrees/swarm-class-a-ProteinActivation/opencell/validation/swarm/class_a/ProteinActivation/findings.json) | [pb_turn11_protein_activation.md](docs/design/pb_turn11_protein_activation.md) | code opencell/vivarium/karr_protein_activation.py:198; next_update is a 10-line boolean rule writeback with no dynamic substrate chemistry and header-only wave traces; Karr extract includes richer activation-state semantics than current rule-only shim. Trace bytes: 42/43/44/45 = 35/35/35/35. |
+| 24 | `karr_protein_decay_light` | [21_ProteinDecay.md](docs/karr_extracts/process/21_ProteinDecay.md) | âœ… ([json](data/karr_fixtures/per_process/ProteinDecay.json), [npz](data/karr_fixtures/per_process/ProteinDecay.npz), [flat.mat](data/karr_fixtures/per_process/ProteinDecay_flat.mat)) | [A:0âœ—](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_ptldecay_a.md) \| â€” \| â€” | [findings.json](E:/opencell-worktrees/swarm-class-a-ProteinDecay/opencell/validation/swarm/class_a/ProteinDecay/findings.json) | â€” | code opencell/vivarium/karr_protein_decay_light.py:193; firing in all 4 seeds; Karr extract gap: intentionally light subset (not full ProteinDecay process coverage). Trace bytes: 42/43/44/45 = 522/527/276/281. |
+| 25 | `karr_macromolecular_complexation` | [23_MacromolecularComplexation.md](docs/karr_extracts/process/23_MacromolecularComplexation.md) | âœ… ([json](data/karr_fixtures/per_process/MacromolecularComplexation.json), [npz](data/karr_fixtures/per_process/MacromolecularComplexation.npz), [flat.mat](data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat)) | â€” \\| â€” \\| â€” | [findings.json](E:/opencell-worktrees/swarm-class-a-MacromolecularComplexation/opencell/validation/swarm/class_a/MacromolecularComplexation/findings.json) | â€” | code opencell/vivarium/karr_macromolecular_complexation.py:199; gate: zero allocated substrates/reaction demand prevents complexes from forming; Karr extract gap: full stochastic complexation + ribosome-specific branch deferred (module TODO). Trace bytes: 42/43/44/45 = 35/35/35/35. |
+| 26 | `karr_metabolism` | [01_Metabolism.md](docs/karr_extracts/process/01_Metabolism.md) | âœ… ([json](data/karr_fixtures/per_process/Metabolism.json), [npz](data/karr_fixtures/per_process/Metabolism.npz), [flat.mat](data/karr_fixtures/per_process/Metabolism_flat.mat)) | [A:1âœ—](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_met_a.md) \| [B:5âœ—](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_met_b.md) \| [C:3âœ—](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_met_c.md) | [findings.json](E:/opencell-worktrees/swarm-class-a-Metabolism/opencell/validation/swarm/class_a/Metabolism/findings.json) | â€” | code opencell/vivarium/karr_metabolism.py:323 (dispatch) and :331+ (_dynamic_update); firing in all 4 seeds; Karr extract gap: reduced dynamic-bound/resource coupling and documented ATPM-floor divergences (P2 A/B/C). Trace bytes: 42/43/44/45 = 2332295/2261814/2356092/1635084. |
+| 27 | `karr_transcription` | [09_Transcription.md](docs/karr_extracts/process/09_Transcription.md) | âœ… ([json](data/karr_fixtures/per_process/Transcription.json), [npz](data/karr_fixtures/per_process/Transcription.npz), [flat.mat](data/karr_fixtures/per_process/Transcription_flat.mat)) | [A:0âœ—](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_tx_a.md) \| [B:9âœ—](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_tx_b.md) \| [C:2âœ—](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_tx_c.md) | [findings.json](E:/opencell-worktrees/swarm-class-a-Transcription/opencell/validation/swarm/class_a/Transcription/findings.json) | â€” | code opencell/vivarium/karr_transcription_v3.py:170; firing in all 4 seeds; Karr extract gap: no full RNAP state-machine/sequence-accurate NTP chemistry (P2 B=9âœ—, C=2âœ—). Trace bytes: 42/43/44/45 = 87141906/86381126/87239660/87257250. |
+| 28 | `karr_translation` | [15_Translation.md](docs/karr_extracts/process/15_Translation.md) | âœ… ([json](data/karr_fixtures/per_process/Translation.json), [npz](data/karr_fixtures/per_process/Translation.npz), [flat.mat](data/karr_fixtures/per_process/Translation_flat.mat)) | [A:0âœ—](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_tl_a.md) \| [B:8âœ—](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_tl_b.md) \| [C:1âœ—](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_tl_c.md) | [findings.json](E:/opencell-worktrees/swarm-class-a-Translation/opencell/validation/swarm/class_a/Translation/findings.json) | â€” | code opencell/vivarium/karr_translation_v3.py:143; firing in all 4 seeds; Karr extract gap: deterministic rate wrapper misses full stochastic ribosome event flow and full energy semantics (P2 B=8âœ—). Trace bytes: 42/43/44/45 = 17308697/17308727/17308698/17308697. |
 
-> Probe-level `nonempty=201` for these is misleading: they return a dict like `{"ATP": 0}` which counts as nonempty by dict-length but is biologically zero. RC-transcription wave-1 confirmed this. After rc_translation lands, decide whether to one-shot-fix all 7 remaining RCs as a single PR (likely 30-line shared guard).
+## Request-calculator status (separate layer, not part of 28-process L1 ladder)
 
-## Verdict rollup
+| Calculator bundle | P2 status | Link |
+|---|---|---|
+| RC1 (D2 + PD) | DIVERGENCES_FOUND (0âœ—, 3âš ) | [STATUS_p2_rc1.md](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_rc1.md) |
+| RC2 (RibAsm + TRNA) | DIVERGENCES_FOUND (1âœ—) | [STATUS_p2_rc2.md](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_rc2.md) |
+| RC3 (RNA + Protein pathway) | NO_DIVERGENCES_FOUND (0âœ“) | [STATUS_p2_rc3.md](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_rc3.md) |
+| RC4 (TX + TL + Metabolism) | DIVERGENCES_FOUND (1âœ—) | [STATUS_p2_rc4.md](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_rc4.md) |
 
-- **Probe-confirmed dead (8)**: ProteinProcessingI/II, ProteinModification, ProteinTranslocation, RibosomeAssembly, MacromolecularComplexation (semantic-dead), RNAProcessing, HostInteraction, TerminalOrganelleAssembly
-- **Probe-partial (3)**: DNADamage, RNAModification, tRNAAminoacylation
-- **Probe-alive (17)**: the rest
-- **Wave-1 verdicts complete (3)**: PP1 (c), RNAProcessing (e), RC-transcription (b)
-- **Wave-2 v2 running (8 total)**: 7 via consolidator + 1 greenfield rc_translation
-- **Total covered after wave-2 v2 lands**: 3 (W1) + 8 (W2v2) = 11 deep STATUS; remaining 17 are covered by Track-A audit findings + Phase-B design docs
+## Verdict rollup (L1-aware)
 
-## Coverage gaps (true unknowns)
+- **L1-IMPLEMENTED-FIRING**: 11 / 28
+- **L1-IMPLEMENTED-GATED**: 15 / 28
+- **L1-STUB**: 2 / 28
+- **L1-green total (FIRING + GATED)**: 26 / 28
 
-1. **HostInteraction**: 0/200 nonempty + no class-A findings + no audit row + no PB doc. Needs a dedicated wave-3 audit OR a "is this even wired into v6?" structural check.
-2. **TerminalOrganelleAssembly**: same — 0/200 + zero coverage. Same recommendation.
-3. **DNADamage 86/200**: not zero, not full — likely stochastic Poisson firing, but needs a 1-tick check.
-4. **RNAModification 1/200, tRNAAminoacylation 1/200**: probably one-shot-at-init, but needs confirmation. Both have S10 (RNAModification) coverage; tRNA has R18.
-5. **6 processes with no audit row**: TranscriptionalRegulation, RNADecay, ProteinActivation, RibosomeAssembly, FtsZPolymerization, HostInteraction, TerminalOrganelleAssembly. Most are alive and Phase-B-design-doc'd; the dead ones (RibosomeAssembly, HostInteraction, TerminalOrganelleAssembly) are the real gaps.
+- **STUB processes (Karr gap):**
+  - `karr_cell_cycle_coordinator`: OpenCell coordination shim (`opencell/vivarium/karr_cell_cycle_coordinator.py:64`) with no direct Karr `.m` process to validate against.
+  - `karr_protein_activation`: rule-only writeback (`opencell/vivarium/karr_protein_activation.py:198`) versus richer activation semantics in [20_ProteinActivation.md](docs/karr_extracts/process/20_ProteinActivation.md).
 
-## Wave-3 — does it need to exist?
+- **GATED processes (primary gate):**
+  - `karr_replication`, `karr_replication_initiation`, `karr_dna_supercoiling`, `karr_chromosome_segregation`, `karr_cytokinesis`: blocked by upstream replication-state progression (no successful initiation/elongation chain in wave2).
+  - `karr_dna_damage`: stochastic damage path remains silent under current fork/chromosome state.
+  - `karr_terminal_organelle_assembly`, `karr_host_interaction`: blocked by terminal-organelle/adhesion readiness not reaching thresholds.
+  - `karr_rna_processing`: blocked by empty unprocessed-RNA substrate pool.
+  - `karr_trna_aminoacylation`, `karr_ribosome_assembly`, `karr_protein_processing_i`, `karr_protein_processing_ii`, `karr_protein_modification`, `karr_macromolecular_complexation`: blocked by upstream substrate/allocation starvation and missing precursor flow.
 
-**Argument against (currently leading):**
-- 22/28 processes are routed: Track-A PRs A1–A5 cover the 17 audit-confirmed findings; consolidator+rc_translation cover the 8 truly-dead ones.
-- A "wave-3 fresh audit" would re-derive what's already in `findings.json` files (same mistake we made with wave-2).
+## Coverage gaps (true unknowns, post-wave2-base)
 
-**Argument for a small wave-3:**
-- HostInteraction + TerminalOrganelleAssembly + RibosomeAssembly are dead and have no audit row. RibosomeAssembly is in W2v2 consolidator (has class-A); HostInteraction + TerminalOrganelleAssembly are truly bare.
-- These two are biologically peripheral to E.2's central dogma (TX → TL → folding → modification) — they may be safely deferred to a later milestone.
+1. `karr_cell_cycle_coordinator` is in the v6 expected key set but is not a native Karr process; parity target must be defined explicitly before L2.
+2. `karr_host_interaction` and `karr_terminal_organelle_assembly` stay dead across all 4 seeds (header-only traces), and both modules declare explicit Karr-light deferrals in-file.
+3. `karr_trna_aminoacylation` remains the highest-leverage dead gate: it starves translation and downstream protein pathways despite non-stub code.
+4. High axis-B divergence clusters (`rpl_b=14`, `tx_b=9`, `rep_b=9`, `tl_b=8`, `ptl_b=8`) are now clearly L2 spec backlog, not L1 presence/absence unknowns.
+5. No process is `partial` at 32,400t in this ensemble; every process is either FIRING in all 4 seeds or DEAD in all 4 seeds.
 
-**Recommendation**: NO wave-3. Instead:
-1. Let consolidator + rc_translation land (~60–90 min).
-2. Open one 30-min triage task per probe-partial process (DNADamage, RNAModification, tRNAAminoacylation) to confirm "one-shot-at-init" hypothesis.
-3. Mark HostInteraction + TerminalOrganelleAssembly as **explicitly deferred** with rationale in DECISIONS.md.
-4. Execute Track-A PRs (A1–A5) — that's the scaling step we've been deferring.
+## L1 -> L2 fanout priority
+
+Recommended L2 spec-authoring order (metabolism-first lock retained):
+1. **Metabolism submodule first**: `karr_metabolism`, then `karr_macromolecular_complexation` (gate). Rewrite `docs/design/01_Metabolism.md` to v3 template first.
+2. **Central dogma submodule**: `karr_transcription`, `karr_translation`, `karr_rna_decay`, `karr_rna_processing`, `karr_rna_modification`, `karr_trna_aminoacylation`, `karr_ribosome_assembly`, `karr_protein_folding`.
+3. **Protein post-processing chain**: `karr_protein_translocation`, `karr_protein_processing_i`, `karr_protein_processing_ii`, `karr_protein_modification`, `karr_protein_decay_light` (and later revisit `karr_protein_activation` once reimplemented).
+4. **DNA dynamics submodule**: `karr_replication_initiation`, `karr_replication`, `karr_dna_supercoiling`, `karr_chromosome_condensation`, `karr_dna_damage`, `karr_dna_repair`.
+5. **Cell division submodule**: `karr_ftsz_polymerization`, `karr_chromosome_segregation`, `karr_cytokinesis` (plus coordinator replacement plan).
+6. **Periphery (deferred)**: `karr_host_interaction`, `karr_terminal_organelle_assembly`.
+
+L1 implementation work needed BEFORE any L2 audit (STUBs):
+1. `karr_cell_cycle_coordinator`: either replace with Karr-parity process mapping or remove from 28-KP fidelity ladder; start from [03_Replication.md](docs/karr_extracts/process/03_Replication.md), [08_ChromosomeSegregation.md](docs/karr_extracts/process/08_ChromosomeSegregation.md), [26_Cytokinesis.md](docs/karr_extracts/process/26_Cytokinesis.md) for parity decomposition.
+2. `karr_protein_activation`: upgrade rule-only shim to full activation-state chemistry; start from [20_ProteinActivation.md](docs/karr_extracts/process/20_ProteinActivation.md) verbatim biology section.
 
 ## Source artifacts
 
-- `findings_index.csv` (30 rows, R01–R19 + S01–S10): `E:\opencell-worktrees\p3-karr-light-docstrings\opencell\validation\swarm\consolidated\findings_index.csv`
-- `CONSOLIDATED_AUDIT_REPORT.md` (Track-A PR scope): same dir
-- `entity_call_stats.csv` (probe baseline): `E:\opencell\artifacts\probe_full_traces_20260526_190830\`
-- 28 Karr extracts: `E:\opencell-worktrees\p3-karr-light-docstrings\docs\karr_extracts\process\`
-- 11 PB design docs: `E:\opencell-worktrees\p3-karr-light-docstrings\docs\design\pb_turn*.md`
-- 28 class-A worktrees: `E:\opencell-worktrees\swarm-class-a-*\`
-- 28 Karr fixtures (json/npz/mat): `E:\opencell-worktrees\p3-karr-light-docstrings\data\karr_fixtures\per_process\`
-- Wave-1 STATUS files (3): `E:\opencell-worktrees\swarm-dead-{protein_processing_i,rna_processing,rc_transcription}\`
+- `opencell/validation/swarm/consolidated/findings_index.csv` (R01-R19 + S01-S10)
+- `opencell/validation/swarm/consolidated/CONSOLIDATED_AUDIT_REPORT.md`
+- Wave2 ensemble manifests/traces: `E:/opencell/artifacts/ensemble_wave2_20260527_023611/`
+- 28 Karr extracts: `docs/karr_extracts/process/`
+- 28 Karr fixtures (json/npz/flat.mat): `data/karr_fixtures/per_process/`
+- Track-P2 swarm STATUS corpus: `E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_*.md`
+- P2 master synthesis: `E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_master.md`
+- 28 class-A worktrees: `E:/opencell-worktrees/swarm-class-a-*/`
+- 11 PB design docs: `docs/design/pb_turn*.md`
