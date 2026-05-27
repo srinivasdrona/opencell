@@ -183,16 +183,23 @@ def _load_fixture(path: str | Path) -> dict[str, Any]:
 
 
 def _load_canonical_complex_wids(path: str | Path) -> set[str]:
-    try:
-        resolved = _resolve_fixture_path(path)
-        mat = loadmat(str(resolved))
-        fx = mat["data"]["fixture"][0, 0]
-        names = set(fx.dtype.names or ())
-        if "complexWholeCellModelIDs" not in names:
-            return set()
-        return set(_extract_wids(_as_field_matrix(fx, "complexWholeCellModelIDs")))
-    except (FileNotFoundError, KeyError, OSError, TypeError, ValueError):
-        return set()
+    resolved = _resolve_fixture_path(path)
+    mat = loadmat(str(resolved))
+    if "data" not in mat:
+        raise KeyError(f"Missing 'data' root in complex fixture: {resolved}")
+    fx = mat["data"]["fixture"][0, 0]
+    names = set(fx.dtype.names or ())
+    if "complexWholeCellModelIDs" not in names:
+        raise KeyError(
+            "Missing complexWholeCellModelIDs in complex fixture used by "
+            "karr_transcriptional_regulation"
+        )
+    complex_wids = set(_extract_wids(_as_field_matrix(fx, "complexWholeCellModelIDs")))
+    if not complex_wids:
+        raise ValueError(
+            "No complex WIDs found in complex fixture used by karr_transcriptional_regulation"
+        )
+    return complex_wids
 
 
 class KarrTranscriptionalRegulationProcess(Process):
@@ -233,19 +240,25 @@ class KarrTranscriptionalRegulationProcess(Process):
             [self._tf_wid_source[tf_wid] == "complex" for tf_wid in self.tf_wids],
             dtype=bool,
         )
+        self._protein_tf_wids = [
+            tf_wid for tf_wid in self.tf_wids if self._tf_wid_source[tf_wid] == "protein"
+        ]
+        self._complex_tf_wids = [
+            tf_wid for tf_wid in self.tf_wids if self._tf_wid_source[tf_wid] == "complex"
+        ]
 
     def ports_schema(self) -> dict[str, Any]:
         return {
             "protein": {
                 "counts": {
                     tf_wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
-                    for tf_wid in self.tf_wids
+                    for tf_wid in self._protein_tf_wids
                 }
             },
             "complex": {
                 "counts": {
                     tf_wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
-                    for tf_wid in self.tf_wids
+                    for tf_wid in self._complex_tf_wids
                 }
             },
             "tf_binding": {
@@ -333,13 +346,22 @@ class KarrTranscriptionalRegulationProcess(Process):
             binding[tf_i] = row
 
         bound_effects = np.where(binding > 0, self.tf_tu_fold_change, 1.0)
-        fold_change_total = np.prod(bound_effects, axis=0, dtype=np.float64)
+        float64_max = np.finfo(np.float64).max
+        fold_change_total = np.clip(
+            np.prod(bound_effects, axis=0, dtype=np.float64), a_min=0.0, a_max=float64_max
+        )
 
         tf_present = tf_counts > 0.0
         if np.any(tf_present):
             other_effects = np.where(tf_present[:, np.newaxis], self.tf_other_activities, 1.0)
-            fold_change_total = fold_change_total * np.prod(
-                other_effects, axis=0, dtype=np.float64
+            # TODO(L4): TranscriptionalRegulation_flat.mat currently has 5 TFs, so
+            # direct float64 products are stable; revisit log-space accumulation if
+            # future fixtures materially increase TF cardinality.
+            other_multiplier = np.clip(
+                np.prod(other_effects, axis=0, dtype=np.float64), a_min=0.0, a_max=float64_max
+            )
+            fold_change_total = np.clip(
+                fold_change_total * other_multiplier, a_min=0.0, a_max=float64_max
             )
 
         tf_binding_update: dict[str, dict[str, float]] = {}

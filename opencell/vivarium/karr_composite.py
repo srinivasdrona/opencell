@@ -1196,6 +1196,25 @@ def build_karr_chassis_v4(
             len(missing_tx_reg_complex_wids),
             ",".join(missing_tx_reg_complex_wids),
         )
+    zero_seeded_regulatory_tfs: list[str] = []
+    for tf_i, tf_wid in enumerate(tx_reg_proc.tf_wids):
+        if tf_wid not in tx_reg_tf_complex_wids or tf_wid not in mature_complex_counts:
+            continue
+        has_regulatory_target = bool(
+            np.any(tx_reg_proc.tf_promoter_affinity[tf_i] > 0.0)
+            or np.any(np.abs(tx_reg_proc.tf_tu_fold_change[tf_i] - 1.0) > 1e-12)
+            or np.any(np.abs(tx_reg_proc.tf_other_activities[tf_i] - 1.0) > 1e-12)
+        )
+        if has_regulatory_target and complex_counts.get(tf_wid, 0.0) <= 0.0:
+            complex_counts[tf_wid] = 1.0
+            zero_seeded_regulatory_tfs.append(tf_wid)
+    if zero_seeded_regulatory_tfs:
+        _LOGGER.warning(
+            "build_karr_chassis_v4: %d regulation-active complex TF WIDs had zero mature "
+            "snapshot counts; seeding one copy for chassis bootstrap (%s)",
+            len(zero_seeded_regulatory_tfs),
+            ",".join(sorted(zero_seeded_regulatory_tfs)),
+        )
 
     m1_topo = {
         "metabolic_reaction": ("metabolic_reaction",),
@@ -1825,6 +1844,25 @@ def build_karr_chassis_v5(
             "seeding zero defaults (%s)",
             len(missing_tx_reg_complex_wids),
             ",".join(missing_tx_reg_complex_wids),
+        )
+    zero_seeded_regulatory_tfs: list[str] = []
+    for tf_i, tf_wid in enumerate(tx_reg_proc.tf_wids):
+        if tf_wid not in tx_reg_tf_complex_wids or tf_wid not in mature_complex_counts:
+            continue
+        has_regulatory_target = bool(
+            np.any(tx_reg_proc.tf_promoter_affinity[tf_i] > 0.0)
+            or np.any(np.abs(tx_reg_proc.tf_tu_fold_change[tf_i] - 1.0) > 1e-12)
+            or np.any(np.abs(tx_reg_proc.tf_other_activities[tf_i] - 1.0) > 1e-12)
+        )
+        if has_regulatory_target and complex_counts.get(tf_wid, 0.0) <= 0.0:
+            complex_counts[tf_wid] = 1.0
+            zero_seeded_regulatory_tfs.append(tf_wid)
+    if zero_seeded_regulatory_tfs:
+        _LOGGER.warning(
+            "build_karr_chassis_v5: %d regulation-active complex TF WIDs had zero mature "
+            "snapshot counts; seeding one copy for chassis bootstrap (%s)",
+            len(zero_seeded_regulatory_tfs),
+            ",".join(sorted(zero_seeded_regulatory_tfs)),
         )
 
     m1_topo = {

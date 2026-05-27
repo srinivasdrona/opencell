@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 import pytest
+from vivarium.core.engine import Engine
 
 # Ensure pytest imports from this worktree even if another editable install exists.
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -106,6 +107,8 @@ def _make_toy_process(
     p._tf_is_complex = np.asarray(
         [p._tf_wid_source[tf_wid] == "complex" for tf_wid in tf_wids], dtype=bool
     )
+    p._protein_tf_wids = [tf_wid for tf_wid in tf_wids if p._tf_wid_source[tf_wid] == "protein"]
+    p._complex_tf_wids = [tf_wid for tf_wid in tf_wids if p._tf_wid_source[tf_wid] == "complex"]
     return p
 
 
@@ -169,40 +172,24 @@ def test_fixture_loads() -> None:
     assert p.n_relationships > 0
 
 
-def test_v6_complex_tf_changes_fold_change_when_complex_count_changes() -> None:
+def test_v6_chassis_seed_path_drives_mg205_fold_change() -> None:
     composite = build_karr_chassis_v6(time_step_s=1.0, emit_step_s=1.0)
     tx_reg = composite["processes"]["karr_transcriptional_regulation"]
     tx_reg_topology = composite["topology"]["karr_transcriptional_regulation"]
     assert tx_reg_topology["complex"] == ("complex",)
 
-    d2_proc = composite["processes"]["karr_macromolecular_complexation"]
-    complex_tf_wids = [tf_wid for tf_wid in tx_reg.tf_wids if tf_wid in set(d2_proc.complex_wids)]
-    if not complex_tf_wids:
-        pytest.skip("No TR TF WIDs map to v6 D2 complex WIDs in this fixture")
+    assert _tf_store(tx_reg, "MG_205_DIMER") == "complex"
+    complex_counts = composite["state"]["complex"]["counts"]
+    assert float(complex_counts["MG_205_DIMER"]) != pytest.approx(0.0)
 
-    target_tf = complex_tf_wids[0]
-    target_tus = _regulated_tus_for_tf(tx_reg, target_tf)
-    if not target_tus:
-        pytest.skip(f"Complex TF {target_tf} has no regulated TUs in current fixture")
+    target_tus = _regulated_tus_for_tf(tx_reg, "MG_205_DIMER")
+    assert target_tus
 
-    state_no_complex = _empty_tr_state(tx_reg)
-    _set_tf_count(tx_reg, state_no_complex, target_tf, 0.0)
-    update_no_complex = tx_reg.next_update(1.0, state_no_complex)
-    fold_no_complex = {
-        tu_wid: float(update_no_complex["tx_rate_fold_change"][tu_wid]) for tu_wid in target_tus
-    }
-
-    state_with_complex = _empty_tr_state(tx_reg)
-    state_with_complex["complex"]["counts"][target_tf] = 1000.0
-    update_with_complex = tx_reg.next_update(1.0, state_with_complex)
-    fold_with_complex = {
-        tu_wid: float(update_with_complex["tx_rate_fold_change"][tu_wid]) for tu_wid in target_tus
-    }
-
-    assert any(
-        abs(fold_with_complex[tu_wid] - fold_no_complex[tu_wid]) > _FLOAT_TOL
-        for tu_wid in target_tus
-    )
+    engine = Engine(composite=composite, emit_step=1.0, display_info=False)
+    engine.update(1.0)
+    state = engine.state.get_value()
+    fold_change = state["tx_rate_fold_change"]
+    assert any(abs(float(fold_change[tu_wid]) - 1.0) > _FLOAT_TOL for tu_wid in target_tus)
 
 
 def test_loader_rejects_binding_other_activities_overlap(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -218,6 +205,33 @@ def test_loader_rejects_binding_other_activities_overlap(monkeypatch: pytest.Mon
 
     with pytest.raises(ValueError, match="overlap|overlapping"):
         tx_reg_module._load_fixture("mocked.mat")
+
+
+def test_canonical_complex_wids_loader_raises_on_malformed_fixture(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    malformed_fx = np.zeros((1, 1), dtype=[("wrongField", object)])
+    malformed_data = np.zeros((1, 1), dtype=[("fixture", object)])
+    malformed_data["fixture"][0, 0] = malformed_fx
+    monkeypatch.setattr(tx_reg_module, "_resolve_fixture_path", lambda _: Path("mocked_complex.mat"))
+    monkeypatch.setattr(tx_reg_module, "loadmat", lambda _: {"data": malformed_data})
+
+    with pytest.raises(KeyError, match="complexWholeCellModelIDs"):
+        tx_reg_module._load_canonical_complex_wids("mocked_complex.mat")
+
+
+def test_ports_schema_registers_tf_wids_in_mapped_store_only() -> None:
+    p = KarrTranscriptionalRegulationProcess({})
+    schema = p.ports_schema()
+
+    protein_wids = set(schema["protein"]["counts"])
+    complex_wids = set(schema["complex"]["counts"])
+    expected_protein = {tf_wid for tf_wid in p.tf_wids if _tf_store(p, tf_wid) == "protein"}
+    expected_complex = {tf_wid for tf_wid in p.tf_wids if _tf_store(p, tf_wid) == "complex"}
+
+    assert protein_wids == expected_protein
+    assert complex_wids == expected_complex
+    assert protein_wids.isdisjoint(complex_wids)
 
 
 def test_missing_tf_wid_in_expected_store_raises() -> None:
