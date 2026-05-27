@@ -412,10 +412,12 @@ NOT a parallel program)**
 ### TL;DR
 `trackA/wave2-base` advanced from `2e185ff` → **`488b563`** since this morning. **6 tracks merged today** (tRNA probe, Track-A scorecard, trajectory-pilot, optionB-flat chromosome flats, MATLAB manifest, orchestration-model doc). **2 codex sessions in flight**: PP1 fix-only (PID 34288, integration sweep on retry) and RNAProcessing Option-4 defer (PID 28528 launcher, just fired ~13:25). Per-process fidelity now tracked via `PROCESS_STATUS_ALL_28.md` (28-row living matrix, source of biology truth). PM orchestration moved into **Phase 4 multi-stage kanban + codex-foreman pattern** (logged today in `docs/ORCHESTRATION_MODEL.md` + cross-project `DECISIONS.md`).
 
-### L4 Methods paper — Track A is now UNBLOCKED (RECOMMENDED — scorecard reads strongly)
+### L4 Methods paper — Track A is unblocked but pre-conditions are weaker than yesterday's read
 The 10:55 status said "decide after scorecard." Scorecard has landed (`docs/phase_e/karr_fidelity_scorecard.md`). Headline read:
 
-**Per-process Karr fidelity at tick 0**: **15 PASS · 1 PARTIAL · 0 FAIL · 12 SKIP** (out of 28).
+**Per-process Karr fidelity at tick 0** (isolation replay, baseline `75609c7`): **15 PASS · 1 PARTIAL · 0 FAIL · 12 SKIP** (out of 28).
+
+> **Honest framing of the underlying baseline** (updated 14:14 IST after wave-2 ensemble + phenotype scorecard returned): the wave-2 ensemble at `75609c7` is **not a stable baseline**. Final ATP across seeds 42-45 = `{3587, 1056, 0.61, 578}` — a 5,900× spread with seed-44 effectively crashed to zero. The phenotype scorecard reads 6/28 PASS / 14 FAIL / 8 BLOCKED across all 4 seeds (status-stable but materially worse than the 7/28 pre-fix baseline at `chassis_v6 @ ee52141`, with KP20 regressing PASS→FAIL). Per-process isolation fidelity (15 PASS below) is a **necessary but not sufficient** signal: it certifies port-level correctness, not composition-level survival. Any L4-A claim must lead with both numbers and explicitly separate isolation fidelity from composition fragility — see "Reconciliation" subsection below.
 
 | Bucket | Count | Processes |
 |---|---:|---|
@@ -431,7 +433,11 @@ Zero FAILs at tick-0 replay across 16 active adapters is the most positive fidel
 - **5 are small adapter/key-name bugs**, all reachable via codex-foreman fanout (each is a 1-3 file fix; the error messages already name the missing key)
 - **2 are intentional deferrals** documented in scope from day 1
 
-**Recommendation: commit to L4 Track A.** The story is already publishable as a porting/fidelity paper with the wave-2 ensemble baseline plus this scorecard. Remaining work to ship is bounded:
+**Recommendation: HOLD on L4 Track A commitment until wave-2 baseline is honestly characterized.** The fidelity scorecard is real and reads strongly *in isolation* (15 PASS / 0 FAIL at tick 0). But the wave-2 ensemble that anchors the methods paper's composition story is currently fragile: 5,900× ATP spread across 4 seeds, seed-44 cratered to 0.61 ATP, KP20 regressed from PASS to FAIL, 6/28 phenotypes pass vs 7/28 pre-fix. Two paths from here, operator's call:
+- **Path A (commit now, ship as-is)**: paper leads with isolation-fidelity PASS scorecard, explicitly frames composition as "wave-2 is the *boundary* of viability, here are the per-seed numbers, here is what fails." Honest negative-result framing of composition; positive framing of port quality. Defensible.
+- **Path B (defer L4, run wave-3 first)**: queue KP20 regression diagnosis (in flight, PID 30312), extractor-schemas-8 fixes (in flight, PID 30968), tRNAAminoacylation enrollment, then re-run ensemble. Target a paper where composition has stabilised (max/min ATP spread < 10×, all seeds above some viability floor) — then ship.
+
+Remaining work to ship under Path A is bounded:
 1. Fire 5-way adapter-key codex fanout (PP1 template applies once it lands — many of these are the same enzyme-seed / port-key pattern). ~1-2 days wall-clock.
 2. Restore MATLAB license to unblock 5 truncated re-extracts (`MATLAB_FILE_MANIFEST.md` Section 4 lists the exact runs). Independent track.
 3. Generate the **post-wave2 phenotype scorecard** (`E2_scorecard_post_strip.md` is the *pre-fix* baseline on broken `chassis_v6 @ ee52141`; a fresh E.2 run on wave2-base is the missing artifact for the paper).
@@ -472,7 +478,7 @@ This nuance strengthens the methods paper: it cleanly separates the "port qualit
 2. **RNAProcessing Option-4 defer** (`E:\opencell-worktrees\triage-rna-processing-defer`, launcher PID 28528, branch `triage/rna-processing-defer`) — fired 13:25. Verdict (e) "legitimate downstream gate"; will land 3 commits (DEFER docstring + sentinel comment, wave3 Option-1 spec doc, regression test).
 
 ### Process-level fidelity — input side
-Canonical: `PROCESS_STATUS_ALL_28.md` (session file → to be promoted to `docs/phase_e/PROCESS_STATUS_ALL_28.md` as the live tracker post-PP1). Current bucket counts:
+Canonical: `docs/phase_e/PROCESS_STATUS_ALL_28.md` (promoted from session-state 14:14 IST; this is now the source-of-truth tracker). Current bucket counts:
 - **9 closed** (writing real data): Metabolism, DNARepair, ChromosomeCondensation, Transcription, RNADecay, Translation, ProteinFolding, ProteinTranslocation, FtsZPolymerization
 - **2 partial**: RNAModification, ProteinDecay-light
 - **10 unclosed-dead** with diagnose evidence: tRNAAminoacylation (probe fired today), ProteinProcessingI (PP1 fix in flight), ProteinProcessingII (queued behind PP1 template), ProteinModification (queued behind PP1 template), MacromolecularComplexation, RNAProcessing (Option-4 defer in flight), RibosomeAssembly, ReplicationInitiation, Replication, CellCycleCoordinator
@@ -490,7 +496,7 @@ Logged 2026-05-27 in `docs/ORCHESTRATION_MODEL.md` + `.pm-os/DECISIONS.md` (slug
 - **Confirmed**: Karr 2012 supplement xls/xlsx files are HTML download stubs (placeholders), not real spreadsheets
 
 ### Bug 8 / Bug 9 status
-Both still pending. Bug 9 (protein decay enrollment) — `swarm-dead-protein_decay_light` branch exists but has **no STATUS** (diagnose never completed). Promoting to design-codex (diagnose first, then A6-pattern enrollment fix). Bug 8 (TL energy: +GTP, +4 ATP-eq/AA) — still gated on PP1 + tRNA closures so the magnitude isn't conflated with other deltas.
+Both still pending. Bug 9 (protein decay enrollment) — diagnose **did complete** (correction 14:14 IST): STATUS lives in the consolidator worktree as `swarm-dead-consolidator/STATUS_dead_protein_decay_light_consolidated.md` with verdict (b) buggy implementation (R09 + R19 findings, allocator-key bypass at `karr_protein_decay_light.py:177-181,223-248`). The `swarm-dead-protein_decay_light` worktree itself is a recycled scratch worktree, not the diagnose codex's output location — its name is misleading. Rule 5 not violated. Next step is A6-pattern enrollment fix, not a fresh diagnose. Bug 8 (TL energy: +GTP, +4 ATP-eq/AA) — still gated on PP1 + tRNA closures so the magnitude isn't conflated with other deltas.
 
 ### Next decisions / queue
 1. **PP1 lands → fire PP2 + ProteinModification fanout** using PP1 STATUS as literal template (codex-foreman pattern, mechanical fanout).
