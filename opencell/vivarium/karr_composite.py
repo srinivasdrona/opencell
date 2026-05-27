@@ -969,7 +969,13 @@ def build_karr_chassis_v4(
     )
     d2_proc = MacromolecularComplexationProcess({"time_step": time_step_s})
     decay_proc = ProteinDecayLightProcess({"time_step": time_step_s})
-    trna_proc = KarrTRNAAminoacylationProcess({"time_step": time_step_s})
+    trna_proc = KarrTRNAAminoacylationProcess(
+        {
+            "time_step": time_step_s,
+            "emit_noop_update": True,
+            "emit_trace_heartbeat_on_noop": True,
+        }
+    )
     ribasm_proc = KarrRibosomeAssemblyProcess({"time_step": time_step_s})
     tx_reg_proc = KarrTranscriptionalRegulationProcess({"time_step": time_step_s})
     rna_proc = KarrRNAProcessingProcess({"time_step": time_step_s})
@@ -1493,7 +1499,13 @@ def build_karr_chassis_v5(
     )
     d2_proc = MacromolecularComplexationProcess({"time_step": time_step_s})
     decay_proc = ProteinDecayLightProcess({"time_step": time_step_s})
-    trna_proc = KarrTRNAAminoacylationProcess({"time_step": time_step_s})
+    trna_proc = KarrTRNAAminoacylationProcess(
+        {
+            "time_step": time_step_s,
+            "emit_noop_update": True,
+            "emit_trace_heartbeat_on_noop": True,
+        }
+    )
     ribasm_proc = KarrRibosomeAssemblyProcess({"time_step": time_step_s})
     tx_reg_proc = KarrTranscriptionalRegulationProcess({"time_step": time_step_s})
     rna_proc = KarrRNAProcessingProcess({"time_step": time_step_s})

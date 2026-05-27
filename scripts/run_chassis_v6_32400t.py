@@ -317,6 +317,7 @@ class DiagnosticCollector:
                     return update
 
                 writer = self.process_trace_writers[_entity_name]
+                wrote_trace_row = False
                 for port_name, port_update in update.items():
                     port_name_str = str(port_name)
                     store_path = _shared_ports.get(port_name_str)
@@ -345,6 +346,13 @@ class DiagnosticCollector:
                             self.per_tick_process_sums[wid_str] += float(delta)
                         if tick % self._process_trace_stride == 0:
                             writer.writerow([tick, _entity_name, wid_str, f"{delta:.12g}"])
+                            wrote_trace_row = True
+                if (
+                    (tick % self._process_trace_stride == 0)
+                    and not wrote_trace_row
+                    and bool(getattr(entity_obj, "parameters", {}).get("emit_trace_heartbeat_on_noop", False))
+                ):
+                    writer.writerow([tick, _entity_name, "__noop__", "0"])
                 return update
 
             entity_obj.next_update = wrapped_next_update

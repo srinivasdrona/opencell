@@ -15,12 +15,17 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import sys
 from collections import Counter
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 from vivarium.core.engine import Engine
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from opencell.m1 import karr_metabolism as km
 from opencell.m2 import transcription as tx
