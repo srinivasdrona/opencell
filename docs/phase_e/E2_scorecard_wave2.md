@@ -46,3 +46,16 @@ cascade). Compare KP-by-KP to see which KPs the wave-2 fixes moved.
 | KP27 | Host adhesion competence | biology-beyond-Karr | NA | True | NA | BLOCKED | Extractor unavailable for emitted schema. (E2-V1_1-KP27-HOST-ADHESION) |
 | KP28 | Host immune activation cascade | biology-beyond-Karr | NA | True | NA | BLOCKED | Extractor unavailable for emitted schema. (E2-V1_1-KP28-HOST-IMMUNE-CASCADE) |
 
+## Cross-seed comparison (seeds 42-45)
+
+| Seed | Trajectory | PASS | FAIL | BLOCKED |
+|---|---|---:|---:|---:|
+| 42 | artifacts/ensemble_wave2_20260527_023611/seed_42/trajectory.pkl | 6 | 14 | 8 |
+| 43 | artifacts/ensemble_wave2_20260527_023611/seed_43/trajectory.pkl | 6 | 14 | 8 |
+| 44 | artifacts/ensemble_wave2_20260527_023611/seed_44/trajectory.pkl | 6 | 14 | 8 |
+| 45 | artifacts/ensemble_wave2_20260527_023611/seed_45/trajectory.pkl | 6 | 14 | 8 |
+
+No KP changed PASS/FAIL/BLOCKED status across seeds 42-45; status stability is 28/28.
+Largest numeric spread was KP07 (mRNA short-horizon stability), from 0.000595 to 0.00227,
+which remained below the threshold_max target (0.1) for all four seeds.
+
