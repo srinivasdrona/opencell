@@ -1,4 +1,25 @@
-"""Vivarium Process port of Karr's RNA processing flow."""
+"""karr_rna_processing — Karr 2012 RNA Processing process (light/v5 chassis).
+
+ARCHITECTURAL DEFER (2026-05-27): This process is registered and called every
+tick but currently always returns ``{}``. This is intentional, not a bug.
+
+Karr's MATLAB chain is:
+    Transcription -> nascent TU-keyed RNA pool -> RNAProcessing -> mature mRNA/rRNA/sRNA/tRNA
+
+OpenCell v5 chassis collapses this into TX-emits-mature: `karr_transcription`
+writes mature gene-keyed RNA (`MG_###`) directly to `rna.counts`. RNAProcessing
+here reads unprocessed TU-keyed RNA (`TU_###`). Intersection of the two ID
+spaces is empty at runtime, so the unprocessed-pool gate at
+:func:`KarrRNAProcessingProcess.next_update` correctly returns empty every tick.
+
+The full Karr-faithful fix (TX emits nascent TU pool, RNAProcessing converts to
+mature pool) is wave3 Option 1 — see ``docs/processes/rna_processing_defer.md``.
+
+Until wave3, this module is kept registered (a) to preserve the wiring topology
+for future restoration, (b) to keep the process count at 28 for canary
+completeness, and (c) so any future TX change that *does* emit TU-keyed RNA
+will automatically light this process up.
+"""
 
 from __future__ import annotations
 
@@ -236,6 +257,8 @@ class KarrRNAProcessingProcess(Process):
         unprocessed = np.asarray(
             [float(rna_counts.get(wid, 0.0)) for wid in self.unprocessed_rna_wids], dtype=np.float64
         )
+        # DEFER (wave3 Option 1): empty by design until TX emits TU-keyed nascent pool.
+        # See module docstring + docs/processes/rna_processing_defer.md.
         if unprocessed.sum() <= 0.0:
             return {}
 
