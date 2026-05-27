@@ -8,11 +8,37 @@
 **Pass count**: `6/28`
 **Bucket summary**: opencell-tooling 3/8 · validation-and-organism-scaling 1/8 · karr-known-incomplete 0/5 · biology-beyond-Karr 2/7
 
+## Framing note — this is a fragile baseline, not a stable one
+
+> **Read this section before citing any number below.** Wave-2 closed the
+> five A2/A3/A4/tracer/A6 audit findings cleanly, but the resulting baseline
+> is fragile, not stable:
+>
+> - **Final ATP varies ~5,900× across seeds** (42 → 3,587 · 43 → 1,056 · 44 → 0.61 · 45 → 578). Seed 44 effectively cratered; the system is hovering at the boundary of feasibility on three of four random seeds.
+> - **No seed initiated replication**; no seed reached division; mass grew +1.9% then plateaued as amino acids and ATP exhausted.
+> - The 6/28 PASS count is a **regression from the 7/28 pre-strip baseline**
+>   on a single KP (KP20 metabolite-profile flipped PASS → FAIL at 3.08× tolerance).
+> - Bucket-status stability across seeds (28/28, see Cross-seed section below)
+>   is **not a sign of biological stability** — it is the natural consequence
+>   of all four seeds failing the same KPs for the same reasons. A scorecard
+>   that doesn't move when the underlying state varies by orders of magnitude
+>   is undersensitive, not robust.
+> - Root cause of the AA/ATP plateau is the dead `karr_trna_aminoacylation`
+>   process (Tier 0 in the dead-process triage). That gate must close before
+>   any wave-3 ensemble can produce a non-fragile baseline.
+>
+> This scorecard is published as an honest negative-result snapshot of where
+> the model stands at wave-2, not as evidence that the model is converged.
+> Phase 5 tier-0 / tier-1 enrollment is the prerequisite for the next pass.
+
 ## Pre-fix vs Post-wave2
 
 This is the POST-WAVE2 baseline. The earlier `E2_scorecard_post_strip.md`
 was the pre-fix baseline on broken chassis_v6 @ ee52141 (allocation-bypass
 cascade). Compare KP-by-KP to see which KPs the wave-2 fixes moved.
+**KP20 regression** (PASS → FAIL) is the headline delta — wave-2 fixes are
+net-additive on plumbing but surfaced a real biology gap on metabolite
+profile that the pre-strip baseline was hiding.
 
 ## Per-KP detail
 | KP | Label | Bucket | Opencell | Karr | rel_err | Status | Disposition |
@@ -56,6 +82,19 @@ cascade). Compare KP-by-KP to see which KPs the wave-2 fixes moved.
 | 45 | artifacts/ensemble_wave2_20260527_023611/seed_45/trajectory.pkl | 6 | 14 | 8 |
 
 No KP changed PASS/FAIL/BLOCKED status across seeds 42-45; status stability is 28/28.
-Largest numeric spread was KP07 (mRNA short-horizon stability), from 0.000595 to 0.00227,
-which remained below the threshold_max target (0.1) for all four seeds.
+Largest numeric spread *within a single KP's tolerance band* was KP07 (mRNA short-horizon
+stability), from 0.000595 to 0.00227, which remained below the threshold_max target (0.1)
+for all four seeds.
+
+**Do not read this as biological stability.** Bucket-status invariance across seeds
+co-exists with a ~5,900× spread in final ATP across the same four seeds
+(42 → 3,587 · 43 → 1,056 · 44 → 0.61 · 45 → 578). The scorecard's KPs are
+either (a) measured before the divergence point, (b) tolerance-banded too
+loosely to register seed-44's near-crash, or (c) gated BLOCKED and therefore
+not contributing signal at all. KP01 (growth rate) does register the crash
+(4.42e-21 g/s, effectively zero) but is already FAIL on the median seed, so
+it can't distinguish "fragile" from "broken" at this baseline. Add an
+ensemble-divergence canary (proposed: flag any KP whose cross-seed CV
+exceeds 10×) before the next wave to make this kind of fragility visible
+in the scorecard itself, not just in the raw trajectory pickles.
 
