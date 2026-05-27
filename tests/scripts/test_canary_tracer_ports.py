@@ -1,9 +1,19 @@
 from __future__ import annotations
 
 import csv
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+# Ensure pytest imports from this worktree even if another editable install exists.
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+if "scripts.run_chassis_v6_32400t" in sys.modules:
+    loaded = Path(getattr(sys.modules["scripts.run_chassis_v6_32400t"], "__file__", "")).resolve()
+    if _REPO_ROOT not in loaded.parents:
+        del sys.modules["scripts.run_chassis_v6_32400t"]
 
 from scripts.run_chassis_v6_32400t import DiagnosticCollector
 
@@ -115,3 +125,36 @@ def test_diagnostic_collector_skips_non_shared_ports_without_crashing(tmp_path: 
     assert returned_update == entity.update
     assert len(rows) == 1
     assert rows[0]["substrate"] == "ATP"
+
+
+def test_diagnostic_collector_can_emit_noop_heartbeat_for_traceability(tmp_path: Path) -> None:
+    entity = _DummyEntity(
+        update={
+            "rna": {"counts": {}},
+        },
+        schema={
+            "rna": {"counts": {"RNA_1": {"_default": 0.0, "_updater": "accumulate"}}},
+        },
+    )
+    entity.parameters["emit_trace_heartbeat_on_noop"] = True
+    composite = _DummyComposite(
+        entity=entity,
+        topology_entry={
+            "rna": ("rna",),
+        },
+    )
+    collector = DiagnosticCollector(
+        composite=composite,
+        process_traces_dir=tmp_path / "process_traces",
+        process_trace_stride=1,
+        seed=23,
+    )
+
+    collector.set_tick(7)
+    entity.next_update(1.0, {"rna": {"counts": {"RNA_1": 0.0}}})
+    collector.close()
+
+    rows = _read_rows(tmp_path / "process_traces" / "dummy.csv")
+    assert len(rows) == 1
+    assert rows[0]["substrate"] == "__noop__"
+    assert float(rows[0]["delta"]) == 0.0

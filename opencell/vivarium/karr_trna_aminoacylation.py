@@ -53,6 +53,11 @@ class KarrTRNAAminoacylationProcess(Process):
         "rng_seed": 0,
         "time_step": 1.0,
         "max_stochastic_iterations": _MAX_STOCHASTIC_ITERATIONS,
+        # Optional traceability hook for chassis-level diagnostics: emit a
+        # structured no-op update instead of `{}` when guards suppress flux.
+        "emit_noop_update": False,
+        # When enabled, the chassis tracer may emit a heartbeat row for no-op ticks.
+        "emit_trace_heartbeat_on_noop": False,
     }
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
@@ -148,7 +153,7 @@ class KarrTRNAAminoacylationProcess(Process):
         )
 
         if free_rna.sum() <= 0.0:
-            return {}
+            return self._noop_update() if bool(self.parameters.get("emit_noop_update", False)) else {}
 
         reaction_fluxes = self._compute_reaction_fluxes(
             free_rna=free_rna,
@@ -157,7 +162,7 @@ class KarrTRNAAminoacylationProcess(Process):
             dt=float(self.parameters["time_step"]),
         )
         if not np.any(reaction_fluxes > 0):
-            return {}
+            return self._noop_update() if bool(self.parameters.get("emit_noop_update", False)) else {}
 
         substrate_delta = self.reaction_stoich @ reaction_fluxes
         rna_consumed = self.reaction_modification.T @ reaction_fluxes
@@ -192,6 +197,16 @@ class KarrTRNAAminoacylationProcess(Process):
         # Keep explicit read-path for charged store in tests and engines.
         _ = aminoacylated_rna
         return update
+
+    @staticmethod
+    def _noop_update() -> dict[str, Any]:
+        return {
+            "substrates": {},
+            "rna": {
+                "counts": {},
+                "aminoacylated_counts": {},
+            },
+        }
 
     def _compute_reaction_fluxes(
         self,
