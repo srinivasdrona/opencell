@@ -401,6 +401,65 @@ NOT a parallel program)**
 
 ---
 
+## Current Status (2026-05-27 10:55 IST, **WAVE-2 PRs LANDED + 4-SEED ENSEMBLE COMPLETE**)
+
+### TL;DR
+4-seed × 32,400 s ensemble on `trackA/wave2-base` HEAD `2e185ff` ran clean in 36 min wall-clock. 11 of 29 Karr biological processes are actively writing; 18 are header-only (silent). A6 PTransloc enrollment proved the close-the-loop pattern (35 B → 1.68 MB). Per-process replay fixtures materialized for all 28 processes (commit `e0118b2`) — the "MCOS-decode wall" was a phantom. Two Karr-fidelity codex tracks launched this morning (Track A scorecard in flight, Track B MATLAB re-extractor done). Track-F tRNA aminoacylation probe codex launched 10:51 IST. Hygiene pass underway to promote session docs into repo.
+
+### Commits landed since 2026-05-25 22:53
+
+| Commit | Branch | What |
+|---|---|---|
+| `b2863dc` | A3 | key normalization + zero-demand writeback guard |
+| `f8339b7` | wave2-base | merge A3 |
+| `6661d2e` | A2 | enroll Metabolism + Transcription + Translation in allocator (v3/v4) |
+| `cd2e775` | wave2-base | merge A2 (Metabolism/TX/TL enrollment + C1 tolerance) |
+| `0ba4f7c` | tracer-fix | fix canary tracer port filtering |
+| `bf1a2e6` | wave2-base | merge tracer fix |
+| `9a677b7` | A6 | enroll ProteinTranslocation in allocator |
+| `2e185ff` | wave2-base | merge A6 |
+| `c7c3635` | wave2-base | merge A4 (L3 vector members) |
+| `e0118b2` | wave2-base | materialize 28 per-process replay fixtures (data-only) |
+
+### Wave-2 PRs status (5 PRs from the swarm-discovery audit)
+- ✅ A2 Metabolism + TX + TL enrollment — landed
+- ✅ A3 key normalization — landed
+- ✅ A4 L3 vector members — landed
+- ✅ A5 (tracer port-filter) — landed
+- ✅ A6 ProteinTranslocation enrollment — landed (proved A6 pattern)
+
+### Ensemble (artifacts/ensemble_wave2_20260527_023611/)
+4 seeds (42/43/44/45), 32,400 s biological time each, ~36 min wall-clock total (parallel WSL processes). No NaNs, no negative pools, no allocator wedges. Final state per seed (tight spread):
+
+| Seed | Final ATP | Mass (g) | Proteins | RNA | Free AAs | Repl/Div |
+|---|---:|---:|---:|---:|---:|:-:|
+| 42 | 3,587 | 3.654e-14 | 29,106 | 671 | 1 | none |
+| 43 | 1,056 | 3.653e-14 | 29,125 | 670 | 1 | none |
+| 44 | 0.61  | 3.652e-14 | 29,106 | 671 | 1 | none |
+| 45 | 578   | 3.653e-14 | 29,098 | 673 | 1 | none |
+
+Rate-limiting failure mode: AAs deplete to 1 because `karr_trna_aminoacylation` is silent → translation stalls → mass plateaus → ATP drains downstream. **This is the publishable wave-2 baseline.**
+
+### Process-level fidelity (input side)
+See `docs/phase_e/process_status.md` (promoted from session this morning). Rollup:
+- **9 closed** (writing real data): Metabolism, DNARepair, ChromosomeCondensation, Transcription, RNADecay, Translation, ProteinFolding, ProteinTranslocation, FtsZPolymerization
+- **2 partial**: RNAModification (201 B), ProteinDecay (light; full decay is Bug 9)
+- **10 unclosed dead**: tRNAAminoacylation, ProteinProcessingI/II, ProteinModification, MacromolecularComplexation, RNAProcessing, RibosomeAssembly, ReplicationInitiation, Replication, CellCycleCoordinator
+- **2 deferred**: HostInteraction, TerminalOrganelleAssembly
+
+### In flight (2026-05-27 morning)
+1. **Track A — Karr fidelity scorecard** (`E:\opencell-worktrees\karr-fidelity-trackA`, PID 34348, branch `trackF/karr-fidelity-trackA`) — Python harness fix + scorecard doc + integration test. ETA 30-60 min from 10:18.
+2. **Track B — MATLAB re-extractor** (DONE, branch `trackF/karr-fidelity-trackB` HEAD `d6b4019`) — 4 commits, runbook in `scripts/matlab/README_extractor_fix.md`. Awaiting operator MATLAB run for 5 truncated processes (Transcription/Translation/RNADecay/Replication/ReplicationInitiation).
+3. **Track F — tRNA aminoacylation probe** (`E:\opencell-worktrees\trna-probe`, PID 27408, branch `trackF/trna-probe`) — diagnose H1/H2/H3/H4 + fix. First instance of the close-the-loop template.
+4. **Hygiene pass** (this commit) — promoted 4 session docs to `docs/`, refreshed plan.md.
+
+### Bug 8 / Bug 9 status
+Both still pending, both still deferred. Bug 9 (protein decay enrollment) unblocks AFTER A6 pattern proven (it is, now). Bug 8 (TL energy: +GTP, +4 ATP-eq/AA) needs Track-A scorecard first to bound the magnitude of mis-accounting before tightening.
+
+### Next decisions (gated on Track-A scorecard)
+- **L4 methods paper framing**: A (port + fidelity) ≈ 2 weeks away; B (port + division) 6-10 weeks. Decide after scorecard.
+- **Tier-0 sequence**: tRNA (in flight) → Bug 9 (protein decay enroll) → Bug 8 (TL energy) → ReplicationInitiation/Replication enrollment → CellCycleCoordinator → division.
+
 ## Current Status (2026-05-25 ~22:50 IST, **TRACK-A SWARM LANDED ON MAIN**)
 
 ### TL;DR
