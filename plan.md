@@ -412,11 +412,47 @@ NOT a parallel program)**
 ### TL;DR
 `trackA/wave2-base` advanced from `2e185ff` → **`488b563`** since this morning. **6 tracks merged today** (tRNA probe, Track-A scorecard, trajectory-pilot, optionB-flat chromosome flats, MATLAB manifest, orchestration-model doc). **2 codex sessions in flight**: PP1 fix-only (PID 34288, integration sweep on retry) and RNAProcessing Option-4 defer (PID 28528 launcher, just fired ~13:25). Per-process fidelity now tracked via `PROCESS_STATUS_ALL_28.md` (28-row living matrix, source of biology truth). PM orchestration moved into **Phase 4 multi-stage kanban + codex-foreman pattern** (logged today in `docs/ORCHESTRATION_MODEL.md` + cross-project `DECISIONS.md`).
 
-### L4 Methods paper — Track A is now UNBLOCKED (decision pending)
-The 10:55 status said "decide after scorecard." Scorecard has landed. Status now:
-- **L4 Track A (port + fidelity)**: gating dependency (scorecard) → ✅ done. Remaining gates: (a) close ≥6 of 10 unclosed-dead processes to lift "9 closed" → "15+ closed" baseline; (b) get tRNA aminoacylation writing (was the wave-2 rate-limiter — AA depletion to 1 → translation stall); (c) Bug 9 (protein decay enrollment) and Bug 8 (TL energy) to tighten the energy/mass scorecard before publication.
-- **Operator decision pending**: commit to L4 Track A (port + fidelity, ~2 weeks of close-the-loop work) or L4 Track B (port + division, 6-10 weeks). Recommended: Track A — the wave-2 baseline is already publishable as "honest snapshot of a port" and the 10 dead processes are now individually scoped (PROCESS_STATUS_ALL_28 + 8 swarm-dead diagnose worktrees, 5 actively triaging or queued).
-- **Not yet started**: the `l4-methods-paper` todo (pending bucket). Will queue as a parallel docs lane once 2-3 more biology closures land.
+### L4 Methods paper — Track A is now UNBLOCKED (RECOMMENDED — scorecard reads strongly)
+The 10:55 status said "decide after scorecard." Scorecard has landed (`docs/phase_e/karr_fidelity_scorecard.md`). Headline read:
+
+**Per-process Karr fidelity at tick 0**: **15 PASS · 1 PARTIAL · 0 FAIL · 12 SKIP** (out of 28).
+
+| Bucket | Count | Processes |
+|---|---:|---|
+| **PASS** (max_rel < 1e-6 or max_abs < 1e-9) | 15 | ChromosomeCondensation, ChromosomeSegregation, Cytokinesis, DNADamage, DNARepair, DNASupercoiling, MacromolecularComplexation, Metabolism, ProteinActivation, ProteinProcessingI, ProteinProcessingII, ProteinTranslocation, RNAProcessing, RibosomeAssembly, TranscriptionalRegulation |
+| **PARTIAL** (max_rel < 0.05) | 1 | FtsZPolymerization (max_rel 5.5e-4 on `substrates`) |
+| **FAIL** | **0** | — |
+| **SKIP — awaiting MATLAB re-extract** (5 truncated 1-tick mirrors) | 5 | Transcription, Translation, RNADecay, Replication, ReplicationInitiation |
+| **SKIP — adapter/key bugs** (small Python fixes) | 5 | ProteinDecay ('complex'), ProteinFolding ('unfolded_counts'), ProteinModification ('unmodified_counts'), RNAModification ('rna'), tRNAAminoacylation ('rna') |
+| **SKIP — by-design deferral** | 2 | HostInteraction, TerminalOrganelleAssembly |
+
+Zero FAILs at tick-0 replay across 16 active adapters is the most positive fidelity signal we have produced to date. The 12 SKIPs are all **scoped, not architectural**:
+- **5 are blocked on MATLAB license restoration** (Bucket A in `MATLAB_FILE_MANIFEST.md`)
+- **5 are small adapter/key-name bugs**, all reachable via codex-foreman fanout (each is a 1-3 file fix; the error messages already name the missing key)
+- **2 are intentional deferrals** documented in scope from day 1
+
+**Recommendation: commit to L4 Track A.** The story is already publishable as a porting/fidelity paper with the wave-2 ensemble baseline plus this scorecard. Remaining work to ship is bounded:
+1. Fire 5-way adapter-key codex fanout (PP1 template applies once it lands — many of these are the same enzyme-seed / port-key pattern). ~1-2 days wall-clock.
+2. Restore MATLAB license to unblock 5 truncated re-extracts (`MATLAB_FILE_MANIFEST.md` Section 4 lists the exact runs). Independent track.
+3. Generate the **post-wave2 phenotype scorecard** (`E2_scorecard_post_strip.md` is the *pre-fix* baseline on broken `chassis_v6 @ ee52141`; a fresh E.2 run on wave2-base is the missing artifact for the paper).
+4. PP1 + RNAProcessing-Option-4 (in flight today).
+5. Bug 8 / Bug 9 tighten the energy/mass scorecard.
+
+**Realistic L4-A timeline if committed today**: ~2 weeks for items 1, 3, 4, 5. Item 2 (MATLAB license) parallel; if it slips, the 5 awaiting-re-extract processes appear in the paper as "license-gated, scoped pending" rather than blocking publication.
+
+**Not yet started**: the `l4-methods-paper` todo (pending bucket). Queue as a parallel docs lane once 2-3 more biology closures land (recommended: after PP1 + RNAProcessing-Option-4 + tRNA close out).
+
+### Reconciliation — "PASS at replay" vs "unclosed-dead at runtime"
+The fidelity scorecard tests each process **in isolation** by replaying Karr's input state into our adapter and comparing tick-0 output to Karr's. So **PP1, PP2, RNAProcessing, RibosomeAssembly, MacromolecularComplexation all PASS in isolation** — our adapter logic is Karr-faithful given Karr's input.
+
+`PROCESS_STATUS_ALL_28.md` measures **runtime in composition**: in the wave-2 ensemble, these same processes are silent because upstream architecture in OpenCell v5 doesn't write their input pools (e.g., RNAProcessing reads TU-keyed unprocessed RNA; TX writes gene-keyed mature RNA — intersection 0; PP1 reads enzymes that were never seeded into the enzyme pool).
+
+**Implication for L4-A**: this is a *publishable finding*, not a contradiction.
+- "Per-process adapters are Karr-faithful (15 PASS / 0 FAIL at tick 0)"
+- "v5 chassis composes them differently than Karr's MATLAB, producing 10 silent-in-composition processes whose upstream pools are not populated"
+- The 10 silent processes' triage path is therefore upstream-architecture work (TX refactor for RNAProcessing, enzyme seeding for PP1, etc.), not process-logic work.
+
+This nuance strengthens the methods paper: it cleanly separates the "port quality" claim (per-process adapter fidelity, scorecard) from the "composition fidelity" claim (whole-cell runtime closure, wave-2 ensemble + PROCESS_STATUS_ALL_28).
 
 ### Commits landed since 10:55 IST (this morning's wave-2 baseline)
 
