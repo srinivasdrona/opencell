@@ -1,12 +1,12 @@
 # Phase E.2 - 28-Phenotype Scorecard
 
-`E2_PASS=6/28 OC=3/8 VAL=1/8 INC=0/5 BEY=2/7 FAIL=16 BLOCKED=1 DEFERRED=2 NEEDS_EMITTER=3`
+`E2_PASS=7/28 OC=4/8 VAL=1/8 INC=0/5 BEY=2/7 FAIL=16 BLOCKED=0 DEFERRED=2 NEEDS_EMITTER=3`
 
 **Run**: chassis_v6 @ commit `unknown`
 **Wall-time**: `0.00` s
-**Pass count**: `6/28` (pre-fix baseline gate >=6)
-**Bucket summary**: opencell-tooling 3/8 · validation-and-organism-scaling 1/8 · karr-known-incomplete 0/5 · biology-beyond-Karr 2/7
-**Blocked**: `1` (KP21)
+**Pass count**: `7/28` (pre-fix baseline gate >=6)
+**Bucket summary**: opencell-tooling 4/8 · validation-and-organism-scaling 1/8 · karr-known-incomplete 0/5 · biology-beyond-Karr 2/7
+**Blocked**: `0` (None)
 **Deferred**: `2` (KP25, KP26)
 **Needs emitter**: `3` (KP15, KP27, KP28)
 
@@ -38,7 +38,7 @@ This scorecard is the **BEFORE-fix baseline** captured on the known broken chass
 | KP18 | RNA mass fraction | validation-and-organism-scaling | 0 | 0.0434821 | 1 | FAIL | tolerance exceeded |
 | KP19 | Protein mass fraction | validation-and-organism-scaling | 0.0167298 | 0.277002 | 0.9396 | FAIL | tolerance exceeded |
 | KP20 | Metabolite concentration profile | karr-known-incomplete | 3.0788 | 1 | 3.079 | FAIL | threshold_max exceeded |
-| KP21 | ATP/GTP production-use balance | opencell-tooling | NA | 0 | NA | BLOCKED | Extractor unavailable for emitted schema. (E2-V1_1-KP21-ENERGY-LEDGER) |
+| KP21 | ATP/GTP production-use balance | opencell-tooling | 2.82179e-13 | 0 | 2.822e-13 | PASS | within tolerance |
 | KP22 | Energy discrepancy phenotype | karr-known-incomplete | False | True | 1 | FAIL | qualitative boolean mismatch |
 | KP23 | Burst-like protein synthesis stats | biology-beyond-Karr | True | True | 0 | PASS | qualitative boolean matched |
 | KP24 | mRNA/protein distribution shape | biology-beyond-Karr | True | True | 0 | PASS | qualitative boolean matched |

@@ -338,9 +338,7 @@ def extract_kp20(trajectory: Trajectory) -> float | None:
 
 
 def extract_kp21(trajectory: Trajectory) -> float | None:
-    _ = trajectory
-    # Requires ATP/GTP conservation sidecar extraction (added in a follow-up commit).
-    return None
+    return _sidecar_metric(trajectory, "kp21_energy_unattributed_ratio")
 
 
 def extract_kp22(trajectory: Trajectory) -> bool | None:

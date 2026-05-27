@@ -173,7 +173,26 @@ def _build_sidecar_metrics(trajectory_path: Path) -> dict[str, float]:
         if log2_errors:
             metrics["kp03_flux_oracle_median_abs_log2_ratio"] = float(np.median(log2_errors))
 
-    _ = conservation_path  # KP21 sidecar extraction lands in a follow-up commit.
+    if conservation_path.exists():
+        abs_unattributed = 0.0
+        abs_process = 0.0
+        with conservation_path.open("r", encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                substrate = str(row.get("substrate", "")).strip().upper()
+                if substrate not in _ENERGY_BALANCE_SUBSTRATES:
+                    continue
+                try:
+                    process_delta = float(row.get("sum_process_deltas", "nan"))
+                    unattributed = float(row.get("unattributed_delta", "nan"))
+                except (TypeError, ValueError):
+                    continue
+                if math.isfinite(process_delta):
+                    abs_process += abs(process_delta)
+                if math.isfinite(unattributed):
+                    abs_unattributed += abs(unattributed)
+        if abs_process > 0.0:
+            metrics["kp21_energy_unattributed_ratio"] = float(abs_unattributed / abs_process)
 
     return metrics
 
