@@ -65,6 +65,52 @@ def test_v6_one_tick() -> None:
     assert "protein" in state
 
 
+def test_v6_chromosome_segregation_complex_seed_gate_and_effect() -> None:
+    composite = build_karr_chassis_v6(time_step_s=1.0, emit_step_s=1.0)
+    process = composite["processes"]["karr_chromosome_segregation"]
+    state = composite["state"]
+
+    required_complex_wid = "MG_221_OCTAMER"
+    complex_seed = float(state["complex"]["counts"].get(required_complex_wid, 0.0))
+    assert required_complex_wid in process.required_complex_enzyme_wids
+    assert complex_seed > 0.0
+
+    process_state = {
+        "chromosome": {
+            "replication_state": "complete",
+            "supercoiled": True,
+            "segregation_progress": 0.0,
+            "daughter_pole_positions": {"left": 0.0, "right": 0.0},
+            "segregation_complete": False,
+            "cell_cycle_event": "none",
+        },
+        "protein": state["protein"],
+        "complex": state["complex"],
+        "substrates": state["substrates"],
+        "requests": {
+            process.name: {
+                process.gtp_wid: 0.0,
+                process.h2o_wid: 0.0,
+            }
+        },
+        "substrates_allocated": {
+            process.name: {
+                process.gtp_wid: float(process.gtp_cost),
+                process.h2o_wid: float(process.gtp_cost),
+            }
+        },
+    }
+    update = process.next_update(1.0, process_state)
+    assert float(update["chromosome"].get("segregation_progress", 0.0)) > 0.0
+
+    no_complex_state = dict(process_state)
+    no_complex_counts = dict(state["complex"]["counts"])
+    no_complex_counts[required_complex_wid] = 0.0
+    no_complex_state["complex"] = {"counts": no_complex_counts}
+    update_without_complex = process.next_update(1.0, no_complex_state)
+    assert "segregation_progress" not in update_without_complex["chromosome"]
+
+
 @pytest.mark.slow
 def test_v6_short_run_100s() -> None:
     engine = _build_engine()

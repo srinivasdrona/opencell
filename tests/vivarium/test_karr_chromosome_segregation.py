@@ -33,9 +33,12 @@ def _base_state(
     h2o: float = 10.0,
     enzyme_count: float = 2.0,
 ) -> dict[str, Any]:
-    protein_counts = {wid: 0.0 for wid in process.enzyme_wids}
-    for wid in process.required_enzyme_wids:
+    protein_counts = {wid: 0.0 for wid in process.monomer_enzyme_wids}
+    complex_counts = {wid: 0.0 for wid in process.complex_enzyme_wids}
+    for wid in process.required_monomer_enzyme_wids:
         protein_counts[wid] = float(enzyme_count)
+    for wid in process.required_complex_enzyme_wids:
+        complex_counts[wid] = float(enzyme_count)
 
     return {
         "chromosome": {
@@ -47,6 +50,7 @@ def _base_state(
             "cell_cycle_event": "none",
         },
         "protein": {"counts": protein_counts},
+        "complex": {"counts": complex_counts},
         "substrates": {wid: 0.0 for wid in process.substrate_wids},
         "requests": {process.name: {process.gtp_wid: 0.0, process.h2o_wid: 0.0}},
         "substrates_allocated": {
@@ -138,6 +142,16 @@ def test_no_progress_when_replication_not_complete() -> None:
     assert "segregation_progress" not in update["chromosome"]
     assert update["chromosome"]["cell_cycle_event"] == "none"
     assert update["requests"][p.name][p.gtp_wid] == pytest.approx(0.0)
+
+
+def test_missing_required_complex_input_raises_keyerror() -> None:
+    p = KarrChromosomeSegregationProcess({"segregation_rate_per_s": 0.5})
+    state = _base_state(p, replication_state="complete", supercoiled=True, gtp=10.0, h2o=10.0)
+    missing_wid = p.required_complex_enzyme_wids[0]
+    state["complex"]["counts"].pop(missing_wid, None)
+
+    with pytest.raises(KeyError, match=missing_wid):
+        p.next_update(1.0, state)
 
 
 def test_allocation_contract_bounds_progress() -> None:

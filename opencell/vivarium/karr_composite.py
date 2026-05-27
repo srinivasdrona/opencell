@@ -1752,6 +1752,9 @@ def build_karr_chassis_v5(
     }
     for wid in ribasm_proc.complex_wids:
         complex_counts.setdefault(wid, 0.0)
+    for wid in segregation_proc.complex_enzyme_wids:
+        seed_count = float(segregation_proc.enzyme_count_by_wid.get(wid, 0.0))
+        complex_counts[wid] = max(float(complex_counts.get(wid, 0.0)), seed_count)
 
     m1_topo = {
         "metabolic_reaction": ("metabolic_reaction",),
@@ -1888,6 +1891,7 @@ def build_karr_chassis_v5(
         "karr_chromosome_segregation": {
             "chromosome": ("chromosome",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "substrates": ("substrates",),
             "requests": ("requests",),
             "substrates_allocated": ("substrates_allocated",),

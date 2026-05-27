@@ -20,6 +20,7 @@ Deferred to v2:
 from __future__ import annotations
 
 import math
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +29,11 @@ from scipy.io import loadmat
 from vivarium.core.process import Process
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/ChromosomeSegregation_flat.mat"
+_MACROMOLECULAR_COMPLEXATION_FIXTURE_PATH = (
+    "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
+)
+_RIBOSOME_ASSEMBLY_FIXTURE_PATH = "data/karr_fixtures/per_process/RibosomeAssembly_flat.mat"
+_ALWAYS_COMPLEX_WIDS = frozenset({"RNA_POLYMERASE", "RIBOSOME_70S"})
 
 
 def _resolve_path(path: str | Path) -> Path:
@@ -68,6 +74,24 @@ def _clamp01(value: float) -> float:
     return float(min(1.0, max(0.0, value)))
 
 
+@lru_cache(maxsize=1)
+def _canonical_complex_wids() -> frozenset[str]:
+    mc = loadmat(
+        str(_resolve_path(_MACROMOLECULAR_COMPLEXATION_FIXTURE_PATH)),
+        squeeze_me=True,
+        struct_as_record=False,
+    )["data"].fixture
+    ra = loadmat(
+        str(_resolve_path(_RIBOSOME_ASSEMBLY_FIXTURE_PATH)),
+        squeeze_me=True,
+        struct_as_record=False,
+    )["data"].fixture
+    wids = set(_parse_wids(mc.complexWholeCellModelIDs))
+    wids.update(_parse_wids(ra.complexWholeCellModelIDs))
+    wids.update(_ALWAYS_COMPLEX_WIDS)
+    return frozenset(wids)
+
+
 class KarrChromosomeSegregationProcess(Process):
     """Karr Process_ChromosomeSegregation with gated progress + completion signal."""
 
@@ -97,6 +121,7 @@ class KarrChromosomeSegregationProcess(Process):
         if bool(self.parameters.get("include_topoiv_gate", False)):
             if self.topoiv_wid not in self.required_enzyme_wids:
                 self.required_enzyme_wids.append(self.topoiv_wid)
+        self._partition_enzyme_wids()
 
     def _load_fixture(self, path: str | Path) -> None:
         mat = loadmat(str(_resolve_path(path)), squeeze_me=True, struct_as_record=False)
@@ -135,7 +160,24 @@ class KarrChromosomeSegregationProcess(Process):
             self.era_wid,
             self.obg_wid,
         ]
+        enzyme_counts = np.asarray(fx.enzymes, dtype=np.float64).reshape(-1)
+        self.enzyme_count_by_wid = {
+            wid: float(enzyme_counts[idx]) for idx, wid in enumerate(self.enzyme_wids)
+        }
         self._fixture_gtp_cost = int(_coerce_scalar(fx.gtpCost))
+
+    def _partition_enzyme_wids(self) -> None:
+        complex_wids = _canonical_complex_wids()
+        self.complex_enzyme_wids = [wid for wid in self.enzyme_wids if wid in complex_wids]
+        self.monomer_enzyme_wids = [wid for wid in self.enzyme_wids if wid not in complex_wids]
+        self.required_complex_enzyme_wids = [
+            wid for wid in self.required_enzyme_wids if wid in complex_wids
+        ]
+        self.required_monomer_enzyme_wids = [
+            wid for wid in self.required_enzyme_wids if wid not in complex_wids
+        ]
+        self._required_complex_enzyme_wids_set = set(self.required_complex_enzyme_wids)
+        self._required_monomer_enzyme_wids_set = set(self.required_monomer_enzyme_wids)
 
     def ports_schema(self) -> dict[str, Any]:
         return {
@@ -185,7 +227,13 @@ class KarrChromosomeSegregationProcess(Process):
             "protein": {
                 "counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
-                    for wid in self.enzyme_wids
+                    for wid in self.monomer_enzyme_wids
+                }
+            },
+            "complex": {
+                "counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
+                    for wid in self.complex_enzyme_wids
                 }
             },
             "requests": {
@@ -224,6 +272,7 @@ class KarrChromosomeSegregationProcess(Process):
         replication_state: str,
         supercoiled: bool,
         protein_counts: dict[str, Any],
+        complex_counts: dict[str, Any],
     ) -> bool:
         if replication_state != "complete":
             return False
@@ -231,7 +280,36 @@ class KarrChromosomeSegregationProcess(Process):
             return False
 
         min_count = float(self.parameters["min_required_enzyme_count"])
-        return all(float(protein_counts.get(wid, 0.0)) >= min_count for wid in self.required_enzyme_wids)
+        return all(
+            self._required_enzyme_count(
+                wid=wid,
+                protein_counts=protein_counts,
+                complex_counts=complex_counts,
+            )
+            >= min_count
+            for wid in self.required_enzyme_wids
+        )
+
+    def _required_enzyme_count(
+        self,
+        *,
+        wid: str,
+        protein_counts: dict[str, Any],
+        complex_counts: dict[str, Any],
+    ) -> float:
+        if wid in self._required_complex_enzyme_wids_set:
+            if wid not in complex_counts:
+                raise KeyError(
+                    f"Missing required complex input '{wid}' in complex.counts for {self.name}"
+                )
+            return float(complex_counts[wid])
+        if wid in self._required_monomer_enzyme_wids_set:
+            if wid not in protein_counts:
+                raise KeyError(
+                    f"Missing required monomer input '{wid}' in protein.counts for {self.name}"
+                )
+            return float(protein_counts[wid])
+        raise KeyError(f"Required enzyme '{wid}' is not classified for {self.name}")
 
     def _progress_delta(self, dt: float, current_progress: float) -> float:
         if current_progress >= 1.0:
@@ -258,10 +336,12 @@ class KarrChromosomeSegregationProcess(Process):
         current_right = float(pos_state.get("right", current_progress))
 
         protein_counts = states.get("protein", {}).get("counts", {})
+        complex_counts = states.get("complex", {}).get("counts", {})
         gated = self._gates_satisfied(
             replication_state=replication_state,
             supercoiled=supercoiled,
             protein_counts=protein_counts,
+            complex_counts=complex_counts,
         )
 
         allocated = states.get("substrates_allocated", {}).get(self.name, {})
