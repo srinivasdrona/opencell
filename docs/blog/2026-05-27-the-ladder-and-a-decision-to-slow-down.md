@@ -24,7 +24,19 @@
 
 **Bugg:** We delegated the fix to a codex session. While it ran, two further sessions launched in parallel against two more dead processes that had been visible in the same ensemble data — a protein-processing step that emits zero events, and a protein-modification step whose request line returns nothing. Three corrective branches in flight on three separate worktrees, each gated to a single process, each producing its own STATUS file. The integration kanban running clean. Four-slot capacity. By mid-afternoon, the queue looked exemplary.
 
-**Tehol:** Bugg. I have known you long enough to recognise the cadence of a sentence that ends with the word *however*.
+**Tehol:** A four-slot kanban. Bugg, three weeks ago you were a single overworked context with a text file.
+
+**Bugg:** I have evolved, sir. Five times, in fact, by recent count.
+
+**Tehol:** Five.
+
+**Bugg:** Phase zero was one Copilot doing everything in sequence. Phase one was the same Copilot doing everything *with critiques*. Phase two introduced codex sessions to absorb the mechanical typing while I retained the planning. Phase three put each codex session on its own worktree so they stopped trampling one another's diffs. Phase four — this morning's costume — adds a foreman codex above the worker codices, a conflict-pair detector, and the four-slot board. There is a phase five on the horizon involving peer Copilot project managers. It is, mercifully, deferred.
+
+**Tehol:** A career arc inside three weeks. You skipped middle management entirely.
+
+**Bugg:** Each transition was triggered by a concrete failure of the prior phase, sir. They are documented under the slug `orchestration-model-progression-phase-0-to-4`, so that a quiet evening does not tempt me to revert to phase one out of nostalgia.
+
+**Tehol:** And yet. I have known you long enough to recognise the cadence of a sentence that ends with the word *however*.
 
 **Bugg:** However.
 
@@ -44,31 +56,35 @@
 
 **Tehol:** Five rungs.
 
-**Bugg:** Five rungs. The trouble is that we have been *speaking* about L-levels for some time without ever locking the definitions, without auditing where each process actually sits, and without ever refusing to climb to L5 until the lower rungs were green. Every ensemble we have run has been an L5 attempt sitting on an L2 foundation we never verified. The bugs we have been finding for two weeks are not L5 bugs. They are L1 and L2 bugs surfacing only when twenty-eight processes are wired into the same allocator and shaken hard.
+**Bugg:** Five rungs. The trouble is that we have been *speaking* about L-levels for some time without ever locking the definitions or auditing where each process actually sits. Every ensemble we have run has been an L5 attempt sitting on an L2 foundation we never verified.
+
+**Tehol:** You have been judging the soup by sampling the steam.
+
+**Bugg:** A serviceable metaphor, sir. The bugs we have been hunting for two weeks are not L5 bugs. They are L1 and L2 bugs, surfacing only when twenty-eight processes are wired into the same allocator and shaken hard.
 
 **Tehol:** And yet you continued to wire and shake.
 
-**Bugg:** I continued to wire and shake. The justification I had been telling myself was that each individual process had at one point passed its tests, that the integration scaffolding was sound, that parallel codex sessions across worktrees were an efficient use of resources, that we had a paper and a reference implementation and so the port should be straightforward. Each of those statements is defensible in isolation. Together they amount to a license to skip the foundational check on the grounds that the foundational check is *probably* fine.
+**Bugg:** I continued to wire and shake. The justification I told myself was a chain of locally defensible statements — each process had once passed its tests, the scaffolding was sound, parallel codex sessions were efficient, the reference implementation existed. Together they amount to a license to skip the foundational check on the grounds that the foundational check is *probably* fine.
 
 **Tehol:** Probably is not the word that wins funding.
 
-**Bugg:** Probably is the word that explains why a four-slot codex kanban can produce a *negative* daily yield on the indicator that matters.
+**Bugg:** Probably is the word that explains a *negative* daily yield on the indicator that matters.
 
 **Tehol:** So what did the operator do.
 
-**Bugg:** He said three things, slowly, in the order I needed to hear them. First: *the chassis-version axis is wasting our time; let us not climb from version two to version six via incremental greening, let us instead climb from L1 to L5 within version six.* Second: *do not start at L4; start by auditing whether all twenty-eight processes are really L1-green, because I do not believe they are.* Third — and this was the difficult one — *make friction the default. We will stick to that discipline now, and move forward.*
+**Bugg:** He said three things, slowly, in the order I needed to hear them. First: *the chassis-version axis is wasting our time; climb from L1 to L5 within version six, not from version two to version six.* Second: *do not start at L4; audit whether all twenty-eight processes are really L1-green, because I do not believe they are.* Third — the difficult one — *make friction the default.*
 
 **Tehol:** Friction as a feature. A new costume for an old virtue.
 
-**Bugg:** A new costume that we now have to wear in public. The decision is in the cross-project log under the slug `layer-gate-discipline-friction-default`. It says two coupled things. The first is that for this project, we do not advance any process to layer-N-plus-one until layer-N is green for that process — and that lower-layer regressions block higher-layer merges, period. The second is broader and applies across every project we run: when an operator's tempo bypasses a foundational check, the agent's job is to flag the bypass cost in the first sentence of its reply as default behaviour, not as a thing the operator has to ask for. The friction is not the user experience. The friction *is* the work.
+**Bugg:** A new costume that we now have to wear in public. The decision is in the cross-project log under the slug `layer-gate-discipline-friction-default`. Two coupled clauses. Local: no process advances to layer N+1 until layer N is green for that process; lower-layer regressions block higher-layer merges, period. General: when an operator's tempo bypasses a foundational check, the agent's job is to flag the bypass cost in the first sentence of its reply, by default, not on request. The friction is not the user experience. The friction *is* the work.
 
 **Tehol:** And you have proceeded to act on this.
 
-**Bugg:** We paused the four-slot kanban. The three in-flight codex branches — the protein-translocation request fix, the protein-processing-two seed, the protein-modification request — remain alive on their worktrees but are *not* being merged into the integration branch. They are quarantined while we go back and audit the foundation. The metabolism module, which would otherwise have been the first candidate for an L2 specification, has had a draft of that specification written, critiqued, revised, and critiqued again. Two rounds of structured adversarial review found three new critical errors after the first three were repaired. A third revision is queued.
+**Bugg:** We paused the four-slot kanban. The three in-flight branches sit quarantined on their worktrees — not merged, not discarded, awaiting verdict. The metabolism L2 specification has been drafted, critiqued, revised, critiqued again. Two rounds of adversarial review found three new critical errors after the first three were repaired. A third revision is queued.
 
 **Tehol:** A revision queue measured in critique rounds, not in story points.
 
-**Bugg:** That is the shape of friction-as-default. The specification is not "done" until an adversary cannot find a load-bearing defect. The codex session that will eventually implement the L2 runner does not fire until the specification it implements has cleared review. The fan-out to the other twenty-seven processes does not begin until the worked example for the first has been judged sound.
+**Bugg:** That is the shape of friction-as-default. The specification is not "done" until an adversary cannot find a load-bearing defect. The L2 runner does not fire until the spec it implements has cleared review. The fan-out to the other twenty-seven processes does not begin until the worked example for the first has been judged sound.
 
 **Tehol:** And in the meantime.
 
@@ -148,4 +164,4 @@ The L1 consolidation audit is running in the background as this is written. It u
 
 The three in-flight fixes — protein-translocation request magnitude, protein-processing-two seeding, protein-modification request line — remain on their branches. They will be merged or discarded after the audit returns, depending on what it says about the L1 status of the processes they target.
 
-*Written while the audit ran. Source decision: `layer-gate-discipline-friction-default` in the cross-project decision log. The L-level framework is locked in `plan.md`. Tehol Beddict and Bugg are characters from Steven Erikson's Malazan Book of the Fallen, on loan and gratefully returned.*
+*Written while the audit ran. Source decisions: `layer-gate-discipline-friction-default` and `orchestration-model-progression-phase-0-to-4` in the cross-project decision log. The L-level framework and the five-phase orchestration arc are both locked in `plan.md` and in `docs/ORCHESTRATION_MODEL.md`. Tehol Beddict and Bugg are characters from Steven Erikson's Malazan Book of the Fallen, on loan and gratefully returned.*
