@@ -273,7 +273,12 @@ class KarrTranscriptionalRegulationProcess(Process):
         for tf_i, tf_wid in enumerate(self.tf_wids):
             source = self._tf_wid_source[tf_wid]
             source_counts = complex_counts if source == "complex" else protein_counts
-            tf_counts[tf_i] = max(0.0, float(source_counts.get(tf_wid, 0.0)))
+            if tf_wid not in source_counts:
+                raise KeyError(
+                    f"Missing TF WID '{tf_wid}' in expected {source}.counts store "
+                    "for karr_transcriptional_regulation"
+                )
+            tf_counts[tf_i] = max(0.0, float(source_counts[tf_wid]))
         return tf_counts
 
     def _read_binding(self, states: dict[str, Any]) -> np.ndarray:

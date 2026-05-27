@@ -220,6 +220,22 @@ def test_loader_rejects_binding_other_activities_overlap(monkeypatch: pytest.Mon
         tx_reg_module._load_fixture("mocked.mat")
 
 
+def test_missing_tf_wid_in_expected_store_raises() -> None:
+    p = _make_toy_process(
+        tf_wids=["TF_DIMER"],
+        tu_wids=["TU_X"],
+        affinity=np.array([[1.0]], dtype=np.float64),
+        fold_change=np.array([[2.0]], dtype=np.float64),
+        tf_wid_source={"TF_DIMER": "complex"},
+        seed=0,
+    )
+    state = _empty_tr_state(p)
+    del state["complex"]["counts"]["TF_DIMER"]
+
+    with pytest.raises(KeyError, match="TF_DIMER.*complex"):
+        p.next_update(1.0, state)
+
+
 def test_no_free_tfs_no_binding_change() -> None:
     p = KarrTranscriptionalRegulationProcess({"rng_seed": 1})
     state = _empty_tr_state(p)
