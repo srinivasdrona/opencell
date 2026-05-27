@@ -182,3 +182,49 @@ Order of attack (biological priority):
 - **Source of truth** for input-side mechanical fidelity. Updated per PR that touches a process.
 - **Pairs with** `docs/phase_e/karr_fidelity_scorecard.md` (in flight, Track A) which is output-side numerical fidelity.
 - Both together feed the L4 methods paper.
+
+---
+
+## Fixture audit — 2026-05-27 11:30 IST (validates the input-side oracle itself)
+
+Triggered by Track-B-trajectory investigation. Found that the MATLAB-extracted `_100ticks.mat` fixtures, which serve as the per-process "ground truth" for `test_replay_fixture_quality` and friends, are **largely degenerate as evolution oracles**.
+
+### Breakdown (28 processes)
+
+| Status | Count | Processes |
+|---|---|---|
+| ✅ Evolves (states_before ≠ states_after across ticks) | **2** | FtsZPolymerization, tRNAAminoacylation |
+| ⚪ 100 ticks present but all constant (states_before == states_after every tick) | **18** | Cytokinesis, ChromosomeSegregation, DNADamage, DNARepair, MacromolecularComplexation, Metabolism, ProteinActivation, ProteinFolding, ProteinModification, ProteinProcessingI, ProteinProcessingII, ProteinTranslocation, RibosomeAssembly, RNAModification, RNAProcessing, TerminalOrganelleAssembly, TranscriptionalRegulation, HostInteraction |
+| ❌ Truncated (16-22 KB header-only) | **7** | Transcription, Translation, RNADecay, Replication, ReplicationInitiation, **ChromosomeCondensation**, **DnaSupercoiling** |
+| ⚠️ Partial (9/8 ticks instead of 100) | **1** | ProteinDecay |
+
+(The two newly-flagged truncated ones — ChromosomeCondensation, DnaSupercoiling — were not in the original Track-B scope of 5. The previous list was inherited from an earlier investigator without re-audit.)
+
+### Implication
+
+The downstream `data/karr_fixtures/per_process_replay/*.npz` files reflect the same pattern: **26 of 28 have `max_abs_diff(state_before, states_after) = 0`** for all ticks. Only FtsZ + tRNA show real evolution.
+
+Likely root cause: `scripts/matlab/extract_per_process_traces.m` runs `evolveState` in a loop without re-seeding `copyFromState()` from a progressing whole-cell simulation. Each tick starts from the same input → identical output. Only processes with stochastic self-driven dynamics (FtsZ random subunit binding, tRNA stochastic acylation) show change.
+
+### Trajectory-based fixture rebuild — coverage analysis
+
+`data/m1_sources/karr_native/cell_cycle_trajectory.mat` contains 324 multi-tick whole-sim snapshots (snapshot_interval=100 → covers the full 32,400-tick cell cycle). It captures Metabolite/Rna/ProteinMonomer/ProteinComplex/Mass/Geometry/Time arrays — but **no Chromosome_*** state.
+
+| Reconstructable from trajectory | Count | Notes |
+|---|---|---|
+| ✅ Yes (substrate/rna/protein-coupled) | **24 of 28** | Includes Tx, Tl, RNADecay, ProteinDecay, all post-translation chain, metabolism, etc. |
+| ❌ No (chromosome-internal state only) | **4 of 28** | Replication, ReplicationInitiation, ChromosomeCondensation, DnaSupercoiling |
+
+The 4 chromosome-only processes will need a different data source. Per-process `data/karr_fixtures/per_process/<Process>_flat.mat` files exist (each 363-582 KB) and are the likely source — already extracted, already committed.
+
+### What this means for validation strategy
+
+- Per-process fixture quality tests, where they pass on the 26 "constant" fixtures, are **trivially satisfied** (no work being done to validate). They do not constitute evidence of correct biology.
+- Real per-process validation requires the trajectory-derived (substrate-evolving) fixtures or flat-file-derived (chromosome) fixtures. Track-B-trajectory is building these now for a pilot of 5 processes; coverage will extend to 28 once the pilot lands.
+- The whole-cell ensemble remains the primary integration-level validation oracle.
+
+### Status updates triggered by this audit
+
+- `trackB-matlab-reextractor` (MATLAB-online re-run path): scope was incomplete (5/7 truncated). License expired 2026-05-24; would not have produced evolving fixtures anyway because `extract_per_process_traces.m` is structurally broken. Promoted to lower priority.
+- `trackB-trajectory-fixtures` (in flight, pilot of 5): scope needs widening from 5 to 24 trajectory-reconstructable processes after pilot lands.
+- New follow-up: build flat-file-derived fixtures for the 4 chromosome processes.
