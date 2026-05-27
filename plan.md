@@ -475,11 +475,11 @@ This nuance strengthens the methods paper: it cleanly separates the "port qualit
 | `488b563` | wave2-base | merge MATLAB manifest |
 | `d7ab8f6` | wave2-base | `docs/ORCHESTRATION_MODEL.md` (PM phase 0→4 progression) + plan.md pointer |
 
-### In flight (2026-05-27 ~15:40 IST)
-- **None.** All 3 codex sessions from prior batch (PP1, KP20, extractor-schemas-8) completed cleanly and merged in the queen-pass. 4-slot codex ceiling free.
+### In flight (2026-05-27 ~15:56 IST)
+- **PTransloc request-magnitude fix** — branch `fix/ptransloc-request-magnitude` off `trackA/wave2-base@cea37ca`, worktree `E:\opencell-worktrees\fix-ptransloc-request`, PID `20032`, prompt `PROMPT.md`, log `.codex_combined.log`. Scope: replace `max(need, current_pool)` with `max(0.0, need)` on lines 742-753 of `karr_request_calculators.py` (the same idiom every other request calculator uses); add unit test pinning down magnitude semantics; verify AA pools no longer floor-pin at 1.0; run scorecard at seed=42 and report KP20 delta + full phenotype block.
 
-### Next track — RequestCalculatorPTransloc (committed, not yet fired)
-Diagnose: `docs/phase_e/KP20_regression_investigation.md` lines 44-53, 59. Suspect commit `9a677b7` (A6 PTransloc enrollment): `max(need, current_pool)` request semantics produce near-full ATP/GTP requests from early ticks (tick-10 trace: ATP=36,139 / GTP=35,870). Likely interacts with A4 (`82ae251`, L3 vector members) and A3 (`b2863dc`, key normalization). Fix path: audit + cap request generation, verify AA pool no longer pins at 1.0. Then wave-3 ensemble (4 seeds × 32,400s) carries both PP1 + PTransloc fixes.
+### Next track — RequestCalculatorPTransloc fix (in flight, see above)
+Diagnose: `docs/phase_e/KP20_regression_investigation.md` lines 44-53, 59. Suspect commit `9a677b7` (A6 PTransloc enrollment): `max(need, current_pool)` request semantics produce near-full ATP/GTP requests from early ticks (tick-10 trace: ATP=36,139 / GTP=35,870). Confirmed anomalous vs Translation (line 654), Transcription, TRNA, etc. which all use `max(0.0, need)`. Likely interacts with A4 (`82ae251`, L3 vector members) and A3 (`b2863dc`, key normalization) — those are secondary; the magnitude bug is the primary. After PTransloc lands and KP20 + AA-pool checks pass: wave-3 ensemble (4 seeds × 32,400s) carries both PP1 + PTransloc fixes.
 
 ### Process-level fidelity — input side
 Canonical: `docs/phase_e/PROCESS_STATUS_ALL_28.md` (promoted from session-state 14:14 IST; this is now the source-of-truth tracker). Current bucket counts:
