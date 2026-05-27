@@ -191,9 +191,17 @@ class ProteinDecayLightProcess(Process):
         return rates
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        complex_store = states.get("complex", {})
+        if isinstance(complex_store, dict):
+            raw_complex_counts = complex_store.get("counts", {})
+        else:
+            raw_complex_counts = {}
+        if not isinstance(raw_complex_counts, dict):
+            raw_complex_counts = {}
+
         complex_counts = np.asarray(
             [
-                max(0, int(float(states["complex"]["counts"].get(wid, 0.0))))
+                max(0, int(float(raw_complex_counts.get(wid, 0.0))))
                 for wid in self.complex_wids
             ],
             dtype=np.int64,
