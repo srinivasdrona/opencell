@@ -1152,6 +1152,20 @@ def build_karr_chassis_v4(
         "RNA_POLYMERASE": float(m2_mechanism_inputs.n_active_rnap),
         "RIBOSOME_70S": float(m3_mechanism_inputs.n_active_ribosomes),
     }
+    trna_complex_seed_proc = MacromolecularComplexationStubProcess()
+    missing_trna_complex_seed_wids = [
+        wid
+        for wid in trna_proc.complex_enzyme_wids
+        if wid not in trna_complex_seed_proc._complex_counts_schema
+    ]
+    if missing_trna_complex_seed_wids:
+        missing = ", ".join(missing_trna_complex_seed_wids[:5])
+        raise KeyError(
+            "v4 chassis missing canonical complex seed defaults for "
+            f"karr_trna_aminoacylation enzyme WIDs: {missing}"
+        )
+    for wid in trna_proc.complex_enzyme_wids:
+        complex_counts[wid] = float(trna_complex_seed_proc._complex_counts_schema[wid]["_default"])
     for wid in ribasm_proc.complex_wids:
         complex_counts.setdefault(wid, 0.0)
 
@@ -1197,6 +1211,7 @@ def build_karr_chassis_v4(
             "substrates": ("substrates",),
             "rna": ("rna",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("_internal_requests_trna",),
             "substrates_allocated": ("substrates_allocated",),
         },
@@ -1750,6 +1765,20 @@ def build_karr_chassis_v5(
         "RNA_POLYMERASE": float(m2_mechanism_inputs.n_active_rnap),
         "RIBOSOME_70S": float(m3_mechanism_inputs.n_active_ribosomes),
     }
+    trna_complex_seed_proc = MacromolecularComplexationStubProcess()
+    missing_trna_complex_seed_wids = [
+        wid
+        for wid in trna_proc.complex_enzyme_wids
+        if wid not in trna_complex_seed_proc._complex_counts_schema
+    ]
+    if missing_trna_complex_seed_wids:
+        missing = ", ".join(missing_trna_complex_seed_wids[:5])
+        raise KeyError(
+            "v5 chassis missing canonical complex seed defaults for "
+            f"karr_trna_aminoacylation enzyme WIDs: {missing}"
+        )
+    for wid in trna_proc.complex_enzyme_wids:
+        complex_counts[wid] = float(trna_complex_seed_proc._complex_counts_schema[wid]["_default"])
     for wid in ribasm_proc.complex_wids:
         complex_counts.setdefault(wid, 0.0)
 
@@ -1795,6 +1824,7 @@ def build_karr_chassis_v5(
             "substrates": ("substrates",),
             "rna": ("rna",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("_internal_requests_trna",),
             "substrates_allocated": ("substrates_allocated",),
         },

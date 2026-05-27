@@ -114,3 +114,28 @@ def test_v6_allocation_consumers_include_rna_decay_not_host_interaction() -> Non
 
     assert consumers.get("karr_rna_decay") == ["H2O"]
     assert "karr_host_interaction" not in consumers
+
+
+def test_v6_trna_aminoacylation_complex_chain_seed_port_read() -> None:
+    composite = build_karr_chassis_v6(time_step_s=1.0, emit_step_s=1.0)
+    topology = composite["topology"]["karr_trna_aminoacylation"]
+    trna_proc = composite["processes"]["karr_trna_aminoacylation"]
+    initial_state = composite["state"]
+
+    assert topology["complex"] == ("complex",)
+    complex_counts = initial_state["complex"]["counts"]
+    seeded_complex_wids = [
+        wid for wid in trna_proc.complex_enzyme_wids if float(complex_counts.get(wid, 0.0)) > 0.0
+    ]
+    assert seeded_complex_wids
+
+    seeded_complex_wid = seeded_complex_wids[0]
+    seeded_complex_count = float(complex_counts[seeded_complex_wid])
+    assert seeded_complex_count > 0.0
+
+    enzymes = trna_proc._enzyme_vector_from_split_stores(
+        protein_count_store=initial_state["protein"]["counts"],
+        complex_count_store=complex_counts,
+    )
+    seeded_idx = trna_proc.enzyme_wids.index(seeded_complex_wid)
+    assert enzymes[seeded_idx] == pytest.approx(seeded_complex_count)
