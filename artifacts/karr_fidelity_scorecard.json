@@ -1,0 +1,290 @@
+{
+  "generated_at_utc": "2026-05-27T04:48:36+00:00",
+  "thresholds": {
+    "pass_rel_lt": 1e-06,
+    "pass_abs_lt": 1e-09,
+    "partial_rel_lt": 0.05
+  },
+  "rows": [
+    {
+      "process_name": "ChromosomeCondensation",
+      "status": "PASS",
+      "reason": "",
+      "n_ticks_tested": 1,
+      "properties_compared": 3,
+      "max_abs": 0.0,
+      "max_rel": 0.0,
+      "top_disagreement_property": "boundEnzymes"
+    },
+    {
+      "process_name": "ChromosomeSegregation",
+      "status": "PASS",
+      "reason": "",
+      "n_ticks_tested": 1,
+      "properties_compared": 3,
+      "max_abs": 0.0,
+      "max_rel": 0.0,
+      "top_disagreement_property": "boundEnzymes"
+    },
+    {
+      "process_name": "Cytokinesis",
+      "status": "PASS",
+      "reason": "",
+      "n_ticks_tested": 1,
+      "properties_compared": 3,
+      "max_abs": 0.0,
+      "max_rel": 0.0,
+      "top_disagreement_property": "boundEnzymes"
+    },
+    {
+      "process_name": "DNADamage",
+      "status": "PASS",
+      "reason": "",
+      "n_ticks_tested": 1,
+      "properties_compared": 3,
+      "max_abs": 0.0,
+      "max_rel": 0.0,
+      "top_disagreement_property": "boundEnzymes"
+    },
+    {
+      "process_name": "DNARepair",
+      "status": "PASS",
+      "reason": "",
+      "n_ticks_tested": 1,
+      "properties_compared": 3,
+      "max_abs": 0.0,
+      "max_rel": 0.0,
+      "top_disagreement_property": "boundEnzymes"
+    },
+    {
+      "process_name": "DNASupercoiling",
+      "status": "PASS",
+      "reason": "",
+      "n_ticks_tested": 1,
+      "properties_compared": 3,
+      "max_abs": 0.0,
+      "max_rel": 0.0,
+      "top_disagreement_property": "boundEnzymes"
+    },
+    {
+      "process_name": "FtsZPolymerization",
+      "status": "PARTIAL",
+      "reason": "",
+      "n_ticks_tested": 1,
+      "properties_compared": 2,
+      "max_abs": 2.0,
+      "max_rel": 0.0005517241379310345,
+      "top_disagreement_property": "substrates"
+    },
+    {
+      "process_name": "HostInteraction",
+      "status": "SKIP",
+      "reason": "No Vivarium adapter available for replay in Track-A.",
+      "n_ticks_tested": 0,
+      "properties_compared": 0,
+      "max_abs": null,
+      "max_rel": null,
+      "top_disagreement_property": null
+    },
+    {
+      "process_name": "MacromolecularComplexation",
+      "status": "PASS",
+      "reason": "",
+      "n_ticks_tested": 1,
+      "properties_compared": 4,
+      "max_abs": 0.0,
+      "max_rel": 0.0,
+      "top_disagreement_property": "boundEnzymes"
+    },
+    {
+      "process_name": "Metabolism",
+      "status": "PASS",
+      "reason": "",
+      "n_ticks_tested": 1,
+      "properties_compared": 3,
+      "max_abs": 0.0,
+      "max_rel": 0.0,
+      "top_disagreement_property": "boundEnzymes"
+    },
+    {
+      "process_name": "ProteinActivation",
+      "status": "PASS",
+      "reason": "",
+      "n_ticks_tested": 1,
+      "properties_compared": 3,
+      "max_abs": 0.0,
+      "max_rel": 0.0,
+      "top_disagreement_property": "boundEnzymes"
+    },
+    {
+      "process_name": "ProteinDecay",
+      "status": "SKIP",
+      "reason": "Replay execution failed: 'complex'",
+      "n_ticks_tested": 0,
+      "properties_compared": 0,
+      "max_abs": null,
+      "max_rel": null,
+      "top_disagreement_property": null
+    },
+    {
+      "process_name": "ProteinFolding",
+      "status": "SKIP",
+      "reason": "Replay execution failed: 'unfolded_counts'",
+      "n_ticks_tested": 0,
+      "properties_compared": 0,
+      "max_abs": null,
+      "max_rel": null,
+      "top_disagreement_property": null
+    },
+    {
+      "process_name": "ProteinModification",
+      "status": "SKIP",
+      "reason": "Replay execution failed: 'unmodified_counts'",
+      "n_ticks_tested": 0,
+      "properties_compared": 0,
+      "max_abs": null,
+      "max_rel": null,
+      "top_disagreement_property": null
+    },
+    {
+      "process_name": "ProteinProcessingI",
+      "status": "PASS",
+      "reason": "",
+      "n_ticks_tested": 1,
+      "properties_compared": 5,
+      "max_abs": 0.0,
+      "max_rel": 0.0,
+      "top_disagreement_property": "boundEnzymes"
+    },
+    {
+      "process_name": "ProteinProcessingII",
+      "status": "PASS",
+      "reason": "",
+      "n_ticks_tested": 1,
+      "properties_compared": 5,
+      "max_abs": 0.0,
+      "max_rel": 0.0,
+      "top_disagreement_property": "boundEnzymes"
+    },
+    {
+      "process_name": "ProteinTranslocation",
+      "status": "PASS",
+      "reason": "",
+      "n_ticks_tested": 1,
+      "properties_compared": 4,
+      "max_abs": 0.0,
+      "max_rel": 0.0,
+      "top_disagreement_property": "boundEnzymes"
+    },
+    {
+      "process_name": "RNADecay",
+      "status": "SKIP",
+      "reason": "1-tick mirror (states_before == states_after); awaiting Track-B MATLAB re-extract.",
+      "n_ticks_tested": 0,
+      "properties_compared": 0,
+      "max_abs": null,
+      "max_rel": null,
+      "top_disagreement_property": null
+    },
+    {
+      "process_name": "RNAModification",
+      "status": "SKIP",
+      "reason": "Replay execution failed: 'rna'",
+      "n_ticks_tested": 0,
+      "properties_compared": 0,
+      "max_abs": null,
+      "max_rel": null,
+      "top_disagreement_property": null
+    },
+    {
+      "process_name": "RNAProcessing",
+      "status": "PASS",
+      "reason": "",
+      "n_ticks_tested": 1,
+      "properties_compared": 5,
+      "max_abs": 0.0,
+      "max_rel": 0.0,
+      "top_disagreement_property": "boundEnzymes"
+    },
+    {
+      "process_name": "Replication",
+      "status": "SKIP",
+      "reason": "1-tick mirror (states_before == states_after); awaiting Track-B MATLAB re-extract.",
+      "n_ticks_tested": 0,
+      "properties_compared": 0,
+      "max_abs": null,
+      "max_rel": null,
+      "top_disagreement_property": null
+    },
+    {
+      "process_name": "ReplicationInitiation",
+      "status": "SKIP",
+      "reason": "1-tick mirror (states_before == states_after); awaiting Track-B MATLAB re-extract.",
+      "n_ticks_tested": 0,
+      "properties_compared": 0,
+      "max_abs": null,
+      "max_rel": null,
+      "top_disagreement_property": null
+    },
+    {
+      "process_name": "RibosomeAssembly",
+      "status": "PASS",
+      "reason": "",
+      "n_ticks_tested": 1,
+      "properties_compared": 5,
+      "max_abs": 0.0,
+      "max_rel": 0.0,
+      "top_disagreement_property": "boundEnzymes"
+    },
+    {
+      "process_name": "TerminalOrganelleAssembly",
+      "status": "SKIP",
+      "reason": "No Vivarium adapter available for replay in Track-A.",
+      "n_ticks_tested": 0,
+      "properties_compared": 0,
+      "max_abs": null,
+      "max_rel": null,
+      "top_disagreement_property": null
+    },
+    {
+      "process_name": "Transcription",
+      "status": "SKIP",
+      "reason": "1-tick mirror (states_before == states_after); awaiting Track-B MATLAB re-extract.",
+      "n_ticks_tested": 0,
+      "properties_compared": 0,
+      "max_abs": null,
+      "max_rel": null,
+      "top_disagreement_property": null
+    },
+    {
+      "process_name": "TranscriptionalRegulation",
+      "status": "PASS",
+      "reason": "",
+      "n_ticks_tested": 1,
+      "properties_compared": 3,
+      "max_abs": 0.0,
+      "max_rel": 0.0,
+      "top_disagreement_property": "boundEnzymes"
+    },
+    {
+      "process_name": "Translation",
+      "status": "SKIP",
+      "reason": "1-tick mirror (states_before == states_after); awaiting Track-B MATLAB re-extract.",
+      "n_ticks_tested": 0,
+      "properties_compared": 0,
+      "max_abs": null,
+      "max_rel": null,
+      "top_disagreement_property": null
+    },
+    {
+      "process_name": "tRNAAminoacylation",
+      "status": "SKIP",
+      "reason": "Replay execution failed: 'rna'",
+      "n_ticks_tested": 0,
+      "properties_compared": 0,
+      "max_abs": null,
+      "max_rel": null,
+      "top_disagreement_property": null
+    }
+  ]
+}
