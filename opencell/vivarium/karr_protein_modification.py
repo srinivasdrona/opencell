@@ -143,6 +143,9 @@ class KarrProteinModificationProcess(Process):
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         dt = float(timestep) if timestep > 0 else float(self.parameters["time_step"])
+        protein_state = states.get("protein", {})
+        if not isinstance(protein_state, dict):
+            protein_state = {}
 
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
         # Strict-zero allocator contract: do not fallback to global substrate pools.
@@ -153,13 +156,24 @@ class KarrProteinModificationProcess(Process):
             ],
             dtype=np.float64,
         )
+        count_store = protein_state.get("counts", {})
+        if not isinstance(count_store, dict):
+            count_store = {}
         enzymes = np.asarray(
-            [float(states["protein"]["counts"].get(wid, 0.0)) for wid in self.enzyme_wids],
+            [float(count_store.get(wid, 0.0)) for wid in self.enzyme_wids],
             dtype=np.float64,
         )
+        unmodified_store = protein_state.get("unmodified_counts", {})
+        if not isinstance(unmodified_store, dict):
+            unmodified_store = {}
+        if not unmodified_store:
+            unmodified_store = self._legacy_vector_to_wid_counts(
+                states.get("unmodifiedMonomers"),
+                self.unmodified_monomer_wids,
+            )
         unmodified = np.asarray(
             [
-                float(states["protein"]["unmodified_counts"].get(wid, 0.0))
+                float(unmodified_store.get(wid, 0.0))
                 for wid in self.unmodified_monomer_wids
             ],
             dtype=np.float64,
@@ -288,6 +302,21 @@ class KarrProteinModificationProcess(Process):
         catalytic_enzymes = np.clip(enz[:n_catalytic], a_min=0.0, a_max=None)
         per_rxn_enzyme_counts = self.reaction_catalysis @ catalytic_enzymes
         return per_rxn_enzyme_counts * self.enzyme_bounds[:, 1] * float(dt)
+
+    @staticmethod
+    def _legacy_vector_to_wid_counts(
+        values: Any,
+        wids: list[str],
+    ) -> dict[str, float]:
+        if values is None:
+            return {}
+        try:
+            flat = np.asarray(values, dtype=np.float64).reshape(-1)
+        except (TypeError, ValueError):
+            return {}
+        if flat.size != len(wids):
+            return {}
+        return {wid: float(flat[idx]) for idx, wid in enumerate(wids)}
 
 
 __all__ = ["KarrProteinModificationProcess"]
