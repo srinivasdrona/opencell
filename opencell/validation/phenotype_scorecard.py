@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import math
 import pickle
 import subprocess
@@ -379,6 +380,30 @@ def run_from_fixture(
 ) -> tuple[list[ScorecardRow], str]:
     trajectory = load_v6_trajectory_fixture(fixture_path)
     return write_scorecard_report(trajectory, out_path=out_path)
+
+
+def _build_arg_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Run the Phase E.2 phenotype scorecard.")
+    parser.add_argument(
+        "--trajectory",
+        type=Path,
+        default=V6_FIXTURE_PATH,
+        help=(
+            "Path to a v6 trajectory fixture pickle. "
+            "Defaults to data/phase_e/v6_trajectory_32400s.pkl."
+        ),
+    )
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = _build_arg_parser().parse_args(argv)
+    run_from_fixture(fixture_path=args.trajectory, out_path=E2_SCORECARD_PATH)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
 
 
 __all__ = [
