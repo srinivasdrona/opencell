@@ -1,9 +1,19 @@
 from __future__ import annotations
 
 import csv
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+# Ensure pytest imports from this worktree even if another editable install exists.
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+if "scripts.run_chassis_v6_32400t" in sys.modules:
+    loaded = Path(getattr(sys.modules["scripts.run_chassis_v6_32400t"], "__file__", "")).resolve()
+    if _REPO_ROOT not in loaded.parents:
+        del sys.modules["scripts.run_chassis_v6_32400t"]
 
 from scripts.run_chassis_v6_32400t import DiagnosticCollector
 
