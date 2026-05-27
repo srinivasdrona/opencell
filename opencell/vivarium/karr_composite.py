@@ -1750,6 +1750,12 @@ def build_karr_chassis_v5(
         "RNA_POLYMERASE": float(m2_mechanism_inputs.n_active_rnap),
         "RIBOSOME_70S": float(m3_mechanism_inputs.n_active_ribosomes),
     }
+    supercoil_seed_counts = {
+        supercoil_proc.gyrase_wid: float(supercoil_proc.parameters["reference_gyrase_count"]),
+        supercoil_proc.topoiv_wid: float(supercoil_proc.parameters["reference_topoiv_count"]),
+    }
+    for wid, count in supercoil_seed_counts.items():
+        complex_counts[wid] = max(float(complex_counts.get(wid, 0.0)), count)
     for wid in ribasm_proc.complex_wids:
         complex_counts.setdefault(wid, 0.0)
 
@@ -1875,6 +1881,7 @@ def build_karr_chassis_v5(
         "karr_dna_supercoiling": {
             "chromosome": ("chromosome",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "substrates": ("substrates",),
             "requests": ("requests",),
             "substrates_allocated": ("substrates_allocated",),
