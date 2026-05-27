@@ -43,6 +43,8 @@ _OUTPUT_HINTS = (
     "delta",
 )
 _TICK_HINTS = ("tick", "time", "state_before", "states_before", "state_after", "states_after")
+_REPLAY_INPUT_PREFIXES = ("state_before__", "states_before__")
+_REPLAY_OUTPUT_PREFIXES = ("state_after__", "states_after__")
 
 
 @dataclass
@@ -213,6 +215,39 @@ def _split_inputs_outputs(
     return inputs, outputs, unclassified_series
 
 
+def _strip_replay_channel_prefix(key: str, *, prefixes: tuple[str, ...]) -> str:
+    for prefix in prefixes:
+        if key.startswith(prefix):
+            return _normalize_array_key(key[len(prefix) :])
+    return _normalize_array_key(key)
+
+
+def _rewrite_replay_io_keys(
+    inputs: dict[str, np.ndarray],
+    outputs: dict[str, np.ndarray],
+) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
+    rewritten_inputs: dict[str, np.ndarray] = {}
+    rewritten_outputs: dict[str, np.ndarray] = {}
+
+    for raw_key, series in inputs.items():
+        key = _strip_replay_channel_prefix(raw_key, prefixes=_REPLAY_INPUT_PREFIXES)
+        if key in rewritten_inputs and raw_key != key:
+            raise ValueError(
+                f"Replay fixture input key collision after prefix stripping: {raw_key!r} -> {key!r}"
+            )
+        rewritten_inputs[key] = series
+
+    for raw_key, series in outputs.items():
+        key = _strip_replay_channel_prefix(raw_key, prefixes=_REPLAY_OUTPUT_PREFIXES)
+        if key in rewritten_outputs and raw_key != key:
+            raise ValueError(
+                f"Replay fixture output key collision after prefix stripping: {raw_key!r} -> {key!r}"
+            )
+        rewritten_outputs[key] = series
+
+    return rewritten_inputs, rewritten_outputs
+
+
 def _select_default_fixture_root(process_name: str) -> Path:
     stem = _normalize_process_name(process_name)
     replay_npz = _REPLAY_FIXTURE_ROOT / f"{stem}.npz"
@@ -238,7 +273,8 @@ def load_per_process_fixture(process_name: str, root: Path | None = None) -> Kar
     replay_has_artifacts = replay_json_path.exists() and replay_npz_path.exists()
     legacy_mat_path = fixture_root / f"{base}_flat.mat"
 
-    if replay_has_artifacts and not legacy_mat_path.exists():
+    using_replay_npz = replay_has_artifacts and not legacy_mat_path.exists()
+    if using_replay_npz:
         fixture_path = replay_npz_path
         companion_json = _load_companion_json(replay_json_path)
         arrays = _load_companion_npz(replay_npz_path, normalize_keys=False)
@@ -256,6 +292,8 @@ def load_per_process_fixture(process_name: str, root: Path | None = None) -> Kar
 
     n_ticks = _infer_n_ticks(arrays, companion_json)
     inputs, outputs, unclassified = _split_inputs_outputs(arrays, n_ticks=n_ticks)
+    if using_replay_npz:
+        inputs, outputs = _rewrite_replay_io_keys(inputs, outputs)
 
     metadata: dict[str, Any] = {
         "root": str(fixture_root),

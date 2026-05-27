@@ -1,5 +1,19 @@
 from __future__ import annotations
 
+from pathlib import Path
+import sys
+
+# Ensure pytest imports from this worktree even if another editable install exists.
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+if "opencell" in sys.modules:
+    loaded = Path(getattr(sys.modules["opencell"], "__file__", "")).resolve()
+    if _REPO_ROOT not in loaded.parents:
+        for mod_name in list(sys.modules):
+            if mod_name == "opencell" or mod_name.startswith("opencell."):
+                del sys.modules[mod_name]
+
 from opencell.validation.replay import load_per_process_fixture
 
 
@@ -9,9 +23,8 @@ def _first_before_series_shape(process_name: str) -> tuple[int, ...]:
     assert fixture.inputs, "expected at least one resolved input channel"
     assert fixture.outputs, "expected at least one resolved output channel"
 
-    before_keys = [key for key in fixture.inputs if key.startswith("state_before__")]
-    assert before_keys, "expected at least one state_before__<prop> input channel"
-    return fixture.inputs[before_keys[0]].shape
+    assert "substrates" in fixture.inputs
+    return fixture.inputs["substrates"].shape
 
 
 def test_replay_fixture_loaded_cytokinesis() -> None:
