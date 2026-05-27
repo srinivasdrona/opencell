@@ -29,6 +29,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from copy import deepcopy
+from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -118,6 +119,26 @@ def _load_karr_initial_substrate_counts(
         sid: float(dyn.substrates_snapshot[idx, _KARR_CYTOSOL_COMPARTMENT_0])
         for idx, sid in enumerate(sub_ids)
     }
+
+
+@lru_cache(maxsize=1)
+def _d2_stub_complex_defaults() -> dict[str, float]:
+    seed_proc = MacromolecularComplexationStubProcess()
+    return {
+        wid: float(schema["_default"])
+        for wid, schema in seed_proc._complex_counts_schema.items()
+    }
+
+
+def _seeded_complex_counts_for_wids(wids: set[str]) -> dict[str, float]:
+    if not wids:
+        return {}
+    defaults = _d2_stub_complex_defaults()
+    missing = sorted(wid for wid in wids if wid not in defaults)
+    if missing:
+        joined = ", ".join(missing)
+        raise KeyError(f"Missing D2 complex-count seed defaults for WIDs: {joined}")
+    return {wid: defaults[wid] for wid in sorted(wids)}
 
 
 CHASSIS_V6_EXPECTED_PROCESS_KEYS: tuple[str, ...] = (
@@ -1154,6 +1175,8 @@ def build_karr_chassis_v4(
     }
     for wid in ribasm_proc.complex_wids:
         complex_counts.setdefault(wid, 0.0)
+    for wid, count in _seeded_complex_counts_for_wids(set(rna_proc.complex_enzyme_wids)).items():
+        complex_counts.setdefault(wid, count)
 
     m1_topo = {
         "metabolic_reaction": ("metabolic_reaction",),
@@ -1217,6 +1240,7 @@ def build_karr_chassis_v4(
             "substrates": ("substrates",),
             "rna": ("rna",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("_internal_requests_rna_proc",),
             "substrates_allocated": ("substrates_allocated",),
         },
@@ -1752,6 +1776,8 @@ def build_karr_chassis_v5(
     }
     for wid in ribasm_proc.complex_wids:
         complex_counts.setdefault(wid, 0.0)
+    for wid, count in _seeded_complex_counts_for_wids(set(rna_proc.complex_enzyme_wids)).items():
+        complex_counts.setdefault(wid, count)
 
     m1_topo = {
         "metabolic_reaction": ("metabolic_reaction",),
@@ -1815,6 +1841,7 @@ def build_karr_chassis_v5(
             "substrates": ("substrates",),
             "rna": ("rna",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("_internal_requests_rna_proc",),
             "substrates_allocated": ("substrates_allocated",),
         },
