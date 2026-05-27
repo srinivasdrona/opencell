@@ -21,18 +21,52 @@ if "opencell" in sys.modules:
 
 from opencell.m2 import transcription as tx
 from opencell.m2 import transcription_v2 as tx_v2
+from opencell.vivarium.karr_composite import build_karr_chassis_v6
 from opencell.vivarium.karr_transcription_v2 import KarrTranscriptionV2Process
 from opencell.vivarium.karr_transcription_v3 import KarrTranscriptionV3Process
 from opencell.vivarium.karr_transcriptional_regulation import (
     KarrTranscriptionalRegulationProcess,
 )
 
+_FLOAT_TOL = 1e-12
+
 
 def _empty_tr_state(process: KarrTranscriptionalRegulationProcess) -> dict[str, Any]:
     return {
         "protein": {"counts": {tf: 0.0 for tf in process.tf_wids}},
+        "complex": {"counts": {tf: 0.0 for tf in process.tf_wids}},
         "tf_binding": {tf: {tu: 0.0 for tu in process.tu_wids} for tf in process.tf_wids},
     }
+
+
+def _tf_store(process: KarrTranscriptionalRegulationProcess, tf_wid: str) -> str:
+    tf_wid_source = getattr(process, "_tf_wid_source", {})
+    if isinstance(tf_wid_source, dict):
+        return str(tf_wid_source.get(tf_wid, "protein"))
+    return "protein"
+
+
+def _set_tf_count(
+    process: KarrTranscriptionalRegulationProcess,
+    state: dict[str, Any],
+    tf_wid: str,
+    count: float,
+) -> None:
+    store = _tf_store(process, tf_wid)
+    state[store]["counts"][tf_wid] = float(count)
+
+
+def _regulated_tus_for_tf(
+    process: KarrTranscriptionalRegulationProcess,
+    tf_wid: str,
+) -> list[str]:
+    tf_i = process.tf_wids.index(tf_wid)
+    mask = (
+        (process.tf_promoter_affinity[tf_i] > 0.0)
+        | (np.abs(process.tf_tu_fold_change[tf_i] - 1.0) > _FLOAT_TOL)
+        | (np.abs(process.tf_other_activities[tf_i] - 1.0) > _FLOAT_TOL)
+    )
+    return [process.tu_wids[idx] for idx in np.flatnonzero(mask).tolist()]
 
 
 def _apply_tf_binding_update(state: dict[str, Any], update: dict[str, Any]) -> None:
@@ -49,6 +83,7 @@ def _make_toy_process(
     affinity: np.ndarray,
     fold_change: np.ndarray,
     other_activities: np.ndarray | None = None,
+    tf_wid_source: dict[str, str] | None = None,
     seed: int = 0,
 ) -> KarrTranscriptionalRegulationProcess:
     p = KarrTranscriptionalRegulationProcess({"rng_seed": seed})
@@ -64,6 +99,12 @@ def _make_toy_process(
     p._n_tf = len(tf_wids)
     p._n_tu = len(tu_wids)
     p._rng = np.random.default_rng(seed)
+    if tf_wid_source is None:
+        tf_wid_source = {tf_wid: "protein" for tf_wid in tf_wids}
+    p._tf_wid_source = {tf_wid: str(tf_wid_source.get(tf_wid, "protein")) for tf_wid in tf_wids}
+    p._tf_is_complex = np.asarray(
+        [p._tf_wid_source[tf_wid] == "complex" for tf_wid in tf_wids], dtype=bool
+    )
     return p
 
 
@@ -98,6 +139,42 @@ def test_fixture_loads() -> None:
     assert p.n_relationships > 0
 
 
+def test_v6_complex_tf_changes_fold_change_when_complex_count_changes() -> None:
+    composite = build_karr_chassis_v6(time_step_s=1.0, emit_step_s=1.0)
+    tx_reg = composite["processes"]["karr_transcriptional_regulation"]
+    tx_reg_topology = composite["topology"]["karr_transcriptional_regulation"]
+    assert tx_reg_topology["complex"] == ("complex",)
+
+    d2_proc = composite["processes"]["karr_macromolecular_complexation"]
+    complex_tf_wids = [tf_wid for tf_wid in tx_reg.tf_wids if tf_wid in set(d2_proc.complex_wids)]
+    if not complex_tf_wids:
+        pytest.skip("No TR TF WIDs map to v6 D2 complex WIDs in this fixture")
+
+    target_tf = complex_tf_wids[0]
+    target_tus = _regulated_tus_for_tf(tx_reg, target_tf)
+    if not target_tus:
+        pytest.skip(f"Complex TF {target_tf} has no regulated TUs in current fixture")
+
+    state_no_complex = _empty_tr_state(tx_reg)
+    _set_tf_count(tx_reg, state_no_complex, target_tf, 0.0)
+    update_no_complex = tx_reg.next_update(1.0, state_no_complex)
+    fold_no_complex = {
+        tu_wid: float(update_no_complex["tx_rate_fold_change"][tu_wid]) for tu_wid in target_tus
+    }
+
+    state_with_complex = _empty_tr_state(tx_reg)
+    state_with_complex["complex"]["counts"][target_tf] = 1000.0
+    update_with_complex = tx_reg.next_update(1.0, state_with_complex)
+    fold_with_complex = {
+        tu_wid: float(update_with_complex["tx_rate_fold_change"][tu_wid]) for tu_wid in target_tus
+    }
+
+    assert any(
+        abs(fold_with_complex[tu_wid] - fold_no_complex[tu_wid]) > _FLOAT_TOL
+        for tu_wid in target_tus
+    )
+
+
 def test_no_free_tfs_no_binding_change() -> None:
     p = KarrTranscriptionalRegulationProcess({"rng_seed": 1})
     state = _empty_tr_state(p)
@@ -121,7 +198,7 @@ def test_high_affinity_tf_binds_first() -> None:
             seed=seed,
         )
         state = _empty_tr_state(p)
-        state["protein"]["counts"]["TF_A"] = 1.0
+        _set_tf_count(p, state, "TF_A", 1.0)
         update = p.next_update(1.0, state)
         chosen = next(iter(update["tf_binding"]["TF_A"]))
         if chosen == "TU_HI":
@@ -141,7 +218,7 @@ def test_one_copy_per_tf_per_promoter() -> None:
         seed=0,
     )
     state = _empty_tr_state(p)
-    state["protein"]["counts"]["TF_A"] = 10.0
+    _set_tf_count(p, state, "TF_A", 10.0)
 
     update = p.next_update(1.0, state)
     assert update["tf_binding"]["TF_A"]["TU_A"] == pytest.approx(1.0)
@@ -160,8 +237,8 @@ def test_fold_change_multiplicative() -> None:
         seed=0,
     )
     state = _empty_tr_state(p)
-    state["protein"]["counts"]["TF_A"] = 1.0
-    state["protein"]["counts"]["TF_B"] = 1.0
+    _set_tf_count(p, state, "TF_A", 1.0)
+    _set_tf_count(p, state, "TF_B", 1.0)
 
     update = p.next_update(1.0, state)
     assert update["tx_rate_fold_change"]["TU_X"] == pytest.approx(4.0)
@@ -182,7 +259,7 @@ def test_other_activities_fold_change_tracks_tf_presence() -> None:
     assert update_none["tf_binding"] == {}
     assert update_none["tx_rate_fold_change"]["TU_X"] == pytest.approx(1.0)
 
-    state["protein"]["counts"]["TF_A"] = 1.0
+    _set_tf_count(p, state, "TF_A", 1.0)
     update_present = p.next_update(1.0, state)
     assert update_present["tf_binding"] == {}
     assert update_present["tx_rate_fold_change"]["TU_X"] == pytest.approx(3.0)
@@ -219,12 +296,12 @@ def test_unbinding_recovers_baseline() -> None:
         seed=0,
     )
     state = _empty_tr_state(p)
-    state["protein"]["counts"]["TF_A"] = 1.0
+    _set_tf_count(p, state, "TF_A", 1.0)
     first = p.next_update(1.0, state)
     _apply_tf_binding_update(state, first)
     assert first["tx_rate_fold_change"]["TU_A"] == pytest.approx(3.0)
 
-    state["protein"]["counts"]["TF_A"] = 0.0
+    _set_tf_count(p, state, "TF_A", 0.0)
     second = p.next_update(1.0, state)
     assert second["tf_binding"]["TF_A"]["TU_A"] == pytest.approx(-1.0)
     assert second["tx_rate_fold_change"]["TU_A"] == pytest.approx(1.0)
@@ -234,7 +311,7 @@ def test_steady_state_binding_fraction() -> None:
     p = KarrTranscriptionalRegulationProcess({"rng_seed": 0})
     state = _empty_tr_state(p)
     for tf in p.tf_wids:
-        state["protein"]["counts"][tf] = 10.0
+        _set_tf_count(p, state, tf, 10.0)
 
     for _ in range(100):
         update = p.next_update(1.0, state)
@@ -243,7 +320,9 @@ def test_steady_state_binding_fraction() -> None:
     total_bound = 0.0
     for tf in p.tf_wids:
         total_bound += sum(float(state["tf_binding"][tf][tu]) for tu in p.tu_wids)
-    total_tf = sum(float(state["protein"]["counts"][tf]) for tf in p.tf_wids)
+    total_tf = 0.0
+    for tf in p.tf_wids:
+        total_tf += float(state[_tf_store(p, tf)]["counts"][tf])
     binding_capacity = float(np.count_nonzero(p.tf_promoter_affinity > 0.0))
     expected_bound = min(total_tf, binding_capacity)
     if expected_bound > 0.0:

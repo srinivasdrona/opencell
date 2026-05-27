@@ -10,6 +10,7 @@ from scipy.io import loadmat
 from vivarium.core.process import Process
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/TranscriptionalRegulation_flat.mat"
+_DEFAULT_COMPLEX_FIXTURE_PATH = "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
 _FLOAT_TOL = 1e-12
 
 
@@ -167,12 +168,27 @@ def _load_fixture(path: str | Path) -> dict[str, Any]:
     }
 
 
+def _load_canonical_complex_wids(path: str | Path) -> set[str]:
+    try:
+        resolved = _resolve_fixture_path(path)
+        mat = loadmat(str(resolved))
+        fx = mat["data"]["fixture"][0, 0]
+        names = set(fx.dtype.names or ())
+        if "complexWholeCellModelIDs" not in names:
+            return set()
+        return set(_extract_wids(_as_field_matrix(fx, "complexWholeCellModelIDs")))
+    except (FileNotFoundError, KeyError, OSError, TypeError, ValueError):
+        return set()
+
+
 class KarrTranscriptionalRegulationProcess(Process):
     """TF-promoter binding and transcription-rate fold-change modulation."""
 
     name = "karr_transcriptional_regulation"
     defaults: dict[str, Any] = {
         "fixture_path": _DEFAULT_FIXTURE_PATH,
+        "complex_wids": None,
+        "complex_fixture_path": _DEFAULT_COMPLEX_FIXTURE_PATH,
         "rng_seed": 0,
         "time_step": 1.0,
     }
@@ -191,9 +207,28 @@ class KarrTranscriptionalRegulationProcess(Process):
         self._n_tu = len(self.tu_wids)
         self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
 
+        configured_complex_wids = self.parameters.get("complex_wids")
+        if configured_complex_wids is None:
+            complex_wids = _load_canonical_complex_wids(self.parameters["complex_fixture_path"])
+        else:
+            complex_wids = {str(wid) for wid in configured_complex_wids}
+        self._tf_wid_source: dict[str, str] = {
+            tf_wid: ("complex" if tf_wid in complex_wids else "protein") for tf_wid in self.tf_wids
+        }
+        self._tf_is_complex = np.asarray(
+            [self._tf_wid_source[tf_wid] == "complex" for tf_wid in self.tf_wids],
+            dtype=bool,
+        )
+
     def ports_schema(self) -> dict[str, Any]:
         return {
             "protein": {
+                "counts": {
+                    tf_wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                    for tf_wid in self.tf_wids
+                }
+            },
+            "complex": {
                 "counts": {
                     tf_wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                     for tf_wid in self.tf_wids
@@ -212,6 +247,21 @@ class KarrTranscriptionalRegulationProcess(Process):
             },
         }
 
+    def _read_tf_counts(self, states: dict[str, Any]) -> np.ndarray:
+        protein_counts = states.get("protein", {}).get("counts", {})
+        if not isinstance(protein_counts, dict):
+            protein_counts = {}
+        complex_counts = states.get("complex", {}).get("counts", {})
+        if not isinstance(complex_counts, dict):
+            complex_counts = {}
+
+        tf_counts = np.zeros(self._n_tf, dtype=np.float64)
+        for tf_i, tf_wid in enumerate(self.tf_wids):
+            source = self._tf_wid_source[tf_wid]
+            source_counts = complex_counts if source == "complex" else protein_counts
+            tf_counts[tf_i] = max(0.0, float(source_counts.get(tf_wid, 0.0)))
+        return tf_counts
+
     def _read_binding(self, states: dict[str, Any]) -> np.ndarray:
         binding = np.zeros((self._n_tf, self._n_tu), dtype=np.int8)
         binding_store = states.get("tf_binding", {})
@@ -224,12 +274,12 @@ class KarrTranscriptionalRegulationProcess(Process):
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         del timestep
-        protein_counts = states.get("protein", {}).get("counts", {})
+        tf_counts = self._read_tf_counts(states)
         binding = self._read_binding(states)
         binding_delta = np.zeros((self._n_tf, self._n_tu), dtype=np.int64)
 
         for tf_i, tf_wid in enumerate(self.tf_wids):
-            total_copies = max(0, int(np.floor(float(protein_counts.get(tf_wid, 0.0)))))
+            total_copies = max(0, int(np.floor(float(tf_counts[tf_i]))))
             row = binding[tf_i].copy()
 
             bound_idx = np.flatnonzero(row > 0)
@@ -266,13 +316,7 @@ class KarrTranscriptionalRegulationProcess(Process):
         bound_effects = np.where(binding > 0, self.tf_tu_fold_change, 1.0)
         fold_change_total = np.prod(bound_effects, axis=0, dtype=np.float64)
 
-        tf_present = np.asarray(
-            [
-                max(0.0, float(protein_counts.get(tf_wid, 0.0))) > 0.0
-                for tf_wid in self.tf_wids
-            ],
-            dtype=bool,
-        )
+        tf_present = tf_counts > 0.0
         if np.any(tf_present):
             other_effects = np.where(tf_present[:, np.newaxis], self.tf_other_activities, 1.0)
             fold_change_total = fold_change_total * np.prod(

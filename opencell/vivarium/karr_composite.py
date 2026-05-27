@@ -978,7 +978,17 @@ def build_karr_chassis_v4(
         }
     )
     ribasm_proc = KarrRibosomeAssemblyProcess({"time_step": time_step_s})
-    tx_reg_proc = KarrTranscriptionalRegulationProcess({"time_step": time_step_s})
+    tx_reg_complex_wids = (
+        set(d2_proc.complex_wids)
+        | set(ribasm_proc.complex_wids)
+        | {"RNA_POLYMERASE", "RIBOSOME_70S"}
+    )
+    tx_reg_proc = KarrTranscriptionalRegulationProcess(
+        {
+            "time_step": time_step_s,
+            "complex_wids": sorted(tx_reg_complex_wids),
+        }
+    )
     rna_proc = KarrRNAProcessingProcess({"time_step": time_step_s})
     rna_mod_proc = KarrRNAModificationProcess({"time_step": time_step_s})
     pp1_proc = KarrProteinProcessingIProcess({"time_step": time_step_s})
@@ -1211,6 +1221,7 @@ def build_karr_chassis_v4(
         },
         "karr_transcriptional_regulation": {
             "protein": ("protein",),
+            "complex": ("complex",),
             "tf_binding": ("tf_binding",),
             "tx_rate_fold_change": ("tx_rate_fold_change",),
         },
@@ -1513,7 +1524,17 @@ def build_karr_chassis_v5(
         }
     )
     ribasm_proc = KarrRibosomeAssemblyProcess({"time_step": time_step_s})
-    tx_reg_proc = KarrTranscriptionalRegulationProcess({"time_step": time_step_s})
+    tx_reg_complex_wids = (
+        set(d2_proc.complex_wids)
+        | set(ribasm_proc.complex_wids)
+        | {"RNA_POLYMERASE", "RIBOSOME_70S"}
+    )
+    tx_reg_proc = KarrTranscriptionalRegulationProcess(
+        {
+            "time_step": time_step_s,
+            "complex_wids": sorted(tx_reg_complex_wids),
+        }
+    )
     rna_proc = KarrRNAProcessingProcess({"time_step": time_step_s})
     rna_mod_proc = KarrRNAModificationProcess({"time_step": time_step_s})
     pp1_proc = KarrProteinProcessingIProcess({"time_step": time_step_s})
@@ -1809,6 +1830,7 @@ def build_karr_chassis_v5(
         },
         "karr_transcriptional_regulation": {
             "protein": ("protein",),
+            "complex": ("complex",),
             "tf_binding": ("tf_binding",),
             "tx_rate_fold_change": ("tx_rate_fold_change",),
         },
