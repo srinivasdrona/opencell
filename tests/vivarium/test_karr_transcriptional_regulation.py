@@ -22,6 +22,7 @@ if "opencell" in sys.modules:
 from opencell.m2 import transcription as tx
 from opencell.m2 import transcription_v2 as tx_v2
 from opencell.vivarium.karr_composite import build_karr_chassis_v6
+from opencell.vivarium import karr_transcriptional_regulation as tx_reg_module
 from opencell.vivarium.karr_transcription_v2 import KarrTranscriptionV2Process
 from opencell.vivarium.karr_transcription_v3 import KarrTranscriptionV3Process
 from opencell.vivarium.karr_transcriptional_regulation import (
@@ -128,6 +129,35 @@ def _make_m2_state(
     }
 
 
+def _mock_dense_fixture_mat(
+    *,
+    tf_wids: list[str],
+    tu_wids: list[str],
+    affinity: np.ndarray,
+    fold_change: np.ndarray,
+    other_activities: np.ndarray,
+) -> dict[str, Any]:
+    fx_dtype = np.dtype(
+        [
+            ("transcriptionFactorWholeCellModelIDs", object),
+            ("transcriptionUnitWholeCellModelIDs", object),
+            ("tfPromoterAffinityMatrix", object),
+            ("tfTuFoldChangeMatrix", object),
+            ("otherActivities", object),
+        ]
+    )
+    fx = np.zeros((1, 1), dtype=fx_dtype)
+    fx["transcriptionFactorWholeCellModelIDs"][0, 0] = np.asarray(tf_wids, dtype=object)
+    fx["transcriptionUnitWholeCellModelIDs"][0, 0] = np.asarray(tu_wids, dtype=object)
+    fx["tfPromoterAffinityMatrix"][0, 0] = np.asarray(affinity, dtype=np.float64)
+    fx["tfTuFoldChangeMatrix"][0, 0] = np.asarray(fold_change, dtype=np.float64)
+    fx["otherActivities"][0, 0] = np.asarray(other_activities, dtype=np.float64)
+
+    data = np.zeros((1, 1), dtype=[("fixture", object)])
+    data["fixture"][0, 0] = fx
+    return {"data": data}
+
+
 def test_fixture_loads() -> None:
     p = KarrTranscriptionalRegulationProcess({})
     assert p.name == "karr_transcriptional_regulation"
@@ -173,6 +203,21 @@ def test_v6_complex_tf_changes_fold_change_when_complex_count_changes() -> None:
         abs(fold_with_complex[tu_wid] - fold_no_complex[tu_wid]) > _FLOAT_TOL
         for tu_wid in target_tus
     )
+
+
+def test_loader_rejects_binding_other_activities_overlap(monkeypatch: pytest.MonkeyPatch) -> None:
+    mocked = _mock_dense_fixture_mat(
+        tf_wids=["TF_A"],
+        tu_wids=["TU_X"],
+        affinity=np.array([[1.0]], dtype=np.float64),
+        fold_change=np.array([[2.0]], dtype=np.float64),
+        other_activities=np.array([[3.0]], dtype=np.float64),
+    )
+    monkeypatch.setattr(tx_reg_module, "_resolve_fixture_path", lambda _: Path("mocked.mat"))
+    monkeypatch.setattr(tx_reg_module, "loadmat", lambda _: mocked)
+
+    with pytest.raises(ValueError, match="overlap|overlapping"):
+        tx_reg_module._load_fixture("mocked.mat")
 
 
 def test_no_free_tfs_no_binding_change() -> None:

@@ -134,8 +134,22 @@ def _load_fixture(path: str | Path) -> dict[str, Any]:
                 _as_field_matrix(fx, "otherActivities"), n_tu=n_tu_all, n_tf=n_tf
             )
 
+    overlap_mask = (affinity_full > 0.0) & (np.abs(other_activities_full - 1.0) > _FLOAT_TOL)
+    if np.any(overlap_mask):
+        overlap_indices = np.argwhere(overlap_mask)
+        preview = ", ".join(
+            f"(tf={int(tf_i)}, tu={int(tu_i)})"
+            for tf_i, tu_i in overlap_indices[:10]
+        )
+        if overlap_indices.shape[0] > 10:
+            preview = f"{preview}, ..."
+        raise ValueError(
+            "TranscriptionalRegulation fixture has overlapping binding and otherActivities entries; "
+            f"expected disjoint matrices but found {overlap_indices.shape[0]} overlap(s): {preview}"
+        )
+
     # Karr applies otherActivities for TF-presence effects that are distinct
-    # from promoter-bound TF fold changes; avoid double-counting when overlaps exist.
+    # from promoter-bound TF fold changes; keep this defensive zeroing as a belt-and-braces mask.
     other_activities_full = np.where(affinity_full > 0.0, 1.0, other_activities_full)
 
     relationship_mask = (
