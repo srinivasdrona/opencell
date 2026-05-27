@@ -1139,7 +1139,12 @@ def build_karr_chassis_v4(
     protein_processed_init = {wid: 0.0 for wid in pp2_proc.processed_monomer_wids}
     protein_signal_seq_init = {wid: 0.0 for wid in pp2_proc.signal_sequence_monomer_wids}
     protein_modified_init = {wid: 0.0 for wid in p_mod_proc.modified_monomer_wids}
-    protein_enzyme_init = {wid: float(prot_init.get(wid, 0.0)) for wid in pp2_proc.enzyme_wids}
+    protein_enzyme_init = {
+        wid: float(prot_init.get(wid, 0.0))
+        for wid in sorted(set(pp1_proc.enzyme_wids) | set(pp2_proc.enzyme_wids))
+    }
+    protein_enzyme_init["MG_106_DIMER"] = 22.0  # from PP1_flat.mat enzymes column
+    protein_enzyme_init["MG_172_MONOMER"] = 38.0  # from PP1_flat.mat enzymes column
     protein_location_init = {wid: "cytoplasm" for wid in p_trans_proc.translocatable_wids}
     protein_activity_init = {wid: 0 for wid in p_activation_proc.regulated_protein_wids}
 
@@ -1732,7 +1737,12 @@ def build_karr_chassis_v5(
     protein_processed_init = {wid: 0.0 for wid in pp2_proc.processed_monomer_wids}
     protein_signal_seq_init = {wid: 0.0 for wid in pp2_proc.signal_sequence_monomer_wids}
     protein_modified_init = {wid: 0.0 for wid in p_mod_proc.modified_monomer_wids}
-    protein_enzyme_init = {wid: float(prot_init.get(wid, 0.0)) for wid in pp2_proc.enzyme_wids}
+    protein_enzyme_init = {
+        wid: float(prot_init.get(wid, 0.0))
+        for wid in sorted(set(pp1_proc.enzyme_wids) | set(pp2_proc.enzyme_wids))
+    }
+    protein_enzyme_init["MG_106_DIMER"] = 22.0  # from PP1_flat.mat enzymes column
+    protein_enzyme_init["MG_172_MONOMER"] = 38.0  # from PP1_flat.mat enzymes column
     protein_location_init = {wid: "cytoplasm" for wid in p_trans_proc.translocatable_wids}
     protein_activity_init = {wid: 0 for wid in p_activation_proc.regulated_protein_wids}
 

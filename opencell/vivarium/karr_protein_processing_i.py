@@ -107,7 +107,7 @@ class KarrProteinProcessingIProcess(Process):
                     for wid in self.unprocessed_monomer_wids
                 },
                 "processed_counts": processed_schema,
-                "counts": {
+                "enzyme_counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                     for wid in self.enzyme_wids
                 },
@@ -141,8 +141,15 @@ class KarrProteinProcessingIProcess(Process):
             return {}
 
         substrates = self._read_allocated_or_baseline_substrates(states)
+        protein_state = states.get("protein", {})
+        enzyme_state = protein_state.get("enzyme_counts")
+        if not isinstance(enzyme_state, dict):
+            # Backward-compatibility fallback for transitions where enzyme_counts is absent.
+            enzyme_state = protein_state.get("counts", {})
+        if not isinstance(enzyme_state, dict):
+            enzyme_state = {}
         enzymes = np.asarray(
-            [float(states["protein"]["counts"].get(wid, 0.0)) for wid in self.enzyme_wids],
+            [float(enzyme_state.get(wid, 0.0)) for wid in self.enzyme_wids],
             dtype=np.float64,
         )
 
