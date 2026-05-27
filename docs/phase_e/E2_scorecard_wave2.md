@@ -1,0 +1,48 @@
+# Phase E.2 — 28-Phenotype Scorecard (post-wave2 baseline)
+
+`E2_PASS=6/28 OC=3/8 VAL=1/8 INC=0/5 BEY=2/7 BLOCKED=8`
+
+**Run**: trackA/wave2-base @ commit `75609c7` (post-wave2 ensemble seed 43)
+**Trajectory**: artifacts/ensemble_wave2_20260527_023611/seed_43/trajectory.pkl (source root: `E:\opencell\artifacts`)
+**Wall-time**: `0.00` s
+**Pass count**: `6/28`
+**Bucket summary**: opencell-tooling 3/8 · validation-and-organism-scaling 1/8 · karr-known-incomplete 0/5 · biology-beyond-Karr 2/7
+
+## Pre-fix vs Post-wave2
+
+This is the POST-WAVE2 baseline. The earlier `E2_scorecard_post_strip.md`
+was the pre-fix baseline on broken chassis_v6 @ ee52141 (allocation-bypass
+cascade). Compare KP-by-KP to see which KPs the wave-2 fixes moved.
+
+## Per-KP detail
+| KP | Label | Bucket | Opencell | Karr | rel_err | Status | Disposition |
+|---|---|---|---:|---:|---:|---|---|
+| KP01 | Growth rate (g/s) | opencell-tooling | 4.42492e-21 | 2.11927e-05 | 1 | FAIL | tolerance exceeded |
+| KP02 | Doubling time (s) | validation-and-organism-scaling | NaN | 47186.1 | NA | FAIL | Extractor returned NaN/non-finite value. |
+| KP03 | Flux-oracle agreement | opencell-tooling | NA | 0 | NA | BLOCKED | Extractor unavailable for emitted schema. (E2-V1_1-KP03-FLUX-ORACLE) |
+| KP04 | Glucose uptake (PTS) | validation-and-organism-scaling | NA | 2725 | NA | BLOCKED | Extractor unavailable for emitted schema. (E2-V1_1-KP04-TX_GLCPTS) |
+| KP05 | Total mRNA abundance | validation-and-organism-scaling | 670 | 784 | 0.1454 | PASS | within tolerance |
+| KP06 | Total protein abundance | validation-and-organism-scaling | 29125 | 16177 | 0.8004 | FAIL | tolerance exceeded |
+| KP07 | mRNA short-horizon stability | opencell-tooling | 0.000711523 | 0.1 | 0.007115 | PASS | threshold_max satisfied |
+| KP08 | Protein short-horizon stability | opencell-tooling | 0.0007654 | 0.1 | 0.007654 | PASS | threshold_max satisfied |
+| KP09 | Amino-acid pool stability | opencell-tooling | 0.0109728 | 0.1 | 0.1097 | PASS | threshold_max satisfied |
+| KP10 | Cell dry mass (g) at division | validation-and-organism-scaling | 1.096e-14 | 3.94464e-15 | 1.778 | FAIL | tolerance exceeded |
+| KP11 | Replication initiation timing (s) | karr-known-incomplete | NaN | NA | NA | FAIL | Extractor returned NaN/non-finite value. |
+| KP12 | Replication duration (s) | karr-known-incomplete | NaN | NA | NA | FAIL | Extractor returned NaN/non-finite value. |
+| KP13 | Cytokinesis duration (s) | karr-known-incomplete | 0 | 3869 | 1 | FAIL | ratio out of [0.4, 2.5] |
+| KP14 | dNTP vs replication coupling | opencell-tooling | 0 | 0.5 | 1 | FAIL | below minimum threshold |
+| KP15 | DNA-binding occupancy dynamics | biology-beyond-Karr | NA | True | NA | BLOCKED | Extractor unavailable for emitted schema. (E2-V1_1-KP15-DNA-OCCUPANCY) |
+| KP16 | DNA content doubling | opencell-tooling | 1 | 2 | 0.5 | FAIL | tolerance exceeded |
+| KP17 | DNA mass fraction | validation-and-organism-scaling | 0 | 0.1688 | 1 | FAIL | tolerance exceeded |
+| KP18 | RNA mass fraction | validation-and-organism-scaling | 0 | 0.0434821 | 1 | FAIL | tolerance exceeded |
+| KP19 | Protein mass fraction | validation-and-organism-scaling | 0.0167298 | 0.277002 | 0.9396 | FAIL | tolerance exceeded |
+| KP20 | Metabolite concentration profile | karr-known-incomplete | 3.0788 | 1 | 3.079 | FAIL | threshold_max exceeded |
+| KP21 | ATP/GTP production-use balance | opencell-tooling | NA | 0 | NA | BLOCKED | Extractor unavailable for emitted schema. (E2-V1_1-KP21-ENERGY-LEDGER) |
+| KP22 | Energy discrepancy phenotype | karr-known-incomplete | False | True | 1 | FAIL | qualitative boolean mismatch |
+| KP23 | Burst-like protein synthesis stats | biology-beyond-Karr | True | True | 0 | PASS | qualitative boolean matched |
+| KP24 | mRNA/protein distribution shape | biology-beyond-Karr | True | True | 0 | PASS | qualitative boolean matched |
+| KP25 | Gene essentiality accuracy | biology-beyond-Karr | NA | NA | NA | BLOCKED | Extractor unavailable for emitted schema. (E2-V1_1-KP25-KO-SWEEP) |
+| KP26 | Single-gene disruption phenotype class | biology-beyond-Karr | NA | NA | NA | BLOCKED | Extractor unavailable for emitted schema. (E2-V1_1-KP26-KO-CLASS) |
+| KP27 | Host adhesion competence | biology-beyond-Karr | NA | True | NA | BLOCKED | Extractor unavailable for emitted schema. (E2-V1_1-KP27-HOST-ADHESION) |
+| KP28 | Host immune activation cascade | biology-beyond-Karr | NA | True | NA | BLOCKED | Extractor unavailable for emitted schema. (E2-V1_1-KP28-HOST-IMMUNE-CASCADE) |
+
