@@ -1,12 +1,12 @@
 # Phase E.2 - 28-Phenotype Scorecard
 
-`E2_PASS=6/28 OC=3/8 VAL=1/8 INC=0/5 BEY=2/7 FAIL=15 BLOCKED=2 DEFERRED=2 NEEDS_EMITTER=3`
+`E2_PASS=6/28 OC=3/8 VAL=1/8 INC=0/5 BEY=2/7 FAIL=16 BLOCKED=1 DEFERRED=2 NEEDS_EMITTER=3`
 
 **Run**: chassis_v6 @ commit `unknown`
 **Wall-time**: `0.00` s
 **Pass count**: `6/28` (pre-fix baseline gate >=6)
 **Bucket summary**: opencell-tooling 3/8 · validation-and-organism-scaling 1/8 · karr-known-incomplete 0/5 · biology-beyond-Karr 2/7
-**Blocked**: `2` (KP04, KP21)
+**Blocked**: `1` (KP21)
 **Deferred**: `2` (KP25, KP26)
 **Needs emitter**: `3` (KP15, KP27, KP28)
 
@@ -21,7 +21,7 @@ This scorecard is the **BEFORE-fix baseline** captured on the known broken chass
 | KP01 | Growth rate (g/s) | opencell-tooling | 4.42492e-21 | 2.11927e-05 | 1 | FAIL | tolerance exceeded |
 | KP02 | Doubling time (s) | validation-and-organism-scaling | NaN | 47186.1 | NA | FAIL | Extractor returned NaN/non-finite value. |
 | KP03 | Flux-oracle agreement | opencell-tooling | 2.91967 | 0 | 2.92e+12 | FAIL | threshold_max exceeded |
-| KP04 | Glucose uptake (PTS) | validation-and-organism-scaling | NA | 2725 | NA | BLOCKED | Extractor unavailable for emitted schema. (E2-V1_1-KP04-TX_GLCPTS) |
+| KP04 | Glucose uptake (PTS) | validation-and-organism-scaling | 0.308138 | 2725 | 0.9999 | FAIL | tolerance exceeded |
 | KP05 | Total mRNA abundance | validation-and-organism-scaling | 670 | 784 | 0.1454 | PASS | within tolerance |
 | KP06 | Total protein abundance | validation-and-organism-scaling | 29125 | 16177 | 0.8004 | FAIL | tolerance exceeded |
 | KP07 | mRNA short-horizon stability | opencell-tooling | 0.000711523 | 0.1 | 0.007115 | PASS | threshold_max satisfied |

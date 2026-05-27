@@ -107,12 +107,14 @@ def _minimal_snapshot_trajectory() -> dict:
     }
 
 
-def test_kp03_extractor_uses_sidecar_metrics() -> None:
+def test_kp03_kp04_extractors_use_sidecar_metrics() -> None:
     traj = _minimal_snapshot_trajectory()
     traj["_sidecar_metrics"] = {
         "kp03_flux_oracle_median_abs_log2_ratio": 0.75,
+        "kp04_tx_glcpts_mean_abs_flux": 12.5,
     }
     assert np.isfinite(float(ex.extract_kp03(traj)))
+    assert np.isfinite(float(ex.extract_kp04(traj)))
 
 
 def test_deferred_and_needs_emitter_statuses() -> None:

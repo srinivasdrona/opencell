@@ -157,9 +157,7 @@ def extract_kp03(trajectory: Trajectory) -> float | None:
 
 
 def extract_kp04(trajectory: Trajectory) -> float | None:
-    _ = trajectory
-    # Requires TX_GLCPTS flux sidecar extraction (added in a follow-up commit).
-    return None
+    return _sidecar_metric(trajectory, "kp04_tx_glcpts_mean_abs_flux")
 
 
 def extract_kp05(trajectory: Trajectory) -> float | None:

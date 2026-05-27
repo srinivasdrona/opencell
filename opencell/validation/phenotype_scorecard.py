@@ -152,6 +152,11 @@ def _build_sidecar_metrics(trajectory_path: Path) -> dict[str, float]:
                 counts[substrate] = counts.get(substrate, 0) + 1
         process_stats = {k: (sums[k], counts[k]) for k in sums if counts.get(k, 0) > 0}
 
+    tx_glcpts = process_stats.get("TX_GLCPTS")
+    if tx_glcpts is not None:
+        mean_flux = tx_glcpts[0] / max(tx_glcpts[1], 1)
+        metrics["kp04_tx_glcpts_mean_abs_flux"] = float(abs(mean_flux))
+
     oracle = _load_karr_flux_oracle_map()
     if process_stats and oracle:
         log2_errors: list[float] = []
