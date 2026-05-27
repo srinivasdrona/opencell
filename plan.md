@@ -1,5 +1,11 @@
 # OpenCell: Open-Source Whole-Cell Simulation
 
+> **PM orchestration model**: see [`docs/ORCHESTRATION_MODEL.md`](docs/ORCHESTRATION_MODEL.md)
+> for the 5-phase progression (pure main → main+codex → kanban →
+> kanban+foreman) and the invariants that hold across all phases.
+> Cross-project decision logged 2026-05-27 in `.pm-os/DECISIONS.md`
+> under `orchestration-model-progression-phase-0-to-4`.
+
 ## Strategic Direction (2026-04-24, four rounds of adversarial critique converged)
 
 **The hard problem (single most important framing, GPT-5.4 critique):**
