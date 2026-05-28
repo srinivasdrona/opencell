@@ -7,6 +7,7 @@ Two-phase implementation for monomer folding:
 
 from __future__ import annotations
 
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -15,6 +16,9 @@ from scipy.io import loadmat
 from vivarium.core.process import Process
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/ProteinFolding_flat.mat"
+_D2_COMPLEX_FIXTURE_PATH = "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
+_RIBOSOME_ASSEMBLY_FIXTURE_PATH = "data/karr_fixtures/per_process/RibosomeAssembly_flat.mat"
+_EXTRA_COMPLEX_WIDS = frozenset({"RNA_POLYMERASE", "RIBOSOME_70S"})
 _MAX_STOCHASTIC_ITERATIONS = 200_000
 _DEFAULT_ATP_PER_CHAPERONE_CYCLE = 4
 
@@ -58,6 +62,39 @@ def _parse_zero_based_index(value: np.ndarray) -> int:
     return int(scalar) - 1
 
 
+def _parse_count_array(
+    values: np.ndarray,
+    *,
+    expected_size: int,
+    field_name: str,
+) -> np.ndarray:
+    array: object = np.asarray(values, dtype=object)
+    while isinstance(array, np.ndarray) and array.dtype == object and array.size == 1:
+        array = array.flat[0]
+    flat = np.asarray(array, dtype=np.float64).reshape(-1)
+    if flat.size != expected_size:
+        raise ValueError(
+            f"{field_name} size mismatch: expected {expected_size}, got {flat.size}"
+        )
+    return flat
+
+
+def _load_complex_wids(path: str | Path) -> set[str]:
+    resolved = _resolve_fixture_path(path)
+    fx = loadmat(str(resolved))["data"]["fixture"][0, 0]
+    if "complexWholeCellModelIDs" not in fx.dtype.names:
+        return set()
+    return set(_parse_wid_array(fx["complexWholeCellModelIDs"]))
+
+
+@lru_cache(maxsize=1)
+def _canonical_complex_wids() -> frozenset[str]:
+    complex_wids = _load_complex_wids(_D2_COMPLEX_FIXTURE_PATH)
+    complex_wids.update(_load_complex_wids(_RIBOSOME_ASSEMBLY_FIXTURE_PATH))
+    complex_wids.update(_EXTRA_COMPLEX_WIDS)
+    return frozenset(complex_wids)
+
+
 class KarrProteinFoldingProcess(Process):
     """Karr Process_ProteinFolding (ion binding + chaperone folding)."""
 
@@ -87,6 +124,22 @@ class KarrProteinFoldingProcess(Process):
 
         self.substrate_wids = _parse_wid_array(fx["substrateWholeCellModelIDs"])
         self.enzyme_wids = _parse_wid_array(fx["enzymeWholeCellModelIDs"])
+        enzyme_counts = _parse_count_array(
+            fx["enzymes"],
+            expected_size=len(self.enzyme_wids),
+            field_name="enzymes",
+        )
+        self.enzyme_initial_counts_by_wid = {
+            wid: float(enzyme_counts[idx]) for idx, wid in enumerate(self.enzyme_wids)
+        }
+        canonical_complex_wids = _canonical_complex_wids()
+        self.complex_enzyme_wids = [
+            wid for wid in self.enzyme_wids if wid in canonical_complex_wids
+        ]
+        self.protein_enzyme_wids = [
+            wid for wid in self.enzyme_wids if wid not in canonical_complex_wids
+        ]
+        self._complex_enzyme_wid_set = set(self.complex_enzyme_wids)
         self.unfolded_monomer_wids = _parse_wid_array(fx["unfoldedMonomerWholeCellModelIDs"])
         self.folded_monomer_wids = _parse_wid_array(fx["foldedMonomerWholeCellModelIDs"])
 
@@ -129,8 +182,8 @@ class KarrProteinFoldingProcess(Process):
                 )
 
     def ports_schema(self) -> dict[str, Any]:
-        count_wids = list(dict.fromkeys([*self.folded_monomer_wids, *self.enzyme_wids]))
-        return {
+        count_wids = list(dict.fromkeys([*self.folded_monomer_wids, *self.protein_enzyme_wids]))
+        schema: dict[str, Any] = {
             "substrates": {
                 wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                 for wid in self.substrate_wids
@@ -152,6 +205,14 @@ class KarrProteinFoldingProcess(Process):
                 }
             },
         }
+        if self.complex_enzyme_wids:
+            schema["complex"] = {
+                "counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                    for wid in self.complex_enzyme_wids
+                }
+            }
+        return schema
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         del timestep
@@ -191,14 +252,7 @@ class KarrProteinFoldingProcess(Process):
         if unfolded_pool.sum() <= 0:
             return {}
 
-        count_store = protein_state.get("counts", {})
-        if not isinstance(count_store, dict):
-            count_store = {}
-        enzyme_pool = np.asarray(
-            [float(count_store.get(wid, 0.0)) for wid in self.enzyme_wids],
-            dtype=np.float64,
-        )
-        enzyme_pool = np.floor(np.clip(enzyme_pool, a_min=0.0, a_max=None)).astype(np.int64)
+        enzyme_pool = self._read_enzyme_pool(states, protein_state)
 
         ion_ready, ion_consumed = self._phase1_ion_binding(
             unfolded_pool=unfolded_pool,
@@ -242,6 +296,52 @@ class KarrProteinFoldingProcess(Process):
             }
 
         return update
+
+    def _read_enzyme_pool(
+        self,
+        states: dict[str, Any],
+        protein_state: dict[str, Any],
+    ) -> np.ndarray:
+        protein_counts = protein_state.get("counts", {})
+        if not isinstance(protein_counts, dict):
+            protein_counts = {}
+
+        complex_state = states.get("complex", {})
+        if not isinstance(complex_state, dict):
+            complex_state = {}
+        complex_counts = complex_state.get("counts", {})
+        if not isinstance(complex_counts, dict):
+            complex_counts = {}
+
+        missing_protein: list[str] = []
+        missing_complex: list[str] = []
+        enzyme_pool = np.zeros(len(self.enzyme_wids), dtype=np.float64)
+
+        for idx, wid in enumerate(self.enzyme_wids):
+            if wid in self._complex_enzyme_wid_set:
+                if wid not in complex_counts:
+                    missing_complex.append(wid)
+                    continue
+                enzyme_pool[idx] = float(complex_counts[wid])
+                continue
+
+            if wid not in protein_counts:
+                missing_protein.append(wid)
+                continue
+            enzyme_pool[idx] = float(protein_counts[wid])
+
+        if missing_protein or missing_complex:
+            parts: list[str] = []
+            if missing_protein:
+                parts.append(f"protein.counts={missing_protein}")
+            if missing_complex:
+                parts.append(f"complex.counts={missing_complex}")
+            raise KeyError(
+                "Missing required karr_protein_folding enzymes in state: "
+                + "; ".join(parts)
+            )
+
+        return np.floor(np.clip(enzyme_pool, a_min=0.0, a_max=None)).astype(np.int64)
 
     @staticmethod
     def _allocated_or_free(
