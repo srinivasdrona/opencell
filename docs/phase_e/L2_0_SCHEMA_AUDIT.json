@@ -1,0 +1,906 @@
+{
+  "counts": {
+    "GREEN": 0,
+    "AMBER": 24,
+    "RED": 4,
+    "ERROR": 0
+  },
+  "rows": [
+    {
+      "process": "ChromosomeCondensation",
+      "module": "karr_chromosome_condensation",
+      "class": "KarrChromosomeCondensationProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "enzymes",
+        "substrates"
+      ],
+      "oc_obs": [
+        "chromosome",
+        "requests",
+        "substrates",
+        "substrates_allocated"
+      ],
+      "overlap": [
+        "substrates"
+      ],
+      "karr_only": [
+        "boundEnzymes",
+        "enzymes"
+      ],
+      "oc_only": [
+        "chromosome",
+        "requests",
+        "substrates_allocated"
+      ],
+      "verdict": "AMBER",
+      "error": null
+    },
+    {
+      "process": "ChromosomeSegregation",
+      "module": "karr_chromosome_segregation",
+      "class": "KarrChromosomeSegregationProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "enzymes",
+        "substrates"
+      ],
+      "oc_obs": [
+        "chromosome",
+        "complex",
+        "protein",
+        "requests",
+        "substrates",
+        "substrates_allocated"
+      ],
+      "overlap": [
+        "substrates"
+      ],
+      "karr_only": [
+        "boundEnzymes",
+        "enzymes"
+      ],
+      "oc_only": [
+        "chromosome",
+        "complex",
+        "protein",
+        "requests",
+        "substrates_allocated"
+      ],
+      "verdict": "AMBER",
+      "error": null
+    },
+    {
+      "process": "Cytokinesis",
+      "module": "karr_cytokinesis",
+      "class": "KarrCytokinesisProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "enzymes",
+        "substrates"
+      ],
+      "oc_obs": [
+        "cell",
+        "chromosome",
+        "requests",
+        "substrates",
+        "substrates_allocated"
+      ],
+      "overlap": [
+        "substrates"
+      ],
+      "karr_only": [
+        "boundEnzymes",
+        "enzymes"
+      ],
+      "oc_only": [
+        "cell",
+        "chromosome",
+        "requests",
+        "substrates_allocated"
+      ],
+      "verdict": "AMBER",
+      "error": null
+    },
+    {
+      "process": "DNADamage",
+      "module": "karr_dna_damage",
+      "class": "KarrDNADamageProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "enzymes",
+        "substrates"
+      ],
+      "oc_obs": [
+        "chromosome"
+      ],
+      "overlap": [],
+      "karr_only": [
+        "boundEnzymes",
+        "enzymes",
+        "substrates"
+      ],
+      "oc_only": [
+        "chromosome"
+      ],
+      "verdict": "RED",
+      "error": null
+    },
+    {
+      "process": "DNARepair",
+      "module": "karr_dna_repair",
+      "class": "KarrDNARepairProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "enzymes",
+        "substrates"
+      ],
+      "oc_obs": [
+        "chromosome",
+        "complex",
+        "protein",
+        "requests",
+        "substrates",
+        "substrates_allocated"
+      ],
+      "overlap": [
+        "substrates"
+      ],
+      "karr_only": [
+        "boundEnzymes",
+        "enzymes"
+      ],
+      "oc_only": [
+        "chromosome",
+        "complex",
+        "protein",
+        "requests",
+        "substrates_allocated"
+      ],
+      "verdict": "AMBER",
+      "error": null
+    },
+    {
+      "process": "DNASupercoiling",
+      "module": "karr_dna_supercoiling",
+      "class": "KarrDNASupercoilingProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "enzymes",
+        "substrates"
+      ],
+      "oc_obs": [
+        "chromosome",
+        "complex",
+        "protein",
+        "requests",
+        "substrates",
+        "substrates_allocated"
+      ],
+      "overlap": [
+        "substrates"
+      ],
+      "karr_only": [
+        "boundEnzymes",
+        "enzymes"
+      ],
+      "oc_only": [
+        "chromosome",
+        "complex",
+        "protein",
+        "requests",
+        "substrates_allocated"
+      ],
+      "verdict": "AMBER",
+      "error": null
+    },
+    {
+      "process": "FtsZPolymerization",
+      "module": "karr_ftsz_polymerization",
+      "class": "KarrFtsZPolymerizationProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "enzymes",
+        "substrates"
+      ],
+      "oc_obs": [
+        "cell",
+        "requests",
+        "substrates",
+        "substrates_allocated"
+      ],
+      "overlap": [
+        "substrates"
+      ],
+      "karr_only": [
+        "boundEnzymes",
+        "enzymes"
+      ],
+      "oc_only": [
+        "cell",
+        "requests",
+        "substrates_allocated"
+      ],
+      "verdict": "AMBER",
+      "error": null
+    },
+    {
+      "process": "HostInteraction",
+      "module": "karr_host_interaction",
+      "class": "KarrHostInteractionProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "enzymes",
+        "substrates"
+      ],
+      "oc_obs": [
+        "cell",
+        "protein"
+      ],
+      "overlap": [],
+      "karr_only": [
+        "boundEnzymes",
+        "enzymes",
+        "substrates"
+      ],
+      "oc_only": [
+        "cell",
+        "protein"
+      ],
+      "verdict": "RED",
+      "error": null
+    },
+    {
+      "process": "MacromolecularComplexation",
+      "module": "karr_macromolecular_complexation",
+      "class": "MacromolecularComplexationProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "complexs",
+        "enzymes",
+        "substrates"
+      ],
+      "oc_obs": [
+        "complex",
+        "requests",
+        "substrates",
+        "substrates_allocated"
+      ],
+      "overlap": [
+        "substrates"
+      ],
+      "karr_only": [
+        "boundEnzymes",
+        "complexs",
+        "enzymes"
+      ],
+      "oc_only": [
+        "complex",
+        "requests",
+        "substrates_allocated"
+      ],
+      "verdict": "AMBER",
+      "error": null
+    },
+    {
+      "process": "Metabolism",
+      "module": "karr_metabolism",
+      "class": "KarrMetabolismProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "enzymes",
+        "substrates"
+      ],
+      "oc_obs": [
+        "metabolic_reaction",
+        "substrates"
+      ],
+      "overlap": [
+        "substrates"
+      ],
+      "karr_only": [
+        "boundEnzymes",
+        "enzymes"
+      ],
+      "oc_only": [
+        "metabolic_reaction"
+      ],
+      "verdict": "AMBER",
+      "error": null
+    },
+    {
+      "process": "ProteinActivation",
+      "module": "karr_protein_activation",
+      "class": "KarrProteinActivationProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "enzymes",
+        "substrates"
+      ],
+      "oc_obs": [
+        "protein",
+        "stimuli",
+        "substrates"
+      ],
+      "overlap": [
+        "substrates"
+      ],
+      "karr_only": [
+        "boundEnzymes",
+        "enzymes"
+      ],
+      "oc_only": [
+        "protein",
+        "stimuli"
+      ],
+      "verdict": "AMBER",
+      "error": null
+    },
+    {
+      "process": "ProteinDecay",
+      "module": "karr_protein_decay_light",
+      "class": "ProteinDecayLightProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "complexs",
+        "enzymes",
+        "monomers",
+        "substrates"
+      ],
+      "oc_obs": [
+        "complex",
+        "protein",
+        "requests",
+        "rna",
+        "substrates",
+        "substrates_allocated"
+      ],
+      "overlap": [
+        "substrates"
+      ],
+      "karr_only": [
+        "boundEnzymes",
+        "complexs",
+        "enzymes",
+        "monomers"
+      ],
+      "oc_only": [
+        "complex",
+        "protein",
+        "requests",
+        "rna",
+        "substrates_allocated"
+      ],
+      "verdict": "AMBER",
+      "error": null
+    },
+    {
+      "process": "ProteinFolding",
+      "module": "karr_protein_folding",
+      "class": "KarrProteinFoldingProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "enzymes",
+        "foldedMonomers",
+        "substrates",
+        "unfoldedMonomers"
+      ],
+      "oc_obs": [
+        "complex",
+        "protein",
+        "substrates",
+        "substrates_allocated"
+      ],
+      "overlap": [
+        "substrates"
+      ],
+      "karr_only": [
+        "boundEnzymes",
+        "enzymes",
+        "foldedMonomers",
+        "unfoldedMonomers"
+      ],
+      "oc_only": [
+        "complex",
+        "protein",
+        "substrates_allocated"
+      ],
+      "verdict": "AMBER",
+      "error": null
+    },
+    {
+      "process": "ProteinModification",
+      "module": "karr_protein_modification",
+      "class": "KarrProteinModificationProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "enzymes",
+        "modifiedMonomers",
+        "substrates",
+        "unmodifiedMonomers"
+      ],
+      "oc_obs": [
+        "complex",
+        "protein",
+        "requests",
+        "substrates",
+        "substrates_allocated"
+      ],
+      "overlap": [
+        "substrates"
+      ],
+      "karr_only": [
+        "boundEnzymes",
+        "enzymes",
+        "modifiedMonomers",
+        "unmodifiedMonomers"
+      ],
+      "oc_only": [
+        "complex",
+        "protein",
+        "requests",
+        "substrates_allocated"
+      ],
+      "verdict": "AMBER",
+      "error": null
+    },
+    {
+      "process": "ProteinProcessingII",
+      "module": "karr_protein_processing_ii",
+      "class": "KarrProteinProcessingIIProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "enzymes",
+        "processedMonomers",
+        "substrates",
+        "unprocessedMonomers"
+      ],
+      "oc_obs": [
+        "protein",
+        "requests",
+        "substrates",
+        "substrates_allocated"
+      ],
+      "overlap": [
+        "substrates"
+      ],
+      "karr_only": [
+        "boundEnzymes",
+        "enzymes",
+        "processedMonomers",
+        "unprocessedMonomers"
+      ],
+      "oc_only": [
+        "protein",
+        "requests",
+        "substrates_allocated"
+      ],
+      "verdict": "AMBER",
+      "error": null
+    },
+    {
+      "process": "ProteinProcessingI",
+      "module": "karr_protein_processing_i",
+      "class": "KarrProteinProcessingIProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "enzymes",
+        "processedMonomers",
+        "substrates",
+        "unprocessedMonomers"
+      ],
+      "oc_obs": [
+        "complex",
+        "protein",
+        "requests",
+        "substrates",
+        "substrates_allocated"
+      ],
+      "overlap": [
+        "substrates"
+      ],
+      "karr_only": [
+        "boundEnzymes",
+        "enzymes",
+        "processedMonomers",
+        "unprocessedMonomers"
+      ],
+      "oc_only": [
+        "complex",
+        "protein",
+        "requests",
+        "substrates_allocated"
+      ],
+      "verdict": "AMBER",
+      "error": null
+    },
+    {
+      "process": "ProteinTranslocation",
+      "module": "karr_protein_translocation",
+      "class": "KarrProteinTranslocationProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "enzymes",
+        "monomers",
+        "substrates"
+      ],
+      "oc_obs": [
+        "complex",
+        "protein",
+        "requests",
+        "substrates",
+        "substrates_allocated"
+      ],
+      "overlap": [
+        "substrates"
+      ],
+      "karr_only": [
+        "boundEnzymes",
+        "enzymes",
+        "monomers"
+      ],
+      "oc_only": [
+        "complex",
+        "protein",
+        "requests",
+        "substrates_allocated"
+      ],
+      "verdict": "AMBER",
+      "error": null
+    },
+    {
+      "process": "RNADecay",
+      "module": "karr_rna_decay",
+      "class": "RnaDecayLightProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "enzymes",
+        "substrates"
+      ],
+      "oc_obs": [
+        "requests",
+        "rna",
+        "substrates",
+        "substrates_allocated"
+      ],
+      "overlap": [
+        "substrates"
+      ],
+      "karr_only": [
+        "boundEnzymes",
+        "enzymes"
+      ],
+      "oc_only": [
+        "requests",
+        "rna",
+        "substrates_allocated"
+      ],
+      "verdict": "AMBER",
+      "error": null
+    },
+    {
+      "process": "RNAModification",
+      "module": "karr_rna_modification",
+      "class": "KarrRNAModificationProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "enzymes",
+        "modifiedRNAs",
+        "substrates",
+        "unmodifiedRNAs"
+      ],
+      "oc_obs": [
+        "complex",
+        "protein",
+        "requests",
+        "rna",
+        "substrates",
+        "substrates_allocated"
+      ],
+      "overlap": [
+        "substrates"
+      ],
+      "karr_only": [
+        "boundEnzymes",
+        "enzymes",
+        "modifiedRNAs",
+        "unmodifiedRNAs"
+      ],
+      "oc_only": [
+        "complex",
+        "protein",
+        "requests",
+        "rna",
+        "substrates_allocated"
+      ],
+      "verdict": "AMBER",
+      "error": null
+    },
+    {
+      "process": "RNAProcessing",
+      "module": "karr_rna_processing",
+      "class": "KarrRNAProcessingProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "enzymes",
+        "processedRNAs",
+        "substrates",
+        "unprocessedRNAs"
+      ],
+      "oc_obs": [
+        "complex",
+        "protein",
+        "requests",
+        "rna",
+        "substrates",
+        "substrates_allocated"
+      ],
+      "overlap": [
+        "substrates"
+      ],
+      "karr_only": [
+        "boundEnzymes",
+        "enzymes",
+        "processedRNAs",
+        "unprocessedRNAs"
+      ],
+      "oc_only": [
+        "complex",
+        "protein",
+        "requests",
+        "rna",
+        "substrates_allocated"
+      ],
+      "verdict": "AMBER",
+      "error": null
+    },
+    {
+      "process": "ReplicationInitiation",
+      "module": "karr_replication_initiation",
+      "class": "KarrReplicationInitiationProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "enzymes",
+        "substrates"
+      ],
+      "oc_obs": [
+        "chromosome",
+        "protein",
+        "requests",
+        "substrates",
+        "substrates_allocated"
+      ],
+      "overlap": [
+        "substrates"
+      ],
+      "karr_only": [
+        "boundEnzymes",
+        "enzymes"
+      ],
+      "oc_only": [
+        "chromosome",
+        "protein",
+        "requests",
+        "substrates_allocated"
+      ],
+      "verdict": "AMBER",
+      "error": null
+    },
+    {
+      "process": "Replication",
+      "module": "karr_replication",
+      "class": "KarrReplicationProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "enzymes",
+        "substrates"
+      ],
+      "oc_obs": [
+        "chromosome",
+        "requests",
+        "substrates",
+        "substrates_allocated"
+      ],
+      "overlap": [
+        "substrates"
+      ],
+      "karr_only": [
+        "boundEnzymes",
+        "enzymes"
+      ],
+      "oc_only": [
+        "chromosome",
+        "requests",
+        "substrates_allocated"
+      ],
+      "verdict": "AMBER",
+      "error": null
+    },
+    {
+      "process": "RibosomeAssembly",
+      "module": "karr_ribosome_assembly",
+      "class": "KarrRibosomeAssemblyProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "complexs",
+        "enzymes",
+        "monomers",
+        "substrates"
+      ],
+      "oc_obs": [
+        "complex",
+        "protein",
+        "requests",
+        "rna",
+        "substrates",
+        "substrates_allocated"
+      ],
+      "overlap": [
+        "substrates"
+      ],
+      "karr_only": [
+        "boundEnzymes",
+        "complexs",
+        "enzymes",
+        "monomers"
+      ],
+      "oc_only": [
+        "complex",
+        "protein",
+        "requests",
+        "rna",
+        "substrates_allocated"
+      ],
+      "verdict": "AMBER",
+      "error": null
+    },
+    {
+      "process": "TerminalOrganelleAssembly",
+      "module": "karr_terminal_organelle_assembly",
+      "class": "KarrTerminalOrganelleAssemblyProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "enzymes",
+        "substrates"
+      ],
+      "oc_obs": [
+        "cell",
+        "protein"
+      ],
+      "overlap": [],
+      "karr_only": [
+        "boundEnzymes",
+        "enzymes",
+        "substrates"
+      ],
+      "oc_only": [
+        "cell",
+        "protein"
+      ],
+      "verdict": "RED",
+      "error": null
+    },
+    {
+      "process": "Transcription",
+      "module": "karr_transcription",
+      "class": "KarrTranscriptionProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "enzymes",
+        "substrates"
+      ],
+      "oc_obs": [
+        "rna",
+        "substrates"
+      ],
+      "overlap": [
+        "substrates"
+      ],
+      "karr_only": [
+        "boundEnzymes",
+        "enzymes"
+      ],
+      "oc_only": [
+        "rna"
+      ],
+      "verdict": "AMBER",
+      "error": null
+    },
+    {
+      "process": "TranscriptionalRegulation",
+      "module": "karr_transcriptional_regulation",
+      "class": "KarrTranscriptionalRegulationProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "enzymes",
+        "substrates"
+      ],
+      "oc_obs": [
+        "complex",
+        "protein",
+        "tf_binding",
+        "tx_rate_fold_change"
+      ],
+      "overlap": [],
+      "karr_only": [
+        "boundEnzymes",
+        "enzymes",
+        "substrates"
+      ],
+      "oc_only": [
+        "complex",
+        "protein",
+        "tf_binding",
+        "tx_rate_fold_change"
+      ],
+      "verdict": "RED",
+      "error": null
+    },
+    {
+      "process": "Translation",
+      "module": "karr_translation",
+      "class": "KarrTranslationProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "enzymes",
+        "monomers",
+        "substrates"
+      ],
+      "oc_obs": [
+        "protein",
+        "substrates"
+      ],
+      "overlap": [
+        "substrates"
+      ],
+      "karr_only": [
+        "boundEnzymes",
+        "enzymes",
+        "monomers"
+      ],
+      "oc_only": [
+        "protein"
+      ],
+      "verdict": "AMBER",
+      "error": null
+    },
+    {
+      "process": "tRNAAminoacylation",
+      "module": "karr_trna_aminoacylation",
+      "class": "KarrTRNAAminoacylationProcess",
+      "karr_obs": [
+        "aminoacylatedRNAs",
+        "boundEnzymes",
+        "enzymes",
+        "freeRNAs",
+        "substrates"
+      ],
+      "oc_obs": [
+        "complex",
+        "protein",
+        "requests",
+        "rna",
+        "substrates",
+        "substrates_allocated"
+      ],
+      "overlap": [
+        "substrates"
+      ],
+      "karr_only": [
+        "aminoacylatedRNAs",
+        "boundEnzymes",
+        "enzymes",
+        "freeRNAs"
+      ],
+      "oc_only": [
+        "complex",
+        "protein",
+        "requests",
+        "rna",
+        "substrates_allocated"
+      ],
+      "verdict": "AMBER",
+      "error": null
+    }
+  ]
+}
