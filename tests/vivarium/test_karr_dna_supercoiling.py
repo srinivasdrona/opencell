@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 import math
 import sys
 from pathlib import Path
@@ -19,6 +20,7 @@ if "opencell" in sys.modules:
                 del sys.modules[mod_name]
 
 from opencell.vivarium.karr_dna_supercoiling import KarrDNASupercoilingProcess
+from opencell.vivarium.karr_composite import build_karr_chassis_v6
 
 
 def _base_state(
@@ -31,6 +33,17 @@ def _base_state(
     gyrase_count: float = 3.0,
     topoiv_count: float = 12.0,
 ) -> dict[str, Any]:
+    protein_counts: dict[str, float] = {}
+    complex_counts: dict[str, float] = {}
+    for wid, count in (
+        (process.gyrase_wid, gyrase_count),
+        (process.topoiv_wid, topoiv_count),
+    ):
+        if process.enzyme_store_by_wid.get(wid) == "complex":
+            complex_counts[wid] = float(count)
+        else:
+            protein_counts[wid] = float(count)
+
     substrates = {wid: 0.0 for wid in process.substrate_wids}
     substrates[process.atp_wid] = float(atp)
     substrates[process.h2o_wid] = float(atp if h2o is None else h2o)
@@ -44,11 +57,9 @@ def _base_state(
             "supercoiled": sigma < 0.0,
         },
         "protein": {
-            "counts": {
-                process.gyrase_wid: float(gyrase_count),
-                process.topoiv_wid: float(topoiv_count),
-            }
+            "counts": protein_counts
         },
+        "complex": {"counts": complex_counts},
         "substrates": substrates,
         "requests": {
             process.name: {
@@ -117,6 +128,59 @@ def test_process_instantiates_with_defaults() -> None:
     assert p.gyrase_activity_rate > 0.0
     assert p.topoiv_activity_rate > 0.0
     assert p.equilibrium_sigma == pytest.approx(-0.06, rel=1e-6)
+
+
+def test_declared_complex_enzymes_fail_fast_when_missing_from_complex_port() -> None:
+    p = KarrDNASupercoilingProcess({})
+    state = _base_state(
+        p,
+        sigma=-0.02,
+        atp=10_000.0,
+        gyrase_count=5.0,
+        topoiv_count=5.0,
+    )
+    state_missing_complex = deepcopy(state)
+    state_missing_complex["protein"]["counts"][p.gyrase_wid] = 5.0
+    state_missing_complex["protein"]["counts"][p.topoiv_wid] = 5.0
+    state_missing_complex["complex"]["counts"] = {}
+
+    with pytest.raises(KeyError, match="Missing declared complex enzyme"):
+        p.next_update(1.0, state_missing_complex)
+
+
+def test_chassis_seeded_complex_enzyme_changes_request_output() -> None:
+    composite = build_karr_chassis_v6(time_step_s=1.0, emit_step_s=1.0)
+    topology = composite["topology"]["karr_dna_supercoiling"]
+    assert "complex" in topology
+
+    chassis_process = composite["processes"]["karr_dna_supercoiling"]
+    gyrase_seed = float(composite["state"]["complex"]["counts"][chassis_process.gyrase_wid])
+    assert gyrase_seed > 0.0
+
+    p_with_seed = KarrDNASupercoilingProcess({"rng_seed": 23})
+    p_without_seed = KarrDNASupercoilingProcess({"rng_seed": 23})
+    state_with_seed = _base_state(
+        p_with_seed,
+        sigma=-0.02,
+        atp=10_000.0,
+        gyrase_count=gyrase_seed,
+        topoiv_count=0.0,
+    )
+    state_without_seed = _base_state(
+        p_without_seed,
+        sigma=-0.02,
+        atp=10_000.0,
+        gyrase_count=0.0,
+        topoiv_count=0.0,
+    )
+
+    update_with_seed = p_with_seed.next_update(1.0, state_with_seed)
+    update_without_seed = p_without_seed.next_update(1.0, state_without_seed)
+    request_with_seed = float(update_with_seed["requests"][p_with_seed.name][p_with_seed.atp_wid])
+    request_without_seed = float(
+        update_without_seed["requests"][p_without_seed.name][p_without_seed.atp_wid]
+    )
+    assert request_with_seed > request_without_seed
 
 
 def test_one_tick_gyrase_sign() -> None:
