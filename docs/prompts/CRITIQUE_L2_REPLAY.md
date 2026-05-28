@@ -33,14 +33,14 @@ For the process under test:
 1. List every key in `states_after/` of the `.mat` file via `h5py`. Cite the python snippet.
 2. List every store/key the process's `next_update` writes a delta into. Cite the line range.
 3. Cross-check `_OBSERVABLES` in the test against the union. List any **missing** observables.
-4. For any pass-through observable (Karr has it, OC `next_update` doesn't write it), verify the test ASSERTS it as identity-check, not silently ignores it.
+4. For any pass-through observable (Karr has it, OC `next_update` doesn't write it), verify the test ASSERTS it as identity-check AND derives `oc_after` from `states_before[t]` — NOT from `states_after[t]` / `karr_after`. The latter is a tautology (FIX Rule 7 pass-through provenance).
 
 **Output:**
 - `states_after_keys`: [...]
 - `next_update_writes`: [...]
 - `_OBSERVABLES`: [...]
 - `missing`: [...] (count; non-empty → Gate 1 FAIL)
-- `pass_through_handled`: [...] (must be labelled in test; absent labelling → Gate 5 WEAK)
+- `pass_through_handled`: [...] (must be labelled in test AND provenance must be `states_before`; absent labelling OR oracle-sourced provenance → **Gate 1 FAIL for a published GREEN** — not WEAK)
 
 ### Gate 2 — Tolerance discipline (Rule 2)
 
@@ -81,10 +81,11 @@ Locate the comparison assertion. Report:
 
 ### Gate 5 — Non-triviality (Rule 6) + RNG persistence (Rule 5)
 
-1. **Early-return probe.** Grep `process.next_update` for `return {}`, `return None`, `return state` patterns. For each, identify the gate predicate. Cite line.
+1. **Early-return probe — full call graph.** Inspect `process.next_update` AND every helper it calls on the update path (depth ≥ 2). For every guard that can return `{}`, `None`, unchanged state, zero flux, or an all-zero delta vector, identify the gate predicate. Cite file:line for each. Pure `grep "return {}"` on `next_update` is insufficient — callees like `_compute_flux` that `return np.zeros(...)` on `if enzymes.sum() == 0` are the same shape one frame down.
 2. For each predicate, derive the corresponding `states_before` field. Sweep all 100 ticks of `states_before/<field>` and report how many ticks satisfy the predicate (trigger the non-trivial path).
-3. If 0/100 → verdict is "no-op replay." Gate 5 FAIL. The test result is NOT GREEN; it is "L2.1 N/A — adversarial trace required."
-4. **RNG persistence probe.** Locate the `KarrXProcess(...)` constructor call. Is it inside the tick loop or outside? If inside → Gate 5 FAIL (RNG reset every tick masks sequence-dependent bugs).
+3. **Per-observable nonzero-delta sweep.** For each MUTATED observable (Rule 7 split), sweep all 100 ticks and report how many emitted a nonzero delta. Any mutated observable with 0/100 nonzero deltas → that observable's GREEN is "L2.1 untested" not GREEN.
+4. If 0/100 ticks trigger any non-trivial path → Gate 5 FAIL. The test result is NOT GREEN; it is "L2.1 N/A — adversarial trace required."
+5. **RNG persistence probe.** Locate the `KarrXProcess(...)` constructor call. Is it inside the tick loop or outside? If inside → Gate 5 FAIL (RNG reset every tick masks sequence-dependent bugs).
 
 **Verdict:**
 - ≥1 tick triggers non-trivial path AND process constructed outside loop → Gate 5 PASS.
