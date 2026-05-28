@@ -801,6 +801,7 @@ def build_karr_chassis_v3(
         "karr_protein_translocation": {
             "substrates": ("substrates",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("_internal_requests_ptrans",),
             "substrates_allocated": ("substrates_allocated",),
         },
@@ -1253,6 +1254,7 @@ def build_karr_chassis_v4(
         "karr_protein_translocation": {
             "substrates": ("substrates",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("_internal_requests_ptrans",),
             "substrates_allocated": ("substrates_allocated",),
         },
@@ -1851,6 +1853,7 @@ def build_karr_chassis_v5(
         "karr_protein_translocation": {
             "substrates": ("substrates",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("_internal_requests_ptrans",),
             "substrates_allocated": ("substrates_allocated",),
         },

@@ -26,18 +26,37 @@ def _base_state(process: KarrProteinTranslocationProcess) -> dict[str, Any]:
         "substrates": {wid: 0.0 for wid in process.substrate_wids},
         "protein": {
             "counts": {wid: 0.0 for wid in process.protein_count_wids},
+            "unprocessed_counts": {wid: 0.0 for wid in process.translocatable_wids},
             "location": {wid: "cytoplasm" for wid in process.translocatable_wids},
         },
+        "complex": {"counts": {wid: 0.0 for wid in process.complex_count_wids}},
         "requests": {process.name: {wid: 0.0 for wid in process.request_wids}},
         "substrates_allocated": {process.name: {wid: 0.0 for wid in process.vector_wids}},
     }
 
 
+def _set_pending_monomer(state: dict[str, Any], wid: str, count: float) -> None:
+    state["protein"]["counts"][wid] = float(count)
+    state["protein"]["unprocessed_counts"][wid] = float(count)
+
+
+def _set_enzyme_count(
+    state: dict[str, Any],
+    process: KarrProteinTranslocationProcess,
+    wid: str,
+    count: float,
+) -> None:
+    if wid in process.complex_count_wids:
+        state["complex"]["counts"][wid] = float(count)
+        return
+    state["protein"]["counts"][wid] = float(count)
+
+
 def _enable_core_enzymes(state: dict[str, Any], process: KarrProteinTranslocationProcess) -> None:
-    state["protein"]["counts"][process.srp_wid] = 2.0
-    state["protein"]["counts"][process.srp_receptor_wid] = 2.0
-    state["protein"]["counts"][process.translocase_atpase_wid] = 2.0
-    state["protein"]["counts"][process.translocase_pore_wid] = 2.0
+    _set_enzyme_count(state, process, process.srp_wid, 2.0)
+    _set_enzyme_count(state, process, process.srp_receptor_wid, 2.0)
+    _set_enzyme_count(state, process, process.translocase_atpase_wid, 2.0)
+    _set_enzyme_count(state, process, process.translocase_pore_wid, 2.0)
 
 
 def _set_allocated_resources(
@@ -100,11 +119,11 @@ def test_srp_mediated_integral_membrane_path() -> None:
     wid = process.integral_membrane_wids[0]
     atp_cost = process.atp_cost_by_wid[wid]
 
-    state["protein"]["counts"][wid] = 1.0
-    state["protein"]["counts"][process.srp_wid] = 1.0
-    state["protein"]["counts"][process.srp_receptor_wid] = 1.0
-    state["protein"]["counts"][process.translocase_atpase_wid] = 1.0
-    state["protein"]["counts"][process.translocase_pore_wid] = 1.0
+    _set_pending_monomer(state, wid, 1.0)
+    _set_enzyme_count(state, process, process.srp_wid, 1.0)
+    _set_enzyme_count(state, process, process.srp_receptor_wid, 1.0)
+    _set_enzyme_count(state, process, process.translocase_atpase_wid, 1.0)
+    _set_enzyme_count(state, process, process.translocase_pore_wid, 1.0)
     gtp_cost = float(process.srp_gtp_cost_per_monomer)
     _set_allocated_resources(
         state,
@@ -128,11 +147,11 @@ def test_direct_lipoprotein_path() -> None:
     wid = process.lipoprotein_wids[0]
     atp_cost = process.atp_cost_by_wid[wid]
 
-    state["protein"]["counts"][wid] = 1.0
-    state["protein"]["counts"][process.translocase_atpase_wid] = 1.0
-    state["protein"]["counts"][process.translocase_pore_wid] = 1.0
-    state["protein"]["counts"][process.srp_wid] = 0.0
-    state["protein"]["counts"][process.srp_receptor_wid] = 0.0
+    _set_pending_monomer(state, wid, 1.0)
+    _set_enzyme_count(state, process, process.translocase_atpase_wid, 1.0)
+    _set_enzyme_count(state, process, process.translocase_pore_wid, 1.0)
+    _set_enzyme_count(state, process, process.srp_wid, 0.0)
+    _set_enzyme_count(state, process, process.srp_receptor_wid, 0.0)
     _set_allocated_resources(state, process, atp=float(atp_cost), gtp=0.0, h2o=float(atp_cost))
 
     update = process.next_update(1.0, state)
@@ -149,12 +168,12 @@ def test_atp_consumption_per_translocation() -> None:
     wid_extracellular = process.extracellular_wids[0]
     atp_need = process.atp_cost_by_wid[wid_integral] + process.atp_cost_by_wid[wid_extracellular]
 
-    state["protein"]["counts"][wid_integral] = 1.0
-    state["protein"]["counts"][wid_extracellular] = 1.0
-    state["protein"]["counts"][process.srp_wid] = 1.0
-    state["protein"]["counts"][process.srp_receptor_wid] = 1.0
-    state["protein"]["counts"][process.translocase_atpase_wid] = 2.0
-    state["protein"]["counts"][process.translocase_pore_wid] = 2.0
+    _set_pending_monomer(state, wid_integral, 1.0)
+    _set_pending_monomer(state, wid_extracellular, 1.0)
+    _set_enzyme_count(state, process, process.srp_wid, 1.0)
+    _set_enzyme_count(state, process, process.srp_receptor_wid, 1.0)
+    _set_enzyme_count(state, process, process.translocase_atpase_wid, 2.0)
+    _set_enzyme_count(state, process, process.translocase_pore_wid, 2.0)
     gtp_need = float(process.srp_gtp_cost_per_monomer)
     _set_allocated_resources(
         state,
@@ -178,12 +197,12 @@ def test_srp_starvation_blocks_membrane_only() -> None:
     wid_lipoprotein = process.lipoprotein_wids[0]
     atp_need = process.atp_cost_by_wid[wid_integral] + process.atp_cost_by_wid[wid_lipoprotein]
 
-    state["protein"]["counts"][wid_integral] = 1.0
-    state["protein"]["counts"][wid_lipoprotein] = 1.0
-    state["protein"]["counts"][process.srp_wid] = 0.0
-    state["protein"]["counts"][process.srp_receptor_wid] = 0.0
-    state["protein"]["counts"][process.translocase_atpase_wid] = 2.0
-    state["protein"]["counts"][process.translocase_pore_wid] = 2.0
+    _set_pending_monomer(state, wid_integral, 1.0)
+    _set_pending_monomer(state, wid_lipoprotein, 1.0)
+    _set_enzyme_count(state, process, process.srp_wid, 0.0)
+    _set_enzyme_count(state, process, process.srp_receptor_wid, 0.0)
+    _set_enzyme_count(state, process, process.translocase_atpase_wid, 2.0)
+    _set_enzyme_count(state, process, process.translocase_pore_wid, 2.0)
     _set_allocated_resources(state, process, atp=float(atp_need), gtp=0.0, h2o=float(atp_need))
 
     update = process.next_update(1.0, state)
@@ -200,12 +219,12 @@ def test_translocase_starvation_blocks_all() -> None:
     wid_integral = process.integral_membrane_wids[0]
     wid_lipoprotein = process.lipoprotein_wids[0]
 
-    state["protein"]["counts"][wid_integral] = 1.0
-    state["protein"]["counts"][wid_lipoprotein] = 1.0
-    state["protein"]["counts"][process.srp_wid] = 2.0
-    state["protein"]["counts"][process.srp_receptor_wid] = 2.0
-    state["protein"]["counts"][process.translocase_atpase_wid] = 0.0
-    state["protein"]["counts"][process.translocase_pore_wid] = 0.0
+    _set_pending_monomer(state, wid_integral, 1.0)
+    _set_pending_monomer(state, wid_lipoprotein, 1.0)
+    _set_enzyme_count(state, process, process.srp_wid, 2.0)
+    _set_enzyme_count(state, process, process.srp_receptor_wid, 2.0)
+    _set_enzyme_count(state, process, process.translocase_atpase_wid, 0.0)
+    _set_enzyme_count(state, process, process.translocase_pore_wid, 0.0)
     _set_allocated_resources(state, process, atp=500.0, gtp=500.0, h2o=1000.0)
 
     update = process.next_update(1.0, state)
@@ -221,9 +240,9 @@ def test_protein_location_store_updates() -> None:
     assert schema["substrates"][process.atp_wid]["_updater"] == "accumulate"
 
     state = _base_state(process)
-    state["protein"]["counts"][example_wid] = 1.0
-    state["protein"]["counts"][process.translocase_atpase_wid] = 1.0
-    state["protein"]["counts"][process.translocase_pore_wid] = 1.0
+    _set_pending_monomer(state, example_wid, 1.0)
+    _set_enzyme_count(state, process, process.translocase_atpase_wid, 1.0)
+    _set_enzyme_count(state, process, process.translocase_pore_wid, 1.0)
     atp_need = float(process.atp_cost_by_wid[example_wid])
     _set_allocated_resources(state, process, atp=atp_need, gtp=0.0, h2o=atp_need)
     update = process.next_update(1.0, state)
@@ -241,12 +260,12 @@ def test_deterministic_with_seed() -> None:
     wid_b = process_1.integral_membrane_wids[1]
     max_atp = max(process_1.atp_cost_by_wid[wid_a], process_1.atp_cost_by_wid[wid_b])
 
-    state["protein"]["counts"][wid_a] = 1.0
-    state["protein"]["counts"][wid_b] = 1.0
-    state["protein"]["counts"][process_1.srp_wid] = 1.0
-    state["protein"]["counts"][process_1.srp_receptor_wid] = 1.0
-    state["protein"]["counts"][process_1.translocase_atpase_wid] = 1.0
-    state["protein"]["counts"][process_1.translocase_pore_wid] = 1.0
+    _set_pending_monomer(state, wid_a, 1.0)
+    _set_pending_monomer(state, wid_b, 1.0)
+    _set_enzyme_count(state, process_1, process_1.srp_wid, 1.0)
+    _set_enzyme_count(state, process_1, process_1.srp_receptor_wid, 1.0)
+    _set_enzyme_count(state, process_1, process_1.translocase_atpase_wid, 1.0)
+    _set_enzyme_count(state, process_1, process_1.translocase_pore_wid, 1.0)
     gtp_need = float(process_1.srp_gtp_cost_per_monomer)
     _set_allocated_resources(
         state,
