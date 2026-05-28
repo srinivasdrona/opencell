@@ -1,0 +1,189 @@
+
+=== ChromosomeCondensation ===
+observable                  nz_ticks  total_|delta|       max_|delta|   sample_diff
+  boundEnzymes                 42/100             132               8   t=72 idx=1 78->86 (Δ=+8)
+  enzymes                      72/100             270               8   t=80 idx=0 0->8 (Δ=+8)
+  substrates                   72/100             657               8   t=72 idx=0 79->71 (Δ=-8)
+
+=== ChromosomeSegregation ===
+observable                  nz_ticks  total_|delta|       max_|delta|   sample_diff
+  boundEnzymes                  0/100               0               0   none
+  enzymes                       0/100               0               0   none
+  substrates                    0/100               0               0   none
+
+=== Cytokinesis ===
+observable                  nz_ticks  total_|delta|       max_|delta|   sample_diff
+  boundEnzymes                  0/100               0               0   none
+  enzymes                       0/100               0               0   none
+  substrates                    0/100               0               0   none
+
+=== DNADamage ===
+observable                  nz_ticks  total_|delta|       max_|delta|   sample_diff
+  boundEnzymes                  0/100               0               0   none
+  enzymes                       0/100               0               0   none
+  substrates                    0/100               0               0   none
+
+=== DNARepair ===
+observable                  nz_ticks  total_|delta|       max_|delta|   sample_diff
+  boundEnzymes                  0/100               0               0   none
+  enzymes                       0/100               0               0   none
+  substrates                    2/100               6               1   t=8 idx=2 0->1 (Δ=+1)
+
+=== DNASupercoiling ===
+observable                  nz_ticks  total_|delta|       max_|delta|   sample_diff
+  boundEnzymes                 30/100             117              12   t=6 idx=1 0->12 (Δ=+12)
+  enzymes                      30/100             117              12   t=6 idx=1 12->0 (Δ=-12)
+  substrates                  100/100           34810             128   t=6 idx=0 1789->1661 (Δ=-128)
+
+=== FtsZPolymerization ===
+observable                  nz_ticks  total_|delta|       max_|delta|   sample_diff
+  boundEnzymes                  0/100               0               0   none
+  enzymes                     100/100            1088               6   t=85 idx=2 3->9 (Δ=+6)
+  substrates                   60/100              98               4   t=6 idx=1 25->29 (Δ=+4)
+
+=== HostInteraction ===
+observable                  nz_ticks  total_|delta|       max_|delta|   sample_diff
+  boundEnzymes                  0/100               0               0   none
+  enzymes                       0/100               0               0   none
+  substrates                    0/100               0               0   none
+
+=== MacromolecularComplexation ===
+observable                  nz_ticks  total_|delta|       max_|delta|   sample_diff
+  boundEnzymes                  0/100               0               0   none
+  complexs                     19/100              21               1   t=8 idx=44 0->1 (Δ=+1)
+  enzymes                       0/100               0               0   none
+  substrates                   19/100              75               6   t=43 idx=169 6->0 (Δ=-6)
+
+=== Metabolism ===
+observable                  nz_ticks  total_|delta|       max_|delta|   sample_diff
+  boundEnzymes                  0/100               0               0   none
+  enzymes                       0/100               0               0   none
+  substrates                  100/100        10018144           13210   t=68 idx=881 1314022541->1314009331 (Δ=-13210)
+
+=== ProteinActivation ===
+observable                  nz_ticks  total_|delta|       max_|delta|   sample_diff
+  boundEnzymes                  0/100               0               0   none
+  enzymes                       0/100               0               0   none
+  substrates                    3/100               3               1   t=28 idx=2 1->0 (Δ=-1)
+
+=== ProteinDecay ===
+observable                  nz_ticks  total_|delta|       max_|delta|   sample_diff
+  boundEnzymes                  0/100               0               0   none
+  complexs                      2/100               2               1   t=10 idx=291 7->6 (Δ=-1)
+  enzymes                       0/100               0               0   none
+  monomers                     25/100              31               6   t=10 idx=4567 0->6 (Δ=+6)
+  substrates                   41/100           84633            7051   t=63 idx=19 235018028->235010977 (Δ=-7051)
+
+=== ProteinFolding ===
+observable                  nz_ticks  total_|delta|       max_|delta|   sample_diff
+  boundEnzymes                  0/100               0               0   none
+  enzymes                       0/100               0               0   none
+  foldedMonomers               61/100             208               2   t=18 idx=171 0->2 (Δ=+2)
+  substrates                   21/100              42               3   t=31 idx=10 7469->7466 (Δ=-3)
+  unfoldedMonomers             61/100             208               2   t=18 idx=171 2->0 (Δ=-2)
+
+=== ProteinModification ===
+observable                  nz_ticks  total_|delta|       max_|delta|   sample_diff
+  boundEnzymes                  0/100               0               0   none
+  enzymes                       0/100               0               0   none
+  modifiedMonomers             55/100             203               2   t=19 idx=171 121->123 (Δ=+2)
+  substrates                   19/100             117               5   t=73 idx=0 0->5 (Δ=+5)
+  unmodifiedMonomers           55/100             203               2   t=19 idx=171 2->0 (Δ=-2)
+
+=== ProteinProcessingII ===
+observable                  nz_ticks  total_|delta|       max_|delta|   sample_diff
+  boundEnzymes                  0/100               0               0   none
+  enzymes                       0/100               0               0   none
+  processedMonomers            67/100             208               2   t=50 idx=282 0->2 (Δ=+2)
+  substrates                    4/100               4               1   t=3 idx=0 140259->140258 (Δ=-1)
+  unprocessedMonomers          67/100             208               2   t=50 idx=282 2->0 (Δ=-2)
+
+=== ProteinProcessingI ===
+observable                  nz_ticks  total_|delta|       max_|delta|   sample_diff
+  boundEnzymes                  0/100               0               0   none
+  enzymes                       0/100               0               0   none
+  processedMonomers            69/100             213               2   t=48 idx=282 0->2 (Δ=+2)
+  substrates                   69/100             697              10   t=30 idx=0 694638->694628 (Δ=-10)
+  unprocessedMonomers          69/100             213               2   t=48 idx=282 2->0 (Δ=-2)
+
+=== ProteinTranslocation ===
+observable                  nz_ticks  total_|delta|       max_|delta|   sample_diff
+  boundEnzymes                  0/100               0               0   none
+  enzymes                       0/100               0               0   none
+  monomers                     15/100              40               2   t=49 idx=282 2->0 (Δ=-2)
+  substrates                   15/100            1190              40   t=35 idx=4 0->40 (Δ=+40)
+
+=== RNADecay ===
+observable                  nz_ticks  total_|delta|       max_|delta|   sample_diff
+  boundEnzymes                  0/100               0               0   none
+  enzymes                       0/100               0               0   none
+  substrates                   65/100          239622            8135   t=62 idx=14 0->8135 (Δ=+8135)
+
+=== RNAModification ===
+observable                  nz_ticks  total_|delta|       max_|delta|   sample_diff
+  boundEnzymes                  0/100               0               0   none
+  enzymes                       0/100               0               0   none
+  modifiedRNAs                 58/100             116               1   t=6 idx=140 0->1 (Δ=+1)
+  substrates                   46/100             745               6   t=95 idx=12 0->6 (Δ=+6)
+  unmodifiedRNAs               58/100             116               1   t=6 idx=140 1->0 (Δ=-1)
+
+=== RNAProcessing ===
+observable                  nz_ticks  total_|delta|       max_|delta|   sample_diff
+  boundEnzymes                  0/100               0               0   none
+  enzymes                       0/100               0               0   none
+  processedRNAs                30/100             126               3   t=92 idx=225 0->3 (Δ=+3)
+  substrates                   10/100             123              12   t=5 idx=5 1679939->1679927 (Δ=-12)
+  unprocessedRNAs              30/100              98               3   t=92 idx=219 3->0 (Δ=-3)
+
+=== ReplicationInitiation ===
+observable                  nz_ticks  total_|delta|       max_|delta|   sample_diff
+  boundEnzymes                 61/100             112              14   t=13 idx=0 0->14 (Δ=+14)
+  enzymes                      61/100              90               2   t=0 idx=1 2->0 (Δ=-2)
+  substrates                    3/100              84              14   t=13 idx=2 0->14 (Δ=+14)
+
+=== Replication ===
+observable                  nz_ticks  total_|delta|       max_|delta|   sample_diff
+  boundEnzymes                 78/100             157               6   t=27 idx=12 17->23 (Δ=+6)
+  enzymes                      89/100             360              12   t=27 idx=11 31->19 (Δ=-12)
+  substrates                   97/100          114203             400   t=37 idx=8 0->400 (Δ=+400)
+
+=== RibosomeAssembly ===
+observable                  nz_ticks  total_|delta|       max_|delta|   sample_diff
+  boundEnzymes                  0/100               0               0   none
+  complexs                      1/100               1               1   t=96 idx=0 0->1 (Δ=+1)
+  enzymes                       0/100               0               0   none
+  monomers                      1/100              20               1   t=96 idx=1 128->127 (Δ=-1)
+  substrates                    1/100              10               2   t=96 idx=0 155->153 (Δ=-2)
+
+=== TerminalOrganelleAssembly ===
+observable                  nz_ticks  total_|delta|       max_|delta|   sample_diff
+  boundEnzymes                  0/100               0               0   none
+  enzymes                       0/100               0               0   none
+  substrates                    3/100               6               1   t=6 idx=4 26->27 (Δ=+1)
+
+=== Transcription ===
+observable                  nz_ticks  total_|delta|       max_|delta|   sample_diff
+  boundEnzymes                 81/100             177               6   t=26 idx=4 33->39 (Δ=+6)
+  enzymes                      81/100             169               7   t=26 idx=4 7->0 (Δ=-7)
+  substrates                  100/100          163932            1800   t=3 idx=9 0->1800 (Δ=+1800)
+
+=== TranscriptionalRegulation ===
+observable                  nz_ticks  total_|delta|       max_|delta|   sample_diff
+  boundEnzymes                  2/100               3               1   t=15 idx=3 0->1 (Δ=+1)
+  enzymes                       2/100               3               1   t=15 idx=3 1->0 (Δ=-1)
+  substrates                    0/100               0               0   none
+
+=== Translation ===
+observable                  nz_ticks  total_|delta|       max_|delta|   sample_diff
+  boundEnzymes                 97/100            1110              12   t=0 idx=3 68->56 (Δ=-12)
+  enzymes                      97/100            1350              23   t=0 idx=9 25->2 (Δ=-23)
+  monomers                     88/100             215               2   t=98 idx=170 0->2 (Δ=+2)
+  substrates                  100/100          805306            2778   t=94 idx=25 0->2778 (Δ=+2778)
+
+=== tRNAAminoacylation ===
+observable                  nz_ticks  total_|delta|       max_|delta|   sample_diff
+  aminoacylatedRNAs           100/100           72866              74   t=52 idx=1 35->109 (Δ=+74)
+  boundEnzymes                  0/100               0               0   none
+  enzymes                       0/100               0               0   none
+  freeRNAs                    100/100           72866              74   t=52 idx=1 74->0 (Δ=-74)
+  substrates                  100/100          308415             973   t=95 idx=6 21870->20897 (Δ=-973)
