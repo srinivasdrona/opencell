@@ -30,6 +30,7 @@ def test_karr_protein_processing_i_strict_zero_no_global_fallback() -> None:
             "processed_counts": {wid: 0.0 for wid in process.processed_monomer_wids},
             "counts": {wid: 100.0 for wid in process.enzyme_wids},
         },
+        "complex": {"counts": {wid: 0.0 for wid in process.complex_enzyme_wids}},
         "requests": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
         "substrates_allocated": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
     }

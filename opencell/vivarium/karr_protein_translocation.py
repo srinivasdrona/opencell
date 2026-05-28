@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -10,6 +11,10 @@ from scipy.io import loadmat
 from vivarium.core.process import Process
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/ProteinTranslocation_flat.mat"
+_MACROMOLECULAR_COMPLEXATION_FIXTURE_PATH = (
+    "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
+)
+_RIBOSOME_ASSEMBLY_FIXTURE_PATH = "data/karr_fixtures/per_process/RibosomeAssembly_flat.mat"
 _CYTOPLASM = "cytoplasm"
 _MEMBRANE = "membrane"
 _EXTRACELLULAR = "extracellular"
@@ -60,6 +65,27 @@ def _as_scalar_int(value: np.ndarray) -> int:
     return int(_as_vector(value)[0])
 
 
+def _fixture_wids(value: np.ndarray) -> list[str]:
+    return np.asarray(value, dtype=object).ravel().astype(str).tolist()
+
+
+@lru_cache(maxsize=1)
+def _canonical_complex_wids() -> set[str]:
+    d2_fixture = loadmat(
+        str(_resolve_fixture_path(_MACROMOLECULAR_COMPLEXATION_FIXTURE_PATH)),
+        squeeze_me=True,
+        struct_as_record=False,
+    )["data"].fixture
+    ribasm_fixture = loadmat(
+        str(_resolve_fixture_path(_RIBOSOME_ASSEMBLY_FIXTURE_PATH)),
+        squeeze_me=True,
+        struct_as_record=False,
+    )["data"].fixture
+    return set(_fixture_wids(d2_fixture.complexWholeCellModelIDs)) | set(
+        _fixture_wids(ribasm_fixture.complexWholeCellModelIDs)
+    ) | {"RNA_POLYMERASE", "RIBOSOME_70S"}
+
+
 def _read_nonnegative_count(state: dict[str, Any], wid: str) -> int:
     return int(max(0.0, np.floor(float(state.get(wid, 0.0)))))
 
@@ -87,6 +113,12 @@ class KarrProteinTranslocationProcess(Process):
         self.substrate_wids = _parse_wid_array(fx["substrateWholeCellModelIDs"])
         self.enzyme_wids = _parse_wid_array(fx["enzymeWholeCellModelIDs"])
         self.monomer_wids = _parse_wid_array(fx["monomerWholeCellModelIDs"])
+        canonical_complex_wids = _canonical_complex_wids()
+        self.complex_enzyme_wids = [wid for wid in self.enzyme_wids if wid in canonical_complex_wids]
+        self.monomer_enzyme_wids = [
+            wid for wid in self.enzyme_wids if wid not in canonical_complex_wids
+        ]
+        self._complex_enzyme_wid_set = set(self.complex_enzyme_wids)
 
         atp_substrate_idx = _as_scalar_int(fx["substrateIndexs_atp"]) - 1
         gtp_substrate_idx = _as_scalar_int(fx["substrateIndexs_gtp"]) - 1
@@ -102,6 +134,19 @@ class KarrProteinTranslocationProcess(Process):
         self.pi_wid = self.substrate_wids[pi_substrate_idx]
         self.h2o_wid = self.substrate_wids[h2o_substrate_idx]
         self.h_wid = self.substrate_wids[h_substrate_idx]
+        self.allocation_substrate_wids: tuple[str, ...] = tuple(
+            sorted(
+                {
+                    self.atp_wid,
+                    self.gtp_wid,
+                    self.adp_wid,
+                    self.gdp_wid,
+                    self.pi_wid,
+                    self.h2o_wid,
+                    self.h_wid,
+                }
+            )
+        )
         self.request_wids = (self.atp_wid, self.gtp_wid, self.h2o_wid)
         self.vector_wids = (
             self.atp_wid,
@@ -188,7 +233,10 @@ class KarrProteinTranslocationProcess(Process):
         )
         self.direct_path_wids = self.lipoprotein_wids + self.extracellular_wids
 
-        self.protein_count_wids = list(dict.fromkeys(self.enzyme_wids + self.translocatable_wids))
+        self.protein_count_wids = list(
+            dict.fromkeys(self.monomer_enzyme_wids + self.translocatable_wids)
+        )
+        self.complex_count_wids = list(dict.fromkeys(self.complex_enzyme_wids))
 
     def ports_schema(self) -> dict[str, Any]:
         return {
@@ -201,10 +249,20 @@ class KarrProteinTranslocationProcess(Process):
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                     for wid in self.protein_count_wids
                 },
+                "unprocessed_counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                    for wid in self.translocatable_wids
+                },
                 "location": {
                     wid: {"_default": _CYTOPLASM, "_updater": "set", "_emit": True}
                     for wid in self.translocatable_wids
                 },
+            },
+            "complex": {
+                "counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                    for wid in self.complex_count_wids
+                }
             },
             "requests": {
                 self.name: {
@@ -219,8 +277,8 @@ class KarrProteinTranslocationProcess(Process):
             },
         }
 
-    def _available_substrate(self, states: dict[str, Any], wid: str) -> int:
-        allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
+    def _available_substrate(self, allocated_state: dict[str, Any], wid: str) -> int:
+        # Strict-zero allocator contract: only allocated budget is readable here.
         allocated = float(allocated_state.get(wid, 0.0))
         return int(max(0.0, np.floor(allocated)))
 
@@ -232,36 +290,61 @@ class KarrProteinTranslocationProcess(Process):
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         del timestep
-        protein_counts_state = states.get("protein", {}).get("counts", {})
-        location_state = states.get("protein", {}).get("location", {})
+        protein_state = states.get("protein", {})
+        protein_counts_state = protein_state.get("counts", {})
+        queue_counts_state = protein_state.get("unprocessed_counts", protein_counts_state)
+        enzyme_counts_state = protein_state.get("enzyme_counts", {})
+        location_state = protein_state.get("location", {})
+        complex_counts_state = states.get("complex", {}).get("counts", {})
+        allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
+
+        missing_complex_wids = [wid for wid in self.complex_count_wids if wid not in complex_counts_state]
+        if missing_complex_wids:
+            missing_joined = ", ".join(sorted(missing_complex_wids))
+            raise KeyError(
+                "karr_protein_translocation missing required complex.counts keys: "
+                f"{missing_joined}"
+            )
 
         cytoplasmic_counts = {
-            wid: _read_nonnegative_count(protein_counts_state, wid)
+            wid: max(0.0, float(queue_counts_state.get(wid, 0.0)))
             for wid in self.translocatable_wids
             if str(location_state.get(wid, _CYTOPLASM)) == _CYTOPLASM
-            and _read_nonnegative_count(protein_counts_state, wid) > 0
+            and max(0.0, float(queue_counts_state.get(wid, 0.0))) > 0.0
         }
+        if not cytoplasmic_counts:
+            # v6 integration fallback: track pending queue from unprocessed proteins
+            # even after species-level location labels have been updated.
+            cytoplasmic_counts = {
+                wid: max(0.0, float(queue_counts_state.get(wid, 0.0)))
+                for wid in self.translocatable_wids
+                if max(0.0, float(queue_counts_state.get(wid, 0.0))) > 0.0
+            }
         if not cytoplasmic_counts:
             return {}
 
-        atp_remaining = self._available_substrate(states, self.atp_wid)
-        gtp_remaining = self._available_substrate(states, self.gtp_wid)
-        h2o_remaining = self._available_substrate(states, self.h2o_wid)
+        atp_remaining = self._available_substrate(allocated_state, self.atp_wid)
+        gtp_remaining = self._available_substrate(allocated_state, self.gtp_wid)
+        h2o_remaining = self._available_substrate(allocated_state, self.h2o_wid)
         if atp_remaining <= 0 or h2o_remaining <= 0:
             return {}
 
-        srp_remaining = _read_nonnegative_count(protein_counts_state, self.srp_wid)
-        srp_receptor_remaining = _read_nonnegative_count(
-            protein_counts_state, self.srp_receptor_wid
-        )
-        atpase_remaining = _read_nonnegative_count(
-            protein_counts_state, self.translocase_atpase_wid
-        )
-        pore_remaining = _read_nonnegative_count(protein_counts_state, self.translocase_pore_wid)
+        def _enzyme_remaining(wid: str) -> int:
+            if wid in self._complex_enzyme_wid_set:
+                return _read_nonnegative_count(complex_counts_state, wid)
+            return max(
+                _read_nonnegative_count(protein_counts_state, wid),
+                _read_nonnegative_count(enzyme_counts_state, wid),
+            )
 
-        translocated_counts: dict[str, int] = {}
-        atp_spent = 0
-        gtp_spent = 0
+        srp_remaining = _enzyme_remaining(self.srp_wid)
+        srp_receptor_remaining = _enzyme_remaining(self.srp_receptor_wid)
+        atpase_remaining = _enzyme_remaining(self.translocase_atpase_wid)
+        pore_remaining = _enzyme_remaining(self.translocase_pore_wid)
+
+        translocated_counts: dict[str, float] = {}
+        atp_spent = 0.0
+        gtp_spent = 0.0
 
         def attempt_phase(candidates: list[str], needs_srp: bool) -> None:
             nonlocal atp_remaining
@@ -275,31 +358,44 @@ class KarrProteinTranslocationProcess(Process):
             nonlocal gtp_spent
 
             for wid in self._ordered_wids(candidates):
-                count = int(cytoplasmic_counts.get(wid, 0))
-                if count <= 0:
+                count = float(cytoplasmic_counts.get(wid, 0.0))
+                if count <= 0.0:
                     continue
 
-                atp_need = count * int(self.atp_cost_by_wid[wid])
-                gtp_need = count * int(self.srp_gtp_cost_per_monomer) if needs_srp else 0
-                hydrolysis_need = atp_need + gtp_need
-                if atp_need > atp_remaining or gtp_need > gtp_remaining or hydrolysis_need > h2o_remaining:
-                    continue
-                if atpase_remaining < count or pore_remaining < count:
-                    continue
-                if needs_srp and (srp_remaining < count or srp_receptor_remaining < count):
+                atp_per_monomer = int(self.atp_cost_by_wid[wid])
+                gtp_per_monomer = int(self.srp_gtp_cost_per_monomer) if needs_srp else 0
+                hydrolysis_per_monomer = atp_per_monomer + gtp_per_monomer
+                if hydrolysis_per_monomer <= 0:
                     continue
 
-                translocated_counts[wid] = count
+                max_from_substrates = float(
+                    min(
+                        atp_remaining / atp_per_monomer if atp_per_monomer > 0 else count,
+                        gtp_remaining / gtp_per_monomer if gtp_per_monomer > 0 else count,
+                        h2o_remaining / hydrolysis_per_monomer,
+                    )
+                )
+                max_from_enzymes = float(min(atpase_remaining, pore_remaining))
+                if needs_srp:
+                    max_from_enzymes = float(min(max_from_enzymes, srp_remaining, srp_receptor_remaining))
+                translocate_count = float(min(count, max_from_substrates, max_from_enzymes))
+                if translocate_count <= 0.0:
+                    continue
+
+                atp_need = translocate_count * atp_per_monomer
+                gtp_need = translocate_count * gtp_per_monomer
+                hydrolysis_need = translocate_count * hydrolysis_per_monomer
+                translocated_counts[wid] = translocated_counts.get(wid, 0.0) + translocate_count
                 atp_remaining -= atp_need
                 gtp_remaining -= gtp_need
                 h2o_remaining -= hydrolysis_need
-                atpase_remaining -= count
-                pore_remaining -= count
+                atpase_remaining -= translocate_count
+                pore_remaining -= translocate_count
                 atp_spent += atp_need
                 gtp_spent += gtp_need
                 if needs_srp:
-                    srp_remaining -= count
-                    srp_receptor_remaining -= count
+                    srp_remaining -= translocate_count
+                    srp_receptor_remaining -= translocate_count
 
         # Phase 1: SRP-mediated pathway for integral membrane proteins.
         attempt_phase(
@@ -317,9 +413,16 @@ class KarrProteinTranslocationProcess(Process):
             return {}
 
         hydrolysis_spent = atp_spent + gtp_spent
-        location_update = {wid: self.destination_by_wid[wid] for wid in translocated_counts}
 
-        update: dict[str, Any] = {"protein": {"location": location_update}}
+        location_update = {wid: self.destination_by_wid[wid] for wid in translocated_counts}
+        unprocessed_update = {wid: -float(cnt) for wid, cnt in translocated_counts.items()}
+
+        update: dict[str, Any] = {
+            "protein": {
+                "location": location_update,
+                "unprocessed_counts": unprocessed_update,
+            }
+        }
         if atp_spent > 0:
             substrate_update: dict[str, float] = {
                 self.atp_wid: -float(atp_spent),

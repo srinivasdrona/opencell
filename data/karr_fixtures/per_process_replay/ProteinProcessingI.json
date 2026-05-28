@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "n_ticks": 100,
+    "process_name": "ProteinProcessingI",
+    "rng_seed": 0,
+    "snapshot_properties": [
+      "boundEnzymes",
+      "enzymes",
+      "processedMonomers",
+      "substrates",
+      "unprocessedMonomers"
+    ],
+    "source_mat": "data/m1_sources/karr_native/per_process_traces/ProteinProcessingI_100ticks.mat",
+    "schema_version": 1
+  }
+}

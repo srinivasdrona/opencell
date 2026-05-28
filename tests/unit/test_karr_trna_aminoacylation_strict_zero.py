@@ -29,10 +29,15 @@ def test_karr_trna_aminoacylation_strict_zero_no_global_fallback() -> None:
     substrate_values = {wid: 10_000.0 for wid in process.substrate_wids}
     guarded_substrates = _GuardedSubstrates(substrate_values, process.substrate_wids)
 
-    enzyme_counts = {wid: 0.0 for wid in process.enzyme_wids}
+    monomer_enzyme_counts = {wid: 0.0 for wid in process.monomer_enzyme_wids}
+    complex_enzyme_counts = {wid: 0.0 for wid in process.complex_enzyme_wids}
     for enzyme_idx, coeff in enumerate(process.reaction_catalysis[reaction_idx]):
         if coeff > 0:
-            enzyme_counts[process.enzyme_wids[enzyme_idx]] = 100.0
+            enzyme_wid = process.enzyme_wids[enzyme_idx]
+            if enzyme_wid in process.complex_enzyme_wids:
+                complex_enzyme_counts[enzyme_wid] = 100.0
+            else:
+                monomer_enzyme_counts[enzyme_wid] = 100.0
 
     state = {
         "substrates": guarded_substrates,
@@ -40,7 +45,8 @@ def test_karr_trna_aminoacylation_strict_zero_no_global_fallback() -> None:
             "counts": {wid: 0.0 for wid in process.free_rna_wids},
             "aminoacylated_counts": {wid: 0.0 for wid in process.aminoacylated_rna_wids},
         },
-        "protein": {"counts": enzyme_counts},
+        "protein": {"counts": monomer_enzyme_counts},
+        "complex": {"counts": complex_enzyme_counts},
         "requests": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
         "substrates_allocated": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
     }
@@ -51,3 +57,42 @@ def test_karr_trna_aminoacylation_strict_zero_no_global_fallback() -> None:
     substrate_delta = update.get("substrates", {})
     for wid in process.substrate_wids:
         assert abs(float(substrate_delta.get(wid, 0.0))) <= 1.0e-12
+
+
+def test_karr_trna_aminoacylation_accepts_legacy_rna_replay_keys() -> None:
+    process = KarrTRNAAminoacylationProcess({"rng_seed": 1, "max_stochastic_iterations": 0})
+    target_idx = 0
+
+    legacy_free = np.zeros(len(process.free_rna_wids), dtype=np.float64)
+    legacy_free[target_idx] = 4.0
+    legacy_amino = np.zeros(len(process.aminoacylated_rna_wids), dtype=np.float64)
+    seen: dict[str, np.ndarray] = {}
+
+    def _fake_compute_reaction_fluxes(
+        *,
+        free_rna: np.ndarray,
+        substrates: np.ndarray,
+        enzymes: np.ndarray,
+        dt: float,
+    ) -> np.ndarray:
+        _ = substrates, enzymes, dt
+        seen["free_rna"] = np.asarray(free_rna, dtype=np.float64)
+        return np.zeros(process.reaction_stoich.shape[1], dtype=np.int64)
+
+    process._compute_reaction_fluxes = _fake_compute_reaction_fluxes  # type: ignore[method-assign]
+
+    state = {
+        "substrates": {wid: 0.0 for wid in process.substrate_wids},
+        "freeRNAs": legacy_free,
+        "aminoacylatedRNAs": legacy_amino,
+        "protein": {"counts": {wid: 100.0 for wid in process.monomer_enzyme_wids}},
+        "complex": {"counts": {wid: 100.0 for wid in process.complex_enzyme_wids}},
+        "requests": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
+        "substrates_allocated": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
+    }
+
+    update = process.next_update(1.0, state)
+
+    assert update == {}
+    assert "free_rna" in seen
+    assert float(seen["free_rna"][target_idx]) == 4.0

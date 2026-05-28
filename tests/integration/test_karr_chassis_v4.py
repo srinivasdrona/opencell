@@ -160,9 +160,11 @@ def _seed_rna_pathway_inputs(engine: Any) -> None:
         engine.state.set_path(("rna", "counts", wid), 500.0)
 
     for wid in (
-        set(rna_proc.enzyme_wids) | set(rna_mod.enzyme_wids) | set(ribasm.protein_state_wids)
+        set(rna_proc.enzyme_wids) | set(rna_mod.monomer_enzyme_wids) | set(ribasm.protein_state_wids)
     ):
         engine.state.set_path(("protein", "counts", wid), 2_000.0)
+    for wid in rna_mod.complex_enzyme_wids:
+        engine.state.set_path(("complex", "counts", wid), 2_000.0)
     for wid in ribasm.monomer_subunit_wids:
         engine.state.set_path(("protein", "counts", wid), 2_000.0)
 
@@ -227,10 +229,32 @@ def test_chassis_v4_builds(
         "request_calculator_trna",
         "request_calculator_rna_pathway",
         "request_calculator_protein_pathway",
+        "request_calculator_metabolism",
+        "request_calculator_transcription",
+        "request_calculator_translation",
         "karr_allocation_step",
     }
     assert expected_processes.issubset(set(engine.processes))
     assert expected_steps.issubset(set(engine.steps))
+
+    consumers = dict(engine.steps["karr_allocation_step"].parameters["consumer_processes"])
+    m1_proc = engine.processes["karr_metabolism"]
+    m2_proc = engine.processes["karr_transcription_v3"]
+    m3_proc = engine.processes["karr_translation_v3"]
+    if m1_proc.allocation_substrate_wids:
+        assert consumers[m1_proc.name] == list(m1_proc.allocation_substrate_wids)
+    else:
+        assert m1_proc.name not in consumers
+    assert consumers[m2_proc.name] == list(m2_proc.allocation_substrate_wids)
+    assert consumers[m3_proc.name] == list(m3_proc.allocation_substrate_wids)
+    assert bool(m1_proc.parameters["use_allocator_budget"])
+    assert bool(m2_proc.parameters["use_allocator_budget"])
+    assert bool(m3_proc.parameters["use_allocator_budget"])
+
+    deps = set(engine.flow["karr_allocation_step"])
+    assert ("request_calculator_metabolism",) in deps
+    assert ("request_calculator_transcription",) in deps
+    assert ("request_calculator_translation",) in deps
 
 
 def test_chassis_v4_10_ticks_smoke(

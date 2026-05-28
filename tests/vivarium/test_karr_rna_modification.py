@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 from scipy.io import loadmat
+from vivarium.core.engine import Engine
 
 # Ensure pytest imports from this worktree even if another editable install exists.
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -19,9 +20,38 @@ if "opencell" in sys.modules:
             if mod_name == "opencell" or mod_name.startswith("opencell."):
                 del sys.modules[mod_name]
 
+from opencell.vivarium.karr_composite import build_karr_chassis_v6
 from opencell.vivarium.karr_rna_modification import KarrRNAModificationProcess
 
 _FIXTURE_PATH = "data/karr_fixtures/per_process/RNAModification_flat.mat"
+
+
+def _set_enzyme_count(
+    state: dict[str, Any],
+    process: KarrRNAModificationProcess,
+    wid: str,
+    value: float,
+) -> None:
+    if wid in process.complex_enzyme_wids:
+        state["complex"]["counts"][wid] = float(value)
+        return
+    state["protein"]["counts"][wid] = float(value)
+
+
+def _enzyme_vector_from_state(
+    state: dict[str, Any], process: KarrRNAModificationProcess
+) -> np.ndarray:
+    protein_counts = state.get("protein", {}).get("counts", {})
+    complex_counts = state.get("complex", {}).get("counts", {})
+    return np.asarray(
+        [
+            float(complex_counts[wid])
+            if wid in process.complex_enzyme_wids
+            else float(protein_counts[wid])
+            for wid in process.enzyme_wids
+        ],
+        dtype=np.float64,
+    )
 
 
 def _load_snapshot_state(process: KarrRNAModificationProcess) -> dict[str, Any]:
@@ -49,6 +79,14 @@ def _load_snapshot_state(process: KarrRNAModificationProcess) -> dict[str, Any]:
         modified = rng.integers(0, 20, size=len(process.modified_rna_wids)).astype(float)
         enzymes = rng.integers(1, 100, size=len(process.enzyme_wids)).astype(float)
 
+    protein_counts: dict[str, float] = {}
+    complex_counts: dict[str, float] = {}
+    for idx, wid in enumerate(process.enzyme_wids):
+        if wid in process.complex_enzyme_wids:
+            complex_counts[wid] = float(enzymes[idx])
+        else:
+            protein_counts[wid] = float(enzymes[idx])
+
     return {
         "substrates": {
             wid: float(substrates[idx]) for idx, wid in enumerate(process.substrate_wids)
@@ -61,9 +99,8 @@ def _load_snapshot_state(process: KarrRNAModificationProcess) -> dict[str, Any]:
                 wid: float(modified[idx]) for idx, wid in enumerate(process.modified_rna_wids)
             },
         },
-        "protein": {
-            "counts": {wid: float(enzymes[idx]) for idx, wid in enumerate(process.enzyme_wids)}
-        },
+        "protein": {"counts": protein_counts},
+        "complex": {"counts": complex_counts},
         "requests": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
         "substrates_allocated": {
             process.name: {
@@ -150,7 +187,7 @@ def test_mass_conservation() -> None:
         [state["rna"]["counts"][wid] for wid in p.unmodified_rna_wids], dtype=np.float64
     )
     substrates = np.array([state["substrates"][wid] for wid in p.substrate_wids], dtype=np.float64)
-    enzymes = np.array([state["protein"]["counts"][wid] for wid in p.enzyme_wids], dtype=np.float64)
+    enzymes = _enzyme_vector_from_state(state, p)
     flux = p._compute_reaction_fluxes(
         unmodified_rna=unmodified,
         substrates=substrates,
@@ -195,7 +232,7 @@ def test_full_modification_transitions_state() -> None:
         state["substrates"][wid] = 1_000_000.0
         state["substrates_allocated"][p.name][wid] = 1_000_000.0
     for wid in p.enzyme_wids:
-        state["protein"]["counts"][wid] = 1_000_000.0
+        _set_enzyme_count(state, p, wid, 1_000_000.0)
 
     for _ in range(20):
         update = p.next_update(1.0, state)
@@ -218,7 +255,7 @@ def test_partial_modification_no_transition() -> None:
         state["substrates"][wid] = 0.0
         state["substrates_allocated"][p.name][wid] = 0.0
     for wid in p.enzyme_wids:
-        state["protein"]["counts"][wid] = 0.0
+        _set_enzyme_count(state, p, wid, 0.0)
 
     reaction_ids = np.flatnonzero(p.reaction_modification[:, target_idx] > 0)
     kept_reaction = int(reaction_ids[0])
@@ -231,7 +268,7 @@ def test_partial_modification_no_transition() -> None:
 
     for eidx, flag in enumerate(p.reaction_catalysis[kept_reaction]):
         if flag > 0:
-            state["protein"]["counts"][p.enzyme_wids[eidx]] = 1_000_000.0
+            _set_enzyme_count(state, p, p.enzyme_wids[eidx], 1_000_000.0)
 
     update = p.next_update(1.0, state)
     assert update.get("rna", {}).get("counts", {}).get(target_wid, 0.0) == 0.0
@@ -250,3 +287,63 @@ def test_deterministic_with_seed() -> None:
     update_2 = p2.next_update(1.0, state_2)
     assert update_1 == update_2
     np.testing.assert_array_equal(p1._n_completed, p2._n_completed)
+
+
+def test_chassis_v6_wires_complex_port_for_rna_modification() -> None:
+    composite = build_karr_chassis_v6(time_step_s=1.0, emit_step_s=1.0)
+    assert composite["topology"]["karr_rna_modification"]["complex"] == ("complex",)
+
+
+def test_complex_enzyme_is_read_from_complex_store() -> None:
+    p = KarrRNAModificationProcess({"rng_seed": 0})
+    assert p.complex_enzyme_wids
+
+    complex_enzyme_wid = p.complex_enzyme_wids[0]
+    complex_enzyme_idx = p.enzyme_wids.index(complex_enzyme_wid)
+    reaction_candidates = np.flatnonzero(p.reaction_catalysis[:, complex_enzyme_idx] > 0)
+    assert reaction_candidates.size > 0
+    reaction_idx = int(reaction_candidates[0])
+    target_idx = int(np.argmax(p.reaction_modification[reaction_idx]))
+    target_wid = p.unmodified_rna_wids[target_idx]
+
+    base_state = _single_target_state(p, target_idx)
+    for wid in p.substrate_wids:
+        base_state["substrates"][wid] = 0.0
+        base_state["substrates_allocated"][p.name][wid] = 0.0
+    for wid in p.enzyme_wids:
+        _set_enzyme_count(base_state, p, wid, 0.0)
+    base_state["rna"]["counts"][target_wid] = 1.0
+    base_state["rna"]["modified_counts"][target_wid] = 0.0
+
+    for sidx, coeff in enumerate(p.reaction_stoich[:, reaction_idx]):
+        if coeff < 0:
+            substrate_wid = p.substrate_wids[sidx]
+            base_state["substrates"][substrate_wid] = float(-coeff)
+            base_state["substrates_allocated"][p.name][substrate_wid] = float(-coeff)
+
+    for eidx, flag in enumerate(p.reaction_catalysis[reaction_idx]):
+        if flag > 0:
+            _set_enzyme_count(base_state, p, p.enzyme_wids[eidx], 1_000_000.0)
+
+    blocked_state = deepcopy(base_state)
+    _set_enzyme_count(blocked_state, p, complex_enzyme_wid, 0.0)
+
+    update_active = p.next_update(1.0, base_state)
+    update_blocked = p.next_update(1.0, blocked_state)
+
+    assert update_active != {}
+    assert update_blocked == {}
+
+
+def test_chassis_v6_has_rna_modification_complex_keys() -> None:
+    p = KarrRNAModificationProcess({})
+    engine = Engine(
+        composite=build_karr_chassis_v6(time_step_s=1.0, emit_step_s=1.0),
+        emit_step=1.0,
+        display_info=False,
+    )
+    state = engine.state.get_value()
+    complex_counts = state.get("complex", {}).get("counts", {})
+
+    for wid in p.complex_enzyme_wids:
+        assert wid in complex_counts

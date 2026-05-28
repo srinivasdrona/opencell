@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -10,7 +11,10 @@ from scipy.io import loadmat
 from vivarium.core.process import Process
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/ProteinModification_flat.mat"
+_FIXTURE_DIR = Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "per_process"
+_MACROMOLECULAR_COMPLEXATION_FIXTURE_PATH = _FIXTURE_DIR / "MacromolecularComplexation_flat.mat"
 _MAX_STOCHASTIC_ITERATIONS = 100_000
+_SPECIAL_COMPLEX_WIDS = frozenset({"RNA_POLYMERASE", "RIBOSOME_70S"})
 
 
 def _resolve_fixture_path(path: str | Path) -> Path:
@@ -42,6 +46,15 @@ def _parse_wid_array(cell_array: np.ndarray) -> list[str]:
             value = value.flat[0]
         out.append(str(value))
     return out
+
+
+@lru_cache(maxsize=1)
+def _canonical_complex_wids() -> frozenset[str]:
+    """Canonical complex WIDs used to classify enzyme read paths."""
+    fixture = loadmat(str(_MACROMOLECULAR_COMPLEXATION_FIXTURE_PATH))
+    fx = fixture["data"]["fixture"][0, 0]
+    d2_complex_wids = _parse_wid_array(fx["complexWholeCellModelIDs"])
+    return frozenset(d2_complex_wids).union(_SPECIAL_COMPLEX_WIDS)
 
 
 class KarrProteinModificationProcess(Process):
@@ -79,6 +92,10 @@ class KarrProteinModificationProcess(Process):
 
         self.substrate_wids = _parse_wid_array(fx["substrateWholeCellModelIDs"])
         self.enzyme_wids = _parse_wid_array(fx["enzymeWholeCellModelIDs"])
+        canonical_complex_wids = _canonical_complex_wids()
+        self.complex_enzyme_wids = [wid for wid in self.enzyme_wids if wid in canonical_complex_wids]
+        self.monomer_enzyme_wids = [wid for wid in self.enzyme_wids if wid not in canonical_complex_wids]
+        self._complex_enzyme_wid_set = set(self.complex_enzyme_wids)
         all_unmodified_wids = _parse_wid_array(fx["unmodifiedMonomerWholeCellModelIDs"])
         all_modified_wids = _parse_wid_array(fx["modifiedMonomerWholeCellModelIDs"])
 
@@ -116,7 +133,7 @@ class KarrProteinModificationProcess(Process):
             "protein": {
                 "counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
-                    for wid in self.enzyme_wids
+                    for wid in self.monomer_enzyme_wids
                 },
                 "unmodified_counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
@@ -126,6 +143,12 @@ class KarrProteinModificationProcess(Process):
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
                     for wid in self.modified_monomer_wids
                 },
+            },
+            "complex": {
+                "counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                    for wid in self.complex_enzyme_wids
+                }
             },
             "requests": {
                 self.name: {
@@ -143,8 +166,15 @@ class KarrProteinModificationProcess(Process):
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         dt = float(timestep) if timestep > 0 else float(self.parameters["time_step"])
+        protein_state = states.get("protein", {})
+        if not isinstance(protein_state, dict):
+            protein_state = {}
+        complex_state = states.get("complex", {})
+        if not isinstance(complex_state, dict):
+            complex_state = {}
 
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
+        # Strict-zero allocator contract: do not fallback to global substrate pools.
         substrates = np.asarray(
             [
                 max(0.0, float(allocated_state.get(wid, 0.0)))
@@ -152,13 +182,34 @@ class KarrProteinModificationProcess(Process):
             ],
             dtype=np.float64,
         )
+        monomer_count_store = protein_state.get("counts", {})
+        if not isinstance(monomer_count_store, dict):
+            monomer_count_store = {}
+        complex_count_store = complex_state.get("counts", {})
+        if not isinstance(complex_count_store, dict):
+            complex_count_store = {}
         enzymes = np.asarray(
-            [float(states["protein"]["counts"].get(wid, 0.0)) for wid in self.enzyme_wids],
+            [
+                self._read_required_enzyme_count(
+                    wid=wid,
+                    monomer_counts=monomer_count_store,
+                    complex_counts=complex_count_store,
+                )
+                for wid in self.enzyme_wids
+            ],
             dtype=np.float64,
         )
+        unmodified_store = protein_state.get("unmodified_counts", {})
+        if not isinstance(unmodified_store, dict):
+            unmodified_store = {}
+        if not unmodified_store:
+            unmodified_store = self._legacy_vector_to_wid_counts(
+                states.get("unmodifiedMonomers"),
+                self.unmodified_monomer_wids,
+            )
         unmodified = np.asarray(
             [
-                float(states["protein"]["unmodified_counts"].get(wid, 0.0))
+                float(unmodified_store.get(wid, 0.0))
                 for wid in self.unmodified_monomer_wids
             ],
             dtype=np.float64,
@@ -212,6 +263,23 @@ class KarrProteinModificationProcess(Process):
             }
 
         return update
+
+    def _read_required_enzyme_count(
+        self,
+        *,
+        wid: str,
+        monomer_counts: dict[str, Any],
+        complex_counts: dict[str, Any],
+    ) -> float:
+        if wid in self._complex_enzyme_wid_set:
+            if wid not in complex_counts:
+                raise KeyError(
+                    f"{self.name}: missing required complex enzyme '{wid}' in complex.counts"
+                )
+            return float(complex_counts[wid])
+        if wid not in monomer_counts:
+            raise KeyError(f"{self.name}: missing required monomer enzyme '{wid}' in protein.counts")
+        return float(monomer_counts[wid])
 
     def _sample_reaction_fluxes(
         self,
@@ -287,6 +355,21 @@ class KarrProteinModificationProcess(Process):
         catalytic_enzymes = np.clip(enz[:n_catalytic], a_min=0.0, a_max=None)
         per_rxn_enzyme_counts = self.reaction_catalysis @ catalytic_enzymes
         return per_rxn_enzyme_counts * self.enzyme_bounds[:, 1] * float(dt)
+
+    @staticmethod
+    def _legacy_vector_to_wid_counts(
+        values: Any,
+        wids: list[str],
+    ) -> dict[str, float]:
+        if values is None:
+            return {}
+        try:
+            flat = np.asarray(values, dtype=np.float64).reshape(-1)
+        except (TypeError, ValueError):
+            return {}
+        if flat.size != len(wids):
+            return {}
+        return {wid: float(flat[idx]) for idx, wid in enumerate(wids)}
 
 
 __all__ = ["KarrProteinModificationProcess"]

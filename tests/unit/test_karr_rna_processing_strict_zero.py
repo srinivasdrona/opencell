@@ -27,6 +27,7 @@ def test_karr_rna_processing_strict_zero_no_global_fallback() -> None:
         "substrates": guarded_substrates,
         "rna": {"counts": {wid: 0.0 for wid in process.rna_wids}},
         "protein": {"counts": {wid: 0.0 for wid in process.enzyme_wids}},
+        "complex": {"counts": {wid: 0.0 for wid in process.complex_enzyme_wids}},
         "requests": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
         "substrates_allocated": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
     }

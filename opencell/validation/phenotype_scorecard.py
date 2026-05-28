@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import argparse
+import csv
+import json
 import math
 import pickle
 import subprocess
@@ -34,6 +37,11 @@ _REQUIRED_STATE_KEYS = {
     "dntp_pool_total",
     "division_event_timestamp_s",
 }
+
+# Designed deferrals (see disposition_todo_id: E2-V1_1-KP25-KO-SWEEP / E2-V1_1-KP26-KO-CLASS).
+_DEFERRED_KPS = {"KP25", "KP26"}
+_EMITTER_GAP_KPS = {"KP15", "KP27", "KP28"}
+_ENERGY_BALANCE_SUBSTRATES = {"ATP", "GTP"}
 
 
 @dataclass(frozen=True)
@@ -88,6 +96,119 @@ def load_v6_trajectory_fixture(path: Path = V6_FIXTURE_PATH) -> dict[str, Any]:
     return payload
 
 
+def _load_karr_flux_oracle_map() -> dict[str, float]:
+    json_path = Path("data/karr_fixtures/karr_native_m1.json")
+    if not json_path.exists():
+        return {}
+    try:
+        fixture = json.loads(json_path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    ids = fixture.get("ids", {})
+    rxn_ids = ids.get("reaction_wcm_645") if isinstance(ids, dict) else None
+    matrix_npz = fixture.get("matrix_npz")
+    if not isinstance(rxn_ids, list) or not isinstance(matrix_npz, str):
+        return {}
+    npz_path = Path(matrix_npz)
+    if not npz_path.exists():
+        return {}
+    try:
+        fluxes = np.load(npz_path, allow_pickle=False)["fluxs_stored"]
+    except Exception:
+        return {}
+    if fluxes.shape[0] != len(rxn_ids):
+        return {}
+    out: dict[str, float] = {}
+    for rxn_id, flux in zip(rxn_ids, fluxes):
+        try:
+            out[str(rxn_id)] = float(flux)
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
+def _build_sidecar_metrics(trajectory_path: Path) -> dict[str, float]:
+    seed_dir = trajectory_path.parent
+    process_trace_path = seed_dir / "process_traces" / "karr_metabolism.csv"
+    conservation_path = seed_dir / "conservation.csv"
+    metrics: dict[str, float] = {}
+
+    process_stats: dict[str, tuple[float, int]] = {}
+    if process_trace_path.exists():
+        sums: dict[str, float] = {}
+        counts: dict[str, int] = {}
+        with process_trace_path.open("r", encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                substrate = str(row.get("substrate", "")).strip()
+                if not substrate:
+                    continue
+                try:
+                    delta = float(row.get("delta", "nan"))
+                except (TypeError, ValueError):
+                    continue
+                if not math.isfinite(delta):
+                    continue
+                sums[substrate] = sums.get(substrate, 0.0) + delta
+                counts[substrate] = counts.get(substrate, 0) + 1
+        process_stats = {k: (sums[k], counts[k]) for k in sums if counts.get(k, 0) > 0}
+
+    tx_glcpts = process_stats.get("TX_GLCPTS")
+    if tx_glcpts is not None:
+        mean_flux = tx_glcpts[0] / max(tx_glcpts[1], 1)
+        metrics["kp04_tx_glcpts_mean_abs_flux"] = float(abs(mean_flux))
+
+    oracle = _load_karr_flux_oracle_map()
+    if process_stats and oracle:
+        log2_errors: list[float] = []
+        for substrate, (total_delta, n) in process_stats.items():
+            if substrate not in oracle:
+                continue
+            predicted = total_delta / max(n, 1)
+            reference = oracle[substrate]
+            if (not math.isfinite(predicted)) or (not math.isfinite(reference)):
+                continue
+            if abs(predicted) <= 1e-12 or abs(reference) <= 1e-12:
+                continue
+            log2_errors.append(abs(math.log2(abs(predicted) / abs(reference))))
+        if log2_errors:
+            metrics["kp03_flux_oracle_median_abs_log2_ratio"] = float(np.median(log2_errors))
+
+    if conservation_path.exists():
+        abs_unattributed = 0.0
+        abs_process = 0.0
+        with conservation_path.open("r", encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                substrate = str(row.get("substrate", "")).strip().upper()
+                if substrate not in _ENERGY_BALANCE_SUBSTRATES:
+                    continue
+                try:
+                    process_delta = float(row.get("sum_process_deltas", "nan"))
+                    unattributed = float(row.get("unattributed_delta", "nan"))
+                except (TypeError, ValueError):
+                    continue
+                if math.isfinite(process_delta):
+                    abs_process += abs(process_delta)
+                if math.isfinite(unattributed):
+                    abs_unattributed += abs(unattributed)
+        if abs_process > 0.0:
+            metrics["kp21_energy_unattributed_ratio"] = float(abs_unattributed / abs_process)
+
+    return metrics
+
+
+def load_trajectory(path: Path) -> dict[str, Any]:
+    with path.open("rb") as f:
+        payload = pickle.load(f)
+    if not isinstance(payload, dict):
+        raise ValueError(f"Invalid trajectory payload at {path}: expected dict.")
+    metrics = _build_sidecar_metrics(path)
+    if metrics:
+        payload["_sidecar_metrics"] = metrics
+    return payload
+
+
 def _safe_rel_err(observed: float, expected: float) -> float:
     if math.isclose(expected, 0.0, abs_tol=1e-30):
         return abs(observed)
@@ -116,6 +237,31 @@ def _evaluate(defn: PhenotypeDef, observed: float | bool | None) -> ScorecardRow
     kp_id = defn.id
     if observed is None:
         todo_id = defn.disposition_todo_id or _fallback_todo_id(kp_id, "schema-mismatch")
+        if kp_id in _DEFERRED_KPS:
+            # Keep TODO linkage visible for deferred-by-design KPs (disposition_todo_id).
+            return ScorecardRow(
+                kp_id=kp_id,
+                label=defn.label,
+                bucket=defn.bucket,
+                opencell_value=None,
+                karr_value=defn.karr_value,
+                rel_err=None,
+                status="DEFERRED",
+                disposition="multi-run KO sweep required",
+                disposition_todo_id=todo_id,
+            )
+        if kp_id in _EMITTER_GAP_KPS:
+            return ScorecardRow(
+                kp_id=kp_id,
+                label=defn.label,
+                bucket=defn.bucket,
+                opencell_value=None,
+                karr_value=defn.karr_value,
+                rel_err=None,
+                status="NEEDS_EMITTER",
+                disposition="missing emitted trajectory field(s)",
+                disposition_todo_id=todo_id,
+            )
         return ScorecardRow(
             kp_id=kp_id,
             label=defn.label,
@@ -277,7 +423,10 @@ def _bucket_totals(rows: list[ScorecardRow]) -> dict[str, tuple[int, int]]:
 
 def make_stdout_summary(rows: list[ScorecardRow]) -> str:
     pass_count = sum(1 for r in rows if r.status == "PASS")
+    fail_count = sum(1 for r in rows if r.status == "FAIL")
     blocked = sum(1 for r in rows if r.status == "BLOCKED")
+    deferred = sum(1 for r in rows if r.status == "DEFERRED")
+    needs_emitter = sum(1 for r in rows if r.status == "NEEDS_EMITTER")
     totals = _bucket_totals(rows)
     oc = totals.get("opencell-tooling", (0, 0))
     val = totals.get("validation-and-organism-scaling", (0, 0))
@@ -289,7 +438,10 @@ def make_stdout_summary(rows: list[ScorecardRow]) -> str:
         f"VAL={val[0]}/{val[1]} "
         f"INC={inc[0]}/{inc[1]} "
         f"BEY={bey[0]}/{bey[1]} "
-        f"BLOCKED={blocked}"
+        f"FAIL={fail_count} "
+        f"BLOCKED={blocked} "
+        f"DEFERRED={deferred} "
+        f"NEEDS_EMITTER={needs_emitter}"
     )
 
 
@@ -308,7 +460,11 @@ def _git_sha() -> str:
 def render_scorecard_markdown(rows: list[ScorecardRow], *, wall_time_s: float | None = None) -> str:
     pass_count = sum(1 for r in rows if r.status == "PASS")
     blocked_rows = [r for r in rows if r.status == "BLOCKED"]
+    deferred_rows = [r for r in rows if r.status == "DEFERRED"]
+    needs_emitter_rows = [r for r in rows if r.status == "NEEDS_EMITTER"]
     blocked_text = ", ".join(r.kp_id for r in blocked_rows) if blocked_rows else "None"
+    deferred_text = ", ".join(r.kp_id for r in deferred_rows) if deferred_rows else "None"
+    needs_emitter_text = ", ".join(r.kp_id for r in needs_emitter_rows) if needs_emitter_rows else "None"
     totals = _bucket_totals(rows)
     sha = _git_sha()
     summary = make_stdout_summary(rows)
@@ -334,6 +490,8 @@ def render_scorecard_markdown(rows: list[ScorecardRow], *, wall_time_s: float | 
             f"{totals.get('biology-beyond-Karr', (0, 0))[1]}"
         ),
         f"**Blocked**: `{len(blocked_rows)}` ({blocked_text})",
+        f"**Deferred**: `{len(deferred_rows)}` ({deferred_text})",
+        f"**Needs emitter**: `{len(needs_emitter_rows)}` ({needs_emitter_text})",
         "",
         "## Pre-fix vs Post-fix",
         "",
@@ -348,7 +506,7 @@ def render_scorecard_markdown(rows: list[ScorecardRow], *, wall_time_s: float | 
     ]
     for row in rows:
         disposition = row.disposition
-        if row.status == "BLOCKED" and row.disposition_todo_id:
+        if row.status in {"BLOCKED", "DEFERRED", "NEEDS_EMITTER"} and row.disposition_todo_id:
             disposition = f"{disposition} ({row.disposition_todo_id})"
         lines.append(
             "| "
@@ -381,14 +539,61 @@ def run_from_fixture(
     return write_scorecard_report(trajectory, out_path=out_path)
 
 
+def run_from_trajectory(
+    trajectory_path: Path,
+    *,
+    out_path: Path = E2_SCORECARD_PATH,
+) -> tuple[list[ScorecardRow], str]:
+    trajectory = load_trajectory(trajectory_path)
+    return write_scorecard_report(trajectory, out_path=out_path)
+
+
+def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--trajectory",
+        type=Path,
+        help="Path to trajectory.pkl (sidecar CSVs are auto-discovered from sibling files).",
+    )
+    parser.add_argument(
+        "--fixture",
+        type=Path,
+        default=V6_FIXTURE_PATH,
+        help="Path to canonical v6 fixture when --trajectory is not provided.",
+    )
+    parser.add_argument(
+        "--out",
+        type=Path,
+        default=E2_SCORECARD_PATH,
+        help="Output markdown path.",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = _parse_args(argv)
+    if args.trajectory is not None:
+        run_from_trajectory(args.trajectory, out_path=args.out)
+    else:
+        run_from_fixture(fixture_path=args.fixture, out_path=args.out)
+    return 0
+
+
 __all__ = [
     "E2_SCORECARD_PATH",
     "ScorecardRow",
     "V6_FIXTURE_PATH",
+    "load_trajectory",
     "load_v6_trajectory_fixture",
     "make_stdout_summary",
+    "main",
     "render_scorecard_markdown",
     "run_from_fixture",
+    "run_from_trajectory",
     "score",
     "write_scorecard_report",
 ]
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -191,9 +191,17 @@ class ProteinDecayLightProcess(Process):
         return rates
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        complex_store = states.get("complex", {})
+        if isinstance(complex_store, dict):
+            raw_complex_counts = complex_store.get("counts", {})
+        else:
+            raw_complex_counts = {}
+        if not isinstance(raw_complex_counts, dict):
+            raw_complex_counts = {}
+
         complex_counts = np.asarray(
             [
-                max(0, int(float(states["complex"]["counts"].get(wid, 0.0))))
+                max(0, int(float(raw_complex_counts.get(wid, 0.0))))
                 for wid in self.complex_wids
             ],
             dtype=np.int64,
@@ -222,13 +230,23 @@ class ProteinDecayLightProcess(Process):
 
         consume_atp_h2o = bool(self.parameters["consume_atp_h2o"])
         if consume_atp_h2o:
-            substrate_update = {
-                wid: float(sub_deltas[i])
-                for i, wid in enumerate(self.substrate_wids)
-                if sub_deltas[i] != 0
-            }
             atp_need = float(abs(sub_deltas[self.substrate_index_atp]))
             h2o_need = float(abs(sub_deltas[self.substrate_index_water]))
+            if atp_need > 0.0 or h2o_need > 0.0:
+                substrate_update = {
+                    wid: float(sub_deltas[i])
+                    for i, wid in enumerate(self.substrate_wids)
+                    if sub_deltas[i] != 0
+                }
+            else:
+                # Fixture extraction currently yields all-zero ATP/H2O rows for
+                # filtered complexes. Avoid negative direct substrate writes when
+                # allocator demand is zero for this tick.
+                substrate_update = {
+                    wid: float(sub_deltas[i])
+                    for i, wid in enumerate(self.substrate_wids)
+                    if sub_deltas[i] > 0
+                }
         else:
             substrate_update = {}
             atp_need = 0.0

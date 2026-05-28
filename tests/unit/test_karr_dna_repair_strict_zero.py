@@ -34,6 +34,7 @@ def test_karr_dna_repair_strict_zero_no_global_fallback() -> None:
             },
         },
         "protein": {"counts": {wid: float(cnt) for wid, cnt in process.enzyme_defaults.items()}},
+        "complex": {"counts": {wid: 0.0 for wid in process.complex_enzyme_wids}},
         "substrates": guarded_substrates,
         "requests": {process.name: {wid: 0.0 for wid in process.tracked_substrates}},
         "substrates_allocated": {process.name: {wid: 0.0 for wid in process.tracked_substrates}},

@@ -8,3 +8,15 @@ STATUS_*.md
 PROMPT_*.md
 .codex_*_pid.txt
 
+# Python build artifacts (suppress VS Code source control noise across worktrees)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.egg-info/
+.mypy_cache/
+.ruff_cache/

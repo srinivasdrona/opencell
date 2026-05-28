@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "n_ticks": 100,
+    "process_name": "RibosomeAssembly",
+    "rng_seed": 0,
+    "snapshot_properties": [
+      "boundEnzymes",
+      "complexs",
+      "enzymes",
+      "monomers",
+      "substrates"
+    ],
+    "source_mat": "data/m1_sources/karr_native/per_process_traces/RibosomeAssembly_100ticks.mat",
+    "schema_version": 1
+  }
+}

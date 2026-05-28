@@ -24,6 +24,16 @@ from opencell.vivarium.karr_dna_repair import KarrDNARepairProcess
 from opencell.vivarium.chromosome_views import current_damage_sites
 
 
+def _enzyme_counts_by_store(process: KarrDNARepairProcess) -> tuple[dict[str, float], dict[str, float]]:
+    protein_counts = {
+        wid: float(process.enzyme_defaults.get(wid, 0.0)) for wid in process.protein_enzyme_wids
+    }
+    complex_counts = {
+        wid: float(process.enzyme_defaults.get(wid, 0.0)) for wid in process.complex_enzyme_wids
+    }
+    return protein_counts, complex_counts
+
+
 def _base_state(
     process: KarrDNARepairProcess,
     *,
@@ -32,6 +42,7 @@ def _base_state(
     allocated_pool: float = 0.0,
 ) -> dict[str, Any]:
     damage_sites = damage_sites or []
+    protein_counts, complex_counts = _enzyme_counts_by_store(process)
     return {
         "chromosome": {
             "damage_events_cumulative": damage_sites,
@@ -39,7 +50,8 @@ def _base_state(
             "repair_count": 0.0,
             "repair_count_by_pathway": {pathway: 0.0 for pathway in ("ber", "ner", "hr", "nhej_like")},
         },
-        "protein": {"counts": {wid: float(cnt) for wid, cnt in process.enzyme_defaults.items()}},
+        "protein": {"counts": protein_counts},
+        "complex": {"counts": complex_counts},
         "substrates": {wid: float(substrate_pool) for wid in process.tracked_substrates},
         "requests": {process.name: {wid: 0.0 for wid in process.tracked_substrates}},
         "substrates_allocated": {
@@ -125,6 +137,38 @@ def test_one_tick_run_produces_positive_repair_delta() -> None:
     assert update["chromosome"]["repair_count"] > 0.0
     assert len(update["chromosome"]["repair_events_cumulative"]) > 0
     assert any(float(v) < 0.0 for v in update.get("substrates", {}).values())
+
+
+def test_chassis_seeded_complex_wid_changes_repair_output() -> None:
+    from opencell.vivarium.karr_composite import build_karr_chassis_v6
+
+    process_with = KarrDNARepairProcess({"rng_seed": 23, "pathway_rate_scale": 1.0})
+    process_without = KarrDNARepairProcess({"rng_seed": 23, "pathway_rate_scale": 1.0})
+
+    chassis = build_karr_chassis_v6(time_step_s=1.0, emit_step_s=1.0)
+    chassis_state = chassis["state"] if isinstance(chassis, dict) else chassis.state
+    seeded_wid = "MG_073_206_421_TETRAMER"
+    assert seeded_wid in process_with.complex_enzyme_wids
+    assert chassis_state["complex"]["counts"][seeded_wid] > 0.0
+
+    damage_sites = [
+        {"site_id": f"ner_{idx}", "damage_type": "intrastrand_crosslink", "position": idx}
+        for idx in range(20)
+    ]
+    state_with = _base_state(process_with, damage_sites=damage_sites, allocated_pool=1.0e6)
+    state_without = _base_state(process_without, damage_sites=damage_sites, allocated_pool=1.0e6)
+    for wid in process_with.complex_enzyme_wids:
+        seeded_count = float(chassis_state["complex"]["counts"][wid])
+        state_with["complex"]["counts"][wid] = seeded_count
+        state_without["complex"]["counts"][wid] = seeded_count
+    state_without["complex"]["counts"][seeded_wid] = 0.0
+
+    update_with = process_with.next_update(1.0, state_with)
+    update_without = process_without.next_update(1.0, state_without)
+
+    with_ner = float(update_with["chromosome"]["repair_count_by_pathway"]["ner"])
+    without_ner = float(update_without["chromosome"]["repair_count_by_pathway"]["ner"])
+    assert with_ner != without_ner
 
 
 def test_allocation_contract_honored() -> None:

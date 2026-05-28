@@ -31,9 +31,12 @@ def test_karr_chromosome_segregation_strict_zero_no_global_fallback() -> None:
     substrate_values[process.h2o_wid] = 10_000.0
     guarded_substrates = _GuardedSubstrates(substrate_values, blocked_wids)
 
-    protein_counts = {wid: 0.0 for wid in process.enzyme_wids}
-    for wid in process.required_enzyme_wids:
+    protein_counts = {wid: 0.0 for wid in process.monomer_enzyme_wids}
+    complex_counts = {wid: 0.0 for wid in process.complex_enzyme_wids}
+    for wid in process.required_monomer_enzyme_wids:
         protein_counts[wid] = 10.0
+    for wid in process.required_complex_enzyme_wids:
+        complex_counts[wid] = 10.0
 
     state = {
         "chromosome": {
@@ -45,6 +48,7 @@ def test_karr_chromosome_segregation_strict_zero_no_global_fallback() -> None:
             "cell_cycle_event": "none",
         },
         "protein": {"counts": protein_counts},
+        "complex": {"counts": complex_counts},
         "substrates": guarded_substrates,
         "requests": {process.name: {process.gtp_wid: 0.0, process.h2o_wid: 0.0}},
         "substrates_allocated": {process.name: {process.gtp_wid: 0.0, process.h2o_wid: 0.0}},

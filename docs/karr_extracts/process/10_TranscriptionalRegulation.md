@@ -4,7 +4,7 @@
 **WholeCellModelID:** `Process_TranscriptionalRegulation`
 **Karr functional area:** RNA-synthesis-and-maturation
 **OpenCell fixture:** `data/karr_fixtures/per_process/TranscriptionalRegulation_flat.mat`
-**OpenCell status (per karr_execution_plan §2):** NOT-STARTED
+**OpenCell status (per karr_execution_plan §2):** L1-green
 
 ---
 

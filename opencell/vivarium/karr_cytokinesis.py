@@ -193,7 +193,6 @@ class KarrCytokinesisProcess(Process):
 
         cell_state = states.get("cell", {})
         chromosome_state = states.get("chromosome", {})
-        substrate_state = states.get("substrates", {})
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
 
         raw_progress = float(cell_state.get("division_progress", 0.0))
@@ -202,7 +201,7 @@ class KarrCytokinesisProcess(Process):
         is_complete = bool(cell_state.get("division_complete", False)) or progress >= 1.0
 
         gates_ready = self._gates_ready(cell_state=cell_state, chromosome_state=chromosome_state)
-        available_gtp = self._allocated_or_state(allocated_state, substrate_state, self.gtp_wid)
+        available_gtp = self._allocated_or_state(allocated_state, self.gtp_wid)
 
         requested_gtp = 0.0
         progress_delta = 0.0
@@ -264,7 +263,6 @@ class KarrCytokinesisProcess(Process):
     @staticmethod
     def _allocated_or_state(
         allocated_state: dict[str, Any],
-        substrate_state: dict[str, Any],
         wid: str,
     ) -> float:
         allocated = float(allocated_state.get(wid, 0.0))

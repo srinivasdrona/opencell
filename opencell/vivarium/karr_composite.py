@@ -27,8 +27,10 @@ mapping, both deferred to the integrator pass).
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Mapping
 from copy import deepcopy
+from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -71,6 +73,7 @@ from opencell.vivarium.karr_request_calculators import (
     RequestCalculatorD2,
     RequestCalculatorMetabolism,
     RequestCalculatorPD,
+    RequestCalculatorPTransloc,
     RequestCalculatorProteinPathway,
     RequestCalculatorRibAsm,
     RequestCalculatorRNAPathway,
@@ -100,6 +103,29 @@ if TYPE_CHECKING:
 
 _M1_SUBSTRATE_DEFAULT = 1.0
 _KARR_CYTOSOL_COMPARTMENT_0 = 0
+_LOGGER = logging.getLogger(__name__)
+
+
+@lru_cache(maxsize=1)
+def _d2_stub_complex_seed_defaults() -> dict[str, float]:
+    """Canonical complex seed defaults from the D2 stub fixture snapshot."""
+    d2_stub_proc = MacromolecularComplexationStubProcess()
+    return {
+        wid: float(d2_stub_proc._complex_counts_schema[wid]["_default"])
+        for wid in d2_stub_proc.d2_owned_wids
+    }
+
+
+def _seed_required_complex_wids(
+    *,
+    complex_counts: dict[str, float],
+    required_wids: list[str],
+) -> None:
+    defaults = _d2_stub_complex_seed_defaults()
+    for wid in required_wids:
+        if wid not in defaults:
+            raise KeyError(f"Missing D2-stub complex default for required WID '{wid}'")
+        complex_counts.setdefault(wid, float(defaults[wid]))
 
 
 def _load_karr_initial_substrate_counts(
@@ -116,6 +142,34 @@ def _load_karr_initial_substrate_counts(
     return {
         sid: float(dyn.substrates_snapshot[idx, _KARR_CYTOSOL_COMPARTMENT_0])
         for idx, sid in enumerate(sub_ids)
+    }
+
+
+@lru_cache(maxsize=1)
+def _d2_stub_complex_defaults() -> dict[str, float]:
+    seed_proc = MacromolecularComplexationStubProcess()
+    return {
+        wid: float(schema["_default"])
+        for wid, schema in seed_proc._complex_counts_schema.items()
+    }
+
+
+def _seeded_complex_counts_for_wids(wids: set[str]) -> dict[str, float]:
+    if not wids:
+        return {}
+    defaults = _d2_stub_complex_defaults()
+    missing = sorted(wid for wid in wids if wid not in defaults)
+    if missing:
+        joined = ", ".join(missing)
+        raise KeyError(f"Missing D2 complex-count seed defaults for WIDs: {joined}")
+    return {wid: defaults[wid] for wid in sorted(wids)}
+
+
+def _load_d2_mature_complex_counts_snapshot() -> dict[str, float]:
+    """Load canonical mature complex counts from the D2 stub snapshot path."""
+    d2_stub = MacromolecularComplexationStubProcess({})
+    return {
+        wid: float(d2_stub._complex_counts_schema[wid]["_default"]) for wid in d2_stub.d2_owned_wids
     }
 
 
@@ -148,12 +202,16 @@ CHASSIS_V6_EXPECTED_PROCESS_KEYS: tuple[str, ...] = (
     "karr_metabolism",
     "karr_transcription",
     "karr_translation",
+    "karr_transcriptional_regulation",
 )
 
-CHASSIS_V6_RUNTIME_IDENTITY_EXPECTED_CLASS_NAMES: dict[str, str] = {
+CHASSIS_V6_RUNTIME_IDENTITY_EXPECTED_CLASSES: dict[str, type[Any]] = {
     # Composition L0 currently flags only these runtime identity promotions.
-    "karr_transcription": "KarrTranscriptionV3Process",
-    "karr_translation": "KarrTranslationV3Process",
+    "karr_transcription": KarrTranscriptionV3Process,
+    "karr_translation": KarrTranslationV3Process,
+}
+CHASSIS_V6_RUNTIME_IDENTITY_EXPECTED_CLASS_QUALNAMES: dict[str, str] = {
+    key: cls.__qualname__ for key, cls in CHASSIS_V6_RUNTIME_IDENTITY_EXPECTED_CLASSES.items()
 }
 CHASSIS_V6_RUNTIME_IDENTITY_LEGACY_KEYS: tuple[str, ...] = (
     "karr_transcription_v3",
@@ -184,15 +242,17 @@ def assert_chassis_runtime_identity(chassis: Any) -> None:
     process_map = _resolve_process_map(chassis)
     failures: list[str] = []
 
-    for key, expected_cls_name in CHASSIS_V6_RUNTIME_IDENTITY_EXPECTED_CLASS_NAMES.items():
+    for key, expected_cls in CHASSIS_V6_RUNTIME_IDENTITY_EXPECTED_CLASSES.items():
         proc = process_map.get(key)
         if proc is None:
             failures.append(f"missing process key '{key}'")
             continue
-        observed_cls_name = proc.__class__.__name__
-        if observed_cls_name != expected_cls_name:
+        observed_cls = proc.__class__
+        if observed_cls is not expected_cls:
+            expected_class_path = f"{expected_cls.__module__}.{expected_cls.__qualname__}"
+            observed_class_path = f"{observed_cls.__module__}.{observed_cls.__qualname__}"
             failures.append(
-                f"{key}: expected class {expected_cls_name}, observed {observed_cls_name}"
+                f"{key}: expected class {expected_class_path}, observed {observed_class_path}"
             )
 
     for legacy_key in CHASSIS_V6_RUNTIME_IDENTITY_LEGACY_KEYS:
@@ -670,6 +730,7 @@ def build_karr_chassis_v3(
             "model": m1_model,
             "time_step": time_step_s,
             "dynamic_bounds": dynamic_bounds,
+            "use_allocator_budget": True,
             "enable_pool_replenishment": enable_pool_replenishment,
             "baseline_demand_per_s": baseline_demand,
         }
@@ -679,6 +740,7 @@ def build_karr_chassis_v3(
             "kinetics_model": tx.calibrated_chassis_model(m2_model),
             "mechanism_inputs": m2_mechanism_inputs,
             "time_step": time_step_s,
+            "use_allocator_budget": True,
             "substrate_default": _M1_SUBSTRATE_DEFAULT,
         }
     )
@@ -687,28 +749,46 @@ def build_karr_chassis_v3(
             "kinetics_model": m3_model,
             "mechanism_inputs": m3_mechanism_inputs,
             "time_step": time_step_s,
+            "use_allocator_budget": True,
             "substrate_default": _M1_SUBSTRATE_DEFAULT,
         }
     )
     d2_proc = MacromolecularComplexationProcess({"time_step": time_step_s})
     decay_proc = ProteinDecayLightProcess({"time_step": time_step_s})
+    p_trans_proc = KarrProteinTranslocationProcess({"time_step": time_step_s})
 
     allocation_substrates = sorted(
         set(m1_model.raw["ids"]["substrate_wcm_585"])
+        | set(m1_proc.allocation_substrate_wids)
+        | set(m2_proc.allocation_substrate_wids)
+        | set(m3_proc.allocation_substrate_wids)
         | set(d2_proc.substrate_wids)
         | set(decay_proc.substrate_wids)
+        | set(p_trans_proc.allocation_substrate_wids)
     )
+    consumer_processes: list[tuple[str, list[str]]] = [
+        (m2_proc.name, list(m2_proc.allocation_substrate_wids)),
+        (m3_proc.name, list(m3_proc.allocation_substrate_wids)),
+        ("karr_macromolecular_complexation", list(d2_proc.substrate_wids)),
+        ("karr_protein_decay_light", ["ATP", "H2O"]),
+        (p_trans_proc.name, list(p_trans_proc.allocation_substrate_wids)),
+    ]
+    if m1_proc.allocation_substrate_wids:
+        consumer_processes.insert(0, (m1_proc.name, list(m1_proc.allocation_substrate_wids)))
     allocation_step = KarrAllocationStep(
         {
-            "consumer_processes": [
-                ("karr_macromolecular_complexation", list(d2_proc.substrate_wids)),
-                ("karr_protein_decay_light", ["ATP", "H2O"]),
-            ],
+            "consumer_processes": consumer_processes,
             "substrate_wids": allocation_substrates,
         }
     )
     req_d2 = RequestCalculatorD2({"d2_real_proc": d2_proc})
     req_pd = RequestCalculatorPD({"pd_light_proc": decay_proc})
+    req_metabolism = RequestCalculatorMetabolism({"metabolism_proc": m1_proc})
+    req_transcription = RequestCalculatorTranscription({"transcription_proc": m2_proc})
+    req_translation = RequestCalculatorTranslation({"translation_proc": m3_proc})
+    req_protein_translocation = RequestCalculatorPTransloc(
+        {"protein_translocation_proc": p_trans_proc}
+    )
 
     rxn_ids = m1_model.rxn_wcm_ids_645
     m1_sub_ids = [str(wid) for wid in m1_model.raw["ids"]["substrate_wcm_585"]]
@@ -738,6 +818,7 @@ def build_karr_chassis_v3(
     m1_topo = {
         "metabolic_reaction": ("metabolic_reaction",),
         "substrates": ("substrates",),
+        "substrates_allocated": ("substrates_allocated",),
     }
     if dynamic_bounds:
         m1_topo["m1_dynamic_diagnostics"] = ("m1_dynamic_diagnostics",)
@@ -749,11 +830,13 @@ def build_karr_chassis_v3(
             "rna": ("rna",),
             "substrates": ("substrates",),
             "complex": ("complex",),
+            "substrates_allocated": ("substrates_allocated",),
         },
         "karr_translation_v3": {
             "protein": ("protein",),
             "substrates": ("substrates",),
             "complex": ("complex",),
+            "substrates_allocated": ("substrates_allocated",),
         },
         "karr_macromolecular_complexation": {
             "substrates": ("substrates",),
@@ -769,12 +852,35 @@ def build_karr_chassis_v3(
             "requests": ("_internal_requests",),
             "substrates_allocated": ("_internal_substrates_allocated",),
         },
+        "karr_protein_translocation": {
+            "substrates": ("substrates",),
+            "protein": ("protein",),
+            "complex": ("complex",),
+            "requests": ("_internal_requests_ptrans",),
+            "substrates_allocated": ("substrates_allocated",),
+        },
         "request_calculator_d2": {
             "complex": ("complex",),
             "requests": ("requests",),
         },
         "request_calculator_pd": {
             "complex": ("complex",),
+            "requests": ("requests",),
+        },
+        "request_calculator_metabolism": {
+            "requests": ("requests",),
+        },
+        "request_calculator_transcription": {
+            "complex": ("complex",),
+            "requests": ("requests",),
+        },
+        "request_calculator_translation": {
+            "complex": ("complex",),
+            "requests": ("requests",),
+        },
+        "request_calculator_protein_translocation": {
+            "substrates": ("substrates",),
+            "protein": ("protein",),
             "requests": ("requests",),
         },
         "karr_allocation_step": {
@@ -792,7 +898,10 @@ def build_karr_chassis_v3(
         },
         "substrates": initial_substrates,
         "rna": {"counts": rna_init},
-        "protein": {"counts": prot_init},
+        "protein": {
+            "counts": prot_init,
+            "location": {wid: "cytoplasm" for wid in p_trans_proc.translocatable_wids},
+        },
         "complex": {"counts": complex_counts},
     }
     if dynamic_bounds:
@@ -811,18 +920,31 @@ def build_karr_chassis_v3(
             "karr_translation_v3": m3_proc,
             "karr_macromolecular_complexation": d2_proc,
             "karr_protein_decay_light": decay_proc,
+            "karr_protein_translocation": p_trans_proc,
         },
         steps={
             "request_calculator_d2": req_d2,
             "request_calculator_pd": req_pd,
+            "request_calculator_metabolism": req_metabolism,
+            "request_calculator_transcription": req_transcription,
+            "request_calculator_translation": req_translation,
+            "request_calculator_protein_translocation": req_protein_translocation,
             "karr_allocation_step": allocation_step,
         },
         flow={
             "request_calculator_d2": [],
             "request_calculator_pd": [],
+            "request_calculator_metabolism": [],
+            "request_calculator_transcription": [],
+            "request_calculator_translation": [],
+            "request_calculator_protein_translocation": [],
             "karr_allocation_step": [
                 ("request_calculator_d2",),
                 ("request_calculator_pd",),
+                ("request_calculator_metabolism",),
+                ("request_calculator_transcription",),
+                ("request_calculator_translation",),
+                ("request_calculator_protein_translocation",),
             ],
         },
         topology=topology,
@@ -877,6 +999,7 @@ def build_karr_chassis_v4(
             "model": m1_model,
             "time_step": time_step_s,
             "dynamic_bounds": dynamic_bounds,
+            "use_allocator_budget": True,
             "enable_pool_replenishment": enable_pool_replenishment,
             "baseline_demand_per_s": baseline_demand,
         }
@@ -886,6 +1009,7 @@ def build_karr_chassis_v4(
             "kinetics_model": tx.calibrated_chassis_model(m2_model),
             "mechanism_inputs": m2_mechanism_inputs,
             "time_step": time_step_s,
+            "use_allocator_budget": True,
             "substrate_default": _M1_SUBSTRATE_DEFAULT,
         }
     )
@@ -894,14 +1018,36 @@ def build_karr_chassis_v4(
             "kinetics_model": m3_model,
             "mechanism_inputs": m3_mechanism_inputs,
             "time_step": time_step_s,
+            "use_allocator_budget": True,
             "substrate_default": _M1_SUBSTRATE_DEFAULT,
         }
     )
     d2_proc = MacromolecularComplexationProcess({"time_step": time_step_s})
     decay_proc = ProteinDecayLightProcess({"time_step": time_step_s})
-    trna_proc = KarrTRNAAminoacylationProcess({"time_step": time_step_s})
+    trna_proc = KarrTRNAAminoacylationProcess(
+        {
+            "time_step": time_step_s,
+            "emit_noop_update": True,
+            "emit_trace_heartbeat_on_noop": True,
+        }
+    )
     ribasm_proc = KarrRibosomeAssemblyProcess({"time_step": time_step_s})
-    tx_reg_proc = KarrTranscriptionalRegulationProcess({"time_step": time_step_s})
+    tx_reg_complex_wids = (
+        set(d2_proc.complex_wids)
+        | set(ribasm_proc.complex_wids)
+        | {"RNA_POLYMERASE", "RIBOSOME_70S"}
+    )
+    tx_reg_proc = KarrTranscriptionalRegulationProcess(
+        {
+            "time_step": time_step_s,
+            "complex_wids": sorted(tx_reg_complex_wids),
+        }
+    )
+    tx_reg_tf_complex_wids = sorted(
+        wid
+        for wid in tx_reg_proc.tf_wids
+        if getattr(tx_reg_proc, "_tf_wid_source", {}).get(wid) == "complex"
+    )
     rna_proc = KarrRNAProcessingProcess({"time_step": time_step_s})
     rna_mod_proc = KarrRNAModificationProcess({"time_step": time_step_s})
     pp1_proc = KarrProteinProcessingIProcess({"time_step": time_step_s})
@@ -941,6 +1087,9 @@ def build_karr_chassis_v4(
 
     allocation_substrates = sorted(
         set(m1_model.raw["ids"]["substrate_wcm_585"])
+        | set(m1_proc.allocation_substrate_wids)
+        | set(m2_proc.allocation_substrate_wids)
+        | set(m3_proc.allocation_substrate_wids)
         | set(d2_proc.substrate_wids)
         | set(decay_proc.substrate_wids)
         | set(trna_consumed)
@@ -951,29 +1100,34 @@ def build_karr_chassis_v4(
         | set(pp2_consumed)
         | set(p_mod_consumed)
         | set(p_fold_consumed)
-        | set(p_trans_proc.vector_wids)
+        | set(p_trans_proc.allocation_substrate_wids)
         | set(p_activation_proc.substrate_wids)
         | {ftsz_proc.gtp_wid}
     )
+    consumer_processes = [
+        (m2_proc.name, list(m2_proc.allocation_substrate_wids)),
+        (m3_proc.name, list(m3_proc.allocation_substrate_wids)),
+        ("karr_macromolecular_complexation", list(d2_proc.substrate_wids)),
+        ("karr_protein_decay_light", ["ATP", "H2O"]),
+        (
+            ribasm_proc.name,
+            [ribasm_proc.substrate_wid_gtp, ribasm_proc.substrate_wid_h2o],
+        ),
+        (trna_proc.name, trna_consumed),
+        (rna_proc.name, rna_proc_consumed),
+        (rna_mod_proc.name, rna_mod_consumed),
+        (pp1_proc.name, [pp1_proc.substrate_wids[pp1_proc.substrate_idx_water]]),
+        (pp2_proc.name, pp2_consumed),
+        (p_mod_proc.name, p_mod_consumed),
+        (p_fold_proc.name, p_fold_consumed),
+        (p_trans_proc.name, list(p_trans_proc.allocation_substrate_wids)),
+        (ftsz_proc.name, [ftsz_proc.gtp_wid]),
+    ]
+    if m1_proc.allocation_substrate_wids:
+        consumer_processes.insert(0, (m1_proc.name, list(m1_proc.allocation_substrate_wids)))
     allocation_step = KarrAllocationStep(
         {
-            "consumer_processes": [
-                ("karr_macromolecular_complexation", list(d2_proc.substrate_wids)),
-                ("karr_protein_decay_light", ["ATP", "H2O"]),
-                (
-                    ribasm_proc.name,
-                    [ribasm_proc.substrate_wid_gtp, ribasm_proc.substrate_wid_h2o],
-                ),
-                (trna_proc.name, trna_consumed),
-                (rna_proc.name, rna_proc_consumed),
-                (rna_mod_proc.name, rna_mod_consumed),
-                (pp1_proc.name, [pp1_proc.substrate_wids[pp1_proc.substrate_idx_water]]),
-                (pp2_proc.name, pp2_consumed),
-                (p_mod_proc.name, p_mod_consumed),
-                (p_fold_proc.name, p_fold_consumed),
-                (p_trans_proc.name, list(p_trans_proc.vector_wids)),
-                (ftsz_proc.name, [ftsz_proc.gtp_wid]),
-            ],
+            "consumer_processes": consumer_processes,
             "substrate_wids": allocation_substrates,
         }
     )
@@ -1004,6 +1158,9 @@ def build_karr_chassis_v4(
     )
     req_transcription = RequestCalculatorTranscription({"transcription_proc": m2_proc})
     req_translation = RequestCalculatorTranslation({"translation_proc": m3_proc})
+    req_protein_translocation = RequestCalculatorPTransloc(
+        {"protein_translocation_proc": p_trans_proc}
+    )
 
     rxn_ids = m1_model.rxn_wcm_ids_645
     m1_sub_ids = [str(wid) for wid in m1_model.raw["ids"]["substrate_wcm_585"]]
@@ -1052,20 +1209,86 @@ def build_karr_chassis_v4(
     protein_processed_init = {wid: 0.0 for wid in pp2_proc.processed_monomer_wids}
     protein_signal_seq_init = {wid: 0.0 for wid in pp2_proc.signal_sequence_monomer_wids}
     protein_modified_init = {wid: 0.0 for wid in p_mod_proc.modified_monomer_wids}
-    protein_enzyme_init = {wid: float(prot_init.get(wid, 0.0)) for wid in pp2_proc.enzyme_wids}
+    protein_enzyme_init = {
+        wid: float(prot_init.get(wid, 0.0))
+        for wid in sorted(set(pp1_proc.enzyme_wids) | set(pp2_proc.enzyme_wids))
+    }
+    protein_enzyme_init.pop("MG_106_DIMER", None)
+    protein_enzyme_init["MG_172_MONOMER"] = 38.0  # from PP1_flat.mat enzymes column
     protein_location_init = {wid: "cytoplasm" for wid in p_trans_proc.translocatable_wids}
     protein_activity_init = {wid: 0 for wid in p_activation_proc.regulated_protein_wids}
 
+    mature_complex_counts = _load_d2_mature_complex_counts_snapshot()
     complex_counts = {
-        "RNA_POLYMERASE": float(m2_mechanism_inputs.n_active_rnap),
-        "RIBOSOME_70S": float(m3_mechanism_inputs.n_active_ribosomes),
+        wid: float(mature_complex_counts.get(wid, 0.0)) for wid in sorted(tx_reg_complex_wids)
     }
+    complex_counts["MG_106_DIMER"] = 22.0  # from PP1_flat.mat enzymes column
+    trna_complex_seed_proc = MacromolecularComplexationStubProcess()
+    missing_trna_complex_seed_wids = [
+        wid
+        for wid in trna_proc.complex_enzyme_wids
+        if wid not in trna_complex_seed_proc._complex_counts_schema
+    ]
+    if missing_trna_complex_seed_wids:
+        missing = ", ".join(missing_trna_complex_seed_wids[:5])
+        raise KeyError(
+            "v4 chassis missing canonical complex seed defaults for "
+            f"karr_trna_aminoacylation enzyme WIDs: {missing}"
+        )
+    for wid in trna_proc.complex_enzyme_wids:
+        complex_counts.setdefault(wid, float(trna_complex_seed_proc._complex_counts_schema[wid]["_default"]))
     for wid in ribasm_proc.complex_wids:
         complex_counts.setdefault(wid, 0.0)
+    for wid, count in _seeded_complex_counts_for_wids(set(rna_proc.complex_enzyme_wids)).items():
+        complex_counts.setdefault(wid, count)
+    for wid in p_fold_proc.complex_enzyme_wids:
+        complex_counts.setdefault(wid, float(p_fold_proc.enzyme_initial_counts_by_wid.get(wid, 0.0)))
+    _seed_required_complex_wids(
+        complex_counts=complex_counts,
+        required_wids=p_mod_proc.complex_enzyme_wids,
+    )
+    complex_counts["RNA_POLYMERASE"] = max(
+        complex_counts.get("RNA_POLYMERASE", 0.0),
+        float(m2_mechanism_inputs.n_active_rnap),
+    )
+    complex_counts["RIBOSOME_70S"] = max(
+        complex_counts.get("RIBOSOME_70S", 0.0),
+        float(m3_mechanism_inputs.n_active_ribosomes),
+    )
+    missing_tx_reg_complex_wids = sorted(
+        wid for wid in tx_reg_tf_complex_wids if wid not in mature_complex_counts
+    )
+    if missing_tx_reg_complex_wids:
+        _LOGGER.warning(
+            "build_karr_chassis_v4: %d tx-reg TF complex WIDs missing mature complex snapshot; "
+            "seeding zero defaults (%s)",
+            len(missing_tx_reg_complex_wids),
+            ",".join(missing_tx_reg_complex_wids),
+        )
+    zero_seeded_regulatory_tfs: list[str] = []
+    for tf_i, tf_wid in enumerate(tx_reg_proc.tf_wids):
+        if tf_wid not in tx_reg_tf_complex_wids or tf_wid not in mature_complex_counts:
+            continue
+        has_regulatory_target = bool(
+            np.any(tx_reg_proc.tf_promoter_affinity[tf_i] > 0.0)
+            or np.any(np.abs(tx_reg_proc.tf_tu_fold_change[tf_i] - 1.0) > 1e-12)
+            or np.any(np.abs(tx_reg_proc.tf_other_activities[tf_i] - 1.0) > 1e-12)
+        )
+        if has_regulatory_target and complex_counts.get(tf_wid, 0.0) <= 0.0:
+            complex_counts[tf_wid] = 1.0
+            zero_seeded_regulatory_tfs.append(tf_wid)
+    if zero_seeded_regulatory_tfs:
+        _LOGGER.warning(
+            "build_karr_chassis_v4: %d regulation-active complex TF WIDs had zero mature "
+            "snapshot counts; seeding one copy for chassis bootstrap (%s)",
+            len(zero_seeded_regulatory_tfs),
+            ",".join(sorted(zero_seeded_regulatory_tfs)),
+        )
 
     m1_topo = {
         "metabolic_reaction": ("metabolic_reaction",),
         "substrates": ("substrates",),
+        "substrates_allocated": ("substrates_allocated",),
     }
     if dynamic_bounds:
         m1_topo["m1_dynamic_diagnostics"] = ("m1_dynamic_diagnostics",)
@@ -1077,12 +1300,14 @@ def build_karr_chassis_v4(
             "rna": ("rna",),
             "substrates": ("substrates",),
             "complex": ("complex",),
+            "substrates_allocated": ("substrates_allocated",),
             "tx_rate_fold_change": ("tx_rate_fold_change",),
         },
         "karr_translation_v3": {
             "protein": ("protein",),
             "substrates": ("substrates",),
             "complex": ("complex",),
+            "substrates_allocated": ("substrates_allocated",),
         },
         "karr_macromolecular_complexation": {
             "substrates": ("substrates",),
@@ -1102,6 +1327,7 @@ def build_karr_chassis_v4(
             "substrates": ("substrates",),
             "rna": ("rna",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("_internal_requests_trna",),
             "substrates_allocated": ("substrates_allocated",),
         },
@@ -1115,6 +1341,7 @@ def build_karr_chassis_v4(
         },
         "karr_transcriptional_regulation": {
             "protein": ("protein",),
+            "complex": ("complex",),
             "tf_binding": ("tf_binding",),
             "tx_rate_fold_change": ("tx_rate_fold_change",),
         },
@@ -1122,6 +1349,7 @@ def build_karr_chassis_v4(
             "substrates": ("substrates",),
             "rna": ("rna",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("_internal_requests_rna_proc",),
             "substrates_allocated": ("substrates_allocated",),
         },
@@ -1129,12 +1357,14 @@ def build_karr_chassis_v4(
             "substrates": ("substrates",),
             "rna": ("rna",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("_internal_requests_rna_mod",),
             "substrates_allocated": ("substrates_allocated",),
         },
         "karr_protein_processing_i": {
             "substrates": ("substrates",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("_internal_requests_pp1",),
             "substrates_allocated": ("substrates_allocated",),
         },
@@ -1147,17 +1377,20 @@ def build_karr_chassis_v4(
         "karr_protein_modification": {
             "substrates": ("substrates",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("_internal_requests_pmod",),
             "substrates_allocated": ("substrates_allocated",),
         },
         "karr_protein_folding": {
             "substrates": ("substrates",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "substrates_allocated": ("substrates_allocated",),
         },
         "karr_protein_translocation": {
             "substrates": ("substrates",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("_internal_requests_ptrans",),
             "substrates_allocated": ("substrates_allocated",),
         },
@@ -1197,6 +1430,22 @@ def build_karr_chassis_v4(
             "requests": ("requests",),
         },
         "request_calculator_protein_pathway": {
+            "substrates": ("substrates",),
+            "protein": ("protein",),
+            "requests": ("requests",),
+        },
+        "request_calculator_metabolism": {
+            "requests": ("requests",),
+        },
+        "request_calculator_transcription": {
+            "complex": ("complex",),
+            "requests": ("requests",),
+        },
+        "request_calculator_translation": {
+            "complex": ("complex",),
+            "requests": ("requests",),
+        },
+        "request_calculator_protein_translocation": {
             "substrates": ("substrates",),
             "protein": ("protein",),
             "requests": ("requests",),
@@ -1282,6 +1531,10 @@ def build_karr_chassis_v4(
             "request_calculator_trna": req_trna,
             "request_calculator_rna_pathway": req_rna,
             "request_calculator_protein_pathway": req_protein,
+            "request_calculator_metabolism": req_metabolism,
+            "request_calculator_transcription": req_transcription,
+            "request_calculator_translation": req_translation,
+            "request_calculator_protein_translocation": req_protein_translocation,
             "karr_allocation_step": allocation_step,
         },
         flow={
@@ -1291,6 +1544,10 @@ def build_karr_chassis_v4(
             "request_calculator_trna": [],
             "request_calculator_rna_pathway": [],
             "request_calculator_protein_pathway": [],
+            "request_calculator_metabolism": [],
+            "request_calculator_transcription": [],
+            "request_calculator_translation": [],
+            "request_calculator_protein_translocation": [],
             "karr_allocation_step": [
                 ("request_calculator_d2",),
                 ("request_calculator_pd",),
@@ -1298,6 +1555,10 @@ def build_karr_chassis_v4(
                 ("request_calculator_trna",),
                 ("request_calculator_rna_pathway",),
                 ("request_calculator_protein_pathway",),
+                ("request_calculator_metabolism",),
+                ("request_calculator_transcription",),
+                ("request_calculator_translation",),
+                ("request_calculator_protein_translocation",),
             ],
         },
         topology=topology,
@@ -1359,6 +1620,8 @@ def build_karr_chassis_v5(
             "baseline_demand_per_s": baseline_demand,
         }
     )
+    # L0 runtime-identity invariant (S03/S04): v5/v6 canonical chassis binds
+    # TX/TL to the v3 process classes, never the legacy wrapper classes.
     m2_proc = KarrTranscriptionV3Process(
         {
             "kinetics_model": tx.calibrated_chassis_model(m2_model),
@@ -1379,9 +1642,30 @@ def build_karr_chassis_v5(
     )
     d2_proc = MacromolecularComplexationProcess({"time_step": time_step_s})
     decay_proc = ProteinDecayLightProcess({"time_step": time_step_s})
-    trna_proc = KarrTRNAAminoacylationProcess({"time_step": time_step_s})
+    trna_proc = KarrTRNAAminoacylationProcess(
+        {
+            "time_step": time_step_s,
+            "emit_noop_update": True,
+            "emit_trace_heartbeat_on_noop": True,
+        }
+    )
     ribasm_proc = KarrRibosomeAssemblyProcess({"time_step": time_step_s})
-    tx_reg_proc = KarrTranscriptionalRegulationProcess({"time_step": time_step_s})
+    tx_reg_complex_wids = (
+        set(d2_proc.complex_wids)
+        | set(ribasm_proc.complex_wids)
+        | {"RNA_POLYMERASE", "RIBOSOME_70S"}
+    )
+    tx_reg_proc = KarrTranscriptionalRegulationProcess(
+        {
+            "time_step": time_step_s,
+            "complex_wids": sorted(tx_reg_complex_wids),
+        }
+    )
+    tx_reg_tf_complex_wids = sorted(
+        wid
+        for wid in tx_reg_proc.tf_wids
+        if getattr(tx_reg_proc, "_tf_wid_source", {}).get(wid) == "complex"
+    )
     rna_proc = KarrRNAProcessingProcess({"time_step": time_step_s})
     rna_mod_proc = KarrRNAModificationProcess({"time_step": time_step_s})
     pp1_proc = KarrProteinProcessingIProcess({"time_step": time_step_s})
@@ -1451,7 +1735,7 @@ def build_karr_chassis_v5(
         | set(pp2_consumed)
         | set(p_mod_consumed)
         | set(p_fold_consumed)
-        | set(p_trans_proc.vector_wids)
+        | set(p_trans_proc.allocation_substrate_wids)
         | set(p_activation_proc.substrate_wids)
         | {rep_init_proc.atp_wid, rep_init_proc.water_wid}
         | set(rep_proc.dntp_wids)
@@ -1482,7 +1766,7 @@ def build_karr_chassis_v5(
                 (pp2_proc.name, pp2_consumed),
                 (p_mod_proc.name, p_mod_consumed),
                 (p_fold_proc.name, p_fold_consumed),
-                (p_trans_proc.name, list(p_trans_proc.vector_wids)),
+                (p_trans_proc.name, list(p_trans_proc.allocation_substrate_wids)),
                 (rep_init_proc.name, [rep_init_proc.atp_wid, rep_init_proc.water_wid]),
                 (rep_proc.name, [*rep_proc.dntp_wids, rep_proc.atp_wid]),
                 (supercoil_proc.name, [supercoil_proc.atp_wid, supercoil_proc.h2o_wid]),
@@ -1528,6 +1812,9 @@ def build_karr_chassis_v5(
     )
     req_transcription = RequestCalculatorTranscription({"transcription_proc": m2_proc})
     req_translation = RequestCalculatorTranslation({"translation_proc": m3_proc})
+    req_protein_translocation = RequestCalculatorPTransloc(
+        {"protein_translocation_proc": p_trans_proc}
+    )
 
     rxn_ids = m1_model.rxn_wcm_ids_645
     m1_sub_ids = [str(wid) for wid in m1_model.raw["ids"]["substrate_wcm_585"]]
@@ -1603,16 +1890,92 @@ def build_karr_chassis_v5(
     protein_processed_init = {wid: 0.0 for wid in pp2_proc.processed_monomer_wids}
     protein_signal_seq_init = {wid: 0.0 for wid in pp2_proc.signal_sequence_monomer_wids}
     protein_modified_init = {wid: 0.0 for wid in p_mod_proc.modified_monomer_wids}
-    protein_enzyme_init = {wid: float(prot_init.get(wid, 0.0)) for wid in pp2_proc.enzyme_wids}
+    protein_enzyme_init = {
+        wid: float(prot_init.get(wid, 0.0))
+        for wid in sorted(set(pp1_proc.enzyme_wids) | set(pp2_proc.enzyme_wids))
+    }
+    protein_enzyme_init.pop("MG_106_DIMER", None)
+    protein_enzyme_init["MG_172_MONOMER"] = 38.0  # from PP1_flat.mat enzymes column
     protein_location_init = {wid: "cytoplasm" for wid in p_trans_proc.translocatable_wids}
     protein_activity_init = {wid: 0 for wid in p_activation_proc.regulated_protein_wids}
 
+    mature_complex_counts = _load_d2_mature_complex_counts_snapshot()
     complex_counts = {
-        "RNA_POLYMERASE": float(m2_mechanism_inputs.n_active_rnap),
-        "RIBOSOME_70S": float(m3_mechanism_inputs.n_active_ribosomes),
+        wid: float(mature_complex_counts.get(wid, 0.0)) for wid in sorted(tx_reg_complex_wids)
     }
+    supercoil_seed_counts = {
+        supercoil_proc.gyrase_wid: float(supercoil_proc.parameters["reference_gyrase_count"]),
+        supercoil_proc.topoiv_wid: float(supercoil_proc.parameters["reference_topoiv_count"]),
+    }
+    for wid, count in supercoil_seed_counts.items():
+        complex_counts[wid] = max(float(complex_counts.get(wid, 0.0)), count)
+    complex_counts["MG_106_DIMER"] = 22.0  # from PP1_flat.mat enzymes column
+    trna_complex_seed_proc = MacromolecularComplexationStubProcess()
+    missing_trna_complex_seed_wids = [
+        wid
+        for wid in trna_proc.complex_enzyme_wids
+        if wid not in trna_complex_seed_proc._complex_counts_schema
+    ]
+    if missing_trna_complex_seed_wids:
+        missing = ", ".join(missing_trna_complex_seed_wids[:5])
+        raise KeyError(
+            "v5 chassis missing canonical complex seed defaults for "
+            f"karr_trna_aminoacylation enzyme WIDs: {missing}"
+        )
+    for wid in trna_proc.complex_enzyme_wids:
+        complex_counts.setdefault(wid, float(trna_complex_seed_proc._complex_counts_schema[wid]["_default"]))
     for wid in ribasm_proc.complex_wids:
         complex_counts.setdefault(wid, 0.0)
+    for wid in segregation_proc.complex_enzyme_wids:
+        seed_count = float(segregation_proc.enzyme_count_by_wid.get(wid, 0.0))
+        complex_counts[wid] = max(float(complex_counts.get(wid, 0.0)), seed_count)
+    for wid in dna_repair_proc.complex_enzyme_wids:
+        complex_counts.setdefault(wid, float(dna_repair_proc.enzyme_defaults.get(wid, 0.0)))
+    for wid, count in _seeded_complex_counts_for_wids(set(rna_proc.complex_enzyme_wids)).items():
+        complex_counts.setdefault(wid, count)
+    for wid in p_fold_proc.complex_enzyme_wids:
+        complex_counts.setdefault(wid, float(p_fold_proc.enzyme_initial_counts_by_wid.get(wid, 0.0)))
+    _seed_required_complex_wids(
+        complex_counts=complex_counts,
+        required_wids=p_mod_proc.complex_enzyme_wids,
+    )
+    complex_counts["RNA_POLYMERASE"] = max(
+        complex_counts.get("RNA_POLYMERASE", 0.0),
+        float(m2_mechanism_inputs.n_active_rnap),
+    )
+    complex_counts["RIBOSOME_70S"] = max(
+        complex_counts.get("RIBOSOME_70S", 0.0),
+        float(m3_mechanism_inputs.n_active_ribosomes),
+    )
+    missing_tx_reg_complex_wids = sorted(
+        wid for wid in tx_reg_tf_complex_wids if wid not in mature_complex_counts
+    )
+    if missing_tx_reg_complex_wids:
+        _LOGGER.warning(
+            "build_karr_chassis_v5: %d tx-reg TF complex WIDs missing mature complex snapshot; "
+            "seeding zero defaults (%s)",
+            len(missing_tx_reg_complex_wids),
+            ",".join(missing_tx_reg_complex_wids),
+        )
+    zero_seeded_regulatory_tfs: list[str] = []
+    for tf_i, tf_wid in enumerate(tx_reg_proc.tf_wids):
+        if tf_wid not in tx_reg_tf_complex_wids or tf_wid not in mature_complex_counts:
+            continue
+        has_regulatory_target = bool(
+            np.any(tx_reg_proc.tf_promoter_affinity[tf_i] > 0.0)
+            or np.any(np.abs(tx_reg_proc.tf_tu_fold_change[tf_i] - 1.0) > 1e-12)
+            or np.any(np.abs(tx_reg_proc.tf_other_activities[tf_i] - 1.0) > 1e-12)
+        )
+        if has_regulatory_target and complex_counts.get(tf_wid, 0.0) <= 0.0:
+            complex_counts[tf_wid] = 1.0
+            zero_seeded_regulatory_tfs.append(tf_wid)
+    if zero_seeded_regulatory_tfs:
+        _LOGGER.warning(
+            "build_karr_chassis_v5: %d regulation-active complex TF WIDs had zero mature "
+            "snapshot counts; seeding one copy for chassis bootstrap (%s)",
+            len(zero_seeded_regulatory_tfs),
+            ",".join(sorted(zero_seeded_regulatory_tfs)),
+        )
 
     m1_topo = {
         "metabolic_reaction": ("metabolic_reaction",),
@@ -1656,6 +2019,7 @@ def build_karr_chassis_v5(
             "substrates": ("substrates",),
             "rna": ("rna",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("_internal_requests_trna",),
             "substrates_allocated": ("substrates_allocated",),
         },
@@ -1669,6 +2033,7 @@ def build_karr_chassis_v5(
         },
         "karr_transcriptional_regulation": {
             "protein": ("protein",),
+            "complex": ("complex",),
             "tf_binding": ("tf_binding",),
             "tx_rate_fold_change": ("tx_rate_fold_change",),
         },
@@ -1676,6 +2041,7 @@ def build_karr_chassis_v5(
             "substrates": ("substrates",),
             "rna": ("rna",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("_internal_requests_rna_proc",),
             "substrates_allocated": ("substrates_allocated",),
         },
@@ -1683,12 +2049,14 @@ def build_karr_chassis_v5(
             "substrates": ("substrates",),
             "rna": ("rna",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("_internal_requests_rna_mod",),
             "substrates_allocated": ("substrates_allocated",),
         },
         "karr_protein_processing_i": {
             "substrates": ("substrates",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("_internal_requests_pp1",),
             "substrates_allocated": ("substrates_allocated",),
         },
@@ -1701,17 +2069,20 @@ def build_karr_chassis_v5(
         "karr_protein_modification": {
             "substrates": ("substrates",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("_internal_requests_pmod",),
             "substrates_allocated": ("substrates_allocated",),
         },
         "karr_protein_folding": {
             "substrates": ("substrates",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "substrates_allocated": ("substrates_allocated",),
         },
         "karr_protein_translocation": {
             "substrates": ("substrates",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("_internal_requests_ptrans",),
             "substrates_allocated": ("substrates_allocated",),
         },
@@ -1736,6 +2107,7 @@ def build_karr_chassis_v5(
         "karr_dna_supercoiling": {
             "chromosome": ("chromosome",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "substrates": ("substrates",),
             "requests": ("requests",),
             "substrates_allocated": ("substrates_allocated",),
@@ -1749,6 +2121,7 @@ def build_karr_chassis_v5(
         "karr_chromosome_segregation": {
             "chromosome": ("chromosome",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "substrates": ("substrates",),
             "requests": ("requests",),
             "substrates_allocated": ("substrates_allocated",),
@@ -1759,6 +2132,7 @@ def build_karr_chassis_v5(
         "karr_dna_repair": {
             "chromosome": ("chromosome",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "substrates": ("substrates",),
             "requests": ("requests",),
             "substrates_allocated": ("substrates_allocated",),
@@ -1805,6 +2179,11 @@ def build_karr_chassis_v5(
             "requests": ("requests",),
         },
         "request_calculator_protein_pathway": {
+            "substrates": ("substrates",),
+            "protein": ("protein",),
+            "requests": ("requests",),
+        },
+        "request_calculator_protein_translocation": {
             "substrates": ("substrates",),
             "protein": ("protein",),
             "requests": ("requests",),
@@ -1947,6 +2326,7 @@ def build_karr_chassis_v5(
             "request_calculator_trna": req_trna,
             "request_calculator_rna_pathway": req_rna,
             "request_calculator_protein_pathway": req_protein,
+            "request_calculator_protein_translocation": req_protein_translocation,
             "request_calculator_metabolism": req_metabolism,
             "request_calculator_transcription": req_transcription,
             "request_calculator_translation": req_translation,
@@ -1960,6 +2340,7 @@ def build_karr_chassis_v5(
             "request_calculator_trna": [],
             "request_calculator_rna_pathway": [],
             "request_calculator_protein_pathway": [],
+            "request_calculator_protein_translocation": [],
             "request_calculator_metabolism": [],
             "request_calculator_transcription": [],
             "request_calculator_translation": [],
@@ -1970,6 +2351,7 @@ def build_karr_chassis_v5(
                 ("request_calculator_trna",),
                 ("request_calculator_rna_pathway",),
                 ("request_calculator_protein_pathway",),
+                ("request_calculator_protein_translocation",),
                 ("request_calculator_metabolism",),
                 ("request_calculator_transcription",),
                 ("request_calculator_translation",),
@@ -2000,7 +2382,13 @@ def build_karr_chassis_v6(
     seed_from_fixture: bool = True,
     karr_parity_mode: bool = True,
 ) -> Any:
-    """Build the Phase-D v6 composite (v5 + RNA decay + HostInteraction)."""
+    """Build the Phase-D v6 composite (v5 + RNA decay + HostInteraction).
+
+    Runtime-identity invariant: TX/TL keys in the returned process map must
+    point to the canonical v3 runtime classes (`KarrTranscriptionV3Process`
+    and `KarrTranslationV3Process`) under canonical keys
+    (`karr_transcription`, `karr_translation`).
+    """
     del host_adhesion_gates_division
 
     from vivarium.core.composer import Composite
@@ -2032,6 +2420,8 @@ def build_karr_chassis_v6(
     initial_state = deepcopy(base_engine.initial_state)
 
     # Canonical process-key map expected by chassis_v6 integration gates.
+    # Runtime-identity guardrail below enforces that remapped keys still point
+    # to canonical v3 classes rather than legacy wrapper classes.
     for old_key, new_key in (
         ("karr_transcription_v3", "karr_transcription"),
         ("karr_translation_v3", "karr_translation"),

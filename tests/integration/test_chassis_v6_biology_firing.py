@@ -36,6 +36,14 @@ C1_PERTURB_PULSE_TICKS = 40
 C1_PERTURB_RECOVERY_TICKS = 40
 C1_PERTURB_ATP_DRAIN_PER_TICK = 100.0
 C1_PERTURB_MIN_ATP_DROP = 100.0
+# Stationarity tolerance for the pre- and post-pulse windows. Metabolism is now
+# allocator-mediated (Track-A A2 enrollment), so ATP no longer settles to a
+# bit-identical steady state in the absence of perturbation; tiny redistribution
+# through the allocator request matrix produces ~1-molecule drift per tick on a
+# count of ~10^8. 2.0 molecules/tick is 50x smaller than C1_PERTURB_MIN_ATP_DROP
+# (100/tick), preserving the SNR of the pulse-response signal we actually care
+# about, while accepting that pre/recovery windows are no longer bit-stationary.
+C1_PERTURB_STATIONARY_TOLERANCE = 2.0
 
 # Canonical DnaA keys were inspected from chassis_v6 t=0 state.
 DNAA_RNA_KEY = "MG_469"
@@ -242,9 +250,10 @@ def test_c1_metabolism_responds_to_atp_demand_under_karr_parity(karr_parity_mode
     atp_after_pulse = float(atp[pulse_end])
     atp_drop = atp_before_pulse - atp_after_pulse
 
-    assert float(np.max(np.abs(pre_delta))) <= 1e-9, (
+    assert float(np.max(np.abs(pre_delta))) <= C1_PERTURB_STATIONARY_TOLERANCE, (
         "C1 demand-pulse baseline failed: ATP moved before perturbation window; "
-        f"max_abs_pre_delta={float(np.max(np.abs(pre_delta))):.12g}."
+        f"max_abs_pre_delta={float(np.max(np.abs(pre_delta))):.12g}, "
+        f"tolerance={C1_PERTURB_STATIONARY_TOLERANCE:.12g}."
     )
     assert np.any(pulse_delta < 0.0), (
         "C1 demand-pulse response failed: ATP never decreased during perturbation window; "
@@ -256,9 +265,10 @@ def test_c1_metabolism_responds_to_atp_demand_under_karr_parity(karr_parity_mode
         f"drop={atp_drop:.12g}, expected_min={C1_PERTURB_MIN_ATP_DROP:.12g}, "
         f"atp_before={atp_before_pulse:.12g}, atp_after={atp_after_pulse:.12g}."
     )
-    assert float(np.max(np.abs(recovery_delta))) <= 1e-9, (
+    assert float(np.max(np.abs(recovery_delta))) <= C1_PERTURB_STATIONARY_TOLERANCE, (
         "C1 demand-pulse recovery failed: ATP did not settle after perturbation window; "
-        f"max_abs_recovery_delta={float(np.max(np.abs(recovery_delta))):.12g}."
+        f"max_abs_recovery_delta={float(np.max(np.abs(recovery_delta))):.12g}, "
+        f"tolerance={C1_PERTURB_STATIONARY_TOLERANCE:.12g}."
     )
 
 

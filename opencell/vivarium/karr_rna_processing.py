@@ -1,7 +1,29 @@
-"""Vivarium Process port of Karr's RNA processing flow."""
+"""karr_rna_processing — Karr 2012 RNA Processing process (light/v5 chassis).
+
+ARCHITECTURAL DEFER (2026-05-27): This process is registered and called every
+tick but currently always returns ``{}``. This is intentional, not a bug.
+
+Karr's MATLAB chain is:
+    Transcription -> nascent TU-keyed RNA pool -> RNAProcessing -> mature mRNA/rRNA/sRNA/tRNA
+
+OpenCell v5 chassis collapses this into TX-emits-mature: `karr_transcription`
+writes mature gene-keyed RNA (`MG_###`) directly to `rna.counts`. RNAProcessing
+here reads unprocessed TU-keyed RNA (`TU_###`). Intersection of the two ID
+spaces is empty at runtime, so the unprocessed-pool gate at
+:func:`KarrRNAProcessingProcess.next_update` correctly returns empty every tick.
+
+The full Karr-faithful fix (TX emits nascent TU pool, RNAProcessing converts to
+mature pool) is wave3 Option 1 — see ``docs/processes/rna_processing_defer.md``.
+
+Until wave3, this module is kept registered (a) to preserve the wiring topology
+for future restoration, (b) to keep the process count at 28 for canary
+completeness, and (c) so any future TX change that *does* emit TU-keyed RNA
+will automatically light this process up.
+"""
 
 from __future__ import annotations
 
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -12,8 +34,23 @@ from vivarium.core.process import Process
 from opencell.vivarium.karr_trna_aminoacylation import _parse_wid_array, _resolve_fixture_path
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/RNAProcessing_flat.mat"
+_D2_COMPLEXATION_FIXTURE_PATH = "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
+_RIBOSOME_ASSEMBLY_FIXTURE_PATH = "data/karr_fixtures/per_process/RibosomeAssembly_flat.mat"
+_FIXED_COMPLEX_WIDS = frozenset({"RNA_POLYMERASE", "RIBOSOME_70S"})
 _MAX_STOCHASTIC_ITERATIONS = 10_000
 _UNBOUNDED_LIMIT = 1_000_000_000_000
+
+
+@lru_cache(maxsize=1)
+def _canonical_complex_wids() -> frozenset[str]:
+    complex_wids: set[str] = set()
+    for fixture_path in (_D2_COMPLEXATION_FIXTURE_PATH, _RIBOSOME_ASSEMBLY_FIXTURE_PATH):
+        resolved = _resolve_fixture_path(fixture_path)
+        mat = loadmat(str(resolved))
+        fx = mat["data"]["fixture"][0, 0]
+        complex_wids.update(_parse_wid_array(fx["complexWholeCellModelIDs"]))
+    complex_wids.update(_FIXED_COMPLEX_WIDS)
+    return frozenset(complex_wids)
 
 
 class KarrRNAProcessingProcess(Process):
@@ -31,6 +68,14 @@ class KarrRNAProcessingProcess(Process):
         super().__init__(parameters)
         self._load_fixture(self.parameters["fixture_path"])
         self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
+        canonical_complex_wids = _canonical_complex_wids()
+        self.complex_enzyme_wids = [
+            wid for wid in self.enzyme_wids if wid in canonical_complex_wids
+        ]
+        self.monomer_enzyme_wids = [
+            wid for wid in self.enzyme_wids if wid not in canonical_complex_wids
+        ]
+        self._complex_enzyme_wid_set = set(self.complex_enzyme_wids)
 
         self.rna_wids = list(dict.fromkeys(self.unprocessed_rna_wids + self.processed_rna_wids))
         self._processed_index_by_wid = {wid: idx for idx, wid in enumerate(self.rna_wids)}
@@ -213,7 +258,13 @@ class KarrRNAProcessingProcess(Process):
             "protein": {
                 "counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
-                    for wid in self.enzyme_wids
+                    for wid in self.monomer_enzyme_wids
+                }
+            },
+            "complex": {
+                "counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                    for wid in self.complex_enzyme_wids
                 }
             },
             "requests": {
@@ -232,23 +283,33 @@ class KarrRNAProcessingProcess(Process):
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         del timestep
+        protein_state = states.get("protein", {})
+        if not isinstance(protein_state, dict):
+            protein_state = {}
+        complex_state = states.get("complex", {})
+        if not isinstance(complex_state, dict):
+            complex_state = {}
+        enzymes = self._enzyme_counts_from_stores(
+            protein_count_store=protein_state.get("counts", {}),
+            complex_count_store=complex_state.get("counts", {}),
+        )
+
         rna_counts = states.get("rna", {}).get("counts", {})
         unprocessed = np.asarray(
             [float(rna_counts.get(wid, 0.0)) for wid in self.unprocessed_rna_wids], dtype=np.float64
         )
+        # DEFER (wave3 Option 1): empty by design until TX emits TU-keyed nascent pool.
+        # See module docstring + docs/processes/rna_processing_defer.md.
         if unprocessed.sum() <= 0.0:
             return {}
 
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
+        # Strict-zero allocator contract: do not fallback to global substrate pools.
         substrates = np.asarray(
             [
                 max(0.0, float(allocated_state.get(wid, 0.0)))
                 for wid in self.substrate_wids
             ],
-            dtype=np.float64,
-        )
-        enzymes = np.asarray(
-            [float(states["protein"]["counts"].get(wid, 0.0)) for wid in self.enzyme_wids],
             dtype=np.float64,
         )
 
@@ -286,6 +347,36 @@ class KarrRNAProcessingProcess(Process):
         if rna_updates:
             update["rna"] = {"counts": rna_updates}
         return update
+
+    def _enzyme_counts_from_stores(
+        self,
+        protein_count_store: Any,
+        complex_count_store: Any,
+    ) -> np.ndarray:
+        if not isinstance(protein_count_store, dict):
+            protein_count_store = {}
+        if not isinstance(complex_count_store, dict):
+            complex_count_store = {}
+
+        missing: list[str] = []
+        enzymes = np.zeros(len(self.enzyme_wids), dtype=np.float64)
+        for eidx, wid in enumerate(self.enzyme_wids):
+            if wid in self._complex_enzyme_wid_set:
+                if wid not in complex_count_store:
+                    missing.append(f"complex.counts[{wid}]")
+                enzymes[eidx] = float(complex_count_store.get(wid, 0.0))
+            else:
+                if wid not in protein_count_store:
+                    missing.append(f"protein.counts[{wid}]")
+                enzymes[eidx] = float(protein_count_store.get(wid, 0.0))
+
+        if missing:
+            joined = ", ".join(sorted(missing))
+            raise KeyError(
+                "KarrRNAProcessingProcess missing declared enzyme inputs in state stores: "
+                f"{joined}"
+            )
+        return enzymes
 
     def _compute_reaction_fluxes(
         self,

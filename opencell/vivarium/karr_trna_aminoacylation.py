@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -10,6 +11,8 @@ from scipy.io import loadmat
 from vivarium.core.process import Process
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/tRNAAminoacylation_flat.mat"
+_D2_COMPLEX_FIXTURE_PATH = "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
+_RIBASM_COMPLEX_FIXTURE_PATH = "data/karr_fixtures/per_process/RibosomeAssembly_flat.mat"
 _MAX_STOCHASTIC_ITERATIONS = 10_000
 
 
@@ -44,6 +47,19 @@ def _parse_wid_array(cell_array: np.ndarray) -> list[str]:
     return out
 
 
+@lru_cache(maxsize=1)
+def _canonical_complex_wids() -> frozenset[str]:
+    d2_mat = loadmat(str(_resolve_fixture_path(_D2_COMPLEX_FIXTURE_PATH)))
+    d2_fx = d2_mat["data"]["fixture"][0, 0]
+    d2_wids = set(_parse_wid_array(d2_fx["complexWholeCellModelIDs"]))
+
+    ribasm_mat = loadmat(str(_resolve_fixture_path(_RIBASM_COMPLEX_FIXTURE_PATH)))
+    ribasm_fx = ribasm_mat["data"]["fixture"][0, 0]
+    ribasm_wids = set(_parse_wid_array(ribasm_fx["complexWholeCellModelIDs"]))
+
+    return frozenset(d2_wids | ribasm_wids | {"RNA_POLYMERASE", "RIBOSOME_70S"})
+
+
 class KarrTRNAAminoacylationProcess(Process):
     """Karr Process_tRNAAminoacylation (deterministic + stochastic phases)."""
 
@@ -53,11 +69,26 @@ class KarrTRNAAminoacylationProcess(Process):
         "rng_seed": 0,
         "time_step": 1.0,
         "max_stochastic_iterations": _MAX_STOCHASTIC_ITERATIONS,
+        # Optional traceability hook for chassis-level diagnostics: emit a
+        # structured no-op update instead of `{}` when guards suppress flux.
+        "emit_noop_update": False,
+        # When enabled, the chassis tracer may emit a heartbeat row for no-op ticks.
+        "emit_trace_heartbeat_on_noop": False,
     }
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
         super().__init__(parameters)
         self._load_fixture(self.parameters["fixture_path"])
+        n_catalytic_enzymes = int(self.reaction_catalysis.shape[1])
+        self.catalytic_enzyme_wids = self.enzyme_wids[:n_catalytic_enzymes]
+        canonical_complex_wids = _canonical_complex_wids()
+        self.complex_enzyme_wids = [
+            wid for wid in self.catalytic_enzyme_wids if wid in canonical_complex_wids
+        ]
+        self.monomer_enzyme_wids = [
+            wid for wid in self.catalytic_enzyme_wids if wid not in canonical_complex_wids
+        ]
+        self._enzyme_index_by_wid = {wid: idx for idx, wid in enumerate(self.enzyme_wids)}
         self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
 
         row_sums = np.sum(self.reaction_modification, axis=1)
@@ -85,7 +116,7 @@ class KarrTRNAAminoacylationProcess(Process):
         self.enzyme_bounds = np.asarray(fx["enzymeBounds"][0, 0], dtype=np.float64)
 
     def ports_schema(self) -> dict[str, Any]:
-        return {
+        schema: dict[str, Any] = {
             "substrates": {
                 wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                 for wid in self.substrate_wids
@@ -103,7 +134,7 @@ class KarrTRNAAminoacylationProcess(Process):
             "protein": {
                 "counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
-                    for wid in self.enzyme_wids
+                    for wid in self.monomer_enzyme_wids
                 }
             },
             "requests": {
@@ -119,10 +150,29 @@ class KarrTRNAAminoacylationProcess(Process):
                 }
             },
         }
+        if self.complex_enzyme_wids:
+            schema["complex"] = {
+                "counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                    for wid in self.complex_enzyme_wids
+                }
+            }
+        return schema
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         del timestep
+        rna_state = states.get("rna", {})
+        if not isinstance(rna_state, dict):
+            rna_state = {}
+        protein_state = states.get("protein", {})
+        if not isinstance(protein_state, dict):
+            protein_state = {}
+        complex_state = states.get("complex", {})
+        if not isinstance(complex_state, dict):
+            complex_state = {}
+
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
+        # Strict-zero allocator contract: do not fallback to global substrate pools.
         substrates = np.asarray(
             [
                 max(0.0, float(allocated_state.get(wid, 0.0)))
@@ -130,24 +180,46 @@ class KarrTRNAAminoacylationProcess(Process):
             ],
             dtype=np.float64,
         )
+        free_store = rna_state.get("counts", {})
+        if not isinstance(free_store, dict):
+            free_store = {}
+        if not free_store:
+            free_store = self._legacy_vector_to_wid_counts(
+                states.get("freeRNAs"),
+                self.free_rna_wids,
+            )
         free_rna = np.asarray(
-            [float(states["rna"]["counts"].get(wid, 0.0)) for wid in self.free_rna_wids],
+            [float(free_store.get(wid, 0.0)) for wid in self.free_rna_wids],
             dtype=np.float64,
         )
+        amino_store = rna_state.get("aminoacylated_counts", {})
+        if not isinstance(amino_store, dict):
+            amino_store = {}
+        if not amino_store:
+            amino_store = self._legacy_vector_to_wid_counts(
+                states.get("aminoacylatedRNAs"),
+                self.aminoacylated_rna_wids,
+            )
         aminoacylated_rna = np.asarray(
             [
-                float(states["rna"].get("aminoacylated_counts", {}).get(wid, 0.0))
+                float(amino_store.get(wid, 0.0))
                 for wid in self.aminoacylated_rna_wids
             ],
             dtype=np.float64,
         )
-        enzymes = np.asarray(
-            [float(states["protein"]["counts"].get(wid, 0.0)) for wid in self.enzyme_wids],
-            dtype=np.float64,
+        protein_count_store = protein_state.get("counts", {})
+        if not isinstance(protein_count_store, dict):
+            protein_count_store = {}
+        complex_count_store = complex_state.get("counts", {})
+        if not isinstance(complex_count_store, dict):
+            complex_count_store = {}
+        enzymes = self._enzyme_vector_from_split_stores(
+            protein_count_store=protein_count_store,
+            complex_count_store=complex_count_store,
         )
 
         if free_rna.sum() <= 0.0:
-            return {}
+            return self._noop_update() if bool(self.parameters.get("emit_noop_update", False)) else {}
 
         reaction_fluxes = self._compute_reaction_fluxes(
             free_rna=free_rna,
@@ -156,7 +228,7 @@ class KarrTRNAAminoacylationProcess(Process):
             dt=float(self.parameters["time_step"]),
         )
         if not np.any(reaction_fluxes > 0):
-            return {}
+            return self._noop_update() if bool(self.parameters.get("emit_noop_update", False)) else {}
 
         substrate_delta = self.reaction_stoich @ reaction_fluxes
         rna_consumed = self.reaction_modification.T @ reaction_fluxes
@@ -191,6 +263,45 @@ class KarrTRNAAminoacylationProcess(Process):
         # Keep explicit read-path for charged store in tests and engines.
         _ = aminoacylated_rna
         return update
+
+    def _enzyme_vector_from_split_stores(
+        self,
+        *,
+        protein_count_store: dict[str, Any],
+        complex_count_store: dict[str, Any],
+    ) -> np.ndarray:
+        missing_monomers = [wid for wid in self.monomer_enzyme_wids if wid not in protein_count_store]
+        if missing_monomers:
+            missing = ", ".join(missing_monomers[:5])
+            raise KeyError(
+                "karr_trna_aminoacylation missing required monomer enzyme WIDs in protein.counts: "
+                f"{missing}"
+            )
+
+        missing_complexes = [wid for wid in self.complex_enzyme_wids if wid not in complex_count_store]
+        if missing_complexes:
+            missing = ", ".join(missing_complexes[:5])
+            raise KeyError(
+                "karr_trna_aminoacylation missing required complex enzyme WIDs in complex.counts: "
+                f"{missing}"
+            )
+
+        enzyme_values = np.zeros(len(self.enzyme_wids), dtype=np.float64)
+        for wid in self.monomer_enzyme_wids:
+            enzyme_values[self._enzyme_index_by_wid[wid]] = float(protein_count_store[wid])
+        for wid in self.complex_enzyme_wids:
+            enzyme_values[self._enzyme_index_by_wid[wid]] = float(complex_count_store[wid])
+        return enzyme_values
+
+    @staticmethod
+    def _noop_update() -> dict[str, Any]:
+        return {
+            "substrates": {},
+            "rna": {
+                "counts": {},
+                "aminoacylated_counts": {},
+            },
+        }
 
     def _compute_reaction_fluxes(
         self,
@@ -297,6 +408,21 @@ class KarrTRNAAminoacylationProcess(Process):
         free_pool[target_idx] -= 1
         enzyme_remaining[chosen] -= 1
         return True
+
+    @staticmethod
+    def _legacy_vector_to_wid_counts(
+        values: Any,
+        wids: list[str],
+    ) -> dict[str, float]:
+        if values is None:
+            return {}
+        try:
+            flat = np.asarray(values, dtype=np.float64).reshape(-1)
+        except (TypeError, ValueError):
+            return {}
+        if flat.size != len(wids):
+            return {}
+        return {wid: float(flat[idx]) for idx, wid in enumerate(wids)}
 
 
 __all__ = ["KarrTRNAAminoacylationProcess"]

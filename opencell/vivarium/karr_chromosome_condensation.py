@@ -240,9 +240,8 @@ class KarrChromosomeCondensationProcess(Process):
         self._sync_internal_state(current_bound)
 
         allocated = states.get("substrates_allocated", {}).get(self.name, {})
-        substrate_state = states.get("substrates", {})
-        available_atp = self._allocated_or_state(allocated, substrate_state, self.atp_wid)
-        available_h2o = self._allocated_or_state(allocated, substrate_state, self.water_wid)
+        available_atp = self._allocated_or_state(allocated, self.atp_wid)
+        available_h2o = self._allocated_or_state(allocated, self.water_wid)
 
         update: dict[str, Any] = {}
         substrate_delta: dict[str, float] = {}
@@ -326,7 +325,6 @@ class KarrChromosomeCondensationProcess(Process):
     def _allocated_or_state(
         self,
         allocated_state: dict[str, Any],
-        substrate_state: dict[str, Any],
         wid: str,
     ) -> float:
         allocated = float(allocated_state.get(wid, 0.0))

@@ -22,6 +22,9 @@ from scipy.io import loadmat
 from vivarium.core.process import Process
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/DNASupercoiling_flat.mat"
+_DEFAULT_COMPLEXATION_FIXTURE_PATH = (
+    "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
+)
 
 
 def _resolve_fixture_path(path: str | Path) -> Path:
@@ -61,12 +64,33 @@ def _to_finite(value: float, fallback: float) -> float:
     return float(value)
 
 
+def _load_d2_complex_wid_set(path: str | Path) -> set[str]:
+    resolved = _resolve_fixture_path(path)
+    mat = loadmat(str(resolved))
+    fx = mat["data"]["fixture"][0, 0]
+    values = np.asarray(fx["complexWholeCellModelIDs"], dtype=object)
+    if values.shape == (1, 1):
+        values = np.asarray(values[0, 0], dtype=object)
+
+    out: set[str] = set()
+    for raw in values.ravel():
+        value: object = raw
+        while isinstance(value, np.ndarray):
+            if value.size == 0:
+                value = ""
+                break
+            value = value.flat[0]
+        out.add(str(value))
+    return out
+
+
 class KarrDNASupercoilingProcess(Process):
     """Karr Process_DNASupercoiling (light bulk-sigma variant)."""
 
     name = "karr_dna_supercoiling"
     defaults: dict[str, Any] = {
         "fixture_path": _DEFAULT_FIXTURE_PATH,
+        "complexation_fixture_path": _DEFAULT_COMPLEXATION_FIXTURE_PATH,
         "rng_seed": 0,
         "time_step": 1.0,
         "chromosome_length_bp": 580_076.0,
@@ -98,6 +122,19 @@ class KarrDNASupercoilingProcess(Process):
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
         super().__init__(parameters)
         self._load_fixture(self.parameters["fixture_path"])
+        self._canonical_complex_wids = _load_d2_complex_wid_set(
+            self.parameters["complexation_fixture_path"]
+        )
+        self.complex_enzyme_wids = [
+            wid for wid in self.enzyme_wids if wid in self._canonical_complex_wids
+        ]
+        self.protein_enzyme_wids = [
+            wid for wid in self.enzyme_wids if wid not in self._canonical_complex_wids
+        ]
+        self.enzyme_store_by_wid = {
+            wid: ("complex" if wid in self._canonical_complex_wids else "protein")
+            for wid in self.enzyme_wids
+        }
         self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
 
         chromosome_length = float(self.parameters["chromosome_length_bp"])
@@ -161,7 +198,7 @@ class KarrDNASupercoilingProcess(Process):
         return float(fallback)
 
     def ports_schema(self) -> dict[str, Any]:
-        return {
+        schema: dict[str, Any] = {
             "chromosome": {
                 "supercoil_density": {
                     "_default": float(self.equilibrium_sigma),
@@ -178,12 +215,6 @@ class KarrDNASupercoilingProcess(Process):
                     "_updater": "set",
                     "_emit": False,
                 },
-            },
-            "protein": {
-                "counts": {
-                    self.gyrase_wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True},
-                    self.topoiv_wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True},
-                }
             },
             "substrates": {
                 wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
@@ -202,6 +233,21 @@ class KarrDNASupercoilingProcess(Process):
                 }
             },
         }
+        if self.protein_enzyme_wids:
+            schema["protein"] = {
+                "counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
+                    for wid in self.protein_enzyme_wids
+                }
+            }
+        if self.complex_enzyme_wids:
+            schema["complex"] = {
+                "counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
+                    for wid in self.complex_enzyme_wids
+                }
+            }
+        return schema
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         dt = float(timestep) if timestep > 0 else float(self.parameters["time_step"])
@@ -214,13 +260,17 @@ class KarrDNASupercoilingProcess(Process):
         replication_state = str(chrom_state.get("replication_state", "idle"))
 
         protein_counts = states.get("protein", {}).get("counts", {})
-        gyrase_count = max(0.0, float(protein_counts.get(self.gyrase_wid, 0.0)))
-        topoiv_count = max(0.0, float(protein_counts.get(self.topoiv_wid, 0.0)))
+        complex_counts = states.get("complex", {}).get("counts", {})
+        gyrase_count = self._resolve_enzyme_count(
+            self.gyrase_wid, protein_counts=protein_counts, complex_counts=complex_counts
+        )
+        topoiv_count = self._resolve_enzyme_count(
+            self.topoiv_wid, protein_counts=protein_counts, complex_counts=complex_counts
+        )
 
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
-        substrate_state = states.get("substrates", {})
-        available_atp = self._allocated_or_state(allocated_state, substrate_state, self.atp_wid)
-        available_h2o = self._allocated_or_state(allocated_state, substrate_state, self.h2o_wid)
+        available_atp = self._allocated_or_state(allocated_state, self.atp_wid)
+        available_h2o = self._allocated_or_state(allocated_state, self.h2o_wid)
         hydrolysis_budget = min(available_atp, available_h2o)
 
         rep_load_events = self._replication_supercoil_load_events(replication_state, dt)
@@ -315,10 +365,29 @@ class KarrDNASupercoilingProcess(Process):
 
         return update
 
+    def _resolve_enzyme_count(
+        self,
+        wid: str,
+        *,
+        protein_counts: dict[str, Any],
+        complex_counts: dict[str, Any],
+    ) -> float:
+        store = self.enzyme_store_by_wid.get(wid)
+        if store is None:
+            raise KeyError(f"Declared enzyme '{wid}' is missing store classification")
+        if store == "complex":
+            if wid not in complex_counts:
+                raise KeyError(
+                    f"Missing declared complex enzyme '{wid}' in complex.counts"
+                )
+            return max(0.0, float(complex_counts[wid]))
+        if wid not in protein_counts:
+            raise KeyError(f"Missing declared protein enzyme '{wid}' in protein.counts")
+        return max(0.0, float(protein_counts[wid]))
+
     def _allocated_or_state(
         self,
         allocated_state: dict[str, Any],
-        substrate_state: dict[str, Any],
         wid: str,
     ) -> float:
         allocated = float(allocated_state.get(wid, 0.0))

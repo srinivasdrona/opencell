@@ -50,6 +50,8 @@ def _load_snapshot_state(process: KarrTRNAAminoacylationProcess) -> dict[str, An
         amino_rna = rng.integers(1, 80, size=len(process.aminoacylated_rna_wids)).astype(float)
         enzymes = rng.integers(1, 100, size=len(process.enzyme_wids)).astype(float)
 
+    enzyme_by_wid = {wid: float(enzymes[idx]) for idx, wid in enumerate(process.enzyme_wids)}
+
     return {
         "substrates": {
             wid: float(substrates[idx]) for idx, wid in enumerate(process.substrate_wids)
@@ -61,7 +63,10 @@ def _load_snapshot_state(process: KarrTRNAAminoacylationProcess) -> dict[str, An
             },
         },
         "protein": {
-            "counts": {wid: float(enzymes[idx]) for idx, wid in enumerate(process.enzyme_wids)}
+            "counts": {wid: enzyme_by_wid[wid] for wid in process.monomer_enzyme_wids}
+        },
+        "complex": {
+            "counts": {wid: enzyme_by_wid[wid] for wid in process.complex_enzyme_wids}
         },
         "requests": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
         "substrates_allocated": {
@@ -133,7 +138,10 @@ def test_mass_conservation() -> None:
 
     free = np.array([state["rna"]["counts"][wid] for wid in p.free_rna_wids], dtype=np.float64)
     substrates = np.array([state["substrates"][wid] for wid in p.substrate_wids], dtype=np.float64)
-    enzymes = np.array([state["protein"]["counts"][wid] for wid in p.enzyme_wids], dtype=np.float64)
+    enzymes = p._enzyme_vector_from_split_stores(
+        protein_count_store=state["protein"]["counts"],
+        complex_count_store=state["complex"]["counts"],
+    )
     flux = p._compute_reaction_fluxes(free_rna=free, substrates=substrates, enzymes=enzymes, dt=1.0)
 
     update = p.next_update(1.0, state)
@@ -216,8 +224,10 @@ def test_enzyme_limit_kicks_in() -> None:
         state["rna"]["counts"][wid] = 0.0
     state["rna"]["counts"][target_wid] = 10.0
 
-    for wid in p.enzyme_wids:
+    for wid in p.monomer_enzyme_wids:
         state["protein"]["counts"][wid] = 0.0
+    for wid in p.complex_enzyme_wids:
+        state["complex"]["counts"][wid] = 0.0
     for sidx, coeff in enumerate(p.reaction_stoich[:, ridx]):
         if coeff < 0:
             wid = p.substrate_wids[sidx]
@@ -227,7 +237,10 @@ def test_enzyme_limit_kicks_in() -> None:
     update_starved = p.next_update(1.0, state)
     assert update_starved == {}
 
-    state["protein"]["counts"][enzyme_wid] = 2.0
+    if enzyme_wid in p.complex_enzyme_wids:
+        state["complex"]["counts"][enzyme_wid] = 2.0
+    else:
+        state["protein"]["counts"][enzyme_wid] = 2.0
     update_enzyme = p.next_update(1.0, state)
     assert update_enzyme["rna"]["counts"][target_wid] < 0.0
     assert update_enzyme["rna"]["aminoacylated_counts"][target_wid] > 0.0
@@ -256,7 +269,13 @@ def test_integration_with_chassis_v3() -> None:
         "protein": {
             "counts": {
                 wid: float(chassis_state.get("protein", {}).get("counts", {}).get(wid, 0.0))
-                for wid in process.enzyme_wids
+                for wid in process.monomer_enzyme_wids
+            }
+        },
+        "complex": {
+            "counts": {
+                wid: float(chassis_state.get("complex", {}).get("counts", {}).get(wid, 0.0))
+                for wid in process.complex_enzyme_wids
             }
         },
         "requests": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
@@ -280,6 +299,7 @@ def test_within_tick_lag_at_dt_1s() -> None:
                 "substrates": ("substrates",),
                 "rna": ("rna",),
                 "protein": ("protein",),
+                "complex": ("complex",),
                 "requests": ("requests",),
                 "substrates_allocated": ("substrates_allocated",),
             }
@@ -292,3 +312,49 @@ def test_within_tick_lag_at_dt_1s() -> None:
     final_state = engine.state.get_value()
     final_fraction = _charged_fraction(final_state, process)
     assert abs(final_fraction - 0.67) <= 0.05
+
+
+def test_v6_chassis_seeded_complex_enzyme_is_flux_active_without_manual_store_writes() -> None:
+    pytest.importorskip("opencell.vivarium.karr_composite")
+    from opencell.vivarium.karr_composite import build_karr_chassis_v6
+
+    composite = build_karr_chassis_v6(time_step_s=1.0, emit_step_s=1.0)
+    process = composite["processes"]["karr_trna_aminoacylation"]
+    initial_state = deepcopy(composite["state"])
+    complex_counts = initial_state["complex"]["counts"]
+
+    seeded_complex_wids = [
+        wid for wid in process.complex_enzyme_wids if float(complex_counts.get(wid, 0.0)) > 0.0
+    ]
+    assert seeded_complex_wids
+    seeded_complex_wid = seeded_complex_wids[0]
+    seeded_complex_count = float(complex_counts[seeded_complex_wid])
+    assert seeded_complex_count > 0.0
+
+    initial_state.setdefault("substrates_allocated", {})
+    initial_state["substrates_allocated"][process.name] = {
+        wid: float(initial_state["substrates"].get(wid, 0.0)) for wid in process.substrate_wids
+    }
+    enzymes = process._enzyme_vector_from_split_stores(
+        protein_count_store=initial_state["protein"]["counts"],
+        complex_count_store=initial_state["complex"]["counts"],
+    )
+    free_rna = np.asarray(
+        [float(initial_state["rna"]["counts"][wid]) for wid in process.free_rna_wids],
+        dtype=np.float64,
+    )
+    substrates = np.asarray(
+        [float(initial_state["substrates_allocated"][process.name][wid]) for wid in process.substrate_wids],
+        dtype=np.float64,
+    )
+    fluxes = process._compute_reaction_fluxes(
+        free_rna=free_rna,
+        substrates=substrates,
+        enzymes=enzymes,
+        dt=float(process.parameters["time_step"]),
+    )
+
+    enzyme_idx = process.enzyme_wids.index(seeded_complex_wid)
+    catalyzed_rxn_idx = np.flatnonzero(process.reaction_catalysis[:, enzyme_idx] > 0)
+    assert catalyzed_rxn_idx.size > 0
+    assert np.any(fluxes[catalyzed_rxn_idx] > 0)

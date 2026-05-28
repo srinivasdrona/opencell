@@ -73,6 +73,18 @@ def _time_series(trajectory: Trajectory) -> np.ndarray | None:
     return np.asarray(out, dtype=np.float64)
 
 
+def _sidecar_metric(trajectory: Trajectory, key: str) -> float | None:
+    sidecar = trajectory.get("_sidecar_metrics", {})
+    if not isinstance(sidecar, dict):
+        return None
+    value = sidecar.get(key)
+    try:
+        scalar = float(value)
+    except (TypeError, ValueError):
+        return None
+    return scalar if np.isfinite(scalar) else None
+
+
 def _tail(arr: np.ndarray, *, n: int = 20) -> np.ndarray:
     if arr.size <= n:
         return arr
@@ -140,14 +152,12 @@ def extract_kp02(trajectory: Trajectory) -> float | None:
     return first
 
 
-def extract_kp03(_trajectory: Trajectory) -> float | None:
-    # Requires metabolic flux and oracle fixture not emitted in schema-v1 snapshots.
-    return None
+def extract_kp03(trajectory: Trajectory) -> float | None:
+    return _sidecar_metric(trajectory, "kp03_flux_oracle_median_abs_log2_ratio")
 
 
-def extract_kp04(_trajectory: Trajectory) -> float | None:
-    # Requires TX_GLCPTS flux not emitted in schema-v1 snapshots.
-    return None
+def extract_kp04(trajectory: Trajectory) -> float | None:
+    return _sidecar_metric(trajectory, "kp04_tx_glcpts_mean_abs_flux")
 
 
 def extract_kp05(trajectory: Trajectory) -> float | None:
@@ -327,9 +337,8 @@ def extract_kp20(trajectory: Trajectory) -> float | None:
     return float(np.mean(np.asarray(log_ratios, dtype=np.float64)))
 
 
-def extract_kp21(_trajectory: Trajectory) -> float | None:
-    # Requires production/use ledger stores not emitted in schema-v1 snapshots.
-    return None
+def extract_kp21(trajectory: Trajectory) -> float | None:
+    return _sidecar_metric(trajectory, "kp21_energy_unattributed_ratio")
 
 
 def extract_kp22(trajectory: Trajectory) -> bool | None:
