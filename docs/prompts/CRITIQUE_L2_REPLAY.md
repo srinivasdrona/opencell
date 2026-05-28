@@ -42,18 +42,22 @@ For the process under test:
 - `missing`: [...] (count; non-empty → Gate 1 FAIL)
 - `pass_through_handled`: [...] (must be labelled in test AND provenance must be `states_before`; absent labelling OR oracle-sourced provenance → **Gate 1 FAIL for a published GREEN** — not WEAK)
 
-### Gate 2 — Tolerance discipline (Rule 2)
+### Gate 2 — Tolerance discipline + delta-integrality (Rule 2)
 
-Locate the comparison assertion. Report:
+Locate the comparison assertion AND the update-application call site. Report:
 
 - Exact code of the mismatch detection (e.g., `mismatch = diff > tol` vs `mismatch = oc != karr`).
 - The tolerance expression if any (e.g., `1.0e-6 * np.maximum(1.0, np.abs(karr))`).
 - The largest count value seen in this trace's `states_after` (from `h5py`-driven probe). Estimate the masked-difference upper bound at that value.
+- The site where the emitted update delta is applied to `states_before` (e.g., `_apply_update(state, update)` or Engine update). Quote the line that performs the per-element add.
+- Whether an explicit delta-integrality assertion (`np.array_equal(np.rint(delta), delta)`) fires before that add, per Rule 2 clause 4. Cite line.
+- Whether any rounding/casting/floor/clip/coercion happens on `state_before + delta` before the integer-exact compare. Cite line.
 
 **Verdict:**
 - Tolerance present AND comparison is on count observables → Gate 2 FAIL. Specify masked-difference upper bound.
-- Integer-exact compare AND oracle-integrality + oc-integrality asserts present → Gate 2 PASS.
-- Integer-exact compare WITHOUT integrality asserts → Gate 2 WEAK (a smuggled concentration silently passes as a 0.0-diff integer cast).
+- Integer-exact compare AND oracle-integrality + oc-integrality asserts present AND delta-integrality assert present AND no rounding/cast on the apply path → Gate 2 PASS.
+- Integer-exact compare AND oracle/oc-integrality present BUT delta-integrality MISSING → **Gate 2 FAIL** (Rule 2 clause 4 violated; a non-integral delta can be rounded by `np.rint(state_before + delta)` and the integrality assert on `oc_after` then passes vacuously).
+- Integer-exact compare WITHOUT oc-integrality assertions → Gate 2 WEAK (a smuggled concentration silently passes as a 0.0-diff integer cast).
 
 ### Gate 3 — State-build vs schema (Rules 4, 7)
 

@@ -6,14 +6,20 @@
 
 **Bug class:** false-confidence GREENs caused by skipped observables, hidden float tolerance, pass-through assertions that never exercise mutated state, no-op traces that hit early-returns in production code, and tick-loop process reconstruction that resets RNG.
 
-## Rule 1 — Observable coverage must be complete
+## Rule 1 — Observable coverage must be complete; pass-through declared as a manifest
 
 The `_OBSERVABLES` tuple MUST list every observable the process's `next_update` emits a delta into, plus every observable Karr records in `states_after/<obs>` for this process. No early-return, no flag-gated skip, no observable absent from the tuple "because the process doesn't write to it" (those still need to be asserted as pass-through; see Rule 7).
+
+Two manifests are mandatory at module scope of the test file (machine-checkable, no comment-only labels):
+
+- `_OBSERVABLES`: tuple of observable names. MUST equal the set of keys under the trace's `states_after` group.
+- `_PASS_THROUGH`: frozenset of observable names from `_OBSERVABLES` whose `oc_after` is identity-rebuilt from `states_before` (not from any process write). For every name in `_PASS_THROUGH`, the test's projection routine MUST derive that observable from the `states_before`-rebuilt state. Lint MUST verify no taint from `states_after` / `karr_after` reaches that name (Rule 7). For every name in `_OBSERVABLES - _PASS_THROUGH`, the process's `next_update` MUST write at least one update touching the observable in at least one trace tick (else Rule 6 mutated-delta sweep reclassifies the verdict to "L2.1 untested").
 
 **Procedure:**
 1. Read `states_after/` keys from `<Process>_100ticks.mat` via `h5py`. List every observable.
 2. Read the process's `next_update` and list every store/key it returns a delta into.
-3. The union of the two lists is `_OBSERVABLES`. Anything in Karr's set but not OC's is a pass-through observable (assert it remains equal to `states_before/<obs>` for the same tick).
+3. `_OBSERVABLES` = union of (1) and (2). `_PASS_THROUGH` = members of `_OBSERVABLES` not written by `next_update`.
+4. Lint checks: `set(_OBSERVABLES) == set(states_after keys)`; `_PASS_THROUGH ⊆ _OBSERVABLES`; provenance taint check per Rule 7.
 
 ## Rule 2 — Integer-exact compare on count observables
 
@@ -49,14 +55,31 @@ State for tick `t` MUST be rebuilt from `states_before[t]`, NOT from OC's tick-`
 
 ### Rule 4b — Per-tick process scratch reset
 
-Rule 4 isolates the *state dict*. It does NOT isolate mutable attributes ON THE PROCESS OBJECT itself. If `next_update` reads from `self._n_completed`, `self._request_buffer`, `self._last_flux`, or any other attribute that was written by a prior tick, the test silently couples tick `t` to tick `t-1`'s OC behaviour.
+Rule 4 isolates the *state dict*. It does NOT isolate mutable attributes ON THE PROCESS OBJECT itself. If `next_update` reads from `self._n_completed`, `self._request_buffer`, `self._last_flux`, or any other attribute that was written by a prior tick, the test silently couples tick `t` to tick `t-1`'s OC behaviour. Equally, callees can mutate non-assignment-syntax state — most importantly RNG draws (`self._rng.choice(...)`) advance the bit generator without any `self.<attr> =` line that grep would catch.
+
+**Mandatory manifest (machine-checkable):**
+
+At module scope of the test file, declare:
+
+```python
+_SCRATCH_RESET = {
+    # attribute_name: classification string,
+    "_rng": "karr-persistent",         # MATLAB process advances RNG across ticks; do not reset
+    "_n_completed": "per-tick-scratch", # zero before each tick
+    "_request_buffer": "per-tick-scratch",
+    # ...
+}
+```
+
+Every mutable attribute on the process must be enumerated. Two-class taxonomy: `karr-persistent` (the MATLAB process carries this across ticks, leave alone) or `per-tick-scratch` (the MATLAB process resets this, the test must reset before each replay tick).
 
 **Procedure:**
-1. Grep the process module for `self\.[_a-zA-Z]+ = ` assignments inside `next_update` or any method `next_update` calls.
-2. Classify each: **Karr-persistent** (the MATLAB process also carries this across ticks — keep) or **per-tick scratch** (the MATLAB process resets this — must be reset before each replay tick).
-3. For per-tick scratch attributes, the test MUST reset them before each tick, either by deleting/zeroing them or by classifying them in a comment block.
+1. AST-walk the process module: list every `self.<name> = ...` assignment inside `next_update` or any method `next_update` calls (depth ≥ 2).
+2. AST-walk for mutation calls without assignment syntax: `self.<name>.append(...)`, `self.<name>.choice(...)`, `self.<name>.update(...)`, `self.<name>.pop(...)`, `self.<name>[...] = ...`, and similar. These advance state silently and MUST appear in `_SCRATCH_RESET`.
+3. For each name discovered in (1) or (2), the test's `_SCRATCH_RESET` manifest MUST list it. Lint fails if any discovered name is missing from the manifest.
+4. For every `per-tick-scratch` entry, the test MUST reset it (delete / zero / re-initialise) before each tick. For every `karr-persistent` entry, the test MUST leave it untouched and document why in the manifest's value string.
 
-If you cannot classify an attribute confidently, treat it as per-tick scratch. False reset is observable (mismatch will appear); silent carryover is the dangerous default.
+If you cannot classify an attribute confidently, treat it as `per-tick-scratch`. False reset is observable (mismatch will appear); silent carryover is the dangerous default.
 
 ## Rule 5 — Construct process once, outside tick loop (with stateless-exception)
 
