@@ -44,6 +44,7 @@ def test_karr_dna_supercoiling_strict_zero_no_global_fallback() -> None:
                 process.topoiv_wid: 1.0,
             }
         },
+        "complex": {"counts": {wid: 0.0 for wid in process.complex_enzyme_wids}},
         "substrates": guarded_substrates,
         "requests": {process.name: {process.atp_wid: 0.0}},
         "substrates_allocated": {process.name: {process.atp_wid: 0.0}},

@@ -30,6 +30,7 @@ def test_karr_protein_translocation_strict_zero_no_global_fallback() -> None:
             "counts": {wid: 0.0 for wid in process.protein_count_wids},
             "location": {wid: "cytoplasm" for wid in process.translocatable_wids},
         },
+        "complex": {"counts": {wid: 0.0 for wid in process.complex_enzyme_wids}},
         "requests": {process.name: {process.atp_wid: 0.0}},
         "substrates_allocated": {process.name: {process.atp_wid: 0.0}},
     }

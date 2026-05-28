@@ -35,6 +35,7 @@ def test_karr_protein_folding_strict_zero_no_global_fallback() -> None:
             "counts": {wid: 100.0 for wid in count_wids},
             "unfolded_counts": {wid: 0.0 for wid in process.unfolded_monomer_wids},
         },
+        "complex": {"counts": {wid: 0.0 for wid in process.complex_enzyme_wids}},
         "substrates_allocated": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
     }
     state["protein"]["unfolded_counts"][target_wid] = 1.0
@@ -62,6 +63,7 @@ def test_karr_protein_folding_accepts_unfolded_monomers_replay_key() -> None:
     state = {
         "substrates": {wid: 0.0 for wid in process.substrate_wids},
         "protein": {"counts": {wid: 100.0 for wid in count_wids}},
+        "complex": {"counts": {wid: 0.0 for wid in process.complex_enzyme_wids}},
         "unfoldedMonomers": legacy_unfolded,
         "substrates_allocated": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
     }
