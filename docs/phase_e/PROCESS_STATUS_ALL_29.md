@@ -8,14 +8,24 @@ Updated 2026-05-27 by L1 consolidation audit, then corrected 2026-05-27 20:50 IS
 - 🔴 STUB — no real biology in `next_update` (none after 20:50 IST reclass)
 - ⚪ SHIM — OpenCell-original Step, no Karr `.m` counterpart, exempt from Karr-parity
 - ⚫ MISSING — Karr process exists in source/extract/fixture but NOT instantiated in v6
+- ⚠️ Suffix — additional L1 sub-check known to be RED for this process (see Table 1b)
 
-**Total bookkeeping (2026-05-27 20:50 IST):**
+**Important:** the L1 column is the FIRING/GATED/STUB/SHIM/MISSING headline only. As of 2026-05-28 we know that headline alone is insufficient — a process can be 🟢 FIRING and still silently dark on dimer-port enzyme reads (10 such processes were CONFIRMED in the 2026-05-27 dimer-port audit, branch `audit/l1-dimer-port-sweep`, doc `docs/phase_e/L1_DIMER_PORT_AUDIT.md`). Table 1b below tracks these L1 sub-checks. A process is not actually L1-green until both Table 1 AND every applicable Table 1b row are green.
+
+**Total bookkeeping (2026-05-28 00:20 IST):**
 - 28 Karr processes total (per Karr's `.m` source / per the 28 Karr extracts under `docs/karr_extracts/process/`)
 - 27 Karr processes implemented in v6 chassis
-- 1 Karr process MISSING from v6: `karr_transcriptional_regulation` (#29 in this tracker)
+- 1 Karr process MISSING from v6: `karr_transcriptional_regulation` (#29 in this tracker) — IN-FLIGHT IMPL on `impl/karr-transcriptional-regulation`, round 3 codex running 2026-05-28 00:18 IST
 - 1 OpenCell coordination shim in v6: `karr_cell_cycle_coordinator` (#11 in this tracker)
 - v6 chassis key count: 28 (27 Karr + 1 shim) — per `CHASSIS_V6_EXPECTED_PROCESS_KEYS` in `opencell/vivarium/karr_composite.py:123-152`
 - This tracker row count: 29 (28 v6 keys + 1 missing Karr process)
+
+**Dimer-port L1 sub-check (2026-05-27 audit, 2026-05-28 fixes in flight):**
+- 10 of 27 Karr-in-v6 processes CONFIRMED-RED on dimer-port: declare complex/dimer WIDs as enzyme inputs but read from `protein.counts` only; v6 chassis seeds those WIDs into `complex.counts` separately. Process can be 🟢 FIRING in Table 1 yet silently dark on dimer-dependent reactions.
+- 6 of 10 in active fix worktrees (A/B test on Deliberate Action prompt prefix): dna-supercoiling, chromosome-segregation, rna-processing, rna-modification, protein-folding, protein-processing-i.
+- 4 of 10 in held-out queue: dna-repair, trna-aminoacylation, protein-modification, protein-translocation. Held out because protein-modification and protein-translocation intersect quarantined fix branches (`fix/pmod-allocator-zero`, `fix/ptransloc-request-magnitude`); merge-sequence ordering will determine when their dimer fixes fire.
+- Audit doc: `docs/phase_e/L1_DIMER_PORT_AUDIT.md` (branch `audit/l1-dimer-port-sweep` @ `9c6c6ef`).
+- A/B rubric: `docs/phase_e/AB_RUBRIC_DIMER_PORT.md` (branch `trackA/wave2-base` @ `f3e9690`).
 
 Global links: [P2 master synthesis](E:/opencell-worktrees/p2-karr-divergence-audit/STATUS_p2_master.md), [Track-A consolidated audit](opencell/validation/swarm/consolidated/CONSOLIDATED_AUDIT_REPORT.md), [Track-A findings index](opencell/validation/swarm/consolidated/findings_index.csv).
 
@@ -25,37 +35,37 @@ Global links: [P2 master synthesis](E:/opencell-worktrees/p2-karr-divergence-aud
 |---:|---|---|---|---|---|---|---|
 | 1 | `karr_replication` | 🟡 GATED | — | — | — | — | DEAD |
 | 2 | `karr_replication_initiation` | 🟡 GATED | — | — | — | — | DEAD |
-| 3 | `karr_dna_supercoiling` | 🟡 GATED | — | — | — | — | DEAD |
+| 3 | `karr_dna_supercoiling` | 🟡 GATED ⚠️ | — | — | — | — | DEAD |
 | 4 | `karr_chromosome_condensation` | 🟢 FIRING | — | — | — | — | FIRING |
-| 5 | `karr_chromosome_segregation` | 🟡 GATED | — | — | — | — | DEAD |
+| 5 | `karr_chromosome_segregation` | 🟡 GATED ⚠️ | — | — | — | — | DEAD |
 | 6 | `karr_dna_damage` | 🟡 GATED | — | — | — | — | DEAD |
-| 7 | `karr_dna_repair` | 🟢 FIRING | — | — | — | — | FIRING |
+| 7 | `karr_dna_repair` | 🟢 FIRING ⚠️ | — | — | — | — | FIRING |
 | 8 | `karr_ftsz_polymerization` | 🟢 FIRING | — | — | — | — | FIRING |
 | 9 | `karr_cytokinesis` | 🟡 GATED | — | — | — | — | DEAD |
 | 10 | `karr_terminal_organelle_assembly` | 🟡 GATED | — | — | — | — | DEAD |
 | 11 | `karr_cell_cycle_coordinator` | ⚪ SHIM | — | — | — | — | DEAD |
 | 12 | `karr_host_interaction` | 🟡 GATED | — | — | — | — | DEAD |
 | 13 | `karr_rna_decay` | 🟢 FIRING | — | — | — | — | FIRING |
-| 14 | `karr_rna_processing` | 🟡 GATED | — | — | — | — | DEAD |
-| 15 | `karr_rna_modification` | 🟢 FIRING | — | — | — | — | FIRING |
-| 16 | `karr_trna_aminoacylation` | 🟡 GATED | — | — | — | — | DEAD |
+| 14 | `karr_rna_processing` | 🟡 GATED ⚠️ | — | — | — | — | DEAD |
+| 15 | `karr_rna_modification` | 🟢 FIRING ⚠️ | — | — | — | — | FIRING |
+| 16 | `karr_trna_aminoacylation` | 🟡 GATED ⚠️ | — | — | — | — | DEAD |
 | 17 | `karr_ribosome_assembly` | 🟡 GATED | — | — | — | — | DEAD |
-| 18 | `karr_protein_processing_i` | 🟡 GATED | — | — | — | — | DEAD |
+| 18 | `karr_protein_processing_i` | 🟡 GATED ⚠️ | — | — | — | — | DEAD |
 | 19 | `karr_protein_processing_ii` | 🟡 GATED | — | — | — | — | DEAD |
-| 20 | `karr_protein_folding` | 🟢 FIRING | — | — | — | — | FIRING |
-| 21 | `karr_protein_modification` | 🟡 GATED | — | — | — | — | DEAD |
-| 22 | `karr_protein_translocation` | 🟢 FIRING | — | — | — | — | FIRING |
+| 20 | `karr_protein_folding` | 🟢 FIRING ⚠️ | — | — | — | — | FIRING |
+| 21 | `karr_protein_modification` | 🟡 GATED ⚠️ | — | — | — | — | DEAD |
+| 22 | `karr_protein_translocation` | 🟢 FIRING ⚠️ | — | — | — | — | FIRING |
 | 23 | `karr_protein_activation` | 🟡 GATED | — | — | — | — | DEAD |
 | 24 | `karr_protein_decay_light` | 🟢 FIRING | — | — | — | — | FIRING |
 | 25 | `karr_macromolecular_complexation` | 🟡 GATED | — | — | — | — | DEAD |
 | 26 | `karr_metabolism` | 🟢 FIRING | — | — | — | — | FIRING |
 | 27 | `karr_transcription` | 🟢 FIRING | — | — | — | — | FIRING |
 | 28 | `karr_translation` | 🟢 FIRING | — | — | — | — | FIRING |
-| 29 | `karr_transcriptional_regulation` | ⚫ MISSING | — | — | — | — | N/A (not in v6) |
+| 29 | `karr_transcriptional_regulation` | 🟡 GATED (L1-green) | — | — | — | — | Landed on `trackA/wave2-base` @ `82348a8` (2026-05-28) — Karr process #29 complete. Critique r3 DIRTY-4 → CLEAN after strict-zero suite added (`tests/unit/test_karr_transcriptional_regulation_strict_zero.py`, 5/5 PASS; 15/15 vivarium + 6/6 integration also PASS). |
 
-L1-green processes in v6 (FIRING + GATED, 27 of 27 Karr-in-v6): karr_replication, karr_replication_initiation, karr_dna_supercoiling, karr_chromosome_condensation, karr_chromosome_segregation, karr_dna_damage, karr_dna_repair, karr_ftsz_polymerization, karr_cytokinesis, karr_terminal_organelle_assembly, karr_host_interaction, karr_rna_decay, karr_rna_processing, karr_rna_modification, karr_trna_aminoacylation, karr_ribosome_assembly, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_folding, karr_protein_modification, karr_protein_translocation, karr_protein_activation, karr_protein_decay_light, karr_macromolecular_complexation, karr_metabolism, karr_transcription, karr_translation
+L1-green processes in v6 (FIRING + GATED, **28 of 28 Karr-in-v6**): karr_replication, karr_replication_initiation, karr_dna_supercoiling, karr_chromosome_condensation, karr_chromosome_segregation, karr_dna_damage, karr_dna_repair, karr_ftsz_polymerization, karr_cytokinesis, karr_terminal_organelle_assembly, karr_host_interaction, karr_rna_decay, karr_rna_processing, karr_rna_modification, karr_trna_aminoacylation, karr_ribosome_assembly, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_folding, karr_protein_modification, karr_protein_translocation, karr_protein_activation, karr_protein_decay_light, karr_macromolecular_complexation, karr_metabolism, karr_transcription, karr_translation, karr_transcriptional_regulation.
 
-Not L1-green in this chassis: `karr_cell_cycle_coordinator` (SHIM, Karr-parity N/A) and `karr_transcriptional_regulation` (MISSING from v6, L0 — needs implementation before L1 audit applies).
+Not L1-green in this chassis: `karr_cell_cycle_coordinator` (SHIM, Karr-parity N/A). **L1 is COMPLETE for all 28 Karr-in-v6 processes as of `trackA/wave2-base@82348a8` (tag `l1-complete`).**
 
 Wave2 evidence source for `FIRING/DEAD`: `E:/opencell/artifacts/ensemble_wave2_20260527_023611/seed_{42,43,44,45}/manifest.json` process trace `size_bytes` (header-only traces are 35 bytes).
 
