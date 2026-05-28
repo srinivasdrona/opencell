@@ -104,6 +104,28 @@ _M1_SUBSTRATE_DEFAULT = 1.0
 _KARR_CYTOSOL_COMPARTMENT_0 = 0
 
 
+@lru_cache(maxsize=1)
+def _d2_stub_complex_seed_defaults() -> dict[str, float]:
+    """Canonical complex seed defaults from the D2 stub fixture snapshot."""
+    d2_stub_proc = MacromolecularComplexationStubProcess()
+    return {
+        wid: float(d2_stub_proc._complex_counts_schema[wid]["_default"])
+        for wid in d2_stub_proc.d2_owned_wids
+    }
+
+
+def _seed_required_complex_wids(
+    *,
+    complex_counts: dict[str, float],
+    required_wids: list[str],
+) -> None:
+    defaults = _d2_stub_complex_seed_defaults()
+    for wid in required_wids:
+        if wid not in defaults:
+            raise KeyError(f"Missing D2-stub complex default for required WID '{wid}'")
+        complex_counts.setdefault(wid, float(defaults[wid]))
+
+
 def _load_karr_initial_substrate_counts(
     m1_model: km.KarrMetabolismModel,
 ) -> dict[str, float]:
@@ -1195,6 +1217,10 @@ def build_karr_chassis_v4(
         complex_counts.setdefault(wid, count)
     for wid in p_fold_proc.complex_enzyme_wids:
         complex_counts.setdefault(wid, float(p_fold_proc.enzyme_initial_counts_by_wid.get(wid, 0.0)))
+    _seed_required_complex_wids(
+        complex_counts=complex_counts,
+        required_wids=p_mod_proc.complex_enzyme_wids,
+    )
 
     m1_topo = {
         "metabolic_reaction": ("metabolic_reaction",),
@@ -1287,6 +1313,7 @@ def build_karr_chassis_v4(
         "karr_protein_modification": {
             "substrates": ("substrates",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("_internal_requests_pmod",),
             "substrates_allocated": ("substrates_allocated",),
         },
@@ -1829,6 +1856,10 @@ def build_karr_chassis_v5(
         complex_counts.setdefault(wid, count)
     for wid in p_fold_proc.complex_enzyme_wids:
         complex_counts.setdefault(wid, float(p_fold_proc.enzyme_initial_counts_by_wid.get(wid, 0.0)))
+    _seed_required_complex_wids(
+        complex_counts=complex_counts,
+        required_wids=p_mod_proc.complex_enzyme_wids,
+    )
 
     m1_topo = {
         "metabolic_reaction": ("metabolic_reaction",),
@@ -1921,6 +1952,7 @@ def build_karr_chassis_v5(
         "karr_protein_modification": {
             "substrates": ("substrates",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("_internal_requests_pmod",),
             "substrates_allocated": ("substrates_allocated",),
         },

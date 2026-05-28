@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from vivarium.core.engine import Engine
 
 # Ensure pytest imports from this worktree even if another editable install exists.
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -18,6 +19,7 @@ if "opencell" in sys.modules:
             if mod_name == "opencell" or mod_name.startswith("opencell."):
                 del sys.modules[mod_name]
 
+from opencell.vivarium.karr_composite import build_karr_chassis_v6
 from opencell.vivarium.karr_protein_modification import KarrProteinModificationProcess
 
 
@@ -25,9 +27,12 @@ def _build_state(process: KarrProteinModificationProcess) -> dict[str, Any]:
     return {
         "substrates": {wid: 0.0 for wid in process.substrate_wids},
         "protein": {
-            "counts": {wid: 0.0 for wid in process.enzyme_wids},
+            "counts": {wid: 0.0 for wid in process.monomer_enzyme_wids},
             "unmodified_counts": {wid: 0.0 for wid in process.unmodified_monomer_wids},
             "modified_counts": {wid: 0.0 for wid in process.modified_monomer_wids},
+        },
+        "complex": {
+            "counts": {wid: 0.0 for wid in process.complex_enzyme_wids},
         },
         "requests": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
         "substrates_allocated": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
@@ -62,10 +67,41 @@ def _apply_update(
         )
 
 
+def _set_all_enzyme_counts(
+    state: dict[str, Any],
+    process: KarrProteinModificationProcess,
+    value: float,
+) -> None:
+    for wid in process.monomer_enzyme_wids:
+        state["protein"]["counts"][wid] = float(value)
+    for wid in process.complex_enzyme_wids:
+        state["complex"]["counts"][wid] = float(value)
+
+
+def _enzyme_vector_from_state(
+    state: dict[str, Any],
+    process: KarrProteinModificationProcess,
+) -> np.ndarray:
+    complex_wids = set(process.complex_enzyme_wids)
+    return np.asarray(
+        [
+            (
+                state["complex"]["counts"][wid]
+                if wid in complex_wids
+                else state["protein"]["counts"][wid]
+            )
+            for wid in process.enzyme_wids
+        ],
+        dtype=np.float64,
+    )
+
+
 def test_fixture_loads() -> None:
     process = KarrProteinModificationProcess({})
     assert process.name == "karr_protein_modification"
     assert len(process.enzyme_wids) == 3
+    assert process.complex_enzyme_wids == ["MG_109_DIMER"]
+    assert set(process.monomer_enzyme_wids) == {"MG_012_MONOMER", "MG_270_MONOMER"}
     assert len(process.unmodified_monomer_wids) == 20
     assert len(process.modified_monomer_wids) == 20
     assert process.reaction_stoich.shape == (15, 63)
@@ -75,13 +111,16 @@ def test_fixture_loads() -> None:
     assert process.required_modifications.max() == 11
     np.testing.assert_array_equal(np.sum(process.reaction_modification, axis=1), np.ones(63))
 
+    schema = process.ports_schema()
+    assert "MG_109_DIMER" in schema["complex"]["counts"]
+    assert "MG_109_DIMER" not in schema["protein"]["counts"]
+
 
 def test_no_unmodified_no_action() -> None:
     process = KarrProteinModificationProcess({"rng_seed": 2})
     state = _build_state(process)
     _set_substrates(state, process, value=10_000.0)
-    for wid in process.enzyme_wids:
-        state["protein"]["counts"][wid] = 1_000.0
+    _set_all_enzyme_counts(state, process, value=1_000.0)
 
     update = process.next_update(1.0, state)
     assert update == {}
@@ -100,8 +139,7 @@ def test_full_modification_transitions() -> None:
     process = KarrProteinModificationProcess({"rng_seed": 7})
     state = _build_state(process)
     _set_substrates(state, process, value=10_000.0)
-    for wid in process.enzyme_wids:
-        state["protein"]["counts"][wid] = 2_000.0
+    _set_all_enzyme_counts(state, process, value=2_000.0)
 
     target_idx = int(np.flatnonzero(process.required_modifications == 3)[0])
     target_unmod = process.unmodified_monomer_wids[target_idx]
@@ -126,8 +164,7 @@ def test_partial_modification_no_transition() -> None:
     process = KarrProteinModificationProcess({"rng_seed": 8})
     state = _build_state(process)
     _set_substrates(state, process, value=10_000.0)
-    for wid in process.enzyme_wids:
-        state["protein"]["counts"][wid] = 2_000.0
+    _set_all_enzyme_counts(state, process, value=2_000.0)
 
     target_idx = int(np.argmax(process.required_modifications))
     target_unmod = process.unmodified_monomer_wids[target_idx]
@@ -155,8 +192,7 @@ def test_mass_conservation() -> None:
 
     state = _build_state(expected_process)
     _set_substrates(state, expected_process, value=5_000.0)
-    for wid in expected_process.enzyme_wids:
-        state["protein"]["counts"][wid] = 2_000.0
+    _set_all_enzyme_counts(state, expected_process, value=2_000.0)
     for wid in expected_process.unmodified_monomer_wids[:5]:
         state["protein"]["unmodified_counts"][wid] = 1.0
 
@@ -170,9 +206,7 @@ def test_mass_conservation() -> None:
     substrates = np.asarray(
         [state["substrates"][wid] for wid in expected_process.substrate_wids], dtype=np.float64
     )
-    enzymes = np.asarray(
-        [state["protein"]["counts"][wid] for wid in expected_process.enzyme_wids], dtype=np.float64
-    )
+    enzymes = _enzyme_vector_from_state(state, expected_process)
     expected_flux = expected_process._sample_reaction_fluxes(
         unmodified=unmodified,
         substrates=substrates,
@@ -198,8 +232,7 @@ def test_deterministic_with_seed() -> None:
 
     state = _build_state(process_1)
     _set_substrates(state, process_1, value=8_000.0)
-    for wid in process_1.enzyme_wids:
-        state["protein"]["counts"][wid] = 2_500.0
+    _set_all_enzyme_counts(state, process_1, value=2_500.0)
     for wid in process_1.unmodified_monomer_wids[:4]:
         state["protein"]["unmodified_counts"][wid] = 1.0
 
@@ -207,3 +240,39 @@ def test_deterministic_with_seed() -> None:
     update_2 = process_2.next_update(1.0, deepcopy(state))
     assert update_1 == update_2
     np.testing.assert_array_equal(process_1._n_completed, process_2._n_completed)
+
+
+def test_chassis_seeded_mg109_complex_enzyme_drives_mg109_only_targets() -> None:
+    composite = build_karr_chassis_v6(time_step_s=1.0, emit_step_s=1.0)
+    initial_state = composite.initial_state()
+    process = composite.processes["karr_protein_modification"]
+
+    mg109_wid = "MG_109_DIMER"
+    assert mg109_wid in process.complex_enzyme_wids
+    assert float(initial_state["complex"]["counts"].get(mg109_wid, 0.0)) > 0.0
+    assert float(initial_state["protein"]["counts"].get(mg109_wid, 0.0)) == 0.0
+
+    mg109_idx = process.enzyme_wids.index(mg109_wid)
+    mg109_only_modified_targets: list[str] = []
+    for pidx, modified_wid in enumerate(process.modified_monomer_wids):
+        rxn_idx = np.flatnonzero(process.reaction_modification[:, pidx] > 0)
+        if rxn_idx.size == 0:
+            continue
+        if np.all(process.reaction_catalysis[rxn_idx, mg109_idx] > 0):
+            mg109_only_modified_targets.append(modified_wid)
+    assert mg109_only_modified_targets
+
+    engine = Engine(composite=composite, emit_step=1.0, display_info=False)
+    before_state = deepcopy(engine.state.get_value())
+    for _ in range(5):
+        engine.update(1.0)
+    after_state = engine.state.get_value()
+
+    mg109_only_delta = float(
+        sum(
+            float(after_state["protein"]["modified_counts"].get(wid, 0.0))
+            - float(before_state["protein"]["modified_counts"].get(wid, 0.0))
+            for wid in mg109_only_modified_targets
+        )
+    )
+    assert mg109_only_delta > 0.0
