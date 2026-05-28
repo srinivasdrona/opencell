@@ -13,6 +13,7 @@ Deferred to v2:
 
 from __future__ import annotations
 
+from functools import lru_cache
 import math
 from dataclasses import dataclass
 from pathlib import Path
@@ -25,6 +26,7 @@ from vivarium.core.process import Process
 from opencell.vivarium.chromosome_views import current_damage_sites
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/DNARepair_flat.mat"
+_D2_COMPLEX_FIXTURE_PATH = "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
 
 _PATHWAYS = ("ber", "ner", "hr", "nhej_like")
 
@@ -84,6 +86,14 @@ def _parse_wid_array(value: object) -> list[str]:
     for raw in arr.ravel():
         out.append(str(_coerce_scalar(raw)))
     return out
+
+
+@lru_cache(maxsize=1)
+def _canonical_complex_wids() -> frozenset[str]:
+    resolved = _resolve_path(_D2_COMPLEX_FIXTURE_PATH)
+    mat = loadmat(str(resolved), squeeze_me=True, struct_as_record=False)
+    fx = mat["data"].fixture
+    return frozenset(_parse_wid_array(fx.complexWholeCellModelIDs))
 
 
 def _parse_index_array(value: object) -> np.ndarray:
@@ -176,6 +186,9 @@ class KarrDNARepairProcess(Process):
                 strict=False,
             )
         }
+        canonical_complex_wids = _canonical_complex_wids()
+        self.complex_enzyme_wids = [wid for wid in self.enzyme_wids if wid in canonical_complex_wids]
+        self.protein_enzyme_wids = [wid for wid in self.enzyme_wids if wid not in canonical_complex_wids]
 
         self.pathway_reaction_indices: dict[str, np.ndarray] = {
             "ber": _parse_index_array(fx.reactionIndexs_BER) - 1,
@@ -246,7 +259,13 @@ class KarrDNARepairProcess(Process):
             "protein": {
                 "counts": {
                     wid: {"_default": self.enzyme_defaults.get(wid, 0.0), "_updater": "accumulate"}
-                    for wid in self.enzyme_wids
+                    for wid in self.protein_enzyme_wids
+                }
+            },
+            "complex": {
+                "counts": {
+                    wid: {"_default": self.enzyme_defaults.get(wid, 0.0), "_updater": "accumulate"}
+                    for wid in self.complex_enzyme_wids
                 }
             },
             "substrates": {
@@ -393,12 +412,25 @@ class KarrDNARepairProcess(Process):
 
     def _enzyme_counts(self, states: dict[str, Any]) -> dict[str, float]:
         protein_counts = states.get("protein", {}).get("counts", {})
+        complex_counts = states.get("complex", {}).get("counts", {})
+        if not isinstance(protein_counts, dict):
+            protein_counts = {}
+        if not isinstance(complex_counts, dict):
+            complex_counts = {}
+
+        missing_protein = [wid for wid in self.protein_enzyme_wids if wid not in protein_counts]
+        missing_complex = [wid for wid in self.complex_enzyme_wids if wid not in complex_counts]
+        if missing_protein or missing_complex:
+            raise KeyError(
+                "karr_dna_repair missing declared enzyme counts: "
+                f"protein={missing_protein}, complex={missing_complex}"
+            )
+
         out: dict[str, float] = {}
-        for wid in self.enzyme_wids:
-            if wid in protein_counts:
-                out[wid] = float(max(0.0, protein_counts.get(wid, 0.0)))
-            else:
-                out[wid] = float(max(0.0, self.enzyme_defaults.get(wid, 0.0)))
+        for wid in self.protein_enzyme_wids:
+            out[wid] = float(max(0.0, protein_counts[wid]))
+        for wid in self.complex_enzyme_wids:
+            out[wid] = float(max(0.0, complex_counts[wid]))
         return out
 
     def _pathway_for_damage_type(self, damage_type: str) -> str:
