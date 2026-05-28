@@ -1165,7 +1165,7 @@ def build_karr_chassis_v4(
         wid: float(prot_init.get(wid, 0.0))
         for wid in sorted(set(pp1_proc.enzyme_wids) | set(pp2_proc.enzyme_wids))
     }
-    protein_enzyme_init["MG_106_DIMER"] = 22.0  # from PP1_flat.mat enzymes column
+    protein_enzyme_init.pop("MG_106_DIMER", None)
     protein_enzyme_init["MG_172_MONOMER"] = 38.0  # from PP1_flat.mat enzymes column
     protein_location_init = {wid: "cytoplasm" for wid in p_trans_proc.translocatable_wids}
     protein_activity_init = {wid: 0 for wid in p_activation_proc.regulated_protein_wids}
@@ -1174,6 +1174,7 @@ def build_karr_chassis_v4(
         "RNA_POLYMERASE": float(m2_mechanism_inputs.n_active_rnap),
         "RIBOSOME_70S": float(m3_mechanism_inputs.n_active_ribosomes),
     }
+    complex_counts["MG_106_DIMER"] = 22.0  # from PP1_flat.mat enzymes column
     for wid in ribasm_proc.complex_wids:
         complex_counts.setdefault(wid, 0.0)
     for wid, count in _seeded_complex_counts_for_wids(set(rna_proc.complex_enzyme_wids)).items():
@@ -1258,6 +1259,7 @@ def build_karr_chassis_v4(
         "karr_protein_processing_i": {
             "substrates": ("substrates",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("_internal_requests_pp1",),
             "substrates_allocated": ("substrates_allocated",),
         },
@@ -1771,7 +1773,7 @@ def build_karr_chassis_v5(
         wid: float(prot_init.get(wid, 0.0))
         for wid in sorted(set(pp1_proc.enzyme_wids) | set(pp2_proc.enzyme_wids))
     }
-    protein_enzyme_init["MG_106_DIMER"] = 22.0  # from PP1_flat.mat enzymes column
+    protein_enzyme_init.pop("MG_106_DIMER", None)
     protein_enzyme_init["MG_172_MONOMER"] = 38.0  # from PP1_flat.mat enzymes column
     protein_location_init = {wid: "cytoplasm" for wid in p_trans_proc.translocatable_wids}
     protein_activity_init = {wid: 0 for wid in p_activation_proc.regulated_protein_wids}
@@ -1786,6 +1788,7 @@ def build_karr_chassis_v5(
     }
     for wid, count in supercoil_seed_counts.items():
         complex_counts[wid] = max(float(complex_counts.get(wid, 0.0)), count)
+    complex_counts["MG_106_DIMER"] = 22.0  # from PP1_flat.mat enzymes column
     for wid in ribasm_proc.complex_wids:
         complex_counts.setdefault(wid, 0.0)
     for wid in segregation_proc.complex_enzyme_wids:
@@ -1875,6 +1878,7 @@ def build_karr_chassis_v5(
         "karr_protein_processing_i": {
             "substrates": ("substrates",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("_internal_requests_pp1",),
             "substrates_allocated": ("substrates_allocated",),
         },

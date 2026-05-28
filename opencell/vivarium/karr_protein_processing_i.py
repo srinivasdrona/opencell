@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +13,21 @@ from vivarium.core.process import Process
 from opencell.vivarium.karr_trna_aminoacylation import _parse_wid_array, _resolve_fixture_path
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/ProteinProcessingI_flat.mat"
+_D2_COMPLEX_FIXTURE_PATH = "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
+_RIBOSOME_ASSEMBLY_FIXTURE_PATH = "data/karr_fixtures/per_process/RibosomeAssembly_flat.mat"
+
+
+@lru_cache(maxsize=1)
+def _canonical_complex_wids() -> frozenset[str]:
+    """Load canonical complex WIDs for process-side store classification."""
+    complex_wids: set[str] = set()
+    for fixture_path in (_D2_COMPLEX_FIXTURE_PATH, _RIBOSOME_ASSEMBLY_FIXTURE_PATH):
+        resolved = _resolve_fixture_path(fixture_path)
+        mat = loadmat(str(resolved))
+        fx = mat["data"]["fixture"][0, 0]
+        complex_wids.update(_parse_wid_array(fx["complexWholeCellModelIDs"]))
+    complex_wids.update({"RNA_POLYMERASE", "RIBOSOME_70S"})
+    return frozenset(complex_wids)
 
 
 class KarrProteinProcessingIProcess(Process):
@@ -28,6 +44,17 @@ class KarrProteinProcessingIProcess(Process):
         super().__init__(parameters)
         self._load_fixture(self.parameters["fixture_path"])
         self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
+        canonical_complex_wids = _canonical_complex_wids()
+        self.complex_enzyme_wids = [
+            wid for wid in self.enzyme_wids if wid in canonical_complex_wids
+        ]
+        self.protein_enzyme_wids = [
+            wid for wid in self.enzyme_wids if wid not in canonical_complex_wids
+        ]
+        self._enzyme_source_by_wid = {
+            wid: ("complex" if wid in canonical_complex_wids else "protein")
+            for wid in self.enzyme_wids
+        }
 
         if len(self.unprocessed_monomer_wids) != len(self.processed_monomer_wids):
             raise ValueError("unprocessed and processed monomer WID lengths must match")
@@ -95,6 +122,14 @@ class KarrProteinProcessingIProcess(Process):
             wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
             for wid in self.processed_monomer_wids
         }
+        protein_enzyme_schema = {
+            wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+            for wid in self.protein_enzyme_wids
+        }
+        complex_enzyme_schema = {
+            wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+            for wid in self.complex_enzyme_wids
+        }
 
         return {
             "substrates": {
@@ -107,10 +142,11 @@ class KarrProteinProcessingIProcess(Process):
                     for wid in self.unprocessed_monomer_wids
                 },
                 "processed_counts": processed_schema,
-                "enzyme_counts": {
-                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
-                    for wid in self.enzyme_wids
-                },
+                "counts": protein_enzyme_schema,
+                "enzyme_counts": protein_enzyme_schema,
+            },
+            "complex": {
+                "counts": complex_enzyme_schema,
             },
             "requests": {
                 self.name: {
@@ -141,17 +177,7 @@ class KarrProteinProcessingIProcess(Process):
             return {}
 
         substrates = self._read_allocated_or_baseline_substrates(states)
-        protein_state = states.get("protein", {})
-        enzyme_state = protein_state.get("enzyme_counts")
-        if not isinstance(enzyme_state, dict):
-            # Backward-compatibility fallback for transitions where enzyme_counts is absent.
-            enzyme_state = protein_state.get("counts", {})
-        if not isinstance(enzyme_state, dict):
-            enzyme_state = {}
-        enzymes = np.asarray(
-            [float(enzyme_state.get(wid, 0.0)) for wid in self.enzyme_wids],
-            dtype=np.float64,
-        )
+        enzymes = self._read_enzyme_counts(states)
 
         unprocessed_pool = np.floor(np.clip(unprocessed, a_min=0.0, a_max=None)).astype(np.int64)
         substrate_pool = np.floor(np.clip(substrates, a_min=0.0, a_max=None)).astype(np.int64)
@@ -244,6 +270,43 @@ class KarrProteinProcessingIProcess(Process):
             }
 
         return update
+
+    def _read_enzyme_counts(self, states: dict[str, Any]) -> np.ndarray:
+        protein_state = states.get("protein", {})
+        enzyme_state = protein_state.get("enzyme_counts")
+        if not isinstance(enzyme_state, dict):
+            # Backward-compatibility fallback for transitional state payloads.
+            enzyme_state = protein_state.get("counts", {})
+        if not isinstance(enzyme_state, dict):
+            raise KeyError("karr_protein_processing_i requires protein.enzyme_counts (or protein.counts)")
+
+        complex_state = states.get("complex", {}).get("counts", {})
+        if not isinstance(complex_state, dict):
+            raise KeyError("karr_protein_processing_i requires complex.counts")
+
+        missing_protein_wids = [wid for wid in self.protein_enzyme_wids if wid not in enzyme_state]
+        if missing_protein_wids:
+            raise KeyError(
+                "karr_protein_processing_i missing protein enzyme counts for: "
+                + ", ".join(missing_protein_wids)
+            )
+
+        missing_complex_wids = [wid for wid in self.complex_enzyme_wids if wid not in complex_state]
+        if missing_complex_wids:
+            raise KeyError(
+                "karr_protein_processing_i missing complex enzyme counts for: "
+                + ", ".join(missing_complex_wids)
+            )
+
+        return np.asarray(
+            [
+                float(complex_state[wid])
+                if self._enzyme_source_by_wid[wid] == "complex"
+                else float(enzyme_state[wid])
+                for wid in self.enzyme_wids
+            ],
+            dtype=np.float64,
+        )
 
     def _read_allocated_or_baseline_substrates(self, states: dict[str, Any]) -> np.ndarray:
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
