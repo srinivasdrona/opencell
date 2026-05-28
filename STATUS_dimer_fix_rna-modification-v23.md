@@ -66,3 +66,12 @@ Inversion failure mode triggered (assertion weakening/deletion): **No**.
 ## PM notes
 - Scope-complete for the L1 dimer/complex-port chain in this process: declaration classification, read-path split, and topology wiring are in place with regression coverage.
 - `build_karr_chassis_v5()` with default args still fails on a non-RNA-modification updater path (`karr_metabolism` / `substrates_allocated`). `v5(dynamic_bounds=True)` and `v6` construct successfully.
+
+## Critique-response note (post-hoc)
+
+External critique (gpt-5.5 5-gate, agent `critique-v23-rna-mod`, 215s) flagged Q2 as WEAK on the implicit claim that the chassis seeds these complex enzyme WIDs from a non-zero source. Clarification for the audit trail:
+
+- **Classification source**: D2 complexWholeCellModelIDs symbol table in MacromolecularComplexation_flat.mat (loaded by `_load_d2_complex_wids()` at `opencell/vivarium/karr_rna_modification.py:48-53`). This is the authoritative answer to "is this WID a complex?"
+- **Seeding source**: `build_karr_chassis_v5` only explicitly seeds RNAP / ribosome / ribosome-assembly keys as `0.0` in `complex.counts` (`opencell/vivarium/karr_composite.py:1750-1755`); all other complex enzyme WIDs declared by this process schema (opencell/vivarium/karr_rna_modification.py:137-141) get their default `0.0` from the process schema's `_default`, not from a snapshot fixture.
+- The fix is functionally correct: classification is canonical; the read path is split + fail-fast; Rule 6 probes pass. The earlier prose did not distinguish "classified as complex" (true) from "chassis seeds non-zero" (only true for RNAP/ribosome). All other complex WIDs default to 0.0 — which is correct given Karr's initial conditions for this process; replay fidelity (L2) will validate non-zero dynamics during simulation.
+- No code change. This note exists only to make the canonical-source separation explicit.
