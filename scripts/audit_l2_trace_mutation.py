@@ -102,6 +102,11 @@ def _pilot_sweep_traces(repo_root: Path) -> list[Path]:
     ]
 
 
+def _all_traces(repo_root: Path) -> list[Path]:
+    base = repo_root / "data" / "m1_sources" / "karr_native" / "per_process_traces"
+    return sorted(base.glob("*_100ticks.mat"))
+
+
 def _format_summary(report: dict) -> str:
     lines = []
     name = Path(report["trace"]).stem.replace("_100ticks", "")
@@ -131,6 +136,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--trace", type=Path, help="Single .mat trace path")
     parser.add_argument("--pilot-sweep", action="store_true", help="Run all 3 pilot traces")
+    parser.add_argument("--all", action="store_true", help="Run every *_100ticks.mat in the standard dir")
     parser.add_argument("--json", action="store_true", help="Emit JSON only")
     parser.add_argument(
         "--repo-root",
@@ -140,10 +146,15 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    if not args.trace and not args.pilot_sweep:
-        parser.error("--trace or --pilot-sweep required")
+    if not args.trace and not args.pilot_sweep and not args.all:
+        parser.error("--trace or --pilot-sweep or --all required")
 
-    traces = [args.trace] if args.trace else _pilot_sweep_traces(args.repo_root)
+    if args.trace:
+        traces = [args.trace]
+    elif args.all:
+        traces = _all_traces(args.repo_root)
+    else:
+        traces = _pilot_sweep_traces(args.repo_root)
     reports = []
     for t in traces:
         if not t.exists():
