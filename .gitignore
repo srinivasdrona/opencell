@@ -20,3 +20,6 @@ htmlcov/
 *.egg-info/
 .mypy_cache/
 .ruff_cache/
+
+# MATLAB re-extraction binaries
+data/m1_sources/karr_native/per_process_traces_v2/*.mat
