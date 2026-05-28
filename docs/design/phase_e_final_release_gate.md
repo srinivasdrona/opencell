@@ -14,9 +14,9 @@ page. Soft gates (blog, PyPI, methods paper) are explicitly deferred — not blo
 ## 2. Hard gates checklist (every one must PASS)
 
 ### G1. Code completeness
-- 28 of 28 Karr processes present:
+- 29 chassis keys present (28 Karr processes + 1 OpenCell shim):
   ```
-  python -c "from opencell.vivarium.karr_composite import CHASSIS_V6_EXPECTED_PROCESS_KEYS; assert len(CHASSIS_V6_EXPECTED_PROCESS_KEYS) == 28"
+  python -c "from opencell.vivarium.karr_composite import CHASSIS_V6_EXPECTED_PROCESS_KEYS; assert len(CHASSIS_V6_EXPECTED_PROCESS_KEYS) == 29"
   ```
 - No `NotImplementedError` in production paths:
   ```
@@ -148,9 +148,9 @@ detailed STATUS for human follow-up.
 ```python
 # tests/release/test_e_final_gates.py — invoked by Codex during gate verification
 
-def test_g1_28_processes():
+def test_g1_29_chassis_keys():
     from opencell.vivarium.karr_composite import CHASSIS_V6_EXPECTED_PROCESS_KEYS
-    assert len(CHASSIS_V6_EXPECTED_PROCESS_KEYS) == 28
+    assert len(CHASSIS_V6_EXPECTED_PROCESS_KEYS) == 29
 
 def test_g1_no_not_implemented_in_production():
     import subprocess

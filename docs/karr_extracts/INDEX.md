@@ -30,7 +30,7 @@ Primary-source extracts from MATLAB headers and architecture code.
 
 ### RNA synthesis and maturation
 - [09_Transcription](process/09_Transcription.md) - `DONE-v2` (was DONE-v1 at extract time; A3 step 2 merged v2 chassis wrapper as `461209e`)
-- [10_TranscriptionalRegulation](process/10_TranscriptionalRegulation.md) - `NOT-STARTED`
+- [10_TranscriptionalRegulation](process/10_TranscriptionalRegulation.md) - `L1-green`
 - [11_RNAProcessing](process/11_RNAProcessing.md) - `NOT-STARTED`
 - [12_RNAModification](process/12_RNAModification.md) - `NOT-STARTED`
 - [13_RNADecay](process/13_RNADecay.md) - `NOT-STARTED`
