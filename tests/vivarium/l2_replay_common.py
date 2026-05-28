@@ -1,0 +1,454 @@
+from __future__ import annotations
+
+import copy
+from numbers import Number
+from pathlib import Path
+from typing import Any
+
+import h5py
+import numpy as np
+import pytest
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+_TRACE_BASE_REL = Path("data/m1_sources/karr_native/per_process_traces_v2")
+
+_OBS_STORE_PATHS = {
+    "substrates": ("substrates",),
+    "complexs": ("complex", "counts"),
+    "foldedMonomers": ("protein", "counts"),
+    "unfoldedMonomers": ("protein", "unfolded_counts"),
+    "modifiedMonomers": ("protein", "counts"),
+    "unmodifiedMonomers": ("protein", "counts"),
+    "processedMonomers": ("protein", "counts"),
+    "unprocessedMonomers": ("protein", "counts"),
+    "freeRNAs": ("rna", "counts"),
+    "aminoacylatedRNAs": ("rna", "aminoacylated_counts"),
+    "modifiedRNAs": ("rna", "counts"),
+    "unmodifiedRNAs": ("rna", "counts"),
+    "processedRNAs": ("rna", "counts"),
+    "unprocessedRNAs": ("rna", "counts"),
+}
+
+_OBS_CANDIDATE_ATTRS = {
+    "substrates": (
+        "substrate_wids",
+        "allocation_substrate_wids",
+        "request_wids",
+        "vector_wids",
+    ),
+    "enzymes": ("enzyme_wids",),
+    "boundEnzymes": ("enzyme_wids",),
+    "complexs": ("complex_wids",),
+    "monomers": (
+        "monomer_wids",
+        "protein_wids",
+        "protein_ids",
+        "processed_monomer_wids",
+        "unprocessed_monomer_wids",
+        "signal_sequence_monomer_wids",
+    ),
+    "foldedMonomers": ("folded_monomer_wids", "protein_ids"),
+    "unfoldedMonomers": ("unfolded_monomer_wids", "protein_ids"),
+    "modifiedMonomers": ("modified_monomer_wids", "protein_ids"),
+    "unmodifiedMonomers": ("unmodified_monomer_wids", "protein_ids"),
+    "processedMonomers": ("processed_monomer_wids", "protein_ids"),
+    "unprocessedMonomers": (
+        "unprocessed_monomer_wids",
+        "signal_sequence_monomer_wids",
+        "protein_ids",
+    ),
+    "freeRNAs": ("free_rna_wids", "rna_wids"),
+    "aminoacylatedRNAs": ("aminoacylated_rna_wids",),
+    "modifiedRNAs": ("modified_rna_wids", "processed_rna_wids", "rna_wids"),
+    "unmodifiedRNAs": ("unmodified_rna_wids", "unprocessed_rna_wids", "rna_wids"),
+    "processedRNAs": ("processed_rna_wids", "rna_wids"),
+    "unprocessedRNAs": ("unprocessed_rna_wids", "rna_wids"),
+}
+
+
+def resolve_trace_path(process_name: str) -> Path:
+    rel = _TRACE_BASE_REL / f"{process_name}_100ticks.mat"
+    candidates = [
+        _REPO_ROOT / rel,
+        Path("E:/opencell") / rel,
+        Path("/mnt/e/opencell") / rel,
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    raise FileNotFoundError(
+        f"Missing {process_name} 100-tick oracle at expected locations: "
+        + ", ".join(str(path) for path in candidates)
+    )
+
+
+def cell_vector(handle: h5py.File, group: str, name: str, tick: int) -> np.ndarray:
+    ds = handle[f"{group}/{name}"]
+    if len(ds.shape) != 2:
+        raise ValueError(
+            f"Unexpected MAT cell dataset rank for {group}/{name}: shape={ds.shape}, expected 2D"
+        )
+    rows, cols = int(ds.shape[0]), int(ds.shape[1])
+    if rows == 1 and cols >= (tick + 1):
+        ref = ds[0, tick]
+    elif cols == 1 and rows >= (tick + 1):
+        ref = ds[tick, 0]
+    elif rows >= (tick + 1):
+        ref = ds[tick, 0]
+    elif cols >= (tick + 1):
+        ref = ds[0, tick]
+    else:
+        raise IndexError(
+            f"Tick index {tick} out of range for {group}/{name} with shape={ds.shape}"
+        )
+    return np.asarray(handle[ref][()], dtype=np.float64).reshape(-1)
+
+
+def schema_defaults(node: Any) -> Any:
+    if isinstance(node, dict):
+        if "_default" in node:
+            return copy.deepcopy(node["_default"])
+        return {k: schema_defaults(v) for k, v in node.items() if not str(k).startswith("_")}
+    return copy.deepcopy(node)
+
+
+def build_state_template(process: Any) -> dict[str, Any]:
+    schema = process.ports_schema()
+    return {k: schema_defaults(v) for k, v in schema.items()}
+
+
+def _get_nested_mapping(state: dict[str, Any], path: tuple[str, ...]) -> dict[str, Any] | None:
+    cur: Any = state
+    for key in path:
+        if not isinstance(cur, dict) or key not in cur:
+            return None
+        cur = cur[key]
+    if isinstance(cur, dict):
+        return cur
+    return None
+
+
+def _ensure_nested_mapping(state: dict[str, Any], path: tuple[str, ...]) -> dict[str, Any]:
+    cur: Any = state
+    for key in path:
+        nxt = cur.get(key)
+        if not isinstance(nxt, dict):
+            nxt = {}
+            cur[key] = nxt
+        cur = nxt
+    return cur
+
+
+def _is_nonempty_sequence(obj: Any) -> bool:
+    return isinstance(obj, (list, tuple)) and len(obj) > 0
+
+
+def infer_wids_for_observable(
+    process: Any,
+    state_template: dict[str, Any],
+    observable: str,
+    *,
+    karr_len: int,
+    explicit_attr: str | None,
+) -> list[str]:
+    attrs_to_try: list[str] = []
+    if explicit_attr:
+        attrs_to_try.append(explicit_attr)
+    attrs_to_try.extend(_OBS_CANDIDATE_ATTRS.get(observable, ()))
+
+    candidate_lists: list[list[str]] = []
+    for attr in attrs_to_try:
+        if not hasattr(process, attr):
+            continue
+        value = getattr(process, attr)
+        if _is_nonempty_sequence(value):
+            candidate_lists.append([str(x) for x in value])
+
+    for ids in candidate_lists:
+        if len(ids) == karr_len:
+            return ids
+    if candidate_lists:
+        return candidate_lists[0]
+
+    if observable == "enzymes" or observable == "boundEnzymes":
+        enz = getattr(process, "enzyme_wids", None)
+        if _is_nonempty_sequence(enz):
+            return [str(x) for x in enz]
+
+    store_path = observable_store_path(observable, state_template)
+    if store_path is not None:
+        store = _get_nested_mapping(state_template, store_path)
+        if isinstance(store, dict) and store:
+            keys = [str(k) for k in store.keys()]
+            if len(keys) == karr_len:
+                return keys
+            if keys:
+                return keys
+
+    return [f"{observable}_{idx}" for idx in range(karr_len)]
+
+
+def observable_store_path(observable: str, state: dict[str, Any]) -> tuple[str, ...] | None:
+    if observable == "monomers":
+        unprocessed = _get_nested_mapping(state, ("protein", "unprocessed_counts"))
+        if isinstance(unprocessed, dict) and unprocessed:
+            return ("protein", "unprocessed_counts")
+        return ("protein", "counts")
+    return _OBS_STORE_PATHS.get(observable)
+
+
+def _monomer_enzyme_set(process: Any) -> set[str]:
+    out: set[str] = set()
+    for attr in ("monomer_enzyme_wids", "protein_enzyme_wids"):
+        if hasattr(process, attr):
+            value = getattr(process, attr)
+            if _is_nonempty_sequence(value):
+                out.update(str(x) for x in value)
+    return out
+
+
+def _complex_enzyme_set(process: Any) -> set[str]:
+    if hasattr(process, "complex_enzyme_wids"):
+        value = getattr(process, "complex_enzyme_wids")
+        if _is_nonempty_sequence(value):
+            return {str(x) for x in value}
+    return set()
+
+
+def _set_enzyme_vector(
+    *,
+    process: Any,
+    state: dict[str, Any],
+    enzyme_wids: list[str],
+    values: np.ndarray,
+) -> None:
+    protein_counts = _ensure_nested_mapping(state, ("protein", "counts"))
+    complex_counts = _ensure_nested_mapping(state, ("complex", "counts"))
+    monomer_set = _monomer_enzyme_set(process)
+    complex_set = _complex_enzyme_set(process)
+
+    n = min(len(enzyme_wids), values.shape[0])
+    for idx in range(n):
+        wid = enzyme_wids[idx]
+        val = float(values[idx])
+        if wid in complex_set:
+            complex_counts[wid] = val
+            continue
+        if wid in monomer_set:
+            protein_counts[wid] = val
+            continue
+        if wid in protein_counts:
+            protein_counts[wid] = val
+            continue
+        if wid in complex_counts:
+            complex_counts[wid] = val
+            continue
+        if protein_counts:
+            protein_counts[wid] = val
+        else:
+            complex_counts[wid] = val
+
+
+def overlay_observable_into_state(
+    *,
+    process: Any,
+    state: dict[str, Any],
+    observable: str,
+    vector: np.ndarray,
+    wids: list[str],
+) -> None:
+    if observable == "boundEnzymes":
+        return
+    if observable == "enzymes":
+        _set_enzyme_vector(process=process, state=state, enzyme_wids=wids, values=vector)
+        return
+    store_path = observable_store_path(observable, state)
+    if store_path is None:
+        return
+    store = _ensure_nested_mapping(state, store_path)
+    n = min(len(wids), vector.shape[0])
+    for idx in range(n):
+        store[wids[idx]] = float(vector[idx])
+
+
+def _get_enzyme_vector(*, state: dict[str, Any], enzyme_wids: list[str]) -> np.ndarray:
+    protein_counts = _get_nested_mapping(state, ("protein", "counts")) or {}
+    complex_counts = _get_nested_mapping(state, ("complex", "counts")) or {}
+    out = np.zeros(len(enzyme_wids), dtype=np.float64)
+    for idx, wid in enumerate(enzyme_wids):
+        if wid in protein_counts:
+            out[idx] = float(protein_counts[wid])
+        elif wid in complex_counts:
+            out[idx] = float(complex_counts[wid])
+    return out
+
+
+def project_observable_from_state(
+    *,
+    process: Any,
+    state: dict[str, Any],
+    observable: str,
+    wids: list[str],
+    bound_enzymes_before: np.ndarray | None,
+) -> np.ndarray:
+    if observable == "boundEnzymes":
+        if bound_enzymes_before is None:
+            return np.zeros(len(wids), dtype=np.float64)
+        return np.asarray(bound_enzymes_before, dtype=np.float64).reshape(-1)
+    if observable == "enzymes":
+        return _get_enzyme_vector(state=state, enzyme_wids=wids).reshape(-1)
+
+    store_path = observable_store_path(observable, state)
+    if store_path is None:
+        return np.zeros(len(wids), dtype=np.float64)
+    store = _get_nested_mapping(state, store_path) or {}
+    return np.asarray([float(store.get(wid, 0.0)) for wid in wids], dtype=np.float64).reshape(-1)
+
+
+def refresh_allocator_views(process: Any, state: dict[str, Any]) -> None:
+    substrates = state.get("substrates", {})
+    if not isinstance(substrates, dict):
+        return
+
+    requests = state.get("requests", {})
+    if isinstance(requests, dict):
+        proc_req = requests.get(getattr(process, "name", ""), None)
+        if isinstance(proc_req, dict):
+            for wid in list(proc_req.keys()):
+                if wid in substrates:
+                    proc_req[wid] = float(max(0.0, float(substrates[wid])))
+
+    allocated = state.get("substrates_allocated", {})
+    if isinstance(allocated, dict):
+        proc_alloc = allocated.get(getattr(process, "name", ""), None)
+        if isinstance(proc_alloc, dict):
+            for wid in list(proc_alloc.keys()):
+                if wid in substrates:
+                    proc_alloc[wid] = float(max(0.0, float(substrates[wid])))
+
+
+def _iter_numeric_leaf_dicts(node: Any, prefix: str = "") -> list[tuple[str, dict[str, float]]]:
+    if not isinstance(node, dict):
+        return []
+    out: list[tuple[str, dict[str, float]]] = []
+    if node and all(not isinstance(v, dict) for v in node.values()):
+        if all(isinstance(v, Number) for v in node.values()):
+            out.append((prefix or "<root>", {str(k): float(v) for k, v in node.items()}))
+        return out
+    for k, v in node.items():
+        child_prefix = f"{prefix}/{k}" if prefix else str(k)
+        out.extend(_iter_numeric_leaf_dicts(v, child_prefix))
+    return out
+
+
+def collect_count_delta_dicts(update: dict[str, Any]) -> list[tuple[str, dict[str, float]]]:
+    out: list[tuple[str, dict[str, float]]] = []
+    for key in ("substrates", "protein", "rna", "complex"):
+        if key in update:
+            out.extend(_iter_numeric_leaf_dicts(update[key], key))
+    return out
+
+
+def apply_count_update(state: dict[str, Any], update: dict[str, Any]) -> None:
+    def _accumulate(target: dict[str, Any], delta: dict[str, Any]) -> None:
+        for key, value in delta.items():
+            if isinstance(value, dict):
+                next_target = target.get(key)
+                if not isinstance(next_target, dict):
+                    next_target = {}
+                    target[key] = next_target
+                _accumulate(next_target, value)
+                continue
+            if isinstance(value, Number):
+                prev = target.get(key, 0.0)
+                try:
+                    prev_f = float(prev)
+                except Exception:
+                    prev_f = 0.0
+                target[key] = float(prev_f + float(value))
+            else:
+                target[key] = value
+
+    for key in ("substrates", "protein", "rna", "complex"):
+        node = update.get(key)
+        if isinstance(node, dict):
+            target = state.get(key)
+            if not isinstance(target, dict):
+                target = {}
+                state[key] = target
+            _accumulate(target, node)
+
+
+def assert_delta_integral(label: str, deltas: dict[str, float]) -> None:
+    if not deltas:
+        return
+    for wid, delta in deltas.items():
+        delta_f = float(delta)
+        if not np.isfinite(delta_f):
+            pytest.fail(f"L2a delta non-finite: store={label}, wid={wid}, delta={delta_f}")
+        if delta_f != float(np.rint(delta_f)):
+            pytest.fail(
+                "L2a delta non-integral: "
+                f"store={label}, wid={wid}, delta={delta_f} "
+                "(Rule 2 clause 4: emitted count delta must be integral)"
+            )
+
+
+def audit_trace_mutated_ticks(
+    trace: h5py.File,
+    observables: tuple[str, ...],
+    n_ticks: int,
+) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for obs in observables:
+        nz = 0
+        for tick in range(n_ticks):
+            before = cell_vector(trace, "states_before", obs, tick)
+            after = cell_vector(trace, "states_after", obs, tick)
+            if before.shape != after.shape or np.any(after != before):
+                nz += 1
+        counts[obs] = nz
+    return counts
+
+
+def assert_identity_or_tolerance(
+    *,
+    tick: int,
+    observable: str,
+    oc_after: np.ndarray,
+    karr_after: np.ndarray,
+) -> None:
+    if oc_after.shape != karr_after.shape:
+        pytest.fail(
+            "L2a mismatch record: "
+            f"tick={tick}, observable={observable}, index=-1, "
+            f"oc_shape={oc_after.shape}, karr_shape={karr_after.shape}"
+        )
+
+    karr_int_part = np.rint(karr_after)
+    oc_int_part = np.rint(oc_after)
+    if not np.array_equal(karr_int_part, karr_after):
+        bad = int(np.flatnonzero(karr_int_part != karr_after)[0])
+        pytest.fail(
+            "L2a oracle non-integral: "
+            f"tick={tick}, observable={observable}, index={bad}, "
+            f"karr_val={float(karr_after[bad])} (expected integral count)"
+        )
+    if not np.array_equal(oc_int_part, oc_after):
+        bad = int(np.flatnonzero(oc_int_part != oc_after)[0])
+        pytest.fail(
+            "L2a oc non-integral: "
+            f"tick={tick}, observable={observable}, index={bad}, "
+            f"oc_val={float(oc_after[bad])} (expected integral count)"
+        )
+
+    mismatch = oc_after != karr_after
+    diff = oc_after - karr_after
+    if np.any(mismatch):
+        idx = int(np.flatnonzero(mismatch)[0])
+        pytest.fail(
+            "L2a mismatch record: "
+            f"tick={tick}, observable={observable}, index={idx}, "
+            f"oc_val={float(oc_after[idx])}, karr_val={float(karr_after[idx])}, "
+            f"diff={float(diff[idx])}"
+        )
