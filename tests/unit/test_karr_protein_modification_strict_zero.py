@@ -33,6 +33,7 @@ def test_karr_protein_modification_strict_zero_no_global_fallback() -> None:
             "unmodified_counts": {wid: 0.0 for wid in process.unmodified_monomer_wids},
             "modified_counts": {wid: 0.0 for wid in process.modified_monomer_wids},
         },
+        "complex": {"counts": {wid: 0.0 for wid in process.complex_enzyme_wids}},
         "requests": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
         "substrates_allocated": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
     }
@@ -72,6 +73,7 @@ def test_karr_protein_modification_accepts_unmodified_monomers_replay_key() -> N
             "counts": {wid: 1_000.0 for wid in process.enzyme_wids},
             "modified_counts": {wid: 0.0 for wid in process.modified_monomer_wids},
         },
+        "complex": {"counts": {wid: 0.0 for wid in process.complex_enzyme_wids}},
         "unmodifiedMonomers": legacy_unmodified,
         "requests": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
         "substrates_allocated": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
