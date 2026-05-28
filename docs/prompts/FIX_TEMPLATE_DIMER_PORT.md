@@ -64,6 +64,28 @@ A VERIFICATION block that names sibling-builder breakage as a Beat 4 failure mod
 
 Rationale: empirical evidence from dna-repair and protein-modification — both wired v5/v6 correctly, both broke v4 silently because the chassis-v6 integration test does not construct v4. Beat 4 inversion declared the failure mode; verification did not probe it. Rule 6 closes that gap.
 
+## Rule 7 — Schema-completeness probe (no silent stragglers)
+
+When you split a WID class out of one store into another (e.g., complex enzymes out of `protein.counts` into `complex.counts`; monomer enzymes out of a global store into a dedicated substore), the OLD store path must not retain a production-code read for the migrated WID class. A residual fallback — `dict.get(wid, 0.0)`, `if not isinstance(...): use old store`, or any silent-darkness re-route — defeats fail-fast and recreates the dimer-port bug class one layer down.
+
+**Procedure:**
+
+1. After your fix, identify the migrated WID class (e.g., "complex enzymes", "monomer enzymes for process X") and the OLD store path you migrated away from.
+2. Grep the production module(s) you changed for the OLD store path. Test files, docstrings, and comments are out of scope; production code is in scope.
+3. Cite the grep command and the hit count in your VERIFICATION block.
+
+**Gate 2 evidence rule for this failure class:**
+
+A VERIFICATION block that describes the schema split but does not run the residual-read probe is **Weak evidence and fails Gate 2**. A grep count greater than zero on production code for the migrated WID class is also Weak — you have a residual reader of the old store and the silent-darkness pattern is still alive. Strong evidence requires `count == 0` with the exact command and the exact path cited.
+
+Common shapes of a residual reader (any of these on the migrated WID class fails the gate):
+
+- `state.get("old_store", {}).get(wid, 0.0)` — silent zero.
+- `if not isinstance(new_state, dict): new_state = state.get("old_store", {})` — silent fallback.
+- A second schema declaration listing the migrated WIDs in the old store ("backward-compat", "transitional") — dual-declaration. Pick one store. Declare in one place. Read from one place.
+
+Rationale: empirical evidence from `KarrProteinProcessingIProcess` v2.3 — the complex side was split cleanly, but the monomer side retained a dual-declaration (`protein.counts` AND `protein.enzyme_counts`) plus a transitional fallback. External critique caught it via Q3+Q5 inspection. Rule 7 turns that judgment call into a `grep | wc -l == 0` mechanical check.
+
 ## What this template does NOT cover
 
 This template is scoped to the dimer-port bug class. It does not handle:
