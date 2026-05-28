@@ -1,4 +1,23 @@
-"""Vivarium Process for Karr transcriptional regulation binding + fold-changes."""
+"""Vivarium Process for Karr transcriptional regulation binding + fold-changes.
+
+Karr-parity reductions / approximations (documented for L2 audit):
+
+- **No explicit t=0 pre-binding.** Karr's MATLAB source initializes the
+  TF-promoter binding occupancy at t=0 before any tick runs (see
+  ``docs/karr_extracts/process/10_TranscriptionalRegulation.md`` lines
+  96-99). This implementation seeds ``tf_binding`` to zero in chassis
+  initial state (``karr_composite.py`` ``build_karr_chassis_v6``) and
+  performs the first binding sweep inside the first ``next_update`` call.
+  At steady-state the difference is negligible, but tick-0 output will
+  show zero bound TFs before the first sweep. Revisit at L3 if pair
+  coupling with ``karr_transcription`` is sensitive to first-tick state.
+- TFs are partitioned into ``protein`` vs ``complex`` ports via
+  ``_load_canonical_complex_wids`` from the MacromolecularComplexation
+  fixture. There is **no silent fallback** between stores: a TF declared
+  to live in ``complex`` will ``KeyError`` if absent from ``complex.counts``
+  even if present in ``protein.counts``. See
+  ``tests/unit/test_karr_transcriptional_regulation_strict_zero.py``.
+"""
 
 from __future__ import annotations
 
