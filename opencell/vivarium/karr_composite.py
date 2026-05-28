@@ -1175,6 +1175,20 @@ def build_karr_chassis_v4(
         "RIBOSOME_70S": float(m3_mechanism_inputs.n_active_ribosomes),
     }
     complex_counts["MG_106_DIMER"] = 22.0  # from PP1_flat.mat enzymes column
+    trna_complex_seed_proc = MacromolecularComplexationStubProcess()
+    missing_trna_complex_seed_wids = [
+        wid
+        for wid in trna_proc.complex_enzyme_wids
+        if wid not in trna_complex_seed_proc._complex_counts_schema
+    ]
+    if missing_trna_complex_seed_wids:
+        missing = ", ".join(missing_trna_complex_seed_wids[:5])
+        raise KeyError(
+            "v4 chassis missing canonical complex seed defaults for "
+            f"karr_trna_aminoacylation enzyme WIDs: {missing}"
+        )
+    for wid in trna_proc.complex_enzyme_wids:
+        complex_counts.setdefault(wid, float(trna_complex_seed_proc._complex_counts_schema[wid]["_default"]))
     for wid in ribasm_proc.complex_wids:
         complex_counts.setdefault(wid, 0.0)
     for wid, count in _seeded_complex_counts_for_wids(set(rna_proc.complex_enzyme_wids)).items():
@@ -1224,6 +1238,7 @@ def build_karr_chassis_v4(
             "substrates": ("substrates",),
             "rna": ("rna",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("_internal_requests_trna",),
             "substrates_allocated": ("substrates_allocated",),
         },
@@ -1789,6 +1804,20 @@ def build_karr_chassis_v5(
     for wid, count in supercoil_seed_counts.items():
         complex_counts[wid] = max(float(complex_counts.get(wid, 0.0)), count)
     complex_counts["MG_106_DIMER"] = 22.0  # from PP1_flat.mat enzymes column
+    trna_complex_seed_proc = MacromolecularComplexationStubProcess()
+    missing_trna_complex_seed_wids = [
+        wid
+        for wid in trna_proc.complex_enzyme_wids
+        if wid not in trna_complex_seed_proc._complex_counts_schema
+    ]
+    if missing_trna_complex_seed_wids:
+        missing = ", ".join(missing_trna_complex_seed_wids[:5])
+        raise KeyError(
+            "v5 chassis missing canonical complex seed defaults for "
+            f"karr_trna_aminoacylation enzyme WIDs: {missing}"
+        )
+    for wid in trna_proc.complex_enzyme_wids:
+        complex_counts.setdefault(wid, float(trna_complex_seed_proc._complex_counts_schema[wid]["_default"]))
     for wid in ribasm_proc.complex_wids:
         complex_counts.setdefault(wid, 0.0)
     for wid in segregation_proc.complex_enzyme_wids:
@@ -1843,6 +1872,7 @@ def build_karr_chassis_v5(
             "substrates": ("substrates",),
             "rna": ("rna",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("_internal_requests_trna",),
             "substrates_allocated": ("substrates_allocated",),
         },

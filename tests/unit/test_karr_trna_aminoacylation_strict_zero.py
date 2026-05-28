@@ -29,10 +29,15 @@ def test_karr_trna_aminoacylation_strict_zero_no_global_fallback() -> None:
     substrate_values = {wid: 10_000.0 for wid in process.substrate_wids}
     guarded_substrates = _GuardedSubstrates(substrate_values, process.substrate_wids)
 
-    enzyme_counts = {wid: 0.0 for wid in process.enzyme_wids}
+    monomer_enzyme_counts = {wid: 0.0 for wid in process.monomer_enzyme_wids}
+    complex_enzyme_counts = {wid: 0.0 for wid in process.complex_enzyme_wids}
     for enzyme_idx, coeff in enumerate(process.reaction_catalysis[reaction_idx]):
         if coeff > 0:
-            enzyme_counts[process.enzyme_wids[enzyme_idx]] = 100.0
+            enzyme_wid = process.enzyme_wids[enzyme_idx]
+            if enzyme_wid in process.complex_enzyme_wids:
+                complex_enzyme_counts[enzyme_wid] = 100.0
+            else:
+                monomer_enzyme_counts[enzyme_wid] = 100.0
 
     state = {
         "substrates": guarded_substrates,
@@ -40,7 +45,8 @@ def test_karr_trna_aminoacylation_strict_zero_no_global_fallback() -> None:
             "counts": {wid: 0.0 for wid in process.free_rna_wids},
             "aminoacylated_counts": {wid: 0.0 for wid in process.aminoacylated_rna_wids},
         },
-        "protein": {"counts": enzyme_counts},
+        "protein": {"counts": monomer_enzyme_counts},
+        "complex": {"counts": complex_enzyme_counts},
         "requests": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
         "substrates_allocated": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
     }
@@ -79,7 +85,8 @@ def test_karr_trna_aminoacylation_accepts_legacy_rna_replay_keys() -> None:
         "substrates": {wid: 0.0 for wid in process.substrate_wids},
         "freeRNAs": legacy_free,
         "aminoacylatedRNAs": legacy_amino,
-        "protein": {"counts": {wid: 100.0 for wid in process.enzyme_wids}},
+        "protein": {"counts": {wid: 100.0 for wid in process.monomer_enzyme_wids}},
+        "complex": {"counts": {wid: 100.0 for wid in process.complex_enzyme_wids}},
         "requests": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
         "substrates_allocated": {process.name: {wid: 0.0 for wid in process.substrate_wids}},
     }
