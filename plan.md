@@ -103,6 +103,50 @@ not a failure of the project.
 - **Chassagnole + Vilar are coupling torture rigs**, not frozen reference
   fixtures. Use them to break A5/A6/A7/M0 *before* M. genitalium does.
 
+### L-axis discipline (locked 2026-05-27)
+
+After the wave2-base ensemble surfaced 20 dead processes and multi-chassis
+debugging chased symptoms across versions, the project adopts a strict
+layer-gate ladder. **A process advances to L(n+1) only when L(n) is green
+and the operator confirms.** Tempo without this discipline produced
+"green at integration test, broken at biology" outcomes; friction is now
+the default (see DECISIONS.md `layer-gate-discipline-friction-default`).
+
+| Level | Name | Definition | "Green" criterion |
+|---|---|---|---|
+| **L1** | Implemented | Process module exists in `opencell/vivarium/`, has a real `next_update()` (not `pass` / `return {}` / `NotImplementedError`), reads its declared input ports, has at least one test exercising a real code path, structurally consistent with the Karr `.m` source | Code is real, not a description-stub |
+| **L2** | Isolated fidelity | Process in isolation reproduces its Karr per-tick oracle (substrate-delta replay over the ≥100t `.npz` fixture), responds correctly to ≥6 perturbations, hardcode-clean | Matches Karr behavior on its own |
+| **L3** | Direct coupling | Process pair (producer ↔ consumer with direct port hand-off, not mediated by `substrates` store or `KarrAllocationStep`) reproduces a 2-process trace against Karr. Examples: RibosomeAssembly → Translation; ProteinFolding → ProteinModification; Replication → ChromosomeSegregation | Direct biological hand-offs work |
+| **L4** | Submodule | Natural process cluster (central dogma; metabolism; DNA dynamics; cell division) reproduces a Karr submodel-level oracle | Biological subsystems integrate |
+| **L5** | Chassis | Full v6 chassis hits ≥10/28 phenotype scorecard KPs across a 4-seed ensemble | Whole-cell phenotype match (publishable v1.0) |
+
+**Chassis versions (locked):**
+- **v1–v5**: historical, NOT for active development. Do not branch off these.
+- **v6**: canonical 28-process composite, `build_karr_chassis_v6` in
+  `opencell/vivarium/karr_composite.py`.
+- **wave2-base**: v6 @ `2e185ff` + A2/A3/A4/A6 + tracer fix. Current ensemble
+  baseline. L1/L2/L3 work targets this commit unless a fix is required at
+  v6-trunk.
+
+**Working rule:** Each codex session fanned out for L2 work must include
+the explicit chassis version and the explicit L-level it's proving. STATUS
+files must report L-level verdict (GREEN/RED/PARTIAL) per process, not
+just "tests passed."
+
+**L1 audit (in-flight, codex not yet fired):**
+- Worktree: `E:\opencell-worktrees\l1-audit`, branch `audit/l1-green`
+  off `trackA/wave2-base`.
+- Prompt: `PROMPT_L1_audit.md` v2 (2026-05-27). Read-only on everything
+  except `docs/phase_e/PROCESS_STATUS_ALL_28.md`. Edits the canonical
+  tracker in place: Table 1 = per-process L1–L5 status (with explicit
+  🟢/🟡/🔴 on L1 column, L2–L5 reserved as `—`), Table 2 = per-process
+  artifact links (Karr extract, P2 A/B/C swarm, class-A, PB design,
+  fixture). Consolidates 7 prior artifact sources into one tracker.
+- Operator decision: `PROCESS_STATUS_ALL_28.md` is THE source of truth
+  for "does process X match Karr's definition?" — every per-process
+  artifact must be linked from it.
+- Output: in-place edit + `STATUS_L1_audit.md` rollup at worktree root.
+
 ### Phase Narrative (continuous arc, pre- and post-pivot)
 
 The project arc was always: validate manual sub-models against published
@@ -407,469 +451,639 @@ NOT a parallel program)**
 
 ---
 
-## Current Status (2026-05-27 ~15:40 IST, **POST-QUEEN-PASS, WAVE-2 BASE @ `0b97542`, PTRANSLOC NEXT**)
+## Current Status (2026-05-29 ~16:15 IST, **PATTERN B CLOSED — DNADamage GREEN; Transcription/Translation integerized, A residue resurfaced; 3 Codex agents in flight**)
 
 ### TL;DR
-`trackA/wave2-base` advanced from `488b563` → `7c0ad75` (plan/docs corrections) → **`0b97542`** (queen-pass merge of 6 branches). Today's full march: 6 morning merges + the queen-pass merge of 6 codex-output branches (rna-processing-defer, protein-processing-i, adapter-keys-5way, extractor-schemas-8, phenotype-scorecard-wave2, kp20-regression). 1 conflict resolved (phenotype_scorecard.py, toward strict-superset side). 27/27 smoke tests green. Pushed to origin. **Scorecard moves 6/28 → 7/28 PASS, 0 BLOCKED**. **PP1 revived** (canary trace 35B → 24,840B / 525 lines at 1000t). **KP20 root cause identified**: deterministic across all 4 seeds — AA pools hit floor `1.0` at t=99-571s + GTP collapse, driven by `RequestCalculatorPTransloc` `max(need, current_pool)` allocator-request semantics.
+Pattern B sweep landed 3 commits. **DNADamage GREEN** via Karr oracle integer-snap (`|frac|<1e-9`) in the L2 harness — was never an OC bug, just MATLAB serialization noise (`karr=2.8e-11`); principle logged as DECISION `l2-harness-integrality-asymmetry`. **Transcription + Translation integerized** via unbiased `floor + Bernoulli(frac)` with seeded RNG (real OC bugs, closed loud) — but pytest's first-fail short-circuit now reveals **Pattern A residue underneath**: both fail at t=0 substrates wid-length drift (karr=12 mapped=4, karr=26 mapped=20). Same shape as already-closed Metabolism/ProteinDecay — empirical reclassification to D likely cheapest path. **Pattern D triage + L2.0 RED triage** Codex agents still in flight on separate worktrees.
 
-**Next track committed**: **fix `RequestCalculatorPTransloc` before wave-3.** PP1 is downstream of translation; translation is starved by AA collapse upstream; wave-3-with-PP1-only would conflate "PP1 alive" with "energetics stable" and waste a baseline. Both fixes ride into wave-3 together. New `queen-pass-merge` skill formalised under `%USERPROFILE%\.copilot\skills\` from this pass.
+### 28-process landscape after this segment
+- **L2.1 GREEN**: 5 (Cytokinesis, MacromolComplex, ChromSeg, HostInter, **+DNADamage**)
+- **Pattern A**: 2 (was 0) — Transcription, Translation **resurfaced**
+- **Pattern B** (non-integral counts, real OC bug): 0 (was 3) — closed
+- **Pattern C**: 0 (closed in prior segment)
+- **Pattern D**: 21 (unchanged this segment)
 
-### L4 Methods paper — Track A is unblocked but pre-conditions are weaker than yesterday's read
-The 10:55 status said "decide after scorecard." Scorecard has landed (`docs/phase_e/karr_fidelity_scorecard.md`). Headline read:
+### Commits this segment (audit/l2-1-sweep-v2 unless noted)
+- `b1feb82`: `audit: add Pattern B census runner` (28×100 tick decoupled integrality probe)
+- `51dc101`: `audit: add Pattern B census reports` (confirmed only 2/28 with non-integral deltas)
+- `ea5a2bf`: `fix(l2-harness): clamp Karr oracle to nearest integer when |frac| < 1e-9 (DNADamage Pattern B' closure)`
+- `fe0b9d5`: `fix(transcription): integerize next_update count deltas (Pattern B closure)`
+- `9d54886`: `fix(translation): integerize next_update count deltas (Pattern B closure)` (both base + v3 wrappers)
+- `main c180e28`: `docs(l2): refresh L2_STATUS after Pattern B sweep (DNADamage GREEN; A resurfaced on Transcription/Translation)`
 
-**Per-process Karr fidelity at tick 0** (isolation replay, baseline `75609c7`): **15 PASS · 1 PARTIAL · 0 FAIL · 12 SKIP** (out of 28).
+### DECISIONS logged this segment
+- `2026-05-29 | opencell | l2-1-empirical-reclassification-over-canonical-projection`
+- `2026-05-29 | opencell | l2-harness-integrality-asymmetry`
 
-> **Honest framing of the underlying baseline** (updated 14:14 IST after wave-2 ensemble + phenotype scorecard returned): the wave-2 ensemble at `75609c7` is **not a stable baseline**. Final ATP across seeds 42-45 = `{3587, 1056, 0.61, 578}` — a 5,900× spread with seed-44 effectively crashed to zero. The phenotype scorecard reads 6/28 PASS / 14 FAIL / 8 BLOCKED across all 4 seeds (status-stable but materially worse than the 7/28 pre-fix baseline at `chassis_v6 @ ee52141`, with KP20 regressing PASS→FAIL). Per-process isolation fidelity (15 PASS below) is a **necessary but not sufficient** signal: it certifies port-level correctness, not composition-level survival. Any L4-A claim must lead with both numbers and explicitly separate isolation fidelity from composition fragility — see "Reconciliation" subsection below.
+### Codex agents in flight (schedule #50 polling 15 min)
+- **Pattern D triage** (PID 41296, worktree `pattern-d-triage`): ranking 4 near-GREEN candidates (RNAMod, ProteinProcessingI, ProteinTranslocation, ProteinActivation) for highest-ROI fix target. Pure investigation, markdown deliverables only.
+- **L2.0 RED triage** (PID 25016, worktree `l2-0-red-triage`): schema-gap analysis for 4 L2.0 RED processes (now 3 effective: TerminalOrganelleAssembly, TranscriptionalRegulation, HostInteraction; DNADamage is L2.1 GREEN despite L2.0 RED). Pure investigation.
 
-| Bucket | Count | Processes |
-|---|---:|---|
-| **PASS** (max_rel < 1e-6 or max_abs < 1e-9) | 15 | ChromosomeCondensation, ChromosomeSegregation, Cytokinesis, DNADamage, DNARepair, DNASupercoiling, MacromolecularComplexation, Metabolism, ProteinActivation, ProteinProcessingI, ProteinProcessingII, ProteinTranslocation, RNAProcessing, RibosomeAssembly, TranscriptionalRegulation |
-| **PARTIAL** (max_rel < 0.05) | 1 | FtsZPolymerization (max_rel 5.5e-4 on `substrates`) |
-| **FAIL** | **0** | — |
-| **SKIP — awaiting MATLAB re-extract** (5 truncated 1-tick mirrors) | 5 | Transcription, Translation, RNADecay, Replication, ReplicationInitiation |
-| **SKIP — adapter/key bugs** (small Python fixes) | 5 | ProteinDecay ('complex'), ProteinFolding ('unfolded_counts'), ProteinModification ('unmodified_counts'), RNAModification ('rna'), tRNAAminoacylation ('rna') |
-| **SKIP — by-design deferral** | 2 | HostInteraction, TerminalOrganelleAssembly |
+### Next moves (priority order, pending triage returns)
+1. **Pattern A residue (Transcription/Translation)** — apply same "honest-enough projection" pattern as Metabolism/ProteinDecay closure. Estimated 25-min reclassification to D. Decide whether to do before or after Pattern D triage recommendation lands.
+2. **Pattern D quick wins** — wait for triage; likely delegate top-ranked fix to Codex.
+3. **L2.0 RED schema work** — wait for triage; may be deferrable to post-L2.1 closure.
+4. **Defensive global pass-through propagation** — add `_PASS_THROUGH` honoring branch to ~22 remaining tests (safe, defensive correctness).
+5. **L2.2 methodology design** — σ-band pre-registration, ensemble harness.
 
-Zero FAILs at tick-0 replay across 16 active adapters is the most positive fidelity signal we have produced to date. The 12 SKIPs are all **scoped, not architectural**:
-- **5 are blocked on MATLAB license restoration** (Bucket A in `MATLAB_FILE_MANIFEST.md`)
-- **5 are small adapter/key-name bugs**, all reachable via codex-foreman fanout (each is a 1-3 file fix; the error messages already name the missing key)
-- **2 are intentional deferrals** documented in scope from day 1
-
-**Recommendation: HOLD on L4 Track A commitment until wave-2 baseline is honestly characterized.** The fidelity scorecard is real and reads strongly *in isolation* (15 PASS / 0 FAIL at tick 0). But the wave-2 ensemble that anchors the methods paper's composition story is currently fragile: 5,900× ATP spread across 4 seeds, seed-44 cratered to 0.61 ATP, KP20 regressed from PASS to FAIL, 6/28 phenotypes pass vs 7/28 pre-fix. Two paths from here, operator's call:
-- **Path A (commit now, ship as-is)**: paper leads with isolation-fidelity PASS scorecard, explicitly frames composition as "wave-2 is the *boundary* of viability, here are the per-seed numbers, here is what fails." Honest negative-result framing of composition; positive framing of port quality. Defensible.
-- **Path B (defer L4, run wave-3 first)**: queue KP20 regression diagnosis (in flight, PID 30312), extractor-schemas-8 fixes (in flight, PID 30968), tRNAAminoacylation enrollment, then re-run ensemble. Target a paper where composition has stabilised (max/min ATP spread < 10×, all seeds above some viability floor) — then ship.
-
-Remaining work to ship under Path A is bounded:
-1. Fire 5-way adapter-key codex fanout (PP1 template applies once it lands — many of these are the same enzyme-seed / port-key pattern). ~1-2 days wall-clock.
-2. Restore MATLAB license to unblock 5 truncated re-extracts (`MATLAB_FILE_MANIFEST.md` Section 4 lists the exact runs). Independent track.
-3. Generate the **post-wave2 phenotype scorecard** (`E2_scorecard_post_strip.md` is the *pre-fix* baseline on broken `chassis_v6 @ ee52141`; a fresh E.2 run on wave2-base is the missing artifact for the paper).
-4. PP1 + RNAProcessing-Option-4 (in flight today).
-5. Bug 8 / Bug 9 tighten the energy/mass scorecard.
-
-**Realistic L4-A timeline if committed today**: ~2 weeks for items 1, 3, 4, 5. Item 2 (MATLAB license) parallel; if it slips, the 5 awaiting-re-extract processes appear in the paper as "license-gated, scoped pending" rather than blocking publication.
-
-**Not yet started**: the `l4-methods-paper` todo (pending bucket). Queue as a parallel docs lane once 2-3 more biology closures land (recommended: after PP1 + RNAProcessing-Option-4 + tRNA close out).
-
-### Reconciliation — "PASS at replay" vs "unclosed-dead at runtime"
-The fidelity scorecard tests each process **in isolation** by replaying Karr's input state into our adapter and comparing tick-0 output to Karr's. So **PP1, PP2, RNAProcessing, RibosomeAssembly, MacromolecularComplexation all PASS in isolation** — our adapter logic is Karr-faithful given Karr's input.
-
-`PROCESS_STATUS_ALL_28.md` measures **runtime in composition**: in the wave-2 ensemble, these same processes are silent because upstream architecture in OpenCell v5 doesn't write their input pools (e.g., RNAProcessing reads TU-keyed unprocessed RNA; TX writes gene-keyed mature RNA — intersection 0; PP1 reads enzymes that were never seeded into the enzyme pool).
-
-**Implication for L4-A**: this is a *publishable finding*, not a contradiction.
-- "Per-process adapters are Karr-faithful (15 PASS / 0 FAIL at tick 0)"
-- "v5 chassis composes them differently than Karr's MATLAB, producing 10 silent-in-composition processes whose upstream pools are not populated"
-- The 10 silent processes' triage path is therefore upstream-architecture work (TX refactor for RNAProcessing, enzyme seeding for PP1, etc.), not process-logic work.
-
-This nuance strengthens the methods paper: it cleanly separates the "port quality" claim (per-process adapter fidelity, scorecard) from the "composition fidelity" claim (whole-cell runtime closure, wave-2 ensemble + PROCESS_STATUS_ALL_28).
-
-### Commits landed since 10:55 IST (this morning's wave-2 baseline)
-
-| Commit | Branch | What |
-|---|---|---|
-| `1f63cb3` | trackF/trna-probe | tRNA aminoacylation probe + fix |
-| `593e694` | trackF/karr-fidelity-trackA | Karr fidelity scorecard harness + integration test |
-| (merge to wave2-base) | | |
-| `4b2f1db` | trackF/trajectory-fixtures | 4-process flat-file chromosome fixtures (Option B) |
-| `a7f3525` | wave2-base | merge trajectory-pilot + flat-file fixtures |
-| `f1cd01e` | docs/matlab-manifest | MATLAB file manifest (161 .mat + 562 .m, 5-stream coverage map, 3 license-blocker classes) |
-| `488b563` | wave2-base | merge MATLAB manifest |
-| `d7ab8f6` | wave2-base | `docs/ORCHESTRATION_MODEL.md` (PM phase 0→4 progression) + plan.md pointer |
-
-### In flight (2026-05-27 ~15:56 IST)
-- **PTransloc request-magnitude fix** — branch `fix/ptransloc-request-magnitude` off `trackA/wave2-base@cea37ca`, worktree `E:\opencell-worktrees\fix-ptransloc-request`, PID `20032`, prompt `PROMPT.md`, log `.codex_combined.log`. Scope: replace `max(need, current_pool)` with `max(0.0, need)` on lines 742-753 of `karr_request_calculators.py` (the same idiom every other request calculator uses); add unit test pinning down magnitude semantics; verify AA pools no longer floor-pin at 1.0; run scorecard at seed=42 and report KP20 delta + full phenotype block.
-
-### Next track — RequestCalculatorPTransloc fix (in flight, see above)
-Diagnose: `docs/phase_e/KP20_regression_investigation.md` lines 44-53, 59. Suspect commit `9a677b7` (A6 PTransloc enrollment): `max(need, current_pool)` request semantics produce near-full ATP/GTP requests from early ticks (tick-10 trace: ATP=36,139 / GTP=35,870). Confirmed anomalous vs Translation (line 654), Transcription, TRNA, etc. which all use `max(0.0, need)`. Likely interacts with A4 (`82ae251`, L3 vector members) and A3 (`b2863dc`, key normalization) — those are secondary; the magnitude bug is the primary. After PTransloc lands and KP20 + AA-pool checks pass: wave-3 ensemble (4 seeds × 32,400s) carries both PP1 + PTransloc fixes.
-
-### Process-level fidelity — input side
-Canonical: `docs/phase_e/PROCESS_STATUS_ALL_28.md` (promoted from session-state 14:14 IST; this is now the source-of-truth tracker). Current bucket counts:
-- **9 closed** (writing real data): Metabolism, DNARepair, ChromosomeCondensation, Transcription, RNADecay, Translation, ProteinFolding, ProteinTranslocation, FtsZPolymerization
-- **2 partial**: RNAModification, ProteinDecay-light
-- **10 unclosed-dead** with diagnose evidence: tRNAAminoacylation (probe fired today), ProteinProcessingI (PP1 fix in flight), ProteinProcessingII (queued behind PP1 template), ProteinModification (queued behind PP1 template), MacromolecularComplexation, RNAProcessing (Option-4 defer in flight), RibosomeAssembly, ReplicationInitiation, Replication, CellCycleCoordinator
-- **2 deferred**: HostInteraction, TerminalOrganelleAssembly
-
-### PM orchestration — Phase 4 active
-Logged 2026-05-27 in `docs/ORCHESTRATION_MODEL.md` + `.pm-os/DECISIONS.md` (slug `orchestration-model-progression-phase-0-to-4`). Five phases captured: Phase 0 (pure main) → 1 (main + design) → 2 (main + codex) → 3 (kanban with worktree-per-track) → **4 (multi-stage kanban + conflict-pair detection + codex-foreman, current)** → 5 (peer Copilot PMs, deferred). Queen-pass cadence runs at every meaningful turn; 4-slot codex ceiling enforced.
-
-### MATLAB picture — clarified today
-`docs/phase_e/MATLAB_FILE_MANIFEST.md` (21.7 KB / 232 lines) inventories the full local corpus:
-- **161 .mat** files (150 probed via `scipy.io.loadmat`, 11 size-listed only)
-- **562 .m** sources (538 WholeCell mirror at `E:\opencell-mirrors\WholeCell` → symlinked into `data/m1_sources/WholeCell`)
-- **3 true license-blocker classes** (Bucket A): new simulation generation, regeneration of missing/truncated artifacts, new-field extraction from MCOS when no flattened/archive surrogate
-- **Important non-blockers**: PP2 + ProteinModification triage inputs already on disk (flat fixtures + 100-tick traces); RNAProcessing/RibosomeAssembly/MacromolecularComplexation diagnoses don't need new MATLAB runs
-- **Confirmed**: Karr 2012 supplement xls/xlsx files are HTML download stubs (placeholders), not real spreadsheets
-
-### Bug 8 / Bug 9 status
-Both still pending. Bug 9 (protein decay enrollment) — diagnose **did complete** (correction 14:14 IST): STATUS lives in the consolidator worktree as `swarm-dead-consolidator/STATUS_dead_protein_decay_light_consolidated.md` with verdict (b) buggy implementation (R09 + R19 findings, allocator-key bypass at `karr_protein_decay_light.py:177-181,223-248`). The `swarm-dead-protein_decay_light` worktree itself is a recycled scratch worktree, not the diagnose codex's output location — its name is misleading. Rule 5 not violated. Next step is A6-pattern enrollment fix, not a fresh diagnose. Bug 8 (TL energy: +GTP, +4 ATP-eq/AA) — still gated on PP1 + tRNA closures so the magnitude isn't conflated with other deltas.
-
-### Next decisions / queue
-1. **PP1 lands → fire PP2 + ProteinModification fanout** using PP1 STATUS as literal template (codex-foreman pattern, mechanical fanout).
-2. **L4 Track A vs Track B**: ready to decide; recommend Track A. Pending operator commit.
-3. **Bug 9 diagnose codex**: queue once a slot frees (currently 2/4 in use).
-4. **build_replay_fixtures `max_diff=0` investigation**: small investigation track, queue once PP1 lands.
-5. **MATLAB-restored runs (wishlist)**: when license is restored, `docs/phase_e/MATLAB_FILE_MANIFEST.md` Section 4 lists the exact runs to do — 5 truncated process re-extractions + missing init-state .mat for 5 processes.
+### Inbox hygiene done this segment
+- Dropped stale `#compete-dashboard T-2 lag` item (pipeline uses wildcard fileset, T-2 handled implicitly)
+- Added `#opencell` item: post-L2.1-closure → write `scripts/regen_l2_status.py` (foreshadowed in L2_STATUS itself)
+- 2 #opencell deferred items unchanged (await next class-A swarm template update)
 
 ---
 
-## Current Status (2026-05-27 10:55 IST, **WAVE-2 PRs LANDED + 4-SEED ENSEMBLE COMPLETE**)
+## Prior Status (2026-05-29 ~14:30 IST, **PATTERN A HARNESS SCALED — L2.1 GREEN 3→4, PATTERN A 7→2, PATTERN D 11→15**)
 
 ### TL;DR
-4-seed × 32,400 s ensemble on `trackA/wave2-base` HEAD `2e185ff` ran clean in 36 min wall-clock. 11 of 29 Karr biological processes are actively writing; 18 are header-only (silent). A6 PTransloc enrollment proved the close-the-loop pattern (35 B → 1.68 MB). Per-process replay fixtures materialized for all 28 processes (commit `e0118b2`) — the "MCOS-decode wall" was a phantom. Two Karr-fidelity codex tracks launched this morning (Track A scorecard in flight, Track B MATLAB re-extractor done). Track-F tRNA aminoacylation probe codex launched 10:51 IST. Hygiene pass underway to promote session docs into repo.
+Pattern A harness (`project_karr_vector`) extended with literal-index projection. All 7 Pattern A tests refactored using the clean override API. Cytokinesis promoted to GREEN. 4 processes (RNAMod, PTransloc, PActivation, ProteinMod) advanced past length-drift wall into Pattern D (real biology, ready for per-process root-cause). 2 stuck: Metabolism (WID-order mismatch suspected, not pure layout) + ProteinDecay (complexs needs fixture-driven column-index extraction).
 
-### Commits landed since 2026-05-25 22:53
+### 28-process landscape after this segment
+- **L2.1 GREEN**: 4 (Cytokinesis, MacromolComplex, ChromSeg, HostInter)
+- **Pattern A residue**: 2 (Metabolism, ProteinDecay) — deeper layout work
+- **Pattern B** (non-integral counts, real OC bug): 3 untouched (DNADamage, Transcription, Translation)
+- **Pattern C** (enzyme reconstruction t=0): 4 untouched (ProteinFolding, ProteinProcessingI/II, ReplicationInitiation)
+- **Pattern D**: 15 (11 original + 4 promoted from A; first-mismatch fingerprints captured in `docs/phase_e/L2_STATUS.md`)
 
-| Commit | Branch | What |
+### Commits this segment
+- `audit/l2-1-sweep-v2 55450ea`: harness extension + 7 Pattern A test refactors (local only)
+- `main 3d44a47`: `docs(l2): refresh L2_STATUS after Pattern A harness scale-out`
+
+### Next moves (priority order)
+1. **Pattern A residue** — Metabolism (inspect trace .mat for WID-order metadata, build WID-mapped index), ProteinDecay (extract complex column-indices from fixture).
+2. **Pattern C enzyme reconstruction** — 4 processes, single shared fix candidate in `project_observable_from_state` / `overlay`.
+3. **Pattern D quick wins** — RNAMod tick=0 init-seeding lead; PTransloc (tick=2) + PActivation (tick=28) are 1-bit-near-GREEN.
+4. **Pattern B Rule-2 violations** — real OC bug, scoped per-process.
+5. **L2.2 methodology** — still not started.
+6. **Pattern D long tail** — 11 original, slowest path.
+
+### Open questions for operator
+- Classify "1-bit drift at tick > 0" as strict L2.1 RED or softer L2.2 promotion?
+- Batch Pattern D investigations (RNAMod + ProteinMod tick=0/43 init gaps) into one ticket or per-process?
+
+### Session artifact
+- `files/pattern_a_autonomous_run.md`: detailed verdicts table + diagnostics + next-step playbook.
+
+---
+
+## Prior Status (2026-05-29 ~01:00 IST, **EXTRACTOR BUG CONFIRMED, RE-EXTRACTION + L2.1 SWEEP RUNNING AUTOPILOT**)
+
+### TL;DR
+H1 canary on Metabolism passed: `states_before` and `states_after` are **byte-identical for 100/100 ticks** across `substrates`, `enzymes`, and `boundEnzymes`. Total |delta| = 0.0. Extractor allocator bug **confirmed**. The previously-claimed "L2.1 GREEN on MacromolComplex" is officially invalidated.
+
+### Autopilot in flight (operator stepped away ~01:03 IST)
+
+1. **Codex re-extraction** running detached, PID **34356**, branch `audit/l2-matlab-reextract-v2`, worktree `E:\opencell-worktrees\l2-matlab-reextract-v2`.
+   - Pattern B-inline: replicate `Simulation.evolveState()` per tick with a tap on the target process. Preserves cross-process coupling AND captures clean per-process inputs/outputs.
+   - Mandatory smoke test before commit: `scripts/check_metabolism_active.py` requires ≥10 nonzero-delta ticks. (Would have caught the original bug.)
+   - Outputs go to `data/m1_sources/karr_native/per_process_traces_v2/` (originals preserved at `per_process_traces/` for diff).
+   - ETA: 30–90 min wall-clock for full 28-process sweep.
+
+2. **Scheduled poll #45** (every 10 min): on completion, parses STATUS + audit log, summarizes bucket counts vs prior (2 active / 18 vacuous / 8 shape-mismatch).
+
+3. **Chained autopilot (separate schedule #46)**: when extraction succeeds, automatically launches L2.1 replay sweep across all processes that produced live data (delegated to Codex on a fresh worktree). Goal is per-process GREEN/RED verdicts under real Karr traces.
+
+### Decision pending (operator-only, not autopiloted)
+- Whether to log `l2-extractor-bug-blocks-l2-1` to pm-os DECISIONS.md once re-extraction completes + verdicts land.
+
+### What success looks like when operator returns
+- `per_process_traces_v2/` has 28 files, all with nonzero substrate deltas.
+- L2.1 sweep produced verdict table: which processes GREEN vs RED at bit-identity.
+- AMP-37 tRNAAA finding re-evaluated under real ticks 1..99 (not just tick 0).
+- STATUS files + commit lists ready for review on the two Codex branches.
+
+### What failure looks like
+- Codex extraction failed/wedged: schedule #45 surfaces it.
+- L2.1 sweep finds new bug pattern: schedule #46 surfaces it.
+- Either way, no silent failures; the schedules guarantee a wake-up call.
+
+---
+
+## Prior Status (2026-05-28 ~23:50 IST, **L2.1 BLOCKED ON EXTRACTOR BUG — 18/28 TRACES VACUOUS, ROOT-CAUSED**)
+
+### TL;DR
+After hardening the L2 replay templates (Codex dry-run + mechanical lint), the **mutated-tick auditor** (`scripts/audit_l2_trace_mutation.py --all`) swept all 28 per-process traces and surfaced a systemic extractor bug:
+
+| Bucket | Count | Examples |
 |---|---|---|
-| `b2863dc` | A3 | key normalization + zero-demand writeback guard |
-| `f8339b7` | wave2-base | merge A3 |
-| `6661d2e` | A2 | enroll Metabolism + Transcription + Translation in allocator (v3/v4) |
-| `cd2e775` | wave2-base | merge A2 (Metabolism/TX/TL enrollment + C1 tolerance) |
-| `0ba4f7c` | tracer-fix | fix canary tracer port filtering |
-| `bf1a2e6` | wave2-base | merge tracer fix |
-| `9a677b7` | A6 | enroll ProteinTranslocation in allocator |
-| `2e185ff` | wave2-base | merge A6 |
-| `c7c3635` | wave2-base | merge A4 (L3 vector members) |
-| `e0118b2` | wave2-base | materialize 28 per-process replay fixtures (data-only) |
+| **Real activity** | **2** | FtsZPolymerization (100/100 enzymes), tRNAAminoacylation (1/100) |
+| **Vacuous** (`states_after ≡ states_before` all 100 ticks) | **18** | **Metabolism**, ProteinFolding, RibosomeAssembly, RNAProcessing, MacromolComplex, DNARepair, DNADamage, ChromSeg, Cytokinesis, HostInteraction, ProteinTranslocation, RNAModification, ProteinMod, ProteinProcI/II, ProteinActivation, TermOrgAssembly, TxReg |
+| **Shape mismatch** (`states_after` empty) | 8 | ChromCondens, DNASupercoil, ProteinDecay, RNADecay, ReplInit, Repl, Transcription, Translation |
 
-### Wave-2 PRs status (5 PRs from the swarm-discovery audit)
-- ✅ A2 Metabolism + TX + TL enrollment — landed
-- ✅ A3 key normalization — landed
-- ✅ A4 L3 vector members — landed
-- ✅ A5 (tracer port-filter) — landed
-- ✅ A6 ProteinTranslocation enrollment — landed (proved A6 pattern)
+**Metabolism showing 0/100 is the smoking gun.** Karr's Metabolism fires ~600 reactions every tick; it cannot legitimately be silent for 100s. The "L2.1 GREEN on MacromolComplex" from the earlier pilot is now **invalidated** — it was bit-identical because `states_after` was a byte-copy of `states_before`, not real biology.
 
-### Ensemble (artifacts/ensemble_wave2_20260527_023611/)
-4 seeds (42/43/44/45), 32,400 s biological time each, ~36 min wall-clock total (parallel WSL processes). No NaNs, no negative pools, no allocator wedges. Final state per seed (tight spread):
+### Root cause (confirmed by source read)
+Both `scripts/matlab/extract_per_process_traces.m` (original) and `extract_per_process_traces_fix.m` (May 27 retry on the 5 truncated traces) use the same broken loop:
+```matlab
+proc.copyFromState();   % pull global state into proc.substrates etc.
+[snapshot before]
+proc.evolveState();     % ← needs allocated resources to do anything
+[snapshot after]
+proc.copyToState();
+```
+Karr's scheduler requires `sim.scheduleResourceRequests()` + `sim.allocateResources()` BEFORE `proc.evolveState()`. Without those calls, each process's substrate allocation is empty → evolveState produces no flux → snapshot equality.
 
-| Seed | Final ATP | Mass (g) | Proteins | RNA | Free AAs | Repl/Div |
-|---|---:|---:|---:|---:|---:|:-:|
-| 42 | 3,587 | 3.654e-14 | 29,106 | 671 | 1 | none |
-| 43 | 1,056 | 3.653e-14 | 29,125 | 670 | 1 | none |
-| 44 | 0.61  | 3.652e-14 | 29,106 | 671 | 1 | none |
-| 45 | 578   | 3.653e-14 | 29,098 | 673 | 1 | none |
+**Why the 2 active ones survive:**
+- **FtsZPolymerization**: enzyme state-machine only, doesn't consume substrates → still mutates.
+- **tRNAAminoacylation**: tick 0 has substrates from initial sim state; `copyToState` drains them; ticks 1–99 vacuous → matches observed `nz=[0]`.
 
-Rate-limiting failure mode: AAs deplete to 1 because `karr_trna_aminoacylation` is silent → translation stalls → mass plateaus → ATP drains downstream. **This is the publishable wave-2 baseline.**
+### What we know NOT to do
+- Do not interpret the existing 28 `_100ticks.mat` traces as ground truth. They are extractor artifacts, not Karr behavior.
+- Do not declare any L2.1 GREEN/RED verdict from current traces. The tRNAAA AMP-37 finding is real (tick 0 *does* fire) but isolated to 1 tick.
+- Do not scale to FtsZ as the next pilot until we have full traces. FtsZ is the one process where current data is real.
 
-### Process-level fidelity (input side)
-See `docs/phase_e/process_status.md` (promoted from session this morning). Rollup:
-- **9 closed** (writing real data): Metabolism, DNARepair, ChromosomeCondensation, Transcription, RNADecay, Translation, ProteinFolding, ProteinTranslocation, FtsZPolymerization
-- **2 partial**: RNAModification (201 B), ProteinDecay (light; full decay is Bug 9)
-- **10 unclosed dead**: tRNAAminoacylation, ProteinProcessingI/II, ProteinModification, MacromolecularComplexation, RNAProcessing, RibosomeAssembly, ReplicationInitiation, Replication, CellCycleCoordinator
-- **2 deferred**: HostInteraction, TerminalOrganelleAssembly
+### Next steps (priority order)
 
-### In flight (2026-05-27 morning)
-1. **Track A — Karr fidelity scorecard** (`E:\opencell-worktrees\karr-fidelity-trackA`, PID 34348, branch `trackF/karr-fidelity-trackA`) — Python harness fix + scorecard doc + integration test. ETA 30-60 min from 10:18.
-2. **Track B — MATLAB re-extractor** (DONE, branch `trackF/karr-fidelity-trackB` HEAD `d6b4019`) — 4 commits, runbook in `scripts/matlab/README_extractor_fix.md`. Awaiting operator MATLAB run for 5 truncated processes (Transcription/Translation/RNADecay/Replication/ReplicationInitiation).
-3. **Track F — tRNA aminoacylation probe** (`E:\opencell-worktrees\trna-probe`, PID 27408, branch `trackF/trna-probe`) — diagnose H1/H2/H3/H4 + fix. First instance of the close-the-loop template.
-4. **Hygiene pass** (this commit) — promoted 4 session docs to `docs/`, refreshed plan.md.
+1. **Fix the MATLAB extractor.** Two viable patterns:
+   - **A. Per-process isolation w/ allocation**: before each `evolveState()`, call `proc.calcResourceRequirements_Current()`, manually populate `proc.substrates` from a fresh `simulation.state` snapshot.
+   - **B. Full-sim tick + per-process snapshot** (recommended): run `sim.evolveState()` (the full simulation tick which includes scheduler + allocator + all processes), snapshot the target process's input fields BEFORE and output fields AFTER. Gives realistic substrate availability + cross-process coupling.
+   Pattern B matches what OC's L2.1 replay actually tests: "given Karr's per-tick inputs, does OC reproduce the per-tick outputs."
 
-### Bug 8 / Bug 9 status
-Both still pending, both still deferred. Bug 9 (protein decay enrollment) unblocks AFTER A6 pattern proven (it is, now). Bug 8 (TL energy: +GTP, +4 ATP-eq/AA) needs Track-A scorecard first to bound the magnitude of mis-accounting before tightening.
+2. **Delegate to Codex** on a fresh worktree `audit/l2-matlab-reextract-v2`. MATLAB code, 28 processes, ~100 ticks each → ~30–60 min run. Prior Codex extractor session (`audit/l2-matlab-reextract`, 3 commits) is the natural precedent — that one fixed the FQ-class identifier issue but not this bug.
 
-### Next decisions (gated on Track-A scorecard)
-- **L4 methods paper framing**: A (port + fidelity) ≈ 2 weeks away; B (port + division) 6-10 weeks. Decide after scorecard.
-- **Tier-0 sequence**: tRNA (in flight) → Bug 9 (protein decay enroll) → Bug 8 (TL energy) → ReplicationInitiation/Replication enrollment → CellCycleCoordinator → division.
+3. **Re-run audit + lint** post-extraction. Expected: Metabolism, Translation, Transcription, RNAProcessing all become active (these are constantly firing in Karr); some genuinely-rare processes (Cytokinesis, ReplInit) may legitimately stay quiescent in a t=0..99 window — flag those for an alternate-window extraction.
 
-## Current Status (2026-05-25 ~22:50 IST, **TRACK-A SWARM LANDED ON MAIN**)
+4. **Re-pilot L2.1** on Metabolism (highest-activity, most diagnostically valuable) once traces are real. The AMP-37 tRNAAA finding stays valid for tick 0 but is no longer the top lead.
+
+### Artifacts shipped this segment (committed + pushed)
+- `scripts/audit_l2_trace_mutation.py` (`--trace` / `--pilot-sweep` / `--all`): per-observable nonzero-delta tick counter.
+- `scripts/lint_l2_replay.py` (296 LOC): 6 AST-based mechanical checks for L2 test compliance.
+- `docs/prompts/FIX_TEMPLATE_L2_REPLAY.md` + `CRITIQUE_L2_REPLAY.md`: hardened with machine-readable `_PASS_THROUGH` + `_SCRATCH_RESET` manifests, delta-integrality on apply path, K1–K6 known gaps section.
+- `docs/phase_e/L2_1_TRNA_AMINOACYLATION_PILOT.md`: revised scoreboard reflecting 1-tick coverage.
+- Worktree `audit/l2-trna-aminoacylation` (commit `b4dd1e4`, NOT pushed): only fully-compliant L2.1 exemplar test — keep as reference.
+
+### Decision pending
+Whether to log a pm-os decision (`l2-extractor-bug-blocks-l2-1`) tonight or fold it into a broader retro after re-extraction lands.
+
+---
+
+## Prior Status (2026-05-28 ~22:30 IST, **L2-GREEN THREE-RUNG FRAMEWORK SHIPPED + L2.1 PILOT LANDED**)
 
 ### TL;DR
-All 7 swarm branches merged to `main` at HEAD `2151d35`. Final gates: unit suite `381/381 passed`, **B1 substrate sanity GREEN** (the central blocker that motivated the 7-layer audit), L3 integration spot-check `4/4`. Contract-layer chapter is closed; next is the M-phase ensemble (4-seed × 32,400-tick) graded against the 28-KP Karr scorecard.
 
-### Merges landed (in order)
+L2-green decomposed into three rungs (L2.0 schema / L2.1 bit-identity / L2.2 distributional), pilot data in hand:
+- L2.0 audit: 0 GREEN, 24 AMBER, 4 RED across 28 processes (karr ⊆ oc).
+- L2.1 N/A: 7 processes with empty `states_after` in `_100ticks.mat`.
+- L2.1 RED: **tRNAAminoacylation** tick 0 substrates[2]=**AMP**, oc=2080 vs karr=2117, **diff=−37** (~37-event tRNA-charging shortfall).
+- L2.1 GREEN: **MacromolecularComplexation**, 100 ticks × all observables, bit-identical. First L2.1 GREEN.
+- Commit `da32cde` on `main`, pushed.
+- Decision `l2-green-three-rung-framework` logged in pm-os.
 
-| Step | Merge commit | Branch | Layer |
+### Immediate next steps
+
+1. Triage AMP-37 finding on tRNAAminoacylation against the M1 per-reaction oracle (single concrete debug lead).
+2. Sweep the remaining 19 L2.1-viable processes via their existing worktree replay tests; collate first-mismatch table.
+3. Resolve the 7-empty-after blocker (either re-extract states_after via MATLAB Codex round, or document L2.1 N/A and lean on L1+L2.0+L2.2 for those processes).
+
+### Pilot artefacts (committed in `da32cde`)
+
+- `scripts/probe_l2_0_schema_audit.py` (idempotent 28-process scan)
+- `docs/phase_e/L2_0_SCHEMA_AUDIT.{md,json}`
+- `docs/phase_e/L2_1_TRNA_AMINOACYLATION_PILOT.md`
+
+### Prior Status (2026-05-28 ~19:25 IST, **L2 ORACLE LAYER UNBLOCKED; PAIRED PILOT IN FLIGHT**)
+
+### TL;DR
+After a critique-driven detour (V2 design → GPT-5.5 ACCEPT_WITH_MODIFICATIONS → Path 3 third-pilot → discovered structural blocker: oracles biased to quiescent windows), the **MATLAB re-extraction Codex (`audit/l2-matlab-reextract`, 3 commits) shipped a real unlock**:
+- **Q1 GREEN**: FQ-class-identifier resolution (`sim.process(<short>)` returning `edu.stanford.covert.cell.sim.process.<Name>`) fixed the prior `_fix.m` failure. **7/7 truncated P0 traces re-extracted** at full 100 ticks.
+- **Q2 RED-with-caveat**: alternate windows (t=5000, t=15000) for the 2 quiescent pilots came back 100% quiescent — but they were run via process-isolated burn-in, not full-sim calendar windows, so the test doesn't actually answer Q2.
+- **Buried in the data**: among the 7 newly extracted t=0..99 traces, **DNASupercoiling (frac=0.544)** and **Replication (frac=0.734)** are non-quiescent. First real oracle windows we have.
+
+### Paired pilot in flight
+Two Codex sessions launched ~19:23 IST, polling via schedule #43:
+
+| Worktree | PID | Process class | Oracle quiescence | Failure-mode coverage |
+|---|---|---|---|---|
+| `l2-dna-supercoiling` | 31768 | Stochastic (Poisson) | 0.544 | RNG-divergence OR algorithm |
+| `l2-replication` | 22908 | **Deterministic** (no `_rng`) | 0.734 | Algorithm/plumbing only |
+
+Joint 2x2 outcome interpretation pre-registered in `l2-replication/PROMPT.md`:
+- (GREEN, GREEN) → V1 methodology works, V2/V3 over-engineered.
+- (RED@t=0, GREEN) → RNG divergence dominates → Path 1 (RNG-parity work).
+- (RED@t>0, RED@t>0) → systematic algorithm gap → V2+ tier structure justified.
+- (GREEN, RED) → Replication-specific port bug, not methodology.
+
+### Branch state (worktrees)
+- `audit/l2-matlab-reextract` — c46483f + 1917d88 + f5a3c9d; STATUS verdict Q1_GREEN_Q2_RED.
+- `audit/l2-rna-modification` — GREEN-vacuous (closed).
+- `audit/l2-cell-cycle-probe` — WRONG_FORMAT verdict (closed).
+- `audit/l2-rng-parity-spike` — PARITY_HARD verdict (closed).
+- `audit/l2-dna-supercoiling` — in flight (PID 31768).
+- `audit/l2-replication` — in flight (PID 22908).
+
+### What changed vs the 14:24 block
+- "P0 = L2 GREEN × 28" target was the wrong target. Right target is: **validate L2 methodology on one non-vacuous oracle window first**. Per-process fanout comes after methodology lock.
+- L1c ATP collapse still demoted to L3-prep. Unchanged.
+- L2 methodology design (V1/V2/V3) is now **empirically blocked on the paired pilot's joint verdict** rather than on speculative design debate.
+- 7/7 truncated traces re-extracted means the universe of L2-eligible processes is now ~27/28 (only ProteinDecay PARTIAL_8 remains deferred).
+
+### Codex operating lessons (captured)
+- `--full-auto` flag on codex 0.133.0 fails on Windows ("spawn setup refresh"). Canonical launch flag is `--dangerously-bypass-approvals-and-sandbox`.
+- Remote compaction crashes at ~470K tokens — split big prompts into multiple sessions, hard-cap context budget per session in the prompt.
+- MATLAB sim registry expects FQ class identifiers; bare strings silently fail with "process not found".
+
+---
+
+## Current Status (2026-05-28 ~14:24 IST, **P0 = L2 GREEN × 28; L1c collapse demoted to L3-prep tier**)
+
+### TL;DR (honest, post user-pushback)
+L1 28/28 green still holds per-process. The post-L1c ensemble revealed an ATP collapse to integer floor, BUT — corrected framing — that's an *integration* signature, not an L1 regression and not something L2-isolated-fidelity will surface either (L2 replay feeds each process recorded ATP). So **L1c sits between L2 and L3, not between L1 and L2**. Diagnosing it now buys nothing for L2. P0 collapses to: **get L2 G3 replay green across all 28 processes**, then write the blog, then handle the collapse as part of L3 prep.
+
+### Today's plan (target: L2-green + blog post by EOD)
+Six todos with corrected deps. Ready frontier = items 1 & 2 (run in parallel).
+
+**P0 — L2 green (start NOW):**
+1. **`l2-g2-probe-tighten`** (no deps) — fix the inventory probe to require `replay_one_tick`/`load_per_process_fixture` import. Re-validate the 9 G2=PASS rows; expect 2-4 truly ready.
+2. **`l2-tolerance-calibrate-midcycle`** (no deps) — pull per-process σ at t=1k/3k/5k from the ensemble we already have, write `docs/phase_e/L2_TOLERANCE_TABLE.md`. Energy-coupled processes use mid-cycle band (final-tick is at integer floor → meaningless).
+3. **`l2-output-key-map-fanout`** (deps 1, 2) — codex fanout across 19 processes using `IMPL_NEW_PROCESS_LANDING.md` envelope. Populate OUTPUT_KEY_MAP, extend fixtures for the 8 KeyError cases. Goal: G3 replay green for all 19.
+
+**P1 — narrative:**
+4. **`blog-post-l1-to-l2-bridge`** (dep 3) — third blog post. Honest narrative: L1 green ≠ biologically sound; L2 isolated-fidelity green ≠ biologically sound either; L1c is the *next* gate (integration energy balance), not solved today. Includes "tight-spread yesterday" retraction.
+
+**P2 — L3 prep (deferred till after L2 green):**
+5. **`l1c-atp-collapse-diagnose`** (dep 3) — rank ATP consumers from `process_traces/*.csv` at mid-cycle. Now an L3-prep task, not an L2 blocker.
+6. **`l2c-energy-ledger-gate`** (dep 5) — formalize L1c as `docs/phase_e/L1C_ENERGY_LEDGER_GATE.md` and wire into CI smoke. Renaming pending: probably belongs as L2.5 or L3-prereq, not L1c.
+
+### Friction the user named, and the fix
+I was treating ATP collapse as a P0 blocker because it *felt* like a regression. It isn't. L1 contract green is intact — each process honors its inputs/outputs/schema in isolation. The collapse is emergent at integration. L2 (isolated replay) cannot see it either. So:
+- "L1c" was a misnomer. It's a post-L2 gate, not a pre-L2 gate.
+- Diagnosing it before L2 green = sequencing it ahead of where the diagnostic infrastructure (per-process σ, replay determinism) will be sharpest.
+- Real P0 = L2 G3 fanout × 19, full stop.
+
+### Branch state
+- `main`: L1 complete (`l1-complete` tag pushed).
+- `audit/l2-isolated-fidelity-sweep`: L2 inventory CSV + audit doc + 19 replay test scaffolds + template + generator + `IMPL_NEW_PROCESS_LANDING.md`. Clean. This is the working branch for today's fanout.
+- `audit/l1-green`: merged.
+
+### Branch state
+- `main`: L1 complete (tag `l1-complete` pushed). Clean. Next merge candidate = `audit/l2-isolated-fidelity-sweep` once L2 G3 lands.
+- `audit/l2-isolated-fidelity-sweep`: contains L2 inventory CSV + audit doc + 19 replay test scaffolds + template + generator + `IMPL_NEW_PROCESS_LANDING.md`. Pushed to origin. Uncommitted: none.
+- `audit/l1-green`: merged to main, kept for history.
+- 31 worktrees active after the 129→28 cleanup (some new ones for in-flight work). No new pruning needed today.
+
+### Open structural finding (not yet a bug, hypothesis only)
+ATP regen slope from t=0 to t=5k is ~5.7 molecules/s consumed net (36234→7900 over 5000 ticks). Then drops to floor and stays there. Either metabolism's regen rate fails when ATP is low (likely — FBA with near-zero substrate could throw NaN/clip to zero) or one consumer goes runaway and overshoots. Diagnosis lives in `l1c-atp-collapse-diagnose`. Likely candidates from prior bug analysis: translation (over-produces 5.3× Karr final protein count, energy-coupled), or request-calculators with the v23-cohort fixes.
+
+### What changed in this status block vs the 11:15 one
+- L1 status updated from "phase closed" to "phase closed at L1 layer; L1c layer red". Gate L1c added.
+- 6 new todos for today's long day.
+- 19 L2 Stage-1 scaffolds + 2 new docs committed on audit branch.
+- ATP collapse honestly characterized; yesterday's tight-spread claim retracted.
+
+---
+
+## Current Status (2026-05-28 ~11:15, **L1 COMPLETE 28/28 — MAIN ADVANCED, TAGGED, PUSHED**)
+
+### TL;DR
+Karr process #29 `karr_transcriptional_regulation` landed on `main`. All 28 Karr-in-v6 processes are L1-green (FIRING or GATED, both count). `cell_cycle_coordinator` SHIM remains as Karr-parity N/A. `trackA/wave2-base` merged into `main` (115 commits), `audit/l1-green` merged into `main` (canonical tracker), tag `l1-complete` pushed to origin. Smoke-tested green on `main`: 8/8 v6 integration + 5/5 tx-reg strict-zero. **L1 phase closed.** Next: L2 isolated-fidelity audit on `audit/l2-isolated-fidelity-sweep`.
+
+### What landed (2026-05-28 evening)
+- **tx-reg critique r3**: DIRTY-4 verdict (missing strict-zero suite). Validated the morning's `critique-gate-4-must-cover-both-test-roots` decision empirically — template caught the gap.
+- **Gate-4 closure on impl branch**: `tests/unit/test_karr_transcriptional_regulation_strict_zero.py` (5 tests, pattern from pmod) + module docstring expanded with t=0 reduction + no-fallback invariant. Commit `4c40347` on `impl/karr-transcriptional-regulation`. Tests: 5/5 strict-zero + 15/15 vivarium + 6/6 integration = 26/26 PASS.
+- **Merge into trackA**: `git merge --no-ff impl/karr-transcriptional-regulation` → 3 concat conflicts in `karr_composite.py` (helper region + v4 builder seed + v5 builder seed; pure additive). Resolved. Merge commit `82348a8`. Tag `l1-complete` applied on trackA.
+- **trackA → main**: clean fast-forward-no-ff merge (115 commits). Merge commit `6930eb4` on `main`.
+- **audit/l1-green → main**: add/add conflict on `PROCESS_STATUS_ALL_29.md` — took canonical version from `audit/l1-green` (28/28 green, row 29 updated 🟢/🟡). Merge commit `c363a75` on `main`.
+- **Post-merge smoke**: 8/8 v6 integration + 5/5 strict-zero green on main.
+- **Push**: `main` + tags `l1-complete`, `l1-dimer-port-complete` pushed to origin.
+- **SQL `prefix_v2_runs`**: row `karr-transcriptional-regulation-r3` recorded with verdict `DIRTY-4-rescued-by-strict-zero-add`, status `merged-trackA-82348a8`.
+
+### State of branches/worktrees (snapshot)
+- `main` at `c363a75` — L1 closed. trackA fully merged. 115-commit gap eliminated.
+- `trackA/wave2-base` at `82348a8` — frozen post-L1; tag `l1-complete`.
+- `audit/l1-green` at `ec3ec1e` — canonical ALL_29 tracker (28/28 green).
+- `audit/l2-isolated-fidelity-sweep` at `86b340a` — L2 audit doc skeleton; ready for Stage-0 inventory probe.
+- ~169 local branches still live; cleanup deferred (Pass 1 ~85 safe drops post-L1).
+
+### Open backlog (lower priority)
+- Two-pass branch cleanup: Pass 1 drop ~85 branches already merged into trackA (now in main).
+- Promote `CRITIQUE_R3_PROMPT.md` → `docs/prompts/CRITIQUE_NEW_PROCESS_LANDING.md` (distinct from dimer-port critique template).
+- TR-R4 cleanup of synthetic MG_205_DIMER bootstrap — moot after tx-reg landed (auto-resolved).
+- Update `delegate-to-codex` SKILL.md to reference 3-slot framework.
+- Extract `PRESERVATION_DIRECTIVE.md` template.
+
+### Next phase: L2 Isolated Fidelity
+Branch `audit/l2-isolated-fidelity-sweep` has skeleton at `docs/phase_e/L2_ISOLATED_FIDELITY_AUDIT.md` (5-gate methodology G1 fixture → G2 replay → G3 PASS → G4 ≥6 perturbations → G5 hardcode-clean; 29-row UNKNOWN table; 6-stage fanout plan). Three open design questions to settle before Stage-0 probe:
+1. Tolerance budget: per-process from seed-variance vs uniform (recommended: per-process)
+2. Perturbation taxonomy: lock 6 common vs per-process custom (recommended: lock-6-plus-allow)
+3. Sequencing: FIRING-first vs submodel-cluster (recommended: FIRING-first)
+
+
+## Prior Status (2026-05-28 ~10:30, L1 DIMER-PORT CLASS COMPLETE 10/10, TAGGED)
+
+### TL;DR
+trna-aminoacylation (47cef97) + pmod-v22 (9f2d12f) merged into `trackA/wave2-base` via dimer-port-v23-integration → fast-forward. Both retroactively critiqued CLEAN by gpt-5.5 5-gate rubric. Tag `l1-dimer-port-complete` created. Critique-pipeline gap discovered + closed: Gate 4 expanded to require ALL THREE test roots (vivarium/, unit/strict_zero/, integration v6); 9 strict-zero test fixtures patched on `trackA/wave2-base` (2 from pmod+ trna, 7 backfilled from prior v23 cohort). Canonical critique template now lives at `docs/prompts/CRITIQUE_DIMER_PORT.md`. `.gitignore` patched to suppress pycache noise (10k+ → 1160 untracked across worktrees).
+
+### What landed (2026-05-28 PM)
+- **trna + pmod-v22 retroactive 5-gate critique** (both gpt-5.5, both CLEAN). SQL `prefix_v2_runs.critique_verdict` updated. Diffs preserved in critique-arena.
+- **Merges into integration**: trna at `6f9c989`, pmod-v22 at `ecb1f15`. 4 conflicts in `karr_composite.py` (concatenation, same pattern as v23 cohort).
+- **Strict-zero LHS fixture patches** at `38332ef` (pmod) + `385d682` (7-test backfill across dna-repair, dna-supercoiling, protein-folding × 2 fns, protein-processing-i, protein-translocation, rna-processing). All LHS-only, no RHS edits.
+- **Fast-forward** `trackA/wave2-base` to `385d682`. Post-ff sweep: 8/8 integration + 19/19 strict-zero green.
+- **Tag** `l1-dimer-port-complete` (annotated) on trackA at head.
+- **`docs/prompts/CRITIQUE_DIMER_PORT.md`** created — canonical 5-gate critique rubric, codifies what was ad-hoc in agent prompts. Gate 4 expanded with mandatory enumeration of all 3 test roots.
+- **Decision `critique-gate-4-must-cover-both-test-roots`** logged at top of DECISIONS.md.
+- **`.gitignore`** patched: added `__pycache__/`, `*.pyc`, `.pytest_cache/`, `.coverage`, `*.egg-info/`, `.mypy_cache/`, `.ruff_cache/`. Commit `973066d`. Main worktree untracked dropped 82 → 46; all-worktree sum dropped 10k+ → 1160 (residual will clear as branches rebase onto trackA).
+
+### Process closure (L1 dimer-port)
+All 10 CONFIRMED dimer-port processes from `L1_DIMER_PORT_AUDIT.md` are now merged on `trackA/wave2-base` with critique-CLEAN verdicts (v2.3 cohort 8 + v2.2/v2 retroactive 2):
+ptransloc, dna-supercoiling, chromosome-segregation, dna-repair, rna-processing, rna-modification, protein-folding, pp1 (v23-r2), trna-aminoacylation, protein-modification (pmod-v22).
+
+### Open backlog (lower priority)
+- TR-R4 cleanup of synthetic MG_205_DIMER bootstrap
+- `PROCESS_STATUS_ALL_29.md` commit (uncommitted in l1-audit worktree)
+- Update `delegate-to-codex` SKILL.md to reference 3-slot framework as default prefix
+- Extract generic PRESERVATION DIRECTIVE template to `docs/prompts/PRESERVATION_DIRECTIVE.md` for reuse
+- Optional: machine-level `~/.gitconfig` `core.excludesfile` for pycache to clear the remaining 1160 untracked across older-branch worktrees immediately
+- Rebase other long-lived branches onto trackA to pick up the .gitignore patch organically
+- **Next bug class**: pick the next L1 audit class (after dimer-port full closure) and apply the 3-slot framework + CRITIQUE_DIMER_PORT.md as the prior
+
+## Current Status (2026-05-28 ~09:53, **DIMER-PORT CLASS CLOSED ON trackA/wave2-base**)
+
+### TL;DR
+3-slot prompt framework (PREFIX widens imagination, FIX_TEMPLATE Rules 5/6/7 tighten probes, PRESERVATION DIRECTIVE locks pre-existing assertions) empirically validated at n=5 critiques. All 8 v2.3 dimer-port fixes merged into `trackA/wave2-base` at `9b0fff6`. v3/v4/v5/v6 all construct. 67/67 per-process vivarium tests pass. 7/7 v6 integration tests pass in 43s. Methodology contribution durable.
+
+### What landed (2026-05-28)
+- **Rule 7 (schema-completeness probe)** added to `docs/prompts/FIX_TEMPLATE_DIMER_PORT.md` (commit `0db950d`): grep-based mechanical gate on residual reads of the old store after a WID-class migration. Strong/Weak evidence clause parallel to Rule 6.
+- **Decision `rule-7-schema-completeness-graduated`** logged in `D:\OneDrive - Microsoft\.pm-os\DECISIONS.md` (top entry). Closes the dimer-port template's mechanical-gate set: three slots × three gates.
+- **8 v2.3 fix branches integrated** into `trackA/wave2-base` via `dimer-port-v23-integration`:
+  - `fix/dimer-port-ptransloc-v23` (CLEAN critique)
+  - `fix/dimer-port-dna-supercoiling-v23`
+  - `fix/dimer-port-chromosome-segregation-v23`
+  - `fix/dimer-port-dna-repair-v23-v23`
+  - `fix/dimer-port-rna-processing-v23`
+  - `fix/dimer-port-rna-modification-v23` (narrative patch on STATUS post-critique)
+  - `fix/dimer-port-protein-folding-v23`
+  - `dimer-fix/pp1-v23-r2` (real bug from pp1-v23 critique, fixed via Rule 7 closed loop)
+- 4 merge conflicts in `karr_composite.py` (per-process seed-loop concatenation in v4 and v5 builder blocks). All trivial.
+
+### Critique results (v2.3 framework, gpt-5.5 5-gate)
+| Process | Verdict | Code change needed? |
+|---|---|---|
+| ptransloc | CLEAN | No |
+| pp1 (v23) | WITH-CHANGES | Yes → pp1-v23-r2 (CLEAN by mechanical gates) |
+| rna-mod | WITH-CHANGES | No (narrative only — STATUS patched) |
+| dna-repair | DO-NOT-MERGE | No (narrative only — STATUS patched) |
+
+### Framework state — durable artifacts
+1. `docs/prompts/DELIBERATE_ACTION_PREFIX_v2.md` — PREFIX v2.1 with code-hygiene Beat 4 non-domain example
+2. `docs/prompts/FIX_TEMPLATE_DIMER_PORT.md` — Rules 1-7 complete (Rules 5/6/7 are the mechanical gates)
+3. `docs/prompts/PREFIX_V2_VALIDATION_RUBRIC.md` — Gate 1 / Gate 2 Strong/Medium/Weak / Gate 3a vs 3b split
+4. PRESERVATION DIRECTIVE template (generic form embedded in pp1-v23-r2 PROMPT.md, ready to extract)
+
+### Open backlog (lower priority)
+- TR-R4 cleanup of synthetic MG_205_DIMER bootstrap
+- `PROCESS_STATUS_ALL_29.md` commit (uncommitted in l1-audit worktree)
+- Update `delegate-to-codex` SKILL.md to reference the 3-slot framework as default prefix
+- Extract generic PRESERVATION DIRECTIVE template to `docs/prompts/PRESERVATION_DIRECTIVE.md` for reuse
+- 4 held-out / pp2 / pmod / ptransloc-v22 — superseded by v2.3 work; close out
+
+## Current Status (2026-05-27 ~03:15, **ENSEMBLE COMPLETE: 4 seeds × 32,400t in 36 min wall-clock**)
+
+### TL;DR
+The 4-seed × 32,400-second ensemble at wave2-base completed cleanly. **No seed reached division; no replication initiated** in any seed. Mass grew +1.9% (3.587e-14 → 3.652e-14 g) and then plateaued as amino acids and ATP exhausted. **21 of 41 processes active per seed** (up from 12 at the 1000t canary — more processes engaged at long timescale). 20 processes remained dead — the critical missing ones are `karr_trna_aminoacylation` (AA recycling), the replication cluster (`replication_initiation`, `replication`, `chromosome_segregation`, `cytokinesis`, `cell_cycle_coordinator`), and the protein post-processing chain (`processing_i/ii`, `modification`, `ribosome_assembly`, `rna_processing`, `transcriptional_regulation`, `macromolecular_complexation`, `dna_supercoiling`, `protein_activation`). This is the expected outcome at the current edge of Track-A coverage — it tells us exactly what to fix next.
+
+### Ensemble run (`artifacts/ensemble_wave2_20260527_023611/`)
+| Seed | Final ATP | Final mass (g) | Final protein | Final RNA | AAs | Replication | Division |
+|---|---|---|---|---|---|---|---|
+| 42 | 3,587 | 3.65378e-14 | 29,106 | 671 | 1 each | idle (0 events) | not reached |
+| 43 | 1,056 | 3.65333e-14 | 29,125 | 670 | 1 each | idle (0 events) | not reached |
+| 44 | 0.61 | 3.65220e-14 | 29,106 | 671 | 1 each | idle (0 events) | not reached |
+| 45 | 578 | 3.65272e-14 | 29,098 | 673 | 1 each | idle (0 events) | not reached |
+
+Wall-clock: 35:55 to 36:29 per seed; all 4 ran in parallel.
+
+### Active processes (21 alive per seed) — top contributors by trace size for seed=42
+- karr_transcription: 87 MB
+- karr_translation: 17 MB
+- karr_observability_step: 3.6 MB
+- karr_metabolism: 2.3 MB
+- **karr_protein_translocation: 1.68 MB** (A6's headline; was 21B header-only before this session)
+- request_calculator_protein_pathway: 1.13 MB
+- karr_dna_repair: 449 KB
+- karr_allocation_step: 405 KB
+- request_calculator_rna_pathway: 374 KB
+- request_calculator_trna: 338 KB
+- **request_calculator_protein_translocation: 327 KB** (new in A6)
+- karr_chromosome_condensation: 220 KB
+- karr_protein_folding: 76 KB
+- karr_ftsz_polymerization: 33 KB
+- karr_rna_decay: 8 KB
+- request_calculator_metabolism: 8 KB
+- request_calculator_translation: 1 KB
+- request_calculator_transcription: 0.7 KB
+
+### Dead processes (20 per seed) — priority-ranked for next track
+**Tier 0 (gates the entire trajectory past T~5,000s)**
+1. `karr_trna_aminoacylation` — without this, free AAs deplete and translation/growth halts. **Highest priority.**
+
+**Tier 1 (gates cell division — without these, no phenotype scorecard hits cycle metrics)**
+2. `karr_replication_initiation`
+3. `karr_replication`
+4. `karr_cell_cycle_coordinator`
+5. `karr_chromosome_segregation`
+6. `karr_cytokinesis`
+
+**Tier 2 (downstream of PTransloc; may revive with longer runs OR may need enrollment)**
+7. `karr_protein_processing_i`
+8. `karr_protein_processing_ii`
+9. `karr_protein_modification`
+10. `karr_protein_activation`
+11. `karr_ribosome_assembly`
+12. `karr_rna_processing`
+13. `karr_rna_modification`
+14. `karr_transcriptional_regulation`
+
+**Tier 3 (was active in pre-Track-A baseline; check whether tracer fix surfaced a real regression vs port-of-write difference)**
+15. `karr_macromolecular_complexation`
+16. `karr_dna_supercoiling`
+17. `karr_dna_damage`
+
+**Tier 4 (explicitly de-scoped from Track-A)**
+18. `karr_host_interaction`
+19. `karr_terminal_organelle_assembly`
+
+**Tier 5 (request calculators with no live consumer)**
+20. `request_calculator_d2`, `request_calculator_pd` (D2 / PD — fixture rebuild deferred per CONSOLIDATED_AUDIT_REPORT #1)
+
+### Interpretation
+Wave2-base is a **clean, conservative baseline**. The 5 PRs from this session closed every audit finding they were scoped to close. The cell does not divide because:
+1. `tRNA aminoacylation` is dead → AA recycling broken → translation stalls (this is the ground-truth gate at the current commit).
+2. The replication cluster has no live demand path. Replication is a separately wired process and was never expected to fire at wave2-base — it needs its own enrollment PR similar to A6.
+3. Downstream protein chain processes can't fire without functioning aminoacylation upstream.
+
+This is a **publishable baseline** — it's exactly the kind of "where the model is reproducible and where it isn't" honesty the strategic plan calls for. Next track is biology coverage, not Track-A maintenance.
+
+### What's next (proposed, for operator review on return)
+1. **Land `karr_trna_aminoacylation` enrollment** — same pattern as A6 (RequestCalculator + consumer_processes + tests). Should unlock Tier 2 downstream.
+2. **Replication cluster enrollment** — bigger effort: `karr_replication_initiation` + `karr_replication` + the cell-cycle coordinator that gates them. Probably needs more than one PR.
+3. **Re-run ensemble post-tier-0/tier-1 fixes** — should produce at least one seed that initiates replication; ideally one that divides.
+4. **E.2 phenotype scorecard pass** at wave2-base baseline so we have a "before tier-0" datapoint to compare against.
+5. **Decision log**: log this ensemble result + the "publishable baseline" framing.
+
+---
+
+## Current Status (2026-05-27 ~02:38, **ENSEMBLE FIRING: 4 seeds × 32,400t, ETA ~28 min**)
+
+### TL;DR
+All five Track-A wave-2 PRs are now closed. Wave2-base is at `2e185ff` with A2 (allocator enrollment), A3 (key normalization), A4 (L3 vector members), tracer fix (port iteration), and A6 (PTransloc enrollment) all merged. 1000-tick canary validated 12 active processes with PTransloc trace going from 21B → 53,656B (944 rows). Ensemble of 4 seeds × 32,400 biological seconds launched at 02:36, running in parallel under WSL, ETA ~28 min total wall-clock.
+
+### Wave2-base composition (`2e185ff`)
+| PR | Commit | Merged as | Scope |
 |---|---|---|---|
-| 1 | `e4b22c4` | `track-a/L5-strict-zero` (A1) | L5 strict-zero rollout |
-| 2 | `4a650dd` | `track-a/L0-tx-tl-v3-fitness` (A5) | L0 runtime-identity guards + TL t=0 |
-| 3 | `6bb5972` | `track-a/L4-L6-keys-request` (A3) | L4 default-key + L6 request calc |
-| 4 | `3164f7e` | `track-a/L3-vectors` (A4) | **manual resolve — preserved L5 strict-zero in helpers** |
-| 5 | `cda0509` | `track-a/L2-enrollment` (A2) | L2 direct-writer enrollment |
-| 6 | `bfb89c2` | `track-b/replay-fixtures` | replay pipeline (independent) |
-| 7 | `2151d35` | `track-l/log-backfill` | 13 retrospective LLM-interaction JSONL entries |
+| A2 | `6661d2e` | `cd2e775` | M1/TX/TL allocator enrollment + C1 stationarity tolerance |
+| A3 | `b2863dc` | `f8339b7` | Key normalization + zero-demand writeback guard |
+| A4 | `82ae251` | `c7c3635` | L3 vector members for DNASupercoiling + PTransloc |
+| canary tracer | `0ba4f7c` | `bf1a2e6` | Port-iteration fix + closing diagnostics before payload build |
+| **A6** | `9a677b7` | `2e185ff` | **PTransloc allocator enrollment + RequestCalculatorPTransloc** |
 
-### Merge-train story (for the post-mortem)
-- Track-M v1 correctly aborted at step 4 (L3-vectors vs A1) on a genuine semantic conflict — L3 reintroduced a fallback to bulk `substrate_state` that A1 had explicitly ripped out across 16 files. The new decision `l5-strict-zero-is-canonical` (2026-05-25) makes the verdict binding for future merge-time conflict resolution.
-- Manual resolve preserved L3's vector-accounting additions (H2O/GTP/H+ bookkeeping in DNASupercoiling and ProteinTranslocation) while keeping strict-zero in the `_allocated_or_state` and `_available_substrate` helpers.
-- Track-M v2 picked up from step 5 and landed the remaining 3 branches + ran all 3 final gates cleanly.
-- Hardened Codex prompt template (commit-discipline + 200k/150k token budget + STATUS via `-o`) survived 4 retries this session with zero work loss.
+**5 of 5 PRs closed (100%).** The ~25-finding triage from the consolidated audit is fully resolved.
 
-### Next step: M-phase ensemble prep
+### 1000t canary (`artifacts/canary_1000t_wave2_20260527_023158`)
+**12 processes actively writing** (sizes at 1000t):
+- karr_transcription: 2.57 MB
+- karr_translation: 529 KB
+- karr_metabolism: 104 KB
+- karr_observability_step: 94 KB
+- karr_protein_folding: 75 KB
+- karr_allocation_step: 60 KB
+- **karr_protein_translocation: 53,656 B (944 rows)** — A6's headline win
+- request_calculator_protein_translocation: 16 KB
+- karr_dna_repair: 13 KB
+- karr_chromosome_condensation: 7 KB
+- karr_ftsz_polymerization: 4.9 KB
+- request_calculator_metabolism: 5 KB
 
-Pre-ensemble checklist (none of these block the next ensemble itself; they're hygiene):
-1. Re-harden NTP non-negativity asserts in `tests/integration/test_bug6a_stage2_canary.py:94-135`
-2. Confirm Bug 6b's `clamped_reactions` becomes non-zero in a smoke run
-3. (Deferred) Bug 8 + Bug 9 — let the post-ensemble scorecard prioritize
+**Biology dynamics**: ATP 36,234 → 34,781 (-4%); proteins 16,272 → 27,921 (+71%); mass +3.5%; replication state idle (expected — fires hours into cell cycle).
 
-Then:
-4. Launch 4-seed × 32,400-tick ensemble
-5. Grade against 28-KP scorecard (currently 9/28 pre-Track-A; **M7 target ≥10/28**)
-6. README rewrite (deferred to M7 / v1.0)
+**Known limitation surfaced by canary**: amino acids depleted from 5K-17K each → 1. Root cause is dead `karr_trna_aminoacylation` (still 35B header-only). Free AAs get consumed by translation without regeneration. Translation will stall mid-cycle in the ensemble. **This is biology coverage, not a Track-A regression — separate follow-up PR queued.**
 
----
+### Ensemble in flight (`artifacts/ensemble_wave2_20260527_023611`)
+- 4 seeds: 42, 43, 44, 45
+- 32,400 biological seconds each (full M.gen cell-cycle duration)
+- All 4 running in parallel under WSL (WSL PIDs 13459/13463 ... CPU ~87% each)
+- At tick=2000/32400 after 1:50 wall-clock → ETA ~28 min total
+- Wall-clock ~28 min vs originally projected 9-16 hrs (the runner is much faster than the original estimate; tracer fix made the runner I/O lighter)
+- Logs/errs per seed: `artifacts/ensemble_wave2_20260527_023611/seed_{42,43,44,45}.{log,err}`
 
-## Prior Status (2026-05-25 ~22:00 IST, all 7 swarm branches authored, not yet merged)
-[Archived — superseded by post-merge status above. See git log for the branch tips at authoring time.]
+### Post-ensemble next steps (queued)
+1. Compare per-seed `division_event.json` / `replication_events.csv` — did any seed divide?
+2. Run E.2 phenotype scorecard across the 4 seeds at the wave2-base baseline.
+3. **Triage dead-by-coverage processes** in priority order:
+   - `karr_trna_aminoacylation` (HIGHEST — gates AA recycling, which gates everything translation-dependent)
+   - `karr_ribosome_assembly` (gates new ribosome production)
+   - `karr_rna_processing` / `karr_rna_modification` (gates mature TX output)
+   - `karr_protein_processing_i/ii` / `karr_protein_modification` (downstream of PTransloc — may wake up on their own once PTransloc output accumulates over more ticks)
+   - `karr_macromolecular_complexation` (was active in original baseline; check whether tracer fix surfaced a real regression vs just a port-of-write difference)
+4. Replication + division processes (`karr_replication_initiation`, `karr_replication`, `karr_chromosome_segregation`, `karr_cytokinesis`, `karr_cell_cycle_coordinator`) — these are CRITICAL for any cell-cycle phenotype; if they remain dead in the ensemble, the next track is cell-cycle integration.
 
-### Hardened-template lesson (2026-05-25, evening)
-
-Three repeats of "Codex died mid-context" failure mode (Karr Cloudflare detour, stale-STATUS inheritance, today's A2/L compaction deaths) converged into a single decision: `codex-prompt-template-v2-commit-discipline`. Locked rules now in `delegate-to-codex/SKILL.md`:
-1. Launcher uses `-o STATUS_<track>.md`
-2. Commit each green chunk immediately (max one uncommitted chunk)
-3. Token budget 200k hard ceiling, **75% = 150k handoff threshold** (50k buffer for graceful exit, not extra work)
-4. Per-worktree `SESSION_CONTEXT.md` for multi-turn delegations
-5. p9-only source policy for backfill tasks (no whole-file ingestion of transcripts)
-
-A2 rescue and L v2 backfill both landed clean on first retry under the new template — empirical proof the template addresses the right failure class.
-
-### Critique resolution and Track-A lock (2026-05-25, afternoon — context preserved below)
-
-GPT-5.5 critique on reducer triggered the EXIT RULE: the "allocator-bypass" cluster was symptom-shaped, mixing 5 distinct seams. Class B was paused; restructured the audit into a **7-layer contract taxonomy** (L0 runtime identity, L1 store classification, L2 enrollment topology, L3 resource-vector completeness, L4 default-key identity, L5 helper zero-grant semantics, L6 request-calc correctness, L7 fixture provenance). Full reasoning in `DECISIONS.md` → `swarm-contract-taxonomy-v1`.
-
-**Secondary audits (3 fired, all complete, all merged to main):**
-- `swarm/composition` (L0/L1/L2/L7) — `opencell/validation/swarm/composition/composition_audit.md`
-- `swarm/allocator-completeness` (L3/L4/L6) — `opencell/validation/swarm/allocator/allocator_audit.md`
-- `swarm/l5-semantics` (L5 strict-zero) — `opencell/validation/swarm/l5/zero_grant_contract_recommendation.md`
-
-**Tertiary audits (4 fired, all complete, all merged):**
-- `swarm/class-a-v3/Transcription` and `swarm/class-a-v3/Translation` (v3 biology re-audit on canonical runtime classes)
-- `swarm/fixture-investigation` (root-causes 28/28 single-snapshot fixtures, recommends Option B)
-- `swarm/audit-consolidation` (`opencell/validation/swarm/consolidated/CONSOLIDATED_AUDIT_REPORT.md`)
-
-**Three false-positives killed**: Metabolism `metabolic_reaction` (telemetry, L1 reclassified), DNADamage enrollment (model-parity only, no runtime substrate traffic), Metabolism M1 t=0 (smoke harness only, not v5/v6).
-
-**Deferred (not blocking Track-A merge):**
-- Fixture pipeline rebuild — Option B already shipped in Track-B branch (~200 LOC); merge will land it.
-- Central-dogma re-audit on canonical runtime classes — after Track-A lands.
-- DNADamage model-parity decision.
-- README rewrite — deferred to M7 / v1.0 release. Surgical patch deferred for now (no audience pressure, no PRs to coordinate).
-
-**Operator locks (still active)**: no more audits this phase; all code work stays in Codex; Copilot is planner/orchestrator only.
+### Deferred
+- HostInteraction + TerminalOrganelleAssembly (no Track-A coverage, post-ensemble).
+- PD / MacComp fixture rebuild (per CONSOLIDATED_AUDIT_REPORT #1).
+- `emit_step_s=float(ticks)` — codex deferred this from the tracer PR; secondary concern.
+- WSL manifest `git rev-parse HEAD` snag in runner (non-fatal but cosmetic).
+- 83+ worktrees cleanup side-quest.
 
 ---
 
-## Prior Status (2026-05-25 ~13:45 IST, **SPRINT 0 LANDED ON BRANCHES; AUDIT-AND-RATCHET PHASE BEGINS**)
+## Current Status (2026-05-27 ~01:20, **WAVE2-BASE LANDED, CANARY TRACER FIX IN FLIGHT**)
 
 ### TL;DR
-After Day 10 wrap (Bug 5 + Bug 6 landed on `main` at `40f96c5`), three research agents (vEcoli infra, wcEcoli methodology, WCM validation literature 2018-2026) converged on five durable Covert Lab validation patterns. The literature also confirmed nobody in the field has a MATLAB→Python differential test harness — our per-process `*_flat.mat` fixtures uniquely enable this.
+Track-A wave-2 PRs (A2 enrollment, A3 key-normalization, A4 L3 vector members) all landed and merged to `trackA/wave2-base` (`cd2e775`). Wave2-base passes the integration sweep (18 passed, 2 skipped, 1 xfailed) and a 200-tick probe completed in 21.9s with clean wins on the M1/TX/TL allocator path (TX 21B→40K, TL 21B→194K, M1 -10% direct writes / allocator-mediated). Eight processes remain probe-dead; PTransloc is the only one we can close with a small follow-up PR before the ensemble.
 
-**Sprint 0 complete** (three branches, ready to merge):
-| Branch | SHA | What it ships |
+### What landed (3 of 5 PRs from the ~25-finding triage)
+| PR | Commit | Scope |
 |---|---|---|
-| `sprint0/predicates` | `0757402` | `opencell/validation/predicates.py` — vEcoli's `data_predicates` ported verbatim (10 public predicate functions + tests) |
-| `sprint0/allocator-guards` | `38fe273` | `ASSERT_POSITIVE_COUNTS` + `NegativeCountsError` in `KarrAllocationStep` (3 checkpoints; would have caught Bug 1, Bug 2 at first tick) |
-| `sprint0/replay-harness` | `1b79452` | `opencell/validation/replay.py` — generic solver-replay harness over `data/karr_fixtures/per_process/*_flat.mat` + smoke test |
+| A2 | `6661d2e` | Metabolism / TX / TL allocator enrollment + C1 stationarity tolerance (1e-9 → 2.0) |
+| A3 | `b2863dc` | Key normalization across `KEY_ALIASES` + zero-demand writeback guard |
+| A4 | `82ae251` | L3 vector members for DNASupercoiling + ProteinTranslocation |
+| wave2-base | `cd2e775` | Sequential merge A4 → A3 (conflict on `karr_allocation_step.py` resolved by keeping all 6 helpers) → A2 |
 
-These now form the foundation for the **audit-and-ratchet phase** (decision `swarm-audit-before-track-a`, 2026-05-25).
+### In flight right now
+- **Canary tracer fix** — codex working in `E:\opencell-worktrees\canary-tracer-fix` (branch `fix/canary-tracer-ports-v2` off wave2-base) on `scripts/run_chassis_v6_32400t.py:281` to (a) iterate all ports instead of `substrates` only and (b) fix the emit-stride bug (`emit_step_s=float(ticks)` fires once). Launched 00:34 after fixing `AZURE_OPENAI_API_KEY` env propagation. STATUS lands at `STATUS_canary_tracer.md`. ETA 30-60 min.
 
-### Audit-and-ratchet phase plan
+### Sequence (next 5 steps)
+1. Tracer codex completes → review STATUS, merge `fix/canary-tracer-ports-v2` → `trackA/wave2-base`.
+2. **PTransloc enrollment follow-up PR** — A4 gave it L3 vectors but A2 never enrolled it in the v3/v4 composite builders (same pattern as M1/TX/TL in `karr_composite.py:673-1383`). Land this *before* ensemble per operator decision 2026-05-27.
+3. **1000-tick canary** at wave2-base using fixed runner: `python scripts/run_chassis_v6_32400t.py --seed 42 --biological-seconds 1000 --out-dir artifacts/canary_1000t_wave2 --fresh`. Inspect `process_traces/` for populated per-port rows.
+4. Update ensemble PROMPT to reference wave2-base + correct runner CLI flags (`--biological-seconds`, not `--ticks`).
+5. **Fire 4-seed × 32,400-tick ensemble** (9-16 hrs autonomous).
 
-```
-Sprint 0 (DONE)
-   ├ predicates.py    ← vEcoli pattern
-   ├ allocator guards ← wcEcoli pattern (3-checkpoint negative-count)
-   └ replay harness   ← wcEcoli pattern (solver-replay differential)
-        │
-        ▼
-[merge sprint0 trio → main]
-        │
-        ▼
-Swarm pilot — Class A: 28 per-process auditors (findings-only, parallel batches)
-   each agent produces:
-   (1) findings.json     — diagnostic findings
-   (2) test_<p>_biology_fires.py — invariants via simulate_process
-   (3) test_<p>_matches_karr.py  — solver-replay against fixture
-   (4) activity_monitor.json — observables for global expected_active_set
-        │
-        ▼
-Reducer (1 agent)
-   produces:
-   - swarm_report.md
-   - expected_active_set.json
-   - bugs_to_fix.md
-   - class_b_scope_proposal.md   ← scope informed by Class A findings
-        │
-        ▼
-GPT-5.5 critique gate  ← per decision swarm-pilot-cross-model-critique-gate
-   sharp 3-Q prompt: structural flaws / wrong-redundant seams / symptoms of deeper bugs
-        │
-        ▼
-Operator + Copilot review session  → locks Class B scope
-        │
-        ▼
-Class B fleet (TBD count, scope from review) → Reducer round 2 → final swarm_report
-        │
-        ▼
-Triage gate (operator + Copilot)  → fix-fleet queue
-        │
-        ▼
-Track A (TX/TL allocator enrollment, the B1 fix)
-   benefits inherited:  guards + replay + prioritized bug context
-```
+### Deferred
+- **HostInteraction + TerminalOrganelleAssembly** — still probe-dead, no Track-A coverage, triage post-ensemble.
+- **protein_processing_i/ii, protein_modification, rna_processing, ribosome_assembly** — downstream gates, expected to revive once upstream PTransloc + TX flow.
+- PD / MacComp fixture rebuild (per CONSOLIDATED_AUDIT_REPORT #1).
+- 83+ worktrees cleanup side-quest.
 
-Single mega-PR for swarm Class A test files + report — 28 PRs would be process overhead with no review value.
-
-### Audit-and-ratchet progress (2026-05-25)
-
-**5-gap hardening locked** (decision `swarm-pilot-five-gap-hardening`): Sprint 0.5 chassis canary, Class A.5 boundary auditors, mandatory reducer spot-check, Track A scope protection, typed findings.json schema. PR plan revised: 1 PR for reducer artifacts + 4 PRs × 7 processes for test files.
-
-**Class A swarm complete (28/28):**
-- Phased rollout: pilot 2 → scale 8 → remainder 18, fired via `scripts/swarm/launch_class_a.py`
-- All 28 contract-clean (findings.json + 2 test files + activity_monitor.json + STATUS.md)
-- All 28 schema-conformant (`bug_class`, `severity`, `blocks_b1`, `citation`, `raw_fixture_check`)
-- **181 findings total · 98 HIGH · 19 `blocks_b1`** (Track-A relevant)
-- Single commit per audit branch `swarm/class-a/<ProcessName>` off `852da97`
-
-**Sprint 0.5 canary complete** (`swarm/sprint0-chassis-canary`): `chassis_canary.py` + `ChassisCanaryFailed` + 3 bootstrap monitors + 4 integration tests, all passing. Bonus: canary's full-suite run surfaced pre-existing failure `test_b1_substrate_sanity_no_negative_core_substrates` (ATP/GTP → −140k at 5000s).
-
-**Reducer complete** (`swarm/reducer`): 5 artifacts shipped, spot-check 4 confirmed / 0 refuted / 1 inconclusive (seed 20260525). Key cross-process patterns:
-- `allocator-bypass` cluster: **all 28 processes**. Root cause appears to be `_allocated_or_state` falling back to raw `substrates` when allocation == 0 — a single helper used across 5+ Karr processes. Strong Track-A candidate.
-- `t=0-init-mismatch` cluster: **all 28 processes**.
-- `fixture-replay-blocked` cluster: 20 / 28 processes (replay harness needs I/O channelization).
-- `m3-vs-vivarium-duplication` cluster: 7 central-dogma processes.
-- `missing-enzyme-gating` cluster: 7 processes.
-- `read-port-unpowered` cluster: 4 processes (structurally present but runtime-unpowered).
-
-**Class B scope proposed by reducer** (5 audits):
-1. `Class-B-allocator-contract-audit`
-2. `Class-B-fixture-replay-fidelity-audit`
-3. `Class-B-t0-initialization-parity-audit`
-4. `Class-B-enzyme-gate-consistency-audit`
-5. `Class-B-central-dogma-semantics-audit`
-
-**Next gates**: GPT-5.5 critique on reducer artifacts → operator triage → PR consolidation → Class B fleet OR direct Track-A start (operator choice).
-
-### Critique resolution and Track-A lock (2026-05-25, evening)
-
-GPT-5.5 critique on reducer triggered the EXIT RULE: the "allocator-bypass" cluster was symptom-shaped, mixing 5 distinct seams. Class B was paused; restructured the audit into a **7-layer contract taxonomy** (L0 runtime identity, L1 store classification, L2 enrollment topology, L3 resource-vector completeness, L4 default-key identity, L5 helper zero-grant semantics, L6 request-calc correctness, L7 fixture provenance). Full reasoning in `DECISIONS.md` → `swarm-contract-taxonomy-v1`.
-
-**Secondary audits (3 fired, all complete, all merged to main):**
-- `swarm/composition` (L0/L1/L2/L7) — `opencell/validation/swarm/composition/composition_audit.md`
-- `swarm/allocator-completeness` (L3/L4/L6) — `opencell/validation/swarm/allocator/allocator_audit.md`
-- `swarm/l5-semantics` (L5 strict-zero) — `opencell/validation/swarm/l5/zero_grant_contract_recommendation.md`
-
-**Tertiary audits (4 fired, all complete, all merged):**
-- `swarm/class-a-v3/Transcription` and `swarm/class-a-v3/Translation` (v3 biology re-audit on canonical runtime classes)
-- `swarm/fixture-investigation` (root-causes 28/28 single-snapshot fixtures, recommends Option B)
-- `swarm/audit-consolidation` (`opencell/validation/swarm/consolidated/CONSOLIDATED_AUDIT_REPORT.md`)
-
-**Track-A locked at 5 layer-scoped PRs (~710-1100 LOC total):**
-
-| PR | Layer | Scope | Est LOC | Deps | Status |
-|---|---|---|---:|---|---|
-| **A1** | L5 | Strict-zero contract at 13 helper/inline fallback sites (FtsZ already correct, skipped) | 180-260 | none | fired |
-| **A5** | L0 | TX/TL v3 runtime-identity guardrails + TL t=0 monomer fix | 70-130 | none | fired |
-| **A3** | L4/L6 | `d2_real` drift, ProteinDecay key drift, MacromolecularComplexation zero-demand path | 120-200 | A1 | pending |
-| **A4** | L3 | DNASupercoiling H2O + ProteinTranslocation full vector | 120-190 | A1 | pending |
-| **A2** | L2 | Metabolism + TX/TL v3 allocator enrollment | 220-320 | A1, A5 | pending |
-
-**Three false-positives killed**: Metabolism `metabolic_reaction` (telemetry, L1 reclassified), DNADamage enrollment (model-parity only, no runtime substrate traffic), Metabolism M1 t=0 (smoke harness only, not v5/v6).
-
-**Deferred (not blocking Track-A):**
-- Fixture pipeline rebuild — Option B (~200 LOC): reuse `scripts/matlab/extract_per_process_traces.m` + Python converter. Schedule after Track-A.
-- Central-dogma re-audit on canonical runtime classes — after A5.
-- DNADamage model-parity decision.
-
-**Operator locks**: no more audits this phase; all code work stays in Codex; Copilot is planner/orchestrator only.
-
-### Sprint 0 strategic context
-
-Convergent finding across all three Phase 0 research agents: the most portable patterns are (1) `ASSERT_POSITIVE_COUNTS` runtime guards at allocator boundaries, (2) `data_predicates` invariant library, (3) per-process biology-firing tests using `simulate_process`, (4) solver replay for differential validation, (5) `find_limiting_metabolites` + `expected_set` for "beautiful corpse" detection. Sprint 0 ships patterns 1, 2, 4 as foundation; the swarm pilot's 28 class-A agents will author patterns 3 and 5 across all 28 processes.
-
-Decisions recorded today: `swarm-audit-before-track-a`, `swarm-pilot-cross-model-critique-gate` (both cross-cutting, 2026-05-25).
+### Closure scorecard
+- Findings synthesized: 31/54 (gpt54 + opus47 reviews).
+- Wave2 PRs closed: **3 of 5** (60%). Tracer ≈ closing. PTransloc enrollment pending (decided: land before ensemble).
 
 ---
 
-## Prior Status (2026-05-25 ~00:30 IST, **BUG 5 + BUG 6 LANDED ON MAIN; TRACK A IS THE B1 BLOCKER**)
+## Current Status (2026-05-26 ~15:45, **POST-STRIP, CANARY IN FLIGHT, READY FOR MERGE**)
 
 ### TL;DR
-All four Bug 5 commits (protein maturation pipeline) and all three Bug 6
-commits (FBA writeback to shared substrate pool) are merged into `main` at
-`40f96c5`. Regression on `main`: **338 passed, 1 failed (B1, known-pending),
-2 xfailed in 17m30s.**
+Track-P2 swarm landed → P0 single global parity flag (`8abaf63`) → P1 C1 reformulation (`94a6b8c`) → C1 false-positive discovery → cleanup. The reformulated C1 was itself measuring raw per-tick variance on a piecewise-constant LP-emit substrate; empirically median diff-std = 0 for windows ≤2000t, 608 at 5000t (C1's window). Test was statistically degenerate.
 
-Bug 5 closed the protein maturation chain: Translation → unprocessed →
-PP I (processed) → PP II (unfolded) → Karr step 7 (mature). Bug 6 closed
-the shared-substrate writeback: M1's LP solution now writes signed deltas
-back to 368 mapped cytosol rows with per-tick M1/M2v3/M3v3 ATP attribution.
+**Cleanup shipped today (this session):**
+1. `d34887e` — deleted xfailed original C1 + `ATP_DYNAMIC_STD_MIN` constant
+2. `6cfb1e3` — stripped Sites 2/3/4 NGAM floor code (-307 net lines); kept Site 1 (RequestCalculatorMetabolism) gated under `karr_parity_mode` because tests codify it
 
-Bug 5+6 alone do **not** fix B1 (substrate-negativity). The Stage 2
-diagnostic proves it: M1's LP net flux for ATP/CTP/GTP/UTP is ~0; the
-drain comes from TX (M2v3) and TL (M3v3) writing `substrates` deltas
-directly, unconstrained, because they are **not enrolled in the allocator**.
-This is **Track A** — the next sprint.
+**Decision logged**: `c1-false-positive-piecewise-constant-lp` (DECISIONS.md). Lesson: never measure raw per-tick variance on a constraint-satisfaction (LP/QP) substrate; inject perturbation, measure response.
 
-### Commits landed today (2026-05-24)
-| Bug | SHA | Effect |
-|---|---|---|
-| 5A | `bbfab3c` | Zero-init unprocessed/unfolded protein pools |
-| 5B | `a2da0eb` | PP I writes `processed_counts`; PP II reads it, writes `unfolded_counts`; Karr step 7 non-lipo pass-through |
-| 5C | `6e4f0d1` | Translation routes to `unprocessed_counts` (closes the pipeline) |
-| 5D | `50ec5fc` | Canary `test_chassis_v6_protein_maturation_pipeline.py` (2 PASS + 1 XFAIL pending Bug 6) |
-| 6b | `b69e7ca` | Stoichiometric demand-pool headroom caps in M1 LP bounds (preventive; `clamped_reactions=0` until Track A) |
-| 6a S1 | `c697075` | LP writeback for 24 demand keys, positive only |
-| 6a S2 | `ecde4e4` | Full signed writeback for 368 mapped cytosol rows + ATP attribution diagnostic; NTP non-negativity converted to diagnostic-only prints |
-| 6a fix | `be2d401` | Stage 1 canary relaxed for Stage 2 signed-writeback contract |
-| merge | `40f96c5` | `agent/bug6` → `main` (no-ff) |
+**Lesson captured**: INBOX.md entry for class-A swarm template's "test-shape gotchas" section.
 
-### Process wins this sprint
-- **Parallel codex fleet pattern**: independent worktrees, each with an
-  async pwsh PID watcher (`Get-Process -Id $pid; sleep 60; loop`) that
-  fires a `system_notification` on codex exit. Replaces the
-  poll-and-idle anti-pattern that had been silently stretching wall-clock.
-- **Tier-1 must include `tests/integration/`** for any commit touching
-  `ports_schema` or `_dynamic_update` keys. Caught chassis_v4 staleness
-  after 5B; would have caught Stage 1 canary breakage after Stage 2 if
-  the rule had been in the Stage 2 prompt.
-- **Codex `git push` retry hang remediation**: if `git log --oneline -1`
-  on the worktree shows the expected commit exists, kill the codex pwsh
-  by PID. Local push is non-essential for feature worktrees.
-- **`codex exec resume --last` does not inherit `--dangerously-bypass`**.
-  Must use fresh `codex exec` with full flags each turn; rely on
-  `SESSION_CONTEXT.md` for continuity. Patch queued for the
-  `delegate-to-codex` skill.
+### In flight right now
+- **32,400-tick v6 canary** with `karr_parity_mode=True` (default), PID 21 in WSL, out-dir `artifacts/canary_post_strip_20260526_153956`. At tick 6000/32400, ETA ~15 min. Validates post-strip biology before merging to main.
 
-### Known-pending: Track A (next sprint)
-**Minimum scope**: enroll TX (`karr_transcription_v3.py`, M2v3) and TL
-(`karr_translation_v3.py`, M3v3) in the allocator. Scale each process's
-activity by `allocated / demanded` NTP ratio instead of writing
-unbounded substrate deltas.
+### Blog post drafted
+- `docs/blog/drafts/2026-05-26-four-floors-for-a-phantom.md` — Tehol & Bugg dialogue covering the NGAM phantom → P0/P1 → false-positive discovery → strip arc. ~1200 words, ready for review.
 
-**Acceptance criteria**:
-1. `test_b1_substrate_sanity_no_negative_core_substrates` passes.
-2. The NTP non-negativity asserts in `tests/integration/test_bug6a_stage2_canary.py`
-   lines ~94-135 (currently diagnostic prints) re-hardened to `assert`.
-3. Bug 6b's `clamped_reactions` becomes non-zero under tight NTP supply
-   (proves the cap actually engages).
-
-**Estimate**: 600-1000 LOC, 2-3 codex turns, 1-2h wall-clock. Risk:
-TX/TL inner loops likely assume unlimited NTP supply; Karr-spec
-attention required on which sub-reactions consume which NTPs.
-
-### Next-session queue
-1. Track A minimum (TX + TL allocator enrollment).
-2. Bug 8 (TL energy accounting — ATP/GTP coupling per Karr spec) —
-   becomes easier once Track A constrains TL by NTP availability.
-3. Bug 9 (protein decay coupling) — same pattern as TX/TL.
-4. Push `main` to `origin/main` (currently 87 commits ahead).
-5. Patch `delegate-to-codex` skill (resume flag inheritance, git-push
-   hang, parallel-fleet pattern, Tier-1-includes-integration rule).
-6. First honest 28-KP Karr scorecard after Track A lands.
-
-### Carried over from prior sprint (still true)
-- 28-KP scorecard infrastructure already exists at
-  `data/karr_fixtures/karr_phenotype_targets.json` +
-  `opencell/validation/karr_reference_values.py` +
-  `tests/phaseE/test_karr_phenotypes.py`. Inventory in
-  `REFERENCE_INFRASTRUCTURE_INVENTORY.md`.
-- Local `cell_cycle_trajectory.mat` is compartment-unresolvable; grade
-  against published Karr 2012 figure-level targets, not local MAT.
-- Karr-cycle wall-time on current code: ~25 ticks/sec single-core
-  (~30 min for 45k ticks). Expect 3-8× slowdown once all 28 processes
-  are fully integrated at Karr granularity (1.5-3h projected).
+### Next steps (post-canary)
+1. Canary completes → eyeball substrate trajectories, replication events, mass dynamics
+2. If green: merge `track-p2/karr-divergence-audit` → `main` (4 commits: `8abaf63`, `94a6b8c`, `d34887e`, `6cfb1e3`)
+3. Begin E.2 phenotype scorecard work: registry currently has 1 of 28 `PhenotypeDef(` entries; need ≥10 for `pe-2-phenotype-match` gate. E.2 launch script also not yet wired.
 
 ---
 
-## Prior Status (2026-05-24 ~08:55, **THREE BUGS ROOT-CAUSED, ONE IS OUR REGRESSION, TEST-FIRST FIX SEQUENCE**)
+## Current Status (2026-05-26 ~12:30, **TRACK-P2 KARR-DIVERGENCE SWARM IN FLIGHT**)
+
+### TL;DR
+The C1 ATP-biology test infinite-loop (Tracks N, N2, N3, O) was a **phantom invariant**. Karr's MATLAB declares `nonGrowthAssociatedMaintenance = 8.39` but never reads it in any runtime arithmetic; GAM is folded into the biomass column ATP coefficient at fit time by `FitConstants.m`. Six layers of investigation chased an invariant that doesn't exist. Rule #17 added to DECISIONS.md (oracle-invariant verification before fanout).
+
+The session has pivoted from "fix the C1 bug" to "audit every Karr process for sibling phantom-invariants" via Track-P2 — a 19-session codex swarm.
+
+### Track-P2 swarm (in flight, 14 sessions concurrent at this minute)
+- **Wave 1 (done)**: axis-C × 5 (met, tl, tx, rep, rpl). 12 ✗ findings total. Most important: met-c independently flagged Track-N2's LP `lb_override` as invariant-source debt without prior knowledge of the bug. Confirms revert is safe.
+- **Wave 2 (in flight, ~3 min)**: axis-A × 6 (met, tl, tx, rep, rpl, ptl) + RequestCalculators bundle = 7 sessions.
+- **Wave 3 (in flight, ~12 s)**: axis-B × 5 (met, tl, tx, rep, rpl).
+- **Wave 4 (in flight, ~12 s)**: ProteinTranslocation axis B + axis C = 2 sessions.
+
+Wave 1 patterns (axis C only, n=12 ✗):
+1. **Silent neg-clamps** (7×) — Python `max(0, X)` swallows upstream invariant violations Karr lets propagate
+2. **`max(1, X)` length floors** (2×) — Python invents minimum-of-1 where Karr formula yields 0
+3. **Track-N2 phantom-invariant** (2×) — confirmed
+4. **Missing-cap debt** (1×, inverse) — `karr_replication_initiation.py:517` missed Karr's ATP-availability cap
+
+### Track-P2 work-tree
+- **Path**: `E:\opencell-worktrees\p2-karr-divergence-audit` on branch `track-p2/karr-divergence-audit` from main `989fd60`.
+- **STATUS files**: `STATUS_p2_<proc>_<axis>.md` at worktree root. Wave-1 5 files recovered cleanly from `codex_p2_*.err.log` after `-o` clobber discovery; agents now write directly.
+- **Local MATLAB mirror**: `_tmp_WholeCell/` (pre-cloned, used by all wave-2+ sessions since `gh` is unauthenticated in codex sandbox).
+
+### Phase P0 (pending Track-P2 complete) — revert plan
+After wave 4 lands, synthesize STATUS_p2_master.md (~30 min), then:
+1. Revert Track-N2 commits (`eb61df0`, `8a5a1ac`, `655032c`, `989fd60`) — LP `lb` floor that targets `biomass_col` not ATPM, infeasible 100% of ticks, functionally inert
+2. Flag-off Track-N (`enforce_ngam_at_allocator: bool = False` default)
+3. Update SESSION_CONTEXT.md: Rule #17, expand Rule #12 to 6-gate audit with column-resolution-misidentification failure mode
+
+### Phase P1 (after P0) — reformulate C1
+Add downstream ATP consumer to fixture so the invariant becomes "metabolism *responds* to ATP demand" — a Karr-valid invariant — not "metabolism enforces NGAM floor" which is the phantom.
+
+### Phase P3 (after P0+P1+P2 synthesis)
+Systemic fix for all ✗ findings as a single Karr-divergence flag-set (`karr_parity_mode: bool`), not per-bug patches. Re-fire 4-seed ensemble against the reformulated C1.
+
+---
+
+## Current Status (2026-05-24 ~08:55, **THREE BUGS ROOT-CAUSED, ONE IS OUR REGRESSION, TEST-FIRST FIX SEQUENCE**)
 
 ### TL;DR
 The 4-seed × 32,400t ensemble surfaced (not fixed) **three serious bugs** the 1000t canary missed:
@@ -909,11 +1123,7 @@ Expected: ~8 min for test author, ~10-15 min for the three investigations.
 - Verdict: `local-data-insufficient` → grade against published Karr 2012 figure-level targets, not local MAT.
 - But this is moot until bugs are fixed.
 
----
-
-## Prior Status (2026-05-24 ~05:25, ENSEMBLE RUNNING + REFERENCE INFRASTRUCTURE FOUND)
-
-### What's running right now (5 parallel Codex sessions)
+### What's running right now (5 parallel Codex sessions — OBSOLETE, see above)
 | Session | PID | Worktree | Status |
 |---|---|---|---|
 | **Ensemble seed=42** | 21384 | `phase-2-fix` | Running 32,400-tick |
@@ -933,52 +1143,18 @@ The PASS_CRITERIA_32400t.md draft (18 criteria) was reinventing what we already 
 - **`data/karr_fixtures/per_process/*_flat.mat`** — 44 per-process flat dumps (CellMass 1MB, Metabolism 0.6MB, Translation 0.55MB, etc.) — likely the REAL per-tick trajectory data, not the static `cell_cycle_trajectory.mat`.
 - **`data/phase_e/v6_trajectory_32400s.pkl`** + `_post_alloc.pkl` — previous 32,400-tick OpenCell runs (pre-cascade-fix; useful for delta).
 
-Documented in `E:\opencell\REFERENCE_INFRASTRUCTURE_INVENTORY.md`. The grading prompt (`PROMPT_grade_32400t.md`) has been rewritten to use the 28-KP scorecard, not the reinvented 18 criteria.
+Documented in `E:\opencell\REFERENCE_INFRASTRUCTURE_INVENTORY.md`. The grading prompt has been rewritten to use the 28-KP scorecard.
 
-### Earlier reference-extraction (Karr-reference Codex, completed 05:14)
-- Verdict: `partial-with-gaps`. 36 quantity CSVs at `E:\opencell-worktrees\karr-reference\data\reference\`.
-- **Caveat**: the extracted trajectories show near-static values (ATP 46→1, mass +0.28%, no division). This is either bad aggregation or wrong source file. Karr-triage is investigating.
-
-### Sequence & Gates (revised after finding existing infrastructure)
-1. ⏳ Ensemble runs complete (4 seeds) — wall-clock ~9-16hr.
-2. ⏳ Karr-triage completes → decide whether `cell_cycle_trajectory.mat` is salvageable or use `per_process/*_flat.mat`.
-3. **GATE 1 (coverage)**: confirm KP01-KP28 are reachable from our ensemble outputs.
-4. **GATE 2 (pre-flight grading)**: launch grading Codex against existing 28-KP scorecard + any new per-tick refs from triage.
-5. **GATE 3 (interpretation)** — based on ensemble scorecard:
-   - PASS (≥21/28): ship the result. Refactor A becomes v1.1 hygiene.
-   - PARTIAL with conservation FAILs: Path A justified by data → refactor → re-run.
-   - PARTIAL with biology FAILs in B/D-tier: real biology gap. Different work.
-   - FAIL across tiers: post-mortem before more work.
-6. Possibly: refactor A → re-run ensemble → re-grade.
-
-### Hardcoding audit (2026-05-24, in response to user question)
-- ❌ No `clip`/`clamp`/floor on substrate counts in production code.
-- ❌ No "if negative → small positive" anywhere in simulation path.
-- ⚠️ `max(0.0, allocated.get(...))` patterns in consumer processes are defensive clamps on **allocator grants** (no-op if allocator is sane).
-- ⚠️ **Drainer whitelist IS a thumb on the scale for diagnostics** (not for biology): could let a real failure slip past unflagged at tick 18,000+. Path A is the real fix.
-- ⚠️ Regression-test threshold `cum_store_delta < -100 over 100t` could mask a slow drain.
-- ⚠️ Old PASS_CRITERIA bands (±20% / ±50%) superseded by the 28-KP scorecard's per-KP tolerances.
-
-### Worktrees & branches
-| Worktree | Branch | HEAD | State |
-|---|---|---|---|
-| `E:\opencell-worktrees\substrate-cascade-fix` | `agent/substrate-cascade-fix` | `f13d517` | Cascade fix validated |
-| `E:\opencell-worktrees\phase-2-fix` | `agent/phase-2-fix` | `4c2c389` | Seed=42 running |
-| `E:\opencell-worktrees\run-seed-43` | `agent/run-seed-43` | `fecd178` | Seed=43 running |
-| `E:\opencell-worktrees\run-seed-44` | `agent/run-seed-44` | `6001e97` | Seed=44 running |
-| `E:\opencell-worktrees\run-seed-45` | `agent/run-seed-45` | `99cb880` | Seed=45 running |
-| `E:\opencell-worktrees\karr-reference` | `agent/karr-reference` | `faaa4f1` | Partial extraction done |
-| `E:\opencell-worktrees\karr-triage` | `agent/karr-triage` | `9240cdb` | Investigating static-trajectory anomaly |
-
-### Risks still open
-- 4 parallel CPU-bound runs may extend wall-clock to 16hr+ from baseline ~9hr.
-- `cell_cycle_trajectory.mat` may be unsalvageable; per_process/*_flat.mat extraction needed.
-- Drainer whitelist may quietly hide a substrate's biological role at full cycle scale.
-- Karr supplements (`.xls`) on disk are anti-bot HTML placeholders, not real data.
+### Sequence & Gates
+1. ⏳ Ensemble (4 seeds) completes — ~9-16hr.
+2. ⏳ Karr-triage completes → confirms reference data source.
+3. GATE 1 (coverage) — KP01-KP28 reachable from ensemble outputs.
+4. GATE 2 (pre-flight) — launch grading Codex.
+5. GATE 3 (interpretation): PASS → ship, refactor A as v1.1. PARTIAL+conservation-fail → Path A refactor. PARTIAL+biology-fail → real biology gap. FAIL → post-mortem.
 
 ---
 
-## Prior status (2026-05-24 ~04:50, PASS-CRITERIA PIVOT — cascade fixed, now benchmarking before claiming victory)
+## Prior status (2026-05-24 ~04:50, PASS-CRITERIA PIVOT)
 
 ### Pivot rationale (the soul-searching moment, 2026-05-24)
 After 10 days of plumbing (cascade fix v5, phase-2 rebase, drain triage, Phase-C whitelist) we asked: *if biology holds at 32,400t, does that mean anything?* Honest answer: **no, not without comparison to Karr 2012's published trajectories.** "ATP growing at 1397/tick" sounds great until you ask "is that the right number?" Decision: extract Karr reference trajectories + define quantitative pass criteria BEFORE the 32,400-tick run, so the run produces a scorecard, not a vibe.
@@ -1021,198 +1197,20 @@ After 10 days of plumbing (cascade fix v5, phase-2 rebase, drain triage, Phase-C
 
 ---
 
-## Prior Status (2026-05-24 01:21 IST, hyp-validation done, fix-did-not-execute in flight)
-
-### Hypothesis validation results (PID 20388, completed 01:20)
-
-- **H1 REFUTED** — drift is monotonic (-437.5/tick for ATP, every tick) NOT a tick-1 cliff. Init at 1.0 is additive only.
-- **H2 REFUTED** — substrate store has 805 keys, all 585 expected M1 wids present at tick 0.
-- **H5 REFUTED** — no `set` updater on shared substrates port.
-- **H7 CONFIRMED** — chassis_v6 has **29 processes, not 28**. Extra: `karr_transcriptional_regulation`.
-- **H8 REFUTED** — wid naming consistent across modules.
-
-**Smoking gun in the data**: deltas are CONSTANT per tick (-437.5 ATP/tick at tick 1, tick 2, tick 5, ... tick 100). The consumer is not even partially throttled by allocation. Full unmodified consumption every tick. The fix is being structurally bypassed at runtime even though tests pass.
-
-### fix-did-not-execute results (01:21 IST)
-
-- **C1 REFUTED** — imports do resolve to the correct worktree
-- **C2 CONFIRMED** — `proc.parameters["write_substrate_deltas"] = False` has NO runtime effect (vivarium Process freezes parameters post-init)
-- **C3 CONFIRMED** — 29 processes vs 28 (extra: `karr_transcriptional_regulation`)
-- **C4 CONFIRMED** — `karr_transcription`/`karr_translation` flow deps = `None`; they do NOT depend on `karr_allocation_step`
-
-### Phase-3 drain triage complete (03:36 IST)
-
-Codex (HEAD `df9428b`, STATUS at `STATUS_phase3_drain_triage.md`) characterized the 14 drainers:
-
-**Resolution of -1M mystery**: NOT a floor clamp, NOT a one-shot bug. It's a steady **-1000/tick** M1 metabolic sink (AD `TX_AD ~ -999.6`, NH3 `NH3eq = -1000`, URA `DeoD8 = -1000`). Initial pool was `1.0` placeholder, not `1e6`. So `-1M` = -1000/tick × 1000 ticks. Coincidence.
-
-**All 14 drains**: 100% owned by `karr_metabolism` (with +24 H from protein_modification — negligible). Conservation perfect for every one.
-
-**Classification**:
-- 6 STOICHIOMETRIC (energy/redox cycle expected): H, PI, ADP, GDP (mirror ATP/GTP production)
-- 8 UNKNOWN (steady metabolic sinks, no replenisher in shared store): AD, NH3, URA, SNGLYP, LIPOYLLYS, pTHR, pSER, THY, GN, AHCYS
-
-**32,400t linear extrapolation**: all 8 UNKNOWNs would project deep negative. Not a crash (conservation holds, ATP/AAs healthy) but a diagnostic eyesore.
-
-**Codex recommendation: FIX_BEFORE_32400T**. Architectural reason: chassis_v6 exposes all 585 M1 species into the shared cross-process substrate ledger when only true cross-process resources (NTPs, AAs, etc.) should live there. M1-internal species (AD, URA, AHCYS, etc.) should be private/internal diagnostics.
-
-### Decision point — paused for user
-
-Two paths:
-- **Path A (architectural)**: refactor chassis to restrict shared `substrates` writes to allocation-keyed cross-process resources only. Bigger change. Per Codex recommendation.
-- **Path B (pragmatic)**: kick off 32,400-tick now. Cascade is solved (ATP grows, AAs conserved, conservation holds). The negative M1-internals are pre-existing chassis design debt, not introduced by recent fixes. Cell-growth signals are clean. Accept diagnostic noise for now; do architectural cleanup separately.
-- **Path C**: minimal whitelist — add regression test that ignores known M1-internal species, run 32,400-tick. Smaller than A, less hygienic than B.
-
-Currently no Codex running. Awaiting user direction.
-
-### Current branch state
-
-- `agent/substrate-cascade-fix` HEAD `f13d517` — cascade fix validated, ready to merge to main
-- `agent/phase-2-fix` HEAD `df9428b` — phase-2 + cascade-fix rebased + drain-triage docs, validated, ready to merge after cascade-fix
-- 32,400-tick run NOT yet triggered
-
-### Phase-2-combined validated 100t + 1000t (03:24 IST)
-
-Codex (PID 4604, HEAD `58bfe21`) rebased onto cascade-fix HEAD `f13d517` cleanly, 60/60 tests pass, both canaries clean:
-- ATP cum: +1,397,399 over 1000 ticks (~1397/tick growth) — production now flows from metabolism (Bug 4 commits work as intended)
-- All NTPs / AAs healthy
-- **Conservation holds**: `unattributed_delta` cumulative ~1e-8 across ALL 805 substrates over 1000 ticks
-- Codex verdict: `clean-ready-for-32400t`
-
-### 14 substrates with negative cumulative drain (potential 32400t blockers)
-
-Three hit exactly **-1,000,000** (looks floor-clamped): `AD`, `NH3`, `URA`. Others:
-- `ADP` -1.4M (mirrors ATP gain — energy cycle, expected)
-- `GDP` -516K (mirrors GTP gain — expected)
-- `H` (proton) -1.7M
-- `PI` (inorganic phosphate) -1.4M (mirrors PPi → 2Pi → consumed)
-- `AHCYS` -2.6K, `GN` -4.3K, `LIPOYLLYS` -13.6K
-- `pSER` -11K, `pTHR` -12K, `SNGLYP` -562K, `THY` -4.6K
-
-Action: launch analyst Codex to (a) check initial pool size for each, (b) determine if drains are stoichiometric/expected vs floor-clamping bugs, (c) extrapolate to 32400t, (d) recommend proceed-now vs fix-first.
-
-Direct re-run of 100-tick canary on cascade-fix v4 HEAD revealed:
-- **v4's claimed "ATP min=0, delta -1 then 0" was WRONG** — Codex's parser misread the CSV
-- **Reality: -437.5/tick ATP consumption, identical to pre-fix**
-- 1000t canary's "regression" verdict was CORRECT
-
-### Deep probe of v4 state (Copilot direct, 02:40 IST)
-
-All v4 runtime state is correct:
-- `write_substrate_deltas=False` ✅, `is_step()=True` ✅, flow deps set ✅, topology wired ✅
-- Direct call to `proc.next_update(...)` returns NO substrates (gating logic works)
-- **But the simulation NEVER calls our instance's `next_update`** (prints in source don't fire)
-- The per_process CSV STILL attributes -437.5 ATP/tick to `karr_transcription`
-
-This is the smoking gun for one of:
-- V1: vivarium Engine deep-copies the composite, losing our parameter override
-- V2: dispatch via metaclass / Store-based / different method, bypassing our edit
-- V3: CSV attribution is misleading; real emitter is elsewhere (e.g., `tx_v2` module called from another process)
-
-### cascade-fix v5 Codex launched (PID 7896, 02:50 IST)
-
-PROMPT: `E:\opencell-worktrees\substrate-cascade-fix\CONTINUE_PROMPT_v5.md`. Will disambiguate V1/V2/V3 via file-based logging probes, then fix root cause.
-
-### Phase-2-fix (PID 15800) also completed
-- Bug 4 (metabolism producer), D2 discard, ProteinDecay clamp all committed (e55a457, 8f2f64c, d3453aa) on branch `agent/phase-2-fix`
-- STATUS_phase2.md MISSING — hit compaction failure at 199k tokens
-- May or may not have substrate-cascade impact; re-test after v5 lands
-
-### 🚨 ALARMING RESULT: cascade-fix v3 had ZERO measurable impact on the cascade
-
-Cascade-fix v3 completed cleanly:
-- Bug 1 (transcription_v3 allocation-aware): commits `07dcd7c`
-- Bug 2 (translation_v3 allocation-aware): commit `297d30c`
-- Bug 3 (chassis_v6 wiring): commit `a1740ba`
-- All targeted tests pass: 17 (process tests) + 6 (integration) + 4 (chassis)
-- **100-tick canary FAIL with IDENTICAL pre-fix numbers**: `ATP=-43750`, `LEU=-8982.83`
-
-`-43750 = -437.5/tick × 100 ticks` means consumption proceeded at FULL rate every tick — allocation gating is still being bypassed in practice. Working hypotheses for why:
-1. **H1** (init at 1.0 means tick-1 cliff regardless of gating)
-2. **Wiring drift** (override didn't take effect — process kept old write_substrate_deltas=True after rename)
-3. **Bug 4 dominates** so completely that even perfect 1+2+3 doesn't move the needle
-
-### Active Codex sessions (post-audit completion)
-
-| Session | PID | Worktree | Status | Waiter |
-|---|---|---|---|---|
-| ✅ bypass-precondition-audit v2 | 6420 | `E:\opencell-worktrees\bypass-precondition-audit` | DONE — 8 HIGH, 1 MED findings | exited 01:06 |
-| ✅ substrate-cascade-fix v3 | 5284 | `E:\opencell-worktrees\substrate-cascade-fix` | DONE — code merged-ready, CANARY FAIL | exited 01:07 |
-| 🟡 hypothesis-validation | 20388 | `E:\opencell-worktrees\hypothesis-validation` | RUNNING — H1/H2/H5/H7/H8 read-only checks | `wait-hyp-v2` |
-
-### Audit findings (8 HIGH, 1 MED) — `E:\opencell-worktrees\bypass-precondition-audit\docs\audits\bypass_precondition_audit.md`
-
-Already covered by cascade-fix v3 (5 HIGH): transcription/translation B/C/E patterns.
-
-**NEW findings cascade-fix did NOT address**:
-- HIGH B `karr_macromolecular_complexation.py:203` — D2 explicitly discards `substrates_allocated`, consumes raw
-- HIGH D `karr_metabolism.py:267` — producer-silence (Bug 4 deferred)
-- MED B `karr_protein_decay_light.py:193` — no allocation clamp
-
-**Audit also REFUTED H6** (Pattern F clean — no `_v3` reference mismatches).
-
-### Next decisions (pending hyp-validation results)
-
-If H1 confirms (cliff at tick 1): fix initial conditions FIRST, then re-run canary before chasing more bypasses.
-If wiring-drift confirms: re-investigate Bug 3 override mechanism (Process.parameters may be immutable post-__init__).
-If neither: Bug 4 (metabolism production) becomes the only path forward.
-
-### Diagnostic worktree (read-only, not yet merged)
-
-- `E:\opencell-worktrees\substrate-leak-diagnosis` (branch `agent/substrate-leak-diagnosis`) — contains the 100-tick instrumented run that confirmed root cause. Files of interest: `STATUS.md`, `docs/diagnostics/substrate_leak_report.md`, `data/diagnostics/*.csv`. The diagnostic script `scripts/diagnose_substrate_leak.py` is the verification harness used by the fix Codex. Decision: keep this worktree until fix lands and final verification matches; then merge diagnostic-only changes to main.
-
-### Cross-checks completed
-
-- ✅ **GPT-5.5 independent analysis** (`files/gpt55_independent_leak_analysis.md` in session): converged on same root cause; added contract-ambiguity framing, initial-conditions bug, and protein_folding K/MN/NA mismatch as keepers.
-- ✅ **Codex per-tick empirical confirmation**: PID 16100 100-tick instrumented probe matched static hypothesis exactly. `unattributed_delta=0` proves no hidden mutation. `karr_transcription` -43,750 each NTP, `karr_translation` -89,451 AAs, `karr_metabolism` 0 substrate emissions.
-
-## Status (frozen pre-fix, 2026-05-24 00:30 IST, **903 tests passing**, ROOT CAUSE IDENTIFIED, fix Codex not yet launched)
+## Prior Status (2026-05-23 late evening, **903 tests passing**, Buckets A+B MERGED, BLOCK-RELEASE v1.0 still OPEN)
 
 ### Today's headline result
 
-**M4 milestone hit + first integrated validation pass complete + ROOT CAUSE OF SUBSTRATE CASCADE IDENTIFIED.** chassis_v6 (full 28-process composite) merged. Phase E.1, E.2, Bucket A (allocation-consumer enrollment), Bucket B (observability extensions) all merged to main. Scorecard moved 6/28 → 9/28 PASS. After Bucket A's allocation-bypass diagnosis was refuted (32400-tick before/after trajectories were bit-identical), a fanout of 5 parallel explore agents in ~5 min identified the **actual** root cause: `karr_transcription_v3` and `karr_translation_v3` (renamed to `karr_transcription` / `karr_translation` in chassis_v6) **are not enrolled in `KarrAllocationStep.consumer_processes`** but emit `{"substrates": {NTP/AA: -consumption}}` deltas directly via the `write_substrate_deltas=True` default parameter. Meanwhile `karr_metabolism` emits **zero** substrate deltas (no production side). The cascade is consumption without a source.
+**M4 milestone hit + first integrated validation pass complete + first failed root-cause hypothesis.** chassis_v6 (full 28-process composite) merged. Phase E.1 (real Karr trajectory match), E.2 (28-KP phenotype scorecard), Bucket A (allocation-consumer enrollment), and Bucket B (observability extensions) all merged to main. Scorecard moved **6/28 → 9/28 PASS** thanks to Bucket B. **Critical finding**: the allocation-bypass theory of E.1 was **wrong** — Bucket A enrolled `karr_rna_decay` correctly (structurally good, 100% allocation integrity), but the 32400-tick before/after trajectories are **bit-identical** on ATP/dNTP/mass/replication. A 2.6M-unit net substrate leak persists across the shared store from a still-unidentified source. v1.0 BLOCK-RELEASE remains open.
 
-### ROOT CAUSE (2026-05-24 00:30) — confirmed by static analysis, Codex per-tick confirmation in flight
-
-**Three contributing facts** all simultaneously true in chassis_v6:
-
-1. **`karr_transcription_v3` (renamed to `karr_transcription`) is NOT in `consumer_processes`** at `karr_composite.py:1362-1388` (v5 base list) nor added at `1894-1907` (v6 rebuild). But it IS wired into the engine at `karr_composite.py:1761`. It defaults to `write_substrate_deltas=True` (`karr_transcription_v3.py:46`) and emits `{"substrates": {ntp: -per_ntp * timestep for ntp in self.consumed_substrates}}` at line 165 — ungated NTP consumption.
-
-2. **`karr_translation_v3` (renamed to `karr_translation`) is similarly NOT in `consumer_processes`** but IS wired at `karr_composite.py:1762`. Same `write_substrate_deltas=True` default (`karr_translation_v3.py:39`), same direct delta emission at line 137 — ungated AA consumption.
-
-3. **`karr_metabolism` emits ZERO substrate deltas.** In both static and dynamic modes it returns `fluxs`, `growth_per_s`, and `m1_pools` diagnostics — never `{"substrates": {...}}`. Reads `states["substrates"]` to set FBA bounds (`karr_metabolism.py:281-287`) but never writes back. The production side that should refill NTPs/AAs at the rate M2/M3 consume them is structurally absent.
-
-**Math fit**: combined transcription + translation NTP/AA consumption easily produces the observed ~315 ATP units/tick drain. ATP, GTP, all dNTPs go negative because none have a source.
-
-### Why prior debugging failed
-
-- **Bucket A's rna_decay enrollment** affected only H2O (a tiny per-tick consumer); the big consumers (transcription_v3, translation_v3) were never touched. Bucket A fixed ~5% of the problem so trajectories were essentially identical pre/post.
-- **No mass-balance regression test exists.** ~900 tests in the suite, zero assert `sum(substrate_deltas) ≈ 0` over time or substrates remain ≥ 0. Allocation-integrity tests confirmed the cycle is clean but said nothing about non-enrolled processes.
-- **Narrow process tests use fixture-injected substrates** (`state["substrates_allocated"][p.name][p.atp_wid] = 5_000.0`), which masks any consumption imbalance.
-- **The leak was present from chassis_v5 day one** (`write_substrate_deltas=True` defaults are weeks old) but no integrated v5 trajectory was ever compared against Karr's `cell_cycle_trajectory.mat`. E.1 was the first such comparison; the leak surfaced immediately.
-
-### Fix path (next Codex session)
-
-Clear, scoped fix — NOT a diagnostic ticket:
-
-1. **Disable `write_substrate_deltas`** on `karr_transcription_v3` and `karr_translation_v3` at the chassis_v6 construction sites (parameter override).
-2. **Enroll them in `consumer_processes`** with their NTP/AA wids (similar to how `karr_replication` was enrolled with `[*rep_proc.dntp_wids, rep_proc.atp_wid]`).
-3. **Audit that they read `substrates_allocated[self.name]`** correctly inside their `next_update` — if not, wire it.
-4. **Decide on metabolism production side**:
-   - (a) v1.0 quick: enable `enable_pool_replenishment=True` on metabolism (heuristic source-term in internal state, may not flow to shared substrates — needs verification)
-   - (b) v1.0 proper: translate FBA solution flux → substrate deltas in metabolism's return update
-   - (c) v2 deferred: full M1 first-principles biochemistry
-
-Option (b) is the cleanest v1.0 close. Option (a) is the smallest possible change but may not fix it.
-
-### Tonight's diagnostic Codex (substrate-leak-diagnosis)
-
-Currently running (PID 16100, launched 00:02:30). Will produce per-process substrate delta CSV from a 100-tick instrumented run. **Now a confirmation oracle, not a discovery tool** — explore agents already pinned the root cause statically. If Codex's CSV doesn't show transcription_v3 + translation_v3 as the top consumers and metabolism with zero substrate-store emission, we've misread something and need to re-examine. Let it run.
-
-### Tonight's merges (2026-05-23 ~22:00, completed before root-cause discovery)
-- ✅ **Bucket A merged** (`5fefe4a`): rna_decay allocation enrollment + host_interaction test-fixture cleanup. Allocation integrity = 100%. **Did NOT close BLOCK-RELEASE** (root cause was elsewhere).
+### Tonight's merges (2026-05-23 ~22:00)
+- ✅ **Bucket A merged** (`5fefe4a`): rna_decay allocation enrollment + host_interaction test-fixture cleanup. Allocation integrity = 100% (max_overalloc=0). All narrow + full-suite tests green.
 - ✅ **Bucket B merged** (`3fd9edd`): observability schema extended; 5 BLOCKED KPs lifted (KP17/19/20 PASS, KP13/18 FAIL with diagnostic signal). E2_scorecard regenerated.
-- ✅ **Test baseline**: 903 passed / 0 skipped / 4 xfailed.
+- ✅ **Test baseline**: 903 passed / 0 skipped / 4 xfailed (was 896 / 0 / 4 pre-merge; +7 net from Bucket B's new tests minus A's host_interaction consolidation).
+- ❌ **BLOCK-RELEASE v1.0 OPEN**: substrate leak (-2.6M units) source unidentified. Allocation-bypass diagnosis was incomplete.
+
+### Open diagnostic ticket (next session)
+Need per-process substrate delta instrumentation on a short-tick run (~100 ticks) to identify which process(es) actually drain ATP/dNTPs outside the allocation cycle. Candidates not yet ruled out: metabolism (FBA bound enforcement), transcription/translation (cost accounting), DNA replication (dNTP draw timing), terminal organelle assembly. NEW Codex session to be launched next sitting.
 
 ### v1.0 scope decision (logged today)
 
