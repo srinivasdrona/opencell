@@ -76,6 +76,15 @@ class KarrRNAProcessingProcess(Process):
             wid for wid in self.enzyme_wids if wid not in canonical_complex_wids
         ]
         self._complex_enzyme_wid_set = set(self.complex_enzyme_wids)
+        self._h2o_substrate_idx = self.substrate_wids.index("H2O") if "H2O" in self.substrate_wids else -1
+        self._rnaseiii_rnasep_zero_stoich_mask = np.zeros(self.reaction_stoich.shape[1], dtype=bool)
+        if "MG_367_DIMER" in self.enzyme_wids and "MG_0003_465" in self.enzyme_wids:
+            i3, ip = self.enzyme_wids.index("MG_367_DIMER"), self.enzyme_wids.index("MG_0003_465")
+            self._rnaseiii_rnasep_zero_stoich_mask = (
+                np.all(self.reaction_stoich == 0, axis=0)
+                & (self.reaction_catalysis[:, i3] > 0)
+                & (self.reaction_catalysis[:, ip] > 0)
+            )
 
         self.rna_wids = list(dict.fromkeys(self.unprocessed_rna_wids + self.processed_rna_wids))
         self._processed_index_by_wid = {wid: idx for idx, wid in enumerate(self.rna_wids)}
@@ -395,6 +404,12 @@ class KarrRNAProcessingProcess(Process):
         ).astype(np.int64)
 
         for ridx in range(n_rxn):
+            if (
+                self._h2o_substrate_idx >= 0
+                and substrate_pool[self._h2o_substrate_idx] <= 0
+                and self._rnaseiii_rnasep_zero_stoich_mask[ridx]
+            ):
+                continue
             sub_limit = self._substrate_limit_for_reaction(substrate_pool, ridx)
             enz_limit = int(enzyme_remaining[ridx])
             rna_limit = int(unprocessed_pool[ridx])
@@ -464,6 +479,8 @@ class KarrRNAProcessingProcess(Process):
     ) -> bool:
         substrate_limit = self._substrate_limit(substrate_pool)
         residual_limit = np.minimum.reduce([substrate_limit, unprocessed_pool, enzyme_remaining])
+        if self._h2o_substrate_idx >= 0 and substrate_pool[self._h2o_substrate_idx] <= 0:
+            residual_limit[self._rnaseiii_rnasep_zero_stoich_mask] = 0
         feasible = np.flatnonzero(residual_limit > 0)
         if feasible.size == 0:
             return False
