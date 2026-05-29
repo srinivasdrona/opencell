@@ -198,24 +198,23 @@ class KarrProteinTranslocationProcess(Process):
             # Empirically in this fixture:
             # - compartment code 3 maps to extracellular proteins
             # - among membrane-target proteins (code 4), SRP flag=1 are lipoproteins
-            #   routed through the direct path in this Phase-B simplification.
+            # MATLAB fidelity: SRP/GTP requirements are controlled by SRP flag,
+            # independent of destination-class labeling.
             compartment_code = int(monomer_compartments[int(idx)])
             srp_flag = int(monomer_srp_pathways[int(idx)])
             if compartment_code == 3:
                 destination = _EXTRACELLULAR
                 destination_class = "extracellular"
-                pathway = "direct"
                 extracellular_wids.append(wid)
             elif srp_flag == 1:
                 destination = _MEMBRANE
                 destination_class = "lipoprotein"
-                pathway = "direct"
                 lipoprotein_wids.append(wid)
             else:
                 destination = _MEMBRANE
                 destination_class = "integral_membrane"
-                pathway = "srp"
                 integral_membrane_wids.append(wid)
+            pathway = "srp" if srp_flag == 1 else "direct"
 
             monomer_len = max(1, int(monomer_lengths[int(idx)]))
             atp_cost = max(1, int(np.ceil(float(monomer_len) / aa_per_atp)))
@@ -231,7 +230,12 @@ class KarrProteinTranslocationProcess(Process):
         self.translocatable_wids = (
             self.integral_membrane_wids + self.lipoprotein_wids + self.extracellular_wids
         )
-        self.direct_path_wids = self.lipoprotein_wids + self.extracellular_wids
+        self.srp_path_wids = [
+            wid for wid in self.translocatable_wids if self.pathway_by_wid[wid] == "srp"
+        ]
+        self.direct_path_wids = [
+            wid for wid in self.translocatable_wids if self.pathway_by_wid[wid] == "direct"
+        ]
 
         self.protein_count_wids = list(
             dict.fromkeys(self.monomer_enzyme_wids + self.translocatable_wids)
@@ -346,7 +350,7 @@ class KarrProteinTranslocationProcess(Process):
         atp_spent = 0.0
         gtp_spent = 0.0
 
-        def attempt_phase(candidates: list[str], needs_srp: bool) -> None:
+        def attempt_phase(candidates: list[str], needs_srp: bool) -> bool:
             nonlocal atp_remaining
             nonlocal gtp_remaining
             nonlocal h2o_remaining
@@ -363,7 +367,8 @@ class KarrProteinTranslocationProcess(Process):
                     continue
 
                 atp_per_monomer = int(self.atp_cost_by_wid[wid])
-                gtp_per_monomer = int(self.srp_gtp_cost_per_monomer) if needs_srp else 0
+                requires_srp = bool(needs_srp or self.pathway_by_wid.get(wid) == "srp")
+                gtp_per_monomer = int(self.srp_gtp_cost_per_monomer) if requires_srp else 0
                 hydrolysis_per_monomer = atp_per_monomer + gtp_per_monomer
                 if hydrolysis_per_monomer <= 0:
                     continue
@@ -376,11 +381,11 @@ class KarrProteinTranslocationProcess(Process):
                     )
                 )
                 max_from_enzymes = float(min(atpase_remaining, pore_remaining))
-                if needs_srp:
+                if requires_srp:
                     max_from_enzymes = float(min(max_from_enzymes, srp_remaining, srp_receptor_remaining))
                 translocate_count = float(min(count, max_from_substrates, max_from_enzymes))
                 if translocate_count <= 0.0:
-                    continue
+                    return True
 
                 atp_need = translocate_count * atp_per_monomer
                 gtp_need = translocate_count * gtp_per_monomer
@@ -393,21 +398,23 @@ class KarrProteinTranslocationProcess(Process):
                 pore_remaining -= translocate_count
                 atp_spent += atp_need
                 gtp_spent += gtp_need
-                if needs_srp:
+                if requires_srp:
                     srp_remaining -= translocate_count
                     srp_receptor_remaining -= translocate_count
+            return False
 
-        # Phase 1: SRP-mediated pathway for integral membrane proteins.
-        attempt_phase(
-            [wid for wid in self.integral_membrane_wids if wid in cytoplasmic_counts],
+        # Phase 1: SRP-mediated proteins.
+        halted = attempt_phase(
+            [wid for wid in self.srp_path_wids if wid in cytoplasmic_counts],
             needs_srp=True,
         )
 
-        # Phase 2: direct pathway for lipoproteins and extracellular proteins.
-        attempt_phase(
-            [wid for wid in self.direct_path_wids if wid in cytoplasmic_counts],
-            needs_srp=False,
-        )
+        # Phase 2: direct pathway proteins.
+        if not halted:
+            attempt_phase(
+                [wid for wid in self.direct_path_wids if wid in cytoplasmic_counts],
+                needs_srp=False,
+            )
 
         if not translocated_counts:
             return {}
