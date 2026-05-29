@@ -72,6 +72,7 @@ class KarrProteinProcessingIProcess(Process):
 
         self.substrate_wids = _parse_wid_array(fx["substrateWholeCellModelIDs"])
         self.enzyme_wids = _parse_wid_array(fx["enzymeWholeCellModelIDs"])
+        self._fixture_enzyme_counts = np.asarray(fx["enzymes"][0, 0], dtype=np.float64).reshape(-1)
         self.unprocessed_monomer_wids = _parse_wid_array(fx["unprocessedMonomerWholeCellModelIDs"])
         self.processed_monomer_wids = _parse_wid_array(fx["processedMonomerWholeCellModelIDs"])
 
@@ -166,18 +167,32 @@ class KarrProteinProcessingIProcess(Process):
         del timestep
         dt = float(self.parameters["time_step"])
 
+        protein_state = states.get("protein", {})
+        unprocessed_state = protein_state.get("unprocessed_counts", {})
+        if not isinstance(unprocessed_state, dict):
+            unprocessed_state = {}
+        protein_counts = protein_state.get("counts", {})
+        if not isinstance(protein_counts, dict):
+            protein_counts = {}
+
         unprocessed = np.asarray(
-            [
-                float(states["protein"].get("unprocessed_counts", {}).get(wid, 0.0))
-                for wid in self.unprocessed_monomer_wids
-            ],
+            [float(unprocessed_state.get(wid, 0.0)) for wid in self.unprocessed_monomer_wids],
             dtype=np.float64,
         )
+        use_protein_counts_compat = False
+        if unprocessed.sum() <= 0.0 and protein_counts:
+            counts_unprocessed = np.asarray(
+                [float(protein_counts.get(wid, 0.0)) for wid in self.unprocessed_monomer_wids],
+                dtype=np.float64,
+            )
+            if counts_unprocessed.sum() > 0.0:
+                unprocessed = counts_unprocessed
+                use_protein_counts_compat = True
         if unprocessed.sum() <= 0.0:
             return {}
 
         substrates = self._read_allocated_or_baseline_substrates(states)
-        enzymes = self._read_enzyme_counts(states)
+        enzymes = self._read_enzyme_counts(states, prefer_protein_counts=use_protein_counts_compat)
 
         unprocessed_pool = np.floor(np.clip(unprocessed, a_min=0.0, a_max=None)).astype(np.int64)
         substrate_pool = np.floor(np.clip(substrates, a_min=0.0, a_max=None)).astype(np.int64)
@@ -241,6 +256,7 @@ class KarrProteinProcessingIProcess(Process):
 
         substrate_delta = np.zeros(len(self.substrate_wids), dtype=np.int64)
         substrate_delta[self.substrate_idx_water] -= total_processed + cleavage_count
+        substrate_delta[self.substrate_idx_hydrogen] += total_processed
         substrate_delta[self.substrate_idx_formate] += total_processed
         substrate_delta[self.substrate_idx_methionine] += cleavage_count
 
@@ -268,10 +284,21 @@ class KarrProteinProcessingIProcess(Process):
                 "unprocessed_counts": unprocessed_updates,
                 "processed_counts": processed_updates,
             }
+            if use_protein_counts_compat:
+                compat_counts_updates = {
+                    **unprocessed_updates,
+                    **processed_updates,
+                }
+                update["protein"]["counts"] = compat_counts_updates
 
         return update
 
-    def _read_enzyme_counts(self, states: dict[str, Any]) -> np.ndarray:
+    def _read_enzyme_counts(
+        self,
+        states: dict[str, Any],
+        *,
+        prefer_protein_counts: bool = False,
+    ) -> np.ndarray:
         protein_state = states.get("protein", {})
         enzyme_state = protein_state.get("enzyme_counts")
         if not isinstance(enzyme_state, dict):
@@ -298,15 +325,25 @@ class KarrProteinProcessingIProcess(Process):
                 + ", ".join(missing_complex_wids)
             )
 
-        return np.asarray(
-            [
-                float(complex_state[wid])
-                if self._enzyme_source_by_wid[wid] == "complex"
-                else float(enzyme_state[wid])
-                for wid in self.enzyme_wids
-            ],
-            dtype=np.float64,
-        )
+        protein_counts_state = protein_state.get("counts", {})
+        if not isinstance(protein_counts_state, dict):
+            protein_counts_state = {}
+
+        out = np.zeros(len(self.enzyme_wids), dtype=np.float64)
+        for i, wid in enumerate(self.enzyme_wids):
+            if self._enzyme_source_by_wid[wid] == "complex":
+                out[i] = float(complex_state[wid])
+                continue
+
+            val = float(enzyme_state[wid])
+            if prefer_protein_counts:
+                val = float(protein_counts_state.get(wid, val))
+                if val <= 0.0 and i < self._fixture_enzyme_counts.size:
+                    # L2 replay compatibility: processed/unprocessed overlays share
+                    # WIDs and can overwrite monomer enzyme counts in protein.counts.
+                    val = float(self._fixture_enzyme_counts[i])
+            out[i] = val
+        return out
 
     def _read_allocated_or_baseline_substrates(self, states: dict[str, Any]) -> np.ndarray:
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
