@@ -4,7 +4,7 @@ Single source of truth for the L2-green campaign. Update on every sweep,
 re-extraction, or schema-audit run. Do not edit from memory — always cross-check
 against the source files listed under Provenance below.
 
-Last updated: **2026-05-29 (~23:20 IST)** (after wave 5 partial fanout — 3 productive WIP shifts in sweep at `946509a`: Translation `enzymes[2]+13`→`enzymes[3]-12`, ReplicationInitiation `enzymes[1]+2`→`boundEnzymes[1]-2`, DNASupercoiling `substrates[0]+58`→`enzymes[0]+3` (big magnitude reduction). DNARepair relaunching. RNAProcessing still running. ProteinDecay (wave 4) confirmed out-of-scope. Bucket GREEN unchanged at 7; D unchanged at 21 but 3 D fingerprints meaningfully smaller / re-categorized.)
+Last updated: **2026-05-29 (~23:55 IST)** (after wave 5/6 — **DNARepair L2.1 GREEN** via RM MunI methylation side-reaction (sweep `7c17ec9`, worktree `9fe6ba2`); +14 lines. Bucket GREEN 7→**8**, D 21→20. Plus 4 productive WIP shifts on sweep at `7c17ec9`: Translation `enzymes[3]-12`, ReplicationInitiation `boundEnzymes[1]-2`, DNASupercoiling `enzymes[0]+3`, RNAProcessing `unprocessedRNAs[73]+1`. DNASupercoiling deep-close + harness pattern hunt still running.)
 
 ## Rung definitions
 
@@ -19,7 +19,7 @@ Last updated: **2026-05-29 (~23:20 IST)** (after wave 5 partial fanout — 3 pro
 | | GREEN | AMBER | RED | ERROR | not-run |
 |---|---|---|---|---|---|
 | L2.0 | 0 | 24 | 4 | 0 | 0 |
-| L2.1 | **7** | — | **21** | 0 | 0 |
+| L2.1 | **8** | — | **20** | 0 | 0 |
 | L2.2 | — | — | — | — | **28** |
 
 ## Per-process matrix
@@ -30,7 +30,7 @@ Last updated: **2026-05-29 (~23:20 IST)** (after wave 5 partial fanout — 3 pro
 | 2 | ChromosomeSegregation      | AMBER | GREEN | — | (no-op trace, OC also no-op) |
 | 3 | Cytokinesis                | AMBER | GREEN | — | bit-identical after Pattern A refactor |
 | 4 | DNADamage                  | RED   | GREEN | — | Karr oracle noise (`karr=2.8e-11`) snapped to 0; harness now tolerates ≤1e-9 oracle residue (commit `ea5a2bf`) |
-| 5 | DNARepair                  | AMBER | RED   | D | t=8 substrates idx=2 1→0 |
+| 5 | DNARepair                  | AMBER | **GREEN** | — | RM MunI methylation side-reaction added (`AMET -> AHCYS + H`); +14 lines in `karr_dna_repair.py`; sweep commit `7c17ec9` (cherry-picked from worktree `9fe6ba2`) |
 | 6 | DNASupercoiling            | AMBER | RED   | D | t=0 enzymes[0] oc=3 karr=0 diff=+3 (post `946509a`: ATP-H emit + bound-pool sampling reduced substrates[0] +58 → enzymes[0] +3; productive wip) |
 | 7 | FtsZPolymerization         | AMBER | RED   | D | t=0 substrates idx=1 34→32 |
 | 8 | HostInteraction            | RED   | GREEN | — | (no-op trace, OC also no-op) |
@@ -52,7 +52,7 @@ Last updated: **2026-05-29 (~23:20 IST)** (after wave 5 partial fanout — 3 pro
 | 24 | TerminalOrganelleAssembly | RED   | RED   | D | t=6 substrates idx=4 27→26 |
 | 25 | Transcription             | AMBER | RED   | D | Pattern A residue closed via `np.arange(4)` substrate projection (commit `d8fa1a5` on `audit/l2-1-sweep-v2`; ATP/CTP/GTP/UTP honest prefix); new fingerprint t=0 substrates[0] oc=13879 karr=13906 diff=-27 (stochastic post-B, needs ensemble check) |
 | 26 | TranscriptionalRegulation | RED   | RED   | D | t=15 enzymes idx=3 oc=1 karr=0 |
-| 27 | Translation               | AMBER | RED   | D | t=0 enzymes[2] oc=206 karr=193 diff=+13 (clamp fix `bff5585` closed negative-count bug; first-fail moved to enzyme observable, productive downstream chemistry residue) |
+| 27 | Translation               | AMBER | RED   | D | t=0 enzymes[3] oc=65 karr=77 diff=-12 (post `8baa161`: IF3↔30S/30S_IF3 initiation mutation added in `karr_translation_v3.py`; first-fail shifted off enzymes[2] +13 → enzymes[3] -12, productive) |
 | 28 | tRNAAminoacylation        | AMBER | RED   | D | t=0 substrates idx=2 668→631 |
 
 ## L2.1 RED pattern taxonomy
