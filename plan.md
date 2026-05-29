@@ -451,7 +451,50 @@ NOT a parallel program)**
 
 ---
 
-## Current Status (2026-05-29 ~21:20 IST, **3 PARALLEL CODEX WAVES ON D QUICK-WINS — 6 [wip] commits on sweep; GREEN still 6 pending verification; Day 14 blog pushed**)
+## Current Status (2026-05-29 ~22:00 IST, **PATTERN D WAVE 1-3 VERIFIED — L2.1 GREEN 6→7 (ProteinProcessingI); Translation clamp productive; RNAMod Path X failed**)
+
+### TL;DR
+Three Codex agents (launched in parallel with `--dangerously-bypass-approvals-and-sandbox`) all returned within ~25 min. Verification in sweep worktree:
+
+- **ProteinProcessingI → GREEN** (`b6b6cbe`, +6/-1). Root cause: replay was reading enzyme counts from `protein.enzyme_counts` (default zeros), suppressing methionine aminopeptidase (`MG_172_MONOMER`) cleavage. Fallback to `protein.counts` when no positive enzyme signal restored cleavage chemistry. Test PASSED in sweep (43s).
+- **Translation clamp WIP landed** (`bff5585`, +9/-5). Mirrors allocator-budget path's `min(need, available)` clamp into non-allocator AA-delta branch. First-fail moved `t=0 substrates[0] oc=-57 karr=0` → `t=0 enzymes[2] +13` — productive shift to downstream chemistry residue.
+- **RNAMod Path X FAILED** (`505cfff` cherry-picked then immediately reverted as `b19c7ff`). Agent's test was a no-op trace (SKIPPED) in fresh worktree so they had no real signal. In sweep, Path X cofactor-accounting patch made it WORSE (`tick=6 substrates[0]=AHCYS +1` → `+7`). Reverted, also kept the revert of original `9acdb32` stochastic-round. **Net RNAMod state: back to baseline `tick=6 substrates[2]=AMP +1`** — neither stochastic-round nor cofactor-accounting was the right move.
+
+### Codex sandbox bug (revisited)
+codex-cli 0.133.0 Windows sandbox bug confirmed across 3 more agents this segment. `--dangerously-bypass-approvals-and-sandbox` workaround is reliable. Agents all completed cleanly and wrote STATUS files. Sandbox bug remains the dominant launch-time friction.
+
+### Trace-data-availability gotcha (confirmed via RNAMod path-x failure)
+The agent for RNAMod-cofactor saw `L2.1 N/A: no-op trace` in their fresh worktree (correctly, because `data/per_process_traces_v2/RNAModification_100ticks.mat` is not in fresh worktrees) and could not validate their patch against real signal. They committed Path X based on a hypothesis alone. **The sweep-worktree verification step is non-negotiable** — it caught the regression in <1 min.
+
+### 28-process landscape after this segment
+- **L2.1 GREEN**: 7 (Cytokinesis, MacromolComplex, ChromSeg, HostInter, DNADamage, ProteinTranslocation, **+ProteinProcessingI**)
+- **Pattern A**: 0
+- **Pattern B**: 0
+- **Pattern C**: 0
+- **Pattern D**: 21 (was 22; -ProteinProcessingI)
+- **L2.0 RED**: 2 truly L2.0+L2.1 RED (TerminalOrganelleAssembly, TranscriptionalRegulation)
+
+### Commits this segment (audit/l2-1-sweep-v2 chain)
+- `b6b6cbe`: `fix(protein-processing-i): close substrates[0] residue (L2.1 GREEN)` (cherry of `fccc0c2`)
+- `ad81f7a`: `Revert "[wip] fix(rna-modification): stochastic round enzyme-budget limit (ambiguous)"` (cherry of `9b3ae46`)
+- `505cfff`: `[wip] fix(rna-modification): path-x cofactor accounting + status` (cherry of `dbec739`) — FAILED in sweep
+- `b19c7ff`: `Revert "[wip] fix(rna-modification): path-x cofactor accounting + status"` (revert of `505cfff`)
+- `bff5585`: `[wip] fix(translation): clamp non-allocator AA consumption to current pool`
+
+### Next moves (priority order)
+1. **Translation enzymes[2] +13 residue** — investigate which enzyme is being over-counted. Likely related to ribosome/elongation-factor accounting that mirrors the AA-pool starvation logic just clamped. ≤30-line target. Codex-friendly.
+2. **RNAMod AMP residue** — original `tick=6 substrates[2]=AMP +1`. Two attempts (stochastic-round, cofactor-accounting) both reverted. May need MATLAB cross-reference (`RNAModification.m`) to find the actual canonical-vs-OC stoichiometry delta. Higher-cost investigation.
+3. **Pattern D quick-wins wave 4** — ChromCond +3, FtsZPoly -2, ProteinDecay -6, RNADecay -20. All early-tick small-magnitude. Parallel-friendly.
+4. **L2.0 RED schema work** — defer (not blocking).
+5. **L2.2 methodology design** — needed for stochastic close-outs.
+
+### Worktrees alive (4 fewer)
+- `E:\opencell-worktrees\l2-1-sweep-v2` (audit/l2-1-sweep-v2, head `bff5585`)
+- (3 fix-* worktrees removed; branches preserved on `audit/fix-processing-i-chem`, `audit/fix-rna-mod-cofactor`, `audit/fix-translation-clamp`)
+
+---
+
+## Prior Status (2026-05-29 ~21:20 IST, **3 PARALLEL CODEX WAVES ON D QUICK-WINS — 6 [wip] commits on sweep; GREEN still 6 pending verification; Day 14 blog pushed**)
 
 ### TL;DR
 Ran three back-to-back parallel Codex waves on Pattern D quick-wins (RNAModification + ProteinProcessingI + Translation). Each wave hit the **codex-cli 0.133.0 Windows sandbox bug** (`spawn setup refresh` error) — workaround standardized: `--dangerously-bypass-approvals-and-sandbox` flag must be on every launch until upstream fixes it. Six `[wip]` commits land on `audit/l2-1-sweep-v2` (cherry-picks + manual patches from agent diffs since fresh worktrees lack `data/per_process_traces_v2/*.mat`). ProcessingI moved `tick=1 processedMonomers[147] +1 → tick=1 substrates[0] +2` (real residual chemistry). RNAModification moved `tick=6 substrates[2] +1 → tick=6 substrates[0]=AHCYS +1` (ambiguous — may revert). Translation negative-count investigation localized to `karr_translation_v3.py:198-202` (non-allocator branch missing `min(need, available)` clamp present in allocator path) — Codex agent in flight to patch. **Day 14 blog post** committed (`fbc6820`, 1004 words, Tehol 50%) and pushed to GitHub. Two doc-todos logged for after L2.1 closes: `doc-dimer-port-prompt-methodology` + `doc-karr-parity-discoveries`. Honest historical correction etched: dimer-port template was applied to **test prompts FIRST** (turn 1133, May 28 17:29), not as a delegation framework — Pattern A/B/C/D taxonomy emerged ~12 hours LATER as a consequence of hardened-prompt clean failure signatures.
