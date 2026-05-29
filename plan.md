@@ -451,7 +451,42 @@ NOT a parallel program)**
 
 ---
 
-## Current Status (2026-05-29 ~22:00 IST, **PATTERN D WAVE 1-3 VERIFIED — L2.1 GREEN 6→7 (ProteinProcessingI); Translation clamp productive; RNAMod Path X failed**)
+## Current Status (2026-05-29 ~23:55 IST, **L2.1 GREEN 7→8 — DNARepair lands via RM MunI methylation side-reaction; 4 productive WIP shifts banked; harness pattern-hunt + DNASupercoiling deep-close still running**)
+
+### TL;DR
+Wave 5 closed: 4 productive WIP shifts + 1 GREEN (**DNARepair**, sweep `7c17ec9` ← worktree `9fe6ba2`). DNARepair root cause = missing `DNA_RM_MunI_Methylation` side-reaction (`AMET → AHCYS + H`); +14 lines in `karr_dna_repair.py`. Wave 6 launched in parallel: (a) `dna-supercoil-deep` (deep-close enzymes[0] +3 residue) and (b) **`harness-pattern-hunt`** (analytical, READ-ONLY, REPORT.md) — highest-EV play given ~3:1 productive-shift:regression ratio across waves 4-5 suggests a systemic harness/projection bug rather than 20 independent per-process bugs. Both alive; schedule #60 polling every 25 min. Main pushed to `10ef0c2` (L2_STATUS update; first push of session hung ~3 min on Windows credential prompt as usual).
+
+### 28-process landscape after this segment
+- **L2.1 GREEN**: **8** (+DNARepair)
+- **Pattern D**: **20** (-DNARepair)
+- **L2.0 RED**: 2 (TerminalOrganelleAssembly, TranscriptionalRegulation)
+- Wave 5 productive WIP shifts banked on sweep (no GREEN graduation but residues materially reduced/relocated): Translation `enzymes[3]-12`, ReplicationInitiation `boundEnzymes[1]-2`, DNASupercoiling `enzymes[0]+3` (down from `substrates[0]+58`), RNAProcessing `unprocessedRNAs[73]+1`.
+
+### Strategic observation driving wave 6
+Across waves 4-5: 7 productive WIP shifts vs 2 regressions vs 2 GREENs. The shift pattern recurs — "substrates → enzymes/boundEnzymes side". Hypothesis: harness `_PASS_THROUGH` or enzyme projection logic in `tests/vivarium/l2_replay_common.py` may have a systemic bug similar to the one that closed ProteinProcessingI. If `harness_hunt` confirms, one fix could close 5+ residues at once.
+
+### Commits this segment (audit/l2-1-sweep-v2 chain, post `bff5585`)
+- `8baa161`: [wip] Translation `enzymes[2]+13 → enzymes[3]-12`
+- `e3cfb21`: [wip] ReplicationInitiation `enzymes[1]+2 → boundEnzymes[1]-2`
+- `946509a`: [wip] DNASupercoiling `substrates[0]+58 → enzymes[0]+3`
+- `e159c5b`: [wip] RNAProcessing `t=4 processedRNAs[140]+1 → t=9 unprocessedRNAs[73]+1`
+- **`7c17ec9`**: **fix(dna-repair): close substrates[2] +1 residue at tick=8 (L2.1 GREEN)**
+
+### Main pushed
+- `d8d9ecd`: L2_STATUS wave-5 WIP narrative
+- `10ef0c2`: L2_STATUS DNARepair GREEN + bucket count 7→8
+
+### In flight (schedule #60)
+- `dna-supercoil-deep` (worktree `E:\opencell-worktrees\dna-supercoil-deep`): deep-close the +3 residue → potential GREEN #9
+- `harness-pattern-hunt` (worktree `E:\opencell-worktrees\harness-pattern-hunt`): analytical sweep across all 28 traces, produces REPORT.md with 1-3 systemic hypotheses + per-D-process disposition table
+
+### Next on completion
+- GREEN from dna_supercoil_deep → cherry-pick → verify → push (GREEN #9).
+- REPORT.md from harness_hunt → if high-confidence systemic hypothesis → fire focused harness-fix agent → potential multi-D closure. If no leverage → continue per-process wave 7 (tractable: tRNAAA, ProteinFolding, ProteinProcessingII, RibosomeAssembly).
+
+---
+
+## Prior Status (2026-05-29 ~22:00 IST, **PATTERN D WAVE 1-3 VERIFIED — L2.1 GREEN 6→7 (ProteinProcessingI); Translation clamp productive; RNAMod Path X failed**)
 
 ### TL;DR
 Three Codex agents (launched in parallel with `--dangerously-bypass-approvals-and-sandbox`) all returned within ~25 min. Verification in sweep worktree:
