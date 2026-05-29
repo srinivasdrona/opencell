@@ -54,6 +54,7 @@ class KarrTranslationV3Process(Process):
         self.kinetics_model: tl.KarrTranslationModel = kinetics_model
         self.mechanism_inputs: tl_v2.RibosomeMechanismInputs = mechanism_inputs
         self.protein_ids = self.kinetics_model.protein_wcm_ids
+        self.enzyme_wids = ("MG_173_MONOMER", "MG_142_MONOMER", "MG_196_MONOMER", "MG_089_DIMER", "MG_026_MONOMER", "MG_451_DIMER", "MG_433_DIMER", "MG_258_MONOMER", "MG_435_MONOMER", "RIBOSOME_30S", "RIBOSOME_30S_IF3", "RIBOSOME_50S", "RIBOSOME_70S", "MG_0004", "MG_059_MONOMER", "MG_083_MONOMER")
         if len(self.protein_ids) != self.mechanism_inputs.n_proteins:
             raise ValueError(
                 "M3 v2 wrapper expects matching protein dimensions: "
@@ -159,7 +160,7 @@ class KarrTranslationV3Process(Process):
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         protein_state = states.get("protein", {})
-        counts_state = protein_state.get("counts", protein_state.get("unprocessed_counts", {}))
+        counts_state = protein_state.get("unprocessed_counts", protein_state.get("counts", {}))
         counts = np.array(
             [
                 float(counts_state.get(pid, self.kinetics_model.counts_mature[i]))
@@ -189,6 +190,23 @@ class KarrTranslationV3Process(Process):
                 }
             }
         }
+        p_counts = protein_state.get("counts", {})
+        if isinstance(p_counts, dict):
+            c_counts = states.get("complex", {}).get("counts", {})
+            f_if3 = float(p_counts.get("MG_196_MONOMER", c_counts.get("MG_196_MONOMER", 0.0)))
+            r30s = float(p_counts.get("RIBOSOME_30S", c_counts.get("RIBOSOME_30S", 0.0)))
+            r30s_if3 = float(p_counts.get("RIBOSOME_30S_IF3", c_counts.get("RIBOSOME_30S_IF3", 0.0)))
+            r50s = float(p_counts.get("RIBOSOME_50S", c_counts.get("RIBOSOME_50S", 0.0)))
+            bind = int(min(max(0.0, r30s), max(0.0, f_if3)))
+            init = int(min(max(0.0, r50s), max(0.0, r30s_if3 + bind)))
+            if bind or init:
+                p_upd = update["protein"].setdefault("counts", {})
+                c_upd = update.setdefault("complex", {}).setdefault("counts", {})
+                for wid, dv in (("MG_196_MONOMER", -bind + init), ("RIBOSOME_30S", -bind), ("RIBOSOME_30S_IF3", bind - init), ("RIBOSOME_50S", -init)):
+                    if not dv:
+                        continue
+                    tgt = c_upd if wid in c_counts and wid not in p_counts else p_upd
+                    tgt[wid] = float(tgt.get(wid, 0.0) + dv)
 
         if self.parameters["write_substrate_deltas"]:
             need_by_aa = self._predict_substrate_need(synth_per_s, timestep)
