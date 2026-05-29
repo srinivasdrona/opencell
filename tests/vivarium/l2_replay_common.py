@@ -199,6 +199,13 @@ def observable_store_path(
 ) -> tuple[str, ...] | None:
     if store_path_override and observable in store_path_override:
         return store_path_override[observable]
+    if observable in {"processedMonomers", "unprocessedMonomers"}:
+        # ProteinProcessingI stores these observables in dedicated protein sub-stores.
+        key = "processed_counts" if observable == "processedMonomers" else "unprocessed_counts"
+        dedicated = _get_nested_mapping(state, ("protein", key))
+        if isinstance(dedicated, dict):
+            return ("protein", key)
+        return ("protein", "counts")
     if observable == "modifiedRNAs":
         # RNAModification stores post-processed RNA counts under rna.modified_counts.
         # Keep a compatibility fallback for processes that still expose only rna.counts.
