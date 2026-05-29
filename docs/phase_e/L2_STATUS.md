@@ -4,7 +4,7 @@ Single source of truth for the L2-green campaign. Update on every sweep,
 re-extraction, or schema-audit run. Do not edit from memory — always cross-check
 against the source files listed under Provenance below.
 
-Last updated: **2026-05-29 (late evening)** (after Pattern A residue close + ProteinTranslocation fix — Transcription/Translation reclassified A→D via empirical projection; ProteinTranslocation GREEN via SRP-vs-direct pathway correction; bucket A 2→0, GREEN 5→6, D 21→22)
+Last updated: **2026-05-29 (~21:20 IST)** (after Pattern D quick-win waves 1-3 — 6 `[wip]` commits on `audit/l2-1-sweep-v2`, 3 Codex agents in flight on ProcessingI-chem / RNAMod-cofactor / Translation-clamp; GREEN bucket unchanged at 6 pending verification; main bucket counts reflect the latest verified state, not in-flight wip)
 
 ## Rung definitions
 
@@ -40,19 +40,19 @@ Last updated: **2026-05-29 (late evening)** (after Pattern A residue close + Pro
 | 12 | ProteinDecay              | AMBER | RED   | D | t=3 substrates[0] oc=0 karr=6 — real biology; complexs/monomers naive np.arange projection (canonical deferred — complexs mutates only 2/100 ticks vs substrates 41/100, biology dominates) |
 | 13 | ProteinFolding            | AMBER | RED   | D | t=2 foldedMonomers idx=429 oc=0 karr=1 (was C, _PASS_THROUGH fixed) |
 | 14 | ProteinModification       | AMBER | RED   | D | length fixed via `_active_protein_indices`; t=43 real biology drift |
-| 15 | ProteinProcessingI        | AMBER | RED   | D | t=1 substrates idx=0 diff=3 (was C, _PASS_THROUGH fixed) |
+| 15 | ProteinProcessingI        | AMBER | RED   | D | t=1 substrates[0] +2 (wip: routing fix `151d0ed` + H2O/stoich cherry `2ed4701`; residue chemistry agent in flight) |
 | 16 | ProteinProcessingII       | AMBER | RED   | D | t=2 unprocessedMonomers idx=429 diff=1 (was C, _PASS_THROUGH fixed) |
 | 17 | ProteinTranslocation      | AMBER | GREEN | — | SRP-vs-direct pathway corrected to MATLAB `signalSequenceType ∈ {lipoprotein, secretory}` + first-infeasible halt (commit `699f1c4` on `audit/l2-1-sweep-v2`; 100/100 ticks bit-identical) |
 | 18 | Replication               | AMBER | RED   | D | t=0 substrates idx=4 649→695 |
 | 19 | ReplicationInitiation     | AMBER | RED   | D | t=0 enzymes idx=1 oc=2 karr=0 (was C; mis-declared as pass-through — enzymes ARE mutated during tick by binding logic OC doesn't model) |
 | 20 | RibosomeAssembly          | AMBER | RED   | D | t=96 substrates idx=0 153→155 |
 | 21 | RNADecay                  | AMBER | RED   | D | t=0 substrates idx=1 20→0 |
-| 22 | RNAModification           | AMBER | RED   | D | length fixed via `_active_rna_indices`; t=0 modifiedRNAs[0] oc=0 karr=35 (init seeding) |
+| 22 | RNAModification           | AMBER | RED   | D | t=6 substrates[0]=AHCYS +1 (wip: shared-enzyme-budget cherry `06595c2` + stochastic-round `9acdb32` — AMBIGUOUS, cofactor agent in flight on Path X revert / Path Y AHCYS stoich) |
 | 23 | RNAProcessing             | AMBER | RED   | D | t=4 processedRNAs idx=140 0→1 |
 | 24 | TerminalOrganelleAssembly | RED   | RED   | D | t=6 substrates idx=4 27→26 |
 | 25 | Transcription             | AMBER | RED   | D | Pattern A residue closed via `np.arange(4)` substrate projection (commit `d8fa1a5` on `audit/l2-1-sweep-v2`; ATP/CTP/GTP/UTP honest prefix); new fingerprint t=0 substrates[0] oc=13879 karr=13906 diff=-27 (stochastic post-B, needs ensemble check) |
 | 26 | TranscriptionalRegulation | RED   | RED   | D | t=15 enzymes idx=3 oc=1 karr=0 |
-| 27 | Translation               | AMBER | RED   | D | Pattern A residue closed via `np.arange(20)` substrate projection (commit `d779951` on `audit/l2-1-sweep-v2`; 20 std AAs honest prefix); new fingerprint t=0 substrates[0] oc=-57 karr=0 diff=-57 (stochastic post-B, needs ensemble check) |
+| 27 | Translation               | AMBER | RED   | D | t=0 substrates[0] oc=-57 karr=0 diff=-57 — localized to `karr_translation_v3.py:198-202` (non-allocator AA-delta branch missing `min(need, available)` clamp present in allocator path at `:140`); clamp agent in flight |
 | 28 | tRNAAminoacylation        | AMBER | RED   | D | t=0 substrates idx=2 668→631 |
 
 ## L2.1 RED pattern taxonomy
