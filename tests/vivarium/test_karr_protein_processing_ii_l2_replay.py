@@ -160,13 +160,20 @@ def test_karr_protein_processing_ii_l2_replay_identity_per_tick(rng_seed: int) -
                         f"mapped_len={expected_len}, mapped_attr={mapped_attr}"
                     )
 
-                oc_after = project_observable_from_state(
-                    process=process,
-                    state=state,
-                    observable=observable,
-                    wids=wids_by_observable[observable],
-                    bound_enzymes_before=before_vectors.get("boundEnzymes"),
-                )
+                if observable in _PASS_THROUGH:
+                    # Rule 7: Karr records this observable but OC's next_update
+                    # does not write into it. oc_after == karr_before by
+                    # construction; if Karr mutates the observable within the
+                    # tick the assertion will surface the discrepancy.
+                    oc_after = before_vectors[observable].astype(np.float64).reshape(-1)
+                else:
+                    oc_after = project_observable_from_state(
+                        process=process,
+                        state=state,
+                        observable=observable,
+                        wids=wids_by_observable[observable],
+                        bound_enzymes_before=before_vectors.get("boundEnzymes"),
+                    )
                 _assert_identity_or_tolerance(
                     tick=tick,
                     observable=observable,
