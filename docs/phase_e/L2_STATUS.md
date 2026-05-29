@@ -4,7 +4,7 @@ Single source of truth for the L2-green campaign. Update on every sweep,
 re-extraction, or schema-audit run. Do not edit from memory — always cross-check
 against the source files listed under Provenance below.
 
-Last updated: **2026-05-29 (~22:00 IST)** (after Pattern D quick-win wave 1-3 verification — ProteinProcessingI L2.1 **GREEN** via enzyme-counts fallback (`b6b6cbe`); Translation negative-count clamp landed (`bff5585`, productive shift to enzymes residue); RNAMod Path X tried+reverted, AMP baseline restored; bucket GREEN 6→7, D 22→21)
+Last updated: **2026-05-29 (~23:20 IST)** (after wave 5 partial fanout — 3 productive WIP shifts in sweep at `946509a`: Translation `enzymes[2]+13`→`enzymes[3]-12`, ReplicationInitiation `enzymes[1]+2`→`boundEnzymes[1]-2`, DNASupercoiling `substrates[0]+58`→`enzymes[0]+3` (big magnitude reduction). DNARepair relaunching. RNAProcessing still running. ProteinDecay (wave 4) confirmed out-of-scope. Bucket GREEN unchanged at 7; D unchanged at 21 but 3 D fingerprints meaningfully smaller / re-categorized.)
 
 ## Rung definitions
 
@@ -31,7 +31,7 @@ Last updated: **2026-05-29 (~22:00 IST)** (after Pattern D quick-win wave 1-3 ve
 | 3 | Cytokinesis                | AMBER | GREEN | — | bit-identical after Pattern A refactor |
 | 4 | DNADamage                  | RED   | GREEN | — | Karr oracle noise (`karr=2.8e-11`) snapped to 0; harness now tolerates ≤1e-9 oracle residue (commit `ea5a2bf`) |
 | 5 | DNARepair                  | AMBER | RED   | D | t=8 substrates idx=2 1→0 |
-| 6 | DNASupercoiling            | AMBER | RED   | D | t=0 substrates idx=0 847→905 |
+| 6 | DNASupercoiling            | AMBER | RED   | D | t=0 enzymes[0] oc=3 karr=0 diff=+3 (post `946509a`: ATP-H emit + bound-pool sampling reduced substrates[0] +58 → enzymes[0] +3; productive wip) |
 | 7 | FtsZPolymerization         | AMBER | RED   | D | t=0 substrates idx=1 34→32 |
 | 8 | HostInteraction            | RED   | GREEN | — | (no-op trace, OC also no-op) |
 | 9 | MacromolecularComplexation | AMBER | GREEN | — | 100/100 bit-identical (the real GREEN) |
@@ -44,7 +44,7 @@ Last updated: **2026-05-29 (~22:00 IST)** (after Pattern D quick-win wave 1-3 ve
 | 16 | ProteinProcessingII       | AMBER | RED   | D | t=2 unprocessedMonomers idx=429 diff=1 (was C, _PASS_THROUGH fixed) |
 | 17 | ProteinTranslocation      | AMBER | GREEN | — | SRP-vs-direct pathway corrected to MATLAB `signalSequenceType ∈ {lipoprotein, secretory}` + first-infeasible halt (commit `699f1c4` on `audit/l2-1-sweep-v2`; 100/100 ticks bit-identical) |
 | 18 | Replication               | AMBER | RED   | D | t=0 substrates idx=4 649→695 |
-| 19 | ReplicationInitiation     | AMBER | RED   | D | t=0 enzymes idx=1 oc=2 karr=0 (was C; mis-declared as pass-through — enzymes ARE mutated during tick by binding logic OC doesn't model) |
+| 19 | ReplicationInitiation     | AMBER | RED   | D | t=0 boundEnzymes[1] oc=23 karr=25 diff=-2 (post `e3cfb21`: DnaA ATP/ADP delta emission + `enzymes` removed from pass-through; productive wip — boundEnzymes now the residue surface) |
 | 20 | RibosomeAssembly          | AMBER | RED   | D | t=96 substrates idx=0 153→155 |
 | 21 | RNADecay                  | AMBER | RED   | D | t=0 substrates idx=1 20→0 |
 | 22 | RNAModification           | AMBER | RED   | D | t=6 substrates[2]=AMP +1 (post `9acdb32` revert; Path X cofactor patch tried then reverted — made worse to +7; baseline AMP residue remains the working signal) |
