@@ -103,15 +103,11 @@ def test_karr_dna_damage_l2_replay_identity_per_tick(rng_seed: int) -> None:
             recorded_seed = int(np.asarray(trace["metadata/rng_seed"][()]).reshape(-1)[0])
             assert int(rng_seed) == recorded_seed
 
+        # Quiet-process guard: do not skip. Karr trace may be no-op across all
+        # mutated observables, but we still want to assert OC's next_update is
+        # also no-op (else OC silently drifting would never be caught).
         mutated_obs = tuple(o for o in _OBSERVABLES if o not in _PASS_THROUGH)
-        mutated_tick_counts = _audit_trace_mutated_ticks(trace, mutated_obs, n_ticks)
-        if sum(mutated_tick_counts.values()) == 0:
-            pytest.skip(
-                "L2.1 N/A: no-op trace. Every mutated observable "
-                f"({list(mutated_obs)}) is identical between states_before and "
-                f"states_after across all {n_ticks} ticks. Per-observable "
-                f"nonzero-delta counts: {mutated_tick_counts}."
-            )
+        _ = _audit_trace_mutated_ticks(trace, mutated_obs, n_ticks)
 
         process = KarrDNADamageProcess({"rng_seed": int(rng_seed)})
         state_template = build_state_template(process)
