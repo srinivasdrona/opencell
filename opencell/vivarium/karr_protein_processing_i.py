@@ -328,6 +328,9 @@ class KarrProteinProcessingIProcess(Process):
         protein_counts_state = protein_state.get("counts", {})
         if not isinstance(protein_counts_state, dict):
             protein_counts_state = {}
+        protein_enzyme_state_has_signal = any(
+            float(enzyme_state.get(wid, 0.0)) > 0.0 for wid in self.protein_enzyme_wids
+        )
 
         out = np.zeros(len(self.enzyme_wids), dtype=np.float64)
         for i, wid in enumerate(self.enzyme_wids):
@@ -335,7 +338,9 @@ class KarrProteinProcessingIProcess(Process):
                 out[i] = float(complex_state[wid])
                 continue
 
-            val = float(enzyme_state[wid])
+            val = float(enzyme_state.get(wid, 0.0))
+            if not protein_enzyme_state_has_signal:
+                val = float(protein_counts_state.get(wid, val))
             if prefer_protein_counts:
                 val = float(protein_counts_state.get(wid, val))
                 if val <= 0.0 and i < self._fixture_enzyme_counts.size:
