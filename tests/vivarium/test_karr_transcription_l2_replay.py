@@ -32,6 +32,7 @@ from l2_replay_common import (
     collect_count_delta_dicts,
     infer_wids_for_observable,
     overlay_observable_into_state,
+    project_karr_vector,
     project_observable_from_state,
     refresh_allocator_views,
     resolve_trace_path,
@@ -52,6 +53,10 @@ _SCRATCH_RESET = {}
 # Optional explicit observable->WID attribute mapping. Any missing or unknown
 # attr falls back to heuristic inference from process attrs / state schema.
 _OBSERVABLE_TO_WIDS_ATTR = {'substrates': 'substrate_wids', 'enzymes': 'enzyme_wids', 'boundEnzymes': 'enzyme_wids'}
+
+# L2.1 harness override (Pattern A residue, reclassified to D). Karr records
+# 12 transcription substrates; OC tracks the first 4 NTP entries only.
+_INDEX_PROJECTION_LITERAL = {'substrates': np.arange(4)}
 
 
 def _assert_delta_integral(label: str, deltas: dict[str, float]) -> None:
@@ -131,7 +136,12 @@ def test_karr_transcription_l2_replay_identity_per_tick(rng_seed: int) -> None:
         for tick in range(n_ticks):
             state = build_state_template(process)
             before_vectors = {
-                observable: cell_vector(trace, "states_before", observable, tick)
+                observable: project_karr_vector(
+                    process,
+                    observable,
+                    cell_vector(trace, "states_before", observable, tick),
+                    index_projection_literal=_INDEX_PROJECTION_LITERAL,
+                )
                 for observable in _OBSERVABLES
             }
 
@@ -149,7 +159,12 @@ def test_karr_transcription_l2_replay_identity_per_tick(rng_seed: int) -> None:
             _apply_update(state, update, process)
 
             for observable in _OBSERVABLES:
-                karr_after = cell_vector(trace, "states_after", observable, tick)
+                karr_after = project_karr_vector(
+                    process,
+                    observable,
+                    cell_vector(trace, "states_after", observable, tick),
+                    index_projection_literal=_INDEX_PROJECTION_LITERAL,
+                )
                 expected_len = len(wids_by_observable[observable])
                 if karr_after.shape[0] != expected_len:
                     mapped_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable, "<heuristic>")
