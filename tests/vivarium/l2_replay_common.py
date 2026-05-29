@@ -23,7 +23,7 @@ _OBS_STORE_PATHS = {
     "unprocessedMonomers": ("protein", "counts"),
     "freeRNAs": ("rna", "counts"),
     "aminoacylatedRNAs": ("rna", "aminoacylated_counts"),
-    "modifiedRNAs": ("rna", "counts"),
+    "modifiedRNAs": ("rna", "modified_counts"),
     "unmodifiedRNAs": ("rna", "counts"),
     "processedRNAs": ("rna", "counts"),
     "unprocessedRNAs": ("rna", "counts"),
@@ -199,6 +199,13 @@ def observable_store_path(
 ) -> tuple[str, ...] | None:
     if store_path_override and observable in store_path_override:
         return store_path_override[observable]
+    if observable == "modifiedRNAs":
+        # RNAModification stores post-processed RNA counts under rna.modified_counts.
+        # Keep a compatibility fallback for processes that still expose only rna.counts.
+        modified = _get_nested_mapping(state, ("rna", "modified_counts"))
+        if isinstance(modified, dict):
+            return ("rna", "modified_counts")
+        return ("rna", "counts")
     if observable == "monomers":
         unprocessed = _get_nested_mapping(state, ("protein", "unprocessed_counts"))
         if isinstance(unprocessed, dict) and unprocessed:
