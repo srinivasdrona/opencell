@@ -70,44 +70,10 @@ Hard rules for any command that executes Python/pytest/scripts:
   before the file is visible to the Linux venv.
 
 ### State Sync Protocol (SUPERSEDED — see Plan source of truth above)
-The session DB sync rules below remain. The plan.md sync section is OBSOLETE:
-the plan now lives only in the repo (see top of file). Do not "sync" plan.md;
-just edit the repo plan directly.
 
-Two artifacts MUST be kept in sync between the per-session scratch and the
-repo (which is the durable record across sessions):
+The plan.md sync section is OBSOLETE: the plan now lives only in the repo (see top of file). Do not "sync" plan.md; just edit the repo plan directly.
 
-| Scratch (per-session)                                              | Canonical (repo, committed)         |
-|--------------------------------------------------------------------|-------------------------------------|
-| `~/.copilot/session-state/<session-id>/plan.md`                    | `E:\opencell\plan.md`               |
-| Session SQL DB (`todos`, `todo_deps` tables)                       | `E:\opencell\opencell_tasks.db`     |
-
-When to sync (any one triggers a full sync of BOTH artifacts):
-1. **End of every checkpoint** (before the runtime auto-checkpoints).
-2. **After completing any todo or marking one blocked** (status changes
-   are the most valuable thing to persist).
-3. **Before the user closes the session or asks "where are we?"** —
-   if a repo-state question is being asked, the repo state had better be current.
-4. **Whenever plan.md has been edited in the session-state copy** and
-   more than ~3 todos have changed status since the last sync.
-
-How to sync:
-- `plan.md`: `Copy-Item` (Windows) or `cp` (WSL) the session-state file
-  over `E:\opencell\plan.md`, then `git add plan.md && git commit`.
-- `opencell_tasks.db`: dump session DB to JSON, replay into the E-drive
-  DB inside a transaction, back up the old DB first. Use the helper
-  pattern in `scripts/sync_tasks_db.py` (build it on first sync) so
-  it's a one-command operation, not ad-hoc Python each time.
-- Commit messages for sync commits should say "Sync plan.md: <what changed>"
-  or "Sync tasks DB: <N> done, <M> pending" so the git log is a
-  human-readable progress journal.
-
-What NOT to sync:
-- Don't push session DB rows for tables the agent doesn't own
-  (e.g., `review_findings` is project-wide and may have been edited
-  by other sessions or tools — leave alone).
-- Don't blindly overwrite if the repo DB has todo IDs unique to it;
-  always run a "what would I lose?" diff first.
+The session DB sync rules below still apply for `opencell_tasks.db`:
 
 ### No Naked Biology Numbers
 Every biological constant in model code MUST reference a parameter ID from the data layer.
