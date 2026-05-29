@@ -240,12 +240,6 @@ class KarrRNAModificationProcess(Process):
             required_rxn = np.flatnonzero(self.reaction_modification[:, ridx] > 0)
             if required_rxn.size == 0:
                 continue
-            required_count = int(self.required_reactions_per_rna[ridx])
-            if required_count > 0:
-                total_events = int(np.sum(reaction_fluxes[required_rxn]))
-                self._n_completed[ridx] = int(
-                    (self._n_completed[ridx] + total_events) % required_count
-                )
 
             # A RNA can only complete if each required reaction fires.
             completed_rna = int(np.min(reaction_fluxes[required_rxn]))
@@ -259,7 +253,7 @@ class KarrRNAModificationProcess(Process):
             transition_events[ridx] = n_transition
 
         reaction_events = self.reaction_modification @ transition_events
-        substrate_delta = self.reaction_stoich @ reaction_fluxes
+        substrate_delta = self.reaction_stoich @ reaction_events
 
         update: dict[str, Any] = {}
         sub_updates = {
