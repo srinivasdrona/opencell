@@ -195,11 +195,15 @@ class KarrTranslationV3Process(Process):
             if bool(self.parameters["use_allocator_budget"]):
                 substrate_update = self._allocated_aa_deltas(need_by_aa, states)
             else:
-                substrate_update = {
-                    aa: float(-self._stochastic_round_nonnegative(need))
-                    for aa, need in need_by_aa.items()
-                    if need > 0.0
-                }
+                current_substrates = states.get("substrates", {})
+                substrate_update: dict[str, float] = {}
+                for aa, need in need_by_aa.items():
+                    if need <= 0.0:
+                        continue
+                    actual = min(float(need), max(0.0, float(current_substrates.get(aa, 0.0))))
+                    rounded = self._stochastic_round_nonnegative(actual)
+                    if rounded > 0:
+                        substrate_update[aa] = float(-rounded)
             if substrate_update:
                 update["substrates"] = substrate_update
         return update
