@@ -140,6 +140,7 @@ class KarrDNARepairProcess(Process):
         super().__init__(parameters)
         self._load_fixture(self.parameters["fixture_path"])
         self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
+        self._rm_rng = np.random.default_rng(int(self.parameters["rng_seed"]) + 18017)
 
     def _load_fixture(self, path: str | Path) -> None:
         resolved = _resolve_path(path)
@@ -200,6 +201,7 @@ class KarrDNARepairProcess(Process):
         for pathway, rxn_idx in self.pathway_reaction_indices.items():
             if rxn_idx.size == 0:
                 raise ValueError(f"DNARepair pathway {pathway} has no mapped reactions")
+        self._rm_muni_methylation_idx = self.reaction_wids.index("DNA_RM_MunI_Methylation")
 
         if "ATP" not in self.substrate_wids:
             raise ValueError("DNARepair fixture missing ATP substrate")
@@ -307,6 +309,13 @@ class KarrDNARepairProcess(Process):
 
         substrate_consumption = self._substrate_needs_for_repairs(actual_repairs)
         consumed_total = int(sum(actual_repairs.values()))
+        substrates_state = states.get("substrates", {})
+        rm_methylation = int(
+            "AMET" in substrates_state
+            and float(substrates_state.get("AMET", 0.0)) >= 1.0
+            and self._rm_rng.random()
+            < float(enzyme_counts.get("MG_184_DIMER", 0.0)) * float(self.reaction_ub[self._rm_muni_methylation_idx]) * dt
+        )
 
         update: dict[str, Any] = {
             "requests": {self.name: {wid: float(requests[wid]) for wid in self.tracked_substrates}}
@@ -318,6 +327,11 @@ class KarrDNARepairProcess(Process):
                 for wid in self.tracked_substrates
                 if substrate_consumption[wid] > 0.0
             }
+        if rm_methylation:
+            update.setdefault("substrates", {})
+            update["substrates"]["AMET"] = float(update["substrates"].get("AMET", 0.0) - rm_methylation)
+            update["substrates"]["AHCYS"] = float(update["substrates"].get("AHCYS", 0.0) + rm_methylation)
+            update["substrates"]["H"] = float(update["substrates"].get("H", 0.0) + rm_methylation)
 
         if consumed_total > 0:
             repaired_indices = self._sample_repaired_indices(indices_by_pathway, actual_repairs)
