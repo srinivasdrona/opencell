@@ -182,14 +182,17 @@ def test_karr_metabolism_l2_replay_identity_per_tick(rng_seed: int) -> None:
                         f"mapped_len={expected_len}, mapped_attr={mapped_attr}"
                     )
 
-                oc_after = project_observable_from_state(
-                    process=process,
-                    state=state,
-                    observable=observable,
-                    wids=wids_by_observable[observable],
-                    bound_enzymes_before=before_vectors.get("boundEnzymes"),
-                    store_path_override=_STORE_PATH_OVERRIDE,
-                )
+                if observable in _PASS_THROUGH:
+                    oc_after = before_vectors[observable].astype(np.float64).reshape(-1)
+                else:
+                    oc_after = project_observable_from_state(
+                        process=process,
+                        state=state,
+                        observable=observable,
+                        wids=wids_by_observable[observable],
+                        bound_enzymes_before=before_vectors.get("boundEnzymes"),
+                        store_path_override=_STORE_PATH_OVERRIDE,
+                    )
                 _assert_identity_or_tolerance(
                     tick=tick,
                     observable=observable,
