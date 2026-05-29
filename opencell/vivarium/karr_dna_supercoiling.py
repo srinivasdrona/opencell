@@ -270,12 +270,14 @@ class KarrDNASupercoilingProcess(Process):
 
         protein_counts = states.get("protein", {}).get("counts", {})
         complex_counts = states.get("complex", {}).get("counts", {})
-        gyrase_count = self._resolve_enzyme_count(
+        gyrase_free_count = self._resolve_enzyme_count(
             self.gyrase_wid, protein_counts=protein_counts, complex_counts=complex_counts
         )
-        topoiv_count = self._resolve_enzyme_count(
+        topoiv_free_count = self._resolve_enzyme_count(
             self.topoiv_wid, protein_counts=protein_counts, complex_counts=complex_counts
         )
+        gyrase_count = gyrase_free_count
+        topoiv_count = topoiv_free_count
         use_bound_mode = isinstance(states.get("boundEnzymes"), dict)
         if use_bound_mode:
             gyrase_count = max(
@@ -383,6 +385,11 @@ class KarrDNASupercoilingProcess(Process):
         substrate_delta = self._substrate_delta(atp_used)
         if substrate_delta:
             update["substrates"] = substrate_delta
+        if use_bound_mode and gyrase_free_count > 0.0:
+            enzyme_store = self.enzyme_store_by_wid[self.gyrase_wid]
+            update.setdefault(enzyme_store, {}).setdefault("counts", {})[
+                self.gyrase_wid
+            ] = -float(gyrase_free_count)
 
         return update
 
