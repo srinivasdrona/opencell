@@ -24,3 +24,8 @@
 *.yml   text eol=lf
 *.md    text eol=lf
 *.py    text eol=lf
+
+# Windows batch files MUST use CRLF or cmd.exe misparses them
+*.cmd   text eol=crlf
+*.bat   text eol=crlf
+*.ps1   text eol=crlf

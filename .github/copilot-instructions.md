@@ -48,7 +48,14 @@ oracle cross-check tests — which are the whole point of having an
 oracle.
 
 Hard rules for any command that executes Python/pytest/scripts:
-- **Always** wrap with `wsl -e bash -lc "cd /mnt/e/opencell && source
+- **Prefer the wrapper scripts** in `bin\`:
+  - `bin\oc-py <script.py> <args>` — for Python scripts
+  - `bin\oc-pytest <path> <opts>` — for pytest
+  These translate the current Windows CWD to a WSL path, source the canonical
+  venv, and pass args through. Works identically from the main repo and any
+  worktree. Caveat: `oc-py -c "code"` does not preserve quoted strings — for
+  that one case fall back to the long form below.
+- **Long form (fallback only):** `wsl -e bash -lc "cd /mnt/e/opencell && source
   .venv-wsl/bin/activate && <command>"`. Never invoke `python` or
   `pytest` directly from a PowerShell prompt.
 - A passing `pytest` summary that shows `skipped` > 0 must be audited
