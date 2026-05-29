@@ -46,6 +46,7 @@ class KarrTranscriptionProcess(Process):
         "substrate_default": 0.0,
         "enable_throttle": False,
         "m1_pool_default": 0.0,
+        "rng_seed": 0,
     }
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
@@ -58,6 +59,7 @@ class KarrTranscriptionProcess(Process):
         self.gene_ids = self.model.gene_wcm_ids
         self.enable_throttle: bool = bool(self.parameters["enable_throttle"])
         self.consumed_substrates: tuple[str, ...] = _M2_CONSUMED_SUBSTRATES
+        self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
 
         # E.1b calibration: build a chassis-operative model whose
         # synthesis rate is recalibrated so dRNA/dt = 0 at counts_mature.
@@ -167,7 +169,10 @@ class KarrTranscriptionProcess(Process):
             condition=self.condition,
             synth_scale=synth_scale,
         )
-        rna_set = {g: float(rna_next[i]) for i, g in enumerate(self.gene_ids)}
+        rna_set = {
+            g: float(self._stochastic_round_nonnegative(float(rna_next[i])))
+            for i, g in enumerate(self.gene_ids)
+        }
 
         update: dict[str, Any] = {"rna": {"counts": rna_set}}
         if self.parameters["write_substrate_deltas"]:
@@ -176,8 +181,20 @@ class KarrTranscriptionProcess(Process):
                 condition=self.condition,
                 synth_scale=synth_scale,
             )
-            update["substrates"] = {s: -ntp[s] * timestep for s in self.consumed_substrates}
+            update["substrates"] = {
+                s: float(-self._stochastic_round_nonnegative(float(ntp[s]) * timestep))
+                for s in self.consumed_substrates
+            }
         return update
+
+    def _stochastic_round_nonnegative(self, expected_count: float) -> int:
+        """Return an integral nonnegative count with mean ``expected_count``."""
+        if not np.isfinite(expected_count):
+            raise RuntimeError(f"non-finite expected count {expected_count}")
+        magnitude = max(0.0, float(expected_count))
+        base = int(np.floor(magnitude))
+        frac = float(np.clip(magnitude - float(base), 0.0, 1.0))
+        return base + int(self._rng.binomial(1, frac))
 
 
 def build_karr_m2_engine(
