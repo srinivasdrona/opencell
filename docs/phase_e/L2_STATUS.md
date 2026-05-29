@@ -4,7 +4,7 @@ Single source of truth for the L2-green campaign. Update on every sweep,
 re-extraction, or schema-audit run. Do not edit from memory — always cross-check
 against the source files listed under Provenance below.
 
-Last updated: **2026-05-29 (afternoon)** (after Pattern A residue closure — both Metabolism + ProteinDecay empirically reclassified to Pattern D via "honest-enough" projection; bucket goes 2→0)
+Last updated: **2026-05-29 (evening)** (after Pattern B fixes — DNADamage GREEN via Karr oracle integer-snap; Transcription/Translation integerized but residue A surfaced; bucket B 3→0, A 0→2, GREEN 4→5)
 
 ## Rung definitions
 
@@ -19,7 +19,7 @@ Last updated: **2026-05-29 (afternoon)** (after Pattern A residue closure — bo
 | | GREEN | AMBER | RED | ERROR | not-run |
 |---|---|---|---|---|---|
 | L2.0 | 0 | 24 | 4 | 0 | 0 |
-| L2.1 | 4 | — | 24 | 0 | 0 |
+| L2.1 | 5 | — | 23 | 0 | 0 |
 | L2.2 | — | — | — | — | **28** |
 
 ## Per-process matrix
@@ -29,7 +29,7 @@ Last updated: **2026-05-29 (afternoon)** (after Pattern A residue closure — bo
 | 1 | ChromosomeCondensation     | AMBER | RED   | D | t=0 substrates idx=0 72→75 |
 | 2 | ChromosomeSegregation      | AMBER | GREEN | — | (no-op trace, OC also no-op) |
 | 3 | Cytokinesis                | AMBER | GREEN | — | bit-identical after Pattern A refactor |
-| 4 | DNADamage                  | RED   | RED   | B | t=0 substrates idx=39 karr=2.8e-11 (non-integral) |
+| 4 | DNADamage                  | RED   | GREEN | — | Karr oracle noise (`karr=2.8e-11`) snapped to 0; harness now tolerates ≤1e-9 oracle residue (commit `ea5a2bf`) |
 | 5 | DNARepair                  | AMBER | RED   | D | t=8 substrates idx=2 1→0 |
 | 6 | DNASupercoiling            | AMBER | RED   | D | t=0 substrates idx=0 847→905 |
 | 7 | FtsZPolymerization         | AMBER | RED   | D | t=0 substrates idx=1 34→32 |
@@ -50,34 +50,35 @@ Last updated: **2026-05-29 (afternoon)** (after Pattern A residue closure — bo
 | 22 | RNAModification           | AMBER | RED   | D | length fixed via `_active_rna_indices`; t=0 modifiedRNAs[0] oc=0 karr=35 (init seeding) |
 | 23 | RNAProcessing             | AMBER | RED   | D | t=4 processedRNAs idx=140 0→1 |
 | 24 | TerminalOrganelleAssembly | RED   | RED   | D | t=6 substrates idx=4 27→26 |
-| 25 | Transcription             | AMBER | RED   | B | t=0 ATP delta -53.97 (non-integral) |
+| 25 | Transcription             | AMBER | RED   | A | integerized via `floor+Bernoulli(frac)` (commit `fe0b9d5`); next first-fail = t=0 substrates wid-length drift karr=12 mapped=4 |
 | 26 | TranscriptionalRegulation | RED   | RED   | D | t=15 enzymes idx=3 oc=1 karr=0 |
-| 27 | Translation               | AMBER | RED   | B | t=0 ALA delta -56.53 (non-integral) |
+| 27 | Translation               | AMBER | RED   | A | integerized via `floor+Bernoulli(frac)` (commit `9d54886`, both base + v3 wrappers); next first-fail = t=0 substrates wid-length drift karr=26 mapped=20 |
 | 28 | tRNAAminoacylation        | AMBER | RED   | D | t=0 substrates idx=2 668→631 |
 
 ## L2.1 RED pattern taxonomy
 
 | Pattern | Count | Hypothesis | Suggested fix surface |
 |---|---|---|---|
-| A: wid-length drift | 0 (was 2) | Closed: Metabolism + ProteinDecay empirically reclassified to D in commit `2a30cc6`. Metabolism WID order verified via fixture (`substrateIndexs_adp=11` matches OC `wids[10]='ADP'`). ProteinDecay's complexs/monomers projection deferred via naive np.arange — first-fail lands on substrates (length-matched, no ambiguity) as predicted. | — (closed) |
-| B: non-integral counts | 3 | Real OC bug — `next_update` emits float deltas, violating count integrality (Rule 2). | Process-specific math (Transcription, Translation, DNADamage). |
+| A: wid-length drift | 2 (was 0) | **Resurfaced**: Transcription + Translation now exhibit wid-length drift at t=0 once Pattern B integerization unmasked them (pytest short-circuits on first-fail tick, so B at t=0 was hiding A underneath). Same shape as previously-closed Metabolism/ProteinDecay — empirical reclassification to D likely cheapest path. | Per-process empirical reclassification via `np.arange(n)` projection + code-comment caveat; OR canonical fixture mining if substrate biology is closed first. |
+| B: non-integral counts | 0 (was 3) | **Closed**: DNADamage was Karr oracle float noise (~2.8e-11), fixed in harness via integer-snap when `|frac| < 1e-9` (commit `ea5a2bf`, principle logged as DECISION `l2-harness-integrality-asymmetry`). Transcription + Translation were real OC bugs — integerized via unbiased `floor + Bernoulli(frac)` with seeded RNG (commits `fe0b9d5`, `9d54886`); revealed A residue underneath. | — (closed) |
 | C: enzyme vector mismatch (t=0) | 0 (was 4) | Resolved: per-test `_PASS_THROUGH` set was declared but not honored in the projection loop. Fix landed in commit `43d5620`. All 4 migrated to Pattern D with informative t>0 fingerprints. ReplicationInitiation's `_PASS_THROUGH` for enzymes is incorrect (enzymes ARE mutated by binding) and stays Pattern D. | — (closed) |
 | D: real biology drift | 21 (was 19) | Per-process semantics drift between OC and Karr. +2 from Pattern A residue closure (Metabolism, ProteinDecay). +4 from earlier Pattern A migration (RNAMod, PTransloc, PActivation, ProteinMod). +4 from Pattern C migration (ProteinFolding, ProteinProcessingI, ProteinProcessingII, ReplicationInitiation). | Per-process triage, slowest. |
 
 ## Priority for next moves
 
-1. **Pattern B Rule-2 violations** — real OC bug, 3 processes (DNADamage, Transcription, Translation), scoped per-process. Highest-leverage next move.
-2. **Pattern D quick wins** — three almost-GREEN with small late-tick drift: ProteinProcessingI (t=1, diff=3), ProteinTranslocation (t=2, diff=2), ProteinActivation (t=28, diff=1). And RNAMod's t=0 oc=0/karr=35 modifiedRNAs[0] is the cleanest init-seeding lead.
-3. **Defensive global pass** — propagate the `_PASS_THROUGH` honoring branch to the other ~22 tests (safe; no GREEN deltas expected, but defensive correctness).
-4. **L2.2 methodology design** — still nothing (σ-band pre-registration, ensemble harness).
-5. **Pattern D long tail** — 21 processes, slowest path.
-6. **Deferred: ProteinDecay canonical complexs/monomers projection** — only needed if/when substrate biology gap is closed and complexs/monomers become the new first-fail (unlikely given mutation-frequency ratio).
+1. **Pattern A residue (Transcription/Translation)** — same shape as already-closed Metabolism/ProteinDecay. Likely 25-min empirical reclassification to D. Triage in flight via Codex Pattern D triage agent.
+2. **Pattern D quick wins** — three almost-GREEN with small late-tick drift: ProteinProcessingI (t=1, diff=3), ProteinTranslocation (t=2, diff=2), ProteinActivation (t=28, diff=1). And RNAMod's t=0 oc=0/karr=35 modifiedRNAs[0] is the cleanest init-seeding lead. **Codex triage in flight** (PID 41296).
+3. **L2.0 RED schema work** — 4 processes (DNADamage now GREEN'd by oracle clamp, leaving TerminalOrganelleAssembly, TranscriptionalRegulation, HostInteraction). Schema-gap analysis in flight via Codex L2.0 RED triage (PID 25016).
+4. **Defensive global pass** — propagate the `_PASS_THROUGH` honoring branch to the other ~22 tests (safe; no GREEN deltas expected, but defensive correctness).
+5. **L2.2 methodology design** — still nothing (σ-band pre-registration, ensemble harness).
+6. **Pattern D long tail** — 21 processes, slowest path.
+7. **Deferred: ProteinDecay canonical complexs/monomers projection** — only needed if/when substrate biology gap is closed and complexs/monomers become the new first-fail (unlikely given mutation-frequency ratio).
 
 ## Cross-rung observations
 
 - **L2.0 GREEN = 0 across all 28**: nobody currently has full schema overlap with Karr. The 24 AMBERs share `substrates` only; OC routes enzyme state via different port names (`protein` / `complex` / `chromosome` / `tf_binding`).
 - **HostInteraction L2.0=RED but L2.1=GREEN**: OC doesn't claim to emit substrates (schema RED), but when forced to run via overlay it no-ops, matching Karr's quiet trace. L2.1 GREEN ≠ L2.0 GREEN.
-- **3 processes are L2.0 RED + L2.1 RED**: DNADamage, TerminalOrganelleAssembly, TranscriptionalRegulation. These need schema work before L2.1 progress is meaningful.
+- **3 processes are L2.0 RED + L2.1 RED**: TerminalOrganelleAssembly, TranscriptionalRegulation (was 3; DNADamage flipped to L2.0 RED + L2.1 GREEN after harness oracle-snap fix). These need schema work before further L2.1 progress is meaningful.
 
 ## Provenance
 
