@@ -4,7 +4,7 @@ Single source of truth for the L2-green campaign. Update on every sweep,
 re-extraction, or schema-audit run. Do not edit from memory — always cross-check
 against the source files listed under Provenance below.
 
-Last updated: **2026-05-29** (after L2.1 sweep extension + quiet-process upgrade)
+Last updated: **2026-05-29** (after Pattern A harness scale-out — `project_karr_vector` extended with literal-index projection, all 7 Pattern A tests refactored; 1 promoted to GREEN, 4 advanced to Pattern D, 2 blocked on deeper layout work)
 
 ## Rung definitions
 
@@ -19,7 +19,7 @@ Last updated: **2026-05-29** (after L2.1 sweep extension + quiet-process upgrade
 | | GREEN | AMBER | RED | ERROR | not-run |
 |---|---|---|---|---|---|
 | L2.0 | 0 | 24 | 4 | 0 | 0 |
-| L2.1 | 3 | — | 25 | 0 | 0 |
+| L2.1 | 4 | — | 24 | 0 | 0 |
 | L2.2 | — | — | — | — | **28** |
 
 ## Per-process matrix
@@ -28,26 +28,26 @@ Last updated: **2026-05-29** (after L2.1 sweep extension + quiet-process upgrade
 |---|---|---|---|---|---|
 | 1 | ChromosomeCondensation     | AMBER | RED   | D | t=0 substrates idx=0 72→75 |
 | 2 | ChromosomeSegregation      | AMBER | GREEN | — | (no-op trace, OC also no-op) |
-| 3 | Cytokinesis                | AMBER | RED   | A | t=0 substrates len 3→4 |
+| 3 | Cytokinesis                | AMBER | GREEN | — | bit-identical after Pattern A refactor |
 | 4 | DNADamage                  | RED   | RED   | B | t=0 substrates idx=39 karr=2.8e-11 (non-integral) |
 | 5 | DNARepair                  | AMBER | RED   | D | t=8 substrates idx=2 1→0 |
 | 6 | DNASupercoiling            | AMBER | RED   | D | t=0 substrates idx=0 847→905 |
 | 7 | FtsZPolymerization         | AMBER | RED   | D | t=0 substrates idx=1 34→32 |
 | 8 | HostInteraction            | RED   | GREEN | — | (no-op trace, OC also no-op) |
 | 9 | MacromolecularComplexation | AMBER | GREEN | — | 100/100 bit-identical (the real GREEN) |
-| 10 | Metabolism                | AMBER | RED   | A | t=0 substrates len 1755→585 |
-| 11 | ProteinActivation         | AMBER | RED   | A | t=0 substrates len 60→10 |
-| 12 | ProteinDecay              | AMBER | RED   | A | t=0 monomers len 28920→482 |
+| 10 | Metabolism                | AMBER | RED   | A* | length fixed (np.arange(585)); t=0 substrates idx=10 oc=3622 karr=0 — WID-order mismatch suspected |
+| 11 | ProteinActivation         | AMBER | RED   | D | length fixed; t=28 substrates idx=2 diff=1 (late drift) |
+| 12 | ProteinDecay              | AMBER | RED   | A | monomers length fixed (np.arange(482)); NEW length drift on complexs 7236→147, needs fixture-driven extraction |
 | 13 | ProteinFolding            | AMBER | RED   | C | t=0 enzymes idx=2 46→0 |
-| 14 | ProteinModification       | AMBER | RED   | A | t=0 modifiedMonomers len 482→20 |
+| 14 | ProteinModification       | AMBER | RED   | D | length fixed via `_active_protein_indices`; t=43 real biology drift |
 | 15 | ProteinProcessingI        | AMBER | RED   | C | t=0 enzymes idx=1 38→0 |
 | 16 | ProteinProcessingII       | AMBER | RED   | C | t=0 enzymes idx=0 58→0 |
-| 17 | ProteinTranslocation      | AMBER | RED   | A | t=0 monomers len 2892→482 |
+| 17 | ProteinTranslocation      | AMBER | RED   | D | length fixed (np.arange(482)); t=2 substrates idx=1 diff=2 |
 | 18 | Replication               | AMBER | RED   | D | t=0 substrates idx=4 649→695 |
 | 19 | ReplicationInitiation     | AMBER | RED   | C | t=0 enzymes idx=1 0→2 |
 | 20 | RibosomeAssembly          | AMBER | RED   | D | t=96 substrates idx=0 153→155 |
 | 21 | RNADecay                  | AMBER | RED   | D | t=0 substrates idx=1 20→0 |
-| 22 | RNAModification           | AMBER | RED   | A | t=0 modifiedRNAs len 347→38 |
+| 22 | RNAModification           | AMBER | RED   | D | length fixed via `_active_rna_indices`; t=0 modifiedRNAs[0] oc=0 karr=35 (init seeding) |
 | 23 | RNAProcessing             | AMBER | RED   | D | t=4 processedRNAs idx=140 0→1 |
 | 24 | TerminalOrganelleAssembly | RED   | RED   | D | t=6 substrates idx=4 27→26 |
 | 25 | Transcription             | AMBER | RED   | B | t=0 ATP delta -53.97 (non-integral) |
@@ -59,18 +59,19 @@ Last updated: **2026-05-29** (after L2.1 sweep extension + quiet-process upgrade
 
 | Pattern | Count | Hypothesis | Suggested fix surface |
 |---|---|---|---|
-| A: wid-length drift | 7 | Test harness compares Karr global-compartment vector against OC's process-local slice. | `tests/vivarium/l2_replay_common.py` — likely a single shared fix. |
+| A: wid-length drift | 2 (was 7) | Remaining after harness scale-out: Metabolism (WID-order mismatch suspected, not pure layout) + ProteinDecay (complexs needs fixture-driven extraction). | Trace-metadata inspection + fixture-driven projection. |
 | B: non-integral counts | 3 | Real OC bug — `next_update` emits float deltas, violating count integrality (Rule 2). | Process-specific math (Transcription, Translation, DNADamage). |
 | C: enzyme vector mismatch (t=0) | 4 | OC's enzyme reconstruction from `boundEnzymes_before` differs from Karr's. | Likely one shared `project_observable_from_state` / `overlay` fix. |
-| D: real biology drift | 11 | Per-process semantics drift between OC and Karr. | Per-process triage, slowest. |
+| D: real biology drift | 15 (was 11) | Per-process semantics drift between OC and Karr. +4 promoted from A: RNAMod, PTransloc, PActivation, ProteinMod. | Per-process triage, slowest. |
 
 ## Priority for next moves
 
-1. **Pattern A harness audit** — 7-RED upside, single shared file (`l2_replay_common.py`). Could lift L2.1 from 3 → 10 GREEN.
-2. **Pattern C enzyme reconstruction** — 4 processes, likely one shared fix in projection/overlay logic.
-3. **Pattern B Rule-2 violations** — real OC bug, 3 processes, scoped per-process.
-4. **L2.2 methodology design** — still nothing (σ-band pre-registration, ensemble harness).
-5. **Pattern D per-process triage** — 11 processes, slowest path.
+1. **Pattern A residue** — 2 processes left. Metabolism: inspect trace metadata for WID order, build WID-mapped index. ProteinDecay: extract complexs column-index from fixture (`complex_col_by_wid` line 83 of `karr_protein_decay_light.py`).
+2. **Pattern C enzyme reconstruction** — 4 processes (ProteinFolding, ProteinProcessingI/II, ReplicationInitiation), likely one shared fix in projection/overlay logic. Highest upside-per-effort after Pattern A residue.
+3. **Pattern D quick wins** — RNAModification's t=0 oc=0/karr=35 modifiedRNAs[0] is the cleanest init-seeding lead. ProteinTranslocation (t=2) and ProteinActivation (t=28) are 1-bit-near-GREEN.
+4. **Pattern B Rule-2 violations** — real OC bug, 3 processes, scoped per-process.
+5. **L2.2 methodology design** — still nothing (σ-band pre-registration, ensemble harness).
+6. **Pattern D long tail** — 11 original Pattern D processes, slowest path.
 
 ## Cross-rung observations
 
