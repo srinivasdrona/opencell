@@ -238,13 +238,22 @@ class KarrRNAModificationProcess(Process):
         completed_this_step = (self.reaction_modification.T @ reaction_fluxes).astype(np.int64)
         self._n_completed += completed_this_step
 
+        available_rna = np.floor(np.clip(unmodified_rna, a_min=0.0, a_max=None)).astype(np.int64)
         transition_events = np.zeros_like(self._n_completed)
         for ridx, required in enumerate(self.required_reactions_per_rna):
             if required <= 0:
                 continue
-            if self._n_completed[ridx] >= required and unmodified_rna[ridx] > 0.0:
-                transition_events[ridx] = 1
-                self._n_completed[ridx] = 0
+
+            completed_rna = int(self._n_completed[ridx] // required)
+            if completed_rna <= 0:
+                continue
+
+            n_transition = int(min(available_rna[ridx], completed_rna))
+            if n_transition <= 0:
+                continue
+
+            transition_events[ridx] = n_transition
+            self._n_completed[ridx] -= n_transition * required
 
         update: dict[str, Any] = {}
         sub_updates = {
@@ -310,7 +319,9 @@ class KarrRNAModificationProcess(Process):
         enzyme_remaining = np.floor(
             np.clip(self._enzyme_limit(enzymes=enzymes, dt=dt), a_min=0.0, a_max=None)
         ).astype(np.int64)
-        unmodified_available = (np.asarray(unmodified_rna) > 0).astype(np.int64)
+        unmodified_available = np.floor(
+            np.clip(np.asarray(unmodified_rna), a_min=0.0, a_max=None)
+        ).astype(np.int64)
         reaction_remaining = unmodified_available[self._reaction_target_idx].copy()
 
         # Phase 1: deterministic allocation.
