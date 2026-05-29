@@ -377,12 +377,8 @@ class KarrRNAModificationProcess(Process):
             return 0
 
         per_event = catalytic[catalytic_idx].astype(np.float64) / kcat_dt[ridx]
-        raw_limit = float(np.min(enzyme_budget[catalytic_idx] / per_event))
-        floor_limit = int(np.floor(raw_limit))
-        frac = raw_limit - float(floor_limit)
-        if frac > 0.0 and float(self._rng.random()) < frac:
-            floor_limit += 1
-        return max(0, floor_limit)
+        limits = np.floor(enzyme_budget[catalytic_idx] / per_event).astype(np.int64)
+        return max(0, int(np.min(limits)))
 
     def _consume_enzyme_budget(
         self,
