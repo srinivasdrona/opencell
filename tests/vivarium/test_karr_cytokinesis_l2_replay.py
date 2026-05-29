@@ -32,6 +32,7 @@ from l2_replay_common import (
     collect_count_delta_dicts,
     infer_wids_for_observable,
     overlay_observable_into_state,
+    project_karr_vector,
     project_observable_from_state,
     refresh_allocator_views,
     resolve_trace_path,
@@ -52,6 +53,30 @@ _SCRATCH_RESET = {}
 # Optional explicit observable->WID attribute mapping. Any missing or unknown
 # attr falls back to heuristic inference from process attrs / state schema.
 _OBSERVABLE_TO_WIDS_ATTR = {'substrates': 'substrate_wids', 'enzymes': 'enzyme_wids', 'boundEnzymes': 'enzyme_wids'}
+
+# L2.1 harness overrides. Three optional dicts that close the
+# Karr-trace-vs-OC-state schema gap discovered during the Pattern A audit.
+#
+#   canonical_wids:       Override the heuristic wid inference. Use when OC's
+#                         process exposes wids in a different set/order than
+#                         Karr's MATLAB-source declaration.
+#   store_path_override:  Override the harness's default (state-key, sub-key)
+#                         path for an observable. Use when OC's ports_schema
+#                         puts an observable in a non-standard nested store.
+#   index_projection_attr: Map observable -> process attr name whose value is
+#                         an integer-array slice into Karr's full-compartment
+#                         vector. Use when Karr dumps the whole proteome /
+#                         metabolome but OC only tracks an active subset.
+#
+# Source: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/
+#         +process/Cytokinesis.m (lines 77-87)
+_CANONICAL_WIDS = {
+    'substrates': ['PI', 'H2O', 'H'],
+    'enzymes': ['MG_224_9MER_GTP', 'MG_224_9MER_GDP', 'MG_224_MONOMER_GDP', 'MG_224_MONOMER_GTP'],
+    'boundEnzymes': ['MG_224_9MER_GTP', 'MG_224_9MER_GDP', 'MG_224_MONOMER_GDP', 'MG_224_MONOMER_GTP'],
+}
+_STORE_PATH_OVERRIDE: dict[str, tuple[str, ...]] = {}
+_INDEX_PROJECTION_ATTR: dict[str, str] = {}
 
 
 def _assert_delta_integral(label: str, deltas: dict[str, float]) -> None:
@@ -122,12 +147,18 @@ def test_karr_cytokinesis_l2_replay_identity_per_tick(rng_seed: int) -> None:
                 observable,
                 karr_len=int(karr_before.shape[0]),
                 explicit_attr=explicit_attr,
+                canonical_wids_override=_CANONICAL_WIDS,
             )
 
         for tick in range(n_ticks):
             state = build_state_template(process)
             before_vectors = {
-                observable: cell_vector(trace, "states_before", observable, tick)
+                observable: project_karr_vector(
+                    process,
+                    observable,
+                    cell_vector(trace, "states_before", observable, tick),
+                    index_projection_attr=_INDEX_PROJECTION_ATTR,
+                )
                 for observable in _OBSERVABLES
             }
 
@@ -138,6 +169,7 @@ def test_karr_cytokinesis_l2_replay_identity_per_tick(rng_seed: int) -> None:
                     observable=observable,
                     vector=before_vectors[observable],
                     wids=wids_by_observable[observable],
+                    store_path_override=_STORE_PATH_OVERRIDE,
                 )
             refresh_allocator_views(process, state)
 
@@ -145,7 +177,12 @@ def test_karr_cytokinesis_l2_replay_identity_per_tick(rng_seed: int) -> None:
             _apply_update(state, update, process)
 
             for observable in _OBSERVABLES:
-                karr_after = cell_vector(trace, "states_after", observable, tick)
+                karr_after = project_karr_vector(
+                    process,
+                    observable,
+                    cell_vector(trace, "states_after", observable, tick),
+                    index_projection_attr=_INDEX_PROJECTION_ATTR,
+                )
                 expected_len = len(wids_by_observable[observable])
                 if karr_after.shape[0] != expected_len:
                     mapped_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable, "<heuristic>")
@@ -162,6 +199,7 @@ def test_karr_cytokinesis_l2_replay_identity_per_tick(rng_seed: int) -> None:
                     observable=observable,
                     wids=wids_by_observable[observable],
                     bound_enzymes_before=before_vectors.get("boundEnzymes"),
+                    store_path_override=_STORE_PATH_OVERRIDE,
                 )
                 _assert_identity_or_tolerance(
                     tick=tick,

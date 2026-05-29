@@ -150,7 +150,10 @@ def infer_wids_for_observable(
     *,
     karr_len: int,
     explicit_attr: str | None,
+    canonical_wids_override: dict[str, list[str]] | None = None,
 ) -> list[str]:
+    if canonical_wids_override and observable in canonical_wids_override:
+        return list(canonical_wids_override[observable])
     attrs_to_try: list[str] = []
     if explicit_attr:
         attrs_to_try.append(explicit_attr)
@@ -188,7 +191,14 @@ def infer_wids_for_observable(
     return [f"{observable}_{idx}" for idx in range(karr_len)]
 
 
-def observable_store_path(observable: str, state: dict[str, Any]) -> tuple[str, ...] | None:
+def observable_store_path(
+    observable: str,
+    state: dict[str, Any],
+    *,
+    store_path_override: dict[str, tuple[str, ...]] | None = None,
+) -> tuple[str, ...] | None:
+    if store_path_override and observable in store_path_override:
+        return store_path_override[observable]
     if observable == "monomers":
         unprocessed = _get_nested_mapping(state, ("protein", "unprocessed_counts"))
         if isinstance(unprocessed, dict) and unprocessed:
@@ -256,13 +266,14 @@ def overlay_observable_into_state(
     observable: str,
     vector: np.ndarray,
     wids: list[str],
+    store_path_override: dict[str, tuple[str, ...]] | None = None,
 ) -> None:
     if observable == "boundEnzymes":
         return
     if observable == "enzymes":
         _set_enzyme_vector(process=process, state=state, enzyme_wids=wids, values=vector)
         return
-    store_path = observable_store_path(observable, state)
+    store_path = observable_store_path(observable, state, store_path_override=store_path_override)
     if store_path is None:
         return
     store = _ensure_nested_mapping(state, store_path)
@@ -290,6 +301,7 @@ def project_observable_from_state(
     observable: str,
     wids: list[str],
     bound_enzymes_before: np.ndarray | None,
+    store_path_override: dict[str, tuple[str, ...]] | None = None,
 ) -> np.ndarray:
     if observable == "boundEnzymes":
         if bound_enzymes_before is None:
@@ -298,11 +310,50 @@ def project_observable_from_state(
     if observable == "enzymes":
         return _get_enzyme_vector(state=state, enzyme_wids=wids).reshape(-1)
 
-    store_path = observable_store_path(observable, state)
+    store_path = observable_store_path(observable, state, store_path_override=store_path_override)
     if store_path is None:
         return np.zeros(len(wids), dtype=np.float64)
     store = _get_nested_mapping(state, store_path) or {}
     return np.asarray([float(store.get(wid, 0.0)) for wid in wids], dtype=np.float64).reshape(-1)
+
+
+def project_karr_vector(
+    process: Any,
+    observable: str,
+    vector: np.ndarray,
+    *,
+    index_projection_attr: dict[str, str] | None = None,
+    index_projection_literal: dict[str, Any] | None = None,
+) -> np.ndarray:
+    """Project a full-compartment Karr trace vector down to the OC process subset.
+
+    Two override modes are supported (literal wins if both are set for the
+    same observable):
+
+    1. `index_projection_attr={observable: attr_name}` — the OC process exposes
+       the subset's indices via an attribute (e.g. `active_protein_indices`).
+       This is the typical case for "subset of subset" observables.
+
+    2. `index_projection_literal={observable: indices}` — caller supplies the
+       indices directly as an ndarray / sequence of ints. Useful when Karr
+       dumps `(quantity, compartment)` flattened in column-major order and OC
+       tracks only the cytosol compartment slice (e.g. metabolism's substrates
+       trace is 1755 = 585 substrates x 3 compartments, OC tracks 585).
+
+    If no projection is configured for `observable`, returns `vector` unchanged.
+    """
+    indices: Any | None = None
+    if index_projection_literal:
+        indices = index_projection_literal.get(observable)
+    if indices is None and index_projection_attr:
+        attr = index_projection_attr.get(observable)
+        if attr is not None:
+            indices = getattr(process, attr, None)
+    if indices is None:
+        return vector
+    arr = np.asarray(vector, dtype=np.float64)
+    idx_arr = np.asarray(indices, dtype=np.int64)
+    return arr[idx_arr]
 
 
 def refresh_allocator_views(process: Any, state: dict[str, Any]) -> None:

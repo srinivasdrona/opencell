@@ -32,6 +32,7 @@ from l2_replay_common import (
     collect_count_delta_dicts,
     infer_wids_for_observable,
     overlay_observable_into_state,
+    project_karr_vector,
     project_observable_from_state,
     refresh_allocator_views,
     resolve_trace_path,
@@ -52,6 +53,13 @@ _SCRATCH_RESET = {}
 # Optional explicit observable->WID attribute mapping. Any missing or unknown
 # attr falls back to heuristic inference from process attrs / state schema.
 _OBSERVABLE_TO_WIDS_ATTR = {'substrates': 'substrate_wids', 'enzymes': 'enzyme_wids', 'boundEnzymes': 'enzyme_wids', 'modifiedRNAs': 'modified_rna_wids', 'unmodifiedRNAs': 'unmodified_rna_wids'}
+
+
+# L2.1 harness overrides (Pattern A). OC's `_active_rna_indices` slices Karr's 347-mature-RNA vec down to the 38-active subset for both modifiedRNAs/unmodifiedRNAs.
+_CANONICAL_WIDS: dict[str, list[str]] = {}
+_STORE_PATH_OVERRIDE: dict[str, tuple[str, ...]] = {}
+_INDEX_PROJECTION_ATTR: dict[str, str] = {'modifiedRNAs': '_active_rna_indices', 'unmodifiedRNAs': '_active_rna_indices'}
+_INDEX_PROJECTION_LITERAL = {}
 
 
 def _assert_delta_integral(label: str, deltas: dict[str, float]) -> None:
@@ -126,12 +134,19 @@ def test_karr_rna_modification_l2_replay_identity_per_tick(rng_seed: int) -> Non
                 observable,
                 karr_len=int(karr_before.shape[0]),
                 explicit_attr=explicit_attr,
+                canonical_wids_override=_CANONICAL_WIDS,
             )
 
         for tick in range(n_ticks):
             state = build_state_template(process)
             before_vectors = {
-                observable: cell_vector(trace, "states_before", observable, tick)
+                observable: project_karr_vector(
+                    process,
+                    observable,
+                    cell_vector(trace, "states_before", observable, tick),
+                    index_projection_attr=_INDEX_PROJECTION_ATTR,
+                    index_projection_literal=_INDEX_PROJECTION_LITERAL,
+                )
                 for observable in _OBSERVABLES
             }
 
@@ -142,6 +157,7 @@ def test_karr_rna_modification_l2_replay_identity_per_tick(rng_seed: int) -> Non
                     observable=observable,
                     vector=before_vectors[observable],
                     wids=wids_by_observable[observable],
+                    store_path_override=_STORE_PATH_OVERRIDE,
                 )
             refresh_allocator_views(process, state)
 
@@ -149,7 +165,13 @@ def test_karr_rna_modification_l2_replay_identity_per_tick(rng_seed: int) -> Non
             _apply_update(state, update, process)
 
             for observable in _OBSERVABLES:
-                karr_after = cell_vector(trace, "states_after", observable, tick)
+                karr_after = project_karr_vector(
+                    process,
+                    observable,
+                    cell_vector(trace, "states_after", observable, tick),
+                    index_projection_attr=_INDEX_PROJECTION_ATTR,
+                    index_projection_literal=_INDEX_PROJECTION_LITERAL,
+                )
                 expected_len = len(wids_by_observable[observable])
                 if karr_after.shape[0] != expected_len:
                     mapped_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable, "<heuristic>")
@@ -166,6 +188,7 @@ def test_karr_rna_modification_l2_replay_identity_per_tick(rng_seed: int) -> Non
                     observable=observable,
                     wids=wids_by_observable[observable],
                     bound_enzymes_before=before_vectors.get("boundEnzymes"),
+                    store_path_override=_STORE_PATH_OVERRIDE,
                 )
                 _assert_identity_or_tolerance(
                     tick=tick,

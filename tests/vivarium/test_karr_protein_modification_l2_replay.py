@@ -32,6 +32,7 @@ from l2_replay_common import (
     collect_count_delta_dicts,
     infer_wids_for_observable,
     overlay_observable_into_state,
+    project_karr_vector,
     project_observable_from_state,
     refresh_allocator_views,
     resolve_trace_path,
@@ -52,6 +53,24 @@ _SCRATCH_RESET = {}
 # Optional explicit observable->WID attribute mapping. Any missing or unknown
 # attr falls back to heuristic inference from process attrs / state schema.
 _OBSERVABLE_TO_WIDS_ATTR = {'substrates': 'substrate_wids', 'enzymes': 'enzyme_wids', 'boundEnzymes': 'enzyme_wids', 'modifiedMonomers': 'modified_monomer_wids', 'unmodifiedMonomers': 'unmodified_monomer_wids'}
+
+# L2.1 harness overrides — see test_karr_cytokinesis_l2_replay.py for full
+# documentation of the three override dicts.
+#
+# Karr's trace dumps the full proteome vector (482) for {un,}modifiedMonomers;
+# OC only tracks the 20-element active subset. OC's process exposes
+# `active_protein_indices` (set in _load_fixture) as the slice into Karr's
+# 482-vector. Also OC's ports_schema uses dedicated nested stores rather than
+# the harness default `("protein","counts")`.
+_CANONICAL_WIDS: dict[str, list[str]] = {}
+_STORE_PATH_OVERRIDE = {
+    'modifiedMonomers': ('protein', 'modified_counts'),
+    'unmodifiedMonomers': ('protein', 'unmodified_counts'),
+}
+_INDEX_PROJECTION_ATTR = {
+    'modifiedMonomers': 'active_protein_indices',
+    'unmodifiedMonomers': 'active_protein_indices',
+}
 
 
 def _assert_delta_integral(label: str, deltas: dict[str, float]) -> None:
@@ -126,12 +145,18 @@ def test_karr_protein_modification_l2_replay_identity_per_tick(rng_seed: int) ->
                 observable,
                 karr_len=int(karr_before.shape[0]),
                 explicit_attr=explicit_attr,
+                canonical_wids_override=_CANONICAL_WIDS,
             )
 
         for tick in range(n_ticks):
             state = build_state_template(process)
             before_vectors = {
-                observable: cell_vector(trace, "states_before", observable, tick)
+                observable: project_karr_vector(
+                    process,
+                    observable,
+                    cell_vector(trace, "states_before", observable, tick),
+                    index_projection_attr=_INDEX_PROJECTION_ATTR,
+                )
                 for observable in _OBSERVABLES
             }
 
@@ -142,6 +167,7 @@ def test_karr_protein_modification_l2_replay_identity_per_tick(rng_seed: int) ->
                     observable=observable,
                     vector=before_vectors[observable],
                     wids=wids_by_observable[observable],
+                    store_path_override=_STORE_PATH_OVERRIDE,
                 )
             refresh_allocator_views(process, state)
 
@@ -149,7 +175,12 @@ def test_karr_protein_modification_l2_replay_identity_per_tick(rng_seed: int) ->
             _apply_update(state, update, process)
 
             for observable in _OBSERVABLES:
-                karr_after = cell_vector(trace, "states_after", observable, tick)
+                karr_after = project_karr_vector(
+                    process,
+                    observable,
+                    cell_vector(trace, "states_after", observable, tick),
+                    index_projection_attr=_INDEX_PROJECTION_ATTR,
+                )
                 expected_len = len(wids_by_observable[observable])
                 if karr_after.shape[0] != expected_len:
                     mapped_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable, "<heuristic>")
@@ -166,6 +197,7 @@ def test_karr_protein_modification_l2_replay_identity_per_tick(rng_seed: int) ->
                     observable=observable,
                     wids=wids_by_observable[observable],
                     bound_enzymes_before=before_vectors.get("boundEnzymes"),
+                    store_path_override=_STORE_PATH_OVERRIDE,
                 )
                 _assert_identity_or_tolerance(
                     tick=tick,
