@@ -4,7 +4,7 @@ Single source of truth for the L2-green campaign. Update on every sweep,
 re-extraction, or schema-audit run. Do not edit from memory — always cross-check
 against the source files listed under Provenance below.
 
-Last updated: **2026-05-29 (evening)** (after Pattern B fixes — DNADamage GREEN via Karr oracle integer-snap; Transcription/Translation integerized but residue A surfaced; bucket B 3→0, A 0→2, GREEN 4→5)
+Last updated: **2026-05-29 (late evening)** (after Pattern A residue close + ProteinTranslocation fix — Transcription/Translation reclassified A→D via empirical projection; ProteinTranslocation GREEN via SRP-vs-direct pathway correction; bucket A 2→0, GREEN 5→6, D 21→22)
 
 ## Rung definitions
 
@@ -19,7 +19,7 @@ Last updated: **2026-05-29 (evening)** (after Pattern B fixes — DNADamage GREE
 | | GREEN | AMBER | RED | ERROR | not-run |
 |---|---|---|---|---|---|
 | L2.0 | 0 | 24 | 4 | 0 | 0 |
-| L2.1 | 5 | — | 23 | 0 | 0 |
+| L2.1 | 6 | — | 22 | 0 | 0 |
 | L2.2 | — | — | — | — | **28** |
 
 ## Per-process matrix
@@ -42,7 +42,7 @@ Last updated: **2026-05-29 (evening)** (after Pattern B fixes — DNADamage GREE
 | 14 | ProteinModification       | AMBER | RED   | D | length fixed via `_active_protein_indices`; t=43 real biology drift |
 | 15 | ProteinProcessingI        | AMBER | RED   | D | t=1 substrates idx=0 diff=3 (was C, _PASS_THROUGH fixed) |
 | 16 | ProteinProcessingII       | AMBER | RED   | D | t=2 unprocessedMonomers idx=429 diff=1 (was C, _PASS_THROUGH fixed) |
-| 17 | ProteinTranslocation      | AMBER | RED   | D | length fixed (np.arange(482)); t=2 substrates idx=1 diff=2 |
+| 17 | ProteinTranslocation      | AMBER | GREEN | — | SRP-vs-direct pathway corrected to MATLAB `signalSequenceType ∈ {lipoprotein, secretory}` + first-infeasible halt (commit `699f1c4` on `audit/l2-1-sweep-v2`; 100/100 ticks bit-identical) |
 | 18 | Replication               | AMBER | RED   | D | t=0 substrates idx=4 649→695 |
 | 19 | ReplicationInitiation     | AMBER | RED   | D | t=0 enzymes idx=1 oc=2 karr=0 (was C; mis-declared as pass-through — enzymes ARE mutated during tick by binding logic OC doesn't model) |
 | 20 | RibosomeAssembly          | AMBER | RED   | D | t=96 substrates idx=0 153→155 |
@@ -50,25 +50,24 @@ Last updated: **2026-05-29 (evening)** (after Pattern B fixes — DNADamage GREE
 | 22 | RNAModification           | AMBER | RED   | D | length fixed via `_active_rna_indices`; t=0 modifiedRNAs[0] oc=0 karr=35 (init seeding) |
 | 23 | RNAProcessing             | AMBER | RED   | D | t=4 processedRNAs idx=140 0→1 |
 | 24 | TerminalOrganelleAssembly | RED   | RED   | D | t=6 substrates idx=4 27→26 |
-| 25 | Transcription             | AMBER | RED   | A | integerized via `floor+Bernoulli(frac)` (commit `fe0b9d5`); next first-fail = t=0 substrates wid-length drift karr=12 mapped=4 |
+| 25 | Transcription             | AMBER | RED   | D | Pattern A residue closed via `np.arange(4)` substrate projection (commit `d8fa1a5` on `audit/l2-1-sweep-v2`; ATP/CTP/GTP/UTP honest prefix); new fingerprint t=0 substrates[0] oc=13879 karr=13906 diff=-27 (stochastic post-B, needs ensemble check) |
 | 26 | TranscriptionalRegulation | RED   | RED   | D | t=15 enzymes idx=3 oc=1 karr=0 |
-| 27 | Translation               | AMBER | RED   | A | integerized via `floor+Bernoulli(frac)` (commit `9d54886`, both base + v3 wrappers); next first-fail = t=0 substrates wid-length drift karr=26 mapped=20 |
+| 27 | Translation               | AMBER | RED   | D | Pattern A residue closed via `np.arange(20)` substrate projection (commit `d779951` on `audit/l2-1-sweep-v2`; 20 std AAs honest prefix); new fingerprint t=0 substrates[0] oc=-57 karr=0 diff=-57 (stochastic post-B, needs ensemble check) |
 | 28 | tRNAAminoacylation        | AMBER | RED   | D | t=0 substrates idx=2 668→631 |
 
 ## L2.1 RED pattern taxonomy
 
 | Pattern | Count | Hypothesis | Suggested fix surface |
 |---|---|---|---|
-| A: wid-length drift | 2 (was 0) | **Resurfaced**: Transcription + Translation now exhibit wid-length drift at t=0 once Pattern B integerization unmasked them (pytest short-circuits on first-fail tick, so B at t=0 was hiding A underneath). Same shape as previously-closed Metabolism/ProteinDecay — empirical reclassification to D likely cheapest path. | Per-process empirical reclassification via `np.arange(n)` projection + code-comment caveat; OR canonical fixture mining if substrate biology is closed first. |
+| A: wid-length drift | 0 (was 2) | **Closed (again)**: Transcription + Translation residue closed via Path A honest-prefix projection (commits `d8fa1a5`, `d779951`). Both now Pattern D with seed-sensitive fingerprints — D close-out should be ensemble-checked, not single-trace bit-identity. | — (closed) |
 | B: non-integral counts | 0 (was 3) | **Closed**: DNADamage was Karr oracle float noise (~2.8e-11), fixed in harness via integer-snap when `|frac| < 1e-9` (commit `ea5a2bf`, principle logged as DECISION `l2-harness-integrality-asymmetry`). Transcription + Translation were real OC bugs — integerized via unbiased `floor + Bernoulli(frac)` with seeded RNG (commits `fe0b9d5`, `9d54886`); revealed A residue underneath. | — (closed) |
 | C: enzyme vector mismatch (t=0) | 0 (was 4) | Resolved: per-test `_PASS_THROUGH` set was declared but not honored in the projection loop. Fix landed in commit `43d5620`. All 4 migrated to Pattern D with informative t>0 fingerprints. ReplicationInitiation's `_PASS_THROUGH` for enzymes is incorrect (enzymes ARE mutated by binding) and stays Pattern D. | — (closed) |
-| D: real biology drift | 21 (was 19) | Per-process semantics drift between OC and Karr. +2 from Pattern A residue closure (Metabolism, ProteinDecay). +4 from earlier Pattern A migration (RNAMod, PTransloc, PActivation, ProteinMod). +4 from Pattern C migration (ProteinFolding, ProteinProcessingI, ProteinProcessingII, ReplicationInitiation). | Per-process triage, slowest. |
+| D: real biology drift | 22 (was 21) | Per-process semantics drift between OC and Karr. +2 from Pattern A residue closure on Transcription/Translation, -1 from ProteinTranslocation closing to GREEN (commit `699f1c4`). | Per-process triage, slowest. |
 
 ## Priority for next moves
 
-1. **Pattern A residue (Transcription/Translation)** — same shape as already-closed Metabolism/ProteinDecay. Likely 25-min empirical reclassification to D. Triage in flight via Codex Pattern D triage agent.
-2. **Pattern D quick wins** — three almost-GREEN with small late-tick drift: ProteinProcessingI (t=1, diff=3), ProteinTranslocation (t=2, diff=2), ProteinActivation (t=28, diff=1). And RNAMod's t=0 oc=0/karr=35 modifiedRNAs[0] is the cleanest init-seeding lead. **Codex triage in flight** (PID 41296).
-3. **L2.0 RED schema work** — 4 processes (DNADamage now GREEN'd by oracle clamp, leaving TerminalOrganelleAssembly, TranscriptionalRegulation, HostInteraction). Schema-gap analysis in flight via Codex L2.0 RED triage (PID 25016).
+1. **Pattern D quick wins (remaining)** — per Pattern D triage (commit `2f1f531` on `audit/pattern-d-triage`): #1 ProteinTranslocation **DONE** (commit `699f1c4`). Next: #2 RNAModification (t=0 modifiedRNAs[0] diff=-35, transition-cap suspected, 10-30 lines), #3 ProteinProcessingI (t=1 substrates diff=+3, cleavage/deformyl rounding), #4 ProteinActivation (large refactor, deferred).
+2. **L2.0 RED schema work** — 4 processes (DNADamage now GREEN'd by oracle clamp, leaving TerminalOrganelleAssembly, TranscriptionalRegulation, HostInteraction). Per L2.0 RED triage (commit `5ba13ba`): **not blocking L2.1 closure**; schema work emerges organically as D quick-wins land. Recommended order if pursued: TranscriptionalRegulation > TerminalOrganelleAssembly.
 4. **Defensive global pass** — propagate the `_PASS_THROUGH` honoring branch to the other ~22 tests (safe; no GREEN deltas expected, but defensive correctness).
 5. **L2.2 methodology design** — still nothing (σ-band pre-registration, ensemble harness).
 6. **Pattern D long tail** — 21 processes, slowest path.

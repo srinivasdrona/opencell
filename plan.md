@@ -451,45 +451,45 @@ NOT a parallel program)**
 
 ---
 
-## Current Status (2026-05-29 ~16:15 IST, **PATTERN B CLOSED — DNADamage GREEN; Transcription/Translation integerized, A residue resurfaced; 3 Codex agents in flight**)
+## Current Status (2026-05-29 ~18:20 IST, **AWAY-HOUR FANOUT LANDED — L2.1 GREEN 5→6 (ProteinTranslocation), Pattern A 2→0 (Transcription/Translation reclassified to D); ready for next D quick-win**)
 
 ### TL;DR
-Pattern B sweep landed 3 commits. **DNADamage GREEN** via Karr oracle integer-snap (`|frac|<1e-9`) in the L2 harness — was never an OC bug, just MATLAB serialization noise (`karr=2.8e-11`); principle logged as DECISION `l2-harness-integrality-asymmetry`. **Transcription + Translation integerized** via unbiased `floor + Bernoulli(frac)` with seeded RNG (real OC bugs, closed loud) — but pytest's first-fail short-circuit now reveals **Pattern A residue underneath**: both fail at t=0 substrates wid-length drift (karr=12 mapped=4, karr=26 mapped=20). Same shape as already-closed Metabolism/ProteinDecay — empirical reclassification to D likely cheapest path. **Pattern D triage + L2.0 RED triage** Codex agents still in flight on separate worktrees.
+Two parallel Codex agents during away hour both succeeded. **ProteinTranslocation → GREEN** (100/100 ticks bit-identical) via SRP-vs-direct pathway correction matching MATLAB `signalSequenceType ∈ {lipoprotein, secretory}` + first-infeasible-halt semantics (commit `699f1c4`, +25/-18, larger than ≤5-line estimate but honest). **Transcription + Translation** Pattern A residue closed via Path A empirical projection (`np.arange(4)` ATP/CTP/GTP/UTP, `np.arange(20)` 20 std AAs — both honest prefixes; commits `d8fa1a5`, `d779951`). New D fingerprints at t=0 with seed-sensitive diffs (need ensemble check per L2.2 methodology, not single-trace bit-identity). L2.0 RED triage (commit `5ba13ba` on `audit/l2-0-red-triage`) concluded **schema work is not blocking L2.1**; defer until D quick-wins land.
 
 ### 28-process landscape after this segment
-- **L2.1 GREEN**: 5 (Cytokinesis, MacromolComplex, ChromSeg, HostInter, **+DNADamage**)
-- **Pattern A**: 2 (was 0) — Transcription, Translation **resurfaced**
-- **Pattern B** (non-integral counts, real OC bug): 0 (was 3) — closed
-- **Pattern C**: 0 (closed in prior segment)
-- **Pattern D**: 21 (unchanged this segment)
+- **L2.1 GREEN**: 6 (Cytokinesis, MacromolComplex, ChromSeg, HostInter, DNADamage, **+ProteinTranslocation**)
+- **Pattern A**: 0 (was 2) — Transcription/Translation reclassified D
+- **Pattern B**: 0
+- **Pattern C**: 0
+- **Pattern D**: 22 (was 21; -ProteinTranslocation, +Transcription, +Translation)
+- **L2.0 RED**: 4 (deferred — not blocking)
 
-### Commits this segment (audit/l2-1-sweep-v2 unless noted)
-- `b1feb82`: `audit: add Pattern B census runner` (28×100 tick decoupled integrality probe)
-- `51dc101`: `audit: add Pattern B census reports` (confirmed only 2/28 with non-integral deltas)
-- `ea5a2bf`: `fix(l2-harness): clamp Karr oracle to nearest integer when |frac| < 1e-9 (DNADamage Pattern B' closure)`
-- `fe0b9d5`: `fix(transcription): integerize next_update count deltas (Pattern B closure)`
-- `9d54886`: `fix(translation): integerize next_update count deltas (Pattern B closure)` (both base + v3 wrappers)
-- `main c180e28`: `docs(l2): refresh L2_STATUS after Pattern B sweep (DNADamage GREEN; A resurfaced on Transcription/Translation)`
+### Commits this segment
+- `audit/l2-1-sweep-v2 d8fa1a5`: `test(l2): close Pattern A residue on Transcription — empirical reclassification to D`
+- `audit/l2-1-sweep-v2 d779951`: `test(l2): close Pattern A residue on Translation — empirical reclassification to D`
+- `audit/fix-protein-translocation 426a698` → cherry-picked as `audit/l2-1-sweep-v2 699f1c4`: `fix(protein-translocation): correct SRP-vs-direct pathway classification (closes Pattern D, L2.1 GREEN)`
+- `audit/pattern-d-triage 2f1f531`: Pattern D quick-wins triage (ProteinTranslocation #1, RNAModification #2, ProteinProcessingI #3, ProteinActivation #4 deferred)
+- `audit/l2-0-red-triage 5ba13ba`: L2.0 RED triage (not blocking L2.1)
+- `main c180e28`: (prior) L2_STATUS refresh after Pattern B
+- `main fdfb8e2`, `fb09dbd`: (prior) plan.md sync + drop obsolete sync section
 
-### DECISIONS logged this segment
-- `2026-05-29 | opencell | l2-1-empirical-reclassification-over-canonical-projection`
+### DECISIONS logged this segment (and recent)
+- `2026-05-29 | cross-cutting | repo-plan-only-never-session-state-plan`
 - `2026-05-29 | opencell | l2-harness-integrality-asymmetry`
+- `2026-05-29 | opencell | l2-1-empirical-reclassification-over-canonical-projection`
 
-### Codex agents in flight (schedule #50 polling 15 min)
-- **Pattern D triage** (PID 41296, worktree `pattern-d-triage`): ranking 4 near-GREEN candidates (RNAMod, ProteinProcessingI, ProteinTranslocation, ProteinActivation) for highest-ROI fix target. Pure investigation, markdown deliverables only.
-- **L2.0 RED triage** (PID 25016, worktree `l2-0-red-triage`): schema-gap analysis for 4 L2.0 RED processes (now 3 effective: TerminalOrganelleAssembly, TranscriptionalRegulation, HostInteraction; DNADamage is L2.1 GREEN despite L2.0 RED). Pure investigation.
+### Next moves (priority order)
+1. **Pattern D quick win #2: RNAModification** — `MG471` modifiedRNAs[0] diff=-35 @t=0 (transition events capped to 1 per RNA species per tick suspected). 10-30 lines, moderate risk. Delegate to Codex next.
+2. **Pattern D quick win #3: ProteinProcessingI** — H2O drift +3 @t=1 (cleavage/deformyl rounding). Moderate.
+3. **L2.2 methodology design** — needed for the now-stochastic Transcription/Translation/DNADamage close-out via ensemble σ-bands (not bit-identity).
+4. **L2.0 RED schema work** — defer per triage; emerges organically as D closes.
+5. **Defensive `_PASS_THROUGH` propagation** — ~22 remaining tests, safe.
+6. **Pattern D long tail** — 19 remaining (after #2/#3 land).
 
-### Next moves (priority order, pending triage returns)
-1. **Pattern A residue (Transcription/Translation)** — apply same "honest-enough projection" pattern as Metabolism/ProteinDecay closure. Estimated 25-min reclassification to D. Decide whether to do before or after Pattern D triage recommendation lands.
-2. **Pattern D quick wins** — wait for triage; likely delegate top-ranked fix to Codex.
-3. **L2.0 RED schema work** — wait for triage; may be deferrable to post-L2.1 closure.
-4. **Defensive global pass-through propagation** — add `_PASS_THROUGH` honoring branch to ~22 remaining tests (safe, defensive correctness).
-5. **L2.2 methodology design** — σ-band pre-registration, ensemble harness.
-
-### Inbox hygiene done this segment
-- Dropped stale `#compete-dashboard T-2 lag` item (pipeline uses wildcard fileset, T-2 handled implicitly)
-- Added `#opencell` item: post-L2.1-closure → write `scripts/regen_l2_status.py` (foreshadowed in L2_STATUS itself)
-- 2 #opencell deferred items unchanged (await next class-A swarm template update)
+### Worktree hygiene pending
+- `E:\opencell-worktrees\pattern-d-triage` (idle, triage done — can prune)
+- `E:\opencell-worktrees\l2-0-red-triage` (idle, triage done — can prune)
+- `E:\opencell-worktrees\fix-protein-translocation` (commit cherry-picked into sweep — can prune)
 
 ---
 
