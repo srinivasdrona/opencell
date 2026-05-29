@@ -39,6 +39,7 @@ class KarrTranslationV3Process(Process):
         "write_substrate_deltas": True,
         "use_allocator_budget": False,
         "substrate_default": 0.0,
+        "rng_seed": 0,
     }
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
@@ -62,6 +63,7 @@ class KarrTranslationV3Process(Process):
         self.aa_ids = self.kinetics_model.aa_wcm_ids
         self.allocation_substrate_wids: tuple[str, ...] = tuple(self.aa_ids)
         self._fallback_n_active_ribosomes = int(self.mechanism_inputs.n_active_ribosomes)
+        self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
 
     def ports_schema(self) -> dict[str, Any]:
         schema: dict[str, Any] = {
@@ -137,8 +139,23 @@ class KarrTranslationV3Process(Process):
             budget = max(0.0, float(allocated.get(aa, 0.0)))
             consumed = min(need, budget)
             if consumed > 0.0:
-                out[aa] = -consumed
+                out[aa] = float(-self._stochastic_round_nonnegative(consumed))
         return out
+
+    def _stochastic_round_nonnegative(self, expected_count: float) -> int:
+        if not np.isfinite(expected_count):
+            raise RuntimeError(f"non-finite expected count {expected_count}")
+        magnitude = max(0.0, float(expected_count))
+        base = int(np.floor(magnitude))
+        frac = float(np.clip(magnitude - float(base), 0.0, 1.0))
+        return base + int(self._rng.binomial(1, frac))
+
+    def _stochastic_round_delta(self, expected_delta: float) -> int:
+        if not np.isfinite(expected_delta):
+            raise RuntimeError(f"non-finite expected delta {expected_delta}")
+        sign = -1 if expected_delta < 0.0 else 1
+        rounded_mag = self._stochastic_round_nonnegative(abs(float(expected_delta)))
+        return sign * rounded_mag
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         protein_state = states.get("protein", {})
@@ -167,7 +184,7 @@ class KarrTranslationV3Process(Process):
         update: dict[str, Any] = {
             "protein": {
                 "unprocessed_counts": {
-                    pid: float(protein_next[i] - counts[i])
+                    pid: float(self._stochastic_round_delta(float(protein_next[i] - counts[i])))
                     for i, pid in enumerate(self.protein_ids)
                 }
             }
@@ -178,7 +195,11 @@ class KarrTranslationV3Process(Process):
             if bool(self.parameters["use_allocator_budget"]):
                 substrate_update = self._allocated_aa_deltas(need_by_aa, states)
             else:
-                substrate_update = {aa: -need for aa, need in need_by_aa.items() if need > 0.0}
+                substrate_update = {
+                    aa: float(-self._stochastic_round_nonnegative(need))
+                    for aa, need in need_by_aa.items()
+                    if need > 0.0
+                }
             if substrate_update:
                 update["substrates"] = substrate_update
         return update

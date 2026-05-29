@@ -47,6 +47,7 @@ class KarrTranslationProcess(Process):
         "substrate_default": 0.0,
         "enable_throttle": False,
         "m1_pool_default": 0.0,
+        "rng_seed": 0,
     }
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
@@ -58,6 +59,7 @@ class KarrTranslationProcess(Process):
         self.protein_ids = self.model.protein_wcm_ids
         self.aa_ids: tuple[str, ...] = self.model.aa_wcm_ids
         self.enable_throttle: bool = bool(self.parameters["enable_throttle"])
+        self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
 
     def ports_schema(self) -> dict[str, Any]:
         ss = self.model.counts_mature
@@ -131,13 +133,28 @@ class KarrTranslationProcess(Process):
             timestep,
             synth_scale=synth_scale,
         )
-        n_set = {p: float(n_next[i]) for i, p in enumerate(self.protein_ids)}
+        n_set = {
+            p: float(self._stochastic_round_nonnegative(float(n_next[i])))
+            for i, p in enumerate(self.protein_ids)
+        }
 
         update: dict[str, Any] = {"protein": {"counts": n_set}}
         if self.parameters["write_substrate_deltas"]:
             aa = tl.aa_consumption_per_s(self.model, synth_scale=synth_scale)
-            update["substrates"] = {a: -float(aa[a]) * timestep for a in self.aa_ids}
+            update["substrates"] = {
+                a: float(-self._stochastic_round_nonnegative(float(aa[a]) * timestep))
+                for a in self.aa_ids
+            }
         return update
+
+    def _stochastic_round_nonnegative(self, expected_count: float) -> int:
+        """Return an integral nonnegative count with mean ``expected_count``."""
+        if not np.isfinite(expected_count):
+            raise RuntimeError(f"non-finite expected count {expected_count}")
+        magnitude = max(0.0, float(expected_count))
+        base = int(np.floor(magnitude))
+        frac = float(np.clip(magnitude - float(base), 0.0, 1.0))
+        return base + int(self._rng.binomial(1, frac))
 
 
 def build_karr_m3_engine(
