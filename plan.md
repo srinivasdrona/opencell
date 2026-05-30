@@ -597,6 +597,7 @@ Ran three back-to-back parallel Codex waves on Pattern D quick-wins (RNAModifica
 - L2.0 RED schema work (TerminalOrganelleAssembly, TranscriptionalRegulation)
 - ProteinActivation Pattern D #4 (large refactor)
 - L2.2 methodology design (σ-bands, ensemble harness)
+- **L3 PCV framework** — sketched at `docs/phase_e/L3_PCV_FRAMEWORK.md` on 2026-05-30. 8 candidate producer-consumer-validator sets ranked by L2.1-GREEN readiness. PCV-4 (DNADamage→DNARepair, 2/2 GREEN) is the recommended pilot. **Discipline: do not start L3 work — design, harness, anything — until L2 is fully GREEN.**
 - `pattern-debug-loop` skill formalization
 
 ### Worktrees alive
