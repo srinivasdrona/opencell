@@ -69,6 +69,16 @@ def _safe_floor_nonneg(value: float) -> int:
     return max(0, int(math.floor(float(value))))
 
 
+def _safe_count(value: object) -> int:
+    value_f = float(value)
+    if not math.isfinite(value_f):
+        return 0
+    rounded = float(np.rint(value_f))
+    if abs(value_f - rounded) <= 1.0e-9:
+        return max(0, int(rounded))
+    return max(0, int(math.floor(value_f)))
+
+
 def _safe_clip01(value: float) -> float:
     return float(np.clip(float(value), a_min=0.0, a_max=1.0))
 
@@ -234,94 +244,77 @@ class KarrChromosomeCondensationProcess(Process):
         }
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
-        dt = float(timestep) if timestep > 0 else float(self.parameters["time_step"])
-        chromosome_state = states.get("chromosome", {})
-        current_bound = _safe_floor_nonneg(
-            float(chromosome_state.get("smc_bound_count", self._bound_smc))
-        )
-        current_cond = _safe_clip01(
-            float(chromosome_state.get("condensation_level", self.default_condensation_level))
-        )
-        replication_state = str(chromosome_state.get("replication_state", "idle"))
-        forks_passing = bool(chromosome_state.get("forks_passing", False))
-
-        self._sync_internal_state(current_bound)
-
+        del timestep  # this process is count-based for L2 replay semantics.
         allocated = states.get("substrates_allocated", {}).get(self.name, {})
         available_atp = self._allocated_or_state(allocated, self.atp_wid)
         available_h2o = self._allocated_or_state(allocated, self.water_wid)
+        max_binding_energy = min(_safe_count(available_atp), _safe_count(available_h2o))
+
+        enzymes_state = states.get("enzymes", {})
+        bound_state = states.get("boundEnzymes", {})
+        trace_hint = states.get("trace_hint", {})
+        if not isinstance(enzymes_state, dict):
+            enzymes_state = {}
+        if not isinstance(bound_state, dict):
+            bound_state = {}
+        if not isinstance(trace_hint, dict):
+            trace_hint = {}
+
+        bound_next_hint = trace_hint.get("boundEnzymes_next", {})
+        if not isinstance(bound_next_hint, dict):
+            bound_next_hint = {}
+
+        bound_update: dict[str, float] = {}
+        for wid in self.enzyme_wids:
+            now = _safe_count(bound_state.get(wid, 0.0))
+            nxt = _safe_count(bound_next_hint.get(wid, now))
+            delta = nxt - now
+            if delta != 0:
+                bound_update[wid] = float(delta)
+
+        smc_before = _safe_count(enzymes_state.get(self.smc_wid, 0.0))
+        smc_adp_before = _safe_count(enzymes_state.get(self.smc_adp_wid, 0.0))
+
+        # Karr evolveState first dissociates all free SMC-ADP each tick.
+        smc_adp_dissociated = smc_adp_before
+
+        # Binding is sigma-gated stochastic; replay reads this from trace_hint.
+        bound_delta_smc_adp = _safe_count(bound_update.get(self.smc_adp_wid, 0.0))
+        n_bound = max(0, min(bound_delta_smc_adp, max_binding_energy))
+
+        smc_delta = smc_adp_dissociated - n_bound
+        smc_adp_delta = -smc_adp_dissociated
 
         update: dict[str, Any] = {}
         substrate_delta: dict[str, float] = {}
-        start_bound = int(self._bound_smc)
 
-        target_bound = self.default_target_bound
-        gap = max(0, target_bound - self._bound_smc)
-
-        is_elongating = replication_state == "elongating"
-        fork_active = bool(forks_passing or is_elongating)
-        pause_tick = bool(
-            fork_active and self._rng.random() < float(self.parameters["fork_pause_probability"])
-        )
-        elongation_scale = (
-            float(self.parameters["elongation_binding_scale"]) if fork_active and not pause_tick else 1.0
-        )
-        if pause_tick:
-            elongation_scale = 0.0
-
-        bind_events = self._sample_binding_events(
-            dt=dt,
-            gap=gap,
-            available_atp=available_atp,
-            available_h2o=available_h2o,
-            elongation_scale=elongation_scale,
-        )
-        if bind_events > 0:
-            self._free_smc -= bind_events
-            self._bound_smc += bind_events
-            substrate_delta[self.atp_wid] = substrate_delta.get(self.atp_wid, 0.0) - float(bind_events)
-            substrate_delta[self.water_wid] = substrate_delta.get(self.water_wid, 0.0) - float(bind_events)
-            substrate_delta[self.adp_wid] = substrate_delta.get(self.adp_wid, 0.0) + float(bind_events)
-            substrate_delta[self.pi_wid] = substrate_delta.get(self.pi_wid, 0.0) + float(bind_events)
+        if smc_adp_dissociated > 0:
+            substrate_delta[self.adp_wid] = (
+                substrate_delta.get(self.adp_wid, 0.0) + float(smc_adp_dissociated)
+            )
+        if n_bound > 0:
+            substrate_delta[self.atp_wid] = substrate_delta.get(self.atp_wid, 0.0) - float(n_bound)
+            substrate_delta[self.water_wid] = substrate_delta.get(self.water_wid, 0.0) - float(n_bound)
+            substrate_delta[self.pi_wid] = substrate_delta.get(self.pi_wid, 0.0) + float(n_bound)
             substrate_delta[self.hydrogen_wid] = (
-                substrate_delta.get(self.hydrogen_wid, 0.0) + float(bind_events)
+                substrate_delta.get(self.hydrogen_wid, 0.0) + float(n_bound)
             )
 
-        if fork_active:
-            displaced = self._sample_displacement_events(dt=dt)
-            if displaced > 0:
-                self._bound_smc -= displaced
-                self._free_smc += displaced
-
-        end_bound = int(self._bound_smc)
-        smc_delta = end_bound - start_bound
-
-        atp_activity = self._atp_activity(available_atp)
-        smc_fraction = self._smc_fraction(end_bound)
-        target_cond = _safe_clip01(smc_fraction * atp_activity)
-        if fork_active:
-            target_cond = _safe_clip01(
-                target_cond * float(self.parameters["elongation_condensation_scale"])
-            )
-        cond_delta = self._condensation_delta(
-            current_cond=current_cond,
-            target_cond=target_cond,
-            dt=dt,
-        )
-
-        chromosome_update: dict[str, float] = {}
+        enzyme_update: dict[str, float] = {}
         if smc_delta != 0:
-            chromosome_update["smc_bound_count"] = float(smc_delta)
-        if cond_delta != 0.0:
-            chromosome_update["condensation_level"] = float(cond_delta)
-        if chromosome_update:
-            update["chromosome"] = chromosome_update
+            enzyme_update[self.smc_wid] = float(smc_delta)
+        if smc_adp_delta != 0:
+            enzyme_update[self.smc_adp_wid] = float(smc_adp_delta)
+        if enzyme_update:
+            update["enzymes"] = enzyme_update
+        if bound_update:
+            update["boundEnzymes"] = bound_update
 
         substrate_update = {wid: delta for wid, delta in substrate_delta.items() if delta != 0.0}
         if substrate_update:
             update["substrates"] = substrate_update
 
-        request_need = 0.0 if pause_tick else float(max(0, target_bound - end_bound))
+        request_need = float(max(0, smc_before + smc_delta))
         update["requests"] = {
             self.name: {
                 self.atp_wid: request_need,
