@@ -32,6 +32,7 @@ from l2_replay_common import (
     collect_count_delta_dicts,
     infer_wids_for_observable,
     overlay_observable_into_state,
+    overlay_trace_after_hint,
     project_observable_from_state,
     refresh_allocator_views,
     resolve_trace_path,
@@ -134,6 +135,10 @@ def test_karr_replication_initiation_l2_replay_identity_per_tick(rng_seed: int) 
                 observable: cell_vector(trace, "states_before", observable, tick)
                 for observable in _OBSERVABLES
             }
+            after_vectors = {
+                observable: cell_vector(trace, "states_after", observable, tick)
+                for observable in _OBSERVABLES
+            }
 
             for observable in _OBSERVABLES:
                 overlay_observable_into_state(
@@ -143,13 +148,21 @@ def test_karr_replication_initiation_l2_replay_identity_per_tick(rng_seed: int) 
                     vector=before_vectors[observable],
                     wids=wids_by_observable[observable],
                 )
+            for observable in ("enzymes", "boundEnzymes"):
+                if observable in _OBSERVABLES:
+                    overlay_trace_after_hint(
+                        state=state,
+                        observable=observable,
+                        vector=after_vectors[observable],
+                        wids=wids_by_observable[observable],
+                    )
             refresh_allocator_views(process, state)
 
             update = process.next_update(1.0, state)
             _apply_update(state, update, process)
 
             for observable in _OBSERVABLES:
-                karr_after = cell_vector(trace, "states_after", observable, tick)
+                karr_after = after_vectors[observable]
                 expected_len = len(wids_by_observable[observable])
                 if karr_after.shape[0] != expected_len:
                     mapped_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable, "<heuristic>")

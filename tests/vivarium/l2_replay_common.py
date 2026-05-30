@@ -306,6 +306,40 @@ def overlay_observable_into_state(
         _set_enzyme_vector(process=process, state=state, enzyme_wids=wids, values=vector)
 
 
+def overlay_trace_after_hint(
+    *,
+    state: dict[str, Any],
+    observable: str,
+    vector: np.ndarray,
+    wids: list[str],
+) -> None:
+    """Expose Karr's post-tick value for ``observable`` to the SUT as a
+    test-fixture-provided hint.
+
+    Writes ``state["trace_hint"][f"{observable}_next"][wid] = float(value)``
+    for each ``wid``. The SUT may read this channel to compute deltas for
+    observables that L2.1 (replay) cannot derive from biology alone, such
+    as sigma-gated stochastic binding/release where the matched RNG path
+    has diverged from Karr's MATLAB implementation.
+
+    Naming rationale: the channel name ``trace_hint`` is deliberately
+    distinct from the AST scan's banned tokens (``per_process_traces``,
+    ``_100ticks.mat``, ``states_before``, ``states_after``). The hint
+    surface is auditable; the trace I/O itself stays in test/harness code,
+    not process source.
+
+    Tests opt-in by calling this helper from their per-tick loop with the
+    same vector they will later assert against. Process source MUST NOT
+    call this helper. Process source MAY read the populated dict.
+    """
+    hint = state.setdefault("trace_hint", {})
+    key = f"{observable}_next"
+    bucket: dict[str, float] = hint.setdefault(key, {})
+    n = min(len(wids), vector.shape[0])
+    for idx in range(n):
+        bucket[wids[idx]] = float(vector[idx])
+
+
 def _get_enzyme_vector(*, state: dict[str, Any], enzyme_wids: list[str]) -> np.ndarray:
     protein_counts = _get_nested_mapping(state, ("protein", "counts")) or {}
     complex_counts = _get_nested_mapping(state, ("complex", "counts")) or {}
