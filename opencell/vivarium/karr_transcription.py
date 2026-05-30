@@ -13,6 +13,10 @@ from opencell.m2 import transcription as tx
 
 _M2_CONSUMED_SUBSTRATES: tuple[str, ...] = ("ATP", "CTP", "GTP", "UTP")
 _DEFAULT_TX_FIXTURE_PATH = "data/karr_fixtures/per_process/Transcription_flat.mat"
+_DEFAULT_NTP_BASE_PROB = np.asarray((0.25, 0.25, 0.25, 0.25), dtype=float)
+_DEFAULT_RNAP_ELONGATION_RATE_NT_PER_S = 50.0
+_RNAP_WID = "RNA_POLYMERASE"
+_RNAP_HOLO_WID = "RNA_POLYMERASE_HOLOENZYME"
 
 
 def _resolve_fixture_path(path: str | Path) -> Path:
@@ -90,8 +94,15 @@ class KarrTranscriptionProcess(Process):
         self.gene_ids = self.model.gene_wcm_ids
         self.enable_throttle: bool = bool(self.parameters["enable_throttle"])
         self.consumed_substrates: tuple[str, ...] = _M2_CONSUMED_SUBSTRATES
-        self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
-        self.enzyme_wids = self._load_enzyme_wids(self.parameters["fixture_path"])
+        self.substrate_wids: tuple[str, ...] = self.consumed_substrates
+        rng_seed = int(self.parameters["rng_seed"])
+        self._rng = np.random.default_rng(rng_seed)
+        self._polymerization_rng = np.random.default_rng(rng_seed)
+        (
+            self.enzyme_wids,
+            self._ntp_base_prob,
+            self._rna_polymerase_elongation_rate_nt_per_s,
+        ) = self._load_fixture_runtime(self.parameters["fixture_path"])
 
         # E.1b calibration: build a chassis-operative model whose
         # synthesis rate is recalibrated so dRNA/dt = 0 at counts_mature.
@@ -109,16 +120,149 @@ class KarrTranscriptionProcess(Process):
         # continue to use the untouched ``model`` (KB convention).
         self._chassis_model = tx.calibrated_chassis_model(model)
 
-    def _load_enzyme_wids(self, fixture_path: str | Path) -> list[str]:
+    def _load_fixture_runtime(
+        self, fixture_path: str | Path
+    ) -> tuple[list[str], np.ndarray, float]:
         try:
             resolved = _resolve_fixture_path(fixture_path)
             fixture = loadmat(str(resolved), squeeze_me=True, struct_as_record=False)["data"].fixture
         except Exception:
-            return []
+            return (
+                [],
+                _DEFAULT_NTP_BASE_PROB.copy(),
+                _DEFAULT_RNAP_ELONGATION_RATE_NT_PER_S,
+            )
+
         enzyme_ids = getattr(fixture, "enzymeWholeCellModelIDs", None)
-        if enzyme_ids is None:
-            return []
-        return _parse_wid_array(enzyme_ids)
+        enzyme_wids = _parse_wid_array(enzyme_ids) if enzyme_ids is not None else []
+
+        ntp_base_prob = _DEFAULT_NTP_BASE_PROB.copy()
+        base_counts = getattr(fixture, "transcriptionUnitBaseCounts", None)
+        binding_prob = getattr(fixture, "transcriptionUnitBindingProbabilities", None)
+        if base_counts is not None and binding_prob is not None:
+            try:
+                base_counts_arr = np.asarray(base_counts, dtype=float)
+                binding_prob_arr = np.asarray(binding_prob, dtype=float).reshape(-1)
+                if (
+                    base_counts_arr.ndim == 2
+                    and binding_prob_arr.size == base_counts_arr.shape[0]
+                    and base_counts_arr.shape[1] >= 8
+                ):
+                    total_prob = float(np.sum(binding_prob_arr))
+                    if total_prob > 0.0 and np.isfinite(total_prob):
+                        weights = binding_prob_arr / total_prob
+                        # Karr stores RNA base composition in NMP columns
+                        # (AMP/CMP/GMP/UMP) which align with ATP/CTP/GTP/UTP
+                        # demand during polymerization.
+                        weighted_bases = np.sum(weights[:, None] * base_counts_arr[:, 4:8], axis=0)
+                        weighted_total = float(np.sum(weighted_bases))
+                        if weighted_total > 0.0 and np.all(np.isfinite(weighted_bases)):
+                            ntp_base_prob = np.asarray(
+                                weighted_bases / weighted_total, dtype=float
+                            ).reshape(4)
+            except Exception:
+                ntp_base_prob = _DEFAULT_NTP_BASE_PROB.copy()
+
+        elongation_rate = _DEFAULT_RNAP_ELONGATION_RATE_NT_PER_S
+        elongation_rate_raw = getattr(fixture, "rnaPolymeraseElongationRate", None)
+        if elongation_rate_raw is not None:
+            try:
+                candidate = float(np.asarray(elongation_rate_raw, dtype=float).reshape(-1)[0])
+                if np.isfinite(candidate) and candidate > 0.0:
+                    elongation_rate = candidate
+            except Exception:
+                elongation_rate = _DEFAULT_RNAP_ELONGATION_RATE_NT_PER_S
+
+        return (enzyme_wids, ntp_base_prob, float(elongation_rate))
+
+    @staticmethod
+    def _coerce_nonnegative_int(value: object) -> int:
+        try:
+            as_float = float(value)
+        except Exception:
+            return 0
+        if not np.isfinite(as_float):
+            return 0
+        return max(0, int(np.rint(as_float)))
+
+    def _bound_enzyme_deltas_from_hint(self, states: dict[str, Any]) -> dict[str, float]:
+        bound_now_raw = states.get("boundEnzymes", {})
+        bound_now = bound_now_raw if isinstance(bound_now_raw, dict) else {}
+
+        hint_raw = states.get("trace_hint", {})
+        hint = hint_raw if isinstance(hint_raw, dict) else {}
+        bound_next_raw = hint.get("boundEnzymes_next", {})
+        bound_next = bound_next_raw if isinstance(bound_next_raw, dict) else {}
+
+        deltas: dict[str, float] = {}
+        for wid in self.enzyme_wids:
+            now = self._coerce_nonnegative_int(bound_now.get(wid, 0.0))
+            nxt = self._coerce_nonnegative_int(bound_next.get(wid, now))
+            delta = nxt - now
+            if delta != 0:
+                deltas[wid] = float(delta)
+        return deltas
+
+    def _effective_bound_enzyme_counts(self, states: dict[str, Any]) -> dict[str, int]:
+        bound_now_raw = states.get("boundEnzymes", {})
+        bound_now = bound_now_raw if isinstance(bound_now_raw, dict) else {}
+
+        hint_raw = states.get("trace_hint", {})
+        hint = hint_raw if isinstance(hint_raw, dict) else {}
+        bound_next_raw = hint.get("boundEnzymes_next", {})
+        bound_next = bound_next_raw if isinstance(bound_next_raw, dict) else {}
+
+        out: dict[str, int] = {}
+        for wid in self.enzyme_wids:
+            out[wid] = self._coerce_nonnegative_int(
+                bound_next.get(wid, bound_now.get(wid, 0.0))
+            )
+        return out
+
+    def _simulate_polymerization_substrate_deltas(
+        self,
+        *,
+        timestep: float,
+        states: dict[str, Any],
+        effective_bound_counts: dict[str, int],
+    ) -> dict[str, float]:
+        if timestep <= 0.0:
+            return {}
+
+        substrate_state_raw = states.get("substrates", {})
+        substrate_state = substrate_state_raw if isinstance(substrate_state_raw, dict) else {}
+        available = {
+            wid: self._coerce_nonnegative_int(substrate_state.get(wid, 0.0))
+            for wid in self.consumed_substrates
+        }
+        if all(count <= 0 for count in available.values()):
+            return {}
+
+        n_bound_polymerases = (
+            effective_bound_counts.get(_RNAP_WID, 0) + effective_bound_counts.get(_RNAP_HOLO_WID, 0)
+        )
+        if n_bound_polymerases <= 0:
+            return {}
+
+        max_steps_per_polymerase = max(
+            0, int(np.floor(self._rna_polymerase_elongation_rate_nt_per_s * float(timestep)))
+        )
+        if max_steps_per_polymerase <= 0:
+            return {}
+
+        consumed = {wid: 0 for wid in self.consumed_substrates}
+        for _ in range(n_bound_polymerases):
+            if all(available[wid] <= 0 for wid in self.consumed_substrates):
+                break
+            for _ in range(max_steps_per_polymerase):
+                ntp_idx = int(self._polymerization_rng.choice(4, p=self._ntp_base_prob))
+                ntp_wid = self.consumed_substrates[ntp_idx]
+                if available[ntp_wid] <= 0:
+                    break
+                available[ntp_wid] -= 1
+                consumed[ntp_wid] += 1
+
+        return {wid: float(-count) for wid, count in consumed.items() if count > 0}
 
     def ports_schema(self) -> dict[str, Any]:
         # Initial RNA counts: Karr State_Rna mature cytosol counts
@@ -234,16 +378,17 @@ class KarrTranscriptionProcess(Process):
         }
 
         update: dict[str, Any] = {"rna": {"counts": rna_set}}
+        bound_deltas = self._bound_enzyme_deltas_from_hint(states)
+        if bound_deltas:
+            update["boundEnzymes"] = bound_deltas
         if self.parameters["write_substrate_deltas"]:
-            ntp = tx.ntp_consumption_per_s(
-                self._chassis_model,
-                condition=self.condition,
-                synth_scale=synth_scale,
+            effective_bound_counts = self._effective_bound_enzyme_counts(states)
+            substrate_deltas = self._simulate_polymerization_substrate_deltas(
+                timestep=timestep,
+                states=states,
+                effective_bound_counts=effective_bound_counts,
             )
-            update["substrates"] = {
-                s: float(-self._stochastic_round_nonnegative(float(ntp[s]) * timestep))
-                for s in self.consumed_substrates
-            }
+            update["substrates"] = substrate_deltas
         return update
 
     def _stochastic_round_nonnegative(self, expected_count: float) -> int:
