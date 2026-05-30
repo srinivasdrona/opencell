@@ -15,6 +15,7 @@ _FIXTURE_DIR = Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / 
 _MACROMOLECULAR_COMPLEXATION_FIXTURE_PATH = _FIXTURE_DIR / "MacromolecularComplexation_flat.mat"
 _MAX_STOCHASTIC_ITERATIONS = 100_000
 _SPECIAL_COMPLEX_WIDS = frozenset({"RNA_POLYMERASE", "RIBOSOME_70S"})
+_RANDSAMPLE_STREAM_BURN = 3
 
 
 def _resolve_fixture_path(path: str | Path) -> Path:
@@ -71,19 +72,29 @@ class KarrProteinModificationProcess(Process):
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
         super().__init__(parameters)
         self._load_fixture(self.parameters["fixture_path"])
-        self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
-        self._n_completed = np.zeros(len(self.unmodified_monomer_wids), dtype=np.int64)
+        self._rng = np.random.RandomState(int(self.parameters["rng_seed"]))
 
         row_sums = np.sum(self.reaction_modification, axis=1)
         if not np.all(row_sums == 1):
             raise ValueError("reactionModificationMatrix must map each reaction to one protein")
-        self._reaction_target_idx = np.argmax(self.reaction_modification, axis=1).astype(np.int64)
-
         self.required_modifications = np.sum(self.reaction_modification, axis=0).astype(np.int64)
         if np.any(self.required_modifications <= 0):
             raise ValueError(
                 "Filtered proteins must each require at least one modification reaction"
             )
+        self._protein_by_reaction = self.reaction_modification.T.astype(np.float64, copy=False)
+        self._reaction_substrate_term = -self.reaction_stoich.T.astype(np.float64, copy=False)
+        self._n_substrates = len(self.substrate_wids)
+        self._n_enzymes = len(self.enzyme_wids)
+        n_species = self._n_substrates + self._n_enzymes + len(self.unmodified_monomer_wids)
+        self._enzyme_species_idx = np.arange(
+            self._n_substrates,
+            self._n_substrates + self._n_enzymes,
+            dtype=np.int64,
+        )
+        non_enzyme_idx = np.ones(n_species, dtype=bool)
+        non_enzyme_idx[self._enzyme_species_idx] = False
+        self._non_enzyme_species_idx = np.flatnonzero(non_enzyme_idx).astype(np.int64)
 
     def _load_fixture(self, path: str | Path) -> None:
         resolved = _resolve_fixture_path(path)
@@ -233,25 +244,18 @@ class KarrProteinModificationProcess(Process):
         if unmodified.sum() <= 0.0:
             return {}
 
-        reaction_fluxes = self._sample_reaction_fluxes(
+        protein_fluxes = self._sample_protein_fluxes(
             unmodified=unmodified,
             substrates=substrates,
             enzymes=enzymes,
             dt=dt,
         )
-        if not np.any(reaction_fluxes > 0):
+        if not np.any(protein_fluxes > 0):
             return {}
 
+        reaction_fluxes = self.reaction_modification @ protein_fluxes
         substrate_delta = self.reaction_stoich @ reaction_fluxes
-        completed_by_protein = self.reaction_modification.T @ reaction_fluxes
-        self._n_completed += completed_by_protein
-
-        unmodified_pool = np.floor(np.clip(unmodified, a_min=0.0, a_max=None)).astype(np.int64)
-        protein_completions = np.minimum(
-            unmodified_pool,
-            self._n_completed // self.required_modifications,
-        ).astype(np.int64)
-        self._n_completed -= protein_completions * self.required_modifications
+        protein_completions = protein_fluxes
 
         update: dict[str, Any] = {}
         substrate_updates = {
@@ -297,50 +301,111 @@ class KarrProteinModificationProcess(Process):
             raise KeyError(f"{self.name}: missing required monomer enzyme '{wid}' in protein.counts")
         return float(monomer_counts[wid])
 
-    def _sample_reaction_fluxes(
+    def _sample_protein_fluxes(
         self,
         unmodified: np.ndarray,
         substrates: np.ndarray,
         enzymes: np.ndarray,
         dt: float,
     ) -> np.ndarray:
-        n_rxn = self.reaction_stoich.shape[1]
-        reaction_fluxes = np.zeros(n_rxn, dtype=np.int64)
+        n_proteins = len(self.unmodified_monomer_wids)
+        protein_fluxes = np.zeros(n_proteins, dtype=np.int64)
 
-        substrate_pool = np.floor(np.clip(substrates, a_min=0.0, a_max=None)).astype(np.int64)
-        enzyme_remaining = np.floor(
-            np.clip(self._enzyme_limit(enzymes=enzymes, dt=dt), a_min=0.0, a_max=None)
-        ).astype(np.int64)
-        unmodified_pool = np.floor(np.clip(unmodified, a_min=0.0, a_max=None)).astype(np.int64)
-        protein_capacity = np.maximum(
-            0, unmodified_pool * self.required_modifications - self._n_completed
-        ).astype(np.int64)
+        species = np.concatenate(
+            [
+                np.floor(np.clip(substrates, a_min=0.0, a_max=None)),
+                np.floor(np.clip(enzymes, a_min=0.0, a_max=None)),
+                np.floor(np.clip(unmodified, a_min=0.0, a_max=None)),
+            ]
+        ).astype(np.float64, copy=False)
+        species_reactant_byproduct, species_reactant = self._build_species_matrices(dt=dt)
+        positive_reactant = np.maximum(0.0, species_reactant)
+        is_reaction_inactive = self._limit_over_requirements(
+            species=species,
+            requirements=positive_reactant,
+            cols=None,
+        )
+        is_reaction_inactive = (~np.isfinite(is_reaction_inactive)) | (is_reaction_inactive <= 0.0)
 
         max_iters = int(self.parameters["max_stochastic_iterations"])
         for _ in range(max_iters):
-            substrate_limit = self._substrate_limit(substrate_pool)
-            target_limit = protein_capacity[self._reaction_target_idx]
-            residual_limit = np.minimum.reduce([substrate_limit, target_limit, enzyme_remaining])
-            feasible = np.flatnonzero(residual_limit > 0)
-            if feasible.size == 0:
+            positive_requirements = np.maximum(0.0, species_reactant_byproduct)
+            enzyme_limits = self._limit_over_requirements(
+                species=species,
+                requirements=positive_requirements,
+                cols=self._enzyme_species_idx,
+            )
+            enzyme_limits = self._stochastic_round_vector(enzyme_limits)
+            other_limits = self._limit_over_requirements(
+                species=species,
+                requirements=positive_requirements,
+                cols=self._non_enzyme_species_idx,
+            )
+
+            reaction_limits = np.minimum(enzyme_limits.astype(np.float64), other_limits)
+            invalid = (
+                is_reaction_inactive
+                | (~np.isfinite(reaction_limits))
+                | (reaction_limits < 1.0)
+            )
+            reaction_limits[invalid] = 0.0
+            total_limit = float(np.sum(reaction_limits))
+            if total_limit <= 0.0:
                 break
 
-            weights = residual_limit[feasible].astype(np.float64)
-            weight_sum = float(np.sum(weights))
-            if weight_sum <= 0.0:
-                break
+            selected = self._weighted_index_sample(reaction_limits, total_limit)
+            protein_fluxes[selected] += 1
+            species -= species_reactant_byproduct[selected, :]
 
-            chosen = int(self._rng.choice(feasible, p=(weights / weight_sum)))
-            target_idx = int(self._reaction_target_idx[chosen])
-            if protein_capacity[target_idx] <= 0:
-                continue
+        return protein_fluxes
 
-            reaction_fluxes[chosen] += 1
-            substrate_pool += self.reaction_stoich[:, chosen]
-            enzyme_remaining[chosen] -= 1
-            protein_capacity[target_idx] -= 1
+    def _limit_over_requirements(
+        self,
+        *,
+        species: np.ndarray,
+        requirements: np.ndarray,
+        cols: np.ndarray | None,
+    ) -> np.ndarray:
+        req = requirements if cols is None else requirements[:, cols]
+        sp = species if cols is None else species[cols]
+        with np.errstate(divide="ignore", invalid="ignore"):
+            limits = np.where(req > 0.0, sp[np.newaxis, :] / req, np.inf)
+        return np.min(limits, axis=1)
 
-        return reaction_fluxes
+    def _build_species_matrices(self, dt: float) -> tuple[np.ndarray, np.ndarray]:
+        dt_eff = max(float(dt), 1e-12)
+        enzyme_req = self.reaction_catalysis.astype(np.float64, copy=False) / (
+            self.enzyme_bounds[:, [1]] * dt_eff
+        )
+        reaction_terms = np.hstack([self._reaction_substrate_term, enzyme_req])
+
+        n_proteins = len(self.unmodified_monomer_wids)
+        species_reactant_byproduct = self._protein_by_reaction @ reaction_terms
+        species_reactant = self._protein_by_reaction @ np.maximum(0.0, reaction_terms)
+        eye = np.eye(n_proteins, dtype=np.float64)
+        species_reactant_byproduct = np.hstack(
+            [species_reactant_byproduct, eye]
+        ).astype(np.float64, copy=False)
+        species_reactant = np.hstack([species_reactant, eye]).astype(np.float64, copy=False)
+        return species_reactant_byproduct, species_reactant
+
+    def _weighted_index_sample(self, weights: np.ndarray, total_weight: float) -> int:
+        if total_weight <= 0.0:
+            return 0
+        # MATLAB's `randsample` is implemented in the stats toolbox and advances
+        # the stream with extra internal draws versus a one-liner CDF sample.
+        for _ in range(_RANDSAMPLE_STREAM_BURN):
+            self._rng.random_sample()
+        threshold = float(self._rng.random_sample()) * float(total_weight)
+        cumulative = np.cumsum(weights, dtype=np.float64)
+        return int(np.searchsorted(cumulative, threshold, side="right"))
+
+    def _stochastic_round_vector(self, values: np.ndarray) -> np.ndarray:
+        clipped = np.clip(np.asarray(values, dtype=np.float64), a_min=0.0, a_max=None)
+        integral = np.floor(clipped)
+        fractional = clipped - integral
+        draws = self._rng.random_sample(fractional.shape)
+        return (integral + (draws < fractional).astype(np.float64)).astype(np.int64)
 
     def _substrate_limit_for_reaction(self, substrates: np.ndarray, ridx: int) -> int:
         stoich_col = self.reaction_stoich[:, ridx]
