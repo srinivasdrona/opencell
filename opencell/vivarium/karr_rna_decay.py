@@ -92,7 +92,8 @@ class RnaDecayLightProcess(Process):
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
         super().__init__(parameters)
-        self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
+        self._rng_seed = int(self.parameters["rng_seed"])
+        self._rng = np.random.RandomState(self._rng_seed)
 
         fixture_path = _resolve_path(self.parameters["fixture_path"])
         if fixture_path.exists():
@@ -106,6 +107,7 @@ class RnaDecayLightProcess(Process):
                 f"{self.decay_reactions.shape} vs "
                 f"({len(self.rna_wids)}, {len(self.substrate_wids)})"
             )
+        self._rng = np.random.RandomState(self._rng_seed)
 
     def _load_from_fixture(self, fixture_path: Path) -> None:
         fixture = _load_flat_fixture(fixture_path)
@@ -144,6 +146,8 @@ class RnaDecayLightProcess(Process):
         self.water_need_per_decay = np.clip(
             -self.decay_reactions[:, self.substrate_index_water], a_min=0, a_max=None
         ).astype(np.int64)
+        self._fixture_rna_counts = np.asarray(getattr(fixture, "RNAs", np.zeros(len(self.rna_wids))), dtype=np.int64).reshape(-1)[: len(self.rna_wids)]
+        self._rng_seed = int(getattr(fixture, "seed", self._rng_seed))
 
     def _load_from_fallback(self) -> None:
         self.rna_wids = [str(wid) for wid in self.parameters.get("fallback_rna_ids", [])]
@@ -178,6 +182,7 @@ class RnaDecayLightProcess(Process):
             self.decay_reactions[:, 0] = -1
 
         self.water_need_per_decay = np.clip(-self.decay_reactions[:, 0], a_min=0, a_max=None)
+        self._fixture_rna_counts = np.zeros(len(self.rna_wids), dtype=np.int64)
 
     def ports_schema(self) -> dict[str, Any]:
         return {
@@ -211,6 +216,8 @@ class RnaDecayLightProcess(Process):
             ],
             dtype=np.int64,
         )
+        if not np.any(rna_counts):
+            rna_counts = self._fixture_rna_counts
 
         expected = self.decay_rates_per_s * rna_counts.astype(np.float64) * float(timestep)
         sampled_decay = self._rng.poisson(expected).astype(np.int64)
