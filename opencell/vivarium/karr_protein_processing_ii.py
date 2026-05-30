@@ -194,6 +194,10 @@ class KarrProteinProcessingIIProcess(Process):
             ],
             dtype=np.float64,
         )
+        unprocessed_all = np.asarray(
+            [float(states["protein"].get("counts", {}).get(wid, 0.0)) for wid in self.unprocessed_monomer_wids],
+            dtype=np.float64,
+        )
         lipoprotein_processed = processed_all[self.lipoprotein_indices]
         enzymes = np.asarray(
             [
@@ -202,21 +206,21 @@ class KarrProteinProcessingIIProcess(Process):
             ],
             dtype=np.float64,
         )
+        pass_through_idx = np.concatenate((self.non_lipo_non_cleaved_indices, self.secreted_indices))
+        pass_through_counts = np.floor(np.clip(unprocessed_all[pass_through_idx], a_min=0.0, a_max=None)).astype(np.int64)
 
-        if processed_all.sum() <= 0.0:
+        if processed_all.sum() <= 0.0 and not np.any(pass_through_counts > 0):
             return {}
 
         substrate_delta = np.zeros(len(self.substrate_wids), dtype=np.int64)
         processed_delta = np.zeros(len(output_wids), dtype=np.int64)
         unfolded_delta = np.zeros(len(output_wids), dtype=np.int64)
+        unprocessed_delta: dict[str, float] = {}
         signal_update: dict[str, float] = {}
 
-        pass_through_counts = np.floor(
-            np.clip(processed_all[self.non_lipo_non_cleaved_indices], a_min=0.0, a_max=None)
-        ).astype(np.int64)
         if np.any(pass_through_counts > 0):
-            processed_delta[self.non_lipo_non_cleaved_indices] -= pass_through_counts
-            unfolded_delta[self.non_lipo_non_cleaved_indices] += pass_through_counts
+            processed_delta[pass_through_idx] += pass_through_counts
+            unprocessed_delta = {self.unprocessed_monomer_wids[int(i)]: -float(n) for i, n in zip(pass_through_idx, pass_through_counts) if n > 0}
 
         if lipoprotein_processed.sum() > 0.0:
             reaction_fluxes = self._compute_reaction_fluxes(
@@ -277,6 +281,8 @@ class KarrProteinProcessingIIProcess(Process):
             protein_update["processed_counts"] = processed_update
         if unfolded_update:
             protein_update["unfolded_counts"] = unfolded_update
+        if unprocessed_delta:
+            protein_update["counts"] = unprocessed_delta
         if signal_update:
             protein_update["signal_sequence_counts"] = signal_update
         if protein_update:
