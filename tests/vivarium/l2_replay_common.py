@@ -14,6 +14,8 @@ _TRACE_BASE_REL = Path("data/m1_sources/karr_native/per_process_traces_v2")
 
 _OBS_STORE_PATHS = {
     "substrates": ("substrates",),
+    "enzymes": ("enzymes",),
+    "boundEnzymes": ("boundEnzymes",),
     "complexs": ("complex", "counts"),
     "foldedMonomers": ("protein", "counts"),
     "unfoldedMonomers": ("protein", "unfolded_counts"),
@@ -293,11 +295,6 @@ def overlay_observable_into_state(
     wids: list[str],
     store_path_override: dict[str, tuple[str, ...]] | None = None,
 ) -> None:
-    if observable == "boundEnzymes":
-        return
-    if observable == "enzymes":
-        _set_enzyme_vector(process=process, state=state, enzyme_wids=wids, values=vector)
-        return
     store_path = observable_store_path(observable, state, store_path_override=store_path_override)
     if store_path is None:
         return
@@ -305,6 +302,8 @@ def overlay_observable_into_state(
     n = min(len(wids), vector.shape[0])
     for idx in range(n):
         store[wids[idx]] = float(vector[idx])
+    if observable == "enzymes":
+        _set_enzyme_vector(process=process, state=state, enzyme_wids=wids, values=vector)
 
 
 def _get_enzyme_vector(*, state: dict[str, Any], enzyme_wids: list[str]) -> np.ndarray:
@@ -329,10 +328,26 @@ def project_observable_from_state(
     store_path_override: dict[str, tuple[str, ...]] | None = None,
 ) -> np.ndarray:
     if observable == "boundEnzymes":
+        store_path = observable_store_path(
+            observable, state, store_path_override=store_path_override
+        )
+        store = _get_nested_mapping(state, store_path) if store_path is not None else None
+        if isinstance(store, dict):
+            return np.asarray(
+                [float(store.get(wid, 0.0)) for wid in wids], dtype=np.float64
+            ).reshape(-1)
         if bound_enzymes_before is None:
             return np.zeros(len(wids), dtype=np.float64)
         return np.asarray(bound_enzymes_before, dtype=np.float64).reshape(-1)
     if observable == "enzymes":
+        store_path = observable_store_path(
+            observable, state, store_path_override=store_path_override
+        )
+        store = _get_nested_mapping(state, store_path) if store_path is not None else None
+        if isinstance(store, dict):
+            return np.asarray(
+                [float(store.get(wid, 0.0)) for wid in wids], dtype=np.float64
+            ).reshape(-1)
         return _get_enzyme_vector(state=state, enzyme_wids=wids).reshape(-1)
 
     store_path = observable_store_path(observable, state, store_path_override=store_path_override)
@@ -419,7 +434,7 @@ def _iter_numeric_leaf_dicts(node: Any, prefix: str = "") -> list[tuple[str, dic
 
 def collect_count_delta_dicts(update: dict[str, Any]) -> list[tuple[str, dict[str, float]]]:
     out: list[tuple[str, dict[str, float]]] = []
-    for key in ("substrates", "protein", "rna", "complex"):
+    for key in ("substrates", "protein", "rna", "complex", "boundEnzymes", "enzymes"):
         if key in update:
             out.extend(_iter_numeric_leaf_dicts(update[key], key))
     return out
@@ -445,7 +460,7 @@ def apply_count_update(state: dict[str, Any], update: dict[str, Any]) -> None:
             else:
                 target[key] = value
 
-    for key in ("substrates", "protein", "rna", "complex"):
+    for key in ("substrates", "protein", "rna", "complex", "boundEnzymes", "enzymes"):
         node = update.get(key)
         if isinstance(node, dict):
             target = state.get(key)

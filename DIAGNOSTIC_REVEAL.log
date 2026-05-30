@@ -1,0 +1,1236 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.13, pytest-9.0.3, pluggy-1.6.0 -- /mnt/e/opencell/.venv-wsl/bin/python
+cachedir: .pytest_cache
+hypothesis profile 'default'
+rootdir: /mnt/e/opencell-worktrees/fix-l2-harness-bound-enzymes
+configfile: pyproject.toml
+plugins: anyio-4.13.0, hypothesis-6.152.1, jaxtyping-0.3.9, cov-7.1.0
+collecting ... collected 8 items
+
+tests/vivarium/test_karr_dna_supercoiling_l2_replay.py::test_karr_dna_supercoiling_l2_replay_identity_per_tick[rng_seed_0] FAILED [ 12%]
+tests/vivarium/test_karr_ftsz_polymerization_l2_replay.py::test_karr_ftsz_polymerization_l2_replay_identity_per_tick[rng_seed_0] FAILED [ 25%]
+tests/vivarium/test_karr_chromosome_condensation_l2_replay.py::test_karr_chromosome_condensation_l2_replay_identity_per_tick[rng_seed_0] FAILED [ 37%]
+tests/vivarium/test_karr_replication_l2_replay.py::test_karr_replication_l2_replay_identity_per_tick[rng_seed_0] FAILED [ 50%]
+tests/vivarium/test_karr_replication_initiation_l2_replay.py::test_karr_replication_initiation_l2_replay_identity_per_tick[rng_seed_0] FAILED [ 62%]
+tests/vivarium/test_karr_transcription_l2_replay.py::test_karr_transcription_l2_replay_identity_per_tick[rng_seed_0] FAILED [ 75%]
+tests/vivarium/test_karr_translation_l2_replay.py::test_karr_translation_l2_replay_identity_per_tick[rng_seed_0] FAILED [ 87%]
+tests/vivarium/test_karr_transcriptional_regulation_l2_replay.py::test_karr_transcriptional_regulation_l2_replay_identity_per_tick[rng_seed_0] FAILED [100%]
+
+=================================== FAILURES ===================================
+______ test_karr_dna_supercoiling_l2_replay_identity_per_tick[rng_seed_0] ______
+
+rng_seed = 0
+
+    @pytest.mark.parametrize("rng_seed", [0], ids=["rng_seed_0"])
+    def test_karr_dna_supercoiling_l2_replay_identity_per_tick(rng_seed: int) -> None:
+        trace_path = resolve_trace_path(_TRACE_PROCESS_NAME)
+        with h5py.File(trace_path, "r") as trace:
+            n_ticks = int(np.asarray(trace["metadata/n_ticks"][()]).reshape(-1)[0])
+            assert n_ticks == 100
+    
+            if "metadata" in trace and "rng_seed" in trace["metadata"]:
+                recorded_seed = int(np.asarray(trace["metadata/rng_seed"][()]).reshape(-1)[0])
+                assert int(rng_seed) == recorded_seed
+    
+            mutated_obs = tuple(o for o in _OBSERVABLES if o not in _PASS_THROUGH)
+            mutated_tick_counts = _audit_trace_mutated_ticks(trace, mutated_obs, n_ticks)
+            if sum(mutated_tick_counts.values()) == 0:
+                pytest.skip(
+                    "L2.1 N/A: no-op trace. Every mutated observable "
+                    f"({list(mutated_obs)}) is identical between states_before and "
+                    f"states_after across all {n_ticks} ticks. Per-observable "
+                    f"nonzero-delta counts: {mutated_tick_counts}."
+                )
+    
+            process = KarrDNASupercoilingProcess({"rng_seed": int(rng_seed)})
+            state_template = build_state_template(process)
+    
+            wids_by_observable: dict[str, list[str]] = {}
+            for observable in _OBSERVABLES:
+                karr_before = cell_vector(trace, "states_before", observable, 0)
+                explicit_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable)
+                wids_by_observable[observable] = infer_wids_for_observable(
+                    process,
+                    state_template,
+                    observable,
+                    karr_len=int(karr_before.shape[0]),
+                    explicit_attr=explicit_attr,
+                )
+    
+            for tick in range(n_ticks):
+                state = build_state_template(process)
+                before_vectors = {
+                    observable: cell_vector(trace, "states_before", observable, tick)
+                    for observable in _OBSERVABLES
+                }
+    
+                for observable in _OBSERVABLES:
+                    overlay_observable_into_state(
+                        process=process,
+                        state=state,
+                        observable=observable,
+                        vector=before_vectors[observable],
+                        wids=wids_by_observable[observable],
+                    )
+                refresh_allocator_views(process, state)
+    
+                update = process.next_update(1.0, state)
+                _apply_update(state, update, process)
+    
+                for observable in _OBSERVABLES:
+                    karr_after = cell_vector(trace, "states_after", observable, tick)
+                    expected_len = len(wids_by_observable[observable])
+                    if karr_after.shape[0] != expected_len:
+                        mapped_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable, "<heuristic>")
+                        pytest.fail(
+                            "L2a wid-length drift: "
+                            f"tick={tick}, observable={observable}, "
+                            f"karr_len={karr_after.shape[0]}, "
+                            f"mapped_len={expected_len}, mapped_attr={mapped_attr}"
+                        )
+    
+                    oc_after = project_observable_from_state(
+                        process=process,
+                        state=state,
+                        observable=observable,
+                        wids=wids_by_observable[observable],
+                        bound_enzymes_before=before_vectors.get("boundEnzymes"),
+                    )
+>                   _assert_identity_or_tolerance(
+                        tick=tick,
+                        observable=observable,
+                        oc_after=oc_after,
+                        karr_after=karr_after,
+                    )
+
+tests/vivarium/test_karr_dna_supercoiling_l2_replay.py:170: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/vivarium/test_karr_dna_supercoiling_l2_replay.py:87: in _assert_identity_or_tolerance
+    _assert_identity_or_tolerance_shared(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def assert_identity_or_tolerance(
+        *,
+        tick: int,
+        observable: str,
+        oc_after: np.ndarray,
+        karr_after: np.ndarray,
+    ) -> None:
+        if oc_after.shape != karr_after.shape:
+            pytest.fail(
+                "L2a mismatch record: "
+                f"tick={tick}, observable={observable}, index=-1, "
+                f"oc_shape={oc_after.shape}, karr_shape={karr_after.shape}"
+            )
+    
+        karr_int_part = np.rint(karr_after)
+        karr_snapped = False
+        if not np.array_equal(karr_int_part, karr_after):
+            karr_frac = np.abs(karr_after - karr_int_part)
+            if np.all(karr_frac < 1e-9):
+                # MATLAB trace serialization injects ~1e-11 float noise on integer-valued observables; snap-to-integer below 1e-9 preserves correctness while eating noise.
+                karr_after = karr_int_part.astype(np.float64)
+                karr_snapped = True
+            else:
+                bad = int(np.flatnonzero(karr_frac >= 1e-9)[0])
+                pytest.fail(
+                    "L2a oracle non-integral: "
+                    f"tick={tick}, observable={observable}, index={bad}, "
+                    f"karr_val={float(karr_after[bad])} (expected integral count)"
+                )
+    
+        oc_int_part = np.rint(oc_after)
+        if not np.array_equal(oc_int_part, oc_after):
+            oc_frac = np.abs(oc_after - oc_int_part)
+            if karr_snapped and np.all(oc_frac < 1e-9):
+                oc_after = oc_int_part.astype(np.float64)
+            else:
+                bad = int(np.flatnonzero(oc_int_part != oc_after)[0])
+                pytest.fail(
+                    "L2a oc non-integral: "
+                    f"tick={tick}, observable={observable}, index={bad}, "
+                    f"oc_val={float(oc_after[bad])} (expected integral count)"
+                )
+    
+        mismatch = oc_after != karr_after
+        diff = oc_after - karr_after
+        if np.any(mismatch):
+            idx = int(np.flatnonzero(mismatch)[0])
+>           pytest.fail(
+                "L2a mismatch record: "
+                f"tick={tick}, observable={observable}, index={idx}, "
+                f"oc_val={float(oc_after[idx])}, karr_val={float(karr_after[idx])}, "
+                f"diff={float(diff[idx])}"
+            )
+E           Failed: L2a mismatch record: tick=0, observable=enzymes, index=0, oc_val=3.0, karr_val=0.0, diff=3.0
+
+tests/vivarium/l2_replay_common.py:552: Failed
+____ test_karr_ftsz_polymerization_l2_replay_identity_per_tick[rng_seed_0] _____
+
+rng_seed = 0
+
+    @pytest.mark.parametrize("rng_seed", [0], ids=["rng_seed_0"])
+    def test_karr_ftsz_polymerization_l2_replay_identity_per_tick(rng_seed: int) -> None:
+        trace_path = resolve_trace_path(_TRACE_PROCESS_NAME)
+        with h5py.File(trace_path, "r") as trace:
+            n_ticks = int(np.asarray(trace["metadata/n_ticks"][()]).reshape(-1)[0])
+            assert n_ticks == 100
+    
+            if "metadata" in trace and "rng_seed" in trace["metadata"]:
+                recorded_seed = int(np.asarray(trace["metadata/rng_seed"][()]).reshape(-1)[0])
+                assert int(rng_seed) == recorded_seed
+    
+            mutated_obs = tuple(o for o in _OBSERVABLES if o not in _PASS_THROUGH)
+            mutated_tick_counts = _audit_trace_mutated_ticks(trace, mutated_obs, n_ticks)
+            if sum(mutated_tick_counts.values()) == 0:
+                pytest.skip(
+                    "L2.1 N/A: no-op trace. Every mutated observable "
+                    f"({list(mutated_obs)}) is identical between states_before and "
+                    f"states_after across all {n_ticks} ticks. Per-observable "
+                    f"nonzero-delta counts: {mutated_tick_counts}."
+                )
+    
+            process = KarrFtsZPolymerizationProcess({"rng_seed": int(rng_seed)})
+            state_template = build_state_template(process)
+    
+            wids_by_observable: dict[str, list[str]] = {}
+            for observable in _OBSERVABLES:
+                karr_before = cell_vector(trace, "states_before", observable, 0)
+                explicit_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable)
+                wids_by_observable[observable] = infer_wids_for_observable(
+                    process,
+                    state_template,
+                    observable,
+                    karr_len=int(karr_before.shape[0]),
+                    explicit_attr=explicit_attr,
+                )
+    
+            for tick in range(n_ticks):
+                state = build_state_template(process)
+                before_vectors = {
+                    observable: cell_vector(trace, "states_before", observable, tick)
+                    for observable in _OBSERVABLES
+                }
+    
+                for observable in _OBSERVABLES:
+                    overlay_observable_into_state(
+                        process=process,
+                        state=state,
+                        observable=observable,
+                        vector=before_vectors[observable],
+                        wids=wids_by_observable[observable],
+                    )
+                refresh_allocator_views(process, state)
+    
+                update = process.next_update(1.0, state)
+                _apply_update(state, update, process)
+    
+                for observable in _OBSERVABLES:
+                    karr_after = cell_vector(trace, "states_after", observable, tick)
+                    expected_len = len(wids_by_observable[observable])
+                    if karr_after.shape[0] != expected_len:
+                        mapped_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable, "<heuristic>")
+                        pytest.fail(
+                            "L2a wid-length drift: "
+                            f"tick={tick}, observable={observable}, "
+                            f"karr_len={karr_after.shape[0]}, "
+                            f"mapped_len={expected_len}, mapped_attr={mapped_attr}"
+                        )
+    
+                    oc_after = project_observable_from_state(
+                        process=process,
+                        state=state,
+                        observable=observable,
+                        wids=wids_by_observable[observable],
+                        bound_enzymes_before=before_vectors.get("boundEnzymes"),
+                    )
+>                   _assert_identity_or_tolerance(
+                        tick=tick,
+                        observable=observable,
+                        oc_after=oc_after,
+                        karr_after=karr_after,
+                    )
+
+tests/vivarium/test_karr_ftsz_polymerization_l2_replay.py:170: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/vivarium/test_karr_ftsz_polymerization_l2_replay.py:87: in _assert_identity_or_tolerance
+    _assert_identity_or_tolerance_shared(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def assert_identity_or_tolerance(
+        *,
+        tick: int,
+        observable: str,
+        oc_after: np.ndarray,
+        karr_after: np.ndarray,
+    ) -> None:
+        if oc_after.shape != karr_after.shape:
+            pytest.fail(
+                "L2a mismatch record: "
+                f"tick={tick}, observable={observable}, index=-1, "
+                f"oc_shape={oc_after.shape}, karr_shape={karr_after.shape}"
+            )
+    
+        karr_int_part = np.rint(karr_after)
+        karr_snapped = False
+        if not np.array_equal(karr_int_part, karr_after):
+            karr_frac = np.abs(karr_after - karr_int_part)
+            if np.all(karr_frac < 1e-9):
+                # MATLAB trace serialization injects ~1e-11 float noise on integer-valued observables; snap-to-integer below 1e-9 preserves correctness while eating noise.
+                karr_after = karr_int_part.astype(np.float64)
+                karr_snapped = True
+            else:
+                bad = int(np.flatnonzero(karr_frac >= 1e-9)[0])
+                pytest.fail(
+                    "L2a oracle non-integral: "
+                    f"tick={tick}, observable={observable}, index={bad}, "
+                    f"karr_val={float(karr_after[bad])} (expected integral count)"
+                )
+    
+        oc_int_part = np.rint(oc_after)
+        if not np.array_equal(oc_int_part, oc_after):
+            oc_frac = np.abs(oc_after - oc_int_part)
+            if karr_snapped and np.all(oc_frac < 1e-9):
+                oc_after = oc_int_part.astype(np.float64)
+            else:
+                bad = int(np.flatnonzero(oc_int_part != oc_after)[0])
+                pytest.fail(
+                    "L2a oc non-integral: "
+                    f"tick={tick}, observable={observable}, index={bad}, "
+                    f"oc_val={float(oc_after[bad])} (expected integral count)"
+                )
+    
+        mismatch = oc_after != karr_after
+        diff = oc_after - karr_after
+        if np.any(mismatch):
+            idx = int(np.flatnonzero(mismatch)[0])
+>           pytest.fail(
+                "L2a mismatch record: "
+                f"tick={tick}, observable={observable}, index={idx}, "
+                f"oc_val={float(oc_after[idx])}, karr_val={float(karr_after[idx])}, "
+                f"diff={float(diff[idx])}"
+            )
+E           Failed: L2a mismatch record: tick=0, observable=enzymes, index=3, oc_val=1.0, karr_val=0.0, diff=1.0
+
+tests/vivarium/l2_replay_common.py:552: Failed
+__ test_karr_chromosome_condensation_l2_replay_identity_per_tick[rng_seed_0] ___
+
+rng_seed = 0
+
+    @pytest.mark.parametrize("rng_seed", [0], ids=["rng_seed_0"])
+    def test_karr_chromosome_condensation_l2_replay_identity_per_tick(rng_seed: int) -> None:
+        trace_path = resolve_trace_path(_TRACE_PROCESS_NAME)
+        with h5py.File(trace_path, "r") as trace:
+            n_ticks = int(np.asarray(trace["metadata/n_ticks"][()]).reshape(-1)[0])
+            assert n_ticks == 100
+    
+            if "metadata" in trace and "rng_seed" in trace["metadata"]:
+                recorded_seed = int(np.asarray(trace["metadata/rng_seed"][()]).reshape(-1)[0])
+                assert int(rng_seed) == recorded_seed
+    
+            mutated_obs = tuple(o for o in _OBSERVABLES if o not in _PASS_THROUGH)
+            mutated_tick_counts = _audit_trace_mutated_ticks(trace, mutated_obs, n_ticks)
+            if sum(mutated_tick_counts.values()) == 0:
+                pytest.skip(
+                    "L2.1 N/A: no-op trace. Every mutated observable "
+                    f"({list(mutated_obs)}) is identical between states_before and "
+                    f"states_after across all {n_ticks} ticks. Per-observable "
+                    f"nonzero-delta counts: {mutated_tick_counts}."
+                )
+    
+            process = KarrChromosomeCondensationProcess({"rng_seed": int(rng_seed)})
+            state_template = build_state_template(process)
+    
+            wids_by_observable: dict[str, list[str]] = {}
+            for observable in _OBSERVABLES:
+                karr_before = cell_vector(trace, "states_before", observable, 0)
+                explicit_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable)
+                wids_by_observable[observable] = infer_wids_for_observable(
+                    process,
+                    state_template,
+                    observable,
+                    karr_len=int(karr_before.shape[0]),
+                    explicit_attr=explicit_attr,
+                )
+    
+            for tick in range(n_ticks):
+                state = build_state_template(process)
+                before_vectors = {
+                    observable: cell_vector(trace, "states_before", observable, tick)
+                    for observable in _OBSERVABLES
+                }
+    
+                for observable in _OBSERVABLES:
+                    overlay_observable_into_state(
+                        process=process,
+                        state=state,
+                        observable=observable,
+                        vector=before_vectors[observable],
+                        wids=wids_by_observable[observable],
+                    )
+                refresh_allocator_views(process, state)
+    
+                update = process.next_update(1.0, state)
+                _apply_update(state, update, process)
+    
+                for observable in _OBSERVABLES:
+                    karr_after = cell_vector(trace, "states_after", observable, tick)
+                    expected_len = len(wids_by_observable[observable])
+                    if karr_after.shape[0] != expected_len:
+                        mapped_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable, "<heuristic>")
+                        pytest.fail(
+                            "L2a wid-length drift: "
+                            f"tick={tick}, observable={observable}, "
+                            f"karr_len={karr_after.shape[0]}, "
+                            f"mapped_len={expected_len}, mapped_attr={mapped_attr}"
+                        )
+    
+                    oc_after = project_observable_from_state(
+                        process=process,
+                        state=state,
+                        observable=observable,
+                        wids=wids_by_observable[observable],
+                        bound_enzymes_before=before_vectors.get("boundEnzymes"),
+                    )
+>                   _assert_identity_or_tolerance(
+                        tick=tick,
+                        observable=observable,
+                        oc_after=oc_after,
+                        karr_after=karr_after,
+                    )
+
+tests/vivarium/test_karr_chromosome_condensation_l2_replay.py:170: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/vivarium/test_karr_chromosome_condensation_l2_replay.py:87: in _assert_identity_or_tolerance
+    _assert_identity_or_tolerance_shared(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def assert_identity_or_tolerance(
+        *,
+        tick: int,
+        observable: str,
+        oc_after: np.ndarray,
+        karr_after: np.ndarray,
+    ) -> None:
+        if oc_after.shape != karr_after.shape:
+            pytest.fail(
+                "L2a mismatch record: "
+                f"tick={tick}, observable={observable}, index=-1, "
+                f"oc_shape={oc_after.shape}, karr_shape={karr_after.shape}"
+            )
+    
+        karr_int_part = np.rint(karr_after)
+        karr_snapped = False
+        if not np.array_equal(karr_int_part, karr_after):
+            karr_frac = np.abs(karr_after - karr_int_part)
+            if np.all(karr_frac < 1e-9):
+                # MATLAB trace serialization injects ~1e-11 float noise on integer-valued observables; snap-to-integer below 1e-9 preserves correctness while eating noise.
+                karr_after = karr_int_part.astype(np.float64)
+                karr_snapped = True
+            else:
+                bad = int(np.flatnonzero(karr_frac >= 1e-9)[0])
+                pytest.fail(
+                    "L2a oracle non-integral: "
+                    f"tick={tick}, observable={observable}, index={bad}, "
+                    f"karr_val={float(karr_after[bad])} (expected integral count)"
+                )
+    
+        oc_int_part = np.rint(oc_after)
+        if not np.array_equal(oc_int_part, oc_after):
+            oc_frac = np.abs(oc_after - oc_int_part)
+            if karr_snapped and np.all(oc_frac < 1e-9):
+                oc_after = oc_int_part.astype(np.float64)
+            else:
+                bad = int(np.flatnonzero(oc_int_part != oc_after)[0])
+                pytest.fail(
+                    "L2a oc non-integral: "
+                    f"tick={tick}, observable={observable}, index={bad}, "
+                    f"oc_val={float(oc_after[bad])} (expected integral count)"
+                )
+    
+        mismatch = oc_after != karr_after
+        diff = oc_after - karr_after
+        if np.any(mismatch):
+            idx = int(np.flatnonzero(mismatch)[0])
+>           pytest.fail(
+                "L2a mismatch record: "
+                f"tick={tick}, observable={observable}, index={idx}, "
+                f"oc_val={float(oc_after[idx])}, karr_val={float(karr_after[idx])}, "
+                f"diff={float(diff[idx])}"
+            )
+E           Failed: L2a mismatch record: tick=0, observable=enzymes, index=1, oc_val=3.0, karr_val=0.0, diff=3.0
+
+tests/vivarium/l2_replay_common.py:552: Failed
+________ test_karr_replication_l2_replay_identity_per_tick[rng_seed_0] _________
+
+rng_seed = 0
+
+    @pytest.mark.parametrize("rng_seed", [0], ids=["rng_seed_0"])
+    def test_karr_replication_l2_replay_identity_per_tick(rng_seed: int) -> None:
+        trace_path = resolve_trace_path(_TRACE_PROCESS_NAME)
+        with h5py.File(trace_path, "r") as trace:
+            n_ticks = int(np.asarray(trace["metadata/n_ticks"][()]).reshape(-1)[0])
+            assert n_ticks == 100
+    
+            if "metadata" in trace and "rng_seed" in trace["metadata"]:
+                recorded_seed = int(np.asarray(trace["metadata/rng_seed"][()]).reshape(-1)[0])
+                assert int(rng_seed) == recorded_seed
+    
+            mutated_obs = tuple(o for o in _OBSERVABLES if o not in _PASS_THROUGH)
+            mutated_tick_counts = _audit_trace_mutated_ticks(trace, mutated_obs, n_ticks)
+            if sum(mutated_tick_counts.values()) == 0:
+                pytest.skip(
+                    "L2.1 N/A: no-op trace. Every mutated observable "
+                    f"({list(mutated_obs)}) is identical between states_before and "
+                    f"states_after across all {n_ticks} ticks. Per-observable "
+                    f"nonzero-delta counts: {mutated_tick_counts}."
+                )
+    
+            process = KarrReplicationProcess({"rng_seed": int(rng_seed)})
+            state_template = build_state_template(process)
+    
+            wids_by_observable: dict[str, list[str]] = {}
+            for observable in _OBSERVABLES:
+                karr_before = cell_vector(trace, "states_before", observable, 0)
+                explicit_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable)
+                wids_by_observable[observable] = infer_wids_for_observable(
+                    process,
+                    state_template,
+                    observable,
+                    karr_len=int(karr_before.shape[0]),
+                    explicit_attr=explicit_attr,
+                )
+    
+            for tick in range(n_ticks):
+                state = build_state_template(process)
+                before_vectors = {
+                    observable: cell_vector(trace, "states_before", observable, tick)
+                    for observable in _OBSERVABLES
+                }
+    
+                for observable in _OBSERVABLES:
+                    overlay_observable_into_state(
+                        process=process,
+                        state=state,
+                        observable=observable,
+                        vector=before_vectors[observable],
+                        wids=wids_by_observable[observable],
+                    )
+                refresh_allocator_views(process, state)
+    
+                update = process.next_update(1.0, state)
+                _apply_update(state, update, process)
+    
+                for observable in _OBSERVABLES:
+                    karr_after = cell_vector(trace, "states_after", observable, tick)
+                    expected_len = len(wids_by_observable[observable])
+                    if karr_after.shape[0] != expected_len:
+                        mapped_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable, "<heuristic>")
+                        pytest.fail(
+                            "L2a wid-length drift: "
+                            f"tick={tick}, observable={observable}, "
+                            f"karr_len={karr_after.shape[0]}, "
+                            f"mapped_len={expected_len}, mapped_attr={mapped_attr}"
+                        )
+    
+                    oc_after = project_observable_from_state(
+                        process=process,
+                        state=state,
+                        observable=observable,
+                        wids=wids_by_observable[observable],
+                        bound_enzymes_before=before_vectors.get("boundEnzymes"),
+                    )
+>                   _assert_identity_or_tolerance(
+                        tick=tick,
+                        observable=observable,
+                        oc_after=oc_after,
+                        karr_after=karr_after,
+                    )
+
+tests/vivarium/test_karr_replication_l2_replay.py:170: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/vivarium/test_karr_replication_l2_replay.py:87: in _assert_identity_or_tolerance
+    _assert_identity_or_tolerance_shared(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def assert_identity_or_tolerance(
+        *,
+        tick: int,
+        observable: str,
+        oc_after: np.ndarray,
+        karr_after: np.ndarray,
+    ) -> None:
+        if oc_after.shape != karr_after.shape:
+            pytest.fail(
+                "L2a mismatch record: "
+                f"tick={tick}, observable={observable}, index=-1, "
+                f"oc_shape={oc_after.shape}, karr_shape={karr_after.shape}"
+            )
+    
+        karr_int_part = np.rint(karr_after)
+        karr_snapped = False
+        if not np.array_equal(karr_int_part, karr_after):
+            karr_frac = np.abs(karr_after - karr_int_part)
+            if np.all(karr_frac < 1e-9):
+                # MATLAB trace serialization injects ~1e-11 float noise on integer-valued observables; snap-to-integer below 1e-9 preserves correctness while eating noise.
+                karr_after = karr_int_part.astype(np.float64)
+                karr_snapped = True
+            else:
+                bad = int(np.flatnonzero(karr_frac >= 1e-9)[0])
+                pytest.fail(
+                    "L2a oracle non-integral: "
+                    f"tick={tick}, observable={observable}, index={bad}, "
+                    f"karr_val={float(karr_after[bad])} (expected integral count)"
+                )
+    
+        oc_int_part = np.rint(oc_after)
+        if not np.array_equal(oc_int_part, oc_after):
+            oc_frac = np.abs(oc_after - oc_int_part)
+            if karr_snapped and np.all(oc_frac < 1e-9):
+                oc_after = oc_int_part.astype(np.float64)
+            else:
+                bad = int(np.flatnonzero(oc_int_part != oc_after)[0])
+                pytest.fail(
+                    "L2a oc non-integral: "
+                    f"tick={tick}, observable={observable}, index={bad}, "
+                    f"oc_val={float(oc_after[bad])} (expected integral count)"
+                )
+    
+        mismatch = oc_after != karr_after
+        diff = oc_after - karr_after
+        if np.any(mismatch):
+            idx = int(np.flatnonzero(mismatch)[0])
+>           pytest.fail(
+                "L2a mismatch record: "
+                f"tick={tick}, observable={observable}, index={idx}, "
+                f"oc_val={float(oc_after[idx])}, karr_val={float(karr_after[idx])}, "
+                f"diff={float(diff[idx])}"
+            )
+E           Failed: L2a mismatch record: tick=0, observable=substrates, index=4, oc_val=695.0, karr_val=649.0, diff=46.0
+
+tests/vivarium/l2_replay_common.py:552: Failed
+___ test_karr_replication_initiation_l2_replay_identity_per_tick[rng_seed_0] ___
+
+rng_seed = 0
+
+    @pytest.mark.parametrize("rng_seed", [0], ids=["rng_seed_0"])
+    def test_karr_replication_initiation_l2_replay_identity_per_tick(rng_seed: int) -> None:
+        trace_path = resolve_trace_path(_TRACE_PROCESS_NAME)
+        with h5py.File(trace_path, "r") as trace:
+            n_ticks = int(np.asarray(trace["metadata/n_ticks"][()]).reshape(-1)[0])
+            assert n_ticks == 100
+    
+            if "metadata" in trace and "rng_seed" in trace["metadata"]:
+                recorded_seed = int(np.asarray(trace["metadata/rng_seed"][()]).reshape(-1)[0])
+                assert int(rng_seed) == recorded_seed
+    
+            mutated_obs = tuple(o for o in _OBSERVABLES if o not in _PASS_THROUGH)
+            mutated_tick_counts = _audit_trace_mutated_ticks(trace, mutated_obs, n_ticks)
+            if sum(mutated_tick_counts.values()) == 0:
+                pytest.skip(
+                    "L2.1 N/A: no-op trace. Every mutated observable "
+                    f"({list(mutated_obs)}) is identical between states_before and "
+                    f"states_after across all {n_ticks} ticks. Per-observable "
+                    f"nonzero-delta counts: {mutated_tick_counts}."
+                )
+    
+            process = KarrReplicationInitiationProcess({"rng_seed": int(rng_seed)})
+            state_template = build_state_template(process)
+    
+            wids_by_observable: dict[str, list[str]] = {}
+            for observable in _OBSERVABLES:
+                karr_before = cell_vector(trace, "states_before", observable, 0)
+                explicit_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable)
+                wids_by_observable[observable] = infer_wids_for_observable(
+                    process,
+                    state_template,
+                    observable,
+                    karr_len=int(karr_before.shape[0]),
+                    explicit_attr=explicit_attr,
+                )
+    
+            for tick in range(n_ticks):
+                state = build_state_template(process)
+                before_vectors = {
+                    observable: cell_vector(trace, "states_before", observable, tick)
+                    for observable in _OBSERVABLES
+                }
+    
+                for observable in _OBSERVABLES:
+                    overlay_observable_into_state(
+                        process=process,
+                        state=state,
+                        observable=observable,
+                        vector=before_vectors[observable],
+                        wids=wids_by_observable[observable],
+                    )
+                refresh_allocator_views(process, state)
+    
+                update = process.next_update(1.0, state)
+                _apply_update(state, update, process)
+    
+                for observable in _OBSERVABLES:
+                    karr_after = cell_vector(trace, "states_after", observable, tick)
+                    expected_len = len(wids_by_observable[observable])
+                    if karr_after.shape[0] != expected_len:
+                        mapped_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable, "<heuristic>")
+                        pytest.fail(
+                            "L2a wid-length drift: "
+                            f"tick={tick}, observable={observable}, "
+                            f"karr_len={karr_after.shape[0]}, "
+                            f"mapped_len={expected_len}, mapped_attr={mapped_attr}"
+                        )
+    
+                    if observable in _PASS_THROUGH:
+                        # Rule 7: Karr records this observable but OC's next_update
+                        # does not write into it. oc_after == karr_before by
+                        # construction; if Karr mutates the observable within the
+                        # tick the assertion will surface the discrepancy.
+                        oc_after = before_vectors[observable].astype(np.float64).reshape(-1)
+                    else:
+                        oc_after = project_observable_from_state(
+                            process=process,
+                            state=state,
+                            observable=observable,
+                            wids=wids_by_observable[observable],
+                            bound_enzymes_before=before_vectors.get("boundEnzymes"),
+                        )
+>                   _assert_identity_or_tolerance(
+                        tick=tick,
+                        observable=observable,
+                        oc_after=oc_after,
+                        karr_after=karr_after,
+                    )
+
+tests/vivarium/test_karr_replication_initiation_l2_replay.py:177: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/vivarium/test_karr_replication_initiation_l2_replay.py:87: in _assert_identity_or_tolerance
+    _assert_identity_or_tolerance_shared(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def assert_identity_or_tolerance(
+        *,
+        tick: int,
+        observable: str,
+        oc_after: np.ndarray,
+        karr_after: np.ndarray,
+    ) -> None:
+        if oc_after.shape != karr_after.shape:
+            pytest.fail(
+                "L2a mismatch record: "
+                f"tick={tick}, observable={observable}, index=-1, "
+                f"oc_shape={oc_after.shape}, karr_shape={karr_after.shape}"
+            )
+    
+        karr_int_part = np.rint(karr_after)
+        karr_snapped = False
+        if not np.array_equal(karr_int_part, karr_after):
+            karr_frac = np.abs(karr_after - karr_int_part)
+            if np.all(karr_frac < 1e-9):
+                # MATLAB trace serialization injects ~1e-11 float noise on integer-valued observables; snap-to-integer below 1e-9 preserves correctness while eating noise.
+                karr_after = karr_int_part.astype(np.float64)
+                karr_snapped = True
+            else:
+                bad = int(np.flatnonzero(karr_frac >= 1e-9)[0])
+                pytest.fail(
+                    "L2a oracle non-integral: "
+                    f"tick={tick}, observable={observable}, index={bad}, "
+                    f"karr_val={float(karr_after[bad])} (expected integral count)"
+                )
+    
+        oc_int_part = np.rint(oc_after)
+        if not np.array_equal(oc_int_part, oc_after):
+            oc_frac = np.abs(oc_after - oc_int_part)
+            if karr_snapped and np.all(oc_frac < 1e-9):
+                oc_after = oc_int_part.astype(np.float64)
+            else:
+                bad = int(np.flatnonzero(oc_int_part != oc_after)[0])
+                pytest.fail(
+                    "L2a oc non-integral: "
+                    f"tick={tick}, observable={observable}, index={bad}, "
+                    f"oc_val={float(oc_after[bad])} (expected integral count)"
+                )
+    
+        mismatch = oc_after != karr_after
+        diff = oc_after - karr_after
+        if np.any(mismatch):
+            idx = int(np.flatnonzero(mismatch)[0])
+>           pytest.fail(
+                "L2a mismatch record: "
+                f"tick={tick}, observable={observable}, index={idx}, "
+                f"oc_val={float(oc_after[idx])}, karr_val={float(karr_after[idx])}, "
+                f"diff={float(diff[idx])}"
+            )
+E           Failed: L2a mismatch record: tick=0, observable=enzymes, index=1, oc_val=2.0, karr_val=0.0, diff=2.0
+
+tests/vivarium/l2_replay_common.py:552: Failed
+_______ test_karr_transcription_l2_replay_identity_per_tick[rng_seed_0] ________
+
+rng_seed = 0
+
+    @pytest.mark.parametrize("rng_seed", [0], ids=["rng_seed_0"])
+    def test_karr_transcription_l2_replay_identity_per_tick(rng_seed: int) -> None:
+        trace_path = resolve_trace_path(_TRACE_PROCESS_NAME)
+        with h5py.File(trace_path, "r") as trace:
+            n_ticks = int(np.asarray(trace["metadata/n_ticks"][()]).reshape(-1)[0])
+            assert n_ticks == 100
+    
+            if "metadata" in trace and "rng_seed" in trace["metadata"]:
+                recorded_seed = int(np.asarray(trace["metadata/rng_seed"][()]).reshape(-1)[0])
+                assert int(rng_seed) == recorded_seed
+    
+            mutated_obs = tuple(o for o in _OBSERVABLES if o not in _PASS_THROUGH)
+            mutated_tick_counts = _audit_trace_mutated_ticks(trace, mutated_obs, n_ticks)
+            if sum(mutated_tick_counts.values()) == 0:
+                pytest.skip(
+                    "L2.1 N/A: no-op trace. Every mutated observable "
+                    f"({list(mutated_obs)}) is identical between states_before and "
+                    f"states_after across all {n_ticks} ticks. Per-observable "
+                    f"nonzero-delta counts: {mutated_tick_counts}."
+                )
+    
+            process = KarrTranscriptionProcess({"rng_seed": int(rng_seed)})
+            state_template = build_state_template(process)
+    
+            wids_by_observable: dict[str, list[str]] = {}
+            for observable in _OBSERVABLES:
+                karr_before = cell_vector(trace, "states_before", observable, 0)
+                explicit_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable)
+                wids_by_observable[observable] = infer_wids_for_observable(
+                    process,
+                    state_template,
+                    observable,
+                    karr_len=int(karr_before.shape[0]),
+                    explicit_attr=explicit_attr,
+                )
+    
+            for tick in range(n_ticks):
+                state = build_state_template(process)
+                before_vectors = {
+                    observable: project_karr_vector(
+                        process,
+                        observable,
+                        cell_vector(trace, "states_before", observable, tick),
+                        index_projection_literal=_INDEX_PROJECTION_LITERAL,
+                    )
+                    for observable in _OBSERVABLES
+                }
+    
+                for observable in _OBSERVABLES:
+                    overlay_observable_into_state(
+                        process=process,
+                        state=state,
+                        observable=observable,
+                        vector=before_vectors[observable],
+                        wids=wids_by_observable[observable],
+                    )
+                refresh_allocator_views(process, state)
+    
+                update = process.next_update(1.0, state)
+                _apply_update(state, update, process)
+    
+                for observable in _OBSERVABLES:
+                    karr_after = project_karr_vector(
+                        process,
+                        observable,
+                        cell_vector(trace, "states_after", observable, tick),
+                        index_projection_literal=_INDEX_PROJECTION_LITERAL,
+                    )
+                    expected_len = len(wids_by_observable[observable])
+                    if karr_after.shape[0] != expected_len:
+                        mapped_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable, "<heuristic>")
+                        pytest.fail(
+                            "L2a wid-length drift: "
+                            f"tick={tick}, observable={observable}, "
+                            f"karr_len={karr_after.shape[0]}, "
+                            f"mapped_len={expected_len}, mapped_attr={mapped_attr}"
+                        )
+    
+                    oc_after = project_observable_from_state(
+                        process=process,
+                        state=state,
+                        observable=observable,
+                        wids=wids_by_observable[observable],
+                        bound_enzymes_before=before_vectors.get("boundEnzymes"),
+                    )
+>                   _assert_identity_or_tolerance(
+                        tick=tick,
+                        observable=observable,
+                        oc_after=oc_after,
+                        karr_after=karr_after,
+                    )
+
+tests/vivarium/test_karr_transcription_l2_replay.py:185: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/vivarium/test_karr_transcription_l2_replay.py:92: in _assert_identity_or_tolerance
+    _assert_identity_or_tolerance_shared(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def assert_identity_or_tolerance(
+        *,
+        tick: int,
+        observable: str,
+        oc_after: np.ndarray,
+        karr_after: np.ndarray,
+    ) -> None:
+        if oc_after.shape != karr_after.shape:
+            pytest.fail(
+                "L2a mismatch record: "
+                f"tick={tick}, observable={observable}, index=-1, "
+                f"oc_shape={oc_after.shape}, karr_shape={karr_after.shape}"
+            )
+    
+        karr_int_part = np.rint(karr_after)
+        karr_snapped = False
+        if not np.array_equal(karr_int_part, karr_after):
+            karr_frac = np.abs(karr_after - karr_int_part)
+            if np.all(karr_frac < 1e-9):
+                # MATLAB trace serialization injects ~1e-11 float noise on integer-valued observables; snap-to-integer below 1e-9 preserves correctness while eating noise.
+                karr_after = karr_int_part.astype(np.float64)
+                karr_snapped = True
+            else:
+                bad = int(np.flatnonzero(karr_frac >= 1e-9)[0])
+                pytest.fail(
+                    "L2a oracle non-integral: "
+                    f"tick={tick}, observable={observable}, index={bad}, "
+                    f"karr_val={float(karr_after[bad])} (expected integral count)"
+                )
+    
+        oc_int_part = np.rint(oc_after)
+        if not np.array_equal(oc_int_part, oc_after):
+            oc_frac = np.abs(oc_after - oc_int_part)
+            if karr_snapped and np.all(oc_frac < 1e-9):
+                oc_after = oc_int_part.astype(np.float64)
+            else:
+                bad = int(np.flatnonzero(oc_int_part != oc_after)[0])
+                pytest.fail(
+                    "L2a oc non-integral: "
+                    f"tick={tick}, observable={observable}, index={bad}, "
+                    f"oc_val={float(oc_after[bad])} (expected integral count)"
+                )
+    
+        mismatch = oc_after != karr_after
+        diff = oc_after - karr_after
+        if np.any(mismatch):
+            idx = int(np.flatnonzero(mismatch)[0])
+>           pytest.fail(
+                "L2a mismatch record: "
+                f"tick={tick}, observable={observable}, index={idx}, "
+                f"oc_val={float(oc_after[idx])}, karr_val={float(karr_after[idx])}, "
+                f"diff={float(diff[idx])}"
+            )
+E           Failed: L2a mismatch record: tick=0, observable=substrates, index=0, oc_val=13879.0, karr_val=13906.0, diff=-27.0
+
+tests/vivarium/l2_replay_common.py:552: Failed
+________ test_karr_translation_l2_replay_identity_per_tick[rng_seed_0] _________
+
+rng_seed = 0
+
+    @pytest.mark.parametrize("rng_seed", [0], ids=["rng_seed_0"])
+    def test_karr_translation_l2_replay_identity_per_tick(rng_seed: int) -> None:
+        trace_path = resolve_trace_path(_TRACE_PROCESS_NAME)
+        with h5py.File(trace_path, "r") as trace:
+            n_ticks = int(np.asarray(trace["metadata/n_ticks"][()]).reshape(-1)[0])
+            assert n_ticks == 100
+    
+            if "metadata" in trace and "rng_seed" in trace["metadata"]:
+                recorded_seed = int(np.asarray(trace["metadata/rng_seed"][()]).reshape(-1)[0])
+                assert int(rng_seed) == recorded_seed
+    
+            mutated_obs = tuple(o for o in _OBSERVABLES if o not in _PASS_THROUGH)
+            mutated_tick_counts = _audit_trace_mutated_ticks(trace, mutated_obs, n_ticks)
+            if sum(mutated_tick_counts.values()) == 0:
+                pytest.skip(
+                    "L2.1 N/A: no-op trace. Every mutated observable "
+                    f"({list(mutated_obs)}) is identical between states_before and "
+                    f"states_after across all {n_ticks} ticks. Per-observable "
+                    f"nonzero-delta counts: {mutated_tick_counts}."
+                )
+    
+            process = KarrTranslationV3Process({"rng_seed": int(rng_seed)})
+            state_template = build_state_template(process)
+    
+            wids_by_observable: dict[str, list[str]] = {}
+            for observable in _OBSERVABLES:
+                karr_before = cell_vector(trace, "states_before", observable, 0)
+                explicit_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable)
+                wids_by_observable[observable] = infer_wids_for_observable(
+                    process,
+                    state_template,
+                    observable,
+                    karr_len=int(karr_before.shape[0]),
+                    explicit_attr=explicit_attr,
+                )
+    
+            for tick in range(n_ticks):
+                state = build_state_template(process)
+                before_vectors = {
+                    observable: project_karr_vector(
+                        process,
+                        observable,
+                        cell_vector(trace, "states_before", observable, tick),
+                        index_projection_literal=_INDEX_PROJECTION_LITERAL,
+                    )
+                    for observable in _OBSERVABLES
+                }
+    
+                for observable in _OBSERVABLES:
+                    overlay_observable_into_state(
+                        process=process,
+                        state=state,
+                        observable=observable,
+                        vector=before_vectors[observable],
+                        wids=wids_by_observable[observable],
+                    )
+                refresh_allocator_views(process, state)
+    
+                update = process.next_update(1.0, state)
+                _apply_update(state, update, process)
+    
+                for observable in _OBSERVABLES:
+                    karr_after = project_karr_vector(
+                        process,
+                        observable,
+                        cell_vector(trace, "states_after", observable, tick),
+                        index_projection_literal=_INDEX_PROJECTION_LITERAL,
+                    )
+                    expected_len = len(wids_by_observable[observable])
+                    if karr_after.shape[0] != expected_len:
+                        mapped_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable, "<heuristic>")
+                        pytest.fail(
+                            "L2a wid-length drift: "
+                            f"tick={tick}, observable={observable}, "
+                            f"karr_len={karr_after.shape[0]}, "
+                            f"mapped_len={expected_len}, mapped_attr={mapped_attr}"
+                        )
+    
+                    oc_after = project_observable_from_state(
+                        process=process,
+                        state=state,
+                        observable=observable,
+                        wids=wids_by_observable[observable],
+                        bound_enzymes_before=before_vectors.get("boundEnzymes"),
+                    )
+>                   _assert_identity_or_tolerance(
+                        tick=tick,
+                        observable=observable,
+                        oc_after=oc_after,
+                        karr_after=karr_after,
+                    )
+
+tests/vivarium/test_karr_translation_l2_replay.py:185: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/vivarium/test_karr_translation_l2_replay.py:92: in _assert_identity_or_tolerance
+    _assert_identity_or_tolerance_shared(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def assert_identity_or_tolerance(
+        *,
+        tick: int,
+        observable: str,
+        oc_after: np.ndarray,
+        karr_after: np.ndarray,
+    ) -> None:
+        if oc_after.shape != karr_after.shape:
+            pytest.fail(
+                "L2a mismatch record: "
+                f"tick={tick}, observable={observable}, index=-1, "
+                f"oc_shape={oc_after.shape}, karr_shape={karr_after.shape}"
+            )
+    
+        karr_int_part = np.rint(karr_after)
+        karr_snapped = False
+        if not np.array_equal(karr_int_part, karr_after):
+            karr_frac = np.abs(karr_after - karr_int_part)
+            if np.all(karr_frac < 1e-9):
+                # MATLAB trace serialization injects ~1e-11 float noise on integer-valued observables; snap-to-integer below 1e-9 preserves correctness while eating noise.
+                karr_after = karr_int_part.astype(np.float64)
+                karr_snapped = True
+            else:
+                bad = int(np.flatnonzero(karr_frac >= 1e-9)[0])
+                pytest.fail(
+                    "L2a oracle non-integral: "
+                    f"tick={tick}, observable={observable}, index={bad}, "
+                    f"karr_val={float(karr_after[bad])} (expected integral count)"
+                )
+    
+        oc_int_part = np.rint(oc_after)
+        if not np.array_equal(oc_int_part, oc_after):
+            oc_frac = np.abs(oc_after - oc_int_part)
+            if karr_snapped and np.all(oc_frac < 1e-9):
+                oc_after = oc_int_part.astype(np.float64)
+            else:
+                bad = int(np.flatnonzero(oc_int_part != oc_after)[0])
+                pytest.fail(
+                    "L2a oc non-integral: "
+                    f"tick={tick}, observable={observable}, index={bad}, "
+                    f"oc_val={float(oc_after[bad])} (expected integral count)"
+                )
+    
+        mismatch = oc_after != karr_after
+        diff = oc_after - karr_after
+        if np.any(mismatch):
+            idx = int(np.flatnonzero(mismatch)[0])
+>           pytest.fail(
+                "L2a mismatch record: "
+                f"tick={tick}, observable={observable}, index={idx}, "
+                f"oc_val={float(oc_after[idx])}, karr_val={float(karr_after[idx])}, "
+                f"diff={float(diff[idx])}"
+            )
+E           Failed: L2a mismatch record: tick=0, observable=enzymes, index=2, oc_val=206.0, karr_val=193.0, diff=13.0
+
+tests/vivarium/l2_replay_common.py:552: Failed
+_ test_karr_transcriptional_regulation_l2_replay_identity_per_tick[rng_seed_0] _
+
+rng_seed = 0
+
+    @pytest.mark.parametrize("rng_seed", [0], ids=["rng_seed_0"])
+    def test_karr_transcriptional_regulation_l2_replay_identity_per_tick(rng_seed: int) -> None:
+        trace_path = resolve_trace_path(_TRACE_PROCESS_NAME)
+        with h5py.File(trace_path, "r") as trace:
+            n_ticks = int(np.asarray(trace["metadata/n_ticks"][()]).reshape(-1)[0])
+            assert n_ticks == 100
+    
+            if "metadata" in trace and "rng_seed" in trace["metadata"]:
+                recorded_seed = int(np.asarray(trace["metadata/rng_seed"][()]).reshape(-1)[0])
+                assert int(rng_seed) == recorded_seed
+    
+            # Quiet-process guard: do not skip. Karr trace may be no-op across all
+            # mutated observables, but we still want to assert OC's next_update is
+            # also no-op (else OC silently drifting would never be caught).
+            mutated_obs = tuple(o for o in _OBSERVABLES if o not in _PASS_THROUGH)
+            _ = _audit_trace_mutated_ticks(trace, mutated_obs, n_ticks)
+    
+            process = KarrTranscriptionalRegulationProcess({"rng_seed": int(rng_seed)})
+            state_template = build_state_template(process)
+    
+            wids_by_observable: dict[str, list[str]] = {}
+            for observable in _OBSERVABLES:
+                karr_before = cell_vector(trace, "states_before", observable, 0)
+                explicit_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable)
+                wids_by_observable[observable] = infer_wids_for_observable(
+                    process,
+                    state_template,
+                    observable,
+                    karr_len=int(karr_before.shape[0]),
+                    explicit_attr=explicit_attr,
+                )
+    
+            for tick in range(n_ticks):
+                state = build_state_template(process)
+                before_vectors = {
+                    observable: cell_vector(trace, "states_before", observable, tick)
+                    for observable in _OBSERVABLES
+                }
+    
+                for observable in _OBSERVABLES:
+                    overlay_observable_into_state(
+                        process=process,
+                        state=state,
+                        observable=observable,
+                        vector=before_vectors[observable],
+                        wids=wids_by_observable[observable],
+                    )
+                refresh_allocator_views(process, state)
+    
+                update = process.next_update(1.0, state)
+                _apply_update(state, update, process)
+    
+                for observable in _OBSERVABLES:
+                    karr_after = cell_vector(trace, "states_after", observable, tick)
+                    expected_len = len(wids_by_observable[observable])
+                    if karr_after.shape[0] != expected_len:
+                        mapped_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable, "<heuristic>")
+                        pytest.fail(
+                            "L2a wid-length drift: "
+                            f"tick={tick}, observable={observable}, "
+                            f"karr_len={karr_after.shape[0]}, "
+                            f"mapped_len={expected_len}, mapped_attr={mapped_attr}"
+                        )
+    
+                    oc_after = project_observable_from_state(
+                        process=process,
+                        state=state,
+                        observable=observable,
+                        wids=wids_by_observable[observable],
+                        bound_enzymes_before=before_vectors.get("boundEnzymes"),
+                    )
+>                   _assert_identity_or_tolerance(
+                        tick=tick,
+                        observable=observable,
+                        oc_after=oc_after,
+                        karr_after=karr_after,
+                    )
+
+tests/vivarium/test_karr_transcriptional_regulation_l2_replay.py:166: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/vivarium/test_karr_transcriptional_regulation_l2_replay.py:87: in _assert_identity_or_tolerance
+    _assert_identity_or_tolerance_shared(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def assert_identity_or_tolerance(
+        *,
+        tick: int,
+        observable: str,
+        oc_after: np.ndarray,
+        karr_after: np.ndarray,
+    ) -> None:
+        if oc_after.shape != karr_after.shape:
+            pytest.fail(
+                "L2a mismatch record: "
+                f"tick={tick}, observable={observable}, index=-1, "
+                f"oc_shape={oc_after.shape}, karr_shape={karr_after.shape}"
+            )
+    
+        karr_int_part = np.rint(karr_after)
+        karr_snapped = False
+        if not np.array_equal(karr_int_part, karr_after):
+            karr_frac = np.abs(karr_after - karr_int_part)
+            if np.all(karr_frac < 1e-9):
+                # MATLAB trace serialization injects ~1e-11 float noise on integer-valued observables; snap-to-integer below 1e-9 preserves correctness while eating noise.
+                karr_after = karr_int_part.astype(np.float64)
+                karr_snapped = True
+            else:
+                bad = int(np.flatnonzero(karr_frac >= 1e-9)[0])
+                pytest.fail(
+                    "L2a oracle non-integral: "
+                    f"tick={tick}, observable={observable}, index={bad}, "
+                    f"karr_val={float(karr_after[bad])} (expected integral count)"
+                )
+    
+        oc_int_part = np.rint(oc_after)
+        if not np.array_equal(oc_int_part, oc_after):
+            oc_frac = np.abs(oc_after - oc_int_part)
+            if karr_snapped and np.all(oc_frac < 1e-9):
+                oc_after = oc_int_part.astype(np.float64)
+            else:
+                bad = int(np.flatnonzero(oc_int_part != oc_after)[0])
+                pytest.fail(
+                    "L2a oc non-integral: "
+                    f"tick={tick}, observable={observable}, index={bad}, "
+                    f"oc_val={float(oc_after[bad])} (expected integral count)"
+                )
+    
+        mismatch = oc_after != karr_after
+        diff = oc_after - karr_after
+        if np.any(mismatch):
+            idx = int(np.flatnonzero(mismatch)[0])
+>           pytest.fail(
+                "L2a mismatch record: "
+                f"tick={tick}, observable={observable}, index={idx}, "
+                f"oc_val={float(oc_after[idx])}, karr_val={float(karr_after[idx])}, "
+                f"diff={float(diff[idx])}"
+            )
+E           Failed: L2a mismatch record: tick=15, observable=enzymes, index=3, oc_val=1.0, karr_val=0.0, diff=1.0
+
+tests/vivarium/l2_replay_common.py:552: Failed
+=========================== short test summary info ============================
+FAILED tests/vivarium/test_karr_dna_supercoiling_l2_replay.py::test_karr_dna_supercoiling_l2_replay_identity_per_tick[rng_seed_0]
+FAILED tests/vivarium/test_karr_ftsz_polymerization_l2_replay.py::test_karr_ftsz_polymerization_l2_replay_identity_per_tick[rng_seed_0]
+FAILED tests/vivarium/test_karr_chromosome_condensation_l2_replay.py::test_karr_chromosome_condensation_l2_replay_identity_per_tick[rng_seed_0]
+FAILED tests/vivarium/test_karr_replication_l2_replay.py::test_karr_replication_l2_replay_identity_per_tick[rng_seed_0]
+FAILED tests/vivarium/test_karr_replication_initiation_l2_replay.py::test_karr_replication_initiation_l2_replay_identity_per_tick[rng_seed_0]
+FAILED tests/vivarium/test_karr_transcription_l2_replay.py::test_karr_transcription_l2_replay_identity_per_tick[rng_seed_0]
+FAILED tests/vivarium/test_karr_translation_l2_replay.py::test_karr_translation_l2_replay_identity_per_tick[rng_seed_0]
+FAILED tests/vivarium/test_karr_transcriptional_regulation_l2_replay.py::test_karr_transcriptional_regulation_l2_replay_identity_per_tick[rng_seed_0]
+============================== 8 failed in 48.29s ==============================
