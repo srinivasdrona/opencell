@@ -123,6 +123,7 @@ class KarrFtsZPolymerizationProcess(Process):
 
         self.enzyme_index_ftsz_gdp = int(_coerce_scalar(fx.enzymeIndexs_FtsZ_GDP)) - 1
         self.enzyme_index_ftsz_gtp = int(_coerce_scalar(fx.enzymeIndexs_FtsZ_GTP)) - 1
+        self.enzyme_index_ftsz = int(_coerce_scalar(fx.enzymeIndexs_FtsZ)) - 1
         self.enzyme_index_ftsz_dimer = int(_coerce_scalar(fx.enzymeIndexs_FtsZ_dimer)) - 1
         self.enzyme_index_ftsz_9mer = int(_coerce_scalar(fx.enzymeIndexs_FtsZ_9mer)) - 1
 
@@ -245,17 +246,18 @@ class KarrFtsZPolymerizationProcess(Process):
         idx_gdp = self.enzyme_index_ftsz_gdp
         idx_gtp = self.enzyme_index_ftsz_gtp
 
-        # 1) GDP -> GTP activation (allocation-bounded GTP consumption).
-        n_gdp = int(max(0, s[idx_gdp]))
+        # 1) Inactive -> GTP activation (allocation-bounded GTP consumption).
+        idx_ftsz = self.enzyme_index_ftsz
+        n_ftsz = int(max(0, s[idx_ftsz]))
         activate_expected = (
             self.activation_fwd
-            * float(n_gdp)
+            * float(n_ftsz)
             * dt
             / float(self.parameters["activation_rate_scale"])
         )
-        n_activate = min(self._event_poisson(activate_expected), n_gdp, gtp_budget)
+        n_activate = min(self._event_poisson(activate_expected), n_ftsz, gtp_budget)
         if n_activate > 0:
-            s[idx_gdp] -= n_activate
+            s[idx_ftsz] -= n_activate
             s[idx_gtp] += n_activate
             substrate_delta[self.gtp_wid] = substrate_delta.get(self.gtp_wid, 0) - n_activate
             gtp_budget -= n_activate
@@ -271,7 +273,7 @@ class KarrFtsZPolymerizationProcess(Process):
         n_deactivate = min(self._event_poisson(deactivate_expected), n_gtp)
         if n_deactivate > 0:
             s[idx_gtp] -= n_deactivate
-            s[idx_gdp] += n_deactivate
+            s[idx_ftsz] += n_deactivate
 
         # 3) Nucleation forward/reverse between monomers and dimers.
         n_gtp = int(max(0, s[idx_gtp]))
