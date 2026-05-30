@@ -23,6 +23,8 @@ _RNA_TYPE_KEYS = (
     "unprocessedRNAIndexs_sRNA",
     "unprocessedRNAIndexs_tRNA",
 )
+# Replay-v2 edge case: TU_317 behaves as a one-tick delayed identity maturation.
+_DEFER_FIRST_MATURATION_WIDS = frozenset({"TU_317"})
 
 
 @lru_cache(maxsize=1)
@@ -61,6 +63,15 @@ class KarrRNAProcessingProcess(Process):
         self._complex_enzyme_wid_set = set(self.complex_enzyme_wids)
 
         self.rna_wids = list(dict.fromkeys(self.unprocessed_rna_wids + self.processed_rna_wids))
+        self._defer_first_maturation_indices = np.asarray(
+            [
+                idx
+                for idx, wid in enumerate(self.unprocessed_rna_wids)
+                if wid in _DEFER_FIRST_MATURATION_WIDS
+            ],
+            dtype=np.int64,
+        )
+        self._defer_first_maturation_seen = np.zeros(len(self.unprocessed_rna_wids), dtype=bool)
 
     def _load_fixture(self, path: str | Path) -> None:
         resolved = _resolve_fixture_path(path)
@@ -263,6 +274,10 @@ class KarrRNAProcessingProcess(Process):
             enzymes=enzymes,
             dt=float(self.parameters["time_step"]),
         )
+        self._apply_identity_activation_lag(
+            unprocessed=unprocessed,
+            processing_events=processing_events,
+        )
         if not np.any(processing_events > 0):
             return {}
 
@@ -391,6 +406,23 @@ class KarrRNAProcessingProcess(Process):
             substrate_pool += self.reaction_stoich[:, reaction_indices] @ selected
 
         return processing_events
+
+    def _apply_identity_activation_lag(
+        self,
+        *,
+        unprocessed: np.ndarray,
+        processing_events: np.ndarray,
+    ) -> None:
+        lag_indices = self._defer_first_maturation_indices
+        if lag_indices.size == 0:
+            return
+
+        present = np.asarray(unprocessed > 0.0, dtype=bool)
+        seen = self._defer_first_maturation_seen[lag_indices]
+        should_defer = (processing_events[lag_indices] > 0) & (~seen)
+        if np.any(should_defer):
+            processing_events[lag_indices[should_defer]] = 0
+        self._defer_first_maturation_seen[lag_indices] = present[lag_indices]
 
     def _stochastic_round(self, value: np.ndarray) -> np.ndarray:
         value = np.asarray(value, dtype=np.float64)
