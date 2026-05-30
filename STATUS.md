@@ -1,33 +1,47 @@
-# Replication L2.1 fix status (v2 fanout)
+# Phase F schema-extract status
 
-## Outcome
-- Target test: RED-shifted
-- Oracle-leak lint: clean
-- Regression gate (3 GREEN): 3/3 pass
-- Commit: <pending>
+## Round-trip validator result
+- Run command: `/mnt/e/opencell/.venv-wsl/bin/python scripts/validate_per_process_schema.py`
+- Output: `28/28 round-trip pass`
+- Failing processes: none
 
-## Residue trajectory
-- Before: L2a mismatch record: tick=0, observable=substrates, index=4, oc_val=695.0, karr_val=649.0, diff=46.0
-- After: L2a mismatch record: tick=1, observable=substrates, index=0, oc_val=30265.0, karr_val=30267.0, diff=-2.0
+## Probe cross-check
+- bound_mutated_ticks per process matches PROBE_BOUND_MUTATIONS.json: probe file not found (`C:/Users/sdrona/.copilot/session-state/5c51d44b-5a9f-4b23-85ff-0fddaadf2212/files/PROBE_BOUND_MUTATIONS.json`)
 
-## What changed in source
-- File: opencell/vivarium/karr_replication.py
-- Lines changed: ~190
-- Mechanism (1-2 sentences, explicit about which deltas come from biology vs trace_hint)
-  Added a replay mode that emits `boundEnzymes` and `enzymes` channel deltas from `trace_hint` (`*_next - *_before`) without reading oracle files in process source. Substrate deltas are biology-driven from fixture kinetics: initiation/helicase ATP hydrolysis (+ADP/PI/H), polymerization dNTP consumption (+PPI), and ligase NAD coupling (+NMN/AMP/H), bounded by available pools.
+## TOA hand-audit (Rule C)
+- substrates.count: `8` (from MATLAB `TerminalOrganelleAssembly.m` line `127`, `substrateWholeCellModelIDs__`)
+- substrates.shape: `[2, 8]` (from trace HDF5 observable `states_after/substrates`, first tick cell matrix shape)
+- compartment_wids: `["incorporated", "unincorporated"]` (extraction method: trace axis inference + process-local `compartmentIndexs_*` constants)
+- Match expected (2,8): yes (shape matches `(2, 8)` exactly)
 
-## Trace-hint usage
-- Used for: both
-- WIDs read from hint: REPLISOME, DNA_POLYMERASE_2CORE_BETA_CLAMP_GAMMA_COMPLEX_PRIMASE, DNA_POLYMERASE_CORE_BETA_CLAMP_GAMMA_COMPLEX, DNA_POLYMERASE_CORE_BETA_CLAMP_PRIMASE, DNA_POLYMERASE_CORE, DNA_POLYMERASE_GAMMA_COMPLEX, MG_001_MONOMER, MG_001_DIMER, MG_094_HEXAMER, MG_254_MONOMER, MG_250_MONOMER, MG_091_TETRAMER, MG_091_OCTAMER
-- Biology-driven deltas: ATP, H2O, ADP, PI, H, DATP, DCTP, DGTP, DTTP, PPI, NAD, NMN, AMP
+## Hard-rule compliance
+- extractor source contains "opencell/vivarium/karr_": `0` matches (`rg -n "opencell/vivarium/karr_|karr_translation" scripts/extract_per_process_schema.py`)
+- karr_*.py modified: `0` (must be 0)
+- tests/ modified: `0`
+- hand-edited TOMLs: `0` (all 28 TOMLs start with autogen header)
+- TOMLs with EXTRACTOR_FAILED markers:
+  - `DNADamage`: `substrates.compartment_wids`, `enzymes.free.wids`, `enzymes.free.count`, `enzymes.bound.wids`
+  - `DNARepair`: `substrates.wids`, `substrates.count`, `substrates.compartment_wids`, `enzymes.free.wids`, `enzymes.free.count`, `enzymes.bound.wids`
+  - `HostInteraction`: `substrates.wids`, `substrates.count`, `substrates.compartments`, `substrates.compartment_wids`
+  - `MacromolecularComplexation`: `substrates.wids`, `substrates.count`, `substrates.compartment_wids`, `enzymes.free.wids`, `enzymes.free.count`, `enzymes.bound.wids`
+  - `Metabolism`: `substrates.wids`, `substrates.count`, `substrates.compartment_wids`, `enzymes.free.wids`, `enzymes.free.count`, `enzymes.bound.wids`
+  - `ProteinActivation`: `substrates.wids`, `substrates.count`, `substrates.compartment_wids`, `enzymes.free.wids`, `enzymes.free.count`, `enzymes.bound.wids`
+  - `ProteinDecay`: `substrates.compartment_wids`
+  - `ProteinFolding`: `substrates.compartment_wids`
+  - `ProteinModification`: `substrates.wids`, `substrates.count`, `substrates.compartment_wids`, `enzymes.free.wids`, `enzymes.free.count`, `enzymes.bound.wids`
+  - `RNADecay`: `substrates.wids`, `substrates.count`, `substrates.compartment_wids`
+  - `RNAModification`: `substrates.wids`, `substrates.count`, `substrates.compartment_wids`, `enzymes.free.wids`, `enzymes.free.count`, `enzymes.bound.wids`
+  - `TerminalOrganelleAssembly`: `enzymes.free.wids`, `enzymes.free.count`, `enzymes.bound.wids`
+  - `TranscriptionalRegulation`: `substrates.wids`, `substrates.count`, `substrates.compartments`, `substrates.compartment_wids`, `enzymes.free.wids`, `enzymes.free.count`, `enzymes.bound.wids`
+  - `tRNAAminoacylation`: `substrates.wids`, `substrates.count`, `substrates.compartment_wids`, `enzymes.free.wids`, `enzymes.free.count`, `enzymes.bound.wids`
+  - Note: `extractor_diagnostics.axis_inference.local_compartment_indexs` is diagnostic-only and frequently reports `EXTRACTOR_FAILED` when no `compartmentIndexs_*` constants exist in MATLAB source.
 
-## Self-attestation
-- process_source_files_modified: 1
-- harness_file_modified: 0
-- per_process_test_files_modified: 0
-- oracle_leak_lint_passed: true
-- regression_3_passed: 3/3
-- tests_run: 43
-- commits_made: 0
-- agents_spawned: 0
-- imported_h5py_in_process_source: false
+## Python-drift report summary (informational)
+- Total processes audited: `28`
+- Total drifts found: `224`
+- Top 5 drifts by severity:
+  - `ChromosomeCondensation` `process.class`: schema=`ChromosomeCondensation`, python=`KarrChromosomeCondensationProcess` (`value_mismatch`)
+  - `ChromosomeSegregation` `process.class`: schema=`ChromosomeSegregation`, python=`KarrChromosomeSegregationProcess` (`value_mismatch`)
+  - `Cytokinesis` `process.class`: schema=`Cytokinesis`, python=`KarrCytokinesisProcess` (`value_mismatch`)
+  - `DNADamage` `enzymes.free.count`: schema=`{EXTRACTOR_FAILED: enzymeWholeCellModelIDs assignment not found}`, python=`0` (`value_mismatch`)
+  - `DNADamage` `enzymes.free.wids`: schema=`{EXTRACTOR_FAILED: enzymeWholeCellModelIDs assignment not found}`, python=`[]` (`value_mismatch`)
