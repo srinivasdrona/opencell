@@ -1,0 +1,29 @@
+process,ready_for_L2,G1_fixture,G1_path,G1_size_bytes,G2_replay_test,G2_path,G2_notes,structural,structural_notes
+karr_metabolism,NO,PASS,data\karr_fixtures\per_process\Metabolism.npz,69768,FAIL,,no replay test found,PASS,next_update + ports_schema declared
+karr_transcription,YES,PASS,data\karr_fixtures\per_process\Transcription.npz,31200,PASS,tests\swarm\class_a_v3\test_Transcription_matches_karr.py,heuristic: 1 file(s) reference process+replay+import,PASS,next_update + ports_schema declared
+karr_translation,YES,PASS,data\karr_fixtures\per_process\Translation.npz,24516,PASS,tests\integration\test_tx_tl_v3_init_parity.py,heuristic: 2 file(s) reference process+replay+import,PASS,next_update + ports_schema declared
+karr_transcriptional_regulation,NO,PASS,data\karr_fixtures\per_process\TranscriptionalRegulation.npz,25601,FAIL,,no replay test found,PASS,next_update + ports_schema declared
+karr_rna_decay,NO,PASS,data\karr_fixtures\per_process\RNADecay.npz,33176,FAIL,,no replay test found,PASS,next_update + ports_schema declared
+karr_rna_processing,NO,PASS,data\karr_fixtures\per_process\RNAProcessing.npz,25383,FAIL,,no replay test found,PASS,next_update + ports_schema declared
+karr_rna_modification,NO,PASS,data\karr_fixtures\per_process\RNAModification.npz,29301,FAIL,tests\unit\test_karr_rna_modification_strict_zero.py,near-hit: 1 file(s) name-match but no replay import,PASS,next_update + ports_schema declared
+karr_trna_aminoacylation,NO,PASS,data\karr_fixtures\per_process\tRNAAminoacylation.npz,45196,FAIL,tests\unit\test_karr_trna_aminoacylation_strict_zero.py,near-hit: 1 file(s) name-match but no replay import,PASS,next_update + ports_schema declared
+karr_ribosome_assembly,NO,PASS,data\karr_fixtures\per_process\RibosomeAssembly.npz,24751,FAIL,,no replay test found,PASS,next_update + ports_schema declared
+karr_protein_processing_i,NO,PASS,data\karr_fixtures\per_process\ProteinProcessingI.npz,20104,FAIL,,no replay test found,PASS,next_update + ports_schema declared
+karr_protein_processing_ii,NO,PASS,data\karr_fixtures\per_process\ProteinProcessingII.npz,24409,FAIL,,no replay test found,PASS,next_update + ports_schema declared
+karr_protein_folding,NO,PASS,data\karr_fixtures\per_process\ProteinFolding.npz,38340,FAIL,tests\unit\test_karr_protein_folding_strict_zero.py,near-hit: 1 file(s) name-match but no replay import,PASS,next_update + ports_schema declared
+karr_protein_modification,NO,PASS,data\karr_fixtures\per_process\ProteinModification.npz,27584,FAIL,tests\unit\test_karr_protein_modification_strict_zero.py,near-hit: 1 file(s) name-match but no replay import,PASS,next_update + ports_schema declared
+karr_protein_translocation,NO,PASS,data\karr_fixtures\per_process\ProteinTranslocation.npz,24105,FAIL,,no replay test found,PASS,next_update + ports_schema declared
+karr_protein_activation,NO,PASS,data\karr_fixtures\per_process\ProteinActivation.npz,23916,FAIL,,no replay test found,PASS,next_update + ports_schema declared
+karr_protein_decay_light,NO,PASS,data\karr_fixtures\per_process\ProteinDecay.npz,50896,FAIL,tests\probes\test_probe5_seedsequence.py,near-hit: 1 file(s) name-match but no replay import,PASS,next_update + ports_schema declared
+karr_macromolecular_complexation,NO,PASS,data\karr_fixtures\per_process\MacromolecularComplexation.npz,27822,FAIL,tests\probes\test_probe5_seedsequence.py,near-hit: 1 file(s) name-match but no replay import,PASS,next_update + ports_schema declared
+karr_replication,NO,PASS,data\karr_fixtures\per_process\Replication.npz,25042,FAIL,,no replay test found,PASS,next_update + ports_schema declared
+karr_replication_initiation,NO,PASS,data\karr_fixtures\per_process\ReplicationInitiation.npz,35404,FAIL,,no replay test found,PASS,next_update + ports_schema declared
+karr_dna_supercoiling,NO,PASS,data\karr_fixtures\per_process\DNASupercoiling.npz,23346,FAIL,,no replay test found,PASS,next_update + ports_schema declared
+karr_chromosome_condensation,NO,PASS,data\karr_fixtures\per_process\ChromosomeCondensation.npz,23037,FAIL,,no replay test found,PASS,next_update + ports_schema declared
+karr_chromosome_segregation,NO,PASS,data\karr_fixtures\per_process\ChromosomeSegregation.npz,23700,FAIL,,no replay test found,PASS,next_update + ports_schema declared
+karr_dna_damage,NO,PASS,data\karr_fixtures\per_process\DNADamage.npz,32004,FAIL,,no replay test found,PASS,next_update + ports_schema declared
+karr_dna_repair,NO,PASS,data\karr_fixtures\per_process\DNARepair.npz,99558,FAIL,,no replay test found,PASS,next_update + ports_schema declared
+karr_ftsz_polymerization,NO,PASS,data\karr_fixtures\per_process\FtsZPolymerization.npz,21024,FAIL,,no replay test found,PASS,next_update + ports_schema declared
+karr_cytokinesis,YES,PASS,data\karr_fixtures\per_process\Cytokinesis.npz,23194,PASS,tests\integration\test_replay_smoke.py,heuristic: 1 file(s) reference process+replay+import,PASS,next_update + ports_schema declared
+karr_terminal_organelle_assembly,NO,PASS,data\karr_fixtures\per_process\TerminalOrganelleAssembly.npz,24664,FAIL,,no replay test found,PASS,next_update + ports_schema declared
+karr_host_interaction,NO,PASS,data\karr_fixtures\per_process\HostInteraction.npz,23059,FAIL,,no replay test found,PASS,next_update + ports_schema declared
