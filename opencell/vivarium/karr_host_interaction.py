@@ -198,6 +198,7 @@ class KarrHostInteractionProcess(Process):
         fx = mat["data"].fixture
 
         self.enzyme_wids = _parse_wid_array(fx.enzymeWholeCellModelIDs)
+        self.substrate_wids = _parse_wid_array(fx.substrateWholeCellModelIDs)
         self.enzyme_ref_counts = np.asarray(fx.enzymes, dtype=np.float64).reshape(-1)
         if self.enzyme_ref_counts.size != len(self.enzyme_wids):
             raise ValueError(
@@ -216,6 +217,18 @@ class KarrHostInteractionProcess(Process):
     def ports_schema(self) -> dict[str, Any]:
         required_wids = sorted(set(self.adhesin_wids) | set(self.terminal_organelle_wids))
         return {
+            "substrates": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.substrate_wids
+            },
+            "enzymes": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.enzyme_wids
+            },
+            "boundEnzymes": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.enzyme_wids
+            },
             "cell": {
                 "terminal_organelle_count": {"_default": 0.0, "_updater": "accumulate", "_emit": True},
                 "host_adhesion_strength": {"_default": 0.0, "_updater": "accumulate", "_emit": True},

@@ -168,6 +168,14 @@ class KarrReplicationInitiationProcess(Process):
                     self.dnaa_wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
                 }
             },
+            "enzymes": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.enzyme_wids
+            },
+            "boundEnzymes": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.enzyme_wids
+            },
             "substrates": {
                 wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
                 for wid in self.substrate_wids

@@ -110,6 +110,7 @@ class KarrReplicationProcess(Process):
         chromosome_fixture = chromosome_mat["data"].fixture
 
         self.substrate_wids = _parse_wid_array(replication_fixture.substrateWholeCellModelIDs)
+        self.enzyme_wids = _parse_wid_array(getattr(replication_fixture, "enzymeWholeCellModelIDs", []))
         self.substrate_index_dntp = (_parse_index_array(replication_fixture.substrateIndexs_dntp) - 1).tolist()
         self.substrate_index_atp = int(_coerce_scalar(replication_fixture.substrateIndexs_atp)) - 1
 
@@ -159,6 +160,14 @@ class KarrReplicationProcess(Process):
             "substrates": {
                 wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
                 for wid in self.substrate_wids
+            },
+            "enzymes": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.enzyme_wids
+            },
+            "boundEnzymes": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.enzyme_wids
             },
             "requests": {
                 self.name: {

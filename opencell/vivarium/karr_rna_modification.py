@@ -118,6 +118,22 @@ class KarrRNAModificationProcess(Process):
                 wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                 for wid in self.substrate_wids
             },
+            "enzymes": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.enzyme_wids
+            },
+            "boundEnzymes": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.enzyme_wids
+            },
+            "unmodifiedRNAs": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.unmodified_rna_wids
+            },
+            "modifiedRNAs": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.modified_rna_wids
+            },
             "rna": {
                 "counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}

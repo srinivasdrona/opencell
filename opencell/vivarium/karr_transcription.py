@@ -2,14 +2,44 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import numpy as np
+from scipy.io import loadmat
 from vivarium.core.process import Process
 
 from opencell.m2 import transcription as tx
 
 _M2_CONSUMED_SUBSTRATES: tuple[str, ...] = ("ATP", "CTP", "GTP", "UTP")
+_DEFAULT_TX_FIXTURE_PATH = "data/karr_fixtures/per_process/Transcription_flat.mat"
+
+
+def _resolve_fixture_path(path: str | Path) -> Path:
+    candidate = Path(path)
+    if candidate.exists():
+        return candidate
+
+    repo_root = Path(__file__).resolve().parents[2]
+    rooted = repo_root / candidate
+    if rooted.exists():
+        return rooted
+
+    raise FileNotFoundError(f"Fixture not found: {path}")
+
+
+def _parse_wid_array(value: object) -> list[str]:
+    values = np.asarray(value, dtype=object)
+    out: list[str] = []
+    for raw in values.ravel():
+        item: object = raw
+        while isinstance(item, np.ndarray):
+            if item.size == 0:
+                item = ""
+                break
+            item = item.flat[0]
+        out.append(str(item))
+    return out
 
 
 class KarrTranscriptionProcess(Process):
@@ -40,6 +70,7 @@ class KarrTranscriptionProcess(Process):
     name = "karr_transcription"
     defaults: dict[str, Any] = {
         "model": None,
+        "fixture_path": _DEFAULT_TX_FIXTURE_PATH,
         "time_step": 1.0,
         "condition": 1,
         "write_substrate_deltas": True,
@@ -58,6 +89,7 @@ class KarrTranscriptionProcess(Process):
         self.gene_ids = self.model.gene_wcm_ids
         self.enable_throttle: bool = bool(self.parameters["enable_throttle"])
         self.consumed_substrates: tuple[str, ...] = _M2_CONSUMED_SUBSTRATES
+        self.enzyme_wids = self._load_enzyme_wids(self.parameters["fixture_path"])
 
         # E.1b calibration: build a chassis-operative model whose
         # synthesis rate is recalibrated so dRNA/dt = 0 at counts_mature.
@@ -74,6 +106,17 @@ class KarrTranscriptionProcess(Process):
         # ``self.condition`` at runtime.  The pure-M2 oracle tests
         # continue to use the untouched ``model`` (KB convention).
         self._chassis_model = tx.calibrated_chassis_model(model)
+
+    def _load_enzyme_wids(self, fixture_path: str | Path) -> list[str]:
+        try:
+            resolved = _resolve_fixture_path(fixture_path)
+            fixture = loadmat(str(resolved), squeeze_me=True, struct_as_record=False)["data"].fixture
+        except Exception:
+            return []
+        enzyme_ids = getattr(fixture, "enzymeWholeCellModelIDs", None)
+        if enzyme_ids is None:
+            return []
+        return _parse_wid_array(enzyme_ids)
 
     def ports_schema(self) -> dict[str, Any]:
         # Initial RNA counts: Karr State_Rna mature cytosol counts
@@ -105,6 +148,22 @@ class KarrTranscriptionProcess(Process):
         schema: dict[str, Any] = {
             "rna": {"counts": rna_schema},
             "substrates": substrates_schema,
+            "enzymes": {
+                wid: {
+                    "_default": 0.0,
+                    "_updater": "set",
+                    "_emit": False,
+                }
+                for wid in self.enzyme_wids
+            },
+            "boundEnzymes": {
+                wid: {
+                    "_default": 0.0,
+                    "_updater": "set",
+                    "_emit": False,
+                }
+                for wid in self.enzyme_wids
+            },
         }
         if self.enable_throttle:
             # Read view on m1_pools.  M1 owns the authoritative leaf
