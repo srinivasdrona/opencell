@@ -1,3 +1,15 @@
+## Current Status (2026-05-30 08:05 IST)
+
+- Sweep head: `a2b3285` on `audit/l2-1-sweep-v2` (main baseline for this arc: `8951a11`).
+- Bucket: L2.1 GREEN **9/28**; L2.1 RED **19/28** (Pattern D now 19). L2.0 truly RED remains **2** (TerminalOrganelleAssembly, TranscriptionalRegulation).
+- Wave 7 / H2 (allocator-mirror disable): full 28x2 A/B reported **0 of 6** targeted candidates flipped GREEN, with **3 GREEN regressions** (MacromolComplex, ProteinProcessingI, ProteinTranslocation); refuted, not landed.
+- Wave 7 / H3 (store fanout shadow-write): no-regression gate held on existing GREENs; A/B first-fail fingerprints for PP-II, ProteinFolding, RNAModification were unchanged; refuted as a closure lever, but rigor patch was cherry-picked (`cad12e3`).
+- Wave 8 / ProteinFolding: **L2.1 GREEN #9** landed (`725ff1e` -> sweep `a2b3285`) by fixing chaperone enzyme overlay handling and ATP-gating mismatch against MATLAB catalytic-gate semantics.
+- Wave 8 / ProteinProcessingII: productive WIP landed (`82c64d5` -> sweep `3524332`), closing tick-2 `processedMonomers[429]` and shifting first-fail to `t=3 substrates[0]=H2O +1`; L1 follow-up mismatch is flagged (not fixed here).
+- Wave 8 / RNAModification: re-fired with corrected non-vacuous trace input; status remains in progress at this housekeeping cut.
+- Wave 9: fanout currently active on `wave9-ftsz`, `wave9-rnadecay`, and `wave9-chromcond` (in flight).
+- Strategic implication: global harness-hunt returns are diminishing (H2/H3 both refuted); per-process dimer-port fanout remains the dominant closure lever with the replay-identity gate and strict revert discipline.
+
 # OpenCell: Open-Source Whole-Cell Simulation
 
 > **PM orchestration model**: see [`docs/ORCHESTRATION_MODEL.md`](docs/ORCHESTRATION_MODEL.md)
