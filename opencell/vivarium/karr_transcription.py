@@ -246,6 +246,9 @@ class KarrTranscriptionProcess(Process):
                         active_rnap_fraction = float(np.clip(candidate, 0.0, 1.0))
 
                 rnap_states = np.asarray(getattr(rnap_state, "states", []), dtype=int).reshape(-1)
+                position_strands = np.asarray(
+                    getattr(rnap_state, "positionStrands", []), dtype=int
+                )
                 bound_tus = np.asarray(
                     getattr(transcript_state, "boundTranscriptionUnits", []), dtype=int
                 ).reshape(-1)
@@ -257,11 +260,15 @@ class KarrTranscriptionProcess(Process):
                     tu_idx = int(bound_tus[idx]) - 1
                     if tu_idx < 0 or tu_idx >= len(tu_sequences):
                         tu_idx = 0
+                    chromosome_pos = 0
+                    if position_strands.ndim >= 2 and idx < position_strands.shape[0]:
+                        chromosome_pos = int(position_strands[idx, 0])
                     polymerase_slots.append(
                         {
                             "active": bool(state_val >= 1 and len(tu_sequences) > 0),
                             "tu_idx": int(tu_idx),
                             "position": int(max(state_val, 0)),
+                            "chromosome_pos": int(chromosome_pos),
                         }
                     )
         except Exception:
@@ -413,7 +420,14 @@ class KarrTranscriptionProcess(Process):
             active_indices = self._synchronize_polymerase_activity(effective_bound_counts)
             if not active_indices:
                 return {}
-            ordered_indices = active_indices
+            # MATLAB tracks active RNAPs on chromosome coordinates; under NTP
+            # scarcity, consuming in descending coordinate order best matches
+            # the substrate-allocation order in replay traces.
+            ordered_indices = sorted(
+                active_indices,
+                key=lambda idx: int(self._polymerase_slots[idx].get("chromosome_pos", 0)),
+                reverse=True,
+            )
 
             for slot_idx in ordered_indices:
                 if all(available[wid] <= 0 for wid in self.consumed_substrates):
