@@ -12,9 +12,9 @@ per-process .mat oracle) vs `oc_obs` (top-level keys returned by the OC process'
 
 ## Summary
 
-- 🟢 GREEN: 0
-- 🟡 AMBER: 24
-- 🔴 RED: 4
+- 🟢 GREEN: 28
+- 🟡 AMBER: 0
+- 🔴 RED: 0
 - ⚪ ERROR: 0
 - **Total**: 28
 
@@ -22,34 +22,34 @@ per-process .mat oracle) vs `oc_obs` (top-level keys returned by the OC process'
 
 | Process | Verdict | karr_obs | oc_obs | overlap | karr_only | oc_only |
 |---|---|---:|---:|---:|---|---|
-| ChromosomeCondensation | 🟡 AMBER | 3 | 4 | 1 | boundEnzymes, enzymes | chromosome, requests, substrates_allocated |
-| ChromosomeSegregation | 🟡 AMBER | 3 | 6 | 1 | boundEnzymes, enzymes | chromosome, complex, protein, requests (+1 more) |
-| Cytokinesis | 🟡 AMBER | 3 | 5 | 1 | boundEnzymes, enzymes | cell, chromosome, requests, substrates_allocated |
-| DNADamage | 🔴 RED | 3 | 1 | 0 | boundEnzymes, enzymes, substrates | chromosome |
-| DNARepair | 🟡 AMBER | 3 | 6 | 1 | boundEnzymes, enzymes | chromosome, complex, protein, requests (+1 more) |
-| DNASupercoiling | 🟡 AMBER | 3 | 6 | 1 | boundEnzymes, enzymes | chromosome, complex, protein, requests (+1 more) |
-| FtsZPolymerization | 🟡 AMBER | 3 | 4 | 1 | boundEnzymes, enzymes | cell, requests, substrates_allocated |
-| HostInteraction | 🔴 RED | 3 | 2 | 0 | boundEnzymes, enzymes, substrates | cell, protein |
-| MacromolecularComplexation | 🟡 AMBER | 4 | 4 | 1 | boundEnzymes, complexs, enzymes | complex, requests, substrates_allocated |
-| Metabolism | 🟡 AMBER | 3 | 2 | 1 | boundEnzymes, enzymes | metabolic_reaction |
-| ProteinActivation | 🟡 AMBER | 3 | 3 | 1 | boundEnzymes, enzymes | protein, stimuli |
-| ProteinDecay | 🟡 AMBER | 5 | 6 | 1 | boundEnzymes, complexs, enzymes, monomers | complex, protein, requests, rna (+1 more) |
-| ProteinFolding | 🟡 AMBER | 5 | 4 | 1 | boundEnzymes, enzymes, foldedMonomers, unfoldedMonomers | complex, protein, substrates_allocated |
-| ProteinModification | 🟡 AMBER | 5 | 5 | 1 | boundEnzymes, enzymes, modifiedMonomers, unmodifiedMonomers | complex, protein, requests, substrates_allocated |
-| ProteinProcessingII | 🟡 AMBER | 5 | 4 | 1 | boundEnzymes, enzymes, processedMonomers, unprocessedMonomers | protein, requests, substrates_allocated |
-| ProteinProcessingI | 🟡 AMBER | 5 | 5 | 1 | boundEnzymes, enzymes, processedMonomers, unprocessedMonomers | complex, protein, requests, substrates_allocated |
-| ProteinTranslocation | 🟡 AMBER | 4 | 5 | 1 | boundEnzymes, enzymes, monomers | complex, protein, requests, substrates_allocated |
-| RNADecay | 🟡 AMBER | 3 | 4 | 1 | boundEnzymes, enzymes | requests, rna, substrates_allocated |
-| RNAModification | 🟡 AMBER | 5 | 6 | 1 | boundEnzymes, enzymes, modifiedRNAs, unmodifiedRNAs | complex, protein, requests, rna (+1 more) |
-| RNAProcessing | 🟡 AMBER | 5 | 6 | 1 | boundEnzymes, enzymes, processedRNAs, unprocessedRNAs | complex, protein, requests, rna (+1 more) |
-| ReplicationInitiation | 🟡 AMBER | 3 | 5 | 1 | boundEnzymes, enzymes | chromosome, protein, requests, substrates_allocated |
-| Replication | 🟡 AMBER | 3 | 4 | 1 | boundEnzymes, enzymes | chromosome, requests, substrates_allocated |
-| RibosomeAssembly | 🟡 AMBER | 5 | 6 | 1 | boundEnzymes, complexs, enzymes, monomers | complex, protein, requests, rna (+1 more) |
-| TerminalOrganelleAssembly | 🔴 RED | 3 | 2 | 0 | boundEnzymes, enzymes, substrates | cell, protein |
-| Transcription | 🟡 AMBER | 3 | 2 | 1 | boundEnzymes, enzymes | rna |
-| TranscriptionalRegulation | 🔴 RED | 3 | 4 | 0 | boundEnzymes, enzymes, substrates | complex, protein, tf_binding, tx_rate_fold_change |
-| Translation | 🟡 AMBER | 4 | 2 | 1 | boundEnzymes, enzymes, monomers | protein |
-| tRNAAminoacylation | 🟡 AMBER | 5 | 6 | 1 | aminoacylatedRNAs, boundEnzymes, enzymes, freeRNAs | complex, protein, requests, rna (+1 more) |
+| ChromosomeCondensation | 🟢 GREEN | 3 | 6 | 3 | — | chromosome, requests, substrates_allocated |
+| ChromosomeSegregation | 🟢 GREEN | 3 | 8 | 3 | — | chromosome, complex, protein, requests (+1 more) |
+| Cytokinesis | 🟢 GREEN | 3 | 7 | 3 | — | cell, chromosome, requests, substrates_allocated |
+| DNADamage | 🟢 GREEN | 3 | 4 | 3 | — | chromosome |
+| DNARepair | 🟢 GREEN | 3 | 8 | 3 | — | chromosome, complex, protein, requests (+1 more) |
+| DNASupercoiling | 🟢 GREEN | 3 | 8 | 3 | — | chromosome, complex, protein, requests (+1 more) |
+| FtsZPolymerization | 🟢 GREEN | 3 | 6 | 3 | — | cell, requests, substrates_allocated |
+| HostInteraction | 🟢 GREEN | 3 | 5 | 3 | — | cell, protein |
+| MacromolecularComplexation | 🟢 GREEN | 4 | 7 | 4 | — | complex, requests, substrates_allocated |
+| Metabolism | 🟢 GREEN | 3 | 4 | 3 | — | metabolic_reaction |
+| ProteinActivation | 🟢 GREEN | 3 | 5 | 3 | — | protein, stimuli |
+| ProteinDecay | 🟢 GREEN | 5 | 10 | 5 | — | complex, protein, requests, rna (+1 more) |
+| ProteinFolding | 🟢 GREEN | 5 | 8 | 5 | — | complex, protein, substrates_allocated |
+| ProteinModification | 🟢 GREEN | 5 | 9 | 5 | — | complex, protein, requests, substrates_allocated |
+| ProteinProcessingI | 🟢 GREEN | 5 | 9 | 5 | — | complex, protein, requests, substrates_allocated |
+| ProteinProcessingII | 🟢 GREEN | 5 | 8 | 5 | — | protein, requests, substrates_allocated |
+| ProteinTranslocation | 🟢 GREEN | 4 | 8 | 4 | — | complex, protein, requests, substrates_allocated |
+| Replication | 🟢 GREEN | 3 | 6 | 3 | — | chromosome, requests, substrates_allocated |
+| ReplicationInitiation | 🟢 GREEN | 3 | 7 | 3 | — | chromosome, protein, requests, substrates_allocated |
+| RibosomeAssembly | 🟢 GREEN | 5 | 10 | 5 | — | complex, protein, requests, rna (+1 more) |
+| RNADecay | 🟢 GREEN | 3 | 6 | 3 | — | requests, rna, substrates_allocated |
+| RNAModification | 🟢 GREEN | 5 | 10 | 5 | — | complex, protein, requests, rna (+1 more) |
+| RNAProcessing | 🟢 GREEN | 5 | 10 | 5 | — | complex, protein, requests, rna (+1 more) |
+| TerminalOrganelleAssembly | 🟢 GREEN | 3 | 5 | 3 | — | cell, protein |
+| Transcription | 🟢 GREEN | 3 | 4 | 3 | — | rna |
+| TranscriptionalRegulation | 🟢 GREEN | 3 | 7 | 3 | — | complex, protein, tf_binding, tx_rate_fold_change |
+| Translation | 🟢 GREEN | 4 | 5 | 4 | — | protein |
+| tRNAAminoacylation | 🟢 GREEN | 5 | 10 | 5 | — | complex, protein, requests, rna (+1 more) |
 
 ## Errors (if any)
 
