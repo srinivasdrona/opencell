@@ -17,6 +17,7 @@ Current complex-count dependency and provenance:
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -26,6 +27,12 @@ from opencell.m3 import translation as tl
 from opencell.m3 import translation_v2 as tl_v2
 
 _RIBOSOME_ACTIVE_WID = "RIBOSOME_70S"
+_RIBOSOME_STATE_ACTIVE = 1
+_KARR_ARCHIVE_RELATIVE_PATH = Path("data") / "karr_archive" / "karr_archive.npz"
+_ARCHIVE_KEY_RIB_STATES = "translation_v2_targeted__rib_states"
+_ARCHIVE_KEY_RIB_BOUND_MRNAS = "translation_v2_targeted__rib_boundMRNAs"
+_ARCHIVE_KEY_RIB_MRNA_POSITIONS = "translation_v2_targeted__rib_mRNAPositions"
+_ARCHIVE_KEY_POLY_MONOMER_LENGTHS = "translation_v2_targeted__poly_monomerLengths"
 
 
 class KarrTranslationV3Process(Process):
@@ -65,6 +72,41 @@ class KarrTranslationV3Process(Process):
         self.allocation_substrate_wids: tuple[str, ...] = tuple(self.aa_ids)
         self._fallback_n_active_ribosomes = int(self.mechanism_inputs.n_active_ribosomes)
         self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
+        self._ribosome_replay_loaded = False
+        self._ribosome_state_active: np.ndarray | None = None
+        self._ribosome_bound_mrnas: np.ndarray | None = None
+        self._ribosome_mrna_positions: np.ndarray | None = None
+        self._polypeptide_lengths_aa: np.ndarray | None = None
+        self._load_ribosome_replay_seed()
+
+    def _load_ribosome_replay_seed(self) -> None:
+        repo_root = Path(__file__).resolve().parents[2]
+        archive_path = repo_root / _KARR_ARCHIVE_RELATIVE_PATH
+        if not archive_path.exists():
+            return
+        try:
+            with np.load(archive_path, allow_pickle=False) as archive:
+                rib_states = np.asarray(archive[_ARCHIVE_KEY_RIB_STATES], dtype=np.int64).reshape(-1)
+                bound_mrnas = np.asarray(archive[_ARCHIVE_KEY_RIB_BOUND_MRNAS], dtype=np.int64).reshape(-1)
+                mrna_positions = np.asarray(
+                    archive[_ARCHIVE_KEY_RIB_MRNA_POSITIONS], dtype=np.int64
+                ).reshape(-1)
+                polypeptide_lengths = np.asarray(
+                    archive[_ARCHIVE_KEY_POLY_MONOMER_LENGTHS], dtype=np.int64
+                ).reshape(-1)
+        except Exception:
+            return
+
+        if polypeptide_lengths.size != len(self.protein_ids):
+            return
+        if not (rib_states.size == bound_mrnas.size == mrna_positions.size):
+            return
+
+        self._ribosome_state_active = rib_states == _RIBOSOME_STATE_ACTIVE
+        self._ribosome_bound_mrnas = np.clip(bound_mrnas, 0, None)
+        self._ribosome_mrna_positions = np.clip(mrna_positions, 0, None)
+        self._polypeptide_lengths_aa = np.clip(polypeptide_lengths, 1, None)
+        self._ribosome_replay_loaded = True
 
     def ports_schema(self) -> dict[str, Any]:
         schema: dict[str, Any] = {
@@ -209,6 +251,43 @@ class KarrTranslationV3Process(Process):
             )
         return max(0.0, float(self._fallback_n_active_ribosomes))
 
+    def _monomer_deltas_from_ribosome_state(self, timestep: float) -> np.ndarray:
+        out = np.zeros(len(self.protein_ids), dtype=np.float64)
+        if not self._ribosome_replay_loaded:
+            return out
+        if (
+            self._ribosome_state_active is None
+            or self._ribosome_bound_mrnas is None
+            or self._ribosome_mrna_positions is None
+            or self._polypeptide_lengths_aa is None
+        ):
+            return out
+        if timestep <= 0.0:
+            return out
+
+        step_aa = int(np.rint(float(self.mechanism_inputs.elongation_rate_aa_per_s) * float(timestep)))
+        if step_aa <= 0:
+            return out
+
+        active_indices = np.flatnonzero(self._ribosome_state_active)
+        for rib_idx in active_indices:
+            monomer_idx_1based = int(self._ribosome_bound_mrnas[rib_idx])
+            if monomer_idx_1based <= 0:
+                continue
+            monomer_idx = monomer_idx_1based - 1
+            if monomer_idx >= len(self.protein_ids):
+                continue
+
+            next_pos = int(self._ribosome_mrna_positions[rib_idx]) + step_aa
+            if next_pos >= int(self._polypeptide_lengths_aa[monomer_idx]):
+                out[monomer_idx] += 1.0
+                self._ribosome_state_active[rib_idx] = False
+                self._ribosome_bound_mrnas[rib_idx] = 0
+                self._ribosome_mrna_positions[rib_idx] = 0
+                continue
+            self._ribosome_mrna_positions[rib_idx] = next_pos
+        return out
+
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         protein_state = states.get("protein", {})
         counts_state = protein_state.get("unprocessed_counts", protein_state.get("counts", {}))
@@ -225,14 +304,23 @@ class KarrTranslationV3Process(Process):
         synth_per_s = tl_v2.predict_synthesis_per_s(
             self.mechanism_inputs, n_active=n_active_ribosomes
         )
-        protein_next = self._step_protein(counts, synth_per_s, timestep)
+        monomer_deltas = self._monomer_deltas_from_ribosome_state(timestep)
+        if np.any(monomer_deltas):
+            protein_delta_update = {
+                pid: float(monomer_deltas[i])
+                for i, pid in enumerate(self.protein_ids)
+                if monomer_deltas[i] != 0.0
+            }
+        else:
+            protein_next = self._step_protein(counts, synth_per_s, timestep)
+            protein_delta_update = {
+                pid: float(self._stochastic_round_delta(float(protein_next[i] - counts[i])))
+                for i, pid in enumerate(self.protein_ids)
+            }
 
         update: dict[str, Any] = {
             "protein": {
-                "unprocessed_counts": {
-                    pid: float(self._stochastic_round_delta(float(protein_next[i] - counts[i])))
-                    for i, pid in enumerate(self.protein_ids)
-                }
+                "unprocessed_counts": protein_delta_update
             }
         }
         enzyme_deltas = self._enzyme_channel_deltas_from_trace_hint(states, channel="enzymes")
