@@ -77,6 +77,10 @@ def _base_state(
 
 
 def _apply_update(process: KarrDNASupercoilingProcess, state: dict[str, Any], update: dict[str, Any]) -> None:
+    def _accumulate_counts(target: dict[str, Any], deltas: dict[str, Any]) -> None:
+        for wid, delta in deltas.items():
+            target[wid] = float(target.get(wid, 0.0) + float(delta))
+
     chrom_update = update.get("chromosome", {})
     if "supercoil_density" in chrom_update:
         state["chromosome"]["supercoil_density"] = float(
@@ -91,10 +95,14 @@ def _apply_update(process: KarrDNASupercoilingProcess, state: dict[str, Any], up
     for wid, delta in update.get("substrates", {}).items():
         state["substrates"][wid] = float(state["substrates"].get(wid, 0.0) + float(delta))
 
-    for wid, delta in update.get("protein", {}).get("counts", {}).items():
-        state["protein"]["counts"][wid] = float(
-            state["protein"]["counts"].get(wid, 0.0) + float(delta)
-        )
+    _accumulate_counts(state["protein"]["counts"], update.get("protein", {}).get("counts", {}))
+    _accumulate_counts(state["complex"]["counts"], update.get("complex", {}).get("counts", {}))
+    if "enzymes" in update:
+        state.setdefault("enzymes", {})
+        _accumulate_counts(state["enzymes"], update["enzymes"])
+    if "boundEnzymes" in update:
+        state.setdefault("boundEnzymes", {})
+        _accumulate_counts(state["boundEnzymes"], update["boundEnzymes"])
 
     if process.name in update.get("requests", {}):
         req_atp = float(update["requests"][process.name].get(process.atp_wid, 0.0))
@@ -248,6 +256,67 @@ def test_replication_elongating_increases_gyrase_request() -> None:
     idle_req = float(idle_update["requests"][p_idle.name][p_idle.atp_wid])
     elong_req = float(elong_update["requests"][p_elong.name][p_elong.atp_wid])
     assert elong_req >= idle_req
+
+
+def test_bound_mode_moves_free_pool_to_bound_once() -> None:
+    p = KarrDNASupercoilingProcess(
+        {
+            "rng_seed": 31,
+            "gyrase_activity_rate": 0.0,
+            "topoiv_activity_rate": 0.0,
+        }
+    )
+    state = _base_state(
+        p,
+        sigma=-0.06,
+        atp=10_000.0,
+        gyrase_count=3.0,
+        topoiv_count=12.0,
+    )
+    state["boundEnzymes"] = {wid: 0.0 for wid in p.enzyme_wids}
+
+    free_before = {
+        p.gyrase_wid: float(
+            state[p.enzyme_store_by_wid[p.gyrase_wid]]["counts"][p.gyrase_wid]
+        ),
+        p.topoiv_wid: float(
+            state[p.enzyme_store_by_wid[p.topoiv_wid]]["counts"][p.topoiv_wid]
+        ),
+    }
+
+    update_0 = p.next_update(1.0, state)
+    assert float(update_0.get("boundEnzymes", {}).get(p.gyrase_wid, 0.0)) == pytest.approx(
+        free_before[p.gyrase_wid]
+    )
+    assert float(update_0.get("boundEnzymes", {}).get(p.topoiv_wid, 0.0)) == pytest.approx(
+        free_before[p.topoiv_wid]
+    )
+    _apply_update(p, state, update_0)
+
+    assert float(state["boundEnzymes"][p.gyrase_wid]) == pytest.approx(
+        free_before[p.gyrase_wid]
+    )
+    assert float(state["boundEnzymes"][p.topoiv_wid]) == pytest.approx(
+        free_before[p.topoiv_wid]
+    )
+    assert float(state[p.enzyme_store_by_wid[p.gyrase_wid]]["counts"][p.gyrase_wid]) == pytest.approx(
+        0.0
+    )
+    assert float(state[p.enzyme_store_by_wid[p.topoiv_wid]]["counts"][p.topoiv_wid]) == pytest.approx(
+        0.0
+    )
+
+    update_1 = p.next_update(1.0, state)
+    assert p.gyrase_wid not in update_1.get("boundEnzymes", {})
+    assert p.topoiv_wid not in update_1.get("boundEnzymes", {})
+    assert (
+        p.gyrase_wid
+        not in update_1.get(p.enzyme_store_by_wid[p.gyrase_wid], {}).get("counts", {})
+    )
+    assert (
+        p.topoiv_wid
+        not in update_1.get(p.enzyme_store_by_wid[p.topoiv_wid], {}).get("counts", {})
+    )
 
 
 def test_100tick_steady_state_near_karr_sigma() -> None:

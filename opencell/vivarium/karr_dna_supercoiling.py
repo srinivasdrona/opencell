@@ -169,12 +169,6 @@ class KarrDNASupercoilingProcess(Process):
         topoiv_idx = int(_coerce_scalar(fx.enzymeIndexs_topoIV)) - 1
         self.gyrase_wid = self.enzyme_wids[gyrase_idx]
         self.topoiv_wid = self.enzyme_wids[topoiv_idx]
-        self.h_wid = "H" if "H" in self.substrate_wids else None
-        enz_seed = np.asarray(fx.enzymes, dtype=float).reshape(-1)
-        bnd_seed = np.asarray(getattr(fx, "boundEnzymes", np.zeros_like(enz_seed)), dtype=float).reshape(-1)
-        self.total_enzyme_seed = {
-            wid: float(enz_seed[i] + bnd_seed[i]) for i, wid in enumerate(self.enzyme_wids)
-        }
 
         self.gyrase_activity_rate = self._cfg("gyrase_activity_rate", float(fx.gyraseActivityRate))
         self.topoiv_activity_rate = self._cfg("topoiv_activity_rate", float(fx.topoIVActivityRate))
@@ -227,11 +221,11 @@ class KarrDNASupercoilingProcess(Process):
                 for wid in self.substrate_wids
             },
             "enzymes": {
-                wid: {"_default": 0.0, "_updater": "set", "_emit": False}
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                 for wid in self.enzyme_wids
             },
             "boundEnzymes": {
-                wid: {"_default": 0.0, "_updater": "set", "_emit": False}
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                 for wid in self.enzyme_wids
             },
             "requests": {
@@ -283,14 +277,21 @@ class KarrDNASupercoilingProcess(Process):
         )
         gyrase_count = gyrase_free_count
         topoiv_count = topoiv_free_count
+        gyrase_bind_events = 0.0
+        topoiv_bind_events = 0.0
         use_bound_mode = isinstance(states.get("boundEnzymes"), dict)
         if use_bound_mode:
-            gyrase_count = max(
-                0.0, float(self.total_enzyme_seed.get(self.gyrase_wid, gyrase_count)) - gyrase_count
-            )
-            topoiv_count = max(
-                0.0, float(self.total_enzyme_seed.get(self.topoiv_wid, topoiv_count)) - topoiv_count
-            )
+            bound_counts = states.get("boundEnzymes", {})
+            if not isinstance(bound_counts, dict):
+                bound_counts = {}
+            gyrase_bound_count = max(0.0, float(bound_counts.get(self.gyrase_wid, 0.0)))
+            topoiv_bound_count = max(0.0, float(bound_counts.get(self.topoiv_wid, 0.0)))
+            # Bind any free enzymes exactly once per tick and account for both
+            # pools when computing this tick's catalytic capacity.
+            gyrase_bind_events = gyrase_free_count
+            topoiv_bind_events = topoiv_free_count
+            gyrase_count = gyrase_bound_count + gyrase_bind_events
+            topoiv_count = topoiv_bound_count + topoiv_bind_events
             gyrase_ref = topoiv_ref = 1.0
         else:
             gyrase_ref = float(self.parameters["reference_gyrase_count"])
@@ -390,11 +391,22 @@ class KarrDNASupercoilingProcess(Process):
         substrate_delta = self._substrate_delta(atp_used)
         if substrate_delta:
             update["substrates"] = substrate_delta
-        if use_bound_mode and gyrase_free_count > 0.0:
-            enzyme_store = self.enzyme_store_by_wid[self.gyrase_wid]
-            update.setdefault(enzyme_store, {}).setdefault("counts", {})[
-                self.gyrase_wid
-            ] = -float(gyrase_free_count)
+        if use_bound_mode:
+            bound_delta: dict[str, float] = {}
+            if gyrase_bind_events > 0.0:
+                bound_delta[self.gyrase_wid] = float(gyrase_bind_events)
+                store = self.enzyme_store_by_wid[self.gyrase_wid]
+                update.setdefault(store, {}).setdefault("counts", {})[
+                    self.gyrase_wid
+                ] = -float(gyrase_bind_events)
+            if topoiv_bind_events > 0.0:
+                bound_delta[self.topoiv_wid] = float(topoiv_bind_events)
+                store = self.enzyme_store_by_wid[self.topoiv_wid]
+                update.setdefault(store, {}).setdefault("counts", {})[
+                    self.topoiv_wid
+                ] = -float(topoiv_bind_events)
+            if bound_delta:
+                update["boundEnzymes"] = bound_delta
 
         return update
 
@@ -573,15 +585,12 @@ class KarrDNASupercoilingProcess(Process):
     def _substrate_delta(self, atp_used: float) -> dict[str, float]:
         if atp_used <= 0.0:
             return {}
-        out = {
+        return {
             self.atp_wid: float(-atp_used),
             self.h2o_wid: float(-atp_used),
             self.adp_wid: float(atp_used),
             self.pi_wid: float(atp_used),
         }
-        if self.h_wid is not None:
-            out[self.h_wid] = float(atp_used)
-        return out
 
 
 __all__ = ["KarrDNASupercoilingProcess"]
