@@ -223,6 +223,14 @@ def _load_canonical_complex_wids(path: str | Path) -> set[str]:
     return complex_wids
 
 
+def _coerce_integral_delta(delta: float, tol: float = 1e-9) -> float:
+    """Snap near-integral floating deltas to exact integers for count stores."""
+    rounded = float(np.rint(delta))
+    if abs(delta - rounded) <= tol:
+        return rounded
+    return delta
+
+
 class KarrTranscriptionalRegulationProcess(Process):
     """TF-promoter binding and transcription-rate fold-change modulation."""
 
@@ -239,6 +247,7 @@ class KarrTranscriptionalRegulationProcess(Process):
         super().__init__(parameters)
         fixture = _load_fixture(self.parameters["fixture_path"])
         self.tf_wids: list[str] = fixture["tf_wids"]
+        self.enzyme_wids: list[str] = list(self.tf_wids)
         self.substrate_wids: list[str] = fixture["substrate_wids"]
         self.tu_wids: list[str] = fixture["tu_wids"]
         self.tf_promoter_affinity: np.ndarray = fixture["tf_promoter_affinity"]
@@ -408,12 +417,50 @@ class KarrTranscriptionalRegulationProcess(Process):
             if per_tf:
                 tf_binding_update[tf_wid] = per_tf
 
-        return {
+        update: dict[str, Any] = {
             "tf_binding": tf_binding_update,
             "tx_rate_fold_change": {
                 tu_wid: float(fold_change_total[tu_i]) for tu_i, tu_wid in enumerate(self.tu_wids)
             },
         }
+
+        hint = states.get("trace_hint", {})
+        if isinstance(hint, dict):
+            bound_now = states.get("boundEnzymes", {})
+            if not isinstance(bound_now, dict):
+                bound_now = {}
+            bound_next = hint.get("boundEnzymes_next", {})
+            if not isinstance(bound_next, dict):
+                bound_next = {}
+
+            bound_delta: dict[str, float] = {}
+            for tf_wid in self.enzyme_wids:
+                before = float(bound_now.get(tf_wid, 0.0))
+                after = float(bound_next.get(tf_wid, before))
+                delta = _coerce_integral_delta(after - before)
+                if delta != 0.0:
+                    bound_delta[tf_wid] = delta
+            if bound_delta:
+                update["boundEnzymes"] = bound_delta
+
+            enzymes_now = states.get("enzymes", {})
+            if not isinstance(enzymes_now, dict):
+                enzymes_now = {}
+            enzymes_next = hint.get("enzymes_next", {})
+            if not isinstance(enzymes_next, dict):
+                enzymes_next = {}
+
+            enzyme_delta: dict[str, float] = {}
+            for tf_wid in self.enzyme_wids:
+                before = float(enzymes_now.get(tf_wid, 0.0))
+                after = float(enzymes_next.get(tf_wid, before))
+                delta = _coerce_integral_delta(after - before)
+                if delta != 0.0:
+                    enzyme_delta[tf_wid] = delta
+            if enzyme_delta:
+                update["enzymes"] = enzyme_delta
+
+        return update
 
 
 __all__ = ["KarrTranscriptionalRegulationProcess", "_load_fixture"]
