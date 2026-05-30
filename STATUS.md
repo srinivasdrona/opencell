@@ -1,4 +1,4 @@
-# Transcription L2.1 fix status (v2 fanout)
+# Replication L2.1 fix status (v2 fanout)
 
 ## Outcome
 - Target test: RED-shifted
@@ -7,19 +7,19 @@
 - Commit: <pending>
 
 ## Residue trajectory
-- Before: `L2a mismatch record: tick=0, observable=substrates, index=0, oc_val=13879.0, karr_val=13906.0, diff=-27.0`
-- After: `L2a mismatch record: tick=0, observable=substrates, index=0, oc_val=13911.0, karr_val=13906.0, diff=5.0`
+- Before: L2a mismatch record: tick=0, observable=substrates, index=4, oc_val=695.0, karr_val=649.0, diff=46.0
+- After: L2a mismatch record: tick=1, observable=substrates, index=0, oc_val=30265.0, karr_val=30267.0, diff=-2.0
 
 ## What changed in source
-- File: opencell/vivarium/karr_transcription.py
-- Lines changed: ~175
+- File: opencell/vivarium/karr_replication.py
+- Lines changed: ~190
 - Mechanism (1-2 sentences, explicit about which deltas come from biology vs trace_hint)
-  Bound-enzyme channel updates are now emitted as integer deltas from `state["trace_hint"]["boundEnzymes_next"]` relative to `state["boundEnzymes"]` for replay-consistent sigma-gated binding/release. Substrate deltas (`ATP/CTP/GTP/UTP`) are computed from a biology-driven catalytic kernel that uses bound RNAP occupancy, fixture-derived base composition, elongation cap, and current substrate pools.
+  Added a replay mode that emits `boundEnzymes` and `enzymes` channel deltas from `trace_hint` (`*_next - *_before`) without reading oracle files in process source. Substrate deltas are biology-driven from fixture kinetics: initiation/helicase ATP hydrolysis (+ADP/PI/H), polymerization dNTP consumption (+PPI), and ligase NAD coupling (+NMN/AMP/H), bounded by available pools.
 
 ## Trace-hint usage
-- Used for: boundEnzymes_next
-- WIDs read from hint: `MG_249_MONOMER`, `MG_282_MONOMER`, `MG_141_MONOMER`, `MG_027_MONOMER`, `RNA_POLYMERASE`, `RNA_POLYMERASE_HOLOENZYME`
-- Biology-driven deltas: `substrates[ATP]`, `substrates[CTP]`, `substrates[GTP]`, `substrates[UTP]`
+- Used for: both
+- WIDs read from hint: REPLISOME, DNA_POLYMERASE_2CORE_BETA_CLAMP_GAMMA_COMPLEX_PRIMASE, DNA_POLYMERASE_CORE_BETA_CLAMP_GAMMA_COMPLEX, DNA_POLYMERASE_CORE_BETA_CLAMP_PRIMASE, DNA_POLYMERASE_CORE, DNA_POLYMERASE_GAMMA_COMPLEX, MG_001_MONOMER, MG_001_DIMER, MG_094_HEXAMER, MG_254_MONOMER, MG_250_MONOMER, MG_091_TETRAMER, MG_091_OCTAMER
+- Biology-driven deltas: ATP, H2O, ADP, PI, H, DATP, DCTP, DGTP, DTTP, PPI, NAD, NMN, AMP
 
 ## Self-attestation
 - process_source_files_modified: 1
@@ -28,6 +28,6 @@
 - oracle_leak_lint_passed: true
 - regression_3_passed: 3/3
 - tests_run: 43
-- commits_made: 1
+- commits_made: 0
 - agents_spawned: 0
 - imported_h5py_in_process_source: false
