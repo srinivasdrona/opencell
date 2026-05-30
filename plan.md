@@ -1,13 +1,12 @@
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-05-30 15:30 IST):**
-- Codex fleet `f1v2-tier2` (3 agents) — 2/3 exited (transcription, transcriptionalregulation), `f1v2-replication` still alive. Wait shell: async PowerShell `tier2-wait` polling `codex_fire wait ... --timeout 7200 --poll 60`. Notification fires when last agent exits.
-- Fleet JSON: `C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\fanout_f1v2_tier2_fleet.json`
-- Per-agent worktrees: `E:\opencell-worktrees\fix-l2-v2-{transcription,replication,transcriptionalregulation}` (off sweep tip `632d946`)
+**Live processes / agents (2026-05-30 15:40 IST):**
+- No active codex agents. Tier 2 fleet (`f1v2-tier2`, 3 agents) completed at t+1380s; cherry-picked onto sweep.
+- Wait shell `tier2-wait` exited cleanly.
 
 **Branch tips (active):**
-- `main` @ `d270e53` (tightened L2 probe). Pending push to origin.
-- `audit/l2-1-sweep-v2` @ `632d946` (L2.1 GREEN 12 + 2 WIP). Pending push to origin.
+- `main` @ `2310842` (plan refresh + handoff block). Pending push to origin.
+- `audit/l2-1-sweep-v2` @ `5c99ce0` (L2.1 GREEN 13 + 4 WIP). Pending push to origin.
 
 **Operational traps the agent keeps re-hitting (read before improvising):**
 - `git worktree remove --force` on Windows traverses directory junctions — wipes whatever the junction points at. Never junction-of-junction for oracle data; junction directly from canonical.
@@ -23,22 +22,30 @@
 - L2.0-era: `from opencell.validation.replay import load_per_process_fixture` (or `replay_one_tick`)
 - L2.1-era: `from l2_replay_common import (...)` — used by every `test_karr_<name>_l2_replay.py` on the sweep branch
 
-## Current Status (2026-05-30 15:30 IST, **L2.1 GREEN 12/28, Tier 2 fanout in flight, scoreboard + probe tightened on main**)
+## Current Status (2026-05-30 15:40 IST, **L2.1 GREEN 13/28, Tier 2 fanout landed**)
+
+- **L2.1 GREEN 13/28** (sweep tip `5c99ce0`): +TranscriptionalRegulation `3b5e976` over the prior 12. Clean GREEN, 0 oracle leaks, 0 regressions on the 12 baseline.
+- **L2.1 productive WIP +2 (this fanout) + 2 prior = 4 total**: Transcription `c4e0569` (RED-shifted `substrates[0] +5 @ t=0`), Replication `5c99ce0` (RED-shifted `substrates[0] -2 @ t=1`), Translation `4480c88`, DNASupercoiling `632d946`.
+- **Tier 2 fanout outcome**: 3 agents, 1 clean GREEN + 2 productive WIPs + 0 cheats. Same ratio as Tier 1 redo (3 GREEN + 2 WIPs / 5 agents). The trace-hint channel + AST scan pattern is now empirically validated across 8 bound-mutator processes.
+- **17-test gate post-cherry-pick**: 50 passed / 13 failed / 2 skipped. AST scan 37/37 held. RED failures match expected (4 productive WIPs + 9 long-pending deep-red).
+- **v2 trace dir 28/28** restored; SHA256 manifest fresh. Junction-traversal incident notes in operational handoff above.
+- **PROCESS_STATUS_ALL_29 scoreboard refreshed** (`ddbdccd`): rows 16/18/19/21 flipped 🟢 FIRING with post-L1c trace-byte evidence.
+- **L2 inventory probe tightened** (`d270e53`): G2 sentinel now requires real replay-infra import. Main 9 → 3 PASS; sweep 28/28 (all wired).
+- **Push pending**: `main` (`2310842`) and `audit/l2-1-sweep-v2` (`5c99ce0`). HTTPS to github.com:443 recv-failed earlier; retry on stable network.
+
+### Next picks (queued)
+1. **Translation beat 2**: catalytic-completion plumbing for `monomers` channel (needs `monomers_next` trace_hint surface, or biology fix in `karr_translation_v3.py`).
+2. **DNASupercoiling beat 2**: close `substrates[0] +2 @ t=3` (stoichiometry tightening).
+3. **Transcription beat 2**: close `substrates[0] +5 @ t=0` (this fanout's residue — NTP/PPi stoichiometry).
+4. **Replication beat 2**: close `substrates[0] -2 @ t=1` (this fanout's residue — dNTP stoichiometry).
+5. **ProteinProcessingII beat 2**: productive WIP `82c64d5` with H2O residue, already on a branch.
+6. **L2.1 deep-red set fanout 2**: Metabolism, ProteinActivation, ProteinDecay, ProteinModification, RibosomeAssembly, TerminalOrganelleAssembly, tRNAAminoacylation — these are not bound-mutators so the trace-hint channel doesn't directly help; needs a different closure design (likely allocator/substrate-flow audit per process).
+
+## Prior Status (2026-05-30 15:30 IST)
 
 - **L2.1 GREEN 12/28** (sweep tip `632d946`): +ChromosomeCondensation `985be49`, +FtsZPolymerization `ce8175d`, +ReplicationInitiation `653c55f` over the 9 baseline. 14-test gate: 49 passed / 2 failed at documented WIP fingerprints. Oracle-leak AST scan held (37/37) across all 5 new commits.
 - **L2.1 productive WIP +2**: DNASupercoiling `632d946` (RED-shifted `substrates[0] +2 @ t=3`), Translation `4480c88` (RED-shifted `monomers[152] +1 @ t=0`).
-- **v2 trace dir 28/28** restored after the junction-traversal wipe; manifest refreshed. Full incident details + lesson in operational handoff block above.
-- **Tier 2 fanout LIVE (this turn)**: 3 codex agents on Transcription / Replication / TranscriptionalRegulation, off sweep tip `632d946`, hardened prompt template, junctioned-from-canonical v2 traces. 2/3 already exited as of 15:30; awaiting last + cherry-pick triage.
-- **PROCESS_STATUS_ALL_29 scoreboard refreshed** (`ddbdccd`): rows 16/18/19/21 flipped 🟡 GATED → 🟢 FIRING with post-L1c ensemble trace-byte evidence. Row 17 RibosomeAssembly held GATED.
-- **L2 inventory probe tightened** (`d270e53`): G2 sentinel now requires real replay-infra import. Main 9 → 3 PASS (false-positive correction); sweep 28/28 PASS (all l2_replay_common-wired, independent of GREEN/RED beat status).
-- **Push pending**: both `main` (`d270e53`) and `audit/l2-1-sweep-v2` (`632d946`). HTTPS to github.com:443 recv-failed earlier; retry on stable network.
-
-### Next picks (queued)
-1. **Tier 2 cherry-pick triage** on completion notification: 17-test gate (14 + 3 new), GREEN/WIP sort, sweep tip advance.
-2. **Translation beat 2**: catalytic-completion plumbing for `monomers` channel (needs `monomers_next` trace_hint surface, or biology fix in `karr_translation_v3.py`).
-3. **DNASupercoiling beat 2**: close `substrates[0] +2 @ t=3` (stoichiometry tightening).
-4. **ProteinProcessingII beat 2**: productive WIP `82c64d5` with H2O residue, already on a branch.
-5. **L2.1 deep-red set**: Metabolism, ProteinActivation, ProteinDecay, ProteinModification, RibosomeAssembly, TerminalOrganelleAssembly, tRNAAminoacylation — schedule individual fanouts.
+- **v2 trace dir 28/28** restored after the junction-traversal wipe; manifest refreshed.
 
 ## Prior Status (2026-05-30 15:10 IST)
 
