@@ -115,6 +115,7 @@ class RnaDecayLightProcess(Process):
 
         self.rna_wids = _to_str_list(rna_state.wholeCellModelIDs)
         self.substrate_wids = _to_str_list(fixture.substrateWholeCellModelIDs)
+        self.enzyme_wids = _to_str_list(fixture.enzymeWholeCellModelIDs)
 
         half_lives = np.asarray(rna_state.halfLives, dtype=np.float64).reshape(-1)
         if half_lives.size != len(self.rna_wids):
@@ -155,6 +156,7 @@ class RnaDecayLightProcess(Process):
             raise FileNotFoundError(
                 "RnaDecay fixture not found and fallback_rna_ids is empty; cannot initialize."
             )
+        self.enzyme_wids = []
 
         type_by_wid = {
             str(wid): str(rna_type)
@@ -191,6 +193,14 @@ class RnaDecayLightProcess(Process):
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
                     for wid in self.rna_wids
                 }
+            },
+            "enzymes": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.enzyme_wids
+            },
+            "boundEnzymes": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.enzyme_wids
             },
             "substrates": {
                 wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}

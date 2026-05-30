@@ -248,6 +248,18 @@ class KarrProteinTranslocationProcess(Process):
                 wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                 for wid in self.substrate_wids
             },
+            "enzymes": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.enzyme_wids
+            },
+            "boundEnzymes": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.enzyme_wids
+            },
+            "monomers": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.monomer_wids
+            },
             "protein": {
                 "counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}

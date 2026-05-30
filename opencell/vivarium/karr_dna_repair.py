@@ -274,6 +274,14 @@ class KarrDNARepairProcess(Process):
                 wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
                 for wid in self.tracked_substrates
             },
+            "enzymes": {
+                wid: {"_default": self.enzyme_defaults.get(wid, 0.0), "_updater": "accumulate", "_emit": False}
+                for wid in self.enzyme_wids
+            },
+            "boundEnzymes": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.enzyme_wids
+            },
             "requests": {
                 self.name: {
                     wid: {"_default": 0.0, "_updater": "set", "_emit": False}

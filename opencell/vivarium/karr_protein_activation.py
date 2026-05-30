@@ -134,6 +134,7 @@ class KarrProteinActivationProcess(Process):
 
         self.substrate_wids = _parse_wid_array(fixture.substrateWholeCellModelIDs)
         self.stimuli_wids = _parse_wid_array(fixture.stimuliWholeCellModelIDs)
+        self.enzyme_wids = _parse_wid_array(fixture.enzymeWholeCellModelIDs)
         self._substrate_wid_set = set(self.substrate_wids)
         self._stimuli_wid_set = set(self.stimuli_wids)
 
@@ -171,6 +172,14 @@ class KarrProteinActivationProcess(Process):
             "substrates": {
                 wid: {"_default": 0.0, "_updater": "set", "_emit": False}
                 for wid in self.substrate_wids
+            },
+            "enzymes": {
+                wid: {"_default": 0.0, "_updater": "set", "_emit": False}
+                for wid in self.enzyme_wids
+            },
+            "boundEnzymes": {
+                wid: {"_default": 0.0, "_updater": "set", "_emit": False}
+                for wid in self.enzyme_wids
             },
             "stimuli": {
                 wid: {"_default": 0.0, "_updater": "set", "_emit": False}

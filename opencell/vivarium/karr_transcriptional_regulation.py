@@ -106,6 +106,7 @@ def _load_fixture(path: str | Path) -> dict[str, Any]:
         raise KeyError("Missing TF IDs field in TranscriptionalRegulation fixture")
     tf_wids = _extract_wids(_as_field_matrix(fx, tf_field))
     n_tf = len(tf_wids)
+    substrate_wids = _extract_wids(_as_field_matrix(fx, "substrateWholeCellModelIDs")) if "substrateWholeCellModelIDs" in names else []
 
     if "transcriptionUnitWholeCellModelIDs" not in names:
         raise KeyError("Missing transcriptionUnitWholeCellModelIDs field in fixture")
@@ -187,6 +188,7 @@ def _load_fixture(path: str | Path) -> dict[str, Any]:
 
     return {
         "tf_wids": tf_wids,
+        "substrate_wids": substrate_wids,
         "tu_wids": tu_wids,
         "tf_promoter_affinity": affinity,
         "tf_tu_fold_change": fold_change,
@@ -237,6 +239,7 @@ class KarrTranscriptionalRegulationProcess(Process):
         super().__init__(parameters)
         fixture = _load_fixture(self.parameters["fixture_path"])
         self.tf_wids: list[str] = fixture["tf_wids"]
+        self.substrate_wids: list[str] = fixture["substrate_wids"]
         self.tu_wids: list[str] = fixture["tu_wids"]
         self.tf_promoter_affinity: np.ndarray = fixture["tf_promoter_affinity"]
         self.tf_tu_fold_change: np.ndarray = fixture["tf_tu_fold_change"]
@@ -268,6 +271,18 @@ class KarrTranscriptionalRegulationProcess(Process):
 
     def ports_schema(self) -> dict[str, Any]:
         return {
+            "substrates": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.substrate_wids
+            },
+            "enzymes": {
+                tf_wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for tf_wid in self.tf_wids
+            },
+            "boundEnzymes": {
+                tf_wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for tf_wid in self.tf_wids
+            },
             "protein": {
                 "counts": {
                     tf_wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}

@@ -131,6 +131,7 @@ class KarrMetabolismProcess(Process):
         self.model: km.KarrMetabolismModel = model
         self._rxn_ids = self.model.rxn_wcm_ids_645
         self._sub_ids = self.model.raw["ids"]["substrate_wcm_585"]
+        self.enzyme_wids = tuple(self.model.raw.get("ids", {}).get("enzyme_wcm_104", []))
 
         self.dynamic_bounds: bool = bool(self.parameters["dynamic_bounds"])
         self.use_allocator_budget: bool = bool(self.parameters["use_allocator_budget"])
@@ -268,6 +269,22 @@ class KarrMetabolismProcess(Process):
                     "_emit": False,
                 }
                 for sid in self._sub_ids
+            },
+            "enzymes": {
+                wid: {
+                    "_default": 0.0,
+                    "_updater": "accumulate",
+                    "_emit": False,
+                }
+                for wid in self.enzyme_wids
+            },
+            "boundEnzymes": {
+                wid: {
+                    "_default": 0.0,
+                    "_updater": "accumulate",
+                    "_emit": False,
+                }
+                for wid in self.enzyme_wids
             },
         }
         if self.dynamic_bounds:

@@ -152,6 +152,22 @@ class KarrRibosomeAssemblyProcess(Process):
                 wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                 for wid in self.substrate_wids
             },
+            "enzymes": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.gtpase_wids
+            },
+            "boundEnzymes": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.gtpase_wids
+            },
+            "complexs": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.complex_wids
+            },
+            "monomers": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.monomer_subunit_wids
+            },
             "rna": {
                 "counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}

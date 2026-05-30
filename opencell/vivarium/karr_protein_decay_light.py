@@ -97,6 +97,7 @@ class ProteinDecayLightProcess(Process):
         kept_cols_arr = np.asarray(kept_cols, dtype=np.int64)
         self.complex_wids = kept_wids
         self.substrate_wids = _fixture_wids(fixture.substrateWholeCellModelIDs)
+        self.enzyme_wids = _fixture_wids(fixture.enzymeWholeCellModelIDs)
         self.protein_wids = _fixture_wids(polypeptide_state.monomerWholeCellModelIDs)
         self.rna_wids = _fixture_wids(fixture.rnaWholeCellModelIDs)
 
@@ -151,6 +152,22 @@ class ProteinDecayLightProcess(Process):
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
                     for wid in self.complex_wids
                 }
+            },
+            "complexs": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.complex_wids
+            },
+            "monomers": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.protein_wids
+            },
+            "enzymes": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.enzyme_wids
+            },
+            "boundEnzymes": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.enzyme_wids
             },
             "substrates": {
                 wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}

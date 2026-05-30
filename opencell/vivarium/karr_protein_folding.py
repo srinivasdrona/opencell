@@ -188,6 +188,22 @@ class KarrProteinFoldingProcess(Process):
                 wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                 for wid in self.substrate_wids
             },
+            "enzymes": {
+                wid: {"_default": self.enzyme_initial_counts_by_wid.get(wid, 0.0), "_updater": "accumulate", "_emit": False}
+                for wid in self.enzyme_wids
+            },
+            "boundEnzymes": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.enzyme_wids
+            },
+            "foldedMonomers": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.folded_monomer_wids
+            },
+            "unfoldedMonomers": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.unfolded_monomer_wids
+            },
             "protein": {
                 "counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}

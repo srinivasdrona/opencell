@@ -53,6 +53,15 @@ def _safe_int(value: object, default: int = 0) -> int:
         return int(default)
 
 
+def _coerce_scalar(value: object) -> object:
+    out = value
+    while isinstance(out, np.ndarray):
+        if out.size == 0:
+            return ""
+        out = out.flat[0]
+    return out
+
+
 def _is_finite_number(value: object) -> bool:
     try:
         return bool(np.isfinite(float(value)))
@@ -94,6 +103,9 @@ class KarrDNADamageProcess(Process):
         self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
         self.damage_kinds = list(_DAMAGE_KINDS)
         self._tick_index = 0
+        self.substrate_wids: list[str] = []
+        self.enzyme_wids: list[str] = []
+        self._load_schema_observables(self.parameters.get("fixture_path", _DEFAULT_FIXTURE_PATH))
 
         configured_rates = self.parameters.get("kind_rates_per_s") or {}
         self.kind_rates_per_s = {
@@ -119,6 +131,21 @@ class KarrDNADamageProcess(Process):
             )
         self.fork_match_tolerance_nt = max(0, _safe_int(self.parameters.get("fork_match_tolerance_nt"), 0))
         self.enforce_unique_positions = bool(self.parameters.get("enforce_unique_positions", True))
+
+    def _load_schema_observables(self, fixture_path: str | Path) -> None:
+        resolved = _resolve_path(fixture_path)
+        if not resolved.exists():
+            return
+        try:
+            fixture = loadmat(str(resolved), squeeze_me=True, struct_as_record=False)["data"].fixture
+        except Exception:
+            return
+        substrate_ids = getattr(fixture, "substrateWholeCellModelIDs", None)
+        enzyme_ids = getattr(fixture, "enzymeWholeCellModelIDs", None)
+        if substrate_ids is not None:
+            self.substrate_wids = [str(_coerce_scalar(raw)) for raw in np.asarray(substrate_ids, dtype=object).ravel()]
+        if enzyme_ids is not None:
+            self.enzyme_wids = [str(_coerce_scalar(raw)) for raw in np.asarray(enzyme_ids, dtype=object).ravel()]
 
     def ports_schema(self) -> dict[str, Any]:
         return {
@@ -147,7 +174,19 @@ class KarrDNADamageProcess(Process):
                     "_updater": "set",
                     "_emit": False,
                 },
-            }
+            },
+            "substrates": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.substrate_wids
+            },
+            "enzymes": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.enzyme_wids
+            },
+            "boundEnzymes": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.enzyme_wids
+            },
         }
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:

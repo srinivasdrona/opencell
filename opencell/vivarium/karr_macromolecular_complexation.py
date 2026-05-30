@@ -56,6 +56,7 @@ def _load_fixture(path: str | Path) -> dict[str, Any]:
     fx = mat["data"]["fixture"][0, 0]
 
     substrate_wids = _extract_wids(fx["substrateWholeCellModelIDs"])
+    enzyme_wids = _extract_wids(fx["enzymeWholeCellModelIDs"])
     complex_wids = _extract_wids(fx["complexWholeCellModelIDs"])
     complex_composition = np.asarray(fx["complexComposition"][0, 0], dtype=np.int64)
 
@@ -67,6 +68,7 @@ def _load_fixture(path: str | Path) -> dict[str, Any]:
 
     return {
         "substrate_wids": substrate_wids,
+        "enzyme_wids": enzyme_wids,
         "complex_wids": complex_wids,
         "complex_composition": complex_composition,
         "substrates2net": substrates2net,
@@ -162,6 +164,7 @@ class MacromolecularComplexationProcess(Process):
         fixture = _load_fixture(self.parameters["fixture_path"])
 
         self.substrate_wids: list[str] = fixture["substrate_wids"]
+        self.enzyme_wids: list[str] = fixture["enzyme_wids"]
         self.complex_wids: list[str] = fixture["complex_wids"]
         self.complex_composition: np.ndarray = fixture["complex_composition"]
         self.substrates2net: np.ndarray = fixture["substrates2net"]
@@ -181,6 +184,18 @@ class MacromolecularComplexationProcess(Process):
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
                     for wid in self.complex_wids
                 }
+            },
+            "complexs": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.complex_wids
+            },
+            "enzymes": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.enzyme_wids
+            },
+            "boundEnzymes": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.enzyme_wids
             },
             "requests": {
                 self.name: {

@@ -101,6 +101,7 @@ class KarrTerminalOrganelleAssemblyProcess(Process):
         fixture = loadmat(str(resolved), squeeze_me=True, struct_as_record=False)["data"].fixture
 
         self.component_wids = _parse_wid_array(fixture.substrateWholeCellModelIDs)
+        self.enzyme_wids = _parse_wid_array(fixture.enzymeWholeCellModelIDs)
         self.reaction_wids = _parse_wid_array(fixture.reactionWholeCellModelIDs)
 
         localization_reactions = _as_int_array(fixture.localizationReactions)
@@ -156,6 +157,18 @@ class KarrTerminalOrganelleAssemblyProcess(Process):
 
     def ports_schema(self) -> dict[str, Any]:
         return {
+            "substrates": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.component_wids
+            },
+            "enzymes": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.enzyme_wids
+            },
+            "boundEnzymes": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.enzyme_wids
+            },
             "protein": {
                 "activity": {
                     wid: {"_default": 0.0, "_updater": "set", "_emit": False}

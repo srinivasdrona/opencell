@@ -167,6 +167,14 @@ class KarrFtsZPolymerizationProcess(Process):
                 wid: {"_default": 0.0, "_updater": "accumulate", "_emit": wid == self.gtp_wid}
                 for wid in self.substrate_wids
             },
+            "enzymes": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.enzyme_wids
+            },
+            "boundEnzymes": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.enzyme_wids
+            },
             "requests": {
                 self.name: {
                     self.gtp_wid: {"_default": 0.0, "_updater": "set", "_emit": False},
