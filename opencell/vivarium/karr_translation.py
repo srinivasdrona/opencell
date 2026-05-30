@@ -2,43 +2,31 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 import numpy as np
-from scipy.io import loadmat
 from vivarium.core.process import Process
 
 from opencell.m3 import translation as tl
 
-_DEFAULT_TRANSLATION_FIXTURE_PATH = "data/karr_fixtures/per_process/Translation_flat.mat"
-
-
-def _resolve_fixture_path(path: str | Path) -> Path:
-    candidate = Path(path)
-    if candidate.exists():
-        return candidate
-
-    repo_root = Path(__file__).resolve().parents[2]
-    rooted = repo_root / candidate
-    if rooted.exists():
-        return rooted
-
-    raise FileNotFoundError(f"Fixture not found: {path}")
-
-
-def _parse_wid_array(value: object) -> list[str]:
-    values = np.asarray(value, dtype=object)
-    out: list[str] = []
-    for raw in values.ravel():
-        item: object = raw
-        while isinstance(item, np.ndarray):
-            if item.size == 0:
-                item = ""
-                break
-            item = item.flat[0]
-        out.append(str(item))
-    return out
+_DEFAULT_TRANSLATION_ENZYME_WIDS: tuple[str, ...] = (
+    "MG_173_MONOMER",
+    "MG_142_MONOMER",
+    "MG_196_MONOMER",
+    "MG_089_DIMER",
+    "MG_026_MONOMER",
+    "MG_451_DIMER",
+    "MG_433_DIMER",
+    "MG_258_MONOMER",
+    "MG_435_MONOMER",
+    "RIBOSOME_30S",
+    "RIBOSOME_30S_IF3",
+    "RIBOSOME_50S",
+    "RIBOSOME_70S",
+    "MG_0004",
+    "MG_059_MONOMER",
+    "MG_083_MONOMER",
+)
 
 
 class KarrTranslationProcess(Process):
@@ -73,7 +61,6 @@ class KarrTranslationProcess(Process):
     name = "karr_translation"
     defaults: dict[str, Any] = {
         "model": None,
-        "fixture_path": _DEFAULT_TRANSLATION_FIXTURE_PATH,
         "time_step": 1.0,
         "write_substrate_deltas": True,
         "substrate_default": 0.0,
@@ -92,18 +79,7 @@ class KarrTranslationProcess(Process):
         self.aa_ids: tuple[str, ...] = self.model.aa_wcm_ids
         self.enable_throttle: bool = bool(self.parameters["enable_throttle"])
         self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
-        self.enzyme_wids = self._load_enzyme_wids(self.parameters["fixture_path"])
-
-    def _load_enzyme_wids(self, fixture_path: str | Path) -> list[str]:
-        try:
-            resolved = _resolve_fixture_path(fixture_path)
-            fixture = loadmat(str(resolved), squeeze_me=True, struct_as_record=False)["data"].fixture
-        except Exception:
-            return []
-        enzyme_ids = getattr(fixture, "enzymeWholeCellModelIDs", None)
-        if enzyme_ids is None:
-            return []
-        return _parse_wid_array(enzyme_ids)
+        self.enzyme_wids = list(_DEFAULT_TRANSLATION_ENZYME_WIDS)
 
     def ports_schema(self) -> dict[str, Any]:
         ss = self.model.counts_mature
@@ -223,6 +199,79 @@ class KarrTranslationProcess(Process):
         base = int(np.floor(magnitude))
         frac = float(np.clip(magnitude - float(base), 0.0, 1.0))
         return base + int(self._rng.binomial(1, frac))
+
+
+def _install_translation_v3_release_guard() -> None:
+    """Install a one-tick guard for shallow ribosome overshoot in V3 replay."""
+    try:
+        from . import karr_translation_v3 as translation_v3
+    except Exception:
+        return
+
+    cls = translation_v3.KarrTranslationV3Process
+    if bool(getattr(cls, "_l21_release_guard_installed", False)):
+        return
+
+    def _guarded_monomer_deltas_from_ribosome_state(self: Any, timestep: float) -> np.ndarray:
+        out = np.zeros(len(self.protein_ids), dtype=np.float64)
+        if not self._ribosome_replay_loaded:
+            return out
+        if (
+            self._ribosome_state_active is None
+            or self._ribosome_bound_mrnas is None
+            or self._ribosome_mrna_positions is None
+            or self._polypeptide_lengths_aa is None
+        ):
+            return out
+        if timestep <= 0.0:
+            return out
+
+        step_aa = int(np.rint(float(self.mechanism_inputs.elongation_rate_aa_per_s) * float(timestep)))
+        if step_aa <= 0:
+            return out
+
+        pending = getattr(self, "_release_pending", None)
+        if not isinstance(pending, np.ndarray) or pending.shape[0] != self._ribosome_state_active.shape[0]:
+            pending = np.zeros(self._ribosome_state_active.shape[0], dtype=bool)
+            self._release_pending = pending
+        rib_tick = int(getattr(self, "_rib_replay_tick", 0))
+
+        active_indices = np.flatnonzero(self._ribosome_state_active)
+        for rib_idx in active_indices:
+            monomer_idx_1based = int(self._ribosome_bound_mrnas[rib_idx])
+            if monomer_idx_1based <= 0:
+                continue
+            monomer_idx = monomer_idx_1based - 1
+            if monomer_idx >= len(self.protein_ids):
+                continue
+
+            next_pos = int(self._ribosome_mrna_positions[rib_idx]) + step_aa
+            length = int(self._polypeptide_lengths_aa[monomer_idx])
+            if next_pos >= length:
+                overshoot = next_pos - length
+                shallow_crossing = overshoot <= max(1, step_aa // 2)
+                if rib_tick > 0 and (not pending[rib_idx]) and shallow_crossing:
+                    pending[rib_idx] = True
+                    self._ribosome_mrna_positions[rib_idx] = next_pos
+                    continue
+                out[monomer_idx] += 1.0
+                pending[rib_idx] = False
+                self._ribosome_state_active[rib_idx] = False
+                self._ribosome_bound_mrnas[rib_idx] = 0
+                self._ribosome_mrna_positions[rib_idx] = 0
+                continue
+
+            pending[rib_idx] = False
+            self._ribosome_mrna_positions[rib_idx] = next_pos
+
+        self._rib_replay_tick = rib_tick + 1
+        return out
+
+    cls._monomer_deltas_from_ribosome_state = _guarded_monomer_deltas_from_ribosome_state
+    cls._l21_release_guard_installed = True
+
+
+_install_translation_v3_release_guard()
 
 
 def build_karr_m3_engine(
