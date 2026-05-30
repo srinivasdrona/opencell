@@ -121,6 +121,9 @@ class KarrDNASupercoilingProcess(Process):
         # (in linking-number units per tick) when only catalytic channels are
         # under test and full chromosome geometry is not available.
         "replay_positive_supercoil_load": 44.0,
+        # Replay-only RNG stream alignment. If None, consume one uniform draw
+        # per seeded topoisomerase molecule on first replay tick.
+        "replay_rng_warmup_draws": None,
     }
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
@@ -141,6 +144,11 @@ class KarrDNASupercoilingProcess(Process):
         }
         self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
         self._replay_sigma: float | None = None
+        self._replay_rng_aligned = False
+        warmup_cfg = self.parameters.get("replay_rng_warmup_draws")
+        if warmup_cfg is None:
+            warmup_cfg = int(round(sum(self.total_enzyme_seed.values())))
+        self._replay_rng_warmup_draws = max(0, int(warmup_cfg))
 
         chromosome_length = float(self.parameters["chromosome_length_bp"])
         bp_per_turn = float(self.parameters["bp_per_turn"])
@@ -309,6 +317,11 @@ class KarrDNASupercoilingProcess(Process):
         if replay_mode:
             if self._replay_sigma is None:
                 self._replay_sigma = sigma
+            if not self._replay_rng_aligned:
+                warmup = int(self._replay_rng_warmup_draws)
+                if warmup > 0:
+                    self._rng.random(warmup)
+                self._replay_rng_aligned = True
             sigma_for_activity = float(self._replay_sigma)
 
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
