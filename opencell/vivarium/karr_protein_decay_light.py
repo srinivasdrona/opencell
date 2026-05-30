@@ -210,6 +210,11 @@ class ProteinDecayLightProcess(Process):
             self._latent_enabled = False
         if self._latent_monomer_decay_reactions.shape[1] != self._latent_monomers.shape[0]:
             self._latent_enabled = False
+        if self._latent_monomers.shape[0] != len(self.protein_wids):
+            # The replay process exposes the mature 482-monomer surface; fixture
+            # latent tensors can include expanded species that are not 1:1 mappable
+            # to that surface. Disable latent decay until a canonical projection exists.
+            self._latent_enabled = False
 
     def ports_schema(self) -> dict[str, Any]:
         return {
