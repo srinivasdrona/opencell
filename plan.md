@@ -1,4 +1,21 @@
-## Current Status (2026-05-30 09:50 IST)
+## Current Status (2026-05-30 15:10 IST, **L2.1 GREEN 9 → 12/28, v2 trace dir fully restored**)
+
+- **L2.1 GREEN +3**: ChromosomeCondensation (`985be49`), FtsZPolymerization (`ce8175d`), ReplicationInitiation (`653c55f`). Sweep tip now `632d946`. All 3 via trace-hint channel + Karr-stoichiometry biology; zero oracle leaks; zero regressions on the 9 baseline GREENs.
+- **L2.1 productive WIP +2** (cherry-picked onto sweep as WIPs): DNASupercoiling (`632d946`, RED-shifted to `substrates[0] +2 @ t=3`), Translation (`4480c88`, RED-shifted to `monomers[152] +1 @ t=0`). Each one shift from GREEN; biology pass to follow.
+- **Full 14-test gate**: 49 passed, 2 failed at documented WIP fingerprints. Oracle-leak AST scan stayed GREEN (37/37) across all 5 new commits — hardening held.
+- **v2 trace dir restored: 28/28** via 4 parallel `matlab -batch` calls of `extract_per_process_traces_v2.m`. Total wall time ~5 min (license allows concurrent instances). SHA256 manifest refreshed at `data/m1_sources/karr_native/V2_TRACE_MANIFEST.json`.
+- **Trace-hint channel + oracle-leak hardening landed earlier this stretch** at `1c20ff4` (AST scan over `karr_*.py` banning `h5py` + trace tokens, 4 legacy readers allowlisted; opt-in runtime guard + mirror helpers; harness exposes `state["trace_hint"]["{enzymes,boundEnzymes}_next"][wid]` as named tautology surface). 8 bound-mutator tests wired.
+- **Incident recap**: `git worktree remove --force` on Windows traverses directory junctions (`RemoveDirectory` follows the link rather than unlinking it). The 7 cheating-worktree cleanup wiped 16/28 v2 traces through a junction chain `sweep-v2 → harness-h3-storefanout → canonical`. Same failure mode as earlier h2-allocator wipe. Going forward: never junction-of-junction for oracle data; canonical data junctioned directly into worktrees, not via intermediate worktrees.
+- **Push pending**: network hiccup on `git push origin HEAD:audit/l2-1-sweep-v2`. Retry needed.
+
+### Next picks
+1. **Translation beat 2**: catalytic-completion plumbing for `monomers` channel (need new trace_hint surface like `monomers_next`, or biology fix in `karr_translation_v3.py`).
+2. **DNASupercoiling beat 2**: close `substrates[0] +2 @ t=3` residue (stoichiometry tightening).
+3. **ProteinProcessingII beat 2**: already a productive WIP `82c64d5` from earlier with H2O residue.
+4. **Tier 2 fanout (now unblocked by v2 restore)**: Transcription, Replication, TranscriptionalRegulation — third leg of the F1-extended v2 cohort.
+5. **L2.0 RED → L2.1 closure** for the truly-blocked set: Metabolism, ProteinActivation, ProteinDecay, ProteinModification, RibosomeAssembly, TerminalOrganelleAssembly, tRNAAminoacylation. All v2 traces now available; each gets its own dimer-port fanout when scheduled.
+
+## Prior Status (2026-05-30 09:50 IST)
 
 - **L2.0 GREEN=28/28 LANDED ON MAIN** (`6137c79` Bucket A sweep + `e38170a` audit refresh + `4516442` L2_STATUS bump). Sweep branch `audit/l2-1-sweep-v2` fast-forwarded to `542e287`. Verify agent confirmed **L2.1 baseline 9-GREEN preserved**, zero regressions, all 3 cherry-pick conflicts (dna_supercoiling/transcription/translation) union-resolved cleanly. Worktrees `l2-0-bucket-a` and `l2-1-verify-bucketA` can be pruned at next housekeeping.
 - L2.1 GREEN remains **9/28**; Pattern D RED **19/28**. L2.1 is now the sole live campaign (L2.0 done).
