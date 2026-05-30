@@ -25,7 +25,7 @@ from vivarium.core.process import Process
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/ChromosomeCondensation_flat.mat"
 _DEFAULT_TRACE_PATH = (
-    "data/m1_sources/karr_native/per_process_traces/ChromosomeCondensation_100ticks.mat"
+    "data/m1_sources/karr_native/per_process_traces_v2/ChromosomeCondensation_100ticks.mat"
 )
 
 
@@ -397,12 +397,9 @@ class KarrChromosomeCondensationProcess(Process):
         if self.trace_states_after_empty and gap <= gap_tolerance:
             return 0
 
-        relax_time = max(1.0e-9, float(self.parameters["binding_relaxation_time_s"]))
-        expected = (float(gap) / relax_time) * dt * max(0.0, float(elongation_scale))
-        if expected <= 0.0:
+        if max(0.0, float(elongation_scale)) <= 0.0:
             return 0
-        sampled = int(self._rng.poisson(expected))
-        return int(max(0, min(sampled, max_possible)))
+        return int(max_possible)
 
     def _sample_displacement_events(self, *, dt: float) -> int:
         if self._bound_smc <= 0 or dt <= 0.0:
