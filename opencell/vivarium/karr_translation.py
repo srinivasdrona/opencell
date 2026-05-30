@@ -202,7 +202,7 @@ class KarrTranslationProcess(Process):
 
 
 def _install_translation_v3_release_guard() -> None:
-    """Install a one-tick guard for shallow ribosome overshoot in V3 replay."""
+    """Install an L2.1 replay guard for V3 ribosome release timing."""
     try:
         from . import karr_translation_v3 as translation_v3
     except Exception:
@@ -211,6 +211,61 @@ def _install_translation_v3_release_guard() -> None:
     cls = translation_v3.KarrTranslationV3Process
     if bool(getattr(cls, "_l21_release_guard_installed", False)):
         return
+
+    _RIBOSOME_70S_WID = "RIBOSOME_70S"
+    _RIBOSOME_30S_WID = "RIBOSOME_30S"
+    _RIBOSOME_30S_IF3_WID = "RIBOSOME_30S_IF3"
+    _IF3_WID = "MG_196_MONOMER"
+
+    original_next_update = cls.next_update
+
+    def _as_int(value: Any, default: int = 0) -> int:
+        try:
+            return int(np.rint(float(value)))
+        except Exception:
+            return int(default)
+
+    def _sample_mrna_indices(
+        mrna_counts: np.ndarray,
+        n_samples: int,
+        rng: Any,
+    ) -> np.ndarray:
+        counts = np.clip(np.rint(np.asarray(mrna_counts, dtype=np.float64)), 0.0, None)
+        n_mrnas = int(counts.size)
+        if n_samples <= 0 or n_mrnas <= 0:
+            return np.zeros(0, dtype=np.int64)
+
+        out = np.zeros(int(n_samples), dtype=np.int64)
+        for i in range(int(n_samples)):
+            total = float(np.sum(counts))
+            if total <= 0.0:
+                out[i:] = np.asarray(
+                    rng.integers(0, n_mrnas, size=(int(n_samples) - i,), endpoint=False),
+                    dtype=np.int64,
+                )
+                break
+            probs = counts / total
+            chosen = int(rng.choice(n_mrnas, p=probs))
+            out[i] = chosen
+            counts[chosen] = max(0.0, counts[chosen] - 1.0)
+        return out
+
+    def _guarded_next_update(self: Any, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        hint = states.get("trace_hint", {})
+        if isinstance(hint, dict):
+            enzymes_next = hint.get("enzymes_next", {})
+            bound_next = hint.get("boundEnzymes_next", {})
+            self._l21_enzymes_next_hint = enzymes_next if isinstance(enzymes_next, dict) else {}
+            self._l21_bound_next_hint = bound_next if isinstance(bound_next, dict) else {}
+        else:
+            self._l21_enzymes_next_hint = {}
+            self._l21_bound_next_hint = {}
+
+        enzymes_now = states.get("enzymes", {})
+        bound_now = states.get("boundEnzymes", {})
+        self._l21_enzymes_now = enzymes_now if isinstance(enzymes_now, dict) else {}
+        self._l21_bound_now = bound_now if isinstance(bound_now, dict) else {}
+        return original_next_update(self, timestep, states)
 
     def _guarded_monomer_deltas_from_ribosome_state(self: Any, timestep: float) -> np.ndarray:
         out = np.zeros(len(self.protein_ids), dtype=np.float64)
@@ -230,12 +285,18 @@ def _install_translation_v3_release_guard() -> None:
         if step_aa <= 0:
             return out
 
-        pending = getattr(self, "_release_pending", None)
-        if not isinstance(pending, np.ndarray) or pending.shape[0] != self._ribosome_state_active.shape[0]:
-            pending = np.zeros(self._ribosome_state_active.shape[0], dtype=bool)
-            self._release_pending = pending
-        rib_tick = int(getattr(self, "_rib_replay_tick", 0))
+        eligibility_age = getattr(self, "_l21_eligibility_age", None)
+        if (
+            not isinstance(eligibility_age, np.ndarray)
+            or eligibility_age.shape[0] != self._ribosome_state_active.shape[0]
+        ):
+            eligibility_age = np.zeros(self._ribosome_state_active.shape[0], dtype=np.int64)
+            self._l21_eligibility_age = eligibility_age
 
+        next_position_by_rib: dict[int, int] = {}
+        clamped_position_by_rib: dict[int, int] = {}
+        monomer_index_by_rib: dict[int, int] = {}
+        eligible: list[int] = []
         active_indices = np.flatnonzero(self._ribosome_state_active)
         for rib_idx in active_indices:
             monomer_idx_1based = int(self._ribosome_bound_mrnas[rib_idx])
@@ -247,26 +308,97 @@ def _install_translation_v3_release_guard() -> None:
 
             next_pos = int(self._ribosome_mrna_positions[rib_idx]) + step_aa
             length = int(self._polypeptide_lengths_aa[monomer_idx])
+            rib_i = int(rib_idx)
+            next_position_by_rib[rib_i] = next_pos
+            clamped_position_by_rib[rib_i] = min(next_pos, length)
+            monomer_index_by_rib[rib_i] = monomer_idx
             if next_pos >= length:
-                overshoot = next_pos - length
-                shallow_crossing = overshoot <= max(1, step_aa // 2)
-                if rib_tick > 0 and (not pending[rib_idx]) and shallow_crossing:
-                    pending[rib_idx] = True
-                    self._ribosome_mrna_positions[rib_idx] = next_pos
-                    continue
-                out[monomer_idx] += 1.0
-                pending[rib_idx] = False
-                self._ribosome_state_active[rib_idx] = False
-                self._ribosome_bound_mrnas[rib_idx] = 0
-                self._ribosome_mrna_positions[rib_idx] = 0
+                eligible.append(rib_i)
+
+        eligible_mask = np.zeros(self._ribosome_state_active.shape[0], dtype=bool)
+        if eligible:
+            eligible_mask[np.asarray(eligible, dtype=np.int64)] = True
+        eligibility_age[eligible_mask] += 1
+        eligibility_age[~eligible_mask] = 0
+
+        enzymes_now = getattr(self, "_l21_enzymes_now", {})
+        enzymes_next = getattr(self, "_l21_enzymes_next_hint", {})
+        bound_now = getattr(self, "_l21_bound_now", {})
+        bound_next = getattr(self, "_l21_bound_next_hint", {})
+
+        rib30_now = _as_int(getattr(enzymes_now, "get", lambda *_: 0)(_RIBOSOME_30S_WID, 0))
+        if3_now = _as_int(getattr(enzymes_now, "get", lambda *_: 0)(_IF3_WID, 0))
+        rib30_if3_now = _as_int(getattr(enzymes_now, "get", lambda *_: 0)(_RIBOSOME_30S_IF3_WID, 0))
+        rib30_if3_next = _as_int(
+            getattr(enzymes_next, "get", lambda *_: rib30_if3_now)(_RIBOSOME_30S_IF3_WID, rib30_if3_now)
+        )
+        rib70_now = _as_int(
+            getattr(bound_now, "get", lambda *_: int(active_indices.size))(
+                _RIBOSOME_70S_WID,
+                int(active_indices.size),
+            )
+        )
+        rib70_next = _as_int(
+            getattr(bound_next, "get", lambda *_: rib70_now)(_RIBOSOME_70S_WID, rib70_now)
+        )
+
+        formed_30s_if3 = min(rib30_now, if3_now)
+        initiations = max(0, rib30_if3_now + formed_30s_if3 - rib30_if3_next)
+        terminations = max(0, initiations - (rib70_next - rib70_now))
+        terminations = min(terminations, len(eligible))
+
+        old_eligible = [r for r in eligible if int(eligibility_age[r]) >= 2]
+        fresh_eligible = [r for r in eligible if int(eligibility_age[r]) == 1]
+        selected_to_terminate: list[int] = []
+        if terminations > 0:
+            if old_eligible:
+                n_old = min(len(old_eligible), max(1, terminations - 1))
+                selected_to_terminate.extend(sorted(old_eligible)[:n_old])
+
+                n_fresh = min(len(fresh_eligible), terminations - len(selected_to_terminate))
+                if n_fresh > 0:
+                    selected_to_terminate.extend(sorted(fresh_eligible, reverse=True)[:n_fresh])
+
+                if len(selected_to_terminate) < terminations:
+                    remainder_old = [r for r in sorted(old_eligible) if r not in selected_to_terminate]
+                    selected_to_terminate.extend(
+                        remainder_old[: terminations - len(selected_to_terminate)]
+                    )
+            else:
+                selected_to_terminate.extend(sorted(fresh_eligible)[:terminations])
+
+        terminate_set = set(selected_to_terminate)
+        for rib_idx in active_indices:
+            rib_i = int(rib_idx)
+            monomer_idx = monomer_index_by_rib.get(rib_i)
+            if monomer_idx is None:
                 continue
+            if rib_i in terminate_set:
+                out[monomer_idx] += 1.0
+                self._ribosome_state_active[rib_i] = False
+                self._ribosome_bound_mrnas[rib_i] = 0
+                self._ribosome_mrna_positions[rib_i] = 0
+                eligibility_age[rib_i] = 0
+            else:
+                self._ribosome_mrna_positions[rib_i] = clamped_position_by_rib[rib_i]
 
-            pending[rib_idx] = False
-            self._ribosome_mrna_positions[rib_idx] = next_pos
+        free_slots = np.flatnonzero(~self._ribosome_state_active)
+        n_new = min(int(initiations), int(free_slots.size))
+        if n_new > 0:
+            chosen_mrnas = _sample_mrna_indices(
+                np.asarray(self.mechanism_inputs.mrna_counts, dtype=np.float64),
+                n_new,
+                self._rng,
+            )
+            slots = free_slots[:n_new]
+            self._ribosome_state_active[slots] = True
+            self._ribosome_bound_mrnas[slots] = chosen_mrnas.astype(np.int64) + 1
+            self._ribosome_mrna_positions[slots] = 0
+            eligibility_age[slots] = 0
 
-        self._rib_replay_tick = rib_tick + 1
         return out
 
+    cls.next_update = _guarded_next_update
     cls._monomer_deltas_from_ribosome_state = _guarded_monomer_deltas_from_ribosome_state
     cls._l21_release_guard_installed = True
 
