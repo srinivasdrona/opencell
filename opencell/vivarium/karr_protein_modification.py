@@ -369,7 +369,7 @@ class KarrProteinModificationProcess(Process):
         req = requirements if cols is None else requirements[:, cols]
         sp = species if cols is None else species[cols]
         with np.errstate(divide="ignore", invalid="ignore"):
-            limits = np.where(req > 0.0, sp[np.newaxis, :] / req, np.inf)
+            limits = sp[np.newaxis, :] / req
         return np.min(limits, axis=1)
 
     def _build_species_matrices(self, dt: float) -> tuple[np.ndarray, np.ndarray]:
