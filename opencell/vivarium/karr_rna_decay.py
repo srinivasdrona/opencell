@@ -181,7 +181,6 @@ class RnaDecayLightProcess(Process):
             getattr(fixture, "peptidylTRNAHydrolaseSpecificRate", 0.0)
         )
         self.step_size_sec = float(getattr(fixture, "stepSizeSec", 1.0))
-        self._rng_seed = int(getattr(fixture, "seed", self._rng_seed))
 
     def _load_from_fallback(self) -> None:
         self.rna_wids = [str(wid) for wid in self.parameters.get("fallback_rna_ids", [])]
@@ -276,7 +275,7 @@ class RnaDecayLightProcess(Process):
 
         decay_rates = np.minimum(1.0e6, self.decay_rates_per_s * dt)
         expected = decay_rates * rna_counts.astype(np.float64)
-        sampled_decay = self._rng.poisson(expected).astype(np.int64)
+        sampled_decay = self._sample_poisson_vector(expected)
         sampled_decay = np.minimum(sampled_decay, rna_counts)
 
         raw_h2o_need = float(np.dot(self.water_need_per_decay, sampled_decay))
@@ -349,6 +348,29 @@ class RnaDecayLightProcess(Process):
         threshold = float(self._rng.rand()) * float(total)
         cumulative = np.cumsum(weights, dtype=np.int64)
         return int(np.searchsorted(cumulative, threshold, side="right"))
+
+    def _sample_poisson_vector(self, lam: np.ndarray) -> np.ndarray:
+        lam_vec = np.asarray(lam, dtype=np.float64).reshape(-1)
+        out = np.zeros(lam_vec.size, dtype=np.int64)
+        for idx in range(lam_vec.size):
+            threshold = float(self._rng.rand())
+            rate = float(lam_vec[idx])
+            if not np.isfinite(rate) or rate <= 0.0:
+                continue
+            if rate >= 30.0:
+                out[idx] = int(self._rng.poisson(rate))
+                continue
+
+            p = math.exp(-rate)
+            cdf = p
+            k = 0
+            while threshold > cdf:
+                k += 1
+                p *= rate / float(k)
+                cdf += p
+            out[idx] = k
+
+        return out
 
     def _available_water(self, states: dict[str, Any]) -> float:
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
