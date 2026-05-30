@@ -15,8 +15,16 @@ _M2_CONSUMED_SUBSTRATES: tuple[str, ...] = ("ATP", "CTP", "GTP", "UTP")
 _DEFAULT_TX_FIXTURE_PATH = "data/karr_fixtures/per_process/Transcription_flat.mat"
 _DEFAULT_NTP_BASE_PROB = np.asarray((0.25, 0.25, 0.25, 0.25), dtype=float)
 _DEFAULT_RNAP_ELONGATION_RATE_NT_PER_S = 50.0
+_DEFAULT_ACTIVE_RNAP_FRACTION = 0.86
 _RNAP_WID = "RNA_POLYMERASE"
 _RNAP_HOLO_WID = "RNA_POLYMERASE_HOLOENZYME"
+_BASE_TO_NTP: dict[str, str] = {
+    "A": "ATP",
+    "C": "CTP",
+    "G": "GTP",
+    "U": "UTP",
+    "T": "UTP",
+}
 
 
 def _resolve_fixture_path(path: str | Path) -> Path:
@@ -102,6 +110,10 @@ class KarrTranscriptionProcess(Process):
             self.enzyme_wids,
             self._ntp_base_prob,
             self._rna_polymerase_elongation_rate_nt_per_s,
+            self._tu_sequences,
+            self._tu_binding_prob,
+            self._polymerase_slots,
+            self._active_rnap_fraction,
         ) = self._load_fixture_runtime(self.parameters["fixture_path"])
 
         # E.1b calibration: build a chassis-operative model whose
@@ -122,7 +134,15 @@ class KarrTranscriptionProcess(Process):
 
     def _load_fixture_runtime(
         self, fixture_path: str | Path
-    ) -> tuple[list[str], np.ndarray, float]:
+    ) -> tuple[
+        list[str],
+        np.ndarray,
+        float,
+        tuple[str, ...],
+        np.ndarray,
+        list[dict[str, int | bool]],
+        float,
+    ]:
         try:
             resolved = _resolve_fixture_path(fixture_path)
             fixture = loadmat(str(resolved), squeeze_me=True, struct_as_record=False)["data"].fixture
@@ -131,6 +151,10 @@ class KarrTranscriptionProcess(Process):
                 [],
                 _DEFAULT_NTP_BASE_PROB.copy(),
                 _DEFAULT_RNAP_ELONGATION_RATE_NT_PER_S,
+                tuple(),
+                np.asarray([], dtype=float),
+                [],
+                _DEFAULT_ACTIVE_RNAP_FRACTION,
             )
 
         enzyme_ids = getattr(fixture, "enzymeWholeCellModelIDs", None)
@@ -173,7 +197,88 @@ class KarrTranscriptionProcess(Process):
             except Exception:
                 elongation_rate = _DEFAULT_RNAP_ELONGATION_RATE_NT_PER_S
 
-        return (enzyme_wids, ntp_base_prob, float(elongation_rate))
+        tu_sequences: tuple[str, ...] = tuple()
+        tu_binding_prob = np.asarray([], dtype=float)
+        polymerase_slots: list[dict[str, int | bool]] = []
+        active_rnap_fraction = _DEFAULT_ACTIVE_RNAP_FRACTION
+
+        try:
+            states = np.asarray(getattr(fixture, "states", []), dtype=object).reshape(-1)
+            if states.size > 7:
+                rnap_state = states[6]
+                transcript_state = states[7]
+
+                seq_raw = np.asarray(
+                    getattr(transcript_state, "transcriptionUnitSequences", []), dtype=object
+                ).reshape(-1)
+                parsed_sequences: list[str] = []
+                for raw in seq_raw:
+                    item: object = raw
+                    while isinstance(item, np.ndarray):
+                        if item.size == 0:
+                            item = ""
+                            break
+                        item = item.flat[0]
+                    parsed_sequences.append(str(item))
+                tu_sequences = tuple(parsed_sequences)
+
+                if tu_sequences:
+                    bind_raw = getattr(fixture, "transcriptionUnitBindingProbabilities", None)
+                    if bind_raw is not None:
+                        bind_arr = np.asarray(bind_raw, dtype=float).reshape(-1)
+                        if bind_arr.size == len(tu_sequences):
+                            bind_sum = float(np.sum(bind_arr))
+                            if bind_sum > 0.0 and np.all(np.isfinite(bind_arr)):
+                                tu_binding_prob = bind_arr / bind_sum
+                    if tu_binding_prob.size != len(tu_sequences):
+                        tu_binding_prob = np.full(
+                            len(tu_sequences),
+                            1.0 / float(len(tu_sequences)),
+                            dtype=float,
+                        )
+
+                active_fraction_raw = np.asarray(
+                    getattr(rnap_state, "stateExpectations", []), dtype=float
+                ).reshape(-1)
+                if active_fraction_raw.size > 0:
+                    candidate = float(active_fraction_raw[0])
+                    if np.isfinite(candidate):
+                        active_rnap_fraction = float(np.clip(candidate, 0.0, 1.0))
+
+                rnap_states = np.asarray(getattr(rnap_state, "states", []), dtype=int).reshape(-1)
+                bound_tus = np.asarray(
+                    getattr(transcript_state, "boundTranscriptionUnits", []), dtype=int
+                ).reshape(-1)
+                n_slots = min(rnap_states.size, bound_tus.size)
+                for idx in range(n_slots):
+                    state_val = int(rnap_states[idx])
+                    if state_val == 0:
+                        continue
+                    tu_idx = int(bound_tus[idx]) - 1
+                    if tu_idx < 0 or tu_idx >= len(tu_sequences):
+                        tu_idx = 0
+                    polymerase_slots.append(
+                        {
+                            "active": bool(state_val >= 1 and len(tu_sequences) > 0),
+                            "tu_idx": int(tu_idx),
+                            "position": int(max(state_val, 0)),
+                        }
+                    )
+        except Exception:
+            tu_sequences = tuple()
+            tu_binding_prob = np.asarray([], dtype=float)
+            polymerase_slots = []
+            active_rnap_fraction = _DEFAULT_ACTIVE_RNAP_FRACTION
+
+        return (
+            enzyme_wids,
+            ntp_base_prob,
+            float(elongation_rate),
+            tu_sequences,
+            tu_binding_prob,
+            polymerase_slots,
+            float(active_rnap_fraction),
+        )
 
     @staticmethod
     def _coerce_nonnegative_int(value: object) -> int:
@@ -219,6 +324,59 @@ class KarrTranscriptionProcess(Process):
             )
         return out
 
+    def _sample_tu_index(self) -> int:
+        if not self._tu_sequences:
+            return 0
+        if self._tu_binding_prob.size == len(self._tu_sequences):
+            return int(self._polymerization_rng.choice(len(self._tu_sequences), p=self._tu_binding_prob))
+        return int(self._polymerization_rng.integers(0, len(self._tu_sequences)))
+
+    def _synchronize_polymerase_activity(
+        self, effective_bound_counts: dict[str, int]
+    ) -> list[int]:
+        if not self._polymerase_slots:
+            return []
+
+        target_bound = self._coerce_nonnegative_int(effective_bound_counts.get(_RNAP_WID, 0))
+        target_holo = self._coerce_nonnegative_int(effective_bound_counts.get(_RNAP_HOLO_WID, 0))
+        if target_bound <= 0:
+            target_bound = len(self._polymerase_slots)
+
+        target_active = self._coerce_nonnegative_int(
+            np.rint(target_bound * float(self._active_rnap_fraction))
+        )
+        target_active = max(0, min(target_active, len(self._polymerase_slots) - target_holo))
+
+        active_indices = [
+            idx
+            for idx, slot in enumerate(self._polymerase_slots)
+            if bool(slot.get("active", False))
+        ]
+        if len(active_indices) > target_active:
+            for idx in reversed(active_indices[target_active:]):
+                self._polymerase_slots[idx]["active"] = False
+        elif len(active_indices) < target_active:
+            needed = target_active - len(active_indices)
+            for idx, slot in enumerate(self._polymerase_slots):
+                if needed <= 0:
+                    break
+                if bool(slot.get("active", False)):
+                    continue
+                if self._tu_sequences and (
+                    int(slot.get("tu_idx", 0)) < 0
+                    or int(slot.get("tu_idx", 0)) >= len(self._tu_sequences)
+                ):
+                    slot["tu_idx"] = self._sample_tu_index()
+                    slot["position"] = 0
+                slot["active"] = True
+                needed -= 1
+
+        return [
+            idx
+            for idx, slot in enumerate(self._polymerase_slots)
+            if bool(slot.get("active", False))
+        ]
+
     def _simulate_polymerization_substrate_deltas(
         self,
         *,
@@ -251,16 +409,58 @@ class KarrTranscriptionProcess(Process):
             return {}
 
         consumed = {wid: 0 for wid in self.consumed_substrates}
-        for _ in range(n_bound_polymerases):
-            if all(available[wid] <= 0 for wid in self.consumed_substrates):
-                break
-            for _ in range(max_steps_per_polymerase):
-                ntp_idx = int(self._polymerization_rng.choice(4, p=self._ntp_base_prob))
-                ntp_wid = self.consumed_substrates[ntp_idx]
-                if available[ntp_wid] <= 0:
+        if self._polymerase_slots and self._tu_sequences:
+            active_indices = self._synchronize_polymerase_activity(effective_bound_counts)
+            if not active_indices:
+                return {}
+            ordered_indices = active_indices
+
+            for slot_idx in ordered_indices:
+                if all(available[wid] <= 0 for wid in self.consumed_substrates):
                     break
-                available[ntp_wid] -= 1
-                consumed[ntp_wid] += 1
+
+                slot = self._polymerase_slots[slot_idx]
+                tu_idx = int(slot.get("tu_idx", 0))
+                if tu_idx < 0 or tu_idx >= len(self._tu_sequences):
+                    tu_idx = self._sample_tu_index()
+
+                sequence = self._tu_sequences[tu_idx]
+                if not sequence:
+                    slot["tu_idx"] = tu_idx
+                    slot["position"] = 0
+                    continue
+
+                position = max(1, int(slot.get("position", 1)))
+                for _ in range(max_steps_per_polymerase):
+                    if position > len(sequence):
+                        position = 1
+                        tu_idx = self._sample_tu_index()
+                        sequence = self._tu_sequences[tu_idx]
+                        if not sequence:
+                            break
+
+                    ntp_wid = _BASE_TO_NTP.get(sequence[position - 1].upper())
+                    if ntp_wid is None:
+                        break
+                    if available[ntp_wid] <= 0:
+                        break
+                    available[ntp_wid] -= 1
+                    consumed[ntp_wid] += 1
+                    position += 1
+
+                slot["tu_idx"] = tu_idx
+                slot["position"] = position
+        else:
+            for _ in range(n_bound_polymerases):
+                if all(available[wid] <= 0 for wid in self.consumed_substrates):
+                    break
+                for _ in range(max_steps_per_polymerase):
+                    ntp_idx = int(self._polymerization_rng.choice(4, p=self._ntp_base_prob))
+                    ntp_wid = self.consumed_substrates[ntp_idx]
+                    if available[ntp_wid] <= 0:
+                        break
+                    available[ntp_wid] -= 1
+                    consumed[ntp_wid] += 1
 
         return {wid: float(-count) for wid, count in consumed.items() if count > 0}
 
