@@ -1,4 +1,46 @@
-## Current Status (2026-05-30 15:10 IST, **L2.1 GREEN 9 → 12/28, v2 trace dir fully restored**)
+## Operational handoff (compaction wake-up block) — refresh before stepping away
+
+**Live processes / agents (2026-05-30 15:30 IST):**
+- Codex fleet `f1v2-tier2` (3 agents) — 2/3 exited (transcription, transcriptionalregulation), `f1v2-replication` still alive. Wait shell: async PowerShell `tier2-wait` polling `codex_fire wait ... --timeout 7200 --poll 60`. Notification fires when last agent exits.
+- Fleet JSON: `C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\fanout_f1v2_tier2_fleet.json`
+- Per-agent worktrees: `E:\opencell-worktrees\fix-l2-v2-{transcription,replication,transcriptionalregulation}` (off sweep tip `632d946`)
+
+**Branch tips (active):**
+- `main` @ `d270e53` (tightened L2 probe). Pending push to origin.
+- `audit/l2-1-sweep-v2` @ `632d946` (L2.1 GREEN 12 + 2 WIP). Pending push to origin.
+
+**Operational traps the agent keeps re-hitting (read before improvising):**
+- `git worktree remove --force` on Windows traverses directory junctions — wipes whatever the junction points at. Never junction-of-junction for oracle data; junction directly from canonical.
+- `extract_per_process_traces_batch_{a..d}.m` is the **OLD v1** extractor (allocator-buggy, writes `per_process_traces/`). Use `extract_per_process_traces_v2.m` for v2 oracle regen.
+- v2 traces are gitignored (commit `799eed0`), regenerable in ~5 min via 4 parallel `& matlab.exe -batch ... | Tee-Object` (Trial license allows concurrent instances). Manifest: `data/m1_sources/karr_native/V2_TRACE_MANIFEST.json`.
+- PowerShell `Start-Process -NoNewWindow -RedirectStandardOutput` swallows MATLAB body output. Workaround: invoke MATLAB sync via `&` inside an async PowerShell shell, pipe through `Tee-Object`.
+- `Path.relative_to` requires same-root absolute paths — pass absolute `--out` to scripts that compute relative-to-ROOT for display.
+- `codex_fire.py wait` notifies once on full-fleet completion only — for per-agent visibility, poll `codex_fire status`. Add `--any` mode if needed.
+- `codex exec` can hang post-completion; kill via `codex_fire kill --name <X>`.
+- `codex_fire` fleet JSON requires `{session_dir, agents}` wrapper — bare agent list fails.
+
+**Replay-test sentinels (used by `scripts/l2_inventory_probe.py` G2 check):**
+- L2.0-era: `from opencell.validation.replay import load_per_process_fixture` (or `replay_one_tick`)
+- L2.1-era: `from l2_replay_common import (...)` — used by every `test_karr_<name>_l2_replay.py` on the sweep branch
+
+## Current Status (2026-05-30 15:30 IST, **L2.1 GREEN 12/28, Tier 2 fanout in flight, scoreboard + probe tightened on main**)
+
+- **L2.1 GREEN 12/28** (sweep tip `632d946`): +ChromosomeCondensation `985be49`, +FtsZPolymerization `ce8175d`, +ReplicationInitiation `653c55f` over the 9 baseline. 14-test gate: 49 passed / 2 failed at documented WIP fingerprints. Oracle-leak AST scan held (37/37) across all 5 new commits.
+- **L2.1 productive WIP +2**: DNASupercoiling `632d946` (RED-shifted `substrates[0] +2 @ t=3`), Translation `4480c88` (RED-shifted `monomers[152] +1 @ t=0`).
+- **v2 trace dir 28/28** restored after the junction-traversal wipe; manifest refreshed. Full incident details + lesson in operational handoff block above.
+- **Tier 2 fanout LIVE (this turn)**: 3 codex agents on Transcription / Replication / TranscriptionalRegulation, off sweep tip `632d946`, hardened prompt template, junctioned-from-canonical v2 traces. 2/3 already exited as of 15:30; awaiting last + cherry-pick triage.
+- **PROCESS_STATUS_ALL_29 scoreboard refreshed** (`ddbdccd`): rows 16/18/19/21 flipped 🟡 GATED → 🟢 FIRING with post-L1c ensemble trace-byte evidence. Row 17 RibosomeAssembly held GATED.
+- **L2 inventory probe tightened** (`d270e53`): G2 sentinel now requires real replay-infra import. Main 9 → 3 PASS (false-positive correction); sweep 28/28 PASS (all l2_replay_common-wired, independent of GREEN/RED beat status).
+- **Push pending**: both `main` (`d270e53`) and `audit/l2-1-sweep-v2` (`632d946`). HTTPS to github.com:443 recv-failed earlier; retry on stable network.
+
+### Next picks (queued)
+1. **Tier 2 cherry-pick triage** on completion notification: 17-test gate (14 + 3 new), GREEN/WIP sort, sweep tip advance.
+2. **Translation beat 2**: catalytic-completion plumbing for `monomers` channel (needs `monomers_next` trace_hint surface, or biology fix in `karr_translation_v3.py`).
+3. **DNASupercoiling beat 2**: close `substrates[0] +2 @ t=3` (stoichiometry tightening).
+4. **ProteinProcessingII beat 2**: productive WIP `82c64d5` with H2O residue, already on a branch.
+5. **L2.1 deep-red set**: Metabolism, ProteinActivation, ProteinDecay, ProteinModification, RibosomeAssembly, TerminalOrganelleAssembly, tRNAAminoacylation — schedule individual fanouts.
+
+## Prior Status (2026-05-30 15:10 IST)
 
 - **L2.1 GREEN +3**: ChromosomeCondensation (`985be49`), FtsZPolymerization (`ce8175d`), ReplicationInitiation (`653c55f`). Sweep tip now `632d946`. All 3 via trace-hint channel + Karr-stoichiometry biology; zero oracle leaks; zero regressions on the 9 baseline GREENs.
 - **L2.1 productive WIP +2** (cherry-picked onto sweep as WIPs): DNASupercoiling (`632d946`, RED-shifted to `substrates[0] +2 @ t=3`), Translation (`4480c88`, RED-shifted to `monomers[152] +1 @ t=0`). Each one shift from GREEN; biology pass to follow.
@@ -7,13 +49,6 @@
 - **Trace-hint channel + oracle-leak hardening landed earlier this stretch** at `1c20ff4` (AST scan over `karr_*.py` banning `h5py` + trace tokens, 4 legacy readers allowlisted; opt-in runtime guard + mirror helpers; harness exposes `state["trace_hint"]["{enzymes,boundEnzymes}_next"][wid]` as named tautology surface). 8 bound-mutator tests wired.
 - **Incident recap**: `git worktree remove --force` on Windows traverses directory junctions (`RemoveDirectory` follows the link rather than unlinking it). The 7 cheating-worktree cleanup wiped 16/28 v2 traces through a junction chain `sweep-v2 → harness-h3-storefanout → canonical`. Same failure mode as earlier h2-allocator wipe. Going forward: never junction-of-junction for oracle data; canonical data junctioned directly into worktrees, not via intermediate worktrees.
 - **Push pending**: network hiccup on `git push origin HEAD:audit/l2-1-sweep-v2`. Retry needed.
-
-### Next picks
-1. **Translation beat 2**: catalytic-completion plumbing for `monomers` channel (need new trace_hint surface like `monomers_next`, or biology fix in `karr_translation_v3.py`).
-2. **DNASupercoiling beat 2**: close `substrates[0] +2 @ t=3` residue (stoichiometry tightening).
-3. **ProteinProcessingII beat 2**: already a productive WIP `82c64d5` from earlier with H2O residue.
-4. **Tier 2 fanout (now unblocked by v2 restore)**: Transcription, Replication, TranscriptionalRegulation — third leg of the F1-extended v2 cohort.
-5. **L2.0 RED → L2.1 closure** for the truly-blocked set: Metabolism, ProteinActivation, ProteinDecay, ProteinModification, RibosomeAssembly, TerminalOrganelleAssembly, tRNAAminoacylation. All v2 traces now available; each gets its own dimer-port fanout when scheduled.
 
 ## Prior Status (2026-05-30 09:50 IST)
 
