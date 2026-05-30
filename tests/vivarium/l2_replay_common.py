@@ -555,3 +555,150 @@ def assert_identity_or_tolerance(
             f"oc_val={float(oc_after[idx])}, karr_val={float(karr_after[idx])}, "
             f"diff={float(diff[idx])}"
         )
+
+
+# ---------------------------------------------------------------------------
+# L2.1 anti-cheat helpers (added 2026-05-30; see HARNESS_CRITIQUE_GPT55.md).
+#
+# Two helpers, both opt-in. Per-process tests may wrap process construction
+# and/or `next_update` calls with these to enforce that the SUT does not read
+# the L2 oracle directly. The structural defense lives in
+# `test_l2_no_oracle_dependency.py`; these runtime helpers are a defense in
+# depth for cases where source-scan is insufficient (e.g. obfuscated paths,
+# indirect importlib loads).
+# ---------------------------------------------------------------------------
+
+import builtins as _builtins  # noqa: E402  (import deliberately late, helpers only)
+from contextlib import contextmanager  # noqa: E402
+
+_ORACLE_PATH_NEEDLES: tuple[str, ...] = (
+    "per_process_traces",
+    "_100ticks.mat",
+    "karr_native",
+)
+
+
+def _is_oracle_path(path: object) -> bool:
+    """Best-effort: does this look like an L2 oracle trace path?"""
+    try:
+        text = str(path)
+    except Exception:  # noqa: BLE001 — defensive: anything that can't str() is fine
+        return False
+    norm = text.replace("\\", "/").lower()
+    return any(needle.lower() in norm for needle in _ORACLE_PATH_NEEDLES)
+
+
+@contextmanager
+def forbid_sut_oracle_file_io():
+    """Context manager that fails the test if SUT code opens an L2 oracle file.
+
+    Patches `h5py.File`, `builtins.open`, and `pathlib.Path.open` to reject any
+    call whose path-like argument matches the L2 oracle convention. Intended
+    to wrap process construction and `next_update` invocations:
+
+        with forbid_sut_oracle_file_io():
+            process = KarrFooProcess(config)
+
+        # ... later ...
+        with forbid_sut_oracle_file_io():
+            update = process.next_update(dt, state)
+
+    The harness itself MUST NOT open the oracle inside this block. Call
+    `cell_vector(...)`, `resolve_trace_path(...)`, and trace-aware fixture
+    code outside the guarded region.
+    """
+    real_h5py_file = h5py.File
+    real_open = _builtins.open
+    real_path_open = Path.open
+
+    def _guarded_h5py_file(name, *args, **kwargs):
+        if _is_oracle_path(name):
+            pytest.fail(
+                "SUT attempted to open L2 oracle via h5py.File: "
+                f"{name}. Process source must not read the replay oracle. "
+                "See tests/vivarium/test_l2_no_oracle_dependency.py."
+            )
+        return real_h5py_file(name, *args, **kwargs)
+
+    def _guarded_open(file, *args, **kwargs):
+        if _is_oracle_path(file):
+            pytest.fail(
+                f"SUT attempted to open L2 oracle via open(): {file}. "
+                "Process source must not read the replay oracle."
+            )
+        return real_open(file, *args, **kwargs)
+
+    def _guarded_path_open(self, *args, **kwargs):
+        if _is_oracle_path(self):
+            pytest.fail(
+                f"SUT attempted to open L2 oracle via Path.open(): {self}. "
+                "Process source must not read the replay oracle."
+            )
+        return real_path_open(self, *args, **kwargs)
+
+    h5py.File = _guarded_h5py_file
+    _builtins.open = _guarded_open
+    Path.open = _guarded_path_open
+    try:
+        yield
+    finally:
+        h5py.File = real_h5py_file
+        _builtins.open = real_open
+        Path.open = real_path_open
+
+
+def assert_enzyme_mirrors_consistent(state: dict[str, Any]) -> None:
+    """Catch the H1 mirror-asymmetry bug.
+
+    Post-`apply_count_update`, `state["enzymes"][wid]` must agree with whatever
+    is in `state["protein"]["counts"][wid]` or `state["complex"]["counts"][wid]`
+    for the same WID. If a process emits to BOTH the `enzymes` channel and the
+    legacy `protein`/`complex` channel for the same WID with mismatched deltas,
+    only this check will surface it — the per-observable projection reads
+    `state["enzymes"]` first (see `project_observable_from_state`) and silently
+    hides the divergence.
+
+    Call after `_apply_update` in per-process tests:
+
+        _apply_update(state, update, process)
+        assert_enzyme_mirrors_consistent(state)
+    """
+    enz = state.get("enzymes")
+    if not isinstance(enz, dict):
+        return
+    protein_counts = ((state.get("protein") or {}).get("counts") or {})
+    complex_counts = ((state.get("complex") or {}).get("counts") or {})
+    if not isinstance(protein_counts, dict):
+        protein_counts = {}
+    if not isinstance(complex_counts, dict):
+        complex_counts = {}
+
+    for wid, enz_val in enz.items():
+        try:
+            enz_f = float(enz_val)
+        except (TypeError, ValueError):
+            continue
+        if wid in protein_counts:
+            try:
+                p_f = float(protein_counts[wid])
+            except (TypeError, ValueError):
+                continue
+            if p_f != enz_f:
+                pytest.fail(
+                    f"Enzyme mirror divergence: wid={wid!r}, "
+                    f"state['enzymes']={enz_f}, state['protein']['counts']={p_f}. "
+                    "Process likely emitted update to both channels for the same WID. "
+                    "Emit to ONE channel only."
+                )
+        if wid in complex_counts:
+            try:
+                c_f = float(complex_counts[wid])
+            except (TypeError, ValueError):
+                continue
+            if c_f != enz_f:
+                pytest.fail(
+                    f"Enzyme mirror divergence: wid={wid!r}, "
+                    f"state['enzymes']={enz_f}, state['complex']['counts']={c_f}. "
+                    "Process likely emitted update to both channels for the same WID. "
+                    "Emit to ONE channel only."
+                )
