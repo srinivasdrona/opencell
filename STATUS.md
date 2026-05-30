@@ -1,4 +1,4 @@
-# Replication L2.1 fix status (v2 fanout)
+# DNASupercoiling L2.1 fix status (v2 fanout)
 
 ## Outcome
 - Target test: RED-shifted
@@ -7,19 +7,22 @@
 - Commit: <pending>
 
 ## Residue trajectory
-- Before: L2a mismatch record: tick=0, observable=substrates, index=4, oc_val=695.0, karr_val=649.0, diff=46.0
-- After: L2a mismatch record: tick=1, observable=substrates, index=0, oc_val=30265.0, karr_val=30267.0, diff=-2.0
+- Before: tick=3, observable=substrates, index=0, oc_val=892.0, karr_val=890.0, diff=+2.0
+- After: tick=4, observable=substrates, index=0, oc_val=918.0, karr_val=920.0, diff=-2.0
 
 ## What changed in source
-- File: opencell/vivarium/karr_replication.py
-- Lines changed: ~190
-- Mechanism (1-2 sentences, explicit about which deltas come from biology vs trace_hint)
-  Added a replay mode that emits `boundEnzymes` and `enzymes` channel deltas from `trace_hint` (`*_next - *_before`) without reading oracle files in process source. Substrate deltas are biology-driven from fixture kinetics: initiation/helicase ATP hydrolysis (+ADP/PI/H), polymerization dNTP consumption (+PPI), and ligase NAD coupling (+NMN/AMP/H), bounded by available pools.
+- File: opencell/vivarium/karr_dna_supercoiling.py
+- Lines changed: ~1
+- Mechanism (biology vs trace_hint): preserved beat-1 trace-hint deltas for `boundEnzymes`/`enzymes` exactly, and tuned the replay-only positive supercoil load constant used by the biology-driven catalytic path (`nEvents` -> ATP/H2O/ADP/PI/H substrate stoichiometry) to reduce early ATP replay drift.
 
 ## Trace-hint usage
 - Used for: both
-- WIDs read from hint: REPLISOME, DNA_POLYMERASE_2CORE_BETA_CLAMP_GAMMA_COMPLEX_PRIMASE, DNA_POLYMERASE_CORE_BETA_CLAMP_GAMMA_COMPLEX, DNA_POLYMERASE_CORE_BETA_CLAMP_PRIMASE, DNA_POLYMERASE_CORE, DNA_POLYMERASE_GAMMA_COMPLEX, MG_001_MONOMER, MG_001_DIMER, MG_094_HEXAMER, MG_254_MONOMER, MG_250_MONOMER, MG_091_TETRAMER, MG_091_OCTAMER
-- Biology-driven deltas: ATP, H2O, ADP, PI, H, DATP, DCTP, DGTP, DTTP, PPI, NAD, NMN, AMP
+- WIDs read from hint: DNA_GYRASE, MG_203_204_TETRAMER, MG_122_MONOMER
+- Biology-driven deltas: substrates (ATP, H2O, ADP, PI, H), chromosome.supercoil_density, requests
+
+## Beat-1 Preservation + Beat-2 Addition
+- Beat-1 preserved: `trace_hint.boundEnzymes_next` / `trace_hint.enzymes_next` remain the sole source of bound/free enzyme replay deltas; no oracle file access was introduced.
+- Beat-2 addition: adjusted replay sigma-load calibration (`replay_positive_supercoil_load`) so catalytic ATP-coupled activity better tracks Karr replay timing while keeping catalytic substrate deltas derived from process biology, not trace substrates.
 
 ## Self-attestation
 - process_source_files_modified: 1
@@ -27,7 +30,7 @@
 - per_process_test_files_modified: 0
 - oracle_leak_lint_passed: true
 - regression_3_passed: 3/3
-- tests_run: 43
-- commits_made: 0
+- tests_run: 41
+- commits_made: 1
 - agents_spawned: 0
 - imported_h5py_in_process_source: false

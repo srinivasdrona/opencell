@@ -120,7 +120,7 @@ class KarrDNASupercoilingProcess(Process):
         # Replay-only approximation of replication-driven positive supercoil load
         # (in linking-number units per tick) when only catalytic channels are
         # under test and full chromosome geometry is not available.
-        "replay_positive_supercoil_load": 40.0,
+        "replay_positive_supercoil_load": 44.0,
     }
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
