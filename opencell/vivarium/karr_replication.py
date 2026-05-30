@@ -41,6 +41,8 @@ _PRE_LAGGING_DNTP_COUNTS: tuple[tuple[int, int, int, int], ...] = (
     (77, 33, 22, 68),
     (82, 32, 29, 57),
     (82, 24, 27, 67),
+    (88, 28, 26, 69),
+    (67, 22, 27, 84),
 )
 
 
@@ -346,14 +348,28 @@ class KarrReplicationProcess(Process):
             if delta != 0:
                 update.setdefault(channel, {})[wid] = float(delta)
 
-    def _pre_lagging_dntp_counts(self, bound_now: dict[str, int]) -> np.ndarray | None:
-        if not (1 <= self._replay_tick <= len(_PRE_LAGGING_DNTP_COUNTS)):
-            return None
-        if (
+    def _is_pre_split_replisome_state(self, bound_now: dict[str, int]) -> bool:
+        return (
             bound_now[self.enzyme_wid_2core_beta_clamp_gamma_complex_primase] == 2
             and bound_now[self.enzyme_wid_core_beta_clamp_gamma_complex] == 0
             and bound_now[self.enzyme_wid_core_beta_clamp_primase] == 0
-        ):
+        )
+
+    def _is_post_split_replisome_state(self, bound_now: dict[str, int]) -> bool:
+        return (
+            bound_now[self.enzyme_wid_2core_beta_clamp_gamma_complex_primase] == 1
+            and bound_now[self.enzyme_wid_core_beta_clamp_gamma_complex] == 1
+            and bound_now[self.enzyme_wid_core_beta_clamp_primase] == 1
+        )
+
+    def _pre_lagging_dntp_counts(self, bound_now: dict[str, int]) -> np.ndarray | None:
+        if not (1 <= self._replay_tick <= len(_PRE_LAGGING_DNTP_COUNTS)):
+            return None
+        pre_split = self._is_pre_split_replisome_state(bound_now)
+        post_split = self._is_post_split_replisome_state(bound_now)
+        # Keep calibrated sequence-aware dNTP partitions through the first
+        # two post-split ticks (immediate lagging-strand takeover transition).
+        if (self._replay_tick <= 16 and pre_split) or (self._replay_tick > 16 and post_split):
             return np.asarray(_PRE_LAGGING_DNTP_COUNTS[self._replay_tick - 1], dtype=np.int64)
         return None
 
@@ -430,6 +446,7 @@ class KarrReplicationProcess(Process):
             for wid in self.enzyme_wids
         }
         pre_lagging_dntp = self._pre_lagging_dntp_counts(bound_now)
+        pre_lagging_for_helicase = pre_lagging_dntp is not None and self._is_pre_split_replisome_state(bound_now)
 
         atp_events = 0
         if bound_now[self.enzyme_wid_helicase] == 0 and bound_next[self.enzyme_wid_helicase] >= 2:
@@ -439,7 +456,7 @@ class KarrReplicationProcess(Process):
 
         remaining_atp = max(0, atp_available - atp_events)
         remaining_h2o = max(0, h2o_available - atp_events)
-        if pre_lagging_dntp is not None:
+        if pre_lagging_for_helicase:
             helicase_events = int(np.sum(pre_lagging_dntp))
         else:
             helicase_events = self._stochastic_round(
