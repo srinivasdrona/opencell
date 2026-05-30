@@ -1,7 +1,10 @@
-## Current Status (2026-05-30 08:05 IST)
+## Current Status (2026-05-30 09:50 IST)
 
-- Sweep head: `a2b3285` on `audit/l2-1-sweep-v2` (main baseline for this arc: `8951a11`).
-- Bucket: L2.1 GREEN **9/28**; L2.1 RED **19/28** (Pattern D now 19). L2.0 truly RED remains **2** (TerminalOrganelleAssembly, TranscriptionalRegulation).
+- **L2.0 GREEN=28/28 LANDED ON MAIN** (`6137c79` Bucket A sweep + `e38170a` audit refresh + `4516442` L2_STATUS bump). Sweep branch `audit/l2-1-sweep-v2` fast-forwarded to `542e287`. Verify agent confirmed **L2.1 baseline 9-GREEN preserved**, zero regressions, all 3 cherry-pick conflicts (dna_supercoiling/transcription/translation) union-resolved cleanly. Worktrees `l2-0-bucket-a` and `l2-1-verify-bucketA` can be pruned at next housekeeping.
+- L2.1 GREEN remains **9/28**; Pattern D RED **19/28**. L2.1 is now the sole live campaign (L2.0 done).
+- Wave 9 (FtsZ/RNADecay/ChromCond) and wave 8 RNAMod still WIPs on their worktrees; not yet promoted.
+- **Meta-delegation experiment (A/B/C) complete**: Pattern C (scout-synthesizer) won on token efficiency (187K, single agent, polished L2_2_DATA_INVENTORY_C.md). Pattern A (chunked-map) won on breadth (699K, 3 children, unique σ-table extraction in d3). Pattern B (foreman) cheapest coordination (42K + grandchildren). Full comparison to be written into `docs/phase_e/META_DELEGATION_NOTES.md`. Worktrees `meta-l2-2-a/b/c` retain agent artifacts.
+- **Infra shipped**: `codex_fire.py` launcher (5 subcommands; `wait` replaces scheduled polling). Decision logged as `codex-fleet-launcher` in DECISIONS.md. utf-8 stdout fix applied after σ-character crash in first multi-agent wait.
 - Wave 7 / H2 (allocator-mirror disable): full 28x2 A/B reported **0 of 6** targeted candidates flipped GREEN, with **3 GREEN regressions** (MacromolComplex, ProteinProcessingI, ProteinTranslocation); refuted, not landed.
 - Wave 7 / H3 (store fanout shadow-write): no-regression gate held on existing GREENs; A/B first-fail fingerprints for PP-II, ProteinFolding, RNAModification were unchanged; refuted as a closure lever, but rigor patch was cherry-picked (`cad12e3`).
 - Wave 8 / ProteinFolding: **L2.1 GREEN #9** landed (`725ff1e` -> sweep `a2b3285`) by fixing chaperone enzyme overlay handling and ATP-gating mismatch against MATLAB catalytic-gate semantics.
