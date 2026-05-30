@@ -1,12 +1,12 @@
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-05-30 15:40 IST):**
-- No active codex agents. Tier 2 fleet (`f1v2-tier2`, 3 agents) completed at t+1380s; cherry-picked onto sweep.
-- Wait shell `tier2-wait` exited cleanly.
+**Live processes / agents (2026-05-30 17:00 IST):**
+- 1 codex agent in flight: `phase-f-schema` (re-fired 16:24 after killing original with bug-laundering prompt). New prompt is MATLAB+trace anchored, round-trip-validated, extractor-only. Phase F worktree: `E:/opencell-worktrees/phase-f-schema`. Wait shell: `phase-f-wait` (note: completed once on the killed PID; new PID still alive).
+- Beat-2 fleet (4 agents) + deep-red fleet (6 agents) both LANDED. 10/10 cherry-picked onto sweep.
 
 **Branch tips (active):**
-- `main` @ `2310842` (plan refresh + handoff block). Pending push to origin.
-- `audit/l2-1-sweep-v2` @ `5c99ce0` (L2.1 GREEN 13 + 4 WIP). Pending push to origin.
+- `main` @ `b814e44` (post-Tier 2 plan refresh). **Pending push to origin** (network blip 17:00).
+- `audit/l2-1-sweep-v2` @ `ceb36ac` (L2.1 GREEN 15 + 11 productive RED + 2 SKIP). **Pending push to origin** (network blip 17:00).
 
 **Operational traps the agent keeps re-hitting (read before improvising):**
 - `git worktree remove --force` on Windows traverses directory junctions — wipes whatever the junction points at. Never junction-of-junction for oracle data; junction directly from canonical.
@@ -22,7 +22,35 @@
 - L2.0-era: `from opencell.validation.replay import load_per_process_fixture` (or `replay_one_tick`)
 - L2.1-era: `from l2_replay_common import (...)` — used by every `test_karr_<name>_l2_replay.py` on the sweep branch
 
-## Current Status (2026-05-30 15:40 IST, **L2.1 GREEN 13/28, Tier 2 fanout landed**)
+## Current Status (2026-05-30 17:00 IST, **L2.1 GREEN 15/28 (+ 2 SKIP), 11 productive WIPs, beat-2 + deep-red landed**)
+
+- **L2.1 GREEN 15/28** (sweep tip `ceb36ac`): +2 from deep-red fanout (ProteinActivation `8fb9d83`, tRNAAminoacylation `29faf52`) over 13 baseline. Clean GREEN, 0 oracle leaks, 0 regressions.
+- **L2.1 productive RED-shifted WIPs (10 total this round, 11 grand total)**:
+  - Beat-2 batch (4): Translation `7d9dba3` (`monomers[152] +1 @ t=0` → `monomers[320] +1 @ t=1`), DNASupercoiling `28172a6` (`substrates[0] +2 @ t=3` → `substrates[0] -2 @ t=4`), Transcription `3f0141d` (`+5 @ t=0` → `+2 @ t=1`), Replication `46812d9` (`-2 @ t=1` → `-14 @ t=17`).
+  - Deep-red batch (4 RED-shifted WIPs): ProteinModification `ceb36ac` (`+3 @ t=43` → `-3 @ t=53`), RNADecay `1e906c8` (`+5 @ t=0` → `-20 @ t=0`), RNAProcessing `e40a487` (`unprocessedRNAs +1 @ t=9` → `processedRNAs +1 @ t=63`), ProteinDecay `7b0b6d7` (uncommitted-by-agent, salvaged: `+46 @ t=0` → `-2 @ t=1`).
+  - Plus PPII `82c64d5` (`+1 @ t=3`) and ProteinProcessingII still RED.
+- **L2.1 SKIP +2 (effectively GREEN)**: RibosomeAssembly (no-op trace), one other.
+- **Full 28-test gate post-cherry-pick**: 15 passed / 11 failed / 2 skipped in 67s. AST scan 37/37 held. All 11 failures are documented productive WIPs (no regressions).
+- **2 deep-red rules-of-engagement violations** (minor, accepted):
+  - `protein_decay` agent forgot to commit (and copy-pasted "Replication" template into STATUS.md). Work was on the right file, salvaged via local commit on the worktree branch then cherry-picked.
+- **Push pending**: `main` (`b814e44`) and `audit/l2-1-sweep-v2` (`ceb36ac`). GitHub HTTPS recv-failed 17:00, retry needed.
+- **Phase F agent re-fired** (16:24) with corrected MATLAB+trace-anchored prompt after user caught the bug-laundering gap in the original. Original killed at 30min with 0 files written, net loss ~30min for materially safer foundation.
+
+### Next picks (queued)
+1. **Phase F agent in flight** — currently exploring MATLAB sources. Wait for completion, audit STATUS.md hand-check section, especially TOA `(2,8)` compartment-wid extraction.
+2. **Stubborn remainders for next fanout cycle**:
+   - Metabolism `substrates[10] +3622 @ t=0` — FBA solver scope, big lift, may need MATLAB FBA replay parity probe before any code attempt.
+   - TerminalOrganelleAssembly — depends on Phase F compartment-projector landing.
+   - Translation, DNASupercoiling, Transcription, Replication, ProteinModification, RNADecay, RNAProcessing, ProteinDecay, ProteinProcessingII, PPII, ChromosomeSegregation (residue check) — all small-residue, candidates for another beat-3 fanout cycle once trajectory captured.
+3. **Push when GitHub recovers** — both `main` and `audit/l2-1-sweep-v2`.
+
+### Honest assessment of project-debt (Phase F seed)
+- The hand-wired per-process WID/compartment/`_PASS_THROUGH` model is ~60% intrinsic (Karr's 28 stochastic kernels), ~40% debt we knowingly took to ship L1/L1c/L2 vertically.
+- First debt-blocking-progress signal: TOA compartment-projection bug. Was always there; only surfaces now that the cohort is closing.
+- Phase F seed (post-L2.1): one schema TOML per process auto-extracted from MATLAB `.m` + trace `.mat` ground truth (NOT from Python source — original Phase F prompt anchored to Python and would have laundered bugs; fixed mid-session). Round-trip validator (re-extract → bytewise equal) is the correctness gate.
+- Do NOT start this refactor before 28/28 GREEN (or as close as we can practically get). The point of the debt is to refactor against a green baseline, not while hunting bugs.
+
+## Prior Status (2026-05-30 15:40 IST, **L2.1 GREEN 13/28, Tier 2 fanout landed**)
 
 - **L2.1 GREEN 13/28** (sweep tip `5c99ce0`): +TranscriptionalRegulation `3b5e976` over the prior 12. Clean GREEN, 0 oracle leaks, 0 regressions on the 12 baseline.
 - **L2.1 productive WIP +2 (this fanout) + 2 prior = 4 total**: Transcription `c4e0569` (RED-shifted `substrates[0] +5 @ t=0`), Replication `5c99ce0` (RED-shifted `substrates[0] -2 @ t=1`), Translation `4480c88`, DNASupercoiling `632d946`.
@@ -34,12 +62,18 @@
 - **Push pending**: `main` (`2310842`) and `audit/l2-1-sweep-v2` (`5c99ce0`). HTTPS to github.com:443 recv-failed earlier; retry on stable network.
 
 ### Next picks (queued)
-1. **Translation beat 2**: catalytic-completion plumbing for `monomers` channel (needs `monomers_next` trace_hint surface, or biology fix in `karr_translation_v3.py`).
-2. **DNASupercoiling beat 2**: close `substrates[0] +2 @ t=3` (stoichiometry tightening).
-3. **Transcription beat 2**: close `substrates[0] +5 @ t=0` (this fanout's residue — NTP/PPi stoichiometry).
-4. **Replication beat 2**: close `substrates[0] -2 @ t=1` (this fanout's residue — dNTP stoichiometry).
-5. **ProteinProcessingII beat 2**: productive WIP `82c64d5` with H2O residue, already on a branch.
-6. **L2.1 deep-red set fanout 2**: Metabolism, ProteinActivation, ProteinDecay, ProteinModification, RibosomeAssembly, TerminalOrganelleAssembly, tRNAAminoacylation — these are not bound-mutators so the trace-hint channel doesn't directly help; needs a different closure design (likely allocator/substrate-flow audit per process).
+1. **In-flight beat-2 + deep-red fleets** (10 agents) — triage on completion, cherry-pick clean GREEN + productive WIPs onto sweep, capture residues for next iteration.
+2. **PPII beat-2**: productive WIP `82c64d5` with `substrates[0] +1 @ t=3`. Sequential single agent or hand-fix.
+3. **Stubborn-3** (NOT in current fleets, need separate design):
+   - **Metabolism** `substrates[10] +3622 @ t=0` — FBA solver scope, big lift.
+   - **TerminalOrganelleAssembly** wid-length drift `karr_len=16, mapped_len=8` — compartment-projection wiring bug in fixture, NOT biology. First concrete symptom of the schema-debt called out in "Honest assessment" below.
+   - **RibosomeAssembly** SKIP — no-op trace (N/A for L2.1), counts as passing-equivalent. No action.
+
+### Honest assessment of project-debt (Phase F seed)
+- The hand-wired per-process WID/compartment/`_PASS_THROUGH` model is ~60% intrinsic (Karr's 28 stochastic kernels), ~40% debt we knowingly took to ship L1/L1c/L2 vertically.
+- First debt-blocking-progress signal: TOA compartment-projection bug. Was always there; only surfaces now that the cohort is closing.
+- Phase F seed (post-L2.1): one schema TOML per process auto-extracted from MATLAB fixture (substrate wids + compartments + mutation profile + kernel signature); harness validates + runs generic replay loop; mass-balance + charge-balance asserted every tick (Rule F becomes unrepresentable); `_PASS_THROUGH` and `trace_hint_keys` derived not declared.
+- Do NOT start this refactor before 28/28 GREEN. The point of the debt was to refactor against a green baseline, not while hunting bugs.
 
 ## Prior Status (2026-05-30 15:30 IST)
 
