@@ -124,6 +124,9 @@ class KarrDNASupercoilingProcess(Process):
         # Replay-only RNG stream alignment. If None, consume one uniform draw
         # per seeded topoisomerase molecule on first replay tick.
         "replay_rng_warmup_draws": None,
+        # Replay-only scalar-sigma correction: bound topoIV indicates local
+        # overwound regions not captured by the bulk sigma approximation.
+        "replay_topoiv_sigma_bias": 3.0,
     }
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
@@ -322,7 +325,22 @@ class KarrDNASupercoilingProcess(Process):
                 if warmup > 0:
                     self._rng.random(warmup)
                 self._replay_rng_aligned = True
+            # MATLAB unbinds processive topoIV prior to catalytic actions.
+            # In replay we source occupancy deltas from trace_hint; consume a
+            # matching RNG draw when topoIV occupancy decreases.
+            topoiv_delta = float(bound_next.get(self.topoiv_wid, 0.0)) - float(
+                bound_now.get(self.topoiv_wid, 0.0)
+            )
+            if topoiv_delta < 0.0:
+                self._rng.random(1)
             sigma_for_activity = float(self._replay_sigma)
+        sigma_for_events = sigma_for_activity
+        if replay_mode and topoiv_count > 0.0:
+            sigma_for_events += (
+                float(self.parameters["replay_topoiv_sigma_bias"])
+                * topoiv_count
+                / self.linking_number_relaxed
+            )
 
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
         available_atp = self._allocated_or_state(allocated_state, self.atp_wid)
@@ -331,7 +349,7 @@ class KarrDNASupercoilingProcess(Process):
 
         rep_load_events = self._replication_supercoil_load_events(replication_state, dt)
         rep_sigma_delta = rep_load_events / self.linking_number_relaxed
-        sigma_after_rep = sigma_for_activity + rep_sigma_delta
+        sigma_after_rep = sigma_for_events + rep_sigma_delta
 
         mode = self._regime(sigma_after_rep)
         gyrase_prob = self._activity_probability(
