@@ -4,7 +4,7 @@ Single source of truth for the L2-green campaign. Update on every sweep,
 re-extraction, or schema-audit run. Do not edit from memory — always cross-check
 against the source files listed under Provenance below.
 
-Last updated: **2026-05-30 (08:05 IST)** (wave 7 global probes **H2/H3 refuted honestly**; wave 8 landed **ProteinFolding L2.1 GREEN #9** plus PP-II/DNASupercoiling productive WIPs; wave 8 RNAMod + wave 9 (FtsZ/RNADecay/ChromCond) are in flight. Bucket GREEN **9**, Pattern D RED **19**.)
+Last updated: **2026-05-30 (09:45 IST)** (L2.0 **SWEEP COMPLETE — 28/28 GREEN** via Bucket A codex agent (`6137c79` + `e38170a` on main, fast-forwarded to sweep `542e287`); verify agent confirmed **L2.1 baseline 9-GREEN preserved**, zero regressions. Bucket GREEN **9**, Pattern D RED **19**. L2.1 remains the next campaign.)
 
 ## Rung definitions
 
@@ -18,7 +18,7 @@ Last updated: **2026-05-30 (08:05 IST)** (wave 7 global probes **H2/H3 refuted h
 
 | | GREEN | AMBER | RED | ERROR | not-run |
 |---|---|---|---|---|---|
-| L2.0 | 0 | 24 | 4 | 0 | 0 |
+| L2.0 | **28** | 0 | 0 | 0 | 0 |
 | L2.1 | **9** | — | **19** | 0 | 0 |
 | L2.2 | — | — | — | — | **28** |
 
