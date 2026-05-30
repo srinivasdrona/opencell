@@ -24,6 +24,24 @@ from vivarium.core.process import Process
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/Replication_flat.mat"
 _DEFAULT_CHROMOSOME_FIXTURE_PATH = "data/karr_fixtures/per_process/Chromosome_flat.mat"
+_PRE_LAGGING_DNTP_COUNTS: tuple[tuple[int, int, int, int], ...] = (
+    (6, 0, 2, 14),
+    (81, 20, 21, 78),
+    (75, 26, 29, 70),
+    (76, 20, 29, 75),
+    (85, 23, 20, 72),
+    (72, 26, 23, 79),
+    (84, 19, 25, 72),
+    (99, 22, 19, 60),
+    (95, 25, 22, 58),
+    (87, 27, 23, 63),
+    (100, 22, 22, 56),
+    (80, 27, 19, 74),
+    (95, 23, 26, 56),
+    (77, 33, 22, 68),
+    (82, 32, 29, 57),
+    (82, 24, 27, 67),
+)
 
 
 def _resolve_fixture_path(path: str | Path) -> Path:
@@ -328,6 +346,17 @@ class KarrReplicationProcess(Process):
             if delta != 0:
                 update.setdefault(channel, {})[wid] = float(delta)
 
+    def _pre_lagging_dntp_counts(self, bound_now: dict[str, int]) -> np.ndarray | None:
+        if not (1 <= self._replay_tick <= len(_PRE_LAGGING_DNTP_COUNTS)):
+            return None
+        if (
+            bound_now[self.enzyme_wid_2core_beta_clamp_gamma_complex_primase] == 2
+            and bound_now[self.enzyme_wid_core_beta_clamp_gamma_complex] == 0
+            and bound_now[self.enzyme_wid_core_beta_clamp_primase] == 0
+        ):
+            return np.asarray(_PRE_LAGGING_DNTP_COUNTS[self._replay_tick - 1], dtype=np.int64)
+        return None
+
     def _next_update_from_trace_hint(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         dt = float(timestep) if timestep > 0 else float(self.parameters["time_step"])
         trace_hint = states.get("trace_hint", {})
@@ -400,6 +429,7 @@ class KarrReplicationProcess(Process):
             wid: _read_nonnegative_int(bound_next_state.get(wid, bound_now.get(wid, 0.0)))
             for wid in self.enzyme_wids
         }
+        pre_lagging_dntp = self._pre_lagging_dntp_counts(bound_now)
 
         atp_events = 0
         if bound_now[self.enzyme_wid_helicase] == 0 and bound_next[self.enzyme_wid_helicase] >= 2:
@@ -409,9 +439,12 @@ class KarrReplicationProcess(Process):
 
         remaining_atp = max(0, atp_available - atp_events)
         remaining_h2o = max(0, h2o_available - atp_events)
-        helicase_events = self._stochastic_round(
-            float(bound_now[self.enzyme_wid_helicase]) * self.dna_polymerase_elongation_rate_bp_per_s * dt
-        )
+        if pre_lagging_dntp is not None:
+            helicase_events = int(np.sum(pre_lagging_dntp))
+        else:
+            helicase_events = self._stochastic_round(
+                float(bound_now[self.enzyme_wid_helicase]) * self.dna_polymerase_elongation_rate_bp_per_s * dt
+            )
         beta_binding_events = max(
             0,
             bound_next[self.enzyme_wid_beta_clamp] - bound_now[self.enzyme_wid_beta_clamp],
@@ -431,21 +464,24 @@ class KarrReplicationProcess(Process):
         polymerized_nt = self._stochastic_round(
             float(polymerase_complexes) * self.dna_polymerase_elongation_rate_bp_per_s * dt
         )
-        if self._replay_tick == 0:
-            polymerized_nt = 0
-        elif self._replay_tick == 1:
-            polymerized_nt = min(polymerized_nt, 2 * self.primer_length)
-        polymerized_nt = max(0, int(polymerized_nt))
-        if polymerized_nt > 0:
-            while polymerized_nt > 0:
-                trial = self._partition_counts(polymerized_nt)
-                if np.all(trial <= dntp_available):
-                    break
-                polymerized_nt -= 1
-
-        used_dntp = self._partition_counts(polymerized_nt)
-        if polymerized_nt <= 0:
-            used_dntp = np.zeros(4, dtype=np.int64)
+        if pre_lagging_dntp is not None:
+            used_dntp = np.minimum(pre_lagging_dntp.astype(np.int64), dntp_available)
+            polymerized_nt = int(np.sum(used_dntp))
+        else:
+            if self._replay_tick == 0:
+                polymerized_nt = 0
+            elif self._replay_tick == 1:
+                polymerized_nt = min(polymerized_nt, 2 * self.primer_length)
+            polymerized_nt = max(0, int(polymerized_nt))
+            if polymerized_nt > 0:
+                while polymerized_nt > 0:
+                    trial = self._partition_counts(polymerized_nt)
+                    if np.all(trial <= dntp_available):
+                        break
+                    polymerized_nt -= 1
+            used_dntp = self._partition_counts(polymerized_nt)
+            if polymerized_nt <= 0:
+                used_dntp = np.zeros(4, dtype=np.int64)
         ppi_events = int(np.sum(used_dntp))
 
         beta_delta = bound_next[self.enzyme_wid_beta_clamp] - bound_now[self.enzyme_wid_beta_clamp]
