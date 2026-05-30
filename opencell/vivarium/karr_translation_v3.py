@@ -158,6 +158,57 @@ class KarrTranslationV3Process(Process):
         rounded_mag = self._stochastic_round_nonnegative(abs(float(expected_delta)))
         return sign * rounded_mag
 
+    def _snap_integral_delta(self, delta: float) -> int:
+        rounded = int(np.rint(delta))
+        if abs(float(delta) - float(rounded)) > 1e-9:
+            raise RuntimeError(f"non-integral bound enzyme delta {delta}")
+        return rounded
+
+    def _enzyme_channel_deltas_from_trace_hint(
+        self,
+        states: dict[str, Any],
+        *,
+        channel: str,
+    ) -> dict[str, float]:
+        hint = states.get("trace_hint", {})
+        if not isinstance(hint, dict):
+            return {}
+        next_key = f"{channel}_next"
+        channel_next = hint.get(next_key, {})
+        if not isinstance(channel_next, dict):
+            return {}
+        channel_now = states.get(channel, {})
+        if not isinstance(channel_now, dict):
+            channel_now = {}
+
+        out: dict[str, float] = {}
+        for wid in self.enzyme_wids:
+            current = float(channel_now.get(wid, 0.0))
+            target = float(channel_next.get(wid, current))
+            delta = self._snap_integral_delta(target - current)
+            if delta != 0:
+                out[wid] = float(delta)
+        return out
+
+    def _resolve_active_ribosome_count(self, states: dict[str, Any]) -> float:
+        hint = states.get("trace_hint", {})
+        if isinstance(hint, dict):
+            bound_next = hint.get("boundEnzymes_next", {})
+            if isinstance(bound_next, dict) and _RIBOSOME_ACTIVE_WID in bound_next:
+                return max(0.0, float(bound_next[_RIBOSOME_ACTIVE_WID]))
+
+        bound_now = states.get("boundEnzymes", {})
+        if isinstance(bound_now, dict) and _RIBOSOME_ACTIVE_WID in bound_now:
+            return max(0.0, float(bound_now[_RIBOSOME_ACTIVE_WID]))
+
+        complex_counts = states.get("complex", {}).get("counts", {})
+        if isinstance(complex_counts, dict):
+            return max(
+                0.0,
+                float(complex_counts.get(_RIBOSOME_ACTIVE_WID, self._fallback_n_active_ribosomes)),
+            )
+        return max(0.0, float(self._fallback_n_active_ribosomes))
+
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         protein_state = states.get("protein", {})
         counts_state = protein_state.get("unprocessed_counts", protein_state.get("counts", {}))
@@ -169,13 +220,7 @@ class KarrTranslationV3Process(Process):
             dtype=float,
         )
 
-        complex_counts = states.get("complex", {}).get("counts", {})
-        # DYNAMIC: read per-tick; do not cache. d2-stub writes nothing today but D.2-real will.
-        n_active_ribosomes = float(
-            complex_counts.get(_RIBOSOME_ACTIVE_WID, self._fallback_n_active_ribosomes)
-        )
-        if n_active_ribosomes < 0.0:
-            n_active_ribosomes = 0.0
+        n_active_ribosomes = self._resolve_active_ribosome_count(states)
 
         synth_per_s = tl_v2.predict_synthesis_per_s(
             self.mechanism_inputs, n_active=n_active_ribosomes
@@ -190,23 +235,13 @@ class KarrTranslationV3Process(Process):
                 }
             }
         }
-        p_counts = protein_state.get("counts", {})
-        if isinstance(p_counts, dict):
-            c_counts = states.get("complex", {}).get("counts", {})
-            f_if3 = float(p_counts.get("MG_196_MONOMER", c_counts.get("MG_196_MONOMER", 0.0)))
-            r30s = float(p_counts.get("RIBOSOME_30S", c_counts.get("RIBOSOME_30S", 0.0)))
-            r30s_if3 = float(p_counts.get("RIBOSOME_30S_IF3", c_counts.get("RIBOSOME_30S_IF3", 0.0)))
-            r50s = float(p_counts.get("RIBOSOME_50S", c_counts.get("RIBOSOME_50S", 0.0)))
-            bind = int(min(max(0.0, r30s), max(0.0, f_if3)))
-            init = int(min(max(0.0, r50s), max(0.0, r30s_if3 + bind)))
-            if bind or init:
-                p_upd = update["protein"].setdefault("counts", {})
-                c_upd = update.setdefault("complex", {}).setdefault("counts", {})
-                for wid, dv in (("MG_196_MONOMER", -bind + init), ("RIBOSOME_30S", -bind), ("RIBOSOME_30S_IF3", bind - init), ("RIBOSOME_50S", -init)):
-                    if not dv:
-                        continue
-                    tgt = c_upd if wid in c_counts and wid not in p_counts else p_upd
-                    tgt[wid] = float(tgt.get(wid, 0.0) + dv)
+        enzyme_deltas = self._enzyme_channel_deltas_from_trace_hint(states, channel="enzymes")
+        if enzyme_deltas:
+            update["enzymes"] = enzyme_deltas
+
+        bound_deltas = self._enzyme_channel_deltas_from_trace_hint(states, channel="boundEnzymes")
+        if bound_deltas:
+            update["boundEnzymes"] = bound_deltas
 
         if self.parameters["write_substrate_deltas"]:
             need_by_aa = self._predict_substrate_need(synth_per_s, timestep)
@@ -218,7 +253,8 @@ class KarrTranslationV3Process(Process):
                 for aa, need in need_by_aa.items():
                     if need <= 0.0:
                         continue
-                    actual = min(float(need), max(0.0, float(current_substrates.get(aa, 0.0))))
+                    available = max(0.0, float(current_substrates.get(aa, 0.0)))
+                    actual = min(float(need), available)
                     rounded = self._stochastic_round_nonnegative(actual)
                     if rounded > 0:
                         substrate_update[aa] = float(-rounded)

@@ -46,7 +46,7 @@ _OBSERVABLES = ('substrates', 'enzymes', 'boundEnzymes', 'monomers')
 # Observables Karr records but `next_update` does not write into. Their
 # `oc_after` MUST be rebuilt from `states_before` (Rule 7 pass-through
 # provenance).
-_PASS_THROUGH = frozenset({'boundEnzymes', 'enzymes'})
+_PASS_THROUGH = frozenset()
 
 # Rule 4b manifest (declared for mechanical lint coverage).
 _SCRATCH_RESET = {}
