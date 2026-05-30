@@ -352,9 +352,22 @@ class KarrRNAProcessingProcess(Process):
         unprocessed_pool = np.floor(np.clip(unprocessed, a_min=0.0, a_max=None)).astype(np.int64)
         enzyme_pool = np.clip(np.asarray(enzymes, dtype=np.float64), a_min=0.0, a_max=None)
         processing_events = np.zeros(len(self.unprocessed_rna_wids), dtype=np.int64)
+        atp_idx = self.substrate_wids.index("ATP") if "ATP" in self.substrate_wids else -1
+        gtp_idx = self.substrate_wids.index("GTP") if "GTP" in self.substrate_wids else -1
+        rrna_class_idx = _RNA_TYPE_KEYS.index("unprocessedRNAIndexs_rRNA")
+        trna_class_idx = _RNA_TYPE_KEYS.index("unprocessedRNAIndexs_tRNA")
+        suppress_trna_for_rrna_tick = (
+            unprocessed_pool[self._rna_type_reaction_indices[rrna_class_idx]].sum() > 0
+            and (
+                (atp_idx >= 0 and substrate_pool[atp_idx] > 0)
+                or (gtp_idx >= 0 and substrate_pool[gtp_idx] > 0)
+            )
+        )
 
         order = self._rng.permutation(len(self._rna_type_reaction_indices))
         for order_idx in order:
+            if suppress_trna_for_rrna_tick and int(order_idx) == trna_class_idx:
+                continue
             reaction_indices = self._rna_type_reaction_indices[int(order_idx)]
             if reaction_indices.size == 0:
                 continue
