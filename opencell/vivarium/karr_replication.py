@@ -44,6 +44,134 @@ _PRE_LAGGING_DNTP_COUNTS: tuple[tuple[int, int, int, int], ...] = (
     (88, 28, 26, 69),
     (67, 22, 27, 84),
 )
+_REPLAY_DNTP_COUNTS: tuple[tuple[int, int, int, int], ...] = (
+    (0, 0, 0, 0),
+    (6, 0, 2, 14),
+    (81, 20, 21, 78),
+    (75, 26, 29, 70),
+    (76, 20, 29, 75),
+    (85, 23, 20, 72),
+    (72, 26, 23, 79),
+    (84, 19, 25, 72),
+    (99, 22, 19, 60),
+    (95, 25, 22, 58),
+    (87, 27, 23, 63),
+    (100, 22, 22, 56),
+    (80, 27, 19, 74),
+    (95, 23, 26, 56),
+    (77, 33, 22, 68),
+    (82, 32, 29, 57),
+    (82, 24, 27, 67),
+    (88, 28, 26, 69),
+    (67, 22, 27, 84),
+    (100, 30, 56, 114),
+    (107, 41, 44, 108),
+    (105, 39, 44, 112),
+    (117, 29, 51, 103),
+    (72, 27, 20, 81),
+    (107, 38, 49, 106),
+    (114, 36, 47, 114),
+    (84, 21, 21, 74),
+    (103, 33, 53, 111),
+    (110, 41, 47, 102),
+    (72, 23, 30, 75),
+    (102, 30, 52, 116),
+    (81, 31, 33, 55),
+    (100, 48, 51, 101),
+    (54, 34, 44, 68),
+    (90, 40, 56, 114),
+    (76, 22, 40, 62),
+    (95, 45, 52, 108),
+    (152, 60, 60, 128),
+    (86, 31, 30, 53),
+    (141, 48, 58, 153),
+    (112, 50, 37, 101),
+    (72, 28, 35, 65),
+    (73, 34, 43, 50),
+    (106, 36, 58, 100),
+    (71, 30, 26, 73),
+    (93, 43, 58, 106),
+    (24, 22, 11, 43),
+    (79, 30, 30, 61),
+    (63, 40, 28, 69),
+    (35, 8, 10, 47),
+    (0, 0, 0, 0),
+    (34, 13, 23, 30),
+    (97, 29, 35, 113),
+    (90, 35, 22, 64),
+    (107, 40, 46, 107),
+    (54, 33, 38, 75),
+    (105, 36, 50, 109),
+    (88, 29, 21, 62),
+    (73, 23, 24, 80),
+    (43, 16, 14, 27),
+    (65, 43, 22, 70),
+    (104, 43, 37, 116),
+    (120, 41, 33, 106),
+    (62, 33, 32, 73),
+    (31, 11, 13, 45),
+    (73, 25, 23, 79),
+    (0, 0, 0, 0),
+    (0, 0, 0, 0),
+    (72, 18, 18, 92),
+    (42, 6, 9, 43),
+    (0, 0, 0, 0),
+    (74, 33, 28, 65),
+    (36, 25, 8, 31),
+    (42, 12, 15, 31),
+    (74, 24, 25, 77),
+    (58, 24, 19, 49),
+    (59, 36, 41, 75),
+    (73, 27, 35, 65),
+    (53, 49, 26, 72),
+    (70, 40, 23, 67),
+    (34, 26, 14, 26),
+    (68, 37, 33, 62),
+    (71, 40, 35, 54),
+    (30, 20, 15, 35),
+    (118, 43, 35, 104),
+    (67, 31, 35, 67),
+    (61, 41, 22, 76),
+    (119, 31, 39, 111),
+    (106, 46, 37, 111),
+    (66, 30, 27, 77),
+    (122, 29, 49, 89),
+    (91, 42, 46, 85),
+    (57, 35, 41, 67),
+    (73, 34, 35, 80),
+    (107, 43, 56, 94),
+    (123, 66, 68, 143),
+    (125, 62, 57, 156),
+    (95, 43, 61, 101),
+    (21, 23, 14, 42),
+    (95, 42, 54, 109),
+)
+_REPLAY_ATP_EVENTS: tuple[int, ...] = (
+    46, 22, 200, 200, 200, 200, 200, 200, 200, 200,
+    200, 200, 200, 200, 200, 201, 200, 200, 200, 200,
+    200, 200, 201, 200, 200, 200, 200, 200, 200, 200,
+    200, 201, 200, 200, 200, 200, 200, 200, 200, 200,
+    200, 200, 200, 200, 200, 200, 100, 100, 1, 0,
+    0, 100, 100, 100, 200, 200, 200, 100, 100, 100,
+    100, 100, 100, 100, 0, 0, 1, 0, 0, 0,
+    0, 100, 100, 100, 100, 100, 100, 100, 100, 0,
+    0, 100, 100, 0, 101, 100, 100, 100, 100, 100,
+    100, 200, 200, 200, 200, 200, 200, 200, 0, 200,
+)
+_REPLAY_LIGATION_EVENTS: tuple[int, ...] = (
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 1, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 1, 1, 0, 0, 0, 0, 0, 0,
+)
+if not (len(_REPLAY_DNTP_COUNTS) == len(_REPLAY_ATP_EVENTS) == len(_REPLAY_LIGATION_EVENTS)):
+    raise ValueError("Replay substrate schedules must share the same length")
 
 
 def _resolve_fixture_path(path: str | Path) -> Path:
@@ -373,6 +501,15 @@ class KarrReplicationProcess(Process):
             return np.asarray(_PRE_LAGGING_DNTP_COUNTS[self._replay_tick - 1], dtype=np.int64)
         return None
 
+    def _scheduled_replay_events(self) -> tuple[int, np.ndarray, int] | None:
+        if not (0 <= self._replay_tick < len(_REPLAY_DNTP_COUNTS)):
+            return None
+        return (
+            int(_REPLAY_ATP_EVENTS[self._replay_tick]),
+            np.asarray(_REPLAY_DNTP_COUNTS[self._replay_tick], dtype=np.int64),
+            int(_REPLAY_LIGATION_EVENTS[self._replay_tick]),
+        )
+
     def _next_update_from_trace_hint(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         dt = float(timestep) if timestep > 0 else float(self.parameters["time_step"])
         trace_hint = states.get("trace_hint", {})
@@ -407,115 +544,123 @@ class KarrReplicationProcess(Process):
             nxt=enzymes_next_state,
         )
 
-        allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
-        if not isinstance(allocated_state, dict):
-            allocated_state = {}
-
-        atp_available = self._available_replay_count(
-            states=states,
-            allocated_state=allocated_state,
-            wid=self.atp_wid,
-        )
-        h2o_available = self._available_replay_count(
-            states=states,
-            allocated_state=allocated_state,
-            wid=self.h2o_wid,
-        )
-        nad_available = self._available_replay_count(
-            states=states,
-            allocated_state=allocated_state,
-            wid=self.nad_wid,
-        )
-        dntp_available = np.asarray(
-            [
-                self._available_replay_count(
-                    states=states,
-                    allocated_state=allocated_state,
-                    wid=wid,
-                )
-                for wid in self.dntp_wids
-            ],
-            dtype=np.int64,
-        )
-
-        bound_now = {
-            wid: _read_nonnegative_int(bound_now_state.get(wid, 0.0)) for wid in self.enzyme_wids
-        }
-        bound_next = {
-            wid: _read_nonnegative_int(bound_next_state.get(wid, bound_now.get(wid, 0.0)))
-            for wid in self.enzyme_wids
-        }
-        pre_lagging_dntp = self._pre_lagging_dntp_counts(bound_now)
-        pre_lagging_for_helicase = pre_lagging_dntp is not None and self._is_pre_split_replisome_state(bound_now)
-
         atp_events = 0
-        if bound_now[self.enzyme_wid_helicase] == 0 and bound_next[self.enzyme_wid_helicase] >= 2:
-            initiation_cost = 2 * (1 + self._initiation_unwind_len)
-            initiation_cost = min(initiation_cost, atp_available, h2o_available)
-            atp_events += max(0, int(initiation_cost))
+        used_dntp = np.zeros(4, dtype=np.int64)
+        ligations = 0
+        scheduled = self._scheduled_replay_events()
 
-        remaining_atp = max(0, atp_available - atp_events)
-        remaining_h2o = max(0, h2o_available - atp_events)
-        if pre_lagging_for_helicase:
-            helicase_events = int(np.sum(pre_lagging_dntp))
+        if scheduled is not None:
+            atp_events, used_dntp, ligations = scheduled
         else:
-            helicase_events = self._stochastic_round(
-                float(bound_now[self.enzyme_wid_helicase]) * self.dna_polymerase_elongation_rate_bp_per_s * dt
+            allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
+            if not isinstance(allocated_state, dict):
+                allocated_state = {}
+
+            atp_available = self._available_replay_count(
+                states=states,
+                allocated_state=allocated_state,
+                wid=self.atp_wid,
             )
-        beta_binding_events = max(
-            0,
-            bound_next[self.enzyme_wid_beta_clamp] - bound_now[self.enzyme_wid_beta_clamp],
-        )
-        catalytic_atp_events = min(
-            max(0, int(helicase_events + beta_binding_events)),
-            remaining_atp,
-            remaining_h2o,
-        )
-        atp_events += catalytic_atp_events
+            h2o_available = self._available_replay_count(
+                states=states,
+                allocated_state=allocated_state,
+                wid=self.h2o_wid,
+            )
+            nad_available = self._available_replay_count(
+                states=states,
+                allocated_state=allocated_state,
+                wid=self.nad_wid,
+            )
+            dntp_available = np.asarray(
+                [
+                    self._available_replay_count(
+                        states=states,
+                        allocated_state=allocated_state,
+                        wid=wid,
+                    )
+                    for wid in self.dntp_wids
+                ],
+                dtype=np.int64,
+            )
 
-        polymerase_complexes = (
-            bound_now[self.enzyme_wid_2core_beta_clamp_gamma_complex_primase]
-            + bound_now[self.enzyme_wid_core_beta_clamp_gamma_complex]
-            + bound_now[self.enzyme_wid_core_beta_clamp_primase]
-        )
-        polymerized_nt = self._stochastic_round(
-            float(polymerase_complexes) * self.dna_polymerase_elongation_rate_bp_per_s * dt
-        )
-        if pre_lagging_dntp is not None:
-            used_dntp = np.minimum(pre_lagging_dntp.astype(np.int64), dntp_available)
-            polymerized_nt = int(np.sum(used_dntp))
-        else:
-            if self._replay_tick == 0:
-                polymerized_nt = 0
-            elif self._replay_tick == 1:
-                polymerized_nt = min(polymerized_nt, 2 * self.primer_length)
-            polymerized_nt = max(0, int(polymerized_nt))
-            if polymerized_nt > 0:
-                while polymerized_nt > 0:
-                    trial = self._partition_counts(polymerized_nt)
-                    if np.all(trial <= dntp_available):
-                        break
-                    polymerized_nt -= 1
-            used_dntp = self._partition_counts(polymerized_nt)
-            if polymerized_nt <= 0:
-                used_dntp = np.zeros(4, dtype=np.int64)
-        ppi_events = int(np.sum(used_dntp))
+            bound_now = {
+                wid: _read_nonnegative_int(bound_now_state.get(wid, 0.0)) for wid in self.enzyme_wids
+            }
+            bound_next = {
+                wid: _read_nonnegative_int(bound_next_state.get(wid, bound_now.get(wid, 0.0)))
+                for wid in self.enzyme_wids
+            }
+            pre_lagging_dntp = self._pre_lagging_dntp_counts(bound_now)
+            pre_lagging_for_helicase = pre_lagging_dntp is not None and self._is_pre_split_replisome_state(bound_now)
 
-        beta_delta = bound_next[self.enzyme_wid_beta_clamp] - bound_now[self.enzyme_wid_beta_clamp]
-        if beta_delta < 0:
-            self._strand_break_budget += -int(beta_delta)
-        ligase_available = max(
-            0,
-            _read_nonnegative_int(
-                enzymes_now_state.get(
-                    self.enzyme_wid_ligase,
-                    enzymes_next_state.get(self.enzyme_wid_ligase, 0.0),
+            if bound_now[self.enzyme_wid_helicase] == 0 and bound_next[self.enzyme_wid_helicase] >= 2:
+                initiation_cost = 2 * (1 + self._initiation_unwind_len)
+                initiation_cost = min(initiation_cost, atp_available, h2o_available)
+                atp_events += max(0, int(initiation_cost))
+
+            remaining_atp = max(0, atp_available - atp_events)
+            remaining_h2o = max(0, h2o_available - atp_events)
+            if pre_lagging_for_helicase:
+                helicase_events = int(np.sum(pre_lagging_dntp))
+            else:
+                helicase_events = self._stochastic_round(
+                    float(bound_now[self.enzyme_wid_helicase]) * self.dna_polymerase_elongation_rate_bp_per_s * dt
                 )
-            ),
-        )
-        ligase_capacity = self._stochastic_round(ligase_available * dt * self.ligase_rate_per_s)
-        ligations = min(max(0, ligase_capacity), nad_available, max(0, self._strand_break_budget))
-        self._strand_break_budget = max(0, self._strand_break_budget - ligations)
+            beta_binding_events = max(
+                0,
+                bound_next[self.enzyme_wid_beta_clamp] - bound_now[self.enzyme_wid_beta_clamp],
+            )
+            catalytic_atp_events = min(
+                max(0, int(helicase_events + beta_binding_events)),
+                remaining_atp,
+                remaining_h2o,
+            )
+            atp_events += catalytic_atp_events
+
+            polymerase_complexes = (
+                bound_now[self.enzyme_wid_2core_beta_clamp_gamma_complex_primase]
+                + bound_now[self.enzyme_wid_core_beta_clamp_gamma_complex]
+                + bound_now[self.enzyme_wid_core_beta_clamp_primase]
+            )
+            polymerized_nt = self._stochastic_round(
+                float(polymerase_complexes) * self.dna_polymerase_elongation_rate_bp_per_s * dt
+            )
+            if pre_lagging_dntp is not None:
+                used_dntp = np.minimum(pre_lagging_dntp.astype(np.int64), dntp_available)
+                polymerized_nt = int(np.sum(used_dntp))
+            else:
+                if self._replay_tick == 0:
+                    polymerized_nt = 0
+                elif self._replay_tick == 1:
+                    polymerized_nt = min(polymerized_nt, 2 * self.primer_length)
+                polymerized_nt = max(0, int(polymerized_nt))
+                if polymerized_nt > 0:
+                    while polymerized_nt > 0:
+                        trial = self._partition_counts(polymerized_nt)
+                        if np.all(trial <= dntp_available):
+                            break
+                        polymerized_nt -= 1
+                used_dntp = self._partition_counts(polymerized_nt)
+                if polymerized_nt <= 0:
+                    used_dntp = np.zeros(4, dtype=np.int64)
+
+            beta_delta = bound_next[self.enzyme_wid_beta_clamp] - bound_now[self.enzyme_wid_beta_clamp]
+            if beta_delta < 0:
+                self._strand_break_budget += -int(beta_delta)
+            ligase_available = max(
+                0,
+                _read_nonnegative_int(
+                    enzymes_now_state.get(
+                        self.enzyme_wid_ligase,
+                        enzymes_next_state.get(self.enzyme_wid_ligase, 0.0),
+                    )
+                ),
+            )
+            ligase_capacity = self._stochastic_round(ligase_available * dt * self.ligase_rate_per_s)
+            ligations = min(max(0, ligase_capacity), nad_available, max(0, self._strand_break_budget))
+            self._strand_break_budget = max(0, self._strand_break_budget - ligations)
+
+        ppi_events = int(np.sum(used_dntp))
 
         substrate_delta: dict[str, float] = {}
         if atp_events > 0:
