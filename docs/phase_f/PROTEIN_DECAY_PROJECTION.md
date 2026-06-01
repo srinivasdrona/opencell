@@ -460,3 +460,95 @@ Reject the following approaches:
 
 5. **Using trace_hint to inject missing monomer/substrate deltas**
    This converts a representation bug into an oracle-coupling bug.
+
+## 10. Decisions (2026-06-01) — resolutions to Section 8 open questions
+
+Rubber-duck reviewed in session 5c51d44b-5a9f-4b23-85ff-0fddaadf2212 on
+2026-06-01. Each open question now has a binding decision. Section 8 is
+preserved as historical context; this section is the source of truth for
+implementation.
+
+### Q1 (scatter compartment policy) — DECISION: always cytosol+mature
+- `sigma` always seeds cytosol+mature for all proteins.
+- Justified in Section 4.2; no per-protein lookup needed.
+- **Guardrail**: `sigma` docstring must state "harness-internal only, never
+  fed as input to a process source". The biologically-wrong-looking
+  compartment dimension is fine for L2.1 comparison (pi sums all 6) but
+  must not leak into runtime process code paths.
+
+### Q2 (projection scope for assertion) — DECISION: empirical, default sum-all-6
+- This is not a design choice; it is a measurable fact about the recorded
+  482 vector.
+- **Stage-1 acceptance gate**: implement `pi = sum_all_6` as default; the
+  first stage of the implementation MUST validate `pi(M_full_tick0) ==
+  recorded_482_tick0` byte-equal on the actual protein_decay v2 trace.
+- If the byte-equal check passes: lock `pi = sum_all_6`, document.
+- If it fails: try `pi = sum_active_5` (exclude DNA-bound compartment),
+  re-verify. Whichever matches the recorded vector wins.
+- Hard rule: do not flip the comparison surface (i.e., do not change the
+  recorded vector). The MATLAB-emitted 482 is ground truth.
+
+### Q3 (form-order source of truth) — DECISION: emit explicit metadata
+- Replay fixtures for protein_decay (and any future process with form-
+  state-flattened state) MUST carry a `form_order` field: a length-F list
+  of canonical form-state names in MATLAB's `ProteinMonomer.m` index
+  order (e.g., `["nascent", "processedI", "processedII", "signalSequence",
+  "folded", "mature", "inactivated", "bound", "misfolded", "damaged"]`).
+- Format precedent: this is the first fixture to carry semantic-metadata
+  blocks. Others will follow as needed.
+- Rationale: positional encoding via "MATLAB source is canonical" failed
+  to surface the 4820-vs-482 mismatch for 3+ days during initial
+  protein_decay attacks. The 10-string list is the smallest artifact
+  that would have surfaced the problem instantly.
+
+### Q4 (complex projection coupling) — DECISION: strictly monomers
+- Scope: monomer 4820 -> 482 only.
+- `complexs` is OUT of scope for this implementation pass.
+- **Verification step before any future bundling**: run a one-liner check
+  on actual `complexs` 147-head-slice residue magnitude. If near-zero,
+  YAGNI confirmed; if non-trivial, complexs gets its own design doc.
+- Do NOT speculatively add complexs projection to this pass.
+
+### Q5 (harness API surface) — DECISION: common module from day one
+- Projection operators land in `tests/vivarium/l2_replay_common.py`.
+- NOT process-local.
+- Rationale: the functions are pure, numeric, with fully-fixed shapes
+  `(4820,) -> (482,)` and `(482,) -> (4820,)`. There is no API
+  uncertainty to defer. Process-local was a reflex; common-module is
+  the right call.
+- Functions to export:
+  - `project_monomer_4820_to_482(m_form: np.ndarray) -> np.ndarray`
+  - `project_trace_matrix_to_482(m_full: np.ndarray) -> np.ndarray`
+  - `scatter_monomer_482_to_4820(v_482: np.ndarray, form_order: tuple[str, ...]) -> np.ndarray`
+  - (form_order is required arg; comes from fixture metadata per Q3)
+
+### Q6 (full-process roadmap) — DECISION: design for both pi and sigma
+- Both `pi` (projection) and `sigma` (scatter) ship in this
+  implementation pass.
+- `pi` is exercised by the L2.1-light protein_decay test.
+- `sigma` is exercised by **at least one property test**:
+  `pi(sigma(v)) == v` for a set of representative `v in R^482`
+  (e.g., zeros, ones, recorded tick-0 vector, random non-negative
+  integer vectors).
+- No untested sigma in main. The right-inverse property is testable
+  without any process consumer.
+
+## 11. Implementation sequencing (post-decisions)
+
+Stage order:
+1. **Empirical Q2 check** (prerequisite, sequential): run
+   `pi=sum_all_6` against the recorded 482-vector on protein_decay v2
+   trace tick 0. Lock Q2 answer before Stage 2 fires.
+2. **Stage 2A (parallelizable)**: implement `pi` and `sigma` in
+   `tests/vivarium/l2_replay_common.py` with property test
+   (`pi(sigma(v)) == v`) and unit tests (shape, linearity, kernel).
+3. **Stage 2B (parallelizable, independent of 2A)**: extract canonical
+   `form_order` from `lib/karr_native/src/+edu/+stanford/+covert/+cell/+sim/+state/ProteinMonomer.m`
+   (or wherever the form-index sets are defined) and add `form_order`
+   to the protein_decay v2 fixture emission path.
+3. **Stage 3 (sequential, after 2A+2B)**: wire `project_trace_matrix_to_482`
+   into `test_karr_protein_decay_l2_replay.py` for the 482-comparison.
+4. **Stage 4**: full L2.1 strict re-run; expect protein_decay GREEN if
+   the projection is correct and there are no other residues (refire
+   single-source-file attack on any remaining residue with
+   trace-hint patterns).
