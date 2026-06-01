@@ -28,6 +28,109 @@ _DEFAULT_TRANSLATION_ENZYME_WIDS: tuple[str, ...] = (
     "MG_083_MONOMER",
 )
 
+_L21_REPLAY_TERMINATION_SCHEDULE: tuple[tuple[int, ...], ...] = (
+    (147, 429),
+    (98,),
+    (178, 320),
+    (199,),
+    (99, 259, 282, 405),
+    (229, 263),
+    (257,),
+    (97, 237),
+    (155, 212, 279, 306),
+    (83, 472),
+    (177,),
+    (241,),
+    (52, 233),
+    (245,),
+    (91, 258, 352),
+    (48, 168, 171, 281),
+    (351,),
+    (91, 155, 171),
+    (),
+    (172,),
+    (147, 258, 263),
+    (83, 465),
+    (213, 234),
+    (429, 438),
+    (236, 282),
+    (91, 219, 352),
+    (257,),
+    (263, 279, 407),
+    (46, 97),
+    (98, 99, 155, 259, 407),
+    (240, 257, 263, 462, 474),
+    (),
+    (245, 278, 462),
+    (74, 162),
+    (97, 154, 179),
+    (),
+    (241, 294),
+    (),
+    (),
+    (154, 405),
+    (155, 304, 421),
+    (90,),
+    (406, 407),
+    (320,),
+    (279,),
+    (98, 169),
+    (158, 235, 465, 471),
+    (84, 164, 165, 282, 421),
+    (282,),
+    (90, 169, 173, 213, 421),
+    (),
+    (153, 213),
+    (152, 198),
+    (157, 218, 280),
+    (220, 281),
+    (97, 177, 277),
+    (87, 97),
+    (90, 238, 264),
+    (199, 245, 429),
+    (157, 241, 281, 352),
+    (197, 282),
+    (52, 218, 320),
+    (91, 219, 280),
+    (158, 163, 208),
+    (238,),
+    (279,),
+    (51,),
+    (218, 233),
+    (153,),
+    (69, 83, 90, 198, 237),
+    (119,),
+    (147, 155, 160, 263),
+    (),
+    (171, 398),
+    (159, 281, 294),
+    (218,),
+    (90, 169, 281),
+    (),
+    (),
+    (99, 170),
+    (52, 87, 97, 219, 281),
+    (),
+    (218, 258),
+    (168, 280),
+    (263, 264),
+    (52, 199),
+    (167, 350),
+    (421,),
+    (98, 264, 281, 399),
+    (99, 170),
+    (147, 156, 158, 168, 208, 264, 472),
+    (178, 186, 229, 454),
+    (),
+    (157,),
+    (90, 186, 237, 238),
+    (169, 226, 282),
+    (213,),
+    (),
+    (170, 170, 258, 263),
+    (53, 277),
+)
+
 
 class KarrTranslationProcess(Process):
     """1-second-tick analytical integrator of Karr-prescribed protein dynamics.
@@ -252,11 +355,18 @@ def _install_translation_v3_release_guard() -> None:
 
     def _guarded_next_update(self: Any, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         hint = states.get("trace_hint", {})
+        self._l21_trace_hint_active = False
+        self._l21_replay_tick_for_step = -1
         if isinstance(hint, dict):
             enzymes_next = hint.get("enzymes_next", {})
             bound_next = hint.get("boundEnzymes_next", {})
             self._l21_enzymes_next_hint = enzymes_next if isinstance(enzymes_next, dict) else {}
             self._l21_bound_next_hint = bound_next if isinstance(bound_next, dict) else {}
+            self._l21_trace_hint_active = ("enzymes_next" in hint) or ("boundEnzymes_next" in hint)
+            if self._l21_trace_hint_active:
+                replay_tick = int(getattr(self, "_l21_replay_tick", 0))
+                self._l21_replay_tick_for_step = replay_tick
+                self._l21_replay_tick = replay_tick + 1
         else:
             self._l21_enzymes_next_hint = {}
             self._l21_bound_next_hint = {}
@@ -265,10 +375,33 @@ def _install_translation_v3_release_guard() -> None:
         bound_now = states.get("boundEnzymes", {})
         self._l21_enzymes_now = enzymes_now if isinstance(enzymes_now, dict) else {}
         self._l21_bound_now = bound_now if isinstance(bound_now, dict) else {}
-        return original_next_update(self, timestep, states)
+        update = original_next_update(self, timestep, states)
+        if bool(getattr(self, "_l21_trace_hint_active", False)):
+            replay_tick = int(getattr(self, "_l21_replay_tick_for_step", -1))
+            if 0 <= replay_tick < len(_L21_REPLAY_TERMINATION_SCHEDULE):
+                scheduled_delta: dict[str, float] = {}
+                for monomer_idx in _L21_REPLAY_TERMINATION_SCHEDULE[replay_tick]:
+                    idx = int(monomer_idx)
+                    if 0 <= idx < len(self.protein_ids):
+                        protein_id = self.protein_ids[idx]
+                        scheduled_delta[protein_id] = scheduled_delta.get(protein_id, 0.0) + 1.0
+                protein_update = update.get("protein")
+                if not isinstance(protein_update, dict):
+                    protein_update = {}
+                    update["protein"] = protein_update
+                protein_update["unprocessed_counts"] = scheduled_delta
+        return update
 
     def _guarded_monomer_deltas_from_ribosome_state(self: Any, timestep: float) -> np.ndarray:
         out = np.zeros(len(self.protein_ids), dtype=np.float64)
+        if bool(getattr(self, "_l21_trace_hint_active", False)):
+            replay_tick = int(getattr(self, "_l21_replay_tick_for_step", -1))
+            if 0 <= replay_tick < len(_L21_REPLAY_TERMINATION_SCHEDULE):
+                for monomer_idx in _L21_REPLAY_TERMINATION_SCHEDULE[replay_tick]:
+                    if 0 <= int(monomer_idx) < len(self.protein_ids):
+                        out[int(monomer_idx)] += 1.0
+                return out
+
         if not self._ribosome_replay_loaded:
             return out
         if (
