@@ -1,6 +1,7 @@
 # L2_2_HARNESS_DESIGN
 
 Status: first dogfood of `docs/prompts/DESIGN_TEMPLATE.md` for multi-file design-doc authoring.
+Template reference: this document is intentionally structured against [DESIGN_TEMPLATE](../prompts/DESIGN_TEMPLATE.md).
 
 ## DAP Intent
 
@@ -465,3 +466,8 @@ R5. Scope confusion between L2.2 and L3
 4. Are unresolved decisions surfaced in QO1-QO6 with defaults and risks?
 5. Is migration strategy clear enough to avoid destructive rewrites and preserve auditability?
 
+## Dogfood lessons for DESIGN_TEMPLATE
+
+1. The mandatory inventory section added concrete value: it forced branch-path artifact discovery (`phase-f-schema-extract:data/schemas/per_process/*.toml`) that directly exposed the root-cause class.
+2. Mandatory Beat-4 inversions per decision improved quality: D3 evolved from binary attribution to a full seven-cause taxonomy because inversion pressure made "upstream vs intrinsic only" visibly insufficient.
+3. Suggested template refinement for v1.1: require at least one "semantic mismatch witness" snippet (index + WID name on both sides) whenever vector-space composition is a core risk.
