@@ -87,6 +87,9 @@ class KarrProteinProcessingIIProcess(Process):
             fx["lipoproteinMonomerIndexs"][0, 0], dtype=np.int64
         ).reshape(-1)
         self.lipoprotein_indices = lipoprotein_indices - 1
+        self.lipoprotein_wids = [
+            self.processed_monomer_wids[int(i)] for i in self.lipoprotein_indices
+        ]
         self.secreted_indices = (
             np.asarray(fx["secretedMonomerIndexs"][0, 0], dtype=np.int64).reshape(-1) - 1
         )
@@ -96,6 +99,20 @@ class KarrProteinProcessingIIProcess(Process):
         self.peptidase_indices = np.concatenate(
             (self.lipoprotein_indices, self.secreted_indices)
         ).astype(np.int64)
+
+        n_sub = len(self.substrate_wids)
+        n_lipo = len(self.lipoprotein_indices)
+        n_rxn = 2 * n_lipo
+        transferase_reaction_index = np.arange(0, n_rxn, 2, dtype=np.int64)
+        cleavage_reaction_index = transferase_reaction_index + 1
+
+        # Compatibility surface used by chassis builders (v4/v5): substrate x reaction.
+        self.reaction_stoich = np.zeros((n_sub, n_rxn), dtype=np.int64)
+        self.reaction_stoich[self.substrate_index_pg160, transferase_reaction_index] = -1
+        self.reaction_stoich[self.substrate_index_snglyp, transferase_reaction_index] = 1
+        self.reaction_stoich[self.substrate_index_hydrogen, transferase_reaction_index] = 1
+        self.reaction_stoich[self.substrate_index_water, cleavage_reaction_index] = -1
+        self.substrate_index_dag = self.substrate_index_pg160
 
         self.lipoprotein_signal_peptidase_specific_rate = float(
             np.asarray(fx["lipoproteinSignalPeptidaseSpecificRate"][0, 0]).reshape(-1)[0]
