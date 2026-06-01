@@ -1,7 +1,25 @@
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-06-01 ~19:55 IST):**
-- **1 agent live:** `matlab_rng_shim` codex on `E:\opencell-worktrees\matlab-rng-shim` (branch `infra/matlab-randstream-shim` off sweep `3d82f9b`). PID **47992**. Wait shell `wait_rng`. Building MatlabRandStream wrapper + golden tests; last seen testing `randperm(100,5)` and running L2.1 regression. Scope: shim + tests only, no process wiring.
+**Live processes / agents (2026-06-01 ~20:42 IST):**
+- **NONE LIVE.** All evening codex jobs returned. Sweep pushed cleanly to origin at `0e17e00`.
+
+**Evening fanout #3 outcomes (2026-06-01 ~20:00-20:40 IST):**
+- **matlab_rng_shim SHIPPED** (cherry-picked `77e06fd` + `be8f13b` onto sweep). 15 passed + 3 xpassed. Critical empirical finding: `np.random.RandomState(0)` ≠ MATLAB `RandStream('mt19937ar','Seed',0)` (MATLAB maps seed 0 → 5489 internally; shim encodes the mapping). `randperm` requires Fisher-Yates against MATLAB's documented startup vector `[6 3 7 8 5 1 2 4 9 10]`. Awaits wiring into stochastic processes (dna_super = smallest target, agent's own recommendation).
+- **rule8_ci_lint SHIPPED** (cherry-picked `0e17e00`). Pytest `tests/prompts/test_rule8_no_oracle_reads.py` enforces 2-token AND (call-shape + filename-marker) scan over `opencell/vivarium/`. Comment allowlist `# rule8-ok: <reason>` required. Sanity-check canary fired + cleared. Pre-commit hook NOT added (no `.pre-commit-config.yaml` at repo root). First-attempt bailed on untracked-PROMPT trap; re-launched with explicit ignore-untracked block + `.git/info/exclude` entries.
+- **l2_2_harness SHIPPED-RED-with-finding** (cherry-picked `d2421ac` + `cba045d`). FIRST L2.2.k harness. Mode A shared-state composition, translation→rna_processing pair. **Failure surfaces a real bug L2.1 cannot catch**: at tick=5, `RNAProcessing.substrates[5]` expects 1,679,927 but composed run yields 0; harness's counterfactual proves it's upstream pollution from Translation. **Likely root cause: per-process substrate WID-set divergence** — "index 5" is a different chemical in `Translation.substrate_wids` vs `RNAProcessing.substrate_wids`. NOT the previously-known port-name diff (`wiring-tx-to-rnaproc-investigate`) — that's a Vivarium-graph concern; this harness bypasses the graph by directly invoking `next_update`. Open: instrument harness with per-process WID-set diagnostics OR redesign overlay to be wid-resolved per-consumer.
+
+**Sweep tip (origin in sync):** `0e17e00 test(prompts): add Rule 8 CI lint`. Adds since previous handoff:
+- `77e06fd feat(util): add matlab mt19937ar randstream shim and golden tests`
+- `be8f13b docs(phase_f): add matlab rng shim design note and source map`
+- `d2421ac test(l2.2): add l2_2_replay_common integrated-replay harness (k-process)`
+- `cba045d test(l2.2): add translation+rna_processing first pair (k=2)`
+- `0e17e00 test(prompts): add Rule 8 CI lint (no oracle reads in production code)`
+
+**L2.1 baseline preserved:** 40 passed / 6 failed / 2 skipped (smoke). Six REDs unchanged: dna_supercoiling, metabolism, protein_decay, protein_modification, rna_decay, transcription.
+
+**L2.2.k status: harness exists, first pair RED with localized finding.** New design problem queued: WID-set unification across composed processes. Next pairs (`replication-cluster`, `protein-pipeline`) blocked on resolving WID semantics OR scoped to processes with identical wid-sets.
+
+**Original (Day 17 evening #1+#2) handoff below — kept for trap reference:**
 - **pmod_3slot RETURNED** (PID 12112 dead, 19:51 IST): **Class C-RNG confirmed** — independently corroborated the matrix prediction. No commits (docs-only landing, same shape as dna_super). Cited `ProteinModification.m` lines 361–375 (`stochasticRound` + `randsample`). Bonus finding: a deterministic probe (treat zero-requirements as non-limiting in `_limit_over_requirements`) cleared tick=19 but pushed residue to ~tick 53 — suggests possible deterministic bug under RNG noise; re-attack after shim lands. Token spend 401k (hit Azure compaction errors near end — close to ceiling). STATUS at `E:\opencell-worktrees\pmod-3slot\STATUS_pmod_3slot.md` (27.7 KB).
 - **Sweep pushed:** `audit/l2-1-sweep-v2` is at `3d82f9b` on origin (cherry-picks `db84a77 pp2` + `27c0ae6 tol-table` + `3d82f9b tol-loader` landed). Use the GCM-explicit WSL form below for any future push — plain `wsl git push` HANGS silently.
 - **Tolerance flag-on sweep result: ZERO new passes.** `L2_USE_CALIBRATED_TOLERANCES=1` → 40/6/2, identical to baseline. **Signal, not null:** every one of the 6 remaining REDs is a structural gap, not a tolerance-width issue. The calibrated table is still valuable as a regression guard but won't farm more GREENs on its own.
