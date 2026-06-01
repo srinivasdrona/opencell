@@ -34,6 +34,7 @@ from l2_replay_common import (
     overlay_observable_into_state,
     project_karr_vector,
     project_observable_from_state,
+    project_trace_matrix_to_482,
     refresh_allocator_views,
     resolve_trace_path,
 )
@@ -56,19 +57,38 @@ _OBSERVABLE_TO_WIDS_ATTR = {'substrates': 'substrate_wids', 'enzymes': 'enzyme_w
 
 
 # L2.1 harness overrides (Pattern A residue, reclassified to D).
-# Karr's monomers trace is 28920 = 482 monomers x 60 form-compartment combos; OC tracks
-# the mature-cytosol slice, assumed at indices [0:482].
+# Karr's monomers trace is 28920 = 6 compartments x 4820 (482 proteins x 10 form-states).
+# OC's ProteinDecayLight port is compartment-agnostic 482-WID. The canonical
+# projection pi (sum over all 6 compartments, then col-major (10, 482).sum(axis=0))
+# lives in l2_replay_common.project_trace_matrix_to_482. See
+# docs/phase_f/PROTEIN_DECAY_PROJECTION.md section 10 for the decision record.
+#
 # Karr's complexs trace is 7236; OC's complex_wids has 147 entries. Naive head-slice
 # np.arange(147) is NOT canonically correct, but acceptable as an "honest-enough"
 # projection because: (a) complexs only mutates in 2/100 ticks vs substrates'
 # 41/100, so first-failure surfaces on substrates (real biology), and (b) substrate
-# length matches Karr 1:1 (53), so no projection error there. If first-failure ever
-# lands on complexs[k]/monomers[k] with k<147/482, that fingerprint is still a real
-# biology delta worth recording. Full canonical projection deferred.
+# length matches Karr 1:1 (53), so no projection error there.
 _CANONICAL_WIDS: dict[str, list[str]] = {}
 _STORE_PATH_OVERRIDE: dict[str, tuple[str, ...]] = {}
 _INDEX_PROJECTION_ATTR: dict[str, str] = {}
-_INDEX_PROJECTION_LITERAL = {'monomers': np.arange(482), 'complexs': np.arange(147)}
+# NOTE: 'monomers' is intentionally NOT in this dict — it uses the dedicated
+# project_trace_matrix_to_482 helper applied inline below.
+_INDEX_PROJECTION_LITERAL = {'complexs': np.arange(147)}
+
+
+def _monomers_to_482(flat_28920: np.ndarray) -> np.ndarray:
+    """Reshape Karr's flat monomers trace cell to (6, 4820) and project to 482.
+
+    cell_vector returns a row-major flattened view of MATLAB's (4820, 6)
+    column-major matrix, which numpy sees as (6, 4820) before flattening.
+    Re-reshape to (6, 4820) and apply the canonical pi projection.
+    """
+    arr = np.asarray(flat_28920, dtype=np.float64)
+    if arr.size != 6 * 4820:
+        raise ValueError(
+            f"monomers trace expected size {6 * 4820}, got {arr.size}"
+        )
+    return project_trace_matrix_to_482(arr.reshape(6, 4820))
 
 
 def _assert_delta_integral(label: str, deltas: dict[str, float]) -> None:
@@ -148,16 +168,19 @@ def test_karr_protein_decay_l2_replay_identity_per_tick(rng_seed: int) -> None:
 
         for tick in range(n_ticks):
             state = build_state_template(process)
-            before_vectors = {
-                observable: project_karr_vector(
-                    process,
-                    observable,
-                    cell_vector(trace, "states_before", observable, tick),
-                    index_projection_attr=_INDEX_PROJECTION_ATTR,
-                    index_projection_literal=_INDEX_PROJECTION_LITERAL,
-                )
-                for observable in _OBSERVABLES
-            }
+            before_vectors = {}
+            for observable in _OBSERVABLES:
+                raw = cell_vector(trace, "states_before", observable, tick)
+                if observable == "monomers":
+                    before_vectors[observable] = _monomers_to_482(raw)
+                else:
+                    before_vectors[observable] = project_karr_vector(
+                        process,
+                        observable,
+                        raw,
+                        index_projection_attr=_INDEX_PROJECTION_ATTR,
+                        index_projection_literal=_INDEX_PROJECTION_LITERAL,
+                    )
 
             for observable in _OBSERVABLES:
                 overlay_observable_into_state(
@@ -174,13 +197,17 @@ def test_karr_protein_decay_l2_replay_identity_per_tick(rng_seed: int) -> None:
             _apply_update(state, update, process)
 
             for observable in _OBSERVABLES:
-                karr_after = project_karr_vector(
-                    process,
-                    observable,
-                    cell_vector(trace, "states_after", observable, tick),
-                    index_projection_attr=_INDEX_PROJECTION_ATTR,
-                    index_projection_literal=_INDEX_PROJECTION_LITERAL,
-                )
+                raw_after = cell_vector(trace, "states_after", observable, tick)
+                if observable == "monomers":
+                    karr_after = _monomers_to_482(raw_after)
+                else:
+                    karr_after = project_karr_vector(
+                        process,
+                        observable,
+                        raw_after,
+                        index_projection_attr=_INDEX_PROJECTION_ATTR,
+                        index_projection_literal=_INDEX_PROJECTION_LITERAL,
+                    )
                 expected_len = len(wids_by_observable[observable])
                 if karr_after.shape[0] != expected_len:
                     mapped_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable, "<heuristic>")
