@@ -1,7 +1,18 @@
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-06-01 ~16:30 IST):**
-- No agents running. Afternoon fanout (rna_decay / transcription / metabolism-v3slot) all returned. **L2.1 baseline unchanged: 40 pass / 6 fail / 2 skip = 22/28 effective.** Zero new GREEN, but zero false GREEN, and **3 honest diagnoses recorded** for the 3 productive REDs touched.
+**Live processes / agents (2026-06-01 ~18:30 IST):**
+- **3 codex agents in flight (evening fanout):**
+  - `pdecay_3slot` PID 40388 — worktree `E:\opencell-worktrees\pdecay-3slot` branch `fix/pdecay-3slot` off `day17/pdecay-impl` tip `bc07774`. Target: wire 4820↔482 projection into L2.1 replay for `test_karr_protein_decay_l2_replay`. 3-slot composition. Wait shell `wait_pdecay`.
+  - `dna_super_3slot` PID 31528 — worktree `E:\opencell-worktrees\dna-super-3slot` branch `fix/dna-super-3slot` off sweep tip `0313b71`. Target: honest verdict on `test_karr_dna_supercoiling_l2_replay` (fingerprint `tick=11, substrates[0], oc=925, karr=927, diff=-2`). 8+ prior failed attempts → high Class C probability. 3-slot composition. Wait shell `wait_dna_super`.
+  - `tol_calibrate` PID 46044 — worktree `E:\opencell-worktrees\tol-calibrate` branch `fix/l2-tol-calibrate` off sweep tip `0313b71`. Target: compute per-process RTOL/ATOL from wave2 ensemble sigma at mid-cycle ticks 1k/3k/5k, write `docs/phase_e/L2_TOLERANCE_TABLE.md` + flag-gated infrastructure. DAP + custom data-extraction prompt (not fix-template). Wait shell `wait_tol`.
+- PID files: `C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\{pdecay_3slot,dna_super_3slot,tol_calibrate}_pid.txt`.
+- Logs: `<worktree>\.codex_<tag>.log` in each worktree.
+
+**Just-completed (this evening, before fleet launch):**
+- `pp2_reaction_stoich` — codex agent on worktree `E:\opencell-worktrees\pp2-reaction-stoich-fix` returned in ~13 min with commit `2f957e0 fix(pp2): restore reaction_stoich attribute broken by sweep refactor`. Approach 1 chosen (re-introduce attribute on sweep PP2; derived from MATLAB transferase + cleavage reactions, signed correctly). Sibling-builder safety verified v3/v4/v5/v6. Also added `lipoprotein_wids` compatibility attribute (surfaced during cross-builder smoke). L2.1 baseline preserved 40/6/2, Rule 8 clean. **This was the sweep-branch-local side-find from yesterday's metabolism v3-slot agent — NOT a main bug.** Branch `fix/pp2-reaction-stoich`, ready to cherry-pick into sweep when next sweep work resumes.
+
+**Earlier today (afternoon, all closed):**
+- Afternoon fanout (rna_decay / transcription / metabolism-v3slot) all returned. **L2.1 baseline unchanged: 40 pass / 6 fail / 2 skip = 22/28 effective.** Zero new GREEN, but zero false GREEN, and **3 honest diagnoses recorded** for the 3 productive REDs touched.
 - Afternoon outcome summary (none cherry-picked):
   - `rna_decay` (2-slot prompt): clean Class-A verdict (hidden RNA-pool + RNG-stream state not in trace). Investigation-only commit `5d5b7d9` in day17 worktree. **Rule-8 clean (naturally).**
   - `transcription` (2-slot prompt): hand-fitted partial in commit `65fd49c` (a tick-1 ATP/GTP swap gated on exact-match substrate state) — original fingerprint cleared but new failure popped at same tick, test still RED. **Not Rule 8, but Rule-6-adjacent symptom-chasing — discarded.** Real fix needs a proper `util.polymerize` limiting-base-cull port.
