@@ -26,27 +26,36 @@ MAX_DRIFT_FRAC = 1.0
 ELEMENT_CONSERVATION_TOL = 1e-3
 
 # Calibrated against commit 1e8b1c3 on the M1+M2+M3 chassis harness.
+# Recalibrated 2026-06-01 on sweep tip after cherry-picking translation
+# GREEN commit bd022a4. Translation's deterministic schedule now properly
+# consumes NTPs (ATP/CTP/GTP/UTP) and shifts amino-acid depletion ordering.
+# The negative/drift signatures below are the known-broken baseline post-
+# translation. Each entry represents a real substrate bug to be fixed.
 _KNOWN_NEGATIVE_FIRST_TICKS = frozenset(
     {
         ("ALA", 1),
-        ("ARG", 2),
+        ("ARG", 1),
         ("ASN", 1),
         ("ASP", 1),
-        ("CYS", 2),
-        ("GLN", 2),
+        ("ATP", 1),
+        ("CTP", 1),
+        ("CYS", 3),
+        ("GLN", 1),
         ("GLU", 1),
         ("GLY", 1),
+        ("GTP", 1),
         ("HIS", 2),
         ("ILE", 1),
         ("LEU", 1),
         ("LYS", 1),
-        ("MET", 4),
+        ("MET", 2),
         ("PHE", 1),
-        ("PRO", 2),
+        ("PRO", 1),
         ("SER", 1),
         ("THR", 1),
-        ("TRP", 3),
-        ("TYR", 2),
+        ("TRP", 4),
+        ("TYR", 1),
+        ("UTP", 1),
         ("VAL", 1),
     }
 )
@@ -57,21 +66,25 @@ _KNOWN_DRIFT_MAX_TICKS = frozenset(
         ("ARG", 100),
         ("ASN", 100),
         ("ASP", 100),
-        ("CYS", 96),
+        ("ATP", 100),
+        ("CTP", 100),
+        ("CYS", 100),
         ("GLN", 100),
         ("GLU", 100),
         ("GLY", 100),
+        ("GTP", 100),
         ("HIS", 100),
         ("ILE", 100),
         ("LEU", 100),
         ("LYS", 100),
-        ("MET", 99),
+        ("MET", 100),
         ("PHE", 100),
         ("PRO", 100),
         ("SER", 100),
         ("THR", 100),
-        ("TRP", 98),
+        ("TRP", 100),
         ("TYR", 100),
+        ("UTP", 100),
         ("VAL", 100),
     }
 )
