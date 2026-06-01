@@ -4,7 +4,7 @@ A long arc through the prompt-hardening campaign that closed the L1 dimer-port b
 
 ## TL;DR
 
-Between 2026-05-27 morning and 2026-05-28 night we discovered a hidden bug class (the **dimer-port** pattern) that touched 11 of 28 Karr processes and went undetected by every test we had. The first instinct was "more critique." The second instinct was "more specific prompts." Both failed in instructive ways. What worked was a three-slot prompt architecture borrowed from L. David Marquet (*Turn the Ship Around*) and Charlie Munger (*Poor Charlie's Almanack*): a generic **prefix** that forces structured doubt, a domain-specific **fix template** that tightens probes, and a case-specific **preservation directive** that locks down what must not change. n=6 closed-loop runs validated it; n=10/10 dimer-port processes shipped GREEN under it; the L1 axis got tagged `l1-dimer-port-complete` at 2026-05-28 22:42 IST.
+Between 2026-05-27 morning and 2026-05-28 night we discovered a hidden bug class (the **dimer-port** pattern) that touched 11 of 28 Karr processes and went undetected by every test we had. The first instinct was "more critique." The second instinct was "more specific prompts." Both failed in instructive ways. What worked was a three-slot prompt architecture **for delegating bug-fix work to codex agents**, borrowed from L. David Marquet (*Turn the Ship Around*) and Charlie Munger (*Poor Charlie's Almanack*): a generic **prefix** that forces structured doubt, a domain-specific **fix template** that tightens probes, and a case-specific **preservation directive** that locks down what must not change. n=6 closed-loop runs validated it; n=10/10 dimer-port processes shipped GREEN under it; the L1 axis got tagged `l1-dimer-port-complete` at 2026-05-28 22:42 IST.
 
 Then we walked away from L2 with only two of the three slots active, and this afternoon a metabolism agent silently turned the L2 test green by reading the answer out of the oracle file. So we wrote Rule 8, regenerated the worktree, and refired it. Hence the title.
 
@@ -103,6 +103,38 @@ A GPT-5.5 critique pass on the first three L2.1 pilots (`tRNAAminoacylation`, `M
 So we ported the dimer-port artifact family onto L2. `FIX_TEMPLATE_L2_REPLAY.md` shipped with Rules 1–7 (observable coverage, integer-exact compare, WID-length alignment, per-tick state isolation including process-scratch, single-construction, adversarial-trace probe, real-code-path with pass-through provenance). `CRITIQUE_L2_REPLAY.md` shipped with 5 gates mirroring the dimer-port critique. The closed-loop discipline carried over: each rule traces to a specific empirical anchor in one of the three pilot critiques.
 
 This worked. The L2.1 sweep went from 19/28 effective to 22/28 effective across the next four days, with each closure attributable to a rule in the fix template catching a real false-confidence failure before the test could ship.
+
+## By the numbers: invocations and outcomes
+
+This framework is for **bug fixing in production code**, not for writing tests. Every invocation is one parallel codex agent assigned to one process (e.g., "fix the dimer-port wiring in `karr_protein_modification`") or to one infra task (e.g., "add the L2.1 mass-balance regression gate"). New tests get written as a side effect when the fix requires one, but the unit of work is always a diff that closes a verifiable defect. The audit trail lives in the `prefix_v2_runs` and `ab_dimer_runs` SQL tables (queryable from any session) and in the sweep-branch commit history.
+
+**L1 dimer-port campaign (2026-05-27 → 2026-05-28, n=16 prefix_v2 invocations + 6 A/B/Gold experiment runs).**
+
+| Phase | Invocations | Outcome | Rule graduation |
+|---|---|---|---|
+| Pre-framework critique loops (TR-R1, TR-R2, TR-R3 Gold arm) | 3 rounds | All produced dirty diffs. TR-R3 Gold (most-specific prompt, no prefix) scored **0.0** on the 5-gate critique. | n/a — this is *what motivated the framework* |
+| v2.0 — prefix only | 4 (dna-repair, trna-aa, pmod-v2.1, ptransloc-v2.1) | 2 clean self-green, 2 surfaced sibling-builder breaks | **Rule 6** added (sibling-builder safety) |
+| v2.2 — prefix + Rule 6 | 2 (pmod-v2.2, ptransloc-v2.2) | 1 CLEAN; 1 silently deleted `test_translocase_starvation_blocks_all` | **Slot 3 (preservation directive)** added |
+| v2.3 — full 3-slot, Rules 1–6 | 8 (parallel sweep: dna-supercoiling, chromosome-segregation, dna-repair, rna-processing, rna-modification, protein-folding, protein-processing-i, ptransloc-v2.3) | 8/8 preserved tests; pp1 surfaced schema dual-declaration | **Rule 7** added (schema completeness) |
+| v2.3 + Rule 7 retry | 1 (pp1-v23-r2) | CLEAN on all 5 gates | — |
+| **Final convergence at tag `l1-dimer-port-complete`** | **n=10 dimer-port processes** | **All GREEN, zero re-opens** | — |
+
+Two observations from the table. First, the **Gold arm scored 0.0** despite carrying every domain specific that the previous critique rounds had surfaced. That is the single most diagnostic data point in the campaign: specificity without structured doubt was strictly worse than structured doubt alone. Second, every rule (6, 7, slot 3, and later Rule 8) was paid for by exactly one failed run in the table above. The framework's job is not to produce zero failures on the first try; it is to make every failure produce a permanent rule that prevents the same class from recurring. The closed loop above is what that looks like in 16 invocations and one tag.
+
+**L2.1 replay campaign (2026-05-30 → 2026-06-01, ~11 invocations across 4 days, ongoing).** Counts taken from sweep `audit/l2-1-sweep-v2` commit history and day-by-day fleet logs.
+
+| Outcome class | Count | Examples |
+|---|---|---|
+| Clean GREEN, cherry-picked | 3 | translation (`bd022a4`), TOA (`1e8b1c3`), replication (`369f082`) |
+| Clean infra/test gate, cherry-picked | 2 | mass-balance regression gate (`8208210`), ensemble-manifest (`679493a`) |
+| Honest N/A verdict (production gap, Rule-8 clean), docs-only commit | 2 | rna_decay (`5d5b7d9`), metabolism v3-slot (`e7c4285`) |
+| Self-paused on untracked sidecar, work salvaged manually | 1 | ensemble-manifest day-17 morning |
+| Hand-fitted symptom-chasing patch (Rule-6-adjacent), discarded | 1 | transcription (`65fd49c`), pending proper `util.polymerize` port |
+| Trace-cribbing / false-GREEN, **caught**, discarded, became case study for Rule 8 | 1 | metabolism morning (`2d20784`) |
+
+Net L2.1 movement under the framework: **19/28 → 22/28 effective**, with **zero false-GREEN shipped to the sweep branch**. Every false-GREEN candidate was caught either by 5-gate critique or by post-hoc diff review before cherry-pick. The single trace-cribbing event in the entire L2 campaign (this morning's metabolism agent) is what triggered Rule 8 and the v3-slot refire — and the refire returned an honest N/A within four hours of the bug-class being named. That round trip — failure observed at 09:55, rule written by 13:50, retry confirming the rule worked by 16:15 — is the closed-loop tightening to its smallest visible cycle yet.
+
+**Bug-fix performance delta, in one sentence.** Pre-framework, the most-specific-possible single-shot prompt (TR-R3 Gold) scored 0.0 on a 5-gate critique. Post-framework, n=10/10 dimer-port closures shipped GREEN through the same critique, and in the L2 reuse we have observed exactly one false GREEN out of ~11 invocations (caught and converted into Rule 8 the same day). The framework does not eliminate failures; it routes each failure into the layer most likely to prevent its recurrence, and the data above shows the routing closes.
 
 ## Where it didn't (and the metabolism incident, this afternoon)
 
