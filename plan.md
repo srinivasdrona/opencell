@@ -1,7 +1,29 @@
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-06-01 ~19:30 IST):**
-- **No agents running.** Evening 3-agent fanout all returned. **L2.1 baseline unchanged: 40 pass / 6 fail / 2 skip = 22/28 effective.** Zero new GREEN, zero false GREEN, **3 more honest verdicts** + substantive plumbing on 2 of 3 branches.
+**Live processes / agents (2026-06-01 ~19:45 IST):**
+- **1 agent live:** `pmod_3slot` codex on `E:\opencell-worktrees\pmod-3slot` (branch `fix/pmod-3slot` off sweep `3d82f9b`). PID **12112**. Wait shell `wait_pmod` armed. Target: `test_karr_protein_modification_l2_replay` (fingerprint t=19, substrates[0], oc=0 vs karr=1, off-by-one). Prompt flags 2 prior wip attempts (`68d46a1`, `ceb36ac`) as anti-pattern bait.
+- **Sweep pushed:** `audit/l2-1-sweep-v2` is at `3d82f9b` on origin (cherry-picks `db84a77 pp2` + `27c0ae6 tol-table` + `3d82f9b tol-loader` landed). Use the GCM-explicit WSL form below for any future push — plain `wsl git push` HANGS silently.
+- **Tolerance flag-on sweep result: ZERO new passes.** `L2_USE_CALIBRATED_TOLERANCES=1` → 40/6/2, identical to baseline. **Signal, not null:** every one of the 6 remaining REDs is a structural gap, not a tolerance-width issue. The calibrated table is still valuable as a regression guard but won't farm more GREENs on its own.
+
+**Hypothesis matrix for the 6 remaining L2.1 REDs** (built 2026-06-01 evening — single source of truth for "what's next" on L2.1):
+
+| # | Process | Fingerprint | Class | Root cause | Fix path | Effort | Crib risk |
+|---|---|---|---|---|---|---|---|
+| 1 | metabolism | t=0, substrates[10]=ADP, +3622 | **C-harness gap** | Static replay path receives only 585-cytosol substrates (vs MATLAB 585×3); no `randStream` continuation; no `evolveState` machinery | (a) extend replay harness's metabolism path or (b) defer to L2.2 integrated replay | L | LOW |
+| 2 | dna_supercoiling | t=11, ATP +2 (= 1 event) | **C-RNG** | MATLAB has 4 distinct `randStream` draws (`DnaSupercoiling.m` lines 391/419/470/487); NumPy can't bit-replay | (a) MATLAB `randStream` shim or (b) ±1-event tolerance band | M / S | LOW |
+| 3 | protein_decay | shifted fingerprint after `dd9de0b` wiring | **C-representation seam** | 4820↔482 projection is lossy: many 4820 states collapse to same 482 vector but imply different substrate outputs (482 proteins with form-varying decay cols + Lon cleavages) | (a) lift harness to 4820 surface for pdecay or (b) add per-form observables to replay extraction | L | MED |
+| 4 | protein_modification | t=19, substrates[0], +1 | **TBD** (pmod agent investigating) | hypotheses: RNG, allocator order, OR earlier-tick sibling drift | TBD | TBD | TBD |
+| 5 | rna_decay | t=0, AMP +1 | **A — hidden-state seeding** | Trace exposes only `{substrates,enzymes,boundEnzymes}`; needs RNA pool + per-process randStream at t=0. Diff vector = exactly `decay_row(MG518) − decay_row(MG493)` (1 stochastic event reassigned) | extend replay extraction: dump RNA pool + randStream into fixture | M | LOW |
+| 6 | transcription | t=1, ATP +1 (after discarding `65fd49c` hand-fit) | **D — algorithmic port gap** | OC drains per-RNAP sequentially; MATLAB `util.polymerize` does limiting-base culls across active sequence frontier | port `util.polymerize` faithfully — reusable kernel for translation + replication later | L | LOW |
+
+**Cross-cutting insight:** 4 of 6 fingerprints (rna_decay, pmod, transcription, dna_super) are ±1 stochastic event or scale-equivalent. **A MATLAB `randStream` shim plausibly collapses 3–4 of these in one stroke** — highest unit-leverage move on the board.
+
+**Recommended L2.1 attack order:**
+1. **rna_decay extraction extension** (M, LOW risk) — creates the pattern for hidden-state work.
+2. **MATLAB `randStream` shim** (M) — kills dna_super, tightens pmod & rna_decay residues, may nuke transcription t=1 if RNG-shaped.
+3. **transcription `util.polymerize` port** (L) — reusable kernel (translation + replication).
+4. **pdecay 4820 harness lift** (L) — retest *after* randStream shim; residue may shrink.
+5. **metabolism harness extension** — punt to L2.2 unless something blocks on it.
 
 **Evening outcomes (in completion order):**
 - `tol_calibrate` — **GREEN delivered**. 2 commits on `fix/l2-tol-calibrate` off sweep `0313b71`:
