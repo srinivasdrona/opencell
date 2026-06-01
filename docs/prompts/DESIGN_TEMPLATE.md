@@ -117,11 +117,13 @@ Beat-4 inversion:
 
 ### 4) Baseline facts and constraints (mandatory)
 
+> **Boundary rule (added 2026-06-01 after first dogfood):** if a fact is *single-component* (lives inside one process / one schema / one file), it belongs here. If it is *multi-component* (touched by ≥2 processes, shared across schemas, or describes alignment between components), it belongs in section 3 (Interaction-surface map). When uncertain, prefer section 3 — cross-surface evidence is the section more likely to be skimmed thin, and was the slot the L2.2.k miss happened in.
+
 Capture non-negotiables before options:
 
 1. Hard constraints from project/session context.
 2. Fidelity constraints from primary source.
-3. Existing implementation facts (what already exists).
+3. Existing implementation facts (what already exists, **single-component only**).
 4. Known failures and anti-patterns.
 
 Keep this as facts only; do not present preferred design yet.
