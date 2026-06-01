@@ -430,6 +430,121 @@ def project_karr_vector(
     return arr[idx_arr]
 
 
+# --- Protein-decay 4820/482 projection ---
+# Source-of-truth: Karr 2012 ProteinMonomer state class. The 10 form-state slots
+# are constructed in order in:
+#   data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+state/ProteinMonomer.m
+# lines 95-104 (this.nascentIndexs through this.damagedIndexs, each
+# (1:numMonomers)' offset from the previous block-end).
+# That construction also confirms proteins vary fastest within a form block
+# (col-major over a (n_proteins, n_forms) matrix). Keep this tuple in EXACT
+# index order; downstream sigma uses .index(mature_form_name) on it.
+KARR_MONOMER_FORM_ORDER: tuple[str, ...] = (
+    "nascent",
+    "processedI",
+    "processedII",
+    "signalSequence",
+    "folded",
+    "mature",
+    "inactivated",
+    "bound",
+    "misfolded",
+    "damaged",
+)
+
+
+def project_monomer_4820_to_482(m_form: np.ndarray, n_proteins: int = 482) -> np.ndarray:
+    """Project a compartment-collapsed form-flattened monomer vector to base 482.
+
+    Args:
+        m_form: shape (4820,) - one entry per (form, protein) pair, with
+            proteins varying fastest (col-major from a (n_proteins, n_forms)
+            matrix).
+        n_proteins: base protein count, default 482.
+
+    Returns:
+        shape (n_proteins,) - sum over all form slots per base protein.
+
+    Raises:
+        ValueError if m_form is not 1-D or if size is not a multiple of n_proteins.
+    """
+    if m_form.ndim != 1:
+        raise ValueError(f"expected 1-D vector, got ndim={m_form.ndim}")
+    if m_form.size % n_proteins != 0:
+        raise ValueError(
+            f"expected size divisible by {n_proteins}, got {m_form.size}"
+        )
+    n_forms = m_form.size // n_proteins
+    return m_form.reshape(n_forms, n_proteins).sum(axis=0, dtype=np.float64)
+
+
+def project_trace_matrix_to_482(m_full: np.ndarray, n_proteins: int = 482) -> np.ndarray:
+    """Project a full-trace (n_compartments, 4820) matrix to base 482.
+
+    Per Section 10 Q2: sums over ALL compartments (DNA compartment is empty
+    in current traces but counted for future-proofing).
+
+    Args:
+        m_full: shape (n_compartments, 4820) typically (6, 4820).
+        n_proteins: base protein count, default 482.
+
+    Returns:
+        shape (n_proteins,)
+
+    Raises:
+        ValueError if m_full is not 2-D.
+    """
+    if m_full.ndim != 2:
+        raise ValueError(f"expected 2-D matrix, got ndim={m_full.ndim}")
+    m_form = m_full.sum(axis=0, dtype=np.float64)
+    return project_monomer_4820_to_482(m_form, n_proteins=n_proteins)
+
+
+def scatter_monomer_482_to_4820(
+    v_482: np.ndarray,
+    form_order: tuple[str, ...],
+    *,
+    n_proteins: int = 482,
+    mature_form_name: str = "mature",
+) -> np.ndarray:
+    """Scatter a 482-vector into a 4820-form-flattened vector at the 'mature' slot.
+
+    HARNESS-INTERNAL ONLY. Never feed the output of this function into a
+    process source — the compartment axis is collapsed and the form-axis
+    placement is a canonical choice, not biology.
+
+    Args:
+        v_482: shape (482,) - base-protein vector to scatter.
+        form_order: length-F tuple of form-state names in MATLAB index order
+            (REQUIRED; comes from fixture metadata per Section 10 Q3). Must
+            contain `mature_form_name`.
+        n_proteins: base protein count, default 482.
+        mature_form_name: form slot to scatter into, default "mature".
+
+    Returns:
+        shape (n_proteins * len(form_order),) - all zeros except at the
+        mature slot, where v_482 is placed.
+
+    Raises:
+        ValueError if v_482 wrong shape, mature_form_name not in form_order,
+        or form_order is empty.
+    """
+    if v_482.ndim != 1 or v_482.size != n_proteins:
+        raise ValueError(f"expected shape ({n_proteins},), got {v_482.shape}")
+    if not form_order:
+        raise ValueError("form_order must be non-empty")
+    if mature_form_name not in form_order:
+        raise ValueError(
+            f"mature form {mature_form_name!r} not in form_order {form_order!r}"
+        )
+    n_forms = len(form_order)
+    mature_idx = form_order.index(mature_form_name)
+    out = np.zeros(n_forms * n_proteins, dtype=np.float64)
+    start = mature_idx * n_proteins
+    out[start:start + n_proteins] = v_482
+    return out
+
+
 def refresh_allocator_views(process: Any, state: dict[str, Any]) -> None:
     substrates = state.get("substrates", {})
     if not isinstance(substrates, dict):
