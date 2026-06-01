@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 import copy
+import inspect
+import os
+import re
+from functools import lru_cache
 from numbers import Number
 from pathlib import Path
 from typing import Any
@@ -11,6 +15,10 @@ import pytest
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _TRACE_BASE_REL = Path("data/m1_sources/karr_native/per_process_traces_v2")
+_L2_TOLERANCE_TABLE_REL = Path("docs/phase_e/L2_TOLERANCE_TABLE.md")
+_L2_USE_CALIBRATED_ENV = "L2_USE_CALIBRATED_TOLERANCES"
+_L2_BUCKET_RTOL_DEFAULT = 0.30
+_L2_BUCKET_ATOL_DEFAULT = 0.30
 
 _OBS_STORE_PATHS = {
     "substrates": ("substrates",),
@@ -657,6 +665,7 @@ def assert_identity_or_tolerance(
     observable: str,
     oc_after: np.ndarray,
     karr_after: np.ndarray,
+    process_name: str | None = None,
 ) -> None:
     if oc_after.shape != karr_after.shape:
         pytest.fail(
@@ -697,6 +706,11 @@ def assert_identity_or_tolerance(
     mismatch = oc_after != karr_after
     diff = oc_after - karr_after
     if np.any(mismatch):
+        if _use_calibrated_l2_tolerances():
+            inferred_name = _infer_current_l2_process_name(process_name)
+            rtol, atol = _resolve_l2_tolerance_pair(inferred_name)
+            if np.allclose(oc_after, karr_after, rtol=rtol, atol=atol):
+                return
         idx = int(np.flatnonzero(mismatch)[0])
         pytest.fail(
             "L2a mismatch record: "
@@ -704,6 +718,78 @@ def assert_identity_or_tolerance(
             f"oc_val={float(oc_after[idx])}, karr_val={float(karr_after[idx])}, "
             f"diff={float(diff[idx])}"
         )
+
+
+def _use_calibrated_l2_tolerances() -> bool:
+    return os.environ.get(_L2_USE_CALIBRATED_ENV, "0") == "1"
+
+
+@lru_cache(maxsize=1)
+def load_l2_tolerance_table() -> dict[str, tuple[float, float]]:
+    """Load calibrated per-process (rtol, atol) from L2_TOLERANCE_TABLE.md."""
+    table_path = _REPO_ROOT / _L2_TOLERANCE_TABLE_REL
+    if not table_path.exists():
+        return {}
+
+    out: dict[str, tuple[float, float]] = {}
+    in_table = False
+    for raw in table_path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not in_table:
+            if line.startswith("| process_name |") and "rtol_median" in line:
+                in_table = True
+            continue
+        if not line.startswith("|"):
+            break
+        if line.startswith("|---"):
+            continue
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        if len(cells) < 9:
+            continue
+        process = cells[0]
+        rtol_txt = cells[3]
+        atol_txt = cells[4]
+        if not process:
+            continue
+        try:
+            rtol = float(rtol_txt)
+            atol = float(atol_txt)
+        except ValueError:
+            continue
+        out[process] = (rtol, atol)
+    return out
+
+
+def _infer_current_l2_process_name(explicit_process_name: str | None = None) -> str | None:
+    if explicit_process_name:
+        return explicit_process_name
+
+    current = os.environ.get("PYTEST_CURRENT_TEST", "")
+    match = re.search(r"test_(karr_[a-z0-9_]+)_l2_replay\.py", current)
+    if match:
+        return match.group(1)
+
+    for frame in inspect.stack():
+        frame_path = str(frame.filename).replace("\\", "/")
+        match = re.search(r"test_(karr_[a-z0-9_]+)_l2_replay\.py$", frame_path)
+        if match:
+            return match.group(1)
+    return None
+
+
+def _resolve_l2_tolerance_pair(process_name: str | None) -> tuple[float, float]:
+    table = load_l2_tolerance_table()
+    if process_name:
+        if process_name in table:
+            return table[process_name]
+        if process_name.endswith("_light"):
+            canonical = process_name[: -len("_light")]
+            if canonical in table:
+                return table[canonical]
+        light_name = f"{process_name}_light"
+        if light_name in table:
+            return table[light_name]
+    return (_L2_BUCKET_RTOL_DEFAULT, _L2_BUCKET_ATOL_DEFAULT)
 
 
 # ---------------------------------------------------------------------------
