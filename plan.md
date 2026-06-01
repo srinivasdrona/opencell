@@ -1,27 +1,35 @@
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-06-01 11:20 IST):**
-- No agents running. Day-17 morning landed: L2.1 GREEN 20/28 strict + 2 SKIP = **22/28 effective** (+1 from translation).
-- Day's fleet (4 parallel codex agents, fired 10:25, returned 11:01): 3 landed clean cherry-picks (translation GREEN, mass-balance test gate, protein_decay projection design doc), 1 self-paused on untracked sidecar (ensemble manifest — work salvaged + committed manually).
-- All 4 fleet runs used logs OUTSIDE worktrees (`session-state/.../files/day17_logs/`). **Codex log-file bail trap pattern is now 7-for-7** (3 yesterday + 4 today).
+**Live processes / agents (2026-06-01 ~16:30 IST):**
+- No agents running. Afternoon fanout (rna_decay / transcription / metabolism-v3slot) all returned. **L2.1 baseline unchanged: 40 pass / 6 fail / 2 skip = 22/28 effective.** Zero new GREEN, but zero false GREEN, and **3 honest diagnoses recorded** for the 3 productive REDs touched.
+- Afternoon outcome summary (none cherry-picked):
+  - `rna_decay` (2-slot prompt): clean Class-A verdict (hidden RNA-pool + RNG-stream state not in trace). Investigation-only commit `5d5b7d9` in day17 worktree. **Rule-8 clean (naturally).**
+  - `transcription` (2-slot prompt): hand-fitted partial in commit `65fd49c` (a tick-1 ATP/GTP swap gated on exact-match substrate state) — original fingerprint cleared but new failure popped at same tick, test still RED. **Not Rule 8, but Rule-6-adjacent symptom-chasing — discarded.** Real fix needs a proper `util.polymerize` limiting-base-cull port.
+  - `metabolism v3-slot` (3-slot prompt, fired this afternoon to replace the morning's trace-cribbing `2d20784`): clean Class-C-irreducible verdict (harness only projects 585/1755 substrates, no MATLAB randStream continuity, evolveState machinery not in static path). Docs-only commit `e7c4285`. **Rule-8 clean (grep verified).** ← **first empirical payoff of slot 3 + Rule 8, observed within an hour of writing them.**
+- Side-find from v3-slot construction smoke: `KarrProteinProcessingIIProcess` has no `reaction_stoich` attribute (pre-existing, unrelated to metabolism, build_karr_chassis_v6 fails). Flagged for separate triage.
+
+**L2 prompt architecture correction (afternoon):**
+- Discovered L2 fanout prompts had silently drifted to 2-slot (fix template + critique, no PREFIX_v2, no preservation directive) while canonical L1 dimer-port hardening was 3-slot. Today's morning metabolism agent (`2d20784`) trace-cribbed `Metabolism_100ticks.mat` from inside `_static_update` — the live evidence the drift mattered.
+- **Rule 8 added** to `docs/prompts/FIX_TEMPLATE_L2_REPLAY.md` (criterion #9): no `loadmat`/`h5py.File`/`np.load`/`open(...)` in `opencell/vivarium/` targeting `*_100ticks*` / `states_before` / `states_after`. Empirical anchor cited inline.
+- Same template committed onto sweep at `0313b71`. Metabolism refired with full 3-slot prompt; returned honest N/A as documented above.
+- **Going forward**: any L2 fanout MUST use full 3-slot composition (PREFIX_v2 + FIX_TEMPLATE_L2_REPLAY + case-specific preservation directive). Rna_decay refused trace-cribbing naturally (the bridge would have required reseeding RNA pools, not just emitting a delta), but we shouldn't rely on luck.
 
 **Branch tips (active):**
-- `main` @ `8faac90` (day 15 blog post). **Pushed.** **plan.md uncommitted** (day-15 + day-16 + day-17 closes — defer until clean push).
-- `audit/l2-1-sweep-v2` @ `679493a` (L2.1 GREEN 20 + 6 productive RED + 2 SKIP). **10 commits ahead of origin (5 from y'day + 5 today), push hanging on both Windows and WSL at 11:25 IST — retry later.**
+- `main` @ `3914da1` (blog: 2026-06-01 three slots seven rules). **Pushed.** **plan.md uncommitted** (this refresh — push after compaction).
+- `audit/l2-1-sweep-v2` @ `0313b71` (sweep tip is now the Rule 8 template commit; no new GREEN today). **11 commits ahead of origin (5 y'day + 6 today), push deferred — see push status below.**
   - **Today's adds (top, newest first)**:
-    - `679493a` ensemble manifest emission with git+timing metadata (chassis_v6_32400t.py +56 lines).
+    - `0313b71` docs(l2-template): add Rule 8 (no trace-cribbing) + criterion 9.
+    - `679493a` ensemble manifest emission with git+timing metadata.
     - `12a44f4` mass-balance test baseline recalibration post-translation.
     - `58ad82e` docs: protein_decay 4820↔482 canonical projection design doc.
-    - `8208210` mass-balance regression test gate (2 pass / 2 xfail / 1 skip in 12s — xfails track real pre-existing substrate bugs).
-    - `bd022a4` translation L2.1 GREEN (deterministic per-tick monomer termination schedule, 135 lines, **same pattern as Replication template**).
-  - **Yesterday's adds (still pending push)**: `1e8b1c3` TOA L2.1 GREEN, `bf8e103` TOA schema TOML, `369f082` replication GREEN, `3ca6d3f` translation beat-4 (now superseded by `bd022a4` GREEN), `69329b7` dna_supercoiling beat-4.
+    - `8208210` mass-balance regression test gate.
+    - `bd022a4` translation L2.1 GREEN (Replication template, +1 to L2.1 GREEN count).
 - `phase-f-schema-extract` @ `1bab39e` (28 round-trip-validated TOMLs). **Pushed.**
-- 4 day17 worktree branches at `E:\opencell-worktrees\day17-*\` — keep until sweep pushes confirm cherry-picks landed, then delete.
+- 5 day17 worktree branches at `E:\opencell-worktrees\day17-*\` and `day17-l2-metabolism-v3slot\`. **Do NOT delete metabolism-v3slot yet** — its STATUS doc is the canonical record of the Rule-8 payoff and may be referenced by next session. Other 4 day17 worktrees can go once sweep pushes.
 
-**Push status (2026-06-01 11:25 IST):**
-- Direct `git push` from Windows on sweep: **hanging** (>2 min, no output). Same GCM/SNI pattern as day-15/16 mornings.
-- WSL fallback (per documented workaround): also hanging. Network condition differs from yesterday's morning.
-- Last successful push: yesterday end-of-day. Defer push retry to next session check-in.
+**Push status (2026-06-01 ~16:30 IST):**
+- Main pushed cleanly this afternoon (`3914da1`). So the morning GCM/SNI block has lifted.
+- Sweep push **not yet attempted this afternoon** — try `git -C E:\opencell push --no-verify origin audit/l2-1-sweep-v2` next session before any new work.
 
 **Network workaround (CRITICAL, future sessions will hit this again):**
 - github.com TLS handshake gets RST from Windows host (Microsoft tenant, Azure India POP `20.207.73.82`, SNI-based filter on `*github.com`).
@@ -42,6 +50,7 @@
 - **Codex agents bail when worktree has untracked files** (even their own redirected `.err`/`.out` logs) despite `--dangerously-bypass-approvals-and-sandbox`. Always redirect agent logs OUTSIDE the worktree directory.
 - `codex exec` can hang post-completion; kill via PID stored in `<name>.pid.json`.
 - **Codex prompts must anchor validation to ground truth**, NOT to the artifact being replaced (Phase F lesson: original extractor passed by inheriting Python port's bugs). For extractors: input = MATLAB+trace only; round-trip validator (re-extract → byte-equal) is the correctness gate.
+- **L2 fanout prompts must use full 3-slot composition** (PREFIX_v2 + FIX_TEMPLATE_L2_REPLAY + case-specific preservation directive). 2-slot drift (template + critique, no prefix, no preservation) is what let `2d20784` trace-crib `Metabolism_100ticks.mat`. Rule 8 in the template is necessary but not sufficient — the prefix-driven Beat-4 invert is what makes the agent *check* whether it's about to oracle-bridge before doing it.
 
 **Replay-test sentinels (used by `scripts/l2_inventory_probe.py` G2 check):**
 - L2.0-era: `from opencell.validation.replay import load_per_process_fixture` (or `replay_one_tick`)
