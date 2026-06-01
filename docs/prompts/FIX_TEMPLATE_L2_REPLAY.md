@@ -117,6 +117,45 @@ The test MUST invoke `process.next_update(1.0, state)` directly OR run a full Vi
 
 **Acceptance:** a test that is GREEN only on pass-through columns is reported as ⚪ "L2.1 untested" — not GREEN.
 
+## Rule 8 — No trace-cribbing in production code
+
+Production code under `opencell/vivarium/` (and any module imported transitively from `next_update` or `__init__`) MUST NOT open, import, parse, or otherwise read any L2 oracle file. The oracle (`.mat` trace, `karr_fixtures/states_*`, any `*_100ticks*` file, any per-tick `states_before`/`states_after` snapshot) is **test-only**.
+
+**Forbidden in production code path:**
+
+- `h5py.File("<anything>_100ticks.mat")`, `scipy.io.loadmat("<anything>_100ticks.mat")`, or any path resolution that targets the per-process trace files.
+- Importing helpers (e.g., from `tests/`, from `scripts/extract_*`, from `l2_replay_common`) that internally open trace files.
+- Module-level `_TRACE_PATH_CANDIDATES`, `_load_trace_substrates()`, or any other accessor whose only purpose is to surface oracle deltas inside `next_update` / `_static_update` / any process method on the update path.
+- "Replay mode" toggles that switch the process from computing the delta to emitting `states_after - current` (or any algebraic equivalent) sourced from the oracle. This is **trace-cribbing**: the test passes because production code is reading the answer from the same file the harness checks against.
+
+**Why this rule exists** (empirical anchor — Metabolism L2.1, 2026-06-01): a prior fix added a static-mode bridge in `KarrMetabolismProcess._static_update` that loaded `Metabolism_100ticks.mat`, matched the incoming substrate vector against per-tick `states_before`, and emitted `substrates_delta = states_after - current` whenever the match succeeded. The L2.1 test went GREEN. The process computed nothing: the answer flowed from oracle to process to harness. Structurally identical to the TR-R3 synthetic-bootstrap incident (2026-05-28) one layer deeper.
+
+**Allowed (and how to tell the difference):**
+
+- The process may read **canonical fixtures** under `data/karr_fixtures/` that ship as part of the model's initial state — stoichiometry tables, KP constants, FBA bound vectors, mature-state snapshots used to seed `chassis.build_*()`. These are model parameters, not per-tick oracle observations.
+- The L2.1 **harness** (test code) reads the oracle freely — that is its job.
+- A `_static_replay.py` helper consumed **only by tests** is fine. Put it under `tests/` (or `tests/vivarium/_helpers/`), not under `opencell/vivarium/`.
+
+**Decision rule when the bug is "the process emits no delta on this observable":**
+
+The correct fix is one of:
+1. Wire the missing computation into `next_update` (the process actually computes the delta from its inputs).
+2. If the computation requires inputs the process does not yet receive, extend the topology and chassis seeding to provide them; then compute.
+3. If neither (1) nor (2) is in scope for L2.1, the verdict is **L2.1 N/A — production gap**, not GREEN. Document the gap; do not bridge it from the oracle.
+
+**Procedure (Beat 2 / Beat 4 enforcement):**
+
+1. In Beat 2, name every file the process opens (grep `open\(`, `h5py.File`, `loadmat`, `np.load`, `read_csv`, `Path(...).read_*` across the process module + every helper it calls at depth ≥ 2). If any of those paths match an L2 oracle (any `*_100ticks*`, any per-tick trace file), STOP — your fix is on the trace-cribbing path.
+2. In Beat 4, name the inversion failure mode explicitly: *"the test passes because the process is reading the per-tick answer from the same trace the harness checks against."* If that mode is plausible, name the exact `open(...)` call you considered adding (or removing) and prove it does not exist in the final diff.
+
+**Gate 2 evidence required (Critique side):**
+
+- `git diff` of the final patch contains no new `open(...)`, `loadmat`, `h5py.File`, `np.load`, `read_csv`, or `Path.read_*` call inside any module under `opencell/vivarium/`.
+- The process's `next_update` / `_static_update` derives every emitted delta from `state` (the dict passed in by the engine) and from canonical parameters loaded at `__init__` time. No per-tick file I/O. No conditional toggles that switch behavior based on whether a trace file is present.
+
+**Strong evidence:** named `grep` over the final diff with zero matches against the forbidden patterns, cited in the VERIFICATION block.
+**Weak evidence:** "I did not add any file reads" without the grep.
+
 ## Acceptance criteria for "L2.1 GREEN"
 
 Before declaring a process L2.1 GREEN:
@@ -129,8 +168,9 @@ Before declaring a process L2.1 GREEN:
 6. Non-triviality predicate identified, swept, and at least one tick triggers. Cite line + tick count that triggers.
 7. `next_update` or Engine `update` is the entry point. Cite the line.
 8. Mutated and pass-through observables split in the verdict block.
+9. No production-side oracle reads: `git diff` shows zero new `open` / `loadmat` / `h5py.File` / `np.load` / `read_csv` calls inside `opencell/vivarium/` that target any `*_100ticks*` or per-tick trace file. Cite the grep. (Rule 8)
 
-If any of 1-8 is missing, the verdict is **NOT** GREEN. Report as ⚪ "L2.1 untested — Rule N gap" instead.
+If any of 1-9 is missing, the verdict is **NOT** GREEN. Report as ⚪ "L2.1 untested — Rule N gap" instead.
 
 ## How this template grows
 
