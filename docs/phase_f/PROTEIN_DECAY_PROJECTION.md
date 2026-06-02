@@ -552,3 +552,31 @@ Stage order:
    the projection is correct and there are no other residues (refire
    single-source-file attack on any remaining residue with
    trace-hint patterns).
+
+### 11.1 Empirical update (2026-06-02): Path-A lift reproduces +144; blocker is missing trace surface
+
+Investigation in worktree `pdecay-4820-lift` produced three key facts:
+
+1. **Current baseline (without forcing 4820 latent monomer path):**
+   `pytest tests/vivarium/test_karr_protein_decay_l2_replay.py -v --tb=short`
+   fails at `tick=3, substrates[0], diff=-6` (`oc=0, karr=6`).
+2. **Path-A diagnostic (force-feed full 4820 monomer matrix into latent decay path):**
+   first mismatch becomes the historical fingerprint
+   `tick=1, substrates[0], diff=+144` (`oc=144, karr=0`).
+3. **Trace-surface evidence of missing context:**
+   - `states_before/monomers` is `(6, 4820)` and `metadata/snapshot_properties`
+     are only `boundEnzymes, complexs, enzymes, monomers, substrates`.
+   - Mismatch ticks include substrate-energy events with no `complexs` change;
+     at least one such tick (`tick=6`) has no monomer delta either, which is
+     consistent with ProteinDecay substeps not represented by the 5-observable
+     trace surface (notably `evolveState_DegradeAbortedPolypeptides`, and
+     potentially refolding/misfolding side effects).
+
+Decision update:
+
+- **Choose Path B** (extend extraction surface), not Path A.
+- Path A is not safely closable here: a 482-only light process cannot be lifted
+  to faithful 4820 replay without additional per-tick substep observables.
+- Minimal required extraction change is a new ProteinDecay trace schema that
+  includes substep-relevant state beyond the current 5 fields (at minimum,
+  proteolysis-tagged polypeptide context), followed by MATLAB re-extraction.
