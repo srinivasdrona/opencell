@@ -1,6 +1,49 @@
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-06-02 ~18:55 IST):**
+**Live processes / agents (2026-06-02 ~23:50 IST):**
+- **Codex Job H: `feat/pdecay-monomer-decay`** (wrapper PID 70180, node PID 83496, codex PID 85528, fired 23:40 — RE-FIRED after first attempt died on missing `AZURE_OPENAI_API_KEY`).
+  Worktree: `E:\opencell-worktrees\pdecay-monomer-decay` off `audit/l2-1-sweep-v2 @ b725751`.
+  Goal: port `evolveState_DegradeMonomers` (MATLAB ProteinDecay.m lines 844–915, 8-substep algorithm) into `karr_protein_decay_light.py` after existing complex-decay path. Tick=3 substrates[0] should move from -6 to <=1.
+  Prompt: `PROMPT_pdecay_monomer.md` (3-slot, 9 KB, contains full algorithm + fixture fields + trace inspection helper + acceptance criteria).
+  Outputs: `.codex_pdecay_monomer.log` + `STATUS_pdecay_monomer.md` (agent writes).
+  PID file: `~/.copilot/session-state/5c51d44b-.../files/pdecay_monomer_pid.txt`.
+
+**L2.1 status after evening push (Job G shipped, Job H in flight):**
+
+GREEN count: **22/28** (up from 20). Two new closes via tolerance widening (Job G `29ff396` on `audit/l2-1-sweep-v2`, pushed):
+- ✅ `karr_dna_supercoiling` — closed with `(0.05, 30.0)` calibration
+- ✅ `karr_protein_modification` — closed with `(0.05, 7.0)` calibration
+
+Still RED (4):
+- `karr_protein_decay` — Job H in flight (monomer-decay port)
+- `karr_transcription` — Job G partial; tick=26 enzymes idx=4 oc=7 karr=0 diff=7 is real structural divergence (not Poisson noise). Needs algorithmic investigation, not calibration.
+- `karr_rna_decay` — Job G partial; tick=1 substrates idx=1 oc=124 karr=0 diff=124 is large structural divergence. Algorithmic, not noise.
+- `karr_metabolism` — separate pre-existing issue, untouched tonight.
+
+**Phase F walk method validated again:** For pmod and pdecay diagnosis, F artifact + MATLAB source + Python source + karr HDF5 trace deltas (no MATLAB launch needed) gave complete picture in <30 min. pmod = stochastic + tiny-overlap (tolerance fix). pdecay = missing sub-process (`evolveState_DegradeMonomers` absent from light port; tick=3 trace requires it). Two failures had same surface symptom (RED at tick 3 or 19) but completely different failure classes.
+
+**Sweep tip (origin in sync):** `29ff396 L2.1 Job G: widen tolerances for 4 stochastic processes (n=1 baseline)`. Job G commit.
+
+**Main tip (origin in sync):** `ef2306d plan: handoff refresh — 3 L2.1 codex jobs fanned out + D1 design shipped`. Unchanged.
+
+**Activation env:** All L2 stochastic runs that need calibrated tolerances must set `L2_USE_CALIBRATED_TOLERANCES=1`. CI default still strict-mode (no env var). Per-process `(rtol, atol)` in `docs/phase_e/L2_TOLERANCE_TABLE.md`.
+
+**MATLAB on this machine:** `E:\MATLAB\bin\matlab.exe` (R2026a, DEMO/trial). Use `karr_bootstrap()`; `extract_per_process_traces_v2` regenerates traces.
+
+**Codex env gotcha (re-confirmed tonight):** `AZURE_OPENAI_API_KEY` MUST be pulled from User scope into current process before launching codex — Copilot-CLI-spawned shells do NOT inherit User-scoped env vars. Job H died silently 10s after launch on first try (Day-17 lesson repeated). Re-launch script in skill GOTCHAS.
+
+**When Job H notification fires:** read `.codex_pdecay_monomer.log` tail + `STATUS_pdecay_monomer.md`, then verify by `L2_USE_CALIBRATED_TOLERANCES=0 pytest tests/vivarium/test_karr_protein_decay_l2_replay.py -x` in the worktree (gate OFF — codex must close honestly). If GREEN: push branch from Windows (`git push origin feat/pdecay-monomer-decay`); GREEN count → 23/28.
+
+**Operator's pending tasks:**
+1. **transcription + rna_decay structural divergence** — these need code-side investigation, not calibration. Walk method: pick the failing tick in karr trace, compare MATLAB `evolveState` for what runs at that tick vs. Python `next_update`. Likely a missing sub-step or order-of-operations gap.
+2. **Log to `.pm-os\TRAPS.md`**: MATLAB-strsplit-shim trap (carried from earlier) + "Codex env-var inheritance gotcha re-hit on 2026-06-02 Job H — must `[Environment]::GetEnvironmentVariable('AZURE_OPENAI_API_KEY','User')` in current process before every launch."
+3. **Log to `.pm-os\DECISIONS.md`** (log-decision skill): "Adopted manual n=1 tolerance overrides for 4 stochastic L2 processes; calibration ensembles produced (0,0) which silently overrode the (0.30, 0.30) default to stricter rather than looser. Architectural fix deferred — consider making (0,0) table entries fall back to default instead of overriding downward."
+
+**Previous handoff blocks below for reference.**
+
+---
+
+## Previous handoff (2026-06-02 ~18:55 IST) — superseded by block above
 - **2 NEW codex jobs in flight** (Jobs D + E), both off `main @ ef2306d`:
   - **Job D: `feat/tx-polymerize-port`** (PID file: `files/tx_polymerize_port_pid.txt`).
     Worktree: `E:\opencell-worktrees\tx-polymerize`.
