@@ -1,7 +1,31 @@
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-06-02 ~14:00 IST):**
-- **NONE LIVE.** Morning shim codex (`feat/dna-super-rng-shim` @ `a30fc14`) returned + pushed to origin. PID 63776 wrapper still resident but the work landed.
+**Live processes / agents (2026-06-02 ~16:42 IST):**
+- **3 codex jobs FANNED OUT** to close L2.1 fast (compressed 5-day plan → ~2.5 days):
+  - **Job A: `feat/dna-super-randperm`** (wrapper PID 35524, node PID 54604, fired 16:38).
+    Worktree: `E:\opencell-worktrees\dna-super-randperm` off sweep `6653ee6`.
+    Goal: port MATLAB `randperm` enzyme-loop draws (DNASupercoiling.m lines 391+470) into Python replay path. Builds on shim wiring `a30fc14`.
+    Wait shell: `wait_dna_super` (async, will fire completion notification).
+    Outputs: `.codex_dna_super_randperm.{log,err,pid}` at worktree root + STATUS_dna_super_randperm.md.
+  - **Job B: `feat/rna-decay-extraction`** (wrapper PID 86156, node PID 64164, fired 16:40).
+    Worktree: `E:\opencell-worktrees\rna-decay-extraction` off sweep `6653ee6`.
+    Goal: Class A — seed RNA pool from trace per tick (and per-process randStream if also drifting). Investigates trace contents first; pivots to extraction-pipeline extension if trace lacks `rnas`.
+    Wait shell: `wait_rna_decay` (async).
+  - **Job C: `feat/pdecay-4820-lift`** (wrapper PID 85092, fired 16:41).
+    Worktree: `E:\opencell-worktrees\pdecay-4820-lift` off sweep `6653ee6`.
+    Goal: close pdecay L2.1 by EITHER lifting harness to 4820-surface OR extending extraction to per-form observables (codex investigates + picks). 144-magnitude residue is structural, not noise.
+    Wait shell: `wait_pdecay` (async).
+- **D1 design doc SHIPPED** on sweep at `b725751` (pushed to origin). `docs/phase_f/L2_2_D1_UNION_MASTER_LIST.md` (~20 KB). Specifies union master construction, owner manifest format, EXTRACTOR_FAILED fallback, closes umbrella QO1+QO4. Spec-only, no code; operator review checklist at doc tail.
+
+**Sweep tip (origin in sync):** `b725751 docs(l2.2): D1 union master + owner manifest design (spec-only)`. Adds since previous handoff:
+- `6653ee6` (28 F-TOMLs + 3 phase-f scripts, cherry-pick of d150dca)
+- `b725751` (this evening's D1 design doc)
+
+**Main tip (origin in sync):** `588d475 plan: revise hypothesis matrix after shim retests` (matrix revision from earlier today).
+
+**When codex notifications fire:** read .err first (codex writes structured progress to stderr, NOT stdout). Then `git log -3` on that worktree to see what landed. Then `git push origin <branch>` from Windows side (WSL push of worktrees FAILS — known TRAPS.md issue). Update todos + cherry-pick verdict (sweep vs. defer).
+
+**Original (2026-06-02 ~14:00 IST) afternoon handoff below for reference:**
 
 **Day 18 morning outcomes (2026-06-02 ~12:30-14:00 IST):**
 - **L2.2 v2 harness cherry-picked onto sweep** (`fff05fd` + `59a6232` + `5c0824d` → sweep `809e644`). WID-set diagnostics now machine-readable (`CAUSE_1_WID_SET_MISMATCH`). Smoke: 1 xfailed in 16s as expected.
