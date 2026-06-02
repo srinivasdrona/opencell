@@ -20,3 +20,36 @@ htmlcov/
 *.egg-info/
 .mypy_cache/
 .ruff_cache/
+
+# === Noise suppression (added 2026-06-02) ===
+# Virtualenvs (do not commit)
+.venv-opencell/
+.venv-wsl/
+.paper_cache/
+
+# Artifacts: probe traces, ensemble runs, extract logs — regeneratable
+artifacts/
+
+# Karr WholeCell MATLAB source trees (clone targets, not source-of-truth)
+data/m1_sources/WholeCell/
+data/m1_sources/WholeCellKB/
+data/m1_sources/karr_native/initial_states/
+data/m1_sources/karr_native/per_process_traces/
+data/m1_sources/karr_native/per_process_traces_v2/
+data/m1_sources/karr_native/*.mat
+
+# Local databases + backups
+*.db
+*.db.bak.*
+opencell_costs.db
+opencell_tasks.db.bak.*
+
+# Codex/probe scratch logs at repo root
+.codex_*.err
+.codex_*.log
+probe_*.log
+.last_probe_dir.txt
+.merge_baseline_sha.txt
+
+# Blog drafts (working area, ship via docs/blog/)
+docs/blog/drafts/
