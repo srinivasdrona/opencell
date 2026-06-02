@@ -1,5 +1,46 @@
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Live processes / agents (2026-06-02 ~18:55 IST):**
+- **2 NEW codex jobs in flight** (Jobs D + E), both off `main @ ef2306d`:
+  - **Job D: `feat/tx-polymerize-port`** (PID file: `files/tx_polymerize_port_pid.txt`).
+    Worktree: `E:\opencell-worktrees\tx-polymerize`.
+    Goal: port MATLAB `util.polymerize` limiting-base-cull into `karr_transcription.py`; replace discarded hand-fit `65fd49c`.
+    Wait shell: `wait_tx_polymerize` (async, will fire completion notification).
+    Outputs: `.codex_tx_polymerize_port.log` + `STATUS_tx_polymerize_port.md`.
+  - **Job E: `feat/tx-rnaproc-wiring`** (PID file: `files/tx_rnaproc_wiring_pid.txt`).
+    Worktree: `E:\opencell-worktrees\tx-rnaproc-wiring`.
+    Goal: diagnose + fix port-name diff between transcription output schema and rna_processing input (L1 audit `005df62` flagged rna_processing firing only 35 B).
+    Wait shell: `wait_tx_rnaproc` (async).
+    Out-of-scope guard: must NOT touch `_simulate_polymerization_substrates` (Job D's territory) — only `ports_schema` and the topology dict.
+
+**L2.1 status after afternoon push (Jobs A/B/C all completed):**
+
+| # | Process | Branch | State |
+|---|---|---|---|
+| #2 | dna_super | `feat/dna-super-randperm @ bb029a2` | **Job A done.** Honest RED, fingerprint shifted `tick=11 diff=-2 → tick=3 diff=+2`. Randperm port at lines 391+470 landed structurally; residue is bulk-vs-per-region enzyme loop. Needs ~half-day refactor for GREEN. |
+| #5 | rna_decay | `feat/rna-decay-extraction @ 2073647` | **Trace UNBLOCKED.** Discovered Job B "blocked on MATLAB" was wrong-framed — root cause was 1-word case bug in `scripts/matlab/extract_per_process_traces_v2.m` (allowlist had `'rnas'`, MATLAB property is `'RNAs'`, `intersect()` is case-sensitive). Fix landed at `2073647`; trace regenerated locally via headless `matlab -batch`; new trace carries `RNAs (1, 2428)` per tick. **Test overlay still TODO** (~1 hour Python work — operator owes this). |
+| #3 | pdecay | `feat/pdecay-4820-lift @ 7387297` | **Path B verdict + design-doc update landed.** Still blocked on MATLAB sibling-state extraction (`this.polypeptide.abortedPolypeptides` lives on a state object, not a process property — allowlist trick doesn't apply). Needs ~half-day custom MATLAB extraction hook before Path A overlay is viable. |
+
+**Strategic discovery (skill update landed):** `~/.copilot/skills/delegate-to-codex/SKILL.md` gained a new section "Verify-locally before accepting 'blocked on operator' (added 2026-06-02 after empirical hit)" with the rna_decay anchor. Codex sees only its sandbox; orchestrator MUST verify "blocked on tool X" claims locally before relaying them.
+
+**Sweep tip (origin in sync):** `b725751 docs(l2.2): D1 union master + owner manifest design (spec-only)`. Unchanged since previous handoff.
+
+**Main tip (origin in sync):** `ef2306d plan: handoff refresh — 3 L2.1 codex jobs fanned out + D1 design shipped`. Jobs D + E branched off this.
+
+**MATLAB on this machine:** `E:\MATLAB\bin\matlab.exe` (R2026a, DEMO/trial license). Headless `-batch "<expr>"` works. Use `karr_bootstrap()` from `scripts/matlab/karr_bootstrap.m` to get a fitted Simulation. `extract_per_process_traces_v2(<process_names_cell>)` regenerates per-process traces (writes to `data/m1_sources/karr_native/per_process_traces_v2/<Process>_<n_ticks>ticks.mat`, `-v7.3` format, h5py-readable; skips if file exists, so delete first).
+
+**When codex notifications fire (Jobs D + E):** read `.codex_<tag>.log` (no separate .err for these — stdout+stderr merged via `*>`), then `git log -3` on the worktree, then `git push origin <branch>` from Windows side (WSL push of worktrees FAILS — known TRAPS.md issue). For Job E specifically: confirm Vivarium topology composite isn't broken — `tests/vivarium/ -x` should reach at least the same failure point as on `main`.
+
+**Operator's pending hands-on tasks:**
+1. **rna_decay test overlay** — write the Python overlay against the regenerated trace's `RNAs` observable in `tests/vivarium/test_karr_rna_decay_l2_replay.py`. ~1 hour. First definitive L2.1 GREEN of the day.
+2. **pdecay sibling-state extraction hook** — extend `extract_per_process_traces_v2.m` to also snapshot `proc.polypeptide.abortedPolypeptides` and `proc.polypeptide.abortedSequenceLengths` when target_idx is ProteinDecay. ~half-day MATLAB + Python wiring. Unblocks Job C's Path A.
+
+**Previous handoff blocks (afternoon + earlier) below for reference.**
+
+---
+
+## Previous handoff (2026-06-02 ~16:42 IST) — superseded by block above
+
 **Live processes / agents (2026-06-02 ~16:42 IST):**
 - **3 codex jobs FANNED OUT** to close L2.1 fast (compressed 5-day plan → ~2.5 days):
   - **Job A: `feat/dna-super-randperm`** (wrapper PID 35524, node PID 54604, fired 16:38).
