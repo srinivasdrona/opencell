@@ -37,6 +37,7 @@ _OBS_STORE_PATHS = {
     "unmodifiedRNAs": ("rna", "counts"),
     "processedRNAs": ("rna", "counts"),
     "unprocessedRNAs": ("rna", "counts"),
+    "RNAs": ("rna", "counts"),
 }
 
 _OBS_CANDIDATE_ATTRS = {
@@ -73,6 +74,7 @@ _OBS_CANDIDATE_ATTRS = {
     "unmodifiedRNAs": ("unmodified_rna_wids", "unprocessed_rna_wids", "rna_wids"),
     "processedRNAs": ("processed_rna_wids", "rna_wids"),
     "unprocessedRNAs": ("unprocessed_rna_wids", "rna_wids"),
+    "RNAs": ("rna_wids",),
 }
 
 

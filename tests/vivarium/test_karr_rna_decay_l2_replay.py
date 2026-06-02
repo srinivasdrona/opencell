@@ -39,7 +39,7 @@ from l2_replay_common import (
 from opencell.vivarium.karr_rna_decay import RnaDecayLightProcess
 
 _TRACE_PROCESS_NAME = "RNADecay"
-_OBSERVABLES = ('substrates', 'enzymes', 'boundEnzymes')
+_OBSERVABLES = ('substrates', 'enzymes', 'boundEnzymes', 'RNAs')
 
 # Observables Karr records but `next_update` does not write into. Their
 # `oc_after` MUST be rebuilt from `states_before` (Rule 7 pass-through
@@ -51,7 +51,7 @@ _SCRATCH_RESET = {}
 
 # Optional explicit observable->WID attribute mapping. Any missing or unknown
 # attr falls back to heuristic inference from process attrs / state schema.
-_OBSERVABLE_TO_WIDS_ATTR = {'substrates': 'substrate_wids', 'enzymes': 'enzyme_wids', 'boundEnzymes': 'enzyme_wids'}
+_OBSERVABLE_TO_WIDS_ATTR = {'substrates': 'substrate_wids', 'enzymes': 'enzyme_wids', 'boundEnzymes': 'enzyme_wids', 'RNAs': 'rna_wids'}
 
 
 def _assert_delta_integral(label: str, deltas: dict[str, float]) -> None:
