@@ -24,3 +24,4 @@ This note documents the `MatlabRandStream` shim in `opencell/util/matlab_rng.py`
 
 ## Known Gaps
 - Some vectors are still tagged in tests as TODO-primary-source where only secondary sources are available (`randn(seed=0)` and `randperm(100,5)`).
+- randperm enzyme-loop ports landed in `karr_dna_supercoiling` for MATLAB `DNASupercoiling.m` line-391 and line-470 replay alignment.
