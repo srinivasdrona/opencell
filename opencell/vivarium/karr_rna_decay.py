@@ -175,6 +175,8 @@ class RnaDecayLightProcess(Process):
             getattr(rna_state, "aminoacylatedIndexs", np.asarray([], dtype=np.int64)),
             len(self.rna_wids),
         )
+        ribonuclease_idx_raw = int(getattr(fixture, "enzymeIndexs_ribonucleaseR", 0))
+        self.enzyme_index_ribonuclease_r = ribonuclease_idx_raw - 1 if ribonuclease_idx_raw > 0 else -1
         peptidyl_idx_raw = int(getattr(fixture, "enzymeIndexs_peptidylTRNAHydrolase", 0))
         self.enzyme_index_peptidyl_hydrolase = peptidyl_idx_raw - 1 if peptidyl_idx_raw > 0 else -1
         self.peptidyl_trna_hydrolase_specific_rate = float(
@@ -220,6 +222,7 @@ class RnaDecayLightProcess(Process):
         self._fixture_rna_counts = np.zeros(len(self.rna_wids), dtype=np.int64)
         self._fixture_enzyme_counts = np.zeros(len(self.enzyme_wids), dtype=np.float64)
         self.aminoacylated_indices = np.asarray([], dtype=np.int64)
+        self.enzyme_index_ribonuclease_r = -1
         self.enzyme_index_peptidyl_hydrolase = -1
         self.peptidyl_trna_hydrolase_specific_rate = 0.0
         self.step_size_sec = 1.0
@@ -261,7 +264,21 @@ class RnaDecayLightProcess(Process):
         if dt <= 0.0:
             dt = self.step_size_sec
 
-        peptidyl_capacity = self._peptidyl_hydrolase_capacity(states=states, dt=dt)
+        enzyme_counts = self._read_enzyme_counts(states=states)
+        peptidyl_capacity = self._peptidyl_hydrolase_capacity_with_counts(
+            dt=dt,
+            enzyme_counts=enzyme_counts,
+        )
+        ribonuclease_r = self._ribonuclease_r_count(enzyme_counts=enzyme_counts)
+
+        if ribonuclease_r <= 0.0:
+            return {
+                "requests": {
+                    self.name: {
+                        self.water_wid: 0.0,
+                    }
+                }
+            }
 
         rna_counts = np.asarray(
             [
@@ -382,9 +399,19 @@ class RnaDecayLightProcess(Process):
         return 0.0
 
     def _peptidyl_hydrolase_capacity(self, *, states: dict[str, Any], dt: float) -> int:
+        return self._peptidyl_hydrolase_capacity_with_counts(
+            dt=dt,
+            enzyme_counts=self._read_enzyme_counts(states=states),
+        )
+
+    def _peptidyl_hydrolase_capacity_with_counts(
+        self,
+        *,
+        dt: float,
+        enzyme_counts: np.ndarray,
+    ) -> int:
         if self.enzyme_index_peptidyl_hydrolase < 0 or not self.enzyme_wids:
             return -1
-        enzyme_counts = self._read_enzyme_counts(states=states)
         if self.enzyme_index_peptidyl_hydrolase >= enzyme_counts.size:
             return -1
         expected = (
@@ -393,6 +420,13 @@ class RnaDecayLightProcess(Process):
             * max(0.0, dt)
         )
         return self._stochastic_round(expected)
+
+    def _ribonuclease_r_count(self, *, enzyme_counts: np.ndarray) -> float:
+        if self.enzyme_index_ribonuclease_r < 0 or not self.enzyme_wids:
+            return 1.0
+        if self.enzyme_index_ribonuclease_r >= enzyme_counts.size:
+            return 1.0
+        return max(0.0, float(enzyme_counts[self.enzyme_index_ribonuclease_r]))
 
     def _stochastic_round(self, value: float) -> int:
         if value <= 0.0:
