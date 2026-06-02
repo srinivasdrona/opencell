@@ -160,10 +160,20 @@ end
 end
 
 function val = eval_dotted(root, expr)
-parts = strsplit(expr, '.');
+% Avoid relying on strsplit (a name potentially shadowed by the WCM
+% compatibility shims on the path); walk the dotted expression manually.
 val = root;
-for i = 1:numel(parts)
-    val = val.(parts{i});
+remaining = expr;
+while ~isempty(remaining)
+    dot_pos = find(remaining == '.', 1, 'first');
+    if isempty(dot_pos)
+        field = remaining;
+        remaining = '';
+    else
+        field = remaining(1:dot_pos - 1);
+        remaining = remaining(dot_pos + 1:end);
+    end
+    val = val.(field);
 end
 end
 
