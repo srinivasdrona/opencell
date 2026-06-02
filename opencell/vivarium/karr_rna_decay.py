@@ -54,6 +54,22 @@ def _to_str_list(values: object) -> list[str]:
     return out
 
 
+def _uniquify_ids(values: list[str]) -> list[str]:
+    counts: dict[str, int] = {}
+    totals: dict[str, int] = {}
+    for value in values:
+        totals[value] = totals.get(value, 0) + 1
+
+    out: list[str] = []
+    for value in values:
+        counts[value] = counts.get(value, 0) + 1
+        if totals[value] <= 1:
+            out.append(value)
+        else:
+            out.append(f"{value}__{counts[value]}")
+    return out
+
+
 def _fixture_state_by_class(
     fixture: object,
     class_name: str,
@@ -124,7 +140,7 @@ class RnaDecayLightProcess(Process):
         fixture = _load_flat_fixture(fixture_path)
         rna_state = _fixture_state_by_class(fixture, _RNA_STATE_CLASS)
 
-        self.rna_wids = _to_str_list(rna_state.wholeCellModelIDs)
+        self.rna_wids = _uniquify_ids(_to_str_list(rna_state.wholeCellModelIDs))
         self.substrate_wids = _to_str_list(fixture.substrateWholeCellModelIDs)
         enzyme_wids_raw = getattr(fixture, "enzymeWholeCellModelIDs", None)
         if enzyme_wids_raw is None:
@@ -203,7 +219,9 @@ class RnaDecayLightProcess(Process):
         self._fixture_aborted_sequences = self._read_fixture_aborted_sequences(fixture=fixture)
 
     def _load_from_fallback(self) -> None:
-        self.rna_wids = [str(wid) for wid in self.parameters.get("fallback_rna_ids", [])]
+        self.rna_wids = _uniquify_ids(
+            [str(wid) for wid in self.parameters.get("fallback_rna_ids", [])]
+        )
         if not self.rna_wids:
             raise FileNotFoundError(
                 "RnaDecay fixture not found and fallback_rna_ids is empty; cannot initialize."
