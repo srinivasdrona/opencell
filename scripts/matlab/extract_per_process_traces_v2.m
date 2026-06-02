@@ -53,7 +53,7 @@ for i = 1:numel(process_names)
     end
 
     proc = sim.processes{target_idx};
-    snapshot_props = pick_snapshot_properties(proc);
+    [snapshot_props, snapshot_paths] = pick_snapshot_properties(proc, canonical_name);
     fprintf('[trace_v2] %s snapshot properties: %s\n', canonical_name, join_props(snapshot_props));
 
     states_before = struct();
@@ -69,7 +69,7 @@ for i = 1:numel(process_names)
     error_message = '';
     for t = 1:n_ticks
         try
-            [sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx, snapshot_props);
+            [sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx, snapshot_props, snapshot_paths);
             for p = 1:numel(snapshot_props)
                 prop = snapshot_props{p};
                 states_before.(prop){t, 1} = before_tick.(prop);
@@ -102,7 +102,7 @@ end
 
 end
 
-function props = pick_snapshot_properties(proc)
+function [props, paths] = pick_snapshot_properties(proc, canonical_name)
 props = intersect(properties(proc), { ...
     'substrates', 'enzymes', 'boundEnzymes', ...
     'freeRNAs', 'aminoacylatedRNAs', ...
@@ -115,9 +115,59 @@ props = intersect(properties(proc), { ...
     'inactiveComplexs', 'matureComplexs', ...
     'complexs', 'monomers', 'rnas', ...
 });
+% Build out_field -> dotted access-path map (identity for plain properties).
+paths = struct();
+for k = 1:numel(props)
+    paths.(props{k}) = props{k};
+end
+% Splice in per-process sibling-state extras (e.g. proc.polypeptide.xxx).
+extras = pick_extra_specs(canonical_name);
+for k = 1:size(extras, 1)
+    out_field = extras{k, 1};
+    expr = extras{k, 2};
+    if ~resolves(proc, expr)
+        continue;
+    end
+    if ~ismember(out_field, props)
+        props{end+1, 1} = out_field;
+    end
+    paths.(out_field) = expr;
+end
 end
 
-function [sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx, snapshot_props)
+function specs = pick_extra_specs(canonical_name)
+% Per-process sibling-state extras. Each row: {out_field, dotted_proc_path}.
+% The path is resolved as proc.<path> via subsref. Only added if the path
+% resolves cleanly at extraction time.
+switch canonical_name
+    case 'ProteinDecay'
+        specs = { ...
+            'abortedPolypeptides',     'polypeptide.abortedPolypeptides'; ...
+            'abortedSequenceLengths',  'polypeptide.abortedSequenceLengths'; ...
+        };
+    otherwise
+        specs = cell(0, 2);
+end
+end
+
+function tf = resolves(proc, expr)
+tf = false;
+try
+    val = eval_dotted(proc, expr); %#ok<NASGU>
+    tf = true;
+catch
+end
+end
+
+function val = eval_dotted(root, expr)
+parts = strsplit(expr, '.');
+val = root;
+for i = 1:numel(parts)
+    val = val.(parts{i});
+end
+end
+
+function [sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx, snapshot_props, snapshot_paths)
 before_tick = empty_snapshot_struct(snapshot_props);
 after_tick = empty_snapshot_struct(snapshot_props);
 
@@ -187,13 +237,13 @@ for i = 1:nProcesses
     end
 
     if proc_idx == target_idx
-        before_tick = snapshot_from_process(mod, snapshot_props);
+        before_tick = snapshot_from_process(mod, snapshot_props, snapshot_paths);
     end
 
     mod.evolveState();
 
     if proc_idx == target_idx
-        after_tick = snapshot_from_process(mod, snapshot_props);
+        after_tick = snapshot_from_process(mod, snapshot_props, snapshot_paths);
     end
 
     mod.copyToState();
@@ -208,11 +258,21 @@ mets.counts = edu.stanford.covert.cell.sim.constant.Condition.applyConditions( .
     mets.counts, mets.setCounts, time.values);
 end
 
-function out = snapshot_from_process(proc, snapshot_props)
+function out = snapshot_from_process(proc, snapshot_props, snapshot_paths)
 out = struct();
 for p = 1:numel(snapshot_props)
     prop = snapshot_props{p};
-    out.(prop) = sanitize_snapshot_value(proc.(prop), 0);
+    if nargin >= 3 && isfield(snapshot_paths, prop)
+        expr = snapshot_paths.(prop);
+    else
+        expr = prop;
+    end
+    try
+        raw = eval_dotted(proc, expr);
+    catch
+        raw = [];
+    end
+    out.(prop) = sanitize_snapshot_value(raw, 0);
 end
 end
 
