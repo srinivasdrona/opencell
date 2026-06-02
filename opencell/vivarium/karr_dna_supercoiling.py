@@ -21,6 +21,8 @@ import numpy as np
 from scipy.io import loadmat
 from vivarium.core.process import Process
 
+from opencell.util.matlab_rng import MatlabRandStream
+
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/DNASupercoiling_flat.mat"
 _DEFAULT_COMPLEXATION_FIXTURE_PATH = (
     "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
@@ -145,7 +147,9 @@ class KarrDNASupercoilingProcess(Process):
             wid: ("complex" if wid in self._canonical_complex_wids else "protein")
             for wid in self.enzyme_wids
         }
-        self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
+        seed = int(self.parameters["rng_seed"])
+        self._rng = MatlabRandStream(seed, generator="mt19937ar")
+        self._poisson_rng = np.random.default_rng(seed)
         self._replay_sigma: float | None = None
         self._replay_rng_aligned = False
         warmup_cfg = self.parameters.get("replay_rng_warmup_draws")
@@ -323,7 +327,7 @@ class KarrDNASupercoilingProcess(Process):
             if not self._replay_rng_aligned:
                 warmup = int(self._replay_rng_warmup_draws)
                 if warmup > 0:
-                    self._rng.random(warmup)
+                    self._rng.rand(warmup)
                 self._replay_rng_aligned = True
             # MATLAB unbinds processive topoIV prior to catalytic actions.
             # In replay we source occupancy deltas from trace_hint; consume a
@@ -332,7 +336,7 @@ class KarrDNASupercoilingProcess(Process):
                 bound_now.get(self.topoiv_wid, 0.0)
             )
             if topoiv_delta < 0.0:
-                self._rng.random(1)
+                self._rng.rand(1)
             sigma_for_activity = float(self._replay_sigma)
         sigma_for_events = sigma_for_activity
         if replay_mode and topoiv_count > 0.0:
@@ -475,7 +479,7 @@ class KarrDNASupercoilingProcess(Process):
         if replication_state != "elongating":
             return 0
         rate = max(0.0, float(self.parameters["replication_supercoil_load_rate"]))
-        return int(self._rng.poisson(rate * max(0.0, dt)))
+        return int(self._poisson_rng.poisson(rate * max(0.0, dt)))
 
     def _activity_probability(
         self,
@@ -505,7 +509,7 @@ class KarrDNASupercoilingProcess(Process):
         frac = float(value - base)
         if frac <= 0.0:
             return base
-        return base + int(self._rng.random() < frac)
+        return base + int(float(self._rng.rand()) < frac)
 
     def _emit_hint_delta(
         self,

@@ -24,3 +24,14 @@ This note documents the `MatlabRandStream` shim in `opencell/util/matlab_rng.py`
 
 ## Known Gaps
 - Some vectors are still tagged in tests as TODO-primary-source where only secondary sources are available (`randn(seed=0)` and `randperm(100,5)`).
+
+## DNASupercoiling Wiring (2026-06-02)
+- `opencell/vivarium/karr_dna_supercoiling.py` now wires replay RNG draws through `MatlabRandStream` at four sites:
+  - stream construction in `__init__`
+  - replay warmup draw consumption
+  - replay topoIV-unbind alignment draw
+  - `_stochastic_round` Bernoulli draw
+- Replay draw budget currently observed in the L2 harness:
+  - tick 0: one warmup block (`replay_rng_warmup_draws`, default 191) plus per-tick catalytic rounding draws
+  - typical replay tick: one Bernoulli draw in `_stochastic_round` (for the non-integral catalytic branch), plus optional topoIV-unbind alignment draw
+- This wiring aligns the RNG implementation (MATLAB-compatible stream), but does not yet emulate all MATLAB `DNASupercoiling.m` random call sites (`randperm`/strand-choice branches), so full stream lockstep remains a known gap.
