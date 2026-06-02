@@ -1,0 +1,72 @@
+{
+  "_meta": {
+    "description": "Class A.5 boundary auditors. Per the swarm-pilot-five-gap-hardening decision (2026-05-25): Bugs 1, 5, 6 were all process-boundary failures (process<->composite step identity, process<->process pipeline, process<->shared store). 28 inside-process auditors cannot find another Bug 6 by construction. These 4 auditors run in parallel with Class A, findings-only, same artifact contract (template at CLASS_A_TEMPLATE.md, adapted scope).",
+    "main_sha": "852da97",
+    "parallel_with": "class_a",
+    "boundary_count": 4
+  },
+  "boundaries": [
+    {
+      "id": "B-M1-substrates",
+      "name": "M1MetabolismToSubstratesStore",
+      "scope": "M1 (Metabolism) <-> shared substrates store. Audit: writeback semantics, fba_sub_idx -> 1686 mapping, dynamic_bounds=False flag (Bug 3 territory), substrate init values (Bug 2 territory: _M1_SUBSTRATE_DEFAULT, _updater: accumulate).",
+      "files_in_scope": [
+        "opencell/vivarium/karr_metabolism.py",
+        "opencell/m1/karr_metabolism.py",
+        "opencell/vivarium/karr_composite.py"
+      ],
+      "key_questions": [
+        "Are substrate initial counts pulled from Karr fixture or hardcoded?",
+        "Does accumulate updater semantics match Karr's per-tick delta model?",
+        "Is dynamic_bounds wired to fixture-driven enzyme bounds, or static?",
+        "Does writeback correctly cover all 504 FBA reactions' substrate deltas?"
+      ]
+    },
+    {
+      "id": "B-allocator-consumers",
+      "name": "AllocatorToConsumerProcesses",
+      "scope": "KarrAllocationStep <-> 28 consumer processes. Audit: who is enrolled vs who actually consumes; request/grant cycle integrity; ASSERT_POSITIVE_COUNTS coverage (sprint0); the karr_rna_decay/karr_host_interaction enrollment story (Bucket A).",
+      "files_in_scope": [
+        "opencell/vivarium/karr_allocation_step.py",
+        "opencell/vivarium/karr_composite.py"
+      ],
+      "key_questions": [
+        "Full list of declared consumers vs full list of processes that actually write substrates?",
+        "Any consumer that drains a substrate without an allocator request?",
+        "Are tx + tl currently NOT enrolled? (Track A's target — confirm + cite)",
+        "Does ASSERT_POSITIVE_COUNTS fire on every write path or only the request path?"
+      ]
+    },
+    {
+      "id": "B-tx-tl-pipeline",
+      "name": "TranscriptionToTranslationPipeline",
+      "scope": "karr_transcription <-> karr_translation. Audit: mRNA produced by TX is the same identity TL consumes; ribosome allocation across the pipeline; codon-to-AA mapping; step identity bug (Bug 1: _mark_instance_as_step at karr_composite.py:1873) and its TX/TL impact.",
+      "files_in_scope": [
+        "opencell/vivarium/karr_transcription.py",
+        "opencell/vivarium/karr_translation.py",
+        "opencell/vivarium/karr_composite.py"
+      ],
+      "key_questions": [
+        "Is TX dt actually firing post-Bug-1? (raw CSV check on karr_transcription.csv row count vs tick count)",
+        "Does TL consume the same mRNA store TX writes? Key-by-key audit.",
+        "Are ribosome counts shared correctly between the two?",
+        "Does the step identity bug (Bug 1) affect any other process pair the same way?"
+      ]
+    },
+    {
+      "id": "B-chassis-karr-step",
+      "name": "ChassisToKarrStepHarness",
+      "scope": "build_karr_chassis_v6 <-> KarrAllocationStep + sub-process step registration. Audit: instantiation order, _mark_instance_as_step semantics, Bug 1's root site, what other invariants the chassis silently assumes about Process vs Step identity.",
+      "files_in_scope": [
+        "opencell/vivarium/karr_composite.py",
+        "opencell/vivarium/karr_allocation_step.py"
+      ],
+      "key_questions": [
+        "Full inventory of every _mark_instance_as_step call site (Bug 1 root)",
+        "What does is_step=True actually change in Vivarium scheduling? (dt=0 implication)",
+        "Are there other processes inadvertently flagged as steps?",
+        "Does the chassis registry know which Processes are Steps vs Processes, or is identity inferred?"
+      ]
+    }
+  ]
+}
