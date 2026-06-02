@@ -54,25 +54,30 @@
 - **Sweep pushed:** `audit/l2-1-sweep-v2` is at `3d82f9b` on origin (cherry-picks `db84a77 pp2` + `27c0ae6 tol-table` + `3d82f9b tol-loader` landed). Use the GCM-explicit WSL form below for any future push — plain `wsl git push` HANGS silently.
 - **Tolerance flag-on sweep result: ZERO new passes.** `L2_USE_CALIBRATED_TOLERANCES=1` → 40/6/2, identical to baseline. **Signal, not null:** every one of the 6 remaining REDs is a structural gap, not a tolerance-width issue. The calibrated table is still valuable as a regression guard but won't farm more GREENs on its own.
 
-**Hypothesis matrix for the 6 remaining L2.1 REDs** (built 2026-06-01 evening — single source of truth for "what's next" on L2.1):
+**Hypothesis matrix for the 6 remaining L2.1 REDs** (built 2026-06-01 evening; **revised 2026-06-02 afternoon** after empirical retests against the MATLAB randStream shim):
 
 | # | Process | Fingerprint | Class | Root cause | Fix path | Effort | Crib risk |
 |---|---|---|---|---|---|---|---|
 | 1 | metabolism | t=0, substrates[10]=ADP, +3622 | **C-harness gap** | Static replay path receives only 585-cytosol substrates (vs MATLAB 585×3); no `randStream` continuation; no `evolveState` machinery | (a) extend replay harness's metabolism path or (b) defer to L2.2 integrated replay | L | LOW |
-| 2 | dna_supercoiling | t=11, ATP +2 (= 1 event) | **C-RNG** | MATLAB has 4 distinct `randStream` draws (`DnaSupercoiling.m` lines 391/419/470/487); NumPy can't bit-replay | (a) MATLAB `randStream` shim or (b) ±1-event tolerance band | M / S | LOW |
+| 2 | dna_supercoiling | post-shim: t=3, ATP +2 (was t=11, -2) | **C-RNG-partial (REVISED 2026-06-02)** | Shim wired correctly (`a30fc14`, 3 of 4 NumPy sites swapped, audit test passes) but **MATLAB `DnaSupercoiling.m` lines 391/470 use `randperm(length(this.enzymes))` to randomize per-tick enzyme processing order — that draw site is absent from the Python replay path entirely.** Fingerprint moved (t=11→t=3, sign preserved) confirming stream-side improved but algorithm-side gap remains. | shim + port enzyme-loop ordering draws into `_replay_update` (faithfully match MATLAB's per-tick randperm) | M (done) + S (todo) | LOW |
 | 3 | protein_decay | shifted fingerprint after `dd9de0b` wiring | **C-representation seam** | 4820↔482 projection is lossy: many 4820 states collapse to same 482 vector but imply different substrate outputs (482 proteins with form-varying decay cols + Lon cleavages) | (a) lift harness to 4820 surface for pdecay or (b) add per-form observables to replay extraction | L | MED |
-| 4 | protein_modification | t=19, substrates[0], +1 | **C-RNG** (CONFIRMED 2026-06-01 19:51) | MATLAB `stochasticRound` + `randsample` in `ProteinModification.m` lines 361–375. Deterministic probe (treat zero-requirements as non-limiting in `_limit_over_requirements`) cleared tick=19 but pushed residue to ~tick 53 — consistent with stream divergence, NOT a local arithmetic typo. **Note: may also have a latent deterministic bug under the RNG noise** — re-attack after shim lands. | shim then re-test; deterministic probe is a candidate follow-up | M then S | LOW |
+| 4 | protein_modification | t=19, substrates[0], ±1 (sign-flipped post-shim) | **D-algorithmic (REVISED 2026-06-02)** — was C-RNG | Shim wired correctly (`edba591`, 3 sites swapped, `_RANDSAMPLE_STREAM_BURN` hack removed, audit test passes). Pre/post draw counts at ticks 5/19/50 = `0/1/1` (identical). **At tick 19, `reaction_limits` are all zero → `total_limit=0` → `randsample` is NEVER called.** RNG is not on the failing path; the divergence is upstream in `_substrate_limit` / `_enzyme_limit` / `_limit_over_requirements` (deterministic feasibility arithmetic). The Day-17 "deterministic probe pushed residue to tick=53" finding now reads correctly: that probe nudged the feasibility path, not the stochastic path. | investigate feasibility-limit arithmetic at tick=19 (no RNG fix will close this); ProteinModification.m lines 354–365 are the MATLAB oracle to diff against | M (deterministic port) | LOW |
 | 5 | rna_decay | t=0, AMP +1 | **A — hidden-state seeding** | Trace exposes only `{substrates,enzymes,boundEnzymes}`; needs RNA pool + per-process randStream at t=0. Diff vector = exactly `decay_row(MG518) − decay_row(MG493)` (1 stochastic event reassigned) | extend replay extraction: dump RNA pool + randStream into fixture | M | LOW |
 | 6 | transcription | t=1, ATP +1 (after discarding `65fd49c` hand-fit) | **D — algorithmic port gap** | OC drains per-RNAP sequentially; MATLAB `util.polymerize` does limiting-base culls across active sequence frontier | port `util.polymerize` faithfully — reusable kernel for translation + replication later | L | LOW |
 
-**Cross-cutting insight:** **5 of 6** fingerprints (rna_decay, pmod, transcription, dna_super, AND now pmod confirmed Class C-RNG) are stochastic-stream gaps. **A MATLAB `randStream` shim plausibly collapses 3–5 of these in one stroke** — highest unit-leverage move on the board.
+**Cross-cutting insight (REVISED 2026-06-02 after dna_super + pmod shim retests):** the original claim was **"5 of 6 are stochastic-stream gaps; one shim collapses 3–5 of them"**. Empirical reality after wiring the shim into 2 processes:
+- **dna_super:** shim helps (fingerprint moves) but does NOT clear — algorithmic gap (`randperm` enzyme ordering) co-exists with stream alignment.
+- **pmod:** shim wires cleanly but does NOT change the answer at all — RNG is not even called on the failing tick. **Class re-assigned C-RNG → D-algorithmic.**
+- **Revised count:** **2 of 6 are genuinely RNG-shaped at the surface** (rna_decay #5, possibly transcription #6 — needs the polymerize port to confirm). **3 of 6 are algorithmic** (pmod #4, transcription #6, plus the algorithmic half of dna_super #2). **Class C-RNG is not the dominant pattern it appeared to be from fingerprint-shape alone.**
+- **Lesson for matrix discipline:** fingerprint shape (single-substrate, low-magnitude, late-tick) is a weak predictor of stream-vs-algorithm. Distinguishing the two requires either (a) wiring the shim and checking draw-count invariance, or (b) running a deterministic probe on the suspect arithmetic path. We now have both methods proven; use them before assigning Class C-RNG in future.
 
-**Recommended L2.1 attack order:**
-1. **rna_decay extraction extension** (M, LOW risk) — creates the pattern for hidden-state work.
-2. **MATLAB `randStream` shim** (M) — kills dna_super, tightens pmod & rna_decay residues, may nuke transcription t=1 if RNG-shaped.
-3. **transcription `util.polymerize` port** (L) — reusable kernel (translation + replication).
-4. **pdecay 4820 harness lift** (L) — retest *after* randStream shim; residue may shrink.
-5. **metabolism harness extension** — punt to L2.2 unless something blocks on it.
+**Recommended L2.1 attack order (REVISED 2026-06-02):**
+1. **rna_decay extraction extension** (M, LOW risk) — only genuine Class A on the board; pattern-establishing for any future hidden-state work.
+2. **dna_super randperm enzyme-loop port** (S) — completes the partial shim landing; matrix entry #2 second half.
+3. **pmod feasibility-limit investigation** (M) — Class D, needs deterministic port of MATLAB lines 354-365 feasibility arithmetic. Day-17 deterministic probe is the starting point.
+4. **transcription `util.polymerize` port** (L) — reusable kernel (translation + replication).
+5. **pdecay 4820 harness lift** (L) — Class C-representation, independent of the above.
+6. **metabolism harness extension** — punt to L2.2 unless something blocks on it.
 
 **Evening outcomes (in completion order):**
 - `tol_calibrate` — **GREEN delivered**. 2 commits on `fix/l2-tol-calibrate` off sweep `0313b71`:
