@@ -10,12 +10,13 @@ import numpy as np
 from scipy.io import loadmat
 from vivarium.core.process import Process
 
+from opencell.util.matlab_rng import MatlabRandStream
+
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/ProteinModification_flat.mat"
 _FIXTURE_DIR = Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "per_process"
 _MACROMOLECULAR_COMPLEXATION_FIXTURE_PATH = _FIXTURE_DIR / "MacromolecularComplexation_flat.mat"
 _MAX_STOCHASTIC_ITERATIONS = 100_000
 _SPECIAL_COMPLEX_WIDS = frozenset({"RNA_POLYMERASE", "RIBOSOME_70S"})
-_RANDSAMPLE_STREAM_BURN = 3
 
 
 def _resolve_fixture_path(path: str | Path) -> Path:
@@ -72,7 +73,10 @@ class KarrProteinModificationProcess(Process):
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
         super().__init__(parameters)
         self._load_fixture(self.parameters["fixture_path"])
-        self._rng = np.random.RandomState(int(self.parameters["rng_seed"]))
+        self._rng = MatlabRandStream(
+            int(self.parameters["rng_seed"]),
+            generator="mt19937ar",
+        )
 
         row_sums = np.sum(self.reaction_modification, axis=1)
         if not np.all(row_sums == 1):
@@ -392,11 +396,7 @@ class KarrProteinModificationProcess(Process):
     def _weighted_index_sample(self, weights: np.ndarray, total_weight: float) -> int:
         if total_weight <= 0.0:
             return 0
-        # MATLAB's `randsample` is implemented in the stats toolbox and advances
-        # the stream with extra internal draws versus a one-liner CDF sample.
-        for _ in range(_RANDSAMPLE_STREAM_BURN):
-            self._rng.random_sample()
-        threshold = float(self._rng.random_sample()) * float(total_weight)
+        threshold = float(self._rng.rand()) * float(total_weight)
         cumulative = np.cumsum(weights, dtype=np.float64)
         return int(np.searchsorted(cumulative, threshold, side="right"))
 
@@ -404,7 +404,7 @@ class KarrProteinModificationProcess(Process):
         clipped = np.clip(np.asarray(values, dtype=np.float64), a_min=0.0, a_max=None)
         integral = np.floor(clipped)
         fractional = clipped - integral
-        draws = self._rng.random_sample(fractional.shape)
+        draws = self._rng.rand(*fractional.shape)
         return (integral + (draws < fractional).astype(np.float64)).astype(np.int64)
 
     def _substrate_limit_for_reaction(self, substrates: np.ndarray, ridx: int) -> int:

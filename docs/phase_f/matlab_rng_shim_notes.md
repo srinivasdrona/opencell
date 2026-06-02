@@ -24,3 +24,11 @@ This note documents the `MatlabRandStream` shim in `opencell/util/matlab_rng.py`
 
 ## Known Gaps
 - Some vectors are still tagged in tests as TODO-primary-source where only secondary sources are available (`randn(seed=0)` and `randperm(100,5)`).
+
+## ProteinModification Wiring (L2.1 Retest)
+- `opencell/vivarium/karr_protein_modification.py` now constructs `MatlabRandStream(seed, generator='mt19937ar')` for replay draws instead of `np.random.RandomState`.
+- Mapped draw sites:
+  - `_weighted_index_sample`: one scalar `self._rng.rand()` for the weighted-CDF threshold.
+  - `_stochastic_round_vector`: vector draw via `self._rng.rand(*fractional.shape)`.
+- Burn decision: removed `_RANDSAMPLE_STREAM_BURN` and its extra stream burns. With the shim in place, replay draws should come directly from MATLAB-compatible stream calls rather than a NumPy-era empirical compensation loop.
+- Added replay RNG audit coverage in `tests/vivarium/test_karr_protein_modification_rng_audit.py` to assert per-tick call pattern stability and seed-0 tick-0 value equivalence against a standalone `MatlabRandStream(0)`.
