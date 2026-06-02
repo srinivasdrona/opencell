@@ -1,0 +1,118 @@
+{
+  "generated_at": "2026-05-30T14:58:18+05:30",
+  "count": 28,
+  "files": {
+    "ChromosomeCondensation_100ticks.mat": {
+      "sha256": "a590913f15414008156e6f9f9aa71b4e465d3bf0311b7eb32f97ad54037c8d06",
+      "size": 245824
+    },
+    "ChromosomeSegregation_100ticks.mat": {
+      "sha256": "c4bd7357bcd4255d99e38ce1e3e457dd8865013169b664cdfea161a9ca859f11",
+      "size": 255352
+    },
+    "Cytokinesis_100ticks.mat": {
+      "sha256": "d3dd553d5959b92c81b6cc286015edfc1ef7afc7d5c20cd21efc6cd0f693b52a",
+      "size": 248920
+    },
+    "DNADamage_100ticks.mat": {
+      "sha256": "a000c756c75fb1a8f476926e4e746b6e6e516cb118a7ff14dc6d1299d798bba1",
+      "size": 326256
+    },
+    "DNARepair_100ticks.mat": {
+      "sha256": "7d426709538e6cb726f70dce916247421efc04e661226a0f6747407f15d29ec5",
+      "size": 722672
+    },
+    "DNASupercoiling_100ticks.mat": {
+      "sha256": "2f36b2ab1d72f113a26a880b9d813ea510438bc9ae576f98d3b52e897810f819",
+      "size": 248976
+    },
+    "FtsZPolymerization_100ticks.mat": {
+      "sha256": "c0797bcb84fa6041875caddf6a7c195362fdad64fd80412a34946a914aaa9ee1",
+      "size": 274576
+    },
+    "HostInteraction_100ticks.mat": {
+      "sha256": "a87006a356001ac060fcbe233af19dc7e21e863dcf4bf4d848b49147a5114f44",
+      "size": 290144
+    },
+    "MacromolecularComplexation_100ticks.mat": {
+      "sha256": "ee6a9ae55e3514dcff98a9efc5ce186bd41cfe46d601119ed64ab5a76618ed68",
+      "size": 903608
+    },
+    "Metabolism_100ticks.mat": {
+      "sha256": "c72ee57816eca01a647c6d7bf5d467810b31c61e50d325996b9509b51eb979e3",
+      "size": 1303448
+    },
+    "ProteinActivation_100ticks.mat": {
+      "sha256": "045604afde9a5a4586e630a360ff79dff4910146fc5917ef2f074b0649a737d1",
+      "size": 345472
+    },
+    "ProteinDecay_100ticks.mat": {
+      "sha256": "2c458214a6d08e60a72206a6c52ddd15721b8bf0cf7ae3d3bf1d8bc9f1fe1aca",
+      "size": 2237999
+    },
+    "ProteinFolding_100ticks.mat": {
+      "sha256": "b4a9c1d1b7ddb41abe905029477a60f5dcc1c5ed6591258b4cb2c723150e8410",
+      "size": 1957392
+    },
+    "ProteinModification_100ticks.mat": {
+      "sha256": "01f8b5cbb355a9139e0ece64e7f64088f3120fa6f96363f1ca8fcfc620f84b4f",
+      "size": 1957616
+    },
+    "ProteinProcessingI_100ticks.mat": {
+      "sha256": "0907939bf5d15a0c7a119d7155e6fd373bff2ffc64985f9a0fd2fade30408eb2",
+      "size": 1936816
+    },
+    "ProteinProcessingII_100ticks.mat": {
+      "sha256": "1cbcb450d706f12c4724ef345c915509761a2477f46b8e42d7d6e373824e5a11",
+      "size": 1938368
+    },
+    "ProteinTranslocation_100ticks.mat": {
+      "sha256": "22d0a215a9a7c4d835b1f7398d3c667ed2e68d93ae82a8724f199df92adf0ec4",
+      "size": 899264
+    },
+    "Replication_100ticks.mat": {
+      "sha256": "58b9a784117f7c10ce8a6cb84ccf8f27a4b11bfae6a111c63f229b1b625b6d04",
+      "size": 298544
+    },
+    "ReplicationInitiation_100ticks.mat": {
+      "sha256": "a9a16bc2bbffdf06eb2cb507835e88191d816f11f6709f6d22ad1b556a87a4b9",
+      "size": 287448
+    },
+    "RibosomeAssembly_100ticks.mat": {
+      "sha256": "879207bcb9e2010b6a0442a49788624fd98a9f25dde6697881f69f8563654f7f",
+      "size": 495152
+    },
+    "RNADecay_100ticks.mat": {
+      "sha256": "81639bda0f756e4953548245929f57da09f5b89cf8141691fbd8b50aa98d213b",
+      "size": 300192
+    },
+    "RNAModification_100ticks.mat": {
+      "sha256": "5058bc287da7053ace4c429ee8c090e5a2dc1baeb12e4b2c39cac3492b277f8d",
+      "size": 1579952
+    },
+    "RNAProcessing_100ticks.mat": {
+      "sha256": "8f2d87d42b6b02518d20750c44c9188d158e41283df0794f5d6e337a20b44f0a",
+      "size": 1500000
+    },
+    "TerminalOrganelleAssembly_100ticks.mat": {
+      "sha256": "d827f71e7e3f5f814833d8c7dbcb6461a708e78990f754fd64b5c068e25efe8c",
+      "size": 333768
+    },
+    "Transcription_100ticks.mat": {
+      "sha256": "ad53dc81d1fea4756bb0a8c2b4a901dd3183d38746f1042243e09301a30c94fe",
+      "size": 269824
+    },
+    "TranscriptionalRegulation_100ticks.mat": {
+      "sha256": "9f9984839056fc70e8c38929eb7926a95f00315cc7a103a3ae17d93fea1cbb5c",
+      "size": 258112
+    },
+    "Translation_100ticks.mat": {
+      "sha256": "6250bd66e7ee50a7ceec66a1eedf71f25180f990f443abad21e56ca7ac0f2e3f",
+      "size": 1178000
+    },
+    "tRNAAminoacylation_100ticks.mat": {
+      "sha256": "6e49a379fc493d6ebee884ff29e7b4040a73796917ffbf743108abfa9191d970",
+      "size": 733392
+    }
+  }
+}
