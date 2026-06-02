@@ -46,6 +46,7 @@ class KarrTranscriptionV3Process(Process):
         "write_substrate_deltas": True,
         "use_allocator_budget": False,
         "substrate_default": 0.0,
+        "emit_unprocessed_tu": False,
     }
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
@@ -90,16 +91,24 @@ class KarrTranscriptionV3Process(Process):
 
     def ports_schema(self) -> dict[str, Any]:
         rna_ss = self.kinetics_model.counts_mature[:, 1]
+        rna_counts_schema = {
+            gid: {
+                "_default": float(rna_ss[i]),
+                "_updater": "accumulate",
+                "_emit": True,
+            }
+            for i, gid in enumerate(self.gene_ids)
+        }
+        if bool(self.parameters["emit_unprocessed_tu"]):
+            for tu_wid in self.tu_wids:
+                rna_counts_schema[tu_wid] = {
+                    "_default": 0.0,
+                    "_updater": "accumulate",
+                    "_emit": True,
+                }
         schema: dict[str, Any] = {
             "rna": {
-                "counts": {
-                    gid: {
-                        "_default": float(rna_ss[i]),
-                        "_updater": "accumulate",
-                        "_emit": True,
-                    }
-                    for i, gid in enumerate(self.gene_ids)
-                }
+                "counts": rna_counts_schema
             },
             "substrates": {
                 ntp: {
@@ -209,6 +218,13 @@ class KarrTranscriptionV3Process(Process):
                 "counts": {gid: float(rna_next[i] - rna[i]) for i, gid in enumerate(self.gene_ids)}
             }
         }
+        if bool(self.parameters["emit_unprocessed_tu"]):
+            rna_counts_update = update["rna"]["counts"]
+            unprocessed_delta = np.clip(synth_gene_per_s * float(timestep), a_min=0.0, a_max=None)
+            for i, tu_wid in enumerate(self.tu_wids):
+                delta = float(unprocessed_delta[i])
+                if delta > 0.0:
+                    rna_counts_update[tu_wid] = float(rna_counts_update.get(tu_wid, 0.0) + delta)
         if self.parameters["write_substrate_deltas"]:
             if bool(self.parameters["use_allocator_budget"]):
                 substrate_update = self._allocated_ntp_deltas(timestep, states, n_active_rnap)

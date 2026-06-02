@@ -742,6 +742,7 @@ def build_karr_chassis_v3(
             "time_step": time_step_s,
             "use_allocator_budget": True,
             "substrate_default": _M1_SUBSTRATE_DEFAULT,
+            "emit_unprocessed_tu": True,
         }
     )
     m3_proc = KarrTranslationV3Process(
@@ -1011,6 +1012,7 @@ def build_karr_chassis_v4(
             "time_step": time_step_s,
             "use_allocator_budget": True,
             "substrate_default": _M1_SUBSTRATE_DEFAULT,
+            "emit_unprocessed_tu": True,
         }
     )
     m3_proc = KarrTranslationV3Process(
@@ -1629,6 +1631,7 @@ def build_karr_chassis_v5(
             "time_step": time_step_s,
             "use_allocator_budget": True,
             "substrate_default": _M1_SUBSTRATE_DEFAULT,
+            "emit_unprocessed_tu": True,
         }
     )
     m3_proc = KarrTranslationV3Process(
