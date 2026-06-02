@@ -1,7 +1,35 @@
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-06-01 ~20:42 IST):**
-- **NONE LIVE.** All evening codex jobs returned. Sweep pushed cleanly to origin at `0e17e00`.
+**Live processes / agents (2026-06-02 ~14:00 IST):**
+- **NONE LIVE.** Morning shim codex (`feat/dna-super-rng-shim` @ `a30fc14`) returned + pushed to origin. PID 63776 wrapper still resident but the work landed.
+
+**Day 18 morning outcomes (2026-06-02 ~12:30-14:00 IST):**
+- **L2.2 v2 harness cherry-picked onto sweep** (`fff05fd` + `59a6232` + `5c0824d` → sweep `809e644`). WID-set diagnostics now machine-readable (`CAUSE_1_WID_SET_MISMATCH`). Smoke: 1 xfailed in 16s as expected.
+- **3-slot composition mandate codified** (sweep `88f3ae4`): inserted into `docs/prompts/FIX_TEMPLATE_L2_REPLAY.md` after bug-class block. Also added to `~/.copilot/skills/delegate-to-codex/SKILL.md` (pre-launch self-check item #6 + dedicated section with empirical anchors). Slot-3 < 2 KB heuristic codified.
+- **dna_super RNG-shim wiring SHIPPED-RED with finding** (`feat/dna-super-rng-shim` @ `a30fc14`, pushed). Codex correctly wired 3 of 4 NumPy sites to `MatlabRandStream` (warmup, topoIV-align, `_stochastic_round`); kept Poisson on separate generator for non-replay path. L2.1 fingerprint moved `tick=11, diff=-2` → `tick=3, diff=+2` (different shape, still RED). **Confessed gap:** the `randperm` enzyme-loop draw site (`DnaSupercoiling.m` lines 391/470) is absent from the Python replay path entirely — this matches the PROMPT's pre-mortem suspect pattern #3. Verdict: **honest Class C residue**, matrix entry #2 needs revision ("shim alone clears dna_super" was wrong; need shim + port enzyme-loop draws).
+- **Gitignore + repo hygiene SHIPPED** (main `33a67bc` + 2 follow-on commits → `224577c`, pushed). VS Code source-control noise dropped from 32,080 → ~1. Committed legit untracked content: `scripts/swarm/launch_class_a.py` (canonical fire_codex), fleet/launcher scripts, `docs/architecture/L2_specs/01_Metabolism.md`, PREFIX v2 rubric, V2 trace manifest, probe scripts. `docs/prompts/DELIBERATE_ACTION_PREFIX.md` (v1) left untracked pending retire decision.
+
+**Sweep tip (origin in sync):** `88f3ae4 docs(prompts): mandate 3-slot composition in L2 fix template`. Adds since previous handoff:
+- `fff05fd` + `59a6232` + `5c0824d` — L2.2 v2 harness (WID diagnostics, CAUSE_1_WID_SET_MISMATCH payload).
+- `88f3ae4` — 3-slot composition mandate in FIX_TEMPLATE_L2_REPLAY.
+
+**Main tip (pushed):** `224577c chore: track L2 spec, PREFIX v2 rubric, infra inventory, probes`. Includes the gitignore hygiene + scripts batch.
+
+**Hypothesis matrix revision (post-shim):**
+- Entry #2 (dna_supercoiling): **shim alone is insufficient.** Need shim + faithful port of `randperm` enzyme-loop draws (lines 391, 470 of DnaSupercoiling.m) into Python replay path. Effort revised: M → M+S.
+- Entry #4 (protein_modification): prediction still standing — shim retest queued (`day18-pmod-shim-retest`). If GREEN, partial matrix validation; if RED with similar fingerprint shift, both #2 and #4 share the "shim wires but algorithm gap remains" failure mode and matrix's "5 of 6 are stochastic-stream-shaped" claim weakens.
+
+**L2.2 v2 status:** harness with WID diagnostics on sweep, pair #1 still RED with `CAUSE_1_WID_SET_MISMATCH` payload. D1 (union master list + owner manifest) blocks on F-TOMLs cherry-pick from `phase-f-schema-extract` (27 of 28 still off-sweep).
+
+**Pending Day-18 afternoon slate (executing):**
+1. ✅ Closure: shim push + todo updates + matrix revision + this refresh.
+2. 🔄 `day18-pmod-shim-retest` — A retest, codex job (canonical fire_codex pattern).
+3. 🔄 `day18-f-tomls-to-sweep` — cherry-pick 27 TOMLs to sweep (hand work, no codex).
+4. ⏳ `day18-blog-shim-class-c` — mid-day blog with honest negative result.
+
+**Original (2026-06-01 ~20:42 IST) handoff below for trap reference:**
+
+
 
 **Evening fanout #3 outcomes (2026-06-01 ~20:00-20:40 IST):**
 - **matlab_rng_shim SHIPPED** (cherry-picked `77e06fd` + `be8f13b` onto sweep). 15 passed + 3 xpassed. Critical empirical finding: `np.random.RandomState(0)` ≠ MATLAB `RandStream('mt19937ar','Seed',0)` (MATLAB maps seed 0 → 5489 internally; shim encodes the mapping). `randperm` requires Fisher-Yates against MATLAB's documented startup vector `[6 3 7 8 5 1 2 4 9 10]`. Awaits wiring into stochastic processes (dna_super = smallest target, agent's own recommendation).
