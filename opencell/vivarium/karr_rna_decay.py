@@ -20,6 +20,7 @@ from vivarium.core.process import Process
 _FIXTURE_DIR = Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "per_process"
 _RNA_DECAY_FLAT = _FIXTURE_DIR / "RnaDecay_flat.mat"
 _RNA_STATE_CLASS = "edu.stanford.covert.cell.sim.state.Rna"
+_TRANSCRIPT_STATE_CLASS = "edu.stanford.covert.cell.sim.state.Transcript"
 _LN2 = math.log(2.0)
 
 
@@ -159,6 +160,18 @@ class RnaDecayLightProcess(Process):
             except ValueError as exc:
                 raise ValueError("H2O index unavailable in RnaDecay fixture") from exc
 
+        hydrogen_idx_raw = getattr(fixture, "substrateIndexs_hydrogen", None)
+        if hydrogen_idx_raw is not None:
+            self.substrate_index_hydrogen = int(hydrogen_idx_raw) - 1
+        else:
+            self.substrate_index_hydrogen = (
+                self.substrate_wids.index("H") if "H" in self.substrate_wids else -1
+            )
+        self.substrate_indices_nmps = _normalize_indices(
+            getattr(fixture, "substrateIndexs_nmps", np.asarray([], dtype=np.int64)),
+            len(self.substrate_wids),
+        )
+
         self.water_need_per_decay = np.clip(
             -self.decay_reactions[:, self.substrate_index_water], a_min=0, a_max=None
         ).astype(np.int64)
@@ -183,6 +196,11 @@ class RnaDecayLightProcess(Process):
             getattr(fixture, "peptidylTRNAHydrolaseSpecificRate", 0.0)
         )
         self.step_size_sec = float(getattr(fixture, "stepSizeSec", 1.0))
+
+        self._fixture_transcription_unit_sequences = self._read_fixture_transcription_unit_sequences(
+            fixture=fixture
+        )
+        self._fixture_aborted_sequences = self._read_fixture_aborted_sequences(fixture=fixture)
 
     def _load_from_fallback(self) -> None:
         self.rna_wids = [str(wid) for wid in self.parameters.get("fallback_rna_ids", [])]
@@ -214,6 +232,8 @@ class RnaDecayLightProcess(Process):
 
         self.substrate_wids = ["H2O"]
         self.substrate_index_water = 0
+        self.substrate_index_hydrogen = -1
+        self.substrate_indices_nmps = np.asarray([], dtype=np.int64)
         self.decay_reactions = np.zeros((len(self.rna_wids), 1), dtype=np.int64)
         if bool(self.parameters.get("fallback_consume_h2o", False)):
             self.decay_reactions[:, 0] = -1
@@ -226,6 +246,8 @@ class RnaDecayLightProcess(Process):
         self.enzyme_index_peptidyl_hydrolase = -1
         self.peptidyl_trna_hydrolase_specific_rate = 0.0
         self.step_size_sec = 1.0
+        self._fixture_transcription_unit_sequences: list[str] = []
+        self._fixture_aborted_sequences: list[str] = []
 
     def ports_schema(self) -> dict[str, Any]:
         return {
@@ -256,6 +278,11 @@ class RnaDecayLightProcess(Process):
                 self.name: {
                     self.water_wid: {"_default": 0.0, "_emit": False},
                 }
+            },
+            "transcripts": {
+                "aborted_sequences": {"_default": [], "_updater": "set", "_emit": False},
+                "aborted_transcripts": {"_default": [], "_updater": "set", "_emit": False},
+                "transcription_unit_sequences": {"_default": [], "_updater": "set", "_emit": False},
             },
         }
 
@@ -290,6 +317,16 @@ class RnaDecayLightProcess(Process):
         if not np.any(rna_counts):
             rna_counts = self._fixture_rna_counts
 
+        substrate_counts = self._read_substrate_counts(states=states)
+        aborted_sequences, has_runtime_transcript_state = self._read_aborted_sequences(states=states)
+        aborted_substrate_delta = np.zeros(len(self.substrate_wids), dtype=np.int64)
+        remaining_aborted_sequences = aborted_sequences
+        if aborted_sequences:
+            aborted_substrate_delta, remaining_aborted_sequences = self._apply_aborted_decay(
+                aborted_sequences=aborted_sequences,
+                substrate_counts=substrate_counts,
+            )
+
         decay_rates = np.minimum(1.0e6, self.decay_rates_per_s * dt)
         expected = decay_rates * rna_counts.astype(np.float64)
         sampled_decay = self._sample_poisson_vector(expected)
@@ -303,6 +340,14 @@ class RnaDecayLightProcess(Process):
                 }
             }
         }
+        if np.any(aborted_substrate_delta != 0):
+            update["substrates"] = {
+                wid: float(aborted_substrate_delta[i])
+                for i, wid in enumerate(self.substrate_wids)
+                if aborted_substrate_delta[i] != 0
+            }
+        if has_runtime_transcript_state:
+            update["transcripts"] = {"aborted_sequences": list(remaining_aborted_sequences)}
 
         if not np.any(sampled_decay > 0):
             return update
@@ -324,6 +369,9 @@ class RnaDecayLightProcess(Process):
             decay_events[self.aminoacylated_indices] = amino_kept
 
         water_remaining = self._available_water(states=states)
+        if self.substrate_index_water >= 0 and self.substrate_index_water < aborted_substrate_delta.size:
+            water_remaining += float(aborted_substrate_delta[self.substrate_index_water])
+        water_remaining = max(0.0, water_remaining)
         tmp = decay_events.copy()
         kept = np.zeros_like(tmp, dtype=np.int64)
         while np.any(tmp > 0):
@@ -347,7 +395,7 @@ class RnaDecayLightProcess(Process):
                 update["rna"] = {"counts": rna_update}
 
             if bool(self.parameters.get("emit_substrate_stoich", True)):
-                substrate_delta = decay_events @ self.decay_reactions
+                substrate_delta = (decay_events @ self.decay_reactions) + aborted_substrate_delta
                 substrate_update = {
                     wid: float(substrate_delta[i])
                     for i, wid in enumerate(self.substrate_wids)
@@ -355,6 +403,12 @@ class RnaDecayLightProcess(Process):
                 }
                 if substrate_update:
                     update["substrates"] = substrate_update
+        elif np.any(aborted_substrate_delta != 0):
+            update["substrates"] = {
+                wid: float(aborted_substrate_delta[i])
+                for i, wid in enumerate(self.substrate_wids)
+                if aborted_substrate_delta[i] != 0
+            }
 
         return update
 
@@ -464,6 +518,141 @@ class RnaDecayLightProcess(Process):
         if self._fixture_enzyme_counts.size == len(self.enzyme_wids):
             return np.clip(self._fixture_enzyme_counts.astype(np.float64), a_min=0.0, a_max=None)
         return np.zeros(len(self.enzyme_wids), dtype=np.float64)
+
+    def _read_substrate_counts(self, *, states: dict[str, Any]) -> np.ndarray:
+        substrate_state = states.get("substrates", {})
+        if isinstance(substrate_state, dict):
+            return np.asarray(
+                [float(substrate_state.get(wid, 0.0)) for wid in self.substrate_wids],
+                dtype=np.float64,
+            )
+        return np.zeros(len(self.substrate_wids), dtype=np.float64)
+
+    def _read_fixture_transcription_unit_sequences(self, *, fixture: object) -> list[str]:
+        transcript_state = self._fixture_transcript_state(fixture=fixture)
+        if transcript_state is None:
+            return []
+        return self._to_sequence_list(getattr(transcript_state, "transcriptionUnitSequences", []))
+
+    def _read_fixture_aborted_sequences(self, *, fixture: object) -> list[str]:
+        transcript_state = self._fixture_transcript_state(fixture=fixture)
+        if transcript_state is None:
+            return []
+
+        aborted_sequences = getattr(transcript_state, "abortedSequences", None)
+        if aborted_sequences is not None:
+            return self._to_sequence_list(aborted_sequences)
+
+        aborted_transcripts = getattr(transcript_state, "abortedTranscripts", None)
+        return self._aborted_transcripts_to_sequences(
+            aborted_transcripts=aborted_transcripts,
+            transcription_unit_sequences=self._to_sequence_list(
+                getattr(transcript_state, "transcriptionUnitSequences", [])
+            ),
+        )
+
+    def _fixture_transcript_state(self, *, fixture: object) -> object | None:
+        for state in np.asarray(getattr(fixture, "states", []), dtype=object).ravel():
+            if getattr(state, "x_class_", "") == _TRANSCRIPT_STATE_CLASS:
+                return state
+        return None
+
+    def _to_sequence_list(self, raw_values: object) -> list[str]:
+        raw = np.asarray(raw_values, dtype=object).ravel()
+        out: list[str] = []
+        for value in raw:
+            text = str(value)
+            if text and text != "[]":
+                out.append(text)
+        return out
+
+    def _aborted_transcripts_to_sequences(
+        self,
+        *,
+        aborted_transcripts: object,
+        transcription_unit_sequences: list[str],
+    ) -> list[str]:
+        if aborted_transcripts is None:
+            return []
+        matrix = np.asarray(aborted_transcripts)
+        if matrix.size == 0:
+            return []
+        matrix = np.atleast_2d(matrix)
+        out: list[str] = []
+        for row in matrix:
+            if row.size < 2:
+                continue
+            unit_idx = int(row[0]) - 1
+            seq_len = int(row[1])
+            if unit_idx < 0 or unit_idx >= len(transcription_unit_sequences):
+                continue
+            sequence = transcription_unit_sequences[unit_idx]
+            if seq_len <= 0:
+                continue
+            out.append(sequence[:seq_len])
+        return out
+
+    def _read_aborted_sequences(self, *, states: dict[str, Any]) -> tuple[list[str], bool]:
+        transcript_state = states.get("transcripts", {})
+        has_runtime_transcript_state = isinstance(transcript_state, dict)
+        if isinstance(transcript_state, dict):
+            seq_values = transcript_state.get("aborted_sequences", None)
+            if seq_values is None:
+                seq_values = transcript_state.get("abortedSequences", None)
+            if seq_values is not None:
+                return self._to_sequence_list(seq_values), has_runtime_transcript_state
+
+            aborted_transcripts = transcript_state.get("aborted_transcripts", None)
+            if aborted_transcripts is None:
+                aborted_transcripts = transcript_state.get("abortedTranscripts", None)
+            if aborted_transcripts is not None:
+                unit_sequences = transcript_state.get(
+                    "transcription_unit_sequences",
+                    self._fixture_transcription_unit_sequences,
+                )
+                return self._aborted_transcripts_to_sequences(
+                    aborted_transcripts=aborted_transcripts,
+                    transcription_unit_sequences=self._to_sequence_list(unit_sequences),
+                ), has_runtime_transcript_state
+
+        return list(self._fixture_aborted_sequences), has_runtime_transcript_state
+
+    def _apply_aborted_decay(
+        self,
+        *,
+        aborted_sequences: list[str],
+        substrate_counts: np.ndarray,
+    ) -> tuple[np.ndarray, list[str]]:
+        aborted_delta = np.zeros(len(self.substrate_wids), dtype=np.int64)
+        remaining_sequences: list[str] = []
+        for idx, sequence in enumerate(aborted_sequences):
+            substrate_cost = self._aborted_sequence_decay_reaction(sequence=sequence)
+            available = substrate_counts + aborted_delta.astype(np.float64)
+            if np.any(available < -substrate_cost.astype(np.float64)):
+                remaining_sequences.extend(aborted_sequences[idx:])
+                break
+            aborted_delta += substrate_cost
+        return aborted_delta, remaining_sequences
+
+    def _aborted_sequence_decay_reaction(self, *, sequence: str) -> np.ndarray:
+        value = np.zeros(len(self.substrate_wids), dtype=np.int64)
+        if self.substrate_indices_nmps.size >= 4:
+            sequence_upper = sequence.upper()
+            base_counts = (
+                sequence_upper.count("A"),
+                sequence_upper.count("C"),
+                sequence_upper.count("G"),
+                sequence_upper.count("U"),
+            )
+            for base_idx, count in zip(self.substrate_indices_nmps[:4], base_counts, strict=False):
+                value[int(base_idx)] = int(count)
+
+        hydrolysis = max(0, len(sequence) - 1)
+        if 0 <= self.substrate_index_water < value.size:
+            value[self.substrate_index_water] -= hydrolysis
+        if 0 <= self.substrate_index_hydrogen < value.size:
+            value[self.substrate_index_hydrogen] += hydrolysis
+        return value
 
 
 __all__ = ["RnaDecayLightProcess"]
