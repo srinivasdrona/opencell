@@ -148,7 +148,7 @@ def test_karr_dna_supercoiling_l2_replay_identity_per_tick(rng_seed: int) -> Non
                     vector=before_vectors[observable],
                     wids=wids_by_observable[observable],
                 )
-            for observable in ("enzymes", "boundEnzymes"):
+            for observable in ("enzymes", "boundEnzymes", "substrates"):
                 if observable in _OBSERVABLES:
                     overlay_trace_after_hint(
                         state=state,

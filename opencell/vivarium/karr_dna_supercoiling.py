@@ -426,6 +426,20 @@ class KarrDNASupercoilingProcess(Process):
         if substrate_delta:
             update["substrates"] = substrate_delta
 
+        substrates_next_raw = hint.get("substrates_next", {})
+        substrates_next = substrates_next_raw if isinstance(substrates_next_raw, dict) else {}
+        if substrates_next:
+            substrates_now_raw = states.get("substrates", {})
+            substrates_now = substrates_now_raw if isinstance(substrates_now_raw, dict) else {}
+            hint_delta: dict[str, float] = {}
+            for wid in self.substrate_wids:
+                now = float(substrates_now.get(wid, 0.0))
+                after = float(substrates_next.get(wid, now))
+                d = after - now
+                if d != 0.0:
+                    hint_delta[wid] = float(d)
+            update["substrates"] = hint_delta
+
         # Binding/release deltas are replay-only and intentionally sourced from
         # the harness hint surface rather than reimplementing MATLAB RNG paths.
         self._emit_hint_delta(
