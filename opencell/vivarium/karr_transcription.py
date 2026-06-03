@@ -595,6 +595,12 @@ class KarrTranscriptionProcess(Process):
         bound_deltas = self._bound_enzyme_deltas_from_hint(states)
         if bound_deltas:
             update["boundEnzymes"] = bound_deltas
+            # Mass conservation: every polymerase that enters the bound pool
+            # must leave the free pool (and vice versa). Without this the
+            # `enzymes` channel drifts vs the karr trace at every binding
+            # transition (e.g. tick=26: 7 RNA polymerases bind, free pool
+            # must drop by 7).
+            update["enzymes"] = {wid: -delta for wid, delta in bound_deltas.items()}
         if self.parameters["write_substrate_deltas"]:
             effective_bound_counts = self._effective_bound_enzyme_counts(states)
             substrate_deltas = self._simulate_polymerization_substrate_deltas(
