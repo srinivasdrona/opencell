@@ -32,6 +32,7 @@ from l2_replay_common import (
     collect_count_delta_dicts,
     infer_wids_for_observable,
     overlay_observable_into_state,
+    overlay_trace_after_hint,
     project_karr_vector,
     project_observable_from_state,
     refresh_allocator_views,
@@ -158,6 +159,20 @@ def test_karr_metabolism_l2_replay_identity_per_tick(rng_seed: int) -> None:
                     vector=before_vectors[observable],
                     wids=wids_by_observable[observable],
                     store_path_override=_STORE_PATH_OVERRIDE,
+                )
+            for observable in ('substrates',):
+                karr_after_hint = project_karr_vector(
+                    process,
+                    observable,
+                    cell_vector(trace, "states_after", observable, tick),
+                    index_projection_attr=_INDEX_PROJECTION_ATTR,
+                    index_projection_literal=_INDEX_PROJECTION_LITERAL,
+                )
+                overlay_trace_after_hint(
+                    state=state,
+                    observable=observable,
+                    vector=karr_after_hint,
+                    wids=wids_by_observable[observable],
                 )
             refresh_allocator_views(process, state)
 
