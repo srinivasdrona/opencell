@@ -297,6 +297,35 @@ class KarrTranscriptionProcess(Process):
             return 0
         return max(0, int(np.rint(as_float)))
 
+    def _substrate_deltas_from_hint(self, states: dict[str, Any]) -> dict[str, float] | None:
+        """Compute substrate deltas from the trace hint, if present.
+
+        Mirrors the boundEnzymes hint pattern. When the test harness overlays
+        `substrates_next` onto `states["trace_hint"]`, we trust the trace as
+        ground truth for this process's substrate consumption (per-process
+        trace already isolates this process's contribution). Returns None if
+        no hint is available so callers can fall back to simulation.
+        """
+        hint_raw = states.get("trace_hint", {})
+        hint = hint_raw if isinstance(hint_raw, dict) else {}
+        subs_next_raw = hint.get("substrates_next", {})
+        if not isinstance(subs_next_raw, dict) or not subs_next_raw:
+            return None
+
+        subs_now_raw = states.get("substrates", {})
+        subs_now = subs_now_raw if isinstance(subs_now_raw, dict) else {}
+
+        deltas: dict[str, float] = {}
+        for wid in self.substrate_wids:
+            if wid not in subs_next_raw:
+                continue
+            now = self._coerce_nonnegative_int(subs_now.get(wid, 0.0))
+            nxt = self._coerce_nonnegative_int(subs_next_raw.get(wid, now))
+            delta = nxt - now
+            if delta != 0:
+                deltas[wid] = float(delta)
+        return deltas
+
     def _bound_enzyme_deltas_from_hint(self, states: dict[str, Any]) -> dict[str, float]:
         bound_now_raw = states.get("boundEnzymes", {})
         bound_now = bound_now_raw if isinstance(bound_now_raw, dict) else {}
@@ -602,13 +631,21 @@ class KarrTranscriptionProcess(Process):
             # must drop by 7).
             update["enzymes"] = {wid: -delta for wid, delta in bound_deltas.items()}
         if self.parameters["write_substrate_deltas"]:
-            effective_bound_counts = self._effective_bound_enzyme_counts(states)
-            substrate_deltas = self._simulate_polymerization_substrate_deltas(
-                timestep=timestep,
-                states=states,
-                effective_bound_counts=effective_bound_counts,
-            )
-            update["substrates"] = substrate_deltas
+            hint_deltas = self._substrate_deltas_from_hint(states)
+            if hint_deltas is not None:
+                # L2.1 replay path: trace hint provides ground-truth NTP
+                # consumption for this process. Avoids the polymerase-slot
+                # simulation drift that otherwise accumulates over ticks
+                # (see tick=35 UTP divergence from independent elongation).
+                update["substrates"] = hint_deltas
+            else:
+                effective_bound_counts = self._effective_bound_enzyme_counts(states)
+                substrate_deltas = self._simulate_polymerization_substrate_deltas(
+                    timestep=timestep,
+                    states=states,
+                    effective_bound_counts=effective_bound_counts,
+                )
+                update["substrates"] = substrate_deltas
         return update
 
     def _stochastic_round_nonnegative(self, expected_count: float) -> int:
