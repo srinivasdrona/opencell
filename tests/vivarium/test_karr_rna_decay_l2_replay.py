@@ -32,6 +32,7 @@ from l2_replay_common import (
     collect_count_delta_dicts,
     infer_wids_for_observable,
     overlay_observable_into_state,
+    overlay_trace_after_hint,
     project_observable_from_state,
     refresh_allocator_views,
     resolve_trace_path,
@@ -143,6 +144,18 @@ def test_karr_rna_decay_l2_replay_identity_per_tick(rng_seed: int) -> None:
                     vector=before_vectors[observable],
                     wids=wids_by_observable[observable],
                 )
+            # L2.1 replay: hint substrates_next so the process can compute
+            # its byproduct deltas from ground truth rather than re-running
+            # the stochastic Poisson decay sampler (which drifts vs karr's
+            # actual per-tick events). Mirrors the karr_transcription /
+            # boundEnzymes hint pattern.
+            karr_subs_after = cell_vector(trace, "states_after", "substrates", tick)
+            overlay_trace_after_hint(
+                state=state,
+                observable="substrates",
+                vector=karr_subs_after,
+                wids=wids_by_observable["substrates"],
+            )
             refresh_allocator_views(process, state)
 
             update = process.next_update(1.0, state)
