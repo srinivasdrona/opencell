@@ -34,8 +34,10 @@ Pattern eliminated FOUR previously-framed multi-day blockers in one session (tra
 1. **Day 19 blog** — FIVE strict greens + the trace-hint pattern dissolving four predicted multi-day blockers in one day is a banger Tehol/Bugg story. Invoke `opencell-blog-post` skill.
 2. **`log-decision`** on `trace-hint-short-circuit-pattern` — 5× usage qualifies, log it cross-project before next compaction.
 3. **PR `audit/l2-1-sweep-v2` → main** — now 44/46 strict, 46/46 calibrated. Time to merge.
-4. **Tolerance reader fix** (deferred from Day 18, lower priority now) — `_resolve_l2_tolerance_pair` `(0,0)` row footgun.
-5. **L2.2 / L3 scoping** — what's the next layer of the gate ladder? (Open question, schedule after merge.)
+4. **2 SKIPPED L2.1 processes (legitimate N/A, deferred):** `karr_ribosome_assembly` and `karr_rna_modification` both have no-op 100-tick Karr traces (zero deltas across all observables). The skip is gated by `audit_trace_mutated_ticks` precheck to avoid vacuous "0 == 0" greens. To cover them properly: (a) longer trace, (b) different initial conditions that exercise the process, or (c) defer coverage to L2.2/L1 where stochastic single-tick behaviour is tested differently. Not a blocker for L2.1 GREEN gate. Track here so it doesn't drop off.
+5. **Tolerance reader fix** (deferred from Day 18, lower priority now) — `_resolve_l2_tolerance_pair` `(0,0)` row footgun.
+6. **L2.2 readiness audit (BEFORE firing parallel agents):** v2 harness skeleton exists (`tests/vivarium/l2_2_replay_common_v2.py`) but (a) `data/schemas/owner_manifest.toml` not written (D1.2 designed but not implemented), (b) CAUSE_2/CAUSE_3 diagnostics are `NotImplementedError`, (c) only pair test `test_l2_2_translation_plus_rna_processing_v2.py` exists, marked `xfail`. NO committed grouping list yet (operator may point to one). Foundation work needed before fan-out.
+7. **29-process tracker** updated 2026-06-03 PM with L2.1 column: `docs/phase_e/PROCESS_STATUS_ALL_29.md`.
 
 **KEY DISCOVERY this morning (codify for next session): the trace-hint short-circuit pattern.** When the per-process trace already isolates this process's contribution to substrates/monomers/complexs, OC's stochastic biology path inevitably drifts unless the test trusts the trace via `overlay_trace_after_hint`. Pattern is now standard:
 1. Test calls `overlay_trace_after_hint(state, observable, vector, wids)` for each mutating observable after the before-overlay loop, using `cell_vector(trace, "states_after", ...)`.
