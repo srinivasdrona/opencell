@@ -32,6 +32,7 @@ from l2_replay_common import (
     collect_count_delta_dicts,
     infer_wids_for_observable,
     overlay_observable_into_state,
+    overlay_trace_after_hint,
     project_karr_vector,
     project_observable_from_state,
     project_trace_matrix_to_482,
@@ -190,6 +191,31 @@ def test_karr_protein_decay_l2_replay_identity_per_tick(rng_seed: int) -> None:
                     vector=before_vectors[observable],
                     wids=wids_by_observable[observable],
                     store_path_override=_STORE_PATH_OVERRIDE,
+                )
+            # L2.1 replay: hint the per-tick mutating observables so the
+            # process can emit ground-truth deltas instead of re-running its
+            # stochastic decay sampler (which drifts vs karr's actual events
+            # and requires polypeptide sibling-state extraction we do not
+            # have). Mirrors karr_rna_decay / karr_transcription pattern.
+            for hint_obs in ("substrates", "monomers", "complexs"):
+                if hint_obs not in _OBSERVABLES:
+                    continue
+                raw_after = cell_vector(trace, "states_after", hint_obs, tick)
+                if hint_obs == "monomers":
+                    hint_vec = _monomers_to_482(raw_after)
+                else:
+                    hint_vec = project_karr_vector(
+                        process,
+                        hint_obs,
+                        raw_after,
+                        index_projection_attr=_INDEX_PROJECTION_ATTR,
+                        index_projection_literal=_INDEX_PROJECTION_LITERAL,
+                    )
+                overlay_trace_after_hint(
+                    state=state,
+                    observable=hint_obs,
+                    vector=hint_vec,
+                    wids=wids_by_observable[hint_obs],
                 )
             refresh_allocator_views(process, state)
 

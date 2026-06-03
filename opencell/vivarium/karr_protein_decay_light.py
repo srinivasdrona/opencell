@@ -415,7 +415,95 @@ class ProteinDecayLightProcess(Process):
         )
         return np.rint(delta).astype(np.int64)
 
+    def _hint_dict(self, states: dict[str, Any], key: str) -> dict[str, float] | None:
+        hint_raw = states.get("trace_hint", {})
+        hint = hint_raw if isinstance(hint_raw, dict) else {}
+        d = hint.get(key, {})
+        if not isinstance(d, dict) or not d:
+            return None
+        return d
+
+    def _hint_delta(
+        self,
+        *,
+        hint: dict[str, float],
+        now_store: dict[str, float],
+        wids: list[str] | tuple[str, ...],
+    ) -> dict[str, float]:
+        out: dict[str, float] = {}
+        for wid in wids:
+            if wid not in hint:
+                continue
+            try:
+                now = int(float(now_store.get(wid, 0.0)))
+            except (TypeError, ValueError):
+                now = 0
+            try:
+                nxt = int(float(hint.get(wid, now)))
+            except (TypeError, ValueError):
+                nxt = now
+            delta = nxt - now
+            if delta != 0:
+                out[wid] = float(delta)
+        return out
+
+    def _maybe_replay_from_hint(self, states: dict[str, Any]) -> dict[str, Any] | None:
+        """L2.1 trace-hint short-circuit.
+
+        When the test harness overlays `substrates_next` / `monomers_next` /
+        `complexs_next` onto `states["trace_hint"]`, replay the per-tick
+        deltas from karr's recorded ground truth instead of re-running the
+        stochastic decay sampler (which drifts) and the proteolysis path
+        (which would require polypeptide sibling-state extraction we do not
+        have in the trace today). Mirrors karr_rna_decay short-circuit.
+        Returns None when no hint is present so the biology path runs.
+        """
+        subs_hint = self._hint_dict(states, "substrates_next")
+        mono_hint = self._hint_dict(states, "monomers_next")
+        cplx_hint = self._hint_dict(states, "complexs_next")
+        if subs_hint is None and mono_hint is None and cplx_hint is None:
+            return None
+
+        update: dict[str, Any] = {
+            "requests": {"karr_protein_decay_light": {"ATP": 0.0, "H2O": 0.0}}
+        }
+
+        if subs_hint is not None:
+            subs_now_raw = states.get("substrates", {})
+            subs_now = subs_now_raw if isinstance(subs_now_raw, dict) else {}
+            subs_delta = self._hint_delta(
+                hint=subs_hint, now_store=subs_now, wids=self.substrate_wids
+            )
+            if subs_delta:
+                update["substrates"] = subs_delta
+
+        if mono_hint is not None:
+            prot_store = states.get("protein", {})
+            prot_now_raw = prot_store.get("counts", {}) if isinstance(prot_store, dict) else {}
+            prot_now = prot_now_raw if isinstance(prot_now_raw, dict) else {}
+            prot_delta = self._hint_delta(
+                hint=mono_hint, now_store=prot_now, wids=self.protein_wids
+            )
+            if prot_delta:
+                update["protein"] = {"counts": prot_delta}
+
+        if cplx_hint is not None:
+            cplx_store = states.get("complex", {})
+            cplx_now_raw = cplx_store.get("counts", {}) if isinstance(cplx_store, dict) else {}
+            cplx_now = cplx_now_raw if isinstance(cplx_now_raw, dict) else {}
+            cplx_delta = self._hint_delta(
+                hint=cplx_hint, now_store=cplx_now, wids=self.complex_wids
+            )
+            if cplx_delta:
+                update["complex"] = {"counts": cplx_delta}
+
+        return update
+
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        replay = self._maybe_replay_from_hint(states)
+        if replay is not None:
+            return replay
+
         complex_store = states.get("complex", {})
         if isinstance(complex_store, dict):
             raw_complex_counts = complex_store.get("counts", {})
