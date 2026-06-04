@@ -43,11 +43,18 @@ from l2_replay_common import (
     refresh_allocator_views,
     resolve_trace_path,
 )
+from opencell.vivarium.karr_protein_processing_i import KarrProteinProcessingIProcess
+from opencell.vivarium.karr_protein_processing_ii import KarrProteinProcessingIIProcess
 from opencell.vivarium.karr_rna_processing import KarrRNAProcessingProcess
 from opencell.vivarium.karr_translation_v3 import KarrTranslationV3Process
 
 
-_COMPOSITION_ORDER_V2 = ("Translation", "RNAProcessing")
+_COMPOSITION_ORDER_V2 = (
+    "Translation",
+    "RNAProcessing",
+    "ProteinProcessingI",
+    "ProteinProcessingII",
+)
 
 CAUSE_1_WID_SET_MISMATCH = "CAUSE_1_WID_SET_MISMATCH"
 CAUSE_2_ORACLE_INJECTION_MISALIGNMENT = "CAUSE_2_ORACLE_INJECTION_MISALIGNMENT"
@@ -121,6 +128,30 @@ _PROCESS_SPECS: dict[str, _ProcessSpec] = {
             "boundEnzymes": "enzyme_wids",
             "processedRNAs": "processed_rna_wids",
             "unprocessedRNAs": "unprocessed_rna_wids",
+        },
+    ),
+    "ProteinProcessingI": _ProcessSpec(
+        process_cls=KarrProteinProcessingIProcess,
+        observables=("substrates", "enzymes", "boundEnzymes", "processedMonomers", "unprocessedMonomers"),
+        pass_through=frozenset({"boundEnzymes", "enzymes"}),
+        observable_to_wids_attr={
+            "substrates": "substrate_wids",
+            "enzymes": "enzyme_wids",
+            "boundEnzymes": "enzyme_wids",
+            "processedMonomers": "processed_monomer_wids",
+            "unprocessedMonomers": "unprocessed_monomer_wids",
+        },
+    ),
+    "ProteinProcessingII": _ProcessSpec(
+        process_cls=KarrProteinProcessingIIProcess,
+        observables=("substrates", "enzymes", "boundEnzymes", "processedMonomers", "unprocessedMonomers"),
+        pass_through=frozenset({"boundEnzymes", "enzymes"}),
+        observable_to_wids_attr={
+            "substrates": "substrate_wids",
+            "enzymes": "enzyme_wids",
+            "boundEnzymes": "enzyme_wids",
+            "processedMonomers": "processed_monomer_wids",
+            "unprocessedMonomers": "unprocessed_monomer_wids",
         },
     ),
 }
