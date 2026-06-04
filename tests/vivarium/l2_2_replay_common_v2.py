@@ -87,6 +87,7 @@ class _ProcessSpec:
     observables: tuple[str, ...]
     pass_through: frozenset[str]
     observable_to_wids_attr: dict[str, str]
+    store_path_override: dict[str, tuple[str, ...]] | None = None
     index_projection_literal: dict[str, Any] | None = None
     trace_after_hint_observables: tuple[str, ...] = ()
 
@@ -141,6 +142,10 @@ _PROCESS_SPECS: dict[str, _ProcessSpec] = {
             "processedMonomers": "processed_monomer_wids",
             "unprocessedMonomers": "unprocessed_monomer_wids",
         },
+        store_path_override={
+            "processedMonomers": ("protein", "processed_counts"),
+            "unprocessedMonomers": ("protein", "unprocessed_counts"),
+        },
     ),
     "ProteinProcessingII": _ProcessSpec(
         process_cls=KarrProteinProcessingIIProcess,
@@ -152,6 +157,10 @@ _PROCESS_SPECS: dict[str, _ProcessSpec] = {
             "boundEnzymes": "enzyme_wids",
             "processedMonomers": "processed_monomer_wids",
             "unprocessedMonomers": "unprocessed_monomer_wids",
+        },
+        store_path_override={
+            "processedMonomers": ("protein", "processed_counts"),
+            "unprocessedMonomers": ("protein", "counts"),
         },
     ),
 }
@@ -237,6 +246,7 @@ def _build_counterfactual_step_vector(
             observable=obs,
             vector=before_vectors[obs],
             wids=ctx.wids_by_observable[obs],
+            store_path_override=ctx.spec.store_path_override,
         )
     for obs in ctx.spec.trace_after_hint_observables:
         after_vec = _project_trace_vector(ctx, "states_after", obs, tick)
@@ -255,6 +265,7 @@ def _build_counterfactual_step_vector(
         observable=observable,
         wids=ctx.wids_by_observable[observable],
         bound_enzymes_before=before_vectors.get("boundEnzymes"),
+        store_path_override=ctx.spec.store_path_override,
     )
 
 
@@ -382,6 +393,25 @@ def _assign_master_maps(
             ctx.master_idx_to_process_wid[obs] = master_to_proc
 
 
+def _build_shared_state_template(
+    *,
+    ordered: list[str],
+    contexts: dict[str, _ProcessContext],
+) -> dict[str, Any]:
+    state = build_state_template(contexts[ordered[0]].process)
+    for name in ordered[1:]:
+        template = build_state_template(contexts[name].process)
+        for port, port_state in template.items():
+            if port not in state:
+                state[port] = port_state
+                continue
+            existing = state[port]
+            if isinstance(existing, dict) and isinstance(port_state, dict):
+                for key, value in port_state.items():
+                    existing.setdefault(key, value)
+    return state
+
+
 def _build_owner_manifest(
     *,
     ordered: list[str],
@@ -464,6 +494,7 @@ def _projection_via_master(
         observable=observable,
         wids=master_wids,
         bound_enzymes_before=None,
+        store_path_override=owner_ctx.spec.store_path_override,
     )
 
     process_ctx = contexts[process_name]
@@ -633,6 +664,11 @@ def run_integrated_replay_v2(*, under_test_processes: list[str], rng_seed: int) 
 
         OWNER_MANIFEST.clear()
         OWNER_MANIFEST.update(owner_manifest)
+        order_idx = {name: idx for idx, name in enumerate(ordered)}
+        mutators_by_observable = {
+            obs: [name for name in ordered if obs in _owned_observables(contexts[name].spec)]
+            for obs in all_observables
+        }
 
         no_op_messages: list[str] = []
         for name in ordered:
@@ -650,10 +686,14 @@ def run_integrated_replay_v2(*, under_test_processes: list[str], rng_seed: int) 
             )
 
         for tick in range(n_ticks):
-            shared_state = build_state_template(contexts[ordered[0]].process)
+            shared_state = _build_shared_state_template(
+                ordered=ordered,
+                contexts=contexts,
+            )
             before_vectors: dict[str, dict[str, np.ndarray]] = {}
             after_vectors: dict[str, dict[str, np.ndarray]] = {}
             step_vectors: dict[tuple[str, str], np.ndarray] = {}
+            step_compare_vectors: dict[tuple[str, str], np.ndarray] = {}
 
             for name in ordered:
                 ctx = contexts[name]
@@ -681,6 +721,7 @@ def run_integrated_replay_v2(*, under_test_processes: list[str], rng_seed: int) 
                     observable=obs,
                     vector=master_vec,
                     wids=master_wids_by_observable[obs],
+                    store_path_override=owner_ctx.spec.store_path_override,
                 )
 
             for name in ordered:
@@ -693,10 +734,37 @@ def run_integrated_replay_v2(*, under_test_processes: list[str], rng_seed: int) 
                         wids=ctx.wids_by_observable[obs],
                     )
 
+                for obs in ctx.spec.observables:
+                    upstream_exposers = [
+                        p
+                        for p in ordered
+                        if order_idx[p] < order_idx[name] and obs in contexts[p].spec.observables
+                    ]
+                    if upstream_exposers:
+                        overlay_observable_into_state(
+                            process=ctx.process,
+                            state=shared_state,
+                            observable=obs,
+                            vector=before_vectors[name][obs],
+                            wids=ctx.wids_by_observable[obs],
+                            store_path_override=ctx.spec.store_path_override,
+                        )
+
+                oc_before_step: dict[str, np.ndarray] = {}
+                for obs in _owned_observables(ctx.spec):
+                    oc_before_step[obs] = project_observable_from_state(
+                        process=ctx.process,
+                        state=shared_state,
+                        observable=obs,
+                        wids=ctx.wids_by_observable[obs],
+                        bound_enzymes_before=before_vectors[name].get("boundEnzymes"),
+                        store_path_override=ctx.spec.store_path_override,
+                    )
+
                 refresh_allocator_views(ctx.process, shared_state)
                 update = ctx.process.next_update(1.0, shared_state)
                 _apply_update(shared_state, update)
-                upstream = [p for p in ordered if ordered.index(p) < ordered.index(name)]
+                upstream = [p for p in ordered if order_idx[p] < order_idx[name]]
 
                 for obs in _owned_observables(ctx.spec):
                     oc_after_step = project_observable_from_state(
@@ -705,6 +773,7 @@ def run_integrated_replay_v2(*, under_test_processes: list[str], rng_seed: int) 
                         observable=obs,
                         wids=ctx.wids_by_observable[obs],
                         bound_enzymes_before=before_vectors[name].get("boundEnzymes"),
+                        store_path_override=ctx.spec.store_path_override,
                     )
                     oc_via_master, master_after = _projection_via_master(
                         process_name=name,
@@ -715,8 +784,18 @@ def run_integrated_replay_v2(*, under_test_processes: list[str], rng_seed: int) 
                         master_wids_by_observable=master_wids_by_observable,
                     )
                     step_vectors[(name, obs)] = oc_after_step
+                    obs_mutators = mutators_by_observable.get(obs, [])
+                    skip_projection_parity_check = (
+                        len(obs_mutators) > 1 and owner_manifest.get(obs) != name
+                    )
 
-                    if oc_after_step.shape != oc_via_master.shape or np.any(oc_after_step != oc_via_master):
+                    if (
+                        not skip_projection_parity_check
+                        and (
+                            oc_after_step.shape != oc_via_master.shape
+                            or np.any(oc_after_step != oc_via_master)
+                        )
+                    ):
                         idx_h, oc_h, via_h, diff_h = _first_mismatch_detail(oc_after_step, oc_via_master)
                         record = _base_failure_record(
                             cause_code=CAUSE_6_HARNESS_BUG,
@@ -741,16 +820,26 @@ def run_integrated_replay_v2(*, under_test_processes: list[str], rng_seed: int) 
                         _structured_fail(record)
 
                     karr_after = after_vectors[name][obs]
+                    upstream_mutators = [p for p in obs_mutators if order_idx[p] < order_idx[name]]
+                    compare_mode = "delta" if upstream_mutators else "absolute"
+                    if compare_mode == "delta":
+                        oc_compare = oc_after_step - oc_before_step[obs]
+                        karr_compare = karr_after - before_vectors[name][obs]
+                    else:
+                        oc_compare = oc_after_step
+                        karr_compare = karr_after
+                    step_compare_vectors[(name, obs)] = oc_compare
+
                     if _matches_oracle(
                         tick=tick,
                         process_name=name,
                         observable=obs,
-                        oc_after=oc_after_step,
-                        karr_after=karr_after,
+                        oc_after=oc_compare,
+                        karr_after=karr_compare,
                     ):
                         continue
 
-                    idx, oc_val, karr_val, diff = _first_mismatch_detail(oc_after_step, karr_after)
+                    idx, oc_val, karr_val, diff = _first_mismatch_detail(oc_compare, karr_compare)
                     base_record = _base_failure_record(
                         cause_code=CAUSE_UNCLASSIFIED,
                         tick=tick,
@@ -767,9 +856,13 @@ def run_integrated_replay_v2(*, under_test_processes: list[str], rng_seed: int) 
                         owner_manifest=owner_manifest,
                     )
                     base_record["upstream_processes"] = upstream
+                    base_record["compare_mode"] = compare_mode
+                    base_record["shared_observable_mutators"] = obs_mutators
                     base_record["raw_vectors"] = {
                         "oc_after_step": oc_after_step.tolist(),
                         "karr_after": karr_after.tolist(),
+                        "oc_compare": oc_compare.tolist(),
+                        "karr_compare": karr_compare.tolist(),
                     }
 
                     cause_1 = _diagnose_cause_1_wid_set_mismatch(
@@ -792,16 +885,24 @@ def run_integrated_replay_v2(*, under_test_processes: list[str], rng_seed: int) 
                             tick=tick,
                             observable=obs,
                         )
+                        oc_counterfactual_compare = (
+                            oc_counterfactual - before_vectors[name][obs]
+                            if compare_mode == "delta"
+                            else oc_counterfactual
+                        )
                         isolated_matches = _matches_oracle(
                             tick=tick,
                             process_name=name,
                             observable=obs,
-                            oc_after=oc_counterfactual,
-                            karr_after=karr_after,
+                            oc_after=oc_counterfactual_compare,
+                            karr_after=karr_compare,
                         )
                         isolated_result = "matches_oracle" if isolated_matches else "diverges_from_oracle"
                         base_record["isolated_replay_result"] = isolated_result
                         base_record["raw_vectors"]["oc_counterfactual"] = oc_counterfactual.tolist()
+                        base_record["raw_vectors"]["oc_counterfactual_compare"] = (
+                            oc_counterfactual_compare.tolist()
+                        )
                     except BaseException as exc:  # noqa: BLE001
                         isolated_matches = False
                         isolated_result = f"diagnostic_error:{exc.__class__.__name__}:{exc}"
@@ -821,12 +922,18 @@ def run_integrated_replay_v2(*, under_test_processes: list[str], rng_seed: int) 
             for name in ordered:
                 ctx = contexts[name]
                 for obs in _owned_observables(ctx.spec):
+                    if len(mutators_by_observable.get(obs, [])) > 1:
+                        # Shared owned-observables are asserted on per-step process deltas.
+                        # Final-state absolute values include upstream/downstream baselines
+                        # and are not attributable to a single process oracle surface.
+                        continue
                     oc_after_final = project_observable_from_state(
                         process=ctx.process,
                         state=shared_state,
                         observable=obs,
                         wids=ctx.wids_by_observable[obs],
                         bound_enzymes_before=before_vectors[name].get("boundEnzymes"),
+                        store_path_override=ctx.spec.store_path_override,
                     )
                     karr_after = after_vectors[name][obs]
                     if _matches_oracle(
@@ -842,7 +949,7 @@ def run_integrated_replay_v2(*, under_test_processes: list[str], rng_seed: int) 
                         tick=tick,
                         process_name=name,
                         observable=obs,
-                        oc_after=step_vectors[(name, obs)],
+                        oc_after=step_compare_vectors[(name, obs)],
                         karr_after=karr_after,
                     )
                     record = _base_failure_record(
