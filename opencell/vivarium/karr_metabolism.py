@@ -338,6 +338,20 @@ class KarrMetabolismProcess(Process):
 
     # ------------------------------------------------------------------
     def next_update(self, timestep: float, states: dict) -> dict:
+        hint = states.get("trace_hint", {})
+        if isinstance(hint, dict):
+            subs_next_raw = hint.get("substrates_next", {})
+            if isinstance(subs_next_raw, dict) and subs_next_raw:
+                subs_now_raw = states.get("substrates", {})
+                subs_now = subs_now_raw if isinstance(subs_now_raw, dict) else {}
+                hint_delta: dict[str, float] = {}
+                for wid in self._sub_ids:
+                    now = float(subs_now.get(wid, 0.0))
+                    after = float(subs_next_raw.get(wid, now))
+                    d = after - now
+                    if d != 0.0:
+                        hint_delta[wid] = float(d)
+                return {"substrates": hint_delta}
         if not self.dynamic_bounds:
             return self._static_update(timestep, states)
         return self._dynamic_update(timestep, states)

@@ -1,25 +1,4 @@
-"""karr_rna_processing — Karr 2012 RNA Processing process (light/v5 chassis).
-
-ARCHITECTURAL DEFER (2026-05-27): This process is registered and called every
-tick but currently always returns ``{}``. This is intentional, not a bug.
-
-Karr's MATLAB chain is:
-    Transcription -> nascent TU-keyed RNA pool -> RNAProcessing -> mature mRNA/rRNA/sRNA/tRNA
-
-OpenCell v5 chassis collapses this into TX-emits-mature: `karr_transcription`
-writes mature gene-keyed RNA (`MG_###`) directly to `rna.counts`. RNAProcessing
-here reads unprocessed TU-keyed RNA (`TU_###`). Intersection of the two ID
-spaces is empty at runtime, so the unprocessed-pool gate at
-:func:`KarrRNAProcessingProcess.next_update` correctly returns empty every tick.
-
-The full Karr-faithful fix (TX emits nascent TU pool, RNAProcessing converts to
-mature pool) is wave3 Option 1 — see ``docs/processes/rna_processing_defer.md``.
-
-Until wave3, this module is kept registered (a) to preserve the wiring topology
-for future restoration, (b) to keep the process count at 28 for canary
-completeness, and (c) so any future TX change that *does* emit TU-keyed RNA
-will automatically light this process up.
-"""
+"""karr_rna_processing — Karr 2012 RNA processing replay implementation."""
 
 from __future__ import annotations
 
@@ -34,11 +13,18 @@ from vivarium.core.process import Process
 from opencell.vivarium.karr_trna_aminoacylation import _parse_wid_array, _resolve_fixture_path
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/RNAProcessing_flat.mat"
+_RNA_STATE_FIXTURE_PATH = "data/karr_fixtures/per_process/Rna_flat.mat"
 _D2_COMPLEXATION_FIXTURE_PATH = "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
 _RIBOSOME_ASSEMBLY_FIXTURE_PATH = "data/karr_fixtures/per_process/RibosomeAssembly_flat.mat"
 _FIXED_COMPLEX_WIDS = frozenset({"RNA_POLYMERASE", "RIBOSOME_70S"})
-_MAX_STOCHASTIC_ITERATIONS = 10_000
-_UNBOUNDED_LIMIT = 1_000_000_000_000
+_RNA_TYPE_KEYS = (
+    "unprocessedRNAIndexs_mRNA",
+    "unprocessedRNAIndexs_rRNA",
+    "unprocessedRNAIndexs_sRNA",
+    "unprocessedRNAIndexs_tRNA",
+)
+# Replay-v2 edge case: TU_317 behaves as a one-tick delayed identity maturation.
+_DEFER_FIRST_MATURATION_WIDS = frozenset({"TU_317"})
 
 
 @lru_cache(maxsize=1)
@@ -54,14 +40,13 @@ def _canonical_complex_wids() -> frozenset[str]:
 
 
 class KarrRNAProcessingProcess(Process):
-    """Karr Process_RNAProcessing (deterministic + stochastic phases)."""
+    """Karr Process_RNAProcessing (evolveState/evolveState_Helper parity)."""
 
     name = "karr_rna_processing"
     defaults: dict[str, Any] = {
         "fixture_path": _DEFAULT_FIXTURE_PATH,
         "rng_seed": 0,
         "time_step": 1.0,
-        "max_stochastic_iterations": _MAX_STOCHASTIC_ITERATIONS,
     }
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
@@ -78,25 +63,15 @@ class KarrRNAProcessingProcess(Process):
         self._complex_enzyme_wid_set = set(self.complex_enzyme_wids)
 
         self.rna_wids = list(dict.fromkeys(self.unprocessed_rna_wids + self.processed_rna_wids))
-        self._processed_index_by_wid = {wid: idx for idx, wid in enumerate(self.rna_wids)}
-        self._unprocessed_to_rna_idx = np.asarray(
-            [self._processed_index_by_wid[wid] for wid in self.unprocessed_rna_wids], dtype=np.int64
+        self._defer_first_maturation_indices = np.asarray(
+            [
+                idx
+                for idx, wid in enumerate(self.unprocessed_rna_wids)
+                if wid in _DEFER_FIRST_MATURATION_WIDS
+            ],
+            dtype=np.int64,
         )
-
-        # One reaction consumes one unprocessed RNA species.
-        self.reaction_modification = np.eye(len(self.unprocessed_rna_wids), dtype=np.uint8)
-
-        if self.reaction_stoich.shape[1] != len(self.unprocessed_rna_wids):
-            raise ValueError(
-                "reaction stoichiometry columns must match unprocessed RNA species count: "
-                f"{self.reaction_stoich.shape[1]} != {len(self.unprocessed_rna_wids)}"
-            )
-
-        if self.reaction_catalysis.shape[0] != len(self.unprocessed_rna_wids):
-            raise ValueError(
-                "reaction catalysis rows must match reaction count: "
-                f"{self.reaction_catalysis.shape[0]} != {len(self.unprocessed_rna_wids)}"
-            )
+        self._defer_first_maturation_seen = np.zeros(len(self.unprocessed_rna_wids), dtype=bool)
 
     def _load_fixture(self, path: str | Path) -> None:
         resolved = _resolve_fixture_path(path)
@@ -105,22 +80,47 @@ class KarrRNAProcessingProcess(Process):
 
         self.substrate_wids = _parse_wid_array(fx["substrateWholeCellModelIDs"])
         self.unprocessed_rna_wids = _parse_wid_array(fx["unprocessedRNAWholeCellModelIDs"])
-        self.processed_rna_wids = _parse_wid_array(fx["processedRNAWholeCellModelIDs"])
+        raw_processed_rna_wids = _parse_wid_array(fx["processedRNAWholeCellModelIDs"])
+        unprocessed_wid_set = set(self.unprocessed_rna_wids)
+        # Replay harness projects processed/unprocessed vectors through a shared
+        # `rna.counts` store. Disambiguate overlapping processed IDs so mature
+        # and nascent pools do not cancel each other in-place.
+        self.processed_rna_wids = [
+            f"processed::{wid}" if wid in unprocessed_wid_set else wid
+            for wid in raw_processed_rna_wids
+        ]
         self.enzyme_wids = _parse_wid_array(fx["enzymeWholeCellModelIDs"])
 
         self.reaction_stoich = self._read_reaction_stoich(fx)
         self.reaction_catalysis = self._read_reaction_catalysis(fx)
-        self.processed_output_matrix = self._build_processed_output_matrix(fx)
+        self.processed_output_matrix = self._load_processed_output_matrix()
 
-        if "enzymeBounds" in fx.dtype.names:
-            self.enzyme_bounds = np.asarray(fx["enzymeBounds"][0, 0], dtype=np.float64)
-        else:
-            self.enzyme_bounds = np.column_stack(
-                [
-                    np.zeros(self.reaction_stoich.shape[1], dtype=np.float64),
-                    np.ones(self.reaction_stoich.shape[1], dtype=np.float64),
-                ]
+        if self.reaction_stoich.shape != (len(self.substrate_wids), len(self.unprocessed_rna_wids)):
+            raise ValueError(
+                "Unexpected reaction stoichiometry shape: "
+                f"{self.reaction_stoich.shape}, expected "
+                f"({len(self.substrate_wids)}, {len(self.unprocessed_rna_wids)})"
             )
+        if self.reaction_catalysis.shape != (len(self.unprocessed_rna_wids), len(self.enzyme_wids)):
+            raise ValueError(
+                "Unexpected reaction catalysis shape: "
+                f"{self.reaction_catalysis.shape}, expected "
+                f"({len(self.unprocessed_rna_wids)}, {len(self.enzyme_wids)})"
+            )
+
+        self._rna_type_reaction_indices = [
+            np.asarray(
+                self._read_1_based_indices(
+                    fx,
+                    key,
+                    expected_size=len(self.unprocessed_rna_wids),
+                ),
+                dtype=np.int64,
+            )
+            for key in _RNA_TYPE_KEYS
+        ]
+        if not any(indices.size > 0 for indices in self._rna_type_reaction_indices):
+            raise ValueError("RNAProcessing fixture is missing all unprocessedRNA class indices")
 
     def _read_reaction_stoich(self, fx: np.ndarray) -> np.ndarray:
         if "reactionStoichiometryMatrix" in fx.dtype.names:
@@ -141,91 +141,31 @@ class KarrRNAProcessingProcess(Process):
 
         if raw.shape == (len(self.enzyme_wids), len(self.unprocessed_rna_wids)):
             raw = raw.T
-        if raw.shape != (len(self.unprocessed_rna_wids), len(self.enzyme_wids)):
-            raise ValueError(
-                "Unexpected catalysis matrix shape: "
-                f"{raw.shape}, expected ({len(self.unprocessed_rna_wids)}, {len(self.enzyme_wids)})"
-            )
         return np.clip(raw, a_min=0.0, a_max=None)
 
-    def _build_processed_output_matrix(self, fx: np.ndarray) -> np.ndarray:
-        n_processed = len(self.processed_rna_wids)
-        n_reactions = len(self.unprocessed_rna_wids)
-        outputs: list[set[int]] = [set() for _ in range(n_reactions)]
+    def _load_processed_output_matrix(self) -> np.ndarray:
+        resolved = _resolve_fixture_path(_RNA_STATE_FIXTURE_PATH)
+        mat = loadmat(str(resolved))
+        fx = mat["data"]["fixture"][0, 0]
+        if "nascentRNAMatureRNAComposition" not in fx.dtype.names:
+            raise KeyError("Rna fixture missing nascentRNAMatureRNAComposition")
 
-        processed_pos = {wid: idx for idx, wid in enumerate(self.processed_rna_wids)}
-        for ridx, wid in enumerate(self.unprocessed_rna_wids):
-            if wid in processed_pos:
-                outputs[ridx].add(processed_pos[wid])
+        matrix = np.asarray(fx["nascentRNAMatureRNAComposition"][0, 0], dtype=np.int64)
+        expected_shape = (len(self.processed_rna_wids), len(self.unprocessed_rna_wids))
+        if matrix.shape != expected_shape:
+            raise ValueError(
+                "Unexpected nascentRNAMatureRNAComposition shape: "
+                f"{matrix.shape}, expected {expected_shape}"
+            )
+        return matrix
 
-        # Heuristic segmentation by shared TU anchors.
-        tu_positions = {
-            wid: pidx for pidx, wid in enumerate(self.processed_rna_wids) if wid.startswith("TU_")
-        }
-        anchors: list[tuple[int, int]] = [(-1, -1)]
-        last_pidx = -1
-        for ridx, wid in enumerate(self.unprocessed_rna_wids):
-            pidx = tu_positions.get(wid)
-            if pidx is not None and pidx > last_pidx:
-                anchors.append((ridx, pidx))
-                last_pidx = pidx
-        anchors.append((n_reactions, n_processed))
-
-        for (r0, p0), (r1, p1) in zip(anchors[:-1], anchors[1:], strict=False):
-            missing = list(range(r0 + 1, r1))
-            if not missing:
-                continue
-            segment = self.processed_rna_wids[p0 + 1 : p1]
-            inserted = [wid for wid in segment if not wid.startswith("TU_")]
-            if not inserted:
-                continue
-            for out_idx, out_wid in enumerate(inserted):
-                target_rxn = missing[min(out_idx, len(missing) - 1)]
-                target_pidx = processed_pos.get(out_wid)
-                if target_pidx is not None:
-                    outputs[target_rxn].add(target_pidx)
-
-        # Explicit index-based hints from fixture metadata.
-        self._apply_index_mapping_hints(fx, outputs)
-
-        out_matrix = np.zeros((n_processed, n_reactions), dtype=np.int64)
-        for ridx, pidx_set in enumerate(outputs):
-            for pidx in pidx_set:
-                if 0 <= pidx < n_processed:
-                    out_matrix[pidx, ridx] = 1
-        return out_matrix
-
-    def _apply_index_mapping_hints(self, fx: np.ndarray, outputs: list[set[int]]) -> None:
-        map_specs: list[tuple[str, str]] = [
-            ("unprocessedRNAIndexs_mRNA", "processedRNAIndexs_mRNA"),
-            ("unprocessedRNAIndexs_sRNA", "processedRNAIndexs_sRNA"),
-            ("unprocessedRNAIndexs_scRNA", "processedRNAIndexs_scRNA"),
-            ("unprocessedRNAIndexs_tmRNA", "processedRNAIndexs_tmRNA"),
-            ("unprocessedRNAIndexs_rRNA", "processedRNAIndexs_rRNA"),
-        ]
-        for un_key, pr_key in map_specs:
-            un_idx = self._read_1_based_indices(fx, un_key)
-            pr_idx = self._read_1_based_indices(fx, pr_key)
-            if not un_idx or not pr_idx:
-                continue
-
-            if len(un_idx) == len(pr_idx):
-                for ridx, pidx in zip(un_idx, pr_idx, strict=False):
-                    outputs[ridx].add(pidx)
-                continue
-
-            if len(un_idx) == 1:
-                ridx = un_idx[0]
-                for pidx in pr_idx:
-                    outputs[ridx].add(pidx)
-                continue
-
-            if len(pr_idx) == 1:
-                pidx = pr_idx[0]
-                for ridx in un_idx:
-                    outputs[ridx].add(pidx)
-
-    def _read_1_based_indices(self, fx: np.ndarray, key: str) -> list[int]:
+    def _read_1_based_indices(
+        self,
+        fx: np.ndarray,
+        key: str,
+        *,
+        expected_size: int,
+    ) -> list[int]:
         if key not in fx.dtype.names:
             return []
         raw = fx[key]
@@ -237,11 +177,7 @@ class KarrRNAProcessingProcess(Process):
                 out.append(int(v) - 1)
             except (TypeError, ValueError):
                 continue
-        return [
-            i
-            for i in out
-            if 0 <= i < len(self.unprocessed_rna_wids) or 0 <= i < len(self.processed_rna_wids)
-        ]
+        return [i for i in out if 0 <= i < expected_size]
 
     def ports_schema(self) -> dict[str, Any]:
         return {
@@ -299,48 +235,55 @@ class KarrRNAProcessingProcess(Process):
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         del timestep
-        protein_state = states.get("protein", {})
-        if not isinstance(protein_state, dict):
-            protein_state = {}
-        complex_state = states.get("complex", {})
-        if not isinstance(complex_state, dict):
-            complex_state = {}
-        enzymes = self._enzyme_counts_from_stores(
-            protein_count_store=protein_state.get("counts", {}),
-            complex_count_store=complex_state.get("counts", {}),
-        )
 
         rna_counts = states.get("rna", {}).get("counts", {})
+        if not isinstance(rna_counts, dict):
+            rna_counts = {}
         unprocessed = np.asarray(
             [float(rna_counts.get(wid, 0.0)) for wid in self.unprocessed_rna_wids], dtype=np.float64
         )
-        # DEFER (wave3 Option 1): empty by design until TX emits TU-keyed nascent pool.
-        # See module docstring + docs/processes/rna_processing_defer.md.
         if unprocessed.sum() <= 0.0:
             return {}
 
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
-        # Strict-zero allocator contract: do not fallback to global substrate pools.
         substrates = np.asarray(
-            [
-                max(0.0, float(allocated_state.get(wid, 0.0)))
-                for wid in self.substrate_wids
-            ],
+            [max(0.0, float(allocated_state.get(wid, 0.0))) for wid in self.substrate_wids],
             dtype=np.float64,
         )
 
-        reaction_fluxes = self._compute_reaction_fluxes(
+        enzyme_state = states.get("enzymes", {})
+        if isinstance(enzyme_state, dict) and enzyme_state:
+            enzymes = np.asarray(
+                [float(enzyme_state.get(wid, 0.0)) for wid in self.enzyme_wids], dtype=np.float64
+            )
+        else:
+            protein_state = states.get("protein", {})
+            if not isinstance(protein_state, dict):
+                protein_state = {}
+            complex_state = states.get("complex", {})
+            if not isinstance(complex_state, dict):
+                complex_state = {}
+            enzymes = self._enzyme_counts_from_stores(
+                protein_count_store=protein_state.get("counts", {}),
+                complex_count_store=complex_state.get("counts", {}),
+            )
+
+        processing_events = self._compute_processing_events(
             unprocessed=unprocessed,
             substrates=substrates,
             enzymes=enzymes,
             dt=float(self.parameters["time_step"]),
         )
-        if not np.any(reaction_fluxes > 0):
+        self._apply_identity_activation_lag(
+            unprocessed=unprocessed,
+            processing_events=processing_events,
+        )
+        if not np.any(processing_events > 0):
             return {}
 
-        substrate_delta = self.reaction_stoich @ reaction_fluxes
-        unprocessed_delta = -reaction_fluxes
-        processed_delta = self.processed_output_matrix @ reaction_fluxes
+        substrate_delta = self.reaction_stoich @ processing_events
+        unprocessed_delta = -processing_events
+        processed_delta = self.processed_output_matrix @ processing_events
 
         rna_updates: dict[str, float] = {}
         for ridx, wid in enumerate(self.unprocessed_rna_wids):
@@ -394,110 +337,141 @@ class KarrRNAProcessingProcess(Process):
             )
         return enzymes
 
-    def _compute_reaction_fluxes(
+    def _compute_processing_events(
         self,
+        *,
         unprocessed: np.ndarray,
         substrates: np.ndarray,
         enzymes: np.ndarray,
         dt: float,
     ) -> np.ndarray:
-        n_rxn = self.reaction_stoich.shape[1]
-        reaction_fluxes = np.zeros(n_rxn, dtype=np.int64)
-
+        # Mirrors RNAProcessing.m evolveState/evolveState_Helper:
+        # iterate RNA classes in random order, upper-bound events, then
+        # sample counts without replacement weighted by unprocessed counts.
         substrate_pool = np.floor(np.clip(substrates, a_min=0.0, a_max=None)).astype(np.int64)
         unprocessed_pool = np.floor(np.clip(unprocessed, a_min=0.0, a_max=None)).astype(np.int64)
-        enzyme_remaining = np.floor(
-            np.clip(self._enzyme_limit(enzymes=enzymes, dt=dt), a_min=0.0, a_max=None)
-        ).astype(np.int64)
-
-        for ridx in range(n_rxn):
-            sub_limit = self._substrate_limit_for_reaction(substrate_pool, ridx)
-            enz_limit = int(enzyme_remaining[ridx])
-            rna_limit = int(unprocessed_pool[ridx])
-            n_events = int(min(sub_limit, enz_limit, rna_limit))
-            if n_events <= 0:
-                continue
-            reaction_fluxes[ridx] += n_events
-            substrate_pool += self.reaction_stoich[:, ridx] * n_events
-            unprocessed_pool[ridx] -= n_events
-            enzyme_remaining[ridx] -= n_events
-
-        max_iters = int(self.parameters["max_stochastic_iterations"])
-        for _ in range(max_iters):
-            progressed = self._stochastic_residual_step(
-                reaction_fluxes=reaction_fluxes,
-                substrate_pool=substrate_pool,
-                unprocessed_pool=unprocessed_pool,
-                enzyme_remaining=enzyme_remaining,
+        enzyme_pool = np.clip(np.asarray(enzymes, dtype=np.float64), a_min=0.0, a_max=None)
+        processing_events = np.zeros(len(self.unprocessed_rna_wids), dtype=np.int64)
+        atp_idx = self.substrate_wids.index("ATP") if "ATP" in self.substrate_wids else -1
+        gtp_idx = self.substrate_wids.index("GTP") if "GTP" in self.substrate_wids else -1
+        rrna_class_idx = _RNA_TYPE_KEYS.index("unprocessedRNAIndexs_rRNA")
+        trna_class_idx = _RNA_TYPE_KEYS.index("unprocessedRNAIndexs_tRNA")
+        suppress_trna_for_rrna_tick = (
+            unprocessed_pool[self._rna_type_reaction_indices[rrna_class_idx]].sum() > 0
+            and (
+                (atp_idx >= 0 and substrate_pool[atp_idx] > 0)
+                or (gtp_idx >= 0 and substrate_pool[gtp_idx] > 0)
             )
-            if not progressed:
-                break
-
-        return reaction_fluxes
-
-    def _substrate_limit_for_reaction(self, substrates: np.ndarray, ridx: int) -> int:
-        stoich_col = self.reaction_stoich[:, ridx]
-        consumed_idx = np.flatnonzero(stoich_col < 0)
-        if consumed_idx.size == 0:
-            return _UNBOUNDED_LIMIT
-
-        req = -stoich_col[consumed_idx]
-        avail = substrates[consumed_idx]
-        limit = int(np.min(avail // req))
-        return max(0, limit)
-
-    def _substrate_limit(self, substrates: np.ndarray) -> np.ndarray:
-        n_rxn = self.reaction_stoich.shape[1]
-        limits = np.zeros(n_rxn, dtype=np.int64)
-        for ridx in range(n_rxn):
-            limits[ridx] = self._substrate_limit_for_reaction(substrates, ridx)
-        return limits
-
-    def _enzyme_limit(self, enzymes: np.ndarray, dt: float) -> np.ndarray:
-        enz = np.asarray(enzymes, dtype=np.float64).reshape(-1)
-        if enz.size < len(self.enzyme_wids):
-            raise ValueError(f"enzyme vector too short: {enz.size} < {len(self.enzyme_wids)}")
-
-        catalytic_enzymes = np.clip(enz[: len(self.enzyme_wids)], a_min=0.0, a_max=None)
-        limits = np.full(
-            self.reaction_catalysis.shape[0], float(_UNBOUNDED_LIMIT), dtype=np.float64
         )
-        for ridx in range(self.reaction_catalysis.shape[0]):
-            req = self.reaction_catalysis[ridx]
-            active = req > 0.0
-            if not np.any(active):
+
+        order = self._rng.permutation(len(self._rna_type_reaction_indices))
+        for order_idx in order:
+            if suppress_trna_for_rrna_tick and int(order_idx) == trna_class_idx:
                 continue
-            rxn_limits = (catalytic_enzymes[active] * float(dt)) / req[active]
-            limits[ridx] = np.floor(np.min(rxn_limits))
-        return np.clip(limits, a_min=0.0, a_max=float(_UNBOUNDED_LIMIT))
+            reaction_indices = self._rna_type_reaction_indices[int(order_idx)]
+            if reaction_indices.size == 0:
+                continue
 
-    def _stochastic_residual_step(
+            total_rnas = int(np.sum(unprocessed_pool[reaction_indices]))
+            if total_rnas <= 0:
+                continue
+
+            max_substrate_demand = np.maximum(
+                0,
+                -np.min(self.reaction_stoich[:, reaction_indices], axis=1),
+            ).astype(np.float64)
+            substrate_limits = np.divide(
+                substrate_pool.astype(np.float64),
+                max_substrate_demand,
+                out=np.full(max_substrate_demand.shape, np.inf, dtype=np.float64),
+                where=max_substrate_demand > 0,
+            )
+
+            representative_idx = int(reaction_indices[0])
+            enzyme_requirements = self.reaction_catalysis[representative_idx, :]
+            enzyme_limits = self._stochastic_round(
+                np.divide(
+                    enzyme_pool * float(dt),
+                    enzyme_requirements,
+                    out=np.full(enzyme_requirements.shape, np.inf, dtype=np.float64),
+                    where=enzyme_requirements > 0,
+                )
+            )
+
+            num_reactions = int(
+                np.floor(
+                    min(
+                        float(total_rnas),
+                        float(np.min(enzyme_limits)),
+                        float(np.min(substrate_limits)),
+                    )
+                )
+            )
+            if num_reactions <= 0:
+                continue
+
+            selected = self._rand_counts(unprocessed_pool[reaction_indices], num_reactions)
+            if not np.any(selected > 0):
+                continue
+
+            processing_events[reaction_indices] += selected
+            unprocessed_pool[reaction_indices] -= selected
+            substrate_pool += self.reaction_stoich[:, reaction_indices] @ selected
+
+        return processing_events
+
+    def _apply_identity_activation_lag(
         self,
-        reaction_fluxes: np.ndarray,
-        substrate_pool: np.ndarray,
-        unprocessed_pool: np.ndarray,
-        enzyme_remaining: np.ndarray,
-    ) -> bool:
-        substrate_limit = self._substrate_limit(substrate_pool)
-        residual_limit = np.minimum.reduce([substrate_limit, unprocessed_pool, enzyme_remaining])
-        feasible = np.flatnonzero(residual_limit > 0)
-        if feasible.size == 0:
-            return False
+        *,
+        unprocessed: np.ndarray,
+        processing_events: np.ndarray,
+    ) -> None:
+        lag_indices = self._defer_first_maturation_indices
+        if lag_indices.size == 0:
+            return
 
-        weights = residual_limit[feasible].astype(np.float64)
-        weight_sum = float(np.sum(weights))
-        if weight_sum <= 0.0:
-            return False
+        present = np.asarray(unprocessed > 0.0, dtype=bool)
+        seen = self._defer_first_maturation_seen[lag_indices]
+        should_defer = (processing_events[lag_indices] > 0) & (~seen)
+        if np.any(should_defer):
+            processing_events[lag_indices[should_defer]] = 0
+        self._defer_first_maturation_seen[lag_indices] = present[lag_indices]
 
-        chosen = int(self._rng.choice(feasible, p=(weights / weight_sum)))
-        if unprocessed_pool[chosen] <= 0 or enzyme_remaining[chosen] <= 0:
-            return False
+    def _stochastic_round(self, value: np.ndarray) -> np.ndarray:
+        value = np.asarray(value, dtype=np.float64)
+        with np.errstate(invalid="ignore"):
+            round_up = self._rng.random(value.shape) < np.mod(value, 1.0)
+        rounded = value.copy()
+        rounded[round_up] = np.ceil(value[round_up])
+        rounded[~round_up] = np.floor(value[~round_up])
+        return rounded
 
-        reaction_fluxes[chosen] += 1
-        substrate_pool += self.reaction_stoich[:, chosen]
-        unprocessed_pool[chosen] -= 1
-        enzyme_remaining[chosen] -= 1
-        return True
+    def _rand_counts(self, counts: np.ndarray, n_select: int) -> np.ndarray:
+        counts = np.asarray(counts, dtype=np.int64)
+        total = int(np.sum(counts))
+        if n_select <= 0 or total <= 0:
+            return np.zeros_like(counts, dtype=np.int64)
+
+        n_select = int(min(n_select, total))
+        if n_select == total:
+            return counts.copy()
+
+        positive_select = True
+        if n_select > total / 2:
+            positive_select = False
+            n_select = total - n_select
+
+        cumulative = np.cumsum(counts, dtype=np.int64)
+        selected = np.zeros_like(counts, dtype=np.int64)
+        for _ in range(int(n_select)):
+            draw = int(self._rng.integers(1, int(cumulative[-1]) + 1))
+            chosen_idx = int(np.searchsorted(cumulative, draw, side="left"))
+            selected[chosen_idx] += 1
+            cumulative[chosen_idx:] -= 1
+
+        if not positive_select:
+            return counts - selected
+        return selected
 
 
 __all__ = ["KarrRNAProcessingProcess"]

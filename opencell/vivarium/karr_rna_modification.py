@@ -250,17 +250,26 @@ class KarrRNAModificationProcess(Process):
         if not np.any(reaction_fluxes > 0):
             return {}
 
-        substrate_delta = self.reaction_stoich @ reaction_fluxes
-        completed_this_step = (self.reaction_modification.T @ reaction_fluxes).astype(np.int64)
-        self._n_completed += completed_this_step
-
-        transition_events = np.zeros_like(self._n_completed)
-        for ridx, required in enumerate(self.required_reactions_per_rna):
-            if required <= 0:
+        available_rna = np.floor(np.clip(unmodified_rna, a_min=0.0, a_max=None)).astype(np.int64)
+        transition_events = np.zeros(len(self.unmodified_rna_wids), dtype=np.int64)
+        for ridx in range(len(self.unmodified_rna_wids)):
+            required_rxn = np.flatnonzero(self.reaction_modification[:, ridx] > 0)
+            if required_rxn.size == 0:
                 continue
-            if self._n_completed[ridx] >= required and unmodified_rna[ridx] > 0.0:
-                transition_events[ridx] = 1
-                self._n_completed[ridx] = 0
+
+            # A RNA can only complete if each required reaction fires.
+            completed_rna = int(np.min(reaction_fluxes[required_rxn]))
+            if completed_rna <= 0:
+                continue
+
+            n_transition = int(min(available_rna[ridx], completed_rna))
+            if n_transition <= 0:
+                continue
+
+            transition_events[ridx] = n_transition
+
+        reaction_events = self.reaction_modification @ transition_events
+        substrate_delta = self.reaction_stoich @ reaction_events
 
         update: dict[str, Any] = {}
         sub_updates = {
@@ -323,16 +332,23 @@ class KarrRNAModificationProcess(Process):
         reaction_fluxes = np.zeros(n_rxn, dtype=np.int64)
 
         substrate_pool = np.floor(np.clip(substrates, a_min=0.0, a_max=None)).astype(np.int64)
-        enzyme_remaining = np.floor(
-            np.clip(self._enzyme_limit(enzymes=enzymes, dt=dt), a_min=0.0, a_max=None)
+        n_catalytic = self.reaction_catalysis.shape[1]
+        catalytic_enzymes = np.clip(np.asarray(enzymes, dtype=np.float64).reshape(-1)[:n_catalytic], 0.0, None)
+        enzyme_budget = catalytic_enzymes.astype(np.float64, copy=True)
+        kcat_dt = np.clip(self.enzyme_bounds[:, 1] * float(dt), a_min=0.0, a_max=None)
+        unmodified_available = np.floor(
+            np.clip(np.asarray(unmodified_rna), a_min=0.0, a_max=None)
         ).astype(np.int64)
-        unmodified_available = (np.asarray(unmodified_rna) > 0).astype(np.int64)
         reaction_remaining = unmodified_available[self._reaction_target_idx].copy()
 
         # Phase 1: deterministic allocation.
         for ridx in range(n_rxn):
             sub_limit = self._substrate_limit_for_reaction(substrate_pool, ridx)
-            enz_limit = int(enzyme_remaining[ridx])
+            enz_limit = self._enzyme_limit_for_reaction(
+                enzyme_budget=enzyme_budget,
+                kcat_dt=kcat_dt,
+                ridx=ridx,
+            )
             reaction_limit = int(reaction_remaining[ridx])
             n_events = int(min(sub_limit, enz_limit, reaction_limit))
             if n_events <= 0:
@@ -340,7 +356,12 @@ class KarrRNAModificationProcess(Process):
 
             reaction_fluxes[ridx] += n_events
             substrate_pool += self.reaction_stoich[:, ridx] * n_events
-            enzyme_remaining[ridx] -= n_events
+            self._consume_enzyme_budget(
+                enzyme_budget=enzyme_budget,
+                kcat_dt=kcat_dt,
+                ridx=ridx,
+                n_events=n_events,
+            )
             reaction_remaining[ridx] -= n_events
 
         # Phase 2: stochastic residual sampling.
@@ -349,13 +370,47 @@ class KarrRNAModificationProcess(Process):
             progressed = self._stochastic_residual_step(
                 reaction_fluxes=reaction_fluxes,
                 substrate_pool=substrate_pool,
-                enzyme_remaining=enzyme_remaining,
+                enzyme_budget=enzyme_budget,
+                kcat_dt=kcat_dt,
                 reaction_remaining=reaction_remaining,
             )
             if not progressed:
                 break
 
         return reaction_fluxes
+
+    def _enzyme_limit_for_reaction(
+        self,
+        enzyme_budget: np.ndarray,
+        kcat_dt: np.ndarray,
+        ridx: int,
+    ) -> int:
+        catalytic = self.reaction_catalysis[ridx, :]
+        catalytic_idx = np.flatnonzero(catalytic > 0)
+        if catalytic_idx.size == 0:
+            return np.iinfo(np.int64).max
+        if kcat_dt[ridx] <= 0.0:
+            return 0
+
+        per_event = catalytic[catalytic_idx].astype(np.float64) / kcat_dt[ridx]
+        limits = np.floor(enzyme_budget[catalytic_idx] / per_event).astype(np.int64)
+        return max(0, int(np.min(limits)))
+
+    def _consume_enzyme_budget(
+        self,
+        enzyme_budget: np.ndarray,
+        kcat_dt: np.ndarray,
+        ridx: int,
+        n_events: int,
+    ) -> None:
+        if n_events <= 0 or kcat_dt[ridx] <= 0.0:
+            return
+        catalytic = self.reaction_catalysis[ridx, :].astype(np.float64)
+        if not np.any(catalytic > 0):
+            return
+
+        enzyme_budget -= catalytic * (float(n_events) / kcat_dt[ridx])
+        np.maximum(enzyme_budget, 0.0, out=enzyme_budget)
 
     def _substrate_limit_for_reaction(self, substrates: np.ndarray, ridx: int) -> int:
         stoich_col = self.reaction_stoich[:, ridx]
@@ -391,11 +446,23 @@ class KarrRNAModificationProcess(Process):
         self,
         reaction_fluxes: np.ndarray,
         substrate_pool: np.ndarray,
-        enzyme_remaining: np.ndarray,
+        enzyme_budget: np.ndarray,
+        kcat_dt: np.ndarray,
         reaction_remaining: np.ndarray,
     ) -> bool:
         substrate_limit = self._substrate_limit(substrate_pool)
-        residual_limit = np.minimum.reduce([substrate_limit, enzyme_remaining, reaction_remaining])
+        enzyme_limit = np.asarray(
+            [
+                self._enzyme_limit_for_reaction(
+                    enzyme_budget=enzyme_budget,
+                    kcat_dt=kcat_dt,
+                    ridx=ridx,
+                )
+                for ridx in range(reaction_remaining.size)
+            ],
+            dtype=np.int64,
+        )
+        residual_limit = np.minimum.reduce([substrate_limit, enzyme_limit, reaction_remaining])
 
         feasible = np.flatnonzero(residual_limit > 0)
         if feasible.size == 0:
@@ -407,12 +474,17 @@ class KarrRNAModificationProcess(Process):
             return False
 
         chosen = int(self._rng.choice(feasible, p=(weights / weight_sum)))
-        if enzyme_remaining[chosen] <= 0 or reaction_remaining[chosen] <= 0:
+        if reaction_remaining[chosen] <= 0:
             return False
 
         reaction_fluxes[chosen] += 1
         substrate_pool += self.reaction_stoich[:, chosen]
-        enzyme_remaining[chosen] -= 1
+        self._consume_enzyme_budget(
+            enzyme_budget=enzyme_budget,
+            kcat_dt=kcat_dt,
+            ridx=chosen,
+            n_events=1,
+        )
         reaction_remaining[chosen] -= 1
         return True
 

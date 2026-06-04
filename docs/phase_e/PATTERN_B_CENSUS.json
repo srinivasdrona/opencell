@@ -1,0 +1,423 @@
+{
+  "generated_at_utc": "2026-05-29T09:53:41.369881+00:00",
+  "n_modules": 28,
+  "n_rows": 28,
+  "rows": [
+    {
+      "error": null,
+      "first_delta": null,
+      "first_store": null,
+      "first_tick": null,
+      "first_wid": null,
+      "module": "tests.vivarium.test_karr_chromosome_condensation_l2_replay",
+      "process": "ChromosomeCondensation",
+      "sample_nonintegral_deltas": [],
+      "total_nonintegral_deltas": 0,
+      "worst_magnitude": null
+    },
+    {
+      "error": null,
+      "first_delta": null,
+      "first_store": null,
+      "first_tick": null,
+      "first_wid": null,
+      "module": "tests.vivarium.test_karr_chromosome_segregation_l2_replay",
+      "process": "ChromosomeSegregation",
+      "sample_nonintegral_deltas": [],
+      "total_nonintegral_deltas": 0,
+      "worst_magnitude": null
+    },
+    {
+      "error": null,
+      "first_delta": null,
+      "first_store": null,
+      "first_tick": null,
+      "first_wid": null,
+      "module": "tests.vivarium.test_karr_cytokinesis_l2_replay",
+      "process": "Cytokinesis",
+      "sample_nonintegral_deltas": [],
+      "total_nonintegral_deltas": 0,
+      "worst_magnitude": null
+    },
+    {
+      "error": null,
+      "first_delta": null,
+      "first_store": null,
+      "first_tick": null,
+      "first_wid": null,
+      "module": "tests.vivarium.test_karr_dna_damage_l2_replay",
+      "process": "DNADamage",
+      "sample_nonintegral_deltas": [],
+      "total_nonintegral_deltas": 0,
+      "worst_magnitude": null
+    },
+    {
+      "error": null,
+      "first_delta": null,
+      "first_store": null,
+      "first_tick": null,
+      "first_wid": null,
+      "module": "tests.vivarium.test_karr_dna_repair_l2_replay",
+      "process": "DNARepair",
+      "sample_nonintegral_deltas": [],
+      "total_nonintegral_deltas": 0,
+      "worst_magnitude": null
+    },
+    {
+      "error": null,
+      "first_delta": null,
+      "first_store": null,
+      "first_tick": null,
+      "first_wid": null,
+      "module": "tests.vivarium.test_karr_dna_supercoiling_l2_replay",
+      "process": "DNASupercoiling",
+      "sample_nonintegral_deltas": [],
+      "total_nonintegral_deltas": 0,
+      "worst_magnitude": null
+    },
+    {
+      "error": null,
+      "first_delta": null,
+      "first_store": null,
+      "first_tick": null,
+      "first_wid": null,
+      "module": "tests.vivarium.test_karr_ftsz_polymerization_l2_replay",
+      "process": "FtsZPolymerization",
+      "sample_nonintegral_deltas": [],
+      "total_nonintegral_deltas": 0,
+      "worst_magnitude": null
+    },
+    {
+      "error": null,
+      "first_delta": null,
+      "first_store": null,
+      "first_tick": null,
+      "first_wid": null,
+      "module": "tests.vivarium.test_karr_host_interaction_l2_replay",
+      "process": "HostInteraction",
+      "sample_nonintegral_deltas": [],
+      "total_nonintegral_deltas": 0,
+      "worst_magnitude": null
+    },
+    {
+      "error": null,
+      "first_delta": null,
+      "first_store": null,
+      "first_tick": null,
+      "first_wid": null,
+      "module": "tests.vivarium.test_karr_macromolecular_complexation_l2_replay",
+      "process": "MacromolecularComplexation",
+      "sample_nonintegral_deltas": [],
+      "total_nonintegral_deltas": 0,
+      "worst_magnitude": null
+    },
+    {
+      "error": null,
+      "first_delta": null,
+      "first_store": null,
+      "first_tick": null,
+      "first_wid": null,
+      "module": "tests.vivarium.test_karr_metabolism_l2_replay",
+      "process": "Metabolism",
+      "sample_nonintegral_deltas": [],
+      "total_nonintegral_deltas": 0,
+      "worst_magnitude": null
+    },
+    {
+      "error": null,
+      "first_delta": null,
+      "first_store": null,
+      "first_tick": null,
+      "first_wid": null,
+      "module": "tests.vivarium.test_karr_protein_activation_l2_replay",
+      "process": "ProteinActivation",
+      "sample_nonintegral_deltas": [],
+      "total_nonintegral_deltas": 0,
+      "worst_magnitude": null
+    },
+    {
+      "error": null,
+      "first_delta": null,
+      "first_store": null,
+      "first_tick": null,
+      "first_wid": null,
+      "module": "tests.vivarium.test_karr_protein_decay_l2_replay",
+      "process": "ProteinDecay",
+      "sample_nonintegral_deltas": [],
+      "total_nonintegral_deltas": 0,
+      "worst_magnitude": null
+    },
+    {
+      "error": null,
+      "first_delta": null,
+      "first_store": null,
+      "first_tick": null,
+      "first_wid": null,
+      "module": "tests.vivarium.test_karr_protein_folding_l2_replay",
+      "process": "ProteinFolding",
+      "sample_nonintegral_deltas": [],
+      "total_nonintegral_deltas": 0,
+      "worst_magnitude": null
+    },
+    {
+      "error": null,
+      "first_delta": null,
+      "first_store": null,
+      "first_tick": null,
+      "first_wid": null,
+      "module": "tests.vivarium.test_karr_protein_modification_l2_replay",
+      "process": "ProteinModification",
+      "sample_nonintegral_deltas": [],
+      "total_nonintegral_deltas": 0,
+      "worst_magnitude": null
+    },
+    {
+      "error": null,
+      "first_delta": null,
+      "first_store": null,
+      "first_tick": null,
+      "first_wid": null,
+      "module": "tests.vivarium.test_karr_protein_processing_i_l2_replay",
+      "process": "ProteinProcessingI",
+      "sample_nonintegral_deltas": [],
+      "total_nonintegral_deltas": 0,
+      "worst_magnitude": null
+    },
+    {
+      "error": null,
+      "first_delta": null,
+      "first_store": null,
+      "first_tick": null,
+      "first_wid": null,
+      "module": "tests.vivarium.test_karr_protein_processing_ii_l2_replay",
+      "process": "ProteinProcessingII",
+      "sample_nonintegral_deltas": [],
+      "total_nonintegral_deltas": 0,
+      "worst_magnitude": null
+    },
+    {
+      "error": null,
+      "first_delta": null,
+      "first_store": null,
+      "first_tick": null,
+      "first_wid": null,
+      "module": "tests.vivarium.test_karr_protein_translocation_l2_replay",
+      "process": "ProteinTranslocation",
+      "sample_nonintegral_deltas": [],
+      "total_nonintegral_deltas": 0,
+      "worst_magnitude": null
+    },
+    {
+      "error": null,
+      "first_delta": null,
+      "first_store": null,
+      "first_tick": null,
+      "first_wid": null,
+      "module": "tests.vivarium.test_karr_rna_decay_l2_replay",
+      "process": "RNADecay",
+      "sample_nonintegral_deltas": [],
+      "total_nonintegral_deltas": 0,
+      "worst_magnitude": null
+    },
+    {
+      "error": null,
+      "first_delta": null,
+      "first_store": null,
+      "first_tick": null,
+      "first_wid": null,
+      "module": "tests.vivarium.test_karr_rna_modification_l2_replay",
+      "process": "RNAModification",
+      "sample_nonintegral_deltas": [],
+      "total_nonintegral_deltas": 0,
+      "worst_magnitude": null
+    },
+    {
+      "error": null,
+      "first_delta": null,
+      "first_store": null,
+      "first_tick": null,
+      "first_wid": null,
+      "module": "tests.vivarium.test_karr_rna_processing_l2_replay",
+      "process": "RNAProcessing",
+      "sample_nonintegral_deltas": [],
+      "total_nonintegral_deltas": 0,
+      "worst_magnitude": null
+    },
+    {
+      "error": null,
+      "first_delta": null,
+      "first_store": null,
+      "first_tick": null,
+      "first_wid": null,
+      "module": "tests.vivarium.test_karr_replication_l2_replay",
+      "process": "Replication",
+      "sample_nonintegral_deltas": [],
+      "total_nonintegral_deltas": 0,
+      "worst_magnitude": null
+    },
+    {
+      "error": null,
+      "first_delta": null,
+      "first_store": null,
+      "first_tick": null,
+      "first_wid": null,
+      "module": "tests.vivarium.test_karr_replication_initiation_l2_replay",
+      "process": "ReplicationInitiation",
+      "sample_nonintegral_deltas": [],
+      "total_nonintegral_deltas": 0,
+      "worst_magnitude": null
+    },
+    {
+      "error": null,
+      "first_delta": null,
+      "first_store": null,
+      "first_tick": null,
+      "first_wid": null,
+      "module": "tests.vivarium.test_karr_ribosome_assembly_l2_replay",
+      "process": "RibosomeAssembly",
+      "sample_nonintegral_deltas": [],
+      "total_nonintegral_deltas": 0,
+      "worst_magnitude": null
+    },
+    {
+      "error": null,
+      "first_delta": null,
+      "first_store": null,
+      "first_tick": null,
+      "first_wid": null,
+      "module": "tests.vivarium.test_karr_terminal_organelle_assembly_l2_replay",
+      "process": "TerminalOrganelleAssembly",
+      "sample_nonintegral_deltas": [],
+      "total_nonintegral_deltas": 0,
+      "worst_magnitude": null
+    },
+    {
+      "error": null,
+      "first_delta": -53.968661202027135,
+      "first_store": "substrates",
+      "first_tick": 0,
+      "first_wid": "ATP",
+      "module": "tests.vivarium.test_karr_transcription_l2_replay",
+      "process": "Transcription",
+      "sample_nonintegral_deltas": [
+        {
+          "delta": -53.968661202027135,
+          "store": "substrates",
+          "tick": 0,
+          "wid": "ATP"
+        },
+        {
+          "delta": -53.968661202027135,
+          "store": "substrates",
+          "tick": 0,
+          "wid": "CTP"
+        },
+        {
+          "delta": -53.968661202027135,
+          "store": "substrates",
+          "tick": 0,
+          "wid": "GTP"
+        },
+        {
+          "delta": -53.968661202027135,
+          "store": "substrates",
+          "tick": 0,
+          "wid": "UTP"
+        },
+        {
+          "delta": 0.2,
+          "store": "rna/counts",
+          "tick": 0,
+          "wid": "MG_005"
+        }
+      ],
+      "total_nonintegral_deltas": 6600,
+      "worst_magnitude": {
+        "abs_delta": 53.968661202027135,
+        "delta": -53.968661202027135,
+        "store": "substrates",
+        "tick": 0,
+        "wid": "ATP"
+      }
+    },
+    {
+      "error": null,
+      "first_delta": null,
+      "first_store": null,
+      "first_tick": null,
+      "first_wid": null,
+      "module": "tests.vivarium.test_karr_transcriptional_regulation_l2_replay",
+      "process": "TranscriptionalRegulation",
+      "sample_nonintegral_deltas": [],
+      "total_nonintegral_deltas": 0,
+      "worst_magnitude": null
+    },
+    {
+      "error": null,
+      "first_delta": -56.53433442828094,
+      "first_store": "substrates",
+      "first_tick": 0,
+      "first_wid": "ALA",
+      "module": "tests.vivarium.test_karr_translation_l2_replay",
+      "process": "Translation",
+      "sample_nonintegral_deltas": [
+        {
+          "delta": -56.53433442828094,
+          "store": "substrates",
+          "tick": 0,
+          "wid": "ALA"
+        },
+        {
+          "delta": -29.099327389332093,
+          "store": "substrates",
+          "tick": 0,
+          "wid": "ARG"
+        },
+        {
+          "delta": -61.334584702017814,
+          "store": "substrates",
+          "tick": 0,
+          "wid": "ASN"
+        },
+        {
+          "delta": -46.09291412482404,
+          "store": "substrates",
+          "tick": 0,
+          "wid": "ASP"
+        },
+        {
+          "delta": -8.111371812920378,
+          "store": "substrates",
+          "tick": 0,
+          "wid": "CYS"
+        }
+      ],
+      "total_nonintegral_deltas": 33700,
+      "worst_magnitude": {
+        "abs_delta": 89.83826059752857,
+        "delta": -89.83826059752857,
+        "store": "substrates",
+        "tick": 0,
+        "wid": "LEU"
+      }
+    },
+    {
+      "error": null,
+      "first_delta": null,
+      "first_store": null,
+      "first_tick": null,
+      "first_wid": null,
+      "module": "tests.vivarium.test_karr_trna_aminoacylation_l2_replay",
+      "process": "tRNAAminoacylation",
+      "sample_nonintegral_deltas": [],
+      "total_nonintegral_deltas": 0,
+      "worst_magnitude": null
+    }
+  ],
+  "summary": {
+    "errored_processes": 0,
+    "processes_with_nonintegral_deltas": 2,
+    "processes_without_nonintegral_deltas": 26,
+    "runtime_seconds": 54.31717467002454
+  }
+}

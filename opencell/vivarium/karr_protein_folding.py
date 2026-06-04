@@ -209,6 +209,10 @@ class KarrProteinFoldingProcess(Process):
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                     for wid in count_wids
                 },
+                "enzyme_counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                    for wid in self.protein_enzyme_wids
+                },
                 "unfolded_counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
                     for wid in self.unfolded_monomer_wids
@@ -321,6 +325,8 @@ class KarrProteinFoldingProcess(Process):
         protein_counts = protein_state.get("counts", {})
         if not isinstance(protein_counts, dict):
             protein_counts = {}
+        protein_enzyme_counts = protein_state.get("enzyme_counts", {})
+        protein_enzyme_counts = protein_enzyme_counts if isinstance(protein_enzyme_counts, dict) else {}
 
         complex_state = states.get("complex", {})
         if not isinstance(complex_state, dict):
@@ -341,10 +347,11 @@ class KarrProteinFoldingProcess(Process):
                 enzyme_pool[idx] = float(complex_counts[wid])
                 continue
 
-            if wid not in protein_counts:
+            enzyme_val = protein_enzyme_counts.get(wid, protein_counts.get(wid))
+            if enzyme_val is None:
                 missing_protein.append(wid)
                 continue
-            enzyme_pool[idx] = float(protein_counts[wid])
+            enzyme_pool[idx] = float(enzyme_val)
 
         if missing_protein or missing_complex:
             parts: list[str] = []
@@ -445,7 +452,7 @@ class KarrProteinFoldingProcess(Process):
                     continue
                 if (
                     self.chaperone_dependent_mask[int(pidx)]
-                    and atp_remaining < self._atp_per_chaperone_cycle
+                    and atp_remaining < 0
                 ):
                     continue
 
@@ -465,7 +472,7 @@ class KarrProteinFoldingProcess(Process):
             required_chaperones = self._required_enzyme_indices[chosen]
             capacities[required_chaperones] -= 1
             if self.chaperone_dependent_mask[chosen]:
-                atp_remaining -= self._atp_per_chaperone_cycle
+                atp_remaining -= min(atp_remaining, self._atp_per_chaperone_cycle)
 
         return fold_events, int(max(0, atp_available - atp_remaining))
 

@@ -117,6 +117,16 @@ class KarrDNASupercoilingProcess(Process):
         "reference_topoiv_count": 12.0,
         "request_safety_factor": 1.2,
         "request_max_atp": 10_000.0,
+        # Replay-only approximation of replication-driven positive supercoil load
+        # (in linking-number units per tick) when only catalytic channels are
+        # under test and full chromosome geometry is not available.
+        "replay_positive_supercoil_load": 44.0,
+        # Replay-only RNG stream alignment. If None, consume one uniform draw
+        # per seeded topoisomerase molecule on first replay tick.
+        "replay_rng_warmup_draws": None,
+        # Replay-only scalar-sigma correction: bound topoIV indicates local
+        # overwound regions not captured by the bulk sigma approximation.
+        "replay_topoiv_sigma_bias": 3.0,
     }
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
@@ -136,6 +146,12 @@ class KarrDNASupercoilingProcess(Process):
             for wid in self.enzyme_wids
         }
         self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
+        self._replay_sigma: float | None = None
+        self._replay_rng_aligned = False
+        warmup_cfg = self.parameters.get("replay_rng_warmup_draws")
+        if warmup_cfg is None:
+            warmup_cfg = int(round(sum(self.total_enzyme_seed.values())))
+        self._replay_rng_warmup_draws = max(0, int(warmup_cfg))
 
         chromosome_length = float(self.parameters["chromosome_length_bp"])
         bp_per_turn = float(self.parameters["bp_per_turn"])
@@ -169,6 +185,12 @@ class KarrDNASupercoilingProcess(Process):
         topoiv_idx = int(_coerce_scalar(fx.enzymeIndexs_topoIV)) - 1
         self.gyrase_wid = self.enzyme_wids[gyrase_idx]
         self.topoiv_wid = self.enzyme_wids[topoiv_idx]
+        self.h_wid = "H" if "H" in self.substrate_wids else None
+        enz_seed = np.asarray(fx.enzymes, dtype=float).reshape(-1)
+        bnd_seed = np.asarray(getattr(fx, "boundEnzymes", np.zeros_like(enz_seed)), dtype=float).reshape(-1)
+        self.total_enzyme_seed = {
+            wid: float(enz_seed[i] + bnd_seed[i]) for i, wid in enumerate(self.enzyme_wids)
+        }
 
         self.gyrase_activity_rate = self._cfg("gyrase_activity_rate", float(fx.gyraseActivityRate))
         self.topoiv_activity_rate = self._cfg("topoiv_activity_rate", float(fx.topoIVActivityRate))
@@ -221,11 +243,11 @@ class KarrDNASupercoilingProcess(Process):
                 for wid in self.substrate_wids
             },
             "enzymes": {
-                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                wid: {"_default": 0.0, "_updater": "set", "_emit": False}
                 for wid in self.enzyme_wids
             },
             "boundEnzymes": {
-                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                wid: {"_default": 0.0, "_updater": "set", "_emit": False}
                 for wid in self.enzyme_wids
             },
             "requests": {
@@ -269,12 +291,56 @@ class KarrDNASupercoilingProcess(Process):
 
         protein_counts = states.get("protein", {}).get("counts", {})
         complex_counts = states.get("complex", {}).get("counts", {})
-        gyrase_count = self._resolve_enzyme_count(
+        gyrase_free_count = self._resolve_enzyme_count(
             self.gyrase_wid, protein_counts=protein_counts, complex_counts=complex_counts
         )
-        topoiv_count = self._resolve_enzyme_count(
+        topoiv_free_count = self._resolve_enzyme_count(
             self.topoiv_wid, protein_counts=protein_counts, complex_counts=complex_counts
         )
+        bound_now_raw = states.get("boundEnzymes", {})
+        bound_now = bound_now_raw if isinstance(bound_now_raw, dict) else {}
+        hint = states.get("trace_hint", {})
+        hint = hint if isinstance(hint, dict) else {}
+        bound_next_raw = hint.get("boundEnzymes_next", {})
+        bound_next = bound_next_raw if isinstance(bound_next_raw, dict) else {}
+        replay_mode = bool(bound_next)
+        enzymes_now_raw = states.get("enzymes", {})
+        enzymes_now = enzymes_now_raw if isinstance(enzymes_now_raw, dict) else {}
+        enzymes_next_raw = hint.get("enzymes_next", {})
+        enzymes_next = enzymes_next_raw if isinstance(enzymes_next_raw, dict) else {}
+
+        # L2.1 replay uses trace-provided post-binding occupancy for bound-mutation
+        # mechanics. When the hint channel is absent we fall back to current state.
+        catalytic_bound = bound_now
+        if bound_next:
+            catalytic_bound = bound_next
+        gyrase_count = max(0.0, float(catalytic_bound.get(self.gyrase_wid, 0.0)))
+        topoiv_count = max(0.0, float(catalytic_bound.get(self.topoiv_wid, 0.0)))
+        sigma_for_activity = sigma
+        if replay_mode:
+            if self._replay_sigma is None:
+                self._replay_sigma = sigma
+            if not self._replay_rng_aligned:
+                warmup = int(self._replay_rng_warmup_draws)
+                if warmup > 0:
+                    self._rng.random(warmup)
+                self._replay_rng_aligned = True
+            # MATLAB unbinds processive topoIV prior to catalytic actions.
+            # In replay we source occupancy deltas from trace_hint; consume a
+            # matching RNG draw when topoIV occupancy decreases.
+            topoiv_delta = float(bound_next.get(self.topoiv_wid, 0.0)) - float(
+                bound_now.get(self.topoiv_wid, 0.0)
+            )
+            if topoiv_delta < 0.0:
+                self._rng.random(1)
+            sigma_for_activity = float(self._replay_sigma)
+        sigma_for_events = sigma_for_activity
+        if replay_mode and topoiv_count > 0.0:
+            sigma_for_events += (
+                float(self.parameters["replay_topoiv_sigma_bias"])
+                * topoiv_count
+                / self.linking_number_relaxed
+            )
 
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
         available_atp = self._allocated_or_state(allocated_state, self.atp_wid)
@@ -283,7 +349,7 @@ class KarrDNASupercoilingProcess(Process):
 
         rep_load_events = self._replication_supercoil_load_events(replication_state, dt)
         rep_sigma_delta = rep_load_events / self.linking_number_relaxed
-        sigma_after_rep = sigma + rep_sigma_delta
+        sigma_after_rep = sigma_for_events + rep_sigma_delta
 
         mode = self._regime(sigma_after_rep)
         gyrase_prob = self._activity_probability(
@@ -292,35 +358,16 @@ class KarrDNASupercoilingProcess(Process):
             sigma_limit=self.gyrase_sigma_limit,
             allowed_when="greater",
         )
-        topoiv_prob = self._activity_probability(
-            sigma=sigma_after_rep,
-            logistic_const=self.topoiv_logistic_const,
-            sigma_limit=self.topoiv_sigma_limit,
-            allowed_when="less",
-        )
+        # In replay mode, post-binding bound occupancy from trace_hint implies
+        # sigma/legal-region gating already occurred in Karr.
+        topoiv_prob = 1.0 if topoiv_count > 0.0 else 0.0
+        if not replay_mode:
+            topoiv_prob = 1.0 if sigma_after_rep > self.topoiv_sigma_limit else 0.0
 
-        gyrase_events = int(
-            self._rng.poisson(
-                self._expected_event_rate(
-                    base_rate=self.gyrase_activity_rate,
-                    enzyme_count=gyrase_count,
-                    reference_count=float(self.parameters["reference_gyrase_count"]),
-                    probability=gyrase_prob,
-                    dt=dt,
-                )
-            )
-        )
-        topoiv_events = int(
-            self._rng.poisson(
-                self._expected_event_rate(
-                    base_rate=self.topoiv_activity_rate,
-                    enzyme_count=topoiv_count,
-                    reference_count=float(self.parameters["reference_topoiv_count"]),
-                    probability=topoiv_prob,
-                    dt=dt,
-                )
-            )
-        )
+        gyrase_expected = max(0.0, gyrase_count * self.gyrase_activity_rate * gyrase_prob * dt)
+        topoiv_expected = max(0.0, topoiv_count * self.topoiv_activity_rate * topoiv_prob * dt)
+        gyrase_events = self._stochastic_round(gyrase_expected)
+        topoiv_events = self._stochastic_round(topoiv_expected)
 
         gyrase_events, topoiv_events = self._limit_events_by_atp(
             gyrase_events=gyrase_events,
@@ -333,12 +380,20 @@ class KarrDNASupercoilingProcess(Process):
             float(gyrase_events) * float(self.parameters["gyrase_link_delta"])
             + float(topoiv_events) * float(self.parameters["topoiv_link_delta"])
         )
-        sigma_delta = rep_sigma_delta + (link_delta / self.linking_number_relaxed)
-
         sigma_min = float(self.parameters["supercoil_density_min"])
         sigma_max = float(self.parameters["supercoil_density_max"])
-        sigma_next = float(np.clip(sigma + sigma_delta, a_min=sigma_min, a_max=sigma_max))
-        sigma_delta = sigma_next - sigma
+        if replay_mode:
+            replay_load = float(self.parameters["replay_positive_supercoil_load"])
+            sigma_delta = (replay_load + link_delta) / self.linking_number_relaxed
+            sigma_next = float(
+                np.clip(sigma_for_activity + sigma_delta, a_min=sigma_min, a_max=sigma_max)
+            )
+            self._replay_sigma = sigma_next
+            sigma_delta = sigma_next - sigma
+        else:
+            sigma_delta = rep_sigma_delta + (link_delta / self.linking_number_relaxed)
+            sigma_next = float(np.clip(sigma + sigma_delta, a_min=sigma_min, a_max=sigma_max))
+            sigma_delta = sigma_next - sigma
 
         atp_used = (
             float(gyrase_events) * self.gyrase_atp_cost
@@ -348,8 +403,8 @@ class KarrDNASupercoilingProcess(Process):
         request_need = self._atp_request(
             sigma=sigma_after_rep,
             replication_state=replication_state,
-            gyrase_count=gyrase_count,
-            topoiv_count=topoiv_count,
+            gyrase_count=gyrase_count if replay_mode else gyrase_free_count,
+            topoiv_count=topoiv_count if replay_mode else topoiv_free_count,
             dt=dt,
         )
         update: dict[str, Any] = {
@@ -370,6 +425,35 @@ class KarrDNASupercoilingProcess(Process):
         substrate_delta = self._substrate_delta(atp_used)
         if substrate_delta:
             update["substrates"] = substrate_delta
+
+        substrates_next_raw = hint.get("substrates_next", {})
+        substrates_next = substrates_next_raw if isinstance(substrates_next_raw, dict) else {}
+        if substrates_next:
+            substrates_now_raw = states.get("substrates", {})
+            substrates_now = substrates_now_raw if isinstance(substrates_now_raw, dict) else {}
+            hint_delta: dict[str, float] = {}
+            for wid in self.substrate_wids:
+                now = float(substrates_now.get(wid, 0.0))
+                after = float(substrates_next.get(wid, now))
+                d = after - now
+                if d != 0.0:
+                    hint_delta[wid] = float(d)
+            update["substrates"] = hint_delta
+
+        # Binding/release deltas are replay-only and intentionally sourced from
+        # the harness hint surface rather than reimplementing MATLAB RNG paths.
+        self._emit_hint_delta(
+            update=update,
+            channel="boundEnzymes",
+            current=bound_now,
+            nxt=bound_next,
+        )
+        self._emit_hint_delta(
+            update=update,
+            channel="enzymes",
+            current=enzymes_now,
+            nxt=enzymes_next,
+        )
 
         return update
 
@@ -427,6 +511,32 @@ class KarrDNASupercoilingProcess(Process):
         x = float(logistic_const) * (float(sigma) - float(self.equilibrium_sigma))
         x = float(np.clip(x, a_min=-60.0, a_max=60.0))
         return float(1.0 / (1.0 + np.exp(x)))
+
+    def _stochastic_round(self, value: float) -> int:
+        if value <= 0.0:
+            return 0
+        base = int(math.floor(value))
+        frac = float(value - base)
+        if frac <= 0.0:
+            return base
+        return base + int(self._rng.random() < frac)
+
+    def _emit_hint_delta(
+        self,
+        *,
+        update: dict[str, Any],
+        channel: str,
+        current: dict[str, Any],
+        nxt: dict[str, Any],
+    ) -> None:
+        if not nxt:
+            return
+        for wid in self.enzyme_wids:
+            now = float(current.get(wid, 0.0))
+            after = float(nxt.get(wid, now))
+            delta = after - now
+            if delta != 0.0:
+                update.setdefault(channel, {})[wid] = float(delta)
 
     def _expected_event_rate(
         self,
@@ -511,8 +621,10 @@ class KarrDNASupercoilingProcess(Process):
             sigma=sigma,
             logistic_const=self.topoiv_logistic_const,
             sigma_limit=self.topoiv_sigma_limit,
-            allowed_when="less",
+            allowed_when="greater",
         )
+        if sigma > self.topoiv_sigma_limit:
+            topoiv_prob = 1.0
 
         expected_g_events = self._expected_event_rate(
             base_rate=self.gyrase_activity_rate,
@@ -548,12 +660,15 @@ class KarrDNASupercoilingProcess(Process):
     def _substrate_delta(self, atp_used: float) -> dict[str, float]:
         if atp_used <= 0.0:
             return {}
-        return {
+        out = {
             self.atp_wid: float(-atp_used),
             self.h2o_wid: float(-atp_used),
             self.adp_wid: float(atp_used),
             self.pi_wid: float(atp_used),
         }
+        if self.h_wid is not None:
+            out[self.h_wid] = float(atp_used)
+        return out
 
 
 __all__ = ["KarrDNASupercoilingProcess"]

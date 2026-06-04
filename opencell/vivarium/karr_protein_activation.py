@@ -54,6 +54,24 @@ def _parse_wid_array(cell_array: np.ndarray) -> list[str]:
     return [str(_coerce_scalar(raw)) for raw in values.ravel()]
 
 
+def _parse_stimulus_defaults(stimuli: object, n_stimuli: int) -> list[float]:
+    values = np.asarray(stimuli, dtype=np.float64)
+    if values.ndim == 0:
+        return [float(values)] * n_stimuli
+    if values.ndim == 1:
+        vector = values.reshape(-1)
+    else:
+        # Karr stores process stimuli by compartment; evaluateActivationRules uses a
+        # single compartment slice per tick in this replay harness.
+        vector = values[:, 0].reshape(-1)
+
+    out = [0.0] * n_stimuli
+    n = min(n_stimuli, int(vector.shape[0]))
+    for idx in range(n):
+        out[idx] = float(vector[idx])
+    return out
+
+
 def _sanitize_rule_text(rule: str) -> str:
     text = rule.strip()
     text = text.replace("&&", "&").replace("||", "|")
@@ -135,6 +153,13 @@ class KarrProteinActivationProcess(Process):
         self.substrate_wids = _parse_wid_array(fixture.substrateWholeCellModelIDs)
         self.stimuli_wids = _parse_wid_array(fixture.stimuliWholeCellModelIDs)
         self.enzyme_wids = _parse_wid_array(fixture.enzymeWholeCellModelIDs)
+        self.default_stimuli = dict(
+            zip(
+                self.stimuli_wids,
+                _parse_stimulus_defaults(fixture.stimuli, len(self.stimuli_wids)),
+                strict=False,
+            )
+        )
         self._substrate_wid_set = set(self.substrate_wids)
         self._stimuli_wid_set = set(self.stimuli_wids)
 
@@ -170,7 +195,11 @@ class KarrProteinActivationProcess(Process):
     def ports_schema(self) -> dict[str, Any]:
         return {
             "substrates": {
-                wid: {"_default": 0.0, "_updater": "set", "_emit": False}
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                for wid in self.substrate_wids
+            },
+            "inactivatedSubstrates": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                 for wid in self.substrate_wids
             },
             "enzymes": {
@@ -182,7 +211,11 @@ class KarrProteinActivationProcess(Process):
                 for wid in self.enzyme_wids
             },
             "stimuli": {
-                wid: {"_default": 0.0, "_updater": "set", "_emit": False}
+                wid: {
+                    "_default": float(self.default_stimuli.get(wid, 0.0)),
+                    "_updater": "set",
+                    "_emit": False,
+                }
                 for wid in self.stimuli_wids
             },
             "protein": {
@@ -207,13 +240,35 @@ class KarrProteinActivationProcess(Process):
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         del timestep
         signals = self._collect_rule_signals(states)
-        return {
-            "protein": {
-                "activity": {
-                    wid: int(self.rules[wid](signals)) for wid in self.regulated_protein_wids
-                }
-            }
-        }
+        substrates_state = states.get("substrates", {})
+        inactivated_state = states.get("inactivatedSubstrates", {})
+
+        activity_update: dict[str, int] = {}
+        substrate_delta: dict[str, float] = {}
+        inactivated_delta: dict[str, float] = {}
+
+        for wid in self.regulated_protein_wids:
+            is_active = int(self.rules[wid](signals))
+            activity_update[wid] = is_active
+
+            active_now = float(substrates_state.get(wid, 0.0))
+            inactive_now = float(inactivated_state.get(wid, 0.0))
+
+            if is_active:
+                if inactive_now != 0.0:
+                    substrate_delta[wid] = substrate_delta.get(wid, 0.0) + inactive_now
+                    inactivated_delta[wid] = inactivated_delta.get(wid, 0.0) - inactive_now
+            else:
+                if active_now != 0.0:
+                    substrate_delta[wid] = substrate_delta.get(wid, 0.0) - active_now
+                    inactivated_delta[wid] = inactivated_delta.get(wid, 0.0) + active_now
+
+        update: dict[str, Any] = {"protein": {"activity": activity_update}}
+        if substrate_delta:
+            update["substrates"] = substrate_delta
+        if inactivated_delta:
+            update["inactivatedSubstrates"] = inactivated_delta
+        return update
 
 
 __all__ = ["KarrProteinActivationProcess"]
