@@ -2,7 +2,7 @@
   "process_name": "Translation",
   "process_class": "KarrTranslationProcess",
   "process_module": "opencell.vivarium.karr_translation",
-  "process_source_git_sha": "bd022a45e7e5f13583d38a17143005e905a09265",
+  "process_source_git_sha": "unknown",
   "rng_seed": 32,
   "n_ticks": 100,
   "observables": [
@@ -560,6 +560,6 @@
       "MG_470_MONOMER"
     ]
   },
-  "generated_at_utc": "2026-06-04T20:08:06.260208+00:00",
+  "generated_at_utc": "2026-06-04T22:09:46.744021+00:00",
   "npz_file": "Translation_100ticks.npz"
 }

@@ -1,0 +1,19 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________________ test_l2_2_translation_distributional_fidelity _________________
+
+    def test_l2_2_translation_distributional_fidelity() -> None:
+        report = _run_comparison()
+>       assert report["overall_pass"], (
+            "L2.2 Translation distributional mismatch. "
+            f"ks_failure_count={report['ks_failure_count']}, "
+            f"wasserstein_failure_count={report['wasserstein_failure_count']}, "
+            f"report={_REPORT_PATH}"
+        )
+E       AssertionError: L2.2 Translation distributional mismatch. ks_failure_count=398, wasserstein_failure_count=400, report=/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/comparison_report.json
+E       assert False
+
+tests/vivarium/test_l2_2_translation.py:456: AssertionError
+=========================== short test summary info ============================
+FAILED tests/vivarium/test_l2_2_translation.py::test_l2_2_translation_distributional_fidelity
+1 failed in 65.02s (0:01:05)
