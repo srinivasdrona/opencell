@@ -823,6 +823,10 @@ def joint_wasserstein_topk(samples_a: np.ndarray, samples_b: np.ndarray, topk_in
 
 - Recommendation: default to `karr_transcription` for continuity with current L2.1 replay gate, report class in artifacts, and optionally shadow-run v3 non-gating.
 - Owner input needed: yes.
+- **Decision (2026-06-05, operator-confirmed):** Use **v1 = `KarrTranscriptionProcess`** (`opencell/vivarium/karr_transcription.py`) imported directly in the L2.2 ensemble runner. No v3 shadow.
+  - Rationale: v1 is the trace-trust Karr-port (`_substrate_deltas_from_hint`, `_bound_enzyme_deltas_from_hint`, fixture-backed; 695 LOC, fresh June-4 commits `7473bd0` / `edaa781` closing L2-replay alignment). v3 is a scope-reduced mechanism approximation built on `opencell.m2.transcription_v2` (223 LOC, last meaningful commit `5638f69` "declare scope reduction") and was never aiming for L2-replay parity — it bypasses the trace and predicts from analytic curves. The two processes answer different questions (replay-faithful port vs runnable mechanism for whole-cell chassis); conflating them in L2.2 would smear the gate's signal.
+  - Composite note: `karr_composite.py:210` aliases `karr_transcription → KarrTranscriptionV3Process` for whole-cell runs. This is a chassis runtime decision (no trace-data mid-simulation) and is **not** a statement that v3 is the L2 target. L2.2 instantiates v1 directly, matching the existing L2.1 replay-test pattern (each test imports its target process, no composite indirection).
+  - No code change required for this decision — codex's L2.2 §2.6 already assumes v1.
 
 #### Q6: For Replication and DNARepair, should gate include raw chromosome sparse channels or only derived summaries?
 
