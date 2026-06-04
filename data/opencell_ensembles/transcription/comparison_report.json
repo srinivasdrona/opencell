@@ -1,0 +1,142 @@
+{
+  "process_name": "Transcription",
+  "process_class": "KarrTranscriptionProcess",
+  "expected_process_class": "KarrTranscriptionProcess",
+  "seed_list": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49
+  ],
+  "n_ticks": 100,
+  "n_observables": 4,
+  "observables": [
+    "substrates",
+    "enzymes",
+    "boundEnzymes",
+    "RNAs"
+  ],
+  "global_alpha": 0.01,
+  "family_size": 400,
+  "bonferroni_alpha": 2.5e-05,
+  "bootstrap_iterations": 200,
+  "bootstrap_quantile": 0.95,
+  "bootstrap_margin": 1.1,
+  "ks_failure_count": 381,
+  "wasserstein_failure_count": 396,
+  "observable_rollup": {
+    "substrates": {
+      "ks_d_max": 1.0,
+      "ks_p_bonferroni_min": 7.929322417134671e-27,
+      "w1_max": 8729.059999999998,
+      "w1_threshold_max": 1139.1401999999991
+    },
+    "enzymes": {
+      "ks_d_max": 0.88,
+      "ks_p_bonferroni_min": 9.452167817719186e-18,
+      "w1_max": 1.9200000000000004,
+      "w1_threshold_max": 1.0119999999999996
+    },
+    "boundEnzymes": {
+      "ks_d_max": 0.98,
+      "ks_p_bonferroni_min": 7.929322417134671e-25,
+      "w1_max": 2.76,
+      "w1_threshold_max": 0.9910999999999998
+    },
+    "RNAs": {
+      "ks_d_max": 1.0,
+      "ks_p_bonferroni_min": 7.929322417134671e-27,
+      "w1_max": 783.3999999999999,
+      "w1_threshold_max": 1.8931
+    }
+  },
+  "ks_failures_path": "/mnt/e/opencell-worktrees/l22-gate-transcription/data/opencell_ensembles/transcription/ks_failures.csv",
+  "wasserstein_failures_path": "/mnt/e/opencell-worktrees/l22-gate-transcription/data/opencell_ensembles/transcription/wasserstein_failures.csv",
+  "substrate_projection": {
+    "karr_wids": [
+      "ATP",
+      "CTP",
+      "GTP",
+      "UTP",
+      "AMP",
+      "CMP",
+      "GMP",
+      "UMP",
+      "ADP",
+      "PPI",
+      "H2O",
+      "H"
+    ],
+    "oc_wids": [
+      "ATP",
+      "CTP",
+      "GTP",
+      "UTP"
+    ],
+    "intersection_wids": [
+      "ATP",
+      "CTP",
+      "GTP",
+      "UTP"
+    ],
+    "dropped_karr_wids": [
+      "AMP",
+      "CMP",
+      "GMP",
+      "UMP",
+      "ADP",
+      "PPI",
+      "H2O",
+      "H"
+    ],
+    "dropped_oc_wids": [],
+    "tick0_intersection_w1_seed0": 1181.0
+  },
+  "overall_pass": false
+}

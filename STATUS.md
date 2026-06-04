@@ -66,3 +66,4 @@
 - [2026-06-04 22:25:18 UTC] GATE_B C2 complete: generated transcription ensemble seeds 000-049 and MANIFEST.json (50/50 present, no missing seeds).
 - [2026-06-04 22:31:34 UTC] GATE_B C3 complete: added Transcription OC ensemble runner with fitted-init overlay and generated 50 NPZ seeds under data/opencell_ensembles/transcription/.
 - [2026-06-04 22:32:02 UTC] GATE_B C4 wired: added tests/vivarium/test_l2_2_transcription.py with Bonferroni KS/W1 checks and substrate WID-intersection projection.
+- [2026-06-04 22:37:13 UTC] GATE_B full run complete: test_l2_2_transcription.py executed (FAIL expected as quantitative verdict); artifacts + STATUS_gate_transcription.md updated with per-channel metrics.
