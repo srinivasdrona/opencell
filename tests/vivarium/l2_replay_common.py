@@ -4,6 +4,7 @@ import copy
 import inspect
 import os
 import re
+from dataclasses import dataclass
 from functools import lru_cache
 from numbers import Number
 from pathlib import Path
@@ -15,6 +16,7 @@ import pytest
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _TRACE_BASE_REL = Path("data/m1_sources/karr_native/per_process_traces_v2")
+_FIXTURE_BASE_REL = Path("data/karr_fixtures/per_process")
 _L2_TOLERANCE_TABLE_REL = Path("docs/phase_e/L2_TOLERANCE_TABLE.md")
 _L2_USE_CALIBRATED_ENV = "L2_USE_CALIBRATED_TOLERANCES"
 _L2_BUCKET_RTOL_DEFAULT = 0.30
@@ -92,6 +94,22 @@ def resolve_trace_path(process_name: str) -> Path:
     )
 
 
+def resolve_per_process_fixture_path(process_name: str) -> Path:
+    rel = _FIXTURE_BASE_REL / f"{process_name}_flat.mat"
+    candidates = [
+        _REPO_ROOT / rel,
+        Path("E:/opencell") / rel,
+        Path("/mnt/e/opencell") / rel,
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    raise FileNotFoundError(
+        f"Missing per-process fixture for {process_name} at expected locations: "
+        + ", ".join(str(path) for path in candidates)
+    )
+
+
 def cell_vector(handle: h5py.File, group: str, name: str, tick: int) -> np.ndarray:
     ds = handle[f"{group}/{name}"]
     if len(ds.shape) != 2:
@@ -112,6 +130,182 @@ def cell_vector(handle: h5py.File, group: str, name: str, tick: int) -> np.ndarr
             f"Tick index {tick} out of range for {group}/{name} with shape={ds.shape}"
         )
     return np.asarray(handle[ref][()], dtype=np.float64).reshape(-1)
+
+
+def _parse_wid_array(value: object) -> list[str]:
+    values = np.asarray(value, dtype=object).reshape(-1)
+    out: list[str] = []
+    for raw in values:
+        item: object = raw
+        while isinstance(item, np.ndarray):
+            if item.size == 0:
+                item = ""
+                break
+            item = item.flat[0]
+        out.append(str(item))
+    return out
+
+
+@lru_cache(maxsize=None)
+def load_fixture_channel_wids(process_name: str, channel: str) -> tuple[str, ...]:
+    field_by_channel = {
+        "substrates": "substrateWholeCellModelIDs",
+        "enzymes": "enzymeWholeCellModelIDs",
+        "boundEnzymes": "enzymeWholeCellModelIDs",
+    }
+    field_name = field_by_channel.get(channel)
+    if field_name is None:
+        return tuple()
+
+    from scipy.io import loadmat
+
+    fixture_path = resolve_per_process_fixture_path(process_name)
+    fixture_mat = loadmat(str(fixture_path), squeeze_me=True, struct_as_record=False)
+    data = fixture_mat.get("data")
+    if data is None:
+        return tuple()
+    fixture = getattr(data, "fixture", None)
+    if fixture is None or not hasattr(fixture, field_name):
+        return tuple()
+    return tuple(_parse_wid_array(getattr(fixture, field_name)))
+
+
+@dataclass(frozen=True)
+class ChannelSpec:
+    karr_field: str
+    karr_wids: tuple[str, ...]
+    oc_wids: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class WidIntersectionProjection:
+    intersection_wids: tuple[str, ...]
+    karr_projected: np.ndarray
+    oc_projected: np.ndarray
+    dropped_karr_wids: tuple[str, ...]
+    dropped_oc_wids: tuple[str, ...]
+
+
+def project_vector_onto_wids(
+    *,
+    karr_vector: np.ndarray,
+    karr_wids: tuple[str, ...] | list[str],
+    oc_wids: tuple[str, ...] | list[str],
+) -> np.ndarray:
+    """Project Karr vector onto OC WID order via name intersection.
+
+    Missing OC WIDs are filled with zero.
+    """
+    karr_arr = np.asarray(karr_vector, dtype=np.float64).reshape(-1)
+    karr_ids = [str(x) for x in karr_wids]
+    oc_ids = [str(x) for x in oc_wids]
+    if len(karr_arr) != len(karr_ids):
+        raise ValueError(
+            f"Karr vector/WID length mismatch: len(vector)={len(karr_arr)} len(karr_wids)={len(karr_ids)}"
+        )
+    if len(set(karr_ids)) != len(karr_ids):
+        raise ValueError("Karr WID list contains duplicates; cannot project by name")
+    if len(set(oc_ids)) != len(oc_ids):
+        raise ValueError("OC WID list contains duplicates; cannot project by name")
+
+    karr_idx = {wid: idx for idx, wid in enumerate(karr_ids)}
+    out = np.zeros(len(oc_ids), dtype=np.float64)
+    for idx, wid in enumerate(oc_ids):
+        src_idx = karr_idx.get(wid)
+        if src_idx is not None:
+            out[idx] = float(karr_arr[src_idx])
+    return out
+
+
+def project_pair_to_wid_intersection(
+    *,
+    karr_vector: np.ndarray,
+    oc_vector: np.ndarray,
+    karr_wids: tuple[str, ...] | list[str],
+    oc_wids: tuple[str, ...] | list[str],
+) -> WidIntersectionProjection:
+    """Project both vectors onto the Karr∩OC WID set in OC order."""
+    karr_arr = np.asarray(karr_vector, dtype=np.float64).reshape(-1)
+    oc_arr = np.asarray(oc_vector, dtype=np.float64).reshape(-1)
+    karr_ids = [str(x) for x in karr_wids]
+    oc_ids = [str(x) for x in oc_wids]
+    if len(karr_arr) != len(karr_ids):
+        raise ValueError(
+            f"Karr vector/WID length mismatch: len(vector)={len(karr_arr)} len(karr_wids)={len(karr_ids)}"
+        )
+    if len(oc_arr) != len(oc_ids):
+        raise ValueError(
+            f"OC vector/WID length mismatch: len(vector)={len(oc_arr)} len(oc_wids)={len(oc_ids)}"
+        )
+    if len(set(karr_ids)) != len(karr_ids):
+        raise ValueError("Karr WID list contains duplicates; cannot intersect by name")
+    if len(set(oc_ids)) != len(oc_ids):
+        raise ValueError("OC WID list contains duplicates; cannot intersect by name")
+
+    karr_idx = {wid: idx for idx, wid in enumerate(karr_ids)}
+    oc_idx = {wid: idx for idx, wid in enumerate(oc_ids)}
+    intersection = [wid for wid in oc_ids if wid in karr_idx]
+
+    karr_intersection = np.asarray(
+        [float(karr_arr[karr_idx[wid]]) for wid in intersection], dtype=np.float64
+    )
+    oc_intersection = np.asarray(
+        [float(oc_arr[oc_idx[wid]]) for wid in intersection], dtype=np.float64
+    )
+    dropped_karr = tuple(wid for wid in karr_ids if wid not in oc_idx)
+    dropped_oc = tuple(wid for wid in oc_ids if wid not in karr_idx)
+
+    return WidIntersectionProjection(
+        intersection_wids=tuple(intersection),
+        karr_projected=karr_intersection,
+        oc_projected=oc_intersection,
+        dropped_karr_wids=dropped_karr,
+        dropped_oc_wids=dropped_oc,
+    )
+
+
+def wasserstein_over_wid_intersection(
+    *,
+    karr_vector: np.ndarray,
+    oc_vector: np.ndarray,
+    karr_wids: tuple[str, ...] | list[str],
+    oc_wids: tuple[str, ...] | list[str],
+) -> tuple[float, WidIntersectionProjection]:
+    """Compute W1 distance after projecting both vectors to Karr∩OC WIDs."""
+    projection = project_pair_to_wid_intersection(
+        karr_vector=karr_vector,
+        oc_vector=oc_vector,
+        karr_wids=karr_wids,
+        oc_wids=oc_wids,
+    )
+    if projection.karr_projected.size == 0:
+        return (float("nan"), projection)
+
+    from scipy.stats import wasserstein_distance
+
+    w1 = float(wasserstein_distance(projection.karr_projected, projection.oc_projected))
+    return (w1, projection)
+
+
+def load_fitted_init_from_mat(
+    mat_path: Path,
+    channel_map: dict[str, ChannelSpec],
+) -> dict[str, np.ndarray]:
+    """Load OC tick-0 fitted init from a Karr MAT ``states_before`` snapshot.
+
+    For each channel, reads ``states_before[channel_spec.karr_field][0, :]`` and
+    projects from Karr WID order onto OC WID order (intersection, missing->0).
+    """
+    out: dict[str, np.ndarray] = {}
+    with h5py.File(mat_path, "r") as handle:
+        for channel, spec in channel_map.items():
+            before_vec = cell_vector(handle, "states_before", spec.karr_field, 0)
+            out[channel] = project_vector_onto_wids(
+                karr_vector=before_vec,
+                karr_wids=spec.karr_wids,
+                oc_wids=spec.oc_wids,
+            )
+    return out
 
 
 def schema_defaults(node: Any) -> Any:
