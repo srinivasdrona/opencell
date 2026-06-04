@@ -19,6 +19,7 @@ _KARR_ROOT = (
     / "translation"
 )
 _OC_ROOT = _REPO_ROOT / "data" / "opencell_ensembles" / "translation"
+_OC_MANIFEST_PATH = _OC_ROOT / "MANIFEST.json"
 _REPORT_PATH = _OC_ROOT / "comparison_report.json"
 _KS_FAILURES_PATH = _OC_ROOT / "ks_failures.csv"
 _W1_FAILURES_PATH = _OC_ROOT / "wasserstein_failures.csv"
@@ -41,6 +42,7 @@ _OBSERVABLES = (
 )
 _CORE_OBSERVABLES = {"substrates", "enzymes", "boundEnzymes", "monomers"}
 _SUMMARY_OBSERVABLES = set(_OBSERVABLES).difference(_CORE_OBSERVABLES)
+_EXPECTED_OC_PROCESS_CLASS = "KarrTranslationProcess"
 
 
 def _karr_seed_path(seed: int) -> Path:
@@ -109,6 +111,22 @@ def _seed_coverage_check() -> None:
         pytest.fail(f"Missing OpenCell ensemble seeds: {missing_oc}")
 
 
+def _oc_process_class_check() -> str:
+    if not _OC_MANIFEST_PATH.exists():
+        pytest.fail(f"Missing OpenCell manifest: {_OC_MANIFEST_PATH}")
+    try:
+        manifest = json.loads(_OC_MANIFEST_PATH.read_text(encoding="utf-8"))
+    except Exception as exc:  # pragma: no cover - defensive parse failure path
+        pytest.fail(f"Failed to parse OpenCell manifest {_OC_MANIFEST_PATH}: {exc}")
+    process_class = str(manifest.get("process_class", ""))
+    if process_class != _EXPECTED_OC_PROCESS_CLASS:
+        pytest.fail(
+            f"OpenCell ensemble process_class mismatch: "
+            f"got={process_class!r}, expected={_EXPECTED_OC_PROCESS_CLASS!r}"
+        )
+    return process_class
+
+
 def _schema_check() -> None:
     with h5py.File(_karr_seed_path(_SEEDS[0]), "r") as handle:
         karr_keys = set(handle["states_after"].keys())
@@ -175,6 +193,7 @@ def _bootstrap_w1_threshold(
 
 def _run_comparison() -> dict[str, Any]:
     _seed_coverage_check()
+    oc_process_class = _oc_process_class_check()
     _schema_check()
     karr_samples, oc_samples = _build_sample_cube()
 
@@ -258,6 +277,8 @@ def _run_comparison() -> dict[str, Any]:
 
     report = {
         "process_name": "Translation",
+        "process_class": oc_process_class,
+        "expected_process_class": _EXPECTED_OC_PROCESS_CLASS,
         "seed_list": list(_SEEDS),
         "n_ticks": _N_TICKS,
         "n_observables": len(_OBSERVABLES),
