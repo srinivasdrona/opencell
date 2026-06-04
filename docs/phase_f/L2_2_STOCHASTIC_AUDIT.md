@@ -118,6 +118,61 @@ This is actually good news for L2.5 progress — the first viable L2.5 pair (`PP
 - **Q3.** The 14th SHALLOW entry vs 13 in the headline: tRNAAminoacylation is a judgement call between TRIVIAL and SHALLOW. Defaulted shallow. Acceptable?
 - **Q4.** Should DEEP processes' L2.2 work proceed in parallel via codex fleet (4 agents, ~1 day each, ~1 calendar day total), or sequentially (4 calendar days, less integration risk)?
 
+---
+
+## CRITIQUE ADDENDUM (2026-06-04, GPT-5.5 adversarial review)
+
+**Status of original verdict above:** SUPERSEDED IN PART. Original buckets remain visible for audit trail; the revised verdict below governs L2.2 execution.
+
+**Provenance:** GPT-5.5 critique fired against this doc with 3 targeted questions (trivial-vs-shallow boundary, 3 shallow-vs-deep borderlines, PPI+PPII as first L2.5 pair). Critique returned material objections on all 3. Findings below quote the call sites cited by the critique; I cross-verified each against the MATLAB sources.
+
+### A1. TRIVIAL-RNG bucket is NOT cleared by L2.1 trace-hint
+
+Original claim: λ-check via L2.1 trace-hint delta-integral covers TRIVIAL processes. **Wrong.** L2.1 trace-hint short-circuit bypasses Python's stochastic code path entirely (`next_update` returns hinted deltas before biology), so it validates the *seam*, not the *draw*.
+
+Three concrete masked-bug classes the critique identified:
+
+1. **Same-seed RNG coupling at composition time.** PPI and PPII both default `rng_seed=0` in `karr_protein_processing_{i,ii}.py`. In L2.5 these instantiate `np.random.default_rng(0)` independently; per-process marginals look correct, but draws across the two processes become deterministically correlated, synchronizing water-demand bursts and shifting shared-pool starvation behavior. L2.1 cannot see this — it tests one process at a time.
+2. **PPI implementation drift.** Karr uses `mnrnd(...) + min(...)` at `ProteinProcessingI.m:265-274, 307-308`. Current Python PPI uses `multivariate_hypergeometric` at `karr_protein_processing_i.py:399-413`. Different joint variance and clipping. L2.1 trace-hint masks this completely.
+3. **Metabolism FBA solver divergence.** Karr=GLPK (`Metabolism.m:173-177`, solve `1287-1290`); Python=SciPy HiGHS (`karr_metabolism.py:144-150`). Degenerate LP optima return the same objective but potentially different flux vectors → different `stochasticRound` inputs at `Metabolism.m:1215, 1220, 1225, 1230`. Trace-hint bypass at `karr_metabolism.py:341-354` hides this entirely.
+
+**Revised TRIVIAL-RNG action:** all 5 require small no-hint tests (RNG independence/correlation cross-process; PPI multinomial covariance vs Karr; Metabolism FBA flux-vector oracle vs MATLAB GLPK). Not free.
+
+### A2. Three SHALLOW borderlines BUMP TO DEEP
+
+| Process | Original | Revised | Evidence |
+|---|---|---|---|
+| **Replication** | SHALLOW | **DEEP** | Pre-registered DEEP rule includes "iterated rejection/while-loop sampling." `Replication.m:414-418` is exactly that: Poisson Okazaki fragment lengths extended in a while loop until `sum(pos) >= len`, then truncated at `420-426`. Locations feed persistent replication state. My original classification violated my own rule — failed pre-registered check. |
+| **MacromolecularComplexation** | SHALLOW | **DEEP** | The audit flagged this as a close call contingent on whether `cumprob` is recomputed inside the loop. It IS: `MacromolecularComplexation.m:340-343` recomputes, `355` applies selection, `356` depletes monomers. Sequential resource-depletion with cross-complex correlations. |
+| **Cytokinesis** | SHALLOW | **DEEP** | Rates are constant, but RNG drives a Markov chain over ring substates. First-filament binding at `184-188` mutates `numEdgesOneStraight`; second-filament gate at `192-199` reads the updated state; residual dissociation `204-216` reads it again; hydrolysis `220-236` mutates `numEdgesTwoStraight/numEdgesTwoBent`; bent-ring falloff `245-248` mutates further. State-dependent transition probabilities = state machine. |
+
+### A3. PPI+PPII first L2.5 pair: VALID but limited
+
+Critique verdict: good **allocator smoke test** (will catch double-spend, negative water, starvation asymmetry across the shared `substrates` pool) but biologically uninformative. Stays as first pair with explicit assertions:
+- Total allocated water ≤ pool capacity.
+- No negative substrates after composition.
+- Both processes starve symmetrically under constrained water.
+- Namespace/request keys remain separate.
+
+Then move to **`RNAProcessing + RNAModification`** as the second pair — sequential producer-consumer coupling is the next signal-rich test. (Not Translation+RNAProcessing, which has been xfail for 4 days; Translation is DEEP and shouldn't anchor L2.5 work until its L2.2 lands.)
+
+### Revised bucket counts
+
+| Bucket | Original | Revised | Cost change |
+|---|---:|---:|---|
+| DETERMINISTIC | 6 | 6 | unchanged |
+| TRIVIAL-RNG | 5 | 5 | +3 small no-hint tests (~0.5 eng-day each = ~1.5 eng-days) |
+| ALGORITHMIC-SHALLOW | 13 | 10 | -3 promoted; ensemble harness still 1 eng-day |
+| ALGORITHMIC-DEEP | **4** | **7** | +3 → ~3 more eng-days at the audit's "1 process per engineer-day" rate |
+
+**Revised total L2.2 closure cost: ~8-9 eng-days** (vs original 5 eng-days, still vastly under the naive 3-week interpretation). The 7 DEEP processes are: ReplicationInitiation, **Replication**, DNARepair, Transcription, Translation, **MacromolecularComplexation**, **Cytokinesis**.
+
+### Methodological lesson
+
+Pre-registered rules only debias if the auditor enforces them. I classified Replication as SHALLOW despite the file containing a verbatim instance of the DEEP rule's "iterated rejection/while-loop sampling" criterion. The pre-registration was honest; the application was lazy. Future audits should include a self-check pass: for each classification, restate which rule clause was matched and which alternative clause was rejected, with line numbers.
+
+---
+
 ## Provenance
 
 - F artifacts read: `docs/karr_extracts/process/{01..28}_*.md` (verbatim docstring extracts + mapping notes, no code).

@@ -63,15 +63,22 @@ Pattern eliminated FOUR previously-framed multi-day blockers in one session (tra
 4. **2 SKIPPED L2.1 processes (legitimate N/A, deferred):** `karr_ribosome_assembly` and `karr_rna_modification` both have no-op 100-tick Karr traces (zero deltas across all observables). The skip is gated by `audit_trace_mutated_ticks` precheck to avoid vacuous "0 == 0" greens. To cover them properly: (a) longer trace, (b) different initial conditions that exercise the process, or (c) defer coverage to L2.2/L1 where stochastic single-tick behaviour is tested differently. Not a blocker for L2.1 GREEN gate. Track here so it doesn't drop off.
 5. **Tolerance reader fix** (deferred from Day 18, lower priority now) — `_resolve_l2_tolerance_pair` `(0,0)` row footgun.
 6. **L2.5 (was "L2.2 composition") readiness audit — PAUSED 2026-06-04 pending L2.2 distributional.** v2 harness skeleton exists (`tests/vivarium/l2_2_replay_common_v2.py`; filename predates ladder rename) but (a) `data/schemas/owner_manifest.toml` not written (D1.2 designed but not implemented), (b) CAUSE_2/CAUSE_3 diagnostics are `NotImplementedError`, (c) only pair test `test_l2_2_translation_plus_rna_processing_v2.py` exists, marked `xfail`. Per 2026-06-04 sequencing decision, L2.5 work resumes only after L2.2 distributional fidelity is all-green for stochastic processes. See `docs/phase_f/L2_5_PLAN.md` for paused M1-M5 milestones.
-6b. **L2.2 distributional methodology — SCOPE REDUCED 2026-06-04 via stochastic audit (`da9a4b3`, `docs/phase_f/L2_2_STOCHASTIC_AUDIT.md`).** Per pre-registered classifier rules, 28 Karr processes bucket as:
-  - **DETERMINISTIC (6)**: no L2.2 needed — ChromosomeCondensation, ChromosomeSegregation, HostInteraction, ProteinActivation, TerminalOrganelleAssembly, TranscriptionalRegulation.
-  - **TRIVIAL-RNG (5)**: covered by L2.1 trace-hint delta-integral (no new test) — Metabolism, DNADamage, ProteinProcessingI, ProteinProcessingII, (tRNAAminoacylation borderline).
-  - **ALGORITHMIC-SHALLOW (13)**: 1 Python-only ensemble harness (N=50, ~1 eng-day) covers all — Replication, DNASupercoiling, RNAProcessing, RNAModification, RNADecay, tRNAAminoacylation, ProteinModification, ProteinFolding, ProteinDecay, ProteinTranslocation, MacromolecularComplexation, RibosomeAssembly, FtsZPolymerization, Cytokinesis.
-  - **ALGORITHMIC-DEEP (4)**: Karr ensemble required (N=20+ each) — ReplicationInitiation, DNARepair, Transcription, Translation.
+6b. **L2.2 distributional methodology — SCOPE REVISED 2026-06-04 after GPT-5.5 critique (`docs/phase_f/L2_2_STOCHASTIC_AUDIT.md` CRITIQUE ADDENDUM).** Original audit (`da9a4b3`) had 4 DEEP; critique bumped 3 SHALLOW → DEEP (Replication, MacromolecularComplexation, Cytokinesis) and rejected the "TRIVIAL is free" claim. Revised buckets:
+  - **DETERMINISTIC (6)**: no L2.2 needed.
+  - **TRIVIAL-RNG (5)**: need small no-hint tests (~1.5 eng-days total) — RNG independence cross-process, PPI multinomial covariance vs Karr, Metabolism FBA flux-vector oracle vs MATLAB GLPK.
+  - **ALGORITHMIC-SHALLOW (10)**: 1 Python ensemble harness (~1 eng-day) covers all.
+  - **ALGORITHMIC-DEEP (7)**: ReplicationInitiation, **Replication**, DNARepair, Transcription, Translation, **MacromolecularComplexation**, **Cytokinesis**. Karr ensemble (N=20+) each, ~1 eng-day per.
 
-  Cost: ~5 eng-days total (4 DEEP + 1 SHALLOW harness) vs ~3 weeks naive interpretation. **GPT-5.5 targeted critique fired 2026-06-04 (3 questions: trivial/shallow boundary, 3 shallow/deep borderlines, PPI+PPII as first L2.5 pair)**; await before drafting `L2_2_PLAN.md` for the 4 DEEP. 4 open questions (Q1-Q4) in audit doc footer pending operator input — Q1 (wrong-λ-right-shape gap) is load-bearing.
+  **Revised cost: ~8-9 eng-days L2.2 closure** (vs 5 pre-critique, still vastly under naive 3 weeks).
 
-6c. **L2.5 first pair pivot (pending critique):** replace current xfail `Translation+RNAProcessing` (Translation is DEEP) with `ProteinProcessingI + ProteinProcessingII` — both TRIVIAL-RNG, both L2.1-GREEN, zero L2.2 dependency. Immediate unblock for L2.5 harness work once critique clears.
+  Critique evidence (load-bearing — read before drafting L2_2_PLAN.md):
+  - PPI implementation drift: Karr `mnrnd+min` (`ProteinProcessingI.m:265-274`) vs Python `multivariate_hypergeometric` (`karr_protein_processing_i.py:399-413`).
+  - Metabolism: GLPK vs HiGHS LP degeneracy → different flux vectors → different `stochasticRound` inputs.
+  - Replication has explicit while-loop rejection sampling (`Replication.m:414-418`) matching the pre-registered DEEP rule — original SHALLOW call violated own rule.
+  - MacComplex `cumprob` IS recomputed inside loop (`MacromolecularComplexation.m:340-343, 355-356`).
+  - Cytokinesis state-machine: ring substate mutations feed subsequent gate reads (`184-248`).
+
+6c. **L2.5 first pair pivot:** `ProteinProcessingI + ProteinProcessingII` as **allocator smoke test** (NOT biology validation). Add explicit assertions: total water ≤ pool, no negative substrates, symmetric starvation, namespace separation. Then second pair = `RNAProcessing + RNAModification` (sequential producer-consumer; replaces failing Translation+RNAProcessing — Translation is DEEP and shouldn't anchor L2.5 until its L2.2 lands).
 7. **29-process tracker** updated 2026-06-03 PM with L2.1 column: `docs/phase_e/PROCESS_STATUS_ALL_29.md`.
 
 **KEY DISCOVERY this morning (codify for next session): the trace-hint short-circuit pattern.** When the per-process trace already isolates this process's contribution to substrates/monomers/complexs, OC's stochastic biology path inevitably drifts unless the test trusts the trace via `overlay_trace_after_hint`. Pattern is now standard:
