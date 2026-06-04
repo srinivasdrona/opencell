@@ -2,7 +2,7 @@
   "process_name": "Translation",
   "process_class": "KarrTranslationProcess",
   "process_module": "opencell.vivarium.karr_translation",
-  "process_source_git_sha": "bd022a45e7e5f13583d38a17143005e905a09265",
+  "process_source_git_sha": "unknown",
   "seed_range": [
     0,
     49
@@ -20,306 +20,306 @@
     "ribosome_bound_mrnas_nonzero_count",
     "ribosome_mrna_positions_sum"
   ],
-  "generated_at_utc": "2026-06-04T20:08:25.254102+00:00",
+  "generated_at_utc": "2026-06-04T22:09:56.143370+00:00",
   "entries": [
     {
       "seed": 0,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_000/Translation_100ticks.npz",
-      "size_bytes": 10081,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_000/Translation_100ticks.npz",
+      "size_bytes": 11291,
       "status": "generated"
     },
     {
       "seed": 1,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_001/Translation_100ticks.npz",
-      "size_bytes": 10122,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_001/Translation_100ticks.npz",
+      "size_bytes": 11296,
       "status": "generated"
     },
     {
       "seed": 2,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_002/Translation_100ticks.npz",
-      "size_bytes": 10079,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_002/Translation_100ticks.npz",
+      "size_bytes": 11236,
       "status": "generated"
     },
     {
       "seed": 3,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_003/Translation_100ticks.npz",
-      "size_bytes": 10097,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_003/Translation_100ticks.npz",
+      "size_bytes": 11308,
       "status": "generated"
     },
     {
       "seed": 4,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_004/Translation_100ticks.npz",
-      "size_bytes": 10089,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_004/Translation_100ticks.npz",
+      "size_bytes": 11256,
       "status": "generated"
     },
     {
       "seed": 5,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_005/Translation_100ticks.npz",
-      "size_bytes": 10140,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_005/Translation_100ticks.npz",
+      "size_bytes": 11258,
       "status": "generated"
     },
     {
       "seed": 6,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_006/Translation_100ticks.npz",
-      "size_bytes": 10138,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_006/Translation_100ticks.npz",
+      "size_bytes": 11293,
       "status": "generated"
     },
     {
       "seed": 7,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_007/Translation_100ticks.npz",
-      "size_bytes": 10094,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_007/Translation_100ticks.npz",
+      "size_bytes": 11263,
       "status": "generated"
     },
     {
       "seed": 8,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_008/Translation_100ticks.npz",
-      "size_bytes": 10102,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_008/Translation_100ticks.npz",
+      "size_bytes": 11284,
       "status": "generated"
     },
     {
       "seed": 9,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_009/Translation_100ticks.npz",
-      "size_bytes": 10075,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_009/Translation_100ticks.npz",
+      "size_bytes": 11301,
       "status": "generated"
     },
     {
       "seed": 10,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_010/Translation_100ticks.npz",
-      "size_bytes": 10131,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_010/Translation_100ticks.npz",
+      "size_bytes": 11252,
       "status": "generated"
     },
     {
       "seed": 11,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_011/Translation_100ticks.npz",
-      "size_bytes": 10130,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_011/Translation_100ticks.npz",
+      "size_bytes": 11307,
       "status": "generated"
     },
     {
       "seed": 12,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_012/Translation_100ticks.npz",
-      "size_bytes": 10114,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_012/Translation_100ticks.npz",
+      "size_bytes": 11316,
       "status": "generated"
     },
     {
       "seed": 13,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_013/Translation_100ticks.npz",
-      "size_bytes": 10108,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_013/Translation_100ticks.npz",
+      "size_bytes": 11304,
       "status": "generated"
     },
     {
       "seed": 14,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_014/Translation_100ticks.npz",
-      "size_bytes": 10128,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_014/Translation_100ticks.npz",
+      "size_bytes": 11320,
       "status": "generated"
     },
     {
       "seed": 15,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_015/Translation_100ticks.npz",
-      "size_bytes": 10089,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_015/Translation_100ticks.npz",
+      "size_bytes": 11290,
       "status": "generated"
     },
     {
       "seed": 16,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_016/Translation_100ticks.npz",
-      "size_bytes": 10137,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_016/Translation_100ticks.npz",
+      "size_bytes": 11285,
       "status": "generated"
     },
     {
       "seed": 17,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_017/Translation_100ticks.npz",
-      "size_bytes": 10134,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_017/Translation_100ticks.npz",
+      "size_bytes": 11293,
       "status": "generated"
     },
     {
       "seed": 18,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_018/Translation_100ticks.npz",
-      "size_bytes": 10142,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_018/Translation_100ticks.npz",
+      "size_bytes": 11301,
       "status": "generated"
     },
     {
       "seed": 19,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_019/Translation_100ticks.npz",
-      "size_bytes": 10106,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_019/Translation_100ticks.npz",
+      "size_bytes": 11278,
       "status": "generated"
     },
     {
       "seed": 20,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_020/Translation_100ticks.npz",
-      "size_bytes": 10101,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_020/Translation_100ticks.npz",
+      "size_bytes": 11278,
       "status": "generated"
     },
     {
       "seed": 21,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_021/Translation_100ticks.npz",
-      "size_bytes": 10117,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_021/Translation_100ticks.npz",
+      "size_bytes": 11266,
       "status": "generated"
     },
     {
       "seed": 22,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_022/Translation_100ticks.npz",
-      "size_bytes": 10132,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_022/Translation_100ticks.npz",
+      "size_bytes": 11300,
       "status": "generated"
     },
     {
       "seed": 23,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_023/Translation_100ticks.npz",
-      "size_bytes": 10089,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_023/Translation_100ticks.npz",
+      "size_bytes": 11269,
       "status": "generated"
     },
     {
       "seed": 24,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_024/Translation_100ticks.npz",
-      "size_bytes": 10127,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_024/Translation_100ticks.npz",
+      "size_bytes": 11249,
       "status": "generated"
     },
     {
       "seed": 25,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_025/Translation_100ticks.npz",
-      "size_bytes": 10118,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_025/Translation_100ticks.npz",
+      "size_bytes": 11299,
       "status": "generated"
     },
     {
       "seed": 26,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_026/Translation_100ticks.npz",
-      "size_bytes": 10146,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_026/Translation_100ticks.npz",
+      "size_bytes": 11290,
       "status": "generated"
     },
     {
       "seed": 27,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_027/Translation_100ticks.npz",
-      "size_bytes": 10136,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_027/Translation_100ticks.npz",
+      "size_bytes": 11266,
       "status": "generated"
     },
     {
       "seed": 28,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_028/Translation_100ticks.npz",
-      "size_bytes": 10150,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_028/Translation_100ticks.npz",
+      "size_bytes": 11310,
       "status": "generated"
     },
     {
       "seed": 29,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_029/Translation_100ticks.npz",
-      "size_bytes": 10164,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_029/Translation_100ticks.npz",
+      "size_bytes": 11282,
       "status": "generated"
     },
     {
       "seed": 30,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_030/Translation_100ticks.npz",
-      "size_bytes": 10075,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_030/Translation_100ticks.npz",
+      "size_bytes": 11285,
       "status": "generated"
     },
     {
       "seed": 31,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_031/Translation_100ticks.npz",
-      "size_bytes": 10048,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_031/Translation_100ticks.npz",
+      "size_bytes": 11291,
       "status": "generated"
     },
     {
       "seed": 32,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_032/Translation_100ticks.npz",
-      "size_bytes": 10134,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_032/Translation_100ticks.npz",
+      "size_bytes": 11317,
       "status": "generated"
     },
     {
       "seed": 33,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_033/Translation_100ticks.npz",
-      "size_bytes": 10100,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_033/Translation_100ticks.npz",
+      "size_bytes": 11294,
       "status": "generated"
     },
     {
       "seed": 34,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_034/Translation_100ticks.npz",
-      "size_bytes": 10131,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_034/Translation_100ticks.npz",
+      "size_bytes": 11280,
       "status": "generated"
     },
     {
       "seed": 35,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_035/Translation_100ticks.npz",
-      "size_bytes": 10087,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_035/Translation_100ticks.npz",
+      "size_bytes": 11271,
       "status": "generated"
     },
     {
       "seed": 36,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_036/Translation_100ticks.npz",
-      "size_bytes": 10079,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_036/Translation_100ticks.npz",
+      "size_bytes": 11287,
       "status": "generated"
     },
     {
       "seed": 37,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_037/Translation_100ticks.npz",
-      "size_bytes": 10130,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_037/Translation_100ticks.npz",
+      "size_bytes": 11283,
       "status": "generated"
     },
     {
       "seed": 38,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_038/Translation_100ticks.npz",
-      "size_bytes": 10094,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_038/Translation_100ticks.npz",
+      "size_bytes": 11302,
       "status": "generated"
     },
     {
       "seed": 39,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_039/Translation_100ticks.npz",
-      "size_bytes": 10115,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_039/Translation_100ticks.npz",
+      "size_bytes": 11281,
       "status": "generated"
     },
     {
       "seed": 40,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_040/Translation_100ticks.npz",
-      "size_bytes": 10099,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_040/Translation_100ticks.npz",
+      "size_bytes": 11283,
       "status": "generated"
     },
     {
       "seed": 41,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_041/Translation_100ticks.npz",
-      "size_bytes": 10129,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_041/Translation_100ticks.npz",
+      "size_bytes": 11272,
       "status": "generated"
     },
     {
       "seed": 42,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_042/Translation_100ticks.npz",
-      "size_bytes": 10137,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_042/Translation_100ticks.npz",
+      "size_bytes": 11299,
       "status": "generated"
     },
     {
       "seed": 43,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_043/Translation_100ticks.npz",
-      "size_bytes": 10096,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_043/Translation_100ticks.npz",
+      "size_bytes": 11273,
       "status": "generated"
     },
     {
       "seed": 44,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_044/Translation_100ticks.npz",
-      "size_bytes": 10091,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_044/Translation_100ticks.npz",
+      "size_bytes": 11317,
       "status": "generated"
     },
     {
       "seed": 45,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_045/Translation_100ticks.npz",
-      "size_bytes": 10117,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_045/Translation_100ticks.npz",
+      "size_bytes": 11283,
       "status": "generated"
     },
     {
       "seed": 46,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_046/Translation_100ticks.npz",
-      "size_bytes": 10131,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_046/Translation_100ticks.npz",
+      "size_bytes": 11252,
       "status": "generated"
     },
     {
       "seed": 47,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_047/Translation_100ticks.npz",
-      "size_bytes": 10083,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_047/Translation_100ticks.npz",
+      "size_bytes": 11316,
       "status": "generated"
     },
     {
       "seed": 48,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_048/Translation_100ticks.npz",
-      "size_bytes": 10092,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_048/Translation_100ticks.npz",
+      "size_bytes": 11292,
       "status": "generated"
     },
     {
       "seed": 49,
-      "npz_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/seed_049/Translation_100ticks.npz",
-      "size_bytes": 10134,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/seed_049/Translation_100ticks.npz",
+      "size_bytes": 11281,
       "status": "generated"
     }
   ]
