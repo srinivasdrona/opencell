@@ -7,8 +7,10 @@ import pytest
 from l2_replay_common import (
     KARR_MONOMER_FORM_ORDER,
     project_monomer_4820_to_482,
+    project_pair_to_wid_intersection,
     project_trace_matrix_to_482,
     scatter_monomer_482_to_4820,
+    wasserstein_over_wid_intersection,
 )
 
 
@@ -147,3 +149,32 @@ class TestScatterMonomer482To4820:
     def test_rejects_empty_form_order(self):
         with pytest.raises(ValueError, match="non-empty"):
             scatter_monomer_482_to_4820(np.zeros(482), ())
+
+
+def test_wid_intersection_projects_down_not_up():
+    karr_wids = ("ATP", "CTP", "GTP", "UTP", "ADP")
+    oc_wids = ("ATP", "CTP", "GTP", "UTP")
+    karr = np.asarray([100.0, 200.0, 300.0, 400.0, 500.0], dtype=np.float64)
+    oc = np.asarray([95.0, 190.0, 290.0, 410.0], dtype=np.float64)
+    projected = project_pair_to_wid_intersection(
+        karr_vector=karr,
+        oc_vector=oc,
+        karr_wids=karr_wids,
+        oc_wids=oc_wids,
+    )
+    assert projected.intersection_wids == oc_wids
+    assert projected.dropped_karr_wids == ("ADP",)
+    assert projected.dropped_oc_wids == ()
+    assert np.array_equal(projected.karr_projected, np.asarray([100.0, 200.0, 300.0, 400.0]))
+    assert np.array_equal(projected.oc_projected, oc)
+
+
+def test_wid_intersection_w1_is_finite_on_overlap():
+    w1, projected = wasserstein_over_wid_intersection(
+        karr_vector=np.asarray([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float64),
+        oc_vector=np.asarray([1.2, 2.3, 3.4, 4.5], dtype=np.float64),
+        karr_wids=("ATP", "CTP", "GTP", "UTP", "ADP"),
+        oc_wids=("ATP", "CTP", "GTP", "UTP"),
+    )
+    assert projected.intersection_wids == ("ATP", "CTP", "GTP", "UTP")
+    assert np.isfinite(w1)

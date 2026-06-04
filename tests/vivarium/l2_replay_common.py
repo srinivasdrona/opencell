@@ -177,6 +177,15 @@ class ChannelSpec:
     oc_wids: tuple[str, ...]
 
 
+@dataclass(frozen=True)
+class WidIntersectionProjection:
+    intersection_wids: tuple[str, ...]
+    karr_projected: np.ndarray
+    oc_projected: np.ndarray
+    dropped_karr_wids: tuple[str, ...]
+    dropped_oc_wids: tuple[str, ...]
+
+
 def project_vector_onto_wids(
     *,
     karr_vector: np.ndarray,
@@ -206,6 +215,76 @@ def project_vector_onto_wids(
         if src_idx is not None:
             out[idx] = float(karr_arr[src_idx])
     return out
+
+
+def project_pair_to_wid_intersection(
+    *,
+    karr_vector: np.ndarray,
+    oc_vector: np.ndarray,
+    karr_wids: tuple[str, ...] | list[str],
+    oc_wids: tuple[str, ...] | list[str],
+) -> WidIntersectionProjection:
+    """Project both vectors onto the Karr∩OC WID set in OC order."""
+    karr_arr = np.asarray(karr_vector, dtype=np.float64).reshape(-1)
+    oc_arr = np.asarray(oc_vector, dtype=np.float64).reshape(-1)
+    karr_ids = [str(x) for x in karr_wids]
+    oc_ids = [str(x) for x in oc_wids]
+    if len(karr_arr) != len(karr_ids):
+        raise ValueError(
+            f"Karr vector/WID length mismatch: len(vector)={len(karr_arr)} len(karr_wids)={len(karr_ids)}"
+        )
+    if len(oc_arr) != len(oc_ids):
+        raise ValueError(
+            f"OC vector/WID length mismatch: len(vector)={len(oc_arr)} len(oc_wids)={len(oc_ids)}"
+        )
+    if len(set(karr_ids)) != len(karr_ids):
+        raise ValueError("Karr WID list contains duplicates; cannot intersect by name")
+    if len(set(oc_ids)) != len(oc_ids):
+        raise ValueError("OC WID list contains duplicates; cannot intersect by name")
+
+    karr_idx = {wid: idx for idx, wid in enumerate(karr_ids)}
+    oc_idx = {wid: idx for idx, wid in enumerate(oc_ids)}
+    intersection = [wid for wid in oc_ids if wid in karr_idx]
+
+    karr_intersection = np.asarray(
+        [float(karr_arr[karr_idx[wid]]) for wid in intersection], dtype=np.float64
+    )
+    oc_intersection = np.asarray(
+        [float(oc_arr[oc_idx[wid]]) for wid in intersection], dtype=np.float64
+    )
+    dropped_karr = tuple(wid for wid in karr_ids if wid not in oc_idx)
+    dropped_oc = tuple(wid for wid in oc_ids if wid not in karr_idx)
+
+    return WidIntersectionProjection(
+        intersection_wids=tuple(intersection),
+        karr_projected=karr_intersection,
+        oc_projected=oc_intersection,
+        dropped_karr_wids=dropped_karr,
+        dropped_oc_wids=dropped_oc,
+    )
+
+
+def wasserstein_over_wid_intersection(
+    *,
+    karr_vector: np.ndarray,
+    oc_vector: np.ndarray,
+    karr_wids: tuple[str, ...] | list[str],
+    oc_wids: tuple[str, ...] | list[str],
+) -> tuple[float, WidIntersectionProjection]:
+    """Compute W1 distance after projecting both vectors to Karr∩OC WIDs."""
+    projection = project_pair_to_wid_intersection(
+        karr_vector=karr_vector,
+        oc_vector=oc_vector,
+        karr_wids=karr_wids,
+        oc_wids=oc_wids,
+    )
+    if projection.karr_projected.size == 0:
+        return (float("nan"), projection)
+
+    from scipy.stats import wasserstein_distance
+
+    w1 = float(wasserstein_distance(projection.karr_projected, projection.oc_projected))
+    return (w1, projection)
 
 
 def load_fitted_init_from_mat(
