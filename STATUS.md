@@ -55,3 +55,9 @@
 
 1. This worktree has no `tests/vivarium/*l2_replay*` test files, so the requested L2.1 selector cannot validate 9-pass non-regression locally. Should we run the replay gate from the sibling sweep worktree that contains those tests and then backport results here?
 2. Should `data/m1_sources/karr_native/per_process_traces` be symlinked/standardized for all audit worktrees so `scripts/probe_l2_0_schema_audit.py` is reproducible without manual copy?
+- 2026-06-04T21:20:01Z ? l22-f3: loaded F3 context docs and inspected translation/per-process extractor surfaces.
+- 2026-06-04T21:20:01Z ? l22-f3: reproduced pre-fix seed_000 semantics drift (substrates 0%, monomers 30%, enzymes/boundEnzymes 90%, free/aminoacylated tRNAs 0%).
+- 2026-06-04T21:20:01Z ? l22-f3: MATLAB diagnostic confirmed proc.monomers diverges from backing until copyToState and next tick pre-value diverges again.
+- 2026-06-04T21:21:20Z ? l22-f3: patched extractor to capture translation snapshots at global tick boundaries (pre-loop and post-loop copyFromState).
+- 2026-06-04T21:21:20Z ? l22-f3: post-fix seed_000 probe is green at 100% snap-eq for all 9 translation snapshot channels.
+- 2026-06-04T21:40:38Z ? l22-f3: regenerated translation ensemble seeds 001..049 with patched extractor (936.44s total), and spot-check probes for seeds 010/049 are 100% on all 9 channels.
