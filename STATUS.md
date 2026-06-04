@@ -61,3 +61,4 @@
 - 2026-06-04T21:21:20Z ? l22-f3: patched extractor to capture translation snapshots at global tick boundaries (pre-loop and post-loop copyFromState).
 - 2026-06-04T21:21:20Z ? l22-f3: post-fix seed_000 probe is green at 100% snap-eq for all 9 translation snapshot channels.
 - 2026-06-04T21:40:38Z ? l22-f3: regenerated translation ensemble seeds 001..049 with patched extractor (936.44s total), and spot-check probes for seeds 010/049 are 100% on all 9 channels.
+- 2026-06-04T21:42:59Z ? l22-f3: completed with commits d8a5354 (diagnose), 6f1f6d5 (fix), b19688f (regen); detailed report in STATUS_f3.md.
