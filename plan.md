@@ -1,3 +1,29 @@
+## L-ladder (canonical, reconciled 2026-06-04)
+
+The L-ladder went through a terminology drift around L2.2 vs L2.2.k (composition harness) vs L3 (direct coupling). Reconciled definitions:
+
+```
+L1   "did it fire?"                                                 [composite chassis runtime]
+L2.0 schema audit (static)                                          [ports_schema vs karr_obs]
+L2.1 bit-identity (per-process, single trace, σ=0)                  [GREEN as of 2026-06-03]
+L2.2 distributional fidelity (per-process, ensemble)                [stochastic gate; NOT STARTED]
+L2.5 shared-pool composition (k processes, single trace,            [was "L2.2.k"; PAUSED pending L2.2]
+     allocator-mediated; CAUSE_1-7 taxonomy)
+L3   direct coupling (2 processes, direct port hand-off, no pool)   [PCV framework sketched, not started]
+L4   submodule (cluster vs Karr submodel oracle)
+L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
+```
+
+**Sequencing decision (2026-06-04):** L2.5 starts only after L2.2 is all-green for every stochastic process intended to participate in any planned L2.5 pair. Reason: L2.5 currently absorbs stochastic divergence via L2.1's calibrated-tolerance shortcut; without L2.2 closing that gap first, L2.5 silently rides on calibrated tolerances and can pass while distributional behavior is wrong.
+
+**Plans:**
+- `docs/phase_f/L2_5_PLAN.md` — L2.5 composition harness closure (PAUSED).
+- `docs/phase_f/L2_2_HARNESS_DESIGN.md` — name predates rename; canonical L2.5 design doc.
+- `docs/phase_f/L2_2_D1_UNION_MASTER_LIST.md` — name predates rename; canonical L2.5 D1 design.
+- L2.2 (distributional) plan — **TO BE DRAFTED**; methodology not started.
+
+**Overlap with L3/L4:** L2.5 (shared-pool) and L3 (direct hand-off) are peer rungs that test 2 processes through different mechanisms (allocator vs direct port). Both must be green for L4/L5 to mean anything. L2.5 comes first because it tests the wiring the chassis actually uses.
+
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
 **Live processes / agents (2026-06-03 ~12:30 IST):** NONE.
@@ -36,7 +62,8 @@ Pattern eliminated FOUR previously-framed multi-day blockers in one session (tra
 3. **PR `audit/l2-1-sweep-v2` → main** — now 44/46 strict, 46/46 calibrated. Time to merge.
 4. **2 SKIPPED L2.1 processes (legitimate N/A, deferred):** `karr_ribosome_assembly` and `karr_rna_modification` both have no-op 100-tick Karr traces (zero deltas across all observables). The skip is gated by `audit_trace_mutated_ticks` precheck to avoid vacuous "0 == 0" greens. To cover them properly: (a) longer trace, (b) different initial conditions that exercise the process, or (c) defer coverage to L2.2/L1 where stochastic single-tick behaviour is tested differently. Not a blocker for L2.1 GREEN gate. Track here so it doesn't drop off.
 5. **Tolerance reader fix** (deferred from Day 18, lower priority now) — `_resolve_l2_tolerance_pair` `(0,0)` row footgun.
-6. **L2.2 readiness audit (BEFORE firing parallel agents):** v2 harness skeleton exists (`tests/vivarium/l2_2_replay_common_v2.py`) but (a) `data/schemas/owner_manifest.toml` not written (D1.2 designed but not implemented), (b) CAUSE_2/CAUSE_3 diagnostics are `NotImplementedError`, (c) only pair test `test_l2_2_translation_plus_rna_processing_v2.py` exists, marked `xfail`. NO committed grouping list yet (operator may point to one). Foundation work needed before fan-out.
+6. **L2.5 (was "L2.2 composition") readiness audit — PAUSED 2026-06-04 pending L2.2 distributional.** v2 harness skeleton exists (`tests/vivarium/l2_2_replay_common_v2.py`; filename predates ladder rename) but (a) `data/schemas/owner_manifest.toml` not written (D1.2 designed but not implemented), (b) CAUSE_2/CAUSE_3 diagnostics are `NotImplementedError`, (c) only pair test `test_l2_2_translation_plus_rna_processing_v2.py` exists, marked `xfail`. Per 2026-06-04 sequencing decision, L2.5 work resumes only after L2.2 distributional fidelity is all-green for stochastic processes. See `docs/phase_f/L2_5_PLAN.md` for paused M1-M5 milestones.
+6b. **L2.2 distributional methodology — NOT STARTED.** No design doc, no σ-band specification, no ensemble harness. This is now the next active workstream after Day-19 housekeeping (blog + decision logs + PR). 19 stochastic processes currently passing L2.1 only via calibrated tolerances are the primary target.
 7. **29-process tracker** updated 2026-06-03 PM with L2.1 column: `docs/phase_e/PROCESS_STATUS_ALL_29.md`.
 
 **KEY DISCOVERY this morning (codify for next session): the trace-hint short-circuit pattern.** When the per-process trace already isolates this process's contribution to substrates/monomers/complexs, OC's stochastic biology path inevitably drifts unless the test trusts the trace via `overlay_trace_after_hint`. Pattern is now standard:

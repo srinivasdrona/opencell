@@ -1,22 +1,55 @@
-# L2.2 Plan — Composition Harness Closure
+# L2.5 Plan — Shared-Pool Composition Harness Closure
 
-**Status**: draft, pre-execution
+**Status**: draft, **PAUSED pending L2.2 distributional all-green**
 **Drafted**: 2026-06-03 (Day 19, post-L2.1-FULL-GREEN)
-**Predecessor**: L2.1 sweep (44/46 strict, 46/46 calibrated, 2 legitimate skips)
-**Successor**: L3 (full whole-cell composition; scope TBD)
+**Renamed**: 2026-06-04 from `L2_2_PLAN.md` after canonical L-ladder reconciliation (L2.2 = distributional, L2.5 = composition; see plan.md ladder block).
+**Predecessor**: L2.1 sweep (44/46 strict, 46/46 calibrated, 2 legitimate skips) + L2.2 distributional sweep (not yet drafted).
+**Successor**: L3 (direct producer→consumer hand-off, no substrates pool); see `L3_PCV_FRAMEWORK.md`.
 
 ---
 
 ## 1. Goal
 
-Bring the L2.2 composition harness to full green for all priority process
-pairs identified in the L2.2 design (CAUSE_1–7 taxonomy, D1–D4 decisions in
-`L2_2_HARNESS_DESIGN.md`). Validate that processes individually correct at
-L2.1 compose correctly when run together against the joint Karr trace.
+Bring the L2.5 shared-pool composition harness to full green for all priority
+process pairs identified in the L2.5 design (CAUSE_1–7 taxonomy, D1–D4 decisions
+in `L2_2_HARNESS_DESIGN.md` — note: filename predates the ladder rename and is
+retained as canonical L2.5 design doc). Validate that processes individually
+correct at L2.1 (and stochastically correct at L2.2) compose correctly when
+run together on the shared `substrates` store + `KarrAllocationStep` against
+the joint Karr trace.
 
-L2.2 tests **state-update wiring between processes** (owner manifest,
-write-conflict resolution, composition order, shared WID space alignment),
-not within-process biology (that is L1/L2.1 territory).
+L2.5 tests **state-update wiring between processes via the shared substrates
+pool** (owner manifest, write-conflict resolution, composition order, shared
+WID space alignment), not within-process biology (that is L1/L2.1 territory)
+nor stochastic distributional fidelity (L2.2) nor direct biological hand-off
+(L3).
+
+## 0. Sequencing — why L2.5 sits where it does
+
+The canonical L-ladder (reconciled 2026-06-04):
+
+```
+L1   "did it fire?"
+L2.0 schema audit (static)
+L2.1 bit-identity (per-process, single trace, σ=0)
+L2.2 distributional fidelity (per-process, ensemble)        ← stochastic gate
+L2.5 shared-pool composition (k processes, single trace,    ← THIS DOC
+     allocator-mediated)
+L3   direct coupling (2 processes, direct hand-off, no pool)
+L4   submodule (cluster vs Karr submodel oracle)
+L5   chassis (whole-cell phenotype, ensemble)
+```
+
+**L2.5 starts only after L2.2 is all-green** for every stochastic process
+that participates in any planned L2.5 pair. Reason: L2.5 currently absorbs
+stochastic divergence via L2.1's calibrated-tolerance shortcut. Running L2.5
+on stochastic processes before L2.2 lands means L2.5 silently rides on
+calibrated tolerances and can pass while the underlying distributional
+behavior is wrong. L2.2 closes that gap.
+
+Concretely: this plan is **paused**. Execution resumes when L2.2 is green
+across all stochastic processes intended to compose. Until then, this doc
+captures the design and the M1–M5 milestone structure for resumption.
 
 ## 2. Scope
 
@@ -187,4 +220,5 @@ workstream switches) characteristic of operator's L2.1 cadence.
 
 | Date | Change | By |
 |---|---|---|
-| 2026-06-03 | v0.1 draft | operator |
+| 2026-06-03 | v0.1 draft (as L2_2_PLAN.md) | operator |
+| 2026-06-04 | v0.2 renamed L2_2_PLAN.md → L2_5_PLAN.md after canonical L-ladder reconciliation. L2.2 is distributional fidelity (per-process ensemble); L2.5 is shared-pool composition (this doc). Sequencing: L2.5 paused until L2.2 all-green. | operator + agent |
