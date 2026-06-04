@@ -26,6 +26,41 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Live processes / agents (2026-06-05 ~01:10 IST):** THREE codex jobs running detached.
+
+| Tag | Worktree | Branch | PID | PID-file | Log | Spec |
+|---|---|---|---|---|---|---|
+| 2a trivial-no-hint | `E:\opencell-worktrees\trivial-no-hint` | `test/trivial-no-hint` | 99712 (**done, see STATUS**) | `~\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\trivial_no_hint_pid.txt` | `.codex_trivial_no_hint.log` | 3 TRIVIAL tests authored; 1 PASS (RNG indep r=-0.014, p=0.94) + 2 PROMOTE-TO-DEEP signals (PPI covariance 21.5% drift, Metabolism FBA 50% growth drift). Commits `dd22f4c`, `fe0651d`, `da04e5e`. Push blocked (creds missing in non-interactive shell). |
+| 2c l22-translation | `E:\opencell-worktrees\l22-translation` | `exec/l22-translation` | 68632 (**running**) | `…\l22_translation_pid.txt` | `.codex_l22_translation.log` | L2.2 Translation DEEP execution per `docs/phase_f/L2_2_PLAN.md §2.5`. 4 checkpoint commits (C1 MATLAB script, C2 N=50 extraction, C3 Python ensemble, C4 comparison test). Expected wall 90-120 min. |
+| 2b l25-cause-4 | `E:\opencell-worktrees\l25-cause-4` | `fix/l25-cause-4-ppi-ppii` | 95376 (**running**) | `…\l25_cause_4_pid.txt` | `.codex_l25_cause_4.log` | L2.5 PPI+PPII pair `CAUSE_4_UPSTREAM_STATE_POLLUTION` (diff=38 at master-idx 174, NOT MG_174_MONOMER). Prior diagnosis at `CAUSE_4_DIAGNOSIS.md` in worktree root; probe at `scripts/probe_cause_4_l25.py`. Speculative additive-merge fix tried + reverted (was dormant in this test path). |
+
+**Branch tips (origin in sync where noted):**
+- `feature/l2-2-apm-x2` @ `e5d0efc` (`docs(L2.2): resolve Q5 - use v1 KarrTranscriptionProcess directly, no v3 shadow`) — current working branch; carries L2.2 plan + L2.5 PPI/PPII test (`79536fb`) + critique addendum (`bb5716c`) + L2.2 plan (`6458c70`). Not pushed (network/creds noisy this session; safe to push).
+- `test/trivial-no-hint` @ `da04e5e` — local only, codex push blocked.
+- `exec/l22-translation` — in-flight, codex committing as it goes.
+- `fix/l25-cause-4-ppi-ppii` @ `e5d0efc` (fresh worktree, codex just starting).
+- `main` @ `723f902` (unchanged).
+
+**§7 questions status (from L2.2 plan):**
+- Q5 (transcription class) — ✅ RESOLVED via `e5d0efc`. Use v1 `KarrTranscriptionProcess` directly, no v3 shadow. v3 is a scope-reduced mechanism for chassis runs.
+- Q1, Q2, Q4, Q6-Q9 — open. Codex's defaults are recommended-accept with small additions; user is iterating on them while codex jobs run.
+
+**Operational traps re-hit this session (capture for future):**
+- `git worktree prune` does NOT delete disk dirs. 133 ghost dirs remained at `E:\opencell-worktrees\` after the prune. They contain symlinks into canonical `data/m1_sources/karr_native/per_process_traces_v2` — naive `rm -rf` would have wiped canonical traces (same trap as 2026-05-30 16/28 wipe). Disposition: ghost dirs LEFT IN PLACE (3.6 GB). Documented in `D:\OneDrive - Microsoft\.pm-os\TRAPS.md` as `worktree-prune-orphan-dirs-recursion (2026-06-04)`.
+- WSL one-liners that activate venv then `cd` then `python ...` hang under codex-fleet load. Workaround: use `bin\oc-pytest.cmd` / `bin\oc-py.cmd` wrappers, or as last resort Windows `python` with the project on PYTHONPATH (it'll fail on `opencell.*` imports but works for pure scipy/numpy probes against `data/karr_fixtures/`).
+
+**Activation env:** `L2_USE_CALIBRATED_TOLERANCES=1` only needed for `karr_transcription` and `karr_protein_modification` (2 strict-near-clean cases). Tolerance table at `docs/phase_e/L2_TOLERANCE_TABLE.md`.
+
+**MATLAB:** `E:\MATLAB\bin\matlab.exe` (R2026a, DEMO/trial, single-license → serialize MATLAB jobs across worktrees). Headless: `& "E:\MATLAB\bin\matlab.exe" -batch "cd('...'); run('script.m');"`. NOT needed for codex 2a/2b; IS needed for codex 2c (Translation N=50 extraction).
+
+**WSL venv:** `/mnt/e/opencell/.venv-wsl/bin/activate` (worktrees do NOT have their own venv; activate the canonical one).
+
+**Polling cadence (post-step-away):** Codex 2c and 2b need 30-120 min more wall. `manage_schedule create interval=10m prompt="poll PIDs in files/*_pid.txt; tail logs; report STATUS files when present"`.
+
+---
+
+### Prior handoff (2026-06-03 ~12:30 IST) — kept for context
+
 **Live processes / agents (2026-06-03 ~12:30 IST):** NONE.
 
 **🎉 L2.1 IS GREEN.** After today's afternoon push (metabolism closed via same trace-hint pattern):
