@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import sys
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -31,7 +32,7 @@ from l2_replay_common import (  # noqa: E402
     project_observable_from_state,
     refresh_allocator_views,
 )
-from opencell.vivarium.karr_translation_v3 import KarrTranslationV3Process  # noqa: E402
+from opencell.vivarium.karr_translation import KarrTranslationProcess  # noqa: E402
 
 
 OBSERVABLES: tuple[str, ...] = (
@@ -56,7 +57,7 @@ class TranslationRunConfig:
     force_overwrite: bool = False
 
 
-def _observable_wids(process: KarrTranslationV3Process) -> dict[str, list[str]]:
+def _observable_wids(process: KarrTranslationProcess) -> dict[str, list[str]]:
     substrate_wids = list(getattr(process, "allocation_substrate_wids", ()))
     if not substrate_wids:
         substrate_wids = list(getattr(process, "aa_ids", ()))
@@ -68,8 +69,14 @@ def _observable_wids(process: KarrTranslationV3Process) -> dict[str, list[str]]:
     }
 
 
-def _translation_summary_from_process(process: KarrTranslationV3Process) -> dict[str, float]:
-    out = {k: 0.0 for k in SUMMARY_FIELDS}
+def _translation_summary_from_process(process: KarrTranslationProcess) -> dict[str, float]:
+    # v3 -> v1 internal mapping note:
+    # - v3 `_ribosome_state_active`               -> summary ribosome_state_active_count
+    # - v3 `_ribosome_bound_mrnas`                -> summary ribosome_bound_mrnas_nonzero_count
+    # - v3 `_ribosome_mrna_positions`             -> summary ribosome_mrna_positions_sum
+    # v1 `KarrTranslationProcess` currently does not expose analogous ribosome-state arrays,
+    # so these summary channels are preserved but emitted as NaN (explicitly not silently dropped).
+    out = {k: float("nan") for k in SUMMARY_FIELDS}
 
     rib_active = getattr(process, "_ribosome_state_active", None)
     if rib_active is not None:
@@ -89,8 +96,32 @@ def _translation_summary_from_process(process: KarrTranslationV3Process) -> dict
     return out
 
 
+def _apply_translation_v1_update(state: dict[str, Any], update: dict[str, Any]) -> None:
+    # v1 writes absolute protein.counts (set updater); apply_count_update is accumulate-only.
+    # Keep this adjustment local to the L2.2 runner to avoid changing shared replay helpers.
+    protein_update = update.get("protein", {})
+    if isinstance(protein_update, dict):
+        counts_update = protein_update.get("counts")
+        if isinstance(counts_update, dict):
+            protein_state = state.setdefault("protein", {})
+            protein_counts_state = protein_state.setdefault("counts", {})
+            for wid, value in counts_update.items():
+                protein_counts_state[str(wid)] = float(value)
+
+    update_for_accumulate = dict(update)
+    if isinstance(protein_update, dict) and "counts" in protein_update:
+        remainder = dict(protein_update)
+        remainder.pop("counts", None)
+        if remainder:
+            update_for_accumulate["protein"] = remainder
+        else:
+            update_for_accumulate.pop("protein", None)
+
+    apply_count_update(state, update_for_accumulate)
+
+
 def _run_translation_seed(seed: int, n_ticks: int) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray], dict[str, list[str]]]:
-    process = KarrTranslationV3Process({"rng_seed": int(seed)})
+    process = KarrTranslationProcess({"rng_seed": int(seed)})
     state = build_state_template(process)
     wids_by_observable = _observable_wids(process)
 
@@ -102,7 +133,7 @@ def _run_translation_seed(seed: int, n_ticks: int) -> tuple[dict[str, np.ndarray
     for tick in range(n_ticks):
         refresh_allocator_views(process, state)
         update = process.next_update(1.0, state)
-        apply_count_update(state, update)
+        _apply_translation_v1_update(state, update)
 
         for obs in OBSERVABLES:
             vec = project_observable_from_state(
@@ -119,6 +150,17 @@ def _run_translation_seed(seed: int, n_ticks: int) -> tuple[dict[str, np.ndarray
             summaries[name][tick] = float(summary[name])
 
     return vectors, summaries, wids_by_observable
+
+
+def _source_git_sha(path: Path) -> str:
+    try:
+        return subprocess.check_output(
+            ["git", "log", "-n", "1", "--format=%H", "--", str(path)],
+            cwd=_REPO_ROOT,
+            text=True,
+        ).strip()
+    except Exception:
+        return "unknown"
 
 
 def _save_seed_output(
@@ -144,7 +186,9 @@ def _save_seed_output(
 
     metadata = {
         "process_name": "Translation",
-        "process_class": "KarrTranslationV3Process",
+        "process_class": "KarrTranslationProcess",
+        "process_module": "opencell.vivarium.karr_translation",
+        "process_source_git_sha": _source_git_sha(_REPO_ROOT / "opencell" / "vivarium" / "karr_translation.py"),
         "rng_seed": int(seed),
         "n_ticks": int(n_ticks),
         "observables": list(OBSERVABLES),
@@ -196,7 +240,9 @@ def run_translation_ensemble(config: TranslationRunConfig) -> dict[str, Any]:
 
     manifest = {
         "process_name": "Translation",
-        "process_class": "KarrTranslationV3Process",
+        "process_class": "KarrTranslationProcess",
+        "process_module": "opencell.vivarium.karr_translation",
+        "process_source_git_sha": _source_git_sha(_REPO_ROOT / "opencell" / "vivarium" / "karr_translation.py"),
         "seed_range": [int(min(config.seed_list)), int(max(config.seed_list))],
         "seed_count": len(config.seed_list),
         "n_ticks": int(config.n_ticks),
