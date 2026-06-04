@@ -799,12 +799,23 @@ def joint_wasserstein_topk(samples_a: np.ndarray, samples_b: np.ndarray, topk_in
 - Does affect broader L2.2 closure narrative.
 - Recommendation: accept critique addendum direction and handle TRIVIAL via separate no-hint tests, SHALLOW via separate harness.
 - Owner input needed: yes (policy-level).
+- **Decision (2026-06-05, operator-confirmed):** Accept critique addendum with an **explicit TRIVIAL→DEEP promotion gate**. Each TRIVIAL test computes a drift metric vs the Karr primitive and, if drift > a primitive-specific threshold (default 10% relative on the leading moment / oracle), the process is reclassified DEEP and added to the DEEP queue. Wrong-lambda-right-shape is NOT a silent acceptance criterion.
+  - Empirical anchor (codex 2a, commits `dd22f4c` / `fe0651d` / `da04e5e` on `test/trivial-no-hint`, 2026-06-05): of three TRIVIAL tests authored against this rule, **one passed and two failed past the 10% threshold** — PPI multinomial covariance drifted 21.5% (Frobenius, vs Karr `mnrnd+min`), Metabolism FBA growth/h drifted ~50% (HiGHS 0.0392 vs MATLAB GLPK 0.0763 on `Metabolism_100ticks.mat`). RNG independence (PPI vs PPII) passed cleanly (`r=-0.014, p=0.94`). This is exactly the discrimination signal the gate is for.
+  - Promotion mechanism: when a TRIVIAL test's STATUS reports `Classification: FAIL` with drift > threshold, orchestrator opens a §2.x DEEP entry in this plan, tagging the originating commit as evidence. PPI and Metabolism are now candidate DEEP promotions pending §2 spec authoring.
+  - Owner input needed: NO further input — the threshold + promotion mechanism are now in implementation authority.
+
+
 
 #### Q2 (carry-over): handling L2.1-SKIPPED processes in L2.2
 
 - RibosomeAssembly and RNAModification are SHALLOW, not DEEP.
 - Recommendation: defer from this DEEP plan and track in SHALLOW workstream.
 - Owner input needed: yes, because sequencing preference impacts downstream reporting.
+- **Decision (2026-06-05, operator-confirmed):** Defer from the DEEP plan. Track in the SHALLOW workstream with an explicit **unblock criterion**: SHALLOW coverage for either process is gated on EITHER (a) a longer Karr trace (≥1000 ticks) where both processes mutate at least once, OR (b) an alternate initial-condition fixture that exercises the process within 100 ticks. Until either lands, both processes remain `xskip` in L2.2 with rationale `no-op trace, L2.1-SKIPPED, awaiting Karr extension`.
+  - This is the same gating policy used for L2.1 SKIPs (`audit_trace_mutated_ticks` precheck); reusing it keeps L2.1 and L2.2 SKIP semantics aligned, so a single trace extension can clear both at once.
+  - Owner input needed: NO further input.
+
+
 
 #### Q3 (carry-over): tRNAAminoacylation boundary classification
 
@@ -816,6 +827,13 @@ def joint_wasserstein_topk(samples_a: np.ndarray, samples_b: np.ndarray, topk_in
 
 - Recommendation: parallel after M1 infra lock.
 - Owner input needed: yes (resource allocation and integration preference).
+- **Decision (2026-06-05, operator-confirmed):** Parallel after M1, with a **MATLAB-extraction serialization caveat**. The MATLAB license on this host is DEMO/trial single-seat (`E:\MATLAB\bin\matlab.exe`, R2026a), so concurrent `-batch` invocations either license-fail or serialize at the FlexLM layer. Therefore:
+  - **MATLAB N=50 extractions: serialize.** At most ONE `matlab -batch` per process at a time, run sequentially per DEEP process. The active extraction blocks other extractions.
+  - **Python ensemble authoring / harness coding / pytest runs: parallelize up to 3 worktrees.** These don't touch MATLAB and are CPU/IO bound. Three concurrent codex worktrees has been validated this session (2a, 2b, 2c live simultaneously without contention except for WSL-venv probe hangs).
+  - **Practical schedule per DEEP process:** (1) author MATLAB extraction script + Python harness in parallel across worktrees; (2) serialize the extraction step into a FIFO queue handled by orchestrator (not codex); (3) parallelize ensemble runs (Python only) once their `.mat` fixture exists.
+  - Owner input needed: NO further input.
+
+
 
 ### 7.2 New DEEP-plan-specific questions
 
@@ -832,33 +850,45 @@ def joint_wasserstein_topk(samples_a: np.ndarray, samples_b: np.ndarray, topk_in
 
 - Recommendation: include both minimal raw sparse channels and compact summaries.
 - Owner input needed: no (implementation authority within this workstream).
+- **Decision (2026-06-05, operator-confirmed):** ACCEPT codex default. Include both raw sparse channels (`polymerizedRegions`, `linkingNumbers`, `damagedSites` non-zero entries as `(position, value)` sparse triplets) AND derived per-tick summaries (count, sum, max, by-strand totals). Rationale: sparse channels preserve spatial topology for future debugging; summaries are what the Wasserstein statistic actually consumes. Cost is modest — N=20 ensemble × 100 ticks × ~10 sparse channels is well under 100 MB per process.
 
 #### Q7: Should Wasserstein threshold be absolute or bootstrap-calibrated per process?
 
 - Recommendation: bootstrap-calibrated from Karr split-ensemble baseline with 1.10 margin.
 - Owner input needed: no.
+- **Decision (2026-06-05, operator-confirmed):** ACCEPT codex default. Bootstrap-calibrated per process from a Karr split-ensemble baseline (split Karr's N=50 into two halves, compute within-Karr Wasserstein, multiply by 1.10 to get the OC-vs-Karr threshold). Absolute thresholds were rejected because Wasserstein magnitude scales with observable units (mRNA counts ~10² vs metabolite fluxes ~10⁶), and a single absolute bound would be either trivially passed by counts or impossible for fluxes.
 
 #### Q8: Should Bonferroni family be per-process global or per-observable?
 
 - Recommendation: per-process global for strictness and audit simplicity.
 - Owner input needed: no.
+- **Decision (2026-06-05, operator-confirmed):** ACCEPT codex default. Per-process global Bonferroni (α=0.05 / k_observables_for_that_process). Per-observable would defeat the family-wise error control the gate is built around. The audit trail is one corrected p-value per process per release, which is what the L2.2 summary table needs.
 
 #### Q9: Should no-op seeds be retained in sample distributions?
 
 - Recommendation: yes, retain no-op seeds; they are valid stochastic outcomes under gated state.
 - Owner input needed: no.
+- **Decision (2026-06-05, operator-confirmed):** ACCEPT codex default. Retain no-op seeds (seeds where the process drew zero events for the tick under test). They are part of the true distribution P(outcome | state) — silently dropping them would inflate the empirical mean and shrink the variance, biasing every downstream statistic. The harness must report `n_noop_seeds / N` in STATUS so reviewers can sanity-check (e.g., if 48/50 seeds are no-op, the process probably shouldn't be in the DEEP bucket for that initial condition).
 
 ### 7.3 Explicit question requested in prompt
 
 - Question: should the two L2.1-SKIPPED SHALLOW processes (RibosomeAssembly, RNAModification) be deferred or included now in L2.2 despite L2.1 skip?
 - Recommendation: defer from DEEP plan and execute in SHALLOW workstream after trace extension or alternate non-no-op initialization policy is ratified.
 - Owner input needed: yes.
+- **Decision (2026-06-05, operator-confirmed):** DEFER. Same disposition as Q2 — both processes stay `xskip` in L2.2 until either a longer Karr trace or alternate initial-condition fixture lands. Tracking is in the SHALLOW workstream, not here. See Q2 for the full unblock criterion.
 
 ### 7.4 Open-question count summary
 
 - Total open questions listed: 9.
-- Questions requiring operator input: 5.
-- Questions within implementation authority: 4.
+- Questions requiring operator input: ~~5~~ **0** (all resolved 2026-06-05; see decision blocks under Q1, Q2, Q4, Q5, Q7.3).
+- Questions within implementation authority: 4 (Q6-Q9; accepted codex defaults).
+
+**Resolution log:**
+- 2026-06-05 — Q5 resolved (`e5d0efc`): v1 `KarrTranscriptionProcess` direct, no v3 shadow.
+- 2026-06-05 — Q1 resolved: TRIVIAL→DEEP promotion gate at 10% drift; PPI + Metabolism now candidate promotions from codex 2a empirical evidence.
+- 2026-06-05 — Q2 / Q7.3 resolved: defer SKIPs to SHALLOW workstream with trace-extension unblock criterion.
+- 2026-06-05 — Q4 resolved: parallel DEEP after M1, MATLAB extractions serialized (DEMO license single-seat), Python ensembles parallel ≤3 worktrees.
+- 2026-06-05 — Q6, Q7, Q8, Q9 resolved: accept codex defaults.
 
 ## §8 Change log
 
