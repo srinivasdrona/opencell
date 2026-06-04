@@ -71,53 +71,90 @@
   "bootstrap_iterations": 200,
   "bootstrap_quantile": 0.95,
   "bootstrap_margin": 1.1,
-  "ks_failure_count": 400,
+  "ks_failure_count": 398,
   "wasserstein_failure_count": 400,
+  "substrates_intersection_audit": {
+    "karr_wid_count": 26,
+    "oc_wid_count": 20,
+    "intersection_wid_count": 20,
+    "intersection_wids": [
+      "ALA",
+      "ARG",
+      "ASN",
+      "ASP",
+      "CYS",
+      "GLN",
+      "GLU",
+      "GLY",
+      "HIS",
+      "ILE",
+      "LEU",
+      "LYS",
+      "MET",
+      "PHE",
+      "PRO",
+      "SER",
+      "THR",
+      "TRP",
+      "TYR",
+      "VAL"
+    ],
+    "dropped_karr_wids": [
+      "FMET",
+      "GTP",
+      "GDP",
+      "PI",
+      "H2O",
+      "H"
+    ],
+    "dropped_oc_wids": [],
+    "tick0_seed0_w1_over_intersection": 17.8
+  },
   "observable_rollup": {
     "substrates": {
       "ks_d_max": 1.0,
       "ks_p_bonferroni_min": 1.3876314229985673e-26,
-      "w1_max": 164692961.10000002,
-      "w1_threshold_max": 15367829.534199998
+      "w1_max": 23771.060000000005,
+      "w1_threshold_max": 2642.5586
     },
     "enzymes": {
       "ks_d_max": 1.0,
       "ks_p_bonferroni_min": 1.3876314229985673e-26,
-      "w1_max": 826.08,
-      "w1_threshold_max": 4.692599999999998
+      "w1_max": 31.64,
+      "w1_threshold_max": 4.713499999999998
     },
     "boundEnzymes": {
       "ks_d_max": 1.0,
       "ks_p_bonferroni_min": 1.3876314229985673e-26,
-      "w1_max": 334.44,
-      "w1_threshold_max": 4.5209999999999955
+      "w1_max": 38.08,
+      "w1_threshold_max": 4.600199999999999
     },
     "monomers": {
       "ks_d_max": 1.0,
       "ks_p_bonferroni_min": 1.3876314229985673e-26,
-      "w1_max": 16175.52,
-      "w1_threshold_max": 1.012
+      "w1_max": 16176.300000000001,
+      "w1_threshold_max": 0.8821999999999993
     },
     "ribosome_state_active_count": {
       "ks_d_max": 0.0,
       "ks_p_bonferroni_min": 1.0,
       "w1_max": 0.0,
-      "w1_threshold_max": 0.792
+      "w1_threshold_max": 0.9701999999999994
     },
     "ribosome_bound_mrnas_nonzero_count": {
       "ks_d_max": 0.0,
       "ks_p_bonferroni_min": 1.0,
       "w1_max": 0.0,
-      "w1_threshold_max": 0.7710999999999998
+      "w1_threshold_max": 1.0130999999999997
     },
     "ribosome_mrna_positions_sum": {
       "ks_d_max": 0.0,
       "ks_p_bonferroni_min": 1.0,
       "w1_max": 0.0,
-      "w1_threshold_max": 1396.2178999999985
+      "w1_threshold_max": 1406.0617999999988
     }
   },
-  "ks_failures_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/ks_failures.csv",
-  "wasserstein_failures_path": "/mnt/e/opencell-worktrees/l22-translation-v1/data/opencell_ensembles/translation/wasserstein_failures.csv",
+  "ks_failures_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/ks_failures.csv",
+  "wasserstein_failures_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/wasserstein_failures.csv",
   "overall_pass": false
 }

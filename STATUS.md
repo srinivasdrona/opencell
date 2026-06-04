@@ -62,3 +62,8 @@
 - 2026-06-04T21:21:20Z ? l22-f3: post-fix seed_000 probe is green at 100% snap-eq for all 9 translation snapshot channels.
 - 2026-06-04T21:40:38Z ? l22-f3: regenerated translation ensemble seeds 001..049 with patched extractor (936.44s total), and spot-check probes for seeds 010/049 are 100% on all 9 channels.
 - 2026-06-04T21:42:59Z ? l22-f3: completed with commits d8a5354 (diagnose), 6f1f6d5 (fix), b19688f (regen); detailed report in STATUS_f3.md.
+- 2026-06-04T22:06:08Z — GATE_A/F1 wired in tests/vivarium/_l2_2_ensemble_runner.py: per-seed fitted_init load from Karr Translation ensemble MAT + pre-tick overlay for substrates/enzymes/boundEnzymes.
+- 2026-06-04T22:06:53Z — GATE_A/F2 wired in tests/vivarium/test_l2_2_translation.py: substrates comparator now projects through wasserstein_over_wid_intersection with dropped-WID audit persisted in comparison_report.json.
+- 2026-06-04T22:10:09Z — GATE_A regen complete: bin\\oc-py.cmd tests/vivarium/_l2_2_ensemble_runner.py --seeds 0:49 --force (wall=65.752s).
+- 2026-06-04T22:11:48Z — GATE_A full gate run executed: bin\\oc-pytest tests/vivarium/test_l2_2_translation.py -q (FAIL: ks_failure_count=398, wasserstein_failure_count=400).
+- 2026-06-04T22:13:31Z — Wrote STATUS_gate_translation.md with F1/F2 line refs, pre/post tick-0 W1 table, gate verdict, dropped WIDs, and commit trail.
