@@ -27,8 +27,12 @@ if str(_HELPER_DIR) not in sys.path:
     sys.path.insert(0, str(_HELPER_DIR))
 
 from l2_replay_common import (  # noqa: E402
+    ChannelSpec,
     apply_count_update,
     build_state_template,
+    load_fitted_init_from_mat,
+    load_fixture_channel_wids,
+    overlay_observable_into_state,
     project_observable_from_state,
     refresh_allocator_views,
 )
@@ -46,6 +50,10 @@ SUMMARY_FIELDS: tuple[str, ...] = (
     "ribosome_state_active_count",
     "ribosome_bound_mrnas_nonzero_count",
     "ribosome_mrna_positions_sum",
+)
+
+_KARR_TRANSLATION_ROOT = (
+    _REPO_ROOT / "data" / "m1_sources" / "karr_native" / "ensembles" / "translation"
 )
 
 
@@ -67,6 +75,55 @@ def _observable_wids(process: KarrTranslationProcess) -> dict[str, list[str]]:
         "boundEnzymes": list(process.enzyme_wids),
         "monomers": list(process.protein_ids),
     }
+
+
+def _karr_seed_mat_path(seed: int) -> Path:
+    return _KARR_TRANSLATION_ROOT / f"seed_{seed:03d}" / "Translation_100ticks.mat"
+
+
+def _build_fitted_channel_map(
+    process: KarrTranslationProcess,
+    wids_by_observable: dict[str, list[str]],
+) -> dict[str, ChannelSpec]:
+    del process  # mapping only depends on observable WID surfaces.
+    out: dict[str, ChannelSpec] = {}
+    for channel in ("substrates", "enzymes", "boundEnzymes"):
+        oc_wids = tuple(str(x) for x in wids_by_observable.get(channel, ()))
+        if not oc_wids:
+            continue
+        karr_wids = load_fixture_channel_wids("Translation", channel)
+        if not karr_wids:
+            karr_wids = oc_wids
+        out[channel] = ChannelSpec(
+            karr_field=channel,
+            karr_wids=tuple(str(x) for x in karr_wids),
+            oc_wids=oc_wids,
+        )
+    return out
+
+
+def _apply_fitted_init(
+    *,
+    seed: int,
+    process: KarrTranslationProcess,
+    state: dict[str, Any],
+    wids_by_observable: dict[str, list[str]],
+) -> None:
+    mat_path = _karr_seed_mat_path(seed)
+    if not mat_path.exists():
+        raise FileNotFoundError(f"Missing Karr Translation ensemble MAT for seed {seed}: {mat_path}")
+    channel_map = _build_fitted_channel_map(process, wids_by_observable)
+    fitted_init = load_fitted_init_from_mat(mat_path, channel_map)
+    for channel, vec in fitted_init.items():
+        if channel not in wids_by_observable:
+            continue
+        overlay_observable_into_state(
+            process=process,
+            state=state,
+            observable=channel,
+            vector=np.asarray(vec, dtype=np.float64).reshape(-1),
+            wids=wids_by_observable[channel],
+        )
 
 
 def _translation_summary_from_process(process: KarrTranslationProcess) -> dict[str, float]:
@@ -124,6 +181,12 @@ def _run_translation_seed(seed: int, n_ticks: int) -> tuple[dict[str, np.ndarray
     process = KarrTranslationProcess({"rng_seed": int(seed)})
     state = build_state_template(process)
     wids_by_observable = _observable_wids(process)
+    _apply_fitted_init(
+        seed=seed,
+        process=process,
+        state=state,
+        wids_by_observable=wids_by_observable,
+    )
 
     vectors = {
         obs: np.zeros((n_ticks, len(wids_by_observable[obs])), dtype=np.float64) for obs in OBSERVABLES
