@@ -236,8 +236,8 @@ end
 function [sim, before_tick, after_tick, before_summary, after_summary] = evolve_state_with_tap_translation(sim, target_idx, snapshot_props)
 before_tick = empty_snapshot_struct(snapshot_props);
 after_tick = empty_snapshot_struct(snapshot_props);
-before_summary = translation_summary_from_process(sim.processes{target_idx});
-after_summary = before_summary;
+before_summary = struct();
+after_summary = struct();
 
 time = sim.state_time;
 mets = sim.state_metabolite;
@@ -265,6 +265,11 @@ end
 requirements = max(0, requirements);
 tmp = mets.counts(:) ./ max(1, sum(requirements, 2));
 allocations = max(0, fix(requirements .* tmp(:, ones(nProcesses, 1))));
+
+% Capture boundary snapshot for tick start before any process-local evolve.
+target_proc = processes{target_idx};
+before_tick = snapshot_from_process(target_proc, snapshot_props);
+before_summary = translation_summary_from_process(target_proc);
 
 rand_stream = [];
 if isobject(sim) && ismethod(sim, 'getForTest')
@@ -303,17 +308,7 @@ for i = 1:nProcesses
         mod.RNAs = max(0, mod.RNAs);
     end
 
-    if proc_idx == target_idx
-        before_tick = snapshot_from_process(mod, snapshot_props);
-        before_summary = translation_summary_from_process(mod);
-    end
-
     mod.evolveState();
-
-    if proc_idx == target_idx
-        after_tick = snapshot_from_process(mod, snapshot_props);
-        after_summary = translation_summary_from_process(mod);
-    end
 
     mod.copyToState();
     mets.counts(gidx) = counts + mod.substrates(lidx, :) - allocation;
@@ -325,6 +320,12 @@ end
 
 mets.counts = edu.stanford.covert.cell.sim.constant.Condition.applyConditions( ...
     mets.counts, mets.setCounts, time.values);
+
+% Capture boundary snapshot for tick end after all process writes are applied.
+target_proc = processes{target_idx};
+target_proc.copyFromState();
+after_tick = snapshot_from_process(target_proc, snapshot_props);
+after_summary = translation_summary_from_process(target_proc);
 end
 
 function out = snapshot_from_process(proc, snapshot_props)
