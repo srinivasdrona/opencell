@@ -64,3 +64,4 @@
 - 2026-06-04T21:42:59Z ? l22-f3: completed with commits d8a5354 (diagnose), 6f1f6d5 (fix), b19688f (regen); detailed report in STATUS_f3.md.
 - [2026-06-04 22:10:29 UTC] GATE_B C1 complete: added extract_transcription_ensemble.m with boundary snapshot semantics; seed_000 extracted and snap-eq validated >=99% on all channels.
 - [2026-06-04 22:25:18 UTC] GATE_B C2 complete: generated transcription ensemble seeds 000-049 and MANIFEST.json (50/50 present, no missing seeds).
+- [2026-06-04 22:31:34 UTC] GATE_B C3 complete: added Transcription OC ensemble runner with fitted-init overlay and generated 50 NPZ seeds under data/opencell_ensembles/transcription/.
