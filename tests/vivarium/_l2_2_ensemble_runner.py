@@ -87,7 +87,7 @@ def _build_fitted_channel_map(
 ) -> dict[str, ChannelSpec]:
     del process  # mapping only depends on observable WID surfaces.
     out: dict[str, ChannelSpec] = {}
-    for channel in ("substrates", "enzymes", "boundEnzymes"):
+    for channel in ("substrates", "enzymes", "boundEnzymes", "monomers"):
         oc_wids = tuple(str(x) for x in wids_by_observable.get(channel, ()))
         if not oc_wids:
             continue
