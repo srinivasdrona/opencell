@@ -876,6 +876,54 @@ With monomers' 16,175 noise removed, the substrates residual is now visible: **W
 - substrates W1max 23771 — **still FAIL, now the dominant residual, mechanism vs semantics TBD via canary**.
 - RNAs W1max 783 → after F4 intersection-comparator: non-finite (structural block, not mechanism).
 
+### 4.6.7 Translation::substrates root cause — v1 synth_rate calibration bug (added 2026-06-05 ~14:30 IST)
+
+The substrates W1max=23,771 residual surfaced in §4.6.6 has been root-caused via a calibration probe (`scripts/_probe_l22_translation_calibration.py`, commit `a4f4de8`). It is a **calibration bug at the fixture-ingest layer**, not mechanism drift, not DELTA-semantics, and not a structural scope difference.
+
+**Probe finding (Karr ensemble-mean vs v1 analytical, same 20-AA intersection surface):**
+
+| quantity | value |
+|---|---:|
+| v1 total AA consumption per tick | 38.89 |
+| Karr ensemble-mean per tick (50 seeds × 100 ticks) | 276.64 |
+| Karr/v1 ratio | **7.11×** uniform |
+| per-AA ratio CV | 0.135 (uniform offset, not shape mismatch) |
+| Karr-v1 shape correlation | **r=0.970** |
+
+The gap is uniform across all 20 AAs. Restricted to the **same 20 WID surface on both sides**, so Karr-only non-AA chemistry (FMET, GTP, GDP, PI, H2O, H) is already excluded — those cannot explain the 7×.
+
+**Root cause** (`scripts/karr_native_ingest_m3.py:52-63`):
+
+```python
+synth_rate_per_s = counts_mature * decay_rate_per_s   # steady-state decay-balance fit
+```
+
+This assumes `s = k*N` (synthesis exactly replaces decay) and is wrong because:
+
+1. **Missing growth-dilution term.** Real steady-state under exponential cell growth is `s = (k + μ)*N` where μ = ln(2)/T_doubling. For T_doubling = 9h = 32400s, μ ≈ 2.14e-5/s. For stable proteins where k is small, μ dominates.
+2. **119 immortal proteins get s=0.** With k=0 in the formula, immortal proteins (which are dominant by count and need replacement during division) get zero synthesis. The μ*N replacement term for these is the dominant missing contribution.
+
+In-repo corroboration (`tests/m3/test_translation_v2.py:80-90`): already documents this as a lower bound and notes the ribosome-mechanism v2 produces ~23× the v1 rate. Karr ensemble gives 7×. Both confirm v1 is systematically low; the analytical formula is the bug.
+
+**Fix path — F5 (Translation calibration):**
+
+Two-phase fix:
+
+- **F5.1 (calibration replacement):** In `scripts/karr_native_ingest_m3.py`, replace the analytical `s = k*N` with an **ensemble-sampled per-protein synthesis rate**, derived from Karr's 50-seed Translation ensemble. For each of the 482 proteins, compute mean per-tick synthesis rate from `states_after − states_before` (monomer creation events) across the 50 seeds × 100 ticks. Write back into `data/karr_fixtures/karr_native_m3.json/.npz`. Regenerate Translation ensemble. Re-run gate.
+- **F5.2 (variance-collapse fix, conditional on F5.1 passing the mean):** OC fitted-init currently sources from a single deterministic fixture, giving ~zero variance across the 50 OC seeds. After F5.1, if the gate still fails because of variance collapse (not mean), source per-seed fitted-init from each Karr seed's `states_before[0]`. This was deferred from F4 as unnecessary then; may become necessary after F5.1.
+
+Expected outcome of F5.1 alone: substrate W1max drops from 23,771 to ≈3,000-5,000 (closing the ~7× mean gap; remaining residual is variance-collapse). If F5.2 is needed, W1max should drop further to ~500-1,000 (intra-Karr noise floor).
+
+**Scope discipline:**
+
+- F5 is L2.2 work. Lands on `feature/l2-2-apm-x2` or new `exec/l22-f5-translation-calibration` worktree.
+- Calibration fix is at the fixture-ingest layer; v1 `KarrTranslationProcess` source is NOT modified. The analytical integrator structure (`dN_i/dt = s_i - k_i*N_i`) is preserved — only `s_i` is recalibrated.
+- This pattern (v1 = analytical mean-rate integrator, calibrated from Karr ensemble means) is the **correct architecture per the 2026-06-05 operator decision** (v1 ≠ v3; v1 is the L2.2 target as an analytical, not ribosome-mechanistic, model). F5 makes v1 correctly fit the data it was always supposed to fit.
+
+**Open cross-check:** does Transcription have the same calibration architecture? If yes, the same fix shape applies; consider F6 (Transcription calibration) as a parallel workstream. Probe before assuming.
+
+**Correction to §4.6.6 open question:** the "Replication::substrates canary" was discarded in favor of a Translation::substrates intra-Karr noise floor canary (`scripts/_canary_translation_substrates_noise_floor_v2.py`, commit `3fbdbde`), which returned median 1.73× ratio (borderline). The deeper per-WID/per-AA investigation (probe at `a4f4de8`) then nailed the root cause. The canary was useful but the calibration probe was decisive.
+
 ## §5 Pass/fail gates for L2.2 closure
 
 ### 5.1 Process-level gate
