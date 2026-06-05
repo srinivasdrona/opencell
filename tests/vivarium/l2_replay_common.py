@@ -452,6 +452,7 @@ def _set_enzyme_vector(
 ) -> None:
     protein_counts = _ensure_nested_mapping(state, ("protein", "counts"))
     protein_enzyme_counts = _get_nested_mapping(state, ("protein", "enzyme_counts"))
+    use_dedicated_enzyme_store = isinstance(protein_enzyme_counts, dict)
     complex_counts = _ensure_nested_mapping(state, ("complex", "counts"))
     monomer_set = _monomer_enzyme_set(process)
     complex_set = _complex_enzyme_set(process)
@@ -464,26 +465,28 @@ def _set_enzyme_vector(
             complex_counts[wid] = val
             continue
         if wid in monomer_set:
-            protein_counts[wid] = val
-            if isinstance(protein_enzyme_counts, dict):
+            if use_dedicated_enzyme_store:
                 protein_enzyme_counts[wid] = val
+            else:
+                protein_counts[wid] = val
             continue
-        if isinstance(protein_enzyme_counts, dict) and wid in protein_enzyme_counts:
-            protein_counts[wid] = val
+        if use_dedicated_enzyme_store and wid in protein_enzyme_counts:
             protein_enzyme_counts[wid] = val
             continue
         if wid in protein_counts:
-            protein_counts[wid] = val
-            if isinstance(protein_enzyme_counts, dict):
+            if use_dedicated_enzyme_store:
                 protein_enzyme_counts[wid] = val
+            else:
+                protein_counts[wid] = val
             continue
         if wid in complex_counts:
             complex_counts[wid] = val
             continue
-        if protein_counts or isinstance(protein_enzyme_counts, dict):
-            protein_counts[wid] = val
-            if isinstance(protein_enzyme_counts, dict):
+        if protein_counts or use_dedicated_enzyme_store:
+            if use_dedicated_enzyme_store:
                 protein_enzyme_counts[wid] = val
+            else:
+                protein_counts[wid] = val
         else:
             complex_counts[wid] = val
 
