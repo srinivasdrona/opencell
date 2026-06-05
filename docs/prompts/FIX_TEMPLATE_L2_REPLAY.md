@@ -21,6 +21,7 @@ Every codex delegation that authors, repairs, or extends an L2.1 / L2.2 replay t
 **Authoring discipline.** The case-specific (slot 3) directive must include:
 - A Beat-1 contract sentence ("Replace X with Y such that test Z flips").
 - A Beat-2 surface enumeration (read paths, write paths, suspect patterns).
+- **A Beat-2 Karr-source-selection sub-check (added 2026-06-05).** Before naming any Karr data source in slot 3, list the `data/m1_sources/karr_native/per_process_traces_v2*/<Process>_100ticks.mat` files available for the target process. If F traces exist and the prompt picks a different source (`karr_archive/*.mat`, `ensembles/<process>/seed_NNN/`, analytical `s = k*N`, `fitted_constants.mat`, KB pickles), include a one-sentence justification (e.g., "F seed-0 has only 93/482 proteins observed nonzero — need ensembles for tail coverage"). The default IS the F trace; alternatives need justification. See TRAPS `phase-f-traces-are-the-sourcing-data-not-just-validation-data` (2026-06-05).
 - A Beat-3 falsifiable predicted outcome (exact assertion, exact value).
 - A Beat-4 pre-mortem with at least 2 named failure modes specific to THIS task.
 - A Beat-5 verification protocol (commands in order, expected outputs).

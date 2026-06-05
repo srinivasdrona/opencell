@@ -19,6 +19,24 @@ Every algorithm choice must trace to:
 - Per-process bit-identical trace at `data/m1_sources/karr_native/per_process_traces/<Process>_100ticks.mat` (gold-standard validation data)
 Do NOT invent biology. If a docstring is silent, document the gap, don't guess.
 
+### 1b. Phase-F traces are the FIRST sourcing data for any per-process Karr signal (added 2026-06-05)
+Whenever you need a Karr per-process per-tick signal — calibration rates,
+expected counts, transition probabilities, state deltas, allocator demands —
+**the first file to grep is** `data/m1_sources/karr_native/per_process_traces_v2{,_s<NNN>}/<Process>_100ticks.mat`.
+These are F4-output Phase-F traces: each one captures `(states_before, states_after, metadata)` for a single Karr process across 100 ticks, with `Simulation.evolveState` wrapping the target process in realistic allocator-state context.
+
+**Reflexive check before reaching for any other source** (`karr_archive`, `ensembles/<process>/`, `cell_cycle_trajectory.mat`, `fitted_constants.mat`, KB pickles, or computing from first principles via `s = k*N`):
+
+```powershell
+Get-ChildItem data\m1_sources\karr_native\per_process_traces_v2*\<Process>_100ticks.mat
+```
+
+If F traces exist for that process, the default IS to sample from them. If you choose a different source, write a one-sentence justification in the prompt / STATUS / plan (e.g., "F trace seed-0 only has 93/482 proteins observed nonzero, so we also need ensembles for tail coverage", "F trace captures evolveState mid-sim but we need fresh-init values"). Do NOT silently substitute.
+
+**Why this rule exists (2026-06-05 incident anchor):** On Day-20 L2.2 Translation calibration, the operator had to redirect the agent **twice** to the F artifact (first when the failed F5.1 sampled `ensembles/translation/` and produced 10× worse numbers; second when the agent then re-implemented sourcing from a different MATLAB call site again). The F traces were always the right answer; the agent kept reaching for ensembles/ or computing from `s = k*N` because (a) the directory is named `per_process_traces_v2` not `phase_f_*`, (b) Rule 1 above mentions F traces as *validation* data which the agent read as "for checking" not "for sampling", and (c) ensembles/ has 50 seeds which looks superficially richer. This rule inverts the default: F is the sourcing data, ensembles/ + others are the fallbacks.
+
+**Implication for the Karr fixture ingestors** (`scripts/karr_native_ingest_*.py` and `scripts/karr_*_ingest.py`): every analytical-rate computation (`s = k*N`, `p = 1 / mean_lifetime`, etc.) is a candidate calibration bug. The F traces are the empirical truth. When opening any of these ingestors for any reason, check whether its rate fields could be replaced with F-trace samples instead — the analytical form is almost certainly biased by missing terms (growth dilution, allocator floor, sub-process coupling).
+
 ### 2. WSL venv ONLY for Python
 The repo uses an editable install in `.venv-wsl`. All Python commands MUST be:
 ```
