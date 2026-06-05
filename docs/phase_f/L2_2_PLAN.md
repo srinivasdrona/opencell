@@ -909,10 +909,18 @@ In-repo corroboration (`tests/m3/test_translation_v2.py:80-90`): already documen
 
 Two-phase fix:
 
-- **F5.1 (calibration replacement):** In `scripts/karr_native_ingest_m3.py`, replace the analytical `s = k*N` with an **ensemble-sampled per-protein synthesis rate**, derived from Karr's 50-seed Translation ensemble. For each of the 482 proteins, compute mean per-tick synthesis rate from `states_after − states_before` (monomer creation events) across the 50 seeds × 100 ticks. Write back into `data/karr_fixtures/karr_native_m3.json/.npz`. Regenerate Translation ensemble. Re-run gate.
+- **F5.1 (calibration replacement):** In `scripts/karr_native_ingest_m3.py`, replace the analytical `s = k*N` with **per-protein synthesis rates sampled from Karr's Phase-F per-process traces** (`data/m1_sources/karr_native/per_process_traces_v2{,_s<NNN>}/Translation_100ticks.mat`). For each of the 482 proteins, compute mean per-tick synthesis rate as `mean((states_after.monomers − states_before.monomers).sum_over_ticks / n_ticks)` across all available seeds. Write back into `data/karr_fixtures/karr_native_m3.json/.npz`. Re-run gate.
+
+  **Decomposition:**
+  - **F5.1a (extractor extension, codex, ~10min):** Extend `scripts/matlab/extract_per_process_traces_v2.m` to accept a 4th `seed` argument (default `0`). When `seed > 0`, write to `data/m1_sources/karr_native/per_process_traces_v2_s<NNN>/`. Smoke-test by running for `Translation` with seed=1.
+  - **F5.1b (MATLAB batch, Copilot/operator, ~50min):** Run the extended extractor for `Translation` × seeds 1..9 (seed=0 is already in `per_process_traces_v2/`). Background detached MATLAB run.
+  - **F5.1c (ingest rewrite + verify, codex, ~15min):** Modify `scripts/karr_native_ingest_m3.py` to source `synth_rate_per_s` from all available `per_process_traces_v2{,_s*}/Translation_100ticks.mat` files (aggregate `(after − before).monomers` across all seeds × all ticks). Regen fixture. Re-run gate.
+
+  **Why Phase-F trace, NOT `ensembles/translation/`:** the failed F5.1 attempt sampled `ensembles/translation/seed_NNN/Translation_100ticks.mat`. Those captures wrap `Translation.evolveState` in **isolation from a fresh init** (ribosome ramp-up phase), giving 0.0168/s — 10× LOWER than the buggy `s=k*N`. The Phase-F traces (`per_process_traces_v2/`) wrap `evolveState` mid-simulation with realistic allocator state, giving 2.15/s — matches the W1-implied Karr target of ~1.1-2.5/s. Empirical: `(after-before).monomers.sum() / 100 = 2.15` on the seed-0 Phase-F trace vs `~0.02` on any single ensemble seed.
+
 - **F5.2 (variance-collapse fix, conditional on F5.1 passing the mean):** OC fitted-init currently sources from a single deterministic fixture, giving ~zero variance across the 50 OC seeds. After F5.1, if the gate still fails because of variance collapse (not mean), source per-seed fitted-init from each Karr seed's `states_before[0]`. This was deferred from F4 as unnecessary then; may become necessary after F5.1.
 
-Expected outcome of F5.1 alone: substrate W1max drops from 23,771 to ≈3,000-5,000 (closing the ~7× mean gap; remaining residual is variance-collapse). If F5.2 is needed, W1max should drop further to ~500-1,000 (intra-Karr noise floor).
+Expected outcome of F5.1 alone: substrate W1max drops from 23,771 toward ≈500-3,000 (closing most of the gap; remaining residual is variance-collapse). If F5.2 is needed, W1max should drop further to ~500-1,000 (intra-Karr noise floor).
 
 **Scope discipline:**
 
