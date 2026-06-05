@@ -10,6 +10,19 @@
 - This plan is intentionally per-process.
 - This plan is intentionally pre-L2.5.
 
+### ⚠️ Stage discipline rule (added 2026-06-05)
+
+Per the L-ladder reconciliation (commit `feababd`, 2026-06-01):
+**L2.5 starts only after L2.2 is all-green for stochastic processes intended to participate in any L2.5 pair.**
+
+While L2.2 is in progress (current status as of 2026-06-05: 2 of 7 gates landed, both FAIL — informative):
+- **No new L2.5 work.** No new `test_l2_5_*` files. No new L2.5 pair pivots. No L2.5 ensembles.
+- **L2.5 bug surfacing is allowed only if the fix lands at the shared-L2-helper layer** (`tests/vivarium/l2_replay_common*.py`) and is committed as L2-helper work, not as L2.5 work. Example: the `fix(l2-helpers): shared-observable mapping in l2_replay_common` merge on 2026-06-05 was originally branded "L2.5 CAUSE_4" but the actual fix is L2.2 infrastructure consumed by all downstream layers.
+- **Existing dormant L2.5 test code** on this branch (`tests/vivarium/test_l2_5_ppi_ppii_v2.py`, added in `79536fb` on 2026-06-02) is allowed to remain but MUST NOT be invoked in L2.2 gates or CI until L2.2 closes.
+- **Branch hygiene**: L2.5 work, when it eventually resumes, belongs on a downstream branch off `feature/l2-2-apm-x2` (e.g., `feature/l2-5-fixes`), not on `main` (which lacks L2.2 helpers) and not interleaved on this branch.
+
+Drift detection: if a commit message or branch name contains `l2.5` / `l25` / `cause_4` / `pair`, ask: "is the actual file change at the shared-helper layer or in a new L2.5-specific test?" Only the former is allowed.
+
 ### In-scope process set (7 DEEP)
 
 1. ReplicationInitiation
