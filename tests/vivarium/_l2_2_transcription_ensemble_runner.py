@@ -6,10 +6,12 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
 import numpy as np
+from scipy.io import loadmat
 
 # Ensure imports resolve to this worktree.
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -44,7 +46,8 @@ OBSERVABLES: tuple[str, ...] = (
     "boundEnzymes",
     "RNAs",
 )
-FITTED_CHANNELS: tuple[str, ...] = ("substrates", "enzymes", "boundEnzymes")
+FITTED_CHANNELS: tuple[str, ...] = ("substrates", "enzymes", "boundEnzymes", "RNAs")
+_TRANSCRIPTION_FIXTURE_PATH = _REPO_ROOT / "data" / "karr_fixtures" / "per_process" / "Transcription_flat.mat"
 
 
 @dataclass(frozen=True)
@@ -62,6 +65,58 @@ def _observable_wids(process: KarrTranscriptionProcess) -> dict[str, list[str]]:
         "enzymes": [str(x) for x in process.enzyme_wids],
         "boundEnzymes": [str(x) for x in process.enzyme_wids],
         "RNAs": [str(x) for x in process.gene_ids],
+    }
+
+
+def _parse_object_ids(values: object) -> list[str]:
+    arr = np.asarray(values, dtype=object).reshape(-1)
+    out: list[str] = []
+    for raw in arr:
+        item: object = raw
+        while isinstance(item, np.ndarray):
+            if item.size == 0:
+                item = ""
+                break
+            item = item.flat[0]
+        out.append(str(item))
+    return out
+
+
+@lru_cache(maxsize=1)
+def _load_karr_rna_tu_wids() -> tuple[str, ...]:
+    fixture_mat = loadmat(str(_TRANSCRIPTION_FIXTURE_PATH), squeeze_me=True, struct_as_record=False)
+    data = fixture_mat.get("data")
+    fixture = getattr(data, "fixture", None)
+    if fixture is None:
+        return tuple()
+    states = np.asarray(getattr(fixture, "states", []), dtype=object).reshape(-1)
+    for state in states:
+        if hasattr(state, "transcriptionUnitWholeCellModelIDs"):
+            ids = _parse_object_ids(getattr(state, "transcriptionUnitWholeCellModelIDs"))
+            if ids:
+                return tuple(ids)
+    return tuple()
+
+
+def _wid_alignment_audit(
+    *,
+    karr_wids: tuple[str, ...],
+    oc_wids: tuple[str, ...],
+) -> dict[str, Any]:
+    karr_set = set(karr_wids)
+    oc_set = set(oc_wids)
+    intersection = tuple(w for w in oc_wids if w in karr_set)
+    dropped_karr = tuple(w for w in karr_wids if w not in oc_set)
+    dropped_oc = tuple(w for w in oc_wids if w not in karr_set)
+    return {
+        "karr_wid_count": len(karr_wids),
+        "oc_wid_count": len(oc_wids),
+        "intersection_wid_count": len(intersection),
+        "intersection_wids": list(intersection),
+        "dropped_karr_wids": list(dropped_karr),
+        "dropped_oc_wids": list(dropped_oc),
+        "karr_subset_of_oc": bool(karr_set.issubset(oc_set)),
+        "oc_subset_of_karr": bool(oc_set.issubset(karr_set)),
     }
 
 
@@ -111,21 +166,38 @@ def _channel_map_for_fitted_init(
     *,
     process: KarrTranscriptionProcess,
     wids_by_observable: dict[str, list[str]],
-) -> dict[str, ChannelSpec]:
+) -> tuple[dict[str, ChannelSpec], dict[str, Any]]:
+    del process  # mapping uses precomputed WID surfaces only.
     channel_map: dict[str, ChannelSpec] = {}
+    rna_alignment_audit: dict[str, Any] | None = None
     for channel in FITTED_CHANNELS:
         oc_wids = tuple(wids_by_observable.get(channel, ()))
         if not oc_wids:
             continue
-        karr_wids = load_fixture_channel_wids("Transcription", channel)
-        if not karr_wids:
-            karr_wids = oc_wids
+        if channel == "RNAs":
+            karr_wids = _load_karr_rna_tu_wids()
+            if not karr_wids:
+                continue
+            audit = _wid_alignment_audit(karr_wids=karr_wids, oc_wids=oc_wids)
+            rna_alignment_audit = audit
+            intersection = tuple(audit["intersection_wids"])
+            # F2-style guard: only initialize shared WIDs; skip when intersection is empty.
+            if not intersection:
+                continue
+            karr_wids = intersection
+            oc_wids = intersection
+        else:
+            karr_wids = load_fixture_channel_wids("Transcription", channel)
+            if not karr_wids:
+                karr_wids = oc_wids
         channel_map[channel] = ChannelSpec(
             karr_field=channel,
             karr_wids=tuple(karr_wids),
             oc_wids=tuple(oc_wids),
         )
-    return channel_map
+    if rna_alignment_audit is None:
+        rna_alignment_audit = {}
+    return channel_map, {"RNAs": rna_alignment_audit}
 
 
 def _run_transcription_seed(
@@ -133,21 +205,27 @@ def _run_transcription_seed(
     seed: int,
     n_ticks: int,
     karr_root: Path,
-) -> tuple[dict[str, np.ndarray], dict[str, list[str]], dict[str, ChannelSpec]]:
+) -> tuple[dict[str, np.ndarray], dict[str, list[str]], dict[str, ChannelSpec], dict[str, Any]]:
     process = KarrTranscriptionProcess({"rng_seed": int(seed)})
     state = build_state_template(process)
     wids_by_observable = _observable_wids(process)
-    channel_map = _channel_map_for_fitted_init(process=process, wids_by_observable=wids_by_observable)
+    channel_map, fitted_init_alignment_audit = _channel_map_for_fitted_init(
+        process=process,
+        wids_by_observable=wids_by_observable,
+    )
 
     fitted_path = karr_root / f"seed_{seed:03d}" / f"Transcription_{n_ticks}ticks.mat"
     fitted_init = load_fitted_init_from_mat(fitted_path, channel_map)
     for channel, vec in fitted_init.items():
+        spec = channel_map.get(channel)
+        if spec is None:
+            continue
         overlay_observable_into_state(
             process=process,
             state=state,
             observable=channel,
             vector=np.asarray(vec, dtype=np.float64).reshape(-1),
-            wids=wids_by_observable[channel],
+            wids=list(spec.oc_wids),
         )
 
     vectors = {
@@ -172,7 +250,7 @@ def _run_transcription_seed(
                 )
             vectors[obs][tick, :] = np.asarray(vec, dtype=np.float64).reshape(-1)
 
-    return vectors, wids_by_observable, channel_map
+    return vectors, wids_by_observable, channel_map, fitted_init_alignment_audit
 
 
 def _source_git_sha(path: Path) -> str:
@@ -198,6 +276,7 @@ def _save_seed_output(
     vectors: dict[str, np.ndarray],
     wids_by_observable: dict[str, list[str]],
     channel_map: dict[str, ChannelSpec],
+    fitted_init_alignment_audit: dict[str, Any],
 ) -> Path:
     seed_dir = output_root / f"seed_{seed:03d}"
     seed_dir.mkdir(parents=True, exist_ok=True)
@@ -227,6 +306,7 @@ def _save_seed_output(
             }
             for channel, spec in channel_map.items()
         },
+        "fitted_init_alignment_audit": fitted_init_alignment_audit,
         "generated_at_utc": datetime.now(UTC).isoformat(),
         "npz_file": npz_path.name,
     }
@@ -253,7 +333,7 @@ def run_transcription_ensemble(config: TranscriptionRunConfig) -> dict[str, Any]
             )
             continue
 
-        vectors, wids_by_observable, channel_map = _run_transcription_seed(
+        vectors, wids_by_observable, channel_map, fitted_init_alignment_audit = _run_transcription_seed(
             seed=seed,
             n_ticks=config.n_ticks,
             karr_root=config.karr_root,
@@ -265,6 +345,7 @@ def run_transcription_ensemble(config: TranscriptionRunConfig) -> dict[str, Any]
             vectors=vectors,
             wids_by_observable=wids_by_observable,
             channel_map=channel_map,
+            fitted_init_alignment_audit=fitted_init_alignment_audit,
         )
         entries.append(
             {

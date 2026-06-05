@@ -71,8 +71,8 @@
   "bootstrap_iterations": 200,
   "bootstrap_quantile": 0.95,
   "bootstrap_margin": 1.1,
-  "ks_failure_count": 398,
-  "wasserstein_failure_count": 400,
+  "ks_failure_count": 385,
+  "wasserstein_failure_count": 396,
   "substrates_intersection_audit": {
     "karr_wid_count": 26,
     "oc_wid_count": 20,
@@ -108,13 +108,13 @@
       "H"
     ],
     "dropped_oc_wids": [],
-    "tick0_seed0_w1_over_intersection": 17.8
+    "tick0_seed0_w1_over_intersection": 17.700000000000003
   },
   "observable_rollup": {
     "substrates": {
       "ks_d_max": 1.0,
       "ks_p_bonferroni_min": 1.3876314229985673e-26,
-      "w1_max": 23771.060000000005,
+      "w1_max": 23771.06,
       "w1_threshold_max": 2642.5586
     },
     "enzymes": {
@@ -132,7 +132,7 @@
     "monomers": {
       "ks_d_max": 1.0,
       "ks_p_bonferroni_min": 1.3876314229985673e-26,
-      "w1_max": 16176.300000000001,
+      "w1_max": 14.96,
       "w1_threshold_max": 0.8821999999999993
     },
     "ribosome_state_active_count": {
@@ -154,7 +154,7 @@
       "w1_threshold_max": 1406.0617999999988
     }
   },
-  "ks_failures_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/ks_failures.csv",
-  "wasserstein_failures_path": "/mnt/e/opencell-worktrees/l22-gate-translation/data/opencell_ensembles/translation/wasserstein_failures.csv",
+  "ks_failures_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/translation/ks_failures.csv",
+  "wasserstein_failures_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/translation/wasserstein_failures.csv",
   "overall_pass": false
 }
