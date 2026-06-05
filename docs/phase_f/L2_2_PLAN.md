@@ -843,6 +843,39 @@ Implications:
 - Mechanism-gap follow-ups (monomers, RNAs) are NEW workstreams not yet scoped — they are not §4.6 territory (those were artifact fixes); they are §2.4/§2.5 deepening or possibly a new §6.
 - 3 ribosome observers in `_l2_2_ensemble_runner.py` return all-zeros — false PASS in current verdict. Observer fix is a small task; not blocking.
 
+### 4.6.6 F4 verdict — fitted-init scope extension to monomers + RNAs (added 2026-06-05 ~11:55 IST)
+
+F4 extended `fitted_init` scope to cover Translation::monomers and Transcription::RNAs, then re-ran both gates. Worktree `exec/l22-f4-monomer-rna-init`, 6 commits `b15c938..f7f625c`, merged into integration at `c7be443` (no conflicts on `l2_replay_common.py`). Wall-time 26.7 min.
+
+**Headline (Translation::monomers — SOLVED):**
+
+| channel | pre-F4 W1max | post-F4 W1max | post-F4 mean | verdict |
+|---|---:|---:|---:|---|
+| **monomers** | **16,175 (flat)** | **14.96** | **7.31** | **H_init CONFIRMED and RESOLVED — ~1000× collapse** |
+
+The 16,175 monomer residual flagged in §4.6.5 as "real mechanism gap" was actually init-artifact. With `fitted_init` extended to cover the monomer state vector, the residual collapses to W1max ≈ 15. **Lesson for §4.6.5 retroactive reading**: when channel A's W1 dominates the gate verdict, the smaller residuals on channel B might be hidden. Don't declare "mechanism gap" on the dominating channel until it has been put through fitted-init.
+
+**Headline (Transcription::RNAs — STRUCTURAL BLOCK, not mechanism gap):**
+
+| channel | post-F4 W1 | verdict |
+|---|---:|---|
+| RNAs | non-finite (intersection empty) | **H_intersection — Karr uses `TU_*` IDs (335 per-TU), OC uses `MG_*` IDs (525 per-gene), zero overlap** |
+
+The RNAs gap is neither H_init nor mechanism — it is a structural mismatch between Karr's per-transcription-unit observable and OC's per-gene observable. The intersection comparator by design returns non-finite when intersection is empty. **Needs a new workstream (F5-RNA-mapping)**: either (a) build TU↔gene mapping at extract time using Karr's MATLAB `transcriptionUnitGeneMatrix`, or (b) find an OC alternate per-TU observable, or (c) convert Karr's per-TU counts to per-gene at MATLAB-extract time. Not in scope for the current L2.2 closure attempt — RNAs may be carved out as a "structural defer" similar to a known channel reduction.
+
+**Hidden residual surfaced (Translation::substrates — NEW finding):**
+
+With monomers' 16,175 noise removed, the substrates residual is now visible: **W1max=23,771 mean=12,509**. This was hidden behind monomers pre-F4. Translation gate continues to globally FAIL because of substrates; enzymes (W1max=31.64) and boundEnzymes (W1max=38.08) are small residuals.
+
+**Open question**: is the substrates 23,771 residual a real mechanism gap or another DELTA-vs-SNAPSHOT-style semantics issue? Translation::substrates is documented in §4.6.5 as a DELTA channel (per-tick reset) and was renormalized in F3, but the 23k residual is suspiciously large. **Next step: fire a Replication::substrates canary** (DELTA channel on a different DEEP process) to triage:
+- If Replication::substrates also shows 5-figure W1, then substrates DELTA semantics need a more careful treatment across DEEP processes — open F5-substrates.
+- If Replication::substrates shows low W1, then Translation::substrates 23k is specific to Translation — open mechanism investigation just for Translation.
+
+**State of §4.6.5 verdict table after F4** (correcting the "real mechanism gap" line for monomers):
+- ~~monomers W1max 16176 — real mechanism gap~~ → **monomers W1max 14.96 — RESOLVED via fitted_init**.
+- substrates W1max 23771 — **still FAIL, now the dominant residual, mechanism vs semantics TBD via canary**.
+- RNAs W1max 783 → after F4 intersection-comparator: non-finite (structural block, not mechanism).
+
 ## §5 Pass/fail gates for L2.2 closure
 
 ### 5.1 Process-level gate
