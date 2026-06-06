@@ -34,7 +34,7 @@ def test_protein_decay_monomer_oracle_is_projected_not_raw_head_slice() -> None:
     assert not np.array_equal(projected, naive_head_slice)
 
 
-def test_protein_decay_tick_replays_after_hint_on_primary_channels() -> None:
+def test_protein_decay_tick_does_not_feed_after_hint_back_into_primary_channels() -> None:
     if hasattr(runner_helpers._protein_decay_process, "cache_clear"):
         runner_helpers._protein_decay_process.cache_clear()
 
@@ -60,9 +60,9 @@ def test_protein_decay_tick_replays_after_hint_on_primary_channels() -> None:
 
     result = runner_helpers._run_protein_decay_tick(seed=12345, tick=0, state=state)
 
-    assert np.array_equal(result["substrates"], state["oracle_after_substrates"])
-    assert np.array_equal(result["monomers"], state["oracle_after_monomers"])
-    assert np.array_equal(result["complexs"], state["oracle_after_complexs"])
+    assert not np.array_equal(result["substrates"], state["oracle_after_substrates"])
+    assert not np.array_equal(result["monomers"], state["oracle_after_monomers"])
+    assert not np.array_equal(result["complexs"], state["oracle_after_complexs"])
 
 
 def test_protein_decay_laundering_flows_through_trace_hint_replay_not_store_alias() -> None:
