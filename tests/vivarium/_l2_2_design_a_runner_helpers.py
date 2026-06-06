@@ -64,6 +64,8 @@ _PROTEIN_DECAY_ORACLE_PATH = (
 )
 _TRANSLATION_MRNA_STORE_PATH_OVERRIDE = {"mRNAs": ("rna", "counts")}
 _RNA_STORE_PATH_OVERRIDE = {"RNAs": ("rna", "counts")}
+_RNA_SLOT_COUNTS_STATE_KEY = "_l2_rna_slot_counts"
+_RNA_SLOT_WIDS_STATE_KEY = "_l2_rna_slot_wids"
 
 
 def _oracle_dispatch() -> dict[str, Any]:
@@ -544,6 +546,61 @@ def _run_translation_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[s
     }
 
 
+def _overlay_rna_decay_slot_counts(
+    *,
+    state: dict[str, Any],
+    vector: np.ndarray,
+    wids: list[str],
+) -> None:
+    state[_RNA_SLOT_COUNTS_STATE_KEY] = np.asarray(vector, dtype=np.float64).reshape(-1).copy()
+    state[_RNA_SLOT_WIDS_STATE_KEY] = tuple(str(wid) for wid in wids)
+
+
+def _apply_rna_decay_slot_update(*, process: Any, state: dict[str, Any]) -> None:
+    slot_counts = state.get(_RNA_SLOT_COUNTS_STATE_KEY)
+    slot_delta = getattr(process, "_last_rna_delta_vector", None)
+    if slot_counts is None or slot_delta is None:
+        return
+
+    counts_arr = np.asarray(slot_counts, dtype=np.float64).reshape(-1)
+    delta_arr = np.asarray(slot_delta, dtype=np.float64).reshape(-1)
+    if counts_arr.shape != delta_arr.shape:
+        raise ValueError(
+            "RNADecay slot-count update shape mismatch: "
+            f"counts={counts_arr.shape} delta={delta_arr.shape}"
+        )
+    state[_RNA_SLOT_COUNTS_STATE_KEY] = counts_arr + delta_arr
+
+
+def _project_rna_decay_slot_counts(
+    *,
+    process: Any,
+    state: dict[str, Any],
+    wids: list[str],
+    bound_enzymes_before: np.ndarray | None,
+) -> np.ndarray:
+    slot_counts = state.get(_RNA_SLOT_COUNTS_STATE_KEY)
+    slot_wids = state.get(_RNA_SLOT_WIDS_STATE_KEY)
+    if slot_counts is not None:
+        counts_arr = np.asarray(slot_counts, dtype=np.float64).reshape(-1)
+        if counts_arr.size == len(wids) and (
+            slot_wids is None or tuple(str(wid) for wid in wids) == tuple(slot_wids)
+        ):
+            return counts_arr
+
+    return np.asarray(
+        project_observable_from_state(
+            process=process,
+            state=state,
+            observable="RNAs",
+            wids=wids,
+            bound_enzymes_before=bound_enzymes_before,
+            store_path_override=_RNA_STORE_PATH_OVERRIDE,
+        ),
+        dtype=np.float64,
+    )
+
+
 def _run_rna_decay_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
     """Run one OpenCell RNADecay tick from a prepared state snapshot."""
     process = _rna_decay_process(_sample_seed(seed, tick))
@@ -574,22 +631,16 @@ def _run_rna_decay_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str
         wids=rna_wids,
         store_path_override=_RNA_STORE_PATH_OVERRIDE,
     )
-    overlay_trace_after_hint(
+    _overlay_rna_decay_slot_counts(
         state=runtime_state,
-        observable="substrates",
-        vector=np.asarray(state["oracle_after_substrates"], dtype=np.float64),
-        wids=substrate_wids,
-    )
-    overlay_trace_after_hint(
-        state=runtime_state,
-        observable="RNAs",
-        vector=np.asarray(state["oracle_after_rnas"], dtype=np.float64),
+        vector=np.asarray(state["oracle_before_rnas"], dtype=np.float64),
         wids=rna_wids,
     )
     refresh_allocator_views(process, runtime_state)
     with forbid_sut_oracle_file_io():
         update = process.next_update(1.0, runtime_state)
     apply_count_update(runtime_state, update)
+    _apply_rna_decay_slot_update(process=process, state=runtime_state)
     return {
         "substrates": np.asarray(
             project_observable_from_state(
@@ -602,13 +653,11 @@ def _run_rna_decay_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str
             dtype=np.float64,
         ),
         "RNAs": np.asarray(
-            project_observable_from_state(
+            _project_rna_decay_slot_counts(
                 process=process,
                 state=runtime_state,
-                observable="RNAs",
                 wids=rna_wids,
                 bound_enzymes_before=np.asarray(state["oracle_before_bound_enzymes"], dtype=np.float64),
-                store_path_override=_RNA_STORE_PATH_OVERRIDE,
             ),
             dtype=np.float64,
         ),
