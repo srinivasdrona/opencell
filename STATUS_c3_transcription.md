@@ -35,3 +35,5 @@
   - legacy non-Design-A harness files
 
 2026-06-06T12:12:24.7606278Z Beat 2 in progress: helper module now dispatches Metabolism/Transcription, projects Transcription substrates from 12 fixture ids down to the four NTP ports by WID, and maps 335 oracle TU-RNAs into the process’ 525 gene-RNA space via `nascentRNAGeneComposition` from `Transcription_flat.mat`. Verified helper load plus one guarded `run_oc_tick('Transcription', ...)` sample in WSL.
+
+2026-06-06T12:16:54.8914072Z Beat 3 in progress: runner now accepts the requested smoke CLI aliases (`--ticks`, `--output-dir`, `--bootstrap-B`), gates by per-process bucket/k_eng, and evaluates all Transcription output channels (`substrates`, `RNAs`, `boundEnzymes`). Narrow WSL probe: `run_design_a(process='Metabolism', seeds=[0], m_ticks=1, bootstrap_B=2)` returned process `PASS` with channel `substrates=SEED_NOISE`.
