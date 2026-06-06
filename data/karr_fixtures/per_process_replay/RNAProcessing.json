@@ -6,6 +6,7 @@
     "snapshot_properties": [
       "boundEnzymes",
       "enzymes",
+      "intergenicRNAs",
       "processedRNAs",
       "substrates",
       "unprocessedRNAs"

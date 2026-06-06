@@ -4,6 +4,7 @@
     "process_name": "ProteinDecay",
     "rng_seed": 0,
     "snapshot_properties": [
+      "RNAs",
       "boundEnzymes",
       "complexs",
       "enzymes",

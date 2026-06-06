@@ -4,6 +4,7 @@
     "process_name": "Transcription",
     "rng_seed": 0,
     "snapshot_properties": [
+      "RNAs",
       "boundEnzymes",
       "enzymes",
       "substrates"

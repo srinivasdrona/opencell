@@ -4,8 +4,14 @@
     "process_name": "Translation",
     "rng_seed": 0,
     "snapshot_properties": [
+      "aminoacylatedTMRNA",
+      "aminoacylatedTRNAs",
       "boundEnzymes",
+      "boundTMRNA",
       "enzymes",
+      "freeTMRNA",
+      "freeTRNAs",
+      "mRNAs",
       "monomers",
       "substrates"
     ],
