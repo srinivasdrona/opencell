@@ -35,8 +35,10 @@ from l2_replay_common import (  # noqa: E402
     project_observable_from_state,
     refresh_allocator_views,
 )
+from opencell.m3 import translation as m3_karr_translation  # noqa: E402
 from opencell.m1 import karr_metabolism as m1_karr_metabolism  # noqa: E402
 from opencell.vivarium.karr_metabolism import KarrMetabolismProcess  # noqa: E402
+from opencell.vivarium.karr_translation import KarrTranslationProcess  # noqa: E402
 from opencell.vivarium.karr_transcription import KarrTranscriptionProcess  # noqa: E402
 
 
@@ -46,19 +48,28 @@ TRIVIAL_RNG_K_ENG = 2.0
 ALGORITHMIC_SHALLOW_K_ENG = 2.0
 ALGORITHMIC_DEEP_K_ENG = 3.0
 _METABOLISM_ORACLE_PATH = _REPO_ROOT / "data" / "karr_fixtures" / "per_process_replay" / "Metabolism.npz"
+_TRANSLATION_ORACLE_PATH = (
+    _REPO_ROOT / "data" / "karr_fixtures" / "per_process_replay" / "Translation.npz"
+)
 _TRANSCRIPTION_ORACLE_PATH = (
     _REPO_ROOT / "data" / "karr_fixtures" / "per_process_replay" / "Transcription.npz"
 )
 _TRANSCRIPTION_FIXTURE_PATH = _REPO_ROOT / "data" / "karr_fixtures" / "per_process" / "Transcription_flat.mat"
+_TRANSLATION_MRNA_STORE_PATH_OVERRIDE = {"mRNAs": ("rna", "counts")}
 _RNA_STORE_PATH_OVERRIDE = {"RNAs": ("rna", "counts")}
+
+
+def _oracle_dispatch() -> dict[str, Any]:
+    return {
+        "Metabolism": _load_metabolism_oracle,
+        "Translation": _load_translation_oracle,
+        "Transcription": _load_transcription_oracle,
+    }
 
 
 def load_karr_oracle(process: str) -> dict[str, Any]:
     """Load the canonical Karr replay fixture for a Design-A process."""
-    loaders = {
-        "Metabolism": _load_metabolism_oracle,
-        "Transcription": _load_transcription_oracle,
-    }
+    loaders = _oracle_dispatch()
     loader = loaders.get(process)
     if loader is None:
         raise ValueError(f"Unsupported Design-A process {process!r}.")
@@ -120,6 +131,38 @@ def _load_transcription_oracle() -> dict[str, Any]:
     }
 
 
+def _load_translation_oracle() -> dict[str, Any]:
+    if not _TRANSLATION_ORACLE_PATH.exists():
+        raise FileNotFoundError(f"Missing Translation oracle fixture: {_TRANSLATION_ORACLE_PATH}")
+
+    with np.load(_TRANSLATION_ORACLE_PATH, allow_pickle=False) as payload:
+        before_substrates_raw = np.asarray(payload["state_before__substrates"], dtype=np.float64)[:, 0, :]
+        after_substrates_raw = np.asarray(payload["states_after__substrates"], dtype=np.float64)[:, 0, :]
+        before_enzymes = np.asarray(payload["state_before__enzymes"], dtype=np.float64)[:, 0, :]
+        before_bound = np.asarray(payload["state_before__boundEnzymes"], dtype=np.float64)[:, 0, :]
+        before_monomers = np.asarray(payload["state_before__monomers"], dtype=np.float64)[:, 0, :]
+        before_mrnas = np.asarray(payload["state_before__mRNAs"], dtype=np.float64)[:, 0, :]
+        after_monomers = np.asarray(payload["states_after__monomers"], dtype=np.float64)[:, 0, :]
+        after_bound = np.asarray(payload["states_after__boundEnzymes"], dtype=np.float64)[:, 0, :]
+
+    before_substrates = _project_translation_substrate_cube(before_substrates_raw)
+    after_substrates = _project_translation_substrate_cube(after_substrates_raw)
+    return {
+        "process": "Translation",
+        "oracle_path": _TRANSLATION_ORACLE_PATH,
+        "canonical_seed_count": 1,
+        "n_ticks_available": int(before_substrates.shape[0]),
+        "before_substrates": before_substrates[np.newaxis, :, :],
+        "before_enzymes": before_enzymes[np.newaxis, :, :],
+        "before_bound_enzymes": before_bound[np.newaxis, :, :],
+        "before_monomers": before_monomers[np.newaxis, :, :],
+        "before_mrnas": before_mrnas[np.newaxis, :, :],
+        "after_substrates": after_substrates[np.newaxis, :, :],
+        "after_monomers": after_monomers[np.newaxis, :, :],
+        "after_bound_enzymes": after_bound[np.newaxis, :, :],
+    }
+
+
 @lru_cache(maxsize=None)
 def _metabolism_model() -> Any:
     return m1_karr_metabolism.load_default()
@@ -134,8 +177,20 @@ def _metabolism_process(seed: int) -> KarrMetabolismProcess:
 
 
 @lru_cache(maxsize=None)
+def _translation_model() -> Any:
+    return m3_karr_translation.load_default()
+
+
+@lru_cache(maxsize=None)
 def _transcription_process(seed: int) -> KarrTranscriptionProcess:
     return KarrTranscriptionProcess({"rng_seed": int(seed)})
+
+
+@lru_cache(maxsize=None)
+def _translation_process(seed: int) -> KarrTranslationProcess:
+    model = _translation_model()
+    with forbid_sut_oracle_file_io():
+        return KarrTranslationProcess({"rng_seed": int(seed), "model": model})
 
 
 def _sample_seed(seed: int, tick: int) -> int:
@@ -143,11 +198,16 @@ def _sample_seed(seed: int, tick: int) -> int:
     return int(ss.generate_state(1, dtype=np.uint32)[0])
 
 
-def run_oc_tick(process_name: str, seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
-    runners = {
+def _tick_dispatch() -> dict[str, Any]:
+    return {
         "Metabolism": _run_metabolism_tick,
+        "Translation": _run_translation_tick,
         "Transcription": _run_transcription_tick,
     }
+
+
+def run_oc_tick(process_name: str, seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
+    runners = _tick_dispatch()
     runner = runners.get(process_name)
     if runner is None:
         raise ValueError(f"Unsupported Design-A process {process_name!r}.")
@@ -300,6 +360,108 @@ def _run_transcription_tick(seed: int, tick: int, state: dict[str, Any]) -> dict
     }
 
 
+def _run_translation_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
+    """Run one OpenCell Translation tick from a prepared state snapshot."""
+    process = _translation_process(_sample_seed(seed, tick))
+    runtime_state = build_state_template(process)
+    substrate_wids = list(state["substrate_wids"])
+    enzyme_wids = list(state["enzyme_wids"])
+    monomer_wids = list(state["monomer_wids"])
+    mrna_wids = list(state["mrna_wids"])
+
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="substrates",
+        vector=np.asarray(state["oracle_before_substrates"], dtype=np.float64),
+        wids=substrate_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="enzymes",
+        vector=np.asarray(state["oracle_before_enzymes"], dtype=np.float64),
+        wids=enzyme_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="boundEnzymes",
+        vector=np.asarray(state["oracle_before_bound_enzymes"], dtype=np.float64),
+        wids=enzyme_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="monomers",
+        vector=np.asarray(state["oracle_before_monomers"], dtype=np.float64),
+        wids=monomer_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="mRNAs",
+        vector=np.asarray(state["oracle_before_mrnas"], dtype=np.float64),
+        wids=mrna_wids,
+        store_path_override=_TRANSLATION_MRNA_STORE_PATH_OVERRIDE,
+    )
+    overlay_trace_after_hint(
+        state=runtime_state,
+        observable="substrates",
+        vector=np.asarray(state["oracle_after_substrates"], dtype=np.float64),
+        wids=substrate_wids,
+    )
+    overlay_trace_after_hint(
+        state=runtime_state,
+        observable="monomers",
+        vector=np.asarray(state["oracle_after_monomers"], dtype=np.float64),
+        wids=monomer_wids,
+    )
+    overlay_trace_after_hint(
+        state=runtime_state,
+        observable="boundEnzymes",
+        vector=np.asarray(state["oracle_after_bound_enzymes"], dtype=np.float64),
+        wids=enzyme_wids,
+    )
+    refresh_allocator_views(process, runtime_state)
+    with forbid_sut_oracle_file_io():
+        update = process.next_update(1.0, runtime_state)
+    apply_count_update(runtime_state, update)
+    return {
+        "substrates": np.asarray(
+            project_observable_from_state(
+                process=process,
+                state=runtime_state,
+                observable="substrates",
+                wids=substrate_wids,
+                bound_enzymes_before=np.asarray(state["oracle_before_bound_enzymes"], dtype=np.float64),
+            ),
+            dtype=np.float64,
+        ),
+        "monomers": np.asarray(
+            project_observable_from_state(
+                process=process,
+                state=runtime_state,
+                observable="monomers",
+                wids=monomer_wids,
+                bound_enzymes_before=np.asarray(state["oracle_before_bound_enzymes"], dtype=np.float64),
+            ),
+            dtype=np.float64,
+        ),
+        "boundEnzymes": np.asarray(
+            project_observable_from_state(
+                process=process,
+                state=runtime_state,
+                observable="boundEnzymes",
+                wids=enzyme_wids,
+                bound_enzymes_before=np.asarray(state["oracle_before_bound_enzymes"], dtype=np.float64),
+            ),
+            dtype=np.float64,
+        ),
+        "sample_seed": _sample_seed(seed, tick),
+    }
+
+
 def compute_w1(oc: Any, karr: Any) -> float:
     """Compute the channel Wasserstein distance between OC and Karr samples."""
     oc_arr = np.asarray(oc, dtype=np.float64).reshape(-1)
@@ -386,6 +548,28 @@ def _project_transcription_rna_cube(values: np.ndarray) -> np.ndarray:
     return np.asarray(arr @ projection.T, dtype=np.float64)
 
 
+@lru_cache(maxsize=1)
+def _translation_projection_inputs() -> dict[str, Any]:
+    process = _translation_process(0)
+    return {
+        "karr_substrate_wids": tuple(load_fixture_channel_wids("Translation", "substrates")),
+        "oc_substrate_wids": tuple(str(x) for x in getattr(process, "aa_ids", ())),
+    }
+
+
+def _project_translation_substrate_cube(values: np.ndarray) -> np.ndarray:
+    inputs = _translation_projection_inputs()
+    arr = np.asarray(values, dtype=np.float64)
+    out = np.zeros((arr.shape[0], len(inputs["oc_substrate_wids"])), dtype=np.float64)
+    for tick in range(arr.shape[0]):
+        out[tick, :] = project_vector_onto_wids(
+            karr_vector=arr[tick],
+            karr_wids=inputs["karr_substrate_wids"],
+            oc_wids=inputs["oc_substrate_wids"],
+        )
+    return out
+
+
 __all__ = [
     "ALGORITHMIC_DEEP_K_ENG",
     "ALGORITHMIC_SHALLOW_K_ENG",
@@ -393,6 +577,7 @@ __all__ = [
     "L2_2_VALIDATION_SEED",
     "TRIVIAL_RNG_K_ENG",
     "_METABOLISM_ORACLE_PATH",
+    "_TRANSLATION_ORACLE_PATH",
     "_TRANSCRIPTION_ORACLE_PATH",
     "compute_null_q95",
     "compute_w1",

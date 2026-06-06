@@ -1,0 +1,4 @@
+## C4 Translation Status
+
+- 2026-06-06T12:39:30Z Beat 1 complete: read `SESSION_CONTEXT.md` once, skimmed Transcription helper/runner wiring, checked `PROCESS_CATALOG.yaml` Translation slice, and confirmed the relevant CLI/spec sections. Intended diffs: add Translation oracle loader + cached process/tick dispatch in `tests/vivarium/_l2_2_design_a_runner_helpers.py`, extend process tables in `tests/vivarium/l2_2_design_a_runner.py`, add one Translation oracle-laundering anti-cheat on `monomers`, then run the required WSL smoke and targeted pytest.
+- 2026-06-06T13:01:53Z Beat 2 in progress: fixed the Translation helper runtime bug by caching the M3 model outside `forbid_sut_oracle_file_io()` and injecting it into `KarrTranslationProcess`, so Translation oracle loading now works under WSL without tripping the anti-oracle guard. Verified projected oracle tensor shapes: substrates `(1,100,20)`, enzymes/bound `(1,100,16)`, monomers/mRNAs `(1,100,482)`.
