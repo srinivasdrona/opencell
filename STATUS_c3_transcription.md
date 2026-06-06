@@ -39,3 +39,29 @@
 2026-06-06T12:16:54.8914072Z Beat 3 in progress: runner now accepts the requested smoke CLI aliases (`--ticks`, `--output-dir`, `--bootstrap-B`), gates by per-process bucket/k_eng, and evaluates all Transcription output channels (`substrates`, `RNAs`, `boundEnzymes`). Narrow WSL probe: `run_design_a(process='Metabolism', seeds=[0], m_ticks=1, bootstrap_B=2)` returned process `PASS` with channel `substrates=SEED_NOISE`.
 
 2026-06-06T12:20:32.3881146Z Beat 4 in progress: smoke command `python tests/vivarium/l2_2_design_a_runner.py --process Transcription --seeds 0,1,2 --ticks 5 --bootstrap-B 10 --output-dir tests/vivarium/artifacts/l2_2_design_a/Transcription_smoke` returned `Transcription PASS substrates=SEED_NOISE@0.000000 RNAs=INSUFFICIENT_SAMPLES@0.004698 boundEnzymes=INSUFFICIENT_SAMPLES@0.000000` (plus a SciPy `ks_2samp` asymptotic fallback warning). `result.json` summary: substrates `W1=0.0 q95=0.0 threshold=1.0 verdict=SEED_NOISE`; RNAs `W1=0.004698412698412661 q95=0.0 threshold=1.0 verdict=INSUFFICIENT_SAMPLES`; boundEnzymes `W1=0.0 q95=0.0 threshold=1.0 verdict=INSUFFICIENT_SAMPLES`. New Transcription oracle-laundering inversion added to `tests/vivarium/test_l2_2_design_a_runner_anticheat.py`; WSL pytest result: `4 passed in 44.70s`.
+
+## Final
+
+2026-06-06T12:21:27.1947345Z Verdict: SHIPPED
+
+- commit SHAs:
+  - Beat 2: `bd2febdf669cc41da69e3cc54299020783d86049`
+  - Beat 3: `4124886288a4fb0ef24f5f899bb5733c75482ab3`
+  - Beat 4: `285c11058db34f87d57c7c0e9322fc918bd4eb1c`
+
+- smoke verdict per channel (`Transcription`, seeds `0,1,2`, ticks `5`, bootstrap `10`):
+  - substrates: `W1=0.0`, `q95_null=0.0`, `k_eng*q95=0.0`, threshold used `1.0`, verdict `SEED_NOISE`
+  - RNAs: `W1=0.004698412698412661`, `q95_null=0.0`, `k_eng*q95=0.0`, threshold used `1.0`, verdict `INSUFFICIENT_SAMPLES`
+  - boundEnzymes: `W1=0.0`, `q95_null=0.0`, `k_eng*q95=0.0`, threshold used `1.0`, verdict `INSUFFICIENT_SAMPLES`
+
+- most important diagnostic:
+  - yes, the Transcription `RNAs` channel shows real non-zero `W1` (`0.004698412698412661`) against the Karr oracle, so this is the first non-zero DEEP-bucket signal rather than a flat zero. It is not gateable yet in the reduced smoke because `n_nonzero_oc=12` / `n_nonzero_karr=30` leaves the channel in `INSUFFICIENT_SAMPLES`.
+
+- anti-cheat:
+  - PASS. `tests/vivarium/test_l2_2_design_a_runner_anticheat.py` now includes a Transcription oracle-laundering inversion where the honest RNAs path fails and the cheated RNAs path flips to process `PASS` with `KARR_SINGLE_SEED_REUSED` present.
+
+- honest open questions / scope cuts:
+  - I projected oracle `RNAs` from 335 TU counts into the process’ 525 gene-RNA space using `nascentRNAGeneComposition` from `Transcription_flat.mat`, because the SUT/state space and replay fixture widths do not match directly. This is the key assumption in the new path.
+  - I projected Transcription substrates by WID from the 12-wide replay fixture down to the process’ four NTP ports; this matches the existing L2.1 Transcription replay treatment.
+  - The reduced smoke intentionally stops at `3 x 5` samples, so the primary `RNAs` channel remains `INSUFFICIENT_SAMPLES`; no full `N=50 / M=100` run was attempted in C3.
+  - I did not add a dedicated Transcription exact-match leak warning beyond `KARR_SINGLE_SEED_REUSED`; the new anti-cheat coverage detects laundering via verdict flip rather than a new warning code.
