@@ -33,6 +33,7 @@ from l2_replay_common import (  # noqa: E402
     overlay_trace_after_hint,
     project_vector_onto_wids,
     project_observable_from_state,
+    project_trace_matrix_to_482,
     refresh_allocator_views,
 )
 from opencell.m3 import translation as m3_karr_translation  # noqa: E402
@@ -40,6 +41,8 @@ from opencell.m1 import karr_metabolism as m1_karr_metabolism  # noqa: E402
 from opencell.vivarium.karr_metabolism import KarrMetabolismProcess  # noqa: E402
 from opencell.vivarium.karr_translation import KarrTranslationProcess  # noqa: E402
 from opencell.vivarium.karr_transcription import KarrTranscriptionProcess  # noqa: E402
+from opencell.vivarium.karr_rna_decay import RnaDecayLightProcess  # noqa: E402
+from opencell.vivarium.karr_protein_decay_light import ProteinDecayLightProcess  # noqa: E402
 
 
 L2_2_VALIDATION_SEED = 0xCA11B
@@ -55,6 +58,10 @@ _TRANSCRIPTION_ORACLE_PATH = (
     _REPO_ROOT / "data" / "karr_fixtures" / "per_process_replay" / "Transcription.npz"
 )
 _TRANSCRIPTION_FIXTURE_PATH = _REPO_ROOT / "data" / "karr_fixtures" / "per_process" / "Transcription_flat.mat"
+_RNA_DECAY_ORACLE_PATH = _REPO_ROOT / "data" / "karr_fixtures" / "per_process_replay" / "RNADecay.npz"
+_PROTEIN_DECAY_ORACLE_PATH = (
+    _REPO_ROOT / "data" / "karr_fixtures" / "per_process_replay" / "ProteinDecay.npz"
+)
 _TRANSLATION_MRNA_STORE_PATH_OVERRIDE = {"mRNAs": ("rna", "counts")}
 _RNA_STORE_PATH_OVERRIDE = {"RNAs": ("rna", "counts")}
 
@@ -64,6 +71,8 @@ def _oracle_dispatch() -> dict[str, Any]:
         "Metabolism": _load_metabolism_oracle,
         "Translation": _load_translation_oracle,
         "Transcription": _load_transcription_oracle,
+        "RNADecay": _load_rna_decay_oracle,
+        "ProteinDecay": _load_protein_decay_oracle,
     }
 
 
@@ -163,6 +172,65 @@ def _load_translation_oracle() -> dict[str, Any]:
     }
 
 
+def _load_rna_decay_oracle() -> dict[str, Any]:
+    if not _RNA_DECAY_ORACLE_PATH.exists():
+        raise FileNotFoundError(f"Missing RNADecay oracle fixture: {_RNA_DECAY_ORACLE_PATH}")
+
+    with np.load(_RNA_DECAY_ORACLE_PATH, allow_pickle=False) as payload:
+        before_substrates = np.asarray(payload["state_before__substrates"], dtype=np.float64)[:, 0, :]
+        before_enzymes = np.asarray(payload["state_before__enzymes"], dtype=np.float64)[:, 0, :]
+        before_bound = np.asarray(payload["state_before__boundEnzymes"], dtype=np.float64)[:, 0, :]
+        before_rnas = np.asarray(payload["state_before__RNAs"], dtype=np.float64)[:, 0, :]
+        after_substrates = np.asarray(payload["states_after__substrates"], dtype=np.float64)[:, 0, :]
+        after_rnas = np.asarray(payload["states_after__RNAs"], dtype=np.float64)[:, 0, :]
+
+    return {
+        "process": "RNADecay",
+        "oracle_path": _RNA_DECAY_ORACLE_PATH,
+        "canonical_seed_count": 1,
+        "n_ticks_available": int(before_substrates.shape[0]),
+        "before_substrates": before_substrates[np.newaxis, :, :],
+        "before_enzymes": before_enzymes[np.newaxis, :, :],
+        "before_bound_enzymes": before_bound[np.newaxis, :, :],
+        "before_rnas": before_rnas[np.newaxis, :, :],
+        "after_substrates": after_substrates[np.newaxis, :, :],
+        "after_rnas": after_rnas[np.newaxis, :, :],
+    }
+
+
+def _load_protein_decay_oracle() -> dict[str, Any]:
+    if not _PROTEIN_DECAY_ORACLE_PATH.exists():
+        raise FileNotFoundError(f"Missing ProteinDecay oracle fixture: {_PROTEIN_DECAY_ORACLE_PATH}")
+
+    with np.load(_PROTEIN_DECAY_ORACLE_PATH, allow_pickle=False) as payload:
+        before_substrates = np.asarray(payload["state_before__substrates"], dtype=np.float64)[:, 0, :]
+        before_enzymes = np.asarray(payload["state_before__enzymes"], dtype=np.float64)[:, 0, :]
+        before_monomers_raw = np.asarray(payload["state_before__monomers"], dtype=np.float64)
+        before_complexs_raw = np.asarray(payload["state_before__complexs"], dtype=np.float64)
+        after_substrates = np.asarray(payload["states_after__substrates"], dtype=np.float64)[:, 0, :]
+        after_monomers_raw = np.asarray(payload["states_after__monomers"], dtype=np.float64)
+        after_complexs_raw = np.asarray(payload["states_after__complexs"], dtype=np.float64)
+
+    before_monomers = _project_protein_decay_monomer_cube(before_monomers_raw)
+    before_complexs = _project_protein_decay_complex_cube(before_complexs_raw)
+    after_monomers = _project_protein_decay_monomer_cube(after_monomers_raw)
+    after_complexs = _project_protein_decay_complex_cube(after_complexs_raw)
+
+    return {
+        "process": "ProteinDecay",
+        "oracle_path": _PROTEIN_DECAY_ORACLE_PATH,
+        "canonical_seed_count": 1,
+        "n_ticks_available": int(before_substrates.shape[0]),
+        "before_substrates": before_substrates[np.newaxis, :, :],
+        "before_enzymes": before_enzymes[np.newaxis, :, :],
+        "before_monomers": before_monomers[np.newaxis, :, :],
+        "before_complexs": before_complexs[np.newaxis, :, :],
+        "after_substrates": after_substrates[np.newaxis, :, :],
+        "after_monomers": after_monomers[np.newaxis, :, :],
+        "after_complexs": after_complexs[np.newaxis, :, :],
+    }
+
+
 @lru_cache(maxsize=None)
 def _metabolism_model() -> Any:
     return m1_karr_metabolism.load_default()
@@ -193,6 +261,18 @@ def _translation_process(seed: int) -> KarrTranslationProcess:
         return KarrTranslationProcess({"rng_seed": int(seed), "model": model})
 
 
+@lru_cache(maxsize=None)
+def _rna_decay_process(seed: int) -> RnaDecayLightProcess:
+    with forbid_sut_oracle_file_io():
+        return RnaDecayLightProcess({"rng_seed": int(seed)})
+
+
+@lru_cache(maxsize=None)
+def _protein_decay_process(seed: int) -> ProteinDecayLightProcess:
+    with forbid_sut_oracle_file_io():
+        return ProteinDecayLightProcess({"rng_seed": int(seed)})
+
+
 def _sample_seed(seed: int, tick: int) -> int:
     ss = np.random.SeedSequence([L2_2_VALIDATION_SEED, int(seed), int(tick)])
     return int(ss.generate_state(1, dtype=np.uint32)[0])
@@ -203,6 +283,8 @@ def _tick_dispatch() -> dict[str, Any]:
         "Metabolism": _run_metabolism_tick,
         "Translation": _run_translation_tick,
         "Transcription": _run_transcription_tick,
+        "RNADecay": _run_rna_decay_tick,
+        "ProteinDecay": _run_protein_decay_tick,
     }
 
 
@@ -462,6 +544,173 @@ def _run_translation_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[s
     }
 
 
+def _run_rna_decay_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
+    """Run one OpenCell RNADecay tick from a prepared state snapshot."""
+    process = _rna_decay_process(_sample_seed(seed, tick))
+    runtime_state = build_state_template(process)
+    substrate_wids = list(state["substrate_wids"])
+    enzyme_wids = list(state["enzyme_wids"])
+    rna_wids = list(state["rna_wids"])
+
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="substrates",
+        vector=np.asarray(state["oracle_before_substrates"], dtype=np.float64),
+        wids=substrate_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="enzymes",
+        vector=np.asarray(state["oracle_before_enzymes"], dtype=np.float64),
+        wids=enzyme_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="RNAs",
+        vector=np.asarray(state["oracle_before_rnas"], dtype=np.float64),
+        wids=rna_wids,
+        store_path_override=_RNA_STORE_PATH_OVERRIDE,
+    )
+    overlay_trace_after_hint(
+        state=runtime_state,
+        observable="substrates",
+        vector=np.asarray(state["oracle_after_substrates"], dtype=np.float64),
+        wids=substrate_wids,
+    )
+    overlay_trace_after_hint(
+        state=runtime_state,
+        observable="RNAs",
+        vector=np.asarray(state["oracle_after_rnas"], dtype=np.float64),
+        wids=rna_wids,
+    )
+    refresh_allocator_views(process, runtime_state)
+    with forbid_sut_oracle_file_io():
+        update = process.next_update(1.0, runtime_state)
+    apply_count_update(runtime_state, update)
+    return {
+        "substrates": np.asarray(
+            project_observable_from_state(
+                process=process,
+                state=runtime_state,
+                observable="substrates",
+                wids=substrate_wids,
+                bound_enzymes_before=np.asarray(state["oracle_before_bound_enzymes"], dtype=np.float64),
+            ),
+            dtype=np.float64,
+        ),
+        "RNAs": np.asarray(
+            project_observable_from_state(
+                process=process,
+                state=runtime_state,
+                observable="RNAs",
+                wids=rna_wids,
+                bound_enzymes_before=np.asarray(state["oracle_before_bound_enzymes"], dtype=np.float64),
+                store_path_override=_RNA_STORE_PATH_OVERRIDE,
+            ),
+            dtype=np.float64,
+        ),
+        "sample_seed": _sample_seed(seed, tick),
+    }
+
+
+def _run_protein_decay_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
+    """Run one OpenCell ProteinDecay tick from a prepared state snapshot."""
+    process = _protein_decay_process(_sample_seed(seed, tick))
+    runtime_state = build_state_template(process)
+    substrate_wids = list(state["substrate_wids"])
+    enzyme_wids = list(state["enzyme_wids"])
+    monomer_wids = list(state["monomer_wids"])
+    complex_wids = list(state["complex_wids"])
+    bound_enzymes_before = np.zeros(len(enzyme_wids), dtype=np.float64)
+
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="substrates",
+        vector=np.asarray(state["oracle_before_substrates"], dtype=np.float64),
+        wids=substrate_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="enzymes",
+        vector=np.asarray(state["oracle_before_enzymes"], dtype=np.float64),
+        wids=enzyme_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="monomers",
+        vector=np.asarray(state["oracle_before_monomers"], dtype=np.float64),
+        wids=monomer_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="complexs",
+        vector=np.asarray(state["oracle_before_complexs"], dtype=np.float64),
+        wids=complex_wids,
+    )
+    overlay_trace_after_hint(
+        state=runtime_state,
+        observable="substrates",
+        vector=np.asarray(state["oracle_after_substrates"], dtype=np.float64),
+        wids=substrate_wids,
+    )
+    overlay_trace_after_hint(
+        state=runtime_state,
+        observable="monomers",
+        vector=np.asarray(state["oracle_after_monomers"], dtype=np.float64),
+        wids=monomer_wids,
+    )
+    overlay_trace_after_hint(
+        state=runtime_state,
+        observable="complexs",
+        vector=np.asarray(state["oracle_after_complexs"], dtype=np.float64),
+        wids=complex_wids,
+    )
+    refresh_allocator_views(process, runtime_state)
+    with forbid_sut_oracle_file_io():
+        update = process.next_update(1.0, runtime_state)
+    apply_count_update(runtime_state, update)
+    return {
+        "substrates": np.asarray(
+            project_observable_from_state(
+                process=process,
+                state=runtime_state,
+                observable="substrates",
+                wids=substrate_wids,
+                bound_enzymes_before=bound_enzymes_before,
+            ),
+            dtype=np.float64,
+        ),
+        "monomers": np.asarray(
+            project_observable_from_state(
+                process=process,
+                state=runtime_state,
+                observable="monomers",
+                wids=monomer_wids,
+                bound_enzymes_before=bound_enzymes_before,
+            ),
+            dtype=np.float64,
+        ),
+        "complexs": np.asarray(
+            project_observable_from_state(
+                process=process,
+                state=runtime_state,
+                observable="complexs",
+                wids=complex_wids,
+                bound_enzymes_before=bound_enzymes_before,
+            ),
+            dtype=np.float64,
+        ),
+        "sample_seed": _sample_seed(seed, tick),
+    }
+
+
 def compute_w1(oc: Any, karr: Any) -> float:
     """Compute the channel Wasserstein distance between OC and Karr samples."""
     oc_arr = np.asarray(oc, dtype=np.float64).reshape(-1)
@@ -570,6 +819,29 @@ def _project_translation_substrate_cube(values: np.ndarray) -> np.ndarray:
     return out
 
 
+@lru_cache(maxsize=1)
+def _protein_decay_projection_inputs() -> dict[str, Any]:
+    process = _protein_decay_process(0)
+    return {
+        "complex_width": len(process.complex_wids),
+    }
+
+
+def _project_protein_decay_monomer_cube(values: np.ndarray) -> np.ndarray:
+    arr = np.asarray(values, dtype=np.float64)
+    return np.asarray(
+        [project_trace_matrix_to_482(arr[tick]) for tick in range(arr.shape[0])],
+        dtype=np.float64,
+    )
+
+
+def _project_protein_decay_complex_cube(values: np.ndarray) -> np.ndarray:
+    arr = np.asarray(values, dtype=np.float64)
+    complex_width = int(_protein_decay_projection_inputs()["complex_width"])
+    flat = arr.reshape(arr.shape[0], -1)
+    return np.asarray(flat[:, :complex_width], dtype=np.float64)
+
+
 __all__ = [
     "ALGORITHMIC_DEEP_K_ENG",
     "ALGORITHMIC_SHALLOW_K_ENG",
@@ -578,6 +850,8 @@ __all__ = [
     "TRIVIAL_RNG_K_ENG",
     "_METABOLISM_ORACLE_PATH",
     "_TRANSLATION_ORACLE_PATH",
+    "_RNA_DECAY_ORACLE_PATH",
+    "_PROTEIN_DECAY_ORACLE_PATH",
     "_TRANSCRIPTION_ORACLE_PATH",
     "compute_null_q95",
     "compute_w1",

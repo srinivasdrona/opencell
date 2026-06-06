@@ -241,8 +241,16 @@ def test_transcription_oracle_laundering_flips_primary_channel(monkeypatch, tmp_
 
     assert honest_payload["result"]["verdict"] == "FAIL"
     assert honest_payload["result"]["channels"]["RNAs"]["verdict"] == "FAIL"
-    assert cheated_payload["result"]["verdict"] == "PASS"
-    assert cheated_payload["result"]["channels"]["RNAs"]["verdict"] in {"SEED_NOISE", "PASS"}
+    # C5 added PRIMARY_CHANNEL_ORACLE_LAUNDERING detection that flips the
+    # primary channel verdict to FAIL when OC exactly matches the oracle on
+    # an RNAs primary channel for Transcription/RNADecay. Previously the
+    # cheat surfaced only as a KARR_SINGLE_SEED_REUSED warning with PASS.
+    assert cheated_payload["result"]["verdict"] == "FAIL"
+    assert cheated_payload["result"]["channels"]["RNAs"]["verdict"] == "FAIL"
+    assert any(
+        "PRIMARY_CHANNEL_ORACLE_LAUNDERING" in warning
+        for warning in cheated_payload["result"]["warnings"]
+    )
     assert any(
         "KARR_SINGLE_SEED_REUSED" in warning for warning in cheated_payload["result"]["warnings"]
     )
