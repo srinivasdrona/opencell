@@ -21,6 +21,8 @@ _FIXTURE_DIR = Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / 
 _RNA_DECAY_FLAT = _FIXTURE_DIR / "RnaDecay_flat.mat"
 _RNA_STATE_CLASS = "edu.stanford.covert.cell.sim.state.Rna"
 _LN2 = math.log(2.0)
+_L2_RNA_SLOT_COUNTS_STATE_KEY = "_l2_rna_slot_counts"
+_L2_RNA_SLOT_WIDS_STATE_KEY = "_l2_rna_slot_wids"
 
 
 def _load_flat_fixture(path: Path) -> object:  # noqa: ANN401 - matlab struct dynamic
@@ -118,6 +120,7 @@ class RnaDecayLightProcess(Process):
                 f"({len(self.rna_wids)}, {len(self.substrate_wids)})"
             )
         self._rng = np.random.RandomState(self._rng_seed)
+        self._last_rna_delta_vector = np.zeros(len(self.rna_wids), dtype=np.float64)
 
     def _load_from_fixture(self, fixture_path: Path) -> None:
         fixture = _load_flat_fixture(fixture_path)
@@ -296,6 +299,7 @@ class RnaDecayLightProcess(Process):
         dt = float(timestep)
         if dt <= 0.0:
             dt = self.step_size_sec
+        self._last_rna_delta_vector = np.zeros(len(self.rna_wids), dtype=np.float64)
 
         # L2.1 replay short-circuit: if a substrates trace hint is present,
         # emit exactly the per-tick substrate deltas the karr trace recorded
@@ -311,13 +315,7 @@ class RnaDecayLightProcess(Process):
 
         peptidyl_capacity = self._peptidyl_hydrolase_capacity(states=states, dt=dt)
 
-        rna_counts = np.asarray(
-            [
-                max(0, int(float(states.get("rna", {}).get("counts", {}).get(wid, 0.0))))
-                for wid in self.rna_wids
-            ],
-            dtype=np.int64,
-        )
+        rna_counts = self._read_rna_counts(states=states)
         if not np.any(rna_counts):
             rna_counts = self._fixture_rna_counts
 
@@ -371,6 +369,7 @@ class RnaDecayLightProcess(Process):
 
         if np.any(decay_events > 0):
             rna_delta = -decay_events
+            self._last_rna_delta_vector = rna_delta.astype(np.float64, copy=True)
             rna_update = {
                 wid: float(rna_delta[i]) for i, wid in enumerate(self.rna_wids) if rna_delta[i] != 0
             }
@@ -388,6 +387,27 @@ class RnaDecayLightProcess(Process):
                     update["substrates"] = substrate_update
 
         return update
+
+    def _read_rna_counts(self, *, states: dict[str, Any]) -> np.ndarray:
+        slot_wids = states.get(_L2_RNA_SLOT_WIDS_STATE_KEY)
+        slot_counts = states.get(_L2_RNA_SLOT_COUNTS_STATE_KEY)
+        if slot_counts is not None:
+            counts = np.asarray(slot_counts, dtype=np.float64).reshape(-1)
+            if counts.size == len(self.rna_wids) and (
+                slot_wids is None or tuple(str(wid) for wid in slot_wids) == tuple(self.rna_wids)
+            ):
+                return np.asarray(
+                    [max(0, int(float(value))) for value in counts],
+                    dtype=np.int64,
+                )
+
+        return np.asarray(
+            [
+                max(0, int(float(states.get("rna", {}).get("counts", {}).get(wid, 0.0))))
+                for wid in self.rna_wids
+            ],
+            dtype=np.int64,
+        )
 
     def _draw_weighted_index(self, weights: np.ndarray) -> int | None:
         total = int(np.sum(weights))
