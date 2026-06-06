@@ -43,6 +43,7 @@ from opencell.vivarium.karr_transcription import KarrTranscriptionProcess  # noq
 L2_2_VALIDATION_SEED = 0xCA11B
 ABSOLUTE_FLOOR = 1.0
 TRIVIAL_RNG_K_ENG = 2.0
+ALGORITHMIC_SHALLOW_K_ENG = 2.0
 ALGORITHMIC_DEEP_K_ENG = 3.0
 _METABOLISM_ORACLE_PATH = _REPO_ROOT / "data" / "karr_fixtures" / "per_process_replay" / "Metabolism.npz"
 _TRANSCRIPTION_ORACLE_PATH = (
@@ -387,6 +388,7 @@ def _project_transcription_rna_cube(values: np.ndarray) -> np.ndarray:
 
 __all__ = [
     "ALGORITHMIC_DEEP_K_ENG",
+    "ALGORITHMIC_SHALLOW_K_ENG",
     "ABSOLUTE_FLOOR",
     "L2_2_VALIDATION_SEED",
     "TRIVIAL_RNG_K_ENG",
