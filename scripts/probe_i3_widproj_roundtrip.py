@@ -40,14 +40,17 @@ def _project_round_trip(
         wids=wids,
         store_path_override=runner_helpers._RNA_STORE_PATH_OVERRIDE,
     )
+    runner_helpers._overlay_rna_decay_slot_counts(
+        state=runtime_state,
+        vector=np.asarray(vector, dtype=np.float64),
+        wids=wids,
+    )
     return np.asarray(
-        runner_helpers.project_observable_from_state(
+        runner_helpers._project_rna_decay_slot_counts(
             process=process,
             state=runtime_state,
-            observable="RNAs",
             wids=wids,
             bound_enzymes_before=np.zeros(len(process.enzyme_wids), dtype=np.float64),
-            store_path_override=runner_helpers._RNA_STORE_PATH_OVERRIDE,
         ),
         dtype=np.float64,
     )
@@ -88,6 +91,14 @@ def main() -> int:
             "n_ticks": int(before_all.shape[0]),
             "mean_raw_before": float(np.mean(before_all)),
             "mean_round_trip_before": float(np.mean(round_trip_all)),
+            "mean_w1_before_vs_after": float(
+                np.mean(
+                    [
+                        runner_helpers.compute_w1(before_all[tick], after_all[tick])
+                        for tick in range(int(before_all.shape[0]))
+                    ]
+                )
+            ),
             "mean_w1_round_trip_before_vs_after": float(
                 np.mean(
                     [
