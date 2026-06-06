@@ -83,6 +83,45 @@ def _fake_transcription_process(
     )
 
 
+def _fake_translation_oracle(
+    *,
+    tick_count: int = 4,
+    substrate_dim: int = 4,
+    enzyme_dim: int = 3,
+    monomer_dim: int = 8,
+) -> dict[str, object]:
+    substrate_base = np.arange(tick_count * substrate_dim, dtype=np.float64).reshape(1, tick_count, substrate_dim)
+    bound_base = np.arange(tick_count * enzyme_dim, dtype=np.float64).reshape(1, tick_count, enzyme_dim)
+    monomer_base = np.arange(tick_count * monomer_dim, dtype=np.float64).reshape(1, tick_count, monomer_dim) + 1.0
+    return {
+        "process": "Translation",
+        "oracle_path": runner.runner_helpers._TRANSLATION_ORACLE_PATH,
+        "canonical_seed_count": 1,
+        "n_ticks_available": tick_count,
+        "before_substrates": substrate_base,
+        "before_enzymes": np.ones((1, tick_count, enzyme_dim), dtype=np.float64),
+        "before_bound_enzymes": bound_base,
+        "before_monomers": monomer_base,
+        "before_mrnas": monomer_base + 7.0,
+        "after_substrates": substrate_base + 5.0,
+        "after_bound_enzymes": bound_base + 2.0,
+        "after_monomers": monomer_base + 3.0,
+    }
+
+
+def _fake_translation_process(
+    *,
+    substrate_dim: int = 4,
+    enzyme_dim: int = 3,
+    monomer_dim: int = 8,
+) -> SimpleNamespace:
+    return SimpleNamespace(
+        aa_ids=tuple(f"AA_{idx}" for idx in range(substrate_dim)),
+        enzyme_wids=tuple(f"RIBO_{idx}" for idx in range(enzyme_dim)),
+        protein_ids=tuple(f"PROT_{idx:03d}" for idx in range(monomer_dim)),
+    )
+
+
 def test_constant_zero_oc_fails(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(runner.runner_helpers, "load_karr_oracle", lambda process: _fake_oracle())
     monkeypatch.setattr(runner.runner_helpers, "_metabolism_process", lambda seed: _fake_process())
@@ -204,6 +243,60 @@ def test_transcription_oracle_laundering_flips_primary_channel(monkeypatch, tmp_
     assert honest_payload["result"]["channels"]["RNAs"]["verdict"] == "FAIL"
     assert cheated_payload["result"]["verdict"] == "PASS"
     assert cheated_payload["result"]["channels"]["RNAs"]["verdict"] in {"SEED_NOISE", "PASS"}
+    assert any(
+        "KARR_SINGLE_SEED_REUSED" in warning for warning in cheated_payload["result"]["warnings"]
+    )
+
+
+def test_translation_oracle_laundering_flips_primary_channel(monkeypatch, tmp_path: Path) -> None:
+    oracle = _fake_translation_oracle()
+    monkeypatch.setattr(runner.runner_helpers, "load_karr_oracle", lambda process: oracle)
+    monkeypatch.setattr(
+        runner.runner_helpers,
+        "_translation_process",
+        lambda seed: _fake_translation_process(monomer_dim=oracle["after_monomers"].shape[2]),
+    )
+
+    def _honest_tick(process_name: str, seed: int, tick: int, state: dict[str, object]) -> dict[str, np.ndarray]:
+        assert process_name == "Translation"
+        return {
+            "substrates": np.asarray(state["oracle_after_substrates"], dtype=np.float64),
+            "monomers": np.zeros_like(np.asarray(state["oracle_after_monomers"], dtype=np.float64)),
+            "boundEnzymes": np.asarray(state["oracle_after_bound_enzymes"], dtype=np.float64),
+        }
+
+    def _cheat_tick(process_name: str, seed: int, tick: int, state: dict[str, object]) -> dict[str, np.ndarray]:
+        assert process_name == "Translation"
+        return {
+            "substrates": np.asarray(state["oracle_after_substrates"], dtype=np.float64),
+            "monomers": np.asarray(state["oracle_after_monomers"], dtype=np.float64),
+            "boundEnzymes": np.asarray(state["oracle_after_bound_enzymes"], dtype=np.float64),
+        }
+
+    monkeypatch.setattr(runner.runner_helpers, "run_oc_tick", _honest_tick)
+    honest_payload = runner.run_design_a(
+        process="Translation",
+        seeds=[0, 1, 2],
+        m_ticks=4,
+        out_dir=tmp_path / "honest",
+        thresholds_path=tmp_path / "honest_thresholds.json",
+        bootstrap_B=16,
+    )
+
+    monkeypatch.setattr(runner.runner_helpers, "run_oc_tick", _cheat_tick)
+    cheated_payload = runner.run_design_a(
+        process="Translation",
+        seeds=[0, 1, 2],
+        m_ticks=4,
+        out_dir=tmp_path / "cheated",
+        thresholds_path=tmp_path / "cheated_thresholds.json",
+        bootstrap_B=16,
+    )
+
+    assert honest_payload["result"]["verdict"] == "FAIL"
+    assert honest_payload["result"]["channels"]["monomers"]["verdict"] == "FAIL"
+    assert cheated_payload["result"]["verdict"] == "PASS"
+    assert cheated_payload["result"]["channels"]["monomers"]["verdict"] in {"SEED_NOISE", "PASS"}
     assert any(
         "KARR_SINGLE_SEED_REUSED" in warning for warning in cheated_payload["result"]["warnings"]
     )
