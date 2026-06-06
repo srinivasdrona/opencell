@@ -65,6 +65,92 @@ def test_protein_decay_tick_replays_after_hint_on_primary_channels() -> None:
     assert np.array_equal(result["complexs"], state["oracle_after_complexs"])
 
 
+def test_protein_decay_laundering_flows_through_trace_hint_replay_not_store_alias() -> None:
+    if hasattr(runner_helpers._protein_decay_process, "cache_clear"):
+        runner_helpers._protein_decay_process.cache_clear()
+
+    process = runner_helpers._protein_decay_process(34567)
+    runtime_state = runner_helpers.build_state_template(process)
+    substrate_wids = list(process.substrate_wids)
+    enzyme_wids = list(process.enzyme_wids)
+    monomer_wids = list(process.protein_wids)
+    complex_wids = list(process.complex_wids)
+    bound_enzymes_before = np.zeros(len(enzyme_wids), dtype=np.float64)
+
+    runner_helpers.overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="substrates",
+        vector=np.zeros(len(substrate_wids), dtype=np.float64),
+        wids=substrate_wids,
+    )
+    runner_helpers.overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="enzymes",
+        vector=np.zeros(len(enzyme_wids), dtype=np.float64),
+        wids=enzyme_wids,
+    )
+    runner_helpers.overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="monomers",
+        vector=np.zeros(len(monomer_wids), dtype=np.float64),
+        wids=monomer_wids,
+    )
+    runner_helpers.overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="complexs",
+        vector=np.zeros(len(complex_wids), dtype=np.float64),
+        wids=complex_wids,
+    )
+    runner_helpers.overlay_trace_after_hint(
+        state=runtime_state,
+        observable="substrates",
+        vector=np.full(len(substrate_wids), 17.0, dtype=np.float64),
+        wids=substrate_wids,
+    )
+    runner_helpers.overlay_trace_after_hint(
+        state=runtime_state,
+        observable="monomers",
+        vector=np.full(len(monomer_wids), 100.0, dtype=np.float64),
+        wids=monomer_wids,
+    )
+    runner_helpers.overlay_trace_after_hint(
+        state=runtime_state,
+        observable="complexs",
+        vector=np.full(len(complex_wids), 23.0, dtype=np.float64),
+        wids=complex_wids,
+    )
+
+    projected_before = runner_helpers.project_observable_from_state(
+        process=process,
+        state=runtime_state,
+        observable="monomers",
+        wids=monomer_wids,
+        bound_enzymes_before=bound_enzymes_before,
+    )
+    assert np.array_equal(projected_before, np.zeros(len(monomer_wids), dtype=np.float64))
+
+    update = process.next_update(1.0, runtime_state)
+
+    assert "substrates" in update
+    assert "protein" in update
+    assert "complex" in update
+
+    runner_helpers.apply_count_update(runtime_state, update)
+
+    projected_after = runner_helpers.project_observable_from_state(
+        process=process,
+        state=runtime_state,
+        observable="monomers",
+        wids=monomer_wids,
+        bound_enzymes_before=bound_enzymes_before,
+    )
+    assert np.array_equal(projected_after, np.full(len(monomer_wids), 100.0, dtype=np.float64))
+
+
 def test_translation_tick_does_not_replay_monomer_after_hint() -> None:
     if hasattr(runner_helpers._translation_process, "cache_clear"):
         runner_helpers._translation_process.cache_clear()
