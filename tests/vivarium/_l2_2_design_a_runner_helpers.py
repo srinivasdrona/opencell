@@ -654,24 +654,10 @@ def _run_protein_decay_tick(seed: int, tick: int, state: dict[str, Any]) -> dict
         vector=np.asarray(state["oracle_before_complexs"], dtype=np.float64),
         wids=complex_wids,
     )
-    overlay_trace_after_hint(
-        state=runtime_state,
-        observable="substrates",
-        vector=np.asarray(state["oracle_after_substrates"], dtype=np.float64),
-        wids=substrate_wids,
-    )
-    overlay_trace_after_hint(
-        state=runtime_state,
-        observable="monomers",
-        vector=np.asarray(state["oracle_after_monomers"], dtype=np.float64),
-        wids=monomer_wids,
-    )
-    overlay_trace_after_hint(
-        state=runtime_state,
-        observable="complexs",
-        vector=np.asarray(state["oracle_after_complexs"], dtype=np.float64),
-        wids=complex_wids,
-    )
+    # Do not feed ProteinDecay's measured channels back through trace_hint:
+    # ProteinDecayLightProcess.next_update has a trace-hint replay path for
+    # substrates/monomers/complexs, so doing so launders the oracle directly
+    # into the projected output instead of measuring the SUT update.
     refresh_allocator_views(process, runtime_state)
     with forbid_sut_oracle_file_io():
         update = process.next_update(1.0, runtime_state)

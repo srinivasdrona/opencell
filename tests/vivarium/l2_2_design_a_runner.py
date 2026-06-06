@@ -293,6 +293,25 @@ def _primary_channel_oracle_laundering_warning(
     )
 
 
+def _primary_channel_oracle_determinism_legitimate_warning(
+    *,
+    process: str,
+    primary_channel: str,
+    oc_vectors: np.ndarray,
+    before_vectors: np.ndarray,
+    karr_vectors: np.ndarray,
+) -> str | None:
+    if not np.array_equal(oc_vectors, karr_vectors):
+        return None
+    if not np.array_equal(before_vectors, karr_vectors):
+        return None
+    return (
+        "PRIMARY_CHANNEL_ORACLE_DETERMINISM_LEGITIMATE: OC matched the Karr oracle exactly on "
+        f"primary channel={primary_channel}, and the oracle itself was unchanged (before == after) "
+        "for every requested sample."
+    )
+
+
 def _seed_alignment_warning(
     *,
     channel_name: str,
@@ -669,6 +688,15 @@ def run_design_a(
     if primary_oracle_laundering_warning is not None:
         warnings.append(primary_oracle_laundering_warning)
         channel_payloads[primary_channel]["verdict"] = "FAIL"
+    primary_legitimate_determinism_warning = _primary_channel_oracle_determinism_legitimate_warning(
+        process=process,
+        primary_channel=primary_channel,
+        oc_vectors=oc_vectors[primary_channel],
+        before_vectors=before_vectors.get(primary_channel, before_vectors["substrates"]),
+        karr_vectors=after_vectors[primary_channel],
+    )
+    if primary_legitimate_determinism_warning is not None:
+        warnings.append(primary_legitimate_determinism_warning)
     seed_alignment_warning = _seed_alignment_warning(
         channel_name=primary_channel,
         oc_vectors=oc_vectors[primary_channel],
