@@ -179,6 +179,8 @@ def _channel_verdict(
     n_nonzero_oc: int,
     n_nonzero_karr: int,
 ) -> str:
+    if n_nonzero_karr >= 30 and n_nonzero_oc == 0:
+        return "FAIL"
     if n_nonzero_oc < 30 or n_nonzero_karr < 30:
         return "INSUFFICIENT_SAMPLES"
     if w1_oc_vs_karr <= q95_null:
@@ -214,6 +216,44 @@ def _warning_strings(
             "TRIVIAL_RNG_LEAK: OC matched the Karr oracle exactly on every requested sample; review for possible oracle laundering."
         )
     return warnings
+
+
+def _seed_alignment_warning(*, oc_vectors: np.ndarray, karr_vectors: np.ndarray) -> str | None:
+    if oc_vectors.shape[0] < 2 or karr_vectors.shape[0] < 2:
+        return None
+    observed = float(
+        np.mean(
+            [
+                runner_helpers.compute_w1(oc_vectors[seed, tick], karr_vectors[seed, tick])
+                for seed in range(oc_vectors.shape[0])
+                for tick in range(oc_vectors.shape[1])
+            ]
+        )
+    )
+    best_shift: int | None = None
+    best_shift_w1 = observed
+    for shift in range(1, karr_vectors.shape[0]):
+        shifted = float(
+            np.mean(
+                [
+                    runner_helpers.compute_w1(
+                        oc_vectors[seed, tick],
+                        karr_vectors[(seed + shift) % karr_vectors.shape[0], tick],
+                    )
+                    for seed in range(oc_vectors.shape[0])
+                    for tick in range(oc_vectors.shape[1])
+                ]
+            )
+        )
+        if shifted + 1e-12 < best_shift_w1:
+            best_shift = shift
+            best_shift_w1 = shifted
+    if best_shift is None:
+        return None
+    return (
+        "SEED_ALIGNMENT_MISMATCH: OC outputs align better to a shifted Karr seed index "
+        f"(shift=+{best_shift}, observed_w1={observed:.6f}, shifted_w1={best_shift_w1:.6f})."
+    )
 
 
 def _result_payload(
@@ -386,16 +426,25 @@ def run_design_a(
         canonical_seed_count=int(oracle.get("canonical_seed_count", after_substrates.shape[0])),
         requested_seed_count=len(seeds),
     )
+    seed_alignment_warning = _seed_alignment_warning(
+        oc_vectors=oc_vectors,
+        karr_vectors=after_substrates,
+    )
+    if seed_alignment_warning is not None:
+        warnings.append(seed_alignment_warning)
     timestamp = datetime.now(UTC).isoformat()
     allocator_inputs_path = out_dir / "allocator_inputs.json"
     provenance_path = out_dir / "provenance.json"
+    process_verdict = _process_verdict([channel_payload["verdict"]])
+    if seed_alignment_warning is not None and process_verdict == "PASS":
+        process_verdict = "FAIL"
     result = _result_payload(
         process=process,
         seeds=seeds,
         m_ticks=m_ticks,
         timestamp=timestamp,
         channel_payload=channel_payload,
-        verdict=_process_verdict([channel_payload["verdict"]]),
+        verdict=process_verdict,
         warnings=warnings,
         bootstrap_B=int(bootstrap_B),
         allocator_inputs_path=allocator_inputs_path,
