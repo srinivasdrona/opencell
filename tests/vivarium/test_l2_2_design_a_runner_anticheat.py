@@ -122,6 +122,47 @@ def _fake_translation_process(
     )
 
 
+def _fake_protein_decay_oracle(
+    *,
+    tick_count: int = 4,
+    substrate_dim: int = 4,
+    enzyme_dim: int = 3,
+    monomer_dim: int = 8,
+    complex_dim: int = 5,
+) -> dict[str, object]:
+    substrate_base = np.arange(tick_count * substrate_dim, dtype=np.float64).reshape(1, tick_count, substrate_dim)
+    monomer_base = np.arange(tick_count * monomer_dim, dtype=np.float64).reshape(1, tick_count, monomer_dim) + 1.0
+    complex_base = np.zeros((1, tick_count, complex_dim), dtype=np.float64)
+    return {
+        "process": "ProteinDecay",
+        "oracle_path": runner.runner_helpers._PROTEIN_DECAY_ORACLE_PATH,
+        "canonical_seed_count": 1,
+        "n_ticks_available": tick_count,
+        "before_substrates": substrate_base,
+        "before_enzymes": np.ones((1, tick_count, enzyme_dim), dtype=np.float64),
+        "before_monomers": monomer_base,
+        "before_complexs": complex_base,
+        "after_substrates": substrate_base,
+        "after_monomers": monomer_base,
+        "after_complexs": complex_base,
+    }
+
+
+def _fake_protein_decay_process(
+    *,
+    substrate_dim: int = 4,
+    enzyme_dim: int = 3,
+    monomer_dim: int = 8,
+    complex_dim: int = 5,
+) -> SimpleNamespace:
+    return SimpleNamespace(
+        substrate_wids=tuple(f"ATP_{idx}" for idx in range(substrate_dim)),
+        enzyme_wids=tuple(f"PROTEASE_{idx}" for idx in range(enzyme_dim)),
+        protein_wids=tuple(f"MONO_{idx:03d}" for idx in range(monomer_dim)),
+        complex_wids=tuple(f"CPLX_{idx:03d}" for idx in range(complex_dim)),
+    )
+
+
 def test_constant_zero_oc_fails(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(runner.runner_helpers, "load_karr_oracle", lambda process: _fake_oracle())
     monkeypatch.setattr(runner.runner_helpers, "_metabolism_process", lambda seed: _fake_process())
@@ -307,4 +348,41 @@ def test_translation_oracle_laundering_flips_primary_channel(monkeypatch, tmp_pa
     assert cheated_payload["result"]["channels"]["monomers"]["verdict"] in {"SEED_NOISE", "PASS"}
     assert any(
         "KARR_SINGLE_SEED_REUSED" in warning for warning in cheated_payload["result"]["warnings"]
+    )
+
+
+def test_protein_decay_primary_exact_zero_can_be_marked_legitimate_noop(monkeypatch, tmp_path: Path) -> None:
+    oracle = _fake_protein_decay_oracle()
+    monkeypatch.setattr(runner.runner_helpers, "load_karr_oracle", lambda process: oracle)
+    monkeypatch.setattr(
+        runner.runner_helpers,
+        "_protein_decay_process",
+        lambda seed: _fake_protein_decay_process(
+            monomer_dim=oracle["after_monomers"].shape[2],
+            complex_dim=oracle["after_complexs"].shape[2],
+        ),
+    )
+    monkeypatch.setattr(
+        runner.runner_helpers,
+        "run_oc_tick",
+        lambda process_name, seed, tick, state: {
+            "substrates": np.asarray(state["oracle_after_substrates"], dtype=np.float64),
+            "monomers": np.asarray(state["oracle_after_monomers"], dtype=np.float64),
+            "complexs": np.asarray(state["oracle_after_complexs"], dtype=np.float64),
+        },
+    )
+
+    payload = runner.run_design_a(
+        process="ProteinDecay",
+        seeds=[0, 1, 2],
+        m_ticks=4,
+        out_dir=tmp_path / "protein_decay",
+        thresholds_path=tmp_path / "protein_decay_thresholds.json",
+        bootstrap_B=16,
+    )
+
+    assert payload["result"]["verdict"] == "PASS"
+    assert any(
+        "PRIMARY_CHANNEL_ORACLE_DETERMINISM_LEGITIMATE" in warning
+        for warning in payload["result"]["warnings"]
     )
