@@ -33,10 +33,11 @@ import _l2_2_design_a_runner_helpers as runner_helpers  # noqa: E402
 
 HARNESS_VERSION = "design_a_v1_3"
 SUMMARY_SCHEMA_VERSION = "1.3"
-SUPPORTED_PROCESSES = frozenset({"Metabolism", "Transcription"})
+SUPPORTED_PROCESSES = frozenset({"Metabolism", "Translation", "Transcription"})
 DEFAULT_BOOTSTRAP_B = 1000
 _PROCESS_BUCKET = {
     "Metabolism": "TRIVIAL_RNG",
+    "Translation": "ALGORITHMIC_DEEP",
     "Transcription": "ALGORITHMIC_DEEP",
 }
 _PROCESS_K_ENG = {
@@ -46,25 +47,31 @@ _PROCESS_K_ENG = {
 }
 _PROCESS_OUTPUT_CHANNELS = {
     "Metabolism": ("substrates",),
+    "Translation": ("substrates", "monomers", "boundEnzymes"),
     "Transcription": ("substrates", "RNAs", "boundEnzymes"),
 }
 _PROCESS_PRIMARY_CHANNEL = {
     "Metabolism": "substrates",
+    "Translation": "monomers",
     "Transcription": "RNAs",
 }
 _PROCESS_ANALYTICAL_CHECK_REASON = {
     "Metabolism": "Metabolism has no closed-form per-tick check",
+    "Translation": "Translation has no closed-form per-tick check",
     "Transcription": "Transcription has no closed-form per-tick check",
 }
 _ORACLE_BEFORE_KEY = {
     "substrates": "before_substrates",
     "enzymes": "before_enzymes",
     "boundEnzymes": "before_bound_enzymes",
+    "monomers": "before_monomers",
+    "mRNAs": "before_mrnas",
     "RNAs": "before_rnas",
 }
 _ORACLE_AFTER_KEY = {
     "substrates": "after_substrates",
     "boundEnzymes": "after_bound_enzymes",
+    "monomers": "after_monomers",
     "RNAs": "after_rnas",
 }
 
@@ -389,6 +396,8 @@ def _process_primary_channel(process: str) -> str:
 def _process_sample_process(process: str) -> Any:
     if process == "Metabolism":
         return runner_helpers._metabolism_process(0)
+    if process == "Translation":
+        return runner_helpers._translation_process(0)
     if process == "Transcription":
         return runner_helpers._transcription_process(0)
     raise ValueError(f"Unsupported process {process!r}.")
@@ -396,11 +405,17 @@ def _process_sample_process(process: str) -> Any:
 
 def _observable_wids(process: str, sample_process: Any) -> dict[str, list[str]]:
     substrate_ids = getattr(sample_process, "_sub_ids", getattr(sample_process, "substrate_wids", ()))
+    if not substrate_ids:
+        substrate_ids = getattr(sample_process, "aa_ids", ())
     mapping = {
         "substrates": [str(x) for x in substrate_ids],
         "enzymes": [str(x) for x in getattr(sample_process, "enzyme_wids", ())],
         "boundEnzymes": [str(x) for x in getattr(sample_process, "enzyme_wids", ())],
     }
+    if process == "Translation":
+        protein_ids = [str(x) for x in getattr(sample_process, "protein_ids", ())]
+        mapping["monomers"] = protein_ids
+        mapping["mRNAs"] = protein_ids
     if process == "Transcription":
         mapping["RNAs"] = [str(x) for x in getattr(sample_process, "gene_ids", ())]
     return mapping
@@ -426,7 +441,7 @@ def run_design_a(
     oracle = runner_helpers.load_karr_oracle(process)
     before_vectors = {
         channel: _normalize_seed_axis(oracle[_ORACLE_BEFORE_KEY[channel]], seeds, m_ticks)
-        for channel in ("substrates", "enzymes", "boundEnzymes", "RNAs")
+        for channel in ("substrates", "enzymes", "boundEnzymes", "monomers", "mRNAs", "RNAs")
         if _ORACLE_BEFORE_KEY.get(channel) in oracle
     }
     after_vectors = {
@@ -472,6 +487,17 @@ def run_design_a(
                         "oracle_after_bound_enzymes": after_vectors["boundEnzymes"][seed_index, tick],
                     }
                 )
+            if process == "Translation":
+                sample_state.update(
+                    {
+                        "monomer_wids": wids_by_channel["monomers"],
+                        "mrna_wids": wids_by_channel["mRNAs"],
+                        "oracle_before_monomers": before_vectors["monomers"][seed_index, tick],
+                        "oracle_before_mrnas": before_vectors["mRNAs"][seed_index, tick],
+                        "oracle_after_monomers": after_vectors["monomers"][seed_index, tick],
+                        "oracle_after_bound_enzymes": after_vectors["boundEnzymes"][seed_index, tick],
+                    }
+                )
             oc_result = runner_helpers.run_oc_tick(process, int(seed), int(tick), sample_state)
             for channel in output_channels:
                 oc_vectors[channel][seed_index, tick] = np.asarray(oc_result[channel], dtype=np.float64)
@@ -496,6 +522,10 @@ def run_design_a(
             )
             if "RNAs" in before_vectors:
                 allocator_inputs[-1]["rnas_sum_before"] = float(np.sum(before_vectors["RNAs"][seed_index, tick]))
+            if "mRNAs" in before_vectors:
+                allocator_inputs[-1]["mrnas_sum_before"] = float(np.sum(before_vectors["mRNAs"][seed_index, tick]))
+            if "monomers" in before_vectors:
+                allocator_inputs[-1]["monomers_sum_before"] = float(np.sum(before_vectors["monomers"][seed_index, tick]))
 
     channel_payloads: dict[str, Any] = {}
     null_payload_channels: dict[str, Any] = {}
