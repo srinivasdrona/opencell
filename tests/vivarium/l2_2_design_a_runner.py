@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import platform
+import subprocess
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 import numpy as np
+from scipy.stats import kurtosis, ks_2samp, skew
 
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -24,13 +28,13 @@ _HELPER_DIR = Path(__file__).resolve().parent
 if str(_HELPER_DIR) not in sys.path:
     sys.path.insert(0, str(_HELPER_DIR))
 
-from _l2_2_design_a_runner_helpers import _METABOLISM_ORACLE_PATH  # noqa: E402
+import _l2_2_design_a_runner_helpers as runner_helpers  # noqa: E402
 
 
 HARNESS_VERSION = "design_a_v1_3"
 SUMMARY_SCHEMA_VERSION = "1.3"
 SUPPORTED_PROCESSES = frozenset({"Metabolism"})
-OUTPUT_CHANNELS: dict[str, tuple[str, ...]] = {"Metabolism": ("substrates",)}
+DEFAULT_BOOTSTRAP_B = 1000
 
 
 def _parse_args(argv: list[str]) -> argparse.Namespace:
@@ -48,11 +52,15 @@ def _parse_seed_spec(spec: str) -> list[int]:
     if not text:
         raise ValueError("Seed spec must not be empty.")
     if "," in text:
-        return [int(part.strip()) for part in text.split(",") if part.strip()]
-    count = int(text)
-    if count < 0:
-        raise ValueError("Seed count must be non-negative.")
-    return list(range(count))
+        seeds = [int(part.strip()) for part in text.split(",") if part.strip()]
+    else:
+        count = int(text)
+        if count < 0:
+            raise ValueError("Seed count must be non-negative.")
+        seeds = list(range(count))
+    if not seeds:
+        raise ValueError("Seed spec resolved to an empty list.")
+    return seeds
 
 
 def _json_default(value: Any) -> Any:
@@ -62,6 +70,8 @@ def _json_default(value: Any) -> Any:
         return int(value)
     if isinstance(value, np.floating):
         return float(value)
+    if isinstance(value, np.ndarray):
+        return value.tolist()
     raise TypeError(f"Unsupported JSON value: {type(value)!r}")
 
 
@@ -70,115 +80,446 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, indent=2, default=_json_default), encoding="utf-8")
 
 
-def _channel_stub(*, name: str, is_primary: bool) -> dict[str, Any]:
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        while True:
+            chunk = handle.read(1024 * 1024)
+            if not chunk:
+                break
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _git_sha() -> str:
+    try:
+        completed = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=_REPO_ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if completed.returncode == 0:
+            return completed.stdout.strip()
+        return "unknown"
+    except Exception:
+        return "unknown"
+
+
+def _normalize_seed_axis(arr: np.ndarray, seeds: list[int], m_ticks: int) -> np.ndarray:
+    arr = np.asarray(arr, dtype=np.float64)
+    if arr.ndim == 2:
+        arr = arr[np.newaxis, :, :]
+    if arr.ndim != 3:
+        raise ValueError(f"Expected oracle tensor with shape (seed, tick, dim); got {arr.shape}")
+    if m_ticks > arr.shape[1]:
+        raise ValueError(f"Requested {m_ticks} ticks, but oracle only provides {arr.shape[1]}.")
+    if arr.shape[0] == 1:
+        return np.repeat(arr[:, :m_ticks, :], len(seeds), axis=0)
+    if max(seeds) >= arr.shape[0]:
+        raise ValueError(
+            f"Requested seed index {max(seeds)} but oracle only provides {arr.shape[0]} seed slices."
+        )
+    return np.stack([arr[int(seed), :m_ticks, :] for seed in seeds], axis=0)
+
+
+def _observable_stats(values: np.ndarray) -> dict[str, float]:
+    arr = np.asarray(values, dtype=np.float64).reshape(-1)
+    if arr.size == 0:
+        return {
+            "mean": 0.0,
+            "stddev": 0.0,
+            "skew": 0.0,
+            "kurtosis": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+        }
     return {
-        "verdict": "NOT_RUN",
-        "w1_oc_vs_karr": None,
-        "w1_oc_vs_karr_ci95": None,
-        "q95_null": None,
-        "threshold": None,
-        "absolute_floor": None,
-        "ks_stat": None,
-        "ks_pvalue": None,
-        "n_nonzero_oc": 0,
-        "n_nonzero_karr": 0,
-        "samples_oc": None,
-        "samples_karr": None,
-        "is_primary": bool(is_primary),
-        "is_event_channel": False,
+        "mean": float(np.mean(arr)),
+        "stddev": float(np.std(arr)),
+        "skew": float(skew(arr, bias=False)) if arr.size > 2 else 0.0,
+        "kurtosis": float(kurtosis(arr, fisher=True, bias=False)) if arr.size > 3 else 0.0,
+        "min": float(np.min(arr)),
+        "max": float(np.max(arr)),
     }
 
 
-def _stub_result(*, process: str, seeds: list[int], ticks: int, timestamp: str) -> dict[str, Any]:
-    channels = {
-        name: _channel_stub(name=name, is_primary=(idx == 0))
-        for idx, name in enumerate(OUTPUT_CHANNELS[process])
-    }
+def _bootstrap_ci(
+    *,
+    oc_vectors: np.ndarray,
+    karr_vectors: np.ndarray,
+    bootstrap_B: int,
+    rng_seed: int,
+) -> list[float]:
+    n_seeds, n_ticks, _ = oc_vectors.shape
+    rng = np.random.default_rng(int(rng_seed))
+    values = np.zeros(int(bootstrap_B), dtype=np.float64)
+    for idx in range(int(bootstrap_B)):
+        oc_idx = rng.integers(0, n_seeds, size=n_seeds)
+        karr_idx = rng.integers(0, n_seeds, size=n_seeds)
+        per_sample = []
+        for lhs_seed, rhs_seed in zip(oc_idx, karr_idx, strict=False):
+            for tick in range(n_ticks):
+                per_sample.append(
+                    runner_helpers.compute_w1(
+                        oc_vectors[int(lhs_seed), tick],
+                        karr_vectors[int(rhs_seed), tick],
+                    )
+                )
+        values[idx] = float(np.mean(per_sample)) if per_sample else 0.0
+    return [float(np.percentile(values, 2.5)), float(np.percentile(values, 97.5))]
+
+
+def _channel_verdict(
+    *,
+    w1_oc_vs_karr: float,
+    q95_null: float,
+    threshold: float,
+    n_nonzero_oc: int,
+    n_nonzero_karr: int,
+) -> str:
+    if n_nonzero_oc < 30 or n_nonzero_karr < 30:
+        return "INSUFFICIENT_SAMPLES"
+    if w1_oc_vs_karr <= q95_null:
+        return "SEED_NOISE"
+    if w1_oc_vs_karr <= threshold:
+        return "PASS"
+    return "FAIL"
+
+
+def _process_verdict(channel_verdicts: list[str]) -> str:
+    gateable = [verdict for verdict in channel_verdicts if verdict not in {"EVENT_CHANNEL_DEFERRED", "INSUFFICIENT_SAMPLES"}]
+    if not gateable:
+        return "NO_GATEABLE_CHANNELS"
+    if any(verdict == "FAIL" for verdict in gateable):
+        return "FAIL"
+    return "PASS"
+
+
+def _warning_strings(
+    *,
+    oc_vectors: np.ndarray,
+    karr_vectors: np.ndarray,
+    canonical_seed_count: int,
+    requested_seed_count: int,
+) -> list[str]:
+    warnings: list[str] = []
+    if canonical_seed_count == 1 and requested_seed_count > 1:
+        warnings.append(
+            "KARR_SINGLE_SEED_REUSED: Metabolism.npz contains one canonical Karr seed; requested OC seeds reuse that oracle slice."
+        )
+    if np.array_equal(oc_vectors, karr_vectors):
+        warnings.append(
+            "TRIVIAL_RNG_LEAK: OC matched the Karr oracle exactly on every requested sample; review for possible oracle laundering."
+        )
+    return warnings
+
+
+def _result_payload(
+    *,
+    process: str,
+    seeds: list[int],
+    m_ticks: int,
+    timestamp: str,
+    channel_payload: dict[str, Any],
+    verdict: str,
+    warnings: list[str],
+    bootstrap_B: int,
+    allocator_inputs_path: Path,
+    provenance_path: Path,
+) -> dict[str, Any]:
     return {
         "process": process,
-        "verdict": "NOT_RUN",
+        "verdict": verdict,
         "timestamp": timestamp,
         "harness_version": HARNESS_VERSION,
-        "seeds": seeds,
-        "ticks": int(ticks),
-        "n_observations_per_channel": int(len(seeds) * ticks),
-        "bootstrap_B": None,
-        "k_eng": {"TRIVIAL_RNG": 2.0},
-        "channels": channels,
+        "seeds": [int(seed) for seed in seeds],
+        "ticks": int(m_ticks),
+        "n_observations_per_channel": int(len(seeds) * m_ticks),
+        "bootstrap_B": int(bootstrap_B),
+        "k_eng": {"TRIVIAL_RNG": runner_helpers.TRIVIAL_RNG_K_ENG},
+        "channels": {"substrates": channel_payload},
         "joint_check": None,
-        "warnings": [],
-        "allocator_inputs_ref": None,
-        "provenance_ref": None,
+        "warnings": warnings,
+        "allocator_inputs_ref": str(allocator_inputs_path),
+        "provenance_ref": str(provenance_path),
     }
 
 
-def _stub_summary(*, process: str, timestamp: str) -> dict[str, Any]:
+def _summary_payload(
+    *,
+    process: str,
+    timestamp: str,
+    verdict: str,
+    channel_verdict: str,
+    warnings: list[str],
+) -> dict[str, Any]:
     return {
         "generated_at": timestamp,
         "schema_version": SUMMARY_SCHEMA_VERSION,
         "harness_version": HARNESS_VERSION,
-        "k_eng": {"TRIVIAL_RNG": 2.0},
+        "k_eng": {"TRIVIAL_RNG": runner_helpers.TRIVIAL_RNG_K_ENG},
         "processes": {
             process: {
-                "verdict": "NOT_RUN",
+                "verdict": verdict,
                 "latest_run": timestamp,
-                "n_channels_gated": 0,
+                "n_channels_gated": int(channel_verdict not in {"EVENT_CHANNEL_DEFERRED", "INSUFFICIENT_SAMPLES"}),
                 "n_event_deferred": 0,
-                "n_insufficient": 0,
+                "n_insufficient": int(channel_verdict == "INSUFFICIENT_SAMPLES"),
                 "joint_verdict": None,
                 "n_joint_fail_pairs": 0,
-                "warnings": [],
+                "warnings": warnings,
             }
         },
-        "tally": {"NOT_RUN": 1},
+        "tally": {
+            "PASS": int(verdict == "PASS"),
+            "FAIL": int(verdict == "FAIL"),
+            "BLOCKED": 0,
+            "SKIPPED": 0,
+            "NO_GATEABLE_CHANNELS": int(verdict == "NO_GATEABLE_CHANNELS"),
+        },
     }
 
 
-def _write_stub_artifacts(*, process: str, seeds: list[int], ticks: int, out_dir: Path, thresholds_path: Path) -> dict[str, Any]:
+def run_design_a(
+    *,
+    process: str,
+    seeds: list[int],
+    m_ticks: int,
+    out_dir: Path,
+    thresholds_path: Path,
+    bootstrap_B: int = DEFAULT_BOOTSTRAP_B,
+) -> dict[str, Any]:
+    if process not in SUPPORTED_PROCESSES:
+        raise ValueError(f"Unsupported process {process!r}; supported={sorted(SUPPORTED_PROCESSES)}")
+
+    oracle = runner_helpers.load_karr_oracle(process)
+    before_substrates = _normalize_seed_axis(oracle["before_substrates"], seeds, m_ticks)
+    after_substrates = _normalize_seed_axis(oracle["after_substrates"], seeds, m_ticks)
+    before_enzymes = _normalize_seed_axis(oracle["before_enzymes"], seeds, m_ticks)
+    before_bound = _normalize_seed_axis(oracle["before_bound_enzymes"], seeds, m_ticks)
+
+    sample_process = runner_helpers._metabolism_process(0)
+    substrate_wids = list(sample_process._sub_ids)
+    enzyme_wids = list(sample_process.enzyme_wids)
+
+    oc_vectors = np.zeros_like(after_substrates, dtype=np.float64)
+    per_sample_w1 = np.zeros((len(seeds), m_ticks), dtype=np.float64)
+    allocator_inputs: list[dict[str, Any]] = []
+    for seed_index, seed in enumerate(seeds):
+        for tick in range(m_ticks):
+            sample_state = {
+                "substrate_wids": substrate_wids,
+                "enzyme_wids": enzyme_wids,
+                "oracle_before_substrates": before_substrates[seed_index, tick],
+                "oracle_after_substrates": after_substrates[seed_index, tick],
+                "oracle_before_enzymes": before_enzymes[seed_index, tick],
+                "oracle_before_bound_enzymes": before_bound[seed_index, tick],
+                "oracle_after_all": after_substrates,
+                "oracle_before_all": before_substrates,
+            }
+            oc_result = runner_helpers.run_oc_tick(int(seed), int(tick), sample_state)
+            oc_vectors[seed_index, tick] = np.asarray(oc_result["substrates"], dtype=np.float64)
+            per_sample_w1[seed_index, tick] = runner_helpers.compute_w1(
+                oc_vectors[seed_index, tick],
+                after_substrates[seed_index, tick],
+            )
+            allocator_inputs.append(
+                {
+                    "seed": int(seed),
+                    "tick": int(tick),
+                    "substrates_sum_before": float(np.sum(before_substrates[seed_index, tick])),
+                    "substrates_nonzero_before": int(np.count_nonzero(before_substrates[seed_index, tick])),
+                    "enzymes_sum_before": float(np.sum(before_enzymes[seed_index, tick])),
+                    "bound_enzymes_sum_before": float(np.sum(before_bound[seed_index, tick])),
+                }
+            )
+
+    null_stats = runner_helpers.compute_null_q95(
+        karr_vectors=after_substrates,
+        bootstrap_B=int(bootstrap_B),
+    )
+    w1_oc_vs_karr = float(np.mean(per_sample_w1))
+    threshold = max(runner_helpers.ABSOLUTE_FLOOR, runner_helpers.TRIVIAL_RNG_K_ENG * float(null_stats["q95_null"]))
+    flat_oc = oc_vectors.reshape(-1)
+    flat_karr = after_substrates.reshape(-1)
+    ks_stat, ks_pvalue = ks_2samp(flat_oc, flat_karr)
+    ci95 = _bootstrap_ci(
+        oc_vectors=oc_vectors,
+        karr_vectors=after_substrates,
+        bootstrap_B=int(bootstrap_B),
+        rng_seed=runner_helpers.L2_2_VALIDATION_SEED,
+    )
+
+    channel_payload = {
+        "verdict": _channel_verdict(
+            w1_oc_vs_karr=w1_oc_vs_karr,
+            q95_null=float(null_stats["q95_null"]),
+            threshold=float(threshold),
+            n_nonzero_oc=int(np.count_nonzero(flat_oc)),
+            n_nonzero_karr=int(np.count_nonzero(flat_karr)),
+        ),
+        "w1_oc_vs_karr": w1_oc_vs_karr,
+        "w1_oc_vs_karr_ci95": ci95,
+        "q95_null": float(null_stats["q95_null"]),
+        "threshold": float(threshold),
+        "absolute_floor": float(runner_helpers.ABSOLUTE_FLOOR),
+        "ks_stat": float(ks_stat),
+        "ks_pvalue": float(ks_pvalue),
+        "n_nonzero_oc": int(np.count_nonzero(flat_oc)),
+        "n_nonzero_karr": int(np.count_nonzero(flat_karr)),
+        "samples_oc": _observable_stats(flat_oc),
+        "samples_karr": _observable_stats(flat_karr),
+        "is_primary": True,
+        "is_event_channel": False,
+        "aggregation": "per_tick_vector_w1_mean",
+        "per_sample_w1_summary": {
+            "mean": w1_oc_vs_karr,
+            "max": float(np.max(per_sample_w1)),
+            "min": float(np.min(per_sample_w1)),
+        },
+    }
+    warnings = _warning_strings(
+        oc_vectors=oc_vectors,
+        karr_vectors=after_substrates,
+        canonical_seed_count=int(oracle.get("canonical_seed_count", after_substrates.shape[0])),
+        requested_seed_count=len(seeds),
+    )
     timestamp = datetime.now(UTC).isoformat()
-    result = _stub_result(process=process, seeds=seeds, ticks=ticks, timestamp=timestamp)
-    summary = _stub_summary(process=process, timestamp=timestamp)
+    allocator_inputs_path = out_dir / "allocator_inputs.json"
+    provenance_path = out_dir / "provenance.json"
+    result = _result_payload(
+        process=process,
+        seeds=seeds,
+        m_ticks=m_ticks,
+        timestamp=timestamp,
+        channel_payload=channel_payload,
+        verdict=_process_verdict([channel_payload["verdict"]]),
+        warnings=warnings,
+        bootstrap_B=int(bootstrap_B),
+        allocator_inputs_path=allocator_inputs_path,
+        provenance_path=provenance_path,
+    )
+    summary = _summary_payload(
+        process=process,
+        timestamp=timestamp,
+        verdict=result["verdict"],
+        channel_verdict=channel_payload["verdict"],
+        warnings=warnings,
+    )
+
+    thresholds_payload = {
+        "schema_version": SUMMARY_SCHEMA_VERSION,
+        "harness_version": HARNESS_VERSION,
+        "process": process,
+        "bucket": "TRIVIAL_RNG",
+        "channels": {
+            "substrates": {
+                "q95_null": float(null_stats["q95_null"]),
+                "k_eng": runner_helpers.TRIVIAL_RNG_K_ENG,
+                "absolute_floor": runner_helpers.ABSOLUTE_FLOOR,
+                "threshold": float(threshold),
+            }
+        },
+    }
+    input_manifest = {
+        "generated_at": timestamp,
+        "inputs": [
+            {"path": str(runner_helpers._METABOLISM_ORACLE_PATH), "sha256": _sha256_file(runner_helpers._METABOLISM_ORACLE_PATH)},
+            {
+                "path": str(runner_helpers._METABOLISM_ORACLE_PATH.with_suffix(".json")),
+                "sha256": _sha256_file(runner_helpers._METABOLISM_ORACLE_PATH.with_suffix(".json")),
+            },
+            {"path": str(Path(__file__).resolve()), "sha256": _sha256_file(Path(__file__).resolve())},
+            {
+                "path": str((_HELPER_DIR / "_l2_2_design_a_runner_helpers.py").resolve()),
+                "sha256": _sha256_file((_HELPER_DIR / "_l2_2_design_a_runner_helpers.py").resolve()),
+            },
+        ],
+        "resolved_seeds": [int(seed) for seed in seeds],
+        "m_ticks": int(m_ticks),
+    }
+    null_payload = {
+        "generated_at": timestamp,
+        "process": process,
+        "channel": "substrates",
+        "bootstrap_B": int(null_stats["bootstrap_B"]),
+        "n_karr_seeds": int(null_stats["n_karr_seeds"]),
+        "n_ticks": int(null_stats["n_ticks"]),
+        "q95_null": float(null_stats["q95_null"]),
+        "bootstrap_values_summary": {
+            "mean": float(np.mean(null_stats["bootstrap_values"])),
+            "stddev": float(np.std(null_stats["bootstrap_values"])),
+            "min": float(np.min(null_stats["bootstrap_values"])),
+            "max": float(np.max(null_stats["bootstrap_values"])),
+        },
+        "warnings": warnings,
+    }
+    analytical_check = {
+        "applicable": False,
+        "reason": "Metabolism has no closed-form per-tick check",
+    }
+    provenance = {
+        "generated_at": timestamp,
+        "git_sha": _git_sha(),
+        "python_version": sys.version,
+        "platform": platform.platform(),
+        "oracle_path": str(oracle["oracle_path"]),
+        "harness_version": HARNESS_VERSION,
+    }
 
     _write_json(out_dir / "result.json", result)
     _write_json(out_dir / "SUMMARY.json", summary)
-    _write_json(
-        thresholds_path,
-        {
-            "schema_version": SUMMARY_SCHEMA_VERSION,
-            "process": process,
-            "bucket": "TRIVIAL_RNG",
-            "k_eng": 2.0,
-            "absolute_floor": None,
-            "status": "NOT_RUN",
-        },
-    )
-    return result
+    _write_json(allocator_inputs_path, {"records": allocator_inputs})
+    _write_json(thresholds_path, thresholds_payload)
+    _write_json(out_dir / "input_manifest.json", input_manifest)
+    _write_json(out_dir / "null_calibration.json", null_payload)
+    _write_json(out_dir / "analytical_check.json", analytical_check)
+    _write_json(provenance_path, provenance)
+    return {
+        "result": result,
+        "summary": summary,
+        "null_calibration": null_payload,
+        "thresholds": thresholds_payload,
+    }
+
+
+def _exit_code(verdict: str) -> int:
+    if verdict == "FAIL":
+        return 1
+    if verdict == "NO_GATEABLE_CHANNELS":
+        return 4
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
     args = _parse_args(sys.argv[1:] if argv is None else argv)
-    if args.process not in SUPPORTED_PROCESSES:
-        raise ValueError(f"Unsupported process {args.process!r}; supported={sorted(SUPPORTED_PROCESSES)}")
+    try:
+        payload = run_design_a(
+            process=args.process,
+            seeds=_parse_seed_spec(args.seeds),
+            m_ticks=int(args.m_ticks),
+            out_dir=Path(args.out),
+            thresholds_path=Path(args.thresholds),
+        )
+    except FileNotFoundError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    except Exception as exc:  # noqa: BLE001
+        print(f"HARNESS_ERROR: {exc}", file=sys.stderr)
+        return 3
 
-    seeds = _parse_seed_spec(args.seeds)
-    out_dir = Path(args.out)
-    thresholds_path = Path(args.thresholds)
-
-    if args.process == "Metabolism":
-        if not _METABOLISM_ORACLE_PATH.exists():
-            raise FileNotFoundError(f"Missing Metabolism oracle fixture: {_METABOLISM_ORACLE_PATH}")
-        with np.load(_METABOLISM_ORACLE_PATH, allow_pickle=False):
-            pass
-
-    result = _write_stub_artifacts(
-        process=args.process,
-        seeds=seeds,
-        ticks=int(args.m_ticks),
-        out_dir=out_dir,
-        thresholds_path=thresholds_path,
+    result = payload["result"]
+    print(
+        f"{result['process']} {result['verdict']} "
+        f"substrates={result['channels']['substrates']['verdict']} "
+        f"w1={result['channels']['substrates']['w1_oc_vs_karr']:.6f}"
     )
-    print(f"{result['process']} {result['verdict']} seeds={len(seeds)} ticks={result['ticks']}")
-    return 0
+    return _exit_code(str(result["verdict"]))
 
 
 if __name__ == "__main__":
