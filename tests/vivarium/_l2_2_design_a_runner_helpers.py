@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 from functools import lru_cache
 from pathlib import Path
+import re
 from typing import Any
 
 import numpy as np
@@ -46,6 +47,7 @@ from opencell.vivarium.karr_protein_decay_light import ProteinDecayLightProcess 
 from opencell.vivarium.karr_macromolecular_complexation import (  # noqa: E402
     MacromolecularComplexationProcess,
 )
+from opencell.vivarium.karr_replication_initiation import KarrReplicationInitiationProcess  # noqa: E402
 
 
 L2_2_VALIDATION_SEED = 0xCA11B
@@ -316,6 +318,9 @@ def _protein_decay_process(seed: int) -> ProteinDecayLightProcess:
 def _macromol_process(seed: int) -> MacromolecularComplexationProcess:
     with forbid_sut_oracle_file_io():
         return MacromolecularComplexationProcess({"rng_seed": int(seed)})
+def _replication_initiation_process(seed: int) -> KarrReplicationInitiationProcess:
+    with forbid_sut_oracle_file_io():
+        return KarrReplicationInitiationProcess({"rng_seed": int(seed)})
 
 
 def _sample_seed(seed: int, tick: int) -> int:
@@ -331,6 +336,7 @@ def _tick_dispatch() -> dict[str, Any]:
         "RNADecay": _run_rna_decay_tick,
         "ProteinDecay": _run_protein_decay_tick,
         "MacromolecularComplexation": _run_macromol_tick,
+        "ReplicationInitiation": _run_repinit_tick,
     }
 
 
@@ -843,6 +849,163 @@ def _run_macromol_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str,
         ),
         "sample_seed": _sample_seed(seed, tick),
     }
+
+
+
+
+def _repinit_species_descriptor(wid: str) -> tuple[int, int]:
+    if wid == "MG_469_MONOMER":
+        return (1, 0)
+
+    mixed_match = re.search(r"_(\d+)MER_(\d+)ATP_ADP$", wid)
+    if mixed_match:
+        mer_length = int(mixed_match.group(1))
+        atp_moieties = int(mixed_match.group(2))
+        return (mer_length, atp_moieties)
+
+    atp_match = re.search(r"_(\d+)MER_ATP$", wid)
+    if atp_match:
+        mer_length = int(atp_match.group(1))
+        return (mer_length, mer_length)
+
+    adp_match = re.search(r"_(\d+)MER_ADP$", wid)
+    if adp_match:
+        mer_length = int(adp_match.group(1))
+        return (mer_length, 0)
+
+    raise ValueError(f"Unrecognized ReplicationInitiation DnaA species wid: {wid!r}")
+
+
+def _prime_repinit_state_from_trace(
+    *,
+    process: KarrReplicationInitiationProcess,
+    state: dict[str, Any],
+    enzyme_before: np.ndarray,
+    bound_before: np.ndarray,
+) -> None:
+    enzyme_vec = np.asarray(enzyme_before, dtype=np.float64).reshape(-1)
+    bound_vec = np.asarray(bound_before, dtype=np.float64).reshape(-1)
+    if enzyme_vec.size != len(process.enzyme_wids):
+        raise ValueError(
+            "ReplicationInitiation enzyme width mismatch: "
+            f"{enzyme_vec.size} vs {len(process.enzyme_wids)}"
+        )
+    if bound_vec.size != len(process.enzyme_wids):
+        raise ValueError(
+            "ReplicationInitiation bound-enzyme width mismatch: "
+            f"{bound_vec.size} vs {len(process.enzyme_wids)}"
+        )
+
+    free_dnaa_adp = 0
+    free_dnaa_atp = 0
+    bound_atp = np.zeros(process.n_sites, dtype=np.int64)
+    bound_adp = np.zeros(process.n_sites, dtype=np.int64)
+    site_totals = state["chromosome"]["dnaa_complex_count"]
+    candidate_sites = list(process.non_oric_site_ids) + list(process.oric_site_ids)
+    site_cursor = 0
+
+    for wid, raw_count in zip(process.enzyme_wids, enzyme_vec, strict=False):
+        count = max(0, int(np.rint(float(raw_count))))
+        if count <= 0:
+            continue
+        mer_length, atp_moieties = _repinit_species_descriptor(wid)
+        free_dnaa_atp += count * atp_moieties
+        free_dnaa_adp += count * (mer_length - atp_moieties)
+
+    for wid, raw_count in zip(process.enzyme_wids, bound_vec, strict=False):
+        count = max(0, int(np.rint(float(raw_count))))
+        if count <= 0:
+            continue
+        mer_length, atp_moieties = _repinit_species_descriptor(wid)
+        adp_moieties = mer_length - atp_moieties
+        for _ in range(count):
+            if site_cursor >= len(candidate_sites):
+                raise ValueError(
+                    "ReplicationInitiation bound-site reconstruction exhausted candidate sites."
+                )
+            site_id = candidate_sites[site_cursor]
+            site_cursor += 1
+            site_idx = process.site_id_to_index[site_id]
+            bound_atp[site_idx] = atp_moieties
+            bound_adp[site_idx] = adp_moieties
+            site_totals[site_id] = float(mer_length)
+
+    dnaa_adp_wid, dnaa_atp_wid = process.enzyme_wids[0], process.enzyme_wids[1]
+    protein_counts = state["protein"]["counts"]
+    protein_counts[dnaa_adp_wid] = float(free_dnaa_adp)
+    protein_counts[dnaa_atp_wid] = float(free_dnaa_atp)
+
+    process._initialized = True
+    process._free_dnaa_adp = int(free_dnaa_adp)
+    process._free_dnaa_atp = int(free_dnaa_atp)
+    process._bound_atp = bound_atp
+    process._bound_adp = bound_adp
+
+
+def _run_repinit_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
+    """Run one OpenCell ReplicationInitiation tick from a prepared state snapshot."""
+    process = _replication_initiation_process(_sample_seed(seed, tick))
+    runtime_state = build_state_template(process)
+    substrate_wids = list(state["substrate_wids"])
+    enzyme_wids = list(state["enzyme_wids"])
+
+    substrate_before = np.asarray(state["oracle_before_substrates"], dtype=np.float64)
+    enzyme_before = np.asarray(state["oracle_before_enzymes"], dtype=np.float64)
+    bound_before = np.asarray(state["oracle_before_bound_enzymes"], dtype=np.float64)
+
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="substrates",
+        vector=substrate_before,
+        wids=substrate_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="enzymes",
+        vector=enzyme_before,
+        wids=enzyme_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="boundEnzymes",
+        vector=bound_before,
+        wids=enzyme_wids,
+    )
+    _prime_repinit_state_from_trace(
+        process=process,
+        state=runtime_state,
+        enzyme_before=enzyme_before,
+        bound_before=bound_before,
+    )
+    refresh_allocator_views(process, runtime_state)
+    runtime_state["trace_hint"] = {}
+    runtime_state["substrates_allocated"][process.name][process.atp_wid] = float(
+        substrate_before[process.substrate_index_atp]
+    )
+    runtime_state["substrates_allocated"][process.name][process.water_wid] = float(
+        substrate_before[process.substrate_index_water]
+    )
+    with forbid_sut_oracle_file_io():
+        update = process.next_update(1.0, runtime_state)
+    apply_count_update(runtime_state, update)
+    return {
+        "substrates": np.asarray(
+            project_observable_from_state(
+                process=process,
+                state=runtime_state,
+                observable="substrates",
+                wids=substrate_wids,
+                bound_enzymes_before=bound_before,
+            ),
+            dtype=np.float64,
+        ),
+        "sample_seed": _sample_seed(seed, tick),
+    }
+
+
 
 
 def compute_w1(oc: Any, karr: Any) -> float:

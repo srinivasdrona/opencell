@@ -43,6 +43,32 @@ Bucket choice:
 
 ## Beat 2 - tick dispatcher
 
+- 2026-06-07T12:03:20.5803142Z helper edit: added `_run_repinit_tick()` and ReplicationInitiation state-reconstruction helpers in `tests/vivarium/_l2_2_design_a_runner_helpers.py`.
+
+Beat 2 implementation notes:
+- Added `_replication_initiation_process()` cache factory.
+- Added `_repinit_species_descriptor()` to parse DnaA species WIDs into `(mer_length, ATP_moieties)`.
+- Added `_prime_repinit_state_from_trace()` to reconstruct the SUT's hidden state from before-side trace aggregates:
+  - free ATP/ADP DnaA monomer pools from `oracle_before_enzymes`
+  - per-site chromosome occupancy arrays from `oracle_before_bound_enzymes`
+  - non-OriC sites filled first to avoid inventing an OriC trigger that the trace does not expose
+- Added `_run_repinit_tick()`:
+  - overlays before-side `substrates`, `enzymes`, and `boundEnzymes`
+  - primes process internals and `chromosome.dnaa_complex_count`
+  - gives the SUT explicit before-side ATP/H2O grants via `substrates_allocated`
+  - clears `trace_hint` so `_next_update_from_trace_hint()` cannot become the measurement path
+  - projects only `substrates` on the output side
+
+Beat 2 diff stat:
+```text
+tests/vivarium/_l2_2_design_a_runner_helpers.py | 162 ++++++++++++++++++++++++
+1 file changed, 162 insertions(+)
+```
+
+Beat 2 verification:
+- `bin\oc-pytest tests/vivarium/test_l2_2_design_a_runner_anticheat.py -q`
+- Result: `6 passed`
+
 ## Beat 3 - runner wiring + anticheat tests
 
 ## Beat 4 - inversion
