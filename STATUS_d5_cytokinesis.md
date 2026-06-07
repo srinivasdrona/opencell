@@ -6,6 +6,7 @@
 - 2026-06-07T12:52:06Z UTC: Loaded `opencell/vivarium/karr_cytokinesis.py`, `tests/vivarium/_l2_2_design_a_runner_helpers.py`, `tests/vivarium/l2_2_design_a_runner.py`, existing anticheat tests, and probe templates to establish the write surface and harness pattern.
 - 2026-06-07T13:00:32Z UTC: Probed Cytokinesis replay artifacts and raw trace metadata via WSL Python; established channel coverage, duplicate-WID counts, no-op replay behavior, and PRIMARY-channel choice.
 - 2026-06-07T13:04:57Z UTC: Added Cytokinesis helper loader/process/dispatcher; verified the helper avoids production-side oracle file I/O by forcing a non-resolving `trace_path` override and still returns the honest no-op substrate vector.
+- 2026-06-07T13:11:11Z UTC: Wired Cytokinesis into the Design-A runner and added Cytokinesis anticheat coverage; focused anticheat suite passed (`23 passed`).
 
 ## Beat 1 - SUT inspection + wiring design
 
@@ -69,7 +70,31 @@ Diff stat:
 
 ## Beat 3 - runner wiring + anticheat tests
 
-Pending.
+Files changed:
+- `tests/vivarium/l2_2_design_a_runner.py`
+- `tests/vivarium/test_l2_2_design_a_runner_anticheat_cytokinesis.py`
+
+Runner wiring:
+- Added `Cytokinesis` to `SUPPORTED_PROCESSES`.
+- Added `Cytokinesis` to `_PROCESS_BUCKET` as `TRIVIAL_RNG`.
+- Added `Cytokinesis` to `_PROCESS_OUTPUT_CHANNELS` as `("substrates",)`.
+- Added `Cytokinesis` to `_PROCESS_PRIMARY_CHANNEL` as `substrates`.
+- Added `Cytokinesis` to `_PROCESS_ANALYTICAL_CHECK_REASON`.
+- Added `_process_sample_process("Cytokinesis") -> runner_helpers._cytokinesis_process(0)`.
+- Hardened `_observable_wids()` so fixture-backed processes can source WIDs from `fixture_substrate_wids` / `fixture_enzyme_wids`; this is required for Cytokinesis because the process does not expose `substrate_wids` / `enzyme_wids`.
+
+Anticheat file:
+- Added `tests/vivarium/test_l2_2_design_a_runner_anticheat_cytokinesis.py`
+
+New tests:
+- `test_cytokinesis_primary_fixture_is_legitimate_noop`
+- `test_cytokinesis_tick_ignores_cheated_after_payload`
+- `test_cytokinesis_constant_zero_primary_channel_fails`
+- `test_cytokinesis_primary_exact_match_is_legitimate_noop`
+
+Pass count:
+- `bin\oc-pytest tests/vivarium/test_l2_2_design_a_runner_anticheat.py tests/vivarium/test_l2_2_design_a_runner_anticheat_rna_decay.py tests/vivarium/test_l2_2_design_a_runner_anticheat_macromol.py tests/vivarium/test_l2_2_design_a_runner_anticheat_replication.py tests/vivarium/test_l2_2_design_a_runner_anticheat_repinit.py tests/vivarium/test_l2_2_design_a_runner_anticheat_cytokinesis.py -q`
+- Result: `23 passed in 53.27s`
 
 ## Beat 4 - inversion
 
