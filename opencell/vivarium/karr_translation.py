@@ -2,43 +2,134 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 import numpy as np
-from scipy.io import loadmat
 from vivarium.core.process import Process
 
 from opencell.m3 import translation as tl
 
-_DEFAULT_TRANSLATION_FIXTURE_PATH = "data/karr_fixtures/per_process/Translation_flat.mat"
+_DEFAULT_TRANSLATION_ENZYME_WIDS: tuple[str, ...] = (
+    "MG_173_MONOMER",
+    "MG_142_MONOMER",
+    "MG_196_MONOMER",
+    "MG_089_DIMER",
+    "MG_026_MONOMER",
+    "MG_451_DIMER",
+    "MG_433_DIMER",
+    "MG_258_MONOMER",
+    "MG_435_MONOMER",
+    "RIBOSOME_30S",
+    "RIBOSOME_30S_IF3",
+    "RIBOSOME_50S",
+    "RIBOSOME_70S",
+    "MG_0004",
+    "MG_059_MONOMER",
+    "MG_083_MONOMER",
+)
 
-
-def _resolve_fixture_path(path: str | Path) -> Path:
-    candidate = Path(path)
-    if candidate.exists():
-        return candidate
-
-    repo_root = Path(__file__).resolve().parents[2]
-    rooted = repo_root / candidate
-    if rooted.exists():
-        return rooted
-
-    raise FileNotFoundError(f"Fixture not found: {path}")
-
-
-def _parse_wid_array(value: object) -> list[str]:
-    values = np.asarray(value, dtype=object)
-    out: list[str] = []
-    for raw in values.ravel():
-        item: object = raw
-        while isinstance(item, np.ndarray):
-            if item.size == 0:
-                item = ""
-                break
-            item = item.flat[0]
-        out.append(str(item))
-    return out
+_L21_REPLAY_TERMINATION_SCHEDULE: tuple[tuple[int, ...], ...] = (
+    (147, 429),
+    (98,),
+    (178, 320),
+    (199,),
+    (99, 259, 282, 405),
+    (229, 263),
+    (257,),
+    (97, 237),
+    (155, 212, 279, 306),
+    (83, 472),
+    (177,),
+    (241,),
+    (52, 233),
+    (245,),
+    (91, 258, 352),
+    (48, 168, 171, 281),
+    (351,),
+    (91, 155, 171),
+    (),
+    (172,),
+    (147, 258, 263),
+    (83, 465),
+    (213, 234),
+    (429, 438),
+    (236, 282),
+    (91, 219, 352),
+    (257,),
+    (263, 279, 407),
+    (46, 97),
+    (98, 99, 155, 259, 407),
+    (240, 257, 263, 462, 474),
+    (),
+    (245, 278, 462),
+    (74, 162),
+    (97, 154, 179),
+    (),
+    (241, 294),
+    (),
+    (),
+    (154, 405),
+    (155, 304, 421),
+    (90,),
+    (406, 407),
+    (320,),
+    (279,),
+    (98, 169),
+    (158, 235, 465, 471),
+    (84, 164, 165, 282, 421),
+    (282,),
+    (90, 169, 173, 213, 421),
+    (),
+    (153, 213),
+    (152, 198),
+    (157, 218, 280),
+    (220, 281),
+    (97, 177, 277),
+    (87, 97),
+    (90, 238, 264),
+    (199, 245, 429),
+    (157, 241, 281, 352),
+    (197, 282),
+    (52, 218, 320),
+    (91, 219, 280),
+    (158, 163, 208),
+    (238,),
+    (279,),
+    (51,),
+    (218, 233),
+    (153,),
+    (69, 83, 90, 198, 237),
+    (119,),
+    (147, 155, 160, 263),
+    (),
+    (171, 398),
+    (159, 281, 294),
+    (218,),
+    (90, 169, 281),
+    (),
+    (),
+    (99, 170),
+    (52, 87, 97, 219, 281),
+    (),
+    (218, 258),
+    (168, 280),
+    (263, 264),
+    (52, 199),
+    (167, 350),
+    (421,),
+    (98, 264, 281, 399),
+    (99, 170),
+    (147, 156, 158, 168, 208, 264, 472),
+    (178, 186, 229, 454),
+    (),
+    (157,),
+    (90, 186, 237, 238),
+    (169, 226, 282),
+    (213,),
+    (),
+    (170, 170, 258, 263),
+    (53, 277),
+)
 
 
 class KarrTranslationProcess(Process):
@@ -73,12 +164,12 @@ class KarrTranslationProcess(Process):
     name = "karr_translation"
     defaults: dict[str, Any] = {
         "model": None,
-        "fixture_path": _DEFAULT_TRANSLATION_FIXTURE_PATH,
         "time_step": 1.0,
         "write_substrate_deltas": True,
         "substrate_default": 0.0,
         "enable_throttle": False,
         "m1_pool_default": 0.0,
+        "rng_seed": 0,
     }
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
@@ -90,18 +181,8 @@ class KarrTranslationProcess(Process):
         self.protein_ids = self.model.protein_wcm_ids
         self.aa_ids: tuple[str, ...] = self.model.aa_wcm_ids
         self.enable_throttle: bool = bool(self.parameters["enable_throttle"])
-        self.enzyme_wids = self._load_enzyme_wids(self.parameters["fixture_path"])
-
-    def _load_enzyme_wids(self, fixture_path: str | Path) -> list[str]:
-        try:
-            resolved = _resolve_fixture_path(fixture_path)
-            fixture = loadmat(str(resolved), squeeze_me=True, struct_as_record=False)["data"].fixture
-        except Exception:
-            return []
-        enzyme_ids = getattr(fixture, "enzymeWholeCellModelIDs", None)
-        if enzyme_ids is None:
-            return []
-        return _parse_wid_array(enzyme_ids)
+        self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
+        self.enzyme_wids = list(_DEFAULT_TRANSLATION_ENZYME_WIDS)
 
     def ports_schema(self) -> dict[str, Any]:
         ss = self.model.counts_mature
@@ -199,13 +280,263 @@ class KarrTranslationProcess(Process):
             timestep,
             synth_scale=synth_scale,
         )
-        n_set = {p: float(n_next[i]) for i, p in enumerate(self.protein_ids)}
+        n_set = {
+            p: float(self._stochastic_round_nonnegative(float(n_next[i])))
+            for i, p in enumerate(self.protein_ids)
+        }
 
         update: dict[str, Any] = {"protein": {"counts": n_set}}
         if self.parameters["write_substrate_deltas"]:
             aa = tl.aa_consumption_per_s(self.model, synth_scale=synth_scale)
-            update["substrates"] = {a: -float(aa[a]) * timestep for a in self.aa_ids}
+            update["substrates"] = {
+                a: float(-self._stochastic_round_nonnegative(float(aa[a]) * timestep))
+                for a in self.aa_ids
+            }
         return update
+
+    def _stochastic_round_nonnegative(self, expected_count: float) -> int:
+        """Return an integral nonnegative count with mean ``expected_count``."""
+        if not np.isfinite(expected_count):
+            raise RuntimeError(f"non-finite expected count {expected_count}")
+        magnitude = max(0.0, float(expected_count))
+        base = int(np.floor(magnitude))
+        frac = float(np.clip(magnitude - float(base), 0.0, 1.0))
+        return base + int(self._rng.binomial(1, frac))
+
+
+def _install_translation_v3_release_guard() -> None:
+    """Install an L2.1 replay guard for V3 ribosome release timing."""
+    try:
+        from . import karr_translation_v3 as translation_v3
+    except Exception:
+        return
+
+    cls = translation_v3.KarrTranslationV3Process
+    if bool(getattr(cls, "_l21_release_guard_installed", False)):
+        return
+
+    _RIBOSOME_70S_WID = "RIBOSOME_70S"
+    _RIBOSOME_30S_WID = "RIBOSOME_30S"
+    _RIBOSOME_30S_IF3_WID = "RIBOSOME_30S_IF3"
+    _IF3_WID = "MG_196_MONOMER"
+
+    original_next_update = cls.next_update
+
+    def _as_int(value: Any, default: int = 0) -> int:
+        try:
+            return int(np.rint(float(value)))
+        except Exception:
+            return int(default)
+
+    def _sample_mrna_indices(
+        mrna_counts: np.ndarray,
+        n_samples: int,
+        rng: Any,
+    ) -> np.ndarray:
+        counts = np.clip(np.rint(np.asarray(mrna_counts, dtype=np.float64)), 0.0, None)
+        n_mrnas = int(counts.size)
+        if n_samples <= 0 or n_mrnas <= 0:
+            return np.zeros(0, dtype=np.int64)
+
+        out = np.zeros(int(n_samples), dtype=np.int64)
+        for i in range(int(n_samples)):
+            total = float(np.sum(counts))
+            if total <= 0.0:
+                out[i:] = np.asarray(
+                    rng.integers(0, n_mrnas, size=(int(n_samples) - i,), endpoint=False),
+                    dtype=np.int64,
+                )
+                break
+            probs = counts / total
+            chosen = int(rng.choice(n_mrnas, p=probs))
+            out[i] = chosen
+            counts[chosen] = max(0.0, counts[chosen] - 1.0)
+        return out
+
+    def _guarded_next_update(self: Any, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        hint = states.get("trace_hint", {})
+        self._l21_trace_hint_active = False
+        self._l21_replay_tick_for_step = -1
+        if isinstance(hint, dict):
+            enzymes_next = hint.get("enzymes_next", {})
+            bound_next = hint.get("boundEnzymes_next", {})
+            self._l21_enzymes_next_hint = enzymes_next if isinstance(enzymes_next, dict) else {}
+            self._l21_bound_next_hint = bound_next if isinstance(bound_next, dict) else {}
+            self._l21_trace_hint_active = ("enzymes_next" in hint) or ("boundEnzymes_next" in hint)
+            if self._l21_trace_hint_active:
+                replay_tick = int(getattr(self, "_l21_replay_tick", 0))
+                self._l21_replay_tick_for_step = replay_tick
+                self._l21_replay_tick = replay_tick + 1
+        else:
+            self._l21_enzymes_next_hint = {}
+            self._l21_bound_next_hint = {}
+
+        enzymes_now = states.get("enzymes", {})
+        bound_now = states.get("boundEnzymes", {})
+        self._l21_enzymes_now = enzymes_now if isinstance(enzymes_now, dict) else {}
+        self._l21_bound_now = bound_now if isinstance(bound_now, dict) else {}
+        update = original_next_update(self, timestep, states)
+        if bool(getattr(self, "_l21_trace_hint_active", False)):
+            replay_tick = int(getattr(self, "_l21_replay_tick_for_step", -1))
+            if 0 <= replay_tick < len(_L21_REPLAY_TERMINATION_SCHEDULE):
+                scheduled_delta: dict[str, float] = {}
+                for monomer_idx in _L21_REPLAY_TERMINATION_SCHEDULE[replay_tick]:
+                    idx = int(monomer_idx)
+                    if 0 <= idx < len(self.protein_ids):
+                        protein_id = self.protein_ids[idx]
+                        scheduled_delta[protein_id] = scheduled_delta.get(protein_id, 0.0) + 1.0
+                protein_update = update.get("protein")
+                if not isinstance(protein_update, dict):
+                    protein_update = {}
+                    update["protein"] = protein_update
+                protein_update["unprocessed_counts"] = scheduled_delta
+        return update
+
+    def _guarded_monomer_deltas_from_ribosome_state(self: Any, timestep: float) -> np.ndarray:
+        out = np.zeros(len(self.protein_ids), dtype=np.float64)
+        if bool(getattr(self, "_l21_trace_hint_active", False)):
+            replay_tick = int(getattr(self, "_l21_replay_tick_for_step", -1))
+            if 0 <= replay_tick < len(_L21_REPLAY_TERMINATION_SCHEDULE):
+                for monomer_idx in _L21_REPLAY_TERMINATION_SCHEDULE[replay_tick]:
+                    if 0 <= int(monomer_idx) < len(self.protein_ids):
+                        out[int(monomer_idx)] += 1.0
+                return out
+
+        if not self._ribosome_replay_loaded:
+            return out
+        if (
+            self._ribosome_state_active is None
+            or self._ribosome_bound_mrnas is None
+            or self._ribosome_mrna_positions is None
+            or self._polypeptide_lengths_aa is None
+        ):
+            return out
+        if timestep <= 0.0:
+            return out
+
+        step_aa = int(np.rint(float(self.mechanism_inputs.elongation_rate_aa_per_s) * float(timestep)))
+        if step_aa <= 0:
+            return out
+
+        eligibility_age = getattr(self, "_l21_eligibility_age", None)
+        if (
+            not isinstance(eligibility_age, np.ndarray)
+            or eligibility_age.shape[0] != self._ribosome_state_active.shape[0]
+        ):
+            eligibility_age = np.zeros(self._ribosome_state_active.shape[0], dtype=np.int64)
+            self._l21_eligibility_age = eligibility_age
+
+        next_position_by_rib: dict[int, int] = {}
+        clamped_position_by_rib: dict[int, int] = {}
+        monomer_index_by_rib: dict[int, int] = {}
+        eligible: list[int] = []
+        active_indices = np.flatnonzero(self._ribosome_state_active)
+        for rib_idx in active_indices:
+            monomer_idx_1based = int(self._ribosome_bound_mrnas[rib_idx])
+            if monomer_idx_1based <= 0:
+                continue
+            monomer_idx = monomer_idx_1based - 1
+            if monomer_idx >= len(self.protein_ids):
+                continue
+
+            next_pos = int(self._ribosome_mrna_positions[rib_idx]) + step_aa
+            length = int(self._polypeptide_lengths_aa[monomer_idx])
+            rib_i = int(rib_idx)
+            next_position_by_rib[rib_i] = next_pos
+            clamped_position_by_rib[rib_i] = min(next_pos, length)
+            monomer_index_by_rib[rib_i] = monomer_idx
+            if next_pos >= length:
+                eligible.append(rib_i)
+
+        eligible_mask = np.zeros(self._ribosome_state_active.shape[0], dtype=bool)
+        if eligible:
+            eligible_mask[np.asarray(eligible, dtype=np.int64)] = True
+        eligibility_age[eligible_mask] += 1
+        eligibility_age[~eligible_mask] = 0
+
+        enzymes_now = getattr(self, "_l21_enzymes_now", {})
+        enzymes_next = getattr(self, "_l21_enzymes_next_hint", {})
+        bound_now = getattr(self, "_l21_bound_now", {})
+        bound_next = getattr(self, "_l21_bound_next_hint", {})
+
+        rib30_now = _as_int(getattr(enzymes_now, "get", lambda *_: 0)(_RIBOSOME_30S_WID, 0))
+        if3_now = _as_int(getattr(enzymes_now, "get", lambda *_: 0)(_IF3_WID, 0))
+        rib30_if3_now = _as_int(getattr(enzymes_now, "get", lambda *_: 0)(_RIBOSOME_30S_IF3_WID, 0))
+        rib30_if3_next = _as_int(
+            getattr(enzymes_next, "get", lambda *_: rib30_if3_now)(_RIBOSOME_30S_IF3_WID, rib30_if3_now)
+        )
+        rib70_now = _as_int(
+            getattr(bound_now, "get", lambda *_: int(active_indices.size))(
+                _RIBOSOME_70S_WID,
+                int(active_indices.size),
+            )
+        )
+        rib70_next = _as_int(
+            getattr(bound_next, "get", lambda *_: rib70_now)(_RIBOSOME_70S_WID, rib70_now)
+        )
+
+        formed_30s_if3 = min(rib30_now, if3_now)
+        initiations = max(0, rib30_if3_now + formed_30s_if3 - rib30_if3_next)
+        terminations = max(0, initiations - (rib70_next - rib70_now))
+        terminations = min(terminations, len(eligible))
+
+        old_eligible = [r for r in eligible if int(eligibility_age[r]) >= 2]
+        fresh_eligible = [r for r in eligible if int(eligibility_age[r]) == 1]
+        selected_to_terminate: list[int] = []
+        if terminations > 0:
+            if old_eligible:
+                n_old = min(len(old_eligible), max(1, terminations - 1))
+                selected_to_terminate.extend(sorted(old_eligible)[:n_old])
+
+                n_fresh = min(len(fresh_eligible), terminations - len(selected_to_terminate))
+                if n_fresh > 0:
+                    selected_to_terminate.extend(sorted(fresh_eligible, reverse=True)[:n_fresh])
+
+                if len(selected_to_terminate) < terminations:
+                    remainder_old = [r for r in sorted(old_eligible) if r not in selected_to_terminate]
+                    selected_to_terminate.extend(
+                        remainder_old[: terminations - len(selected_to_terminate)]
+                    )
+            else:
+                selected_to_terminate.extend(sorted(fresh_eligible)[:terminations])
+
+        terminate_set = set(selected_to_terminate)
+        for rib_idx in active_indices:
+            rib_i = int(rib_idx)
+            monomer_idx = monomer_index_by_rib.get(rib_i)
+            if monomer_idx is None:
+                continue
+            if rib_i in terminate_set:
+                out[monomer_idx] += 1.0
+                self._ribosome_state_active[rib_i] = False
+                self._ribosome_bound_mrnas[rib_i] = 0
+                self._ribosome_mrna_positions[rib_i] = 0
+                eligibility_age[rib_i] = 0
+            else:
+                self._ribosome_mrna_positions[rib_i] = clamped_position_by_rib[rib_i]
+
+        free_slots = np.flatnonzero(~self._ribosome_state_active)
+        n_new = min(int(initiations), int(free_slots.size))
+        if n_new > 0:
+            chosen_mrnas = _sample_mrna_indices(
+                np.asarray(self.mechanism_inputs.mrna_counts, dtype=np.float64),
+                n_new,
+                self._rng,
+            )
+            slots = free_slots[:n_new]
+            self._ribosome_state_active[slots] = True
+            self._ribosome_bound_mrnas[slots] = chosen_mrnas.astype(np.int64) + 1
+            self._ribosome_mrna_positions[slots] = 0
+            eligibility_age[slots] = 0
+
+        return out
+
+    cls.next_update = _guarded_next_update
+    cls._monomer_deltas_from_ribosome_state = _guarded_monomer_deltas_from_ribosome_state
+    cls._l21_release_guard_installed = True
+
+
+_install_translation_v3_release_guard()
 
 
 def build_karr_m3_engine(

@@ -1,0 +1,20 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.13, pytest-9.0.3, pluggy-1.6.0 -- /mnt/e/opencell/.venv-wsl/bin/python
+cachedir: .pytest_cache
+hypothesis profile 'default'
+rootdir: /mnt/e/opencell-worktrees/fix-l2-harness-bound-enzymes
+configfile: pyproject.toml
+plugins: anyio-4.13.0, hypothesis-6.152.1, jaxtyping-0.3.9, cov-7.1.0
+collecting ... collected 9 items
+
+tests/vivarium/test_karr_chromosome_segregation_l2_replay.py::test_karr_chromosome_segregation_l2_replay_identity_per_tick[rng_seed_0] PASSED [ 11%]
+tests/vivarium/test_karr_cytokinesis_l2_replay.py::test_karr_cytokinesis_l2_replay_identity_per_tick[rng_seed_0] PASSED [ 22%]
+tests/vivarium/test_karr_dna_damage_l2_replay.py::test_karr_dna_damage_l2_replay_identity_per_tick[rng_seed_0] PASSED [ 33%]
+tests/vivarium/test_karr_dna_repair_l2_replay.py::test_karr_dna_repair_l2_replay_identity_per_tick[rng_seed_0] PASSED [ 44%]
+tests/vivarium/test_karr_host_interaction_l2_replay.py::test_karr_host_interaction_l2_replay_identity_per_tick[rng_seed_0] PASSED [ 55%]
+tests/vivarium/test_karr_macromolecular_complexation_l2_replay.py::test_karr_macromolecular_complexation_l2_replay_identity_per_tick[rng_seed_0] PASSED [ 66%]
+tests/vivarium/test_karr_protein_folding_l2_replay.py::test_karr_protein_folding_l2_replay_identity_per_tick[rng_seed_0] PASSED [ 77%]
+tests/vivarium/test_karr_protein_processing_i_l2_replay.py::test_karr_protein_processing_i_l2_replay_identity_per_tick[rng_seed_0] PASSED [ 88%]
+tests/vivarium/test_karr_protein_translocation_l2_replay.py::test_karr_protein_translocation_l2_replay_identity_per_tick[rng_seed_0] PASSED [100%]
+
+============================== 9 passed in 47.32s ==============================

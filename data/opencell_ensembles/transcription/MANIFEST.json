@@ -1,0 +1,327 @@
+{
+  "process_name": "Transcription",
+  "process_class": "KarrTranscriptionProcess",
+  "process_module": "opencell.vivarium.karr_transcription",
+  "process_source_git_sha": "unknown",
+  "seed_range": [
+    0,
+    49
+  ],
+  "seed_count": 50,
+  "n_ticks": 100,
+  "observables": [
+    "substrates",
+    "enzymes",
+    "boundEnzymes",
+    "RNAs"
+  ],
+  "fitted_channels": [
+    "substrates",
+    "enzymes",
+    "boundEnzymes",
+    "RNAs"
+  ],
+  "generated_at_utc": "2026-06-05T05:55:34.092584+00:00",
+  "entries": [
+    {
+      "seed": 0,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_000/Transcription_100ticks.npz",
+      "size_bytes": 6733,
+      "status": "generated"
+    },
+    {
+      "seed": 1,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_001/Transcription_100ticks.npz",
+      "size_bytes": 6800,
+      "status": "generated"
+    },
+    {
+      "seed": 2,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_002/Transcription_100ticks.npz",
+      "size_bytes": 6599,
+      "status": "generated"
+    },
+    {
+      "seed": 3,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_003/Transcription_100ticks.npz",
+      "size_bytes": 6861,
+      "status": "generated"
+    },
+    {
+      "seed": 4,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_004/Transcription_100ticks.npz",
+      "size_bytes": 6479,
+      "status": "generated"
+    },
+    {
+      "seed": 5,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_005/Transcription_100ticks.npz",
+      "size_bytes": 6616,
+      "status": "generated"
+    },
+    {
+      "seed": 6,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_006/Transcription_100ticks.npz",
+      "size_bytes": 6834,
+      "status": "generated"
+    },
+    {
+      "seed": 7,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_007/Transcription_100ticks.npz",
+      "size_bytes": 6575,
+      "status": "generated"
+    },
+    {
+      "seed": 8,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_008/Transcription_100ticks.npz",
+      "size_bytes": 5949,
+      "status": "generated"
+    },
+    {
+      "seed": 9,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_009/Transcription_100ticks.npz",
+      "size_bytes": 6588,
+      "status": "generated"
+    },
+    {
+      "seed": 10,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_010/Transcription_100ticks.npz",
+      "size_bytes": 6615,
+      "status": "generated"
+    },
+    {
+      "seed": 11,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_011/Transcription_100ticks.npz",
+      "size_bytes": 6208,
+      "status": "generated"
+    },
+    {
+      "seed": 12,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_012/Transcription_100ticks.npz",
+      "size_bytes": 6808,
+      "status": "generated"
+    },
+    {
+      "seed": 13,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_013/Transcription_100ticks.npz",
+      "size_bytes": 6866,
+      "status": "generated"
+    },
+    {
+      "seed": 14,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_014/Transcription_100ticks.npz",
+      "size_bytes": 6643,
+      "status": "generated"
+    },
+    {
+      "seed": 15,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_015/Transcription_100ticks.npz",
+      "size_bytes": 6212,
+      "status": "generated"
+    },
+    {
+      "seed": 16,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_016/Transcription_100ticks.npz",
+      "size_bytes": 6558,
+      "status": "generated"
+    },
+    {
+      "seed": 17,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_017/Transcription_100ticks.npz",
+      "size_bytes": 6848,
+      "status": "generated"
+    },
+    {
+      "seed": 18,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_018/Transcription_100ticks.npz",
+      "size_bytes": 5901,
+      "status": "generated"
+    },
+    {
+      "seed": 19,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_019/Transcription_100ticks.npz",
+      "size_bytes": 6836,
+      "status": "generated"
+    },
+    {
+      "seed": 20,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_020/Transcription_100ticks.npz",
+      "size_bytes": 6299,
+      "status": "generated"
+    },
+    {
+      "seed": 21,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_021/Transcription_100ticks.npz",
+      "size_bytes": 6340,
+      "status": "generated"
+    },
+    {
+      "seed": 22,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_022/Transcription_100ticks.npz",
+      "size_bytes": 6489,
+      "status": "generated"
+    },
+    {
+      "seed": 23,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_023/Transcription_100ticks.npz",
+      "size_bytes": 6513,
+      "status": "generated"
+    },
+    {
+      "seed": 24,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_024/Transcription_100ticks.npz",
+      "size_bytes": 6468,
+      "status": "generated"
+    },
+    {
+      "seed": 25,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_025/Transcription_100ticks.npz",
+      "size_bytes": 6621,
+      "status": "generated"
+    },
+    {
+      "seed": 26,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_026/Transcription_100ticks.npz",
+      "size_bytes": 5998,
+      "status": "generated"
+    },
+    {
+      "seed": 27,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_027/Transcription_100ticks.npz",
+      "size_bytes": 6637,
+      "status": "generated"
+    },
+    {
+      "seed": 28,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_028/Transcription_100ticks.npz",
+      "size_bytes": 6033,
+      "status": "generated"
+    },
+    {
+      "seed": 29,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_029/Transcription_100ticks.npz",
+      "size_bytes": 6847,
+      "status": "generated"
+    },
+    {
+      "seed": 30,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_030/Transcription_100ticks.npz",
+      "size_bytes": 6291,
+      "status": "generated"
+    },
+    {
+      "seed": 31,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_031/Transcription_100ticks.npz",
+      "size_bytes": 6189,
+      "status": "generated"
+    },
+    {
+      "seed": 32,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_032/Transcription_100ticks.npz",
+      "size_bytes": 6940,
+      "status": "generated"
+    },
+    {
+      "seed": 33,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_033/Transcription_100ticks.npz",
+      "size_bytes": 6385,
+      "status": "generated"
+    },
+    {
+      "seed": 34,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_034/Transcription_100ticks.npz",
+      "size_bytes": 6197,
+      "status": "generated"
+    },
+    {
+      "seed": 35,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_035/Transcription_100ticks.npz",
+      "size_bytes": 6683,
+      "status": "generated"
+    },
+    {
+      "seed": 36,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_036/Transcription_100ticks.npz",
+      "size_bytes": 6646,
+      "status": "generated"
+    },
+    {
+      "seed": 37,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_037/Transcription_100ticks.npz",
+      "size_bytes": 6499,
+      "status": "generated"
+    },
+    {
+      "seed": 38,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_038/Transcription_100ticks.npz",
+      "size_bytes": 6477,
+      "status": "generated"
+    },
+    {
+      "seed": 39,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_039/Transcription_100ticks.npz",
+      "size_bytes": 6871,
+      "status": "generated"
+    },
+    {
+      "seed": 40,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_040/Transcription_100ticks.npz",
+      "size_bytes": 6498,
+      "status": "generated"
+    },
+    {
+      "seed": 41,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_041/Transcription_100ticks.npz",
+      "size_bytes": 6770,
+      "status": "generated"
+    },
+    {
+      "seed": 42,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_042/Transcription_100ticks.npz",
+      "size_bytes": 6174,
+      "status": "generated"
+    },
+    {
+      "seed": 43,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_043/Transcription_100ticks.npz",
+      "size_bytes": 6492,
+      "status": "generated"
+    },
+    {
+      "seed": 44,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_044/Transcription_100ticks.npz",
+      "size_bytes": 6885,
+      "status": "generated"
+    },
+    {
+      "seed": 45,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_045/Transcription_100ticks.npz",
+      "size_bytes": 6242,
+      "status": "generated"
+    },
+    {
+      "seed": 46,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_046/Transcription_100ticks.npz",
+      "size_bytes": 5919,
+      "status": "generated"
+    },
+    {
+      "seed": 47,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_047/Transcription_100ticks.npz",
+      "size_bytes": 6635,
+      "status": "generated"
+    },
+    {
+      "seed": 48,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_048/Transcription_100ticks.npz",
+      "size_bytes": 7037,
+      "status": "generated"
+    },
+    {
+      "seed": 49,
+      "npz_path": "/mnt/e/opencell-worktrees/l22-f4-monomer-rna-init/data/opencell_ensembles/transcription/seed_049/Transcription_100ticks.npz",
+      "size_bytes": 6746,
+      "status": "generated"
+    }
+  ]
+}

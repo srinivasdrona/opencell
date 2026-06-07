@@ -1,0 +1,823 @@
+{
+  "process": "Transcription",
+  "seed_range": [
+    0,
+    49
+  ],
+  "expected_seed_count": 50,
+  "present_seed_count": 50,
+  "missing_seeds": [],
+  "all_metadata_seed_match": true,
+  "n_ticks_set": 100,
+  "observable_schema_set": [
+    "RNAs",
+    "boundEnzymes",
+    "enzymes",
+    "substrates"
+  ],
+  "total_size_bytes": 4.4583408E+7,
+  "entries": [
+    {
+      "seed": 0,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_000/Transcription_100ticks.mat",
+      "size_bytes": 891480,
+      "n_ticks": 100,
+      "rng_seed": 0,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "reused",
+      "elapsed_seconds": 0
+    },
+    {
+      "seed": 1,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_001/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 1,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 34.1621816
+    },
+    {
+      "seed": 2,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_002/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 2,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 18.7978184
+    },
+    {
+      "seed": 3,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_003/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 3,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 17.5084934
+    },
+    {
+      "seed": 4,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_004/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 4,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 17.0358595
+    },
+    {
+      "seed": 5,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_005/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 5,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 17.3566388
+    },
+    {
+      "seed": 6,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_006/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 6,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 18.345568
+    },
+    {
+      "seed": 7,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_007/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 7,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 17.166016
+    },
+    {
+      "seed": 8,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_008/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 8,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 17.1573854
+    },
+    {
+      "seed": 9,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_009/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 9,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 17.4359332
+    },
+    {
+      "seed": 10,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_010/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 10,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 17.293571
+    },
+    {
+      "seed": 11,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_011/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 11,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 18.8109242
+    },
+    {
+      "seed": 12,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_012/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 12,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 16.9320926
+    },
+    {
+      "seed": 13,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_013/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 13,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 15.2970948
+    },
+    {
+      "seed": 14,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_014/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 14,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 16.7686471
+    },
+    {
+      "seed": 15,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_015/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 15,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 16.6828893
+    },
+    {
+      "seed": 16,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_016/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 16,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 18.3845368
+    },
+    {
+      "seed": 17,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_017/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 17,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 17.3009868
+    },
+    {
+      "seed": 18,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_018/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 18,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 16.7634107
+    },
+    {
+      "seed": 19,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_019/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 19,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 16.2393889
+    },
+    {
+      "seed": 20,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_020/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 20,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 16.3318222
+    },
+    {
+      "seed": 21,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_021/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 21,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 18.1470638
+    },
+    {
+      "seed": 22,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_022/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 22,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 18.5758736
+    },
+    {
+      "seed": 23,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_023/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 23,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 17.4260632
+    },
+    {
+      "seed": 24,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_024/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 24,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 16.0831469
+    },
+    {
+      "seed": 25,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_025/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 25,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 16.0817285
+    },
+    {
+      "seed": 26,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_026/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 26,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 16.1739227
+    },
+    {
+      "seed": 27,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_027/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 27,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 16.913121
+    },
+    {
+      "seed": 28,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_028/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 28,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 16.4414709
+    },
+    {
+      "seed": 29,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_029/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 29,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 15.5097289
+    },
+    {
+      "seed": 30,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_030/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 30,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 16.7688811
+    },
+    {
+      "seed": 31,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_031/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 31,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 16.3506885
+    },
+    {
+      "seed": 32,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_032/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 32,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 15.3516092
+    },
+    {
+      "seed": 33,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_033/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 33,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 15.6725555
+    },
+    {
+      "seed": 34,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_034/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 34,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 17.6163561
+    },
+    {
+      "seed": 35,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_035/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 35,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 15.7164775
+    },
+    {
+      "seed": 36,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_036/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 36,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 15.4780419
+    },
+    {
+      "seed": 37,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_037/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 37,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 15.8278134
+    },
+    {
+      "seed": 38,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_038/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 38,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 16.1085155
+    },
+    {
+      "seed": 39,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_039/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 39,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 15.9968432
+    },
+    {
+      "seed": 40,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_040/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 40,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 16.2888792
+    },
+    {
+      "seed": 41,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_041/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 41,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 16.3664515
+    },
+    {
+      "seed": 42,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_042/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 42,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 15.7574396
+    },
+    {
+      "seed": 43,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_043/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 43,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 15.9766458
+    },
+    {
+      "seed": 44,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_044/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 44,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 15.8675745
+    },
+    {
+      "seed": 45,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_045/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 45,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 16.3273728
+    },
+    {
+      "seed": 46,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_046/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 46,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 16.2061872
+    },
+    {
+      "seed": 47,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_047/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 47,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 15.7382272
+    },
+    {
+      "seed": 48,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_048/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 48,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 16.8330055
+    },
+    {
+      "seed": 49,
+      "path": "data/m1_sources/karr_native/ensembles/transcription/seed_049/Transcription_100ticks.mat",
+      "size_bytes": 891672,
+      "n_ticks": 100,
+      "rng_seed": 49,
+      "n_observables": 4,
+      "observables": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "RNAs"
+      ],
+      "status": "generated",
+      "elapsed_seconds": 15.9302892
+    }
+  ],
+  "timestamp": "2026-06-05 03:54:57",
+  "n_ticks_expected": 100
+}

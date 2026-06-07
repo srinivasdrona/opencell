@@ -1,0 +1,1687 @@
+[
+  {
+    "trace": "/mnt/e/opencell-worktrees/l2-matlab-reextract-v2/data/m1_sources/karr_native/per_process_traces_v2/ChromosomeCondensation_100ticks.mat",
+    "observables": {
+      "boundEnzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 42,
+        "first_5_nonzero_ticks": [
+          0,
+          7,
+          8,
+          9,
+          10
+        ],
+        "total_abs_delta": 132.0,
+        "max_abs_delta": 8.0,
+        "largest_delta_sample": {
+          "tick": 72,
+          "idx": 1,
+          "before": 78.0,
+          "after": 86.0,
+          "delta": 8.0
+        }
+      },
+      "enzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 72,
+        "first_5_nonzero_ticks": [
+          0,
+          7,
+          8,
+          9,
+          10
+        ],
+        "total_abs_delta": 270.0,
+        "max_abs_delta": 8.0,
+        "largest_delta_sample": {
+          "tick": 80,
+          "idx": 0,
+          "before": 0.0,
+          "after": 8.0,
+          "delta": 8.0
+        }
+      },
+      "substrates": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 72,
+        "first_5_nonzero_ticks": [
+          0,
+          7,
+          8,
+          9,
+          10
+        ],
+        "total_abs_delta": 657.0,
+        "max_abs_delta": 8.0,
+        "largest_delta_sample": {
+          "tick": 72,
+          "idx": 0,
+          "before": 79.0,
+          "after": 71.0,
+          "delta": -8.0
+        }
+      }
+    },
+    "n_ticks": 100
+  },
+  {
+    "trace": "/mnt/e/opencell-worktrees/l2-matlab-reextract-v2/data/m1_sources/karr_native/per_process_traces_v2/ChromosomeSegregation_100ticks.mat",
+    "observables": {
+      "boundEnzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "enzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "substrates": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      }
+    },
+    "n_ticks": 100
+  },
+  {
+    "trace": "/mnt/e/opencell-worktrees/l2-matlab-reextract-v2/data/m1_sources/karr_native/per_process_traces_v2/Cytokinesis_100ticks.mat",
+    "observables": {
+      "boundEnzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "enzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "substrates": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      }
+    },
+    "n_ticks": 100
+  },
+  {
+    "trace": "/mnt/e/opencell-worktrees/l2-matlab-reextract-v2/data/m1_sources/karr_native/per_process_traces_v2/DNADamage_100ticks.mat",
+    "observables": {
+      "boundEnzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "enzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "substrates": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      }
+    },
+    "n_ticks": 100
+  },
+  {
+    "trace": "/mnt/e/opencell-worktrees/l2-matlab-reextract-v2/data/m1_sources/karr_native/per_process_traces_v2/DNARepair_100ticks.mat",
+    "observables": {
+      "boundEnzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "enzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "substrates": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 2,
+        "first_5_nonzero_ticks": [
+          8,
+          94
+        ],
+        "total_abs_delta": 6.0,
+        "max_abs_delta": 1.0,
+        "largest_delta_sample": {
+          "tick": 8,
+          "idx": 2,
+          "before": 0.0,
+          "after": 1.0,
+          "delta": 1.0
+        }
+      }
+    },
+    "n_ticks": 100
+  },
+  {
+    "trace": "/mnt/e/opencell-worktrees/l2-matlab-reextract-v2/data/m1_sources/karr_native/per_process_traces_v2/DNASupercoiling_100ticks.mat",
+    "observables": {
+      "boundEnzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 30,
+        "first_5_nonzero_ticks": [
+          0,
+          2,
+          4,
+          6,
+          7
+        ],
+        "total_abs_delta": 117.0,
+        "max_abs_delta": 12.0,
+        "largest_delta_sample": {
+          "tick": 6,
+          "idx": 1,
+          "before": 0.0,
+          "after": 12.0,
+          "delta": 12.0
+        }
+      },
+      "enzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 30,
+        "first_5_nonzero_ticks": [
+          0,
+          2,
+          4,
+          6,
+          7
+        ],
+        "total_abs_delta": 117.0,
+        "max_abs_delta": 12.0,
+        "largest_delta_sample": {
+          "tick": 6,
+          "idx": 1,
+          "before": 12.0,
+          "after": 0.0,
+          "delta": -12.0
+        }
+      },
+      "substrates": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 100,
+        "first_5_nonzero_ticks": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total_abs_delta": 34810.0,
+        "max_abs_delta": 128.0,
+        "largest_delta_sample": {
+          "tick": 6,
+          "idx": 0,
+          "before": 1789.0,
+          "after": 1661.0,
+          "delta": -128.0
+        }
+      }
+    },
+    "n_ticks": 100
+  },
+  {
+    "trace": "/mnt/e/opencell-worktrees/l2-matlab-reextract-v2/data/m1_sources/karr_native/per_process_traces_v2/FtsZPolymerization_100ticks.mat",
+    "observables": {
+      "boundEnzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "enzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 100,
+        "first_5_nonzero_ticks": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total_abs_delta": 1088.0,
+        "max_abs_delta": 6.0,
+        "largest_delta_sample": {
+          "tick": 85,
+          "idx": 2,
+          "before": 3.0,
+          "after": 9.0,
+          "delta": 6.0
+        }
+      },
+      "substrates": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 60,
+        "first_5_nonzero_ticks": [
+          4,
+          6,
+          7,
+          8,
+          9
+        ],
+        "total_abs_delta": 98.0,
+        "max_abs_delta": 4.0,
+        "largest_delta_sample": {
+          "tick": 6,
+          "idx": 1,
+          "before": 25.0,
+          "after": 29.0,
+          "delta": 4.0
+        }
+      }
+    },
+    "n_ticks": 100
+  },
+  {
+    "trace": "/mnt/e/opencell-worktrees/l2-matlab-reextract-v2/data/m1_sources/karr_native/per_process_traces_v2/HostInteraction_100ticks.mat",
+    "observables": {
+      "boundEnzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "enzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "substrates": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      }
+    },
+    "n_ticks": 100
+  },
+  {
+    "trace": "/mnt/e/opencell-worktrees/l2-matlab-reextract-v2/data/m1_sources/karr_native/per_process_traces_v2/MacromolecularComplexation_100ticks.mat",
+    "observables": {
+      "boundEnzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "complexs": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 19,
+        "first_5_nonzero_ticks": [
+          8,
+          10,
+          15,
+          17,
+          20
+        ],
+        "total_abs_delta": 21.0,
+        "max_abs_delta": 1.0,
+        "largest_delta_sample": {
+          "tick": 8,
+          "idx": 44,
+          "before": 0.0,
+          "after": 1.0,
+          "delta": 1.0
+        }
+      },
+      "enzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "substrates": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 19,
+        "first_5_nonzero_ticks": [
+          8,
+          10,
+          15,
+          17,
+          20
+        ],
+        "total_abs_delta": 75.0,
+        "max_abs_delta": 6.0,
+        "largest_delta_sample": {
+          "tick": 43,
+          "idx": 169,
+          "before": 6.0,
+          "after": 0.0,
+          "delta": -6.0
+        }
+      }
+    },
+    "n_ticks": 100
+  },
+  {
+    "trace": "/mnt/e/opencell-worktrees/l2-matlab-reextract-v2/data/m1_sources/karr_native/per_process_traces_v2/Metabolism_100ticks.mat",
+    "observables": {
+      "boundEnzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "enzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "substrates": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 100,
+        "first_5_nonzero_ticks": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total_abs_delta": 10018144.0,
+        "max_abs_delta": 13210.0,
+        "largest_delta_sample": {
+          "tick": 68,
+          "idx": 881,
+          "before": 1314022541.0,
+          "after": 1314009331.0,
+          "delta": -13210.0
+        }
+      }
+    },
+    "n_ticks": 100
+  },
+  {
+    "trace": "/mnt/e/opencell-worktrees/l2-matlab-reextract-v2/data/m1_sources/karr_native/per_process_traces_v2/ProteinActivation_100ticks.mat",
+    "observables": {
+      "boundEnzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "enzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "substrates": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 3,
+        "first_5_nonzero_ticks": [
+          28,
+          38,
+          63
+        ],
+        "total_abs_delta": 3.0,
+        "max_abs_delta": 1.0,
+        "largest_delta_sample": {
+          "tick": 28,
+          "idx": 2,
+          "before": 1.0,
+          "after": 0.0,
+          "delta": -1.0
+        }
+      }
+    },
+    "n_ticks": 100
+  },
+  {
+    "trace": "/mnt/e/opencell-worktrees/l2-matlab-reextract-v2/data/m1_sources/karr_native/per_process_traces_v2/ProteinDecay_100ticks.mat",
+    "observables": {
+      "boundEnzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "complexs": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 2,
+        "first_5_nonzero_ticks": [
+          10,
+          66
+        ],
+        "total_abs_delta": 2.0,
+        "max_abs_delta": 1.0,
+        "largest_delta_sample": {
+          "tick": 10,
+          "idx": 291,
+          "before": 7.0,
+          "after": 6.0,
+          "delta": -1.0
+        }
+      },
+      "enzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "monomers": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 25,
+        "first_5_nonzero_ticks": [
+          3,
+          8,
+          10,
+          11,
+          12
+        ],
+        "total_abs_delta": 31.0,
+        "max_abs_delta": 6.0,
+        "largest_delta_sample": {
+          "tick": 10,
+          "idx": 4567,
+          "before": 0.0,
+          "after": 6.0,
+          "delta": 6.0
+        }
+      },
+      "substrates": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 41,
+        "first_5_nonzero_ticks": [
+          3,
+          6,
+          8,
+          10,
+          11
+        ],
+        "total_abs_delta": 84633.0,
+        "max_abs_delta": 7051.0,
+        "largest_delta_sample": {
+          "tick": 63,
+          "idx": 19,
+          "before": 235018028.0,
+          "after": 235010977.0,
+          "delta": -7051.0
+        }
+      }
+    },
+    "n_ticks": 100
+  },
+  {
+    "trace": "/mnt/e/opencell-worktrees/l2-matlab-reextract-v2/data/m1_sources/karr_native/per_process_traces_v2/ProteinFolding_100ticks.mat",
+    "observables": {
+      "boundEnzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "enzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "foldedMonomers": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 61,
+        "first_5_nonzero_ticks": [
+          2,
+          4,
+          5,
+          7,
+          9
+        ],
+        "total_abs_delta": 208.0,
+        "max_abs_delta": 2.0,
+        "largest_delta_sample": {
+          "tick": 18,
+          "idx": 171,
+          "before": 0.0,
+          "after": 2.0,
+          "delta": 2.0
+        }
+      },
+      "substrates": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 21,
+        "first_5_nonzero_ticks": [
+          7,
+          11,
+          16,
+          23,
+          27
+        ],
+        "total_abs_delta": 42.0,
+        "max_abs_delta": 3.0,
+        "largest_delta_sample": {
+          "tick": 31,
+          "idx": 10,
+          "before": 7469.0,
+          "after": 7466.0,
+          "delta": -3.0
+        }
+      },
+      "unfoldedMonomers": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 61,
+        "first_5_nonzero_ticks": [
+          2,
+          4,
+          5,
+          7,
+          9
+        ],
+        "total_abs_delta": 208.0,
+        "max_abs_delta": 2.0,
+        "largest_delta_sample": {
+          "tick": 18,
+          "idx": 171,
+          "before": 2.0,
+          "after": 0.0,
+          "delta": -2.0
+        }
+      }
+    },
+    "n_ticks": 100
+  },
+  {
+    "trace": "/mnt/e/opencell-worktrees/l2-matlab-reextract-v2/data/m1_sources/karr_native/per_process_traces_v2/ProteinModification_100ticks.mat",
+    "observables": {
+      "boundEnzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "enzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "modifiedMonomers": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 55,
+        "first_5_nonzero_ticks": [
+          3,
+          4,
+          5,
+          8,
+          10
+        ],
+        "total_abs_delta": 203.0,
+        "max_abs_delta": 2.0,
+        "largest_delta_sample": {
+          "tick": 19,
+          "idx": 171,
+          "before": 121.0,
+          "after": 123.0,
+          "delta": 2.0
+        }
+      },
+      "substrates": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 19,
+        "first_5_nonzero_ticks": [
+          19,
+          26,
+          33,
+          44,
+          46
+        ],
+        "total_abs_delta": 117.0,
+        "max_abs_delta": 5.0,
+        "largest_delta_sample": {
+          "tick": 73,
+          "idx": 0,
+          "before": 0.0,
+          "after": 5.0,
+          "delta": 5.0
+        }
+      },
+      "unmodifiedMonomers": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 55,
+        "first_5_nonzero_ticks": [
+          3,
+          4,
+          5,
+          8,
+          10
+        ],
+        "total_abs_delta": 203.0,
+        "max_abs_delta": 2.0,
+        "largest_delta_sample": {
+          "tick": 19,
+          "idx": 171,
+          "before": 2.0,
+          "after": 0.0,
+          "delta": -2.0
+        }
+      }
+    },
+    "n_ticks": 100
+  },
+  {
+    "trace": "/mnt/e/opencell-worktrees/l2-matlab-reextract-v2/data/m1_sources/karr_native/per_process_traces_v2/ProteinProcessingII_100ticks.mat",
+    "observables": {
+      "boundEnzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "enzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "processedMonomers": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 67,
+        "first_5_nonzero_ticks": [
+          2,
+          3,
+          4,
+          6,
+          8
+        ],
+        "total_abs_delta": 208.0,
+        "max_abs_delta": 2.0,
+        "largest_delta_sample": {
+          "tick": 50,
+          "idx": 282,
+          "before": 0.0,
+          "after": 2.0,
+          "delta": 2.0
+        }
+      },
+      "substrates": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 4,
+        "first_5_nonzero_ticks": [
+          3,
+          23,
+          74,
+          93
+        ],
+        "total_abs_delta": 4.0,
+        "max_abs_delta": 1.0,
+        "largest_delta_sample": {
+          "tick": 3,
+          "idx": 0,
+          "before": 140259.0,
+          "after": 140258.0,
+          "delta": -1.0
+        }
+      },
+      "unprocessedMonomers": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 67,
+        "first_5_nonzero_ticks": [
+          2,
+          3,
+          4,
+          6,
+          8
+        ],
+        "total_abs_delta": 208.0,
+        "max_abs_delta": 2.0,
+        "largest_delta_sample": {
+          "tick": 50,
+          "idx": 282,
+          "before": 2.0,
+          "after": 0.0,
+          "delta": -2.0
+        }
+      }
+    },
+    "n_ticks": 100
+  },
+  {
+    "trace": "/mnt/e/opencell-worktrees/l2-matlab-reextract-v2/data/m1_sources/karr_native/per_process_traces_v2/ProteinProcessingI_100ticks.mat",
+    "observables": {
+      "boundEnzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "enzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "processedMonomers": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 69,
+        "first_5_nonzero_ticks": [
+          1,
+          2,
+          3,
+          5,
+          6
+        ],
+        "total_abs_delta": 213.0,
+        "max_abs_delta": 2.0,
+        "largest_delta_sample": {
+          "tick": 48,
+          "idx": 282,
+          "before": 0.0,
+          "after": 2.0,
+          "delta": 2.0
+        }
+      },
+      "substrates": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 69,
+        "first_5_nonzero_ticks": [
+          1,
+          2,
+          3,
+          5,
+          6
+        ],
+        "total_abs_delta": 697.0,
+        "max_abs_delta": 10.0,
+        "largest_delta_sample": {
+          "tick": 30,
+          "idx": 0,
+          "before": 694638.0,
+          "after": 694628.0,
+          "delta": -10.0
+        }
+      },
+      "unprocessedMonomers": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 69,
+        "first_5_nonzero_ticks": [
+          1,
+          2,
+          3,
+          5,
+          6
+        ],
+        "total_abs_delta": 213.0,
+        "max_abs_delta": 2.0,
+        "largest_delta_sample": {
+          "tick": 48,
+          "idx": 282,
+          "before": 2.0,
+          "after": 0.0,
+          "delta": -2.0
+        }
+      }
+    },
+    "n_ticks": 100
+  },
+  {
+    "trace": "/mnt/e/opencell-worktrees/l2-matlab-reextract-v2/data/m1_sources/karr_native/per_process_traces_v2/ProteinTranslocation_100ticks.mat",
+    "observables": {
+      "boundEnzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "enzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "monomers": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 15,
+        "first_5_nonzero_ticks": [
+          2,
+          6,
+          13,
+          22,
+          26
+        ],
+        "total_abs_delta": 40.0,
+        "max_abs_delta": 2.0,
+        "largest_delta_sample": {
+          "tick": 49,
+          "idx": 282,
+          "before": 2.0,
+          "after": 0.0,
+          "delta": -2.0
+        }
+      },
+      "substrates": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 15,
+        "first_5_nonzero_ticks": [
+          2,
+          6,
+          13,
+          22,
+          26
+        ],
+        "total_abs_delta": 1190.0,
+        "max_abs_delta": 40.0,
+        "largest_delta_sample": {
+          "tick": 35,
+          "idx": 4,
+          "before": 0.0,
+          "after": 40.0,
+          "delta": 40.0
+        }
+      }
+    },
+    "n_ticks": 100
+  },
+  {
+    "trace": "/mnt/e/opencell-worktrees/l2-matlab-reextract-v2/data/m1_sources/karr_native/per_process_traces_v2/RNADecay_100ticks.mat",
+    "observables": {
+      "boundEnzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "enzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "substrates": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 65,
+        "first_5_nonzero_ticks": [
+          0,
+          2,
+          5,
+          6,
+          8
+        ],
+        "total_abs_delta": 239622.0,
+        "max_abs_delta": 8135.0,
+        "largest_delta_sample": {
+          "tick": 62,
+          "idx": 14,
+          "before": 0.0,
+          "after": 8135.0,
+          "delta": 8135.0
+        }
+      }
+    },
+    "n_ticks": 100
+  },
+  {
+    "trace": "/mnt/e/opencell-worktrees/l2-matlab-reextract-v2/data/m1_sources/karr_native/per_process_traces_v2/RNAModification_100ticks.mat",
+    "observables": {
+      "boundEnzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "enzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "modifiedRNAs": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 58,
+        "first_5_nonzero_ticks": [
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "total_abs_delta": 116.0,
+        "max_abs_delta": 1.0,
+        "largest_delta_sample": {
+          "tick": 6,
+          "idx": 140,
+          "before": 0.0,
+          "after": 1.0,
+          "delta": 1.0
+        }
+      },
+      "substrates": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 46,
+        "first_5_nonzero_ticks": [
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "total_abs_delta": 745.0,
+        "max_abs_delta": 6.0,
+        "largest_delta_sample": {
+          "tick": 95,
+          "idx": 12,
+          "before": 0.0,
+          "after": 6.0,
+          "delta": 6.0
+        }
+      },
+      "unmodifiedRNAs": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 58,
+        "first_5_nonzero_ticks": [
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "total_abs_delta": 116.0,
+        "max_abs_delta": 1.0,
+        "largest_delta_sample": {
+          "tick": 6,
+          "idx": 140,
+          "before": 1.0,
+          "after": 0.0,
+          "delta": -1.0
+        }
+      }
+    },
+    "n_ticks": 100
+  },
+  {
+    "trace": "/mnt/e/opencell-worktrees/l2-matlab-reextract-v2/data/m1_sources/karr_native/per_process_traces_v2/RNAProcessing_100ticks.mat",
+    "observables": {
+      "boundEnzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "enzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "processedRNAs": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 30,
+        "first_5_nonzero_ticks": [
+          5,
+          9,
+          14,
+          15,
+          16
+        ],
+        "total_abs_delta": 126.0,
+        "max_abs_delta": 3.0,
+        "largest_delta_sample": {
+          "tick": 92,
+          "idx": 225,
+          "before": 0.0,
+          "after": 3.0,
+          "delta": 3.0
+        }
+      },
+      "substrates": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 10,
+        "first_5_nonzero_ticks": [
+          5,
+          16,
+          22,
+          26,
+          34
+        ],
+        "total_abs_delta": 123.0,
+        "max_abs_delta": 12.0,
+        "largest_delta_sample": {
+          "tick": 5,
+          "idx": 5,
+          "before": 1679939.0,
+          "after": 1679927.0,
+          "delta": -12.0
+        }
+      },
+      "unprocessedRNAs": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 30,
+        "first_5_nonzero_ticks": [
+          5,
+          9,
+          14,
+          15,
+          16
+        ],
+        "total_abs_delta": 98.0,
+        "max_abs_delta": 3.0,
+        "largest_delta_sample": {
+          "tick": 92,
+          "idx": 219,
+          "before": 3.0,
+          "after": 0.0,
+          "delta": -3.0
+        }
+      }
+    },
+    "n_ticks": 100
+  },
+  {
+    "trace": "/mnt/e/opencell-worktrees/l2-matlab-reextract-v2/data/m1_sources/karr_native/per_process_traces_v2/ReplicationInitiation_100ticks.mat",
+    "observables": {
+      "boundEnzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 61,
+        "first_5_nonzero_ticks": [
+          0,
+          4,
+          5,
+          11,
+          13
+        ],
+        "total_abs_delta": 112.0,
+        "max_abs_delta": 14.0,
+        "largest_delta_sample": {
+          "tick": 13,
+          "idx": 0,
+          "before": 0.0,
+          "after": 14.0,
+          "delta": 14.0
+        }
+      },
+      "enzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 61,
+        "first_5_nonzero_ticks": [
+          0,
+          4,
+          5,
+          11,
+          13
+        ],
+        "total_abs_delta": 90.0,
+        "max_abs_delta": 2.0,
+        "largest_delta_sample": {
+          "tick": 0,
+          "idx": 1,
+          "before": 2.0,
+          "after": 0.0,
+          "delta": -2.0
+        }
+      },
+      "substrates": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 3,
+        "first_5_nonzero_ticks": [
+          13,
+          14,
+          15
+        ],
+        "total_abs_delta": 84.0,
+        "max_abs_delta": 14.0,
+        "largest_delta_sample": {
+          "tick": 13,
+          "idx": 2,
+          "before": 0.0,
+          "after": 14.0,
+          "delta": 14.0
+        }
+      }
+    },
+    "n_ticks": 100
+  },
+  {
+    "trace": "/mnt/e/opencell-worktrees/l2-matlab-reextract-v2/data/m1_sources/karr_native/per_process_traces_v2/Replication_100ticks.mat",
+    "observables": {
+      "boundEnzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 78,
+        "first_5_nonzero_ticks": [
+          0,
+          3,
+          6,
+          8,
+          9
+        ],
+        "total_abs_delta": 157.0,
+        "max_abs_delta": 6.0,
+        "largest_delta_sample": {
+          "tick": 27,
+          "idx": 12,
+          "before": 17.0,
+          "after": 23.0,
+          "delta": 6.0
+        }
+      },
+      "enzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 89,
+        "first_5_nonzero_ticks": [
+          0,
+          3,
+          6,
+          8,
+          9
+        ],
+        "total_abs_delta": 360.0,
+        "max_abs_delta": 12.0,
+        "largest_delta_sample": {
+          "tick": 27,
+          "idx": 11,
+          "before": 31.0,
+          "after": 19.0,
+          "delta": -12.0
+        }
+      },
+      "substrates": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 97,
+        "first_5_nonzero_ticks": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total_abs_delta": 114203.0,
+        "max_abs_delta": 400.0,
+        "largest_delta_sample": {
+          "tick": 37,
+          "idx": 8,
+          "before": 0.0,
+          "after": 400.0,
+          "delta": 400.0
+        }
+      }
+    },
+    "n_ticks": 100
+  },
+  {
+    "trace": "/mnt/e/opencell-worktrees/l2-matlab-reextract-v2/data/m1_sources/karr_native/per_process_traces_v2/RibosomeAssembly_100ticks.mat",
+    "observables": {
+      "boundEnzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "complexs": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 1,
+        "first_5_nonzero_ticks": [
+          96
+        ],
+        "total_abs_delta": 1.0,
+        "max_abs_delta": 1.0,
+        "largest_delta_sample": {
+          "tick": 96,
+          "idx": 0,
+          "before": 0.0,
+          "after": 1.0,
+          "delta": 1.0
+        }
+      },
+      "enzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "monomers": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 1,
+        "first_5_nonzero_ticks": [
+          96
+        ],
+        "total_abs_delta": 20.0,
+        "max_abs_delta": 1.0,
+        "largest_delta_sample": {
+          "tick": 96,
+          "idx": 1,
+          "before": 128.0,
+          "after": 127.0,
+          "delta": -1.0
+        }
+      },
+      "substrates": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 1,
+        "first_5_nonzero_ticks": [
+          96
+        ],
+        "total_abs_delta": 10.0,
+        "max_abs_delta": 2.0,
+        "largest_delta_sample": {
+          "tick": 96,
+          "idx": 0,
+          "before": 155.0,
+          "after": 153.0,
+          "delta": -2.0
+        }
+      }
+    },
+    "n_ticks": 100
+  },
+  {
+    "trace": "/mnt/e/opencell-worktrees/l2-matlab-reextract-v2/data/m1_sources/karr_native/per_process_traces_v2/TerminalOrganelleAssembly_100ticks.mat",
+    "observables": {
+      "boundEnzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "enzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "substrates": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 3,
+        "first_5_nonzero_ticks": [
+          6,
+          46,
+          63
+        ],
+        "total_abs_delta": 6.0,
+        "max_abs_delta": 1.0,
+        "largest_delta_sample": {
+          "tick": 6,
+          "idx": 4,
+          "before": 26.0,
+          "after": 27.0,
+          "delta": 1.0
+        }
+      }
+    },
+    "n_ticks": 100
+  },
+  {
+    "trace": "/mnt/e/opencell-worktrees/l2-matlab-reextract-v2/data/m1_sources/karr_native/per_process_traces_v2/Transcription_100ticks.mat",
+    "observables": {
+      "boundEnzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 81,
+        "first_5_nonzero_ticks": [
+          1,
+          3,
+          4,
+          5,
+          6
+        ],
+        "total_abs_delta": 177.0,
+        "max_abs_delta": 6.0,
+        "largest_delta_sample": {
+          "tick": 26,
+          "idx": 4,
+          "before": 33.0,
+          "after": 39.0,
+          "delta": 6.0
+        }
+      },
+      "enzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 81,
+        "first_5_nonzero_ticks": [
+          1,
+          3,
+          4,
+          5,
+          6
+        ],
+        "total_abs_delta": 169.0,
+        "max_abs_delta": 7.0,
+        "largest_delta_sample": {
+          "tick": 26,
+          "idx": 4,
+          "before": 7.0,
+          "after": 0.0,
+          "delta": -7.0
+        }
+      },
+      "substrates": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 100,
+        "first_5_nonzero_ticks": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total_abs_delta": 163932.0,
+        "max_abs_delta": 1800.0,
+        "largest_delta_sample": {
+          "tick": 3,
+          "idx": 9,
+          "before": 0.0,
+          "after": 1800.0,
+          "delta": 1800.0
+        }
+      }
+    },
+    "n_ticks": 100
+  },
+  {
+    "trace": "/mnt/e/opencell-worktrees/l2-matlab-reextract-v2/data/m1_sources/karr_native/per_process_traces_v2/TranscriptionalRegulation_100ticks.mat",
+    "observables": {
+      "boundEnzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 2,
+        "first_5_nonzero_ticks": [
+          15,
+          45
+        ],
+        "total_abs_delta": 3.0,
+        "max_abs_delta": 1.0,
+        "largest_delta_sample": {
+          "tick": 15,
+          "idx": 3,
+          "before": 0.0,
+          "after": 1.0,
+          "delta": 1.0
+        }
+      },
+      "enzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 2,
+        "first_5_nonzero_ticks": [
+          15,
+          45
+        ],
+        "total_abs_delta": 3.0,
+        "max_abs_delta": 1.0,
+        "largest_delta_sample": {
+          "tick": 15,
+          "idx": 3,
+          "before": 1.0,
+          "after": 0.0,
+          "delta": -1.0
+        }
+      },
+      "substrates": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      }
+    },
+    "n_ticks": 100
+  },
+  {
+    "trace": "/mnt/e/opencell-worktrees/l2-matlab-reextract-v2/data/m1_sources/karr_native/per_process_traces_v2/Translation_100ticks.mat",
+    "observables": {
+      "boundEnzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 97,
+        "first_5_nonzero_ticks": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total_abs_delta": 1110.0,
+        "max_abs_delta": 12.0,
+        "largest_delta_sample": {
+          "tick": 0,
+          "idx": 3,
+          "before": 68.0,
+          "after": 56.0,
+          "delta": -12.0
+        }
+      },
+      "enzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 97,
+        "first_5_nonzero_ticks": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total_abs_delta": 1350.0,
+        "max_abs_delta": 23.0,
+        "largest_delta_sample": {
+          "tick": 0,
+          "idx": 9,
+          "before": 25.0,
+          "after": 2.0,
+          "delta": -23.0
+        }
+      },
+      "monomers": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 88,
+        "first_5_nonzero_ticks": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total_abs_delta": 215.0,
+        "max_abs_delta": 2.0,
+        "largest_delta_sample": {
+          "tick": 98,
+          "idx": 170,
+          "before": 0.0,
+          "after": 2.0,
+          "delta": 2.0
+        }
+      },
+      "substrates": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 100,
+        "first_5_nonzero_ticks": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total_abs_delta": 805306.0,
+        "max_abs_delta": 2778.0,
+        "largest_delta_sample": {
+          "tick": 94,
+          "idx": 25,
+          "before": 0.0,
+          "after": 2778.0,
+          "delta": 2778.0
+        }
+      }
+    },
+    "n_ticks": 100
+  },
+  {
+    "trace": "/mnt/e/opencell-worktrees/l2-matlab-reextract-v2/data/m1_sources/karr_native/per_process_traces_v2/tRNAAminoacylation_100ticks.mat",
+    "observables": {
+      "aminoacylatedRNAs": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 100,
+        "first_5_nonzero_ticks": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total_abs_delta": 72866.0,
+        "max_abs_delta": 74.0,
+        "largest_delta_sample": {
+          "tick": 52,
+          "idx": 1,
+          "before": 35.0,
+          "after": 109.0,
+          "delta": 74.0
+        }
+      },
+      "boundEnzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "enzymes": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 0,
+        "first_5_nonzero_ticks": [],
+        "total_abs_delta": 0.0,
+        "max_abs_delta": 0.0,
+        "largest_delta_sample": null
+      },
+      "freeRNAs": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 100,
+        "first_5_nonzero_ticks": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total_abs_delta": 72866.0,
+        "max_abs_delta": 74.0,
+        "largest_delta_sample": {
+          "tick": 52,
+          "idx": 1,
+          "before": 74.0,
+          "after": 0.0,
+          "delta": -74.0
+        }
+      },
+      "substrates": {
+        "n_ticks": 100,
+        "nonzero_delta_ticks": 100,
+        "first_5_nonzero_ticks": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "total_abs_delta": 308415.0,
+        "max_abs_delta": 973.0,
+        "largest_delta_sample": {
+          "tick": 95,
+          "idx": 6,
+          "before": 21870.0,
+          "after": 20897.0,
+          "delta": -973.0
+        }
+      }
+    },
+    "n_ticks": 100
+  }
+]

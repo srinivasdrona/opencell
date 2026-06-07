@@ -1,4 +1,65 @@
+## L-ladder (canonical, reconciled 2026-06-04)
+
+The L-ladder went through a terminology drift around L2.2 vs L2.2.k (composition harness) vs L3 (direct coupling). Reconciled definitions:
+
+```
+L1   "did it fire?"                                                 [composite chassis runtime]
+L2.0 schema audit (static)                                          [ports_schema vs karr_obs]
+L2.1 bit-identity (per-process, single trace, σ=0)                  [GREEN as of 2026-06-03]
+L2.2 distributional fidelity (per-process, ensemble)                [stochastic gate; NOT STARTED]
+L2.5 shared-pool composition (k processes, single trace,            [was "L2.2.k"; PAUSED pending L2.2]
+     allocator-mediated; CAUSE_1-7 taxonomy)
+L3   direct coupling (2 processes, direct port hand-off, no pool)   [PCV framework sketched, not started]
+L4   submodule (cluster vs Karr submodel oracle)
+L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
+```
+
+**Sequencing decision (2026-06-04):** L2.5 starts only after L2.2 is all-green for every stochastic process intended to participate in any planned L2.5 pair. Reason: L2.5 currently absorbs stochastic divergence via L2.1's calibrated-tolerance shortcut; without L2.2 closing that gap first, L2.5 silently rides on calibrated tolerances and can pass while distributional behavior is wrong.
+
+**Plans:**
+- `docs/phase_f/L2_5_PLAN.md` — L2.5 composition harness closure (PAUSED).
+- `docs/phase_f/L2_2_HARNESS_DESIGN.md` — name predates rename; canonical L2.5 design doc.
+- `docs/phase_f/L2_2_D1_UNION_MASTER_LIST.md` — name predates rename; canonical L2.5 D1 design.
+- L2.2 (distributional) plan — **TO BE DRAFTED**; methodology not started.
+
+**Overlap with L3/L4:** L2.5 (shared-pool) and L3 (direct hand-off) are peer rungs that test 2 processes through different mechanisms (allocator vs direct port). Both must be green for L4/L5 to mean anything. L2.5 comes first because it tests the wiring the chassis actually uses.
+
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
+
+**Live processes / agents (2026-06-05 ~01:10 IST):** THREE codex jobs running detached.
+
+| Tag | Worktree | Branch | PID | PID-file | Log | Spec |
+|---|---|---|---|---|---|---|
+| 2a trivial-no-hint | `E:\opencell-worktrees\trivial-no-hint` | `test/trivial-no-hint` | 99712 (**done, see STATUS**) | `~\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\trivial_no_hint_pid.txt` | `.codex_trivial_no_hint.log` | 3 TRIVIAL tests authored; 1 PASS (RNG indep r=-0.014, p=0.94) + 2 PROMOTE-TO-DEEP signals (PPI covariance 21.5% drift, Metabolism FBA 50% growth drift). Commits `dd22f4c`, `fe0651d`, `da04e5e`. Push blocked (creds missing in non-interactive shell). |
+| 2c l22-translation | `E:\opencell-worktrees\l22-translation` | `exec/l22-translation` | 68632 (**running**) | `…\l22_translation_pid.txt` | `.codex_l22_translation.log` | L2.2 Translation DEEP execution per `docs/phase_f/L2_2_PLAN.md §2.5`. 4 checkpoint commits (C1 MATLAB script, C2 N=50 extraction, C3 Python ensemble, C4 comparison test). Expected wall 90-120 min. |
+| 2b l25-cause-4 | `E:\opencell-worktrees\l25-cause-4` | `fix/l25-cause-4-ppi-ppii` | 95376 (**running**) | `…\l25_cause_4_pid.txt` | `.codex_l25_cause_4.log` | L2.5 PPI+PPII pair `CAUSE_4_UPSTREAM_STATE_POLLUTION` (diff=38 at master-idx 174, NOT MG_174_MONOMER). Prior diagnosis at `CAUSE_4_DIAGNOSIS.md` in worktree root; probe at `scripts/probe_cause_4_l25.py`. Speculative additive-merge fix tried + reverted (was dormant in this test path). |
+
+**Branch tips (origin in sync where noted):**
+- `feature/l2-2-apm-x2` @ `e5d0efc` (`docs(L2.2): resolve Q5 - use v1 KarrTranscriptionProcess directly, no v3 shadow`) — current working branch; carries L2.2 plan + L2.5 PPI/PPII test (`79536fb`) + critique addendum (`bb5716c`) + L2.2 plan (`6458c70`). Not pushed (network/creds noisy this session; safe to push).
+- `test/trivial-no-hint` @ `da04e5e` — local only, codex push blocked.
+- `exec/l22-translation` — in-flight, codex committing as it goes.
+- `fix/l25-cause-4-ppi-ppii` @ `e5d0efc` (fresh worktree, codex just starting).
+- `main` @ `723f902` (unchanged).
+
+**§7 questions status (from L2.2 plan):**
+- Q5 (transcription class) — ✅ RESOLVED via `e5d0efc`. Use v1 `KarrTranscriptionProcess` directly, no v3 shadow. v3 is a scope-reduced mechanism for chassis runs.
+- Q1, Q2, Q4, Q6-Q9 — open. Codex's defaults are recommended-accept with small additions; user is iterating on them while codex jobs run.
+
+**Operational traps re-hit this session (capture for future):**
+- `git worktree prune` does NOT delete disk dirs. 133 ghost dirs remained at `E:\opencell-worktrees\` after the prune. They contain symlinks into canonical `data/m1_sources/karr_native/per_process_traces_v2` — naive `rm -rf` would have wiped canonical traces (same trap as 2026-05-30 16/28 wipe). Disposition: ghost dirs LEFT IN PLACE (3.6 GB). Documented in `D:\OneDrive - Microsoft\.pm-os\TRAPS.md` as `worktree-prune-orphan-dirs-recursion (2026-06-04)`.
+- WSL one-liners that activate venv then `cd` then `python ...` hang under codex-fleet load. Workaround: use `bin\oc-pytest.cmd` / `bin\oc-py.cmd` wrappers, or as last resort Windows `python` with the project on PYTHONPATH (it'll fail on `opencell.*` imports but works for pure scipy/numpy probes against `data/karr_fixtures/`).
+
+**Activation env:** `L2_USE_CALIBRATED_TOLERANCES=1` only needed for `karr_transcription` and `karr_protein_modification` (2 strict-near-clean cases). Tolerance table at `docs/phase_e/L2_TOLERANCE_TABLE.md`.
+
+**MATLAB:** `E:\MATLAB\bin\matlab.exe` (R2026a, DEMO/trial, single-license → serialize MATLAB jobs across worktrees). Headless: `& "E:\MATLAB\bin\matlab.exe" -batch "cd('...'); run('script.m');"`. NOT needed for codex 2a/2b; IS needed for codex 2c (Translation N=50 extraction).
+
+**WSL venv:** `/mnt/e/opencell/.venv-wsl/bin/activate` (worktrees do NOT have their own venv; activate the canonical one).
+
+**Polling cadence (post-step-away):** Codex 2c and 2b need 30-120 min more wall. `manage_schedule create interval=10m prompt="poll PIDs in files/*_pid.txt; tail logs; report STATUS files when present"`.
+
+---
+
+### Prior handoff (2026-06-03 ~12:30 IST) — kept for context
 
 **Live processes / agents (2026-06-03 ~12:30 IST):** NONE.
 
@@ -36,7 +97,23 @@ Pattern eliminated FOUR previously-framed multi-day blockers in one session (tra
 3. **PR `audit/l2-1-sweep-v2` → main** — now 44/46 strict, 46/46 calibrated. Time to merge.
 4. **2 SKIPPED L2.1 processes (legitimate N/A, deferred):** `karr_ribosome_assembly` and `karr_rna_modification` both have no-op 100-tick Karr traces (zero deltas across all observables). The skip is gated by `audit_trace_mutated_ticks` precheck to avoid vacuous "0 == 0" greens. To cover them properly: (a) longer trace, (b) different initial conditions that exercise the process, or (c) defer coverage to L2.2/L1 where stochastic single-tick behaviour is tested differently. Not a blocker for L2.1 GREEN gate. Track here so it doesn't drop off.
 5. **Tolerance reader fix** (deferred from Day 18, lower priority now) — `_resolve_l2_tolerance_pair` `(0,0)` row footgun.
-6. **L2.2 readiness audit (BEFORE firing parallel agents):** v2 harness skeleton exists (`tests/vivarium/l2_2_replay_common_v2.py`) but (a) `data/schemas/owner_manifest.toml` not written (D1.2 designed but not implemented), (b) CAUSE_2/CAUSE_3 diagnostics are `NotImplementedError`, (c) only pair test `test_l2_2_translation_plus_rna_processing_v2.py` exists, marked `xfail`. NO committed grouping list yet (operator may point to one). Foundation work needed before fan-out.
+6. **L2.5 (was "L2.2 composition") readiness audit — PAUSED 2026-06-04 pending L2.2 distributional.** v2 harness skeleton exists (`tests/vivarium/l2_2_replay_common_v2.py`; filename predates ladder rename) but (a) `data/schemas/owner_manifest.toml` not written (D1.2 designed but not implemented), (b) CAUSE_2/CAUSE_3 diagnostics are `NotImplementedError`, (c) only pair test `test_l2_2_translation_plus_rna_processing_v2.py` exists, marked `xfail`. Per 2026-06-04 sequencing decision, L2.5 work resumes only after L2.2 distributional fidelity is all-green for stochastic processes. See `docs/phase_f/L2_5_PLAN.md` for paused M1-M5 milestones.
+6b. **L2.2 distributional methodology — SCOPE REVISED 2026-06-04 after GPT-5.5 critique (`docs/phase_f/L2_2_STOCHASTIC_AUDIT.md` CRITIQUE ADDENDUM).** Original audit (`da9a4b3`) had 4 DEEP; critique bumped 3 SHALLOW → DEEP (Replication, MacromolecularComplexation, Cytokinesis) and rejected the "TRIVIAL is free" claim. Revised buckets:
+  - **DETERMINISTIC (6)**: no L2.2 needed.
+  - **TRIVIAL-RNG (5)**: need small no-hint tests (~1.5 eng-days total) — RNG independence cross-process, PPI multinomial covariance vs Karr, Metabolism FBA flux-vector oracle vs MATLAB GLPK.
+  - **ALGORITHMIC-SHALLOW (10)**: 1 Python ensemble harness (~1 eng-day) covers all.
+  - **ALGORITHMIC-DEEP (7)**: ReplicationInitiation, **Replication**, DNARepair, Transcription, Translation, **MacromolecularComplexation**, **Cytokinesis**. Karr ensemble (N=20+) each, ~1 eng-day per.
+
+  **Revised cost: ~8-9 eng-days L2.2 closure** (vs 5 pre-critique, still vastly under naive 3 weeks).
+
+  Critique evidence (load-bearing — read before drafting L2_2_PLAN.md):
+  - PPI implementation drift: Karr `mnrnd+min` (`ProteinProcessingI.m:265-274`) vs Python `multivariate_hypergeometric` (`karr_protein_processing_i.py:399-413`).
+  - Metabolism: GLPK vs HiGHS LP degeneracy → different flux vectors → different `stochasticRound` inputs.
+  - Replication has explicit while-loop rejection sampling (`Replication.m:414-418`) matching the pre-registered DEEP rule — original SHALLOW call violated own rule.
+  - MacComplex `cumprob` IS recomputed inside loop (`MacromolecularComplexation.m:340-343, 355-356`).
+  - Cytokinesis state-machine: ring substate mutations feed subsequent gate reads (`184-248`).
+
+6c. **L2.5 first pair pivot:** `ProteinProcessingI + ProteinProcessingII` as **allocator smoke test** (NOT biology validation). Add explicit assertions: total water ≤ pool, no negative substrates, symmetric starvation, namespace separation. Then second pair = `RNAProcessing + RNAModification` (sequential producer-consumer; replaces failing Translation+RNAProcessing — Translation is DEEP and shouldn't anchor L2.5 until its L2.2 lands).
 7. **29-process tracker** updated 2026-06-03 PM with L2.1 column: `docs/phase_e/PROCESS_STATUS_ALL_29.md`.
 
 **KEY DISCOVERY this morning (codify for next session): the trace-hint short-circuit pattern.** When the per-process trace already isolates this process's contribution to substrates/monomers/complexs, OC's stochastic biology path inevitably drifts unless the test trusts the trace via `overlay_trace_after_hint`. Pattern is now standard:

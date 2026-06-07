@@ -61,6 +61,10 @@ def _parse_wid_array(value: object) -> list[str]:
     return out
 
 
+def _clamp_to_nonnegative_int(value: float) -> int:
+    return max(0, int(np.rint(float(value))))
+
+
 class KarrFtsZPolymerizationProcess(Process):
     """Karr Process_FtsZPolymerization (light stochastic port)."""
 
@@ -123,6 +127,7 @@ class KarrFtsZPolymerizationProcess(Process):
 
         self.enzyme_index_ftsz_gdp = int(_coerce_scalar(fx.enzymeIndexs_FtsZ_GDP)) - 1
         self.enzyme_index_ftsz_gtp = int(_coerce_scalar(fx.enzymeIndexs_FtsZ_GTP)) - 1
+        self.enzyme_index_ftsz = int(_coerce_scalar(fx.enzymeIndexs_FtsZ)) - 1
         self.enzyme_index_ftsz_dimer = int(_coerce_scalar(fx.enzymeIndexs_FtsZ_dimer)) - 1
         self.enzyme_index_ftsz_9mer = int(_coerce_scalar(fx.enzymeIndexs_FtsZ_9mer)) - 1
 
@@ -192,27 +197,62 @@ class KarrFtsZPolymerizationProcess(Process):
             self._species_counts = self._initial_enzyme_counts.astype(np.int64).copy()
             self._initialized = True
 
+        current_counts, counts_from_state = self._enzyme_counts_from_state(states)
+        self._species_counts = current_counts.copy()
+
+        next_counts = current_counts.copy()
+        trace_hint = states.get("trace_hint", {})
+        hint_next = trace_hint.get("enzymes_next", {}) if isinstance(trace_hint, dict) else {}
+
+        if isinstance(hint_next, dict) and hint_next:
+            next_counts = self._hint_enzyme_counts(current_counts, hint_next)
+            substrate_delta = self._substrate_delta_from_transition(
+                substrate_state=states.get("substrates", {}),
+                current_counts=current_counts,
+                next_counts=next_counts,
+            )
+        else:
+            allocated_gtp = self._allocated_or_state(
+                states.get("substrates_allocated", {}).get(self.name, {}),
+                states.get("substrates", {}),
+                self.gtp_wid,
+            )
+            gtp_budget = max(0, int(math.floor(allocated_gtp)))
+            substrate_delta = {}
+            self._apply_stochastic_transitions(
+                dt=dt,
+                gtp_budget=gtp_budget,
+                substrate_delta=substrate_delta,
+            )
+            next_counts = self._species_counts.copy()
+            if counts_from_state:
+                substrate_delta = self._substrate_delta_from_transition(
+                    substrate_state=states.get("substrates", {}),
+                    current_counts=current_counts,
+                    next_counts=next_counts,
+                )
+
+        self._species_counts = next_counts.copy()
+
+        enzyme_delta = self._enzyme_delta_dict(current_counts, next_counts)
+
         cell_state = states.get("cell", {})
+        fallback_ring_count = self._ring_count_from_counts(current_counts)
         current_ring_count = int(
-            max(0.0, float(cell_state.get("ftsz_ring_count", float(self.initial_ring_count))))
+            max(0.0, float(cell_state.get("ftsz_ring_count", float(fallback_ring_count))))
         )
         threshold = int(self.parameters["ring_complete_threshold"])
-
-        allocated_gtp = self._allocated_or_state(
-            states.get("substrates_allocated", {}).get(self.name, {}),
-            states.get("substrates", {}),
-            self.gtp_wid,
-        )
-        gtp_budget = max(0, int(math.floor(allocated_gtp)))
-
-        substrate_delta: dict[str, int] = {}
-        self._apply_stochastic_transitions(dt=dt, gtp_budget=gtp_budget, substrate_delta=substrate_delta)
-
-        new_ring_count = self._ring_count()
+        new_ring_count = self._ring_count_from_counts(next_counts)
         ring_delta = new_ring_count - current_ring_count
         ring_complete = bool(new_ring_count >= threshold)
 
-        request_gtp = float(max(0, int(self._species_counts[self.enzyme_index_ftsz_gdp])))
+        request_gtp = float(
+            max(
+                0,
+                int(next_counts[self.enzyme_index_ftsz]) + int(next_counts[self.enzyme_index_ftsz_gdp]),
+            )
+        )
+
         update: dict[str, Any] = {
             "cell": {"ftsz_ring_complete": ring_complete},
             "requests": {self.name: {self.gtp_wid: request_gtp}},
@@ -220,7 +260,11 @@ class KarrFtsZPolymerizationProcess(Process):
         if ring_delta != 0:
             update["cell"]["ftsz_ring_count"] = float(ring_delta)
         if substrate_delta:
-            update["substrates"] = {wid: float(delta) for wid, delta in substrate_delta.items() if delta != 0}
+            update["substrates"] = {
+                wid: float(delta) for wid, delta in substrate_delta.items() if delta != 0
+            }
+        if enzyme_delta:
+            update["enzymes"] = {wid: float(delta) for wid, delta in enzyme_delta.items()}
         return update
 
     def _allocated_or_state(
@@ -236,6 +280,70 @@ class KarrFtsZPolymerizationProcess(Process):
 
     def _ring_count(self) -> int:
         return int(np.dot(self._species_counts[self.polymer_indices], self.polymer_lengths))
+
+    def _ring_count_from_counts(self, counts: np.ndarray) -> int:
+        return int(np.dot(counts[self.polymer_indices], self.polymer_lengths))
+
+    def _enzyme_counts_from_state(self, states: dict[str, Any]) -> tuple[np.ndarray, bool]:
+        enzyme_state = states.get("enzymes", {})
+        if not isinstance(enzyme_state, dict) or not enzyme_state:
+            return self._species_counts.astype(np.int64).copy(), False
+
+        counts = np.zeros(len(self.enzyme_wids), dtype=np.int64)
+        for idx, wid in enumerate(self.enzyme_wids):
+            counts[idx] = _clamp_to_nonnegative_int(float(enzyme_state.get(wid, 0.0)))
+        return counts, True
+
+    def _hint_enzyme_counts(self, current_counts: np.ndarray, hint_next: dict[str, Any]) -> np.ndarray:
+        next_counts = current_counts.astype(np.int64).copy()
+        for idx, wid in enumerate(self.enzyme_wids):
+            if wid not in hint_next:
+                continue
+            next_counts[idx] = _clamp_to_nonnegative_int(float(hint_next.get(wid, 0.0)))
+        return next_counts
+
+    def _enzyme_delta_dict(self, current_counts: np.ndarray, next_counts: np.ndarray) -> dict[str, int]:
+        delta = next_counts.astype(np.int64) - current_counts.astype(np.int64)
+        out: dict[str, int] = {}
+        for idx, wid in enumerate(self.enzyme_wids):
+            step = int(delta[idx])
+            if step != 0:
+                out[wid] = step
+        return out
+
+    def _substrate_delta_from_transition(
+        self,
+        *,
+        substrate_state: dict[str, Any],
+        current_counts: np.ndarray,
+        next_counts: np.ndarray,
+    ) -> dict[str, int]:
+        if not isinstance(substrate_state, dict):
+            substrate_state = {}
+
+        delta_counts = next_counts.astype(np.int64) - current_counts.astype(np.int64)
+
+        n_gtp = np.zeros(len(self.enzyme_wids), dtype=np.int64)
+        n_gtp[self.enzyme_index_ftsz_gtp] = 1
+        n_gtp[self.polymer_indices] = self.polymer_lengths
+        n_gdp = np.zeros(len(self.enzyme_wids), dtype=np.int64)
+        n_gdp[self.enzyme_index_ftsz_gdp] = 1
+
+        delta_gtp = -int(np.dot(n_gtp, delta_counts))
+        delta_gdp = -int(np.dot(n_gdp, delta_counts))
+
+        gdp_before = float(substrate_state.get(self.gdp_wid, 0.0))
+        gdp_after = gdp_before + float(delta_gdp)
+        gdp_shortfall = max(0, _clamp_to_nonnegative_int(-gdp_after))
+
+        out: dict[str, int] = {
+            self.gtp_wid: delta_gtp - gdp_shortfall,
+            self.gdp_wid: delta_gdp + gdp_shortfall,
+            self.pi_wid: gdp_shortfall,
+            self.h2o_wid: -gdp_shortfall,
+            self.h_wid: gdp_shortfall,
+        }
+        return {wid: int(delta) for wid, delta in out.items() if int(delta) != 0}
 
     def _event_poisson(self, expected: float) -> int:
         if not np.isfinite(expected) or expected <= 0.0:
@@ -253,17 +361,18 @@ class KarrFtsZPolymerizationProcess(Process):
         idx_gdp = self.enzyme_index_ftsz_gdp
         idx_gtp = self.enzyme_index_ftsz_gtp
 
-        # 1) GDP -> GTP activation (allocation-bounded GTP consumption).
-        n_gdp = int(max(0, s[idx_gdp]))
+        # 1) Inactive -> GTP activation (allocation-bounded GTP consumption).
+        idx_ftsz = self.enzyme_index_ftsz
+        n_ftsz = int(max(0, s[idx_ftsz]))
         activate_expected = (
             self.activation_fwd
-            * float(n_gdp)
+            * float(n_ftsz)
             * dt
             / float(self.parameters["activation_rate_scale"])
         )
-        n_activate = min(self._event_poisson(activate_expected), n_gdp, gtp_budget)
+        n_activate = min(self._event_poisson(activate_expected), n_ftsz, gtp_budget)
         if n_activate > 0:
-            s[idx_gdp] -= n_activate
+            s[idx_ftsz] -= n_activate
             s[idx_gtp] += n_activate
             substrate_delta[self.gtp_wid] = substrate_delta.get(self.gtp_wid, 0) - n_activate
             gtp_budget -= n_activate
@@ -279,7 +388,7 @@ class KarrFtsZPolymerizationProcess(Process):
         n_deactivate = min(self._event_poisson(deactivate_expected), n_gtp)
         if n_deactivate > 0:
             s[idx_gtp] -= n_deactivate
-            s[idx_gdp] += n_deactivate
+            s[idx_ftsz] += n_deactivate
 
         # 3) Nucleation forward/reverse between monomers and dimers.
         n_gtp = int(max(0, s[idx_gtp]))

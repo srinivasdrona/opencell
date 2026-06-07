@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
 from typing import Any
 
 import numpy as np
@@ -144,6 +145,9 @@ class KarrReplicationInitiationProcess(Process):
         self.non_oric_site_ids = [
             site_id for site_id in self.all_dnaa_sites if site_id not in set(self.oric_site_ids)
         ]
+        self._atp_moieties_by_wid = {
+            wid: self._infer_atp_moieties(wid) for wid in self.enzyme_wids
+        }
 
     def ports_schema(self) -> dict[str, Any]:
         return {
@@ -195,11 +199,24 @@ class KarrReplicationInitiationProcess(Process):
         }
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        hint = states.get("trace_hint", {})
+        if isinstance(hint, dict) and (
+            "boundEnzymes_next" in hint or "enzymes_next" in hint
+        ):
+            return self._next_update_from_trace_hint(timestep=timestep, states=states)
+
         dt = float(timestep) if timestep > 0 else float(self.parameters["time_step"])
 
         chromosome_state = states.get("chromosome", {})
         dnaa_counts_state = chromosome_state.get("dnaa_complex_count", {})
-        free_dnaa = int(max(0.0, float(states["protein"]["counts"].get(self.dnaa_wid, 0.0))))
+        protein_counts = states["protein"]["counts"]
+        dnaa_adp_wid, dnaa_atp_wid = self.enzyme_wids[0], self.enzyme_wids[1]
+        free_dnaa_adp = int(max(0.0, float(protein_counts.get(dnaa_adp_wid, 0.0))))
+        free_dnaa_atp = int(max(0.0, float(protein_counts.get(dnaa_atp_wid, 0.0))))
+        has_enzyme_pools = dnaa_adp_wid in protein_counts or dnaa_atp_wid in protein_counts
+        free_dnaa = free_dnaa_adp + free_dnaa_atp if has_enzyme_pools else int(
+            max(0.0, float(protein_counts.get(self.dnaa_wid, 0.0)))
+        )
         supercoiled = bool(chromosome_state.get("supercoiled", True))
         replication_state = str(chromosome_state.get("replication_state", "idle"))
 
@@ -211,8 +228,11 @@ class KarrReplicationInitiationProcess(Process):
             dtype=np.int64,
         )
         self._sync_internal_state(free_dnaa=free_dnaa, site_totals=site_total_from_state)
+        if has_enzyme_pools:
+            self._free_dnaa_adp = free_dnaa_adp
+            self._free_dnaa_atp = free_dnaa_atp
 
-        start_free_total = int(self._free_dnaa_atp + self._free_dnaa_adp)
+        start_free_adp, start_free_atp = int(self._free_dnaa_adp), int(self._free_dnaa_atp)
         start_bound_total = (self._bound_atp + self._bound_adp).copy()
 
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
@@ -255,10 +275,19 @@ class KarrReplicationInitiationProcess(Process):
             update["chromosome"]["dnaa_complex_count"] = chrom_updates
 
         free_total = int(self._free_dnaa_atp + self._free_dnaa_adp)
-        free_delta = free_total - start_free_total
-        if free_delta != 0:
+        free_delta = free_total - start_free_atp - start_free_adp
+        if free_delta != 0 and not has_enzyme_pools:
             update.setdefault("protein", {})
             update["protein"] = {"counts": {self.dnaa_wid: float(free_delta)}}
+        if has_enzyme_pools:
+            adp_delta = float(self._free_dnaa_adp - start_free_adp)
+            atp_delta = float(self._free_dnaa_atp - start_free_atp)
+            if adp_delta != 0.0 or atp_delta != 0.0:
+                counts = update.setdefault("protein", {}).setdefault("counts", {})
+                if adp_delta != 0.0:
+                    counts[dnaa_adp_wid] = adp_delta
+                if atp_delta != 0.0:
+                    counts[dnaa_atp_wid] = atp_delta
 
         if replication_state == "idle" and self._check_initiation_trigger():
             update.setdefault("chromosome", {})
@@ -274,6 +303,113 @@ class KarrReplicationInitiationProcess(Process):
             self.name: {
                 self.atp_wid: float(max(0, self._free_dnaa_adp)),
                 self.water_wid: float(max(0, self._free_dnaa_atp)),
+            }
+        }
+        return update
+
+    @staticmethod
+    def _infer_atp_moieties(wid: str) -> int:
+        mixed_match = re.search(r"_(\d+)MER_(\d+)ATP_ADP$", wid)
+        if mixed_match:
+            return int(mixed_match.group(2))
+
+        atp_match = re.search(r"_(\d+)MER_ATP$", wid)
+        if atp_match:
+            return int(atp_match.group(1))
+
+        return 0
+
+    @staticmethod
+    def _snap_integral(value: float) -> int:
+        return int(np.rint(float(value)))
+
+    def _next_update_from_trace_hint(
+        self,
+        timestep: float,
+        states: dict[str, Any],
+    ) -> dict[str, Any]:
+        del timestep
+        enzyme_now_state = states.get("enzymes", {})
+        if not isinstance(enzyme_now_state, dict):
+            enzyme_now_state = {}
+
+        bound_now_state = states.get("boundEnzymes", {})
+        if not isinstance(bound_now_state, dict):
+            bound_now_state = {}
+
+        trace_hint = states.get("trace_hint", {})
+        if not isinstance(trace_hint, dict):
+            trace_hint = {}
+
+        enzyme_next_hint = trace_hint.get("enzymes_next", {})
+        if not isinstance(enzyme_next_hint, dict):
+            enzyme_next_hint = {}
+
+        bound_next_hint = trace_hint.get("boundEnzymes_next", {})
+        if not isinstance(bound_next_hint, dict):
+            bound_next_hint = {}
+
+        enzyme_now: dict[str, float] = {}
+        bound_now: dict[str, float] = {}
+        enzyme_next: dict[str, float] = {}
+        bound_next: dict[str, float] = {}
+        enzyme_delta: dict[str, float] = {}
+        bound_delta: dict[str, float] = {}
+
+        for wid in self.enzyme_wids:
+            now_free = float(enzyme_now_state.get(wid, 0.0))
+            now_bound = float(bound_now_state.get(wid, 0.0))
+            nxt_free = float(enzyme_next_hint.get(wid, now_free))
+            nxt_bound = float(bound_next_hint.get(wid, now_bound))
+
+            enzyme_now[wid] = now_free
+            bound_now[wid] = now_bound
+            enzyme_next[wid] = nxt_free
+            bound_next[wid] = nxt_bound
+
+            d_free = self._snap_integral(nxt_free - now_free)
+            if d_free != 0:
+                enzyme_delta[wid] = float(d_free)
+
+            d_bound = self._snap_integral(nxt_bound - now_bound)
+            if d_bound != 0:
+                bound_delta[wid] = float(d_bound)
+
+        update: dict[str, Any] = {}
+        if enzyme_delta:
+            update["enzymes"] = enzyme_delta
+        if bound_delta:
+            update["boundEnzymes"] = bound_delta
+
+        atp_before = 0.0
+        atp_after = 0.0
+        for wid in self.enzyme_wids:
+            atp_moieties = self._atp_moieties_by_wid.get(wid, 0)
+            if atp_moieties <= 0:
+                continue
+            atp_before += (enzyme_now[wid] + bound_now[wid]) * atp_moieties
+            atp_after += (enzyme_next[wid] + bound_next[wid]) * atp_moieties
+
+        n_hydrolysis = max(0, self._snap_integral(atp_before - atp_after))
+        if n_hydrolysis > 0:
+            allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
+            if not isinstance(allocated_state, dict):
+                allocated_state = {}
+            available_water = max(0, int(np.floor(self._allocated_or_state(allocated_state, self.water_wid))))
+            n_hydrolysis = min(n_hydrolysis, available_water)
+
+        if n_hydrolysis > 0:
+            update["substrates"] = {
+                self.pi_wid: float(n_hydrolysis),
+                self.water_wid: float(-n_hydrolysis),
+                self.hydrogen_wid: float(n_hydrolysis),
+            }
+
+        dnaa_adp_wid, dnaa_atp_wid = self.enzyme_wids[0], self.enzyme_wids[1]
+        update["requests"] = {
+            self.name: {
+                self.atp_wid: float(max(0.0, enzyme_next.get(dnaa_adp_wid, 0.0))),
+                self.water_wid: float(max(0.0, enzyme_next.get(dnaa_atp_wid, 0.0))),
             }
         }
         return update

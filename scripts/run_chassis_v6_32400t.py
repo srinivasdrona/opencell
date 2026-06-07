@@ -14,10 +14,13 @@ import json
 import math
 import random
 import shutil
+import subprocess
 import sys
 import time
 from collections import defaultdict
 from dataclasses import dataclass
+from datetime import datetime
+from datetime import timezone
 from pathlib import Path
 from typing import Any
 
@@ -407,6 +410,10 @@ def run_full_cycle(
     memory_retry_attempts: int,
     memory_retry_sleep_s: float,
 ) -> dict[str, Any]:
+    started_at = datetime.now(timezone.utc).isoformat()
+    git_commit = _git("rev-parse", "HEAD")
+    git_branch = _git_branch_name(git_commit)
+
     random.seed(seed)
     np.random.seed(seed)
 
@@ -449,6 +456,13 @@ def run_full_cycle(
     aa_ids = tuple(str(wid) for wid in composite.processes["karr_translation"].aa_ids)
     mass_estimator = MassEstimator.build(m1_model, m2_model, m3_model)
     progress_log_fh, progress_log_actual_path = _open_progress_log(log_path, out_dir)
+    trajectory_pkl_path = out_dir / "trajectory.pkl"
+    ticks_completed = 0
+    t_start = time.time()
+    replication_initiation_tick: int | None = None
+    replication_completion_tick: int | None = None
+    division_tick: int | None = None
+    max_abs_unattributed = 0.0
 
     with (
         key_path.open("w", newline="", encoding="utf-8") as key_f,
@@ -577,18 +591,13 @@ def run_full_cycle(
                 ]
             )
 
-        t_start = time.time()
         state = _snapshot_runtime_state(engine)
         write_key_row(0, state)
         initial_substrates = {str(k): _to_float(v) for k, v in state.get("substrates", {}).items()}
         write_full_rows(0, initial_substrates)
         write_replication_row(0, state, "none")
 
-        replication_initiation_tick: int | None = None
-        replication_completion_tick: int | None = None
-        division_tick: int | None = None
         division_state: dict[str, Any] | None = None
-        max_abs_unattributed = 0.0
 
         for tick in range(1, ticks + 1):
             do_conservation = tick % max(1, int(conservation_stride)) == 0
@@ -599,6 +608,25 @@ def run_full_cycle(
                 try:
                     engine.update(timestep_s)
                     break
+                except KeyboardInterrupt:
+                    wall_time_s = float(time.time() - t_start)
+                    interrupt_manifest = {
+                        "head_sha": git_commit,
+                        "git_commit": git_commit,
+                        "git_branch": git_branch,
+                        "ticks_completed": int(ticks_completed),
+                        "started_at": started_at,
+                        "ended_at": datetime.now(timezone.utc).isoformat(),
+                        "wall_clock_seconds": float(wall_time_s),
+                        "seed": int(seed),
+                        "timestep_s": float(timestep_s),
+                        "ticks": int(ticks),
+                        "biological_seconds": float(ticks * timestep_s),
+                        "wall_time_s": float(wall_time_s),
+                        "run_completed": False,
+                    }
+                    manifest_path.write_text(json.dumps(interrupt_manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+                    raise
                 except Exception as exc:
                     is_memory_error = isinstance(exc, MemoryError) or exc.__class__.__name__ == "ArrayMemoryError"
                     if (not is_memory_error) or update_attempt >= max(0, int(memory_retry_attempts)):
@@ -633,6 +661,7 @@ def run_full_cycle(
                 replication_completion_tick = tick
                 repl_event = "completion" if repl_event == "none" else "initiation+completion"
             write_replication_row(tick, state, repl_event)
+            ticks_completed = tick
 
             if do_conservation:
                 all_substrates = set(before) | set(after) | set(diagnostics.per_tick_process_sums)
@@ -688,7 +717,6 @@ def run_full_cycle(
 
     diagnostics.close()
 
-    trajectory_pkl_path = out_dir / "trajectory.pkl"
     trajectory_payload = build_e2_payload(
         out_dir,
         reference_fixture=ROOT / "data" / "phase_e" / "v6_trajectory_32400s.pkl",
@@ -704,8 +732,15 @@ def run_full_cycle(
         except importlib_metadata.PackageNotFoundError:
             continue
 
+    ended_at = datetime.now(timezone.utc).isoformat()
     manifest = {
-        "head_sha": _run_git_rev_parse(),
+        "head_sha": git_commit,
+        "git_commit": git_commit,
+        "git_branch": git_branch,
+        "ticks_completed": int(ticks_completed),
+        "started_at": started_at,
+        "ended_at": ended_at,
+        "wall_clock_seconds": float(wall_time_s),
         "seed": int(seed),
         "timestep_s": float(timestep_s),
         "ticks": int(ticks),
@@ -750,11 +785,20 @@ def run_full_cycle(
     return manifest
 
 
-def _run_git_rev_parse() -> str:
-    import subprocess
+def _git(*args: str) -> str | None:
+    try:
+        out = subprocess.run(["git", *args], capture_output=True, text=True, check=True, cwd=ROOT)
+    except Exception:
+        return None
+    value = out.stdout.strip()
+    return value if value else None
 
-    out = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True)
-    return out.strip()
+
+def _git_branch_name(git_commit: str | None) -> str | None:
+    branch = _git("rev-parse", "--abbrev-ref", "HEAD")
+    if branch == "HEAD":
+        return f"HEAD detached at {git_commit or 'unknown'}"
+    return branch
 
 
 def _gather_file_sizes(out_dir: Path) -> list[dict[str, Any]]:

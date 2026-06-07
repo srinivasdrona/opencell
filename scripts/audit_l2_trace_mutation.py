@@ -26,7 +26,10 @@ import numpy as np
 
 
 def _read_tick_vector(h5f: h5py.File, ref_dataset: h5py.Dataset, tick: int) -> np.ndarray:
-    ref = ref_dataset[tick, 0]
+    if ref_dataset.shape[0] == 1:
+        ref = ref_dataset[0, tick]
+    else:
+        ref = ref_dataset[tick, 0]
     arr = np.asarray(h5f[ref])
     return arr.reshape(-1)
 
@@ -51,7 +54,7 @@ def audit_trace(trace_path: Path) -> dict:
             if before_ref.shape != after_ref.shape:
                 report["observables"][name] = {"error": "shape mismatch"}
                 continue
-            n_ticks = before_ref.shape[0]
+            n_ticks = max(before_ref.shape[0], before_ref.shape[1])
             n_ticks_attr = n_ticks
             nonzero_ticks: list[int] = []
             total_abs_delta = 0.0
@@ -93,8 +96,7 @@ def audit_trace(trace_path: Path) -> dict:
     return report
 
 
-def _pilot_sweep_traces(repo_root: Path) -> list[Path]:
-    base = repo_root / "data" / "m1_sources" / "karr_native" / "per_process_traces"
+def _pilot_sweep_traces(base: Path) -> list[Path]:
     return [
         base / "tRNAAminoacylation_100ticks.mat",
         base / "MacromolecularComplexation_100ticks.mat",
@@ -102,9 +104,16 @@ def _pilot_sweep_traces(repo_root: Path) -> list[Path]:
     ]
 
 
-def _all_traces(repo_root: Path) -> list[Path]:
-    base = repo_root / "data" / "m1_sources" / "karr_native" / "per_process_traces"
+def _all_traces(base: Path) -> list[Path]:
     return sorted(base.glob("*_100ticks.mat"))
+
+
+def _resolve_trace_dir(repo_root: Path, trace_dir: Path | None) -> Path:
+    if trace_dir is None:
+        return repo_root / "data" / "m1_sources" / "karr_native" / "per_process_traces"
+    if trace_dir.is_absolute():
+        return trace_dir
+    return repo_root / trace_dir
 
 
 def _format_summary(report: dict) -> str:
@@ -139,6 +148,12 @@ def main() -> int:
     parser.add_argument("--all", action="store_true", help="Run every *_100ticks.mat in the standard dir")
     parser.add_argument("--json", action="store_true", help="Emit JSON only")
     parser.add_argument(
+        "--dir",
+        type=Path,
+        default=None,
+        help="Trace directory (absolute or relative to --repo-root)",
+    )
+    parser.add_argument(
         "--repo-root",
         type=Path,
         default=Path(__file__).resolve().parent.parent,
@@ -149,12 +164,14 @@ def main() -> int:
     if not args.trace and not args.pilot_sweep and not args.all:
         parser.error("--trace or --pilot-sweep or --all required")
 
+    trace_dir = _resolve_trace_dir(args.repo_root, args.dir)
+
     if args.trace:
         traces = [args.trace]
     elif args.all:
-        traces = _all_traces(args.repo_root)
+        traces = _all_traces(trace_dir)
     else:
-        traces = _pilot_sweep_traces(args.repo_root)
+        traces = _pilot_sweep_traces(trace_dir)
     reports = []
     for t in traces:
         if not t.exists():
