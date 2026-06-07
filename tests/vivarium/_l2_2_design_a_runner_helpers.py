@@ -47,7 +47,6 @@ from opencell.vivarium.karr_protein_decay_light import ProteinDecayLightProcess 
 from opencell.vivarium.karr_macromolecular_complexation import (  # noqa: E402
     MacromolecularComplexationProcess,
 )
-from opencell.vivarium.karr_replication import KarrReplicationProcess  # noqa: E402
 from opencell.vivarium.karr_replication_initiation import KarrReplicationInitiationProcess  # noqa: E402
 
 
@@ -71,9 +70,6 @@ _PROTEIN_DECAY_ORACLE_PATH = (
 _MACROMOL_ORACLE_PATH = (
     _REPO_ROOT / "data" / "karr_fixtures" / "per_process_replay" / "MacromolecularComplexation.npz"
 )
-_REPLICATION_ORACLE_PATH = (
-    _REPO_ROOT / "data" / "karr_fixtures" / "per_process_replay" / "Replication.npz"
-)
 _REPLICATION_INITIATION_ORACLE_PATH = (
     _REPO_ROOT
     / "data"
@@ -95,7 +91,6 @@ def _oracle_dispatch() -> dict[str, Any]:
         "RNADecay": _load_rna_decay_oracle,
         "ProteinDecay": _load_protein_decay_oracle,
         "MacromolecularComplexation": _load_macromol_oracle,
-        "Replication": _load_replication_oracle,
         "ReplicationInitiation": _load_replication_initiation_oracle,
     }
 
@@ -285,53 +280,6 @@ def _load_macromol_oracle() -> dict[str, Any]:
     }
 
 
-@lru_cache(maxsize=1)
-def _replication_projection_inputs() -> dict[str, Any]:
-    process = _replication_process(0)
-    return {
-        "primary_substrate_wids": tuple([*process.dntp_wids, process.atp_wid]),
-        "trace_substrate_wids": tuple(str(x) for x in process.substrate_wids),
-    }
-
-
-def _project_replication_substrate_cube(values: np.ndarray) -> np.ndarray:
-    inputs = _replication_projection_inputs()
-    arr = np.asarray(values, dtype=np.float64)
-    out = np.zeros((arr.shape[0], len(inputs["primary_substrate_wids"])), dtype=np.float64)
-    for tick in range(arr.shape[0]):
-        out[tick, :] = project_vector_onto_wids(
-            karr_vector=arr[tick],
-            karr_wids=inputs["trace_substrate_wids"],
-            oc_wids=inputs["primary_substrate_wids"],
-        )
-    return out
-
-
-def _load_replication_oracle() -> dict[str, Any]:
-    if not _REPLICATION_ORACLE_PATH.exists():
-        raise FileNotFoundError(f"Missing Replication oracle fixture: {_REPLICATION_ORACLE_PATH}")
-
-    with np.load(_REPLICATION_ORACLE_PATH, allow_pickle=False) as payload:
-        before_substrates_raw = np.asarray(payload["state_before__substrates"], dtype=np.float64)[:, 0, :]
-        before_enzymes = np.asarray(payload["state_before__enzymes"], dtype=np.float64)[:, 0, :]
-        before_bound = np.asarray(payload["state_before__boundEnzymes"], dtype=np.float64)[:, 0, :]
-        after_substrates_raw = np.asarray(payload["states_after__substrates"], dtype=np.float64)[:, 0, :]
-
-    before_substrates = _project_replication_substrate_cube(before_substrates_raw)
-    after_substrates = _project_replication_substrate_cube(after_substrates_raw)
-
-    return {
-        "process": "Replication",
-        "oracle_path": _REPLICATION_ORACLE_PATH,
-        "canonical_seed_count": 1,
-        "n_ticks_available": int(before_substrates.shape[0]),
-        "before_substrates": before_substrates[np.newaxis, :, :],
-        "before_enzymes": before_enzymes[np.newaxis, :, :],
-        "before_bound_enzymes": before_bound[np.newaxis, :, :],
-        "after_substrates": after_substrates[np.newaxis, :, :],
-    }
-
-
 def _load_replication_initiation_oracle() -> dict[str, Any]:
     if not _REPLICATION_INITIATION_ORACLE_PATH.exists():
         raise FileNotFoundError(
@@ -407,15 +355,6 @@ def _protein_decay_process(seed: int) -> ProteinDecayLightProcess:
 def _macromol_process(seed: int) -> MacromolecularComplexationProcess:
     with forbid_sut_oracle_file_io():
         return MacromolecularComplexationProcess({"rng_seed": int(seed)})
-
-
-@lru_cache(maxsize=None)
-def _replication_process(seed: int) -> KarrReplicationProcess:
-    with forbid_sut_oracle_file_io():
-        return KarrReplicationProcess({"rng_seed": int(seed)})
-
-
-@lru_cache(maxsize=None)
 def _replication_initiation_process(seed: int) -> KarrReplicationInitiationProcess:
     with forbid_sut_oracle_file_io():
         return KarrReplicationInitiationProcess({"rng_seed": int(seed)})
@@ -434,7 +373,6 @@ def _tick_dispatch() -> dict[str, Any]:
         "RNADecay": _run_rna_decay_tick,
         "ProteinDecay": _run_protein_decay_tick,
         "MacromolecularComplexation": _run_macromol_tick,
-        "Replication": _run_replication_tick,
         "ReplicationInitiation": _run_repinit_tick,
     }
 
@@ -950,57 +888,6 @@ def _run_macromol_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str,
     }
 
 
-def _run_replication_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
-    """Run one OpenCell Replication tick from a prepared state snapshot."""
-    process = _replication_process(_sample_seed(seed, tick))
-    runtime_state = build_state_template(process)
-    substrate_wids = list(state["substrate_wids"])
-    enzyme_wids = list(state["enzyme_wids"])
-    bound_enzymes_before = np.asarray(state["oracle_before_bound_enzymes"], dtype=np.float64)
-
-    overlay_observable_into_state(
-        process=process,
-        state=runtime_state,
-        observable="substrates",
-        vector=np.asarray(state["oracle_before_substrates"], dtype=np.float64),
-        wids=substrate_wids,
-    )
-    overlay_observable_into_state(
-        process=process,
-        state=runtime_state,
-        observable="enzymes",
-        vector=np.asarray(state["oracle_before_enzymes"], dtype=np.float64),
-        wids=enzyme_wids,
-    )
-    overlay_observable_into_state(
-        process=process,
-        state=runtime_state,
-        observable="boundEnzymes",
-        vector=bound_enzymes_before,
-        wids=enzyme_wids,
-    )
-    # Replication has a trace_hint-conditioned replay path; keep it disabled
-    # so the measured primary channel comes only from the real next_update path.
-    runtime_state["trace_hint"] = {}
-    refresh_allocator_views(process, runtime_state)
-    with forbid_sut_oracle_file_io():
-        update = process.next_update(1.0, runtime_state)
-    apply_count_update(runtime_state, update)
-    return {
-        "substrates": np.asarray(
-            project_observable_from_state(
-                process=process,
-                state=runtime_state,
-                observable="substrates",
-                wids=substrate_wids,
-                bound_enzymes_before=bound_enzymes_before,
-            ),
-            dtype=np.float64,
-        ),
-        "sample_seed": _sample_seed(seed, tick),
-    }
-
-
 
 
 def _repinit_species_descriptor(wid: str) -> tuple[int, int]:
@@ -1300,7 +1187,6 @@ __all__ = [
     "_RNA_DECAY_ORACLE_PATH",
     "_PROTEIN_DECAY_ORACLE_PATH",
     "_MACROMOL_ORACLE_PATH",
-    "_REPLICATION_ORACLE_PATH",
     "_REPLICATION_INITIATION_ORACLE_PATH",
     "_TRANSCRIPTION_ORACLE_PATH",
     "compute_null_q95",
