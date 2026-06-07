@@ -5,6 +5,7 @@
 - 2026-06-07T12:36:00Z UTC — Confirmed `KarrReplicationProcess.next_update()` has a `trace_hint` replay branch (`_next_update_from_trace_hint`) and that the real path writes `requests`, `chromosome`, and `substrates`.
 - 2026-06-07T12:52:00Z UTC — Probed available Replication replay artifacts. Prompt-named `data/m1_sources/karr_native/per_process_traces/Replication_100ticks.mat` is absent in this worktree; `data/karr_fixtures/per_process_replay/Replication.json` still references that missing MAT as its source.
 - 2026-06-07T13:08:00Z UTC — Inspected `Replication.npz`, `Replication_from_flat.npz`, and `Replication_from_trajectory.npz`; ran duplicate-WID and honest-path viability probes for candidate primary channels.
+- 2026-06-07T12:38:23.7154965Z UTC — Added Replication helper loader/dispatcher path using canonical `Replication.npz` projected to the 5 real-path substrate WIDs and verified `_run_replication_tick()` returns the tick-0 oracle vector with `trace_hint` held empty.
 
 ## Beat 1 — SUT inspection + wiring design
 
@@ -45,7 +46,9 @@
 - Decision: no positional shadow store required for Replication.
 
 ### Primary / secondary / gaps decision
-- PRIMARY candidate: projected `substrates` written subset on `DATP`, `DCTP`, `DGTP`, `DTTP`, `ATP`
+- PRIMARY channel: projected `substrates` written subset on `DATP`, `DCTP`, `DGTP`, `DTTP`, `ATP`
+- Canonical Design-A oracle source for wiring: `data/karr_fixtures/per_process_replay/Replication.npz`
+  - justification: this export is the direct replay artifact pointing back to the prompt-named per-process MAT source and is a legitimate no-op (`before == after`) on the written substrate subset; `Replication_from_trajectory.npz` is retained only as a diagnostic active-window probe because it is trajectory-derived (`effective_dt_sec=100`) and not the direct per-process replay export.
 - SECONDARY diagnostic channels to document only, not wire as gateable runner outputs:
   - `enzymes` (`expected_sut_gap`)
   - `boundEnzymes` (`expected_sut_gap`)
@@ -71,7 +74,17 @@
 - Interpretation: there is a candidate measurable primary surface (`substrates` written subset), but the honest path is currently far from the trajectory export. Beat 5 will need to decide whether this stays a documented FAIL/block or whether a better honest seeding exists inside the allowed harness surface.
 
 ## Beat 2 — tick dispatcher
-- Pending.
+- Changes:
+  - added `_REPLICATION_ORACLE_PATH` and `_load_replication_oracle()` using `Replication.npz`
+  - projected the raw 16-wide substrate trace down to the 5 real-path written WIDs (`DATP/DCTP/DGTP/DTTP/ATP`)
+  - added cached `_replication_process()` constructor
+  - added `_run_replication_tick()` to the helper dispatch table
+  - forced `runtime_state['trace_hint'] = {}` so the replay branch cannot activate inside the Design-A helper path
+- Narrow verification:
+  - `python -m py_compile tests/vivarium/_l2_2_design_a_runner_helpers.py`
+  - one-tick helper probe: oracle shape `1 x 100 x 5`, tick output shape `5`, `tick_equals_oracle=True` on tick 0
+- Diff stat:
+  - `tests/vivarium/_l2_2_design_a_runner_helpers.py` `+113 -0`
 
 ## Beat 3 — runner wiring + anticheat tests
 - Pending.
