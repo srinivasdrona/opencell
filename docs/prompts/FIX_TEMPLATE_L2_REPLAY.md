@@ -8,11 +8,28 @@
 
 ## Composition mandate — 3-slot prompt architecture (MANDATORY for any L2 codex delegation)
 
-The 3-slot composition mandate, slot definitions, empirical anchors, authoring discipline, slot-3 size heuristics (floor and ceiling), and slot-to-patch routing rules now live in their own versioned file:
+The 3-slot composition mandate, slot definitions, empirical anchors, authoring discipline, slot-3 size heuristics (floor and ceiling), spec-authority rule, and slot-to-patch routing rules now live in their own versioned file:
 
-**→ `docs/prompts/COMPOSITION_MANDATE_v1.md`**
+**→ `docs/prompts/COMPOSITION_MANDATE_v2.md`**
 
-This file (FIX_TEMPLATE_L2_REPLAY.md) is **slot 2** in that architecture. Read the mandate before composing any L2 delegation prompt. When the mandate bumps to v2, references in this template will need a deliberate update — they are not silent-follow.
+This file (FIX_TEMPLATE_L2_REPLAY.md) is **slot 2** in that architecture. Read the mandate before composing any L2 delegation prompt. When the mandate bumps to v3, references in this template will need a deliberate update — they are not silent-follow.
+
+## Authoritative spec for L2.2 wiring (MANDATORY slot-3 quotation requirement)
+
+For any L2.2 delegation (Design-A runner wiring, ensemble harness extension, per-process tick dispatcher), slot 3 MUST quote the target process's entry from `docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml` verbatim as a fenced code block titled "Catalog entry (authoritative spec):" before any Beat content. The quotation is the wiring contract. Codex MUST NOT infer wiring from existing helpers, the runner's existing process tables, or prior fanout-process commits — those may carry deviations.
+
+Fields codex MUST honor from the catalog quotation:
+- `primary_channel` — the channel whose W1 verdict gates PASS/FAIL.
+- `M_ticks` — per-process tick budget (catalog default is 100; some processes specify 200).
+- `karr_artifact` — the oracle source family (`per_process_traces_v2` for 50-seed ensembles; `per_process_replay` for legacy single-seed).
+- `bucket` — the test policy class (DETERMINISTIC / TRIVIAL_RNG / ALGORITHMIC_SHALLOW / ALGORITHMIC_DEEP / EVENT_CLASS).
+- `event_channels` — channels that must be treated as event-deferred (not gated normally).
+- `seed_window` — if present, restricts the active tick range relative to a cell-cycle anchor (cytokinesis, FtsZ).
+- `in_scope_L2_2: false` — process is out of L2.2 scope (EVENT_CLASS, DETERMINISTIC); do not wire as a regular gate target.
+
+If catalog and existing code disagree, **catalog wins**. If catalog and prior empirical findings (Beat 1 STATUS) disagree, raise the disagreement in STATUS before proceeding; do not silently pick one.
+
+Empirical anchor: 5-process spec drift on 2026-06-07/08 (see COMPOSITION_MANDATE_v2.md Day-22 anchor) — all 5 fanout merges had to be reverted because none cited this catalog.
 
 ## Rule 1 — Observable coverage must be complete; pass-through declared as a manifest
 
