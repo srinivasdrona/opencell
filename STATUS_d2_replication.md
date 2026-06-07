@@ -6,6 +6,7 @@
 - 2026-06-07T12:52:00Z UTC — Probed available Replication replay artifacts. Prompt-named `data/m1_sources/karr_native/per_process_traces/Replication_100ticks.mat` is absent in this worktree; `data/karr_fixtures/per_process_replay/Replication.json` still references that missing MAT as its source.
 - 2026-06-07T13:08:00Z UTC — Inspected `Replication.npz`, `Replication_from_flat.npz`, and `Replication_from_trajectory.npz`; ran duplicate-WID and honest-path viability probes for candidate primary channels.
 - 2026-06-07T12:38:23.7154965Z UTC — Added Replication helper loader/dispatcher path using canonical `Replication.npz` projected to the 5 real-path substrate WIDs and verified `_run_replication_tick()` returns the tick-0 oracle vector with `trace_hint` held empty.
+- 2026-06-07T12:44:03.5816061Z UTC — Wired Replication into the Design-A runner and added `test_l2_2_design_a_runner_anticheat_replication.py`; narrow anticheat suite is green (`19 passed`).
 
 ## Beat 1 — SUT inspection + wiring design
 
@@ -87,7 +88,25 @@
   - `tests/vivarium/_l2_2_design_a_runner_helpers.py` `+113 -0`
 
 ## Beat 3 — runner wiring + anticheat tests
-- Pending.
+- Runner wiring:
+  - added `Replication` to `SUPPORTED_PROCESSES`
+  - added `Replication` to `_PROCESS_BUCKET` as `ALGORITHMIC_DEEP`
+  - added `Replication` to `_PROCESS_OUTPUT_CHANNELS` with primary-only output `('substrates',)`
+  - added `Replication` to `_PROCESS_PRIMARY_CHANNEL`
+  - added `Replication` to `_PROCESS_ANALYTICAL_CHECK_REASON`
+  - added `Replication` sample-process routing and 5-WID substrate projection in `_observable_wids`
+- New anticheat file:
+  - `tests/vivarium/test_l2_2_design_a_runner_anticheat_replication.py`
+- Test names added:
+  - `test_replication_primary_fixture_is_legitimate_noop`
+  - `test_replication_tick_ignores_trace_hint_bypass_payload`
+  - `test_replication_constant_zero_primary_channel_fails`
+  - `test_replication_primary_exact_match_is_legitimate_noop`
+- Narrow verification:
+  - command: `bin\oc-pytest.cmd tests/vivarium/test_l2_2_design_a_runner_anticheat.py tests/vivarium/test_l2_2_design_a_runner_anticheat_rna_decay.py tests/vivarium/test_l2_2_design_a_runner_anticheat_macromol.py tests/vivarium/test_l2_2_design_a_runner_anticheat_repinit.py tests/vivarium/test_l2_2_design_a_runner_anticheat_replication.py -q`
+  - result: `19 passed in 49.35s`
+- Notes:
+  - one incidental regression surfaced during this pass: `_replication_initiation_process` briefly lost its `@lru_cache` wrapper, breaking an existing `.cache_clear()` anticheat. Restored before the green run.
 
 ## Beat 4 — inversion
 - Pending.

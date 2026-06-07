@@ -415,6 +415,7 @@ def _replication_process(seed: int) -> KarrReplicationProcess:
         return KarrReplicationProcess({"rng_seed": int(seed)})
 
 
+@lru_cache(maxsize=None)
 def _replication_initiation_process(seed: int) -> KarrReplicationInitiationProcess:
     with forbid_sut_oracle_file_io():
         return KarrReplicationInitiationProcess({"rng_seed": int(seed)})
