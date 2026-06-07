@@ -101,3 +101,20 @@ With both zero-substrates state AND populated state (enzymes=5, substrates=100, 
 - **Positional shadow store falsifier:** We kept positional shadowing disabled because Beat 1 found `277/277` unique substrate WIDs and `15/15` unique enzyme WIDs. Any duplicate count greater than zero on a wired channel would have flipped this decision and forced a positional store.
 - **After-hint overlay falsifier:** We did not overlay `oracle_after_*` onto the primary substrates channel because that would launder the scored output. After-hint overlay would only be correct for a non-primary reconstruction channel that is not itself gated, or for an explicitly sanctioned replay-only branch whose values are never used as the measured primary verdict surface.
 - **Oracle source choice falsifier:** We used canonical `data/karr_fixtures/per_process_replay/DNARepair.npz`. An alternative source would only be correct if that canonical fixture were missing, schema-broken, or demonstrably mismatched to the process/channel contract and the replacement were explicitly justified as the authoritative per-process replay source.
+
+## Beat 5 — smoke gate
+
+- Command: `bin/oc-py.cmd tests/vivarium/l2_2_design_a_runner.py --process DNARepair --seeds 3 --m-ticks 5 --bootstrap-B 200 --output-dir tests/vivarium/artifacts/l2_2_design_a/DNARepair_smoke`
+- Runner stdout: `DNARepair PASS substrates=SEED_NOISE@0.000000`
+- `result.json` primary block:
+  - `substrates.verdict = SEED_NOISE`
+  - `substrates.w1_oc_vs_karr = 0.0`
+  - `substrates.q95_null = 0.0`
+  - `substrates.threshold = 1.0`
+  - `substrates.is_primary = true`
+- Warnings:
+  - `KARR_SINGLE_SEED_REUSED: DNARepair.npz contains one canonical Karr seed; requested OC seeds reuse that oracle slice.`
+  - `PRIMARY_CHANNEL_ORACLE_DETERMINISM_LEGITIMATE: OC matched the Karr oracle exactly on primary channel=substrates, and the oracle itself was unchanged (before == after) for every requested sample.`
+- Interpretation: matches Beat 1's predicted honest no-op replay window. The 5-WID primary substrates gate passes cleanly, while `enzymes` and `boundEnzymes` remain documented non-gated `expected_sut_gap` channels by design.
+
+verdict: PASS_PRIMARY_WITH_DOCUMENTED_GAPS
