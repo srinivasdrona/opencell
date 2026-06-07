@@ -1,0 +1,5 @@
+0 True False 2.375
+1 True False 2.5625
+2 True False 0.1875
+3 True False 0.1875
+4 True False 0.3125
