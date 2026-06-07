@@ -48,6 +48,7 @@ from opencell.vivarium.karr_macromolecular_complexation import (  # noqa: E402
     MacromolecularComplexationProcess,
 )
 from opencell.vivarium.karr_cytokinesis import KarrCytokinesisProcess  # noqa: E402
+from opencell.vivarium.karr_dna_repair import KarrDNARepairProcess  # noqa: E402
 from opencell.vivarium.karr_replication import KarrReplicationProcess  # noqa: E402
 from opencell.vivarium.karr_replication_initiation import KarrReplicationInitiationProcess  # noqa: E402
 
@@ -75,6 +76,9 @@ _MACROMOL_ORACLE_PATH = (
 _CYTOKINESIS_ORACLE_PATH = (
     _REPO_ROOT / "data" / "karr_fixtures" / "per_process_replay" / "Cytokinesis.npz"
 )
+_DNAREPAIR_ORACLE_PATH = (
+    _REPO_ROOT / "data" / "karr_fixtures" / "per_process_replay" / "DNARepair.npz"
+)
 _REPLICATION_ORACLE_PATH = (
     _REPO_ROOT / "data" / "karr_fixtures" / "per_process_replay" / "Replication.npz"
 )
@@ -100,6 +104,7 @@ def _oracle_dispatch() -> dict[str, Any]:
         "ProteinDecay": _load_protein_decay_oracle,
         "MacromolecularComplexation": _load_macromol_oracle,
         "Cytokinesis": _load_cytokinesis_oracle,
+        "DNARepair": _load_dnarepair_oracle,
         "Replication": _load_replication_oracle,
         "ReplicationInitiation": _load_replication_initiation_oracle,
     }
@@ -317,6 +322,52 @@ def _load_cytokinesis_oracle() -> dict[str, Any]:
 
 
 @lru_cache(maxsize=1)
+def _dnarepair_projection_inputs() -> dict[str, Any]:
+    process = _dnarepair_process(0)
+    primary_substrate_wids = tuple(str(x) for x in process.tracked_substrates)
+    trace_substrate_indices = tuple(process.substrate_wids.index(wid) for wid in primary_substrate_wids)
+    return {
+        "primary_substrate_wids": primary_substrate_wids,
+        "trace_substrate_indices": trace_substrate_indices,
+    }
+
+
+def _project_dnarepair_substrate_cube(values: np.ndarray) -> np.ndarray:
+    inputs = _dnarepair_projection_inputs()
+    arr = np.asarray(values, dtype=np.float64)
+    return np.asarray(arr[:, inputs["trace_substrate_indices"]], dtype=np.float64)
+
+
+def _load_dnarepair_oracle() -> dict[str, Any]:
+    if not _DNAREPAIR_ORACLE_PATH.exists():
+        raise FileNotFoundError(f"Missing DNARepair oracle fixture: {_DNAREPAIR_ORACLE_PATH}")
+
+    with np.load(_DNAREPAIR_ORACLE_PATH, allow_pickle=False) as payload:
+        before_substrates_raw = np.asarray(payload["state_before__substrates"], dtype=np.float64)[:, 0, :]
+        before_enzymes = np.asarray(payload["state_before__enzymes"], dtype=np.float64)[:, 0, :]
+        before_bound = np.asarray(payload["state_before__boundEnzymes"], dtype=np.float64)[:, 0, :]
+        before_proteins = np.asarray(payload["state_before__protein"], dtype=np.float64)[:, 0, :]
+        before_complexs = np.asarray(payload["state_before__complex"], dtype=np.float64)[:, 0, :]
+        after_substrates_raw = np.asarray(payload["states_after__substrates"], dtype=np.float64)[:, 0, :]
+
+    before_substrates = _project_dnarepair_substrate_cube(before_substrates_raw)
+    after_substrates = _project_dnarepair_substrate_cube(after_substrates_raw)
+
+    return {
+        "process": "DNARepair",
+        "oracle_path": _DNAREPAIR_ORACLE_PATH,
+        "canonical_seed_count": 1,
+        "n_ticks_available": int(before_substrates.shape[0]),
+        "before_substrates": before_substrates[np.newaxis, :, :],
+        "before_enzymes": before_enzymes[np.newaxis, :, :],
+        "before_bound_enzymes": before_bound[np.newaxis, :, :],
+        "before_monomers": before_proteins[np.newaxis, :, :],
+        "before_complexs": before_complexs[np.newaxis, :, :],
+        "after_substrates": after_substrates[np.newaxis, :, :],
+    }
+
+
+@lru_cache(maxsize=1)
 def _replication_projection_inputs() -> dict[str, Any]:
     process = _replication_process(0)
     return {
@@ -461,6 +512,12 @@ def _replication_process(seed: int) -> KarrReplicationProcess:
 
 
 @lru_cache(maxsize=None)
+def _dnarepair_process(seed: int) -> KarrDNARepairProcess:
+    with forbid_sut_oracle_file_io():
+        return KarrDNARepairProcess({"rng_seed": int(seed)})
+
+
+@lru_cache(maxsize=None)
 def _replication_initiation_process(seed: int) -> KarrReplicationInitiationProcess:
     with forbid_sut_oracle_file_io():
         return KarrReplicationInitiationProcess({"rng_seed": int(seed)})
@@ -480,6 +537,7 @@ def _tick_dispatch() -> dict[str, Any]:
         "ProteinDecay": _run_protein_decay_tick,
         "MacromolecularComplexation": _run_macromol_tick,
         "Cytokinesis": _run_cytokinesis_tick,
+        "DNARepair": _run_dnarepair_tick,
         "Replication": _run_replication_tick,
         "ReplicationInitiation": _run_repinit_tick,
     }
@@ -1099,6 +1157,73 @@ def _run_replication_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[s
     }
 
 
+def _run_dnarepair_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
+    """Run one OpenCell DNARepair tick from a prepared state snapshot."""
+    process = _dnarepair_process(_sample_seed(seed, tick))
+    runtime_state = build_state_template(process)
+    substrate_wids = list(state["substrate_wids"])
+    enzyme_wids = list(state["enzyme_wids"])
+    monomer_wids = list(state["monomer_wids"])
+    complex_wids = list(state["complex_wids"])
+    bound_enzymes_before = np.asarray(state["oracle_before_bound_enzymes"], dtype=np.float64)
+
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="substrates",
+        vector=np.asarray(state["oracle_before_substrates"], dtype=np.float64),
+        wids=substrate_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="enzymes",
+        vector=np.asarray(state["oracle_before_enzymes"], dtype=np.float64),
+        wids=enzyme_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="boundEnzymes",
+        vector=bound_enzymes_before,
+        wids=enzyme_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="monomers",
+        vector=np.asarray(state["oracle_before_monomers"], dtype=np.float64),
+        wids=monomer_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="complexs",
+        vector=np.asarray(state["oracle_before_complexs"], dtype=np.float64),
+        wids=complex_wids,
+    )
+    # DNARepair has no replay-from-hint bypass, but keep trace_hint empty so
+    # this dispatcher follows the same anti-laundering discipline as Replication.
+    runtime_state["trace_hint"] = {}
+    refresh_allocator_views(process, runtime_state)
+    with forbid_sut_oracle_file_io():
+        update = process.next_update(1.0, runtime_state)
+    apply_count_update(runtime_state, update)
+    return {
+        "substrates": np.asarray(
+            project_observable_from_state(
+                process=process,
+                state=runtime_state,
+                observable="substrates",
+                wids=substrate_wids,
+                bound_enzymes_before=bound_enzymes_before,
+            ),
+            dtype=np.float64,
+        ),
+        "sample_seed": _sample_seed(seed, tick),
+    }
+
+
 
 
 def _repinit_species_descriptor(wid: str) -> tuple[int, int]:
@@ -1400,6 +1525,7 @@ __all__ = [
     "_MACROMOL_ORACLE_PATH",
     "_REPLICATION_ORACLE_PATH",
     "_REPLICATION_INITIATION_ORACLE_PATH",
+    "_DNAREPAIR_ORACLE_PATH",
     "_TRANSCRIPTION_ORACLE_PATH",
     "compute_null_q95",
     "compute_w1",

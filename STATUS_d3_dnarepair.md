@@ -77,3 +77,9 @@ With both zero-substrates state AND populated state (enzymes=5, substrates=100, 
 - **`_maybe_replay_from_hint` exists:** NO (no after-hint overlay code branch needed; defensive guard not required)
 - **Reference implementation to mirror:** `_run_replication_tick` in `tests/vivarium/_l2_2_design_a_runner_helpers.py` (d2's tick dispatcher) — DNARepair is structurally the closest analog (event-driven, substrate-consuming, no-op replay window, same primary-projection pattern).
 - **Expected smoke gate verdict:** `PASS_PRIMARY_WITH_DOCUMENTED_GAPS` with primary substrates = `SEED_NOISE@0.000000` and `PRIMARY_CHANNEL_ORACLE_DETERMINISM_LEGITIMATE` warning (same as d2 Replication, d4 Macromol — the trace is a legitimate no-op, the helper reproduces it without laundering).
+
+## Beat 2 — tick dispatcher
+
+- Diff stat: `tests/vivarium/_l2_2_design_a_runner_helpers.py | 126 insertions(+)`
+- Added `_DNAREPAIR_ORACLE_PATH`, a dynamic 5-WID substrate projection loader for `ATP/DATP/DCTP/DGTP/DTTP`, `_dnarepair_process({"rng_seed": seed})`, and `_run_dnarepair_tick`.
+- Dispatcher mirrors Replication's structure: it overlays the clean `oracle_before_*` snapshot for substrates/enzymes/boundEnzymes/protein/complex, keeps `trace_hint = {}` defensively, and never applies `oracle_after_*` onto the primary substrates channel.
