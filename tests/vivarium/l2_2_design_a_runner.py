@@ -41,7 +41,6 @@ SUPPORTED_PROCESSES = frozenset(
         "RNADecay",
         "ProteinDecay",
         "MacromolecularComplexation",
-        "ReplicationInitiation",
     }
 )
 DEFAULT_BOOTSTRAP_B = 1000
@@ -52,7 +51,6 @@ _PROCESS_BUCKET = {
     "RNADecay": "ALGORITHMIC_SHALLOW",
     "ProteinDecay": "ALGORITHMIC_SHALLOW",
     "MacromolecularComplexation": "ALGORITHMIC_SHALLOW",
-    "ReplicationInitiation": "ALGORITHMIC_DEEP",
 }
 _PROCESS_K_ENG = {
     "TRIVIAL_RNG": runner_helpers.TRIVIAL_RNG_K_ENG,
@@ -66,7 +64,6 @@ _PROCESS_OUTPUT_CHANNELS = {
     "RNADecay": ("substrates", "RNAs"),
     "ProteinDecay": ("substrates", "monomers", "complexs"),
     "MacromolecularComplexation": ("substrates", "complexs"),
-    "ReplicationInitiation": ("substrates",),
 }
 _PROCESS_PRIMARY_CHANNEL = {
     "Metabolism": "substrates",
@@ -75,7 +72,6 @@ _PROCESS_PRIMARY_CHANNEL = {
     "RNADecay": "RNAs",
     "ProteinDecay": "monomers",
     "MacromolecularComplexation": "substrates",
-    "ReplicationInitiation": "substrates",
 }
 _PROCESS_ANALYTICAL_CHECK_REASON = {
     "Metabolism": "Metabolism has no closed-form per-tick check",
@@ -84,7 +80,6 @@ _PROCESS_ANALYTICAL_CHECK_REASON = {
     "RNADecay": "RNADecay has no closed-form per-tick check",
     "ProteinDecay": "ProteinDecay has no closed-form per-tick check",
     "MacromolecularComplexation": "MacromolecularComplexation has no closed-form per-tick check",
-    "ReplicationInitiation": "ReplicationInitiation has no closed-form per-tick check",
 }
 _ORACLE_BEFORE_KEY = {
     "substrates": "before_substrates",
@@ -473,8 +468,6 @@ def _process_sample_process(process: str) -> Any:
         return runner_helpers._protein_decay_process(0)
     if process == "MacromolecularComplexation":
         return runner_helpers._macromol_process(0)
-    if process == "ReplicationInitiation":
-        return runner_helpers._replication_initiation_process(0)
     raise ValueError(f"Unsupported process {process!r}.")
 
 
