@@ -2,6 +2,8 @@
 
 Status: reusable slot-2 template for multi-file design-doc authoring (parallel to `FIX_TEMPLATE_*` artifacts).
 
+**Composition mandate.** This template is **slot 2** in the 3-slot codex prompt architecture. Before composing a design-doc delegation, read `docs/prompts/COMPOSITION_MANDATE_v1.md` — it defines slot roles, slot-3 size heuristics (floor and ceiling), and the slot-to-patch routing rules for diagnosing failures.
+
 ## Trigger guardrail (apply template only when needed)
 
 Use this template when any of the following is true:

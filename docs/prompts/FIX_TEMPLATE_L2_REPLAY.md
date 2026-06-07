@@ -8,26 +8,11 @@
 
 ## Composition mandate — 3-slot prompt architecture (MANDATORY for any L2 codex delegation)
 
-Every codex delegation that authors, repairs, or extends an L2.1 / L2.2 replay test MUST be composed of all three slots, in order. Two-slot prompts (template + critique, or PREFIX + critique, etc.) are forbidden — they have been empirically shown to permit Rule-8 trace-cribbing and oracle-routing escapes.
+The 3-slot composition mandate, slot definitions, empirical anchors, authoring discipline, slot-3 size heuristics (floor and ceiling), and slot-to-patch routing rules now live in their own versioned file:
 
-| Slot | Source | Role | Forbidden to omit |
-|---|---|---|---|
-| 1 | `docs/prompts/DELIBERATE_ACTION_PREFIX_v2.md` | Generic anti-act-before-thinking discipline (Beats 1-5). Forces Beat 4 inversion. | Yes |
-| 2 | THIS file (`FIX_TEMPLATE_L2_REPLAY.md`) | Domain rules (1-8) + acceptance criteria (1-9). | Yes |
-| 3 | Case-specific directive | Names the contract, the surface, the expected outcome, the case-specific pre-mortem failure modes, the hard rules ("no `tick == N` branches", "no edits outside `karr_<X>.py`"). One per task, never reused verbatim. | Yes |
+**→ `docs/prompts/COMPOSITION_MANDATE_v1.md`**
 
-**Empirical anchor.** Day-17 (2026-06-01) morning metabolism delegation used a 2-slot prompt (template + critique, no PREFIX, no case-specific preservation directive) and shipped `2d20784` containing a `Metabolism_100ticks.mat` trace-crib inside `_static_update` — Rule-8 violation undetected because Rule 8 had not been written yet. The afternoon 3-slot refire (`e7c4285`) returned an honest Class-C verdict with zero crib. Same agent, same task, different slot count.
-
-**Authoring discipline.** The case-specific (slot 3) directive must include:
-- A Beat-1 contract sentence ("Replace X with Y such that test Z flips").
-- A Beat-2 surface enumeration (read paths, write paths, suspect patterns).
-- **A Beat-2 Karr-source-selection sub-check (added 2026-06-05).** Before naming any Karr data source in slot 3, list the `data/m1_sources/karr_native/per_process_traces_v2*/<Process>_100ticks.mat` files available for the target process. If F traces exist and the prompt picks a different source (`karr_archive/*.mat`, `ensembles/<process>/seed_NNN/`, analytical `s = k*N`, `fitted_constants.mat`, KB pickles), include a one-sentence justification (e.g., "F seed-0 has only 93/482 proteins observed nonzero — need ensembles for tail coverage"). The default IS the F trace; alternatives need justification. See TRAPS `phase-f-traces-are-the-sourcing-data-not-just-validation-data` (2026-06-05).
-- A Beat-3 falsifiable predicted outcome (exact assertion, exact value).
-- A Beat-4 pre-mortem with at least 2 named failure modes specific to THIS task.
-- A Beat-5 verification protocol (commands in order, expected outputs).
-- "Hard rules" closing block (no tick-targeted branches, no oracle reads, no edits outside named files).
-
-**Lint heuristic for slot 3 minimum viable content.** If the case-specific directive is < 2 KB, it is almost certainly underspecified and the prompt is closer to 2-slot than 3-slot. The L2.2 harness v1 prompt (Day-17 evening, ~1.4 KB slot 3) shipped RED with `"upstream pollution"` mis-diagnosis. The v2 redesign prompt (Day-17 late evening, ~7 KB slot 3 with explicit pre-mortem and forbidden patterns) shipped the correct `CAUSE_1_WID_SET_MISMATCH` classification.
+This file (FIX_TEMPLATE_L2_REPLAY.md) is **slot 2** in that architecture. Read the mandate before composing any L2 delegation prompt. When the mandate bumps to v2, references in this template will need a deliberate update — they are not silent-follow.
 
 ## Rule 1 — Observable coverage must be complete; pass-through declared as a manifest
 

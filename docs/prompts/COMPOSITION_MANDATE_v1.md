@@ -1,0 +1,72 @@
+<!-- COMPOSITION_MANDATE v1 -->
+
+# 3-Slot Prompt Composition Mandate (v1)
+
+**Status:** canonical prompt-architecture spec for codex delegations. Referenced by `FIX_TEMPLATE_L2_REPLAY.md`, `DESIGN_TEMPLATE.md`, and `~/.copilot/skills/delegate-to-codex/SKILL.md`. Single source of truth — edit here, not in the references.
+
+**Scope.** Authoritative for any codex delegation that authors or modifies code, design docs, or tests. Originally formalized for L2 replay delegations; the underlying mechanism (deliberate action + inversion + protected assertions, layered across generic / domain / case slots) generalizes to other delegation classes. Has not been formally tested as an in-session thinking framework on the primary model — that experiment is open.
+
+---
+
+## The three slots
+
+Every codex delegation MUST be composed of all three slots, in order. Two-slot prompts (template + critique, or PREFIX + critique, etc.) are forbidden — they have been empirically shown to permit Rule-8 trace-cribbing and oracle-routing escapes.
+
+| Slot | Source | Role | Forbidden to omit |
+|---|---|---|---|
+| 1 | `docs/prompts/DELIBERATE_ACTION_PREFIX_v2.md` | Generic anti-act-before-thinking discipline (Beats 1-5). Forces Beat 4 inversion. | Yes |
+| 2 | Domain template (`FIX_TEMPLATE_L2_REPLAY.md`, `DESIGN_TEMPLATE.md`, `FIX_TEMPLATE_DIMER_PORT.md`, etc.) | Domain rules + acceptance criteria for the bug-class or work-class. | Yes |
+| 3 | Case-specific directive | Names the contract, the surface, the expected outcome, the case-specific pre-mortem failure modes, the hard rules. One per task, never reused verbatim. | Yes |
+
+---
+
+## Empirical anchors
+
+**Day-17 (2026-06-01) morning metabolism delegation** used a 2-slot prompt (template + critique, no PREFIX, no case-specific preservation directive) and shipped `2d20784` containing a `Metabolism_100ticks.mat` trace-crib inside `_static_update` — Rule-8 violation undetected because Rule 8 had not been written yet. The afternoon 3-slot refire (`e7c4285`) returned an honest Class-C verdict with zero crib. Same agent, same task, different slot count.
+
+**Day-17 evening L2.2 harness v1 prompt** (~1.4 KB slot 3) shipped RED with `"upstream pollution"` mis-diagnosis. The v2 redesign prompt (Day-17 late evening, ~7 KB slot 3 with explicit pre-mortem and forbidden patterns) shipped the correct `CAUSE_1_WID_SET_MISMATCH` classification.
+
+**Day-22 (2026-06-07) d3_dnarepair delegation** died three times across three structurally-different attempts (5-way fanout, 3-way fanout, 1-way decomposed-phase-1) without committing. Root cause was not Azure stream flake but **slot-3 over-historicization**: the PROMPT.md recited i2 ProteinDecay laundering history + i3 RNADecay duplicate-WID history + i4 Translation boundEnzymes history, and listed 7 probe-template files in the read-set. Codex read all 7 templates and built a comprehensive JSON-dump probe instead of targeted scipy queries; burned 97k tokens on a 40k-cap Beat-1-only scope; died mid-write before committing. Operator-done Beat 1 + stripped Beats-2-5 prompt unblocked it. The 2 KB lower bound below cannot be calibrated as a single number — there is also an upper failure mode at the high end.
+
+---
+
+## Authoring discipline (slot 3)
+
+The case-specific directive must include:
+- A Beat-1 contract sentence ("Replace X with Y such that test Z flips").
+- A Beat-2 surface enumeration (read paths, write paths, suspect patterns).
+- **A Beat-2 Karr-source-selection sub-check (added 2026-06-05).** Before naming any Karr data source in slot 3, list the `data/m1_sources/karr_native/per_process_traces_v2*/<Process>_100ticks.mat` files available for the target process. If F traces exist and the prompt picks a different source (`karr_archive/*.mat`, `ensembles/<process>/seed_NNN/`, analytical `s = k*N`, `fitted_constants.mat`, KB pickles), include a one-sentence justification (e.g., "F seed-0 has only 93/482 proteins observed nonzero — need ensembles for tail coverage"). The default IS the F trace; alternatives need justification. See TRAPS `phase-f-traces-are-the-sourcing-data-not-just-validation-data` (2026-06-05).
+- A Beat-3 falsifiable predicted outcome (exact assertion, exact value).
+- A Beat-4 pre-mortem with at least 2 named failure modes specific to THIS task.
+- A Beat-5 verification protocol (commands in order, expected outputs).
+- "Hard rules" closing block (no tick-targeted branches, no oracle reads, no edits outside named files).
+
+## Slot 3 size heuristics (both ends)
+
+**Floor (≥ ~2 KB) — suggestive, not a gate.** A case-specific directive < 2 KB is almost certainly underspecified and the prompt is closer to 2-slot than 3-slot. Calibrated on the L2.2 harness v1 (1.4 KB, shipped wrong) vs v2 (7 KB, shipped right) — n=2, so treat as a smoke alarm, not a hard threshold.
+
+**Ceiling (slot 3 distills, never recites) — added 2026-06-07 (d3 anchor).** State design *constraints* derived from prior investigations (e.g., "do not overlay `oracle_after_*` on primary"); do not narrate the investigation *history* that produced them. Do not list multiple probe-template files in the read-set — codex will read all of them. If the case sits at the intersection of multiple prior bug classes (e.g., i2 + i3 + i4), pick ONE canonical reference (the most recent merged sibling) and constrain reads to that + the SUT file + 1 helper file. Symptom of violation: token burn 2-3× the budget cap with zero commits, death mid-exploration.
+
+There is no single "right" size. The diagnostic is *content* — constraints (good), recited history (bad), template enumeration (bad).
+
+---
+
+## Diagnosing failures: which slot to patch?
+
+When a delegation ships wrong or dies, route the diagnosis:
+
+| Failure mode | Slot to patch |
+|---|---|
+| Agent didn't imagine the failure mode at all → executed naively | Slot 1 (prefix — expand Beat 4 inversion invitations) |
+| Agent imagined the mode but evidence was weak or wrong-class | Slot 2 (domain template — add a probe rule or acceptance criterion) |
+| Agent had the right rules but applied them to the wrong artifact, or over-explored the read-set | Slot 3 (case-specific — tighten constraints or trim history) |
+
+A failure that splits across two layers (3a/3b) means both need patching. Resist the urge to fold a domain-specific learning into the generic prefix — that's how slot 1 bloats into the prompt's center of gravity and stops being generic.
+
+---
+
+## Versioning
+
+This file is versioned by filename suffix (`_v1`, `_v2`, …). v1 = the rules as of 2026-06-07. Bump the suffix when a structural change lands (new slot, removed slot, semantic rewrite of the diagnostic routing). Additive notes — new empirical anchors, new size heuristics — do not bump the version.
+
+References to this file from FIX_TEMPLATE_L2_REPLAY.md, DESIGN_TEMPLATE.md, and the delegate-to-codex skill should be by versioned filename, not "the composition mandate." When v2 ships, those references must be deliberately updated, not silently followed.
