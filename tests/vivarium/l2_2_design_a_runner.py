@@ -40,6 +40,7 @@ SUPPORTED_PROCESSES = frozenset(
         "Transcription",
         "RNADecay",
         "ProteinDecay",
+        "Cytokinesis",
         "MacromolecularComplexation",
         "Replication",
         "ReplicationInitiation",
@@ -52,6 +53,7 @@ _PROCESS_BUCKET = {
     "Transcription": "ALGORITHMIC_DEEP",
     "RNADecay": "ALGORITHMIC_SHALLOW",
     "ProteinDecay": "ALGORITHMIC_SHALLOW",
+    "Cytokinesis": "TRIVIAL_RNG",
     "MacromolecularComplexation": "ALGORITHMIC_SHALLOW",
     "Replication": "ALGORITHMIC_DEEP",
     "ReplicationInitiation": "ALGORITHMIC_DEEP",
@@ -67,6 +69,7 @@ _PROCESS_OUTPUT_CHANNELS = {
     "Transcription": ("substrates", "RNAs", "boundEnzymes"),
     "RNADecay": ("substrates", "RNAs"),
     "ProteinDecay": ("substrates", "monomers", "complexs"),
+    "Cytokinesis": ("substrates",),
     "MacromolecularComplexation": ("substrates", "complexs"),
     "Replication": ("substrates",),
     "ReplicationInitiation": ("substrates",),
@@ -77,6 +80,7 @@ _PROCESS_PRIMARY_CHANNEL = {
     "Transcription": "RNAs",
     "RNADecay": "RNAs",
     "ProteinDecay": "monomers",
+    "Cytokinesis": "substrates",
     "MacromolecularComplexation": "substrates",
     "Replication": "substrates",
     "ReplicationInitiation": "substrates",
@@ -87,6 +91,7 @@ _PROCESS_ANALYTICAL_CHECK_REASON = {
     "Transcription": "Transcription has no closed-form per-tick check",
     "RNADecay": "RNADecay has no closed-form per-tick check",
     "ProteinDecay": "ProteinDecay has no closed-form per-tick check",
+    "Cytokinesis": "Cytokinesis has no closed-form per-tick check",
     "MacromolecularComplexation": "MacromolecularComplexation has no closed-form per-tick check",
     "Replication": "Replication has no closed-form per-tick check",
     "ReplicationInitiation": "ReplicationInitiation has no closed-form per-tick check",
@@ -476,6 +481,8 @@ def _process_sample_process(process: str) -> Any:
         return runner_helpers._rna_decay_process(0)
     if process == "ProteinDecay":
         return runner_helpers._protein_decay_process(0)
+    if process == "Cytokinesis":
+        return runner_helpers._cytokinesis_process(0)
     if process == "MacromolecularComplexation":
         return runner_helpers._macromol_process(0)
     if process == "Replication":
@@ -486,13 +493,18 @@ def _process_sample_process(process: str) -> Any:
 
 
 def _observable_wids(process: str, sample_process: Any) -> dict[str, list[str]]:
-    substrate_ids = getattr(sample_process, "_sub_ids", getattr(sample_process, "substrate_wids", ()))
+    substrate_ids = getattr(
+        sample_process,
+        "_sub_ids",
+        getattr(sample_process, "substrate_wids", getattr(sample_process, "fixture_substrate_wids", ())),
+    )
     if not substrate_ids:
         substrate_ids = getattr(sample_process, "aa_ids", ())
+    enzyme_ids = getattr(sample_process, "enzyme_wids", getattr(sample_process, "fixture_enzyme_wids", ()))
     mapping = {
         "substrates": [str(x) for x in substrate_ids],
-        "enzymes": [str(x) for x in getattr(sample_process, "enzyme_wids", ())],
-        "boundEnzymes": [str(x) for x in getattr(sample_process, "enzyme_wids", ())],
+        "enzymes": [str(x) for x in enzyme_ids],
+        "boundEnzymes": [str(x) for x in enzyme_ids],
     }
     if process == "Translation":
         protein_ids = [str(x) for x in getattr(sample_process, "protein_ids", ())]
