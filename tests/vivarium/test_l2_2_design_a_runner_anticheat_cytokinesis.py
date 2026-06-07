@@ -26,7 +26,7 @@ def _cytokinesis_state(*, tick: int = 0) -> dict[str, object]:
     }
 
 
-def test_cytokinesis_primary_fixture_is_legitimate_noop() -> None:
+def test_cytokinesis_fixture_substrates_are_noop_window() -> None:
     oracle = runner_helpers.load_karr_oracle("Cytokinesis")
     before = np.asarray(oracle["before_substrates"], dtype=np.float64)
     after = np.asarray(oracle["after_substrates"], dtype=np.float64)
@@ -84,20 +84,19 @@ def test_cytokinesis_constant_zero_primary_channel_fails(
     assert result["channels"]["substrates"]["w1_oc_vs_karr"] > 0.0
 
 
-def test_cytokinesis_primary_exact_match_is_legitimate_noop(tmp_path: Path) -> None:
-    payload = runner.run_design_a(
-        process="Cytokinesis",
-        seeds=[0, 1, 2],
-        m_ticks=5,
-        out_dir=tmp_path / "Cytokinesis_legitimate_noop",
-        bootstrap_B=10,
-    )
+def test_cytokinesis_trace_visible_substrates_are_pass_through_on_smoke_window() -> None:
+    oracle = runner_helpers.load_karr_oracle("Cytokinesis")
 
-    result = payload["result"]
-    assert result["verdict"] == "PASS"
-    assert result["channels"]["substrates"]["is_primary"] is True
-    assert result["channels"]["substrates"]["w1_oc_vs_karr"] == 0.0
-    assert any(
-        "PRIMARY_CHANNEL_ORACLE_DETERMINISM_LEGITIMATE" in warning
-        for warning in result["warnings"]
-    )
+    for tick in range(5):
+        state = _cytokinesis_state(tick=tick)
+        runner_helpers._cytokinesis_process.cache_clear()
+        result = runner_helpers._run_cytokinesis_tick(0, tick, state)
+
+        assert np.array_equal(
+            np.asarray(result["substrates"], dtype=np.float64),
+            np.asarray(state["oracle_before_substrates"], dtype=np.float64),
+        )
+        assert np.array_equal(
+            np.asarray(result["substrates"], dtype=np.float64),
+            np.asarray(oracle["after_substrates"], dtype=np.float64)[0, tick],
+        )

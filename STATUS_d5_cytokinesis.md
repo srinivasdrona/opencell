@@ -7,6 +7,7 @@
 - 2026-06-07T13:00:32Z UTC: Probed Cytokinesis replay artifacts and raw trace metadata via WSL Python; established channel coverage, duplicate-WID counts, no-op replay behavior, and PRIMARY-channel choice.
 - 2026-06-07T13:04:57Z UTC: Added Cytokinesis helper loader/process/dispatcher; verified the helper avoids production-side oracle file I/O by forcing a non-resolving `trace_path` override and still returns the honest no-op substrate vector.
 - 2026-06-07T13:11:11Z UTC: Wired Cytokinesis into the Design-A runner and added Cytokinesis anticheat coverage; focused anticheat suite passed (`23 passed`).
+- 2026-06-07T13:12:27Z UTC: Ran the Cytokinesis smoke gate and a follow-up write-surface probe; the runner artifact is green, but the trace-visible channels are pass-through only, so the final beat verdict is `BLOCKED_NO_VIABLE_PRIMARY`.
 
 ## Beat 1 - SUT inspection + wiring design
 
@@ -28,7 +29,7 @@ Write-surface table:
 
 | channel | written_by_SUT? | in_trace? | n_wids_total | n_wids_unique | classification |
 | --- | --- | --- | ---: | ---: | --- |
-| `substrates` | yes, but only `GTP` | yes | 3 | 3 | PRIMARY_CANDIDATE |
+| `substrates` | store yes, trace-visible WIDs no (`GTP` is absent from oracle vector) | yes | 3 | 3 | RUNNER_DIAGNOSTIC_ONLY |
 | `enzymes` | no | yes | 4 | 4 | SUT_BIOLOGY_GAP |
 | `boundEnzymes` | no | yes | 4 | 4 | SUT_BIOLOGY_GAP |
 | `cell.division_progress` | yes | no | n/a | n/a | UNOBSERVABLE_TO_RUNNER |
@@ -36,9 +37,10 @@ Write-surface table:
 | `requests.karr_cytokinesis.GTP` | yes | no | n/a | n/a | INPUT_SIDE_ONLY |
 
 Decision:
-- PRIMARY channel: `substrates`
+- Diagnostic runner slot (required by current harness): `substrates`
+- Viable biological PRIMARY: none
 - SECONDARY channels: none
-- `expected_sut_gap`: `enzymes`, `boundEnzymes`
+- `expected_sut_gap`: `substrates[PI,H2O,H]`, `enzymes`, `boundEnzymes`
 - Positional shadow store: not needed; no duplicate WIDs on any trace-visible channel.
 
 Bucket choice:
@@ -78,7 +80,7 @@ Runner wiring:
 - Added `Cytokinesis` to `SUPPORTED_PROCESSES`.
 - Added `Cytokinesis` to `_PROCESS_BUCKET` as `TRIVIAL_RNG`.
 - Added `Cytokinesis` to `_PROCESS_OUTPUT_CHANNELS` as `("substrates",)`.
-- Added `Cytokinesis` to `_PROCESS_PRIMARY_CHANNEL` as `substrates`.
+- Added `Cytokinesis` to `_PROCESS_PRIMARY_CHANNEL` as `substrates` because the current runner requires a primary slot; Beat 5 documents that this is diagnostic-only and not a viable biological gate channel.
 - Added `Cytokinesis` to `_PROCESS_ANALYTICAL_CHECK_REASON`.
 - Added `_process_sample_process("Cytokinesis") -> runner_helpers._cytokinesis_process(0)`.
 - Hardened `_observable_wids()` so fixture-backed processes can source WIDs from `fixture_substrate_wids` / `fixture_enzyme_wids`; this is required for Cytokinesis because the process does not expose `substrate_wids` / `enzyme_wids`.
@@ -87,10 +89,10 @@ Anticheat file:
 - Added `tests/vivarium/test_l2_2_design_a_runner_anticheat_cytokinesis.py`
 
 New tests:
-- `test_cytokinesis_primary_fixture_is_legitimate_noop`
+- `test_cytokinesis_fixture_substrates_are_noop_window`
 - `test_cytokinesis_tick_ignores_cheated_after_payload`
 - `test_cytokinesis_constant_zero_primary_channel_fails`
-- `test_cytokinesis_primary_exact_match_is_legitimate_noop`
+- `test_cytokinesis_trace_visible_substrates_are_pass_through_on_smoke_window`
 
 Pass count:
 - `bin\oc-pytest tests/vivarium/test_l2_2_design_a_runner_anticheat.py tests/vivarium/test_l2_2_design_a_runner_anticheat_rna_decay.py tests/vivarium/test_l2_2_design_a_runner_anticheat_macromol.py tests/vivarium/test_l2_2_design_a_runner_anticheat_replication.py tests/vivarium/test_l2_2_design_a_runner_anticheat_repinit.py tests/vivarium/test_l2_2_design_a_runner_anticheat_cytokinesis.py -q`
@@ -98,8 +100,35 @@ Pass count:
 
 ## Beat 4 - inversion
 
-Pending.
+Falsifiers considered:
+- Why not accept `substrates` as a real PRIMARY? Falsifier: if the trace-visible substrate WIDs did not intersect the SUT's actual writes, then the projected channel would be pass-through and therefore invalid as a gate. This falsifier fired: oracle WIDs are `PI/H2O/H`, but the SUT only writes `substrates[GTP]`.
+- Why `TRIVIAL_RNG` and not `ALGORITHMIC_SHALLOW` or `ALGORITHMIC_DEEP`? Falsifier: any RNG draw, stochastic branch, or persistent random state affecting `next_update()` would have moved Cytokinesis out of `TRIVIAL_RNG`. Source inspection found none.
+- Why no positional shadow store? Falsifier: any duplicate trace WID on `substrates`, `enzymes`, or `boundEnzymes` would have forced positional slot preservation. Duplicate-WID probe found `3/3`, `4/4`, and `4/4` unique respectively, so the shadow store would add complexity without guarding a real failure mode.
+- Why no oracle-after overlay on PRIMARY? Falsifier: none. Even before the no-viable-primary conclusion, after-hint overlay on the compared channel would still be laundering and therefore wrong.
+- Why is the smoke result not sufficient evidence of success? Falsifier: if the SUT actually emitted one of the trace-visible channels during the smoke window, then `w1=0` plus the no-op warning could have been a legitimate gate pass. The follow-up write-surface probe rejected that: ticks `0..4` return only `requests`, with no trace-visible substrate writes.
 
 ## Beat 5 - smoke gate
 
-Pending.
+Command:
+- `bin\oc-py tests/vivarium/l2_2_design_a_runner.py --process Cytokinesis --seeds 3 --ticks 5 --bootstrap-B 200 --output-dir tests/vivarium/artifacts/l2_2_design_a/Cytokinesis_smoke`
+
+Runner artifact:
+- CLI summary: `Cytokinesis PASS substrates=SEED_NOISE@0.000000`
+- `result.json` primary-channel details: `w1_oc_vs_karr=0.0`, `ci95=[0.0, 0.0]`, `q95_null=0.0`, `threshold=1.0`, runner verdict `SEED_NOISE`
+- Runner warnings: `KARR_SINGLE_SEED_REUSED`, `PRIMARY_CHANNEL_ORACLE_DETERMINISM_LEGITIMATE`
+
+Follow-up probes:
+- Duplicate-WID probe: not needed after Beat 1; all trace-visible channels are unique-WID.
+- `oc_equals_before` / write-surface probe over ticks `0..4`:
+  - trace substrate WIDs = `PI`, `H2O`, `H`
+  - SUT substrate WIDs = `GTP`, `H`, `H2O`, `PI`
+  - `next_update()` returns only `requests` on all five ticks
+  - `update["substrates"]` is empty on all five ticks
+  - projected runner `substrates` vector equals both oracle-before and oracle-after on all five ticks
+
+Interpretation:
+- The smoke artifact is honest but not gateable: the compared `substrates` vector is pass-through on the replay window because the current SUT never writes the trace-visible substrate WIDs.
+- This is an i4-class SUT biology gap, not a harness laundering bug.
+- No trace-visible channel satisfies the Beat 1 PRIMARY contract for Cytokinesis in the current SUT.
+
+verdict: BLOCKED_NO_VIABLE_PRIMARY
