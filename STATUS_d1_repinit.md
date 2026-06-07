@@ -102,4 +102,76 @@ Beat 3 verification:
 
 ## Beat 4 - inversion
 
+- 2026-06-07T12:10:12.6995635Z inversion pass: recorded rejected alternatives and the evidence that would have flipped each design choice.
+
+Falsifiers considered and rejected:
+- PRIMARY channel choice:
+  - Chosen: `substrates`
+  - Rejected alternative: `enzymes` or `boundEnzymes` as primary
+  - Falsifier that would have moved `substrates` to secondary: evidence that the real `next_update()` path writes `enzymes` or `boundEnzymes` without going through `trace_hint`. The source review found the opposite: those channels are only writable through `_next_update_from_trace_hint()`, so they cannot be an honest primary.
+- Oracle selection:
+  - Chosen: `ReplicationInitiation_from_trajectory.npz`
+  - Rejected alternative: the plain `ReplicationInitiation.npz`
+  - Falsifier that would have justified the plain oracle: at least one tick with `before_substrates != after_substrates` on the plain fixture. Probe result was `before == after` on all exposed channels for all 100 ticks, so using it would have converted ReplicationInitiation into a noop false-pass.
+- Bucket choice:
+  - Chosen: `ALGORITHMIC_DEEP`
+  - Rejected alternatives: `TRIVIAL_RNG`, `ALGORITHMIC_SHALLOW`
+  - Falsifier that would have moved bucket down: a source review showing no RNG usage and no hidden state beyond directly exposed before-vectors. Instead the SUT uses `_rng.random`, `_rng.binomial`, `_rng.choice`, plus hidden per-site arrays `_bound_atp/_bound_adp`, so shallow/trivial classification would understate the reconstruction risk.
+- Duplicate-WID handling:
+  - Chosen: no positional shadow store
+  - Rejected alternative: RNADecay-style slot shadow store
+  - Falsifier that would have flipped this: any duplicate WIDs on `substrates`, `enzymes`, `boundEnzymes`, or `all_dnaa_sites`. Probe result was zero duplicates on all inspected channels, so positional shadow storage would add complexity without protecting a real failure mode.
+- Site reconstruction policy:
+  - Chosen: fill non-OriC sites first when expanding aggregate `boundEnzymes` into per-site chromosome occupancy
+  - Rejected alternative: allow the helper to invent OriC occupancy from aggregate counts
+  - Falsifier that would have justified filling OriC first: trace-visible per-site occupancy data, or a SUT/fixture source showing that the aggregate bound counts are guaranteed to be OriC-local. Neither exists in the available replay artifacts, so populating OriC first would be an unjustified way to trigger initiation.
+- After-hint overlay policy:
+  - Chosen: never overlay `oracle_after_*` or incoming `trace_hint` onto the primary ReplicationInitiation path
+  - Rejected alternative: use `trace_hint` to populate `enzymes_next` / `boundEnzymes_next` and let the helper project from that
+  - Falsifier that would have justified an after-hint overlay on the primary: none. Any such overlay would route through `_next_update_from_trace_hint()` and launder the oracle by construction.
+
 ## Beat 5 - smoke gate
+
+- 2026-06-07T12:12:17.451288+00:00 smoke gate run: `bin\oc-py tests/vivarium/l2_2_design_a_runner.py --process ReplicationInitiation --seeds 3 --m-ticks 5 --bootstrap-B 200 --output-dir tests/vivarium/artifacts/l2_2_design_a/ReplicationInitiation_smoke`
+- 2026-06-07T12:12:17.451288+00:00 smoke gate outcome: `ReplicationInitiation FAIL substrates=FAIL@7531.520000`
+
+Smoke-gate summary:
+- Primary channel: `substrates`
+- Result: `FAIL`
+- `w1_oc_vs_karr`: `7531.52`
+- `w1_oc_vs_karr_ci95`: `[7531.52, 7531.52]`
+- `q95_null`: `0.0`
+- Threshold: `1.0`
+- Artifact dir: `tests/vivarium/artifacts/l2_2_design_a/ReplicationInitiation_smoke/`
+
+Follow-up probes after primary fail:
+- Duplicate-WID probe on primary:
+  - reused Beat 1 result
+  - `substrates`: 5 total WIDs, 5 unique, 0 duplicates
+  - Conclusion: not an i3 duplicate-WID collapse
+- `oc_equals_before` probe on the 5 smoke ticks:
+  - ticks `0..4`: `oc_equals_before == True`
+  - ticks `0..4`: `oc_equals_after == False`
+  - per-tick `w1(oc, after)` exactly matched `w1(before, after)`
+  - Conclusion: the current RepInitiation primary path is a pure pass-through on `substrates`
+- Write-surface probe on the 5 smoke ticks:
+  - every tick returned update keys `["chromosome", "protein", "requests"]`
+  - every tick had `writes_substrates == False`
+  - Conclusion: under the best available before-side reconstruction from the exposed oracle channels, the real SUT path never emits a `substrates` delta on the smoke window
+- Anti-laundering sanity:
+  - the RepInit anticheat `test_repinit_tick_ignores_cheated_trace_hint_payload` is green
+  - Conclusion: this is not a primary-channel after-hint overlay bug
+
+Interpretation:
+- This is not a duplicate-WID issue and not an oracle-laundering false pass.
+- The only trace-visible primary candidate that the real SUT path can honestly gate on is `substrates`, but the available replay surface (`substrates`, `enzymes`, `boundEnzymes`) does not expose enough chromosome/protein state to drive a non-pass-through `substrates` update.
+- The other trace-visible channels (`enzymes`, `boundEnzymes`) are only writable through `_next_update_from_trace_hint()`, so promoting them to primary would launder the oracle.
+- Therefore this task reaches the prompt's "no viable primary" branch with the current SUT/trace contract.
+
+Handoff / next-step recommendation:
+- Commission a v2 ReplicationInitiation replay surface or SUT interface that exposes a real primary channel:
+  - either add trace-visible `chromosome.dnaa_complex_count` / free DnaA pool state needed to drive the biological path
+  - or teach the replay oracle to expose the exact before-side chromosome occupancy required for RepInitiation without using any `after_*` hint
+- Until then, ReplicationInitiation can be wired in the harness, but it cannot honestly PASS a Design-A primary gate.
+
+verdict: BLOCKED_NO_VIABLE_PRIMARY
