@@ -47,6 +47,7 @@ from opencell.vivarium.karr_protein_decay_light import ProteinDecayLightProcess 
 from opencell.vivarium.karr_macromolecular_complexation import (  # noqa: E402
     MacromolecularComplexationProcess,
 )
+from opencell.vivarium.karr_cytokinesis import KarrCytokinesisProcess  # noqa: E402
 from opencell.vivarium.karr_replication import KarrReplicationProcess  # noqa: E402
 from opencell.vivarium.karr_replication_initiation import KarrReplicationInitiationProcess  # noqa: E402
 
@@ -70,6 +71,9 @@ _PROTEIN_DECAY_ORACLE_PATH = (
 )
 _MACROMOL_ORACLE_PATH = (
     _REPO_ROOT / "data" / "karr_fixtures" / "per_process_replay" / "MacromolecularComplexation.npz"
+)
+_CYTOKINESIS_ORACLE_PATH = (
+    _REPO_ROOT / "data" / "karr_fixtures" / "per_process_replay" / "Cytokinesis.npz"
 )
 _REPLICATION_ORACLE_PATH = (
     _REPO_ROOT / "data" / "karr_fixtures" / "per_process_replay" / "Replication.npz"
@@ -95,6 +99,7 @@ def _oracle_dispatch() -> dict[str, Any]:
         "RNADecay": _load_rna_decay_oracle,
         "ProteinDecay": _load_protein_decay_oracle,
         "MacromolecularComplexation": _load_macromol_oracle,
+        "Cytokinesis": _load_cytokinesis_oracle,
         "Replication": _load_replication_oracle,
         "ReplicationInitiation": _load_replication_initiation_oracle,
     }
@@ -285,6 +290,32 @@ def _load_macromol_oracle() -> dict[str, Any]:
     }
 
 
+def _load_cytokinesis_oracle() -> dict[str, Any]:
+    if not _CYTOKINESIS_ORACLE_PATH.exists():
+        raise FileNotFoundError(f"Missing Cytokinesis oracle fixture: {_CYTOKINESIS_ORACLE_PATH}")
+
+    with np.load(_CYTOKINESIS_ORACLE_PATH, allow_pickle=False) as payload:
+        before_substrates = np.asarray(payload["state_before__substrates"], dtype=np.float64)[:, 0, :]
+        before_enzymes = np.asarray(payload["state_before__enzymes"], dtype=np.float64)[:, 0, :]
+        before_bound = np.asarray(payload["state_before__boundEnzymes"], dtype=np.float64)[:, 0, :]
+        after_substrates = np.asarray(payload["states_after__substrates"], dtype=np.float64)[:, 0, :]
+        after_enzymes = np.asarray(payload["states_after__enzymes"], dtype=np.float64)[:, 0, :]
+        after_bound = np.asarray(payload["states_after__boundEnzymes"], dtype=np.float64)[:, 0, :]
+
+    return {
+        "process": "Cytokinesis",
+        "oracle_path": _CYTOKINESIS_ORACLE_PATH,
+        "canonical_seed_count": 1,
+        "n_ticks_available": int(before_substrates.shape[0]),
+        "before_substrates": before_substrates[np.newaxis, :, :],
+        "before_enzymes": before_enzymes[np.newaxis, :, :],
+        "before_bound_enzymes": before_bound[np.newaxis, :, :],
+        "after_substrates": after_substrates[np.newaxis, :, :],
+        "after_enzymes": after_enzymes[np.newaxis, :, :],
+        "after_bound_enzymes": after_bound[np.newaxis, :, :],
+    }
+
+
 @lru_cache(maxsize=1)
 def _replication_projection_inputs() -> dict[str, Any]:
     process = _replication_process(0)
@@ -410,6 +441,20 @@ def _macromol_process(seed: int) -> MacromolecularComplexationProcess:
 
 
 @lru_cache(maxsize=None)
+def _cytokinesis_process(seed: int) -> KarrCytokinesisProcess:
+    with forbid_sut_oracle_file_io():
+        return KarrCytokinesisProcess(
+            {
+                "rng_seed": int(seed),
+                # Avoid production-side reads of the per-process replay trace
+                # during __init__; Cytokinesis falls back to the built-in
+                # 100-tick default when the trace path does not resolve.
+                "trace_path": "data/does_not_exist/Cytokinesis_trace_unused_for_l22.mat",
+            }
+        )
+
+
+@lru_cache(maxsize=None)
 def _replication_process(seed: int) -> KarrReplicationProcess:
     with forbid_sut_oracle_file_io():
         return KarrReplicationProcess({"rng_seed": int(seed)})
@@ -434,6 +479,7 @@ def _tick_dispatch() -> dict[str, Any]:
         "RNADecay": _run_rna_decay_tick,
         "ProteinDecay": _run_protein_decay_tick,
         "MacromolecularComplexation": _run_macromol_tick,
+        "Cytokinesis": _run_cytokinesis_tick,
         "Replication": _run_replication_tick,
         "ReplicationInitiation": _run_repinit_tick,
     }
@@ -942,6 +988,58 @@ def _run_macromol_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str,
                 state=runtime_state,
                 observable="complexs",
                 wids=complex_wids,
+                bound_enzymes_before=bound_enzymes_before,
+            ),
+            dtype=np.float64,
+        ),
+        "sample_seed": _sample_seed(seed, tick),
+    }
+
+
+def _run_cytokinesis_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
+    """Run one OpenCell Cytokinesis tick from a prepared state snapshot."""
+    process = _cytokinesis_process(_sample_seed(seed, tick))
+    runtime_state = build_state_template(process)
+    substrate_wids = list(state["substrate_wids"])
+    enzyme_wids = list(state["enzyme_wids"])
+    bound_enzymes_before = np.asarray(state["oracle_before_bound_enzymes"], dtype=np.float64)
+
+    maybe_replay = getattr(process, "_maybe_replay_from_hint", None)
+    if callable(maybe_replay):
+        setattr(process, "_maybe_replay_from_hint", lambda *_args, **_kwargs: None)
+
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="substrates",
+        vector=np.asarray(state["oracle_before_substrates"], dtype=np.float64),
+        wids=substrate_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="enzymes",
+        vector=np.asarray(state["oracle_before_enzymes"], dtype=np.float64),
+        wids=enzyme_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="boundEnzymes",
+        vector=bound_enzymes_before,
+        wids=enzyme_wids,
+    )
+    refresh_allocator_views(process, runtime_state)
+    with forbid_sut_oracle_file_io():
+        update = process.next_update(1.0, runtime_state)
+    apply_count_update(runtime_state, update)
+    return {
+        "substrates": np.asarray(
+            project_observable_from_state(
+                process=process,
+                state=runtime_state,
+                observable="substrates",
+                wids=substrate_wids,
                 bound_enzymes_before=bound_enzymes_before,
             ),
             dtype=np.float64,
