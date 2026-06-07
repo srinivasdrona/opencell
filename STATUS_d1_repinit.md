@@ -71,6 +71,35 @@ Beat 2 verification:
 
 ## Beat 3 - runner wiring + anticheat tests
 
+- 2026-06-07T12:08:07.6664258Z runner wiring: added ReplicationInitiation to helper oracle dispatch, runner process tables, sample-process lookup, and a new anticheat file.
+
+Beat 3 implementation notes:
+- Helper wiring:
+  - added `_REPLICATION_INITIATION_ORACLE_PATH`
+  - added `_load_replication_initiation_oracle()`
+  - `load_karr_oracle("ReplicationInitiation")` now sources `ReplicationInitiation_from_trajectory.npz`, not the noop `ReplicationInitiation.npz`
+- Runner wiring in `tests/vivarium/l2_2_design_a_runner.py`:
+  - added `ReplicationInitiation` to `SUPPORTED_PROCESSES`
+  - bucketed as `ALGORITHMIC_DEEP`
+  - output channels set to `("substrates",)` only
+  - primary channel set to `substrates`
+  - added analytical-check reason and sample-process dispatch entry
+- New anticheat file: `tests/vivarium/test_l2_2_design_a_runner_anticheat_repinit.py`
+  - `test_repinit_primary_fixture_is_nontrivial`
+  - `test_repinit_tick_ignores_cheated_trace_hint_payload`
+  - `test_repinit_constant_zero_primary_channel_fails`
+
+Beat 3 diff stat (tracked edits before staging the new file):
+```text
+tests/vivarium/_l2_2_design_a_runner_helpers.py | 38 +++++++++++++++++++++++++
+tests/vivarium/l2_2_design_a_runner.py          | 10 ++++++-
+2 files changed, 47 insertions(+), 1 deletion(-)
+```
+
+Beat 3 verification:
+- `bin\oc-pytest tests/vivarium/test_l2_2_design_a_runner_anticheat.py tests/vivarium/test_l2_2_design_a_runner_anticheat_rna_decay.py tests/vivarium/test_l2_2_design_a_runner_protein_decay_anticheat.py tests/vivarium/test_l2_2_design_a_runner_anticheat_repinit.py -q`
+- Result: `16 passed`
+
 ## Beat 4 - inversion
 
 ## Beat 5 - smoke gate

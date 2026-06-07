@@ -70,6 +70,13 @@ _PROTEIN_DECAY_ORACLE_PATH = (
 _MACROMOL_ORACLE_PATH = (
     _REPO_ROOT / "data" / "karr_fixtures" / "per_process_replay" / "MacromolecularComplexation.npz"
 )
+_REPLICATION_INITIATION_ORACLE_PATH = (
+    _REPO_ROOT
+    / "data"
+    / "karr_fixtures"
+    / "per_process_replay"
+    / "ReplicationInitiation_from_trajectory.npz"
+)
 _TRANSLATION_MRNA_STORE_PATH_OVERRIDE = {"mRNAs": ("rna", "counts")}
 _RNA_STORE_PATH_OVERRIDE = {"RNAs": ("rna", "counts")}
 _RNA_SLOT_COUNTS_STATE_KEY = "_l2_rna_slot_counts"
@@ -84,6 +91,7 @@ def _oracle_dispatch() -> dict[str, Any]:
         "RNADecay": _load_rna_decay_oracle,
         "ProteinDecay": _load_protein_decay_oracle,
         "MacromolecularComplexation": _load_macromol_oracle,
+        "ReplicationInitiation": _load_replication_initiation_oracle,
     }
 
 
@@ -269,6 +277,35 @@ def _load_macromol_oracle() -> dict[str, Any]:
         "before_complexs": before_complexs[np.newaxis, :, :],
         "after_substrates": after_substrates[np.newaxis, :, :],
         "after_complexs": after_complexs[np.newaxis, :, :],
+    }
+
+
+def _load_replication_initiation_oracle() -> dict[str, Any]:
+    if not _REPLICATION_INITIATION_ORACLE_PATH.exists():
+        raise FileNotFoundError(
+            "Missing ReplicationInitiation oracle fixture: "
+            f"{_REPLICATION_INITIATION_ORACLE_PATH}"
+        )
+
+    with np.load(_REPLICATION_INITIATION_ORACLE_PATH, allow_pickle=True) as payload:
+        before_substrates = np.asarray(payload["state_before__substrates"], dtype=np.float64)[:, 0, :]
+        before_enzymes = np.asarray(payload["state_before__enzymes"], dtype=np.float64)[:, 0, :]
+        before_bound = np.asarray(payload["state_before__boundEnzymes"], dtype=np.float64)[:, 0, :]
+        after_substrates = np.asarray(payload["states_after__substrates"], dtype=np.float64)[:, 0, :]
+        after_enzymes = np.asarray(payload["states_after__enzymes"], dtype=np.float64)[:, 0, :]
+        after_bound = np.asarray(payload["states_after__boundEnzymes"], dtype=np.float64)[:, 0, :]
+
+    return {
+        "process": "ReplicationInitiation",
+        "oracle_path": _REPLICATION_INITIATION_ORACLE_PATH,
+        "canonical_seed_count": 1,
+        "n_ticks_available": int(before_substrates.shape[0]),
+        "before_substrates": before_substrates[np.newaxis, :, :],
+        "before_enzymes": before_enzymes[np.newaxis, :, :],
+        "before_bound_enzymes": before_bound[np.newaxis, :, :],
+        "after_substrates": after_substrates[np.newaxis, :, :],
+        "after_enzymes": after_enzymes[np.newaxis, :, :],
+        "after_bound_enzymes": after_bound[np.newaxis, :, :],
     }
 
 
@@ -1150,6 +1187,7 @@ __all__ = [
     "_RNA_DECAY_ORACLE_PATH",
     "_PROTEIN_DECAY_ORACLE_PATH",
     "_MACROMOL_ORACLE_PATH",
+    "_REPLICATION_INITIATION_ORACLE_PATH",
     "_TRANSCRIPTION_ORACLE_PATH",
     "compute_null_q95",
     "compute_w1",
