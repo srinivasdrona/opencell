@@ -1,0 +1,2 @@
+attrs ('_command_result', '_condition_path', '_parallel', '_parameters', '_pending_command', '_rng', '_schema', '_schema_override', 'aa_ids', 'enable_throttle', 'enzyme_wids', 'model', 'protein_ids')
+ribosome_or_bound_attrs ()
