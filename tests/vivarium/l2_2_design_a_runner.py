@@ -33,16 +33,7 @@ import _l2_2_design_a_runner_helpers as runner_helpers  # noqa: E402
 
 HARNESS_VERSION = "design_a_v1_3"
 SUMMARY_SCHEMA_VERSION = "1.3"
-SUPPORTED_PROCESSES = frozenset(
-    {
-        "Metabolism",
-        "Translation",
-        "Transcription",
-        "RNADecay",
-        "ProteinDecay",
-        "MacromolecularComplexation",
-    }
-)
+SUPPORTED_PROCESSES = frozenset({"Metabolism", "Translation", "Transcription", "RNADecay", "ProteinDecay"})
 DEFAULT_BOOTSTRAP_B = 1000
 _PROCESS_BUCKET = {
     "Metabolism": "TRIVIAL_RNG",
@@ -50,7 +41,6 @@ _PROCESS_BUCKET = {
     "Transcription": "ALGORITHMIC_DEEP",
     "RNADecay": "ALGORITHMIC_SHALLOW",
     "ProteinDecay": "ALGORITHMIC_SHALLOW",
-    "MacromolecularComplexation": "ALGORITHMIC_SHALLOW",
 }
 _PROCESS_K_ENG = {
     "TRIVIAL_RNG": runner_helpers.TRIVIAL_RNG_K_ENG,
@@ -63,7 +53,6 @@ _PROCESS_OUTPUT_CHANNELS = {
     "Transcription": ("substrates", "RNAs", "boundEnzymes"),
     "RNADecay": ("substrates", "RNAs"),
     "ProteinDecay": ("substrates", "monomers", "complexs"),
-    "MacromolecularComplexation": ("substrates", "complexs"),
 }
 _PROCESS_PRIMARY_CHANNEL = {
     "Metabolism": "substrates",
@@ -71,7 +60,6 @@ _PROCESS_PRIMARY_CHANNEL = {
     "Transcription": "RNAs",
     "RNADecay": "RNAs",
     "ProteinDecay": "monomers",
-    "MacromolecularComplexation": "substrates",
 }
 _PROCESS_ANALYTICAL_CHECK_REASON = {
     "Metabolism": "Metabolism has no closed-form per-tick check",
@@ -79,7 +67,6 @@ _PROCESS_ANALYTICAL_CHECK_REASON = {
     "Transcription": "Transcription has no closed-form per-tick check",
     "RNADecay": "RNADecay has no closed-form per-tick check",
     "ProteinDecay": "ProteinDecay has no closed-form per-tick check",
-    "MacromolecularComplexation": "MacromolecularComplexation has no closed-form per-tick check",
 }
 _ORACLE_BEFORE_KEY = {
     "substrates": "before_substrates",
@@ -466,8 +453,6 @@ def _process_sample_process(process: str) -> Any:
         return runner_helpers._rna_decay_process(0)
     if process == "ProteinDecay":
         return runner_helpers._protein_decay_process(0)
-    if process == "MacromolecularComplexation":
-        return runner_helpers._macromol_process(0)
     raise ValueError(f"Unsupported process {process!r}.")
 
 
@@ -489,8 +474,6 @@ def _observable_wids(process: str, sample_process: Any) -> dict[str, list[str]]:
         mapping["RNAs"] = [str(x) for x in rna_ids]
     if process == "ProteinDecay":
         mapping["monomers"] = [str(x) for x in getattr(sample_process, "protein_wids", ())]
-        mapping["complexs"] = [str(x) for x in getattr(sample_process, "complex_wids", ())]
-    if process == "MacromolecularComplexation":
         mapping["complexs"] = [str(x) for x in getattr(sample_process, "complex_wids", ())]
     return mapping
 
@@ -587,14 +570,6 @@ def run_design_a(
                         "oracle_before_monomers": before_vectors["monomers"][seed_index, tick],
                         "oracle_before_complexs": before_vectors["complexs"][seed_index, tick],
                         "oracle_after_monomers": after_vectors["monomers"][seed_index, tick],
-                        "oracle_after_complexs": after_vectors["complexs"][seed_index, tick],
-                    }
-                )
-            if process == "MacromolecularComplexation":
-                sample_state.update(
-                    {
-                        "complex_wids": wids_by_channel["complexs"],
-                        "oracle_before_complexs": before_vectors["complexs"][seed_index, tick],
                         "oracle_after_complexs": after_vectors["complexs"][seed_index, tick],
                     }
                 )

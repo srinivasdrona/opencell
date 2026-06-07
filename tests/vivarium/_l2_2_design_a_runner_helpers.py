@@ -43,9 +43,6 @@ from opencell.vivarium.karr_translation import KarrTranslationProcess  # noqa: E
 from opencell.vivarium.karr_transcription import KarrTranscriptionProcess  # noqa: E402
 from opencell.vivarium.karr_rna_decay import RnaDecayLightProcess  # noqa: E402
 from opencell.vivarium.karr_protein_decay_light import ProteinDecayLightProcess  # noqa: E402
-from opencell.vivarium.karr_macromolecular_complexation import (  # noqa: E402
-    MacromolecularComplexationProcess,
-)
 
 
 L2_2_VALIDATION_SEED = 0xCA11B
@@ -65,9 +62,6 @@ _RNA_DECAY_ORACLE_PATH = _REPO_ROOT / "data" / "karr_fixtures" / "per_process_re
 _PROTEIN_DECAY_ORACLE_PATH = (
     _REPO_ROOT / "data" / "karr_fixtures" / "per_process_replay" / "ProteinDecay.npz"
 )
-_MACROMOL_ORACLE_PATH = (
-    _REPO_ROOT / "data" / "karr_fixtures" / "per_process_replay" / "MacromolecularComplexation.npz"
-)
 _TRANSLATION_MRNA_STORE_PATH_OVERRIDE = {"mRNAs": ("rna", "counts")}
 _RNA_STORE_PATH_OVERRIDE = {"RNAs": ("rna", "counts")}
 _RNA_SLOT_COUNTS_STATE_KEY = "_l2_rna_slot_counts"
@@ -81,7 +75,6 @@ def _oracle_dispatch() -> dict[str, Any]:
         "Transcription": _load_transcription_oracle,
         "RNADecay": _load_rna_decay_oracle,
         "ProteinDecay": _load_protein_decay_oracle,
-        "MacromolecularComplexation": _load_macromol_oracle,
     }
 
 
@@ -240,36 +233,6 @@ def _load_protein_decay_oracle() -> dict[str, Any]:
     }
 
 
-def _load_macromol_oracle() -> dict[str, Any]:
-    if not _MACROMOL_ORACLE_PATH.exists():
-        raise FileNotFoundError(
-            f"Missing MacromolecularComplexation oracle fixture: {_MACROMOL_ORACLE_PATH}"
-        )
-
-    with np.load(_MACROMOL_ORACLE_PATH, allow_pickle=False) as payload:
-        before_substrates = np.asarray(payload["state_before__substrates"], dtype=np.float64)[:, 0, :]
-        after_substrates = np.asarray(payload["states_after__substrates"], dtype=np.float64)[:, 0, :]
-        before_complexs = np.asarray(payload["state_before__complexs"], dtype=np.float64)[:, 0, :]
-        after_complexs = np.asarray(payload["states_after__complexs"], dtype=np.float64)[:, 0, :]
-
-    n_ticks = int(before_substrates.shape[0])
-    # The replay export stores MATLAB-empty enzyme arrays as width-2 placeholders,
-    # but the SUT exposes zero enzyme WIDs; normalize them to true zero-width cubes.
-    before_enzymes = np.zeros((n_ticks, 0), dtype=np.float64)
-
-    return {
-        "process": "MacromolecularComplexation",
-        "oracle_path": _MACROMOL_ORACLE_PATH,
-        "canonical_seed_count": 1,
-        "n_ticks_available": n_ticks,
-        "before_substrates": before_substrates[np.newaxis, :, :],
-        "before_enzymes": before_enzymes[np.newaxis, :, :],
-        "before_complexs": before_complexs[np.newaxis, :, :],
-        "after_substrates": after_substrates[np.newaxis, :, :],
-        "after_complexs": after_complexs[np.newaxis, :, :],
-    }
-
-
 @lru_cache(maxsize=None)
 def _metabolism_model() -> Any:
     return m1_karr_metabolism.load_default()
@@ -312,12 +275,6 @@ def _protein_decay_process(seed: int) -> ProteinDecayLightProcess:
         return ProteinDecayLightProcess({"rng_seed": int(seed)})
 
 
-@lru_cache(maxsize=None)
-def _macromol_process(seed: int) -> MacromolecularComplexationProcess:
-    with forbid_sut_oracle_file_io():
-        return MacromolecularComplexationProcess({"rng_seed": int(seed)})
-
-
 def _sample_seed(seed: int, tick: int) -> int:
     ss = np.random.SeedSequence([L2_2_VALIDATION_SEED, int(seed), int(tick)])
     return int(ss.generate_state(1, dtype=np.uint32)[0])
@@ -330,7 +287,6 @@ def _tick_dispatch() -> dict[str, Any]:
         "Transcription": _run_transcription_tick,
         "RNADecay": _run_rna_decay_tick,
         "ProteinDecay": _run_protein_decay_tick,
-        "MacromolecularComplexation": _run_macromol_tick,
     }
 
 
@@ -790,61 +746,6 @@ def _run_protein_decay_tick(seed: int, tick: int, state: dict[str, Any]) -> dict
     }
 
 
-def _run_macromol_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
-    """Run one OpenCell MacromolecularComplexation tick from a prepared snapshot."""
-    process = _macromol_process(_sample_seed(seed, tick))
-    runtime_state = build_state_template(process)
-    substrate_wids = list(state["substrate_wids"])
-    complex_wids = list(state["complex_wids"])
-    bound_enzymes_before = np.zeros(0, dtype=np.float64)
-
-    maybe_replay = getattr(process, "_maybe_replay_from_hint", None)
-    if callable(maybe_replay):
-        setattr(process, "_maybe_replay_from_hint", lambda *_args, **_kwargs: None)
-
-    overlay_observable_into_state(
-        process=process,
-        state=runtime_state,
-        observable="substrates",
-        vector=np.asarray(state["oracle_before_substrates"], dtype=np.float64),
-        wids=substrate_wids,
-    )
-    overlay_observable_into_state(
-        process=process,
-        state=runtime_state,
-        observable="complexs",
-        vector=np.asarray(state["oracle_before_complexs"], dtype=np.float64),
-        wids=complex_wids,
-    )
-    refresh_allocator_views(process, runtime_state)
-    with forbid_sut_oracle_file_io():
-        update = process.next_update(1.0, runtime_state)
-    apply_count_update(runtime_state, update)
-    return {
-        "substrates": np.asarray(
-            project_observable_from_state(
-                process=process,
-                state=runtime_state,
-                observable="substrates",
-                wids=substrate_wids,
-                bound_enzymes_before=bound_enzymes_before,
-            ),
-            dtype=np.float64,
-        ),
-        "complexs": np.asarray(
-            project_observable_from_state(
-                process=process,
-                state=runtime_state,
-                observable="complexs",
-                wids=complex_wids,
-                bound_enzymes_before=bound_enzymes_before,
-            ),
-            dtype=np.float64,
-        ),
-        "sample_seed": _sample_seed(seed, tick),
-    }
-
-
 def compute_w1(oc: Any, karr: Any) -> float:
     """Compute the channel Wasserstein distance between OC and Karr samples."""
     oc_arr = np.asarray(oc, dtype=np.float64).reshape(-1)
@@ -986,7 +887,6 @@ __all__ = [
     "_TRANSLATION_ORACLE_PATH",
     "_RNA_DECAY_ORACLE_PATH",
     "_PROTEIN_DECAY_ORACLE_PATH",
-    "_MACROMOL_ORACLE_PATH",
     "_TRANSCRIPTION_ORACLE_PATH",
     "compute_null_q95",
     "compute_w1",
