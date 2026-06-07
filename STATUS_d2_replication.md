@@ -7,6 +7,7 @@
 - 2026-06-07T13:08:00Z UTC — Inspected `Replication.npz`, `Replication_from_flat.npz`, and `Replication_from_trajectory.npz`; ran duplicate-WID and honest-path viability probes for candidate primary channels.
 - 2026-06-07T12:38:23.7154965Z UTC — Added Replication helper loader/dispatcher path using canonical `Replication.npz` projected to the 5 real-path substrate WIDs and verified `_run_replication_tick()` returns the tick-0 oracle vector with `trace_hint` held empty.
 - 2026-06-07T12:44:03.5816061Z UTC — Wired Replication into the Design-A runner and added `test_l2_2_design_a_runner_anticheat_replication.py`; narrow anticheat suite is green (`19 passed`).
+- 2026-06-07T12:46:00Z UTC — Recorded Beat 4 inversion/falsifiers before the smoke gate.
 
 ## Beat 1 — SUT inspection + wiring design
 
@@ -109,7 +110,24 @@
   - one incidental regression surfaced during this pass: `_replication_initiation_process` briefly lost its `@lru_cache` wrapper, breaking an existing `.cache_clear()` anticheat. Restored before the green run.
 
 ## Beat 4 — inversion
-- Pending.
+- PRIMARY channel choice:
+  - chose projected `substrates` written subset (`DATP/DCTP/DGTP/DTTP/ATP`) instead of the full 16-wide substrate trace
+  - falsifier considered: if the real SUT had emitted the byproduct/product legs visible in Karr (`PPI/H2O/H/NAD/NMN/ADP/AMP/PI`), the full 16-wide substrate vector would have been the correct primary; the tick-0 honest-path probe showed those legs remain zero in OC while Karr changes them substantially, so full-width `substrates` would misclassify a trace-only SUT gap as a primary failure
+- Oracle-source choice:
+  - chose canonical `Replication.npz` as the Design-A source instead of `Replication_from_trajectory.npz`
+  - falsifier considered: if the direct replay export had been missing, malformed, or non-canonical relative to the prompt-named per-process trace source, the trajectory export would have been the fallback; `Replication.json` ties `Replication.npz` back to the missing direct MAT source, while the trajectory export advertises `source=trajectory` and `effective_dt_sec=100`, so it is diagnostic rather than primary
+- Bucket choice:
+  - chose `ALGORITHMIC_DEEP` instead of `TRIVIAL_RNG` / `ALGORITHMIC_SHALLOW`
+  - falsifier considered: if `next_update()` had no RNG and depended only on shallow pool arithmetic with no hidden chromosome coupling, shallow/trivial would have been justified; the actual code uses `_rng`, fork progression, completion state, and a `trace_hint` replay branch keyed off deep process state, so deep is the safer classification
+- Positional shadow-store choice:
+  - chose no positional shadow store
+  - falsifier considered: any duplicate WID count > 0 on a wired output channel would have flipped this immediately; the duplicate-WID probe returned zero duplicates on `substrates`, `enzymes`, and `boundEnzymes`
+- After-hint overlay choice:
+  - chose no `oracle_after_*` overlay on Replication primary
+  - falsifier considered: none; after-hint overlay on the primary channel is always wrong here because Replication has a `trace_hint`-conditioned replay branch and would convert the oracle into the measured output path
+- Chromosome-seeding choice:
+  - chose not to invent per-tick chromosome bootstrap state beyond the helper default
+  - falsifier considered: if the available replay artifacts had exposed a clean per-tick chromosome state channel (or a documented reversible mapping from trace vectors to `replication_state` / fork positions), we would have seeded it; no such channel is present in the available Replication replay exports
 
 ## Beat 5 — smoke gate
 - Pending.
