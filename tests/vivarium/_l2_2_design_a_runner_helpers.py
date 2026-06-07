@@ -326,9 +326,17 @@ def _dnarepair_projection_inputs() -> dict[str, Any]:
     process = _dnarepair_process(0)
     primary_substrate_wids = tuple(str(x) for x in process.tracked_substrates)
     trace_substrate_indices = tuple(process.substrate_wids.index(wid) for wid in primary_substrate_wids)
+    protein_enzyme_wids = tuple(str(x) for x in process.protein_enzyme_wids)
+    protein_enzyme_indices = tuple(process.enzyme_wids.index(wid) for wid in protein_enzyme_wids)
+    complex_enzyme_wids = tuple(str(x) for x in process.complex_enzyme_wids)
+    complex_enzyme_indices = tuple(process.enzyme_wids.index(wid) for wid in complex_enzyme_wids)
     return {
         "primary_substrate_wids": primary_substrate_wids,
         "trace_substrate_indices": trace_substrate_indices,
+        "protein_enzyme_wids": protein_enzyme_wids,
+        "protein_enzyme_indices": protein_enzyme_indices,
+        "complex_enzyme_wids": complex_enzyme_wids,
+        "complex_enzyme_indices": complex_enzyme_indices,
     }
 
 
@@ -336,6 +344,18 @@ def _project_dnarepair_substrate_cube(values: np.ndarray) -> np.ndarray:
     inputs = _dnarepair_projection_inputs()
     arr = np.asarray(values, dtype=np.float64)
     return np.asarray(arr[:, inputs["trace_substrate_indices"]], dtype=np.float64)
+
+
+def _project_dnarepair_protein_cube(values: np.ndarray) -> np.ndarray:
+    inputs = _dnarepair_projection_inputs()
+    arr = np.asarray(values, dtype=np.float64)
+    return np.asarray(arr[:, inputs["protein_enzyme_indices"]], dtype=np.float64)
+
+
+def _project_dnarepair_complex_cube(values: np.ndarray) -> np.ndarray:
+    inputs = _dnarepair_projection_inputs()
+    arr = np.asarray(values, dtype=np.float64)
+    return np.asarray(arr[:, inputs["complex_enzyme_indices"]], dtype=np.float64)
 
 
 def _load_dnarepair_oracle() -> dict[str, Any]:
@@ -346,11 +366,11 @@ def _load_dnarepair_oracle() -> dict[str, Any]:
         before_substrates_raw = np.asarray(payload["state_before__substrates"], dtype=np.float64)[:, 0, :]
         before_enzymes = np.asarray(payload["state_before__enzymes"], dtype=np.float64)[:, 0, :]
         before_bound = np.asarray(payload["state_before__boundEnzymes"], dtype=np.float64)[:, 0, :]
-        before_proteins = np.asarray(payload["state_before__protein"], dtype=np.float64)[:, 0, :]
-        before_complexs = np.asarray(payload["state_before__complex"], dtype=np.float64)[:, 0, :]
         after_substrates_raw = np.asarray(payload["states_after__substrates"], dtype=np.float64)[:, 0, :]
 
     before_substrates = _project_dnarepair_substrate_cube(before_substrates_raw)
+    before_proteins = _project_dnarepair_protein_cube(before_enzymes)
+    before_complexs = _project_dnarepair_complex_cube(before_enzymes)
     after_substrates = _project_dnarepair_substrate_cube(after_substrates_raw)
 
     return {

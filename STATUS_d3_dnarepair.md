@@ -83,3 +83,13 @@ With both zero-substrates state AND populated state (enzymes=5, substrates=100, 
 - Diff stat: `tests/vivarium/_l2_2_design_a_runner_helpers.py | 126 insertions(+)`
 - Added `_DNAREPAIR_ORACLE_PATH`, a dynamic 5-WID substrate projection loader for `ATP/DATP/DCTP/DGTP/DTTP`, `_dnarepair_process({"rng_seed": seed})`, and `_run_dnarepair_tick`.
 - Dispatcher mirrors Replication's structure: it overlays the clean `oracle_before_*` snapshot for substrates/enzymes/boundEnzymes/protein/complex, keeps `trace_hint = {}` defensively, and never applies `oracle_after_*` onto the primary substrates channel.
+
+## Beat 3 — runner wiring + anticheat tests
+
+- Wired `DNARepair` through `tests/vivarium/l2_2_design_a_runner.py`: supported-process tables, primary/output channel metadata, sample-process dispatch, 5-WID observable projection, and the DNARepair-specific sample-state handoff for protein/complex inputs.
+- Added `tests/vivarium/test_l2_2_design_a_runner_anticheat_dnarepair.py` with:
+  - `test_dnarepair_primary_fixture_is_legitimate_noop`
+  - `test_dnarepair_constant_zero_primary_channel_fails`
+  - `test_dnarepair_primary_exact_match_is_legitimate_noop`
+- Omitted the Replication trace-hint bypass test on purpose; DNARepair has no `_maybe_replay_from_hint` / `trace_hint` replay branch.
+- Verification: `bin/oc-pytest.cmd tests/vivarium/test_l2_2_design_a_runner_anticheat*.py -q` -> `26 passed in 58.57s`

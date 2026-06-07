@@ -35,6 +35,7 @@ HARNESS_VERSION = "design_a_v1_3"
 SUMMARY_SCHEMA_VERSION = "1.3"
 SUPPORTED_PROCESSES = frozenset(
     {
+        "DNARepair",
         "Metabolism",
         "Translation",
         "Transcription",
@@ -48,6 +49,7 @@ SUPPORTED_PROCESSES = frozenset(
 )
 DEFAULT_BOOTSTRAP_B = 1000
 _PROCESS_BUCKET = {
+    "DNARepair": "ALGORITHMIC_DEEP",
     "Metabolism": "TRIVIAL_RNG",
     "Translation": "ALGORITHMIC_DEEP",
     "Transcription": "ALGORITHMIC_DEEP",
@@ -64,6 +66,7 @@ _PROCESS_K_ENG = {
     "ALGORITHMIC_DEEP": runner_helpers.ALGORITHMIC_DEEP_K_ENG,
 }
 _PROCESS_OUTPUT_CHANNELS = {
+    "DNARepair": ("substrates",),
     "Metabolism": ("substrates",),
     "Translation": ("substrates", "monomers", "boundEnzymes"),
     "Transcription": ("substrates", "RNAs", "boundEnzymes"),
@@ -75,6 +78,7 @@ _PROCESS_OUTPUT_CHANNELS = {
     "ReplicationInitiation": ("substrates",),
 }
 _PROCESS_PRIMARY_CHANNEL = {
+    "DNARepair": "substrates",
     "Metabolism": "substrates",
     "Translation": "monomers",
     "Transcription": "RNAs",
@@ -86,6 +90,7 @@ _PROCESS_PRIMARY_CHANNEL = {
     "ReplicationInitiation": "substrates",
 }
 _PROCESS_ANALYTICAL_CHECK_REASON = {
+    "DNARepair": "DNARepair has no closed-form per-tick check",
     "Metabolism": "Metabolism has no closed-form per-tick check",
     "Translation": "Translation has no closed-form per-tick check",
     "Transcription": "Transcription has no closed-form per-tick check",
@@ -471,6 +476,8 @@ def _process_primary_channel(process: str) -> str:
 
 
 def _process_sample_process(process: str) -> Any:
+    if process == "DNARepair":
+        return runner_helpers._dnarepair_process(0)
     if process == "Metabolism":
         return runner_helpers._metabolism_process(0)
     if process == "Translation":
@@ -518,6 +525,10 @@ def _observable_wids(process: str, sample_process: Any) -> dict[str, list[str]]:
         mapping["complexs"] = [str(x) for x in getattr(sample_process, "complex_wids", ())]
     if process == "MacromolecularComplexation":
         mapping["complexs"] = [str(x) for x in getattr(sample_process, "complex_wids", ())]
+    if process == "DNARepair":
+        mapping["substrates"] = [str(x) for x in getattr(sample_process, "tracked_substrates", ())]
+        mapping["monomers"] = [str(x) for x in getattr(sample_process, "protein_enzyme_wids", ())]
+        mapping["complexs"] = [str(x) for x in getattr(sample_process, "complex_enzyme_wids", ())]
     if process == "Replication":
         mapping["substrates"] = [str(x) for x in [*sample_process.dntp_wids, sample_process.atp_wid]]
     return mapping
@@ -624,6 +635,15 @@ def run_design_a(
                         "complex_wids": wids_by_channel["complexs"],
                         "oracle_before_complexs": before_vectors["complexs"][seed_index, tick],
                         "oracle_after_complexs": after_vectors["complexs"][seed_index, tick],
+                    }
+                )
+            if process == "DNARepair":
+                sample_state.update(
+                    {
+                        "monomer_wids": wids_by_channel["monomers"],
+                        "complex_wids": wids_by_channel["complexs"],
+                        "oracle_before_monomers": before_vectors["monomers"][seed_index, tick],
+                        "oracle_before_complexs": before_vectors["complexs"][seed_index, tick],
                     }
                 )
             if "boundEnzymes" in before_vectors:
