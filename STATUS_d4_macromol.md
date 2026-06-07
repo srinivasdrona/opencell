@@ -101,8 +101,59 @@ Beat-3 falsifier caught early:
 
 ## Beat 4 - inversion
 
-Pending.
+- 2026-06-07T11:39:47Z UTC: Wrote explicit falsifiers after the Beat-3 primary-channel revision.
+
+Falsifiers considered and rejected:
+- Primary channel choice: `substrates` is primary, not `complexs`.
+  Falsifier: if `complexs` had any nontrivial support in the replay fixture (`n_nonzero_karr >= 30` or even just a nonzero all-zero-cheat W1), it would be the more direct D2-owned primary.
+  Rejection evidence: Beat-3 anticheat plus the probe showed `complexs_before=0`, `complexs_after=0`, so `complexs` cannot discriminate a cheated zero-output path.
+- Secondary channel choice: `complexs` stays secondary, not dropped.
+  Falsifier: if `complexs` were absent from the SUT write surface or absent from the trace, it would move from SECONDARY to SUT_GAP / unwired.
+  Rejection evidence: `next_update()` does write `complex.counts`, and both the raw trace and replay fixture expose `complexs`; it is real, just all-zero on this oracle slice.
+- Bucket choice: `ALGORITHMIC_SHALLOW`, not `TRIVIAL_RNG` and not `ALGORITHMIC_DEEP`.
+  Falsifier for `TRIVIAL_RNG`: if `_rng.choice` / `_rng.poisson` were absent and the process reduced to pure deterministic arithmetic, the bucket would drop to `TRIVIAL_RNG`.
+  Falsifier for `ALGORITHMIC_DEEP`: if the tick needed chromosome state, RNAP occupancy, replication state, or other deep cross-process stores to compute its delta, it would move to `ALGORITHMIC_DEEP`.
+  Rejection evidence: the SUT only uses stoichiometry, the current allocated substrate snapshot, and its own RNG.
+- Positional shadow store: no positional shadow store.
+  Falsifier: any duplicate WID count greater than zero on a wired output channel would have forced an i3-style positional store.
+  Rejection evidence: `substrates=210/210 unique`, `complexs=147/147 unique`, so dict overlay is safe.
+- After-hint overlay: none on the primary channel.
+  Falsifier: none. An `oracle_after_*` overlay on a measured primary channel is always wrong because it launders the oracle.
+  Rejection evidence: `_run_macromol_tick()` uses only before-state overlays, and the cheated-after-payload anticheat stays invariant.
+- Trace-only channels: `enzymes` and `boundEnzymes` remain unwired.
+  Falsifier: if the SUT exposed nonzero enzyme WIDs and `next_update()` returned deltas on either channel, they would move into `_PROCESS_OUTPUT_CHANNELS`.
+  Rejection evidence: the SUT exposes zero enzyme WIDs and writes neither channel.
 
 ## Beat 5 - smoke gate
 
-Pending.
+- 2026-06-07T11:39:47Z UTC: Ran the small-scale Design-A gate with:
+  `bin\oc-py.cmd tests/vivarium/l2_2_design_a_runner.py --process MacromolecularComplexation --seeds 3 --ticks 5 --bootstrap-B 200 --output-dir tests/vivarium/artifacts/l2_2_design_a/MacromolecularComplexation_smoke`
+
+Observed CLI summary:
+- `MacromolecularComplexation PASS substrates=SEED_NOISE@0.000000 complexs=INSUFFICIENT_SAMPLES@0.000000`
+
+Primary channel result:
+- Channel: `substrates`
+- Verdict: `SEED_NOISE`
+- `w1_oc_vs_karr = 0.0`
+- `w1_oc_vs_karr_ci95 = [0.0, 0.0]`
+- `q95_null = 0.0`
+- `threshold = 1.0`
+- Warning: `PRIMARY_CHANNEL_ORACLE_DETERMINISM_LEGITIMATE`
+
+Secondary channel result:
+- Channel: `complexs`
+- Verdict: `INSUFFICIENT_SAMPLES`
+- `w1_oc_vs_karr = 0.0`
+- `n_nonzero_oc = 0`
+- `n_nonzero_karr = 0`
+- Interpretation: documented all-zero oracle slice; retained as diagnostic visibility only.
+
+Follow-up probes:
+- No additional duplicate-WID / oc-equals-before / write-surface probes were needed after the smoke gate because the chosen primary already passed and the legitimate-determinism warning matched the Beat-1 replay audit.
+
+Artifacts:
+- `tests/vivarium/artifacts/l2_2_design_a/MacromolecularComplexation_smoke/result.json`
+- `tests/vivarium/artifacts/l2_2_design_a/MacromolecularComplexation_smoke/SUMMARY.json`
+
+verdict: PASS_PRIMARY_WITH_DOCUMENTED_GAPS
