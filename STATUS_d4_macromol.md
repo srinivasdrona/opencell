@@ -20,8 +20,8 @@ Channel table:
 
 | channel | written_by_SUT? | in_trace? | n_wids_total | n_wids_unique | classification |
 | --- | --- | --- | ---: | ---: | --- |
-| `complexs` | yes (`complex.counts`) | yes | 147 | 147 | PRIMARY_CANDIDATE_DIRECT_OUTPUT |
-| `substrates` | yes | yes | 210 | 210 | SECONDARY_CANDIDATE_DERIVED_DELTA |
+| `substrates` | yes | yes | 210 | 210 | PRIMARY_CANDIDATE_NONZERO_DIRECT_DELTA |
+| `complexs` | yes (`complex.counts`) | yes | 147 | 147 | SECONDARY_CANDIDATE_ALL_ZERO_TRACE |
 | `enzymes` | no | yes | 0 | 0 | EXPECTED_SUT_GAP_TRACE_ONLY |
 | `boundEnzymes` | no | yes | 0 | 0 | EXPECTED_SUT_GAP_TRACE_ONLY |
 
@@ -29,6 +29,7 @@ Trace / replay observations:
 - `data/karr_fixtures/per_process_replay/MacromolecularComplexation.npz` already exists and is the right Design-A oracle source, so the runner can follow the existing 5-process loader pattern.
 - Replay fixture keys: `state_before__{substrates,complexs,enzymes,boundEnzymes}` and `states_after__{substrates,complexs,enzymes,boundEnzymes}`.
 - Replay fixture change counts are all zero across 100 ticks: `substrates=0`, `complexs=0`, `enzymes=0`, `boundEnzymes=0`.
+- Replay fixture nonzero elements: `substrates_before=14400`, `substrates_after=14400`, `complexs_before=0`, `complexs_after=0`.
 - A tick-0 runner-shape probe showed `refresh_allocator_views()` supplies nonzero allocated substrates (`allocated_nonzero=144`, `allocated_sum=3532.0`), but the SUT still emits zero nonzero updates on tick 0. This is consistent with the oracle no-op and not with a harness starvation bug.
 
 Duplicate-WID check:
@@ -37,15 +38,16 @@ Duplicate-WID check:
 - Decision: no positional shadow store is needed for D2.
 
 Decision:
-- PRIMARY channel: `complexs`.
-- SECONDARY channels: `substrates`.
+- PRIMARY channel: `substrates`.
+- SECONDARY channels: `complexs`.
 - SUT_BIOLOGY_GAP / not wired into `_PROCESS_OUTPUT_CHANNELS`: `enzymes`, `boundEnzymes`.
 - Bucket: `ALGORITHMIC_SHALLOW`.
 - Rationale: the process is stochastic (`_rng.choice`, `_rng.poisson`) but has no deep chromosome or long-range state dependency; it consumes only the current allocated subunit snapshot plus fixed stoichiometry.
+- Primary-channel revision note: initial Beat-1 draft chose `complexs`, but the Beat-3 anticheat falsified that choice because the oracle is all-zero on `complexs`, so an all-zero cheat cannot be distinguished there. `substrates` stays no-op too (`before == after`) but remains nonzero and therefore provides a real W1 signal under adversarial zero-output tests.
 
 Notes for Beat 2:
 - The helper must overlay `oracle_before_substrates` and `oracle_before_complexs`.
-- The helper must not overlay any `oracle_after_*` value on `complexs` (primary) or `substrates`.
+- The helper must not overlay any `oracle_after_*` value on `substrates` (primary) or `complexs`.
 - The loader should normalize `enzymes` / `boundEnzymes` to zero-width arrays or ignore them entirely for runner wiring, because the SUT exposes zero enzyme WIDs while the replay fixture stores MATLAB-empty arrays with shape `(100, 2)`.
 
 ## Beat 2 - tick dispatcher
@@ -63,7 +65,7 @@ Changes:
 
 Primary-channel anti-laundering notes:
 - `_run_macromol_tick()` overlays only `oracle_before_substrates` and `oracle_before_complexs`.
-- No `oracle_after_*` overlay is applied to the primary channel (`complexs`) or to the secondary channel (`substrates`).
+- No `oracle_after_*` overlay is applied to the primary channel (`substrates`) or to the secondary channel (`complexs`).
 - The helper explicitly disables `_maybe_replay_from_hint` if such an attribute ever appears on the process in the future, even though the current SUT has no such method.
 
 Diff stat:
@@ -71,7 +73,31 @@ Diff stat:
 
 ## Beat 3 - runner wiring + anticheat tests
 
-Pending.
+- 2026-06-07T11:36:41Z UTC: Wired `MacromolecularComplexation` into `tests/vivarium/l2_2_design_a_runner.py`.
+- 2026-06-07T11:36:41Z UTC: Added `tests/vivarium/test_l2_2_design_a_runner_anticheat_macromol.py`.
+- 2026-06-07T11:36:41Z UTC: Re-ran the full Design-A anticheat slice with `bin\oc-pytest.cmd tests/vivarium/test_l2_2_design_a_runner_anticheat.py tests/vivarium/test_l2_2_design_a_runner_anticheat_rna_decay.py tests/vivarium/test_l2_2_design_a_runner_anticheat_macromol.py tests/vivarium/test_l2_2_design_a_runner_protein_decay_anticheat.py -q` -> `16 passed`.
+
+Runner wiring:
+- Added `MacromolecularComplexation` to `SUPPORTED_PROCESSES`.
+- Added `MacromolecularComplexation` to `_PROCESS_BUCKET` as `ALGORITHMIC_SHALLOW`.
+- Added `MacromolecularComplexation` to `_PROCESS_OUTPUT_CHANNELS` as `("substrates", "complexs")`.
+- Added `MacromolecularComplexation` to `_PROCESS_PRIMARY_CHANNEL` with revised primary `substrates`.
+- Added `MacromolecularComplexation` to `_PROCESS_ANALYTICAL_CHECK_REASON`.
+- Added D2 cases to `_process_sample_process()`, `_observable_wids()`, and `run_design_a()` state assembly.
+
+New anticheat tests:
+- `test_macromol_tick_ignores_cheated_after_payload`
+- `test_macromol_constant_zero_primary_fails`
+- `test_macromol_primary_exact_match_is_legitimate_noop`
+
+Pass count:
+- Existing runner anticheat slice: `13` tests before this work.
+- Added MacromolecularComplexation tests: `3`.
+- Current runner anticheat slice total: `16 passed`.
+
+Beat-3 falsifier caught early:
+- Falsifier: "If `complexs` is the primary channel but the oracle is identically zero there, a zero-output cheat will not move W1 and the anticheat becomes toothless."
+- Result: falsified. Primary moved from `complexs` to `substrates` before the Beat-3 commit.
 
 ## Beat 4 - inversion
 

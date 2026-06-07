@@ -115,6 +115,12 @@ def main() -> int:
                 _normalize_replay_channel(replay["states_after__boundEnzymes"]),
             ),
         }
+        nonzero_elements = {
+            "substrates_before": int(np.count_nonzero(_normalize_replay_channel(replay["state_before__substrates"]))),
+            "substrates_after": int(np.count_nonzero(_normalize_replay_channel(replay["states_after__substrates"]))),
+            "complexs_before": int(np.count_nonzero(_normalize_replay_channel(replay["state_before__complexs"]))),
+            "complexs_after": int(np.count_nonzero(_normalize_replay_channel(replay["states_after__complexs"]))),
+        }
         runtime_state = runner_helpers.build_state_template(process)
         substrate_wids = list(process.substrate_wids)
         complex_wids = list(process.complex_wids)
@@ -175,6 +181,7 @@ def main() -> int:
         "replay_npz_keys": replay_keys,
         "replay_npz_shapes": replay_shapes,
         "replay_changed_ticks": changed_ticks,
+        "replay_nonzero_elements": nonzero_elements,
         "trace_path": str(trace_path),
         "trace_dataset_keys": list(dataset_shapes),
         "trace_before_channels": sorted(
