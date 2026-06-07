@@ -93,3 +93,11 @@ With both zero-substrates state AND populated state (enzymes=5, substrates=100, 
   - `test_dnarepair_primary_exact_match_is_legitimate_noop`
 - Omitted the Replication trace-hint bypass test on purpose; DNARepair has no `_maybe_replay_from_hint` / `trace_hint` replay branch.
 - Verification: `bin/oc-pytest.cmd tests/vivarium/test_l2_2_design_a_runner_anticheat*.py -q` -> `26 passed in 58.57s`
+
+## Beat 4 — inversion
+
+- **PRIMARY channel choice falsifier:** We chose the 5-WID `substrates` projection because `next_update` only writes `ATP/DATP/DCTP/DGTP/DTTP`. This would have flipped to the full 277-vector only if Beat 1 had shown honest SUT writes on additional substrate WIDs inside the replay window.
+- **Bucket choice falsifier:** We kept `DNARepair` in `ALGORITHMIC_DEEP` because the SUT combines two RNG streams, pathway-weighted repair sampling, allocator-mediated substrate feasibility, and chromosome damage state. This would have dropped to `ALGORITHMIC_SHALLOW` or `TRIVIAL_RNG` only if the tick path had reduced to deterministic closed-form arithmetic without stochastic pathway/event selection or deep state dependence.
+- **Positional shadow store falsifier:** We kept positional shadowing disabled because Beat 1 found `277/277` unique substrate WIDs and `15/15` unique enzyme WIDs. Any duplicate count greater than zero on a wired channel would have flipped this decision and forced a positional store.
+- **After-hint overlay falsifier:** We did not overlay `oracle_after_*` onto the primary substrates channel because that would launder the scored output. After-hint overlay would only be correct for a non-primary reconstruction channel that is not itself gated, or for an explicitly sanctioned replay-only branch whose values are never used as the measured primary verdict surface.
+- **Oracle source choice falsifier:** We used canonical `data/karr_fixtures/per_process_replay/DNARepair.npz`. An alternative source would only be correct if that canonical fixture were missing, schema-broken, or demonstrably mismatched to the process/channel contract and the replacement were explicitly justified as the authoritative per-process replay source.
