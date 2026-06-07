@@ -1,0 +1,83 @@
+# STATUS_d2_replication
+
+## Progress log
+- 2026-06-07T12:25:40.7361569Z UTC — Read `SESSION_CONTEXT.md`, Deliberate Action Prefix, Fix Template, helper/runner templates, and `karr_replication.py`.
+- 2026-06-07T12:36:00Z UTC — Confirmed `KarrReplicationProcess.next_update()` has a `trace_hint` replay branch (`_next_update_from_trace_hint`) and that the real path writes `requests`, `chromosome`, and `substrates`.
+- 2026-06-07T12:52:00Z UTC — Probed available Replication replay artifacts. Prompt-named `data/m1_sources/karr_native/per_process_traces/Replication_100ticks.mat` is absent in this worktree; `data/karr_fixtures/per_process_replay/Replication.json` still references that missing MAT as its source.
+- 2026-06-07T13:08:00Z UTC — Inspected `Replication.npz`, `Replication_from_flat.npz`, and `Replication_from_trajectory.npz`; ran duplicate-WID and honest-path viability probes for candidate primary channels.
+
+## Beat 1 — SUT inspection + wiring design
+
+### Contract notes
+- `KarrReplicationProcess.next_update()` real path writes:
+  - `requests.karr_replication.<DATP/DCTP/DGTP/DTTP/ATP>` on every non-idle tick
+  - `chromosome.fork_position_bp.{left,right}` during elongation
+  - `chromosome.replication_state` and `chromosome.events.replication_complete` at state transitions / completion
+  - `substrates.<DATP/DCTP/DGTP/DTTP/ATP>` depletion on productive ticks
+- `KarrReplicationProcess.next_update()` real path does **not** write `enzymes` or `boundEnzymes`.
+- `_next_update_from_trace_hint()` exists and is selected when `trace_hint` contains `boundEnzymes_next` or `enzymes_next`; that path emits `enzymes` / `boundEnzymes` deltas and a replay-style substrate delta. This is an anti-laundering hazard for L2.2 primary measurement.
+
+### Available trace/oracle artifacts
+- Missing in worktree: `data/m1_sources/karr_native/per_process_traces/Replication_100ticks.mat`
+- Available replay exports:
+  - `data/karr_fixtures/per_process_replay/Replication.npz`
+  - `data/karr_fixtures/per_process_replay/Replication_from_trajectory.npz`
+  - `data/karr_fixtures/per_process_replay/Replication_from_flat.npz`
+- `Replication.json` manifest says the default replay export came from the missing MAT and carries snapshot properties `boundEnzymes`, `enzymes`, `substrates`.
+- Empirical trace-channel check on available replay exports:
+  - `Replication.npz`: `state_before/state_after` for `substrates`, `enzymes`, `boundEnzymes`, but all three channels are exact no-ops (`before == after` everywhere).
+  - `Replication_from_trajectory.npz`: same three vector channels, nontrivial on all three (`substrates` 626 changed entries, `enzymes` 40, `boundEnzymes` 2 across 323 snapshots), metadata `source=trajectory`, `effective_dt_sec=100.0`.
+
+### Channel table
+
+| channel | written_by_SUT? | in_trace? | n_wids_total | n_wids_unique | classification |
+| --- | --- | --- | --- | --- | --- |
+| `substrates` full trace vector | partial | yes | 16 | 16 | trace has full 16-wide vector; real SUT writes only `DATP/DCTP/DGTP/DTTP/ATP` and does not emit byproduct/product legs (`PPI/H2O/H/NAD/NMN/ADP/AMP/PI`) |
+| `substrates` written subset (`DATP/DCTP/DGTP/DTTP/ATP`) | yes | yes (projected from `states_after__substrates`) | 5 | 5 | only viable primary candidate |
+| `enzymes` | no (real path) | yes | 13 | 13 | `expected_sut_gap`; only replay branch writes this surface |
+| `boundEnzymes` | no (real path) | yes | 13 | 13 | `expected_sut_gap`; only replay branch writes this surface |
+| `chromosome` | yes | no clean vector trace channel available | n/a | n/a | real SUT write surface but not wireable from available replay vectors |
+
+### Duplicate-WID probe
+- `substrates`: 16 total / 16 unique / 0 duplicate WIDs
+- `enzymes`: 13 total / 13 unique / 0 duplicate WIDs
+- `boundEnzymes`: 13 total / 13 unique / 0 duplicate WIDs
+- Decision: no positional shadow store required for Replication.
+
+### Primary / secondary / gaps decision
+- PRIMARY candidate: projected `substrates` written subset on `DATP`, `DCTP`, `DGTP`, `DTTP`, `ATP`
+- SECONDARY diagnostic channels to document only, not wire as gateable runner outputs:
+  - `enzymes` (`expected_sut_gap`)
+  - `boundEnzymes` (`expected_sut_gap`)
+- SUT_BIOLOGY_GAP / topology gap:
+  - full 16-wide substrate trace contains byproduct/product terms the real SUT does not emit
+  - real path also depends on chromosome state (`replication_state`, fork positions) that is absent from available replay vectors
+
+### Bucket choice
+- Bucket: `ALGORITHMIC_DEEP`
+- Rationale:
+  - stochastic rounding via `self._rng`
+  - deep dependence on hidden chromosome state / fork progression
+  - replay-branch coupling to enzyme/bound-enzyme state confirms nontrivial internal state coupling
+
+### Beat 1 viability probe notes
+- Honest-path probe against `Replication_from_trajectory.npz`:
+  - default/bootstrap chromosome state (`idle`) yields pure no-op and huge substrate mismatch
+  - forcing a plausible minimal real-path state (`replication_state='elongating'`) produces nonzero depletion on the 5 written substrate WIDs, but still misses the trajectory substantially
+  - first-20 snapshot mean W1 on written 5-WID subset:
+    - `idle_dt1`: `35.93`
+    - `elongating_dt1`: `37.05`
+    - `elongating_dt100`: `37.05`
+- Interpretation: there is a candidate measurable primary surface (`substrates` written subset), but the honest path is currently far from the trajectory export. Beat 5 will need to decide whether this stays a documented FAIL/block or whether a better honest seeding exists inside the allowed harness surface.
+
+## Beat 2 — tick dispatcher
+- Pending.
+
+## Beat 3 — runner wiring + anticheat tests
+- Pending.
+
+## Beat 4 — inversion
+- Pending.
+
+## Beat 5 — smoke gate
+- Pending.
