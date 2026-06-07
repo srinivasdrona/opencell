@@ -8,6 +8,7 @@
 - 2026-06-07T12:38:23.7154965Z UTC — Added Replication helper loader/dispatcher path using canonical `Replication.npz` projected to the 5 real-path substrate WIDs and verified `_run_replication_tick()` returns the tick-0 oracle vector with `trace_hint` held empty.
 - 2026-06-07T12:44:03.5816061Z UTC — Wired Replication into the Design-A runner and added `test_l2_2_design_a_runner_anticheat_replication.py`; narrow anticheat suite is green (`19 passed`).
 - 2026-06-07T12:46:00Z UTC — Recorded Beat 4 inversion/falsifiers before the smoke gate.
+- 2026-06-07T12:46:35.3601762Z UTC — Ran the required Replication smoke gate (`M=5, N=3, B=200`) and captured a primary PASS on the canonical no-op replay export.
 
 ## Beat 1 — SUT inspection + wiring design
 
@@ -130,4 +131,27 @@
   - falsifier considered: if the available replay artifacts had exposed a clean per-tick chromosome state channel (or a documented reversible mapping from trace vectors to `replication_state` / fork positions), we would have seeded it; no such channel is present in the available Replication replay exports
 
 ## Beat 5 — smoke gate
-- Pending.
+- Command:
+  - `bin\oc-py.cmd tests/vivarium/l2_2_design_a_runner.py --process Replication --seeds 3 --m-ticks 5 --bootstrap-B 200 --output-dir tests/vivarium/artifacts/l2_2_design_a/Replication_smoke`
+- Runner stdout:
+  - `Replication PASS substrates=SEED_NOISE@0.000000`
+- Artifact:
+  - `tests/vivarium/artifacts/l2_2_design_a/Replication_smoke/result.json`
+- Primary channel result:
+  - channel: `substrates` (5-WID written subset `DATP/DCTP/DGTP/DTTP/ATP`)
+  - verdict: `SEED_NOISE`
+  - `w1_oc_vs_karr = 0.0`
+  - `w1_oc_vs_karr_ci95 = [0.0, 0.0]`
+  - `q95_null = 0.0`
+  - `threshold = 1.0`
+  - `n_nonzero_oc = 75`
+  - `n_nonzero_karr = 75`
+- Warnings emitted:
+  - `KARR_SINGLE_SEED_REUSED`
+  - `PRIMARY_CHANNEL_ORACLE_DETERMINISM_LEGITIMATE`
+- Interpretation:
+  - the canonical direct Replication replay export is a legitimate no-op on the chosen primary surface, and the helper reproduces that no-op without primary-channel after-hint overlay or `trace_hint` replay activation
+  - `enzymes` / `boundEnzymes` remain documented `expected_sut_gap` channels and were intentionally not wired as gateable outputs
+  - the trajectory-derived active-window probe remains a separate diagnostic showing the current real-path Replication SUT does not yet reproduce active substrate deltas on that surface; that does not invalidate the direct per-process replay verdict used by this Design-A harness
+
+verdict: PASS_PRIMARY_WITH_DOCUMENTED_GAPS
