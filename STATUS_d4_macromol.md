@@ -50,7 +50,24 @@ Notes for Beat 2:
 
 ## Beat 2 - tick dispatcher
 
-Pending.
+- 2026-06-07T11:30:31Z UTC: Added D2 support to `tests/vivarium/_l2_2_design_a_runner_helpers.py`.
+- 2026-06-07T11:30:31Z UTC: Verified no regressions in the existing generic anticheat file with `bin\oc-pytest.cmd tests/vivarium/test_l2_2_design_a_runner_anticheat.py -q` -> `6 passed`.
+
+Changes:
+- Added `_MACROMOL_ORACLE_PATH`.
+- Added `_load_macromol_oracle()` using the existing replay fixture `data/karr_fixtures/per_process_replay/MacromolecularComplexation.npz`.
+- Normalized D2 `enzymes` to zero-width arrays in the loader because the SUT exposes zero enzyme WIDs.
+- Added `_macromol_process(seed)`.
+- Added `_run_macromol_tick(seed, tick, state)`.
+- Added `MacromolecularComplexation` to helper oracle/tick dispatch tables.
+
+Primary-channel anti-laundering notes:
+- `_run_macromol_tick()` overlays only `oracle_before_substrates` and `oracle_before_complexs`.
+- No `oracle_after_*` overlay is applied to the primary channel (`complexs`) or to the secondary channel (`substrates`).
+- The helper explicitly disables `_maybe_replay_from_hint` if such an attribute ever appears on the process in the future, even though the current SUT has no such method.
+
+Diff stat:
+- `tests/vivarium/_l2_2_design_a_runner_helpers.py | 100 insertions`
 
 ## Beat 3 - runner wiring + anticheat tests
 
