@@ -1,0 +1,3 @@
+wid_order_match True
+roundtrip_equal True
+first4_fixture ('MG_173_MONOMER', 'MG_142_MONOMER', 'MG_196_MONOMER', 'MG_089_DIMER') first4_process ('MG_173_MONOMER', 'MG_142_MONOMER', 'MG_196_MONOMER', 'MG_089_DIMER')

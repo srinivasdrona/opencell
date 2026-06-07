@@ -1,0 +1,4 @@
+update_keys ['protein', 'substrates']
+writes_boundEnzymes False writes_enzymes False
+protein_key ['counts']
+substrate_keys 20
