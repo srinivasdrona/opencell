@@ -6,8 +6,10 @@
     "snapshot_properties": [
       "boundEnzymes",
       "enzymes",
+      "foldedComplexs",
       "foldedMonomers",
       "substrates",
+      "unfoldedComplexs",
       "unfoldedMonomers"
     ],
     "source_mat": "data/m1_sources/karr_native/per_process_traces/ProteinFolding_100ticks.mat",
