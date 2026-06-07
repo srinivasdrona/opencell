@@ -41,6 +41,7 @@ SUPPORTED_PROCESSES = frozenset(
         "RNADecay",
         "ProteinDecay",
         "MacromolecularComplexation",
+        "Replication",
         "ReplicationInitiation",
     }
 )
@@ -52,6 +53,7 @@ _PROCESS_BUCKET = {
     "RNADecay": "ALGORITHMIC_SHALLOW",
     "ProteinDecay": "ALGORITHMIC_SHALLOW",
     "MacromolecularComplexation": "ALGORITHMIC_SHALLOW",
+    "Replication": "ALGORITHMIC_DEEP",
     "ReplicationInitiation": "ALGORITHMIC_DEEP",
 }
 _PROCESS_K_ENG = {
@@ -66,6 +68,7 @@ _PROCESS_OUTPUT_CHANNELS = {
     "RNADecay": ("substrates", "RNAs"),
     "ProteinDecay": ("substrates", "monomers", "complexs"),
     "MacromolecularComplexation": ("substrates", "complexs"),
+    "Replication": ("substrates",),
     "ReplicationInitiation": ("substrates",),
 }
 _PROCESS_PRIMARY_CHANNEL = {
@@ -75,6 +78,7 @@ _PROCESS_PRIMARY_CHANNEL = {
     "RNADecay": "RNAs",
     "ProteinDecay": "monomers",
     "MacromolecularComplexation": "substrates",
+    "Replication": "substrates",
     "ReplicationInitiation": "substrates",
 }
 _PROCESS_ANALYTICAL_CHECK_REASON = {
@@ -84,6 +88,7 @@ _PROCESS_ANALYTICAL_CHECK_REASON = {
     "RNADecay": "RNADecay has no closed-form per-tick check",
     "ProteinDecay": "ProteinDecay has no closed-form per-tick check",
     "MacromolecularComplexation": "MacromolecularComplexation has no closed-form per-tick check",
+    "Replication": "Replication has no closed-form per-tick check",
     "ReplicationInitiation": "ReplicationInitiation has no closed-form per-tick check",
 }
 _ORACLE_BEFORE_KEY = {
@@ -473,6 +478,8 @@ def _process_sample_process(process: str) -> Any:
         return runner_helpers._protein_decay_process(0)
     if process == "MacromolecularComplexation":
         return runner_helpers._macromol_process(0)
+    if process == "Replication":
+        return runner_helpers._replication_process(0)
     if process == "ReplicationInitiation":
         return runner_helpers._replication_initiation_process(0)
     raise ValueError(f"Unsupported process {process!r}.")
@@ -499,6 +506,8 @@ def _observable_wids(process: str, sample_process: Any) -> dict[str, list[str]]:
         mapping["complexs"] = [str(x) for x in getattr(sample_process, "complex_wids", ())]
     if process == "MacromolecularComplexation":
         mapping["complexs"] = [str(x) for x in getattr(sample_process, "complex_wids", ())]
+    if process == "Replication":
+        mapping["substrates"] = [str(x) for x in [*sample_process.dntp_wids, sample_process.atp_wid]]
     return mapping
 
 
