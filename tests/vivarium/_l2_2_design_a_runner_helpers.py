@@ -45,6 +45,7 @@ from opencell.vivarium.karr_translation import KarrTranslationProcess  # noqa: E
 from opencell.vivarium.karr_transcription import KarrTranscriptionProcess  # noqa: E402
 from opencell.vivarium.karr_rna_decay import RnaDecayLightProcess  # noqa: E402
 from opencell.vivarium.karr_protein_decay_light import ProteinDecayLightProcess  # noqa: E402
+from opencell.vivarium.karr_cytokinesis import KarrCytokinesisProcess  # noqa: E402
 
 
 L2_2_VALIDATION_SEED = 0xCA11B
@@ -63,6 +64,9 @@ _TRANSCRIPTION_FIXTURE_PATH = _REPO_ROOT / "data" / "karr_fixtures" / "per_proce
 _RNA_DECAY_ORACLE_PATH = _REPO_ROOT / "data" / "karr_fixtures" / "per_process_replay" / "RNADecay.npz"
 _PROTEIN_DECAY_ORACLE_PATH = (
     _REPO_ROOT / "data" / "karr_fixtures" / "per_process_replay" / "ProteinDecay.npz"
+)
+_CYTOKINESIS_ORACLE_PATH = (
+    _REPO_ROOT / "data" / "karr_fixtures" / "per_process_replay" / "Cytokinesis.npz"
 )
 _TRANSLATION_MRNA_STORE_PATH_OVERRIDE = {"mRNAs": ("rna", "counts")}
 _RNA_STORE_PATH_OVERRIDE = {"RNAs": ("rna", "counts")}
@@ -217,6 +221,8 @@ def _required_ensemble_keys(process_name: str) -> tuple[tuple[str, ...], tuple[s
             "monomers",
             "complexs",
         )
+    if process_name == "Cytokinesis":
+        return ("substrates", "enzymes", "boundEnzymes"), ("substrates",)
     raise ValueError(f"Unsupported Design-A process {process_name!r}.")
 
 
@@ -374,6 +380,20 @@ def _format_ensemble_oracle(
             "ensemble_missing_after_channels": tuple(missing_after),
         }
 
+    if process_name == "Cytokinesis":
+        return {
+            "process": process_name,
+            "oracle_path": oracle_path,
+            "canonical_seed_count": canonical_seed_count,
+            "n_ticks_available": n_ticks_available,
+            "before_substrates": before_channel("substrates", "before_substrates"),
+            "after_substrates": after_channel("substrates", "after_substrates"),
+            "before_enzymes": before_channel("enzymes", "before_enzymes"),
+            "before_bound_enzymes": before_channel("boundEnzymes", "before_bound_enzymes"),
+            "ensemble_missing_before_channels": tuple(missing_before),
+            "ensemble_missing_after_channels": tuple(missing_after),
+        }
+
     raise ValueError(f"Unsupported Design-A process {process_name!r}.")
 
 
@@ -440,6 +460,7 @@ def _oracle_dispatch() -> dict[str, Any]:
         "Transcription": _load_transcription_oracle,
         "RNADecay": _load_rna_decay_oracle,
         "ProteinDecay": _load_protein_decay_oracle,
+        "Cytokinesis": _load_cytokinesis_oracle,
     }
 
 
@@ -622,6 +643,28 @@ def _load_protein_decay_oracle() -> dict[str, Any]:
     }
 
 
+def _load_cytokinesis_oracle() -> dict[str, Any]:
+    if not _CYTOKINESIS_ORACLE_PATH.exists():
+        raise FileNotFoundError(f"Missing Cytokinesis oracle fixture: {_CYTOKINESIS_ORACLE_PATH}")
+
+    with np.load(_CYTOKINESIS_ORACLE_PATH, allow_pickle=False) as payload:
+        before_substrates = np.asarray(payload["state_before__substrates"], dtype=np.float64)[:, 0, :]
+        after_substrates = np.asarray(payload["states_after__substrates"], dtype=np.float64)[:, 0, :]
+        before_enzymes = np.asarray(payload["state_before__enzymes"], dtype=np.float64)[:, 0, :]
+        before_bound = np.asarray(payload["state_before__boundEnzymes"], dtype=np.float64)[:, 0, :]
+
+    return {
+        "process": "Cytokinesis",
+        "oracle_path": _CYTOKINESIS_ORACLE_PATH,
+        "canonical_seed_count": 1,
+        "n_ticks_available": int(before_substrates.shape[0]),
+        "before_substrates": before_substrates[np.newaxis, :, :],
+        "after_substrates": after_substrates[np.newaxis, :, :],
+        "before_enzymes": before_enzymes[np.newaxis, :, :],
+        "before_bound_enzymes": before_bound[np.newaxis, :, :],
+    }
+
+
 @lru_cache(maxsize=None)
 def _metabolism_model() -> Any:
     return m1_karr_metabolism.load_default()
@@ -664,6 +707,21 @@ def _protein_decay_process(seed: int) -> ProteinDecayLightProcess:
         return ProteinDecayLightProcess({"rng_seed": int(seed)})
 
 
+@lru_cache(maxsize=None)
+def _cytokinesis_process(seed: int) -> KarrCytokinesisProcess:
+    with forbid_sut_oracle_file_io():
+        return KarrCytokinesisProcess(
+            {
+                "rng_seed": int(seed),
+                # Avoid the trace_path open during __init__ which would otherwise
+                # trigger forbid_sut_oracle_file_io. The trace tick count is only
+                # used to default active_division_rate; we provide that explicitly.
+                "trace_path": "",
+                "active_division_rate_per_s": 0.01,
+            }
+        )
+
+
 def _sample_seed(seed: int, tick: int) -> int:
     ss = np.random.SeedSequence([L2_2_VALIDATION_SEED, int(seed), int(tick)])
     return int(ss.generate_state(1, dtype=np.uint32)[0])
@@ -676,6 +734,7 @@ def _tick_dispatch() -> dict[str, Any]:
         "Transcription": _run_transcription_tick,
         "RNADecay": _run_rna_decay_tick,
         "ProteinDecay": _run_protein_decay_tick,
+        "Cytokinesis": _run_cytokinesis_tick,
     }
 
 
@@ -1131,6 +1190,80 @@ def _run_protein_decay_tick(seed: int, tick: int, state: dict[str, Any]) -> dict
             ),
             dtype=np.float64,
         ),
+        "sample_seed": _sample_seed(seed, tick),
+    }
+
+
+def _run_cytokinesis_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
+    """Run one OpenCell Cytokinesis tick from a prepared state snapshot.
+
+    Cytokinesis has primary_channel=substrates per catalog. The SUT exposes 4 substrate
+    WIDs (GTP, H, H2O, PI) but the Karr replay oracle only snapshots the 3 reaction
+    byproducts (PI, H2O, H - GTP hydrolysis products). Project SUT output down to the
+    3 oracle WIDs for the W1 comparison.
+
+    The SUT writes substrates only when the division event fires within the tick's
+    seed_window=[-50, 0] from division. Expected verdict at flat 100-tick replay is
+    INSUFFICIENT_SAMPLES per catalog notes.
+    """
+    process = _cytokinesis_process(_sample_seed(seed, tick))
+    runtime_state = build_state_template(process)
+    sut_substrate_wids = list(process._substrate_wids)
+    oracle_substrate_wids = list(state["substrate_wids"])
+    enzyme_wids = list(state["enzyme_wids"])
+    bound_enzymes_before = np.asarray(state["oracle_before_bound_enzymes"], dtype=np.float64)
+
+    oracle_before_substrates = np.asarray(state["oracle_before_substrates"], dtype=np.float64)
+    sut_before_substrates = np.zeros(len(sut_substrate_wids), dtype=np.float64)
+    for oracle_idx, wid in enumerate(oracle_substrate_wids):
+        if wid in sut_substrate_wids:
+            sut_idx = sut_substrate_wids.index(wid)
+            sut_before_substrates[sut_idx] = oracle_before_substrates[oracle_idx]
+
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="substrates",
+        vector=sut_before_substrates,
+        wids=sut_substrate_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="enzymes",
+        vector=np.asarray(state["oracle_before_enzymes"], dtype=np.float64),
+        wids=enzyme_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="boundEnzymes",
+        vector=bound_enzymes_before,
+        wids=enzyme_wids,
+    )
+    refresh_allocator_views(process, runtime_state)
+    with forbid_sut_oracle_file_io():
+        update = process.next_update(1.0, runtime_state)
+    apply_count_update(runtime_state, update)
+
+    sut_substrates_after = np.asarray(
+        project_observable_from_state(
+            process=process,
+            state=runtime_state,
+            observable="substrates",
+            wids=sut_substrate_wids,
+            bound_enzymes_before=bound_enzymes_before,
+        ),
+        dtype=np.float64,
+    )
+    oracle_substrates_out = np.zeros(len(oracle_substrate_wids), dtype=np.float64)
+    for oracle_idx, wid in enumerate(oracle_substrate_wids):
+        if wid in sut_substrate_wids:
+            sut_idx = sut_substrate_wids.index(wid)
+            oracle_substrates_out[oracle_idx] = sut_substrates_after[sut_idx]
+
+    return {
+        "substrates": oracle_substrates_out,
         "sample_seed": _sample_seed(seed, tick),
     }
 

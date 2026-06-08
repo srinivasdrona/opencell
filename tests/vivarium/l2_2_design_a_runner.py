@@ -613,6 +613,8 @@ def _process_sample_process(process: str) -> Any:
         return runner_helpers._rna_decay_process(0)
     if process == "ProteinDecay":
         return runner_helpers._protein_decay_process(0)
+    if process == "Cytokinesis":
+        return runner_helpers._cytokinesis_process(0)
     raise ValueError(f"Unsupported process {process!r}.")
 
 
@@ -635,6 +637,13 @@ def _observable_wids(process: str, sample_process: Any) -> dict[str, list[str]]:
     if process == "ProteinDecay":
         mapping["monomers"] = [str(x) for x in getattr(sample_process, "protein_wids", ())]
         mapping["complexs"] = [str(x) for x in getattr(sample_process, "complex_wids", ())]
+    if process == "Cytokinesis":
+        # SUT's _substrate_wids includes GTP (4 WIDs); the Karr oracle snapshot has
+        # only the 3 fixture substrate WIDs (PI, H2O, H). Use fixture WIDs for the
+        # comparison surface; the tick dispatcher projects SUT output down to these.
+        mapping["substrates"] = [str(x) for x in getattr(sample_process, "fixture_substrate_wids", ())]
+        mapping["enzymes"] = [str(x) for x in getattr(sample_process, "fixture_enzyme_wids", ())]
+        mapping["boundEnzymes"] = [str(x) for x in getattr(sample_process, "fixture_enzyme_wids", ())]
     return mapping
 
 
@@ -668,18 +677,26 @@ def run_design_a(
     after_vectors = {
         channel: _normalize_seed_axis(oracle[_ORACLE_AFTER_KEY[channel]], seeds, m_ticks)
         for channel in output_channels
+        if _ORACLE_AFTER_KEY.get(channel) in oracle
     }
+    # Catalog may list output_channels that the current oracle doesn't carry (e.g.
+    # chromosome state for processes where chromosome is event-only and not
+    # snapshotted as a vector). Filter those out and surface as event-deferred via
+    # event_channels mechanism if applicable; otherwise just skip silently.
+    gateable_output_channels = tuple(
+        channel for channel in output_channels if channel in after_vectors
+    )
 
     sample_process = _process_sample_process(process)
     wids_by_channel = _observable_wids(process, sample_process)
 
     oc_vectors = {
         channel: np.zeros_like(after_vectors[channel], dtype=np.float64)
-        for channel in output_channels
+        for channel in gateable_output_channels
     }
     per_sample_w1 = {
         channel: np.zeros((len(seeds), m_ticks), dtype=np.float64)
-        for channel in output_channels
+        for channel in gateable_output_channels
     }
     oc_projection_vectors: np.ndarray | None = None
     karr_projection_vectors: np.ndarray | None = None
@@ -704,7 +721,7 @@ def run_design_a(
                 "oracle_before_all": before_vectors.get(primary_channel, before_vectors["substrates"]),
                 "oracle_after_by_channel": {
                     channel: after_vectors[channel]
-                    for channel in output_channels
+                    for channel in gateable_output_channels
                 },
                 "oracle_before_by_channel": before_vectors,
             }
@@ -766,7 +783,7 @@ def run_design_a(
                     karr_projection_state,
                     primary_projection,
                 )
-            for channel in output_channels:
+            for channel in gateable_output_channels:
                 oc_vectors[channel][seed_index, tick] = np.asarray(oc_result[channel], dtype=np.float64)
                 per_sample_w1[channel][seed_index, tick] = runner_helpers.compute_w1(
                     oc_vectors[channel][seed_index, tick],
@@ -822,7 +839,7 @@ def run_design_a(
             }
         else:
             raise ValueError(f"Unsupported primary_distance {primary_distance!r} for process {process!r}.")
-    for channel in output_channels:
+    for channel in gateable_output_channels:
         null_stats = runner_helpers.compute_null_q95(
             karr_vectors=after_vectors[channel],
             bootstrap_B=int(bootstrap_B),
