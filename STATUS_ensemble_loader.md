@@ -61,3 +61,16 @@ universals:
 - `tests/vivarium/l2_2_design_a_runner.py` now merges loader-provided warnings into the run payload before adding harness-derived warnings.
 - Added tests covering precedence, legacy fallback warning emission, and runner warning merge behavior.
 - Verification: `bin\\oc-pytest.cmd tests/vivarium/test_l2_2_design_a*.py -q` => `32 passed`.
+
+## Beat 5 — Validation
+- Full regression sweep: `bin\\oc-pytest.cmd tests/vivarium/test_l2_2_design_a*.py -q` => `33 passed`.
+- Translation smoke: `bin\\oc-py.cmd tests/vivarium/l2_2_design_a_runner.py --process Translation --seeds 50 --ticks 10 --bootstrap-B 200 --output-dir tests/vivarium/artifacts/l2_2_design_a/Translation_ensemble_smoke`
+  - `result.json` shows `canonical_seed_count: 50`.
+  - `warnings` do **not** include `KARR_SINGLE_SEED_REUSED`.
+  - Observed warning: `SEED_ALIGNMENT_MISMATCH` on primary channel `monomers`, so the smoke run verdict itself is `FAIL`; loader wiring objective is satisfied because the run is using the 50-seed ensemble rather than the legacy single-seed NPZ.
+- Metabolism smoke: `bin\\oc-py.cmd tests/vivarium/l2_2_design_a_runner.py --process Metabolism --seeds 50 --ticks 10 --bootstrap-B 200 --output-dir tests/vivarium/artifacts/l2_2_design_a/Metabolism_legacy_smoke`
+  - `result.json` shows `canonical_seed_count: 1`.
+  - `warnings` include `KARR_LEGACY_SINGLE_SEED_FALLBACK`.
+  - `warnings` also include the pre-existing `KARR_SINGLE_SEED_REUSED`, `TRIVIAL_RNG_LEAK`, and `PRIMARY_CHANNEL_ORACLE_DETERMINISM_LEGITIMATE` diagnostics because this process still runs against the legacy single-seed oracle.
+
+verdict: PASS

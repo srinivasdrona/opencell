@@ -451,10 +451,15 @@ def load_karr_oracle(process: str) -> dict[str, Any]:
         raise ValueError(f"Unsupported Design-A process {process!r}.")
 
     v2_oracle = _load_v2_ensemble(process)
+    specialized_ensemble_oracle = _load_ensembles_layout(process)
+    if v2_oracle is not None and specialized_ensemble_oracle is not None:
+        if int(v2_oracle.get("canonical_seed_count", 0)) >= int(
+            specialized_ensemble_oracle.get("canonical_seed_count", 0)
+        ):
+            return v2_oracle
+        return specialized_ensemble_oracle
     if v2_oracle is not None:
         return v2_oracle
-
-    specialized_ensemble_oracle = _load_ensembles_layout(process)
     if specialized_ensemble_oracle is not None:
         return specialized_ensemble_oracle
 

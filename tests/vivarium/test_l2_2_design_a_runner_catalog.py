@@ -315,3 +315,4 @@ def test_run_design_a_merges_loader_warnings_into_result(monkeypatch, tmp_path: 
         "KARR_LEGACY_SINGLE_SEED_FALLBACK" in warning
         for warning in payload["result"]["warnings"]
     )
+    assert payload["result"]["canonical_seed_count"] == 1
