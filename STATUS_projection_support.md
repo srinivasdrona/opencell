@@ -189,6 +189,26 @@ Beat 4 verdict: PASS
 
 ## Beat 5 - Synthetic smoke
 
-Status: pending
+Status: completed
 
-verdict: IN_PROGRESS
+Changes:
+- Added `scripts/probe_l22_projection_smoke.py`.
+- The probe constructs:
+  - a synthetic 3-component `per_component_scaled` catalog entry
+  - a synthetic 5-component hurdle catalog entry
+- The probe exercises the new distance functions directly and asserts that the returned structures contain the expected component blocks.
+
+Smoke stdout:
+```text
+per_component joint_verdict=PASS components=3
+hurdle joint_verdict=PASS event_rate_diff=0.000000 conditionals=4
+PASS
+```
+
+Final verification:
+- Command: `bin\oc-pytest.cmd tests/vivarium/test_l2_2_design_a*.py -q`
+- Actual: `25 passed in 77.31s`
+
+Beat 5 verdict: PASS
+
+verdict: PASS
