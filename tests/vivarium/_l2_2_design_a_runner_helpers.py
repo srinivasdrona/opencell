@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import json
 import sys
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
+import h5py
 import numpy as np
 from scipy.io import loadmat
 from scipy.stats import wasserstein_distance
@@ -66,6 +68,331 @@ _TRANSLATION_MRNA_STORE_PATH_OVERRIDE = {"mRNAs": ("rna", "counts")}
 _RNA_STORE_PATH_OVERRIDE = {"RNAs": ("rna", "counts")}
 _RNA_SLOT_COUNTS_STATE_KEY = "_l2_rna_slot_counts"
 _RNA_SLOT_WIDS_STATE_KEY = "_l2_rna_slot_wids"
+
+
+def _karr_native_root() -> Path:
+    return _REPO_ROOT / "data" / "m1_sources" / "karr_native"
+
+
+def _v2_seed_mat_path(process_name: str, seed: int) -> Path:
+    return (
+        _karr_native_root()
+        / f"per_process_traces_v2_s{int(seed):03d}"
+        / f"{process_name}_100ticks.mat"
+    )
+
+
+def _ensembles_seed_mat_path(process_name: str, seed: int) -> Path:
+    return (
+        _karr_native_root()
+        / "ensembles"
+        / str(process_name).lower()
+        / f"seed_{int(seed):03d}"
+        / f"{process_name}_100ticks.mat"
+    )
+
+
+def _ensembles_manifest_path(process_name: str) -> Path:
+    return _karr_native_root() / "ensembles" / str(process_name).lower() / "MANIFEST.json"
+
+
+def _legacy_seed_slice(legacy_oracle: dict[str, Any], key: str, seed_count: int) -> np.ndarray:
+    arr = np.asarray(legacy_oracle[key], dtype=np.float64)
+    if arr.ndim != 3:
+        raise ValueError(f"Legacy oracle key {key!r} must have shape (seed, tick, dim); got {arr.shape}")
+    if arr.shape[0] == int(seed_count):
+        return np.asarray(arr, dtype=np.float64)
+    if arr.shape[0] != 1:
+        raise ValueError(
+            f"Legacy oracle key {key!r} cannot be expanded to {seed_count} seeds from shape {arr.shape}"
+        )
+    return np.repeat(arr, int(seed_count), axis=0)
+
+
+def _matlab_ref_to_vector(handle: h5py.File, ref: Any) -> np.ndarray:
+    if not ref:
+        raise ValueError("Encountered null HDF5 reference in MATLAB trace cell array.")
+    arr = np.asarray(handle[ref][()], dtype=np.float64)
+    return np.asarray(arr.reshape(-1), dtype=np.float64)
+
+
+def _matlab_channel_matrix(handle: h5py.File, dataset: h5py.Dataset) -> np.ndarray:
+    if dataset.ndim != 2 or 1 not in dataset.shape:
+        raise ValueError(
+            "MATLAB trace channel must be a 2D cell array with a singleton axis; "
+            f"got {dataset.name} shape={dataset.shape}"
+        )
+    if dataset.shape[0] == 1:
+        refs = [dataset[0, tick] for tick in range(dataset.shape[1])]
+    else:
+        refs = [dataset[tick, 0] for tick in range(dataset.shape[0])]
+    vectors = [_matlab_ref_to_vector(handle, ref) for ref in refs]
+    widths = {int(vector.shape[0]) for vector in vectors}
+    if len(widths) > 1:
+        raise ValueError(
+            f"Inconsistent vector widths in {dataset.name}: {sorted(widths)}"
+        )
+    return np.asarray(np.stack(vectors, axis=0), dtype=np.float64)
+
+
+def _load_seeded_mat_channels(seed_paths: list[Path]) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray], int]:
+    before_by_channel: dict[str, list[np.ndarray]] = {}
+    after_by_channel: dict[str, list[np.ndarray]] = {}
+    before_keys_expected: tuple[str, ...] | None = None
+    after_keys_expected: tuple[str, ...] | None = None
+    n_ticks_expected: int | None = None
+
+    for seed_path in seed_paths:
+        with h5py.File(seed_path, "r") as handle:
+            if "states_before" not in handle or "states_after" not in handle:
+                raise ValueError(f"Missing states_before/states_after groups in {seed_path}")
+
+            before_group = handle["states_before"]
+            after_group = handle["states_after"]
+            before_keys = tuple(sorted(str(key) for key in before_group.keys()))
+            after_keys = tuple(sorted(str(key) for key in after_group.keys()))
+            if before_keys_expected is None:
+                before_keys_expected = before_keys
+                after_keys_expected = after_keys
+            elif before_keys != before_keys_expected or after_keys != after_keys_expected:
+                raise ValueError(
+                    "Observable schema drift across ensemble seeds: "
+                    f"{seed_path} before={before_keys} after={after_keys}; "
+                    f"expected before={before_keys_expected} after={after_keys_expected}"
+                )
+
+            for channel in before_keys:
+                matrix = _matlab_channel_matrix(handle, before_group[channel])
+                if n_ticks_expected is None:
+                    n_ticks_expected = int(matrix.shape[0])
+                elif matrix.shape[0] != n_ticks_expected:
+                    raise ValueError(
+                        f"Tick-count drift in {seed_path} channel {channel!r}: "
+                        f"{matrix.shape[0]} vs expected {n_ticks_expected}"
+                    )
+                before_by_channel.setdefault(channel, []).append(matrix)
+
+            for channel in after_keys:
+                matrix = _matlab_channel_matrix(handle, after_group[channel])
+                if n_ticks_expected is None:
+                    n_ticks_expected = int(matrix.shape[0])
+                elif matrix.shape[0] != n_ticks_expected:
+                    raise ValueError(
+                        f"Tick-count drift in {seed_path} channel {channel!r}: "
+                        f"{matrix.shape[0]} vs expected {n_ticks_expected}"
+                    )
+                after_by_channel.setdefault(channel, []).append(matrix)
+
+    before_stacked = {
+        channel: np.asarray(np.stack(matrices, axis=0), dtype=np.float64)
+        for channel, matrices in before_by_channel.items()
+    }
+    after_stacked = {
+        channel: np.asarray(np.stack(matrices, axis=0), dtype=np.float64)
+        for channel, matrices in after_by_channel.items()
+    }
+    return before_stacked, after_stacked, int(n_ticks_expected or 0)
+
+
+def _required_ensemble_keys(process_name: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    if process_name == "Metabolism":
+        return ("substrates", "enzymes", "boundEnzymes"), ("substrates",)
+    if process_name == "Translation":
+        return ("substrates", "enzymes", "boundEnzymes", "monomers"), (
+            "substrates",
+            "monomers",
+            "boundEnzymes",
+        )
+    if process_name == "Transcription":
+        return ("substrates", "enzymes", "boundEnzymes", "RNAs"), (
+            "substrates",
+            "RNAs",
+            "boundEnzymes",
+        )
+    if process_name == "RNADecay":
+        return ("substrates", "enzymes", "boundEnzymes", "RNAs"), ("substrates", "RNAs")
+    if process_name == "ProteinDecay":
+        return ("substrates", "enzymes", "monomers", "complexs"), (
+            "substrates",
+            "monomers",
+            "complexs",
+        )
+    raise ValueError(f"Unsupported Design-A process {process_name!r}.")
+
+
+def _format_ensemble_oracle(
+    *,
+    process_name: str,
+    oracle_path: Path,
+    seed_paths: list[Path],
+    before_channels: dict[str, np.ndarray],
+    after_channels: dict[str, np.ndarray],
+) -> dict[str, Any]:
+    canonical_seed_count = int(len(seed_paths))
+    n_ticks_available = int(next(iter(before_channels.values())).shape[1]) if before_channels else 0
+    required_before, required_after = _required_ensemble_keys(process_name)
+    legacy_oracle: dict[str, Any] | None = None
+
+    def before_channel(channel: str, legacy_key: str) -> np.ndarray:
+        nonlocal legacy_oracle
+        if channel in before_channels:
+            return np.asarray(before_channels[channel], dtype=np.float64)
+        if legacy_oracle is None:
+            legacy_oracle = _oracle_dispatch()[process_name]()
+        return _legacy_seed_slice(legacy_oracle, legacy_key, canonical_seed_count)
+
+    def after_channel(channel: str, legacy_key: str) -> np.ndarray:
+        nonlocal legacy_oracle
+        if channel in after_channels:
+            return np.asarray(after_channels[channel], dtype=np.float64)
+        if legacy_oracle is None:
+            legacy_oracle = _oracle_dispatch()[process_name]()
+        return _legacy_seed_slice(legacy_oracle, legacy_key, canonical_seed_count)
+
+    missing_before = [channel for channel in required_before if channel not in before_channels]
+    missing_after = [channel for channel in required_after if channel not in after_channels]
+
+    if process_name == "Metabolism":
+        return {
+            "process": process_name,
+            "oracle_path": oracle_path,
+            "canonical_seed_count": canonical_seed_count,
+            "n_ticks_available": n_ticks_available,
+            "before_substrates": before_channel("substrates", "before_substrates"),
+            "after_substrates": after_channel("substrates", "after_substrates"),
+            "before_enzymes": before_channel("enzymes", "before_enzymes"),
+            "before_bound_enzymes": before_channel("boundEnzymes", "before_bound_enzymes"),
+            "ensemble_missing_before_channels": tuple(missing_before),
+            "ensemble_missing_after_channels": tuple(missing_after),
+        }
+
+    if process_name == "Transcription":
+        before_substrates_raw = before_channel("substrates", "before_substrates")
+        after_substrates_raw = after_channel("substrates", "after_substrates")
+        before_rnas_raw = before_channel("RNAs", "before_rnas")
+        after_rnas_raw = after_channel("RNAs", "after_rnas")
+        return {
+            "process": process_name,
+            "oracle_path": oracle_path,
+            "canonical_seed_count": canonical_seed_count,
+            "n_ticks_available": n_ticks_available,
+            "before_substrates": np.asarray(
+                [_project_transcription_substrate_cube(seed_matrix) for seed_matrix in before_substrates_raw],
+                dtype=np.float64,
+            ),
+            "before_enzymes": before_channel("enzymes", "before_enzymes"),
+            "before_bound_enzymes": before_channel("boundEnzymes", "before_bound_enzymes"),
+            "before_rnas": np.asarray(
+                [_project_transcription_rna_cube(seed_matrix) for seed_matrix in before_rnas_raw],
+                dtype=np.float64,
+            ),
+            "after_substrates": np.asarray(
+                [_project_transcription_substrate_cube(seed_matrix) for seed_matrix in after_substrates_raw],
+                dtype=np.float64,
+            ),
+            "after_rnas": np.asarray(
+                [_project_transcription_rna_cube(seed_matrix) for seed_matrix in after_rnas_raw],
+                dtype=np.float64,
+            ),
+            "after_bound_enzymes": after_channel("boundEnzymes", "after_bound_enzymes"),
+            "ensemble_missing_before_channels": tuple(missing_before),
+            "ensemble_missing_after_channels": tuple(missing_after),
+        }
+
+    if process_name == "Translation":
+        before_substrates_raw = before_channel("substrates", "before_substrates")
+        after_substrates_raw = after_channel("substrates", "after_substrates")
+        return {
+            "process": process_name,
+            "oracle_path": oracle_path,
+            "canonical_seed_count": canonical_seed_count,
+            "n_ticks_available": n_ticks_available,
+            "before_substrates": np.asarray(
+                [_project_translation_substrate_cube(seed_matrix) for seed_matrix in before_substrates_raw],
+                dtype=np.float64,
+            ),
+            "before_enzymes": before_channel("enzymes", "before_enzymes"),
+            "before_bound_enzymes": before_channel("boundEnzymes", "before_bound_enzymes"),
+            "before_monomers": before_channel("monomers", "before_monomers"),
+            "before_mrnas": before_channel("mRNAs", "before_mrnas"),
+            "after_substrates": np.asarray(
+                [_project_translation_substrate_cube(seed_matrix) for seed_matrix in after_substrates_raw],
+                dtype=np.float64,
+            ),
+            "after_monomers": after_channel("monomers", "after_monomers"),
+            "after_bound_enzymes": after_channel("boundEnzymes", "after_bound_enzymes"),
+            "ensemble_missing_before_channels": tuple(missing_before),
+            "ensemble_missing_after_channels": tuple(missing_after),
+        }
+
+    if process_name == "RNADecay":
+        return {
+            "process": process_name,
+            "oracle_path": oracle_path,
+            "canonical_seed_count": canonical_seed_count,
+            "n_ticks_available": n_ticks_available,
+            "before_substrates": before_channel("substrates", "before_substrates"),
+            "before_enzymes": before_channel("enzymes", "before_enzymes"),
+            "before_bound_enzymes": before_channel("boundEnzymes", "before_bound_enzymes"),
+            "before_rnas": before_channel("RNAs", "before_rnas"),
+            "after_substrates": after_channel("substrates", "after_substrates"),
+            "after_rnas": after_channel("RNAs", "after_rnas"),
+            "ensemble_missing_before_channels": tuple(missing_before),
+            "ensemble_missing_after_channels": tuple(missing_after),
+        }
+
+    if process_name == "ProteinDecay":
+        before_monomers_raw = before_channel("monomers", "before_monomers")
+        before_complexs_raw = before_channel("complexs", "before_complexs")
+        after_monomers_raw = after_channel("monomers", "after_monomers")
+        after_complexs_raw = after_channel("complexs", "after_complexs")
+        return {
+            "process": process_name,
+            "oracle_path": oracle_path,
+            "canonical_seed_count": canonical_seed_count,
+            "n_ticks_available": n_ticks_available,
+            "before_substrates": before_channel("substrates", "before_substrates"),
+            "before_enzymes": before_channel("enzymes", "before_enzymes"),
+            "before_monomers": np.asarray(
+                [_project_protein_decay_monomer_cube(seed_matrix) for seed_matrix in before_monomers_raw],
+                dtype=np.float64,
+            ),
+            "before_complexs": np.asarray(
+                [_project_protein_decay_complex_cube(seed_matrix) for seed_matrix in before_complexs_raw],
+                dtype=np.float64,
+            ),
+            "after_substrates": after_channel("substrates", "after_substrates"),
+            "after_monomers": np.asarray(
+                [_project_protein_decay_monomer_cube(seed_matrix) for seed_matrix in after_monomers_raw],
+                dtype=np.float64,
+            ),
+            "after_complexs": np.asarray(
+                [_project_protein_decay_complex_cube(seed_matrix) for seed_matrix in after_complexs_raw],
+                dtype=np.float64,
+            ),
+            "ensemble_missing_before_channels": tuple(missing_before),
+            "ensemble_missing_after_channels": tuple(missing_after),
+        }
+
+    raise ValueError(f"Unsupported Design-A process {process_name!r}.")
+
+
+def _load_v2_ensemble(process_name: str, max_seeds: int = 50) -> dict[str, Any] | None:
+    seed_paths = [
+        _v2_seed_mat_path(process_name, seed)
+        for seed in range(int(max_seeds))
+        if _v2_seed_mat_path(process_name, seed).exists()
+    ]
+    if not seed_paths:
+        return None
+    before_channels, after_channels, _ = _load_seeded_mat_channels(seed_paths)
+    return _format_ensemble_oracle(
+        process_name=process_name,
+        oracle_path=seed_paths[0],
+        seed_paths=seed_paths,
+        before_channels=before_channels,
+        after_channels=after_channels,
+    )
 
 
 def _oracle_dispatch() -> dict[str, Any]:

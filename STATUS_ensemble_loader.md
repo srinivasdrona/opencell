@@ -42,3 +42,9 @@ universals:
 - Beat 3 — add `_load_ensembles_layout(process_name, max_seeds=50)`.
 - Beat 4 — wire precedence into `load_karr_oracle`.
 - Beat 5 — run full validation plus Translation/Metabolism smoke gates.
+
+## Beat 2 — v2 Loader
+- Added HDF5 MATLAB-cell resolution for `states_before/<channel>` and `states_after/<channel>` datasets, plus seed stacking across present `per_process_traces_v2_s{NNN}` files.
+- `_load_v2_ensemble(process_name, max_seeds=50)` now returns `None` when zero seed MATs exist and otherwise returns the existing oracle dict shape with `canonical_seed_count = <present seeds>`.
+- Added synthetic unit coverage in `tests/vivarium/test_l2_2_design_a_ensemble_loader.py` for 0-seed, 1-seed, and 3-seed v2 layouts.
+- Verification: `bin\\oc-pytest.cmd tests/vivarium/test_l2_2_design_a*.py -q` => `28 passed`.
