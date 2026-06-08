@@ -103,7 +103,31 @@ Beat 1 verdict: PASS
 
 ## Beat 2 - Catalog loader + table replacement
 
-Status: pending
+Status: completed
+
+Changes:
+- Added `_load_catalog(path: Path | None = None)` in `tests/vivarium/l2_2_design_a_runner.py`, backed by `yaml.safe_load` and `@lru_cache(maxsize=1)`.
+- Added a full-catalog companion loader so the runner can distinguish:
+  - unknown process
+  - known but out-of-scope catalog process
+  - in-scope catalog process not yet implemented by the current helper/oracle layer
+- Replaced the current module-level process tables with catalog-derived equivalents while keeping the existing names:
+  - `SUPPORTED_PROCESSES`
+  - `_PROCESS_BUCKET`
+  - `_PROCESS_OUTPUT_CHANNELS`
+  - `_PROCESS_PRIMARY_CHANNEL`
+  - `_PROCESS_ANALYTICAL_CHECK_REASON`
+- Normalized catalog channel spellings into the runner's existing internal spellings (notably `rnas -> RNAs`, `mrnas -> mRNAs`) so current helper/oracle code remains unchanged.
+- Added runner-startup conformance errors:
+  - out-of-scope process names now fail with `bucket=<...>; rationale=<...>`
+  - in-scope catalog names that the current runner does not yet implement now fail before helper dispatch
+- Added `tests/vivarium/test_l2_2_design_a_runner_catalog.py` to lock in catalog filtering, normalization, table derivation, and the new error messages.
+
+Verification:
+- Command: `bin\oc-pytest.cmd tests/vivarium/test_l2_2_design_a*.py -q`
+- Actual: `17 passed in 97.44s`
+
+Beat 2 verdict: PASS
 
 ## Beat 3 - Projection extractor + distance functions
 

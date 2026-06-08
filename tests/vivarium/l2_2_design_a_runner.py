@@ -6,11 +6,13 @@ import json
 import platform
 import subprocess
 import sys
+from functools import lru_cache
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 import numpy as np
+import yaml
 from scipy.stats import kurtosis, ks_2samp, skew
 
 
@@ -33,40 +35,16 @@ import _l2_2_design_a_runner_helpers as runner_helpers  # noqa: E402
 
 HARNESS_VERSION = "design_a_v1_3"
 SUMMARY_SCHEMA_VERSION = "1.3"
-SUPPORTED_PROCESSES = frozenset({"Metabolism", "Translation", "Transcription", "RNADecay", "ProteinDecay"})
 DEFAULT_BOOTSTRAP_B = 1000
-_PROCESS_BUCKET = {
-    "Metabolism": "TRIVIAL_RNG",
-    "Translation": "ALGORITHMIC_DEEP",
-    "Transcription": "ALGORITHMIC_DEEP",
-    "RNADecay": "ALGORITHMIC_SHALLOW",
-    "ProteinDecay": "ALGORITHMIC_SHALLOW",
-}
 _PROCESS_K_ENG = {
     "TRIVIAL_RNG": runner_helpers.TRIVIAL_RNG_K_ENG,
     "ALGORITHMIC_SHALLOW": runner_helpers.ALGORITHMIC_SHALLOW_K_ENG,
     "ALGORITHMIC_DEEP": runner_helpers.ALGORITHMIC_DEEP_K_ENG,
 }
-_PROCESS_OUTPUT_CHANNELS = {
-    "Metabolism": ("substrates",),
-    "Translation": ("substrates", "monomers", "boundEnzymes"),
-    "Transcription": ("substrates", "RNAs", "boundEnzymes"),
-    "RNADecay": ("substrates", "RNAs"),
-    "ProteinDecay": ("substrates", "monomers", "complexs"),
-}
-_PROCESS_PRIMARY_CHANNEL = {
-    "Metabolism": "substrates",
-    "Translation": "monomers",
-    "Transcription": "RNAs",
-    "RNADecay": "RNAs",
-    "ProteinDecay": "monomers",
-}
-_PROCESS_ANALYTICAL_CHECK_REASON = {
-    "Metabolism": "Metabolism has no closed-form per-tick check",
-    "Translation": "Translation has no closed-form per-tick check",
-    "Transcription": "Transcription has no closed-form per-tick check",
-    "RNADecay": "RNADecay has no closed-form per-tick check",
-    "ProteinDecay": "ProteinDecay has no closed-form per-tick check",
+_PROCESS_CATALOG_PATH = _REPO_ROOT / "docs" / "phase_f" / "l2_2_design_a" / "PROCESS_CATALOG.yaml"
+_CHANNEL_NAME_ALIASES = {
+    "mrnas": "mRNAs",
+    "rnas": "RNAs",
 }
 _ORACLE_BEFORE_KEY = {
     "substrates": "before_substrates",
@@ -83,6 +61,102 @@ _ORACLE_AFTER_KEY = {
     "monomers": "after_monomers",
     "complexs": "after_complexs",
     "RNAs": "after_rnas",
+}
+
+
+def _normalize_channel_name(name: str) -> str:
+    channel = str(name)
+    return _CHANNEL_NAME_ALIASES.get(channel.lower(), channel)
+
+
+def _normalize_catalog_entry(entry: dict[str, Any], bucket_rationale: str | None) -> dict[str, Any]:
+    normalized = dict(entry)
+    for key in ("event_channels", "input_channels", "output_channels"):
+        channels = normalized.get(key)
+        if channels is not None:
+            normalized[key] = tuple(_normalize_channel_name(channel) for channel in channels)
+    primary_channel = normalized.get("primary_channel")
+    if primary_channel is not None:
+        normalized["primary_channel"] = _normalize_channel_name(str(primary_channel))
+    normalized["_bucket_rationale"] = bucket_rationale
+    return normalized
+
+
+@lru_cache(maxsize=1)
+def _load_catalog_document(path: Path | None = None) -> dict[str, Any]:
+    catalog_path = Path(path) if path is not None else _PROCESS_CATALOG_PATH
+    payload = yaml.safe_load(catalog_path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError(f"Invalid process catalog payload in {catalog_path}")
+    return payload
+
+
+@lru_cache(maxsize=1)
+def _load_catalog(path: Path | None = None) -> dict[str, dict]:
+    document = _load_catalog_document(path)
+    buckets = document.get("buckets", {})
+    processes = document.get("processes", ())
+    catalog: dict[str, dict[str, Any]] = {}
+    for raw_entry in processes:
+        if not isinstance(raw_entry, dict):
+            continue
+        if not raw_entry.get("in_scope_L2_2"):
+            continue
+        name = str(raw_entry["name"])
+        bucket_name = str(raw_entry.get("bucket", ""))
+        bucket_rationale = None
+        if isinstance(buckets, dict):
+            bucket_meta = buckets.get(bucket_name, {})
+            if isinstance(bucket_meta, dict):
+                rationale = bucket_meta.get("rationale")
+                if rationale is not None:
+                    bucket_rationale = str(rationale)
+        catalog[name] = _normalize_catalog_entry(raw_entry, bucket_rationale)
+    return catalog
+
+
+@lru_cache(maxsize=1)
+def _load_catalog_all(path: Path | None = None) -> dict[str, dict[str, Any]]:
+    document = _load_catalog_document(path)
+    buckets = document.get("buckets", {})
+    processes = document.get("processes", ())
+    catalog: dict[str, dict[str, Any]] = {}
+    for raw_entry in processes:
+        if not isinstance(raw_entry, dict):
+            continue
+        name = str(raw_entry["name"])
+        bucket_name = str(raw_entry.get("bucket", ""))
+        bucket_rationale = None
+        if isinstance(buckets, dict):
+            bucket_meta = buckets.get(bucket_name, {})
+            if isinstance(bucket_meta, dict):
+                rationale = bucket_meta.get("rationale")
+                if rationale is not None:
+                    bucket_rationale = str(rationale)
+        catalog[name] = _normalize_catalog_entry(raw_entry, bucket_rationale)
+    return catalog
+
+
+def _implemented_processes() -> frozenset[str]:
+    return frozenset(str(name) for name in runner_helpers._oracle_dispatch())
+
+
+_CATALOG_IN_SCOPE = _load_catalog()
+SUPPORTED_PROCESSES = frozenset(name for name in _CATALOG_IN_SCOPE if name in _implemented_processes())
+_PROCESS_BUCKET = {name: str(entry["bucket"]) for name, entry in _CATALOG_IN_SCOPE.items() if name in SUPPORTED_PROCESSES}
+_PROCESS_OUTPUT_CHANNELS = {
+    name: tuple(str(channel) for channel in entry["output_channels"])
+    for name, entry in _CATALOG_IN_SCOPE.items()
+    if name in SUPPORTED_PROCESSES
+}
+_PROCESS_PRIMARY_CHANNEL = {
+    name: str(entry["primary_channel"])
+    for name, entry in _CATALOG_IN_SCOPE.items()
+    if name in SUPPORTED_PROCESSES
+}
+_PROCESS_ANALYTICAL_CHECK_REASON = {
+    name: f"{name} has no closed-form per-tick check"
+    for name in SUPPORTED_PROCESSES
 }
 
 
@@ -442,6 +516,30 @@ def _process_primary_channel(process: str) -> str:
     return _PROCESS_PRIMARY_CHANNEL[process]
 
 
+def _process_catalog_entry(process: str) -> dict[str, Any]:
+    catalog = _load_catalog_all()
+    entry = catalog.get(process)
+    if entry is None:
+        raise ValueError(f"Unsupported process {process!r}; supported={sorted(SUPPORTED_PROCESSES)}")
+    return entry
+
+
+def _validate_process_request(process: str) -> None:
+    entry = _process_catalog_entry(process)
+    if not entry.get("in_scope_L2_2"):
+        bucket = entry.get("bucket", "unknown")
+        rationale = entry.get("_bucket_rationale") or entry.get("notes") or "no rationale provided"
+        raise ValueError(
+            f"Process {process!r} is out of L2.2 scope: bucket={bucket}; rationale={rationale}"
+        )
+    if process not in SUPPORTED_PROCESSES:
+        bucket = entry.get("bucket", "unknown")
+        raise ValueError(
+            f"Process {process!r} is in scope in PROCESS_CATALOG.yaml (bucket={bucket}) "
+            f"but this runner currently supports only {sorted(SUPPORTED_PROCESSES)}."
+        )
+
+
 def _process_sample_process(process: str) -> Any:
     if process == "Metabolism":
         return runner_helpers._metabolism_process(0)
@@ -487,8 +585,7 @@ def run_design_a(
     thresholds_path: Path | None = None,
     bootstrap_B: int = DEFAULT_BOOTSTRAP_B,
 ) -> dict[str, Any]:
-    if process not in SUPPORTED_PROCESSES:
-        raise ValueError(f"Unsupported process {process!r}; supported={sorted(SUPPORTED_PROCESSES)}")
+    _validate_process_request(process)
 
     bucket = _process_bucket(process)
     k_eng = float(_PROCESS_K_ENG[bucket])
