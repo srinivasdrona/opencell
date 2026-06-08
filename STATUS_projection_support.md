@@ -131,7 +131,33 @@ Beat 2 verdict: PASS
 
 ## Beat 3 - Projection extractor + distance functions
 
-Status: pending
+Status: completed
+
+Changes:
+- Added `tests/vivarium/_l2_2_design_a_projections.py` with:
+  - `extract_projection(...)`
+  - `per_component_scaled_distance(...)`
+  - `hurdle_event_rate_plus_conditional_distance(...)`
+  - alias `hurdle_event_rate_plus_conditional_scaled_distance(...)` for the catalog string variant
+- `extract_projection(...)` now supports:
+  - ordinary dotted chromosome paths
+  - `delta_*` scalar deltas between per-tick before/after snapshots
+  - `replication_state` categorical encoding
+  - `replication_complete_fired_this_tick`
+  - `repair_event_present`
+  - `repair_count_by_pathway.<pathway>_delta`
+- Added synthetic unit tests in `tests/vivarium/test_l2_2_design_a_projections.py` covering:
+  - dotted path and derived-component resolution
+  - missing-path error reporting
+  - per-component scaling semantics
+  - hurdle all-zero behavior
+  - hurdle conditional-nonzero behavior
+
+Verification:
+- Command: `bin\oc-pytest.cmd tests/vivarium/test_l2_2_design_a_projections.py -q`
+- Actual: `5 passed in 17.79s`
+
+Beat 3 verdict: PASS
 
 ## Beat 4 - Wire runner to use primary_distance
 
