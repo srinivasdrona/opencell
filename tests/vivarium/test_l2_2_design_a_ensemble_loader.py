@@ -128,3 +128,17 @@ def test_load_v2_ensemble_stacks_multiple_present_seeds_in_order(monkeypatch, tm
     assert np.array_equal(np.asarray(oracle["before_substrates"])[1, 0], np.asarray([100.0, 101.0]))
     assert np.array_equal(np.asarray(oracle["before_substrates"])[2, 0], np.asarray([200.0, 201.0]))
     assert np.array_equal(np.asarray(oracle["after_substrates"])[2, 1], np.asarray([401.0, 402.0]))
+
+
+def test_load_ensembles_layout_reads_real_translation_ensemble() -> None:
+    oracle = runner_helpers._load_ensembles_layout("Translation", max_seeds=50)
+
+    assert oracle is not None
+    assert oracle["canonical_seed_count"] == 50
+    assert oracle["oracle_path"] == runner_helpers._ensembles_manifest_path("Translation")
+    assert np.asarray(oracle["before_substrates"]).shape[0] == 50
+    assert np.asarray(oracle["before_substrates"]).shape[1] == 100
+    assert np.asarray(oracle["after_monomers"]).shape[0] == 50
+    assert np.asarray(oracle["after_bound_enzymes"]).shape[0] == 50
+    assert np.asarray(oracle["before_mrnas"]).shape[0] == 50
+    assert "mRNAs" in oracle["ensemble_missing_before_channels"]

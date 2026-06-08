@@ -198,7 +198,7 @@ def _required_ensemble_keys(process_name: str) -> tuple[tuple[str, ...], tuple[s
     if process_name == "Metabolism":
         return ("substrates", "enzymes", "boundEnzymes"), ("substrates",)
     if process_name == "Translation":
-        return ("substrates", "enzymes", "boundEnzymes", "monomers"), (
+        return ("substrates", "enzymes", "boundEnzymes", "monomers", "mRNAs"), (
             "substrates",
             "monomers",
             "boundEnzymes",
@@ -389,6 +389,44 @@ def _load_v2_ensemble(process_name: str, max_seeds: int = 50) -> dict[str, Any] 
     return _format_ensemble_oracle(
         process_name=process_name,
         oracle_path=seed_paths[0],
+        seed_paths=seed_paths,
+        before_channels=before_channels,
+        after_channels=after_channels,
+    )
+
+
+def _load_ensembles_layout(process_name: str, max_seeds: int = 50) -> dict[str, Any] | None:
+    seed_paths = [
+        _ensembles_seed_mat_path(process_name, seed)
+        for seed in range(int(max_seeds))
+        if _ensembles_seed_mat_path(process_name, seed).exists()
+    ]
+    if not seed_paths:
+        return None
+
+    before_channels, after_channels, _ = _load_seeded_mat_channels(seed_paths)
+    manifest_path = _ensembles_manifest_path(process_name)
+    if manifest_path.exists():
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest_seed_count = manifest.get("present_seed_count", manifest.get("expected_seed_count"))
+        if manifest_seed_count is not None and int(manifest_seed_count) != len(seed_paths):
+            raise ValueError(
+                f"Manifest seed-count mismatch for {process_name}: "
+                f"manifest={manifest_seed_count} actual={len(seed_paths)}"
+            )
+        manifest_observables = manifest.get("observable_schema_set")
+        if manifest_observables is not None:
+            observed_schema = tuple(sorted(set(before_channels) | set(after_channels)))
+            expected_schema = tuple(sorted(str(channel) for channel in manifest_observables))
+            if observed_schema != expected_schema:
+                raise ValueError(
+                    f"Manifest observable mismatch for {process_name}: "
+                    f"manifest={expected_schema} actual={observed_schema}"
+                )
+
+    return _format_ensemble_oracle(
+        process_name=process_name,
+        oracle_path=manifest_path if manifest_path.exists() else seed_paths[0],
         seed_paths=seed_paths,
         before_channels=before_channels,
         after_channels=after_channels,

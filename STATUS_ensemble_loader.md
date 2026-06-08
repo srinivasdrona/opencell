@@ -48,3 +48,9 @@ universals:
 - `_load_v2_ensemble(process_name, max_seeds=50)` now returns `None` when zero seed MATs exist and otherwise returns the existing oracle dict shape with `canonical_seed_count = <present seeds>`.
 - Added synthetic unit coverage in `tests/vivarium/test_l2_2_design_a_ensemble_loader.py` for 0-seed, 1-seed, and 3-seed v2 layouts.
 - Verification: `bin\\oc-pytest.cmd tests/vivarium/test_l2_2_design_a*.py -q` => `28 passed`.
+
+## Beat 3 — Specialized Ensembles Loader
+- Added `_load_ensembles_layout(process_name, max_seeds=50)` for `data/m1_sources/karr_native/ensembles/<process_lower>/seed_NNN/<Process>_100ticks.mat`.
+- Loader cross-checks `MANIFEST.json` when present for seed count and observable schema before formatting the oracle dict.
+- Real-disk Translation coverage added: the loader reads the existing 50-seed ensemble, returns `canonical_seed_count = 50`, and explicitly records `mRNAs` as a missing ensemble input channel supplemented from legacy NPZ.
+- Verification: `bin\\oc-pytest.cmd tests/vivarium/test_l2_2_design_a*.py -q` => `29 passed`.
