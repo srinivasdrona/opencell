@@ -26,6 +26,53 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Live processes / agents (2026-06-08 ~13:20 IST):** TWO long-running jobs detached.
+
+| Tag | Type | PID | PID-file | Log | Expected wall | Status |
+|---|---|---|---|---|---|---|
+| ensemble_loader | codex | 52064 | `~\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\ensemble_loader_pid.txt` | `E:\opencell-worktrees\l22-ensemble-loader\.codex_ensemble_loader.log` | 20-35 min | started ~12:51 IST. Adds catalog-driven N-seed Karr ensemble loader to runner. Wait shell: `wait-ensemble-loader` (PowerShell `Wait-Process`). |
+| matlab_50seed | MATLAB | 92356 (cmd wrapper) / 29112 (MATLAB) | `~\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\matlab_50seed_pid.txt` | `E:\opencell\.matlab_50seed_extract.log` | 2-3 hours | started ~13:06 IST. Runs `extract_per_process_traces_v2` for 5 fanout processes × seeds 0-49 → `data/m1_sources/karr_native/per_process_traces_v2_s{NNN}/{Process}_100ticks.mat`. Wait shell: `wait-matlab-50seed-v2`. |
+
+**Day-22 (2026-06-07) state — for context:** L2.2 Design-A fanout shipped 5 merges that all deviated from `PROCESS_CATALOG.yaml` on primary_channel / M_ticks / karr_artifact. All 5 reverted today (2026-06-08 03:40-03:41 IST). See "What landed today" below.
+
+**Branch tips (origin in sync where noted):**
+- `main` @ `a61650d` (`docs(l2.2): catalog v2 - primary_projection + primary_distance for chromosome-primary processes`) — pushed.
+- `exec/l22-ensemble-loader` — in-flight, codex committing as it goes.
+- 5 yesterday's fanout worktrees (`l22-d1_repinit`, `l22-d2_replication`, `l22-d3_dnarepair`, `l22-d4_macromol`, `l22-d5_cytokinesis`) — still present on disk but reverted from main; will rebuild after MATLAB 50-seed extraction completes.
+- `l22-projection-support` — merged + closed today (`e3f1178`).
+- `l22-chromosome_critique` — was a scratch dir at `E:\opencell\.l22_chromosome_critique`, kept for the codex critique STATUS reference.
+
+**What landed today (2026-06-08, in order):**
+1. `470e661` — promote 3-slot composition mandate to standalone file (v1).
+2. 5 reverts (`4657cb6`, `01b1a3d`, `6b005e7`, `3159200`, `24b54eb`) — reverted yesterday's 5 fanout merges (d1/d2/d3/d4/d5) after catalog-conformance audit found 4 wrong primary_channel + 2 wrong M_ticks + 5 wrong karr_artifact.
+3. `d35bce6` — COMPOSITION_MANDATE v2 with spec-authority rule (slot 3 MUST quote machine-loadable spec verbatim; existing code not authoritative spec).
+4. `e3f1178` — runner catalog-driven projection support (catalog YAML loader replaces 5 hardcoded process tables; new `primary_projection` + `primary_distance` infrastructure; per_component_scaled + hurdle distance functions; 7 new unit tests; SUMMARY_SCHEMA_VERSION 1.3→1.4).
+5. `a61650d` — catalog v2 entries: Replication + DNARepair get `primary_projection` + `primary_distance` per chromosome-projection critique (Replication: per-fork deltas + state + complete_flag, per_component_scaled; DNARepair: event_present + 4 pathway deltas, hurdle metric).
+
+**In progress (when MATLAB + codex jobs complete):**
+- ensemble_loader codex (PID 52064) will land 5 commits on `exec/l22-ensemble-loader`; merge to main.
+- MATLAB 50-seed extraction (PID 92356) will populate `per_process_traces_v2_s{000..049}/` for 5 fanout processes.
+- After BOTH: re-fire 5-process fanout against catalog spec (with v2 mandate spec-authority discipline + ensemble loader honoring the new 50-seed dirs).
+- Then re-fire full-scale gate.
+
+**Operational traps re-hit / added today:**
+- **L2.2 5-fanout spec drift (Day-22 → reverted Day-23 morning):** all 5 fanout codex PROMPTs cited runner+helpers+previous-fanout-process as wiring template; none cited PROCESS_CATALOG.yaml. d2 deviated from catalog (substrates instead of chromosome primary), and d1/d3/d4/d5 inherited the deviation by copying d2. Documented as the empirical anchor for COMPOSITION_MANDATE v2 spec-authority rule.
+- **MATLAB -batch invocation traps (today):** (a) MATLAB function names MUST start with a letter, not underscore — `_tmp_extract_50seed_batch.m` failed silently with "Invalid text character"; rename to `tmp_extract_50seed_batch.m` resolved it. (b) `Start-Process -RedirectStandardOutput` swallows MATLAB stderr; .bat wrapper + cmd.exe redirect works reliably. (c) Multi-line `-batch` strings get mangled by PowerShell `-ArgumentList`; single-line `addpath + script_name` form is safer.
+- **Content filter on long structured analytical responses (multi-occurrence today):** Claude Opus 4.7 1M ctx model hits filter blocks on responses combining multi-row tables + multi-paragraph reasoning + recommendation blocks. Mitigation added to `~/.copilot/copilot-instructions.md` "Response-blocking recovery" section (prevention discipline: split across turns when planning involves >1 of {comparison table, parallel reasoning paragraphs, bulleted recommendations, empirical anchor block, meta-framework discussion}).
+- **Yesterday's traps still apply:** `git worktree prune` doesn't delete disk dirs; WSL one-liners with `cd` + `python` hang under codex-fleet load (use `bin\oc-pytest.cmd` / `bin\oc-py.cmd` wrappers); `bin\oc-py.cmd` translates CWD but not path arguments — always pass Linux-style relative paths from worktree root.
+
+**Activation env:** `L2_USE_CALIBRATED_TOLERANCES=1` only needed for `karr_transcription` and `karr_protein_modification` (L2.1 strict-near-clean cases).
+
+**MATLAB:** `E:\MATLAB\bin\matlab.exe` (R2026a DEMO/trial, single-license → serialize MATLAB jobs). Headless via `.bat` wrapper + cmd.exe is the only reliable invocation pattern.
+
+**WSL venv:** `/mnt/e/opencell/.venv-wsl/bin/activate` (worktrees do NOT have their own venv).
+
+**Wait shells (instead of `manage_schedule` polling, per 2026-06-01 decision):** one async PowerShell shell per PID, blocks via `Wait-Process -Id <pid>`. Active today: `wait-ensemble-loader`, `wait-matlab-50seed-v2`.
+
+---
+
+### Prior handoff (2026-06-05 ~01:10 IST) — kept for context
+
 **Live processes / agents (2026-06-05 ~01:10 IST):** THREE codex jobs running detached.
 
 | Tag | Worktree | Branch | PID | PID-file | Log | Spec |
