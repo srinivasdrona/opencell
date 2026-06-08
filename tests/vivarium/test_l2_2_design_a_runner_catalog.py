@@ -288,3 +288,30 @@ def test_event_channels_are_deferred_from_normal_gating(monkeypatch, tmp_path: P
     assert primary["is_event_channel"] is True
     assert primary["verdict"] == "EVENT_CHANNEL_DEFERRED"
     assert payload["summary"]["processes"]["Metabolism"]["n_event_deferred"] == 1
+
+
+def test_run_design_a_merges_loader_warnings_into_result(monkeypatch, tmp_path: Path) -> None:
+    oracle = _fake_metabolism_oracle(tick_count=1, dim=2)
+    oracle["warnings"] = ["KARR_LEGACY_SINGLE_SEED_FALLBACK: synthetic test warning"]
+    monkeypatch.setattr(runner.runner_helpers, "load_karr_oracle", lambda process: oracle)
+    monkeypatch.setattr(runner.runner_helpers, "_metabolism_process", lambda seed: _fake_metabolism_process(dim=2))
+    monkeypatch.setattr(
+        runner.runner_helpers,
+        "run_oc_tick",
+        lambda process_name, seed, tick, state: {
+            "substrates": np.asarray(state["oracle_after_substrates"], dtype=np.float64)
+        },
+    )
+
+    payload = runner.run_design_a(
+        process="Metabolism",
+        seeds=[0],
+        m_ticks=1,
+        out_dir=tmp_path / "loader_warning_merge",
+        bootstrap_B=4,
+    )
+
+    assert any(
+        "KARR_LEGACY_SINGLE_SEED_FALLBACK" in warning
+        for warning in payload["result"]["warnings"]
+    )

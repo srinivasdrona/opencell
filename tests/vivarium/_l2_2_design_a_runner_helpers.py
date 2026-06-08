@@ -444,12 +444,31 @@ def _oracle_dispatch() -> dict[str, Any]:
 
 
 def load_karr_oracle(process: str) -> dict[str, Any]:
-    """Load the canonical Karr replay fixture for a Design-A process."""
+    """Load the canonical Karr oracle for a Design-A process."""
     loaders = _oracle_dispatch()
     loader = loaders.get(process)
     if loader is None:
         raise ValueError(f"Unsupported Design-A process {process!r}.")
-    return loader()
+
+    v2_oracle = _load_v2_ensemble(process)
+    if v2_oracle is not None:
+        return v2_oracle
+
+    specialized_ensemble_oracle = _load_ensembles_layout(process)
+    if specialized_ensemble_oracle is not None:
+        return specialized_ensemble_oracle
+
+    legacy_oracle = loader()
+    legacy_warnings = list(legacy_oracle.get("warnings", ()))
+    legacy_warnings.append(
+        "KARR_LEGACY_SINGLE_SEED_FALLBACK: no ensemble found for "
+        f"{process} at per_process_traces_v2_s{{NNN}}/ or ensembles/<process>/seed_NNN/; "
+        f"using legacy single-seed npz at per_process_replay/{process}.npz. "
+        "Distributional gate is degraded to N-OC-samples vs 1-Karr-sample."
+    )
+    legacy_oracle["canonical_seed_count"] = 1
+    legacy_oracle["warnings"] = legacy_warnings
+    return legacy_oracle
 
 
 def _load_metabolism_oracle() -> dict[str, Any]:

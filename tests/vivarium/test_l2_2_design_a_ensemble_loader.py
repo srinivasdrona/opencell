@@ -142,3 +142,27 @@ def test_load_ensembles_layout_reads_real_translation_ensemble() -> None:
     assert np.asarray(oracle["after_bound_enzymes"]).shape[0] == 50
     assert np.asarray(oracle["before_mrnas"]).shape[0] == 50
     assert "mRNAs" in oracle["ensemble_missing_before_channels"]
+
+
+def test_load_karr_oracle_prefers_v2_loader_before_other_sources(monkeypatch) -> None:
+    sentinel = {"process": "Metabolism", "canonical_seed_count": 7}
+    monkeypatch.setattr(runner_helpers, "_load_v2_ensemble", lambda process_name, max_seeds=50: sentinel)
+    monkeypatch.setattr(
+        runner_helpers,
+        "_load_ensembles_layout",
+        lambda process_name, max_seeds=50: (_ for _ in ()).throw(AssertionError("specialized layout should not run")),
+    )
+
+    oracle = runner_helpers.load_karr_oracle("Metabolism")
+
+    assert oracle is sentinel
+
+
+def test_load_karr_oracle_falls_back_to_legacy_with_warning(monkeypatch) -> None:
+    monkeypatch.setattr(runner_helpers, "_load_v2_ensemble", lambda process_name, max_seeds=50: None)
+    monkeypatch.setattr(runner_helpers, "_load_ensembles_layout", lambda process_name, max_seeds=50: None)
+
+    oracle = runner_helpers.load_karr_oracle("Metabolism")
+
+    assert oracle["canonical_seed_count"] == 1
+    assert any("KARR_LEGACY_SINGLE_SEED_FALLBACK" in warning for warning in oracle["warnings"])

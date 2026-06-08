@@ -54,3 +54,10 @@ universals:
 - Loader cross-checks `MANIFEST.json` when present for seed count and observable schema before formatting the oracle dict.
 - Real-disk Translation coverage added: the loader reads the existing 50-seed ensemble, returns `canonical_seed_count = 50`, and explicitly records `mRNAs` as a missing ensemble input channel supplemented from legacy NPZ.
 - Verification: `bin\\oc-pytest.cmd tests/vivarium/test_l2_2_design_a*.py -q` => `29 passed`.
+
+## Beat 4 — Precedence + Legacy Fallback Warning
+- `load_karr_oracle(process)` now tries `_load_v2_ensemble(process)` first, then `_load_ensembles_layout(process)`, then the existing legacy single-seed loader.
+- Legacy fallback now annotates the oracle with `warnings = ["KARR_LEGACY_SINGLE_SEED_FALLBACK: ..."]` and keeps `canonical_seed_count = 1`.
+- `tests/vivarium/l2_2_design_a_runner.py` now merges loader-provided warnings into the run payload before adding harness-derived warnings.
+- Added tests covering precedence, legacy fallback warning emission, and runner warning merge behavior.
+- Verification: `bin\\oc-pytest.cmd tests/vivarium/test_l2_2_design_a*.py -q` => `32 passed`.

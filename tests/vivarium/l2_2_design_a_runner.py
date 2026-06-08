@@ -894,12 +894,15 @@ def run_design_a(
             "absolute_floor": runner_helpers.ABSOLUTE_FLOOR,
             "threshold": float(threshold),
         }
-    warnings = _warning_strings(
+    warnings = list(str(warning) for warning in oracle.get("warnings", ()))
+    warnings.extend(
+        _warning_strings(
         process=process,
         oc_vectors_by_channel=oc_vectors,
         karr_vectors_by_channel=after_vectors,
         canonical_seed_count=int(oracle.get("canonical_seed_count", after_vectors[primary_channel].shape[0])),
         requested_seed_count=len(seeds),
+        )
     )
     primary_oracle_laundering_warning = _primary_channel_oracle_laundering_warning(
         process=process,
