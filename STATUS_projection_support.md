@@ -161,7 +161,31 @@ Beat 3 verdict: PASS
 
 ## Beat 4 - Wire runner to use primary_distance
 
-Status: pending
+Status: completed
+
+Changes:
+- Updated `tests/vivarium/l2_2_design_a_runner.py` to read and expose the catalog-backed fields needed for projection wiring:
+  - `event_channels`
+  - `joint_check`
+  - `primary_projection`
+  - `primary_distance` with default `per_tick_vector_w1_mean`
+- Preserved the existing per-channel W1 bookkeeping for all channels and all current processes.
+- Added a primary-channel projection-distance dispatcher:
+  - default path: unchanged `per_tick_vector_w1_mean`
+  - `per_component_scaled`: emits `channel_payloads[primary_channel]["per_component"]`
+  - `hurdle_event_rate_plus_conditional_scaled_distance`: emits `channel_payloads[primary_channel]["hurdle"]`
+- Marked catalog event channels as `is_event_channel: true` and deferred their normal gating via `EVENT_CHANNEL_DEFERRED`.
+- Bumped `SUMMARY_SCHEMA_VERSION` from `1.3` to `1.4` with an inline comment documenting the optional primary-channel diagnostic additions.
+- Extended `tests/vivarium/test_l2_2_design_a_runner_catalog.py` to cover:
+  - `per_component` primary payload emission
+  - `hurdle` primary payload emission
+  - event-channel deferral accounting
+
+Verification:
+- Command: `bin\oc-pytest.cmd tests/vivarium/test_l2_2_design_a*.py -q`
+- Actual: `25 passed in 62.63s`
+
+Beat 4 verdict: PASS
 
 ## Beat 5 - Synthetic smoke
 

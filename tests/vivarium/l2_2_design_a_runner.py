@@ -31,10 +31,17 @@ if str(_HELPER_DIR) not in sys.path:
     sys.path.insert(0, str(_HELPER_DIR))
 
 import _l2_2_design_a_runner_helpers as runner_helpers  # noqa: E402
+from _l2_2_design_a_projections import (  # noqa: E402
+    extract_projection,
+    hurdle_event_rate_plus_conditional_scaled_distance,
+    per_component_scaled_distance,
+)
 
 
 HARNESS_VERSION = "design_a_v1_3"
-SUMMARY_SCHEMA_VERSION = "1.3"
+# v1.4 adds optional primary-channel `per_component` / `hurdle` diagnostic blocks
+# while preserving the existing top-level channel schema.
+SUMMARY_SCHEMA_VERSION = "1.4"
 DEFAULT_BOOTSTRAP_B = 1000
 _PROCESS_K_ENG = {
     "TRIVIAL_RNG": runner_helpers.TRIVIAL_RNG_K_ENG,
@@ -157,6 +164,26 @@ _PROCESS_PRIMARY_CHANNEL = {
 _PROCESS_ANALYTICAL_CHECK_REASON = {
     name: f"{name} has no closed-form per-tick check"
     for name in SUPPORTED_PROCESSES
+}
+_PROCESS_EVENT_CHANNELS = {
+    name: tuple(str(channel) for channel in entry.get("event_channels", ()))
+    for name, entry in _CATALOG_IN_SCOPE.items()
+    if name in SUPPORTED_PROCESSES
+}
+_PROCESS_JOINT_CHECK = {
+    name: bool(entry.get("joint_check", False))
+    for name, entry in _CATALOG_IN_SCOPE.items()
+    if name in SUPPORTED_PROCESSES
+}
+_PROCESS_PRIMARY_PROJECTION = {
+    name: tuple(str(component) for component in entry.get("primary_projection", ()))
+    for name, entry in _CATALOG_IN_SCOPE.items()
+    if name in SUPPORTED_PROCESSES
+}
+_PROCESS_PRIMARY_DISTANCE = {
+    name: str(entry.get("primary_distance", "per_tick_vector_w1_mean"))
+    for name, entry in _CATALOG_IN_SCOPE.items()
+    if name in SUPPORTED_PROCESSES
 }
 
 
@@ -473,6 +500,7 @@ def _summary_payload(
 ) -> dict[str, Any]:
     channel_verdicts = {name: str(payload["verdict"]) for name, payload in channel_payloads.items()}
     failed_channels = [name for name, verdict_name in channel_verdicts.items() if verdict_name == "FAIL"]
+    n_event_deferred = int(sum(verdict_name == "EVENT_CHANNEL_DEFERRED" for verdict_name in channel_verdicts.values()))
     return {
         "generated_at": timestamp,
         "schema_version": SUMMARY_SCHEMA_VERSION,
@@ -487,7 +515,7 @@ def _summary_payload(
                 "n_channels_gated": int(
                     sum(verdict_name not in {"EVENT_CHANNEL_DEFERRED", "INSUFFICIENT_SAMPLES"} for verdict_name in channel_verdicts.values())
                 ),
-                "n_event_deferred": 0,
+                "n_event_deferred": n_event_deferred,
                 "n_insufficient": int(sum(verdict_name == "INSUFFICIENT_SAMPLES" for verdict_name in channel_verdicts.values())),
                 "joint_verdict": None,
                 "n_joint_fail_pairs": 0,
@@ -516,6 +544,22 @@ def _process_primary_channel(process: str) -> str:
     return _PROCESS_PRIMARY_CHANNEL[process]
 
 
+def _process_event_channels(process: str) -> tuple[str, ...]:
+    return _PROCESS_EVENT_CHANNELS.get(process, ())
+
+
+def _process_joint_check(process: str) -> bool:
+    return _PROCESS_JOINT_CHECK.get(process, False)
+
+
+def _process_primary_projection(process: str) -> tuple[str, ...]:
+    return _PROCESS_PRIMARY_PROJECTION.get(process, ())
+
+
+def _process_primary_distance(process: str) -> str:
+    return _PROCESS_PRIMARY_DISTANCE.get(process, "per_tick_vector_w1_mean")
+
+
 def _process_catalog_entry(process: str) -> dict[str, Any]:
     catalog = _load_catalog_all()
     entry = catalog.get(process)
@@ -538,6 +582,22 @@ def _validate_process_request(process: str) -> None:
             f"Process {process!r} is in scope in PROCESS_CATALOG.yaml (bucket={bucket}) "
             f"but this runner currently supports only {sorted(SUPPORTED_PROCESSES)}."
         )
+
+
+def _projection_component_scales(
+    projection_spec: tuple[str, ...],
+    karr_projection_vectors: np.ndarray,
+) -> dict[str, float]:
+    scales: dict[str, float] = {}
+    for idx, component_name in enumerate(projection_spec):
+        values = np.asarray(karr_projection_vectors[:, :, idx], dtype=np.float64).reshape(-1)
+        nonzero = np.abs(values[np.abs(values) > 1e-12])
+        if nonzero.size == 0:
+            scale = 1.0
+        else:
+            scale = float(max(np.percentile(nonzero, 95), 1.0))
+        scales[str(component_name)] = scale
+    return scales
 
 
 def _process_sample_process(process: str) -> Any:
@@ -591,6 +651,11 @@ def run_design_a(
     k_eng = float(_PROCESS_K_ENG[bucket])
     output_channels = _process_output_channels(process)
     primary_channel = _process_primary_channel(process)
+    event_channels = set(_process_event_channels(process))
+    joint_check_enabled = _process_joint_check(process)
+    primary_distance = _process_primary_distance(process)
+    primary_projection = _process_primary_projection(process)
+    use_projection_distance = primary_distance != "per_tick_vector_w1_mean"
     thresholds_output = thresholds_path or (out_dir / "thresholds.json")
     oracle = runner_helpers.load_karr_oracle(process)
     before_vectors = {
@@ -614,6 +679,16 @@ def run_design_a(
         channel: np.zeros((len(seeds), m_ticks), dtype=np.float64)
         for channel in output_channels
     }
+    oc_projection_vectors: np.ndarray | None = None
+    karr_projection_vectors: np.ndarray | None = None
+    if use_projection_distance:
+        if not primary_projection:
+            raise ValueError(
+                f"Process {process!r} requests primary_distance={primary_distance!r} "
+                "but does not define primary_projection in PROCESS_CATALOG.yaml."
+            )
+        oc_projection_vectors = np.zeros((len(seeds), m_ticks, len(primary_projection)), dtype=np.float64)
+        karr_projection_vectors = np.zeros_like(oc_projection_vectors)
     allocator_inputs: list[dict[str, Any]] = []
     for seed_index, seed in enumerate(seeds):
         for tick in range(m_ticks):
@@ -673,6 +748,22 @@ def run_design_a(
             if "boundEnzymes" in before_vectors:
                 sample_state["oracle_before_bound_enzymes"] = before_vectors["boundEnzymes"][seed_index, tick]
             oc_result = runner_helpers.run_oc_tick(process, int(seed), int(tick), sample_state)
+            if use_projection_distance:
+                oc_projection_state = oc_result.get("projection_state")
+                karr_projection_state = oc_result.get("karr_projection_state")
+                if oc_projection_state is None or karr_projection_state is None:
+                    raise ValueError(
+                        f"Process {process!r} requires projection snapshots for primary_distance={primary_distance!r}, "
+                        "but run_oc_tick did not return both projection_state and karr_projection_state."
+                    )
+                oc_projection_vectors[seed_index, tick] = extract_projection(
+                    oc_projection_state,
+                    primary_projection,
+                )
+                karr_projection_vectors[seed_index, tick] = extract_projection(
+                    karr_projection_state,
+                    primary_projection,
+                )
             for channel in output_channels:
                 oc_vectors[channel][seed_index, tick] = np.asarray(oc_result[channel], dtype=np.float64)
                 per_sample_w1[channel][seed_index, tick] = runner_helpers.compute_w1(
@@ -707,6 +798,28 @@ def run_design_a(
     channel_payloads: dict[str, Any] = {}
     null_payload_channels: dict[str, Any] = {}
     thresholds_channels: dict[str, Any] = {}
+    primary_projection_payload: dict[str, Any] | None = None
+    if use_projection_distance and oc_projection_vectors is not None and karr_projection_vectors is not None:
+        if primary_distance == "per_component_scaled":
+            component_scales = _projection_component_scales(primary_projection, karr_projection_vectors)
+            primary_projection_payload = {
+                "aggregation": primary_distance,
+                "per_component": per_component_scaled_distance(
+                    oc_projection_vectors,
+                    karr_projection_vectors,
+                    component_scales,
+                ),
+            }
+        elif primary_distance == "hurdle_event_rate_plus_conditional_scaled_distance":
+            primary_projection_payload = {
+                "aggregation": primary_distance,
+                "hurdle": hurdle_event_rate_plus_conditional_scaled_distance(
+                    oc_projection_vectors,
+                    karr_projection_vectors,
+                ),
+            }
+        else:
+            raise ValueError(f"Unsupported primary_distance {primary_distance!r} for process {process!r}.")
     for channel in output_channels:
         null_stats = runner_helpers.compute_null_q95(
             karr_vectors=after_vectors[channel],
@@ -743,7 +856,7 @@ def run_design_a(
             "samples_oc": _observable_stats(flat_oc),
             "samples_karr": _observable_stats(flat_karr),
             "is_primary": channel == primary_channel,
-            "is_event_channel": False,
+            "is_event_channel": channel in event_channels,
             "aggregation": "per_tick_vector_w1_mean",
             "per_sample_w1_summary": {
                 "mean": w1_oc_vs_karr,
@@ -751,6 +864,18 @@ def run_design_a(
                 "min": float(np.min(per_sample_w1[channel])),
             },
         }
+        if channel in event_channels:
+            channel_payloads[channel]["verdict"] = "EVENT_CHANNEL_DEFERRED"
+        if channel == primary_channel and primary_projection_payload is not None:
+            channel_payloads[channel]["aggregation"] = str(primary_projection_payload["aggregation"])
+            if "per_component" in primary_projection_payload:
+                channel_payloads[channel]["per_component"] = primary_projection_payload["per_component"]
+                channel_payloads[channel]["verdict"] = str(
+                    primary_projection_payload["per_component"]["joint_verdict"]
+                )
+            if "hurdle" in primary_projection_payload:
+                channel_payloads[channel]["hurdle"] = primary_projection_payload["hurdle"]
+                channel_payloads[channel]["verdict"] = str(primary_projection_payload["hurdle"]["joint_verdict"])
         null_payload_channels[channel] = {
             "bootstrap_B": int(null_stats["bootstrap_B"]),
             "n_karr_seeds": int(null_stats["n_karr_seeds"]),
@@ -820,6 +945,8 @@ def run_design_a(
         allocator_inputs_path=allocator_inputs_path,
         provenance_path=provenance_path,
     )
+    if joint_check_enabled:
+        result["joint_check"] = {"enabled": True, "verdict": None}
     summary = _summary_payload(
         process=process,
         bucket=bucket,
@@ -828,6 +955,8 @@ def run_design_a(
         channel_payloads=channel_payloads,
         warnings=warnings,
     )
+    if joint_check_enabled:
+        summary["processes"][process]["joint_verdict"] = "NOT_RUN"
 
     thresholds_payload = {
         "schema_version": SUMMARY_SCHEMA_VERSION,
