@@ -20,7 +20,9 @@ verdict: PASS
 
 ## Beat 4 - inversion
 
-Pending.
+Falsifier 1: the verdict flip should only be re-enabled if a future on-OC-only ensemble harness establishes that OC seed `N` has a deterministic, semantically meaningful correspondence to OC seed `N`; that can justify diagonal seed alignment inside one engine, but it does not hold for today's cross-engine numpy-vs-MATLAB comparison. Falsifier 2: the diagnostic should only be deleted outright if we can confirm no current or future harness will ever want shifted-seed detection as a non-gating debugging aid; that is a much stronger claim than this bug fix needs, so rename-and-demote is the narrower change. Falsifier 3: the diagnostic would become statistically meaningful even cross-engine if it were paired with an explicit multiple-comparisons correction, such as a Bonferroni-style threshold calibrated against the expected minimum-over-49-shifts baseline at `N=50`, rather than treating any lower shifted mean W1 as evidence.
+
+verdict: PASS
 
 ## Beat 5 - synthetic smoke
 
