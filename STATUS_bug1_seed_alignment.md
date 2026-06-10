@@ -26,4 +26,6 @@ verdict: PASS
 
 ## Beat 5 - synthetic smoke
 
-Pending.
+Command run: `bin\oc-py.cmd tests/vivarium/l2_2_design_a_runner.py --process Translation --seeds 50 --ticks 10 --bootstrap-B 200 --output-dir tests/vivarium/artifacts/l2_2_design_a/Translation_bug1_smoke`. Measured output from [tests/vivarium/artifacts/l2_2_design_a/Translation_bug1_smoke/result.json](/E:/opencell-worktrees/bug1-seed-alignment/tests/vivarium/artifacts/l2_2_design_a/Translation_bug1_smoke/result.json:1): `verdict: "PASS"`, `canonical_seed_count: 50`, primary channel `monomers` remained `PASS`, and `warnings` contains `SEED_ALIGNMENT_DIAGNOSTIC: OC outputs align better to a shifted Karr seed index on channel=monomers (shift=+37, observed_w1=0.006041, shifted_w1=0.005502).` No `KARR_SINGLE_SEED_REUSED` warning was emitted.
+
+verdict: PASS
