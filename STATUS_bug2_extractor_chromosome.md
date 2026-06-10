@@ -54,7 +54,33 @@ Notes:
 
 ## Beat 3 - single-seed verification
 
-Pending.
+MATLAB command run:
+
+```powershell
+& "E:\MATLAB\bin\matlab.exe" -batch "cd('E:/opencell-worktrees/bug2-extractor-chromosome/scripts/matlab'); extract_per_process_traces_v2({'Replication'}, 'per_process_traces_v2_s000_bug2test', 100, uint32(0))"
+```
+
+MATLAB stdout highlight:
+
+```text
+[trace_v2] Replication snapshot properties: boundEnzymes, chromosome, enzymes, substrates
+[trace_v2] saved: E:\opencell-worktrees\bug2-extractor-chromosome\data\m1_sources\karr_native\per_process_traces_v2_s000_bug2test\Replication_100ticks.mat
+```
+
+`h5py` probe output:
+
+```text
+top-level keys: ['#refs#', 'metadata', 'states_after', 'states_before']
+states_before keys: ['boundEnzymes', 'chromosome', 'enzymes', 'substrates']
+states_after keys: ['boundEnzymes', 'chromosome', 'enzymes', 'substrates']
+metadata snapshot_properties: ['boundEnzymes', 'chromosome', 'enzymes', 'substrates']
+```
+
+Result:
+- PASS: `states_before/chromosome` exists.
+- PASS: `states_after/chromosome` exists.
+- PASS: `metadata/snapshot_properties` includes `chromosome`.
+- Cleanup required after capture: delete `data/m1_sources/karr_native/per_process_traces_v2_s000_bug2test/`.
 
 ## Beat 4 - inversion
 
