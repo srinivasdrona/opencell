@@ -36,7 +36,21 @@ Finding:
 
 ## Beat 2 - extend the allowlist
 
-Pending.
+Change:
+
+```matlab
+function props = pick_snapshot_properties(proc)
+props = intersect(properties(proc), { ...
+    'substrates', 'enzymes', 'boundEnzymes', 'chromosome', ...
+    ...
+    'complexs', 'monomers', 'rnas', 'RNAs', ...
+});
+end
+```
+
+Notes:
+- Added exactly one new top-level entry: `chromosome`.
+- Did not add chromosome subfields such as `delta_fork_position_bp` or `replication_state`; those remain downstream Python projections from the saved chromosome struct/state object.
 
 ## Beat 3 - single-seed verification
 
