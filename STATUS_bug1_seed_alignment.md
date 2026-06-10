@@ -14,7 +14,9 @@ verdict: PASS
 
 ## Beat 3 - regression test
 
-Pending.
+Added [tests/vivarium/test_l2_2_design_a_seed_alignment.py](/E:/opencell-worktrees/bug1-seed-alignment/tests/vivarium/test_l2_2_design_a_seed_alignment.py:1) with 50-seed, 10-tick, 5-dimensional synthetic ensemble coverage: one test drives the real `run_design_a(...)` path with an off-by-one seed roll so `SEED_ALIGNMENT_DIAGNOSTIC` fires while the process verdict remains `PASS`, and a second test calls `_seed_alignment_warning(...)` on the same shape with diagonal-aligned vectors to confirm no seed-alignment warning fires when no shifted index beats the diagonal.
+
+verdict: PASS
 
 ## Beat 4 - inversion
 
