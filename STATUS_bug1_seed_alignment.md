@@ -1,0 +1,23 @@
+# STATUS - Bug 1 Seed Alignment
+
+## Beat 1 - confirm the bug
+
+Bug confirmed in [tests/vivarium/l2_2_design_a_runner.py](/E:/opencell-worktrees/bug1-seed-alignment/tests/vivarium/l2_2_design_a_runner.py:944): the runner appends the warning and then executes `"if seed_alignment_warning is not None and process_verdict == \"PASS\": process_verdict = \"FAIL\""` at [tests/vivarium/l2_2_design_a_runner.py](/E:/opencell-worktrees/bug1-seed-alignment/tests/vivarium/l2_2_design_a_runner.py:955), so any shifted-seed win can overturn an otherwise passing primary-channel result. That diagonal-alignment assumption is wrong for cross-engine ensembles because OpenCell's `numpy.random.Generator` and Karr's MATLAB `rand` do not produce meaningfully aligned seed-`N` trajectories for the same integer seed. The Day-23 Translation smoke evidence supplied for this bug matches the failure mode exactly: `observed_w1=0.006041` vs `shifted_w1=0.005502` triggered a warning-driven PASS-to-FAIL flip even though the gap is within the expected noise regime for a 50-seed, 49-shift minimum search. Pre-fix baseline: `bin\oc-pytest.cmd tests/vivarium/test_l2_2_design_a*.py -q` -> `33 passed in 738.07s (0:12:18)`.
+
+verdict: PASS
+
+## Beat 2 - implement the fix
+
+Pending.
+
+## Beat 3 - regression test
+
+Pending.
+
+## Beat 4 - inversion
+
+Pending.
+
+## Beat 5 - synthetic smoke
+
+Pending.
