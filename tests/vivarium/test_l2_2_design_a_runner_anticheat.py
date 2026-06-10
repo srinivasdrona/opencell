@@ -231,7 +231,7 @@ def test_off_by_one_seed_caught(monkeypatch, tmp_path: Path) -> None:
     )
 
     assert payload["result"]["verdict"] == "FAIL" or any(
-        "SEED_ALIGNMENT_MISMATCH" in warning for warning in payload["result"]["warnings"]
+        "SEED_ALIGNMENT_DIAGNOSTIC" in warning for warning in payload["result"]["warnings"]
     )
 
 

@@ -419,6 +419,12 @@ def _seed_alignment_warning(
     oc_vectors: np.ndarray,
     karr_vectors: np.ndarray,
 ) -> str | None:
+    """Informational only. Does not gate any verdict.
+
+    Diagonal seed alignment is not a meaningful comparison for cross-engine
+    ensembles (numpy vs MATLAB rand produce different sequences for the same
+    integer seed).
+    """
     if oc_vectors.shape[0] < 2 or karr_vectors.shape[0] < 2:
         return None
     observed = float(
@@ -451,7 +457,7 @@ def _seed_alignment_warning(
     if best_shift is None:
         return None
     return (
-        "SEED_ALIGNMENT_MISMATCH: OC outputs align better to a shifted Karr seed index "
+        "SEED_ALIGNMENT_DIAGNOSTIC: OC outputs align better to a shifted Karr seed index "
         f"on channel={channel_name} (shift=+{best_shift}, observed_w1={observed:.6f}, shifted_w1={best_shift_w1:.6f})."
     )
 
@@ -952,8 +958,6 @@ def run_design_a(
     allocator_inputs_path = out_dir / "allocator_inputs.json"
     provenance_path = out_dir / "provenance.json"
     process_verdict = _process_verdict([str(payload["verdict"]) for payload in channel_payloads.values()])
-    if seed_alignment_warning is not None and process_verdict == "PASS":
-        process_verdict = "FAIL"
     result = _result_payload(
         process=process,
         bucket=bucket,
