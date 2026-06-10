@@ -80,14 +80,37 @@ Result:
 - PASS: `states_before/chromosome` exists.
 - PASS: `states_after/chromosome` exists.
 - PASS: `metadata/snapshot_properties` includes `chromosome`.
-- Cleanup required after capture: delete `data/m1_sources/karr_native/per_process_traces_v2_s000_bug2test/`.
+- Cleanup complete: deleted `data/m1_sources/karr_native/per_process_traces_v2_s000_bug2test/` after verification.
 
 ## Beat 4 - inversion
 
-Pending.
+Falsifier 1:
+- Evidence that would justify NOT adding `chromosome`: if `chromosome` were exposed as a property but serialized as a transient/handle reference that did not survive `-v7.3` save in a meaningful way.
+- Why that did not materialize here: Beat 3 showed `states_before/chromosome`, `states_after/chromosome`, and metadata inclusion in the saved MAT file itself, falsifying the "metadata-only / non-serializing handle" failure mode.
+
+Falsifier 2:
+- Evidence that would justify adding MORE chromosome subfields explicitly to the allowlist: if `properties(proc)` returned chromosome subfields as separate top-level properties for any affected process.
+- Why that did not materialize here: the extractor works from `properties(proc)` top-level names, and the fix only needed the single top-level `chromosome` entry. Beat 3 showed the saved channel is the top-level chromosome object/state, matching the downstream Python-side projection design.
+
+Falsifier 3:
+- What would make the fix wrong for `ReplicationInitiation` specifically: if its `chromosome` property were read-only, always empty, or otherwise semantically irrelevant to that process.
+- Why the fix still stands: the authoritative catalog lists `chromosome` in `ReplicationInitiation` input channels, output channels, and event channels, so the extractor should snapshot it when the property is exposed.
 
 ## Beat 5 - operator handoff note
 
-Pending.
+Bug 2 fix landed. To benefit from the fix, the operator must re-run the 50-seed MATLAB extraction for the 3 affected processes (`Replication`, `DNARepair`, `ReplicationInitiation`). The existing `per_process_traces_v2_s{000..049}/` extracts for these processes are stale - they have substrates/enzymes/boundEnzymes but not chromosome.
 
-verdict: PENDING
+Suggested invocation (serial, single MATLAB license):
+
+```powershell
+& bash scripts/git_hooks/install.sh   # ensure hook is installed
+& "E:\MATLAB\bin\matlab.exe" -batch "cd('E:/opencell-worktrees/bug2-extractor-chromosome/scripts/matlab'); processes = {'Replication','DNARepair','ReplicationInitiation'}; for s = 0:49, seed_dir = sprintf('per_process_traces_v2_s%03d', s); extract_per_process_traces_v2(processes, seed_dir, 100, uint32(s)); end"
+```
+
+Expected wall:
+- ~50 min total (`3 processes x 50 seeds`, about `~20s` per seed-process combination based on Day-23 timing).
+
+Unaffected extracts:
+- `MacromolecularComplexation` and `Cytokinesis` Day-23 extracts remain valid and should not be re-extracted.
+
+verdict: PASS
