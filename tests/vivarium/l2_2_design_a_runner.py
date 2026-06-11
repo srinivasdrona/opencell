@@ -646,6 +646,10 @@ def _process_sample_process(process: str) -> Any:
         return runner_helpers._rna_decay_process(0)
     if process == "ProteinDecay":
         return runner_helpers._protein_decay_process(0)
+    if process == "ProteinProcessingI":
+        return runner_helpers._protein_processing_i_process(0)
+    if process == "ProteinProcessingII":
+        return runner_helpers._protein_processing_ii_process(0)
     if process == "MacromolecularComplexation":
         return runner_helpers._macromol_process(0)
     if process == "Cytokinesis":
@@ -673,6 +677,13 @@ def _observable_wids(process: str, sample_process: Any) -> dict[str, list[str]]:
         monomer_ids = getattr(sample_process, "protein_wids", getattr(sample_process, "monomer_wids", ()))
         mapping["monomers"] = [str(x) for x in monomer_ids]
         mapping["complexs"] = [str(x) for x in getattr(sample_process, "complex_wids", ())]
+    if process in {"ProteinProcessingI", "ProteinProcessingII"}:
+        monomer_ids = getattr(
+            sample_process,
+            "monomer_wids",
+            getattr(sample_process, "unprocessed_monomer_wids", ()),
+        )
+        mapping["monomers"] = [str(x) for x in monomer_ids]
     if process == "Cytokinesis":
         # SUT's _substrate_wids includes GTP (4 WIDs); the Karr oracle snapshot has
         # only the 3 fixture substrate WIDs (PI, H2O, H). Use fixture WIDs for the
@@ -799,6 +810,14 @@ def run_design_a(
                         "oracle_before_complexs": before_vectors["complexs"][seed_index, tick],
                         "oracle_after_monomers": after_vectors["monomers"][seed_index, tick],
                         "oracle_after_complexs": after_vectors["complexs"][seed_index, tick],
+                    }
+                )
+            if process in {"ProteinProcessingI", "ProteinProcessingII"}:
+                sample_state.update(
+                    {
+                        "monomer_wids": wids_by_channel["monomers"],
+                        "oracle_before_monomers": before_vectors["monomers"][seed_index, tick],
+                        "oracle_after_monomers": after_vectors["monomers"][seed_index, tick],
                     }
                 )
             if process == "MacromolecularComplexation":

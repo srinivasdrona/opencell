@@ -65,3 +65,16 @@
 - Verification:
   - `bin/oc-pytest.cmd tests/vivarium/test_l2_2_design_a*.py -q`
   - result: `37 passed`
+
+## Beat 3 - wire runner
+
+- Wired `tests/vivarium/l2_2_design_a_runner.py` for both processes:
+  - `_process_sample_process()`
+  - `_observable_wids()`
+  - `run_design_a()` sample-state branch for `oracle_before_monomers` / `oracle_after_monomers`
+- Tightened `tests/vivarium/test_l2_2_design_a_runner_catalog.py` so `SUPPORTED_PROCESSES` explicitly includes:
+  - `ProteinProcessingI`
+  - `ProteinProcessingII`
+- Verification:
+  - `bin/oc-pytest.cmd tests/vivarium/test_l2_2_design_a*.py -q`
+  - result: `37 passed`
