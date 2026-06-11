@@ -46,7 +46,22 @@
   - `bin\oc-pytest.cmd tests/vivarium/test_l2_2_design_a*.py -q`
   - Result: `36 passed in 301.78s`
 
-## Beat 3 - pending
+## Beat 3 - wire runner _process_sample_process
+
+- Runner wiring added in `tests/vivarium/l2_2_design_a_runner.py`:
+  - `_process_sample_process("MacromolecularComplexation")` now returns `runner_helpers._macromol_process(0)`.
+  - `_observable_wids()` now exposes:
+    - `substrates`: 210 mixed substrate WIDs,
+    - `monomers`: 208 monomer-subset WIDs from the helper-annotated process,
+    - `complexs`: 147 complex WIDs.
+  - `run_design_a()` sample-state construction no longer assumes every process has an `enzymes` channel; enzyme inputs are attached only when present in the oracle.
+  - Added the Macromol per-tick sample-state branch carrying `monomer_wids`, `complex_wids`, `oracle_before_*`, and `oracle_after_*` for the 3 catalog channels.
+- Added runner coverage in `tests/vivarium/test_l2_2_design_a_runner_catalog.py`:
+  - `MacromolecularComplexation` is asserted to be in `SUPPORTED_PROCESSES`.
+  - Sample-process wiring and observable WID lengths are checked directly (`210 substrates / 208 monomers / 147 complexs`).
+- Verification:
+  - `bin\oc-pytest.cmd tests/vivarium/test_l2_2_design_a*.py -q`
+  - Result: `37 passed in 282.69s`
 
 ## Beat 4 - pending
 

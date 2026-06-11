@@ -146,7 +146,18 @@ def test_catalog_backed_process_tables_match_real_catalog() -> None:
         "Transcription",
         "RNADecay",
         "ProteinDecay",
+        "MacromolecularComplexation",
     }.issubset(runner.SUPPORTED_PROCESSES)
+
+
+def test_macromol_sample_process_and_observable_wids_are_wired() -> None:
+    process = runner._process_sample_process("MacromolecularComplexation")
+    wids = runner._observable_wids("MacromolecularComplexation", process)
+
+    assert process.__class__.__name__ == "MacromolecularComplexationProcess"
+    assert len(wids["substrates"]) == 210
+    assert len(wids["monomers"]) == 208
+    assert len(wids["complexs"]) == 147
 
 
 def test_run_design_a_rejects_out_of_scope_process_with_bucket_rationale(tmp_path: Path) -> None:
