@@ -397,7 +397,13 @@ def _primary_channel_oracle_laundering_warning(
 ) -> str | None:
     if primary_channel != "RNAs":
         return None
-    if process not in {"RNADecay", "Transcription"}:
+    if process not in {
+        "RNADecay",
+        "Transcription",
+        "RNAProcessing",
+        "RNAModification",
+        "tRNAAminoacylation",
+    }:
         return None
     if not np.array_equal(oc_vectors, karr_vectors):
         return None
