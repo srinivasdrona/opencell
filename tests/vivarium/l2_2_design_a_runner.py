@@ -158,7 +158,7 @@ def _load_catalog_all(path: Path | None = None) -> dict[str, dict[str, Any]]:
 
 
 def _implemented_processes() -> frozenset[str]:
-    return frozenset(str(name) for name in runner_helpers._oracle_dispatch())
+    return frozenset(str(name) for name in runner_helpers._tick_dispatch())
 
 
 _CATALOG_IN_SCOPE = _load_catalog()
@@ -397,7 +397,13 @@ def _primary_channel_oracle_laundering_warning(
 ) -> str | None:
     if primary_channel != "RNAs":
         return None
-    if process not in {"RNADecay", "Transcription"}:
+    if process not in {
+        "RNADecay",
+        "Transcription",
+        "RNAProcessing",
+        "RNAModification",
+        "tRNAAminoacylation",
+    }:
         return None
     if not np.array_equal(oc_vectors, karr_vectors):
         return None
@@ -644,6 +650,12 @@ def _process_sample_process(process: str) -> Any:
         return runner_helpers._transcription_process(0)
     if process == "RNADecay":
         return runner_helpers._rna_decay_process(0)
+    if process == "RNAProcessing":
+        return runner_helpers._rna_processing_process(0)
+    if process == "RNAModification":
+        return runner_helpers._rna_modification_process(0)
+    if process == "tRNAAminoacylation":
+        return runner_helpers._trna_aminoacylation_process(0)
     if process == "ProteinDecay":
         return runner_helpers._protein_decay_process(0)
     if process == "MacromolecularComplexation":
@@ -666,8 +678,18 @@ def _observable_wids(process: str, sample_process: Any) -> dict[str, list[str]]:
         protein_ids = [str(x) for x in getattr(sample_process, "protein_ids", ())]
         mapping["monomers"] = protein_ids
         mapping["mRNAs"] = protein_ids
-    if process in {"RNADecay", "Transcription"}:
-        rna_ids = getattr(sample_process, "gene_ids", getattr(sample_process, "rna_wids", ()))
+    if process in {
+        "RNADecay",
+        "Transcription",
+        "RNAProcessing",
+        "RNAModification",
+        "tRNAAminoacylation",
+    }:
+        rna_ids = getattr(
+            sample_process,
+            "rna_primary_wids",
+            getattr(sample_process, "gene_ids", getattr(sample_process, "rna_wids", ())),
+        )
         mapping["RNAs"] = [str(x) for x in rna_ids]
     if process in {"ProteinDecay", "MacromolecularComplexation"}:
         monomer_ids = getattr(sample_process, "protein_wids", getattr(sample_process, "monomer_wids", ()))
@@ -782,7 +804,12 @@ def run_design_a(
                         "oracle_after_bound_enzymes": after_vectors["boundEnzymes"][seed_index, tick],
                     }
                 )
-            if process == "RNADecay":
+            if process in {
+                "RNADecay",
+                "RNAProcessing",
+                "RNAModification",
+                "tRNAAminoacylation",
+            }:
                 sample_state.update(
                     {
                         "rna_wids": wids_by_channel["RNAs"],
