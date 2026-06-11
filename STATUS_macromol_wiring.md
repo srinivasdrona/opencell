@@ -63,7 +63,14 @@
   - `bin\oc-pytest.cmd tests/vivarium/test_l2_2_design_a*.py -q`
   - Result: `37 passed in 282.69s`
 
-## Beat 4 - pending
+## Beat 4 - inversion
+
+1. What evidence would justify picking `substrates` or `monomers` as primary instead of `complexs`?
+   - None. The authoritative catalog entry says `primary_channel: complexs`, and Beat 1 found no contradictory spec document. The earlier Day-22 substrates-primary fanout was explicitly called out as a mistake to avoid.
+2. What evidence would justify wiring this as `ALGORITHMIC_DEEP` instead of `ALGORITHMIC_SHALLOW`?
+   - None for this task. The authoritative catalog entry says `bucket: ALGORITHMIC_SHALLOW`, and this wiring task is constrained to the catalog contract even though older audit prose discussed a deeper stochastic interpretation.
+3. What evidence would justify enabling `joint_check` now instead of deferring?
+   - None required to proceed. The catalog/spec contract says `joint_check: true`, but Beat 4 interpretation is unchanged: spec §6.4 defines the cross-complex Spearman diagnostic as non-gating. Deferring implementation while preserving the flag is acceptable for this wiring pass.
 
 ## Beat 5 - pending
 
