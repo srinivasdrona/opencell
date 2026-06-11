@@ -78,3 +78,16 @@
 - Verification:
   - `bin/oc-pytest.cmd tests/vivarium/test_l2_2_design_a*.py -q`
   - result: `37 passed`
+
+## Beat 4 - inversion
+
+- Added `tests/vivarium/test_l2_2_design_a_runner_protein_processing_anticheat.py`.
+- Falsifiers added per process:
+  - primary-channel anti-laundering: tick helper must not replay `oracle_after_monomers`
+  - distance falsifier: runner must fail when `monomers` is forced to a large wrong vector while `substrates` still match
+- Verification:
+  - `bin/oc-pytest.cmd tests/vivarium/test_l2_2_design_a*.py -q`
+  - result: `41 passed`
+- Notes:
+  - The synthetic distance falsifiers intentionally use a low-variance oracle surface so null-bootstrap spread stays small and the monomer mismatch is decisively gateable.
+  - The new synthetic tests emit SciPy precision-loss warnings for skew/kurtosis on nearly constant arrays; pytest remains green and the warnings are non-blocking.
