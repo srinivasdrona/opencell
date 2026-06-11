@@ -48,3 +48,20 @@
 
 - Historical note from task: substrate-cliff secondary FAILs are expected for `ProteinProcessingI/II`.
 - L2.2 gate for this task is primary channel `monomers`, so any substrate-only smoke concern should be documented, not treated as a blocker.
+
+## Beat 2 - dispatchers
+
+- Added helper-layer support in `tests/vivarium/_l2_2_design_a_runner_helpers.py` for:
+  - `ProteinProcessingI`
+  - `ProteinProcessingII`
+- Added:
+  - legacy oracle loaders mapping Design-A `monomers` to `unprocessedMonomers`
+  - v2 ensemble formatting support for both processes
+  - shared-root fallback to `E:/opencell/data/m1_sources/karr_native` for both processes
+  - cached process constructors
+  - `_run_protein_processing_i_tick()`
+  - `_run_protein_processing_ii_tick()`
+  - `_tick_dispatch()` entries
+- Verification:
+  - `bin/oc-pytest.cmd tests/vivarium/test_l2_2_design_a*.py -q`
+  - result: `37 passed`

@@ -45,6 +45,8 @@ from opencell.vivarium.karr_translation import KarrTranslationProcess  # noqa: E
 from opencell.vivarium.karr_transcription import KarrTranscriptionProcess  # noqa: E402
 from opencell.vivarium.karr_rna_decay import RnaDecayLightProcess  # noqa: E402
 from opencell.vivarium.karr_protein_decay_light import ProteinDecayLightProcess  # noqa: E402
+from opencell.vivarium.karr_protein_processing_i import KarrProteinProcessingIProcess  # noqa: E402
+from opencell.vivarium.karr_protein_processing_ii import KarrProteinProcessingIIProcess  # noqa: E402
 from opencell.vivarium.karr_cytokinesis import KarrCytokinesisProcess  # noqa: E402
 from opencell.vivarium.karr_macromolecular_complexation import (  # noqa: E402
     MacromolecularComplexationProcess,
@@ -226,6 +228,16 @@ def _required_ensemble_keys(process_name: str) -> tuple[tuple[str, ...], tuple[s
             "monomers",
             "complexs",
         )
+    if process_name == "ProteinProcessingI":
+        return ("substrates", "enzymes", "unprocessedMonomers"), (
+            "substrates",
+            "unprocessedMonomers",
+        )
+    if process_name == "ProteinProcessingII":
+        return ("substrates", "enzymes", "unprocessedMonomers"), (
+            "substrates",
+            "unprocessedMonomers",
+        )
     if process_name == "MacromolecularComplexation":
         return ("substrates", "complexs"), ("substrates", "complexs")
     if process_name == "Cytokinesis":
@@ -387,6 +399,36 @@ def _format_ensemble_oracle(
             "ensemble_missing_after_channels": tuple(missing_after),
         }
 
+    if process_name == "ProteinProcessingI":
+        return {
+            "process": process_name,
+            "oracle_path": oracle_path,
+            "canonical_seed_count": canonical_seed_count,
+            "n_ticks_available": n_ticks_available,
+            "before_substrates": before_channel("substrates", "before_substrates"),
+            "before_enzymes": before_channel("enzymes", "before_enzymes"),
+            "before_monomers": before_channel("unprocessedMonomers", "before_monomers"),
+            "after_substrates": after_channel("substrates", "after_substrates"),
+            "after_monomers": after_channel("unprocessedMonomers", "after_monomers"),
+            "ensemble_missing_before_channels": tuple(missing_before),
+            "ensemble_missing_after_channels": tuple(missing_after),
+        }
+
+    if process_name == "ProteinProcessingII":
+        return {
+            "process": process_name,
+            "oracle_path": oracle_path,
+            "canonical_seed_count": canonical_seed_count,
+            "n_ticks_available": n_ticks_available,
+            "before_substrates": before_channel("substrates", "before_substrates"),
+            "before_enzymes": before_channel("enzymes", "before_enzymes"),
+            "before_monomers": before_channel("unprocessedMonomers", "before_monomers"),
+            "after_substrates": after_channel("substrates", "after_substrates"),
+            "after_monomers": after_channel("unprocessedMonomers", "after_monomers"),
+            "ensemble_missing_before_channels": tuple(missing_before),
+            "ensemble_missing_after_channels": tuple(missing_after),
+        }
+
     if process_name == "MacromolecularComplexation":
         before_substrates_raw = before_channel("substrates", "before_substrates")
         after_substrates_raw = after_channel("substrates", "after_substrates")
@@ -437,7 +479,7 @@ def _load_v2_ensemble(process_name: str, max_seeds: int = 50) -> dict[str, Any] 
         if _v2_seed_mat_path(process_name, seed).exists()
     ]
     if (
-        process_name == "MacromolecularComplexation"
+        process_name in {"MacromolecularComplexation", "ProteinProcessingI", "ProteinProcessingII"}
         and _REPO_ROOT == _ACTUAL_REPO_ROOT
         and len(seed_paths) < int(max_seeds)
     ):
@@ -515,6 +557,8 @@ def _oracle_dispatch() -> dict[str, Any]:
         "Transcription": _load_transcription_oracle,
         "RNADecay": _load_rna_decay_oracle,
         "ProteinDecay": _load_protein_decay_oracle,
+        "ProteinProcessingI": _load_protein_processing_i_oracle,
+        "ProteinProcessingII": _load_protein_processing_ii_oracle,
         "MacromolecularComplexation": _load_macromol_oracle,
         "Cytokinesis": _load_cytokinesis_oracle,
     }
@@ -699,6 +743,56 @@ def _load_protein_decay_oracle() -> dict[str, Any]:
     }
 
 
+def _load_protein_processing_i_oracle() -> dict[str, Any]:
+    oracle_path = _REPO_ROOT / "data" / "karr_fixtures" / "per_process_replay" / "ProteinProcessingI.npz"
+    if not oracle_path.exists():
+        raise FileNotFoundError(f"Missing ProteinProcessingI oracle fixture: {oracle_path}")
+
+    with np.load(oracle_path, allow_pickle=False) as payload:
+        before_substrates = np.asarray(payload["state_before__substrates"], dtype=np.float64)[:, 0, :]
+        before_enzymes = np.asarray(payload["state_before__enzymes"], dtype=np.float64)[:, 0, :]
+        before_monomers = np.asarray(payload["state_before__unprocessedMonomers"], dtype=np.float64)[:, 0, :]
+        after_substrates = np.asarray(payload["states_after__substrates"], dtype=np.float64)[:, 0, :]
+        after_monomers = np.asarray(payload["states_after__unprocessedMonomers"], dtype=np.float64)[:, 0, :]
+
+    return {
+        "process": "ProteinProcessingI",
+        "oracle_path": oracle_path,
+        "canonical_seed_count": 1,
+        "n_ticks_available": int(before_substrates.shape[0]),
+        "before_substrates": before_substrates[np.newaxis, :, :],
+        "before_enzymes": before_enzymes[np.newaxis, :, :],
+        "before_monomers": before_monomers[np.newaxis, :, :],
+        "after_substrates": after_substrates[np.newaxis, :, :],
+        "after_monomers": after_monomers[np.newaxis, :, :],
+    }
+
+
+def _load_protein_processing_ii_oracle() -> dict[str, Any]:
+    oracle_path = _REPO_ROOT / "data" / "karr_fixtures" / "per_process_replay" / "ProteinProcessingII.npz"
+    if not oracle_path.exists():
+        raise FileNotFoundError(f"Missing ProteinProcessingII oracle fixture: {oracle_path}")
+
+    with np.load(oracle_path, allow_pickle=False) as payload:
+        before_substrates = np.asarray(payload["state_before__substrates"], dtype=np.float64)[:, 0, :]
+        before_enzymes = np.asarray(payload["state_before__enzymes"], dtype=np.float64)[:, 0, :]
+        before_monomers = np.asarray(payload["state_before__unprocessedMonomers"], dtype=np.float64)[:, 0, :]
+        after_substrates = np.asarray(payload["states_after__substrates"], dtype=np.float64)[:, 0, :]
+        after_monomers = np.asarray(payload["states_after__unprocessedMonomers"], dtype=np.float64)[:, 0, :]
+
+    return {
+        "process": "ProteinProcessingII",
+        "oracle_path": oracle_path,
+        "canonical_seed_count": 1,
+        "n_ticks_available": int(before_substrates.shape[0]),
+        "before_substrates": before_substrates[np.newaxis, :, :],
+        "before_enzymes": before_enzymes[np.newaxis, :, :],
+        "before_monomers": before_monomers[np.newaxis, :, :],
+        "after_substrates": after_substrates[np.newaxis, :, :],
+        "after_monomers": after_monomers[np.newaxis, :, :],
+    }
+
+
 def _load_macromol_oracle() -> dict[str, Any]:
     raise FileNotFoundError(
         "MacromolecularComplexation has no dedicated legacy single-seed loader; "
@@ -770,6 +864,22 @@ def _protein_decay_process(seed: int) -> ProteinDecayLightProcess:
         return ProteinDecayLightProcess({"rng_seed": int(seed)})
 
 
+@lru_cache(maxsize=None)
+def _protein_processing_i_process(seed: int) -> KarrProteinProcessingIProcess:
+    with forbid_sut_oracle_file_io():
+        process = KarrProteinProcessingIProcess({"rng_seed": int(seed)})
+    process.monomer_wids = list(process.unprocessed_monomer_wids)
+    return process
+
+
+@lru_cache(maxsize=None)
+def _protein_processing_ii_process(seed: int) -> KarrProteinProcessingIIProcess:
+    with forbid_sut_oracle_file_io():
+        process = KarrProteinProcessingIIProcess({"rng_seed": int(seed)})
+    process.monomer_wids = list(process.unprocessed_monomer_wids)
+    return process
+
+
 @lru_cache(maxsize=1)
 def _macromol_channel_metadata() -> dict[str, Any]:
     fixture_path = _REPO_ROOT / "data" / "karr_fixtures" / "per_process" / "MacromolecularComplexation_flat.mat"
@@ -836,6 +946,8 @@ def _tick_dispatch() -> dict[str, Any]:
         "Transcription": _run_transcription_tick,
         "RNADecay": _run_rna_decay_tick,
         "ProteinDecay": _run_protein_decay_tick,
+        "ProteinProcessingI": _run_protein_processing_i_tick,
+        "ProteinProcessingII": _run_protein_processing_ii_tick,
         "MacromolecularComplexation": _run_macromol_tick,
         "Cytokinesis": _run_cytokinesis_tick,
     }
@@ -1290,6 +1402,122 @@ def _run_protein_decay_tick(seed: int, tick: int, state: dict[str, Any]) -> dict
                 observable="complexs",
                 wids=complex_wids,
                 bound_enzymes_before=bound_enzymes_before,
+            ),
+            dtype=np.float64,
+        ),
+        "sample_seed": _sample_seed(seed, tick),
+    }
+
+
+def _run_protein_processing_i_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
+    """Run one OpenCell ProteinProcessingI tick from a prepared state snapshot."""
+    process = _protein_processing_i_process(_sample_seed(seed, tick))
+    runtime_state = build_state_template(process)
+    substrate_wids = list(state["substrate_wids"])
+    enzyme_wids = list(state["enzyme_wids"])
+    monomer_wids = list(state["monomer_wids"])
+
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="substrates",
+        vector=np.asarray(state["oracle_before_substrates"], dtype=np.float64),
+        wids=substrate_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="enzymes",
+        vector=np.asarray(state["oracle_before_enzymes"], dtype=np.float64),
+        wids=enzyme_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="monomers",
+        vector=np.asarray(state["oracle_before_monomers"], dtype=np.float64),
+        wids=monomer_wids,
+    )
+    refresh_allocator_views(process, runtime_state)
+    with forbid_sut_oracle_file_io():
+        update = process.next_update(1.0, runtime_state)
+    apply_count_update(runtime_state, update)
+    return {
+        "substrates": np.asarray(
+            project_observable_from_state(
+                process=process,
+                state=runtime_state,
+                observable="substrates",
+                wids=substrate_wids,
+                bound_enzymes_before=None,
+            ),
+            dtype=np.float64,
+        ),
+        "monomers": np.asarray(
+            project_observable_from_state(
+                process=process,
+                state=runtime_state,
+                observable="monomers",
+                wids=monomer_wids,
+                bound_enzymes_before=None,
+            ),
+            dtype=np.float64,
+        ),
+        "sample_seed": _sample_seed(seed, tick),
+    }
+
+
+def _run_protein_processing_ii_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
+    """Run one OpenCell ProteinProcessingII tick from a prepared state snapshot."""
+    process = _protein_processing_ii_process(_sample_seed(seed, tick))
+    runtime_state = build_state_template(process)
+    substrate_wids = list(state["substrate_wids"])
+    enzyme_wids = list(state["enzyme_wids"])
+    monomer_wids = list(state["monomer_wids"])
+
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="substrates",
+        vector=np.asarray(state["oracle_before_substrates"], dtype=np.float64),
+        wids=substrate_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="enzymes",
+        vector=np.asarray(state["oracle_before_enzymes"], dtype=np.float64),
+        wids=enzyme_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="monomers",
+        vector=np.asarray(state["oracle_before_monomers"], dtype=np.float64),
+        wids=monomer_wids,
+    )
+    refresh_allocator_views(process, runtime_state)
+    with forbid_sut_oracle_file_io():
+        update = process.next_update(1.0, runtime_state)
+    apply_count_update(runtime_state, update)
+    return {
+        "substrates": np.asarray(
+            project_observable_from_state(
+                process=process,
+                state=runtime_state,
+                observable="substrates",
+                wids=substrate_wids,
+                bound_enzymes_before=None,
+            ),
+            dtype=np.float64,
+        ),
+        "monomers": np.asarray(
+            project_observable_from_state(
+                process=process,
+                state=runtime_state,
+                observable="monomers",
+                wids=monomer_wids,
+                bound_enzymes_before=None,
             ),
             dtype=np.float64,
         ),
