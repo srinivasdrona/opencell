@@ -46,8 +46,12 @@ from opencell.vivarium.karr_transcription import KarrTranscriptionProcess  # noq
 from opencell.vivarium.karr_rna_decay import RnaDecayLightProcess  # noqa: E402
 from opencell.vivarium.karr_protein_decay_light import ProteinDecayLightProcess  # noqa: E402
 from opencell.vivarium.karr_cytokinesis import KarrCytokinesisProcess  # noqa: E402
+from opencell.vivarium.karr_macromolecular_complexation import (  # noqa: E402
+    MacromolecularComplexationProcess,
+)
 
 
+_ACTUAL_REPO_ROOT = Path(__file__).resolve().parents[2]
 L2_2_VALIDATION_SEED = 0xCA11B
 ABSOLUTE_FLOOR = 1.0
 TRIVIAL_RNG_K_ENG = 2.0
@@ -68,6 +72,7 @@ _PROTEIN_DECAY_ORACLE_PATH = (
 _CYTOKINESIS_ORACLE_PATH = (
     _REPO_ROOT / "data" / "karr_fixtures" / "per_process_replay" / "Cytokinesis.npz"
 )
+_MACROMOL_MONOMER_STORE_PATH_OVERRIDE = {"monomers": ("substrates",)}
 _TRANSLATION_MRNA_STORE_PATH_OVERRIDE = {"mRNAs": ("rna", "counts")}
 _RNA_STORE_PATH_OVERRIDE = {"RNAs": ("rna", "counts")}
 _RNA_SLOT_COUNTS_STATE_KEY = "_l2_rna_slot_counts"
@@ -221,6 +226,8 @@ def _required_ensemble_keys(process_name: str) -> tuple[tuple[str, ...], tuple[s
             "monomers",
             "complexs",
         )
+    if process_name == "MacromolecularComplexation":
+        return ("substrates", "complexs"), ("substrates", "complexs")
     if process_name == "Cytokinesis":
         return ("substrates", "enzymes", "boundEnzymes"), ("substrates",)
     raise ValueError(f"Unsupported Design-A process {process_name!r}.")
@@ -380,6 +387,32 @@ def _format_ensemble_oracle(
             "ensemble_missing_after_channels": tuple(missing_after),
         }
 
+    if process_name == "MacromolecularComplexation":
+        before_substrates_raw = before_channel("substrates", "before_substrates")
+        after_substrates_raw = after_channel("substrates", "after_substrates")
+        before_complexs_raw = before_channel("complexs", "before_complexs")
+        after_complexs_raw = after_channel("complexs", "after_complexs")
+        return {
+            "process": process_name,
+            "oracle_path": oracle_path,
+            "canonical_seed_count": canonical_seed_count,
+            "n_ticks_available": n_ticks_available,
+            "before_substrates": before_substrates_raw,
+            "before_monomers": np.asarray(
+                [_project_macromol_monomer_cube(seed_matrix) for seed_matrix in before_substrates_raw],
+                dtype=np.float64,
+            ),
+            "before_complexs": before_complexs_raw,
+            "after_substrates": after_substrates_raw,
+            "after_monomers": np.asarray(
+                [_project_macromol_monomer_cube(seed_matrix) for seed_matrix in after_substrates_raw],
+                dtype=np.float64,
+            ),
+            "after_complexs": after_complexs_raw,
+            "ensemble_missing_before_channels": tuple(missing_before),
+            "ensemble_missing_after_channels": tuple(missing_after),
+        }
+
     if process_name == "Cytokinesis":
         return {
             "process": process_name,
@@ -403,6 +436,28 @@ def _load_v2_ensemble(process_name: str, max_seeds: int = 50) -> dict[str, Any] 
         for seed in range(int(max_seeds))
         if _v2_seed_mat_path(process_name, seed).exists()
     ]
+    if (
+        process_name == "MacromolecularComplexation"
+        and _REPO_ROOT == _ACTUAL_REPO_ROOT
+        and len(seed_paths) < int(max_seeds)
+    ):
+        for candidate_root in (
+            Path("E:/opencell/data/m1_sources/karr_native"),
+            Path("/mnt/e/opencell/data/m1_sources/karr_native"),
+        ):
+            candidate_seed_paths = [
+                candidate_root
+                / f"per_process_traces_v2_s{seed:03d}"
+                / f"{process_name}_100ticks.mat"
+                for seed in range(int(max_seeds))
+                if (
+                    candidate_root
+                    / f"per_process_traces_v2_s{seed:03d}"
+                    / f"{process_name}_100ticks.mat"
+                ).exists()
+            ]
+            if len(candidate_seed_paths) > len(seed_paths):
+                seed_paths = candidate_seed_paths
     if not seed_paths:
         return None
     before_channels, after_channels, _ = _load_seeded_mat_channels(seed_paths)
@@ -460,17 +515,13 @@ def _oracle_dispatch() -> dict[str, Any]:
         "Transcription": _load_transcription_oracle,
         "RNADecay": _load_rna_decay_oracle,
         "ProteinDecay": _load_protein_decay_oracle,
+        "MacromolecularComplexation": _load_macromol_oracle,
         "Cytokinesis": _load_cytokinesis_oracle,
     }
 
 
 def load_karr_oracle(process: str) -> dict[str, Any]:
     """Load the canonical Karr oracle for a Design-A process."""
-    loaders = _oracle_dispatch()
-    loader = loaders.get(process)
-    if loader is None:
-        raise ValueError(f"Unsupported Design-A process {process!r}.")
-
     v2_oracle = _load_v2_ensemble(process)
     specialized_ensemble_oracle = _load_ensembles_layout(process)
     if v2_oracle is not None and specialized_ensemble_oracle is not None:
@@ -483,6 +534,11 @@ def load_karr_oracle(process: str) -> dict[str, Any]:
         return v2_oracle
     if specialized_ensemble_oracle is not None:
         return specialized_ensemble_oracle
+
+    loaders = _oracle_dispatch()
+    loader = loaders.get(process)
+    if loader is None:
+        raise ValueError(f"Unsupported Design-A process {process!r}.")
 
     legacy_oracle = loader()
     legacy_warnings = list(legacy_oracle.get("warnings", ()))
@@ -643,6 +699,13 @@ def _load_protein_decay_oracle() -> dict[str, Any]:
     }
 
 
+def _load_macromol_oracle() -> dict[str, Any]:
+    raise FileNotFoundError(
+        "MacromolecularComplexation has no dedicated legacy single-seed loader; "
+        "use per_process_traces_v2 ensemble inputs."
+    )
+
+
 def _load_cytokinesis_oracle() -> dict[str, Any]:
     if not _CYTOKINESIS_ORACLE_PATH.exists():
         raise FileNotFoundError(f"Missing Cytokinesis oracle fixture: {_CYTOKINESIS_ORACLE_PATH}")
@@ -707,6 +770,45 @@ def _protein_decay_process(seed: int) -> ProteinDecayLightProcess:
         return ProteinDecayLightProcess({"rng_seed": int(seed)})
 
 
+@lru_cache(maxsize=1)
+def _macromol_channel_metadata() -> dict[str, Any]:
+    fixture_path = _REPO_ROOT / "data" / "karr_fixtures" / "per_process" / "MacromolecularComplexation_flat.mat"
+    if not fixture_path.exists() and _REPO_ROOT == _ACTUAL_REPO_ROOT:
+        for candidate in (
+            Path("E:/opencell/data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"),
+            Path("/mnt/e/opencell/data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"),
+        ):
+            if candidate.exists():
+                fixture_path = candidate
+                break
+    fixture = loadmat(str(fixture_path), squeeze_me=True, struct_as_record=False)["data"].fixture
+    substrate_wids = tuple(str(x) for x in np.asarray(fixture.substrateWholeCellModelIDs, dtype=object).reshape(-1))
+    monomer_indices = tuple(
+        sorted(
+            {
+                int(value) - 1
+                for value in np.asarray(fixture.substrateMonomerLocalIndexs, dtype=np.int64).reshape(-1)
+                if int(value) > 0
+            }
+        )
+    )
+    return {
+        "substrate_wids": substrate_wids,
+        "monomer_indices": monomer_indices,
+        "monomer_wids": tuple(substrate_wids[idx] for idx in monomer_indices),
+    }
+
+
+@lru_cache(maxsize=None)
+def _macromol_process(seed: int) -> MacromolecularComplexationProcess:
+    metadata = _macromol_channel_metadata()
+    with forbid_sut_oracle_file_io():
+        process = MacromolecularComplexationProcess({"rng_seed": int(seed)})
+    process.monomer_wids = list(metadata["monomer_wids"])
+    process.monomer_indices = np.asarray(metadata["monomer_indices"], dtype=np.int64)
+    return process
+
+
 @lru_cache(maxsize=None)
 def _cytokinesis_process(seed: int) -> KarrCytokinesisProcess:
     with forbid_sut_oracle_file_io():
@@ -734,6 +836,7 @@ def _tick_dispatch() -> dict[str, Any]:
         "Transcription": _run_transcription_tick,
         "RNADecay": _run_rna_decay_tick,
         "ProteinDecay": _run_protein_decay_tick,
+        "MacromolecularComplexation": _run_macromol_tick,
         "Cytokinesis": _run_cytokinesis_tick,
     }
 
@@ -1194,6 +1297,78 @@ def _run_protein_decay_tick(seed: int, tick: int, state: dict[str, Any]) -> dict
     }
 
 
+def _run_macromol_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
+    """Run one OpenCell MacromolecularComplexation tick from a prepared state snapshot."""
+    process = _macromol_process(_sample_seed(seed, tick))
+    runtime_state = build_state_template(process)
+    substrate_wids = list(state["substrate_wids"])
+    monomer_wids = list(state["monomer_wids"])
+    complex_wids = list(state["complex_wids"])
+
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="substrates",
+        vector=np.asarray(state["oracle_before_substrates"], dtype=np.float64),
+        wids=substrate_wids,
+    )
+    # MacromolecularComplexation's logical monomer channel is the monomer-only
+    # subset of the mixed substrate pool; keep it in the same underlying store.
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="monomers",
+        vector=np.asarray(state["oracle_before_monomers"], dtype=np.float64),
+        wids=monomer_wids,
+        store_path_override=_MACROMOL_MONOMER_STORE_PATH_OVERRIDE,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="complexs",
+        vector=np.asarray(state["oracle_before_complexs"], dtype=np.float64),
+        wids=complex_wids,
+    )
+    refresh_allocator_views(process, runtime_state)
+    with forbid_sut_oracle_file_io():
+        update = process.next_update(1.0, runtime_state)
+    apply_count_update(runtime_state, update)
+    return {
+        "substrates": np.asarray(
+            project_observable_from_state(
+                process=process,
+                state=runtime_state,
+                observable="substrates",
+                wids=substrate_wids,
+                bound_enzymes_before=None,
+            ),
+            dtype=np.float64,
+        ),
+        "monomers": np.asarray(
+            project_observable_from_state(
+                process=process,
+                state=runtime_state,
+                observable="monomers",
+                wids=monomer_wids,
+                bound_enzymes_before=None,
+                store_path_override=_MACROMOL_MONOMER_STORE_PATH_OVERRIDE,
+            ),
+            dtype=np.float64,
+        ),
+        "complexs": np.asarray(
+            project_observable_from_state(
+                process=process,
+                state=runtime_state,
+                observable="complexs",
+                wids=complex_wids,
+                bound_enzymes_before=None,
+            ),
+            dtype=np.float64,
+        ),
+        "sample_seed": _sample_seed(seed, tick),
+    }
+
+
 def _run_cytokinesis_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
     """Run one OpenCell Cytokinesis tick from a prepared state snapshot.
 
@@ -1397,6 +1572,12 @@ def _project_protein_decay_complex_cube(values: np.ndarray) -> np.ndarray:
     complex_width = int(_protein_decay_projection_inputs()["complex_width"])
     flat = arr.reshape(arr.shape[0], -1)
     return np.asarray(flat[:, :complex_width], dtype=np.float64)
+
+
+def _project_macromol_monomer_cube(values: np.ndarray) -> np.ndarray:
+    arr = np.asarray(values, dtype=np.float64)
+    monomer_indices = np.asarray(_macromol_channel_metadata()["monomer_indices"], dtype=np.int64)
+    return np.asarray(arr[:, monomer_indices], dtype=np.float64)
 
 
 __all__ = [

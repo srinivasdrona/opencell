@@ -646,6 +646,8 @@ def _process_sample_process(process: str) -> Any:
         return runner_helpers._rna_decay_process(0)
     if process == "ProteinDecay":
         return runner_helpers._protein_decay_process(0)
+    if process == "MacromolecularComplexation":
+        return runner_helpers._macromol_process(0)
     if process == "Cytokinesis":
         return runner_helpers._cytokinesis_process(0)
     raise ValueError(f"Unsupported process {process!r}.")
@@ -667,8 +669,9 @@ def _observable_wids(process: str, sample_process: Any) -> dict[str, list[str]]:
     if process in {"RNADecay", "Transcription"}:
         rna_ids = getattr(sample_process, "gene_ids", getattr(sample_process, "rna_wids", ()))
         mapping["RNAs"] = [str(x) for x in rna_ids]
-    if process == "ProteinDecay":
-        mapping["monomers"] = [str(x) for x in getattr(sample_process, "protein_wids", ())]
+    if process in {"ProteinDecay", "MacromolecularComplexation"}:
+        monomer_ids = getattr(sample_process, "protein_wids", getattr(sample_process, "monomer_wids", ()))
+        mapping["monomers"] = [str(x) for x in monomer_ids]
         mapping["complexs"] = [str(x) for x in getattr(sample_process, "complex_wids", ())]
     if process == "Cytokinesis":
         # SUT's _substrate_wids includes GTP (4 WIDs); the Karr oracle snapshot has
@@ -746,10 +749,8 @@ def run_design_a(
         for tick in range(m_ticks):
             sample_state = {
                 "substrate_wids": wids_by_channel["substrates"],
-                "enzyme_wids": wids_by_channel["enzymes"],
                 "oracle_before_substrates": before_vectors["substrates"][seed_index, tick],
                 "oracle_after_substrates": after_vectors["substrates"][seed_index, tick],
-                "oracle_before_enzymes": before_vectors["enzymes"][seed_index, tick],
                 "oracle_after_all": after_vectors[primary_channel],
                 "oracle_before_all": before_vectors.get(primary_channel, before_vectors["substrates"]),
                 "oracle_after_by_channel": {
@@ -758,6 +759,9 @@ def run_design_a(
                 },
                 "oracle_before_by_channel": before_vectors,
             }
+            if "enzymes" in before_vectors:
+                sample_state["enzyme_wids"] = wids_by_channel["enzymes"]
+                sample_state["oracle_before_enzymes"] = before_vectors["enzymes"][seed_index, tick]
             if process == "Transcription":
                 sample_state.update(
                     {
@@ -787,6 +791,17 @@ def run_design_a(
                     }
                 )
             if process == "ProteinDecay":
+                sample_state.update(
+                    {
+                        "monomer_wids": wids_by_channel["monomers"],
+                        "complex_wids": wids_by_channel["complexs"],
+                        "oracle_before_monomers": before_vectors["monomers"][seed_index, tick],
+                        "oracle_before_complexs": before_vectors["complexs"][seed_index, tick],
+                        "oracle_after_monomers": after_vectors["monomers"][seed_index, tick],
+                        "oracle_after_complexs": after_vectors["complexs"][seed_index, tick],
+                    }
+                )
+            if process == "MacromolecularComplexation":
                 sample_state.update(
                     {
                         "monomer_wids": wids_by_channel["monomers"],
@@ -829,13 +844,16 @@ def run_design_a(
                     "tick": int(tick),
                     "substrates_sum_before": float(np.sum(before_vectors["substrates"][seed_index, tick])),
                     "substrates_nonzero_before": int(np.count_nonzero(before_vectors["substrates"][seed_index, tick])),
-                    "enzymes_sum_before": float(np.sum(before_vectors["enzymes"][seed_index, tick])),
                     "primary_channel": primary_channel,
                     "primary_sum_before": float(
                         np.sum(before_vectors.get(primary_channel, before_vectors["substrates"])[seed_index, tick])
                     ),
                 }
             )
+            if "enzymes" in before_vectors:
+                allocator_inputs[-1]["enzymes_sum_before"] = float(
+                    np.sum(before_vectors["enzymes"][seed_index, tick])
+                )
             if "RNAs" in before_vectors:
                 allocator_inputs[-1]["rnas_sum_before"] = float(np.sum(before_vectors["RNAs"][seed_index, tick]))
             if "mRNAs" in before_vectors:
