@@ -76,7 +76,11 @@ def _normalize_channel_name(name: str) -> str:
     return _CHANNEL_NAME_ALIASES.get(channel.lower(), channel)
 
 
-def _normalize_catalog_entry(entry: dict[str, Any], bucket_rationale: str | None) -> dict[str, Any]:
+def _normalize_catalog_entry(
+    entry: dict[str, Any],
+    bucket_rationale: str | None,
+    bucket_harness_type: str | None = None,
+) -> dict[str, Any]:
     normalized = dict(entry)
     for key in ("event_channels", "input_channels", "output_channels"):
         channels = normalized.get(key)
@@ -86,6 +90,7 @@ def _normalize_catalog_entry(entry: dict[str, Any], bucket_rationale: str | None
     if primary_channel is not None:
         normalized["primary_channel"] = _normalize_channel_name(str(primary_channel))
     normalized["_bucket_rationale"] = bucket_rationale
+    normalized["_bucket_harness_type"] = bucket_harness_type
     return normalized
 
 
@@ -112,13 +117,17 @@ def _load_catalog(path: Path | None = None) -> dict[str, dict]:
         name = str(raw_entry["name"])
         bucket_name = str(raw_entry.get("bucket", ""))
         bucket_rationale = None
+        bucket_harness_type = None
         if isinstance(buckets, dict):
             bucket_meta = buckets.get(bucket_name, {})
             if isinstance(bucket_meta, dict):
                 rationale = bucket_meta.get("rationale")
                 if rationale is not None:
                     bucket_rationale = str(rationale)
-        catalog[name] = _normalize_catalog_entry(raw_entry, bucket_rationale)
+                ht = bucket_meta.get("harness_type")
+                if ht is not None:
+                    bucket_harness_type = str(ht)
+        catalog[name] = _normalize_catalog_entry(raw_entry, bucket_rationale, bucket_harness_type)
     return catalog
 
 
@@ -134,13 +143,17 @@ def _load_catalog_all(path: Path | None = None) -> dict[str, dict[str, Any]]:
         name = str(raw_entry["name"])
         bucket_name = str(raw_entry.get("bucket", ""))
         bucket_rationale = None
+        bucket_harness_type = None
         if isinstance(buckets, dict):
             bucket_meta = buckets.get(bucket_name, {})
             if isinstance(bucket_meta, dict):
                 rationale = bucket_meta.get("rationale")
                 if rationale is not None:
                     bucket_rationale = str(rationale)
-        catalog[name] = _normalize_catalog_entry(raw_entry, bucket_rationale)
+                ht = bucket_meta.get("harness_type")
+                if ht is not None:
+                    bucket_harness_type = str(ht)
+        catalog[name] = _normalize_catalog_entry(raw_entry, bucket_rationale, bucket_harness_type)
     return catalog
 
 
@@ -583,6 +596,20 @@ def _validate_process_request(process: str) -> None:
         rationale = entry.get("_bucket_rationale") or entry.get("notes") or "no rationale provided"
         raise ValueError(
             f"Process {process!r} is out of L2.2 scope: bucket={bucket}; rationale={rationale}"
+        )
+    # v3 harness routing: refuse processes not destined for this harness.
+    # design_a_per_tick is the only harness this runner implements.
+    harness_type = entry.get("harness_type") or entry.get("_bucket_harness_type")
+    if harness_type and harness_type != "design_a_per_tick":
+        bucket = entry.get("bucket", "unknown")
+        raise ValueError(
+            f"Process {process!r} requires harness_type={harness_type!r} but this runner "
+            f"only implements design_a_per_tick. bucket={bucket}. "
+            f"Catalog entry's notes field for the rationale. "
+            f"In particular, EVENT_CLASS processes (event_density:sparse + seed_window) "
+            f"silently produce zero-W1 fake PASSes through this harness because their "
+            f"sparse events do not fire in the 100-tick replay window. The L2.event "
+            f"harness needs to be built; until then, do not gate these processes here."
         )
     if process not in SUPPORTED_PROCESSES:
         bucket = entry.get("bucket", "unknown")
