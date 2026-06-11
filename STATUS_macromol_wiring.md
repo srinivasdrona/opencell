@@ -26,7 +26,25 @@
   - Add `_run_macromol_tick(seed, tick, state)` that overlays `oracle_before_substrates`, overlays `oracle_before_monomers` onto the same substrate store via a store-path override, overlays `oracle_before_complexs`, keeps `trace_hint` empty, and returns projected `substrates` / `monomers` / `complexs`.
   - Add runner wiring for `MacromolecularComplexation` in `_process_sample_process`, `_observable_wids`, and the per-tick sample-state branch.
 
-## Beat 2 - pending
+## Beat 2 - add _run_macromol_tick dispatcher
+
+- Added helper-only Macromol support in `tests/vivarium/_l2_2_design_a_runner_helpers.py`:
+  - `_macromol_channel_metadata()` derives the 208-entry monomer subset from `substrateMonomerLocalIndexs`.
+  - `_macromol_process(seed)` is cached with `@lru_cache` and wrapped in `forbid_sut_oracle_file_io()`. The cached process is annotated with helper-only `monomer_wids` / `monomer_indices`.
+  - `_run_macromol_tick(seed, tick, state)` overlays:
+    - `oracle_before_substrates` onto the mixed `substrates` store,
+    - `oracle_before_monomers` onto the same underlying substrate store via a Macromol-specific store-path override,
+    - `oracle_before_complexs` onto `complex.counts`.
+  - `trace_hint` remains unused and empty.
+  - Returned projections are `substrates`, `monomers`, `complexs`.
+- Oracle path handling:
+  - `_format_ensemble_oracle()` now has a Macromol branch that keeps raw `substrates` / `complexs` and derives `monomers` from the substrate monomer subset.
+  - `load_karr_oracle()` now checks v2/specialized ensembles before consulting legacy loaders, so Macromol can rely on the generic v2 path without touching a legacy replay path.
+  - Added a Macromol-only v2 root fallback inside `_load_v2_ensemble()` so this worktree finds the populated main-repo `per_process_traces_v2_s{000..049}` tree without altering other processes' oracle sourcing.
+- Duplicate-WID handling remains disabled: Beat 1 probe showed `complexs` has no duplicates.
+- Verification:
+  - `bin\oc-pytest.cmd tests/vivarium/test_l2_2_design_a*.py -q`
+  - Result: `36 passed in 301.78s`
 
 ## Beat 3 - pending
 

@@ -154,6 +154,16 @@ def test_load_karr_oracle_uses_v2_loader_when_no_specialized_ensemble_exists(mon
     assert oracle is sentinel
 
 
+def test_load_karr_oracle_returns_v2_macromol_without_touching_legacy_loader(monkeypatch) -> None:
+    sentinel = {"process": "MacromolecularComplexation", "canonical_seed_count": 50}
+    monkeypatch.setattr(runner_helpers, "_load_v2_ensemble", lambda process_name, max_seeds=50: sentinel)
+    monkeypatch.setattr(runner_helpers, "_load_ensembles_layout", lambda process_name, max_seeds=50: None)
+
+    oracle = runner_helpers.load_karr_oracle("MacromolecularComplexation")
+
+    assert oracle is sentinel
+
+
 def test_load_karr_oracle_prefers_richer_specialized_ensemble_over_partial_v2(monkeypatch) -> None:
     partial_v2 = {"process": "Translation", "canonical_seed_count": 1}
     specialized = {"process": "Translation", "canonical_seed_count": 50}
