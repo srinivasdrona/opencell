@@ -72,6 +72,37 @@
 3. What evidence would justify enabling `joint_check` now instead of deferring?
    - None required to proceed. The catalog/spec contract says `joint_check: true`, but Beat 4 interpretation is unchanged: spec §6.4 defines the cross-complex Spearman diagnostic as non-gating. Deferring implementation while preserving the flag is acceptable for this wiring pass.
 
-## Beat 5 - pending
+## Beat 5 - smoke gate verification
 
-verdict: IN_PROGRESS
+- Command:
+  - `bin\oc-py.cmd tests/vivarium/l2_2_design_a_runner.py --process MacromolecularComplexation --seeds 50 --ticks 10 --bootstrap-B 200 --output-dir tests/vivarium/artifacts/l2_2_design_a/MacromolecularComplexation_smoke`
+- Process verdict:
+  - `PASS`
+- Canonical ensemble:
+  - `canonical_seed_count: 50`
+  - No `KARR_LEGACY_SINGLE_SEED_FALLBACK` warning.
+- Primary channel (`complexs`) details from `result.json`:
+  - channel verdict: `SEED_NOISE`
+  - `w1_oc_vs_karr: 0.0`
+  - `ks_pvalue: 1.0`
+  - `threshold: 1.0`
+  - `samples_oc.mean: 0.0016326530612244899`
+  - `samples_karr.mean: 0.0016326530612244899`
+  - `n_nonzero_oc = n_nonzero_karr = 120`
+- Secondary channels:
+  - `substrates`: `SEED_NOISE`, `w1=0.0`
+  - `monomers`: `SEED_NOISE`, `w1=0.0`
+- Warnings:
+  - `[]`
+- Red-flag investigation for `complexs W1=0.0`:
+  - Verified the dispatcher does not populate `trace_hint`; Beat 1 grep found no SUT trace-hint replay path.
+  - Raw Karr first-10-tick `complexs` data is not flat: across the 50 seeds, the first nonzero `complexs` tick spans ticks 4..9.
+  - Example nonzero replay check: seed 0 / tick 8 has `karr_before_complex_nonzero=0`, `karr_after_complex_nonzero=2`, and OpenCell reproduces `oc_after_complex_nonzero=2` with `complex/substrate/monomer max_abs_diff = 0.0`.
+  - Interpretation: this smoke run produced an exact-match `SEED_NOISE@0.0` on real nonzero events, not a trace-hint laundering symptom.
+- Post-fix verification:
+  - `bin\oc-pytest.cmd tests/vivarium/test_l2_2_design_a*.py -q`
+  - Result: `37 passed in 308.36s`
+- Success-criteria note:
+  - The expected heuristic `complexs W1 > 0` did not materialize; the measured result is exact match on real nonzero `complexs` events under the 50-seed / 10-tick smoke window.
+
+verdict: PASS

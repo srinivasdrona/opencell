@@ -844,13 +844,16 @@ def run_design_a(
                     "tick": int(tick),
                     "substrates_sum_before": float(np.sum(before_vectors["substrates"][seed_index, tick])),
                     "substrates_nonzero_before": int(np.count_nonzero(before_vectors["substrates"][seed_index, tick])),
-                    "enzymes_sum_before": float(np.sum(before_vectors["enzymes"][seed_index, tick])),
                     "primary_channel": primary_channel,
                     "primary_sum_before": float(
                         np.sum(before_vectors.get(primary_channel, before_vectors["substrates"])[seed_index, tick])
                     ),
                 }
             )
+            if "enzymes" in before_vectors:
+                allocator_inputs[-1]["enzymes_sum_before"] = float(
+                    np.sum(before_vectors["enzymes"][seed_index, tick])
+                )
             if "RNAs" in before_vectors:
                 allocator_inputs[-1]["rnas_sum_before"] = float(np.sum(before_vectors["RNAs"][seed_index, tick]))
             if "mRNAs" in before_vectors:
