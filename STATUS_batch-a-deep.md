@@ -91,3 +91,40 @@
 - Notes:
   - The synthetic distance falsifiers intentionally use a low-variance oracle surface so null-bootstrap spread stays small and the monomer mismatch is decisively gateable.
   - The new synthetic tests emit SciPy precision-loss warnings for skew/kurtosis on nearly constant arrays; pytest remains green and the warnings are non-blocking.
+
+## Beat 5 - smoke gates
+
+- Command:
+  - `bin/oc-py.cmd tests/vivarium/l2_2_design_a_runner.py --process ProteinProcessingI --seeds 50 --ticks 10 --bootstrap-B 200 --output-dir tests/vivarium/artifacts/l2_2_design_a/ProteinProcessingI_batch_a_smoke`
+  - `bin/oc-py.cmd tests/vivarium/l2_2_design_a_runner.py --process ProteinProcessingII --seeds 50 --ticks 10 --bootstrap-B 200 --output-dir tests/vivarium/artifacts/l2_2_design_a/ProteinProcessingII_batch_a_smoke`
+
+### ProteinProcessingI
+
+- output_dir: `tests/vivarium/artifacts/l2_2_design_a/ProteinProcessingI_batch_a_smoke`
+- verdict: `PASS`
+- canonical_seed_count: `50`
+- primary channel: `monomers`
+- primary verdict: `SEED_NOISE`
+- primary W1: `0.0`
+- primary KS p-value: `1.0`
+- primary threshold: `1.0`
+- warnings: `[]`
+- note:
+  - LAUNDERING ALARM documented only: primary channel shows the Macromol pattern (`W1=0.0` + `KS p=1.0`).
+  - No fix applied per task instruction.
+
+### ProteinProcessingII
+
+- output_dir: `tests/vivarium/artifacts/l2_2_design_a/ProteinProcessingII_batch_a_smoke`
+- verdict: `PASS`
+- canonical_seed_count: `50`
+- primary channel: `monomers`
+- primary verdict: `INSUFFICIENT_SAMPLES`
+- primary W1: `0.0`
+- primary KS p-value: `1.0`
+- primary threshold: `1.0`
+- warnings: `[]`
+- note:
+  - LAUNDERING ALARM documented only: primary channel again shows the Macromol pattern (`W1=0.0` + `KS p=1.0`).
+  - The primary channel has only `27` nonzero samples in the smoke run, so runner verdict is `INSUFFICIENT_SAMPLES` on the primary while overall process verdict remains `PASS` via the secondary substrate channel.
+  - Substrate-cliff secondary concerns remain expected/non-blocking for this task.

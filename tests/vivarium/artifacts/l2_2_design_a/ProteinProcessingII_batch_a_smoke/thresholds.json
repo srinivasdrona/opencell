@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.4",
+  "harness_version": "design_a_v1_3",
+  "process": "ProteinProcessingII",
+  "bucket": "TRIVIAL_RNG",
+  "channels": {
+    "substrates": {
+      "q95_null": 209.26483999999994,
+      "k_eng": 2.0,
+      "absolute_floor": 1.0,
+      "threshold": 418.52967999999987
+    },
+    "monomers": {
+      "q95_null": 0.00012863070539419043,
+      "k_eng": 2.0,
+      "absolute_floor": 1.0,
+      "threshold": 1.0
+    }
+  }
+}
