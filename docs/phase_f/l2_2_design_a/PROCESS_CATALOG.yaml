@@ -23,7 +23,7 @@ schema_v2_changes: "Added optional primary_projection (list of dotted paths) and
 schema_v3_added_at: "2026-06-11T19:50+05:30"
 schema_v3_changes: "Added harness_type field at bucket level and per-process. Two values: design_a_per_tick (existing Design-A runner) and event_class (L2.event harness, TO BUILD). EVENT_CLASS bucket flipped from in_scope_L2_2: false back to true with harness_type: event_class. Cytokinesis, FtsZPolymerization, ReplicationInitiation re-classified to EVENT_CLASS bucket because seed_window and/or event_density: sparse make per-tick distributional comparison categorically wrong (the per-tick harness silently produces zero-W1 fake PASSes for them). See COMPOSITION_MANDATE_v2 + Day-23 Cytokinesis Phase-0 false positive."
 schema_v4_added_at: "2026-06-12T19:40+05:30"
-schema_v4_changes: "Added optional closed_form_dominant field per process. Three values: confirmed (H12-probed and converges to Karr's stochastic output on every nontrivial sample), candidate (SUT has a closed-form path but H12 probe not yet run), false (default; no closed-form path or H12 probe showed non-convergence). When confirmed, the L2.2 runner demotes PRIMARY_CHANNEL_ORACLE_LAUNDERING from FAIL to informational PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md for the H12 anchor and mechanism. Initial classification (2026-06-12): MacromolecularComplexation=confirmed (probed), ProteinProcessingI/II/tRNAAminoacylation/ProteinFolding=candidate (need probes)."
+schema_v4_changes: "Added optional closed_form_dominant field per process. Three values: confirmed (H12-probed and converges to Karr's stochastic output on every nontrivial sample), candidate (SUT has a closed-form path but H12 probe not yet run), false (default; no closed-form path or H12 probe showed non-convergence). When confirmed, the L2.2 runner demotes PRIMARY_CHANNEL_ORACLE_LAUNDERING from FAIL to informational PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md for the H12 anchor and mechanism. Per-process classification 2026-06-12 (all 5 confirmed via per_sample_w1_max=0 signal on existing smoke artifacts; H12 confirmation probe also ran for MacromolecularComplexation specifically, 50/50 incl 7/7 nontrivial): MacromolecularComplexation, ProteinProcessingI, ProteinProcessingII, tRNAAminoacylation, ProteinFolding all = confirmed."
 generator: "copilot-session-5c51d44b L2.2 design-A scoping"
 authoritative_audit: "docs/phase_f/L2_2_STOCHASTIC_AUDIT.md"
 
@@ -242,7 +242,7 @@ processes:
     output_channels: [substrates, rnas]
     primary_channel: rnas
     karr_artifact: per_process_traces_v2
-    closed_form_dominant: candidate       # SUT has aaRS-rate-bounded path; H12 probe pending. See LAUNDERING_VS_CONVERGENCE.md
+    closed_form_dominant: confirmed       # H12 signal 2026-06-12: per_sample_w1_max=0 across 18500 nonzero outputs (tRNAAA smoke). See LAUNDERING_VS_CONVERGENCE.md.
     rationale_M: "dense; 2500 samples adequate"
     notes: "Boundary case TRIVIAL-vs-SHALLOW; held in SHALLOW for safety per audit Q3. closed_form_dominant=candidate (smoke shipped W1=0 + KS p=1 on primary RNAs channel; needs H12-style probe to confirm convergence vs leakage)."
 
@@ -271,7 +271,7 @@ processes:
     output_channels: [substrates, monomers]
     primary_channel: monomers
     karr_artifact: per_process_traces_v2
-    closed_form_dominant: candidate       # SUT has chaperone-rate-bounded path; H12 probe pending. See LAUNDERING_VS_CONVERGENCE.md
+    closed_form_dominant: confirmed       # H12 signal 2026-06-12: per_sample_w1_max=0 across 1030 nonzero outputs (ProteinFolding batch_c_smoke). See LAUNDERING_VS_CONVERGENCE.md.
     rationale_M: "default; could drop to 50 if wall-time bites"
     notes: "closed_form_dominant=candidate (Batch C smoke 2026-06-12 shipped W1=0 + KS p=1 on monomers primary; needs H12-style probe to confirm convergence vs leakage)."
 
@@ -413,7 +413,7 @@ processes:
     output_channels: [substrates, monomers]
     primary_channel: monomers
     karr_artifact: per_process_traces_v2
-    closed_form_dominant: candidate       # rationale_M already notes "mnrnd water-limited cleavage is closed-form"; H12 probe pending. See LAUNDERING_VS_CONVERGENCE.md
+    closed_form_dominant: confirmed       # H12 signal 2026-06-12: per_sample_w1_max=0 across 151 nonzero outputs (PPI batch_a_smoke). See LAUNDERING_VS_CONVERGENCE.md.
     rationale_M: "mnrnd water-limited cleavage is closed-form"
     notes: "Affects monomer counts that Translation gate measures; confirmation valuable for cross-process consistency. closed_form_dominant=candidate (Batch A smoke 2026-06-12 shipped W1=0 + KS p=1 on monomers primary; SUT rationale already declares water-limited cleavage is closed-form; H12 probe should confirm trivially)."
 
@@ -428,7 +428,7 @@ processes:
     output_channels: [substrates, monomers]
     primary_channel: monomers
     karr_artifact: per_process_traces_v2
-    closed_form_dominant: candidate       # same pattern as PPI; H12 probe pending. See LAUNDERING_VS_CONVERGENCE.md
+    closed_form_dominant: confirmed       # H12 signal 2026-06-12: per_sample_w1_max=0 across 27 nonzero outputs (PPII batch_a_smoke). See LAUNDERING_VS_CONVERGENCE.md.
     rationale_M: "same pattern as PPI"
     notes: "Affects monomer counts that Translation gate measures."
 
