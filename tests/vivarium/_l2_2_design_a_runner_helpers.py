@@ -44,6 +44,9 @@ from opencell.vivarium.karr_metabolism import KarrMetabolismProcess  # noqa: E40
 from opencell.vivarium.karr_translation import KarrTranslationProcess  # noqa: E402
 from opencell.vivarium.karr_transcription import KarrTranscriptionProcess  # noqa: E402
 from opencell.vivarium.karr_rna_decay import RnaDecayLightProcess  # noqa: E402
+from opencell.vivarium.karr_rna_processing import KarrRNAProcessingProcess  # noqa: E402
+from opencell.vivarium.karr_rna_modification import KarrRNAModificationProcess  # noqa: E402
+from opencell.vivarium.karr_trna_aminoacylation import KarrTRNAAminoacylationProcess  # noqa: E402
 from opencell.vivarium.karr_protein_decay_light import ProteinDecayLightProcess  # noqa: E402
 from opencell.vivarium.karr_cytokinesis import KarrCytokinesisProcess  # noqa: E402
 from opencell.vivarium.karr_macromolecular_complexation import (  # noqa: E402
@@ -77,18 +80,45 @@ _TRANSLATION_MRNA_STORE_PATH_OVERRIDE = {"mRNAs": ("rna", "counts")}
 _RNA_STORE_PATH_OVERRIDE = {"RNAs": ("rna", "counts")}
 _RNA_SLOT_COUNTS_STATE_KEY = "_l2_rna_slot_counts"
 _RNA_SLOT_WIDS_STATE_KEY = "_l2_rna_slot_wids"
+_EXTERNAL_V2_PROCESS_ROOT_FALLBACK = frozenset(
+    {"RNAProcessing", "RNAModification", "tRNAAminoacylation"}
+)
 
 
 def _karr_native_root() -> Path:
     return _REPO_ROOT / "data" / "m1_sources" / "karr_native"
 
 
+def _karr_native_candidate_roots(process_name: str) -> tuple[Path, ...]:
+    candidates = [_karr_native_root()]
+    if (
+        process_name in _EXTERNAL_V2_PROCESS_ROOT_FALLBACK
+        and _REPO_ROOT == _ACTUAL_REPO_ROOT
+    ):
+        candidates.extend(
+            (
+                Path("E:/opencell/data/m1_sources/karr_native"),
+                Path("/mnt/e/opencell/data/m1_sources/karr_native"),
+            )
+        )
+    seen: set[str] = set()
+    unique: list[Path] = []
+    for candidate in candidates:
+        key = str(candidate)
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(candidate)
+    return tuple(unique)
+
+
 def _v2_seed_mat_path(process_name: str, seed: int) -> Path:
-    return (
-        _karr_native_root()
-        / f"per_process_traces_v2_s{int(seed):03d}"
-        / f"{process_name}_100ticks.mat"
-    )
+    rel = Path(f"per_process_traces_v2_s{int(seed):03d}") / f"{process_name}_100ticks.mat"
+    for root in _karr_native_candidate_roots(process_name):
+        candidate = root / rel
+        if candidate.exists():
+            return candidate
+    return _karr_native_root() / rel
 
 
 def _ensembles_seed_mat_path(process_name: str, seed: int) -> Path:
@@ -220,6 +250,31 @@ def _required_ensemble_keys(process_name: str) -> tuple[tuple[str, ...], tuple[s
         )
     if process_name == "RNADecay":
         return ("substrates", "enzymes", "boundEnzymes", "RNAs"), ("substrates", "RNAs")
+    if process_name == "RNAProcessing":
+        return (
+            "substrates",
+            "enzymes",
+            "boundEnzymes",
+            "unprocessedRNAs",
+            "processedRNAs",
+            "intergenicRNAs",
+        ), ("substrates", "unprocessedRNAs", "processedRNAs", "intergenicRNAs")
+    if process_name == "RNAModification":
+        return (
+            "substrates",
+            "enzymes",
+            "boundEnzymes",
+            "unmodifiedRNAs",
+            "modifiedRNAs",
+        ), ("substrates", "unmodifiedRNAs", "modifiedRNAs")
+    if process_name == "tRNAAminoacylation":
+        return (
+            "substrates",
+            "enzymes",
+            "boundEnzymes",
+            "freeRNAs",
+            "aminoacylatedRNAs",
+        ), ("substrates", "freeRNAs", "aminoacylatedRNAs")
     if process_name == "ProteinDecay":
         return ("substrates", "enzymes", "monomers", "complexs"), (
             "substrates",
@@ -350,6 +405,74 @@ def _format_ensemble_oracle(
             "before_rnas": before_channel("RNAs", "before_rnas"),
             "after_substrates": after_channel("substrates", "after_substrates"),
             "after_rnas": after_channel("RNAs", "after_rnas"),
+            "ensemble_missing_before_channels": tuple(missing_before),
+            "ensemble_missing_after_channels": tuple(missing_after),
+        }
+
+    if process_name == "RNAProcessing":
+        return {
+            "process": process_name,
+            "oracle_path": oracle_path,
+            "canonical_seed_count": canonical_seed_count,
+            "n_ticks_available": n_ticks_available,
+            "before_substrates": before_channel("substrates", "before_substrates"),
+            "before_enzymes": before_channel("enzymes", "before_enzymes"),
+            "before_bound_enzymes": before_channel("boundEnzymes", "before_bound_enzymes"),
+            "before_rnas": _concatenate_rna_channels(
+                before_channel("unprocessedRNAs", "before_rnas"),
+                before_channel("processedRNAs", "before_rnas"),
+                before_channel("intergenicRNAs", "before_rnas"),
+            ),
+            "after_substrates": after_channel("substrates", "after_substrates"),
+            "after_rnas": _concatenate_rna_channels(
+                after_channel("unprocessedRNAs", "after_rnas"),
+                after_channel("processedRNAs", "after_rnas"),
+                after_channel("intergenicRNAs", "after_rnas"),
+            ),
+            "ensemble_missing_before_channels": tuple(missing_before),
+            "ensemble_missing_after_channels": tuple(missing_after),
+        }
+
+    if process_name == "RNAModification":
+        return {
+            "process": process_name,
+            "oracle_path": oracle_path,
+            "canonical_seed_count": canonical_seed_count,
+            "n_ticks_available": n_ticks_available,
+            "before_substrates": before_channel("substrates", "before_substrates"),
+            "before_enzymes": before_channel("enzymes", "before_enzymes"),
+            "before_bound_enzymes": before_channel("boundEnzymes", "before_bound_enzymes"),
+            "before_rnas": _concatenate_rna_channels(
+                before_channel("unmodifiedRNAs", "before_rnas"),
+                before_channel("modifiedRNAs", "before_rnas"),
+            ),
+            "after_substrates": after_channel("substrates", "after_substrates"),
+            "after_rnas": _concatenate_rna_channels(
+                after_channel("unmodifiedRNAs", "after_rnas"),
+                after_channel("modifiedRNAs", "after_rnas"),
+            ),
+            "ensemble_missing_before_channels": tuple(missing_before),
+            "ensemble_missing_after_channels": tuple(missing_after),
+        }
+
+    if process_name == "tRNAAminoacylation":
+        return {
+            "process": process_name,
+            "oracle_path": oracle_path,
+            "canonical_seed_count": canonical_seed_count,
+            "n_ticks_available": n_ticks_available,
+            "before_substrates": before_channel("substrates", "before_substrates"),
+            "before_enzymes": before_channel("enzymes", "before_enzymes"),
+            "before_bound_enzymes": before_channel("boundEnzymes", "before_bound_enzymes"),
+            "before_rnas": _concatenate_rna_channels(
+                before_channel("freeRNAs", "before_rnas"),
+                before_channel("aminoacylatedRNAs", "before_rnas"),
+            ),
+            "after_substrates": after_channel("substrates", "after_substrates"),
+            "after_rnas": _concatenate_rna_channels(
+                after_channel("freeRNAs", "after_rnas"),
+                after_channel("aminoacylatedRNAs", "after_rnas"),
+            ),
             "ensemble_missing_before_channels": tuple(missing_before),
             "ensemble_missing_after_channels": tuple(missing_after),
         }
@@ -728,6 +851,84 @@ def _load_cytokinesis_oracle() -> dict[str, Any]:
     }
 
 
+def _concatenate_rna_channels(*segments: np.ndarray) -> np.ndarray:
+    arrays = [np.asarray(segment, dtype=np.float64) for segment in segments]
+    return np.asarray(np.concatenate(arrays, axis=2), dtype=np.float64)
+
+
+def _split_rna_vector(vector: np.ndarray, segment_lengths: tuple[int, ...]) -> tuple[np.ndarray, ...]:
+    arr = np.asarray(vector, dtype=np.float64).reshape(-1)
+    expected = int(sum(segment_lengths))
+    if arr.size != expected:
+        raise ValueError(f"RNA vector length mismatch: got {arr.size}, expected {expected}")
+    offsets: list[int] = [0]
+    for length in segment_lengths:
+        offsets.append(offsets[-1] + int(length))
+    return tuple(arr[offsets[idx] : offsets[idx + 1]] for idx in range(len(segment_lengths)))
+
+
+def _replace_active_rna_wids(
+    *,
+    full_before: np.ndarray,
+    full_wids: tuple[str, ...],
+    active_after: np.ndarray,
+    active_wids: list[str] | tuple[str, ...],
+) -> np.ndarray:
+    out = np.asarray(full_before, dtype=np.float64).reshape(-1).copy()
+    active_arr = np.asarray(active_after, dtype=np.float64).reshape(-1)
+    active_ids = [str(wid) for wid in active_wids]
+    if active_arr.size != len(active_ids):
+        raise ValueError(
+            f"Active RNA vector/WID mismatch: len(vector)={active_arr.size} len(wids)={len(active_ids)}"
+        )
+    index_by_wid = {str(wid): idx for idx, wid in enumerate(full_wids)}
+    for idx, wid in enumerate(active_ids):
+        full_idx = index_by_wid.get(wid)
+        if full_idx is not None:
+            out[full_idx] = float(active_arr[idx])
+    return out
+
+
+@lru_cache(maxsize=1)
+def _rna_processing_channel_metadata() -> dict[str, Any]:
+    unprocessed_wids = tuple(load_fixture_channel_wids("RNAProcessing", "unprocessedRNAs"))
+    raw_processed_wids = tuple(load_fixture_channel_wids("RNAProcessing", "processedRNAs"))
+    intergenic_wids = tuple(load_fixture_channel_wids("RNAProcessing", "intergenicRNAs"))
+    unprocessed_set = set(unprocessed_wids)
+    processed_state_wids = tuple(
+        f"processed::{wid}" if wid in unprocessed_set else wid
+        for wid in raw_processed_wids
+    )
+    return {
+        "unprocessed_wids": unprocessed_wids,
+        "processed_state_wids": processed_state_wids,
+        "intergenic_wids": intergenic_wids,
+        "primary_wids": tuple(unprocessed_wids + processed_state_wids + intergenic_wids),
+    }
+
+
+@lru_cache(maxsize=1)
+def _rna_modification_channel_metadata() -> dict[str, Any]:
+    unmodified_wids = tuple(load_fixture_channel_wids("RNAModification", "unmodifiedRNAs"))
+    modified_wids = tuple(load_fixture_channel_wids("RNAModification", "modifiedRNAs"))
+    return {
+        "unmodified_wids": unmodified_wids,
+        "modified_wids": modified_wids,
+        "primary_wids": tuple(unmodified_wids + modified_wids),
+    }
+
+
+@lru_cache(maxsize=1)
+def _trna_aminoacylation_channel_metadata() -> dict[str, Any]:
+    free_wids = tuple(load_fixture_channel_wids("tRNAAminoacylation", "freeRNAs"))
+    amino_wids = tuple(load_fixture_channel_wids("tRNAAminoacylation", "aminoacylatedRNAs"))
+    return {
+        "free_wids": free_wids,
+        "aminoacylated_wids": amino_wids,
+        "primary_wids": tuple(free_wids + amino_wids),
+    }
+
+
 @lru_cache(maxsize=None)
 def _metabolism_model() -> Any:
     return m1_karr_metabolism.load_default()
@@ -762,6 +963,33 @@ def _translation_process(seed: int) -> KarrTranslationProcess:
 def _rna_decay_process(seed: int) -> RnaDecayLightProcess:
     with forbid_sut_oracle_file_io():
         return RnaDecayLightProcess({"rng_seed": int(seed)})
+
+
+@lru_cache(maxsize=None)
+def _rna_processing_process(seed: int) -> KarrRNAProcessingProcess:
+    metadata = _rna_processing_channel_metadata()
+    with forbid_sut_oracle_file_io():
+        process = KarrRNAProcessingProcess({"rng_seed": int(seed)})
+    process.rna_primary_wids = list(metadata["primary_wids"])
+    return process
+
+
+@lru_cache(maxsize=None)
+def _rna_modification_process(seed: int) -> KarrRNAModificationProcess:
+    metadata = _rna_modification_channel_metadata()
+    with forbid_sut_oracle_file_io():
+        process = KarrRNAModificationProcess({"rng_seed": int(seed)})
+    process.rna_primary_wids = list(metadata["primary_wids"])
+    return process
+
+
+@lru_cache(maxsize=None)
+def _trna_aminoacylation_process(seed: int) -> KarrTRNAAminoacylationProcess:
+    metadata = _trna_aminoacylation_channel_metadata()
+    with forbid_sut_oracle_file_io():
+        process = KarrTRNAAminoacylationProcess({"rng_seed": int(seed)})
+    process.rna_primary_wids = list(metadata["primary_wids"])
+    return process
 
 
 @lru_cache(maxsize=None)
@@ -835,6 +1063,9 @@ def _tick_dispatch() -> dict[str, Any]:
         "Translation": _run_translation_tick,
         "Transcription": _run_transcription_tick,
         "RNADecay": _run_rna_decay_tick,
+        "RNAProcessing": _run_rna_processing_tick,
+        "RNAModification": _run_rna_modification_tick,
+        "tRNAAminoacylation": _run_trna_aminoacylation_tick,
         "ProteinDecay": _run_protein_decay_tick,
         "MacromolecularComplexation": _run_macromol_tick,
         "Cytokinesis": _run_cytokinesis_tick,
@@ -1210,6 +1441,276 @@ def _run_rna_decay_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str
                 wids=rna_wids,
                 bound_enzymes_before=np.asarray(state["oracle_before_bound_enzymes"], dtype=np.float64),
             ),
+            dtype=np.float64,
+        ),
+        "sample_seed": _sample_seed(seed, tick),
+    }
+
+
+def _run_rna_processing_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
+    """Run one OpenCell RNAProcessing tick from a prepared state snapshot."""
+    process = _rna_processing_process(_sample_seed(seed, tick))
+    metadata = _rna_processing_channel_metadata()
+    runtime_state = build_state_template(process)
+    substrate_wids = list(state["substrate_wids"])
+    enzyme_wids = list(state["enzyme_wids"])
+    bound_enzymes_before = np.asarray(state["oracle_before_bound_enzymes"], dtype=np.float64)
+    unprocessed_before, processed_before, intergenic_before = _split_rna_vector(
+        np.asarray(state["oracle_before_rnas"], dtype=np.float64),
+        (
+            len(metadata["unprocessed_wids"]),
+            len(metadata["processed_state_wids"]),
+            len(metadata["intergenic_wids"]),
+        ),
+    )
+
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="substrates",
+        vector=np.asarray(state["oracle_before_substrates"], dtype=np.float64),
+        wids=substrate_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="enzymes",
+        vector=np.asarray(state["oracle_before_enzymes"], dtype=np.float64),
+        wids=enzyme_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="unprocessedRNAs",
+        vector=unprocessed_before,
+        wids=list(process.unprocessed_rna_wids),
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="processedRNAs",
+        vector=processed_before,
+        wids=list(process.processed_rna_wids),
+    )
+    refresh_allocator_views(process, runtime_state)
+    with forbid_sut_oracle_file_io():
+        update = process.next_update(1.0, runtime_state)
+    apply_count_update(runtime_state, update)
+
+    unprocessed_after = project_observable_from_state(
+        process=process,
+        state=runtime_state,
+        observable="unprocessedRNAs",
+        wids=list(process.unprocessed_rna_wids),
+        bound_enzymes_before=bound_enzymes_before,
+    )
+    processed_after = project_observable_from_state(
+        process=process,
+        state=runtime_state,
+        observable="processedRNAs",
+        wids=list(process.processed_rna_wids),
+        bound_enzymes_before=bound_enzymes_before,
+    )
+    rna_after = np.asarray(
+        np.concatenate([unprocessed_after, processed_after, intergenic_before]),
+        dtype=np.float64,
+    )
+    return {
+        "substrates": np.asarray(
+            project_observable_from_state(
+                process=process,
+                state=runtime_state,
+                observable="substrates",
+                wids=substrate_wids,
+                bound_enzymes_before=bound_enzymes_before,
+            ),
+            dtype=np.float64,
+        ),
+        "RNAs": rna_after,
+        "sample_seed": _sample_seed(seed, tick),
+    }
+
+
+def _run_rna_modification_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
+    """Run one OpenCell RNAModification tick from a prepared state snapshot."""
+    process = _rna_modification_process(_sample_seed(seed, tick))
+    metadata = _rna_modification_channel_metadata()
+    runtime_state = build_state_template(process)
+    substrate_wids = list(state["substrate_wids"])
+    enzyme_wids = list(state["enzyme_wids"])
+    bound_enzymes_before = np.asarray(state["oracle_before_bound_enzymes"], dtype=np.float64)
+    full_unmodified_before, full_modified_before = _split_rna_vector(
+        np.asarray(state["oracle_before_rnas"], dtype=np.float64),
+        (
+            len(metadata["unmodified_wids"]),
+            len(metadata["modified_wids"]),
+        ),
+    )
+    active_unmodified_before = project_vector_onto_wids(
+        karr_vector=full_unmodified_before,
+        karr_wids=metadata["unmodified_wids"],
+        oc_wids=list(process.unmodified_rna_wids),
+    )
+    active_modified_before = project_vector_onto_wids(
+        karr_vector=full_modified_before,
+        karr_wids=metadata["modified_wids"],
+        oc_wids=list(process.modified_rna_wids),
+    )
+
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="substrates",
+        vector=np.asarray(state["oracle_before_substrates"], dtype=np.float64),
+        wids=substrate_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="enzymes",
+        vector=np.asarray(state["oracle_before_enzymes"], dtype=np.float64),
+        wids=enzyme_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="unmodifiedRNAs",
+        vector=active_unmodified_before,
+        wids=list(process.unmodified_rna_wids),
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="modifiedRNAs",
+        vector=active_modified_before,
+        wids=list(process.modified_rna_wids),
+    )
+    refresh_allocator_views(process, runtime_state)
+    with forbid_sut_oracle_file_io():
+        update = process.next_update(1.0, runtime_state)
+    apply_count_update(runtime_state, update)
+
+    active_unmodified_after = project_observable_from_state(
+        process=process,
+        state=runtime_state,
+        observable="unmodifiedRNAs",
+        wids=list(process.unmodified_rna_wids),
+        bound_enzymes_before=bound_enzymes_before,
+    )
+    active_modified_after = project_observable_from_state(
+        process=process,
+        state=runtime_state,
+        observable="modifiedRNAs",
+        wids=list(process.modified_rna_wids),
+        bound_enzymes_before=bound_enzymes_before,
+    )
+    full_unmodified_after = _replace_active_rna_wids(
+        full_before=full_unmodified_before,
+        full_wids=metadata["unmodified_wids"],
+        active_after=active_unmodified_after,
+        active_wids=list(process.unmodified_rna_wids),
+    )
+    full_modified_after = _replace_active_rna_wids(
+        full_before=full_modified_before,
+        full_wids=metadata["modified_wids"],
+        active_after=active_modified_after,
+        active_wids=list(process.modified_rna_wids),
+    )
+    return {
+        "substrates": np.asarray(
+            project_observable_from_state(
+                process=process,
+                state=runtime_state,
+                observable="substrates",
+                wids=substrate_wids,
+                bound_enzymes_before=bound_enzymes_before,
+            ),
+            dtype=np.float64,
+        ),
+        "RNAs": np.asarray(
+            np.concatenate([full_unmodified_after, full_modified_after]),
+            dtype=np.float64,
+        ),
+        "sample_seed": _sample_seed(seed, tick),
+    }
+
+
+def _run_trna_aminoacylation_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
+    """Run one OpenCell tRNAAminoacylation tick from a prepared state snapshot."""
+    process = _trna_aminoacylation_process(_sample_seed(seed, tick))
+    metadata = _trna_aminoacylation_channel_metadata()
+    runtime_state = build_state_template(process)
+    substrate_wids = list(state["substrate_wids"])
+    enzyme_wids = list(state["enzyme_wids"])
+    bound_enzymes_before = np.asarray(state["oracle_before_bound_enzymes"], dtype=np.float64)
+    free_before, aminoacylated_before = _split_rna_vector(
+        np.asarray(state["oracle_before_rnas"], dtype=np.float64),
+        (
+            len(metadata["free_wids"]),
+            len(metadata["aminoacylated_wids"]),
+        ),
+    )
+
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="substrates",
+        vector=np.asarray(state["oracle_before_substrates"], dtype=np.float64),
+        wids=substrate_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="enzymes",
+        vector=np.asarray(state["oracle_before_enzymes"], dtype=np.float64),
+        wids=enzyme_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="freeRNAs",
+        vector=free_before,
+        wids=list(process.free_rna_wids),
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="aminoacylatedRNAs",
+        vector=aminoacylated_before,
+        wids=list(process.aminoacylated_rna_wids),
+    )
+    refresh_allocator_views(process, runtime_state)
+    with forbid_sut_oracle_file_io():
+        update = process.next_update(1.0, runtime_state)
+    apply_count_update(runtime_state, update)
+
+    free_after = project_observable_from_state(
+        process=process,
+        state=runtime_state,
+        observable="freeRNAs",
+        wids=list(process.free_rna_wids),
+        bound_enzymes_before=bound_enzymes_before,
+    )
+    aminoacylated_after = project_observable_from_state(
+        process=process,
+        state=runtime_state,
+        observable="aminoacylatedRNAs",
+        wids=list(process.aminoacylated_rna_wids),
+        bound_enzymes_before=bound_enzymes_before,
+    )
+    return {
+        "substrates": np.asarray(
+            project_observable_from_state(
+                process=process,
+                state=runtime_state,
+                observable="substrates",
+                wids=substrate_wids,
+                bound_enzymes_before=bound_enzymes_before,
+            ),
+            dtype=np.float64,
+        ),
+        "RNAs": np.asarray(
+            np.concatenate([free_after, aminoacylated_after]),
             dtype=np.float64,
         ),
         "sample_seed": _sample_seed(seed, tick),

@@ -145,6 +145,9 @@ def test_catalog_backed_process_tables_match_real_catalog() -> None:
         "Translation",
         "Transcription",
         "RNADecay",
+        "RNAProcessing",
+        "RNAModification",
+        "tRNAAminoacylation",
         "ProteinDecay",
         "MacromolecularComplexation",
     }.issubset(runner.SUPPORTED_PROCESSES)
@@ -158,6 +161,21 @@ def test_macromol_sample_process_and_observable_wids_are_wired() -> None:
     assert len(wids["substrates"]) == 210
     assert len(wids["monomers"]) == 208
     assert len(wids["complexs"]) == 147
+
+
+def test_rna_primary_sample_processes_expose_combined_rna_wids() -> None:
+    expected_lengths = {
+        "RNAProcessing": 693,
+        "RNAModification": 694,
+        "tRNAAminoacylation": 74,
+    }
+
+    for process_name, expected_len in expected_lengths.items():
+        process = runner._process_sample_process(process_name)
+        wids = runner._observable_wids(process_name, process)
+
+        assert "RNAs" in wids
+        assert len(wids["RNAs"]) == expected_len
 
 
 def test_run_design_a_rejects_out_of_scope_process_with_bucket_rationale(tmp_path: Path) -> None:

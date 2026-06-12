@@ -152,6 +152,13 @@ def load_fixture_channel_wids(process_name: str, channel: str) -> tuple[str, ...
         "substrates": "substrateWholeCellModelIDs",
         "enzymes": "enzymeWholeCellModelIDs",
         "boundEnzymes": "enzymeWholeCellModelIDs",
+        "intergenicRNAs": "intergenicRNAWholeCellModelIDs",
+        "processedRNAs": "processedRNAWholeCellModelIDs",
+        "unprocessedRNAs": "unprocessedRNAWholeCellModelIDs",
+        "modifiedRNAs": "modifiedRNAWholeCellModelIDs",
+        "unmodifiedRNAs": "unmodifiedRNAWholeCellModelIDs",
+        "freeRNAs": "freeRNAWholeCellModelIDs",
+        "aminoacylatedRNAs": "aminoacylatedRNAWholeCellModelIDs",
     }
     field_name = field_by_channel.get(channel)
     if field_name is None:

@@ -158,7 +158,7 @@ def _load_catalog_all(path: Path | None = None) -> dict[str, dict[str, Any]]:
 
 
 def _implemented_processes() -> frozenset[str]:
-    return frozenset(str(name) for name in runner_helpers._oracle_dispatch())
+    return frozenset(str(name) for name in runner_helpers._tick_dispatch())
 
 
 _CATALOG_IN_SCOPE = _load_catalog()
@@ -395,10 +395,16 @@ def _primary_channel_oracle_laundering_warning(
     oc_vectors: np.ndarray,
     karr_vectors: np.ndarray,
 ) -> str | None:
-    if primary_channel != "RNAs":
-        return None
-    if process not in {"RNADecay", "Transcription"}:
-        return None
+    """Detect oracle laundering on the primary channel for any in-scope process.
+
+    Generalized 2026-06-12: previously scoped to RNAs primary on 5 RNA processes.
+    Empirical anchor: PPI/PPII (monomers primary) and MacromolecularComplexation
+    (complexs primary) all shipped W1=0.0 vs Karr where the Karr-vs-Karr null
+    bootstrap shows q95~=0.001, proving OC could not honestly match without
+    reading from the same source. The sibling
+    `_primary_channel_oracle_determinism_legitimate_warning` continues to
+    suppress this when before==after (genuinely deterministic biology).
+    """
     if not np.array_equal(oc_vectors, karr_vectors):
         return None
     return (
@@ -644,6 +650,12 @@ def _process_sample_process(process: str) -> Any:
         return runner_helpers._transcription_process(0)
     if process == "RNADecay":
         return runner_helpers._rna_decay_process(0)
+    if process == "RNAProcessing":
+        return runner_helpers._rna_processing_process(0)
+    if process == "RNAModification":
+        return runner_helpers._rna_modification_process(0)
+    if process == "tRNAAminoacylation":
+        return runner_helpers._trna_aminoacylation_process(0)
     if process == "ProteinDecay":
         return runner_helpers._protein_decay_process(0)
     if process == "MacromolecularComplexation":
@@ -666,8 +678,18 @@ def _observable_wids(process: str, sample_process: Any) -> dict[str, list[str]]:
         protein_ids = [str(x) for x in getattr(sample_process, "protein_ids", ())]
         mapping["monomers"] = protein_ids
         mapping["mRNAs"] = protein_ids
-    if process in {"RNADecay", "Transcription"}:
-        rna_ids = getattr(sample_process, "gene_ids", getattr(sample_process, "rna_wids", ()))
+    if process in {
+        "RNADecay",
+        "Transcription",
+        "RNAProcessing",
+        "RNAModification",
+        "tRNAAminoacylation",
+    }:
+        rna_ids = getattr(
+            sample_process,
+            "rna_primary_wids",
+            getattr(sample_process, "gene_ids", getattr(sample_process, "rna_wids", ())),
+        )
         mapping["RNAs"] = [str(x) for x in rna_ids]
     if process in {"ProteinDecay", "MacromolecularComplexation"}:
         monomer_ids = getattr(sample_process, "protein_wids", getattr(sample_process, "monomer_wids", ()))
@@ -782,7 +804,12 @@ def run_design_a(
                         "oracle_after_bound_enzymes": after_vectors["boundEnzymes"][seed_index, tick],
                     }
                 )
-            if process == "RNADecay":
+            if process in {
+                "RNADecay",
+                "RNAProcessing",
+                "RNAModification",
+                "tRNAAminoacylation",
+            }:
                 sample_state.update(
                     {
                         "rna_wids": wids_by_channel["RNAs"],
@@ -974,15 +1001,6 @@ def run_design_a(
         requested_seed_count=len(seeds),
         )
     )
-    primary_oracle_laundering_warning = _primary_channel_oracle_laundering_warning(
-        process=process,
-        primary_channel=primary_channel,
-        oc_vectors=oc_vectors[primary_channel],
-        karr_vectors=after_vectors[primary_channel],
-    )
-    if primary_oracle_laundering_warning is not None:
-        warnings.append(primary_oracle_laundering_warning)
-        channel_payloads[primary_channel]["verdict"] = "FAIL"
     primary_legitimate_determinism_warning = _primary_channel_oracle_determinism_legitimate_warning(
         process=process,
         primary_channel=primary_channel,
@@ -992,6 +1010,17 @@ def run_design_a(
     )
     if primary_legitimate_determinism_warning is not None:
         warnings.append(primary_legitimate_determinism_warning)
+    else:
+        primary_oracle_laundering_warning = _primary_channel_oracle_laundering_warning(
+            process=process,
+            primary_channel=primary_channel,
+            oc_vectors=oc_vectors[primary_channel],
+            karr_vectors=after_vectors[primary_channel],
+        )
+        if primary_oracle_laundering_warning is not None:
+            warnings.append(primary_oracle_laundering_warning)
+            if not channel_payloads[primary_channel].get("is_event_channel", False):
+                channel_payloads[primary_channel]["verdict"] = "FAIL"
     seed_alignment_warning = _seed_alignment_warning(
         channel_name=primary_channel,
         oc_vectors=oc_vectors[primary_channel],
