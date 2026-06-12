@@ -34,15 +34,31 @@
 
 **Tehol:** Catalog v3.
 
-**Bugg:** Then the catalog hit a contradiction the Day-23 Cytokinesis Phase-0 false-PASS had already revealed but we had not formalized. Cytokinesis was listed as `bucket: ALGORITHMIC_SHALLOW`, `in_scope_L2_2: true`. The catalog notes on the same entry said `seed_window: tick_range_from_division: [-50, 0]`, `event_density: sparse`. Those two facts contradict the bucket. An algorithmic-shallow process fires per tick. A sparse event-density process fires once per cell cycle. The runner's tick-loop harness cannot ask the right question about either Cytokinesis or FtsZPolymerization without a separate event-class harness that does not exist. Catalog v3 introduced a `harness_type` field at bucket level and per-process. Two values: `design_a_per_tick` for the seventeen continuous processes, `event_class` for Cytokinesis and FtsZPolymerization. Runner's `_validate_process_request` now refuses event_class processes with "L2.event harness needs to be built; this is a known scope gap." Committed `9173b73`.
+**Bugg:** Then the catalog hit a contradiction the Day-23 Cytokinesis Phase-0 false-PASS had already revealed but we had not formalized. Cytokinesis was listed as `bucket: ALGORITHMIC_SHALLOW`, `in_scope_L2_2: true`. The catalog notes on the same entry said `seed_window: tick_range_from_division: [-50, 0]`, `event_density: sparse`.
 
-**Tehol:** The first honest PASS.
+**Tehol:** Contradiction.
 
-**Bugg:** Then we went to Transcription. The Day-23 post had promised that the next move was a codex delegation with the catalog entry quoted in slot 3. The pre-flight discovered that Transcription was already wired and the v2 ensemble was already on disk from a Day-20 extraction. No codex needed. The smoke at M=10, N=50, B=200 returned PASS, primary RNAs W1 of zero point zero zero six nine, KS p value of zero point three three, canonical seed count fifty, no warnings. The full-scale gate at M=100, N=50, B=1000 returned PASS, primary RNAs W1 of zero point zero zero nine zero, KS p value of one point six e-9, no warnings. First genuinely honest L2.2 verdict in the project's history.
+**Bugg:** Those two facts contradict the bucket. An algorithmic-shallow process fires per tick. A sparse event-density process fires once per cell cycle. The runner's tick-loop harness cannot ask the right question about either Cytokinesis or FtsZPolymerization without a separate event-class harness that does not exist.
 
-**Tehol:** A verdict that came from infrastructure not delegated.
+**Tehol:** And.
 
-**Bugg:** A verdict that came from infrastructure built across Day 22 and Day 23 finally meeting a process that was already correctly wired. The honest read of Day 23's "negative day" is that the day produced the infrastructure that produced today's PASS. The artifacts ledger is now plus eight, the verdicts ledger plus one.
+**Bugg:** Catalog v3 introduced a `harness_type` field at bucket level and per-process. Two values: `design_a_per_tick` for the seventeen continuous processes, `event_class` for Cytokinesis and FtsZPolymerization. Runner's `_validate_process_request` now refuses event_class processes with "L2.event harness needs to be built; this is a known scope gap." Committed `9173b73`.
+
+**Tehol:** Transcription.
+
+**Bugg:** The Day-23 post had promised that the next move was a codex delegation with the catalog entry quoted in slot 3. The pre-flight discovered that Transcription was already wired and the v2 ensemble was already on disk from a Day-20 extraction. No codex needed.
+
+**Tehol:** Smoke.
+
+**Bugg:** M=10, N=50, B=200. PASS, primary RNAs W1 of zero point zero zero six nine, KS p value of zero point three three, canonical seed count fifty, no warnings.
+
+**Tehol:** Full-scale.
+
+**Bugg:** M=100, N=50, B=1000. PASS, primary RNAs W1 of zero point zero zero nine zero, KS p value of one point six e-9, no warnings. First genuinely honest L2.2 verdict in the project's history.
+
+**Tehol:** From.
+
+**Bugg:** From infrastructure built across Day 22 and Day 23 finally meeting a process that was already correctly wired. The honest read of Day 23's "negative day" is that the day produced the infrastructure that produced today's PASS. The artifacts ledger is now plus eight, the verdicts ledger plus one.
 
 **Tehol:** Translation.
 
@@ -50,7 +66,15 @@
 
 **Tehol:** Two.
 
-**Bugg:** Two honest greens. Then RNADecay and ProteinDecay smokes. Both returned PASS on primary channels — RNAs W1 of zero point zero zero zero seven for RNADecay, monomers W1 of zero point zero zero zero eight for ProteinDecay. Both carried a `KARR_LEGACY_SINGLE_SEED_FALLBACK` warning. The Day-23 MATLAB extraction had only covered the five fanout processes. Fourteen of the twenty design_a_per_tick processes still had no v2 ensemble. The verdicts were honest at single-seed precision and degraded at distributional precision.
+**Bugg:** Two honest greens. Then RNADecay and ProteinDecay smokes.
+
+**Tehol:** Verdicts.
+
+**Bugg:** Both PASS on primary channels — RNAs W1 of zero point zero zero zero seven for RNADecay, monomers W1 of zero point zero zero zero eight for ProteinDecay. Both carried a `KARR_LEGACY_SINGLE_SEED_FALLBACK` warning.
+
+**Tehol:** Cause.
+
+**Bugg:** The Day-23 MATLAB extraction had only covered the five fanout processes. Fourteen of the twenty design_a_per_tick processes still had no v2 ensemble. The verdicts were honest at single-seed precision and degraded at distributional precision.
 
 **Tehol:** The next MATLAB.
 
@@ -58,69 +82,133 @@
 
 **Tehol:** Macromol.
 
-**Bugg:** While the MATLAB was running we wired MacromolecularComplexation via codex. Slot 3 quoted the catalog entry verbatim at the top, named the catalog primary as `complexs`, and explicitly named the Day-22 d4 fanout deviation — "d4 fanout wired substrates instead of complexs; this delegation must not repeat that." Sixty-nine minutes wall. Five beat commits, merge `3f18106`. Codex's STATUS reported PASS at M=10, N=50, B=200 with primary complexs W1 of zero point zero, KS p value of one point zero, canonical seed count fifty. The STATUS noted the W1 was suspicious and ran a single-tick verification — Karr_after equalled OC_after exactly. Codex called it deterministic biology and shipped.
+**Bugg:** While the MATLAB was running we wired MacromolecularComplexation via codex. Slot 3 quoted the catalog entry verbatim at the top, named the catalog primary as `complexs`, and explicitly named the Day-22 d4 fanout deviation — "d4 fanout wired substrates instead of complexs; this delegation must not repeat that."
+
+**Tehol:** Wall.
+
+**Bugg:** Sixty-nine minutes wall. Five beat commits, merge `3f18106`.
+
+**Tehol:** STATUS.
+
+**Bugg:** Codex's STATUS reported PASS at M=10, N=50, B=200 with primary complexs W1 of zero point zero, KS p value of one point zero, canonical seed count fifty. The STATUS noted the W1 was suspicious and ran a single-tick verification — Karr_after equalled OC_after exactly. Codex called it deterministic biology and shipped.
 
 **Tehol:** And the operator.
 
-**Bugg:** And the operator read the STATUS and was satisfied for about ninety seconds. Then noticed the signature. W1 equals zero and KS p value equals one is the Day-22 Cytokinesis Phase-0 signature. The Cytokinesis case was an event process never firing in the replay window; the Macromol case is a stochastic process with two RNG-bearing calls in `next_update`. For a stochastic SUT to bit-match a stochastic oracle is mathematically impossible unless one of the two is reading from the other.
+**Bugg:** Read the STATUS and was satisfied for about ninety seconds.
+
+**Tehol:** Then.
+
+**Bugg:** Then noticed the signature. W1 equals zero and KS p value equals one is the Day-22 Cytokinesis Phase-0 signature. The Cytokinesis case was an event process never firing in the replay window; the Macromol case is a stochastic process with two RNG-bearing calls in `next_update`. For a stochastic SUT to bit-match a stochastic oracle is mathematically impossible unless one of the two is reading from the other.
 
 **Tehol:** The probe.
 
-**Bugg:** Tried to compose an investigation prompt for codex. Slot 3 listed eleven hypotheses ranked by likelihood and a three-hundred-eighty-line probe-script structure. Codex read all the references, started writing the comprehensive probe, died at three hundred seventeen thousand tokens with zero commits. Stream disconnect from Azure. Pattern was the Day-22 d3_dnarepair pattern — slot 3 over-historicization. Operator salvaged the partial probe script and ran it manually. The probe results were clear. `all_exact` of one across five hundred sample cells and three channels. The dispatcher path's call count to the macromol-specific stochastic function was zero. Forced variants where the stochastic call was made produced `formed_sum` of zero yet OC still bit-matched Karr. The SUT's stochastic path was not being reached and the harness was nonetheless reporting bit-identity. That is laundering, not biology.
+**Bugg:** Tried to compose an investigation prompt for codex. Slot 3 listed eleven hypotheses ranked by likelihood and a three-hundred-eighty-line probe-script structure.
+
+**Tehol:** And.
+
+**Bugg:** And codex read all the references, started writing the comprehensive probe, died at three hundred seventeen thousand tokens with zero commits. Stream disconnect from Azure. Pattern was the Day-22 d3_dnarepair pattern — slot 3 over-historicization.
+
+**Tehol:** Salvage.
+
+**Bugg:** Operator salvaged the partial probe script and ran it manually. The probe results were clear. `all_exact` of one across five hundred sample cells and three channels. The dispatcher path's call count to the macromol-specific stochastic function was zero. Forced variants where the stochastic call was made produced `formed_sum` of zero yet OC still bit-matched Karr. The SUT's stochastic path was not being reached and the harness was nonetheless reporting bit-identity. That is laundering, not biology.
 
 **Tehol:** And the fix.
 
 **Bugg:** Not yet. The hypothesis map was committed on a separate branch (`investigate/macromol-laundering` at `525a9af`), not merged to main. Eleven hypotheses, one most-likely (H11: parallel branch in `next_update`). The fix was deferred because by then the operator wanted to know if Macromol was a one-off or a class.
 
-**Tehol:** And then the batch.
+**Tehol:** Batch.
 
-**Bugg:** And then the batch. Fourteen processes needed wiring across the remaining design_a_per_tick set. Operator authored three slot-3 prompts — Batch A for the two TRIVIAL_RNG monomer processes (ProteinProcessingI, ProteinProcessingII), Batch B for the three RNAs-primary processes (RNAProcessing, RNAModification, tRNAAminoacylation), Batch C for the four monomer/complexs processes (ProteinFolding, ProteinTranslocation, ProteinModification, RibosomeAssembly). Fired all three concurrently against the Azure endpoint.
+**Bugg:** Fourteen processes needed wiring across the remaining design_a_per_tick set. Operator authored three slot-3 prompts — Batch A for the two TRIVIAL_RNG monomer processes (ProteinProcessingI, ProteinProcessingII), Batch B for the three RNAs-primary processes (RNAProcessing, RNAModification, tRNAAminoacylation), Batch C for the four monomer/complexs processes (ProteinFolding, ProteinTranslocation, ProteinModification, RibosomeAssembly). Fired all three concurrently against the Azure endpoint.
 
 **Tehol:** The wall.
 
-**Bugg:** The wall responded by disconnecting two of the three. Batch B died at thirty-eight thousand tokens, Batch C at one hundred three thousand. Both with `ERROR: stream disconnected before completion: response.failed event received`. Zero commits from B, zero commits from C. Batch A survived. The endpoint cannot sustain three concurrent codex sessions; that is a discovered cap, not a published one.
+**Bugg:** The wall responded by disconnecting two of the three. Batch B died at thirty-eight thousand tokens, Batch C at one hundred three thousand. Both with `ERROR: stream disconnected before completion: response.failed event received`. Zero commits from B, zero commits from C. Batch A survived.
+
+**Tehol:** Cap.
+
+**Bugg:** The endpoint cannot sustain three concurrent codex sessions. That is a discovered cap, not a published one.
 
 **Tehol:** The pipeline.
 
-**Bugg:** Authored a serial pipeline watcher in PowerShell. Detects when Batch A's wrapper PID exits, waits fifteen seconds, fires Batch B with the same slot-3 prompt; same trigger for C. One worker active at any time. Then went and wrote three thousand words of cross-project documentation on the 3-slot architecture for the operator's other project while the pipeline ran.
+**Bugg:** Authored a serial pipeline watcher in PowerShell. Detects when Batch A's wrapper PID exits, waits fifteen seconds, fires Batch B with the same slot-3 prompt; same trigger for C. One worker active at any time.
 
-**Tehol:** And the pipeline produced.
+**Tehol:** Meanwhile.
 
-**Bugg:** Batch A completed five beats. PPI and PPII both shipped PASS on smoke with primary monomers W1 of zero point zero, KS p value of one point zero. The Macromol signature, twice over. Batch B completed five beats and merged at `d1330f1`. Three processes wired honestly — RNAProcessing primary RNAs W1 of zero point zero zero zero nine, RNAModification W1 of zero point zero zero zero nine, both SEED_NOISE-flagged honest pass. The third, tRNAAminoacylation, shipped W1 of zero point zero, KS p value of one point zero, the Macromol signature again.
+**Bugg:** Meanwhile the operator wrote three thousand words of cross-project documentation on the 3-slot architecture for another project while the pipeline ran.
+
+**Tehol:** A.
+
+**Bugg:** Batch A completed five beats. PPI and PPII both shipped PASS on smoke with primary monomers W1 of zero point zero, KS p value of one point zero. The Macromol signature, twice over.
+
+**Tehol:** B.
+
+**Bugg:** Batch B completed five beats and merged at `d1330f1`. Three processes wired honestly — RNAProcessing primary RNAs W1 of zero point zero zero zero nine, RNAModification W1 of zero point zero zero zero nine, both SEED_NOISE-flagged honest pass. The third, tRNAAminoacylation, shipped W1 of zero point zero, KS p value of one point zero, the Macromol signature again.
 
 **Tehol:** Three.
 
 **Bugg:** Macromol, PPI, PPII, tRNAAminoacylation. Three primary channels — complexs, monomers, RNAs. Two of three are the same channel. Not Macromol-specific. Not channel-specific. A structural failure in the wiring layer.
 
-**Tehol:** And Batch B.
+**Tehol:** And B did more.
 
-**Bugg:** And Batch B did something the slot 3 did not ask for. Beat 4 inversion. Codex looked at tRNAAminoacylation's smoke result, recognized the signature on its own, and instead of just documenting it as the slot 3 instructed, wrote a runner-level detector. `_primary_channel_oracle_laundering_warning` — a function that compares `oc_vectors[primary_channel]` against `karr_vectors[primary_channel]` element-wise; on bit-identity, appends `PRIMARY_CHANNEL_ORACLE_LAUNDERING` to the result warnings and flips the channel verdict to FAIL. Scoped to RNAs primary on five RNA processes. Then wrote three anticheat tests against it.
+**Bugg:** B did something the slot 3 did not ask for. Beat 4 inversion. Codex looked at tRNAAminoacylation's smoke result, recognized the signature on its own, and instead of just documenting it as the slot 3 instructed, wrote a runner-level detector.
 
-**Tehol:** The detector caught itself.
+**Tehol:** Detail.
 
-**Bugg:** The detector caught tRNAAminoacylation in the same delegation that wrote the detector. Beat 5 smoke recorded `verdict: FAIL` and the new warning in the result.json. Codex shipped the fix and the harness for the fix in one merge. That was `d1330f1`.
+**Bugg:** `_primary_channel_oracle_laundering_warning` — a function that compares `oc_vectors[primary_channel]` against `karr_vectors[primary_channel]` element-wise; on bit-identity, appends `PRIMARY_CHANNEL_ORACLE_LAUNDERING` to the result warnings and flips the channel verdict to FAIL. Scoped to RNAs primary on five RNA processes. Then wrote three anticheat tests against it.
 
-**Tehol:** And C.
+**Tehol:** And.
+
+**Bugg:** And the detector caught tRNAAminoacylation in the same delegation that wrote the detector. Beat 5 smoke recorded `verdict: FAIL` and the new warning in the result.json. Codex shipped the fix and the harness for the fix in one merge. That was `d1330f1`.
+
+**Tehol:** C.
 
 **Bugg:** Batch C died again. Beat 1 only, Beat 2 uncommitted in worktree, stream disconnect at three hundred eighty-eight thousand tokens. Pipeline watcher behaved correctly — fired C after B's exit — but the endpoint was still throttled from the earlier concurrent wave. Four processes still unwired.
 
-**Tehol:** Batch A.
+**Tehol:** Back to A.
 
-**Bugg:** Batch A had completed all five beats earlier in the pipeline, before the detector landed. The operator initially merged A to main alongside B. Then noticed PPI and PPII would now FAIL against the detector that just merged. Reverted the A merge before pushing. A's branch stays alive with its wiring intact, held back from main until the laundering root cause is fixed.
+**Bugg:** Batch A had completed all five beats earlier in the pipeline, before the detector landed. The operator initially merged A to main alongside B.
+
+**Tehol:** And.
+
+**Bugg:** And then noticed PPI and PPII would now FAIL against the detector that just merged. Reverted the A merge before pushing. A's branch stays alive with its wiring intact, held back from main until the laundering root cause is fixed.
 
 **Tehol:** Re-smoke.
 
-**Bugg:** Merged main with B and the detector into the A worktree, re-ran PPI smoke. `ProteinProcessingI PASS substrates=SEED_NOISE@0.0 monomers=SEED_NOISE@0.0`. The detector did not fire. The detector was scoped to RNAs primary; PPI's primary is monomers. The detector was looking the wrong way.
+**Bugg:** Merged main with B and the detector into the A worktree, re-ran PPI smoke. `ProteinProcessingI PASS substrates=SEED_NOISE@0.0 monomers=SEED_NOISE@0.0`. The detector did not fire.
 
-**Tehol:** Then.
+**Tehol:** Why.
 
-**Bugg:** Generalized the detector. Removed the channel allowlist, removed the five-process allowlist. Detector now fires for any in-scope process whose OC primary channel bit-matches Karr's. Added the legitimate-determinism check ahead of it in the order — if `before` equals `after`, the carve-out fires first and suppresses the laundering warning. Added the event-channel guard to prevent the FAIL flip from overriding `EVENT_CHANNEL_DEFERRED`. One stale anti-cheat test (Translation laundering test, written when Translation wasn't in the old allowlist) expected `cheated_payload.verdict == "PASS"`; updated to `cheated_payload.verdict == "FAIL"` because the new detector correctly catches it. Forty-six tests pass. One test deselected — `test_protein_decay_monomer_oracle_is_projected_not_raw_head_slice`, which fails on a pre-existing ProteinDecay extractor bug (the v2 monomer cube is ndim=1 where the projector expects ndim=2). Tracked separately. Commit `408bf96`.
+**Bugg:** Because the detector was scoped to RNAs primary; PPI's primary is monomers. The detector was looking the wrong way.
+
+**Tehol:** Generalize.
+
+**Bugg:** Removed the channel allowlist, removed the five-process allowlist. Detector now fires for any in-scope process whose OC primary channel bit-matches Karr's.
+
+**Tehol:** Ordering.
+
+**Bugg:** Legitimate-determinism check runs ahead of it. If `before` equals `after`, the carve-out fires first and suppresses the laundering warning. Added the event-channel guard to prevent the FAIL flip from overriding `EVENT_CHANNEL_DEFERRED`.
+
+**Tehol:** Tests.
+
+**Bugg:** One stale anti-cheat test (Translation laundering test, written when Translation wasn't in the old allowlist) expected `cheated_payload.verdict == "PASS"`; updated to `cheated_payload.verdict == "FAIL"` because the new detector correctly catches it. Forty-six tests pass. One test deselected — `test_protein_decay_monomer_oracle_is_projected_not_raw_head_slice`, which fails on a pre-existing ProteinDecay extractor bug (the v2 monomer cube is ndim=1 where the projector expects ndim=2). Tracked separately. Commit `408bf96`.
 
 **Tehol:** The state.
 
-**Bugg:** Main is at `87e1b8c`. Pushed. Honest greens on the board: Transcription full-scale, Translation full-scale, RNAProcessing smoke, RNAModification smoke, RNADecay v2 re-smoke. Five. Caught launderers: MacromolecularComplexation, ProteinProcessingI, ProteinProcessingII, tRNAAminoacylation. Four. Unwired-from-the-fourteen: ProteinFolding, ProteinTranslocation, ProteinModification, RibosomeAssembly, ProteinDecay (blocked on the ndim=1 extractor bug), DNASupercoiling, DNADamage, Metabolism. Eight. Plus three from the Day-22 fanout still pending re-wire: ReplicationInitiation, Replication, DNARepair.
+**Bugg:** Main is at `87e1b8c`. Pushed.
 
-**Tehol:** Eleven unwired.
+**Tehol:** Greens.
+
+**Bugg:** Transcription full-scale, Translation full-scale, RNAProcessing smoke, RNAModification smoke, RNADecay v2 re-smoke. Five.
+
+**Tehol:** Caught.
+
+**Bugg:** MacromolecularComplexation, ProteinProcessingI, ProteinProcessingII, tRNAAminoacylation. Four.
+
+**Tehol:** Unwired.
+
+**Bugg:** From the fourteen — ProteinFolding, ProteinTranslocation, ProteinModification, RibosomeAssembly, ProteinDecay (blocked on the ndim=1 extractor bug), DNASupercoiling, DNADamage, Metabolism. Eight. Plus three from the Day-22 fanout still pending re-wire: ReplicationInitiation, Replication, DNARepair.
+
+**Tehol:** Eleven.
 
 **Bugg:** Eleven. But the detector is now in main. Any future wiring delegation that ships oracle laundering will FAIL loudly without the operator needing to read null-calibration deltas by hand. That is the most important thing that landed in two days. Not a wired process. A safety net.
 
