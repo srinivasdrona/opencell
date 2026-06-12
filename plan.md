@@ -26,9 +26,14 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-06-12 ~06:18 IST):** All processes have stopped. No live agents. Session paused at clean break.
+**Live processes / agents (2026-06-12 ~13:00 IST):** Batch C re-fire in flight (PID 42316, codex committing as it goes); laundering investigation died and pending re-fire.
 
-**Recent state — Day 25 (2026-06-12, in order):**
+| Tag | Type | PID | Worktree | Log | Status |
+|---|---|---|---|---|---|
+| batch_c_refire | codex | 42316 | `E:\opencell-worktrees\batch-c-monomers` (branch `exec/l22-batch-c-monomers`, rebased onto post-detector main at `c2765fe`) | `.codex_batch_c_refire.log` | ALIVE, Beat 1 committed at `50eeb3f`, currently mid-Beat-2 |
+| laundering_investigation_h11 | codex | 20952 | `E:\opencell-worktrees\investigate-laundering-h11` (branch `investigate/laundering-h11`) | `.codex_investigation.log` | DIED at 91k tokens with Azure stream-disconnect (throttle tail from concurrent firing with Batch C). PROMPT.md authored, worktree ready, re-fire after Batch C exits. |
+
+**Recent state — Day 25 (2026-06-12, in chronological order):**
 
 1. `9173b73` — Catalog v3: harness_type field on bucket + per-process (`design_a_per_tick` vs `event_class`); moved Cytokinesis + FtsZPolymerization to EVENT_CLASS bucket; runner refuses event_class processes with "L2.event harness needs to be built".
 2. Phase 2 Transcription (full-scale PASS, M=100/B=1000, primary RNAs W1=0.0090) + Translation (full-scale PASS, monomers W1=0.0067) — first genuinely honest L2.2 verdicts on real v2 ensembles.
@@ -41,36 +46,55 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 9. 3 parallel codex batches fired (A=PPI/PPII, B=RNAProcessing/RNAModification/tRNAAminoacylation, C=PFolding/PTransloc/PModification/RibosomeAssembly). Azure endpoint rate-limited 3 concurrent; B and C died with stream-disconnect at 38k/103k tokens / 0 commits. **Trap added:** never fire >2 concurrent codex against this endpoint; use serial pipeline with watcher.
 10. Pipeline watcher refired B (5/5 beats, MERGED `d1330f1`) — wired 3 RNA processes + **invented a PRIMARY_CHANNEL_ORACLE_LAUNDERING runner-level detector** during Beat 4 inversion. Detector auto-caught tRNAAminoacylation laundering. Batch A also completed (5/5 beats, NOT merged) — both PPI and PPII show same laundering signature. Pipeline watcher also fired C re-run, which died again at 388k tokens (stream disconnect after Beat 1 only).
 11. `408bf96` — Detector generalization: removed RNAs/5-process allowlist, fires for all in-scope processes. Empirical anchor: 4 processes (Macromol/PPI/PPII/tRNAAminoacylation) all showing identical signature. Ordering fix: legitimate-determinism check runs first; event-channel guard prevents FAIL flip from overriding EVENT_CHANNEL_DEFERRED. 1 stale anti-cheat test updated to expect new behavior. **46/47 L2.2 tests pass** (1 deselected = pre-existing ProteinDecay ndim=1 extractor bug, tracked separately).
+12. `56238b0` — Plan refresh (this block's predecessor).
+13. `aa5bf5f`, `87e1b8c` — Misplaced external essay committed to `docs/blog/` then reverted (curiosity-is-all-you-need belongs in personal essays folder, not the dev-log series).
+14. `d47b433`, `daf829b` — Internal dev-log post for Days 24-25 in Tehol/Bugg debrief format at `docs/blog/2026-06-12-a-fix-in-six-minutes-a-wiring-that-was-a-lie-and-the-detector-that-wrote-itself.md`. Initial post + Tehol-tightening revision. Pushed to origin.
+15. `delegate-to-codex` skill updated (`~/.copilot/skills/delegate-to-codex/SKILL.md` + `GOTCHAS.md`) — version bumped 0.133.0 → 0.137.0; 4 new lessons: Azure 2-concurrent cap, serial pipeline watcher, investigation slot 3 ceiling, sub-agent harness invention. Decomposition table now distinguishes ≤2 concurrent from ≥3 and adds investigation as a work-class row.
+16. `D:\OneDrive - Microsoft\.pm-os\DECISIONS.md` — 4 fresh decisions logged: `runner-level-laundering-detector-as-safety-net` (opencell), `slot-2-work-class-fit-rule` (cross-cutting), `azure-codex-2-concurrent-cap` (cross-cutting), `investigation-slot3-ceiling` (cross-cutting).
+17. Batch C re-fired serially after rebase onto main (with detector) — currently mid-flight at PID 42316.
+18. Laundering investigation fired against worktree `investigate-laundering-h11` with a focused slot-3 prompt (1 hypothesis = H11, 3 read-set files, write probe.py as artifact, 30k/60k budget). Died at 91k tokens with Azure throttle-tail from concurrent firing with Batch C. Re-fire pending Batch C exit.
+19. Session todo DB synced to canonical repo DB via `scripts/_sync_session_to_repo.py` → `scripts/sync_tasks_db.py` → `opencell_tasks.db`. 383 todos (273 done, 37 pending, 1 in_progress, 72 blocked), 203 deps. Backup at `opencell_tasks.db.bak.20260612-125844`.
 
 **Branch tips:**
-- `main` @ `408bf96` (`l2.2(detector): generalize PRIMARY_CHANNEL_ORACLE_LAUNDERING to all in-scope processes`) — **NOT yet pushed**.
-- `exec/l22-batch-a-deep` — PPI + PPII wired, 5 beats green, but **will FAIL detector** (confirmed laundering on smoke). Do NOT merge until laundering root cause is fixed.
-- `exec/l22-batch-c-monomers` — Beat 1 only committed; Beat 2 uncommitted in worktree; needs full re-fire.
-- Macromol investigation branch (`investigate/macromol-laundering` @ `525a9af`) — hypothesis map saved, NOT merged.
+- `main` @ `daf829b` (`blog(days 24-25): tighten Tehol's lines to single words, add interjections to break Bugg paragraphs`) — **PUSHED to origin** as of ~11:35 IST.
+- `exec/l22-batch-c-monomers` @ `50eeb3f` (Beat 1 committed; rebased onto post-detector main at `c2765fe`); codex actively writing Beat 2.
+- `investigate/laundering-h11` — worktree exists, PROMPT.md authored, branch created at main HEAD but zero commits (first fire died at 91k tokens without committing).
+- `exec/l22-batch-a-deep` @ 5 beats committed, NOT merged. Confirmed launderer per detector; held back until laundering root cause is fixed.
+- `investigate/macromol-laundering` @ `525a9af` — hypothesis map, NOT merged.
 
-**Open systemic issue: oracle laundering on monomers/complexs primary channels.**
-- 4 confirmed cases: MacromolecularComplexation (complexs), ProteinProcessingI (monomers), ProteinProcessingII (monomers), tRNAAminoacylation (RNAs — caught by detector at Batch B time).
-- Hypothesis map at `investigate/macromol-laundering:525a9af` identifies H11 (parallel branch in next_update) as most likely.
-- Detector now in main → any future wiring delegation will get loud FAIL signal if it ships laundering. Safety net is up.
+**Honest scoreboard:**
+- **5 honest greens:** Transcription full-scale, Translation full-scale, RNAProcessing smoke, RNAModification smoke, RNADecay v2 re-smoke.
+- **4 caught launderers:** MacromolecularComplexation, ProteinProcessingI, ProteinProcessingII, tRNAAminoacylation.
+- **11 still unwired:** ProteinFolding, ProteinTranslocation, ProteinModification, RibosomeAssembly (4 in flight via Batch C), ProteinDecay (blocked on ndim=1 extractor bug), DNASupercoiling, DNADamage, Metabolism (3 not yet started), ReplicationInitiation, Replication, DNARepair (3 from Day-22 fanout, pending re-wire).
+- **Safety net:** runtime-level PRIMARY_CHANNEL_ORACLE_LAUNDERING detector in main since `408bf96`. Any future wiring delegation that ships oracle laundering will FAIL loudly without operator inspection.
 
 **Next session — recommended sequence:**
-1. **Push main** (`git push origin main`). Currently 7+ commits ahead unpushed.
-2. **Fire C re-run** — use serial pipeline (don't fire while other codex is active). Wires 4 monomer/complex processes (PFolding, PTransloc, PModification, RibosomeAssembly). Expect detector to flag at least 2-3 as launderers — that's the right behavior, not a wiring bug. Worktree at `E:\opencell-worktrees\batch-c-monomers` still has Beat 1 committed; either rebase onto main or start fresh.
-3. **Author one-hypothesis investigation prompt** for the systemic laundering issue. Read the Macromol investigation FAILED prompt (`example-slot3-FAILED-investigation.md` in `~/.copilot/.../files/` and in `D:\OneDrive - Microsoft\.pm-os\templates\`) before writing — it's the cautionary example. Bound to: ONE hypothesis (start with H11), 2-3 read files (SUT + tick dispatcher + runner), "write probe.py that asserts X" as the artifact.
-4. **Decide on Batch A merge** based on investigation outcome. If laundering root cause is fixable in dispatcher code, A's wiring may pass without re-write. If it's deeper, A stays unmerged until then.
-5. **Pre-existing ProteinDecay ndim=1 extractor bug** can be fixed independently; small scope.
+1. **Check Batch C exit status** — read STATUS from `E:\opencell-worktrees\batch-c-monomers\`. If 5 beats green, merge to main + push.
+2. **Re-fire laundering investigation** — Batch C exit clears the Azure throttle. Worktree + PROMPT.md ready at `E:\opencell-worktrees\investigate-laundering-h11`. Existing tag `day26-laundering-investigation` in todo DB.
+3. **Fix ProteinDecay ndim=1 extractor bug** — small, single-file fix at `tests/vivarium/_l2_2_design_a_runner_helpers.py:2066`. Existing todo `day26-protein-decay-extractor-fix`.
+4. **Decide on Batch A merge** based on investigation outcome. Existing todo `day26-batch-a-decision` (depends on investigation).
+5. **Re-wire 3 Day-22 fanout processes** — ReplicationInitiation, Replication, DNARepair. Use spec-quoted slot-3 prompts. Existing todo `day26-day22-fanout-rewire` (depends on Batch C).
+6. **Cleanup candidates** (low priority): retire `opencell_tasks.db.bak.*` backups; either wire `cost_tracker.py` or delete it (currently dead infrastructure, 0 rows in `opencell_costs.db`).
 
-**Operational traps added today:**
-- **Azure endpoint cannot sustain 3+ concurrent codex sessions.** Stream disconnects after 30-100k tokens, zero commits. Use serial pipeline (watcher fires next on previous's exit) for batches >1. Documented in `~/.copilot/.../files/batch_pipeline.ps1` as a reference watcher script.
-- **Slot-3 "over-historicization" anti-pattern for investigations:** listing N hypotheses + N reference files in slot 3 guarantees the sub-agent will burn the budget on Beat 1 exploration alone. One hypothesis per delegation, 2-3 files max, "write probe.py that asserts X" as the artifact. Empirical anchor: Macromol investigation died at 317k tokens / 0 commits; operator-rewritten 6-min version shipped.
-- **Detector-warning ordering matters.** Legitimate-determinism carve-out must run BEFORE laundering check, else the carve-out is unreachable when before==after produces an exact match. Event-channel guard must prevent the FAIL flip from overriding EVENT_CHANNEL_DEFERRED.
-- **"W1 = 0.0 + KS p = 1.0 from a stochastic SUT" is a falsification signature, not a success signature.** Karr-vs-Karr null bootstrap shows q95~=0.001 for these channels; exact match is mathematically impossible without oracle laundering. Beat-4 pre-mortem must always name this when wiring stochastic processes.
-- **3-slot architecture work-class fit:** gate-structured slot-2 (FIX_TEMPLATE shape) does not transfer to critique/judgment work. Empirical anchor (other project, 2026-06-12): 5-gate critique template at best 11/19 vs free-form prose at 13/19; no gate variant beat prose. Use prose-structured slot-2 with sectioned `<thinking>` block for critique. Added to `~/.pm-os/templates/domain-template-authoring.md`.
+**Operational traps added today (codified in skill files):**
+- **Azure endpoint cannot sustain 3+ concurrent codex sessions.** Stream disconnects after 30-100k tokens, zero commits. Use serial pipeline watcher for batches >2. Documented in `~/.copilot/skills/delegate-to-codex/GOTCHAS.md`. Pipeline watcher reference at `~/.copilot/.../files/batch_pipeline.ps1`.
+- **Slot-3 over-historicization anti-pattern for investigations** — listing N hypotheses + N reference files in slot 3 guarantees burn-out on Beat 1 exploration. ONE hypothesis per delegation, ≤3 files, "write probe.py that asserts X" as the artifact. Empirical anchor: Macromol investigation 317k tokens / 0 commits → operator salvage 6 min / 4 commits.
+- **W1 = 0.0 + KS p = 1.0 from a stochastic SUT is a falsification signature, not a success signature.** Karr-vs-Karr null bootstrap shows q95~=0.001 for these channels; exact match is mathematically impossible without oracle laundering. Beat-4 pre-mortem must always name this when wiring stochastic processes. Now enforced at runtime by the detector.
+- **Sub-agent inventing harness during Beat 4 is GOOD** — don't over-constrain Beat 4 to "name modes, do not act." Beat B's codex wrote the laundering detector during Beat 4 even though slot 3 said "document, do not fix"; that single artifact was the most useful thing in two days. Allowed wording: "if a failure mode suggests a runner-level harness that catches the class, and the harness fits within the named write surface, you may author it."
+- **3-slot architecture work-class fit:** gate-structured slot-2 (FIX_TEMPLATE shape) does NOT transfer to critique/judgment work. Empirical anchor (other project, 2026-06-12): 5-gate critique template at best 11/19 vs free-form prose at 13/19; no gate variant beat prose. Use prose-structured slot-2 with sectioned `<thinking>` block for critique. Added to `~/.pm-os/templates/domain-template-authoring.md`.
 
-**Cross-project artifacts produced today:**
+**Cross-project artifacts saved today:**
 - `D:\OneDrive - Microsoft\.pm-os\templates\` — full 3-slot architecture kit: `3-slot-architecture.md`, `slot3-authoring.md`, `domain-template-authoring.md` (with work-class fit rule), `slot-delivery-without-file-access.md`, `example-DELIBERATE_ACTION_PREFIX_v2.md`, `example-DESIGN_TEMPLATE.md`, `example-FIX_TEMPLATE_L2_REPLAY.md`, 4 slot-3 examples (3 positive + 1 FAILED-investigation cautionary).
 
 **Activation env, MATLAB, WSL venv:** unchanged from prior handoff (see below).
+
+**Sync discipline:** repo files are canonical. After meaningful session work, run `bin\oc-py.cmd scripts\_sync_session_to_repo.py` to push session todos → `opencell_tasks.db`. Plan.md is edited directly in repo (no session-state sync). Skill files live machine-local at `~/.copilot/skills/` (not git-tracked anywhere); cross-project templates live in `D:\OneDrive - Microsoft\.pm-os\templates\` (OneDrive-synced).
+
+---
+
+### Prior handoff (2026-06-12 ~06:18 IST) — superseded by block above on 2026-06-12 ~13:00 IST
+
+This block was current at end of the L2.2 detector work earlier today. Operator returned to resume; the live state is in the block above. Content of the prior handoff is preserved by reference in the `Recent state — Day 25` enumeration above (items 1-11 are the prior handoff's "what landed"; items 12-19 are what landed between the two refreshes).
 
 ---
 
