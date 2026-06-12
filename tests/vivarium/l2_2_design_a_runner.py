@@ -395,16 +395,16 @@ def _primary_channel_oracle_laundering_warning(
     oc_vectors: np.ndarray,
     karr_vectors: np.ndarray,
 ) -> str | None:
-    if primary_channel != "RNAs":
-        return None
-    if process not in {
-        "RNADecay",
-        "Transcription",
-        "RNAProcessing",
-        "RNAModification",
-        "tRNAAminoacylation",
-    }:
-        return None
+    """Detect oracle laundering on the primary channel for any in-scope process.
+
+    Generalized 2026-06-12: previously scoped to RNAs primary on 5 RNA processes.
+    Empirical anchor: PPI/PPII (monomers primary) and MacromolecularComplexation
+    (complexs primary) all shipped W1=0.0 vs Karr where the Karr-vs-Karr null
+    bootstrap shows q95~=0.001, proving OC could not honestly match without
+    reading from the same source. The sibling
+    `_primary_channel_oracle_determinism_legitimate_warning` continues to
+    suppress this when before==after (genuinely deterministic biology).
+    """
     if not np.array_equal(oc_vectors, karr_vectors):
         return None
     return (
@@ -1001,15 +1001,6 @@ def run_design_a(
         requested_seed_count=len(seeds),
         )
     )
-    primary_oracle_laundering_warning = _primary_channel_oracle_laundering_warning(
-        process=process,
-        primary_channel=primary_channel,
-        oc_vectors=oc_vectors[primary_channel],
-        karr_vectors=after_vectors[primary_channel],
-    )
-    if primary_oracle_laundering_warning is not None:
-        warnings.append(primary_oracle_laundering_warning)
-        channel_payloads[primary_channel]["verdict"] = "FAIL"
     primary_legitimate_determinism_warning = _primary_channel_oracle_determinism_legitimate_warning(
         process=process,
         primary_channel=primary_channel,
@@ -1019,6 +1010,17 @@ def run_design_a(
     )
     if primary_legitimate_determinism_warning is not None:
         warnings.append(primary_legitimate_determinism_warning)
+    else:
+        primary_oracle_laundering_warning = _primary_channel_oracle_laundering_warning(
+            process=process,
+            primary_channel=primary_channel,
+            oc_vectors=oc_vectors[primary_channel],
+            karr_vectors=after_vectors[primary_channel],
+        )
+        if primary_oracle_laundering_warning is not None:
+            warnings.append(primary_oracle_laundering_warning)
+            if not channel_payloads[primary_channel].get("is_event_channel", False):
+                channel_payloads[primary_channel]["verdict"] = "FAIL"
     seed_alignment_warning = _seed_alignment_warning(
         channel_name=primary_channel,
         oc_vectors=oc_vectors[primary_channel],

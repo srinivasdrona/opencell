@@ -344,10 +344,11 @@ def test_translation_oracle_laundering_flips_primary_channel(monkeypatch, tmp_pa
 
     assert honest_payload["result"]["verdict"] == "FAIL"
     assert honest_payload["result"]["channels"]["monomers"]["verdict"] == "FAIL"
-    assert cheated_payload["result"]["verdict"] == "PASS"
-    assert cheated_payload["result"]["channels"]["monomers"]["verdict"] in {"SEED_NOISE", "PASS"}
+    assert cheated_payload["result"]["verdict"] == "FAIL"
+    assert cheated_payload["result"]["channels"]["monomers"]["verdict"] == "FAIL"
     assert any(
-        "KARR_SINGLE_SEED_REUSED" in warning for warning in cheated_payload["result"]["warnings"]
+        "PRIMARY_CHANNEL_ORACLE_LAUNDERING" in warning
+        for warning in cheated_payload["result"]["warnings"]
     )
 
 
