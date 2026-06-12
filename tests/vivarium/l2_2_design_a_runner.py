@@ -1018,9 +1018,33 @@ def run_design_a(
             karr_vectors=after_vectors[primary_channel],
         )
         if primary_oracle_laundering_warning is not None:
-            warnings.append(primary_oracle_laundering_warning)
-            if not channel_payloads[primary_channel].get("is_event_channel", False):
-                channel_payloads[primary_channel]["verdict"] = "FAIL"
+            # Consult catalog: closed_form_dominant=confirmed means the SUT's
+            # deterministic closed-form path converges to Karr's stochastic output
+            # by biology, not by oracle leakage. Demote FAIL → informational.
+            # See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor).
+            closed_form_state = str(
+                _process_catalog_entry(process).get("closed_form_dominant", "false")
+            )
+            if closed_form_state == "confirmed":
+                warnings.append(
+                    "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr "
+                    f"oracle exactly on primary channel={primary_channel}; per catalog "
+                    "this process has a closed_form_dominant=confirmed path that "
+                    "converges to Karr's stochastic output. See "
+                    "docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
+                )
+                # Do NOT flip the verdict to FAIL.
+            else:
+                warnings.append(primary_oracle_laundering_warning)
+                if closed_form_state == "candidate":
+                    warnings.append(
+                        "LIKELY_CONVERGENCE: process is flagged closed_form_dominant: "
+                        "candidate in catalog but has not been H12-probed. Run a "
+                        "convergence probe before interpreting the laundering FAIL "
+                        "as a real wiring issue."
+                    )
+                if not channel_payloads[primary_channel].get("is_event_channel", False):
+                    channel_payloads[primary_channel]["verdict"] = "FAIL"
     seed_alignment_warning = _seed_alignment_warning(
         channel_name=primary_channel,
         oc_vectors=oc_vectors[primary_channel],
