@@ -149,6 +149,8 @@ def test_catalog_backed_process_tables_match_real_catalog() -> None:
         "RNAModification",
         "tRNAAminoacylation",
         "ProteinDecay",
+        "ProteinProcessingI",
+        "ProteinProcessingII",
         "MacromolecularComplexation",
     }.issubset(runner.SUPPORTED_PROCESSES)
 

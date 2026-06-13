@@ -1,0 +1,4 @@
+{
+  "applicable": false,
+  "reason": "ProteinProcessingI has no closed-form per-tick check"
+}

@@ -1,0 +1,32 @@
+{
+  "generated_at": "2026-06-11T21:30:48.279865+00:00",
+  "process": "ProteinProcessingII",
+  "bucket": "TRIVIAL_RNG",
+  "channels": {
+    "substrates": {
+      "bootstrap_B": 200,
+      "n_karr_seeds": 50,
+      "n_ticks": 10,
+      "q95_null": 209.26483999999994,
+      "bootstrap_values_summary": {
+        "mean": 118.24268599999996,
+        "stddev": 53.39036650643824,
+        "min": 8.776799999999998,
+        "max": 320.7915999999999
+      }
+    },
+    "monomers": {
+      "bootstrap_B": 200,
+      "n_karr_seeds": 50,
+      "n_ticks": 10,
+      "q95_null": 0.00012863070539419043,
+      "bootstrap_values_summary": {
+        "mean": 0.00010446058091286268,
+        "stddev": 1.4171430594167637e-05,
+        "min": 4.979253112033177e-05,
+        "max": 0.00014107883817427336
+      }
+    }
+  },
+  "warnings": []
+}
