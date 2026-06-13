@@ -489,6 +489,98 @@ def _format_ensemble_oracle(
             "ensemble_missing_after_channels": tuple(missing_after),
         }
 
+    if process_name == "ProteinModification":
+        return {
+            "process": process_name,
+            "oracle_path": oracle_path,
+            "canonical_seed_count": canonical_seed_count,
+            "n_ticks_available": n_ticks_available,
+            "before_substrates": before_channel("substrates", "before_substrates"),
+            "before_enzymes": before_channel("enzymes", "before_enzymes"),
+            "before_bound_enzymes": before_channel("boundEnzymes", "before_bound_enzymes"),
+            "before_monomers": _concatenate_channel_cubes(
+                before_channel("unmodifiedMonomers", "before_monomers"),
+                before_channel("modifiedMonomers", "before_monomers"),
+            ),
+            "after_substrates": after_channel("substrates", "after_substrates"),
+            "after_monomers": _concatenate_channel_cubes(
+                after_channel("unmodifiedMonomers", "after_monomers"),
+                after_channel("modifiedMonomers", "after_monomers"),
+            ),
+            "ensemble_missing_before_channels": tuple(missing_before),
+            "ensemble_missing_after_channels": tuple(missing_after),
+        }
+
+    if process_name == "ProteinFolding":
+        return {
+            "process": process_name,
+            "oracle_path": oracle_path,
+            "canonical_seed_count": canonical_seed_count,
+            "n_ticks_available": n_ticks_available,
+            "before_substrates": before_channel("substrates", "before_substrates"),
+            "before_enzymes": before_channel("enzymes", "before_enzymes"),
+            "before_bound_enzymes": before_channel("boundEnzymes", "before_bound_enzymes"),
+            "before_monomers": _concatenate_channel_cubes(
+                before_channel("unfoldedMonomers", "before_monomers"),
+                before_channel("foldedMonomers", "before_monomers"),
+            ),
+            "after_substrates": after_channel("substrates", "after_substrates"),
+            "after_monomers": _concatenate_channel_cubes(
+                after_channel("unfoldedMonomers", "after_monomers"),
+                after_channel("foldedMonomers", "after_monomers"),
+            ),
+            "ensemble_missing_before_channels": tuple(missing_before),
+            "ensemble_missing_after_channels": tuple(missing_after),
+        }
+
+    if process_name == "ProteinTranslocation":
+        before_monomers_raw = before_channel("monomers", "before_monomers")
+        after_monomers_raw = after_channel("monomers", "after_monomers")
+        return {
+            "process": process_name,
+            "oracle_path": oracle_path,
+            "canonical_seed_count": canonical_seed_count,
+            "n_ticks_available": n_ticks_available,
+            "before_substrates": before_channel("substrates", "before_substrates"),
+            "before_enzymes": before_channel("enzymes", "before_enzymes"),
+            "before_bound_enzymes": before_channel("boundEnzymes", "before_bound_enzymes"),
+            "before_monomers": np.asarray(
+                [
+                    _project_protein_translocation_monomer_cube(seed_matrix)
+                    for seed_matrix in before_monomers_raw
+                ],
+                dtype=np.float64,
+            ),
+            "after_substrates": after_channel("substrates", "after_substrates"),
+            "after_monomers": np.asarray(
+                [
+                    _project_protein_translocation_monomer_cube(seed_matrix)
+                    for seed_matrix in after_monomers_raw
+                ],
+                dtype=np.float64,
+            ),
+            "ensemble_missing_before_channels": tuple(missing_before),
+            "ensemble_missing_after_channels": tuple(missing_after),
+        }
+
+    if process_name == "RibosomeAssembly":
+        return {
+            "process": process_name,
+            "oracle_path": oracle_path,
+            "canonical_seed_count": canonical_seed_count,
+            "n_ticks_available": n_ticks_available,
+            "before_substrates": before_channel("substrates", "before_substrates"),
+            "before_enzymes": before_channel("enzymes", "before_enzymes"),
+            "before_bound_enzymes": before_channel("boundEnzymes", "before_bound_enzymes"),
+            "before_monomers": before_channel("monomers", "before_monomers"),
+            "before_complexs": before_channel("complexs", "before_complexs"),
+            "before_rnas": before_channel("RNAs", "before_rnas"),
+            "after_substrates": after_channel("substrates", "after_substrates"),
+            "after_complexs": after_channel("complexs", "after_complexs"),
+            "ensemble_missing_before_channels": tuple(missing_before),
+            "ensemble_missing_after_channels": tuple(missing_after),
+        }
+
     if process_name == "ProteinDecay":
         before_monomers_raw = before_channel("monomers", "before_monomers")
         before_complexs_raw = before_channel("complexs", "before_complexs")
@@ -2312,6 +2404,49 @@ def _project_protein_decay_complex_cube(values: np.ndarray) -> np.ndarray:
     complex_width = int(_protein_decay_projection_inputs()["complex_width"])
     flat = arr.reshape(arr.shape[0], -1)
     return np.asarray(flat[:, :complex_width], dtype=np.float64)
+
+
+@lru_cache(maxsize=1)
+def _protein_translocation_projection_inputs() -> dict[str, Any]:
+    process = _protein_translocation_process(0)
+    return {
+        "cytoplasm_index": 0,
+        "compartment_count": 6,
+        "monomer_width": len(process.monomer_wids),
+    }
+
+
+def _project_protein_translocation_monomer_cube(values: np.ndarray) -> np.ndarray:
+    """Project ProteinTranslocation's raw monomer cube to the cytosolic queue.
+
+    The v2 ensemble loader flattens each per-tick HDF5 dataset to 1-D. For
+    ProteinTranslocation, the raw monomer snapshot is (6 compartments, 482
+    proteins), and the SUT consumes only the cytoplasmic unprocessed queue by
+    base monomer WID.
+    """
+    arr = np.asarray(values, dtype=np.float64)
+    projection = _protein_translocation_projection_inputs()
+    compartment_count = int(projection["compartment_count"])
+    monomer_width = int(projection["monomer_width"])
+    cytoplasm_index = int(projection["cytoplasm_index"])
+    flat_width = compartment_count * monomer_width
+
+    if arr.ndim == 2 and arr.shape[-1] == flat_width:
+        arr = arr.reshape(arr.shape[0], compartment_count, monomer_width)
+    if arr.ndim == 3:
+        expected_shape = (compartment_count, monomer_width)
+        if arr.shape[1:] != expected_shape:
+            raise ValueError(
+                "ProteinTranslocation monomer cube shape drift: "
+                f"expected per-tick {expected_shape}, got {arr.shape[1:]}"
+            )
+        return np.asarray(arr[:, cytoplasm_index, :], dtype=np.float64)
+    if arr.ndim == 2 and arr.shape[-1] == monomer_width:
+        return np.asarray(arr, dtype=np.float64)
+    raise ValueError(
+        "ProteinTranslocation monomer projection expected shape "
+        f"(ticks, {flat_width}) or (ticks, {compartment_count}, {monomer_width}); got {arr.shape}"
+    )
 
 
 def _project_macromol_monomer_cube(values: np.ndarray) -> np.ndarray:
