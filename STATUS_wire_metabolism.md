@@ -26,7 +26,12 @@
 
 ## Beat 3 - wire runner
 
-- Pending.
+- `l2_2_design_a_runner.py` already had the `Metabolism` branch in `_process_sample_process()` and the generic `run_design_a()` sample-state assembly already populated the required `substrate_wids`, `enzyme_wids`, `oracle_before_substrates`, `oracle_before_enzymes`, and `oracle_before_bound_enzymes` fields for this process.
+- `_observable_wids()` did not need a Metabolism-specific special case because the generic mapping already reads `_sub_ids` and `enzyme_wids`, which is the correct surface for `KarrMetabolismProcess`.
+- Added an explicit catalog test to pin the runner wiring:
+  - sample process class resolves to `KarrMetabolismProcess`;
+  - substrate WID count is 585;
+  - enzyme / boundEnzymes WID count is 104.
 
 ## Beat 4 - inversion
 
