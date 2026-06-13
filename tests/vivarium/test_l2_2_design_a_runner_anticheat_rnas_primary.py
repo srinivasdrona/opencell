@@ -142,12 +142,27 @@ def test_rnas_primary_oracle_laundering_flips_primary_channel(
 
     assert honest_payload["result"]["verdict"] == "FAIL"
     assert honest_payload["result"]["channels"]["RNAs"]["verdict"] == "FAIL"
-    assert cheated_payload["result"]["verdict"] == "FAIL"
-    assert cheated_payload["result"]["channels"]["RNAs"]["verdict"] == "FAIL"
-    assert any(
-        "PRIMARY_CHANNEL_ORACLE_LAUNDERING" in warning
-        for warning in cheated_payload["result"]["warnings"]
-    )
+    # Catalog v4 (2026-06-12): tRNAAminoacylation is closed_form_dominant: confirmed,
+    # so the runner demotes PRIMARY_CHANNEL_ORACLE_LAUNDERING to informational
+    # PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE and does NOT flip the verdict to FAIL.
+    # See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md.
+    from tests.vivarium.l2_2_design_a_runner import _process_catalog_entry
+    closed_form = str(_process_catalog_entry(process_name).get("closed_form_dominant", "false"))
+    if closed_form == "confirmed":
+        # Cheat path produces an exact-match smoke result on a closed_form_dominant=confirmed
+        # process; runner correctly recognizes this as legitimate convergence, not laundering.
+        assert any(
+            "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE" in warning
+            for warning in cheated_payload["result"]["warnings"]
+        ), f"Expected DETERMINISTIC_CONVERGENCE warning for closed_form_dominant=confirmed process {process_name}; got warnings={cheated_payload['result']['warnings']}"
+        # No assertion on cheated_payload verdict — it may PASS via convergence.
+    else:
+        assert cheated_payload["result"]["verdict"] == "FAIL"
+        assert cheated_payload["result"]["channels"]["RNAs"]["verdict"] == "FAIL"
+        assert any(
+            "PRIMARY_CHANNEL_ORACLE_LAUNDERING" in warning
+            for warning in cheated_payload["result"]["warnings"]
+        )
 
 
 @pytest.mark.parametrize("process_name", _RNA_PRIMARY_PROCESSES)

@@ -26,52 +26,81 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-06-08 ~13:20 IST):** TWO long-running jobs detached.
+**Live processes / agents (2026-06-12 ~13:00 IST):** Batch C re-fire in flight (PID 42316, codex committing as it goes); laundering investigation died and pending re-fire.
 
-| Tag | Type | PID | PID-file | Log | Expected wall | Status |
-|---|---|---|---|---|---|---|
-| ensemble_loader | codex | 52064 | `~\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\ensemble_loader_pid.txt` | `E:\opencell-worktrees\l22-ensemble-loader\.codex_ensemble_loader.log` | 20-35 min | started ~12:51 IST. Adds catalog-driven N-seed Karr ensemble loader to runner. Wait shell: `wait-ensemble-loader` (PowerShell `Wait-Process`). |
-| matlab_50seed | MATLAB | 92356 (cmd wrapper) / 29112 (MATLAB) | `~\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\matlab_50seed_pid.txt` | `E:\opencell\.matlab_50seed_extract.log` | 2-3 hours | started ~13:06 IST. Runs `extract_per_process_traces_v2` for 5 fanout processes × seeds 0-49 → `data/m1_sources/karr_native/per_process_traces_v2_s{NNN}/{Process}_100ticks.mat`. Wait shell: `wait-matlab-50seed-v2`. |
+| Tag | Type | PID | Worktree | Log | Status |
+|---|---|---|---|---|---|
+| batch_c_refire | codex | 42316 | `E:\opencell-worktrees\batch-c-monomers` (branch `exec/l22-batch-c-monomers`, rebased onto post-detector main at `c2765fe`) | `.codex_batch_c_refire.log` | ALIVE, Beat 1 committed at `50eeb3f`, currently mid-Beat-2 |
+| laundering_investigation_h11 | codex | 20952 | `E:\opencell-worktrees\investigate-laundering-h11` (branch `investigate/laundering-h11`) | `.codex_investigation.log` | DIED at 91k tokens with Azure stream-disconnect (throttle tail from concurrent firing with Batch C). PROMPT.md authored, worktree ready, re-fire after Batch C exits. |
 
-**Day-22 (2026-06-07) state — for context:** L2.2 Design-A fanout shipped 5 merges that all deviated from `PROCESS_CATALOG.yaml` on primary_channel / M_ticks / karr_artifact. All 5 reverted today (2026-06-08 03:40-03:41 IST). See "What landed today" below.
+**Recent state — Day 25 (2026-06-12, in chronological order):**
 
-**Branch tips (origin in sync where noted):**
-- `main` @ `a61650d` (`docs(l2.2): catalog v2 - primary_projection + primary_distance for chromosome-primary processes`) — pushed.
-- `exec/l22-ensemble-loader` — in-flight, codex committing as it goes.
-- 5 yesterday's fanout worktrees (`l22-d1_repinit`, `l22-d2_replication`, `l22-d3_dnarepair`, `l22-d4_macromol`, `l22-d5_cytokinesis`) — still present on disk but reverted from main; will rebuild after MATLAB 50-seed extraction completes.
-- `l22-projection-support` — merged + closed today (`e3f1178`).
-- `l22-chromosome_critique` — was a scratch dir at `E:\opencell\.l22_chromosome_critique`, kept for the codex critique STATUS reference.
+1. `9173b73` — Catalog v3: harness_type field on bucket + per-process (`design_a_per_tick` vs `event_class`); moved Cytokinesis + FtsZPolymerization to EVENT_CLASS bucket; runner refuses event_class processes with "L2.event harness needs to be built".
+2. Phase 2 Transcription (full-scale PASS, M=100/B=1000, primary RNAs W1=0.0090) + Translation (full-scale PASS, monomers W1=0.0067) — first genuinely honest L2.2 verdicts on real v2 ensembles.
+3. RNADecay/ProteinDecay smokes with KARR_LEGACY_SINGLE_SEED_FALLBACK warning (50-seed v2 not yet extracted) — primary PASS, substrate-cliff secondary FAIL as documented.
+4. Fired 50-seed MATLAB extraction for 14 phase-2 processes (DNASupercoiling, RNAProcessing, RNAModification, RNADecay, tRNAAminoacylation, ProteinModification, ProteinFolding, ProteinDecay, ProteinTranslocation, RibosomeAssembly, Metabolism, DNADamage, ProteinProcessingI, ProteinProcessingII) — 215 min wall, 700 MAT files.
+5. `3f18106` — MacromolecularComplexation wiring via codex (3-slot, 69 min, 5 commits, merged).
+6. Macromol smoke shipped W1=0.0 + KS p=1.0 — operator-driven probe (Karr-vs-Karr null bootstrap q95~=0.001) proved it's **laundering**, not deterministic biology. Confirmed root cause is structural, not Macromol-specific.
+7. `2b87ca6`, `525a9af` (on investigate/macromol-laundering branch, not merged) — Macromol laundering investigation; first codex attempt died at 317k tokens / 0 commits from over-historicization (slot-3 listed 11 hypotheses + 7 reference files). Operator-rewritten probe shipped quickly. Hypothesis map identifies H11 (parallel branch in next_update) as most likely root cause.
+8. Phase-2 re-smoke: RNADecay v2 PASS (canonical_seed_count=50, RNAs primary W1=0.000825). ProteinDecay v2 BLOCKED by separate extractor bug (`_project_protein_decay_monomer_cube` line 1565: ndim=1 vs ndim=2). Documented in `~/.copilot/.../files/phase2_resmoke_results.md`. **Not fixed.**
+9. 3 parallel codex batches fired (A=PPI/PPII, B=RNAProcessing/RNAModification/tRNAAminoacylation, C=PFolding/PTransloc/PModification/RibosomeAssembly). Azure endpoint rate-limited 3 concurrent; B and C died with stream-disconnect at 38k/103k tokens / 0 commits. **Trap added:** never fire >2 concurrent codex against this endpoint; use serial pipeline with watcher.
+10. Pipeline watcher refired B (5/5 beats, MERGED `d1330f1`) — wired 3 RNA processes + **invented a PRIMARY_CHANNEL_ORACLE_LAUNDERING runner-level detector** during Beat 4 inversion. Detector auto-caught tRNAAminoacylation laundering. Batch A also completed (5/5 beats, NOT merged) — both PPI and PPII show same laundering signature. Pipeline watcher also fired C re-run, which died again at 388k tokens (stream disconnect after Beat 1 only).
+11. `408bf96` — Detector generalization: removed RNAs/5-process allowlist, fires for all in-scope processes. Empirical anchor: 4 processes (Macromol/PPI/PPII/tRNAAminoacylation) all showing identical signature. Ordering fix: legitimate-determinism check runs first; event-channel guard prevents FAIL flip from overriding EVENT_CHANNEL_DEFERRED. 1 stale anti-cheat test updated to expect new behavior. **46/47 L2.2 tests pass** (1 deselected = pre-existing ProteinDecay ndim=1 extractor bug, tracked separately).
+12. `56238b0` — Plan refresh (this block's predecessor).
+13. `aa5bf5f`, `87e1b8c` — Misplaced external essay committed to `docs/blog/` then reverted (curiosity-is-all-you-need belongs in personal essays folder, not the dev-log series).
+14. `d47b433`, `daf829b` — Internal dev-log post for Days 24-25 in Tehol/Bugg debrief format at `docs/blog/2026-06-12-a-fix-in-six-minutes-a-wiring-that-was-a-lie-and-the-detector-that-wrote-itself.md`. Initial post + Tehol-tightening revision. Pushed to origin.
+15. `delegate-to-codex` skill updated (`~/.copilot/skills/delegate-to-codex/SKILL.md` + `GOTCHAS.md`) — version bumped 0.133.0 → 0.137.0; 4 new lessons: Azure 2-concurrent cap, serial pipeline watcher, investigation slot 3 ceiling, sub-agent harness invention. Decomposition table now distinguishes ≤2 concurrent from ≥3 and adds investigation as a work-class row.
+16. `D:\OneDrive - Microsoft\.pm-os\DECISIONS.md` — 4 fresh decisions logged: `runner-level-laundering-detector-as-safety-net` (opencell), `slot-2-work-class-fit-rule` (cross-cutting), `azure-codex-2-concurrent-cap` (cross-cutting), `investigation-slot3-ceiling` (cross-cutting).
+17. Batch C re-fired serially after rebase onto main (with detector) — currently mid-flight at PID 42316.
+18. Laundering investigation fired against worktree `investigate-laundering-h11` with a focused slot-3 prompt (1 hypothesis = H11, 3 read-set files, write probe.py as artifact, 30k/60k budget). Died at 91k tokens with Azure throttle-tail from concurrent firing with Batch C. Re-fire pending Batch C exit.
+19. Session todo DB synced to canonical repo DB via `scripts/_sync_session_to_repo.py` → `scripts/sync_tasks_db.py` → `opencell_tasks.db`. 383 todos (273 done, 37 pending, 1 in_progress, 72 blocked), 203 deps. Backup at `opencell_tasks.db.bak.20260612-125844`.
 
-**What landed today (2026-06-08, in order):**
-1. `470e661` — promote 3-slot composition mandate to standalone file (v1).
-2. 5 reverts (`4657cb6`, `01b1a3d`, `6b005e7`, `3159200`, `24b54eb`) — reverted yesterday's 5 fanout merges (d1/d2/d3/d4/d5) after catalog-conformance audit found 4 wrong primary_channel + 2 wrong M_ticks + 5 wrong karr_artifact.
-3. `d35bce6` — COMPOSITION_MANDATE v2 with spec-authority rule (slot 3 MUST quote machine-loadable spec verbatim; existing code not authoritative spec).
-4. `e3f1178` — runner catalog-driven projection support (catalog YAML loader replaces 5 hardcoded process tables; new `primary_projection` + `primary_distance` infrastructure; per_component_scaled + hurdle distance functions; 7 new unit tests; SUMMARY_SCHEMA_VERSION 1.3→1.4).
-5. `a61650d` — catalog v2 entries: Replication + DNARepair get `primary_projection` + `primary_distance` per chromosome-projection critique (Replication: per-fork deltas + state + complete_flag, per_component_scaled; DNARepair: event_present + 4 pathway deltas, hurdle metric).
+**Branch tips:**
+- `main` @ `daf829b` (`blog(days 24-25): tighten Tehol's lines to single words, add interjections to break Bugg paragraphs`) — **PUSHED to origin** as of ~11:35 IST.
+- `exec/l22-batch-c-monomers` @ `50eeb3f` (Beat 1 committed; rebased onto post-detector main at `c2765fe`); codex actively writing Beat 2.
+- `investigate/laundering-h11` — worktree exists, PROMPT.md authored, branch created at main HEAD but zero commits (first fire died at 91k tokens without committing).
+- `exec/l22-batch-a-deep` @ 5 beats committed, NOT merged. Confirmed launderer per detector; held back until laundering root cause is fixed.
+- `investigate/macromol-laundering` @ `525a9af` — hypothesis map, NOT merged.
 
-**In progress (when MATLAB + codex jobs complete):**
-- ensemble_loader codex (PID 52064) will land 5 commits on `exec/l22-ensemble-loader`; merge to main.
-- MATLAB 50-seed extraction (PID 92356) will populate `per_process_traces_v2_s{000..049}/` for 5 fanout processes.
-- After BOTH: re-fire 5-process fanout against catalog spec (with v2 mandate spec-authority discipline + ensemble loader honoring the new 50-seed dirs).
-- Then re-fire full-scale gate.
+**Honest scoreboard:**
+- **5 honest greens:** Transcription full-scale, Translation full-scale, RNAProcessing smoke, RNAModification smoke, RNADecay v2 re-smoke.
+- **4 caught launderers:** MacromolecularComplexation, ProteinProcessingI, ProteinProcessingII, tRNAAminoacylation.
+- **11 still unwired:** ProteinFolding, ProteinTranslocation, ProteinModification, RibosomeAssembly (4 in flight via Batch C), ProteinDecay (blocked on ndim=1 extractor bug), DNASupercoiling, DNADamage, Metabolism (3 not yet started), ReplicationInitiation, Replication, DNARepair (3 from Day-22 fanout, pending re-wire).
+- **Safety net:** runtime-level PRIMARY_CHANNEL_ORACLE_LAUNDERING detector in main since `408bf96`. Any future wiring delegation that ships oracle laundering will FAIL loudly without operator inspection.
 
-**Operational traps re-hit / added today:**
-- **L2.2 5-fanout spec drift (Day-22 → reverted Day-23 morning):** all 5 fanout codex PROMPTs cited runner+helpers+previous-fanout-process as wiring template; none cited PROCESS_CATALOG.yaml. d2 deviated from catalog (substrates instead of chromosome primary), and d1/d3/d4/d5 inherited the deviation by copying d2. Documented as the empirical anchor for COMPOSITION_MANDATE v2 spec-authority rule.
-- **MATLAB -batch invocation traps (today):** (a) MATLAB function names MUST start with a letter, not underscore — `_tmp_extract_50seed_batch.m` failed silently with "Invalid text character"; rename to `tmp_extract_50seed_batch.m` resolved it. (b) `Start-Process -RedirectStandardOutput` swallows MATLAB stderr; .bat wrapper + cmd.exe redirect works reliably. (c) Multi-line `-batch` strings get mangled by PowerShell `-ArgumentList`; single-line `addpath + script_name` form is safer.
-- **Content filter on long structured analytical responses (multi-occurrence today):** Claude Opus 4.7 1M ctx model hits filter blocks on responses combining multi-row tables + multi-paragraph reasoning + recommendation blocks. Mitigation added to `~/.copilot/copilot-instructions.md` "Response-blocking recovery" section (prevention discipline: split across turns when planning involves >1 of {comparison table, parallel reasoning paragraphs, bulleted recommendations, empirical anchor block, meta-framework discussion}).
-- **Yesterday's traps still apply:** `git worktree prune` doesn't delete disk dirs; WSL one-liners with `cd` + `python` hang under codex-fleet load (use `bin\oc-pytest.cmd` / `bin\oc-py.cmd` wrappers); `bin\oc-py.cmd` translates CWD but not path arguments — always pass Linux-style relative paths from worktree root.
+**Next session — recommended sequence:**
+1. **Check Batch C exit status** — read STATUS from `E:\opencell-worktrees\batch-c-monomers\`. If 5 beats green, merge to main + push.
+2. **Re-fire laundering investigation** — Batch C exit clears the Azure throttle. Worktree + PROMPT.md ready at `E:\opencell-worktrees\investigate-laundering-h11`. Existing tag `day26-laundering-investigation` in todo DB.
+3. **Fix ProteinDecay ndim=1 extractor bug** — small, single-file fix at `tests/vivarium/_l2_2_design_a_runner_helpers.py:2066`. Existing todo `day26-protein-decay-extractor-fix`.
+4. **Decide on Batch A merge** based on investigation outcome. Existing todo `day26-batch-a-decision` (depends on investigation).
+5. **Re-wire 3 Day-22 fanout processes** — ReplicationInitiation, Replication, DNARepair. Use spec-quoted slot-3 prompts. Existing todo `day26-day22-fanout-rewire` (depends on Batch C).
+6. **Cleanup candidates** (low priority): retire `opencell_tasks.db.bak.*` backups; either wire `cost_tracker.py` or delete it (currently dead infrastructure, 0 rows in `opencell_costs.db`).
 
-**Activation env:** `L2_USE_CALIBRATED_TOLERANCES=1` only needed for `karr_transcription` and `karr_protein_modification` (L2.1 strict-near-clean cases).
+**Operational traps added today (codified in skill files):**
+- **Azure endpoint cannot sustain 3+ concurrent codex sessions.** Stream disconnects after 30-100k tokens, zero commits. Use serial pipeline watcher for batches >2. Documented in `~/.copilot/skills/delegate-to-codex/GOTCHAS.md`. Pipeline watcher reference at `~/.copilot/.../files/batch_pipeline.ps1`.
+- **Slot-3 over-historicization anti-pattern for investigations** — listing N hypotheses + N reference files in slot 3 guarantees burn-out on Beat 1 exploration. ONE hypothesis per delegation, ≤3 files, "write probe.py that asserts X" as the artifact. Empirical anchor: Macromol investigation 317k tokens / 0 commits → operator salvage 6 min / 4 commits.
+- **W1 = 0.0 + KS p = 1.0 from a stochastic SUT is a falsification signature, not a success signature.** Karr-vs-Karr null bootstrap shows q95~=0.001 for these channels; exact match is mathematically impossible without oracle laundering. Beat-4 pre-mortem must always name this when wiring stochastic processes. Now enforced at runtime by the detector.
+- **Sub-agent inventing harness during Beat 4 is GOOD** — don't over-constrain Beat 4 to "name modes, do not act." Beat B's codex wrote the laundering detector during Beat 4 even though slot 3 said "document, do not fix"; that single artifact was the most useful thing in two days. Allowed wording: "if a failure mode suggests a runner-level harness that catches the class, and the harness fits within the named write surface, you may author it."
+- **3-slot architecture work-class fit:** gate-structured slot-2 (FIX_TEMPLATE shape) does NOT transfer to critique/judgment work. Empirical anchor (other project, 2026-06-12): 5-gate critique template at best 11/19 vs free-form prose at 13/19; no gate variant beat prose. Use prose-structured slot-2 with sectioned `<thinking>` block for critique. Added to `~/.pm-os/templates/domain-template-authoring.md`.
 
-**MATLAB:** `E:\MATLAB\bin\matlab.exe` (R2026a DEMO/trial, single-license → serialize MATLAB jobs). Headless via `.bat` wrapper + cmd.exe is the only reliable invocation pattern.
+**Cross-project artifacts saved today:**
+- `D:\OneDrive - Microsoft\.pm-os\templates\` — full 3-slot architecture kit: `3-slot-architecture.md`, `slot3-authoring.md`, `domain-template-authoring.md` (with work-class fit rule), `slot-delivery-without-file-access.md`, `example-DELIBERATE_ACTION_PREFIX_v2.md`, `example-DESIGN_TEMPLATE.md`, `example-FIX_TEMPLATE_L2_REPLAY.md`, 4 slot-3 examples (3 positive + 1 FAILED-investigation cautionary).
 
-**WSL venv:** `/mnt/e/opencell/.venv-wsl/bin/activate` (worktrees do NOT have their own venv).
+**Activation env, MATLAB, WSL venv:** unchanged from prior handoff (see below).
 
-**Wait shells (instead of `manage_schedule` polling, per 2026-06-01 decision):** one async PowerShell shell per PID, blocks via `Wait-Process -Id <pid>`. Active today: `wait-ensemble-loader`, `wait-matlab-50seed-v2`.
+**Sync discipline:** repo files are canonical. After meaningful session work, run `bin\oc-py.cmd scripts\_sync_session_to_repo.py` to push session todos → `opencell_tasks.db`. Plan.md is edited directly in repo (no session-state sync). Skill files live machine-local at `~/.copilot/skills/` (not git-tracked anywhere); cross-project templates live in `D:\OneDrive - Microsoft\.pm-os\templates\` (OneDrive-synced).
 
 ---
 
-### Prior handoff (2026-06-05 ~01:10 IST) — kept for context
+### Prior handoff (2026-06-12 ~06:18 IST) — superseded by block above on 2026-06-12 ~13:00 IST
+
+This block was current at end of the L2.2 detector work earlier today. Operator returned to resume; the live state is in the block above. Content of the prior handoff is preserved by reference in the `Recent state — Day 25` enumeration above (items 1-11 are the prior handoff's "what landed"; items 12-19 are what landed between the two refreshes).
+
+---
+
+### Prior handoff (2026-06-08 ~13:20 IST)
+
+Original 2026-06-08 handoff retained below for context.
 
 **Live processes / agents (2026-06-05 ~01:10 IST):** THREE codex jobs running detached.
 
