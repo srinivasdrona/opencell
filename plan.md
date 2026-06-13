@@ -26,12 +26,63 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-06-12 ~13:00 IST):** Batch C re-fire in flight (PID 42316, codex committing as it goes); laundering investigation died and pending re-fire.
+**Live processes / agents (2026-06-14 ~01:00 IST):** None alive. Two narrow Batch-C fix delegations ran tonight; one finished, one died.
 
-| Tag | Type | PID | Worktree | Log | Status |
-|---|---|---|---|---|---|
-| batch_c_refire | codex | 42316 | `E:\opencell-worktrees\batch-c-monomers` (branch `exec/l22-batch-c-monomers`, rebased onto post-detector main at `c2765fe`) | `.codex_batch_c_refire.log` | ALIVE, Beat 1 committed at `50eeb3f`, currently mid-Beat-2 |
-| laundering_investigation_h11 | codex | 20952 | `E:\opencell-worktrees\investigate-laundering-h11` (branch `investigate/laundering-h11`) | `.codex_investigation.log` | DIED at 91k tokens with Azure stream-disconnect (throttle tail from concurrent firing with Batch C). PROMPT.md authored, worktree ready, re-fire after Batch C exits. |
+| Tag | Worktree | Branch | Result |
+|---|---|---|---|
+| fix-ptransloc | `E:\opencell-worktrees\fix-ptransloc` | `fix/batch-c-ptransloc` | **COMPLETED** — 5 commits, 116k tokens. Wiring bug fixed. Smoke: `FAIL` with `PRIMARY_CHANNEL_ORACLE_LAUNDERING` + `per_sample_w1_max=0` across 455 nonzero entries. This is the **H12 signature** — ProteinTranslocation is another closed_form_dominant process. Will PASS via DETERMINISTIC_CONVERGENCE once catalog is promoted from candidate → confirmed (1-line catalog edit + re-smoke). |
+| fix-pmod | `E:\opencell-worktrees\fix-pmod` | `fix/batch-c-pmod` | DIED at 64k tokens with Azure stream disconnect. Zero commits. Re-fire needed. |
+
+**Honest scoreboard in main (10, unchanged today since morning's batch A + ProteinDecay landings):**
+
+| # | Process | How it passes |
+|---|---|---|
+| 1-5 | Transcription, Translation, RNADecay, RNAProcessing, RNAModification | Real distributional biology |
+| 6-7 | MacromolecularComplexation, tRNAAminoacylation | Convergence (closed_form_dominant) |
+| 8-9 | ProteinProcessingI, ProteinProcessingII | Convergence |
+| 10 | ProteinDecay | Real biology, W1=0.00055 |
+
+Main HEAD: `2aff1ea` (DB sync), pushed.
+
+**Held-back branches awaiting merge:**
+
+| Branch | HEAD | Status |
+|---|---|---|
+| `fix/batch-c-ptransloc` | `2f4c3f0` | Wiring fixed; H12 signal present; need catalog promote + re-smoke + merge |
+| `fix/batch-c-pmod` | 09c6546 (Beat 1 inherited only) | Needs re-fire |
+| `exec/l22-batch-c-monomers` | `09c6546` | Wiring for PFolding + RibosomeAssembly + (broken) PTransloc + PModification; will merge AFTER PMod fix lands AND fix branches merged in |
+| `exec/l22-wire-metabolism` | `e63da11` | 5 beats committed; Beat 5 BLOCKED on compartment-shape wiring (same class as PTransloc, 1755 vs 585). Codex's key win this session: removed Metabolism's pre-existing trace_hint laundering path. |
+
+**Day-27 (2026-06-13) — work landed today:**
+
+1. `6b1d4d2` + `a863bf6` — Rebase + merge Batch A. PPI + PPII land via DETERMINISTIC_CONVERGENCE. +2 honest greens.
+2. `0d64836` — ProteinDecay v2 extractor ndim=1 fix. Reshape (n_ticks, 28920) → (n_ticks, 6, 4820) for the per-tick compartment cube. Re-enabled 4 previously-deselected ProteinDecay anti-cheat tests. Smoke verdict PASS, W1=0.00055 (real biology). +1 honest green.
+3. `2aff1ea` — Session DB sync (393 todos: 280 done, 39 pending, 2 in_progress, 72 blocked).
+4. Background work (3 codex sessions across the day): wire-metabolism completed Beats 1-4 but Beat 5 blocked on shape bug; fix-ptransloc completed all 5 beats with H12-signal smoke result; fix-pmod died at 64k tokens (zero commits) — second consecutive Azure-throttle death on the PModification fix path specifically.
+
+**Tomorrow's recommended sequence (Day 28):**
+
+1. **Promote ProteinTranslocation in catalog** to `closed_form_dominant: confirmed` (1-line YAML edit). Reference: smoke shows per_sample_w1_max=0 across 455 nonzero entries — same H12 signature pattern as the other 5. Reference doc: `docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md`.
+2. **Re-smoke ProteinTranslocation** post-promotion → expect verdict PASS with DETERMINISTIC_CONVERGENCE warning.
+3. **Merge fix-ptransloc branch** to main. +1 honest green → 11.
+4. **Re-fire fix-pmod** — third attempt. The PModification path has died twice now (64k tokens both times); if it dies again, do the fix by hand (the bug is well-documented in `E:\opencell-worktrees\fix-pmod\PROMPT.md` — wid-mapping projection, Option A or B specified).
+5. **Once fix-pmod lands:** rebase Batch C onto current main + smoke all 4 processes (PFolding, PTransloc, PMod, RibosomeAssembly) + merge. Net: +3 (PFolding via convergence, PTransloc via convergence after #1, PMod via whatever shape it lands at) → 14 honest greens potentially.
+6. **Metabolism shape fix** — same class as PTransloc but different SUT. Reference solved pattern from fix-ptransloc as template.
+7. **RibosomeAssembly M=200 re-smoke** — sparse process needs longer window. Likely still INSUFFICIENT_SAMPLES (honest, not a green).
+8. **Day-22 fanout re-do**: Replication, DNARepair, ReplicationInitiation. Catalog already has primary_projection setup for Replication + DNARepair (commit `a61650d`). ReplicationInitiation may need primary_projection added; check before firing.
+9. **DNASupercoiling + DNADamage chromosome-projection design**: ~1-2 hours per process of domain-design work (read SUT + v2 oracle, pick the right scalar fields, pick per_component_scaled vs hurdle distance). Operator-driven, not codex-friendly without that pre-decision.
+
+**Operational notes from today:**
+
+- **The combined-fix prompt died twice** (65k and 146k tokens, both Azure disconnect). Splitting to per-bug narrow prompts (~7 KB each, 40k/70k caps, hard-stop at Beat-4-incomplete-at-60k) got 1 of 2 across the finish line. The PModification fix path specifically has died 3 times now — investigate whether the prompt content is triggering something, or whether it's just statistical bad luck.
+- **The ProteinDecay extractor fix exposed a class of bug** (`_matlab_ref_to_vector` flattens per-tick cubes to 1-D, breaks downstream projection). 3 processes hit by this: ProteinDecay (fixed today), ProteinTranslocation (fixed today, awaiting catalog promote), Metabolism (still blocked). Class-wide fix would be to add a generic per-process shape registry; current per-process fix-by-fix is workable but accumulates duplication.
+- **Codex's surprising win on Metabolism wiring**: removed an existing `overlay_trace_after_hint` laundering path that nobody had flagged. The shape bug only became visible AFTER the laundering was removed (laundering had been masking it). Suggests there may be other processes where wiring "works" only because laundering hides actual bugs — worth a systematic grep for `overlay_trace_after_hint` calls and audit.
+
+**Activation env, MATLAB, WSL venv, sync discipline:** unchanged from prior handoff.
+
+---
+
+### Prior handoff (2026-06-12 ~13:00 IST) — superseded by block above
 
 **Recent state — Day 25 (2026-06-12, in chronological order):**
 
