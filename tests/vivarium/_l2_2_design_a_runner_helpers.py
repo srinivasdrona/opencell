@@ -2289,7 +2289,18 @@ def _protein_decay_projection_inputs() -> dict[str, Any]:
 
 
 def _project_protein_decay_monomer_cube(values: np.ndarray) -> np.ndarray:
+    """Project ProteinDecay's per-tick monomer cube down to the 482-protein base.
+
+    The v2 ensemble loader's _matlab_ref_to_vector flattens each per-tick HDF5
+    dataset to a 1-D vector. ProteinDecay's raw per-tick monomer shape is
+    (6 compartments, 4820 = 482 proteins x 10 forms), so the flattened length
+    is 28920. Reshape back to (6, 4820) per tick before projection.
+    """
     arr = np.asarray(values, dtype=np.float64)
+    # arr shape: (n_ticks, 28920) when the upstream flatten ran;
+    #            (n_ticks, 6, 4820) if upstream preserved structure.
+    if arr.ndim == 2 and arr.shape[-1] == 28920:
+        arr = arr.reshape(arr.shape[0], 6, 4820)
     return np.asarray(
         [project_trace_matrix_to_482(arr[tick]) for tick in range(arr.shape[0])],
         dtype=np.float64,
