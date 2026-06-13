@@ -42,4 +42,5 @@
 
 ## Beat 5 - smoke gate
 
-- Pending.
+- BLOCKED. Smoke at M=20, N=50, B=200: `could not broadcast input array from shape (585,) into shape (1755,)`. Metabolism v2 oracle before_substrates is (50, 100, 1755) = 585 substrates x 3 compartments flattened by `_matlab_ref_to_vector`. Wiring sets substrate_wids to 585-length list; need compartment-shape adapter (see commit message for the 2 fix options and rationale for deferring). Branch DO NOT MERGE.
+- Same shape-mismatch class as ProteinTranslocation (Batch C); tracked as follow-up.
