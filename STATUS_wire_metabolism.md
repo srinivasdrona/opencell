@@ -16,7 +16,13 @@
 
 ## Beat 2 - dispatcher + factory
 
-- Pending.
+- `_metabolism_process(seed)` was already present on the base branch and already cached by seed; kept that structure and reused the cached `load_default()` model.
+- `_run_metabolism_tick(seed, tick, state)` was tightened to honor the task contract:
+  - removed the `overlay_trace_after_hint(..., observable="substrates", ...)` call, so `KarrMetabolismProcess.next_update()` can no longer consume `oracle_after_substrates` through `trace_hint`;
+  - preserved the substrates + enzymes + boundEnzymes state overlay and the post-tick projection shape;
+  - left production `opencell/vivarium/karr_metabolism.py` untouched.
+- `_tick_dispatch()` already contained `Metabolism`; no cross-process wiring changed.
+- Ensemble source note: the worktree-local `data/m1_sources/karr_native` copy does not contain `Metabolism_100ticks.mat`, but the canonical external mirror at `E:\opencell\data\m1_sources\karr_native\per_process_traces_v2_s{000..049}\Metabolism_100ticks.mat` has all 50 seeds. Beat 2 extended the existing test-side external-v2 fallback set to include `Metabolism` so `load_karr_oracle("Metabolism")` resolves to the required 50-seed v2 traces instead of the legacy single-seed replay fixture.
 
 ## Beat 3 - wire runner
 

@@ -81,7 +81,7 @@ _RNA_STORE_PATH_OVERRIDE = {"RNAs": ("rna", "counts")}
 _RNA_SLOT_COUNTS_STATE_KEY = "_l2_rna_slot_counts"
 _RNA_SLOT_WIDS_STATE_KEY = "_l2_rna_slot_wids"
 _EXTERNAL_V2_PROCESS_ROOT_FALLBACK = frozenset(
-    {"RNAProcessing", "RNAModification", "tRNAAminoacylation"}
+    {"Metabolism", "RNAProcessing", "RNAModification", "tRNAAminoacylation"}
 )
 
 
@@ -1107,12 +1107,6 @@ def _run_metabolism_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[st
         observable="boundEnzymes",
         vector=np.asarray(state["oracle_before_bound_enzymes"], dtype=np.float64),
         wids=enzyme_wids,
-    )
-    overlay_trace_after_hint(
-        state=runtime_state,
-        observable="substrates",
-        vector=np.asarray(state["oracle_after_substrates"], dtype=np.float64),
-        wids=substrate_wids,
     )
     refresh_allocator_views(process, runtime_state)
     with forbid_sut_oracle_file_io():
