@@ -1921,6 +1921,231 @@ def _run_trna_aminoacylation_tick(seed: int, tick: int, state: dict[str, Any]) -
     }
 
 
+def _run_protein_modification_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
+    """Run one OpenCell ProteinModification tick from a prepared state snapshot."""
+    process = _protein_modification_process(_sample_seed(seed, tick))
+    runtime_state = build_state_template(process)
+    substrate_wids = list(state["substrate_wids"])
+    enzyme_wids = list(state["enzyme_wids"])
+    bound_enzymes_before = np.asarray(
+        state.get("oracle_before_bound_enzymes", np.zeros(len(enzyme_wids), dtype=np.float64)),
+        dtype=np.float64,
+    )
+    unmodified_before, modified_before = _split_rna_vector(
+        np.asarray(state["oracle_before_monomers"], dtype=np.float64),
+        (len(process.unmodified_monomer_wids), len(process.modified_monomer_wids)),
+    )
+
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="substrates",
+        vector=np.asarray(state["oracle_before_substrates"], dtype=np.float64),
+        wids=substrate_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="enzymes",
+        vector=np.asarray(state["oracle_before_enzymes"], dtype=np.float64),
+        wids=enzyme_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="unmodifiedMonomers",
+        vector=unmodified_before,
+        wids=list(process.unmodified_monomer_wids),
+        store_path_override=_PROTEIN_MODIFICATION_MONOMER_STORE_PATH_OVERRIDE,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="modifiedMonomers",
+        vector=modified_before,
+        wids=list(process.modified_monomer_wids),
+        store_path_override=_PROTEIN_MODIFICATION_MONOMER_STORE_PATH_OVERRIDE,
+    )
+    refresh_allocator_views(process, runtime_state)
+    with forbid_sut_oracle_file_io():
+        update = process.next_update(1.0, runtime_state)
+    apply_count_update(runtime_state, update)
+
+    unmodified_after = project_observable_from_state(
+        process=process,
+        state=runtime_state,
+        observable="unmodifiedMonomers",
+        wids=list(process.unmodified_monomer_wids),
+        bound_enzymes_before=bound_enzymes_before,
+        store_path_override=_PROTEIN_MODIFICATION_MONOMER_STORE_PATH_OVERRIDE,
+    )
+    modified_after = project_observable_from_state(
+        process=process,
+        state=runtime_state,
+        observable="modifiedMonomers",
+        wids=list(process.modified_monomer_wids),
+        bound_enzymes_before=bound_enzymes_before,
+        store_path_override=_PROTEIN_MODIFICATION_MONOMER_STORE_PATH_OVERRIDE,
+    )
+    return {
+        "substrates": np.asarray(
+            project_observable_from_state(
+                process=process,
+                state=runtime_state,
+                observable="substrates",
+                wids=substrate_wids,
+                bound_enzymes_before=bound_enzymes_before,
+            ),
+            dtype=np.float64,
+        ),
+        "monomers": np.asarray(np.concatenate([unmodified_after, modified_after]), dtype=np.float64),
+        "sample_seed": _sample_seed(seed, tick),
+    }
+
+
+def _run_protein_folding_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
+    """Run one OpenCell ProteinFolding tick from a prepared state snapshot."""
+    process = _protein_folding_process(_sample_seed(seed, tick))
+    runtime_state = build_state_template(process)
+    substrate_wids = list(state["substrate_wids"])
+    enzyme_wids = list(state["enzyme_wids"])
+    bound_enzymes_before = np.asarray(
+        state.get("oracle_before_bound_enzymes", np.zeros(len(enzyme_wids), dtype=np.float64)),
+        dtype=np.float64,
+    )
+    unfolded_before, folded_before = _split_rna_vector(
+        np.asarray(state["oracle_before_monomers"], dtype=np.float64),
+        (len(process.unfolded_monomer_wids), len(process.folded_monomer_wids)),
+    )
+
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="substrates",
+        vector=np.asarray(state["oracle_before_substrates"], dtype=np.float64),
+        wids=substrate_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="enzymes",
+        vector=np.asarray(state["oracle_before_enzymes"], dtype=np.float64),
+        wids=enzyme_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="unfoldedMonomers",
+        vector=unfolded_before,
+        wids=list(process.unfolded_monomer_wids),
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="foldedMonomers",
+        vector=folded_before,
+        wids=list(process.folded_monomer_wids),
+    )
+    refresh_allocator_views(process, runtime_state)
+    with forbid_sut_oracle_file_io():
+        update = process.next_update(1.0, runtime_state)
+    apply_count_update(runtime_state, update)
+
+    unfolded_after = project_observable_from_state(
+        process=process,
+        state=runtime_state,
+        observable="unfoldedMonomers",
+        wids=list(process.unfolded_monomer_wids),
+        bound_enzymes_before=bound_enzymes_before,
+    )
+    folded_after = project_observable_from_state(
+        process=process,
+        state=runtime_state,
+        observable="foldedMonomers",
+        wids=list(process.folded_monomer_wids),
+        bound_enzymes_before=bound_enzymes_before,
+    )
+    return {
+        "substrates": np.asarray(
+            project_observable_from_state(
+                process=process,
+                state=runtime_state,
+                observable="substrates",
+                wids=substrate_wids,
+                bound_enzymes_before=bound_enzymes_before,
+            ),
+            dtype=np.float64,
+        ),
+        "monomers": np.asarray(np.concatenate([unfolded_after, folded_after]), dtype=np.float64),
+        "sample_seed": _sample_seed(seed, tick),
+    }
+
+
+def _run_protein_translocation_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
+    """Run one OpenCell ProteinTranslocation tick from a prepared state snapshot."""
+    process = _protein_translocation_process(_sample_seed(seed, tick))
+    runtime_state = build_state_template(process)
+    substrate_wids = list(state["substrate_wids"])
+    enzyme_wids = list(state["enzyme_wids"])
+    monomer_wids = list(state["monomer_wids"])
+    before_monomers = _project_protein_translocation_monomer_cube(
+        np.asarray(state["oracle_before_monomers"], dtype=np.float64)
+    )
+    bound_enzymes_before = np.asarray(
+        state.get("oracle_before_bound_enzymes", np.zeros(len(enzyme_wids), dtype=np.float64)),
+        dtype=np.float64,
+    )
+
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="substrates",
+        vector=np.asarray(state["oracle_before_substrates"], dtype=np.float64),
+        wids=substrate_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="enzymes",
+        vector=np.asarray(state["oracle_before_enzymes"], dtype=np.float64),
+        wids=enzyme_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="monomers",
+        vector=before_monomers,
+        wids=monomer_wids,
+    )
+    refresh_allocator_views(process, runtime_state)
+    with forbid_sut_oracle_file_io():
+        update = process.next_update(1.0, runtime_state)
+    apply_count_update(runtime_state, update)
+    after_monomers = _project_protein_translocation_monomer_cube(
+        project_observable_from_state(
+            process=process,
+            state=runtime_state,
+            observable="monomers",
+            wids=monomer_wids,
+            bound_enzymes_before=bound_enzymes_before,
+        )
+    )
+    return {
+        "substrates": np.asarray(
+            project_observable_from_state(
+                process=process,
+                state=runtime_state,
+                observable="substrates",
+                wids=substrate_wids,
+                bound_enzymes_before=bound_enzymes_before,
+            ),
+            dtype=np.float64,
+        ),
+        "monomers": np.asarray(after_monomers, dtype=np.float64),
+        "sample_seed": _sample_seed(seed, tick),
+    }
+
+
 def _run_protein_decay_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
     """Run one OpenCell ProteinDecay tick from a prepared state snapshot."""
     process = _protein_decay_process(_sample_seed(seed, tick))
@@ -2431,6 +2656,10 @@ def _project_protein_translocation_monomer_cube(values: np.ndarray) -> np.ndarra
     cytoplasm_index = int(projection["cytoplasm_index"])
     flat_width = compartment_count * monomer_width
 
+    if arr.ndim == 1 and arr.size == flat_width:
+        arr = arr.reshape(1, compartment_count, monomer_width)
+    elif arr.ndim == 1 and arr.size == monomer_width:
+        return np.asarray(arr, dtype=np.float64)
     if arr.ndim == 2 and arr.shape[-1] == flat_width:
         arr = arr.reshape(arr.shape[0], compartment_count, monomer_width)
     if arr.ndim == 3:
@@ -2440,12 +2669,14 @@ def _project_protein_translocation_monomer_cube(values: np.ndarray) -> np.ndarra
                 "ProteinTranslocation monomer cube shape drift: "
                 f"expected per-tick {expected_shape}, got {arr.shape[1:]}"
             )
-        return np.asarray(arr[:, cytoplasm_index, :], dtype=np.float64)
+        projected = np.asarray(arr[:, cytoplasm_index, :], dtype=np.float64)
+        return projected[0] if projected.shape[0] == 1 else projected
     if arr.ndim == 2 and arr.shape[-1] == monomer_width:
-        return np.asarray(arr, dtype=np.float64)
+        return np.asarray(arr[0], dtype=np.float64) if arr.shape[0] == 1 else np.asarray(arr, dtype=np.float64)
     raise ValueError(
         "ProteinTranslocation monomer projection expected shape "
-        f"(ticks, {flat_width}) or (ticks, {compartment_count}, {monomer_width}); got {arr.shape}"
+        f"({flat_width},), ({monomer_width},), (ticks, {flat_width}), or "
+        f"(ticks, {compartment_count}, {monomer_width}); got {arr.shape}"
     )
 
 
