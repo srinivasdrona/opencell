@@ -35,7 +35,10 @@
 
 ## Beat 4 - inversion
 
-- Pending.
+- Added `tests/vivarium/test_l2_2_design_a_runner_anticheat_metabolism.py` with two dedicated falsifiers:
+  - oracle-replay cheat: monkeypatched `run_oc_tick()` returns `oracle_after_substrates` verbatim, and the test asserts the runner flips the primary channel to `FAIL` with `PRIMARY_CHANNEL_ORACLE_LAUNDERING`;
+  - zero-substrates cheat: monkeypatched `run_oc_tick()` returns an all-zero substrate vector, and the test asserts `FAIL` with positive primary-channel W1 and `n_nonzero_oc == 0 < n_nonzero_karr`.
+- Both tests are synthetic and self-contained; they exercise the verdicting logic without depending on the external 50-seed Metabolism ensemble mirror.
 
 ## Beat 5 - smoke gate
 
