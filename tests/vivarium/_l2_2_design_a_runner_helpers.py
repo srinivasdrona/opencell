@@ -54,6 +54,7 @@ from opencell.vivarium.karr_cytokinesis import KarrCytokinesisProcess  # noqa: E
 from opencell.vivarium.karr_macromolecular_complexation import (  # noqa: E402
     MacromolecularComplexationProcess,
 )
+from opencell.vivarium.karr_protein_translocation import KarrProteinTranslocationProcess  # noqa: E402
 
 
 _ACTUAL_REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -292,6 +293,11 @@ def _required_ensemble_keys(process_name: str) -> tuple[tuple[str, ...], tuple[s
         return ("substrates", "enzymes", "unprocessedMonomers"), (
             "substrates",
             "unprocessedMonomers",
+        )
+    if process_name == "ProteinTranslocation":
+        return ("substrates", "enzymes", "monomers"), (
+            "substrates",
+            "monomers",
         )
     if process_name == "MacromolecularComplexation":
         return ("substrates", "complexs"), ("substrates", "complexs")
@@ -1271,9 +1277,15 @@ def _tick_dispatch() -> dict[str, Any]:
         "ProteinDecay": _run_protein_decay_tick,
         "ProteinProcessingI": _run_protein_processing_i_tick,
         "ProteinProcessingII": _run_protein_processing_ii_tick,
+        "ProteinTranslocation": _run_protein_translocation_tick,
         "MacromolecularComplexation": _run_macromol_tick,
         "Cytokinesis": _run_cytokinesis_tick,
     }
+
+
+def _protein_translocation_process(seed: int) -> KarrProteinTranslocationProcess:
+    with forbid_sut_oracle_file_io():
+        return KarrProteinTranslocationProcess({"rng_seed": int(seed)})
 
 
 def run_oc_tick(process_name: str, seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
