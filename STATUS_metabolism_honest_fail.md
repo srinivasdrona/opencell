@@ -46,7 +46,26 @@ legacy single-seed fallback.
 
 ## Beat 2 - Switch projection to sum-over-compartments
 
-Pending.
+Code change:
+
+- Edited `tests/vivarium/_l2_2_design_a_runner_helpers.py`,
+  `_project_metabolism_substrate_cube`.
+- Kept the `1755 -> (3, 585)` reshape unchanged.
+- Changed only the final projection from single-compartment select to
+  `arr.sum(axis=1)`.
+
+Verification command:
+
+```powershell
+bin\oc-pytest.cmd tests/vivarium/test_l2_2_design_a*.py -q
+```
+
+Observed result:
+
+- `56 passed, 4 warnings in 329.31s`
+- Warnings were existing `RuntimeWarning: Precision loss occurred in moment calculation`
+  reports from `test_l2_2_design_a_runner_protein_processing_anticheat.py`;
+  no Metabolism-specific failures or new regressions appeared.
 
 ## Beat 3 - Re-smoke
 

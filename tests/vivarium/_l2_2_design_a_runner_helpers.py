@@ -2654,7 +2654,7 @@ def _project_metabolism_substrate_cube(values: np.ndarray) -> np.ndarray:
                 "Metabolism substrate cube shape drift: "
                 f"expected per-tick {expected_shape}, got {arr.shape[1:]}"
             )
-        return np.asarray(arr[:, cytosol_index, :], dtype=np.float64)
+        return np.asarray(arr.sum(axis=1), dtype=np.float64)
     raise ValueError(
         "Metabolism substrate projection expected shape "
         f"(ticks, {flat_width}) or (ticks, {compartment_count}, {substrate_count}); got {arr.shape}"
