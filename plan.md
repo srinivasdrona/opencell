@@ -26,23 +26,59 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-06-14 ~01:00 IST):** None alive. Two narrow Batch-C fix delegations ran tonight; one finished, one died.
+**Live processes / agents (2026-06-14 ~17:15 IST):**
 
-| Tag | Worktree | Branch | Result |
-|---|---|---|---|
-| fix-ptransloc | `E:\opencell-worktrees\fix-ptransloc` | `fix/batch-c-ptransloc` | **COMPLETED** — 5 commits, 116k tokens. Wiring bug fixed. Smoke: `FAIL` with `PRIMARY_CHANNEL_ORACLE_LAUNDERING` + `per_sample_w1_max=0` across 455 nonzero entries. This is the **H12 signature** — ProteinTranslocation is another closed_form_dominant process. Will PASS via DETERMINISTIC_CONVERGENCE once catalog is promoted from candidate → confirmed (1-line catalog edit + re-smoke). |
-| fix-pmod | `E:\opencell-worktrees\fix-pmod` | `fix/batch-c-pmod` | DIED at 64k tokens with Azure stream disconnect. Zero commits. Re-fire needed. |
+| Tag | PID | Worktree | Branch | ETA |
+|---|---|---|---|---|
+| MATLAB chrom re-extract | 22736 | (data only) | n/a | 60-150 min wall — 5 chrom-primary procs × 50 seeds with new Chromosome serializer |
+| Kimi Metabolism investigation | 11072 | `E:\opencell-worktrees\investigate-metabolism-fail` | `investigate/metabolism-honest-fail` | 20-30 min — single hypothesis (sum vs cytosol-select projection) |
+| Codex chrom-projections design | 27304 | `E:\opencell-worktrees\design-chrom-projections` | `design/l22-chrom-projections` | 25-35 min — primary_projection design for DS+DD+revisit R+DR |
 
-**Honest scoreboard in main (10, unchanged today since morning's batch A + ProteinDecay landings):**
+Logs at `.kimi_run.log`, `.codex_run.log` in respective worktrees; MATLAB at `E:\opencell\.matlab_chrom_full.log`. PIDs persisted to `.{kimi,codex,matlab_chrom_full}.pid` files.
+
+**The discovery that ate the day (and prevents 5+ days of future thrash):** The MATLAB extractor's `sanitize_snapshot_value` has a generic `if isobject(v)` branch that writes the literal string `'<object:className>'` for any state object not explicitly handled. The Chromosome state object hit this branch silently for all 5 chromosome-primary processes (Replication, ReplicationInitiation, DNARepair, DNASupercoiling, DNADamage). Catalog work and Replication codex Beat 1 both correctly observed "chromosome data is missing/insufficient" but treated it as inherent to the data rather than as an extractor bug. Fixed in commit `0ff0bb5` (new `serialize_chromosome_state.m` that walks 11 Chromosome state properties as sparse triples). Verified on a 10-tick smoke: linkingNumbers, polymerizedRegions, monomerBoundSites all show real per-tick deltas with biologically plausible values (fork advances 500 bp / 4 ticks).
+
+**Honest scoreboard in main (14 honest greens + 1 honest FAIL, unchanged from Day 28 morning):**
 
 | # | Process | How it passes |
 |---|---|---|
 | 1-5 | Transcription, Translation, RNADecay, RNAProcessing, RNAModification | Real distributional biology |
-| 6-7 | MacromolecularComplexation, tRNAAminoacylation | Convergence (closed_form_dominant) |
-| 8-9 | ProteinProcessingI, ProteinProcessingII | Convergence |
+| 6-9 | MacromolecularComplexation, tRNAAA, PPI, PPII | Convergence (closed_form_dominant) |
 | 10 | ProteinDecay | Real biology, W1=0.00055 |
+| 11 | PTranslocation | Convergence |
+| 12 | ProteinFolding | Convergence |
+| 13 | ProteinModification | Real biology, W1=0.0024 |
+| 14 | RibosomeAssembly | Sparse legitimate-determinism |
+| FAIL | Metabolism | Honest W1=9.76, n_nonzero gap 17k vs 46k (NOT laundering; kimi investigating now) |
 
-Main HEAD: `2aff1ea` (DB sync), pushed.
+Main HEAD: `0ff0bb5` (chromosome serializer), pushed locally.
+
+**Held-back branches awaiting MATLAB completion:**
+
+| Branch | Worktree | Status |
+|---|---|---|
+| `exec/l22-wire-dnasupercoiling` | `E:\opencell-worktrees\wire-dnasupercoil` | Empty worktree, awaiting chrom data + catalog projection design |
+| `exec/l22-wire-dnadamage` | `E:\opencell-worktrees\wire-dnadamage` | Empty worktree, awaiting same |
+| `exec/l22-rewire-replication` | `E:\opencell-worktrees\rewire-replication` | Codex died at 233k tokens with only Beat 1 committed (Beat 1 discovered chromosome-was-placeholder bug, now fixed at source). Re-fire after MATLAB. |
+
+**On resume / when notifications fire:**
+
+1. **Kimi finishes first (~20-30 min):** Read `E:\opencell-worktrees\investigate-metabolism-fail\STATUS_metabolism_honest_fail.md`. Pick case A-E per the prompt's verdict matrix. If case A or B (sum-projection PASS), merge → 15 honest greens.
+2. **Codex chrom-projections finishes (~25-35 min):** Read `E:\opencell-worktrees\design-chrom-projections\STATUS_chrom_projections_design.md`. Review the 4 projection proposals. Merge `design/l22-chrom-projections` to main.
+3. **MATLAB finishes (~60-150 min):** Verify chrom data with the audit script pattern (decode uint16 as ASCII, check for `<object:` prefix on chromosome field — should be absent now). If clean, fire the 4 wiring delegations (DS+DD+R+DR) using `delegate-to-codex` + `delegate-to-kimi-k2.6` in pairs (Azure 2-concurrent cap). DNASupercoiling on codex, DNADamage on Kimi (as operator requested earlier). Then Replication on codex, DNARepair on Kimi.
+4. **Aspirational target:** 14 → 19 honest greens (Metabolism + DS + DD + Replication + DNARepair) if everything cooperates. + ReplicationInitiation as #20 in a follow-up.
+
+**Operational traps to avoid (Day-28 lessons):**
+
+- **Object placeholders in MATLAB extracts:** If a new state-bearing property is added to the v2 extractor's allowlist, ALWAYS audit via the uint16-decode-to-ASCII pattern before declaring the extract usable. The audit script in this session is at `E:\opencell\.probe_audit.py` pattern (now deleted but logic is in commit message of `0ff0bb5` and in this handoff block).
+- **Re-extracting without fixing the serializer is a no-op for object-typed properties.** Don't fire MATLAB jobs more than once for the same allowlist patch — fix the serializer first.
+- **Don't fire wiring delegations against oracle data you haven't verified.** Beat 1 of the Replication codex burned 233k tokens rediscovering the placeholder bug. The cost of a Python h5py probe (5 min) is 50× cheaper than letting a codex session discover oracle pathology mid-flight.
+
+**Activation env, MATLAB, WSL venv, sync discipline:** unchanged from prior handoff.
+
+---
+
+### Prior handoff (2026-06-14 ~01:00 IST) — superseded by block above
 
 **Held-back branches awaiting merge:**
 
