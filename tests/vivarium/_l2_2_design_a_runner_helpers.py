@@ -379,13 +379,21 @@ def _format_ensemble_oracle(
     missing_after = [channel for channel in required_after if channel not in after_channels]
 
     if process_name == "Metabolism":
+        before_substrates_raw = before_channel("substrates", "before_substrates")
+        after_substrates_raw = after_channel("substrates", "after_substrates")
         return {
             "process": process_name,
             "oracle_path": oracle_path,
             "canonical_seed_count": canonical_seed_count,
             "n_ticks_available": n_ticks_available,
-            "before_substrates": before_channel("substrates", "before_substrates"),
-            "after_substrates": after_channel("substrates", "after_substrates"),
+            "before_substrates": np.asarray(
+                [_project_metabolism_substrate_cube(seed_matrix) for seed_matrix in before_substrates_raw],
+                dtype=np.float64,
+            ),
+            "after_substrates": np.asarray(
+                [_project_metabolism_substrate_cube(seed_matrix) for seed_matrix in after_substrates_raw],
+                dtype=np.float64,
+            ),
             "before_enzymes": before_channel("enzymes", "before_enzymes"),
             "before_bound_enzymes": before_channel("boundEnzymes", "before_bound_enzymes"),
             "ensemble_missing_before_channels": tuple(missing_before),
@@ -2615,6 +2623,44 @@ def _project_protein_decay_monomer_cube(values: np.ndarray) -> np.ndarray:
     )
 
 
+def _project_metabolism_substrate_cube(values: np.ndarray) -> np.ndarray:
+    """Project Metabolism's per-tick substrate cube down to the 585-substrate base.
+
+    The v2 ensemble loader's _matlab_ref_to_vector flattens each per-tick HDF5
+    dataset to a 1-D vector. Metabolism's raw per-tick substrate shape is
+    (3 compartments, 585 substrates), so the flattened length is 1755.
+    Reshape back to (3, 585) per tick before projection.
+
+    KarrMetabolismProcess reads the shared `substrates` store into the cytosolic
+    slice of its internal compartmented substrate state each tick, so the oracle
+    projection must select the cytosolic compartment rather than sum across all
+    compartments.
+    """
+    arr = np.asarray(values, dtype=np.float64)
+    compartment_count = 3
+    substrate_count = 585
+    cytosol_index = 0
+    flat_width = compartment_count * substrate_count
+
+    if arr.ndim == 2:
+        if arr.shape[-1] == flat_width:
+            arr = arr.reshape(arr.shape[0], compartment_count, substrate_count)
+        else:
+            return np.asarray(arr, dtype=np.float64)
+    if arr.ndim == 3:
+        expected_shape = (compartment_count, substrate_count)
+        if arr.shape[1:] != expected_shape:
+            raise ValueError(
+                "Metabolism substrate cube shape drift: "
+                f"expected per-tick {expected_shape}, got {arr.shape[1:]}"
+            )
+        return np.asarray(arr[:, cytosol_index, :], dtype=np.float64)
+    raise ValueError(
+        "Metabolism substrate projection expected shape "
+        f"(ticks, {flat_width}) or (ticks, {compartment_count}, {substrate_count}); got {arr.shape}"
+    )
+
+
 def _project_protein_decay_complex_cube(values: np.ndarray) -> np.ndarray:
     arr = np.asarray(values, dtype=np.float64)
     complex_width = int(_protein_decay_projection_inputs()["complex_width"])
@@ -2774,5 +2820,3 @@ def _run_protein_processing_ii_tick(seed: int, tick: int, state: dict[str, Any])
         ),
         "sample_seed": _sample_seed(seed, tick),
     }
-
-
