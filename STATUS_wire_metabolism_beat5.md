@@ -68,4 +68,33 @@ Target process:
 
 ## Beat 4 - Inversion
 
-Pending final write-up in the next commit.
+- Failure mode: **"The projection silently zero-fills via wrong-direction projection and the smoke shows trivial match."**
+  - Evidence against:
+    - The synthetic 1755-wide adapter proof returned nonzero projected values immediately: `(2, 585) True [0.0, 1.0, 2.0, 3.0, 4.0]`.
+    - The smoke reported `n_nonzero_oc = 89000` and `n_nonzero_karr = 89000`, not a collapsed or zero-filled OC surface.
+- Failure mode: **"The projection direction (sum vs select) is wrong and the substrate trajectory differs by a constant factor."**
+  - Evidence against:
+    - Integrated `_format_ensemble_oracle(...)` proof returned `(1, 2, 585) 0.0 0.0 1755.0`.
+    - The projected first entry equals the cytosol slice (`0.0`), while the 3-compartment sum for that same position would have been `1755.0`.
+    - `karr_metabolism.py` reads the shared pool into `_CYTOSOL_COMPARTMENT_0` (`lines 385-406`), so cytosol-select matches the SUT read surface and sum would be structurally wrong.
+- Failure mode: **"The adapter works for the smoke window but breaks on other (seed, tick) ranges where compartment distribution differs."**
+  - Evidence against:
+    - The adapter is a pure per-tick reshape/select function with no seed- or tick-dependent branching.
+    - `bin\oc-pytest.cmd tests/vivarium/test_l2_2_design_a*.py -q` stayed green (`56 passed`), including the ensemble-loader coverage that exercises single-seed and multi-seed stacking paths.
+  - Residual limitation:
+    - This checkout has no Metabolism `per_process_traces_v2` or `ensembles/metabolism` `.mat` files, so I could not falsify this on real Metabolism ensemble data across varied seed/tick ranges.
+
+## Verification
+
+- Expected Beat 3 outcome:
+  - Metabolism Beat 5 smoke should produce a normal verdict instead of a broadcast/ndim exception.
+- Actual measured outcome:
+  - Smoke verdict: `Metabolism PASS substrates=SEED_NOISE@0.000000`
+  - Primary `W1`: `0.0`
+  - `per_sample_w1_max`: `0.0`
+- Commands:
+  - `bin\oc-pytest.cmd tests/vivarium/test_l2_2_design_a*.py -q`
+  - `bin\oc-py.cmd tests/vivarium/l2_2_design_a_runner.py --process Metabolism --seeds 50 --ticks 20 --bootstrap-B 200 --output-dir tests/vivarium/artifacts/l2_2_design_a/Metabolism_beat5_smoke`
+  - `wsl -e bash -lc "cd '/mnt/e/opencell-worktrees/wire-metabolism' && source /mnt/e/opencell/.venv-wsl/bin/activate && python - <<'PY' ... PY"`
+- Verdict:
+  - matched, with the caveat that the local smoke used the legacy single-seed replay oracle because the Metabolism v2 ensemble `.mat` sources are absent in this worktree.
