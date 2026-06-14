@@ -102,4 +102,29 @@ Interpretation:
 
 ## Beat 4 - Verdict + recommendation
 
-Pending.
+Selected case: **Case A - sum-projection PASS (no warnings)**
+
+Reason:
+
+- Baseline `cytosol-select` reproduced the honest FAIL:
+  `W1=9.758299145299116 > threshold=7.327495897435871`.
+- Sum-over-compartments changed the comparison surface and produced a clean PASS:
+  `W1=168.42970769230706 <= threshold=222.0369670085462`.
+- The warnings list stayed empty on the sum smoke, so this is not
+  `PASS_VIA_CONVERGENCE` and not `PASS_VIA_ORACLE_LAUNDERING`.
+
+Recommendation:
+
+- Keep the sum-over-compartments projection in
+  `_project_metabolism_substrate_cube` as the correct Design-A oracle projection
+  for Metabolism's compartmented substrate cube.
+- Do not revert to the prior single-compartment projection.
+- In follow-up work outside this delegation, update the Metabolism catalog notes
+  to document why Design-A must compare the summed compartment view.
+- Treat Metabolism as an honest green under the sum projection, subject to the
+  operator's normal merge review.
+
+Out-of-scope note:
+
+- I did not modify the catalog or any production code under `opencell/**`, per the
+  task's hard rules.
