@@ -167,6 +167,16 @@ def test_macromol_sample_process_and_observable_wids_are_wired() -> None:
     assert len(wids["complexs"]) == 147
 
 
+def test_metabolism_sample_process_and_observable_wids_are_wired() -> None:
+    process = runner._process_sample_process("Metabolism")
+    wids = runner._observable_wids("Metabolism", process)
+
+    assert process.__class__.__name__ == "KarrMetabolismProcess"
+    assert len(wids["substrates"]) == 585
+    assert len(wids["enzymes"]) == 104
+    assert wids["boundEnzymes"] == wids["enzymes"]
+
+
 def test_rna_primary_sample_processes_expose_combined_rna_wids() -> None:
     expected_lengths = {
         "RNAProcessing": 693,
