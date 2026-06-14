@@ -69,7 +69,36 @@ Observed result:
 
 ## Beat 3 - Re-smoke
 
-Pending.
+Command:
+
+```powershell
+bin\oc-py.cmd tests/vivarium/l2_2_design_a_runner.py --process Metabolism --seeds 50 --ticks 20 --bootstrap-B 200 --output-dir tests/vivarium/artifacts/l2_2_design_a/Metabolism_sum_smoke
+```
+
+Observed result from `tests/vivarium/artifacts/l2_2_design_a/Metabolism_sum_smoke/result.json`:
+
+- verdict: `PASS`
+- primary channel: `substrates`
+- channel verdict: `PASS`
+- W1: `168.42970769230706`
+- threshold: `222.0369670085462`
+- q95_null: `111.0184835042731`
+- n_nonzero_oc: `93060`
+- n_nonzero_karr: `119229`
+- warnings: `[]`
+- per_sample_w1_summary:
+  - mean: `168.42970769230706`
+  - max: `234.63760683760606`
+  - min: `130.89743589743546`
+
+Interpretation:
+
+- The sum projection materially changes the Metabolism substrate comparison.
+- The raw W1 does not get smaller; it gets much larger in absolute terms because the
+  summed channel itself is much larger-scale.
+- The Karr-only null also grows substantially under the summed representation, and the
+  primary channel passes cleanly with no `PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE`
+  warning and no `PRIMARY_CHANNEL_ORACLE_LAUNDERING` / laundering warning.
 
 ## Beat 4 - Verdict + recommendation
 
