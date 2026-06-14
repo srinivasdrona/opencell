@@ -26,56 +26,59 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-06-14 ~20:30 IST):** **None alive.** All three jobs from afternoon are complete.
+**Live processes / agents (2026-06-14 ~22:15 IST):** None alive.
 
-| Tag | Result |
-|---|---|
-| MATLAB chrom re-extract | ✅ ALL 250 files done in 118 min. Verified: 5 chrom-primary processes × 4 sample seeds = 20/20 carry real serialized chromosome data (no placeholder strings). One file (s000/ReplicationInitiation) was corrupted by an earlier codex-MATLAB collision; regenerated cleanly. |
-| Codex Metabolism investigation | ✅ 4 beats committed, **Case A verdict: PASS** with sum-projection. W1=168.43 vs threshold=222.04, no warnings. **15th honest green.** Merged to main (`85b1712`). |
-| Codex chrom-projections design | ❌ Killed (quoting bugs + MATLAB collision risk). Operator-authored design instead; merged to main (`c5d5adb`). |
+**Honest scoreboard in main — corrected after Day-28 audit:** 14 honest greens / 20 in-scope L2.2 processes (70%).
 
-**Honest scoreboard in main: 15 honest greens.**
-
-| # | Process | How it passes |
+| Category | Count | Notes |
 |---|---|---|
-| 1-5 | Transcription, Translation, RNADecay, RNAProcessing, RNAModification | Real distributional biology |
-| 6-9 | MacromolecularComplexation, tRNAAA, PPI, PPII | Convergence (closed_form_dominant) |
-| 10 | ProteinDecay | Real biology, W1=0.00055 |
-| 11 | PTranslocation | Convergence |
-| 12 | ProteinFolding | Convergence |
-| 13 | ProteinModification | Real biology, W1=0.0024 |
-| 14 | RibosomeAssembly | Sparse legitimate-determinism |
-| 15 | **Metabolism** | **NEW** — Real biology via sum-projection, W1=168.43 |
+| Real biology greens | **8 / 20** (40%) | Transcription, Translation, RNADecay, RNAProcessing, RNAModification, ProteinDecay W1=0.00055, ProteinModification W1=0.0024, Metabolism W1=168.43 (via sum-projection) |
+| Convergence greens (closed_form_dominant) | **6 / 20** (30%) | tRNAAA, Macromol, PFold, PTransloc, PPI, PPII. W1=0 mathematically justified by SUT design (OC skips inner Monte Carlo; closed-form bound dominates in substrate-non-limiting regime). Gate has zero discriminating power for these — would be flipped to biology green by a substrate-limited stress test (not yet built). |
+| Total honest in-scope greens | **14 / 20** (70%) | |
+| Unwired in-scope L2.2 | **4 / 20** | DNASupercoiling, Replication, ReplicationInitiation, DNARepair (all chromosome-primary) |
+| Out of L2.2 scope (need L2.event harness) | **4** | Cytokinesis, FtsZPolymerization, RibosomeAssembly, DNADamage |
+| Out of L2.2 scope (DETERMINISTIC) | **6** | Chromosome{Condensation,Segregation}, HostInteraction, ProteinActivation, TerminalOrganelleAssembly, TranscriptionalRegulation |
+| **Catalog total** | **28** | |
 
-Main HEAD: `85b1712` (Metabolism merge).
+**Audit findings (Day 28 corrections):**
 
-**Ready to fire (NOT blocked anymore):**
+- **RibosomeAssembly + DNADamage misclassification:** Both had 0/50 seeds with substrate-change events in their captured per-tick windows. Both would produce/were producing fake PASS W1=0 via `PRIMARY_CHANNEL_ORACLE_DETERMINISM_LEGITIMATE` warning. Reclassified to EVENT_CLASS (`d184ffc`). RibosomeAssembly was the prior "14th honest green" — drops out of honest scoreboard, replaced by the real Metabolism green (kept count at 14 net).
 
-| Branch | Worktree | Pair |
+- **Convergence-green gate weakness:** The 6 convergence greens (`closed_form_dominant: confirmed`) all show W1=0 not because OC reproduces Karr's distribution but because OC skips Karr's inner Monte Carlo and only computes the closed-form upper bound. The bound dominates in substrate-non-limiting test windows. Substrate-limited regimes (late cycle, post-partition, stress) would expose distributional drift not caught here. A substrate-limited stress oracle would convert these to true biology greens or expose real gaps — currently not built.
+
+**The 4 unwired chromosome-primary processes — OC surface gap analysis:**
+
+| Process | OC surface | Karr surface | L2.2 feasibility |
+|---|---|---|---|
+| DNASupercoiling | scalar `supercoil_density` | sparse linkingNumbers[580076×4] | ⚠️ WEAK — only aggregate-scalar comparison possible |
+| Replication | 2 scalars fork_position_bp.{l,r} | sparse polymerizedRegions[580076×4] | ⚠️ aggregable to 2 scalars |
+| ReplicationInitiation | (unverified) | sparse chromosome state | unknown — needs check |
+| DNARepair | per-pathway counts (BER/NER/HR/NHEJ-like) | sparse 5 damage-state fields | ✅ TRACTABLE — pathway-count gate works |
+
+Today's chromosome-state extractor fix (`0ff0bb5`) and the v1.4 catalog projections (`c5d5adb`) are correct pc-t7-era infrastructure but cannot be consumed at full fidelity until OC ports the full chromosome state (Phase C v2 / pc-t7, estimated ~25-36 days of focused work).
+
+**Realistic L2.2 ceiling without pc-t7:**
+- **Wire Replication + DNARepair (+ maybe RI) with OC-surface-reduced projections:** 14 → 16 or 17 / 20 (80-85%).
+- **DS stays unwired** until OC scalar→matrix port lands. (Or wire with scalar-aggregate projection — weak gate but tractable; ~+1.)
+- **Hard ceiling for design_a_per_tick harness:** ~17-18 / 20.
+
+**Next-decision matrix:**
+
+| Path | Effort | Outcome |
 |---|---|---|
-| `exec/l22-wire-dnasupercoiling` | `E:\opencell-worktrees\wire-dnasupercoil` | A (codex) |
-| `exec/l22-wire-dnadamage` | `E:\opencell-worktrees\wire-dnadamage` | A (kimi) |
-| `exec/l22-rewire-replication` | `E:\opencell-worktrees\rewire-replication` | B (codex) — has Beat 1 from prior dead session, need to discard or rebase |
-| (new) DNARepair wiring | (to create) | B (kimi) |
+| A. Wire R + DR with OC-surface projections (revert c5d5adb for R+DR back to substrate-synthesis design) | 2 codex/kimi delegations, ~1 hr each | 14 → 16 / 20 (80%) |
+| A+ | A + ReplicationInitiation | +1 delegation | 14 → 17 / 20 (85%) |
+| B. Add substrate-limited stress oracle for 6 convergence-greens | 1-2 days operator work | converts paper-greens to biology-greens or exposes regime drift |
+| C. Run RibosomeAssembly/DNADamage L2.event harness | needs L2.event harness to exist first | 4 more honest greens possible |
+| D. Phase C v2 / pc-t7 chromosome port | 3-5 calendar weeks | unblocks DS + RI + DD + reduces R/DR scope-reduction |
 
-**Wiring delegations now have:**
-- Real chromosome oracle data (commit `0ff0bb5`)
-- Catalog primary_projection entries (commit `c5d5adb`)
-- 4 prior solved-pattern projections in helpers: PTransloc, PDecay, PMod, Metabolism
-
-**Trap to avoid:** Azure peak-demand throttle killed the earlier kimi at 105k tokens during IST afternoon (~17:00). Verify Azure load before firing pairs — if a delegation dies at <30k tokens with "exceeds max usage size during peak load", defer until off-peak.
-
-**On resume — when operator gives the go:**
-
-1. Fire Pair A (DNASupercoiling on codex, DNADamage on kimi) in parallel.
-2. After A merges, fire Pair B (Replication on codex, DNARepair on kimi).
-3. Aspirational target: 15 → 19 honest greens.
+**On resume / when operator gives the go:** Path A is the highest-leverage tonight (2 more biology greens, well-defined scope). Path B is the more philosophically important work but multi-day. Path D is the big mountain — needs PM scheduling.
 
 **Activation env, MATLAB, WSL venv, sync discipline:** unchanged.
 
 ---
 
-### Prior handoff (2026-06-14 ~17:15 IST) — superseded by block above
+### Prior handoff (2026-06-14 ~20:30 IST) — superseded by block above
 
 **Held-back branches awaiting merge:**
 
