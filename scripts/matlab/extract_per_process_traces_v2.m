@@ -270,7 +270,22 @@ if isstruct(v)
 end
 
 if isobject(v)
-    out = sprintf('<object:%s>', class(v));
+    cls = class(v);
+    % Special-case the Chromosome state object: write a sparse-triple
+    % struct of its primary writable properties so chromosome-primary
+    % L2.2 distances (Replication / DNARepair / DNASupercoiling /
+    % DNADamage / ReplicationInitiation) have real signal instead of
+    % the previous '<object:...>' placeholder string.
+    if strcmp(cls, 'edu.stanford.covert.cell.sim.state.Chromosome')
+        try
+            out = serialize_chromosome_state(v);
+            return;
+        catch err
+            out = struct('error', sprintf('serialize_chromosome_state failed: %s', err.message), 'class', cls);
+            return;
+        end
+    end
+    out = sprintf('<object:%s>', cls);
     return;
 end
 
