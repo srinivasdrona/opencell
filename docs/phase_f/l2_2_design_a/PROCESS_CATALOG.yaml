@@ -300,8 +300,9 @@ processes:
     output_channels: [substrates, monomers]
     primary_channel: monomers
     karr_artifact: per_process_traces_v2
+    closed_form_dominant: confirmed       # H12 signal 2026-06-13 fix-ptransloc smoke: per_sample_w1_max=0 across 455 nonzero entries. See LAUNDERING_VS_CONVERGENCE.md.
     rationale_M: "default"
-    notes: ""
+    notes: "closed_form_dominant=confirmed (fix-ptransloc Beat 5 smoke at 50 seeds x 10 ticks shows W1=0 and per_sample_max=0 across 455 nonzero entries; same H12 signature as MacromolecularComplexation, PPI, PPII, PFolding, tRNAAA)."
 
   - name: MacromolecularComplexation
     oc_module: opencell/vivarium/karr_macromolecular_complexation.py

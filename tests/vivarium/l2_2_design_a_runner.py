@@ -656,8 +656,20 @@ def _process_sample_process(process: str) -> Any:
         return runner_helpers._rna_modification_process(0)
     if process == "tRNAAminoacylation":
         return runner_helpers._trna_aminoacylation_process(0)
+    if process == "ProteinModification":
+        return runner_helpers._protein_modification_process(0)
+    if process == "ProteinFolding":
+        return runner_helpers._protein_folding_process(0)
+    if process == "ProteinTranslocation":
+        return runner_helpers._protein_translocation_process(0)
     if process == "ProteinDecay":
         return runner_helpers._protein_decay_process(0)
+    if process == "ProteinProcessingI":
+        return runner_helpers._protein_processing_i_process(0)
+    if process == "ProteinProcessingII":
+        return runner_helpers._protein_processing_ii_process(0)
+    if process == "RibosomeAssembly":
+        return runner_helpers._ribosome_assembly_process(0)
     if process == "MacromolecularComplexation":
         return runner_helpers._macromol_process(0)
     if process == "Cytokinesis":
@@ -691,10 +703,23 @@ def _observable_wids(process: str, sample_process: Any) -> dict[str, list[str]]:
             getattr(sample_process, "gene_ids", getattr(sample_process, "rna_wids", ())),
         )
         mapping["RNAs"] = [str(x) for x in rna_ids]
+    if process in {"ProteinModification", "ProteinFolding", "ProteinTranslocation"}:
+        mapping["monomers"] = [str(x) for x in getattr(sample_process, "monomer_wids", ())]
     if process in {"ProteinDecay", "MacromolecularComplexation"}:
         monomer_ids = getattr(sample_process, "protein_wids", getattr(sample_process, "monomer_wids", ()))
         mapping["monomers"] = [str(x) for x in monomer_ids]
         mapping["complexs"] = [str(x) for x in getattr(sample_process, "complex_wids", ())]
+    if process in {"ProteinProcessingI", "ProteinProcessingII"}:
+        monomer_ids = getattr(
+            sample_process,
+            "monomer_wids",
+            getattr(sample_process, "unprocessed_monomer_wids", ()),
+        )
+        mapping["monomers"] = [str(x) for x in monomer_ids]
+    if process == "RibosomeAssembly":
+        mapping["monomers"] = [str(x) for x in getattr(sample_process, "monomer_subunit_wids", ())]
+        mapping["complexs"] = [str(x) for x in getattr(sample_process, "complex_wids", ())]
+        mapping["RNAs"] = [str(x) for x in getattr(sample_process, "rna_subunit_wids", ())]
     if process == "Cytokinesis":
         # SUT's _substrate_wids includes GTP (4 WIDs); the Karr oracle snapshot has
         # only the 3 fixture substrate WIDs (PI, H2O, H). Use fixture WIDs for the
@@ -817,6 +842,21 @@ def run_design_a(
                         "oracle_after_rnas": after_vectors["RNAs"][seed_index, tick],
                     }
                 )
+            if process in {"ProteinModification", "ProteinFolding", "ProteinTranslocation"}:
+                sample_state.update(
+                    {
+                        "monomer_wids": wids_by_channel["monomers"],
+                        "oracle_before_monomers": before_vectors["monomers"][seed_index, tick],
+                    }
+                )
+            if process in {"ProteinProcessingI", "ProteinProcessingII"}:
+                sample_state.update(
+                    {
+                        "monomer_wids": wids_by_channel["monomers"],
+                        "oracle_before_monomers": before_vectors["monomers"][seed_index, tick],
+                        "oracle_after_monomers": after_vectors["monomers"][seed_index, tick],
+                    }
+                )
             if process == "ProteinDecay":
                 sample_state.update(
                     {
@@ -837,6 +877,17 @@ def run_design_a(
                         "oracle_before_complexs": before_vectors["complexs"][seed_index, tick],
                         "oracle_after_monomers": after_vectors["monomers"][seed_index, tick],
                         "oracle_after_complexs": after_vectors["complexs"][seed_index, tick],
+                    }
+                )
+            if process == "RibosomeAssembly":
+                sample_state.update(
+                    {
+                        "monomer_wids": wids_by_channel["monomers"],
+                        "complex_wids": wids_by_channel["complexs"],
+                        "rna_wids": wids_by_channel["RNAs"],
+                        "oracle_before_monomers": before_vectors["monomers"][seed_index, tick],
+                        "oracle_before_complexs": before_vectors["complexs"][seed_index, tick],
+                        "oracle_before_rnas": before_vectors["RNAs"][seed_index, tick],
                     }
                 )
             if "boundEnzymes" in before_vectors:
@@ -1020,7 +1071,7 @@ def run_design_a(
         if primary_oracle_laundering_warning is not None:
             # Consult catalog: closed_form_dominant=confirmed means the SUT's
             # deterministic closed-form path converges to Karr's stochastic output
-            # by biology, not by oracle leakage. Demote FAIL → informational.
+            # by biology, not by oracle leakage. Demote FAIL -> informational.
             # See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor).
             closed_form_state = str(
                 _process_catalog_entry(process).get("closed_form_dominant", "false")
