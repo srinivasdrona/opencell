@@ -150,11 +150,11 @@ processes:
     input_channels: [substrates, enzymes, chromosome]
     output_channels: [substrates, chromosome]
     primary_channel: chromosome
-    primary_projection: [repair_event_present, repair_count_by_pathway.ber_delta, repair_count_by_pathway.ner_delta, repair_count_by_pathway.hr_delta, repair_count_by_pathway.nhej_like_delta]
+    primary_projection: [repair_event_present, damagedBases.delta_nnz, strandBreaks.delta_nnz, gapSites.delta_nnz, abasicSites.delta_nnz, damagedSugarPhosphates.delta_nnz]
     primary_distance: hurdle_event_rate_plus_conditional_scaled_distance
     karr_artifact: per_process_traces_v2
     rationale_M: "rand>0.5 modification-vs-restriction branch; need enough events to see both arms"
-    notes: "v1.3 (2026-06-08): primary_projection + primary_distance added per chromosome-projection critique. Hurdle structure required because event_density:sparse makes joint W1 saturate at zeros-match-zeros; gate per pathway separately so single pooled statistic cannot hide branch-specific drift. Audit flagged the 0.5 branch (line 897) as the deep-bucket trigger."
+    notes: "v1.4 (2026-06-14): REPLACED prior repair_count_by_pathway.* projection. Old projection assumed pathway counts could be synthesized from substrate deltas (placeholder-chromosome era). Now that chromosome state is properly serialized (commit 0ff0bb5), gate directly on the 5 chromosome state fields DNARepair writes (SUT lines 824, 972-973, 1009, 1010, 1019, 1020, 1047-1049, 1074-1076). Hurdle structure retained for sparse event_density. See docs/phase_f/l2_2_design_a/STATUS_chrom_projections_design.md."
 
   # ===== ALGORITHMIC_SHALLOW (13-14) — Design-A ensemble check ==============
 
@@ -168,11 +168,11 @@ processes:
     input_channels: [substrates, enzymes, boundEnzymes, chromosome]
     output_channels: [substrates, chromosome, boundEnzymes]
     primary_channel: chromosome
-    primary_projection: [delta_fork_position_bp.left, delta_fork_position_bp.right, replication_state, replication_complete_fired_this_tick]
+    primary_projection: [polymerizedRegions.delta_value_sum_strand_1, polymerizedRegions.delta_value_sum_strand_2, polymerizedRegions.delta_value_sum_strand_3, polymerizedRegions.delta_value_sum_strand_4, polymerizedRegions.delta_nnz]
     primary_distance: per_component_scaled
     karr_artifact: per_process_traces_v2
     rationale_M: "Poisson Okazaki + randperm; M=100 covers polymerase queue"
-    notes: "v1.3 (2026-06-08): primary_projection + primary_distance added per chromosome-projection critique. Per-fork deltas preserve queue-driven synthesis variability; raw 3-vector W1 was rejected because bp-scale axis dominated the categorical+boolean components."
+    notes: "v1.4 (2026-06-14): REPLACED prior delta_fork_position_bp.* projection. Old projection synthesized fork positions from substrate (NTP) consumption because the placeholder-chromosome era didn't have real chromosome state. Now polymerizedRegions carries actual region lengths per (position, strand). Per-strand sums preserve leading-vs-lagging asymmetry (Replication.m line 226-227: leadingStrandIndexs=[1 4], laggingStrandIndexs=[3 2]). per_component_scaled retained because 4 per-strand sums + 1 count have different natural scales. See docs/phase_f/l2_2_design_a/STATUS_chrom_projections_design.md."
 
   - name: DNASupercoiling
     oc_module: opencell/vivarium/karr_dna_supercoiling.py
@@ -184,9 +184,11 @@ processes:
     input_channels: [substrates, enzymes, chromosome]
     output_channels: [substrates, chromosome]
     primary_channel: chromosome
+    primary_projection: [linkingNumbers.delta_value_sum, linkingNumbers.delta_nnz]
+    primary_distance: per_component_scaled
     karr_artifact: per_process_traces_v2
     rationale_M: "default; randperm + half-up branch covered"
-    notes: ""
+    notes: "v1.4 (2026-06-14): primary_projection set to linkingNumbers.{delta_value_sum, delta_nnz}. linkingNumbers is the ONLY chromosome field DNASupercoiling writes directly (SUT line 503: c.linkingNumbers = CircularSparseMat(...)). per_component_scaled because event_density:moderate and the two components have different natural scales (sum can be ±10⁴, nnz is small int). See docs/phase_f/l2_2_design_a/STATUS_chrom_projections_design.md."
 
   - name: RNAProcessing
     oc_module: opencell/vivarium/karr_rna_processing.py
@@ -399,9 +401,11 @@ processes:
     input_channels: [substrates, chromosome]
     output_channels: [substrates, chromosome]
     primary_channel: chromosome
+    primary_projection: [damage_event_present, damagedBases.delta_nnz, abasicSites.delta_nnz, strandBreaks.delta_nnz, damagedSugarPhosphates.delta_nnz, intrastrandCrossLinks.delta_nnz, hollidayJunctions.delta_nnz, gapSites.delta_nnz]
+    primary_distance: hurdle_event_rate_plus_conditional_scaled_distance
     karr_artifact: per_process_traces_v2
     rationale_M: "single randperm, independent reactions; small M sufficient"
-    notes: "Rare-event; may yield INSUFFICIENT_SAMPLES verdict at M=20. Acceptable outcome — confirms low surface area."
+    notes: "v1.4 (2026-06-14): primary_projection set per-damage-field deltas with hurdle_event_present. setSiteDamaged (SUT line 559) mutates ONE of 7 damage state fields depending on damage type; gating per-field prevents single pooled statistic from hiding type-specific drift. Mirrors DNARepair's hurdle structure since event_density:sparse. Wiring delegation should drop trivially-zero components after smoke (e.g. hollidayJunctions may not be reached). Rare-event; may yield INSUFFICIENT_SAMPLES verdict at M=20. Acceptable outcome — confirms low surface area. See docs/phase_f/l2_2_design_a/STATUS_chrom_projections_design.md."
 
   - name: ProteinProcessingI
     oc_module: opencell/vivarium/karr_protein_processing_i.py
