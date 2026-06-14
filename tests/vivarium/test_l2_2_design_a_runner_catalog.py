@@ -148,9 +148,11 @@ def test_catalog_backed_process_tables_match_real_catalog() -> None:
         "RNAProcessing",
         "RNAModification",
         "tRNAAminoacylation",
+        "ProteinModification",
+        "ProteinFolding",
+        "ProteinTranslocation",
         "ProteinDecay",
-        "ProteinProcessingI",
-        "ProteinProcessingII",
+        "RibosomeAssembly",
         "MacromolecularComplexation",
     }.issubset(runner.SUPPORTED_PROCESSES)
 
@@ -178,6 +180,31 @@ def test_rna_primary_sample_processes_expose_combined_rna_wids() -> None:
 
         assert "RNAs" in wids
         assert len(wids["RNAs"]) == expected_len
+
+
+def test_batch_c_monomer_sample_processes_expose_monomer_wids() -> None:
+    expected_lengths = {
+        "ProteinModification": 40,
+        "ProteinFolding": 964,
+        "ProteinTranslocation": 482,
+    }
+
+    for process_name, expected_len in expected_lengths.items():
+        process = runner._process_sample_process(process_name)
+        wids = runner._observable_wids(process_name, process)
+
+        assert "monomers" in wids
+        assert len(wids["monomers"]) == expected_len
+
+
+def test_ribosome_assembly_sample_process_exposes_complex_and_rna_wids() -> None:
+    process = runner._process_sample_process("RibosomeAssembly")
+    wids = runner._observable_wids("RibosomeAssembly", process)
+
+    assert process.__class__.__name__ == "KarrRibosomeAssemblyProcess"
+    assert wids["complexs"] == ["RIBOSOME_30S", "RIBOSOME_50S"]
+    assert len(wids["monomers"]) > 0
+    assert len(wids["RNAs"]) == 3
 
 
 def test_run_design_a_rejects_out_of_scope_process_with_bucket_rationale(tmp_path: Path) -> None:
