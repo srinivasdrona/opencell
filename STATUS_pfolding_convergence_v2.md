@@ -31,8 +31,14 @@ Run notes:
 
 ## Verdict
 
-Pending.
+Case A: confirmed biology green across regimes.
+
+Rationale:
+- The corrected harness compares OC directly against Karr-recorded `states_after.foldedMonomers`, not against a second OC instance.
+- The `alpha=1.0` row is exact-match green (`per_tick_W1_mean = 0.0`, `per_tick_W1_max = 0.0`), so the harness sanity check holds.
+- No tested substrate scaling crossed the loose stress threshold (`mean < 0.5`, `max < 2.0`); in fact all sampled rows stayed exactly at zero.
+- Because `alpha=0.01` materially changed the input substrate vectors but left the per-tick folded-count outputs unchanged, the observed convergence is not just an artifact of an un-applied perturbation.
 
 ## Recommendation
 
-Pending.
+Recommend a catalog follow-up note or upgrade to `confirmed_biology_validated` for ProteinFolding's convergence-green claim, with the caveat that this v2 check sampled `N_SEEDS = 5` (`s000`-`s004`) rather than the full 50-seed ensemble.
