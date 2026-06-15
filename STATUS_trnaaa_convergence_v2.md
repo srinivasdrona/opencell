@@ -1,35 +1,21 @@
 # tRNAAminoacylation Convergence Validation v2
 
-## Beat 1 Summary
-1. Mirror the structure of `tests/vivarium/_substrate_stress/pfolding_stress_v2.py` for `KarrTRNAAminoacylationProcess`.
-2. Load v2 per-process traces for seeds `s000`-`s004` via the existing seeded-trace helpers.
-3. Rebuild OpenCell runtime state from scaled `states_before.substrates` plus unscaled `enzymes`, `freeRNAs`, and `aminoacylatedRNAs`.
-4. Run `process.next_update(1.0, state)` and compare OC's projected `aminoacylatedRNAs` against Karr's `states_after.aminoacylatedRNAs`.
-5. Record per-alpha W1 results, then classify the convergence-green claim using the PFolding v2 case matrix.
+## Beat 1 - Projection Contract Identified
 
-## Wiring Notes
-- Required `states_before` channels confirmed from runner helpers: `substrates`, `enzymes`, `boundEnzymes`, `freeRNAs`, `aminoacylatedRNAs`.
-- Primary comparison channel for this investigation: `aminoacylatedRNAs`.
-- Verified OC entry point: `KarrTRNAAminoacylationProcess.next_update`.
-- Verified OC emission path differs from the task's suggested field path: aminoacylated tRNA deltas are emitted under `update["rna"]["aminoacylated_counts"]`, not `update["protein"]["counts"]`.
-- The seeded v2 oracle files exist via the helper's external fallback root at `E:/opencell/data/m1_sources/karr_native/per_process_traces_v2_s000` ... `s004`.
+- `_run_trna_aminoacylation_tick` overlays four inputs into a fresh `build_state_template(process)` state: `substrates`, `enzymes`, `freeRNAs`, and `aminoacylatedRNAs`.
+- Substrate and enzyme vectors use fixture/runtime WID lists sourced from `state["substrate_wids"]` and `state["enzyme_wids"]`; the split RNA channels use `process.free_rna_wids` and `process.aminoacylated_rna_wids`.
+- The helper calls `refresh_allocator_views(process, runtime_state)`, runs `process.next_update(1.0, runtime_state)`, and applies the emitted delta with `apply_count_update(runtime_state, update)`.
+- Post-update projection reads `substrates`, `freeRNAs`, and `aminoacylatedRNAs` back out of `runtime_state` via `project_observable_from_state(...)`; it never digs into `update[...]` paths directly.
+- The Design-A catalog marks `tRNAAminoacylation` primary channel as `rnas`, so the harness should gate on `np.concatenate([free_after, aminoacylated_after])` against Karr's `states_after.freeRNAs` + `states_after.aminoacylatedRNAs`.
 
-## Results
-Not run.
+## Beat 2 - Harness
 
-## Verdict
-STOPPED before Beat 2 / harness authoring.
+Pending.
 
-## Stop Reason
-- The task pinned the output payload field path as `update["protein"]["counts"] (aminoacylated_rna_wids)` and instructed: if this does not match the OC port's actual emission, document the gap in STATUS and stop.
-- Source check in `opencell/vivarium/karr_trna_aminoacylation.py` showed the actual write path is:
-  - `update["rna"]["counts"]` for free RNA deltas
-  - `update["rna"]["aminoacylated_counts"]` for aminoacylated RNA deltas
-- `next_update` does not emit aminoacylated tRNA deltas through `protein.counts`.
-- Proceeding would require overriding the pinned payload-path assumption from the task, which would violate the "document the gap in STATUS and STOP — don't invent fields" rule.
+## Beat 3 - Results
 
-## Verification
-- Expected observable change: `bin\oc-py.cmd tests/vivarium/_substrate_stress/trnaaa_stress_v2.py` prints a five-row alpha table and shows `alpha=1.00` with per-tick W1 approximately `0.0`.
-- Actual measured value: not measured, because the investigation stopped before harness authoring.
-- Evidence for the named inversion failure mode: the OC port was checked before writing the harness, and the mismatch was found in the real `next_update` emission path rather than being papered over in test code.
-- Verdict: could-not-measure, because the task's pinned payload field path conflicts with the OC port.
+Pending.
+
+## Beat 4 - Verdict
+
+Pending.
