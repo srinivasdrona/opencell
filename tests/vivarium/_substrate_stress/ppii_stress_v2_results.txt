@@ -1,0 +1,6 @@
+alpha | per_tick_W1_mean | per_tick_W1_max | total_oc_events | total_karr_events | verdict
+1.00 | 0.000000 | 0.000000 | 939 | 939 | PASS
+0.50 | 0.000008 | 0.002075 | 937 | 939 | PASS
+0.10 | 0.000012 | 0.002075 | 936 | 939 | PASS
+0.05 | 0.000012 | 0.002075 | 936 | 939 | PASS
+0.01 | 0.000012 | 0.002075 | 936 | 939 | PASS

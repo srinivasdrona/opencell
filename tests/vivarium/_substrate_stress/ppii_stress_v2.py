@@ -19,7 +19,25 @@ PASS_MAX_W1 = 2.0
 
 
 def _seed_paths() -> list[Path]:
-    return [runner_helpers._v2_seed_mat_path("ProteinProcessingII", seed) for seed in range(N_SEEDS)]
+    rel_paths = [
+        Path(f"per_process_traces_v2_s{seed:03d}") / "ProteinProcessingII_100ticks.mat"
+        for seed in range(N_SEEDS)
+    ]
+    roots = [
+        _REPO_ROOT / "data" / "m1_sources" / "karr_native",
+        Path("E:/opencell/data/m1_sources/karr_native"),
+        Path("/mnt/e/opencell/data/m1_sources/karr_native"),
+    ]
+    resolved: list[Path] = []
+    for rel_path in rel_paths:
+        chosen: Path | None = None
+        for root in roots:
+            candidate = root / rel_path
+            if candidate.exists():
+                chosen = candidate
+                break
+        resolved.append(chosen or (roots[0] / rel_path))
+    return resolved
 
 
 def _load_trace() -> tuple[dict[str, np.ndarray], np.ndarray]:
