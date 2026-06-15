@@ -17,8 +17,35 @@ PASS_MEAN_W1 = 0.5
 PASS_MAX_W1 = 2.0
 
 
+def _karr_native_root_candidates() -> tuple[Path, ...]:
+    candidates = (
+        _REPO_ROOT / "data" / "m1_sources" / "karr_native",
+        Path("/mnt/e/opencell/data/m1_sources/karr_native"),
+        Path("E:/opencell/data/m1_sources/karr_native"),
+    )
+    unique: list[Path] = []
+    seen: set[str] = set()
+    for candidate in candidates:
+        key = str(candidate)
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(candidate)
+    return tuple(unique)
+
+
 def _seed_paths() -> list[Path]:
-    return [runner_helpers._v2_seed_mat_path("ProteinProcessingI", seed) for seed in range(N_SEEDS)]
+    paths: list[Path] = []
+    for seed in range(N_SEEDS):
+        rel = Path(f"per_process_traces_v2_s{seed:03d}") / "ProteinProcessingI_100ticks.mat"
+        for root in _karr_native_root_candidates():
+            candidate = root / rel
+            if candidate.exists():
+                paths.append(candidate)
+                break
+        else:
+            paths.append(_karr_native_root_candidates()[0] / rel)
+    return paths
 
 
 def _load_trace() -> tuple[dict[str, np.ndarray], np.ndarray]:
