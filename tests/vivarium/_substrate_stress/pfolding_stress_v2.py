@@ -51,17 +51,51 @@ def _run_oc_tick(
 ) -> np.ndarray:
     unfolded_before = np.asarray(before["unfoldedMonomers"][seed, tick], dtype=np.float64)
     folded_before = np.asarray(before["foldedMonomers"][seed, tick], dtype=np.float64)
-    state = {
-        "substrate_wids": tuple(process.substrate_wids),
-        "enzyme_wids": tuple(process.enzyme_wids),
-        "oracle_before_substrates": _scale_substrates(before["substrates"][seed, tick], alpha),
-        "oracle_before_enzymes": np.asarray(before["enzymes"][seed, tick], dtype=np.float64),
-        "oracle_before_bound_enzymes": np.asarray(before["boundEnzymes"][seed, tick], dtype=np.float64),
-        "oracle_before_monomers": np.concatenate([unfolded_before, folded_before]),
-    }
-    oc = runner_helpers._run_protein_folding_tick(seed=seed, tick=tick, state=state)
-    monomers_after = np.asarray(oc["monomers"], dtype=np.float64)
-    return monomers_after[len(process.unfolded_monomer_wids) :]
+    bound_enzymes_before = np.asarray(before["boundEnzymes"][seed, tick], dtype=np.float64)
+    runtime_state = runner_helpers.build_state_template(process)
+    runner_helpers.overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="substrates",
+        vector=_scale_substrates(before["substrates"][seed, tick], alpha),
+        wids=list(process.substrate_wids),
+    )
+    runner_helpers.overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="enzymes",
+        vector=np.asarray(before["enzymes"][seed, tick], dtype=np.float64),
+        wids=list(process.enzyme_wids),
+    )
+    runner_helpers.overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="unfoldedMonomers",
+        vector=unfolded_before,
+        wids=list(process.unfolded_monomer_wids),
+    )
+    runner_helpers.overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="foldedMonomers",
+        vector=folded_before,
+        wids=list(process.folded_monomer_wids),
+    )
+    runner_helpers.refresh_allocator_views(process, runtime_state)
+    process._rng = np.random.default_rng(runner_helpers._sample_seed(seed, tick))
+    with runner_helpers.forbid_sut_oracle_file_io():
+        update = process.next_update(1.0, runtime_state)
+    runner_helpers.apply_count_update(runtime_state, update)
+    return np.asarray(
+        runner_helpers.project_observable_from_state(
+            process=process,
+            state=runtime_state,
+            observable="foldedMonomers",
+            wids=list(process.folded_monomer_wids),
+            bound_enzymes_before=bound_enzymes_before,
+        ),
+        dtype=np.float64,
+    )
 
 
 def _run_alpha(
