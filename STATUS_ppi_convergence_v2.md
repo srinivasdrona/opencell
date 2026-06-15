@@ -33,3 +33,13 @@
 - Verdict: **Case A (biology green)**.
 - Answer to the task question: **yes**. For seeds `s000`-`s004`, OpenCell ProteinProcessingI's primary-channel output (`monomers` projected from post-update state, matching Karr `unprocessedMonomers`) matches Karr's recorded `states_after` exactly at every tested `alpha`.
 - Recommendation: keep the convergence-green claim for ProteinProcessingI, and cite the v2 harness specifically because it uses the runner's projection contract rather than brittle `update[...]` payload inspection.
+
+## Verification
+- Expected outcome: `alpha=1.0` should show effectively zero primary-channel W1 if the harness is using the correct post-apply projection path.
+- Actual outcome: `alpha=1.0` produced `per_tick_W1_mean = 0.000000` and `per_tick_W1_max = 0.000000`; all lower alphas also remained exactly zero.
+- Commands run:
+  - `bin\oc-pytest.cmd "tests/vivarium/test_l2_2_design_a*.py" -q`
+  - `bin\oc-py.cmd tests/vivarium/_substrate_stress/ppi_stress_v2.py`
+  - follow-up water-margin probe against the same five seeds
+- Inversion check: the harness never reads `update[...]` to reconstruct outputs; it delegates output extraction to `_run_protein_processing_i_tick`, which applies the update into `runtime_state` and projects `monomers` from state.
+- Inversion check: no production code was modified; the diff is limited to `STATUS_ppi_convergence_v2.md`, `tests/vivarium/_substrate_stress/ppi_stress_v2.py`, and `tests/vivarium/_substrate_stress/ppi_stress_v2_results.txt`.
