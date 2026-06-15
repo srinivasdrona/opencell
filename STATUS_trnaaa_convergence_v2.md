@@ -17,7 +17,17 @@ Thresholds match the PFolding harness: `PASS` iff mean per-tick W1 `< 0.5` and m
 
 ## Beat 3 - Results
 
-Pending.
+Saved raw output to [tests/vivarium/_substrate_stress/trnaaa_stress_v2_results.txt](/E:/opencell-worktrees/validate-trnaaa-convergence/tests/vivarium/_substrate_stress/trnaaa_stress_v2_results.txt).
+
+| alpha | per_tick_W1_mean | per_tick_W1_max | total_oc_events | total_karr_events | verdict |
+| --- | ---: | ---: | ---: | ---: | --- |
+| 1.00 | 0.000000 | 0.000000 | 355351 | 355351 | PASS |
+| 0.50 | 0.000000 | 0.000000 | 355351 | 355351 | PASS |
+| 0.10 | 0.000000 | 0.000000 | 355351 | 355351 | PASS |
+| 0.05 | 0.026865 | 5.432432 | 354846 | 355351 | FAIL |
+| 0.01 | 10.479405 | 13.783784 | 96794 | 355351 | FAIL |
+
+Sanity check passed: the `alpha=1.0` row is exact-zero W1, which is the expected signal that the harness is projecting the real OC post-state instead of reading the wrong `update[...]` payload path.
 
 ## Beat 4 - Verdict
 
