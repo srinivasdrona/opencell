@@ -421,9 +421,9 @@ processes:
     output_channels: [substrates, monomers]
     primary_channel: monomers
     karr_artifact: per_process_traces_v2
-    closed_form_dominant: confirmed       # H12 signal 2026-06-12: per_sample_w1_max=0 across 151 nonzero outputs (PPI batch_a_smoke). See LAUNDERING_VS_CONVERGENCE.md.
+    closed_form_dominant: confirmed_biology_validated  # 2026-06-15 substrate-stress: PASS at all 5 alpha (953 events on both sides, exact 0.0 W1). True non-limiting-regime algorithmic equivalence. See ppi_stress_v2_results.txt.
     rationale_M: "mnrnd water-limited cleavage is closed-form"
-    notes: "Affects monomer counts that Translation gate measures; confirmation valuable for cross-process consistency. closed_form_dominant=candidate (Batch A smoke 2026-06-12 shipped W1=0 + KS p=1 on monomers primary; SUT rationale already declares water-limited cleavage is closed-form; H12 probe should confirm trivially)."
+    notes: "Affects monomer counts that Translation gate measures; confirmation valuable for cross-process consistency. closed_form_dominant=confirmed_biology_validated (Day-29 substrate-stress: 953 events on both sides at alpha in {1.0, 0.5, 0.1, 0.05, 0.01}; W1=0 exact at every alpha. The mnrnd water-limited cleavage really IS substrate-non-limiting-regime closed-form as the SUT declares)."
 
   - name: ProteinProcessingII
     oc_module: opencell/vivarium/karr_protein_processing_ii.py
@@ -436,9 +436,9 @@ processes:
     output_channels: [substrates, monomers]
     primary_channel: monomers
     karr_artifact: per_process_traces_v2
-    closed_form_dominant: confirmed       # H12 signal 2026-06-12: per_sample_w1_max=0 across 27 nonzero outputs (PPII batch_a_smoke). See LAUNDERING_VS_CONVERGENCE.md.
+    closed_form_dominant: confirmed_biology_validated  # 2026-06-15 substrate-stress: PASS at all 5 alpha (939 -> 936-937 OC events; max W1 0.002). Distributionally robust even with tiny event-count dip. See ppii_stress_v2_results.txt.
     rationale_M: "same pattern as PPI"
-    notes: "Affects monomer counts that Translation gate measures."
+    notes: "Affects monomer counts that Translation gate measures. closed_form_dominant=confirmed_biology_validated (Day-29 substrate-stress: 939 -> 936-937 events as alpha drops; max per_tick_W1=0.002 across all 5 alpha; convergence holds because the closed-form cleavage is genuinely substrate-non-limiting for the tested range)."
 
   # ===== DETERMINISTIC (6) — no L2.2 test required ===========================
 
