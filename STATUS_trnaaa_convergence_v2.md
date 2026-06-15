@@ -10,7 +10,10 @@
 
 ## Beat 2 - Harness
 
-Pending.
+Added [tests/vivarium/_substrate_stress/trnaaa_stress_v2.py](/E:/opencell-worktrees/validate-trnaaa-convergence/tests/vivarium/_substrate_stress/trnaaa_stress_v2.py), which mirrors the PFolding alpha-loop but rebuilds state with the tRNAAminoacylation wrapper's overlay/apply/project flow.
+The harness loads `s000`-`s004` through `runner_helpers._v2_seed_mat_path(...)`, scales only `states_before.substrates`, overlays `substrates`/`enzymes`/`freeRNAs`/`aminoacylatedRNAs`, then projects `substrates`, `freeRNAs`, and `aminoacylatedRNAs` from the post-update state.
+Primary-channel comparison uses the catalog's `rnas` contract: `np.concatenate([free_after, aminoacylated_after])` versus Karr `states_after.freeRNAs` + `states_after.aminoacylatedRNAs`.
+Thresholds match the PFolding harness: `PASS` iff mean per-tick W1 `< 0.5` and max per-tick W1 `< 2.0`, over 5 seeds x 100 ticks.
 
 ## Beat 3 - Results
 
