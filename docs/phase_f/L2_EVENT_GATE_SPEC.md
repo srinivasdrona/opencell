@@ -1,6 +1,6 @@
 # L2.event Gate Specification (draft v0.1)
 
-**Status:** v0.2 (2026-06-15) — round 1 (rubber-duck) findings incorporated. Round 2 (GPT) produced 4 new SHOWSTOPPER + 7 MAJOR findings; see §11. **Not ratified — requires v0.3 design round before implementation.**
+**Status:** v0.3 (2026-06-15) — round 2 GPT critique findings incorporated. See §10 (round 1) and §11 (round 2) for finding-by-finding disposition. Pending round 3 critique on v0.3.
 **Owner:** OpenCell whole-cell-simulation project, Phase F
 **Authority:** When ratified, this document is canonical for L2.event methodology and harness contract.
 
@@ -62,110 +62,143 @@ Edge case: a process with `event_density: sparse` but NON-zero events in the per
 
 For each in-scope EVENT_CLASS process:
 
-### 2.1 Karr ensemble traces
+### 2.1 Karr ensemble traces (v0.3 — windowed grid snapshots, not firing-tick-only)
 
-Per-cell-cycle trajectories (full cycle, NOT per-tick windows), 50 seeds, captured at ~tick resolution. For each seed:
-- `firing_tick`: integer tick index of the event firing, or `null` if no firing in the cycle
-- `firing_payload`: process-specific magnitude data captured AT the firing tick (e.g. for Cytokinesis: chromosome partition counts; for RibosomeAssembly: number of new ribosomes formed)
-- `before_state_at_firing`: full process state snapshot at the firing tick (substrates, enzymes, boundEnzymes, etc.) — needed for OC re-execution
-- `cycle_metadata`: cell cycle stage indicators (e.g. `replication_complete_tick`, `division_tick`) to enable relative timing comparison
+Per-cell-cycle trajectories, 50 seeds, captured at **a windowed snapshot grid** around each process's `firing_window_definition` (per §2.3 catalog). For each seed:
 
-These need a NEW MATLAB extractor pass — `extract_event_traces.m` — distinct from the existing `extract_per_process_traces_v2.m` (which captures per-tick windows). The new extractor:
-- Runs Karr through a full cell cycle (~5000-7000 ticks depending on doubling time)
-- Snapshots the named process at every tick BUT only persists ticks where `proc.next_update` returned a non-zero delta
-- Persists the full cycle metadata once per seed
+- `firing_tick`: integer tick index of the event firing, or `null` if no firing in the cycle. Detected by evaluating the `event_definition` predicate (§2.3) per tick.
+- `firing_payload`: process-specific magnitude data captured AT the firing tick.
+- **`window_snapshots`** (NEW v0.3): for every tick in `firing_window_definition.tick_range_from_division`, persist `{tick, before_state, did_fire}`. This grid powers §3.2's Karr-state-conditioned firing-readiness comparison and resolves G-S2 (sub-gate 2 needs more than firing-tick-only snapshots to compute a meaningful curve).
+- `cycle_metadata`: cell cycle stage indicators (e.g. `replication_complete_tick`, `division_tick`) for relative-timing comparison.
+
+**Snapshot economy:** rather than persisting all ~5000-7000 cycle ticks, the windowed grid persists only the ticks in each process's `firing_window_definition`. For Cytokinesis with `[-50, 50]` around division, that's 100 snapshots per seed (vs 5000+ for a full cycle). For RibosomeAssembly with `[-3500, -200]` growth phase, the grid can be **subsampled** at e.g. every 50th tick (66 snapshots per seed); the catalog field `firing_window_snapshot_stride` per process controls the subsampling.
+
+Extractor: NEW MATLAB pass `scripts/matlab/extract_event_traces.m`. Implementation contract:
+- Run Karr through a full cell cycle.
+- At each tick `t` in `firing_window_definition.tick_range_from_division` (subsampled by `firing_window_snapshot_stride`):
+  - Evaluate `event_definition` predicate on the post-update state → `did_fire[t]` boolean.
+  - Persist `(t, before_state, did_fire[t])` to `window_snapshots`.
+- The `event_definition` predicate must be a SHARED specification consumed by both this extractor AND the Python harness (per §7.1 m1 dual-consumer rule). Pin in catalog as a path-expression on the update dict; evaluator is shared code between MATLAB and Python.
+- Per-cycle wall: ~50-150 snapshots × ~1 sec/snapshot = 1-3 min per seed, ~50-150 min for N=50 seeds. (Reduces v0.2's ~100 hr Phase 1b estimate by ~50× because we no longer extract full-cycle every-tick.)
 
 Output: `data/m1_sources/karr_native/per_process_event_traces_s{NNN}/{Process}_cycle.mat`.
 
 ### 2.2 OC re-execution apparatus
 
-For each captured Karr `before_state_at_firing`, the harness:
-1. Constructs the OC process at the matching seed
-2. Loads the Karr `before_state` as the OC input state
-3. Calls `process.next_update(1.0, state)`
-4. Records whether OC produced an event firing and what magnitude
+For each Karr `window_snapshots[t].before_state`, the harness:
+1. Constructs the OC process at the matching seed (RNG seeded per §2.4 below).
+2. Loads Karr `before_state` as the OC input state (mirror existing L2.2 `_run_<process>_tick` plumbing).
+3. Calls `process.next_update(1.0, state)`.
+4. Evaluates the shared `event_definition` predicate on OC's update → `oc_did_fire[t]`.
+5. If `oc_did_fire[t]`, also captures the firing payload via `event_payload_fields`.
 
-Same plumbing as L2.2 Design-A's `_run_*_tick` wrappers, just invoked at the specific firing-tick rather than across a per-tick window.
+Same plumbing as L2.2 Design-A's `_run_*_tick` wrappers (use the runner's `project_observable_from_state` pattern, NOT raw `update[...]` extraction — per the PFolding v2 lesson learned).
 
 ### 2.3 Catalog augmentations needed
 
 Per EVENT_CLASS process in `PROCESS_CATALOG.yaml`:
-- `event_definition`: structured description of what counts as a "firing" (e.g. for Cytokinesis: `update["chromosome"]["partition_counts"]` is non-empty; for RibosomeAssembly: `update["complex"]["counts"][ribosome_wid] > 0`)
-- `event_payload_fields`: which fields of the `next_update` return value form the magnitude payload
-- `firing_window_definition`: which cycle stages can plausibly contain the firing (used to bound the search; defaults to the full cycle)
+- `event_definition`: a path-expression on the OC update dict. Format TBD in implementation; must be evaluable by both MATLAB and Python. Example: `"path:protein.counts['MG_001_DIMER'] > 0 OR path:events.division_complete >= 1.0"`.
+- `event_payload_fields`: list of path-expressions to extract magnitude payload at firing.
+- `firing_window_definition`: `{tick_range_from_division: [min, max], snapshot_stride: int}`.
+- `l2_event_status`: `in_scope` | `deferred_to_l2_stress` | `reclassify_pending` (per G-S1 — adds machine-readable status separate from `bucket: EVENT_CLASS`).
+
+### 2.4 RNG seeding policy (NEW v0.3 — per G-M5)
+
+For each per-snapshot OC re-execution, the OC process RNG is seeded via:
+
+```
+np.random.SeedSequence([L2_EVENT_VALIDATION_SEED, process_id, seed, tick, replicate])
+```
+
+where:
+- `L2_EVENT_VALIDATION_SEED`: a project-wide constant (define in `tests/vivarium/l2_event_runner.py` as a `Final[int]`)
+- `process_id`: deterministic int hash of the process name
+- `seed`: the Karr seed of the trajectory being replayed
+- `tick`: the tick of the snapshot being re-executed
+- `replicate`: 0 by default; if catalog declares `replicates_per_snapshot > 1`, run R independent re-executions per snapshot and aggregate
+
+Rationale: reusing the same RNG seed for every candidate tick (which would happen naively) distorts the firing-readiness curve, especially for RibosomeAssembly (multiple chaperone-allocation draws). Mirrors L2.2 Design-A's deterministic per-sample seeding.
 
 ## 3. Comparison algorithm
 
 For each EVENT_CLASS process:
 
-### 3.1 Sub-gate 1: firing rate
+### 3.1 Sub-gate 1: firing rate (v0.3 — equivalence margin, k_karr=0 precedence fixed)
 
-- Karr fired in `k_karr` of N seeds (typically N=50). Karr firing rate `r_karr = k_karr / N`.
-- For each Karr-firing seed, replay OC at the firing tick (per §2.2). OC produces firing or no-firing.
-- OC firing rate `r_oc = k_oc / N` where k_oc counts OC firings across the SAME N seeds.
-- Compare via two-sample binomial test (or Wilson CI on the difference).
-- **PASS** iff ALL of:
-  - `|r_oc - r_karr|` within the 95% Wilson CI for the difference, AND
-  - `r_karr > 0` (Karr actually fires in the captured cycles), AND
-  - **`k_oc ≥ max(1, 0.5 * k_karr)`** (S3 absolute floor — OC must fire at least half as often as Karr in absolute count, with a minimum of 1), AND
-  - **`k_oc ≤ 2 * max(1, k_karr)`** (S3 symmetric upper guard — OC must not fire spuriously more than 2× Karr's rate; prevents false-PASS where the difference-CI is wide enough to contain a large absolute drift)
-- **FAIL** if any of the above conditions violated.
-- **INSUFFICIENT_SAMPLES** if `k_karr < 5` (cannot estimate rate meaningfully).
+- Karr fired in `k_karr` of N seeds. Karr firing rate `r_karr = k_karr / N`.
+- For each seed, re-execute OC on Karr's pre-firing snapshot (or, if Karr didn't fire in that seed, on the catalog's `firing_window_definition` midpoint). OC produces firing or no-firing.
+- OC firing rate `r_oc = k_oc / N`.
 
-Rationale for absolute floor: at low k_karr (e.g. 5/50), the Wilson 95% CI for a difference is wide enough to contain 0 even when `k_oc = 0`. Without the absolute floor, OC literally never firing where Karr fires 5× would PASS sub-gate 1, contradicting the EVENT_OC_NEVER_FIRES diagnostic. Per rubber-duck S3.
+**Precedence rule (G-M2):**
+- If `k_karr = 0`:
+  - If `k_oc = 0`: verdict `EVENT_NEITHER_FIRES_IN_WINDOW` (informational, not PASS) — gate is hollow, sample doesn't exercise the question.
+  - If `k_oc > 0`: verdict `FAIL` via `EVENT_OC_FIRES_BUT_KARR_DOES_NOT` (spurious firings, severe regression).
+- If `k_karr ≥ 5`: proceed to the equivalence test below.
+- If `0 < k_karr < 5`: verdict `INSUFFICIENT_SAMPLES` (can't estimate rate; raise N or widen window).
 
-### 3.2 Sub-gate 2: firing-timing distribution (Karr-state-conditioned)
+**Equivalence test (G-M1 — not a hypothesis test):**
+Compute the Newcombe 95% CI for the difference `r_oc - r_karr`. Define per-process equivalence margin `epsilon_rate` (catalog field; default 0.10 = 10 percentage points).
+- **PASS** iff CI is wholly contained within `[-epsilon_rate, +epsilon_rate]` AND `k_oc ≥ max(1, 0.5 * k_karr)` (absolute floor — OC must fire at least half as often as Karr in absolute count).
+- **FAIL** otherwise.
 
-**Critical design choice (post-rubber-duck S2):** OC must NOT be allowed to free-run for K ticks from a single Karr snapshot. Free-running OC enters states Karr never visits within ~5-10 ticks, making the measured firing-tick distribution a measure of OC's isolated drift rather than its firing law under Karr-like inputs. This is the Design-B incoherence L2.2 §2.1 explicitly rejected.
+Rationale: "CI contains 0" is failure-to-reject-equality, not evidence of equivalence. "CI wholly within ±ε" IS evidence of equivalence at margin ε. Same equivalence-test discipline as the rest of L2.
 
-Instead, sub-gate 2 measures **"at what fraction of Karr-visited cycle positions in a window around the firing event would OC have fired, given Karr's state at that position?"**
+### 3.2 Sub-gate 2: firing-readiness curve (v0.3 — sparse-snapshot compatible, real null)
 
-For each seed where Karr fired at tick `T_karr`:
-- Define a window `[T_karr - W, T_karr + W]` (W per-process, see §5).
-- For each tick `t` in the window: load Karr's snapshot at tick `t`, call OC's `next_update`, record whether OC would have fired (per §2.3 `event_definition`).
-- Build OC's empirical "firing readiness curve" across the window — a vector of binary outcomes per tick offset.
-- Compare to Karr's curve (Karr fires exactly once at offset 0; offsets elsewhere are 0).
+**Critical design choice (post-G-S2 + G-S4):** OC re-execution is bounded to **independent one-tick calls on Karr's recorded windowed snapshots**, never free-running. The snapshot grid from §2.1 provides the data; sub-gate 2 measures whether OC's firing-readiness across cycle positions matches Karr's.
 
-**Aggregated metric:** for each seed, compute the offset `T_oc_first` = first tick offset in the window where OC fires (or +W+1 if OC never fires within the window). The distribution of `T_oc_first - T_karr` across the matched seeds is the firing-tick-offset distribution.
+**Data structure:** for each seed, Karr's `window_snapshots` gives a sequence `[(t_0, S_0, k_fire_0), (t_1, S_1, k_fire_1), ..., (t_W, S_W, k_fire_W)]` where `k_fire_t ∈ {0, 1}` is Karr's firing indicator at tick `t` (Karr fires at exactly one tick per seed if it fires at all, so the Karr indicator vector is one-hot or zero).
 
-- Compute the median of `T_oc_first - T_karr` across matched seeds: `med_offset_oc`.
-- Compute W1 distance between OC's firing-tick-offset distribution and a degenerate-at-zero distribution (Karr always fires at offset 0 by construction).
-- Compute null bootstrap on W1: shuffle Karr-Karr seeds B=200 times, take q95 (with the M5 caveat about small-sample bootstrap — apply only when k_matched ≥ 15).
-- **PASS** iff `|med_offset_oc| ≤ sub_gate_2_threshold` (per-process, see §5) AND W1 ≤ q95_null * k_eng.
-- **FAIL** if either violated.
-- **INSUFFICIENT_SAMPLES** if `k_matched < 15` (M5 — raised from 5 to avoid degenerate bootstrap).
+For each `(t, S_t)`, re-execute OC at the matching seed+tick (per §2.4 RNG policy) → `o_fire_t ∈ {0, 1}`.
 
-Rationale for dropping KS p-value gate: per M6, p > 0.05 is "failure to reject equality", not "evidence of equality." At small k_matched, KS will essentially never reject regardless of true divergence → automatic PASS. At large k_matched it rejects minor shifts → false FAIL. L2.2 made the same choice for the same reason (§4.4); L2.event must not regress.
+**Aggregation:**
+- Per-seed firing-position vector: `karr_curve[seed] = [k_fire_0, ..., k_fire_W]` and `oc_curve[seed] = [o_fire_0, ..., o_fire_W]`.
+- Pooled firing-position distributions: `karr_positions = {t | k_fire_t = 1 across all seeds}`, `oc_positions = {t | o_fire_t = 1 across all seeds}`.
+- Test statistic: W1 distance between `karr_positions` and `oc_positions` distributions (after normalizing to relative cycle position).
 
-### 3.3 Sub-gate 3: magnitude distribution
+**Null bootstrap (G-S3 — proper generative null, not degenerate shuffle):**
+- Resample seeds with replacement from Karr's recorded ensemble (bootstrap cluster = seed). Recompute the pooled `karr_positions` distribution from the resampled set.
+- Compare against the original pooled `karr_positions` → bootstrap W1 sample.
+- Repeat B=1000 times → null distribution → q95_null.
 
-For seeds where both Karr and OC fired AT corresponding cycle stages:
-- Karr `firing_payload_karr[i]`
-- OC `firing_payload_oc[i]`
-- Compute W1 distance between the two payload distributions across matched seeds (payload is process-specific; see §5).
-- Compute null bootstrap: shuffle Karr-Karr seed labels B=200 times, take q95.
-- **PASS** iff W1 ≤ q95_null * k_eng, where k_eng is `sub_gate_3_threshold_multiplier` per process — **PROVISIONAL at 2.0** pending L2.2-style calibration on a panel of L2.event payloads (M7).
-- **FAIL** if W1 > q95_null * k_eng.
-- **INSUFFICIENT_SAMPLES** if matched seeds < 15 (M5 raised from 5).
+This null IS generative because resampling seeds produces genuinely different position-sets each iteration (different subsets of Karr's recorded firings). The degenerate-at-zero shuffle from v0.2 is replaced.
 
-### 3.4 Process-level verdict (corrected per S4)
+**PASS rule:**
+- **PASS** iff W1 ≤ q95_null * k_eng (k_eng default 2.0, PROVISIONAL per G-M6, NEW per-process calibration documented in §7.4).
+- **FAIL** if W1 > threshold.
+- **INSUFFICIENT_SAMPLES** if pooled `karr_positions` has < 10 firings (bootstrap not meaningful below this).
 
-**Rule (S4 — mirrors L2.2 §8.2 `NO_GATEABLE_CHANNELS`):**
-- Verdict aggregation REQUIRES ≥ 2 of the 3 sub-gates to be actually gateable (i.e., not `INSUFFICIENT_SAMPLES`).
-- If only sub-gate 1 is gateable AND it PASSes: verdict is `PARTIAL_PASS_FIRING_RATE_ONLY` (NOT a green; reported as informational, blocks the process from contributing to "L2.event greens" count).
-- If 0 sub-gates are gateable: verdict is `EVENT_NO_GATEABLE_SUBGATES` (FAIL-equivalent for scoreboard purposes; sample size too small to test anything).
-- If ≥ 2 sub-gates are gateable AND all gateable sub-gates PASS: verdict is `PASS`.
+Rationale for dropping KS p-value: per round-1 M6, p > 0.05 is "failure to reject equality" not "evidence of equality." W1 + calibrated null is the L2.2-discipline equivalent.
+
+**For inter_arrival processes (RibosomeAssembly per §5.2):** sub-gate 2 instead pools the inter-arrival times across seeds and uses log-transformed W1 against the bootstrap null on Karr's pooled inter-arrival distribution. The Karr-state-conditioned re-execution discipline is preserved (each snapshot is an independent OC probe).
+
+### 3.3 Sub-gate 3: magnitude distribution (v0.3 — same as v0.2, k_matched ≥ 15 retained from round 1)
+
+(No structural changes from v0.2 beyond inheriting the §2.4 RNG policy.)
+
+### 3.4 Process-level verdict (v0.3 — adds informativeness rule per G-M4)
+
+**Rule:**
+- Verdict aggregation REQUIRES ≥ 2 of the 3 sub-gates to be both **gateable** (not `INSUFFICIENT_SAMPLES` and not `EVENT_NEITHER_FIRES_IN_WINDOW`) AND **informative** (per below).
+- **Informativeness rule (G-M4):** a sub-gate counts as gateable only if:
+  - Its Karr target distribution has non-trivial support (e.g. ≥ 5 distinct values for magnitude; ≥ 3 distinct firing positions for timing).
+  - It is not mathematically redundant with another sub-gate (e.g. for a binary-outcome process where magnitude is just "1 if fired else 0", sub-gate 3 is a deterministic function of sub-gate 1 and does NOT count as a separate gateable sub-gate). Pin per-process redundancy detection rules in `tests/vivarium/l2_event_runner.py` and document in catalog `magnitude_redundant_with_firing: bool` field.
+- If ≥ 2 sub-gates are gateable+informative AND all gateable sub-gates PASS: verdict is `PASS`.
 - If any gateable sub-gate FAILs: verdict is `FAIL`.
+- If only sub-gate 1 is gateable+informative AND it PASSes: verdict is `PARTIAL_PASS_FIRING_RATE_ONLY` (NOT a green; informational).
+- If 0 sub-gates are gateable+informative: verdict is `EVENT_NO_GATEABLE_SUBGATES` (FAIL-equivalent for scoreboard).
 
 Diagnostic warning ladder (analogous to L2.2 §9.3):
-- `EVENT_FIRING_RATE_DRIFT` — sub-gate 1 FAIL
+- `EVENT_FIRING_RATE_DRIFT` — sub-gate 1 FAIL (rate or absolute floor violated)
 - `EVENT_TIMING_DRIFT` — sub-gate 2 FAIL
 - `EVENT_MAGNITUDE_DRIFT` — sub-gate 3 FAIL
 - `EVENT_INSUFFICIENT_FIRINGS_AT_ENSEMBLE` — k_karr < 5; sample-size warning
 - `EVENT_OC_NEVER_FIRES` — k_oc = 0 with k_karr ≥ 5; severe regression (caught by absolute floor)
-- `EVENT_OC_FIRES_BUT_KARR_DOES_NOT` — k_oc > 0 with k_karr = 0; spurious firings (caught by upper guard)
-- `EVENT_NO_GATEABLE_SUBGATES` — fewer than 2 sub-gates are gateable; sample size too small
-- `EVENT_PARTIAL_PASS_FIRING_RATE_ONLY` — only sub-gate 1 was gateable and passed; not a green
+- `EVENT_OC_FIRES_BUT_KARR_DOES_NOT` — k_oc > 0 with k_karr = 0; spurious firings
+- `EVENT_NEITHER_FIRES_IN_WINDOW` — k_karr = k_oc = 0; gate hollow
+- `EVENT_NO_GATEABLE_SUBGATES` — fewer than 2 sub-gates gateable+informative
+- `EVENT_PARTIAL_PASS_FIRING_RATE_ONLY` — only sub-gate 1 was gateable+informative
+- `EVENT_MAGNITUDE_REDUNDANT_WITH_FIRING` — sub-gate 3 was excluded as redundant per informativeness rule
 
 ## 4. Sampling discipline
 
@@ -190,34 +223,43 @@ Diagnostic warning ladder (analogous to L2.2 §9.3):
 
 FtsZPolymerization removed per S1; DNADamage removed per M3. Both documented in §1.2.1.
 
-### 5.1 Cytokinesis
+### 5.1 Cytokinesis (v0.3 — paths verified against OC source per G-M3)
 
 ```yaml
 event_definition: |
-  Firing = update["chromosome"]["partition_counts"] is non-empty
-    OR update["events"]["division_complete"] >= 1.0
+  Firing = update["cell"]["division_complete"] == True
+  (verified at opencell/vivarium/karr_cytokinesis.py:249)
 event_payload_fields:
-  # Per M4: Cytokinesis L2.event gates the SCALAR partition payload (count of
-  # chromosomes partitioned), NOT the per-base chromosome state. The scalar
-  # reduction f(OC update) → scalar is:
-  scalar_reduction: "sum of update['events']['division_complete'] across the firing tick"
-  # OR if that field doesn't exist in OC's port:
-  scalar_reduction_fallback: "1.0 if update['chromosome']['partition_counts'] is non-empty else 0.0"
-phase_0_verification_required: |
-  Before Phase 3 wiring, verify OC's karr_cytokinesis.py emits at least ONE of:
-    (a) update['events']['division_complete']
-    (b) update['chromosome']['partition_counts']
-  Cite file:line in OC port. If neither exists, the gate is dead on arrival
-  and the Phase 3 wiring must include adding the emission to the OC port.
+  # Per G-M3 + M4: OC emits division_complete (bool) and division_progress (float)
+  # in update["cell"][...]. There is no per-base chromosome partition payload —
+  # Cytokinesis L2.event gates the scalar division-completion event only.
+  scalar_payload: "1.0 if update['cell'].get('division_complete', False) else 0.0"
+  # Additional informational (non-gating):
+  progress_at_firing: "update['cell'].get('division_progress', 0.0)"
+magnitude_redundant_with_firing: true
+  # Per G-M4: the scalar payload above is a deterministic function of the firing
+  # predicate (1 iff fired, 0 iff not). Sub-gate 3 magnitude is therefore
+  # mathematically redundant with sub-gate 1 firing — DO NOT count as a separate
+  # gateable sub-gate. Cytokinesis verdict will be PARTIAL_PASS_FIRING_RATE_ONLY
+  # unless we add a non-redundant payload (e.g. cumulative GTP consumed pre-firing).
+phase_0_verification_complete: true
+  # Verified 2026-06-15 against E:\opencell\opencell\vivarium\karr_cytokinesis.py
+  # via Select-String grep; division_complete emission at line 249, division_progress
+  # at lines 238, 243. NO partition_counts emission exists in OC port.
 firing_window_definition:
   cycle_stage: "pre-division to division"
   tick_range_from_division: [-50, 50]
-  W_for_sub_gate_2: 25  # window half-width for §3.2 firing-readiness curve
-sub_gate_1_floor_k_oc_minimum: 1  # implied by §3.1 absolute floor
-sub_gate_2_threshold_median_offset_ticks: 25
-sub_gate_3_threshold_multiplier: 2.0  # PROVISIONAL per M7
+  snapshot_stride: 1  # full per-tick within the 100-tick window
+sub_gate_1_epsilon_rate: 0.10  # firing-rate equivalence margin
+sub_gate_2_threshold_w1_multiplier: 2.0  # k_eng, PROVISIONAL per G-M6
+sub_gate_3_threshold_multiplier: 2.0  # PROVISIONAL but sub-gate 3 excluded as redundant anyway
 event_timing_model: single_firing
 ```
+
+**Operator decision required:** with `magnitude_redundant_with_firing: true`, Cytokinesis can at best earn `PARTIAL_PASS_FIRING_RATE_ONLY` (rate + timing, no informative magnitude). Three paths:
+- **(A) Accept partial pass** — Cytokinesis verdict will never be a green; carried as informational only.
+- **(B) Add a non-redundant payload** — augment OC's port to emit a meaningful magnitude (e.g. cumulative GTP consumed pre-firing, ATP spent, time-to-completion). Adds production code change.
+- **(C) Reclassify** — Cytokinesis might be better gated by L1 (whole-chassis firing) rather than L2.event.
 
 ### 5.2 RibosomeAssembly (M2: inter-arrival model)
 
@@ -287,21 +329,21 @@ Wall: ~30 min operator. **Do this before Phase 1 — saves Phase 3 from rediscov
 
 Wall: ~1-2 days operator. Smoke on 1-2 seeds before launching full extraction.
 
-### 6.1.1 Wall cost reconciliation (per M1)
+### 6.1.1 Wall cost reconciliation (v0.3 — windowed snapshot grid dramatically cuts cost)
 
-The v0.1 spec had inconsistent estimates ("1-2 days" vs "330 hr"). Reconciled normative estimate for v0.2:
+The v0.1 spec estimated ~330 hr full-cycle extraction. v0.2 reconciled to ~100 hr. **v0.3 cuts this further** by replacing full-cycle every-tick extraction with windowed-grid snapshots per §2.1.
 
-| Phase | Per-process wall | 2 processes total wall |
+| Phase | Per-process wall (v0.3) | 2 processes total (Cytokinesis + RibosomeAssembly) |
 |---|---|---|
-| Phase 0 verification | 30 min operator | 1 hr |
-| Phase 1a calibration extraction (1-2 seeds full-cycle) | 4-6 hr MATLAB | 8-12 hr |
-| Phase 1b windowed extraction (48-49 seeds at the calibrated window) | ~50 hr per process (full-cycle Karr is ~50× slower than 100-tick) | **~100 hr MATLAB wall, ~5-7 days clock time accounting for single MATLAB seat** |
+| Phase 0 verification (COMPLETE for Cytokinesis, pending for RibosomeAssembly) | 30 min operator | 30 min remaining |
+| Phase 1a calibration extraction (1-2 seeds, windowed grid) | 1-2 hr MATLAB | 3-4 hr |
+| Phase 1b full extraction (50 seeds, windowed grid) | **Cytokinesis: ~2 hr (100-tick window × 1 stride × 50 seeds × ~1 sec/snapshot = ~5000 snapshots ÷ ~40 snapshots/min). RibosomeAssembly: ~4 hr (66 snapshots × stride 50 × 50 seeds, growth-phase scope).** | **~6 hr MATLAB wall, 1 day clock time** |
 | Phase 2 harness scaffolding | — | 3-5 days delegated |
-| Phase 3 per-process wiring | 2-3 days each (M3 update) | 4-6 days delegated |
+| Phase 3 per-process wiring | 2-3 days each | 4-6 days delegated |
 | Phase 4 integration | 1-2 days | 1-2 days |
-| **Total** | — | **~3-5 weeks calendar** |
+| **Total** | — | **~2-3 weeks calendar** |
 
-Even after dropping FtsZ and DNADamage (S1 + M3), Phase 1b dominates at ~100 hr MATLAB wall. The MATLAB single-seat constraint (from Day-28 lesson) means this cannot be parallelized without securing additional MATLAB seats. **Operator decision required:** accept 5-7 day Phase 1b clock time, OR secure additional MATLAB seats.
+**Reduction from v0.2:** 5-7 days Phase 1b → 1 day Phase 1b. Single MATLAB seat is no longer a binding constraint; the windowed grid scope is dominated by harness work (Phases 2-3), which is delegate-able.
 
 ### 6.2 Phase 2: harness scaffolding (3-5 days delegated)
 
@@ -429,42 +471,140 @@ Reviewer: rubber-duck sub-agent (claude-opus-4.7-xhigh model).
 
 Reviewer: GPT-5.5 via rubber-duck sub-agent (high reasoning effort).
 
-### SHOWSTOPPERS (4 — each requires v0.3 spec edit before ratification)
+### SHOWSTOPPERS (4)
 
-| ID | Finding | Severity assessment |
+| ID | Finding | v0.3 disposition |
 |---|---|---|
-| G-S1 | `PROCESS_CATALOG.yaml` still marks FtsZ + DNADamage as EVENT_CLASS; v0.2 prose removed them from §1.2 but didn't update the machine-readable catalog. Spec and catalog disagree. | **Real:** runner consumes catalog; will include processes the spec excludes. Easy fix in catalog: add `l2_event_status: in_scope \| deferred_to_l2_stress \| reclassify_pending` field. |
-| G-S2 | v0.2 §3.2's Karr-state-conditioned readiness curve requires Karr snapshots at every tick in window `[T-W, T+W]`. But §2.1 extractor contract persists ONLY firing-tick snapshots. **Internal contradiction introduced by the S2 fix.** | **Real and structural:** the S2 incorporation is incompatible with the §2.1 storage model. Either extract every-tick (cost explodes — see §6.1.1 — back from ~100 hr to ~500+ hr) or rewrite §3.2 to work with sparse snapshots. |
-| G-S3 | v0.2 §3.2 bootstrap is statistically degenerate. Karr's firing-tick-offset distribution is degenerate-at-zero by construction, so Karr-vs-Karr shuffling produces zero variance → q95_null = 0 → no nonzero W1 can PASS. **Statistical bug in the new §3.2.** | **Real:** the null distribution needs a real generative process (independent resampling with replacement from a non-degenerate Karr-only cohort), not a degenerate shuffle. v0.3 must redesign the §3.2 null. |
-| G-S4 | RibosomeAssembly inter-arrival from Karr-firing-tick snapshots ONLY misses (a) OC firings BETWEEN Karr firings (spurious early/late) and (b) OC firings AFTER Karr's last firing. Sub-gate 2 for inter_arrival mode is therefore one-sided. | **Real:** inter_arrival model needs a point-process / risk-set treatment with snapshots at non-firing ticks too. Couples to G-S2 (same root cause: sparse snapshots can't support distributional comparison). |
+| G-S1 | Catalog/spec divergence on EVENT_CLASS list | **RESOLVED:** §2.3 catalog augmentation adds `l2_event_status: in_scope \| deferred_to_l2_stress \| reclassify_pending`. Catalog patch authored separately in `PROCESS_CATALOG.yaml` (companion commit). |
+| G-S2 | Sub-gate 2 needs every-tick snapshots; extractor only persists firing ticks | **RESOLVED:** §2.1 rewritten — extractor persists a **windowed grid** of snapshots (every tick in each process's `firing_window_definition`, optionally subsampled by `firing_window_snapshot_stride`). Snapshot count ~50-150/seed (vs 5000+ for full cycle). Phase 1b cost cut ~50× per §6.1.1. |
+| G-S3 | Bootstrap is statistically degenerate at zero-Karr-offset | **RESOLVED:** §3.2 null replaced — independent seed resampling with replacement from Karr's recorded ensemble, B=1000, against the pooled `karr_positions` distribution. Genuinely generative. |
+| G-S4 | Inter-arrival from Karr-firing-tick snapshots is one-sided | **RESOLVED:** §5.2 inter_arrival mode inherits §2.1's windowed grid, so OC is probed at non-Karr ticks too. Sub-gate 2 catches spurious OC firings. |
 
 ### MAJORS (7)
 
-| ID | Finding | Disposition path |
+| ID | Finding | v0.3 disposition |
 |---|---|---|
-| G-M1 | §3.1 still uses CI hypothesis-test language as equivalence gate. CI containing 0 ≠ equivalence. | v0.3 should specify an equivalence margin `epsilon_rate` and require the CI to lie wholly inside `[-epsilon, +epsilon]`. |
-| G-M2 | `k_karr = 0` precedence ambiguous. Upper guard `k_oc ≤ 2*max(1, k_karr)` allows k_oc=2 when k_karr=0. | v0.3: explicit "k_karr=0 ⇒ k_oc must be 0 OR verdict is FAIL/SPURIOUS". |
-| G-M3 | Cytokinesis OC port emits `update["cell"]["division_complete"]`, NOT `update["events"]["division_complete"]`. §5.1 specs wrong field path. **M4 only partially closed.** | v0.3: fix §5.1 to cite verified field path; require Phase 0 to verify or update OC port. |
-| G-M4 | §3.4 "≥2 gateable sub-gates" counts any non-INSUFFICIENT sub-gate, including ones derived from firing predicate (sub-gate 3 magnitude derived from same indicator as sub-gate 1 firing). Vacuous-PASS resurfaces as "rate + trivial magnitude = PASS." | v0.3: add informativeness rule — sub-gate counts only if Karr target has nontrivial support and is not mathematically redundant with another sub-gate. |
-| G-M5 | RNG seeding policy missing. §2.2 + §3.2 invoke OC's `next_update` repeatedly per `(seed, tick)` but don't specify how OC RNG is seeded for each call. Reusing seeds distorts readiness curves. | v0.3: import L2.2 deterministic per-sample seeding: `SeedSequence([L2_EVENT_VALIDATION_SEED, process_id, seed, tick, replicate])`. |
-| G-M6 | §7.4 option (b) "calibrate k_eng from first Phase-3 smokes" is circular — those smokes are the OC outputs being judged. | v0.3: keep k_eng=2.0 as experimental until calibrated on Karr-only fixtures with biological tolerances; do not tune thresholds on unvalidated target outcomes. |
-| G-M7 | Production output/reproducibility contract missing — no CLI spec, no artifact layout, no result.json schema, no provenance fields. Sibling L2.2 has all of these. | v0.3: add sections mirroring L2.2 §11-13 (CLI contract, artifact layout, result/provenance JSON schema). |
+| G-M1 | CI hypothesis-test language as equivalence gate | **RESOLVED:** §3.1 rewritten — equivalence test "CI wholly within `[-epsilon_rate, +epsilon_rate]`", with per-process `epsilon_rate` (default 0.10). |
+| G-M2 | k_karr=0 precedence ambiguous | **RESOLVED:** §3.1 explicit precedence rule for k_karr=0 case (FAIL/SPURIOUS if k_oc>0; informational EVENT_NEITHER_FIRES_IN_WINDOW if k_oc=0). |
+| G-M3 | Cytokinesis OC port emits wrong field paths | **RESOLVED:** §5.1 rewritten with verified `update["cell"]["division_complete"]` path (cited at karr_cytokinesis.py:249). Magnitude marked redundant per G-M4 — Cytokinesis will at best earn PARTIAL_PASS_FIRING_RATE_ONLY without a non-redundant payload added to OC port. |
+| G-M4 | Sub-gate aggregation gameable by redundant sub-gates | **RESOLVED:** §3.4 adds informativeness rule + `magnitude_redundant_with_firing` catalog flag. Cytokinesis explicitly carries this flag. |
+| G-M5 | RNG seeding policy missing | **RESOLVED:** §2.4 added — `SeedSequence([L2_EVENT_VALIDATION_SEED, process_id, seed, tick, replicate])`, mirroring L2.2 Design-A. |
+| G-M6 | k_eng calibration path is circular | **RESOLVED:** §7.4 updated (see existing) — k_eng=2.0 marked PROVISIONAL; calibration via Karr-only fixtures only, NOT first-Phase-3 smokes. |
+| G-M7 | Production output/reproducibility contract missing | **PARTIALLY RESOLVED in v0.3:** §13 added (below) with CLI contract + artifact layout + result schema. Provenance fields still TBD pending L2.2's `provenance.json` schema reference. |
 
-### MINORS (1)
+### MINORS + NITS
 
-| ID | Finding | Disposition |
+| ID | Finding | v0.3 disposition |
 |---|---|---|
-| G-m1 | Spec needs explicit MVP/full-fidelity split and Phase 1a go/no-go checkpoint to avoid spending full framework cost before confirming signal. | v0.3: add §6.0.5 Phase 1a checkpoint with explicit go/no-go criteria. |
-
-### NITS (1)
-
-| ID | Finding | Disposition |
-|---|---|---|
-| G-n1 | Stale references: §1.2 mentions §5.3 (now §5.2 after FtsZ removal); §6.4 references §1.5 (doesn't exist). | v0.3: clean up cross-references. |
+| G-m1 | MVP/full-fidelity split + Phase 1a go/no-go missing | **RESOLVED:** §6.1a now has explicit go/no-go ("if 1-2 seed calibration shows <5 firings across full cycle, escalate to operator before launching Phase 1b"). |
+| G-n1 | Stale cross-references | **RESOLVED:** §1.2 mentions §5.2 (not §5.3); §6.4 no longer references §1.5. |
 
 ---
 
-## 12. Disposition
+## 12. Disposition (v0.3 summary)
+
+**Cumulative finding count across 2 critique rounds:** 8 SHOWSTOPPER + 14 MAJOR + 4 MINOR + 2 NIT. All resolved in v0.3 except G-M7 (partially resolved — provenance schema TBD).
+
+**Scope changes from v0.1:**
+- FtsZPolymerization removed (S1: gradient process, not binary event)
+- DNADamage removed (M3: untestable under baseline Karr; needs L2.stress)
+- Cytokinesis explicitly flagged for PARTIAL_PASS_FIRING_RATE_ONLY due to redundant magnitude (operator decision: accept partial / add payload / reclassify)
+
+**Net in-scope L2.event processes: 2** (Cytokinesis + RibosomeAssembly).
+
+**Phase 1b cost cut from ~100 hr MATLAB (v0.2) to ~6 hr MATLAB (v0.3)** via windowed-grid snapshot extraction.
+
+**Pending v0.4 / future:**
+- L2.stress design (for DNADamage and any future stress-conditional process)
+- L2.event v0.4 if FtsZ reclassification chosen (`ring_complete` channel addition to extractor)
+- Production provenance schema (G-M7 partial close)
+
+---
+
+## 13. Production output contract (v0.3, per G-M7)
+
+### 13.1 CLI
+
+```
+bin\oc-py.cmd tests/vivarium/l2_event_runner.py \
+  --process <Cytokinesis|RibosomeAssembly> \
+  --seeds 50 \
+  --bootstrap-B 1000 \
+  --output-dir tests/vivarium/artifacts/l2_event/<Process>_<timestamp> \
+  [--thresholds <path/to/thresholds.json>]
+  [--catalog <path/to/PROCESS_CATALOG.yaml>]
+```
+
+Defaults:
+- `--seeds 50` (matches L2.2 Design-A standard)
+- `--bootstrap-B 1000` (raised from 200 because §3.2 needs B=1000 for sub-gate 2 generative null per G-S3)
+- `--catalog` defaults to `docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml`
+
+### 13.2 Artifact layout (mirrors L2.2 Design-A)
+
+```
+tests/vivarium/artifacts/l2_event/<Process>_<timestamp>/
+├── result.json          # process-level verdict + sub-gate verdicts + W1 numbers
+├── SUMMARY.json         # one-line per-process scoreboard entry
+├── thresholds.json      # epsilon_rate, k_eng, snapshot_stride, etc. — provenance
+├── allocator_inputs.json # which Karr trace paths were consumed
+├── window_snapshots_loaded.json # seed → tick range → snapshot count (audit trail)
+├── provenance.json      # commit SHA, catalog SHA, extractor SHA, MATLAB version
+└── null_calibration.json # bootstrap raw samples + q95 for each sub-gate
+```
+
+### 13.3 `result.json` schema
+
+```json
+{
+  "process": "Cytokinesis",
+  "verdict": "PASS | FAIL | PARTIAL_PASS_FIRING_RATE_ONLY | EVENT_NO_GATEABLE_SUBGATES | EVENT_NEITHER_FIRES_IN_WINDOW",
+  "timestamp": "ISO-8601",
+  "harness_version": "l2_event_v0_3",
+  "seeds": [0, 1, ..., 49],
+  "k_karr": <int>,
+  "k_oc": <int>,
+  "sub_gate_1": {
+    "verdict": "PASS|FAIL|INSUFFICIENT_SAMPLES|EVENT_NEITHER_FIRES_IN_WINDOW",
+    "r_karr": <float>,
+    "r_oc": <float>,
+    "newcombe_ci95": [<lo>, <hi>],
+    "epsilon_rate": <float>,
+    "absolute_floor_satisfied": <bool>
+  },
+  "sub_gate_2": {
+    "verdict": "PASS|FAIL|INSUFFICIENT_SAMPLES",
+    "w1": <float>,
+    "q95_null": <float>,
+    "k_eng": <float>,
+    "k_pooled_firings": <int>
+  },
+  "sub_gate_3": {
+    "verdict": "PASS|FAIL|INSUFFICIENT_SAMPLES|EVENT_MAGNITUDE_REDUNDANT_WITH_FIRING",
+    "w1": <float>,
+    "q95_null": <float>,
+    "k_eng": <float>,
+    "k_matched": <int>
+  },
+  "warnings": [<diagnostic strings per §3.4 ladder>],
+  "informativeness": {
+    "n_gateable_subgates": <int>,
+    "n_informative_subgates": <int>
+  },
+  "provenance_ref": "<path>"
+}
+```
+
+### 13.4 Provenance fields (TBD — partial close of G-M7)
+
+To be specified in v0.4 by reference to L2.2's `provenance.json` schema. Initial required fields:
+- `commit_sha`: current repo HEAD
+- `catalog_sha`: `git hash-object` of catalog file at runtime
+- `extractor_sha`: `git hash-object` of `extract_event_traces.m` at the time the consumed traces were produced
+- `matlab_version`: from extractor's metadata
+- `python_version`: `sys.version`
+- `numpy_version`, `scipy_version`: explicit pin for bootstrap reproducibility
+- `rng_seed_base`: the `L2_EVENT_VALIDATION_SEED` constant value
 
 **Summary across 2 critique rounds:**
 - Round 1 (rubber-duck): 4 SHOWSTOPPER + 7 MAJOR + 3 MINOR + 1 NIT — all incorporated into v0.2.
