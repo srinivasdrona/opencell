@@ -31,4 +31,8 @@ Sanity check passed: the `alpha=1.0` row is exact-zero W1, which is the expected
 
 ## Beat 4 - Verdict
 
-Pending.
+Case **B — regime-bounded**.
+
+The convergence-green claim holds exactly for `alpha` in `{1.0, 0.5, 0.1}` and fails below that floor in this harness: `alpha=0.05` crosses the PFolding-style max-W1 gate and `alpha=0.01` diverges strongly in both W1 and total aminoacylation events.
+This does **not** look like the v1 payload-path bug recurring, because the same projection contract yields exact-zero W1 at `alpha=1.0` and remains exact through `alpha=0.1`.
+Recommendation: mark `tRNAAminoacylation` as convergence-green only down to `alpha=0.1` in the current substrate-stress framing, and treat `0.05` / `0.01` as out-of-regime rather than globally green.
