@@ -31,3 +31,17 @@ Results file: [tests/vivarium/_substrate_stress/ppii_stress_v2_results.txt](E:\o
 | 0.01 | 0.000012 | 0.002075 | 936 | 939 | PASS |
 
 Sanity check: the `alpha=1.0` row is exact (`per_tick_W1_mean = 0`, `per_tick_W1_max = 0`), so the harness is measuring the intended post-update projection rather than replaying the v1 payload-path bug.
+
+## Beat 4 - Verdict
+
+Case: **A - biology green**
+
+Why:
+- The primary channel (`monomers` normalized from oracle `unprocessedMonomers`) matches Karr exactly at `alpha=1.0`.
+- Every stressed alpha remains comfortably inside the PFolding v2 convergence thresholds (`mean < 0.5`, `max < 2.0`), with worst observed `per_tick_W1_max = 0.002075`.
+- The reduced-substrate rows show only a tiny event-count reduction (`936-937` OC events vs `939` Karr events), but the distributional distance stays effectively zero, so the convergence-green claim remains supported rather than merely regime-bounded.
+
+Recommendation:
+- Keep ProteinProcessingII classified as convergence-green for the tested alpha sweep `{1.0, 0.5, 0.1, 0.05, 0.01}`.
+- Use [tests/vivarium/_substrate_stress/ppii_stress_v2.py](E:\opencell-worktrees\validate-ppii-convergence\tests\vivarium\_substrate_stress\ppii_stress_v2.py) and [tests/vivarium/_substrate_stress/ppii_stress_v2_results.txt](E:\opencell-worktrees\validate-ppii-convergence\tests\vivarium\_substrate_stress\ppii_stress_v2_results.txt) as the PPii parity artifact set.
+- If this workflow is promoted into shared helpers later, copy the seed-path fallback into the shared resolver so sparse worktrees can find `s000-s004` without a local trace mirror.
