@@ -27,4 +27,9 @@ Harness output written to `tests/vivarium/_substrate_stress/ptransloc_stress_v2_
 Sanity check: the `alpha=1.00` row is exactly zero on both mean and max per-tick W1, so the v2 harness is exercising the correct OC projection path.
 
 ## Beat 4 - Verdict
-Pending.
+Case **B - regime-bounded**.
+
+The primary `monomers` channel matches Karr exactly at `alpha=1.00` and `alpha=0.50`, which supports the convergence-green claim in the non-limiting regime.
+That claim does **not** extend to the full stress sweep: exact identity is lost at `alpha=0.10`, `0.05`, and `0.01`, even though the PFolding-style W1 thresholds still remain comfortably PASS.
+This does not look like a harness bug: `alpha=1.00` is exactly zero, the wrapper-aligned projection path is exercised end-to-end, and the total OC event count declines monotonically as substrates are starved (`84 -> 83 -> 59 -> 0`), which is biologically plausible.
+Recommendation: keep ProteinTranslocation in the convergence-green bucket, but qualify it explicitly as **high-substrate / non-limiting-regime convergence**, not as an alpha-invariant exact replay claim.
