@@ -244,9 +244,9 @@ processes:
     output_channels: [substrates, rnas]
     primary_channel: rnas
     karr_artifact: per_process_traces_v2
-    closed_form_dominant: confirmed       # H12 signal 2026-06-12: per_sample_w1_max=0 across 18500 nonzero outputs (tRNAAA smoke). See LAUNDERING_VS_CONVERGENCE.md.
+    closed_form_dominant: regime_bounded  # 2026-06-15 substrate-stress: PASS at alpha>=0.1, FAIL at alpha<=0.05. Convergence breaks when substrate becomes binding.
     rationale_M: "dense; 2500 samples adequate"
-    notes: "Boundary case TRIVIAL-vs-SHALLOW; held in SHALLOW for safety per audit Q3. closed_form_dominant=candidate (smoke shipped W1=0 + KS p=1 on primary RNAs channel; needs H12-style probe to confirm convergence vs leakage)."
+    notes: "Boundary case TRIVIAL-vs-SHALLOW; held in SHALLOW for safety per audit Q3. closed_form_dominant=regime_bounded (Day-25 H12 probe confirmed convergence at unperturbed regime; Day-29 substrate-stress validation revealed W1 jumps 0->5.4->13.8 at alpha=0.05/0.01, total events drop 355351->96794). Substrate IS binding constraint. Real-biology PASS only when substrate non-limiting; chassis tests below alpha~0.1 will diverge. See tests/vivarium/_substrate_stress/trnaaa_stress_v2_results.txt."
 
   - name: ProteinModification
     oc_module: opencell/vivarium/karr_protein_modification.py
@@ -273,9 +273,9 @@ processes:
     output_channels: [substrates, monomers]
     primary_channel: monomers
     karr_artifact: per_process_traces_v2
-    closed_form_dominant: confirmed       # H12 signal 2026-06-12: per_sample_w1_max=0 across 1030 nonzero outputs (ProteinFolding batch_c_smoke). See LAUNDERING_VS_CONVERGENCE.md.
+    closed_form_dominant: confirmed_biology_validated  # 2026-06-15 substrate-stress: PASS at all 5 alpha. Chaperone pool (not substrate) is binding constraint. See pfolding_stress_v2_results.txt.
     rationale_M: "default; could drop to 50 if wall-time bites"
-    notes: "closed_form_dominant=candidate (Batch C smoke 2026-06-12 shipped W1=0 + KS p=1 on monomers primary; needs H12-style probe to confirm convergence vs leakage)."
+    notes: "closed_form_dominant=confirmed_biology_validated (Day-29 substrate-stress test confirmed exact OC=Karr match at alpha in {1.0, 0.5, 0.1, 0.05, 0.01}. 933 folding events on both sides at every alpha. Chaperone pool is rate-limiting, so substrate scaling 1.0->0.01 does not push the process into substrate limitation)."
 
   - name: ProteinDecay
     oc_module: opencell/vivarium/karr_protein_decay_light.py
@@ -302,9 +302,9 @@ processes:
     output_channels: [substrates, monomers]
     primary_channel: monomers
     karr_artifact: per_process_traces_v2
-    closed_form_dominant: confirmed       # H12 signal 2026-06-13 fix-ptransloc smoke: per_sample_w1_max=0 across 455 nonzero entries. See LAUNDERING_VS_CONVERGENCE.md.
+    closed_form_dominant: regime_bounded  # 2026-06-15 substrate-stress: exact at alpha>=0.5, loses exact match at alpha=0.1, OC events 84->0 as substrate starves. See ptransloc_stress_v2_results.txt.
     rationale_M: "default"
-    notes: "closed_form_dominant=confirmed (fix-ptransloc Beat 5 smoke at 50 seeds x 10 ticks shows W1=0 and per_sample_max=0 across 455 nonzero entries; same H12 signature as MacromolecularComplexation, PPI, PPII, PFolding, tRNAAA)."
+    notes: "closed_form_dominant=regime_bounded (Day-25 fix-ptransloc Beat-5 smoke at unperturbed regime showed W1=0; Day-29 substrate-stress test shows exact identity holds at alpha>=0.5, breaks at alpha=0.1 with per_tick_W1_max=0.001 but OC events declining 84->83->59->0 monotonically as substrate drops). High-substrate/non-limiting regime convergence only."
 
   - name: MacromolecularComplexation
     oc_module: opencell/vivarium/karr_macromolecular_complexation.py
@@ -318,9 +318,9 @@ processes:
     primary_channel: complexs
     joint_check: true                     # cross-complex Spearman correlation; see spec §6.4 (non-gating in v1.2)
     karr_artifact: per_process_traces_v2
-    closed_form_dominant: confirmed       # H12 probe 2026-06-12: 50/50 + 7/7 nontrivial. See LAUNDERING_VS_CONVERGENCE.md
+    closed_form_dominant: regime_bounded  # 2026-06-15 substrate-stress v3 (tightened total-events gate): FAIL at every alpha<1.0. Prior v2 'Case A' was sparse-event dilution artifact. See macromol_stress_v3_results.txt.
     rationale_M: "default"
-    notes: "joint_check flag enables non-gating cross-complex correlation diagnostic per spec §6.4. closed_form_dominant=confirmed (cluster 1's _closed_form_bounds converges to Karr's stochastic _per_cluster_mc on every nontrivial tick per H12 probe)."
+    notes: "joint_check flag enables non-gating cross-complex correlation diagnostic per spec §6.4. closed_form_dominant=regime_bounded (Day-25 H12 probe confirmed convergence at unperturbed regime; Day-29 substrate-stress v2 showed 'Case A' but with sparse-event masking concern; Day-29 v3 with tightened gate (total_events within 10%) FAILed at every alpha<1.0 — OC forms 0 complexes vs Karr's 97 at sub-unperturbed regimes)."
 
   - name: RibosomeAssembly
     oc_module: opencell/vivarium/karr_ribosome_assembly.py
