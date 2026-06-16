@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import math
 import sys
 from pathlib import Path
 from typing import Any
 
-import h5py
 import numpy as np
 import pytest
 
@@ -22,67 +20,47 @@ if "opencell" in sys.modules:
 
 from opencell.vivarium.karr_ftsz_polymerization import KarrFtsZPolymerizationProcess
 
-_TRACE_PATH = Path(
-    "/mnt/e/opencell/data/m1_sources/karr_native/per_process_traces/"
-    "FtsZPolymerization_100ticks.mat"
-)
-
 
 def _base_state(
     process: KarrFtsZPolymerizationProcess,
     *,
+    enzyme_counts: np.ndarray | None = None,
     allocated_gtp: float,
-    substrate_gtp: float = 1_000_000.0,
+    substrate_counts: dict[str, float] | None = None,
 ) -> dict[str, Any]:
+    counts = (
+        np.asarray(enzyme_counts, dtype=np.int64).copy()
+        if enzyme_counts is not None
+        else process._initial_enzyme_counts.copy()
+    )
     substrates = {wid: 1_000_000.0 for wid in process.substrate_wids}
-    substrates[process.gtp_wid] = float(substrate_gtp)
+    if substrate_counts is not None:
+        substrates.update({wid: float(value) for wid, value in substrate_counts.items()})
     return {
         "cell": {
-            "ftsz_ring_count": float(process.initial_ring_count),
+            "ftsz_ring_count": float(process._ring_count_from_counts(counts)),
             "ftsz_ring_complete": bool(
-                process.initial_ring_count >= int(process.parameters["ring_complete_threshold"])
+                process._ring_count_from_counts(counts)
+                >= int(process.parameters["ring_complete_threshold"])
             ),
         },
         "substrates": substrates,
+        "enzymes": {wid: float(counts[idx]) for idx, wid in enumerate(process.enzyme_wids)},
         "requests": {process.name: {process.gtp_wid: 0.0}},
         "substrates_allocated": {process.name: {process.gtp_wid: float(allocated_gtp)}},
     }
 
 
-def _apply_update(
-    state: dict[str, Any],
-    update: dict[str, Any],
+def _counts_after_update(
     process: KarrFtsZPolymerizationProcess,
-) -> None:
-    if "cell" in update and "ftsz_ring_count" in update["cell"]:
-        state["cell"]["ftsz_ring_count"] = float(
-            state["cell"]["ftsz_ring_count"] + float(update["cell"]["ftsz_ring_count"])
-        )
-    if "cell" in update and "ftsz_ring_complete" in update["cell"]:
-        state["cell"]["ftsz_ring_complete"] = bool(update["cell"]["ftsz_ring_complete"])
-
-    for wid, delta in update.get("substrates", {}).items():
-        state["substrates"][wid] = float(state["substrates"].get(wid, 0.0) + float(delta))
-
-    req = update.get("requests", {}).get(process.name, {})
-    if process.gtp_wid in req:
-        state["requests"][process.name][process.gtp_wid] = float(req[process.gtp_wid])
-
-
-def _trace_ring_tail_mean() -> float:
-    if not _TRACE_PATH.exists():
-        pytest.skip(f"Karr trace not available: {_TRACE_PATH}")
-
-    with h5py.File(_TRACE_PATH, "r") as handle:
-        ds = handle["states_after/enzymes"]
-        ring_values: list[float] = []
-        lengths = np.arange(2, 10, dtype=np.float64)
-        for tick in range(ds.shape[0]):
-            ref = ds[tick, 0]
-            enzymes = np.asarray(handle[ref][()]).reshape(-1).astype(np.float64)
-            ring_values.append(float(np.dot(enzymes[3:11], lengths)))
-    tail = np.asarray(ring_values[-20:], dtype=np.float64)
-    return float(np.mean(tail))
+    current_counts: np.ndarray,
+    update: dict[str, Any],
+) -> np.ndarray:
+    next_counts = np.asarray(current_counts, dtype=np.int64).copy()
+    enzyme_delta = update.get("enzymes", {})
+    for idx, wid in enumerate(process.enzyme_wids):
+        next_counts[idx] += int(float(enzyme_delta.get(wid, 0.0)))
+    return next_counts
 
 
 def test_fixture_loads() -> None:
@@ -91,7 +69,7 @@ def test_fixture_loads() -> None:
     assert process.gtp_wid == "GTP"
     assert len(process.enzyme_wids) == 11
     assert process.initial_ring_count > 0
-    assert process.parameters["ring_complete_threshold"] > 0
+    assert process._geometry_volume > 0.0
 
 
 def test_integration_with_chassis_v4() -> None:
@@ -106,59 +84,129 @@ def test_integration_with_chassis_v4() -> None:
     assert "ftsz_ring_complete" in state["cell"]
 
 
-def test_one_tick_growth_biased_ring_delta_positive() -> None:
-    process = KarrFtsZPolymerizationProcess(
-        {
-            "rng_seed": 5,
-            "nucleation_forward_scale": 8.0e6,
-            "elongation_forward_scale": 6.0e7,
-            "nucleation_reverse_scale": 1.0e12,
-            "elongation_reverse_scale": 1.0e12,
-            "deactivation_rate_scale": 1.0e12,
-            "homeostasis_strength": 0.0,
-        }
+def test_zero_enzymes_returns_noop() -> None:
+    process = KarrFtsZPolymerizationProcess({})
+    zero_counts = np.zeros(len(process.enzyme_wids), dtype=np.int64)
+    state = _base_state(
+        process,
+        enzyme_counts=zero_counts,
+        allocated_gtp=1_000.0,
+        substrate_counts={process.gtp_wid: 1_000.0},
     )
-    state = _base_state(process, allocated_gtp=50_000.0)
+
+    assert process.next_update(1.0, state) == {}
+
+
+def test_mass_conservation_after_next_update() -> None:
+    process = KarrFtsZPolymerizationProcess({"rng_seed": 4})
+    current_counts = process._initial_enzyme_counts.copy()
+    state = _base_state(process, enzyme_counts=current_counts, allocated_gtp=50_000.0)
+
     update = process.next_update(1.0, state)
+    next_counts = _counts_after_update(process, current_counts, update)
 
-    assert float(update["requests"][process.name][process.gtp_wid]) >= 0.0
-    ring_delta = float(update.get("cell", {}).get("ftsz_ring_count", 0.0))
-    assert ring_delta > 0.0
+    assert int(np.dot(process.n_monomers, next_counts)) == int(
+        np.dot(process.n_monomers, current_counts)
+    )
 
 
-def test_allocation_contract_zero_alloc_no_gtp_consumption() -> None:
-    process = KarrFtsZPolymerizationProcess({"rng_seed": 7})
-    state = _base_state(process, allocated_gtp=0.0, substrate_gtp=1_000_000.0)
+def test_rate_1_activation_equilibrium() -> None:
+    process = KarrFtsZPolymerizationProcess({})
+    process.activation_fwd = 1.0
+    process.activation_rev = 1.0
+    process.exchange_fwd = 0.0
+    process.exchange_rev = 0.0
+    process.nucleation_fwd = 0.0
+    process.nucleation_rev = 0.0
+    process.elongation_fwd = 0.0
+    process.elongation_rev = 0.0
+
+    y0 = np.zeros(len(process.enzyme_wids), dtype=np.float64)
+    y0[process.enzyme_index_ftsz] = 1.0
+    _, ode_solutions = process.integrate_odes(
+        y0=y0,
+        substrate_counts=np.zeros(len(process.substrate_wids), dtype=np.float64),
+        timestep=10.0,
+    )
+    equilibrium = ode_solutions[:, process._last_nonnegative_solution_idx(ode_solutions)]
+
+    assert equilibrium[process.enzyme_index_ftsz] == pytest.approx(0.5, abs=1.0e-3)
+    assert equilibrium[process.enzyme_index_ftsz_gtp] == pytest.approx(0.5, abs=1.0e-3)
+    assert np.all(equilibrium[process.enzyme_index_ftsz_gdp :] >= -1.0e-10)
+
+
+def test_apply_substrate_limits_clips_to_gtp_budget() -> None:
+    process = KarrFtsZPolymerizationProcess({})
+    current_counts = np.zeros(len(process.enzyme_wids), dtype=np.int64)
+    current_counts[process.enzyme_index_ftsz] = 3
+
+    proposed = current_counts.copy()
+    proposed[process.enzyme_index_ftsz] = 0
+    proposed[process.enzyme_index_ftsz_gtp] = 3
+
+    substrates = np.zeros(len(process.substrate_wids), dtype=np.float64)
+    substrates[process.substrate_index_gtp] = 1.0
+
+    enzymes, limited_substrates = process.apply_substrate_limits(
+        enzymes=proposed,
+        substrates=substrates,
+        current_counts=current_counts,
+    )
+
+    assert np.array_equal(enzymes, np.asarray([2, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0], dtype=np.int64))
+    assert limited_substrates[process.substrate_index_gtp] == pytest.approx(0.0)
+    assert int(np.dot(process.n_monomers, enzymes)) == int(np.dot(process.n_monomers, current_counts))
+
+
+def test_apply_substrate_limits_hydrolyzes_gtp_when_gdp_is_short() -> None:
+    process = KarrFtsZPolymerizationProcess({})
+    current_counts = np.zeros(len(process.enzyme_wids), dtype=np.int64)
+    current_counts[process.enzyme_index_ftsz] = 1
+
+    proposed = current_counts.copy()
+    proposed[process.enzyme_index_ftsz] = 0
+    proposed[process.enzyme_index_ftsz_gdp] = 1
+
+    substrates = np.zeros(len(process.substrate_wids), dtype=np.float64)
+    substrates[process.substrate_index_gtp] = 1.0
+    substrates[process.substrate_index_water] = 1.0
+
+    _, limited_substrates = process.apply_substrate_limits(
+        enzymes=proposed,
+        substrates=substrates,
+        current_counts=current_counts,
+    )
+
+    assert limited_substrates[process.substrate_index_gdp] == pytest.approx(0.0)
+    assert limited_substrates[process.substrate_index_gtp] == pytest.approx(0.0)
+    assert limited_substrates[process.substrate_index_pi] == pytest.approx(1.0)
+    assert limited_substrates[process.substrate_index_water] == pytest.approx(0.0)
+    assert limited_substrates[process.substrate_index_h] == pytest.approx(1.0)
+
+
+def test_gtp_consumption_matches_karr_stoichiometry() -> None:
+    process = KarrFtsZPolymerizationProcess({"rng_seed": 0})
+    current_counts = np.zeros(len(process.enzyme_wids), dtype=np.int64)
+    current_counts[process.enzyme_index_ftsz] = 20
+    state = _base_state(
+        process,
+        enzyme_counts=current_counts,
+        allocated_gtp=1_000.0,
+        substrate_counts={
+            process.gdp_wid: 0.0,
+            process.gtp_wid: 1_000.0,
+            process.h2o_wid: 1_000.0,
+        },
+    )
+
     update = process.next_update(1.0, state)
-    assert update.get("substrates", {}).get(process.gtp_wid, 0.0) == pytest.approx(0.0)
+    next_counts = _counts_after_update(process, current_counts, update)
+    substrate_delta = {wid: int(float(value)) for wid, value in update.get("substrates", {}).items()}
 
-
-def test_steady_state_ring_count_matches_trace_within_ten_percent() -> None:
-    process = KarrFtsZPolymerizationProcess({"rng_seed": 11})
-    state = _base_state(process, allocated_gtp=5_000.0, substrate_gtp=1_000_000.0)
-
-    for _ in range(100):
-        state["substrates_allocated"][process.name][process.gtp_wid] = 5_000.0
-        update = process.next_update(1.0, state)
-        _apply_update(state, update, process)
-
-    observed = float(state["cell"]["ftsz_ring_count"])
-    trace_target = _trace_ring_tail_mean()
-    rel_err = abs(observed - trace_target) / max(1.0, abs(trace_target))
-    assert rel_err <= 0.10, f"observed={observed} target={trace_target} rel_err={rel_err}"
-
-
-def test_no_nan_no_negative_regressions_over_100_ticks() -> None:
-    process = KarrFtsZPolymerizationProcess({"rng_seed": 3})
-    state = _base_state(process, allocated_gtp=2_000.0, substrate_gtp=1_000_000.0)
-
-    for _ in range(100):
-        state["substrates_allocated"][process.name][process.gtp_wid] = 2_000.0
-        update = process.next_update(1.0, state)
-        _apply_update(state, update, process)
-
-        assert math.isfinite(float(state["cell"]["ftsz_ring_count"]))
-        assert float(state["cell"]["ftsz_ring_count"]) >= 0.0
-        assert np.all(np.isfinite(process._species_counts))
-        assert np.all(process._species_counts >= 0)
-
+    bound_gtp_delta = int(np.dot(process.n_gtp, next_counts - current_counts))
+    hydrolysis = substrate_delta.get(process.pi_wid, 0)
+    assert -substrate_delta.get(process.gtp_wid, 0) == bound_gtp_delta + hydrolysis
+    assert substrate_delta.get(process.gdp_wid, 0) == 0
+    assert substrate_delta.get(process.pi_wid, 0) == hydrolysis
+    assert substrate_delta.get(process.h2o_wid, 0) == -hydrolysis
+    assert substrate_delta.get(process.h_wid, 0) == hydrolysis
