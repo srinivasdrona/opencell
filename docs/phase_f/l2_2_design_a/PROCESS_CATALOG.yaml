@@ -351,7 +351,7 @@ processes:
     primary_channel: monomers
     karr_artifact: per_process_traces_v2
     rationale_M: "sparse; need seeds that overlap pre-division window"
-    notes: "v3 (2026-06-11): reclassified to EVENT_CLASS bucket because seed_window+event_density:sparse makes per-tick design_a_per_tick harness wrong (same failure mode as Cytokinesis Phase-0). Requires L2.event harness. design_a_per_tick runner must refuse this process until L2.event exists. Previously bucket was ALGORITHMIC_SHALLOW."
+    notes: "v3 (2026-06-11): reclassified to EVENT_CLASS. v3.9 (2026-06-16): FIXED at 9375e59 — full ODE-based port replacing Karr-light v1 stochastic rates. scipy BDF solver for activation/exchange/nucleation/elongation kinetics, mass-preserving discretization, substrate-limit clamping. Algorithm now faithful to Karr. Still EVENT_CLASS — needs event-window traces for distributional validation."
     seed_window:
       tick_range_from_division: [-200, 0]
       rationale: "FtsZ polymerization is biologically active only in the pre-division window"
