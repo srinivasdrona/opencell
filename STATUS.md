@@ -72,3 +72,7 @@
 - [2026-06-04 22:31:34 UTC] GATE_B C3 complete: added Transcription OC ensemble runner with fitted-init overlay and generated 50 NPZ seeds under data/opencell_ensembles/transcription/.
 - [2026-06-04 22:32:02 UTC] GATE_B C4 wired: added tests/vivarium/test_l2_2_transcription.py with Bonferroni KS/W1 checks and substrate WID-intersection projection.
 - [2026-06-04 22:37:13 UTC] GATE_B full run complete: test_l2_2_transcription.py executed (FAIL expected as quantitative verdict); artifacts + STATUS_gate_transcription.md updated with per-channel metrics.
+- [2026-06-16 16:22:19 UTC] chrom-phase1: started source audit for chromosome sparse-triple store + DNASupercoiling port; verified main checkout contains requested MATLAB sources and seed-specific v2 traces with chromosome groups.
+- [2026-06-16 16:34:00 UTC] chrom-phase1: added `opencell/state/chromosome_store.py` with sparse-triple CRUD, MATLAB-empty HDF5 normalization, and circular-wrap canonicalization.
+- [2026-06-16 16:40:00 UTC] chrom-phase1: re-ported `karr_dna_supercoiling.py` to `chromosome.linkingNumbers` sparse triples and updated chassis/test surfaces to seed full chromosome state.
+- [2026-06-16 16:44:51 UTC] chrom-phase1: target verification green on chromosome-store unit tests, DNASupercoiling focused tests, DNASupercoiling L2 replay, strict-zero, and H2O enrollment.
