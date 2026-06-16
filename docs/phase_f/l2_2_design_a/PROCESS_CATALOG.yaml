@@ -335,7 +335,7 @@ processes:
     primary_channel: complexs
     karr_artifact: per_process_traces_v2
     rationale_M: "sparse subunit-assembly events; fix L2.1 trace first"
-    notes: "v3.1 (2026-06-14): reclassified to EVENT_CLASS per Day-28 audit. Smoke RibosomeAssembly_batchc_final_smoke produced fake PASS W1=0 with PRIMARY_CHANNEL_ORACLE_DETERMINISM_LEGITIMATE warning + INSUFFICIENT_SAMPLES on primary; same failure mode that triggered Day-23 Cytokinesis/FtsZ reclassification. Audit across all 50 seeds: 0/50 have substrate-change events in 100-tick window. Audit also flagged: L2.1 currently SKIP for no-op trace. Requires L2.event harness (event-aligned comparison, not tick-aligned). design_a_per_tick runner must refuse this process until L2.event exists. Previously bucket was ALGORITHMIC_SHALLOW."
+    notes: "v3.1 (2026-06-14): reclassified to EVENT_CLASS per Day-28 audit. v3.7 (2026-06-16): SUT parity audit found DIVERGENT_BUG — enzyme gate was stoichiometric (capping n_form at enzyme count) vs Karr's binary all-present gate. FIXED at f24f234. Algorithm now faithful: RNG (permutation), sequential depletion, substrate stoichiometry all match Karr. Still EVENT_CLASS — needs event-window traces for timing validation."
     blocked_on: ["L2.event harness must exist", "L2.1 trace must be non-no-op for this process"]
 
   - name: FtsZPolymerization
@@ -370,8 +370,7 @@ processes:
     primary_channel: substrates
     karr_artifact: per_process_traces_v2
     rationale_M: "default; only fires during division window"
-    notes: "v3 (2026-06-11): reclassified to EVENT_CLASS bucket because seed_window+event_density:sparse makes per-tick design_a_per_tick harness categorically wrong (Day-23 Phase-0 produced fake PASS W1=0 because division event did not fire in 100-tick replay and both OC and Karr no-ops trivially match). Requires L2.event harness (event-aligned comparison, not tick-aligned). design_a_per_tick runner must refuse this process until L2.event exists. Previously bucket was ALGORITHMIC_SHALLOW."
-    notes: "Like FtsZ, seed bias toward division window may be needed; otherwise INSUFFICIENT_SAMPLES verdict expected. primary_channel was chromosome in v1.1; moved to substrates in v1.2 to satisfy spec §8.2 invariant."
+    notes: "v3 (2026-06-11): reclassified to EVENT_CLASS. v3.7 (2026-06-16): SUT parity audit verdict DIVERGENT_DOCUMENTED — OC is intentional Karr-light v1 (bulk progress ratchet, 0 RNG draws vs Karr's 4-phase edge-wise FtsZ polygon mechanics with 5 classes of per-element stochastic draws). No fix without full v2 FtsZ ring port. Can validate division timing only, not mechanism fidelity. See docs/phase_f/sut_audits/cytokinesis_oc_vs_karr.md."
     seed_window:
       tick_range_from_division: [-50, 0]       # active only in the immediate pre-division window
       rationale: "Cytokinesis is biologically active only in late cell cycle around division"
