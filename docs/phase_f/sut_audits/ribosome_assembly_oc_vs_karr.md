@@ -68,3 +68,44 @@ Beat-4 inversion for baseline facts:
 - Karr `RibosomeAssembly.m:308`: `this.randStream.randperm(numel(this.complexWholeCellModelIDs))`. Distribution/control: one uniform permutation without replacement over the two particle indices; it controls whether 30S or 50S gets first claim on shared GTP/H2O in that tick. OC counterpart: `karr_ribosome_assembly.py:340`, `self._rng.permutation(len(self.complex_wids))`. Distribution/control: one uniform permutation without replacement over the two zero-based particle indices; it controls the same first-claim order. Match: `YES`.
 - The 1-based MATLAB versus 0-based NumPy index convention is cosmetic here because OC applies the permuted integer directly to `self.complex_wids` and the corresponding composition columns, so the permutation semantics are preserved. (`RibosomeAssembly.m:307-310`; `karr_ribosome_assembly.py:340-348`, `:363-369`)
 - No additional stochastic draws appear in Karr `evolveState`, and no additional RNG calls appear in OC `next_update`. Match: `YES`. (`RibosomeAssembly.m:301-340`; `karr_ribosome_assembly.py:325-372`)
+
+## 4. Substrate-Availability Handling Comparison
+
+**Karr when substrate is insufficient from the start.**
+- If GTP is exactly zero, Karr returns immediately before any permutation or particle work. (`RibosomeAssembly.m:302-305`)
+- If GTP is positive but H2O, RNA, or monomer availability is limiting, Karr still iterates the randomized particle order, computes `newComplexs`, and simply `continue`s on any particle whose `floor(min(...))` is zero. (`RibosomeAssembly.m:307-330`)
+- Missing catalytic enzymes behave the same way: the particle is skipped, but catalytic-enzyme counts do not reduce `newComplexs`; they only determine whether `all(...)` is true. (`RibosomeAssembly.m:323-330`)
+
+**OC when substrate is insufficient from the start.**
+- OC returns immediately when allocated GTP or allocated H2O is non-positive, which is a stricter entry gate than Karr's GTP-only early return. (`karr_ribosome_assembly.py:327-332`)
+- If both allocated substrates are positive, OC computes per-particle limits and `continue`s when `n_form <= 0`, matching Karr's no-write behavior for infeasible particles. (`karr_ribosome_assembly.py:342-357`)
+- The divergence is in the enzyme branch: OC's `gtpase_limit` makes catalytic-enzyme counts part of the resource floor, so "enzyme insufficient" can reduce `n_form` below the Karr value instead of acting as a simple present/absent gate. (`karr_ribosome_assembly.py:257-262`, `:342-355`)
+
+**Sequential depletion under shared GTP/H2O scarcity.**
+- Karr updates `this.substrates` inside the loop, so whichever particle appears first in `randperm` gets first claim on shared GTP and H2O. (`RibosomeAssembly.m:307-338`)
+- OC preserves that order sensitivity by decrementing local `gtp_alloc` and `h2o_alloc` immediately after each successful particle, even though it emits the accumulated deltas only after the loop. (`karr_ribosome_assembly.py:359-361`, `:301-323`)
+- Therefore the user-specified pre-mortem risk about deferred Vivarium deltas does not materialize here: OC's aggregate emission is architecture-different, but the local sequential depletion semantics are preserved.
+
+**Verdict on substrate handling.**
+- `DIVERGENT_BUG`. Shared-substrate competition is ported faithfully enough, but catalytic-enzyme scarcity is not. In Karr, one copy of each required GTPase is sufficient to catalyze multiple particle assemblies in a tick as long as GTP/H2O and subunits remain; in OC, the same state is capped at the minimum catalytic-enzyme count because `gtpase_limit` is folded into `n_form`. That is an algorithmic mismatch, not a documentation choice. (`RibosomeAssembly.m:323-330`; `karr_ribosome_assembly.py:257-262`, `:342-355`)
+
+## 5. Overall Verdict
+
+**DIVERGENT_BUG**
+
+Load-bearing findings:
+1. OC includes catalytic-enzyme counts in the per-particle `min(...)` bound, while Karr does not. Karr treats GTPases as a binary `all-present` gate only. (`RibosomeAssembly.m:323-330`; `karr_ribosome_assembly.py:342-355`)
+2. The single Karr RNG draw is ported correctly in shape: `randperm` versus `permutation` is a cosmetic 1-based versus 0-based indexing difference, not the source of divergence. (`RibosomeAssembly.m:307-310`; `karr_ribosome_assembly.py:340-341`)
+3. OC preserves Karr's sequential depletion of shared GTP/H2O despite emitting Vivarium deltas at the end of the loop, so the substrate-ordering semantics are not the broken part of the port. (`RibosomeAssembly.m:333-338`; `karr_ribosome_assembly.py:359-361`, `:301-323`)
+4. Existing tests do not protect the Karr enzyme contract and instead build GTPase counts proportional to the desired formation capacity, which matches the current OC bug. (`tests/vivarium/test_karr_ribosome_assembly.py:46-56`)
+
+Recommended fix shape:
+- Remove `gtpase_limit` from the `n_form` minimum.
+- Replace it with a separate presence-only gate equivalent to `all(required_gtpase_counts > 0)`.
+- Add a parity test where each required GTPase is present at count `1`, RNA/monomer pools support multiple assemblies, and GTP/H2O support multiple assemblies; Karr semantics predict more than one particle can still form in that tick.
+
+## 6. Implications
+
+- The current OC `next_update` is not a faithful port of Karr's `RibosomeAssembly.evolveState`, so the SUT should not be cited as source-parity-clean until the catalytic-enzyme rule is corrected.
+- This is a bug rather than a documented design deviation: the OC file docstring and tests describe all-or-nothing ribosome formation, but nowhere document a catalytic-enzyme-count capacity cap. (`opencell/vivarium/karr_ribosome_assembly.py:75-83`; `tests/vivarium/test_karr_ribosome_assembly.py:151-175`)
+- Adjacent risk outside the strict SUT: `RequestCalculatorRibAsm.next_update` calls `estimate_formable_without_substrates`, which reuses the same `gtpase_limit` logic. Even after fixing `next_update`, allocator requests would remain too low in the same enzyme-scarce regimes unless that helper is corrected as well. (`opencell/vivarium/karr_ribosome_assembly.py:264-278`; `opencell/vivarium/karr_request_calculators.py:210-225`)
