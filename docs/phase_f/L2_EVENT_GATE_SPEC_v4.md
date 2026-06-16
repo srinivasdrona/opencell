@@ -1,6 +1,6 @@
 # L2.event Gate Specification v4
 
-**Status:** draft v4 (2026-06-16) - fresh DESIGN_TEMPLATE rewrite intended to supersede `docs/phase_f/L2_EVENT_GATE_SPEC.md` once ratified.
+**Status:** RATIFIED v4.1 (2026-06-16). Post-critique fixes applied: corrected false-absence inventory facts (Karr .m files + v2 traces are present on disk), defined RibosomeAssembly timing statistic mathematically (pooled firing-tick W1), added RA empty-update edge case to §4 facts. Two critique rounds on v4 structure: rubber-duck (0 SHOWSTOPPER, 1 MAJOR, 3 MINOR) + GPT round 4 (2 blocking, 2 non-blocking). All findings resolved.
 **Owner:** OpenCell whole-cell-simulation project, Phase F
 **Authority:** when ratified, this document is the canonical design for the L2.event gate for `Cytokinesis` and `RibosomeAssembly`.
 
@@ -32,8 +32,8 @@ Beat-4 inversion:
 
 ## 2) Inventory of existing artifacts
 
-- [A01] path=data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m | kind=code | role=canonical Karr Cytokinesis SUT path referenced by local schemas/docs; absent in this checkout and therefore a Phase 0 dependency rather than a locally verified source file.
-- [A02] path=data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m | kind=code | role=canonical Karr RibosomeAssembly SUT path referenced by local schemas/docs; absent in this checkout and therefore a Phase 0 dependency rather than a locally verified source file.
+- [A01] path=data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m | kind=code | role=canonical Karr Cytokinesis SUT; PRESENT in the main checkout at this path. Source-reviewable for evolveState algorithm, event semantics, and division-completion predicate.
+- [A02] path=data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m | kind=code | role=canonical Karr RibosomeAssembly SUT; PRESENT in the main checkout. Source-reviewable for all-or-nothing 30S/50S formation, GTPase coupling, and repeated-firing semantics.
 - [A03] path=data/schemas/per_process/cytokinesis.toml | kind=schema | role=machine-checkable local schema that records Cytokinesis MATLAB source path, trace path, channel inventory, and extractor diagnostics.
 - [A04] path=data/schemas/per_process/ribosome_assembly.toml | kind=schema | role=machine-checkable local schema that records RibosomeAssembly MATLAB source path, trace path, channel inventory, and extractor diagnostics.
 - [A05] path=docs/karr_extracts/process/26_Cytokinesis.md | kind=doc | role=local extract of the Cytokinesis MATLAB docstring and canonical source path; evidence for single-firing division semantics.
@@ -49,11 +49,11 @@ Beat-4 inversion:
 - [A15] path=tests/vivarium/_substrate_stress/pfolding_stress_v2.py | kind=code | role=reference harness pattern for Karr-backed one-tick OC probes without OC-vs-OC laundering.
 - [A16] path=STATUS_pfolding_convergence_v2.md | kind=status | role=prior status artifact demonstrating how a false reference design was corrected by keeping Karr as the only oracle.
 - [A17] path=data/m1_sources/karr_native/README.md | kind=doc | role=local evidence that native MATLAB extractions are large, gitignored assets and that `data/m1_sources/WholeCell/` is the intended source root when populated.
-- [A18] path=data/m1_sources/karr_native/V2_TRACE_MANIFEST.json | kind=schema | role=machine-checkable trace manifest showing current native-trace availability; useful as evidence that target per-seed event traces are not yet present for the two in-scope processes.
+- [A18] path=data/m1_sources/karr_native/per_process_traces_v2_s{000..049}/{Cytokinesis,RibosomeAssembly}_100ticks.mat | kind=trace | role=existing 100-tick mid-cycle v2 per-tick traces for both processes across 50 seeds. PRESENT on disk but INSUFFICIENT for L2.event — Day-28 audit showed 0/50 seeds have substrate-change events for either process in this 100-tick window. These are the traces that produced the vacuous PASS / EVENT_CLASS reclassification. L2.event requires new stride-1 event-window traces extracted over the declared firing window, NOT these existing traces.
 
 Beat-4 inversion for inventory:
-- What critical artifact could still be missing from this list? The strongest missing artifact is the actual populated `data/m1_sources/WholeCell/` tree plus any existing full-cycle/event-window extractor script for these processes.
-- What check did you run to reduce that risk? The repo was searched for the native `.m` paths, local `.m` files, target process traces, OC port files, catalog/spec files, and PFolding reference harness; only the schema/extract references and the local OC-side artifacts were present.
+- What critical artifact could still be missing from this list? The state-projection adapter contract for RibosomeAssembly (Karr's enzymes/RNAs/monomers → OC's protein.counts/rna.counts mapping) is not an artifact yet. Also, no full-cycle/event-window extractor script exists for either process.
+- What check did you run to reduce that risk? Verified A01-A02 are present in the main checkout (not just referenced). Verified A18 traces exist for all 50 seeds. Confirmed no `extract_event_traces.m` exists in `scripts/matlab/`.
 
 ## 3) Interaction-surface map
 
@@ -80,19 +80,19 @@ Beat-4 inversion:
 2. The same Cytokinesis port emits `cell.division_progress`, optional `cell.division_complete`, and substrate consumption on `substrates[GTP]`; it does not emit `update["events"][...]` or any `chromosome.partition_counts` payload.
 3. `tests/vivarium/test_karr_cytokinesis.py` verifies that Cytokinesis completion is represented by `cell.division_complete is True` when `division_progress` reaches one, confirming the local OC event surface.
 4. `opencell/vivarium/karr_ribosome_assembly.py` reads `substrates_allocated[karr_ribosome_assembly][GTP,H2O]`, `rna.counts`, and `protein.counts`, and it randomizes particle ordering with `_rng.permutation(len(self.complex_wids))`.
-5. The RibosomeAssembly port emits positive counts on `complex.counts` and hydrolysis byproducts on `substrates`; it has no dedicated `events` store.
+5. The RibosomeAssembly port emits positive counts on `complex.counts` and hydrolysis byproducts on `substrates`; when allocated GTP or H₂O is zero, `next_update()` returns an empty dict with no `complex` key (line 332 of karr_ribosome_assembly.py). Any event-detection adapter must handle the empty-update case via `.get("complex", {}).get("counts", {})`, not direct key access.
 6. The RibosomeAssembly `ports_schema()` exposes both `complexs` and emitted `complex.counts`, but `next_update()` writes `complex`, so any event predicate keyed only to `complexs` would be wrong for update-time detection.
 7. Local flat fixtures exist for both target processes: `data/karr_fixtures/per_process/Cytokinesis_flat.mat` and `data/karr_fixtures/per_process/RibosomeAssembly_flat.mat`.
-8. Local per-seed native traces for `Cytokinesis` and `RibosomeAssembly` do not exist in this checkout under `data/m1_sources/karr_native/per_process_traces_v2_s000/...`; event-trace extraction is therefore a prerequisite, not an implementation detail.
-9. The canonical Karr MATLAB source paths are recorded in `data/schemas/per_process/*.toml` and `docs/karr_extracts/process/*.md`, but the `data/m1_sources/WholeCell/...` tree is not populated locally in this worktree.
+8. Existing 100-tick per-seed v2 traces for both Cytokinesis and RibosomeAssembly ARE present on disk at `data/m1_sources/karr_native/per_process_traces_v2_s{000..049}/` (50 seeds each). However, Day-28 audit showed 0/50 seeds have substrate-change events in either process's 100-tick window. These traces are INSUFFICIENT for L2.event — event-trace extraction over the declared firing window is the prerequisite, not these existing per-tick traces.
+9. The canonical Karr MATLAB source paths ARE populated locally in the main checkout at `data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/{Cytokinesis,RibosomeAssembly}.m`. Source-reviewable for evolveState algorithm, event semantics, and firing predicates. (Note: codex v4 worktree did not have the data tree fully populated, leading to incorrect "absent" claims in the original v4 draft — corrected post-critique.)
 10. The Cytokinesis Karr extract describes a multi-stage bind/bend/dissociate cycle concluding when constriction completes; the RibosomeAssembly Karr extract describes repeated all-or-nothing 30S/50S formation within a single time step, not a single once-per-cycle event.
 11. The existing L2.2 helper layer already contains the reusable one-tick replay primitives (`build_state_template`, `overlay_observable_into_state`, `refresh_allocator_views`, `project_observable_from_state`, `forbid_sut_oracle_file_io`).
 12. PFolding stress v2 is a local cautionary baseline: a harness can report a clean green while comparing OC to itself unless Karr remains the only reference surface.
 13. The operator context constrains MATLAB use to a single seat and this task prohibits MATLAB execution, production-code edits, test edits, and catalog edits.
 
 Beat-4 inversion:
-- Which baseline "fact" is inferred rather than proven? The least-proven baseline is the exact native Karr event window and event-count semantics for both processes, because the canonical `.m` files are not present locally.
-- What would invalidate it? Populating the native source tree or running a phase-0 extractor pilot could show that the assumed window anchors or per-tick event counting need to change.
+- Which baseline "fact" is inferred rather than proven? The exact event-window bounds and per-tick event counting semantics for both processes — the Karr SUT `.m` files are present locally (corrected in post-critique) but have not been read line-by-line against these specific claims.
+- What would invalidate it? A Phase-0 read of Cytokinesis.m and RibosomeAssembly.m evolveState methods could show that the assumed window anchors or event counting need adjustment.
 
 ## 5) Decision ledger
 
@@ -114,13 +114,27 @@ Decision D2
 - Options considered:
   1) Inter-arrival distribution as the primary timing statistic.
   2) Per-cycle event count only.
-  3) Per-tick hazard or intensity over the fully enumerated window, with event count handled separately.
+  3) Per-tick firing-rate intensity over the fully enumerated window, with event count handled separately.
 - Chosen option: 3.
-- Rationale: RibosomeAssembly is repeated-firing and all-or-nothing per tick, so hazard or intensity is the directly observable quantity from a stride-1 grid. Inter-arrival depends on censoring and sparse-grid assumptions; count-only misses timing drift. The same infrastructure collapses cleanly to a near-singular position distribution for Cytokinesis.
-- Tradeoffs accepted: more OC one-tick probes and a process-specific timing statistic split (`position W1` for Cytokinesis, hazard-distance for RibosomeAssembly).
-- Beat-4 inversion (how chosen option could be wrong): hazard alignment could pass while the OC port forms the wrong particle mix at the right ticks.
-- Falsifier (what evidence would force reopening D2): hazard passes but magnitude payload on `[RIBOSOME_30S, RIBOSOME_50S]` fails consistently on the same cohort.
+- Rationale: RibosomeAssembly is repeated-firing and all-or-nothing per tick, so firing-rate intensity is the directly observable quantity from a stride-1 grid. Inter-arrival depends on censoring and sparse-grid assumptions; count-only misses timing drift. The same infrastructure collapses cleanly to a near-singular position distribution for Cytokinesis.
+- Tradeoffs accepted: more OC one-tick probes and a process-specific timing statistic split (`position W1` for Cytokinesis, `firing-rate W1` for RibosomeAssembly).
+- Beat-4 inversion (how chosen option could be wrong): firing-rate alignment could pass while the OC port forms the wrong particle mix at the right ticks.
+- Falsifier (what evidence would force reopening D2): firing-rate passes but magnitude payload on `[RIBOSOME_30S, RIBOSOME_50S]` fails consistently on the same cohort.
 - Operator escalation needed? no.
+
+D2 addendum — mathematical definition of timing statistics (added post-critique):
+
+**Cytokinesis (single-fire, `event_timing_model: single_firing`):**
+Timing statistic = W1 on the distribution of relative firing-tick positions. One observation per seed that fired: `t_fire - t_division` (the offset of OC's/Karr's firing tick from the cycle's division tick). W1 computed between pooled OC offsets and pooled Karr offsets across all seeds where both fired.
+
+**RibosomeAssembly (repeated-fire, `event_timing_model: repeated_firing`):**
+Timing statistic = W1 on the pooled firing-tick distribution. For each (seed, tick) in the declared window, the Karr extractor records `did_fire ∈ {0,1}`. Collect the set of ticks where Karr fired across all seeds: `karr_fire_ticks = {t | karr_did_fire[seed, t] = 1 for any seed}`. Similarly for OC: `oc_fire_ticks = {t | oc_did_fire[seed, t] = 1 for any seed}`. Each set is a bag of tick-indices (one entry per (seed, tick) pair that fired, not deduplicated). W1 is computed between the two bags, treating each entry as a sample from the "at what tick in the window does a ribosome assembly event happen?" distribution.
+
+This is NOT a hazard function (which would require a survival/exposure denominator inappropriate for repeated events). It is NOT inter-arrival (which requires consecutive-event pairing across a sparse grid). It IS a direct comparison of "where in the cycle do fires cluster?" — the simplest distribution that captures timing drift without modeling assumptions.
+
+**Null bootstrap for both:** resample seeds (preserving all within-seed fire patterns as a cluster unit) into two independent cohorts of size N. Compute W1 between the two cohorts' pooled firing-tick bags. Repeat B=1000 times → q95_null. Acceptance: W1(OC-vs-Karr) ≤ k_eng × q95_null.
+
+**Relationship to other gates:** the timing gate is independent of the count gate (D3 — compares per-seed total event counts) and the magnitude gate (compares payload values at matched firings). A process can PASS timing while FAILing count or magnitude. All three are assessed independently per §3.4's verdict aggregation.
 
 Decision D3
 - Question: what cycle-level count or incidence rule prevents low-support false PASS?
