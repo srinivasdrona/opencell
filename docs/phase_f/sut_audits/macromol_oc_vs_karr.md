@@ -88,6 +88,7 @@ Coverage note:
 **Karr when substrate is insufficient from the start.**
 - In the deterministic cluster, `buildProteinComplexs_bounds` returns `0` for any complex whose limiting subunit count is below stoichiometric need (`docs/design/a3_step3_joint_design_v1.md:126-128`).
 - In competitive clusters, Karr recomputes `cumprob` from the current pool and exits the loop when `cumprob(1)` is `NaN`, which is the preserved "no further complexes can form" termination condition (`docs/design/a3_step3_joint_design_v1.md:143-147`).
+- If every cluster yields zero, Karr hits `if ~any(newComplexs); return; end` and leaves both `complexs` and `substrates` unchanged (`docs/design/a3_step3_joint_design_v1.md:109-112`).
 
 **Karr when substrate runs out mid-iteration.**
 - Karr never consumes multiple copies at once. After each selected complex, it subtracts exactly one stoichiometric column (`docs/design/a3_step3_joint_design_v1.md:154-156`), then the next loop iteration recomputes rates and either chooses another still-feasible complex or terminates.
@@ -96,6 +97,7 @@ Coverage note:
 **OC when substrate is insufficient from the start.**
 - OC floors/clips the allocated pool and returns immediately if the entire pool is zero (`opencell/vivarium/karr_macromolecular_complexation.py:218-224`).
 - Within `_per_cluster_mc`, OC computes `ub = _closed_form_bounds(...)` and exits when no upper bound is positive; it also forces rates for `ub == 0` complexes to zero before selecting anything (`opencell/vivarium/karr_macromolecular_complexation.py:104-132`).
+- If the cluster loop still produces no complexes, OC returns empty filtered deltas, again leaving state unchanged (`opencell/vivarium/karr_macromolecular_complexation.py:252-265`).
 
 **OC when substrate runs out mid-iteration.**
 - OC may consume more than one copy of the selected complex before reconsidering the rest of the network because it draws `sampled = rng.poisson(rates[chosen])`, clips it to `ub[chosen]`, and subtracts `stoich[:, chosen] * n_form` in one step (`opencell/vivarium/karr_macromolecular_complexation.py:135-145`).

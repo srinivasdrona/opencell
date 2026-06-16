@@ -14,3 +14,10 @@
 2. The audit verdict is `DIVERGENT_BUG`, not `FAITHFUL`.
 3. The decisive mismatch is the OC competitive kernel: Karr forms exactly one complex per MC iteration, while OC draws a Poisson multiplicity and may form several before recomputing rates.
 4. That extra Poisson draw changes substrate exhaustion behavior precisely in the low-substrate regime this audit was asked to evaluate.
+
+## Beat 3 - self-check pass
+
+1. Re-grepped the preserved Karr excerpt for RNG calls and confirmed the only Karr draw in the audited algorithm is `randStream.rand()`.
+2. Confirmed §3 lists both OC stochastic operations: the categorical complex-selection draw and the extra Poisson multiplicity draw.
+3. Re-checked substrate handling and added the explicit "no complexes formed anywhere" early-return path for both Karr and OC into §4.
+4. Final audit position remains unchanged: the competitive-loop kernel is algorithmically divergent, so the process should stay labeled `regime_bounded`.
