@@ -302,9 +302,9 @@ processes:
     output_channels: [substrates, monomers]
     primary_channel: monomers
     karr_artifact: per_process_traces_v2
-    closed_form_dominant: regime_bounded  # 2026-06-16 SUT parity audit: DIVERGENT_DOCUMENTED. OC bulk-translocates per species vs Karr one-copy-per-iteration. Different randomization + raw vs rate-scaled enzyme capacity. See docs/phase_f/sut_audits/ptransloc_oc_vs_karr.md.
+    closed_form_dominant: fixed_pending_revalidation  # 2026-06-16 DIVERGENT_DOCUMENTED divergences FIXED at 3c7d432. Copy-level randperm, rate-scaled enzymes, one-copy-per-iteration with break-on-first-failure. Pending L2 replay re-run for label upgrade.
     rationale_M: "default"
-    notes: "closed_form_dominant=regime_bounded. Day-30 SUT parity audit found 3 algorithmic divergences: (1) Karr randomizes individual monomer copies in one mixed permutation, OC randomizes species separately; (2) Karr uses rate-scaled enzyme capacity (translocaseSpecificRate * stepSizeSec), OC uses raw enzyme counts; (3) Karr one-at-a-time per iteration, OC bulk-translocates. These are relevant precisely in substrate-limited regimes where iteration order and capacity scaling matter. Fix requires faithful re-port of Karr evolveState inner loop."
+    notes: "closed_form_dominant=fixed_pending_revalidation. Day-30 SUT parity audit found 3 algorithmic divergences — ALL FIXED at merge 3c7d432: (1) species-level permutation → copy-level MatlabRandStream.randperm; (2) raw enzyme counts → rate-scaled capacity (translocaseSpecificRate * stepSizeSec / aaPerATP); (3) batch-per-species → one-copy-per-iteration with break-on-first-failure. Tests pass (19/19). Needs L2 replay re-run + substrate-stress revalidation for label upgrade to confirmed_biology_validated."
 
   - name: MacromolecularComplexation
     oc_module: opencell/vivarium/karr_macromolecular_complexation.py
@@ -318,9 +318,9 @@ processes:
     primary_channel: complexs
     joint_check: true                     # cross-complex Spearman correlation; see spec §6.4 (non-gating in v1.2)
     karr_artifact: per_process_traces_v2
-    closed_form_dominant: regime_bounded  # 2026-06-16 SUT parity audit: DIVERGENT_BUG. OC samples Poisson multiplicity per iteration (multiple copies) vs Karr one copy. Extra RNG draw. rate_constant has different semantic weight. See docs/phase_f/sut_audits/macromol_oc_vs_karr.md.
+    closed_form_dominant: fixed_pending_revalidation  # 2026-06-16 DIVERGENT_BUG FIXED at 3deae19. Poisson multiplicity removed, one-copy-per-iteration matching Karr. Pending L2 replay re-run for label upgrade.
     rationale_M: "default"
-    notes: "joint_check flag enables non-gating cross-complex correlation diagnostic per spec §6.4. closed_form_dominant=regime_bounded. Day-30 SUT parity audit: DIVERGENT_BUG — (1) OC _per_cluster_mc samples Poisson multiplicity and may form multiple complex copies before rates are recomputed, Karr forms exactly one copy per competitive-loop iteration; (2) OC has an extra RNG draw (Poisson rate_constant) not present in Karr; (3) OC rate_constant controls how many complexes form per iteration, Karr common_specific_rate only affects reaction probability. Fix: rewrite _per_cluster_mc inner loop to form exactly one complex per iteration matching Karr's competitive Monte Carlo."
+    notes: "joint_check flag enables non-gating cross-complex correlation diagnostic per spec §6.4. closed_form_dominant=fixed_pending_revalidation. Day-30 SUT parity audit found DIVERGENT_BUG — ALL FIXED at merge 3deae19: Poisson multiplicity draw removed, forced floor-to-1 removed. _per_cluster_mc now forms exactly one complex copy per iteration matching Karr's buildProteinComplexs_montecarlokinetic. rate_constant retained (harmless — cancels in normalization). Tests pass (11/11). Needs L2 replay re-run + substrate-stress revalidation for label upgrade to confirmed_biology_validated."
 
   - name: RibosomeAssembly
     oc_module: opencell/vivarium/karr_ribosome_assembly.py
