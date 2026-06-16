@@ -20,8 +20,61 @@ if "opencell" in sys.modules:
             if mod_name == "opencell" or mod_name.startswith("opencell."):
                 del sys.modules[mod_name]
 
+from opencell.state.chromosome_store import SparseTriplet
 from opencell.vivarium.karr_dna_repair import KarrDNARepairProcess
 from opencell.vivarium.chromosome_views import current_damage_sites
+
+_DAMAGE_FIELDS = (
+    "damagedBases",
+    "strandBreaks",
+    "gapSites",
+    "abasicSites",
+    "damagedSugarPhosphates",
+)
+
+
+def _triplet_from_points(
+    points: list[tuple[int, int, int]],
+    *,
+    shape: tuple[int, int],
+) -> dict[str, Any]:
+    if points:
+        positions = np.asarray([p for p, _, _ in points], dtype=np.int64)
+        strands = np.asarray([s for _, s, _ in points], dtype=np.int64)
+        values = np.asarray([v for _, _, v in points], dtype=np.int64)
+    else:
+        positions = np.asarray([], dtype=np.int64)
+        strands = np.asarray([], dtype=np.int64)
+        values = np.asarray([], dtype=np.int64)
+    return SparseTriplet(
+        positions=positions,
+        strands=strands,
+        values=values,
+        shape=shape,
+    ).to_state()
+
+
+def _sparse_damage_from_event_list(
+    damage_sites: list[dict[str, Any]],
+    *,
+    shape: tuple[int, int],
+) -> dict[str, list[tuple[int, int, int]]]:
+    sparse: dict[str, list[tuple[int, int, int]]] = {field: [] for field in _DAMAGE_FIELDS}
+    for idx, event in enumerate(damage_sites):
+        pos = int(event.get("position", idx))
+        strand = int(event.get("strand", 0))
+        damage_type = str(event.get("damage_type", event.get("kind", "")))
+        if damage_type == "damaged_base":
+            sparse["damagedBases"].append((pos, strand, 1))
+        elif damage_type == "abasic_site":
+            sparse["abasicSites"].append((pos, strand, 1))
+        elif damage_type == "single_strand_break":
+            sparse["strandBreaks"].append((pos, strand, 1))
+        elif damage_type == "double_strand_break":
+            pair_strand = strand + 1 if strand % 2 == 0 else strand - 1
+            sparse["strandBreaks"].append((pos, strand, 1))
+            sparse["strandBreaks"].append((pos, pair_strand, 1))
+    return sparse
 
 
 def _enzyme_counts_by_store(process: KarrDNARepairProcess) -> tuple[dict[str, float], dict[str, float]]:
@@ -38,18 +91,30 @@ def _base_state(
     process: KarrDNARepairProcess,
     *,
     damage_sites: list[dict[str, Any]] | None = None,
+    sparse_damage: dict[str, list[tuple[int, int, int]]] | None = None,
     substrate_pool: float = 1.0e6,
     allocated_pool: float = 0.0,
 ) -> dict[str, Any]:
     damage_sites = damage_sites or []
+    sparse_damage = sparse_damage or _sparse_damage_from_event_list(
+        damage_sites,
+        shape=process.chromosome_shape,
+    )
     protein_counts, complex_counts = _enzyme_counts_by_store(process)
-    return {
-        "chromosome": {
+    chromosome_state: dict[str, Any] = {
+        field: _triplet_from_points(sparse_damage.get(field, []), shape=process.chromosome_shape)
+        for field in _DAMAGE_FIELDS
+    }
+    chromosome_state.update(
+        {
             "damage_events_cumulative": damage_sites,
             "repair_events_cumulative": [],
             "repair_count": 0.0,
             "repair_count_by_pathway": {pathway: 0.0 for pathway in ("ber", "ner", "hr", "nhej_like")},
-        },
+        }
+    )
+    return {
+        "chromosome": chromosome_state,
         "protein": {"counts": protein_counts},
         "complex": {"counts": complex_counts},
         "substrates": {wid: float(substrate_pool) for wid in process.tracked_substrates},
@@ -66,6 +131,9 @@ def _apply_update(
     process: KarrDNARepairProcess,
 ) -> None:
     chrom = update.get("chromosome", {})
+    for field in _DAMAGE_FIELDS:
+        if field in chrom and isinstance(chrom[field], dict):
+            state["chromosome"][field] = deepcopy(chrom[field])
     if "repair_events_cumulative" in chrom:
         state["chromosome"]["repair_events_cumulative"].extend(
             deepcopy(chrom["repair_events_cumulative"])
@@ -121,22 +189,78 @@ def test_process_instantiates_with_defaults() -> None:
 
     assert schema["chromosome"]["repair_count"]["_updater"] == "accumulate"
     assert schema["chromosome"]["repair_count_by_pathway"]["ber"]["_updater"] == "accumulate"
+    assert schema["chromosome"]["damagedBases"]["positions"]["_updater"] == "set"
+    assert schema["chromosome"]["strandBreaks"]["values"]["_updater"] == "set"
     assert schema["requests"][process.name]["ATP"]["_updater"] == "set"
     assert "_updater" not in schema["substrates_allocated"][process.name]["ATP"]
 
 
 def test_one_tick_run_produces_positive_repair_delta() -> None:
     process = KarrDNARepairProcess({"rng_seed": 4, "pathway_rate_scale": 300.0})
-    damage_sites = [
-        {"site_id": f"site_{i}", "damage_type": "intrastrand_crosslink", "position": i}
-        for i in range(20)
-    ]
-    state = _base_state(process, damage_sites=damage_sites, allocated_pool=1.0e6)
+    sparse_damage = {
+        "damagedBases": [(i, 0, 1) for i in range(20)],
+        "strandBreaks": [],
+        "gapSites": [],
+        "abasicSites": [],
+        "damagedSugarPhosphates": [],
+    }
+    state = _base_state(process, sparse_damage=sparse_damage, allocated_pool=1.0e6)
+    before_nnz = len(state["chromosome"]["damagedBases"]["values"])
     update = process.next_update(1.0, state)
 
     assert update["chromosome"]["repair_count"] > 0.0
     assert len(update["chromosome"]["repair_events_cumulative"]) > 0
+    assert "damagedBases" in update["chromosome"]
+    after_nnz = len(update["chromosome"]["damagedBases"]["values"])
+    assert after_nnz < before_nnz
     assert any(float(v) < 0.0 for v in update.get("substrates", {}).values())
+
+
+def test_sparse_damage_fields_are_read_as_damage_sites() -> None:
+    process = KarrDNARepairProcess({"rng_seed": 6})
+    sparse_damage = {
+        "damagedBases": [(10, 0, 1)],
+        "strandBreaks": [(20, 0, 1), (20, 1, 1)],
+        "gapSites": [(30, 2, 1)],
+        "abasicSites": [(40, 1, 1)],
+        "damagedSugarPhosphates": [(50, 3, 1)],
+    }
+    state = _base_state(process, sparse_damage=sparse_damage, allocated_pool=0.0)
+    sites = process._damage_sites_from_sparse(state["chromosome"])
+    site_ids = {site.site_id for site in sites}
+
+    assert any(site_id.startswith("damagedBases:") for site_id in site_ids)
+    assert any(site_id.startswith("strandBreaks:20:") for site_id in site_ids)
+    assert any(site_id.startswith("gapSites:") for site_id in site_ids)
+    assert any(site_id.startswith("abasicSites:") for site_id in site_ids)
+    assert any(site_id.startswith("damagedSugarPhosphates:") for site_id in site_ids)
+
+
+def test_sparse_repair_writeback_updates_chromosome_triplets() -> None:
+    process = KarrDNARepairProcess({"rng_seed": 8, "pathway_rate_scale": 1000.0})
+    sparse_damage = {
+        "damagedBases": [(5, 0, 1), (6, 0, 1)],
+        "strandBreaks": [(20, 0, 1), (20, 1, 1), (30, 2, 1)],
+        "gapSites": [(41, 2, 1)],
+        "abasicSites": [(60, 1, 1)],
+        "damagedSugarPhosphates": [(80, 3, 1)],
+    }
+    state = _base_state(process, sparse_damage=sparse_damage, allocated_pool=1.0e6)
+    before_nnz = {
+        field: len(state["chromosome"][field]["values"])
+        for field in _DAMAGE_FIELDS
+    }
+
+    update = process.next_update(1.0, state)
+    _apply_update(state, update, process)
+    after_nnz = {
+        field: len(state["chromosome"][field]["values"])
+        for field in _DAMAGE_FIELDS
+    }
+
+    assert update["chromosome"]["repair_count"] > 0.0
+    assert any(field in update["chromosome"] for field in _DAMAGE_FIELDS)
+    assert any(after_nnz[field] < before_nnz[field] for field in _DAMAGE_FIELDS)
 
 
 def test_chassis_seeded_complex_wid_changes_repair_output() -> None:
@@ -199,7 +323,12 @@ def test_pathway_routing_and_counts() -> None:
         {"site_id": "ds1", "damage_type": "double_strand_break"},
         {"site_id": "ss1", "damage_type": "single_strand_break"},
     ]
-    state = _base_state(process, damage_sites=damage_sites, allocated_pool=1.0e6)
+    state = _base_state(
+        process,
+        damage_sites=damage_sites,
+        sparse_damage={field: [] for field in _DAMAGE_FIELDS},
+        allocated_pool=1.0e6,
+    )
     update = process.next_update(1.0, state)
 
     by_pathway = update["chromosome"]["repair_count_by_pathway"]

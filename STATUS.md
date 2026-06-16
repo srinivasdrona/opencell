@@ -76,3 +76,9 @@
 - [2026-06-16 16:34:00 UTC] chrom-phase1: added `opencell/state/chromosome_store.py` with sparse-triple CRUD, MATLAB-empty HDF5 normalization, and circular-wrap canonicalization.
 - [2026-06-16 16:40:00 UTC] chrom-phase1: re-ported `karr_dna_supercoiling.py` to `chromosome.linkingNumbers` sparse triples and updated chassis/test surfaces to seed full chromosome state.
 - [2026-06-16 16:44:51 UTC] chrom-phase1: target verification green on chromosome-store unit tests, DNASupercoiling focused tests, DNASupercoiling L2 replay, strict-zero, and H2O enrollment.
+
+- [2026-06-16T20:27:31Z] dna_repair port: loaded SESSION_CONTEXT + key OC files; extracted MATLAB DNARepair/Chromosome source line anchors for sparse-field semantics.
+- [2026-06-16T20:29:29Z] dna_repair port: implemented sparse-triplet chromosome read/write in karr_dna_repair and updated unit tests to construct/assert sparse chromosome damage fields.
+- [2026-06-16T20:32:45Z] dna_repair port: required tests green (10 passed): bin/oc-pytest tests/vivarium/test_karr_dna_repair.py tests/vivarium/test_karr_dna_repair_l2_replay.py -x -v.
+- [2026-06-16T20:33:26Z] dna_repair port: wrote STATUS_dna_repair.md with line-cited source anchors and acceptance checklist.
+- [2026-06-16T20:34:14Z] dna_repair port: committed changes on branch as 2894bcc (pc-t7: DNARepair sparse chromosome damage port).
