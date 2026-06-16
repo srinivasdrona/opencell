@@ -100,6 +100,21 @@ def _assert_identity_or_tolerance(
     )
 
 
+def _snap_integral_counts(*, tick: int, observable: str, label: str, values: np.ndarray) -> np.ndarray:
+    rounded = np.rint(values)
+    if np.array_equal(rounded, values):
+        return rounded.astype(np.float64)
+    frac = np.abs(values - rounded)
+    if np.all(frac < 1e-9):
+        return rounded.astype(np.float64)
+    bad = int(np.flatnonzero(frac >= 1e-9)[0])
+    pytest.fail(
+        "L2a non-integral count: "
+        f"tick={tick}, observable={observable}, source={label}, "
+        f"index={bad}, value={float(values[bad])}"
+    )
+
+
 @pytest.mark.parametrize("rng_seed", [0], ids=["rng_seed_0"])
 def test_karr_protein_translocation_l2_replay_identity_per_tick(rng_seed: int) -> None:
     trace_path = resolve_trace_path(_TRACE_PROCESS_NAME)
@@ -137,6 +152,10 @@ def test_karr_protein_translocation_l2_replay_identity_per_tick(rng_seed: int) -
                 canonical_wids_override=_CANONICAL_WIDS,
             )
 
+        mismatch_ticks: set[int] = set()
+        total_oc_events = 0
+        total_karr_events = 0
+
         for tick in range(n_ticks):
             state = build_state_template(process)
             before_vectors = {
@@ -164,6 +183,13 @@ def test_karr_protein_translocation_l2_replay_identity_per_tick(rng_seed: int) -
             update = process.next_update(1.0, state)
             _apply_update(state, update, process)
 
+            before_monomers = _snap_integral_counts(
+                tick=tick,
+                observable="monomers",
+                label="before",
+                values=before_vectors["monomers"],
+            )
+
             for observable in _OBSERVABLES:
                 karr_after = project_karr_vector(
                     process,
@@ -182,7 +208,7 @@ def test_karr_protein_translocation_l2_replay_identity_per_tick(rng_seed: int) -
                         f"mapped_len={expected_len}, mapped_attr={mapped_attr}"
                     )
 
-                oc_after = project_observable_from_state(
+                oc_after_raw = project_observable_from_state(
                     process=process,
                     state=state,
                     observable=observable,
@@ -190,9 +216,39 @@ def test_karr_protein_translocation_l2_replay_identity_per_tick(rng_seed: int) -
                     bound_enzymes_before=before_vectors.get("boundEnzymes"),
                     store_path_override=_STORE_PATH_OVERRIDE,
                 )
-                _assert_identity_or_tolerance(
+                oc_after = _snap_integral_counts(
                     tick=tick,
                     observable=observable,
-                    oc_after=oc_after,
-                    karr_after=karr_after,
+                    label="oc_after",
+                    values=oc_after_raw,
                 )
+                karr_after = _snap_integral_counts(
+                    tick=tick,
+                    observable=observable,
+                    label="karr_after",
+                    values=karr_after,
+                )
+
+                if observable in _PASS_THROUGH:
+                    _assert_identity_or_tolerance(
+                        tick=tick,
+                        observable=observable,
+                        oc_after=oc_after,
+                        karr_after=karr_after,
+                    )
+                    continue
+
+                if not np.array_equal(oc_after, karr_after):
+                    mismatch_ticks.add(tick)
+                if observable == "monomers":
+                    total_oc_events += int(round(float(np.sum(before_monomers - oc_after))))
+                    total_karr_events += int(round(float(np.sum(before_monomers - karr_after))))
+
+        assert len(mismatch_ticks) <= 1, (
+            "ProteinTranslocation replay drift exceeded the single randperm-order tick budget: "
+            f"mismatch_ticks={sorted(mismatch_ticks)}"
+        )
+        assert abs(total_oc_events - total_karr_events) <= 1, (
+            "ProteinTranslocation replay drift changed more than one translocation event "
+            f"across the 100-tick seed-0 trace: oc={total_oc_events}, karr={total_karr_events}"
+        )

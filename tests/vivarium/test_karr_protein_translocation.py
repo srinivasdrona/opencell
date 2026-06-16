@@ -78,6 +78,10 @@ def _set_allocated_resources(
     state["substrates_allocated"][process.name][process.h2o_wid] = float(h2o)
 
 
+def _wid_for_pathway(process: KarrProteinTranslocationProcess, pathway: str) -> str:
+    return next(wid for wid in process.translocatable_wids if process.pathway_by_wid[wid] == pathway)
+
+
 def test_fixture_loads() -> None:
     process = KarrProteinTranslocationProcess({})
     assert process.name == "karr_protein_translocation"
@@ -113,10 +117,10 @@ def test_no_cytoplasmic_no_translocation() -> None:
     assert update == {}
 
 
-def test_srp_mediated_integral_membrane_path() -> None:
+def test_srp_mediated_lipoprotein_path() -> None:
     process = KarrProteinTranslocationProcess({"rng_seed": 1})
     state = _base_state(process)
-    wid = process.integral_membrane_wids[0]
+    wid = _wid_for_pathway(process, "srp")
     atp_cost = process.atp_cost_by_wid[wid]
 
     _set_pending_monomer(state, wid, 1.0)
@@ -141,10 +145,10 @@ def test_srp_mediated_integral_membrane_path() -> None:
     assert update["substrates"][process.gdp_wid] == pytest.approx(gtp_cost)
 
 
-def test_direct_lipoprotein_path() -> None:
+def test_direct_integral_membrane_path() -> None:
     process = KarrProteinTranslocationProcess({})
     state = _base_state(process)
-    wid = process.lipoprotein_wids[0]
+    wid = _wid_for_pathway(process, "direct")
     atp_cost = process.atp_cost_by_wid[wid]
 
     _set_pending_monomer(state, wid, 1.0)
@@ -159,6 +163,26 @@ def test_direct_lipoprotein_path() -> None:
     assert update["substrates"][process.atp_wid] == pytest.approx(-float(atp_cost))
     assert process.gtp_wid not in update["substrates"]
     assert process.gdp_wid not in update["substrates"]
+
+
+def test_timestep_scales_translocase_capacity() -> None:
+    process = KarrProteinTranslocationProcess({})
+    state = _base_state(process)
+    wid = _wid_for_pathway(process, "direct")
+    atp_cost = process.atp_cost_by_wid[wid]
+
+    _set_pending_monomer(state, wid, 1.0)
+    _set_enzyme_count(state, process, process.translocase_atpase_wid, 1.0)
+    _set_enzyme_count(state, process, process.translocase_pore_wid, 1.0)
+    _set_enzyme_count(state, process, process.srp_wid, 0.0)
+    _set_enzyme_count(state, process, process.srp_receptor_wid, 0.0)
+    _set_allocated_resources(state, process, atp=float(atp_cost), gtp=0.0, h2o=float(atp_cost))
+
+    assert process.next_update(1e-12, deepcopy(state)) == {}
+
+    update = process.next_update(1.0, state)
+    assert update["protein"]["location"][wid] == process.destination_by_wid[wid]
+    assert update["substrates"][process.atp_wid] == pytest.approx(-float(atp_cost))
 
 
 def test_atp_consumption_per_translocation() -> None:
@@ -190,15 +214,45 @@ def test_atp_consumption_per_translocation() -> None:
     assert update["protein"]["location"][wid_extracellular] == "extracellular"
 
 
+def test_mixed_copy_order_breaks_after_first_infeasible_copy() -> None:
+    process = KarrProteinTranslocationProcess({"rng_seed": 6})
+    state = _base_state(process)
+    wid_direct = _wid_for_pathway(process, "direct")
+    wid_srp = _wid_for_pathway(process, "srp")
+    direct_atp = process.atp_cost_by_wid[wid_direct]
+    srp_atp = process.atp_cost_by_wid[wid_srp]
+
+    _set_pending_monomer(state, wid_direct, 2.0)
+    _set_pending_monomer(state, wid_srp, 1.0)
+    _set_enzyme_count(state, process, process.srp_wid, 1.0)
+    _set_enzyme_count(state, process, process.srp_receptor_wid, 1.0)
+    _set_enzyme_count(state, process, process.translocase_atpase_wid, 1.0)
+    _set_enzyme_count(state, process, process.translocase_pore_wid, 1.0)
+    _set_allocated_resources(
+        state,
+        process,
+        atp=float((direct_atp * 2) + srp_atp),
+        gtp=0.0,
+        h2o=float((direct_atp * 2) + srp_atp),
+    )
+
+    update = process.next_update(1.0, state)
+    assert update["protein"]["location"] == {wid_direct: process.destination_by_wid[wid_direct]}
+    assert update["protein"]["unprocessed_counts"][wid_direct] == pytest.approx(-1.0)
+    assert wid_srp not in update["protein"]["location"]
+    assert update["substrates"][process.atp_wid] == pytest.approx(-float(direct_atp))
+    assert process.gtp_wid not in update["substrates"]
+
+
 def test_srp_starvation_blocks_membrane_only() -> None:
     process = KarrProteinTranslocationProcess({})
     state = _base_state(process)
-    wid_integral = process.integral_membrane_wids[0]
-    wid_lipoprotein = process.lipoprotein_wids[0]
-    atp_need = process.atp_cost_by_wid[wid_integral] + process.atp_cost_by_wid[wid_lipoprotein]
+    wid_direct = _wid_for_pathway(process, "direct")
+    wid_srp = _wid_for_pathway(process, "srp")
+    atp_need = process.atp_cost_by_wid[wid_direct] + process.atp_cost_by_wid[wid_srp]
 
-    _set_pending_monomer(state, wid_integral, 1.0)
-    _set_pending_monomer(state, wid_lipoprotein, 1.0)
+    _set_pending_monomer(state, wid_direct, 1.0)
+    _set_pending_monomer(state, wid_srp, 1.0)
     _set_enzyme_count(state, process, process.srp_wid, 0.0)
     _set_enzyme_count(state, process, process.srp_receptor_wid, 0.0)
     _set_enzyme_count(state, process, process.translocase_atpase_wid, 2.0)
@@ -206,10 +260,10 @@ def test_srp_starvation_blocks_membrane_only() -> None:
     _set_allocated_resources(state, process, atp=float(atp_need), gtp=0.0, h2o=float(atp_need))
 
     update = process.next_update(1.0, state)
-    assert wid_integral not in update["protein"]["location"]
-    assert update["protein"]["location"][wid_lipoprotein] == "membrane"
+    assert update["protein"]["location"][wid_direct] == process.destination_by_wid[wid_direct]
+    assert wid_srp not in update["protein"]["location"]
     assert update["substrates"][process.atp_wid] == pytest.approx(
-        -float(process.atp_cost_by_wid[wid_lipoprotein])
+        -float(process.atp_cost_by_wid[wid_direct])
     )
 
 
@@ -234,7 +288,7 @@ def test_translocase_starvation_blocks_all() -> None:
 def test_protein_location_store_updates() -> None:
     process = KarrProteinTranslocationProcess({})
     schema = process.ports_schema()
-    example_wid = process.extracellular_wids[0]
+    example_wid = _wid_for_pathway(process, "direct")
     assert schema["protein"]["location"][example_wid]["_updater"] == "set"
     assert schema["protein"]["counts"][example_wid]["_updater"] == "accumulate"
     assert schema["substrates"][process.atp_wid]["_updater"] == "accumulate"
@@ -247,7 +301,7 @@ def test_protein_location_store_updates() -> None:
     _set_allocated_resources(state, process, atp=atp_need, gtp=0.0, h2o=atp_need)
     update = process.next_update(1.0, state)
 
-    assert update["protein"]["location"] == {example_wid: "extracellular"}
+    assert update["protein"]["location"] == {example_wid: process.destination_by_wid[example_wid]}
     assert "counts" not in update.get("protein", {})
 
 
