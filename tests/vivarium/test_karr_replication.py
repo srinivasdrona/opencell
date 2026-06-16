@@ -18,6 +18,7 @@ if "opencell" in sys.modules:
             if mod_name == "opencell" or mod_name.startswith("opencell."):
                 del sys.modules[mod_name]
 
+from opencell.state.chromosome_store import SparseTriplet
 from opencell.vivarium.karr_replication import KarrReplicationProcess
 
 
@@ -29,12 +30,9 @@ def _base_state(
     allocated_override: dict[str, float] | None = None,
 ) -> dict[str, Any]:
     request_wids = [*process.dntp_wids, process.atp_wid]
+    chromosome = process.build_default_chromosome_state(replication_state=replication_state)
     return {
-        "chromosome": {
-            "replication_state": replication_state,
-            "fork_position_bp": {"left": 0.0, "right": 0.0},
-            "events": {"replication_complete": 0.0},
-        },
+        "chromosome": chromosome,
         "substrates": {wid: float(initial_substrate) for wid in process.substrate_wids},
         "requests": {process.name: {wid: 0.0 for wid in request_wids}},
         "substrates_allocated": {
@@ -47,6 +45,11 @@ def _base_state(
 
 def _apply_update(state: dict[str, Any], update: dict[str, Any], process: KarrReplicationProcess) -> None:
     chrom_update = update.get("chromosome", {})
+    if "polymerizedRegions" in chrom_update:
+        state["chromosome"]["polymerizedRegions"] = SparseTriplet.from_state(
+            chrom_update["polymerizedRegions"],
+            shape=process.chromosome_shape,
+        ).to_state()
     if "replication_state" in chrom_update:
         state["chromosome"]["replication_state"] = str(chrom_update["replication_state"])
 
@@ -69,6 +72,10 @@ def _apply_update(state: dict[str, Any], update: dict[str, Any], process: KarrRe
         )
 
 
+def _polymerized_triplet(state: dict[str, Any], process: KarrReplicationProcess) -> SparseTriplet:
+    return SparseTriplet.from_state(state["chromosome"]["polymerizedRegions"], shape=process.chromosome_shape)
+
+
 def test_process_instantiates() -> None:
     p = KarrReplicationProcess({})
     assert p.name == "karr_replication"
@@ -77,6 +84,8 @@ def test_process_instantiates() -> None:
     assert p.terc_position_bp == 290038
     assert p.dntp_wids == ["DATP", "DCTP", "DGTP", "DTTP"]
     assert p.atp_wid == "ATP"
+    assert p.leading_strand_indexs == [0, 3]
+    assert p.lagging_strand_indexs == [2, 1]
 
 
 def test_idle_state_no_progress_no_request() -> None:
@@ -84,11 +93,12 @@ def test_idle_state_no_progress_no_request() -> None:
     state = _base_state(p, replication_state="idle", initial_substrate=1e6)
     update = p.next_update(1.0, state)
     assert update.get("chromosome", {}).get("fork_position_bp", {}) == {}
+    assert "polymerizedRegions" not in update.get("chromosome", {})
     assert all(v == 0.0 for v in update["requests"][p.name].values())
     assert "substrates" not in update
 
 
-def test_initiating_transitions_to_elongating_and_starts_at_zero() -> None:
+def test_initiating_transitions_to_elongating_and_seeds_polymerized_regions() -> None:
     p = KarrReplicationProcess({})
     state = _base_state(
         p,
@@ -99,6 +109,10 @@ def test_initiating_transitions_to_elongating_and_starts_at_zero() -> None:
     update = p.next_update(1.0, state)
     assert update["chromosome"]["replication_state"] == "elongating"
     assert update.get("chromosome", {}).get("fork_position_bp", {}) == {}
+    seeded = SparseTriplet.from_state(update["chromosome"]["polymerizedRegions"], shape=p.chromosome_shape)
+    assert seeded.positions.tolist() == [0, 22, 580054]
+    assert seeded.strands.tolist() == [0, 1, 3]
+    assert seeded.values.tolist() == [580076, 580032, 22]
     assert all(v == 0.0 for v in update["requests"][p.name].values())
 
 
