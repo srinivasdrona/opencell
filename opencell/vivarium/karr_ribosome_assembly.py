@@ -242,7 +242,14 @@ class KarrRibosomeAssemblyProcess(Process):
         rna_pool: dict[str, int],
         monomer_pool: dict[str, int],
         gtpase_pool: dict[str, int],
-    ) -> tuple[int, int, int]:
+    ) -> tuple[int, int, bool]:
+        """Return (rna_limit, monomer_limit, enzymes_present).
+
+        Karr fidelity: catalytic enzymes are a binary all-present gate,
+        NOT a stoichiometric limit.  One copy of each required GTPase is
+        sufficient to catalyze arbitrarily many assemblies per tick
+        (RibosomeAssembly.m:328-330).
+        """
         cidx = self.complex_index_by_wid[particle_wid]
         rna_limit = _stoich_limit_from_pool(
             rna_pool,
@@ -254,12 +261,14 @@ class KarrRibosomeAssemblyProcess(Process):
             self.monomer_subunit_wids,
             self.protein_complex_monomer_composition[:, cidx],
         )
-        gtpase_limit = _stoich_limit_from_pool(
-            gtpase_pool,
-            self.gtpase_wids,
-            self.complexation_catalysis[:, cidx],
+        # Karr binary gate: skip if ANY required catalytic enzyme is absent.
+        catalysis_col = self.complexation_catalysis[:, cidx]
+        enzymes_present = all(
+            gtpase_pool.get(self.gtpase_wids[j], 0) >= 1
+            for j in range(len(self.gtpase_wids))
+            if int(catalysis_col[j]) > 0
         )
-        return int(rna_limit), int(monomer_limit), int(gtpase_limit)
+        return int(rna_limit), int(monomer_limit), enzymes_present
 
     def estimate_formable_without_substrates(self, states: dict[str, Any]) -> dict[str, int]:
         """Estimate max formable particles from RNA/protein/enzyme state only."""
@@ -268,13 +277,13 @@ class KarrRibosomeAssemblyProcess(Process):
         gtpase_pool = self._build_gtpase_pool(states)
         out: dict[str, int] = {}
         for particle_wid in self.complex_wids:
-            limits = self._particle_resource_limits(
+            rna_limit, monomer_limit, enzymes_present = self._particle_resource_limits(
                 particle_wid,
                 rna_pool=rna_pool,
                 monomer_pool=monomer_pool,
                 gtpase_pool=gtpase_pool,
             )
-            out[particle_wid] = int(min(limits))
+            out[particle_wid] = int(min(rna_limit, monomer_limit)) if enzymes_present else 0
         return out
 
     def _build_update(self, n_formed: dict[str, int]) -> dict[str, Any]:
@@ -339,12 +348,14 @@ class KarrRibosomeAssemblyProcess(Process):
 
         for cidx in self._rng.permutation(len(self.complex_wids)):
             particle_wid = self.complex_wids[int(cidx)]
-            rna_limit, monomer_limit, gtpase_limit = self._particle_resource_limits(
+            rna_limit, monomer_limit, enzymes_present = self._particle_resource_limits(
                 particle_wid,
                 rna_pool=rna_pool,
                 monomer_pool=monomer_pool,
                 gtpase_pool=gtpase_pool,
             )
+            if not enzymes_present:
+                continue
             gtp_per_particle = int(self.n_gtpases_per_particle[particle_wid])
             if gtp_per_particle <= 0:
                 continue
@@ -352,7 +363,7 @@ class KarrRibosomeAssemblyProcess(Process):
             gtp_limit = int(math.floor(gtp_alloc / gtp_per_particle))
             h2o_limit = int(math.floor(h2o_alloc / gtp_per_particle))
 
-            n_form = int(min(rna_limit, monomer_limit, gtpase_limit, gtp_limit, h2o_limit))
+            n_form = int(min(rna_limit, monomer_limit, gtp_limit, h2o_limit))
             if n_form <= 0:
                 continue
 
