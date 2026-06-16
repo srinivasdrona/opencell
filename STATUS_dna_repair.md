@@ -48,7 +48,7 @@ Result:
 2. [x] DNARepair writes repair events back as sparse-triple deltas/writeback
 3. [x] Stochastic behavior preserved (`randperm`/`rand`-style ordering and stochastic draws retained)
 4. [x] Tests pass with required command
-5. [ ] Committed on this branch (pending commit hash)
+5. [x] Committed on this branch (`2894bcc`)
 
 ## Files Changed
 - `opencell/vivarium/karr_dna_repair.py`

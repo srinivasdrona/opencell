@@ -81,3 +81,4 @@
 - [2026-06-16T20:29:29Z] dna_repair port: implemented sparse-triplet chromosome read/write in karr_dna_repair and updated unit tests to construct/assert sparse chromosome damage fields.
 - [2026-06-16T20:32:45Z] dna_repair port: required tests green (10 passed): bin/oc-pytest tests/vivarium/test_karr_dna_repair.py tests/vivarium/test_karr_dna_repair_l2_replay.py -x -v.
 - [2026-06-16T20:33:26Z] dna_repair port: wrote STATUS_dna_repair.md with line-cited source anchors and acceptance checklist.
+- [2026-06-16T20:34:14Z] dna_repair port: committed changes on branch as 2894bcc (pc-t7: DNARepair sparse chromosome damage port).
