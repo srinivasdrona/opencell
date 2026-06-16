@@ -397,10 +397,12 @@ class KarrReplicationProcess(Process):
         if unwind_len <= 0:
             return self._mother_polymerized_regions()
         middle_len = max(0, self.sequence_len_bp - 2 * unwind_len)
+        # Seed from the zero-progress fork mirror, not the full initiation
+        # unwind geometry, so the 1-based ORI edge does not produce a duplicate
+        # zero-position daughter entry after 0-based normalization.
         return SparseTriplet.from_regions(
             [
                 (0, int(self.leading_strand_indexs[0]), self.sequence_len_bp),
-                (0, int(self.leading_strand_indexs[1]), unwind_len),
                 (unwind_len, int(self.lagging_strand_indexs[1]), middle_len),
                 (self.sequence_len_bp - unwind_len, int(self.leading_strand_indexs[1]), unwind_len),
             ],
@@ -474,13 +476,25 @@ class KarrReplicationProcess(Process):
 
     def _resolve_chromosome_store(self, chromosome_state: dict[str, Any]) -> ChromosomeStore:
         store = ChromosomeStore.from_state_mapping(chromosome_state, shape=self.chromosome_shape)
-        if store.calc_num_edges("polymerizedRegions") > 0:
-            return store
-
-        replication_state = str(chromosome_state.get("replication_state", "idle"))
         fork_state = chromosome_state.get("fork_position_bp", {})
         left_fork = _read_nonnegative_int(fork_state.get("left", 0.0))
         right_fork = _read_nonnegative_int(fork_state.get("right", 0.0))
+        replication_state = str(chromosome_state.get("replication_state", "idle"))
+
+        if store.calc_num_edges("polymerizedRegions") > 0:
+            polymerized = store.get_field("polymerizedRegions")
+            inferred_left, inferred_right = self._infer_fork_positions_from_polymerized(polymerized)
+            if left_fork <= inferred_left and right_fork <= inferred_right:
+                return store
+
+            store.set_field(
+                "polymerizedRegions",
+                self._build_polymerized_regions(
+                    left_progress_bp=max(inferred_left, left_fork),
+                    right_progress_bp=max(inferred_right, right_fork),
+                ),
+            )
+            return store
 
         if left_fork > 0 or right_fork > 0:
             polymerized = self._build_polymerized_regions(
@@ -613,7 +627,7 @@ class KarrReplicationProcess(Process):
 
     def _demand_from_advances(self, advance_left_bp: int, advance_right_bp: int) -> dict[str, int]:
         total_advanced_bp = max(0, int(advance_left_bp)) + max(0, int(advance_right_bp))
-        total_polymerized_nt = total_advanced_bp
+        total_polymerized_nt = 2 * total_advanced_bp
         dntp_counts = self._partition_counts(total_polymerized_nt)
 
         demand = {wid: int(dntp_counts[idx]) for idx, wid in enumerate(self.dntp_wids)}
