@@ -669,34 +669,30 @@ class KarrReplicationInitiationProcess(Process):
         allocated = float(allocated_state.get(wid, 0.0))
         return max(0.0, allocated)
 
-    def _sync_internal_state(self, free_dnaa: int, site_totals: np.ndarray) -> None:
+    def _sync_internal_state(
+        self,
+        *,
+        free_dnaa: int,
+        bound_atp: np.ndarray,
+        bound_adp: np.ndarray,
+        blocked_sites: np.ndarray,
+    ) -> None:
+        target_bound_atp = np.maximum(np.asarray(bound_atp, dtype=np.int64).reshape(-1), 0)
+        target_bound_adp = np.maximum(np.asarray(bound_adp, dtype=np.int64).reshape(-1), 0)
+        target_blocked_sites = np.asarray(blocked_sites, dtype=bool).reshape(-1)
+
         if not self._initialized:
-            self._bound_atp = np.maximum(site_totals.astype(np.int64), 0)
-            self._bound_adp = np.zeros(self.n_sites, dtype=np.int64)
+            self._bound_atp = target_bound_atp
+            self._bound_adp = target_bound_adp
+            self._blocked_sites = target_blocked_sites
             self._free_dnaa_atp = 0
             self._free_dnaa_adp = max(0, int(free_dnaa))
             self._initialized = True
             return
 
-        current_totals = self._bound_atp + self._bound_adp
-        target_totals = np.maximum(site_totals.astype(np.int64), 0)
-        delta = target_totals - current_totals
-
-        add_mask = delta > 0
-        if np.any(add_mask):
-            self._bound_atp[add_mask] += delta[add_mask]
-
-        remove_mask = delta < 0
-        if np.any(remove_mask):
-            to_remove = -delta[remove_mask]
-            adp_avail = self._bound_adp[remove_mask]
-            from_adp = np.minimum(adp_avail, to_remove)
-            self._bound_adp[remove_mask] -= from_adp
-            remaining = to_remove - from_adp
-            self._bound_atp[remove_mask] = np.maximum(
-                0,
-                self._bound_atp[remove_mask] - remaining,
-            )
+        self._bound_atp = target_bound_atp
+        self._bound_adp = target_bound_adp
+        self._blocked_sites = target_blocked_sites
 
         current_free = int(self._free_dnaa_atp + self._free_dnaa_adp)
         target_free = max(0, int(free_dnaa))
