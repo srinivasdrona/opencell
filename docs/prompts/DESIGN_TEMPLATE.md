@@ -85,12 +85,18 @@ Rules:
 2. Role must be specific ("defines substrate WID order", "contains current failure attribution behavior", etc.).
 3. At least one artifact must be a prior failed attempt/status when such artifact exists.
 4. At least one artifact must be a primary source/spec when available.
+5. For any artifact claimed as a data source, fixture, or evidence anchor (kind=data, trace, schema, fixture): verify at least one field/record loads correctly via code before claiming it contains usable content. File existence ≠ content correctness — placeholder strings, flatten-errors, and empty arrays are common in extracted MATLAB artifacts.
 
 Beat-4 inversion for inventory:
 
 ```
 - What critical artifact could still be missing from this list?
 - What check did you run to reduce that risk?
+- What could be WRONG in the artifacts we listed? (Presence ≠ correctness.
+  A fixture file can exist and contain placeholder strings instead of data.
+  A schema can list a column that is never populated. A trace can have the
+  right keys but wrong shapes. For each data-source artifact, state what
+  content check was run — or flag "content not verified" explicitly.)
 ```
 
 ### 3) Interaction-surface map (mandatory)
