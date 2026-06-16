@@ -10,6 +10,8 @@ import numpy as np
 from scipy.io import loadmat
 from vivarium.core.process import Process
 
+from opencell.util import MatlabRandStream
+
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/ProteinTranslocation_flat.mat"
 _MACROMOLECULAR_COMPLEXATION_FIXTURE_PATH = (
     "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
@@ -103,7 +105,7 @@ class KarrProteinTranslocationProcess(Process):
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
         super().__init__(parameters)
         self._load_fixture(self.parameters["fixture_path"])
-        self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
+        self._rng = MatlabRandStream(int(self.parameters["rng_seed"]))
 
     def _load_fixture(self, path: str | Path) -> None:
         resolved = _resolve_fixture_path(path)
@@ -172,7 +174,8 @@ class KarrProteinTranslocationProcess(Process):
         monomer_lengths = _as_vector(fx["monomerLengths"]).astype(np.int64)
         monomer_compartments = _as_vector(fx["monomerCompartments"]).astype(np.int64)
         monomer_srp_pathways = _as_vector(fx["monomerSRPPathways"]).astype(np.int64)
-        aa_per_atp = float(_as_vector(fx["preproteinTranslocase_aaTranslocatedPerATP"])[0])
+        self.translocase_specific_rate = float(_as_vector(fx["translocaseSpecificRate"])[0])
+        self.aa_per_atp = float(_as_vector(fx["preproteinTranslocase_aaTranslocatedPerATP"])[0])
         self.srp_gtp_cost_per_monomer = int(
             max(0.0, np.floor(float(_as_vector(fx["SRP_GTPUsedPerMonomer"])[0])))
         )
@@ -181,6 +184,7 @@ class KarrProteinTranslocationProcess(Process):
         self.destination_class_by_wid: dict[str, str] = {}
         self.pathway_by_wid: dict[str, str] = {}
         self.atp_cost_by_wid: dict[str, int] = {}
+        translocatable_wids_in_fixture_order: list[str] = []
 
         integral_membrane_wids: list[str] = []
         lipoprotein_wids: list[str] = []
@@ -217,16 +221,18 @@ class KarrProteinTranslocationProcess(Process):
             pathway = "srp" if srp_flag == 1 else "direct"
 
             monomer_len = max(1, int(monomer_lengths[int(idx)]))
-            atp_cost = max(1, int(np.ceil(float(monomer_len) / aa_per_atp)))
+            atp_cost = max(1, int(np.ceil(float(monomer_len) / self.aa_per_atp)))
 
             self.destination_by_wid[wid] = destination
             self.destination_class_by_wid[wid] = destination_class
             self.pathway_by_wid[wid] = pathway
             self.atp_cost_by_wid[wid] = atp_cost
+            translocatable_wids_in_fixture_order.append(wid)
 
         self.integral_membrane_wids = integral_membrane_wids
         self.lipoprotein_wids = lipoprotein_wids
         self.extracellular_wids = extracellular_wids
+        self.translocatable_wids_in_fixture_order = translocatable_wids_in_fixture_order
         self.translocatable_wids = (
             self.integral_membrane_wids + self.lipoprotein_wids + self.extracellular_wids
         )
@@ -298,14 +304,7 @@ class KarrProteinTranslocationProcess(Process):
         allocated = float(allocated_state.get(wid, 0.0))
         return int(max(0.0, np.floor(allocated)))
 
-    def _ordered_wids(self, wids: list[str]) -> list[str]:
-        if len(wids) <= 1:
-            return wids
-        order = self._rng.permutation(len(wids))
-        return [wids[int(i)] for i in order]
-
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
-        del timestep
         protein_state = states.get("protein", {})
         protein_counts_state = protein_state.get("counts", {})
         queue_counts_state = protein_state.get("unprocessed_counts", protein_counts_state)
@@ -323,20 +322,31 @@ class KarrProteinTranslocationProcess(Process):
             )
 
         cytoplasmic_counts = {
-            wid: max(0.0, float(queue_counts_state.get(wid, 0.0)))
-            for wid in self.translocatable_wids
+            wid: _read_nonnegative_count(queue_counts_state, wid)
+            for wid in self.translocatable_wids_in_fixture_order
             if str(location_state.get(wid, _CYTOPLASM)) == _CYTOPLASM
-            and max(0.0, float(queue_counts_state.get(wid, 0.0))) > 0.0
+            and _read_nonnegative_count(queue_counts_state, wid) > 0
         }
         if not cytoplasmic_counts:
             # v6 integration fallback: track pending queue from unprocessed proteins
             # even after species-level location labels have been updated.
             cytoplasmic_counts = {
-                wid: max(0.0, float(queue_counts_state.get(wid, 0.0)))
-                for wid in self.translocatable_wids
-                if max(0.0, float(queue_counts_state.get(wid, 0.0))) > 0.0
+                wid: _read_nonnegative_count(queue_counts_state, wid)
+                for wid in self.translocatable_wids_in_fixture_order
+                if _read_nonnegative_count(queue_counts_state, wid) > 0
             }
         if not cytoplasmic_counts:
+            return {}
+
+        translocating_wids = list(cytoplasmic_counts)
+        translocating_counts = np.fromiter(
+            (cytoplasmic_counts[wid] for wid in translocating_wids),
+            dtype=np.int64,
+            count=len(translocating_wids),
+        )
+        cumulative_counts = np.cumsum(translocating_counts, dtype=np.int64)
+        total_copies = int(cumulative_counts[-1]) if cumulative_counts.size else 0
+        if total_copies <= 0:
             return {}
 
         atp_remaining = self._available_substrate(allocated_state, self.atp_wid)
@@ -353,80 +363,56 @@ class KarrProteinTranslocationProcess(Process):
                 _read_nonnegative_count(enzyme_counts_state, wid),
             )
 
-        srp_remaining = _enzyme_remaining(self.srp_wid)
-        srp_receptor_remaining = _enzyme_remaining(self.srp_receptor_wid)
-        atpase_remaining = _enzyme_remaining(self.translocase_atpase_wid)
-        pore_remaining = _enzyme_remaining(self.translocase_pore_wid)
+        srp_capacity = float(
+            min(
+                _enzyme_remaining(self.srp_wid),
+                _enzyme_remaining(self.srp_receptor_wid),
+            )
+            * float(timestep)
+        )
+        translocase_capacity = float(
+            min(
+                _enzyme_remaining(self.translocase_atpase_wid),
+                _enzyme_remaining(self.translocase_pore_wid),
+            )
+            * self.translocase_specific_rate
+            * float(timestep)
+            / self.aa_per_atp
+        )
 
         translocated_counts: dict[str, float] = {}
         atp_spent = 0.0
         gtp_spent = 0.0
 
-        def attempt_phase(candidates: list[str], needs_srp: bool) -> bool:
-            nonlocal atp_remaining
-            nonlocal gtp_remaining
-            nonlocal h2o_remaining
-            nonlocal srp_remaining
-            nonlocal srp_receptor_remaining
-            nonlocal atpase_remaining
-            nonlocal pore_remaining
-            nonlocal atp_spent
-            nonlocal gtp_spent
+        # Match Karr's randperm over individual copies without expanding a copy list.
+        for copy_index in self._rng.randperm(total_copies):
+            wid_index = int(np.searchsorted(cumulative_counts, int(copy_index), side="left"))
+            wid = translocating_wids[wid_index]
+            atp_per_monomer = int(self.atp_cost_by_wid[wid])
+            requires_srp = self.pathway_by_wid.get(wid) == "srp"
+            srp_per_monomer = 1 if requires_srp else 0
+            gtp_per_monomer = int(self.srp_gtp_cost_per_monomer) if requires_srp else 0
+            hydrolysis_per_monomer = atp_per_monomer + gtp_per_monomer
 
-            for wid in self._ordered_wids(candidates):
-                count = float(cytoplasmic_counts.get(wid, 0.0))
-                if count <= 0.0:
-                    continue
+            if atp_per_monomer > translocase_capacity:
+                break
+            if srp_per_monomer > srp_capacity:
+                break
+            if atp_per_monomer > atp_remaining:
+                break
+            if gtp_per_monomer > gtp_remaining:
+                break
+            if hydrolysis_per_monomer > h2o_remaining:
+                break
 
-                atp_per_monomer = int(self.atp_cost_by_wid[wid])
-                requires_srp = bool(needs_srp or self.pathway_by_wid.get(wid) == "srp")
-                gtp_per_monomer = int(self.srp_gtp_cost_per_monomer) if requires_srp else 0
-                hydrolysis_per_monomer = atp_per_monomer + gtp_per_monomer
-                if hydrolysis_per_monomer <= 0:
-                    continue
-
-                max_from_substrates = float(
-                    min(
-                        atp_remaining / atp_per_monomer if atp_per_monomer > 0 else count,
-                        gtp_remaining / gtp_per_monomer if gtp_per_monomer > 0 else count,
-                        h2o_remaining / hydrolysis_per_monomer,
-                    )
-                )
-                max_from_enzymes = float(min(atpase_remaining, pore_remaining))
-                if requires_srp:
-                    max_from_enzymes = float(min(max_from_enzymes, srp_remaining, srp_receptor_remaining))
-                translocate_count = float(min(count, max_from_substrates, max_from_enzymes))
-                if translocate_count <= 0.0:
-                    return True
-
-                atp_need = translocate_count * atp_per_monomer
-                gtp_need = translocate_count * gtp_per_monomer
-                hydrolysis_need = translocate_count * hydrolysis_per_monomer
-                translocated_counts[wid] = translocated_counts.get(wid, 0.0) + translocate_count
-                atp_remaining -= atp_need
-                gtp_remaining -= gtp_need
-                h2o_remaining -= hydrolysis_need
-                atpase_remaining -= translocate_count
-                pore_remaining -= translocate_count
-                atp_spent += atp_need
-                gtp_spent += gtp_need
-                if requires_srp:
-                    srp_remaining -= translocate_count
-                    srp_receptor_remaining -= translocate_count
-            return False
-
-        # Phase 1: SRP-mediated proteins.
-        halted = attempt_phase(
-            [wid for wid in self.srp_path_wids if wid in cytoplasmic_counts],
-            needs_srp=True,
-        )
-
-        # Phase 2: direct pathway proteins.
-        if not halted:
-            attempt_phase(
-                [wid for wid in self.direct_path_wids if wid in cytoplasmic_counts],
-                needs_srp=False,
-            )
+            translocated_counts[wid] = translocated_counts.get(wid, 0.0) + 1.0
+            translocase_capacity -= float(atp_per_monomer)
+            srp_capacity -= float(srp_per_monomer)
+            atp_remaining -= atp_per_monomer
+            gtp_remaining -= gtp_per_monomer
+            h2o_remaining -= hydrolysis_per_monomer
+            atp_spent += float(atp_per_monomer)
+            gtp_spent += float(gtp_per_monomer)
 
         if not translocated_counts:
             return {}
