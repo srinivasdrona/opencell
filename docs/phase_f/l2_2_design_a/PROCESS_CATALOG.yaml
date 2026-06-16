@@ -172,7 +172,7 @@ processes:
     primary_distance: per_component_scaled
     karr_artifact: per_process_traces_v2
     rationale_M: "Poisson Okazaki + randperm; M=100 covers polymerase queue"
-    notes: "v1.4 (2026-06-14): REPLACED prior delta_fork_position_bp.* projection. Old projection synthesized fork positions from substrate (NTP) consumption because the placeholder-chromosome era didn't have real chromosome state. Now polymerizedRegions carries actual region lengths per (position, strand). Per-strand sums preserve leading-vs-lagging asymmetry (Replication.m line 226-227: leadingStrandIndexs=[1 4], laggingStrandIndexs=[3 2]). per_component_scaled retained because 4 per-strand sums + 1 count have different natural scales. See docs/phase_f/l2_2_design_a/STATUS_chrom_projections_design.md."
+    notes: "v1.4 (2026-06-14): polymerizedRegions projection. v3.11 (2026-06-17): PORTED to full chromosome sparse-triple state at b83c278. Reads/writes chromosome.polymerizedRegions as sparse triples. L2 replay PASS on seed 0 (8/8 tests). Fork position seeding and strand sync verified."
 
   - name: DNASupercoiling
     oc_module: opencell/vivarium/karr_dna_supercoiling.py
