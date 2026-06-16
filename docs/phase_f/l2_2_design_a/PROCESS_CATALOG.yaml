@@ -370,7 +370,7 @@ processes:
     primary_channel: substrates
     karr_artifact: per_process_traces_v2
     rationale_M: "default; only fires during division window"
-    notes: "v3 (2026-06-11): reclassified to EVENT_CLASS. v3.7 (2026-06-16): SUT parity audit verdict DIVERGENT_DOCUMENTED — OC is intentional Karr-light v1 (bulk progress ratchet, 0 RNG draws vs Karr's 4-phase edge-wise FtsZ polygon mechanics with 5 classes of per-element stochastic draws). No fix without full v2 FtsZ ring port. Can validate division timing only, not mechanism fidelity. See docs/phase_f/sut_audits/cytokinesis_oc_vs_karr.md."
+    notes: "v3 (2026-06-11): reclassified to EVENT_CLASS. v3.7 (2026-06-16): SUT audit DIVERGENT_DOCUMENTED. v3.8 (2026-06-16): FIXED at 3cee339 — full 5-phase FtsZ ring port replacing Karr-light v1. All 5 stochastic phases, edge state tracking, geometry, mass conservation. Algorithm now faithful to Karr. Still EVENT_CLASS — needs event-window traces for distributional validation."
     seed_window:
       tick_range_from_division: [-50, 0]       # active only in the immediate pre-division window
       rationale: "Cytokinesis is biologically active only in late cell cycle around division"
