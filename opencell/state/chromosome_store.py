@@ -231,6 +231,29 @@ class SparseTriplet:
             strands = strands - 1
         return cls(positions=positions, strands=strands, values=values, shape=shape)
 
+    @classmethod
+    def from_regions(
+        cls,
+        regions: list[tuple[int, int, int]] | tuple[tuple[int, int, int], ...],
+        *,
+        shape: tuple[int, int],
+    ) -> "SparseTriplet":
+        positions: list[int] = []
+        strands: list[int] = []
+        values: list[int] = []
+        for start, strand, length in regions:
+            if int(length) == 0:
+                continue
+            positions.append(int(start))
+            strands.append(int(strand))
+            values.append(int(length))
+        return cls(
+            positions=np.asarray(positions, dtype=np.int64),
+            strands=np.asarray(strands, dtype=np.int64),
+            values=np.asarray(values, dtype=np.int64),
+            shape=shape,
+        )
+
     def copy(self) -> "SparseTriplet":
         return SparseTriplet(
             positions=self.positions.copy(),
@@ -257,6 +280,17 @@ class SparseTriplet:
             "values": self.values.copy(),
             "shape": self.shape,
         }
+
+    def to_regions(self) -> list[tuple[int, int, int]]:
+        return [
+            (int(position), int(strand), int(value))
+            for position, strand, value in zip(
+                self.positions.tolist(),
+                self.strands.tolist(),
+                self.values.tolist(),
+                strict=False,
+            )
+        ]
 
 
 class ChromosomeStore:

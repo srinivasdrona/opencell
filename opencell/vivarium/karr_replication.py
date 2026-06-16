@@ -1,15 +1,12 @@
-"""Vivarium Process port of Karr's Replication (Karr-LIGHT v1).
+"""Vivarium Process port of Karr's Replication (chromosome-store v2).
 
-Karr-LIGHT v1 scope:
-- consumes initiation state from pc-t1 via ``chromosome.replication_state``
-- tracks bidirectional fork progression as bulk counters
-- requests/consumes dNTPs + ATP through ``KarrAllocationStep`` contract
-- emits replication completion state + event when both forks reach terC
+This phase re-ports Replication onto ``chromosome.polymerizedRegions`` as a
+sparse triple. ``chromosome.fork_position_bp`` remains as a legacy mirror for
+consumers that still read the scalar fork counters.
 
-Deferred to v2:
+Deferred from full Karr:
 - SSB binding/release cycle
-- Okazaki fragment strand-level machinery
-- ligase fragment events and leading/lagging asymmetry
+- exact strand-fragment geometry beyond the sparse-triple replay oracle
 - RNAP collision dwell / pause mechanics
 """
 
@@ -21,6 +18,13 @@ from typing import Any
 import numpy as np
 from scipy.io import loadmat
 from vivarium.core.process import Process
+
+from opencell.state.chromosome_store import (
+    CHROMOSOME_FIELDS,
+    ChromosomeStore,
+    SparseTriplet,
+    sparse_triplet_schema,
+)
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/Replication_flat.mat"
 _DEFAULT_CHROMOSOME_FIXTURE_PATH = "data/karr_fixtures/per_process/Chromosome_flat.mat"
@@ -352,11 +356,179 @@ class KarrReplicationProcess(Process):
         # Datp/Dctp/Dgtp/Dttp order from fixture substrateIndexs_dntp.
         self._dntp_fractions = np.asarray([at_fraction, gc_fraction, gc_fraction, at_fraction])
         self._dntp_fractions = self._dntp_fractions / np.sum(self._dntp_fractions)
+        self.leading_strand_indexs = (_parse_index_array(replication_fixture.leadingStrandIndexs) - 1).tolist()
+        self.lagging_strand_indexs = (_parse_index_array(replication_fixture.laggingStrandIndexs) - 1).tolist()
+        self.chromosome_shape = (self.sequence_len_bp, ChromosomeStore.DEFAULT_N_COMPARTMENTS)
+        self._left_progress_offset_bp = self.primer_length
+        self._right_progress_offset_bp = self.primer_length + self._initiation_unwind_len
+
+    def build_default_chromosome_state(self, *, replication_state: str = "idle") -> dict[str, Any]:
+        store = ChromosomeStore(shape=self.chromosome_shape)
+        if replication_state == "complete":
+            polymerized = self._completed_polymerized_regions()
+            left_fork = float(self.terc_position_bp)
+            right_fork = float(self.terc_position_bp)
+        elif replication_state == "elongating":
+            polymerized = self._seed_polymerized_regions()
+            left_fork = 0.0
+            right_fork = 0.0
+        else:
+            polymerized = self._mother_polymerized_regions()
+            left_fork = 0.0
+            right_fork = 0.0
+        store.set_field("polymerizedRegions", polymerized)
+        state = store.to_state()
+        state["replication_state"] = replication_state
+        state["fork_position_bp"] = {"left": left_fork, "right": right_fork}
+        state["events"] = {"replication_complete": 0.0}
+        return state
+
+    def _mother_polymerized_regions(self) -> SparseTriplet:
+        return SparseTriplet.from_regions(
+            [
+                (0, int(self.leading_strand_indexs[0]), self.sequence_len_bp),
+                (0, int(self.lagging_strand_indexs[1]), self.sequence_len_bp),
+            ],
+            shape=self.chromosome_shape,
+        )
+
+    def _seed_polymerized_regions(self) -> SparseTriplet:
+        unwind_len = max(0, int(self._initiation_unwind_len))
+        if unwind_len <= 0:
+            return self._mother_polymerized_regions()
+        middle_len = max(0, self.sequence_len_bp - 2 * unwind_len)
+        return SparseTriplet.from_regions(
+            [
+                (0, int(self.leading_strand_indexs[0]), self.sequence_len_bp),
+                (0, int(self.leading_strand_indexs[1]), unwind_len),
+                (unwind_len, int(self.lagging_strand_indexs[1]), middle_len),
+                (self.sequence_len_bp - unwind_len, int(self.leading_strand_indexs[1]), unwind_len),
+            ],
+            shape=self.chromosome_shape,
+        )
+
+    def _completed_polymerized_regions(self) -> SparseTriplet:
+        return SparseTriplet.from_regions(
+            [
+                (0, int(strand_idx), self.sequence_len_bp)
+                for strand_idx in (
+                    int(self.leading_strand_indexs[0]),
+                    int(self.lagging_strand_indexs[1]),
+                    int(self.lagging_strand_indexs[0]),
+                    int(self.leading_strand_indexs[1]),
+                )
+            ],
+            shape=self.chromosome_shape,
+        )
+
+    def _build_polymerized_regions(
+        self,
+        *,
+        left_progress_bp: int,
+        right_progress_bp: int,
+    ) -> SparseTriplet:
+        left_progress = max(0, int(left_progress_bp))
+        right_progress = max(0, int(right_progress_bp))
+        if left_progress >= self.terc_position_bp and right_progress >= self.terc_position_bp:
+            return self._completed_polymerized_regions()
+
+        right_main_len = self._right_progress_offset_bp + right_progress
+        left_main_len = self._left_progress_offset_bp + left_progress
+        if right_main_len * 2 >= self.sequence_len_bp:
+            return self._completed_polymerized_regions()
+
+        regions = [
+            (0, int(self.leading_strand_indexs[0]), self.sequence_len_bp),
+            (0, int(self.lagging_strand_indexs[0]), left_main_len),
+            (0, int(self.leading_strand_indexs[1]), right_main_len),
+            (
+                right_main_len,
+                int(self.lagging_strand_indexs[1]),
+                max(0, self.sequence_len_bp - 2 * right_main_len),
+            ),
+            (self.sequence_len_bp - right_main_len, int(self.leading_strand_indexs[1]), right_main_len),
+            (self.sequence_len_bp - left_main_len, int(self.lagging_strand_indexs[1]), left_main_len),
+        ]
+        return SparseTriplet.from_regions(regions, shape=self.chromosome_shape)
+
+    def _infer_fork_positions_from_polymerized(self, polymerized: SparseTriplet) -> tuple[int, int]:
+        left_seed = 0
+        right_seed = 0
+        for position, strand, value in polymerized.to_regions():
+            if position == 0 and strand == int(self.lagging_strand_indexs[0]):
+                left_seed = max(left_seed, int(value))
+            if position == 0 and strand == int(self.leading_strand_indexs[1]):
+                right_seed = max(right_seed, int(value))
+
+        left_progress = max(0, left_seed - int(self._left_progress_offset_bp))
+        right_progress = max(0, right_seed - int(self._right_progress_offset_bp))
+        if (
+            polymerized.calc_num_edges() >= 4
+            and all(int(v) >= self.sequence_len_bp for v in polymerized.values.tolist())
+        ):
+            return (self.terc_position_bp, self.terc_position_bp)
+        return (
+            min(int(left_progress), int(self.terc_position_bp)),
+            min(int(right_progress), int(self.terc_position_bp)),
+        )
+
+    def _resolve_chromosome_store(self, chromosome_state: dict[str, Any]) -> ChromosomeStore:
+        store = ChromosomeStore.from_state_mapping(chromosome_state, shape=self.chromosome_shape)
+        if store.calc_num_edges("polymerizedRegions") > 0:
+            return store
+
+        replication_state = str(chromosome_state.get("replication_state", "idle"))
+        fork_state = chromosome_state.get("fork_position_bp", {})
+        left_fork = _read_nonnegative_int(fork_state.get("left", 0.0))
+        right_fork = _read_nonnegative_int(fork_state.get("right", 0.0))
+
+        if left_fork > 0 or right_fork > 0:
+            polymerized = self._build_polymerized_regions(
+                left_progress_bp=left_fork,
+                right_progress_bp=right_fork,
+            )
+        elif replication_state == "elongating":
+            polymerized = self._seed_polymerized_regions()
+        elif replication_state == "complete":
+            polymerized = self._completed_polymerized_regions()
+        else:
+            polymerized = self._mother_polymerized_regions()
+
+        store.set_field("polymerizedRegions", polymerized)
+        return store
+
+    def _chromosome_hint_update(
+        self,
+        *,
+        states: dict[str, Any],
+        chromosome_hint: dict[str, Any],
+    ) -> dict[str, Any]:
+        current_store = self._resolve_chromosome_store(states.get("chromosome", {}))
+        next_store = ChromosomeStore.from_state_mapping(chromosome_hint, shape=self.chromosome_shape)
+        next_polymerized = next_store.get_field("polymerizedRegions")
+        before_left, before_right = self._infer_fork_positions_from_polymerized(
+            current_store.get_field("polymerizedRegions")
+        )
+        after_left, after_right = self._infer_fork_positions_from_polymerized(next_polymerized)
+        chrom_update: dict[str, Any] = {
+            "polymerizedRegions": next_polymerized.to_state(),
+            "fork_position_bp": {
+                "left": float(after_left - before_left),
+                "right": float(after_right - before_right),
+            },
+        }
+        if "replication_state" in chromosome_hint:
+            chrom_update["replication_state"] = str(chromosome_hint["replication_state"])
+        return chrom_update
 
     def ports_schema(self) -> dict[str, Any]:
         request_wids = [*self.dntp_wids, self.atp_wid]
-        return {
-            "chromosome": {
+        chromosome_schema = {
+            field: sparse_triplet_schema(self.chromosome_shape, emit=(field == "polymerizedRegions"))
+            for field in CHROMOSOME_FIELDS
+        }
+        chromosome_schema.update(
+            {
                 "replication_state": {
                     "_default": "idle",
                     "_updater": "set",
@@ -373,7 +545,10 @@ class KarrReplicationProcess(Process):
                         "_emit": True,
                     }
                 },
-            },
+            }
+        )
+        return {
+            "chromosome": chromosome_schema,
             "substrates": {
                 wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
                 for wid in self.substrate_wids
@@ -438,7 +613,7 @@ class KarrReplicationProcess(Process):
 
     def _demand_from_advances(self, advance_left_bp: int, advance_right_bp: int) -> dict[str, int]:
         total_advanced_bp = max(0, int(advance_left_bp)) + max(0, int(advance_right_bp))
-        total_polymerized_nt = 2 * total_advanced_bp
+        total_polymerized_nt = total_advanced_bp
         dntp_counts = self._partition_counts(total_polymerized_nt)
 
         demand = {wid: int(dntp_counts[idx]) for idx, wid in enumerate(self.dntp_wids)}
@@ -686,21 +861,30 @@ class KarrReplicationProcess(Process):
         if substrate_delta:
             update["substrates"] = {wid: delta for wid, delta in substrate_delta.items() if delta != 0.0}
 
+        chromosome_hint = trace_hint.get("chromosome_next", {})
+        if isinstance(chromosome_hint, dict) and chromosome_hint:
+            update["chromosome"] = self._chromosome_hint_update(
+                states=states,
+                chromosome_hint=chromosome_hint,
+            )
+
         self._replay_tick += 1
         self._replay_initialized = True
         return update
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         hint = states.get("trace_hint", {})
-        if isinstance(hint, dict) and ("boundEnzymes_next" in hint or "enzymes_next" in hint):
+        if isinstance(hint, dict) and (
+            "boundEnzymes_next" in hint or "enzymes_next" in hint or "chromosome_next" in hint
+        ):
             return self._next_update_from_trace_hint(timestep=timestep, states=states)
 
         dt = float(timestep) if timestep > 0 else float(self.parameters["time_step"])
         chromosome_state = states.get("chromosome", {})
         replication_state = str(chromosome_state.get("replication_state", "idle"))
-        fork_state = chromosome_state.get("fork_position_bp", {})
-        left_pos_bp = _read_nonnegative_int(fork_state.get("left", 0.0))
-        right_pos_bp = _read_nonnegative_int(fork_state.get("right", 0.0))
+        chromosome_store = self._resolve_chromosome_store(chromosome_state)
+        polymerized_regions = chromosome_store.get_field("polymerizedRegions")
+        left_pos_bp, right_pos_bp = self._infer_fork_positions_from_polymerized(polymerized_regions)
 
         # Reset one-shot completion emitter if an upstream coordinator restarts the cycle.
         if replication_state in {"idle", "initiating", "elongating"}:
@@ -713,7 +897,10 @@ class KarrReplicationProcess(Process):
             return update
 
         if replication_state == "initiating":
-            update["chromosome"] = {"replication_state": "elongating"}
+            update["chromosome"] = {
+                "replication_state": "elongating",
+                "polymerizedRegions": self._seed_polymerized_regions().to_state(),
+            }
             return update
 
         if replication_state == "complete":
@@ -726,7 +913,8 @@ class KarrReplicationProcess(Process):
         remaining_left_bp = max(0, self.terc_position_bp - left_pos_bp)
         remaining_right_bp = max(0, self.terc_position_bp - right_pos_bp)
         if remaining_left_bp <= 0 and remaining_right_bp <= 0:
-            update.update(self._completion_update())
+            update["chromosome"] = {"polymerizedRegions": self._completed_polymerized_regions().to_state()}
+            update["chromosome"].update(self._completion_update()["chromosome"])
             return update
 
         desired_step_bp = max(0, int(np.floor(self.fork_polymerization_rate_bp_per_s * dt)))
@@ -778,16 +966,24 @@ class KarrReplicationProcess(Process):
             "left": float(actual_left_bp),
             "right": float(actual_right_bp),
         }
+        next_left_bp = left_pos_bp + actual_left_bp
+        next_right_bp = right_pos_bp + actual_right_bp
+        next_polymerized = self._build_polymerized_regions(
+            left_progress_bp=next_left_bp,
+            right_progress_bp=next_right_bp,
+        )
 
-        update["chromosome"] = {"fork_position_bp": fork_delta}
+        update["chromosome"] = {
+            "polymerizedRegions": next_polymerized.to_state(),
+            "fork_position_bp": fork_delta,
+        }
         if substrate_delta:
             update["substrates"] = substrate_delta
 
-        next_left_bp = left_pos_bp + actual_left_bp
-        next_right_bp = right_pos_bp + actual_right_bp
         if next_left_bp >= self.terc_position_bp and next_right_bp >= self.terc_position_bp:
             completion = self._completion_update()
             update.setdefault("chromosome", {})
+            update["chromosome"]["polymerizedRegions"] = self._completed_polymerized_regions().to_state()
             update["chromosome"].update(completion["chromosome"])
         return update
 
