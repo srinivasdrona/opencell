@@ -188,7 +188,7 @@ processes:
     primary_distance: per_component_scaled
     karr_artifact: per_process_traces_v2
     rationale_M: "default; randperm + half-up branch covered"
-    notes: "v1.4 (2026-06-14): primary_projection set to linkingNumbers.{delta_value_sum, delta_nnz}. linkingNumbers is the ONLY chromosome field DNASupercoiling writes directly (SUT line 503: c.linkingNumbers = CircularSparseMat(...)). per_component_scaled because event_density:moderate and the two components have different natural scales (sum can be ±10⁴, nnz is small int). See docs/phase_f/l2_2_design_a/STATUS_chrom_projections_design.md."
+    notes: "v1.4 (2026-06-14): primary_projection set to linkingNumbers.{delta_value_sum, delta_nnz}. v3.10 (2026-06-16): PORTED to full chromosome sparse-triple state at dc9eb70. Reads/writes chromosome.linkingNumbers as sparse triples. L2 replay PASS on seed 0. Legacy supercoil_density mirror maintained. First chromosome-primary process validated end-to-end."
 
   - name: RNAProcessing
     oc_module: opencell/vivarium/karr_rna_processing.py
