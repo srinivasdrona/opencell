@@ -33,11 +33,7 @@ def test_karr_dna_supercoiling_strict_zero_no_global_fallback() -> None:
     guarded_substrates = _GuardedSubstrates(substrate_values, process.atp_wid)
 
     state = {
-        "chromosome": {
-            "supercoil_density": -0.01,
-            "replication_state": "idle",
-            "supercoiled": True,
-        },
+        "chromosome": process.build_default_chromosome_state(sigma=-0.01, replication_state="idle"),
         "protein": {
             "counts": {
                 process.gyrase_wid: 20.0,

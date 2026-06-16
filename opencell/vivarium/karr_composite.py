@@ -2241,12 +2241,10 @@ def build_karr_chassis_v5(
         },
         "tx_rate_fold_change": tx_rate_fold_init,
         "chromosome": {
-            "replication_state": "idle",
+            **supercoil_proc.build_default_chromosome_state(replication_state="idle"),
             "fork_position_bp": {"left": 0.0, "right": 0.0},
             "fork_positions": {"left": 0.0, "right": 0.0},
             "events": {"replication_complete": 0.0},
-            "supercoil_density": float(supercoil_proc.equilibrium_sigma),
-            "supercoiled": True,
             "smc_bound_count": float(condensation_proc.trace_anchor_bound),
             "condensation_level": float(condensation_proc.default_condensation_level),
             "forks_passing": False,

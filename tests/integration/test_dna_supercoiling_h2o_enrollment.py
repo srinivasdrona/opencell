@@ -29,24 +29,29 @@ def _supercoil_state(
     h2o: float,
     gyrase: float,
     topoiv: float,
+    topoi: float = 0.0,
 ) -> dict[str, Any]:
+    protein_counts: dict[str, float] = {}
+    complex_counts: dict[str, float] = {}
+    for wid, count in (
+        (process.gyrase_wid, gyrase),
+        (process.topoiv_wid, topoiv),
+        (process.topoi_wid, topoi),
+    ):
+        if process.enzyme_store_by_wid.get(wid) == "complex":
+            complex_counts[wid] = float(count)
+        else:
+            protein_counts[wid] = float(count)
+
     substrates = {wid: 0.0 for wid in process.substrate_wids}
     substrates[process.atp_wid] = float(atp)
     substrates[process.h2o_wid] = float(h2o)
     substrates[process.adp_wid] = 0.0
     substrates[process.pi_wid] = 0.0
     return {
-        "chromosome": {
-            "supercoil_density": float(sigma),
-            "replication_state": "idle",
-            "supercoiled": sigma < 0.0,
-        },
-        "protein": {
-            "counts": {
-                process.gyrase_wid: float(gyrase),
-                process.topoiv_wid: float(topoiv),
-            }
-        },
+        "chromosome": process.build_default_chromosome_state(sigma=sigma, replication_state="idle"),
+        "protein": {"counts": protein_counts},
+        "complex": {"counts": complex_counts},
         "substrates": substrates,
         "requests": {process.name: {process.atp_wid: float(atp), process.h2o_wid: float(h2o)}},
         "substrates_allocated": {
