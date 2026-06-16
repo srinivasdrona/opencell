@@ -23,12 +23,20 @@ import numpy as np
 from scipy.io import loadmat
 from vivarium.core.process import Process
 
+from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet, sparse_triplet_schema
 from opencell.vivarium.chromosome_views import current_damage_sites
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/DNARepair_flat.mat"
 _D2_COMPLEX_FIXTURE_PATH = "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
 
 _PATHWAYS = ("ber", "ner", "hr", "nhej_like")
+_DAMAGE_FIELDS = (
+    "damagedBases",
+    "strandBreaks",
+    "gapSites",
+    "abasicSites",
+    "damagedSugarPhosphates",
+)
 
 _DAMAGE_TYPE_ALIASES: dict[str, str] = {
     "abasic": "abasic_site",
@@ -130,6 +138,7 @@ class KarrDNARepairProcess(Process):
         "fixture_path": _DEFAULT_FIXTURE_PATH,
         "rng_seed": 0,
         "time_step": 1.0,
+        "chromosome_length_bp": float(ChromosomeStore.DEFAULT_SEQUENCE_LEN),
         "pathway_rate_scale": 1.0,
         "ber_patch_length_nt": 1.0,
         "nhej_patch_length_nt": 1.0,
@@ -138,6 +147,8 @@ class KarrDNARepairProcess(Process):
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
         super().__init__(parameters)
+        self.chromosome_length = int(round(float(self.parameters["chromosome_length_bp"])))
+        self.chromosome_shape = (self.chromosome_length, ChromosomeStore.DEFAULT_N_COMPARTMENTS)
         self._load_fixture(self.parameters["fixture_path"])
         self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
         self._rm_rng = np.random.default_rng(int(self.parameters["rng_seed"]) + 18017)
@@ -248,8 +259,12 @@ class KarrDNARepairProcess(Process):
         }
 
     def ports_schema(self) -> dict[str, Any]:
-        return {
-            "chromosome": {
+        chromosome_schema = {
+            field: sparse_triplet_schema(self.chromosome_shape, emit=(field in set(_DAMAGE_FIELDS)))
+            for field in _DAMAGE_FIELDS
+        }
+        chromosome_schema.update(
+            {
                 "damage_events_cumulative": {"_default": [], "_updater": "accumulate", "_emit": True},
                 "repair_events_cumulative": {"_default": [], "_updater": "accumulate", "_emit": True},
                 "repair_count": {"_default": 0.0, "_updater": "accumulate", "_emit": True},
@@ -257,7 +272,10 @@ class KarrDNARepairProcess(Process):
                     pathway: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
                     for pathway in _PATHWAYS
                 },
-            },
+            }
+        )
+        return {
+            "chromosome": chromosome_schema,
             "protein": {
                 "counts": {
                     wid: {"_default": self.enzyme_defaults.get(wid, 0.0), "_updater": "accumulate"}
@@ -299,7 +317,7 @@ class KarrDNARepairProcess(Process):
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         dt = float(timestep) if timestep > 0 else float(self.parameters["time_step"])
 
-        damage_sites = self._canonical_damage_sites(current_damage_sites(states))
+        damage_sites = self._damage_sites(states.get("chromosome", {}), states)
 
         enzyme_counts = self._enzyme_counts(states)
         desired_repairs, indices_by_pathway = self._desired_repairs(
@@ -347,7 +365,7 @@ class KarrDNARepairProcess(Process):
                 self._repair_event_from_site(damage_sites[idx].payload)
                 for idx in sorted(repaired_indices)
             ]
-            update["chromosome"] = {
+            chromosome_update: dict[str, Any] = {
                 "repair_events_cumulative": repair_events,
                 "repair_count": float(consumed_total),
                 "repair_count_by_pathway": {
@@ -356,8 +374,173 @@ class KarrDNARepairProcess(Process):
                     if actual_repairs[pathway] > 0
                 },
             }
+            chromosome_sparse_delta = self._chromosome_damage_writeback(
+                chrom_state=states.get("chromosome", {}),
+                damage_sites=damage_sites,
+                repaired_indices=repaired_indices,
+            )
+            if chromosome_sparse_delta:
+                chromosome_update.update(chromosome_sparse_delta)
+            update["chromosome"] = chromosome_update
 
         return update
+
+    def _resolve_chromosome_store(self, chrom_state: dict[str, Any]) -> ChromosomeStore:
+        return ChromosomeStore.from_state_mapping(chrom_state, shape=self.chromosome_shape)
+
+    def _damage_sites(self, chrom_state: dict[str, Any], states: dict[str, Any]) -> list[_DamageSite]:
+        sparse_sites = self._damage_sites_from_sparse(chrom_state)
+        if sparse_sites:
+            return sparse_sites
+        return self._canonical_damage_sites(current_damage_sites(states))
+
+    def _damage_sites_from_sparse(self, chrom_state: dict[str, Any]) -> list[_DamageSite]:
+        store = self._resolve_chromosome_store(chrom_state)
+        out: list[_DamageSite] = []
+
+        for field_name in ("damagedBases", "abasicSites", "damagedSugarPhosphates", "gapSites"):
+            triplet = store.get_field(field_name)
+            damage_type = {
+                "damagedBases": "damaged_base",
+                "abasicSites": "abasic_site",
+                "damagedSugarPhosphates": "abasic_site",
+                "gapSites": "single_strand_break",
+            }[field_name]
+            for position, strand, value in zip(
+                triplet.positions.tolist(),
+                triplet.strands.tolist(),
+                triplet.values.tolist(),
+                strict=False,
+            ):
+                site_id = f"{field_name}:{int(position)}:{int(strand)}"
+                payload = {
+                    "id": site_id,
+                    "site_id": site_id,
+                    "damage_type": damage_type,
+                    "position": int(position),
+                    "strand": int(strand),
+                    "field_name": field_name,
+                    "coordinates": [(int(position), int(strand))],
+                    "value": int(value),
+                }
+                out.append(_DamageSite(site_id=site_id, damage_type=damage_type, payload=payload))
+
+        strand_breaks = store.get_field("strandBreaks")
+        break_values = {
+            (int(position), int(strand)): int(value)
+            for position, strand, value in zip(
+                strand_breaks.positions.tolist(),
+                strand_breaks.strands.tolist(),
+                strand_breaks.values.tolist(),
+                strict=False,
+            )
+        }
+        seen_breaks: set[tuple[int, int]] = set()
+        for (position, strand), value in sorted(break_values.items()):
+            if (position, strand) in seen_breaks:
+                continue
+            paired_strand = strand + 1 if strand % 2 == 0 else strand - 1
+            pair_key = (position, paired_strand)
+            if pair_key in break_values:
+                seen_breaks.add((position, strand))
+                seen_breaks.add(pair_key)
+                site_id = f"strandBreaks:{position}:{min(strand, paired_strand)}-{max(strand, paired_strand)}"
+                payload = {
+                    "id": site_id,
+                    "site_id": site_id,
+                    "damage_type": "double_strand_break",
+                    "position": int(position),
+                    "field_name": "strandBreaks",
+                    "coordinates": [
+                        (int(position), int(strand)),
+                        (int(position), int(paired_strand)),
+                    ],
+                    "value": int(value) + int(break_values[pair_key]),
+                }
+                out.append(_DamageSite(site_id=site_id, damage_type="double_strand_break", payload=payload))
+                continue
+
+            seen_breaks.add((position, strand))
+            site_id = f"strandBreaks:{position}:{strand}"
+            payload = {
+                "id": site_id,
+                "site_id": site_id,
+                "damage_type": "single_strand_break",
+                "position": int(position),
+                "strand": int(strand),
+                "field_name": "strandBreaks",
+                "coordinates": [(int(position), int(strand))],
+                "value": int(value),
+            }
+            out.append(_DamageSite(site_id=site_id, damage_type="single_strand_break", payload=payload))
+
+        return out
+
+    def _chromosome_damage_writeback(
+        self,
+        *,
+        chrom_state: dict[str, Any],
+        damage_sites: list[_DamageSite],
+        repaired_indices: set[int],
+    ) -> dict[str, Any]:
+        if not repaired_indices:
+            return {}
+
+        store = self._resolve_chromosome_store(chrom_state)
+        by_field: dict[str, dict[tuple[int, int], int]] = {}
+        for field_name in _DAMAGE_FIELDS:
+            triplet = store.get_field(field_name)
+            by_field[field_name] = {
+                (int(position), int(strand)): int(value)
+                for position, strand, value in zip(
+                    triplet.positions.tolist(),
+                    triplet.strands.tolist(),
+                    triplet.values.tolist(),
+                    strict=False,
+                )
+            }
+
+        touched_fields: set[str] = set()
+        for idx in repaired_indices:
+            if idx < 0 or idx >= len(damage_sites):
+                continue
+            payload = damage_sites[idx].payload
+            field_name = str(payload.get("field_name", ""))
+            if field_name not in by_field:
+                continue
+            coords = payload.get("coordinates")
+            if not isinstance(coords, list):
+                position = payload.get("position")
+                strand = payload.get("strand")
+                if position is None or strand is None:
+                    continue
+                coords = [(int(position), int(strand))]
+            for coord in coords:
+                if not isinstance(coord, (tuple, list)) or len(coord) != 2:
+                    continue
+                key = (int(coord[0]), int(coord[1]))
+                if key in by_field[field_name]:
+                    by_field[field_name].pop(key, None)
+                    touched_fields.add(field_name)
+
+        chromosome_update: dict[str, Any] = {}
+        for field_name in sorted(touched_fields):
+            entries = sorted(by_field[field_name].items(), key=lambda item: (item[0][0], item[0][1]))
+            if entries:
+                positions = np.asarray([coord[0] for coord, _ in entries], dtype=np.int64)
+                strands = np.asarray([coord[1] for coord, _ in entries], dtype=np.int64)
+                values = np.asarray([value for _, value in entries], dtype=np.int64)
+            else:
+                positions = np.array([], dtype=np.int64)
+                strands = np.array([], dtype=np.int64)
+                values = np.array([], dtype=np.int64)
+            chromosome_update[field_name] = SparseTriplet(
+                positions=positions,
+                strands=strands,
+                values=values,
+                shape=self.chromosome_shape,
+            ).to_state()
+        return chromosome_update
 
     def _canonical_damage_sites(self, raw: object) -> list[_DamageSite]:
         normalized: list[_DamageSite] = []
