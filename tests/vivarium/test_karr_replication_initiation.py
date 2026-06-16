@@ -5,6 +5,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pytest
 
 # Ensure pytest imports from this worktree even if another editable install exists.
@@ -71,6 +72,16 @@ def _sum_oric(state: dict[str, Any], process: KarrReplicationInitiationProcess) 
     )
 
 
+def _normalize_for_compare(value: Any) -> Any:
+    if isinstance(value, np.ndarray):
+        return value.tolist()
+    if isinstance(value, dict):
+        return {key: _normalize_for_compare(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_normalize_for_compare(item) for item in value]
+    return value
+
+
 def _ticks_to_initiation(
     process: KarrReplicationInitiationProcess,
     state: dict[str, Any],
@@ -102,6 +113,31 @@ def test_zero_free_dnaa_no_activity() -> None:
     update = p.next_update(1.0, state)
     assert update.get("chromosome", {}).get("dnaa_complex_count", {}) == {}
     assert p.atp_wid not in update.get("substrates", {})
+
+
+def test_sync_internal_state_accepts_chromosome_bound_state() -> None:
+    p = KarrReplicationInitiationProcess({})
+
+    bound_atp = np.zeros(p.n_sites, dtype=np.int64)
+    bound_adp = np.zeros(p.n_sites, dtype=np.int64)
+    blocked_sites = np.zeros(p.n_sites, dtype=bool)
+    bound_atp[p.r5_index] = 2
+    bound_adp[p.r1234_indices[0]] = 1
+    blocked_sites[p.r1234_indices[1]] = True
+
+    p._sync_internal_state(
+        free_dnaa=9,
+        bound_atp=bound_atp,
+        bound_adp=bound_adp,
+        blocked_sites=blocked_sites,
+    )
+
+    assert p._initialized is True
+    assert p._free_dnaa_adp == 9
+    assert p._free_dnaa_atp == 0
+    assert np.array_equal(p._bound_atp, bound_atp)
+    assert np.array_equal(p._bound_adp, bound_adp)
+    assert np.array_equal(p._blocked_sites, blocked_sites)
 
 
 def test_activation_consumes_atp() -> None:
@@ -228,7 +264,9 @@ def test_deterministic_with_seed() -> None:
         _apply_update(s1, u1)
         _apply_update(s2, u2)
 
-    assert updates_1 == updates_2
+    assert [_normalize_for_compare(update) for update in updates_1] == [
+        _normalize_for_compare(update) for update in updates_2
+    ]
     assert s1 == s2
 
 
