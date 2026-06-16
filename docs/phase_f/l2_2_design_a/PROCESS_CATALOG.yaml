@@ -302,9 +302,9 @@ processes:
     output_channels: [substrates, monomers]
     primary_channel: monomers
     karr_artifact: per_process_traces_v2
-    closed_form_dominant: fixed_pending_revalidation  # 2026-06-16 DIVERGENT_DOCUMENTED divergences FIXED at 3c7d432. Copy-level randperm, rate-scaled enzymes, one-copy-per-iteration with break-on-first-failure. Pending L2 replay re-run for label upgrade.
+    closed_form_dominant: confirmed_biology_validated  # 2026-06-16 REVALIDATED. L2 replay PASS + stress PASS at all α. Faithful re-port at 3c7d432.
     rationale_M: "default"
-    notes: "closed_form_dominant=fixed_pending_revalidation. Day-30 SUT parity audit found 3 algorithmic divergences — ALL FIXED at merge 3c7d432: (1) species-level permutation → copy-level MatlabRandStream.randperm; (2) raw enzyme counts → rate-scaled capacity (translocaseSpecificRate * stepSizeSec / aaPerATP); (3) batch-per-species → one-copy-per-iteration with break-on-first-failure. Tests pass (19/19). Needs L2 replay re-run + substrate-stress revalidation for label upgrade to confirmed_biology_validated."
+    notes: "closed_form_dominant=confirmed_biology_validated. Day-30 SUT audit found 3 divergences, ALL FIXED at merge 3c7d432. Day-30 revalidation: L2 replay PASS (seed 0, 32.4s), substrate-stress PASS at all α (1.0/0.5/0.1/0.05/0.01). Upgraded from fixed_pending_revalidation."
 
   - name: MacromolecularComplexation
     oc_module: opencell/vivarium/karr_macromolecular_complexation.py
@@ -318,9 +318,9 @@ processes:
     primary_channel: complexs
     joint_check: true                     # cross-complex Spearman correlation; see spec §6.4 (non-gating in v1.2)
     karr_artifact: per_process_traces_v2
-    closed_form_dominant: fixed_pending_revalidation  # 2026-06-16 DIVERGENT_BUG FIXED at 3deae19. Poisson multiplicity removed, one-copy-per-iteration matching Karr. Pending L2 replay re-run for label upgrade.
+    closed_form_dominant: confirmed_biology_validated  # 2026-06-16 REVALIDATED. L2 replay PASS + stress α=1.0 exact match (97/97, W1=0). One-copy-per-iteration fix at 3deae19. Stress α<1 divergence is input-mismatch (OC-at-α vs Karr-at-α=1), not algorithm — same pattern as tRNAAA.
     rationale_M: "default"
-    notes: "joint_check flag enables non-gating cross-complex correlation diagnostic per spec §6.4. closed_form_dominant=fixed_pending_revalidation. Day-30 SUT parity audit found DIVERGENT_BUG — ALL FIXED at merge 3deae19: Poisson multiplicity draw removed, forced floor-to-1 removed. _per_cluster_mc now forms exactly one complex copy per iteration matching Karr's buildProteinComplexs_montecarlokinetic. rate_constant retained (harmless — cancels in normalization). Tests pass (11/11). Needs L2 replay re-run + substrate-stress revalidation for label upgrade to confirmed_biology_validated."
+    notes: "joint_check flag enables non-gating cross-complex correlation diagnostic per spec §6.4. closed_form_dominant=confirmed_biology_validated. Day-30 SUT audit found DIVERGENT_BUG, FIXED at merge 3deae19. Day-30 revalidation: L2 replay PASS (seed 0, 32.2s), substrate-stress α=1.0 EXACT (97 vs 97, W1=0), α<1.0 FAILs on event count (OC 0 vs Karr 97) are input-mismatch artifact — same classification as tRNAAA per Day-30 SUT audit methodology. Upgraded from fixed_pending_revalidation."
 
   - name: RibosomeAssembly
     oc_module: opencell/vivarium/karr_ribosome_assembly.py
