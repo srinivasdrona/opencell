@@ -244,9 +244,9 @@ processes:
     output_channels: [substrates, rnas]
     primary_channel: rnas
     karr_artifact: per_process_traces_v2
-    closed_form_dominant: regime_bounded  # 2026-06-15 substrate-stress: PASS at alpha>=0.1, FAIL at alpha<=0.05. Convergence breaks when substrate becomes binding.
+    closed_form_dominant: confirmed_biology_validated  # 2026-06-16 SUT parity audit: FAITHFUL. OC reproduces Karr's reaction-feasibility, stochastic rounding, weighted selection, transient depletion. Day-29 stress divergence was input mismatch (OC-at-α vs Karr-at-α=1), not algorithm mismatch. See docs/phase_f/sut_audits/trnaaa_oc_vs_karr.md.
     rationale_M: "dense; 2500 samples adequate"
-    notes: "Boundary case TRIVIAL-vs-SHALLOW; held in SHALLOW for safety per audit Q3. closed_form_dominant=regime_bounded (Day-25 H12 probe confirmed convergence at unperturbed regime; Day-29 substrate-stress validation revealed W1 jumps 0->5.4->13.8 at alpha=0.05/0.01, total events drop 355351->96794). Substrate IS binding constraint. Real-biology PASS only when substrate non-limiting; chassis tests below alpha~0.1 will diverge. See tests/vivarium/_substrate_stress/trnaaa_stress_v2_results.txt."
+    notes: "closed_form_dominant=confirmed_biology_validated (Day-30 SUT parity audit found OC's aminoacylation loop algorithmically faithful to Karr: reaction-feasibility calc, stochastic rounding, weighted reaction selection, transient species depletion all match. Day-29 regime_bounded label was based on stress test comparing OC-at-α<1 vs Karr-at-α=1 — input mismatch, not algorithm divergence. Upgraded from regime_bounded per audit verdict)."
 
   - name: ProteinModification
     oc_module: opencell/vivarium/karr_protein_modification.py
@@ -302,9 +302,9 @@ processes:
     output_channels: [substrates, monomers]
     primary_channel: monomers
     karr_artifact: per_process_traces_v2
-    closed_form_dominant: regime_bounded  # 2026-06-15 substrate-stress: exact at alpha>=0.5, loses exact match at alpha=0.1, OC events 84->0 as substrate starves. See ptransloc_stress_v2_results.txt.
+    closed_form_dominant: regime_bounded  # 2026-06-16 SUT parity audit: DIVERGENT_DOCUMENTED. OC bulk-translocates per species vs Karr one-copy-per-iteration. Different randomization + raw vs rate-scaled enzyme capacity. See docs/phase_f/sut_audits/ptransloc_oc_vs_karr.md.
     rationale_M: "default"
-    notes: "closed_form_dominant=regime_bounded (Day-25 fix-ptransloc Beat-5 smoke at unperturbed regime showed W1=0; Day-29 substrate-stress test shows exact identity holds at alpha>=0.5, breaks at alpha=0.1 with per_tick_W1_max=0.001 but OC events declining 84->83->59->0 monotonically as substrate drops). High-substrate/non-limiting regime convergence only."
+    notes: "closed_form_dominant=regime_bounded. Day-30 SUT parity audit found 3 algorithmic divergences: (1) Karr randomizes individual monomer copies in one mixed permutation, OC randomizes species separately; (2) Karr uses rate-scaled enzyme capacity (translocaseSpecificRate * stepSizeSec), OC uses raw enzyme counts; (3) Karr one-at-a-time per iteration, OC bulk-translocates. These are relevant precisely in substrate-limited regimes where iteration order and capacity scaling matter. Fix requires faithful re-port of Karr evolveState inner loop."
 
   - name: MacromolecularComplexation
     oc_module: opencell/vivarium/karr_macromolecular_complexation.py
@@ -318,9 +318,9 @@ processes:
     primary_channel: complexs
     joint_check: true                     # cross-complex Spearman correlation; see spec §6.4 (non-gating in v1.2)
     karr_artifact: per_process_traces_v2
-    closed_form_dominant: regime_bounded  # 2026-06-15 substrate-stress v3 (tightened total-events gate): FAIL at every alpha<1.0. Prior v2 'Case A' was sparse-event dilution artifact. See macromol_stress_v3_results.txt.
+    closed_form_dominant: regime_bounded  # 2026-06-16 SUT parity audit: DIVERGENT_BUG. OC samples Poisson multiplicity per iteration (multiple copies) vs Karr one copy. Extra RNG draw. rate_constant has different semantic weight. See docs/phase_f/sut_audits/macromol_oc_vs_karr.md.
     rationale_M: "default"
-    notes: "joint_check flag enables non-gating cross-complex correlation diagnostic per spec §6.4. closed_form_dominant=regime_bounded (Day-25 H12 probe confirmed convergence at unperturbed regime; Day-29 substrate-stress v2 showed 'Case A' but with sparse-event masking concern; Day-29 v3 with tightened gate (total_events within 10%) FAILed at every alpha<1.0 — OC forms 0 complexes vs Karr's 97 at sub-unperturbed regimes)."
+    notes: "joint_check flag enables non-gating cross-complex correlation diagnostic per spec §6.4. closed_form_dominant=regime_bounded. Day-30 SUT parity audit: DIVERGENT_BUG — (1) OC _per_cluster_mc samples Poisson multiplicity and may form multiple complex copies before rates are recomputed, Karr forms exactly one copy per competitive-loop iteration; (2) OC has an extra RNG draw (Poisson rate_constant) not present in Karr; (3) OC rate_constant controls how many complexes form per iteration, Karr common_specific_rate only affects reaction probability. Fix: rewrite _per_cluster_mc inner loop to form exactly one complex per iteration matching Karr's competitive Monte Carlo."
 
   - name: RibosomeAssembly
     oc_module: opencell/vivarium/karr_ribosome_assembly.py
