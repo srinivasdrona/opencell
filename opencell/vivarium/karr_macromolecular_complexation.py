@@ -132,16 +132,8 @@ def _per_cluster_mc(
             break
 
         chosen = int(rng.choice(n_cpx, p=(rates / total_rate)))
-        sampled = int(rng.poisson(rates[chosen]))
-        n_form = min(sampled, int(ub[chosen]))
-        if n_form <= 0 and ub[chosen] > 0:
-            n_form = 1
-
-        if n_form <= 0:
-            break
-
-        formed[chosen] += n_form
-        available -= stoich[:, chosen] * n_form
+        formed[chosen] += 1
+        available -= stoich[:, chosen]
     else:
         raise RuntimeError("D2 per-cluster Monte Carlo exceeded iteration limit")
 
