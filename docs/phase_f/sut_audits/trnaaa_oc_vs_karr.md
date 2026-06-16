@@ -118,3 +118,7 @@ Reason:
 - The static audit did not find an inner-loop algorithm mismatch between OC and Karr.
 - The stress-test discrepancy is better explained by an input-matching problem than by a process bug.
 - Future parity tests should compare matched substrate vectors: OC should be judged against the same effective substrate counts Karr receives, not against an allocator-scaled OC state versus an unscaled Karr state.
+
+Self-check note:
+- Karr `evolveState` contains three RNG draws (`L416`, `L430`, `L440`); all are inventoried in section 3.
+- The substrate-runout trace in section 4 covers the initial feasibility mask, iterative limit recomputation, both resource-depletion updates, and the no-feasible-reaction stop condition.

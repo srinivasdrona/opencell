@@ -24,7 +24,9 @@ Five-line source summary:
 
 ## Beat 3 - Self-check
 
-- Pending
+- Pass.
+- Confirmed that every Karr RNG draw in `evolveState` appears in audit §3: `stochasticRound` (`L416`), single-draw `rand` (`L430`), and batched `rand` (`L440`).
+- Confirmed that audit §4 covers every substrate-availability branch in Karr: initial inactivity mask (`L403-L408`), iterative recomputation and zeroing (`L412-L418`), stop-on-no-feasible-reaction (`L420-L422`), and both depletion updates (`L435-L436`, `L447-L448`).
 
 ## Notes
 
