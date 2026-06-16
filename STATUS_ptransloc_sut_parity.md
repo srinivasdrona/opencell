@@ -10,3 +10,7 @@
 ## Beat 2 - audit authored
 - Wrote `docs/phase_f/sut_audits/ptransloc_oc_vs_karr.md` with algorithm summaries, a line-ranged mapping table, RNG inventory, substrate-insufficiency trace, overall verdict, and regime-label recommendation.
 - Current verdict: `DIVERGENT_DOCUMENTED`.
+
+## Beat 3 - self-check pass
+- Verified that Karr `evolveState` contains one stochastic draw in-scope (`randperm`), and section 3 inventories it with the OC counterpart.
+- Verified that Karr's full insufficient-resource branch checks `translocases`, `SRPs`, `atp`, `gtp`, and `water`, and section 4 traces each against OC's batch-capacity logic and phase halt behavior.
