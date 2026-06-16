@@ -18,7 +18,9 @@ Five-line source summary:
 
 ## Beat 2 - Audit authored
 
-- Pending
+- Authored [docs/phase_f/sut_audits/trnaaa_oc_vs_karr.md](/E:/opencell-worktrees/sut-parity-trnaaa/docs/phase_f/sut_audits/trnaaa_oc_vs_karr.md).
+- Current static verdict: `FAITHFUL`.
+- Key note: the inner stochastic depletion loop matches Karr; the main port-boundary differences are OC's `substrates_allocated` ingress and the `50_000` iteration safety cap.
 
 ## Beat 3 - Self-check
 
