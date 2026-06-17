@@ -70,7 +70,11 @@ def _base_state(
             "fork_position_bp": fork_position_bp or {"left": None, "right": None},
             "replication_stall_flag": 0.0,
             "replication_state": replication_state,
-        }
+        },
+        "substrates": {
+            "UVB_radiation": 1.0,
+            "gamma_radiation": 1.0,
+        },
     }
 
 

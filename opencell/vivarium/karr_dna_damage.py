@@ -32,6 +32,17 @@ _DAMAGE_FIELDS = (
     "abasicSites",
     "damagedSugarPhosphates",
 )
+
+# Radiation gating: maps damage kind → substrate WID that must be >0 for
+# that kind to fire.  Karr DNADamage.m line 549: if radiationLclIdx ~= 0,
+# selectionProbability *= substrates(radiationLclIdx).  uv_like covers the
+# 10 UVB_radiation-gated reactions; oxidative covers the 13 gamma_radiation-
+# gated reactions.  Spontaneous kinds (alkylation, depurination) have no
+# radiation gate and fire unconditionally at their (very low) base rates.
+_RADIATION_GATE: dict[str, str] = {
+    "uv_like": "UVB_radiation",
+    "oxidative": "gamma_radiation",
+}
 _SPARSE_DAMAGE_FIELDS = (*_DAMAGE_FIELDS, "intrastrandCrossLinks")
 _DAMAGE_KIND_TO_CHROMOSOME_FIELD = {
     "uv_like": "intrastrandCrossLinks",
@@ -229,8 +240,18 @@ class KarrDNADamageProcess(Process):
         touched_sparse_fields: set[str] = set()
 
         new_sites: list[dict[str, Any]] = []
+        substrates_state = states.get("substrates", {})
         for kind in self.damage_kinds:
             rate_per_s = max(0.0, float(self.kind_rates_per_s.get(kind, 0.0)))
+
+            # Radiation gating: Karr DNADamage.m L549-551 multiplies
+            # selectionProbability by the radiation substrate count.
+            # If the gating substrate is absent or 0, the kind doesn't fire.
+            gate_wid = _RADIATION_GATE.get(kind)
+            if gate_wid is not None:
+                gate_count = max(0.0, float(substrates_state.get(gate_wid, 0.0)))
+                rate_per_s *= gate_count
+
             lam = rate_per_s * dt
             if lam <= 0.0:
                 continue
