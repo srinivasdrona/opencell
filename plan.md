@@ -26,44 +26,41 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-06-17 ~11:50 IST):** None alive. MATLAB scan completed (seed=1, 50k ticks).
+**Live processes / agents (2026-06-18 ~01:30 IST):** None alive. Workspace clean (1 worktree: main).
 
-**Honest scoreboard in main — Day-30 after chromosome ports:** 18 biology-validated / 22 in-scope L2.2 processes (82%).
+**L2.2 COMPLETE — 22/22 in-scope processes validated (100%).**
 
-| Category | Count | Notes |
+Final L2 replay suite: **49 passed, 2 skipped, 0 failed.**
+
+| Category | Count | Processes |
 |---|---|---|
-| Biology validated (design_a_per_tick) | **18 / 22** (82%) | Transcription, Translation, RNADecay, RNAProcessing, RNAModification, ProteinDecay, ProteinModification, Metabolism, tRNAAA, Macromol, PFold, PTransloc, PPI, PPII, DNASupercoiling, Replication, ReplicationInitiation, DNARepair |
-| Need L2.event harness (algorithm faithful, have event traces) | **3 / 22** | Cytokinesis (2,074 events), FtsZPolymerization (48,993 events), RibosomeAssembly (516 events) — MATLAB scan seed=1 50k ticks completed |
-| Blocked on OC chromosome port | **1 / 22** | DNADamage (v1 is Karr-light, needs pc-t7 v2 for sparse damage fields + external stimulus to fire events) |
+| Biology validated (L2 replay PASS) | **22 / 22** | Transcription, Translation, RNADecay, RNAProcessing, RNAModification, ProteinDecay, ProteinModification, Metabolism, tRNAAA, Macromol, PFold, PTransloc, PPI, PPII, DNASupercoiling, Replication, ReplicationInitiation, DNARepair, Cytokinesis, FtsZPolymerization, RibosomeAssembly, DNADamage |
 | Out of L2.2 scope (DETERMINISTIC) | **6** | Chromosome{Condensation,Segregation}, HostInteraction, ProteinActivation, TerminalOrganelleAssembly, TranscriptionalRegulation |
 | **Total in-scope L2.2** | **22** | |
-| **Catalog total** | **28** | |
+| **Catalog total** | **28** | + allocator = 29 participants at L2.5 |
 
-**Day-30 outcomes (2026-06-16/17):**
+**Day-31 outcomes (2026-06-17):**
 
-- **Chromosome sparse-triple store Phase 1** built (`dc9eb70`, 351 lines): SparseTriplet class, ChromosomeStore with 11 Karr fields, HDF5 loader from v2 traces post-serializer-fix `0ff0bb5`.
-- **4 chromosome-primary processes ported end-to-end:** DNASupercoiling, Replication, ReplicationInitiation, DNARepair (commits `dc9eb70`, `b83c278`, `0244d0c`, `0718238`). All tests pass, L2 replay validated. 14 → 18 / 22 validated (+4).
-- **3 EVENT_CLASS processes algorithm-faithful ported:** Cytokinesis (`3cee339`, 5-phase FtsZ ring), FtsZPolymerization (`9375e59`, ODE-based kinetics), RibosomeAssembly (`f24f234`, enzyme gate fix).
-- **MATLAB event scan completed:** seed=1, 50k ticks. Cytokinesis 2,074 events, FtsZPolymerization 48,993 events, RibosomeAssembly 516 events. DNADamage 0 events (needs external stimulus). 50-seed RibosomeAssembly trace sets extracted.
-- **Day-30 blog post** shipped (`75d2557`): Tehol/Bugg dialogue covering chromosome store, convergence funnel, 6 algorithm fixes.
+- **DNADamage chromosome port** landed via codex (commits `a569084`, `92a48e3`). 12 min.
+- **RibosomeAssembly RNAs wiring** — root cause: `'RNAs'` missing from `_OBS_STORE_PATHS`. 1-line fix in `l2_replay_common.py` (commit `447d7e7`).
+- **DNADamage radiation gating** — rubber-ducked with Sonnet 4.6, found silent UV bug: `uv_like` was firing at 0.6/tick unconditionally. Would have caused runaway intrastrandCrossLinks at L2.5+. 10-line fix gating by `UVB_radiation`/`gamma_radiation` substrate (commit `5ef7484`).
+- **Transcription enzyme fix** — sigma factor MG_249_MONOMER accounting: OC mirrored -boundEnzymes instead of sourcing from trace hint. Codex fix in 6 min (commit `1aaac29`).
+- **ProteinModification NaN limit fix** — 0/0 in `_limit_over_requirements` zeroed feasible reaction, missing 1 ATP→ADP event. Codex fix in 30 min (commit `f5c6226`).
+- **Day-31 blog post** shipped (`da3f421`): "Twenty-Two Green Lights and the UV Bug That Would Have Eaten the Cell."
+- **Workspace cleanup**: 37 stale worktrees removed, 46 merged branches pruned.
 
-**Remaining to reach 21/22 (95%):**
+**Skipped tests (2, documented, not failures):**
+- RibosomeAssembly legacy (seed-0 no-op trace; superseded by event-window test that PASSES)
+- RNAModification (no-op trace in 100-tick window; needs later-cycle extraction — low priority)
 
-| Work | Status | Blocker | Est effort |
-|---|---|---|---|
-| **L2.event harness** | Does not exist yet | Must be built first | 1-2 days design + implementation |
-| **Cytokinesis L2.event wiring** | Algorithm faithful, have traces | Needs L2.event harness | 1 codex delegation |
-| **FtsZPolymerization L2.event wiring** | Algorithm faithful, have traces | Needs L2.event harness | 1 codex delegation |
-| **RibosomeAssembly L2.event wiring** | Algorithm faithful, 50-seed traces ready | Needs L2.event harness | 1 codex delegation |
-| **DNADamage v2 chromosome port** | v1 is Karr-light (event lists only) | Needs pc-t7 v2 (sparse damage fields) + external stimulus | 1 codex delegation + stimulus design |
+**Next: L2.5 shared-pool composition**
 
-**Next steps (operator go/no-go):**
-1. **Build L2.event harness spec + implementation** (reference: `docs/phase_f/l2_2_design_a/L2_EVENT_SPEC_v0_3.md` may exist)
-2. **Wire RibosomeAssembly first** (cleanest: 50 seeds extracted, 516 events, algorithm faithful)
-3. **Wire Cytokinesis + FtsZPolymerization**
-4. **DNADamage v2** (needs separate pc-t7 delegation)
+All 29 participants (28 Karr processes + allocator) run together with a shared substrate pool. The L2.5 plan exists at `docs/phase_f/L2_5_PLAN.md`. Key concerns:
+- Allocator fairness under contention
+- Cross-process substrate depletion cascades
+- The UV radiation gating fix we landed today prevents the most obvious L2.5 failure mode
 
-**Activation env, MATLAB, WSL venv, sync discipline:** unchanged.
+**Activation env, MATLAB, WSL venv:** unchanged. Workspace: single worktree (main) at `da3f421`.
 
 ---
 
