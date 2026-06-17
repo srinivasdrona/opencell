@@ -344,6 +344,34 @@ class KarrTranscriptionProcess(Process):
                 deltas[wid] = float(delta)
         return deltas
 
+    def _enzyme_deltas_from_hint(self, states: dict[str, Any]) -> dict[str, float] | None:
+        """Compute free-enzyme deltas from the trace hint, if present.
+
+        Free enzyme counts are not a per-WID negation of ``boundEnzymes`` deltas.
+        Example: core->holo transitions consume free sigma while changing only
+        bound core/holo slots. Therefore replay must use the explicit
+        ``enzymes_next`` channel rather than deriving from bound deltas.
+        """
+        hint_raw = states.get("trace_hint", {})
+        hint = hint_raw if isinstance(hint_raw, dict) else {}
+        enz_next_raw = hint.get("enzymes_next", {})
+        if not isinstance(enz_next_raw, dict) or not enz_next_raw:
+            return None
+
+        enz_now_raw = states.get("enzymes", {})
+        enz_now = enz_now_raw if isinstance(enz_now_raw, dict) else {}
+
+        deltas: dict[str, float] = {}
+        for wid in self.enzyme_wids:
+            if wid not in enz_next_raw:
+                continue
+            now = self._coerce_nonnegative_int(enz_now.get(wid, 0.0))
+            nxt = self._coerce_nonnegative_int(enz_next_raw.get(wid, now))
+            delta = nxt - now
+            if delta != 0:
+                deltas[wid] = float(delta)
+        return deltas
+
     def _effective_bound_enzyme_counts(self, states: dict[str, Any]) -> dict[str, int]:
         bound_now_raw = states.get("boundEnzymes", {})
         bound_now = bound_now_raw if isinstance(bound_now_raw, dict) else {}
@@ -624,12 +652,9 @@ class KarrTranscriptionProcess(Process):
         bound_deltas = self._bound_enzyme_deltas_from_hint(states)
         if bound_deltas:
             update["boundEnzymes"] = bound_deltas
-            # Mass conservation: every polymerase that enters the bound pool
-            # must leave the free pool (and vice versa). Without this the
-            # `enzymes` channel drifts vs the karr trace at every binding
-            # transition (e.g. tick=26: 7 RNA polymerases bind, free pool
-            # must drop by 7).
-            update["enzymes"] = {wid: -delta for wid, delta in bound_deltas.items()}
+        enzyme_deltas = self._enzyme_deltas_from_hint(states)
+        if enzyme_deltas:
+            update["enzymes"] = enzyme_deltas
         if self.parameters["write_substrate_deltas"]:
             hint_deltas = self._substrate_deltas_from_hint(states)
             if hint_deltas is not None:
