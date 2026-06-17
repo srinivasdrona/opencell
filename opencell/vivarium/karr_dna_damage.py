@@ -18,12 +18,27 @@ import numpy as np
 from scipy.io import loadmat
 from vivarium.core.process import Process
 
+from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet, sparse_triplet_schema
 from opencell.vivarium.chromosome_views import current_damage_sites
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/DNADamage_flat.mat"
 _DEFAULT_TRACE_PATH = "data/m1_sources/karr_native/per_process_traces/DNADamage_100ticks.mat"
 _DEFAULT_SEQUENCE_LENGTH_NT = 580_076
 _DAMAGE_KINDS = ("uv_like", "oxidative", "alkylation", "depurination")
+_DAMAGE_FIELDS = (
+    "damagedBases",
+    "strandBreaks",
+    "gapSites",
+    "abasicSites",
+    "damagedSugarPhosphates",
+)
+_SPARSE_DAMAGE_FIELDS = (*_DAMAGE_FIELDS, "intrastrandCrossLinks")
+_DAMAGE_KIND_TO_CHROMOSOME_FIELD = {
+    "uv_like": "intrastrandCrossLinks",
+    "oxidative": "damagedBases",
+    "alkylation": "damagedBases",
+    "depurination": "abasicSites",
+}
 _DEFAULT_KIND_RATES_PER_S = {
     # Karr extract table order-of-magnitude defaults for a light baseline.
     "uv_like": 6.0e-1,
@@ -103,6 +118,8 @@ class KarrDNADamageProcess(Process):
         self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
         self.damage_kinds = list(_DAMAGE_KINDS)
         self._tick_index = 0
+        self.chromosome_length = int(_DEFAULT_SEQUENCE_LENGTH_NT)
+        self.chromosome_shape = (self.chromosome_length, ChromosomeStore.DEFAULT_N_COMPARTMENTS)
         self.substrate_wids: list[str] = []
         self.enzyme_wids: list[str] = []
         self._load_schema_observables(self.parameters.get("fixture_path", _DEFAULT_FIXTURE_PATH))
@@ -129,6 +146,7 @@ class KarrDNADamageProcess(Process):
             self.sequence_length_nt = self._load_sequence_length_from_fixture(
                 self.parameters.get("fixture_path", _DEFAULT_FIXTURE_PATH)
             )
+        self.sequence_length_nt = min(self.sequence_length_nt, self.chromosome_length)
         self.fork_match_tolerance_nt = max(0, _safe_int(self.parameters.get("fork_match_tolerance_nt"), 0))
         self.enforce_unique_positions = bool(self.parameters.get("enforce_unique_positions", True))
 
@@ -148,8 +166,12 @@ class KarrDNADamageProcess(Process):
             self.enzyme_wids = [str(_coerce_scalar(raw)) for raw in np.asarray(enzyme_ids, dtype=object).ravel()]
 
     def ports_schema(self) -> dict[str, Any]:
-        return {
-            "chromosome": {
+        chromosome_schema = {
+            field: sparse_triplet_schema(self.chromosome_shape, emit=True)
+            for field in _SPARSE_DAMAGE_FIELDS
+        }
+        chromosome_schema.update(
+            {
                 "damage_events_cumulative": {
                     "_default": [],
                     "_updater": "accumulate",
@@ -174,7 +196,10 @@ class KarrDNADamageProcess(Process):
                     "_updater": "set",
                     "_emit": False,
                 },
-            },
+            }
+        )
+        return {
+            "chromosome": chromosome_schema,
             "substrates": {
                 wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                 for wid in self.substrate_wids
@@ -198,7 +223,10 @@ class KarrDNADamageProcess(Process):
         chromosome_state = states.get("chromosome", {})
         existing_sites = current_damage_sites(states)
         occupied_positions = _coerce_position_set(existing_sites)
+        occupied_positions.update(self._occupied_positions_from_sparse(chromosome_state))
         fork_positions = self._active_fork_positions(chromosome_state)
+        sparse_by_field = self._sparse_damage_entries(chromosome_state)
+        touched_sparse_fields: set[str] = set()
 
         new_sites: list[dict[str, Any]] = []
         for kind in self.damage_kinds:
@@ -225,6 +253,11 @@ class KarrDNADamageProcess(Process):
                     "age_ticks": 0,
                 }
                 new_sites.append(damage)
+                chrom_field = _DAMAGE_KIND_TO_CHROMOSOME_FIELD[str(kind)]
+                strand = int(self._rng.integers(0, self.chromosome_shape[1]))
+                sparse_key = (int(pos) - 1, strand)
+                sparse_by_field[chrom_field][sparse_key] = max(1, sparse_by_field[chrom_field].get(sparse_key, 0))
+                touched_sparse_fields.add(chrom_field)
                 if self.enforce_unique_positions:
                     occupied_positions.add(int(pos))
 
@@ -233,6 +266,7 @@ class KarrDNADamageProcess(Process):
 
         fork_hit = self._fork_hit(new_sites, fork_positions)
         chromosome_update: dict[str, Any] = {"damage_events_cumulative": new_sites}
+        chromosome_update.update(self._sparse_damage_writeback(sparse_by_field, touched_sparse_fields))
         if fork_hit:
             chromosome_update["replication_stall_flag"] = 1.0
 
@@ -318,6 +352,61 @@ class KarrDNADamageProcess(Process):
                 if abs(pos - fork_pos) <= tolerance:
                     return True
         return False
+
+    def _resolve_chromosome_store(self, chrom_state: dict[str, Any]) -> ChromosomeStore:
+        return ChromosomeStore.from_state_mapping(chrom_state, shape=self.chromosome_shape)
+
+    def _occupied_positions_from_sparse(self, chrom_state: dict[str, Any]) -> set[int]:
+        store = self._resolve_chromosome_store(chrom_state)
+        occupied: set[int] = set()
+        for field_name in _SPARSE_DAMAGE_FIELDS:
+            triplet = store.get_field(field_name)
+            for position in triplet.positions.tolist():
+                pos = int(position) + 1
+                if 1 <= pos <= self.sequence_length_nt:
+                    occupied.add(pos)
+        return occupied
+
+    def _sparse_damage_entries(self, chrom_state: dict[str, Any]) -> dict[str, dict[tuple[int, int], int]]:
+        store = self._resolve_chromosome_store(chrom_state)
+        by_field: dict[str, dict[tuple[int, int], int]] = {}
+        for field_name in _SPARSE_DAMAGE_FIELDS:
+            triplet = store.get_field(field_name)
+            by_field[field_name] = {
+                (int(position), int(strand)): int(value)
+                for position, strand, value in zip(
+                    triplet.positions.tolist(),
+                    triplet.strands.tolist(),
+                    triplet.values.tolist(),
+                    strict=False,
+                )
+                if int(value) != 0
+            }
+        return by_field
+
+    def _sparse_damage_writeback(
+        self,
+        by_field: dict[str, dict[tuple[int, int], int]],
+        touched_fields: set[str],
+    ) -> dict[str, Any]:
+        out: dict[str, Any] = {}
+        for field_name in sorted(touched_fields):
+            entries = sorted(by_field[field_name].items(), key=lambda item: (item[0][0], item[0][1]))
+            if entries:
+                positions = np.asarray([coord[0] for coord, _ in entries], dtype=np.int64)
+                strands = np.asarray([coord[1] for coord, _ in entries], dtype=np.int64)
+                values = np.asarray([value for _, value in entries], dtype=np.int64)
+            else:
+                positions = np.array([], dtype=np.int64)
+                strands = np.array([], dtype=np.int64)
+                values = np.array([], dtype=np.int64)
+            out[field_name] = SparseTriplet(
+                positions=positions,
+                strands=strands,
+                values=values,
+                shape=self.chromosome_shape,
+            ).to_state()
+        return out
 
     def _load_sequence_length_from_fixture(self, fixture_path: str | Path) -> int:
         resolved = _resolve_path(fixture_path)

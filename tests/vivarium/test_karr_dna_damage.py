@@ -18,8 +18,18 @@ if "opencell" in sys.modules:
             if mod_name == "opencell" or mod_name.startswith("opencell."):
                 del sys.modules[mod_name]
 
-from opencell.vivarium.karr_dna_damage import KarrDNADamageProcess
+from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet
 from opencell.vivarium.chromosome_views import current_damage_sites
+from opencell.vivarium.karr_dna_damage import KarrDNADamageProcess
+
+_SPARSE_FIELDS = (
+    "damagedBases",
+    "strandBreaks",
+    "gapSites",
+    "abasicSites",
+    "damagedSugarPhosphates",
+    "intrastrandCrossLinks",
+)
 
 
 class _FixedPoissonRng:
@@ -34,19 +44,27 @@ class _FixedPoissonRng:
         self,
         low: int,
         high: int,
-        size: int,
+        size: int | None = None,
         dtype: type[np.int64] = np.int64,
-    ) -> np.ndarray:
+    ) -> np.ndarray | np.int64:
         _ = high
+        if size is None:
+            return np.int64(low)
         return np.full(size, low, dtype=dtype)
+
+
+def _empty_sparse(shape: tuple[int, int]) -> dict[str, object]:
+    return SparseTriplet.empty(*shape).to_state()
 
 
 def _base_state(
     replication_state: str = "idle",
     fork_position_bp: dict[str, int | None] | None = None,
 ) -> dict[str, Any]:
+    shape = (ChromosomeStore.DEFAULT_SEQUENCE_LEN, ChromosomeStore.DEFAULT_N_COMPARTMENTS)
     return {
         "chromosome": {
+            **{field: _empty_sparse(shape) for field in _SPARSE_FIELDS},
             "damage_events_cumulative": [],
             "repair_events_cumulative": [],
             "fork_position_bp": fork_position_bp or {"left": None, "right": None},
@@ -56,12 +74,18 @@ def _base_state(
     }
 
 
-def _apply_update(state: dict[str, Any], update: dict[str, Any]) -> None:
+def _apply_update(state: dict[str, Any], update: dict[str, Any], process: KarrDNADamageProcess) -> None:
     chrom_update = update.get("chromosome", {})
     if "damage_events_cumulative" in chrom_update:
         state["chromosome"]["damage_events_cumulative"].extend(
             list(chrom_update["damage_events_cumulative"])
         )
+    for field in _SPARSE_FIELDS:
+        if field in chrom_update:
+            state["chromosome"][field] = SparseTriplet.from_state(
+                chrom_update[field],
+                shape=process.chromosome_shape,
+            ).to_state()
     if "replication_stall_flag" in chrom_update:
         state["chromosome"]["replication_stall_flag"] = float(
             state["chromosome"]["replication_stall_flag"] + float(chrom_update["replication_stall_flag"])
@@ -141,6 +165,8 @@ def test_no_substrate_allocation_contract() -> None:
     schema = process.ports_schema()
     assert "requests" not in schema
     assert "substrates_allocated" not in schema
+    for field in _SPARSE_FIELDS:
+        assert field in schema["chromosome"]
 
     update = process.next_update(1.0, _base_state())
     assert "requests" not in update
@@ -172,6 +198,61 @@ def test_replication_stall_flag_on_fork_hit() -> None:
     assert update["chromosome"]["damage_events_cumulative"][0]["position"] == 10101
 
 
+def test_sparse_writeback_uses_mapped_chromosome_field() -> None:
+    process = KarrDNADamageProcess(
+        {
+            "kind_rates_per_s": {
+                "uv_like": 1.0,
+                "oxidative": 0.0,
+                "alkylation": 0.0,
+                "depurination": 0.0,
+            },
+            "rng_seed": 3,
+        }
+    )
+    process._rng = _FixedPoissonRng(1)
+    process._sample_positions = lambda n_events, occupied_positions: np.asarray([11], dtype=np.int64)  # type: ignore[method-assign]
+
+    update = process.next_update(1.0, _base_state())
+    chrom_update = update["chromosome"]
+    assert len(chrom_update["damage_events_cumulative"]) == 1
+    triplet = SparseTriplet.from_state(
+        chrom_update["intrastrandCrossLinks"],
+        shape=process.chromosome_shape,
+    )
+    assert triplet.positions.tolist() == [10]
+    assert triplet.values.tolist() == [1]
+    assert 0 <= int(triplet.strands[0]) < process.chromosome_shape[1]
+
+
+def test_sparse_occupied_sites_prevent_reuse_when_unique_enabled() -> None:
+    process = KarrDNADamageProcess(
+        {
+            "kind_rates_per_s": {
+                "uv_like": 1.0,
+                "oxidative": 0.0,
+                "alkylation": 0.0,
+                "depurination": 0.0,
+            },
+            "rng_seed": 5,
+            "enforce_unique_positions": True,
+        }
+    )
+    process._rng = _FixedPoissonRng(1)
+    state = _base_state()
+    state["chromosome"]["intrastrandCrossLinks"] = SparseTriplet(
+        positions=np.asarray([0], dtype=np.int64),
+        strands=np.asarray([0], dtype=np.int64),
+        values=np.asarray([1], dtype=np.int64),
+        shape=process.chromosome_shape,
+    ).to_state()
+
+    update = process.next_update(1.0, state)
+    events = update["chromosome"]["damage_events_cumulative"]
+    assert len(events) == 1
+    assert int(events[0]["position"]) != 1
+
+
 def test_100_tick_total_damage_within_20_percent_of_expectation() -> None:
     template = KarrDNADamageProcess({})
     expected_from_trace = _trace_total_if_available(template)
@@ -189,7 +270,7 @@ def test_100_tick_total_damage_within_20_percent_of_expectation() -> None:
         for _ in range(100):
             update = process.next_update(1.0, state)
             total += float(len(update.get("chromosome", {}).get("damage_events_cumulative", [])))
-            _apply_update(state, update)
+            _apply_update(state, update, process)
         totals.append(total)
 
     observed = float(np.mean(np.asarray(totals, dtype=np.float64)))
@@ -213,7 +294,7 @@ def test_no_nan_no_negative_regression() -> None:
     previous_count = 0
     for _ in range(100):
         update = process.next_update(1.0, state)
-        _apply_update(state, update)
+        _apply_update(state, update, process)
         sites = current_damage_sites(state)
         assert len(sites) >= previous_count
         previous_count = len(sites)
@@ -228,3 +309,4 @@ def test_no_nan_no_negative_regression() -> None:
 
     assert np.isfinite(float(state["chromosome"]["replication_stall_flag"]))
     assert float(state["chromosome"]["replication_stall_flag"]) >= 0.0
+
