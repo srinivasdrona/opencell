@@ -40,6 +40,7 @@ from opencell.vivarium.karr_ribosome_assembly import KarrRibosomeAssemblyProcess
 
 _TRACE_PROCESS_NAME = "RibosomeAssembly"
 _OBSERVABLES = ('substrates', 'enzymes', 'boundEnzymes', 'monomers', 'complexs')
+_OBSERVABLES_WITH_RNAS = ('substrates', 'enzymes', 'boundEnzymes', 'monomers', 'complexs', 'RNAs')
 
 # Observables Karr records but `next_update` does not write into. Their
 # `oc_after` MUST be rebuilt from `states_before` (Rule 7 pass-through
@@ -51,7 +52,7 @@ _SCRATCH_RESET = {}
 
 # Optional explicit observable->WID attribute mapping. Any missing or unknown
 # attr falls back to heuristic inference from process attrs / state schema.
-_OBSERVABLE_TO_WIDS_ATTR = {'substrates': 'substrate_wids', 'enzymes': 'gtpase_wids', 'boundEnzymes': 'gtpase_wids', 'monomers': 'monomer_subunit_wids', 'complexs': 'complex_wids'}
+_OBSERVABLE_TO_WIDS_ATTR = {'substrates': 'substrate_wids', 'enzymes': 'gtpase_wids', 'boundEnzymes': 'gtpase_wids', 'monomers': 'monomer_subunit_wids', 'complexs': 'complex_wids', 'RNAs': 'rna_subunit_wids'}
 
 
 def _assert_delta_integral(label: str, deltas: dict[str, float]) -> None:
@@ -117,7 +118,9 @@ def test_karr_ribosome_assembly_l2_event_replay(rng_seed: int) -> None:
         n_ticks = int(np.asarray(trace["metadata/n_ticks"][()]).reshape(-1)[0])
         assert n_ticks == 100
 
-        mutated_obs = tuple(o for o in _OBSERVABLES if o not in _PASS_THROUGH)
+        # Use extended observables including RNAs (available in event-window traces)
+        observables = _OBSERVABLES_WITH_RNAS
+        mutated_obs = tuple(o for o in observables if o not in _PASS_THROUGH)
         mutated_tick_counts = _audit_trace_mutated_ticks(trace, mutated_obs, n_ticks)
         if sum(mutated_tick_counts.values()) == 0:
             pytest.skip(
@@ -129,7 +132,7 @@ def test_karr_ribosome_assembly_l2_event_replay(rng_seed: int) -> None:
         state_template = build_state_template(process)
 
         wids_by_observable: dict[str, list[str]] = {}
-        for observable in _OBSERVABLES:
+        for observable in observables:
             karr_before = cell_vector(trace, "states_before", observable, 0)
             explicit_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable)
             wids_by_observable[observable] = infer_wids_for_observable(
@@ -144,10 +147,10 @@ def test_karr_ribosome_assembly_l2_event_replay(rng_seed: int) -> None:
             state = build_state_template(process)
             before_vectors = {
                 observable: cell_vector(trace, "states_before", observable, tick)
-                for observable in _OBSERVABLES
+                for observable in observables
             }
 
-            for observable in _OBSERVABLES:
+            for observable in observables:
                 overlay_observable_into_state(
                     process=process,
                     state=state,
@@ -160,7 +163,7 @@ def test_karr_ribosome_assembly_l2_event_replay(rng_seed: int) -> None:
             update = process.next_update(1.0, state)
             _apply_update(state, update, process)
 
-            for observable in _OBSERVABLES:
+            for observable in observables:
                 karr_after = cell_vector(trace, "states_after", observable, tick)
                 expected_len = len(wids_by_observable[observable])
                 if karr_after.shape[0] != expected_len:

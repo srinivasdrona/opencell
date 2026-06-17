@@ -27,6 +27,7 @@ _OBS_STORE_PATHS = {
     "enzymes": ("enzymes",),
     "boundEnzymes": ("boundEnzymes",),
     "complexs": ("complex", "counts"),
+    "RNAs": ("rna", "counts"),
     "foldedMonomers": ("protein", "counts"),
     "unfoldedMonomers": ("protein", "unfolded_counts"),
     "modifiedMonomers": ("protein", "counts"),
