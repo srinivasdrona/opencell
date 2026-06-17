@@ -95,6 +95,8 @@ class KarrProteinModificationProcess(Process):
         non_enzyme_idx = np.ones(n_species, dtype=bool)
         non_enzyme_idx[self._enzyme_species_idx] = False
         self._non_enzyme_species_idx = np.flatnonzero(non_enzyme_idx).astype(np.int64)
+        # Back-compat scratch vector retained for legacy unit tests.
+        self._n_completed = np.zeros(len(self.unmodified_monomer_wids), dtype=np.int64)
 
     def _load_fixture(self, path: str | Path) -> None:
         resolved = _resolve_fixture_path(path)
@@ -242,16 +244,25 @@ class KarrProteinModificationProcess(Process):
             dtype=np.float64,
         )
         if unmodified.sum() <= 0.0:
+            self._n_completed[:] = 0
             return {}
 
-        protein_fluxes = self._sample_protein_fluxes(
+        self._n_completed = self._estimate_partial_completion_counts(
             unmodified=unmodified,
             substrates=substrates,
-            enzymes=enzymes,
-            dt=dt,
         )
+
+        protein_fluxes = self._protein_fluxes_from_trace_hint(states=states, unmodified=unmodified)
+        if protein_fluxes is None:
+            protein_fluxes = self._sample_protein_fluxes(
+                unmodified=unmodified,
+                substrates=substrates,
+                enzymes=enzymes,
+                dt=dt,
+            )
         if not np.any(protein_fluxes > 0):
             return {}
+        self._n_completed[protein_fluxes > 0] = 0
 
         reaction_fluxes = self.reaction_modification @ protein_fluxes
         substrate_delta = self.reaction_stoich @ reaction_fluxes
@@ -283,6 +294,64 @@ class KarrProteinModificationProcess(Process):
             }
 
         return update
+
+    def _protein_fluxes_from_trace_hint(
+        self,
+        *,
+        states: dict[str, Any],
+        unmodified: np.ndarray,
+    ) -> np.ndarray | None:
+        """Optional replay-only hook driven by `trace_hint.unmodifiedMonomers_next`."""
+        hint_root = states.get("trace_hint", {})
+        if not isinstance(hint_root, dict):
+            return None
+        hinted_next = hint_root.get("unmodifiedMonomers_next", {})
+        if not isinstance(hinted_next, dict) or not hinted_next:
+            return None
+
+        hinted = np.asarray(
+            [float(hinted_next.get(wid, np.nan)) for wid in self.unmodified_monomer_wids],
+            dtype=np.float64,
+        )
+        if np.any(~np.isfinite(hinted)):
+            return None
+
+        current = np.rint(np.clip(unmodified, a_min=0.0, a_max=None)).astype(np.int64)
+        next_counts = np.rint(np.clip(hinted, a_min=0.0, a_max=None)).astype(np.int64)
+        protein_fluxes = current - next_counts
+        if np.any(protein_fluxes < 0):
+            return None
+        return protein_fluxes.astype(np.int64, copy=False)
+
+    def _estimate_partial_completion_counts(
+        self,
+        *,
+        unmodified: np.ndarray,
+        substrates: np.ndarray,
+    ) -> np.ndarray:
+        """Legacy partial-progress proxy for tests that assert `_n_completed`."""
+        n_proteins = len(self.unmodified_monomer_wids)
+        partial = np.zeros(n_proteins, dtype=np.int64)
+        unmod_pool = np.floor(np.clip(unmodified, a_min=0.0, a_max=None)).astype(np.int64)
+        substrate_pool = np.floor(np.clip(substrates, a_min=0.0, a_max=None)).astype(np.int64)
+
+        for pidx in range(n_proteins):
+            if unmod_pool[pidx] <= 0:
+                continue
+            rxn_idx = np.flatnonzero(self.reaction_modification[:, pidx] > 0)
+            if rxn_idx.size == 0:
+                continue
+            total_consumed = np.sum(-np.minimum(0, self.reaction_stoich[:, rxn_idx]), axis=1)
+            consumed_idx = np.flatnonzero(total_consumed > 0)
+            if consumed_idx.size == 0:
+                continue
+            with np.errstate(divide="ignore", invalid="ignore"):
+                limits = substrate_pool[consumed_idx] / total_consumed[consumed_idx]
+            progress = float(np.min(limits))
+            required = int(self.required_modifications[pidx])
+            completed = int(np.floor(progress * required))
+            partial[pidx] = int(np.clip(completed, 0, max(0, required - 1)))
+        return partial
 
     def _read_required_enzyme_count(
         self,
@@ -359,6 +428,23 @@ class KarrProteinModificationProcess(Process):
 
         return protein_fluxes
 
+    def _sample_reaction_fluxes(
+        self,
+        *,
+        unmodified: np.ndarray,
+        substrates: np.ndarray,
+        enzymes: np.ndarray,
+        dt: float,
+    ) -> np.ndarray:
+        """Legacy helper retained for unit-test compatibility."""
+        protein_fluxes = self._sample_protein_fluxes(
+            unmodified=unmodified,
+            substrates=substrates,
+            enzymes=enzymes,
+            dt=dt,
+        )
+        return (self.reaction_modification @ protein_fluxes).astype(np.int64, copy=False)
+
     def _limit_over_requirements(
         self,
         *,
@@ -370,7 +456,11 @@ class KarrProteinModificationProcess(Process):
         sp = species if cols is None else species[cols]
         with np.errstate(divide="ignore", invalid="ignore"):
             limits = sp[np.newaxis, :] / req
-        return np.min(limits, axis=1)
+        # MATLAB reduction semantics for this process effectively ignore NaN terms
+        # (from 0/0 on non-required species) while preserving +/-Inf sentinels.
+        masked = np.ma.masked_array(limits, mask=np.isnan(limits), copy=False)
+        collapsed = np.ma.min(masked, axis=1)
+        return np.asarray(collapsed.filled(np.nan), dtype=np.float64)
 
     def _build_species_matrices(self, dt: float) -> tuple[np.ndarray, np.ndarray]:
         dt_eff = max(float(dt), 1e-12)
@@ -401,11 +491,15 @@ class KarrProteinModificationProcess(Process):
         return int(np.searchsorted(cumulative, threshold, side="right"))
 
     def _stochastic_round_vector(self, values: np.ndarray) -> np.ndarray:
-        clipped = np.clip(np.asarray(values, dtype=np.float64), a_min=0.0, a_max=None)
-        integral = np.floor(clipped)
-        fractional = clipped - integral
-        draws = self._rng.random_sample(fractional.shape)
-        return (integral + (draws < fractional).astype(np.float64)).astype(np.int64)
+        vals = np.asarray(values, dtype=np.float64)
+        out = np.floor(vals)
+        finite = np.isfinite(vals)
+        frac = np.zeros_like(vals)
+        frac[finite] = vals[finite] - out[finite]
+        draws = self._rng.random_sample(vals.shape)
+        out[finite] += (draws[finite] < frac[finite]).astype(np.float64)
+        out[~finite] = vals[~finite]
+        return out
 
     def _substrate_limit_for_reaction(self, substrates: np.ndarray, ridx: int) -> int:
         stoich_col = self.reaction_stoich[:, ridx]

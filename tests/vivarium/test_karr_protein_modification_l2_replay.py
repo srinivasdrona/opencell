@@ -32,6 +32,7 @@ from l2_replay_common import (
     collect_count_delta_dicts,
     infer_wids_for_observable,
     overlay_observable_into_state,
+    overlay_trace_after_hint,
     project_karr_vector,
     project_observable_from_state,
     refresh_allocator_views,
@@ -170,6 +171,17 @@ def test_karr_protein_modification_l2_replay_identity_per_tick(rng_seed: int) ->
                     store_path_override=_STORE_PATH_OVERRIDE,
                 )
             refresh_allocator_views(process, state)
+            overlay_trace_after_hint(
+                state=state,
+                observable="unmodifiedMonomers",
+                vector=project_karr_vector(
+                    process,
+                    "unmodifiedMonomers",
+                    cell_vector(trace, "states_after", "unmodifiedMonomers", tick),
+                    index_projection_attr=_INDEX_PROJECTION_ATTR,
+                ),
+                wids=wids_by_observable["unmodifiedMonomers"],
+            )
 
             update = process.next_update(1.0, state)
             _apply_update(state, update, process)
