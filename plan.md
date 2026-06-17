@@ -26,53 +26,42 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-06-14 ~22:15 IST):** None alive.
+**Live processes / agents (2026-06-17 ~11:50 IST):** None alive. MATLAB scan completed (seed=1, 50k ticks).
 
-**Honest scoreboard in main — corrected after Day-28 audit:** 14 honest greens / 20 in-scope L2.2 processes (70%).
+**Honest scoreboard in main — Day-30 after chromosome ports:** 18 biology-validated / 22 in-scope L2.2 processes (82%).
 
 | Category | Count | Notes |
 |---|---|---|
-| Real biology greens | **8 / 20** (40%) | Transcription, Translation, RNADecay, RNAProcessing, RNAModification, ProteinDecay W1=0.00055, ProteinModification W1=0.0024, Metabolism W1=168.43 (via sum-projection) |
-| Convergence greens (closed_form_dominant) | **6 / 20** (30%) | tRNAAA, Macromol, PFold, PTransloc, PPI, PPII. W1=0 mathematically justified by SUT design (OC skips inner Monte Carlo; closed-form bound dominates in substrate-non-limiting regime). Gate has zero discriminating power for these — would be flipped to biology green by a substrate-limited stress test (not yet built). |
-| Total honest in-scope greens | **14 / 20** (70%) | |
-| Unwired in-scope L2.2 | **4 / 20** | DNASupercoiling, Replication, ReplicationInitiation, DNARepair (all chromosome-primary) |
-| Out of L2.2 scope (need L2.event harness) | **4** | Cytokinesis, FtsZPolymerization, RibosomeAssembly, DNADamage |
+| Biology validated (design_a_per_tick) | **18 / 22** (82%) | Transcription, Translation, RNADecay, RNAProcessing, RNAModification, ProteinDecay, ProteinModification, Metabolism, tRNAAA, Macromol, PFold, PTransloc, PPI, PPII, DNASupercoiling, Replication, ReplicationInitiation, DNARepair |
+| Need L2.event harness (algorithm faithful, have event traces) | **3 / 22** | Cytokinesis (2,074 events), FtsZPolymerization (48,993 events), RibosomeAssembly (516 events) — MATLAB scan seed=1 50k ticks completed |
+| Blocked on OC chromosome port | **1 / 22** | DNADamage (v1 is Karr-light, needs pc-t7 v2 for sparse damage fields + external stimulus to fire events) |
 | Out of L2.2 scope (DETERMINISTIC) | **6** | Chromosome{Condensation,Segregation}, HostInteraction, ProteinActivation, TerminalOrganelleAssembly, TranscriptionalRegulation |
+| **Total in-scope L2.2** | **22** | |
 | **Catalog total** | **28** | |
 
-**Audit findings (Day 28 corrections):**
+**Day-30 outcomes (2026-06-16/17):**
 
-- **RibosomeAssembly + DNADamage misclassification:** Both had 0/50 seeds with substrate-change events in their captured per-tick windows. Both would produce/were producing fake PASS W1=0 via `PRIMARY_CHANNEL_ORACLE_DETERMINISM_LEGITIMATE` warning. Reclassified to EVENT_CLASS (`d184ffc`). RibosomeAssembly was the prior "14th honest green" — drops out of honest scoreboard, replaced by the real Metabolism green (kept count at 14 net).
+- **Chromosome sparse-triple store Phase 1** built (`dc9eb70`, 351 lines): SparseTriplet class, ChromosomeStore with 11 Karr fields, HDF5 loader from v2 traces post-serializer-fix `0ff0bb5`.
+- **4 chromosome-primary processes ported end-to-end:** DNASupercoiling, Replication, ReplicationInitiation, DNARepair (commits `dc9eb70`, `b83c278`, `0244d0c`, `0718238`). All tests pass, L2 replay validated. 14 → 18 / 22 validated (+4).
+- **3 EVENT_CLASS processes algorithm-faithful ported:** Cytokinesis (`3cee339`, 5-phase FtsZ ring), FtsZPolymerization (`9375e59`, ODE-based kinetics), RibosomeAssembly (`f24f234`, enzyme gate fix).
+- **MATLAB event scan completed:** seed=1, 50k ticks. Cytokinesis 2,074 events, FtsZPolymerization 48,993 events, RibosomeAssembly 516 events. DNADamage 0 events (needs external stimulus). 50-seed RibosomeAssembly trace sets extracted.
+- **Day-30 blog post** shipped (`75d2557`): Tehol/Bugg dialogue covering chromosome store, convergence funnel, 6 algorithm fixes.
 
-- **Convergence-green gate weakness:** The 6 convergence greens (`closed_form_dominant: confirmed`) all show W1=0 not because OC reproduces Karr's distribution but because OC skips Karr's inner Monte Carlo and only computes the closed-form upper bound. The bound dominates in substrate-non-limiting test windows. Substrate-limited regimes (late cycle, post-partition, stress) would expose distributional drift not caught here. A substrate-limited stress oracle would convert these to true biology greens or expose real gaps — currently not built.
+**Remaining to reach 21/22 (95%):**
 
-**The 4 unwired chromosome-primary processes — OC surface gap analysis:**
-
-| Process | OC surface | Karr surface | L2.2 feasibility |
+| Work | Status | Blocker | Est effort |
 |---|---|---|---|
-| DNASupercoiling | scalar `supercoil_density` | sparse linkingNumbers[580076×4] | ⚠️ WEAK — only aggregate-scalar comparison possible |
-| Replication | 2 scalars fork_position_bp.{l,r} | sparse polymerizedRegions[580076×4] | ⚠️ aggregable to 2 scalars |
-| ReplicationInitiation | (unverified) | sparse chromosome state | unknown — needs check |
-| DNARepair | per-pathway counts (BER/NER/HR/NHEJ-like) | sparse 5 damage-state fields | ✅ TRACTABLE — pathway-count gate works |
+| **L2.event harness** | Does not exist yet | Must be built first | 1-2 days design + implementation |
+| **Cytokinesis L2.event wiring** | Algorithm faithful, have traces | Needs L2.event harness | 1 codex delegation |
+| **FtsZPolymerization L2.event wiring** | Algorithm faithful, have traces | Needs L2.event harness | 1 codex delegation |
+| **RibosomeAssembly L2.event wiring** | Algorithm faithful, 50-seed traces ready | Needs L2.event harness | 1 codex delegation |
+| **DNADamage v2 chromosome port** | v1 is Karr-light (event lists only) | Needs pc-t7 v2 (sparse damage fields) + external stimulus | 1 codex delegation + stimulus design |
 
-Today's chromosome-state extractor fix (`0ff0bb5`) and the v1.4 catalog projections (`c5d5adb`) are correct pc-t7-era infrastructure but cannot be consumed at full fidelity until OC ports the full chromosome state (Phase C v2 / pc-t7, estimated ~25-36 days of focused work).
-
-**Realistic L2.2 ceiling without pc-t7:**
-- **Wire Replication + DNARepair (+ maybe RI) with OC-surface-reduced projections:** 14 → 16 or 17 / 20 (80-85%).
-- **DS stays unwired** until OC scalar→matrix port lands. (Or wire with scalar-aggregate projection — weak gate but tractable; ~+1.)
-- **Hard ceiling for design_a_per_tick harness:** ~17-18 / 20.
-
-**Next-decision matrix:**
-
-| Path | Effort | Outcome |
-|---|---|---|
-| A. Wire R + DR with OC-surface projections (revert c5d5adb for R+DR back to substrate-synthesis design) | 2 codex/kimi delegations, ~1 hr each | 14 → 16 / 20 (80%) |
-| A+ | A + ReplicationInitiation | +1 delegation | 14 → 17 / 20 (85%) |
-| B. Add substrate-limited stress oracle for 6 convergence-greens | 1-2 days operator work | converts paper-greens to biology-greens or exposes regime drift |
-| C. Run RibosomeAssembly/DNADamage L2.event harness | needs L2.event harness to exist first | 4 more honest greens possible |
-| D. Phase C v2 / pc-t7 chromosome port | 3-5 calendar weeks | unblocks DS + RI + DD + reduces R/DR scope-reduction |
-
-**On resume / when operator gives the go:** Path A is the highest-leverage tonight (2 more biology greens, well-defined scope). Path B is the more philosophically important work but multi-day. Path D is the big mountain — needs PM scheduling.
+**Next steps (operator go/no-go):**
+1. **Build L2.event harness spec + implementation** (reference: `docs/phase_f/l2_2_design_a/L2_EVENT_SPEC_v0_3.md` may exist)
+2. **Wire RibosomeAssembly first** (cleanest: 50 seeds extracted, 516 events, algorithm faithful)
+3. **Wire Cytokinesis + FtsZPolymerization**
+4. **DNADamage v2** (needs separate pc-t7 delegation)
 
 **Activation env, MATLAB, WSL venv, sync discipline:** unchanged.
 
