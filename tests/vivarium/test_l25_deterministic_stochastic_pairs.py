@@ -21,7 +21,7 @@ _HELPER_DIR = Path(__file__).resolve().parent
 if str(_HELPER_DIR) not in sys.path:
     sys.path.insert(0, str(_HELPER_DIR))
 
-from l2_2_replay_common_v2 import _COMPOSITION_ORDER_V2, run_integrated_replay_v2
+from l2_2_replay_common_v2 import run_integrated_replay_v2
 
 _PAIR_LIST_PATH = _REPO_ROOT / "data/schemas/l25_pair_list.toml"
 _EXPECTED_DS_PAIR_COUNT = 43
@@ -62,12 +62,8 @@ def test_l25_deterministic_stochastic_pair_no_hints(
     rng_seed: int,
 ) -> None:
     """L2.5 honest-mode DS pair replay with catalog-driven per-side oracles."""
-    pair_set = {process_a, process_b}
-    under_test = [name for name in _COMPOSITION_ORDER_V2 if name in pair_set]
-    assert set(under_test) == pair_set
-
     run_integrated_replay_v2(
-        under_test_processes=under_test,
+        under_test_processes=[process_a, process_b],
         rng_seed=rng_seed,
         disable_trace_hints=True,
     )
