@@ -343,6 +343,12 @@ def _matches_oracle(
     return True
 
 
+def _trace_hints_enabled(*, disable_trace_hints: bool, oracle_type: str) -> bool:
+    # Deterministic bit-identity replay requires exact bound/enzyme transitions
+    # on some processes; keep the same policy across composition/counterfactual.
+    return (not disable_trace_hints) or oracle_type == ORACLE_BIT_IDENTITY
+
+
 def _first_mismatch_detail(oc_after: np.ndarray, karr_after: np.ndarray) -> tuple[int, float, float, float]:
     if oc_after.shape != karr_after.shape:
         return (-1, float("nan"), float("nan"), float("nan"))
@@ -366,6 +372,8 @@ def _build_counterfactual_step_vector(
     ctx: _ProcessContext,
     tick: int,
     observable: str,
+    disable_trace_hints: bool,
+    oracle_type: str,
 ) -> np.ndarray:
     state = build_state_template(ctx.process)
     before_vectors: dict[str, np.ndarray] = {}
@@ -379,14 +387,18 @@ def _build_counterfactual_step_vector(
             wids=ctx.wids_by_observable[obs],
             store_path_override=ctx.spec.store_path_override,
         )
-    for obs in ctx.spec.trace_after_hint_observables:
-        after_vec = _project_trace_vector(ctx, "states_after", obs, tick)
-        overlay_trace_after_hint(
-            state=state,
-            observable=obs,
-            vector=after_vec,
-            wids=ctx.wids_by_observable[obs],
-        )
+    # H5 fix (STATUS_cause_4_sweep.md): counterfactual replay must honor the same
+    # hint policy as composition mode; otherwise no-hint composition is compared
+    # against hint-assisted isolated replay.
+    if _trace_hints_enabled(disable_trace_hints=disable_trace_hints, oracle_type=oracle_type):
+        for obs in ctx.spec.trace_after_hint_observables:
+            after_vec = _project_trace_vector(ctx, "states_after", obs, tick)
+            overlay_trace_after_hint(
+                state=state,
+                observable=obs,
+                vector=after_vec,
+                wids=ctx.wids_by_observable[obs],
+            )
     refresh_allocator_views(ctx.process, state)
     update = ctx.process.next_update(1.0, state)
     _apply_update(state, update)
@@ -898,6 +910,9 @@ def run_integrated_replay_v2(
             after_vectors: dict[str, dict[str, np.ndarray]] = {}
             step_vectors: dict[tuple[str, str], np.ndarray] = {}
             step_compare_vectors: dict[tuple[str, str], np.ndarray] = {}
+            upstream_mutated_master_indices_by_observable: dict[str, set[int]] = {
+                obs: set() for obs in all_observables
+            }
 
             for name in ordered:
                 ctx = contexts[name]
@@ -930,7 +945,10 @@ def run_integrated_replay_v2(
 
             for name in ordered:
                 ctx = contexts[name]
-                if not disable_trace_hints:
+                if _trace_hints_enabled(
+                    disable_trace_hints=disable_trace_hints,
+                    oracle_type=resolved_oracle_type_by_process[name],
+                ):
                     for obs in ctx.spec.trace_after_hint_observables:
                         overlay_trace_after_hint(
                             state=shared_state,
@@ -946,14 +964,44 @@ def run_integrated_replay_v2(
                         if order_idx[p] < order_idx[name] and obs in contexts[p].spec.observables
                     ]
                     if upstream_exposers:
+                        overlay_vec = before_vectors[name][obs]
+                        mutated_master_indices = upstream_mutated_master_indices_by_observable[obs]
+                        # H6 fix (STATUS_cause_4_sweep.md): do not wipe shared WIDs that
+                        # were already mutated by upstream steps in this tick.
+                        if mutated_master_indices:
+                            running_vec = project_observable_from_state(
+                                process=ctx.process,
+                                state=shared_state,
+                                observable=obs,
+                                wids=ctx.wids_by_observable[obs],
+                                bound_enzymes_before=before_vectors[name].get("boundEnzymes"),
+                                store_path_override=ctx.spec.store_path_override,
+                            )
+                            overlay_vec = before_vectors[name][obs].copy()
+                            for proc_idx, proc_wid in enumerate(ctx.wids_by_observable[obs]):
+                                master_idx = ctx.process_wid_to_master_idx[obs][proc_wid]
+                                if master_idx in mutated_master_indices:
+                                    overlay_vec[proc_idx] = running_vec[proc_idx]
                         overlay_observable_into_state(
                             process=ctx.process,
                             state=shared_state,
                             observable=obs,
-                            vector=before_vectors[name][obs],
+                            vector=overlay_vec,
                             wids=ctx.wids_by_observable[obs],
                             store_path_override=ctx.spec.store_path_override,
                         )
+
+                owned_master_before_step: dict[str, np.ndarray] = {}
+                for obs in _owned_observables(ctx.spec):
+                    _, master_before = _projection_via_master(
+                        process_name=name,
+                        observable=obs,
+                        state=shared_state,
+                        contexts=contexts,
+                        owner_manifest=owner_manifest,
+                        master_wids_by_observable=master_wids_by_observable,
+                    )
+                    owned_master_before_step[obs] = master_before
 
                 oc_before_step: dict[str, np.ndarray] = {}
                 for obs in _owned_observables(ctx.spec):
@@ -969,6 +1017,20 @@ def run_integrated_replay_v2(
                 refresh_allocator_views(ctx.process, shared_state)
                 update = ctx.process.next_update(1.0, shared_state)
                 _apply_update(shared_state, update)
+                for obs, master_before in owned_master_before_step.items():
+                    _, master_after_for_obs = _projection_via_master(
+                        process_name=name,
+                        observable=obs,
+                        state=shared_state,
+                        contexts=contexts,
+                        owner_manifest=owner_manifest,
+                        master_wids_by_observable=master_wids_by_observable,
+                    )
+                    changed_master_indices = np.flatnonzero(master_after_for_obs != master_before)
+                    if changed_master_indices.size:
+                        upstream_mutated_master_indices_by_observable[obs].update(
+                            int(idx) for idx in changed_master_indices.tolist()
+                        )
                 upstream = [p for p in ordered if order_idx[p] < order_idx[name]]
 
                 for obs in _owned_observables(ctx.spec):
@@ -1092,6 +1154,8 @@ def run_integrated_replay_v2(
                             ctx=ctx,
                             tick=tick,
                             observable=obs,
+                            disable_trace_hints=disable_trace_hints,
+                            oracle_type=resolved_oracle_type_by_process[name],
                         )
                         oc_counterfactual_compare = (
                             oc_counterfactual - before_vectors[name][obs]
