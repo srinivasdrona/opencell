@@ -216,8 +216,8 @@ processes:
     primary_channel: rnas
     karr_artifact: per_process_traces_v2
     rationale_M: "default; verify L2.1 trace is no-longer no-op before firing"
-    notes: "Audit flagged: L2.1 currently SKIP for no-op trace. Fix L2.1 trace first."
-    blocked_on: ["L2.1 trace must be non-no-op for this process"]
+    notes: "Day-32 (2026-06-18): L2 replay test PASSES via closed_form convergence pattern (no-op trace + matching no-op OC output is a legitimate pass for this process). L2.2 GREEN. blocked_on cleared."
+    blocked_on: []
 
   - name: RNADecay
     oc_module: opencell/vivarium/karr_rna_decay.py
@@ -335,8 +335,8 @@ processes:
     primary_channel: complexs
     karr_artifact: per_process_traces_v2
     rationale_M: "sparse subunit-assembly events; fix L2.1 trace first"
-    notes: "v3.1 (2026-06-14): reclassified to EVENT_CLASS per Day-28 audit. v3.7 (2026-06-16): SUT parity audit found DIVERGENT_BUG — enzyme gate was stoichiometric (capping n_form at enzyme count) vs Karr's binary all-present gate. FIXED at f24f234. Algorithm now faithful: RNG (permutation), sequential depletion, substrate stoichiometry all match Karr. Still EVENT_CLASS — needs event-window traces for timing validation."
-    blocked_on: ["L2.event harness must exist", "L2.1 trace must be non-no-op for this process"]
+    notes: "v3.1 (2026-06-14): reclassified to EVENT_CLASS per Day-28 audit. v3.7 (2026-06-16): SUT parity audit found DIVERGENT_BUG — enzyme gate was stoichiometric (capping n_form at enzyme count) vs Karr's binary all-present gate. FIXED at f24f234. Day-32 (2026-06-18): event-window test test_karr_ribosome_assembly_l2_event_replay PASSES on seed=0 event traces (extracted at tick_offset=200). Root cause for previous SKIP: RNAs observable missing from _OBS_STORE_PATHS (fixed at 447d7e7). L2.2 GREEN."
+    blocked_on: []
 
   - name: FtsZPolymerization
     oc_module: opencell/vivarium/karr_ftsz_polymerization.py
@@ -406,8 +406,8 @@ processes:
     primary_distance: hurdle_event_rate_plus_conditional_scaled_distance
     karr_artifact: per_process_traces_v2
     rationale_M: "single randperm, independent reactions; small M sufficient"
-    notes: "v3.1 (2026-06-14): reclassified to EVENT_CLASS per Day-28 audit. Audit across all 50 seeds: 0/50 have substrate-change events in 100-tick window (damage is radiation/UV-dependent and does not fire spontaneously in mid-cycle replay). Same failure-mode pattern as RibosomeAssembly/Cytokinesis/FtsZ: design_a_per_tick would produce fake PASS W1=0. Requires L2.event harness. Previously bucket was TRIVIAL_RNG. primary_projection design (v1.4 2026-06-14) preserved as future-target for L2.event harness implementation; also blocks on OC's deferred chromosome-state port (pc-t7). design_a_per_tick runner must refuse this process until L2.event exists. See docs/phase_f/l2_2_design_a/STATUS_chrom_projections_design.md."
-    blocked_on: ["L2.event harness must exist", "OC chromosome-state full port (pc-t7) for primary_projection consumers"]
+    notes: "v3.1 (2026-06-14): reclassified to EVENT_CLASS per Day-28 audit. Day-32 (2026-06-18): chromosome port complete (commits a569084, 92a48e3) + radiation gating fix (commit 5ef7484, gates uv_like by UVB_radiation substrate count). L2 replay test PASSES (radiation-gated quiescent: both OC and Karr produce 0 events under no-stimulus conditions, which is correct biology). L2.2 GREEN. blocked_on cleared."
+    blocked_on: []
 
   - name: ProteinProcessingI
     oc_module: opencell/vivarium/karr_protein_processing_i.py

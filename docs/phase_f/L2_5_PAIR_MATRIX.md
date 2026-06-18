@@ -9,10 +9,10 @@
 - Tier 1 pairs (must-pass priority): 183
 - Tier 2 pairs (should-pass): 72
 - Tier 3 pairs (informational): 1
-- L2.5.2 honest-required shared pairs (catalog-filtered): 154
+- L2.5.2 honest-required shared pairs (catalog-filtered): 211
 - Catalog filter mode: `fallback:in_scope_L2_2` from `docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml`
-- Source digest: `cd02944b5b7842eda515168ca1a11a6f4895d0acc375a8401af34db466f7858e`
-- Deterministic generated_at: `2003-12-23T14:40:02Z`
+- Source digest: `d2f21834ce0f93192b0194fdcd9716686327f63a5b9fb3f9a05fdd0c5e3eddbb`
+- Deterministic generated_at: `2017-04-19T05:18:11Z`
 
 ## 2. Pair count matrix
 
@@ -452,32 +452,32 @@ Idx Process                      1   2   3   4   5   6   7   8   9  10  11  12  
 |---|---:|---:|
 | ChromosomeCondensation | 22 | 0 |
 | ChromosomeSegregation | 22 | 0 |
-| Cytokinesis | 22 | 17 |
-| DNADamage | 22 | 0 |
-| DNARepair | 22 | 17 |
-| DNASupercoiling | 22 | 17 |
-| FtsZPolymerization | 22 | 17 |
+| Cytokinesis | 22 | 20 |
+| DNADamage | 22 | 20 |
+| DNARepair | 22 | 20 |
+| DNASupercoiling | 22 | 20 |
+| FtsZPolymerization | 22 | 20 |
 | HostInteraction | 2 | 0 |
 | MacromolecularComplexation | 1 | 1 |
-| Metabolism | 23 | 17 |
+| Metabolism | 23 | 20 |
 | ProteinActivation | 0 | 0 |
-| ProteinDecay | 22 | 17 |
-| ProteinFolding | 23 | 18 |
-| ProteinModification | 22 | 17 |
-| ProteinProcessingI | 22 | 17 |
-| ProteinProcessingII | 22 | 17 |
-| ProteinTranslocation | 22 | 17 |
-| RNADecay | 22 | 17 |
-| RNAModification | 22 | 0 |
-| RNAProcessing | 22 | 17 |
-| Replication | 22 | 17 |
-| ReplicationInitiation | 22 | 17 |
-| RibosomeAssembly | 22 | 0 |
+| ProteinDecay | 22 | 20 |
+| ProteinFolding | 23 | 21 |
+| ProteinModification | 22 | 20 |
+| ProteinProcessingI | 22 | 20 |
+| ProteinProcessingII | 22 | 20 |
+| ProteinTranslocation | 22 | 20 |
+| RNADecay | 22 | 20 |
+| RNAModification | 22 | 20 |
+| RNAProcessing | 22 | 20 |
+| Replication | 22 | 20 |
+| ReplicationInitiation | 22 | 20 |
+| RibosomeAssembly | 22 | 20 |
 | TerminalOrganelleAssembly | 1 | 0 |
-| Transcription | 22 | 17 |
+| Transcription | 22 | 20 |
 | TranscriptionalRegulation | 0 | 0 |
-| Translation | 22 | 17 |
-| tRNAAminoacylation | 22 | 17 |
+| Translation | 22 | 20 |
+| tRNAAminoacylation | 22 | 20 |
 
 ## 8. Methodology
 
