@@ -10,6 +10,8 @@ from collections import OrderedDict
 from pathlib import Path
 from typing import Any
 
+import h5py
+import numpy as np
 from scipy.io import loadmat
 
 
@@ -161,6 +163,75 @@ def _line_number(text: str, pattern: str) -> int:
     return text[: match.start()].count("\n") + 1
 
 
+def _tick_refs(dataset: h5py.Dataset) -> list[h5py.Reference]:
+    if dataset.ndim != 2:
+        return [dataset[idx] for idx in np.ndindex(dataset.shape)]
+    if dataset.shape[0] == 1:
+        return [dataset[0, i] for i in range(dataset.shape[1])]
+    if dataset.shape[1] == 1:
+        return [dataset[i, 0] for i in range(dataset.shape[0])]
+    return [dataset[idx] for idx in np.ndindex(dataset.shape)]
+
+
+def _load_tick_matrices(handle: h5py.File, group_name: str, observable: str) -> list[np.ndarray]:
+    dataset = handle[f"{group_name}/{observable}"]
+    refs = _tick_refs(dataset)
+    out: list[np.ndarray] = []
+    for ref in refs:
+        out.append(np.asarray(handle[ref][()]))
+    return out
+
+
+def _observable_to_pool(observable_name: str) -> str:
+    lower = observable_name.lower()
+    if "substrate" in lower:
+        return "substrates"
+    if "enzyme" in lower:
+        return "enzymes"
+    if "complex" in lower:
+        return "complexs"
+    if "rna" in lower:
+        return "rnas"
+    if "monomer" in lower:
+        return "monomers"
+    raise ValueError(f"Unable to map observable to pool: {observable_name}")
+
+
+def extract_trace_observables(
+    trace_file: Path,
+) -> tuple[OrderedDict[str, dict[str, Any]], OrderedDict[str, int], list[str], list[str]]:
+    observables: OrderedDict[str, dict[str, Any]] = OrderedDict()
+    mutation_counts: OrderedDict[str, int] = OrderedDict()
+
+    with h5py.File(trace_file, "r") as handle:
+        before_keys = set(handle["states_before"].keys())
+        after_keys = set(handle["states_after"].keys())
+        for observable in sorted(before_keys | after_keys):
+            if observable == "chromosome":
+                continue
+            if f"states_before/{observable}" not in handle or f"states_after/{observable}" not in handle:
+                continue
+            before = _load_tick_matrices(handle, "states_before", observable)
+            after = _load_tick_matrices(handle, "states_after", observable)
+            count = 0
+            for idx in range(min(len(before), len(after))):
+                if not np.array_equal(before[idx], after[idx]):
+                    count += 1
+            mutation_counts[observable] = int(count)
+            shape = [int(dim) for dim in before[0].shape] if before else []
+            observables[observable] = {
+                "pool": _observable_to_pool(observable),
+                "shape": shape,
+            }
+
+    trace_hint_keys: list[str] = []
+    for observable in ("boundEnzymes", "enzymes"):
+        if mutation_counts.get(observable, 0) > 0:
+            trace_hint_keys.append(f"{observable}_next")
+    pass_through = sorted([name for name, count in mutation_counts.items() if count == 0])
+    return observables, mutation_counts, trace_hint_keys, pass_through
+
+
 def resolve_trace_file(process_name: str, paths: Paths) -> tuple[Path, str]:
     s000 = paths.trace_s000_dir / f"{process_name}_100ticks.mat"
     if s000.exists():
@@ -215,6 +286,9 @@ def extract_process_schema(process_name: str, paths: Paths) -> dict[str, Any]:
 
     process_text = matlab_source.read_text(encoding="utf-8", errors="replace")
     species_pools, pool_counts = extract_species_pools_from_fixture(fixture_file)
+    observables, mutation_counts, trace_hint_keys, pass_through = extract_trace_observables(
+        trace_file
+    )
 
     schema: dict[str, Any] = OrderedDict()
     schema["process"] = OrderedDict(
@@ -242,6 +316,18 @@ def extract_process_schema(process_name: str, paths: Paths) -> dict[str, Any]:
         ]
     )
     schema["species_pools"] = OrderedDict((pool, species_pools[pool]) for pool in CANONICAL_POOLS)
+    schema["observables"] = OrderedDict((name, observables[name]) for name in observables)
+    schema["activity_profile"] = OrderedDict(
+        [
+            ("bound_mutated_ticks", int(mutation_counts.get("boundEnzymes", 0))),
+            ("enzymes_mutated_ticks", int(mutation_counts.get("enzymes", 0))),
+            ("substrates_mutated_ticks", int(mutation_counts.get("substrates", 0))),
+            ("monomers_mutated_ticks", int(mutation_counts.get("monomers", 0))),
+            ("per_observable", OrderedDict((k, int(v)) for k, v in mutation_counts.items())),
+            ("trace_hint_keys", trace_hint_keys),
+            ("pass_through", pass_through),
+        ]
+    )
     schema["extractor_diagnostics"] = OrderedDict(
         [
             (
@@ -265,6 +351,7 @@ def extract_process_schema(process_name: str, paths: Paths) -> dict[str, Any]:
                 OrderedDict(
                     [
                         ("wids_source", "fixture"),
+                        ("observable_source", "trace_states_before"),
                         ("trace_source", trace_source),
                         ("fixture_loader", "scipy.io.loadmat"),
                     ]
@@ -312,6 +399,9 @@ def render_schema_toml(schema: dict[str, Any]) -> str:
     lines = [AUTOGEN_HEADER.rstrip("\n"), ""]
     _emit_table(lines, "process", schema["process"])
     _emit_table(lines, "species_pools", schema["species_pools"])
+    for observable_name, table in schema["observables"].items():
+        _emit_table(lines, f"observables.{observable_name}", table)
+    _emit_table(lines, "activity_profile", schema["activity_profile"])
     _emit_table(lines, "extractor_diagnostics.source_lines", schema["extractor_diagnostics"]["source_lines"])
     _emit_table(lines, "extractor_diagnostics.provenance", schema["extractor_diagnostics"]["provenance"])
     _emit_table(
