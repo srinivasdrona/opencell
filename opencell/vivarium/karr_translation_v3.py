@@ -33,6 +33,19 @@ _ARCHIVE_KEY_RIB_STATES = "translation_v2_targeted__rib_states"
 _ARCHIVE_KEY_RIB_BOUND_MRNAS = "translation_v2_targeted__rib_boundMRNAs"
 _ARCHIVE_KEY_RIB_MRNA_POSITIONS = "translation_v2_targeted__rib_mRNAPositions"
 _ARCHIVE_KEY_POLY_MONOMER_LENGTHS = "translation_v2_targeted__poly_monomerLengths"
+_INITIATION_FACTOR_1_WID = "MG_173_MONOMER"
+_INITIATION_FACTOR_2_WID = "MG_142_MONOMER"
+_INITIATION_FACTOR_3_WID = "MG_196_MONOMER"
+_RIBOSOME_30S_WID = "RIBOSOME_30S"
+_RIBOSOME_30S_IF3_WID = "RIBOSOME_30S_IF3"
+_RIBOSOME_50S_WID = "RIBOSOME_50S"
+_RIBOSOME_70S_WID = "RIBOSOME_70S"
+_ELONGATION_FACTOR_WIDS = (
+    "MG_089_DIMER",
+    "MG_026_MONOMER",
+    "MG_451_DIMER",
+    "MG_433_DIMER",
+)
 
 
 class KarrTranslationV3Process(Process):
@@ -205,6 +218,60 @@ class KarrTranslationV3Process(Process):
         if abs(float(delta) - float(rounded)) > 1e-9:
             raise RuntimeError(f"non-integral bound enzyme delta {delta}")
         return rounded
+
+    def _coerce_integral_count(self, value: Any) -> int:
+        rounded = int(np.rint(float(value)))
+        if abs(float(value) - float(rounded)) > 1e-9:
+            raise RuntimeError(f"non-integral enzyme count {value}")
+        return max(0, rounded)
+
+    def _compute_enzyme_transitions_from_biology(
+        self,
+        states: dict[str, Any],
+        timestep: float,
+    ) -> tuple[dict[str, float], dict[str, float]]:
+        """Compute (enzymes_delta, bound_enzymes_delta) from biology state."""
+        del timestep
+        enzymes_now_raw = states.get("enzymes", {})
+        bound_now_raw = states.get("boundEnzymes", {})
+        enzymes_now = (
+            dict(enzymes_now_raw)
+            if isinstance(enzymes_now_raw, dict)
+            else {}
+        )
+        bound_now = dict(bound_now_raw) if isinstance(bound_now_raw, dict) else {}
+
+        enzymes_next: dict[str, int] = {
+            wid: self._coerce_integral_count(enzymes_now.get(wid, 0.0)) for wid in self.enzyme_wids
+        }
+        bound_next: dict[str, int] = {
+            wid: self._coerce_integral_count(bound_now.get(wid, 0.0)) for wid in self.enzyme_wids
+        }
+
+        # Karr Translation.evolveState (line 629-632): 30S + IF3 -> 30S_IF3.
+        n_new_30s_if3 = min(
+            enzymes_next.get(_RIBOSOME_30S_WID, 0),
+            enzymes_next.get(_INITIATION_FACTOR_3_WID, 0),
+        )
+        if n_new_30s_if3 > 0:
+            enzymes_next[_RIBOSOME_30S_WID] -= n_new_30s_if3
+            enzymes_next[_RIBOSOME_30S_IF3_WID] = (
+                enzymes_next.get(_RIBOSOME_30S_IF3_WID, 0) + n_new_30s_if3
+            )
+            enzymes_next[_INITIATION_FACTOR_3_WID] -= n_new_30s_if3
+
+        enzymes_delta: dict[str, float] = {}
+        bound_delta: dict[str, float] = {}
+        for wid in self.enzyme_wids:
+            now_enzyme = self._coerce_integral_count(enzymes_now.get(wid, 0.0))
+            now_bound = self._coerce_integral_count(bound_now.get(wid, 0.0))
+            enzyme_delta = int(enzymes_next.get(wid, now_enzyme)) - now_enzyme
+            bound_enzyme_delta = int(bound_next.get(wid, now_bound)) - now_bound
+            if enzyme_delta != 0:
+                enzymes_delta[wid] = float(enzyme_delta)
+            if bound_enzyme_delta != 0:
+                bound_delta[wid] = float(bound_enzyme_delta)
+        return enzymes_delta, bound_delta
 
     def _enzyme_channel_deltas_from_trace_hint(
         self,
