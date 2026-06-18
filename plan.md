@@ -85,15 +85,26 @@ valid full-cycle trajectories).
 | **Automated calibration loop** | Tune parameters when composition drifts | Bayesian opt / genetic algorithm | 2-4 weeks |
 | **DNN surrogate base class** | Abstract Process for neural net drop-in | PyTorch Process wrapper | 1 week |
 | **Data layout spec** | `[Sims × Timesteps × StateVars]` tensor schema | Derived from TOML species_pools | 2-3 days |
+| **Multi-timescale orchestration** | Move slow processes (Metabolism, ProteinDecay) to longer timesteps | Vivarium per-process `time_step` already supports it | 1 week |
 
 Architecture already supports modular process swap (Vivarium `Process` contract
 with `ports_schema` + `next_update`). The TOML species_pools + DB loader we're
 building now IS the encode/decode schema for DNN surrogates — designed once,
 used at both validation (L-ladder) and training (data factory) time.
 
+**Multi-timescale rationale:** Currently all 28 processes use uniform 1.0s
+timesteps (matching Karr 2012's MATLAB implementation). Vivarium supports
+per-process timesteps natively via `next_update(timestep, states)` returning
+deltas merged atomically by the engine. Metabolism's FBA is the expensive
+step and a candidate for longer timesteps (5-10s) once L5 validates that
+slower-tick metabolism doesn't drift biologically. Estimated 5-10× chassis
+speedup. Fidelity comes first — this is post-L5 optimization, not parallel
+to validation.
+
 **Sequencing:** Build after L5 is green. The emitter/distributor need validated
-trajectories to emit; the calibration loop needs a composition that runs end-to-end.
-Building them before the model is correct would emit wrong data at scale.
+trajectories to emit; the calibration loop needs a composition that runs end-to-end;
+the multi-timescale optimization needs L5 to define "biologically valid" so we
+can measure drift from longer ticks.
 
 ---
 

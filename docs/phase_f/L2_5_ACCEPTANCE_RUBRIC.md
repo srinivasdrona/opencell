@@ -1,0 +1,150 @@
+# L2.5 Acceptance Rubric — Pass/Fail Criteria for Shared-Pool Composition
+
+**Status:** DRAFT — pending operator review
+**Author:** agent (orchestrator, Day 32)
+**Authority:** when ratified, this document defines what "L2.5 green" means
+and which test outcomes qualify the L2.5 gate as PASS.
+
+## Why this document exists
+
+The L2.5 plan (`L2_5_PLAN.md`) and design (`L2_5_HARNESS_DESIGN.md`) define
+HOW the harness works (CAUSE_1-7 taxonomy, owner manifest, union master
+WIDs) but never explicitly state WHICH tests must pass for the gate to be
+declared green. This rubric closes that gap.
+
+Operator decision (2026-06-18): "all pairs should pass for L2.5 to be green,
+so we need the complete list of pairs."
+
+## Definitions
+
+- **Pair**: 2 processes composed on shared substrate pool with allocator mediation
+- **Triple/Quad**: 3 or 4 processes (D6: k ≤ 4)
+- **Composition**: any k-process composition (2 ≤ k ≤ 4)
+- **Honest pass**: composition test passes with `disable_trace_hints=True`
+- **Hint-pass**: composition test passes only with hint injection (L2.2-equivalent)
+- **Sharing**: two processes share an observable if at least one WID overlaps
+
+## Scope (in / out)
+
+### In-scope for L2.5
+
+| Category | Count | Notes |
+|---|---|---|
+| Stochastic processes (L2.2 green) | 22 | All in-scope L2.2 processes |
+| Deterministic processes | 6 | Chromosome{Condensation,Segregation}, HostInteraction, ProteinActivation, TerminalOrganelleAssembly, TranscriptionalRegulation |
+| Allocator | 1 | KarrAllocationStep — substrate budget mediator |
+| **Total composition participants** | **29** | |
+
+### Out-of-scope for L2.5
+
+- k=5+ compositions (deferred to L3 or full-chassis L5)
+- Cell-cycle-phase-specific gating (deferred to L4)
+- Multi-seed ensemble distributional checks (already covered at L2.2)
+- Allocator algorithmic perfection (allocator fairness is its own validation)
+
+## Pass criteria (binary, ordered by strictness)
+
+### L2.5.0 — Smoke: composition runs to completion
+- Composition test instantiates k processes on shared state
+- Runs N ticks without exception (Python errors, NaN, negative counts)
+- This is a precondition; it does NOT mean validation passed
+
+### L2.5.1 — Hint-equivalent: passes with trace_hint injection
+- Composition test with `disable_trace_hints=False` produces zero CAUSE_1-7
+  failures across N ticks
+- This matches L2.2 single-process per-tick fidelity, composed
+- Already true for Translation+RNAProcessing (verified Day 32)
+
+### L2.5.2 — Honest pass: passes WITHOUT trace_hint
+- Composition test with `disable_trace_hints=True` produces zero CAUSE_1-7
+  failures across N ticks
+- This is the actual L2.5 requirement: processes compute their own deltas
+  from biology, not from oracle injection
+- THIS is what "L2.5 green for a pair" means
+
+### L2.5.3 — Owner manifest validated
+- `data/schemas/owner_manifest.toml` (TBA) defines per-observable ownership
+  for every WID in the union master list
+- Composition harness uses the manifest; no positional aliasing
+- Owner manifest passes its own consistency check (no double-ownership)
+
+## Pair list derivation
+
+### Step 1: Pairwise WID overlap matrix
+For each (process_i, process_j) pair where i < j:
+- Compute |substrate_wids_i ∩ substrate_wids_j|
+- Compute |enzyme_wids_i ∩ enzyme_wids_j|
+- Compute |monomer_wids_i ∩ monomer_wids_j|
+- Compute |complex_wids_i ∩ complex_wids_j|
+- Compute |rna_wids_i ∩ rna_wids_j|
+
+### Step 2: Pair classification
+- **Shared-pool pair**: any observable overlap > 0 → composition test required
+- **Disjoint pair**: zero overlap on all observables → no composition test needed
+  (they couldn't interfere even if they wanted to)
+
+### Step 3: Acceptance bar
+- **Must pass at L2.5.2 (honest)**: all shared-pool pairs from the 22 stochastic
+  processes
+- **Must pass at L2.5.1 (hint-equivalent)**: same set, as a regression baseline
+- **Smoke at L2.5.0**: all 29 participants in any combination that runs in
+  the chassis (no exceptions)
+
+### Step 4: Expected pair count
+Rough estimate: ~15-25 priority pairs. Actual number derives from the WID
+overlap matrix (to be generated after TOML extractor v2 lands).
+
+## What counts as a failure
+
+| Failure | Severity | Action |
+|---|---|---|
+| `CAUSE_1_WID_SET_MISMATCH` | BLOCKING | Owner manifest is wrong; fix manifest |
+| `CAUSE_2_ORACLE_INJECTION_MISALIGNMENT` | BLOCKING | Hint scope is wrong; fix harness or process |
+| `CAUSE_3_COMPOSITION_ORDER_ERROR` | BLOCKING | Execution order needs fixing |
+| `CAUSE_4_UPSTREAM_STATE_POLLUTION` | BLOCKING | Process A is mutating state Process B expected |
+| `CAUSE_5_INTRINSIC_PROCESS_REPLAY_DIVERGENCE` | BLOCKING | Process biology is wrong (L2.2 should have caught) |
+| `CAUSE_6_HARNESS_BUG` | BLOCKING | Harness is wrong; fix harness |
+| `CAUSE_7_ORACLE_TRACE_DEFECT` | BLOCKING | MATLAB trace is bad; re-extract |
+| `CAUSE_UNCLASSIFIED` | INFORMATIONAL | Investigate; may indicate missing taxonomy entry |
+| Pre-existing L2.2 failure on a participant | DEFERRED | Cannot pass L2.5 until L2.2 is fixed |
+
+## Triples and quads (k > 2)
+
+Tier 1 (must pass): pairs only — sufficient to declare L2.5 green for first
+release. Triples and quads are stretch goals.
+
+Tier 2 (optional): k=3 compositions where biology coupling is dense (e.g.,
+{Transcription, RNAProcessing, RNADecay} — the RNA lifecycle). Define after
+pairs are green.
+
+Tier 3 (optional): k=4 compositions for full functional clusters (gene
+expression, DNA maintenance, cell division).
+
+## What "L2.5 GREEN" means (the headline definition)
+
+L2.5 is GREEN when:
+1. All shared-pool pairs from the 22 L2.2-green processes pass at L2.5.2 (honest)
+2. Owner manifest is committed and validated
+3. Integrity audit (trace_hint gating) is enforced — composition harness
+   defaults to `disable_trace_hints=True`
+4. PROCESS_STATUS_ALL_29.md L2.5 column shows ✅ for all in-scope pairs
+5. Plan.md operational-handoff block declares L2.5 complete
+
+## What L2.5 is NOT
+
+- L2.5 is not "chassis works" — that's L5
+- L2.5 is not "single seed full cell cycle" — that's L4
+- L2.5 is not allocator algorithmic correctness — that's a separate concern
+- L2.5 is not multi-timescale orchestration — uniform 1s ticks, like Karr
+
+## Next steps to reach L2.5 green
+
+1. ✅ Trace_hint gating in composition harness (Day 32, commit `3a1fe87`)
+2. ⏳ TOML extractor v2 (in flight, codex PID 46728)
+3. ⏳ Translation enzyme divergence (in flight, codex PID 24476)
+4. Generate pair list from TOML overlap matrix (after #2 lands)
+5. Author `owner_manifest.toml` from pair list (Workstream A2)
+6. Author/update test files for each pair
+7. Run pair tests; diagnose CAUSE_1-7 failures; fix; repeat
+8. Update PROCESS_STATUS_ALL_29.md L2.5 column as pairs pass
+9. Update plan.md handoff block when all pairs green
