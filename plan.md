@@ -26,46 +26,59 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-06-18 ~01:30 IST):** None alive. Workspace clean (1 worktree: main).
+**Live processes / agents (2026-06-18 ~23:55 IST):** None alive. Workspace clean (1 worktree: main).
 
-**L2.2 COMPLETE — 22/22 in-scope processes validated (100%).**
+**L2.2: COMPLETE (22/22 in-scope, 100%).** L2.5 in active development.
 
-Final L2 replay suite: **49 passed, 2 skipped, 0 failed.**
+**L2.5 status (Day-32 end):** **10 L2.5 pair tests GREEN** (1 SS + 7 DS + 2 DD). Pair-keyed tracker at [`docs/phase_f/L2_5_PAIR_TRACKER.md`](docs/phase_f/L2_5_PAIR_TRACKER.md); codex-loadable status at [`docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml`](docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml) `l2_5_gate:` section (schema v5, added 2026-06-18).
+**Scope:** 256 honest-required pairs (211 SS + 43 DS + 2 DD), 122 disjoint, 378 total.
 
-| Category | Count | Processes |
+| L2.5 bucket | Count | Notes |
 |---|---|---|
-| Biology validated (L2 replay PASS) | **22 / 22** | Transcription, Translation, RNADecay, RNAProcessing, RNAModification, ProteinDecay, ProteinModification, Metabolism, tRNAAA, Macromol, PFold, PTransloc, PPI, PPII, DNASupercoiling, Replication, ReplicationInitiation, DNARepair, Cytokinesis, FtsZPolymerization, RibosomeAssembly, DNADamage |
-| Out of L2.2 scope (DETERMINISTIC) | **6** | Chromosome{Condensation,Segregation}, HostInteraction, ProteinActivation, TerminalOrganelleAssembly, TranscriptionalRegulation |
-| **Total in-scope L2.2** | **22** | |
-| **Catalog total** | **28** | + allocator = 29 participants at L2.5 |
+| **PASSED** | **10** | Translation+RNAProcessing (SS); Cond+Seg, HostInteraction+TerminalOrganelle (DD); 7 DS = Cond+{DNARepair,Replication,Translation} + Seg+{DNARepair,ProteinFolding,Translation,tRNAAminoacylation} |
+| FAILED CAUSE_5 (intrinsic) | 16 | Pattern: no-hints channel parity gap. Metabolism + ReplicationInitiation diagnosed; ~14 others suspected same class |
+| FAILED CAUSE_4 (upstream pollution) | 4 | Real upstream effects, not classifier artifacts |
+| FAILED CAUSE_UNCLASSIFIED (subclassed) | 8 | Subclass A (6, H2O multi-tick drift); Subclass B (2, MG_020_MONOMER cross-observable) |
+| SKIPPED (no-op trace) | 8 | Includes 2 Cytokinesis pairs (post-fix); needs event-window traces |
+| Total tested | 45 | (43 DS + 2 DD; SS pairs not bulk-scaffolded yet) |
 
-**Day-31 outcomes (2026-06-17):**
+**Day-32 outcomes (2026-06-18):**
 
-- **DNADamage chromosome port** landed via codex (commits `a569084`, `92a48e3`). 12 min.
-- **RibosomeAssembly RNAs wiring** — root cause: `'RNAs'` missing from `_OBS_STORE_PATHS`. 1-line fix in `l2_replay_common.py` (commit `447d7e7`).
-- **DNADamage radiation gating** — rubber-ducked with Sonnet 4.6, found silent UV bug: `uv_like` was firing at 0.6/tick unconditionally. Would have caused runaway intrastrandCrossLinks at L2.5+. 10-line fix gating by `UVB_radiation`/`gamma_radiation` substrate (commit `5ef7484`).
-- **Transcription enzyme fix** — sigma factor MG_249_MONOMER accounting: OC mirrored -boundEnzymes instead of sourcing from trace hint. Codex fix in 6 min (commit `1aaac29`).
-- **ProteinModification NaN limit fix** — 0/0 in `_limit_over_requirements` zeroed feasible reaction, missing 1 ATP→ADP event. Codex fix in 30 min (commit `f5c6226`).
-- **Day-31 blog post** shipped (`da3f421`): "Twenty-Two Green Lights and the UV Bug That Would Have Eaten the Cell."
-- **Workspace cleanup**: 37 stale worktrees removed, 46 merged branches pruned.
+Architecture (early afternoon, ~4 hr bundle):
+- Rename `species_pools` → `state_groups` in TOMLs (commit `7de2141`)
+- Extract biology constants to `m_gen_constants.py` (commit `3f2204a`)
+- Authored 4 spec docs: INTERVENTION_API, DATA_EMIT_SCHEMA, REFERENCE_DATA_MANIFEST, POST_L5_REFACTOR_PLAN (commit `da8e1bf`)
+- Hard Rule 17 (naming discipline) added to SESSION_CONTEXT.md (commit `da8e1bf`)
+- POST_L5_ROADMAP.md consolidated (12 use cases, 10 rejected, 8 deliverables) (commit `0fbd11a`)
+- README rewritten (drop stale JAX/GPU, accurate status) (commit `0fbd11a`)
 
-**Skipped tests (2, documented, not failures):**
-- RibosomeAssembly legacy (seed-0 no-op trace; superseded by event-window test that PASSES)
-- RNAModification (no-op trace in 100-tick window; needs later-cycle extraction — low priority)
+L2.5 infrastructure (afternoon → evening):
+- TOML extractor v2.1 (fixture-first, 28 schemas, state_groups + observables + chromosome) (commits `a4c83b7` → `7a3a1d8`)
+- Translation evolveState faithful port (commits `d436d61` → `02e354a`)
+- Pair matrix derived from TOMLs (commits `505438e` → `6b43b47`)
+- Pair matrix v2: per-side oracle (deterministic→bit-identity, stochastic→distributional), 256 honest-required (commits `12b8a71` → `6522474`)
+- Catalog stale `blocked_on` cleared for DNADamage/RibosomeAssembly/RNAModification (commit `7d801be`)
+- 20 missing `_PROCESS_SPECS` entries wired (commit `5427b4f`)
+- DS pair test scaffolding (commits `0c99161` → `06001a8`)
 
-**Next: L2.5 shared-pool composition**
+Diagnoses (evening, all via 3-slot composition):
+- CAUSE_5 Metabolism: verdict (a) real bug at `karr_metabolism.py:355-357` no-hints substrate writeback gap (commit `af52b93`)
+- 3 parallel 3-slot diagnostics: CAUSE_5 non-Metab → (a) same class; CAUSE_4 remnant → (c) classifier issue; Cytokinesis precondition → (a) GTP wid bug (commit `e9bee7c`)
+- UNCLASSIFIED probe: 2 subclasses identified (H2O multi-tick drift + MG_020 cross-observable) (commit `065670c`)
 
-All 29 participants (28 Karr processes + allocator) run together with a shared substrate pool. The L2.5 plan exists at `docs/phase_f/L2_5_PLAN.md`. Key concerns:
-- Allocator fairness under contention
-- Cross-process substrate depletion cascades
-- The UV radiation gating fix we landed today prevents the most obvious L2.5 failure mode
+Fixes landed:
+- Harness CAUSE_4 fix: H5 (counterfactual/composition hint policy) + H6 (shared-WID overlay preservation) (commits `f55c34a`, `c37fdc7`)
+- Harness CAUSE_4 classifier fix: tightened emission predicate to require upstream_mutators (commit `a4b8d55`)
+- Cytokinesis GTP wid fix: removed from `_substrate_wids` observable list (commit `488e8c7`)
 
-**Current L2.5 pre-work (Day 32, 2026-06-18):**
-- `trace_hint` gating landed (`disable_trace_hints=True` in composition loop) — commit `3a1fe87`
-- First pair canary (Translation+RNAProcessing): PASS with hints, FAIL without (enzyme divergence ±13 on MG_196_MONOMER)
-- Integrity audit shipped (`docs/phase_f/INTEGRITY_AUDIT_PRE_L25.md`) — 20 HIGH findings (14 processes with oracle branches, 5 test infra injection surfaces)
-- TOML schema spec v2 drafted + 3 critique rounds (Sonnet, GPT-5.4, Gemini 3.5). Key decisions: fixture-first extraction, state_groups pattern (renamed from species_pools for domain-agnosticism), remove store_path, keep TOMLs autogenerated.
-- Extractor rewrite next: load `*_flat.mat` fixtures via `loadmat` to fill all 28 TOMLs completely.
+**Tomorrow's clean attack plan (priority order):**
+1. Metabolism no-hints substrate writeback fix — unlocks ~9 CAUSE_5 pairs (biggest single win)
+2. ReplicationInitiation no-hints enzymes/boundEnzymes writeback — unlocks 2 CAUSE_5 pairs
+3. Audit remaining ~7 CAUSE_5 processes for the same no-hints channel parity pattern (likely batch fix)
+4. UNCLASSIFIED Subclass A — multi-tick state fingerprint diagnostic (harness enrichment)
+5. UNCLASSIFIED Subclass B — cross-observable allocator audit
+6. Scaffold the 211 SS pair tests (currently only 1 wired)
+7. Cytokinesis event-window trace extraction (unlocks the 2 currently-skipped Cytokinesis pairs)
 
 **Activation env, MATLAB, WSL venv:** unchanged. Workspace: single worktree (main).
 
