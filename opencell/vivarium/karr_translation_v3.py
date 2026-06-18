@@ -40,6 +40,11 @@ _RIBOSOME_30S_WID = "RIBOSOME_30S"
 _RIBOSOME_30S_IF3_WID = "RIBOSOME_30S_IF3"
 _RIBOSOME_50S_WID = "RIBOSOME_50S"
 _RIBOSOME_70S_WID = "RIBOSOME_70S"
+_TERMINATION_FACTOR_WID = "MG_258_MONOMER"
+_RECYCLING_FACTOR_WID = "MG_435_MONOMER"
+_ELONGATION_G_FACTOR_WID = "MG_089_DIMER"
+_SUBSTRATE_GTP_WID = "GTP"
+_SUBSTRATE_WATER_WID = "H2O"
 _ELONGATION_FACTOR_WIDS = (
     "MG_089_DIMER",
     "MG_026_MONOMER",
@@ -225,6 +230,45 @@ class KarrTranslationV3Process(Process):
             raise RuntimeError(f"non-integral enzyme count {value}")
         return max(0, rounded)
 
+    def _optional_integral_substrate_count(self, states: dict[str, Any], wid: str) -> int | None:
+        substrates = states.get("substrates", {})
+        if not isinstance(substrates, dict):
+            return None
+        if wid not in substrates:
+            return None
+        return self._coerce_integral_count(substrates[wid])
+
+    def _estimate_terminating_ribosome_count_from_replay(self, timestep: float) -> int:
+        if not self._ribosome_replay_loaded:
+            return 0
+        if (
+            self._ribosome_state_active is None
+            or self._ribosome_bound_mrnas is None
+            or self._ribosome_mrna_positions is None
+            or self._polypeptide_lengths_aa is None
+        ):
+            return 0
+        if timestep <= 0.0:
+            return 0
+
+        step_aa = int(np.rint(float(self.mechanism_inputs.elongation_rate_aa_per_s) * float(timestep)))
+        if step_aa <= 0:
+            return 0
+
+        n_terminating = 0
+        active_indices = np.flatnonzero(self._ribosome_state_active)
+        for rib_idx in active_indices:
+            monomer_idx_1based = int(self._ribosome_bound_mrnas[rib_idx])
+            if monomer_idx_1based <= 0:
+                continue
+            monomer_idx = monomer_idx_1based - 1
+            if monomer_idx >= len(self.protein_ids):
+                continue
+            next_pos = int(self._ribosome_mrna_positions[rib_idx]) + step_aa
+            if next_pos >= int(self._polypeptide_lengths_aa[monomer_idx]):
+                n_terminating += 1
+        return int(n_terminating)
+
     def _compute_enzyme_transitions_from_biology(
         self,
         states: dict[str, Any],
@@ -259,6 +303,80 @@ class KarrTranslationV3Process(Process):
                 enzymes_next.get(_RIBOSOME_30S_IF3_WID, 0) + n_new_30s_if3
             )
             enzymes_next[_INITIATION_FACTOR_3_WID] -= n_new_30s_if3
+
+        energy_pool = self._optional_integral_substrate_count(states, _SUBSTRATE_GTP_WID)
+        water_pool = self._optional_integral_substrate_count(states, _SUBSTRATE_WATER_WID)
+        if energy_pool is None or water_pool is None:
+            available_energy_water: int | None = None
+        else:
+            available_energy_water = min(energy_pool, water_pool)
+
+        n_active_ribosomes = self._coerce_integral_count(self._resolve_active_ribosome_count(states))
+        n_bound_70s = int(bound_next.get(_RIBOSOME_70S_WID, 0))
+        n_elongating_ribosomes = min(n_active_ribosomes, n_bound_70s)
+        if available_energy_water is not None:
+            n_elongating_ribosomes = min(n_elongating_ribosomes, available_energy_water // 2)
+
+        if available_energy_water is None:
+            initiation_energy_budget = 10**12
+        else:
+            initiation_energy_budget = max(0, available_energy_water - 2 * n_elongating_ribosomes)
+        n_available_mrnas = self._coerce_integral_count(
+            float(np.sum(np.clip(self.mechanism_inputs.mrna_counts, 0.0, None)))
+        )
+
+        # Karr Translation.evolveState (line 740-754): 30S_IF3 + 50S -> bound 70S.
+        n_initiating_ribosomes = min(
+            enzymes_next.get(_RIBOSOME_30S_IF3_WID, 0),
+            enzymes_next.get(_RIBOSOME_50S_WID, 0),
+            enzymes_next.get(_INITIATION_FACTOR_1_WID, 0),
+            enzymes_next.get(_INITIATION_FACTOR_2_WID, 0),
+            initiation_energy_budget,
+            n_available_mrnas,
+        )
+        if n_initiating_ribosomes > 0:
+            enzymes_next[_RIBOSOME_30S_IF3_WID] -= n_initiating_ribosomes
+            enzymes_next[_RIBOSOME_50S_WID] -= n_initiating_ribosomes
+            bound_next[_RIBOSOME_70S_WID] = (
+                bound_next.get(_RIBOSOME_70S_WID, 0) + n_initiating_ribosomes
+            )
+            enzymes_next[_INITIATION_FACTOR_3_WID] = (
+                enzymes_next.get(_INITIATION_FACTOR_3_WID, 0) + n_initiating_ribosomes
+            )
+            if available_energy_water is not None:
+                available_energy_water = max(0, available_energy_water - n_initiating_ribosomes)
+
+        has_termination_factors = (
+            enzymes_next.get(_TERMINATION_FACTOR_WID, 0) > 0
+            and enzymes_next.get(_RECYCLING_FACTOR_WID, 0) > 0
+            and enzymes_next.get(_ELONGATION_G_FACTOR_WID, 0) > 0
+            and enzymes_next.get(_INITIATION_FACTOR_3_WID, 0) > 0
+        )
+        if has_termination_factors:
+            n_terminating_candidates = self._estimate_terminating_ribosome_count_from_replay(timestep)
+            if available_energy_water is None:
+                termination_energy_budget = 10**12
+            else:
+                termination_energy_budget = available_energy_water // 2
+            n_terminating_ribosomes = min(
+                n_terminating_candidates,
+                bound_next.get(_RIBOSOME_70S_WID, 0),
+                termination_energy_budget,
+            )
+        else:
+            n_terminating_ribosomes = 0
+
+        # Karr Translation.evolveState (line 798-860): bound 70S -> 30S + 50S.
+        if n_terminating_ribosomes > 0:
+            bound_next[_RIBOSOME_70S_WID] = (
+                bound_next.get(_RIBOSOME_70S_WID, 0) - n_terminating_ribosomes
+            )
+            enzymes_next[_RIBOSOME_30S_WID] = (
+                enzymes_next.get(_RIBOSOME_30S_WID, 0) + n_terminating_ribosomes
+            )
+            enzymes_next[_RIBOSOME_50S_WID] = (
+                enzymes_next.get(_RIBOSOME_50S_WID, 0) + n_terminating_ribosomes
+            )
 
         enzymes_delta: dict[str, float] = {}
         bound_delta: dict[str, float] = {}
