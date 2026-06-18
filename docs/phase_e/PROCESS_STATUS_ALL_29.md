@@ -37,37 +37,37 @@ Global links: [P2 master synthesis](E:/opencell-worktrees/p2-karr-divergence-aud
 
 ## Table 1 - Per-process L-axis status
 
-| # | Process | L1 | L2 | L3 | L4 | L5 | Wave2-base 32400t |
-|---:|---|---|---|---|---|---|---|
-| 1 | `karr_replication` | 🟡 GATED | 🟢 STRICT | — | — | — | DEAD |
-| 2 | `karr_replication_initiation` | 🟡 GATED | 🟢 STRICT | — | — | — | DEAD |
-| 3 | `karr_dna_supercoiling` | 🟡 GATED ⚠️ | 🟢 STRICT (D19) | — | — | — | DEAD |
-| 4 | `karr_chromosome_condensation` | 🟢 FIRING | 🟢 STRICT | — | — | — | FIRING |
-| 5 | `karr_chromosome_segregation` | 🟡 GATED ⚠️ | 🟢 STRICT | — | — | — | DEAD |
-| 6 | `karr_dna_damage` | 🟡 GATED | 🟢 STRICT | — | — | — | DEAD |
-| 7 | `karr_dna_repair` | 🟢 FIRING ⚠️ | 🟢 STRICT | — | — | — | FIRING |
-| 8 | `karr_ftsz_polymerization` | 🟢 FIRING | 🟢 STRICT | — | — | — | FIRING |
-| 9 | `karr_cytokinesis` | 🟡 GATED | 🟢 STRICT | — | — | — | DEAD |
-| 10 | `karr_terminal_organelle_assembly` | 🟡 GATED | 🟢 STRICT | — | — | — | DEAD |
-| 11 | `karr_cell_cycle_coordinator` | ⚪ SHIM | ⚪ SHIM (N/A) | — | — | — | DEAD |
-| 12 | `karr_host_interaction` | 🟡 GATED | 🟢 STRICT | — | — | — | DEAD |
-| 13 | `karr_rna_decay` | 🟢 FIRING | 🟢 STRICT (D19) | — | — | — | FIRING |
-| 14 | `karr_rna_processing` | 🟡 GATED ⚠️ | 🟢 STRICT | — | — | — | DEAD |
-| 15 | `karr_rna_modification` | 🟢 FIRING ⚠️ | ⚫ N/A (no-op trace) | — | — | — | FIRING |
-| 16 | `karr_trna_aminoacylation` | 🟡 GATED ⚠️ | 🟢 STRICT | — | — | — | DEAD |
-| 17 | `karr_ribosome_assembly` | 🟡 GATED | ⚫ N/A (no-op trace) | — | — | — | DEAD |
-| 18 | `karr_protein_processing_i` | 🟡 GATED ⚠️ | 🟢 STRICT | — | — | — | DEAD |
-| 19 | `karr_protein_processing_ii` | 🟡 GATED | 🟢 STRICT | — | — | — | DEAD |
-| 20 | `karr_protein_folding` | 🟢 FIRING ⚠️ | 🟢 STRICT | — | — | — | FIRING |
-| 21 | `karr_protein_modification` | 🟡 GATED ⚠️ | 🟢 CALIB `(0.05,7.0)` | — | — | — | DEAD |
-| 22 | `karr_protein_translocation` | 🟢 FIRING ⚠️ | 🟢 STRICT | — | — | — | FIRING |
-| 23 | `karr_protein_activation` | 🟡 GATED | 🟢 STRICT | — | — | — | DEAD |
-| 24 | `karr_protein_decay_light` | 🟢 FIRING | 🟢 STRICT (D19) | — | — | — | FIRING |
-| 25 | `karr_macromolecular_complexation` | 🟡 GATED | 🟢 STRICT | — | — | — | DEAD |
-| 26 | `karr_metabolism` | 🟢 FIRING | 🟢 STRICT (D19) | — | — | — | FIRING |
-| 27 | `karr_transcription` | 🟢 FIRING | 🟢 CALIB `(0.60,5.0)` (D19) | — | — | — | FIRING |
-| 28 | `karr_translation` | 🟢 FIRING | 🟢 STRICT | — | — | — | FIRING |
-| 29 | `karr_transcriptional_regulation` | 🟡 GATED (L1-green) | 🟢 STRICT | — | — | — | Landed on `trackA/wave2-base` @ `82348a8` (2026-05-28) — Karr process #29 complete. Critique r3 DIRTY-4 → CLEAN after strict-zero suite added (`tests/unit/test_karr_transcriptional_regulation_strict_zero.py`, 5/5 PASS; 15/15 vivarium + 6/6 integration also PASS). |
+| # | Process | L1 | L2.1 | L2.2 | L3 | L4 | L5 | Wave2-base 32400t |
+|---:|---|---|---|---|---|---|---|---|
+| 1 | `karr_replication` | 🟡 GATED | 🟢 STRICT | 🟢 PASS (chromosome port) | — | — | — | DEAD |
+| 2 | `karr_replication_initiation` | 🟡 GATED | 🟢 STRICT | 🟢 PASS (chromosome port) | — | — | — | DEAD |
+| 3 | `karr_dna_supercoiling` | 🟡 GATED ⚠️ | 🟢 STRICT (D19) | 🟢 PASS (chromosome port) | — | — | — | DEAD |
+| 4 | `karr_chromosome_condensation` | 🟢 FIRING | 🟢 STRICT | — (DETERMINISTIC) | — | — | — | FIRING |
+| 5 | `karr_chromosome_segregation` | 🟡 GATED ⚠️ | 🟢 STRICT | — (DETERMINISTIC) | — | — | — | DEAD |
+| 6 | `karr_dna_damage` | 🟡 GATED | 🟢 STRICT | 🟢 PASS (radiation-gated quiescent) | — | — | — | DEAD |
+| 7 | `karr_dna_repair` | 🟢 FIRING ⚠️ | 🟢 STRICT | 🟢 PASS (chromosome port) | — | — | — | FIRING |
+| 8 | `karr_ftsz_polymerization` | 🟢 FIRING | 🟢 STRICT | 🟢 PASS (ODE faithful port) | — | — | — | FIRING |
+| 9 | `karr_cytokinesis` | 🟡 GATED | 🟢 STRICT | 🟢 PASS (5-phase FtsZ ring port) | — | — | — | DEAD |
+| 10 | `karr_terminal_organelle_assembly` | 🟡 GATED | 🟢 STRICT | — (DETERMINISTIC) | — | — | — | DEAD |
+| 11 | `karr_cell_cycle_coordinator` | ⚪ SHIM | ⚪ SHIM (N/A) | — (SHIM) | — | — | — | DEAD |
+| 12 | `karr_host_interaction` | 🟡 GATED | 🟢 STRICT | — (DETERMINISTIC) | — | — | — | DEAD |
+| 13 | `karr_rna_decay` | 🟢 FIRING | 🟢 STRICT (D19) | 🟢 PASS | — | — | — | FIRING |
+| 14 | `karr_rna_processing` | 🟡 GATED ⚠️ | 🟢 STRICT | 🟢 PASS | — | — | — | DEAD |
+| 15 | `karr_rna_modification` | 🟢 FIRING ⚠️ | ⚫ N/A (no-op trace) | 🟢 PASS (closed-form convergence) | — | — | — | FIRING |
+| 16 | `karr_trna_aminoacylation` | 🟡 GATED ⚠️ | 🟢 STRICT | 🟢 PASS (SUT parity confirmed) | — | — | — | DEAD |
+| 17 | `karr_ribosome_assembly` | 🟡 GATED | ⚫ N/A (no-op trace) | 🟢 PASS (event-window, RNAs fix) | — | — | — | DEAD |
+| 18 | `karr_protein_processing_i` | 🟡 GATED ⚠️ | 🟢 STRICT | 🟢 PASS | — | — | — | DEAD |
+| 19 | `karr_protein_processing_ii` | 🟡 GATED | 🟢 STRICT | 🟢 PASS | — | — | — | DEAD |
+| 20 | `karr_protein_folding` | 🟢 FIRING ⚠️ | 🟢 STRICT | 🟢 PASS (substrate-stress confirmed) | — | — | — | FIRING |
+| 21 | `karr_protein_modification` | 🟡 GATED ⚠️ | 🟢 CALIB `(0.05,7.0)` | 🟢 PASS (NaN limit fix) | — | — | — | DEAD |
+| 22 | `karr_protein_translocation` | 🟢 FIRING ⚠️ | 🟢 STRICT | 🟢 PASS (faithful re-port) | — | — | — | FIRING |
+| 23 | `karr_protein_activation` | 🟡 GATED | 🟢 STRICT | — (DETERMINISTIC) | — | — | — | DEAD |
+| 24 | `karr_protein_decay_light` | 🟢 FIRING | 🟢 STRICT (D19) | 🟢 PASS | — | — | — | FIRING |
+| 25 | `karr_macromolecular_complexation` | 🟡 GATED | 🟢 STRICT | 🟢 PASS (Poisson fix) | — | — | — | DEAD |
+| 26 | `karr_metabolism` | 🟢 FIRING | 🟢 STRICT (D19) | 🟢 PASS | — | — | — | FIRING |
+| 27 | `karr_transcription` | 🟢 FIRING | 🟢 CALIB `(0.60,5.0)` (D19) | 🟢 PASS (enzyme hint fix) | — | — | — | FIRING |
+| 28 | `karr_translation` | 🟢 FIRING | 🟢 STRICT | 🟢 PASS | — | — | — | FIRING |
+| 29 | `karr_transcriptional_regulation` | 🟡 GATED (L1-green) | 🟢 STRICT | — (DETERMINISTIC) | — | — | — | Landed on `trackA/wave2-base` @ `82348a8` (2026-05-28) — Karr process #29 complete. Critique r3 DIRTY-4 → CLEAN after strict-zero suite added (`tests/unit/test_karr_transcriptional_regulation_strict_zero.py`, 5/5 PASS; 15/15 vivarium + 6/6 integration also PASS). |
 
 L1-green processes in v6 (FIRING + GATED, **28 of 28 Karr-in-v6**): karr_replication, karr_replication_initiation, karr_dna_supercoiling, karr_chromosome_condensation, karr_chromosome_segregation, karr_dna_damage, karr_dna_repair, karr_ftsz_polymerization, karr_cytokinesis, karr_terminal_organelle_assembly, karr_host_interaction, karr_rna_decay, karr_rna_processing, karr_rna_modification, karr_trna_aminoacylation, karr_ribosome_assembly, karr_protein_processing_i, karr_protein_processing_ii, karr_protein_folding, karr_protein_modification, karr_protein_translocation, karr_protein_activation, karr_protein_decay_light, karr_macromolecular_complexation, karr_metabolism, karr_transcription, karr_translation, karr_transcriptional_regulation.
 
