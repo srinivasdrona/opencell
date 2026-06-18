@@ -43,14 +43,34 @@ from l2_replay_common import (
     refresh_allocator_views,
     resolve_trace_path,
 )
+from opencell.vivarium.karr_cytokinesis import KarrCytokinesisProcess
 from opencell.vivarium.karr_chromosome_condensation import KarrChromosomeCondensationProcess
 from opencell.vivarium.karr_chromosome_segregation import KarrChromosomeSegregationProcess
+from opencell.vivarium.karr_dna_damage import KarrDNADamageProcess
+from opencell.vivarium.karr_dna_repair import KarrDNARepairProcess
+from opencell.vivarium.karr_dna_supercoiling import KarrDNASupercoilingProcess
+from opencell.vivarium.karr_ftsz_polymerization import KarrFtsZPolymerizationProcess
 from opencell.vivarium.karr_host_interaction import KarrHostInteractionProcess
+from opencell.vivarium.karr_macromolecular_complexation import MacromolecularComplexationProcess
+from opencell.vivarium.karr_metabolism import KarrMetabolismProcess
+from opencell.vivarium.karr_protein_activation import KarrProteinActivationProcess
+from opencell.vivarium.karr_protein_decay_light import ProteinDecayLightProcess
+from opencell.vivarium.karr_protein_folding import KarrProteinFoldingProcess
+from opencell.vivarium.karr_protein_modification import KarrProteinModificationProcess
 from opencell.vivarium.karr_protein_processing_i import KarrProteinProcessingIProcess
 from opencell.vivarium.karr_protein_processing_ii import KarrProteinProcessingIIProcess
+from opencell.vivarium.karr_protein_translocation import KarrProteinTranslocationProcess
+from opencell.vivarium.karr_replication import KarrReplicationProcess
+from opencell.vivarium.karr_replication_initiation import KarrReplicationInitiationProcess
+from opencell.vivarium.karr_ribosome_assembly import KarrRibosomeAssemblyProcess
+from opencell.vivarium.karr_rna_decay import RnaDecayLightProcess
+from opencell.vivarium.karr_rna_modification import KarrRNAModificationProcess
 from opencell.vivarium.karr_rna_processing import KarrRNAProcessingProcess
 from opencell.vivarium.karr_terminal_organelle_assembly import KarrTerminalOrganelleAssemblyProcess
+from opencell.vivarium.karr_transcription import KarrTranscriptionProcess
+from opencell.vivarium.karr_transcriptional_regulation import KarrTranscriptionalRegulationProcess
 from opencell.vivarium.karr_translation_v3 import KarrTranslationV3Process
+from opencell.vivarium.karr_trna_aminoacylation import KarrTRNAAminoacylationProcess
 
 
 _COMPOSITION_ORDER_V2 = (
@@ -62,6 +82,26 @@ _COMPOSITION_ORDER_V2 = (
     "ChromosomeSegregation",
     "HostInteraction",
     "TerminalOrganelleAssembly",
+    "Transcription",
+    "RNADecay",
+    "RNAModification",
+    "ProteinDecay",
+    "ProteinModification",
+    "Metabolism",
+    "tRNAAminoacylation",
+    "MacromolecularComplexation",
+    "ProteinFolding",
+    "ProteinTranslocation",
+    "DNASupercoiling",
+    "Replication",
+    "ReplicationInitiation",
+    "DNARepair",
+    "Cytokinesis",
+    "FtsZPolymerization",
+    "RibosomeAssembly",
+    "DNADamage",
+    "ProteinActivation",
+    "TranscriptionalRegulation",
 )
 
 ORACLE_DISTRIBUTIONAL = "distributional"
@@ -147,6 +187,250 @@ _PROCESS_SPECS: dict[str, _ProcessSpec] = {
             "unprocessedRNAs": "unprocessed_rna_wids",
         },
     ),
+    "Transcription": _ProcessSpec(
+        process_cls=KarrTranscriptionProcess,
+        observables=("substrates", "enzymes", "boundEnzymes"),
+        pass_through=frozenset({"boundEnzymes", "enzymes"}),
+        observable_to_wids_attr={
+            "substrates": "substrate_wids",
+            "enzymes": "enzyme_wids",
+            "boundEnzymes": "enzyme_wids",
+        },
+        index_projection_literal={"substrates": np.arange(4)},
+        trace_after_hint_observables=("enzymes", "boundEnzymes", "substrates"),
+    ),
+    "RNADecay": _ProcessSpec(
+        process_cls=RnaDecayLightProcess,
+        observables=("substrates", "enzymes", "boundEnzymes"),
+        pass_through=frozenset({"boundEnzymes", "enzymes"}),
+        observable_to_wids_attr={
+            "substrates": "substrate_wids",
+            "enzymes": "enzyme_wids",
+            "boundEnzymes": "enzyme_wids",
+        },
+        trace_after_hint_observables=("substrates",),
+    ),
+    "RNAModification": _ProcessSpec(
+        process_cls=KarrRNAModificationProcess,
+        observables=("substrates", "enzymes", "boundEnzymes", "modifiedRNAs", "unmodifiedRNAs"),
+        pass_through=frozenset({"boundEnzymes", "enzymes"}),
+        observable_to_wids_attr={
+            "substrates": "substrate_wids",
+            "enzymes": "enzyme_wids",
+            "boundEnzymes": "enzyme_wids",
+            "modifiedRNAs": "modified_rna_wids",
+            "unmodifiedRNAs": "unmodified_rna_wids",
+        },
+        index_projection_literal={
+            "modifiedRNAs": np.array(
+                [
+                    6, 7, 37, 88, 89, 125, 136, 137, 138, 139, 140, 141, 142, 143, 148,
+                    168, 170, 171, 175, 190, 191, 192, 193, 194, 199, 225, 226, 228, 229,
+                    230, 231, 232, 233, 234, 259, 261, 263, 287,
+                ]
+            ),
+            "unmodifiedRNAs": np.array(
+                [
+                    6, 7, 37, 88, 89, 125, 136, 137, 138, 139, 140, 141, 142, 143, 148,
+                    168, 170, 171, 175, 190, 191, 192, 193, 194, 199, 225, 226, 228, 229,
+                    230, 231, 232, 233, 234, 259, 261, 263, 287,
+                ]
+            ),
+        },
+    ),
+    "ProteinDecay": _ProcessSpec(
+        process_cls=ProteinDecayLightProcess,
+        observables=("substrates", "enzymes", "boundEnzymes", "monomers", "complexs"),
+        pass_through=frozenset({"boundEnzymes", "enzymes"}),
+        observable_to_wids_attr={
+            "substrates": "substrate_wids",
+            "enzymes": "enzyme_wids",
+            "boundEnzymes": "enzyme_wids",
+            "monomers": "protein_wids",
+            "complexs": "complex_wids",
+        },
+        index_projection_literal={
+            "monomers": np.arange(482),
+            "complexs": np.arange(147),
+        },
+        trace_after_hint_observables=("substrates", "monomers", "complexs"),
+    ),
+    "ProteinModification": _ProcessSpec(
+        process_cls=KarrProteinModificationProcess,
+        observables=("substrates", "enzymes", "boundEnzymes", "modifiedMonomers", "unmodifiedMonomers"),
+        pass_through=frozenset({"boundEnzymes", "enzymes"}),
+        observable_to_wids_attr={
+            "substrates": "substrate_wids",
+            "enzymes": "enzyme_wids",
+            "boundEnzymes": "enzyme_wids",
+            "modifiedMonomers": "modified_monomer_wids",
+            "unmodifiedMonomers": "unmodified_monomer_wids",
+        },
+        store_path_override={
+            "modifiedMonomers": ("protein", "modified_counts"),
+            "unmodifiedMonomers": ("protein", "unmodified_counts"),
+        },
+        index_projection_literal={
+            "modifiedMonomers": np.array(
+                [
+                    69, 168, 221, 223, 279, 280, 281, 289, 313, 325,
+                    337, 353, 390, 406, 415, 421, 438, 448, 461, 470,
+                ]
+            ),
+            "unmodifiedMonomers": np.array(
+                [
+                    69, 168, 221, 223, 279, 280, 281, 289, 313, 325,
+                    337, 353, 390, 406, 415, 421, 438, 448, 461, 470,
+                ]
+            ),
+        },
+        trace_after_hint_observables=("unmodifiedMonomers",),
+    ),
+    "Metabolism": _ProcessSpec(
+        process_cls=KarrMetabolismProcess,
+        observables=("substrates", "enzymes", "boundEnzymes"),
+        pass_through=frozenset({"boundEnzymes", "enzymes"}),
+        observable_to_wids_attr={
+            "substrates": "substrate_wids",
+            "enzymes": "enzyme_wids",
+            "boundEnzymes": "enzyme_wids",
+        },
+        index_projection_literal={"substrates": np.arange(585)},
+        trace_after_hint_observables=("substrates",),
+    ),
+    "tRNAAminoacylation": _ProcessSpec(
+        process_cls=KarrTRNAAminoacylationProcess,
+        observables=("substrates", "enzymes", "boundEnzymes", "freeRNAs", "aminoacylatedRNAs"),
+        pass_through=frozenset({"boundEnzymes", "enzymes"}),
+        observable_to_wids_attr={
+            "substrates": "substrate_wids",
+            "enzymes": "enzyme_wids",
+            "boundEnzymes": "enzyme_wids",
+            "freeRNAs": "free_rna_wids",
+            "aminoacylatedRNAs": "aminoacylated_rna_wids",
+        },
+    ),
+    "MacromolecularComplexation": _ProcessSpec(
+        process_cls=MacromolecularComplexationProcess,
+        observables=("substrates", "enzymes", "boundEnzymes", "complexs"),
+        pass_through=frozenset({"boundEnzymes", "enzymes"}),
+        observable_to_wids_attr={
+            "substrates": "substrate_wids",
+            "enzymes": "enzyme_wids",
+            "boundEnzymes": "enzyme_wids",
+            "complexs": "complex_wids",
+        },
+    ),
+    "ProteinFolding": _ProcessSpec(
+        process_cls=KarrProteinFoldingProcess,
+        observables=("substrates", "enzymes", "boundEnzymes", "foldedMonomers", "unfoldedMonomers"),
+        pass_through=frozenset({"boundEnzymes", "enzymes"}),
+        observable_to_wids_attr={
+            "substrates": "substrate_wids",
+            "enzymes": "enzyme_wids",
+            "boundEnzymes": "enzyme_wids",
+            "foldedMonomers": "folded_monomer_wids",
+            "unfoldedMonomers": "unfolded_monomer_wids",
+        },
+    ),
+    "ProteinTranslocation": _ProcessSpec(
+        process_cls=KarrProteinTranslocationProcess,
+        observables=("substrates", "enzymes", "boundEnzymes", "monomers"),
+        pass_through=frozenset({"boundEnzymes", "enzymes"}),
+        observable_to_wids_attr={
+            "substrates": "substrate_wids",
+            "enzymes": "enzyme_wids",
+            "boundEnzymes": "enzyme_wids",
+            "monomers": "monomer_wids",
+        },
+        index_projection_literal={"monomers": np.arange(482)},
+    ),
+    "DNASupercoiling": _ProcessSpec(
+        process_cls=KarrDNASupercoilingProcess,
+        observables=("substrates", "enzymes", "boundEnzymes"),
+        pass_through=frozenset({"boundEnzymes", "enzymes"}),
+        observable_to_wids_attr={
+            "substrates": "substrate_wids",
+            "enzymes": "enzyme_wids",
+            "boundEnzymes": "enzyme_wids",
+        },
+        trace_after_hint_observables=("enzymes", "boundEnzymes", "substrates"),
+    ),
+    "Replication": _ProcessSpec(
+        process_cls=KarrReplicationProcess,
+        observables=("substrates", "enzymes", "boundEnzymes"),
+        pass_through=frozenset({"boundEnzymes", "enzymes"}),
+        observable_to_wids_attr={
+            "substrates": "substrate_wids",
+            "enzymes": "enzyme_wids",
+            "boundEnzymes": "enzyme_wids",
+        },
+        trace_after_hint_observables=("enzymes", "boundEnzymes"),
+    ),
+    "ReplicationInitiation": _ProcessSpec(
+        process_cls=KarrReplicationInitiationProcess,
+        observables=("substrates", "enzymes", "boundEnzymes"),
+        pass_through=frozenset(),
+        observable_to_wids_attr={
+            "substrates": "substrate_wids",
+            "enzymes": "enzyme_wids",
+            "boundEnzymes": "enzyme_wids",
+        },
+        trace_after_hint_observables=("enzymes", "boundEnzymes"),
+    ),
+    "DNARepair": _ProcessSpec(
+        process_cls=KarrDNARepairProcess,
+        observables=("substrates", "enzymes", "boundEnzymes"),
+        pass_through=frozenset({"boundEnzymes", "enzymes"}),
+        observable_to_wids_attr={
+            "substrates": "substrate_wids",
+            "enzymes": "enzyme_wids",
+            "boundEnzymes": "enzyme_wids",
+        },
+    ),
+    "Cytokinesis": _ProcessSpec(
+        process_cls=KarrCytokinesisProcess,
+        observables=("substrates", "enzymes", "boundEnzymes"),
+        pass_through=frozenset({"boundEnzymes", "enzymes"}),
+        observable_to_wids_attr={
+            "substrates": "substrate_wids",
+            "enzymes": "enzyme_wids",
+            "boundEnzymes": "enzyme_wids",
+        },
+    ),
+    "FtsZPolymerization": _ProcessSpec(
+        process_cls=KarrFtsZPolymerizationProcess,
+        observables=("substrates", "enzymes", "boundEnzymes"),
+        pass_through=frozenset({"boundEnzymes"}),
+        observable_to_wids_attr={
+            "substrates": "substrate_wids",
+            "enzymes": "enzyme_wids",
+            "boundEnzymes": "enzyme_wids",
+        },
+        trace_after_hint_observables=("enzymes", "boundEnzymes"),
+    ),
+    "RibosomeAssembly": _ProcessSpec(
+        process_cls=KarrRibosomeAssemblyProcess,
+        observables=("substrates", "enzymes", "boundEnzymes", "monomers", "complexs"),
+        pass_through=frozenset({"boundEnzymes", "enzymes"}),
+        observable_to_wids_attr={
+            "substrates": "substrate_wids",
+            "enzymes": "gtpase_wids",
+            "boundEnzymes": "gtpase_wids",
+            "monomers": "monomer_subunit_wids",
+            "complexs": "complex_wids",
+        },
+    ),
+    "DNADamage": _ProcessSpec(
+        process_cls=KarrDNADamageProcess,
+        observables=("substrates", "enzymes", "boundEnzymes"),
+        pass_through=frozenset({"boundEnzymes", "enzymes"}),
+        observable_to_wids_attr={
+            "substrates": "substrate_wids",
+            "enzymes": "enzyme_wids",
+            "boundEnzymes": "enzyme_wids",
+        },
+    ),
     "ProteinProcessingI": _ProcessSpec(
         process_cls=KarrProteinProcessingIProcess,
         observables=("substrates", "enzymes", "boundEnzymes", "processedMonomers", "unprocessedMonomers"),
@@ -213,6 +497,18 @@ _PROCESS_SPECS: dict[str, _ProcessSpec] = {
         },
         oracle_type=ORACLE_BIT_IDENTITY,
     ),
+    "ProteinActivation": _ProcessSpec(
+        process_cls=KarrProteinActivationProcess,
+        observables=("substrates", "enzymes", "boundEnzymes"),
+        pass_through=frozenset({"boundEnzymes", "enzymes"}),
+        observable_to_wids_attr={
+            "substrates": "substrate_wids",
+            "enzymes": "enzyme_wids",
+            "boundEnzymes": "enzyme_wids",
+        },
+        index_projection_literal={"substrates": np.arange(10)},
+        oracle_type=ORACLE_BIT_IDENTITY,
+    ),
     "TerminalOrganelleAssembly": _ProcessSpec(
         process_cls=KarrTerminalOrganelleAssemblyProcess,
         observables=("substrates", "enzymes", "boundEnzymes"),
@@ -222,6 +518,18 @@ _PROCESS_SPECS: dict[str, _ProcessSpec] = {
             "enzymes": "enzyme_wids",
             "boundEnzymes": "enzyme_wids",
         },
+        oracle_type=ORACLE_BIT_IDENTITY,
+    ),
+    "TranscriptionalRegulation": _ProcessSpec(
+        process_cls=KarrTranscriptionalRegulationProcess,
+        observables=("substrates", "enzymes", "boundEnzymes"),
+        pass_through=frozenset({"boundEnzymes", "enzymes"}),
+        observable_to_wids_attr={
+            "substrates": "substrate_wids",
+            "enzymes": "enzyme_wids",
+            "boundEnzymes": "enzyme_wids",
+        },
+        trace_after_hint_observables=("enzymes", "boundEnzymes"),
         oracle_type=ORACLE_BIT_IDENTITY,
     ),
 }
