@@ -88,6 +88,10 @@ Wire all 20 missing `_ProcessSpec` entries in `tests/vivarium/l2_2_replay_common
   - `L2.2.v2 precondition failed (wid-length mismatch): process=Cytokinesis, observable=substrates, len(runtime_wids)=4, len(initial_oracle_vector)=3`
 - Unsupported-process precondition failures were eliminated (previously 35).
 
+## Beat 4 Review Queue
+- Review Cytokinesis WID source mapping in L2.5 harness (runtime inferred 4 substrate WIDs vs oracle 3).
+- Review deterministic-stochastic composition ordering assumptions for Condensation/Segregation against shared substrate ownership, given CAUSE_5 concentration at tick 0 on `substrates`.
+
 ## Progress Log
 - [2026-06-18 16:28:00 UTC] Loaded `SESSION_CONTEXT.md` and confirmed Hard Rule 17 naming discipline.
 - [2026-06-18 16:28:00 UTC] Audited DS pair harness/test/status artifacts and identified unsupported-process gap as primary blocker.
