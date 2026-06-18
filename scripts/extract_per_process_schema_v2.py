@@ -7,7 +7,9 @@ import argparse
 import ast
 import dataclasses
 import importlib
+import os
 import re
+import tempfile
 from collections import OrderedDict
 from functools import lru_cache
 from pathlib import Path
@@ -580,6 +582,38 @@ def build_pool_cross_check(
     return out
 
 
+def _write_terminal_organelle_schema_for_cross_check(substrate_wids: list[str]) -> Path:
+    fd, raw_path = tempfile.mkstemp(prefix="oc_toa_crosscheck_", suffix=".toml")
+    path = Path(raw_path)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write("[substrates]\n")
+            wids = ", ".join(f'"{_toml_escape_string(w)}"' for w in substrate_wids)
+            handle.write(f"wids = [{wids}]\n")
+            handle.write('compartment_wids = ["incorporated", "unincorporated"]\n\n')
+            handle.write("[extractor_diagnostics.axis_inference]\n")
+            handle.write("substrate_axis = 1\n")
+            handle.write("compartment_axis = 0\n")
+    except Exception:
+        path.unlink(missing_ok=True)
+        raise
+    return path
+
+
+def instantiate_process_for_cross_check(
+    process_name: str, cls: Any, species_pools: dict[str, list[str]]
+) -> Any:
+    if process_name == "TerminalOrganelleAssembly":
+        temp_schema = _write_terminal_organelle_schema_for_cross_check(
+            species_pools.get("substrates", [])
+        )
+        try:
+            return cls({"schema_path": str(temp_schema)})
+        finally:
+            temp_schema.unlink(missing_ok=True)
+    return cls({})
+
+
 def extract_process_schema(process_name: str, paths: Paths) -> dict[str, Any]:
     matlab_source = paths.process_dir / f"{process_name}.m"
     if not matlab_source.exists():
@@ -618,7 +652,9 @@ def extract_process_schema(process_name: str, paths: Paths) -> dict[str, Any]:
         try:
             module = importlib.import_module(f"opencell.vivarium.{oc_module_name}")
             cls = getattr(module, oc_class_name)
-            process_obj = cls({})
+            process_obj = instantiate_process_for_cross_check(
+                process_name, cls, species_pools
+            )
             oc_pools = collect_oc_pool_wids(process_obj)
             cross_check = build_pool_cross_check(species_pools, oc_pools)
         except Exception as exc:  # noqa: BLE001
