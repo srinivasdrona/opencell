@@ -1495,11 +1495,16 @@ def run_integrated_replay_v2(
                         base_record["cause_code"] = CAUSE_UNCLASSIFIED
                         _structured_fail(base_record)
 
-                    base_record["cause_code"] = (
-                        CAUSE_4_UPSTREAM_STATE_POLLUTION
-                        if isolated_matches
-                        else CAUSE_5_INTRINSIC_PROCESS_REPLAY_DIVERGENCE
-                    )
+                    if isolated_matches and upstream_mutators:
+                        base_record["cause_code"] = CAUSE_4_UPSTREAM_STATE_POLLUTION
+                    elif isolated_matches:
+                        base_record["cause_code"] = CAUSE_UNCLASSIFIED
+                        base_record["reclassification"] = {
+                            "reclassified_from": CAUSE_4_UPSTREAM_STATE_POLLUTION,
+                            "reason": "upstream_mutators_empty",
+                        }
+                    else:
+                        base_record["cause_code"] = CAUSE_5_INTRINSIC_PROCESS_REPLAY_DIVERGENCE
                     _structured_fail(base_record)
 
             for name in ordered:
