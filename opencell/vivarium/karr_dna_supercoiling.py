@@ -10,6 +10,7 @@ import numpy as np
 from scipy.io import loadmat
 from vivarium.core.process import Process
 
+from opencell.m_gen_constants import GENOME_LENGTH_BP
 from opencell.state.chromosome_store import (
     CHROMOSOME_FIELDS,
     ChromosomeStore,
@@ -120,7 +121,7 @@ class KarrDNASupercoilingProcess(Process):
         "complexation_fixture_path": _DEFAULT_COMPLEXATION_FIXTURE_PATH,
         "rng_seed": 0,
         "time_step": 1.0,
-        "chromosome_length_bp": 580_076.0,
+        "chromosome_length_bp": float(GENOME_LENGTH_BP),
         "bp_per_turn": 10.5,
         "equilibrium_supercoil_density": -0.06,
         "supercoil_density_min": -0.2,

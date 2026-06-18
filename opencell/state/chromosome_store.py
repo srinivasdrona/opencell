@@ -294,10 +294,20 @@ class SparseTriplet:
 
 
 class ChromosomeStore:
-    """Sparse-triple chromosome state for the 11 Karr chromosome fields."""
+    """Sparse-triple chromosome state for the 11 Karr chromosome fields.
 
-    DEFAULT_SEQUENCE_LEN = 580_076
-    DEFAULT_N_COMPARTMENTS = 4
+    Defaults are M. genitalium-specific (Karr 2012). For other organisms,
+    pass explicit `shape` to __init__. See `opencell/m_gen_constants.py`.
+    """
+
+    # Defaults are sourced from m_gen_constants to keep biology-specific
+    # values centralized. Generic primitives accept these as parameters.
+    from opencell.m_gen_constants import (
+        GENOME_LENGTH_BP as _GENOME_LENGTH_BP,
+        N_CHROMOSOME_COMPARTMENTS as _N_CHROMOSOME_COMPARTMENTS,
+    )
+    DEFAULT_SEQUENCE_LEN = _GENOME_LENGTH_BP
+    DEFAULT_N_COMPARTMENTS = _N_CHROMOSOME_COMPARTMENTS
     FIELDS = CHROMOSOME_FIELDS
 
     def __init__(

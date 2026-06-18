@@ -19,11 +19,11 @@ from scipy.io import loadmat
 from vivarium.core.process import Process
 
 from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet, sparse_triplet_schema
+from opencell.m_gen_constants import GENOME_LENGTH_BP as _DEFAULT_SEQUENCE_LENGTH_NT
 from opencell.vivarium.chromosome_views import current_damage_sites
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/DNADamage_flat.mat"
 _DEFAULT_TRACE_PATH = "data/m1_sources/karr_native/per_process_traces/DNADamage_100ticks.mat"
-_DEFAULT_SEQUENCE_LENGTH_NT = 580_076
 _DAMAGE_KINDS = ("uv_like", "oxidative", "alkylation", "depurination")
 _DAMAGE_FIELDS = (
     "damagedBases",

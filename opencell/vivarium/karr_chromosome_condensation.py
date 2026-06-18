@@ -23,6 +23,8 @@ import numpy as np
 from scipy.io import loadmat
 from vivarium.core.process import Process
 
+from opencell.m_gen_constants import GENOME_LENGTH_BP
+
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/ChromosomeCondensation_flat.mat"
 _DEFAULT_TRACE_PATH = (
     "data/m1_sources/karr_native/per_process_traces_v2/ChromosomeCondensation_100ticks.mat"
@@ -92,7 +94,7 @@ class KarrChromosomeCondensationProcess(Process):
         "trace_path": _DEFAULT_TRACE_PATH,
         "rng_seed": 0,
         "time_step": 1.0,
-        "genome_length_bp": 580_076.0,
+        "genome_length_bp": float(GENOME_LENGTH_BP),
         "binding_relaxation_time_s": 120.0,
         "displacement_rate_per_s": 2.0e-3,
         "condensation_tau_s": 40.0,
