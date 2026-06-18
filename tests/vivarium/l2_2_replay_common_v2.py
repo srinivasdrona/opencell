@@ -981,6 +981,8 @@ def run_integrated_replay_v2(
                             for proc_idx, proc_wid in enumerate(ctx.wids_by_observable[obs]):
                                 master_idx = ctx.process_wid_to_master_idx[obs][proc_wid]
                                 if master_idx in mutated_master_indices:
+                                    # Keep upstream-mutated shared WIDs from the
+                                    # live shared state; overlay only untouched WIDs.
                                     overlay_vec[proc_idx] = running_vec[proc_idx]
                         overlay_observable_into_state(
                             process=ctx.process,
