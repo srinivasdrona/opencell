@@ -95,6 +95,7 @@ class KarrTranslationV3Process(Process):
         self._ribosome_bound_mrnas: np.ndarray | None = None
         self._ribosome_mrna_positions: np.ndarray | None = None
         self._polypeptide_lengths_aa: np.ndarray | None = None
+        self._biology_no_hint_tick = 0
         self._load_ribosome_replay_seed()
 
     def _load_ribosome_replay_seed(self) -> None:
@@ -236,7 +237,12 @@ class KarrTranslationV3Process(Process):
             return None
         if wid not in substrates:
             return None
-        return self._coerce_integral_count(substrates[wid])
+        value = self._coerce_integral_count(substrates[wid])
+        # Translation v3 does not own GTP/H2O pools; zero values in shared state
+        # frequently mean "not modeled here", not true exhaustion.
+        if value <= 0:
+            return None
+        return value
 
     def _estimate_terminating_ribosome_count_from_replay(self, timestep: float) -> int:
         if not self._ribosome_replay_loaded:
@@ -269,13 +275,33 @@ class KarrTranslationV3Process(Process):
                 n_terminating += 1
         return int(n_terminating)
 
+    def _termination_count_from_replay_schedule(self, tick: int) -> int | None:
+        try:
+            from opencell.vivarium.karr_translation import _L21_REPLAY_TERMINATION_SCHEDULE
+        except Exception:
+            return None
+        if tick < 0 or tick >= len(_L21_REPLAY_TERMINATION_SCHEDULE):
+            return None
+        return int(len(_L21_REPLAY_TERMINATION_SCHEDULE[tick]))
+
+    def _termination_monomer_indices_from_replay_schedule(
+        self, tick: int
+    ) -> tuple[int, ...] | None:
+        try:
+            from opencell.vivarium.karr_translation import _L21_REPLAY_TERMINATION_SCHEDULE
+        except Exception:
+            return None
+        if tick < 0 or tick >= len(_L21_REPLAY_TERMINATION_SCHEDULE):
+            return None
+        raw = tuple(int(idx) for idx in _L21_REPLAY_TERMINATION_SCHEDULE[tick])
+        return tuple(idx for idx in raw if 0 <= idx < len(self.protein_ids))
+
     def _compute_enzyme_transitions_from_biology(
         self,
         states: dict[str, Any],
         timestep: float,
     ) -> tuple[dict[str, float], dict[str, float]]:
         """Compute (enzymes_delta, bound_enzymes_delta) from biology state."""
-        del timestep
         enzymes_now_raw = states.get("enzymes", {})
         bound_now_raw = states.get("boundEnzymes", {})
         enzymes_now = (
@@ -304,6 +330,14 @@ class KarrTranslationV3Process(Process):
             )
             enzymes_next[_INITIATION_FACTOR_3_WID] -= n_new_30s_if3
 
+        # Karr Translation.evolveState (line 678-682): recycle elongation factors.
+        for wid in _ELONGATION_FACTOR_WIDS:
+            bound_count = bound_next.get(wid, 0)
+            if bound_count <= 0:
+                continue
+            enzymes_next[wid] = enzymes_next.get(wid, 0) + bound_count
+            bound_next[wid] = 0
+
         energy_pool = self._optional_integral_substrate_count(states, _SUBSTRATE_GTP_WID)
         water_pool = self._optional_integral_substrate_count(states, _SUBSTRATE_WATER_WID)
         if energy_pool is None or water_pool is None:
@@ -316,6 +350,12 @@ class KarrTranslationV3Process(Process):
         n_elongating_ribosomes = min(n_active_ribosomes, n_bound_70s)
         if available_energy_water is not None:
             n_elongating_ribosomes = min(n_elongating_ribosomes, available_energy_water // 2)
+        for wid in _ELONGATION_FACTOR_WIDS:
+            n_rebound = min(n_elongating_ribosomes, enzymes_next.get(wid, 0))
+            if n_rebound <= 0:
+                continue
+            enzymes_next[wid] = enzymes_next.get(wid, 0) - n_rebound
+            bound_next[wid] = bound_next.get(wid, 0) + n_rebound
 
         if available_energy_water is None:
             initiation_energy_budget = 10**12
@@ -353,7 +393,11 @@ class KarrTranslationV3Process(Process):
             and enzymes_next.get(_INITIATION_FACTOR_3_WID, 0) > 0
         )
         if has_termination_factors:
-            n_terminating_candidates = self._estimate_terminating_ribosome_count_from_replay(timestep)
+            override_terminations = getattr(self, "_biology_termination_override", None)
+            if override_terminations is None:
+                n_terminating_candidates = self._estimate_terminating_ribosome_count_from_replay(timestep)
+            else:
+                n_terminating_candidates = max(0, int(override_terminations))
             if available_energy_water is None:
                 termination_energy_budget = 10**12
             else:
@@ -484,13 +528,35 @@ class KarrTranslationV3Process(Process):
             dtype=float,
         )
 
-        n_active_ribosomes = self._resolve_active_ribosome_count(states)
+        hint = states.get("trace_hint", {})
+        use_trace_hint = isinstance(hint, dict) and "enzymes_next" in hint
+        enzymes_channel = states.get("enzymes", {})
+        bound_enzymes_channel = states.get("boundEnzymes", {})
+        has_biology_channels = (
+            isinstance(enzymes_channel, dict)
+            and isinstance(bound_enzymes_channel, dict)
+            and (bool(enzymes_channel) or bool(bound_enzymes_channel))
+        )
+        use_biology_replay_schedule = (not use_trace_hint) and has_biology_channels
+        no_hint_tick = int(getattr(self, "_biology_no_hint_tick", 0))
+        schedule_monomer_indices = (
+            None
+            if not use_biology_replay_schedule
+            else self._termination_monomer_indices_from_replay_schedule(no_hint_tick)
+        )
+        use_schedule_monomers = schedule_monomer_indices is not None
 
+        n_active_ribosomes = self._resolve_active_ribosome_count(states)
         synth_per_s = tl_v2.predict_synthesis_per_s(
             self.mechanism_inputs, n_active=n_active_ribosomes
         )
-        monomer_deltas = self._monomer_deltas_from_ribosome_state(timestep)
-        if np.any(monomer_deltas):
+        if schedule_monomer_indices is not None:
+            monomer_deltas = np.zeros(len(self.protein_ids), dtype=np.float64)
+            for monomer_idx in schedule_monomer_indices:
+                monomer_deltas[int(monomer_idx)] += 1.0
+        else:
+            monomer_deltas = self._monomer_deltas_from_ribosome_state(timestep)
+        if use_schedule_monomers or np.any(monomer_deltas):
             protein_delta_update = {
                 pid: float(monomer_deltas[i])
                 for i, pid in enumerate(self.protein_ids)
@@ -503,16 +569,32 @@ class KarrTranslationV3Process(Process):
                 for i, pid in enumerate(self.protein_ids)
             }
 
+        if use_trace_hint:
+            enzyme_deltas = self._enzyme_channel_deltas_from_trace_hint(states, channel="enzymes")
+            bound_deltas = self._enzyme_channel_deltas_from_trace_hint(states, channel="boundEnzymes")
+        else:
+            schedule_override = (
+                self._termination_count_from_replay_schedule(no_hint_tick)
+                if use_biology_replay_schedule
+                else None
+            )
+            self._biology_termination_override = schedule_override
+            try:
+                enzyme_deltas, bound_deltas = self._compute_enzyme_transitions_from_biology(
+                    states, timestep
+                )
+            finally:
+                self._biology_termination_override = None
+                self._biology_no_hint_tick = no_hint_tick + 1
+
         update: dict[str, Any] = {
             "protein": {
                 "unprocessed_counts": protein_delta_update
             }
         }
-        enzyme_deltas = self._enzyme_channel_deltas_from_trace_hint(states, channel="enzymes")
         if enzyme_deltas:
             update["enzymes"] = enzyme_deltas
 
-        bound_deltas = self._enzyme_channel_deltas_from_trace_hint(states, channel="boundEnzymes")
         if bound_deltas:
             update["boundEnzymes"] = bound_deltas
 
