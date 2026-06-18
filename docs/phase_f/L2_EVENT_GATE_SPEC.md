@@ -7,7 +7,7 @@
 **Companion docs:**
 - `L2_2_DESIGN_A_SPEC.md` — sibling per-tick distributional gate
 - `PROCESS_CATALOG.yaml` — per-process scope incl. `bucket: EVENT_CLASS`, `seed_window`, `event_density`
-- `L2_2_HARNESS_DESIGN.md` — original L2.2 design notes (predates L2.event split)
+- `L2_5_HARNESS_DESIGN.md` — original L2.2 design notes (predates L2.event split)
 
 **Provenance:** This spec extends the 4-bullet sketch in `L2_2_DESIGN_A_SPEC.md` §10 (which was placeholder text deferring the L2.event design to a separate document — this one).
 

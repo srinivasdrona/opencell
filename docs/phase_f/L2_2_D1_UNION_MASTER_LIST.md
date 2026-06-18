@@ -1,9 +1,9 @@
 # L2.2 D1: Union Master List + Owner Manifest Design
 
-Status: D1 expansion of the umbrella design decision recorded in `L2_2_HARNESS_DESIGN.md` § 5 (Decision D1).
+Status: D1 expansion of the umbrella design decision recorded in `L2_5_HARNESS_DESIGN.md` § 5 (Decision D1).
 Scope: implementation-level specification for the WID-set unification machinery that the v2 harness (`tests/vivarium/l2_2_replay_common_v2.py`) already contains in skeleton form. This doc back-fills the formal algorithm, defines its inputs/outputs, names the governance for the owner manifest, and closes operator questions QO1 + QO4 from the umbrella design.
 Authors: agent (with operator review pending).
-Related: `L2_2_HARNESS_DESIGN.md`, `data/schemas/per_process/*.toml` (28 F-tomls landed at sweep `6653ee6`), `tests/vivarium/l2_2_replay_common_v2.py`.
+Related: `L2_5_HARNESS_DESIGN.md`, `data/schemas/per_process/*.toml` (28 F-tomls landed at sweep `6653ee6`), `tests/vivarium/l2_2_replay_common_v2.py`.
 
 ---
 
@@ -28,7 +28,7 @@ Related: `L2_2_HARNESS_DESIGN.md`, `data/schemas/per_process/*.toml` (28 F-tomls
 - [A02] path=tests/vivarium/l2_2_replay_common.py | kind=code | role=v1 harness (positional overlay). Retained per umbrella D8; D1 explicitly does NOT modify it.
 - [A03] path=data/schemas/per_process/*.toml | kind=schema | role=28 per-process schemas (F-tomls) extracted by scripts/extract_per_process_schema.py. Authoritative WID source for union construction. 20/28 have parsed `wids = [...]`; 8/28 carry `EXTRACTOR_FAILED` markers (see Risks § 9).
 - [A04] path=scripts/extract_per_process_schema.py | kind=code | role=MATLAB-source → TOML extractor. Owner of the WID literal parser. Gaps here are the blocker for full D1 coverage.
-- [A05] path=docs/phase_f/L2_2_HARNESS_DESIGN.md | kind=doc | role=umbrella L2.2 design. § 5 Decision D1 picked Option 1 (union master + owner manifest). This doc is its expansion.
+- [A05] path=docs/phase_f/L2_5_HARNESS_DESIGN.md | kind=doc | role=umbrella L2.2 design. § 5 Decision D1 picked Option 1 (union master + owner manifest). This doc is its expansion.
 - [A06] path=docs/phase_f/L2_2_HARNESS_V1_BASELINE.md | kind=doc | role=frozen v1 baseline failure. First mismatch: tick=5, RNAProcessing, substrates[5], H2O vs GLN. The D1 falsification target.
 - [A07] path=tests/vivarium/test_l2_2_translation_plus_rna_processing.py | kind=code | role=first L2.2 pair test. D1 correctness is judged here.
 - [A08] path=tests/vivarium/l2_replay_common.py | kind=code | role=L2.1 single-process helpers; D1 reuses cell_vector, infer_wids_for_observable, project_observable_from_state without modification.
@@ -234,5 +234,5 @@ rationale = "..."
 ## Provenance
 
 - Drafted: Day 18 evening, in parallel with 3 L2.1 codex jobs (dna_super-randperm port, rna_decay-extraction extension, pdecay-4820 lift).
-- Inputs: `L2_2_HARNESS_DESIGN.md` § 5 D1, `L2_2_HARNESS_V1_BASELINE.md`, sweep tip `6653ee6` F-TOMLs (28 files, 20 OK / 8 EXTRACTOR_FAILED), existing `_build_union_master_wids` etc. skeletons in `l2_2_replay_common_v2.py`.
+- Inputs: `L2_5_HARNESS_DESIGN.md` § 5 D1, `L2_2_HARNESS_V1_BASELINE.md`, sweep tip `6653ee6` F-TOMLs (28 files, 20 OK / 8 EXTRACTOR_FAILED), existing `_build_union_master_wids` etc. skeletons in `l2_2_replay_common_v2.py`.
 - Not yet implemented; spec-only.

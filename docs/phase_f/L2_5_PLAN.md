@@ -12,7 +12,7 @@
 
 Bring the L2.5 shared-pool composition harness to full green for all priority
 process pairs identified in the L2.5 design (CAUSE_1–7 taxonomy, D1–D4 decisions
-in `L2_2_HARNESS_DESIGN.md` — note: filename predates the ladder rename and is
+in `L2_5_HARNESS_DESIGN.md` — note: filename predates the ladder rename and is
 retained as canonical L2.5 design doc). Validate that processes individually
 correct at L2.1 (and stochastically correct at L2.2) compose correctly when
 run together on the shared `substrates` store + `KarrAllocationStep` against
@@ -202,7 +202,7 @@ workstream switches) characteristic of operator's L2.1 cadence.
 
 ## 8. References
 
-- `docs/phase_f/L2_2_HARNESS_DESIGN.md` — umbrella, CAUSE_1–7, D1–D4.
+- `docs/phase_f/L2_5_HARNESS_DESIGN.md` — umbrella, CAUSE_1–7, D1–D4.
 - `docs/phase_f/L2_2_D1_UNION_MASTER_LIST.md` — owner manifest format spec.
 - `docs/phase_f/L2_2_HARNESS_V1_BASELINE.md` — v1 frozen RED + known
   misdiagnosis.
