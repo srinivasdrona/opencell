@@ -30,7 +30,7 @@ Current generated counts (2026-06-18):
 - Shared-pool pairs: 256
 - Disjoint pairs: 122
 - Tier 1: 183, Tier 2: 72, Tier 3: 1
-- L2.5.2 honest-required shared pairs (catalog-filtered): 154
+- L2.5.2 honest-required shared pairs (all shared-pool pairs): 256
 
 Regenerate:
 
@@ -93,6 +93,23 @@ Check-only (CI/pre-commit):
 - Composition harness uses the manifest; no positional aliasing
 - Owner manifest passes its own consistency check (no double-ownership)
 
+## Per-side oracle selection
+
+L2.5 honest mode uses different oracles depending on each process's kind:
+
+| Process kind | Oracle | Comparison | Tolerance |
+|---|---|---|---|
+| Stochastic (L2.2 in-scope) | L2.2 trace + CAUSE_1-7 taxonomy | per-tick distributional | rtol/atol per process |
+| Deterministic | L2.1 trace | per-tick bit-identity | rtol=0, atol=0 |
+
+For a pair `(A, B)`, each side is asserted with its appropriate oracle.
+A pair PASSES if BOTH sides pass their respective assertions.
+
+This is STRICTER than excluding deterministic processes, because bit-identity
+is harder to pass than distributional. Deterministic processes have no RNG and
+should compose deterministically. Any divergence indicates allocator wiring bug
+or upstream state pollution.
+
 ## Pair list derivation
 
 Reference implementation: `scripts/derive_l25_pair_matrix.py`.
@@ -111,9 +128,11 @@ For each (process_i, process_j) pair where i < j:
   (they couldn't interfere even if they wanted to)
 
 ### Step 3: Acceptance bar
-- **Must pass at L2.5.2 (honest)**: all shared-pool pairs from the 22 stochastic
-  processes
-- **Must pass at L2.5.1 (hint-equivalent)**: same set, as a regression baseline
+- **Must pass at L2.5.2 (honest)**: all 256 shared-pool pairs, with per-side
+  oracle selection (distributional for stochastic side(s), bit-identity for
+  deterministic side(s))
+- **Must pass at L2.5.1 (hint-equivalent)**: same shared-pool pair set, as a
+  regression baseline
 - **Smoke at L2.5.0**: all 29 participants in any combination that runs in
   the chassis (no exceptions)
 
@@ -126,7 +145,7 @@ Actual (generated 2026-06-18 from current v2.1 TOMLs):
 - `tier_1_pairs = 183`
 - `tier_2_pairs = 72`
 - `tier_3_pairs = 1`
-- `l25_honest_required_pairs = 154`
+- `l25_honest_required_pairs = 256`
 
 Consistency check: `shared_pool_pairs + disjoint_pairs = total_pairs_computed`.
 
@@ -158,8 +177,12 @@ expression, DNA maintenance, cell division).
 
 ## What "L2.5 GREEN" means (the headline definition)
 
-L2.5 is GREEN when:
-1. All shared-pool pairs from the 22 L2.2-green processes pass at L2.5.2 (honest)
+L2.5 is GREEN when all 256 shared-pool pairs pass with per-side appropriate
+oracle.
+
+Operationally:
+1. All shared-pool pairs pass at L2.5.2 (honest), using distributional oracle
+   on stochastic sides and bit-identity oracle on deterministic sides
 2. Owner manifest is committed and validated
 3. Integrity audit (trace_hint gating) is enforced — composition harness
    defaults to `disable_trace_hints=True`
