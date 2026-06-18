@@ -76,6 +76,8 @@ class ProcessSchema:
     state_groups: dict[str, set[str]]
     l2_2_passed: bool
     l2_2_gate_source: str
+    oracle_type: str
+    oracle_review_note: str | None
 
 
 @dataclass(frozen=True)
@@ -97,6 +99,9 @@ class PairRecord:
     tier: int
     l2_2_passed_a: bool
     l2_2_passed_b: bool
+    oracle_type_a: str
+    oracle_type_b: str
+    pair_oracle_complexity: str
     l25_honest_required: bool
 
 
@@ -155,9 +160,68 @@ def _load_catalog(root: Path) -> tuple[dict[str, dict[str, Any]], Path, str]:
         passed, source = _infer_l2_2_status(entry)
         if source.startswith("fallback:"):
             fallback_mode_used = source
-        out[name] = {"passed": passed, "source": source}
+        oracle_type = _oracle_type_for_process(entry)
+        oracle_review_note = _oracle_review_note_for_process(entry)
+        out[name] = {
+            "passed": passed,
+            "source": source,
+            "oracle_type": oracle_type,
+            "oracle_review_note": oracle_review_note,
+        }
 
     return out, catalog_path, fallback_mode_used
+
+
+def _oracle_type_for_process(catalog_entry: dict[str, Any]) -> str:
+    """Return 'distributional' or 'bit_identity'.
+
+    Deterministic processes use bit-identity (L2.1 trace replay).
+    Stochastic processes (in_scope_L2_2 = true) use distributional (L2.2 oracle).
+    """
+    if _has_ambiguous_oracle_classification(catalog_entry):
+        return "distributional"
+    if not catalog_entry.get("in_scope_L2_2", True):
+        return "bit_identity"
+    bucket = str(catalog_entry.get("bucket", "")).strip().upper()
+    if bucket == "DETERMINISTIC":
+        return "bit_identity"
+    return "distributional"
+
+
+def _has_ambiguous_oracle_classification(catalog_entry: dict[str, Any]) -> bool:
+    has_in_scope = "in_scope_L2_2" in catalog_entry
+    has_bucket = "bucket" in catalog_entry and str(catalog_entry.get("bucket", "")).strip() != ""
+    if not has_in_scope and not has_bucket:
+        return True
+    if has_in_scope and has_bucket:
+        in_scope = bool(catalog_entry.get("in_scope_L2_2", True))
+        bucket = str(catalog_entry.get("bucket", "")).strip().upper()
+        if bucket == "DETERMINISTIC" and in_scope:
+            return True
+        if bucket != "DETERMINISTIC" and not in_scope:
+            return True
+    return False
+
+
+def _oracle_review_note_for_process(catalog_entry: dict[str, Any]) -> str | None:
+    has_in_scope = "in_scope_L2_2" in catalog_entry
+    has_bucket = "bucket" in catalog_entry and str(catalog_entry.get("bucket", "")).strip() != ""
+    if not has_in_scope and not has_bucket:
+        return "missing catalog oracle classification (no in_scope_L2_2 and no bucket)"
+    if has_in_scope and has_bucket:
+        in_scope = bool(catalog_entry.get("in_scope_L2_2", True))
+        bucket = str(catalog_entry.get("bucket", "")).strip().upper()
+        if bucket == "DETERMINISTIC" and in_scope:
+            return (
+                "ambiguous catalog classification (bucket=DETERMINISTIC but "
+                "in_scope_L2_2=true); defaulted to distributional"
+            )
+        if bucket != "DETERMINISTIC" and not in_scope:
+            return (
+                "ambiguous catalog classification (bucket!=DETERMINISTIC but "
+                "in_scope_L2_2=false); defaulted to distributional"
+            )
+    return None
 
 
 def _infer_l2_2_status(entry: dict[str, Any]) -> tuple[bool, str]:
@@ -209,7 +273,18 @@ def _load_process_schemas(
             raise ValueError(f"Duplicate process name across TOMLs: {name}")
         seen_names.add(name)
 
-        catalog_entry = catalog_lookup.get(name, {"passed": True, "source": "fallback:missing"})
+        catalog_entry = catalog_lookup.get(
+            name,
+            {
+                "passed": True,
+                "source": "fallback:missing",
+                "oracle_type": "distributional",
+                "oracle_review_note": (
+                    "missing catalog entry; defaulted to distributional "
+                    "for operator review"
+                ),
+            },
+        )
         group_sets: dict[str, set[str]] = {}
         for group in CANONICAL_STATE_GROUPS:
             raw_values = state_groups.get(group, [])
@@ -226,6 +301,12 @@ def _load_process_schemas(
                 state_groups=group_sets,
                 l2_2_passed=bool(catalog_entry["passed"]),
                 l2_2_gate_source=str(catalog_entry["source"]),
+                oracle_type=str(catalog_entry["oracle_type"]),
+                oracle_review_note=(
+                    str(catalog_entry["oracle_review_note"])
+                    if catalog_entry["oracle_review_note"] is not None
+                    else None
+                ),
             )
         )
 
@@ -257,8 +338,9 @@ def _compute_pairs(processes: list[ProcessSchema]) -> list[PairRecord]:
 
             classification, tier = _classify_pair(overlaps)
             total_overlap = sum(overlaps.values())
-            l25_honest_required = (
-                classification == "shared_pool" and proc_a.l2_2_passed and proc_b.l2_2_passed
+            l25_honest_required = classification == "shared_pool"
+            pair_oracle_complexity = _pair_oracle_complexity(
+                proc_a.oracle_type, proc_b.oracle_type
             )
             pairs.append(
                 PairRecord(
@@ -279,6 +361,9 @@ def _compute_pairs(processes: list[ProcessSchema]) -> list[PairRecord]:
                     tier=tier,
                     l2_2_passed_a=proc_a.l2_2_passed,
                     l2_2_passed_b=proc_b.l2_2_passed,
+                    oracle_type_a=proc_a.oracle_type,
+                    oracle_type_b=proc_b.oracle_type,
+                    pair_oracle_complexity=pair_oracle_complexity,
                     l25_honest_required=l25_honest_required,
                 )
             )
@@ -292,6 +377,14 @@ def _compute_pairs(processes: list[ProcessSchema]) -> list[PairRecord]:
         )
     )
     return pairs
+
+
+def _pair_oracle_complexity(oracle_type_a: str, oracle_type_b: str) -> str:
+    if oracle_type_a == "distributional" and oracle_type_b == "distributional":
+        return "stochastic_stochastic"
+    if oracle_type_a == "bit_identity" and oracle_type_b == "bit_identity":
+        return "deterministic_deterministic"
+    return "deterministic_stochastic"
 
 
 def _source_digest(root: Path, processes: list[ProcessSchema], catalog_path: Path) -> str:
@@ -321,6 +414,24 @@ def _pair_counts(pairs: list[PairRecord]) -> dict[str, int]:
     tier_2 = sum(1 for pair in pairs if pair.tier == 2)
     tier_3 = sum(1 for pair in pairs if pair.tier == 3)
     honest_required = sum(1 for pair in pairs if pair.l25_honest_required)
+    stochastic_stochastic = sum(
+        1
+        for pair in pairs
+        if pair.l25_honest_required
+        and pair.pair_oracle_complexity == "stochastic_stochastic"
+    )
+    deterministic_stochastic = sum(
+        1
+        for pair in pairs
+        if pair.l25_honest_required
+        and pair.pair_oracle_complexity == "deterministic_stochastic"
+    )
+    deterministic_deterministic = sum(
+        1
+        for pair in pairs
+        if pair.l25_honest_required
+        and pair.pair_oracle_complexity == "deterministic_deterministic"
+    )
     return {
         "shared_pool_pairs": shared,
         "disjoint_pairs": disjoint,
@@ -328,6 +439,9 @@ def _pair_counts(pairs: list[PairRecord]) -> dict[str, int]:
         "tier_2_pairs": tier_2,
         "tier_3_pairs": tier_3,
         "l25_honest_required_pairs": honest_required,
+        "stochastic_stochastic_pairs": stochastic_stochastic,
+        "deterministic_stochastic_pairs": deterministic_stochastic,
+        "deterministic_deterministic_pairs": deterministic_deterministic,
     }
 
 
@@ -335,14 +449,17 @@ def _render_markdown_pair_table(pairs: list[PairRecord]) -> list[str]:
     if not pairs:
         return ["_None_"]
     lines = [
-        "| process_A | process_B | substrates_overlap | enzymes_overlap | monomers_overlap | complexs_overlap | rnas_overlap | total |",
-        "|---|---:|---:|---:|---:|---:|---:|---:|",
+        "| process_A | process_B | oracle_type_a | oracle_type_b | pair_oracle_complexity | substrates_overlap | enzymes_overlap | monomers_overlap | complexs_overlap | rnas_overlap | total |",
+        "|---|---:|---|---|---|---:|---:|---:|---:|---:|---:|",
     ]
     for pair in pairs:
         lines.append(
             "| "
             f"{pair.process_a} | "
             f"{pair.process_b} | "
+            f"{pair.oracle_type_a} | "
+            f"{pair.oracle_type_b} | "
+            f"{pair.pair_oracle_complexity} | "
             f"{pair.substrates_overlap} | "
             f"{pair.enzymes_overlap} | "
             f"{pair.monomers_overlap} | "
@@ -424,7 +541,7 @@ def _build_pair_matrix_markdown(
     lines.append(f"- Tier 2 pairs (should-pass): {counts['tier_2_pairs']}")
     lines.append(f"- Tier 3 pairs (informational): {counts['tier_3_pairs']}")
     lines.append(
-        "- L2.5.2 honest-required shared pairs (catalog-filtered): "
+        "- L2.5.2 honest-required shared pairs (all shared-pool pairs): "
         f"{counts['l25_honest_required_pairs']}"
     )
     lines.append(
@@ -434,29 +551,54 @@ def _build_pair_matrix_markdown(
     lines.append(f"- Source digest: `{source_digest}`")
     lines.append(f"- Deterministic generated_at: `{generated_at}`")
     lines.append("")
-    lines.append("## 2. Pair count matrix")
+    lines.append("## 2. Pair complexity breakdown")
+    lines.append("")
+    lines.append("| Complexity | Count | Description |")
+    lines.append("|---|---:|---|")
+    lines.append(
+        "| stochastic ↔ stochastic | "
+        f"{counts['stochastic_stochastic_pairs']} | "
+        "Both sides use distributional oracle (CAUSE_1-7 taxonomy) |"
+    )
+    lines.append(
+        "| deterministic ↔ stochastic | "
+        f"{counts['deterministic_stochastic_pairs']} | "
+        "One side bit-identity, other distributional |"
+    )
+    lines.append(
+        "| deterministic ↔ deterministic | "
+        f"{counts['deterministic_deterministic_pairs']} | "
+        "Both sides bit-identity (strictest) |"
+    )
+    lines.append(
+        "| **Total honest-required** | "
+        f"**{counts['l25_honest_required_pairs']}** | "
+        "All shared-pool pairs |"
+    )
+    lines.append("")
+    lines.append("## 3. Pair count matrix")
     lines.append("")
     lines.append("```text")
     lines.extend(matrix_lines)
     lines.append("```")
     lines.append("")
-    lines.append("## 3. Tier 1 pair list")
+    lines.append("## 4. Tier 1 pair list")
     lines.append("")
     lines.extend(_render_markdown_pair_table(tier_1))
     lines.append("")
-    lines.append("## 4. Tier 2 pair list")
+    lines.append("## 5. Tier 2 pair list")
     lines.append("")
     lines.extend(_render_markdown_pair_table(tier_2))
     lines.append("")
-    lines.append("## 5. Tier 3 pair list")
+    lines.append("## 6. Tier 3 pair list")
     lines.append("")
     lines.extend(_render_markdown_pair_table(tier_3))
     lines.append("")
-    lines.append("## 6. Disjoint pair list")
+    lines.append("## 7. Disjoint pair list")
     lines.append("")
     lines.extend(_render_disjoint_table(disjoint))
     lines.append("")
-    lines.append("## 7. Per-process pair count")
+    lines.append("## 8. Per-process pair count")
     lines.append("")
     lines.append("| process | shared_pool_partners | honest_required_partners |")
     lines.append("|---|---:|---:|")
@@ -466,7 +608,7 @@ def _build_pair_matrix_markdown(
             f"{required_partners[process.name]} |"
         )
     lines.append("")
-    lines.append("## 8. Methodology")
+    lines.append("## 9. Methodology")
     lines.append("")
     lines.append("- Input source: `data/schemas/per_process/*.toml`")
     lines.append(
@@ -533,6 +675,16 @@ def _build_pair_list_toml(
     lines.append(
         f"l25_honest_required_pairs = {counts['l25_honest_required_pairs']}"
     )
+    lines.append(
+        f"stochastic_stochastic_pairs = {counts['stochastic_stochastic_pairs']}"
+    )
+    lines.append(
+        f"deterministic_stochastic_pairs = {counts['deterministic_stochastic_pairs']}"
+    )
+    lines.append(
+        "deterministic_deterministic_pairs = "
+        f"{counts['deterministic_deterministic_pairs']}"
+    )
     lines.append("")
 
     for pair in pairs:
@@ -543,6 +695,12 @@ def _build_pair_list_toml(
         lines.append(f"classification = {_toml_str(pair.classification)}")
         lines.append(f"l2_2_passed_a = {_toml_bool(pair.l2_2_passed_a)}")
         lines.append(f"l2_2_passed_b = {_toml_bool(pair.l2_2_passed_b)}")
+        lines.append(f"oracle_type_a = {_toml_str(pair.oracle_type_a)}")
+        lines.append(f"oracle_type_b = {_toml_str(pair.oracle_type_b)}")
+        lines.append(
+            "pair_oracle_complexity = "
+            f"{_toml_str(pair.pair_oracle_complexity)}"
+        )
         lines.append(f"l25_honest_required = {_toml_bool(pair.l25_honest_required)}")
         lines.append(f"substrates_overlap = {pair.substrates_overlap}")
         lines.append(f"enzymes_overlap = {pair.enzymes_overlap}")
@@ -634,6 +792,16 @@ def main() -> int:
         print(f"[ok] wrote {path.relative_to(root).as_posix()}")
 
     counts = _pair_counts(pairs)
+    oracle_review_processes = [
+        process
+        for process in processes
+        if process.oracle_review_note is not None
+    ]
+    if oracle_review_processes:
+        print("[warn] defaulted oracle classification to distributional for review:")
+        for process in oracle_review_processes:
+            note = process.oracle_review_note or "unspecified"
+            print(f"  - {process.name}: {note}")
     print(
         "[summary] "
         f"processes={len(processes)} "
@@ -643,7 +811,10 @@ def main() -> int:
         f"tier1={counts['tier_1_pairs']} "
         f"tier2={counts['tier_2_pairs']} "
         f"tier3={counts['tier_3_pairs']} "
-        f"l25_honest_required={counts['l25_honest_required_pairs']}"
+        f"l25_honest_required={counts['l25_honest_required_pairs']} "
+        f"stochastic_stochastic={counts['stochastic_stochastic_pairs']} "
+        f"deterministic_stochastic={counts['deterministic_stochastic_pairs']} "
+        f"deterministic_deterministic={counts['deterministic_deterministic_pairs']}"
     )
     return 0
 
