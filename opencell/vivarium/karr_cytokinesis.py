@@ -157,7 +157,7 @@ class KarrCytokinesisProcess(Process):
         self.gating_tolerance = float(self.parameters["gating_tolerance"])
         self.default_filament_length_nm = float(self.parameters["filament_length_nm"])
 
-        self._substrate_wids = sorted(set(self.fixture_substrate_wids + [self.gtp_wid]))
+        self._substrate_wids = list(self.fixture_substrate_wids)
 
     def _load_fixture(self, path: str | Path) -> None:
         resolved = _resolve_path(path)
