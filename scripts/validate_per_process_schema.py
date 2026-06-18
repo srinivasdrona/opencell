@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Round-trip validator for per-process schema TOMLs."""
+"""Round-trip validator for per-process v2.1 schema TOMLs."""
 
 from __future__ import annotations
 
@@ -9,8 +9,9 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
-from extract_per_process_schema import (
+from extract_per_process_schema_v2 import (
     OUTPUT_DIR_REL,
+    SCHEMA_VERSION,
     build_paths,
     extract_process_schema,
     render_schema_toml,
@@ -39,8 +40,8 @@ def _diff_fields(a: Any, b: Any, prefix: str = "") -> list[str]:
         if len(a) != len(b):
             diffs.append(prefix or "<root>")
             return diffs
-        for i, (x, y) in enumerate(zip(a, b)):
-            diffs.extend(_diff_fields(x, y, f"{prefix}[{i}]"))
+        for idx, (left, right) in enumerate(zip(a, b)):
+            diffs.extend(_diff_fields(left, right, f"{prefix}[{idx}]"))
         return diffs
 
     if a != b:
@@ -55,17 +56,12 @@ def parse_args() -> argparse.Namespace:
         default=str(OUTPUT_DIR_REL),
         help="Directory containing per-process TOML schema files.",
     )
-    parser.add_argument(
-        "--wholecell-root",
-        default=None,
-        help="Optional explicit WholeCell root containing src/",
-    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
-    paths = build_paths(args.wholecell_root)
+    paths = build_paths()
     schema_dir = (
         Path(args.schema_dir)
         if Path(args.schema_dir).is_absolute()
@@ -82,10 +78,19 @@ def main() -> int:
     for toml_path in toml_files:
         text = toml_path.read_text(encoding="utf-8")
         parsed = tomllib.loads(text)
-        process_name = parsed.get("process", {}).get("name")
+        process_table = parsed.get("process", {})
+        process_name = process_table.get("name")
+        schema_version = process_table.get("schema_version")
         if not process_name:
             failures.append((toml_path.name, ["process.name"]))
             print(f"[FAIL] {toml_path.name}: missing process.name")
+            continue
+        if schema_version != SCHEMA_VERSION:
+            failures.append((process_name, ["process.schema_version"]))
+            print(
+                f"[FAIL] {process_name}: process.schema_version={schema_version!r} "
+                f"(expected {SCHEMA_VERSION!r})"
+            )
             continue
 
         extracted = extract_process_schema(process_name, paths)
@@ -107,11 +112,11 @@ def main() -> int:
             print(f"[PASS] {process_name}")
 
     total = len(toml_files)
-    print(f"{passed}/{total} round-trip pass")
+    print(f"{passed}/{total} round-trip pass (v{SCHEMA_VERSION})")
     if failures:
         print("failing fields:")
-        for proc, fields in failures:
-            print(f"  - {proc}: {', '.join(fields)}")
+        for process_name, fields in failures:
+            print(f"  - {process_name}: {', '.join(fields)}")
         return 1
     return 0
 
