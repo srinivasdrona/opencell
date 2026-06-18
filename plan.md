@@ -78,33 +78,48 @@ generator. They are bolt-on infrastructure that does NOT affect the biological
 model itself. Precondition: L5 chassis validated (model produces biologically
 valid full-cycle trajectories).
 
-| Component | Purpose | Candidate tech | Effort est |
-|---|---|---|---|
-| **Tensor emitter** | Stream simulation state to ML-friendly format | Zarr / HDF5 / Parquet | 1-2 weeks |
-| **Distributed execution** | Parallelize 10k+ runs across cluster | Ray / Dask | 1-2 weeks |
-| **Automated calibration loop** | Tune parameters when composition drifts | Bayesian opt / genetic algorithm | 2-4 weeks |
-| **DNN surrogate base class** | Abstract Process for neural net drop-in | PyTorch Process wrapper | 1 week |
-| **Data layout spec** | `[Sims × Timesteps × StateVars]` tensor schema | Derived from TOML state_groups | 2-3 days |
-| **Multi-timescale orchestration** | Move slow processes (Metabolism, ProteinDecay) to longer timesteps | Vivarium per-process `time_step` already supports it | 1 week |
+**See `docs/specs/POST_L5_ROADMAP.md` for the comprehensive plan.** It covers:
+- 12 defensible use cases (ranked by defensibility)
+- 10 rejected use cases (with mitigations when asked)
+- 8 use-case-specific deliverables (D1-D8: Intervention API impl, Gym env,
+  causal benchmark, multi-scale benchmark, educational materials, mutagenesis
+  tool, multi-omics datasets, generative safety)
+- 5 publication artifacts (E1-E5: README rewrite, biology paper, methodology
+  paper, benchmark papers, dev-practice writeup)
+- 8 anti-patterns to avoid
+- Multi-timescale stale-read risk documentation
+- Phased sequencing (Phases 1-6 across ~6 months post-L5)
 
-Architecture already supports modular process swap (Vivarium `Process` contract
-with `ports_schema` + `next_update`). The TOML state_groups + DB loader we're
-building now IS the encode/decode schema for DNN surrogates — designed once,
-used at both validation (L-ladder) and training (data factory) time.
+| Component class | Headline | Effort |
+|---|---|---|
+| Mechanical reorganization (Phase 1) | core/ vs models/ split (see POST_L5_REFACTOR_PLAN.md) | 4-5 weeks |
+| ML infrastructure (Phase 2) | Tensor emitter (Zarr/HDF5), distributed execution (Ray/Dask), calibration loop, DNN surrogate base, multi-timescale | 4-6 weeks |
+| Foundational deliverables (Phase 3) | D1 Intervention API impl, D2 Gym env wrapper | 2-3 weeks |
+| Benchmark deliverables (Phase 4) | D3 Causal discovery benchmark, D4 Multi-scale dynamical system benchmark | 3-5 weeks |
+| User-facing tools (Phase 5) | D5 Educational materials, D6 Mutagenesis study design | 2-3 weeks |
+| Publications (Phase 6, ongoing) | E2 Biology paper FIRST, then E3 methodology paper, then E4 benchmark papers | ongoing |
 
-**Multi-timescale rationale:** Currently all 28 processes use uniform 1.0s
-timesteps (matching Karr 2012's MATLAB implementation). Vivarium supports
-per-process timesteps natively via `next_update(timestep, states)` returning
-deltas merged atomically by the engine. Metabolism's FBA is the expensive
-step and a candidate for longer timesteps (5-10s) once L5 validates that
-slower-tick metabolism doesn't drift biologically. Estimated 5-10× chassis
-speedup. Fidelity comes first — this is post-L5 optimization, not parallel
-to validation.
+**Critical sequencing rules** (full rationale in POST_L5_ROADMAP.md):
+1. Biology earns the architecture credibility. Ship E2 (biology paper) FIRST.
+   Methodology paper (E3) only AFTER biology lands.
+2. Architecture already supports modular process swap (Vivarium `Process`
+   contract with `ports_schema` + `next_update`). TOML state_groups +
+   DB loader IS the encode/decode schema for DNN surrogates — designed
+   once, used at both validation (L-ladder) and training (data factory).
+3. Multi-timescale optimization needs L5 to define "biologically valid"
+   so we can measure drift from longer ticks. Premature timestep changes
+   are the #1 risk to chassis stability. See ROADMAP Part 8 for details.
 
-**Sequencing:** Build after L5 is green. The emitter/distributor need validated
-trajectories to emit; the calibration loop needs a composition that runs end-to-end;
-the multi-timescale optimization needs L5 to define "biologically valid" so we
-can measure drift from longer ticks.
+**Pre-L5 hooks already landed (Day 32):**
+- ✅ state_groups rename (was species_pools)
+- ✅ Constants extracted to `m_gen_constants.py`
+- ✅ Intervention API spec (`docs/specs/INTERVENTION_API.md`)
+- ✅ Tensor emit schema spec (`docs/specs/DATA_EMIT_SCHEMA.yaml`)
+- ✅ Reference data manifest spec (`docs/specs/REFERENCE_DATA_MANIFEST.yaml`)
+- ✅ Naming discipline rule (Hard Rule 17 in SESSION_CONTEXT.md)
+- ✅ README rewritten (dropped stale JAX/GPU claims, current status accurate)
+- ✅ Post-L5 refactor plan (`docs/specs/POST_L5_REFACTOR_PLAN.md`)
+- ✅ Post-L5 comprehensive roadmap (`docs/specs/POST_L5_ROADMAP.md`)
 
 ---
 
