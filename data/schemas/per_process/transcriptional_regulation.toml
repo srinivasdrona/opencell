@@ -8,7 +8,7 @@ matlab_source = "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim
 trace_file = "data/m1_sources/karr_native/per_process_traces_v2/TranscriptionalRegulation_100ticks.mat"
 fixture_file = "data/karr_fixtures/per_process/TranscriptionalRegulation_flat.mat"
 
-[species_pools]
+[state_groups]
 substrates = []
 enzymes = ["MG_101_MONOMER", "MG_127_MONOMER", "MG_205_DIMER", "MG_236_MONOMER", "MG_428_DIMER"]
 monomers = []
@@ -51,7 +51,7 @@ oc_module = "karr_transcriptional_regulation"
 oc_class = "KarrTranscriptionalRegulationProcess"
 oc_source = "opencell/vivarium/karr_transcriptional_regulation.py"
 
-[extractor_diagnostics.species_pool_counts]
+[extractor_diagnostics.state_group_counts]
 substrates = 0
 enzymes = 5
 monomers = 0

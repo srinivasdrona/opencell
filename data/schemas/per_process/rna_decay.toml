@@ -8,7 +8,7 @@ matlab_source = "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim
 trace_file = "data/m1_sources/karr_native/per_process_traces_v2_s000/RNADecay_100ticks.mat"
 fixture_file = "data/karr_fixtures/per_process/RNADecay_flat.mat"
 
-[species_pools]
+[state_groups]
 substrates = ["ALA", "AMP", "ARG", "ASN", "ASP", "CMP", "CYS", "FMET", "FOR", "GLN", "GLU", "GLY", "GMP", "GmMP", "H", "H2O", "HIS", "ILE", "LEU", "LYS", "MET", "NH3", "PHE", "PRO", "PSIURIMP", "SER", "THR", "TRP", "TYR", "UMP", "UmMP", "VAL", "cmnm5s2UMP", "k2CMP", "m1GMP", "m2GMP", "m62AMP", "m7GMP", "s4UMP"]
 enzymes = ["MG_104_MONOMER", "MG_083_MONOMER"]
 monomers = []
@@ -55,7 +55,7 @@ oc_module = "karr_rna_decay"
 oc_class = "RnaDecayLightProcess"
 oc_source = "opencell/vivarium/karr_rna_decay.py"
 
-[extractor_diagnostics.species_pool_counts]
+[extractor_diagnostics.state_group_counts]
 substrates = 39
 enzymes = 2
 monomers = 0

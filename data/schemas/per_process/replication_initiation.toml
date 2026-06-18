@@ -8,7 +8,7 @@ matlab_source = "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim
 trace_file = "data/m1_sources/karr_native/per_process_traces_v2_s000/ReplicationInitiation_100ticks.mat"
 fixture_file = "data/karr_fixtures/per_process/ReplicationInitiation_flat.mat"
 
-[species_pools]
+[state_groups]
 substrates = ["ATP", "ADP", "PI", "H2O", "H"]
 enzymes = ["MG_469_1MER_ADP", "MG_469_1MER_ATP", "MG_469_2MER_1ATP_ADP", "MG_469_2MER_ATP", "MG_469_3MER_2ATP_ADP", "MG_469_3MER_ATP", "MG_469_4MER_3ATP_ADP", "MG_469_4MER_ATP", "MG_469_5MER_4ATP_ADP", "MG_469_5MER_ATP", "MG_469_6MER_5ATP_ADP", "MG_469_6MER_ATP", "MG_469_7MER_6ATP_ADP", "MG_469_7MER_ATP", "MG_469_MONOMER"]
 monomers = []
@@ -60,7 +60,7 @@ oc_module = "karr_replication_initiation"
 oc_class = "KarrReplicationInitiationProcess"
 oc_source = "opencell/vivarium/karr_replication_initiation.py"
 
-[extractor_diagnostics.species_pool_counts]
+[extractor_diagnostics.state_group_counts]
 substrates = 5
 enzymes = 15
 monomers = 0

@@ -35,7 +35,7 @@ AUTOGEN_HEADER = (
 )
 
 SCHEMA_VERSION = "2.1"
-CANONICAL_POOLS = ("substrates", "enzymes", "monomers", "complexs", "rnas")
+CANONICAL_STATE_GROUPS = ("substrates", "enzymes", "monomers", "complexs", "rnas")
 CHROMOSOME_FIELDS = (
     "polymerizedRegions",
     "linkingNumbers",
@@ -329,14 +329,14 @@ def list_process_names(paths: Paths) -> list[str]:
     return names
 
 
-def extract_species_pools_from_fixture(fixture_file: Path) -> tuple[dict[str, list[str]], dict[str, int]]:
+def extract_state_groups_from_fixture(fixture_file: Path) -> tuple[dict[str, list[str]], dict[str, int]]:
     mat = loadmat(str(fixture_file), squeeze_me=True, struct_as_record=False)
     data = mat.get("data")
     if data is None or not hasattr(data, "fixture"):
         raise ValueError("Fixture MAT missing data.fixture root")
     fixture = data.fixture
 
-    pooled: dict[str, list[str]] = {pool: [] for pool in CANONICAL_POOLS}
+    pooled: dict[str, list[str]] = {pool: [] for pool in CANONICAL_STATE_GROUPS}
     source_attrs = 0
     for attr_name in dir(fixture):
         pool = _attr_to_pool(attr_name)
@@ -551,7 +551,7 @@ def build_pool_cross_check(
     fixture_pools: dict[str, list[str]], oc_pools: dict[str, list[str]]
 ) -> OrderedDict[str, dict[str, Any]]:
     out: OrderedDict[str, dict[str, Any]] = OrderedDict()
-    for pool_name in CANONICAL_POOLS:
+    for pool_name in CANONICAL_STATE_GROUPS:
         fixture_wids = list(fixture_pools.get(pool_name, []))
         oc_wids = list(oc_pools.get(pool_name, []))
         fixture_set = set(fixture_wids)
@@ -601,11 +601,11 @@ def _write_terminal_organelle_schema_for_cross_check(substrate_wids: list[str]) 
 
 
 def instantiate_process_for_cross_check(
-    process_name: str, cls: Any, species_pools: dict[str, list[str]]
+    process_name: str, cls: Any, state_groups: dict[str, list[str]]
 ) -> Any:
     if process_name == "TerminalOrganelleAssembly":
         temp_schema = _write_terminal_organelle_schema_for_cross_check(
-            species_pools.get("substrates", [])
+            state_groups.get("substrates", [])
         )
         try:
             return cls({"schema_path": str(temp_schema)})
@@ -622,7 +622,7 @@ def extract_process_schema(process_name: str, paths: Paths) -> dict[str, Any]:
     fixture_file = resolve_fixture_file(process_name, paths)
 
     process_text = matlab_source.read_text(encoding="utf-8", errors="replace")
-    species_pools, pool_counts = extract_species_pools_from_fixture(fixture_file)
+    state_groups, pool_counts = extract_state_groups_from_fixture(fixture_file)
     observables, mutation_counts, trace_hint_keys, pass_through = extract_trace_observables(
         trace_file
     )
@@ -634,7 +634,7 @@ def extract_process_schema(process_name: str, paths: Paths) -> dict[str, Any]:
     oc_source_rel: str | None = None
     cross_check: OrderedDict[str, dict[str, Any]] | dict[str, Any]
     cross_check_error = ""
-    oc_pools: dict[str, list[str]] = {pool: [] for pool in CANONICAL_POOLS}
+    oc_pools: dict[str, list[str]] = {pool: [] for pool in CANONICAL_STATE_GROUPS}
 
     module_tuple = None
     for alias in _snake_aliases(snake_name):
@@ -653,10 +653,10 @@ def extract_process_schema(process_name: str, paths: Paths) -> dict[str, Any]:
             module = importlib.import_module(f"opencell.vivarium.{oc_module_name}")
             cls = getattr(module, oc_class_name)
             process_obj = instantiate_process_for_cross_check(
-                process_name, cls, species_pools
+                process_name, cls, state_groups
             )
             oc_pools = collect_oc_pool_wids(process_obj)
-            cross_check = build_pool_cross_check(species_pools, oc_pools)
+            cross_check = build_pool_cross_check(state_groups, oc_pools)
         except Exception as exc:  # noqa: BLE001
             cross_check = {"status": "oc_instantiation_failed"}
             cross_check_error = f"{type(exc).__name__}: {exc}"
@@ -734,7 +734,7 @@ def extract_process_schema(process_name: str, paths: Paths) -> dict[str, Any]:
             ),
         ]
     )
-    schema["species_pools"] = OrderedDict((pool, species_pools[pool]) for pool in CANONICAL_POOLS)
+    schema["state_groups"] = OrderedDict((pool, state_groups[pool]) for pool in CANONICAL_STATE_GROUPS)
     schema["observables"] = OrderedDict((name, observables[name]) for name in observables)
     if chromosome_table is not None:
         schema["chromosome"] = chromosome_table
@@ -779,7 +779,7 @@ def extract_process_schema(process_name: str, paths: Paths) -> dict[str, Any]:
                     ]
                 ),
             ),
-            ("species_pool_counts", pool_counts),
+            ("state_group_counts", pool_counts),
             ("cross_check", cross_check),
         ]
     )
@@ -829,7 +829,7 @@ def _emit_table(lines: list[str], table_name: str, table: dict[str, Any]) -> Non
 def render_schema_toml(schema: dict[str, Any]) -> str:
     lines = [AUTOGEN_HEADER.rstrip("\n"), ""]
     _emit_table(lines, "process", schema["process"])
-    _emit_table(lines, "species_pools", schema["species_pools"])
+    _emit_table(lines, "state_groups", schema["state_groups"])
     for observable_name, table in schema["observables"].items():
         _emit_table(lines, f"observables.{observable_name}", table)
     if "chromosome" in schema:
@@ -839,8 +839,8 @@ def render_schema_toml(schema: dict[str, Any]) -> str:
     _emit_table(lines, "extractor_diagnostics.provenance", schema["extractor_diagnostics"]["provenance"])
     _emit_table(
         lines,
-        "extractor_diagnostics.species_pool_counts",
-        schema["extractor_diagnostics"]["species_pool_counts"],
+        "extractor_diagnostics.state_group_counts",
+        schema["extractor_diagnostics"]["state_group_counts"],
     )
     _emit_table(
         lines,
@@ -902,7 +902,7 @@ def main() -> int:
     for process_name in process_names:
         schema = extract_process_schema(process_name, paths)
         if args.dry_run:
-            print(f"[dry-run] {process_name}: fixture/species_pools parsed")
+            print(f"[dry-run] {process_name}: fixture/state_groups parsed")
             continue
         out = write_schema_file(process_name, schema, output_dir)
         written += 1

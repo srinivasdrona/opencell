@@ -8,7 +8,7 @@ matlab_source = "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim
 trace_file = "data/m1_sources/karr_native/per_process_traces_v2_s000/RNAModification_100ticks.mat"
 fixture_file = "data/karr_fixtures/per_process/RNAModification_flat.mat"
 
-[species_pools]
+[state_groups]
 substrates = ["AHCYS", "AMET", "AMP", "ATP", "cmnm5s2UMP", "CMP", "CYS", "FAD", "FTHF5", "GLY", "GmMP", "GMP", "H", "H2O", "k2CMP", "LYS", "m1GMP", "m2GMP", "m62AMP", "m6AMP", "m7GMP", "PPI", "PSIURIMP", "s2UMP", "s4UMP", "SER", "THF", "UmMP", "UMP"]
 enzymes = ["MG_209_MONOMER", "MG_295_MONOMER", "MG_370_MONOMER", "MG_380_MONOMER", "MG_463_MONOMER", "MG_008_379_TETRAMER", "MG_084_TETRAMER", "MG_182_DIMER", "MG_252_DIMER", "MG_346_DIMER", "MG_347_DIMER", "MG_372_DIMER", "MG_445_DIMER"]
 monomers = []
@@ -59,7 +59,7 @@ oc_module = "karr_rna_modification"
 oc_class = "KarrRNAModificationProcess"
 oc_source = "opencell/vivarium/karr_rna_modification.py"
 
-[extractor_diagnostics.species_pool_counts]
+[extractor_diagnostics.state_group_counts]
 substrates = 29
 enzymes = 13
 monomers = 0

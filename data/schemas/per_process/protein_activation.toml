@@ -8,7 +8,7 @@ matlab_source = "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim
 trace_file = "data/m1_sources/karr_native/per_process_traces_v2/ProteinActivation_100ticks.mat"
 fixture_file = "data/karr_fixtures/per_process/ProteinActivation_flat.mat"
 
-[species_pools]
+[state_groups]
 substrates = ["MG_101_MONOMER", "MG_127_MONOMER", "MG_236_MONOMER", "DNA_GYRASE", "MG_085_HEXAMER", "MG_203_204_TETRAMER", "MG_205_DIMER", "MG_409_DIMER", "RIBOSOME_30S", "RIBOSOME_50S"]
 enzymes = []
 monomers = []
@@ -51,7 +51,7 @@ oc_module = "karr_protein_activation"
 oc_class = "KarrProteinActivationProcess"
 oc_source = "opencell/vivarium/karr_protein_activation.py"
 
-[extractor_diagnostics.species_pool_counts]
+[extractor_diagnostics.state_group_counts]
 substrates = 10
 enzymes = 0
 monomers = 0

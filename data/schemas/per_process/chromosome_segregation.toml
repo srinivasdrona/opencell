@@ -8,7 +8,7 @@ matlab_source = "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim
 trace_file = "data/m1_sources/karr_native/per_process_traces_v2/ChromosomeSegregation_100ticks.mat"
 fixture_file = "data/karr_fixtures/per_process/ChromosomeSegregation_flat.mat"
 
-[species_pools]
+[state_groups]
 substrates = ["GTP", "GDP", "H", "H2O", "PI"]
 enzymes = ["MG_470_MONOMER", "MG_221_OCTAMER", "MG_387_MONOMER", "MG_384_MONOMER", "MG_203_204_TETRAMER"]
 monomers = []
@@ -51,7 +51,7 @@ oc_module = "karr_chromosome_segregation"
 oc_class = "KarrChromosomeSegregationProcess"
 oc_source = "opencell/vivarium/karr_chromosome_segregation.py"
 
-[extractor_diagnostics.species_pool_counts]
+[extractor_diagnostics.state_group_counts]
 substrates = 5
 enzymes = 5
 monomers = 0

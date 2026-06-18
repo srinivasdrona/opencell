@@ -8,7 +8,7 @@ matlab_source = "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim
 trace_file = "data/m1_sources/karr_native/per_process_traces_v2/Transcription_100ticks.mat"
 fixture_file = "data/karr_fixtures/per_process/Transcription_flat.mat"
 
-[species_pools]
+[state_groups]
 substrates = ["ATP", "CTP", "GTP", "UTP", "AMP", "CMP", "GMP", "UMP", "ADP", "PPI", "H2O", "H"]
 enzymes = ["MG_249_MONOMER", "MG_282_MONOMER", "MG_141_MONOMER", "MG_027_MONOMER", "RNA_POLYMERASE", "RNA_POLYMERASE_HOLOENZYME"]
 monomers = []
@@ -51,7 +51,7 @@ oc_module = "karr_transcription"
 oc_class = "KarrTranscriptionProcess"
 oc_source = "opencell/vivarium/karr_transcription.py"
 
-[extractor_diagnostics.species_pool_counts]
+[extractor_diagnostics.state_group_counts]
 substrates = 12
 enzymes = 6
 monomers = 0

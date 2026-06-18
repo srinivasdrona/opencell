@@ -8,7 +8,7 @@ matlab_source = "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim
 trace_file = "data/m1_sources/karr_native/per_process_traces_v2_s000/Replication_100ticks.mat"
 fixture_file = "data/karr_fixtures/per_process/Replication_flat.mat"
 
-[species_pools]
+[state_groups]
 substrates = ["DATP", "DCTP", "DGTP", "DTTP", "ATP", "CTP", "GTP", "UTP", "PPI", "H2O", "H", "NAD", "NMN", "ADP", "AMP", "PI"]
 enzymes = ["REPLISOME", "DNA_POLYMERASE_2CORE_BETA_CLAMP_GAMMA_COMPLEX_PRIMASE", "DNA_POLYMERASE_CORE_BETA_CLAMP_GAMMA_COMPLEX", "DNA_POLYMERASE_CORE_BETA_CLAMP_PRIMASE", "DNA_POLYMERASE_CORE", "DNA_POLYMERASE_GAMMA_COMPLEX", "MG_001_MONOMER", "MG_001_DIMER", "MG_094_HEXAMER", "MG_254_MONOMER", "MG_250_MONOMER", "MG_091_TETRAMER", "MG_091_OCTAMER"]
 monomers = []
@@ -60,7 +60,7 @@ oc_module = "karr_replication"
 oc_class = "KarrReplicationProcess"
 oc_source = "opencell/vivarium/karr_replication.py"
 
-[extractor_diagnostics.species_pool_counts]
+[extractor_diagnostics.state_group_counts]
 substrates = 16
 enzymes = 13
 monomers = 0

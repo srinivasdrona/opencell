@@ -8,7 +8,7 @@ matlab_source = "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim
 trace_file = "data/m1_sources/karr_native/per_process_traces_v2/Translation_100ticks.mat"
 fixture_file = "data/karr_fixtures/per_process/Translation_flat.mat"
 
-[species_pools]
+[state_groups]
 substrates = ["ALA", "ARG", "ASN", "ASP", "CYS", "GLN", "GLU", "GLY", "HIS", "ILE", "LEU", "LYS", "MET", "PHE", "PRO", "SER", "THR", "TRP", "TYR", "VAL", "FMET", "GTP", "GDP", "PI", "H2O", "H"]
 enzymes = ["MG_173_MONOMER", "MG_142_MONOMER", "MG_196_MONOMER", "MG_089_DIMER", "MG_026_MONOMER", "MG_451_DIMER", "MG_433_DIMER", "MG_258_MONOMER", "MG_435_MONOMER", "RIBOSOME_30S", "RIBOSOME_30S_IF3", "RIBOSOME_50S", "RIBOSOME_70S", "MG_0004", "MG_059_MONOMER", "MG_083_MONOMER"]
 monomers = []
@@ -55,7 +55,7 @@ oc_module = "karr_translation_v3"
 oc_class = "KarrTranslationV3Process"
 oc_source = "opencell/vivarium/karr_translation_v3.py"
 
-[extractor_diagnostics.species_pool_counts]
+[extractor_diagnostics.state_group_counts]
 substrates = 26
 enzymes = 16
 monomers = 0

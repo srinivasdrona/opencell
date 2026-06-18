@@ -8,7 +8,7 @@ matlab_source = "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim
 trace_file = "data/m1_sources/karr_native/per_process_traces_v2_s000/ProteinDecay_100ticks.mat"
 fixture_file = "data/karr_fixtures/per_process/ProteinDecay_flat.mat"
 
-[species_pools]
+[state_groups]
 substrates = ["ADP", "ALA", "AMP", "ARG", "ASN", "ASP", "ATP", "COA", "CYS", "DDCA", "FE2", "FMET", "FOR", "GDP", "GLN", "GLU", "GLY", "GTP", "H", "H2O", "HDCA", "HDCEA", "HIS", "ILE", "K", "LEU", "LIPOYLLYS", "LYS", "MET", "MG", "MN", "NA", "NH3", "O2", "OCDCA", "OCDCEA", "PAP", "PHE", "PI", "PPI", "PRO", "SER", "THR", "TRP", "TTDCA", "TTDCEA", "TYR", "VAL", "ZN", "diacylglycerolCys", "pSER", "pTHR", "pTYR"]
 enzymes = ["MG_355_HEXAMER", "MG_239_HEXAMER", "MG_457_HEXAMER", "MG_183_MONOMER", "MG_324_MONOMER", "MG_391_HEXAMER", "MG_208_DIMER", "MG_046_DIMER", "MG_020_MONOMER"]
 monomers = []
@@ -63,7 +63,7 @@ oc_module = "karr_protein_decay_light"
 oc_class = "ProteinDecayLightProcess"
 oc_source = "opencell/vivarium/karr_protein_decay_light.py"
 
-[extractor_diagnostics.species_pool_counts]
+[extractor_diagnostics.state_group_counts]
 substrates = 53
 enzymes = 9
 monomers = 0

@@ -8,7 +8,7 @@ matlab_source = "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim
 trace_file = "data/m1_sources/karr_native/per_process_traces_v2/TerminalOrganelleAssembly_100ticks.mat"
 fixture_file = "data/karr_fixtures/per_process/TerminalOrganelleAssembly_flat.mat"
 
-[species_pools]
+[state_groups]
 substrates = ["MG_191_MONOMER", "MG_192_MONOMER", "MG_217_MONOMER", "MG_218_MONOMER", "MG_312_MONOMER", "MG_317_MONOMER", "MG_318_MONOMER", "MG_386_MONOMER"]
 enzymes = ["MG_218_MONOMER", "MG_312_MONOMER", "MG_317_MONOMER", "MG_318_MONOMER"]
 monomers = []
@@ -51,7 +51,7 @@ oc_module = "karr_terminal_organelle_assembly"
 oc_class = "KarrTerminalOrganelleAssemblyProcess"
 oc_source = "opencell/vivarium/karr_terminal_organelle_assembly.py"
 
-[extractor_diagnostics.species_pool_counts]
+[extractor_diagnostics.state_group_counts]
 substrates = 8
 enzymes = 4
 monomers = 0

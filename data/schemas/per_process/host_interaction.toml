@@ -8,7 +8,7 @@ matlab_source = "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim
 trace_file = "data/m1_sources/karr_native/per_process_traces_v2/HostInteraction_100ticks.mat"
 fixture_file = "data/karr_fixtures/per_process/HostInteraction_flat.mat"
 
-[species_pools]
+[state_groups]
 substrates = []
 enzymes = ["MG_075_MONOMER", "MG_149_MONOMER", "MG_191_MONOMER", "MG_192_MONOMER", "MG_200_MONOMER", "MG_217_MONOMER", "MG_218_MONOMER", "MG_288_MONOMER", "MG_309_MONOMER", "MG_312_MONOMER", "MG_317_MONOMER", "MG_318_MONOMER", "MG_386_MONOMER", "MG_412_MONOMER", "MG_410_411_412_PENTAMER"]
 monomers = []
@@ -51,7 +51,7 @@ oc_module = "karr_host_interaction"
 oc_class = "KarrHostInteractionProcess"
 oc_source = "opencell/vivarium/karr_host_interaction.py"
 
-[extractor_diagnostics.species_pool_counts]
+[extractor_diagnostics.state_group_counts]
 substrates = 0
 enzymes = 15
 monomers = 0

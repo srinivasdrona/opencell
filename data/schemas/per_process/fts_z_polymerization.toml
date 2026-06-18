@@ -8,7 +8,7 @@ matlab_source = "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim
 trace_file = "data/m1_sources/karr_native/per_process_traces_v2/FtsZPolymerization_100ticks.mat"
 fixture_file = "data/karr_fixtures/per_process/FtsZPolymerization_flat.mat"
 
-[species_pools]
+[state_groups]
 substrates = ["GDP", "GTP", "PI", "H2O", "H"]
 enzymes = ["MG_224_MONOMER", "MG_224_MONOMER_GDP", "MG_224_MONOMER_GTP", "MG_224_2MER_GTP", "MG_224_3MER_GTP", "MG_224_4MER_GTP", "MG_224_5MER_GTP", "MG_224_6MER_GTP", "MG_224_7MER_GTP", "MG_224_8MER_GTP", "MG_224_9MER_GTP"]
 monomers = []
@@ -51,7 +51,7 @@ oc_module = "karr_ftsz_polymerization"
 oc_class = "KarrFtsZPolymerizationProcess"
 oc_source = "opencell/vivarium/karr_ftsz_polymerization.py"
 
-[extractor_diagnostics.species_pool_counts]
+[extractor_diagnostics.state_group_counts]
 substrates = 5
 enzymes = 11
 monomers = 0

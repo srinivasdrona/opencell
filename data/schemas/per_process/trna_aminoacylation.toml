@@ -8,7 +8,7 @@ matlab_source = "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim
 trace_file = "data/m1_sources/karr_native/per_process_traces_v2_s000/tRNAAminoacylation_100ticks.mat"
 fixture_file = "data/karr_fixtures/per_process/tRNAAminoacylation_flat.mat"
 
-[species_pools]
+[state_groups]
 substrates = ["ADP", "ALA", "AMP", "ARG", "ASN", "ASP", "ATP", "CYS", "FMET", "FTHF10", "GLU", "GLY", "H", "H2O", "HIS", "ILE", "LEU", "LYS", "MET", "PHE", "PI", "PPI", "PRO", "SER", "THF", "THR", "TRP", "TYR", "VAL", "GLN"]
 enzymes = ["MG_253_MONOMER", "MG_266_MONOMER", "MG_334_MONOMER", "MG_345_MONOMER", "MG_365_MONOMER", "MG_378_MONOMER", "MG_462_MONOMER", "MG_005_DIMER", "MG_021_DIMER", "MG_035_DIMER", "MG_036_DIMER", "MG_098_099_100_TRIMER", "MG_113_DIMER", "MG_126_DIMER", "MG_136_DIMER", "MG_194_195_TETRAMER", "MG_251_DIMER", "MG_283_DIMER", "MG_292_TETRAMER", "MG_375_DIMER", "MG_455_DIMER", "MG471", "MG472", "MG475", "MG479", "MG483", "MG484", "MG485", "MG486", "MG487", "MG488", "MG489", "MG490", "MG492", "MG493", "MG495", "MG496", "MG497", "MG499", "MG500", "MG501", "MG502", "MG503", "MG504", "MG506", "MG507", "MG508", "MG509", "MG510", "MG511", "MG512", "MG513", "MG514", "MG518", "MG519", "MG520", "MG523", "MG_0004"]
 monomers = []
@@ -59,7 +59,7 @@ oc_module = "karr_trna_aminoacylation"
 oc_class = "KarrTRNAAminoacylationProcess"
 oc_source = "opencell/vivarium/karr_trna_aminoacylation.py"
 
-[extractor_diagnostics.species_pool_counts]
+[extractor_diagnostics.state_group_counts]
 substrates = 30
 enzymes = 58
 monomers = 0
