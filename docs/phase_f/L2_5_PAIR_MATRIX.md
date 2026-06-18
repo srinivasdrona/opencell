@@ -9,12 +9,21 @@
 - Tier 1 pairs (must-pass priority): 183
 - Tier 2 pairs (should-pass): 72
 - Tier 3 pairs (informational): 1
-- L2.5.2 honest-required shared pairs (catalog-filtered): 211
+- L2.5.2 honest-required shared pairs (all shared-pool pairs): 256
 - Catalog filter mode: `fallback:in_scope_L2_2` from `docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml`
 - Source digest: `d2f21834ce0f93192b0194fdcd9716686327f63a5b9fb3f9a05fdd0c5e3eddbb`
 - Deterministic generated_at: `2017-04-19T05:18:11Z`
 
-## 2. Pair count matrix
+## 2. Pair complexity breakdown
+
+| Complexity | Count | Description |
+|---|---:|---|
+| stochastic ↔ stochastic | 211 | Both sides use distributional oracle (CAUSE_1-7 taxonomy) |
+| deterministic ↔ stochastic | 43 | One side bit-identity, other distributional |
+| deterministic ↔ deterministic | 2 | Both sides bit-identity (strictest) |
+| **Total honest-required** | **256** | All shared-pool pairs |
+
+## 3. Pair count matrix
 
 ```text
 Idx Process                      1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19  20  21  22  23  24  25  26  27  28
@@ -48,278 +57,278 @@ Idx Process                      1   2   3   4   5   6   7   8   9  10  11  12  
  28 tRNAAminoacylation         5   3   3   2   7   5   3   0   0  30   0  29   5  10   3   2   5  24  47  42   7   5   3   0   6   0  62   -
 ```
 
-## 3. Tier 1 pair list
+## 4. Tier 1 pair list
 
-| process_A | process_B | substrates_overlap | enzymes_overlap | monomers_overlap | complexs_overlap | rnas_overlap | total |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| ProteinFolding | ProteinTranslocation | 5 | 0 | 482 | 0 | 0 | 487 |
-| ProteinFolding | ProteinModification | 4 | 0 | 482 | 0 | 0 | 486 |
-| ProteinModification | ProteinTranslocation | 4 | 0 | 482 | 0 | 0 | 486 |
-| RNAModification | RNAProcessing | 3 | 0 | 0 | 0 | 347 | 350 |
-| DNARepair | Metabolism | 197 | 1 | 0 | 0 | 0 | 198 |
-| Translation | tRNAAminoacylation | 24 | 1 | 0 | 0 | 37 | 62 |
-| ProteinFolding | RibosomeAssembly | 3 | 0 | 52 | 2 | 0 | 57 |
-| ProteinTranslocation | RibosomeAssembly | 5 | 0 | 52 | 0 | 0 | 57 |
-| Metabolism | ProteinDecay | 53 | 0 | 0 | 0 | 0 | 53 |
-| RNAModification | tRNAAminoacylation | 10 | 0 | 0 | 0 | 37 | 47 |
-| RNAModification | Translation | 6 | 0 | 0 | 0 | 37 | 43 |
-| RNAProcessing | Translation | 5 | 0 | 0 | 0 | 37 | 42 |
-| RNAProcessing | tRNAAminoacylation | 5 | 0 | 0 | 0 | 37 | 42 |
-| DNADamage | DNARepair | 39 | 0 | 0 | 0 | 0 | 39 |
-| Metabolism | RNADecay | 39 | 0 | 0 | 0 | 0 | 39 |
-| Metabolism | RNAModification | 29 | 1 | 0 | 0 | 0 | 30 |
-| Metabolism | tRNAAminoacylation | 30 | 0 | 0 | 0 | 0 | 30 |
-| ProteinDecay | tRNAAminoacylation | 28 | 0 | 0 | 0 | 1 | 29 |
-| ProteinDecay | Translation | 26 | 0 | 0 | 0 | 1 | 27 |
-| Metabolism | Translation | 26 | 0 | 0 | 0 | 0 | 26 |
-| ProteinDecay | RNADecay | 26 | 0 | 0 | 0 | 0 | 26 |
-| RNADecay | Translation | 23 | 1 | 0 | 0 | 0 | 24 |
-| RNADecay | tRNAAminoacylation | 24 | 0 | 0 | 0 | 0 | 24 |
-| DNADamage | Metabolism | 21 | 0 | 0 | 0 | 0 | 21 |
-| RNADecay | RNAModification | 20 | 0 | 0 | 0 | 0 | 20 |
-| Metabolism | ProteinModification | 15 | 1 | 0 | 0 | 0 | 16 |
-| Metabolism | Replication | 16 | 0 | 0 | 0 | 0 | 16 |
-| ProteinDecay | RNAModification | 9 | 0 | 0 | 0 | 7 | 16 |
-| DNARepair | Replication | 13 | 2 | 0 | 0 | 0 | 15 |
-| ProteinDecay | ProteinModification | 14 | 0 | 0 | 0 | 0 | 14 |
-| ProteinDecay | RNAProcessing | 7 | 0 | 0 | 0 | 7 | 14 |
-| Metabolism | Transcription | 12 | 0 | 0 | 0 | 0 | 12 |
-| Metabolism | ProteinFolding | 11 | 0 | 0 | 0 | 0 | 11 |
-| ProteinDecay | ProteinFolding | 11 | 0 | 0 | 0 | 0 | 11 |
-| ProteinModification | tRNAAminoacylation | 10 | 0 | 0 | 0 | 0 | 10 |
-| Replication | Transcription | 9 | 0 | 0 | 0 | 0 | 9 |
-| ProteinDecay | Replication | 8 | 0 | 0 | 0 | 0 | 8 |
-| ProteinDecay | RibosomeAssembly | 5 | 0 | 0 | 0 | 3 | 8 |
-| RNAModification | Transcription | 8 | 0 | 0 | 0 | 0 | 8 |
-| RNAProcessing | RibosomeAssembly | 5 | 0 | 0 | 0 | 3 | 8 |
-| ChromosomeSegregation | RibosomeAssembly | 5 | 2 | 0 | 0 | 0 | 7 |
-| DNARepair | ProteinDecay | 7 | 0 | 0 | 0 | 0 | 7 |
-| DNARepair | RNAModification | 7 | 0 | 0 | 0 | 0 | 7 |
-| DNARepair | tRNAAminoacylation | 7 | 0 | 0 | 0 | 0 | 7 |
-| Metabolism | ProteinTranslocation | 7 | 0 | 0 | 0 | 0 | 7 |
-| Metabolism | RNAProcessing | 7 | 0 | 0 | 0 | 0 | 7 |
-| ProteinDecay | ProteinTranslocation | 7 | 0 | 0 | 0 | 0 | 7 |
-| ProteinDecay | Transcription | 7 | 0 | 0 | 0 | 0 | 7 |
-| ProteinModification | RNADecay | 7 | 0 | 0 | 0 | 0 | 7 |
-| ProteinModification | Translation | 7 | 0 | 0 | 0 | 0 | 7 |
-| ProteinTranslocation | RNAProcessing | 7 | 0 | 0 | 0 | 0 | 7 |
-| Replication | tRNAAminoacylation | 7 | 0 | 0 | 0 | 0 | 7 |
-| Cytokinesis | FtsZPolymerization | 3 | 3 | 0 | 0 | 0 | 6 |
-| DNARepair | Transcription | 6 | 0 | 0 | 0 | 0 | 6 |
-| ProteinTranslocation | Replication | 6 | 0 | 0 | 0 | 0 | 6 |
-| RNADecay | Transcription | 6 | 0 | 0 | 0 | 0 | 6 |
-| RNAProcessing | Replication | 6 | 0 | 0 | 0 | 0 | 6 |
-| Transcription | tRNAAminoacylation | 6 | 0 | 0 | 0 | 0 | 6 |
-| ChromosomeCondensation | DNARepair | 5 | 0 | 0 | 0 | 0 | 5 |
-| ChromosomeCondensation | DNASupercoiling | 5 | 0 | 0 | 0 | 0 | 5 |
-| ChromosomeCondensation | Metabolism | 5 | 0 | 0 | 0 | 0 | 5 |
-| ChromosomeCondensation | ProteinDecay | 5 | 0 | 0 | 0 | 0 | 5 |
-| ChromosomeCondensation | ProteinFolding | 5 | 0 | 0 | 0 | 0 | 5 |
-| ChromosomeCondensation | ProteinTranslocation | 5 | 0 | 0 | 0 | 0 | 5 |
-| ChromosomeCondensation | RNAProcessing | 5 | 0 | 0 | 0 | 0 | 5 |
-| ChromosomeCondensation | Replication | 5 | 0 | 0 | 0 | 0 | 5 |
-| ChromosomeCondensation | ReplicationInitiation | 5 | 0 | 0 | 0 | 0 | 5 |
-| ChromosomeCondensation | tRNAAminoacylation | 5 | 0 | 0 | 0 | 0 | 5 |
-| ChromosomeSegregation | FtsZPolymerization | 5 | 0 | 0 | 0 | 0 | 5 |
-| ChromosomeSegregation | Metabolism | 5 | 0 | 0 | 0 | 0 | 5 |
-| ChromosomeSegregation | ProteinDecay | 5 | 0 | 0 | 0 | 0 | 5 |
-| ChromosomeSegregation | ProteinTranslocation | 5 | 0 | 0 | 0 | 0 | 5 |
-| ChromosomeSegregation | RNAProcessing | 5 | 0 | 0 | 0 | 0 | 5 |
-| ChromosomeSegregation | Translation | 5 | 0 | 0 | 0 | 0 | 5 |
-| DNARepair | DNASupercoiling | 5 | 0 | 0 | 0 | 0 | 5 |
-| DNARepair | ProteinFolding | 5 | 0 | 0 | 0 | 0 | 5 |
-| DNARepair | ProteinModification | 5 | 0 | 0 | 0 | 0 | 5 |
-| DNARepair | ProteinTranslocation | 5 | 0 | 0 | 0 | 0 | 5 |
-| DNARepair | RNAProcessing | 5 | 0 | 0 | 0 | 0 | 5 |
-| DNARepair | ReplicationInitiation | 5 | 0 | 0 | 0 | 0 | 5 |
-| DNASupercoiling | Metabolism | 5 | 0 | 0 | 0 | 0 | 5 |
-| DNASupercoiling | ProteinDecay | 5 | 0 | 0 | 0 | 0 | 5 |
-| DNASupercoiling | ProteinFolding | 5 | 0 | 0 | 0 | 0 | 5 |
-| DNASupercoiling | ProteinTranslocation | 5 | 0 | 0 | 0 | 0 | 5 |
-| DNASupercoiling | RNAProcessing | 5 | 0 | 0 | 0 | 0 | 5 |
-| DNASupercoiling | Replication | 5 | 0 | 0 | 0 | 0 | 5 |
-| DNASupercoiling | ReplicationInitiation | 5 | 0 | 0 | 0 | 0 | 5 |
-| DNASupercoiling | tRNAAminoacylation | 5 | 0 | 0 | 0 | 0 | 5 |
-| FtsZPolymerization | Metabolism | 5 | 0 | 0 | 0 | 0 | 5 |
-| FtsZPolymerization | ProteinDecay | 5 | 0 | 0 | 0 | 0 | 5 |
-| FtsZPolymerization | ProteinTranslocation | 5 | 0 | 0 | 0 | 0 | 5 |
-| FtsZPolymerization | RNAProcessing | 5 | 0 | 0 | 0 | 0 | 5 |
-| FtsZPolymerization | RibosomeAssembly | 5 | 0 | 0 | 0 | 0 | 5 |
-| FtsZPolymerization | Translation | 5 | 0 | 0 | 0 | 0 | 5 |
-| Metabolism | ProteinProcessingII | 5 | 0 | 0 | 0 | 0 | 5 |
-| Metabolism | ReplicationInitiation | 5 | 0 | 0 | 0 | 0 | 5 |
-| Metabolism | RibosomeAssembly | 5 | 0 | 0 | 0 | 0 | 5 |
-| ProteinDecay | ReplicationInitiation | 5 | 0 | 0 | 0 | 0 | 5 |
-| ProteinFolding | RNAProcessing | 5 | 0 | 0 | 0 | 0 | 5 |
-| ProteinFolding | Replication | 5 | 0 | 0 | 0 | 0 | 5 |
-| ProteinFolding | ReplicationInitiation | 5 | 0 | 0 | 0 | 0 | 5 |
-| ProteinFolding | tRNAAminoacylation | 5 | 0 | 0 | 0 | 0 | 5 |
-| ProteinModification | RNAModification | 5 | 0 | 0 | 0 | 0 | 5 |
-| ProteinModification | Replication | 5 | 0 | 0 | 0 | 0 | 5 |
-| ProteinTranslocation | ReplicationInitiation | 5 | 0 | 0 | 0 | 0 | 5 |
-| ProteinTranslocation | Transcription | 5 | 0 | 0 | 0 | 0 | 5 |
-| ProteinTranslocation | Translation | 5 | 0 | 0 | 0 | 0 | 5 |
-| ProteinTranslocation | tRNAAminoacylation | 5 | 0 | 0 | 0 | 0 | 5 |
-| RNAModification | Replication | 5 | 0 | 0 | 0 | 0 | 5 |
-| RNAProcessing | ReplicationInitiation | 5 | 0 | 0 | 0 | 0 | 5 |
-| RNAProcessing | Transcription | 5 | 0 | 0 | 0 | 0 | 5 |
-| Replication | ReplicationInitiation | 5 | 0 | 0 | 0 | 0 | 5 |
-| ReplicationInitiation | tRNAAminoacylation | 5 | 0 | 0 | 0 | 0 | 5 |
-| RibosomeAssembly | Translation | 5 | 0 | 0 | 0 | 0 | 5 |
-| ChromosomeCondensation | ProteinModification | 4 | 0 | 0 | 0 | 0 | 4 |
-| ChromosomeCondensation | Transcription | 4 | 0 | 0 | 0 | 0 | 4 |
-| ChromosomeSegregation | DNASupercoiling | 3 | 1 | 0 | 0 | 0 | 4 |
-| ChromosomeSegregation | Replication | 4 | 0 | 0 | 0 | 0 | 4 |
-| DNASupercoiling | ProteinModification | 4 | 0 | 0 | 0 | 0 | 4 |
-| DNASupercoiling | Transcription | 4 | 0 | 0 | 0 | 0 | 4 |
-| FtsZPolymerization | Replication | 4 | 0 | 0 | 0 | 0 | 4 |
-| HostInteraction | TerminalOrganelleAssembly | 0 | 4 | 0 | 0 | 0 | 4 |
-| Metabolism | ProteinProcessingI | 4 | 0 | 0 | 0 | 0 | 4 |
-| ProteinDecay | ProteinProcessingI | 4 | 0 | 0 | 0 | 0 | 4 |
-| ProteinFolding | Transcription | 4 | 0 | 0 | 0 | 0 | 4 |
-| ProteinModification | RNAProcessing | 4 | 0 | 0 | 0 | 0 | 4 |
-| ProteinModification | ReplicationInitiation | 4 | 0 | 0 | 0 | 0 | 4 |
-| ProteinModification | Transcription | 4 | 0 | 0 | 0 | 0 | 4 |
-| ProteinProcessingI | RNADecay | 4 | 0 | 0 | 0 | 0 | 4 |
-| Replication | RibosomeAssembly | 4 | 0 | 0 | 0 | 0 | 4 |
-| Replication | Translation | 4 | 0 | 0 | 0 | 0 | 4 |
-| ReplicationInitiation | Transcription | 4 | 0 | 0 | 0 | 0 | 4 |
-| ChromosomeCondensation | ChromosomeSegregation | 3 | 0 | 0 | 0 | 0 | 3 |
-| ChromosomeCondensation | Cytokinesis | 3 | 0 | 0 | 0 | 0 | 3 |
-| ChromosomeCondensation | FtsZPolymerization | 3 | 0 | 0 | 0 | 0 | 3 |
-| ChromosomeCondensation | RNAModification | 3 | 0 | 0 | 0 | 0 | 3 |
-| ChromosomeCondensation | RibosomeAssembly | 3 | 0 | 0 | 0 | 0 | 3 |
-| ChromosomeCondensation | Translation | 3 | 0 | 0 | 0 | 0 | 3 |
-| ChromosomeSegregation | Cytokinesis | 3 | 0 | 0 | 0 | 0 | 3 |
-| ChromosomeSegregation | DNARepair | 3 | 0 | 0 | 0 | 0 | 3 |
-| ChromosomeSegregation | ProteinFolding | 3 | 0 | 0 | 0 | 0 | 3 |
-| ChromosomeSegregation | ReplicationInitiation | 3 | 0 | 0 | 0 | 0 | 3 |
-| ChromosomeSegregation | Transcription | 3 | 0 | 0 | 0 | 0 | 3 |
-| ChromosomeSegregation | tRNAAminoacylation | 3 | 0 | 0 | 0 | 0 | 3 |
-| Cytokinesis | DNARepair | 3 | 0 | 0 | 0 | 0 | 3 |
-| Cytokinesis | DNASupercoiling | 3 | 0 | 0 | 0 | 0 | 3 |
-| Cytokinesis | Metabolism | 3 | 0 | 0 | 0 | 0 | 3 |
-| Cytokinesis | ProteinDecay | 3 | 0 | 0 | 0 | 0 | 3 |
-| Cytokinesis | ProteinFolding | 3 | 0 | 0 | 0 | 0 | 3 |
-| Cytokinesis | ProteinTranslocation | 3 | 0 | 0 | 0 | 0 | 3 |
-| Cytokinesis | RNAProcessing | 3 | 0 | 0 | 0 | 0 | 3 |
-| Cytokinesis | Replication | 3 | 0 | 0 | 0 | 0 | 3 |
-| Cytokinesis | ReplicationInitiation | 3 | 0 | 0 | 0 | 0 | 3 |
-| Cytokinesis | RibosomeAssembly | 3 | 0 | 0 | 0 | 0 | 3 |
-| Cytokinesis | Translation | 3 | 0 | 0 | 0 | 0 | 3 |
-| Cytokinesis | tRNAAminoacylation | 3 | 0 | 0 | 0 | 0 | 3 |
-| DNADamage | ProteinDecay | 3 | 0 | 0 | 0 | 0 | 3 |
-| DNADamage | RNADecay | 3 | 0 | 0 | 0 | 0 | 3 |
-| DNARepair | FtsZPolymerization | 3 | 0 | 0 | 0 | 0 | 3 |
-| DNARepair | RNADecay | 3 | 0 | 0 | 0 | 0 | 3 |
-| DNARepair | RibosomeAssembly | 3 | 0 | 0 | 0 | 0 | 3 |
-| DNARepair | Translation | 3 | 0 | 0 | 0 | 0 | 3 |
-| DNASupercoiling | FtsZPolymerization | 3 | 0 | 0 | 0 | 0 | 3 |
-| DNASupercoiling | RNAModification | 3 | 0 | 0 | 0 | 0 | 3 |
-| DNASupercoiling | RibosomeAssembly | 3 | 0 | 0 | 0 | 0 | 3 |
-| DNASupercoiling | Translation | 3 | 0 | 0 | 0 | 0 | 3 |
-| FtsZPolymerization | ProteinFolding | 3 | 0 | 0 | 0 | 0 | 3 |
-| FtsZPolymerization | ReplicationInitiation | 3 | 0 | 0 | 0 | 0 | 3 |
-| FtsZPolymerization | Transcription | 3 | 0 | 0 | 0 | 0 | 3 |
-| FtsZPolymerization | tRNAAminoacylation | 3 | 0 | 0 | 0 | 0 | 3 |
-| ProteinDecay | ProteinProcessingII | 3 | 0 | 0 | 0 | 0 | 3 |
-| ProteinFolding | RNAModification | 3 | 0 | 0 | 0 | 0 | 3 |
-| ProteinFolding | Translation | 3 | 0 | 0 | 0 | 0 | 3 |
-| ProteinProcessingI | Translation | 3 | 0 | 0 | 0 | 0 | 3 |
-| ProteinProcessingI | tRNAAminoacylation | 3 | 0 | 0 | 0 | 0 | 3 |
-| ProteinTranslocation | RNAModification | 3 | 0 | 0 | 0 | 0 | 3 |
-| RNADecay | Replication | 3 | 0 | 0 | 0 | 0 | 3 |
-| RNAModification | ReplicationInitiation | 3 | 0 | 0 | 0 | 0 | 3 |
-| ReplicationInitiation | RibosomeAssembly | 3 | 0 | 0 | 0 | 0 | 3 |
-| ReplicationInitiation | Translation | 3 | 0 | 0 | 0 | 0 | 3 |
-| RibosomeAssembly | Transcription | 3 | 0 | 0 | 0 | 0 | 3 |
-| RibosomeAssembly | tRNAAminoacylation | 3 | 0 | 0 | 0 | 0 | 3 |
-| Transcription | Translation | 3 | 0 | 0 | 0 | 0 | 3 |
+| process_A | process_B | oracle_type_a | oracle_type_b | pair_oracle_complexity | substrates_overlap | enzymes_overlap | monomers_overlap | complexs_overlap | rnas_overlap | total |
+|---|---:|---|---|---|---:|---:|---:|---:|---:|---:|
+| ProteinFolding | ProteinTranslocation | distributional | distributional | stochastic_stochastic | 5 | 0 | 482 | 0 | 0 | 487 |
+| ProteinFolding | ProteinModification | distributional | distributional | stochastic_stochastic | 4 | 0 | 482 | 0 | 0 | 486 |
+| ProteinModification | ProteinTranslocation | distributional | distributional | stochastic_stochastic | 4 | 0 | 482 | 0 | 0 | 486 |
+| RNAModification | RNAProcessing | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 347 | 350 |
+| DNARepair | Metabolism | distributional | distributional | stochastic_stochastic | 197 | 1 | 0 | 0 | 0 | 198 |
+| Translation | tRNAAminoacylation | distributional | distributional | stochastic_stochastic | 24 | 1 | 0 | 0 | 37 | 62 |
+| ProteinFolding | RibosomeAssembly | distributional | distributional | stochastic_stochastic | 3 | 0 | 52 | 2 | 0 | 57 |
+| ProteinTranslocation | RibosomeAssembly | distributional | distributional | stochastic_stochastic | 5 | 0 | 52 | 0 | 0 | 57 |
+| Metabolism | ProteinDecay | distributional | distributional | stochastic_stochastic | 53 | 0 | 0 | 0 | 0 | 53 |
+| RNAModification | tRNAAminoacylation | distributional | distributional | stochastic_stochastic | 10 | 0 | 0 | 0 | 37 | 47 |
+| RNAModification | Translation | distributional | distributional | stochastic_stochastic | 6 | 0 | 0 | 0 | 37 | 43 |
+| RNAProcessing | Translation | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 37 | 42 |
+| RNAProcessing | tRNAAminoacylation | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 37 | 42 |
+| DNADamage | DNARepair | distributional | distributional | stochastic_stochastic | 39 | 0 | 0 | 0 | 0 | 39 |
+| Metabolism | RNADecay | distributional | distributional | stochastic_stochastic | 39 | 0 | 0 | 0 | 0 | 39 |
+| Metabolism | RNAModification | distributional | distributional | stochastic_stochastic | 29 | 1 | 0 | 0 | 0 | 30 |
+| Metabolism | tRNAAminoacylation | distributional | distributional | stochastic_stochastic | 30 | 0 | 0 | 0 | 0 | 30 |
+| ProteinDecay | tRNAAminoacylation | distributional | distributional | stochastic_stochastic | 28 | 0 | 0 | 0 | 1 | 29 |
+| ProteinDecay | Translation | distributional | distributional | stochastic_stochastic | 26 | 0 | 0 | 0 | 1 | 27 |
+| Metabolism | Translation | distributional | distributional | stochastic_stochastic | 26 | 0 | 0 | 0 | 0 | 26 |
+| ProteinDecay | RNADecay | distributional | distributional | stochastic_stochastic | 26 | 0 | 0 | 0 | 0 | 26 |
+| RNADecay | Translation | distributional | distributional | stochastic_stochastic | 23 | 1 | 0 | 0 | 0 | 24 |
+| RNADecay | tRNAAminoacylation | distributional | distributional | stochastic_stochastic | 24 | 0 | 0 | 0 | 0 | 24 |
+| DNADamage | Metabolism | distributional | distributional | stochastic_stochastic | 21 | 0 | 0 | 0 | 0 | 21 |
+| RNADecay | RNAModification | distributional | distributional | stochastic_stochastic | 20 | 0 | 0 | 0 | 0 | 20 |
+| Metabolism | ProteinModification | distributional | distributional | stochastic_stochastic | 15 | 1 | 0 | 0 | 0 | 16 |
+| Metabolism | Replication | distributional | distributional | stochastic_stochastic | 16 | 0 | 0 | 0 | 0 | 16 |
+| ProteinDecay | RNAModification | distributional | distributional | stochastic_stochastic | 9 | 0 | 0 | 0 | 7 | 16 |
+| DNARepair | Replication | distributional | distributional | stochastic_stochastic | 13 | 2 | 0 | 0 | 0 | 15 |
+| ProteinDecay | ProteinModification | distributional | distributional | stochastic_stochastic | 14 | 0 | 0 | 0 | 0 | 14 |
+| ProteinDecay | RNAProcessing | distributional | distributional | stochastic_stochastic | 7 | 0 | 0 | 0 | 7 | 14 |
+| Metabolism | Transcription | distributional | distributional | stochastic_stochastic | 12 | 0 | 0 | 0 | 0 | 12 |
+| Metabolism | ProteinFolding | distributional | distributional | stochastic_stochastic | 11 | 0 | 0 | 0 | 0 | 11 |
+| ProteinDecay | ProteinFolding | distributional | distributional | stochastic_stochastic | 11 | 0 | 0 | 0 | 0 | 11 |
+| ProteinModification | tRNAAminoacylation | distributional | distributional | stochastic_stochastic | 10 | 0 | 0 | 0 | 0 | 10 |
+| Replication | Transcription | distributional | distributional | stochastic_stochastic | 9 | 0 | 0 | 0 | 0 | 9 |
+| ProteinDecay | Replication | distributional | distributional | stochastic_stochastic | 8 | 0 | 0 | 0 | 0 | 8 |
+| ProteinDecay | RibosomeAssembly | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 3 | 8 |
+| RNAModification | Transcription | distributional | distributional | stochastic_stochastic | 8 | 0 | 0 | 0 | 0 | 8 |
+| RNAProcessing | RibosomeAssembly | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 3 | 8 |
+| ChromosomeSegregation | RibosomeAssembly | bit_identity | distributional | deterministic_stochastic | 5 | 2 | 0 | 0 | 0 | 7 |
+| DNARepair | ProteinDecay | distributional | distributional | stochastic_stochastic | 7 | 0 | 0 | 0 | 0 | 7 |
+| DNARepair | RNAModification | distributional | distributional | stochastic_stochastic | 7 | 0 | 0 | 0 | 0 | 7 |
+| DNARepair | tRNAAminoacylation | distributional | distributional | stochastic_stochastic | 7 | 0 | 0 | 0 | 0 | 7 |
+| Metabolism | ProteinTranslocation | distributional | distributional | stochastic_stochastic | 7 | 0 | 0 | 0 | 0 | 7 |
+| Metabolism | RNAProcessing | distributional | distributional | stochastic_stochastic | 7 | 0 | 0 | 0 | 0 | 7 |
+| ProteinDecay | ProteinTranslocation | distributional | distributional | stochastic_stochastic | 7 | 0 | 0 | 0 | 0 | 7 |
+| ProteinDecay | Transcription | distributional | distributional | stochastic_stochastic | 7 | 0 | 0 | 0 | 0 | 7 |
+| ProteinModification | RNADecay | distributional | distributional | stochastic_stochastic | 7 | 0 | 0 | 0 | 0 | 7 |
+| ProteinModification | Translation | distributional | distributional | stochastic_stochastic | 7 | 0 | 0 | 0 | 0 | 7 |
+| ProteinTranslocation | RNAProcessing | distributional | distributional | stochastic_stochastic | 7 | 0 | 0 | 0 | 0 | 7 |
+| Replication | tRNAAminoacylation | distributional | distributional | stochastic_stochastic | 7 | 0 | 0 | 0 | 0 | 7 |
+| Cytokinesis | FtsZPolymerization | distributional | distributional | stochastic_stochastic | 3 | 3 | 0 | 0 | 0 | 6 |
+| DNARepair | Transcription | distributional | distributional | stochastic_stochastic | 6 | 0 | 0 | 0 | 0 | 6 |
+| ProteinTranslocation | Replication | distributional | distributional | stochastic_stochastic | 6 | 0 | 0 | 0 | 0 | 6 |
+| RNADecay | Transcription | distributional | distributional | stochastic_stochastic | 6 | 0 | 0 | 0 | 0 | 6 |
+| RNAProcessing | Replication | distributional | distributional | stochastic_stochastic | 6 | 0 | 0 | 0 | 0 | 6 |
+| Transcription | tRNAAminoacylation | distributional | distributional | stochastic_stochastic | 6 | 0 | 0 | 0 | 0 | 6 |
+| ChromosomeCondensation | DNARepair | bit_identity | distributional | deterministic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| ChromosomeCondensation | DNASupercoiling | bit_identity | distributional | deterministic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| ChromosomeCondensation | Metabolism | bit_identity | distributional | deterministic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| ChromosomeCondensation | ProteinDecay | bit_identity | distributional | deterministic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| ChromosomeCondensation | ProteinFolding | bit_identity | distributional | deterministic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| ChromosomeCondensation | ProteinTranslocation | bit_identity | distributional | deterministic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| ChromosomeCondensation | RNAProcessing | bit_identity | distributional | deterministic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| ChromosomeCondensation | Replication | bit_identity | distributional | deterministic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| ChromosomeCondensation | ReplicationInitiation | bit_identity | distributional | deterministic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| ChromosomeCondensation | tRNAAminoacylation | bit_identity | distributional | deterministic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| ChromosomeSegregation | FtsZPolymerization | bit_identity | distributional | deterministic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| ChromosomeSegregation | Metabolism | bit_identity | distributional | deterministic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| ChromosomeSegregation | ProteinDecay | bit_identity | distributional | deterministic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| ChromosomeSegregation | ProteinTranslocation | bit_identity | distributional | deterministic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| ChromosomeSegregation | RNAProcessing | bit_identity | distributional | deterministic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| ChromosomeSegregation | Translation | bit_identity | distributional | deterministic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| DNARepair | DNASupercoiling | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| DNARepair | ProteinFolding | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| DNARepair | ProteinModification | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| DNARepair | ProteinTranslocation | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| DNARepair | RNAProcessing | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| DNARepair | ReplicationInitiation | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| DNASupercoiling | Metabolism | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| DNASupercoiling | ProteinDecay | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| DNASupercoiling | ProteinFolding | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| DNASupercoiling | ProteinTranslocation | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| DNASupercoiling | RNAProcessing | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| DNASupercoiling | Replication | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| DNASupercoiling | ReplicationInitiation | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| DNASupercoiling | tRNAAminoacylation | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| FtsZPolymerization | Metabolism | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| FtsZPolymerization | ProteinDecay | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| FtsZPolymerization | ProteinTranslocation | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| FtsZPolymerization | RNAProcessing | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| FtsZPolymerization | RibosomeAssembly | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| FtsZPolymerization | Translation | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| Metabolism | ProteinProcessingII | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| Metabolism | ReplicationInitiation | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| Metabolism | RibosomeAssembly | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| ProteinDecay | ReplicationInitiation | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| ProteinFolding | RNAProcessing | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| ProteinFolding | Replication | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| ProteinFolding | ReplicationInitiation | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| ProteinFolding | tRNAAminoacylation | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| ProteinModification | RNAModification | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| ProteinModification | Replication | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| ProteinTranslocation | ReplicationInitiation | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| ProteinTranslocation | Transcription | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| ProteinTranslocation | Translation | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| ProteinTranslocation | tRNAAminoacylation | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| RNAModification | Replication | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| RNAProcessing | ReplicationInitiation | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| RNAProcessing | Transcription | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| Replication | ReplicationInitiation | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| ReplicationInitiation | tRNAAminoacylation | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| RibosomeAssembly | Translation | distributional | distributional | stochastic_stochastic | 5 | 0 | 0 | 0 | 0 | 5 |
+| ChromosomeCondensation | ProteinModification | bit_identity | distributional | deterministic_stochastic | 4 | 0 | 0 | 0 | 0 | 4 |
+| ChromosomeCondensation | Transcription | bit_identity | distributional | deterministic_stochastic | 4 | 0 | 0 | 0 | 0 | 4 |
+| ChromosomeSegregation | DNASupercoiling | bit_identity | distributional | deterministic_stochastic | 3 | 1 | 0 | 0 | 0 | 4 |
+| ChromosomeSegregation | Replication | bit_identity | distributional | deterministic_stochastic | 4 | 0 | 0 | 0 | 0 | 4 |
+| DNASupercoiling | ProteinModification | distributional | distributional | stochastic_stochastic | 4 | 0 | 0 | 0 | 0 | 4 |
+| DNASupercoiling | Transcription | distributional | distributional | stochastic_stochastic | 4 | 0 | 0 | 0 | 0 | 4 |
+| FtsZPolymerization | Replication | distributional | distributional | stochastic_stochastic | 4 | 0 | 0 | 0 | 0 | 4 |
+| HostInteraction | TerminalOrganelleAssembly | bit_identity | bit_identity | deterministic_deterministic | 0 | 4 | 0 | 0 | 0 | 4 |
+| Metabolism | ProteinProcessingI | distributional | distributional | stochastic_stochastic | 4 | 0 | 0 | 0 | 0 | 4 |
+| ProteinDecay | ProteinProcessingI | distributional | distributional | stochastic_stochastic | 4 | 0 | 0 | 0 | 0 | 4 |
+| ProteinFolding | Transcription | distributional | distributional | stochastic_stochastic | 4 | 0 | 0 | 0 | 0 | 4 |
+| ProteinModification | RNAProcessing | distributional | distributional | stochastic_stochastic | 4 | 0 | 0 | 0 | 0 | 4 |
+| ProteinModification | ReplicationInitiation | distributional | distributional | stochastic_stochastic | 4 | 0 | 0 | 0 | 0 | 4 |
+| ProteinModification | Transcription | distributional | distributional | stochastic_stochastic | 4 | 0 | 0 | 0 | 0 | 4 |
+| ProteinProcessingI | RNADecay | distributional | distributional | stochastic_stochastic | 4 | 0 | 0 | 0 | 0 | 4 |
+| Replication | RibosomeAssembly | distributional | distributional | stochastic_stochastic | 4 | 0 | 0 | 0 | 0 | 4 |
+| Replication | Translation | distributional | distributional | stochastic_stochastic | 4 | 0 | 0 | 0 | 0 | 4 |
+| ReplicationInitiation | Transcription | distributional | distributional | stochastic_stochastic | 4 | 0 | 0 | 0 | 0 | 4 |
+| ChromosomeCondensation | ChromosomeSegregation | bit_identity | bit_identity | deterministic_deterministic | 3 | 0 | 0 | 0 | 0 | 3 |
+| ChromosomeCondensation | Cytokinesis | bit_identity | distributional | deterministic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| ChromosomeCondensation | FtsZPolymerization | bit_identity | distributional | deterministic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| ChromosomeCondensation | RNAModification | bit_identity | distributional | deterministic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| ChromosomeCondensation | RibosomeAssembly | bit_identity | distributional | deterministic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| ChromosomeCondensation | Translation | bit_identity | distributional | deterministic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| ChromosomeSegregation | Cytokinesis | bit_identity | distributional | deterministic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| ChromosomeSegregation | DNARepair | bit_identity | distributional | deterministic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| ChromosomeSegregation | ProteinFolding | bit_identity | distributional | deterministic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| ChromosomeSegregation | ReplicationInitiation | bit_identity | distributional | deterministic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| ChromosomeSegregation | Transcription | bit_identity | distributional | deterministic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| ChromosomeSegregation | tRNAAminoacylation | bit_identity | distributional | deterministic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| Cytokinesis | DNARepair | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| Cytokinesis | DNASupercoiling | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| Cytokinesis | Metabolism | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| Cytokinesis | ProteinDecay | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| Cytokinesis | ProteinFolding | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| Cytokinesis | ProteinTranslocation | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| Cytokinesis | RNAProcessing | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| Cytokinesis | Replication | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| Cytokinesis | ReplicationInitiation | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| Cytokinesis | RibosomeAssembly | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| Cytokinesis | Translation | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| Cytokinesis | tRNAAminoacylation | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| DNADamage | ProteinDecay | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| DNADamage | RNADecay | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| DNARepair | FtsZPolymerization | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| DNARepair | RNADecay | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| DNARepair | RibosomeAssembly | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| DNARepair | Translation | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| DNASupercoiling | FtsZPolymerization | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| DNASupercoiling | RNAModification | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| DNASupercoiling | RibosomeAssembly | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| DNASupercoiling | Translation | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| FtsZPolymerization | ProteinFolding | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| FtsZPolymerization | ReplicationInitiation | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| FtsZPolymerization | Transcription | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| FtsZPolymerization | tRNAAminoacylation | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| ProteinDecay | ProteinProcessingII | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| ProteinFolding | RNAModification | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| ProteinFolding | Translation | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| ProteinProcessingI | Translation | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| ProteinProcessingI | tRNAAminoacylation | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| ProteinTranslocation | RNAModification | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| RNADecay | Replication | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| RNAModification | ReplicationInitiation | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| ReplicationInitiation | RibosomeAssembly | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| ReplicationInitiation | Translation | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| RibosomeAssembly | Transcription | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| RibosomeAssembly | tRNAAminoacylation | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
+| Transcription | Translation | distributional | distributional | stochastic_stochastic | 3 | 0 | 0 | 0 | 0 | 3 |
 
-## 4. Tier 2 pair list
+## 5. Tier 2 pair list
 
-| process_A | process_B | substrates_overlap | enzymes_overlap | monomers_overlap | complexs_overlap | rnas_overlap | total |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| ProteinFolding | ProteinProcessingI | 2 | 0 | 482 | 0 | 0 | 484 |
-| ProteinFolding | ProteinProcessingII | 2 | 0 | 482 | 0 | 0 | 484 |
-| ProteinProcessingI | ProteinProcessingII | 2 | 0 | 482 | 0 | 0 | 484 |
-| ProteinProcessingI | ProteinTranslocation | 2 | 0 | 482 | 0 | 0 | 484 |
-| ProteinProcessingII | ProteinTranslocation | 2 | 0 | 482 | 0 | 0 | 484 |
-| ProteinModification | ProteinProcessingI | 1 | 0 | 482 | 0 | 0 | 483 |
-| ProteinModification | ProteinProcessingII | 1 | 0 | 482 | 0 | 0 | 483 |
-| ProteinModification | RibosomeAssembly | 2 | 0 | 52 | 0 | 0 | 54 |
-| ProteinProcessingI | RibosomeAssembly | 2 | 0 | 52 | 0 | 0 | 54 |
-| ProteinProcessingII | RibosomeAssembly | 2 | 0 | 52 | 0 | 0 | 54 |
-| RNAModification | RibosomeAssembly | 2 | 0 | 0 | 0 | 3 | 5 |
-| ChromosomeCondensation | DNADamage | 2 | 0 | 0 | 0 | 0 | 2 |
-| ChromosomeCondensation | ProteinProcessingI | 2 | 0 | 0 | 0 | 0 | 2 |
-| ChromosomeCondensation | ProteinProcessingII | 2 | 0 | 0 | 0 | 0 | 2 |
-| ChromosomeCondensation | RNADecay | 2 | 0 | 0 | 0 | 0 | 2 |
-| ChromosomeSegregation | DNADamage | 2 | 0 | 0 | 0 | 0 | 2 |
-| ChromosomeSegregation | ProteinModification | 2 | 0 | 0 | 0 | 0 | 2 |
-| ChromosomeSegregation | ProteinProcessingI | 2 | 0 | 0 | 0 | 0 | 2 |
-| ChromosomeSegregation | ProteinProcessingII | 2 | 0 | 0 | 0 | 0 | 2 |
-| ChromosomeSegregation | RNADecay | 2 | 0 | 0 | 0 | 0 | 2 |
-| ChromosomeSegregation | RNAModification | 2 | 0 | 0 | 0 | 0 | 2 |
-| Cytokinesis | DNADamage | 2 | 0 | 0 | 0 | 0 | 2 |
-| Cytokinesis | ProteinModification | 2 | 0 | 0 | 0 | 0 | 2 |
-| Cytokinesis | ProteinProcessingI | 2 | 0 | 0 | 0 | 0 | 2 |
-| Cytokinesis | ProteinProcessingII | 2 | 0 | 0 | 0 | 0 | 2 |
-| Cytokinesis | RNADecay | 2 | 0 | 0 | 0 | 0 | 2 |
-| Cytokinesis | RNAModification | 2 | 0 | 0 | 0 | 0 | 2 |
-| Cytokinesis | Transcription | 2 | 0 | 0 | 0 | 0 | 2 |
-| DNADamage | DNASupercoiling | 2 | 0 | 0 | 0 | 0 | 2 |
-| DNADamage | FtsZPolymerization | 2 | 0 | 0 | 0 | 0 | 2 |
-| DNADamage | ProteinFolding | 2 | 0 | 0 | 0 | 0 | 2 |
-| DNADamage | ProteinProcessingI | 2 | 0 | 0 | 0 | 0 | 2 |
-| DNADamage | ProteinProcessingII | 2 | 0 | 0 | 0 | 0 | 2 |
-| DNADamage | ProteinTranslocation | 2 | 0 | 0 | 0 | 0 | 2 |
-| DNADamage | RNAModification | 2 | 0 | 0 | 0 | 0 | 2 |
-| DNADamage | RNAProcessing | 2 | 0 | 0 | 0 | 0 | 2 |
-| DNADamage | Replication | 2 | 0 | 0 | 0 | 0 | 2 |
-| DNADamage | ReplicationInitiation | 2 | 0 | 0 | 0 | 0 | 2 |
-| DNADamage | RibosomeAssembly | 2 | 0 | 0 | 0 | 0 | 2 |
-| DNADamage | Transcription | 2 | 0 | 0 | 0 | 0 | 2 |
-| DNADamage | Translation | 2 | 0 | 0 | 0 | 0 | 2 |
-| DNADamage | tRNAAminoacylation | 2 | 0 | 0 | 0 | 0 | 2 |
-| DNARepair | ProteinProcessingI | 2 | 0 | 0 | 0 | 0 | 2 |
-| DNARepair | ProteinProcessingII | 2 | 0 | 0 | 0 | 0 | 2 |
-| DNASupercoiling | ProteinProcessingI | 2 | 0 | 0 | 0 | 0 | 2 |
-| DNASupercoiling | ProteinProcessingII | 2 | 0 | 0 | 0 | 0 | 2 |
-| DNASupercoiling | RNADecay | 2 | 0 | 0 | 0 | 0 | 2 |
-| FtsZPolymerization | ProteinModification | 2 | 0 | 0 | 0 | 0 | 2 |
-| FtsZPolymerization | ProteinProcessingI | 2 | 0 | 0 | 0 | 0 | 2 |
-| FtsZPolymerization | ProteinProcessingII | 2 | 0 | 0 | 0 | 0 | 2 |
-| FtsZPolymerization | RNADecay | 2 | 0 | 0 | 0 | 0 | 2 |
-| FtsZPolymerization | RNAModification | 2 | 0 | 0 | 0 | 0 | 2 |
-| ProteinFolding | RNADecay | 2 | 0 | 0 | 0 | 0 | 2 |
-| ProteinProcessingI | RNAModification | 2 | 0 | 0 | 0 | 0 | 2 |
-| ProteinProcessingI | RNAProcessing | 2 | 0 | 0 | 0 | 0 | 2 |
-| ProteinProcessingI | Replication | 2 | 0 | 0 | 0 | 0 | 2 |
-| ProteinProcessingI | ReplicationInitiation | 2 | 0 | 0 | 0 | 0 | 2 |
-| ProteinProcessingI | Transcription | 2 | 0 | 0 | 0 | 0 | 2 |
-| ProteinProcessingII | RNADecay | 2 | 0 | 0 | 0 | 0 | 2 |
-| ProteinProcessingII | RNAModification | 2 | 0 | 0 | 0 | 0 | 2 |
-| ProteinProcessingII | RNAProcessing | 2 | 0 | 0 | 0 | 0 | 2 |
-| ProteinProcessingII | Replication | 2 | 0 | 0 | 0 | 0 | 2 |
-| ProteinProcessingII | ReplicationInitiation | 2 | 0 | 0 | 0 | 0 | 2 |
-| ProteinProcessingII | Transcription | 2 | 0 | 0 | 0 | 0 | 2 |
-| ProteinProcessingII | Translation | 2 | 0 | 0 | 0 | 0 | 2 |
-| ProteinProcessingII | tRNAAminoacylation | 2 | 0 | 0 | 0 | 0 | 2 |
-| ProteinTranslocation | RNADecay | 2 | 0 | 0 | 0 | 0 | 2 |
-| RNADecay | RNAProcessing | 2 | 0 | 0 | 0 | 0 | 2 |
-| RNADecay | ReplicationInitiation | 2 | 0 | 0 | 0 | 0 | 2 |
-| RNADecay | RibosomeAssembly | 2 | 0 | 0 | 0 | 0 | 2 |
-| DNADamage | ProteinModification | 1 | 0 | 0 | 0 | 0 | 1 |
-| HostInteraction | Metabolism | 0 | 1 | 0 | 0 | 0 | 1 |
+| process_A | process_B | oracle_type_a | oracle_type_b | pair_oracle_complexity | substrates_overlap | enzymes_overlap | monomers_overlap | complexs_overlap | rnas_overlap | total |
+|---|---:|---|---|---|---:|---:|---:|---:|---:|---:|
+| ProteinFolding | ProteinProcessingI | distributional | distributional | stochastic_stochastic | 2 | 0 | 482 | 0 | 0 | 484 |
+| ProteinFolding | ProteinProcessingII | distributional | distributional | stochastic_stochastic | 2 | 0 | 482 | 0 | 0 | 484 |
+| ProteinProcessingI | ProteinProcessingII | distributional | distributional | stochastic_stochastic | 2 | 0 | 482 | 0 | 0 | 484 |
+| ProteinProcessingI | ProteinTranslocation | distributional | distributional | stochastic_stochastic | 2 | 0 | 482 | 0 | 0 | 484 |
+| ProteinProcessingII | ProteinTranslocation | distributional | distributional | stochastic_stochastic | 2 | 0 | 482 | 0 | 0 | 484 |
+| ProteinModification | ProteinProcessingI | distributional | distributional | stochastic_stochastic | 1 | 0 | 482 | 0 | 0 | 483 |
+| ProteinModification | ProteinProcessingII | distributional | distributional | stochastic_stochastic | 1 | 0 | 482 | 0 | 0 | 483 |
+| ProteinModification | RibosomeAssembly | distributional | distributional | stochastic_stochastic | 2 | 0 | 52 | 0 | 0 | 54 |
+| ProteinProcessingI | RibosomeAssembly | distributional | distributional | stochastic_stochastic | 2 | 0 | 52 | 0 | 0 | 54 |
+| ProteinProcessingII | RibosomeAssembly | distributional | distributional | stochastic_stochastic | 2 | 0 | 52 | 0 | 0 | 54 |
+| RNAModification | RibosomeAssembly | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 3 | 5 |
+| ChromosomeCondensation | DNADamage | bit_identity | distributional | deterministic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| ChromosomeCondensation | ProteinProcessingI | bit_identity | distributional | deterministic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| ChromosomeCondensation | ProteinProcessingII | bit_identity | distributional | deterministic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| ChromosomeCondensation | RNADecay | bit_identity | distributional | deterministic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| ChromosomeSegregation | DNADamage | bit_identity | distributional | deterministic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| ChromosomeSegregation | ProteinModification | bit_identity | distributional | deterministic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| ChromosomeSegregation | ProteinProcessingI | bit_identity | distributional | deterministic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| ChromosomeSegregation | ProteinProcessingII | bit_identity | distributional | deterministic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| ChromosomeSegregation | RNADecay | bit_identity | distributional | deterministic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| ChromosomeSegregation | RNAModification | bit_identity | distributional | deterministic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| Cytokinesis | DNADamage | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| Cytokinesis | ProteinModification | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| Cytokinesis | ProteinProcessingI | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| Cytokinesis | ProteinProcessingII | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| Cytokinesis | RNADecay | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| Cytokinesis | RNAModification | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| Cytokinesis | Transcription | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| DNADamage | DNASupercoiling | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| DNADamage | FtsZPolymerization | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| DNADamage | ProteinFolding | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| DNADamage | ProteinProcessingI | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| DNADamage | ProteinProcessingII | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| DNADamage | ProteinTranslocation | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| DNADamage | RNAModification | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| DNADamage | RNAProcessing | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| DNADamage | Replication | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| DNADamage | ReplicationInitiation | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| DNADamage | RibosomeAssembly | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| DNADamage | Transcription | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| DNADamage | Translation | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| DNADamage | tRNAAminoacylation | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| DNARepair | ProteinProcessingI | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| DNARepair | ProteinProcessingII | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| DNASupercoiling | ProteinProcessingI | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| DNASupercoiling | ProteinProcessingII | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| DNASupercoiling | RNADecay | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| FtsZPolymerization | ProteinModification | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| FtsZPolymerization | ProteinProcessingI | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| FtsZPolymerization | ProteinProcessingII | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| FtsZPolymerization | RNADecay | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| FtsZPolymerization | RNAModification | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| ProteinFolding | RNADecay | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| ProteinProcessingI | RNAModification | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| ProteinProcessingI | RNAProcessing | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| ProteinProcessingI | Replication | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| ProteinProcessingI | ReplicationInitiation | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| ProteinProcessingI | Transcription | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| ProteinProcessingII | RNADecay | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| ProteinProcessingII | RNAModification | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| ProteinProcessingII | RNAProcessing | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| ProteinProcessingII | Replication | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| ProteinProcessingII | ReplicationInitiation | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| ProteinProcessingII | Transcription | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| ProteinProcessingII | Translation | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| ProteinProcessingII | tRNAAminoacylation | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| ProteinTranslocation | RNADecay | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| RNADecay | RNAProcessing | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| RNADecay | ReplicationInitiation | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| RNADecay | RibosomeAssembly | distributional | distributional | stochastic_stochastic | 2 | 0 | 0 | 0 | 0 | 2 |
+| DNADamage | ProteinModification | distributional | distributional | stochastic_stochastic | 1 | 0 | 0 | 0 | 0 | 1 |
+| HostInteraction | Metabolism | bit_identity | distributional | deterministic_stochastic | 0 | 1 | 0 | 0 | 0 | 1 |
 
-## 5. Tier 3 pair list
+## 6. Tier 3 pair list
 
-| process_A | process_B | substrates_overlap | enzymes_overlap | monomers_overlap | complexs_overlap | rnas_overlap | total |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| MacromolecularComplexation | ProteinFolding | 0 | 0 | 0 | 147 | 0 | 147 |
+| process_A | process_B | oracle_type_a | oracle_type_b | pair_oracle_complexity | substrates_overlap | enzymes_overlap | monomers_overlap | complexs_overlap | rnas_overlap | total |
+|---|---:|---|---|---|---:|---:|---:|---:|---:|---:|
+| MacromolecularComplexation | ProteinFolding | distributional | distributional | stochastic_stochastic | 0 | 0 | 0 | 147 | 0 | 147 |
 
-## 6. Disjoint pair list
+## 7. Disjoint pair list
 
 | process_A | process_B |
 |---|---|
@@ -446,40 +455,40 @@ Idx Process                      1   2   3   4   5   6   7   8   9  10  11  12  
 | TranscriptionalRegulation | Translation |
 | TranscriptionalRegulation | tRNAAminoacylation |
 
-## 7. Per-process pair count
+## 8. Per-process pair count
 
 | process | shared_pool_partners | honest_required_partners |
 |---|---:|---:|
-| ChromosomeCondensation | 22 | 0 |
-| ChromosomeSegregation | 22 | 0 |
-| Cytokinesis | 22 | 20 |
-| DNADamage | 22 | 20 |
-| DNARepair | 22 | 20 |
-| DNASupercoiling | 22 | 20 |
-| FtsZPolymerization | 22 | 20 |
-| HostInteraction | 2 | 0 |
+| ChromosomeCondensation | 22 | 22 |
+| ChromosomeSegregation | 22 | 22 |
+| Cytokinesis | 22 | 22 |
+| DNADamage | 22 | 22 |
+| DNARepair | 22 | 22 |
+| DNASupercoiling | 22 | 22 |
+| FtsZPolymerization | 22 | 22 |
+| HostInteraction | 2 | 2 |
 | MacromolecularComplexation | 1 | 1 |
-| Metabolism | 23 | 20 |
+| Metabolism | 23 | 23 |
 | ProteinActivation | 0 | 0 |
-| ProteinDecay | 22 | 20 |
-| ProteinFolding | 23 | 21 |
-| ProteinModification | 22 | 20 |
-| ProteinProcessingI | 22 | 20 |
-| ProteinProcessingII | 22 | 20 |
-| ProteinTranslocation | 22 | 20 |
-| RNADecay | 22 | 20 |
-| RNAModification | 22 | 20 |
-| RNAProcessing | 22 | 20 |
-| Replication | 22 | 20 |
-| ReplicationInitiation | 22 | 20 |
-| RibosomeAssembly | 22 | 20 |
-| TerminalOrganelleAssembly | 1 | 0 |
-| Transcription | 22 | 20 |
+| ProteinDecay | 22 | 22 |
+| ProteinFolding | 23 | 23 |
+| ProteinModification | 22 | 22 |
+| ProteinProcessingI | 22 | 22 |
+| ProteinProcessingII | 22 | 22 |
+| ProteinTranslocation | 22 | 22 |
+| RNADecay | 22 | 22 |
+| RNAModification | 22 | 22 |
+| RNAProcessing | 22 | 22 |
+| Replication | 22 | 22 |
+| ReplicationInitiation | 22 | 22 |
+| RibosomeAssembly | 22 | 22 |
+| TerminalOrganelleAssembly | 1 | 1 |
+| Transcription | 22 | 22 |
 | TranscriptionalRegulation | 0 | 0 |
-| Translation | 22 | 20 |
-| tRNAAminoacylation | 22 | 20 |
+| Translation | 22 | 22 |
+| tRNAAminoacylation | 22 | 22 |
 
-## 8. Methodology
+## 9. Methodology
 
 - Input source: `data/schemas/per_process/*.toml`
 - Canonical state groups: `substrates`, `enzymes`, `monomers`, `complexs`, `rnas`
