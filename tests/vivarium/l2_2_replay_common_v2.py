@@ -43,9 +43,13 @@ from l2_replay_common import (
     refresh_allocator_views,
     resolve_trace_path,
 )
+from opencell.vivarium.karr_chromosome_condensation import KarrChromosomeCondensationProcess
+from opencell.vivarium.karr_chromosome_segregation import KarrChromosomeSegregationProcess
+from opencell.vivarium.karr_host_interaction import KarrHostInteractionProcess
 from opencell.vivarium.karr_protein_processing_i import KarrProteinProcessingIProcess
 from opencell.vivarium.karr_protein_processing_ii import KarrProteinProcessingIIProcess
 from opencell.vivarium.karr_rna_processing import KarrRNAProcessingProcess
+from opencell.vivarium.karr_terminal_organelle_assembly import KarrTerminalOrganelleAssemblyProcess
 from opencell.vivarium.karr_translation_v3 import KarrTranslationV3Process
 
 
@@ -54,7 +58,18 @@ _COMPOSITION_ORDER_V2 = (
     "RNAProcessing",
     "ProteinProcessingI",
     "ProteinProcessingII",
+    "ChromosomeCondensation",
+    "ChromosomeSegregation",
+    "HostInteraction",
+    "TerminalOrganelleAssembly",
 )
+
+ORACLE_DISTRIBUTIONAL = "distributional"
+ORACLE_BIT_IDENTITY = "bit_identity"
+_SUPPORTED_ORACLE_TYPES = {
+    ORACLE_DISTRIBUTIONAL,
+    ORACLE_BIT_IDENTITY,
+}
 
 CAUSE_1_WID_SET_MISMATCH = "CAUSE_1_WID_SET_MISMATCH"
 CAUSE_2_ORACLE_INJECTION_MISALIGNMENT = "CAUSE_2_ORACLE_INJECTION_MISALIGNMENT"
@@ -90,6 +105,7 @@ class _ProcessSpec:
     store_path_override: dict[str, tuple[str, ...]] | None = None
     index_projection_literal: dict[str, Any] | None = None
     trace_after_hint_observables: tuple[str, ...] = ()
+    oracle_type: str = ORACLE_DISTRIBUTIONAL
 
 
 @dataclass
@@ -163,6 +179,51 @@ _PROCESS_SPECS: dict[str, _ProcessSpec] = {
             "unprocessedMonomers": ("protein", "counts"),
         },
     ),
+    "ChromosomeCondensation": _ProcessSpec(
+        process_cls=KarrChromosomeCondensationProcess,
+        observables=("substrates", "enzymes", "boundEnzymes"),
+        pass_through=frozenset(),
+        observable_to_wids_attr={
+            "substrates": "substrate_wids",
+            "enzymes": "enzyme_wids",
+            "boundEnzymes": "enzyme_wids",
+        },
+        trace_after_hint_observables=("enzymes", "boundEnzymes"),
+        oracle_type=ORACLE_BIT_IDENTITY,
+    ),
+    "ChromosomeSegregation": _ProcessSpec(
+        process_cls=KarrChromosomeSegregationProcess,
+        observables=("substrates", "enzymes", "boundEnzymes"),
+        pass_through=frozenset(),
+        observable_to_wids_attr={
+            "substrates": "substrate_wids",
+            "enzymes": "enzyme_wids",
+            "boundEnzymes": "enzyme_wids",
+        },
+        oracle_type=ORACLE_BIT_IDENTITY,
+    ),
+    "HostInteraction": _ProcessSpec(
+        process_cls=KarrHostInteractionProcess,
+        observables=("substrates", "enzymes", "boundEnzymes"),
+        pass_through=frozenset(),
+        observable_to_wids_attr={
+            "substrates": "substrate_wids",
+            "enzymes": "enzyme_wids",
+            "boundEnzymes": "enzyme_wids",
+        },
+        oracle_type=ORACLE_BIT_IDENTITY,
+    ),
+    "TerminalOrganelleAssembly": _ProcessSpec(
+        process_cls=KarrTerminalOrganelleAssemblyProcess,
+        observables=("substrates", "enzymes", "boundEnzymes"),
+        pass_through=frozenset(),
+        observable_to_wids_attr={
+            "substrates": "substrate_wids",
+            "enzymes": "enzyme_wids",
+            "boundEnzymes": "enzyme_wids",
+        },
+        oracle_type=ORACLE_BIT_IDENTITY,
+    ),
 }
 
 
@@ -191,22 +252,92 @@ def _owned_observables(spec: _ProcessSpec) -> tuple[str, ...]:
     return tuple(obs for obs in spec.observables if obs not in spec.pass_through)
 
 
+def _assert_bit_identity(
+    *,
+    tick: int,
+    observable: str,
+    oc_after: np.ndarray,
+    karr_after: np.ndarray,
+    process_name: str,
+) -> None:
+    if oc_after.shape != karr_after.shape:
+        pytest.fail(
+            "L2.5 bit-identity shape mismatch: "
+            f"tick={tick}, process={process_name}, observable={observable}, "
+            f"oc_shape={oc_after.shape}, karr_shape={karr_after.shape}"
+        )
+
+    karr_int_part = np.rint(karr_after)
+    karr_snapped = False
+    if not np.array_equal(karr_int_part, karr_after):
+        karr_frac = np.abs(karr_after - karr_int_part)
+        if np.all(karr_frac < 1e-9):
+            karr_after = karr_int_part.astype(np.float64)
+            karr_snapped = True
+        else:
+            bad = int(np.flatnonzero(karr_frac >= 1e-9)[0])
+            pytest.fail(
+                "L2.5 oracle non-integral: "
+                f"tick={tick}, process={process_name}, observable={observable}, index={bad}, "
+                f"karr_val={float(karr_after[bad])}"
+            )
+
+    oc_int_part = np.rint(oc_after)
+    if not np.array_equal(oc_int_part, oc_after):
+        oc_frac = np.abs(oc_after - oc_int_part)
+        if karr_snapped and np.all(oc_frac < 1e-9):
+            oc_after = oc_int_part.astype(np.float64)
+        else:
+            bad = int(np.flatnonzero(oc_frac >= 1e-9)[0])
+            pytest.fail(
+                "L2.5 oc non-integral: "
+                f"tick={tick}, process={process_name}, observable={observable}, index={bad}, "
+                f"oc_val={float(oc_after[bad])}"
+            )
+
+    mismatch = oc_after != karr_after
+    if np.any(mismatch):
+        idx = int(np.flatnonzero(mismatch)[0])
+        diff = float(oc_after[idx] - karr_after[idx])
+        pytest.fail(
+            "L2.5 bit-identity mismatch: "
+            f"tick={tick}, process={process_name}, observable={observable}, index={idx}, "
+            f"oc_val={float(oc_after[idx])}, karr_val={float(karr_after[idx])}, diff={diff}"
+        )
+
+
 def _matches_oracle(
     *,
     tick: int,
     process_name: str,
+    oracle_type: str,
     observable: str,
     oc_after: np.ndarray,
     karr_after: np.ndarray,
 ) -> bool:
-    try:
-        _assert_identity_or_tolerance_shared(
-            tick=tick,
-            observable=observable,
-            oc_after=oc_after,
-            karr_after=karr_after,
-            process_name=process_name,
+    if oracle_type not in _SUPPORTED_ORACLE_TYPES:
+        pytest.fail(
+            "L2.2.v2 precondition failed (unknown oracle type): "
+            f"process={process_name}, oracle_type={oracle_type}, "
+            f"supported={sorted(_SUPPORTED_ORACLE_TYPES)}"
         )
+    try:
+        if oracle_type == ORACLE_BIT_IDENTITY:
+            _assert_bit_identity(
+                tick=tick,
+                observable=observable,
+                oc_after=oc_after,
+                karr_after=karr_after,
+                process_name=process_name,
+            )
+        else:
+            _assert_identity_or_tolerance_shared(
+                tick=tick,
+                observable=observable,
+                oc_after=oc_after,
+                karr_after=karr_after,
+                process_name=process_name,
+            )
     except BaseException:
         return False
     return True
@@ -269,14 +400,22 @@ def _build_counterfactual_step_vector(
     )
 
 
-def _build_context(name: str, rng_seed: int, handle: h5py.File) -> _ProcessContext:
+def _build_context(
+    name: str,
+    rng_seed: int,
+    handle: h5py.File,
+    process_config_override: dict[str, Any] | None = None,
+) -> _ProcessContext:
     spec = _PROCESS_SPECS[name]
     n_ticks = int(np.asarray(handle["metadata/n_ticks"][()]).reshape(-1)[0])
     if "metadata" in handle and "rng_seed" in handle["metadata"]:
         recorded_seed = int(np.asarray(handle["metadata/rng_seed"][()]).reshape(-1)[0])
         assert int(rng_seed) == recorded_seed
 
-    process = spec.process_cls({"rng_seed": int(rng_seed)})
+    process_config = {"rng_seed": int(rng_seed)}
+    if process_config_override:
+        process_config.update(process_config_override)
+    process = spec.process_cls(process_config)
     state_template = build_state_template(process)
     probe_ctx = _ProcessContext(
         name=name,
@@ -522,18 +661,35 @@ def _base_failure_record(
     master_wids_by_observable: dict[str, list[str]],
     contexts: dict[str, _ProcessContext],
     owner_manifest: dict[str, str],
+    oracle_type_by_process: dict[str, str],
 ) -> dict[str, Any]:
     wid_lists = {
         name: list(contexts[name].wids_by_observable.get(observable, []))
         for name in ordered
         if observable in contexts[name].wids_by_observable
     }
+    process_wids = contexts[process_name].wids_by_observable.get(observable, [])
+    process_wid: str | None = None
+    if 0 <= idx < len(process_wids):
+        process_wid = process_wids[idx]
+
+    process_idx_to_master = contexts[process_name].process_idx_to_master_idx.get(observable, {})
+    master_idx = process_idx_to_master.get(idx) if idx >= 0 else None
+    owner_name = owner_manifest.get(observable)
+    owner_wid: str | None = None
+    if owner_name is not None and master_idx is not None:
+        owner_wid = contexts[owner_name].master_idx_to_process_wid.get(observable, {}).get(master_idx)
+
     return {
         "cause_code": cause_code,
         "tick": tick,
         "process": process_name,
+        "oracle_type": oracle_type_by_process[process_name],
         "observable": observable,
         "index": idx,
+        "process_wid": process_wid,
+        "master_index": master_idx,
+        "owner_wid": owner_wid,
         "oc_val": oc_val,
         "karr_val": karr_val,
         "diff": diff,
@@ -565,13 +721,18 @@ def _diagnose_cause_1_wid_set_mismatch(
     if mismatch_index >= len(process_wids):
         return None
     process_wid = process_wids[mismatch_index]
+    process_master_idx = contexts[process_name].process_idx_to_master_idx.get(observable, {}).get(
+        mismatch_index
+    )
+    if process_master_idx is None:
+        return None
     for other_name in ordered:
         if other_name == process_name:
             continue
-        other_wids = contexts[other_name].wids_by_observable.get(observable)
-        if other_wids is None or mismatch_index >= len(other_wids):
+        other_master_to_wid = contexts[other_name].master_idx_to_process_wid.get(observable)
+        if other_master_to_wid is None or process_master_idx not in other_master_to_wid:
             continue
-        compared_wid = other_wids[mismatch_index]
+        compared_wid = other_master_to_wid[process_master_idx]
         if compared_wid != process_wid:
             return {
                 "cause_code": CAUSE_1_WID_SET_MISMATCH,
@@ -580,6 +741,7 @@ def _diagnose_cause_1_wid_set_mismatch(
                 "compared_process": other_name,
                 "compared_wid": compared_wid,
                 "comparison_index": mismatch_index,
+                "comparison_master_index": process_master_idx,
             }
     return None
 
@@ -602,14 +764,34 @@ def _structured_fail(record: dict[str, Any]) -> None:
     pytest.fail("L2.2.v2 structured failure: " + json.dumps(record, sort_keys=True))
 
 
-def run_integrated_replay_v2(*, under_test_processes: list[str], rng_seed: int, disable_trace_hints: bool = False) -> None:
+def run_integrated_replay_v2(
+    *,
+    under_test_processes: list[str],
+    rng_seed: int,
+    disable_trace_hints: bool = False,
+    oracle_type_by_process: dict[str, str] | None = None,
+    process_config_overrides: dict[str, dict[str, Any]] | None = None,
+) -> None:
     ordered = _ordered_under_test(under_test_processes)
 
     with ExitStack() as stack:
+        if process_config_overrides is None:
+            process_config_overrides = {}
+        unknown_process_config_overrides = sorted(set(process_config_overrides).difference(ordered))
+        if unknown_process_config_overrides:
+            pytest.fail(
+                "L2.2.v2 precondition failed (process config override for unknown process): "
+                f"{unknown_process_config_overrides}, under_test={ordered}"
+            )
         contexts: dict[str, _ProcessContext] = {}
         for name in ordered:
             trace_handle = stack.enter_context(h5py.File(resolve_trace_path(name), "r"))
-            contexts[name] = _build_context(name, rng_seed, trace_handle)
+            contexts[name] = _build_context(
+                name,
+                rng_seed,
+                trace_handle,
+                process_config_override=process_config_overrides.get(name),
+            )
 
         n_ticks_values = {contexts[name].n_ticks for name in ordered}
         if len(n_ticks_values) != 1:
@@ -665,6 +847,25 @@ def run_integrated_replay_v2(*, under_test_processes: list[str], rng_seed: int, 
         OWNER_MANIFEST.clear()
         OWNER_MANIFEST.update(owner_manifest)
         order_idx = {name: idx for idx, name in enumerate(ordered)}
+        if oracle_type_by_process is None:
+            oracle_type_by_process = {}
+        unknown_oracle_overrides = sorted(set(oracle_type_by_process).difference(ordered))
+        if unknown_oracle_overrides:
+            pytest.fail(
+                "L2.2.v2 precondition failed (oracle override for unknown process): "
+                f"{unknown_oracle_overrides}, under_test={ordered}"
+            )
+        resolved_oracle_type_by_process = {
+            name: str(oracle_type_by_process.get(name, contexts[name].spec.oracle_type))
+            for name in ordered
+        }
+        for name, oracle_type in resolved_oracle_type_by_process.items():
+            if oracle_type not in _SUPPORTED_ORACLE_TYPES:
+                pytest.fail(
+                    "L2.2.v2 precondition failed (unsupported oracle type): "
+                    f"process={name}, oracle_type={oracle_type}, "
+                    f"supported={sorted(_SUPPORTED_ORACLE_TYPES)}"
+                )
         mutators_by_observable = {
             obs: [name for name in ordered if obs in _owned_observables(contexts[name].spec)]
             for obs in all_observables
@@ -675,7 +876,10 @@ def run_integrated_replay_v2(*, under_test_processes: list[str], rng_seed: int, 
             ctx = contexts[name]
             mutated = _owned_observables(ctx.spec)
             mutated_tick_counts = audit_trace_mutated_ticks(ctx.trace, mutated, n_ticks)
-            if sum(mutated_tick_counts.values()) == 0:
+            if (
+                resolved_oracle_type_by_process[name] != ORACLE_BIT_IDENTITY
+                and sum(mutated_tick_counts.values()) == 0
+            ):
                 no_op_messages.append(
                     f"{name}: all owned observables are no-op across {n_ticks} ticks: {mutated_tick_counts}"
                 )
@@ -812,6 +1016,7 @@ def run_integrated_replay_v2(*, under_test_processes: list[str], rng_seed: int, 
                             master_wids_by_observable=master_wids_by_observable,
                             contexts=contexts,
                             owner_manifest=owner_manifest,
+                            oracle_type_by_process=resolved_oracle_type_by_process,
                         )
                         record["harness_projection_disagreement"] = {
                             "projection_direct": oc_after_step.tolist(),
@@ -834,6 +1039,7 @@ def run_integrated_replay_v2(*, under_test_processes: list[str], rng_seed: int, 
                     if _matches_oracle(
                         tick=tick,
                         process_name=name,
+                        oracle_type=resolved_oracle_type_by_process[name],
                         observable=obs,
                         oc_after=oc_compare,
                         karr_after=karr_compare,
@@ -855,6 +1061,7 @@ def run_integrated_replay_v2(*, under_test_processes: list[str], rng_seed: int, 
                         master_wids_by_observable=master_wids_by_observable,
                         contexts=contexts,
                         owner_manifest=owner_manifest,
+                        oracle_type_by_process=resolved_oracle_type_by_process,
                     )
                     base_record["upstream_processes"] = upstream
                     base_record["compare_mode"] = compare_mode
@@ -894,6 +1101,7 @@ def run_integrated_replay_v2(*, under_test_processes: list[str], rng_seed: int, 
                         isolated_matches = _matches_oracle(
                             tick=tick,
                             process_name=name,
+                            oracle_type=resolved_oracle_type_by_process[name],
                             observable=obs,
                             oc_after=oc_counterfactual_compare,
                             karr_after=karr_compare,
@@ -940,6 +1148,7 @@ def run_integrated_replay_v2(*, under_test_processes: list[str], rng_seed: int, 
                     if _matches_oracle(
                         tick=tick,
                         process_name=name,
+                        oracle_type=resolved_oracle_type_by_process[name],
                         observable=obs,
                         oc_after=oc_after_final,
                         karr_after=karr_after,
@@ -949,6 +1158,7 @@ def run_integrated_replay_v2(*, under_test_processes: list[str], rng_seed: int, 
                     step_aligned = _matches_oracle(
                         tick=tick,
                         process_name=name,
+                        oracle_type=resolved_oracle_type_by_process[name],
                         observable=obs,
                         oc_after=step_compare_vectors[(name, obs)],
                         karr_after=karr_after,
@@ -969,6 +1179,7 @@ def run_integrated_replay_v2(*, under_test_processes: list[str], rng_seed: int, 
                         master_wids_by_observable=master_wids_by_observable,
                         contexts=contexts,
                         owner_manifest=owner_manifest,
+                        oracle_type_by_process=resolved_oracle_type_by_process,
                     )
                     record["raw_vectors"] = {
                         "oc_after_final": oc_after_final.tolist(),
