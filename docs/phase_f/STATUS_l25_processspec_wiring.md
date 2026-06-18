@@ -13,7 +13,7 @@ Wire all 20 missing `_ProcessSpec` entries in `tests/vivarium/l2_2_replay_common
 | Beat | Description | Status | Notes |
 |---|---|---|---|
 | 1 | Wire all 20 missing `_ProcessSpec` entries | COMPLETE | Imports + specs added; `_COMPOSITION_ORDER_V2` expanded to 28 names |
-| 2 | Verify 28 entries + collect-only run | PENDING | Waiting on verification commands |
+| 2 | Verify 28 entries + collect-only run | COMPLETE | `Total: 28`; collect-only confirms `43 tests collected` |
 | 3 | Run all 43 DS pair tests + summarize | PENDING | Waiting on full run |
 | 4 | (Conditional) Document new failure modes | PENDING | Will complete only if new modes appear |
 
@@ -22,7 +22,16 @@ Wire all 20 missing `_ProcessSpec` entries in `tests/vivarium/l2_2_replay_common
 - Used per-process L2 replay test constants for process class, observables, WID attribute mapping, pass-through, and hint surfaces.
 - Applied projection literals where trace vector cardinality differs from runtime observable cardinality (e.g. Metabolism substrates, Transcription substrates, ProteinActivation substrates, ProteinTranslocation monomers).
 
+## Beat 2 Verification
+- Spec inventory command:
+  - `bin\oc-py.cmd _tmp_verify_specs.py` (temp script wrapper for `_PROCESS_SPECS` import/print)
+  - Result: `Total: 28` with all expected process names present.
+- Collect-only command:
+  - `bin\oc-pytest.cmd tests/vivarium/test_l25_deterministic_stochastic_pairs.py --collect-only -q`
+  - Result: `43 tests collected in 29.26s`.
+
 ## Progress Log
 - [2026-06-18 16:28:00 UTC] Loaded `SESSION_CONTEXT.md` and confirmed Hard Rule 17 naming discipline.
 - [2026-06-18 16:28:00 UTC] Audited DS pair harness/test/status artifacts and identified unsupported-process gap as primary blocker.
 - [2026-06-18 16:28:00 UTC] Wired 20 missing process specs and added required imports/order coverage in `l2_2_replay_common_v2.py`.
+- [2026-06-18 16:28:00 UTC] Verified `_PROCESS_SPECS` inventory (`Total: 28`) and DS collect-only count (`43`).
