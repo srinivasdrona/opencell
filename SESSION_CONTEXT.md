@@ -183,6 +183,30 @@ For OpenCell that means: substrate pool deltas non-zero, transcription log non-e
 ATP balance within tolerance over a multi-tick window. Wire that smoke before
 declaring a layer ready for downstream consumers.
 
+### 17. Naming discipline: generic vs organism-prefixed (added 2026-06-18)
+The architecture generalizes more than the biology does. To preserve generalization
+optionality with zero extra cost during the build, name new things by what they
+ARE, not what they're being used FOR:
+
+- **Generic primitives**: descriptive of mechanism, no organism reference.
+  Examples: `SparseTripletStore`, `SharedPoolAllocator`, `ReplayHarness`,
+  `state_groups` (NOT `species_pools`), `state_vector`, `named_components`.
+- **Biology-specific code**: prefix with organism short code.
+  Examples: `MGenTranscriptionProcess`, `MGenChromosome`, `m_gen_constants.py`.
+
+**The rename test:** if you were to add a second organism tomorrow (JCVI-syn3A,
+E. coli), would this class/constant need a rename? If yes → prefix with
+organism. If no → keep generic.
+
+Applies to: new files, new classes, new top-level functions, new TOML field
+names, new test infrastructure. Does NOT apply (yet) to existing `karr_*.py`
+process files — those get renamed in the Post-L5 reorganization (see
+`docs/specs/POST_L5_REFACTOR_PLAN.md`).
+
+**Why this matters:** without this rule, every new generic mechanism that gets
+named `Karr*` or `M*` creates retrofit pain later. With this rule, only the
+old code needs renaming post-L5; new code arrives correctly named.
+
 ## Reference files to read FIRST (every session)
 1. `opencell/vivarium/karr_replication_initiation.py` — Phase C v1 pattern (DNA state, allocation, accumulate)
 2. `opencell/vivarium/karr_allocation_step.py` — request/allocate protocol

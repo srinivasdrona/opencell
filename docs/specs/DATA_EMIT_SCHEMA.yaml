@@ -1,0 +1,122 @@
+# Data Emit Schema (forward-looking, no implementation)
+#
+# Status: SPEC ONLY (Day 32, 2026-06-18) — implementation deferred to Post-L5.
+# Purpose: Define a domain-agnostic tensor emit schema NOW so the future
+# tensor emitter is a contract fulfillment, not a fresh design.
+#
+# Tripwire usage: any code path that wants to emit simulation state must
+# fit this schema. If a new state surface can't be expressed as a named
+# state_group, that's a biology-leak in the emitter design.
+
+schema_version: "1.0"
+
+# Per-run metadata. Required for every emission.
+run_id: <uuid>                    # unique identifier for this simulation run
+simulator_version: <semver>       # opencell version, e.g. "0.32.0"
+config_hash: <sha256>             # hash of the full config (deterministic replay)
+seed: <int>                       # primary RNG seed
+created_at: <iso8601>             # when the run started
+host_fingerprint: <string>        # platform info for stochastic reproducibility
+
+# Reference data manifest (see reference_data_manifest.yaml schema).
+# Required for any benchmark/validation claim.
+reference_data:
+  matlab_commit: <sha>            # Karr MATLAB code commit
+  fixture_extraction_date: <iso8601>
+  numpy_version: <semver>
+  scipy_version: <semver>
+  vivarium_core_version: <semver>
+
+# Interventions applied during this run (per INTERVENTION_API.md spec).
+# Empty list if none.
+interventions:
+  - target_path: [<str>, ...]
+    operation: <"set"|"scale"|"delta"|"freeze"|"unfreeze">
+    value: <any>
+    time_window: [<float>, <float>]
+    repeat: <"one_shot"|"every_tick"|"at_interval">
+    interval_s: <float|null>
+    metadata: <dict|null>
+
+# Time axis — when each state snapshot was taken.
+# Length T; matches the leading dimension of every state_groups.data tensor.
+time_axis: <float[T]>             # seconds since run start
+
+# State groups — the actual simulation state at each time point.
+# Each named group has labels (which dimension is which species/component)
+# and data (the actual values as a tensor [T, N]).
+# This is the **biology-agnostic** part: state_groups can hold proteins,
+# metabolites, concentrations, agent positions, traffic densities, anything.
+state_groups:
+  <named_group>:                  # e.g. "substrates", "monomers", "complexs"
+    labels: [<str>, ...]          # WIDs / component IDs; length N
+    data: <tensor[T, N]>          # state values per (time, component)
+    units: <str|null>             # optional: "count", "concentration_mM", etc.
+    dtype: <str>                  # "int32", "float64", etc.
+    description: <str|null>       # optional human-readable description
+
+# Optional reward signals for RL training.
+# Each objective is a scalar trajectory [T]. Common for Gym/RL workflows.
+objectives:                       # optional, can be empty
+  <objective_name>:               # e.g. "cell_cycle_completion", "biomass"
+    values: <float[T]>
+    description: <str|null>
+
+# Event log — when interventions were applied, when processes fired
+# discrete events (cell division, replication initiation, etc.).
+# Optional for ML training; useful for causal inference and timeline analysis.
+events: <list[Event]|null>
+# Event = {
+#   tick: <int>,
+#   time_s: <float>,
+#   event_type: <str>,            # e.g. "intervention_applied", "cell_division"
+#   metadata: <dict>,
+# }
+
+# ----------------------------------------------------------------------
+# Storage format guidance (not part of the schema, but normative):
+# ----------------------------------------------------------------------
+# Suggested on-disk layout for ML pipelines:
+#
+#   <run_id>.zarr/                      # or HDF5
+#     ├── metadata.json                 # everything above EXCEPT state_groups/objectives
+#     ├── state_groups/
+#     │     ├── substrates/
+#     │     │     ├── labels/           # variable-length string array, length N
+#     │     │     └── data/             # chunked tensor [T, N], compressed
+#     │     ├── monomers/
+#     │     │     ├── labels/
+#     │     │     └── data/
+#     │     └── ...
+#     └── objectives/
+#           ├── cell_cycle_completion/
+#           │     ├── values/
+#           │     └── description.txt
+#           └── ...
+#
+# Chunk sizes should be (1024, full_N) for fast time-axis slicing,
+# or (full_T, 64) for fast variable-axis slicing — choose based on
+# downstream access pattern.
+#
+# For PyTorch training: a Dataset class can lazy-load chunks on demand:
+#   ds = ZarrSimulationDataset(run_id, state_group="monomers", window_T=100)
+#   for x, y in ds:
+#       ...  # x: (window_T, N), y: next-window prediction target
+#
+# ----------------------------------------------------------------------
+# Anti-patterns (DO NOT do):
+# ----------------------------------------------------------------------
+# - Do NOT name state_groups by biology category at the schema level.
+#   e.g. NEVER: { "rnas": {...}, "proteins": {...} }
+#   ALWAYS: state_groups: { "rnas": {...} }  — biology is a labeling
+#   convention OVER the schema, not baked INTO it.
+#
+# - Do NOT emit per-WID JSON. Every label/data tensor stays tensor-shaped.
+#   ML pipelines parsing JSON object-per-tick are unusable at scale.
+#
+# - Do NOT bake organism-specific assumptions. The schema works for
+#   M. genitalium, E. coli, JCVI-syn3A, traffic models, anything.
+#
+# - Do NOT include the full state at every tick if it's not changing.
+#   For sparse state, use a delta-log format: emit base + diffs.
+#   (Add a `compression: "delta"` field at the state_group level later.)

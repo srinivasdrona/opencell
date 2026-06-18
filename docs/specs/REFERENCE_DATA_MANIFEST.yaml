@@ -1,0 +1,113 @@
+# Reference Data Manifest Schema
+#
+# Status: SPEC ONLY (Day 32, 2026-06-18) — implementation deferred to Post-L5.
+# Purpose: Capture EVERY input required to reproduce a benchmark/validation
+# claim. Without this, "reproducibility" claims are partial.
+#
+# Every reproducibility claim in a paper/README/blog must point to a manifest
+# of this form. Anyone trying to validate the benchmark needs ALL of these to
+# actually reproduce.
+
+schema_version: "1.0"
+manifest_id: <uuid>                       # unique identifier for this manifest
+generated_at: <iso8601>                   # when the manifest was generated
+opencell_version: <semver>                # which opencell version generated it
+
+# --- Source code provenance --------------------------------------------------
+
+source_code:
+  opencell_commit: <git_sha>              # commit of opencell at run time
+  opencell_branch: <str|null>             # branch name, if applicable
+  opencell_dirty: <bool>                  # true if uncommitted changes present
+  opencell_diff_sha: <sha256|null>        # hash of uncommitted diff (if dirty)
+
+# --- External reference data -------------------------------------------------
+
+karr_matlab:
+  commit_sha: <git_sha>                   # commit of WholeCell MATLAB code
+  fork_url: <url|null>                    # if using a fork
+  fixture_extraction_date: <iso8601>      # when *_flat.mat files were generated
+  matlab_version: <str>                   # e.g. "R2022b"
+  extraction_script: <path>               # e.g. "scripts/matlab/extract_fixtures.m"
+  extraction_script_sha: <sha256>         # hash of the script used
+
+karr_traces:
+  extraction_date: <iso8601>
+  extraction_script: <path>
+  extraction_script_sha: <sha256>
+  trace_layout: <str>                     # e.g. "per_process_traces_v2"
+  trace_seeds: <list[int]>                # which seeds were extracted
+
+# --- Kinetic parameters ------------------------------------------------------
+
+kinetic_parameters:
+  # For each parameter source, capture:
+  - parameter_name: <str>                 # e.g. "k_cat_dnap"
+    value: <float>
+    units: <str>                          # e.g. "1/s"
+    source_type: <"karr2012"|"literature"|"calibrated"|"estimated">
+    citation: <str>                       # full citation or "Karr 2012 Table S2"
+    doi: <doi|null>
+    calibration_run: <run_id|null>        # if calibrated, which calibration run
+    notes: <str|null>
+
+# --- Random seed conventions -------------------------------------------------
+
+rng:
+  primary_seed: <int>                     # the seed passed to the simulator
+  rng_type: <"numpy_default"|"numpy_pcg64"|"jax_threefry"|"matlab_mt19937">
+  per_process_seed_derivation: <str>      # how per-process seeds are derived
+                                          # e.g. "hash(process_name + str(seed))"
+  matches_karr_matlab: <bool>             # true if we replicate MATLAB's RNG
+
+# --- Hardware fingerprint (matters for stochastic claims) --------------------
+
+hardware:
+  platform: <str>                         # "Windows", "Linux", "Darwin"
+  python_version: <str>                   # e.g. "3.12.13"
+  cpu_arch: <str>                         # e.g. "x86_64"
+  gpu_present: <bool>
+  gpu_model: <str|null>                   # if GPU used (post JAX migration)
+
+# --- Library version pins ----------------------------------------------------
+
+dependencies:
+  numpy: <semver>
+  scipy: <semver>
+  vivarium_core: <semver>
+  h5py: <semver>
+  # add more as the project grows; pin via uv.lock or requirements.lock
+  lockfile_sha: <sha256>                  # hash of the lockfile used
+
+# --- Solver tolerances -------------------------------------------------------
+
+solver_settings:
+  # Per-process solver tuning. Only include processes whose results are
+  # tolerance-sensitive.
+  Metabolism:
+    fba_solver: <str>                     # e.g. "GLPK", "Gurobi", "COBRApy_default"
+    fba_solver_version: <str>
+    tolerance: <float>
+  FtsZPolymerization:
+    ode_solver: <str>                     # "BDF", "RK45", etc.
+    rtol: <float>
+    atol: <float>
+  # Add more processes as needed
+
+# --- Validation gates passed -------------------------------------------------
+
+validation_status:
+  L1_did_it_fire: <bool>
+  L2_0_schema_audit: <bool>
+  L2_1_bit_identity: <"PASS"|"FAIL"|"PARTIAL">
+  L2_2_distributional: <"PASS"|"FAIL"|"PARTIAL">
+  L2_2_pass_count: <int>                  # e.g. 22 (out of 22 in-scope)
+  L2_5_composition: <"PASS"|"FAIL"|"NOT_STARTED">
+  L3_direct_coupling: <"PASS"|"FAIL"|"NOT_STARTED">
+  L4_submodule: <"PASS"|"FAIL"|"NOT_STARTED">
+  L5_chassis: <"PASS"|"FAIL"|"NOT_STARTED">
+
+# --- Notes -------------------------------------------------------------------
+
+operator_notes: <str|null>                # any caveats or context the operator
+                                          # wants future readers to know about
