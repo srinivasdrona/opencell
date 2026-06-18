@@ -602,7 +602,7 @@ def _structured_fail(record: dict[str, Any]) -> None:
     pytest.fail("L2.2.v2 structured failure: " + json.dumps(record, sort_keys=True))
 
 
-def run_integrated_replay_v2(*, under_test_processes: list[str], rng_seed: int) -> None:
+def run_integrated_replay_v2(*, under_test_processes: list[str], rng_seed: int, disable_trace_hints: bool = False) -> None:
     ordered = _ordered_under_test(under_test_processes)
 
     with ExitStack() as stack:
@@ -726,13 +726,14 @@ def run_integrated_replay_v2(*, under_test_processes: list[str], rng_seed: int) 
 
             for name in ordered:
                 ctx = contexts[name]
-                for obs in ctx.spec.trace_after_hint_observables:
-                    overlay_trace_after_hint(
-                        state=shared_state,
-                        observable=obs,
-                        vector=after_vectors[name][obs],
-                        wids=ctx.wids_by_observable[obs],
-                    )
+                if not disable_trace_hints:
+                    for obs in ctx.spec.trace_after_hint_observables:
+                        overlay_trace_after_hint(
+                            state=shared_state,
+                            observable=obs,
+                            vector=after_vectors[name][obs],
+                            wids=ctx.wids_by_observable[obs],
+                        )
 
                 for obs in ctx.spec.observables:
                     upstream_exposers = [

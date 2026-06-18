@@ -23,12 +23,19 @@ if str(_HELPER_DIR) not in sys.path:
 from l2_2_replay_common_v2 import _COMPOSITION_ORDER_V2, run_integrated_replay_v2
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="L2.2.k first pair RED, attribution classified as WID-set mismatch — see STATUS_l2_2_harness_v2.md",
-)
 @pytest.mark.parametrize("rng_seed", [0], ids=["rng_seed_0"])
 def test_l2_2_translation_plus_rna_processing_v2(rng_seed: int) -> None:
     under_test = ["Translation", "RNAProcessing"]
     assert list(_COMPOSITION_ORDER_V2[:2]) == under_test
     run_integrated_replay_v2(under_test_processes=under_test, rng_seed=rng_seed)
+
+
+@pytest.mark.parametrize("rng_seed", [0], ids=["rng_seed_0"])
+def test_l25_translation_plus_rna_processing_no_hints(rng_seed: int) -> None:
+    """L2.5: same pair but with trace_hint oracle disabled — honest composition."""
+    under_test = ["Translation", "RNAProcessing"]
+    run_integrated_replay_v2(
+        under_test_processes=under_test,
+        rng_seed=rng_seed,
+        disable_trace_hints=True,
+    )
