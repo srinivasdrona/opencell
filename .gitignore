@@ -1,12 +1,11 @@
-
-PROMPT_*.md
+# === Root-level scratch (added 2026-06-19; canonical artifacts moved under docs/) ===
+# Anchored to repo root with leading `/` so docs/archive/{prompts,status}/ still ships.
+/PROMPT.md
+/PROMPT_*.md
+/STATUS_*.md
+!/STATUS.md
 .codex_*_pid.txt
 codex_*.log
-STATUS_*.md
-
-
-PROMPT_*.md
-.codex_*_pid.txt
 
 # Python build artifacts (suppress VS Code source control noise across worktrees)
 __pycache__/
@@ -47,9 +46,26 @@ opencell_tasks.db.bak.*
 # Codex/probe scratch logs at repo root
 .codex_*.err
 .codex_*.log
+.fullscale_*.log
+.fullscale_*.log.err
+.fullscale_postfanout_verdicts.json
+.gate_*.log
+.gate_*.log.err
+.matlab_*.log
+.matlab_*.pid
+.pipeline_watcher_*.ps1
+.probe_*.py
+.run_matlab_*.bat
+.sut_pipeline.*
 probe_*.log
 .last_probe_dir.txt
 .merge_baseline_sha.txt
+
+# Temporary scratch files at repo root
+_tmp_*.py
+_tmp_*.txt
+_tmp_*.sh
+_tmp_*.ps1
 
 # Blog drafts (working area, ship via docs/blog/)
 docs/blog/drafts/
