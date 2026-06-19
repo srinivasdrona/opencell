@@ -420,8 +420,41 @@ class KarrDNASupercoilingProcess(Process):
 
         gyrase_bound = max(0.0, float((bound_next or bound_now).get(self.gyrase_wid, 0.0)))
         topoiv_bound = max(0.0, float((bound_next or bound_now).get(self.topoiv_wid, 0.0)))
-        gyrase_catalytic = gyrase_bound if gyrase_bound > 0.0 else gyrase_free_count
-        topoiv_catalytic = topoiv_bound if topoiv_bound > 0.0 else topoiv_free_count
+        gyrase_free_effective = max(0.0, float(gyrase_free_count))
+        topoiv_free_effective = max(0.0, float(topoiv_free_count))
+        nohint_bound_next_effective: dict[str, float] = {}
+        nohint_enzymes_next_effective: dict[str, float] = {}
+        if not replay_mode:
+            gyrase_legal = bool(np.any(sigma_values > self.gyrase_sigma_limit))
+            topoiv_legal = bool(np.any(sigma_values > self.topoiv_sigma_limit))
+
+            # Aggregate no-hints binding/release transitions from the same
+            # sampled-tick context without introducing new RNG draws.
+            topoiv_release = topoiv_bound if not topoiv_legal else 0.0
+            topoiv_bound = max(0.0, topoiv_bound - topoiv_release)
+            topoiv_free_effective = max(0.0, topoiv_free_effective + topoiv_release)
+
+            gyrase_bind = gyrase_free_effective if gyrase_legal else 0.0
+            topoiv_bind = topoiv_free_effective if topoiv_legal else 0.0
+
+            gyrase_bound = max(0.0, gyrase_bound + gyrase_bind)
+            topoiv_bound = max(0.0, topoiv_bound + topoiv_bind)
+            gyrase_free_effective = max(0.0, gyrase_free_effective - gyrase_bind)
+            topoiv_free_effective = max(0.0, topoiv_free_effective - topoiv_bind)
+
+            nohint_bound_next_effective = {
+                self.gyrase_wid: float(gyrase_bound),
+                self.topoiv_wid: float(topoiv_bound),
+                self.topoi_wid: float(bound_now.get(self.topoi_wid, 0.0)),
+            }
+            nohint_enzymes_next_effective = {
+                self.gyrase_wid: float(gyrase_free_effective),
+                self.topoiv_wid: float(topoiv_free_effective),
+                self.topoi_wid: float(topoi_free_count),
+            }
+
+        gyrase_catalytic = gyrase_bound if gyrase_bound > 0.0 else gyrase_free_effective
+        topoiv_catalytic = topoiv_bound if topoiv_bound > 0.0 else topoiv_free_effective
 
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
         available_atp = self._allocated_or_state(allocated_state, self.atp_wid)
@@ -572,12 +605,18 @@ class KarrDNASupercoilingProcess(Process):
                 enzymes_next_effective[wid] = float(enzymes_next.get(wid, enzymes_now.get(wid, 0.0)))
         else:
             for wid in self.enzyme_wids:
+                bound_next_effective[wid] = float(
+                    nohint_bound_next_effective.get(wid, bound_now.get(wid, 0.0))
+                )
                 enzymes_next_effective[wid] = float(
-                    self._resolve_enzyme_count(
+                    nohint_enzymes_next_effective.get(
                         wid,
-                        protein_counts=protein_counts,
-                        complex_counts=complex_counts,
-                        top_level_enzymes=top_level_enzymes,
+                        self._resolve_enzyme_count(
+                            wid,
+                            protein_counts=protein_counts,
+                            complex_counts=complex_counts,
+                            top_level_enzymes=top_level_enzymes,
+                        ),
                     )
                 )
 
