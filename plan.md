@@ -69,27 +69,32 @@ Pair-keyed tracker at [`docs/phase_f/L2_5_PAIR_TRACKER.md`](docs/phase_f/L2_5_PA
 
 **Next session attack plan (priority order, revised after H10/H11):**
 
-1. **H11 methodology resolution.** Today's H10/H11 probes revealed: post-H9, DNAS's `substrates_allocated` budget is correct (907 ATP), but DNAS still emits only -4 ATP in composition. Root cause: composition order. ChromosomeCondensation runs first, adds 3 chromosome state keys (`condensation_level`, `forks_passing`, `smc_bound_count`) that DNAS's canary biology reads — condensed DNA biologically reduces gyrase activity. DNAS's trace was captured at whatever moment Karr's `randperm`-driven evolveState order had DNAS run that tick, possibly BEFORE Cond.
+1. **🛑 H11 METHODOLOGY FINDING (real, sharp, deeper than expected).** Day-33 deep probe revealed: per-process traces capture DIFFERENT cell-cycle moments, not different process-orders-within-one-tick. Concrete numbers:
+   - DNAS's `states_before[ATP]` at tick 0 = **907**
+   - Cond's `states_before[ATP]` at tick 0 = **75** (from yesterday's STATUS_cause5_diagnosis)
+   - There is no single moment in Karr's simulation where ATP is simultaneously 907 (DNAS's view) and 75 (Cond's view).
+   - Composing them naively in a single pair tick is therefore semantically meaningless: each trace was recorded at a moment after a different set of upstream processes had already consumed substrates.
 
-   **Two sub-questions to resolve before more fixes:**
-   - **(a) Is `condensation_level` an OC-only state field that doesn't exist in Karr's MATLAB Chromosome representation?** If yes, OC's Cond is writing a field that DNAS's canary biology reads — representation mismatch. Fix: either remove the OC field or make DNAS not read it. Cheap to verify (grep MATLAB `Chromosome.m` for "condensation").
-   - **(b) If `condensation_level` is real biology**, then composition order matters and our alphabetical-default is wrong. Two options: (i) extract Karr's per-tick randperm order from MATLAB and use it as the canonical pair order; (ii) accept that L2.5 needs a relaxed oracle for processes whose biology is upstream-state-dependent (distributional tolerance, not bit-identity-near).
+   Confirmed via local grep: `condensation_level`, `smc_bound_count`, `forks_passing` are OC-only fields (not in Karr's MATLAB Chromosome.m); AND DNASupercoiling does NOT read them by name. So the squeeze isn't a direct OC field-mismatch — it's the substrate baseline being from different cell-cycle phases.
 
-   Recommendation: check (a) first as a 15-minute MATLAB grep. If (a) is true, fix is easy and unlocks DNAS pairs immediately. If (a) is false, escalate to operator for (b) methodology call.
+   **This means the L2.5 pair test is structurally NOT just "run two processes against shared substrate pool" — it's "compose two trace fragments from different moments of the cell cycle and hope the math works."**
 
-2. **Once H11 resolves and DNAS pairs flip green**: replicate canary pattern to 7 remaining biology-port-needing processes (FtsZ, ProteinDecay, ProteinModification, ProteinTranslocation, Replication, ReplicationInitiation, RNADecay, Transcription). Each ~30-50 LOC.
+   **Methodology options (operator call before more codex):**
+   - **(A) Re-extract per-process traces from the same canonical tick across all 28 processes.** Each process's tick-0 trace would be captured at the SAME moment of a single Karr simulation. Pair tests would then have consistent baselines. Requires MATLAB re-run + extractor revision. Estimated 1-2 days.
+   - **(B) Switch L2.5 to "joint state" semantics:** start from a global tick-start state (Metabolism's view, since Metab seeds the pool), run all pair processes, check final joint state. Drop per-process delta comparison. Requires harness rewrite.
+   - **(C) Accept tolerance:** declare the current 18 PASS as the achievable L2.5 surface and move on. Treat the 20 FAILS as "known oracle mismatch, not biology bug" and document the limitation. Move to L3 with the working subset.
 
-3. **Metabolism Karr port** (separate, ~150 LOC + KB extraction).
+2. **Once methodology resolves**: existing biology ports (Group A + canary) + 7 remaining pattern-ports + Metab will follow whichever pattern is chosen.
 
-4. **CAUSE_UNCLASSIFIED Subclass A/B** after CAUSE_5 cascade resolves.
+3. **CAUSE_UNCLASSIFIED Subclass A/B** after methodology resolves.
 
-5. **211 SS pair tests** (bulk scaffold after DS+DD are stable).
+4. **211 SS pair tests** (bulk scaffold after DS+DD methodology settles).
 
 **Day-33 Probe-and-fix progression (sharpening cascade):**
-- H8: harness arithmetic suspected → REJECTED (arithmetic is correct)
+- H8: harness arithmetic suspected → REJECTED (arithmetic correct)
 - H9: pre-step substrate baseline suspected → CONFIRMED → FIXED (+8 PASS)
-- H10: allocator budget suspected → REJECTED (budget is 907 in both modes)
-- **H11: composition order / state representation pollution → CONFIRMED, fix path narrowing**
+- H10: allocator budget suspected → REJECTED (budget 907 in both modes)
+- **H11: composition state mismatch suspected → CONFIRMED with new sharper insight: per-process traces are from DIFFERENT cell-cycle moments, not different orders**
 
 **Activation env, MATLAB, WSL venv:** unchanged. Workspace: single worktree (main).
 
