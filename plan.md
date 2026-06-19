@@ -26,11 +26,32 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-06-18 ~23:55 IST):** None alive. Workspace clean (1 worktree: main).
+**Live processes / agents (2026-06-19 ~13:30 IST):** None alive. Workspace clean (1 worktree: main).
 
 **L2.2: COMPLETE (22/22 in-scope, 100%).** L2.5 in active development.
 
-**L2.5 status (Day-32 end):** **10 L2.5 pair tests GREEN** (1 SS + 7 DS + 2 DD). Pair-keyed tracker at [`docs/phase_f/L2_5_PAIR_TRACKER.md`](docs/phase_f/L2_5_PAIR_TRACKER.md); codex-loadable status at [`docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml`](docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml) `l2_5_gate:` section (schema v5, added 2026-06-18).
+**L2.5 status (Day-33 mid-day):** **10 L2.5 pair tests GREEN** (1 SS + 7 DS + 2 DD). **No net change since yesterday.** Pair-keyed tracker at [`docs/phase_f/L2_5_PAIR_TRACKER.md`](docs/phase_f/L2_5_PAIR_TRACKER.md); codex-loadable status at [`docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml`](docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml) `l2_5_gate:` section (schema v5).
+
+**Day-33 morning work (2026-06-19) — what we learned:**
+
+1. **Metabolism CAUSE_5 fix attempted, REJECTED.** Day-32 diagnosis said "compute `substrates` delta from `S @ v * dt` in `_static_update`". Codex implemented exactly that (commit reverted via stash, not in main). Probe revealed FBA `v` at SS has `S × v ≈ 0` for internal metabolites by construction — emit was all zeros. Re-diagnosis via 3-slot investigation (commit `a667827`, `docs/archive/status/STATUS_metab_redx.md`): Karr's MATLAB `Metabolism.evolveState` uses **4-partition substrate update** (external exchange + internal exchange + metabolismNewProduction*growth + ATP hydrolysis), NOT aggregate `S @ v`. Real fix is a Karr biology port, ~50-150 LOC + KB extraction.
+
+2. **CAUSE_5 audit revealed universal pattern** (commit `5c14db7`, `scripts/audit_cause5_writeback.py`). All 6 audited processes (DNASupercoiling, FtsZPolymerization, ProteinModification, RNADecay, Transcription, Replication) are missing `enzymes`/`boundEnzymes` writeback in no-hints branch. Same architectural shape as RepInit. Looked like one bug across 7 processes.
+
+3. **Group A (DNA processes) fix landed** — 3 commits (`3859dfe`, `d4485cf`, `41d08df`) added `enzymes`/`boundEnzymes`/`substrates` delta emissions to no-hints branches of RepInit, Replication, DNASupercoiling. **L2.1 stayed GREEN** (good — no regression). **But L2.5 pairs DID NOT FLIP** (only the pre-existing `Cond+Replication` still passes; `Seg+Replication`, both RepInit pairs, both DNASupercoiling pairs still FAIL with CAUSE_4/CAUSE_5).
+
+4. **What this means:** the no-hints channel parity gap was a *necessary* fix (these channels were genuinely silently dropped) but *not sufficient*. The L2.5 failures have a deeper cause — the values emitted by the no-hints path don't match Karr's per-tick observed counts even when the channels are now wired. This is a **value-level divergence**, not a missing-emit divergence.
+
+**Repo root cleanup landed (commit `889396a`):** 102 root files -> 22. 89 historical PROMPT_*.md / STATUS_*.md / diagnostic files archived under `docs/archive/{prompts,status,diagnostics}/`. STATUS.md (canonical, 113 refs) kept at root. README is now reachable on GitHub landing page without scrolling.
+
+**Tomorrow's open questions (to plan with operator before firing more codex):**
+
+- The CAUSE_5 pattern is value-level, not channel-emit-level. Diagnosing requires a tick-0 probe per process comparing OC's no-hints emit values against Karr's `states_after - states_before`. This is the same probe we used for Metabolism that revealed `S @ v = 0`. Likely outcome: each process has a different process-specific no-hints biology gap.
+- ProteinModification is the most-channels-missing (`enzymes`, `boundEnzymes`, `modifiedMonomers`, `unmodifiedMonomers`, `substrates` — all 5). Worth probing if its no-hints branch is even running biology, or if it's a stub that always defers to hint mode.
+- Should we audit the L2.1 tests for these 7 processes to see if they're *only* passing because of harness trace-hint overlay (i.e., L2.1 itself doesn't exercise the no-hints branch we're trying to fix)? If yes, then we have an L2.1 oracle-leakage problem too, and the L2.5 ladder is the first time these no-hints paths run honestly.
+- Metabolism Karr-port is ~50-150 LOC + KB extraction; that's a 1-day delegation (or 3-slot exploratory).
+
+**Day-32 outcomes carry over (unchanged):** see Day-32 section below for L2.5 harness fixes (H5/H6/H7), Cytokinesis GTP fix, etc.
 **Scope:** 256 honest-required pairs (211 SS + 43 DS + 2 DD), 122 disjoint, 378 total.
 
 | L2.5 bucket | Count | Notes |
