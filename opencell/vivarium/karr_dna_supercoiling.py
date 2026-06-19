@@ -545,36 +545,62 @@ class KarrDNASupercoilingProcess(Process):
             },
         }
 
+        substrates_now_raw = states.get("substrates", {})
+        substrates_now = substrates_now_raw if isinstance(substrates_now_raw, dict) else {}
+        substrates_next_effective = {
+            wid: float(substrates_now.get(wid, 0.0)) for wid in self.substrate_wids
+        }
         substrate_delta = self._substrate_delta(atp_used)
-        if substrate_delta:
-            update["substrates"] = substrate_delta
+        for wid, delta in substrate_delta.items():
+            substrates_next_effective[wid] = float(
+                substrates_next_effective.get(wid, 0.0) + float(delta)
+            )
 
         substrates_next_raw = hint.get("substrates_next", {})
         substrates_next = substrates_next_raw if isinstance(substrates_next_raw, dict) else {}
         if substrates_next:
-            substrates_now_raw = states.get("substrates", {})
-            substrates_now = substrates_now_raw if isinstance(substrates_now_raw, dict) else {}
-            hint_delta: dict[str, float] = {}
             for wid in self.substrate_wids:
-                now = float(substrates_now.get(wid, 0.0))
-                after = float(substrates_next.get(wid, now))
-                delta = after - now
-                if delta != 0.0:
-                    hint_delta[wid] = float(delta)
-            update["substrates"] = hint_delta
+                substrates_next_effective[wid] = float(
+                    substrates_next.get(wid, substrates_next_effective.get(wid, 0.0))
+                )
 
-        self._emit_hint_delta(
-            update=update,
-            channel="boundEnzymes",
-            current=bound_now,
-            nxt=bound_next,
-        )
-        self._emit_hint_delta(
-            update=update,
-            channel="enzymes",
-            current=enzymes_now,
-            nxt=enzymes_next,
-        )
+        bound_next_effective = {wid: float(bound_now.get(wid, 0.0)) for wid in self.enzyme_wids}
+        enzymes_next_effective = {wid: float(enzymes_now.get(wid, 0.0)) for wid in self.enzyme_wids}
+        if replay_mode:
+            for wid in self.enzyme_wids:
+                bound_next_effective[wid] = float(bound_next.get(wid, bound_now.get(wid, 0.0)))
+                enzymes_next_effective[wid] = float(enzymes_next.get(wid, enzymes_now.get(wid, 0.0)))
+        else:
+            for wid in self.enzyme_wids:
+                enzymes_next_effective[wid] = float(
+                    self._resolve_enzyme_count(
+                        wid,
+                        protein_counts=protein_counts,
+                        complex_counts=complex_counts,
+                        top_level_enzymes=top_level_enzymes,
+                    )
+                )
+
+        substrate_delta_out: dict[str, float] = {}
+        for wid in self.substrate_wids:
+            now = float(substrates_now.get(wid, 0.0))
+            after = float(substrates_next_effective.get(wid, now))
+            delta = after - now
+            if delta != 0.0:
+                substrate_delta_out[wid] = float(delta)
+        update["substrates"] = substrate_delta_out
+
+        bound_delta_out: dict[str, float] = {}
+        enzyme_delta_out: dict[str, float] = {}
+        for wid in self.enzyme_wids:
+            bound_delta = float(bound_next_effective.get(wid, 0.0)) - float(bound_now.get(wid, 0.0))
+            if bound_delta != 0.0:
+                bound_delta_out[wid] = float(bound_delta)
+            enzyme_delta = float(enzymes_next_effective.get(wid, 0.0)) - float(enzymes_now.get(wid, 0.0))
+            if enzyme_delta != 0.0:
+                enzyme_delta_out[wid] = float(enzyme_delta)
+        update["boundEnzymes"] = bound_delta_out
+        update["enzymes"] = enzyme_delta_out
 
         return update
 
