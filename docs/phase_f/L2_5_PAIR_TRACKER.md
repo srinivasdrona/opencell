@@ -1,6 +1,6 @@
 # L2.5 Pair Tracker — actual pass/fail status per shared-pool pair
 
-**Generated:** 2026-06-18 (Day 32 EOD)
+**Generated:** 2026-06-19 (Day 33 EOD)
 **Source of truth for L2.5 status. PROCESS_STATUS_ALL_29.md L2.5 column points here.**
 **Machine-loadable companion:** [`data/schemas/l25_pair_list.toml`](../../data/schemas/l25_pair_list.toml) (pair derivation, no status field)
 **Catalog reference:** [`l2_2_design_a/PROCESS_CATALOG.yaml`](./l2_2_design_a/PROCESS_CATALOG.yaml) `l2_5_gate:` section
@@ -18,12 +18,12 @@
 | ↳ Deterministic ↔ Stochastic (DS) | 43 | Det side bit-identity, stoch side distributional |
 | ↳ Deterministic ↔ Deterministic (DD) | 2 | Both sides bit-identity (strictest) |
 
-## Scoreboard (Day-32 EOD)
+## Scoreboard (Day-33 EOD)
 
 | Status | Count | Source |
 |---|---:|---|
-| 🟢 **PASS** | **10** | 1 SS + 7 DS + 2 DD |
-| 🔴 FAIL | 28 | 28 DS (failure-class breakdown below) |
+| 🟢 **PASS** | **18** | 1 SS + 15 DS + 2 DD (was 10 at Day-32 EOD; H9 harness fix unlocked +8) |
+| 🔴 FAIL | 20 | 20 DS (failure-class breakdown below) |
 | ⚪ SKIPPED | 8 | 8 DS (no-op trace / sparse-event; need event-window) |
 | ⬜ UNTESTED | 210 | 210 SS (only Translation+RNAProcessing wired) |
 | ➖ OUT OF SCOPE | 122 | Disjoint (no shared WIDs) |
@@ -32,7 +32,7 @@
 
 ---
 
-## 🟢 PASS — 10 pairs
+## 🟢 PASS — 18 pairs
 
 ### SS (1)
 
@@ -40,17 +40,25 @@
 |---|---|---|
 | Translation + RNAProcessing | `test_l2_2_translation_plus_rna_processing_v2.py::test_l25_no_hints` | First SS green; gated by Translation evolveState port (`02e354a`) |
 
-### DS (7) — from `test_l25_deterministic_stochastic_pairs.py`
+### DS (15) — from `test_l25_deterministic_stochastic_pairs.py`
 
-| Pair | Notes |
+| Pair | Day landed |
 |---|---|
-| ChromosomeCondensation + DNARepair | |
-| ChromosomeCondensation + Replication | |
-| ChromosomeCondensation + Translation | |
-| ChromosomeSegregation + DNARepair | |
-| ChromosomeSegregation + ProteinFolding | |
-| ChromosomeSegregation + Translation | |
-| ChromosomeSegregation + tRNAAminoacylation | |
+| ChromosomeCondensation + DNARepair | Day-32 |
+| ChromosomeCondensation + Replication | Day-32 |
+| ChromosomeCondensation + Translation | Day-32 |
+| ChromosomeCondensation + ProteinFolding | Day-33 (H9 unlock) |
+| ChromosomeCondensation + RNAProcessing | Day-33 (H9 unlock) |
+| ChromosomeCondensation + tRNAAminoacylation | Day-33 (H9 unlock) |
+| ChromosomeCondensation + ProteinProcessingI | Day-33 (H9 unlock) |
+| ChromosomeCondensation + ProteinProcessingII | Day-33 (H9 unlock) |
+| ChromosomeSegregation + DNARepair | Day-32 |
+| ChromosomeSegregation + ProteinFolding | Day-32 |
+| ChromosomeSegregation + Translation | Day-32 |
+| ChromosomeSegregation + tRNAAminoacylation | Day-32 |
+| ChromosomeSegregation + RNAProcessing | Day-33 (H9 unlock) |
+| ChromosomeSegregation + ProteinProcessingI | Day-33 (H9 unlock) |
+| ChromosomeSegregation + ProteinProcessingII | Day-33 (H9 unlock) |
 
 ### DD (2) — from dedicated test files
 
@@ -61,43 +69,22 @@
 
 ---
 
-## 🔴 FAIL — 28 DS pairs (by failure class)
+## 🔴 FAIL — 20 DS pairs (Day-33 EOD)
 
-Failure-class roll-up (precise per-pair classification TBD; counts from latest sweep before EOD):
-- **CAUSE_5** (intrinsic replay divergence — "no-hints channel parity gap") — ~16 pairs
-- **CAUSE_4** (genuine upstream pollution, post classifier fix) — 4 pairs
-- **CAUSE_UNCLASSIFIED** (subclass A: H2O multi-tick drift, 6; subclass B: MG_020 cross-observable, 2) — 8 pairs
+| Stochastic process | Failing pairs | Root cause class | Next-step |
+|---|---:|---|---|
+| Metabolism | 3 (Cond+M, Seg+M, HostInt+M) | Karr 4-partition port required | ~150 LOC port + KB extraction |
+| DNASupercoiling | 2 (Cond+DS, Seg+DS) | **H10 allocator-budget squeeze under composition** (NEW Day-33) | Diagnose H10, fix harness allocator path |
+| FtsZPolymerization | 2 | "no-hints branch lacks binding/release compute" (same class as DNAS canary) | Canary-style biology port (~30-50 LOC) |
+| ProteinDecay | 2 | same | same |
+| ProteinModification | 2 | same | same |
+| ProteinTranslocation | 2 | same | same |
+| Replication | 1 (Seg+R) | same (Cond+R passed already) | same |
+| ReplicationInitiation | 2 | same | same |
+| Transcription | 2 | same | same |
+| RNADecay | 2 | same | same |
 
-| Pair | Suspected class | Notes |
-|---|---|---|
-| ChromosomeCondensation + DNASupercoiling | CAUSE_5 | |
-| ChromosomeCondensation + FtsZPolymerization | CAUSE_5 | |
-| ChromosomeCondensation + Metabolism | CAUSE_5 | confirmed: no-hints substrate writeback gap @ `karr_metabolism.py:355-357` |
-| ChromosomeCondensation + ProteinDecay | CAUSE_UNCLASSIFIED (subclass B) | MG_020_MONOMER cross-observable |
-| ChromosomeCondensation + ProteinFolding | CAUSE_4 | ATP upstream |
-| ChromosomeCondensation + ProteinModification | CAUSE_5 | |
-| ChromosomeCondensation + ProteinProcessingI | CAUSE_UNCLASSIFIED (subclass A) | H2O drift |
-| ChromosomeCondensation + ProteinProcessingII | CAUSE_UNCLASSIFIED (subclass A) | H2O drift |
-| ChromosomeCondensation + ProteinTranslocation | CAUSE_4 | ATP upstream |
-| ChromosomeCondensation + RNADecay | CAUSE_5 | |
-| ChromosomeCondensation + RNAProcessing | CAUSE_UNCLASSIFIED (subclass A) | H2O drift (after classifier fix) |
-| ChromosomeCondensation + ReplicationInitiation | CAUSE_5 | confirmed: no-hints enzymes/boundEnzymes writeback gap @ `karr_replication_initiation.py:354-401` |
-| ChromosomeCondensation + Transcription | CAUSE_5 | |
-| ChromosomeCondensation + tRNAAminoacylation | CAUSE_4 | |
-| ChromosomeSegregation + DNASupercoiling | CAUSE_5 | |
-| ChromosomeSegregation + FtsZPolymerization | CAUSE_5 | |
-| ChromosomeSegregation + Metabolism | CAUSE_5 | (same class as Cond+Metab) |
-| ChromosomeSegregation + ProteinDecay | CAUSE_UNCLASSIFIED (subclass B) | |
-| ChromosomeSegregation + ProteinModification | CAUSE_5 | |
-| ChromosomeSegregation + ProteinProcessingI | CAUSE_UNCLASSIFIED (subclass A) | |
-| ChromosomeSegregation + ProteinProcessingII | CAUSE_UNCLASSIFIED (subclass A) | |
-| ChromosomeSegregation + ProteinTranslocation | CAUSE_4 | |
-| ChromosomeSegregation + RNADecay | CAUSE_5 | |
-| ChromosomeSegregation + RNAProcessing | CAUSE_UNCLASSIFIED (subclass A) | |
-| ChromosomeSegregation + Replication | CAUSE_5 | (Cond+Replication PASSES; Seg-paired version FAILS — interesting) |
-| ChromosomeSegregation + ReplicationInitiation | CAUSE_5 | |
-| ChromosomeSegregation + Transcription | CAUSE_5 | |
-| HostInteraction + Metabolism | CAUSE_5 | (same class as Cond+Metab) |
+Total: 20 (5 unique stochastic processes need biology ports + DNAS H10 harness + Metab Karr port + Replication overflow).
 
 ---
 

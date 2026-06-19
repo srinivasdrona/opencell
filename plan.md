@@ -26,62 +26,57 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-06-19 ~17:30 IST):** None alive. Workspace clean (1 worktree: main).
+**Live processes / agents (2026-06-19 ~18:30 IST):** None alive. Workspace clean (1 worktree: main).
 
 **L2.2: COMPLETE (22/22 in-scope, 100%).** L2.5 in active development.
 
-**L2.5 status (Day-33 EOD):** **10 L2.5 pair tests GREEN** (1 SS + 7 DS + 2 DD). **No net change for full day** — but with progressively sharper diagnosis ending at one specific harness bug.
+**L2.5 status (Day-33 EOD):** **18 L2.5 pair tests GREEN** (1 SS + 15 DS + 2 DD), up from 10 at start of day. **+8 net unlocks today** from the H9 harness fix.
 
-**Day-33 EOD: H8 diagnosis (commit `7c6320d`) — REJECTED in expected form, REDIRECTED to deeper bug.**
+Pair-keyed tracker at [`docs/phase_f/L2_5_PAIR_TRACKER.md`](docs/phase_f/L2_5_PAIR_TRACKER.md); codex-loadable status at [`docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml`](docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml) `l2_5_gate:` section (schema v5).
 
-Codex's H8 probe (`scripts/probe_h8_composition_delta.py`) confirmed:
-- ✅ Harness arithmetic is fine: `oc_compare = oc_after_step - oc_before_step` is exactly correct.
-- ❌ **DNASupercoiling's no-hints branch emits `-4` ATP under composition, not `-60` like in isolation.**
+**Day-33 final scoreboard breakdown:**
 
-The probe table reveals the smoking gun:
+| Category | Count |
+|---|---:|
+| PASS | **18** |
+| FAIL | 20 |
+| SKIPPED (no-op trace / event-class) | 8 |
+| Total DS+DD+1SS tested | 46 |
 
-| WID | oc_states_before_tick_start | oc_states_before_step | karr_states_before |
-|---|---:|---:|---:|
-| ATP | 907 | **72** | 907 |
-| H2O | 9080624 | **756715** | 9080624 |
+**Passing pairs (Day-33 EOD):**
+- SS (1): Translation+RNAProcessing
+- DD (2): Cond+Seg, HostInteraction+TerminalOrganelle
+- DS (15): Cond+{DNARepair, ProteinFolding, RNAProcessing, Replication, tRNAAA, Translation, ProteinProcessingI, ProteinProcessingII}; Seg+{DNARepair, ProteinFolding, RNAProcessing, Translation, tRNAAA, ProteinProcessingI, ProteinProcessingII}
 
-Between "tick start" and "DNASupercoiling's step start", the shared substrate pool went from 907 ATP to 72 ATP. ChromosomeCondensation supposedly ran in between, but Cond is deterministic and should NOT consume 835 ATP. The 72 ATP figure is suspicious — it matches Karr's Metabolism trace at `Cond+Metab` pair (yesterday's diagnosis showed `ATP: 72 -> 72`).
+**Remaining FAIL by stochastic process (20 pairs):**
+- Metabolism (3): Cond+M, Seg+M, HostInteraction+M — needs Karr 4-partition port (~150 LOC)
+- DNASupercoiling (2): canary biology correct at isolation, composition still shows ATP `-4 vs -60`. Now ROOT-CAUSED as allocator-budget squeeze: post-H9 the baseline is correct (907 ATP) but DNAS reads `substrates_allocated[DNAS][ATP]` which gets a small budget in composition mode. **NEW BUG CLASS H10.**
+- 7 other processes need canary-style biology ports (~15 pairs): FtsZPolymerization (2), ProteinDecay (2), ProteinModification (2), ProteinTranslocation (2), Replication (1), ReplicationInitiation (2), Transcription (2), RNADecay (2)
+- ProteinDecay (2) and Transcription (2) included — Group A didn't touch these; same "no-hints branch lacks binding/release compute" gap as DNASupercoiling pre-canary.
 
-**New hypothesis H9 (next session):** The harness's pre-step state initialization at `l2_2_replay_common_v2.py:1236-1252` overlays the shared substrate pool from the OWNER process's `before_vectors`, where owner is determined by `owner_manifest`. If the owner of `substrates` for the `Cond+DNASupercoiling` pair is being computed from a different process's trace (likely the first-declared process in the pair, Cond, whose Karr trace happens to have ATP=72 at tick 0 because Cond runs AFTER Metabolism in the canonical Karr cell-cycle order), then DNASupercoiling sees the wrong pre-step substrate vector. DNASupercoiling's no-hints sampler computes events against this squeezed 72 ATP budget instead of the full 907, producing only 4 hydrolyses instead of 60.
-
-This is NOT a process bug. The DNASupercoiling biology port is correct. This is a harness initialization bug specific to multi-process composition where the second process's substrate baseline gets overwritten by the first process's trace baseline.
-
-**The fix family (to characterize next session):**
-- Either: each process's substrate observable gets initialized from its OWN trace, not from the owner's
-- Or: a single shared substrate pool is initialized from the canonical Karr tick-start state (Metabolism's, which is the master substrate ledger), with per-process deltas applied on top
-
-This explains why YESTERDAY'S Group A fixes didn't unlock anything — even before today's canary, those processes were running against the wrong substrate baseline under composition.
-
-**Day-33 work summary (10 commits):**
-- `5c14db7` audit probe (false start — said "missing-writeback", was actually "missing-compute")
-- `3859dfe`, `d4485cf`, `41d08df` Group A no-hints emit-plumbing fixes (necessary defense, zero L2.5 movement)
-- `a667827` Metabolism re-diagnosis (verdict: 4-partition Karr port required, separate work)
-- `889396a` repo root cleanup (102 → 22 files, README front-and-center)
+**Day-33 commit log (12 commits, all pushed):**
+- `5c14db7` audit probe — false-positive "missing-writeback" classification (the channels CAN be plumbed, but values are zero because compute is missing)
+- `3859dfe`, `d4485cf`, `41d08df` Group A no-hints emit-plumbing fixes (necessary, not sufficient on their own)
+- `a667827` Metabolism re-diagnosis — verdict: 4-partition Karr port required
+- `889396a` repo root cleanup (102 → 22 files)
 - `10098cf` per-process value probe (revealed off-by-N pattern across 7 processes)
 - `f13b9aa` deep DNASupercoiling probe (revealed compute-vs-plumbing gap)
-- `250b777` DNASupercoiling biology port (proven at isolation; ALL diffs to zero)
-- `7c6320d` H8 diagnosis (rejected H8 arithmetic hypothesis; redirected to H9 baseline-overlay bug)
-
-**Net scoreboard movement Day-33: 0** (10 PASS at start, 10 PASS at end). But the unknown surface has collapsed:
-- ✅ Canary proves biology ports CAN work
-- ✅ Harness arithmetic is sound
-- ✅ Root cause of pair failures isolated to ONE harness initialization site (H9)
-- Once H9 is fixed, the existing Group A + canary fixes should produce a cascade of pair unlocks (estimated 5-9 immediately)
+- `250b777` DNASupercoiling canary biology port (proven at isolation, then unblocked by H9)
+- `652b069`, `3dcacab`, `d78aac7` plan updates through the day
+- `7c6320d` H8 diagnosis (rejected: harness arithmetic is correct)
+- `4bcc9a1` H9 diagnosis (CONFIRMED: owner-snapshot bug in pre-step substrate seeding)
+- **`07febee` H9 FIX (+8 L2.5 PASS unlocks)** — Shape 1: per-process own-baseline overlay always runs
 
 **Next session attack plan (priority order):**
 
-1. **Diagnose H9 (3-slot codex, token-capped, single-hypothesis probe):** instrument the per-process pre-step initialization at `l2_2_replay_common_v2.py:1236-1302`, capture what owner the substrate observable gets and what `before_vectors[owner_name]` returns vs what DNASupercoiling's OWN `states_before` would return. Verify the 72-ATP mystery and name the fix.
-2. **Land H9 fix** — likely small (~20-30 LOC). Re-run full L2.5 sweep. Expected: 5-9 pair unlocks from the existing Group A + canary work.
-3. **If H9 fix unblocks the cascade:** port the canary pattern to remaining 5 processes (FtsZ, ProteinMod, RNADecay, Transcription, Replication) for the residual CAUSE_5 failures. Each ~30-50 LOC.
-4. **Metabolism Karr port** (separate effort, ~150 LOC).
-5. **CAUSE_UNCLASSIFIED Subclass A/B** (after the CAUSE_5 cascade resolves).
+1. **Diagnose H10 (allocator-budget squeeze under composition).** Quick probe: instrument `substrates_allocated[DNASupercoiling][ATP]` value at the moment DNAS calls `next_update` in pair test. If it's small (e.g., 4 instead of 907), the allocator is shorting DNAS. Fix shape likely: harness sets `substrates_allocated[process][wid] = states["substrates"][wid]` (full pool) before each composed process step, or the allocator's per-process budget is mis-computed.
+2. **If H10 fix unlocks DNAS pairs (2)** — replicate to the 7 remaining processes' canary-style biology ports. Total unlock estimate: ~15 additional pairs.
+3. **Metabolism Karr port** (separate, larger).
+4. **CAUSE_UNCLASSIFIED Subclass A/B** after CAUSE_5 cascade resolves.
+5. **211 SS pair tests** (only 1 wired so far) — bulk scaffolding once L2.5 DS lessons are stable.
 
-**Day-32 outcomes carry over (unchanged):** see Day-32 section below for harness fixes H5/H6/H7, Cytokinesis GTP fix, etc.
+**Activation env, MATLAB, WSL venv:** unchanged. Workspace: single worktree (main).
+
 **Scope:** 256 honest-required pairs (211 SS + 43 DS + 2 DD), 122 disjoint, 378 total.
 
 | L2.5 bucket | Count | Notes |

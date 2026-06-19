@@ -587,9 +587,9 @@ l2_5_gate:
       deterministic_stochastic: 43
       deterministic_deterministic: 2
 
-  status_2026_06_18_eod:                  # Day-32 EOD snapshot; refresh after every sweep
-    pass: 10                              # 1 SS + 7 DS + 2 DD
-    fail: 28                              # all DS (28/43 wired); failure-class roll-up below
+  status_2026_06_19_eod:                  # Day-33 EOD snapshot; refresh after every sweep
+    pass: 18                              # 1 SS + 15 DS + 2 DD (was 10 at Day-32 EOD; H9 harness fix unlocked +8)
+    fail: 20                              # all DS (failure-class roll-up below)
     skipped: 8                            # all DS (no-op trace / sparse-event; need event-window)
     untested: 210                         # 210 SS (only Translation+RNAProcessing wired)
     out_of_scope: 122                     # disjoint pairs
@@ -600,21 +600,35 @@ l2_5_gate:
       - "Translation+RNAProcessing"
     ds:
       - "ChromosomeCondensation+DNARepair"
+      - "ChromosomeCondensation+ProteinFolding"        # Day-33 H9 unlock
+      - "ChromosomeCondensation+ProteinProcessingI"    # Day-33 H9 unlock
+      - "ChromosomeCondensation+ProteinProcessingII"   # Day-33 H9 unlock
       - "ChromosomeCondensation+Replication"
+      - "ChromosomeCondensation+RNAProcessing"         # Day-33 H9 unlock
       - "ChromosomeCondensation+Translation"
+      - "ChromosomeCondensation+tRNAAminoacylation"    # Day-33 H9 unlock
       - "ChromosomeSegregation+DNARepair"
       - "ChromosomeSegregation+ProteinFolding"
+      - "ChromosomeSegregation+ProteinProcessingI"     # Day-33 H9 unlock
+      - "ChromosomeSegregation+ProteinProcessingII"    # Day-33 H9 unlock
+      - "ChromosomeSegregation+RNAProcessing"          # Day-33 H9 unlock
       - "ChromosomeSegregation+Translation"
       - "ChromosomeSegregation+tRNAAminoacylation"
     dd:
       - "ChromosomeCondensation+ChromosomeSegregation"
       - "HostInteraction+TerminalOrganelleAssembly"
 
-  failure_class_breakdown:                # approximate per-class counts; precise per-pair classification in tracker
-    CAUSE_5_intrinsic_no_hints_gap: 16    # "no-hints channel parity gap" pattern; Metabolism + ReplicationInitiation diagnosed
-    CAUSE_4_upstream_pollution: 4         # genuine upstream effects, post-classifier-fix (commit a4b8d55)
-    CAUSE_UNCLASSIFIED_subclass_A: 6      # H2O multi-tick drift
-    CAUSE_UNCLASSIFIED_subclass_B: 2      # MG_020_MONOMER cross-observable
+  failure_class_breakdown_2026_06_19:     # post-H9 fix, by stochastic process
+    Metabolism: 3                         # Cond+M, Seg+M, HostInt+M — needs Karr 4-partition port
+    DNASupercoiling: 2                    # H10 allocator-budget squeeze under composition (NEW Day-33)
+    FtsZPolymerization: 2                 # canary-style no-hints biology port required
+    ProteinDecay: 2
+    ProteinModification: 2
+    ProteinTranslocation: 2
+    Replication: 1                        # Seg+R only (Cond+R passes)
+    ReplicationInitiation: 2
+    RNADecay: 2
+    Transcription: 2
 
   harness_fixes_landed_day_32:
     - commit: "f55c34a"
@@ -624,22 +638,39 @@ l2_5_gate:
     - commit: "a4b8d55"
       label:  "H7: CAUSE_4 classifier requires upstream_mutators precondition"
 
+  harness_fixes_landed_day_33:
+    - commit: "07febee"
+      label:  "H9: per-process own-baseline pre-step overlay (replaces owner-snapshot seeding)"
+      unlocks: 8
+
   process_fixes_landed_day_32:
     - commit: "488e8c7"
       label:  "Cytokinesis: removed GTP from observable _substrate_wids (was tripping precondition)"
 
+  process_fixes_landed_day_33:
+    - commits: ["3859dfe", "d4485cf", "41d08df"]
+      label:  "Group A: RepInit/Replication/DNASupercoiling no-hints emit-plumbing (necessary, not sufficient on own)"
+    - commit: "250b777"
+      label:  "DNASupercoiling: no-hints binding/release biology port (proven at isolation; pair still blocked by H10)"
+
   process_fixes_pending:
     - process: "Metabolism"
-      file:    "opencell/vivarium/karr_metabolism.py:355-357"
-      pattern: "no-hints channel parity gap"
-      unlocks_approx: 9            # CAUSE_5 pairs likely cleared
-    - process: "ReplicationInitiation"
-      file:    "opencell/vivarium/karr_replication_initiation.py:354-401"
-      pattern: "no-hints channel parity gap (enzymes/boundEnzymes writeback)"
+      file:    "opencell/vivarium/karr_metabolism.py:359-376"
+      pattern: "Karr 4-partition substrate update (external exchange + internal exchange + metabolismNewProduction*growth + ATP hydrolysis)"
+      unlocks_approx: 3                   # Cond+M, Seg+M, HostInt+M
+      diagnosis: "STATUS_metab_redx.md (commit a667827)"
+    - process: "DNASupercoiling"
+      file:    "harness (allocator path; H10)"
+      pattern: "substrates_allocated[process][wid] gets squeezed budget in composition mode"
       unlocks_approx: 2
+      diagnosis: "pending H10 probe"
+    - processes: ["FtsZPolymerization", "ProteinDecay", "ProteinModification", "ProteinTranslocation", "Replication", "ReplicationInitiation", "RNADecay", "Transcription"]
+      file:    "respective karr_*.py no-hints branches"
+      pattern: "no-hints branch lacks binding/release compute (mirror DNASupercoiling canary fix)"
+      unlocks_approx: 15
 
   refresh_discipline: |
-    Update this section's status_2026_06_18_eod + pass_list + failure_class_breakdown
+    Update this section's status_<YYYY_MM_DD>_eod + pass_list + failure_class_breakdown
     after every L2.5 pair sweep that changes pass/fail counts. Bump the date suffix
     on status_<YYYY_MM_DD>_eod when refreshed. Codex prompts targeting L2.5 work
     must quote the relevant pair entry from this catalog (not from prose elsewhere).
