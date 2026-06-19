@@ -323,7 +323,13 @@ class KarrReplicationInitiationProcess(Process):
             self._free_dnaa_atp = free_dnaa_atp
 
         start_free_adp, start_free_atp = int(self._free_dnaa_adp), int(self._free_dnaa_atp)
+        start_bound_atp = self._bound_atp.copy()
+        start_bound_adp = self._bound_adp.copy()
         start_bound_total = (self._bound_atp + self._bound_adp).copy()
+        enzymes_before_raw = states.get("enzymes", {})
+        enzymes_before = enzymes_before_raw if isinstance(enzymes_before_raw, dict) else {}
+        bound_before_raw = states.get("boundEnzymes", {})
+        bound_before = bound_before_raw if isinstance(bound_before_raw, dict) else {}
 
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
         available_atp = self._allocated_or_state(allocated_state, self.atp_wid)
@@ -385,6 +391,32 @@ class KarrReplicationInitiationProcess(Process):
                     counts[dnaa_adp_wid] = adp_delta
                 if atp_delta != 0.0:
                     counts[dnaa_atp_wid] = atp_delta
+
+        enzymes_next = {wid: float(enzymes_before.get(wid, 0.0)) for wid in self.enzyme_wids}
+        bound_next = {wid: float(bound_before.get(wid, 0.0)) for wid in self.enzyme_wids}
+        if has_enzyme_pools:
+            enzymes_next[dnaa_adp_wid] = float(self._free_dnaa_adp)
+            enzymes_next[dnaa_atp_wid] = float(self._free_dnaa_atp)
+            bound_next[dnaa_adp_wid] = float(
+                bound_next.get(dnaa_adp_wid, 0.0)
+                + int(np.sum(self._bound_adp) - np.sum(start_bound_adp))
+            )
+            bound_next[dnaa_atp_wid] = float(
+                bound_next.get(dnaa_atp_wid, 0.0)
+                + int(np.sum(self._bound_atp) - np.sum(start_bound_atp))
+            )
+
+        enzymes_delta: dict[str, float] = {}
+        bound_enzymes_delta: dict[str, float] = {}
+        for wid in self.enzyme_wids:
+            delta_free = self._snap_integral(enzymes_next[wid] - float(enzymes_before.get(wid, 0.0)))
+            if delta_free != 0:
+                enzymes_delta[wid] = float(delta_free)
+            delta_bound = self._snap_integral(bound_next[wid] - float(bound_before.get(wid, 0.0)))
+            if delta_bound != 0:
+                bound_enzymes_delta[wid] = float(delta_bound)
+        update["enzymes"] = enzymes_delta
+        update["boundEnzymes"] = bound_enzymes_delta
 
         if (
             replication_state == "idle"
