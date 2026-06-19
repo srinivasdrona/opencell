@@ -894,6 +894,36 @@ class KarrReplicationProcess(Process):
             return self._next_update_from_trace_hint(timestep=timestep, states=states)
 
         dt = float(timestep) if timestep > 0 else float(self.parameters["time_step"])
+        enzymes_now_raw = states.get("enzymes", {})
+        enzymes_now = enzymes_now_raw if isinstance(enzymes_now_raw, dict) else {}
+        bound_now_raw = states.get("boundEnzymes", {})
+        bound_now = bound_now_raw if isinstance(bound_now_raw, dict) else {}
+        substrates_now_raw = states.get("substrates", {})
+        substrates_now = substrates_now_raw if isinstance(substrates_now_raw, dict) else {}
+        enzymes_next = {wid: float(enzymes_now.get(wid, 0.0)) for wid in self.enzyme_wids}
+        bound_next = {wid: float(bound_now.get(wid, 0.0)) for wid in self.enzyme_wids}
+        substrates_next = {wid: float(substrates_now.get(wid, 0.0)) for wid in self.substrate_wids}
+
+        def _finalize_no_hint_update(update_payload: dict[str, Any]) -> dict[str, Any]:
+            enzyme_delta: dict[str, float] = {}
+            bound_delta: dict[str, float] = {}
+            substrate_delta: dict[str, float] = {}
+            for wid in self.enzyme_wids:
+                d_free = _snap_integral(float(enzymes_next[wid]) - float(enzymes_now.get(wid, 0.0)))
+                if d_free != 0:
+                    enzyme_delta[wid] = float(d_free)
+                d_bound = _snap_integral(float(bound_next[wid]) - float(bound_now.get(wid, 0.0)))
+                if d_bound != 0:
+                    bound_delta[wid] = float(d_bound)
+            for wid in self.substrate_wids:
+                d_sub = _snap_integral(float(substrates_next[wid]) - float(substrates_now.get(wid, 0.0)))
+                if d_sub != 0:
+                    substrate_delta[wid] = float(d_sub)
+            update_payload["enzymes"] = enzyme_delta
+            update_payload["boundEnzymes"] = bound_delta
+            update_payload["substrates"] = substrate_delta
+            return update_payload
+
         chromosome_state = states.get("chromosome", {})
         replication_state = str(chromosome_state.get("replication_state", "idle"))
         chromosome_store = self._resolve_chromosome_store(chromosome_state)
@@ -908,28 +938,28 @@ class KarrReplicationProcess(Process):
         update: dict[str, Any] = {"requests": {self.name: zero_requests}}
 
         if replication_state == "idle":
-            return update
+            return _finalize_no_hint_update(update)
 
         if replication_state == "initiating":
             update["chromosome"] = {
                 "replication_state": "elongating",
                 "polymerizedRegions": self._seed_polymerized_regions().to_state(),
             }
-            return update
+            return _finalize_no_hint_update(update)
 
         if replication_state == "complete":
-            return update
+            return _finalize_no_hint_update(update)
 
         if replication_state != "elongating":
             # Unknown state: keep requests at zero and do nothing.
-            return update
+            return _finalize_no_hint_update(update)
 
         remaining_left_bp = max(0, self.terc_position_bp - left_pos_bp)
         remaining_right_bp = max(0, self.terc_position_bp - right_pos_bp)
         if remaining_left_bp <= 0 and remaining_right_bp <= 0:
             update["chromosome"] = {"polymerizedRegions": self._completed_polymerized_regions().to_state()}
             update["chromosome"].update(self._completion_update()["chromosome"])
-            return update
+            return _finalize_no_hint_update(update)
 
         desired_step_bp = max(0, int(np.floor(self.fork_polymerization_rate_bp_per_s * dt)))
         desired_left_bp = min(desired_step_bp, remaining_left_bp)
@@ -943,7 +973,7 @@ class KarrReplicationProcess(Process):
         if desired_left_bp <= 0 and desired_right_bp <= 0:
             if remaining_left_bp <= 0 and remaining_right_bp <= 0:
                 update.update(self._completion_update())
-            return update
+            return _finalize_no_hint_update(update)
 
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
         available = {
@@ -970,12 +1000,12 @@ class KarrReplicationProcess(Process):
                 actual_right_bp -= 1
 
         if actual_left_bp <= 0 and actual_right_bp <= 0:
-            return update
+            return _finalize_no_hint_update(update)
 
         actual_demand = self._demand_from_advances(actual_left_bp, actual_right_bp)
-        substrate_delta = {
-            wid: -float(amount) for wid, amount in actual_demand.items() if int(amount) > 0
-        }
+        for wid, amount in actual_demand.items():
+            if int(amount) > 0:
+                substrates_next[wid] = float(substrates_next.get(wid, 0.0) - float(amount))
         fork_delta = {
             "left": float(actual_left_bp),
             "right": float(actual_right_bp),
@@ -991,15 +1021,13 @@ class KarrReplicationProcess(Process):
             "polymerizedRegions": next_polymerized.to_state(),
             "fork_position_bp": fork_delta,
         }
-        if substrate_delta:
-            update["substrates"] = substrate_delta
 
         if next_left_bp >= self.terc_position_bp and next_right_bp >= self.terc_position_bp:
             completion = self._completion_update()
             update.setdefault("chromosome", {})
             update["chromosome"]["polymerizedRegions"] = self._completed_polymerized_regions().to_state()
             update["chromosome"].update(completion["chromosome"])
-        return update
+        return _finalize_no_hint_update(update)
 
 
 __all__ = ["KarrReplicationProcess"]
