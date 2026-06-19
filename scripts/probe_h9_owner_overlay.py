@@ -93,6 +93,9 @@ def _run_probe() -> dict[str, Any]:
         upstream_mutated_master_indices_by_observable: dict[str, set[int]] = {
             obs: set() for obs in all_observables
         }
+        upstream_mutated_master_before_by_observable: dict[str, dict[int, float]] = {
+            obs: {} for obs in all_observables
+        }
 
         for name in ordered:
             ctx = contexts[name]
@@ -105,31 +108,13 @@ def _run_probe() -> dict[str, Any]:
                 for observable in ctx.spec.observables
             }
 
-        # Owner-init pass (l2_2_replay_common_v2.py:1236-1252)
-        for observable in all_observables:
-            owner_name = owner_manifest[observable]
-            owner_ctx = contexts[owner_name]
-            source_vec = before_vectors[owner_name][observable]
-            master_vec = np.zeros(len(master_wids_by_observable[observable]), dtype=np.float64)
-            owner_wids = owner_ctx.wids_by_observable[observable]
-            for owner_idx, owner_wid in enumerate(owner_wids):
-                master_idx = owner_ctx.process_wid_to_master_idx[observable][owner_wid]
-                master_vec[master_idx] = float(source_vec[owner_idx])
-            h.overlay_observable_into_state(
-                process=owner_ctx.process,
-                state=shared_state,
-                observable=observable,
-                vector=master_vec,
-                wids=master_wids_by_observable[observable],
-                store_path_override=owner_ctx.spec.store_path_override,
-            )
-
         capture_shared_values: dict[str, float | None] | None = None
         capture_shared_master_values: dict[str, float | None] | None = None
         capture_tick_before_target_step: dict[str, float | None] | None = None
 
         for name in ordered:
             ctx = contexts[name]
+            owned_observables = h._owned_observables(ctx.spec)
             if h._trace_hints_enabled(
                 disable_trace_hints=True,
                 oracle_type=ctx.spec.oracle_type,
@@ -142,38 +127,43 @@ def _run_probe() -> dict[str, Any]:
                         wids=ctx.wids_by_observable[observable],
                     )
 
-            # Per-process pre-step overlay loop (l2_2_replay_common_v2.py:1268-1302)
+            # Per-process pre-step overlay loop.
             for observable in ctx.spec.observables:
+                overlay_vec = before_vectors[name][observable]
                 upstream_exposers = [
                     p
                     for p in ordered
                     if order_idx[p] < order_idx[name] and observable in contexts[p].spec.observables
                 ]
-                if upstream_exposers:
-                    overlay_vec = before_vectors[name][observable]
-                    mutated_master_indices = upstream_mutated_master_indices_by_observable[observable]
-                    if mutated_master_indices:
-                        running_vec = h.project_observable_from_state(
-                            process=ctx.process,
-                            state=shared_state,
-                            observable=observable,
-                            wids=ctx.wids_by_observable[observable],
-                            bound_enzymes_before=before_vectors[name].get("boundEnzymes"),
-                            store_path_override=ctx.spec.store_path_override,
-                        )
-                        overlay_vec = before_vectors[name][observable].copy()
-                        for proc_idx, proc_wid in enumerate(ctx.wids_by_observable[observable]):
-                            master_idx = ctx.process_wid_to_master_idx[observable][proc_wid]
-                            if master_idx in mutated_master_indices:
-                                overlay_vec[proc_idx] = running_vec[proc_idx]
-                    h.overlay_observable_into_state(
+                mutated_master_indices = upstream_mutated_master_indices_by_observable[observable]
+                mutated_master_before = upstream_mutated_master_before_by_observable[observable]
+                if observable in owned_observables and upstream_exposers and mutated_master_indices:
+                    running_vec = h.project_observable_from_state(
                         process=ctx.process,
                         state=shared_state,
                         observable=observable,
-                        vector=overlay_vec,
                         wids=ctx.wids_by_observable[observable],
+                        bound_enzymes_before=before_vectors[name].get("boundEnzymes"),
                         store_path_override=ctx.spec.store_path_override,
                     )
+                    overlay_vec = before_vectors[name][observable].copy()
+                    for proc_idx, proc_wid in enumerate(ctx.wids_by_observable[observable]):
+                        master_idx = ctx.process_wid_to_master_idx[observable][proc_wid]
+                        if master_idx in mutated_master_indices:
+                            baseline_before_upstream = mutated_master_before.get(master_idx)
+                            if (
+                                baseline_before_upstream is not None
+                                and overlay_vec[proc_idx] == baseline_before_upstream
+                            ):
+                                overlay_vec[proc_idx] = running_vec[proc_idx]
+                h.overlay_observable_into_state(
+                    process=ctx.process,
+                    state=shared_state,
+                    observable=observable,
+                    vector=overlay_vec,
+                    wids=ctx.wids_by_observable[observable],
+                    store_path_override=ctx.spec.store_path_override,
+                )
 
             # Capture immediately after overlay loop and before TARGET_PROCESS.next_update.
             if name == TARGET_PROCESS:
@@ -208,7 +198,7 @@ def _run_probe() -> dict[str, Any]:
                 break
 
             owned_master_before_step: dict[str, np.ndarray] = {}
-            for observable in h._owned_observables(ctx.spec):
+            for observable in owned_observables:
                 _, master_before = h._projection_via_master(
                     process_name=name,
                     observable=observable,
@@ -234,9 +224,12 @@ def _run_probe() -> dict[str, Any]:
                 )
                 changed_master_indices = np.flatnonzero(master_after_for_obs != master_before)
                 if changed_master_indices.size:
-                    upstream_mutated_master_indices_by_observable[observable].update(
-                        int(idx) for idx in changed_master_indices.tolist()
-                    )
+                    for idx in changed_master_indices.tolist():
+                        idx_int = int(idx)
+                        upstream_mutated_master_indices_by_observable[observable].add(idx_int)
+                        upstream_mutated_master_before_by_observable[observable][idx_int] = float(
+                            master_before[idx_int]
+                        )
 
         if capture_shared_values is None or capture_shared_master_values is None:
             raise RuntimeError("Did not reach target pre-step capture point.")

@@ -1221,6 +1221,9 @@ def run_integrated_replay_v2(
             upstream_mutated_master_indices_by_observable: dict[str, set[int]] = {
                 obs: set() for obs in all_observables
             }
+            upstream_mutated_master_before_by_observable: dict[str, dict[int, float]] = {
+                obs: {} for obs in all_observables
+            }
 
             for name in ordered:
                 ctx = contexts[name]
@@ -1233,26 +1236,9 @@ def run_integrated_replay_v2(
                     for obs in ctx.spec.observables
                 }
 
-            for obs in all_observables:
-                owner_name = owner_manifest[obs]
-                owner_ctx = contexts[owner_name]
-                source_vec = before_vectors[owner_name][obs]
-                master_vec = np.zeros(len(master_wids_by_observable[obs]), dtype=np.float64)
-                owner_wids = owner_ctx.wids_by_observable[obs]
-                for owner_idx, owner_wid in enumerate(owner_wids):
-                    master_idx = owner_ctx.process_wid_to_master_idx[obs][owner_wid]
-                    master_vec[master_idx] = float(source_vec[owner_idx])
-                overlay_observable_into_state(
-                    process=owner_ctx.process,
-                    state=shared_state,
-                    observable=obs,
-                    vector=master_vec,
-                    wids=master_wids_by_observable[obs],
-                    store_path_override=owner_ctx.spec.store_path_override,
-                )
-
             for name in ordered:
                 ctx = contexts[name]
+                owned_observables = _owned_observables(ctx.spec)
                 if _trace_hints_enabled(
                     disable_trace_hints=disable_trace_hints,
                     oracle_type=resolved_oracle_type_by_process[name],
@@ -1266,43 +1252,49 @@ def run_integrated_replay_v2(
                         )
 
                 for obs in ctx.spec.observables:
+                    overlay_vec = before_vectors[name][obs]
                     upstream_exposers = [
                         p
                         for p in ordered
                         if order_idx[p] < order_idx[name] and obs in contexts[p].spec.observables
                     ]
-                    if upstream_exposers:
-                        overlay_vec = before_vectors[name][obs]
-                        mutated_master_indices = upstream_mutated_master_indices_by_observable[obs]
-                        # H6 fix (STATUS_cause_4_sweep.md): do not wipe shared WIDs that
-                        # were already mutated by upstream steps in this tick.
-                        if mutated_master_indices:
-                            running_vec = project_observable_from_state(
-                                process=ctx.process,
-                                state=shared_state,
-                                observable=obs,
-                                wids=ctx.wids_by_observable[obs],
-                                bound_enzymes_before=before_vectors[name].get("boundEnzymes"),
-                                store_path_override=ctx.spec.store_path_override,
-                            )
-                            overlay_vec = before_vectors[name][obs].copy()
-                            for proc_idx, proc_wid in enumerate(ctx.wids_by_observable[obs]):
-                                master_idx = ctx.process_wid_to_master_idx[obs][proc_wid]
-                                if master_idx in mutated_master_indices:
-                                    # Keep upstream-mutated shared WIDs from the
-                                    # live shared state; overlay only untouched WIDs.
-                                    overlay_vec[proc_idx] = running_vec[proc_idx]
-                        overlay_observable_into_state(
+                    mutated_master_indices = upstream_mutated_master_indices_by_observable[obs]
+                    mutated_master_before = upstream_mutated_master_before_by_observable[obs]
+                    # H6 fix (STATUS_cause_4_sweep.md): do not wipe shared WIDs that
+                    # were already mutated by upstream steps in this tick.
+                    if obs in owned_observables and upstream_exposers and mutated_master_indices:
+                        running_vec = project_observable_from_state(
                             process=ctx.process,
                             state=shared_state,
                             observable=obs,
-                            vector=overlay_vec,
                             wids=ctx.wids_by_observable[obs],
+                            bound_enzymes_before=before_vectors[name].get("boundEnzymes"),
                             store_path_override=ctx.spec.store_path_override,
                         )
+                        overlay_vec = before_vectors[name][obs].copy()
+                        for proc_idx, proc_wid in enumerate(ctx.wids_by_observable[obs]):
+                            master_idx = ctx.process_wid_to_master_idx[obs][proc_wid]
+                            if master_idx in mutated_master_indices:
+                                baseline_before_upstream = mutated_master_before.get(master_idx)
+                                if (
+                                    baseline_before_upstream is not None
+                                    and overlay_vec[proc_idx] == baseline_before_upstream
+                                ):
+                                    # Keep upstream-mutated shared WIDs from the
+                                    # live shared state when both processes share
+                                    # the same pre-mutation baseline on that WID.
+                                    overlay_vec[proc_idx] = running_vec[proc_idx]
+                    overlay_observable_into_state(
+                        process=ctx.process,
+                        state=shared_state,
+                        observable=obs,
+                        vector=overlay_vec,
+                        wids=ctx.wids_by_observable[obs],
+                        store_path_override=ctx.spec.store_path_override,
+                    )
 
                 owned_master_before_step: dict[str, np.ndarray] = {}
-                for obs in _owned_observables(ctx.spec):
+                for obs in owned_observables:
                     _, master_before = _projection_via_master(
                         process_name=name,
                         observable=obs,
@@ -1314,7 +1306,7 @@ def run_integrated_replay_v2(
                     owned_master_before_step[obs] = master_before
 
                 oc_before_step: dict[str, np.ndarray] = {}
-                for obs in _owned_observables(ctx.spec):
+                for obs in owned_observables:
                     oc_before_step[obs] = project_observable_from_state(
                         process=ctx.process,
                         state=shared_state,
@@ -1338,12 +1330,15 @@ def run_integrated_replay_v2(
                     )
                     changed_master_indices = np.flatnonzero(master_after_for_obs != master_before)
                     if changed_master_indices.size:
-                        upstream_mutated_master_indices_by_observable[obs].update(
-                            int(idx) for idx in changed_master_indices.tolist()
-                        )
+                        for idx in changed_master_indices.tolist():
+                            idx_int = int(idx)
+                            upstream_mutated_master_indices_by_observable[obs].add(idx_int)
+                            upstream_mutated_master_before_by_observable[obs][idx_int] = float(
+                                master_before[idx_int]
+                            )
                 upstream = [p for p in ordered if order_idx[p] < order_idx[name]]
 
-                for obs in _owned_observables(ctx.spec):
+                for obs in owned_observables:
                     oc_after_step = project_observable_from_state(
                         process=ctx.process,
                         state=shared_state,
