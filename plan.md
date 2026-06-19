@@ -26,32 +26,46 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-06-19 ~13:30 IST):** None alive. Workspace clean (1 worktree: main).
+**Live processes / agents (2026-06-19 ~16:30 IST):** None alive. Workspace clean (1 worktree: main).
 
 **L2.2: COMPLETE (22/22 in-scope, 100%).** L2.5 in active development.
 
-**L2.5 status (Day-33 mid-day):** **10 L2.5 pair tests GREEN** (1 SS + 7 DS + 2 DD). **No net change since yesterday.** Pair-keyed tracker at [`docs/phase_f/L2_5_PAIR_TRACKER.md`](docs/phase_f/L2_5_PAIR_TRACKER.md); codex-loadable status at [`docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml`](docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml) `l2_5_gate:` section (schema v5).
+**L2.5 status (Day-33 afternoon):** **10 L2.5 pair tests GREEN** (1 SS + 7 DS + 2 DD). **No net change for full day** — but with sharper diagnostic clarity than morning.
 
-**Day-33 morning work (2026-06-19) — what we learned:**
+**Day-33 afternoon canary outcome (DNASupercoiling biology port, commit `250b777`):**
 
-1. **Metabolism CAUSE_5 fix attempted, REJECTED.** Day-32 diagnosis said "compute `substrates` delta from `S @ v * dt` in `_static_update`". Codex implemented exactly that (commit reverted via stash, not in main). Probe revealed FBA `v` at SS has `S × v ≈ 0` for internal metabolites by construction — emit was all zeros. Re-diagnosis via 3-slot investigation (commit `a667827`, `docs/archive/status/STATUS_metab_redx.md`): Karr's MATLAB `Metabolism.evolveState` uses **4-partition substrate update** (external exchange + internal exchange + metabolismNewProduction*growth + ATP hydrolysis), NOT aggregate `S @ v`. Real fix is a Karr biology port, ~50-150 LOC + KB extraction.
+DNASupercoiling no-hints branch was ported to compute `bound_next_effective`/`enzymes_next_effective` from sampled binding/release transitions. Result:
 
-2. **CAUSE_5 audit revealed universal pattern** (commit `5c14db7`, `scripts/audit_cause5_writeback.py`). All 6 audited processes (DNASupercoiling, FtsZPolymerization, ProteinModification, RNADecay, Transcription, Replication) are missing `enzymes`/`boundEnzymes` writeback in no-hints branch. Same architectural shape as RepInit. Looked like one bug across 7 processes.
+- **Isolated tick-0 probe**: ALL ZERO diffs across substrates / enzymes / boundEnzymes. **Bit-identity achieved.**
+- **L2.1 replay**: still PASS.
+- **L2.5 pair tests**: STILL FAIL but with **new, deeper signatures**:
+  - `Cond+DNASupercoiling`: CAUSE_4 — ATP composition reads `-4` vs oracle `-60` (delta-mode arithmetic anomaly)
+  - `Seg+DNASupercoiling`: now fails at **tick 2** (was tick 0), off-by-2 ATP
 
-3. **Group A (DNA processes) fix landed** — 3 commits (`3859dfe`, `d4485cf`, `41d08df`) added `enzymes`/`boundEnzymes`/`substrates` delta emissions to no-hints branches of RepInit, Replication, DNASupercoiling. **L2.1 stayed GREEN** (good — no regression). **But L2.5 pairs DID NOT FLIP** (only the pre-existing `Cond+Replication` still passes; `Seg+Replication`, both RepInit pairs, both DNASupercoiling pairs still FAIL with CAUSE_4/CAUSE_5).
+**Verdict on the canary:** Pattern is right — the no-hints branch CAN be biology-ported to bit-identity. But composition mode has a layer-2 bug: the harness's `compare_mode=delta` arithmetic produces nonsense numbers when the upstream process moves substrate counts AND the downstream process moves them again. Now that OC actually moves ATP by 60 (it didn't before), the composition computes wrong baselines.
 
-4. **What this means:** the no-hints channel parity gap was a *necessary* fix (these channels were genuinely silently dropped) but *not sufficient*. The L2.5 failures have a deeper cause — the values emitted by the no-hints path don't match Karr's per-tick observed counts even when the channels are now wired. This is a **value-level divergence**, not a missing-emit divergence.
+**This is the harness's third bug class** (after H5/H6/H7 fixed yesterday):
+- H8: delta-mode oracle arithmetic doesn't preserve attribution under multi-process composition when both processes mutate the same WID with large nonzero magnitudes.
 
-**Repo root cleanup landed (commit `889396a`):** 102 root files -> 22. 89 historical PROMPT_*.md / STATUS_*.md / diagnostic files archived under `docs/archive/{prompts,status,diagnostics}/`. STATUS.md (canonical, 113 refs) kept at root. README is now reachable on GitHub landing page without scrolling.
+This means the remaining L2.5 unlocks require **both** per-process biology ports (~6 more) **and** a harness H8 fix (1 fix, unlocks all of them simultaneously). The harness fix is higher-leverage and should come first.
 
-**Tomorrow's open questions (to plan with operator before firing more codex):**
+**Day-33 commits landed (8 total):**
+- `5c14db7` audit probe (false start)
+- `3859dfe`, `d4485cf`, `41d08df` Group A no-hints emit-plumbing fixes (necessary, not sufficient)
+- `a667827` Metabolism re-diagnosis (verdict: needs Karr port)
+- `889396a` repo root cleanup (102 → 22 files)
+- `10098cf` value probe (revealed off-by-N pattern)
+- `f13b9aa` deep DNASupercoiling probe (revealed compute-vs-plumbing gap)
+- `250b777` DNASupercoiling biology port (proven at isolation; pair tests reveal H8)
 
-- The CAUSE_5 pattern is value-level, not channel-emit-level. Diagnosing requires a tick-0 probe per process comparing OC's no-hints emit values against Karr's `states_after - states_before`. This is the same probe we used for Metabolism that revealed `S @ v = 0`. Likely outcome: each process has a different process-specific no-hints biology gap.
-- ProteinModification is the most-channels-missing (`enzymes`, `boundEnzymes`, `modifiedMonomers`, `unmodifiedMonomers`, `substrates` — all 5). Worth probing if its no-hints branch is even running biology, or if it's a stub that always defers to hint mode.
-- Should we audit the L2.1 tests for these 7 processes to see if they're *only* passing because of harness trace-hint overlay (i.e., L2.1 itself doesn't exercise the no-hints branch we're trying to fix)? If yes, then we have an L2.1 oracle-leakage problem too, and the L2.5 ladder is the first time these no-hints paths run honestly.
-- Metabolism Karr-port is ~50-150 LOC + KB extraction; that's a 1-day delegation (or 3-slot exploratory).
+**Next session attack plan (priority order):**
 
-**Day-32 outcomes carry over (unchanged):** see Day-32 section below for L2.5 harness fixes (H5/H6/H7), Cytokinesis GTP fix, etc.
+1. **Diagnose H8 (harness delta-mode arithmetic under composition).** Write a probe that runs `Cond+DNASupercoiling` post-canary and traces how `compare_mode=delta` computes the expected ATP delta. Likely fix: switch composition-mode `substrates` channel to absolute-compare-after-applying-both-process-deltas, not delta-compare-one-process.
+2. **If H8 fix unlocks Cond+DNASupercoiling and Seg+DNASupercoiling**: replicate the canary biology-port pattern on the other 5 (FtsZ, ProteinMod, RNADecay, Transcription, Replication). Each is a ~30-50 LOC port mirroring DNASupercoiling's pattern.
+3. **Metabolism Karr port** (separate, larger).
+4. **CAUSE_UNCLASSIFIED Subclass A** (H2O multi-tick drift, 6 pairs).
+
+**Activation env, MATLAB, WSL venv:** unchanged. Workspace: single worktree (main).
 **Scope:** 256 honest-required pairs (211 SS + 43 DS + 2 DD), 122 disjoint, 378 total.
 
 | L2.5 bucket | Count | Notes |
