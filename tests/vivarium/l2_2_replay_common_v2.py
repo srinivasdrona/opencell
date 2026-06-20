@@ -43,6 +43,7 @@ from l2_replay_common import (
     refresh_allocator_views,
     resolve_trace_path,
 )
+from opencell.state.chromosome_store import ChromosomeStore
 from opencell.vivarium.karr_cytokinesis import KarrCytokinesisProcess
 from opencell.vivarium.karr_chromosome_condensation import KarrChromosomeCondensationProcess
 from opencell.vivarium.karr_chromosome_segregation import KarrChromosomeSegregationProcess
@@ -145,6 +146,7 @@ class _ProcessSpec:
     store_path_override: dict[str, tuple[str, ...]] | None = None
     index_projection_literal: dict[str, Any] | None = None
     trace_after_hint_observables: tuple[str, ...] = ()
+    hidden_read_surface: tuple[str, ...] = ()
     oracle_type: str = ORACLE_DISTRIBUTIONAL
 
 
@@ -355,6 +357,11 @@ _PROCESS_SPECS: dict[str, _ProcessSpec] = {
             "boundEnzymes": "enzyme_wids",
         },
         trace_after_hint_observables=("enzymes", "boundEnzymes", "substrates"),
+        hidden_read_surface=(
+            "chromosome",
+            "stimulus.values",
+            "rnaPolymerase.supercoilingBindingProbFoldChange",
+        ),
     ),
     "Replication": _ProcessSpec(
         process_cls=KarrReplicationProcess,
@@ -366,6 +373,7 @@ _PROCESS_SPECS: dict[str, _ProcessSpec] = {
             "boundEnzymes": "enzyme_wids",
         },
         trace_after_hint_observables=("enzymes", "boundEnzymes"),
+        hidden_read_surface=("chromosome",),
     ),
     "ReplicationInitiation": _ProcessSpec(
         process_cls=KarrReplicationInitiationProcess,
@@ -377,6 +385,7 @@ _PROCESS_SPECS: dict[str, _ProcessSpec] = {
             "boundEnzymes": "enzyme_wids",
         },
         trace_after_hint_observables=("enzymes", "boundEnzymes"),
+        hidden_read_surface=("chromosome",),
     ),
     "DNARepair": _ProcessSpec(
         process_cls=KarrDNARepairProcess,
@@ -387,6 +396,7 @@ _PROCESS_SPECS: dict[str, _ProcessSpec] = {
             "enzymes": "enzyme_wids",
             "boundEnzymes": "enzyme_wids",
         },
+        hidden_read_surface=("chromosome",),
     ),
     "Cytokinesis": _ProcessSpec(
         process_cls=KarrCytokinesisProcess,
@@ -397,6 +407,7 @@ _PROCESS_SPECS: dict[str, _ProcessSpec] = {
             "enzymes": "enzyme_wids",
             "boundEnzymes": "enzyme_wids",
         },
+        hidden_read_surface=("chromosome",),
     ),
     "FtsZPolymerization": _ProcessSpec(
         process_cls=KarrFtsZPolymerizationProcess,
@@ -430,6 +441,7 @@ _PROCESS_SPECS: dict[str, _ProcessSpec] = {
             "enzymes": "enzyme_wids",
             "boundEnzymes": "enzyme_wids",
         },
+        hidden_read_surface=("chromosome",),
     ),
     "ProteinProcessingI": _ProcessSpec(
         process_cls=KarrProteinProcessingIProcess,
@@ -473,6 +485,7 @@ _PROCESS_SPECS: dict[str, _ProcessSpec] = {
             "boundEnzymes": "enzyme_wids",
         },
         trace_after_hint_observables=("enzymes", "boundEnzymes"),
+        hidden_read_surface=("chromosome",),
         oracle_type=ORACLE_BIT_IDENTITY,
     ),
     "ChromosomeSegregation": _ProcessSpec(
@@ -484,6 +497,7 @@ _PROCESS_SPECS: dict[str, _ProcessSpec] = {
             "enzymes": "enzyme_wids",
             "boundEnzymes": "enzyme_wids",
         },
+        hidden_read_surface=("chromosome",),
         oracle_type=ORACLE_BIT_IDENTITY,
     ),
     "HostInteraction": _ProcessSpec(
@@ -507,6 +521,7 @@ _PROCESS_SPECS: dict[str, _ProcessSpec] = {
             "boundEnzymes": "enzyme_wids",
         },
         index_projection_literal={"substrates": np.arange(10)},
+        hidden_read_surface=("stimulus.values",),
         oracle_type=ORACLE_BIT_IDENTITY,
     ),
     "TerminalOrganelleAssembly": _ProcessSpec(
@@ -657,6 +672,112 @@ def _trace_hints_enabled(*, disable_trace_hints: bool, oracle_type: str) -> bool
     return (not disable_trace_hints) or oracle_type == ORACLE_BIT_IDENTITY
 
 
+def _cell_tick_ref(ds: h5py.Dataset, tick: int) -> h5py.Reference:
+    if len(ds.shape) != 2:
+        raise ValueError(
+            f"Unexpected MAT cell dataset rank: shape={ds.shape}, expected 2D"
+        )
+    rows, cols = int(ds.shape[0]), int(ds.shape[1])
+    if rows == 1 and cols >= (tick + 1):
+        return ds[0, tick]
+    if cols == 1 and rows >= (tick + 1):
+        return ds[tick, 0]
+    if rows >= (tick + 1):
+        return ds[tick, 0]
+    if cols >= (tick + 1):
+        return ds[0, tick]
+    raise IndexError(f"Tick index {tick} out of range for dataset with shape={ds.shape}")
+
+
+def _trace_cell_payload(
+    *,
+    ctx: _ProcessContext,
+    group: str,
+    name: str,
+    tick: int,
+) -> h5py.Dataset | h5py.Group | None:
+    dataset_path = f"{group}/{name}"
+    if dataset_path not in ctx.trace:
+        return None
+    ds = ctx.trace[dataset_path]
+    if not isinstance(ds, h5py.Dataset):
+        return None
+    ref = _cell_tick_ref(ds, tick)
+    if not ref:
+        return None
+    payload = ctx.trace[ref]
+    if isinstance(payload, (h5py.Dataset, h5py.Group)):
+        return payload
+    return None
+
+
+def _inject_hidden_chromosome_state(*, ctx: _ProcessContext, state: dict[str, Any], tick: int) -> None:
+    chrom_state = state.get("chromosome")
+    if not isinstance(chrom_state, dict):
+        return
+    payload = _trace_cell_payload(ctx=ctx, group="states_before", name="chromosome", tick=tick)
+    if not isinstance(payload, h5py.Group):
+        return
+    injected = ChromosomeStore.from_hdf5_group(payload).to_state()
+    chrom_state.update(injected)
+
+
+def _inject_hidden_stimulus_values(*, ctx: _ProcessContext, state: dict[str, Any], tick: int) -> None:
+    stimuli_state = state.get("stimuli")
+    if not isinstance(stimuli_state, dict):
+        return
+    payload = _trace_cell_payload(ctx=ctx, group="states_before", name="stimulus", tick=tick)
+    if not isinstance(payload, h5py.Dataset):
+        return
+    vec = np.asarray(payload[()], dtype=np.float64).reshape(-1)
+    process_wids = getattr(ctx.process, "stimuli_wids", None)
+    if process_wids is None:
+        return
+    wids = [str(wid) for wid in process_wids]
+    if len(wids) != int(vec.shape[0]):
+        return
+    for wid, value in zip(wids, vec, strict=False):
+        stimuli_state[wid] = float(value)
+
+
+def _inject_hidden_rnap_supercoiling_fold_change(
+    *,
+    ctx: _ProcessContext,
+    state: dict[str, Any],
+    tick: int,
+) -> None:
+    payload = _trace_cell_payload(ctx=ctx, group="states_before", name="rnaPolymerase", tick=tick)
+    if not isinstance(payload, h5py.Group):
+        return
+    key = "supercoilingBindingProbFoldChange"
+    if key not in payload:
+        return
+    node = payload[key]
+    if not isinstance(node, h5py.Dataset):
+        return
+    arr = np.asarray(node[()], dtype=np.float64).reshape(-1)
+    if arr.size == 0:
+        return
+    rp_state = state.setdefault("rnaPolymerase", {})
+    if not isinstance(rp_state, dict):
+        return
+    rp_state[key] = float(arr[0])
+
+
+def _inject_hidden_read_surface(*, ctx: _ProcessContext, state: dict[str, Any], tick: int) -> None:
+    for channel in ctx.spec.hidden_read_surface:
+        if channel == "chromosome":
+            _inject_hidden_chromosome_state(ctx=ctx, state=state, tick=tick)
+            continue
+        if channel == "stimulus.values":
+            _inject_hidden_stimulus_values(ctx=ctx, state=state, tick=tick)
+            continue
+        if channel == "rnaPolymerase.supercoilingBindingProbFoldChange":
+            _inject_hidden_rnap_supercoiling_fold_change(ctx=ctx, state=state, tick=tick)
+            continue
+        pytest.fail(f"L2.2.v2 harness bug: unsupported hidden_read_surface channel {channel!r}")
+
+
 def _first_mismatch_detail(oc_after: np.ndarray, karr_after: np.ndarray) -> tuple[int, float, float, float]:
     if oc_after.shape != karr_after.shape:
         return (-1, float("nan"), float("nan"), float("nan"))
@@ -695,6 +816,7 @@ def _build_counterfactual_step_vector(
             wids=ctx.wids_by_observable[obs],
             store_path_override=ctx.spec.store_path_override,
         )
+    _inject_hidden_read_surface(ctx=ctx, state=state, tick=tick)
     # H5 fix (STATUS_cause_4_sweep.md): counterfactual replay must honor the same
     # hint policy as composition mode; otherwise no-hint composition is compared
     # against hint-assisted isolated replay.
@@ -1084,6 +1206,17 @@ def _structured_fail(record: dict[str, Any]) -> None:
     pytest.fail("L2.2.v2 structured failure: " + json.dumps(record, sort_keys=True))
 
 
+def _resolve_trace_path_for_seed(process_name: str, rng_seed: int, *, prefer_seeded: bool) -> Path:
+    base = resolve_trace_path(process_name)
+    if not prefer_seeded:
+        return base
+    seed_dir = f"{base.parent.name}_s{int(rng_seed):03d}"
+    seeded = base.parent.parent / seed_dir / base.name
+    if seeded.exists():
+        return seeded
+    return base
+
+
 def run_integrated_replay_v2(
     *,
     under_test_processes: list[str],
@@ -1105,7 +1238,17 @@ def run_integrated_replay_v2(
             )
         contexts: dict[str, _ProcessContext] = {}
         for name in ordered:
-            trace_handle = stack.enter_context(h5py.File(resolve_trace_path(name), "r"))
+            prefer_seeded = bool(_PROCESS_SPECS[name].hidden_read_surface)
+            trace_handle = stack.enter_context(
+                h5py.File(
+                    _resolve_trace_path_for_seed(
+                        name,
+                        rng_seed,
+                        prefer_seeded=prefer_seeded,
+                    ),
+                    "r",
+                )
+            )
             contexts[name] = _build_context(
                 name,
                 rng_seed,
