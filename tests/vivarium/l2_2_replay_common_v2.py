@@ -147,6 +147,7 @@ class _ProcessSpec:
     index_projection_literal: dict[str, Any] | None = None
     trace_after_hint_observables: tuple[str, ...] = ()
     hidden_read_surface: tuple[str, ...] = ()
+    requires_hints_for_honest_mode: bool = False
     oracle_type: str = ORACLE_DISTRIBUTIONAL
 
 
@@ -486,6 +487,7 @@ _PROCESS_SPECS: dict[str, _ProcessSpec] = {
         },
         trace_after_hint_observables=("enzymes", "boundEnzymes"),
         hidden_read_surface=("chromosome",),
+        requires_hints_for_honest_mode=False,
         oracle_type=ORACLE_BIT_IDENTITY,
     ),
     "ChromosomeSegregation": _ProcessSpec(
@@ -498,6 +500,7 @@ _PROCESS_SPECS: dict[str, _ProcessSpec] = {
             "boundEnzymes": "enzyme_wids",
         },
         hidden_read_surface=("chromosome",),
+        requires_hints_for_honest_mode=False,
         oracle_type=ORACLE_BIT_IDENTITY,
     ),
     "HostInteraction": _ProcessSpec(
@@ -509,6 +512,7 @@ _PROCESS_SPECS: dict[str, _ProcessSpec] = {
             "enzymes": "enzyme_wids",
             "boundEnzymes": "enzyme_wids",
         },
+        requires_hints_for_honest_mode=False,
         oracle_type=ORACLE_BIT_IDENTITY,
     ),
     "ProteinActivation": _ProcessSpec(
@@ -522,6 +526,7 @@ _PROCESS_SPECS: dict[str, _ProcessSpec] = {
         },
         index_projection_literal={"substrates": np.arange(10)},
         hidden_read_surface=("stimulus.values",),
+        requires_hints_for_honest_mode=False,
         oracle_type=ORACLE_BIT_IDENTITY,
     ),
     "TerminalOrganelleAssembly": _ProcessSpec(
@@ -533,6 +538,7 @@ _PROCESS_SPECS: dict[str, _ProcessSpec] = {
             "enzymes": "enzyme_wids",
             "boundEnzymes": "enzyme_wids",
         },
+        requires_hints_for_honest_mode=False,
         oracle_type=ORACLE_BIT_IDENTITY,
     ),
     "TranscriptionalRegulation": _ProcessSpec(
@@ -545,6 +551,7 @@ _PROCESS_SPECS: dict[str, _ProcessSpec] = {
             "boundEnzymes": "enzyme_wids",
         },
         trace_after_hint_observables=("enzymes", "boundEnzymes"),
+        requires_hints_for_honest_mode=False,
         oracle_type=ORACLE_BIT_IDENTITY,
     ),
 }
@@ -667,9 +674,8 @@ def _matches_oracle(
 
 
 def _trace_hints_enabled(*, disable_trace_hints: bool, oracle_type: str) -> bool:
-    # Deterministic bit-identity replay requires exact bound/enzyme transitions
-    # on some processes; keep the same policy across composition/counterfactual.
-    return (not disable_trace_hints) or oracle_type == ORACLE_BIT_IDENTITY
+    del oracle_type
+    return not disable_trace_hints
 
 
 def _cell_tick_ref(ds: h5py.Dataset, tick: int) -> h5py.Reference:
@@ -1328,6 +1334,17 @@ def run_integrated_replay_v2(
                     "L2.2.v2 precondition failed (unsupported oracle type): "
                     f"process={name}, oracle_type={oracle_type}, "
                     f"supported={sorted(_SUPPORTED_ORACLE_TYPES)}"
+                )
+        if disable_trace_hints:
+            requires_hints = [
+                name
+                for name in ordered
+                if contexts[name].spec.requires_hints_for_honest_mode
+            ]
+            if requires_hints:
+                pytest.fail(
+                    "L2.2.v2 precondition failed (honest mode requires trace hints): "
+                    f"processes={requires_hints}"
                 )
         mutators_by_observable = {
             obs: [name for name in ordered if obs in _owned_observables(contexts[name].spec)]
