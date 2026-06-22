@@ -719,12 +719,27 @@ class KarrChromosomeCondensationProcess(Process):
             if total_weight <= 0.0:
                 break
 
-            region_idx = int(self._rng.choice(len(regions), p=(weights / total_weight)))
+            region_pick_u = float(self._rng.random())
+            cumulative = np.cumsum(weights, dtype=np.float64)
+            threshold = region_pick_u * total_weight
+            region_idx = int(np.searchsorted(cumulative, threshold, side="right"))
+            if region_idx >= len(regions):
+                region_idx = len(regions) - 1
             region_start, region_strand, region_len = regions[region_idx]
             max_offset = int(region_len) - self._smc_bindable_span
             if max_offset < 0:
                 continue
-            offset = int(self._rng.integers(0, max_offset + 1))
+            # Mirror MATLAB calcBindingPosition: ceil(rand * n_bind_positions) - 1.
+            rand_real = float(self._rng.random())
+            n_bind_positions = float(max_offset + 1)
+            if n_bind_positions <= 1.0:
+                offset = 0
+            else:
+                u = max(
+                    float(np.nextafter(0.0, 1.0)),
+                    min(rand_real, float(np.nextafter(1.0, 0.0))),
+                )
+                offset = max(0, int(math.ceil(u * n_bind_positions)) - 1)
             bind_pos = int((region_start + offset) % sequence_len)
             bound_positions.append(bind_pos)
             bound_strands.append(int(region_strand))
