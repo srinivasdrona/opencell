@@ -73,11 +73,22 @@ Plus the SS dedicated test PPI+PPII (also clean×clean) **FAILED** today → 3rd
 
 ### Day-36 attack plan (priority order)
 
-1. **Diagnose the ProteinTranslocation composition bug** — one allocator-side root cause likely unlocks 6 SS clean×clean pairs + the Seg+ProteinTranslocation DS fail (=7 PASSes). Failure record (`docs/phase_f/L2_5_CLEAN_PAIRS_SS_RESULTS.md`) shows `isolated_replay_result: matches_oracle` and a textbook ATP hydrolysis signature — biology is right, allocator gives 14 extra ATP in composition.
-2. **Diagnose the DNARepair composition bug** — same shape as ProteinTranslocation; +7 PASSes if the bug class is similar.
-3. **Unblock the 34 SS SKIPs** — harness-level skip (`l25_no_op_trace` / `sparse_event`); single-threshold investigation may unlock 5-15 more pairs.
-4. **Then per-pair stragglers**: MacromolComplex+ProteinFolding, ProcI+ProcII, ProteinFolding+ProcII, RNAProcessing+tRNAAminoacylation.
-5. **Defer: 13 short-circuited sampler ports** (Replication FULL_BYPASS, Metabolism FBA, Transcription polymerase-slot, RNADecay/PDecay Poisson, etc.) — multi-day per process; only worth attacking after the clean-set picture is exhausted.
+1. **RNG-isolation probe for ProteinTranslocation** (~1-2h). Confirm Finding-2
+   hypothesis: that per-tick state is correct in composition but the reused
+   process instance's RNG state drives the 14-event drift. If confirmed,
+   add a `reset_rng_per_tick` hook (or similar) and re-run. Unlock candidates: 6 SS pairs + Seg+ProteinTranslocation DS = ~7 pairs.
+2. **Ensemble verification for DNARepair pairs** (~30 min). Finding-1 fixed
+   the contract gap; remaining 1-event drift is plausibly within stochastic
+   variance. Run N=5 seeds on the 6 DNARepair pairs; if distributional
+   envelope passes, redefine the per-tick rubric to admit them.
+3. **Per-pair investigation for the 4 stragglers**: MacromolComplex+Folding,
+   ProcI+ProcII, Folding+ProcII, RNAProc+tRNA. Each may have its own bug class.
+4. **Unblock the 34 SS SKIPs** — harness-level skip (`l25_no_op_trace` /
+   `sparse_event`); single-threshold investigation may unlock 5-15 more pairs.
+5. **Defer: 13 short-circuited sampler ports** (Replication FULL_BYPASS,
+   Metabolism FBA, Transcription polymerase-slot, RNADecay/PDecay Poisson,
+   etc.) — multi-day per process; only worth attacking after the clean-set
+   picture is exhausted.
 
 ### Day-35 commits (all pushed):
 - `d11b2b6` plan(day-35): correct scoreboard to 8 honest PASS

@@ -1476,6 +1476,16 @@ def run_integrated_replay_v2(
                         store_path_override=ctx.spec.store_path_override,
                     )
 
+                # Day-35 fix: inject hidden read-surface channels (chromosome,
+                # stimulus.values, rnaPolymerase.supercoilingBindingProbFoldChange)
+                # into the shared state before this process runs. Without this,
+                # processes that read these surfaces (e.g., DNARepair reads
+                # chromosome) see the template defaults and produce wrong
+                # biology in composition mode while counterfactual replay
+                # (which DOES inject the surface) matches oracle. Matches the
+                # counterfactual contract in _build_counterfactual_step_vector.
+                _inject_hidden_read_surface(ctx=ctx, state=shared_state, tick=tick)
+
                 refresh_allocator_views(ctx.process, shared_state)
                 update = ctx.process.next_update(1.0, shared_state)
                 _apply_update(shared_state, update)
