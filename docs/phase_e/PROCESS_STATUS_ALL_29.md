@@ -1,5 +1,26 @@
 # All-29 Process Status - 2026-06-03 ~14:30 IST (L2.1 SWEEP COMPLETE)
 
+> **⚠️ Day-36 (2026-06-22) addendum: STRICT-RUBRIC AUDIT — L2.1 honest count is 9/28, not 28/28.**
+> 
+> The Day-35/36 honest-mode audit revealed the L2.1 acceptance rubric (bit-identity per tick) was admitting three classes of false-positive PASSes:
+> - **Trace-hint short-circuits** (13 processes): biology bypassed via `state["trace_hint"]` echo
+> - **Port-mismatch coincidental zeros** (1+ processes): biology reads ports not in observables, returns trivial zero, matches Karr's zero
+> - **Uninformative trace windows** (6 processes): Karr's 100-tick trace shows zero activity; PASS is vacuous
+> 
+> **Honest L2.1 verdict scoreboard** (per `tests/vivarium/test_l2_1_strict_rubric.py`, baseline pinned `docs/phase_f/L2_1_STRICT_RUBRIC_BASELINE.md`):
+> 
+> | Verdict | Count | Processes |
+> |---|---:|---|
+> | GENUINE | 9 | DNARepair, MacromolecularComplexation, ProteinActivation, ProteinFolding, ProteinProcessingI, ProteinProcessingII, RNAProcessing, Translation, tRNAAminoacylation |
+> | UNINFORMATIVE | 6 | ChromosomeSegregation, Cytokinesis, DNADamage, HostInteraction, RNAModification, RibosomeAssembly |
+> | COINCIDENTAL | 1 | TranscriptionalRegulation |
+> | FAIL strict | 11 | ChromosomeCondensation, DNASupercoiling, FtsZPolymerization, Metabolism, ProteinDecay, ProteinModification, ProteinTranslocation, RNADecay, Replication, ReplicationInitiation, Transcription |
+> | ERROR | 1 | TerminalOrganelleAssembly (harness config) |
+> 
+> The L1 / L2.1 cells in Table 1 below reflect the LEGACY rubric and are preserved as historical record. The strict-rubric verdict is the CURRENT honest status. Day-37 will re-audit L2.2 with the same strict checks; current 22/22 L2.2 in-scope GREEN claim is structurally vacuous for any process whose L2.1 isn't GENUINE.
+> 
+> Day-36 blog post: `docs/blog/2026-06-22-nine-out-of-twenty-eight.md`. Audit catalog: `docs/phase_f/L2_5_SHORTCIRCUIT_AUDIT.md`, `docs/phase_f/L2_1_FALSE_POSITIVE_AUDIT.md`.
+
 **🎉 L2.1 GREEN GATE CLOSED (2026-06-03 PM):** All 28 Karr-in-v6 processes are now L2.1-covered. Sweep result on `audit/l2-1-sweep-v2 @ 413896a`:
 - **44/46 strict pass, 0 fail, 2 skipped** (2 absorbed by calibrated table: `karr_transcription`, `karr_protein_modification`).
 - **46/46 calibrated pass, 0 fail, 2 skipped** (`L2_USE_CALIBRATED_TOLERANCES=1`).
