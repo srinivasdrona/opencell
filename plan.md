@@ -26,11 +26,44 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-06-19 ~18:30 IST):** None alive. Workspace clean (1 worktree: main).
+**Live processes / agents (2026-06-22 ~09:30 IST):** None alive. Workspace clean (1 worktree: main).
 
 **L2.2: COMPLETE (22/22 in-scope, 100%).** L2.5 in active development.
 
-**L2.5 status (Day-33 EOD):** **18 L2.5 pair tests GREEN** (1 SS + 15 DS + 2 DD), up from 10 at start of day. **+8 net unlocks today** from the H9 harness fix.
+**L2.5 status (Day-35 morning, post Day-34 two-blocking-fixes correction):**
+
+**8 L2.5 pair tests GREEN under HONEST mode** (1 SS + 6 DS + 1 DD). This is a correction from Day-33's "18 PASS" which was hint-assisted hybrid mode (deterministic side received trace hints even with `disable_trace_hints=True` due to ORACLE_BIT_IDENTITY override).
+
+Day-34 (2026-06-20) landed two blocking-bug fixes:
+- `98afad5` — extend counterfactual injection surface to cover chromosome / stimulus / rnaPolymerase
+- `3b7997e` — decouple `_trace_hints_enabled` from `ORACLE_BIT_IDENTITY` so honest mode is honest for all processes
+
+**Day-34 also surfaced a sharp pattern:**
+- ALL 9 ChromosomeCondensation pairs fail honest mode → **ONE Cond `next_update` honest-mode biology bug** (likely unlocks all 10 with one fix)
+- Cond+Seg DD pair: tick-0 ATP forensic shows OC produces +3 ADP but NO -3 ATP / -3 H2O / +3 PI / +3 H. **Hydrolysis chemistry only fires when `n_bound > 0`, and `n_bound` is derived from trace_hint** (line 284) — in honest mode it's always 0.
+- Karr's MATLAB algorithm (`ChromosomeCondensation.m:60-80`): compute regions, expected SMC bindings = sum(regions)/smcSepNt, then sample positions stochastically.
+- OC has NO honest-mode sampler — entire binding-event computation is hint-only. Needs ~50-100 LOC Karr-faithful port (same class as DNASupercoiling canary from Day-33).
+
+**Day-35 attack plan (priority order):**
+
+1. **🎯 Cond honest-mode SMC binding sampler port (NOW)**. Predicted to unlock 10 pairs (9 DS + Cond+Seg DD). 3-slot delegation, ~30-60 min. Highest leverage single move.
+2. **Audit Seg pairs** — codex categorized all 11 Seg-side failures as "5a structural impossibility" but symmetry with Cond suggests Seg may also have a missing-sampler honest-mode bug. ~15 min probe.
+3. **Remaining stochastic-side processes** (FtsZ, ProtMod, RNADecay, Transcription, etc.) — apply DNASupercoiling-canary-style biology ports (~30-50 LOC each).
+4. **Metabolism Karr 4-partition port** (separate, ~150 LOC).
+5. **211 SS pair tests** bulk scaffold after DS/DD stable.
+
+**Day-34 commit log (4 commits, all pushed):**
+- `fab7e86` h12: verification status for seed reproducibility and contamination channels
+- `1746d19` probe(l2.5): H11 verification - same cell-cycle moment, different intra-tick positions
+- `98afad5` test(l2.5): extend counterfactual hidden-state injection surface
+- `3b7997e` test(l2.5): decouple trace-hint policy from oracle type
+
+**Day-34 5a/5b/5c partition of 20 originally-failing DS pairs (from STATUS_l25_two_blocking_fixes.md):**
+- (5a) Structural impossibility (codex-classified, suspect needs audit): 11 — all Seg+X pairs + HostInt+Metab
+- (5b) Was injection gap, fixed by Fix #1: **0** (rubber-duck injection-gap hypothesis REJECTED)
+- (5c) Real OC biology bug surfaced in honest mode: 9 — all Cond+X pairs
+
+**Activation env, MATLAB, WSL venv:** unchanged. Workspace: single worktree (main).
 
 Pair-keyed tracker at [`docs/phase_f/L2_5_PAIR_TRACKER.md`](docs/phase_f/L2_5_PAIR_TRACKER.md); codex-loadable status at [`docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml`](docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml) `l2_5_gate:` section (schema v5).
 
