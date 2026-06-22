@@ -73,22 +73,17 @@ Plus the SS dedicated test PPI+PPII (also clean×clean) **FAILED** today → 3rd
 
 ### Day-36 attack plan (priority order)
 
-1. **RNG-isolation probe for ProteinTranslocation** (~1-2h). Confirm Finding-2
-   hypothesis: that per-tick state is correct in composition but the reused
-   process instance's RNG state drives the 14-event drift. If confirmed,
-   add a `reset_rng_per_tick` hook (or similar) and re-run. Unlock candidates: 6 SS pairs + Seg+ProteinTranslocation DS = ~7 pairs.
-2. **Ensemble verification for DNARepair pairs** (~30 min). Finding-1 fixed
-   the contract gap; remaining 1-event drift is plausibly within stochastic
-   variance. Run N=5 seeds on the 6 DNARepair pairs; if distributional
-   envelope passes, redefine the per-tick rubric to admit them.
-3. **Per-pair investigation for the 4 stragglers**: MacromolComplex+Folding,
-   ProcI+ProcII, Folding+ProcII, RNAProc+tRNA. Each may have its own bug class.
-4. **Unblock the 34 SS SKIPs** — harness-level skip (`l25_no_op_trace` /
-   `sparse_event`); single-threshold investigation may unlock 5-15 more pairs.
-5. **Defer: 13 short-circuited sampler ports** (Replication FULL_BYPASS,
-   Metabolism FBA, Transcription polymerase-slot, RNADecay/PDecay Poisson,
-   etc.) — multi-day per process; only worth attacking after the clean-set
-   picture is exhausted.
+1. **Allocator-vs-queue binary search for ProteinTranslocation** (30 min). Instrument both L2.1 and composition Translocation at tick 21 with the same diagnostic. Identify which early-return guard trips in L2.1 (ATP=0? queue empty?). If composition has populated state where L2.1 has empty state, the bug is upstream-overlay contamination of `protein.unprocessed_counts`/`protein.location`/`substrates_allocated`. Fix is in either Translocation or the harness depending on which port.
+2. **Ensemble verification for DNARepair pairs (30 min).** Run N=5 (or 30, per rubber-duck N3 critique) seeds on the 6 DNARepair pairs. If per-seed 1-event drifts are mean-zero across seeds, it's stochastic variance. Add ensemble verification path to harness or relax per-tick rubric for distributional pairs.
+3. **ProcII straggler probe (30 min, per rubber-duck N4).** Run ProcII against all other clean processes. If all fail, ProcII has its own port-contamination bug like Translocation.
+4. **Audit OC code for port-mismatch bugs systematically.** Grep all `karr_*.py` for `state.get("protein"`, `state.get("complex"`, then compare against each process's port schema. Mismatches are candidates.
+5. **Defer: 13 short-circuited sampler ports.** Multi-day per process; only worth attacking after the clean-set picture is exhausted.
+
+## Day-35 EOD totals
+- Wired pairs: 102 / 256 (40%)
+- Honest PASSes: 15 / 256 (6%)
+- Two new findings opened (Findings 2-4), all with concrete Day-36 next steps
+- Rubber-duck Sonnet 4.6 review caught 3 blocking issues in original Day-36 plan
 
 ### Day-35 commits (all pushed):
 - `d11b2b6` plan(day-35): correct scoreboard to 8 honest PASS
