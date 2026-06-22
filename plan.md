@@ -26,33 +26,91 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-06-22 ~09:30 IST):** None alive. Workspace clean (1 worktree: main).
+**Live processes / agents (2026-06-22 ~14:15 IST):** None alive. Workspace clean (1 worktree: main).
 
 **L2.2: COMPLETE (22/22 in-scope, 100%).** L2.5 in active development.
 
-**L2.5 status (Day-35 morning, post Day-34 two-blocking-fixes correction):**
+### L2.5 status (Day-35 EOD — short-circuit audit complete)
 
-**8 L2.5 pair tests GREEN under HONEST mode** (1 SS + 6 DS + 1 DD). This is a correction from Day-33's "18 PASS" which was hint-assisted hybrid mode (deterministic side received trace hints even with `disable_trace_hints=True` due to ORACLE_BIT_IDENTITY override).
+Day-35 surfaced and **catalogued the L2.1/L2.2 short-circuit attack surface** that explains why Day-34's honest-mode fix dropped the scoreboard from 18 to 8 PASS.
 
+**Current honest L2.5 sweep (Day-35 14:00 IST):**
+
+| Verdict | Count | Notes |
+|---|---:|---|
+| ✅ PASS | **8** | 5 DS clean×clean (Seg+{Folding, RNAProc, tRNA, ProcI, ProcII}); 2 DS clean×dirty (Seg+Translation, HostInt+TermOrg); 1 SS dirty×clean (Trans+RNAProc) |
+| ❌ FAIL | 31 | 29 DS + 1 SS (PPI+PPII) + 1 DD (Cond+Seg) |
+| ⚪ SKIPPED | 7 | (no-op trace / sparse-event) |
+| **Wired pairs total** | **46** | 18% of in-scope |
+| ⬛ NOT WIRED | 210 | Mostly SS pairs (only Trans+RNAProc + PPI+PPII have dedicated SS tests) |
+| **256 in-scope total** | | |
+
+### Day-35 short-circuit audit (canonical artifact: `docs/phase_f/L2_5_SHORTCIRCUIT_AUDIT.md`)
+
+**13 of 28 L2.5 processes have hint-driven short-circuits** that bypass biology when `trace_hint` is present. Severity classes:
+- FULL_BYPASS (2): Replication, ReplicationInitiation — entire next_update from hint
+- CHEMISTRY_BYPASS (5): Metabolism, RNADecay, ProteinDecayLight, Transcription, FtsZ, TerminalOrganelle
+- GATED_BIOLOGY (2): ChromosomeCondensation, ProteinModification
+- CHANNEL_OVERLAY (2): DNASupercoiling, TranscriptionalRegulation
+- REPLAY_GUARD / DUAL_PATH (2): Translation, TranslationV3
+
+L2.1 + L2.2 passed for these 13 because they validated "harness can apply trace deltas" not "biology computes correct deltas". **L2.5 honest mode is the first real biology validation gate.**
+
+### Clean-vs-clean pair set (Day-35 EOD analysis)
+
+Of 256 shared-pool pairs:
+- **67 are clean×clean** (both sides have no `trace_hint`) ← true biology validation surface
+- 134 are clean×dirty
+- 55 are dirty×dirty
+
+Of the 67 clean×clean: **11 are DS** (all Seg+X, since Seg is the only deterministic clean process), **56 are SS**.
+
+**Today's 11 DS clean×clean run:** 5 PASS / 2 FAIL / 4 SKIP. The 2 FAILS are smoking-gun clean-vs-clean biology bugs:
+- **Seg + ProteinTranslocation** — CAUSE_4, ATP off -14
+- **Seg + DNARepair** — needs failure record
+
+Plus the SS dedicated test PPI+PPII (also clean×clean) **FAILED** today → 3rd real biology drift, not explained by any short-circuit.
+
+**Projected L2.5 ceiling without porting any of the 13 short-circuited samplers:**
+- At today's 63% clean×clean honest-green rate (5/8 testable so far)
+- ~40 more PASSes possible from the 55 untested SS clean×clean
+- **Ceiling: ~48 honest PASS / 256 = 19%** (vs today's 8/256 = 3%)
+
+### Day-36 attack plan (priority order)
+
+1. **Wire the 55 untested SS clean×clean pairs** to the existing v2 harness (single new parametrized test file in `tests/vivarium/`, mirrors `test_l25_deterministic_stochastic_pairs.py`). High leverage — ~40 expected new PASSes.
+2. **Investigate the 3 clean×clean FAILs** (Seg+ProteinTranslocation, Seg+DNARepair, PPI+PPII) — these are real new bugs hidden by the audit prediction; extract failure records, identify whether they're hidden short-circuits the audit missed or genuine composition drifts.
+3. **Unblock the 4 skipped Seg clean×clean pairs** (RibosomeAssembly, Cytokinesis, DNADamage, RNAModification) — cheapest unblock; likely a sparse-event/no-op threshold issue not a biology problem.
+4. **Then attack the 13 short-circuited samplers** (Metabolism FBA port, Transcription polymerase-slot port, etc.) — each is a multi-day biology port; defer until the clean-set picture is fully exhausted.
+
+### Day-35 commits (all pushed):
+- `d11b2b6` plan(day-35): correct scoreboard to 8 honest PASS
+- `81600c1` wip(chromosome_condensation): port Karr SMC binding sampler to no-hints branch (drifts at tick 9 off-by-2)
+- `057d62b` docs(status): archive STATUS_cond_smc_sampler.md
+- `7662d5b` wip(chromosome_condensation): tighten SMC offset sampling
+- `678928c` probe(l2.5): Seg pair failure audit - all 11 failures blame stochastic side
+- `231e2da` docs(l2.5): trace-hint short-circuit finding (RNADecay specific)
+- `73b254d` audit(l2.5): comprehensive L2.1/L2.2 hint-driven shortcircuit catalog (13 processes)
+- `953e7cd` audit(l2.5): clean-vs-clean pair set and DS results (5/2/4 of 11)
+
+### Key artifacts under `docs/phase_f/`:
+- `L2_5_SHORTCIRCUIT_AUDIT.md` — 13-process catalog
+- `L2_5_CLEAN_CLEAN_PAIRS.md` — 67 clean×clean pairs
+- `L2_5_CLEAN_PAIRS_DS_RESULTS.md` — today's 11 DS clean×clean Seg run
+- `L2_5_HONEST_MODE_HINT_LEAKAGE_FINDING.md` — first-pass finding (RNADecay 6× over-decay evidence)
+
+### Reproducible probes under `scripts/`:
+- `probe_hint_shortcircuit_audit.py` — classifies all 38 karr_*.py into severity buckets
+- `probe_clean_clean_pairs.py` — cross-references audit with 256-pair matrix
+- `probe_clean_clean_wiring.py` — which clean×clean pairs are testable today
+- `probe_seg_pair_audit.py` — Seg failure attribution (all blame stochastic side)
+
+### Day-34 (reference, kept for context):
 Day-34 (2026-06-20) landed two blocking-bug fixes:
 - `98afad5` — extend counterfactual injection surface to cover chromosome / stimulus / rnaPolymerase
 - `3b7997e` — decouple `_trace_hints_enabled` from `ORACLE_BIT_IDENTITY` so honest mode is honest for all processes
 
-**Day-34 also surfaced a sharp pattern:**
-- ALL 9 ChromosomeCondensation pairs fail honest mode → **ONE Cond `next_update` honest-mode biology bug** (likely unlocks all 10 with one fix)
-- Cond+Seg DD pair: tick-0 ATP forensic shows OC produces +3 ADP but NO -3 ATP / -3 H2O / +3 PI / +3 H. **Hydrolysis chemistry only fires when `n_bound > 0`, and `n_bound` is derived from trace_hint** (line 284) — in honest mode it's always 0.
-- Karr's MATLAB algorithm (`ChromosomeCondensation.m:60-80`): compute regions, expected SMC bindings = sum(regions)/smcSepNt, then sample positions stochastically.
-- OC has NO honest-mode sampler — entire binding-event computation is hint-only. Needs ~50-100 LOC Karr-faithful port (same class as DNASupercoiling canary from Day-33).
-
-**Day-35 attack plan (priority order):**
-
-1. **🎯 Cond honest-mode SMC binding sampler port (NOW)**. Predicted to unlock 10 pairs (9 DS + Cond+Seg DD). 3-slot delegation, ~30-60 min. Highest leverage single move.
-2. **Audit Seg pairs** — codex categorized all 11 Seg-side failures as "5a structural impossibility" but symmetry with Cond suggests Seg may also have a missing-sampler honest-mode bug. ~15 min probe.
-3. **Remaining stochastic-side processes** (FtsZ, ProtMod, RNADecay, Transcription, etc.) — apply DNASupercoiling-canary-style biology ports (~30-50 LOC each).
-4. **Metabolism Karr 4-partition port** (separate, ~150 LOC).
-5. **211 SS pair tests** bulk scaffold after DS/DD stable.
-
-**Day-34 commit log (4 commits, all pushed):**
+Day-34 commit log (4 commits, all pushed):
 - `fab7e86` h12: verification status for seed reproducibility and contamination channels
 - `1746d19` probe(l2.5): H11 verification - same cell-cycle moment, different intra-tick positions
 - `98afad5` test(l2.5): extend counterfactual hidden-state injection surface
