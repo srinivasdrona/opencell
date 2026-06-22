@@ -71,19 +71,33 @@ Plus the SS dedicated test PPI+PPII (also clean×clean) **FAILED** today → 3rd
 - ~40 more PASSes possible from the 55 untested SS clean×clean
 - **Ceiling: ~48 honest PASS / 256 = 19%** (vs today's 8/256 = 3%)
 
-### Day-36 attack plan (priority order)
+### Day-36 EOD: L2.1 strict-rubric audit complete
 
-1. **Allocator-vs-queue binary search for ProteinTranslocation** (30 min). Instrument both L2.1 and composition Translocation at tick 21 with the same diagnostic. Identify which early-return guard trips in L2.1 (ATP=0? queue empty?). If composition has populated state where L2.1 has empty state, the bug is upstream-overlay contamination of `protein.unprocessed_counts`/`protein.location`/`substrates_allocated`. Fix is in either Translocation or the harness depending on which port.
-2. **Ensemble verification for DNARepair pairs (30 min).** Run N=5 (or 30, per rubber-duck N3 critique) seeds on the 6 DNARepair pairs. If per-seed 1-event drifts are mean-zero across seeds, it's stochastic variance. Add ensemble verification path to harness or relax per-tick rubric for distributional pairs.
-3. **ProcII straggler probe (30 min, per rubber-duck N4).** Run ProcII against all other clean processes. If all fail, ProcII has its own port-contamination bug like Translocation.
-4. **Audit OC code for port-mismatch bugs systematically.** Grep all `karr_*.py` for `state.get("protein"`, `state.get("complex"`, then compare against each process's port schema. Mismatches are candidates.
-5. **Defer: 13 short-circuited sampler ports.** Multi-day per process; only worth attacking after the clean-set picture is exhausted.
+**The honest L2.1 surface is 9 of 28 processes.** Strict rubric (`tests/vivarium/test_l2_1_strict_rubric.py`, baseline `docs/phase_f/L2_1_STRICT_RUBRIC_BASELINE.md`) adds two supplement checks on top of bit-identity:
+1. Karr-active rate: how many ticks have non-trivial recorded delta?
+2. OC-fire rate on Karr-active ticks: did biology actually run on those ticks?
 
-## Day-35 EOD totals
-- Wired pairs: 102 / 256 (40%)
-- Honest PASSes: 15 / 256 (6%)
-- Two new findings opened (Findings 2-4), all with concrete Day-36 next steps
-- Rubber-duck Sonnet 4.6 review caught 3 blocking issues in original Day-36 plan
+**Verdict scoreboard:**
+
+| Verdict | Count | Processes |
+|---|---:|---|
+| GENUINE | **9** | DNARepair, MacromolComplex, ProteinActivation, ProteinFolding, ProcI, ProcII, RNAProcessing, Translation, tRNAAminoacylation |
+| UNINFORMATIVE | 6 | Seg, Cytokinesis, DNADamage, HostInteraction, RNAModification, RibosomeAssembly — trace shows no activity |
+| COINCIDENTAL | 1 | TranscriptionalRegulation — biology silent on the one Karr-active tick |
+| FAIL strict | 11 | The 13 trace-hint short-circuited processes + ProteinTranslocation (overlap accounts for 11 not 14) |
+| ERROR | 1 | TerminalOrganelleAssembly config |
+
+The 11 FAIL processes are the real biology gaps. L2.2 inherits L2.1's per-tick check, so the 22/22 L2.2 GREEN claim is structurally vacuous for any process whose L2.1 isn't GENUINE — likely 6-7 honest L2.2 PASSes, not 22.
+
+### Day-37 priorities
+
+1. **Re-audit L2.2 with the strict rubric.** Apply the same Karr-active / fire-rate check to the L2.2 distributional tests. Report honest L2.2 count.
+2. **Per-process biology gap investigations** for the 11 FAIL processes — each needs a Karr-MATLAB-vs-OC comparison to identify what biology is missing or wrong. Multi-week scope.
+3. **Extend traces or build synthetic scenarios** for the 6 UNINFORMATIVE processes so they can be validated.
+4. **Fix TerminalOrganelleAssembly config** (ERROR bucket; small).
+5. **Investigate TranscriptionalRegulation port-mismatch** (COINCIDENTAL; same class as ProteinTranslocation).
+
+Day-22 (post-discovery) blog: `docs/blog/2026-06-22-nine-out-of-twenty-eight.md`.
 
 ### Day-35 commits (all pushed):
 - `d11b2b6` plan(day-35): correct scoreboard to 8 honest PASS
