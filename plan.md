@@ -26,24 +26,19 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-06-22 ~14:15 IST):** None alive. Workspace clean (1 worktree: main).
+**Live processes / agents (2026-06-22 ~14:40 IST):** None alive. Workspace clean (1 worktree: main).
 
 **L2.2: COMPLETE (22/22 in-scope, 100%).** L2.5 in active development.
 
-### L2.5 status (Day-35 EOD — short-circuit audit complete)
+### L2.5 status (Day-35 EOD — SS clean-vs-clean wired + run)
 
-Day-35 surfaced and **catalogued the L2.1/L2.2 short-circuit attack surface** that explains why Day-34's honest-mode fix dropped the scoreboard from 18 to 8 PASS.
+| Sweep | PASS | FAIL | SKIP | Total wired |
+|---|---:|---:|---:|---:|
+| Prior (DS + 4 dedicated) | 8 | 31 | 7 | 46 |
+| New SS clean×clean (today PM) | **+7** | **+15** | **+34** | **+56** |
+| **Combined** | **15** | **46** | **41** | **102 / 256** |
 
-**Current honest L2.5 sweep (Day-35 14:00 IST):**
-
-| Verdict | Count | Notes |
-|---|---:|---|
-| ✅ PASS | **8** | 5 DS clean×clean (Seg+{Folding, RNAProc, tRNA, ProcI, ProcII}); 2 DS clean×dirty (Seg+Translation, HostInt+TermOrg); 1 SS dirty×clean (Trans+RNAProc) |
-| ❌ FAIL | 31 | 29 DS + 1 SS (PPI+PPII) + 1 DD (Cond+Seg) |
-| ⚪ SKIPPED | 7 | (no-op trace / sparse-event) |
-| **Wired pairs total** | **46** | 18% of in-scope |
-| ⬛ NOT WIRED | 210 | Mostly SS pairs (only Trans+RNAProc + PPI+PPII have dedicated SS tests) |
-| **256 in-scope total** | | |
+40% of the 256 attack surface now wired (102/256). 15 honest PASS = 6% of total.
 
 ### Day-35 short-circuit audit (canonical artifact: `docs/phase_f/L2_5_SHORTCIRCUIT_AUDIT.md`)
 
@@ -78,10 +73,11 @@ Plus the SS dedicated test PPI+PPII (also clean×clean) **FAILED** today → 3rd
 
 ### Day-36 attack plan (priority order)
 
-1. **Wire the 55 untested SS clean×clean pairs** to the existing v2 harness (single new parametrized test file in `tests/vivarium/`, mirrors `test_l25_deterministic_stochastic_pairs.py`). High leverage — ~40 expected new PASSes.
-2. **Investigate the 3 clean×clean FAILs** (Seg+ProteinTranslocation, Seg+DNARepair, PPI+PPII) — these are real new bugs hidden by the audit prediction; extract failure records, identify whether they're hidden short-circuits the audit missed or genuine composition drifts.
-3. **Unblock the 4 skipped Seg clean×clean pairs** (RibosomeAssembly, Cytokinesis, DNADamage, RNAModification) — cheapest unblock; likely a sparse-event/no-op threshold issue not a biology problem.
-4. **Then attack the 13 short-circuited samplers** (Metabolism FBA port, Transcription polymerase-slot port, etc.) — each is a multi-day biology port; defer until the clean-set picture is fully exhausted.
+1. **Diagnose the ProteinTranslocation composition bug** — one allocator-side root cause likely unlocks 6 SS clean×clean pairs + the Seg+ProteinTranslocation DS fail (=7 PASSes). Failure record (`docs/phase_f/L2_5_CLEAN_PAIRS_SS_RESULTS.md`) shows `isolated_replay_result: matches_oracle` and a textbook ATP hydrolysis signature — biology is right, allocator gives 14 extra ATP in composition.
+2. **Diagnose the DNARepair composition bug** — same shape as ProteinTranslocation; +7 PASSes if the bug class is similar.
+3. **Unblock the 34 SS SKIPs** — harness-level skip (`l25_no_op_trace` / `sparse_event`); single-threshold investigation may unlock 5-15 more pairs.
+4. **Then per-pair stragglers**: MacromolComplex+ProteinFolding, ProcI+ProcII, ProteinFolding+ProcII, RNAProcessing+tRNAAminoacylation.
+5. **Defer: 13 short-circuited sampler ports** (Replication FULL_BYPASS, Metabolism FBA, Transcription polymerase-slot, RNADecay/PDecay Poisson, etc.) — multi-day per process; only worth attacking after the clean-set picture is exhausted.
 
 ### Day-35 commits (all pushed):
 - `d11b2b6` plan(day-35): correct scoreboard to 8 honest PASS
