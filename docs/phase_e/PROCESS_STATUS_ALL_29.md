@@ -38,7 +38,23 @@
 > 
 > **The legacy L2.2 column in Table 1 below is preserved as historical record. The current honest L2.2 status is per the table above.**
 
-> **⚠️ Day-36 (2026-06-22) addendum: L2.1 STRICT-RUBRIC AUDIT — L2.1 honest count is 9/28, not 28/28.**
+> **⚠️ Day-37 (2026-06-23 PM) REVISION: L2.1 strict rubric oracle-type-aware — honest count is 16/28, not 9/28.**
+> 
+> The Day-36 L2.1 strict rubric incorrectly applied per-tick bit-identity uniformly across all 28 processes. This was over-strict for stochastic processes (oracle_type=distributional) which legitimately have per-tick RNG variance.
+> 
+> Day-37 fix in `tests/vivarium/test_l2_1_strict_rubric.py`: only check per-tick bit-identity for deterministic processes (oracle_type=bit_identity); for stochastic processes, gate on biology-fire-rate. This aligns with the per-process L2.1 tests' `assert_identity_or_tolerance` rubric and restores L2.2 ⊆ L2.1 hierarchy.
+> 
+> **Revised L2.1 strict-rubric scoreboard:**
+> 
+> | Verdict | Count | Processes |
+> |---|---:|---|
+> | GENUINE | **16** | DNARepair, DNASupercoiling, FtsZ, MacromolComplex, ProteinActivation, ProteinFolding, ProteinModification, ProcI, ProcII, ProteinTranslocation, RNADecay, RNAProcessing, ReplicationInitiation, Transcription, Translation, tRNAAminoacylation |
+> | UNINFORMATIVE | 6 | Seg, Cytokinesis, DNADamage, HostInteraction, RNAModification, RibosomeAssembly |
+> | COINCIDENTAL | 4 | **Metabolism, ProteinDecay, Replication, TranscriptionalRegulation** (biology fires 0% on Karr-active ticks) |
+> | FAIL | 1 | ChromosomeCondensation (bit-identity FAIL, deterministic) |
+> | ERROR | 1 | TerminalOrganelleAssembly (config issue) |
+
+> **⚠️ Day-36 (2026-06-22) addendum: L2.1 STRICT-RUBRIC AUDIT — L2.1 honest count is 9/28, not 28/28.** *(superseded by Day-37 revision above)*
 > 
 > The Day-35/36 honest-mode audit revealed the L2.1 acceptance rubric (bit-identity per tick) was admitting three classes of false-positive PASSes:
 > - **Trace-hint short-circuits** (13 processes): biology bypassed via `state["trace_hint"]` echo

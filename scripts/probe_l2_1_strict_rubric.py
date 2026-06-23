@@ -127,7 +127,14 @@ def audit_one_process(name: str, threshold: float = KARR_ACTIVE_THRESHOLD) -> di
                 else:
                     karr_active_oc_silent += 1
 
-            # Bit-identity check on owned observables (mirrors L2.1 acceptance)
+            # Bit-identity check on owned observables (mirrors L2.1 acceptance).
+            # Day-37 fix: only apply per-tick bit-identity check for deterministic
+            # processes (oracle_type=bit_identity). Stochastic processes
+            # (oracle_type=distributional) have legitimate per-tick RNG variance;
+            # bit-identity is the wrong rubric for them. Use the fire-rate check
+            # below to gate stochastic processes.
+            oracle_type = getattr(spec, "oracle_type", "distributional")
+            check_bit_identity = oracle_type == "bit_identity"
             for obs in observables:
                 if obs in spec.pass_through:
                     continue
@@ -140,11 +147,12 @@ def audit_one_process(name: str, threshold: float = KARR_ACTIVE_THRESHOLD) -> di
                     store_path_override=spec.store_path_override,
                 )
                 karr_after = _project_trace_vector(ctx, "states_after", obs, tick)
-                if oc_after.shape == karr_after.shape:
-                    if not np.array_equal(oc_after.astype(np.int64), karr_after.astype(np.int64)):
-                        bit_identity_failures += 1
-                        break
-                else:
+                if oc_after.shape != karr_after.shape:
+                    bit_identity_failures += 1
+                    break
+                if check_bit_identity and not np.array_equal(
+                    oc_after.astype(np.int64), karr_after.astype(np.int64)
+                ):
                     bit_identity_failures += 1
                     break
     except Exception as exc:

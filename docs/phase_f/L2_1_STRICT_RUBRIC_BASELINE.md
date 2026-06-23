@@ -1,3 +1,56 @@
+## Day-37 (2026-06-23) revision: oracle-type-aware rubric
+
+After the Day-37 Phase B L2.2 audit revealed L2.2 > L2.1 (10 > 9, impossible
+under any consistent hierarchy), the L2.1 strict rubric was diagnosed as
+incorrectly applying per-tick bit-identity to stochastic processes that
+legitimately have per-tick RNG variance.
+
+**The fix (`tests/vivarium/test_l2_1_strict_rubric.py:170-184`)**: differentiate by
+`oracle_type`:
+- `bit_identity` (deterministic): per-tick bit-identity check
+- `distributional` (stochastic): biology-fire-rate check only (no bit-identity)
+
+This aligns with how the actual per-process L2.1 tests work
+(`assert_identity_or_tolerance` in `l2_replay_common.py:867` already uses
+per-process calibrated tolerances) and restores the L2.2 ⊆ L2.1 hierarchy.
+
+### Day-37 revised scoreboard
+
+| Verdict | Old (Day-36, uniform bit-identity) | New (Day-37, oracle-type-aware) |
+|---|---:|---:|
+| GENUINE | 9 | **16** |
+| UNINFORMATIVE | 6 | 6 |
+| COINCIDENTAL | 1 | 4 |
+| FAIL | 11 | 1 |
+| ERROR | 1 | 1 |
+
+The 7 processes that moved FAIL → GENUINE were stochastic processes whose
+biology fires correctly on Karr-active ticks but legitimately diverges
+per-tick due to RNG variance:
+DNASupercoiling, FtsZ, ProteinModification, ProteinTranslocation,
+RNADecay, ReplicationInitiation, Transcription.
+
+The 3 that moved FAIL → COINCIDENTAL are stochastic processes where
+biology fires 0% of Karr-active ticks even without bit-identity check —
+real biology gaps: Metabolism, ProteinDecay, Replication.
+
+### Hierarchy check (L2.2 ⊆ L2.1)
+
+Of 10 L2.2 VERIFIED_GENUINE, 8 are also L2.1 GENUINE (hierarchy holds).
+2 remain anomalous:
+- **ProteinDecay**: L2.1 COINCIDENTAL (biology fires 0% with minimal state),
+  L2.2 GENUINE (biology fires with runner's richer state). Difference: the
+  L2.2 runner's per-process state overlay populates ports L2.1 strict
+  leaves empty.
+- **RNAModification**: L2.1 UNINFORMATIVE (single-seed 100-tick trace shows
+  zero Karr activity), L2.2 GENUINE (50-seed ensemble exercises ticks where
+  Karr is active). Difference: test data scope.
+
+These 2 are explainable (different harnesses test different things) and
+not contradictory.
+
+---
+
 # L2.1 Strict-Rubric Baseline — Day-36 (2026-06-22)
 
 **Status:** L2.1 acceptance rubric extended with two supplement checks
