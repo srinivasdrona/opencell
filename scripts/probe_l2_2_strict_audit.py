@@ -33,7 +33,7 @@ sys.path.insert(0, str(_REPO / "tests" / "vivarium"))
 # Day-37 empirical verdicts from running tests/vivarium/l2_2_design_a_runner.py
 # at 50 seeds x 10 ticks, post runner string-drift fix (commit Day-37).
 EMPIRICAL_VERDICTS = {
-    # 10 VERIFIED_GENUINE
+    # 11 VERIFIED_GENUINE (Day-37 Phase B + Translocation shape fix)
     "MacromolecularComplexation": "VERIFIED_GENUINE",
     "ProteinFolding": "VERIFIED_GENUINE",
     "ProteinProcessingI": "VERIFIED_GENUINE",
@@ -44,10 +44,9 @@ EMPIRICAL_VERDICTS = {
     "RNADecay": "VERIFIED_GENUINE",
     "RNAModification": "VERIFIED_GENUINE",
     "RNAProcessing": "VERIFIED_GENUINE",
+    "ProteinTranslocation": "VERIFIED_GENUINE",
     # 1 VERIFIED_FAIL — real biology divergence
     "Metabolism": "VERIFIED_FAIL",
-    # 1 CRASH — harness shape mismatch
-    "ProteinTranslocation": "CRASH_HARNESS_BUG",
     # 2 UNVALIDATABLE — runner refuses
     "Cytokinesis": "UNVALIDATABLE_EVENT_CLASS",
     "RibosomeAssembly": "UNVALIDATABLE_EVENT_CLASS",

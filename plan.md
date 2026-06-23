@@ -71,39 +71,47 @@ Plus the SS dedicated test PPI+PPII (also clean×clean) **FAILED** today → 3rd
 - ~40 more PASSes possible from the 55 untested SS clean×clean
 - **Ceiling: ~48 honest PASS / 256 = 19%** (vs today's 8/256 = 3%)
 
-### Day-37 PM revision: L2.1 strict rubric oracle-type-aware
+### Day-37 PM update: L2.1 + L2.2 progress, smaller fixes batch
 
-User caught a contradiction: L2.2 reported 10 GENUINE > L2.1 strict reported 9 GENUINE, which is impossible in a consistent hierarchy. Diagnosed: my Day-36 L2.1 strict rubric was applying per-tick bit-identity uniformly across all 28 processes — wrong for stochastic processes (oracle_type=distributional) that legitimately have per-tick RNG variance.
+User chose smaller-fixes-first path before Metabolism (rationale: don't lose smaller wins, build momentum). First fix landed this evening:
 
-**Fix landed**: `test_l2_1_strict_rubric.py` and `probe_l2_1_strict_rubric.py` now check bit-identity only for deterministic processes; stochastic processes are gated on biology-fire-rate alone. Hierarchy restored.
+**Fix #1: ProteinTranslocation runner shape mismatch (`d7df2a0+`)**
 
-**Revised honest baseline**:
+The L2.2 design_a runner crashed on ProteinTranslocation with `shape (482,) into shape (2892,)` because the v2 ensemble loader flattens the (6 compartments, 482 proteins) monomers cube to length 2892 but the runner overlays it against a 482-WID list.
 
-| Claim | Was claimed | Day-36 baseline | Day-37 corrected |
-|---|---:|---:|---:|
-| L2.1 GENUINE | 28 | 9 (wrong) | **16** (oracle-type-aware) |
-| L2.2 in-scope GREEN | 22 | 10 (Phase B empirical) | **10** (unchanged) |
-| L2.5 honest PASS / 256 | 15 | 15 | 15 (partner-validity needs re-audit) |
+Added `_project_protein_translocation_monomer_cube` helper (parallel to `_project_protein_decay_monomer_cube`) that sums across compartments to project (6, 482) → (482,). Wired into `_format_ensemble_oracle` for ProteinTranslocation.
 
-Of the 10 L2.2 GENUINE, **8 are also L2.1 GENUINE** (hierarchy holds). 2 anomalous but explainable:
-- ProteinDecay: L2.1 COINCIDENTAL, L2.2 GENUINE — runner provides state L2.1 strict harness doesn't
-- RNAModification: L2.1 UNINFORMATIVE, L2.2 GENUINE — different test data scope (50 seeds vs 1)
+**Result:** ProteinTranslocation L2.2 verdict moves CRASH_HARNESS_BUG → VERIFIED_GENUINE (substrates=SEED_NOISE@0, monomers=SEED_NOISE@0.0004). Clean PASS, no laundering warnings. L2.5 composition still fails (separate Day-35 port-mismatch bug; this fix doesn't touch that).
 
-### Day-38 attack plan (priority order, updated)
+### Updated empirical L2.2 baseline (Day-37 evening)
 
-1. **Implement Metabolism fix per `docs/phase_f/METABOLISM_FIX_DESIGN.md`** (6-8 hours, multi-session). Highest-leverage single biology fix on the roadmap.
-   - Karr's `evolveState` (`Metabolism.m:1200-1258`) has 4 substrate update steps after FBA; OC implements ZERO of them
-   - Empirical probe at tick 0 (seed 000) shows Karr produces 148,121 molecules of substrate delta vs OC's 0
-   - With dynamic_bounds=True, OC produces 41 cytosol-only float deltas (no integer rounding) — still far from Karr
-   - Need: stochasticRound helper + nutrient uptake + internal exchange + biomass production + unaccounted energy
-   - Expected impact: L2.1 GENUINE 16→17, L2.2 GREEN 10→11, L2.5 honest 15→~38 (23 Metabolism pairs)
-2. **Investigate ProteinDecay L2.1 COINCIDENTAL with L2.2 PASS** (~30 min)
-3. **Investigate Replication L2.1 COINCIDENTAL** (~30 min)
-4. **Investigate TranscriptionalRegulation COINCIDENTAL** (~30 min)
-5. **Fix ProteinTranslocation L2.2 runner crash** (~30 min)
-6. **Remove explicit hint feeds from Transcription + Translation L2.2 runners** (~30 min)
-7. **Audit the 6 NOT_WIRED chromosome-port L2.2 PASS claims**
-8. Build L2.event harness for Cytokinesis + RibosomeAssembly (multi-week)
+| Verdict | Count | Δ |
+|---|---:|---:|
+| VERIFIED_GENUINE | **11** | +1 (ProteinTranslocation) |
+| VERIFIED_FAIL | 1 | 0 (Metabolism) |
+| CRASH_HARNESS_BUG | 0 | -1 |
+| UNVALIDATABLE_EVENT_CLASS | 2 | 0 |
+| LAUNDERED_VIA_HINT_FEED | 2 | 0 |
+| NOT_WIRED | 6 | 0 |
+
+### Updated honest cross-ladder baseline
+
+| Claim | Was claimed | Honest baseline |
+|---|---:|---:|
+| L2.1 GREEN | 28 | **16** (Day-37, oracle-type-aware) |
+| L2.2 in-scope GREEN | 22 | **11** (Day-37 PM, +Translocation) |
+| L2.5 honest PASS / 256 | 15 | 15 (Day-35) |
+
+### Remaining Day-38 smaller fixes (Metabolism-independent)
+
+In priority order:
+1. **TerminalOrganelleAssembly config fix** (~15 min) — ERROR bucket; schema_path not passed
+2. **TranscriptionalRegulation port-mismatch investigation** (~30 min) — COINCIDENTAL; same class as Translocation port-mismatch
+3. **Audit 6 NOT_WIRED chromosome-port L2.2 claims** (~30-60 min) — documentation work
+4. **Remove explicit hint feeds from Transcription + Translation L2.2 runners** (~30 min) — methodology fix
+5. **Skip-unblock investigation for 34 SS skipped pairs** (~30-60 min)
+
+Then: **Metabolism focused fix** per `docs/phase_f/METABOLISM_FIX_DESIGN.md` (6-8h estimated, possibly 1-3 days realistic).
 
 ### Day-35 commits (all pushed):
 - `d11b2b6` plan(day-35): correct scoreboard to 8 honest PASS

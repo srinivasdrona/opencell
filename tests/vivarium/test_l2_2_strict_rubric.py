@@ -46,7 +46,8 @@ if str(_HELPER_DIR) not in sys.path:
 # Source: scripts/probe_l2_2_strict_audit.py + runner output files in tmp/l2_2_audit/
 # Runner ran with 50 seeds x 10 ticks per process; runner-vs-catalog string-drift bug fixed.
 EXPECTED_L2_2_VERDICTS = {
-    # 10 VERIFIED_GENUINE (the actual, validated count)
+    # 11 VERIFIED_GENUINE (up from 10 at Day-37 Phase B; +ProteinTranslocation
+    # after Day-37 fix to project (6, 482) monomer cube to (482,))
     "MacromolecularComplexation": "VERIFIED_GENUINE",
     "ProteinFolding": "VERIFIED_GENUINE",
     "ProteinProcessingI": "VERIFIED_GENUINE",
@@ -57,10 +58,9 @@ EXPECTED_L2_2_VERDICTS = {
     "RNADecay": "VERIFIED_GENUINE",
     "RNAModification": "VERIFIED_GENUINE",
     "RNAProcessing": "VERIFIED_GENUINE",
+    "ProteinTranslocation": "VERIFIED_GENUINE",
     # 1 VERIFIED_FAIL — real biology divergence (claim was wrong)
     "Metabolism": "VERIFIED_FAIL",
-    # 1 CRASH — harness shape bug, not a biology issue
-    "ProteinTranslocation": "CRASH_HARNESS_BUG",
     # 2 UNVALIDATABLE — runner refuses (EVENT_CLASS bucket needs L2.event)
     "Cytokinesis": "UNVALIDATABLE_EVENT_CLASS",
     "RibosomeAssembly": "UNVALIDATABLE_EVENT_CLASS",

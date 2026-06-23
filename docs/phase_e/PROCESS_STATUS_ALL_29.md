@@ -1,6 +1,20 @@
 # All-29 Process Status - 2026-06-03 ~14:30 IST (L2.1 SWEEP COMPLETE)
 
-> **⚠️ Day-37 PHASE B (2026-06-23 PM) update: L2.2 EMPIRICALLY VERIFIED — 10 of 22 PASS.**
+> **⚠️ Day-37 PM update: VERIFIED_GENUINE 10 → 11 after ProteinTranslocation runner shape fix.**
+> 
+> The runner crashed on Translocation with `shape (482,) into shape (2892,)` because the v2 ensemble loader flattens (6, 482) → 2892 but the runner overlays against 482 WIDs. Added `_project_protein_translocation_monomer_cube` to sum across compartments. Verdict moves CRASH_HARNESS_BUG → VERIFIED_GENUINE.
+> 
+> **Updated empirical L2.2 baseline:**
+> 
+> | Verdict | Count |
+> |---|---:|
+> | VERIFIED_GENUINE | **11** |
+> | VERIFIED_FAIL | 1 (Metabolism) |
+> | UNVALIDATABLE_EVENT_CLASS | 2 |
+> | LAUNDERED_VIA_HINT_FEED | 2 |
+> | NOT_WIRED | 6 |
+
+> **⚠️ Day-37 PHASE B (2026-06-23 PM) update: L2.2 EMPIRICALLY VERIFIED — 10 of 22 PASS.** *(superseded by Day-37 PM update above; +1 = 11 of 22)*
 > 
 > Day-37 Phase A static audit estimated 4 PROVISIONAL_GENUINE. Phase B ran each runner-supported process empirically (50 seeds × 10 ticks) and revealed:
 > - 10 PASS (after fixing a runner-vs-catalog string-drift bug that was hiding 6 valid PASSes)
