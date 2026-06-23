@@ -71,32 +71,37 @@ Plus the SS dedicated test PPI+PPII (also clean×clean) **FAILED** today → 3rd
 - ~40 more PASSes possible from the 55 untested SS clean×clean
 - **Ceiling: ~48 honest PASS / 256 = 19%** (vs today's 8/256 = 3%)
 
-### Day-37 status: L2.2 strict-rubric re-audit complete
+### Day-37 Phase B status: L2.2 strict-rubric EMPIRICALLY verified
 
-**At most 4 of 22 L2.2 in-scope GREEN claims are honest** per the strict rubric (Day-37 baseline: `docs/phase_f/L2_2_STRICT_RUBRIC_BASELINE.md`, enforced by `tests/vivarium/test_l2_2_strict_rubric.py`).
+**10 of 22 L2.2 in-scope GREEN claims are VERIFIED_GENUINE** (Day-37 Phase B empirical baseline: `docs/phase_f/L2_2_STRICT_RUBRIC_BASELINE.md`, enforced by `tests/vivarium/test_l2_2_strict_rubric.py`).
 
-| L2.2 verdict | Count | Reading |
+| Verdict | Count | Processes |
 |---|---:|---|
-| LAUNDERED_VIA_HINT_FEED | 2 | Transcription, Translation — runner explicitly feeds `overlay_trace_after_hint` |
-| SUSPECT_LAUNDERED | 12 | L2.1 strict FAIL or port-mismatch; L2.2 mechanism unclear (likely runner state overlay papers over the gap) |
-| UNINFORMATIVE | 4 | Karr trace is all-zero (DNADamage, Cytokinesis, RNAModification, RibosomeAssembly) |
-| PROVISIONAL_GENUINE | 4 | DNARepair, ProteinProcessingI, ProteinFolding, MacromolecularComplexation |
+| **VERIFIED_GENUINE** | **10** | MacromolComplex, ProteinFolding, ProcI, ProcII, tRNAAminoacylation, ProteinModification, ProteinDecay, RNADecay, RNAModification, RNAProcessing |
+| VERIFIED_FAIL | 1 | Metabolism (W1=171.39 on substrates — real divergence; claim was wrong) |
+| CRASH_HARNESS_BUG | 1 | ProteinTranslocation (shape mismatch 482→2892) |
+| UNVALIDATABLE_EVENT_CLASS | 2 | Cytokinesis, RibosomeAssembly (runner refuses; needs L2.event) |
+| LAUNDERED_VIA_HINT_FEED | 2 | Transcription, Translation (runner explicitly feeds hints) |
+| NOT_WIRED | 6 | Replication, ReplicationInitiation, DNASupercoiling, DNARepair, DNADamage, FtsZ (chromosome-port; never wired) |
 
-**The honest cross-ladder baseline going into Day-38:**
+**Key Day-37 finding**: a runner-vs-catalog string-drift bug was hiding 6 valid PASSes. The runner checked `closed_form_state == "confirmed"` but the catalog used `confirmed_biology_validated`. Day-37 fix accepts both. This recovered MacromolComplex, ProteinFolding, ProcI, ProcII, ProteinModification, tRNAAminoacylation as VERIFIED_GENUINE.
+
+**Honest cross-ladder baseline:**
 
 | Claim | Was claimed | Honest baseline |
 |---|---:|---:|
-| L2.1 GREEN | 28 | 9 (Day-36) |
-| L2.2 in-scope GREEN | 22 | ≤ 4 (Day-37) |
-| L2.5 honest PASS / 256 | 15 | 15 (Day-35; but partner-side issues may reduce when re-validated against strict-rubric clean partners only) |
+| L2.1 GREEN | 28 | **9** (Day-36) |
+| L2.2 in-scope GREEN | 22 | **10** (Day-37 Phase B empirical) |
+| L2.5 honest PASS / 256 | 15 | 15 (Day-35) — partner-validity needs re-audit |
 
 ### Day-38 attack plan (priority order)
 
-1. **Empirically verify the 4 PROVISIONAL_GENUINE L2.2 claims** (~30-60 min each). Run the L2.2 distributional test with the runner's state overlay restricted to declared observables + no hint feed. If they still pass the KS + Wasserstein thresholds, promote to VERIFIED_GENUINE. Expected: 2-4 will hold. Anything below 2 means even the "clean" set is suspect.
-2. **Investigate SUSPECT_LAUNDERED mechanism for one representative case** (Metabolism). Trace through the L2.2 runner to find how OC's no-hint biology output matches Karr's distribution despite L2.1 strict FAIL. Likely answer: the runner overlays additional state that L2.1 doesn't.
-3. **Remove the explicit hint feed from Transcription and Translation L2.2 runners**. Re-run both. Expected: distributions will diverge from Karr because biology was being fed the answer.
-4. **Per-process biology gap investigations** for the 11 L2.1-FAIL processes — each needs a Karr-MATLAB-vs-OC comparison to identify what biology is missing or wrong. Multi-week scope.
-5. **Defer the deeper L2.5 honest-mode work** until L2.1 and L2.2 baselines are verified-genuine. The L2.5 honest PASSes ride on top of these and may not be meaningful until the foundation is rebuilt.
+1. **Investigate Metabolism real divergence** (~1-2h). W1=171.39 on substrates is real biology divergence, not laundering. Diagnose: FBA solver? substrate update step? allocator budget? Multi-day investigation but high-priority since Metabolism is foundational.
+2. **Fix ProteinTranslocation runner crash** (~30 min). Shape mismatch in projection helper. Once fixed, re-run to see if it PASSes the strict rubric.
+3. **Remove explicit hint feeds from Transcription + Translation L2.2 runners** (~30 min). Lines 1396-1413 and 1499-1511 of `_l2_2_design_a_runner_helpers.py`. Re-run; expected divergence on primary channels (both have trace-hint short-circuits).
+4. **Audit the 6 NOT_WIRED chromosome-port processes**: are their L2.2 PASS claims aspirational or from one-off custom tests? Search git log + audit any out-of-band runs. If aspirational, downgrade in PROCESS_STATUS.
+5. **Build the L2.event harness** for Cytokinesis + RibosomeAssembly (multi-week scope).
+6. **Per-process biology gap investigations** for the 11 L2.1-FAIL processes — each needs a Karr-MATLAB-vs-OC comparison to identify what biology is missing or wrong. Defer until items 1-5 land.
 
 ### Day-35 commits (all pushed):
 - `d11b2b6` plan(day-35): correct scoreboard to 8 honest PASS

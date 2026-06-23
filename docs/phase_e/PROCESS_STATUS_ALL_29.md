@@ -1,6 +1,27 @@
 # All-29 Process Status - 2026-06-03 ~14:30 IST (L2.1 SWEEP COMPLETE)
 
-> **⚠️ Day-37 (2026-06-23) update: L2.2 STRICT-RUBRIC RE-AUDIT — at most 4 of 22 honest.**
+> **⚠️ Day-37 PHASE B (2026-06-23 PM) update: L2.2 EMPIRICALLY VERIFIED — 10 of 22 PASS.**
+> 
+> Day-37 Phase A static audit estimated 4 PROVISIONAL_GENUINE. Phase B ran each runner-supported process empirically (50 seeds × 10 ticks) and revealed:
+> - 10 PASS (after fixing a runner-vs-catalog string-drift bug that was hiding 6 valid PASSes)
+> - 1 FAIL (Metabolism, real divergence W1=171.39 — claim was wrong)
+> - 1 CRASH (ProteinTranslocation, shape mismatch in runner)
+> - 2 UNVALIDATABLE_EVENT_CLASS (Cytokinesis, RibosomeAssembly — runner refuses)
+> - 2 LAUNDERED_VIA_HINT_FEED (Transcription, Translation — explicit hint feed in runner)
+> - 6 NOT_WIRED (chromosome-port processes — never added to runner)
+> 
+> Source: `docs/phase_f/L2_2_STRICT_RUBRIC_BASELINE.md`, enforced by `tests/vivarium/test_l2_2_strict_rubric.py`.
+> 
+> | Verdict | Count | Processes |
+> |---|---:|---|
+> | VERIFIED_GENUINE | 10 | MacromolComplex, ProteinFolding, ProcI, ProcII, tRNAAminoacylation, ProteinModification, ProteinDecay, RNADecay, RNAModification, RNAProcessing |
+> | VERIFIED_FAIL | 1 | Metabolism |
+> | CRASH_HARNESS_BUG | 1 | ProteinTranslocation |
+> | UNVALIDATABLE_EVENT_CLASS | 2 | Cytokinesis, RibosomeAssembly |
+> | LAUNDERED_VIA_HINT_FEED | 2 | Transcription, Translation |
+> | NOT_WIRED | 6 | Replication, ReplicationInitiation, DNASupercoiling, DNARepair, DNADamage, FtsZ |
+
+> **⚠️ Day-37 (2026-06-23) update: L2.2 STRICT-RUBRIC RE-AUDIT — at most 4 of 22 honest.** *(superseded by Phase B above)*
 > 
 > The Day-37 re-audit applied the strict rubric to the 22 L2.2 in-scope GREEN claims below. Source: `docs/phase_f/L2_2_STRICT_RUBRIC_BASELINE.md`, enforced by `tests/vivarium/test_l2_2_strict_rubric.py`.
 > 

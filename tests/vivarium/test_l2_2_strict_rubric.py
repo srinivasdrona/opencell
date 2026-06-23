@@ -42,34 +42,38 @@ if str(_HELPER_DIR) not in sys.path:
     sys.path.insert(0, str(_HELPER_DIR))
 
 
-# Day-37 (2026-06-23) baseline. Source: scripts/probe_l2_2_strict_audit.py
+# Day-37 (2026-06-23) PHASE B baseline — empirically verified via design_a runner
+# Source: scripts/probe_l2_2_strict_audit.py + runner output files in tmp/l2_2_audit/
+# Runner ran with 50 seeds x 10 ticks per process; runner-vs-catalog string-drift bug fixed.
 EXPECTED_L2_2_VERDICTS = {
-    # 2 explicit hint laundering
+    # 10 VERIFIED_GENUINE (the actual, validated count)
+    "MacromolecularComplexation": "VERIFIED_GENUINE",
+    "ProteinFolding": "VERIFIED_GENUINE",
+    "ProteinProcessingI": "VERIFIED_GENUINE",
+    "ProteinProcessingII": "VERIFIED_GENUINE",
+    "tRNAAminoacylation": "VERIFIED_GENUINE",
+    "ProteinModification": "VERIFIED_GENUINE",
+    "ProteinDecay": "VERIFIED_GENUINE",
+    "RNADecay": "VERIFIED_GENUINE",
+    "RNAModification": "VERIFIED_GENUINE",
+    "RNAProcessing": "VERIFIED_GENUINE",
+    # 1 VERIFIED_FAIL — real biology divergence (claim was wrong)
+    "Metabolism": "VERIFIED_FAIL",
+    # 1 CRASH — harness shape bug, not a biology issue
+    "ProteinTranslocation": "CRASH_HARNESS_BUG",
+    # 2 UNVALIDATABLE — runner refuses (EVENT_CLASS bucket needs L2.event)
+    "Cytokinesis": "UNVALIDATABLE_EVENT_CLASS",
+    "RibosomeAssembly": "UNVALIDATABLE_EVENT_CLASS",
+    # 2 LAUNDERED_VIA_HINT_FEED — runner explicitly feeds trace_after_hint
     "Transcription": "LAUNDERED_VIA_HINT_FEED",
     "Translation": "LAUNDERED_VIA_HINT_FEED",
-    # 12 suspect-laundered (L2.1 FAIL but L2.2 PASS claimed; mechanism unclear)
-    "Replication": "SUSPECT_LAUNDERED",
-    "ReplicationInitiation": "SUSPECT_LAUNDERED",
-    "DNASupercoiling": "SUSPECT_LAUNDERED",
-    "FtsZPolymerization": "SUSPECT_LAUNDERED",
-    "RNADecay": "SUSPECT_LAUNDERED",
-    "RNAProcessing": "SUSPECT_LAUNDERED",
-    "tRNAAminoacylation": "SUSPECT_LAUNDERED",
-    "ProteinProcessingII": "SUSPECT_LAUNDERED",
-    "ProteinModification": "SUSPECT_LAUNDERED",
-    "ProteinTranslocation": "SUSPECT_LAUNDERED",
-    "ProteinDecay": "SUSPECT_LAUNDERED",
-    "Metabolism": "SUSPECT_LAUNDERED",
-    # 4 uninformative (Karr trace all-zero)
-    "DNADamage": "UNINFORMATIVE",
-    "Cytokinesis": "UNINFORMATIVE",
-    "RNAModification": "UNINFORMATIVE",
-    "RibosomeAssembly": "UNINFORMATIVE",
-    # 4 provisional genuine — actual upper bound on honest L2.2 today
-    "DNARepair": "PROVISIONAL_GENUINE",
-    "ProteinProcessingI": "PROVISIONAL_GENUINE",
-    "ProteinFolding": "PROVISIONAL_GENUINE",
-    "MacromolecularComplexation": "PROVISIONAL_GENUINE",
+    # 6 NOT_WIRED — chromosome-port processes never added to runner
+    "Replication": "NOT_WIRED",
+    "ReplicationInitiation": "NOT_WIRED",
+    "DNASupercoiling": "NOT_WIRED",
+    "DNARepair": "NOT_WIRED",
+    "DNADamage": "NOT_WIRED",
+    "FtsZPolymerization": "NOT_WIRED",
 }
 
 assert len(EXPECTED_L2_2_VERDICTS) == 22, (

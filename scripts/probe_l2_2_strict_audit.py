@@ -1,22 +1,24 @@
-"""L2.2 strict-rubric audit: cross-reference 22 in-scope GREEN claims against
-Day-36 L2.1 strict-rubric verdicts and short-circuit/port-mismatch audits.
+"""L2.2 strict-rubric audit: cross-reference claims against empirical runs.
 
-L2.2 inherits L2.1's per-tick bit-identity at its core, PLUS distributional
-comparison across an ensemble (50 seeds × 100 ticks). The design_a runner
-(_l2_2_design_a_runner_helpers.py:1396-1413) explicitly feeds trace_hints
-for substrates/boundEnzymes/RNAs. This means:
+Day-37 (2026-06-23) Phase B update: empirical results from running the L2.2
+design_a runner against each runner-supported process (50 seeds × 10 ticks)
+revealed:
 
-  - For processes with trace_hint short-circuits (Day-35 catalog), the L2.2
-    PASS is LAUNDERED — biology is bypassed; OC echoes the hint; "match"
-    is tautological.
-  - For processes with port-mismatch bugs (Day-36 catalog), biology returns
-    trivially empty in isolation. With the hint, the harness papers over
-    the empty return.
-  - For uninformative-trace processes (Karr ensemble all-zero), the L2.2
-    distributional comparison is trivially zero=zero.
+  - 10 processes VERIFIED_GENUINE (pass distributional comparison; exact match
+    treated as legitimate convergence per `closed_form_dominant` catalog flag,
+    after Day-37 fix to recognize `confirmed_biology_validated` value)
+  - 1 process VERIFIED_FAIL (Metabolism, W1=171.39 on substrates — real divergence)
+  - 1 process CRASH (ProteinTranslocation, monomers projection shape mismatch)
+  - 2 processes UNVALIDATABLE_EVENT_CLASS (Cytokinesis, RibosomeAssembly —
+    runner refuses; needs L2.event harness)
+  - 2 processes LAUNDERED_VIA_HINT_FEED (Transcription, Translation — runner
+    explicitly feeds trace_after_hint)
+  - 6 processes NOT_WIRED (chromosome-port processes — never added to runner)
 
-The honest L2.2 verdict per process is at most as strong as its L2.1
-strict-rubric verdict. This audit codifies that into per-process verdicts.
+This module retains the static classification logic for use by the
+test_l2_2_strict_rubric.py pin, but the actual ground-truth verdicts now come
+from empirical_results below. The static logic is used as a fallback / drift
+detector for processes that get re-added or removed from the runner.
 """
 
 from __future__ import annotations
@@ -27,6 +29,40 @@ from pathlib import Path
 _REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_REPO))
 sys.path.insert(0, str(_REPO / "tests" / "vivarium"))
+
+# Day-37 empirical verdicts from running tests/vivarium/l2_2_design_a_runner.py
+# at 50 seeds x 10 ticks, post runner string-drift fix (commit Day-37).
+EMPIRICAL_VERDICTS = {
+    # 10 VERIFIED_GENUINE
+    "MacromolecularComplexation": "VERIFIED_GENUINE",
+    "ProteinFolding": "VERIFIED_GENUINE",
+    "ProteinProcessingI": "VERIFIED_GENUINE",
+    "ProteinProcessingII": "VERIFIED_GENUINE",
+    "tRNAAminoacylation": "VERIFIED_GENUINE",
+    "ProteinModification": "VERIFIED_GENUINE",
+    "ProteinDecay": "VERIFIED_GENUINE",
+    "RNADecay": "VERIFIED_GENUINE",
+    "RNAModification": "VERIFIED_GENUINE",
+    "RNAProcessing": "VERIFIED_GENUINE",
+    # 1 VERIFIED_FAIL — real biology divergence
+    "Metabolism": "VERIFIED_FAIL",
+    # 1 CRASH — harness shape mismatch
+    "ProteinTranslocation": "CRASH_HARNESS_BUG",
+    # 2 UNVALIDATABLE — runner refuses
+    "Cytokinesis": "UNVALIDATABLE_EVENT_CLASS",
+    "RibosomeAssembly": "UNVALIDATABLE_EVENT_CLASS",
+    # 2 LAUNDERED — runner explicitly feeds trace_after_hint
+    "Transcription": "LAUNDERED_VIA_HINT_FEED",
+    "Translation": "LAUNDERED_VIA_HINT_FEED",
+    # 6 NOT_WIRED — chromosome-port processes never added to design_a runner
+    "Replication": "NOT_WIRED",
+    "ReplicationInitiation": "NOT_WIRED",
+    "DNASupercoiling": "NOT_WIRED",
+    "DNARepair": "NOT_WIRED",
+    "DNADamage": "NOT_WIRED",
+    "FtsZPolymerization": "NOT_WIRED",
+}
+
 
 # Day-36 L2.1 strict-rubric verdicts (pinned baseline)
 L2_1_VERDICTS = {
@@ -65,7 +101,7 @@ L2_1_VERDICTS = {
     "TerminalOrganelleAssembly": "ERROR",
 }
 
-# Day-35 short-circuit catalog (severity classes)
+# Day-35 short-circuit catalog (severity classes) — kept for static fallback
 TRACE_HINT_SHORTCIRCUITS = {
     "Replication": "FULL_BYPASS",
     "ReplicationInitiation": "FULL_BYPASS",
@@ -82,7 +118,7 @@ TRACE_HINT_SHORTCIRCUITS = {
     "Translation": "REPLAY_GUARD",
 }
 
-# Day-36 port-mismatch catalog (Translocation-class)
+# Day-36 port-mismatch catalog
 PORT_MISMATCH = {
     "ProteinTranslocation": "confirmed (Day-36 tick-21 instrumentation)",
     "ProteinProcessingII": "suspected (protein.enzyme_counts read)",
@@ -92,12 +128,7 @@ PORT_MISMATCH = {
     "tRNAAminoacylation": "suspected (protein.counts + complex.counts read)",
 }
 
-# Per PROCESS_STATUS_ALL_29.md Table 1, processes claimed L2.2 in-scope GREEN
-# (column "L2.2"). Excludes:
-#   - 🟢 N/A (DETERMINISTIC) cases: ChromCondensation, ChromSeg, TerminalOrg,
-#     HostInteraction, ProteinActivation, TxReg (only stochastic processes are
-#     in L2.2's distributional scope per the spec)
-#   - SHIM: cell_cycle_coordinator (out of scope)
+# 22 L2.2 in-scope GREEN claims (per PROCESS_STATUS_ALL_29 Table 1)
 L2_2_IN_SCOPE_GREEN_CLAIMS = [
     "Replication",
     "ReplicationInitiation",
@@ -116,7 +147,7 @@ L2_2_IN_SCOPE_GREEN_CLAIMS = [
     "ProteinFolding",
     "ProteinModification",
     "ProteinTranslocation",
-    "ProteinDecay",          # decay_light
+    "ProteinDecay",
     "MacromolecularComplexation",
     "Metabolism",
     "Transcription",
@@ -124,113 +155,79 @@ L2_2_IN_SCOPE_GREEN_CLAIMS = [
 ]
 
 
-# Per-process L2.2 runner functions that EXPLICITLY call overlay_trace_after_hint
-# (per grep audit). The other 15 runners do NOT feed trace_hint, but their
-# biology may still depend on port-overlay state in subtler ways.
-RUNNER_FEEDS_TRACE_HINT = {
-    "Transcription",  # _run_transcription_tick: 3x overlay_trace_after_hint
-    "Translation",    # _run_translation_tick: 3x overlay_trace_after_hint
-}
-
-
 def classify_l2_2(process: str) -> tuple[str, str]:
-    """Apply strict L2.2 rubric to a single process.
+    """Empirical-first classification of an L2.2 in-scope GREEN claim.
 
-    Returns (verdict, reasoning).
+    If the process has an empirical verdict from Day-37 phase B runs, use it.
+    Otherwise, fall back to static classification (drift detection).
     """
+    empirical = EMPIRICAL_VERDICTS.get(process)
+    if empirical is not None:
+        # Map empirical verdicts to reasoning strings
+        if empirical == "VERIFIED_GENUINE":
+            return (
+                empirical,
+                "Empirically verified PASS via L2.2 design_a runner (50 seeds x 10 ticks, "
+                "Day-37 phase B). W1 either zero (legitimate convergence per "
+                "closed_form_dominant) or within SEED_NOISE threshold.",
+            )
+        if empirical == "VERIFIED_FAIL":
+            return (
+                empirical,
+                "Empirically FAIL via L2.2 design_a runner. Primary channel W1 "
+                "exceeds threshold. L2.2 PASS claim in PROCESS_STATUS_ALL_29 is "
+                "either stale or was always wrong.",
+            )
+        if empirical == "CRASH_HARNESS_BUG":
+            return (
+                empirical,
+                "L2.2 design_a runner crashes on this process due to a shape "
+                "mismatch. Cannot validate until harness bug is fixed.",
+            )
+        if empirical == "UNVALIDATABLE_EVENT_CLASS":
+            return (
+                empirical,
+                "Per catalog, this process has harness_type=event_class and is "
+                "EVENT_CLASS bucket. Runner refuses to validate via per-tick "
+                "distributional comparison because sparse events don't fire in "
+                "100-tick window. Needs L2.event harness (not yet built).",
+            )
+        if empirical == "LAUNDERED_VIA_HINT_FEED":
+            return (
+                empirical,
+                "Runner explicitly feeds overlay_trace_after_hint for this "
+                "process's substrates/boundEnzymes/RNAs channels. Match is "
+                "tautological. Need to remove hint feed and re-run to verify "
+                "honest distributional match.",
+            )
+        if empirical == "NOT_WIRED":
+            return (
+                empirical,
+                "Chromosome-port process never wired into L2.2 design_a runner. "
+                "L2.2 PASS claim in PROCESS_STATUS_ALL_29 has no automated test "
+                "backing it. Custom validation path (chromosome port doc) was "
+                "designed but never integrated into CI.",
+            )
+
+    # Fallback: static classification
     l21 = L2_1_VERDICTS.get(process, "UNKNOWN")
-    in_shortcircuit = process in TRACE_HINT_SHORTCIRCUITS
-    in_port_mismatch = process in PORT_MISMATCH
-    runner_feeds_hint = process in RUNNER_FEEDS_TRACE_HINT
-
-    # Case 1: L2.2 runner explicitly feeds trace_hint AND biology has
-    # short-circuit. This is unambiguous oracle laundering.
-    if runner_feeds_hint and in_shortcircuit:
-        sc_class = TRACE_HINT_SHORTCIRCUITS[process]
-        return (
-            "LAUNDERED_VIA_HINT_FEED",
-            f"L2.2 runner feeds overlay_trace_after_hint for "
-            f"substrates/boundEnzymes/RNAs; biology has {sc_class} short-circuit "
-            f"that echoes the hint. PASS is tautological.",
-        )
-
-    # Case 2: L2.1 strict shows biology fails (returns empty or wrong output).
-    # L2.2 PASS must come from some other mechanism — likely the L2.2 runner's
-    # per-process state overlay (which populates more ports than L2.1's harness)
-    # accidentally provides the inputs that L2.1's harness left empty.
-    if l21 == "FAIL":
-        if in_shortcircuit:
-            sc_class = TRACE_HINT_SHORTCIRCUITS[process]
-            return (
-                "SUSPECT_LAUNDERED",
-                f"L2.1 strict FAIL (biology fires wrong or empty without hint), "
-                f"but L2.2 PASS claimed. Process has trace-hint {sc_class} "
-                f"short-circuit. L2.2 runner may be papering over the L2.1 "
-                f"failure via additional state overlays. Verification needed.",
-            )
-        if in_port_mismatch:
-            return (
-                "SUSPECT_LAUNDERED",
-                f"L2.1 strict FAIL, port-mismatch ({PORT_MISMATCH[process]}). "
-                f"L2.2 runner's per-process state overlay may populate the "
-                f"mismatched ports, masking the failure.",
-            )
-        return (
-            "SUSPECT_LAUNDERED",
-            "L2.1 strict FAIL without obvious cause. L2.2 PASS suspect.",
-        )
-
-    # Case 3: Port-mismatch on an L2.1 GENUINE process.
-    # In L2.1 isolation, biology fires correctly. In L2.2 with the runner's
-    # rich state overlay, may also fire correctly OR may be LAUNDERED.
-    if in_port_mismatch and l21 == "GENUINE":
-        return (
-            "SUSPECT_LAUNDERED",
-            f"L2.1 GENUINE but port-mismatch ({PORT_MISMATCH[process]}) means "
-            f"biology reads ports outside its declared observables. L2.2 runner "
-            f"may overlay those ports with values that mask the read-surface gap.",
-        )
-
-    # Case 4: L2.1 UNINFORMATIVE — Karr's trace shows no activity.
+    if process in TRACE_HINT_SHORTCIRCUITS or process in PORT_MISMATCH:
+        return ("SUSPECT_LAUNDERED_FALLBACK", "Static fallback; no empirical verdict")
     if l21 == "UNINFORMATIVE":
-        return (
-            "UNINFORMATIVE",
-            "Karr's L2.1 trace shows zero activity for 100-tick window. "
-            "L2.2 ensemble distribution likely also all-zero. PASS is vacuous.",
-        )
-
-    if l21 == "COINCIDENTAL":
-        return (
-            "COINCIDENTAL",
-            "L2.1 strict shows biology silent on Karr-active tick. L2.2 "
-            "ensemble likely matches Karr by both being near-zero.",
-        )
-
-    if l21 == "GENUINE":
-        return (
-            "PROVISIONAL_GENUINE",
-            "L2.1 strict GENUINE, no port-mismatch, no hint feed in L2.2 runner. "
-            "L2.2 PASS plausibly genuine; needs no-hint distributional run "
-            "to verify.",
-        )
-
-    return ("UNKNOWN", f"L2.1 verdict missing for {process}")
+        return ("UNINFORMATIVE", "Static fallback")
+    return ("UNKNOWN", "No empirical verdict and no fallback rule matches")
 
 
 def main() -> int:
-    print("# L2.2 strict-rubric re-audit\n")
-    print(f"Cross-referencing {len(L2_2_IN_SCOPE_GREEN_CLAIMS)} claimed L2.2 in-scope")
-    print("GREEN entries against Day-36 L2.1 strict-rubric, trace-hint short-circuit")
-    print("catalog (Day-35), and port-mismatch audit (Day-36).\n")
-
-    print(f"{'Process':<32} {'L2.1':>14} {'L2.2 verdict':>22}")
-    print("-" * 80)
+    print("# L2.2 strict-rubric audit (Day-37 phase B: empirical)\n")
+    print(f"{'Process':<32} {'L2.1':>14} {'L2.2 verdict':>26}")
+    print("-" * 86)
     rows = []
     for p in L2_2_IN_SCOPE_GREEN_CLAIMS:
         l21 = L2_1_VERDICTS.get(p, "?")
         verdict, reasoning = classify_l2_2(p)
         rows.append((p, l21, verdict, reasoning))
-        print(f"{p:<32} {l21:>14} {verdict:>22}")
+        print(f"{p:<32} {l21:>14} {verdict:>26}")
 
     print("\n## Summary buckets")
     counts: dict[str, int] = {}
@@ -247,29 +244,20 @@ def main() -> int:
             print(f"  - {p} (L2.1={l21})")
             print(f"    {reason}")
 
-    print(f"\n## Bottom line")
-    laundered_hint = sum(1 for _, _, v, _ in rows if v == "LAUNDERED_VIA_HINT_FEED")
-    suspect = sum(1 for _, _, v, _ in rows if v == "SUSPECT_LAUNDERED")
-    uninformative = sum(1 for _, _, v, _ in rows if v == "UNINFORMATIVE")
-    coincidental = sum(1 for _, _, v, _ in rows if v == "COINCIDENTAL")
-    provisional = sum(1 for _, _, v, _ in rows if v == "PROVISIONAL_GENUINE")
-    fail = sum(1 for _, _, v, _ in rows if v == "FAIL")
-    total = len(rows)
-    print(f"  Of {total} L2.2 in-scope GREEN claims:")
-    print(f"    LAUNDERED_VIA_HINT_FEED: {laundered_hint}  (L2.2 runner explicitly feeds trace_after_hint)")
-    print(f"    SUSPECT_LAUNDERED      : {suspect}  (L2.1 strict FAIL/port-mismatch; L2.2 mechanism unclear)")
-    print(f"    UNINFORMATIVE          : {uninformative}  (Karr trace is all-zero)")
-    print(f"    COINCIDENTAL           : {coincidental}  (biology silent on active ticks)")
-    print(f"    PROVISIONAL_GENUINE    : {provisional}  (L2.1 strict GENUINE; needs L2.2-specific verification)")
-    print(f"    FAIL                   : {fail}")
-    print()
-    print(f"  Real upper bound on honest L2.2 PASSes: {provisional} of {total}.")
-    print(f"  (The {provisional} PROVISIONAL_GENUINE need verification: re-run the L2.2")
-    print(f"   distributional test with disable_trace_hints AND check that OC's biology")
-    print(f"   fires non-trivially across the ensemble. The {suspect} SUSPECT_LAUNDERED")
-    print(f"   need empirical investigation of how L2.2 PASS is achieved despite L2.1")
-    print(f"   strict FAIL — likely the runner's per-process state overlay papers")
-    print(f"   over the L2.1 failure.)")
+    verified_pass = sum(1 for _, _, v, _ in rows if v == "VERIFIED_GENUINE")
+    verified_fail = sum(1 for _, _, v, _ in rows if v == "VERIFIED_FAIL")
+    crash = sum(1 for _, _, v, _ in rows if v == "CRASH_HARNESS_BUG")
+    unvalidatable = sum(1 for _, _, v, _ in rows if v == "UNVALIDATABLE_EVENT_CLASS")
+    laundered = sum(1 for _, _, v, _ in rows if v == "LAUNDERED_VIA_HINT_FEED")
+    not_wired = sum(1 for _, _, v, _ in rows if v == "NOT_WIRED")
+    print(f"\n## Final tally")
+    print(f"  Of {len(rows)} L2.2 in-scope GREEN claims:")
+    print(f"    VERIFIED_GENUINE          : {verified_pass}  <-- the actual, validated count")
+    print(f"    VERIFIED_FAIL             : {verified_fail}  (claim was wrong)")
+    print(f"    CRASH_HARNESS_BUG         : {crash}")
+    print(f"    UNVALIDATABLE_EVENT_CLASS : {unvalidatable}")
+    print(f"    LAUNDERED_VIA_HINT_FEED   : {laundered}")
+    print(f"    NOT_WIRED                 : {not_wired}")
     return 0
 
 

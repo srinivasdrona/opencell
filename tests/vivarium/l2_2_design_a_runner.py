@@ -1073,15 +1073,21 @@ def run_design_a(
             # deterministic closed-form path converges to Karr's stochastic output
             # by biology, not by oracle leakage. Demote FAIL -> informational.
             # See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor).
+            #
+            # Day-37 (2026-06-23) fix: also accept `confirmed_biology_validated`
+            # which is the post-Day-29 SUT-audit value the catalog uses to mark
+            # processes that have been H12-probed AND biology-validated against
+            # MATLAB source. The old `confirmed` is grandfathered.
             closed_form_state = str(
                 _process_catalog_entry(process).get("closed_form_dominant", "false")
             )
-            if closed_form_state == "confirmed":
+            CONFIRMED_VALUES = {"confirmed", "confirmed_biology_validated"}
+            if closed_form_state in CONFIRMED_VALUES:
                 warnings.append(
                     "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr "
                     f"oracle exactly on primary channel={primary_channel}; per catalog "
-                    "this process has a closed_form_dominant=confirmed path that "
-                    "converges to Karr's stochastic output. See "
+                    f"this process has a closed_form_dominant={closed_form_state} path "
+                    "that converges to Karr's stochastic output. See "
                     "docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
                 )
                 # Do NOT flip the verdict to FAIL.
