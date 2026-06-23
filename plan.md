@@ -91,15 +91,19 @@ Of the 10 L2.2 GENUINE, **8 are also L2.1 GENUINE** (hierarchy holds). 2 anomalo
 
 ### Day-38 attack plan (priority order, updated)
 
-1. **Investigate Metabolism real divergence** (~1-2h). Stays priority #1; W1=171.39 on substrates is genuine biology divergence.
-2. **Investigate ProteinDecay L2.1 COINCIDENTAL with L2.2 PASS** (~30 min). Per-process state needs identification; either L2.1 strict harness needs richer state setup OR ProteinDecay's biology has hidden state dependence.
-3. **Investigate Replication L2.1 COINCIDENTAL** (~30 min). Same class as Metabolism — biology silent in honest mode.
-4. **Investigate TranscriptionalRegulation COINCIDENTAL** (~30 min). Similar pattern, smaller scope.
-5. **Fix ProteinTranslocation L2.2 runner crash** (~30 min). Harness shape bug.
-6. **Remove explicit hint feeds from Transcription + Translation L2.2 runners** (~30 min). Re-run; expect real divergence to surface.
-7. **Audit the 6 NOT_WIRED chromosome-port L2.2 PASS claims** — aspirational or one-off custom test?
+1. **Implement Metabolism fix per `docs/phase_f/METABOLISM_FIX_DESIGN.md`** (6-8 hours, multi-session). Highest-leverage single biology fix on the roadmap.
+   - Karr's `evolveState` (`Metabolism.m:1200-1258`) has 4 substrate update steps after FBA; OC implements ZERO of them
+   - Empirical probe at tick 0 (seed 000) shows Karr produces 148,121 molecules of substrate delta vs OC's 0
+   - With dynamic_bounds=True, OC produces 41 cytosol-only float deltas (no integer rounding) — still far from Karr
+   - Need: stochasticRound helper + nutrient uptake + internal exchange + biomass production + unaccounted energy
+   - Expected impact: L2.1 GENUINE 16→17, L2.2 GREEN 10→11, L2.5 honest 15→~38 (23 Metabolism pairs)
+2. **Investigate ProteinDecay L2.1 COINCIDENTAL with L2.2 PASS** (~30 min)
+3. **Investigate Replication L2.1 COINCIDENTAL** (~30 min)
+4. **Investigate TranscriptionalRegulation COINCIDENTAL** (~30 min)
+5. **Fix ProteinTranslocation L2.2 runner crash** (~30 min)
+6. **Remove explicit hint feeds from Transcription + Translation L2.2 runners** (~30 min)
+7. **Audit the 6 NOT_WIRED chromosome-port L2.2 PASS claims**
 8. Build L2.event harness for Cytokinesis + RibosomeAssembly (multi-week)
-9. Per-process biology gap investigations (defer until items 1-8 done)
 
 ### Day-35 commits (all pushed):
 - `d11b2b6` plan(day-35): correct scoreboard to 8 honest PASS
