@@ -46,8 +46,10 @@ if str(_HELPER_DIR) not in sys.path:
 # Source: scripts/probe_l2_2_strict_audit.py + runner output files in tmp/l2_2_audit/
 # Runner ran with 50 seeds x 10 ticks per process; runner-vs-catalog string-drift bug fixed.
 EXPECTED_L2_2_VERDICTS = {
-    # 11 VERIFIED_GENUINE (up from 10 at Day-37 Phase B; +ProteinTranslocation
-    # after Day-37 fix to project (6, 482) monomer cube to (482,))
+    # 13 VERIFIED_GENUINE (Day-37 Phase B baseline + Day-37 PM updates:
+    # +ProteinTranslocation after shape fix, +Transcription/+Translation after
+    # explicit hint-feed removal — biology actually matches Karr distributionally
+    # without the hint, so LAUNDERED classification was overly conservative)
     "MacromolecularComplexation": "VERIFIED_GENUINE",
     "ProteinFolding": "VERIFIED_GENUINE",
     "ProteinProcessingI": "VERIFIED_GENUINE",
@@ -59,14 +61,13 @@ EXPECTED_L2_2_VERDICTS = {
     "RNAModification": "VERIFIED_GENUINE",
     "RNAProcessing": "VERIFIED_GENUINE",
     "ProteinTranslocation": "VERIFIED_GENUINE",
+    "Transcription": "VERIFIED_GENUINE",
+    "Translation": "VERIFIED_GENUINE",
     # 1 VERIFIED_FAIL — real biology divergence (claim was wrong)
     "Metabolism": "VERIFIED_FAIL",
     # 2 UNVALIDATABLE — runner refuses (EVENT_CLASS bucket needs L2.event)
     "Cytokinesis": "UNVALIDATABLE_EVENT_CLASS",
     "RibosomeAssembly": "UNVALIDATABLE_EVENT_CLASS",
-    # 2 LAUNDERED_VIA_HINT_FEED — runner explicitly feeds trace_after_hint
-    "Transcription": "LAUNDERED_VIA_HINT_FEED",
-    "Translation": "LAUNDERED_VIA_HINT_FEED",
     # 6 NOT_WIRED — chromosome-port processes never added to runner
     "Replication": "NOT_WIRED",
     "ReplicationInitiation": "NOT_WIRED",

@@ -1407,24 +1407,12 @@ def _run_transcription_tick(seed: int, tick: int, state: dict[str, Any]) -> dict
         wids=rna_wids,
         store_path_override=_RNA_STORE_PATH_OVERRIDE,
     )
-    overlay_trace_after_hint(
-        state=runtime_state,
-        observable="substrates",
-        vector=np.asarray(state["oracle_after_substrates"], dtype=np.float64),
-        wids=substrate_wids,
-    )
-    overlay_trace_after_hint(
-        state=runtime_state,
-        observable="boundEnzymes",
-        vector=np.asarray(state["oracle_after_bound_enzymes"], dtype=np.float64),
-        wids=enzyme_wids,
-    )
-    overlay_trace_after_hint(
-        state=runtime_state,
-        observable="RNAs",
-        vector=np.asarray(state["oracle_after_rnas"], dtype=np.float64),
-        wids=rna_wids,
-    )
+    # Day-37 PM: removed overlay_trace_after_hint for substrates/boundEnzymes/RNAs.
+    # The hint feed turned this runner into oracle laundering for Transcription's
+    # CHEMISTRY_BYPASS short-circuit (it echoed the hinted next-state back as
+    # output, producing tautological PASSes). Per Day-37 L2.2 strict-rubric
+    # baseline (LAUNDERED_VIA_HINT_FEED bucket), the honest behavior is to NOT
+    # feed the trace_after_hint and let biology compute its own output.
     refresh_allocator_views(process, runtime_state)
     with forbid_sut_oracle_file_io():
         update = process.next_update(1.0, runtime_state)
@@ -1510,24 +1498,13 @@ def _run_translation_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[s
         wids=mrna_wids,
         store_path_override=_TRANSLATION_MRNA_STORE_PATH_OVERRIDE,
     )
-    overlay_trace_after_hint(
-        state=runtime_state,
-        observable="substrates",
-        vector=np.asarray(state["oracle_after_substrates"], dtype=np.float64),
-        wids=substrate_wids,
-    )
-    overlay_trace_after_hint(
-        state=runtime_state,
-        observable="monomers",
-        vector=np.asarray(state["oracle_after_monomers"], dtype=np.float64),
-        wids=monomer_wids,
-    )
-    overlay_trace_after_hint(
-        state=runtime_state,
-        observable="boundEnzymes",
-        vector=np.asarray(state["oracle_after_bound_enzymes"], dtype=np.float64),
-        wids=enzyme_wids,
-    )
+    # Day-37 PM: removed overlay_trace_after_hint for substrates/monomers/
+    # boundEnzymes. The hint feed turned this runner into oracle laundering
+    # for Translation's REPLAY_GUARD short-circuit. Per Day-37 L2.2 strict-
+    # rubric baseline (LAUNDERED_VIA_HINT_FEED bucket), the honest behavior
+    # is to NOT feed the trace_after_hint and let biology compute its own
+    # output. Translation's REPLAY_GUARD is hint-gated and transparent
+    # without a hint, so this exposes whatever biology actually does.
     refresh_allocator_views(process, runtime_state)
     with forbid_sut_oracle_file_io():
         update = process.next_update(1.0, runtime_state)

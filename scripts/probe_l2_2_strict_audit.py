@@ -33,7 +33,7 @@ sys.path.insert(0, str(_REPO / "tests" / "vivarium"))
 # Day-37 empirical verdicts from running tests/vivarium/l2_2_design_a_runner.py
 # at 50 seeds x 10 ticks, post runner string-drift fix (commit Day-37).
 EMPIRICAL_VERDICTS = {
-    # 11 VERIFIED_GENUINE (Day-37 Phase B + Translocation shape fix)
+    # 13 VERIFIED_GENUINE (Day-37 PM cumulative)
     "MacromolecularComplexation": "VERIFIED_GENUINE",
     "ProteinFolding": "VERIFIED_GENUINE",
     "ProteinProcessingI": "VERIFIED_GENUINE",
@@ -45,14 +45,13 @@ EMPIRICAL_VERDICTS = {
     "RNAModification": "VERIFIED_GENUINE",
     "RNAProcessing": "VERIFIED_GENUINE",
     "ProteinTranslocation": "VERIFIED_GENUINE",
+    "Transcription": "VERIFIED_GENUINE",
+    "Translation": "VERIFIED_GENUINE",
     # 1 VERIFIED_FAIL — real biology divergence
     "Metabolism": "VERIFIED_FAIL",
     # 2 UNVALIDATABLE — runner refuses
     "Cytokinesis": "UNVALIDATABLE_EVENT_CLASS",
     "RibosomeAssembly": "UNVALIDATABLE_EVENT_CLASS",
-    # 2 LAUNDERED — runner explicitly feeds trace_after_hint
-    "Transcription": "LAUNDERED_VIA_HINT_FEED",
-    "Translation": "LAUNDERED_VIA_HINT_FEED",
     # 6 NOT_WIRED — chromosome-port processes never added to design_a runner
     "Replication": "NOT_WIRED",
     "ReplicationInitiation": "NOT_WIRED",

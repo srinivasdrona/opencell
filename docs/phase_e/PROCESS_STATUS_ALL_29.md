@@ -1,8 +1,42 @@
 # All-29 Process Status - 2026-06-03 ~14:30 IST (L2.1 SWEEP COMPLETE)
 
-> **⚠️ Day-37 PM update: VERIFIED_GENUINE 10 → 11 after ProteinTranslocation runner shape fix.**
+> **⚠️ Day-37 EOD update: smaller-fixes batch (5 of 5) complete; honest L2.1 GENUINE 19/28, L2.2 VERIFIED_GENUINE 13/22.**
 > 
-> The runner crashed on Translocation with `shape (482,) into shape (2892,)` because the v2 ensemble loader flattens (6, 482) → 2892 but the runner overlays against 482 WIDs. Added `_project_protein_translocation_monomer_cube` to sum across compartments. Verdict moves CRASH_HARNESS_BUG → VERIFIED_GENUINE.
+> Five smaller fixes landed in one ~2.5h focused session before the planned Metabolism port:
+> 
+> 1. **ProteinTranslocation L2.2 runner shape fix** — CRASH → VERIFIED_GENUINE
+> 2. **TerminalOrganelleAssembly schema v2.1 fallback** — L2.1 ERROR → GENUINE
+> 3. **TranscriptionalRegulation + Metabolism non-standard channel detection** — both L2.1 COINCIDENTAL → GENUINE (their biology fires via `tf_binding`/`tx_rate_fold_change`/`metabolic_reaction.fluxs` which the strict rubric now recognizes)
+> 4. **Chromosome-port audit** — 6 NOT_WIRED claims documented as UNVALIDATED (no CI test exists for them; design_a runner doesn't support them)
+> 5. **Hint-feed removal for Transcription + Translation L2.2 runners** — both LAUNDERED → VERIFIED_GENUINE (biology actually matches Karr distributionally without the hint; LAUNDERED classification was overly conservative)
+> 
+> **L2.1 strict-rubric scoreboard (28 processes):**
+> 
+> | Verdict | Count |
+> |---|---:|
+> | GENUINE | **19** |
+> | UNINFORMATIVE | 6 |
+> | COINCIDENTAL | 2 (ProteinDecay, Replication — real biology gaps) |
+> | FAIL | 1 (ChromosomeCondensation) |
+> | ERROR | 0 |
+> 
+> **L2.2 strict-rubric scoreboard (22 processes):**
+> 
+> | Verdict | Count |
+> |---|---:|
+> | VERIFIED_GENUINE | **13** |
+> | VERIFIED_FAIL | 1 (Metabolism) |
+> | UNVALIDATABLE_EVENT_CLASS | 2 |
+> | NOT_WIRED (UNVALIDATED) | 6 |
+> | LAUNDERED_VIA_HINT_FEED | 0 (was 2; removed by hint-feed fix) |
+
+> **⚠️ Day-37 PM update: VERIFIED_GENUINE 10 → 11 after ProteinTranslocation runner shape fix; the 6 chromosome-port L2.2 PASS claims are UNVALIDATED (no CI test).** *(superseded by EOD update above)*
+> 
+> Two updates landed Day-37 PM:
+> 
+> 1. **ProteinTranslocation L2.2 fix**: runner crashed on shape (482,) into shape (2892,). Added `_project_protein_translocation_monomer_cube` to sum across compartments. Verdict moves CRASH_HARNESS_BUG → VERIFIED_GENUINE.
+> 
+> 2. **Chromosome-port audit (6 processes)**: Replication, ReplicationInitiation, DNASupercoiling, DNARepair, DNADamage, FtsZPolymerization were claimed L2.2 PASS in Table 1 below under "(chromosome port)" annotations. **Git history shows the only L2.2 wire-up attempt for these (commit `10e2e57` for DNARepair) was REVERTED at `4657cb6` due to spec-authority and laundering issues (Day-22 fanout drift).** The design_a runner (`tests/vivarium/l2_2_design_a_runner.py`) explicitly does NOT support these 6 processes — running it returns: "Process 'X' is in scope in PROCESS_CATALOG.yaml ... but this runner currently supports only [16 processes, not the chromosome-port 6]." There is no CI-enforced L2.2 test for any of these. Their L2.2 PASS claims in the table below are aspirational/stale and should be read as **UNVALIDATED** until either (a) wired into the design_a runner with proper chromosome-primary projections (PC_T7 chromosome port design ratified but not implemented per `docs/phase_f/PC_T7_CHROMOSOME_PORT_DESIGN.md`), or (b) custom L2.2 test files authored.
 > 
 > **Updated empirical L2.2 baseline:**
 > 
@@ -12,7 +46,7 @@
 > | VERIFIED_FAIL | 1 (Metabolism) |
 > | UNVALIDATABLE_EVENT_CLASS | 2 |
 > | LAUNDERED_VIA_HINT_FEED | 2 |
-> | NOT_WIRED | 6 |
+> | NOT_WIRED (UNVALIDATED in table) | 6 — Repl, ReplInit, DNAS, DNARep, DNADamage, FtsZ |
 
 > **⚠️ Day-37 PHASE B (2026-06-23 PM) update: L2.2 EMPIRICALLY VERIFIED — 10 of 22 PASS.** *(superseded by Day-37 PM update above; +1 = 11 of 22)*
 > 

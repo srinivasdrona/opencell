@@ -61,13 +61,15 @@ from l2_replay_common import (  # type: ignore
 # processes (oracle_type=bit_identity). This is the correct rubric per
 # process class and restores the L2.2 ⊆ L2.1 hierarchy expectation.
 EXPECTED_VERDICTS = {
-    # GENUINE: 16 (biology fires on Karr-active ticks; bit-identity check
-    # passes for deterministic processes; distributional check implicit
-    # via fire-rate for stochastic)
+    # GENUINE: 19 (was 16; Day-37 PM: +TerminalOrg from schema-v2.1 fallback,
+    # +TranscriptionalRegulation and +Metabolism from non-standard channel
+    # detection — their biology fires on tf_binding/tx_rate_fold_change/
+    # metabolic_reaction.fluxs which the strict rubric now recognizes)
     "DNARepair": "GENUINE",
     "DNASupercoiling": "GENUINE",
     "FtsZPolymerization": "GENUINE",
     "MacromolecularComplexation": "GENUINE",
+    "Metabolism": "GENUINE",
     "ProteinActivation": "GENUINE",
     "ProteinFolding": "GENUINE",
     "ProteinModification": "GENUINE",
@@ -77,7 +79,9 @@ EXPECTED_VERDICTS = {
     "RNADecay": "GENUINE",
     "RNAProcessing": "GENUINE",
     "ReplicationInitiation": "GENUINE",
+    "TerminalOrganelleAssembly": "GENUINE",
     "Transcription": "GENUINE",
+    "TranscriptionalRegulation": "GENUINE",
     "Translation": "GENUINE",
     "tRNAAminoacylation": "GENUINE",
     # UNINFORMATIVE: 6 (Karr's trace shows no activity for 100-tick window)
@@ -87,17 +91,13 @@ EXPECTED_VERDICTS = {
     "HostInteraction": "UNINFORMATIVE",
     "RNAModification": "UNINFORMATIVE",
     "RibosomeAssembly": "UNINFORMATIVE",
-    # COINCIDENTAL: 4 (biology silent on Karr-active ticks; bit-identity
-    # would be irrelevant; even with oracle-type-aware rubric these fail
-    # because biology fires <50% of Karr-active ticks)
-    "Metabolism": "COINCIDENTAL",
+    # COINCIDENTAL: 2 (Metabolism + TxReg now GENUINE via non-standard channels;
+    # ProteinDecay and Replication still biology-silent on standard channels — real gaps)
     "ProteinDecay": "COINCIDENTAL",
     "Replication": "COINCIDENTAL",
-    "TranscriptionalRegulation": "COINCIDENTAL",
     # FAIL: 1 (bit-identity broken for deterministic process)
     "ChromosomeCondensation": "FAIL",
-    # ERROR: 1 (harness-config issue, not biology)
-    "TerminalOrganelleAssembly": "ERROR",
+    # ERROR: 0 (was 1 — TerminalOrg moved to GENUINE Day-37 PM after schema v2.1 fallback)
 }
 
 # Threshold for "Karr-active" — magnitude of |delta| considered non-trivial.
@@ -155,6 +155,43 @@ def _classify(name: str) -> dict:
                     if any(abs(float(v)) > 0 for v in delta_dict.values()):
                         oc_nonempty = True
                         break
+                # Day-37 fix: collect_count_delta_dicts only knows the standard
+                # ports (substrates/protein/rna/complex/boundEnzymes/enzymes).
+                # Some processes return biology output on non-standard channels
+                # that the strict rubric must still recognize as "biology fired":
+                #   - TranscriptionalRegulation: tf_binding, tx_rate_fold_change
+                #   - Metabolism: metabolic_reaction.fluxs
+                # Check these channels too before declaring biology silent.
+                if not oc_nonempty:
+                    for nonstd_key in ("tf_binding", "tx_rate_fold_change", "metabolic_reaction"):
+                        node = update.get(nonstd_key, None)
+                        if isinstance(node, dict) and node:
+                            # tf_binding is dict[str, dict[str, float]]; flatten
+                            # tx_rate_fold_change is dict[str, float] (multiplicative,
+                            # 1.0 = no change, so check != 1.0 not just != 0)
+                            if nonstd_key == "tx_rate_fold_change":
+                                if any(abs(float(v) - 1.0) > 1e-9 for v in node.values()):
+                                    oc_nonempty = True
+                                    break
+                            elif nonstd_key == "tf_binding":
+                                # dict[tf_wid, dict[tu_wid, delta]]
+                                for inner in node.values():
+                                    if isinstance(inner, dict) and any(
+                                        abs(float(v)) > 0 for v in inner.values()
+                                    ):
+                                        oc_nonempty = True
+                                        break
+                                if oc_nonempty:
+                                    break
+                            elif nonstd_key == "metabolic_reaction":
+                                # dict with "fluxs" (dict[rxn_id, flux]) plus
+                                # growth scalars; fluxs != 0 means biology fired
+                                fluxs = node.get("fluxs", {})
+                                if isinstance(fluxs, dict) and any(
+                                    abs(float(v)) > 1e-9 for v in fluxs.values()
+                                ):
+                                    oc_nonempty = True
+                                    break
             if oc_nonempty:
                 oc_fired += 1
 

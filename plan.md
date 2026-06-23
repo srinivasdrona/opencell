@@ -71,47 +71,55 @@ Plus the SS dedicated test PPI+PPII (also clean×clean) **FAILED** today → 3rd
 - ~40 more PASSes possible from the 55 untested SS clean×clean
 - **Ceiling: ~48 honest PASS / 256 = 19%** (vs today's 8/256 = 3%)
 
-### Day-37 PM update: L2.1 + L2.2 progress, smaller fixes batch
+### Day-37 PM smaller-fixes batch (5 of 5 complete)
 
-User chose smaller-fixes-first path before Metabolism (rationale: don't lose smaller wins, build momentum). First fix landed this evening:
+User chose smaller-fixes-first path before Metabolism. All 5 Metabolism-independent items landed in one focused session (~2.5 h total):
 
-**Fix #1: ProteinTranslocation runner shape mismatch (`d7df2a0+`)**
+| # | Fix | Result |
+|---|---|---|
+| 1 | ProteinTranslocation runner shape mismatch | L2.2 CRASH → VERIFIED_GENUINE (+1) |
+| 2 | TerminalOrganelleAssembly schema v2.1 fallback | L2.1 ERROR → GENUINE (+1) |
+| 3 | TranscriptionalRegulation + Metabolism non-standard channel detection | L2.1 COINCIDENTAL → GENUINE (+2) |
+| 4 | Audit 6 NOT_WIRED chromosome-port L2.2 claims | Documented as UNVALIDATED in PROCESS_STATUS |
+| 5 | Remove explicit hint feeds from Transcription + Translation runners | L2.2 LAUNDERED → VERIFIED_GENUINE (+2) |
 
-The L2.2 design_a runner crashed on ProteinTranslocation with `shape (482,) into shape (2892,)` because the v2 ensemble loader flattens the (6 compartments, 482 proteins) monomers cube to length 2892 but the runner overlays it against a 482-WID list.
+### Updated honest cross-ladder baseline (Day-37 EOD)
 
-Added `_project_protein_translocation_monomer_cube` helper (parallel to `_project_protein_decay_monomer_cube`) that sums across compartments to project (6, 482) → (482,). Wired into `_format_ensemble_oracle` for ProteinTranslocation.
+| Claim | Was claimed | Day-37 EOD | Δ from Day-37 AM |
+|---|---:|---:|---:|
+| L2.1 GENUINE | 28 | **19** | +3 (was 16; +TermOrg, +TxReg, +Metabolism) |
+| L2.2 in-scope GREEN | 22 | **13** | +3 (was 10; +Translocation, +Transcription, +Translation) |
+| L2.5 honest PASS / 256 | 15 | 15 | 0 (untouched) |
 
-**Result:** ProteinTranslocation L2.2 verdict moves CRASH_HARNESS_BUG → VERIFIED_GENUINE (substrates=SEED_NOISE@0, monomers=SEED_NOISE@0.0004). Clean PASS, no laundering warnings. L2.5 composition still fails (separate Day-35 port-mismatch bug; this fix doesn't touch that).
+### L2.1 verdict scoreboard (28 processes)
 
-### Updated empirical L2.2 baseline (Day-37 evening)
+| Verdict | Count |
+|---|---:|
+| GENUINE | 19 |
+| UNINFORMATIVE | 6 |
+| COINCIDENTAL | 2 (ProteinDecay, Replication — real biology gaps) |
+| FAIL | 1 (ChromosomeCondensation) |
+| ERROR | 0 |
 
-| Verdict | Count | Δ |
-|---|---:|---:|
-| VERIFIED_GENUINE | **11** | +1 (ProteinTranslocation) |
-| VERIFIED_FAIL | 1 | 0 (Metabolism) |
-| CRASH_HARNESS_BUG | 0 | -1 |
-| UNVALIDATABLE_EVENT_CLASS | 2 | 0 |
-| LAUNDERED_VIA_HINT_FEED | 2 | 0 |
-| NOT_WIRED | 6 | 0 |
+### L2.2 verdict scoreboard (22 processes)
 
-### Updated honest cross-ladder baseline
+| Verdict | Count |
+|---|---:|
+| VERIFIED_GENUINE | 13 |
+| VERIFIED_FAIL | 1 (Metabolism) |
+| UNVALIDATABLE_EVENT_CLASS | 2 (Cytokinesis, RibosomeAssembly — needs L2.event) |
+| NOT_WIRED (UNVALIDATED) | 6 (chromosome-port — never wired into design_a runner) |
+| LAUNDERED_VIA_HINT_FEED | 0 (was 2, removed by hint-feed fix) |
 
-| Claim | Was claimed | Honest baseline |
-|---|---:|---:|
-| L2.1 GREEN | 28 | **16** (Day-37, oracle-type-aware) |
-| L2.2 in-scope GREEN | 22 | **11** (Day-37 PM, +Translocation) |
-| L2.5 honest PASS / 256 | 15 | 15 (Day-35) |
+### Day-38 priority: Metabolism focused fix
 
-### Remaining Day-38 smaller fixes (Metabolism-independent)
+The smaller-fixes batch is done. Next is the Metabolism Karr substrate-update port per `docs/phase_f/METABOLISM_FIX_DESIGN.md` (6-8 hours focused engineering, possibly 1-3 days realistic).
 
-In priority order:
-1. **TerminalOrganelleAssembly config fix** (~15 min) — ERROR bucket; schema_path not passed
-2. **TranscriptionalRegulation port-mismatch investigation** (~30 min) — COINCIDENTAL; same class as Translocation port-mismatch
-3. **Audit 6 NOT_WIRED chromosome-port L2.2 claims** (~30-60 min) — documentation work
-4. **Remove explicit hint feeds from Transcription + Translation L2.2 runners** (~30 min) — methodology fix
-5. **Skip-unblock investigation for 34 SS skipped pairs** (~30-60 min)
-
-Then: **Metabolism focused fix** per `docs/phase_f/METABOLISM_FIX_DESIGN.md` (6-8h estimated, possibly 1-3 days realistic).
+Expected impact:
+- L2.1 GENUINE: 19 (already there — Metabolism biology fires via metabolic_reaction.fluxs)
+- L2.2 VERIFIED_GENUINE: 13 → 14 (Metabolism moves from VERIFIED_FAIL to GENUINE)
+- L2.5 honest PASS: 15 → ~38 (23 Metabolism-pair unlocks if substrate biology is right)
+- Cascade unlock potential: ProteinDecay/Replication may move COINCIDENTAL → GENUINE if their failure is substrate starvation
 
 ### Day-35 commits (all pushed):
 - `d11b2b6` plan(day-35): correct scoreboard to 8 honest PASS
