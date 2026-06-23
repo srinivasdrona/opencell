@@ -71,33 +71,32 @@ Plus the SS dedicated test PPI+PPII (also clean×clean) **FAILED** today → 3rd
 - ~40 more PASSes possible from the 55 untested SS clean×clean
 - **Ceiling: ~48 honest PASS / 256 = 19%** (vs today's 8/256 = 3%)
 
-### Day-36 EOD: L2.1 strict-rubric audit complete
+### Day-37 status: L2.2 strict-rubric re-audit complete
 
-**The honest L2.1 surface is 9 of 28 processes.** Strict rubric (`tests/vivarium/test_l2_1_strict_rubric.py`, baseline `docs/phase_f/L2_1_STRICT_RUBRIC_BASELINE.md`) adds two supplement checks on top of bit-identity:
-1. Karr-active rate: how many ticks have non-trivial recorded delta?
-2. OC-fire rate on Karr-active ticks: did biology actually run on those ticks?
+**At most 4 of 22 L2.2 in-scope GREEN claims are honest** per the strict rubric (Day-37 baseline: `docs/phase_f/L2_2_STRICT_RUBRIC_BASELINE.md`, enforced by `tests/vivarium/test_l2_2_strict_rubric.py`).
 
-**Verdict scoreboard:**
-
-| Verdict | Count | Processes |
+| L2.2 verdict | Count | Reading |
 |---|---:|---|
-| GENUINE | **9** | DNARepair, MacromolComplex, ProteinActivation, ProteinFolding, ProcI, ProcII, RNAProcessing, Translation, tRNAAminoacylation |
-| UNINFORMATIVE | 6 | Seg, Cytokinesis, DNADamage, HostInteraction, RNAModification, RibosomeAssembly — trace shows no activity |
-| COINCIDENTAL | 1 | TranscriptionalRegulation — biology silent on the one Karr-active tick |
-| FAIL strict | 11 | The 13 trace-hint short-circuited processes + ProteinTranslocation (overlap accounts for 11 not 14) |
-| ERROR | 1 | TerminalOrganelleAssembly config |
+| LAUNDERED_VIA_HINT_FEED | 2 | Transcription, Translation — runner explicitly feeds `overlay_trace_after_hint` |
+| SUSPECT_LAUNDERED | 12 | L2.1 strict FAIL or port-mismatch; L2.2 mechanism unclear (likely runner state overlay papers over the gap) |
+| UNINFORMATIVE | 4 | Karr trace is all-zero (DNADamage, Cytokinesis, RNAModification, RibosomeAssembly) |
+| PROVISIONAL_GENUINE | 4 | DNARepair, ProteinProcessingI, ProteinFolding, MacromolecularComplexation |
 
-The 11 FAIL processes are the real biology gaps. L2.2 inherits L2.1's per-tick check, so the 22/22 L2.2 GREEN claim is structurally vacuous for any process whose L2.1 isn't GENUINE — likely 6-7 honest L2.2 PASSes, not 22.
+**The honest cross-ladder baseline going into Day-38:**
 
-### Day-37 priorities
+| Claim | Was claimed | Honest baseline |
+|---|---:|---:|
+| L2.1 GREEN | 28 | 9 (Day-36) |
+| L2.2 in-scope GREEN | 22 | ≤ 4 (Day-37) |
+| L2.5 honest PASS / 256 | 15 | 15 (Day-35; but partner-side issues may reduce when re-validated against strict-rubric clean partners only) |
 
-1. **Re-audit L2.2 with the strict rubric.** Apply the same Karr-active / fire-rate check to the L2.2 distributional tests. Report honest L2.2 count.
-2. **Per-process biology gap investigations** for the 11 FAIL processes — each needs a Karr-MATLAB-vs-OC comparison to identify what biology is missing or wrong. Multi-week scope.
-3. **Extend traces or build synthetic scenarios** for the 6 UNINFORMATIVE processes so they can be validated.
-4. **Fix TerminalOrganelleAssembly config** (ERROR bucket; small).
-5. **Investigate TranscriptionalRegulation port-mismatch** (COINCIDENTAL; same class as ProteinTranslocation).
+### Day-38 attack plan (priority order)
 
-Day-22 (post-discovery) blog: `docs/blog/2026-06-22-nine-out-of-twenty-eight.md`.
+1. **Empirically verify the 4 PROVISIONAL_GENUINE L2.2 claims** (~30-60 min each). Run the L2.2 distributional test with the runner's state overlay restricted to declared observables + no hint feed. If they still pass the KS + Wasserstein thresholds, promote to VERIFIED_GENUINE. Expected: 2-4 will hold. Anything below 2 means even the "clean" set is suspect.
+2. **Investigate SUSPECT_LAUNDERED mechanism for one representative case** (Metabolism). Trace through the L2.2 runner to find how OC's no-hint biology output matches Karr's distribution despite L2.1 strict FAIL. Likely answer: the runner overlays additional state that L2.1 doesn't.
+3. **Remove the explicit hint feed from Transcription and Translation L2.2 runners**. Re-run both. Expected: distributions will diverge from Karr because biology was being fed the answer.
+4. **Per-process biology gap investigations** for the 11 L2.1-FAIL processes — each needs a Karr-MATLAB-vs-OC comparison to identify what biology is missing or wrong. Multi-week scope.
+5. **Defer the deeper L2.5 honest-mode work** until L2.1 and L2.2 baselines are verified-genuine. The L2.5 honest PASSes ride on top of these and may not be meaningful until the foundation is rebuilt.
 
 ### Day-35 commits (all pushed):
 - `d11b2b6` plan(day-35): correct scoreboard to 8 honest PASS

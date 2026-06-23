@@ -1,6 +1,23 @@
 # All-29 Process Status - 2026-06-03 ~14:30 IST (L2.1 SWEEP COMPLETE)
 
-> **⚠️ Day-36 (2026-06-22) addendum: STRICT-RUBRIC AUDIT — L2.1 honest count is 9/28, not 28/28.**
+> **⚠️ Day-37 (2026-06-23) update: L2.2 STRICT-RUBRIC RE-AUDIT — at most 4 of 22 honest.**
+> 
+> The Day-37 re-audit applied the strict rubric to the 22 L2.2 in-scope GREEN claims below. Source: `docs/phase_f/L2_2_STRICT_RUBRIC_BASELINE.md`, enforced by `tests/vivarium/test_l2_2_strict_rubric.py`.
+> 
+> | Verdict | Count | Processes |
+> |---|---:|---|
+> | LAUNDERED_VIA_HINT_FEED | 2 | Transcription, Translation (runner-injected `overlay_trace_after_hint`) |
+> | SUSPECT_LAUNDERED | 12 | Replication, ReplicationInitiation, DNASupercoiling, FtsZ, RNADecay, RNAProcessing, tRNAAminoacylation, ProcII, ProteinModification, ProteinTranslocation, ProteinDecay, Metabolism |
+> | UNINFORMATIVE | 4 | DNADamage, Cytokinesis, RNAModification, RibosomeAssembly |
+> | PROVISIONAL_GENUINE | 4 | DNARepair, ProteinProcessingI, ProteinFolding, MacromolecularComplexation |
+> 
+> **Upper bound on honest L2.2 PASSes: 4 of 22 (18%).** These 4 still need empirical no-hint distributional verification before promoting to VERIFIED_GENUINE.
+> 
+> The 18 non-genuine claims include 13 with trace-hint short-circuits in their biology and 6 with port-mismatch reads (some overlap). The L2.2 design_a runner papers over some of these through its per-process state overlay; the rest are vacuous or laundered.
+> 
+> **The legacy L2.2 column in Table 1 below is preserved as historical record. The current honest L2.2 status is per the table above.**
+
+> **⚠️ Day-36 (2026-06-22) addendum: L2.1 STRICT-RUBRIC AUDIT — L2.1 honest count is 9/28, not 28/28.**
 > 
 > The Day-35/36 honest-mode audit revealed the L2.1 acceptance rubric (bit-identity per tick) was admitting three classes of false-positive PASSes:
 > - **Trace-hint short-circuits** (13 processes): biology bypassed via `state["trace_hint"]` echo
