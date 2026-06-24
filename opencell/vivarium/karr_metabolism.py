@@ -49,6 +49,7 @@ Two operating modes (selected by the ``dynamic_bounds`` parameter):
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -56,6 +57,17 @@ from vivarium.core.process import Process
 
 from opencell.m1 import calc_flux_bounds as cfb
 from opencell.m1 import karr_metabolism as km
+from opencell.m1.karr_metabolism_writeback import (
+    KarrWritebackFixture,
+    apply_karr_substrate_writeback,
+    project_to_flat_per_wid,
+    CYTOSOL,
+)
+from opencell.vivarium.karr_protein_decay_light import _Mcg16807
+
+_METAB_FIXTURE_PATH = (
+    Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"
+)
 
 # Substrate WCM IDs that the central-dogma chassis writes into the
 # shared `substrates` store and that M1 must drain into its internal
@@ -121,6 +133,12 @@ class KarrMetabolismProcess(Process):
         "enable_lp_writeback": True,
         "enable_pool_replenishment": False,
         "baseline_demand_per_s": None,
+        # Day-38: Karr's 4-step substrate writeback after FBA (Metabolism.m:1200-1258).
+        # When True, returns substrates delta from the full Karr evolveState
+        # algorithm. Replaces the partial S@v writeback in _dynamic_update and
+        # adds substrate writeback to _static_update. See METABOLISM_FIX_DESIGN.md.
+        "enable_karr_substrate_writeback": False,
+        "rng_seed": 0,
     }
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
@@ -142,6 +160,23 @@ class KarrMetabolismProcess(Process):
             else bool(self.parameters["enable_lp_writeback"])
         )
         self.enable_pool_replenishment: bool = bool(self.parameters["enable_pool_replenishment"])
+        self.enable_karr_substrate_writeback: bool = bool(
+            self.parameters["enable_karr_substrate_writeback"]
+        )
+        self._karr_writeback_fixture: KarrWritebackFixture | None = None
+        self._karr_writeback_rng: _Mcg16807 | None = None
+        self._karr_writeback_initial_585x3: np.ndarray | None = None
+        if self.enable_karr_substrate_writeback:
+            self._karr_writeback_fixture = KarrWritebackFixture.from_mat(_METAB_FIXTURE_PATH)
+            self._karr_writeback_rng = _Mcg16807(seed=int(self.parameters["rng_seed"]))
+            # Bootstrap non-cytosol pre-state from fixture so Step 5 clipping
+            # is correct on the first tick even when only cytosol values are
+            # in shared state. Updated each tick from the most recent state.
+            from scipy.io import loadmat as _loadmat
+            _mat = _loadmat(str(_METAB_FIXTURE_PATH), squeeze_me=True, struct_as_record=False)
+            self._karr_writeback_initial_585x3 = np.asarray(
+                _mat["data"].fixture.substrates, dtype=np.float64
+            ).copy()
         self._sub_state: np.ndarray | None = None
         self._enz_state: np.ndarray | None = None
         self._prev_shared: dict[str, float] | None = None
@@ -356,6 +391,29 @@ class KarrMetabolismProcess(Process):
             return self._static_update(timestep, states)
         return self._dynamic_update(timestep, states)
 
+    def _build_pre_state_585x3(self, states: dict) -> np.ndarray:
+        """Construct a (585, 3) pre-state matrix for Karr's writeback.
+
+        Cytosol values come from the shared `substrates` port. Non-cytosol
+        values come from the most recent internal state (`_sub_state` if
+        available, else the fixture defaults from Karr's initial state).
+        """
+        assert self._karr_writeback_initial_585x3 is not None
+        # Start from internal/fixture state, then overlay cytosol from shared.
+        if self._sub_state is not None:
+            pre = self._sub_state.copy()
+        else:
+            pre = self._karr_writeback_initial_585x3.copy()
+        subs_now = states.get("substrates", {})
+        if isinstance(subs_now, dict):
+            for sid, val in subs_now.items():
+                try:
+                    idx = self._sub_ids.index(sid)
+                except ValueError:
+                    continue
+                pre[idx, CYTOSOL] = float(val)
+        return pre
+
     def _static_update(self, timestep: float, states: dict) -> dict:
         v, info = km.solve_fba(
             self.model,
@@ -367,13 +425,29 @@ class KarrMetabolismProcess(Process):
         for col, rid in enumerate(self.model.fba_col_rxn_wcm):
             if rid is not None:
                 flux_update[rid] = float(v[col])
-        return {
+        result: dict[str, Any] = {
             "metabolic_reaction": {
                 "fluxs": flux_update,
                 "growth_per_s": float(info["biomass_flux_per_s"]),
                 "growth_per_h": float(info["biomass_flux_per_h"]),
             },
         }
+        if self.enable_karr_substrate_writeback:
+            assert self._karr_writeback_fixture is not None
+            assert self._karr_writeback_rng is not None
+            pre = self._build_pre_state_585x3(states)
+            karr_delta = apply_karr_substrate_writeback(
+                pre_state_585x3=pre,
+                v_504=v,
+                growth_per_s=float(info["biomass_flux_per_s"]),
+                fixture=self._karr_writeback_fixture,
+                rng=self._karr_writeback_rng,
+                step_size_sec=float(timestep),
+            )
+            # Persist post-state for next tick's non-cytosol pre-state.
+            self._karr_writeback_initial_585x3 = pre + karr_delta.astype(np.float64)
+            result["substrates"] = project_to_flat_per_wid(karr_delta, list(self._sub_ids))
+        return result
 
     def _dynamic_update(self, timestep: float, states: dict) -> dict:
         assert self._dyn is not None
@@ -463,8 +537,29 @@ class KarrMetabolismProcess(Process):
         )
 
         # Bug 6a Stage 2: signed writeback across all mapped cytosol rows.
+        # Day-38: when enable_karr_substrate_writeback=True, the Karr 4-step
+        # writeback REPLACES the S@v writeback. See METABOLISM_FIX_DESIGN.md.
         substrate_delta: dict[str, float] = {}
-        if self.enable_lp_writeback:
+        if self.enable_karr_substrate_writeback:
+            assert self._karr_writeback_fixture is not None
+            assert self._karr_writeback_rng is not None
+            # Pre-state is the internal _sub_state (already drained by upstream
+            # consumption above). Use it directly — non-cytosol values are
+            # carried in the same matrix.
+            pre = self._sub_state.copy()
+            karr_delta = apply_karr_substrate_writeback(
+                pre_state_585x3=pre,
+                v_504=v,
+                growth_per_s=float(info["biomass_flux_per_s"]),
+                fixture=self._karr_writeback_fixture,
+                rng=self._karr_writeback_rng,
+                step_size_sec=float(timestep),
+            )
+            substrate_delta = project_to_flat_per_wid(karr_delta, list(self._sub_ids))
+            # Update internal state with our writeback (cytosol drain happens
+            # via the demand-tracking loop earlier in this method).
+            self._sub_state = pre + karr_delta.astype(np.float64)
+        elif self.enable_lp_writeback:
             rates = S[self._cytosol_rows, :] @ v
             for r_idx, rate in zip(self._cytosol_rows, rates, strict=False):
                 sid = self._cyt_row_to_sid.get(int(r_idx))
