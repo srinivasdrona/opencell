@@ -57,7 +57,14 @@ _OBSERVABLE_TO_WIDS_ATTR = {'substrates': 'substrate_wids', 'enzymes': 'enzyme_w
 
 
 # L2.1 harness overrides (Pattern A). Karr's substrates trace is 1755 = 585 substrates x 3 compartments. OC tracks cytosol (first 585).
-_CANONICAL_WIDS: dict[str, list[str]] = {}
+# Day-38: with dynamic_bounds=True, process exposes allocation_substrate_wids (225) which is
+# narrower than the full 585. Override 'substrates' canonical list to the full 585-WID set
+# from the model so the L2.1 oracle compares apples to apples.
+def _full_substrate_wids() -> list[str]:
+    from opencell.m1 import karr_metabolism as _km
+    return list(_km.load_default().raw["ids"]["substrate_wcm_585"])
+
+_CANONICAL_WIDS: dict[str, list[str]] = {"substrates": _full_substrate_wids()}
 _STORE_PATH_OVERRIDE: dict[str, tuple[str, ...]] = {}
 _INDEX_PROJECTION_ATTR: dict[str, str] = {}
 _INDEX_PROJECTION_LITERAL = {'substrates': np.arange(585)}
@@ -122,7 +129,11 @@ def test_karr_metabolism_l2_replay_identity_per_tick(rng_seed: int) -> None:
                 f"nonzero-delta counts: {mutated_tick_counts}."
             )
 
-        process = KarrMetabolismProcess({"rng_seed": int(rng_seed)})
+        process = KarrMetabolismProcess({
+            "rng_seed": int(rng_seed),
+            "dynamic_bounds": True,
+            "enable_karr_substrate_writeback": True,
+        })
         state_template = build_state_template(process)
 
         wids_by_observable: dict[str, list[str]] = {}

@@ -26,11 +26,39 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-06-24 ~12:00 IST, Day-37 EOD):** None alive. Workspace clean (1 worktree: main). Last pushed commit: `40ab707` (Day-37 EOD smaller-fixes batch). Day-37 blog post drafted on `main` at `docs/blog/2026-06-24-the-string-that-drifted-the-rubric-that-was-wrong-and-the-question-i-didnt-want-to-answer.md`.
+**Live processes / agents (2026-06-24 ~18:30 IST, Day-38 in progress):** None alive. Workspace clean (1 worktree: main).
 
-**Next action when resuming**: Day-38 Metabolism focused fix per `docs/phase_f/METABOLISM_FIX_DESIGN.md`. Two architectural decisions needed BEFORE coding: (1) substrates port shape — single-value-per-WID vs three-values-per-WID (compartment-aware); (2) stochasticRound RNG seeding semantics — per-instance vs per-cell-cycle. Recommend resolving by re-reading Karr's `evolveState` lines 1200-1258 once more and picking the smallest faithful port.
+**Last pushed commits**:
+- `2d36ef3` — Wired Karr writeback into KarrMetabolismProcess (opt-in flag)
+- `92a3980` — Karr substrate-writeback helper + 8 unit tests (8/8 passing)
+- `8258e1e` — Day-37 blog post
 
-**L2.2: 13/22 VERIFIED_GENUINE (honest, Day-37 EOD).** L2.1: 19/28 GENUINE. L2.5: 15/256 honest PASS (untouched today).
+**Uncommitted (Day-38 step 3 partial):**
+- `tests/vivarium/_l2_2_design_a_runner_helpers.py` — `_metabolism_process` factory switched to `dynamic_bounds=True` + `enable_karr_substrate_writeback=True`
+- `tests/vivarium/test_karr_metabolism_l2_replay.py` — adds 585-WID canonical override (needed when dynamic_bounds=True populates `allocation_substrate_wids`)
+- `docs/phase_f/METABOLISM_DAY38_PLANNED_VS_DELIVERED.md` — planned-vs-delivered comparison
+- 2 new probe scripts under `scripts/`
+
+**Day-38 W1 measurement (THE moment of truth):**
+- L2.2 Metabolism W1 = **168.39** (was 171.39) — only 1.7% improvement
+- Writeback algorithm verified correct by 8/8 unit tests AND end-to-end probe
+- **Bug is NOT in writeback** — it's in OC's FBA flux distribution at Karr tick-0 pre-state
+
+**Day-38 diagnosis (`scripts/probe_metab_v504_at_columns.py`):**
+- OC growth_per_s = 5.58e-6 (Karr ~1e-5)
+- 52 of 124 external exchange reactions AT UPPER BOUND — LP can't use Karr's flux distribution
+- Top discrepancies: HDCA +0.7 (vs +7918), HDCEA +0.5 (vs +7919), OCDCEA -999 (vs +6741)
+- Recovery ratio: only 9.3% of Karr's per-WID substrate delta magnitude
+- **Real bottleneck: `cfb.compute_bounds` produces bound profile that forces LP into degenerate corner**
+
+**Decision pending from operator (3 options in METABOLISM_DAY38_PLANNED_VS_DELIVERED.md):**
+- A: Keep writeback wired in, document FBA gap as next blocker, move on
+- B: Roll back L2.2 runner enablement (keep code), preserve clean baseline
+- C: Continue debugging FBA bounds calculator (1-2 days, high uncertainty)
+
+**Next action when resuming**: get operator's call on A/B/C.
+
+**L2.2: 13/22 VERIFIED_GENUINE.** L2.1: 19/28 GENUINE. L2.5: 15/256 honest PASS.
 
 ### L2.5 status (Day-35 EOD — SS clean-vs-clean wired + run)
 

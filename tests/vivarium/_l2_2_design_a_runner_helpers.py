@@ -1144,11 +1144,27 @@ def _metabolism_model() -> Any:
 
 
 @lru_cache(maxsize=None)
+def _metabolism_dynamics() -> Any:
+    # Day-38: pre-load dynamics inputs outside SUT-oracle guard since
+    # dynamic_bounds=True needs the karr_native_m1_dynamics fixture.
+    from opencell.m1 import calc_flux_bounds as cfb
+    return cfb.load_default_dynamics()
+
+
+@lru_cache(maxsize=None)
 def _metabolism_process(seed: int) -> KarrMetabolismProcess:
-    # Static Metabolism replay is state-driven; caching avoids repeated model loads.
+    # Day-38: dynamic_bounds=True + Karr's 4-step substrate writeback enabled.
+    # See docs/phase_f/METABOLISM_FIX_DESIGN.md for rationale.
     model = _metabolism_model()
+    dyn = _metabolism_dynamics()
     with forbid_sut_oracle_file_io():
-        return KarrMetabolismProcess({"rng_seed": int(seed), "model": model})
+        return KarrMetabolismProcess({
+            "rng_seed": int(seed),
+            "model": model,
+            "dynamic_bounds": True,
+            "enable_karr_substrate_writeback": True,
+            "dynamics_inputs": dyn,
+        })
 
 
 @lru_cache(maxsize=None)
