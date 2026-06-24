@@ -26,37 +26,33 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-06-24 ~18:30 IST, Day-38 in progress):** None alive. Workspace clean (1 worktree: main).
+**Live processes / agents (2026-06-24 ~18:55 IST, Day-38 in progress):**
+- **Codex PID 22768** running `PROMPT.md` (FBA-bounds-paradox investigation, H10-refined hypothesis)
+- Wait-shell `codex-wait-paradox` attached to PID 22768 (notifies on exit, zero polling cost)
+- PID file: `~/.copilot/session-state/5c51d44b-5a9f-4b23-85ff-0fddaadf2212/files/metab_fba_paradox_pid.txt`
+- Expected STATUS: `STATUS_metab_fba_paradox.md` at repo root
 
 **Last pushed commits**:
-- `2d36ef3` — Wired Karr writeback into KarrMetabolismProcess (opt-in flag)
-- `92a3980` — Karr substrate-writeback helper + 8 unit tests (8/8 passing)
+- `b325c47` — Day-38 step-3 partial work + 9 diagnostic probes
+- `2d36ef3` — Karr writeback wired into KarrMetabolismProcess (opt-in)
+- `92a3980` — Karr substrate-writeback helper + 8 unit tests
 - `8258e1e` — Day-37 blog post
 
-**Uncommitted (Day-38 step 3 partial):**
-- `tests/vivarium/_l2_2_design_a_runner_helpers.py` — `_metabolism_process` factory switched to `dynamic_bounds=True` + `enable_karr_substrate_writeback=True`
-- `tests/vivarium/test_karr_metabolism_l2_replay.py` — adds 585-WID canonical override (needed when dynamic_bounds=True populates `allocation_substrate_wids`)
-- `docs/phase_f/METABOLISM_DAY38_PLANNED_VS_DELIVERED.md` — planned-vs-delivered comparison
-- 2 new probe scripts under `scripts/`
+**Day-38 status:**
+- Writeback algorithm verified correct (8/8 unit tests)
+- L2.2 Metabolism W1 = **168.39** (was 171.39) — 1.7% improvement only
+- Root cause isolated: OC `cfb.compute_bounds` Rule 3 (`apply_directionality`) over-constrains LP by 4×
+  - Rule 3 off → growth 5.58e-6 → 2.12e-5 (+280%, close to Karr expected)
+  - But: OC.model.lb/ub matches Karr.fbaReactionBounds EXACTLY
+  - **PARADOX**: identical input bounds, identical S, identical objective, yet different LP outcome
+- 12 hypotheses tracked in session DB (`fba_bounds_hypotheses` table)
+  - Rejected: H1c, H2a, H3a, H5a, H6a
+  - Confirmed: H1a/H7 partial (Rule 3 is the over-constraint)
+  - Currently testing via codex: H10-refined (NaN-vs-±inf semantics in `np.fmax` vs MATLAB `max`)
 
-**Day-38 W1 measurement (THE moment of truth):**
-- L2.2 Metabolism W1 = **168.39** (was 171.39) — only 1.7% improvement
-- Writeback algorithm verified correct by 8/8 unit tests AND end-to-end probe
-- **Bug is NOT in writeback** — it's in OC's FBA flux distribution at Karr tick-0 pre-state
-
-**Day-38 diagnosis (`scripts/probe_metab_v504_at_columns.py`):**
-- OC growth_per_s = 5.58e-6 (Karr ~1e-5)
-- 52 of 124 external exchange reactions AT UPPER BOUND — LP can't use Karr's flux distribution
-- Top discrepancies: HDCA +0.7 (vs +7918), HDCEA +0.5 (vs +7919), OCDCEA -999 (vs +6741)
-- Recovery ratio: only 9.3% of Karr's per-WID substrate delta magnitude
-- **Real bottleneck: `cfb.compute_bounds` produces bound profile that forces LP into degenerate corner**
-
-**Decision pending from operator (3 options in METABOLISM_DAY38_PLANNED_VS_DELIVERED.md):**
-- A: Keep writeback wired in, document FBA gap as next blocker, move on
-- B: Roll back L2.2 runner enablement (keep code), preserve clean baseline
-- C: Continue debugging FBA bounds calculator (1-2 days, high uncertainty)
-
-**Next action when resuming**: get operator's call on A/B/C.
+**Next action when resuming**: read codex STATUS on exit notification. Decide:
+- If H10 confirmed → land the one-line fix to `compute_bounds`, re-run L2.2, expect W1 → <20
+- If H10 rejected → next delegation tests H9 (solver) or H8 (extraction)
 
 **L2.2: 13/22 VERIFIED_GENUINE.** L2.1: 19/28 GENUINE. L2.5: 15/256 honest PASS.
 
