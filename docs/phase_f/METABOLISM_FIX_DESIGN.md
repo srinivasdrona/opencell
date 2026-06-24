@@ -1,23 +1,64 @@
-# Metabolism L2.1/L2.2 Fix — Design Document (Day-37)
+# Metabolism L2.1/L2.2 Fix — Design Document (Day-37 + Day-38 architectural decisions)
 
-**Status:** Root-cause diagnosed; multi-day implementation needed.
+**Status:** Day-37 root-cause diagnosed. Day-38 architectural decisions locked in (this revision). Implementation starting.
+
+## Day-38 architectural decisions (operator-ratified 2026-06-24)
+
+**Decision 1 — substrates port shape**: Keep flat per-WID (current OC convention).
+- M1's internal `_sub_state` is already (585, 3) — Karr's 4-step writeback applies there.
+- The shared `substrates` port stays flat — no breaking changes for downstream consumers.
+- Writeback emits a per-WID delta = sum across the 3 compartments per substrate.
+- Rationale: 11 membrane-only entries + 124 extracellular drains are correctly captured as total deltas; L2.2 oracle compares total per-WID anyway (v2 ensemble loader flattens compartments); future per-compartment access can be added as a separate port without breaking the existing one.
+
+**Decision 2 — RNG semantics**: Per-instance `_Mcg16807` seeded from process `rng_seed` parameter.
+- Reuses the existing helper at `opencell/vivarium/karr_protein_decay_light.py:28-49`.
+- L2.2 oracle is distributional (Wasserstein), not bit-identical — exact MATLAB stream reproduction unnecessary.
+- Per-instance keeps each process self-contained (matches OC's convention and the project's "no naked np.random" rule).
+
+**Decision 3 — clipping (Step 5)**: Implement faithfully. Clip metabolite rows (567 of 585) to `max(0, post_state)` after the 4 deltas. Requires pre-state visibility in the static path; bootstrap from fixture for non-cytosol compartments on first call. The clip changes the emitted delta when a step would drive a substrate below zero (delta becomes `-current` instead of full negative).
+
+**Decision 4 — L2.2 runner mode**: Switch Metabolism's L2.2 runner from default-`dynamic_bounds=False` to `dynamic_bounds=True`. Static FBA can't reproduce Karr's flux levels (probe confirms ~5% of Karr's flux); dynamic bounds via `cfb.compute_bounds` is closer to Karr's `calcFluxBounds`.
+
+## Day-38 verified facts from probes
+
+From `scripts/probe_metab_index_semantics.py`:
+
+```
+substrateIndexs_externalExchangedMetabolites:    shape=(124,) max=568 → 1-based substrate rows
+substrateIndexs_internalExchangedMetabolites:    shape=(42,)  max=561 → 1-based substrate rows (single-arg form → cytosol col 1)
+substrateIndexs_atpHydrolysis:                   shape=(5,)   values=[30,298,11,473,297] → cytosol col 1
+fbaReactionIndexs_metaboliteExternalExchange:    shape=(124,) range=[337,460]   ← 504-space, NOT 645-space
+fbaReactionIndexs_metaboliteInternalExchange:    shape=(42,)  range=[461,502]
+metabolismNewProduction:                         shape=(585, 3) — 67 cytosol + 11 membrane nonzero
+unaccountedEnergyConsumption:                    62750063.84 (scalar, float)
+stepSizeSec:                                     1.0
+```
+
+FBA col 504 layout confirmed (OC matches Karr): 336 metabolic + 124 ext exchange + 42 int exchange + 1 biomass prod + 1 biomass exchange.
+
+From `scripts/probe_metab_dynamic_bounds.py` (one-tick test at Karr's tick-0 pre-state):
+
+| Mode | OC substrate delta nonzero | OC sum_abs | Karr cytosol sum_abs | Diff (count, total_abs) |
+|---|---:|---:|---:|---|
+| static_bounds (current L2.2) | 0 | 0.0 | 42753 | (45, 42753) |
+| dynamic_bounds=True | 41 | 0.0 (all <0.5) | 42753 | (45, 42753) |
+
+Both modes fail without the 4-step writeback. Dynamic bounds produces flux but without integer rounding the floats are all sub-unit. **Three pieces are required together**: dynamic bounds + 4-step writeback + stochastic rounding.
 
 ## TL;DR
 
 OC's Metabolism implements FBA correctly but is missing **all** of Karr's
 post-FBA substrate writeback steps. Karr's `evolveState`
-(`data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m:1213-1231`)
-runs 4 substrate updates after FBA:
+(`data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m:1200-1258`)
+runs 4 substrate updates after FBA + a clip:
 
-1. **Nutrient uptake**: `substrates[external, extracellular] -= round(flux[external_exchange] × step)`
-2. **Recycled metabolites**: `substrates[internal] += round(flux[internal_exchange])`
-3. **New biomass**: `substrates += round(metabolismNewProduction × growth × step)`
-4. **Unaccounted energy**: `substrates[atp_hydrolysis] += [-1,-1,1,1,1] × round(unaccounted × growth × step)`
+1. **Nutrient uptake**: `substrates[external, extracellular] -= stochasticRound(flux[external_exchange] × step)`
+2. **Recycled metabolites**: `substrates[internal] += stochasticRound(flux[internal_exchange])` (cytosol via single-arg linear index)
+3. **New biomass**: `substrates += stochasticRound(metabolismNewProduction × growth × step)` (full (585,3))
+4. **Unaccounted energy**: `substrates[atp_hydrolysis] += [-1,-1,1,1,1] × stochasticRound(unaccounted × growth × step)`
+5. **Clip metabolites**: `substrates[metabolite_rows, :] = max(0, substrates[metabolite_rows, :])`
 
-OC's `_static_update` returns only `metabolic_reaction.fluxs` — no substrate
-deltas. OC's `_dynamic_update` does a partial cytosol-only `S @ v * step`
-writeback (no integer rounding, no extracellular update, no biomass production
-update, no unaccounted energy step).
+OC's `_static_update` returns only `metabolic_reaction.fluxs`. OC's `_dynamic_update` has a partial cytosol-only `S @ v * step` writeback that is NOT what Karr does (Karr's biomass term is precomputed from `metabolismNewProduction`, not derived from `S @ v`).
 
 Result: OC's substrate distribution diverges from Karr's by Karr's full
 substrate writeback (148,121 molecules at tick 0 in seed 000). This is the
