@@ -1,6 +1,27 @@
 # All-29 Process Status - 2026-06-03 ~14:30 IST (L2.1 SWEEP COMPLETE)
 
-> **⚠️ Day-37 EOD update: smaller-fixes batch (5 of 5) complete; honest L2.1 GENUINE 19/28, L2.2 VERIFIED_GENUINE 13/22.**
+> **⚠️ Day-38 EOD update: Karr substrate writeback landed (opt-in), L2.2 Metabolism W1 168.39 (was 171.39 — 1.7% improvement only). Scoreboard unchanged.**
+>
+> **What landed (committed and pushed):**
+> - `opencell/m1/karr_metabolism_writeback.py` — standalone helper implementing Karr's 4-step substrate writeback + clip (Metabolism.m:1200-1258), 8/8 unit tests passing
+> - `opencell/vivarium/karr_metabolism.py` — wired into both `_static_update` and `_dynamic_update` paths, opt-in via `enable_karr_substrate_writeback=True`
+> - `tests/vivarium/_l2_2_design_a_runner_helpers.py` — L2.2 Metabolism factory now uses `dynamic_bounds=True` + the writeback
+>
+> **Diagnostic findings (committed for future work, not actioned):**
+> - **H10 NaN-semantics hypothesis REJECTED** — codex investigation produced a probe + STATUS suggesting `np.fmax/np.fmin` → `np.maximum/np.minimum` would match MATLAB. Applying the fix BROKE `test_compute_bounds_matches_matlab_oracle_no_protein` at 183 cells (the oracle is captured from real MATLAB output). MATLAB `max(NaN, X) = X` (NaN-ignoring), same as `np.fmax`. Reverted.
+> - **H11 realmax CONFIRMED-but-WORSENED-ON-LAND** — Karr's MATLAB uses `realmax = 1e6` and GLPK solver; OC uses `DEFAULT_BIG = 1e3` and HiGHS. At tick-0 the corrected realmax produces writeback delta 135K (matches Karr 148K) and growth 2.12e-5 (4x higher). BUT applying the fix WORSENS L2.2 ensemble W1: 168.39 → 213.21. HiGHS LP basis-selection diverges from GLPK with looser bounds, and the divergence hurts the ensemble distributional metric more than the under-fluxed baseline did. Reverted; documented as multi-day fidelity work (port GLPK or extract Karr's actual flux trace from MATLAB).
+>
+> **Honest scoreboard (Day-38 EOD = Day-37 EOD):**
+>
+> | Gate | Count |
+> |---|---:|
+> | L2.1 GENUINE | **19** / 28 |
+> | L2.2 VERIFIED_GENUINE | **13** / 22 |
+> | L2.5 honest PASS | **15** / 256 |
+>
+> **What's still in `VERIFIED_FAIL` for L2.2:** Metabolism (W1=168.39 on substrates). The writeback algorithm is correct; the LP solver behavior (HiGHS vs GLPK basis-selection) is the remaining gap. Multi-day FBA-fidelity work.
+
+> **⚠️ Day-37 EOD update: smaller-fixes batch (5 of 5) complete; honest L2.1 GENUINE 19/28, L2.2 VERIFIED_GENUINE 13/22.** *(superseded by Day-38 update above)*
 > 
 > Five smaller fixes landed in one ~2.5h focused session before the planned Metabolism port:
 > 

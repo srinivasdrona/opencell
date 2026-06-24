@@ -26,56 +26,35 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-06-24 ~19:20 IST, Day-38 in progress):** None alive. Workspace clean.
+**Live processes / agents (2026-06-25 ~01:25 IST, Day-38 EOD):** None alive. Workspace clean.
 
-**Last pushed commits**:
-- `e9a7801` — revert: codex's H10 fix was wrong (MATLAB max IS NaN-ignoring, same as np.fmax). Original code matches MATLAB oracle.
-- `2df2f8b`, `ee9e730`, `649351c` — codex investigation artifacts (probe + STATUS, kept for history even though hypothesis rejected)
-- `b325c47` — Day-38 step 3 partial (writeback enabled in L2.2 runner, W1 = 168.39)
-- `2d36ef3` — Karr writeback wired into KarrMetabolismProcess (opt-in)
-- `92a3980` — Karr substrate-writeback helper + 8 unit tests
-- `8258e1e` — Day-37 blog post
+**Day-38 final state — committed and pushed:**
 
-**Day-38 status — STUCK, need new approach:**
+Karr substrate writeback algorithm landed (opt-in flag):
+- `92a3980` — `opencell/m1/karr_metabolism_writeback.py` (Karr 4-step writeback helper + 8 unit tests)
+- `2d36ef3` — wired into `KarrMetabolismProcess._{static,dynamic}_update`
+- `b325c47` — L2.2 runner factory uses `dynamic_bounds=True` + writeback enabled
 
-### What we KNOW (high confidence, verified by probes)
+Diagnostic findings (committed for future work, not actioned):
+- `649351c`, `ee9e730`, `2df2f8b` — codex H10 investigation (NaN-semantics hypothesis, REJECTED by oracle test)
+- `e9a7801` — revert of H10 fix (MATLAB `max(NaN,X)=X` is NaN-ignoring, same as np.fmax)
+- `d517007` — H11 realmax finding (Karr uses 1e6 + GLPK, OC uses 1e3 + HiGHS) — semantically correct fix WORSENS L2.2 ensemble W1 from 168 → 213. Reverted.
 
-- L2.2 Metabolism W1 = **168.39** (was 171.39) after writeback fix; 1.7% improvement only
-- Writeback algorithm is correct: 8/8 unit tests pass; end-to-end smoke at Karr tick-0 returns sensible deltas
-- OC `compute_bounds` matches the captured MATLAB oracle EXACTLY (no diffs at 504 reactions × 2 bounds)
-  - This is verified by `test_compute_bounds_matches_matlab_oracle_no_protein` against `bounds_dynamic_no_protein_oracle` (captured from MATLAB itself)
-- OC.S, OC.obj, OC.enzymes all match Karr fixture EXACTLY
-- OC growth at Karr tick-0 (dynamic_bounds=True) = 5.58e-6
-- OC produces substrate delta sum_abs = 13.8K per-WID flat (Karr recorded: 148K)
-- Toggling Rule 3 (directionality) OFF in OC pushes growth to 2.12e-5 — but Rule 3 in OC matches MATLAB exactly
+**Day-38 honest scoreboard (= Day-37 EOD, unchanged):**
 
-### Hypotheses tested and REJECTED
+| Gate | Count |
+|---|---:|
+| L2.1 GENUINE | **19** / 28 |
+| L2.2 VERIFIED_GENUINE | **13** / 22 |
+| L2.5 honest PASS | **15** / 256 |
 
-- H1c (cell_dry_mass scale wrong)
-- H2a (objective vector differs) — OC.obj == Karr.fbaObjective exactly
-- H3a (S matrix sign-flips) — OC.S == Karr.S exactly
-- H5a (enzymes shape mismatch) — match exactly
-- H6a (substrates_snapshot stale) — full Karr overlay produces same fluxes
-- **H10 (NaN-vs-±inf semantics)** — REJECTED by oracle test. Codex's port produced 2.12e-5 by COINCIDENCE, not by matching Karr. MATLAB `max(NaN,X)=X` (NaN-ignoring) == `np.fmax`.
+**Metabolism L2.2 W1 = 168.39** (was 171.39; 1.7% improvement). Writeback algorithm correct (8/8 unit tests); the remaining gap is LP solver fidelity (HiGHS vs GLPK basis-selection diverges across ensemble even with semantically-correct bounds).
 
-### What we DON'T know (the real open question)
-
-**Is OC's growth of 5.58e-6 actually correct vs Karr's true tick-0 growth?**
-
-The "Karr expected growth ~3e-5" was *my inference* from the substrate delta of 148K, assuming the writeback Step 3 (biomass production) dominates. But Step 3 only contributes if `growth × metabolismNewProduction` is non-trivial. At growth=5.58e-6, Step 3 produces only ~2500 molecules. The 148K comes mostly from Step 1 (nutrient uptake at extracellular) which depends on LP flux distribution, not growth_per_s.
-
-It's possible:
-- (a) OC's growth 5.58e-6 IS Karr's actual tick-0 growth, and the substrate delta gap comes from a different bug (writeback emission, LP basis selection)
-- (b) Karr's actual tick-0 growth IS ~3e-5 and OC's LP is finding a different optimum than Karr's despite identical inputs (LP degeneracy / solver basis difference)
-
-### Next investigation step
-
-**Empirically measure Karr's actual tick-0 growth.** Options:
-- Find a chassis trace that records `metabolicReaction.growth_per_s`
-- Run Karr's MATLAB whole-cell-simulation Metabolism alone for tick 0 and capture growth
-- Compute growth from `Karr.fbaObjective @ v` if any v vector is recoverable
-
-If Karr's true growth IS ~5.58e-6, the writeback path or per-compartment projection has a bug. If it's ~3e-5, the LP solver behavior is the bug (HiGHS vs MATLAB linprog).
+**Next action when resuming**: Day-39 priorities (operator decision):
+- A. FBA-fidelity work: port Karr's MATLAB headless to capture actual flux trace + growth at snapshot; then either port GLPK or accept solver differences with calibrated tolerances
+- B. Move on to other in-scope L2.2 work (chromosome-port 6 processes, design exists but not implemented)
+- C. Address L2.1 COINCIDENTAL (ProteinDecay, Replication — likely substrate-starvation cascade from unfixed Metabolism)
+- D. Address L2.1 FAIL (ChromosomeCondensation)
 
 **L2.2: 13/22 VERIFIED_GENUINE.** L2.1: 19/28 GENUINE. L2.5: 15/256 honest PASS.
 
