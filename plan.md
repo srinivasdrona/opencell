@@ -26,9 +26,11 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-06-22 ~14:40 IST):** None alive. Workspace clean (1 worktree: main).
+**Live processes / agents (2026-06-24 ~12:00 IST, Day-37 EOD):** None alive. Workspace clean (1 worktree: main). Last pushed commit: `40ab707` (Day-37 EOD smaller-fixes batch). Day-37 blog post drafted on `main` at `docs/blog/2026-06-24-the-string-that-drifted-the-rubric-that-was-wrong-and-the-question-i-didnt-want-to-answer.md`.
 
-**L2.2: COMPLETE (22/22 in-scope, 100%).** L2.5 in active development.
+**Next action when resuming**: Day-38 Metabolism focused fix per `docs/phase_f/METABOLISM_FIX_DESIGN.md`. Two architectural decisions needed BEFORE coding: (1) substrates port shape — single-value-per-WID vs three-values-per-WID (compartment-aware); (2) stochasticRound RNG seeding semantics — per-instance vs per-cell-cycle. Recommend resolving by re-reading Karr's `evolveState` lines 1200-1258 once more and picking the smallest faithful port.
+
+**L2.2: 13/22 VERIFIED_GENUINE (honest, Day-37 EOD).** L2.1: 19/28 GENUINE. L2.5: 15/256 honest PASS (untouched today).
 
 ### L2.5 status (Day-35 EOD — SS clean-vs-clean wired + run)
 
