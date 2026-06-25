@@ -52,10 +52,10 @@ EMPIRICAL_VERDICTS = {
     # 2 UNVALIDATABLE — runner refuses
     "Cytokinesis": "UNVALIDATABLE_EVENT_CLASS",
     "RibosomeAssembly": "UNVALIDATABLE_EVENT_CLASS",
-    # 6 NOT_WIRED — chromosome-port processes never added to design_a runner
+    # 5 NOT_WIRED — chromosome-port processes (DNASupercoiling wired on Day-39)
     "Replication": "NOT_WIRED",
     "ReplicationInitiation": "NOT_WIRED",
-    "DNASupercoiling": "NOT_WIRED",
+    "DNASupercoiling": "VERIFIED_GENUINE",
     "DNARepair": "NOT_WIRED",
     "DNADamage": "NOT_WIRED",
     "FtsZPolymerization": "NOT_WIRED",

@@ -674,6 +674,8 @@ def _process_sample_process(process: str) -> Any:
         return runner_helpers._macromol_process(0)
     if process == "Cytokinesis":
         return runner_helpers._cytokinesis_process(0)
+    if process == "DNASupercoiling":
+        return runner_helpers._dna_supercoiling_process(0)
     raise ValueError(f"Unsupported process {process!r}.")
 
 
@@ -783,6 +785,8 @@ def run_design_a(
     }
     oc_projection_vectors: np.ndarray | None = None
     karr_projection_vectors: np.ndarray | None = None
+    chromosome_oracle: dict[str, Any] | None = None
+    is_chromosome_primary = primary_channel == "chromosome"
     if use_projection_distance:
         if not primary_projection:
             raise ValueError(
@@ -791,6 +795,19 @@ def run_design_a(
             )
         oc_projection_vectors = np.zeros((len(seeds), m_ticks, len(primary_projection)), dtype=np.float64)
         karr_projection_vectors = np.zeros_like(oc_projection_vectors)
+    if is_chromosome_primary:
+        # Day-39: chromosome-primary processes need sparse-triple oracle stores
+        # pre-loaded so the tick handler can overlay Karr's chromosome state and
+        # the projection can be computed from before/after sparse triples.
+        chromosome_oracle = runner_helpers.load_chromosome_oracle_for_process(
+            process, list(seeds), int(m_ticks)
+        )
+        # Pre-compute Karr's projection matrix from the oracle's before/after stores.
+        karr_projection_vectors = runner_helpers.chromosome_projection_matrix(
+            before_stores=chromosome_oracle["before_stores"],
+            after_stores=chromosome_oracle["after_stores"],
+            projection_spec=tuple(primary_projection),
+        )
     allocator_inputs: list[dict[str, Any]] = []
     for seed_index, seed in enumerate(seeds):
         for tick in range(m_ticks):
@@ -798,7 +815,7 @@ def run_design_a(
                 "substrate_wids": wids_by_channel["substrates"],
                 "oracle_before_substrates": before_vectors["substrates"][seed_index, tick],
                 "oracle_after_substrates": after_vectors["substrates"][seed_index, tick],
-                "oracle_after_all": after_vectors[primary_channel],
+                "oracle_after_all": after_vectors.get(primary_channel, after_vectors["substrates"]),
                 "oracle_before_all": before_vectors.get(primary_channel, before_vectors["substrates"]),
                 "oracle_after_by_channel": {
                     channel: after_vectors[channel]
@@ -892,8 +909,26 @@ def run_design_a(
                 )
             if "boundEnzymes" in before_vectors:
                 sample_state["oracle_before_bound_enzymes"] = before_vectors["boundEnzymes"][seed_index, tick]
+            if chromosome_oracle is not None:
+                sample_state["oracle_before_chromosome_store"] = (
+                    chromosome_oracle["before_stores"][seed_index][tick]
+                )
+                sample_state["enzyme_wids"] = wids_by_channel.get("enzymes", [])
             oc_result = runner_helpers.run_oc_tick(process, int(seed), int(tick), sample_state)
-            if use_projection_distance:
+            if chromosome_oracle is not None and use_projection_distance:
+                # Compute OC's projection from before/after sparse-triple stores.
+                # This is the chromosome-primary code path; it bypasses the
+                # projection_state/karr_projection_state dance because chromosome
+                # state is structurally different from count vectors.
+                chrom_before = chromosome_oracle["before_stores"][seed_index][tick]
+                chrom_after_oc = oc_result["chromosome_after_store"]
+                for comp_idx, token in enumerate(primary_projection):
+                    oc_projection_vectors[seed_index, tick, comp_idx] = (
+                        runner_helpers._chromosome_projection_component(
+                            token, chrom_before, chrom_after_oc
+                        )
+                    )
+            elif use_projection_distance:
                 oc_projection_state = oc_result.get("projection_state")
                 karr_projection_state = oc_result.get("karr_projection_state")
                 if oc_projection_state is None or karr_projection_state is None:
@@ -1042,26 +1077,52 @@ def run_design_a(
             "absolute_floor": runner_helpers.ABSOLUTE_FLOOR,
             "threshold": float(threshold),
         }
+    # Day-39: for chromosome-primary processes, the chromosome channel doesn't have
+    # a count-vector after_vector, so it's NOT in gateable_output_channels. But it
+    # IS the primary channel, so we must add a channel_payload entry that carries
+    # the projection-distance verdict.
+    if is_chromosome_primary and primary_projection_payload is not None:
+        channel_payloads[primary_channel] = {
+            "aggregation": str(primary_projection_payload["aggregation"]),
+            "w1_oc_vs_karr": 0.0,  # not applicable; gate is per_component_scaled
+            "is_primary": True,
+            "is_event_channel": False,
+        }
+        if "per_component" in primary_projection_payload:
+            channel_payloads[primary_channel]["per_component"] = primary_projection_payload["per_component"]
+            channel_payloads[primary_channel]["verdict"] = str(
+                primary_projection_payload["per_component"]["joint_verdict"]
+            )
+        if "hurdle" in primary_projection_payload:
+            channel_payloads[primary_channel]["hurdle"] = primary_projection_payload["hurdle"]
+            channel_payloads[primary_channel]["verdict"] = str(
+                primary_projection_payload["hurdle"]["joint_verdict"]
+            )
     warnings = list(str(warning) for warning in oracle.get("warnings", ()))
     warnings.extend(
         _warning_strings(
         process=process,
         oc_vectors_by_channel=oc_vectors,
         karr_vectors_by_channel=after_vectors,
-        canonical_seed_count=int(oracle.get("canonical_seed_count", after_vectors[primary_channel].shape[0])),
+        canonical_seed_count=int(oracle.get("canonical_seed_count", after_vectors.get(primary_channel, after_vectors.get("substrates")).shape[0])),
         requested_seed_count=len(seeds),
         )
     )
-    primary_legitimate_determinism_warning = _primary_channel_oracle_determinism_legitimate_warning(
-        process=process,
-        primary_channel=primary_channel,
-        oc_vectors=oc_vectors[primary_channel],
-        before_vectors=before_vectors.get(primary_channel, before_vectors["substrates"]),
-        karr_vectors=after_vectors[primary_channel],
-    )
+    if not is_chromosome_primary:
+        primary_legitimate_determinism_warning = _primary_channel_oracle_determinism_legitimate_warning(
+            process=process,
+            primary_channel=primary_channel,
+            oc_vectors=oc_vectors[primary_channel],
+            before_vectors=before_vectors.get(primary_channel, before_vectors["substrates"]),
+            karr_vectors=after_vectors[primary_channel],
+        )
+    else:
+        # Chromosome-primary processes use the projection-distance path; primary-channel
+        # determinism checks operate on count vectors that don't exist for chromosome.
+        primary_legitimate_determinism_warning = None
     if primary_legitimate_determinism_warning is not None:
         warnings.append(primary_legitimate_determinism_warning)
-    else:
+    elif not is_chromosome_primary:
         primary_oracle_laundering_warning = _primary_channel_oracle_laundering_warning(
             process=process,
             primary_channel=primary_channel,
@@ -1102,13 +1163,14 @@ def run_design_a(
                     )
                 if not channel_payloads[primary_channel].get("is_event_channel", False):
                     channel_payloads[primary_channel]["verdict"] = "FAIL"
-    seed_alignment_warning = _seed_alignment_warning(
-        channel_name=primary_channel,
-        oc_vectors=oc_vectors[primary_channel],
-        karr_vectors=after_vectors[primary_channel],
-    )
-    if seed_alignment_warning is not None:
-        warnings.append(seed_alignment_warning)
+    if not is_chromosome_primary:
+        seed_alignment_warning = _seed_alignment_warning(
+            channel_name=primary_channel,
+            oc_vectors=oc_vectors[primary_channel],
+            karr_vectors=after_vectors[primary_channel],
+        )
+        if seed_alignment_warning is not None:
+            warnings.append(seed_alignment_warning)
     timestamp = datetime.now(UTC).isoformat()
     allocator_inputs_path = out_dir / "allocator_inputs.json"
     provenance_path = out_dir / "provenance.json"
@@ -1118,7 +1180,7 @@ def run_design_a(
         bucket=bucket,
         seeds=seeds,
         m_ticks=m_ticks,
-        canonical_seed_count=int(oracle.get("canonical_seed_count", after_vectors[primary_channel].shape[0])),
+        canonical_seed_count=int(oracle.get("canonical_seed_count", after_vectors.get(primary_channel, after_vectors.get("substrates")).shape[0])),
         timestamp=timestamp,
         channel_payloads=channel_payloads,
         verdict=process_verdict,

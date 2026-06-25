@@ -58,6 +58,8 @@ from opencell.vivarium.karr_cytokinesis import KarrCytokinesisProcess  # noqa: E
 from opencell.vivarium.karr_macromolecular_complexation import (  # noqa: E402
     MacromolecularComplexationProcess,
 )
+from opencell.vivarium.karr_dna_supercoiling import KarrDNASupercoilingProcess  # noqa: E402
+from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet  # noqa: E402
 
 
 _ACTUAL_REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -219,6 +221,11 @@ def _load_seeded_mat_channels(seed_paths: list[Path]) -> tuple[dict[str, np.ndar
                 )
 
             for channel in before_keys:
+                # Chromosome is a structured sparse-triple group, not a count vector.
+                # It is loaded separately via `load_chromosome_oracle_for_process`
+                # for chromosome-primary processes; skip it here.
+                if channel == "chromosome":
+                    continue
                 matrix = _matlab_channel_matrix(handle, before_group[channel])
                 if n_ticks_expected is None:
                     n_ticks_expected = int(matrix.shape[0])
@@ -230,6 +237,8 @@ def _load_seeded_mat_channels(seed_paths: list[Path]) -> tuple[dict[str, np.ndar
                 before_by_channel.setdefault(channel, []).append(matrix)
 
             for channel in after_keys:
+                if channel == "chromosome":
+                    continue
                 matrix = _matlab_channel_matrix(handle, after_group[channel])
                 if n_ticks_expected is None:
                     n_ticks_expected = int(matrix.shape[0])
@@ -342,6 +351,10 @@ def _required_ensemble_keys(process_name: str) -> tuple[tuple[str, ...], tuple[s
     if process_name == "MacromolecularComplexation":
         return ("substrates", "complexs"), ("substrates", "complexs")
     if process_name == "Cytokinesis":
+        return ("substrates", "enzymes", "boundEnzymes"), ("substrates",)
+    if process_name == "DNASupercoiling":
+        # chromosome is loaded separately via load_chromosome_oracle_for_process;
+        # only count-vector channels are listed here.
         return ("substrates", "enzymes", "boundEnzymes"), ("substrates",)
     raise ValueError(f"Unsupported Design-A process {process_name!r}.")
 
@@ -710,6 +723,36 @@ def _format_ensemble_oracle(
         }
 
     if process_name == "Cytokinesis":
+        return {
+            "process": process_name,
+            "oracle_path": oracle_path,
+            "canonical_seed_count": canonical_seed_count,
+            "n_ticks_available": n_ticks_available,
+            "before_substrates": before_channel("substrates", "before_substrates"),
+            "after_substrates": after_channel("substrates", "after_substrates"),
+            "before_enzymes": before_channel("enzymes", "before_enzymes"),
+            "before_bound_enzymes": before_channel("boundEnzymes", "before_bound_enzymes"),
+            "ensemble_missing_before_channels": tuple(missing_before),
+            "ensemble_missing_after_channels": tuple(missing_after),
+        }
+
+    if process_name == "Cytokinesis":
+        return {
+            "process": process_name,
+            "oracle_path": oracle_path,
+            "canonical_seed_count": canonical_seed_count,
+            "n_ticks_available": n_ticks_available,
+            "before_substrates": before_channel("substrates", "before_substrates"),
+            "after_substrates": after_channel("substrates", "after_substrates"),
+            "before_enzymes": before_channel("enzymes", "before_enzymes"),
+            "before_bound_enzymes": before_channel("boundEnzymes", "before_bound_enzymes"),
+            "ensemble_missing_before_channels": tuple(missing_before),
+            "ensemble_missing_after_channels": tuple(missing_after),
+        }
+
+    if process_name == "DNASupercoiling":
+        # Day-39: chromosome channel is loaded separately via
+        # load_chromosome_oracle_for_process. Only count-vector channels appear here.
         return {
             "process": process_name,
             "oracle_path": oracle_path,
@@ -1330,6 +1373,7 @@ def _tick_dispatch() -> dict[str, Any]:
         "RibosomeAssembly": _run_ribosome_assembly_tick,
         "MacromolecularComplexation": _run_macromol_tick,
         "Cytokinesis": _run_cytokinesis_tick,
+        "DNASupercoiling": _run_dna_supercoiling_tick,
     }
 
 
@@ -2871,5 +2915,219 @@ def _run_protein_processing_ii_tick(seed: int, tick: int, state: dict[str, Any])
             ),
             dtype=np.float64,
         ),
+        "sample_seed": _sample_seed(seed, tick),
+    }
+
+
+# ----------------------------------------------------------------------
+# Chromosome-primary process infrastructure (Day-39, 2026-06-25).
+#
+# Per PC_T7_CHROMOSOME_PORT_DESIGN: the 4 in-scope chromosome-primary
+# processes (DNASupercoiling, Replication, ReplicationInitiation,
+# DNARepair) need chromosome sparse-triple state + projection extraction.
+# This block provides the shared infrastructure; per-process factories
+# and tick handlers follow.
+# ----------------------------------------------------------------------
+
+
+def _chromosome_store_at(trace: h5py.File, group_name: str, tick: int) -> ChromosomeStore:
+    """Load one tick's chromosome state from an open trace file."""
+    ds = trace[f"{group_name}/chromosome"]
+    ref = ds[0, tick] if ds.shape[0] == 1 else ds[tick, 0]
+    return ChromosomeStore.from_hdf5_group(trace[ref])
+
+
+def load_chromosome_oracle_for_process(
+    process_name: str,
+    seeds: list[int],
+    m_ticks: int,
+) -> dict[str, Any]:
+    """Pre-load chromosome sparse-triple stores for all seeds x ticks.
+
+    Returns:
+        {
+          'process': str,
+          'before_stores': list[list[ChromosomeStore]]  # [seed_idx][tick]
+          'after_stores':  list[list[ChromosomeStore]]
+          'seed_paths': list[Path]
+          'n_seeds': int,
+          'm_ticks': int,
+        }
+    """
+    seed_paths: list[Path] = []
+    before_stores: list[list[ChromosomeStore]] = []
+    after_stores: list[list[ChromosomeStore]] = []
+    for seed in seeds:
+        path = _v2_seed_mat_path(process_name, int(seed))
+        if not path.exists():
+            raise FileNotFoundError(
+                f"Missing chromosome trace for {process_name} seed {seed} at {path}"
+            )
+        seed_paths.append(path)
+        with h5py.File(path, "r") as trace:
+            available_ticks = int(np.asarray(trace["metadata/n_ticks"][()]).reshape(-1)[0])
+            if m_ticks > available_ticks:
+                raise ValueError(
+                    f"Trace for {process_name} seed {seed} has only {available_ticks} ticks "
+                    f"but runner requested {m_ticks}"
+                )
+            seed_before = [
+                _chromosome_store_at(trace, "states_before", tick) for tick in range(m_ticks)
+            ]
+            seed_after = [
+                _chromosome_store_at(trace, "states_after", tick) for tick in range(m_ticks)
+            ]
+            before_stores.append(seed_before)
+            after_stores.append(seed_after)
+    return {
+        "process": process_name,
+        "before_stores": before_stores,
+        "after_stores": after_stores,
+        "seed_paths": seed_paths,
+        "n_seeds": len(seeds),
+        "m_ticks": m_ticks,
+    }
+
+
+def _chromosome_projection_component(
+    spec_token: str,
+    before: ChromosomeStore,
+    after: ChromosomeStore,
+) -> float:
+    """Compute one projection component from before/after stores.
+
+    Currently supported tokens (extend as new processes need them):
+      - '<field>.delta_value_sum'
+      - '<field>.delta_nnz'
+    """
+    field_name, op = spec_token.split(".", 1)
+    b = before.get_field(field_name)
+    a = after.get_field(field_name)
+    if op == "delta_value_sum":
+        return float(a.values.sum() - b.values.sum())
+    if op == "delta_nnz":
+        return float(len(a.positions) - len(b.positions))
+    raise ValueError(f"Unsupported chromosome projection op: {op!r} (token {spec_token!r})")
+
+
+def chromosome_projection_matrix(
+    *,
+    before_stores: list[list[ChromosomeStore]],
+    after_stores: list[list[ChromosomeStore]],
+    projection_spec: tuple[str, ...] | list[str],
+) -> np.ndarray:
+    """Compute (n_seeds, m_ticks, n_components) projection matrix from per-tick stores."""
+    n_seeds = len(before_stores)
+    if n_seeds == 0:
+        raise ValueError("no seeds in chromosome oracle")
+    m_ticks = len(before_stores[0])
+    n_comp = len(projection_spec)
+    matrix = np.zeros((n_seeds, m_ticks, n_comp), dtype=np.float64)
+    for seed_idx in range(n_seeds):
+        for tick in range(m_ticks):
+            b = before_stores[seed_idx][tick]
+            a = after_stores[seed_idx][tick]
+            for comp_idx, token in enumerate(projection_spec):
+                matrix[seed_idx, tick, comp_idx] = _chromosome_projection_component(token, b, a)
+    return matrix
+
+
+def _overlay_chromosome_into_state(
+    state: dict[str, Any],
+    store: ChromosomeStore,
+) -> None:
+    """Place a ChromosomeStore's sparse-triple state into a runtime state dict."""
+    chrom_state = state.setdefault("chromosome", {})
+    if not isinstance(chrom_state, dict):
+        raise TypeError("state['chromosome'] must be a dict for chromosome-primary processes")
+    chrom_state.update(store.to_state())
+
+
+def _apply_chromosome_update(
+    before: ChromosomeStore,
+    chrom_update: dict[str, Any] | None,
+) -> ChromosomeStore:
+    """Apply a process's chromosome update dict to the before-store; return the after-store.
+
+    Per PC_T7 Decision D4: processes emit whole-field sparse-triple replacements
+    for the fields they touch. Other fields pass through unchanged from before.
+    Scalar mirrors (supercoil_density, fork_position_bp, etc.) are ignored here
+    (they are not chromosome sparse fields).
+    """
+    new_state = before.to_state()
+    if isinstance(chrom_update, dict):
+        for field_name, value in chrom_update.items():
+            if field_name not in new_state:
+                continue  # skip scalar legacy mirrors
+            if isinstance(value, dict) and "positions" in value:
+                new_state[field_name] = SparseTriplet.from_state(
+                    value, shape=before.shape
+                ).to_state()
+    return ChromosomeStore.from_state_mapping(new_state, shape=before.shape)
+
+
+# ---- DNASupercoiling --------------------------------------------------
+
+@lru_cache(maxsize=None)
+def _dna_supercoiling_process(seed: int) -> KarrDNASupercoilingProcess:
+    with forbid_sut_oracle_file_io():
+        return KarrDNASupercoilingProcess({"rng_seed": int(seed)})
+
+
+def _run_dna_supercoiling_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
+    """Run one OpenCell DNASupercoiling tick from a prepared state snapshot."""
+    process = _dna_supercoiling_process(_sample_seed(seed, tick))
+    runtime_state = build_state_template(process)
+    substrate_wids = list(state["substrate_wids"])
+    enzyme_wids = list(state["enzyme_wids"])
+
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="substrates",
+        vector=np.asarray(state["oracle_before_substrates"], dtype=np.float64),
+        wids=substrate_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="enzymes",
+        vector=np.asarray(state["oracle_before_enzymes"], dtype=np.float64),
+        wids=enzyme_wids,
+    )
+    if "oracle_before_bound_enzymes" in state:
+        overlay_observable_into_state(
+            process=process,
+            state=runtime_state,
+            observable="boundEnzymes",
+            vector=np.asarray(state["oracle_before_bound_enzymes"], dtype=np.float64),
+            wids=enzyme_wids,
+        )
+
+    # CRITICAL: overlay Karr's actual chromosome state, not a fixture default
+    # (Beat 4 failure mode F3).
+    chrom_store_before: ChromosomeStore = state["oracle_before_chromosome_store"]
+    _overlay_chromosome_into_state(runtime_state, chrom_store_before)
+
+    refresh_allocator_views(process, runtime_state)
+    with forbid_sut_oracle_file_io():
+        update = process.next_update(1.0, runtime_state)
+    apply_count_update(runtime_state, update)
+
+    chrom_update = update.get("chromosome", {}) if isinstance(update, dict) else {}
+    chrom_after_store = _apply_chromosome_update(chrom_store_before, chrom_update)
+
+    return {
+        "substrates": np.asarray(
+            project_observable_from_state(
+                process=process,
+                state=runtime_state,
+                observable="substrates",
+                wids=substrate_wids,
+                bound_enzymes_before=None,
+            ),
+            dtype=np.float64,
+        ),
+        "chromosome_after_store": chrom_after_store,
         "sample_seed": _sample_seed(seed, tick),
     }
