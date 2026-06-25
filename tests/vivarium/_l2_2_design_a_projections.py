@@ -215,6 +215,16 @@ def hurdle_event_rate_plus_conditional_distance(
         if oc_values.size == 0 and karr_values.size == 0:
             raw_w1 = 0.0
             scale = 1.0
+        elif oc_values.size == 0 or karr_values.size == 0:
+            # Asymmetric empty: one side fired events, the other didn't. Treat
+            # empty side as a degenerate distribution at 0.0 so wasserstein
+            # quantifies the magnitude of the side that DID fire (no NaN).
+            if oc_values.size == 0:
+                oc_values = np.zeros(1, dtype=np.float64)
+            else:
+                karr_values = np.zeros(1, dtype=np.float64)
+            raw_w1 = float(wasserstein_distance(oc_values, karr_values))
+            scale = _default_scale(karr_values)
         else:
             raw_w1 = float(wasserstein_distance(oc_values, karr_values))
             scale = _default_scale(karr_values)

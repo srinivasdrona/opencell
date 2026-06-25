@@ -60,6 +60,8 @@ from opencell.vivarium.karr_macromolecular_complexation import (  # noqa: E402
 )
 from opencell.vivarium.karr_dna_supercoiling import KarrDNASupercoilingProcess  # noqa: E402
 from opencell.vivarium.karr_replication import KarrReplicationProcess  # noqa: E402
+from opencell.vivarium.karr_dna_repair import KarrDNARepairProcess  # noqa: E402
+from opencell.vivarium.karr_replication_initiation import KarrReplicationInitiationProcess  # noqa: E402
 from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet  # noqa: E402
 
 
@@ -360,6 +362,12 @@ def _required_ensemble_keys(process_name: str) -> tuple[tuple[str, ...], tuple[s
     if process_name == "Replication":
         # chromosome loaded separately. Replication outputs include boundEnzymes
         # so we list it in the after side.
+        return ("substrates", "enzymes", "boundEnzymes"), ("substrates", "boundEnzymes")
+    if process_name == "DNARepair":
+        # chromosome loaded separately; substrates is the only count-vector output.
+        return ("substrates", "enzymes", "boundEnzymes"), ("substrates",)
+    if process_name == "ReplicationInitiation":
+        # chromosome loaded separately; complexs is aliased from boundEnzymes data.
         return ("substrates", "enzymes", "boundEnzymes"), ("substrates", "boundEnzymes")
     raise ValueError(f"Unsupported Design-A process {process_name!r}.")
 
@@ -783,6 +791,43 @@ def _format_ensemble_oracle(
             "before_enzymes": before_channel("enzymes", "before_enzymes"),
             "before_bound_enzymes": before_channel("boundEnzymes", "before_bound_enzymes"),
             "after_bound_enzymes": after_channel("boundEnzymes", "after_bound_enzymes"),
+            "ensemble_missing_before_channels": tuple(missing_before),
+            "ensemble_missing_after_channels": tuple(missing_after),
+        }
+
+    if process_name == "DNARepair":
+        # Day-39: chromosome-primary hurdle gating; only count-vector channel is substrates.
+        return {
+            "process": process_name,
+            "oracle_path": oracle_path,
+            "canonical_seed_count": canonical_seed_count,
+            "n_ticks_available": n_ticks_available,
+            "before_substrates": before_channel("substrates", "before_substrates"),
+            "after_substrates": after_channel("substrates", "after_substrates"),
+            "before_enzymes": before_channel("enzymes", "before_enzymes"),
+            "before_bound_enzymes": before_channel("boundEnzymes", "before_bound_enzymes"),
+            "ensemble_missing_before_channels": tuple(missing_before),
+            "ensemble_missing_after_channels": tuple(missing_after),
+        }
+
+    if process_name == "ReplicationInitiation":
+        # Day-39: RI's catalog calls primary_channel='complexs' but the trace stores
+        # the DnaA complex states (free + bound) in boundEnzymes / enzymes (15-element
+        # vector). Alias boundEnzymes -> complexs for the runner's count-vector path.
+        # chromosome is loaded separately as input (event_channels=['chromosome']
+        # makes it event-deferred, not gated).
+        return {
+            "process": process_name,
+            "oracle_path": oracle_path,
+            "canonical_seed_count": canonical_seed_count,
+            "n_ticks_available": n_ticks_available,
+            "before_substrates": before_channel("substrates", "before_substrates"),
+            "after_substrates": after_channel("substrates", "after_substrates"),
+            "before_enzymes": before_channel("enzymes", "before_enzymes"),
+            "before_bound_enzymes": before_channel("boundEnzymes", "before_bound_enzymes"),
+            "after_bound_enzymes": after_channel("boundEnzymes", "after_bound_enzymes"),
+            "before_complexs": before_channel("boundEnzymes", "before_bound_enzymes"),
+            "after_complexs": after_channel("boundEnzymes", "after_bound_enzymes"),
             "ensemble_missing_before_channels": tuple(missing_before),
             "ensemble_missing_after_channels": tuple(missing_after),
         }
@@ -1396,6 +1441,8 @@ def _tick_dispatch() -> dict[str, Any]:
         "Cytokinesis": _run_cytokinesis_tick,
         "DNASupercoiling": _run_dna_supercoiling_tick,
         "Replication": _run_replication_tick,
+        "DNARepair": _run_dna_repair_tick,
+        "ReplicationInitiation": _run_replication_initiation_tick,
     }
 
 
@@ -3022,7 +3069,26 @@ def _chromosome_projection_component(
       - '<field>.delta_value_sum'           — sum of all values
       - '<field>.delta_nnz'                 — count of distinct sparse positions
       - '<field>.delta_value_sum_strand_<N>' — sum of values where strand == N (1-based)
+      - 'repair_event_present'              — 1.0 if any DNARepair damage field
+                                              changed nnz this tick, else 0.0
     """
+    # Special meta-tokens (no dot)
+    if spec_token == "repair_event_present":
+        # DNARepair touches 5 damage fields; an event happened if any nnz changed
+        damage_fields = (
+            "damagedBases",
+            "strandBreaks",
+            "gapSites",
+            "abasicSites",
+            "damagedSugarPhosphates",
+        )
+        for fld in damage_fields:
+            b = before.get_field(fld)
+            a = after.get_field(fld)
+            if len(b.positions) != len(a.positions):
+                return 1.0
+        return 0.0
+
     field_name, op = spec_token.split(".", 1)
     b = before.get_field(field_name)
     a = after.get_field(field_name)
@@ -3035,7 +3101,6 @@ def _chromosome_projection_component(
             strand_n = int(op.removeprefix("delta_value_sum_strand_"))
         except ValueError as exc:
             raise ValueError(f"Bad strand index in token {spec_token!r}") from exc
-        # Karr's strands array is 1-based; sum values where strands == N
         b_sum = float(b.values[b.strands == strand_n].sum()) if len(b.strands) > 0 else 0.0
         a_sum = float(a.values[a.strands == strand_n].sum()) if len(a.strands) > 0 else 0.0
         return a_sum - b_sum
@@ -3236,6 +3301,156 @@ def _run_replication_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[s
             ),
             dtype=np.float64,
         ),
+        "chromosome_after_store": chrom_after_store,
+        "sample_seed": _sample_seed(seed, tick),
+    }
+
+
+# ---- DNARepair --------------------------------------------------------
+
+@lru_cache(maxsize=None)
+def _dna_repair_process(seed: int) -> KarrDNARepairProcess:
+    with forbid_sut_oracle_file_io():
+        return KarrDNARepairProcess({"rng_seed": int(seed)})
+
+
+def _run_dna_repair_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
+    """Run one OpenCell DNARepair tick from a prepared state snapshot."""
+    process = _dna_repair_process(_sample_seed(seed, tick))
+    runtime_state = build_state_template(process)
+    substrate_wids = list(state["substrate_wids"])
+    enzyme_wids = list(state["enzyme_wids"])
+
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="substrates",
+        vector=np.asarray(state["oracle_before_substrates"], dtype=np.float64),
+        wids=substrate_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="enzymes",
+        vector=np.asarray(state["oracle_before_enzymes"], dtype=np.float64),
+        wids=enzyme_wids,
+    )
+    if "oracle_before_bound_enzymes" in state:
+        overlay_observable_into_state(
+            process=process,
+            state=runtime_state,
+            observable="boundEnzymes",
+            vector=np.asarray(state["oracle_before_bound_enzymes"], dtype=np.float64),
+            wids=enzyme_wids,
+        )
+
+    # Overlay Karr's chromosome state (5 damage fields + others)
+    chrom_store_before: ChromosomeStore = state["oracle_before_chromosome_store"]
+    _overlay_chromosome_into_state(runtime_state, chrom_store_before)
+
+    refresh_allocator_views(process, runtime_state)
+    with forbid_sut_oracle_file_io():
+        update = process.next_update(1.0, runtime_state)
+    apply_count_update(runtime_state, update)
+
+    chrom_update = update.get("chromosome", {}) if isinstance(update, dict) else {}
+    chrom_after_store = _apply_chromosome_update(chrom_store_before, chrom_update)
+
+    return {
+        "substrates": np.asarray(
+            project_observable_from_state(
+                process=process,
+                state=runtime_state,
+                observable="substrates",
+                wids=substrate_wids,
+                bound_enzymes_before=None,
+            ),
+            dtype=np.float64,
+        ),
+        "chromosome_after_store": chrom_after_store,
+        "sample_seed": _sample_seed(seed, tick),
+    }
+
+
+# ---- ReplicationInitiation --------------------------------------------
+
+@lru_cache(maxsize=None)
+def _replication_initiation_process(seed: int) -> KarrReplicationInitiationProcess:
+    with forbid_sut_oracle_file_io():
+        return KarrReplicationInitiationProcess({"rng_seed": int(seed)})
+
+
+def _run_replication_initiation_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
+    """Run one OpenCell ReplicationInitiation tick from a prepared state snapshot.
+
+    RI's catalog says primary_channel='complexs' but Karr's trace stores DnaA
+    complex states in boundEnzymes (15-element). We alias them: 'complexs' in
+    catalog == boundEnzymes data in trace == enzyme_wids in process.
+    """
+    process = _replication_initiation_process(_sample_seed(seed, tick))
+    runtime_state = build_state_template(process)
+    substrate_wids = list(state["substrate_wids"])
+    enzyme_wids = list(state["enzyme_wids"])
+
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="substrates",
+        vector=np.asarray(state["oracle_before_substrates"], dtype=np.float64),
+        wids=substrate_wids,
+    )
+    overlay_observable_into_state(
+        process=process,
+        state=runtime_state,
+        observable="enzymes",
+        vector=np.asarray(state["oracle_before_enzymes"], dtype=np.float64),
+        wids=enzyme_wids,
+    )
+    if "oracle_before_bound_enzymes" in state:
+        overlay_observable_into_state(
+            process=process,
+            state=runtime_state,
+            observable="boundEnzymes",
+            vector=np.asarray(state["oracle_before_bound_enzymes"], dtype=np.float64),
+            wids=enzyme_wids,
+        )
+
+    chrom_store_before: ChromosomeStore = state["oracle_before_chromosome_store"]
+    _overlay_chromosome_into_state(runtime_state, chrom_store_before)
+
+    refresh_allocator_views(process, runtime_state)
+    with forbid_sut_oracle_file_io():
+        update = process.next_update(1.0, runtime_state)
+    apply_count_update(runtime_state, update)
+
+    chrom_update = update.get("chromosome", {}) if isinstance(update, dict) else {}
+    chrom_after_store = _apply_chromosome_update(chrom_store_before, chrom_update)
+
+    # 'complexs' channel is aliased from boundEnzymes per RI catalog mismatch.
+    bound_after = np.asarray(
+        project_observable_from_state(
+            process=process,
+            state=runtime_state,
+            observable="boundEnzymes",
+            wids=enzyme_wids,
+            bound_enzymes_before=None,
+        ),
+        dtype=np.float64,
+    )
+
+    return {
+        "substrates": np.asarray(
+            project_observable_from_state(
+                process=process,
+                state=runtime_state,
+                observable="substrates",
+                wids=substrate_wids,
+                bound_enzymes_before=None,
+            ),
+            dtype=np.float64,
+        ),
+        "boundEnzymes": bound_after,
+        "complexs": bound_after,  # alias for catalog primary_channel
         "chromosome_after_store": chrom_after_store,
         "sample_seed": _sample_seed(seed, tick),
     }

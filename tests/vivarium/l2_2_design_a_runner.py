@@ -678,6 +678,10 @@ def _process_sample_process(process: str) -> Any:
         return runner_helpers._dna_supercoiling_process(0)
     if process == "Replication":
         return runner_helpers._replication_process(0)
+    if process == "DNARepair":
+        return runner_helpers._dna_repair_process(0)
+    if process == "ReplicationInitiation":
+        return runner_helpers._replication_initiation_process(0)
     raise ValueError(f"Unsupported process {process!r}.")
 
 
@@ -731,6 +735,10 @@ def _observable_wids(process: str, sample_process: Any) -> dict[str, list[str]]:
         mapping["substrates"] = [str(x) for x in getattr(sample_process, "fixture_substrate_wids", ())]
         mapping["enzymes"] = [str(x) for x in getattr(sample_process, "fixture_enzyme_wids", ())]
         mapping["boundEnzymes"] = [str(x) for x in getattr(sample_process, "fixture_enzyme_wids", ())]
+    if process == "ReplicationInitiation":
+        # complexs is aliased from boundEnzymes (per _format_ensemble_oracle); the
+        # complex WIDs are therefore the enzyme WIDs of the 15-element DnaA-state array.
+        mapping["complexs"] = [str(x) for x in getattr(sample_process, "enzyme_wids", ())]
     return mapping
 
 
@@ -789,6 +797,12 @@ def run_design_a(
     karr_projection_vectors: np.ndarray | None = None
     chromosome_oracle: dict[str, Any] | None = None
     is_chromosome_primary = primary_channel == "chromosome"
+    # Day-39: chromosome is loaded as oracle input for any process whose catalog
+    # input_channels include chromosome (chromosome-primary processes need it for
+    # both input overlay AND projection gating; non-primary chromosome-input
+    # processes like ReplicationInitiation need it for input overlay only).
+    catalog_input_channels = tuple(_process_catalog_entry(process).get("input_channels", ()))
+    chromosome_in_inputs = "chromosome" in catalog_input_channels
     if use_projection_distance:
         if not primary_projection:
             raise ValueError(
@@ -797,19 +811,17 @@ def run_design_a(
             )
         oc_projection_vectors = np.zeros((len(seeds), m_ticks, len(primary_projection)), dtype=np.float64)
         karr_projection_vectors = np.zeros_like(oc_projection_vectors)
-    if is_chromosome_primary:
-        # Day-39: chromosome-primary processes need sparse-triple oracle stores
-        # pre-loaded so the tick handler can overlay Karr's chromosome state and
-        # the projection can be computed from before/after sparse triples.
+    if chromosome_in_inputs:
         chromosome_oracle = runner_helpers.load_chromosome_oracle_for_process(
             process, list(seeds), int(m_ticks)
         )
-        # Pre-compute Karr's projection matrix from the oracle's before/after stores.
-        karr_projection_vectors = runner_helpers.chromosome_projection_matrix(
-            before_stores=chromosome_oracle["before_stores"],
-            after_stores=chromosome_oracle["after_stores"],
-            projection_spec=tuple(primary_projection),
-        )
+        if is_chromosome_primary:
+            # Pre-compute Karr's projection matrix from the oracle's before/after stores.
+            karr_projection_vectors = runner_helpers.chromosome_projection_matrix(
+                before_stores=chromosome_oracle["before_stores"],
+                after_stores=chromosome_oracle["after_stores"],
+                projection_spec=tuple(primary_projection),
+            )
     allocator_inputs: list[dict[str, Any]] = []
     for seed_index, seed in enumerate(seeds):
         for tick in range(m_ticks):
@@ -917,11 +929,11 @@ def run_design_a(
                 )
                 sample_state["enzyme_wids"] = wids_by_channel.get("enzymes", [])
             oc_result = runner_helpers.run_oc_tick(process, int(seed), int(tick), sample_state)
-            if chromosome_oracle is not None and use_projection_distance:
+            if is_chromosome_primary and use_projection_distance:
                 # Compute OC's projection from before/after sparse-triple stores.
-                # This is the chromosome-primary code path; it bypasses the
-                # projection_state/karr_projection_state dance because chromosome
-                # state is structurally different from count vectors.
+                # Only fires when chromosome IS the primary channel; non-primary
+                # chromosome-input processes (e.g. ReplicationInitiation) just need
+                # the chromosome state for input overlay, not projection gating.
                 chrom_before = chromosome_oracle["before_stores"][seed_index][tick]
                 chrom_after_oc = oc_result["chromosome_after_store"]
                 for comp_idx, token in enumerate(primary_projection):

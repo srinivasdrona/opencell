@@ -68,11 +68,12 @@ EXPECTED_L2_2_VERDICTS = {
     # 2 UNVALIDATABLE — runner refuses (EVENT_CLASS bucket needs L2.event)
     "Cytokinesis": "UNVALIDATABLE_EVENT_CLASS",
     "RibosomeAssembly": "UNVALIDATABLE_EVENT_CLASS",
-    # 4 NOT_WIRED — chromosome-port processes (DNASupercoiling+Replication wired on Day-39)
+    # 2 NOT_WIRED — 4 of 4 in-scope chromosome processes wired on Day-39
+    # (DNADamage + FtsZ remain NOT_WIRED because they are EVENT_CLASS, out of design-A scope)
     "Replication": "VERIFIED_GENUINE",
-    "ReplicationInitiation": "NOT_WIRED",
+    "ReplicationInitiation": "VERIFIED_GENUINE",
     "DNASupercoiling": "VERIFIED_GENUINE",
-    "DNARepair": "NOT_WIRED",
+    "DNARepair": "VERIFIED_GENUINE",
     "DNADamage": "NOT_WIRED",
     "FtsZPolymerization": "NOT_WIRED",
 }
