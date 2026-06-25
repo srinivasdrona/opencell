@@ -55,12 +55,12 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 **Delegation footnote (Day-39)**: 3 codex attempts + 1 Kimi K2.6 attempt all bailed on the 2611-line `_l2_2_design_a_runner_helpers.py` (budget consumed by reads before code generation). Main agent completed all 4 wirings directly. User-scoped memory stored for future delegations.
 
 **Day-40 priority options (operator decision):**
-- A. **L2.5 re-audit** — *DONE Day-39*: net count unchanged at ~15/256. Path B work was L2.2-level wiring; L2.5 honest-mode uses a different code path (`l2_2_replay_common_v2`). 3 of 4 chromosome processes (DNASupercoiling, Replication, RI) are classified DIRTY by the Day-35 trace-hint audit — their source code has `trace_hint` short-circuits that bypass real biology. Unlocking L2.5 PASSes from them needs a separate process-source cleanup project (remove trace_hint reads from the 3 dirty samplers).
-- B. **L2.2 Metabolism FBA-fidelity** — Day-38 deferred (HiGHS vs GLPK basis-selection gap); multi-day work. Started Day-39 PM after L2.5 audit.
+- A. **L2.5 re-audit** — *DONE Day-39*: net unchanged (~15/256). Path B work was L2.2-runner-level; L2.5 uses different code path (`l2_2_replay_common_v2`). 3 of 4 chromosome processes (DNASupercoiling/Replication/RI) classified DIRTY by Day-35 trace-hint audit. Unlocking L2.5 PASSes from them needs separate process-source cleanup (priority F).
+- B. **L2.2 Metabolism FBA-fidelity** — *Day-39 PM DIAGNOSED*: gap is **99.97% LP basis-selection** (HiGHS vs GLPK). Ground truth captured at correct allocated state via `scripts/matlab/extract_metab_flux_v3.m`. Writeback algorithm port is faithful (40/148K = 0.03% gap). Day-40 path: install GLPK Python binding (cvxpy[GLPK] or swiglpk) and route OC `solve_fba` through GLPK for Metabolism. Alternative: parsimony tweak on LIPASE pairs, or accept basis difference + calibrate tolerance.
 - C. **L2.1 COINCIDENTAL fixes** — ProteinDecay + Replication (likely Metabolism-cascade; depends on B)
 - D. **L2.1 FAIL fix** — ChromosomeCondensation (its own investigation)
 - E. **ReplicationInitiation deep audit** — RI's `complexs` alias is a workaround
-- F. **Process-source cleanup for L2.5 unlock** — Remove `trace_hint` from DNASupercoiling/Replication/RI source. NEW priority discovered during A.
+- F. **Process-source cleanup for L2.5 unlock** — Remove `trace_hint` from DNASupercoiling/Replication/RI source. Discovered during A.
 
 **Day-38 final state — committed and pushed:**
 
