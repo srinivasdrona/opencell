@@ -676,6 +676,8 @@ def _process_sample_process(process: str) -> Any:
         return runner_helpers._cytokinesis_process(0)
     if process == "DNASupercoiling":
         return runner_helpers._dna_supercoiling_process(0)
+    if process == "Replication":
+        return runner_helpers._replication_process(0)
     raise ValueError(f"Unsupported process {process!r}.")
 
 
