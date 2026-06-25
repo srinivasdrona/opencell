@@ -1,6 +1,56 @@
 # All-29 Process Status - 2026-06-03 ~14:30 IST (L2.1 SWEEP COMPLETE)
 
-> **⚠️ Day-38 EOD update: Karr substrate writeback landed (opt-in), L2.2 Metabolism W1 168.39 (was 171.39 — 1.7% improvement only). Scoreboard unchanged.**
+> **⚠️ Day-39 EOD update: Path B complete — 4 of 4 in-scope chromosome processes wired into L2.2 design-A runner. L2.2 VERIFIED_GENUINE 13 → 17.**
+>
+> **What landed (committed and pushed):**
+> - Chromosome infrastructure for the L2.2 design-A runner:
+>   - `load_chromosome_oracle_for_process()`: pre-loads 11 sparse-triple fields per seed × tick from `per_process_traces_v2_s{NNN}` traces via `ChromosomeStore`
+>   - `chromosome_projection_matrix()`: computes (n_seeds, m_ticks, n_components) projection from before/after stores
+>   - `_chromosome_projection_component()`: supports `<field>.delta_value_sum`, `<field>.delta_nnz`, `<field>.delta_value_sum_strand_<N>`, and `repair_event_present` meta-token
+>   - `_overlay_chromosome_into_state()` + `_apply_chromosome_update()` for state plumbing
+> - Per-process factories and tick handlers for all 4 chromosome processes
+> - Generalized runner: chromosome oracle loads whenever chromosome is in catalog `input_channels` (chromosome-primary AND non-primary alike)
+> - Bug fix in `_l2_2_design_a_projections.py`: hurdle distance handles asymmetric-empty event masks (was crashing on sparse-event processes like DNARepair)
+>
+> **Empirical verdicts (50 seeds × 10 ticks each):**
+> - DNASupercoiling: `PASS chromosome=PASS@0.000000` (closed-form convergence)
+> - Replication: `PASS chromosome=PASS@0.000000 boundEnzymes=PASS@0.097538`
+> - DNARepair: `PASS chromosome=PASS@0.000000` (hurdle gating)
+> - ReplicationInitiation: `PASS complexs=PASS@0.085733` (complexs aliased from boundEnzymes — catalog/trace naming mismatch resolved at runner level)
+>
+> **L2.1 strict-rubric scoreboard (28 processes — UNCHANGED):**
+>
+> | Verdict | Count |
+> |---|---:|
+> | GENUINE | **19** |
+> | UNINFORMATIVE | 6 |
+> | COINCIDENTAL | 2 (ProteinDecay, Replication — real biology gaps) |
+> | FAIL | 1 (ChromosomeCondensation) |
+> | ERROR | 0 |
+>
+> **L2.2 strict-rubric scoreboard (22 processes — Day-39):**
+>
+> | Verdict | Count |
+> |---|---:|
+> | VERIFIED_GENUINE | **17** (was 13) |
+> | VERIFIED_FAIL | 1 (Metabolism, W1=168) |
+> | UNVALIDATABLE_EVENT_CLASS | 2 (Cytokinesis, RibosomeAssembly) |
+> | NOT_WIRED (UNVALIDATED) | **2** (was 6) — DNADamage + FtsZ only, both EVENT_CLASS / out of design-A scope |
+> | LAUNDERED_VIA_HINT_FEED | 0 |
+>
+> **Honest scoreboard (Day-39 EOD):**
+>
+> | Gate | Was (Day-38 EOD) | Day-39 EOD |
+> |---|---:|---:|
+> | L2.1 GENUINE | 19/28 | **19/28** |
+> | L2.2 VERIFIED_GENUINE | 13/22 | **17/22** |
+> | L2.5 honest PASS | 15/256 | 15/256 (not re-audited) |
+>
+> **Note on closed-form convergence**: 3 of 4 chromosome processes (DNASupercoiling, Replication, DNARepair) hit chromosome=PASS@0.000000 — OC's chromosome biology reproduces Karr's deterministically (consistent with the L2.1 per-seed bit-identity PASSes documented in catalog notes). This is convergence, not laundering: tick handlers overlay Karr's actual chromosome pre-state (not fixture defaults) and OC's `next_update` produces the deltas that drive the projection.
+>
+> **Delegation footnote (Day-39)**: 3 codex attempts + 1 Kimi K2.6 attempt all bailed on the 2611-line `_l2_2_design_a_runner_helpers.py` (budget consumed by reads before code generation). User memory stored. The 4 wirings were completed by the main agent directly.
+
+> **⚠️ Day-38 EOD update: Karr substrate writeback landed (opt-in), L2.2 Metabolism W1 168.39 (was 171.39 — 1.7% improvement only). Scoreboard unchanged.** *(superseded by Day-39 update above)*
 >
 > **What landed (committed and pushed):**
 > - `opencell/m1/karr_metabolism_writeback.py` — standalone helper implementing Karr's 4-step substrate writeback + clip (Metabolism.m:1200-1258), 8/8 unit tests passing

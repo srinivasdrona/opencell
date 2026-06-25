@@ -26,39 +26,40 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-06-25 ~08:45 IST, Day-39 in progress):**
-- **Codex PID 38348** running `PROMPT.md` (DNASupercoiling L2.2 wiring — canary for chromosome plumbing)
-- Wait-shell `codex-wait-dnasupercoiling` attached, notifies on exit (zero polling cost)
-- PID file: `~/.copilot/session-state/5c51d44b-5a9f-4b23-85ff-0fddaadf2212/files/dna_supercoiling_wiring_pid.txt`
-- Expected STATUS: `STATUS_dna_supercoiling_wiring.md` at repo root
+**Live processes / agents (2026-06-25 ~11:45 IST, Day-39 EOD):** None alive. Workspace clean.
 
-**Day-39 Path B (chromosome wiring):** 4 in-scope chromosome-port processes need L2.2 design-A wiring.
-- DNASupercoiling (canary, codex in flight)
-- Replication, ReplicationInitiation, DNARepair (queued after canary)
-- DNADamage, FtsZ are EVENT_CLASS, out of design-A scope
+**Day-39 Path B (chromosome wiring) — COMPLETE.** All 4 in-scope chromosome-port processes wired into the L2.2 design-A runner:
 
-**Last pushed commits**:
-- `037ea99` — Day-39 scoping + codex prompt
-- `4a00c82` — Day-38 blog
-- `d517007` — Day-38 H11 realmax diagnostic (reverted fix)
-- `e9a7801` — Day-38 H10 revert (codex's NaN-semantics hypothesis was wrong)
+| Process | Verdict | Detail |
+|---|---|---|
+| DNASupercoiling | VERIFIED_GENUINE | chromosome=PASS@0.000000 |
+| Replication | VERIFIED_GENUINE | chromosome=PASS@0.000000, boundEnzymes=PASS@0.097 |
+| DNARepair | VERIFIED_GENUINE | chromosome=PASS@0.000000 (hurdle gating) |
+| ReplicationInitiation | VERIFIED_GENUINE | complexs=PASS@0.086 (aliased from boundEnzymes) |
 
-**Day-38 EOD scoreboard (unchanged, baseline for Day-39):**
-- L2.1 GENUINE: 19/28
-- L2.2 VERIFIED_GENUINE: 13/22 (NOT_WIRED: 6 chromosome-port)
-- L2.5 honest PASS: 15/256
+**Last pushed commits (Day-39):**
+- `83c5cc6` — DNARepair + RI wiring (Path B complete)
+- `0d278ec` — Replication wiring (strand_N projection support)
+- `11d0be9` — DNASupercoiling wiring (chromosome canary infrastructure)
+- `b4ef1a5` — DNASupercoiling oracle probe template
 
-**Day-39 target scoreboard if Path B lands cleanly:**
-- L2.2 NOT_WIRED reduced from 6 to 2 (DNADamage + FtsZ remain UNVALIDATABLE_EVENT_CLASS)
-- L2.2 VERIFIED_GENUINE: 13 → 17 (if all 4 PASS empirically)
-- L2.2 VERIFIED_FAIL: 1 → 1-5 (Metabolism stays; new wirings may add more failures)
+**Honest scoreboard (Day-39 EOD):**
 
-**Verification protocol when codex finishes:**
-1. Read STATUS_dna_supercoiling_wiring.md
-2. Confirm Beat 4 inversion checks have evidence, not just claims
-3. Verify pin matches empirical: rerun the L2.2 design-A runner myself
-4. Verify regressions: rerun L2.1 strict-rubric + Metabolism oracle test
-5. **Do NOT trust codex's claim alone** (Day-38 H10 lesson: trust-but-verify with the existing oracle test)
+| Gate | Was (Day-38 EOD) | Day-39 EOD |
+|---|---:|---:|
+| L2.1 GENUINE | 19/28 | **19/28** |
+| L2.2 VERIFIED_GENUINE | 13/22 | **17/22** |
+| L2.2 NOT_WIRED | 6 | **2** (DNADamage + FtsZ only, both EVENT_CLASS) |
+| L2.5 honest PASS | 15/256 | 15/256 (not re-audited; chromosome unlock could expand it) |
+
+**Delegation footnote (Day-39)**: 3 codex attempts + 1 Kimi K2.6 attempt all bailed on the 2611-line `_l2_2_design_a_runner_helpers.py` (budget consumed by reads before code generation). Main agent completed all 4 wirings directly. User-scoped memory stored for future delegations.
+
+**Day-40 priority options (operator decision):**
+- A. **L2.5 re-audit** — chromosome processes are now wired into L2.2; re-run the 256-pair L2.5 sweep with the new in-scope set
+- B. **L2.2 Metabolism FBA-fidelity** — Day-38 deferred (HiGHS vs GLPK basis-selection gap); multi-day work
+- C. **L2.1 COINCIDENTAL fixes** — ProteinDecay + Replication (likely Metabolism-cascade; depends on B)
+- D. **L2.1 FAIL fix** — ChromosomeCondensation (its own investigation)
+- E. **ReplicationInitiation deep audit** — RI's `complexs` alias is a workaround; the catalog-vs-trace mismatch suggests a deeper design question
 
 **Day-38 final state — committed and pushed:**
 
