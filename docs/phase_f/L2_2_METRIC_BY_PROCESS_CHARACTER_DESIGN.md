@@ -681,8 +681,116 @@ QO6. Should the tiny Day-40 `22409` vs `22,412` discrepancy be normalized in the
 
 ## 8) Scope boundary
 
+In scope:
+1. A preregistered mathematical-object audit for L2.2 metric selection with explicit axes for stochasticity, solver type, degeneracy/sensitivity, event density, and observable sufficiency.
+2. A deterministic selection rule that maps the audit record to the metric families defined in D2.
+3. The LP-degenerate family contract for current and future processes, including split W1 semantics, interface-fidelity invariants, baseline-controlled regression, and conditional verdict labels.
+4. The mutation-test catalogue required before `MF4` can replace current single-metric gating.
+5. Explicit handling of the current `EVENT_CLASS` processes as `UNVALIDATABLE_EVENT_CLASS` within the L2.2 selection framework.
+
+Out of scope:
+1. Implementing the new metrics, baselines, or mutation tests in code.
+2. Redesigning L1, L2.1, L2.event, L2.5, L3, L4, or L5 validation semantics.
+3. Fixing the remaining Metabolism gap itself.
+4. Reclassifying biological truth claims against wet-lab literature; this design stays inside process-port fidelity and harness selection.
+5. Running new probes, MATLAB extractions, or empirical sweeps beyond the existing Day-40 artifacts.
+
+Deferred follow-ups:
+1. Implement the audit manifest and metric-family selector in the L2.2 harness.
+2. Build `tests/vivarium/test_l2_2_metabolism_invariants_mutations.py` from D6's catalogue.
+3. Decide storage format and location for `<process>_regression_w1` baselines.
+4. Build or extend `L2.event` so `MF5_UNVALIDATABLE_EVENT_CLASS` can route to a concrete harness.
+
+Beat-4 inversion:
+- Most likely scope-creep vector: sliding from "design the selector and invariants" into "silently solve Metabolism in prose" by embedding implementation details or new empirical claims.
+- How this doc prevents it: every proposal is framed as a contract on future implementation, and every numerical claim is limited to the quoted Day-40 artifacts.
+
 ## 9) Migration and rollout path
+
+Strategy:
+- Hybrid `parallel-v2` rollout. Keep the current Design-A families intact for `MF1`-`MF3`, add the preregistered audit selector beside them, and introduce `MF4`/`MF5` as explicit new branches rather than mutating current verdict semantics in place.
+
+Implementation dependencies:
+1. A durable location and schema for the audit record.
+2. A durable location and schema for baseline artifacts and threshold snapshots.
+3. Access to the measured write surface and any required flux summaries for the LP-degenerate invariant suite.
+4. An explicit verdict serialization shape that can represent conditional passes without overloading plain `PASS`.
+
+Sequence of steps:
+1. Add the audit-record schema and selector function, with a fixture or manifest entry for every current process.
+2. Route current `MF1`, `MF2`, and `MF3` processes through the selector without changing their underlying metric implementation.
+3. Add `MF5_UNVALIDATABLE_EVENT_CLASS` verdict routing so the L2.2 selector can refuse event-window processes intentionally rather than by implicit runner failure.
+4. Implement `MF4` for Metabolism first: interface invariants, historical `trace_vertex_equivalence_w1`, baseline-controlled `metabolism_regression_w1`, and conditional verdicts.
+5. Land the mandatory mutation tests and require them to pass before enabling `MF4` as an admissible family.
+6. Only after the mutation suite is green, wire `MF4` into the public L2.2 verdict path for Metabolism and future LP-degenerate processes.
+
+Backout trigger and backout method:
+1. Trigger: mutation suite fails to detect a mandatory known-bad variant, or conditional verdict serialization proves too ambiguous for review.
+2. Method: keep the selector scaffold but map the affected process back to its prior family until the invariant hole is closed; do not silently degrade to a plain `PASS`.
+
+Compatibility period:
+1. `trace_vertex_equivalence_w1` remains emitted for Metabolism throughout the transition so historical reports remain comparable.
+2. Existing `MF1`-`MF3` thresholds remain unchanged unless a separate design or implementation PR explicitly re-audits them.
+
+Beat-4 inversion:
+- How migration could strand partially-updated code: the selector could exist, but Metabolism might emit new informational fields without actually gating on invariants or regression baseline.
+- Checkpoint or guard to detect that state: require an implementation PR checklist item that names the active metric family for Metabolism and shows which field is the hard gate versus informational output.
 
 ## 10) Risks and residual unknowns
 
+Acceptance bar for this design doc:
+1. A reviewer can read the doc and reconstruct, without further explanation, the metric-selection rule for any current process by filling the D1 audit record and applying D2's matrix.
+2. Every substantive claim about Metabolism in the design is grounded in the quoted catalog, post-mortem, gap-map, schema, runner, projection helper, or decision-log excerpts already placed above.
+3. D6 is concrete enough that an implementer can write `tests/vivarium/test_l2_2_metabolism_invariants_mutations.py` without needing a second design pass.
+4. Applied retroactively, the framework classifies Metabolism as `MF4_LP_DEGENERATE_INTERFACE_FIDELITY`, which demonstrates that the audit would have caught the Day-40 failure mode at port time if it had existed.
+5. The preregistration rule in D1 and the baseline policy in D4 make post-hoc metric shopping a process violation rather than a judgment call.
+
+R1. Observable sufficiency may be weaker than this design assumes for some non-Metabolism processes.
+- Likelihood: medium
+- Impact: medium
+- Detection: a future mutation thought-experiment on an `MF1` or `MF2` process reveals that raw outputs or current projections cannot detect a plausible interface bug.
+- Mitigation: permit future design updates to add another family only by extending the audit matrix, not by per-process exception.
+- Owner: future L2.2 implementer + reviewer
+
+R2. The LP-degenerate invariant suite may need more internal data exposure than current process outputs provide.
+- Likelihood: high
+- Impact: high
+- Detection: implementation cannot compute pathway-level flux distributions or compartment sign/range checks from currently emitted artifacts.
+- Mitigation: treat missing exposure as an implementation dependency and add explicit serialization rather than weakening the invariant list.
+- Owner: Metabolism implementation follow-up
+
+R3. Baseline governance may become operationally heavy.
+- Likelihood: medium
+- Impact: medium
+- Detection: frequent legitimate solver or harness updates trigger repeated rebaselining requests.
+- Mitigation: keep the baseline fingerprint minimal but sufficient, and centralize update protocol in one artifact format.
+- Owner: harness maintainer
+
+R4. The conditional verdict taxonomy could confuse downstream tooling that expects only `PASS` or `FAIL`.
+- Likelihood: medium
+- Impact: medium
+- Detection: serialization consumers or dashboards drop, bucket, or misread the new labels.
+- Mitigation: prefer the structured verdict representation proposed in QO3, with rendered summary strings for humans.
+- Owner: harness maintainer + operator
+
+R5. The Day-40 artifact discrepancies (`22409` vs `22,412`; `Gmk x2` table vs `Gmk x4` summary wording) may trigger unnecessary review churn.
+- Likelihood: medium
+- Impact: low
+- Detection: implementation discussion stalls on literal mismatches instead of the metric design.
+- Mitigation: pin canonical literals during implementation and link back to the source lines that differed.
+- Owner: implementation PR author
+
+R6. Event-class handling remains only partially solved until `L2.event` is available.
+- Likelihood: high
+- Impact: medium
+- Detection: a reviewer asks for a full verdict on RibosomeAssembly, Cytokinesis, FtsZPolymerization, or DNADamage and finds only a deferral label.
+- Mitigation: treat `UNVALIDATABLE_EVENT_CLASS` as an honest status, not a temporary PASS, and keep `L2.event` on the dependency list.
+- Owner: future L2.event designer
+
 ## 11) Operator review checklist
+
+1. Do the authoritative quotations at the top actually support the design's most important claims, especially the LP-degeneracy argument and the current runner contract?
+2. Can you take one process from each family (`MF1` through `MF5`) and classify it using D1 plus D2 without improvising new rules?
+3. Does D3's invariant suite cover interface fidelity, not only aggregate biology summaries?
+4. Does D6 contain concrete enough mutation constructions and expected failures to justify replacing a single W1 gate for LP-degenerate processes?
+5. Do D1 and D4 jointly make metric selection and rebaselining pre-registered enough to block ex-post special pleading?
