@@ -1,3 +1,5 @@
+> **NOTE**: This document's §5 MF4 (LP-degenerate) section is SUPERSEDED by `docs/phase_f/L2_2_METABOLISM_LP_DEGENERATE_DESIGN.md` (V2 design). Sections covering MF0/MF1/MF2/MF3/MF5 remain the current contract.
+
 # L2.2 Metric-by-Process-Character Design
 
 ## Authoritative Quotations
