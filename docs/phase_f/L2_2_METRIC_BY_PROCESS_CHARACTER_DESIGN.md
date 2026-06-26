@@ -347,7 +347,61 @@ Beat-4 inversion for inventory:
 
 ## 3) Interaction-surface map
 
+| Surface ID | Producer | Consumer | Contract unit | Failure if mismatched | Evidence anchor |
+|---|---|---|---|---|---|
+| S1 | `PROCESS_CATALOG.yaml` plus the new audit record | Metric selector | `process`, audit-axis values, selected metric family, gating-vs-informational labels, preregistration fingerprint | Metric shopping after seeing a red result; two reviewers choose different metrics for the same process | `docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml:72-76,380-392,540-548` |
+| S2 | Catalog harness routing | Runner dispatch | `harness_type`, `bucket`, `event_density`, `primary_channel`, `output_channels` | Sparse singular processes get pushed through the per-tick runner and fake a zero-W1 PASS | `docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml:72-76`; `tests/vivarium/l2_2_design_a_runner.py:598-618` |
+| S3 | Per-process observable schema | Invariant evaluator | Observable names, WID identity/order, mutated-vs-pass-through expectations, sign convention, compartment partitioning | Aggregate metrics pass while the write surface is permuted, sign-flipped, or truncated | `data/schemas/per_process/metabolism.toml:18-37,54-64` |
+| S4 | Numerical object audit | Metric selector | Solver class, solver family, condition number, nullity, bound finiteness, variant-family multiplicity, sensitivity label | A numerically degenerate object is treated as if it had a unique trace distribution | `docs/phase_f/METABOLISM_POSTMORTEM_DAY40.md:53-60,94-106`; `D:/OneDrive - Microsoft/.pm-os/DECISIONS.md:22-24` |
+| S5 | Karr after-state traces | `trace_vertex_equivalence_w1` | Primary-channel per-tick delta vectors in the recorded solver's basis | Solver-family basis differences are misread as biology regressions | `tests/vivarium/l2_2_design_a_runner.py:1020-1049`; `docs/phase_f/METABOLISM_GAP_MAP.md:280-281` |
+| S6 | Pinned OC solver stack plus accepted baseline snapshot | `<process>_regression_w1` | Baseline fingerprint = process + audit class + solver family/version + observable schema hash + threshold snapshot | Regression metric silently resets after a code or solver change and stops guarding anything | `docs/phase_f/METABOLISM_POSTMORTEM_DAY40.md:129-141`; `D:/OneDrive - Microsoft/.pm-os/DECISIONS.md:22-24` |
+| S7 | Invariant suite | Mutation harness | Each named bad writeback mutation and the exact invariant(s) that must fail | The replacement bundle is weaker than current W1 and cannot prove interface fidelity | `docs/phase_f/METABOLISM_POSTMORTEM_DAY40.md:131,137-141`; `docs/phase_f/METABOLISM_GAP_MAP.md:21-62,64-245` |
+| S8 | Projection metric implementation | Sparse/event-family processes | Tensor shape, component scaling, hurdle event-rate gate, conditional-distance semantics | A sparse process is compared by dense-vector W1 when event-rate mismatch is the real error surface | `tests/vivarium/_l2_2_design_a_projections.py:152-178,191-230` |
+| S9 | Event-window traces | Future `L2.event` harness | Natural event window, event-aligned observables, no tick-alignment assumption | The framework claims to cover all processes but leaves event-class processes undefined in practice | `docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml:72-76`; `tests/vivarium/l2_2_design_a_runner.py:615-618` |
+
+Beat-4 inversion:
+- Which cross-surface assumption is most likely false? That `output_channels` alone are a sufficient observable contract. Metabolism shows the opposite: the substrate channel can have correct aggregate biology while still carrying wrong signed writeback at specific WIDs or compartments.
+- What observation would expose that quickly? A compartment permutation, cofactor swap, or exchange-direction flip that preserves growth and broad KS but fails a signed residual or whitelist invariant immediately.
+
 ## 4) Baseline facts and constraints
+
+1. Hard task constraints.
+   - This is a design-doc-only task. Only `docs/phase_f/L2_2_METRIC_BY_PROCESS_CHARACTER_DESIGN.md` and `STATUS_l22_metric_design.md` may be created; no code, fixtures, or tests may be modified.
+   - The source-selection checklist is already satisfied locally: the primary spec sources are present in the repo or on the local workstation, no external network fetch is needed, and no MATLAB or new-data extraction is allowed. If implementation later needs more data than the quoted artifacts already provide, that need must be recorded as an open question rather than satisfied ad hoc.
+
+2. Current L2.2 scope is already multi-family, but the family selection is implicit and incomplete.
+   - The catalog currently tallies 22 Design-A per-tick in-scope processes: `4` `ALGORITHMIC_DEEP`, `14` `ALGORITHMIC_SHALLOW`, and `4` `TRIVIAL_RNG`, with `6` `DETERMINISTIC` out of scope (`docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml:540-548`).
+   - The same catalog also defines an `EVENT_CLASS` bucket whose natural contract is `L2.event ensemble (event-aligned, not tick-aligned)` and says the per-tick runner must refuse those processes because tick-level distribution is undefined for them (`docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml:72-76`).
+   - The current runner enforces that refusal at dispatch time (`tests/vivarium/l2_2_design_a_runner.py:598-618`), which means the repo already recognizes that one metric does not fit all stochastic processes. The missing piece is a principled pre-run audit that explains when and why a process should leave the default per-tick W1 family.
+
+3. The current per-tick runner is still fundamentally a distributional-comparison runner.
+   - Channel verdicts are driven by `w1_oc_vs_karr`, `q95_null`, and a threshold derived from the bootstrap null (`tests/vivarium/l2_2_design_a_runner.py:338-363,1020-1049`).
+   - Projection distances likewise flatten `(seed, tick, component)` tensors across all seeds and ticks before computing Wasserstein distance, and the hurdle helper still reduces sparse behavior to event-rate difference plus conditional distribution distance (`tests/vivarium/_l2_2_design_a_projections.py:152-178,191-230`).
+   - Those are valid metrics for some process classes. They are not, by themselves, interface-fidelity checks.
+
+4. Metabolism's observable surface is narrow but high-dimensional.
+   - `metabolism.toml` declares `substrates` as the only mutated observable across the 100-tick trace, while `enzymes` and `boundEnzymes` are pass-through surfaces (`data/schemas/per_process/metabolism.toml:18-37`).
+   - The same schema records `585` substrate IDs and `104` enzyme IDs (`data/schemas/per_process/metabolism.toml:54-64`).
+   - Therefore, any Metabolism replacement metric that checks only biomass or aggregate substrate histograms is under-instrumented for the actual write surface.
+
+5. The empirical Metabolism failure is concentrated and structurally solver-linked.
+   - Day-40 keeps Metabolism at `W1=161 vs threshold=102` over a `50 seeds x 10 ticks = 500 samples` audit (`docs/phase_f/METABOLISM_GAP_MAP.md:5-17`).
+   - The same artifact reports a Karr-recorded delta mean L1 per sample of `109393`, an algorithm/RNG floor of `40`, and bounds drift of `0` at sample `(0,1)` (`docs/phase_f/METABOLISM_GAP_MAP.md:10-17`).
+   - The top four error clusters are aromatic amino acids plus dipeptides (`26.5%`), metabolic byproducts (`25.6%`), lipid family (`23.9%`), and carbon backbone (`16.9%`) (`docs/phase_f/METABOLISM_GAP_MAP.md:21-26`).
+   - The Top-27 table says `99.1%` of the error is carried by 27 WIDs, and summing rows 1-17 yields `91.09%`, which matches the review shorthand that roughly 17 WIDs carry about 90% of the remaining gap (`docs/phase_f/METABOLISM_GAP_MAP.md:32-62`).
+   - The gap map baseline line gives `22409` as the current mean writeback error per sample, while the post-mortem, the gap-to-close line, and the durable decision log repeat `22,412`. That three-count discrepancy is small relative to the gap but real in the artifacts, so later implementation should pin one literal and document why (`docs/phase_f/METABOLISM_GAP_MAP.md:12,17`; `docs/phase_f/METABOLISM_POSTMORTEM_DAY40.md:60,147`; `D:/OneDrive - Microsoft/.pm-os/DECISIONS.md:25`).
+
+6. The post-mortem already states the governing lesson for this design.
+   - RC3 says the LP should have been audited for `cond`, null-space, and bound finiteness before L2.2 was designed, because on a `cond=6.7e+12` LP with `8` unbounded reactions and `128` null-space dimensions the recorded trace is "one of many degenerate optima" rather than a unique biological oracle (`docs/phase_f/METABOLISM_POSTMORTEM_DAY40.md:94-106`).
+   - The durable decision log promotes that into project policy: pre-test object audit is required for LPs, ODEs, and Markov objects before metric design, and default validation threshold should remain bit-match unless justified otherwise (`D:/OneDrive - Microsoft/.pm-os/DECISIONS.md:22-24`).
+
+7. The remaining Metabolism gap is not a generic noise problem.
+   - The post-mortem and gap map jointly identify LP degeneracy sources including `LIPASE` x27, `TX` x12, `Pyk` x7, `Adk` x3, `PfkA` x5, and `Gmk` x2-family behavior in the gap map tables, plus the post-mortem's higher-level statement that six enzyme variant families are implicated (`docs/phase_f/METABOLISM_GAP_MAP.md:64-176`; `docs/phase_f/METABOLISM_POSTMORTEM_DAY40.md:53-60,98-102`).
+   - The same artifacts say GLPK 5.0 plus `presolve=OFF` closed about `82%` of the original writeback L1 gap, leaving a residual that is structurally tied to alternative LP vertices rather than to bounds drift or broad biological mismatch (`docs/phase_f/METABOLISM_POSTMORTEM_DAY40.md:53-60,147-150`; `docs/phase_f/METABOLISM_GAP_MAP.md:14-17,280-281`).
+
+Beat-4 inversion:
+- Which baseline "fact" is inferred rather than proven? The shorthand "17 WIDs carry 90% of error" is a derived summary from the Top-27 table, not a literal sentence in the source docs.
+- What would invalidate it? If the gap-map table is regenerated and the row percentages change, the arithmetic must be recomputed; the qualitative concentration claim would still hold, but the exact cutoff might move.
 
 ## 5) Decision ledger
 
