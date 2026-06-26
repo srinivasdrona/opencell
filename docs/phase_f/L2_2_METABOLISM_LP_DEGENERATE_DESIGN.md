@@ -158,6 +158,29 @@ Expected falsifier:
 
 ## 5. Mutation catalogue and bin tolerances
 
+The mutation catalogue is the admission test for I1-I5. MF4 is not implementation-ready until each mutation below is shown to fail at least one named invariant on the pinned baseline.
+
+| ID | Construction | Required failing invariant |
+|---|---|---|
+| M1 | Sign flip on one dominant WID delta after writeback, e.g. `OCDCEA`, `TRP`, or `H2O2` | I2 |
+| M2 | Compartment or paired-writeback permutation that preserves total magnitude but assigns the signed delta to the wrong substrate slot | I2 |
+| M3 | Cofactor or pathway-family swap that preserves rough mass but moves flux between variant families or cofactor-coupled products | I3 or I5 |
+| M4 | Exchange-direction flip on an external or internal exchange writeback component while keeping magnitude unchanged | I2 and usually I5 |
+| M5 | Growth-only preserved redistribution: keep biomass-compatible totals but reshuffle signed deltas across the Top-17 WIDs | I3 or I4 |
+| M6 | Uniform magnitude attenuation: multiply every per-WID signed delta by `0.9` | I1 and usually I3 |
+| M7 | Temporal shift: apply the correct signed deltas at tick `t+1` or `t-1` instead of tick `t` | I2 |
+| M8 | Correlated-noise forgery: inject zero-mean per-sample noise with Karr-matched variance, then re-normalize to preserve total absolute magnitude and family-bin aggregates | I4 |
+
+Mutation notes:
+1. M6 is the direct B3 fix for the "10% under-flux but same signs" hole. I1's `1%` tolerance is intentionally an order of magnitude tighter than the attack.
+2. M7 is caught because I2 is keyed by exact `(seed,tick,wid)`, not by pooled histograms. No extra tick-alignment invariant is needed for MF4.
+3. M8 is the direct joint-structure test. If a future implementation can make M8 pass while preserving I1-I3, I4 is underspecified and must be strengthened before MF4 ships.
+
+Bin-tolerance decision:
+1. For every variant family bin in `LIPASE`, `TX`, `Pyk`, `Adk`, `PfkA`, and `Gmk`, use `bin_tolerance = max(0.05 * abs(karr_bin_flux), 10)`.
+2. Defense: `5%` is tight enough that M6's `10%` attenuation must fail, while the absolute floor `10` prevents tiny bins from failing on stochastic rounding dust.
+3. The tolerance is anchored to Karr's recorded family-bin flux, not to the candidate run, so the candidate cannot widen its own pass band.
+
 ## 6. Verdict semantics, L5 handoff, and pre-registration enforcement
 
 ## 7. Acceptance bar, self-audit, and risks
