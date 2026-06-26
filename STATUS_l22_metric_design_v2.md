@@ -1,0 +1,9 @@
+2026-06-26T17:26:54Z read SESSION_CONTEXT.md, DESIGN_TEMPLATE.md, COMPOSITION_MANDATE_v2.md, critique, gap map, post-mortem, catalog, schema, runner, projections, and decision-log anchors for MF4-only V2 authoring.
+2026-06-26T17:26:54Z created V2 doc skeleton, added MF4-only supersession note to V1, and opened live STATUS log pending staged commits.
+2026-06-26T17:27:58Z drafted DAP intent plus §1 problem statement and §2 prior-art quotations/inventory, keeping the doc MF4-only and anchored to the critique acceptance bar.
+2026-06-26T17:28:56Z specified the numeric degeneracy rubric, worked Metabolism classification example, and the single normative MF4 selection rule with explicit no-match error behavior and truth-table fixture requirements.
+2026-06-26T17:30:33Z authored the MF4 invariant suite, chose mass+C/N/P conservation, and specified the concrete null-space perturbation admissibility test for sample (seed=0, tick=1).
+2026-06-26T17:31:23Z expanded the mutation catalogue to M1-M8 and fixed the per-family bin tolerance at max(5% of Karr bin flux, 10 molecules) so magnitude attenuation and correlated-noise attacks are explicitly covered.
+2026-06-26T17:32:55Z fixed the operational contract: one MF4 success label, conservative L5 gating, named audit-record and selector locations, and fail-closed harness enforcement with hash and commit pinning.
+2026-06-26T17:34:23Z completed the doc close-out with the acceptance bar, explicit self-audit against B1-B4/N1-N4/S1-S2, and residual implementation risks centered on elemental metadata and partial selector wiring.
+2026-06-26T17:36:26Z final self-audit passed: V2 doc line count is 190 (within 150-300), MF4-only supersession is in place, commits f7957fb -> 7e62229 landed in the requested cadence, and no Python probes or tests were run because this was a doc-only task.
