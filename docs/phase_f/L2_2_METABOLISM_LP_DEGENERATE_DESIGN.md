@@ -207,3 +207,30 @@ Migration and backout path:
 3. Backout method: leave the audit scaffold in place but return Metabolism to `DEFER_TO_V1_NON_MF4` until the failure is resolved; do not silently widen tolerances.
 
 ## 7. Acceptance bar, self-audit, and risks
+
+MF4 implementation may proceed only if all of the following are true:
+1. The preregistered audit deterministically selects MF4 by the numeric rubric in section 3.
+2. The truth-table fixture agrees with the selector on every reachable row and errors on no-match.
+3. The null-space perturbation test passes on `(seed=0, tick=1)`.
+4. M1-M8 all fail at least one required invariant.
+5. The pinned baseline and all later candidates are enforced through the selector path and audit pins named in section 6.
+
+Self-audit against the opus acceptance bar:
+- [x] B1 satisfied: one normative selector rule, truth-table equivalence requirement, explicit no-match error.
+- [x] B2 satisfied: numeric thresholds, worked Metabolism example, operator sign-off required for non-default audit outcomes.
+- [x] B3 satisfied: M6, M7, M8 added; `aggregate_signed_flux_magnitude` added; bin tolerance numeric.
+- [x] B4 satisfied: sample, alpha normalization, WID set, reachability threshold, and fail criteria are concrete.
+- [x] N1 satisfied: one verdict label and conservative L5 handoff are explicit.
+- [x] N2 satisfied: audit file location, selector path, and harness fail-closed contract are named.
+- [x] N3 satisfied: V2 is MF4-only and references V1 instead of re-documenting MF0/MF1/MF2/MF3/MF5.
+- [x] N4 satisfied: element set chosen as mass + C/N/P.
+- [x] S1 satisfied: quotations are limited to the catalog entry and the critique acceptance fragment.
+- [x] S2 satisfied: the L2.1-vs-L2.2 rationale is stated in section 1.
+
+Operator questions remaining:
+1. None for design admissibility. V2 resolves the previously deferred forks directly; review should challenge the chosen thresholds and tolerances, not fill in missing policy.
+
+Residual risks:
+1. The elemental composition lookup may not yet be wired at the schema layer; if so, I5 blocks MF4 implementation until that dependency is closed.
+2. A single mandatory perturbation sample may prove insufficient if `(0,1)` lands near a pathological active set; if that happens, add one confirmatory sample before changing thresholds.
+3. Partial implementation is the main migration risk: selector wiring without fail-closed enforcement would recreate the exact silent-routing problem V2 is designed to stop.
