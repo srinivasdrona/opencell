@@ -73,6 +73,48 @@ Inventory Beat-4 inversion:
 
 ## 3. Objective degeneracy rubric and MF4 admission rule
 
+Normative audit fields for any LP candidate:
+1. `solver_type in {lp, non_lp}`.
+2. `condition_number = cond(S)`.
+3. `nullity_ratio = dim(null(S)) / n_reactions`.
+4. `unbounded_non_biomass_reactions = count(lb=-inf and ub=+inf after static bound construction, excluding biomass and reactions explicitly closed by Karr bounds)`.
+5. `observable_surface = substrates_only | other`.
+
+Numeric rubric:
+1. `degeneracy_sensitivity = lp_degenerate` if any of:
+   - `condition_number > 1e10`
+   - `nullity_ratio > 0.10`
+   - `unbounded_non_biomass_reactions > 0`
+2. `degeneracy_sensitivity = low` if not `lp_degenerate` and any of:
+   - `1e6 < condition_number <= 1e10`
+   - `0.01 < nullity_ratio <= 0.10`
+3. Else `degeneracy_sensitivity = none`.
+
+Defense of thresholds:
+1. They are intentionally decade-scale, not finely tuned, because the Metabolism audit sits far beyond the cutoff on all three axes.
+2. They separate numerically ordinary LPs from solver-family-sensitive LPs using the three failure modes Day-40 actually exposed: ill-conditioning, large feasible null motion, and explicitly unbounded cycle directions.
+3. Any audit that lands in `lp_degenerate` or `low` requires operator sign-off before the harness runs; MF4 is never a silent default.
+
+Worked Metabolism example:
+1. `condition_number = 6.7e+12 > 1e10` -> `lp_degenerate`.
+2. `nullity_ratio = 128 / 504 = 0.254 > 0.10` -> `lp_degenerate`.
+3. `unbounded_non_biomass_reactions = 8 > 0` -> `lp_degenerate`.
+4. Therefore Metabolism is objectively `lp_degenerate` even before considering the 17-WID residual structure, and its current `TRIVIAL_RNG` catalog bucket is non-admissible for L2.2 metric selection.
+
+Single normative selection rule:
+1. Load the preregistered audit record for `process`.
+2. If no audit record exists, if more than one row matches `process`, or if the record hash/commit pin is invalid, raise `AUDIT_REGISTRATION_ERROR`.
+3. If `solver_type != lp`, return `DEFER_TO_V1_NON_MF4`.
+4. If `solver_type == lp` and `degeneracy_sensitivity in {none, low}`, return `DEFER_TO_V1_NON_MF4`.
+5. If `solver_type == lp` and `degeneracy_sensitivity == lp_degenerate`, return `MF4_LP_DEGENERATE_INTERFACE_FIDELITY_V2`.
+6. Else raise `AUDIT_SELECTION_ERROR`; there is no implicit fallthrough to MF1 or any bucket label.
+
+Truth-table equivalence requirement:
+1. The selector above is the only normative artifact; any table is illustrative only.
+2. A checked fixture must enumerate the reachable cross-product for current LP and non-LP audit states and assert exact equality between fixture outcome and selector outcome.
+3. Required rows are at minimum: `(non_lp, none)`, `(non_lp, low)`, `(lp, none)`, `(lp, low)`, `(lp, lp_degenerate)`.
+4. The fixture must also assert the negative case: no matching preregistered row -> explicit error, not `DEFER_TO_V1_NON_MF4`.
+
 ## 4. LP-degenerate invariant suite and null-space perturbation test
 
 ## 5. Mutation catalogue and bin tolerances
