@@ -183,4 +183,27 @@ Bin-tolerance decision:
 
 ## 6. Verdict semantics, L5 handoff, and pre-registration enforcement
 
+Single verdict label:
+1. `CONDITIONAL_PASS_LP_DEGENERATE` is the only MF4 success label.
+2. It may be emitted only if: the preregistered audit selects MF4, the null-space perturbation test passes, I1-I5 pass, and the mutation catalogue has been shown to fail its required invariants on the pinned baseline.
+3. `trace_vertex_equivalence_w1` vs Karr is always emitted as informational telemetry, not as a second success label.
+4. `VERIFIED_GENUINE` is unavailable while the audit remains `lp_degenerate`.
+
+L5 handoff decision:
+1. Choose the conservative path: `CONDITIONAL_PASS_LP_DEGENERATE` does not automatically pass through to L5 whole-cell validation.
+2. Reason: L5 claims against published biology should not silently inherit a 17-WID writeback divergence unless the operator explicitly accepts that residual as biologically irrelevant for the L5 claim being tested.
+3. Therefore Metabolism enters L5 only after either: the process exits MF4 by remediation, or the operator signs a claim-specific override stating that the perturbation-backed residual is admissible for that L5 run.
+
+Pre-registration enforcement:
+1. Audit record location: `data/l2_2_audits/metabolism.yaml` and, by extension, `data/l2_2_audits/<process>.yaml`.
+2. Selector path: `tests/vivarium/l2_2_metric_selector.py::select_metric_family`.
+3. Harness contract: `tests/vivarium/l2_2_design_a_runner.py::run_design_a` must call `select_metric_family(process)` before loading metric logic and must refuse execution on `AUDIT_REGISTRATION_ERROR` or `AUDIT_SELECTION_ERROR`.
+4. Pinning mechanism: each audit record must store the selected family, the normalized audit fields, the approving commit SHA, the catalog SHA256, and the audit-record SHA256; if any pin changes after baseline registration, the harness must fail closed and require re-approval.
+5. Inline overrides are forbidden. The catalog may still describe sampling shape, but it is no longer authoritative for MF4 family selection.
+
+Migration and backout path:
+1. Rollout is parallel-v2: keep V1 behavior for non-MF4 processes, add selector enforcement beside the current runner, and route only Metabolism through the new MF4 contract.
+2. Backout trigger: the null-space perturbation test fails, or any of M1-M8 passes unexpectedly.
+3. Backout method: leave the audit scaffold in place but return Metabolism to `DEFER_TO_V1_NON_MF4` until the failure is resolved; do not silently widen tolerances.
+
 ## 7. Acceptance bar, self-audit, and risks
