@@ -117,6 +117,45 @@ Truth-table equivalence requirement:
 
 ## 4. LP-degenerate invariant suite and null-space perturbation test
 
+MF4 is a two-stage contract:
+1. Admission stage: prove the existing Karr-facing residual is feasible LP vertex motion, not a fixed OC bias.
+2. Regression stage: once admitted, detect future interface regressions against a pinned MF4 baseline using invariants that are stronger than raw W1 on the mutation catalogue.
+
+Pinned baseline rule:
+1. The first admissible MF4 baseline is the exact committed solver stack that passes the null-space perturbation test.
+2. No candidate run may define its own tolerances from its own residuals.
+3. `trace_vertex_equivalence_w1` vs Karr remains informational only; it never upgrades a failing invariant suite to pass.
+
+Invariant suite for regression stage:
+
+| ID | Invariant | Contract unit | Tolerance | Must fail |
+|---|---|---|---|---|
+| I1 | `aggregate_signed_flux_magnitude` | per `(seed,tick)`, `sum_w abs(delta_w)` over all 585 substrate WIDs vs pinned MF4 baseline | `abs(diff) <= max(0.01 * baseline_total, 40)` | M6 |
+| I2 | `per_wid_signed_delta_residual_budget` | per `(seed,tick,wid)` signed delta vs pinned MF4 baseline, with mandatory focus on Top-27 WIDs | `abs(diff) <= max(1, 0.01 * max(1, abs(baseline_delta)))`; sign must match when `abs(baseline_delta) > 1` | M1, M2, M4, M7 |
+| I3 | `pathway_level_flux_distributions` | per `(seed,tick,family,bin)` for `LIPASE x27`, `TX x12`, `Pyk x7`, `Adk x3`, `PfkA x5`, `Gmk x2` | `bin_tolerance = max(0.05 * abs(karr_bin_flux), 10)` | M3, M5, M6 |
+| I4 | `dominant_wid_joint_structure` | per `(seed,tick)` Top-17 signed-delta vector over `OCDCEA,H2O2,O2,TRP,TRIOLEIN,TYR,GL,AC,PHE,TrpTrp,H2O,TyrTyr,GLC,ACAL,AEPP,CAP,PhePhe` vs pinned MF4 baseline | Spearman `rho >= 0.95` and sign agreement on at least `15/17` WIDs | M5, M8 |
+| I5 | `elemental_and_mass_conservation` | per `(seed,tick)` mass + elemental totals after writeback | choose `mass + C/N/P`; pass if deviation `<= max(40, 3e-4 * karr_sample_total)` for each total | M3, M5 |
+
+Element set decision:
+1. V2 chooses `mass + C/N/P`, not mass-only.
+2. Reason: mass-only misses pathway swaps that preserve total count but move carbon, nitrogen, or phosphate burden across WIDs.
+3. Implementation dependency: if the current observable schema lacks elemental composition, MF4 cannot be enabled until the composition lookup is wired from the metabolism model metadata.
+
+Null-space perturbation admissibility test:
+1. Mandatory sample: `(seed=0, tick=1)`, because Day-40 already anchored the algorithm/RNG floor there and verified bounds drift `0`.
+2. Flux input: start from the pinned OC flux vector `v` at that sample after static bounds and biomass optimum are fixed.
+3. Basis: compute a basis `K` for the biomass-fixed feasible null space, i.e. vectors `k` such that `S k = 0`, biomass-column objective remains fixed, and active bound constraints are respected to first order.
+4. Cone projection and `alpha` normalization: for each basis vector, intersect the bound-feasible interval implied by `lb <= v + alpha * k <= ub`; normalize `k` so the nearest feasible bound occurs at `|alpha| = 1`; then evaluate `alpha in {-1.0, -0.9, ..., 0.9, 1.0}`.
+5. Readout: re-run Karr's writeback on each feasible `v + alpha * k` and inspect the 17 dominant Day-40 WIDs listed in I4.
+6. Reachability tolerance: a WID is "reachable" if some feasible perturbation lands within `max(1, 3e-4 * max(1, abs(karr_signed_delta_wid)))` molecules of Karr's recorded signed delta at that sample.
+7. "Moves freely": at least `80%` of the 17 dominant WIDs are reachable.
+8. "Fixed biased offset": more than `10%` of the 17 dominant WIDs are unreachable by every feasible perturbation.
+9. Pass rule: MF4 admission requires "moves freely" and not "fixed biased offset". Any intermediate result is `OPEN_QUESTION_REINVESTIGATE`, not silent admission.
+
+Expected falsifier:
+1. If the perturbation search cannot reach Karr on the dominant WIDs while staying biomass-fixed and bound-feasible, the residual is not established as vertex degeneracy and MF4 is not admissible.
+2. If M6-M8 can pass I1-I5 on the admitted baseline, the suite is weaker than claimed and V2 must be reopened before implementation.
+
 ## 5. Mutation catalogue and bin tolerances
 
 ## 6. Verdict semantics, L5 handoff, and pre-registration enforcement
