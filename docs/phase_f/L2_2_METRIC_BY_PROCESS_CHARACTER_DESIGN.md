@@ -405,9 +405,279 @@ Beat-4 inversion:
 
 ## 5) Decision ledger
 
+Decision D1
+- Question: How should L2.2 choose a per-process metric without special pleading?
+- Options considered:
+  1) Keep the current bucket names (`ALGORITHMIC_DEEP`, `SHALLOW`, `TRIVIAL_RNG`) as the full selector.
+  2) Add a Metabolism-only exception path on top of the current runner.
+  3) Require a pre-registered mathematical-object audit whose outputs select the metric family.
+- Chosen option: 3.
+- Rationale: The post-mortem's core lesson is "before designing a test against a mathematical object, audit the object" (`docs/phase_f/METABOLISM_POSTMORTEM_DAY40.md:94-106`). The catalog already proves that one axis is insufficient because `EVENT_CLASS` processes are explicitly routed away from the per-tick runner (`docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml:72-76`; `tests/vivarium/l2_2_design_a_runner.py:598-618`). The missing discipline is to make that reasoning uniform for all processes, not only for sparse-event ones.
+- Tradeoffs accepted: More up-front documentation and more explicit reviewer burden before running the harness.
+- Beat-4 inversion (how chosen option could be wrong): The audit could become a verbose restatement of current buckets without actually changing the decision surface.
+- Falsifier (what evidence would force reopening D1): If two reviewers, using the same audit schema and cited sources, still classify the same process into different metric families, the schema is underspecified.
+- Operator escalation needed? no
+
+Required audit record for every process before evaluation:
+
+| Axis | Required question | Allowed values in this design | Required evidence before selection |
+|---|---|---|---|
+| `stochasticity` | Does the process have intrinsic randomness, trivial wrapper RNG, or no RNG at all? | `deterministic`, `trivial_rng`, `stochastic` | Catalog bucket/notes, source call-graph, or trace behavior |
+| `solver_type` | What dominant mathematical object determines the emitted observable? | `none`, `projection_state`, `lp`, `ode`, `event_window` | Upstream/process call-graph and current harness surface |
+| `degeneracy_sensitivity` | Is the object uniquely solved, mildly sensitive, or solver-family/ill-conditioning sensitive? | `none`, `low`, `projection_only`, `lp_degenerate` | LP audit (`cond`, nullity, finite-bounds check, variant families), or equivalent object audit for other solver types |
+| `event_density` | Are informative events dense enough for tick-level distributional comparison? | `dense`, `moderate`, `sparse`, `singular_windowed` | Catalog `event_density`, seed window, and trace event counts |
+| `observable_sufficiency` | Can the declared output channel(s) detect interface errors directly? | `raw_output_sufficient`, `projection_sufficient`, `requires_aux_invariants`, `event_window_only` | Schema review plus a mutation thought-experiment against the declared write surface |
+
+Pre-registration rule:
+1. The audit record is authored before the metric run and stored with the threshold/baseline artifact for that process.
+2. The metric family is a pure function of the audit record in D2's matrix below.
+3. If an implementer wants a different metric family after seeing a result, they must change the audit record first and justify the new evidence, not overwrite the verdict logic.
+
+Decision D2
+- Question: What metric families should the audit map to for the axis combinations that exist in the current process set?
+- Options considered:
+  1) One universal metric (`per_tick_vector_w1_mean`) for every in-scope process.
+  2) A hand-maintained per-process exception list.
+  3) A small metric-family matrix keyed by the audit outputs, with examples from the current catalog.
+- Chosen option: 3.
+- Rationale: The current repo already contains more than one metric implementation: vector W1, projection W1, hurdle event-rate distance, and event-class refusal (`tests/vivarium/_l2_2_design_a_projections.py:152-230`; `tests/vivarium/l2_2_design_a_runner.py:598-618`). The design should name those as families and add the missing LP-degenerate family rather than hiding them behind process-specific wiring.
+- Tradeoffs accepted: Some current process labels move from intuitive buckets to a more explicit matrix, which is slightly more cumbersome to read but much safer to review.
+- Beat-4 inversion (how chosen option could be wrong): The matrix could be too coarse and accidentally group together processes whose observables are not equally sufficient.
+- Falsifier (what evidence would force reopening D2): A current in-scope process cannot be placed into exactly one family without appeal to undocumented intuition.
+- Operator escalation needed? no
+
+Metric-family matrix:
+
+| Family ID | Audit signature | Gating metric(s) | Informational metric(s) | Current process examples |
+|---|---|---|---|---|
+| `MF0_DETERMINISTIC_OUT_OF_SCOPE` | `stochasticity=deterministic` | L2.1/L2.5 only; no L2.2 gate | n/a | The 6 `DETERMINISTIC` catalog entries (`docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml:446-524`) |
+| `MF1_PER_TICK_VECTOR_W1` | `stochasticity=stochastic`, `solver_type=none`, `degeneracy_sensitivity in {none, low}`, `event_density in {dense, moderate, sparse}`, `observable_sufficiency=raw_output_sufficient` | Existing per-channel W1 + KS + null bootstrap | Current warnings, joint checks | Translation, Transcription, RNAProcessing, RNAModification, RNADecay, tRNAAminoacylation, ProteinModification, ProteinFolding, ProteinDecay, ProteinTranslocation, MacromolecularComplexation, ReplicationInitiation |
+| `MF2_PROJECTION_DISTANCE` | `solver_type=projection_state`, `degeneracy_sensitivity=projection_only`, `observable_sufficiency=projection_sufficient` | Existing scaled projection W1 or hurdle event-rate-plus-conditional-distance | Raw channel diagnostics if present | Replication, DNASupercoiling, DNARepair |
+| `MF3_TRIVIAL_RNG_CONFIRMATION` | `stochasticity=trivial_rng`, `solver_type=none`, `degeneracy_sensitivity in {none, low}`, `observable_sufficiency=raw_output_sufficient` | Existing confirmation W1 path at smaller `M_ticks` | closed-form dominance notes | ProteinProcessingI, ProteinProcessingII |
+| `MF4_LP_DEGENERATE_INTERFACE_FIDELITY` | `solver_type=lp`, `degeneracy_sensitivity=lp_degenerate`, `observable_sufficiency=requires_aux_invariants` | Interface invariant suite + `<process>_regression_w1` | `trace_vertex_equivalence_w1` at the historical threshold | Metabolism |
+| `MF5_UNVALIDATABLE_EVENT_CLASS` | `event_density=singular_windowed` or catalog `harness_type=event_class` or `observable_sufficiency=event_window_only` | No per-tick verdict; route to `L2.event` | Optional event-free smoke only | RibosomeAssembly, FtsZPolymerization, Cytokinesis, DNADamage |
+
+Selection rule:
+1. If `stochasticity=deterministic`, assign `MF0_DETERMINISTIC_OUT_OF_SCOPE`.
+2. Else if `harness_type=event_class` or `event_density=singular_windowed`, assign `MF5_UNVALIDATABLE_EVENT_CLASS`.
+3. Else if `solver_type=lp` and `degeneracy_sensitivity=lp_degenerate`, assign `MF4_LP_DEGENERATE_INTERFACE_FIDELITY`.
+4. Else if `observable_sufficiency=projection_sufficient`, assign `MF2_PROJECTION_DISTANCE`.
+5. Else if `stochasticity=trivial_rng`, assign `MF3_TRIVIAL_RNG_CONFIRMATION`.
+6. Else assign `MF1_PER_TICK_VECTOR_W1`.
+
+Decision D3
+- Question: What should the LP-degenerate metric family require, specifically?
+- Options considered:
+  1) Waive W1 entirely and use only biological invariants.
+  2) Keep current W1 as the hard gate and add some diagnostic invariants.
+  3) Split W1 into informational trace-vertex equivalence plus baseline-controlled regression, and make interface-fidelity invariants the gate.
+- Chosen option: 3.
+- Rationale: The post-mortem explicitly says L2.2 should be designed around invariants, not trace replay, for Metabolism-class LPs (`docs/phase_f/METABOLISM_POSTMORTEM_DAY40.md:129-141`). But deleting W1 entirely would throw away a useful signal about solver-family divergence. Splitting the signal preserves the historical threshold as a diagnostic while moving the gating burden onto invariants that can actually distinguish biology regressions from basis changes.
+- Tradeoffs accepted: The LP-degenerate family has a heavier harness and a more complex reviewer story than the default W1 families.
+- Beat-4 inversion (how chosen option could be wrong): The invariant suite could still be too aggregate and fail to catch write-surface corruption.
+- Falsifier (what evidence would force reopening D3): Any mandatory mutation in D6 can pass all gating invariants while violating the intended Metabolism interface.
+- Operator escalation needed? no
+
+`MF4_LP_DEGENERATE_INTERFACE_FIDELITY` specification:
+
+1. `trace_vertex_equivalence_w1`
+   - Definition: the current primary-channel W1 against Karr's recorded substrate deltas, evaluated exactly as today's runner evaluates Metabolism on its primary channel.
+   - Gate status: informational only.
+   - Threshold: preserve the existing historical threshold for comparability.
+   - Expected behavior: may legitimately fail whenever solver-family basis selection differs, even if the biology-facing interface is acceptable.
+
+2. `<process>_regression_w1`
+   - Definition: primary-channel W1 between the candidate implementation and a pinned OC baseline generated on the same audit signature and solver fingerprint.
+   - Gate status: hard fail on regression.
+   - Threshold: derived from the pinned baseline's self-null/bootstrap band on the same metric path; never from the candidate run itself.
+
+3. Interface-fidelity invariant suite
+   - `per_wid_signed_delta_residual_budget`
+     - For every mutated WID and sample, compare OC signed delta against Karr signed delta.
+     - Budget construction: `budget[wid] = max(abs_floor_wid, q95_baseline_abs_residual[wid])`, where `q95_baseline_abs_residual` is measured from the accepted solver-stack baseline against Karr.
+     - Hard-fail rule: any key-cofactor WID breach fails immediately; non-whitelist WIDs fail if breach count or total excess exceeds the preregistered budget.
+   - `compartment_specific_exchange_flux_sign_range`
+     - For exchange-associated reactions and writebacks (`TX_*`, `(ext_exch)`, `(int_exch)` families), preserve uptake/secretion sign and stay within baseline/Karr-derived range envelopes per compartment family.
+     - Any sign inversion across the compartment boundary is a hard fail.
+   - `key_cofactor_whitelist`
+     - Mandatory explicit checks for ATP, GTP, CTP, UTP, amino-acid substrates, glucose, PEP, and PYR.
+     - Requirement: sign, non-zero support where Karr is non-zero, and residuals within the per-WID budget.
+   - `pathway_level_flux_distributions`
+     - Compare aggregated signed and absolute flux over variant-family and pathway bins rather than exact vertex columns.
+     - Mandatory family bins for current Metabolism: `LIPASE`, `TX`, `Pyk`, `Adk`, `PfkA`, `Gmk`.
+     - Rationale: a different basis choice inside a family may be acceptable; switching pathway families or exchange direction is not.
+   - `elemental_or_mass_conservation`
+     - Enforce whole-sample mass conservation and element-balance checks at minimum for carbon, nitrogen, and phosphate-bearing pools when those are derivable from the process schema.
+     - Any residual above the preregistered conservation tolerance is a hard fail.
+
+4. Verdict rule for `MF4`
+   - `CONDITIONAL_PASS: biology_invariants_pass / trace_vertex_divergent` if all invariants pass, `<process>_regression_w1` passes, and `trace_vertex_equivalence_w1` fails.
+   - `CONDITIONAL_PASS: biology_invariants_pass / trace_vertex_within_band` if all invariants pass, `<process>_regression_w1` passes, and `trace_vertex_equivalence_w1` also happens to pass.
+   - `FAIL: interface_invariants_breach` if any invariant fails.
+   - `FAIL: regression_vs_baseline` if invariants pass but `<process>_regression_w1` fails.
+   - `VERIFIED_GENUINE` is unavailable while the audit remains `lp_degenerate`.
+
+Decision D4
+- Question: How should the baseline for `<process>_regression_w1` be set and updated?
+- Options considered:
+  1) Compare only to Karr and do not maintain an OC baseline.
+  2) Compare only to the current OC solver stack and stop comparing to Karr.
+  3) Maintain a dual track: invariants against Karr and physics, regression against a pinned OC baseline.
+- Chosen option: 3.
+- Rationale: Comparing only to Karr cannot distinguish solver-family vertex drift from a true regression on an accepted solver stack. Comparing only to OC would sever the remaining tie to the source model. The dual track is the only option that preserves both source fidelity and regression sensitivity.
+- Tradeoffs accepted: Baselines become versioned artifacts that require governance.
+- Beat-4 inversion (how chosen option could be wrong): A baseline could be refreshed too casually and turn a regression into the new normal.
+- Falsifier (what evidence would force reopening D4): A solver-stack change or code regression is accepted only because the baseline was updated in the same change without separate review.
+- Operator escalation needed? yes + QO1
+
+Baseline policy:
+1. A baseline may be created only after the audit record is frozen and the full invariant suite passes.
+2. The baseline fingerprint must include: process name, audit family, solver library, solver version, key solver options, schema hash for the measured observables, seed/tick plan, and the threshold snapshot used to judge `<process>_regression_w1`.
+3. A baseline update requires an explicit operator-reviewed change note that explains why the old baseline is no longer the correct regression target.
+4. A solver-family or solver-version change automatically invalidates the prior regression baseline and forces a re-audit plus explicit rebaselining decision.
+5. The run that first discovers a regression may not also bless the replacement baseline.
+
+Decision D5
+- Question: How should final verdict labels communicate "passes biology, fails trace vertex" without pretending that is the same as full equivalence?
+- Options considered:
+  1) Keep plain `PASS`/`FAIL` and bury nuance in warnings.
+  2) Keep `PASS` but add a suffix note for LP-degenerate processes.
+  3) Introduce explicit conditional verdict labels keyed to the chosen metric family.
+- Chosen option: 3.
+- Rationale: The user-facing problem here is semantic, not just numeric. A clean `PASS` would be read as "same process behavior under the same object assumptions," which is not what an LP-degenerate conditional success means. The verdict itself must carry that nuance.
+- Tradeoffs accepted: The verdict taxonomy grows.
+- Beat-4 inversion (how chosen option could be wrong): Too many labels could make review harder instead of clearer.
+- Falsifier (what evidence would force reopening D5): Reviewers still have to read the fine print to know whether a process is genuinely verified or only conditionally accepted.
+- Operator escalation needed? yes + QO3
+
+Verdict taxonomy:
+
+| Verdict | Meaning | Applies to |
+|---|---|---|
+| `VERIFIED_GENUINE` | Chosen metric family passes and the audit does not flag solver-sensitive degeneracy | `MF1`, `MF2`, `MF3` |
+| `CONDITIONAL_PASS: biology_invariants_pass / trace_vertex_divergent` | LP-degenerate biology-facing interface passes, baseline regression passes, historical Karr-trace W1 diverges | `MF4` |
+| `CONDITIONAL_PASS: biology_invariants_pass / trace_vertex_within_band` | Same as above, but historical trace W1 also lands inside the legacy band | `MF4` |
+| `FAIL: interface_invariants_breach` | Interface-fidelity suite fails | `MF4` |
+| `FAIL: regression_vs_baseline` | Baseline-controlled regression W1 fails after invariants pass | `MF4` |
+| `UNVALIDATABLE_EVENT_CLASS` | Tick-aligned L2.2 verdict is not defined for this process; route to `L2.event` | `MF5` |
+
+Decision D6
+- Question: What mutation-test burden is required before the LP-degenerate family can replace current W1 gating?
+- Options considered:
+  1) No dedicated mutation suite; trust the invariants by inspection.
+  2) A few ad hoc probes during development.
+  3) A required catalogue of known-bad mutations that must fail before the family is considered stronger than current W1.
+- Chosen option: 3.
+- Rationale: The rubber-duck critique is correct: the framework stands or falls on whether its invariants catch concrete interface failures that aggregate biology metrics can miss. Without mutation tests, the claim "stronger than W1" is only rhetorical.
+- Tradeoffs accepted: More up-front harness work in the implementation phase.
+- Beat-4 inversion (how chosen option could be wrong): The mutation list could be too toy and still leave obvious holes.
+- Falsifier (what evidence would force reopening D6): A plausible interface corruption outside the catalogue can pass the suite without difficulty.
+- Operator escalation needed? no
+
+Mandatory mutation catalogue for `tests/vivarium/test_l2_2_metabolism_invariants_mutations.py`:
+
+| Mutation ID | Concrete bad variant | How to construct it in a test double | Must fail | Why this matters |
+|---|---|---|---|---|
+| `M1_sign_flip_top_wid` | Signed writeback sign flip on a dominant WID such as `OCDCEA`, `TRP`, or `H2O2` | Multiply the chosen WID's per-sample deltas by `-1` after solve, leave magnitude unchanged | `per_wid_signed_delta_residual_budget` and usually conservation | Catches the simplest interface corruption that growth-only or mass-only checks can miss |
+| `M2_compartment_permutation_exchange` | Preserve magnitudes but swap internal/external exchange bookkeeping for oxygen/water/carbon-backbone writebacks | Reassign the selected exchange-family outputs to the wrong compartment bucket while keeping totals constant | `compartment_specific_exchange_flux_sign_range` | Directly addresses the critique that biology aggregates can pass while compartments are permuted |
+| `M3_cofactor_swap_whitelist` | Swap ATP with GTP, or PEP with PYR, across the emitted deltas | Exchange the per-tick deltas of two whitelist cofactors and keep all other WIDs untouched | `key_cofactor_whitelist` | Ensures the suite is sensitive to biochemical identity, not only total mass |
+| `M4_exchange_direction_flip` | Reverse the sign of a `TX_*`, `(ext_exch)`, or `(int_exch)` family while keeping absolute magnitudes | Multiply the selected exchange-family flux/writeback by `-1` | `compartment_specific_exchange_flux_sign_range`, often conservation | Catches "uptake became secretion" bugs that can preserve absolute activity |
+| `M5_growth_only_preserved` | Preserve biomass/growth scalar and overall mass, but redistribute writeback across the top-error WIDs or pathway bins | Replace the substrate delta vector with one that matches growth/mass totals yet shuffles residual among the Top-17 WIDs | `per_wid_signed_delta_residual_budget` and `pathway_level_flux_distributions` | Proves the suite is stricter than growth+KS+mass alone |
+
+Example of the intended strength:
+- A candidate that preserves the Day-40 observation "biology bit-matches (growth, KS, mean, stddev)" but still changes the signed `OCDCEA`, `TRP`, or `TX_*` writeback must fail this family (`docs/phase_f/METABOLISM_GAP_MAP.md:23-26,32-62,280-281`).
+
 ## 6) Expected outcomes and verification claims
 
+Claim C1:
+- If design is correct, we should observe: applying the audit retroactively to Metabolism yields `solver_type=lp`, `degeneracy_sensitivity=lp_degenerate`, `observable_sufficiency=requires_aux_invariants`, and therefore `MF4_LP_DEGENERATE_INTERFACE_FIDELITY`.
+- Measurement method / command / assertion: reviewer walks the D1 audit fields using the quoted Day-40 facts (`cond=6.7e+12`, `128` null-space dimensions, `8` unbounded reactions, variant families, substrate-only mutated surface).
+- Threshold or exact value: exact family assignment to `MF4`.
+- Why this distinguishes from alternatives: a bucket-only selector would keep Metabolism in `TRIVIAL_RNG`; the audit-driven selector must not.
+
+Claim C2:
+- If design is correct, we should observe: the same audit leaves dense, non-solver-sensitive stochastic ports in the current W1 family instead of forcing needless complexity.
+- Measurement method / command / assertion: classify Translation or Transcription from the catalog and current runner surface.
+- Threshold or exact value: assignment to `MF1_PER_TICK_VECTOR_W1`.
+- Why this distinguishes from alternatives: proves the design is not a disguised "everything becomes special case" rewrite.
+
+Claim C3:
+- If design is correct, we should observe: projection-centric structured-state ports remain in a projection family rather than being flattened back into raw-vector W1.
+- Measurement method / command / assertion: classify Replication, DNASupercoiling, and DNARepair from their current catalog/runner usage of chromosome projections and hurdle distance.
+- Threshold or exact value: assignment to `MF2_PROJECTION_DISTANCE`.
+- Why this distinguishes from alternatives: proves the multi-axis audit preserves existing good exceptions instead of erasing them.
+
+Claim C4:
+- If design is correct, we should observe: every mandatory mutation in D6 fails at least one named invariant even if growth, broad KS, and mass remain acceptable.
+- Measurement method / command / assertion: implement `M1`-`M5` and assert the expected invariant names trip.
+- Threshold or exact value: 5 of 5 mandatory mutations detected.
+- Why this distinguishes from alternatives: this is the central proof that the LP-degenerate family is stronger than current W1 replacement-by-assertion.
+
+Claim C5:
+- If design is correct, we should observe: event-window processes do not receive fake per-tick passes under the new framework.
+- Measurement method / command / assertion: classify RibosomeAssembly, FtsZPolymerization, Cytokinesis, and DNADamage.
+- Threshold or exact value: all receive `UNVALIDATABLE_EVENT_CLASS` from this L2.2 selection rule.
+- Why this distinguishes from alternatives: it preserves the existing runner safeguard and extends the "not all stochastic processes are tick-comparable" lesson consistently.
+
+Claim C6:
+- If design is correct, we should observe: changing solver family or version forces a baseline invalidation rather than silently carrying forward the old regression guard.
+- Measurement method / command / assertion: review the baseline fingerprint policy in D4 against a hypothetical `GLPK 5.0 -> HiGHS` or `GLPK 5.0 -> GLPK 5.1` change.
+- Threshold or exact value: exact requirement that the old baseline is invalid and operator-reviewed rebaselining is mandatory.
+- Why this distinguishes from alternatives: without this rule, `<process>_regression_w1` can decay into a cosmetic metric.
+
+Beat-4 inversion:
+- How could these claims pass while design is still wrong? The audit could assign the right family names on paper while the future implementation quietly omits one or more invariants from the LP-degenerate bundle.
+- Additional guardrail to close that hole: require the implementation PR to list the invariant names and the mutation IDs they detect in a one-to-one matrix, and block merge if any mandatory mutation lacks a failing invariant.
+
 ## 7) Open questions for operator
+
+QO1. Where should the pinned `<process>_regression_w1` baseline artifact live, and in what format?
+- Why unresolved: this doc defines the policy but not the storage layer.
+- Options:
+  1) Store alongside other L2.2 artifacts under `tests/vivarium/` or a dedicated baseline artifact directory.
+  2) Store as a phase-F design artifact under `docs/phase_f/` and have the harness read it.
+- Recommended default (if no response): option 1, because the baseline is executable test data, not reviewer prose.
+- Risk if wrong: rebaselining becomes either too casual (if mixed with docs) or too opaque (if buried in a test helper).
+
+QO2. Should the audit record be represented as new fields inside `PROCESS_CATALOG.yaml`, or as a sibling preregistration artifact?
+- Why unresolved: embedding it in the catalog centralizes routing, but it also turns a broad catalog file into a more volatile review surface.
+- Options:
+  1) Extend `PROCESS_CATALOG.yaml` with audit fields.
+  2) Create a separate audit manifest keyed by process.
+- Recommended default (if no response): option 2, because preregistration updates will be more frequent and should not blur the stable catalog baseline.
+- Risk if wrong: either the catalog becomes noisy, or the audit drifts from the catalog and loses discoverability.
+
+QO3. Should `CONDITIONAL_PASS: biology_invariants_pass / trace_vertex_divergent` remain a human-readable string, or become a structured verdict object with `status` plus `reason` fields?
+- Why unresolved: both are readable, but they have different downstream parsing implications.
+- Options:
+  1) Human-readable string label.
+  2) Structured object plus a rendered summary string.
+- Recommended default (if no response): option 2, because it preserves machine readability without sacrificing reviewer clarity.
+- Risk if wrong: verdict parsing becomes fragile, or the summary becomes too terse to communicate the distinction.
+
+QO4. How strong should `elemental_or_mass_conservation` be in the first implementation?
+- Why unresolved: the prompt requires elemental/mass conservation, but the exact element set is a policy choice.
+- Options:
+  1) Mass conservation only for v1.
+  2) Mass plus explicit C/N/P balance from day one.
+- Recommended default (if no response): option 2 for Metabolism, because the extra specificity is precisely what makes the invariant suite harder to game.
+- Risk if wrong: a too-weak first version may let pathway swaps slip through; a too-strong version may demand metadata that is not yet serialized.
+
+QO5. How should the design name the four current event-window processes in reviewer-facing output?
+- Why unresolved: the current catalog uses `EVENT_CLASS`, while this design proposes `UNVALIDATABLE_EVENT_CLASS` as the L2.2 verdict label.
+- Options:
+  1) Keep the catalog bucket name and use `UNVALIDATABLE_EVENT_CLASS` only as the verdict.
+  2) Rename the bucket itself in a later follow-up.
+- Recommended default (if no response): option 1, to avoid unnecessary catalog churn in the design-only phase.
+- Risk if wrong: reviewers may conflate "bucket" with "verdict" or interpret the bucket as already solved by this doc.
+
+QO6. Should the tiny Day-40 `22409` vs `22,412` discrepancy be normalized in the first implementation PR, or only documented?
+- Why unresolved: the discrepancy is too small to change the design, but it is large enough to trip literal-threshold assertions if left ambiguous.
+- Options:
+  1) Normalize it immediately and cite the chosen canonical artifact.
+  2) Document the discrepancy and defer normalization until the implementation PR.
+- Recommended default (if no response): option 1, with `22,412` as the canonical narrative figure because it is repeated in the post-mortem and decision log.
+- Risk if wrong: future reviewers may think a threshold moved when only the summary literal changed.
 
 ## 8) Scope boundary
 
