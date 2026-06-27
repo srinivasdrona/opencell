@@ -1,0 +1,70 @@
+{
+  "variants": [
+    {
+      "id": "V_prod",
+      "desc": "presolve=OFF + STD (current production)",
+      "presolve": 0,
+      "scale": 128,
+      "tol_bnd": 1e-06,
+      "pricing": 17,
+      "objective": 0.021330661933306305,
+      "sol_status": 5,
+      "l1_vs_karr": 354330.38341224176,
+      "linf_vs_karr": 55453.61130151052,
+      "nnz_diff_gt_1e9": 83
+    },
+    {
+      "id": "V_karr",
+      "desc": "presolve=ON + STD (Karr Metabolism.m:176 literal)",
+      "presolve": 1,
+      "scale": 128,
+      "tol_bnd": 1e-06,
+      "pricing": 17,
+      "objective": 0.02119796309457199,
+      "sol_status": 5,
+      "l1_vs_karr": 8355056.346617661,
+      "linf_vs_karr": 1031988.7473831533,
+      "nnz_diff_gt_1e9": 136
+    },
+    {
+      "id": "V_eq",
+      "desc": "presolve=ON + STD + scale=EQ",
+      "presolve": 1,
+      "scale": 16,
+      "tol_bnd": 1e-06,
+      "pricing": 17,
+      "objective": 0.02119796309457199,
+      "sol_status": 5,
+      "l1_vs_karr": 8355056.346617661,
+      "linf_vs_karr": 1031988.7473831533,
+      "nnz_diff_gt_1e9": 136
+    },
+    {
+      "id": "V_gm",
+      "desc": "presolve=ON + STD + scale=GM",
+      "presolve": 1,
+      "scale": 1,
+      "tol_bnd": 1e-06,
+      "pricing": 17,
+      "objective": 0.02119796309457199,
+      "sol_status": 5,
+      "l1_vs_karr": 8355056.346617661,
+      "linf_vs_karr": 1031988.7473831533,
+      "nnz_diff_gt_1e9": 136
+    },
+    {
+      "id": "V_tol1e7",
+      "desc": "presolve=ON + STD + tol_bnd=1e-7",
+      "presolve": 1,
+      "scale": 128,
+      "tol_bnd": 1e-07,
+      "pricing": 17,
+      "objective": 0.02119796309457199,
+      "sol_status": 5,
+      "l1_vs_karr": 8355056.346617661,
+      "linf_vs_karr": 1031988.7473831533,
+      "nnz_diff_gt_1e9": 136
+    }
+  ],
+  "karr_recorded_l1_baseline_pre_fix": 8180000.0
+}

@@ -170,6 +170,48 @@ threshold (102) after sweeping across all 500 samples.
 
 ---
 
+## H5 follow-up — Karr's literal config does NOT reproduce on GLPK 5
+
+After the H3 fix was applied, we revisited `Metabolism.m:176`:
+
+```matlab
+'glpk', struct('lpsolver', 1, 'presol', 1, 'scale', 1, 'msglev', 0, 'tolbnd', 10e-7)
+```
+
+Karr uses **presolve = ON** (`presol = 1`). Day-40 had found that presolve=OFF
+was 7× closer to Karr — but that was measured under PSE pricing, so we
+re-tested under the now-correct STD pricing.
+
+| Variant | Objective | L1 vs Karr |
+|---|---:|---:|
+| V_prod (presolve=OFF + STD) — current production fix | 2.1331e-2 ✓ | **3.54e+5** |
+| V_karr (presolve=ON + STD) — Karr's literal config | 2.1198e-2 ⚠ suboptimal | 8.36e+6 |
+| V_eq / V_gm / V_tol1e7 (presolve=ON + variants) | 2.1198e-2 ⚠ | 8.36e+6 |
+
+Pairwise L1(V_prod, V_karr) = 8.45e+6 — different vertices entirely.
+
+**Finding**: GLPK 5's presolve is materially different from GLPK 4.x's presolve.
+It's more aggressive and on this LP cuts away a portion of the optimal face,
+leaving the solver stuck at a vertex with objective 0.62% below the true
+optimum. Karr's MATLAB (glpkmex 2.x + GLPK 4.x) did reach the true optimum
+with presolve=ON — so the presolve semantics are version-bound, not just an
+option name.
+
+**Implication**:
+- Naively copying Karr's literal `Metabolism.m:176` config to GLPK 5 would
+  make things 24× **worse**, not better.
+- Our shipped fix (V_prod: presolve=OFF + pricing=STD) is the best
+  modern-GLPK approximation of Karr's GLPK-4.x behavior.
+- The residual 354K L1 is therefore the **floor reachable via `glp_smcp`
+  options alone**. Closing further would require either (a) running glpkmex
+  2.x on GLPK 4.x as an oracle, or (b) post-hoc vertex correction toward
+  Karr's recorded flux.
+
+**Probe**: `scripts/probe_h5_presolve_under_std.py`
+**JSON**: `tmp/h5_presolve_under_std.json`
+
+---
+
 ## Artifacts
 
 | File | Purpose |
