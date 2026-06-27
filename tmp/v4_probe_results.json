@@ -1,8 +1,17 @@
 {
-  "assumptions": [],
+  "assumptions": [
+    "I1 interpreted as exact preservation of global L1(delta).",
+    "I5a interpreted as exact preservation of total signed count sum.",
+    "I2 evaluated with tau_B on the GLPK baseline because V4 leaves tau undefined.",
+    "I3 family bins inferred from WID alphabetic stems with repeated dimer halves collapsed.",
+    "M4 uses analytic pre-round TX_AROP21/22 column contributions from the baseline flux.",
+    "M7 locates tick=1 and tick=2 by matching a 3D trace tensor slice against the pinned ground-truth delta."
+  ],
   "baseline": {
     "oc_flux_l1": 65318.72988329435,
-    "oc_flux_linf": 1000.0
+    "oc_flux_linf": 1000.0,
+    "writeback_l1": 7403.0,
+    "writeback_total_count": -465.0
   },
   "constants": {
     "alphas": [
@@ -5698,7 +5707,801 @@
         "verified_alphas": []
       }
     },
-    "mutation_matrix": {},
+    "mutation_matrix": {
+      "baseline": {
+        "l1": 7403.0,
+        "total_count": -465.0
+      },
+      "family_bin_definition": "uppercase letters only, with repeated dimer halves collapsed",
+      "i2_tau_formula": "tau_B = max(40, 0.03 * |baseline_delta_w|)",
+      "mutations": {
+        "M1": {
+          "description": "sign flip top WID (OCDCEA)",
+          "designated_invariant": "I2",
+          "fired_invariants": [],
+          "invariants": {
+            "I1": {
+              "metric_abs_l1_gap": 0.0,
+              "pass": true,
+              "threshold": 1e-09
+            },
+            "I2": {
+              "max_tail_breach_share": 0.0,
+              "max_tail_residual_mass_share": 0.0,
+              "pass": true,
+              "tail_abs_residual_sum": 0.0,
+              "tail_breach_count": 0,
+              "tail_threshold": 40.0,
+              "top27_failed_wids": []
+            },
+            "I3": {
+              "bin_count": 443,
+              "failed_bins": {},
+              "pass": true
+            },
+            "I4": {
+              "pass": true,
+              "rho_threshold": 0.95,
+              "sign_agreement_count": 17,
+              "sign_threshold": 15,
+              "spearman_rho": 1.0
+            },
+            "I5a": {
+              "metric_abs_total_count_gap": 0.0,
+              "pass": true,
+              "threshold": 1e-09
+            },
+            "I6": {
+              "over_share": 0.0,
+              "pass": true,
+              "threshold": 0.8,
+              "under_share": 0.0
+            }
+          }
+        },
+        "M2": {
+          "description": "swap OCDCEA delta with H2O2 delta",
+          "designated_invariant": "I2",
+          "fired_invariants": [
+            "I2",
+            "I3",
+            "I4"
+          ],
+          "invariants": {
+            "I1": {
+              "metric_abs_l1_gap": 0.0,
+              "pass": true,
+              "threshold": 1e-09
+            },
+            "I2": {
+              "max_tail_breach_share": 1.0,
+              "max_tail_residual_mass_share": 1.0,
+              "pass": false,
+              "tail_abs_residual_sum": 717.0,
+              "tail_breach_count": 1,
+              "tail_threshold": 40.0,
+              "top27_failed_wids": [
+                "H2O2"
+              ]
+            },
+            "I3": {
+              "bin_count": 443,
+              "failed_bins": {
+                "HO": {
+                  "abs_diff": 717.0,
+                  "tol": 84.7
+                },
+                "OCDCEA": {
+                  "abs_diff": 717.0,
+                  "tol": 10.0
+                }
+              },
+              "pass": false
+            },
+            "I4": {
+              "pass": false,
+              "rho_threshold": 0.95,
+              "sign_agreement_count": 15,
+              "sign_threshold": 15,
+              "spearman_rho": 0.8389937106918239
+            },
+            "I5a": {
+              "metric_abs_total_count_gap": 0.0,
+              "pass": true,
+              "threshold": 1e-09
+            },
+            "I6": {
+              "over_share": 0.0,
+              "pass": true,
+              "threshold": 0.8,
+              "under_share": 0.02
+            }
+          }
+        },
+        "M3": {
+          "description": "swap ATP delta with GTP delta",
+          "designated_invariant": "I3",
+          "fired_invariants": [
+            "I2",
+            "I3"
+          ],
+          "invariants": {
+            "I1": {
+              "metric_abs_l1_gap": 0.0,
+              "pass": true,
+              "threshold": 1e-09
+            },
+            "I2": {
+              "max_tail_breach_share": 1.0,
+              "max_tail_residual_mass_share": 1.0,
+              "pass": false,
+              "tail_abs_residual_sum": 570.0,
+              "tail_breach_count": 1,
+              "tail_threshold": 40.0,
+              "top27_failed_wids": [
+                "ATP"
+              ]
+            },
+            "I3": {
+              "bin_count": 443,
+              "failed_bins": {
+                "ATP": {
+                  "abs_diff": 570.0,
+                  "tol": 28.55
+                },
+                "GTP": {
+                  "abs_diff": 570.0,
+                  "tol": 10.0
+                }
+              },
+              "pass": false
+            },
+            "I4": {
+              "pass": true,
+              "rho_threshold": 0.95,
+              "sign_agreement_count": 17,
+              "sign_threshold": 15,
+              "spearman_rho": 1.0
+            },
+            "I5a": {
+              "metric_abs_total_count_gap": 0.0,
+              "pass": true,
+              "threshold": 1e-09
+            },
+            "I6": {
+              "over_share": 0.0,
+              "pass": true,
+              "threshold": 0.8,
+              "under_share": 0.02
+            }
+          }
+        },
+        "M4": {
+          "description": "negate sign of all TX_AROP21/22 contributions",
+          "designated_invariant": "I2",
+          "fired_invariants": [],
+          "invariants": {
+            "I1": {
+              "metric_abs_l1_gap": 0.0,
+              "pass": true,
+              "threshold": 1e-09
+            },
+            "I2": {
+              "max_tail_breach_share": 0.0,
+              "max_tail_residual_mass_share": 0.0,
+              "pass": true,
+              "tail_abs_residual_sum": 0.0,
+              "tail_breach_count": 0,
+              "tail_threshold": 40.0,
+              "top27_failed_wids": []
+            },
+            "I3": {
+              "bin_count": 443,
+              "failed_bins": {},
+              "pass": true
+            },
+            "I4": {
+              "pass": true,
+              "rho_threshold": 0.95,
+              "sign_agreement_count": 17,
+              "sign_threshold": 15,
+              "spearman_rho": 1.0
+            },
+            "I5a": {
+              "metric_abs_total_count_gap": 0.0,
+              "pass": true,
+              "threshold": 1e-09
+            },
+            "I6": {
+              "over_share": 0.0,
+              "pass": true,
+              "threshold": 0.8,
+              "under_share": 0.0
+            }
+          },
+          "tx_arop_columns": [
+            230,
+            231
+          ]
+        },
+        "M5": {
+          "description": "reshuffle Top-17 deltas randomly with seed=99",
+          "designated_invariant": "I4",
+          "fired_invariants": [
+            "I2",
+            "I3",
+            "I4"
+          ],
+          "invariants": {
+            "I1": {
+              "metric_abs_l1_gap": 0.0,
+              "pass": true,
+              "threshold": 1e-09
+            },
+            "I2": {
+              "max_tail_breach_share": 0.5,
+              "max_tail_residual_mass_share": 0.7977707006369427,
+              "pass": false,
+              "tail_abs_residual_sum": 628.0,
+              "tail_breach_count": 2,
+              "tail_threshold": 40.0,
+              "top27_failed_wids": [
+                "O2",
+                "H2O",
+                "H2O2",
+                "AC",
+                "GLC",
+                "GL",
+                "ACAL"
+              ]
+            },
+            "I3": {
+              "bin_count": 443,
+              "failed_bins": {
+                "AC": {
+                  "abs_diff": 1501.0,
+                  "tol": 25.05
+                },
+                "ACAL": {
+                  "abs_diff": 973.0,
+                  "tol": 10.0
+                },
+                "CAP": {
+                  "abs_diff": 501.0,
+                  "tol": 10.0
+                },
+                "GL": {
+                  "abs_diff": 111.0,
+                  "tol": 10.0
+                },
+                "GLC": {
+                  "abs_diff": 970.0,
+                  "tol": 12.65
+                },
+                "HO": {
+                  "abs_diff": 1947.0,
+                  "tol": 84.7
+                },
+                "O": {
+                  "abs_diff": 1000.0,
+                  "tol": 50.0
+                },
+                "TYR": {
+                  "abs_diff": 113.0,
+                  "tol": 10.0
+                }
+              },
+              "pass": false
+            },
+            "I4": {
+              "pass": false,
+              "rho_threshold": 0.95,
+              "sign_agreement_count": 5,
+              "sign_threshold": 15,
+              "spearman_rho": -0.2364779874213837
+            },
+            "I5a": {
+              "metric_abs_total_count_gap": 0.0,
+              "pass": true,
+              "threshold": 1e-09
+            },
+            "I6": {
+              "over_share": 0.02,
+              "pass": true,
+              "threshold": 0.8,
+              "under_share": 0.18
+            }
+          }
+        },
+        "M6": {
+          "description": "scale all per-WID deltas by 0.9",
+          "designated_invariant": "I1",
+          "fired_invariants": [
+            "I1",
+            "I2",
+            "I3",
+            "I5a",
+            "I6"
+          ],
+          "invariants": {
+            "I1": {
+              "metric_abs_l1_gap": 740.3000000000011,
+              "pass": false,
+              "threshold": 1e-09
+            },
+            "I2": {
+              "max_tail_breach_share": 0.0,
+              "max_tail_residual_mass_share": 0.10256410256410256,
+              "pass": false,
+              "tail_abs_residual_sum": 7.799999999999998,
+              "tail_breach_count": 0,
+              "tail_threshold": 40.0,
+              "top27_failed_wids": [
+                "H",
+                "O2",
+                "H2O",
+                "H2O2",
+                "PI",
+                "ATP",
+                "ADP",
+                "AC",
+                "CO2"
+              ]
+            },
+            "I3": {
+              "bin_count": 443,
+              "failed_bins": {
+                "AC": {
+                  "abs_diff": 50.099999999999966,
+                  "tol": 25.05
+                },
+                "ADP": {
+                  "abs_diff": 57.0,
+                  "tol": 28.5
+                },
+                "ATP": {
+                  "abs_diff": 57.10000000000002,
+                  "tol": 28.55
+                },
+                "CO": {
+                  "abs_diff": 50.099999999999966,
+                  "tol": 25.05
+                },
+                "GL": {
+                  "abs_diff": 11.200000000000003,
+                  "tol": 10.0
+                },
+                "GLC": {
+                  "abs_diff": 25.299999999999983,
+                  "tol": 12.65
+                },
+                "H": {
+                  "abs_diff": 100.0,
+                  "tol": 50.0
+                },
+                "HDCA": {
+                  "abs_diff": 33.69999999999999,
+                  "tol": 16.85
+                },
+                "HO": {
+                  "abs_diff": 169.39999999999986,
+                  "tol": 84.7
+                },
+                "O": {
+                  "abs_diff": 100.0,
+                  "tol": 50.0
+                },
+                "PI": {
+                  "abs_diff": 60.69999999999993,
+                  "tol": 30.35
+                },
+                "TRIPALMITIN": {
+                  "abs_diff": 11.200000000000003,
+                  "tol": 10.0
+                }
+              },
+              "pass": false
+            },
+            "I4": {
+              "pass": true,
+              "rho_threshold": 0.95,
+              "sign_agreement_count": 17,
+              "sign_threshold": 15,
+              "spearman_rho": 1.0
+            },
+            "I5a": {
+              "metric_abs_total_count_gap": 46.49999999999977,
+              "pass": false,
+              "threshold": 1e-09
+            },
+            "I6": {
+              "over_share": 0.0,
+              "pass": false,
+              "threshold": 0.8,
+              "under_share": 1.0
+            }
+          }
+        },
+        "M7": {
+          "description": "use deltas from tick=2 at tick=1",
+          "designated_invariant": "I2",
+          "fired_invariants": [
+            "I1",
+            "I2",
+            "I3",
+            "I4",
+            "I5a",
+            "I6"
+          ],
+          "invariants": {
+            "I1": {
+              "metric_abs_l1_gap": 109960.0,
+              "pass": false,
+              "threshold": 1e-09
+            },
+            "I2": {
+              "max_tail_breach_share": 0.08333333333333333,
+              "max_tail_residual_mass_share": 0.3073011683421962,
+              "pass": false,
+              "tail_abs_residual_sum": 25763.0,
+              "tail_breach_count": 12,
+              "tail_threshold": 40.0,
+              "top27_failed_wids": [
+                "H",
+                "O2",
+                "H2O",
+                "H2O2",
+                "PI",
+                "ATP",
+                "ADP",
+                "AC",
+                "CO2",
+                "HDCA",
+                "GLC",
+                "GL",
+                "TRIPALMITIN"
+              ]
+            },
+            "I3": {
+              "bin_count": 443,
+              "failed_bins": {
+                "AC": {
+                  "abs_diff": 4931.0,
+                  "tol": 25.05
+                },
+                "ADP": {
+                  "abs_diff": 423.0,
+                  "tol": 28.5
+                },
+                "AMP": {
+                  "abs_diff": 2137.0,
+                  "tol": 10.0
+                },
+                "ATP": {
+                  "abs_diff": 1717.0,
+                  "tol": 28.55
+                },
+                "CMP": {
+                  "abs_diff": 218.0,
+                  "tol": 10.0
+                },
+                "CO": {
+                  "abs_diff": 4931.0,
+                  "tol": 25.05
+                },
+                "CTP": {
+                  "abs_diff": 221.0,
+                  "tol": 10.0
+                },
+                "CYTD": {
+                  "abs_diff": 11.0,
+                  "tol": 10.0
+                },
+                "DA": {
+                  "abs_diff": 17.0,
+                  "tol": 10.0
+                },
+                "GDP": {
+                  "abs_diff": 1730.0,
+                  "tol": 10.0
+                },
+                "GL": {
+                  "abs_diff": 5695.0,
+                  "tol": 10.0
+                },
+                "GLC": {
+                  "abs_diff": 2472.0,
+                  "tol": 12.65
+                },
+                "GTP": {
+                  "abs_diff": 1733.0,
+                  "tol": 10.0
+                },
+                "H": {
+                  "abs_diff": 16726.0,
+                  "tol": 50.0
+                },
+                "HDCA": {
+                  "abs_diff": 7582.0,
+                  "tol": 16.85
+                },
+                "HDCEA": {
+                  "abs_diff": 7917.0,
+                  "tol": 10.0
+                },
+                "HO": {
+                  "abs_diff": 26771.0,
+                  "tol": 84.7
+                },
+                "LEU": {
+                  "abs_diff": 11.0,
+                  "tol": 10.0
+                },
+                "MG": {
+                  "abs_diff": 17.0,
+                  "tol": 10.0
+                },
+                "MGMP": {
+                  "abs_diff": 15.0,
+                  "tol": 10.0
+                },
+                "O": {
+                  "abs_diff": 9861.0,
+                  "tol": 50.0
+                },
+                "OCDCEA": {
+                  "abs_diff": 1575.0,
+                  "tol": 10.0
+                },
+                "PI": {
+                  "abs_diff": 1269.0,
+                  "tol": 30.35
+                },
+                "PPI": {
+                  "abs_diff": 3861.0,
+                  "tol": 10.0
+                },
+                "PSIURI": {
+                  "abs_diff": 21.0,
+                  "tol": 10.0
+                },
+                "PSIURIMP": {
+                  "abs_diff": 21.0,
+                  "tol": 10.0
+                },
+                "TRIHDCEAIN": {
+                  "abs_diff": 2639.0,
+                  "tol": 10.0
+                },
+                "TRIOLEIN": {
+                  "abs_diff": 525.0,
+                  "tol": 10.0
+                },
+                "TRIPALMITIN": {
+                  "abs_diff": 2526.0,
+                  "tol": 10.0
+                },
+                "UMP": {
+                  "abs_diff": 1455.0,
+                  "tol": 10.0
+                },
+                "UTP": {
+                  "abs_diff": 1460.0,
+                  "tol": 10.0
+                }
+              },
+              "pass": false
+            },
+            "I4": {
+              "pass": false,
+              "rho_threshold": 0.95,
+              "sign_agreement_count": 11,
+              "sign_threshold": 15,
+              "spearman_rho": 0.8397236102439225
+            },
+            "I5a": {
+              "metric_abs_total_count_gap": 14540.0,
+              "pass": false,
+              "threshold": 1e-09
+            },
+            "I6": {
+              "over_share": 0.92,
+              "pass": false,
+              "threshold": 0.8,
+              "under_share": 0.08
+            }
+          }
+        },
+        "M8": {
+          "description": "zero-mean noise preserving I1 + family bins",
+          "designated_invariant": "I4",
+          "fired_invariants": [
+            "I2"
+          ],
+          "invariants": {
+            "I1": {
+              "metric_abs_l1_gap": 0.0,
+              "pass": true,
+              "threshold": 1e-09
+            },
+            "I2": {
+              "max_tail_breach_share": 0.0,
+              "max_tail_residual_mass_share": 0.0,
+              "pass": false,
+              "tail_abs_residual_sum": 0.0,
+              "tail_breach_count": 0,
+              "tail_threshold": 40.0,
+              "top27_failed_wids": [
+                "H2O",
+                "H2O2"
+              ]
+            },
+            "I3": {
+              "bin_count": 443,
+              "failed_bins": {},
+              "pass": true
+            },
+            "I4": {
+              "pass": true,
+              "rho_threshold": 0.95,
+              "sign_agreement_count": 17,
+              "sign_threshold": 15,
+              "spearman_rho": 0.99748427672956
+            },
+            "I5a": {
+              "metric_abs_total_count_gap": 0.0,
+              "pass": true,
+              "threshold": 1e-09
+            },
+            "I6": {
+              "over_share": 0.02,
+              "pass": true,
+              "threshold": 0.8,
+              "under_share": 0.02
+            }
+          },
+          "noise_variance_source": "variance(karr_delta_flat)"
+        },
+        "M9": {
+          "description": "scale all per-WID deltas by 0.995",
+          "designated_invariant": "I6",
+          "fired_invariants": [
+            "I1",
+            "I5a",
+            "I6"
+          ],
+          "invariants": {
+            "I1": {
+              "metric_abs_l1_gap": 37.01499999999942,
+              "pass": false,
+              "threshold": 1e-09
+            },
+            "I2": {
+              "max_tail_breach_share": 0.0,
+              "max_tail_residual_mass_share": 0.10256410256410232,
+              "pass": true,
+              "tail_abs_residual_sum": 0.39000000000000123,
+              "tail_breach_count": 0,
+              "tail_threshold": 40.0,
+              "top27_failed_wids": []
+            },
+            "I3": {
+              "bin_count": 443,
+              "failed_bins": {},
+              "pass": true
+            },
+            "I4": {
+              "pass": true,
+              "rho_threshold": 0.95,
+              "sign_agreement_count": 17,
+              "sign_threshold": 15,
+              "spearman_rho": 1.0
+            },
+            "I5a": {
+              "metric_abs_total_count_gap": 2.324999999999818,
+              "pass": false,
+              "threshold": 1e-09
+            },
+            "I6": {
+              "over_share": 0.0,
+              "pass": false,
+              "threshold": 0.8,
+              "under_share": 1.0
+            }
+          }
+        }
+      },
+      "off_target_summary": [
+        {
+          "designated": "I2",
+          "mutation": "M2",
+          "off_target": [
+            "I3",
+            "I4"
+          ]
+        },
+        {
+          "designated": "I3",
+          "mutation": "M3",
+          "off_target": [
+            "I2"
+          ]
+        },
+        {
+          "designated": "I4",
+          "mutation": "M5",
+          "off_target": [
+            "I2",
+            "I3"
+          ]
+        },
+        {
+          "designated": "I1",
+          "mutation": "M6",
+          "off_target": [
+            "I2",
+            "I3",
+            "I5a",
+            "I6"
+          ]
+        },
+        {
+          "designated": "I2",
+          "mutation": "M7",
+          "off_target": [
+            "I1",
+            "I3",
+            "I4",
+            "I5a",
+            "I6"
+          ]
+        },
+        {
+          "designated": "I4",
+          "mutation": "M8",
+          "off_target": [
+            "I2"
+          ]
+        },
+        {
+          "designated": "I6",
+          "mutation": "M9",
+          "off_target": [
+            "I1",
+            "I5a"
+          ]
+        }
+      ],
+      "top27_wids": [
+        "H",
+        "O2",
+        "H2O",
+        "H2O2",
+        "PI",
+        "ATP",
+        "ADP",
+        "AC",
+        "CO2",
+        "HDCA",
+        "GLC",
+        "GL",
+        "TRIPALMITIN",
+        "LEU",
+        "LYS",
+        "ILE",
+        "ASN",
+        "DA",
+        "VAL",
+        "ACAL",
+        "ALA",
+        "ASP",
+        "GLN",
+        "GLU",
+        "LeuLeu",
+        "PHE",
+        "SER"
+      ]
+    },
     "precheck": {
       "baseline_biomass_flux_per_s": 5.581449765540722e-06,
       "baseline_nonzero_fluxes": 295,
