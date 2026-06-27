@@ -139,6 +139,17 @@ class KarrMetabolismProcess(Process):
         # adds substrate writeback to _static_update. See METABOLISM_FIX_DESIGN.md.
         "enable_karr_substrate_writeback": False,
         "rng_seed": 0,
+        # LP backend selector. "highs" (default) is fastest; "glpk" matches
+        # Karr 2012's solver family and is required for L2.2 Metabolism
+        # fidelity on the degenerate biomass-objective LP (see
+        # opencell/m1/karr_metabolism.py:solve_fba docstring).
+        "solver": "highs",
+        # When True (and solver="glpk"), runs parsimonious FBA: locks
+        # biomass at the stage-1 optimum, then minimizes total |flux|.
+        # Resolves the LIPASE-family +/-1e6 paired-swap LP degeneracy
+        # that produces ~10 of the 504 reactions' worth of non-biological
+        # paired noise in OC vs Karr at the metabolism allocated state.
+        "pfba": False,
     }
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
@@ -420,6 +431,8 @@ class KarrMetabolismProcess(Process):
             use_full_objective=self.parameters["use_full_objective"],
             sense="max",
             big=self.parameters["big"],
+            solver=self.parameters["solver"],
+            pfba=self.parameters["pfba"],
         )
         flux_update = {rid: 0.0 for rid in self._rxn_ids}
         for col, rid in enumerate(self.model.fba_col_rxn_wcm):
@@ -534,6 +547,8 @@ class KarrMetabolismProcess(Process):
             big=self.parameters["big"],
             lb_override=bounds[:, 0],
             ub_override=bounds[:, 1],
+            solver=self.parameters["solver"],
+            pfba=self.parameters["pfba"],
         )
 
         # Bug 6a Stage 2: signed writeback across all mapped cytosol rows.

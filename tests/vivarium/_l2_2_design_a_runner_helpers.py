@@ -1264,6 +1264,17 @@ def _metabolism_dynamics() -> Any:
 def _metabolism_process(seed: int) -> KarrMetabolismProcess:
     # Day-38: dynamic_bounds=True + Karr's 4-step substrate writeback enabled.
     # See docs/phase_f/METABOLISM_FIX_DESIGN.md for rationale.
+    # Day-40: solver="glpk" matches Karr 2012's GLPK MEX. On the degenerate
+    # biomass-objective LP (cond ~ 6.7e+12 at the allocated state) HiGHS picks
+    # different vertices from GLPK and produces a ~6.7x larger flux L1 gap
+    # vs the recorded Karr trace. See docs/phase_f/METABOLISM_FIX_DESIGN.md
+    # and scripts/probe_glpk_vs_highs_metab.py for the empirical comparison.
+    # NOTE: pFBA was tested Day-40 and rejected — although biologically
+    # equivalent (growth bit-matches Karr to 10ppm), the minimum-|flux|
+    # solution writes substrates very differently from Karr's recorded
+    # GLPK 4.x basis. Substrate writeback L1 went UP from 81K (GLPK-only)
+    # to 143K (worse than HiGHS at 130K). Kept solve_fba(pfba=...) as an
+    # available experiment flag but disabled here.
     model = _metabolism_model()
     dyn = _metabolism_dynamics()
     with forbid_sut_oracle_file_io():
@@ -1273,6 +1284,7 @@ def _metabolism_process(seed: int) -> KarrMetabolismProcess:
             "dynamic_bounds": True,
             "enable_karr_substrate_writeback": True,
             "dynamics_inputs": dyn,
+            "solver": "glpk",
         })
 
 
