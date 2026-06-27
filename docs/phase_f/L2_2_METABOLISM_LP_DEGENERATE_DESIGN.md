@@ -1,3 +1,5 @@
+> **NOTE**: This V2 MF4 design is superseded by `docs/phase_f/L2_2_METABOLISM_LP_DEGENERATE_DESIGN_V4.md`; keep this file only as historical baseline context.
+
 # L2.2 Metabolism LP-Degenerate Design
 
 Supersession scope:
