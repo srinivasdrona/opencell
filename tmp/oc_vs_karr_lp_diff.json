@@ -1,0 +1,661 @@
+{
+  "meta": {
+    "sample": {
+      "seed": 0,
+      "tick": 1
+    },
+    "files_read": [
+      "data/karr_fixtures/matlab_ground_truth/metab_flux_allocated_state_s000_tick1.mat",
+      "data/karr_fixtures/karr_native_m1.npz",
+      "data/karr_fixtures/per_process/Metabolism_flat.mat",
+      "opencell/m1/calc_flux_bounds.py",
+      "opencell/m1/karr_metabolism.py"
+    ],
+    "solver_options": {
+      "solver": "glpk",
+      "presolve": "off",
+      "scale": "auto",
+      "tol_bnd": 1e-06,
+      "big": 1000000.0
+    },
+    "cell_dry_mass_inference": {
+      "cell_dry_mass": 3.944640855678535e-15,
+      "method": "median ratio from Karr ground-truth external exchange bounds vs static fbaReactionBounds",
+      "lower_ratio_count": 122,
+      "lower_ratio_min": 3.944640855678535e-15,
+      "lower_ratio_max": 3.944640855678535e-15,
+      "upper_ratio_count": 67,
+      "upper_ratio_min": 3.944640855678535e-15,
+      "upper_ratio_max": 3.944640855678535e-15,
+      "upper_equal_availability_count": 57
+    }
+  },
+  "section_1_S": {
+    "oc_shape": [
+      376,
+      504
+    ],
+    "karr_shape": [
+      376,
+      504
+    ],
+    "shape_match": true,
+    "max_abs_diff": 0.0,
+    "sum_abs_diff": 0.0,
+    "count_nonzero_diff": 0,
+    "count_gt_1e_9": 0,
+    "oc_nnz": 1758,
+    "karr_nnz": 1758,
+    "nnz_match": true,
+    "source_note": "Karr stoichiometry sourced from Metabolism_flat.mat:data.fixture.fbaReactionStoichiometryMatrix"
+  },
+  "section_2_RHS": {
+    "oc_shape": [
+      376
+    ],
+    "karr_shape": [
+      376
+    ],
+    "shape_match": true,
+    "max_abs_diff": 0.0,
+    "sum_abs_diff": 0.0,
+    "count_gt_1e_9": 0,
+    "oc_all_zero": true,
+    "karr_all_zero": true,
+    "karr_nonzero_indices_gt_1e_9": []
+  },
+  "section_3_objective": {
+    "oc_shape": [
+      504
+    ],
+    "karr_shape": [
+      504
+    ],
+    "shape_match": true,
+    "max_abs_diff": 0.0,
+    "sum_abs_diff": 0.0,
+    "count_gt_1e_9": 0,
+    "oc_nnz_gt_1e_12": 36,
+    "karr_nnz_gt_1e_12": 36,
+    "oc_nonzero_indices": [
+      460,
+      461,
+      462,
+      463,
+      465,
+      466,
+      468,
+      469,
+      470,
+      472,
+      473,
+      474,
+      475,
+      477,
+      479,
+      480,
+      481,
+      482,
+      483,
+      484,
+      486,
+      487,
+      488,
+      489,
+      490,
+      491,
+      492,
+      493,
+      494,
+      495,
+      496,
+      497,
+      498,
+      499,
+      500,
+      502
+    ],
+    "karr_nonzero_indices": [
+      460,
+      461,
+      462,
+      463,
+      465,
+      466,
+      468,
+      469,
+      470,
+      472,
+      473,
+      474,
+      475,
+      477,
+      479,
+      480,
+      481,
+      482,
+      483,
+      484,
+      486,
+      487,
+      488,
+      489,
+      490,
+      491,
+      492,
+      493,
+      494,
+      495,
+      496,
+      497,
+      498,
+      499,
+      500,
+      502
+    ],
+    "same_nonzero_support": true
+  },
+  "section_4_bounds": {
+    "oc_flags": {
+      "apply_enzyme_kinetic": true,
+      "apply_enzyme_presence": true,
+      "apply_directionality": true,
+      "apply_external_metabolite": true,
+      "apply_internal_metabolite": true,
+      "apply_protein_bounds": false
+    },
+    "cell_dry_mass": {
+      "cell_dry_mass": 3.944640855678535e-15,
+      "method": "median ratio from Karr ground-truth external exchange bounds vs static fbaReactionBounds",
+      "lower_ratio_count": 122,
+      "lower_ratio_min": 3.944640855678535e-15,
+      "lower_ratio_max": 3.944640855678535e-15,
+      "upper_ratio_count": 67,
+      "upper_ratio_min": 3.944640855678535e-15,
+      "upper_ratio_max": 3.944640855678535e-15,
+      "upper_equal_availability_count": 57
+    },
+    "static_bound_source_diff": {
+      "lb": {
+        "shape_a": [
+          504
+        ],
+        "shape_b": [
+          504
+        ],
+        "shape_match": true,
+        "max_abs_diff": 0.0,
+        "sum_abs_diff": 0.0,
+        "count_gt_tol": 0
+      },
+      "ub": {
+        "shape_a": [
+          504
+        ],
+        "shape_b": [
+          504
+        ],
+        "shape_match": true,
+        "max_abs_diff": 0.0,
+        "sum_abs_diff": 0.0,
+        "count_gt_tol": 0
+      }
+    },
+    "raw_compare": {
+      "lb": {
+        "shape_a": [
+          504
+        ],
+        "shape_b": [
+          504
+        ],
+        "shape_match": true,
+        "max_abs_diff": 0.0,
+        "sum_abs_diff": 0.0,
+        "count_gt_tol": 0
+      },
+      "ub": {
+        "shape_a": [
+          504
+        ],
+        "shape_b": [
+          504
+        ],
+        "shape_match": true,
+        "max_abs_diff": 0.0,
+        "sum_abs_diff": 0.0,
+        "count_gt_tol": 0
+      },
+      "infinity_handling": {
+        "lb": {
+          "oc_finite_count": 356,
+          "karr_finite_count": 356,
+          "finite_mask_mismatches": 0
+        },
+        "ub": {
+          "oc_finite_count": 235,
+          "karr_finite_count": 235,
+          "finite_mask_mismatches": 0
+        }
+      }
+    },
+    "post_clip_compare": {
+      "clip_big": 1000000.0,
+      "lb": {
+        "shape_a": [
+          504
+        ],
+        "shape_b": [
+          504
+        ],
+        "shape_match": true,
+        "max_abs_diff": "inf",
+        "sum_abs_diff": "inf",
+        "count_gt_tol": 148
+      },
+      "ub": {
+        "shape_a": [
+          504
+        ],
+        "shape_b": [
+          504
+        ],
+        "shape_match": true,
+        "max_abs_diff": "inf",
+        "sum_abs_diff": "inf",
+        "count_gt_tol": 269
+      }
+    },
+    "karr_bounds_source": "data/karr_fixtures/matlab_ground_truth/metab_flux_allocated_state_s000_tick1.mat"
+  },
+  "section_5_karr_flux_under_oc_lp": {
+    "mass_balance": {
+      "max_abs_residual": 4.711182555183768e-10,
+      "sum_abs_residual": 1.9279537896710405e-09,
+      "count_violations": 0,
+      "violation_indices": [],
+      "violation_values": []
+    },
+    "bounds": {
+      "count_below_lb": 0,
+      "count_above_ub": 0,
+      "count_violations": 0,
+      "violation_indices": [],
+      "below_lb_indices": [],
+      "above_ub_indices": [],
+      "total_violation_magnitude": 0.0
+    },
+    "feasible_within_1e_6": true
+  },
+  "section_6_oc_flux_under_karr_lp": {
+    "oc_solver_info": {
+      "status": "ok",
+      "message": "glpk ok",
+      "objective_value": 0.021330661933312074,
+      "biomass_flux_per_s": 2.1192692552130874e-05,
+      "biomass_flux_per_h": 0.07629369318767115,
+      "big": 1000000.0,
+      "use_full_objective": true,
+      "n_nonzero": 321,
+      "solver": "glpk"
+    },
+    "mass_balance": {
+      "max_abs_residual": 3.854074748232961e-08,
+      "sum_abs_residual": 1.1578458324357586e-07,
+      "count_violations": 0,
+      "violation_indices": [],
+      "violation_values": []
+    },
+    "karr_bounds": {
+      "count_below_lb": 0,
+      "count_above_ub": 0,
+      "count_violations": 0,
+      "violation_indices": [],
+      "below_lb_indices": [],
+      "above_ub_indices": [],
+      "total_violation_magnitude": 0.0
+    },
+    "feasible_within_1e_6": true
+  },
+  "section_7_objective_values": {
+    "oc_obj_dot_v_oc": 0.021330661933312074,
+    "oc_obj_dot_v_karr": 0.02133066193318198,
+    "karr_obj_dot_v_karr": 0.02133066193318198,
+    "karr_obj_dot_v_oc": 0.021330661933312074,
+    "abs_diff_oc_objective": 1.3009385235740467e-13,
+    "rel_diff_oc_objective": 6.0989130465865775e-12,
+    "abs_diff_karr_objective": 1.3009385235740467e-13,
+    "rel_diff_karr_objective": 6.0989130465865775e-12
+  },
+  "section_8_flux_comparison": {
+    "max_abs_diff": 1031094.5609469921,
+    "sum_abs_diff": 8184029.820562291,
+    "count_gt_1e_6": 77,
+    "count_gt_1e_3": 77,
+    "count_gt_1e_9": 81,
+    "top20": [
+      {
+        "fba_col": 199,
+        "reaction_name": "Pyk_IDP | pyruvate kinase",
+        "abs_diff": 1031094.5609469921,
+        "v_oc": 1000000.0,
+        "v_karr": -31094.5609469921,
+        "at_oc_lower": false,
+        "at_oc_upper": true,
+        "at_karr_lower": false,
+        "at_karr_upper": false
+      },
+      {
+        "fba_col": 7,
+        "reaction_name": "Adk3 | adentylate kinase (ITP)",
+        "abs_diff": 1030679.030939362,
+        "v_oc": 998058.1881718338,
+        "v_karr": -32620.84276752824,
+        "at_oc_lower": false,
+        "at_oc_upper": false,
+        "at_karr_lower": false,
+        "at_karr_upper": false
+      },
+      {
+        "fba_col": 6,
+        "reaction_name": "Adk2 | adentylate kinase (GTP)",
+        "abs_diff": 1011952.9909876657,
+        "v_oc": -1000000.0,
+        "v_karr": 11952.990987665702,
+        "at_oc_lower": true,
+        "at_oc_upper": false,
+        "at_karr_lower": false,
+        "at_karr_upper": false
+      },
+      {
+        "fba_col": 198,
+        "reaction_name": "Pyk_GDP | pyruvate kinase",
+        "abs_diff": 1010643.2745438736,
+        "v_oc": -994368.891315204,
+        "v_karr": 16274.383228669682,
+        "at_oc_lower": false,
+        "at_oc_upper": false,
+        "at_karr_lower": false,
+        "at_karr_upper": true
+      },
+      {
+        "fba_col": 200,
+        "reaction_name": "Pyk_UDP | pyruvate kinase",
+        "abs_diff": 1000520.0658942355,
+        "v_oc": -999994.3322471651,
+        "v_karr": 525.7336470703315,
+        "at_oc_lower": false,
+        "at_oc_upper": false,
+        "at_karr_lower": false,
+        "at_karr_upper": false
+      },
+      {
+        "fba_col": 161,
+        "reaction_name": "PfkA5 | phosphofructokinase",
+        "abs_diff": 1000513.61428528,
+        "v_oc": -1000000.0,
+        "v_karr": 513.61428528,
+        "at_oc_lower": true,
+        "at_oc_upper": false,
+        "at_karr_lower": false,
+        "at_karr_upper": true
+      },
+      {
+        "fba_col": 159,
+        "reaction_name": "PfkA3 | phosphofructokinase",
+        "abs_diff": 998791.1676461563,
+        "v_oc": 998791.1676461563,
+        "v_karr": 0.0,
+        "at_oc_lower": false,
+        "at_oc_upper": false,
+        "at_karr_lower": true,
+        "at_karr_upper": false
+      },
+      {
+        "fba_col": 194,
+        "reaction_name": "Pyk_DADP | pyruvate kinase",
+        "abs_diff": 969804.3171989883,
+        "v_oc": 969819.4898085187,
+        "v_karr": 15.172609530390623,
+        "at_oc_lower": false,
+        "at_oc_upper": false,
+        "at_karr_lower": false,
+        "at_karr_upper": false
+      },
+      {
+        "fba_col": 83,
+        "reaction_name": "Gmk3 | guanylate kinase (GMP:dATP)",
+        "abs_diff": 32638.31593708892,
+        "v_oc": -29185.752296922252,
+        "v_karr": 3452.5636401666666,
+        "at_oc_lower": false,
+        "at_oc_upper": false,
+        "at_karr_lower": false,
+        "at_karr_upper": true
+      },
+      {
+        "fba_col": 81,
+        "reaction_name": "Gmk1 | guanylate kinase (GMP:ATP)",
+        "abs_diff": 32638.31593708883,
+        "v_oc": 29189.856230500005,
+        "v_karr": -3448.4597065888265,
+        "at_oc_lower": false,
+        "at_oc_upper": true,
+        "at_karr_lower": false,
+        "at_karr_upper": false
+      },
+      {
+        "fba_col": 5,
+        "reaction_name": "Adk1 | adenylate kinase (ATP)",
+        "abs_diff": 18719.588342741972,
+        "v_oc": 1971.4770289413536,
+        "v_karr": 20691.065371683326,
+        "at_oc_lower": false,
+        "at_oc_upper": false,
+        "at_karr_lower": false,
+        "at_karr_upper": true
+      },
+      {
+        "fba_col": 192,
+        "reaction_name": "Pyk_ADP | pyruvate kinase",
+        "abs_diff": 10261.662479832768,
+        "v_oc": -963350.2974300479,
+        "v_karr": -973611.9599098807,
+        "at_oc_lower": false,
+        "at_oc_upper": false,
+        "at_karr_lower": false,
+        "at_karr_upper": false
+      },
+      {
+        "fba_col": 449,
+        "reaction_name": "EXT_EXCHANGE | TRP | L-tryptophan",
+        "abs_diff": 3771.352388515206,
+        "v_oc": -3771.352388515206,
+        "v_karr": 0.0,
+        "at_oc_lower": false,
+        "at_oc_upper": false,
+        "at_karr_lower": false,
+        "at_karr_upper": true
+      },
+      {
+        "fba_col": 230,
+        "reaction_name": "TX_AROP21 | L-phenylalanine reversible transport via proton symport",
+        "abs_diff": 3771.352388515137,
+        "v_oc": 996228.6476114849,
+        "v_karr": 1000000.0,
+        "at_oc_lower": false,
+        "at_oc_upper": false,
+        "at_karr_lower": false,
+        "at_karr_upper": false
+      },
+      {
+        "fba_col": 231,
+        "reaction_name": "TX_AROP22 | L-tryptophan reversible transport via proton symport",
+        "abs_diff": 3762.9721303700935,
+        "v_oc": 1000000.0,
+        "v_karr": 996237.0278696299,
+        "at_oc_lower": false,
+        "at_oc_upper": true,
+        "at_karr_lower": false,
+        "at_karr_upper": false
+      },
+      {
+        "fba_col": 423,
+        "reaction_name": "EXT_EXCHANGE | PHE | L-phenylalanine",
+        "abs_diff": 3762.9721303700867,
+        "v_oc": 0.0,
+        "v_karr": -3762.9721303700867,
+        "at_oc_lower": false,
+        "at_oc_upper": true,
+        "at_karr_lower": false,
+        "at_karr_upper": false
+      },
+      {
+        "fba_col": 82,
+        "reaction_name": "Gmk2 | deoxyguanylate kinase (dGMP:ATP)",
+        "abs_diff": 3651.4654899210154,
+        "v_oc": -198.90184975434886,
+        "v_karr": 3452.5636401666666,
+        "at_oc_lower": false,
+        "at_oc_upper": false,
+        "at_karr_lower": false,
+        "at_karr_upper": true
+      },
+      {
+        "fba_col": 84,
+        "reaction_name": "Gmk4 | deoxyguanylate kinase (dGMP:dATP)",
+        "abs_diff": 3651.4654899203942,
+        "v_oc": 203.09197883333337,
+        "v_karr": -3448.3735110870607,
+        "at_oc_lower": false,
+        "at_oc_upper": true,
+        "at_karr_lower": false,
+        "at_karr_upper": false
+      },
+      {
+        "fba_col": 297,
+        "reaction_name": "TX_OppB_Trp | oligopeptide (Trp) transport via ABC system",
+        "abs_diff": 1885.6761942576104,
+        "v_oc": 1886.811361829633,
+        "v_karr": 1.1351675720225975,
+        "at_oc_lower": false,
+        "at_oc_upper": false,
+        "at_karr_lower": false,
+        "at_karr_upper": false
+      },
+      {
+        "fba_col": 28,
+        "reaction_name": "Apts_Trp | []",
+        "abs_diff": 1885.6761942576102,
+        "v_oc": 1886.8113618296327,
+        "v_karr": 1.1351675720225975,
+        "at_oc_lower": false,
+        "at_oc_upper": false,
+        "at_karr_lower": false,
+        "at_karr_upper": false
+      }
+    ]
+  },
+  "section_9_warm_start": {
+    "cold_start": {
+      "basis_rule": "advanced basis only",
+      "warm_up_status": null,
+      "simplex_status": 0,
+      "solution_status": 5,
+      "solution_status_name": "optimal",
+      "iteration_count": 243,
+      "objective": 0.021330661933312074,
+      "objective_from_flux": 0.021330661933312074,
+      "n_nonzero_gt_1e_9": 321
+    },
+    "warm_start": {
+      "basis_rule": "advanced basis + glp_set_col_stat on already-nonbasic Karr-bound columns (fixed=22, lower=39, upper=20, preserved_basic=360)",
+      "warm_up_status": 0,
+      "simplex_status": 0,
+      "solution_status": 5,
+      "solution_status_name": "optimal",
+      "iteration_count": 205,
+      "objective": 0.021330661933311346,
+      "objective_from_flux": 0.021330661933311346,
+      "n_nonzero_gt_1e_9": 322
+    },
+    "karr_reference_objective": 0.02133066193318198,
+    "warm_improves_objective_over_cold": false,
+    "warm_is_closer_to_karr_objective": true,
+    "objective_delta_warm_minus_cold": -7.28583859910259e-16,
+    "abs_objective_gap_cold_vs_karr": 1.3009385235740467e-13,
+    "abs_objective_gap_warm_vs_karr": 1.293652684974944e-13,
+    "warm_vs_cold_flux_diff": {
+      "max_abs_diff": 1000513.61428528,
+      "sum_abs_diff": 4104899.314951843,
+      "count_gt_1e_6": 26
+    }
+  },
+  "summary": {
+    "match_table": [
+      {
+        "section": "S",
+        "status": {
+          "match": "match",
+          "reason": "max_abs_diff=0.000e+00"
+        }
+      },
+      {
+        "section": "RHS",
+        "status": {
+          "match": "match",
+          "reason": "count_gt_1e_9=0"
+        }
+      },
+      {
+        "section": "objective",
+        "status": {
+          "match": "match",
+          "reason": "count_gt_1e_9=0"
+        }
+      },
+      {
+        "section": "bounds",
+        "status": {
+          "match": "mismatch",
+          "reason": "raw match; post-clip differs only where OC clips +/-inf to +/-1e6"
+        }
+      },
+      {
+        "section": "karr_flux_under_oc_lp",
+        "status": {
+          "match": "match",
+          "reason": "Karr flux feasibility in OC LP"
+        }
+      },
+      {
+        "section": "oc_flux_under_karr_lp",
+        "status": {
+          "match": "match",
+          "reason": "OC flux feasibility in Karr bounds"
+        }
+      },
+      {
+        "section": "objective_values",
+        "status": {
+          "match": "match",
+          "reason": "rel_diff_oc_objective=6.09891305e-12"
+        }
+      },
+      {
+        "section": "flux_comparison",
+        "status": {
+          "match": "mismatch",
+          "reason": "max_abs_diff=1.031e+06"
+        }
+      },
+      {
+        "section": "warm_start",
+        "status": {
+          "match": "match",
+          "reason": "warm-start reaches same optimum (delta=-7.286e-16)"
+        }
+      }
+    ]
+  }
+}
