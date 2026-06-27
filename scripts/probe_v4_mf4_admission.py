@@ -358,6 +358,17 @@ def linearized_flat_delta(
     return constant_flat + linear_operator @ flux
 
 
+def actual_writeback_flat(context: ProbeContext, flux: np.ndarray) -> np.ndarray:
+    delta = apply_karr_substrate_writeback(
+        pre_state_585x3=context.ground_truth["pre_sub"],
+        v_504=flux,
+        growth_per_s=float(flux[context.model.biomass_col]),
+        fixture=context.writeback_fixture,
+        rng=make_writeback_rng(WRITEBACK_SEED),
+    )
+    return delta.sum(axis=1).astype(np.float64)
+
+
 def tau_vector_for(name: str, target_values: np.ndarray) -> np.ndarray:
     return np.asarray([TAU_FORMULAS[name](float(v)) for v in target_values], dtype=np.float64)
 
@@ -594,6 +605,53 @@ def solve_joint_lp(
         glp.glp_delete_prob(lp)
 
 
+def run_line_search(
+    *,
+    context: ProbeContext,
+    baseline_flux: np.ndarray,
+    candidate_k: np.ndarray,
+    tau_name: str,
+) -> dict[str, Any]:
+    target = context.karr_delta_flat[context.top17_indices]
+    tau = tau_vector_for(tau_name, target)
+    alphas_report: dict[str, Any] = {}
+    verified_alphas: list[float] = []
+    best_alpha = None
+    best_pass_count = -1
+    best_total_error = math.inf
+
+    for alpha in ALPHAS:
+        candidate_flux = baseline_flux + alpha * candidate_k
+        actual_flat = actual_writeback_flat(context, candidate_flux)
+        errors = np.abs(actual_flat[context.top17_indices] - target)
+        pass_mask = errors <= tau + 1e-9
+        pass_count = int(np.sum(pass_mask))
+        total_error = float(np.sum(errors))
+        if pass_count == len(TOP17_WIDS):
+            verified_alphas.append(alpha)
+        if pass_count > best_pass_count or (
+            pass_count == best_pass_count and total_error < best_total_error
+        ):
+            best_alpha = alpha
+            best_pass_count = pass_count
+            best_total_error = total_error
+        alphas_report[str(alpha)] = {
+            "pass_count": pass_count,
+            "all_17_within_tau": bool(pass_count == len(TOP17_WIDS)),
+            "per_wid_abs_error": {
+                wid: float(err) for wid, err in zip(TOP17_WIDS, errors, strict=True)
+            },
+        }
+
+    return {
+        "verified_alphas": verified_alphas,
+        "best_verified_alpha": max(verified_alphas) if verified_alphas else None,
+        "minimum_alpha_all17": min(verified_alphas) if verified_alphas else None,
+        "best_alpha_by_pass_count": best_alpha,
+        "alphas": alphas_report,
+    }
+
+
 def main() -> int:
     try:
         report = build_report_shell()
@@ -630,6 +688,7 @@ def main() -> int:
             "fixed_growth_per_s": precheck["solver_metadata"]["biomass_flux_per_s"],
         }
         joint_lp_results: dict[str, dict[str, Any]] = {}
+        joint_lp_candidates: dict[str, np.ndarray] = {}
         for tau_name in TAU_FORMULAS:
             lp_result = solve_joint_lp(
                 context=context,
@@ -639,13 +698,29 @@ def main() -> int:
                 tau_name=tau_name,
             )
             if "candidate_k" in lp_result:
-                candidate_k = lp_result.pop("candidate_k")
+                candidate_k = lp_result["candidate_k"]
+                joint_lp_candidates[tau_name] = candidate_k
+                lp_result = dict(lp_result)
+                lp_result.pop("candidate_k")
                 lp_result["active_bounds_count"] = len(lp_result["active_bounds"])
                 lp_result["candidate_flux_biomass_per_s"] = float(
                     oc_flux[context.model.biomass_col] + candidate_k[context.model.biomass_col]
                 )
             joint_lp_results[tau_name] = lp_result
         report["sections"]["joint_lp"] = joint_lp_results
+        report["sections"]["line_search"] = {
+            tau_name: (
+                run_line_search(
+                    context=context,
+                    baseline_flux=oc_flux,
+                    candidate_k=joint_lp_candidates[tau_name],
+                    tau_name=tau_name,
+                )
+                if tau_name in joint_lp_candidates
+                else {"verified_alphas": [], "best_verified_alpha": None, "alphas": {}}
+            )
+            for tau_name in TAU_FORMULAS
+        }
 
         REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
         REPORT_PATH.write_text(json.dumps(to_builtin(report), indent=2, sort_keys=True))
