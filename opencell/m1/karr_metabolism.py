@@ -175,6 +175,14 @@ def _solve_fba_glpk(
         parm.meth = glp.GLP_PRIMAL
         # Karr's `tolbnd = 10e-7 = 1e-6` — looser than GLPK's default 1e-7.
         parm.tol_bnd = 1e-6
+        # Day-41 finding (H3 fanout): GLPK 5's default pricing is PSE
+        # (steepest-edge). On Karr's M. genitalium LP, PSE lands at a
+        # vertex 8.18e+6 (L1) from Karr's MATLAB glpkmex-recorded flux,
+        # while STD (textbook Dantzig — the default in GLPK ~2011 when
+        # Karr's model was published) lands 354K away. Same optimum
+        # (2.133e-2), 23x closer vertex on the degenerate optimal face.
+        # See scripts/probe_h3_options_sweep.py + tmp/h3_options_sweep.json.
+        parm.pricing = glp.GLP_PT_STD
 
         status = glp.glp_simplex(lp, parm)
         if status != 0:
@@ -331,6 +339,9 @@ def _solve_fba_glpk_pfba(
         parm.msg_lev = glp.GLP_MSG_OFF
         parm.presolve = glp.GLP_ON
         parm.meth = glp.GLP_PRIMAL
+        # Day-41 finding: match the stage-1 solver — STD pricing keeps the
+        # parsimony refinement on the same vertex family Karr's glpkmex used.
+        parm.pricing = glp.GLP_PT_STD
 
         status = glp.glp_simplex(lp, parm)
         if status != 0:
