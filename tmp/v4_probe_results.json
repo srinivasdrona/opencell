@@ -77,7 +77,5111 @@
     "tick": 1
   },
   "sections": {
-    "joint_lp": {},
+    "joint_lp": {
+      "tau_A": {
+        "active_bounds": [
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 9,
+            "name": "AHCYSs",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 35,
+            "name": "Cdd2",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 42,
+            "name": "CmkA1",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 46,
+            "name": "DcdK",
+            "value": -1000.0000000000001
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 47,
+            "name": "Dck",
+            "value": -6.111362116270629e-14
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 48,
+            "name": "DeoC",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.21359900598890025,
+            "fba_col": 55,
+            "name": "DeoD8",
+            "value": 0.21359900598890025
+          },
+          {
+            "bound": "ub",
+            "bound_value": 283.3064301,
+            "fba_col": 62,
+            "name": "FolD2",
+            "value": 283.3064301
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 66,
+            "name": "Fre6",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 67,
+            "name": "FruK1",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 69,
+            "name": "FTHFS",
+            "value": -1.8846634297958894e-13
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 74,
+            "name": "GLNHs",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 203.09197883333337,
+            "fba_col": 84,
+            "name": "Gmk4",
+            "value": 203.09197883333337
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 87,
+            "name": "HCYSMT",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 93,
+            "name": "Hpt1",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 95,
+            "name": "LIPASE_DIBUTYRIN_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 97,
+            "name": "LIPASE_DIBUTYRIN_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 98,
+            "name": "LIPASE_METHYL_OCDCEA_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 100,
+            "name": "LIPASE_METHYL_OCDCEA_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 101,
+            "name": "LIPASE_MONOBUTYRIN_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 103,
+            "name": "LIPASE_MONOBUTYRIN_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 104,
+            "name": "LIPASE_TRIBUTYRIN_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 106,
+            "name": "LIPASE_TRIBUTYRIN_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 107,
+            "name": "LIPASE_TRILAURIN_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 109,
+            "name": "LIPASE_TRILAURIN_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 110,
+            "name": "LIPASE_TRIMYRISTIN_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 112,
+            "name": "LIPASE_TRIMYRISTIN_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 113,
+            "name": "LIPASE_TRIOLEIN_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 115,
+            "name": "LIPASE_TRIOLEIN_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 116,
+            "name": "LIPASE_TRIPALMITIN_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 118,
+            "name": "LIPASE_TRIPALMITIN_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 119,
+            "name": "LIPASE_TRISTEARIN_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 121,
+            "name": "LIPASE_TRISTEARIN_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 122,
+            "name": "LIPASE_TRI_HDCEA_IN_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 124,
+            "name": "LIPASE_TRI_HDCEA_IN_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 125,
+            "name": "LIPASE_TRI_TTDCEA_IN_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 127,
+            "name": "LIPASE_TRI_TTDCEA_IN_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 128,
+            "name": "LIPASE_TWEEN80_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 129,
+            "name": "LIPASE_TWEEN80_MG327",
+            "value": 1000.0000000000006
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 130,
+            "name": "LIPASE_TWEEN80_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 131,
+            "name": "LIPOYLLYSHs",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 136,
+            "name": "MetS",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 139,
+            "name": "NADD2",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 142,
+            "name": "NADR1",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 145,
+            "name": "NrdEF_ADP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 147,
+            "name": "NrdEF_GDP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 149,
+            "name": "Ohr_H2O2",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 150,
+            "name": "Ohr_rx",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 153,
+            "name": "PcbX",
+            "value": -1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 157,
+            "name": "PfkA1",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 158,
+            "name": "PfkA2",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 160,
+            "name": "PfkA4",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 161,
+            "name": "PfkA5",
+            "value": -1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -72.9340828125,
+            "fba_col": 163,
+            "name": "Pgk1",
+            "value": -72.93408281250004
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 164,
+            "name": "Pgk2",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1.9499999483426411,
+            "fba_col": 165,
+            "name": "Pgk3",
+            "value": -1.949999948342679
+          },
+          {
+            "bound": "lb",
+            "bound_value": -632.095384375,
+            "fba_col": 166,
+            "name": "Pgk4",
+            "value": -632.095384375
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 175,
+            "name": "PhnW",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 176,
+            "name": "PhnX",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 185,
+            "name": "Ppc",
+            "value": 999.9999999999999
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 187,
+            "name": "pSERpp",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 189,
+            "name": "pTHRpp",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 190,
+            "name": "pTYRpp",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 192,
+            "name": "Pyk_ADP",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 194,
+            "name": "Pyk_DADP",
+            "value": 1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 198,
+            "name": "Pyk_GDP",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 206,
+            "name": "SNGLYPOr",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 208,
+            "name": "TatD_dAMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 209,
+            "name": "TatD_dCMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 210,
+            "name": "TatD_dGMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 211,
+            "name": "TatD_dTMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 212,
+            "name": "Tdk1",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 214,
+            "name": "ThyA",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 227,
+            "name": "TX_AROP11",
+            "value": -1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 228,
+            "name": "TX_AROP12",
+            "value": -1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 229,
+            "name": "TX_AROP13",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 230,
+            "name": "TX_AROP21",
+            "value": 1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 231,
+            "name": "TX_AROP22",
+            "value": 1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 232,
+            "name": "TX_AROP23",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 240,
+            "name": "TX_ComEC_dApdAp",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 241,
+            "name": "TX_ComEC_dCpdCp",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 242,
+            "name": "TX_ComEC_dGpdGp",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 243,
+            "name": "TX_ComEC_dTpdTp",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 248,
+            "name": "TX_FRUPTS",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 249,
+            "name": "TX_GL",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 250,
+            "name": "TX_GL3P",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 252,
+            "name": "TX_GLNHPQ",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 253,
+            "name": "TX_GLUP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 256,
+            "name": "TX_H2O",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 268,
+            "name": "TX_MGTA_FE2",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 277,
+            "name": "TX_O2",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 300,
+            "name": "TX_PHNT",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 301,
+            "name": "TX_PIUP1",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 312,
+            "name": "TX_UHPT1",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 317,
+            "name": "Upp",
+            "value": 2.6041753318529156e-12
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 318,
+            "name": "UshA_AMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 319,
+            "name": "UshA_cmnm5s2UMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 320,
+            "name": "UshA_dCMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 321,
+            "name": "UshA_dTMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 322,
+            "name": "UshA_dUMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 323,
+            "name": "UshA_GmMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 324,
+            "name": "UshA_GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 325,
+            "name": "UshA_IMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 326,
+            "name": "UshA_k2CMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 327,
+            "name": "UshA_m1GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 328,
+            "name": "UshA_m2GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 329,
+            "name": "UshA_m62AMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 330,
+            "name": "UshA_m7GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 331,
+            "name": "UshA_PSIURIMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 332,
+            "name": "UshA_s4UMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 333,
+            "name": "UshA_UmMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 334,
+            "name": "YbiV_SNGLYP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 335,
+            "name": "YicP",
+            "value": 3.6967511369928784e-13
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 340,
+            "name": "EXT_AKG",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 342,
+            "name": "EXT_AMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 343,
+            "name": "EXT_AMP_Lysine",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 344,
+            "name": "EXT_AMP_Mor",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 345,
+            "name": "EXT_AMP_NH2",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 349,
+            "name": "EXT_BUT",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 351,
+            "name": "EXT_CAP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 352,
+            "name": "EXT_CH3OH",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 354,
+            "name": "EXT_cmnm5s2U",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 362,
+            "name": "EXT_DAMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 363,
+            "name": "EXT_dApdAp",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 364,
+            "name": "EXT_DCMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 365,
+            "name": "EXT_dCpdCp",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 367,
+            "name": "EXT_DGMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 368,
+            "name": "EXT_dGpdGp",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 369,
+            "name": "EXT_DIBUTYRIN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 370,
+            "name": "EXT_dINS",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 371,
+            "name": "EXT_DTMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 372,
+            "name": "EXT_dTpdTp",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 373,
+            "name": "EXT_FE2",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 375,
+            "name": "EXT_FOR",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 375,
+            "name": "EXT_FOR",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 376,
+            "name": "EXT_FRU",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 377,
+            "name": "EXT_G6P",
+            "value": 5.741331108516863e-13
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 379,
+            "name": "EXT_GL3P",
+            "value": -2.1048500720302036e-15
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 381,
+            "name": "EXT_GLN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 385,
+            "name": "EXT_Gm",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 386,
+            "name": "EXT_GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 387,
+            "name": "EXT_GMP_Lysine",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 388,
+            "name": "EXT_GMP_Mor",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 390,
+            "name": "EXT_H",
+            "value": 1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 398,
+            "name": "EXT_k2C",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 401,
+            "name": "EXT_LYS",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 403,
+            "name": "EXT_m1G",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 404,
+            "name": "EXT_m2G",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 405,
+            "name": "EXT_m62A",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 406,
+            "name": "EXT_m7G",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 407,
+            "name": "EXT_METHYL_OCDCEA",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 412,
+            "name": "EXT_MONOBUTYRIN",
+            "value": -1.722388208758546e-12
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 413,
+            "name": "EXT_MOR",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 416,
+            "name": "EXT_NH3",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 419,
+            "name": "EXT_O2",
+            "value": 1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 420,
+            "name": "EXT_OA",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 423,
+            "name": "EXT_PHE",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 426,
+            "name": "EXT_POE_SORBITAN",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 428,
+            "name": "EXT_PSIURI",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 432,
+            "name": "EXT_s4U",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 441,
+            "name": "EXT_TRIBUTYRIN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 442,
+            "name": "EXT_TRILAURIN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 443,
+            "name": "EXT_TRIMYRISTIN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 445,
+            "name": "EXT_TRIPALMITIN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 446,
+            "name": "EXT_TRISTEARIN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 447,
+            "name": "EXT_TRI_HDCEA_IN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 448,
+            "name": "EXT_TRI_TTDCEA_IN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 449,
+            "name": "EXT_TRP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 453,
+            "name": "EXT_TWEEN80",
+            "value": 1000.0000000000006
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 454,
+            "name": "EXT_TYR",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 456,
+            "name": "EXT_Um",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 460,
+            "name": "INT_AD",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 460,
+            "name": "INT_AD",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 461,
+            "name": "INT_ADP",
+            "value": -6.821210263296962e-13
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 462,
+            "name": "INT_AHCYS",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 462,
+            "name": "INT_AHCYS",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 463,
+            "name": "INT_AMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 464,
+            "name": "INT_ATP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 465,
+            "name": "INT_cmnm5s2UMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 466,
+            "name": "INT_CMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 467,
+            "name": "INT_CTP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 468,
+            "name": "INT_DR5P",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 468,
+            "name": "INT_DR5P",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 469,
+            "name": "INT_FMET",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 469,
+            "name": "INT_FMET",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 470,
+            "name": "INT_FOR",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 470,
+            "name": "INT_FOR",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 471,
+            "name": "INT_FTHF10",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 473,
+            "name": "INT_GmMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 473,
+            "name": "INT_GmMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 474,
+            "name": "INT_GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 475,
+            "name": "INT_GN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 475,
+            "name": "INT_GN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 477,
+            "name": "INT_H",
+            "value": -3.0628640606307136e-12
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 478,
+            "name": "INT_H2O",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 479,
+            "name": "INT_k2CMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 479,
+            "name": "INT_k2CMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 480,
+            "name": "INT_LIPOYLLYS",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 480,
+            "name": "INT_LIPOYLLYS",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 481,
+            "name": "INT_m1GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 481,
+            "name": "INT_m1GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 482,
+            "name": "INT_m2GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 482,
+            "name": "INT_m2GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 483,
+            "name": "INT_m62AMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 483,
+            "name": "INT_m62AMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 484,
+            "name": "INT_m7GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 485,
+            "name": "INT_MET",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 486,
+            "name": "INT_NH3",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 486,
+            "name": "INT_NH3",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 487,
+            "name": "INT_NMN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 487,
+            "name": "INT_NMN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 489,
+            "name": "INT_PPI",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 490,
+            "name": "INT_pSER",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 490,
+            "name": "INT_pSER",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 491,
+            "name": "INT_PSIURIMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 492,
+            "name": "INT_pTHR",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 492,
+            "name": "INT_pTHR",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 493,
+            "name": "INT_pTYR",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 493,
+            "name": "INT_pTYR",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 494,
+            "name": "INT_s4UMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 495,
+            "name": "INT_SNGLYP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 495,
+            "name": "INT_SNGLYP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 496,
+            "name": "INT_THF",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 497,
+            "name": "INT_THY",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 497,
+            "name": "INT_THY",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 498,
+            "name": "INT_UmMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 498,
+            "name": "INT_UmMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 499,
+            "name": "INT_UMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 500,
+            "name": "INT_URA",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 500,
+            "name": "INT_URA",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 501,
+            "name": "INT_UTP",
+            "value": 0.0
+          }
+        ],
+        "active_bounds_count": 231,
+        "candidate_flux_biomass_per_s": 5.581449765540722e-06,
+        "candidate_k_l1": 19236.664184785444,
+        "candidate_k_linf": 2000.0,
+        "infeasible": false,
+        "near_zero_objective": false,
+        "objective_value": 28144.550399525422,
+        "per_wid_linearized_error": {
+          "AC": 4929.956589392062,
+          "ACAL": 1.0,
+          "AEPP": 0.0,
+          "CAP": 0.0,
+          "GL": 7083.47443864098,
+          "GLC": 2471.3156219373714,
+          "H2O": 21415.82098783017,
+          "H2O2": 10145.671229064747,
+          "O2": 9865.0,
+          "OCDCEA": 6404.066446665369,
+          "PHE": 3773.9752725977432,
+          "PhePhe": 1886.9876362988716,
+          "TRIOLEIN": 1801.4744386409616,
+          "TRP": 1.4020692969363326,
+          "TYR": 5.755992821672995,
+          "TrpTrp": 1.7010346484681804,
+          "TyrTyr": 3.877996410836545
+        },
+        "per_wid_slack": {
+          "AC": 4928.327289392061,
+          "ACAL": 0.0,
+          "AEPP": 0.0,
+          "CAP": 0.0,
+          "GL": 7081.215738640981,
+          "GLC": 2470.3156219373714,
+          "H2O": 21409.10308783017,
+          "H2O2": 10142.412329064746,
+          "O2": 9861.7405,
+          "OCDCEA": 6402.044146665369,
+          "PHE": 3772.841872597743,
+          "PhePhe": 1885.9876362988718,
+          "TRIOLEIN": 1800.4744386409618,
+          "TRP": 0.4020692969363327,
+          "TYR": 4.755992821672995,
+          "TrpTrp": 0.7010346484681678,
+          "TyrTyr": 2.877996410836631
+        },
+        "simplex_status": 0,
+        "solution_status": "GLP_OPT",
+        "solver_family": "swiglpk",
+        "solver_settings": {
+          "presolve": "OFF",
+          "scale": "AUTO",
+          "simplex": "primal",
+          "tol_bnd": 1e-06
+        },
+        "tau_by_wid": {
+          "AC": 1.6292999999999997,
+          "ACAL": 1.0,
+          "AEPP": 1.0,
+          "CAP": 1.0,
+          "GL": 2.2586999999999997,
+          "GLC": 1.0,
+          "H2O": 6.717899999999999,
+          "H2O2": 3.2588999999999997,
+          "O2": 3.2594999999999996,
+          "OCDCEA": 2.0223,
+          "PHE": 1.1334,
+          "PhePhe": 1.0,
+          "TRIOLEIN": 1.0,
+          "TRP": 1.0,
+          "TYR": 1.0,
+          "TrpTrp": 1.0,
+          "TyrTyr": 1.0
+        }
+      },
+      "tau_B": {
+        "active_bounds": [
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 9,
+            "name": "AHCYSs",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 18,
+            "name": "Apts_Gly",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 35,
+            "name": "Cdd2",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 42,
+            "name": "CmkA1",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 46,
+            "name": "DcdK",
+            "value": -1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 47,
+            "name": "Dck",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 48,
+            "name": "DeoC",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.21359900598890025,
+            "fba_col": 55,
+            "name": "DeoD8",
+            "value": 0.21359900598890025
+          },
+          {
+            "bound": "ub",
+            "bound_value": 283.3064301,
+            "fba_col": 62,
+            "name": "FolD2",
+            "value": 283.3064301
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 66,
+            "name": "Fre6",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 67,
+            "name": "FruK1",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 69,
+            "name": "FTHFS",
+            "value": -1.8846634297958894e-13
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 74,
+            "name": "GLNHs",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 203.09197883333337,
+            "fba_col": 84,
+            "name": "Gmk4",
+            "value": 203.09197883333337
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 87,
+            "name": "HCYSMT",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 93,
+            "name": "Hpt1",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 95,
+            "name": "LIPASE_DIBUTYRIN_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 97,
+            "name": "LIPASE_DIBUTYRIN_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 98,
+            "name": "LIPASE_METHYL_OCDCEA_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 100,
+            "name": "LIPASE_METHYL_OCDCEA_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 101,
+            "name": "LIPASE_MONOBUTYRIN_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 103,
+            "name": "LIPASE_MONOBUTYRIN_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 104,
+            "name": "LIPASE_TRIBUTYRIN_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 106,
+            "name": "LIPASE_TRIBUTYRIN_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 107,
+            "name": "LIPASE_TRILAURIN_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 109,
+            "name": "LIPASE_TRILAURIN_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 110,
+            "name": "LIPASE_TRIMYRISTIN_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 112,
+            "name": "LIPASE_TRIMYRISTIN_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 113,
+            "name": "LIPASE_TRIOLEIN_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 115,
+            "name": "LIPASE_TRIOLEIN_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 116,
+            "name": "LIPASE_TRIPALMITIN_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 118,
+            "name": "LIPASE_TRIPALMITIN_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 119,
+            "name": "LIPASE_TRISTEARIN_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 121,
+            "name": "LIPASE_TRISTEARIN_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 122,
+            "name": "LIPASE_TRI_HDCEA_IN_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 124,
+            "name": "LIPASE_TRI_HDCEA_IN_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 125,
+            "name": "LIPASE_TRI_TTDCEA_IN_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 127,
+            "name": "LIPASE_TRI_TTDCEA_IN_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 128,
+            "name": "LIPASE_TWEEN80_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 129,
+            "name": "LIPASE_TWEEN80_MG327",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 130,
+            "name": "LIPASE_TWEEN80_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 131,
+            "name": "LIPOYLLYSHs",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 136,
+            "name": "MetS",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 139,
+            "name": "NADD2",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 142,
+            "name": "NADR1",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 145,
+            "name": "NrdEF_ADP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 147,
+            "name": "NrdEF_GDP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 149,
+            "name": "Ohr_H2O2",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 150,
+            "name": "Ohr_rx",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 153,
+            "name": "PcbX",
+            "value": -1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 157,
+            "name": "PfkA1",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 158,
+            "name": "PfkA2",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 159,
+            "name": "PfkA3",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 160,
+            "name": "PfkA4",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -72.9340828125,
+            "fba_col": 163,
+            "name": "Pgk1",
+            "value": -72.93408281250004
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1.9499999483426411,
+            "fba_col": 165,
+            "name": "Pgk3",
+            "value": -1.949999948342679
+          },
+          {
+            "bound": "lb",
+            "bound_value": -632.095384375,
+            "fba_col": 166,
+            "name": "Pgk4",
+            "value": -632.095384375
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 167,
+            "name": "Pgk5",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 175,
+            "name": "PhnW",
+            "value": -4.300213409627512e-16
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 176,
+            "name": "PhnX",
+            "value": -6.568875695530935e-16
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 185,
+            "name": "Ppc",
+            "value": 1000.0000000000006
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 187,
+            "name": "pSERpp",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 189,
+            "name": "pTHRpp",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 190,
+            "name": "pTYRpp",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 192,
+            "name": "Pyk_ADP",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 194,
+            "name": "Pyk_DADP",
+            "value": 1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 198,
+            "name": "Pyk_GDP",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 206,
+            "name": "SNGLYPOr",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 208,
+            "name": "TatD_dAMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 209,
+            "name": "TatD_dCMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 210,
+            "name": "TatD_dGMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 211,
+            "name": "TatD_dTMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 212,
+            "name": "Tdk1",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 214,
+            "name": "ThyA",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 227,
+            "name": "TX_AROP11",
+            "value": -1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 228,
+            "name": "TX_AROP12",
+            "value": -1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 229,
+            "name": "TX_AROP13",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 230,
+            "name": "TX_AROP21",
+            "value": 1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 231,
+            "name": "TX_AROP22",
+            "value": 999.9999999999995
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 232,
+            "name": "TX_AROP23",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 240,
+            "name": "TX_ComEC_dApdAp",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 241,
+            "name": "TX_ComEC_dCpdCp",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 242,
+            "name": "TX_ComEC_dGpdGp",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 243,
+            "name": "TX_ComEC_dTpdTp",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 248,
+            "name": "TX_FRUPTS",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 249,
+            "name": "TX_GL",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 250,
+            "name": "TX_GL3P",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 252,
+            "name": "TX_GLNHPQ",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 253,
+            "name": "TX_GLUP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 256,
+            "name": "TX_H2O",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 268,
+            "name": "TX_MGTA_FE2",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 277,
+            "name": "TX_O2",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 287,
+            "name": "TX_OppB_Gly",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 300,
+            "name": "TX_PHNT",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 301,
+            "name": "TX_PIUP1",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 312,
+            "name": "TX_UHPT1",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 317,
+            "name": "Upp",
+            "value": 6.844294050302577e-13
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 318,
+            "name": "UshA_AMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 319,
+            "name": "UshA_cmnm5s2UMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 320,
+            "name": "UshA_dCMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 321,
+            "name": "UshA_dTMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 322,
+            "name": "UshA_dUMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 323,
+            "name": "UshA_GmMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 324,
+            "name": "UshA_GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 325,
+            "name": "UshA_IMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 326,
+            "name": "UshA_k2CMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 327,
+            "name": "UshA_m1GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 328,
+            "name": "UshA_m2GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 329,
+            "name": "UshA_m62AMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 330,
+            "name": "UshA_m7GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 331,
+            "name": "UshA_PSIURIMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 332,
+            "name": "UshA_s4UMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 333,
+            "name": "UshA_UmMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 334,
+            "name": "YbiV_SNGLYP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 335,
+            "name": "YicP",
+            "value": 3.4929869619023136e-13
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 340,
+            "name": "EXT_AKG",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 342,
+            "name": "EXT_AMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 343,
+            "name": "EXT_AMP_Lysine",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 344,
+            "name": "EXT_AMP_Mor",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 345,
+            "name": "EXT_AMP_NH2",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 349,
+            "name": "EXT_BUT",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 351,
+            "name": "EXT_CAP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 352,
+            "name": "EXT_CH3OH",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 354,
+            "name": "EXT_cmnm5s2U",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 362,
+            "name": "EXT_DAMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 363,
+            "name": "EXT_dApdAp",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 364,
+            "name": "EXT_DCMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 365,
+            "name": "EXT_dCpdCp",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 367,
+            "name": "EXT_DGMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 368,
+            "name": "EXT_dGpdGp",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 369,
+            "name": "EXT_DIBUTYRIN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 370,
+            "name": "EXT_dINS",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 371,
+            "name": "EXT_DTMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 372,
+            "name": "EXT_dTpdTp",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 373,
+            "name": "EXT_FE2",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 375,
+            "name": "EXT_FOR",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 375,
+            "name": "EXT_FOR",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 376,
+            "name": "EXT_FRU",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 377,
+            "name": "EXT_G6P",
+            "value": -1.456419881380492e-13
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 379,
+            "name": "EXT_GL3P",
+            "value": -2.1048500720302036e-15
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 381,
+            "name": "EXT_GLN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 385,
+            "name": "EXT_Gm",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 386,
+            "name": "EXT_GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 387,
+            "name": "EXT_GMP_Lysine",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 388,
+            "name": "EXT_GMP_Mor",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 390,
+            "name": "EXT_H",
+            "value": 1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 398,
+            "name": "EXT_k2C",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 401,
+            "name": "EXT_LYS",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 403,
+            "name": "EXT_m1G",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 404,
+            "name": "EXT_m2G",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 405,
+            "name": "EXT_m62A",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 406,
+            "name": "EXT_m7G",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 407,
+            "name": "EXT_METHYL_OCDCEA",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 412,
+            "name": "EXT_MONOBUTYRIN",
+            "value": -1.722388208758546e-12
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 413,
+            "name": "EXT_MOR",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 416,
+            "name": "EXT_NH3",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 419,
+            "name": "EXT_O2",
+            "value": 1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 420,
+            "name": "EXT_OA",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 423,
+            "name": "EXT_PHE",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 426,
+            "name": "EXT_POE_SORBITAN",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 428,
+            "name": "EXT_PSIURI",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 432,
+            "name": "EXT_s4U",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 441,
+            "name": "EXT_TRIBUTYRIN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 442,
+            "name": "EXT_TRILAURIN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 443,
+            "name": "EXT_TRIMYRISTIN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 445,
+            "name": "EXT_TRIPALMITIN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 446,
+            "name": "EXT_TRISTEARIN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 447,
+            "name": "EXT_TRI_HDCEA_IN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 448,
+            "name": "EXT_TRI_TTDCEA_IN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 449,
+            "name": "EXT_TRP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 453,
+            "name": "EXT_TWEEN80",
+            "value": 1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 454,
+            "name": "EXT_TYR",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 456,
+            "name": "EXT_Um",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 460,
+            "name": "INT_AD",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 460,
+            "name": "INT_AD",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 461,
+            "name": "INT_ADP",
+            "value": -1.1368683772161603e-13
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 462,
+            "name": "INT_AHCYS",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 462,
+            "name": "INT_AHCYS",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 463,
+            "name": "INT_AMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 464,
+            "name": "INT_ATP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 465,
+            "name": "INT_cmnm5s2UMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 466,
+            "name": "INT_CMP",
+            "value": -1.005895816322848e-12
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 467,
+            "name": "INT_CTP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 468,
+            "name": "INT_DR5P",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 468,
+            "name": "INT_DR5P",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 469,
+            "name": "INT_FMET",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 469,
+            "name": "INT_FMET",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 470,
+            "name": "INT_FOR",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 470,
+            "name": "INT_FOR",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 471,
+            "name": "INT_FTHF10",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 473,
+            "name": "INT_GmMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 473,
+            "name": "INT_GmMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 474,
+            "name": "INT_GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 475,
+            "name": "INT_GN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 475,
+            "name": "INT_GN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 477,
+            "name": "INT_H",
+            "value": 1.452867392888095e-12
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 478,
+            "name": "INT_H2O",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 479,
+            "name": "INT_k2CMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 479,
+            "name": "INT_k2CMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 480,
+            "name": "INT_LIPOYLLYS",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 480,
+            "name": "INT_LIPOYLLYS",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 481,
+            "name": "INT_m1GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 481,
+            "name": "INT_m1GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 482,
+            "name": "INT_m2GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 482,
+            "name": "INT_m2GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 483,
+            "name": "INT_m62AMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 483,
+            "name": "INT_m62AMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 484,
+            "name": "INT_m7GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 485,
+            "name": "INT_MET",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 486,
+            "name": "INT_NH3",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 486,
+            "name": "INT_NH3",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 487,
+            "name": "INT_NMN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 487,
+            "name": "INT_NMN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 489,
+            "name": "INT_PPI",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 490,
+            "name": "INT_pSER",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 490,
+            "name": "INT_pSER",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 491,
+            "name": "INT_PSIURIMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 492,
+            "name": "INT_pTHR",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 492,
+            "name": "INT_pTHR",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 493,
+            "name": "INT_pTYR",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 493,
+            "name": "INT_pTYR",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 494,
+            "name": "INT_s4UMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 495,
+            "name": "INT_SNGLYP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 495,
+            "name": "INT_SNGLYP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 496,
+            "name": "INT_THF",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 497,
+            "name": "INT_THY",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 497,
+            "name": "INT_THY",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 498,
+            "name": "INT_UmMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 498,
+            "name": "INT_UmMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 499,
+            "name": "INT_UMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 500,
+            "name": "INT_URA",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 500,
+            "name": "INT_URA",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 501,
+            "name": "INT_UTP",
+            "value": 0.0
+          }
+        ],
+        "active_bounds_count": 233,
+        "candidate_flux_biomass_per_s": 5.581449765540722e-06,
+        "candidate_k_l1": 19847.06539834625,
+        "candidate_k_linf": 2000.0,
+        "infeasible": false,
+        "near_zero_objective": false,
+        "objective_value": 300.112482121204,
+        "per_wid_linearized_error": {
+          "AC": 4929.956589392062,
+          "ACAL": 3.7764361370006134,
+          "AEPP": 0.0,
+          "CAP": 0.0,
+          "GL": 7083.47443864098,
+          "GLC": 2471.315621937371,
+          "H2O": 21415.820987830175,
+          "H2O2": 10145.671229064747,
+          "O2": 9865.0,
+          "OCDCEA": 6404.066446665378,
+          "PHE": 3773.9752725977432,
+          "PhePhe": 1886.9876362988716,
+          "TRIOLEIN": 1801.474438640965,
+          "TRP": 1.4020692969363326,
+          "TYR": 5.755992821672995,
+          "TrpTrp": 1.7010346484681804,
+          "TyrTyr": 3.877996410836545
+        },
+        "per_wid_slack": {
+          "AC": 4767.0265893920605,
+          "ACAL": 0.0,
+          "AEPP": 0.0,
+          "CAP": 0.0,
+          "GL": 6857.604438640981,
+          "GLC": 2389.5656219373714,
+          "H2O": 20744.030987830174,
+          "H2O2": 9819.781229064747,
+          "O2": 9539.05,
+          "OCDCEA": 6201.836446665379,
+          "PHE": 3660.635272597743,
+          "PhePhe": 1830.3176362988718,
+          "TRIOLEIN": 1734.0644386409654,
+          "TRP": 0.0,
+          "TYR": 0.0,
+          "TrpTrp": 0.0,
+          "TyrTyr": 0.0
+        },
+        "simplex_status": 0,
+        "solution_status": "GLP_OPT",
+        "solver_family": "swiglpk",
+        "solver_settings": {
+          "presolve": "OFF",
+          "scale": "AUTO",
+          "simplex": "primal",
+          "tol_bnd": 1e-06
+        },
+        "tau_by_wid": {
+          "AC": 162.93,
+          "ACAL": 40.0,
+          "AEPP": 40.0,
+          "CAP": 40.0,
+          "GL": 225.87,
+          "GLC": 81.75,
+          "H2O": 671.79,
+          "H2O2": 325.89,
+          "O2": 325.95,
+          "OCDCEA": 202.23,
+          "PHE": 113.33999999999999,
+          "PhePhe": 56.669999999999995,
+          "TRIOLEIN": 67.41,
+          "TRP": 40.0,
+          "TYR": 40.0,
+          "TrpTrp": 40.0,
+          "TyrTyr": 40.0
+        }
+      },
+      "tau_C": {
+        "active_bounds": [
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 5,
+            "name": "Adk1",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 7,
+            "name": "Adk3",
+            "value": -1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 9,
+            "name": "AHCYSs",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 18,
+            "name": "Apts_Gly",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 35,
+            "name": "Cdd2",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 42,
+            "name": "CmkA1",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 46,
+            "name": "DcdK",
+            "value": -1000.0000000000001
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 47,
+            "name": "Dck",
+            "value": -1.1231145611027149e-13
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 48,
+            "name": "DeoC",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.21359900598890025,
+            "fba_col": 55,
+            "name": "DeoD8",
+            "value": 0.21359900598890025
+          },
+          {
+            "bound": "ub",
+            "bound_value": 283.3064301,
+            "fba_col": 62,
+            "name": "FolD2",
+            "value": 283.3064301
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 66,
+            "name": "Fre6",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 67,
+            "name": "FruK1",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 69,
+            "name": "FTHFS",
+            "value": -1.8846634297958894e-13
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 74,
+            "name": "GLNHs",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 203.09197883333337,
+            "fba_col": 84,
+            "name": "Gmk4",
+            "value": 203.09197883333337
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 87,
+            "name": "HCYSMT",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 93,
+            "name": "Hpt1",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 95,
+            "name": "LIPASE_DIBUTYRIN_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 97,
+            "name": "LIPASE_DIBUTYRIN_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 98,
+            "name": "LIPASE_METHYL_OCDCEA_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 100,
+            "name": "LIPASE_METHYL_OCDCEA_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 101,
+            "name": "LIPASE_MONOBUTYRIN_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 103,
+            "name": "LIPASE_MONOBUTYRIN_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 104,
+            "name": "LIPASE_TRIBUTYRIN_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 106,
+            "name": "LIPASE_TRIBUTYRIN_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 107,
+            "name": "LIPASE_TRILAURIN_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 109,
+            "name": "LIPASE_TRILAURIN_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 110,
+            "name": "LIPASE_TRIMYRISTIN_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 112,
+            "name": "LIPASE_TRIMYRISTIN_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 113,
+            "name": "LIPASE_TRIOLEIN_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 115,
+            "name": "LIPASE_TRIOLEIN_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 116,
+            "name": "LIPASE_TRIPALMITIN_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 118,
+            "name": "LIPASE_TRIPALMITIN_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 119,
+            "name": "LIPASE_TRISTEARIN_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 121,
+            "name": "LIPASE_TRISTEARIN_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 122,
+            "name": "LIPASE_TRI_HDCEA_IN_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 124,
+            "name": "LIPASE_TRI_HDCEA_IN_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 125,
+            "name": "LIPASE_TRI_TTDCEA_IN_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 127,
+            "name": "LIPASE_TRI_TTDCEA_IN_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 128,
+            "name": "LIPASE_TWEEN80_MG310",
+            "value": 1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 129,
+            "name": "LIPASE_TWEEN80_MG327",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 130,
+            "name": "LIPASE_TWEEN80_MG344",
+            "value": -1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 131,
+            "name": "LIPOYLLYSHs",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 136,
+            "name": "MetS",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 139,
+            "name": "NADD2",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 142,
+            "name": "NADR1",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 145,
+            "name": "NrdEF_ADP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 147,
+            "name": "NrdEF_GDP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 149,
+            "name": "Ohr_H2O2",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 150,
+            "name": "Ohr_rx",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 153,
+            "name": "PcbX",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 157,
+            "name": "PfkA1",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 159,
+            "name": "PfkA3",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 160,
+            "name": "PfkA4",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 161,
+            "name": "PfkA5",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 486.22721875,
+            "fba_col": 163,
+            "name": "Pgk1",
+            "value": 486.22721875
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1.9499999483426411,
+            "fba_col": 165,
+            "name": "Pgk3",
+            "value": -1.949999948342679
+          },
+          {
+            "bound": "lb",
+            "bound_value": -632.095384375,
+            "fba_col": 166,
+            "name": "Pgk4",
+            "value": -632.095384375
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 167,
+            "name": "Pgk5",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 175,
+            "name": "PhnW",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 176,
+            "name": "PhnX",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 185,
+            "name": "Ppc",
+            "value": 999.9999999999999
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 187,
+            "name": "pSERpp",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 189,
+            "name": "pTHRpp",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 190,
+            "name": "pTYRpp",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 194,
+            "name": "Pyk_DADP",
+            "value": 1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 198,
+            "name": "Pyk_GDP",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 206,
+            "name": "SNGLYPOr",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 208,
+            "name": "TatD_dAMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 209,
+            "name": "TatD_dCMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 210,
+            "name": "TatD_dGMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 211,
+            "name": "TatD_dTMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 212,
+            "name": "Tdk1",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 214,
+            "name": "ThyA",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 227,
+            "name": "TX_AROP11",
+            "value": -1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 228,
+            "name": "TX_AROP12",
+            "value": -1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 229,
+            "name": "TX_AROP13",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 230,
+            "name": "TX_AROP21",
+            "value": 1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 231,
+            "name": "TX_AROP22",
+            "value": 1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 232,
+            "name": "TX_AROP23",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 240,
+            "name": "TX_ComEC_dApdAp",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 241,
+            "name": "TX_ComEC_dCpdCp",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 242,
+            "name": "TX_ComEC_dGpdGp",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 243,
+            "name": "TX_ComEC_dTpdTp",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 248,
+            "name": "TX_FRUPTS",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 249,
+            "name": "TX_GL",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 250,
+            "name": "TX_GL3P",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 252,
+            "name": "TX_GLNHPQ",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 253,
+            "name": "TX_GLUP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 256,
+            "name": "TX_H2O",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 268,
+            "name": "TX_MGTA_FE2",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 277,
+            "name": "TX_O2",
+            "value": 1000.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 287,
+            "name": "TX_OppB_Gly",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 300,
+            "name": "TX_PHNT",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 301,
+            "name": "TX_PIUP1",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 312,
+            "name": "TX_UHPT1",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 317,
+            "name": "Upp",
+            "value": -4.120273075132123e-12
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 318,
+            "name": "UshA_AMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 319,
+            "name": "UshA_cmnm5s2UMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 320,
+            "name": "UshA_dCMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 321,
+            "name": "UshA_dTMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 322,
+            "name": "UshA_dUMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 323,
+            "name": "UshA_GmMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 324,
+            "name": "UshA_GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 325,
+            "name": "UshA_IMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 326,
+            "name": "UshA_k2CMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 327,
+            "name": "UshA_m1GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 328,
+            "name": "UshA_m2GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 329,
+            "name": "UshA_m62AMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 330,
+            "name": "UshA_m7GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 331,
+            "name": "UshA_PSIURIMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 332,
+            "name": "UshA_s4UMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 333,
+            "name": "UshA_UmMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 334,
+            "name": "YbiV_SNGLYP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 335,
+            "name": "YicP",
+            "value": 4.866384260433188e-13
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 340,
+            "name": "EXT_AKG",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 342,
+            "name": "EXT_AMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 343,
+            "name": "EXT_AMP_Lysine",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 344,
+            "name": "EXT_AMP_Mor",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 345,
+            "name": "EXT_AMP_NH2",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 349,
+            "name": "EXT_BUT",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 351,
+            "name": "EXT_CAP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 352,
+            "name": "EXT_CH3OH",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 354,
+            "name": "EXT_cmnm5s2U",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 362,
+            "name": "EXT_DAMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 363,
+            "name": "EXT_dApdAp",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 364,
+            "name": "EXT_DCMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 365,
+            "name": "EXT_dCpdCp",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 367,
+            "name": "EXT_DGMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 368,
+            "name": "EXT_dGpdGp",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 369,
+            "name": "EXT_DIBUTYRIN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 370,
+            "name": "EXT_dINS",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 371,
+            "name": "EXT_DTMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 372,
+            "name": "EXT_dTpdTp",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 373,
+            "name": "EXT_FE2",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 375,
+            "name": "EXT_FOR",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 375,
+            "name": "EXT_FOR",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 376,
+            "name": "EXT_FRU",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 377,
+            "name": "EXT_G6P",
+            "value": 3.246450010484538e-13
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 379,
+            "name": "EXT_GL3P",
+            "value": -2.1048500720302036e-15
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 381,
+            "name": "EXT_GLN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 385,
+            "name": "EXT_Gm",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 386,
+            "name": "EXT_GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 387,
+            "name": "EXT_GMP_Lysine",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 388,
+            "name": "EXT_GMP_Mor",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 390,
+            "name": "EXT_H",
+            "value": 1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 398,
+            "name": "EXT_k2C",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 401,
+            "name": "EXT_LYS",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 403,
+            "name": "EXT_m1G",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 404,
+            "name": "EXT_m2G",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 405,
+            "name": "EXT_m62A",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 406,
+            "name": "EXT_m7G",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 407,
+            "name": "EXT_METHYL_OCDCEA",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 412,
+            "name": "EXT_MONOBUTYRIN",
+            "value": -1.722388208758546e-12
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 413,
+            "name": "EXT_MOR",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 416,
+            "name": "EXT_NH3",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 419,
+            "name": "EXT_O2",
+            "value": 1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 420,
+            "name": "EXT_OA",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 423,
+            "name": "EXT_PHE",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -1000.0,
+            "fba_col": 426,
+            "name": "EXT_POE_SORBITAN",
+            "value": -1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 428,
+            "name": "EXT_PSIURI",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 432,
+            "name": "EXT_s4U",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 441,
+            "name": "EXT_TRIBUTYRIN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 442,
+            "name": "EXT_TRILAURIN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 443,
+            "name": "EXT_TRIMYRISTIN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 445,
+            "name": "EXT_TRIPALMITIN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 446,
+            "name": "EXT_TRISTEARIN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 447,
+            "name": "EXT_TRI_HDCEA_IN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 448,
+            "name": "EXT_TRI_TTDCEA_IN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 449,
+            "name": "EXT_TRP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 1000.0,
+            "fba_col": 453,
+            "name": "EXT_TWEEN80",
+            "value": 1000.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 454,
+            "name": "EXT_TYR",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 456,
+            "name": "EXT_Um",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 460,
+            "name": "INT_AD",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 460,
+            "name": "INT_AD",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 462,
+            "name": "INT_AHCYS",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 462,
+            "name": "INT_AHCYS",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 463,
+            "name": "INT_AMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 465,
+            "name": "INT_cmnm5s2UMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 466,
+            "name": "INT_CMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 467,
+            "name": "INT_CTP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 468,
+            "name": "INT_DR5P",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 468,
+            "name": "INT_DR5P",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 469,
+            "name": "INT_FMET",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 469,
+            "name": "INT_FMET",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 470,
+            "name": "INT_FOR",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 470,
+            "name": "INT_FOR",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 471,
+            "name": "INT_FTHF10",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 473,
+            "name": "INT_GmMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 473,
+            "name": "INT_GmMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 474,
+            "name": "INT_GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 475,
+            "name": "INT_GN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 475,
+            "name": "INT_GN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 477,
+            "name": "INT_H",
+            "value": -1.713321621754941e-11
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 478,
+            "name": "INT_H2O",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 479,
+            "name": "INT_k2CMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 479,
+            "name": "INT_k2CMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 480,
+            "name": "INT_LIPOYLLYS",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 480,
+            "name": "INT_LIPOYLLYS",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 481,
+            "name": "INT_m1GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 481,
+            "name": "INT_m1GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 482,
+            "name": "INT_m2GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 482,
+            "name": "INT_m2GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 483,
+            "name": "INT_m62AMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 483,
+            "name": "INT_m62AMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 484,
+            "name": "INT_m7GMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 485,
+            "name": "INT_MET",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 486,
+            "name": "INT_NH3",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 486,
+            "name": "INT_NH3",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 487,
+            "name": "INT_NMN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 487,
+            "name": "INT_NMN",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 489,
+            "name": "INT_PPI",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 490,
+            "name": "INT_pSER",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 490,
+            "name": "INT_pSER",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 491,
+            "name": "INT_PSIURIMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 492,
+            "name": "INT_pTHR",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 492,
+            "name": "INT_pTHR",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 493,
+            "name": "INT_pTYR",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 493,
+            "name": "INT_pTYR",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 494,
+            "name": "INT_s4UMP",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 495,
+            "name": "INT_SNGLYP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 495,
+            "name": "INT_SNGLYP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 496,
+            "name": "INT_THF",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 497,
+            "name": "INT_THY",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 497,
+            "name": "INT_THY",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 498,
+            "name": "INT_UmMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 498,
+            "name": "INT_UmMP",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 499,
+            "name": "INT_UMP",
+            "value": 4.413438343069164e-13
+          },
+          {
+            "bound": "lb",
+            "bound_value": -0.0,
+            "fba_col": 500,
+            "name": "INT_URA",
+            "value": 0.0
+          },
+          {
+            "bound": "ub",
+            "bound_value": 0.0,
+            "fba_col": 500,
+            "name": "INT_URA",
+            "value": 0.0
+          },
+          {
+            "bound": "lb",
+            "bound_value": 0.0,
+            "fba_col": 501,
+            "name": "INT_UTP",
+            "value": 0.0
+          }
+        ],
+        "active_bounds_count": 232,
+        "candidate_flux_biomass_per_s": 5.581449765540722e-06,
+        "candidate_k_l1": 18034.25879044219,
+        "candidate_k_linf": 2000.0,
+        "infeasible": false,
+        "near_zero_objective": false,
+        "objective_value": 83.03374463636122,
+        "per_wid_linearized_error": {
+          "AC": 4929.956589392062,
+          "ACAL": 3.776436137000784,
+          "AEPP": 0.0,
+          "CAP": 0.0,
+          "GL": 7083.474438640987,
+          "GLC": 2471.3156219373764,
+          "H2O": 21415.82098783018,
+          "H2O2": 10145.67122906475,
+          "O2": 9865.0,
+          "OCDCEA": 6404.0664466653825,
+          "PHE": 3773.9752725977432,
+          "PhePhe": 1886.9876362988716,
+          "TRIOLEIN": 1801.4744386409664,
+          "TRP": 1.4020692969363326,
+          "TYR": 5.755992821672995,
+          "TrpTrp": 1.7010346484681804,
+          "TyrTyr": 3.877996410836545
+        },
+        "per_wid_slack": {
+          "AC": 4386.85658939206,
+          "ACAL": 0.0,
+          "AEPP": 0.0,
+          "CAP": 0.0,
+          "GL": 6330.574438640988,
+          "GLC": 2198.8156219373764,
+          "H2O": 19176.52098783018,
+          "H2O2": 9059.371229064753,
+          "O2": 8778.5,
+          "OCDCEA": 5729.966446665383,
+          "PHE": 3396.175272597743,
+          "PhePhe": 1698.0876362988715,
+          "TRIOLEIN": 1576.7744386409663,
+          "TRP": 0.0,
+          "TYR": 0.0,
+          "TrpTrp": 0.0,
+          "TyrTyr": 0.0
+        },
+        "simplex_status": 0,
+        "solution_status": "GLP_OPT",
+        "solver_family": "swiglpk",
+        "solver_settings": {
+          "presolve": "OFF",
+          "scale": "AUTO",
+          "simplex": "primal",
+          "tol_bnd": 1e-06
+        },
+        "tau_by_wid": {
+          "AC": 543.1,
+          "ACAL": 100.0,
+          "AEPP": 100.0,
+          "CAP": 100.0,
+          "GL": 752.9000000000001,
+          "GLC": 272.5,
+          "H2O": 2239.3,
+          "H2O2": 1086.3,
+          "O2": 1086.5,
+          "OCDCEA": 674.1,
+          "PHE": 377.8,
+          "PhePhe": 188.9,
+          "TRIOLEIN": 224.70000000000002,
+          "TRP": 100.0,
+          "TYR": 100.0,
+          "TrpTrp": 100.0,
+          "TyrTyr": 100.0
+        }
+      }
+    },
     "karr_feasibility": {
       "feasible": true,
       "lower_bound_max_violation": 0.0,
@@ -96,5 +5200,15 @@
       "relative_full_objective_gap": 0.01574296095264642
     },
     "surrogate_accuracy": {}
+  },
+  "surrogate": {
+    "constant_shape": [
+      585
+    ],
+    "fixed_growth_per_s": 5.581449765540722e-06,
+    "linear_operator_shape": [
+      585,
+      504
+    ]
   }
 }

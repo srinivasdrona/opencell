@@ -25,10 +25,10 @@ from scipy.io import loadmat
 
 from opencell.m1.karr_metabolism import KarrMetabolismModel, solve_fba
 from opencell.m1.karr_metabolism_writeback import (
+    ATP_HYDROLYSIS_SIGNS,
     KarrWritebackFixture,
     apply_karr_substrate_writeback,
 )
-from opencell.vivarium.karr_protein_decay_light import _Mcg16807
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_PATH = ROOT / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"
@@ -80,6 +80,7 @@ TOP27_COUNT = 27
 I4_SPEARMAN_THRESHOLD = 0.95
 I4_SIGN_THRESHOLD = 15
 I6_SIGN_SHARE_THRESHOLD = 0.80
+SOLVER_BIG = 1e3
 
 
 class HardProbeError(RuntimeError):
@@ -99,12 +100,20 @@ class ProbeContext:
     karr_delta_flat: np.ndarray
     bounds_lb: np.ndarray
     bounds_ub: np.ndarray
+    solver_bounds_lb: np.ndarray
+    solver_bounds_ub: np.ndarray
 
 
 def _require_file(path: Path) -> Path:
     if not path.exists():
         raise HardProbeError(f"required file missing: {path}")
     return path
+
+
+def make_writeback_rng(seed: int) -> Any:
+    from opencell.vivarium.karr_protein_decay_light import _Mcg16807  # noqa: PLC0415
+
+    return _Mcg16807(seed)
 
 
 def load_fixture_mat(path: Path) -> Any:
@@ -243,6 +252,16 @@ def build_probe_context() -> ProbeContext:
     writeback_fixture = KarrWritebackFixture.from_mat(FIXTURE_PATH)
     bounds_lb = ground_truth["bounds"][0].reshape(-1).astype(np.float64)
     bounds_ub = ground_truth["bounds"][1].reshape(-1).astype(np.float64)
+    solver_bounds_lb = np.clip(
+        np.where(np.isfinite(bounds_lb), bounds_lb, -SOLVER_BIG),
+        -SOLVER_BIG,
+        SOLVER_BIG,
+    )
+    solver_bounds_ub = np.clip(
+        np.where(np.isfinite(bounds_ub), bounds_ub, SOLVER_BIG),
+        -SOLVER_BIG,
+        SOLVER_BIG,
+    )
     return ProbeContext(
         fixture=fixture,
         ground_truth=ground_truth,
@@ -259,6 +278,8 @@ def build_probe_context() -> ProbeContext:
         karr_delta_flat=ground_truth["delta"].sum(axis=1),
         bounds_lb=bounds_lb,
         bounds_ub=bounds_ub,
+        solver_bounds_lb=solver_bounds_lb,
+        solver_bounds_ub=solver_bounds_ub,
     )
 
 
@@ -312,6 +333,267 @@ def run_d4_precheck(context: ProbeContext) -> tuple[np.ndarray, dict[str, Any]]:
     }
 
 
+def build_pre_round_surrogate(
+    context: ProbeContext, fixed_growth_per_s: float
+) -> tuple[np.ndarray, np.ndarray]:
+    n_sub = len(context.substrate_ids)
+    n_rxn = context.model.n_reactions
+    linear = np.zeros((n_sub, n_rxn), dtype=np.float64)
+    wb = context.writeback_fixture
+
+    linear[wb.sub_idx_external, wb.fba_idx_external] -= wb.step_size_sec
+    linear[wb.sub_idx_internal, wb.fba_idx_internal] += 1.0
+
+    constant_matrix = wb.metabolism_new_production * fixed_growth_per_s * wb.step_size_sec
+    constant_flat = constant_matrix.sum(axis=1)
+    unaccounted_qty = wb.unaccounted_energy_consumption * fixed_growth_per_s * wb.step_size_sec
+    constant_flat = constant_flat.astype(np.float64, copy=True)
+    constant_flat[wb.sub_idx_atp_hydrolysis] += ATP_HYDROLYSIS_SIGNS * unaccounted_qty
+    return linear, constant_flat
+
+
+def linearized_flat_delta(
+    linear_operator: np.ndarray, constant_flat: np.ndarray, flux: np.ndarray
+) -> np.ndarray:
+    return constant_flat + linear_operator @ flux
+
+
+def tau_vector_for(name: str, target_values: np.ndarray) -> np.ndarray:
+    return np.asarray([TAU_FORMULAS[name](float(v)) for v in target_values], dtype=np.float64)
+
+
+def glpk_status_name(status: int) -> str:
+    import swiglpk as glp  # noqa: PLC0415
+
+    names = {
+        glp.GLP_UNDEF: "GLP_UNDEF",
+        glp.GLP_FEAS: "GLP_FEAS",
+        glp.GLP_INFEAS: "GLP_INFEAS",
+        glp.GLP_NOFEAS: "GLP_NOFEAS",
+        glp.GLP_OPT: "GLP_OPT",
+        glp.GLP_UNBND: "GLP_UNBND",
+    }
+    return names.get(status, f"STATUS_{status}")
+
+
+def active_bound_report(
+    baseline_flux: np.ndarray,
+    k: np.ndarray,
+    lb: np.ndarray,
+    ub: np.ndarray,
+    col_names: list[str],
+    tol: float = 1e-6,
+) -> list[dict[str, Any]]:
+    candidate = baseline_flux + k
+    active: list[dict[str, Any]] = []
+    for idx, value in enumerate(candidate):
+        if abs(value - lb[idx]) <= tol:
+            active.append(
+                {
+                    "fba_col": idx,
+                    "name": col_names[idx],
+                    "bound": "lb",
+                    "value": float(value),
+                    "bound_value": float(lb[idx]),
+                }
+            )
+        if abs(value - ub[idx]) <= tol:
+            active.append(
+                {
+                    "fba_col": idx,
+                    "name": col_names[idx],
+                    "bound": "ub",
+                    "value": float(value),
+                    "bound_value": float(ub[idx]),
+                }
+            )
+    return active
+
+
+def solve_joint_lp(
+    *,
+    context: ProbeContext,
+    baseline_flux: np.ndarray,
+    linear_operator: np.ndarray,
+    constant_flat: np.ndarray,
+    tau_name: str,
+) -> dict[str, Any]:
+    try:
+        import swiglpk as glp  # noqa: PLC0415
+    except Exception as exc:  # pragma: no cover - dependency failure
+        raise HardProbeError(f"swiglpk import failed: {exc}") from exc
+
+    n_rxn = context.model.n_reactions
+    n_top = len(context.top17_indices)
+    target = context.karr_delta_flat[context.top17_indices]
+    tau = tau_vector_for(tau_name, target)
+    base_linear = linearized_flat_delta(linear_operator, constant_flat, baseline_flux)
+    a = base_linear[context.top17_indices]
+    J = linear_operator[context.top17_indices, :]
+
+    row_count = context.model.S.shape[0] + 2 + 2 * n_top
+    col_count = n_rxn + n_top
+    lp = glp.glp_create_prob()
+    glp.glp_term_out(glp.GLP_OFF)
+    try:
+        glp.glp_set_obj_dir(lp, glp.GLP_MIN)
+        glp.glp_add_rows(lp, row_count)
+
+        row = 1
+        for _ in range(context.model.S.shape[0]):
+            glp.glp_set_row_bnds(lp, row, glp.GLP_FX, 0.0, 0.0)
+            row += 1
+        glp.glp_set_row_bnds(lp, row, glp.GLP_FX, 0.0, 0.0)
+        row += 1
+        glp.glp_set_row_bnds(lp, row, glp.GLP_FX, 0.0, 0.0)
+        row += 1
+        for j in range(n_top):
+            upper_rhs = float(target[j] - a[j] + tau[j])
+            lower_rhs = float(a[j] - target[j] + tau[j])
+            glp.glp_set_row_bnds(lp, row, glp.GLP_UP, 0.0, upper_rhs)
+            row += 1
+            glp.glp_set_row_bnds(lp, row, glp.GLP_UP, 0.0, lower_rhs)
+            row += 1
+
+        glp.glp_add_cols(lp, col_count)
+        for j in range(n_rxn):
+            lo = float(context.solver_bounds_lb[j] - baseline_flux[j])
+            hi = float(context.solver_bounds_ub[j] - baseline_flux[j])
+            if abs(lo - hi) <= 1e-12:
+                glp.glp_set_col_bnds(lp, j + 1, glp.GLP_FX, lo, hi)
+            else:
+                glp.glp_set_col_bnds(lp, j + 1, glp.GLP_DB, lo, hi)
+            glp.glp_set_obj_coef(lp, j + 1, 0.0)
+        for j in range(n_top):
+            col = n_rxn + j + 1
+            glp.glp_set_col_bnds(lp, col, glp.GLP_LO, 0.0, 0.0)
+            glp.glp_set_obj_coef(lp, col, float(1.0 / tau[j]))
+
+        rows: list[int] = []
+        cols: list[int] = []
+        vals: list[float] = []
+
+        S = np.asarray(context.model.S, dtype=np.float64)
+        s_rows, s_cols = np.nonzero(S)
+        for r_idx, c_idx in zip(s_rows, s_cols, strict=False):
+            rows.append(int(r_idx) + 1)
+            cols.append(int(c_idx) + 1)
+            vals.append(float(S[r_idx, c_idx]))
+
+        biomass_row = context.model.S.shape[0] + 1
+        rows.append(biomass_row)
+        cols.append(context.model.biomass_col + 1)
+        vals.append(1.0)
+
+        objective_row = context.model.S.shape[0] + 2
+        for c_idx, coef in enumerate(context.model.obj):
+            if coef != 0:
+                rows.append(objective_row)
+                cols.append(c_idx + 1)
+                vals.append(float(coef))
+
+        row = context.model.S.shape[0] + 3
+        for j in range(n_top):
+            nz = np.nonzero(J[j])[0]
+            for c_idx in nz:
+                rows.append(row)
+                cols.append(int(c_idx) + 1)
+                vals.append(float(J[j, c_idx]))
+            rows.append(row)
+            cols.append(n_rxn + j + 1)
+            vals.append(-1.0)
+            row += 1
+
+            for c_idx in nz:
+                rows.append(row)
+                cols.append(int(c_idx) + 1)
+                vals.append(float(-J[j, c_idx]))
+            rows.append(row)
+            cols.append(n_rxn + j + 1)
+            vals.append(-1.0)
+            row += 1
+
+        ia = glp.intArray(len(rows) + 1)
+        ja = glp.intArray(len(rows) + 1)
+        ar = glp.doubleArray(len(rows) + 1)
+        for idx, (r_idx, c_idx, val) in enumerate(zip(rows, cols, vals, strict=True), start=1):
+            ia[idx] = r_idx
+            ja[idx] = c_idx
+            ar[idx] = val
+        glp.glp_load_matrix(lp, len(rows), ia, ja, ar)
+
+        glp.glp_scale_prob(lp, glp.GLP_SF_AUTO)
+        glp.glp_adv_basis(lp, 0)
+        params = glp.glp_smcp()
+        glp.glp_init_smcp(params)
+        params.msg_lev = glp.GLP_MSG_OFF
+        params.presolve = glp.GLP_OFF
+        params.meth = glp.GLP_PRIMAL
+        params.tol_bnd = 1e-6
+        simplex_status = glp.glp_simplex(lp, params)
+        if simplex_status != 0:
+            raise HardProbeError(f"GLPK simplex returned status {simplex_status} for {tau_name}")
+
+        solution_status = glp.glp_get_status(lp)
+        result: dict[str, Any] = {
+            "solver_family": "swiglpk",
+            "solver_settings": {
+                "presolve": "OFF",
+                "scale": "AUTO",
+                "tol_bnd": 1e-6,
+                "simplex": "primal",
+            },
+            "simplex_status": simplex_status,
+            "solution_status": glpk_status_name(solution_status),
+            "tau_by_wid": {wid: float(val) for wid, val in zip(TOP17_WIDS, tau, strict=True)},
+            "objective_value": None,
+            "near_zero_objective": False,
+            "infeasible": solution_status != glp.GLP_OPT,
+            "per_wid_slack": {},
+            "per_wid_linearized_error": {},
+            "active_bounds": [],
+            "candidate_k_l1": None,
+            "candidate_k_linf": None,
+        }
+        if solution_status != glp.GLP_OPT:
+            return result
+
+        k = np.array([glp.glp_get_col_prim(lp, i + 1) for i in range(n_rxn)], dtype=np.float64)
+        s = np.array(
+            [glp.glp_get_col_prim(lp, n_rxn + i + 1) for i in range(n_top)],
+            dtype=np.float64,
+        )
+        objective_value = float(glp.glp_get_obj_val(lp))
+        candidate_linear = a + J @ k
+        per_wid_error = np.abs(candidate_linear - target)
+        result.update(
+            {
+                "objective_value": objective_value,
+                "near_zero_objective": bool(objective_value <= 1e-9),
+                "infeasible": False,
+                "candidate_k_l1": float(np.sum(np.abs(k))),
+                "candidate_k_linf": float(np.max(np.abs(k))),
+                "per_wid_slack": {
+                    wid: float(val) for wid, val in zip(TOP17_WIDS, s, strict=True)
+                },
+                "per_wid_linearized_error": {
+                    wid: float(val) for wid, val in zip(TOP17_WIDS, per_wid_error, strict=True)
+                },
+                "active_bounds": active_bound_report(
+                    baseline_flux=baseline_flux,
+                    k=k,
+                    lb=context.solver_bounds_lb,
+                    ub=context.solver_bounds_ub,
+                    col_names=context.fba_col_names,
+                ),
+                "candidate_k": k,
+            }
+        )
+        return result
+    finally:
+        glp.glp_delete_prob(lp)
+
+
 def main() -> int:
     try:
         report = build_report_shell()
@@ -339,6 +621,31 @@ def main() -> int:
             "oc_flux_l1": float(np.sum(np.abs(oc_flux))),
             "oc_flux_linf": float(np.max(np.abs(oc_flux))),
         }
+        linear_operator, constant_flat = build_pre_round_surrogate(
+            context, fixed_growth_per_s=precheck["solver_metadata"]["biomass_flux_per_s"]
+        )
+        report["surrogate"] = {
+            "linear_operator_shape": list(linear_operator.shape),
+            "constant_shape": list(constant_flat.shape),
+            "fixed_growth_per_s": precheck["solver_metadata"]["biomass_flux_per_s"],
+        }
+        joint_lp_results: dict[str, dict[str, Any]] = {}
+        for tau_name in TAU_FORMULAS:
+            lp_result = solve_joint_lp(
+                context=context,
+                baseline_flux=oc_flux,
+                linear_operator=linear_operator,
+                constant_flat=constant_flat,
+                tau_name=tau_name,
+            )
+            if "candidate_k" in lp_result:
+                candidate_k = lp_result.pop("candidate_k")
+                lp_result["active_bounds_count"] = len(lp_result["active_bounds"])
+                lp_result["candidate_flux_biomass_per_s"] = float(
+                    oc_flux[context.model.biomass_col] + candidate_k[context.model.biomass_col]
+                )
+            joint_lp_results[tau_name] = lp_result
+        report["sections"]["joint_lp"] = joint_lp_results
 
         REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
         REPORT_PATH.write_text(json.dumps(to_builtin(report), indent=2, sort_keys=True))
