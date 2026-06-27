@@ -652,6 +652,32 @@ def run_line_search(
     }
 
 
+def measure_surrogate_accuracy(
+    *,
+    context: ProbeContext,
+    baseline_flux: np.ndarray,
+    candidate_k: np.ndarray,
+    linear_operator: np.ndarray,
+    constant_flat: np.ndarray,
+    selected_alpha: float,
+) -> dict[str, Any]:
+    candidate_flux = baseline_flux + selected_alpha * candidate_k
+    actual_flat = actual_writeback_flat(context, candidate_flux)
+    linearized_flat = linearized_flat_delta(linear_operator, constant_flat, candidate_flux)
+    per_wid_gap = np.abs(
+        linearized_flat[context.top17_indices] - actual_flat[context.top17_indices]
+    )
+    max_idx = int(np.argmax(per_wid_gap))
+    return {
+        "alpha": float(selected_alpha),
+        "per_wid_abs_gap": {
+            wid: float(val) for wid, val in zip(TOP17_WIDS, per_wid_gap, strict=True)
+        },
+        "max_abs_gap": float(per_wid_gap[max_idx]),
+        "max_gap_wid": TOP17_WIDS[max_idx],
+    }
+
+
 def main() -> int:
     try:
         report = build_report_shell()
@@ -708,7 +734,7 @@ def main() -> int:
                 )
             joint_lp_results[tau_name] = lp_result
         report["sections"]["joint_lp"] = joint_lp_results
-        report["sections"]["line_search"] = {
+        line_search_results = {
             tau_name: (
                 run_line_search(
                     context=context,
@@ -721,6 +747,28 @@ def main() -> int:
             )
             for tau_name in TAU_FORMULAS
         }
+        report["sections"]["line_search"] = line_search_results
+        surrogate_accuracy: dict[str, Any] = {}
+        for tau_name in TAU_FORMULAS:
+            if tau_name not in joint_lp_candidates:
+                surrogate_accuracy[tau_name] = {"alpha": None, "per_wid_abs_gap": {}}
+                continue
+            line_search = line_search_results[tau_name]
+            selected_alpha = line_search["best_verified_alpha"]
+            selection_policy = "best_verified_alpha"
+            if selected_alpha is None:
+                selected_alpha = line_search["best_alpha_by_pass_count"]
+                selection_policy = "best_alpha_by_pass_count"
+            surrogate_accuracy[tau_name] = measure_surrogate_accuracy(
+                context=context,
+                baseline_flux=oc_flux,
+                candidate_k=joint_lp_candidates[tau_name],
+                linear_operator=linear_operator,
+                constant_flat=constant_flat,
+                selected_alpha=float(selected_alpha),
+            )
+            surrogate_accuracy[tau_name]["selection_policy"] = selection_policy
+        report["sections"]["surrogate_accuracy"] = surrogate_accuracy
 
         REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
         REPORT_PATH.write_text(json.dumps(to_builtin(report), indent=2, sort_keys=True))
