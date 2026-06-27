@@ -1,0 +1,100 @@
+{
+  "assumptions": [],
+  "baseline": {
+    "oc_flux_l1": 65318.72988329435,
+    "oc_flux_linf": 1000.0
+  },
+  "constants": {
+    "alphas": [
+      1.0,
+      0.75,
+      0.5,
+      0.25,
+      0.1,
+      0.05,
+      0.01
+    ],
+    "tau_formulas": {
+      "tau_A": "max(1, 3e-4 * |karr_delta_j|)",
+      "tau_B": "max(40, 0.03 * |karr_delta_j|)",
+      "tau_C": "max(100, 0.10 * |karr_delta_j|)"
+    },
+    "top17_wids": [
+      "OCDCEA",
+      "H2O2",
+      "O2",
+      "TRP",
+      "TRIOLEIN",
+      "TYR",
+      "GL",
+      "AC",
+      "PHE",
+      "TrpTrp",
+      "H2O",
+      "TyrTyr",
+      "GLC",
+      "ACAL",
+      "AEPP",
+      "CAP",
+      "PhePhe"
+    ],
+    "writeback_seed": 12345
+  },
+  "errors": [],
+  "fixture_shapes": {
+    "S": [
+      376,
+      504
+    ],
+    "bounds": [
+      504,
+      2
+    ],
+    "delta": [
+      585,
+      3
+    ],
+    "objective": [
+      504
+    ],
+    "post_sub": [
+      585,
+      3
+    ],
+    "pre_sub": [
+      585,
+      3
+    ]
+  },
+  "paths": {
+    "fixture_mat": "/mnt/e/opencell/data/karr_fixtures/per_process/Metabolism_flat.mat",
+    "ground_truth_mat": "/mnt/e/opencell/data/karr_fixtures/matlab_ground_truth/metab_flux_allocated_state_s000_tick1.mat",
+    "report_json": "/mnt/e/opencell/tmp/v4_probe_results.json",
+    "trace_mat": "/mnt/e/opencell/data/m1_sources/karr_native/per_process_traces_v2_s000/Metabolism_100ticks.mat"
+  },
+  "sample": {
+    "seed": 0,
+    "tick": 1
+  },
+  "sections": {
+    "joint_lp": {},
+    "karr_feasibility": {
+      "feasible": true,
+      "lower_bound_max_violation": 0.0,
+      "mass_balance_max_abs": 4.711182555183768e-10,
+      "tol": 1e-06,
+      "upper_bound_max_violation": 0.0
+    },
+    "line_search": {},
+    "mutation_matrix": {},
+    "precheck": {
+      "baseline_biomass_flux_per_s": 5.581449765540722e-06,
+      "baseline_nonzero_fluxes": 295,
+      "baseline_solver": "glpk",
+      "objective_value_karr": 0.02133066193318198,
+      "objective_value_oc": 0.005587700980535561,
+      "relative_full_objective_gap": 0.01574296095264642
+    },
+    "surrogate_accuracy": {}
+  }
+}
