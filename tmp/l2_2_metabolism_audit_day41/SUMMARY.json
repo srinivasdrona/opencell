@@ -1,0 +1,33 @@
+{
+  "generated_at": "2026-06-27T18:20:15.976278+00:00",
+  "schema_version": "1.4",
+  "harness_version": "design_a_v1_3",
+  "k_eng": {
+    "TRIVIAL_RNG": 2.0,
+    "ALGORITHMIC_SHALLOW": 2.0,
+    "ALGORITHMIC_DEEP": 3.0
+  },
+  "processes": {
+    "Metabolism": {
+      "verdict": "FAIL",
+      "latest_run": "2026-06-27T18:20:15.976278+00:00",
+      "bucket": "TRIVIAL_RNG",
+      "failed_channels": [
+        "substrates"
+      ],
+      "n_channels_gated": 1,
+      "n_event_deferred": 0,
+      "n_insufficient": 0,
+      "joint_verdict": null,
+      "n_joint_fail_pairs": 0,
+      "warnings": []
+    }
+  },
+  "tally": {
+    "PASS": 0,
+    "FAIL": 1,
+    "BLOCKED": 0,
+    "SKIPPED": 0,
+    "NO_GATEABLE_CHANNELS": 0
+  }
+}

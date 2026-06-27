@@ -1,0 +1,4 @@
+{
+  "applicable": false,
+  "reason": "Metabolism has no closed-form per-tick check"
+}

@@ -1,0 +1,20 @@
+{
+  "generated_at": "2026-06-27T18:20:15.976278+00:00",
+  "process": "Metabolism",
+  "bucket": "TRIVIAL_RNG",
+  "channels": {
+    "substrates": {
+      "bootstrap_B": 128,
+      "n_karr_seeds": 50,
+      "n_ticks": 10,
+      "q95_null": 50.973508547008365,
+      "bootstrap_values_summary": {
+        "mean": 46.246202163461376,
+        "stddev": 2.9150018953656303,
+        "min": 39.236441025640886,
+        "max": 56.16052307692288
+      }
+    }
+  },
+  "warnings": []
+}

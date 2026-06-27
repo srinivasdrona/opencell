@@ -1,0 +1,182 @@
+{
+  "result": {
+    "process": "Metabolism",
+    "verdict": "FAIL",
+    "timestamp": "2026-06-26T09:19:41.652154+00:00",
+    "harness_version": "design_a_v1_3",
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49
+    ],
+    "ticks": 10,
+    "n_observations_per_channel": 500,
+    "bootstrap_B": 128,
+    "bucket": "TRIVIAL_RNG",
+    "canonical_seed_count": 50,
+    "k_eng": {
+      "TRIVIAL_RNG": 2.0,
+      "ALGORITHMIC_SHALLOW": 2.0,
+      "ALGORITHMIC_DEEP": 3.0
+    },
+    "channels": {
+      "substrates": {
+        "verdict": "FAIL",
+        "w1_oc_vs_karr": 161.38432136752078,
+        "w1_oc_vs_karr_ci95": [
+          171.04676948717886,
+          181.89156470085405
+        ],
+        "q95_null": 50.973508547008365,
+        "threshold": 101.94701709401673,
+        "absolute_floor": 1.0,
+        "ks_stat": 0.027141880341880364,
+        "ks_pvalue": 4.971378654428042e-94,
+        "n_nonzero_oc": 61457,
+        "n_nonzero_karr": 59388,
+        "samples_oc": {
+          "mean": 246903256192.84415,
+          "stddev": 5928919218304.204,
+          "skew": 24.12457983308748,
+          "kurtosis": 580.003432722785,
+          "min": -450.0,
+          "max": 143525205573671.0
+        },
+        "samples_karr": {
+          "mean": 246903256167.2574,
+          "stddev": 5928919218972.85,
+          "skew": 24.124579833088113,
+          "kurtosis": 580.0034327228054,
+          "min": 0.0,
+          "max": 143525205588275.0
+        },
+        "is_primary": true,
+        "is_event_channel": false,
+        "aggregation": "per_tick_vector_w1_mean",
+        "per_sample_w1_summary": {
+          "mean": 161.38432136752078,
+          "max": 223.97948717948648,
+          "min": 122.55384615384573
+        }
+      }
+    },
+    "joint_check": null,
+    "warnings": [],
+    "allocator_inputs_ref": "/mnt/e/opencell/tmp/l2_2_metabolism_glpk/allocator_inputs.json",
+    "provenance_ref": "/mnt/e/opencell/tmp/l2_2_metabolism_glpk/provenance.json"
+  },
+  "summary": {
+    "generated_at": "2026-06-26T09:19:41.652154+00:00",
+    "schema_version": "1.4",
+    "harness_version": "design_a_v1_3",
+    "k_eng": {
+      "TRIVIAL_RNG": 2.0,
+      "ALGORITHMIC_SHALLOW": 2.0,
+      "ALGORITHMIC_DEEP": 3.0
+    },
+    "processes": {
+      "Metabolism": {
+        "verdict": "FAIL",
+        "latest_run": "2026-06-26T09:19:41.652154+00:00",
+        "bucket": "TRIVIAL_RNG",
+        "failed_channels": [
+          "substrates"
+        ],
+        "n_channels_gated": 1,
+        "n_event_deferred": 0,
+        "n_insufficient": 0,
+        "joint_verdict": null,
+        "n_joint_fail_pairs": 0,
+        "warnings": []
+      }
+    },
+    "tally": {
+      "PASS": 0,
+      "FAIL": 1,
+      "BLOCKED": 0,
+      "SKIPPED": 0,
+      "NO_GATEABLE_CHANNELS": 0
+    }
+  },
+  "null_calibration": {
+    "generated_at": "2026-06-26T09:19:41.652154+00:00",
+    "process": "Metabolism",
+    "bucket": "TRIVIAL_RNG",
+    "channels": {
+      "substrates": {
+        "bootstrap_B": 128,
+        "n_karr_seeds": 50,
+        "n_ticks": 10,
+        "q95_null": 50.973508547008365,
+        "bootstrap_values_summary": {
+          "mean": 46.246202163461376,
+          "stddev": 2.9150018953656303,
+          "min": 39.236441025640886,
+          "max": 56.16052307692288
+        }
+      }
+    },
+    "warnings": []
+  },
+  "thresholds": {
+    "schema_version": "1.4",
+    "harness_version": "design_a_v1_3",
+    "process": "Metabolism",
+    "bucket": "TRIVIAL_RNG",
+    "channels": {
+      "substrates": {
+        "q95_null": 50.973508547008365,
+        "k_eng": 2.0,
+        "absolute_floor": 1.0,
+        "threshold": 101.94701709401673
+      }
+    }
+  }
+}
