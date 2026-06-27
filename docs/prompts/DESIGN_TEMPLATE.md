@@ -20,6 +20,32 @@ Do not use this template for:
 
 Goal: enforce decision quality where ambiguity and cross-surface risk are real, without adding ceremony to trivial work.
 
+## Revision-class minimum (added 2026-06-27 after Day-40 V1→V4 trajectory)
+
+For REVISION-class work (patching an existing design after critique), use a
+lighter shape than the full template:
+
+- **MANDATORY**: §1 design contract, §5 decision ledger (one card per BLK/NB
+  fix), §10 risks. Plus the slot-3 spec-authority quote block and a self-audit
+  checkbox table mapping each critique item to a §5 decision.
+- **OPTIONAL**: §2 inventory, §6 verification claims, §7 operator questions.
+- **SKIP**: §3 interaction-surface map, §9 migration path, §11 review
+  checklist. These add ceremony without changing decision quality for
+  revisions.
+- **Target**: 80-200 lines instead of 250-400.
+
+The decision-card format (options/chosen/rationale/Beat-4 inversion/falsifier)
+is the load-bearing element of this template; the rest is right-sized for
+genuine multi-fork architectural authoring, not revisions. See
+`D:\OneDrive - Microsoft\.pm-os\DECISIONS.md` entry
+`2026-06-27 | cross-cutting | empirical-probe-before-design-iteration` for
+the empirical anchor (Day-40 L2.2 Metabolism MF4 V1=832L→V4=357L iteration).
+
+Companion rule: **before commissioning a full design iteration, check whether
+the design's core assumption can be probed empirically in <1h. If yes, run the
+probe first.** Day-40 V4-probe falsified V4's core assumption in 27 minutes;
+the V2/V3/V4 design rounds could have been skipped had the probe run after V1.
+
 ## Acceptance bar (author must check before requesting review)
 
 The design doc is not review-ready until every item is checked:

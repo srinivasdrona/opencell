@@ -26,6 +26,53 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Live processes / agents (2026-06-28 ~00:30 IST, Day-41 EOD):** None alive. Workspace clean. All audit codex agents (H1-H4 fanout PIDs + L2.2 audit PID 38564) exited cleanly hours ago.
+
+**Day-41 Metabolism LP investigation — COMPLETE; result is "no gate movement".** Three days of FBA-fidelity work (Day-39 chromosome wiring + Day-40 GLPK port + Day-41 hypothesis fanout) collapsed to two distinct outcomes:
+
+| Track | Outcome |
+|---|---|
+| Day-39 chromosome wiring (Path B) | **DONE.** L2.2 VERIFIED_GENUINE 13 → 17. DNASupercoiling / Replication / DNARepair / ReplicationInitiation all wired into design-A runner with chromosome oracle infrastructure. NOT_WIRED dropped 6 → 2 (DNADamage + FtsZ only, both EVENT_CLASS). |
+| Day-40/41 Metabolism FBA | **CLOSED, no gate movement.** GLPK port + pricing=STD fix + Karr-discipline knobs reduced sample-level flux L1 from 8.18M → 354K (23× at sample 0,1). L2.2 Metabolism W1 unchanged at 161.38 (threshold 102, gap 59% — same as Day-40). Root cause: flux differences live in null(S); audit measures substrate-deltas (= S·flux), so flux-vertex differences project to zero. The entire 4-hypothesis fanout + V1→V4 design iteration was solving the wrong problem. |
+
+**Last pushed commits**: Day-39 (`83c5cc6`, `0d278ec`, `11d0be9`, `b4ef1a5`). Nothing pushed since.
+
+**Unpushed commits on `main` (Day-40 + Day-41)**, 8 total, oldest first:
+- Day-40: `3d16106` (GLPK + Karr FBA discipline + pFBA flag) → `a9ca32e` (gap map + post-mortem + diagnostic probes) → `1d70177` (L2.2 MF4 design V2→V3→V4 + critiques, **largely obsoleted by Day-41**)
+- Day-41: `380e85b` (4-hypothesis fanout probes + JSON + synthesis) → `1735729` (pricing=STD source fix) → `b91dce1` (LLM provenance log) → `379f1e1` (H5 probe — Karr presolve=ON is worse on GLPK 5) → `3ab3604` (L2.2 audit run — confirms no-op for W1 gate)
+
+**Bookkeeping commit pending**: blog post + this plan.md update + PROCESS_STATUS_ALL_29.md update + todo state.
+
+**Honest scoreboard (Day-41 EOD):**
+
+| Gate | Day-38 EOD | Day-39 EOD | Day-41 EOD |
+|---|---:|---:|---:|
+| L2.1 GENUINE | 19/28 | 19/28 | **19/28** |
+| L2.2 VERIFIED_GENUINE | 13/22 | 17/22 | **17/22** |
+| L2.2 NOT_WIRED | 6 | 2 | **2** (DNADamage, FtsZ, both EVENT_CLASS) |
+| L2.2 VERIFIED_FAIL | 1 (Metabolism W1=168) | 1 (Metabolism W1=168) | **1 (Metabolism W1=161)** |
+| L2.5 honest PASS | 15/256 | 15/256 | 15/256 (not re-audited) |
+
+**Key lesson logged (user-scoped memory)**: On any degenerate LP, measure OC-vs-oracle gaps in the metric space of the downstream gate, not in raw decision-variable space. Differences in null(constraint matrix) are biologically inert. The 23× flux-L1 reduction at sample level looked decisive but moved the substrate-delta W1 by 0.002%.
+
+**Operational traps re-confirmed this session:**
+- 4 parallel codex agents work fine on Azure — the "2-concurrent cap" never existed (logged retraction in `D:\OneDrive - Microsoft\.pm-os\DECISIONS.md::retract-azure-codex-2-concurrent-cap`).
+- Codex-generated probes need explicit bounds-clipping hygiene (±inf → ±1e6) — H2 crashed without it.
+- The session-state plan.md is NOT the source of truth; THIS file is. (`E:\opencell\plan.md`.)
+
+**Day-42 priority options (operator decision):**
+- A. **Substrate writeback mapping audit** — read `opencell/m1/karr_metabolism_writeback.py` side-by-side with `Metabolism.m::evolveState` lines 1200-1296, look for sign/index/scale bugs. Highest information density given Day-41's findings.
+- B. **Pre-LP allocator-input reconstruction** — H4 showed bounds match exactly, but `pre_sub` / `pre_enz` upstream of bounds was not directly probed. Could carry small biases that propagate through any solver/vertex.
+- C. **Post-clip / mass-balance accounting** — Karr's `Metabolism.m:1287-1296` applies `max(min(flux, ub), lb)` after solve; our `np.clip` does the same shape-wise but may differ in edge handling.
+- D. **Switch to L2.1 cleanup** (COINCIDENTAL: ProteinDecay + Replication; FAIL: ChromosomeCondensation). These are independent of the Metabolism stack and may be quick wins.
+- E. **L2.5 re-audit** — Day-39 chromosome unlocks may have shifted the picture; needs a fresh sweep.
+
+**Pre-existing test failure noted but not addressed**: `tests/vivarium/test_karr_metabolism_pools_throttle.py::test_throttle_on_with_starved_atp_freezes_m2_synthesis` fails on `main` (was failing before Day-41 work; verified via stash-revert). Originates in commit `ecde4e4` (Bug 6a Stage 2). Worth a separate dedicated investigation, but does not block Day-42 priorities.
+
+---
+
+## Operational handoff (Day-39 EOD — superseded by Day-41 above)
+
 **Live processes / agents (2026-06-25 ~11:45 IST, Day-39 EOD):** None alive. Workspace clean.
 
 **Day-39 Path B (chromosome wiring) — COMPLETE.** All 4 in-scope chromosome-port processes wired into the L2.2 design-A runner:

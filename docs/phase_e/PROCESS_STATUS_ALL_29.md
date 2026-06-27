@@ -1,5 +1,41 @@
 # All-29 Process Status - 2026-06-03 ~14:30 IST (L2.1 SWEEP COMPLETE)
 
+> **⚠️ Day-41 EOD update: Metabolism FBA-fidelity investigation CLOSED with no gate movement. L2.2 scoreboard unchanged from Day-39 (17/22 VERIFIED_GENUINE). Metabolism W1 = 161.38 (was 168 Day-38, was 161.38 Day-40 — pricing=STD fix was a no-op for the gate).**
+>
+> **What landed Day-40 (committed, not pushed):**
+> - `3d16106` — GLPK port (HiGHS → swiglpk via `solver='glpk'`), Karr FBA discipline knobs (`presolve=OFF`, `scale=AUTO`, `tol_bnd=1e-6`, post-clip), pFBA flag
+> - `a9ca32e` — Day-40 post-mortem + Metabolism gap map (17 WIDs carry 91% of writeback L1, 27 WIDs carry 99.1%) + 20 diagnostic probe scripts
+> - `1d70177` — L2.2 MF4 design iteration V2 → V3 → V4 + opus/gpt critiques. **Largely obsoleted by Day-41 LP-diff finding** (V1–V4 all assumed sub-optimality; LPs are bit-identical with both vertices optimal).
+>
+> **What landed Day-41 (committed, not pushed):**
+> - `380e85b` — 4-hypothesis parallel codex fanout (H1 basis carryover, H2 two-solve, H3 GLPK options, H4 bounds) — probes + JSON + synthesis doc at `docs/phase_f/probes/HYPOTHESIS_FANOUT_DAY41.md`
+> - `1735729` — `parm.pricing = GLP_PT_STD` in `_solve_fba_glpk` + `_solve_fba_glpk_pfba`. Verified 23× sample-level reduction at (s=0, t=1).
+> - `b91dce1` — LLM provenance log entry
+> - `379f1e1` — H5 follow-up: Karr's literal `presolve=ON` config produces *suboptimal* solution on GLPK 5 (24× worse than current production). Keeps `presolve=OFF` confirmed.
+> - `3ab3604` — L2.2 audit run at 50 seeds × 10 ticks: W1 161.381 (Day-40 was 161.384). **Net change: −0.002%. Verdict: FAIL.**
+>
+> **Mechanism of the no-op** (key methodological finding): the audit measures W1 on substrate-deltas (= S · flux), not on flux. Any two LP-optimal vertices satisfy S·v = b, so flux differences between them lie in null(S). Components in null(S) project to zero in substrate-delta space and are biologically inert. PSE-vs-STD pricing picks vertices that differ on futile cycles / kinetically-equivalent routes (Pyk_IDP, Adk3, Lipase variants, etc.) — exactly the null(S) directions. The 23× flux-L1 reduction was real and biologically invisible.
+>
+> **What this means for Metabolism's gate**: the remaining W1=161 → 102 gap (59% above threshold) is NOT a vertex-selection or LP-solver issue. The next investigation must target one of:
+> 1. Substrate writeback mapping (`opencell/m1/karr_metabolism_writeback.py` vs `Metabolism.m::evolveState:1200-1296`)
+> 2. Pre-LP allocator-input reconstruction (`pre_sub` / `pre_enz`, upstream of the bounds H4 already validated)
+> 3. Post-clip / mass-balance accounting (`Metabolism.m:1287-1296` vs our `np.clip`)
+> 4. Joint distributions with downstream M2/M3 processes
+>
+> **Scoreboard (Day-41 EOD) — UNCHANGED from Day-39 except Metabolism W1:**
+>
+> | Gate | Day-38 EOD | Day-39 EOD | Day-41 EOD |
+> |---|---:|---:|---:|
+> | L2.1 GENUINE | 19/28 | 19/28 | **19/28** |
+> | L2.2 VERIFIED_GENUINE | 13/22 | 17/22 | **17/22** |
+> | L2.2 NOT_WIRED | 6 | 2 | **2** (DNADamage, FtsZ) |
+> | L2.2 VERIFIED_FAIL | 1 (Metab W1=168) | 1 (Metab W1=168) | **1 (Metab W1=161)** |
+> | L2.5 honest PASS | 15/256 | 15/256 | 15/256 (not re-audited) |
+>
+> **Process-improvement memory stored (user scope):** On any degenerate LP, measure OC-vs-oracle gaps in the metric space of the downstream gate, not in raw decision-variable space. Differences in null(constraint matrix) are biologically inert. Closing-from-flux probes are misleading on degenerate LPs.
+>
+> **Empirical retraction (cross-cutting, logged in PM OS DECISIONS):** the previously documented Azure "2-concurrent codex cap" was never validated. 4 parallel codex agents ran fine. The fleet size for hypothesis fanouts is now unconstrained.
+
 > **⚠️ Day-39 EOD update: Path B complete — 4 of 4 in-scope chromosome processes wired into L2.2 design-A runner. L2.2 VERIFIED_GENUINE 13 → 17.**
 >
 > **What landed (committed and pushed):**
