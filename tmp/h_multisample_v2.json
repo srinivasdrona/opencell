@@ -1,0 +1,460 @@
+{
+  "available_samples": 20,
+  "missing_samples": [],
+  "verdict": "PAIR_DOES_NOT_DOMINATE",
+  "aggregate": {
+    "any_pair_in_top5_count": 13,
+    "non_pair_dominates_count": 20,
+    "n_samples": 20,
+    "karr_delta_l1_mean": 111774.75,
+    "karr_delta_l1_min": 86742.0,
+    "karr_delta_l1_max": 128140.0
+  },
+  "per_pair_top5_freq": {
+    "PHE": 0,
+    "PhePhe": 0,
+    "TRP": 0,
+    "TrpTrp": 0,
+    "HDCA": 13,
+    "OCDCEA": 0,
+    "TRIOLEIN": 0,
+    "TRIPALMITIN": 0
+  },
+  "per_pair_top1_freq": {
+    "PHE": 0,
+    "PhePhe": 0,
+    "TRP": 0,
+    "TrpTrp": 0,
+    "HDCA": 0,
+    "OCDCEA": 0,
+    "TRIOLEIN": 0,
+    "TRIPALMITIN": 0
+  },
+  "gap_map_top5_freq": {
+    "420": 20,
+    "297": 20,
+    "298": 15
+  },
+  "per_sample": [
+    {
+      "seed": 0,
+      "tick": 1,
+      "karr_delta_l1": 117427.0,
+      "top5_rows": [
+        296,
+        297,
+        420,
+        298,
+        300
+      ],
+      "top5_abs_l1": [
+        17726.0,
+        17606.0,
+        10861.0,
+        10859.0,
+        7919.0
+      ],
+      "any_pair_in_top5": true,
+      "top1_is_pair_row": false
+    },
+    {
+      "seed": 0,
+      "tick": 5,
+      "karr_delta_l1": 128140.0,
+      "top5_rows": [
+        297,
+        296,
+        420,
+        298,
+        301
+      ],
+      "top5_abs_l1": [
+        16320.0,
+        15753.0,
+        10882.0,
+        10876.0,
+        7918.0
+      ],
+      "any_pair_in_top5": false,
+      "top1_is_pair_row": false
+    },
+    {
+      "seed": 1,
+      "tick": 1,
+      "karr_delta_l1": 117155.0,
+      "top5_rows": [
+        296,
+        297,
+        420,
+        298,
+        301
+      ],
+      "top5_abs_l1": [
+        17648.0,
+        17532.0,
+        10860.0,
+        10859.0,
+        7919.0
+      ],
+      "any_pair_in_top5": false,
+      "top1_is_pair_row": false
+    },
+    {
+      "seed": 1,
+      "tick": 5,
+      "karr_delta_l1": 108365.0,
+      "top5_rows": [
+        296,
+        297,
+        420,
+        298,
+        300
+      ],
+      "top5_abs_l1": [
+        15735.0,
+        15636.0,
+        10330.0,
+        10328.0,
+        7919.0
+      ],
+      "any_pair_in_top5": true,
+      "top1_is_pair_row": false
+    },
+    {
+      "seed": 2,
+      "tick": 1,
+      "karr_delta_l1": 117160.0,
+      "top5_rows": [
+        296,
+        297,
+        420,
+        298,
+        300
+      ],
+      "top5_abs_l1": [
+        17648.0,
+        17531.0,
+        10860.0,
+        10859.0,
+        7919.0
+      ],
+      "any_pair_in_top5": true,
+      "top1_is_pair_row": false
+    },
+    {
+      "seed": 2,
+      "tick": 5,
+      "karr_delta_l1": 88618.0,
+      "top5_rows": [
+        296,
+        297,
+        301,
+        300,
+        420
+      ],
+      "top5_abs_l1": [
+        16126.0,
+        16105.0,
+        7918.0,
+        7918.0,
+        5977.0
+      ],
+      "any_pair_in_top5": true,
+      "top1_is_pair_row": false
+    },
+    {
+      "seed": 3,
+      "tick": 1,
+      "karr_delta_l1": 117156.0,
+      "top5_rows": [
+        296,
+        297,
+        420,
+        298,
+        301
+      ],
+      "top5_abs_l1": [
+        17649.0,
+        17530.0,
+        10860.0,
+        10859.0,
+        7919.0
+      ],
+      "any_pair_in_top5": false,
+      "top1_is_pair_row": false
+    },
+    {
+      "seed": 3,
+      "tick": 5,
+      "karr_delta_l1": 87223.0,
+      "top5_rows": [
+        296,
+        297,
+        301,
+        300,
+        420
+      ],
+      "top5_abs_l1": [
+        16020.0,
+        16001.0,
+        7918.0,
+        7917.0,
+        5810.0
+      ],
+      "any_pair_in_top5": true,
+      "top1_is_pair_row": false
+    },
+    {
+      "seed": 4,
+      "tick": 1,
+      "karr_delta_l1": 117410.0,
+      "top5_rows": [
+        296,
+        297,
+        420,
+        298,
+        300
+      ],
+      "top5_abs_l1": [
+        17722.0,
+        17604.0,
+        10861.0,
+        10859.0,
+        7918.0
+      ],
+      "any_pair_in_top5": true,
+      "top1_is_pair_row": false
+    },
+    {
+      "seed": 4,
+      "tick": 5,
+      "karr_delta_l1": 97965.0,
+      "top5_rows": [
+        297,
+        296,
+        300,
+        301,
+        420
+      ],
+      "top5_abs_l1": [
+        16432.0,
+        15921.0,
+        7918.0,
+        7917.0,
+        7277.0
+      ],
+      "any_pair_in_top5": true,
+      "top1_is_pair_row": false
+    },
+    {
+      "seed": 5,
+      "tick": 1,
+      "karr_delta_l1": 117420.0,
+      "top5_rows": [
+        296,
+        297,
+        420,
+        298,
+        300
+      ],
+      "top5_abs_l1": [
+        17726.0,
+        17606.0,
+        10861.0,
+        10859.0,
+        7919.0
+      ],
+      "any_pair_in_top5": true,
+      "top1_is_pair_row": false
+    },
+    {
+      "seed": 5,
+      "tick": 5,
+      "karr_delta_l1": 98487.0,
+      "top5_rows": [
+        297,
+        296,
+        301,
+        300,
+        420
+      ],
+      "top5_abs_l1": [
+        16626.0,
+        16197.0,
+        7918.0,
+        7918.0,
+        7277.0
+      ],
+      "any_pair_in_top5": true,
+      "top1_is_pair_row": false
+    },
+    {
+      "seed": 6,
+      "tick": 1,
+      "karr_delta_l1": 117463.0,
+      "top5_rows": [
+        296,
+        297,
+        420,
+        298,
+        300
+      ],
+      "top5_abs_l1": [
+        17737.0,
+        17616.0,
+        10861.0,
+        10859.0,
+        7918.0
+      ],
+      "any_pair_in_top5": true,
+      "top1_is_pair_row": false
+    },
+    {
+      "seed": 6,
+      "tick": 5,
+      "karr_delta_l1": 127745.0,
+      "top5_rows": [
+        297,
+        296,
+        420,
+        298,
+        247
+      ],
+      "top5_abs_l1": [
+        16671.0,
+        15738.0,
+        10883.0,
+        10876.0,
+        7918.0
+      ],
+      "any_pair_in_top5": false,
+      "top1_is_pair_row": false
+    },
+    {
+      "seed": 7,
+      "tick": 1,
+      "karr_delta_l1": 117464.0,
+      "top5_rows": [
+        296,
+        297,
+        420,
+        298,
+        300
+      ],
+      "top5_abs_l1": [
+        17736.0,
+        17617.0,
+        10861.0,
+        10859.0,
+        7919.0
+      ],
+      "any_pair_in_top5": true,
+      "top1_is_pair_row": false
+    },
+    {
+      "seed": 7,
+      "tick": 5,
+      "karr_delta_l1": 124854.0,
+      "top5_rows": [
+        296,
+        297,
+        420,
+        298,
+        300
+      ],
+      "top5_abs_l1": [
+        20113.0,
+        18229.0,
+        10842.0,
+        10841.0,
+        7919.0
+      ],
+      "any_pair_in_top5": true,
+      "top1_is_pair_row": false
+    },
+    {
+      "seed": 8,
+      "tick": 1,
+      "karr_delta_l1": 117161.0,
+      "top5_rows": [
+        296,
+        297,
+        420,
+        298,
+        301
+      ],
+      "top5_abs_l1": [
+        17649.0,
+        17532.0,
+        10861.0,
+        10859.0,
+        7919.0
+      ],
+      "any_pair_in_top5": false,
+      "top1_is_pair_row": false
+    },
+    {
+      "seed": 8,
+      "tick": 5,
+      "karr_delta_l1": 86742.0,
+      "top5_rows": [
+        296,
+        297,
+        300,
+        301,
+        420
+      ],
+      "top5_abs_l1": [
+        15926.0,
+        15907.0,
+        7918.0,
+        7918.0,
+        5774.0
+      ],
+      "any_pair_in_top5": true,
+      "top1_is_pair_row": false
+    },
+    {
+      "seed": 9,
+      "tick": 1,
+      "karr_delta_l1": 117431.0,
+      "top5_rows": [
+        296,
+        297,
+        420,
+        298,
+        301
+      ],
+      "top5_abs_l1": [
+        17726.0,
+        17606.0,
+        10861.0,
+        10859.0,
+        7919.0
+      ],
+      "any_pair_in_top5": false,
+      "top1_is_pair_row": false
+    },
+    {
+      "seed": 9,
+      "tick": 5,
+      "karr_delta_l1": 114109.0,
+      "top5_rows": [
+        296,
+        297,
+        420,
+        298,
+        301
+      ],
+      "top5_abs_l1": [
+        17099.0,
+        17003.0,
+        10861.0,
+        10859.0,
+        7919.0
+      ],
+      "any_pair_in_top5": false,
+      "top1_is_pair_row": false
+    }
+  ]
+}
