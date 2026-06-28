@@ -1,0 +1,168 @@
+{
+  "differing_reactions": [
+    {
+      "rxn_pos": 42,
+      "fba_col": 378,
+      "sub_row": 247,
+      "sub_wid": "GL",
+      "lb_raw": -7918.395518452329,
+      "ub_raw": 7918.395518452329,
+      "karr_flux": 7529.4768681334035,
+      "oc_flux": 7526.670662941149,
+      "diff": -2.8062051922543105,
+      "karr_status": "INTERIOR",
+      "oc_status": "INTERIOR"
+    },
+    {
+      "rxn_pos": 44,
+      "fba_col": 380,
+      "sub_row": 250,
+      "sub_wid": "GLC",
+      "lb_raw": -7918.395518452329,
+      "ub_raw": 7918.395518452329,
+      "karr_flux": 2725.0066920110694,
+      "oc_flux": 2727.8065043093666,
+      "diff": 2.7998122982971836,
+      "karr_status": "INTERIOR",
+      "oc_status": "INTERIOR"
+    },
+    {
+      "rxn_pos": 56,
+      "fba_col": 392,
+      "sub_row": 298,
+      "sub_wid": "H2O2",
+      "lb_raw": -13197.325864087215,
+      "ub_raw": 13197.325864087215,
+      "karr_flux": -10863.270436978284,
+      "oc_flux": -10853.480683300857,
+      "diff": 9.789753677427143,
+      "karr_status": "INTERIOR",
+      "oc_status": "INTERIOR"
+    },
+    {
+      "rxn_pos": 57,
+      "fba_col": 393,
+      "sub_row": 300,
+      "sub_wid": "HDCA",
+      "lb_raw": -7918.395518452329,
+      "ub_raw": 7918.395518452329,
+      "karr_flux": 7918.395518452329,
+      "oc_flux": 6749.202397987354,
+      "diff": -1169.1931204649754,
+      "karr_status": "AT_UB",
+      "oc_status": "INTERIOR"
+    },
+    {
+      "rxn_pos": 83,
+      "fba_col": 419,
+      "sub_row": 420,
+      "sub_wid": "O2",
+      "lb_raw": -13197.325864087215,
+      "ub_raw": 13197.325864087215,
+      "karr_flux": 10865.057627555932,
+      "oc_flux": 10855.267873879522,
+      "diff": -9.789753676410328,
+      "karr_status": "INTERIOR",
+      "oc_status": "INTERIOR"
+    },
+    {
+      "rxn_pos": 86,
+      "fba_col": 422,
+      "sub_row": 439,
+      "sub_wid": "OCDCEA",
+      "lb_raw": -7918.395518452329,
+      "ub_raw": 7918.395518452329,
+      "karr_flux": 6740.822139835419,
+      "oc_flux": 7918.395518452329,
+      "diff": 1177.5733786169103,
+      "karr_status": "INTERIOR",
+      "oc_status": "AT_UB"
+    },
+    {
+      "rxn_pos": 87,
+      "fba_col": 423,
+      "sub_row": 469,
+      "sub_wid": "PHE",
+      "lb_raw": -7918.395518452329,
+      "ub_raw": 0.0,
+      "karr_flux": -3762.9721303700867,
+      "oc_flux": 0.0,
+      "diff": 3762.9721303700867,
+      "karr_status": "INTERIOR",
+      "oc_status": "AT_UB"
+    },
+    {
+      "rxn_pos": 88,
+      "fba_col": 424,
+      "sub_row": 470,
+      "sub_wid": "PhePhe",
+      "lb_raw": -7918.395518452329,
+      "ub_raw": 7918.395518452329,
+      "karr_flux": 1889.1269841240833,
+      "oc_flux": 7.6409189390842585,
+      "diff": -1881.486065184999,
+      "karr_status": "INTERIOR",
+      "oc_status": "INTERIOR"
+    },
+    {
+      "rxn_pos": 108,
+      "fba_col": 444,
+      "sub_row": 536,
+      "sub_wid": "TRIOLEIN",
+      "lb_raw": -7918.395518452329,
+      "ub_raw": 0.0,
+      "karr_flux": -2246.48903729383,
+      "oc_flux": -2639.0134968335506,
+      "diff": -392.52445953972074,
+      "karr_status": "INTERIOR",
+      "oc_status": "INTERIOR"
+    },
+    {
+      "rxn_pos": 109,
+      "fba_col": 445,
+      "sub_row": 537,
+      "sub_wid": "TRIPALMITIN",
+      "lb_raw": -7918.395518452329,
+      "ub_raw": 0.0,
+      "karr_flux": -2638.591003664226,
+      "oc_flux": -2248.8599635092223,
+      "diff": 389.7310401550035,
+      "karr_status": "INTERIOR",
+      "oc_status": "INTERIOR"
+    },
+    {
+      "rxn_pos": 113,
+      "fba_col": 449,
+      "sub_row": 541,
+      "sub_wid": "TRP",
+      "lb_raw": -7918.395518452329,
+      "ub_raw": 0.0,
+      "karr_flux": 0.0,
+      "oc_flux": -3771.3523885009595,
+      "diff": -3771.3523885009595,
+      "karr_status": "AT_UB",
+      "oc_status": "INTERIOR"
+    },
+    {
+      "rxn_pos": 114,
+      "fba_col": 450,
+      "sub_row": 542,
+      "sub_wid": "TrpTrp",
+      "lb_raw": -7918.395518452329,
+      "ub_raw": 7918.395518452329,
+      "karr_flux": 1.1351675720225975,
+      "oc_flux": 1886.8113618224033,
+      "diff": 1885.6761942503808,
+      "karr_status": "INTERIOR",
+      "oc_status": "INTERIOR"
+    }
+  ],
+  "karr_status_counts": {
+    "INTERIOR": 10,
+    "AT_UB": 2
+  },
+  "oc_status_counts": {
+    "INTERIOR": 10,
+    "AT_UB": 2
+  }
+}
