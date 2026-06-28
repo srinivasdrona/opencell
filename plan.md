@@ -90,7 +90,69 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 - C. Before picking FVA: investigate what audit-methodology changes would be needed
 - D. Pivot to L2.1 cleanup or L2.5 re-audit while Metabolism is parked
 
-**Pre-existing test failure**: `tests/vivarium/test_karr_metabolism_pools_throttle.py::test_throttle_on_with_starved_atp_freezes_m2_synthesis` still fails on main from commit `ecde4e4`. Independent of Day-42 work.
+---
+
+## Day-43 sizing: FVA reframe + downstream-injection (no commitment yet)
+
+**Operator request at Day-42 EOD**: size the work to switch Metabolism's L2.2 gate to FVA-based feasibility and use Karr-flux-injection at the L3/L4/L5 boundary for downstream tests. No commitment to actually doing this — sizing only.
+
+### Components
+
+**Part 1 — FVA solver integration** (~4 hours)
+- Build a function `fva_range(S, RHS, c, lb, ub, biomass_col, biomass_value_star) -> (v_min[504], v_max[504])`
+- 2N=1008 LPs per sample using existing swiglpk machinery
+- Each LP: maximize/minimize v_j subject to S·v=b, c'v == biomass_value_star (added as equality constraint), lb ≤ v ≤ ub
+- Reuse most of `_solve_fba_glpk` infrastructure; new objective coefficient per LP
+- Performance: ~1ms per LP × 1008 = ~1s per sample. 500 samples = ~8 minutes total audit time. Tractable.
+
+**Part 2 — L2.2 audit metric redesign** (~4-6 hours)
+- Current `tests/vivarium/l2_2_design_a_runner.py` computes Wasserstein-1 on substrate-deltas
+- New metric for LP-degenerate processes (just Metabolism for now):
+  - Per-sample, per-reaction: `karr_flux[j] ∈ [v_min[j], v_max[j]]` ? (with small tolerance for solver noise)
+  - Aggregate: fraction of (sample × reaction) pairs where Karr is in OC's FVA range
+  - Threshold: probably ≥ 99% feasibility = PASS
+- Decision card required: how do we treat reactions where Karr's flux is outside even OC's FVA range? Real bug vs solver tolerance vs LP-difference?
+- Backwards-compat: other processes keep W1; Metabolism switches; doc explains why
+
+**Part 3 — Downstream Karr-flux-injection scaffolding** (~2 hours)
+- Add a new flag to `KarrMetabolismProcess`: `metabolism_use_karr_flux: bool = False`
+- When True, bypass LP solve and use `karr_flux` from fixture at the current tick
+- L3/L4/L5 tests that consume Metabolism's outputs flip this flag to True
+- Effectively turns Metabolism into a trace replay for downstream tests — same idea as the trace_hint mechanism but at the LP-output boundary, explicitly documented
+- ~50 lines code + unit test
+
+**Part 4 — Methodology documentation** (~2 hours)
+- New decision-card: `decisions/2026-06-29-lp-degeneracy-fva-reframe.yaml`
+- Updated PROCESS_STATUS_ALL_29.md note explaining Metabolism's special gate
+- New section in plan.md L-ladder explaining the LP-degenerate-process exemption
+- Blog post (or just commit message) explaining the trade-off
+
+**Part 5 — Re-run audit on Metabolism** (~30 min)
+- Run new audit; expect PASS (Day-41 H4 mathematically guarantees Karr's vertex is in OC's feasibility set)
+- If it doesn't pass, we have a REAL LP bug to investigate — Day-41 H4 falsified
+
+**Total estimate: ~1.5-2 days of focused work**
+
+### Risks / unknowns
+
+1. **FVA solver numerical stability** — adding biomass-equality constraint to a degenerate LP can cause numerical issues; may need tolerance tuning
+2. **What does "feasibility" mean at the audit threshold?** — strict equality unlikely; need a tolerance band. Decision needs scientific justification.
+3. **What if some `karr_flux[j]` is OUTSIDE OC's FVA range?** — would mean Day-41 H4's bit-identity finding was wrong somewhere, or Karr's MATLAB applied a transformation we missed. Probably needs investigation, not auto-pass.
+4. **Cross-talk with L2.5** — if L2.5 currently uses W1 too, does it need a parallel reframe for LP-degenerate-process pairs?
+5. **L3/L4/L5 tests** — if there are any existing L3/L4/L5 tests that consume Metabolism, they'd all need to flip the new injection flag. Need to inventory before promising.
+
+### Comparison to (d) GLPK 4.x oracle for context
+
+| Dim | (d) Oracle | FVA reframe |
+|---|---|---|
+| Engineering effort | Days (vintage MATLAB build, glpkmex 2.11, GLPK 4.x source compile, Docker layering) | ~1.5-2 days |
+| Risk of "doesn't work despite effort" | High (per GPT critique — glpkmex internal patches, MATLAB sparse loading idiosyncrasies) | Low — every step is well-understood standard FBA-community technique |
+| Reusability | Single-purpose | FVA-based methodology applies to any future LP-degenerate process |
+| Closes L2.2 | Yes via per-vertex match | Yes via feasibility (guaranteed by H4) |
+| Closes L3/L4/L5 trajectory drift | Yes definitively | Yes via Karr-flux-injection (explicit oracle at Metab boundary) |
+| Methodological purity | Highest possible | Honest about validation surface; explicit injection at boundary |
+
+**Recommendation if path = FVA reframe**: do it in this Day-43 sizing's component order. Part 1 is independent and high-value. Parts 2-3 are coupled. Part 4 must happen before merging.
 
 ---
 
