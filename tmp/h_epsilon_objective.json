@@ -1,0 +1,146 @@
+{
+  "karr_pair_flux": {
+    "HDCA": 7918.395518452329,
+    "OCDCEA": 6740.822139835419,
+    "PHE": -3762.9721303700867,
+    "PhePhe": 1889.1269841240833,
+    "TRIOLEIN": -2246.48903729383,
+    "TRIPALMITIN": -2638.591003664226,
+    "TRP": 0.0,
+    "TrpTrp": 1.1351675720225975
+  },
+  "baseline": {
+    "label": "baseline (no penalty)",
+    "lp_obj": 0.021330661933306305,
+    "lp_status": "ok",
+    "biomass_growth": 2.1192692552125117e-05,
+    "full_flux_l1_vs_karr": 354330.38341224176,
+    "ext_flux_l1_vs_karr": 14455.694301940694,
+    "int_flux_l1_vs_karr": 29.996564928499488,
+    "writeback_delta_l1_vs_karr": 14517,
+    "pair_flux": {
+      "HDCA": 6749.202397987354,
+      "OCDCEA": 7918.395518452329,
+      "PHE": 0.0,
+      "PhePhe": 7.6409189390842585,
+      "TRIOLEIN": -2639.0134968335506,
+      "TRIPALMITIN": -2248.8599635092223,
+      "TRP": -3771.3523885009595,
+      "TrpTrp": 1886.8113618224033
+    }
+  },
+  "a_fit_eps_1e9": {
+    "label": "a-fit (eps=1e-9, signs from Karr)",
+    "lp_obj": 0.02135744657176053,
+    "lp_status": "ok",
+    "biomass_growth": 2.119269255213082e-05,
+    "full_flux_l1_vs_karr": 328136.6541678401,
+    "ext_flux_l1_vs_karr": 3186.9719362683927,
+    "int_flux_l1_vs_karr": 55.803000704096,
+    "writeback_delta_l1_vs_karr": 3276,
+    "pair_flux": {
+      "HDCA": 7918.395518452329,
+      "OCDCEA": 7918.395518452329,
+      "PHE": -3797.158824322564,
+      "PhePhe": 1906.2203311003686,
+      "TRIOLEIN": -2639.0134968335506,
+      "TRIPALMITIN": -2638.5910036641767,
+      "TRP": 0.0,
+      "TrpTrp": 1.1351675718688057
+    }
+  },
+  "a_fit_eps_1e6": {
+    "label": "a-fit (eps=1e-6, signs from Karr)",
+    "lp_obj": 0.06089043892043498,
+    "lp_status": "ok",
+    "biomass_growth": 2.1192692552128512e-05,
+    "full_flux_l1_vs_karr": 470641.1891173187,
+    "ext_flux_l1_vs_karr": 76575.79912655207,
+    "int_flux_l1_vs_karr": 18455.32479163442,
+    "writeback_delta_l1_vs_karr": 95060,
+    "pair_flux": {
+      "HDCA": 7918.395518452329,
+      "OCDCEA": 7918.395518452329,
+      "PHE": -7918.395518452329,
+      "PhePhe": 3966.8386781652207,
+      "TRIOLEIN": -5278.478669650943,
+      "TRIPALMITIN": -2638.5910036641767,
+      "TRP": -7918.395518452329,
+      "TrpTrp": 3960.3329267979952
+    }
+  },
+  "a_principled_eps_1e9": {
+    "label": "a-principled (eps=1e-9, dipeptide penalty only)",
+    "lp_obj": 0.021332556385593327,
+    "lp_status": "ok",
+    "biomass_growth": 2.119269255213139e-05,
+    "full_flux_l1_vs_karr": 354330.38341225387,
+    "ext_flux_l1_vs_karr": 14455.694301938958,
+    "int_flux_l1_vs_karr": 29.996564931634985,
+    "writeback_delta_l1_vs_karr": 14517,
+    "pair_flux": {
+      "HDCA": 6749.202397988685,
+      "OCDCEA": 7918.395518452329,
+      "PHE": 0.0,
+      "PhePhe": 7.640918939086077,
+      "TRIOLEIN": -2639.0134968335506,
+      "TRIPALMITIN": -2248.859963509758,
+      "TRP": -3771.35238849882,
+      "TrpTrp": 1886.811361821432
+    }
+  },
+  "epsilon_signs_fit": {
+    "HDCA": [
+      393,
+      7918.395518452329,
+      1e-09
+    ],
+    "OCDCEA": [
+      422,
+      6740.822139835419,
+      1e-09
+    ],
+    "PHE": [
+      423,
+      -3762.9721303700867,
+      -1e-09
+    ],
+    "PhePhe": [
+      424,
+      1889.1269841240833,
+      1e-09
+    ],
+    "TRIOLEIN": [
+      444,
+      -2246.48903729383,
+      -1e-09
+    ],
+    "TRIPALMITIN": [
+      445,
+      -2638.591003664226,
+      -1e-09
+    ],
+    "TRP": [
+      449,
+      0.0,
+      0.0
+    ],
+    "TrpTrp": [
+      450,
+      1.1351675720225975,
+      1e-09
+    ]
+  },
+  "epsilon_signs_principled": {
+    "PhePhe": [
+      424,
+      null,
+      1e-09
+    ],
+    "TrpTrp": [
+      450,
+      null,
+      1e-09
+    ]
+  }
+}
