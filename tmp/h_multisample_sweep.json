@@ -1,0 +1,834 @@
+{
+  "intent": "Day-42 Probe 3 multi-sample sweep for writeback-gap dominance.",
+  "target_grid": {
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "ticks": [
+      1,
+      5
+    ],
+    "requested_count": 20
+  },
+  "available_samples": [
+    {
+      "seed": 0,
+      "tick": 1,
+      "path": "/mnt/e/opencell/data/karr_fixtures/matlab_ground_truth/metab_flux_allocated_state_s000_tick1.mat"
+    }
+  ],
+  "selected_samples": [
+    {
+      "seed": 0,
+      "tick": 1,
+      "path": "/mnt/e/opencell/data/karr_fixtures/matlab_ground_truth/metab_flux_allocated_state_s000_tick1.mat",
+      "selection": "target"
+    }
+  ],
+  "missing_target_samples": [
+    {
+      "seed": 0,
+      "tick": 5
+    },
+    {
+      "seed": 1,
+      "tick": 1
+    },
+    {
+      "seed": 1,
+      "tick": 5
+    },
+    {
+      "seed": 2,
+      "tick": 1
+    },
+    {
+      "seed": 2,
+      "tick": 5
+    },
+    {
+      "seed": 3,
+      "tick": 1
+    },
+    {
+      "seed": 3,
+      "tick": 5
+    },
+    {
+      "seed": 4,
+      "tick": 1
+    },
+    {
+      "seed": 4,
+      "tick": 5
+    },
+    {
+      "seed": 5,
+      "tick": 1
+    },
+    {
+      "seed": 5,
+      "tick": 5
+    },
+    {
+      "seed": 6,
+      "tick": 1
+    },
+    {
+      "seed": 6,
+      "tick": 5
+    },
+    {
+      "seed": 7,
+      "tick": 1
+    },
+    {
+      "seed": 7,
+      "tick": 5
+    },
+    {
+      "seed": 8,
+      "tick": 1
+    },
+    {
+      "seed": 8,
+      "tick": 5
+    },
+    {
+      "seed": 9,
+      "tick": 1
+    },
+    {
+      "seed": 9,
+      "tick": 5
+    }
+  ],
+  "processed_count": 1,
+  "failed_samples": [],
+  "missing_gap17_wids_in_substrate_ids": [],
+  "gap_map17_wids": [
+    "OCDCEA",
+    "H2O2",
+    "O2",
+    "TRP",
+    "TRIOLEIN",
+    "TYR",
+    "GL",
+    "AC",
+    "PHE",
+    "TrpTrp",
+    "H2O",
+    "TyrTyr",
+    "GLC",
+    "ACAL",
+    "AEPP",
+    "CAP",
+    "PhePhe"
+  ],
+  "substitution_pairs": {
+    "PHE/PhePhe": [
+      469,
+      470
+    ],
+    "TRP/TrpTrp": [
+      541,
+      542
+    ],
+    "HDCA/OCDCEA": [
+      300,
+      439
+    ],
+    "TRIOLEIN/TRIPALMITIN": [
+      536,
+      537
+    ]
+  },
+  "samples": [
+    {
+      "seed": 0,
+      "tick": 1,
+      "path": "/mnt/e/opencell/data/karr_fixtures/matlab_ground_truth/metab_flux_allocated_state_s000_tick1.mat",
+      "selection": "target",
+      "solver": {
+        "solver_tag": "glpk",
+        "status": "ok",
+        "message": "glpk ok",
+        "objective_value": 0.021330661933306305,
+        "biomass_flux_per_s": 2.1192692552125117e-05
+      },
+      "writeback_vs_karr": {
+        "diff_l1": 14517,
+        "diff_linf": 3771,
+        "diff_nnz": 50,
+        "diff_per_compartment_l1": [
+          43,
+          14473,
+          1
+        ],
+        "karr_delta_l1": 148121,
+        "oc_delta_l1": 148124
+      },
+      "top20_rows_by_abs_diff_l1": [
+        {
+          "row": 541,
+          "wid": "TRP",
+          "abs_diff_l1": 3771,
+          "diff_per_compartment": [
+            0,
+            3771,
+            0
+          ],
+          "oc_delta_per_compartment": [
+            2,
+            3771,
+            0
+          ],
+          "karr_delta_per_compartment": [
+            2,
+            0,
+            0
+          ]
+        },
+        {
+          "row": 469,
+          "wid": "PHE",
+          "abs_diff_l1": 3763,
+          "diff_per_compartment": [
+            0,
+            -3763,
+            0
+          ],
+          "oc_delta_per_compartment": [
+            15,
+            0,
+            0
+          ],
+          "karr_delta_per_compartment": [
+            15,
+            3763,
+            0
+          ]
+        },
+        {
+          "row": 542,
+          "wid": "TrpTrp",
+          "abs_diff_l1": 1885,
+          "diff_per_compartment": [
+            0,
+            -1885,
+            0
+          ],
+          "oc_delta_per_compartment": [
+            0,
+            -1887,
+            0
+          ],
+          "karr_delta_per_compartment": [
+            0,
+            -2,
+            0
+          ]
+        },
+        {
+          "row": 470,
+          "wid": "PhePhe",
+          "abs_diff_l1": 1881,
+          "diff_per_compartment": [
+            0,
+            1881,
+            0
+          ],
+          "oc_delta_per_compartment": [
+            0,
+            -8,
+            0
+          ],
+          "karr_delta_per_compartment": [
+            0,
+            -1889,
+            0
+          ]
+        },
+        {
+          "row": 439,
+          "wid": "OCDCEA",
+          "abs_diff_l1": 1177,
+          "diff_per_compartment": [
+            0,
+            -1177,
+            0
+          ],
+          "oc_delta_per_compartment": [
+            0,
+            -7918,
+            0
+          ],
+          "karr_delta_per_compartment": [
+            0,
+            -6741,
+            0
+          ]
+        },
+        {
+          "row": 300,
+          "wid": "HDCA",
+          "abs_diff_l1": 1169,
+          "diff_per_compartment": [
+            0,
+            1169,
+            0
+          ],
+          "oc_delta_per_compartment": [
+            0,
+            -6749,
+            0
+          ],
+          "karr_delta_per_compartment": [
+            0,
+            -7918,
+            0
+          ]
+        },
+        {
+          "row": 536,
+          "wid": "TRIOLEIN",
+          "abs_diff_l1": 392,
+          "diff_per_compartment": [
+            0,
+            392,
+            0
+          ],
+          "oc_delta_per_compartment": [
+            0,
+            2639,
+            0
+          ],
+          "karr_delta_per_compartment": [
+            0,
+            2247,
+            0
+          ]
+        },
+        {
+          "row": 537,
+          "wid": "TRIPALMITIN",
+          "abs_diff_l1": 390,
+          "diff_per_compartment": [
+            0,
+            -390,
+            0
+          ],
+          "oc_delta_per_compartment": [
+            0,
+            2249,
+            0
+          ],
+          "karr_delta_per_compartment": [
+            0,
+            2639,
+            0
+          ]
+        },
+        {
+          "row": 298,
+          "wid": "H2O2",
+          "abs_diff_l1": 10,
+          "diff_per_compartment": [
+            0,
+            -10,
+            0
+          ],
+          "oc_delta_per_compartment": [
+            0,
+            10853,
+            0
+          ],
+          "karr_delta_per_compartment": [
+            0,
+            10863,
+            0
+          ]
+        },
+        {
+          "row": 420,
+          "wid": "O2",
+          "abs_diff_l1": 10,
+          "diff_per_compartment": [
+            0,
+            10,
+            0
+          ],
+          "oc_delta_per_compartment": [
+            0,
+            -10855,
+            0
+          ],
+          "karr_delta_per_compartment": [
+            0,
+            -10865,
+            0
+          ]
+        },
+        {
+          "row": 557,
+          "wid": "UMP",
+          "abs_diff_l1": 7,
+          "diff_per_compartment": [
+            7,
+            0,
+            0
+          ],
+          "oc_delta_per_compartment": [
+            0,
+            0,
+            0
+          ],
+          "karr_delta_per_compartment": [
+            -7,
+            0,
+            0
+          ]
+        },
+        {
+          "row": 29,
+          "wid": "ATP",
+          "abs_diff_l1": 7,
+          "diff_per_compartment": [
+            7,
+            0,
+            0
+          ],
+          "oc_delta_per_compartment": [
+            3633,
+            0,
+            0
+          ],
+          "karr_delta_per_compartment": [
+            3626,
+            0,
+            0
+          ]
+        },
+        {
+          "row": 560,
+          "wid": "UTP",
+          "abs_diff_l1": 7,
+          "diff_per_compartment": [
+            -7,
+            0,
+            0
+          ],
+          "oc_delta_per_compartment": [
+            5,
+            0,
+            0
+          ],
+          "karr_delta_per_compartment": [
+            12,
+            0,
+            0
+          ]
+        },
+        {
+          "row": 18,
+          "wid": "AMP",
+          "abs_diff_l1": 6,
+          "diff_per_compartment": [
+            -6,
+            0,
+            0
+          ],
+          "oc_delta_per_compartment": [
+            -6,
+            0,
+            0
+          ],
+          "karr_delta_per_compartment": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "row": 297,
+          "wid": "H2O",
+          "abs_diff_l1": 5,
+          "diff_per_compartment": [
+            4,
+            -1,
+            0
+          ],
+          "oc_delta_per_compartment": [
+            9199,
+            13197,
+            0
+          ],
+          "karr_delta_per_compartment": [
+            9195,
+            13198,
+            0
+          ]
+        },
+        {
+          "row": 250,
+          "wid": "GLC",
+          "abs_diff_l1": 3,
+          "diff_per_compartment": [
+            0,
+            -3,
+            0
+          ],
+          "oc_delta_per_compartment": [
+            0,
+            -2728,
+            0
+          ],
+          "karr_delta_per_compartment": [
+            0,
+            -2725,
+            0
+          ]
+        },
+        {
+          "row": 413,
+          "wid": "NH4",
+          "abs_diff_l1": 2,
+          "diff_per_compartment": [
+            1,
+            -1,
+            0
+          ],
+          "oc_delta_per_compartment": [
+            1,
+            4,
+            0
+          ],
+          "karr_delta_per_compartment": [
+            0,
+            5,
+            0
+          ]
+        },
+        {
+          "row": 395,
+          "wid": "MG",
+          "abs_diff_l1": 2,
+          "diff_per_compartment": [
+            1,
+            -1,
+            0
+          ],
+          "oc_delta_per_compartment": [
+            1,
+            -1,
+            0
+          ],
+          "karr_delta_per_compartment": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "row": 247,
+          "wid": "GL",
+          "abs_diff_l1": 2,
+          "diff_per_compartment": [
+            0,
+            2,
+            0
+          ],
+          "oc_delta_per_compartment": [
+            0,
+            -7527,
+            0
+          ],
+          "karr_delta_per_compartment": [
+            0,
+            -7529,
+            0
+          ]
+        },
+        {
+          "row": 211,
+          "wid": "FE3",
+          "abs_diff_l1": 2,
+          "diff_per_compartment": [
+            -1,
+            -1,
+            0
+          ],
+          "oc_delta_per_compartment": [
+            0,
+            -1,
+            0
+          ],
+          "karr_delta_per_compartment": [
+            1,
+            0,
+            0
+          ]
+        }
+      ],
+      "top5_rows": [
+        541,
+        469,
+        542,
+        470,
+        439
+      ],
+      "top5_wids": [
+        "TRP",
+        "PHE",
+        "TrpTrp",
+        "PhePhe",
+        "OCDCEA"
+      ],
+      "top1_row": 541,
+      "top1_wid": "TRP",
+      "top1_is_substitution_pair_row": true,
+      "substitution_pair_summary": {
+        "all_pair_rows": [
+          300,
+          439,
+          469,
+          470,
+          536,
+          537,
+          541,
+          542
+        ],
+        "all_pairs_abs_diff_l1_sum": 14428,
+        "all_pairs_share_of_sample_l1": 0.9938692567334849,
+        "dominant_by_mass_gt_50pct": true,
+        "pairs": {
+          "PHE/PhePhe": {
+            "rows": [
+              469,
+              470
+            ],
+            "abs_diff_l1_sum": 5644,
+            "share_of_sample_l1": 0.3887855617551836,
+            "any_member_in_top5": true,
+            "both_members_in_top5": true
+          },
+          "TRP/TrpTrp": {
+            "rows": [
+              541,
+              542
+            ],
+            "abs_diff_l1_sum": 5656,
+            "share_of_sample_l1": 0.38961217882482607,
+            "any_member_in_top5": true,
+            "both_members_in_top5": true
+          },
+          "HDCA/OCDCEA": {
+            "rows": [
+              300,
+              439
+            ],
+            "abs_diff_l1_sum": 2346,
+            "share_of_sample_l1": 0.16160363711510642,
+            "any_member_in_top5": true,
+            "both_members_in_top5": false
+          },
+          "TRIOLEIN/TRIPALMITIN": {
+            "rows": [
+              536,
+              537
+            ],
+            "abs_diff_l1_sum": 782,
+            "share_of_sample_l1": 0.05386787903836881,
+            "any_member_in_top5": false,
+            "both_members_in_top5": false
+          }
+        }
+      },
+      "gap_map17_presence": {
+        "OCDCEA": {
+          "row": 439,
+          "in_top5": true,
+          "is_top1": false,
+          "abs_diff_l1_at_row": 1177
+        },
+        "H2O2": {
+          "row": 298,
+          "in_top5": false,
+          "is_top1": false,
+          "abs_diff_l1_at_row": 10
+        },
+        "O2": {
+          "row": 420,
+          "in_top5": false,
+          "is_top1": false,
+          "abs_diff_l1_at_row": 10
+        },
+        "TRP": {
+          "row": 541,
+          "in_top5": true,
+          "is_top1": true,
+          "abs_diff_l1_at_row": 3771
+        },
+        "TRIOLEIN": {
+          "row": 536,
+          "in_top5": false,
+          "is_top1": false,
+          "abs_diff_l1_at_row": 392
+        },
+        "TYR": {
+          "row": 547,
+          "in_top5": false,
+          "is_top1": false,
+          "abs_diff_l1_at_row": 1
+        },
+        "GL": {
+          "row": 247,
+          "in_top5": false,
+          "is_top1": false,
+          "abs_diff_l1_at_row": 2
+        },
+        "AC": {
+          "row": 3,
+          "in_top5": false,
+          "is_top1": false,
+          "abs_diff_l1_at_row": 1
+        },
+        "PHE": {
+          "row": 469,
+          "in_top5": true,
+          "is_top1": false,
+          "abs_diff_l1_at_row": 3763
+        },
+        "TrpTrp": {
+          "row": 542,
+          "in_top5": true,
+          "is_top1": false,
+          "abs_diff_l1_at_row": 1885
+        },
+        "H2O": {
+          "row": 297,
+          "in_top5": false,
+          "is_top1": false,
+          "abs_diff_l1_at_row": 5
+        },
+        "TyrTyr": {
+          "row": 548,
+          "in_top5": false,
+          "is_top1": false,
+          "abs_diff_l1_at_row": 1
+        },
+        "GLC": {
+          "row": 250,
+          "in_top5": false,
+          "is_top1": false,
+          "abs_diff_l1_at_row": 3
+        },
+        "ACAL": {
+          "row": 4,
+          "in_top5": false,
+          "is_top1": false,
+          "abs_diff_l1_at_row": 0
+        },
+        "AEPP": {
+          "row": 11,
+          "in_top5": false,
+          "is_top1": false,
+          "abs_diff_l1_at_row": 0
+        },
+        "CAP": {
+          "row": 42,
+          "in_top5": false,
+          "is_top1": false,
+          "abs_diff_l1_at_row": 0
+        },
+        "PhePhe": {
+          "row": 470,
+          "in_top5": true,
+          "is_top1": false,
+          "abs_diff_l1_at_row": 1881
+        }
+      }
+    }
+  ],
+  "aggregates": {
+    "writeback_l1_distribution": {
+      "count": 1,
+      "mean": 14517.0,
+      "min": 14517,
+      "max": 14517
+    },
+    "substitution_pairs_top5_frequency_any_member": {
+      "PHE/PhePhe": 1,
+      "TRP/TrpTrp": 1,
+      "HDCA/OCDCEA": 1,
+      "TRIOLEIN/TRIPALMITIN": 0
+    },
+    "substitution_pairs_top5_frequency_both_members": {
+      "PHE/PhePhe": 1,
+      "TRP/TrpTrp": 1,
+      "HDCA/OCDCEA": 0,
+      "TRIOLEIN/TRIPALMITIN": 0
+    },
+    "gap_map17_top5_frequency": {
+      "OCDCEA": 1,
+      "H2O2": 0,
+      "O2": 0,
+      "TRP": 1,
+      "TRIOLEIN": 0,
+      "TYR": 0,
+      "GL": 0,
+      "AC": 0,
+      "PHE": 1,
+      "TrpTrp": 1,
+      "H2O": 0,
+      "TyrTyr": 0,
+      "GLC": 0,
+      "ACAL": 0,
+      "AEPP": 0,
+      "CAP": 0,
+      "PhePhe": 1
+    },
+    "gap_map17_top1_frequency": {
+      "OCDCEA": 0,
+      "H2O2": 0,
+      "O2": 0,
+      "TRP": 1,
+      "TRIOLEIN": 0,
+      "TYR": 0,
+      "GL": 0,
+      "AC": 0,
+      "PHE": 0,
+      "TrpTrp": 0,
+      "H2O": 0,
+      "TyrTyr": 0,
+      "GLC": 0,
+      "ACAL": 0,
+      "AEPP": 0,
+      "CAP": 0,
+      "PhePhe": 0
+    },
+    "top5_wid_frequency": {
+      "TRP": 1,
+      "PHE": 1,
+      "TrpTrp": 1,
+      "PhePhe": 1,
+      "OCDCEA": 1
+    },
+    "top1_wid_frequency": {
+      "TRP": 1
+    },
+    "four_pair_mass_dominant_gt50pct_count": 1,
+    "four_pair_top1_count": 1,
+    "samples_with_nonpair_top1": [],
+    "headline_assessment": "4 substitution-pair rows are the top-1 contributor in every processed sample."
+  }
+}

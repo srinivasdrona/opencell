@@ -1,0 +1,119 @@
+{
+  "probe": "Day-42 Probe H: pFBA / global secondary objective",
+  "sample": {
+    "seed": 0,
+    "tick": 1
+  },
+  "constants": {
+    "biomass_col": 502,
+    "pair_cols": {
+      "HDCA": 393,
+      "OCDCEA": 422,
+      "PHE": 423,
+      "PhePhe": 424,
+      "TRIOLEIN": 444,
+      "TRIPALMITIN": 445,
+      "TRP": 449,
+      "TrpTrp": 450
+    },
+    "wb_floor_l1_deterministic": 39,
+    "exchange_cols_count": 166,
+    "loopless_penalized_cols_count": 337
+  },
+  "karr": {
+    "growth": 2.119269255200068e-05,
+    "pair_flux": {
+      "HDCA": 7918.395518452329,
+      "OCDCEA": 6740.822139835419,
+      "PHE": -3762.9721303700867,
+      "PhePhe": 1889.1269841240833,
+      "TRIOLEIN": -2246.48903729383,
+      "TRIPALMITIN": -2638.591003664226,
+      "TRP": 0.0,
+      "TrpTrp": 1.1351675720225975
+    }
+  },
+  "variants": {
+    "V_prod": {
+      "label": "V_prod",
+      "lp_status": "ok",
+      "lp_obj": 0.021330661933306305,
+      "biomass_growth": 2.1192692552125117e-05,
+      "full_flux_l1_vs_karr": 354330.38341224176,
+      "ext_exchange_flux_l1_vs_karr": 14455.694301940694,
+      "writeback_delta_l1_vs_karr": 14517,
+      "pair_flux": {
+        "HDCA": 6749.202397987354,
+        "OCDCEA": 7918.395518452329,
+        "PHE": 0.0,
+        "PhePhe": 7.6409189390842585,
+        "TRIOLEIN": -2639.0134968335506,
+        "TRIPALMITIN": -2248.8599635092223,
+        "TRP": -3771.3523885009595,
+        "TrpTrp": 1886.8113618224033
+      }
+    },
+    "V_pfba": {
+      "label": "V_pfba",
+      "lp_status": "pfba_ok sum_abs=3.5930e+04",
+      "lp_obj": 0.021192436721214618,
+      "biomass_growth": 2.119169255212512e-05,
+      "full_flux_l1_vs_karr": 33355328.828833017,
+      "ext_exchange_flux_l1_vs_karr": 107521.73438051445,
+      "writeback_delta_l1_vs_karr": 143602,
+      "pair_flux": {
+        "HDCA": 2.6223837143188575,
+        "OCDCEA": 1.3549640164719676,
+        "PHE": 0.0,
+        "PhePhe": 7.640558394169602,
+        "TRIOLEIN": 0.0,
+        "TRIPALMITIN": 0.0,
+        "TRP": 0.0,
+        "TrpTrp": 1.1351140079677862
+      },
+      "objective_rel_diff_vs_v_prod": 0.0064801182693659375,
+      "biomass_rel_diff_vs_v_prod": 4.718607593344851e-05,
+      "objective_preserved_1e_5": false,
+      "biomass_preserved_1e_5": false
+    },
+    "V_loopless": {
+      "label": "V_loopless",
+      "lp_status": "loopless_ok sum_abs_penalized=2.2484e+04 n_penalized=337",
+      "lp_obj": 0.021192436721214618,
+      "biomass_growth": 2.119169255212512e-05,
+      "full_flux_l1_vs_karr": 33355092.79616249,
+      "ext_exchange_flux_l1_vs_karr": 107521.73438052148,
+      "writeback_delta_l1_vs_karr": 143602,
+      "pair_flux": {
+        "HDCA": 2.6223837143188575,
+        "OCDCEA": 1.3549640164719676,
+        "PHE": 0.0,
+        "PhePhe": 7.640558394169602,
+        "TRIOLEIN": 0.0,
+        "TRIPALMITIN": 0.0,
+        "TRP": 0.0,
+        "TrpTrp": 1.1351140079677862
+      },
+      "objective_rel_diff_vs_v_prod": 0.0064801182693659375,
+      "biomass_rel_diff_vs_v_prod": 4.718607593344851e-05,
+      "objective_preserved_1e_5": false,
+      "biomass_preserved_1e_5": false
+    }
+  },
+  "errors": {
+    "V_pfba": null,
+    "V_loopless": null
+  },
+  "closure": {
+    "V_pfba": {
+      "writeback_l1": 143602,
+      "improvement_vs_v_prod": -129085,
+      "fraction_of_gap_to_floor_closed_vs_v_prod": -8.915941428374085
+    },
+    "V_loopless": {
+      "writeback_l1": 143602,
+      "improvement_vs_v_prod": -129085,
+      "fraction_of_gap_to_floor_closed_vs_v_prod": -8.915941428374085
+    }
+  }
+}

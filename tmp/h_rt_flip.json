@@ -1,0 +1,156 @@
+{
+  "sample": {
+    "seed": 0,
+    "tick": 1,
+    "biomass_col": 502,
+    "karr_growth_per_s": 2.119269255200068e-05,
+    "files": {
+      "lp_fixture": "data/karr_fixtures/karr_native_m1.npz",
+      "ground_truth": "data/karr_fixtures/matlab_ground_truth/metab_flux_allocated_state_s000_tick1.mat",
+      "writeback_fixture": "data/karr_fixtures/per_process/Metabolism_flat.mat"
+    }
+  },
+  "variants": {
+    "V_prod": {
+      "name": "V_prod",
+      "solver_options": {
+        "presolve": "GLP_OFF",
+        "meth": "GLP_PRIMAL",
+        "pricing": "GLP_PT_STD",
+        "r_test": "GLP_RT_HAR",
+        "tol_bnd": 1e-06,
+        "scale": "GLP_SF_AUTO"
+      },
+      "simplex_status": 0,
+      "solution_status": 5,
+      "objective": 0.021330661933306305,
+      "biomass_growth_per_s": 2.1192692552125117e-05,
+      "full_flux_l1_vs_karr": 354330.38341224176,
+      "external_exchange_flux_l1_vs_karr": 14455.694301940694,
+      "writeback_delta_l1_vs_karr_recorded": 14517,
+      "pair_flux": {
+        "HDCA": 6749.202397987354,
+        "OCDCEA": 7918.395518452329,
+        "PHE": 0.0,
+        "PhePhe": 7.6409189390842585,
+        "TRIOLEIN": -2639.0134968335506,
+        "TRIPALMITIN": -2248.8599635092223,
+        "TRP": -3771.3523885009595,
+        "TrpTrp": 1886.8113618224033
+      }
+    },
+    "V_flip": {
+      "name": "V_flip",
+      "solver_options": {
+        "presolve": "GLP_OFF",
+        "meth": "GLP_PRIMAL",
+        "pricing": "GLP_PT_STD",
+        "r_test": "GLP_RT_FLIP",
+        "tol_bnd": 1e-06,
+        "scale": "GLP_SF_AUTO"
+      },
+      "simplex_status": 0,
+      "solution_status": 5,
+      "objective": 0.021330661933060782,
+      "biomass_growth_per_s": 2.1192692551880355e-05,
+      "full_flux_l1_vs_karr": 7077667.515926932,
+      "external_exchange_flux_l1_vs_karr": 14441.682454680713,
+      "writeback_delta_l1_vs_karr_recorded": 14503,
+      "pair_flux": {
+        "HDCA": 6749.202397878531,
+        "OCDCEA": 7918.395518452329,
+        "PHE": 0.0,
+        "PhePhe": 7.6409189389960375,
+        "TRIOLEIN": -2639.0134968335506,
+        "TRIPALMITIN": -2248.859963472798,
+        "TRP": -5.716450501795385e-09,
+        "TrpTrp": 1.1351675748746857
+      }
+    }
+  },
+  "objective_relative_diff": 1.1510301612606584e-11,
+  "pair_columns": [
+    {
+      "name": "HDCA",
+      "col": 393,
+      "karr": 7918.395518452329,
+      "v_prod": 6749.202397987354,
+      "v_flip": 6749.202397878531,
+      "abs_diff_prod_vs_karr": 1169.1931204649754,
+      "abs_diff_flip_vs_karr": 1169.1931205737983
+    },
+    {
+      "name": "OCDCEA",
+      "col": 422,
+      "karr": 6740.822139835419,
+      "v_prod": 7918.395518452329,
+      "v_flip": 7918.395518452329,
+      "abs_diff_prod_vs_karr": 1177.5733786169103,
+      "abs_diff_flip_vs_karr": 1177.5733786169103
+    },
+    {
+      "name": "PHE",
+      "col": 423,
+      "karr": -3762.9721303700867,
+      "v_prod": 0.0,
+      "v_flip": 0.0,
+      "abs_diff_prod_vs_karr": 3762.9721303700867,
+      "abs_diff_flip_vs_karr": 3762.9721303700867
+    },
+    {
+      "name": "PhePhe",
+      "col": 424,
+      "karr": 1889.1269841240833,
+      "v_prod": 7.6409189390842585,
+      "v_flip": 7.6409189389960375,
+      "abs_diff_prod_vs_karr": 1881.486065184999,
+      "abs_diff_flip_vs_karr": 1881.4860651850872
+    },
+    {
+      "name": "TRIOLEIN",
+      "col": 444,
+      "karr": -2246.48903729383,
+      "v_prod": -2639.0134968335506,
+      "v_flip": -2639.0134968335506,
+      "abs_diff_prod_vs_karr": 392.52445953972074,
+      "abs_diff_flip_vs_karr": 392.52445953972074
+    },
+    {
+      "name": "TRIPALMITIN",
+      "col": 445,
+      "karr": -2638.591003664226,
+      "v_prod": -2248.8599635092223,
+      "v_flip": -2248.859963472798,
+      "abs_diff_prod_vs_karr": 389.7310401550035,
+      "abs_diff_flip_vs_karr": 389.73104019142784
+    },
+    {
+      "name": "TRP",
+      "col": 449,
+      "karr": 0.0,
+      "v_prod": -3771.3523885009595,
+      "v_flip": -5.716450501795385e-09,
+      "abs_diff_prod_vs_karr": 3771.3523885009595,
+      "abs_diff_flip_vs_karr": 5.716450501795385e-09
+    },
+    {
+      "name": "TrpTrp",
+      "col": 450,
+      "karr": 1.1351675720225975,
+      "v_prod": 1886.8113618224033,
+      "v_flip": 1.1351675748746857,
+      "abs_diff_prod_vs_karr": 1885.6761942503808,
+      "abs_diff_flip_vs_karr": 2.8520881212301674e-09
+    }
+  ],
+  "acceptance_checks": {
+    "only_two_variants": true,
+    "v_prod_writeback_near_14517": true,
+    "v_flip_uses_glp_rt_flip": true,
+    "objectives_match_within_1e_5_rel": true,
+    "v_flip_writeback_below_1000": false,
+    "deterministic_rng_is_rint": true,
+    "pair_columns_complete": true,
+    "json_written": true
+  }
+}
