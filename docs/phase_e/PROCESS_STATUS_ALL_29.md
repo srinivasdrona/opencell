@@ -1,5 +1,32 @@
 # All-29 Process Status - 2026-06-03 ~14:30 IST (L2.1 SWEEP COMPLETE)
 
+> **⚠️ Day-42 EOD update: Metabolism L2.2 W1=161 gap root-caused to 4 biological substitution pairs on LP-degenerate optimal face. Six diagnostic probes today; no source changes; scoreboard unchanged from Day-41. Path-forward decision (d / a-fit / FVA / accept) deferred to Day-43.**
+>
+> **What landed Day-42 (committed, NOT pushed):**
+> - `50ee8cb` — writeback isolated probe (writeback algorithm is bit-correct at 39 L1 vs Karr's 148K, RNG floor); OC-vs-Karr flux probe (14.5K per-sample exchange-flux gap at 4 substitution pairs)
+> - `a5c8786` — vertex root cause (4 biological-substitution pairs: PHE/PhePhe, TRP/TrpTrp, HDCA/OCDCEA, TRIOLEIN/TRIPALMITIN); bounds-or-tiebreak (bounds identical, pure simplex tie-breaking)
+> - `17e6033` — column ordering bit-identical between OC LP and Karr runtime; rules out option (b)
+> - `07945b8` — ε-objective probe: ε=1e-9 closes 77% but only when sign-tuned to Karr (= fitting); principled bio-only ε is impotent
+>
+> **Root-cause picture (precise as of Day-42):**
+> The L2.2 W1=161 gap is **simplex tie-breaking on biological-substitution pairs**, not a fixable LP / bounds / column-ordering bug. The LP itself is degenerate at the optimal face: four pairs of biologically-equivalent routes (free amino acid vs dipeptide for PHE/TRP; two fatty acids and their triglycerides for HDCA/OCDCEA and TRIOLEIN/TRIPALMITIN) all produce the same biomass but route through different substrate rows. GLPK 5's internal pivot heuristics walk to a different vertex than Karr's glpkmex 2.x did. None of `glp_smcp` options expose enough control to disambiguate (Day-41 H3/H5 swept; column order is identical Day-42).
+>
+> **Honest options (each with real costs):**
+> 1. **(d) Build GLPK 4.x oracle** (vintage MATLAB + glpkmex + Docker/WSL): definitive, days of infrastructure
+> 2. **(a-fit) ε-objective sign-tuned to Karr's flux**: closes 77% but methodologically = trace_hint at LP layer; L2.2 audit loses independence
+> 3. **FVA reframe**: change L2.2 from point-estimate match to range-containment; audit-methodology change affecting all processes
+> 4. **(e) Accept floor**: pay L3/L4 attribution tax forever (Metabolism vertex flips will confound downstream signal in any test that consumes its outputs)
+>
+> **Scoreboard (Day-42 EOD) — UNCHANGED from Day-41:**
+>
+> | Gate | Day-41 EOD | Day-42 EOD |
+> |---|---:|---:|
+> | L2.1 GENUINE | 19/28 | **19/28** |
+> | L2.2 VERIFIED_GENUINE | 17/22 | **17/22** |
+> | L2.2 NOT_WIRED | 2 (DNADamage, FtsZ) | **2** |
+> | L2.2 VERIFIED_FAIL | 1 (Metab W1=161) | **1 (Metab W1=161, root-caused)** |
+> | L2.5 honest PASS | 15/256 | 15/256 (not re-audited) |
+
 > **⚠️ Day-41 EOD update: Metabolism FBA-fidelity investigation CLOSED with no gate movement. L2.2 scoreboard unchanged from Day-39 (17/22 VERIFIED_GENUINE). Metabolism W1 = 161.38 (was 168 Day-38, was 161.38 Day-40 — pricing=STD fix was a no-op for the gate).**
 >
 > **What landed Day-40 (committed, not pushed):**

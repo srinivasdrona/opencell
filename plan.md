@@ -26,6 +26,62 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Live processes / agents (2026-06-28 ~16:40 IST, Day-42 EOD):** None alive. Workspace clean.
+
+**Day-42 Metabolism diagnostic — COMPLETE; root cause precisely characterized.** Six probes today decomposed the L2.2 W1=161 gap exhaustively:
+
+| Probe | Finding |
+|---|---|
+| `probe_h_writeback_isolated.py` | Writeback fed Karr's flux → 39 L1 diff vs Karr's recorded delta (= RNG floor on 148K total). **Writeback algorithm is bit-correct.** |
+| `probe_h_writeback_oc_vs_karr_flux.py` | Writeback fed OC's flux → 14,517 L1 diff vs Karr's recorded delta per sample. Decomposes: ~96% of full flux diff lives in null(S) (inert), ~4% lives at exchange-reaction indices (substrate-delta gap). |
+| `probe_h_vertex_root_cause.py` | 17 differing external exchanges cluster into 4 biological-substitution pairs: PHE/PhePhe, TRP/TrpTrp, HDCA/OCDCEA, TRIOLEIN/TRIPALMITIN. Both routes biomass-equivalent but substrate-row-distinct. |
+| `probe_h_vertex_bounds_or_tiebreak.py` | Bounds identical (H4 confirmed). Both vertices have 10 INTERIOR + 2 AT_UB. Pure simplex tie-breaking on degenerate optimal face. |
+| `probe_h_column_order_check.py` | OC LP column order is **bit-identical** to Karr's runtime extract. Rules out option (b) match-column-ordering. |
+| `probe_h_epsilon_objective.py` | ε=1e-9 with signs from Karr's flux closes 77% of gap (14,517 → 3,276 writeback L1). ε=1e-6 breaks things. Principled bio-only ε does nothing. |
+
+**Where this leaves us — four honest paths, all with real costs:**
+
+| Path | Closes the gap? | Cost dimension |
+|---|---|---|
+| (d) Build GLPK 4.x oracle | Definitively, without fitting | Days of infrastructure (vintage MATLAB + glpkmex + Docker/WSL) |
+| (a-fit) ε-objective sign-tuned to Karr | 77% per-sample | Methodological — trace_hint at LP layer; L2.2 loses independence |
+| FVA reframe | Yes by construction (audit becomes range-containment) | Audit-methodology redesign; affects all process gates, not just Metabolism |
+| (e) Accept floor + reframe | No; document as exchange-vertex degeneracy | L3/L4 attribution tax forever (Metabolism vertex flips will confound downstream signal) |
+
+User paused at the decision point. **Day-43 priority is the path choice** — no more probing is going to change the picture.
+
+**Day-42 commits, all on main, NOT pushed:**
+- `50ee8cb` — diag: writeback isolated + OC-vs-Karr-flux probes (faithful writeback, 14.5K exchange-flux gap)
+- `a5c8786` — diag: vertex root cause + bounds-or-tiebreak probes (4 biological substitution pairs)
+- `17e6033` — diag: column ordering bit-identical (rules out option b)
+- `07945b8` — diag: ε-objective probe (77% closure but only via fitting to Karr)
+
+**Last pushed commit (Day-41 EOD)**: `08a9b37` — Day-41 bookkeeping. Today's 4 Day-42 commits are unpushed pending user push approval + bookkeeping commit.
+
+**Honest scoreboard (Day-42 EOD) — unchanged from Day-41 (no source code changes today, all diagnostic):**
+
+| Gate | Day-41 EOD | Day-42 EOD |
+|---|---:|---:|
+| L2.1 GENUINE | 19/28 | **19/28** |
+| L2.2 VERIFIED_GENUINE | 17/22 | **17/22** |
+| L2.2 NOT_WIRED | 2 (DNADamage, FtsZ) | **2** |
+| L2.2 VERIFIED_FAIL | 1 (Metabolism W1=161) | **1 (Metabolism W1=161, root-caused)** |
+| L2.5 honest PASS | 15/256 | 15/256 (not re-audited) |
+
+**Key Day-42 lesson logged (user-scoped memory not yet stored — TODO):** Degenerate LP non-reproducibility across solver versions is well-documented in the FBA community (COBRApy #970, COBRA toolbox #899). Objective is reproducible; flux vector is not. Standard remedies in the community are FVA, ε-perturbation, or accepting non-reproducibility — none of which are "free" methodologically.
+
+**Day-43 priorities (operator decision required):**
+- A. Pick a path from (d), (a-fit), FVA, or (e)
+- B. If unsure, size (d) effort with a 30-min probe: how hard is glpkmex 2.x in Docker/WSL? Could change the calculus.
+- C. Pivot to L2.1 cleanup (ProteinDecay, Replication, ChromosomeCondensation) while the Metabolism decision is parked
+- D. Pivot to L2.5 re-audit (Day-39 chromosome unlocks may have shifted the picture)
+
+**Pre-existing test failure (carryover from before Day-41)**: `tests/vivarium/test_karr_metabolism_pools_throttle.py::test_throttle_on_with_starved_atp_freezes_m2_synthesis` still fails on main; originates in commit `ecde4e4` (Bug 6a Stage 2). Independent of Day-42 work.
+
+---
+
+## Operational handoff (Day-41 EOD — superseded by Day-42 above)
+
 **Live processes / agents (2026-06-28 ~00:30 IST, Day-41 EOD):** None alive. Workspace clean. All audit codex agents (H1-H4 fanout PIDs + L2.2 audit PID 38564) exited cleanly hours ago.
 
 **Day-41 Metabolism LP investigation — COMPLETE; result is "no gate movement".** Three days of FBA-fidelity work (Day-39 chromosome wiring + Day-40 GLPK port + Day-41 hypothesis fanout) collapsed to two distinct outcomes:
