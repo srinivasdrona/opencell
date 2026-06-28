@@ -1,0 +1,14 @@
+{
+  "karr_S_shape": [
+    376,
+    504
+  ],
+  "oc_S_shape": [
+    376,
+    504
+  ],
+  "s_max_abs_diff": 0.0,
+  "obj_max_abs_diff": 0.0,
+  "rhs_max_abs_diff": 0.0,
+  "verdict": "COLUMN_ORDER_IDENTICAL"
+}
