@@ -1,0 +1,406 @@
+{
+  "sample": {
+    "seed": 0,
+    "tick": 1
+  },
+  "growth_per_s": 2.119269255200068e-05,
+  "step_size_sec": 1.0,
+  "karr_delta_l1": 148121,
+  "karr_delta_nnz": 102,
+  "results": [
+    {
+      "label": "deterministic (rint)",
+      "oc_l1": 148114,
+      "karr_l1": 148121,
+      "diff_l1": 39,
+      "diff_linf": 1,
+      "diff_nnz": 39,
+      "diff_per_compartment_l1": [
+        16,
+        22,
+        1
+      ]
+    },
+    {
+      "label": "stochastic mcg16807 seed=1",
+      "oc_l1": 148123,
+      "karr_l1": 148121,
+      "diff_l1": 42,
+      "diff_linf": 1,
+      "diff_nnz": 42,
+      "diff_per_compartment_l1": [
+        19,
+        21,
+        2
+      ]
+    }
+  ],
+  "per_step_pre_round_l1": {
+    "step1_nutrient_uptake_pre_round": 105361.51841567826,
+    "step2_recycled_metabolites_pre_round": 36189.735093568466,
+    "step3_new_biomass_pre_round": 13221.130641132097,
+    "step4_unaccounted_energy_pre_round": 6649.214052503354
+  },
+  "top20_per_wid_diff_det": [
+    {
+      "wid_row": 297,
+      "diff_per_comp": [
+        -1,
+        -1,
+        0
+      ],
+      "oc_per_comp": [
+        9194,
+        13197,
+        0
+      ],
+      "karr_per_comp": [
+        9195,
+        13198,
+        0
+      ]
+    },
+    {
+      "wid_row": 211,
+      "diff_per_comp": [
+        -1,
+        -1,
+        0
+      ],
+      "oc_per_comp": [
+        0,
+        -1,
+        0
+      ],
+      "karr_per_comp": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "wid_row": 395,
+      "diff_per_comp": [
+        1,
+        -1,
+        0
+      ],
+      "oc_per_comp": [
+        1,
+        -1,
+        0
+      ],
+      "karr_per_comp": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "wid_row": 413,
+      "diff_per_comp": [
+        1,
+        -1,
+        0
+      ],
+      "oc_per_comp": [
+        1,
+        4,
+        0
+      ],
+      "karr_per_comp": [
+        0,
+        5,
+        0
+      ]
+    },
+    {
+      "wid_row": 16,
+      "diff_per_comp": [
+        1,
+        0,
+        0
+      ],
+      "oc_per_comp": [
+        1,
+        0,
+        0
+      ],
+      "karr_per_comp": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "wid_row": 26,
+      "diff_per_comp": [
+        0,
+        -1,
+        0
+      ],
+      "oc_per_comp": [
+        0,
+        -10,
+        0
+      ],
+      "karr_per_comp": [
+        0,
+        -9,
+        0
+      ]
+    },
+    {
+      "wid_row": 28,
+      "diff_per_comp": [
+        0,
+        1,
+        0
+      ],
+      "oc_per_comp": [
+        0,
+        -6,
+        0
+      ],
+      "karr_per_comp": [
+        0,
+        -7,
+        0
+      ]
+    },
+    {
+      "wid_row": 29,
+      "diff_per_comp": [
+        1,
+        0,
+        0
+      ],
+      "oc_per_comp": [
+        3627,
+        0,
+        0
+      ],
+      "karr_per_comp": [
+        3626,
+        0,
+        0
+      ]
+    },
+    {
+      "wid_row": 539,
+      "diff_per_comp": [
+        0,
+        1,
+        0
+      ],
+      "oc_per_comp": [
+        0,
+        2639,
+        0
+      ],
+      "karr_per_comp": [
+        0,
+        2638,
+        0
+      ]
+    },
+    {
+      "wid_row": 542,
+      "diff_per_comp": [
+        0,
+        1,
+        0
+      ],
+      "oc_per_comp": [
+        0,
+        -1,
+        0
+      ],
+      "karr_per_comp": [
+        0,
+        -2,
+        0
+      ]
+    },
+    {
+      "wid_row": 513,
+      "diff_per_comp": [
+        0,
+        1,
+        0
+      ],
+      "oc_per_comp": [
+        0,
+        0,
+        0
+      ],
+      "karr_per_comp": [
+        0,
+        -1,
+        0
+      ]
+    },
+    {
+      "wid_row": 515,
+      "diff_per_comp": [
+        0,
+        0,
+        -1
+      ],
+      "oc_per_comp": [
+        0,
+        -1,
+        1
+      ],
+      "karr_per_comp": [
+        0,
+        -1,
+        2
+      ]
+    },
+    {
+      "wid_row": 547,
+      "diff_per_comp": [
+        1,
+        0,
+        0
+      ],
+      "oc_per_comp": [
+        9,
+        0,
+        0
+      ],
+      "karr_per_comp": [
+        8,
+        0,
+        0
+      ]
+    },
+    {
+      "wid_row": 548,
+      "diff_per_comp": [
+        0,
+        1,
+        0
+      ],
+      "oc_per_comp": [
+        0,
+        -4,
+        0
+      ],
+      "karr_per_comp": [
+        0,
+        -5,
+        0
+      ]
+    },
+    {
+      "wid_row": 557,
+      "diff_per_comp": [
+        1,
+        0,
+        0
+      ],
+      "oc_per_comp": [
+        -6,
+        0,
+        0
+      ],
+      "karr_per_comp": [
+        -7,
+        0,
+        0
+      ]
+    },
+    {
+      "wid_row": 536,
+      "diff_per_comp": [
+        0,
+        -1,
+        0
+      ],
+      "oc_per_comp": [
+        0,
+        2246,
+        0
+      ],
+      "karr_per_comp": [
+        0,
+        2247,
+        0
+      ]
+    },
+    {
+      "wid_row": 407,
+      "diff_per_comp": [
+        -1,
+        0,
+        0
+      ],
+      "oc_per_comp": [
+        0,
+        0,
+        0
+      ],
+      "karr_per_comp": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "wid_row": 406,
+      "diff_per_comp": [
+        0,
+        -1,
+        0
+      ],
+      "oc_per_comp": [
+        0,
+        -1,
+        0
+      ],
+      "karr_per_comp": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "wid_row": 488,
+      "diff_per_comp": [
+        1,
+        0,
+        0
+      ],
+      "oc_per_comp": [
+        6,
+        -6,
+        0
+      ],
+      "karr_per_comp": [
+        5,
+        -6,
+        0
+      ]
+    },
+    {
+      "wid_row": 527,
+      "diff_per_comp": [
+        0,
+        1,
+        0
+      ],
+      "oc_per_comp": [
+        0,
+        0,
+        0
+      ],
+      "karr_per_comp": [
+        0,
+        -1,
+        0
+      ]
+    }
+  ]
+}

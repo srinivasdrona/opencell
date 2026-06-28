@@ -1,0 +1,322 @@
+{
+  "sample": {
+    "seed": 0,
+    "tick": 1
+  },
+  "lp_solver_status": "ok",
+  "karr_growth": 2.119269255200068e-05,
+  "oc_growth_via_obj": 0.021330661933306305,
+  "oc_growth_via_biomass_col": 2.1192692552125117e-05,
+  "biomass_col": 502,
+  "flux_diff": {
+    "full_l1": 354330.38341224176,
+    "external_exchange_l1": 14455.694301940694,
+    "external_exchange_linf": 3771.3523885009595,
+    "external_exchange_nnz_gt_1e_9": 17,
+    "internal_exchange_l1": 29.996564928499488,
+    "internal_exchange_linf": 6.451608955482698,
+    "internal_exchange_nnz_gt_1e_9": 6,
+    "biomass_col_diff": 1.2443591621523475e-16,
+    "other_l1": 339844.6925453725,
+    "other_linf": 55453.61130151052,
+    "other_nnz_gt_1e_9": 60
+  },
+  "writeback_vs_karr_recorded": [
+    {
+      "label": "writeback(Karr_flux)",
+      "oc_l1": 148114,
+      "diff_vs_karr_l1": 39,
+      "diff_vs_karr_linf": 1,
+      "diff_vs_karr_nnz": 39
+    },
+    {
+      "label": "writeback(OC_flux STD)",
+      "oc_l1": 148124,
+      "diff_vs_karr_l1": 14517,
+      "diff_vs_karr_linf": 3771,
+      "diff_vs_karr_nnz": 50
+    }
+  ],
+  "cross_diff": {
+    "l1": 14484,
+    "linf": 3771,
+    "nnz": 17,
+    "per_compartment_l1": [
+      29,
+      14455,
+      0
+    ]
+  },
+  "top15_wid_cross_diff": [
+    {
+      "wid_row": 541,
+      "cross_diff": [
+        0,
+        3771,
+        0
+      ],
+      "writeback_using_OC_flux": [
+        2,
+        3771,
+        0
+      ],
+      "writeback_using_Karr_flux": [
+        2,
+        0,
+        0
+      ]
+    },
+    {
+      "wid_row": 469,
+      "cross_diff": [
+        0,
+        -3763,
+        0
+      ],
+      "writeback_using_OC_flux": [
+        15,
+        0,
+        0
+      ],
+      "writeback_using_Karr_flux": [
+        15,
+        3763,
+        0
+      ]
+    },
+    {
+      "wid_row": 542,
+      "cross_diff": [
+        0,
+        -1886,
+        0
+      ],
+      "writeback_using_OC_flux": [
+        0,
+        -1887,
+        0
+      ],
+      "writeback_using_Karr_flux": [
+        0,
+        -1,
+        0
+      ]
+    },
+    {
+      "wid_row": 470,
+      "cross_diff": [
+        0,
+        1881,
+        0
+      ],
+      "writeback_using_OC_flux": [
+        0,
+        -8,
+        0
+      ],
+      "writeback_using_Karr_flux": [
+        0,
+        -1889,
+        0
+      ]
+    },
+    {
+      "wid_row": 439,
+      "cross_diff": [
+        0,
+        -1177,
+        0
+      ],
+      "writeback_using_OC_flux": [
+        0,
+        -7918,
+        0
+      ],
+      "writeback_using_Karr_flux": [
+        0,
+        -6741,
+        0
+      ]
+    },
+    {
+      "wid_row": 300,
+      "cross_diff": [
+        0,
+        1169,
+        0
+      ],
+      "writeback_using_OC_flux": [
+        0,
+        -6749,
+        0
+      ],
+      "writeback_using_Karr_flux": [
+        0,
+        -7918,
+        0
+      ]
+    },
+    {
+      "wid_row": 536,
+      "cross_diff": [
+        0,
+        393,
+        0
+      ],
+      "writeback_using_OC_flux": [
+        0,
+        2639,
+        0
+      ],
+      "writeback_using_Karr_flux": [
+        0,
+        2246,
+        0
+      ]
+    },
+    {
+      "wid_row": 537,
+      "cross_diff": [
+        0,
+        -390,
+        0
+      ],
+      "writeback_using_OC_flux": [
+        0,
+        2249,
+        0
+      ],
+      "writeback_using_Karr_flux": [
+        0,
+        2639,
+        0
+      ]
+    },
+    {
+      "wid_row": 298,
+      "cross_diff": [
+        0,
+        -10,
+        0
+      ],
+      "writeback_using_OC_flux": [
+        0,
+        10853,
+        0
+      ],
+      "writeback_using_Karr_flux": [
+        0,
+        10863,
+        0
+      ]
+    },
+    {
+      "wid_row": 420,
+      "cross_diff": [
+        0,
+        10,
+        0
+      ],
+      "writeback_using_OC_flux": [
+        0,
+        -10855,
+        0
+      ],
+      "writeback_using_Karr_flux": [
+        0,
+        -10865,
+        0
+      ]
+    },
+    {
+      "wid_row": 557,
+      "cross_diff": [
+        6,
+        0,
+        0
+      ],
+      "writeback_using_OC_flux": [
+        0,
+        0,
+        0
+      ],
+      "writeback_using_Karr_flux": [
+        -6,
+        0,
+        0
+      ]
+    },
+    {
+      "wid_row": 18,
+      "cross_diff": [
+        -6,
+        0,
+        0
+      ],
+      "writeback_using_OC_flux": [
+        -6,
+        0,
+        0
+      ],
+      "writeback_using_Karr_flux": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "wid_row": 29,
+      "cross_diff": [
+        6,
+        0,
+        0
+      ],
+      "writeback_using_OC_flux": [
+        3633,
+        0,
+        0
+      ],
+      "writeback_using_Karr_flux": [
+        3627,
+        0,
+        0
+      ]
+    },
+    {
+      "wid_row": 560,
+      "cross_diff": [
+        -6,
+        0,
+        0
+      ],
+      "writeback_using_OC_flux": [
+        5,
+        0,
+        0
+      ],
+      "writeback_using_Karr_flux": [
+        11,
+        0,
+        0
+      ]
+    },
+    {
+      "wid_row": 297,
+      "cross_diff": [
+        5,
+        0,
+        0
+      ],
+      "writeback_using_OC_flux": [
+        9199,
+        13197,
+        0
+      ],
+      "writeback_using_Karr_flux": [
+        9194,
+        13197,
+        0
+      ]
+    }
+  ]
+}
