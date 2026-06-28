@@ -1,6 +1,49 @@
 # All-29 Process Status - 2026-06-03 ~14:30 IST (L2.1 SWEEP COMPLETE)
 
-> **⚠️ Day-42 EOD update: Metabolism L2.2 W1=161 gap root-caused to 4 biological substitution pairs on LP-degenerate optimal face. Six diagnostic probes today; no source changes; scoreboard unchanged from Day-41. Path-forward decision (d / a-fit / FVA / accept) deferred to Day-43.**
+> **⚠️ Day-42 EOD post-GPT-critique update: 4-paths picture HARDENS rather than changes. GPT-5.4 cross-model critique caught two overstatements (bound semantics + multisample); 4 parallel codex follow-up probes verified them — none of (RT_FLIP, faithful bound semantics, pFBA, loopless-FBA) closes the gap methodologically cleanly. Scoreboard unchanged.**
+>
+> **What landed Day-42 evening (after GPT critique, committed NOT pushed):**
+> - `4b648fa` — 4 parallel follow-up probes confirm 4-paths picture
+>   - `probe_h_rt_flip.py`: GLP_RT_FLIP closes only TRP/TrpTrp pair, net writeback L1 -14 (essentially zero movement)
+>   - `probe_h_bound_semantics.py`: faithful GLP_FR/LO/UP/DB/FX encoding moves PHE/PhePhe closer to Karr but lipids further; net writeback L1 6× worse
+>   - `probe_h_pfba.py`: pFBA + loopless-FBA both zero out substitution-pair reactions entirely; 10× worse than baseline; Karr's MATLAB does not use pFBA either
+>   - `probe_h_multisample_sweep.py`: inconclusive — only 1/20 target sample files available locally; the 4-pair root-cause story remains unverified at samples other than (s=0, t=1)
+> - `e5c1b68` (earlier today) — initial Day-42 bookkeeping; contained overstatement "no more probing will change the picture" that GPT critique falsified
+>
+> **Two GPT-validated corrections to Day-42 morning conclusions:**
+> 1. "Bounds rule out as cause" was overstated — bound *values* match Karr (Day-41 H4), but bound *semantics* (GLP_FR/LO/UP/DB/FX encoding vs our universal GLP_DB-with-±1e6) DO differ and DO affect vertex selection materially.
+> 2. **Multi-sample generalization remains an OPEN question** — single-sample at (s=0, t=1) confirms the 4-pair root cause but we lack empirical validation across the other 499 audit samples. A follow-up probe using the audit harness's data layout would close this.
+>
+> **Net effect on the path-forward decision: 4 paths STILL stand, with stronger evidence behind them.**
+>
+> **Methodologically-clean LP-construction techniques tested today (all FAILED):**
+> - RT_FLIP ratio test
+> - Faithful bound semantics
+> - pFBA (parsimonious FBA)
+> - Loopless-FBA
+>
+> Each one fixes some pairs but breaks others, OR makes things uniformly worse. The pattern is clear: clean techniques can't reproduce Karr's specific vertex on this degenerate LP.
+>
+> **Path-forward picture (after GPT critique):**
+>
+> | Path | Updated assessment |
+> |---|---|
+> | (d) GLPK 4.x oracle | More uncertain — bound-semantics + MATLAB encoding differ in ways we now know matter; reproducing Karr's vertex may require not just GLPK 4.x but also glpkmex 2.11's internal patches |
+> | (a-fit) Karr-signed ε | Still 77% closure; still methodologically equivalent to trace_hint at LP layer |
+> | FVA reframe | Untested but is the FBA-community-standard remedy for degenerate-LP non-reproducibility |
+> | (e) Accept floor | Same L3/L4 attribution tax as before |
+>
+> **Scoreboard (Day-42 EOD post-critique) — UNCHANGED:**
+>
+> | Gate | Day-41 EOD | Day-42 EOD |
+> |---|---:|---:|
+> | L2.1 GENUINE | 19/28 | **19/28** |
+> | L2.2 VERIFIED_GENUINE | 17/22 | **17/22** |
+> | L2.2 NOT_WIRED | 2 (DNADamage, FtsZ) | **2** |
+> | L2.2 VERIFIED_FAIL | 1 (Metab W1=161) | **1 (Metab W1=161, root-caused + GPT-validated)** |
+> | L2.5 honest PASS | 15/256 | 15/256 (not re-audited) |
+
+> **⚠️ Day-42 EOD update: Metabolism L2.2 W1=161 gap root-caused to 4 biological substitution pairs on LP-degenerate optimal face. Six diagnostic probes today; no source changes; scoreboard unchanged from Day-41. Path-forward decision (d / a-fit / FVA / accept) deferred to Day-43.** *(superseded by post-GPT-critique block above)*
 >
 > **What landed Day-42 (committed, NOT pushed):**
 > - `50ee8cb` — writeback isolated probe (writeback algorithm is bit-correct at 39 L1 vs Karr's 148K, RNG floor); OC-vs-Karr flux probe (14.5K per-sample exchange-flux gap at 4 substitution pairs)

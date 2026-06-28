@@ -26,9 +26,83 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-06-28 ~16:40 IST, Day-42 EOD):** None alive. Workspace clean.
+**Live processes / agents (2026-06-28 ~20:50 IST, Day-42 EOD post-GPT-critique):** None alive. Workspace clean. All 4 codex agents from the GPT-critique follow-up exited cleanly.
 
-**Day-42 Metabolism diagnostic — COMPLETE; root cause precisely characterized.** Six probes today decomposed the L2.2 W1=161 gap exhaustively:
+**Day-42 Metabolism diagnostic — COMPLETE with GPT-critique-validated 4-path picture.** Ten probes today (6 morning + 4 evening parallel-fanout post critique by gpt-5.4):
+
+**Morning (probes 1-6):** Decomposed the W1=161 gap at sample (s=0, t=1):
+- Writeback algorithm is bit-correct (39 L1 RNG floor)
+- Gap is in OC's flux at 4 biological-substitution pairs (PHE/PhePhe, TRP/TrpTrp, HDCA/OCDCEA, TRIOLEIN/TRIPALMITIN)
+- Bound *values* match Karr (Day-41 H4)
+- Column ordering matches Karr
+- ε-objective fit-to-Karr closes 77%; principled bio-only ε closes 0%
+
+**GPT-5.4 cross-model critique** flagged two overstatements:
+- "All glp_smcp exhausted" was premature (RT_FLIP not tested)
+- "Bounds rule out as cause" was overstated (only checked bound *values*, not bound *semantics* encoding)
+
+**Evening (probes 7-10 in parallel) — verified GPT's flags:**
+
+| Probe | Result vs baseline 14,517 | Verdict |
+|---|---|---|
+| RT_FLIP (r_test=GLP_RT_FLIP) | 14,503 (-14) | Closes TRP/TrpTrp only; net null |
+| Faithful bound semantics (FR/LO/UP/DB/FX) | 91,840 (6× worse) | Moves PHE/PhePhe closer but lipids further |
+| pFBA / loopless-FBA | 143,602 (10× worse) | Zeros out substitution pairs entirely |
+| Multi-sample (20-sample sweep) | inconclusive | Only 1/20 target samples available locally |
+
+**Net effect of GPT critique: the 4-paths picture HARDENS, doesn't change.**
+
+Every methodologically-clean LP-construction tweak (RT_FLIP, faithful bound semantics, pFBA, loopless-FBA) tested today either does nothing or makes things worse. The "a-principled" hypothesis (close the gap without fitting to Karr) has now been empirically tested across the 4 cleanest standard FBA-community techniques and FAILED. Only Karr-fitted ε meaningfully closes the gap.
+
+**Two specific corrections from GPT critique that are TRUE:**
+1. Bound **semantics** matter (not just bound values). Our `GLP_DB`-with-±1e6 encoding is materially different from faithful `GLP_FR/LO/UP/DB/FX` — moves vertex meaningfully but doesn't converge to Karr.
+2. **Multi-sample generalization remains an OPEN question** — we have empirical confirmation that the 4-pair root cause holds at sample (s=0, t=1) but **not yet at the other 499 samples** (multi-sample probe inconclusive because most target sample files don't exist locally; would require extraction from the v2 trace files used by the audit harness).
+
+**Path-forward picture (now better-evidenced):**
+
+| Path | Status after GPT critique |
+|---|---|
+| (d) GLPK 4.x oracle | EVEN MORE UNCERTAIN it would converge — bound semantics + MATLAB-side encoding diverge in ways we now know matter |
+| (a-fit) Karr-signed ε | Still the only thing meaningfully closing gap; still methodologically suspect (trace_hint at LP) |
+| FVA reframe | Untested but theoretically sound (proper FBA-community standard for degenerate LPs) |
+| (e) Accept floor | Same L3/L4 attribution tax |
+
+**Day-42 commits, all on main, NOT pushed:**
+- `50ee8cb` — writeback isolated + OC-vs-Karr-flux probes
+- `a5c8786` — vertex root cause + bounds-or-tiebreak probes
+- `17e6033` — column ordering bit-identical
+- `07945b8` — ε-objective probe (77% fit-to-Karr / 0% principled)
+- `e5c1b68` — initial Day-42 bookkeeping (overstatement of "no more probing")
+- `4b648fa` — **GPT-critique follow-up: 4 parallel probes** confirm 4-path picture; corrections noted
+
+**Last pushed commit**: `08a9b37` (Day-41 EOD bookkeeping). 6 Day-42 commits unpushed.
+
+**Honest scoreboard (Day-42 EOD) — UNCHANGED:**
+
+| Gate | Day-41 EOD | Day-42 EOD |
+|---|---:|---:|
+| L2.1 GENUINE | 19/28 | **19/28** |
+| L2.2 VERIFIED_GENUINE | 17/22 | **17/22** |
+| L2.2 NOT_WIRED | 2 | **2** |
+| L2.2 VERIFIED_FAIL | 1 (Metab W1=161) | **1 (Metab W1=161, root-caused + GPT-critique-validated)** |
+| L2.5 honest PASS | 15/256 | 15/256 (not re-audited) |
+
+**Process meta-lessons logged today (not yet stored as memory):**
+- GPT cross-model critique catches overstatements that Opus' framing missed. Worth doing before any path commitment.
+- Methodologically-clean LP disambiguation (RT_FLIP, pFBA, faithful bound semantics) does NOT close the gap; Karr's MATLAB does not use pFBA either. The community-standard "principled" techniques are not what produced Karr's recorded flux.
+- Multi-sample probes need careful data-availability checks BEFORE designing the experiment — codex agent couldn't find target ground-truth files because the per-sample format we'd been using is only for sample (s=0, t=1).
+
+**Day-43 priorities (operator decision required):**
+- A. Pick path: (d) oracle / (a-fit + documentation) / FVA reframe / (e) accept floor
+- B. Before picking: do a multi-sample probe using the audit-harness data layout (would close the GPT-critique open question)
+- C. Pivot to L2.1 cleanup (ProteinDecay, Replication, ChromosomeCondensation) while Metabolism is parked
+- D. L2.5 re-audit
+
+**Pre-existing test failure**: `tests/vivarium/test_karr_metabolism_pools_throttle.py::test_throttle_on_with_starved_atp_freezes_m2_synthesis` still fails on main (commit `ecde4e4` Bug 6a Stage 2). Independent of Day-42 work.
+
+---
+
+## Operational handoff (Day-42 morning — superseded by Day-42 EOD post-GPT above)
 
 | Probe | Finding |
 |---|---|
