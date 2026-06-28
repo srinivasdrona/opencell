@@ -1,6 +1,36 @@
 # All-29 Process Status - 2026-06-03 ~14:30 IST (L2.1 SWEEP COMPLETE)
 
-> **⚠️ Day-42 EOD post-GPT-critique update: 4-paths picture HARDENS rather than changes. GPT-5.4 cross-model critique caught two overstatements (bound semantics + multisample); 4 parallel codex follow-up probes verified them — none of (RT_FLIP, faithful bound semantics, pFBA, loopless-FBA) closes the gap methodologically cleanly. Scoreboard unchanged.**
+> **⚠️ Day-42 EOD FINAL update: 12 probes today converged the picture. The W1=161 gap is REAL and COMPOUNDS over 100-tick trajectory (linear drift to 4.70M L1; TRP over-accumulated 1,234×). Only (d) GLPK 4.x oracle and FVA reframe remain viable; ε-objective and accept-floor empirically dead. Scoreboard unchanged.**
+>
+> **What landed Day-42 evening final batch (committed NOT pushed):**
+> - `3982865` — Multi-sample v2 probe + 100-tick live trajectory probe + 100-tick + a-fit ε probe
+>   - Multi-sample v2: at 20 samples, Karr's mass-action is dominated by CENTRAL METABOLISM rows (H2O/O2/H2O2/H+ at rows 296/297/298/420). 4 substitution-pair rows are top-5 contributors at only 0-13/20 samples. The Day-42 morning "4-pair root cause" was a single-sample local phenomenon.
+>   - 100-tick live trajectory (no ε): VERDICT DIVERGES. Tick-99 L1 = 4.70M. TRP over-accumulated 1,234× (Karr: 94 molecules, OC: 116,060). TRIOLEIN 5.9×; PHE 2.1×. Biology stays viable (all substrates non-negative) but compounds linearly.
+>   - 100-tick live + a-fit ε: VERDICT NO_IMPROVEMENT. ε derived from sample (0,1) preferences makes the 100-tick trajectory 48% WORSE (6.96M vs 4.70M baseline). TRP ratio worsens from 1,234× to 8,258×. Mechanism: Karr's preferred vertex varies tick-by-tick; static ε from one sample forces OC further from Karr at later ticks.
+>
+> **Final path-forward picture after 12 Day-42 probes:**
+>
+> | Option | Final status |
+> |---|---|
+> | (d) GLPK 4.x oracle | **STRONGEST viable** — only way to match Karr's time-varying per-tick vertex preferences |
+> | FVA reframe | Methodologically clean alternative — handles time-varying degeneracy as range-containment |
+> | (a-fit) ε | **EMPIRICALLY DEAD** — 100-tick trajectory rejects it |
+> | (c) bound tightening | Dead — same time-varying-preferences problem |
+> | (e) Accept floor | **DEAD** — trajectory probe shows compounding gap |
+>
+> **Scoreboard (Day-42 EOD FINAL) — UNCHANGED:**
+>
+> | Gate | Day-41 EOD | Day-42 EOD |
+> |---|---:|---:|
+> | L2.1 GENUINE | 19/28 | **19/28** |
+> | L2.2 VERIFIED_GENUINE | 17/22 | **17/22** |
+> | L2.2 NOT_WIRED | 2 | **2** |
+> | L2.2 VERIFIED_FAIL | 1 (Metab W1=161, trajectory-validated as real) | **1** |
+> | L2.5 honest PASS | 15/256 | 15/256 |
+>
+> **Day-43 decision required**: (d) GLPK 4.x oracle vs FVA reframe vs pivot.
+
+> **⚠️ Day-42 EOD post-GPT-critique update: 4-paths picture HARDENS rather than changes.** *(SUPERSEDED by Day-42 EOD FINAL block above — trajectory probes killed (a-fit) and (e), narrowing viable paths to 2)*
 >
 > **What landed Day-42 evening (after GPT critique, committed NOT pushed):**
 > - `4b648fa` — 4 parallel follow-up probes confirm 4-paths picture

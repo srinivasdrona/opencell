@@ -26,7 +26,75 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-06-28 ~20:50 IST, Day-42 EOD post-GPT-critique):** None alive. Workspace clean. All 4 codex agents from the GPT-critique follow-up exited cleanly.
+**Live processes / agents (2026-06-28 ~21:30 IST, Day-42 EOD FINAL):** None alive. Workspace clean. All 12 codex probes from today exited cleanly.
+
+**Day-42 Metabolism investigation — COMPLETE; path-forward narrowed to 2 viable options.** 12 probes total today produced a converged understanding:
+
+**Morning probes 1-6 (sample-level)**: Writeback is bit-correct; gap is exchange-flux at 4 substitution pairs (PHE/PhePhe, TRP/TrpTrp, HDCA/OCDCEA, TRIOLEIN/TRIPALMITIN); bounds + column ordering + most `glp_smcp` knobs ruled out; ε-fit-to-Karr closes 77% but methodologically = trace_hint at LP.
+
+**GPT-5.4 cross-model critique** flagged two overstatements; **evening probes 7-10 (parallel-fanout)** verified:
+- RT_FLIP closes only TRP/TrpTrp; net writeback L1 unchanged
+- Faithful bound semantics moves vertex but mixed direction (6× worse net)
+- pFBA / loopless-FBA both hurt (10× worse); Karr doesn't use pFBA either
+- Multi-sample data unavailable locally (inconclusive)
+
+**Operator-instigated probes 11-12 (trajectory-level)**: THIS IS WHERE THE PICTURE CHANGED:
+
+- **Probe 11 (multi-sample v2)**: at 20 samples, Karr's mass-action is dominated by CENTRAL METABOLISM rows (H2O/O2/H2O2/H+ at rows 296/297/298/420) — the 4 substitution pairs are top-5 contributors at only 0-13/20 samples. Day-42 morning's "4-pair root cause" was a single-sample local phenomenon.
+- **Probe 12 (100-tick live trajectory, no ε)**: OC's metabolism DIVERGES approximately linearly from Karr's recorded trajectory over 100 ticks. Tick-99 L1 = 4.70M. TRP over-accumulated 1,234×; TRIOLEIN 5.9×; PHE 2.1×. Biology stays viable but compounds catastrophically.
+- **Probe 12b (100-tick live + a-fit ε)**: ε-fit derived from sample (0,1) preferences makes the 100-tick trajectory **48% WORSE** (6.96M vs 4.70M). TRP ratio worsens from 1,234× to 8,258×. Mechanism: Karr's preferred vertex varies tick-by-tick; static ε from one sample forces OC further from Karr at later ticks.
+
+**Final path-forward picture (after 12 probes):**
+
+| Option | Final status |
+|---|---|
+| **(d) GLPK 4.x oracle (vintage MATLAB + glpkmex)** | **STRONGEST viable option** — only way to match Karr's time-varying per-tick vertex preferences |
+| **FVA reframe** | Methodologically clean alternative — handles time-varying degeneracy as range-containment naturally |
+| (a-fit) ε with Karr signs | **EMPIRICALLY DEAD** — 100-tick trajectory rejects it; closes per-tick but makes trajectory drift worse |
+| (a-principled) bio-only ε | Dead — closes 0% per-tick anyway |
+| (c) bound tightening | Dead — same time-varying-preferences problem as ε |
+| (e) Accept floor | **DEAD** — trajectory probe shows the gap compounds linearly; over 100 ticks the substrate state diverges by millions of molecules |
+
+**Day-42 commits, all on main, NOT pushed (9 total this evening):**
+- `50ee8cb` — writeback isolated + OC-vs-Karr-flux probes
+- `a5c8786` — vertex root cause + bounds-or-tiebreak probes
+- `17e6033` — column ordering bit-identical
+- `07945b8` — ε-objective probe (77% fit-to-Karr / 0% principled)
+- `e5c1b68` — initial Day-42 bookkeeping (overstatement)
+- `4b648fa` — GPT-critique follow-up: RT_FLIP / bound semantics / pFBA / multisample
+- `edb4669` — Day-42 EOD bookkeeping (mid-evening revision)
+- `3982865` — trajectory probes (multi-sample v2, 100-tick live, 100-tick + ε)
+- THIS commit (FINAL bookkeeping refresh)
+
+**Last pushed commit**: `08a9b37` (Day-41 EOD).
+
+**Honest scoreboard (Day-42 EOD FINAL) — UNCHANGED:**
+
+| Gate | Day-41 EOD | Day-42 EOD |
+|---|---:|---:|
+| L2.1 GENUINE | 19/28 | **19/28** |
+| L2.2 VERIFIED_GENUINE | 17/22 | **17/22** |
+| L2.2 NOT_WIRED | 2 | **2** |
+| L2.2 VERIFIED_FAIL | 1 (Metab W1=161) | **1 (Metab W1=161, trajectory-validated as real)** |
+| L2.5 honest PASS | 15/256 | 15/256 (not re-audited) |
+
+**Day-42 process meta-lessons (not yet stored as memory):**
+- **Single-sample root-cause stories are dangerous.** The 4-substitution-pair narrative was right at sample (s=0, t=1) but didn't generalize. Always verify multi-sample.
+- **Per-tick fixes don't necessarily compound to trajectory fixes.** ε that closes 77% per-tick made the trajectory 48% worse. Always validate at the level the gate measures.
+- **GPT cross-model critique catches blind spots.** Day-42's bookkeeping at multiple points overstated; GPT caught each one. Worth doing before any path commitment.
+- **Trajectory-level probes are foundational for L4** — the 100-tick live runner built today is reusable infrastructure for any future L4 / L5 work on Metabolism or other isolated submodules.
+
+**Day-43 priorities (operator decision required):**
+- A. Pick between (d) GLPK 4.x oracle vs FVA reframe
+- B. Before picking (d): size the engineering work (Docker image with vintage MATLAB + glpkmex 2.11 + GLPK 4.x source build)
+- C. Before picking FVA: investigate what audit-methodology changes would be needed
+- D. Pivot to L2.1 cleanup or L2.5 re-audit while Metabolism is parked
+
+**Pre-existing test failure**: `tests/vivarium/test_karr_metabolism_pools_throttle.py::test_throttle_on_with_starved_atp_freezes_m2_synthesis` still fails on main from commit `ecde4e4`. Independent of Day-42 work.
+
+---
+
+## Operational handoff (Day-42 mid-evening — superseded by Day-42 FINAL above)
 
 **Day-42 Metabolism diagnostic — COMPLETE with GPT-critique-validated 4-path picture.** Ten probes today (6 morning + 4 evening parallel-fanout post critique by gpt-5.4):
 
