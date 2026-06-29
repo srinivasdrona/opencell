@@ -183,6 +183,13 @@ def _solve_fba_glpk(
         # (2.133e-2), 23x closer vertex on the degenerate optimal face.
         # See scripts/probe_h3_options_sweep.py + tmp/h3_options_sweep.json.
         parm.pricing = glp.GLP_PT_STD
+        # Day-43 NOTE: cpx_basis + RT_FLIP combo looked promising at
+        # sample (s=0, t=1) (77% per-tick L1 reduction) but FALSIFIED
+        # at scale — 100-tick trajectory doubled, audit W1 unchanged.
+        # The per-sample improvement was a sample-specific artifact; on
+        # other samples the combo drifts further. See
+        # docs/archive/status/STATUS_h_validate_cpx_basis_flip.md (or
+        # commit history at 71b685e for the failed-at-scale evidence).
 
         status = glp.glp_simplex(lp, parm)
         if status != 0:
