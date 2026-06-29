@@ -1,0 +1,402 @@
+schema_version: "1.0"
+process:
+  name: "RNAProcessing"
+  matlab_class: "RNAProcessing"
+  matlab_file: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m"
+  oc_class: "KarrRNAProcessingProcess"
+  oc_file: "opencell/vivarium/karr_rna_processing.py"
+  whole_cell_model_id: "Process_RNAProcessing"
+  functional_area: "gene-expression"
+  state_shape_role: "wiring row for allocation-backed RNA maturation"
+  notes: >-
+    The OC replay fixture exposes the canonical 7-substrate, 335-unprocessed-RNA,
+    347-processed-RNA, 5-enzyme RNAProcessing matrix; this row captures wiring
+    semantics only, not the full stoichiometry table.
+methods:
+  calcResourceRequirements_LifeCycle:
+    matlab:
+      symbol: "calcResourceRequirements_LifeCycle"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m"
+        lines: "387-401"
+        note: "Life-cycle biomass/byproduct requirement block."
+      note: "Major MATLAB method with no OC port."
+    oc:
+      symbol: "NOT_IMPLEMENTED"
+      source:
+        path: "opencell/vivarium/karr_rna_processing.py"
+        lines: "42-477"
+        note: "No OC equivalent for the life-cycle biomass/byproduct request path."
+      note: "OC replay port does not compute this lifecycle requirement."
+    status: "not_implemented"
+    note: "Included because it is a major MATLAB method even though it is not part of the current OC replay wiring."
+  calcResourceRequirements_Current:
+    matlab:
+      symbol: "calcResourceRequirements_Current"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m"
+        lines: "406-409"
+        note: "Per-tick request matrix for allocator share input."
+      note: "Allocator-facing resource requirement block."
+    oc:
+      symbol: "RequestCalculatorRNAPathway.next_update"
+      source:
+        path: "opencell/vivarium/karr_request_calculators.py"
+        lines: "286-351"
+        note: "Shared RNA-pathway request step for RNAProcessing and RNAModification."
+      supporting:
+        - path: "opencell/vivarium/karr_request_calculators.py"
+          lines: "16-27"
+          note: "Availability-based request helper."
+      note: >-
+        The OC request step is allocation-backed but simplified: it asks for the
+        currently available substrate pool when active, rather than reproducing
+        the MATLAB enzyme/unprocessedRNA cap exactly.
+    status: "partial"
+    note: "Implemented in the OC replay path, but the request formula is not a literal MATLAB clone."
+  evolveState:
+    matlab:
+      symbol: "evolveState"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m"
+        lines: "413-420"
+        note: "Random order over RNA classes."
+      note: "Simulation entrypoint that delegates to evolveState_Helper."
+    oc:
+      symbol: "KarrRNAProcessingProcess.next_update"
+      source:
+        path: "opencell/vivarium/karr_rna_processing.py"
+        lines: "236-284"
+        note: "Allocated-substrate read plus substrate/RNA writeback."
+      supporting:
+        - path: "opencell/vivarium/karr_rna_processing.py"
+          lines: "340-477"
+          note: "Reaction-cap calculation, random sampling, and state delta construction."
+      note: >-
+        The OC port preserves the count-space tick update, but it reads from
+        substrates_allocated[self.name] rather than the MATLAB local substrates
+        store and omits the MATLAB intergenicRNAs state.
+    status: "partial"
+    note: "Implemented, with replay-oriented state-shape simplifications."
+  calcFluxBounds:
+    matlab:
+      symbol: "calcFluxBounds"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m"
+        lines: "183-485"
+        note: "RNAProcessing class body; no calcFluxBounds method is defined in the MATLAB source."
+      note: "Schema-required slot; no direct MATLAB implementation exists."
+    oc:
+      symbol: "NOT_IMPLEMENTED"
+      source:
+        path: "opencell/vivarium/karr_rna_processing.py"
+        lines: "42-477"
+        note: "No LP-bound helper or equivalent exists in the OC replay port."
+      note: "RNAProcessing is not modeled through a flux-bound helper in the current OC code."
+    status: "not_implemented"
+    note: "Retained because the row schema requires a calcFluxBounds binding."
+  getDryWeight:
+    matlab:
+      symbol: "getDryWeight"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m"
+        lines: "476-485"
+        note: "Dependent local-state getter."
+      note: "Major MATLAB helper for process-local mass accounting."
+    oc:
+      symbol: "NOT_IMPLEMENTED"
+      source:
+        path: "opencell/vivarium/karr_rna_processing.py"
+        lines: "42-477"
+        note: "No direct OC counterpart; mass accounting is handled elsewhere in the chassis."
+      note: "The replay port does not expose a dedicated dry-weight getter here."
+    status: "not_implemented"
+    note: "Extra major MATLAB helper captured for completeness."
+allocator:
+  mode:
+    karr: "allocation"
+    oc_current: "allocation"
+    note: >-
+      Both sides are allocation-backed. The OC process consumes
+      substrates_allocated[self.name], so the request step and the per-tick
+      writeback are wired through allocator mediation rather than bypassing it.
+  request_formula:
+    matlab: >-
+      max(0, -this.reactantByproductMatrix) * min(ceil(min(this.enzymes(:, ones(size(this.catalysisMatrix, 2), 1)) ./ this.catalysisMatrix * this.stepSizeSec, [], 1))', this.unprocessedRNAs)
+    oc: >-
+      RequestCalculatorRNAPathway.next_update: if any unprocessed RNA is
+      present, request max(0, substrates[wid]) for the consumed WIDs
+      (ATP/GTP/H2O); otherwise request 0. Shared with RNAModification.
+    note: >-
+      The MATLAB formula computes an enzyme- and substrate-limited request
+      vector; the current OC request step is availability-based rather than a
+      literal algebraic clone.
+  requests:
+    - wid: "ATP"
+      compartment: "cytosol"
+      source: "karr"
+      note: "Consumed reactant in the RNA-processing stoichiometry matrix."
+    - wid: "GTP"
+      compartment: "cytosol"
+      source: "karr"
+      note: "Consumed reactant in the RNA-processing stoichiometry matrix."
+    - wid: "H2O"
+      compartment: "cytosol"
+      source: "karr"
+      note: "Consumed reactant in the RNA-processing stoichiometry matrix."
+  bypasses: []
+consume_stoichiometry:
+  - wid: "ATP"
+    compartment: "cytosol"
+    formula_or_constant: "this.reactantByproductMatrix(1, unprocessedRNAIndexs) * processingRNAs"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m"
+      lines: "422-472"
+      note: "Substrate delta update in evolveState_Helper."
+    oc_anchor:
+      path: "opencell/vivarium/karr_rna_processing.py"
+      lines: "236-284"
+      note: "substrate_delta = self.reaction_stoich @ processing_events."
+    note: "Negative ATP row in reactantByproductMatrix."
+  - wid: "GTP"
+    compartment: "cytosol"
+    formula_or_constant: "this.reactantByproductMatrix(2, unprocessedRNAIndexs) * processingRNAs"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m"
+      lines: "422-472"
+      note: "Substrate delta update in evolveState_Helper."
+    oc_anchor:
+      path: "opencell/vivarium/karr_rna_processing.py"
+      lines: "236-284"
+      note: "substrate_delta = self.reaction_stoich @ processing_events."
+    note: "Negative GTP row in reactantByproductMatrix."
+  - wid: "H2O"
+    compartment: "cytosol"
+    formula_or_constant: "this.reactantByproductMatrix(6, unprocessedRNAIndexs) * processingRNAs"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m"
+      lines: "422-472"
+      note: "Substrate delta update in evolveState_Helper."
+    oc_anchor:
+      path: "opencell/vivarium/karr_rna_processing.py"
+      lines: "236-284"
+      note: "substrate_delta = self.reaction_stoich @ processing_events."
+    note: "Negative H2O row in reactantByproductMatrix."
+produce_stoichiometry:
+  - wid: "ADP"
+    compartment: "cytosol"
+    formula_or_constant: "this.reactantByproductMatrix(3, unprocessedRNAIndexs) * processingRNAs"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m"
+      lines: "422-472"
+      note: "Substrate delta update in evolveState_Helper."
+    oc_anchor:
+      path: "opencell/vivarium/karr_rna_processing.py"
+      lines: "236-284"
+      note: "substrate_delta = self.reaction_stoich @ processing_events."
+    note: "Positive ADP byproduct row in reactantByproductMatrix."
+  - wid: "GDP"
+    compartment: "cytosol"
+    formula_or_constant: "this.reactantByproductMatrix(4, unprocessedRNAIndexs) * processingRNAs"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m"
+      lines: "422-472"
+      note: "Substrate delta update in evolveState_Helper."
+    oc_anchor:
+      path: "opencell/vivarium/karr_rna_processing.py"
+      lines: "236-284"
+      note: "substrate_delta = self.reaction_stoich @ processing_events."
+    note: "Positive GDP byproduct row in reactantByproductMatrix."
+  - wid: "PI"
+    compartment: "cytosol"
+    formula_or_constant: "this.reactantByproductMatrix(5, unprocessedRNAIndexs) * processingRNAs"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m"
+      lines: "422-472"
+      note: "Substrate delta update in evolveState_Helper."
+    oc_anchor:
+      path: "opencell/vivarium/karr_rna_processing.py"
+      lines: "236-284"
+      note: "substrate_delta = self.reaction_stoich @ processing_events."
+    note: "Positive PI byproduct row in reactantByproductMatrix."
+  - wid: "H"
+    compartment: "cytosol"
+    formula_or_constant: "this.reactantByproductMatrix(7, unprocessedRNAIndexs) * processingRNAs"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m"
+      lines: "422-472"
+      note: "Substrate delta update in evolveState_Helper."
+    oc_anchor:
+      path: "opencell/vivarium/karr_rna_processing.py"
+      lines: "236-284"
+      note: "substrate_delta = self.reaction_stoich @ processing_events."
+    note: "Positive H byproduct row in reactantByproductMatrix."
+compartment_routing:
+  - wid: "ATP"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Single cytosolic substrate pool; ATP is consumed in place."
+  - wid: "GTP"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Single cytosolic substrate pool; GTP is consumed in place."
+  - wid: "H2O"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Single cytosolic substrate pool; water is consumed in place."
+  - wid: "ADP"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Positive byproduct is written back to the same cytosolic pool."
+  - wid: "GDP"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Positive byproduct is written back to the same cytosolic pool."
+  - wid: "PI"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Positive byproduct is written back to the same cytosolic pool."
+  - wid: "H"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Positive byproduct is written back to the same cytosolic pool."
+unit_conversion_chain:
+  source_units: "enzyme-constrained reaction opportunities"
+  target_units: "substrate molecule counts/tick"
+  steps:
+    - from_units: "enzyme-constrained reaction opportunities"
+      to_units: "substrate molecule counts/tick"
+      operation: "max(0, -reactantByproductMatrix) × min(ceil(min(enzymes(:, ones(size(catalysisMatrix, 2), 1)) ./ catalysisMatrix * stepSizeSec, [], 1))', unprocessedRNAs)"
+      anchor:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m"
+        lines: "406-472"
+        note: "Count-space cap and writeback path."
+      constants:
+        - "stepSizeSec"
+  note: >-
+    RNAProcessing stays in integer count space; there is no mmol/gDW/hr or
+    mass-to-molecule conversion layer in this process.
+dependencies:
+  produces_inputs_for:
+    - "RibosomeAssembly"
+    - "Translation"
+    - "tRNAAminoacylation"
+  consumes_outputs_of:
+    - "Metabolism"
+    - "Transcription"
+  note: >-
+    The process feeds mature RNA pools used downstream by translation,
+    tRNA charging, and ribosome assembly, and it consumes ATP plus newly
+    transcribed RNA output from upstream processes.
+ordering_constraints:
+  hard_before: []
+  hard_after: []
+  soft_before: []
+  soft_after: []
+  note: >-
+    RNAProcessing itself has no process-specific ordering rule in the source.
+    The only canonical hard ordering cited elsewhere in the Karr simulation is
+    tRNAAminoacylation before Translation.
+source_anchors:
+  matlab_blocks:
+    class_identity:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m"
+      lines: "183-384"
+      note: "Classdef, substrate/enzyme IDs, and RNA-type index declarations."
+    lifecycle_requirements:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m"
+      lines: "387-401"
+      note: "calcResourceRequirements_LifeCycle block."
+    resource_requirements_current:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m"
+      lines: "406-409"
+      note: "calcResourceRequirements_Current block."
+    evolve_state:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m"
+      lines: "413-420"
+      note: "Random RNA-class order and helper dispatch."
+    evolve_state_helper:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m"
+      lines: "422-472"
+      note: "Per-class substrate, RNA, and byproduct writeback."
+    get_dry_weight:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m"
+      lines: "476-485"
+      note: "Dependent local-state getter."
+  oc_blocks:
+    process_class:
+      path: "opencell/vivarium/karr_rna_processing.py"
+      lines: "42-123"
+      note: "Class definition plus fixture load and port schema."
+    request_helper:
+      path: "opencell/vivarium/karr_request_calculators.py"
+      lines: "16-27"
+      note: "Availability-based request helper."
+    request_calculator:
+      path: "opencell/vivarium/karr_request_calculators.py"
+      lines: "286-351"
+      note: "Shared RNA-pathway request step."
+    next_update:
+      path: "opencell/vivarium/karr_rna_processing.py"
+      lines: "236-284"
+      note: "Allocated substrate read and substrate/RNA state writeback."
+    processing_events:
+      path: "opencell/vivarium/karr_rna_processing.py"
+      lines: "340-477"
+      note: "Reaction-cap calculation, sampling, and state-delta construction."
+    composite_wiring:
+      path: "opencell/vivarium/karr_composite.py"
+      lines: "1044-1165"
+      note: "Current chassis wiring for RNAProcessing and the shared RNA request step."
+provenance:
+  fixture_files:
+    - "data/karr_fixtures/per_process/RNAProcessing_flat.mat"
+    - "data/karr_fixtures/per_process/Rna_flat.mat"
+    - "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
+    - "data/karr_fixtures/per_process/RibosomeAssembly_flat.mat"
+  kb_version: "karr_native_m1__v2"
+  extraction_date_utc: "2026-06-30"
+  notes: >-
+    Schema-restricted provenance metadata is encoded here because the current
+    row schema does not admit extra top-level provenance keys. last_audited=
+    2026-06-29; audited_by=gpt-5.4-mini (codex; row authored Day-43 EOD);
+    oc_commit_sha=61a5a06e8031af3159dffa436655ade330be1fd9;
+    matlab_files_referenced=[E:\\opencell-mirrors\\WholeCell\\src\\+edu\\+stanford\\+covert\\+cell\\+sim\\+process\\RNAProcessing.m,
+    E:\\opencell-mirrors\\WholeCell\\src\\+edu\\+stanford\\+covert\\+cell\\+sim\\@Simulation\\Simulation.m];
+    oc_files_referenced=[opencell/vivarium/karr_rna_processing.py,
+    opencell/vivarium/karr_request_calculators.py,
+    opencell/vivarium/karr_composite.py,
+    opencell/vivarium/karr_rna_modification.py,
+    opencell/vivarium/karr_trna_aminoacylation.py,
+    tests/vivarium/test_karr_rna_processing.py]
+deviations:
+  lp_bounds_source:
+    karr: "unknown"
+    oc_current: "unknown"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m"
+      lines: "183-485"
+      note: "RNAProcessing.m has no calcFluxBounds method; the class only defines resource-request and evolve methods."
+    oc_anchor:
+      path: "opencell/vivarium/karr_rna_processing.py"
+      lines: "42-477"
+      note: "No OC LP-bound helper exists for this process."
+  shared_pool_projection_merges_compartments: false
+  known_deviations:
+    - "OC RequestCalculatorRNAPathway is shared with RNAModification and requests the current available substrate pool when active; it does not reproduce the MATLAB enzyme/unprocessedRNA cap literally."
+    - "OC next_update consumes from substrates_allocated[self.name], while MATLAB evolves from the local substrates state."
+    - "OC omits the MATLAB intergenicRNAs state/output entirely; the replay port only updates substrates and rna.counts."
+    - "OC prefixes colliding processed RNA IDs with processed:: to keep mature and nascent pools from cancelling in the shared rna.counts store."
+    - "OC can source enzyme counts from protein/complex stores when an explicit enzymes store is absent; MATLAB reads this.enzymes directly."
+  note: >-
+    These deviations are replay-port simplifications and wiring choices, not
+    claim of biological change. They make the current OC port auditable against
+    the MATLAB source without pretending the replay layer is a byte-for-byte
+    clone.
