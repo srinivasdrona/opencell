@@ -1,0 +1,1635 @@
+{
+  "metadata": {
+    "probe": "h_glpk_internal_sweep",
+    "sample": {
+      "seed": 0,
+      "tick": 1
+    },
+    "command": "bin/oc-py scripts/probe_h_glpk_internal_sweep.py",
+    "files": {
+      "ground_truth_fixture": "data/karr_fixtures/matlab_ground_truth/metab_flux_allocated_state_s000_tick1.mat",
+      "lp_fixture_npz": "data/karr_fixtures/karr_native_m1.npz",
+      "writeback_fixture_mat": "data/karr_fixtures/per_process/Metabolism_flat.mat",
+      "json_output": "tmp/h_glpk_internal_sweep.json",
+      "status_output": "STATUS_h_glpk_internal_sweep.md"
+    },
+    "lp_shape": {
+      "rows": 376,
+      "cols": 504
+    },
+    "biomass_col": 502,
+    "karr_growth_per_s": 2.119269255200068e-05
+  },
+  "variant_order": [
+    "V0",
+    "V_cpx_basis",
+    "V_no_advanced_basis",
+    "V_tol_dj_1e5",
+    "V_tol_dj_1e9",
+    "V_tol_piv_1e8",
+    "V_tol_piv_1e12",
+    "V_flip_r_test",
+    "V_cpx_basis_plus_flip",
+    "V_no_advbas_plus_flip",
+    "V_all_alt"
+  ],
+  "pair_columns": [
+    {
+      "name": "HDCA",
+      "col": 393
+    },
+    {
+      "name": "OCDCEA",
+      "col": 422
+    },
+    {
+      "name": "PHE",
+      "col": 423
+    },
+    {
+      "name": "PhePhe",
+      "col": 424
+    },
+    {
+      "name": "TRIOLEIN",
+      "col": 444
+    },
+    {
+      "name": "TRIPALMITIN",
+      "col": 445
+    },
+    {
+      "name": "TRP",
+      "col": 449
+    },
+    {
+      "name": "TrpTrp",
+      "col": 450
+    }
+  ],
+  "systematic_substrates": [
+    {
+      "name": "O2",
+      "row": 420
+    },
+    {
+      "name": "H2O2",
+      "row": 298
+    },
+    {
+      "name": "CO2",
+      "row": 69
+    },
+    {
+      "name": "AC",
+      "row": 3
+    },
+    {
+      "name": "OCDCEA",
+      "row": 439
+    },
+    {
+      "name": "GLC",
+      "row": 250
+    },
+    {
+      "name": "PHE",
+      "row": 469
+    },
+    {
+      "name": "PhePhe",
+      "row": 470
+    },
+    {
+      "name": "H2O",
+      "row": 297
+    }
+  ],
+  "variants": {
+    "V0": {
+      "name": "V0",
+      "ok": true,
+      "simplex_status": 0,
+      "solution_status": 5,
+      "objective": 0.021330661933306305,
+      "biomass_growth_per_s": 2.1192692552125117e-05,
+      "solver_options": {
+        "basis_init": "adv",
+        "presolve": "OFF",
+        "meth": "PRIMAL",
+        "pricing": "STD",
+        "r_test": "HAR",
+        "tol_bnd": 1e-06,
+        "tol_dj": 1e-07,
+        "tol_piv": 1e-09,
+        "scale": "AUTO"
+      },
+      "full_flux_l1_vs_karr": 354330.38341224176,
+      "writeback_delta_l1_vs_karr_recorded": 14517,
+      "pair_flux": {
+        "HDCA": 6749.202397987354,
+        "OCDCEA": 7918.395518452329,
+        "PHE": 0.0,
+        "PhePhe": 7.6409189390842585,
+        "TRIOLEIN": -2639.0134968335506,
+        "TRIPALMITIN": -2248.8599635092223,
+        "TRP": -3771.3523885009595,
+        "TrpTrp": 1886.8113618224033
+      },
+      "systematic_direction": {
+        "O2": {
+          "row_index": 420,
+          "karr_row_delta_total": -10865.0,
+          "variant_row_delta_total": -10855.0,
+          "variant_minus_karr": 10.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "less_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "H2O2": {
+          "row_index": 298,
+          "karr_row_delta_total": 10863.0,
+          "variant_row_delta_total": 10853.0,
+          "variant_minus_karr": -10.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "less_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "CO2": {
+          "row_index": 69,
+          "karr_row_delta_total": 5432.0,
+          "variant_row_delta_total": 5432.0,
+          "variant_minus_karr": 0.0,
+          "variant_minus_karr_sign": 0,
+          "direction_vs_karr": "matches_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "AC": {
+          "row_index": 3,
+          "karr_row_delta_total": 5431.0,
+          "variant_row_delta_total": 5432.0,
+          "variant_minus_karr": 1.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "more_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "OCDCEA": {
+          "row_index": 439,
+          "karr_row_delta_total": -6741.0,
+          "variant_row_delta_total": -7918.0,
+          "variant_minus_karr": -1177.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "more_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "GLC": {
+          "row_index": 250,
+          "karr_row_delta_total": -2725.0,
+          "variant_row_delta_total": -2728.0,
+          "variant_minus_karr": -3.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "more_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "PHE": {
+          "row_index": 469,
+          "karr_row_delta_total": 3778.0,
+          "variant_row_delta_total": 15.0,
+          "variant_minus_karr": -3763.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "less_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "PhePhe": {
+          "row_index": 470,
+          "karr_row_delta_total": -1889.0,
+          "variant_row_delta_total": -8.0,
+          "variant_minus_karr": 1881.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "less_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "H2O": {
+          "row_index": 297,
+          "karr_row_delta_total": 22393.0,
+          "variant_row_delta_total": 22396.0,
+          "variant_minus_karr": 3.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "more_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        }
+      },
+      "objective_rel_diff_vs_v0": 0.0,
+      "objective_preserved_within_1e5_rel": true,
+      "objective_changed_gt_1pct": false,
+      "writeback_l1_improved_vs_v0": false,
+      "flip_count_toward_karr": 0
+    },
+    "V_cpx_basis": {
+      "name": "V_cpx_basis",
+      "ok": true,
+      "simplex_status": 0,
+      "solution_status": 5,
+      "objective": 0.02133066193302281,
+      "biomass_growth_per_s": 2.1192692551841327e-05,
+      "solver_options": {
+        "basis_init": "cpx",
+        "presolve": "OFF",
+        "meth": "PRIMAL",
+        "pricing": "STD",
+        "r_test": "HAR",
+        "tol_bnd": 1e-06,
+        "tol_dj": 1e-07,
+        "tol_piv": 1e-09,
+        "scale": "AUTO"
+      },
+      "full_flux_l1_vs_karr": 15137150.185879579,
+      "writeback_delta_l1_vs_karr_recorded": 75093,
+      "pair_flux": {
+        "HDCA": 7918.395518452329,
+        "OCDCEA": 1.3550279508353924,
+        "PHE": 0.0,
+        "PhePhe": 7.640918938982395,
+        "TRIOLEIN": 0.0,
+        "TRIPALMITIN": -2638.5910036641767,
+        "TRP": 0.0,
+        "TrpTrp": 1.1351675720134153
+      },
+      "systematic_direction": {
+        "O2": {
+          "row_index": 420,
+          "karr_row_delta_total": -10865.0,
+          "variant_row_delta_total": -10865.0,
+          "variant_minus_karr": 0.0,
+          "variant_minus_karr_sign": 0,
+          "direction_vs_karr": "matches_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": true
+        },
+        "H2O2": {
+          "row_index": 298,
+          "karr_row_delta_total": 10863.0,
+          "variant_row_delta_total": 10588.0,
+          "variant_minus_karr": -275.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "less_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "CO2": {
+          "row_index": 69,
+          "karr_row_delta_total": 5432.0,
+          "variant_row_delta_total": 5432.0,
+          "variant_minus_karr": 0.0,
+          "variant_minus_karr_sign": 0,
+          "direction_vs_karr": "matches_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "AC": {
+          "row_index": 3,
+          "karr_row_delta_total": 5431.0,
+          "variant_row_delta_total": 5432.0,
+          "variant_minus_karr": 1.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "more_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "OCDCEA": {
+          "row_index": 439,
+          "karr_row_delta_total": -6741.0,
+          "variant_row_delta_total": -1.0,
+          "variant_minus_karr": 6740.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "less_consumption_than_karr",
+          "flip_toward_karr_vs_v0": true,
+          "moved_toward_karr_abs_error": false
+        },
+        "GLC": {
+          "row_index": 250,
+          "karr_row_delta_total": -2725.0,
+          "variant_row_delta_total": -2725.0,
+          "variant_minus_karr": 0.0,
+          "variant_minus_karr_sign": 0,
+          "direction_vs_karr": "matches_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": true
+        },
+        "PHE": {
+          "row_index": 469,
+          "karr_row_delta_total": 3778.0,
+          "variant_row_delta_total": 15.0,
+          "variant_minus_karr": -3763.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "less_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "PhePhe": {
+          "row_index": 470,
+          "karr_row_delta_total": -1889.0,
+          "variant_row_delta_total": -8.0,
+          "variant_minus_karr": 1881.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "less_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "H2O": {
+          "row_index": 297,
+          "karr_row_delta_total": 22393.0,
+          "variant_row_delta_total": 16477.0,
+          "variant_minus_karr": -5916.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "less_production_than_karr",
+          "flip_toward_karr_vs_v0": true,
+          "moved_toward_karr_abs_error": false
+        }
+      },
+      "objective_rel_diff_vs_v0": 1.3290513450751186e-11,
+      "objective_preserved_within_1e5_rel": true,
+      "objective_changed_gt_1pct": false,
+      "writeback_l1_improved_vs_v0": false,
+      "flip_count_toward_karr": 2
+    },
+    "V_no_advanced_basis": {
+      "name": "V_no_advanced_basis",
+      "ok": true,
+      "simplex_status": 0,
+      "solution_status": 5,
+      "objective": 0.02133066193302286,
+      "biomass_growth_per_s": 2.1192692551841327e-05,
+      "solver_options": {
+        "basis_init": "none",
+        "presolve": "OFF",
+        "meth": "PRIMAL",
+        "pricing": "STD",
+        "r_test": "HAR",
+        "tol_bnd": 1e-06,
+        "tol_dj": 1e-07,
+        "tol_piv": 1e-09,
+        "scale": "AUTO"
+      },
+      "full_flux_l1_vs_karr": 12330854.82847475,
+      "writeback_delta_l1_vs_karr_recorded": 82546,
+      "pair_flux": {
+        "HDCA": 2.622507459894223,
+        "OCDCEA": 1.3550279517730814,
+        "PHE": -3213.1376097393513,
+        "PhePhe": 1614.2097238086571,
+        "TRIOLEIN": 0.0,
+        "TRIPALMITIN": 0.0,
+        "TRP": 0.0,
+        "TrpTrp": 1.1351675720134153
+      },
+      "systematic_direction": {
+        "O2": {
+          "row_index": 420,
+          "karr_row_delta_total": -10865.0,
+          "variant_row_delta_total": -10865.0,
+          "variant_minus_karr": 0.0,
+          "variant_minus_karr_sign": 0,
+          "direction_vs_karr": "matches_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": true
+        },
+        "H2O2": {
+          "row_index": 298,
+          "karr_row_delta_total": 10863.0,
+          "variant_row_delta_total": 10588.0,
+          "variant_minus_karr": -275.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "less_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "CO2": {
+          "row_index": 69,
+          "karr_row_delta_total": 5432.0,
+          "variant_row_delta_total": 5432.0,
+          "variant_minus_karr": 0.0,
+          "variant_minus_karr_sign": 0,
+          "direction_vs_karr": "matches_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "AC": {
+          "row_index": 3,
+          "karr_row_delta_total": 5431.0,
+          "variant_row_delta_total": 5432.0,
+          "variant_minus_karr": 1.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "more_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "OCDCEA": {
+          "row_index": 439,
+          "karr_row_delta_total": -6741.0,
+          "variant_row_delta_total": -1.0,
+          "variant_minus_karr": 6740.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "less_consumption_than_karr",
+          "flip_toward_karr_vs_v0": true,
+          "moved_toward_karr_abs_error": false
+        },
+        "GLC": {
+          "row_index": 250,
+          "karr_row_delta_total": -2725.0,
+          "variant_row_delta_total": -2725.0,
+          "variant_minus_karr": 0.0,
+          "variant_minus_karr_sign": 0,
+          "direction_vs_karr": "matches_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": true
+        },
+        "PHE": {
+          "row_index": 469,
+          "karr_row_delta_total": 3778.0,
+          "variant_row_delta_total": 3228.0,
+          "variant_minus_karr": -550.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "less_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": true
+        },
+        "PhePhe": {
+          "row_index": 470,
+          "karr_row_delta_total": -1889.0,
+          "variant_row_delta_total": -1614.0,
+          "variant_minus_karr": 275.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "less_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": true
+        },
+        "H2O": {
+          "row_index": 297,
+          "karr_row_delta_total": 22393.0,
+          "variant_row_delta_total": 645.0,
+          "variant_minus_karr": -21748.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "less_production_than_karr",
+          "flip_toward_karr_vs_v0": true,
+          "moved_toward_karr_abs_error": false
+        }
+      },
+      "objective_rel_diff_vs_v0": 1.3288073690351718e-11,
+      "objective_preserved_within_1e5_rel": true,
+      "objective_changed_gt_1pct": false,
+      "writeback_l1_improved_vs_v0": false,
+      "flip_count_toward_karr": 2
+    },
+    "V_tol_dj_1e5": {
+      "name": "V_tol_dj_1e5",
+      "ok": true,
+      "simplex_status": 0,
+      "solution_status": 5,
+      "objective": 0.021318559610365384,
+      "biomass_growth_per_s": 2.1192692552131087e-05,
+      "solver_options": {
+        "basis_init": "adv",
+        "presolve": "OFF",
+        "meth": "PRIMAL",
+        "pricing": "STD",
+        "r_test": "HAR",
+        "tol_bnd": 1e-06,
+        "tol_dj": 1e-05,
+        "tol_piv": 1e-09,
+        "scale": "AUTO"
+      },
+      "full_flux_l1_vs_karr": 375818.9896920023,
+      "writeback_delta_l1_vs_karr_recorded": 27666,
+      "pair_flux": {
+        "HDCA": 7918.395518452329,
+        "OCDCEA": 7918.395518452329,
+        "PHE": 0.0,
+        "PhePhe": 7.640918939086077,
+        "TRIOLEIN": -2639.0134968335506,
+        "TRIPALMITIN": -2638.5910036641767,
+        "TRP": -4940.545508966542,
+        "TrpTrp": 2471.4079220553704
+      },
+      "systematic_direction": {
+        "O2": {
+          "row_index": 420,
+          "karr_row_delta_total": -10865.0,
+          "variant_row_delta_total": -10859.0,
+          "variant_minus_karr": 6.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "less_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": true
+        },
+        "H2O2": {
+          "row_index": 298,
+          "karr_row_delta_total": 10863.0,
+          "variant_row_delta_total": 10583.0,
+          "variant_minus_karr": -280.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "less_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "CO2": {
+          "row_index": 69,
+          "karr_row_delta_total": 5432.0,
+          "variant_row_delta_total": 5432.0,
+          "variant_minus_karr": 0.0,
+          "variant_minus_karr_sign": 0,
+          "direction_vs_karr": "matches_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "AC": {
+          "row_index": 3,
+          "karr_row_delta_total": 5431.0,
+          "variant_row_delta_total": 5432.0,
+          "variant_minus_karr": 1.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "more_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "OCDCEA": {
+          "row_index": 439,
+          "karr_row_delta_total": -6741.0,
+          "variant_row_delta_total": -7918.0,
+          "variant_minus_karr": -1177.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "more_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "GLC": {
+          "row_index": 250,
+          "karr_row_delta_total": -2725.0,
+          "variant_row_delta_total": -2732.0,
+          "variant_minus_karr": -7.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "more_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "PHE": {
+          "row_index": 469,
+          "karr_row_delta_total": 3778.0,
+          "variant_row_delta_total": 15.0,
+          "variant_minus_karr": -3763.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "less_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "PhePhe": {
+          "row_index": 470,
+          "karr_row_delta_total": -1889.0,
+          "variant_row_delta_total": -8.0,
+          "variant_minus_karr": 1881.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "less_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "H2O": {
+          "row_index": 297,
+          "karr_row_delta_total": 22393.0,
+          "variant_row_delta_total": 22815.0,
+          "variant_minus_karr": 422.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "more_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        }
+      },
+      "objective_rel_diff_vs_v0": 0.0005673674346703497,
+      "objective_preserved_within_1e5_rel": false,
+      "objective_changed_gt_1pct": false,
+      "writeback_l1_improved_vs_v0": false,
+      "flip_count_toward_karr": 0
+    },
+    "V_tol_dj_1e9": {
+      "name": "V_tol_dj_1e9",
+      "ok": true,
+      "simplex_status": 0,
+      "solution_status": 5,
+      "objective": 0.021330661933306305,
+      "biomass_growth_per_s": 2.1192692552125117e-05,
+      "solver_options": {
+        "basis_init": "adv",
+        "presolve": "OFF",
+        "meth": "PRIMAL",
+        "pricing": "STD",
+        "r_test": "HAR",
+        "tol_bnd": 1e-06,
+        "tol_dj": 1e-09,
+        "tol_piv": 1e-09,
+        "scale": "AUTO"
+      },
+      "full_flux_l1_vs_karr": 354330.38341224176,
+      "writeback_delta_l1_vs_karr_recorded": 14517,
+      "pair_flux": {
+        "HDCA": 6749.202397987354,
+        "OCDCEA": 7918.395518452329,
+        "PHE": 0.0,
+        "PhePhe": 7.6409189390842585,
+        "TRIOLEIN": -2639.0134968335506,
+        "TRIPALMITIN": -2248.8599635092223,
+        "TRP": -3771.3523885009595,
+        "TrpTrp": 1886.8113618224033
+      },
+      "systematic_direction": {
+        "O2": {
+          "row_index": 420,
+          "karr_row_delta_total": -10865.0,
+          "variant_row_delta_total": -10855.0,
+          "variant_minus_karr": 10.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "less_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "H2O2": {
+          "row_index": 298,
+          "karr_row_delta_total": 10863.0,
+          "variant_row_delta_total": 10853.0,
+          "variant_minus_karr": -10.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "less_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "CO2": {
+          "row_index": 69,
+          "karr_row_delta_total": 5432.0,
+          "variant_row_delta_total": 5432.0,
+          "variant_minus_karr": 0.0,
+          "variant_minus_karr_sign": 0,
+          "direction_vs_karr": "matches_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "AC": {
+          "row_index": 3,
+          "karr_row_delta_total": 5431.0,
+          "variant_row_delta_total": 5432.0,
+          "variant_minus_karr": 1.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "more_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "OCDCEA": {
+          "row_index": 439,
+          "karr_row_delta_total": -6741.0,
+          "variant_row_delta_total": -7918.0,
+          "variant_minus_karr": -1177.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "more_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "GLC": {
+          "row_index": 250,
+          "karr_row_delta_total": -2725.0,
+          "variant_row_delta_total": -2728.0,
+          "variant_minus_karr": -3.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "more_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "PHE": {
+          "row_index": 469,
+          "karr_row_delta_total": 3778.0,
+          "variant_row_delta_total": 15.0,
+          "variant_minus_karr": -3763.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "less_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "PhePhe": {
+          "row_index": 470,
+          "karr_row_delta_total": -1889.0,
+          "variant_row_delta_total": -8.0,
+          "variant_minus_karr": 1881.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "less_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "H2O": {
+          "row_index": 297,
+          "karr_row_delta_total": 22393.0,
+          "variant_row_delta_total": 22396.0,
+          "variant_minus_karr": 3.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "more_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        }
+      },
+      "objective_rel_diff_vs_v0": 0.0,
+      "objective_preserved_within_1e5_rel": true,
+      "objective_changed_gt_1pct": false,
+      "writeback_l1_improved_vs_v0": false,
+      "flip_count_toward_karr": 0
+    },
+    "V_tol_piv_1e8": {
+      "name": "V_tol_piv_1e8",
+      "ok": true,
+      "simplex_status": 0,
+      "solution_status": 5,
+      "objective": 0.021330661933306305,
+      "biomass_growth_per_s": 2.1192692552125117e-05,
+      "solver_options": {
+        "basis_init": "adv",
+        "presolve": "OFF",
+        "meth": "PRIMAL",
+        "pricing": "STD",
+        "r_test": "HAR",
+        "tol_bnd": 1e-06,
+        "tol_dj": 1e-07,
+        "tol_piv": 1e-08,
+        "scale": "AUTO"
+      },
+      "full_flux_l1_vs_karr": 354330.38341224176,
+      "writeback_delta_l1_vs_karr_recorded": 14517,
+      "pair_flux": {
+        "HDCA": 6749.202397987354,
+        "OCDCEA": 7918.395518452329,
+        "PHE": 0.0,
+        "PhePhe": 7.6409189390842585,
+        "TRIOLEIN": -2639.0134968335506,
+        "TRIPALMITIN": -2248.8599635092223,
+        "TRP": -3771.3523885009595,
+        "TrpTrp": 1886.8113618224033
+      },
+      "systematic_direction": {
+        "O2": {
+          "row_index": 420,
+          "karr_row_delta_total": -10865.0,
+          "variant_row_delta_total": -10855.0,
+          "variant_minus_karr": 10.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "less_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "H2O2": {
+          "row_index": 298,
+          "karr_row_delta_total": 10863.0,
+          "variant_row_delta_total": 10853.0,
+          "variant_minus_karr": -10.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "less_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "CO2": {
+          "row_index": 69,
+          "karr_row_delta_total": 5432.0,
+          "variant_row_delta_total": 5432.0,
+          "variant_minus_karr": 0.0,
+          "variant_minus_karr_sign": 0,
+          "direction_vs_karr": "matches_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "AC": {
+          "row_index": 3,
+          "karr_row_delta_total": 5431.0,
+          "variant_row_delta_total": 5432.0,
+          "variant_minus_karr": 1.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "more_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "OCDCEA": {
+          "row_index": 439,
+          "karr_row_delta_total": -6741.0,
+          "variant_row_delta_total": -7918.0,
+          "variant_minus_karr": -1177.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "more_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "GLC": {
+          "row_index": 250,
+          "karr_row_delta_total": -2725.0,
+          "variant_row_delta_total": -2728.0,
+          "variant_minus_karr": -3.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "more_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "PHE": {
+          "row_index": 469,
+          "karr_row_delta_total": 3778.0,
+          "variant_row_delta_total": 15.0,
+          "variant_minus_karr": -3763.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "less_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "PhePhe": {
+          "row_index": 470,
+          "karr_row_delta_total": -1889.0,
+          "variant_row_delta_total": -8.0,
+          "variant_minus_karr": 1881.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "less_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "H2O": {
+          "row_index": 297,
+          "karr_row_delta_total": 22393.0,
+          "variant_row_delta_total": 22396.0,
+          "variant_minus_karr": 3.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "more_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        }
+      },
+      "objective_rel_diff_vs_v0": 0.0,
+      "objective_preserved_within_1e5_rel": true,
+      "objective_changed_gt_1pct": false,
+      "writeback_l1_improved_vs_v0": false,
+      "flip_count_toward_karr": 0
+    },
+    "V_tol_piv_1e12": {
+      "name": "V_tol_piv_1e12",
+      "ok": true,
+      "simplex_status": 0,
+      "solution_status": 5,
+      "objective": 0.021330661933306305,
+      "biomass_growth_per_s": 2.1192692552125117e-05,
+      "solver_options": {
+        "basis_init": "adv",
+        "presolve": "OFF",
+        "meth": "PRIMAL",
+        "pricing": "STD",
+        "r_test": "HAR",
+        "tol_bnd": 1e-06,
+        "tol_dj": 1e-07,
+        "tol_piv": 1e-12,
+        "scale": "AUTO"
+      },
+      "full_flux_l1_vs_karr": 354330.38341224176,
+      "writeback_delta_l1_vs_karr_recorded": 14517,
+      "pair_flux": {
+        "HDCA": 6749.202397987354,
+        "OCDCEA": 7918.395518452329,
+        "PHE": 0.0,
+        "PhePhe": 7.6409189390842585,
+        "TRIOLEIN": -2639.0134968335506,
+        "TRIPALMITIN": -2248.8599635092223,
+        "TRP": -3771.3523885009595,
+        "TrpTrp": 1886.8113618224033
+      },
+      "systematic_direction": {
+        "O2": {
+          "row_index": 420,
+          "karr_row_delta_total": -10865.0,
+          "variant_row_delta_total": -10855.0,
+          "variant_minus_karr": 10.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "less_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "H2O2": {
+          "row_index": 298,
+          "karr_row_delta_total": 10863.0,
+          "variant_row_delta_total": 10853.0,
+          "variant_minus_karr": -10.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "less_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "CO2": {
+          "row_index": 69,
+          "karr_row_delta_total": 5432.0,
+          "variant_row_delta_total": 5432.0,
+          "variant_minus_karr": 0.0,
+          "variant_minus_karr_sign": 0,
+          "direction_vs_karr": "matches_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "AC": {
+          "row_index": 3,
+          "karr_row_delta_total": 5431.0,
+          "variant_row_delta_total": 5432.0,
+          "variant_minus_karr": 1.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "more_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "OCDCEA": {
+          "row_index": 439,
+          "karr_row_delta_total": -6741.0,
+          "variant_row_delta_total": -7918.0,
+          "variant_minus_karr": -1177.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "more_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "GLC": {
+          "row_index": 250,
+          "karr_row_delta_total": -2725.0,
+          "variant_row_delta_total": -2728.0,
+          "variant_minus_karr": -3.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "more_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "PHE": {
+          "row_index": 469,
+          "karr_row_delta_total": 3778.0,
+          "variant_row_delta_total": 15.0,
+          "variant_minus_karr": -3763.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "less_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "PhePhe": {
+          "row_index": 470,
+          "karr_row_delta_total": -1889.0,
+          "variant_row_delta_total": -8.0,
+          "variant_minus_karr": 1881.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "less_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "H2O": {
+          "row_index": 297,
+          "karr_row_delta_total": 22393.0,
+          "variant_row_delta_total": 22396.0,
+          "variant_minus_karr": 3.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "more_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        }
+      },
+      "objective_rel_diff_vs_v0": 0.0,
+      "objective_preserved_within_1e5_rel": true,
+      "objective_changed_gt_1pct": false,
+      "writeback_l1_improved_vs_v0": false,
+      "flip_count_toward_karr": 0
+    },
+    "V_flip_r_test": {
+      "name": "V_flip_r_test",
+      "ok": true,
+      "simplex_status": 0,
+      "solution_status": 5,
+      "objective": 0.021330661933060782,
+      "biomass_growth_per_s": 2.1192692551880355e-05,
+      "solver_options": {
+        "basis_init": "adv",
+        "presolve": "OFF",
+        "meth": "PRIMAL",
+        "pricing": "STD",
+        "r_test": "FLIP",
+        "tol_bnd": 1e-06,
+        "tol_dj": 1e-07,
+        "tol_piv": 1e-09,
+        "scale": "AUTO"
+      },
+      "full_flux_l1_vs_karr": 7077667.515926932,
+      "writeback_delta_l1_vs_karr_recorded": 14503,
+      "pair_flux": {
+        "HDCA": 6749.202397878531,
+        "OCDCEA": 7918.395518452329,
+        "PHE": 0.0,
+        "PhePhe": 7.6409189389960375,
+        "TRIOLEIN": -2639.0134968335506,
+        "TRIPALMITIN": -2248.859963472798,
+        "TRP": -5.716450501795385e-09,
+        "TrpTrp": 1.1351675748746857
+      },
+      "systematic_direction": {
+        "O2": {
+          "row_index": 420,
+          "karr_row_delta_total": -10865.0,
+          "variant_row_delta_total": -10861.0,
+          "variant_minus_karr": 4.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "less_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": true
+        },
+        "H2O2": {
+          "row_index": 298,
+          "karr_row_delta_total": 10863.0,
+          "variant_row_delta_total": 10859.0,
+          "variant_minus_karr": -4.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "less_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": true
+        },
+        "CO2": {
+          "row_index": 69,
+          "karr_row_delta_total": 5432.0,
+          "variant_row_delta_total": 5432.0,
+          "variant_minus_karr": 0.0,
+          "variant_minus_karr_sign": 0,
+          "direction_vs_karr": "matches_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "AC": {
+          "row_index": 3,
+          "karr_row_delta_total": 5431.0,
+          "variant_row_delta_total": 5432.0,
+          "variant_minus_karr": 1.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "more_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "OCDCEA": {
+          "row_index": 439,
+          "karr_row_delta_total": -6741.0,
+          "variant_row_delta_total": -7918.0,
+          "variant_minus_karr": -1177.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "more_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "GLC": {
+          "row_index": 250,
+          "karr_row_delta_total": -2725.0,
+          "variant_row_delta_total": -2725.0,
+          "variant_minus_karr": 0.0,
+          "variant_minus_karr_sign": 0,
+          "direction_vs_karr": "matches_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": true
+        },
+        "PHE": {
+          "row_index": 469,
+          "karr_row_delta_total": 3778.0,
+          "variant_row_delta_total": 15.0,
+          "variant_minus_karr": -3763.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "less_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "PhePhe": {
+          "row_index": 470,
+          "karr_row_delta_total": -1889.0,
+          "variant_row_delta_total": -8.0,
+          "variant_minus_karr": 1881.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "less_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "H2O": {
+          "row_index": 297,
+          "karr_row_delta_total": 22393.0,
+          "variant_row_delta_total": 22396.0,
+          "variant_minus_karr": 3.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "more_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        }
+      },
+      "objective_rel_diff_vs_v0": 1.1510301612606584e-11,
+      "objective_preserved_within_1e5_rel": true,
+      "objective_changed_gt_1pct": false,
+      "writeback_l1_improved_vs_v0": true,
+      "flip_count_toward_karr": 0
+    },
+    "V_cpx_basis_plus_flip": {
+      "name": "V_cpx_basis_plus_flip",
+      "ok": true,
+      "simplex_status": 0,
+      "solution_status": 5,
+      "objective": 0.021330661933022882,
+      "biomass_growth_per_s": 2.1192692551841327e-05,
+      "solver_options": {
+        "basis_init": "cpx",
+        "presolve": "OFF",
+        "meth": "PRIMAL",
+        "pricing": "STD",
+        "r_test": "FLIP",
+        "tol_bnd": 1e-06,
+        "tol_dj": 1e-07,
+        "tol_piv": 1e-09,
+        "scale": "AUTO"
+      },
+      "full_flux_l1_vs_karr": 18943699.72340595,
+      "writeback_delta_l1_vs_karr_recorded": 3230,
+      "pair_flux": {
+        "HDCA": 6749.202398053447,
+        "OCDCEA": 7918.395518452329,
+        "PHE": -3771.3523885694312,
+        "PhePhe": 1893.3171132238658,
+        "TRIOLEIN": -2639.0134968335506,
+        "TRIPALMITIN": -2248.859963531184,
+        "TRP": 0.0,
+        "TrpTrp": 1.1351675720134153
+      },
+      "systematic_direction": {
+        "O2": {
+          "row_index": 420,
+          "karr_row_delta_total": -10865.0,
+          "variant_row_delta_total": -10855.0,
+          "variant_minus_karr": 10.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "less_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "H2O2": {
+          "row_index": 298,
+          "karr_row_delta_total": 10863.0,
+          "variant_row_delta_total": 10853.0,
+          "variant_minus_karr": -10.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "less_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "CO2": {
+          "row_index": 69,
+          "karr_row_delta_total": 5432.0,
+          "variant_row_delta_total": 5432.0,
+          "variant_minus_karr": 0.0,
+          "variant_minus_karr_sign": 0,
+          "direction_vs_karr": "matches_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "AC": {
+          "row_index": 3,
+          "karr_row_delta_total": 5431.0,
+          "variant_row_delta_total": 5432.0,
+          "variant_minus_karr": 1.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "more_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "OCDCEA": {
+          "row_index": 439,
+          "karr_row_delta_total": -6741.0,
+          "variant_row_delta_total": -7918.0,
+          "variant_minus_karr": -1177.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "more_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "GLC": {
+          "row_index": 250,
+          "karr_row_delta_total": -2725.0,
+          "variant_row_delta_total": -2728.0,
+          "variant_minus_karr": -3.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "more_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "PHE": {
+          "row_index": 469,
+          "karr_row_delta_total": 3778.0,
+          "variant_row_delta_total": 3786.0,
+          "variant_minus_karr": 8.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "more_production_than_karr",
+          "flip_toward_karr_vs_v0": true,
+          "moved_toward_karr_abs_error": true
+        },
+        "PhePhe": {
+          "row_index": 470,
+          "karr_row_delta_total": -1889.0,
+          "variant_row_delta_total": -1893.0,
+          "variant_minus_karr": -4.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "more_consumption_than_karr",
+          "flip_toward_karr_vs_v0": true,
+          "moved_toward_karr_abs_error": true
+        },
+        "H2O": {
+          "row_index": 297,
+          "karr_row_delta_total": 22393.0,
+          "variant_row_delta_total": 22396.0,
+          "variant_minus_karr": 3.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "more_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        }
+      },
+      "objective_rel_diff_vs_v0": 1.328709778619193e-11,
+      "objective_preserved_within_1e5_rel": true,
+      "objective_changed_gt_1pct": false,
+      "writeback_l1_improved_vs_v0": true,
+      "flip_count_toward_karr": 2
+    },
+    "V_no_advbas_plus_flip": {
+      "name": "V_no_advbas_plus_flip",
+      "ok": true,
+      "simplex_status": 0,
+      "solution_status": 5,
+      "objective": 0.02133066193338157,
+      "biomass_growth_per_s": 2.1192692552200476e-05,
+      "solver_options": {
+        "basis_init": "none",
+        "presolve": "OFF",
+        "meth": "PRIMAL",
+        "pricing": "STD",
+        "r_test": "FLIP",
+        "tol_bnd": 1e-06,
+        "tol_dj": 1e-07,
+        "tol_piv": 1e-09,
+        "scale": "AUTO"
+      },
+      "full_flux_l1_vs_karr": 14345884.33523447,
+      "writeback_delta_l1_vs_karr_recorded": 82546,
+      "pair_flux": {
+        "HDCA": 2.622507460028828,
+        "OCDCEA": 1.3550279517730814,
+        "PHE": -3213.1376096841027,
+        "PhePhe": 1614.2097237811631,
+        "TRIOLEIN": 0.0,
+        "TRIPALMITIN": 0.0,
+        "TRP": 0.0,
+        "TrpTrp": 1.1351675720334242
+      },
+      "systematic_direction": {
+        "O2": {
+          "row_index": 420,
+          "karr_row_delta_total": -10865.0,
+          "variant_row_delta_total": -10865.0,
+          "variant_minus_karr": 0.0,
+          "variant_minus_karr_sign": 0,
+          "direction_vs_karr": "matches_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": true
+        },
+        "H2O2": {
+          "row_index": 298,
+          "karr_row_delta_total": 10863.0,
+          "variant_row_delta_total": 10588.0,
+          "variant_minus_karr": -275.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "less_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "CO2": {
+          "row_index": 69,
+          "karr_row_delta_total": 5432.0,
+          "variant_row_delta_total": 5432.0,
+          "variant_minus_karr": 0.0,
+          "variant_minus_karr_sign": 0,
+          "direction_vs_karr": "matches_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "AC": {
+          "row_index": 3,
+          "karr_row_delta_total": 5431.0,
+          "variant_row_delta_total": 5432.0,
+          "variant_minus_karr": 1.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "more_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "OCDCEA": {
+          "row_index": 439,
+          "karr_row_delta_total": -6741.0,
+          "variant_row_delta_total": -1.0,
+          "variant_minus_karr": 6740.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "less_consumption_than_karr",
+          "flip_toward_karr_vs_v0": true,
+          "moved_toward_karr_abs_error": false
+        },
+        "GLC": {
+          "row_index": 250,
+          "karr_row_delta_total": -2725.0,
+          "variant_row_delta_total": -2725.0,
+          "variant_minus_karr": 0.0,
+          "variant_minus_karr_sign": 0,
+          "direction_vs_karr": "matches_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": true
+        },
+        "PHE": {
+          "row_index": 469,
+          "karr_row_delta_total": 3778.0,
+          "variant_row_delta_total": 3228.0,
+          "variant_minus_karr": -550.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "less_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": true
+        },
+        "PhePhe": {
+          "row_index": 470,
+          "karr_row_delta_total": -1889.0,
+          "variant_row_delta_total": -1614.0,
+          "variant_minus_karr": 275.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "less_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": true
+        },
+        "H2O": {
+          "row_index": 297,
+          "karr_row_delta_total": 22393.0,
+          "variant_row_delta_total": 645.0,
+          "variant_minus_karr": -21748.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "less_production_than_karr",
+          "flip_toward_karr_vs_v0": true,
+          "moved_toward_karr_abs_error": false
+        }
+      },
+      "objective_rel_diff_vs_v0": 3.5285441403903813e-12,
+      "objective_preserved_within_1e5_rel": true,
+      "objective_changed_gt_1pct": false,
+      "writeback_l1_improved_vs_v0": false,
+      "flip_count_toward_karr": 2
+    },
+    "V_all_alt": {
+      "name": "V_all_alt",
+      "ok": true,
+      "simplex_status": 0,
+      "solution_status": 5,
+      "objective": 0.021290793051570233,
+      "biomass_growth_per_s": 2.1192692552144657e-05,
+      "solver_options": {
+        "basis_init": "cpx",
+        "presolve": "OFF",
+        "meth": "PRIMAL",
+        "pricing": "STD",
+        "r_test": "FLIP",
+        "tol_bnd": 1e-06,
+        "tol_dj": 1e-05,
+        "tol_piv": 1e-09,
+        "scale": "AUTO"
+      },
+      "full_flux_l1_vs_karr": 19003294.836013578,
+      "writeback_delta_l1_vs_karr_recorded": 50304,
+      "pair_flux": {
+        "HDCA": 7918.395518452329,
+        "OCDCEA": 7918.395518452329,
+        "PHE": -7918.395518452329,
+        "PhePhe": 3966.838678165228,
+        "TRIOLEIN": -2639.0134968337293,
+        "TRIPALMITIN": -2638.5910036641767,
+        "TRP": -7918.395518452329,
+        "TrpTrp": 3960.3329267982244
+      },
+      "systematic_direction": {
+        "O2": {
+          "row_index": 420,
+          "karr_row_delta_total": -10865.0,
+          "variant_row_delta_total": -10859.0,
+          "variant_minus_karr": 6.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "less_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": true
+        },
+        "H2O2": {
+          "row_index": 298,
+          "karr_row_delta_total": 10863.0,
+          "variant_row_delta_total": 10858.0,
+          "variant_minus_karr": -5.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "less_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": true
+        },
+        "CO2": {
+          "row_index": 69,
+          "karr_row_delta_total": 5432.0,
+          "variant_row_delta_total": 5432.0,
+          "variant_minus_karr": 0.0,
+          "variant_minus_karr_sign": 0,
+          "direction_vs_karr": "matches_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "AC": {
+          "row_index": 3,
+          "karr_row_delta_total": 5431.0,
+          "variant_row_delta_total": 5432.0,
+          "variant_minus_karr": 1.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "more_production_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "OCDCEA": {
+          "row_index": 439,
+          "karr_row_delta_total": -6741.0,
+          "variant_row_delta_total": -7918.0,
+          "variant_minus_karr": -1177.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "more_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "GLC": {
+          "row_index": 250,
+          "karr_row_delta_total": -2725.0,
+          "variant_row_delta_total": -2732.0,
+          "variant_minus_karr": -7.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "more_consumption_than_karr",
+          "flip_toward_karr_vs_v0": false,
+          "moved_toward_karr_abs_error": false
+        },
+        "PHE": {
+          "row_index": 469,
+          "karr_row_delta_total": 3778.0,
+          "variant_row_delta_total": 7933.0,
+          "variant_minus_karr": 4155.0,
+          "variant_minus_karr_sign": 1,
+          "direction_vs_karr": "more_production_than_karr",
+          "flip_toward_karr_vs_v0": true,
+          "moved_toward_karr_abs_error": false
+        },
+        "PhePhe": {
+          "row_index": 470,
+          "karr_row_delta_total": -1889.0,
+          "variant_row_delta_total": -3967.0,
+          "variant_minus_karr": -2078.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "more_consumption_than_karr",
+          "flip_toward_karr_vs_v0": true,
+          "moved_toward_karr_abs_error": false
+        },
+        "H2O": {
+          "row_index": 297,
+          "karr_row_delta_total": 22393.0,
+          "variant_row_delta_total": 13078.0,
+          "variant_minus_karr": -9315.0,
+          "variant_minus_karr_sign": -1,
+          "direction_vs_karr": "less_production_than_karr",
+          "flip_toward_karr_vs_v0": true,
+          "moved_toward_karr_abs_error": false
+        }
+      },
+      "objective_rel_diff_vs_v0": 0.0018690878820698525,
+      "objective_preserved_within_1e5_rel": false,
+      "objective_changed_gt_1pct": false,
+      "writeback_l1_improved_vs_v0": false,
+      "flip_count_toward_karr": 3
+    }
+  },
+  "flips_by_substrate": {
+    "O2": {
+      "row_index": 420,
+      "v0_sign": 1,
+      "variants_flip_toward_karr": []
+    },
+    "H2O2": {
+      "row_index": 298,
+      "v0_sign": -1,
+      "variants_flip_toward_karr": []
+    },
+    "CO2": {
+      "row_index": 69,
+      "v0_sign": 0,
+      "variants_flip_toward_karr": []
+    },
+    "AC": {
+      "row_index": 3,
+      "v0_sign": 1,
+      "variants_flip_toward_karr": []
+    },
+    "OCDCEA": {
+      "row_index": 439,
+      "v0_sign": -1,
+      "variants_flip_toward_karr": [
+        "V_cpx_basis",
+        "V_no_advanced_basis",
+        "V_no_advbas_plus_flip"
+      ]
+    },
+    "GLC": {
+      "row_index": 250,
+      "v0_sign": -1,
+      "variants_flip_toward_karr": []
+    },
+    "PHE": {
+      "row_index": 469,
+      "v0_sign": -1,
+      "variants_flip_toward_karr": [
+        "V_cpx_basis_plus_flip",
+        "V_all_alt"
+      ]
+    },
+    "PhePhe": {
+      "row_index": 470,
+      "v0_sign": 1,
+      "variants_flip_toward_karr": [
+        "V_cpx_basis_plus_flip",
+        "V_all_alt"
+      ]
+    },
+    "H2O": {
+      "row_index": 297,
+      "v0_sign": 1,
+      "variants_flip_toward_karr": [
+        "V_cpx_basis",
+        "V_no_advanced_basis",
+        "V_no_advbas_plus_flip",
+        "V_all_alt"
+      ]
+    }
+  },
+  "summary": {
+    "headline_verdict": "PARTIAL_HIT",
+    "v0_writeback_delta_l1_vs_karr": 14517,
+    "all_variants_ran": true,
+    "all_variants_objective_preserved_within_1e5_rel": false,
+    "best_variant": "V_cpx_basis_plus_flip",
+    "best_variant_flip_count": 2,
+    "best_variant_l1_vs_karr": 3230,
+    "max_flip_count_among_objective_preserved": 2,
+    "objective_preserved_variants_with_l1_below_v0": [
+      "V_flip_r_test",
+      "V_cpx_basis_plus_flip"
+    ],
+    "objective_preserved_variants_with_2plus_flips": [
+      "V_cpx_basis",
+      "V_no_advanced_basis",
+      "V_cpx_basis_plus_flip",
+      "V_no_advbas_plus_flip"
+    ],
+    "objective_preserved_variants_with_5plus_flips": []
+  },
+  "self_audit": [
+    {
+      "criterion": "All 11 requested variants were executed",
+      "ok": true
+    },
+    {
+      "criterion": "V0 uses production baseline knobs (OFF, PRIMAL, STD, HAR, tol_bnd=1e-6, AUTO, adv_basis)",
+      "ok": true
+    },
+    {
+      "criterion": "Per-variant objective preservation (rel <= 1e-5) computed vs V0",
+      "ok": true
+    },
+    {
+      "criterion": "Per-variant writeback substrate-delta L1 vs Karr recorded computed with _DetRng(np.rint)",
+      "ok": true
+    },
+    {
+      "criterion": "Per-variant 8 substitution-pair flux columns captured",
+      "ok": true
+    },
+    {
+      "criterion": "Per-variant sign table for 9 systematic-bias substrates captured",
+      "ok": true
+    },
+    {
+      "criterion": "Best objective-preserved variant selected by most flips then lowest L1",
+      "ok": true
+    },
+    {
+      "criterion": "JSON and STATUS artifacts written to requested paths",
+      "ok": true
+    }
+  ]
+}
