@@ -1,0 +1,1366 @@
+{
+  "metadata": {
+    "probe": "h_substrate_delta_fva",
+    "command": "bin\\oc-py scripts/probe_h_substrate_delta_fva.py",
+    "date_utc_epoch_seconds": 1782700889.7219577,
+    "inputs": {
+      "lp_fixture_npz": "/mnt/e/opencell/data/karr_fixtures/karr_native_m1.npz",
+      "writeback_fixture_mat": "/mnt/e/opencell/data/karr_fixtures/per_process/Metabolism_flat.mat",
+      "sample0_fixture_mat": "/mnt/e/opencell/data/karr_fixtures/matlab_ground_truth/metab_flux_allocated_state_s000_tick1.mat",
+      "trace_root": "/mnt/e/opencell/data/m1_sources/karr_native"
+    },
+    "solver_config": {
+      "solver": "swiglpk simplex",
+      "pricing": "STD",
+      "presolve": "OFF",
+      "scale": "AUTO",
+      "tol_bnd": 1e-06,
+      "method": "PRIMAL",
+      "big": 1000000.0
+    },
+    "tolerance": 2.0,
+    "objective_pairs_count": 166
+  },
+  "summary": {
+    "verdict": "VALIDATED",
+    "samples_processed": 5,
+    "overall_pairs": 8775,
+    "overall_feasible_pairs": 8775,
+    "overall_feasible_fraction": 1.0,
+    "primary_failures": 0,
+    "delta_lps_total": 1660,
+    "delta_lps_optimal": 1660,
+    "delta_lp_optimal_fraction": 1.0,
+    "wall_time_seconds": 0.6180124810000507,
+    "tolerance": 2.0
+  },
+  "samples": [
+    {
+      "seed": 0,
+      "tick_label": 1,
+      "trace_tick_index": 0,
+      "source": "matlab_ground_truth_fixture",
+      "provenance": "/mnt/e/opencell/data/karr_fixtures/matlab_ground_truth/metab_flux_allocated_state_s000_tick1.mat",
+      "n_infeasible_bounds_preclip": 0,
+      "primary_ok": true,
+      "primary_simplex_exit": 0,
+      "primary_sol_status": 5,
+      "objective_value_star": 0.021330661933306305,
+      "growth_flux_star": 2.1192692552125117e-05,
+      "n_delta_lps_optimal": 332,
+      "n_delta_lps_total": 332,
+      "lp_failures_count": 0,
+      "lp_failures_examples": [],
+      "pairs_total": 1755,
+      "feasible_pairs": 1755,
+      "feasible_fraction": 1.0,
+      "out_of_range_count": 0,
+      "top10_outside": [],
+      "substitution_rows": {
+        "469": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 15.0,
+              "range_min": 15.28183787816944,
+              "range_max": 15.28183787816944
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": 3763.0,
+              "range_min": -0.0,
+              "range_max": 7918.395518452329
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "470": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": -1889.0,
+              "range_min": -3966.838678165146,
+              "range_max": -7.64091893900968
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "541": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 2.0,
+              "range_min": 2.2703351440585258,
+              "range_max": 2.2703351440585258
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": 7918.395518452329
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "542": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": -2.0,
+              "range_min": -3960.3329267982317,
+              "range_max": -1.1351675720288767
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "300": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": -7918.0,
+              "range_min": -7918.395518452329,
+              "range_max": -2.622507459894223
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "439": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": -6741.0,
+              "range_min": -7918.395518452329,
+              "range_max": 7917.040490500939
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "536": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": 2247.0,
+              "range_min": -0.0,
+              "range_max": 5278.478669651037
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "537": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": 2639.0,
+              "range_min": -0.0,
+              "range_max": 2638.5910036641544
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seed": 1,
+      "tick_label": 1,
+      "trace_tick_index": 0,
+      "source": "karr_native_trace",
+      "provenance": "/mnt/e/opencell/data/m1_sources/karr_native/per_process_traces_v2_s001/Metabolism_100ticks.mat",
+      "n_infeasible_bounds_preclip": 0,
+      "primary_ok": true,
+      "primary_simplex_exit": 0,
+      "primary_sol_status": 5,
+      "objective_value_star": 0.021330661933306305,
+      "growth_flux_star": 2.1192692552125117e-05,
+      "n_delta_lps_optimal": 332,
+      "n_delta_lps_total": 332,
+      "lp_failures_count": 0,
+      "lp_failures_examples": [],
+      "pairs_total": 1755,
+      "feasible_pairs": 1755,
+      "feasible_fraction": 1.0,
+      "out_of_range_count": 0,
+      "top10_outside": [],
+      "substitution_rows": {
+        "469": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 15.0,
+              "range_min": 15.28183787816944,
+              "range_max": 15.28183787816944
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": 3763.0,
+              "range_min": -0.0,
+              "range_max": 7918.395518452329
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "470": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": -1889.0,
+              "range_min": -3966.838678165146,
+              "range_max": -7.64091893900968
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "541": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 3.0,
+              "range_min": 2.2703351440585258,
+              "range_max": 2.2703351440585258
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": 7918.395518452329
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "542": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": -2.0,
+              "range_min": -3960.3329267982317,
+              "range_max": -1.1351675720288767
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "300": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": -7918.0,
+              "range_min": -7918.395518452329,
+              "range_max": -2.622507459894223
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "439": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": -6741.0,
+              "range_min": -7918.395518452329,
+              "range_max": 7917.040490500939
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "536": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": 2247.0,
+              "range_min": -0.0,
+              "range_max": 5278.478669651037
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "537": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": 2638.0,
+              "range_min": -0.0,
+              "range_max": 2638.5910036641544
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seed": 2,
+      "tick_label": 1,
+      "trace_tick_index": 0,
+      "source": "karr_native_trace",
+      "provenance": "/mnt/e/opencell/data/m1_sources/karr_native/per_process_traces_v2_s002/Metabolism_100ticks.mat",
+      "n_infeasible_bounds_preclip": 0,
+      "primary_ok": true,
+      "primary_simplex_exit": 0,
+      "primary_sol_status": 5,
+      "objective_value_star": 0.021330661933306305,
+      "growth_flux_star": 2.1192692552125117e-05,
+      "n_delta_lps_optimal": 332,
+      "n_delta_lps_total": 332,
+      "lp_failures_count": 0,
+      "lp_failures_examples": [],
+      "pairs_total": 1755,
+      "feasible_pairs": 1755,
+      "feasible_fraction": 1.0,
+      "out_of_range_count": 0,
+      "top10_outside": [],
+      "substitution_rows": {
+        "469": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 15.0,
+              "range_min": 15.28183787816944,
+              "range_max": 15.28183787816944
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": 3763.0,
+              "range_min": -0.0,
+              "range_max": 7918.395518452329
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "470": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": -1889.0,
+              "range_min": -3966.838678165146,
+              "range_max": -7.64091893900968
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "541": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 3.0,
+              "range_min": 2.2703351440585258,
+              "range_max": 2.2703351440585258
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": 7918.395518452329
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "542": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": -1.0,
+              "range_min": -3960.3329267982317,
+              "range_max": -1.1351675720288767
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "300": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": -7918.0,
+              "range_min": -7918.395518452329,
+              "range_max": -2.622507459894223
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "439": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": -6741.0,
+              "range_min": -7918.395518452329,
+              "range_max": 7917.040490500939
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "536": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": 2246.0,
+              "range_min": -0.0,
+              "range_max": 5278.478669651037
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "537": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": 2639.0,
+              "range_min": -0.0,
+              "range_max": 2638.5910036641544
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seed": 3,
+      "tick_label": 1,
+      "trace_tick_index": 0,
+      "source": "karr_native_trace",
+      "provenance": "/mnt/e/opencell/data/m1_sources/karr_native/per_process_traces_v2_s003/Metabolism_100ticks.mat",
+      "n_infeasible_bounds_preclip": 0,
+      "primary_ok": true,
+      "primary_simplex_exit": 0,
+      "primary_sol_status": 5,
+      "objective_value_star": 0.021330661933306305,
+      "growth_flux_star": 2.1192692552125117e-05,
+      "n_delta_lps_optimal": 332,
+      "n_delta_lps_total": 332,
+      "lp_failures_count": 0,
+      "lp_failures_examples": [],
+      "pairs_total": 1755,
+      "feasible_pairs": 1755,
+      "feasible_fraction": 1.0,
+      "out_of_range_count": 0,
+      "top10_outside": [],
+      "substitution_rows": {
+        "469": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 16.0,
+              "range_min": 15.28183787816944,
+              "range_max": 15.28183787816944
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": 3763.0,
+              "range_min": -0.0,
+              "range_max": 7918.395518452329
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "470": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": -1889.0,
+              "range_min": -3966.838678165146,
+              "range_max": -7.64091893900968
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "541": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 3.0,
+              "range_min": 2.2703351440585258,
+              "range_max": 2.2703351440585258
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": 7918.395518452329
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "542": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": -1.0,
+              "range_min": -3960.3329267982317,
+              "range_max": -1.1351675720288767
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "300": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": -7918.0,
+              "range_min": -7918.395518452329,
+              "range_max": -2.622507459894223
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "439": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": -6741.0,
+              "range_min": -7918.395518452329,
+              "range_max": 7917.040490500939
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "536": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": 2246.0,
+              "range_min": -0.0,
+              "range_max": 5278.478669651037
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "537": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": 2638.0,
+              "range_min": -0.0,
+              "range_max": 2638.5910036641544
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seed": 4,
+      "tick_label": 1,
+      "trace_tick_index": 0,
+      "source": "karr_native_trace",
+      "provenance": "/mnt/e/opencell/data/m1_sources/karr_native/per_process_traces_v2_s004/Metabolism_100ticks.mat",
+      "n_infeasible_bounds_preclip": 0,
+      "primary_ok": true,
+      "primary_simplex_exit": 0,
+      "primary_sol_status": 5,
+      "objective_value_star": 0.021330661933306305,
+      "growth_flux_star": 2.1192692552125117e-05,
+      "n_delta_lps_optimal": 332,
+      "n_delta_lps_total": 332,
+      "lp_failures_count": 0,
+      "lp_failures_examples": [],
+      "pairs_total": 1755,
+      "feasible_pairs": 1755,
+      "feasible_fraction": 1.0,
+      "out_of_range_count": 0,
+      "top10_outside": [],
+      "substitution_rows": {
+        "469": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 15.0,
+              "range_min": 15.28183787816944,
+              "range_max": 15.28183787816944
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": 3763.0,
+              "range_min": -0.0,
+              "range_max": 7918.395518452329
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "470": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": -1889.0,
+              "range_min": -3966.838678165146,
+              "range_max": -7.64091893900968
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "541": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 2.0,
+              "range_min": 2.2703351440585258,
+              "range_max": 2.2703351440585258
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": 7918.395518452329
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "542": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": -1.0,
+              "range_min": -3960.3329267982317,
+              "range_max": -1.1351675720288767
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "300": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": -7919.0,
+              "range_min": -7918.395518452329,
+              "range_max": -2.622507459894223
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "439": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": -6740.0,
+              "range_min": -7918.395518452329,
+              "range_max": 7917.040490500939
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "536": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": 2247.0,
+              "range_min": -0.0,
+              "range_max": 5278.478669651037
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        },
+        "537": {
+          "all_compartments_in_range": true,
+          "compartments": [
+            {
+              "comp": 0,
+              "comp_name": "cytosol",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            },
+            {
+              "comp": 1,
+              "comp_name": "extracellular",
+              "in_range": true,
+              "karr_delta": 2639.0,
+              "range_min": -0.0,
+              "range_max": 2638.5910036641544
+            },
+            {
+              "comp": 2,
+              "comp_name": "membrane",
+              "in_range": true,
+              "karr_delta": 0.0,
+              "range_min": -0.0,
+              "range_max": -0.0
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "self_audit": [
+    {
+      "id": 1,
+      "criterion": "Ran exactly 5 samples (seed0 fixture + seeds1..4 at tick1).",
+      "ok": true
+    },
+    {
+      "id": 2,
+      "criterion": "Used compute_bounds with dynamic-update path and apply_protein_bounds=False.",
+      "ok": true
+    },
+    {
+      "id": 3,
+      "criterion": "Solved primary LP then enforced biomass flux equality v[biomass_col] == growth* on FVA LPs.",
+      "ok": true
+    },
+    {
+      "id": 4,
+      "criterion": "Computed Step1+Step2 substrate-delta min/max via LP in (row,compartment) layout.",
+      "ok": true
+    },
+    {
+      "id": 5,
+      "criterion": "Added deterministic Step3+Step4 contribution to bounds.",
+      "ok": true
+    },
+    {
+      "id": 6,
+      "criterion": "Applied Step5 clip floor transform (delta >= -pre for metabolite rows).",
+      "ok": true
+    },
+    {
+      "id": 7,
+      "criterion": "Compared against Karr recorded deltas with \u00b12 tolerance and reported feasible fractions.",
+      "ok": true
+    },
+    {
+      "id": 8,
+      "criterion": "Reported substitution rows (469,470,541,542,300,439,536,537).",
+      "ok": true
+    },
+    {
+      "id": 9,
+      "criterion": "Wrote JSON + STATUS artifacts at requested locations.",
+      "ok": true
+    }
+  ]
+}
