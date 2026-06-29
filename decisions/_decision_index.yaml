@@ -25,3 +25,16 @@ decisions:
       - "Toy cell needs real biological parameters from multiple databases"
       - "Phase 2 start — crosswalk tooling becomes prerequisite"
     superseded_by: null
+
+  - id: dec-003
+    title: "LP degeneracy handling — FVA reframe for Metabolism's L2.2 gate"
+    file: decisions/dec-003-lp-degeneracy-fva-reframe.md
+    status: active
+    created: 2026-06-29
+    invalidation_triggers:
+      - "Solver upgrade (GLPK 6, or switch to HiGHS) that picks vertex-identical to Karr"
+      - "Another L2.2 process discovers LP-degeneracy in its own constraints"
+      - "Karr-flux-injection at L3/L4/L5 boundaries proves insufficient"
+      - "L4 paper review challenges the FVA-feasibility methodology"
+    superseded_by: null
+

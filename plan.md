@@ -26,10 +26,65 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-06-29 ~08:20 IST, Day-43 mid-morning):** 3 codex agents running:
-- `fva_multisample_v2` PID 12976 (structural FVA at 20 samples) — wait shell `codex-fva-multi-v2-wait`
-- `matlab_extraction_inventory` PID 55988 (comprehensive MATLAB extraction spec) — wait shell `codex-matlab-inv-wait`
-- (`substrate_delta_fva` PID 38640 — COMPLETED `571c180`)
+**Live processes / agents (2026-06-29 ~10:35 IST, Day-43 mid-day):** 1 codex agent running:
+- `fva_part2_productionize` PID 38360 — wait shell `codex-fva-part2-wait` (90 min timeout) — Productionizing the FVA solver + adapting L2.2 audit harness for Metabolism's gate redesign.
+
+**Day-43 morning + early afternoon — FVA reframe is the validated path; 3 single-knob fixes falsified at scale.**
+
+Summary of Day-43 net result:
+
+| Probe / Action | Result |
+|---|---|
+| FVA single-sample (cbed29a) | 504/504 reactions feasible at (s=0, t=1) |
+| Substrate-delta FVA at 5 samples (571c180) | 8775/8775 (100%) feasible |
+| Trajectory decomposition (014c1d0) | 66% of Day-42's "vertex drift" was absent-process artifact |
+| Sign analysis (8cc29f2) | Vertex bias is SYSTEMATIC across 100 ticks (consistent direction on H2O2, CO2, AC, O2, GLC, etc.) |
+| MATLAB extraction inventory (0652390) | Comprehensive spec for one-shot license-renewal extraction; ~11-32h compute for P0+P1 |
+| cpx_basis + RT_FLIP (71b685e + revert 065a33d) | **FALSIFIED at audit scale** — 77% sample-level looked great, +107% trajectory regression, audit W1 unchanged. Reverted. |
+| Repo root cleanup (065a33d / 96100f2) | Moved 12 stale STATUS_*.md + 3 historical docs to docs/archive/; root went 32→17 tracked files |
+| **DEC-003** (decisions/dec-003-lp-degeneracy-fva-reframe.md) | Decision card written; FVA reframe is the canonical answer |
+
+**Day-43 FVA reframe productionization (Parts 2-5) — STATUS:**
+- ✅ Part 1: FVA solver validated (cbed29a + 571c180)
+- 🔄 Part 2: Productionize FVA solver + adapt audit metric (codex PID 38360 RUNNING)
+- ⏳ Part 3: Karr-flux-injection scaffolding for L3/L4/L5 (pending Part 2)
+- ✅ Part 4 (decision card): dec-003 written
+- ⏳ Part 5: Re-run audit; expect Metabolism PASSes
+
+**Day-43 commits pushed (10 commits, last at 96100f2):**
+- See `git log origin/main..HEAD` for unpushed; currently none unpushed (all pushed at 10:13 IST)
+
+**Three falsified-at-scale single-sample fixes (the "trap" pattern):**
+
+| Day | Fix | Sample (0,1) | Audit W1 | Trajectory |
+|---|---|---:|---:|---:|
+| Day-41 | pricing=STD | 23× reduction | 0% movement | n/a (no probe) |
+| Day-42 | ε-objective (a-fit) | 77% reduction | unknown | -48% (WORSE) |
+| Day-43 | cpx_basis + RT_FLIP | 77% reduction | 0% movement | +107% (WORSE) |
+
+**Lesson logged:** single-sample probes on this LP are systematically misleading. FVA reframe explicitly addresses the structural problem (degenerate LP optimal face) at the methodology level instead of chasing per-sample solver tuning.
+
+**Scoreboard (Day-43 EOD, projected after Part 2 ships):**
+
+| Gate | Day-42 EOD | Day-43 (after Part 2 ships) |
+|---|---:|---:|
+| L2.1 GENUINE | 19/28 | **19/28** (unchanged) |
+| L2.2 VERIFIED_GENUINE | 17/22 | **18/22** (+Metabolism via FVA-feasibility gate) |
+| L2.2 NOT_WIRED | 2 | **2** |
+| L2.2 VERIFIED_FAIL | 1 (Metab W1=161) | **0** (Metab passes via FVA reframe per DEC-003) |
+| L2.5 honest PASS | 15/256 | 15/256 (not re-audited) |
+
+**Pre-existing test failure**: `tests/vivarium/test_karr_metabolism_pools_throttle.py::test_throttle_on_with_starved_atp_freezes_m2_synthesis` still fails on main from commit `ecde4e4`. Independent of Day-43 work.
+
+**Day-44 priorities (assuming Part 2 lands today):**
+- A. Part 3 (Karr-flux-injection scaffolding) — needed for L3/L4/L5 work with Metabolism in scope
+- B. Pivot to L2.1 cleanup (ProteinDecay, Replication, ChromosomeCondensation) — would unblock more processes
+- C. L2.5 re-audit — Day-39 chromosome unlocks may have shifted the picture
+- D. Resume Phase 4 / L4 design with Metabolism unblocked
+
+---
+
+## Operational handoff (Day-43 morning — superseded by Day-43 mid-day above)
 
 **Day-43 morning — FVA reframe is EMPIRICALLY VALIDATED.** Three probes already in:
 
