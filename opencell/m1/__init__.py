@@ -17,6 +17,10 @@ from .calc_flux_bounds import (
     compute_bounds,
     load_default_dynamics,
 )
+from .fva import (
+    fva_range,
+    substrate_delta_range_from_fva,
+)
 from .karr_metabolism import (
     DEFAULT_BIG,
     DEFAULT_FIXTURE_JSON,
@@ -37,4 +41,6 @@ __all__ = [
     "M1DynamicsInputs",
     "load_default_dynamics",
     "compute_bounds",
+    "fva_range",
+    "substrate_delta_range_from_fva",
 ]

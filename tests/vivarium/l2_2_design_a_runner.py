@@ -9,7 +9,7 @@ import sys
 from functools import lru_cache
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 import yaml
@@ -36,6 +36,8 @@ from _l2_2_design_a_projections import (  # noqa: E402
     hurdle_event_rate_plus_conditional_scaled_distance,
     per_component_scaled_distance,
 )
+from opencell.m1 import calc_flux_bounds as cfb  # noqa: E402
+from opencell.m1.fva import fva_range, substrate_delta_range_from_fva  # noqa: E402
 
 
 HARNESS_VERSION = "design_a_v1_3"
@@ -43,6 +45,9 @@ HARNESS_VERSION = "design_a_v1_3"
 # while preserving the existing top-level channel schema.
 SUMMARY_SCHEMA_VERSION = "1.4"
 DEFAULT_BOOTSTRAP_B = 1000
+_METABOLISM_FVA_BIG = 1e6
+_METABOLISM_FVA_TOL = 2.0
+_METABOLISM_FVA_PASS_FRACTION = 0.99
 _PROCESS_K_ENG = {
     "TRIVIAL_RNG": runner_helpers.TRIVIAL_RNG_K_ENG,
     "ALGORITHMIC_SHALLOW": runner_helpers.ALGORITHMIC_SHALLOW_K_ENG,
@@ -275,17 +280,17 @@ def _normalize_seed_axis(arr: np.ndarray, seeds: list[int], m_ticks: int) -> np.
     arr = np.asarray(arr, dtype=np.float64)
     if arr.ndim == 2:
         arr = arr[np.newaxis, :, :]
-    if arr.ndim != 3:
-        raise ValueError(f"Expected oracle tensor with shape (seed, tick, dim); got {arr.shape}")
+    if arr.ndim < 3:
+        raise ValueError(f"Expected oracle tensor with shape (seed, tick, ...); got {arr.shape}")
     if m_ticks > arr.shape[1]:
         raise ValueError(f"Requested {m_ticks} ticks, but oracle only provides {arr.shape[1]}.")
     if arr.shape[0] == 1:
-        return np.repeat(arr[:, :m_ticks, :], len(seeds), axis=0)
+        return np.repeat(arr[:, :m_ticks, ...], len(seeds), axis=0)
     if max(seeds) >= arr.shape[0]:
         raise ValueError(
             f"Requested seed index {max(seeds)} but oracle only provides {arr.shape[0]} seed slices."
         )
-    return np.stack([arr[int(seed), :m_ticks, :] for seed in seeds], axis=0)
+    return np.stack([arr[int(seed), :m_ticks, ...] for seed in seeds], axis=0)
 
 
 def _observable_stats(values: np.ndarray) -> dict[str, float]:
@@ -742,6 +747,118 @@ def _observable_wids(process: str, sample_process: Any) -> dict[str, list[str]]:
     return mapping
 
 
+def _effective_metric_type(
+    *,
+    process: str,
+    requested: Literal["w1", "fva_feasibility"],
+    sample_process: Any,
+) -> Literal["w1", "fva_feasibility"]:
+    if requested not in {"w1", "fva_feasibility"}:
+        raise ValueError(
+            f"Unsupported metric_type={requested!r}; expected 'w1' or 'fva_feasibility'."
+        )
+    if process != "Metabolism":
+        if requested != "w1":
+            raise ValueError(
+                "metric_type='fva_feasibility' is currently supported only for process='Metabolism'."
+            )
+        return "w1"
+
+    if requested == "fva_feasibility":
+        return "fva_feasibility"
+
+    # Factory opt-in: Metabolism defaults to fva_feasibility unless caller overrides.
+    preferred = str(getattr(sample_process, "l2_2_metric_type", "w1"))
+    if preferred == "fva_feasibility":
+        return "fva_feasibility"
+    return "w1"
+
+
+def _metabolism_bounds_for_fva(
+    *,
+    pre_sub_585x3: np.ndarray,
+    pre_enz_104: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    model = runner_helpers._metabolism_model()
+    dyn = runner_helpers._metabolism_dynamics()
+    fba_reaction_bounds = np.column_stack([model.lb, model.ub]).astype(np.float64)
+    bounds = cfb.compute_bounds(
+        substrates=np.asarray(pre_sub_585x3, dtype=np.float64),
+        enzymes=np.asarray(pre_enz_104, dtype=np.float64),
+        cell_dry_mass=dyn.cell_dry_mass,
+        step_size_sec=dyn.step_size_sec,
+        catalysis=model.catalysis,
+        enz_bounds=model.enz_bounds,
+        fba_reaction_bounds=fba_reaction_bounds,
+        dyn=dyn,
+        apply_protein_bounds=False,
+    )
+    lb = np.where(np.isfinite(bounds[:, 0]), bounds[:, 0], -_METABOLISM_FVA_BIG)
+    ub = np.where(np.isfinite(bounds[:, 1]), bounds[:, 1], _METABOLISM_FVA_BIG)
+    lb = np.clip(lb, -_METABOLISM_FVA_BIG, _METABOLISM_FVA_BIG).astype(np.float64)
+    ub = np.clip(ub, -_METABOLISM_FVA_BIG, _METABOLISM_FVA_BIG).astype(np.float64)
+    infeasible = lb > ub
+    if np.any(infeasible):
+        midpoint = 0.5 * (lb[infeasible] + ub[infeasible])
+        lb[infeasible] = midpoint
+        ub[infeasible] = midpoint
+    return lb, ub
+
+
+def _metabolism_fva_sample_feasibility(
+    *,
+    pre_sub_585x3: np.ndarray,
+    post_sub_585x3: np.ndarray,
+    pre_enz_104: np.ndarray,
+) -> tuple[int, int]:
+    model = runner_helpers._metabolism_model()
+    fixture = getattr(runner_helpers._metabolism_process(0), "_karr_writeback_fixture", None)
+    if fixture is None:
+        raise RuntimeError("Metabolism process missing Karr writeback fixture for FVA feasibility.")
+
+    lb, ub = _metabolism_bounds_for_fva(
+        pre_sub_585x3=np.asarray(pre_sub_585x3, dtype=np.float64),
+        pre_enz_104=np.asarray(pre_enz_104, dtype=np.float64),
+    )
+    _v_star, info = runner_helpers.m1_karr_metabolism.solve_fba(
+        model,
+        use_full_objective=True,
+        sense="max",
+        big=_METABOLISM_FVA_BIG,
+        lb_override=lb,
+        ub_override=ub,
+        solver="glpk",
+    )
+    biomass_value_star = float(info["objective_value"])
+    growth_per_s = float(info["biomass_flux_per_s"])
+    v_min, v_max = fva_range(
+        np.asarray(model.S, dtype=np.float64),
+        np.asarray(model.RHS, dtype=np.float64),
+        np.asarray(model.obj, dtype=np.float64),
+        lb,
+        ub,
+        biomass_value_star=biomass_value_star,
+    )
+    d_min, d_max = substrate_delta_range_from_fva(
+        v_min=v_min,
+        v_max=v_max,
+        fixture=fixture,
+        growth_per_s=growth_per_s,
+        step_size_sec=float(fixture.step_size_sec),
+        pre_state_585x3=np.asarray(pre_sub_585x3, dtype=np.float64),
+    )
+    karr_delta = np.asarray(post_sub_585x3, dtype=np.float64) - np.asarray(pre_sub_585x3, dtype=np.float64)
+    in_range = (
+        np.isfinite(d_min)
+        & np.isfinite(d_max)
+        & (karr_delta >= (d_min - _METABOLISM_FVA_TOL))
+        & (karr_delta <= (d_max + _METABOLISM_FVA_TOL))
+    )
+    total = int(in_range.size)
+    feasible = int(np.count_nonzero(in_range))
+    return feasible, total
+
+
 def run_design_a(
     *,
     process: str,
@@ -750,6 +867,7 @@ def run_design_a(
     out_dir: Path,
     thresholds_path: Path | None = None,
     bootstrap_B: int = DEFAULT_BOOTSTRAP_B,
+    metric_type: Literal["w1", "fva_feasibility"] = "w1",
 ) -> dict[str, Any]:
     _validate_process_request(process)
 
@@ -783,7 +901,49 @@ def run_design_a(
     )
 
     sample_process = _process_sample_process(process)
+    effective_metric_type = _effective_metric_type(
+        process=process,
+        requested=metric_type,
+        sample_process=sample_process,
+    )
     wids_by_channel = _observable_wids(process, sample_process)
+    metabolism_before_cube: np.ndarray | None = None
+    metabolism_after_cube: np.ndarray | None = None
+    if effective_metric_type == "fva_feasibility":
+        before_cube_raw = oracle.get("before_substrates_cube")
+        after_cube_raw = oracle.get("after_substrates_cube")
+        if before_cube_raw is None or after_cube_raw is None:
+            raise ValueError(
+                "Metabolism FVA feasibility requires oracle keys "
+                "`before_substrates_cube` and `after_substrates_cube`."
+            )
+        metabolism_before_cube = _normalize_seed_axis(
+            np.asarray(before_cube_raw, dtype=np.float64),
+            seeds,
+            m_ticks,
+        )
+        metabolism_after_cube = _normalize_seed_axis(
+            np.asarray(after_cube_raw, dtype=np.float64),
+            seeds,
+            m_ticks,
+        )
+        expected_shape_prefix = (len(seeds), int(m_ticks))
+        if metabolism_before_cube.ndim != 4 or metabolism_after_cube.ndim != 4:
+            raise ValueError(
+                "Metabolism FVA feasibility requires oracle cubes "
+                "`before_substrates_cube` and `after_substrates_cube` with shape "
+                "(seed, tick, 585, 3)."
+            )
+        if tuple(metabolism_before_cube.shape[:2]) != expected_shape_prefix:
+            raise ValueError(
+                "Metabolism before_substrates_cube seed/tick shape mismatch: "
+                f"expected prefix {expected_shape_prefix}, got {metabolism_before_cube.shape[:2]}"
+            )
+        if tuple(metabolism_after_cube.shape[:2]) != expected_shape_prefix:
+            raise ValueError(
+                "Metabolism after_substrates_cube seed/tick shape mismatch: "
+                f"expected prefix {expected_shape_prefix}, got {metabolism_after_cube.shape[:2]}"
+            )
 
     oc_vectors = {
         channel: np.zeros_like(after_vectors[channel], dtype=np.float64)
@@ -823,6 +983,8 @@ def run_design_a(
                 projection_spec=tuple(primary_projection),
             )
     allocator_inputs: list[dict[str, Any]] = []
+    fva_feasible_pairs_total = 0
+    fva_pairs_total = 0
     for seed_index, seed in enumerate(seeds):
         for tick in range(m_ticks):
             sample_state = {
@@ -929,6 +1091,16 @@ def run_design_a(
                 )
                 sample_state["enzyme_wids"] = wids_by_channel.get("enzymes", [])
             oc_result = runner_helpers.run_oc_tick(process, int(seed), int(tick), sample_state)
+            if effective_metric_type == "fva_feasibility":
+                assert metabolism_before_cube is not None
+                assert metabolism_after_cube is not None
+                feasible_pairs, total_pairs = _metabolism_fva_sample_feasibility(
+                    pre_sub_585x3=metabolism_before_cube[seed_index, tick],
+                    post_sub_585x3=metabolism_after_cube[seed_index, tick],
+                    pre_enz_104=before_vectors["enzymes"][seed_index, tick],
+                )
+                fva_feasible_pairs_total += int(feasible_pairs)
+                fva_pairs_total += int(total_pairs)
             if is_chromosome_primary and use_projection_distance:
                 # Compute OC's projection from before/after sparse-triple stores.
                 # Only fires when chromosome IS the primary channel; non-primary
@@ -991,6 +1163,12 @@ def run_design_a(
                 allocator_inputs[-1]["complexs_sum_before"] = float(np.sum(before_vectors["complexs"][seed_index, tick]))
             if "boundEnzymes" in before_vectors:
                 allocator_inputs[-1]["bound_enzymes_sum_before"] = float(np.sum(before_vectors["boundEnzymes"][seed_index, tick]))
+            if effective_metric_type == "fva_feasibility":
+                allocator_inputs[-1]["fva_feasible_pairs"] = int(feasible_pairs)
+                allocator_inputs[-1]["fva_pairs_total"] = int(total_pairs)
+                allocator_inputs[-1]["fva_feasibility_fraction"] = float(
+                    feasible_pairs / total_pairs if total_pairs else 0.0
+                )
 
     channel_payloads: dict[str, Any] = {}
     null_payload_channels: dict[str, Any] = {}
@@ -1061,6 +1239,25 @@ def run_design_a(
                 "min": float(np.min(per_sample_w1[channel])),
             },
         }
+        if (
+            effective_metric_type == "fva_feasibility"
+            and process == "Metabolism"
+            and channel == "substrates"
+        ):
+            fva_fraction = float(
+                fva_feasible_pairs_total / fva_pairs_total if fva_pairs_total > 0 else 0.0
+            )
+            channel_payloads[channel]["fva_feasibility_fraction"] = fva_fraction
+            channel_payloads[channel]["fva_feasible_pairs"] = int(fva_feasible_pairs_total)
+            channel_payloads[channel]["fva_pairs_total"] = int(fva_pairs_total)
+            channel_payloads[channel]["fva_tolerance"] = float(_METABOLISM_FVA_TOL)
+            channel_payloads[channel]["fva_threshold"] = float(_METABOLISM_FVA_PASS_FRACTION)
+            channel_payloads[channel]["aggregation"] = "fva_feasibility"
+            channel_payloads[channel]["verdict"] = (
+                "PASS"
+                if fva_fraction >= _METABOLISM_FVA_PASS_FRACTION
+                else "FAIL"
+            )
         if channel in event_channels:
             channel_payloads[channel]["verdict"] = "EVENT_CHANNEL_DEFERRED"
         if channel == primary_channel and primary_projection_payload is not None:

@@ -407,6 +407,14 @@ def _format_ensemble_oracle(
     if process_name == "Metabolism":
         before_substrates_raw = before_channel("substrates", "before_substrates")
         after_substrates_raw = after_channel("substrates", "after_substrates")
+        before_substrates_cube = np.asarray(
+            [_metabolism_substrate_cube(seed_matrix) for seed_matrix in before_substrates_raw],
+            dtype=np.float64,
+        )
+        after_substrates_cube = np.asarray(
+            [_metabolism_substrate_cube(seed_matrix) for seed_matrix in after_substrates_raw],
+            dtype=np.float64,
+        )
         return {
             "process": process_name,
             "oracle_path": oracle_path,
@@ -420,6 +428,8 @@ def _format_ensemble_oracle(
                 [_project_metabolism_substrate_cube(seed_matrix) for seed_matrix in after_substrates_raw],
                 dtype=np.float64,
             ),
+            "before_substrates_cube": before_substrates_cube,
+            "after_substrates_cube": after_substrates_cube,
             "before_enzymes": before_channel("enzymes", "before_enzymes"),
             "before_bound_enzymes": before_channel("boundEnzymes", "before_bound_enzymes"),
             "ensemble_missing_before_channels": tuple(missing_before),
@@ -1278,7 +1288,7 @@ def _metabolism_process(seed: int) -> KarrMetabolismProcess:
     model = _metabolism_model()
     dyn = _metabolism_dynamics()
     with forbid_sut_oracle_file_io():
-        return KarrMetabolismProcess({
+        process = KarrMetabolismProcess({
             "rng_seed": int(seed),
             "model": model,
             "dynamic_bounds": True,
@@ -1286,6 +1296,9 @@ def _metabolism_process(seed: int) -> KarrMetabolismProcess:
             "dynamics_inputs": dyn,
             "solver": "glpk",
         })
+    # Day-43 Part 2: L2.2 Metabolism gates on FVA feasibility (W1 retained as diagnostic).
+    process.l2_2_metric_type = "fva_feasibility"
+    return process
 
 
 @lru_cache(maxsize=None)
@@ -2814,28 +2827,41 @@ def _project_metabolism_substrate_cube(values: np.ndarray) -> np.ndarray:
     projection must select the cytosolic compartment rather than sum across all
     compartments.
     """
+    cube = _metabolism_substrate_cube(values)
+    return np.asarray(cube.sum(axis=2), dtype=np.float64)
+
+
+def _metabolism_substrate_cube(values: np.ndarray) -> np.ndarray:
+    """Return metabolism substrates as (ticks, 585, 3) in (row, compartment) order."""
     arr = np.asarray(values, dtype=np.float64)
     compartment_count = 3
     substrate_count = 585
-    cytosol_index = 0
     flat_width = compartment_count * substrate_count
 
-    if arr.ndim == 2:
-        if arr.shape[-1] == flat_width:
-            arr = arr.reshape(arr.shape[0], compartment_count, substrate_count)
-        else:
-            return np.asarray(arr, dtype=np.float64)
-    if arr.ndim == 3:
-        expected_shape = (compartment_count, substrate_count)
-        if arr.shape[1:] != expected_shape:
-            raise ValueError(
-                "Metabolism substrate cube shape drift: "
-                f"expected per-tick {expected_shape}, got {arr.shape[1:]}"
-            )
-        return np.asarray(arr.sum(axis=1), dtype=np.float64)
+    if arr.ndim == 2 and arr.shape[-1] == flat_width:
+        # Raw flattened trace vectors: reshape to (ticks, compartment, row), then transpose.
+        return np.asarray(
+            arr.reshape(arr.shape[0], compartment_count, substrate_count).transpose(0, 2, 1),
+            dtype=np.float64,
+        )
+
+    if arr.ndim == 2 and arr.shape[-1] == substrate_count:
+        # Legacy projected traces without compartment detail: treat as cytosol-only.
+        out = np.zeros((arr.shape[0], substrate_count, compartment_count), dtype=np.float64)
+        out[:, :, 0] = arr
+        return out
+
+    if arr.ndim == 3 and arr.shape[1:] == (compartment_count, substrate_count):
+        return np.asarray(arr.transpose(0, 2, 1), dtype=np.float64)
+
+    if arr.ndim == 3 and arr.shape[1:] == (substrate_count, compartment_count):
+        return np.asarray(arr, dtype=np.float64)
+
     raise ValueError(
-        "Metabolism substrate projection expected shape "
-        f"(ticks, {flat_width}) or (ticks, {compartment_count}, {substrate_count}); got {arr.shape}"
+        "Metabolism substrate cube expected shape "
+        f"(ticks, {flat_width}), (ticks, {substrate_count}), "
+        f"(ticks, {compartment_count}, {substrate_count}), or "
+        f"(ticks, {substrate_count}, {compartment_count}); got {arr.shape}"
     )
 
 
