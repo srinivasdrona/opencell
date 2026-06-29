@@ -1,0 +1,246 @@
+scripts\probe_big_realmax_sweep.py:23:fbf = KarrWritebackFixture.from_mat(str(REPO / "data/karr_fixtures/per_process/Metabolism_flat.mat"))
+scripts\probe_big_realmax_sweep.py:25:trace_path = REPO / "data/m1_sources/karr_native/per_process_traces_v2_s000/Metabolism_100ticks.mat"
+scripts\probe_big_sweep.py:21:GT_PATH = REPO / "data/karr_fixtures/matlab_ground_truth/metab_flux_allocated_state_s000_tick1.mat"
+scripts\probe_big_sweep.py:36:fbf = KarrWritebackFixture.from_mat(str(REPO / "data/karr_fixtures/per_process/Metabolism_flat.mat"))
+scripts\probe_chromosome_trace.py:18:trace_path = REPO / "data/m1_sources/karr_native/per_process_traces_v2_s000/DNASupercoiling_100ticks.mat"
+scripts\probe_decomposition_at_allocated_state.py:20:GT_PATH = REPO / "data/karr_fixtures/matlab_ground_truth/metab_flux_allocated_state_s000_tick1.mat"
+scripts\probe_decomposition_at_allocated_state.py:73:fbf = KarrWritebackFixture.from_mat(str(REPO / "data/karr_fixtures/per_process/Metabolism_flat.mat"))
+scripts\probe_deterministic_quiescence.py:18:    ("ChromosomeSegregation", OPENCELL / "data/m1_sources/karr_native/per_process_traces/ChromosomeSegregation_100ticks.mat"),
+scripts\probe_deterministic_quiescence.py:19:    ("Cytokinesis", OPENCELL / "data/m1_sources/karr_native/per_process_traces/Cytokinesis_100ticks.mat"),
+scripts\probe_deterministic_quiescence.py:20:    ("Metabolism", OPENCELL / "data/m1_sources/karr_native/per_process_traces/Metabolism_100ticks.mat"),
+scripts\probe_deterministic_quiescence.py:21:    ("ProteinActivation", OPENCELL / "data/m1_sources/karr_native/per_process_traces/ProteinActivation_100ticks.mat"),
+scripts\probe_deterministic_quiescence.py:22:    ("Replication", REEXTRACT / "data/m1_sources/karr_native/per_process_traces/Replication_100ticks.mat"),
+scripts\probe_deterministic_quiescence.py:23:    ("TerminalOrganelleAssembly", OPENCELL / "data/m1_sources/karr_native/per_process_traces/TerminalOrganelleAssembly_100ticks.mat"),
+scripts\probe_deterministic_quiescence.py:24:    ("Transcription", REEXTRACT / "data/m1_sources/karr_native/per_process_traces/Transcription_100ticks.mat"),
+scripts\probe_deterministic_quiescence.py:25:    ("Translation", REEXTRACT / "data/m1_sources/karr_native/per_process_traces/Translation_100ticks.mat"),
+scripts\probe_deterministic_quiescence.py:39:        # (B) /states_before/<obs> as direct dataset (original karr_native)
+scripts\probe_dipeptide_trace_step1.py:22:GT_PATH = REPO / "data/karr_fixtures/matlab_ground_truth/metab_flux_allocated_state_s000_tick1.mat"
+scripts\probe_dipeptide_trace_step1.py:49:with np.load(npz_path) as data:
+scripts\probe_dipeptide_trace_step2.py:12:GT_PATH = REPO / "data/karr_fixtures/matlab_ground_truth/metab_flux_allocated_state_s000_tick1.mat"
+scripts\probe_dipeptide_trace_step2.py:35:npz = np.load(REPO / model.raw["matrix_npz"])
+scripts\probe_dipeptide_trace_step3.py:12:GT_PATH = REPO / "data/karr_fixtures/matlab_ground_truth/metab_flux_allocated_state_s000_tick1.mat"
+scripts\probe_dnasupercoiling_oracle.py:20:        / "m1_sources"
+scripts\probe_dnasupercoiling_oracle.py:21:        / "karr_native"
+scripts\probe_dnasupercoiling_oracle.py:26:        / "m1_sources"
+scripts\probe_dnasupercoiling_oracle.py:27:        / "karr_native"
+scripts\probe_glpk_parsimony.py:33:    / "data/karr_fixtures/matlab_ground_truth/metab_flux_allocated_state_s000_tick1.mat"
+scripts\probe_glpk_presolve_variants.py:17:GT_PATH = REPO / "data/karr_fixtures/matlab_ground_truth/metab_flux_allocated_state_s000_tick1.mat"
+scripts\probe_glpk_presolve_variants.py:84:fbf = KarrWritebackFixture.from_mat(str(REPO / "data/karr_fixtures/per_process/Metabolism_flat.mat"))
+scripts\probe_glpk_variants.py:31:    / "data/karr_fixtures/matlab_ground_truth/metab_flux_allocated_state_s000_tick1.mat"
+scripts\probe_glpk_vs_highs_metab.py:36:    / "data/karr_fixtures/matlab_ground_truth/metab_flux_allocated_state_s000_tick1.mat"
+scripts\probe_glpk_vs_highs_metab.py:221:        str(REPO / "data/karr_fixtures/per_process/Metabolism_flat.mat")
+scripts\probe_h11_verify_baselines.py:30:TRACE_DIR = Path("/mnt/e/opencell/data/m1_sources/karr_native/per_process_traces_v2")
+scripts\probe_h1_basis_carryover.py:14:GT_TICK1_PATH = ROOT / "data" / "karr_fixtures" / "matlab_ground_truth" / "metab_flux_allocated_state_s000_tick1.mat"
+scripts\probe_h1_basis_carryover.py:15:TRACE_PATH = ROOT / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2_s000" / "Metabolism_100ticks.mat"
+scripts\probe_h1_basis_carryover.py:16:FLAT_PATH = ROOT / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"
+scripts\probe_h1_basis_carryover.py:50:    mat = sio.loadmat(FLAT_PATH, squeeze_me=False, struct_as_record=False)
+scripts\probe_h2_two_solve.py:9:from scipy.io import loadmat
+scripts\probe_h2_two_solve.py:16:    / "karr_fixtures"
+scripts\probe_h2_two_solve.py:20:FLAT_MAT = ROOT / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"
+scripts\probe_h2_two_solve.py:21:NPZ_PATH = ROOT / "data" / "karr_fixtures" / "karr_native_m1.npz"
+scripts\probe_h2_two_solve.py:49:    fixture = loadmat(FLAT_MAT, squeeze_me=True, struct_as_record=False)["data"].fixture
+scripts\probe_h2_two_solve.py:62:    with np.load(NPZ_PATH) as data:
+scripts\probe_h3_options_sweep.py:15:    / "karr_fixtures"
+scripts\probe_h3_options_sweep.py:19:NPZ_PATH = REPO_ROOT / "data" / "karr_fixtures" / "karr_native_m1.npz"
+scripts\probe_h3_options_sweep.py:147:    z = np.load(NPZ_PATH)
+scripts\probe_h4_bounds_source.py:14:MAT_PATH = ROOT / "data" / "karr_fixtures" / "matlab_ground_truth" / "metab_flux_allocated_state_s000_tick1.mat"
+scripts\probe_h4_bounds_source.py:15:NPZ_PATH = ROOT / "data" / "karr_fixtures" / "karr_native_m1.npz"
+scripts\probe_h4_bounds_source.py:61:    z = np.load(NPZ_PATH, allow_pickle=True)
+scripts\probe_h5_presolve_under_std.py:78:    npz = np.load("data/karr_fixtures/karr_native_m1.npz", allow_pickle=False)
+scripts\probe_h5_presolve_under_std.py:83:    with h5py.File("data/karr_fixtures/matlab_ground_truth/metab_flux_allocated_state_s000_tick1.mat", "r") as f:
+scripts\probe_h9_owner_overlay.py:37:TRACE_ROOT = _REPO_ROOT / "data/m1_sources/karr_native/per_process_traces_v2"
+scripts\probe_high_diff_reactions.py:17:GT_PATH = REPO / "data/karr_fixtures/matlab_ground_truth/metab_flux_allocated_state_s000_tick1.mat"
+scripts\probe_h_100tick_live_epsilon.py:22:from scipy.io import loadmat
+scripts\probe_h_100tick_live_epsilon.py:38:    / "m1_sources"
+scripts\probe_h_100tick_live_epsilon.py:39:    / "karr_native"
+scripts\probe_h_100tick_live_epsilon.py:43:LP_FIXTURE_NPZ = REPO / "data" / "karr_fixtures" / "karr_native_m1.npz"
+scripts\probe_h_100tick_live_epsilon.py:44:WRITEBACK_FIXTURE_MAT = REPO / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"
+scripts\probe_h_100tick_live_epsilon.py:48:    / "karr_fixtures"
+scripts\probe_h_100tick_live_epsilon.py:325:    lp_npz = np.load(LP_FIXTURE_NPZ)
+scripts\probe_h_100tick_live_epsilon.py:334:    mat = loadmat(str(WRITEBACK_FIXTURE_MAT), squeeze_me=True, struct_as_record=False)
+scripts\probe_h_100tick_live_trajectory.py:21:from scipy.io import loadmat
+scripts\probe_h_100tick_live_trajectory.py:37:    / "m1_sources"
+scripts\probe_h_100tick_live_trajectory.py:38:    / "karr_native"
+scripts\probe_h_100tick_live_trajectory.py:42:LP_FIXTURE_NPZ = REPO / "data" / "karr_fixtures" / "karr_native_m1.npz"
+scripts\probe_h_100tick_live_trajectory.py:43:WRITEBACK_FIXTURE_MAT = REPO / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"
+scripts\probe_h_100tick_live_trajectory.py:155:    lp_npz = np.load(LP_FIXTURE_NPZ)
+scripts\probe_h_100tick_live_trajectory.py:164:    mat = loadmat(str(WRITEBACK_FIXTURE_MAT), squeeze_me=True, struct_as_record=False)
+scripts\probe_h_bound_semantics.py:20:    / "karr_fixtures"
+scripts\probe_h_bound_semantics.py:24:NPZ_PATH = ROOT / "data" / "karr_fixtures" / "karr_native_m1.npz"
+scripts\probe_h_bound_semantics.py:25:WRITEBACK_FIXTURE_PATH = ROOT / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"
+scripts\probe_h_bound_semantics.py:313:    npz = np.load(NPZ_PATH, allow_pickle=False)
+scripts\probe_h_column_order_check.py:6:  2. Load OC's LP S matrix from karr_native_m1.npz.
+scripts\probe_h_column_order_check.py:23:from scipy.io import loadmat
+scripts\probe_h_column_order_check.py:29:    fixture_path = REPO / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"
+scripts\probe_h_column_order_check.py:30:    npz_path = REPO / "data" / "karr_fixtures" / "karr_native_m1.npz"
+scripts\probe_h_column_order_check.py:33:    mat = loadmat(str(fixture_path), squeeze_me=True, struct_as_record=False)
+scripts\probe_h_column_order_check.py:45:    npz = np.load(npz_path, allow_pickle=False)
+scripts\probe_h_epsilon_objective.py:94:    sample_path = REPO / "data" / "karr_fixtures" / "matlab_ground_truth" / "metab_flux_allocated_state_s000_tick1.mat"
+scripts\probe_h_epsilon_objective.py:95:    fixture_path = REPO / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"
+scripts\probe_h_epsilon_objective.py:96:    lp_path = REPO / "data" / "karr_fixtures" / "karr_native_m1.npz"
+scripts\probe_h_epsilon_objective.py:105:    npz = np.load(lp_path, allow_pickle=False)
+scripts\probe_h_fva_multisample.py:33:TRACE_ROOT = REPO / "data" / "m1_sources" / "karr_native"
+scripts\probe_h_fva_multisample.py:34:NPZ_PATH = REPO / "data" / "karr_fixtures" / "karr_native_m1.npz"
+scripts\probe_h_fva_multisample.py:35:WRITEBACK_FIXTURE_PATH = REPO / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"
+scripts\probe_h_fva_multisample.py:412:    lines.append("| Trace root | `data/m1_sources/karr_native/per_process_traces_v2_s{NNN}/Metabolism_100ticks.mat` |")
+scripts\probe_h_fva_multisample.py:413:    lines.append("| LP fixture | `data/karr_fixtures/karr_native_m1.npz` |")
+scripts\probe_h_fva_multisample.py:414:    lines.append("| Writeback fixture (existence check only) | `data/karr_fixtures/per_process/Metabolism_flat.mat` |")
+scripts\probe_h_fva_multisample.py:454:    z = np.load(NPZ_PATH, allow_pickle=False)
+scripts\probe_h_fva_multisample_v2.py:34:TRACE_ROOT = ROOT / "data" / "m1_sources" / "karr_native"
+scripts\probe_h_fva_multisample_v2.py:35:NPZ_PATH = ROOT / "data" / "karr_fixtures" / "karr_native_m1.npz"
+scripts\probe_h_fva_multisample_v2.py:538:    lines.append("| Trace source | `data/m1_sources/karr_native/per_process_traces_v2_s{NNN}/Metabolism_100ticks.mat` |")
+scripts\probe_h_fva_multisample_v2.py:539:    lines.append("| LP fixture | `data/karr_fixtures/karr_native_m1.npz` |")
+scripts\probe_h_fva_multisample_v2.py:612:    z = np.load(NPZ_PATH, allow_pickle=False)
+scripts\probe_h_fva_validation.py:14:NPZ_PATH = ROOT / "data" / "karr_fixtures" / "karr_native_m1.npz"
+scripts\probe_h_fva_validation.py:18:    / "karr_fixtures"
+scripts\probe_h_fva_validation.py:30:    z = np.load(NPZ_PATH, allow_pickle=False)
+scripts\probe_h_fva_validation.py:242:    lines.append("| LP fixture | `data/karr_fixtures/karr_native_m1.npz` |")
+scripts\probe_h_fva_validation.py:243:    lines.append("| Ground truth | `data/karr_fixtures/matlab_ground_truth/metab_flux_allocated_state_s000_tick1.mat` |")
+scripts\probe_h_multisample_sweep.py:39:GT_DIR = REPO / "data" / "karr_fixtures" / "matlab_ground_truth"
+scripts\probe_h_multisample_sweep.py:40:WRITEBACK_FIXTURE = REPO / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"
+scripts\probe_h_multisample_v2.py:64:    base = REPO / "data" / "m1_sources" / "karr_native"
+scripts\probe_h_pfba.py:61:        / "karr_fixtures"
+scripts\probe_h_pfba.py:65:    fixture_path = REPO / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"
+scripts\probe_h_pfba.py:66:    lp_path = REPO / "data" / "karr_fixtures" / "karr_native_m1.npz"
+scripts\probe_h_pfba.py:75:    npz = np.load(lp_path, allow_pickle=False)
+scripts\probe_h_rt_flip.py:21:    / "karr_fixtures"
+scripts\probe_h_rt_flip.py:25:FIXTURE_PATH = REPO_ROOT / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"
+scripts\probe_h_rt_flip.py:26:NPZ_PATH = REPO_ROOT / "data" / "karr_fixtures" / "karr_native_m1.npz"
+scripts\probe_h_rt_flip.py:55:    z = np.load(NPZ_PATH, allow_pickle=False)
+scripts\probe_h_rt_flip.py:307:            "| LP fixture | `data/karr_fixtures/karr_native_m1.npz` |",
+scripts\probe_h_rt_flip.py:308:            "| Ground truth | `data/karr_fixtures/matlab_ground_truth/metab_flux_allocated_state_s000_tick1.mat` |",
+scripts\probe_h_rt_flip.py:309:            "| Writeback fixture | `data/karr_fixtures/per_process/Metabolism_flat.mat` |",
+scripts\probe_h_substrate_delta_fva.py:60:TRACE_ROOT = REPO / "data" / "m1_sources" / "karr_native"
+scripts\probe_h_substrate_delta_fva.py:61:LP_FIXTURE_NPZ = REPO / "data" / "karr_fixtures" / "karr_native_m1.npz"
+scripts\probe_h_substrate_delta_fva.py:62:WRITEBACK_FIXTURE_MAT = REPO / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"
+scripts\probe_h_substrate_delta_fva.py:64:    REPO / "data" / "karr_fixtures" / "matlab_ground_truth" / "metab_flux_allocated_state_s000_tick1.mat"
+scripts\probe_h_substrate_delta_fva.py:230:        source="karr_native_trace",
+scripts\probe_h_substrate_delta_fva.py:534:    lines.append("| LP fixture | `data/karr_fixtures/karr_native_m1.npz` |")
+scripts\probe_h_substrate_delta_fva.py:535:    lines.append("| Writeback fixture | `data/karr_fixtures/per_process/Metabolism_flat.mat` |")
+scripts\probe_h_substrate_delta_fva.py:536:    lines.append("| Seed0 fixture delta | `data/karr_fixtures/matlab_ground_truth/metab_flux_allocated_state_s000_tick1.mat` |")
+scripts\probe_h_substrate_delta_fva.py:537:    lines.append("| Seed1-4 trace delta source | `data/m1_sources/karr_native/per_process_traces_v2_s{NNN}/Metabolism_100ticks.mat` |")
+scripts\probe_h_substrate_delta_fva.py:566:    z = np.load(LP_FIXTURE_NPZ, allow_pickle=False)
+scripts\probe_h_vertex_bounds_or_tiebreak.py:20:from scipy.io import loadmat
+scripts\probe_h_vertex_bounds_or_tiebreak.py:41:    sample_path = REPO / "data" / "karr_fixtures" / "matlab_ground_truth" / "metab_flux_allocated_state_s000_tick1.mat"
+scripts\probe_h_vertex_bounds_or_tiebreak.py:42:    fixture_path = REPO / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"
+scripts\probe_h_vertex_bounds_or_tiebreak.py:43:    lp_path = REPO / "data" / "karr_fixtures" / "karr_native_m1.npz"
+scripts\probe_h_vertex_bounds_or_tiebreak.py:49:    npz = np.load(lp_path, allow_pickle=False)
+scripts\probe_h_vertex_bounds_or_tiebreak.py:62:    mat = loadmat(str(fixture_path), squeeze_me=True, struct_as_record=False)
+scripts\probe_h_vertex_root_cause.py:22:from scipy.io import loadmat
+scripts\probe_h_vertex_root_cause.py:33:    sample_path = REPO / "data" / "karr_fixtures" / "matlab_ground_truth" / "metab_flux_allocated_state_s000_tick1.mat"
+scripts\probe_h_vertex_root_cause.py:34:    fixture_path = REPO / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"
+scripts\probe_h_vertex_root_cause.py:35:    lp_path = REPO / "data" / "karr_fixtures" / "karr_native_m1.npz"
+scripts\probe_h_vertex_root_cause.py:41:    npz = np.load(lp_path, allow_pickle=False)
+scripts\probe_h_vertex_root_cause.py:58:    mat = loadmat(str(fixture_path), squeeze_me=True, struct_as_record=False)
+scripts\probe_h_writeback_isolated.py:84:    sample_path = REPO / "data" / "karr_fixtures" / "matlab_ground_truth" / "metab_flux_allocated_state_s000_tick1.mat"
+scripts\probe_h_writeback_isolated.py:85:    fixture_path = REPO / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"
+scripts\probe_h_writeback_oc_vs_karr_flux.py:42:    sample_path = REPO / "data" / "karr_fixtures" / "matlab_ground_truth" / "metab_flux_allocated_state_s000_tick1.mat"
+scripts\probe_h_writeback_oc_vs_karr_flux.py:43:    fixture_path = REPO / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"
+scripts\probe_h_writeback_oc_vs_karr_flux.py:44:    lp_path = REPO / "data" / "karr_fixtures" / "karr_native_m1.npz"
+scripts\probe_h_writeback_oc_vs_karr_flux.py:55:    npz = np.load(lp_path, allow_pickle=False)
+scripts\probe_karr_growth_search.py:4:  1. data/m1_sources/karr_native/initial_states/Metabolism_init.mat
+scripts\probe_karr_growth_search.py:5:  2. data/m1_sources/karr_native/per_process_traces_v2_s000/Metabolism_100ticks.mat (already checked: no growth)
+scripts\probe_karr_growth_search.py:12:from scipy.io import loadmat
+scripts\probe_karr_growth_search.py:17:    REPO / "data/m1_sources/karr_native/initial_states/Metabolism_init.mat",
+scripts\probe_karr_growth_search.py:18:    REPO / "data/m1_sources/karr_native/per_process_traces_v2_s000/Metabolism_100ticks.mat",
+scripts\probe_karr_growth_search.py:23:mat_files = list(REPO.glob("data/m1_sources/karr_native/**/*.mat"))[:200]
+scripts\probe_karr_growth_search.py:24:print(f"Total .mat files: {len(list(REPO.glob('data/m1_sources/karr_native/**/*.mat')))}")
+scripts\probe_karr_growth_search.py:53:            m = loadmat(str(p), squeeze_me=True, struct_as_record=False)
+scripts\probe_l2_0_schema_audit.py:28:MATS_DIR = REPO / "data" / "m1_sources" / "karr_native" / "per_process_traces"
+scripts\probe_l2_2_metabolism_residual_budget.py:54:    / "data/karr_fixtures/matlab_ground_truth/metab_flux_allocated_state_s000_tick1.mat"
+scripts\probe_l2_2_metabolism_residual_budget.py:58:TRACE_DIR = REPO / "data/m1_sources/karr_native"
+scripts\probe_l2_2_metabolism_residual_budget.py:210:        str(REPO / "data/karr_fixtures/per_process/Metabolism_flat.mat")
+scripts\probe_l2_2_per_wid_breakdown.py:22:TRACE_DIR = REPO / "data/m1_sources/karr_native"
+scripts\probe_l2_2_per_wid_breakdown.py:52:fbf = KarrWritebackFixture.from_mat(str(REPO / "data/karr_fixtures/per_process/Metabolism_flat.mat"))
+scripts\probe_metabolism_fixtures.py:2:for p in ['data/karr_fixtures/per_process/Metabolite.json',
+scripts\probe_metabolism_fixtures.py:3:          'data/karr_fixtures/per_process/Metabolism.json',
+scripts\probe_metabolism_fixtures.py:4:          'data/karr_fixtures/per_process_replay/Metabolism.json']:
+scripts\probe_metabolism_fixtures.py:6:        d = json.load(open(p))
+scripts\probe_metabolism_wid_order.py:16:p = 'data/m1_sources/karr_native/per_process_traces_v2/Metabolism_100ticks.mat'
+scripts\probe_metab_bounds_diff.py:13:from scipy.io import loadmat
+scripts\probe_metab_bounds_diff.py:25:mat = loadmat(str(REPO / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"),
+scripts\probe_metab_bounds_diff.py:45:trace_path = REPO / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2_s000" / "Metabolism_100ticks.mat"
+scripts\probe_metab_bounds_diff.py:155:    fbf = KarrWritebackFixture.from_mat(str(REPO / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"))
+scripts\probe_metab_dynamic_bounds.py:30:trace_path = _REPO / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2_s000" / "Metabolism_100ticks.mat"
+scripts\probe_metab_fba_hypotheses_batch1.py:20:from scipy.io import loadmat
+scripts\probe_metab_fba_hypotheses_batch1.py:27:mat = loadmat(str(REPO / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"),
+scripts\probe_metab_fba_hypotheses_batch1.py:32:trace_path = REPO / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2_s000" / "Metabolism_100ticks.mat"
+scripts\probe_metab_fba_hypotheses_batch2.py:14:from scipy.io import loadmat
+scripts\probe_metab_fba_hypotheses_batch2.py:27:mat = loadmat(str(REPO / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"),
+scripts\probe_metab_fba_hypotheses_batch2.py:49:candidates = list(REPO.glob("data/m1_sources/**/calcFluxBounds*"))
+scripts\probe_metab_fba_hypotheses_batch2.py:91:fbf = KarrWritebackFixture.from_mat(str(REPO / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"))
+scripts\probe_metab_fba_hypotheses_batch2.py:93:trace_path = REPO / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2_s000" / "Metabolism_100ticks.mat"
+scripts\probe_metab_fba_layout.py:11:d = sio.loadmat("data/karr_fixtures/per_process/Metabolism_flat.mat", squeeze_me=True, struct_as_record=False)
+scripts\probe_metab_fba_paradox_codex.py:33:    / "m1_sources"
+scripts\probe_metab_fba_paradox_codex.py:34:    / "karr_native"
+scripts\probe_metab_fba_paradox_codex.py:38:MAT_PATH = REPO / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"
+scripts\probe_metab_fixture.py:6:from scipy.io import loadmat
+scripts\probe_metab_fixture.py:9:fix_path = _REPO / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"
+scripts\probe_metab_fixture.py:11:mat = loadmat(str(fix_path), squeeze_me=True, struct_as_record=False)
+scripts\probe_metab_fixture_v2.py:5:d = sio.loadmat("data/karr_fixtures/per_process/Metabolism_flat.mat")
+scripts\probe_metab_fixture_v3.py:3:d = sio.loadmat("data/karr_fixtures/per_process/Metabolism_flat.mat")
+scripts\probe_metab_fixture_v4.py:5:d = sio.loadmat("data/karr_fixtures/per_process/Metabolism_flat.mat", squeeze_me=True, struct_as_record=False)
+scripts\probe_metab_h6a_full_overlay.py:31:trace_path = REPO / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2_s000" / "Metabolism_100ticks.mat"
+scripts\probe_metab_h6a_full_overlay.py:82:    fix2 = KarrWritebackFixture.from_mat(str(REPO / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"))
+scripts\probe_metab_index_semantics.py:18:d = sio.loadmat("data/karr_fixtures/per_process/Metabolism_flat.mat", squeeze_me=True, struct_as_record=False)
+scripts\probe_metab_init_state.py:9:with h5py.File(REPO / "data/m1_sources/karr_native/initial_states/Metabolism_init.mat", "r") as h:
+scripts\probe_metab_missing_fatty_acids.py:33:fix = KarrWritebackFixture.from_mat(str(REPO / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"))
+scripts\probe_metab_missing_fatty_acids.py:68:trace_path = REPO / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2_s000" / "Metabolism_100ticks.mat"
+scripts\probe_metab_ocmodelbounds_vs_karr.py:9:from scipy.io import loadmat
+scripts\probe_metab_ocmodelbounds_vs_karr.py:17:mat = loadmat(str(REPO / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"),
+scripts\probe_metab_rule_isolation.py:21:fbf = KarrWritebackFixture.from_mat(str(REPO / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"))
+scripts\probe_metab_rule_isolation.py:23:trace_path = REPO / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2_s000" / "Metabolism_100ticks.mat"
+scripts\probe_metab_substrate_update.py:18:from scipy.io import loadmat
+scripts\probe_metab_substrate_update.py:27:fix_path = _REPO / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"
+scripts\probe_metab_substrate_update.py:28:mat = loadmat(str(fix_path), squeeze_me=True, struct_as_record=False)
+scripts\probe_metab_substrate_update.py:58:trace_path = _REPO / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2_s000" / "Metabolism_100ticks.mat"
+scripts\probe_metab_substrate_update.py:60:    trace_path = _REPO / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2" / "Metabolism_100ticks.mat"
+scripts\probe_metab_substrate_update.py:137:# (Karr's trace dim 0 is compartment per loadmat output above.)
+scripts\probe_metab_trace_structure.py:6:trace_path = REPO / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2_s000" / "Metabolism_100ticks.mat"
+scripts\probe_metab_trace_structure.py:8:    trace_path = REPO / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2" / "Metabolism_100ticks.mat"
+scripts\probe_metab_v504_at_columns.py:17:fix = KarrWritebackFixture.from_mat(str(REPO / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"))
+scripts\probe_metab_v504_at_columns.py:22:trace_path = REPO / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2_s000" / "Metabolism_100ticks.mat"
+scripts\probe_metab_writeback_actual.py:29:trace_path = REPO / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2_s000" / "Metabolism_100ticks.mat"
+scripts\probe_monomer_shape.py:12:    trace_path = _REPO / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2" / f"{proc}_100ticks.mat"
+scripts\probe_monomer_shape.py:14:        trace_path = _REPO / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2_s000" / f"{proc}_100ticks.mat"
+scripts\probe_oc_vs_karr_flux.py:7:  data/karr_fixtures/matlab_ground_truth/metabolism_matlab_flux_growth.mat
+scripts\probe_oc_vs_karr_flux.py:25:GT_PATH = REPO / "data/karr_fixtures/matlab_ground_truth/metabolism_matlab_flux_growth.mat"
+scripts\probe_oc_vs_karr_lp_diff.py:11:from scipy.io import loadmat
+scripts\probe_oc_vs_karr_lp_diff.py:18:GT_PATH = ROOT / "data" / "karr_fixtures" / "matlab_ground_truth" / "metab_flux_allocated_state_s000_tick1.mat"
+scripts\probe_oc_vs_karr_lp_diff.py:19:OC_NPZ_PATH = ROOT / "data" / "karr_fixtures" / "karr_native_m1.npz"
+scripts\probe_oc_vs_karr_lp_diff.py:20:FLAT_PATH = ROOT / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"
+scripts\probe_oc_vs_karr_lp_diff.py:169:    z = np.load(path, allow_pickle=False)
+scripts\probe_oc_vs_karr_lp_diff.py:194:    fixture = loadmat(path, struct_as_record=False, squeeze_me=True)["data"].fixture
+scripts\probe_oc_vs_karr_substrate_effects.py:19:GT_PATH = REPO / "data/karr_fixtures/matlab_ground_truth/metabolism_matlab_flux_growth.mat"
+scripts\probe_oc_vs_karr_substrate_effects.py:68:fbf = KarrWritebackFixture.from_mat(str(REPO / "data/karr_fixtures/per_process/Metabolism_flat.mat"))
+scripts\probe_penalty_subsets.py:17:GT_PATH = REPO / "data/karr_fixtures/matlab_ground_truth/metab_flux_allocated_state_s000_tick1.mat"
+scripts\probe_penalty_subsets.py:31:fbf = KarrWritebackFixture.from_mat(str(REPO / "data/karr_fixtures/per_process/Metabolism_flat.mat"))
+scripts\probe_pfba_decomposition.py:29:    / "data/karr_fixtures/matlab_ground_truth/metab_flux_allocated_state_s000_tick1.mat"
+scripts\probe_pfba_decomposition.py:89:        str(REPO / "data/karr_fixtures/per_process/Metabolism_flat.mat")
+scripts\probe_pfba_diagnostic.py:18:    / "data/karr_fixtures/matlab_ground_truth/metab_flux_allocated_state_s000_tick1.mat"
+scripts\probe_protein_decay_complexs.py:8:p = 'data/m1_sources/karr_native/per_process_traces_v2/ProteinDecay_100ticks.mat'
+scripts\probe_rinit_deep.py:12:path = REPO / "data/m1_sources/karr_native/per_process_traces_v2_s000/ReplicationInitiation_100ticks.mat"
+scripts\probe_rinit_trace.py:7:path = REPO / "data/m1_sources/karr_native/per_process_traces_v2_s000/ReplicationInitiation_100ticks.mat"
+scripts\probe_snapshot_vs_trace_prestate.py:14:GT_PATH = REPO / "data/karr_fixtures/matlab_ground_truth/metabolism_matlab_flux_growth.mat"
+scripts\probe_snapshot_vs_trace_prestate.py:19:trace_path = REPO / "data/m1_sources/karr_native/per_process_traces_v2_s000/Metabolism_100ticks.mat"
+scripts\probe_snapshot_vs_trace_prestate.py:68:GT_PATH_DIR = REPO / "data/karr_fixtures/matlab_ground_truth"
+scripts\probe_v4_mf4_admission.py:24:from scipy.io import loadmat
+scripts\probe_v4_mf4_admission.py:35:FIXTURE_PATH = ROOT / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"
+scripts\probe_v4_mf4_admission.py:39:    / "karr_fixtures"
+scripts\probe_v4_mf4_admission.py:46:    / "m1_sources"
+scripts\probe_v4_mf4_admission.py:47:    / "karr_native"
+scripts\probe_v4_mf4_admission.py:122:    return loadmat(str(path), squeeze_me=True, struct_as_record=False)["data"].fixture
+scripts\probe_variant_penalty.py:28:GT_PATH = REPO / "data/karr_fixtures/matlab_ground_truth/metab_flux_allocated_state_s000_tick1.mat"
+scripts\probe_variant_penalty.py:42:fbf = KarrWritebackFixture.from_mat(str(REPO / "data/karr_fixtures/per_process/Metabolism_flat.mat"))
+scripts\probe_writeback_algorithm_fidelity.py:15:from scipy.io import loadmat
+scripts\probe_writeback_algorithm_fidelity.py:23:fbf = KarrWritebackFixture.from_mat(str(REPO / "data/karr_fixtures/per_process/Metabolism_flat.mat"))
+scripts\probe_writeback_algorithm_fidelity.py:46:mat = loadmat(str(REPO / "data/karr_fixtures/per_process/Metabolism_flat.mat"),
+scripts\probe_writeback_decomposition_redo.py:29:GT_PATH = REPO / "data/karr_fixtures/matlab_ground_truth/metabolism_matlab_flux_growth.mat"
+scripts\probe_writeback_decomposition_redo.py:47:trace_path = REPO / "data/m1_sources/karr_native/per_process_traces_v2_s000/Metabolism_100ticks.mat"
+scripts\probe_writeback_decomposition_redo.py:57:fbf = KarrWritebackFixture.from_mat(str(REPO / "data/karr_fixtures/per_process/Metabolism_flat.mat"))
+scripts\probe_writeback_per_compartment.py:16:GT_PATH = REPO / "data/karr_fixtures/matlab_ground_truth/metabolism_matlab_flux_growth.mat"
+scripts\probe_writeback_per_compartment.py:21:fbf = KarrWritebackFixture.from_mat(str(REPO / "data/karr_fixtures/per_process/Metabolism_flat.mat"))
+scripts\probe_writeback_per_compartment.py:64:trace_path = REPO / "data/m1_sources/karr_native/per_process_traces_v2_s000/Metabolism_100ticks.mat"
+scripts\probe_writeback_with_ground_truth_flux.py:24:GT_PATH = REPO / "data/karr_fixtures/matlab_ground_truth/metabolism_matlab_flux_growth.mat"
+scripts\probe_writeback_with_ground_truth_flux.py:44:trace_path = REPO / "data/m1_sources/karr_native/per_process_traces_v2_s000/Metabolism_100ticks.mat"
+scripts\probe_writeback_with_ground_truth_flux.py:54:fbf = KarrWritebackFixture.from_mat(str(REPO / "data/karr_fixtures/per_process/Metabolism_flat.mat"))

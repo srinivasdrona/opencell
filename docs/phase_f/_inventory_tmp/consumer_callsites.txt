@@ -1,0 +1,315 @@
+opencell/m1\calc_flux_bounds.py:28:Validation oracle: data/karr_fixtures/karr_native_m1_dynamics.{json,npz}
+opencell/m1\calc_flux_bounds.py:42:    Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "karr_native_m1_dynamics.json"
+opencell/m1\calc_flux_bounds.py:83:    z = np.load(p.parent / Path(meta["matrix_npz"]).name)
+opencell/m1\compartmented.py:3:Loads `data/karr_fixtures/karr_native_m1_compartmented.{json,npz}` and
+opencell/m1\compartmented.py:35:    / "karr_fixtures"
+opencell/m1\compartmented.py:111:    npz = np.load(npz_path)
+opencell/m1\compartmented.py:171:    dyn_npz = np.load(
+opencell/m1\compartmented.py:174:        / "karr_fixtures"
+opencell/m1\karr_metabolism.py:32:    Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "karr_native_m1.json"
+opencell/m1\karr_metabolism.py:83:    z = np.load(npz_path)
+tests/vivarium\l2_replay_common.py:18:_TRACE_BASE_REL = Path("data/m1_sources/karr_native/per_process_traces_v2")
+tests/vivarium\l2_replay_common.py:19:_FIXTURE_BASE_REL = Path("data/karr_fixtures/per_process")
+tests/vivarium\l2_replay_common.py:168:    from scipy.io import loadmat
+tests/vivarium\l2_replay_common.py:171:    fixture_mat = loadmat(str(fixture_path), squeeze_me=True, struct_as_record=False)
+tests/vivarium\l2_replay_common.py:1014:_ORACLE_PATH_NEEDLES: tuple[str, ...] = (
+tests/vivarium\l2_replay_common.py:1028:    return any(needle.lower() in norm for needle in _ORACLE_PATH_NEEDLES)
+opencell/m1\karr_metabolism_writeback.py:37:from scipy.io import loadmat
+opencell/m1\karr_metabolism_writeback.py:68:        mat = loadmat(str(path), squeeze_me=True, struct_as_record=False)
+opencell/vivarium\karr_chromosome_condensation.py:23:from scipy.io import loadmat
+opencell/vivarium\karr_chromosome_condensation.py:29:_DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/ChromosomeCondensation_flat.mat"
+opencell/vivarium\karr_chromosome_condensation.py:31:    "data/m1_sources/karr_native/per_process_traces_v2/ChromosomeCondensation_100ticks.mat"
+opencell/vivarium\karr_chromosome_condensation.py:150:        "fixture_path": _DEFAULT_FIXTURE_PATH,
+opencell/vivarium\karr_chromosome_condensation.py:188:        mat = loadmat(str(resolved), squeeze_me=True, struct_as_record=False)
+opencell/m1\protein_complexes.py:3:Loads `data/karr_fixtures/karr_protein_complexes.json` (Karr's 201
+opencell/m1\protein_complexes.py:32:    Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "karr_protein_complexes.json"
+opencell/vivarium\karr_chromosome_segregation.py:28:from scipy.io import loadmat
+opencell/vivarium\karr_chromosome_segregation.py:31:_DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/ChromosomeSegregation_flat.mat"
+opencell/vivarium\karr_chromosome_segregation.py:32:_MACROMOLECULAR_COMPLEXATION_FIXTURE_PATH = (
+opencell/vivarium\karr_chromosome_segregation.py:33:    "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
+opencell/vivarium\karr_chromosome_segregation.py:35:_RIBOSOME_ASSEMBLY_FIXTURE_PATH = "data/karr_fixtures/per_process/RibosomeAssembly_flat.mat"
+opencell/vivarium\karr_chromosome_segregation.py:79:    mc = loadmat(
+opencell/vivarium\karr_chromosome_segregation.py:80:        str(_resolve_path(_MACROMOLECULAR_COMPLEXATION_FIXTURE_PATH)),
+opencell/vivarium\karr_chromosome_segregation.py:84:    ra = loadmat(
+opencell/vivarium\karr_chromosome_segregation.py:85:        str(_resolve_path(_RIBOSOME_ASSEMBLY_FIXTURE_PATH)),
+opencell/vivarium\karr_chromosome_segregation.py:100:        "fixture_path": _DEFAULT_FIXTURE_PATH,
+opencell/vivarium\karr_chromosome_segregation.py:127:        mat = loadmat(str(_resolve_path(path)), squeeze_me=True, struct_as_record=False)
+opencell/m1\__init__.py:5:come from `data/karr_fixtures/karr_native_m1.{json,npz}`, extracted from
+opencell/vivarium\karr_composite.py:221:    Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "per_process" / "Translation.npz"
+opencell/vivarium\karr_composite.py:271:    with np.load(_TRANSLATION_FIXTURE_NPZ_PATH, allow_pickle=False) as payload:
+opencell/vivarium\karr_cytokinesis.py:24:from scipy.io import loadmat
+opencell/vivarium\karr_cytokinesis.py:27:_DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/Cytokinesis_flat.mat"
+opencell/vivarium\karr_cytokinesis.py:28:_DEFAULT_FTSZ_RING_FIXTURE_PATH = "data/karr_fixtures/per_process/FtsZRing.json"
+opencell/vivarium\karr_cytokinesis.py:29:_DEFAULT_GEOMETRY_FIXTURE_PATH = "data/karr_fixtures/per_process/CellGeometry.json"
+opencell/vivarium\karr_cytokinesis.py:120:        "fixture_path": _DEFAULT_FIXTURE_PATH,
+opencell/vivarium\karr_cytokinesis.py:121:        "ftsz_ring_fixture_path": _DEFAULT_FTSZ_RING_FIXTURE_PATH,
+opencell/vivarium\karr_cytokinesis.py:122:        "geometry_fixture_path": _DEFAULT_GEOMETRY_FIXTURE_PATH,
+opencell/vivarium\karr_cytokinesis.py:164:        mat = loadmat(str(resolved), squeeze_me=True, struct_as_record=False)
+opencell/vivarium\karr_dna_damage.py:18:from scipy.io import loadmat
+opencell/vivarium\karr_dna_damage.py:25:_DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/DNADamage_flat.mat"
+opencell/vivarium\karr_dna_damage.py:26:_DEFAULT_TRACE_PATH = "data/m1_sources/karr_native/per_process_traces/DNADamage_100ticks.mat"
+opencell/vivarium\karr_dna_damage.py:116:        "fixture_path": _DEFAULT_FIXTURE_PATH,
+opencell/vivarium\karr_dna_damage.py:136:        self._load_schema_observables(self.parameters.get("fixture_path", _DEFAULT_FIXTURE_PATH))
+opencell/vivarium\karr_dna_damage.py:158:                self.parameters.get("fixture_path", _DEFAULT_FIXTURE_PATH)
+opencell/vivarium\karr_dna_damage.py:169:            fixture = loadmat(str(resolved), squeeze_me=True, struct_as_record=False)["data"].fixture
+opencell/vivarium\karr_dna_damage.py:438:            fixture = loadmat(str(resolved), squeeze_me=True, struct_as_record=False)["data"].fixture
+opencell/vivarium\karr_dna_damage.py:457:            trace = loadmat(str(resolved), squeeze_me=True, struct_as_record=False)
+opencell/vivarium\karr_dna_repair.py:23:from scipy.io import loadmat
+opencell/vivarium\karr_dna_repair.py:29:_DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/DNARepair_flat.mat"
+opencell/vivarium\karr_dna_repair.py:30:_D2_COMPLEX_FIXTURE_PATH = "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
+opencell/vivarium\karr_dna_repair.py:101:    resolved = _resolve_path(_D2_COMPLEX_FIXTURE_PATH)
+opencell/vivarium\karr_dna_repair.py:102:    mat = loadmat(str(resolved), squeeze_me=True, struct_as_record=False)
+opencell/vivarium\karr_dna_repair.py:138:        "fixture_path": _DEFAULT_FIXTURE_PATH,
+opencell/vivarium\karr_dna_repair.py:158:        mat = loadmat(str(resolved), squeeze_me=True, struct_as_record=False)
+opencell/vivarium\karr_dna_supercoiling.py:10:from scipy.io import loadmat
+opencell/vivarium\karr_dna_supercoiling.py:21:_DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/DNASupercoiling_flat.mat"
+opencell/vivarium\karr_dna_supercoiling.py:22:_DEFAULT_COMPLEXATION_FIXTURE_PATH = (
+opencell/vivarium\karr_dna_supercoiling.py:23:    "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
+opencell/vivarium\karr_dna_supercoiling.py:66:    mat = loadmat(str(resolved))
+opencell/vivarium\karr_dna_supercoiling.py:120:        "fixture_path": _DEFAULT_FIXTURE_PATH,
+opencell/vivarium\karr_dna_supercoiling.py:121:        "complexation_fixture_path": _DEFAULT_COMPLEXATION_FIXTURE_PATH,
+opencell/vivarium\karr_dna_supercoiling.py:190:        mat = loadmat(str(resolved), squeeze_me=True, struct_as_record=False)
+opencell/vivarium\karr_ftsz_polymerization.py:23:from scipy.io import loadmat
+opencell/vivarium\karr_ftsz_polymerization.py:26:_DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/FtsZPolymerization_flat.mat"
+opencell/vivarium\karr_ftsz_polymerization.py:69:        "fixture_path": _DEFAULT_FIXTURE_PATH,
+opencell/vivarium\karr_ftsz_polymerization.py:87:        mat = loadmat(str(resolved), squeeze_me=True, struct_as_record=False)
+opencell/vivarium\karr_host_interaction.py:20:from scipy.io import loadmat
+opencell/vivarium\karr_host_interaction.py:23:_DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/HostInteraction_flat.mat"
+opencell/vivarium\karr_host_interaction.py:24:_DEFAULT_TRACE_PATH = "data/m1_sources/karr_native/per_process_traces/HostInteraction_100ticks.mat"
+opencell/vivarium\karr_host_interaction.py:106:        mat = loadmat(str(resolved), squeeze_me=True, struct_as_record=False)
+opencell/vivarium\karr_host_interaction.py:158:        "fixture_path": _DEFAULT_FIXTURE_PATH,
+opencell/vivarium\karr_host_interaction.py:197:        mat = loadmat(str(resolved), squeeze_me=True, struct_as_record=False)
+opencell/vivarium\karr_macromolecular_complexation.py:15:from scipy.io import loadmat
+opencell/vivarium\karr_macromolecular_complexation.py:18:_DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
+opencell/vivarium\karr_macromolecular_complexation.py:55:    mat = loadmat(str(resolved))
+opencell/vivarium\karr_macromolecular_complexation.py:148:        "fixture_path": _DEFAULT_FIXTURE_PATH,
+tests/vivarium\test_karr_chromosome_segregation.py:87:    rel = Path("data/m1_sources/karr_native/per_process_traces/ChromosomeSegregation_100ticks.mat")
+opencell/vivarium\karr_macromolecular_complexation_stub.py:4:- `data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat`:
+opencell/vivarium\karr_macromolecular_complexation_stub.py:6:- `data/karr_fixtures/per_process/RibosomeAssembly_flat.mat`:
+opencell/vivarium\karr_macromolecular_complexation_stub.py:8:- `data/karr_fixtures/per_process/ProteinComplex_flat.mat`:
+opencell/vivarium\karr_macromolecular_complexation_stub.py:20:from scipy.io import loadmat
+opencell/vivarium\karr_macromolecular_complexation_stub.py:24:_FIXTURE_DIR = Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "per_process"
+opencell/vivarium\karr_macromolecular_complexation_stub.py:31:    return loadmat(str(path), squeeze_me=True, struct_as_record=False)["data"].fixture
+opencell/vivarium\karr_metabolism.py:68:_METAB_FIXTURE_PATH = (
+opencell/vivarium\karr_metabolism.py:69:    Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"
+opencell/vivarium\karr_metabolism.py:181:            self._karr_writeback_fixture = KarrWritebackFixture.from_mat(_METAB_FIXTURE_PATH)
+opencell/vivarium\karr_metabolism.py:186:            from scipy.io import loadmat as _loadmat
+opencell/vivarium\karr_metabolism.py:187:            _mat = _loadmat(str(_METAB_FIXTURE_PATH), squeeze_me=True, struct_as_record=False)
+opencell/vivarium\karr_observability_step.py:23:    npz_path = Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "karr_native_m2.npz"
+opencell/vivarium\karr_observability_step.py:24:    payload = np.load(npz_path)
+opencell/vivarium\karr_observability_step.py:56:    params_path = Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "parameters.json"
+opencell/vivarium\karr_observability_step.py:58:        raw = json.load(f)
+opencell/vivarium\karr_protein_activation.py:16:from scipy.io import loadmat
+opencell/vivarium\karr_protein_activation.py:19:_DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/ProteinActivation_flat.mat"
+opencell/vivarium\karr_protein_activation.py:142:        "fixture_path": _DEFAULT_FIXTURE_PATH,
+opencell/vivarium\karr_protein_activation.py:149:        fixture = loadmat(str(fixture_path), squeeze_me=True, struct_as_record=False)[
+opencell/vivarium\karr_protein_decay_light.py:4:- `data/karr_fixtures/per_process/ProteinDecay_flat.mat`:
+opencell/vivarium\karr_protein_decay_light.py:8:- `data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat`:
+opencell/vivarium\karr_protein_decay_light.py:19:from scipy.io import loadmat
+opencell/vivarium\karr_protein_decay_light.py:22:_FIXTURE_DIR = Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "per_process"
+opencell/vivarium\karr_protein_decay_light.py:60:    return loadmat(str(path), squeeze_me=True, struct_as_record=False)["data"].fixture
+tests/vivarium\test_karr_dna_damage.py:8:from scipy.io import loadmat
+tests/vivarium\test_karr_dna_damage.py:107:        mat = loadmat(str(trace_path), squeeze_me=True, struct_as_record=False)
+opencell/vivarium\karr_protein_folding.py:15:from scipy.io import loadmat
+opencell/vivarium\karr_protein_folding.py:18:_DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/ProteinFolding_flat.mat"
+opencell/vivarium\karr_protein_folding.py:19:_D2_COMPLEX_FIXTURE_PATH = "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
+opencell/vivarium\karr_protein_folding.py:20:_RIBOSOME_ASSEMBLY_FIXTURE_PATH = "data/karr_fixtures/per_process/RibosomeAssembly_flat.mat"
+opencell/vivarium\karr_protein_folding.py:84:    fx = loadmat(str(resolved))["data"]["fixture"][0, 0]
+opencell/vivarium\karr_protein_folding.py:92:    complex_wids = _load_complex_wids(_D2_COMPLEX_FIXTURE_PATH)
+opencell/vivarium\karr_protein_folding.py:93:    complex_wids.update(_load_complex_wids(_RIBOSOME_ASSEMBLY_FIXTURE_PATH))
+opencell/vivarium\karr_protein_folding.py:103:        "fixture_path": _DEFAULT_FIXTURE_PATH,
+opencell/vivarium\karr_protein_folding.py:122:        mat = loadmat(str(resolved))
+opencell/vivarium\karr_protein_modification.py:10:from scipy.io import loadmat
+opencell/vivarium\karr_protein_modification.py:13:_DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/ProteinModification_flat.mat"
+opencell/vivarium\karr_protein_modification.py:14:_FIXTURE_DIR = Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "per_process"
+opencell/vivarium\karr_protein_modification.py:15:_MACROMOLECULAR_COMPLEXATION_FIXTURE_PATH = _FIXTURE_DIR / "MacromolecularComplexation_flat.mat"
+opencell/vivarium\karr_protein_modification.py:55:    fixture = loadmat(str(_MACROMOLECULAR_COMPLEXATION_FIXTURE_PATH))
+opencell/vivarium\karr_protein_modification.py:66:        "fixture_path": _DEFAULT_FIXTURE_PATH,
+opencell/vivarium\karr_protein_modification.py:103:        mat = loadmat(str(resolved))
+tests/vivarium\test_karr_dna_repair.py:163:        Path("E:/opencell/data/m1_sources/karr_native/per_process_traces/DNARepair_100ticks.mat"),
+opencell/vivarium\karr_protein_processing_i.py:10:from scipy.io import loadmat
+opencell/vivarium\karr_protein_processing_i.py:15:_DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/ProteinProcessingI_flat.mat"
+opencell/vivarium\karr_protein_processing_i.py:16:_D2_COMPLEX_FIXTURE_PATH = "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
+opencell/vivarium\karr_protein_processing_i.py:17:_RIBOSOME_ASSEMBLY_FIXTURE_PATH = "data/karr_fixtures/per_process/RibosomeAssembly_flat.mat"
+opencell/vivarium\karr_protein_processing_i.py:24:    for fixture_path in (_D2_COMPLEX_FIXTURE_PATH, _RIBOSOME_ASSEMBLY_FIXTURE_PATH):
+opencell/vivarium\karr_protein_processing_i.py:26:        mat = loadmat(str(resolved))
+opencell/vivarium\karr_protein_processing_i.py:38:        "fixture_path": _DEFAULT_FIXTURE_PATH,
+opencell/vivarium\karr_protein_processing_i.py:70:        mat = loadmat(str(resolved))
+opencell/vivarium\karr_protein_processing_ii.py:9:from scipy.io import loadmat
+opencell/vivarium\karr_protein_processing_ii.py:12:_DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/ProteinProcessingII_flat.mat"
+opencell/vivarium\karr_protein_processing_ii.py:54:        "fixture_path": _DEFAULT_FIXTURE_PATH,
+opencell/vivarium\karr_protein_processing_ii.py:66:        mat = loadmat(str(resolved))
+opencell/vivarium\karr_protein_translocation.py:10:from scipy.io import loadmat
+opencell/vivarium\karr_protein_translocation.py:15:_DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/ProteinTranslocation_flat.mat"
+opencell/vivarium\karr_protein_translocation.py:16:_MACROMOLECULAR_COMPLEXATION_FIXTURE_PATH = (
+opencell/vivarium\karr_protein_translocation.py:17:    "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
+opencell/vivarium\karr_protein_translocation.py:19:_RIBOSOME_ASSEMBLY_FIXTURE_PATH = "data/karr_fixtures/per_process/RibosomeAssembly_flat.mat"
+opencell/vivarium\karr_protein_translocation.py:76:    d2_fixture = loadmat(
+opencell/vivarium\karr_protein_translocation.py:77:        str(_resolve_fixture_path(_MACROMOLECULAR_COMPLEXATION_FIXTURE_PATH)),
+opencell/vivarium\karr_protein_translocation.py:81:    ribasm_fixture = loadmat(
+opencell/vivarium\karr_protein_translocation.py:82:        str(_resolve_fixture_path(_RIBOSOME_ASSEMBLY_FIXTURE_PATH)),
+opencell/vivarium\karr_protein_translocation.py:100:        "fixture_path": _DEFAULT_FIXTURE_PATH,
+opencell/vivarium\karr_protein_translocation.py:112:        mat = loadmat(str(resolved))
+tests/vivarium\test_karr_dna_supercoiling_l2_replay.py:54:        f"data/m1_sources/karr_native/per_process_traces_v2_s{int(rng_seed):03d}/{process_name}_100ticks.mat"
+opencell/vivarium\karr_replication.py:19:from scipy.io import loadmat
+opencell/vivarium\karr_replication.py:29:_DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/Replication_flat.mat"
+opencell/vivarium\karr_replication.py:30:_DEFAULT_CHROMOSOME_FIXTURE_PATH = "data/karr_fixtures/per_process/Chromosome_flat.mat"
+opencell/vivarium\karr_replication.py:232:        "fixture_path": _DEFAULT_FIXTURE_PATH,
+opencell/vivarium\karr_replication.py:233:        "chromosome_fixture_path": _DEFAULT_CHROMOSOME_FIXTURE_PATH,
+opencell/vivarium\karr_replication.py:266:        replication_mat = loadmat(str(replication_path), squeeze_me=True, struct_as_record=False)
+opencell/vivarium\karr_replication.py:269:        chromosome_mat = loadmat(str(chromosome_path), squeeze_me=True, struct_as_record=False)
+opencell/vivarium\karr_replication_initiation.py:10:from scipy.io import loadmat
+opencell/vivarium\karr_replication_initiation.py:20:_DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/ReplicationInitiation_flat.mat"
+opencell/vivarium\karr_replication_initiation.py:66:        "fixture_path": _DEFAULT_FIXTURE_PATH,
+opencell/vivarium\karr_replication_initiation.py:96:        mat = loadmat(str(resolved), squeeze_me=True, struct_as_record=False)
+opencell/vivarium\karr_request_calculators.py:826:        return Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "parameters.json"
+opencell/vivarium\karr_ribosome_assembly.py:10:from scipy.io import loadmat
+opencell/vivarium\karr_ribosome_assembly.py:13:_DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/RibosomeAssembly_flat.mat"
+opencell/vivarium\karr_ribosome_assembly.py:80:        "fixture_path": _DEFAULT_FIXTURE_PATH,
+opencell/vivarium\karr_ribosome_assembly.py:117:        mat = loadmat(str(resolved))
+opencell/vivarium\karr_rna_decay.py:17:from scipy.io import loadmat
+opencell/vivarium\karr_rna_decay.py:20:_FIXTURE_DIR = Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "per_process"
+opencell/vivarium\karr_rna_decay.py:29:    return loadmat(str(path), squeeze_me=True, struct_as_record=False)["data"].fixture
+opencell/vivarium\karr_rna_modification.py:10:from scipy.io import loadmat
+opencell/vivarium\karr_rna_modification.py:13:_DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/RNAModification_flat.mat"
+opencell/vivarium\karr_rna_modification.py:14:_D2_COMPLEX_FIXTURE_PATH = "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
+opencell/vivarium\karr_rna_modification.py:49:def _load_d2_complex_wids(path: str = _D2_COMPLEX_FIXTURE_PATH) -> frozenset[str]:
+opencell/vivarium\karr_rna_modification.py:51:    mat = loadmat(str(resolved))
+opencell/vivarium\karr_rna_modification.py:61:        "fixture_path": _DEFAULT_FIXTURE_PATH,
+opencell/vivarium\karr_rna_modification.py:90:        mat = loadmat(str(resolved))
+opencell/vivarium\karr_rna_processing.py:10:from scipy.io import loadmat
+opencell/vivarium\karr_rna_processing.py:15:_DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/RNAProcessing_flat.mat"
+opencell/vivarium\karr_rna_processing.py:16:_RNA_STATE_FIXTURE_PATH = "data/karr_fixtures/per_process/Rna_flat.mat"
+opencell/vivarium\karr_rna_processing.py:17:_D2_COMPLEXATION_FIXTURE_PATH = "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
+opencell/vivarium\karr_rna_processing.py:18:_RIBOSOME_ASSEMBLY_FIXTURE_PATH = "data/karr_fixtures/per_process/RibosomeAssembly_flat.mat"
+opencell/vivarium\karr_rna_processing.py:33:    for fixture_path in (_D2_COMPLEXATION_FIXTURE_PATH, _RIBOSOME_ASSEMBLY_FIXTURE_PATH):
+opencell/vivarium\karr_rna_processing.py:35:        mat = loadmat(str(resolved))
+opencell/vivarium\karr_rna_processing.py:47:        "fixture_path": _DEFAULT_FIXTURE_PATH,
+opencell/vivarium\karr_rna_processing.py:78:        mat = loadmat(str(resolved))
+opencell/vivarium\karr_rna_processing.py:147:        resolved = _resolve_fixture_path(_RNA_STATE_FIXTURE_PATH)
+opencell/vivarium\karr_rna_processing.py:148:        mat = loadmat(str(resolved))
+opencell/vivarium\karr_terminal_organelle_assembly.py:31:from scipy.io import loadmat
+opencell/vivarium\karr_terminal_organelle_assembly.py:34:_DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/TerminalOrganelleAssembly_flat.mat"
+opencell/vivarium\karr_terminal_organelle_assembly.py:94:        "fixture_path": _DEFAULT_FIXTURE_PATH,
+opencell/vivarium\karr_terminal_organelle_assembly.py:113:        fixture = loadmat(str(resolved), squeeze_me=True, struct_as_record=False)["data"].fixture
+opencell/vivarium\karr_transcription.py:9:from scipy.io import loadmat
+opencell/vivarium\karr_transcription.py:15:_DEFAULT_TX_FIXTURE_PATH = "data/karr_fixtures/per_process/Transcription_flat.mat"
+opencell/vivarium\karr_transcription.py:85:        "fixture_path": _DEFAULT_TX_FIXTURE_PATH,
+opencell/vivarium\karr_transcription.py:148:            fixture = loadmat(str(resolved), squeeze_me=True, struct_as_record=False)["data"].fixture
+opencell/vivarium\karr_transcriptional_regulation.py:28:from scipy.io import loadmat
+opencell/vivarium\karr_transcriptional_regulation.py:31:_DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/TranscriptionalRegulation_flat.mat"
+opencell/vivarium\karr_transcriptional_regulation.py:32:_DEFAULT_COMPLEX_FIXTURE_PATH = "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
+opencell/vivarium\karr_transcriptional_regulation.py:96:    mat = loadmat(str(resolved))
+opencell/vivarium\karr_transcriptional_regulation.py:208:    mat = loadmat(str(resolved))
+opencell/vivarium\karr_transcriptional_regulation.py:239:        "fixture_path": _DEFAULT_FIXTURE_PATH,
+opencell/vivarium\karr_transcriptional_regulation.py:241:        "complex_fixture_path": _DEFAULT_COMPLEX_FIXTURE_PATH,
+tests/vivarium\test_karr_protein_decay_light.py:7:from scipy.io import loadmat
+tests/vivarium\test_karr_protein_decay_light.py:115:    fixture = loadmat(
+tests/vivarium\test_karr_protein_decay_light.py:116:        "data/karr_fixtures/per_process/ProteinDecay_flat.mat",
+opencell/vivarium\karr_translation_v3.py:31:_KARR_ARCHIVE_RELATIVE_PATH = Path("data") / "karr_archive" / "karr_archive.npz"
+opencell/vivarium\karr_translation_v3.py:107:            with np.load(archive_path, allow_pickle=False) as archive:
+opencell/vivarium\karr_trna_aminoacylation.py:10:from scipy.io import loadmat
+opencell/vivarium\karr_trna_aminoacylation.py:13:_DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/tRNAAminoacylation_flat.mat"
+opencell/vivarium\karr_trna_aminoacylation.py:14:_D2_COMPLEX_FIXTURE_PATH = "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
+opencell/vivarium\karr_trna_aminoacylation.py:15:_RIBASM_COMPLEX_FIXTURE_PATH = "data/karr_fixtures/per_process/RibosomeAssembly_flat.mat"
+opencell/vivarium\karr_trna_aminoacylation.py:56:    d2_mat = loadmat(str(_resolve_fixture_path(_D2_COMPLEX_FIXTURE_PATH)))
+opencell/vivarium\karr_trna_aminoacylation.py:60:    ribasm_mat = loadmat(str(_resolve_fixture_path(_RIBASM_COMPLEX_FIXTURE_PATH)))
+opencell/vivarium\karr_trna_aminoacylation.py:72:        "fixture_path": _DEFAULT_FIXTURE_PATH,
+opencell/vivarium\karr_trna_aminoacylation.py:119:        mat = loadmat(str(resolved))
+tests/vivarium\test_karr_ribosome_assembly_l2_replay.py:98:    rel = Path(f"data/m1_sources/karr_native/per_process_traces_v2_event_s{seed:03d}/RibosomeAssembly_100ticks.mat")
+tests/vivarium\test_karr_rna_modification.py:9:from scipy.io import loadmat
+tests/vivarium\test_karr_rna_modification.py:26:_FIXTURE_PATH = "data/karr_fixtures/per_process/RNAModification_flat.mat"
+tests/vivarium\test_karr_rna_modification.py:58:    fixture = loadmat(_FIXTURE_PATH)["data"]["fixture"][0, 0]
+tests/vivarium\test_karr_transcriptional_regulation.py:204:    monkeypatch.setattr(tx_reg_module, "loadmat", lambda _: mocked)
+tests/vivarium\test_karr_transcriptional_regulation.py:217:    monkeypatch.setattr(tx_reg_module, "loadmat", lambda _: {"data": malformed_data})
+tests/vivarium\test_karr_trna_aminoacylation.py:10:from scipy.io import loadmat
+tests/vivarium\test_karr_trna_aminoacylation.py:26:_FIXTURE_PATH = "data/karr_fixtures/per_process/tRNAAminoacylation_flat.mat"
+tests/vivarium\test_karr_trna_aminoacylation.py:31:    fixture = loadmat(_FIXTURE_PATH)["data"]["fixture"][0, 0]
+tests/vivarium\test_l2_2_design_a_runner_anticheat.py:31:        "oracle_path": runner.runner_helpers._METABOLISM_ORACLE_PATH,
+tests/vivarium\test_l2_2_design_a_runner_anticheat.py:60:        "oracle_path": runner.runner_helpers._TRANSCRIPTION_ORACLE_PATH,
+tests/vivarium\test_l2_2_design_a_runner_anticheat.py:98:        "oracle_path": runner.runner_helpers._TRANSLATION_ORACLE_PATH,
+tests/vivarium\test_l2_2_design_a_runner_anticheat.py:138:        "oracle_path": runner.runner_helpers._PROTEIN_DECAY_ORACLE_PATH,
+tests/vivarium\test_l2_2_design_a_runner_anticheat_metabolism.py:31:        "oracle_path": runner.runner_helpers._METABOLISM_ORACLE_PATH,
+tests/vivarium\test_l2_2_design_a_runner_anticheat_rnas_primary.py:62:        "oracle_path": runner.runner_helpers._METABOLISM_ORACLE_PATH,
+tests/vivarium\test_l2_2_design_a_runner_catalog.py:32:        "oracle_path": runner.runner_helpers._METABOLISM_ORACLE_PATH,
+tests/vivarium\test_l2_2_design_a_runner_protein_decay_anticheat.py:25:    with np.load(runner_helpers._PROTEIN_DECAY_ORACLE_PATH, allow_pickle=False) as payload:
+tests/vivarium\test_l2_2_design_a_seed_alignment.py:41:        "oracle_path": runner.runner_helpers._METABOLISM_ORACLE_PATH,
+tests/vivarium\test_l2_2_transcription.py:12:from scipy.io import loadmat
+tests/vivarium\test_l2_2_transcription.py:44:_TRANSCRIPTION_FIXTURE_PATH = _REPO_ROOT / "data" / "karr_fixtures" / "per_process" / "Transcription_flat.mat"
+tests/vivarium\test_l2_2_transcription.py:109:    fixture_mat = loadmat(str(_TRANSCRIPTION_FIXTURE_PATH), squeeze_me=True, struct_as_record=False)
+tests/vivarium\test_l2_2_transcription.py:171:    with np.load(_oc_seed_path(_SEEDS[0]), allow_pickle=False) as data:
+tests/vivarium\test_l2_2_transcription.py:184:    with np.load(path, allow_pickle=False) as data:
+tests/vivarium\test_l2_2_transcription.py:225:    with np.load(_oc_seed_path(_SEEDS[0]), allow_pickle=False):
+tests/vivarium\test_l2_2_translation.py:104:    with np.load(path, allow_pickle=False) as data:
+tests/vivarium\test_l2_2_translation.py:136:    with np.load(path, allow_pickle=False) as data:
+tests/vivarium\test_l2_2_translation.py:276:    with np.load(_oc_seed_path(_SEEDS[0]), allow_pickle=False) as data:
+tests/vivarium\test_l2_no_oracle_dependency.py:50:# non-oracle fixture (e.g. data/karr_fixtures/per_process/...) or from
+tests/vivarium\_l2_2_design_a_runner_helpers.py:11:from scipy.io import loadmat
+tests/vivarium\_l2_2_design_a_runner_helpers.py:74:_METABOLISM_ORACLE_PATH = _REPO_ROOT / "data" / "karr_fixtures" / "per_process_replay" / "Metabolism.npz"
+tests/vivarium\_l2_2_design_a_runner_helpers.py:75:_TRANSLATION_ORACLE_PATH = (
+tests/vivarium\_l2_2_design_a_runner_helpers.py:76:    _REPO_ROOT / "data" / "karr_fixtures" / "per_process_replay" / "Translation.npz"
+tests/vivarium\_l2_2_design_a_runner_helpers.py:78:_TRANSCRIPTION_ORACLE_PATH = (
+tests/vivarium\_l2_2_design_a_runner_helpers.py:79:    _REPO_ROOT / "data" / "karr_fixtures" / "per_process_replay" / "Transcription.npz"
+tests/vivarium\_l2_2_design_a_runner_helpers.py:81:_TRANSCRIPTION_FIXTURE_PATH = _REPO_ROOT / "data" / "karr_fixtures" / "per_process" / "Transcription_flat.mat"
+tests/vivarium\_l2_2_design_a_runner_helpers.py:82:_RNA_DECAY_ORACLE_PATH = _REPO_ROOT / "data" / "karr_fixtures" / "per_process_replay" / "RNADecay.npz"
+tests/vivarium\_l2_2_design_a_runner_helpers.py:83:_PROTEIN_DECAY_ORACLE_PATH = (
+tests/vivarium\_l2_2_design_a_runner_helpers.py:84:    _REPO_ROOT / "data" / "karr_fixtures" / "per_process_replay" / "ProteinDecay.npz"
+tests/vivarium\_l2_2_design_a_runner_helpers.py:86:_CYTOKINESIS_ORACLE_PATH = (
+tests/vivarium\_l2_2_design_a_runner_helpers.py:87:    _REPO_ROOT / "data" / "karr_fixtures" / "per_process_replay" / "Cytokinesis.npz"
+tests/vivarium\_l2_2_design_a_runner_helpers.py:123:                Path("E:/opencell/data/m1_sources/karr_native"),
+tests/vivarium\_l2_2_design_a_runner_helpers.py:124:                Path("/mnt/e/opencell/data/m1_sources/karr_native"),
+tests/vivarium\_l2_2_design_a_runner_helpers.py:850:            Path("E:/opencell/data/m1_sources/karr_native"),
+tests/vivarium\_l2_2_design_a_runner_helpers.py:851:            Path("/mnt/e/opencell/data/m1_sources/karr_native"),
+tests/vivarium\_l2_2_design_a_runner_helpers.py:966:    if not _METABOLISM_ORACLE_PATH.exists():
+tests/vivarium\_l2_2_design_a_runner_helpers.py:967:        raise FileNotFoundError(f"Missing Metabolism oracle fixture: {_METABOLISM_ORACLE_PATH}")
+tests/vivarium\_l2_2_design_a_runner_helpers.py:969:    with np.load(_METABOLISM_ORACLE_PATH, allow_pickle=False) as payload:
+tests/vivarium\_l2_2_design_a_runner_helpers.py:977:        "oracle_path": _METABOLISM_ORACLE_PATH,
+tests/vivarium\_l2_2_design_a_runner_helpers.py:988:    if not _TRANSCRIPTION_ORACLE_PATH.exists():
+tests/vivarium\_l2_2_design_a_runner_helpers.py:989:        raise FileNotFoundError(f"Missing Transcription oracle fixture: {_TRANSCRIPTION_ORACLE_PATH}")
+tests/vivarium\_l2_2_design_a_runner_helpers.py:991:    with np.load(_TRANSCRIPTION_ORACLE_PATH, allow_pickle=False) as payload:
+tests/vivarium\_l2_2_design_a_runner_helpers.py:1007:        "oracle_path": _TRANSCRIPTION_ORACLE_PATH,
+tests/vivarium\_l2_2_design_a_runner_helpers.py:1021:    if not _TRANSLATION_ORACLE_PATH.exists():
+tests/vivarium\_l2_2_design_a_runner_helpers.py:1022:        raise FileNotFoundError(f"Missing Translation oracle fixture: {_TRANSLATION_ORACLE_PATH}")
+tests/vivarium\_l2_2_design_a_runner_helpers.py:1024:    with np.load(_TRANSLATION_ORACLE_PATH, allow_pickle=False) as payload:
+tests/vivarium\_l2_2_design_a_runner_helpers.py:1038:        "oracle_path": _TRANSLATION_ORACLE_PATH,
+tests/vivarium\_l2_2_design_a_runner_helpers.py:1053:    if not _RNA_DECAY_ORACLE_PATH.exists():
+tests/vivarium\_l2_2_design_a_runner_helpers.py:1054:        raise FileNotFoundError(f"Missing RNADecay oracle fixture: {_RNA_DECAY_ORACLE_PATH}")
+tests/vivarium\_l2_2_design_a_runner_helpers.py:1056:    with np.load(_RNA_DECAY_ORACLE_PATH, allow_pickle=False) as payload:
+tests/vivarium\_l2_2_design_a_runner_helpers.py:1066:        "oracle_path": _RNA_DECAY_ORACLE_PATH,
+tests/vivarium\_l2_2_design_a_runner_helpers.py:1079:    if not _PROTEIN_DECAY_ORACLE_PATH.exists():
+tests/vivarium\_l2_2_design_a_runner_helpers.py:1080:        raise FileNotFoundError(f"Missing ProteinDecay oracle fixture: {_PROTEIN_DECAY_ORACLE_PATH}")
+tests/vivarium\_l2_2_design_a_runner_helpers.py:1082:    with np.load(_PROTEIN_DECAY_ORACLE_PATH, allow_pickle=False) as payload:
+tests/vivarium\_l2_2_design_a_runner_helpers.py:1098:        "oracle_path": _PROTEIN_DECAY_ORACLE_PATH,
+tests/vivarium\_l2_2_design_a_runner_helpers.py:1147:    if not _CYTOKINESIS_ORACLE_PATH.exists():
+tests/vivarium\_l2_2_design_a_runner_helpers.py:1148:        raise FileNotFoundError(f"Missing Cytokinesis oracle fixture: {_CYTOKINESIS_ORACLE_PATH}")
+tests/vivarium\_l2_2_design_a_runner_helpers.py:1150:    with np.load(_CYTOKINESIS_ORACLE_PATH, allow_pickle=False) as payload:
+tests/vivarium\_l2_2_design_a_runner_helpers.py:1158:        "oracle_path": _CYTOKINESIS_ORACLE_PATH,
+tests/vivarium\_l2_2_design_a_runner_helpers.py:1379:    fixture_path = _REPO_ROOT / "data" / "karr_fixtures" / "per_process" / "MacromolecularComplexation_flat.mat"
+tests/vivarium\_l2_2_design_a_runner_helpers.py:1382:            Path("E:/opencell/data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"),
+tests/vivarium\_l2_2_design_a_runner_helpers.py:1383:            Path("/mnt/e/opencell/data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"),
+tests/vivarium\_l2_2_design_a_runner_helpers.py:1388:    fixture = loadmat(str(fixture_path), squeeze_me=True, struct_as_record=False)["data"].fixture
+tests/vivarium\_l2_2_design_a_runner_helpers.py:2667:    fixture = loadmat(str(_TRANSCRIPTION_FIXTURE_PATH), squeeze_me=True, struct_as_record=False)["data"].fixture
+tests/vivarium\_l2_2_design_a_runner_helpers.py:2676:            f"Missing nascentRNAGeneComposition in Transcription fixture: {_TRANSCRIPTION_FIXTURE_PATH}"
+tests/vivarium\_l2_2_design_a_runner_helpers.py:2861:    "_METABOLISM_ORACLE_PATH",
+tests/vivarium\_l2_2_design_a_runner_helpers.py:2862:    "_TRANSLATION_ORACLE_PATH",
+tests/vivarium\_l2_2_design_a_runner_helpers.py:2863:    "_RNA_DECAY_ORACLE_PATH",
+tests/vivarium\_l2_2_design_a_runner_helpers.py:2864:    "_PROTEIN_DECAY_ORACLE_PATH",
+tests/vivarium\_l2_2_design_a_runner_helpers.py:2865:    "_TRANSCRIPTION_ORACLE_PATH",
+tests/vivarium\_l2_2_init_canary.py:45:    "/mnt/e/opencell-worktrees/l22-translation/data/m1_sources/karr_native/ensembles/translation"
+tests/vivarium\_l2_2_init_canary.py:48:    "/mnt/e/opencell-worktrees/l2-matlab-reextract/data/m1_sources/karr_native/per_process_traces/Transcription_100ticks.mat"
+tests/vivarium\_l2_2_init_canary_monomers_rnas.py:8:from scipy.io import loadmat
+tests/vivarium\_l2_2_init_canary_monomers_rnas.py:35:_TRANSLATION_FIXTURE = _REPO_ROOT / "data" / "karr_fixtures" / "per_process" / "Translation_flat.mat"
+tests/vivarium\_l2_2_init_canary_monomers_rnas.py:36:_TRANSCRIPTION_FIXTURE = _REPO_ROOT / "data" / "karr_fixtures" / "per_process" / "Transcription_flat.mat"
+tests/vivarium\_l2_2_init_canary_monomers_rnas.py:70:    fixture_mat = loadmat(str(fixture_path), squeeze_me=True, struct_as_record=False)
+tests/vivarium\_l2_2_semantics_probe.py:50:    '/mnt/e/opencell-worktrees/l22-translation/data/m1_sources/karr_native/ensembles/translation/seed_000/Translation_100ticks.mat',
+tests/vivarium\_l2_2_semantics_probe.py:51:    '/mnt/e/opencell-worktrees/l2-matlab-reextract/data/m1_sources/karr_native/per_process_traces/Transcription_100ticks.mat',
+tests/vivarium\_l2_2_semantics_probe.py:55:for p in sorted(glob.glob('/mnt/e/opencell-worktrees/l2-matlab-reextract/data/m1_sources/karr_native/per_process_traces/*_100ticks.mat')):
+tests/vivarium\_l2_2_transcription_ensemble_runner.py:14:from scipy.io import loadmat
+tests/vivarium\_l2_2_transcription_ensemble_runner.py:50:_TRANSCRIPTION_FIXTURE_PATH = _REPO_ROOT / "data" / "karr_fixtures" / "per_process" / "Transcription_flat.mat"
+tests/vivarium\_l2_2_transcription_ensemble_runner.py:87:    fixture_mat = loadmat(str(_TRANSCRIPTION_FIXTURE_PATH), squeeze_me=True, struct_as_record=False)
+tests/vivarium\_substrate_stress\macromol_stress_v3.py:22:    Path("E:/opencell/data/m1_sources/karr_native"),
+tests/vivarium\_substrate_stress\macromol_stress_v3.py:23:    Path("/mnt/e/opencell/data/m1_sources/karr_native"),
+tests/vivarium\_substrate_stress\ppii_stress_v2.py:28:        Path("E:/opencell/data/m1_sources/karr_native"),
+tests/vivarium\_substrate_stress\ppii_stress_v2.py:29:        Path("/mnt/e/opencell/data/m1_sources/karr_native"),
+tests/vivarium\_substrate_stress\ppi_stress_v2.py:23:        Path("/mnt/e/opencell/data/m1_sources/karr_native"),
+tests/vivarium\_substrate_stress\ppi_stress_v2.py:24:        Path("E:/opencell/data/m1_sources/karr_native"),
