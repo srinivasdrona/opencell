@@ -1,0 +1,365 @@
+schema_version: "1.0"
+kind: per_process_wiring_row
+title: "OpenCell per-process wiring DB row"
+description: >-
+  Machine-readable contract for the per-process wiring DB. This schema
+  captures integration-layer data that the existing per-process TOMLs do not:
+  method correspondence, allocator requests and bypasses, stoichiometry,
+  compartment routing, unit conversion, inter-process dependencies, ordering
+  constraints, source anchors, provenance, and known deviations.
+type: object
+additionalProperties: false
+required:
+  - schema_version
+  - process
+  - methods
+  - allocator
+  - consume_stoichiometry
+  - produce_stoichiometry
+  - compartment_routing
+  - unit_conversion_chain
+  - dependencies
+  - ordering_constraints
+  - source_anchors
+  - provenance
+  - deviations
+definitions:
+  compartment_name:
+    type: string
+    enum: [cytosol, extracellular, membrane]
+    description: "Human-readable compartment label; rows store names, not indices."
+  source_anchor:
+    type: object
+    additionalProperties: false
+    required: [path, lines]
+    properties:
+      path:
+        type: string
+        description: "Repo-relative file path."
+      lines:
+        type: string
+        pattern: "^[0-9]+-[0-9]+$"
+        description: "Inclusive line span in file: start-end."
+      note:
+        type: string
+        description: "Optional short note about what the anchor covers."
+  method_binding:
+    type: object
+    additionalProperties: false
+    required: [matlab, oc, status]
+    properties:
+      matlab:
+        type: object
+        additionalProperties: false
+        required: [symbol, source]
+        properties:
+          symbol:
+            type: string
+            description: "MATLAB method or helper name."
+          source:
+            $ref: "#/definitions/source_anchor"
+          note:
+            type: string
+      oc:
+        type: object
+        additionalProperties: false
+        required: [symbol, source]
+        properties:
+          symbol:
+            type: string
+            description: "OpenCell function or method name."
+          source:
+            $ref: "#/definitions/source_anchor"
+          supporting:
+            type: array
+            description: "Optional supporting OC anchors for helper functions."
+            items:
+              $ref: "#/definitions/source_anchor"
+      status:
+        type: string
+        enum: [implemented, partial, not_implemented]
+        description: "Implementation state of the OC correspondence."
+      note:
+        type: string
+  tuple_entry:
+    type: object
+    additionalProperties: false
+    required: [wid, compartment, source, note]
+    properties:
+      wid:
+        type: string
+        description: "Substrate WID."
+      compartment:
+        $ref: "#/definitions/compartment_name"
+      source:
+        type: string
+        enum: [karr, oc, both, deviation]
+        description: "Which side this tuple describes."
+      note:
+        type: string
+        description: "Short explanation of why the tuple is listed."
+  stoich_entry:
+    type: object
+    additionalProperties: false
+    required: [wid, compartment, formula_or_constant, matlab_anchor, oc_anchor]
+    properties:
+      wid:
+        type: string
+      compartment:
+        $ref: "#/definitions/compartment_name"
+      formula_or_constant:
+        type: string
+        description: "Symbolic formula or literal constant, kept as a string."
+      matlab_anchor:
+        $ref: "#/definitions/source_anchor"
+      oc_anchor:
+        $ref: "#/definitions/source_anchor"
+      note:
+        type: string
+  conversion_step:
+    type: object
+    additionalProperties: false
+    required: [from_units, to_units, operation, anchor]
+    properties:
+      from_units:
+        type: string
+      to_units:
+        type: string
+      operation:
+        type: string
+        description: "Symbolic operation sequence, e.g. '÷secondsPerHour × nAvogadro/1000'."
+      anchor:
+        $ref: "#/definitions/source_anchor"
+      constants:
+        type: array
+        items:
+          type: string
+  dependency_block:
+    type: object
+    additionalProperties: false
+    required: [produces_inputs_for, consumes_outputs_of]
+    properties:
+      produces_inputs_for:
+        type: array
+        items:
+          type: string
+      consumes_outputs_of:
+        type: array
+        items:
+          type: string
+      note:
+        type: string
+fields:
+  schema_version:
+    type: string
+    const: "1.0"
+    description: "Row schema version."
+  process:
+    type: object
+    additionalProperties: false
+    required: [name, matlab_class, matlab_file, oc_class, oc_file, whole_cell_model_id]
+    properties:
+      name:
+        type: string
+      matlab_class:
+        type: string
+      matlab_file:
+        type: string
+      oc_class:
+        type: string
+      oc_file:
+        type: string
+      whole_cell_model_id:
+        type: string
+      functional_area:
+        type: string
+      state_shape_role:
+        type: string
+      notes:
+        type: string
+  methods:
+    type: object
+    description: "Map of MATLAB method name -> OC correspondence block."
+    required: [calcResourceRequirements_Current, evolveState, calcFluxBounds]
+    additionalProperties:
+      $ref: "#/definitions/method_binding"
+    properties:
+      calcResourceRequirements_Current:
+        $ref: "#/definitions/method_binding"
+      evolveState:
+        $ref: "#/definitions/method_binding"
+      calcFluxBounds:
+        $ref: "#/definitions/method_binding"
+  allocator:
+    type: object
+    additionalProperties: false
+    required: [mode, request_formula, requests, bypasses]
+    properties:
+      mode:
+        type: object
+        additionalProperties: false
+        required: [karr, oc_current]
+        properties:
+          karr:
+            type: string
+            enum: [allocation, bypass, mixed]
+          oc_current:
+            type: string
+            enum: [allocation, bypass, mixed]
+          note:
+            type: string
+      request_formula:
+        type: object
+        additionalProperties: false
+        required: [matlab, oc]
+        properties:
+          matlab:
+            type: string
+            description: "MATLAB-symbolic request formula."
+          oc:
+            type: string
+            description: "Current OC request formula or sentinel text."
+          note:
+            type: string
+      requests:
+        type: array
+        items:
+          $ref: "#/definitions/tuple_entry"
+      bypasses:
+        type: array
+        items:
+          $ref: "#/definitions/tuple_entry"
+  consume_stoichiometry:
+    type: array
+    description: "Per-tick consumed substrate entries."
+    items:
+      $ref: "#/definitions/stoich_entry"
+  produce_stoichiometry:
+    type: array
+    description: "Per-tick produced substrate entries."
+    items:
+      $ref: "#/definitions/stoich_entry"
+  compartment_routing:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required: [wid, consume_compartment, produce_compartment, mismatch, note]
+      properties:
+        wid:
+          type: string
+        consume_compartment:
+          anyOf:
+            - $ref: "#/definitions/compartment_name"
+            - type: "null"
+        produce_compartment:
+          anyOf:
+            - $ref: "#/definitions/compartment_name"
+            - type: "null"
+        mismatch:
+          type: boolean
+          description: "True when consume and produce target compartments differ."
+        note:
+          type: string
+  unit_conversion_chain:
+    type: object
+    additionalProperties: false
+    required: [source_units, target_units, steps]
+    properties:
+      source_units:
+        type: string
+      target_units:
+        type: string
+      steps:
+        type: array
+        items:
+          $ref: "#/definitions/conversion_step"
+      note:
+        type: string
+  dependencies:
+    $ref: "#/definitions/dependency_block"
+  ordering_constraints:
+    type: object
+    additionalProperties: false
+    required: [hard_before, hard_after, soft_before, soft_after]
+    properties:
+      hard_before:
+        type: array
+        items:
+          type: string
+      hard_after:
+        type: array
+        items:
+          type: string
+      soft_before:
+        type: array
+        items:
+          type: string
+      soft_after:
+        type: array
+        items:
+          type: string
+      note:
+        type: string
+  source_anchors:
+    type: object
+    additionalProperties: false
+    required: [matlab_blocks, oc_blocks]
+    properties:
+      matlab_blocks:
+        type: object
+        description: "Map of conceptual block name -> MATLAB source_anchor."
+        additionalProperties:
+          $ref: "#/definitions/source_anchor"
+      oc_blocks:
+        type: object
+        description: "Map of conceptual block name -> OC source_anchor."
+        additionalProperties:
+          $ref: "#/definitions/source_anchor"
+  provenance:
+    type: object
+    additionalProperties: false
+    required: [fixture_files, kb_version]
+    properties:
+      fixture_files:
+        type: array
+        items:
+          type: string
+      kb_version:
+        type: string
+        description: "Recorded fixture / KB version string, if available."
+      extraction_date_utc:
+        anyOf:
+          - type: string
+          - type: "null"
+      notes:
+        type: string
+  deviations:
+    type: object
+    additionalProperties: false
+    required: [lp_bounds_source, shared_pool_projection_merges_compartments, known_deviations]
+    properties:
+      lp_bounds_source:
+        type: object
+        additionalProperties: false
+        required: [karr, oc_current, matlab_anchor, oc_anchor]
+        properties:
+          karr:
+            type: string
+            enum: [allocation, internal_pool, unknown]
+          oc_current:
+            type: string
+            enum: [allocation, internal_pool, unknown]
+          matlab_anchor:
+            $ref: "#/definitions/source_anchor"
+          oc_anchor:
+            $ref: "#/definitions/source_anchor"
+      shared_pool_projection_merges_compartments:
+        type: boolean
+        description: "True when OC flattens compartmented shared-pool deltas into one per-WID projection."
+      known_deviations:
+        type: array
+        items:
+          type: string
+      note:
+        type: string
