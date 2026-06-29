@@ -1,0 +1,340 @@
+schema_version: "1.0"
+process:
+  name: "ProteinActivation"
+  matlab_class: "ProteinActivation"
+  matlab_file: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m"
+  oc_class: "KarrProteinActivationProcess"
+  oc_file: "opencell/vivarium/karr_protein_activation.py"
+  whole_cell_model_id: "Process_ProteinActivation"
+  functional_area: "protein-synthesis-and-maturation"
+  state_shape_role: "rule-based active/inactive protein-state flip; no stoichiometric chemistry"
+  notes: >-
+    Raw MATLAB source was not present in this checkout, so the row was anchored to
+    the verified verbatim extract at docs/karr_extracts/process/20_ProteinActivation.md.
+methods:
+  calcResourceRequirements_Current:
+    matlab:
+      symbol: "calcResourceRequirements_Current"
+      source:
+        path: "docs/karr_extracts/process/20_ProteinActivation.md"
+        lines: "49-117"
+        note: "The extract describes boolean rule evaluation and state flips only; no allocator block is present."
+      note: "ProteinActivation is allocator-free in the extracted source shape."
+    oc:
+      symbol: "NOT_IMPLEMENTED"
+      source:
+        path: "opencell/vivarium/karr_protein_activation.py"
+        lines: "137-271"
+        note: "The OC port reads substrates and stimuli directly; it has no request calculator or substrates_allocated path."
+      supporting:
+        - path: "opencell/vivarium/karr_composite.py"
+          lines: "1397-1401"
+          note: "Composite wiring maps only substrates, stimuli, and protein for this process."
+      note: "Current OC mirrors the allocator-free shape."
+    status: "not_implemented"
+    note: "No per-process resource-request method is described for ProteinActivation in the available source extract."
+  evolveState:
+    matlab:
+      symbol: "evolveState"
+      source:
+        path: "docs/karr_extracts/process/20_ProteinActivation.md"
+        lines: "102-117"
+        note: "Per-compartment boolean activation/deactivation update."
+      note: "Rules are evaluated independently per compartment and toggle active/inactive pools."
+    oc:
+      symbol: "KarrProteinActivationProcess.next_update"
+      source:
+        path: "opencell/vivarium/karr_protein_activation.py"
+        lines: "229-271"
+        note: "Per-tick boolean evaluation and active/inactive writeback."
+      supporting:
+        - path: "opencell/vivarium/karr_protein_activation.py"
+          lines: "195-227"
+          note: "Ports schema for substrates, inactivatedSubstrates, stimuli, and protein activity."
+        - path: "opencell/vivarium/karr_composite.py"
+          lines: "1397-1401"
+          note: "Composite port wiring for the process."
+      note: "OC implements the MATLAB evolveState semantics as a pure next_update shim."
+    status: "implemented"
+    note: "This is the core per-tick behavior and is implemented directly in the OC port."
+  calcFluxBounds:
+    matlab:
+      symbol: "calcFluxBounds"
+      source:
+        path: "docs/karr_extracts/process/20_ProteinActivation.md"
+        lines: "49-68"
+        note: "The extracted process description contains no LP / flux-bound semantics."
+      note: "No flux-bound analogue is described for this rule-only process."
+    oc:
+      symbol: "NOT_IMPLEMENTED"
+      source:
+        path: "opencell/vivarium/karr_protein_activation.py"
+        lines: "137-271"
+        note: "There is no flux-bound or LP code path in the current OC shim."
+      note: "No calcFluxBounds implementation exists for ProteinActivation."
+    status: "not_implemented"
+    note: "ProteinActivation does not participate in the Metabolism-style flux-bound surface."
+allocator:
+  mode:
+    karr: "bypass"
+    oc_current: "bypass"
+    note: "Both sides read substrate/state and stimuli directly; there is no `requests` or `substrates_allocated` path."
+  request_formula:
+    matlab: "NOT_APPLICABLE: ProteinActivation has no calcResourceRequirements_Current; boolean rules directly gate state flips."
+    oc: "NOT_APPLICABLE: current OC shim has no request calculator and no `substrates_allocated` dependency."
+    note: "Allocator mediation is absent for this process."
+  requests: []
+  bypasses:
+    - wid: "MG_101_MONOMER"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Directly toggled between active and inactive pools via boolean rule evaluation."
+    - wid: "MG_127_MONOMER"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Directly toggled between active and inactive pools via boolean rule evaluation."
+    - wid: "MG_205_DIMER"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Directly toggled between active and inactive pools via boolean rule evaluation."
+    - wid: "MG_236_MONOMER"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Directly toggled between active and inactive pools via boolean rule evaluation."
+    - wid: "MG_409_DIMER"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Directly toggled between active and inactive pools via boolean rule evaluation."
+consume_stoichiometry:
+  - wid: "MG_101_MONOMER"
+    compartment: "cytosol"
+    formula_or_constant: "substrates(MG_101_MONOMER, compartment) when ~rule(MG_101_MONOMER, compartment)"
+    matlab_anchor:
+      path: "docs/karr_extracts/process/20_ProteinActivation.md"
+      lines: "102-117"
+      note: "The false-rule branch moves the protein out of the active pool."
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_activation.py"
+      lines: "250-270"
+      note: "next_update transfers counts between substrates and inactivatedSubstrates."
+    note: "Canonical deactivation example."
+  - wid: "MG_127_MONOMER"
+    compartment: "cytosol"
+    formula_or_constant: "inactivatedSubstrates(MG_127_MONOMER, compartment) when rule(MG_127_MONOMER, compartment)"
+    matlab_anchor:
+      path: "docs/karr_extracts/process/20_ProteinActivation.md"
+      lines: "102-117"
+      note: "The true-rule branch moves the protein into the active pool."
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_activation.py"
+      lines: "250-270"
+      note: "next_update transfers counts between substrates and inactivatedSubstrates."
+    note: "Canonical activation example."
+  - wid: "MG_205_DIMER"
+    compartment: "cytosol"
+    formula_or_constant: "inactivatedSubstrates(MG_205_DIMER, compartment) when rule(MG_205_DIMER, compartment)"
+    matlab_anchor:
+      path: "docs/karr_extracts/process/20_ProteinActivation.md"
+      lines: "102-117"
+      note: "The true-rule branch moves the protein into the active pool."
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_activation.py"
+      lines: "250-270"
+      note: "next_update transfers counts between substrates and inactivatedSubstrates."
+    note: "Canonical activation example."
+  - wid: "MG_409_DIMER"
+    compartment: "cytosol"
+    formula_or_constant: "substrates(MG_409_DIMER, compartment) when ~rule(MG_409_DIMER, compartment)"
+    matlab_anchor:
+      path: "docs/karr_extracts/process/20_ProteinActivation.md"
+      lines: "102-117"
+      note: "The false-rule branch moves the protein out of the active pool."
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_activation.py"
+      lines: "250-270"
+      note: "next_update transfers counts between substrates and inactivatedSubstrates."
+    note: "Canonical deactivation example."
+produce_stoichiometry:
+  - wid: "MG_101_MONOMER"
+    compartment: "cytosol"
+    formula_or_constant: "inactivatedSubstrates(MG_101_MONOMER, compartment) when ~rule(MG_101_MONOMER, compartment)"
+    matlab_anchor:
+      path: "docs/karr_extracts/process/20_ProteinActivation.md"
+      lines: "102-117"
+      note: "False-rule branch produces the inactive pool."
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_activation.py"
+      lines: "250-270"
+      note: "next_update transfers counts between substrates and inactivatedSubstrates."
+    note: "Deactivation product."
+  - wid: "MG_127_MONOMER"
+    compartment: "cytosol"
+    formula_or_constant: "substrates(MG_127_MONOMER, compartment) when rule(MG_127_MONOMER, compartment)"
+    matlab_anchor:
+      path: "docs/karr_extracts/process/20_ProteinActivation.md"
+      lines: "102-117"
+      note: "True-rule branch produces the active pool."
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_activation.py"
+      lines: "250-270"
+      note: "next_update transfers counts between substrates and inactivatedSubstrates."
+    note: "Activation product."
+  - wid: "MG_205_DIMER"
+    compartment: "cytosol"
+    formula_or_constant: "substrates(MG_205_DIMER, compartment) when rule(MG_205_DIMER, compartment)"
+    matlab_anchor:
+      path: "docs/karr_extracts/process/20_ProteinActivation.md"
+      lines: "102-117"
+      note: "True-rule branch produces the active pool."
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_activation.py"
+      lines: "250-270"
+      note: "next_update transfers counts between substrates and inactivatedSubstrates."
+    note: "Activation product."
+  - wid: "MG_409_DIMER"
+    compartment: "cytosol"
+    formula_or_constant: "inactivatedSubstrates(MG_409_DIMER, compartment) when ~rule(MG_409_DIMER, compartment)"
+    matlab_anchor:
+      path: "docs/karr_extracts/process/20_ProteinActivation.md"
+      lines: "102-117"
+      note: "False-rule branch produces the inactive pool."
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_activation.py"
+      lines: "250-270"
+      note: "next_update transfers counts between substrates and inactivatedSubstrates."
+    note: "Deactivation product."
+compartment_routing:
+  - wid: "MG_101_MONOMER"
+    consume_compartment: "cytosol"
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Active/inactive bookkeeping stays within the same intracellular pool."
+  - wid: "MG_127_MONOMER"
+    consume_compartment: "cytosol"
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Active/inactive bookkeeping stays within the same intracellular pool."
+  - wid: "MG_205_DIMER"
+    consume_compartment: "cytosol"
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Active/inactive bookkeeping stays within the same intracellular pool."
+  - wid: "MG_236_MONOMER"
+    consume_compartment: "cytosol"
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Active/inactive bookkeeping stays within the same intracellular pool."
+  - wid: "MG_409_DIMER"
+    consume_compartment: "cytosol"
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Active/inactive bookkeeping stays within the same intracellular pool."
+unit_conversion_chain:
+  source_units: "boolean rule output + protein counts"
+  target_units: "count transitions per tick"
+  steps:
+    - from_units: "boolean rule output + protein counts"
+      to_units: "count transitions per tick"
+      operation: "no unit conversion; evaluate the boolean rule per compartment and move whole counts between substrates and inactivatedSubstrates in the same tick"
+      anchor:
+        path: "docs/karr_extracts/process/20_ProteinActivation.md"
+        lines: "49-117"
+        note: "Boolean syntax plus per-compartment state update semantics."
+      constants: []
+  note: "The process works directly on counts; there is no mmol/gDW/hr-style scaling chain."
+dependencies:
+  produces_inputs_for:
+    - "ProteinDecay"
+    - "ProteinFolding"
+    - "ProteinModification"
+    - "ProteinTranslocation"
+    - "TranscriptionalRegulation"
+  consumes_outputs_of:
+    - "Metabolism"
+    - "HostInteraction"
+    - "Translation"
+    - "ProteinProcessingI"
+    - "ProteinProcessingII"
+  note: >-
+    Canonical downstream consumers of protein activity are the protein-pathway
+    and transcriptional-regulation modules; canonical upstream sources are the
+    metabolism/host/stress signals and the protein maturation chain that creates
+    the mature protein pools being toggled.
+ordering_constraints:
+  hard_before: []
+  hard_after: []
+  soft_before: []
+  soft_after: []
+  note: "ProteinActivation itself has no process-order exception in the source extract; the only canonical hard order mentioned in the surrounding simulation is tRNAAminoacylation < Translation."
+source_anchors:
+  matlab_blocks:
+    class_identity:
+      path: "docs/karr_extracts/process/20_ProteinActivation.md"
+      lines: "1-7"
+      note: "Canonical metadata header for the process extract."
+    biology_and_rule_scope:
+      path: "docs/karr_extracts/process/20_ProteinActivation.md"
+      lines: "13-47"
+      note: "Docstring biology and the six regulated proteins."
+    rule_syntax:
+      path: "docs/karr_extracts/process/20_ProteinActivation.md"
+      lines: "49-68"
+      note: "Boolean operators and signal types."
+    representation_and_initialization:
+      path: "docs/karr_extracts/process/20_ProteinActivation.md"
+      lines: "76-100"
+      note: "substrates/inactivatedSubstrates/stimuli semantics and initialization path."
+    evolve_state:
+      path: "docs/karr_extracts/process/20_ProteinActivation.md"
+      lines: "102-117"
+      note: "Per-compartment update loop and active/inactive transition rules."
+  oc_blocks:
+    module_and_fixture_load:
+      path: "opencell/vivarium/karr_protein_activation.py"
+      lines: "1-19"
+      note: "Module docstring, imports, and default fixture path."
+    fixture_and_rule_compile:
+      path: "opencell/vivarium/karr_protein_activation.py"
+      lines: "146-193"
+      note: "Fixture load, WID parsing, and rule compilation."
+    ports_schema:
+      path: "opencell/vivarium/karr_protein_activation.py"
+      lines: "195-227"
+      note: "Ports for substrates, inactivatedSubstrates, enzymes, stimuli, and protein activity."
+    next_update:
+      path: "opencell/vivarium/karr_protein_activation.py"
+      lines: "229-271"
+      note: "Per-tick boolean evaluation and writeback."
+    composite_wiring:
+      path: "opencell/vivarium/karr_composite.py"
+      lines: "1397-1401"
+      note: "Composite maps the process to activation_substrates, stimuli, and protein stores."
+provenance:
+  fixture_files:
+    - "data/karr_fixtures/per_process/ProteinActivation_flat.mat"
+  kb_version: "karr_native_m1__v2"
+  extraction_date_utc: null
+  notes: >-
+    last_audited=2026-06-29; audited_by=gpt-5.4-mini (codex; row authored Day-43 EOD);
+    oc_commit_sha=61a5a06e8031af3159dffa436655ade330be1fd9;
+    matlab_files_referenced=[docs/karr_extracts/process/20_ProteinActivation.md];
+    oc_files_referenced=[opencell/vivarium/karr_protein_activation.py, opencell/vivarium/karr_composite.py];
+    canonical_matlab_path=data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m;
+    raw_matlab_source_missing_in_checkout=true
+deviations:
+  lp_bounds_source:
+    karr: "unknown"
+    oc_current: "unknown"
+    matlab_anchor:
+      path: "docs/karr_extracts/process/20_ProteinActivation.md"
+      lines: "49-117"
+      note: "No LP or flux-bound surface is described for this process."
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_activation.py"
+      lines: "137-271"
+      note: "The OC shim has no LP or flux-bound code path."
+  shared_pool_projection_merges_compartments: false
+  known_deviations: []
+  note: >-
+    No known MATLAB↔OC behavioral deviation was identified from the available
+    source extract and current OC port; both are rule-only and allocator-free.
