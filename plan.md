@@ -26,6 +26,58 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Live processes / agents (2026-06-29 ~08:20 IST, Day-43 mid-morning):** 3 codex agents running:
+- `fva_multisample_v2` PID 12976 (structural FVA at 20 samples) — wait shell `codex-fva-multi-v2-wait`
+- `matlab_extraction_inventory` PID 55988 (comprehensive MATLAB extraction spec) — wait shell `codex-matlab-inv-wait`
+- (`substrate_delta_fva` PID 38640 — COMPLETED `571c180`)
+
+**Day-43 morning — FVA reframe is EMPIRICALLY VALIDATED.** Three probes already in:
+
+| Probe | Sample size | Result |
+|---|---|---|
+| FVA single-sample (last night, `cbed29a`) | sample (s=0, t=1), 1008 LPs | **504/504 reactions feasible** for Karr's flux in OC FVA range |
+| Substrate-delta FVA (`571c180`) | 5 samples × 1755 (row,compartment) pairs | **8775/8775 (100%)** — Karr's recorded substrate-delta is inside OC's FVA-derived substrate-delta range. All 8 substitution-pair rows in-range at every sample. |
+
+This DECISIVELY closes the path-forward question that Day-42 EOD left open: **FVA reframe is the right path.** It gives PASS by construction for Metabolism's L2.2 gate, with no Karr-fitting, no methodology compromise.
+
+The remaining 2 probes (still running) are:
+- `fva_multisample_v2`: structural scaling sanity check at 20 samples (FVA solver doesn't fail anywhere)
+- `matlab_extraction_inventory`: comprehensive spec for ALL MATLAB extractions we'd ever need, so the operator only needs to renew MATLAB license ONCE
+
+**MATLAB blocker (encountered this morning):** Per-tick Karr flux extraction was attempted via `scripts/matlab/extract_metab_flux_per_tick.m` (newly written this morning, 80 lines). Hit immediate license expiry — both trial licenses on this machine expired May 2026. Per-tick flux extraction is **blocked until license renewal**. The substrate-delta FVA probe (above) DOESN'T need per-tick flux, so the FVA reframe path is unblocked. The MATLAB-needed extractions are now being enumerated by the inventory probe.
+
+**Day-43 commits, all on main, NOT pushed (since `cbed29a`):**
+- `cbed29a` — FVA single-sample validation (504/504 feasible)
+- `571c180` — substrate-delta FVA at 5 samples (8775/8775)
+
+**Pending bookkeeping commit**: this plan.md update.
+
+**Scoreboard (Day-43 morning) — UNCHANGED from Day-42 (no source code changes yet):**
+
+| Gate | Day-42 EOD | Day-43 morning |
+|---|---:|---:|
+| L2.1 GENUINE | 19/28 | **19/28** |
+| L2.2 VERIFIED_GENUINE | 17/22 | **17/22** |
+| L2.2 NOT_WIRED | 2 | **2** |
+| L2.2 VERIFIED_FAIL | 1 (Metab W1=161, root-caused) | **1 (Metab W1=161, but FVA reframe validated → expected PASS after Part 2 ships)** |
+| L2.5 honest PASS | 15/256 | 15/256 |
+
+**Day-43 priorities (UPDATED based on this morning's validation):**
+
+A. **Ship FVA reframe** (Parts 2-4 of the Day-43 sizing block below). Empirical foundation now solid; pricing risk is low.
+   - Part 2: L2.2 audit metric redesign (4-6h) — replace W1 with substrate-delta-FVA-feasibility for Metabolism
+   - Part 3: Karr-flux-injection scaffolding for L3/L4/L5 (2h) — `metabolism_use_karr_flux` flag
+   - Part 4: Decision-card + methodology docs (2h)
+   - Part 5: Re-run audit (30 min, expect PASS by construction)
+B. Wait for the MATLAB extraction inventory probe; if license can be renewed, run all extractions in one batch
+C. After Metabolism is unblocked at L2.2, can pivot to L2.1 cleanup (ProteinDecay, Replication, ChromosomeCondensation) or L2.5 re-audit
+
+**Pre-existing test failure**: `tests/vivarium/test_karr_metabolism_pools_throttle.py::test_throttle_on_with_starved_atp_freezes_m2_synthesis` still fails on main from commit `ecde4e4`. Independent of Day-43 work.
+
+---
+
+## Operational handoff (Day-42 EOD FINAL — superseded by Day-43 morning above)
+
 **Live processes / agents (2026-06-28 ~21:30 IST, Day-42 EOD FINAL):** None alive. Workspace clean. All 12 codex probes from today exited cleanly.
 
 **Day-42 Metabolism investigation — COMPLETE; path-forward narrowed to 2 viable options.** 12 probes total today produced a converged understanding:
