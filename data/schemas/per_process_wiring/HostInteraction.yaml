@@ -1,0 +1,190 @@
+schema_version: "1.0"
+process:
+  name: "HostInteraction"
+  matlab_class: "HostInteraction"
+  matlab_file: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m"
+  oc_class: "KarrHostInteractionProcess"
+  oc_file: "opencell/vivarium/karr_host_interaction.py"
+  whole_cell_model_id: "Process_HostInteraction"
+  functional_area: "host-interaction"
+  state_shape_role: "qualitative host-interface state; wiring row adds integration semantics"
+  notes: "MATLAB source is documented in the extract and mirrored upstream; the current OC port is Karr-light and only approximates the boolean cascade with aggregate adhesion state."
+methods:
+  calcResourceRequirements_Current:
+    matlab:
+      symbol: "calcResourceRequirements_Current"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m"
+        lines: "265-268"
+        note: "Returns an all-zero resource vector over the empty substrate list."
+    oc:
+      symbol: "NOT_IMPLEMENTED"
+      source:
+        path: "opencell/vivarium/karr_host_interaction.py"
+        lines: "153-300"
+        note: "Current OC port has no request-calculator surface and never reads substrates_allocated or substrates."
+      supporting:
+        - path: "opencell/vivarium/karr_composite.py"
+          lines: "2449-2454"
+          note: "Composite wiring connects HostInteraction only to cell and protein stores."
+    status: "not_implemented"
+    note: "Karr declares the method, but the current OC port bypasses allocator mediation entirely."
+  evolveState:
+    matlab:
+      symbol: "evolveState"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m"
+        lines: "271-303"
+        note: "Boolean host-interface simulation over adhesion, TLR, NF-kB, and inflammatory response."
+    oc:
+      symbol: "KarrHostInteractionProcess.next_update"
+      source:
+        path: "opencell/vivarium/karr_host_interaction.py"
+        lines: "255-300"
+        note: "Current OC per-tick update computes stochastic aggregate adhesion and host_attached/host_adhesion_strength."
+      supporting:
+        - path: "opencell/vivarium/karr_host_interaction.py"
+          lines: "217-243"
+          note: "Port schema exposes cell and protein stores used by next_update."
+        - path: "opencell/vivarium/karr_composite.py"
+          lines: "2449-2454"
+          note: "Topology wiring only exposes cell and protein stores to the process."
+    status: "partial"
+    note: "Implemented in OC as a Karr-light approximation, not a literal port of the MATLAB boolean cascade."
+  calcFluxBounds:
+    matlab:
+      symbol: "NOT_IMPLEMENTED"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m"
+        lines: "247-304"
+        note: "No calcFluxBounds method is defined in HostInteraction.m."
+    oc:
+      symbol: "NOT_IMPLEMENTED"
+      source:
+        path: "opencell/vivarium/karr_host_interaction.py"
+        lines: "153-300"
+        note: "No flux-bound equivalent exists in the current OC port."
+    status: "not_implemented"
+    note: "HostInteraction has no LP-style flux bounds in either code path."
+allocator:
+  mode:
+    karr: "allocation"
+    oc_current: "bypass"
+    note: "Karr declares a resource-requirements method, but the current OC process reads only cell/protein state and has no substrate request surface."
+  request_formula:
+    matlab: "result = zeros(size(this.substrates))"
+    oc: "no OC request calculator; current port bypasses allocator mediation"
+    note: "The Karr request vector is identically zero because HostInteraction's substrate list is empty."
+  requests: []
+  bypasses: []
+consume_stoichiometry: []
+produce_stoichiometry: []
+compartment_routing: []
+unit_conversion_chain:
+  source_units: "dimensionless host/protein state"
+  target_units: "dimensionless host/protein state per tick"
+  steps: []
+  note: "No molecule-count conversion is needed; HostInteraction is qualitative and does not emit substrate stoichiometry."
+dependencies:
+  produces_inputs_for: []
+  consumes_outputs_of:
+    - "TerminalOrganelleAssembly"
+    - "Translation"
+    - "ProteinProcessingI"
+    - "ProteinProcessingII"
+    - "ProteinTranslocation"
+  note: "Current OC reads terminal-organelle readiness plus mature protein counts; these upstream processes supply those read-only inputs."
+ordering_constraints:
+  hard_before: []
+  hard_after: []
+  soft_before: []
+  soft_after:
+    - "TerminalOrganelleAssembly"
+  note: "No explicit Karr order exception is documented for HostInteraction; the only practical ordering pressure is that it reads terminal-organelle readiness."
+source_anchors:
+  matlab_blocks:
+    docstring_and_representation:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m"
+      lines: "1-139"
+      note: "Docstring, representation, and qualitative host model."
+    class_and_constants:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m"
+      lines: "173-213"
+      note: "Class definition, enzyme lists, and host-interaction state indices."
+    lifecycle_requirements:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m"
+      lines: "252-257"
+      note: "Life-cycle resource requirements stub."
+    initialize_state:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m"
+      lines: "259-263"
+      note: "Initialize by running evolveState once."
+    calc_resource_requirements_current:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m"
+      lines: "265-268"
+      note: "Zero request vector."
+    evolve_state:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m"
+      lines: "271-303"
+      note: "Boolean host-interface state update."
+  oc_blocks:
+    module_docstring:
+      path: "opencell/vivarium/karr_host_interaction.py"
+      lines: "1-24"
+      note: "Karr-light v1 module header and fixture defaults."
+    trace_rate_helpers:
+      path: "opencell/vivarium/karr_host_interaction.py"
+      lines: "27-150"
+      note: "Trace parsing and inferred adhesion-rate helpers."
+    process_class:
+      path: "opencell/vivarium/karr_host_interaction.py"
+      lines: "153-193"
+      note: "Process class definition and constructor."
+    fixture_loader:
+      path: "opencell/vivarium/karr_host_interaction.py"
+      lines: "195-215"
+      note: "Fixture-backed enzyme and substrate loading."
+    ports_schema:
+      path: "opencell/vivarium/karr_host_interaction.py"
+      lines: "217-243"
+      note: "Cell and protein ports used by the process."
+    next_update:
+      path: "opencell/vivarium/karr_host_interaction.py"
+      lines: "255-300"
+      note: "Current OC per-tick adhesion update."
+    composite_wiring:
+      path: "opencell/vivarium/karr_composite.py"
+      lines: "2449-2454"
+      note: "HostInteraction topology wiring in the chassis."
+provenance:
+  fixture_files:
+    - "data/karr_fixtures/per_process/HostInteraction_flat.mat"
+    - "data/m1_sources/karr_native/per_process_traces/HostInteraction_100ticks.mat"
+  kb_version: "unknown"
+  extraction_date_utc: "2026-06-29"
+  notes: |-
+    last_audited=2026-06-29
+    audited_by=gpt-5.4-mini (codex; row authored Day-43 EOD)
+    oc_commit_sha=61a5a06e8031af3159dffa436655ade330be1fd9
+    matlab_files_referenced=["E:\\opencell-mirrors\\WholeCell\\src\\+edu\\+stanford\\+covert\\+cell\\+sim\\+process\\HostInteraction.m"]
+    oc_files_referenced=["opencell/vivarium/karr_host_interaction.py", "opencell/vivarium/karr_composite.py"]
+    fixture_files=["data/karr_fixtures/per_process/HostInteraction_flat.mat", "data/m1_sources/karr_native/per_process_traces/HostInteraction_100ticks.mat"]
+    kb_version=unknown
+deviations:
+  lp_bounds_source:
+    karr: "allocation"
+    oc_current: "unknown"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m"
+      lines: "265-268"
+      note: "Karr exposes the resource-requirements method but returns an empty/zero vector."
+    oc_anchor:
+      path: "opencell/vivarium/karr_host_interaction.py"
+      lines: "153-300"
+      note: "Current OC port has no LP or request-calculator path."
+  shared_pool_projection_merges_compartments: false
+  known_deviations:
+    - "OC replaces Karr's boolean host cascade with a Karr-light aggregate adhesion model (`host_adhesion_strength` and `host_attached`)."
+    - "OC reads `cell.terminal_organelle_count` plus `protein.counts`; Karr reads its own `host` state and `enzymes` array."
+    - "No substrate stoichiometry or allocator request surface exists in the current OC port because HostInteraction's fixture has no substrate WIDs."
+  note: "The row records the current OC approximation honestly instead of implying a literal MATLAB port."
