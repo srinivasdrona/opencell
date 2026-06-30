@@ -1,0 +1,364 @@
+schema_version: "1.0"
+process:
+  name: "ReplicationInitiation"
+  matlab_class: "ReplicationInitiation"
+  matlab_file: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
+  oc_class: "KarrReplicationInitiationProcess"
+  oc_file: "opencell/vivarium/karr_replication_initiation.py"
+  whole_cell_model_id: "Process_ReplicationInitiation"
+  functional_area: "DNA-replication-and-maintenance"
+  state_shape_role: "DnaA/OriC gate process; consumes shared ATP and water, updates chromosome-bound DnaA state."
+  notes: "Fixture-backed port of the replication-initiation gate."
+methods:
+  calcResourceRequirements_Current:
+    matlab:
+      symbol: "calcResourceRequirements_Current"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
+        lines: "495-503"
+        note: "Allocator-facing resource demand: ATP for activation plus H2O for polymer hydrolysis."
+      note: "Per-tick resource request vector for the shared metabolite allocator."
+    oc:
+      symbol: "KarrReplicationInitiationProcess.next_update"
+      source:
+        path: "opencell/vivarium/karr_replication_initiation.py"
+        lines: "288-441"
+        note: "Main update path emits the request dict and reads from substrates_allocated[self.name]."
+      supporting:
+        - path: "opencell/vivarium/karr_replication_initiation.py"
+          lines: "605-694"
+          note: "Trace-hint replay branch emits the same request keys."
+      note: "No dedicated request-calculator module exists in the OC port."
+    status: "partial"
+    note: "Equivalent request semantics are embedded in next_update rather than a standalone calculator."
+  evolveState:
+    matlab:
+      symbol: "evolveState"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
+        lines: "506-530"
+        note: "Deterministic activation/inactivation, then stochastic binding/release and reactivation."
+    oc:
+      symbol: "KarrReplicationInitiationProcess.next_update"
+      source:
+        path: "opencell/vivarium/karr_replication_initiation.py"
+        lines: "288-441"
+        note: "Per-tick update path with allocated substrate reads and chromosome/protein writeback."
+      supporting:
+        - path: "opencell/vivarium/karr_replication_initiation.py"
+          lines: "740-777"
+          note: "ATP activation and water-limited hydrolysis deltas."
+        - path: "opencell/vivarium/karr_replication_initiation.py"
+          lines: "779-938"
+          note: "Polymerization, binding, release, and reactivation helpers."
+      note: "Replay-friendly trace-hint handling keeps the wiring aligned with the MATLAB step order."
+    status: "partial"
+    note: "The MATLAB evolveState sequence is preserved, but the OC port is reorganized around next_update and trace hints."
+  calcFluxBounds:
+    matlab:
+      symbol: "calcFluxBounds"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
+        lines: "134-530"
+        note: "No calcFluxBounds method is defined in this process file."
+      note: "Schema-required placeholder for a process that does not expose LP-bound construction."
+    oc:
+      symbol: "NOT_IMPLEMENTED"
+      source:
+        path: "opencell/vivarium/karr_replication_initiation.py"
+        lines: "61-959"
+        note: "No LP-bound builder or flux-bound helper exists in this module."
+    status: "not_implemented"
+    note: "This process has no process-local flux-bound builder in either source tree."
+  initializeState:
+    matlab:
+      symbol: "initializeState"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
+        lines: "365-391"
+        note: "Steady-state bootstrap entry point; delegates to the final-conditions initializer."
+    oc:
+      symbol: "KarrReplicationInitiationProcess.build_default_chromosome_state"
+      source:
+        path: "opencell/vivarium/karr_replication_initiation.py"
+        lines: "206-218"
+        note: "Fixture-backed bootstrap of the default chromosome state."
+      supporting:
+        - path: "opencell/vivarium/karr_replication_initiation.py"
+          lines: "82-198"
+          note: "Fixture load and process bootstrap."
+      note: "OC bootstraps the chromosome and fixture-derived counts but does not reproduce the MATLAB steady-state solve."
+    status: "partial"
+    note: "The OC port initializes a compatible default state, but not MATLAB's optimization-based steady-state initialization."
+  initializeStateBasedOnFinalConditions:
+    matlab:
+      symbol: "initializeStateBasedOnFinalConditions"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
+        lines: "393-424"
+        note: "Final-conditions steady-state construction and oriC seeding."
+    oc:
+      symbol: "NOT_IMPLEMENTED"
+      source:
+        path: "opencell/vivarium/karr_replication_initiation.py"
+        lines: "61-218"
+        note: "No direct OC counterpart; initialization is handled by process bootstrap and fixture loading."
+    status: "not_implemented"
+    note: "The final-conditions steady-state solver is absent from the OC port."
+  initializeStateBasedOnTheory:
+    matlab:
+      symbol: "initializeStateBasedOnTheory"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
+        lines: "426-492"
+        note: "Alternative theory-based steady-state solve and rounding."
+    oc:
+      symbol: "NOT_IMPLEMENTED"
+      source:
+        path: "opencell/vivarium/karr_replication_initiation.py"
+        lines: "61-218"
+        note: "No direct OC counterpart; no theory solve or cubic-root steady-state helper."
+    status: "not_implemented"
+    note: "The OC port does not implement the theory-based initialization path or its cubic-root helper."
+allocator:
+  mode:
+    karr: "allocation"
+    oc_current: "allocation"
+    note: "Both sides treat ATP and H2O as allocator-mediated inputs; the OC port reads from substrates_allocated[self.name]."
+  request_formula:
+    matlab: "result(ATP) = free DnaA + DnaA-ADP + bound DnaA-ADP; result(H2O) = (2:7) * DnaA_polymer_ATP"
+    oc: "update['requests'][self.name][ATP] = max(0, free_dnaa_adp); update['requests'][self.name][H2O] = max(0, free_dnaa_atp)"
+    note: "The OC request is emitted inside next_update; there is no separate request-calculator file."
+  requests:
+    - wid: "ATP"
+      compartment: "cytosol"
+      source: "karr"
+      note: "Allocator request for free-DnaA activation and maintenance demand."
+    - wid: "H2O"
+      compartment: "cytosol"
+      source: "karr"
+      note: "Allocator request for polymer hydrolysis."
+  bypasses:
+    - wid: "ADP"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Written directly to substrates as a hydrolysis product."
+    - wid: "PI"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Written directly to substrates as a hydrolysis product."
+    - wid: "H"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Written directly to substrates as a hydrolysis product."
+consume_stoichiometry:
+  - wid: "ATP"
+    compartment: "cytosol"
+    formula_or_constant: "nActivations = min(this.substrates(this.substrateIndexs_atp), this.enzymes(this.enzymeIndexs_DnaA)); ATP consumed = nActivations"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
+      lines: "536-550"
+      note: "activateFreeDnaA consumes ATP one-for-one with DnaA activation."
+    oc_anchor:
+      path: "opencell/vivarium/karr_replication_initiation.py"
+      lines: "740-747"
+      note: "Activation helper subtracts allocated ATP."
+  - wid: "H2O"
+    compartment: "cytosol"
+    formula_or_constant: "nDissociatingMonomers = (2:7) * nDissociatingPolymers; water consumed = nDissociatingMonomers after clipping to availability"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
+      lines: "560-581"
+      note: "inactivateFreeDnaAATP hydrolyzes DnaA polymers and consumes water."
+    oc_anchor:
+      path: "opencell/vivarium/karr_replication_initiation.py"
+      lines: "749-777"
+      note: "Hydrolysis helper is water-limited and writes ADP/PI/H deltas."
+produce_stoichiometry:
+  - wid: "ADP"
+    compartment: "cytosol"
+    formula_or_constant: "nDissociatingMonomers"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
+      lines: "576-581"
+      note: "Hydrolysis product from inactivateFreeDnaAATP."
+    oc_anchor:
+      path: "opencell/vivarium/karr_replication_initiation.py"
+      lines: "774-777"
+      note: "Hydrolysis product written directly to substrates."
+  - wid: "PI"
+    compartment: "cytosol"
+    formula_or_constant: "nDissociatingMonomers"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
+      lines: "576-581"
+      note: "Hydrolysis product from inactivateFreeDnaAATP."
+    oc_anchor:
+      path: "opencell/vivarium/karr_replication_initiation.py"
+      lines: "774-777"
+      note: "Hydrolysis product written directly to substrates."
+  - wid: "H"
+    compartment: "cytosol"
+    formula_or_constant: "nDissociatingMonomers"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
+      lines: "576-581"
+      note: "Hydrolysis product from inactivateFreeDnaAATP."
+    oc_anchor:
+      path: "opencell/vivarium/karr_replication_initiation.py"
+      lines: "774-777"
+      note: "Hydrolysis product written directly to substrates."
+compartment_routing:
+  - wid: "ATP"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Allocator-mediated cytosolic input."
+  - wid: "H2O"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Allocator-mediated cytosolic input."
+  - wid: "ADP"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Direct cytosolic hydrolysis product."
+  - wid: "PI"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Direct cytosolic hydrolysis product."
+  - wid: "H"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Direct cytosolic hydrolysis product."
+unit_conversion_chain:
+  source_units: "raw molecule counts per tick"
+  target_units: "molecules/tick"
+  steps:
+    - from_units: "raw molecule counts"
+      to_units: "molecules/tick"
+      operation: "identity; the request vector is already expressed as a per-tick molecule count"
+      anchor:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
+        lines: "495-503"
+        note: "calcResourceRequirements_Current does not rescale by time or mass."
+  note: "No concentration, mass, or volume conversion is applied; the process works on raw counts."
+dependencies:
+  produces_inputs_for:
+    - "Metabolism"
+  consumes_outputs_of:
+    - "Metabolism"
+  note: "The only clear substrate-level dependency is the shared metabolite pool; chromosome-state effects are handled separately."
+ordering_constraints:
+  hard_before: []
+  hard_after: []
+  soft_before: []
+  soft_after: []
+  note: "No ReplicationInitiation-specific order rule was identified; the canonical global hard constraint lives in Simulation.evolveState for tRNAAminoacylation < Translation."
+source_anchors:
+  matlab_blocks:
+    docstring_overview:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
+      lines: "1-133"
+      note: "Process biology, representation, initialization, and simulation-order notes."
+    initialize_state:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
+      lines: "365-391"
+      note: "Steady-state bootstrap entry point."
+    initialize_state_final_conditions:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
+      lines: "393-424"
+      note: "Final-conditions steady-state initialization."
+    initialize_state_theory:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
+      lines: "426-492"
+      note: "Theory-based steady-state solve and cubic-root helper."
+    resource_req:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
+      lines: "495-503"
+      note: "Allocator-facing resource request block."
+    evolve_state:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
+      lines: "506-530"
+      note: "Deterministic step order for activation, inactivation, binding, release, and reactivation."
+    activation_and_hydrolysis:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
+      lines: "536-582"
+      note: "ATP activation and polymer hydrolysis helpers."
+    binding_polymerization_release:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
+      lines: "584-694"
+      note: "Polymerization, binding, release, and trace-hint-aligned update logic."
+  oc_blocks:
+    process_bootstrap:
+      path: "opencell/vivarium/karr_replication_initiation.py"
+      lines: "61-218"
+      note: "Class definition, fixture load, and default chromosome bootstrap."
+    ports_schema:
+      path: "opencell/vivarium/karr_replication_initiation.py"
+      lines: "229-286"
+      note: "Ports including requests and substrates_allocated."
+    next_update:
+      path: "opencell/vivarium/karr_replication_initiation.py"
+      lines: "288-441"
+      note: "Main per-tick update path and request emission."
+    chromosome_helpers:
+      path: "opencell/vivarium/karr_replication_initiation.py"
+      lines: "443-594"
+      note: "Chromosome-store resolution, hemimethylation checks, and complex encoding."
+    trace_hint_update:
+      path: "opencell/vivarium/karr_replication_initiation.py"
+      lines: "605-694"
+      note: "Replay-friendly trace-hint path and request emission."
+    substrate_activation_hydrolysis:
+      path: "opencell/vivarium/karr_replication_initiation.py"
+      lines: "740-777"
+      note: "ATP activation and water-limited hydrolysis deltas."
+    binding_polymerization:
+      path: "opencell/vivarium/karr_replication_initiation.py"
+      lines: "779-883"
+      note: "OriC polymerization and free-site binding."
+    release_reactivation:
+      path: "opencell/vivarium/karr_replication_initiation.py"
+      lines: "885-938"
+      note: "Release and membrane-regeneration helpers."
+    initiation_trigger:
+      path: "opencell/vivarium/karr_replication_initiation.py"
+      lines: "946-951"
+      note: "Replication initiation predicate."
+provenance:
+  fixture_files:
+    - "data/karr_fixtures/per_process/ReplicationInitiation_flat.mat"
+  kb_version: "unknown"
+  extraction_date_utc: "2026-06-30"
+  notes: >-
+    last_audited=2026-06-29; audited_by=gpt-5.4-mini (codex; row authored Day-43 EOD);
+    oc_commit_sha=61a5a06e8031af3159dffa436655ade330be1fd9;
+    matlab_files_referenced=[data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m,
+    data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m,
+    data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/initializeState.m];
+    oc_files_referenced=[opencell/vivarium/karr_replication_initiation.py];
+    fixture_files=[data/karr_fixtures/per_process/ReplicationInitiation_flat.mat];
+    kb_version=unknown;
+    note=The current worktree was sparse for the raw MATLAB tree, so the M-file anchors were cross-checked against the full E:/opencell checkout.
+deviations:
+  lp_bounds_source:
+    karr: "unknown"
+    oc_current: "unknown"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
+      lines: "495-530"
+      note: "No process-local LP-bound builder exists; this is the closest allocator-facing block."
+    oc_anchor:
+      path: "opencell/vivarium/karr_replication_initiation.py"
+      lines: "288-441"
+      note: "No LP-bound helper exists in the OC port; request/update logic lives directly in next_update."
+  shared_pool_projection_merges_compartments: false
+  known_deviations:
+    - "OC emits and consumes allocator state inside next_update instead of a dedicated request-calculator class."
+    - "OC initialization is fixture/bootstrap based and does not reproduce MATLAB's final-conditions or theory steady-state solve."
+    - "MATLAB's calcFluxBounds slot is absent for this process, so the schema-required row entry is marked not_implemented."
+  note: "The port keeps substrate wiring explicit and compartment-local; no compartment-flattening projection is involved."
