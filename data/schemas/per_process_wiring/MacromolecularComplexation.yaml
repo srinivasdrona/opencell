@@ -1,0 +1,399 @@
+schema_version: "1.0"
+process:
+  name: "MacromolecularComplexation"
+  matlab_class: "MacromolecularComplexation"
+  matlab_file: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/MacromolecularComplexation.m"
+  oc_class: "MacromolecularComplexationProcess"
+  oc_file: "opencell/vivarium/karr_macromolecular_complexation.py"
+  whole_cell_model_id: "Process_MacromolecularComplexation"
+  functional_area: "protein-synthesis-and-maturation"
+  state_shape_role: "state-shape catalog row; wiring row adds integration semantics"
+  notes: "Raw MATLAB source is absent in this checkout; anchors use verbatim design excerpts and the OC port."
+methods:
+  calcResourceRequirements_Current:
+    matlab:
+      symbol: "calcResourceRequirements_Current"
+      source:
+        path: "docs/design/a33_turn3_d2_real.md"
+        lines: "85-87"
+        note: "Design note cites MacromolecularComplexation.m:285-287; D.2 requests zero metabolites."
+      note: "Zero-demand allocator hook."
+    oc:
+      symbol: "RequestCalculatorD2.next_update"
+      source:
+        path: "opencell/vivarium/karr_request_calculators.py"
+        lines: "53-89"
+        note: "Writes zero requests for karr_macromolecular_complexation."
+      supporting:
+        - path: "opencell/vivarium/karr_allocation_step.py"
+          lines: "153-280"
+          note: "Reads requests and writes substrates_allocated."
+      note: "Separate Step rather than a direct method port."
+    status: "implemented"
+    note: "Behavior matches the Karr zero-request path; OC wires it through a request-calculator Step."
+  evolveState:
+    matlab:
+      symbol: "evolveState"
+      source:
+        path: "docs/design/a3_step3_joint_design_v1.md"
+        lines: "89-117"
+        note: "Verbatim excerpt of the main complexation tick update."
+    oc:
+      symbol: "MacromolecularComplexationProcess.next_update"
+      source:
+        path: "opencell/vivarium/karr_macromolecular_complexation.py"
+        lines: "206-258"
+        note: "Reads substrates_allocated, clusters by disconnected network, and emits substrate + complex deltas."
+      supporting:
+        - path: "opencell/vivarium/karr_macromolecular_complexation.py"
+          lines: "80-140"
+          note: "Closed-form bounds and competitive MC helper."
+        - path: "opencell/vivarium/karr_allocation_step.py"
+          lines: "153-280"
+          note: "Allocated pool comes from the shared allocator step."
+    status: "partial"
+    note: "Core control flow is ported, but the competitive helper adds Poisson multiplicity and a cluster-1 fallback."
+  buildProteinComplexs_bounds:
+    matlab:
+      symbol: "buildProteinComplexs_bounds"
+      source:
+        path: "docs/design/a3_step3_joint_design_v1.md"
+        lines: "121-129"
+        note: "Closed-form per-complex upper bound for the no-competition cluster."
+    oc:
+      symbol: "_closed_form_bounds"
+      source:
+        path: "opencell/vivarium/karr_macromolecular_complexation.py"
+        lines: "80-90"
+        note: "Vectorized closed-form upper bound."
+    status: "implemented"
+    note: "Equivalent deterministic cluster-1 bound."
+  buildProteinComplexs_montecarlokinetic:
+    matlab:
+      symbol: "buildProteinComplexs_montecarlokinetic"
+      source:
+        path: "docs/design/a3_step3_joint_design_v1.md"
+        lines: "133-171"
+        note: "Competitive cluster helper plus collision-theory rate formula."
+    oc:
+      symbol: "_per_cluster_mc"
+      source:
+        path: "opencell/vivarium/karr_macromolecular_complexation.py"
+        lines: "93-140"
+        note: "Competitive helper with extra Poisson multiplicity."
+    status: "partial"
+    note: "Network partitioning matches, but OC is not one-copy-per-iteration."
+  calcFluxBounds:
+    matlab:
+      symbol: "calcFluxBounds"
+      source:
+        path: "docs/design/a3_step3_joint_design_v1.md"
+        lines: "232-239"
+        note: "No process-local flux-bound method; allocator sequencing happens in Simulation.evolveState."
+    oc:
+      symbol: "NOT_IMPLEMENTED"
+      source:
+        path: "opencell/vivarium/karr_macromolecular_complexation.py"
+        lines: "143-258"
+        note: "OC process exposes next_update only."
+    status: "not_implemented"
+    note: "Not applicable to this process."
+allocator:
+  mode:
+    karr: "allocation"
+    oc_current: "allocation"
+    note: "Karr allocates before evolveState; OC reads from substrates_allocated. The request values are still zero."
+  request_formula:
+    matlab: "zeros(size(this.substrates))"
+    oc: "dict(self._zero_requests)"
+    note: "Zero-demand request surface; allocator wiring remains active."
+  requests:
+    - wid: "MG_003_MONOMER"
+      compartment: "cytosol"
+      source: "karr"
+      note: "Representative substrate-universe leaf routed through substrates_allocated."
+    - wid: "MG_005_MONOMER"
+      compartment: "cytosol"
+      source: "karr"
+      note: "Representative substrate-universe leaf routed through substrates_allocated."
+    - wid: "MG_014_MONOMER"
+      compartment: "cytosol"
+      source: "karr"
+      note: "Representative substrate-universe leaf routed through substrates_allocated."
+    - wid: "MG_029_MONOMER"
+      compartment: "cytosol"
+      source: "karr"
+      note: "Representative substrate-universe leaf routed through substrates_allocated."
+  bypasses:
+    - wid: "DNA_GYRASE"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Direct complex.counts write; not allocator-mediated."
+    - wid: "DNA_POLYMERASE_CORE"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Direct complex.counts write; not allocator-mediated."
+    - wid: "MG_005_DIMER"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Direct complex.counts write; not allocator-mediated."
+    - wid: "RNA_POLYMERASE"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Direct complex.counts write; not allocator-mediated."
+consume_stoichiometry:
+  - wid: "MG_003_MONOMER"
+    compartment: "cytosol"
+    formula_or_constant: "-sum_c complexComposition[MG_003_MONOMER, c] * newComplexs[c]"
+    matlab_anchor:
+      path: "docs/design/a3_step3_joint_design_v1.md"
+      lines: "114-115"
+      note: "Mass-balance substrate subtraction."
+    oc_anchor:
+      path: "opencell/vivarium/karr_macromolecular_complexation.py"
+      lines: "244-249"
+      note: "Delta substrate emission from matrix multiply."
+    note: "Representative cytosolic monomer consumption."
+  - wid: "MG_005_MONOMER"
+    compartment: "cytosol"
+    formula_or_constant: "-sum_c complexComposition[MG_005_MONOMER, c] * newComplexs[c]"
+    matlab_anchor:
+      path: "docs/design/a3_step3_joint_design_v1.md"
+      lines: "114-115"
+      note: "Mass-balance substrate subtraction."
+    oc_anchor:
+      path: "opencell/vivarium/karr_macromolecular_complexation.py"
+      lines: "244-249"
+      note: "Delta substrate emission from matrix multiply."
+    note: "Representative cytosolic monomer consumption."
+  - wid: "MG_014_MONOMER"
+    compartment: "cytosol"
+    formula_or_constant: "-sum_c complexComposition[MG_014_MONOMER, c] * newComplexs[c]"
+    matlab_anchor:
+      path: "docs/design/a3_step3_joint_design_v1.md"
+      lines: "114-115"
+      note: "Mass-balance substrate subtraction."
+    oc_anchor:
+      path: "opencell/vivarium/karr_macromolecular_complexation.py"
+      lines: "244-249"
+      note: "Delta substrate emission from matrix multiply."
+    note: "Representative cytosolic monomer consumption."
+  - wid: "MG_029_MONOMER"
+    compartment: "cytosol"
+    formula_or_constant: "-sum_c complexComposition[MG_029_MONOMER, c] * newComplexs[c]"
+    matlab_anchor:
+      path: "docs/design/a3_step3_joint_design_v1.md"
+      lines: "114-115"
+      note: "Mass-balance substrate subtraction."
+    oc_anchor:
+      path: "opencell/vivarium/karr_macromolecular_complexation.py"
+      lines: "244-249"
+      note: "Delta substrate emission from matrix multiply."
+    note: "Representative cytosolic monomer consumption."
+produce_stoichiometry:
+  - wid: "DNA_GYRASE"
+    compartment: "cytosol"
+    formula_or_constant: "newComplexs[DNA_GYRASE]"
+    matlab_anchor:
+      path: "docs/design/a3_step3_joint_design_v1.md"
+      lines: "114-115"
+      note: "Mass-balance complex increment."
+    oc_anchor:
+      path: "opencell/vivarium/karr_macromolecular_complexation.py"
+      lines: "251-255"
+      note: "Complex.counts delta emission."
+    note: "Representative produced complex count."
+  - wid: "DNA_POLYMERASE_CORE"
+    compartment: "cytosol"
+    formula_or_constant: "newComplexs[DNA_POLYMERASE_CORE]"
+    matlab_anchor:
+      path: "docs/design/a3_step3_joint_design_v1.md"
+      lines: "114-115"
+      note: "Mass-balance complex increment."
+    oc_anchor:
+      path: "opencell/vivarium/karr_macromolecular_complexation.py"
+      lines: "251-255"
+      note: "Complex.counts delta emission."
+    note: "Representative produced complex count."
+  - wid: "MG_005_DIMER"
+    compartment: "cytosol"
+    formula_or_constant: "newComplexs[MG_005_DIMER]"
+    matlab_anchor:
+      path: "docs/design/a3_step3_joint_design_v1.md"
+      lines: "114-115"
+      note: "Mass-balance complex increment."
+    oc_anchor:
+      path: "opencell/vivarium/karr_macromolecular_complexation.py"
+      lines: "251-255"
+      note: "Complex.counts delta emission."
+    note: "Representative produced complex count."
+  - wid: "RNA_POLYMERASE"
+    compartment: "cytosol"
+    formula_or_constant: "newComplexs[RNA_POLYMERASE]"
+    matlab_anchor:
+      path: "docs/design/a3_step3_joint_design_v1.md"
+      lines: "114-115"
+      note: "Mass-balance complex increment."
+    oc_anchor:
+      path: "opencell/vivarium/karr_macromolecular_complexation.py"
+      lines: "251-255"
+      note: "Complex.counts delta emission."
+    note: "Representative produced complex count."
+compartment_routing:
+  - wid: "MG_003_MONOMER"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Consumed from the shared cytosolic subunit pool."
+  - wid: "MG_005_MONOMER"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Consumed from the shared cytosolic subunit pool."
+  - wid: "MG_014_MONOMER"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Consumed from the shared cytosolic subunit pool."
+  - wid: "MG_029_MONOMER"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Consumed from the shared cytosolic subunit pool."
+  - wid: "DNA_GYRASE"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Produced on the flat complex.counts surface."
+  - wid: "DNA_POLYMERASE_CORE"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Produced on the flat complex.counts surface."
+  - wid: "MG_005_DIMER"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Produced on the flat complex.counts surface."
+  - wid: "RNA_POLYMERASE"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Produced on the flat complex.counts surface."
+unit_conversion_chain:
+  source_units: "allocated substrate counts (molecules)"
+  target_units: "molecules/tick"
+  steps:
+    - from_units: "molecules"
+      to_units: "integer molecules"
+      operation: "floor then clip to nonnegative integers"
+      anchor:
+        path: "opencell/vivarium/karr_macromolecular_complexation.py"
+        lines: "210-214"
+        note: "Allocated pool is normalized to integer counts before assembly."
+    - from_units: "integer subunit counts"
+      to_units: "per-tick complex/substrate deltas"
+      operation: "matrix multiply with complexComposition; no time scaling"
+      anchor:
+        path: "docs/design/a3_step3_joint_design_v1.md"
+        lines: "114-115"
+        note: "Mass balance uses one matrix multiply."
+dependencies:
+  produces_inputs_for:
+    - "ProteinDecay"
+    - "RibosomeAssembly"
+    - "Translation"
+    - "Transcription"
+    - "ProteinTranslocation"
+  consumes_outputs_of:
+    - "Transcription"
+    - "Translation"
+    - "tRNAAminoacylation"
+    - "RNAProcessing"
+    - "RNAModification"
+  note: "Complex outputs feed downstream decay/translation machinery; the substrate pool is replenished by transcription, translation, and RNA/protein maturation processes."
+ordering_constraints:
+  hard_before: []
+  hard_after: []
+  soft_before: []
+  soft_after: []
+  note: "No D.2-specific ordering exception was found. The canonical hard order in the chassis is tRNAAminoacylation before Translation."
+source_anchors:
+  matlab_blocks:
+    resource_req_zero:
+      path: "docs/design/a33_turn3_d2_real.md"
+      lines: "85-87"
+      note: "Zero-request wiring note citing MacromolecularComplexation.m:285-287."
+    evolve_state_main:
+      path: "docs/design/a3_step3_joint_design_v1.md"
+      lines: "89-117"
+      note: "Main complex-formation tick update."
+    closed_form_cluster:
+      path: "docs/design/a3_step3_joint_design_v1.md"
+      lines: "121-129"
+      note: "Closed-form cluster-1 bound."
+    competitive_cluster:
+      path: "docs/design/a3_step3_joint_design_v1.md"
+      lines: "133-171"
+      note: "Monte Carlo helper and collision-theory rate formula."
+    allocator_sequence:
+      path: "docs/phase_f/L2_5_HARNESS_DESIGN.md"
+      lines: "88-91"
+      note: "Global step ordering and allocation-before-process semantics."
+  oc_blocks:
+    fixture_loader:
+      path: "opencell/vivarium/karr_macromolecular_complexation.py"
+      lines: "22-77"
+      note: "Fixture loading and fixture field extraction."
+    bounds_helper:
+      path: "opencell/vivarium/karr_macromolecular_complexation.py"
+      lines: "80-90"
+      note: "Closed-form upper bounds."
+    mc_helper:
+      path: "opencell/vivarium/karr_macromolecular_complexation.py"
+      lines: "93-140"
+      note: "Competitive Monte Carlo helper."
+    process_class:
+      path: "opencell/vivarium/karr_macromolecular_complexation.py"
+      lines: "143-258"
+      note: "Process class, ports_schema, and next_update."
+    request_calculator:
+      path: "opencell/vivarium/karr_request_calculators.py"
+      lines: "53-89"
+      note: "Zero-request Step."
+    allocation_step:
+      path: "opencell/vivarium/karr_allocation_step.py"
+      lines: "153-280"
+      note: "Proportional fair-share allocation and substrates_allocated writeback."
+provenance:
+  last_audited: "2026-06-29"
+  audited_by: "gpt-5.4-mini (codex; row authored Day-43 EOD)"
+  oc_commit_sha: "61a5a06e8031af3159dffa436655ade330be1fd9"
+  matlab_files_referenced: []
+  oc_files_referenced:
+    - "opencell/vivarium/karr_macromolecular_complexation.py"
+    - "opencell/vivarium/karr_request_calculators.py"
+    - "opencell/vivarium/karr_allocation_step.py"
+    - "opencell/vivarium/karr_macromolecular_complexation_stub.py"
+  fixture_files:
+    - "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
+  kb_version: "unknown"
+  extraction_date_utc: null
+  notes: "Primary .m source is not checked into this worktree; MATLAB anchors come from the repo's verbatim design excerpts and the OC port is validated against the fixture-backed Python implementation."
+deviations:
+  lp_bounds_source:
+    karr: "allocation"
+    oc_current: "allocation"
+    matlab_anchor:
+      path: "docs/design/a33_turn3_d2_real.md"
+      lines: "85-87"
+      note: "Zero-request allocator wiring note."
+    oc_anchor:
+      path: "opencell/vivarium/karr_request_calculators.py"
+      lines: "53-89"
+      note: "Current OC zero-request step."
+  shared_pool_projection_merges_compartments: false
+  known_deviations:
+    - "OC's _per_cluster_mc samples a Poisson multiplicity and can form multiple complexes per iteration; Karr forms exactly one copy per Monte Carlo iteration."
+    - "OC adds a cluster-1 fallback from _closed_form_bounds into _per_cluster_mc when the deterministic bound appears to overconsume; that guard is not present in the preserved Karr excerpt."
+  note: "The request surface is intentionally zero in both Karr and OC; the meaningful divergence is in the competitive Monte Carlo kernel."
