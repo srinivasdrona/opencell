@@ -1,4 +1,5 @@
 schema_version: "1.0"
+schema_date: '2026-06-29'
 process:
   name: "DNADamage"
   matlab_class: "DNADamage"
@@ -8,7 +9,8 @@ process:
   whole_cell_model_id: "Process_DNADamage"
   functional_area: "dna-replication-and-maintenance"
   state_shape_role: "chromosome-primary stochastic damage writer with flat substrate surface"
-  notes: "The canonical MATLAB source file is not present in this checkout; the local verbatim extract doc is the only source-backed proxy available here."
+  notes: "The canonical MATLAB source file is not present in this checkout; the local verbatim extract doc is the only source-backed proxy available
+    here."
 methods:
   calcResourceRequirements_Current:
     matlab:
@@ -16,14 +18,16 @@ methods:
       source:
         path: "docs/karr_extracts/process/04_DNADamage.md"
         lines: "134-178"
-        note: "Verbatim extract shows direct substrate/stimulus usage and the reaction matrix split, but no allocator request block is exposed in the local extract."
+        note: "Verbatim extract shows direct substrate/stimulus usage and the reaction matrix split, but no allocator request block is exposed
+          in the local extract."
       note: "DNADamage is treated as direct-state damage chemistry rather than an allocator-coupled resource consumer in the available source."
     oc:
       symbol: "not_implemented"
       source:
         path: "opencell/vivarium/karr_dna_damage.py"
         lines: "111-226"
-        note: "Current OC port exposes only chromosome damage state plus direct `substrates` reads; there is no request-calculator or `substrates_allocated` path."
+        note: "Current OC port exposes only chromosome damage state plus direct `substrates` reads; there is no request-calculator or `substrates_allocated`
+          path."
     status: "not_implemented"
     note: "The current OC port bypasses allocator mediation."
   evolveState:
@@ -212,66 +216,66 @@ produce_stoichiometry:
 compartment_routing:
   - wid: "UVB_radiation"
     consume_compartment: "extracellular"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Radiation stimulus is read directly from the flat substrate surface."
   - wid: "gamma_radiation"
     consume_compartment: "extracellular"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Radiation stimulus is read directly from the flat substrate surface."
   - wid: "H2O"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Water is a cytosolic free-metabolite reactant."
   - wid: "H"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Hydrogen ion is a free-metabolite product in the sampled reaction families."
   - wid: "NH3"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Ammonia is a free-metabolite product in the sampled reaction families."
   - wid: "AD"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Adenine is produced as a free-metabolite outcome in the damage matrix."
   - wid: "CSN"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Cytosine is produced as a free-metabolite outcome in the damage matrix."
   - wid: "GN"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Guanine is produced as a free-metabolite outcome in the damage matrix."
   - wid: "THY"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Thymine is produced as a free-metabolite outcome in the damage matrix."
   - wid: "DR5P"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Deoxyribose-5-phosphate is produced by base-loss / strand-break chemistry."
   - wid: "H"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Hydrogen ion is produced by oxidation and strand-break chemistries."
   - wid: "NH3"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Ammonia is produced by spontaneous deamination reactions."
   - wid: "CO2"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Carbon dioxide is produced by the DHURA oxidation family."
@@ -287,19 +291,22 @@ unit_conversion_chain:
         path: "opencell/vivarium/karr_dna_damage.py"
         lines: "228-259"
         note: "Current OC computes `lam = rate_per_s * dt` before Poisson sampling."
-  note: "The DNADamage rate table is already in per-second units; the OC port converts to per-tick event counts by multiplying with the tick duration and sampling Poisson events."
+  note: "The DNADamage rate table is already in per-second units; the OC port converts to per-tick event counts by multiplying with the tick duration
+    and sampling Poisson events."
 dependencies:
   produces_inputs_for:
     - "DNARepair"
   consumes_outputs_of:
     - "Metabolism"
-  note: "The strongest shared-substrate link is the DNADamage→DNARepair lesion handoff; the reverse direction is the shared free-metabolite pool that includes water and small-molecule byproducts."
+  note: "The strongest shared-substrate link is the DNADamage→DNARepair lesion handoff; the reverse direction is the shared free-metabolite pool
+    that includes water and small-molecule byproducts."
 ordering_constraints:
   hard_before: []
   hard_after: []
   soft_before: []
   soft_after: []
-  note: "No DNADamage-specific process-order exception is surfaced in the local extract; the only canonical hard order called out in the wider Karr scheduler is `tRNAAminoacylation < Translation`."
+  note: "No DNADamage-specific process-order exception is surfaced in the local extract; the only canonical hard order called out in the wider
+    Karr scheduler is `tRNAAminoacylation < Translation`."
 source_anchors:
   matlab_blocks:
     biology_summary:
@@ -344,9 +351,19 @@ provenance:
     - "data/karr_fixtures/per_process/DNADamage_flat.mat"
     - "data/m1_sources/karr_native/per_process_traces/DNADamage_100ticks.mat"
   kb_version: "karr_native_per_process_traces_v2_s000"
-  extraction_date_utc: null
+  extraction_date_utc:
   notes: >-
-    Local checkout has the flattened per-process fixture and the catalog-declared trace path; the upstream MATLAB source file itself is not present locally, so the row uses the verbatim extract doc as the MATLAB-side proxy. Audit details: last_audited=2026-06-29; audited_by=gpt-5.4-mini (codex; row authored Day-43 EOD); oc_commit_sha=61a5a06e8031af3159dffa436655ade330be1fd9; matlab_files_referenced=[data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNADamage.m]; oc_files_referenced=[opencell/vivarium/karr_dna_damage.py].
+    Local checkout has the flattened per-process fixture and the catalog-declared trace path; the upstream MATLAB source file itself is not present
+    locally, so the row uses the verbatim extract doc as the MATLAB-side proxy. Audit details: last_audited=2026-06-29; audited_by=gpt-5.4-mini
+    (codex; row authored Day-43 EOD); oc_commit_sha=61a5a06e8031af3159dffa436655ade330be1fd9; matlab_files_referenced=[data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNADamage.m];
+    oc_files_referenced=[opencell/vivarium/karr_dna_damage.py].
+  last_audited: '2026-06-29'
+  audited_by: gpt-5.4-mini + parallel codex fleet (Day-43 EOD batch)
+  oc_commit_sha: 61a5a06
+  matlab_files_referenced:
+    - docs/karr_extracts/process/04_DNADamage.md
+  oc_files_referenced:
+    - opencell/vivarium/karr_dna_damage.py
 deviations:
   lp_bounds_source:
     karr: "unknown"
@@ -361,8 +378,10 @@ deviations:
       note: "Current OC port has no flux-bound helper or LP-bound wiring."
   shared_pool_projection_merges_compartments: false
   known_deviations:
-    - "The current OC port is lesion-creation only; it does not implement the full reactionSmallMoleculeStoichiometryMatrix / reactionDNAStoichiometryMatrix / reactionRadiationStoichiometryMatrix chemistry described in the extract."
+    - "The current OC port is lesion-creation only; it does not implement the full reactionSmallMoleculeStoichiometryMatrix / reactionDNAStoichiometryMatrix
+      / reactionRadiationStoichiometryMatrix chemistry described in the extract."
     - "The current OC port bypasses allocator mediation entirely and reads `states[\"substrates\"]` directly."
     - "Repair chemistry, lesion-specific arrays, and any downstream DNARepair coupling are deferred to a later port."
     - "Trace-derived kind rates are optional; when the trace file is unavailable, the OC port falls back to configured per-kind rates."
-  note: "Known deviations are kept explicit so the row does not imply full MATLAB parity where the current OC implementation is intentionally narrower."
+  note: "Known deviations are kept explicit so the row does not imply full MATLAB parity where the current OC implementation is intentionally
+    narrower."

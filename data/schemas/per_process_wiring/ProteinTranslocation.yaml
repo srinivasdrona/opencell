@@ -1,4 +1,5 @@
 schema_version: "1.0"
+schema_date: '2026-06-29'
 process:
   name: "ProteinTranslocation"
   matlab_class: "ProteinTranslocation"
@@ -8,7 +9,8 @@ process:
   whole_cell_model_id: "Process_ProteinTranslocation"
   functional_area: "protein-synthesis-and-maturation"
   state_shape_role: "state-shape catalog row; wiring row adds integration semantics"
-  notes: "The raw MATLAB file is absent from this checkout, so the row uses checked-in extract/audit docs plus the current OC port and fixture metadata."
+  notes: "The raw MATLAB file is absent from this checkout, so the row uses checked-in extract/audit docs plus the current OC port and fixture
+    metadata."
 methods:
   calcResourceRequirements_Current:
     matlab:
@@ -16,7 +18,8 @@ methods:
       source:
         path: "docs/karr_extracts/process/22_ProteinTranslocation.md"
         lines: "103-111"
-        note: "Process extract describes the ATP/GTP hydrolysis terms and cost scalars that drive allocation demand; raw MATLAB body is absent locally."
+        note: "Process extract describes the ATP/GTP hydrolysis terms and cost scalars that drive allocation demand; raw MATLAB body is absent
+          locally."
       note: "Allocator demand is inferred from the process extract and fixture scalars."
     oc:
       symbol: "RequestCalculatorPTransloc.next_update"
@@ -30,14 +33,16 @@ methods:
           note: "Chassis wiring that enrolls the ProteinTranslocation request calculator and consumer process."
       note: "The OC path is indirect but allocator-wired; it reads the translocation process's pending queue and emits ATP/GTP/H2O requests."
     status: "partial"
-    note: "OC preserves the three-request surface, but it caps requests by current substrate pool and is wired as a separate request-calculator step instead of a process method."
+    note: "OC preserves the three-request surface, but it caps requests by current substrate pool and is wired as a separate request-calculator
+      step instead of a process method."
   evolveState:
     matlab:
       symbol: "evolveState"
       source:
         path: "docs/phase_f/sut_audits/ptransloc_oc_vs_karr.md"
         lines: "48-72"
-        note: "Parity audit of the Karr per-copy randperm loop, rate-scaled capacities, and first-insufficient-copy break semantics; raw MATLAB source is absent locally."
+        note: "Parity audit of the Karr per-copy randperm loop, rate-scaled capacities, and first-insufficient-copy break semantics; raw MATLAB
+          source is absent locally."
       note: "The audit cites Karr lines 307-368 for the executable body."
     oc:
       symbol: "KarrProteinTranslocationProcess.next_update"
@@ -51,7 +56,8 @@ methods:
           note: "Allocator input path read by the process."
       note: "OC keeps the same substrate ledger terms but changes the execution order to species-phase batching."
     status: "partial"
-    note: "Implemented, but not faithful line-by-line: OC batches per species, reads allocator budget, and uses raw enzyme counts rather than Karr's rate-scaled capacity checks."
+    note: "Implemented, but not faithful line-by-line: OC batches per species, reads allocator budget, and uses raw enzyme counts rather than
+      Karr's rate-scaled capacity checks."
   calcFluxBounds:
     matlab:
       symbol: "calcFluxBounds"
@@ -75,7 +81,8 @@ allocator:
     oc_current: "allocation"
     note: "OC reads only `substrates_allocated[self.name]`; the process itself is allocator-mediated."
   request_formula:
-    matlab: "ATP_need = sum(count_i * ceil(monomerLength_i / preproteinTranslocase_aaTranslocatedPerATP)); GTP_need = SRP_GTPUsedPerMonomer * count_srp; H2O_need = ATP_need + GTP_need; requests = [ATP_need; GTP_need; H2O_need]"
+    matlab: "ATP_need = sum(count_i * ceil(monomerLength_i / preproteinTranslocase_aaTranslocatedPerATP)); GTP_need = SRP_GTPUsedPerMonomer *
+      count_srp; H2O_need = ATP_need + GTP_need; requests = [ATP_need; GTP_need; H2O_need]"
     oc: "requests[ATP/GTP/H2O] = max(need, current_pool) after aggregating queued cytoplasmic proteins by pathway"
     note: "MATLAB text is inferred from the process extract and fixture scalars; OC over-requests by flooring at the current substrate pool."
   requests:
@@ -190,36 +197,36 @@ produce_stoichiometry:
 compartment_routing:
   - wid: "ATP"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "ATP is read and spent in the cytosolic substrate pool."
   - wid: "GTP"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "GTP is only spent on SRP-path proteins."
   - wid: "H2O"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Water is consumed with hydrolysis."
   - wid: "ADP"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "ADP is produced in the same cytosolic pool."
   - wid: "GDP"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "GDP is produced in the same cytosolic pool."
   - wid: "PI"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Pi is produced in the same cytosolic pool."
   - wid: "H"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "H+ is produced in the same cytosolic pool."
@@ -260,13 +267,15 @@ dependencies:
     - "MacromolecularComplexation"
   consumes_outputs_of:
     - "Translation"
-  note: "Translocation consumes newly translated protein output and feeds the downstream protein-maturation / assembly / decay surface through compartment-localized protein pools."
+  note: "Translocation consumes newly translated protein output and feeds the downstream protein-maturation / assembly / decay surface through
+    compartment-localized protein pools."
 ordering_constraints:
   hard_before: []
   hard_after: []
   soft_before: []
   soft_after: []
-  note: "ProteinTranslocation has no process-specific scheduler exception in `Simulation.evolveState`; the only documented hard order is tRNAAminoacylation before Translation."
+  note: "ProteinTranslocation has no process-specific scheduler exception in `Simulation.evolveState`; the only documented hard order is tRNAAminoacylation
+    before Translation."
 source_anchors:
   matlab_blocks:
     docstring_summary:
@@ -307,7 +316,9 @@ provenance:
   last_audited: "2026-06-29"
   audited_by: "gpt-5.4-mini (codex; row authored Day-43 EOD)"
   oc_commit_sha: "61a5a06e8031af3159dffa436655ade330be1fd9"
-  matlab_files_referenced: []
+  matlab_files_referenced:
+    - docs/karr_extracts/process/22_ProteinTranslocation.md
+    - docs/phase_f/sut_audits/ptransloc_oc_vs_karr.md
   oc_files_referenced:
     - "opencell/vivarium/karr_protein_translocation.py"
     - "opencell/vivarium/karr_request_calculators.py"
@@ -316,7 +327,8 @@ provenance:
     - "tests/integration/test_ptransloc_enrollment_v3_v4.py"
     - "tests/vivarium/test_karr_protein_translocation.py"
     - "tests/vivarium/test_karr_request_calculators.py"
-  notes: "The current checkout does not include a locally vendored `ProteinTranslocation.m`; MATLAB anchors therefore point to checked-in extracts and parity/audit notes rather than a raw local source file."
+  notes: "The current checkout does not include a locally vendored `ProteinTranslocation.m`; MATLAB anchors therefore point to checked-in extracts
+    and parity/audit notes rather than a raw local source file."
 deviations:
   lp_bounds_source:
     karr: "allocation"
@@ -331,8 +343,12 @@ deviations:
       note: "OC request calculator emits allocator-facing ATP/GTP/H2O demand."
   shared_pool_projection_merges_compartments: true
   known_deviations:
-    - "OC batches translocation per species and phase, while Karr randomizes individual monomer copies in one mixed randperm and stops on the first infeasible copy."
-    - "OC reads allocator-granted ATP/GTP/H2O from `substrates_allocated` and raw enzyme counts; Karr uses current substrate pools and rate-scaled translocase/SRP capacities."
+    - "OC batches translocation per species and phase, while Karr randomizes individual monomer copies in one mixed randperm and stops on the
+      first infeasible copy."
+    - "OC reads allocator-granted ATP/GTP/H2O from `substrates_allocated` and raw enzyme counts; Karr uses current substrate pools and rate-scaled
+      translocase/SRP capacities."
     - "OC request magnitude uses a current-pool floor (`max(need, current_pool)`), which can over-request relative to pure need."
-    - "OC represents moved proteins with `protein.location` plus `protein.unprocessed_counts` deltas instead of Karr's compartment-resolved monomer matrix."
-    - "OC excludes `MG_191_MONOMER` and `MG_192_MONOMER` during fixture loading, which makes terminal-organelle handling a load-time omission rather than a compartment remap."
+    - "OC represents moved proteins with `protein.location` plus `protein.unprocessed_counts` deltas instead of Karr's compartment-resolved monomer
+      matrix."
+    - "OC excludes `MG_191_MONOMER` and `MG_192_MONOMER` during fixture loading, which makes terminal-organelle handling a load-time omission
+      rather than a compartment remap."

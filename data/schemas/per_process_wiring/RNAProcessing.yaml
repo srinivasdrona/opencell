@@ -1,4 +1,5 @@
 schema_version: "1.0"
+schema_date: '2026-06-29'
 process:
   name: "RNAProcessing"
   matlab_class: "RNAProcessing"
@@ -122,7 +123,8 @@ allocator:
       writeback are wired through allocator mediation rather than bypassing it.
   request_formula:
     matlab: >-
-      max(0, -this.reactantByproductMatrix) * min(ceil(min(this.enzymes(:, ones(size(this.catalysisMatrix, 2), 1)) ./ this.catalysisMatrix * this.stepSizeSec, [], 1))', this.unprocessedRNAs)
+      max(0, -this.reactantByproductMatrix) * min(ceil(min(this.enzymes(:, ones(size(this.catalysisMatrix, 2), 1)) ./ this.catalysisMatrix * this.stepSizeSec,
+      [], 1))', this.unprocessedRNAs)
     oc: >-
       RequestCalculatorRNAPathway.next_update: if any unprocessed RNA is
       present, request max(0, substrates[wid]) for the consumed WIDs
@@ -234,36 +236,36 @@ produce_stoichiometry:
 compartment_routing:
   - wid: "ATP"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Single cytosolic substrate pool; ATP is consumed in place."
   - wid: "GTP"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Single cytosolic substrate pool; GTP is consumed in place."
   - wid: "H2O"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Single cytosolic substrate pool; water is consumed in place."
   - wid: "ADP"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Positive byproduct is written back to the same cytosolic pool."
   - wid: "GDP"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Positive byproduct is written back to the same cytosolic pool."
   - wid: "PI"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Positive byproduct is written back to the same cytosolic pool."
   - wid: "H"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Positive byproduct is written back to the same cytosolic pool."
@@ -273,7 +275,8 @@ unit_conversion_chain:
   steps:
     - from_units: "enzyme-constrained reaction opportunities"
       to_units: "substrate molecule counts/tick"
-      operation: "max(0, -reactantByproductMatrix) × min(ceil(min(enzymes(:, ones(size(catalysisMatrix, 2), 1)) ./ catalysisMatrix * stepSizeSec, [], 1))', unprocessedRNAs)"
+      operation: "max(0, -reactantByproductMatrix) × min(ceil(min(enzymes(:, ones(size(catalysisMatrix, 2), 1)) ./ catalysisMatrix * stepSizeSec,
+        [], 1))', unprocessedRNAs)"
       anchor:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m"
         lines: "406-472"
@@ -376,6 +379,15 @@ provenance:
     opencell/vivarium/karr_rna_modification.py,
     opencell/vivarium/karr_trna_aminoacylation.py,
     tests/vivarium/test_karr_rna_processing.py]
+  last_audited: '2026-06-29'
+  audited_by: gpt-5.4-mini + parallel codex fleet (Day-43 EOD batch)
+  oc_commit_sha: 61a5a06
+  matlab_files_referenced:
+    - data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m
+  oc_files_referenced:
+    - opencell/vivarium/karr_rna_processing.py
+    - opencell/vivarium/karr_request_calculators.py
+    - opencell/vivarium/karr_composite.py
 deviations:
   lp_bounds_source:
     karr: "unknown"
@@ -390,7 +402,8 @@ deviations:
       note: "No OC LP-bound helper exists for this process."
   shared_pool_projection_merges_compartments: false
   known_deviations:
-    - "OC RequestCalculatorRNAPathway is shared with RNAModification and requests the current available substrate pool when active; it does not reproduce the MATLAB enzyme/unprocessedRNA cap literally."
+    - "OC RequestCalculatorRNAPathway is shared with RNAModification and requests the current available substrate pool when active; it does not
+      reproduce the MATLAB enzyme/unprocessedRNA cap literally."
     - "OC next_update consumes from substrates_allocated[self.name], while MATLAB evolves from the local substrates state."
     - "OC omits the MATLAB intergenicRNAs state/output entirely; the replay port only updates substrates and rna.counts."
     - "OC prefixes colliding processed RNA IDs with processed:: to keep mature and nascent pools from cancelling in the shared rna.counts store."

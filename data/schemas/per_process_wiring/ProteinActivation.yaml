@@ -1,4 +1,5 @@
 schema_version: "1.0"
+schema_date: '2026-06-29'
 process:
   name: "ProteinActivation"
   matlab_class: "ProteinActivation"
@@ -235,7 +236,8 @@ unit_conversion_chain:
   steps:
     - from_units: "boolean rule output + protein counts"
       to_units: "count transitions per tick"
-      operation: "no unit conversion; evaluate the boolean rule per compartment and move whole counts between substrates and inactivatedSubstrates in the same tick"
+      operation: "no unit conversion; evaluate the boolean rule per compartment and move whole counts between substrates and inactivatedSubstrates
+        in the same tick"
       anchor:
         path: "docs/karr_extracts/process/20_ProteinActivation.md"
         lines: "49-117"
@@ -265,7 +267,8 @@ ordering_constraints:
   hard_after: []
   soft_before: []
   soft_after: []
-  note: "ProteinActivation itself has no process-order exception in the source extract; the only canonical hard order mentioned in the surrounding simulation is tRNAAminoacylation < Translation."
+  note: "ProteinActivation itself has no process-order exception in the source extract; the only canonical hard order mentioned in the surrounding
+    simulation is tRNAAminoacylation < Translation."
 source_anchors:
   matlab_blocks:
     class_identity:
@@ -313,7 +316,7 @@ provenance:
   fixture_files:
     - "data/karr_fixtures/per_process/ProteinActivation_flat.mat"
   kb_version: "karr_native_m1__v2"
-  extraction_date_utc: null
+  extraction_date_utc:
   notes: >-
     last_audited=2026-06-29; audited_by=gpt-5.4-mini (codex; row authored Day-43 EOD);
     oc_commit_sha=61a5a06e8031af3159dffa436655ade330be1fd9;
@@ -321,6 +324,14 @@ provenance:
     oc_files_referenced=[opencell/vivarium/karr_protein_activation.py, opencell/vivarium/karr_composite.py];
     canonical_matlab_path=data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m;
     raw_matlab_source_missing_in_checkout=true
+  last_audited: '2026-06-29'
+  audited_by: gpt-5.4-mini + parallel codex fleet (Day-43 EOD batch)
+  oc_commit_sha: 61a5a06
+  matlab_files_referenced:
+    - docs/karr_extracts/process/20_ProteinActivation.md
+  oc_files_referenced:
+    - opencell/vivarium/karr_protein_activation.py
+    - opencell/vivarium/karr_composite.py
 deviations:
   lp_bounds_source:
     karr: "unknown"

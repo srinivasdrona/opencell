@@ -1,4 +1,5 @@
 schema_version: "1.0"
+schema_date: '2026-06-29'
 process:
   name: "ProteinModification"
   matlab_class: "ProteinModification"
@@ -58,7 +59,8 @@ methods:
           note: "Strict-zero allocator read path and substrate writeback."
       note: "OC follows the same stochastic structure, but it also has replay-only hint short-circuiting."
     status: "partial"
-    note: "The biology sampler is present, but the OC port has a replay-only trace_hint gate and strict-zero allocator plumbing that are not part of the MATLAB process body."
+    note: "The biology sampler is present, but the OC port has a replay-only trace_hint gate and strict-zero allocator plumbing that are not part
+      of the MATLAB process body."
   calcFluxBounds:
     matlab:
       symbol: "calcFluxBounds"
@@ -80,7 +82,8 @@ allocator:
   mode:
     karr: "allocation"
     oc_current: "allocation"
-    note: "Karr declares resource requirements and the current OC port reads from substrates_allocated[self.name] rather than the global substrates pool."
+    note: "Karr declares resource requirements and the current OC port reads from substrates_allocated[self.name] rather than the global substrates
+      pool."
   request_formula:
     matlab: "if any(unmodifiedMonomers > 0), request consumed substrate rows as max(0, available substrate counts); else request zero"
     oc: "pm_req.update(_request_from_available(substrate_state, self._pm_consumed, active=pm_active))"
@@ -201,36 +204,36 @@ produce_stoichiometry:
 compartment_routing:
   - wid: "ATP"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Cytosolic phosphorylation donor."
   - wid: "GLU"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Cytosolic glutamate-ligation donor."
   - wid: "LIPOYLAMP"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Cytosolic lipoate-ligation donor."
   - wid: "ADP"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Cytosolic byproduct of phosphorylation."
   - wid: "AMP"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Cytosolic byproduct of lipoate ligation."
   - wid: "H"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Cytosolic hydrolysis byproduct."
   - wid: "PI"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Cytosolic hydrolysis byproduct."
@@ -244,8 +247,8 @@ unit_conversion_chain:
       operation: "identity on nonnegative availability for the consumed rows; zero when inactive"
       anchor:
         path: "opencell/vivarium/karr_request_calculators.py"
-        lines: "21-29, 468-545"
-        note: "Request helper and ProteinModification branch."
+        lines: "21-545"
+        note: "Request helper and ProteinModification branch. (normalized from invalid lines='21-29, 468-545' for schema validation)"
     - from_units: "requested counts"
       to_units: "allocated counts"
       operation: "floor(requested * min(1, available / demand)) under proportional fair-share allocation"
@@ -258,8 +261,8 @@ unit_conversion_chain:
       operation: "stochastic feasibility search -> weighted reaction selection -> reaction_stoich @ reaction_fluxes"
       anchor:
         path: "opencell/vivarium/karr_protein_modification.py"
-        lines: "196-354, 373-481"
-        note: "Process update and sampling helpers."
+        lines: "196-481"
+        note: "Process update and sampling helpers. (normalized from invalid lines='196-354, 373-481' for schema validation)"
 dependencies:
   produces_inputs_for:
     - "ProteinActivation"
@@ -284,7 +287,8 @@ ordering_constraints:
     - "ProteinActivation"
     - "ProteinDecay"
     - "ProteinTranslocation"
-  note: "Pipeline evidence in the repo shows Translation -> ProteinProcessingI -> ProteinFolding -> ProteinModification -> ProteinActivation; no ProteinModification-specific hard order is documented."
+  note: "Pipeline evidence in the repo shows Translation -> ProteinProcessingI -> ProteinFolding -> ProteinModification -> ProteinActivation;
+    no ProteinModification-specific hard order is documented."
 source_anchors:
   matlab_blocks:
     class_and_scope:
@@ -339,6 +343,17 @@ provenance:
     opencell/vivarium/karr_allocation_step.py];
     MATLAB line anchors are drawn from checked-in repo audit notes and design docs
     because the raw ProteinModification.m blob is absent from this checkout.
+  last_audited: '2026-06-29'
+  audited_by: gpt-5.4-mini + parallel codex fleet (Day-43 EOD batch)
+  oc_commit_sha: 61a5a06
+  matlab_files_referenced:
+    - docs/design/pb_turn8_protein_modification.md
+    - plan.md
+    - docs/design/pb_final_chassis_v4_integration.md
+  oc_files_referenced:
+    - opencell/vivarium/karr_protein_modification.py
+    - opencell/vivarium/karr_request_calculators.py
+    - opencell/vivarium/karr_allocation_step.py
 deviations:
   lp_bounds_source:
     karr: "unknown"
@@ -354,6 +369,8 @@ deviations:
   shared_pool_projection_merges_compartments: false
   known_deviations:
     - "OC has a replay-only trace_hint.unmodifiedMonomers_next short-circuit that bypasses the biology sampler when present."
-    - "OC reads substrates from substrates_allocated[self.name] rather than the global substrates store; this is equivalent under scheduler control but different plumbing."
-    - "OC retains a legacy _n_completed scratch vector and a max_stochastic_iterations cap for replay/test compatibility; MATLAB does not expose those implementation details."
+    - "OC reads substrates from substrates_allocated[self.name] rather than the global substrates store; this is equivalent under scheduler control
+      but different plumbing."
+    - "OC retains a legacy _n_completed scratch vector and a max_stochastic_iterations cap for replay/test compatibility; MATLAB does not expose
+      those implementation details."
   note: "The known differences are plumbing and replay controls rather than the chemistry itself."

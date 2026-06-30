@@ -1,4 +1,5 @@
 schema_version: "1.0"
+schema_date: '2026-06-29'
 process:
   name: "tRNAAminoacylation"
   matlab_class: "tRNAAminoacylation"
@@ -8,7 +9,8 @@ process:
   whole_cell_model_id: "Process_tRNAAminoacylation"
   functional_area: "rna-synthesis-and-maturation"
   state_shape_role: "allocation-mediated reaction process with cytosolic substrates and free/aminoacylated RNA state"
-  notes: "MATLAB is a ReactionProcess; OC splits the request path into a dedicated request calculator and consumes allocator grants from substrates_allocated in next_update."
+  notes: "MATLAB is a ReactionProcess; OC splits the request path into a dedicated request calculator and consumes allocator grants from substrates_allocated
+    in next_update."
 methods:
   initializeConstants:
     matlab:
@@ -147,9 +149,11 @@ allocator:
   mode:
     karr: "allocation"
     oc_current: "allocation"
-    note: "Karr declares resource requirements via calcResourceRequirements_Current; OC current reads substrates_allocated in next_update, while the separate request step writes the allocation demand."
+    note: "Karr declares resource requirements via calcResourceRequirements_Current; OC current reads substrates_allocated in next_update, while
+      the separate request step writes the allocation demand."
   request_formula:
-    matlab: "max(0, -this.reactionStoichiometryMatrix) * min(this.reactionModificationMatrix * (this.freeRNAs + this.aminoacylatedRNAs + 1), this.reactionCatalysisMatrix * this.enzymes(1:numel(this.speciesIndexs_enzymes)) * this.stepSizeSec)"
+    matlab: "max(0, -this.reactionStoichiometryMatrix) * min(this.reactionModificationMatrix * (this.freeRNAs + this.aminoacylatedRNAs + 1), this.reactionCatalysisMatrix
+      * this.enzymes(1:numel(this.speciesIndexs_enzymes)) * this.stepSizeSec)"
     oc: "if free_total > 0: request each consumed substrate from states['substrates']; ATP request = avail * 25.0; otherwise zero vector"
     note: "MATLAB computes a per-reaction demand cap, then projects it to substrate counts; OC uses an availability-based request shim."
   requests:
@@ -289,51 +293,51 @@ produce_stoichiometry:
 compartment_routing:
   - wid: "ATP"
     consume_compartment: cytosol
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Allocator demand and consume-side update are both cytosolic."
   - wid: "ALA"
     consume_compartment: cytosol
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Amino-acid donor pool lives in the cytosol."
   - wid: "GLN"
     consume_compartment: cytosol
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Transfer donor pool lives in the cytosol."
   - wid: "H2O"
     consume_compartment: cytosol
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Water is consumed from the cytosolic substrate pool."
   - wid: "FTHF10"
     consume_compartment: cytosol
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Formyl donor is cytosolic."
   - wid: "ADP"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: cytosol
     mismatch: false
     note: "Byproduct is released back into the cytosolic pool."
   - wid: "AMP"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: cytosol
     mismatch: false
     note: "Byproduct is released back into the cytosolic pool."
   - wid: "PPI"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: cytosol
     mismatch: false
     note: "Pyrophosphate is released back into the cytosolic pool."
   - wid: "PI"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: cytosol
     mismatch: false
     note: "Phosphate byproduct stays cytosolic."
   - wid: "THF"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: cytosol
     mismatch: false
     note: "THF byproduct stays cytosolic."
@@ -455,7 +459,8 @@ provenance:
     - "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
     - "data/karr_fixtures/per_process/RibosomeAssembly_flat.mat"
   kb_version: "karr_native_m1__v2"
-  notes: "The KB version is inferred from the shared M1 fixture lineage; raw Simulation.m was not present in this checkout, so the ordering anchor comes from the extracted simulation-loop note."
+  notes: "The KB version is inferred from the shared M1 fixture lineage; raw Simulation.m was not present in this checkout, so the ordering anchor
+    comes from the extracted simulation-loop note."
 deviations:
   lp_bounds_source:
     karr: "allocation"
@@ -470,8 +475,11 @@ deviations:
       note: "OC request calculator is the matching bound-like surface."
   shared_pool_projection_merges_compartments: false
   known_deviations:
-    - "OC request logic is split into RequestCalculatorTRNA and uses an availability-based approximation; ATP scales as avail * 25.0 instead of matching MATLAB's exact min(...) expression."
-    - "OC _compute_rna_fluxes adds a max_stochastic_iterations guard and rounds reaction events / substrate deltas with np.rint; MATLAB uses an unbounded while-loop and direct matrix writeback."
+    - "OC request logic is split into RequestCalculatorTRNA and uses an availability-based approximation; ATP scales as avail * 25.0 instead of
+      matching MATLAB's exact min(...) expression."
+    - "OC _compute_rna_fluxes adds a max_stochastic_iterations guard and rounds reaction events / substrate deltas with np.rint; MATLAB uses an
+      unbounded while-loop and direct matrix writeback."
     - "OC retains legacy vector-to-WID fallbacks for RNA state inputs; MATLAB reads structured process state directly."
-    - "MATLAB initializeState explicitly reseeds the free/aminoacylated RNA split; the OC port relies on fixture/chassis setup instead of a process-local initializer."
+    - "MATLAB initializeState explicitly reseeds the free/aminoacylated RNA split; the OC port relies on fixture/chassis setup instead of a process-local
+      initializer."
   note: "These deviations are intentional porting choices and are called out so the row can distinguish faithful surfaces from approximation layers."

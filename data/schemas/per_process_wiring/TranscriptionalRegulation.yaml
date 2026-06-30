@@ -1,4 +1,5 @@
 schema_version: "1.0"
+schema_date: '2026-06-29'
 process:
   name: "TranscriptionalRegulation"
   matlab_class: "TranscriptionalRegulation"
@@ -93,27 +94,27 @@ produce_stoichiometry: []
 compartment_routing:
   - wid: "MG_101_MONOMER"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Direct read-only pool touch; no mass transfer."
   - wid: "MG_127_MONOMER"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Direct read-only pool touch; no mass transfer."
   - wid: "MG_236_MONOMER"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Direct read-only pool touch; no mass transfer."
   - wid: "MG_205_DIMER"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Direct read-only pool touch; no mass transfer."
   - wid: "MG_428_DIMER"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Direct read-only pool touch; no mass transfer."
 unit_conversion_chain:
@@ -146,7 +147,8 @@ ordering_constraints:
   hard_after: []
   soft_before: []
   soft_after: []
-  note: "No process-specific ordering rule is explicitly stated in the local Karr extracts. The only canonical hard ordering constraint found in Simulation.evolveState is tRNAAminoacylation < Translation."
+  note: "No process-specific ordering rule is explicitly stated in the local Karr extracts. The only canonical hard ordering constraint found
+    in Simulation.evolveState is tRNAAminoacylation < Translation."
 source_anchors:
   matlab_blocks:
     process_docstring:
@@ -191,12 +193,23 @@ provenance:
     - "data/karr_fixtures/per_process/TranscriptionalRegulation_flat.mat"
     - "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
   kb_version: "unknown"
-  extraction_date_utc: null
+  extraction_date_utc:
   notes: >-
     last_audited=2026-06-29; audited_by=gpt-5.4-mini (codex; row authored Day-43 EOD);
     oc_commit_sha=61a5a06e8031af3159dffa436655ade330be1fd9; matlab_files_referenced=none in
     this checkout (raw .m file absent; local surrogate used); oc_files_referenced=
     opencell/vivarium/karr_transcriptional_regulation.py, opencell/vivarium/karr_composite.py.
+  last_audited: '2026-06-29'
+  audited_by: gpt-5.4-mini + parallel codex fleet (Day-43 EOD batch)
+  oc_commit_sha: 61a5a06
+  matlab_files_referenced:
+    - docs/karr_extracts/process/10_TranscriptionalRegulation.md
+    - docs/karr_extracts/architecture/03_variable_allocation.md
+    - docs/karr_extracts/architecture/01_simulation_loop.md
+    - docs/design/pb_turn3_transcriptional_regulation.md
+  oc_files_referenced:
+    - opencell/vivarium/karr_transcriptional_regulation.py
+    - opencell/vivarium/karr_composite.py
 deviations:
   lp_bounds_source:
     karr: "unknown"

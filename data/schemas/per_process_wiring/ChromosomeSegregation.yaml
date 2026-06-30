@@ -1,4 +1,5 @@
 schema_version: "1.0"
+schema_date: '2026-06-29'
 process:
   name: "ChromosomeSegregation"
   matlab_class: "ChromosomeSegregation"
@@ -41,7 +42,8 @@ methods:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m"
         lines: "201-203"
         note: "Zero-grant audit cites the substrate gate/consumption branch for this process."
-      note: "MATLAB process consumes from the allocated substrate vector and gates progression on replicated + supercoiled + enzyme + gtpCost conditions."
+      note: "MATLAB process consumes from the allocated substrate vector and gates progression on replicated + supercoiled + enzyme + gtpCost
+        conditions."
     oc:
       symbol: "KarrChromosomeSegregationProcess.next_update"
       source:
@@ -79,9 +81,11 @@ allocator:
   mode:
     karr: "allocation"
     oc_current: "allocation"
-    note: "Both sides gate on per-process allocated substrates; OC reads states['substrates_allocated'][self.name] and does not fall back to the global substrate pool."
+    note: "Both sides gate on per-process allocated substrates; OC reads states['substrates_allocated'][self.name] and does not fall back to the
+      global substrate pool."
   request_formula:
-    matlab: "if replicated && supercoiled && all(required segregation proteins are present) && ~segregated then request GTP = gtpCost and H2O = gtpCost, else request 0"
+    matlab: "if replicated && supercoiled && all(required segregation proteins are present) && ~segregated then request GTP = gtpCost and H2O
+      = gtpCost, else request 0"
     oc: "request_gtp = request_h2o = gtp_cost when can_progress else 0.0"
     note: "Symbolic formula only; the MATLAB source is documented as a boolean gate with gtpCost, while the OC port inlines the same logic."
   requests:
@@ -174,26 +178,26 @@ produce_stoichiometry:
 compartment_routing:
   - wid: "GTP"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Allocator-gated energy substrate is cytosolic."
   - wid: "H2O"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Allocator-gated hydrolysis partner is cytosolic."
   - wid: "GDP"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Hydrolysis product returns to the cytosolic pool."
   - wid: "H"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Hydrolysis product returns to the cytosolic pool."
   - wid: "PI"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Hydrolysis product returns to the cytosolic pool."
@@ -228,7 +232,8 @@ ordering_constraints:
   hard_after: []
   soft_before: []
   soft_after: []
-  note: "No process-specific order constraint is documented for ChromosomeSegregation; the only canonical hard order in the global simulation is tRNAAminoacylation < Translation."
+  note: "No process-specific order constraint is documented for ChromosomeSegregation; the only canonical hard order in the global simulation
+    is tRNAAminoacylation < Translation."
 source_anchors:
   matlab_blocks:
     docstring_and_gate:
@@ -275,6 +280,16 @@ provenance:
     [opencell/vivarium/karr_chromosome_segregation.py]; validation sources used
     for MATLAB anchors: docs/karr_extracts/process/08_ChromosomeSegregation.md
     and opencell/validation/swarm/l5/karr_zero_grant_behavior.md.
+  last_audited: '2026-06-29'
+  audited_by: gpt-5.4-mini + parallel codex fleet (Day-43 EOD batch)
+  oc_commit_sha: 61a5a06
+  matlab_files_referenced:
+    - docs/karr_extracts/process/08_ChromosomeSegregation.md
+    - opencell/validation/swarm/l5/karr_zero_grant_behavior.md
+    - docs/karr_extracts/architecture/01_simulation_loop.md
+    - docs/design/pc-t5-segregation.md
+  oc_files_referenced:
+    - opencell/vivarium/karr_chromosome_segregation.py
 deviations:
   lp_bounds_source:
     karr: "unknown"
@@ -289,8 +304,10 @@ deviations:
       note: "The OC port has no dedicated flux-bound helper; request/update are handled inline."
   shared_pool_projection_merges_compartments: false
   known_deviations:
-    - "OC exposes continuous segregation_progress and daughter_pole_positions to support downstream chassis logic; the Karr source description is boolean and event-gated."
-    - "OC adds optional include_topoiv_gate and gtp_cost_override parameters; the Karr extract only exposes gtpCost and the four core segregation proteins."
+    - "OC exposes continuous segregation_progress and daughter_pole_positions to support downstream chassis logic; the Karr source description
+      is boolean and event-gated."
+    - "OC adds optional include_topoiv_gate and gtp_cost_override parameters; the Karr extract only exposes gtpCost and the four core segregation
+      proteins."
   note: >-
     Wiring matches the Karr allocation contract: both sides gate from
     allocated GTP/H2O and do not fall back to the global substrate pool.

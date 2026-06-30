@@ -1,4 +1,5 @@
 schema_version: "1.0"
+schema_date: '2026-06-29'
 process:
   name: "RNAModification"
   matlab_class: "RNAModification"
@@ -94,8 +95,10 @@ allocator:
       Karr requests resource share via calcResourceRequirements_Current, and
       current OC consumes the allocated surface at states["substrates_allocated"][self.name].
   request_formula:
-    matlab: "max(0, -this.reactionStoichiometryMatrix) * min(ceil(this.reactionCatalysisMatrix * this.enzymes * this.stepSizeSec), (this.reactionModificationMatrix * this.unmodifiedRNAs))"
-    oc: "if any(unmodified RNA > 0), rm_request[wid] = max(0, substrate_state[wid]) for each consumed wid; else zero requests (shared RNA-pathway calculator)"
+    matlab: "max(0, -this.reactionStoichiometryMatrix) * min(ceil(this.reactionCatalysisMatrix * this.enzymes * this.stepSizeSec), (this.reactionModificationMatrix
+      * this.unmodifiedRNAs))"
+    oc: "if any(unmodified RNA > 0), rm_request[wid] = max(0, substrate_state[wid]) for each consumed wid; else zero requests (shared RNA-pathway
+      calculator)"
     note: "Formula is symbolic and grep-friendly, not executable."
   requests:
     - wid: "AMET"
@@ -264,31 +267,31 @@ produce_stoichiometry:
 compartment_routing:
   - wid: "AMET"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Cytosolic substrate consumed by methyl-transfer reactions."
   - wid: "ATP"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Cytosolic substrate consumed by ATP-coupled modification reactions."
   - wid: "CYS"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Cytosolic substrate consumed by sulfur-transfer reactions."
   - wid: "AHCYS"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Cytosolic product of methyl-transfer reactions."
   - wid: "PPI"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Cytosolic byproduct of ATP-coupled modification reactions."
   - wid: "THF"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Cytosolic product of one-carbon transfer reactions."
@@ -408,7 +411,7 @@ provenance:
     - "data/karr_fixtures/per_process/RNAModification_flat.mat"
     - "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
   kb_version: "karr_native_m1__v2"
-  extraction_date_utc: null
+  extraction_date_utc:
   notes: >-
     Audited against the local WholeCell mirror at E:/opencell-mirrors/WholeCell.
     last_audited=2026-06-29; audited_by="gpt-5.4-mini (codex; row authored Day-43 EOD)";
@@ -417,6 +420,16 @@ provenance:
     oc_files_referenced=[opencell/vivarium/karr_rna_modification.py, opencell/vivarium/karr_request_calculators.py, opencell/vivarium/karr_composite.py];
     fixture_files=[data/karr_fixtures/per_process/RNAModification_flat.mat, data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat];
     kb_version=karr_native_m1__v2.
+  last_audited: '2026-06-29'
+  audited_by: gpt-5.4-mini + parallel codex fleet (Day-43 EOD batch)
+  oc_commit_sha: 61a5a06
+  matlab_files_referenced:
+    - data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m
+    - docs/phase_f/L2_5_HARNESS_DESIGN.md
+  oc_files_referenced:
+    - opencell/vivarium/karr_rna_modification.py
+    - opencell/vivarium/karr_request_calculators.py
+    - opencell/vivarium/karr_composite.py
 deviations:
   lp_bounds_source:
     karr: "unknown"

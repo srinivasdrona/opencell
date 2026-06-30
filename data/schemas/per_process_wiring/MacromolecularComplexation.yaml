@@ -1,4 +1,5 @@
 schema_version: "1.0"
+schema_date: '2026-06-29'
 process:
   name: "MacromolecularComplexation"
   matlab_class: "MacromolecularComplexation"
@@ -242,41 +243,41 @@ produce_stoichiometry:
 compartment_routing:
   - wid: "MG_003_MONOMER"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Consumed from the shared cytosolic subunit pool."
   - wid: "MG_005_MONOMER"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Consumed from the shared cytosolic subunit pool."
   - wid: "MG_014_MONOMER"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Consumed from the shared cytosolic subunit pool."
   - wid: "MG_029_MONOMER"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Consumed from the shared cytosolic subunit pool."
   - wid: "DNA_GYRASE"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Produced on the flat complex.counts surface."
   - wid: "DNA_POLYMERASE_CORE"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Produced on the flat complex.counts surface."
   - wid: "MG_005_DIMER"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Produced on the flat complex.counts surface."
   - wid: "RNA_POLYMERASE"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Produced on the flat complex.counts surface."
@@ -311,7 +312,8 @@ dependencies:
     - "tRNAAminoacylation"
     - "RNAProcessing"
     - "RNAModification"
-  note: "Complex outputs feed downstream decay/translation machinery; the substrate pool is replenished by transcription, translation, and RNA/protein maturation processes."
+  note: "Complex outputs feed downstream decay/translation machinery; the substrate pool is replenished by transcription, translation, and RNA/protein
+    maturation processes."
 ordering_constraints:
   hard_before: []
   hard_after: []
@@ -369,7 +371,10 @@ provenance:
   last_audited: "2026-06-29"
   audited_by: "gpt-5.4-mini (codex; row authored Day-43 EOD)"
   oc_commit_sha: "61a5a06e8031af3159dffa436655ade330be1fd9"
-  matlab_files_referenced: []
+  matlab_files_referenced:
+    - docs/design/a33_turn3_d2_real.md
+    - docs/design/a3_step3_joint_design_v1.md
+    - docs/phase_f/L2_5_HARNESS_DESIGN.md
   oc_files_referenced:
     - "opencell/vivarium/karr_macromolecular_complexation.py"
     - "opencell/vivarium/karr_request_calculators.py"
@@ -378,8 +383,9 @@ provenance:
   fixture_files:
     - "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
   kb_version: "unknown"
-  extraction_date_utc: null
-  notes: "Primary .m source is not checked into this worktree; MATLAB anchors come from the repo's verbatim design excerpts and the OC port is validated against the fixture-backed Python implementation."
+  extraction_date_utc:
+  notes: "Primary .m source is not checked into this worktree; MATLAB anchors come from the repo's verbatim design excerpts and the OC port is
+    validated against the fixture-backed Python implementation."
 deviations:
   lp_bounds_source:
     karr: "allocation"
@@ -394,6 +400,8 @@ deviations:
       note: "Current OC zero-request step."
   shared_pool_projection_merges_compartments: false
   known_deviations:
-    - "OC's _per_cluster_mc samples a Poisson multiplicity and can form multiple complexes per iteration; Karr forms exactly one copy per Monte Carlo iteration."
-    - "OC adds a cluster-1 fallback from _closed_form_bounds into _per_cluster_mc when the deterministic bound appears to overconsume; that guard is not present in the preserved Karr excerpt."
+    - "OC's _per_cluster_mc samples a Poisson multiplicity and can form multiple complexes per iteration; Karr forms exactly one copy per Monte
+      Carlo iteration."
+    - "OC adds a cluster-1 fallback from _closed_form_bounds into _per_cluster_mc when the deterministic bound appears to overconsume; that guard
+      is not present in the preserved Karr excerpt."
   note: "The request surface is intentionally zero in both Karr and OC; the meaningful divergence is in the competitive Monte Carlo kernel."

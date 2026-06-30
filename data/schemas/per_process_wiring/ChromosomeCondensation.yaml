@@ -1,4 +1,5 @@
 schema_version: "1.0"
+schema_date: '2026-06-29'
 process:
   name: "ChromosomeCondensation"
   matlab_class: "ChromosomeCondensation"
@@ -129,7 +130,8 @@ allocator:
   mode:
     karr: "allocation"
     oc_current: "mixed"
-    note: "Karr declares allocator demand explicitly; OC reads `substrates_allocated` first but falls back to global `substrates` when the allocated value is zero."
+    note: "Karr declares allocator demand explicitly; OC reads `substrates_allocated` first but falls back to global `substrates` when the allocated
+      value is zero."
   request_formula:
     matlab: "result(ATP) = this.enzymes(this.enzymeIndexs_SMC); result(H2O) = this.enzymes(this.enzymeIndexs_SMC)"
     oc: "requests[self.name][ATP] = request_need; requests[self.name][H2O] = request_need; no standalone request-calculator class"
@@ -229,26 +231,26 @@ produce_stoichiometry:
 compartment_routing:
   - wid: "ATP"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "ATP is consumed from the cytosolic substrate pool."
   - wid: "H2O"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Water is consumed from the cytosolic substrate pool."
   - wid: "ADP"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "ADP is produced back into the cytosolic substrate pool."
   - wid: "PI"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Phosphate is produced back into the cytosolic substrate pool."
   - wid: "H"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Hydrogen is produced back into the cytosolic substrate pool."
@@ -268,7 +270,8 @@ ordering_constraints:
   hard_after: []
   soft_before: []
   soft_after: []
-  note: "No process-specific ordering rule appears in ChromosomeCondensation.m; the only canonical hard order in Simulation.evolveState is tRNAAminoacylation before Translation."
+  note: "No process-specific ordering rule appears in ChromosomeCondensation.m; the only canonical hard order in Simulation.evolveState is tRNAAminoacylation
+    before Translation."
 source_anchors:
   matlab_blocks:
     class_def:
@@ -361,6 +364,15 @@ provenance:
     - data/karr_fixtures/per_process/ChromosomeCondensation_flat.mat
     - data/m1_sources/karr_native/per_process_traces_v2/ChromosomeCondensation_100ticks.mat
     kb_version_hint: V2 trace manifest for ChromosomeCondensation_100ticks.mat; fixture JSON has no explicit kb_version field.
+  last_audited: '2026-06-29'
+  audited_by: gpt-5.4-mini + parallel codex fleet (Day-43 EOD batch)
+  oc_commit_sha: 61a5a06
+  matlab_files_referenced:
+    - data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m
+    - data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m
+  oc_files_referenced:
+    - opencell/vivarium/karr_chromosome_condensation.py
+    - opencell/vivarium/karr_composite.py
 deviations:
   lp_bounds_source:
     karr: "unknown"

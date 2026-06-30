@@ -1,4 +1,5 @@
 schema_version: "1.0"
+schema_date: '2026-06-29'
 process:
   name: "HostInteraction"
   matlab_class: "HostInteraction"
@@ -8,7 +9,8 @@ process:
   whole_cell_model_id: "Process_HostInteraction"
   functional_area: "host-interaction"
   state_shape_role: "qualitative host-interface state; wiring row adds integration semantics"
-  notes: "MATLAB source is documented in the extract and mirrored upstream; the current OC port is Karr-light and only approximates the boolean cascade with aggregate adhesion state."
+  notes: "MATLAB source is documented in the extract and mirrored upstream; the current OC port is Karr-light and only approximates the boolean
+    cascade with aggregate adhesion state."
 methods:
   calcResourceRequirements_Current:
     matlab:
@@ -70,7 +72,8 @@ allocator:
   mode:
     karr: "allocation"
     oc_current: "bypass"
-    note: "Karr declares a resource-requirements method, but the current OC process reads only cell/protein state and has no substrate request surface."
+    note: "Karr declares a resource-requirements method, but the current OC process reads only cell/protein state and has no substrate request
+      surface."
   request_formula:
     matlab: "result = zeros(size(this.substrates))"
     oc: "no OC request calculator; current port bypasses allocator mediation"
@@ -100,7 +103,8 @@ ordering_constraints:
   soft_before: []
   soft_after:
     - "TerminalOrganelleAssembly"
-  note: "No explicit Karr order exception is documented for HostInteraction; the only practical ordering pressure is that it reads terminal-organelle readiness."
+  note: "No explicit Karr order exception is documented for HostInteraction; the only practical ordering pressure is that it reads terminal-organelle
+    readiness."
 source_anchors:
   matlab_blocks:
     docstring_and_representation:
@@ -170,6 +174,14 @@ provenance:
     oc_files_referenced=["opencell/vivarium/karr_host_interaction.py", "opencell/vivarium/karr_composite.py"]
     fixture_files=["data/karr_fixtures/per_process/HostInteraction_flat.mat", "data/m1_sources/karr_native/per_process_traces/HostInteraction_100ticks.mat"]
     kb_version=unknown
+  last_audited: '2026-06-29'
+  audited_by: gpt-5.4-mini + parallel codex fleet (Day-43 EOD batch)
+  oc_commit_sha: 61a5a06
+  matlab_files_referenced:
+    - data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m
+  oc_files_referenced:
+    - opencell/vivarium/karr_host_interaction.py
+    - opencell/vivarium/karr_composite.py
 deviations:
   lp_bounds_source:
     karr: "allocation"
@@ -186,5 +198,6 @@ deviations:
   known_deviations:
     - "OC replaces Karr's boolean host cascade with a Karr-light aggregate adhesion model (`host_adhesion_strength` and `host_attached`)."
     - "OC reads `cell.terminal_organelle_count` plus `protein.counts`; Karr reads its own `host` state and `enzymes` array."
-    - "No substrate stoichiometry or allocator request surface exists in the current OC port because HostInteraction's fixture has no substrate WIDs."
+    - "No substrate stoichiometry or allocator request surface exists in the current OC port because HostInteraction's fixture has no substrate
+      WIDs."
   note: "The row records the current OC approximation honestly instead of implying a literal MATLAB port."

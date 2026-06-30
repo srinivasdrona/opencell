@@ -1,4 +1,5 @@
 schema_version: "1.0"
+schema_date: '2026-06-29'
 process:
   name: "RNADecay"
   matlab_class: "RNADecay"
@@ -194,31 +195,31 @@ produce_stoichiometry:
 compartment_routing:
   - wid: "H2O"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Water is consumed from the cytosolic shared substrate pool."
   - wid: "ALA"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Amino-acid byproduct remains in the cytosolic substrate pool."
   - wid: "AMP"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Nucleotide byproduct remains in the cytosolic substrate pool."
   - wid: "CMP"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Nucleotide byproduct remains in the cytosolic substrate pool."
   - wid: "GMP"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Nucleotide byproduct remains in the cytosolic substrate pool."
   - wid: "UMP"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Nucleotide byproduct remains in the cytosolic substrate pool."
@@ -320,7 +321,11 @@ provenance:
   last_audited: "2026-06-29"
   audited_by: "gpt-5.4-mini (codex; row authored Day-43 EOD)"
   oc_commit_sha: "61a5a06e8031af3159dffa436655ade330be1fd9"
-  matlab_files_referenced: []
+  matlab_files_referenced:
+    - docs/karr_extracts/process/13_RNADecay.md
+    - docs/karr_extracts/architecture/03_variable_allocation.md
+    - docs/karr_extracts/architecture/01_simulation_loop.md
+    - docs/design/allocation_consumer_enrollment.md
   oc_files_referenced:
     - "opencell/vivarium/karr_rna_decay.py"
     - "opencell/vivarium/karr_allocation_step.py"
@@ -329,7 +334,7 @@ provenance:
   fixture_files:
     - "data/karr_fixtures/per_process/RNADecay_flat.mat"
   kb_version: "unknown"
-  extraction_date_utc: null
+  extraction_date_utc:
   notes: >-
     Raw RNADecay.m was not present in this checkout. Evidence was assembled
     from the checked-in RNADecay extract, scheduler/allocation extracts, the

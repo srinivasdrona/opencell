@@ -1,4 +1,5 @@
 schema_version: "1.0"
+schema_date: '2026-06-29'
 process:
   name: "ReplicationInitiation"
   matlab_class: "ReplicationInitiation"
@@ -154,7 +155,8 @@ allocator:
 consume_stoichiometry:
   - wid: "ATP"
     compartment: "cytosol"
-    formula_or_constant: "nActivations = min(this.substrates(this.substrateIndexs_atp), this.enzymes(this.enzymeIndexs_DnaA)); ATP consumed = nActivations"
+    formula_or_constant: "nActivations = min(this.substrates(this.substrateIndexs_atp), this.enzymes(this.enzymeIndexs_DnaA)); ATP consumed =
+      nActivations"
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
       lines: "536-550"
@@ -211,26 +213,26 @@ produce_stoichiometry:
 compartment_routing:
   - wid: "ATP"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Allocator-mediated cytosolic input."
   - wid: "H2O"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Allocator-mediated cytosolic input."
   - wid: "ADP"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Direct cytosolic hydrolysis product."
   - wid: "PI"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Direct cytosolic hydrolysis product."
   - wid: "H"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Direct cytosolic hydrolysis product."
@@ -257,7 +259,8 @@ ordering_constraints:
   hard_after: []
   soft_before: []
   soft_after: []
-  note: "No ReplicationInitiation-specific order rule was identified; the canonical global hard constraint lives in Simulation.evolveState for tRNAAminoacylation < Translation."
+  note: "No ReplicationInitiation-specific order rule was identified; the canonical global hard constraint lives in Simulation.evolveState for
+    tRNAAminoacylation < Translation."
 source_anchors:
   matlab_blocks:
     docstring_overview:
@@ -344,6 +347,13 @@ provenance:
     fixture_files=[data/karr_fixtures/per_process/ReplicationInitiation_flat.mat];
     kb_version=unknown;
     note=The current worktree was sparse for the raw MATLAB tree, so the M-file anchors were cross-checked against the full E:/opencell checkout.
+  last_audited: '2026-06-29'
+  audited_by: gpt-5.4-mini + parallel codex fleet (Day-43 EOD batch)
+  oc_commit_sha: 61a5a06
+  matlab_files_referenced:
+    - data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m
+  oc_files_referenced:
+    - opencell/vivarium/karr_replication_initiation.py
 deviations:
   lp_bounds_source:
     karr: "unknown"

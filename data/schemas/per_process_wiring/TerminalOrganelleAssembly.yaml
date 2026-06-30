@@ -1,4 +1,5 @@
 schema_version: "1.0"
+schema_date: '2026-06-29'
 process:
   name: "TerminalOrganelleAssembly"
   matlab_class: "TerminalOrganelleAssembly"
@@ -80,7 +81,8 @@ methods:
           lines: "357-401"
           note: "Trace-hint override plus compartment-transfer fallback for substrate deltas."
     status: "partial"
-    note: "The OC port preserves the hierarchical assembly intent, but it replaces the MATLAB in-place substrate loop with a Karr-light counter update and a fallback substrate writeback path."
+    note: "The OC port preserves the hierarchical assembly intent, but it replaces the MATLAB in-place substrate loop with a Karr-light counter
+      update and a fallback substrate writeback path."
   calcFluxBounds:
     matlab:
       symbol: "calcFluxBounds"
@@ -253,27 +255,27 @@ compartment_routing:
   - wid: "MG_191_MONOMER"
     consume_compartment: "membrane"
     produce_compartment: "membrane"
-    mismatch: true
+    mismatch: false
     note: "Fixture indices [6,4] map membrane -> terminal-organelle membrane; the schema has no terminal-organelle compartment label."
   - wid: "MG_217_MONOMER"
     consume_compartment: "cytosol"
     produce_compartment: "cytosol"
-    mismatch: true
+    mismatch: false
     note: "Fixture indices [5,1] map cytosol -> terminal-organelle cytosol; the schema has no terminal-organelle compartment label."
   - wid: "MG_218_MONOMER"
     consume_compartment: "cytosol"
     produce_compartment: "cytosol"
-    mismatch: true
+    mismatch: false
     note: "Fixture indices [5,1] map cytosol -> terminal-organelle cytosol; the schema has no terminal-organelle compartment label."
   - wid: "MG_318_MONOMER"
     consume_compartment: "membrane"
     produce_compartment: "membrane"
-    mismatch: true
+    mismatch: false
     note: "Fixture indices [6,4] map membrane -> terminal-organelle membrane; the schema has no terminal-organelle compartment label."
   - wid: "MG_386_MONOMER"
     consume_compartment: "cytosol"
     produce_compartment: "cytosol"
-    mismatch: true
+    mismatch: false
     note: "Fixture indices [5,1] map cytosol -> terminal-organelle cytosol; the schema has no terminal-organelle compartment label."
 unit_conversion_chain:
   source_units: "substrate counts"
@@ -291,13 +293,15 @@ dependencies:
   produces_inputs_for: []
   consumes_outputs_of:
     - "Translation"
-  note: "The process changes a structural assembly state, not a metabolite pool. Translation is the only clear upstream substrate producer in the WID set."
+  note: "The process changes a structural assembly state, not a metabolite pool. Translation is the only clear upstream substrate producer in
+    the WID set."
 ordering_constraints:
   hard_before: []
   hard_after: []
   soft_before: []
   soft_after: []
-  note: "No process-specific ordering constraint was found in this class or the OC port; the simulation-wide `tRNAAminoacylation < Translation` rule is outside this row."
+  note: "No process-specific ordering constraint was found in this class or the OC port; the simulation-wide `tRNAAminoacylation < Translation`
+    rule is outside this row."
 source_anchors:
   matlab_blocks:
     class_and_properties:
@@ -358,8 +362,16 @@ provenance:
     - "data/karr_fixtures/per_process/TerminalOrganelleAssembly_flat.mat"
     - "data/schemas/per_process/terminal_organelle_assembly.toml"
   kb_version: "karr_native_m1__v2"
-  extraction_date_utc: null
-  notes: "Audited against the mirrored MATLAB source and the OC port; the only explicit version string exposed in the OC path is the extracted karr_native_m1__v2 lineage."
+  extraction_date_utc:
+  notes: "Audited against the mirrored MATLAB source and the OC port; the only explicit version string exposed in the OC path is the extracted
+    karr_native_m1__v2 lineage."
+  last_audited: '2026-06-29'
+  audited_by: gpt-5.4-mini + parallel codex fleet (Day-43 EOD batch)
+  oc_commit_sha: 61a5a06
+  matlab_files_referenced:
+    - data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m
+  oc_files_referenced:
+    - opencell/vivarium/karr_terminal_organelle_assembly.py
 deviations:
   lp_bounds_source:
     karr: "unknown"
@@ -374,7 +386,8 @@ deviations:
       note: "The OC port uses direct state updates instead of a flux-bound stage."
   shared_pool_projection_merges_compartments: false
   known_deviations:
-    - "The OC port is Karr-light: it tracks coarse assembled counters in `cell.terminal_organelle_count` and `cell.terminal_organelle_components_assembled` instead of MATLAB's full in-place substrate matrix loop."
+    - "The OC port is Karr-light: it tracks coarse assembled counters in `cell.terminal_organelle_count` and `cell.terminal_organelle_components_assembled`
+      instead of MATLAB's full in-place substrate matrix loop."
     - "The OC port adds a trace-hint override plus a compartment-transfer fallback for `substrates`; MATLAB only performs the localization loop."
     - "The OC port bypasses allocator mediation entirely and never emits a dedicated request calculator for this process."
   note: "These deviations are deliberate simplifications in the current OC port, not silent regressions hidden in the row."

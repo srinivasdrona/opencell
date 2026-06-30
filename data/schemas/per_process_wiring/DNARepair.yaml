@@ -1,4 +1,5 @@
 schema_version: "1.0"
+schema_date: '2026-06-29'
 process:
   name: "DNARepair"
   matlab_class: "DNARepair"
@@ -8,7 +9,8 @@ process:
   whole_cell_model_id: "Process_DNARepair"
   functional_area: "dna-replication-and-maintenance"
   state_shape_role: "chromosome-primary repair process with substrate/allocation coupling"
-  notes: "The raw MATLAB source file is not present in this checkout; MATLAB-side anchors therefore use the DNARepair extract plus Simulation allocation docs."
+  notes: "The raw MATLAB source file is not present in this checkout; MATLAB-side anchors therefore use the DNARepair extract plus Simulation
+    allocation docs."
 methods:
   calcResourceRequirements_Current:
     matlab:
@@ -78,8 +80,10 @@ allocator:
     oc_current: "allocation"
     note: "Both sides use allocation gating; the OC process reads `substrates_allocated[karr_dna_repair]` before repair."
   request_formula:
-    matlab: "r = sum_pathways( repair_count[pathway] * per_event_cost[pathway] ), with per_event_cost[pathway] = [ATP_cost[pathway], patch_length_nt[pathway] * dntp_split] and desired_repairs limited by pathway capacity and lesion count"
-    oc: "requests = _substrate_needs_for_repairs(desired_repairs); desired_repairs = min(Poisson(pathway_capacity_per_s * dt * lesion_count), lesion_count); available = substrates_allocated[self.name]"
+    matlab: "r = sum_pathways( repair_count[pathway] * per_event_cost[pathway] ), with per_event_cost[pathway] = [ATP_cost[pathway], patch_length_nt[pathway]
+      * dntp_split] and desired_repairs limited by pathway capacity and lesion count"
+    oc: "requests = _substrate_needs_for_repairs(desired_repairs); desired_repairs = min(Poisson(pathway_capacity_per_s * dt * lesion_count),
+      lesion_count); available = substrates_allocated[self.name]"
     note: "Symbolic summary only; the OC request path is folded into next_update."
   requests:
     - wid: "ATP"
@@ -231,46 +235,46 @@ produce_stoichiometry:
 compartment_routing:
   - wid: "ATP"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Repair-energy demand stays in the cytosolic substrate pool."
   - wid: "DATP"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "dNTP patch synthesis is cytosolic."
   - wid: "DCTP"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "dNTP patch synthesis is cytosolic."
   - wid: "DGTP"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "dNTP patch synthesis is cytosolic."
   - wid: "DTTP"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "dNTP patch synthesis is cytosolic."
   - wid: "AMP"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Karr ligation product; OC currently omits this emission."
   - wid: "PPI"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Karr polymerization product; OC currently omits this emission."
   - wid: "AHCYS"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Conditional RM product remains cytosolic."
   - wid: "H"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Conditional RM product remains cytosolic."
@@ -300,13 +304,15 @@ dependencies:
     - "Metabolism"
   consumes_outputs_of:
     - "Metabolism"
-  note: "The non-substrate coupling to DNADamage/Replication is via chromosome damage state, not the shared substrate channel, so it is omitted here."
+  note: "The non-substrate coupling to DNADamage/Replication is via chromosome damage state, not the shared substrate channel, so it is omitted
+    here."
 ordering_constraints:
   hard_before: []
   hard_after: []
   soft_before: []
   soft_after: []
-  note: "No DNARepair-specific ordering rule was found in the available material; the canonical global hard constraint in Simulation.evolveState remains tRNAAminoacylation before Translation."
+  note: "No DNARepair-specific ordering rule was found in the available material; the canonical global hard constraint in Simulation.evolveState
+    remains tRNAAminoacylation before Translation."
 source_anchors:
   matlab_blocks:
     process_header:
@@ -368,6 +374,14 @@ provenance:
     fixture_files=[data/karr_fixtures/per_process/DNARepair_flat.mat,
     data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat];
     kb_version=karr_native_m1__v2.
+  last_audited: '2026-06-29'
+  audited_by: gpt-5.4-mini + parallel codex fleet (Day-43 EOD batch)
+  oc_commit_sha: 61a5a06
+  matlab_files_referenced:
+    - docs/karr_extracts/process/05_DNARepair.md
+    - docs/karr_extracts/architecture/01_simulation_loop.md
+  oc_files_referenced:
+    - opencell/vivarium/karr_dna_repair.py
 deviations:
   lp_bounds_source:
     karr: "allocation"
@@ -384,6 +398,8 @@ deviations:
   known_deviations:
     - "Karr executes six randomly ordered repair subfunctions; OC collapses the process to one aggregated pathway-level update."
     - "OC models only ATP/dNTP repair demand plus the conditional AMET -> AHCYS + H restriction/modification side effect."
-    - "Karr ligation/polymerization products such as AMP, PPI, and NMN are visible in the fixture chemistry but are not emitted by the current OC port."
-    - "The raw MATLAB source file was not present in this checkout, so MATLAB-side evidence is anchored to the DNARepair extract and the generic allocation docs rather than a direct .m read."
+    - "Karr ligation/polymerization products such as AMP, PPI, and NMN are visible in the fixture chemistry but are not emitted by the current
+      OC port."
+    - "The raw MATLAB source file was not present in this checkout, so MATLAB-side evidence is anchored to the DNARepair extract and the generic
+      allocation docs rather than a direct .m read."
   note: "The row keeps known gaps explicit so the wiring DB does not overstate the fidelity of the current OC port."

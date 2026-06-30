@@ -1,4 +1,5 @@
 schema_version: "1.0"
+schema_date: '2026-06-29'
 process:
   name: "Replication"
   matlab_class: "Replication"
@@ -8,7 +9,8 @@ process:
   whole_cell_model_id: "Process_Replication"
   functional_area: "dna-replication-and-maintenance"
   state_shape_role: "process wiring row; state-shape catalog row adds integration semantics"
-  notes: "The checked-in extract describes 8 replication subfunctions; the current OC port replays fork progression and substrate bookkeeping, while SSB and RNAP collision mechanics remain deferred."
+  notes: "The checked-in extract describes 8 replication subfunctions; the current OC port replays fork progression and substrate bookkeeping,
+    while SSB and RNAP collision mechanics remain deferred."
 methods:
   calcResourceRequirements_Current:
     matlab:
@@ -76,10 +78,12 @@ allocator:
   mode:
     karr: "allocation"
     oc_current: "allocation"
-    note: "OC reads substrates_allocated[self.name] in the main update path, with a raw substrates fallback only when the allocation surface is absent."
+    note: "OC reads substrates_allocated[self.name] in the main update path, with a raw substrates fallback only when the allocation surface is
+      absent."
   request_formula:
     matlab: "allocations = max(0, fix(requirements .* tmp(:, ones(nProcesses, 1))))"
-    oc: "requests are built inline in KarrReplicationProcess.next_update from _demand_from_advances; zero outside elongating state, then clipped against substrates_allocated[self.name]"
+    oc: "requests are built inline in KarrReplicationProcess.next_update from _demand_from_advances; zero outside elongating state, then clipped
+      against substrates_allocated[self.name]"
     note: "Karr allocation is simulation-wide fair-share; OC embeds the per-process demand inside the process update."
   requests:
     - wid: "DATP"
@@ -238,51 +242,51 @@ produce_stoichiometry:
 compartment_routing:
   - wid: "DATP"
     consume_compartment: cytosol
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Cytosolic dNTP allocation slot."
   - wid: "DCTP"
     consume_compartment: cytosol
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Cytosolic dNTP allocation slot."
   - wid: "DGTP"
     consume_compartment: cytosol
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Cytosolic dNTP allocation slot."
   - wid: "DTTP"
     consume_compartment: cytosol
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Cytosolic dNTP allocation slot."
   - wid: "ATP"
     consume_compartment: cytosol
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Cytosolic energy input for fork progression."
   - wid: "ADP"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: cytosol
     mismatch: false
     note: "Cytosolic hydrolysis byproduct."
   - wid: "PI"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: cytosol
     mismatch: false
     note: "Cytosolic hydrolysis byproduct."
   - wid: "H"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: cytosol
     mismatch: false
     note: "Cytosolic hydrolysis byproduct."
   - wid: "PPI"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: cytosol
     mismatch: false
     note: "Cytosolic pyrophosphate product of dNTP incorporation."
   - wid: "NMN"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: cytosol
     mismatch: false
     note: "Cytosolic ligation product."
@@ -322,19 +326,22 @@ unit_conversion_chain:
         path: "opencell/vivarium/karr_replication.py"
         lines: "637-644"
         note: "Ligase events are rounded to integer tick counts."
-  note: "The MATLAB extract describes the process qualitatively; the OC port computes integer counts with integer rounding, partitioning, and tick-scale event bookkeeping."
+  note: "The MATLAB extract describes the process qualitatively; the OC port computes integer counts with integer rounding, partitioning, and
+    tick-scale event bookkeeping."
 dependencies:
   produces_inputs_for:
     - "Metabolism"
   consumes_outputs_of:
     - "Metabolism"
-  note: "This block records shared-substrate coupling only. Chromosome-state coupling to ReplicationInitiation and ChromosomeSegregation is handled elsewhere."
+  note: "This block records shared-substrate coupling only. Chromosome-state coupling to ReplicationInitiation and ChromosomeSegregation is handled
+    elsewhere."
 ordering_constraints:
   hard_before: []
   hard_after: []
   soft_before: []
   soft_after: []
-  note: "No Replication-specific ordering rule was identified in the extracted source. The only canonical hard ordering observed in Simulation.evolveState is tRNAAminoacylation < Translation."
+  note: "No Replication-specific ordering rule was identified in the extracted source. The only canonical hard ordering observed in Simulation.evolveState
+    is tRNAAminoacylation < Translation."
 source_anchors:
   matlab_blocks:
     process_header:
@@ -372,7 +379,17 @@ provenance:
     - "data/karr_fixtures/per_process/Chromosome_flat.mat"
   kb_version: "unknown"
   extraction_date_utc: "2026-06-30"
-  notes: "last_audited=2026-06-29; audited_by=gpt-5.4-mini (codex; row authored Day-43 EOD); oc_commit_sha=61a5a06e8031af3159dffa436655ade330be1fd9; matlab_files_referenced=[] because the raw Replication.m file was not present in this worktree; oc_files_referenced=['opencell/vivarium/karr_replication.py']; MATLAB anchors use the checked-in Karr extract docs and allocation notes as the recoverable source proxy."
+  notes: "last_audited=2026-06-29; audited_by=gpt-5.4-mini (codex; row authored Day-43 EOD); oc_commit_sha=61a5a06e8031af3159dffa436655ade330be1fd9;
+    matlab_files_referenced=[] because the raw Replication.m file was not present in this worktree; oc_files_referenced=['opencell/vivarium/karr_replication.py'];
+    MATLAB anchors use the checked-in Karr extract docs and allocation notes as the recoverable source proxy."
+  last_audited: '2026-06-29'
+  audited_by: gpt-5.4-mini + parallel codex fleet (Day-43 EOD batch)
+  oc_commit_sha: 61a5a06
+  matlab_files_referenced:
+    - docs/karr_extracts/process/03_Replication.md
+    - docs/karr_extracts/architecture/03_variable_allocation.md
+  oc_files_referenced:
+    - opencell/vivarium/karr_replication.py
 deviations:
   lp_bounds_source:
     karr: "unknown"
@@ -388,7 +405,10 @@ deviations:
   shared_pool_projection_merges_compartments: false
   known_deviations:
     - "OC request logic is embedded in KarrReplicationProcess.next_update instead of a standalone request-calculator class."
-    - "The current OC port is a light-bulk fork-progress replay; SSB binding/release, Okazaki geometry, and RNAP collision dwell/pause remain deferred."
-    - "The raw MATLAB Replication.m file was not present in this worktree, so the row uses the checked-in Karr extract docs and allocation notes as the source proxy."
+    - "The current OC port is a light-bulk fork-progress replay; SSB binding/release, Okazaki geometry, and RNAP collision dwell/pause remain
+      deferred."
+    - "The raw MATLAB Replication.m file was not present in this worktree, so the row uses the checked-in Karr extract docs and allocation notes
+      as the source proxy."
     - "No Replication-specific calcFluxBounds helper exists in the current OC repository state."
-  note: "This row captures source-to-port wiring and the observed implementation gaps without inflating the scope beyond what the local sources support."
+  note: "This row captures source-to-port wiring and the observed implementation gaps without inflating the scope beyond what the local sources
+    support."

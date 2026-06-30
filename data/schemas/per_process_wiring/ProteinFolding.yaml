@@ -1,4 +1,5 @@
 schema_version: "1.0"
+schema_date: '2026-06-29'
 process:
   name: "ProteinFolding"
   matlab_class: "ProteinFolding"
@@ -8,7 +9,8 @@ process:
   whole_cell_model_id: "Process_ProteinFolding"
   functional_area: "protein-synthesis-and-maturation"
   state_shape_role: "allocator-gated protein maturation with ion binding and chaperone folding"
-  notes: "Raw MATLAB .m body was not present in this checkout; the process extract doc, chassis design note, and downstream audit notes were used as fallback anchors."
+  notes: "Raw MATLAB .m body was not present in this checkout; the process extract doc, chassis design note, and downstream audit notes were used
+    as fallback anchors."
 methods:
   calcResourceRequirements_Current:
     matlab:
@@ -81,8 +83,10 @@ allocator:
     oc_current: "allocation"
     note: "Both Karr and current OC route ProteinFolding through per-process substrate allocation; OC reads from substrates_allocated[self.name]."
   request_formula:
-    matlab: "if unfoldedMonomers present, request ATP plus required prosthetic-group ions (Fe2/Fe3/K/Mg/Mn/Na/Zn as applicable); fold demand is zero otherwise"
-    oc: "RequestCalculatorProteinPathway.next_update sets ProteinFolding requests to max(0, substrate_state[wid]) for ATP, FE2, MG, and ZN when any unfolded monomer is present."
+    matlab: "if unfoldedMonomers present, request ATP plus required prosthetic-group ions (Fe2/Fe3/K/Mg/Mn/Na/Zn as applicable); fold demand is
+      zero otherwise"
+    oc: "RequestCalculatorProteinPathway.next_update sets ProteinFolding requests to max(0, substrate_state[wid]) for ATP, FE2, MG, and ZN when
+      any unfolded monomer is present."
     note: "The request path is shared with the other protein-maturation processes, so this row records the ProteinFolding slice only."
   requests:
     - wid: "ATP"
@@ -166,27 +170,27 @@ produce_stoichiometry: []
 compartment_routing:
   - wid: "ATP"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Cytosolic chaperone-cycle substrate."
   - wid: "FE2"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Cytosolic prosthetic-group ion."
   - wid: "MG"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Cytosolic prosthetic-group ion."
   - wid: "ZN"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Cytosolic prosthetic-group ion."
   - wid: "K"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Cytosolic ion needed by a minority of proteins in the prosthetic-group matrix."
 unit_conversion_chain:
@@ -211,13 +215,15 @@ dependencies:
     - "ProteinProcessingI"
     - "MacromolecularComplexation"
     - "RibosomeAssembly"
-  note: "ProteinFolding directly reads translation output, upstream chaperone complexes, and the processed-protein pipeline before feeding modification and activation."
+  note: "ProteinFolding directly reads translation output, upstream chaperone complexes, and the processed-protein pipeline before feeding modification
+    and activation."
 ordering_constraints:
   hard_before: []
   hard_after: []
   soft_before: []
   soft_after: []
-  note: "No process-specific Karr ordering rule was found for ProteinFolding; the only canonical hard order remains tRNAAminoacylation < Translation in Simulation.evolveState."
+  note: "No process-specific Karr ordering rule was found for ProteinFolding; the only canonical hard order remains tRNAAminoacylation < Translation
+    in Simulation.evolveState."
 source_anchors:
   matlab_blocks:
     process_docstring_and_reconstruction:
@@ -275,7 +281,21 @@ provenance:
     - "data/karr_fixtures/per_process/RibosomeAssembly_flat.mat"
   kb_version: "karr_native_m1__v2"
   extraction_date_utc: "2026-06-30T00:00:00Z"
-  notes: "last_audited=2026-06-29; audited_by=gpt-5.4-mini (codex; row authored Day-43 EOD); oc_commit_sha=61a5a06e8031af3159dffa436655ade330be1fd9; matlab_files_referenced=[]; oc_files_referenced=[opencell/vivarium/karr_protein_folding.py, opencell/vivarium/karr_request_calculators.py, tests/vivarium/test_karr_protein_folding.py, tests/vivarium/test_karr_request_calculators.py]; raw MATLAB ProteinFolding.m body was not present in this checkout, so fallback anchors were taken from the process extract, chassis design note, and downstream audit notes."
+  notes: "last_audited=2026-06-29; audited_by=gpt-5.4-mini (codex; row authored Day-43 EOD); oc_commit_sha=61a5a06e8031af3159dffa436655ade330be1fd9;
+    matlab_files_referenced=[]; oc_files_referenced=[opencell/vivarium/karr_protein_folding.py, opencell/vivarium/karr_request_calculators.py,
+    tests/vivarium/test_karr_protein_folding.py, tests/vivarium/test_karr_request_calculators.py]; raw MATLAB ProteinFolding.m body was not present
+    in this checkout, so fallback anchors were taken from the process extract, chassis design note, and downstream audit notes."
+  last_audited: '2026-06-29'
+  audited_by: gpt-5.4-mini + parallel codex fleet (Day-43 EOD batch)
+  oc_commit_sha: 61a5a06
+  matlab_files_referenced:
+    - docs/karr_extracts/process/19_ProteinFolding.md
+    - docs/phase_e/L2_STATUS.md
+    - docs/phase_f/L2_2_STOCHASTIC_AUDIT.md
+    - docs/design/pb_final_chassis_v4_integration.md
+  oc_files_referenced:
+    - opencell/vivarium/karr_protein_folding.py
+    - opencell/vivarium/karr_request_calculators.py
 deviations:
   lp_bounds_source:
     karr: "unknown"
@@ -290,7 +310,9 @@ deviations:
       note: "Current OC port has no calcFluxBounds routine."
   shared_pool_projection_merges_compartments: false
   known_deviations:
-    - "The current OC request helper is shared across protein maturation and only explicitly surfaces ATP, FE2, MG, and ZN for ProteinFolding; the Karr prosthetic-ion surface is broader (including K/MN/NA/Fe3), and those are not request-emitted by the shared helper."
+    - "The current OC request helper is shared across protein maturation and only explicitly surfaces ATP, FE2, MG, and ZN for ProteinFolding;
+      the Karr prosthetic-ion surface is broader (including K/MN/NA/Fe3), and those are not request-emitted by the shared helper."
     - "The current OC runtime omits the fixture channels unfoldedComplexs and foldedComplexs, even though the Karr fixture exposes them."
-    - "The raw MATLAB ProteinFolding.m body was absent from this checkout, so the MATLAB-side method anchors are reconstructed from the process extract and downstream audit notes."
+    - "The raw MATLAB ProteinFolding.m body was absent from this checkout, so the MATLAB-side method anchors are reconstructed from the process
+      extract and downstream audit notes."
   note: "These are the known row-level divergences that are important enough to keep visible in the DB row."
