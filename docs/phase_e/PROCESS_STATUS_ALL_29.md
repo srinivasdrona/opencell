@@ -1,6 +1,50 @@
 # All-29 Process Status - 2026-06-03 ~14:30 IST (L2.1 SWEEP COMPLETE)
 
-> **⚠️ Day-42 EOD FINAL update: 12 probes today converged the picture. The W1=161 gap is REAL and COMPOUNDS over 100-tick trajectory (linear drift to 4.70M L1; TRP over-accumulated 1,234×). Only (d) GLPK 4.x oracle and FVA reframe remain viable; ε-objective and accept-floor empirically dead. Scoreboard unchanged.**
+> **🛑 Day-44 EOD update (2026-06-30): per-process wiring DB shipped (28/28 PASS); scoreboard re-framed per `2026-06-29 | opencell | l1c-skipped-lower-rung-greens-misread` decision. L1/L2.1/L2.2 greens are per-process correctness — they do NOT imply chassis correctness. The wiring DB is now the standing artifact for chassis-level audits; L1c gate design starts Day-45.**
+>
+> **What landed Day-43→Day-44 (committed and pushed to `srinivasdrona/opencell` main):**
+> - **Wiring DB** (`cac09ae`..`78c5140`, 37 commits across 4 phases):
+>   - Schema design + Metabolism example row (operator-ratified D1-D5: YAML, one-per-process, string formulas, nested method bindings, per-row semver)
+>   - Generator + cross-row consistency checker + 3 pytest tests (`scripts/build_wiring_db.py`)
+>   - 27 per-process wiring rows authored by gpt-5.4-mini codex fleet
+>   - Cross-row reciprocal mismatches: 53→0; cyclic ordering: 2→0; row-level: 27 FAIL → 0 FAIL
+>   - Final validator state: `PASS` (0 mismatches, 0 cyclic, 0 missing)
+> - **DEC-003** (`7b70c67`): FVA reframe decision card — Metabolism per-tick LP-vertex feasibility ratified as 99.9997% PASS; chassis integration explicitly NOT verified
+> - **Methodology decision** (`2026-06-29 | opencell | l1c-skipped-lower-rung-greens-misread`): L1/L2.1/L2.2 are structurally blind to chassis integration bugs; 4 wiring bugs (A1/A2/A3/A3b/A4) found via side-by-side MATLAB↔OC audit on Day-43 evening
+>
+> **Scoreboard (Day-44 EOD) — re-framed:**
+>
+> | Gate | What it measures | Day-42 EOD | Day-44 EOD |
+> |---|---|---:|---:|
+> | L1 firing | trace bytes > threshold | 28/28 | 28/28 |
+> | L1c integrated energy balance | NEW GATE — NOT YET BUILT | 0 | **0** (todos pending; design starts Day-45) |
+> | L2.0 schema | ports_schema vs karr_obs | 28/28 | 28/28 |
+> | L2.1 GENUINE | bit-identity, isolated replay | 19/28 | 19/28 |
+> | L2.2 VERIFIED_GENUINE | W1 vs null, isolated replay | 17/22 | 17/22 |
+> | L2.2 NOT_WIRED | infrastructure missing | 2 | 2 |
+> | L2.2 VERIFIED_FAIL | Metabolism W1=161, threshold 102 | 1 | 1 (DEC-003 reframe is per-tick LP-vertex feasibility; does NOT change chassis claim) |
+> | L2.5 honest PASS | shared-pool composition | 15/256 | 15/256 (3 Metab DS pairs FAIL consistent with chassis bugs) |
+> | **Per-process wiring DB** | chassis-layer integration audit | NOT BUILT | **28/28 PASS ✅** |
+>
+> **Important framing change**: L2.1/L2.2 greens do NOT imply chassis correctness. Each green is a per-process unit test in replay mode where allocator + shared-pool projection are bypassed by construction. The wiring DB is the standing artifact for chassis-level audits; L1c is the gate that will check whether the chassis actually conserves mass and energy.
+>
+> **Day-43 evening audit findings (still open):**
+>
+> | # | Finding | Status |
+> |---|---|---|
+> | A1 | OC allocator caps scale at `min(1.0, ...)`; Karr's can be >1 (over-allocates surplus) | Documented in 28 rows; fix deferred until L1c instrumented |
+> | A2 | OC uses Vivarium topological deterministic order; Karr uses `randStream.randperm` per tick | Benign for mass balance; documented |
+> | A3 | OC's metabolism LP bounds from `_sub_state` (pool), Karr's from allocation | Documented; needs L1c-driven fix |
+> | A3b | OC writeback clips only consumption entries to allocation, not production | Documented; 0/28 rows currently populate the audit hook (mechanical pass pending) |
+> | A4 | `project_to_flat_per_wid` merges (585,3) compartmented delta across compartments | Documented in 28 rows; fix is `~30 lines` in karr_metabolism_writeback.py |
+>
+> **Day-45 priorities:**
+> 1. L1c gate design + build — primary task
+> 2. A4 + A3b localized fixes once L1c is instrumented
+> 3. A3b audit-hook population across 28 rows (mechanical)
+> 4. Re-audit existing 17 L2.2 GENUINE processes against wiring DB
+
+> **⚠️ Day-42 EOD FINAL update: 12 probes today converged the picture. The W1=161 gap is REAL and COMPOUNDS over 100-tick trajectory (linear drift to 4.70M L1; TRP over-accumulated 1,234×). Only (d) GLPK 4.x oracle and FVA reframe remain viable; ε-objective and accept-floor empirically dead. Scoreboard unchanged.** *(SUPERSEDED by Day-44 EOD block above — Day-43 found that "vertex bias" was downstream symptom of chassis wiring bugs; Day-44 shipped wiring DB to audit those bugs systematically)*
 >
 > **What landed Day-42 evening final batch (committed NOT pushed):**
 > - `3982865` — Multi-sample v2 probe + 100-tick live trajectory probe + 100-tick + a-fit ε probe

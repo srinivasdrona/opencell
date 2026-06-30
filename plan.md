@@ -26,65 +26,157 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-06-29 ~10:35 IST, Day-43 mid-day):** 1 codex agent running:
-- `fva_part2_productionize` PID 38360 — wait shell `codex-fva-part2-wait` (90 min timeout) — Productionizing the FVA solver + adapting L2.2 audit harness for Metabolism's gate redesign.
+**Live processes / agents (2026-06-30 ~23:55 IST, Day-44 EOD):** No live agents. All codex fleet completed and merged. Working tree has some uncommitted modifications (fva.py, plan.md, tmp/ artifacts) from earlier Day-43 work — left for separate review/commit.
 
-**Day-43 morning + early afternoon — FVA reframe is the validated path; 3 single-knob fixes falsified at scale.**
+**🛑 TOMORROW (Day-45): start L1c gate design** — see `D:\OneDrive - Microsoft\.pm-os\DECISIONS.md` entry `2026-06-29 | opencell | l1c-skipped-lower-rung-greens-misread`. L1c (integrated energy balance) is the gate that detects the chassis-integration bugs that L1/L2.0/L2.1/L2.2 are structurally blind to. Two pending todos exist (`l1c-atp-collapse-diagnose`, `l2c-energy-ledger-gate`) since Day-13.
 
-Summary of Day-43 net result:
+### Day-44 (2026-06-30) — per-process wiring DB shipped
 
-| Probe / Action | Result |
-|---|---|
-| FVA single-sample (cbed29a) | 504/504 reactions feasible at (s=0, t=1) |
-| Substrate-delta FVA at 5 samples (571c180) | 8775/8775 (100%) feasible |
-| Trajectory decomposition (014c1d0) | 66% of Day-42's "vertex drift" was absent-process artifact |
-| Sign analysis (8cc29f2) | Vertex bias is SYSTEMATIC across 100 ticks (consistent direction on H2O2, CO2, AC, O2, GLC, etc.) |
-| MATLAB extraction inventory (0652390) | Comprehensive spec for one-shot license-renewal extraction; ~11-32h compute for P0+P1 |
-| cpx_basis + RT_FLIP (71b685e + revert 065a33d) | **FALSIFIED at audit scale** — 77% sample-level looked great, +107% trajectory regression, audit W1 unchanged. Reverted. |
-| Repo root cleanup (065a33d / 96100f2) | Moved 12 stale STATUS_*.md + 3 historical docs to docs/archive/; root went 32→17 tracked files |
-| **DEC-003** (decisions/dec-003-lp-degeneracy-fva-reframe.md) | Decision card written; FVA reframe is the canonical answer |
+**Story arc:** Day-43 EOD methodology audit found 4 wiring bugs (A1/A2/A3/A3b/A4) that L1/L2.1/L2.2 cannot detect; the existing per-process TOMLs catalog state shapes but not wiring surfaces. Decision: build a per-process wiring DB as the standing audit artifact before any further L2.x process is promoted to green.
 
-**Day-43 FVA reframe productionization (Parts 2-5) — STATUS:**
-- ✅ Part 1: FVA solver validated (cbed29a + 571c180)
-- 🔄 Part 2: Productionize FVA solver + adapt audit metric (codex PID 38360 RUNNING)
-- ⏳ Part 3: Karr-flux-injection scaffolding for L3/L4/L5 (pending Part 2)
-- ✅ Part 4 (decision card): dec-003 written
-- ⏳ Part 5: Re-run audit; expect Metabolism PASSes
+**Hook trap discovered (~01:40 IST 2026-06-30):** After firing 9 codex agents in parallel and seeing 7/9 die with `stream disconnected before completion: response.failed event received`, diagnosed `~/.codex/hooks.json` as registering `superbased/observer` hooks that ran for 13.8 sec per tool call. With both PreToolUse + PostToolUse hooks active, every codex tool call ate 27 sec of overhead and tripped internal timeouts. Fix: replace hooks.json with `{"hooks": {}}` (original moved to `~/.codex/hooks.json.observer-broken-2026-06-30`). Stored as user-scope memory so future sessions check this before delegating. Even with hooks disabled, parallel codex on this machine still hits stochastic stream disconnects; 2-concurrent + 30-50% retry rate is the empirical pattern. Solo runs are reliable (Translation row solo: 26 min, 209K tokens, clean commit).
 
-**Day-43 commits pushed (10 commits, last at 96100f2):**
-- See `git log origin/main..HEAD` for unpushed; currently none unpushed (all pushed at 10:13 IST)
+**Delivery (all on `srinivasdrona/opencell` main, pushed 2026-06-30):**
+1. Per-process wiring DB schema (revision-class design) — `data/schemas/per_process_wiring/SCHEMA.md`, `_schema.yaml`. Decisions D1-D5 ratified by operator: D1=YAML, D2=one-file-per-process, D3=string formulas, D4=nested method bindings, D5=per-row semver. (`cac09ae`, `61a5a06`)
+2. Schema gap-fix pass: added `symbol` field to all source anchors, full `provenance` block, `schema_date`, fixed bloated dependencies, added writeback steps 2-3 exemplars. (`1d95d7c`, `1f7cbbb`)
+3. Generator + cross-row consistency checker + 3 pytest tests — `scripts/build_wiring_db.py`, `tests/integration/test_build_wiring_db.py`. (`bd9c31d`)
+4. **27 per-process wiring rows** authored by codex fleet (gpt-5.4-mini, mostly 2-concurrent + retry watcher; 1 buggy serial-watcher loop re-committed RibosomeAssembly 20 times — squashed to 1). 28/28 process roster complete: Metabolism (Day-43) + Translation, Transcription, HostInteraction, RNADecay, ProteinDecay, MacromolecularComplexation, tRNAAminoacylation, ProteinProcessingI, ProteinProcessingII, ProteinTranslocation, ProteinModification, ProteinFolding, ProteinActivation, ProteinDecay, RNAModification, RNAProcessing, RibosomeAssembly, Replication, ReplicationInitiation, ChromosomeCondensation, ChromosomeSegregation, Cytokinesis, FtsZPolymerization, DNARepair, DNADamage, DNASupercoiling, TerminalOrganelleAssembly, TranscriptionalRegulation.
+5. Cross-row validation summary — 53 reciprocal mismatches + 2 cyclic ordering, written up at `docs/phase_f/WIRING_DB_SUMMARY_2026-06-30.md`. (`de5eef7`)
+6. Mass row-level remediation: 27× missing schema_date + 24× incomplete provenance + 4× malformed unit-conversion `lines` + 5× TerminalOrganelleAssembly compartment-routing logic. (`76b3f76`)
+7. Cyclic ordering fix: `Translation.hard_before: [tRNAAminoacylation]` was the wrong direction per `evolveState.m:48-55` constraint `tRNAAminoacylation < Translation`. Moved to `hard_after`. (`da47949`)
+8. Reciprocal dependency reconciliation: 53→0 mismatches across 25 rows. Triage doc at `docs/phase_f/WIRING_DB_RECIPROCAL_TRIAGE.md`. Bucket A: removed Metabolism asymmetry edges from 10 producer rows (substrate-pool cycling is internal to S matrix, not a chassis-level dependency); Bucket B: added legitimate back-edges; Bucket C: removed over-claimed producer edges. (`ed19e48`)
+9. `_combined.yaml` regenerated; validator now reports `0 reciprocal mismatches, 0 cyclic ordering, 0 missing rows → PASS`. (`78c5140`)
 
-**Three falsified-at-scale single-sample fixes (the "trap" pattern):**
+**Wiring DB scoreboard (Day-44 EOD):**
 
-| Day | Fix | Sample (0,1) | Audit W1 | Trajectory |
-|---|---|---:|---:|---:|
-| Day-41 | pricing=STD | 23× reduction | 0% movement | n/a (no probe) |
-| Day-42 | ε-objective (a-fit) | 77% reduction | unknown | -48% (WORSE) |
-| Day-43 | cpx_basis + RT_FLIP | 77% reduction | 0% movement | +107% (WORSE) |
-
-**Lesson logged:** single-sample probes on this LP are systematically misleading. FVA reframe explicitly addresses the structural problem (degenerate LP optimal face) at the methodology level instead of chasing per-sample solver tuning.
-
-**Scoreboard (Day-43 EOD, projected after Part 2 ships):**
-
-| Gate | Day-42 EOD | Day-43 (after Part 2 ships) |
+| Validator dimension | Day-43 EOD initial | Day-44 EOD final |
 |---|---:|---:|
-| L2.1 GENUINE | 19/28 | **19/28** (unchanged) |
-| L2.2 VERIFIED_GENUINE | 17/22 | **18/22** (+Metabolism via FVA-feasibility gate) |
-| L2.2 NOT_WIRED | 2 | **2** |
-| L2.2 VERIFIED_FAIL | 1 (Metab W1=161) | **0** (Metab passes via FVA reframe per DEC-003) |
-| L2.5 honest PASS | 15/256 | 15/256 (not re-audited) |
+| Rows present | 28/28 | 28/28 |
+| Row-level validation FAIL | 27/28 rows | 0/28 ✅ |
+| Cross-row reciprocal mismatches | 53 | 0 ✅ |
+| Cross-row cyclic ordering | 2 | 0 ✅ |
+| Final verdict | FAIL | **PASS** |
 
-**Pre-existing test failure**: `tests/vivarium/test_karr_metabolism_pools_throttle.py::test_throttle_on_with_starved_atp_freezes_m2_synthesis` still fails on main from commit `ecde4e4`. Independent of Day-43 work.
+**Day-44 commits pushed (37 commits across 4 phases):**
+- Schema + Metabolism authoring (Day-43 evening, included for context): `cac09ae`, `61a5a06`
+- Gap fixes (Day-43 evening): `1d95d7c`, `1f7cbbb`
+- Generator + tests + 27 row authoring + 27 merges (Day-44 morning + afternoon): `bd9c31d` + 28 row commits + 28 merge commits
+- Summary, remediation, fixes, regenerate (Day-44 evening): `de5eef7`, `76b3f76`, `da47949`, `ed19e48`, `41b97eb`, `578efe6`, `78c5140`
 
-**Day-44 priorities (assuming Part 2 lands today):**
-- A. Part 3 (Karr-flux-injection scaffolding) — needed for L3/L4/L5 work with Metabolism in scope
-- B. Pivot to L2.1 cleanup (ProteinDecay, Replication, ChromosomeCondensation) — would unblock more processes
-- C. L2.5 re-audit — Day-39 chromosome unlocks may have shifted the picture
-- D. Resume Phase 4 / L4 design with Metabolism unblocked
+### Day-43 (2026-06-29) — FVA reframe validated, then L1c-skipped methodology failure surfaced
+
+**Morning (10:30 IST):** FVA reframe empirically validated (`cbed29a` 504/504 reactions, `571c180` 8775/8775 substrate-delta pairs). DEC-003 written + committed (`7b70c67`).
+
+**Mid-day (12:30-15:30):** Part 2 productionization codex shipped `opencell/m1/fva.py` + audit-harness integration (`05affa3`). After basis-refresh fix in `fva_range_with_template`, full 500-sample audit completed in ~60s with `verdict: PASS`, `fva_feasibility_fraction: 0.999997` (877497/877500 pairs).
+
+**Evening (19:00-20:30) — methodology audit triggered by operator pushback:** Side-by-side audit of `evolveState.m` + `Metabolism.m` vs `karr_metabolism.py` + `karr_metabolism_writeback.py` + `karr_allocation_step.py` found **4 wiring divergences**:
+
+| # | Finding | Severity | Symptom explained |
+|---|---|---|---|
+| **A4** | `project_to_flat_per_wid` sums (585,3) compartmented delta across compartments → next-tick sync applies all delta to cytosol. **Extracellular/membrane substrates silently migrate to cytosol over time.** | ⚠️⚠️⚠️ | Day-13 ATP collapse; Day-42 TRP +1234× |
+| **A3b** | OC's metabolism: LP solves with bounds from `_sub_state` (full pool), writeback computes stoichiometrically-consistent delta, then **only consumption entries are capped to allocation** (production entries untouched). Mass conjured per tick. | ⚠️⚠️ | Day-13 ATP linear drain |
+| **A3** | OC's metabolism LP bounds derive from `_sub_state` (pool tracker), not from allocator allocation. Karr's LP gets bounds from `mod.substrates = allocation`. LP feasible regions differ in chassis context. | ⚠️ | Setup for A3b |
+| **A1** | OC allocator caps scale at `min(1.0, counts/total_demand)`; Karr's `tmp = counts/max(1, sum_req)` can be >1 (over-allocates surplus). | Mostly benign for L2.2; matters when chassis processes treat allocation as "consume budget" | — |
+| A2 | Karr randomizes process order per tick via `randStream.randperm`; OC uses Vivarium topological deterministic order. | Benign for mass balance (order-independent end state) | — |
+
+**These bugs have been present since the chassis was first wired. They never showed up in L1 (trace-bytes only), L2.1/L2.2 (isolated replay mode bypasses allocator + shared-pool projection). L2.5 DID expose them — 3/3 Metabolism DS pairs FAIL — but we mis-labeled the failures as "Karr 4-partition port required" instead of investigating the underlying integration bugs.**
+
+**Decision logged at 20:30 IST**: `2026-06-29 | opencell | l1c-skipped-lower-rung-greens-misread` (see `D:\OneDrive - Microsoft\.pm-os\DECISIONS.md`). Key actions:
+- Stop counting L2.1/L2.2 greens as chassis evidence on the scoreboard
+- Build L1c before any further L2.x process is promoted to green
+- Make MATLAB↔OC wiring audit MANDATORY before any L2.x PASS
+- FVA reframe (DEC-003) stays committed but is downgraded from "Metabolism PASS" to "per-tick LP-vertex feasibility verified; chassis integration NOT verified"
+
+**Day-43 scoreboard (corrected — no longer claims Metabolism PASS via FVA):**
+
+| Gate | Day-42 EOD | Day-43 EOD (CORRECTED) |
+|---|---:|---:|
+| L1 firing | 28/28 | 28/28 |
+| L1c integrated energy balance | NOT BUILT | **NOT BUILT** (todos PENDING 30+ days) |
+| L2.0 schema | 28/28 | 28/28 |
+| L2.1 GENUINE | 19/28 | 19/28 (caveat: replay-mode greens do not imply chassis correctness) |
+| L2.2 VERIFIED_GENUINE | 17/22 | **17/22** (Metabolism stays VERIFIED_FAIL on W1=161; FVA-feasibility passes but is a per-tick property, not chassis evidence) |
+| L2.2 NOT_WIRED | 2 | 2 |
+| L2.2 VERIFIED_FAIL | 1 (Metab W1=161) | 1 (Metab W1=161) |
+| L2.5 honest PASS | 15/256 | 15/256 (3 Metab DS pairs FAIL = consistent with chassis bugs A1/A3/A3b/A4) |
+| **Per-process wiring DB** | NOT BUILT | **28/28 PASS** (Day-44) |
+
+**Day-45 priorities — sequenced based on Day-43 EOD methodology decision + Day-44 wiring DB:**
+
+1. **L1c gate design + build** — `l2c-energy-ledger-gate` + `l1c-atp-collapse-diagnose` todos, ~3-5 days work. The wiring DB now provides the per-process ledger of what each process consumes/produces; L1c will sum these and compare against actual chassis trajectory.
+2. **A4 + A3b localized fixes** — once L1c is instrumented, apply the candidate fixes (remove `project_to_flat_per_wid`'s compartment-sum; remove asymmetric consumption clip OR make LP bounds match allocation) and watch L1c metrics move. ~1 day.
+3. **A3b consumption-clip audit-hook population** — 0/28 rows currently populate this. Mechanical pass once we know which rows actually have the asymmetric-clip pattern.
+4. **Re-audit existing 17 L2.2 GENUINE processes** against the wiring DB. Likely surfaces similar bugs in other processes.
+
+**Deferred (no longer Day-45 priority):**
+- ~~Part 3: Karr-flux-injection scaffolding~~ — was meant as L3/L4/L5 workaround for Metabolism; if A3/A3b/A4 fixes make actual chassis metabolism work, this scaffolding may not be needed.
+- ~~L2.5 re-audit~~ — same.
+
+**🛑 METHODOLOGY ALERT — Day-43 PM audit found 4 chassis-integration wiring bugs (A1-A4) that L1/L2.1/L2.2 are structurally incapable of detecting. See `D:\OneDrive - Microsoft\.pm-os\DECISIONS.md` entry `2026-06-29 | opencell | l1c-skipped-lower-rung-greens-misread`. Do NOT promote Metabolism to L2.2 PASS until L1c is built and run.**
+
+### Day-43 timeline (what actually happened)
+
+**Morning (10:30 IST):** FVA reframe empirically validated (cbed29a 504/504 reactions, 571c180 8775/8775 substrate-delta pairs). DEC-003 written + committed (7b70c67).
+
+**Mid-day (12:30-15:30):** Part 2 productionization codex (PID 38360) shipped `opencell/m1/fva.py` + audit-harness integration (05affa3). After basis-refresh fix in `fva_range_with_template`, full 500-sample audit completed in ~60s with `verdict: PASS`, `fva_feasibility_fraction: 0.999997` (877497/877500 pairs).
+
+**Afternoon (19:00-20:30) — methodology audit triggered by operator pushback ("did we wire everything correctly? if you did, then why will L1c even fail in the first place?"):**
+
+Side-by-side audit of `data/m1_sources/WholeCell/src/+edu/.../@Simulation/evolveState.m` + `+process/Metabolism.m` vs `opencell/vivarium/karr_metabolism.py` + `opencell/m1/karr_metabolism_writeback.py` + `opencell/vivarium/karr_allocation_step.py` found **4 wiring divergences**:
+
+| # | Finding | Severity | Symptom explained |
+|---|---|---|---|
+| **A4** | `project_to_flat_per_wid` sums (585,3) compartmented delta across compartments → next-tick sync applies all delta to cytosol. **Extracellular/membrane substrates silently migrate to cytosol over time.** | ⚠️⚠️⚠️ | Day-13 ATP collapse; Day-42 TRP +1234× |
+| **A3b** | OC's metabolism: LP solves with bounds from `_sub_state` (full pool), writeback computes stoichiometrically-consistent delta, then **only consumption entries are capped to allocation** (production entries untouched). Mass conjured per tick. | ⚠️⚠️ | Day-13 ATP linear drain |
+| **A3** | OC's metabolism LP bounds derive from `_sub_state` (pool tracker), not from allocator allocation. Karr's LP gets bounds from `mod.substrates = allocation`. LP feasible regions differ in chassis context. | ⚠️ | Setup for A3b |
+| **A1** | OC allocator caps scale at `min(1.0, counts/total_demand)`; Karr's `tmp = counts/max(1, sum_req)` can be >1 (over-allocates surplus). | Mostly benign for L2.2; matters when chassis processes treat allocation as "consume budget" | — |
+| A2 | Karr randomizes process order per tick via `randStream.randperm`; OC uses Vivarium topological deterministic order. | Benign for mass balance (order-independent end state) | — |
+
+**These bugs have been present since the chassis was first wired. They never showed up in L1 (trace-bytes only), L2.1/L2.2 (isolated replay mode bypasses allocator + shared-pool projection). L2.5 DID expose them — 3/3 Metabolism DS pairs FAIL — but we mis-labeled the failures as "Karr 4-partition port required" instead of investigating the underlying integration bugs.**
+
+**Decision logged at 20:30 IST**: `2026-06-29 | opencell | l1c-skipped-lower-rung-greens-misread` (see `D:\OneDrive - Microsoft\.pm-os\DECISIONS.md`). Key actions:
+- Stop counting L2.1/L2.2 greens as chassis evidence on the scoreboard
+- Build L1c before any further L2.x process is promoted to green
+- Make MATLAB↔OC wiring audit MANDATORY before any L2.x PASS (add to `IMPL_NEW_PROCESS_LANDING.md`)
+- Re-audit the 17/22 existing L2.2 "VERIFIED_GENUINE" processes against this rule
+- FVA reframe (DEC-003) stays committed but is downgraded from "Metabolism PASS" to "per-tick LP-vertex feasibility verified; chassis integration NOT verified"
+- L2.5 todo "Karr 4-partition port required" retired as mis-attribution
+
+**Day-43 commits pushed (Day-43 total now 11 commits):**
+- `cbed29a`, `571c180`, `f64f0bf`, `0652390`, `014c1d0`, `8cc29f2`, `71b685e`, `065a33d`, `96100f2`, `7b70c67`, `05affa3`
+- DEC-003 decision card in `decisions/dec-003-lp-degeneracy-fva-reframe.md`
+- New decision pending separate codification: 2026-06-29 L1c methodology entry (already in `D:\OneDrive - Microsoft\.pm-os\DECISIONS.md`)
+
+**Day-43 EOD scoreboard (corrected — no longer claims Metabolism PASS via FVA):**
+
+| Gate | Day-42 EOD | Day-43 EOD (CORRECTED) |
+|---|---:|---:|
+| L1 firing | 28/28 | 28/28 |
+| L1c integrated energy balance | NOT BUILT | **NOT BUILT** (todo `l1c-atp-collapse-diagnose` PENDING 30 days; `l2c-energy-ledger-gate` PENDING) |
+| L2.0 schema | 28/28 | 28/28 |
+| L2.1 GENUINE | 19/28 | 19/28 (caveat: replay-mode greens do not imply chassis correctness) |
+| L2.2 VERIFIED_GENUINE | 17/22 | **17/22** (Metabolism stays VERIFIED_FAIL on W1=161; FVA-feasibility passes but is a per-tick property, not chassis evidence) |
+| L2.2 NOT_WIRED | 2 | 2 |
+| L2.2 VERIFIED_FAIL | 1 (Metab W1=161) | 1 (Metab W1=161) |
+| L2.5 honest PASS | 15/256 | 15/256 (3 Metab DS pairs FAIL = consistent with chassis bugs A1/A3/A3b/A4) |
+
+**Day-44 priorities — RESEQUENCED based on Day-43 PM audit:**
+
+1. **Wiring DB build-out (started by codex `wiring_db_schema` now)** — populate per-process wiring rows for all 28 processes; this is the standing audit artifact that should have existed before any L2.x promotion. Plan: codex finishes schema design → operator reviews → parallelize gpt-5.4-mini/haiku-4.5 across 27 remaining processes → build_wiring_db.py generator concatenates to combined DB.
+2. **L1c gate design + build** — `l2c-energy-ledger-gate` todo, ~3-5 days work. Energy ledger comparison per process per tick; mass-balance assertion across chassis; detect ATP collapse and substrate-class drift signatures.
+3. **A4 + A3b localized fixes** — once L1c is instrumented, apply the candidate fixes (remove `project_to_flat_per_wid`'s compartment-sum; remove asymmetric consumption clip OR make LP bounds match allocation) and watch L1c metrics move. ~1 day combined.
+4. **Re-audit existing 17 L2.2 GENUINE processes** against the new wiring DB once schema lands. Likely surfaces similar bugs in other processes.
+
+**Deferred (no longer Day-44 priority):**
+- ~~Part 3: Karr-flux-injection scaffolding~~ — was meant as L3/L4/L5 workaround for Metabolism; if A3/A3b/A4 fixes make actual chassis metabolism work, this scaffolding may not be needed.
+- ~~Resume Phase 4 / L4 design~~ — premature without L1c.
+- ~~L2.5 re-audit~~ — same.
 
 ---
 
-## Operational handoff (Day-43 morning — superseded by Day-43 mid-day above)
+## Operational handoff (Day-43 morning — SUPERSEDED by Day-43 EOD above)
+
+
 
 **Day-43 morning — FVA reframe is EMPIRICALLY VALIDATED.** Three probes already in:
 
