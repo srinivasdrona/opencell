@@ -1,0 +1,359 @@
+schema_version: "1.0"
+process:
+  name: "ProteinModification"
+  matlab_class: "ProteinModification"
+  matlab_file: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinModification.m"
+  oc_class: "KarrProteinModificationProcess"
+  oc_file: "opencell/vivarium/karr_protein_modification.py"
+  whole_cell_model_id: "Process_ProteinModification"
+  functional_area: "protein-synthesis-and-maturation"
+  state_shape_role: "protein lifecycle wiring row; allocator, stoichiometry, and maturation semantics"
+  notes: >-
+    20 active modified/unmodified protein pairs, 3 enzymes, and 63 reactions.
+    The canonical MATLAB .m blob is not present in this checkout; the MATLAB
+    anchors below come from repo audit notes and design docs that quote the
+    relevant line ranges.
+methods:
+  calcResourceRequirements_Current:
+    matlab:
+      symbol: "calcResourceRequirements_Current"
+      source:
+        path: "plan.md"
+        lines: "1209-1222"
+        note: "Repo audit note citing ProteinModification.m lines 354-365 as the feasibility/request oracle."
+      note: "Allocator-facing feasibility block; requests are driven by the active unmodified-protein pool and the consumed substrate rows."
+    oc:
+      symbol: "RequestCalculatorProteinPathway.next_update"
+      source:
+        path: "opencell/vivarium/karr_request_calculators.py"
+        lines: "362-545"
+        note: "Shared protein-pathway request step, including the ProteinModification branch."
+      supporting:
+        - path: "opencell/vivarium/karr_allocation_step.py"
+          lines: "210-280"
+          note: "Fair-share allocator that consumes the request matrix."
+      note: "Current OC allocates only the consumed substrate rows and uses the substrate_allocated path."
+    status: "implemented"
+    note: "OC current request handling is shared with the protein pathway step rather than living on the process class itself."
+  evolveState:
+    matlab:
+      symbol: "evolveState"
+      source:
+        path: "plan.md"
+        lines: "1198-1209"
+        note: "Repo audit note citing ProteinModification.m lines 361-375 for stochasticRound + randsample."
+      note: "Per-tick stochastic completion loop with feasibility screening before the weighted reaction draw."
+    oc:
+      symbol: "KarrProteinModificationProcess.next_update"
+      source:
+        path: "opencell/vivarium/karr_protein_modification.py"
+        lines: "196-354"
+        note: "Current OC per-tick maturation update."
+      supporting:
+        - path: "opencell/vivarium/karr_protein_modification.py"
+          lines: "373-481"
+          note: "Feasibility limits, stochastic round, weighted selection, and stoichiometric projection."
+        - path: "opencell/vivarium/karr_protein_modification.py"
+          lines: "205-263"
+          note: "Strict-zero allocator read path and substrate writeback."
+      note: "OC follows the same stochastic structure, but it also has replay-only hint short-circuiting."
+    status: "partial"
+    note: "The biology sampler is present, but the OC port has a replay-only trace_hint gate and strict-zero allocator plumbing that are not part of the MATLAB process body."
+  calcFluxBounds:
+    matlab:
+      symbol: "calcFluxBounds"
+      source:
+        path: "docs/design/pb_turn8_protein_modification.md"
+        lines: "14-21"
+        note: "Process design summary; no LP-style bounds method is documented for this process."
+      note: "ProteinModification is not LP-driven."
+    oc:
+      symbol: "n/a"
+      source:
+        path: "opencell/vivarium/karr_protein_modification.py"
+        lines: "61-133"
+        note: "Class init / fixture load only; no bounds method."
+      note: "No OC calcFluxBounds implementation exists for this process."
+    status: "not_implemented"
+    note: "This process is count-based and stochastic, not an LP process."
+allocator:
+  mode:
+    karr: "allocation"
+    oc_current: "allocation"
+    note: "Karr declares resource requirements and the current OC port reads from substrates_allocated[self.name] rather than the global substrates pool."
+  request_formula:
+    matlab: "if any(unmodifiedMonomers > 0), request consumed substrate rows as max(0, available substrate counts); else request zero"
+    oc: "pm_req.update(_request_from_available(substrate_state, self._pm_consumed, active=pm_active))"
+    note: "Only the consumed metabolite rows are requested: ATP, GLU, and LIPOYLAMP."
+  requests:
+    - wid: "ATP"
+      compartment: "cytosol"
+      source: "karr"
+      note: "Consumed via the phosphorylation reactions."
+    - wid: "GLU"
+      compartment: "cytosol"
+      source: "karr"
+      note: "Consumed by the glutamate-ligase reaction family."
+    - wid: "LIPOYLAMP"
+      compartment: "cytosol"
+      source: "karr"
+      note: "Consumed by the lipoate-ligation reaction family."
+  bypasses:
+    - wid: "MG_012_MONOMER"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Read directly from protein.counts as an enzyme, not through allocator mediation."
+    - wid: "MG_270_MONOMER"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Read directly from protein.counts as an enzyme, not through allocator mediation."
+    - wid: "MG_109_DIMER"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Read directly from complex.counts as an enzyme, not through allocator mediation."
+    - wid: "MG_070_MONOMER"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Representative direct protein bookkeeping pair: unmodified_counts -> modified_counts."
+    - wid: "MG_166_MONOMER"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Representative direct protein bookkeeping pair: unmodified_counts -> modified_counts."
+consume_stoichiometry:
+  - wid: "ATP"
+    compartment: "cytosol"
+    formula_or_constant: "reactionStoichiometryMatrix(ATP,:) * reactionFluxes"
+    matlab_anchor:
+      path: "plan.md"
+      lines: "1198-1222"
+      note: "Audit note tying the stochastic and feasibility blocks to the MATLAB oracle."
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_modification.py"
+      lines: "244-263"
+      note: "substrate_delta = self.reaction_stoich @ reaction_fluxes"
+  - wid: "GLU"
+    compartment: "cytosol"
+    formula_or_constant: "reactionStoichiometryMatrix(GLU,:) * reactionFluxes"
+    matlab_anchor:
+      path: "docs/design/pb_turn8_protein_modification.md"
+      lines: "5-21"
+      note: "ProteinModification design summary identifies the lipoate/glutamate ligase family."
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_modification.py"
+      lines: "244-263"
+      note: "Same stoichiometric projection as ATP."
+  - wid: "LIPOYLAMP"
+    compartment: "cytosol"
+    formula_or_constant: "reactionStoichiometryMatrix(LIPOYLAMP,:) * reactionFluxes"
+    matlab_anchor:
+      path: "docs/design/pb_turn8_protein_modification.md"
+      lines: "5-21"
+      note: "Design summary identifies the lipoate ligase family."
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_modification.py"
+      lines: "244-263"
+      note: "Same stoichiometric projection as ATP."
+produce_stoichiometry:
+  - wid: "ADP"
+    compartment: "cytosol"
+    formula_or_constant: "reactionStoichiometryMatrix(ADP,:) * reactionFluxes"
+    matlab_anchor:
+      path: "plan.md"
+      lines: "1198-1222"
+      note: "Audit note identifies the ATP hydrolysis branch in the MATLAB oracle."
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_modification.py"
+      lines: "244-263"
+      note: "Same substrate_delta projection."
+  - wid: "AMP"
+    compartment: "cytosol"
+    formula_or_constant: "reactionStoichiometryMatrix(AMP,:) * reactionFluxes"
+    matlab_anchor:
+      path: "docs/design/pb_turn8_protein_modification.md"
+      lines: "14-21"
+      note: "Covalent-modification design summary."
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_modification.py"
+      lines: "244-263"
+      note: "Same substrate_delta projection."
+  - wid: "H"
+    compartment: "cytosol"
+    formula_or_constant: "reactionStoichiometryMatrix(H,:) * reactionFluxes"
+    matlab_anchor:
+      path: "plan.md"
+      lines: "1198-1222"
+      note: "Audit note calls out the stochastic sampler and feasibility arithmetic."
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_modification.py"
+      lines: "244-263"
+      note: "Same substrate_delta projection."
+  - wid: "PI"
+    compartment: "cytosol"
+    formula_or_constant: "reactionStoichiometryMatrix(PI,:) * reactionFluxes"
+    matlab_anchor:
+      path: "plan.md"
+      lines: "1198-1222"
+      note: "ATP-to-ADP/PI byproduct branch in the audit note."
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_modification.py"
+      lines: "244-263"
+      note: "Same substrate_delta projection."
+compartment_routing:
+  - wid: "ATP"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Cytosolic phosphorylation donor."
+  - wid: "GLU"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Cytosolic glutamate-ligation donor."
+  - wid: "LIPOYLAMP"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Cytosolic lipoate-ligation donor."
+  - wid: "ADP"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Cytosolic byproduct of phosphorylation."
+  - wid: "AMP"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Cytosolic byproduct of lipoate ligation."
+  - wid: "H"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Cytosolic hydrolysis byproduct."
+  - wid: "PI"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Cytosolic hydrolysis byproduct."
+unit_conversion_chain:
+  source_units: "available counts"
+  target_units: "per-tick substrate deltas"
+  note: "This process is already discrete-count based; there is no mmol/gDW/hr style scaling."
+  steps:
+    - from_units: "available counts"
+      to_units: "requested counts"
+      operation: "identity on nonnegative availability for the consumed rows; zero when inactive"
+      anchor:
+        path: "opencell/vivarium/karr_request_calculators.py"
+        lines: "21-29, 468-545"
+        note: "Request helper and ProteinModification branch."
+    - from_units: "requested counts"
+      to_units: "allocated counts"
+      operation: "floor(requested * min(1, available / demand)) under proportional fair-share allocation"
+      anchor:
+        path: "opencell/vivarium/karr_allocation_step.py"
+        lines: "210-280"
+        note: "Current allocator implementation."
+    - from_units: "allocated counts"
+      to_units: "per-tick substrate deltas"
+      operation: "stochastic feasibility search -> weighted reaction selection -> reaction_stoich @ reaction_fluxes"
+      anchor:
+        path: "opencell/vivarium/karr_protein_modification.py"
+        lines: "196-354, 373-481"
+        note: "Process update and sampling helpers."
+dependencies:
+  produces_inputs_for:
+    - "ProteinActivation"
+    - "ProteinDecay"
+    - "ProteinTranslocation"
+    - "MacromolecularComplexation"
+  consumes_outputs_of:
+    - "Translation"
+    - "ProteinProcessingI"
+    - "ProteinProcessingII"
+    - "ProteinFolding"
+  note: "PCV-2 treats ProteinModification as part of the protein lifecycle downstream of Translation and upstream of activation/decay/translocation."
+ordering_constraints:
+  hard_before: []
+  hard_after: []
+  soft_before:
+    - "Translation"
+    - "ProteinProcessingI"
+    - "ProteinProcessingII"
+    - "ProteinFolding"
+  soft_after:
+    - "ProteinActivation"
+    - "ProteinDecay"
+    - "ProteinTranslocation"
+  note: "Pipeline evidence in the repo shows Translation -> ProteinProcessingI -> ProteinFolding -> ProteinModification -> ProteinActivation; no ProteinModification-specific hard order is documented."
+source_anchors:
+  matlab_blocks:
+    class_and_scope:
+      path: "docs/design/pb_turn8_protein_modification.md"
+      lines: "1-24"
+      note: "Process identity, enzyme count, and fixture scope."
+    request_formula:
+      path: "plan.md"
+      lines: "1209-1222"
+      note: "Audit note pointing at ProteinModification.m lines 354-365 as the feasibility oracle."
+    stochastic_update:
+      path: "plan.md"
+      lines: "1198-1209"
+      note: "Audit note pointing at ProteinModification.m lines 361-375 and the stochasticRound+randsample path."
+    lifecycle_context:
+      path: "docs/design/pb_final_chassis_v4_integration.md"
+      lines: "65-65"
+      note: "Translation -> ProteinProcessingI -> ProteinFolding -> ProteinModification -> ProteinActivation pipeline."
+  oc_blocks:
+    class_and_fixture_load:
+      path: "opencell/vivarium/karr_protein_modification.py"
+      lines: "61-133"
+      note: "Class definition, fixture load, and state-shape setup."
+    allocator_and_next_update:
+      path: "opencell/vivarium/karr_protein_modification.py"
+      lines: "196-354"
+      note: "Strict-zero substrate read path, stochastic tick update, and substrate writeback."
+    biology_sampler:
+      path: "opencell/vivarium/karr_protein_modification.py"
+      lines: "356-481"
+      note: "Feasibility helpers, weighted sampling, and stoichiometric projection."
+    request_calculator:
+      path: "opencell/vivarium/karr_request_calculators.py"
+      lines: "362-545"
+      note: "Shared protein-pathway request step."
+    allocation_step:
+      path: "opencell/vivarium/karr_allocation_step.py"
+      lines: "210-280"
+      note: "Fair-share allocator that writes substrates_allocated."
+provenance:
+  fixture_files:
+    - "data/karr_fixtures/per_process/ProteinModification_flat.mat"
+    - "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
+  kb_version: "karr_native_m1__v2"
+  extraction_date_utc: "2026-06-30T00:00:00Z"
+  notes: >-
+    last_audited=2026-06-29; audited_by=gpt-5.4-mini (codex; row authored Day-43 EOD);
+    oc_commit_sha=61a5a06e8031af3159dffa436655ade330be1fd9;
+    matlab_files_referenced=[];
+    oc_files_referenced=[opencell/vivarium/karr_protein_modification.py,
+    opencell/vivarium/karr_request_calculators.py,
+    opencell/vivarium/karr_allocation_step.py];
+    MATLAB line anchors are drawn from checked-in repo audit notes and design docs
+    because the raw ProteinModification.m blob is absent from this checkout.
+deviations:
+  lp_bounds_source:
+    karr: "unknown"
+    oc_current: "unknown"
+    matlab_anchor:
+      path: "docs/design/pb_turn8_protein_modification.md"
+      lines: "14-21"
+      note: "Design summary shows a count-based stochastic process, not an LP process."
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_modification.py"
+      lines: "61-133"
+      note: "OC class load path; no LP bounds method exists."
+  shared_pool_projection_merges_compartments: false
+  known_deviations:
+    - "OC has a replay-only trace_hint.unmodifiedMonomers_next short-circuit that bypasses the biology sampler when present."
+    - "OC reads substrates from substrates_allocated[self.name] rather than the global substrates store; this is equivalent under scheduler control but different plumbing."
+    - "OC retains a legacy _n_completed scratch vector and a max_stochastic_iterations cap for replay/test compatibility; MATLAB does not expose those implementation details."
+  note: "The known differences are plumbing and replay controls rather than the chemistry itself."
