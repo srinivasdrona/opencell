@@ -1,0 +1,403 @@
+schema_version: "1.0"
+process:
+  name: "ProteinProcessingII"
+  matlab_class: "ProteinProcessingII"
+  matlab_file: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m"
+  oc_class: "KarrProteinProcessingIIProcess"
+  oc_file: "opencell/vivarium/karr_protein_processing_ii.py"
+  whole_cell_model_id: "Process_ProteinProcessingII"
+  functional_area: "protein-processing"
+  state_shape_role: "state-shape catalog row; wiring row adds integration semantics"
+  notes: "Lipoprotein and secreted protein maturation. Karr requests allocator-backed substrate budgets, while the OC port keeps the substrate schema flat and reads from substrates_allocated[self.name]."
+methods:
+  initializeConstants:
+    matlab:
+      symbol: "initializeConstants"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m"
+        lines: "177-196"
+        note: "Populates monomer and compartment indices from the knowledge base."
+    oc:
+      symbol: "_load_fixture"
+      source:
+        path: "opencell/vivarium/karr_protein_processing_ii.py"
+        lines: "64-122"
+        note: "Loads the flat fixture and derives all substrate/enzyme/monomer indices."
+    status: "implemented"
+    note: "The OC port collapses MATLAB constant initialization into fixture parsing."
+  copyFromState:
+    matlab:
+      symbol: "copyFromState"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m"
+        lines: "199-230"
+        note: "Copies global monomer state into the process-local arrays."
+    oc:
+      symbol: "next_update"
+      source:
+        path: "opencell/vivarium/karr_protein_processing_ii.py"
+        lines: "178-302"
+        note: "Reads allocated substrates and protein state inline before computing deltas."
+      supporting:
+        - path: "opencell/vivarium/karr_protein_processing_ii.py"
+          lines: "180-185"
+          note: "Strict-zero allocator read path."
+    status: "partial"
+    note: "OC inlines the read path into next_update instead of exposing a separate copyFromState hook."
+  copyToState:
+    matlab:
+      symbol: "copyToState"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m"
+        lines: "234-270"
+        note: "Writes local arrays back into the global monomer state."
+    oc:
+      symbol: "_build_update"
+      source:
+        path: "opencell/vivarium/karr_protein_processing_ii.py"
+        lines: "304-347"
+        note: "Builds sparse substrate and protein deltas for the next update."
+    status: "partial"
+    note: "OC emits sparse deltas rather than mutating a cached local state block."
+  allocateMemoryForState:
+    matlab:
+      symbol: "allocateMemoryForState"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m"
+        lines: "275-282"
+        note: "Preallocates the local monomer and substrate arrays."
+    oc:
+      symbol: "ports_schema"
+      source:
+        path: "opencell/vivarium/karr_protein_processing_ii.py"
+        lines: "124-176"
+        note: "Declares the store shapes instead of preallocating mutable arrays."
+    status: "partial"
+    note: "The OC port relies on schema-declared stores, not MATLAB-style mutable preallocation."
+  calcResourceRequirements_LifeCycle:
+    matlab:
+      symbol: "calcResourceRequirements_LifeCycle"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m"
+        lines: "290-317"
+        note: "Lifecycle biomass/byproduct accounting plus minimum enzyme expression requirements."
+    oc:
+      symbol: "NOT_IMPLEMENTED"
+      source:
+        path: "opencell/vivarium/karr_protein_processing_ii.py"
+        lines: "49-437"
+        note: "No OC analogue; the current port does not expose lifecycle FBA-style resource accounting."
+    status: "not_implemented"
+    note: "MATLAB keeps a lifecycle resource-accounting block, but the current OC port only exposes the current-tick request path."
+  calcResourceRequirements_Current:
+    matlab:
+      symbol: "calcResourceRequirements_Current"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m"
+        lines: "325-345"
+        note: "Per-tick allocator request for water and PG160."
+    oc:
+      symbol: "RequestCalculatorProteinPathway.next_update"
+      source:
+        path: "opencell/vivarium/karr_request_calculators.py"
+        lines: "365-549"
+        note: "Protein-pathway request calculator that emits the PP2 request slice."
+      supporting:
+        - path: "opencell/vivarium/karr_request_calculators.py"
+          lines: "21-29"
+          note: "Availability-based request helper used by the pathway calculator."
+        - path: "opencell/vivarium/karr_composite.py"
+          lines: "2063-2067"
+          note: "Current chassis wiring for karr_protein_processing_ii."
+    status: "partial"
+    note: "The OC request path is allocator-backed, but it requests available substrate pools rather than the exact MATLAB min(enzyme-limit, monomer-count) formula."
+  evolveState:
+    matlab:
+      symbol: "evolveState"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m"
+        lines: "348-445"
+        note: "Two-phase maturation: coupled transferase + cleavage, then cleavage-only pass-through."
+    oc:
+      symbol: "KarrProteinProcessingIIProcess.next_update"
+      source:
+        path: "opencell/vivarium/karr_protein_processing_ii.py"
+        lines: "178-302"
+        note: "Reads allocated substrates, applies the same two-phase maturation, and returns sparse deltas."
+      supporting:
+        - path: "opencell/vivarium/karr_protein_processing_ii.py"
+          lines: "180-185"
+          note: "Strict-zero allocator read path."
+        - path: "opencell/vivarium/karr_protein_processing_ii.py"
+          lines: "304-347"
+          note: "Sparse update builder used for writeback."
+        - path: "opencell/vivarium/karr_composite.py"
+          lines: "2063-2067"
+          note: "Current chassis wiring for karr_protein_processing_ii."
+    status: "partial"
+    note: "OC preserves the count-space maturation logic, but it is strict-zero on allocator input and does not materialize the nominal diacylglycerolCys product."
+  calcFluxBounds:
+    matlab:
+      symbol: "calcFluxBounds"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m"
+        lines: "285-465"
+        note: "No calcFluxBounds method exists in this class; the model section ends at getDryWeight."
+    oc:
+      symbol: "NOT_IMPLEMENTED"
+      source:
+        path: "opencell/vivarium/karr_protein_processing_ii.py"
+        lines: "49-437"
+        note: "No flux-bound builder or equivalent helper exists in the current OC port."
+    status: "not_implemented"
+    note: "ProteinProcessingII does not participate in the metabolic LP-bound path."
+allocator:
+  mode:
+    karr: "allocation"
+    oc_current: "allocation"
+    note: "Both the MATLAB process and the OC port treat ProteinProcessingII as allocator-backed."
+  request_formula:
+    matlab: >-
+      result(H2O) = min(ceil(enzymes(signalPeptidase) * lipoproteinSignalPeptidaseSpecificRate * stepSizeSec),
+      sum(unprocessedMonomers([lipoproteinMonomerIndexs; secretedMonomerIndexs])));
+      result(PG160) = min(ceil(enzymes(diacylglycerylTransferase) * lipoproteinDiacylglycerylTransferaseSpecificRate * stepSizeSec),
+      sum(unprocessedMonomers(lipoproteinMonomerIndexs)));
+      other substrate entries remain zero.
+    oc: >-
+      pp2_req = {wid: 0.0 for wid in substrate_wids};
+      pp2_req.update(_request_from_available(substrate_state, _pp2_consumed, active=pp2_active));
+      _pp2_consumed is derived from reaction_stoich and currently resolves to H2O and PG160.
+    note: "MATLAB caps demand by enzyme rate and monomer availability; OC currently requests the available consumed substrates from the shared substrate pool."
+  requests:
+    - wid: "H2O"
+      compartment: "cytosol"
+      source: "karr"
+      note: "Water budget for the signal-peptidase cleavage branch."
+    - wid: "PG160"
+      compartment: "membrane"
+      source: "karr"
+      note: "Membrane PG160 budget for the diacylglyceryl transferase branch."
+  bypasses:
+    - wid: "SNGLYP"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Direct byproduct writeback from the transferase branch."
+    - wid: "H"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Direct byproduct writeback from the transferase branch."
+    - wid: "diacylglycerolCys"
+      compartment: "cytosol"
+      source: "deviation"
+      note: "Named in the source chemistry comment, but not emitted by either implementation."
+consume_stoichiometry:
+  - wid: "H2O"
+    compartment: "cytosol"
+    formula_or_constant: "-sum(transformations(peptidaseIndexs))"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m"
+      lines: "408-414"
+      note: "Water decrement in the cleavage branch."
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_processing_ii.py"
+      lines: "427-434"
+      note: "Water decrement in the strict-zero OC update."
+  - wid: "PG160"
+    compartment: "membrane"
+    formula_or_constant: "-sum(transformations(transferaseIndexs))"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m"
+      lines: "412-414"
+      note: "PG160 decrement in the transferase branch."
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_processing_ii.py"
+      lines: "430-434"
+      note: "PG160 decrement in the strict-zero OC update."
+produce_stoichiometry:
+  - wid: "SNGLYP"
+    compartment: "cytosol"
+    formula_or_constant: "+sum(transformations(transferaseIndexs))"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m"
+      lines: "412-414"
+      note: "sn-glycerol-1-phosphate byproduct from the transferase branch."
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_processing_ii.py"
+      lines: "430-434"
+      note: "sn-glycerol-1-phosphate byproduct in the OC update."
+  - wid: "H"
+    compartment: "cytosol"
+    formula_or_constant: "+sum(transformations(transferaseIndexs))"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m"
+      lines: "412-414"
+      note: "Hydrogen byproduct from the transferase branch."
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_processing_ii.py"
+      lines: "430-434"
+      note: "Hydrogen byproduct in the OC update."
+compartment_routing:
+  - wid: "H2O"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Cytosolic water budget for cleavage."
+  - wid: "PG160"
+    consume_compartment: "membrane"
+    produce_compartment: null
+    mismatch: false
+    note: "Membrane PG160 budget for diacylglyceryl transfer."
+  - wid: "SNGLYP"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Cytosolic transferase byproduct."
+  - wid: "H"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Cytosolic transferase byproduct."
+  - wid: "diacylglycerolCys"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: true
+    note: "Nominal reaction product named in the chemistry comment, but no code path emits it."
+unit_conversion_chain:
+  source_units: "enzyme counts, monomer counts, and allocated substrate counts"
+  target_units: "integer substrate deltas/tick"
+  steps:
+    - from_units: "enzyme counts × reactions/s"
+      to_units: "candidate events/tick"
+      operation: "×specific rate ×stepSizeSec; ceil in calcResourceRequirements_Current"
+      anchor:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m"
+        lines: "325-345"
+        note: "Current-tick request calculation scales specific rates by step size before integerization."
+      constants:
+        - "lipoproteinSignalPeptidaseSpecificRate"
+        - "lipoproteinDiacylglycerylTransferaseSpecificRate"
+        - "stepSizeSec"
+    - from_units: "candidate events/tick"
+      to_units: "capped transformations/tick"
+      operation: "min(rate limit, monomer availability); stochasticRound; clip to available H2O/PG160"
+      anchor:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m"
+        lines: "348-445"
+        note: "EvolveState scales by step size, then rounds and clips against allocated substrate counts."
+      constants:
+        - "stepSizeSec"
+    - from_units: "capped transformations/tick"
+      to_units: "integer substrate deltas/tick"
+      operation: "apply stoichiometric sign vectors for H2O, PG160, SNGLYP, and H"
+      anchor:
+        path: "opencell/vivarium/karr_protein_processing_ii.py"
+        lines: "178-347"
+        note: "OC converts the capped transformations into sparse substrate and protein updates."
+      constants:
+        - "substrates_allocated"
+  note: "PP2 stays in count space; there is no mmol/gDW/hr conversion chain."
+dependencies:
+  produces_inputs_for: []
+  consumes_outputs_of:
+    - "Translation"
+    - "ProteinProcessingI"
+    - "ProteinTranslocation"
+  note: "PP2 mutates the shared protein pool populated by the translation and protein-maturation chain; the current OC wire-up does not expose a separate downstream class that consumes PP2-specific processed_counts or signal_sequence_counts directly."
+ordering_constraints:
+  hard_before: []
+  hard_after: []
+  soft_before: []
+  soft_after: []
+  note: "The only documented hard ordering rule in Simulation.evolveState is tRNAAminoacylation < Translation; ProteinProcessingII has no bespoke order constraint."
+source_anchors:
+  matlab_blocks:
+    class_identity:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m"
+      lines: "105-157"
+      note: "Class header, constants, and substrate/enzyme definitions."
+    initialize_constants:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m"
+      lines: "177-196"
+      note: "Knowledge-base to process-local index mapping."
+    state_io:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m"
+      lines: "199-270"
+      note: "copyFromState and copyToState."
+    allocate_memory_for_state:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m"
+      lines: "275-282"
+      note: "Local array preallocation."
+    calc_resource_requirements_lifecycle:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m"
+      lines: "290-317"
+      note: "Lifecycle biomass/byproduct accounting and minimum enzyme expression."
+    calc_resource_requirements_current:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m"
+      lines: "325-345"
+      note: "Current-tick allocator request block."
+    evolve_state:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m"
+      lines: "348-445"
+      note: "Two-phase maturation logic."
+    flux_bounds_absent:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m"
+      lines: "285-465"
+      note: "No calcFluxBounds method is defined in this class."
+  oc_blocks:
+    process_class:
+      path: "opencell/vivarium/karr_protein_processing_ii.py"
+      lines: "49-437"
+      note: "OC process class and fixture loader."
+    ports_schema:
+      path: "opencell/vivarium/karr_protein_processing_ii.py"
+      lines: "124-176"
+      note: "Shared substrate/protein/request store declarations."
+    next_update:
+      path: "opencell/vivarium/karr_protein_processing_ii.py"
+      lines: "178-302"
+      note: "Count-space maturation update path."
+    build_update:
+      path: "opencell/vivarium/karr_protein_processing_ii.py"
+      lines: "304-347"
+      note: "Sparse delta emission."
+    request_calculator:
+      path: "opencell/vivarium/karr_request_calculators.py"
+      lines: "363-549"
+      note: "Protein-pathway request calculator that emits the PP2 request slice."
+    composite_wiring:
+      path: "opencell/vivarium/karr_composite.py"
+      lines: "2063-2067"
+      note: "Current chassis wiring for karr_protein_processing_ii."
+provenance:
+  fixture_files:
+    - "data/karr_fixtures/per_process/ProteinProcessingII_flat.mat"
+  kb_version: "karr_native_m1__v2"
+  extraction_date_utc: "2026-06-30"
+  notes: >-
+    last_audited=2026-06-29; audited_by=gpt-5.4-mini (codex; row authored Day-43 EOD);
+    oc_commit_sha=61a5a06e8031af3159dffa436655ade330be1fd9;
+    matlab_files_referenced=[E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m,
+    E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/Simulation.m];
+    oc_files_referenced=[opencell/vivarium/karr_protein_processing_ii.py,
+    opencell/vivarium/karr_request_calculators.py,
+    opencell/vivarium/karr_composite.py];
+    fixture_family=ProteinProcessingII_flat.mat; JSON/NPZ companions are generated artifacts, not runtime loads.
+deviations:
+  lp_bounds_source:
+    karr: "allocation"
+    oc_current: "allocation"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m"
+      lines: "325-345"
+      note: "Current-tick request formula is the allocator-facing source of demand."
+    oc_anchor:
+      path: "opencell/vivarium/karr_request_calculators.py"
+      lines: "365-549"
+      note: "Current OC request calculator supplies the allocator-facing demand."
+  shared_pool_projection_merges_compartments: false
+  known_deviations:
+    - "OC reads from substrates_allocated[self.name] with a strict-zero guard instead of falling back to the global substrates pool."
+    - "OC request calculation is availability-based (_request_from_available) rather than the exact MATLAB min(enzyme-limit, monomer-count) request formula."
+    - "The nominal diacylglycerolCys chemistry product named in the MATLAB comment is not materialized by either implementation."
+    - "ProteinProcessingII has no calcFluxBounds analogue in the current OC port."
+  note: "This row is count-space and allocator-backed, not an LP-bound metabolic row."
