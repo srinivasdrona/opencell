@@ -1,0 +1,394 @@
+schema_version: "1.0"
+process:
+  name: "Replication"
+  matlab_class: "Replication"
+  matlab_file: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m"
+  oc_class: "KarrReplicationProcess"
+  oc_file: "opencell/vivarium/karr_replication.py"
+  whole_cell_model_id: "Process_Replication"
+  functional_area: "dna-replication-and-maintenance"
+  state_shape_role: "process wiring row; state-shape catalog row adds integration semantics"
+  notes: "The checked-in extract describes 8 replication subfunctions; the current OC port replays fork progression and substrate bookkeeping, while SSB and RNAP collision mechanics remain deferred."
+methods:
+  calcResourceRequirements_Current:
+    matlab:
+      symbol: "calcResourceRequirements_Current"
+      source:
+        path: "docs/karr_extracts/architecture/03_variable_allocation.md"
+        lines: "13-23"
+        note: "Simulation-level allocator loop that invokes the process request method; no raw Replication.m body was recoverable in this worktree."
+      note: "Allocator-facing request path."
+    oc:
+      symbol: "KarrReplicationProcess.next_update"
+      source:
+        path: "opencell/vivarium/karr_replication.py"
+        lines: "937-981"
+        note: "Inline request construction and allocator clipping."
+      supporting:
+        - path: "opencell/vivarium/karr_replication.py"
+          lines: "578-583"
+          note: "Request and substrates_allocated state schema."
+      note: "Requests are built inline rather than via a standalone request-calculator class."
+    status: "partial"
+    note: "Current OC exposes the allocator behavior inside next_update instead of a dedicated request method."
+  evolveState:
+    matlab:
+      symbol: "evolveState"
+      source:
+        path: "docs/karr_extracts/process/03_Replication.md"
+        lines: "103-173"
+        note: "Eight-subfunction replication simulation summary from the extracted source doc."
+      note: "Primary per-tick process logic."
+    oc:
+      symbol: "KarrReplicationProcess.next_update"
+      source:
+        path: "opencell/vivarium/karr_replication.py"
+        lines: "889-1033"
+        note: "Current per-tick update path."
+      supporting:
+        - path: "opencell/vivarium/karr_replication.py"
+          lines: "702-744"
+          note: "Trace-hint replay branch."
+        - path: "opencell/vivarium/karr_replication.py"
+          lines: "578-583"
+          note: "Request and allocation state schema."
+      note: "Light-bulk OC replay of fork progression and substrate bookkeeping."
+    status: "partial"
+    note: "The current port preserves fork motion and substrate deltas, but not the full Karr 8-stage mechanistic loop."
+  calcFluxBounds:
+    matlab:
+      symbol: "calcFluxBounds"
+      source:
+        path: "docs/karr_extracts/process/03_Replication.md"
+        lines: "103-173"
+        note: "No dedicated flux-bounds block surfaced in the extracted Replication notes."
+      note: "Not observed as a Replication-specific method in the checked-in extract."
+    oc:
+      symbol: "NOT_IMPLEMENTED"
+      source:
+        path: "opencell/vivarium/karr_replication.py"
+        lines: "227-1033"
+        note: "No calcFluxBounds symbol exists in the current OC port."
+      note: "Replication has no OC flux-bounds helper in this repository state."
+    status: "not_implemented"
+    note: "Retained for schema completeness; this process does not expose an LP-bound layer."
+allocator:
+  mode:
+    karr: "allocation"
+    oc_current: "allocation"
+    note: "OC reads substrates_allocated[self.name] in the main update path, with a raw substrates fallback only when the allocation surface is absent."
+  request_formula:
+    matlab: "allocations = max(0, fix(requirements .* tmp(:, ones(nProcesses, 1))))"
+    oc: "requests are built inline in KarrReplicationProcess.next_update from _demand_from_advances; zero outside elongating state, then clipped against substrates_allocated[self.name]"
+    note: "Karr allocation is simulation-wide fair-share; OC embeds the per-process demand inside the process update."
+  requests:
+    - wid: "DATP"
+      compartment: cytosol
+      source: karr
+      note: "One of the four dNTP allocation slots."
+    - wid: "DCTP"
+      compartment: cytosol
+      source: karr
+      note: "One of the four dNTP allocation slots."
+    - wid: "DGTP"
+      compartment: cytosol
+      source: karr
+      note: "One of the four dNTP allocation slots."
+    - wid: "DTTP"
+      compartment: cytosol
+      source: karr
+      note: "One of the four dNTP allocation slots."
+    - wid: "ATP"
+      compartment: cytosol
+      source: karr
+      note: "Energy request for fork unwinding and clamp loading."
+  bypasses:
+    - wid: "H2O"
+      compartment: cytosol
+      source: oc
+      note: "Directly consumed in the ATP hydrolysis bookkeeping, not requested via the allocator."
+    - wid: "NAD"
+      compartment: cytosol
+      source: oc
+      note: "Direct ligation cofactor consumed outside the allocator request surface."
+    - wid: "NMN"
+      compartment: cytosol
+      source: oc
+      note: "Direct ligation product written by the process."
+    - wid: "AMP"
+      compartment: cytosol
+      source: oc
+      note: "Direct ligation product written by the process."
+    - wid: "PPI"
+      compartment: cytosol
+      source: oc
+      note: "Direct dNTP hydrolysis product written by the process."
+consume_stoichiometry:
+  - wid: "DATP"
+    compartment: cytosol
+    formula_or_constant: "partition_counts(2 * total_advanced_bp)[0]"
+    matlab_anchor:
+      path: "docs/karr_extracts/process/03_Replication.md"
+      lines: "114-131"
+      note: "Advance replisomes: available dNTP for polymerization and energy for unwinding."
+    oc_anchor:
+      path: "opencell/vivarium/karr_replication.py"
+      lines: "628-636"
+      note: "_demand_from_advances partitions the total advanced bp into dNTP counts."
+  - wid: "DCTP"
+    compartment: cytosol
+    formula_or_constant: "partition_counts(2 * total_advanced_bp)[1]"
+    matlab_anchor:
+      path: "docs/karr_extracts/process/03_Replication.md"
+      lines: "114-131"
+      note: "Same advance-replisomes block as DATP."
+    oc_anchor:
+      path: "opencell/vivarium/karr_replication.py"
+      lines: "628-636"
+      note: "_demand_from_advances partitions the total advanced bp into dNTP counts."
+  - wid: "DGTP"
+    compartment: cytosol
+    formula_or_constant: "partition_counts(2 * total_advanced_bp)[2]"
+    matlab_anchor:
+      path: "docs/karr_extracts/process/03_Replication.md"
+      lines: "114-131"
+      note: "Same advance-replisomes block as DATP."
+    oc_anchor:
+      path: "opencell/vivarium/karr_replication.py"
+      lines: "628-636"
+      note: "_demand_from_advances partitions the total advanced bp into dNTP counts."
+  - wid: "DTTP"
+    compartment: cytosol
+    formula_or_constant: "partition_counts(2 * total_advanced_bp)[3]"
+    matlab_anchor:
+      path: "docs/karr_extracts/process/03_Replication.md"
+      lines: "114-131"
+      note: "Same advance-replisomes block as DATP."
+    oc_anchor:
+      path: "opencell/vivarium/karr_replication.py"
+      lines: "628-636"
+      note: "_demand_from_advances partitions the total advanced bp into dNTP counts."
+  - wid: "ATP"
+    compartment: cytosol
+    formula_or_constant: "initiation_cost + catalytic_atp_events"
+    matlab_anchor:
+      path: "docs/karr_extracts/process/03_Replication.md"
+      lines: "114-131"
+      note: "Advance replisomes: energy for unwinding."
+    oc_anchor:
+      path: "opencell/vivarium/karr_replication.py"
+      lines: "637-644"
+      note: "ATP events are split between initiation, helicase, and beta-clamp loading."
+produce_stoichiometry:
+  - wid: "ADP"
+    compartment: cytosol
+    formula_or_constant: "atp_events"
+    matlab_anchor:
+      path: "docs/karr_extracts/process/03_Replication.md"
+      lines: "114-131"
+      note: "Hydrolysis bookkeeping is implied by the unwinding energy demand."
+    oc_anchor:
+      path: "opencell/vivarium/karr_replication.py"
+      lines: "978-1012"
+      note: "ATP consumption writes ADP/PI/H directly into substrate deltas."
+  - wid: "PI"
+    compartment: cytosol
+    formula_or_constant: "atp_events"
+    matlab_anchor:
+      path: "docs/karr_extracts/process/03_Replication.md"
+      lines: "114-131"
+      note: "Hydrolysis bookkeeping is implied by the unwinding energy demand."
+    oc_anchor:
+      path: "opencell/vivarium/karr_replication.py"
+      lines: "978-1012"
+      note: "ATP consumption writes ADP/PI/H directly into substrate deltas."
+  - wid: "H"
+    compartment: cytosol
+    formula_or_constant: "atp_events"
+    matlab_anchor:
+      path: "docs/karr_extracts/process/03_Replication.md"
+      lines: "114-131"
+      note: "Hydrolysis bookkeeping is implied by the unwinding energy demand."
+    oc_anchor:
+      path: "opencell/vivarium/karr_replication.py"
+      lines: "978-1012"
+      note: "ATP consumption writes ADP/PI/H directly into substrate deltas."
+  - wid: "PPI"
+    compartment: cytosol
+    formula_or_constant: "sum(used_dntp)"
+    matlab_anchor:
+      path: "docs/karr_extracts/process/03_Replication.md"
+      lines: "114-131"
+      note: "dNTP polymerization implies pyrophosphate release."
+    oc_anchor:
+      path: "opencell/vivarium/karr_replication.py"
+      lines: "978-1012"
+      note: "dNTP consumption writes PPI directly into substrate deltas."
+  - wid: "NMN"
+    compartment: cytosol
+    formula_or_constant: "ligations"
+    matlab_anchor:
+      path: "docs/karr_extracts/process/03_Replication.md"
+      lines: "166-173"
+      note: "Ligate DNA: NAD availability."
+    oc_anchor:
+      path: "opencell/vivarium/karr_replication.py"
+      lines: "978-1012"
+      note: "Ligase bookkeeping writes NMN/AMP directly into substrate deltas."
+compartment_routing:
+  - wid: "DATP"
+    consume_compartment: cytosol
+    produce_compartment: null
+    mismatch: false
+    note: "Cytosolic dNTP allocation slot."
+  - wid: "DCTP"
+    consume_compartment: cytosol
+    produce_compartment: null
+    mismatch: false
+    note: "Cytosolic dNTP allocation slot."
+  - wid: "DGTP"
+    consume_compartment: cytosol
+    produce_compartment: null
+    mismatch: false
+    note: "Cytosolic dNTP allocation slot."
+  - wid: "DTTP"
+    consume_compartment: cytosol
+    produce_compartment: null
+    mismatch: false
+    note: "Cytosolic dNTP allocation slot."
+  - wid: "ATP"
+    consume_compartment: cytosol
+    produce_compartment: null
+    mismatch: false
+    note: "Cytosolic energy input for fork progression."
+  - wid: "ADP"
+    consume_compartment: null
+    produce_compartment: cytosol
+    mismatch: false
+    note: "Cytosolic hydrolysis byproduct."
+  - wid: "PI"
+    consume_compartment: null
+    produce_compartment: cytosol
+    mismatch: false
+    note: "Cytosolic hydrolysis byproduct."
+  - wid: "H"
+    consume_compartment: null
+    produce_compartment: cytosol
+    mismatch: false
+    note: "Cytosolic hydrolysis byproduct."
+  - wid: "PPI"
+    consume_compartment: null
+    produce_compartment: cytosol
+    mismatch: false
+    note: "Cytosolic pyrophosphate product of dNTP incorporation."
+  - wid: "NMN"
+    consume_compartment: null
+    produce_compartment: cytosol
+    mismatch: false
+    note: "Cytosolic ligation product."
+unit_conversion_chain:
+  source_units: "per-second kinetic rates and fork progress"
+  target_units: "molecule counts/tick"
+  steps:
+    - from_units: "bp/s"
+      to_units: "bp/tick"
+      operation: "×stepSizeSec then floor/round to integer fork advance"
+      constants: ["stepSizeSec", "fork_polymerization_rate_bp_per_s"]
+      anchor:
+        path: "opencell/vivarium/karr_replication.py"
+        lines: "628-636"
+        note: "Fork progression is converted into integer bp advance per tick."
+    - from_units: "bp/tick"
+      to_units: "nt/tick"
+      operation: "×2 for the two replicated strands"
+      constants: ["2"]
+      anchor:
+        path: "opencell/vivarium/karr_replication.py"
+        lines: "628-636"
+        note: "The process converts total advanced bp into total polymerized nucleotides."
+    - from_units: "nt/tick"
+      to_units: "dNTP molecules/tick"
+      operation: "partition_counts() by dNTP fractions"
+      constants: ["_dntp_fractions"]
+      anchor:
+        path: "opencell/vivarium/karr_replication.py"
+        lines: "628-636"
+        note: "Nucleotide partitioning is done by the fixture-derived A/T and G/C fractions."
+    - from_units: "s^-1"
+      to_units: "ligation events/tick"
+      operation: "×stepSizeSec × ligase_rate_per_s then stochastic_round"
+      constants: ["stepSizeSec", "ligase_rate_per_s"]
+      anchor:
+        path: "opencell/vivarium/karr_replication.py"
+        lines: "637-644"
+        note: "Ligase events are rounded to integer tick counts."
+  note: "The MATLAB extract describes the process qualitatively; the OC port computes integer counts with integer rounding, partitioning, and tick-scale event bookkeeping."
+dependencies:
+  produces_inputs_for:
+    - "Metabolism"
+  consumes_outputs_of:
+    - "Metabolism"
+  note: "This block records shared-substrate coupling only. Chromosome-state coupling to ReplicationInitiation and ChromosomeSegregation is handled elsewhere."
+ordering_constraints:
+  hard_before: []
+  hard_after: []
+  soft_before: []
+  soft_after: []
+  note: "No Replication-specific ordering rule was identified in the extracted source. The only canonical hard ordering observed in Simulation.evolveState is tRNAAminoacylation < Translation."
+source_anchors:
+  matlab_blocks:
+    process_header:
+      path: "docs/karr_extracts/process/03_Replication.md"
+      lines: "1-17"
+      note: "Process identity, WholeCellModelID, and extracted source header."
+    simulation_subfunctions:
+      path: "docs/karr_extracts/process/03_Replication.md"
+      lines: "103-173"
+      note: "Eight subfunctions and their source-described sequencing."
+    allocator_loop:
+      path: "docs/karr_extracts/architecture/03_variable_allocation.md"
+      lines: "13-23"
+      note: "Simulation-level request aggregation and fair-share allocation."
+  oc_blocks:
+    fixture_load:
+      path: "opencell/vivarium/karr_replication.py"
+      lines: "258-269"
+      note: "loadmat calls for Replication_flat.mat and Chromosome_flat.mat."
+    request_schema:
+      path: "opencell/vivarium/karr_replication.py"
+      lines: "578-583"
+      note: "requests and substrates_allocated state schema."
+    trace_hint_replay:
+      path: "opencell/vivarium/karr_replication.py"
+      lines: "702-744"
+      note: "Trace-hint replay still consults substrates_allocated."
+    next_update:
+      path: "opencell/vivarium/karr_replication.py"
+      lines: "889-1033"
+      note: "Current per-tick update and request clipping path."
+provenance:
+  fixture_files:
+    - "data/karr_fixtures/per_process/Replication_flat.mat"
+    - "data/karr_fixtures/per_process/Chromosome_flat.mat"
+  kb_version: "unknown"
+  extraction_date_utc: "2026-06-30"
+  notes: "last_audited=2026-06-29; audited_by=gpt-5.4-mini (codex; row authored Day-43 EOD); oc_commit_sha=61a5a06e8031af3159dffa436655ade330be1fd9; matlab_files_referenced=[] because the raw Replication.m file was not present in this worktree; oc_files_referenced=['opencell/vivarium/karr_replication.py']; MATLAB anchors use the checked-in Karr extract docs and allocation notes as the recoverable source proxy."
+deviations:
+  lp_bounds_source:
+    karr: "unknown"
+    oc_current: "unknown"
+    matlab_anchor:
+      path: "docs/karr_extracts/process/03_Replication.md"
+      lines: "103-173"
+      note: "The extracted Replication notes do not expose a dedicated LP-bound block."
+    oc_anchor:
+      path: "opencell/vivarium/karr_replication.py"
+      lines: "889-1033"
+      note: "The current OC port has no calcFluxBounds helper for Replication."
+  shared_pool_projection_merges_compartments: false
+  known_deviations:
+    - "OC request logic is embedded in KarrReplicationProcess.next_update instead of a standalone request-calculator class."
+    - "The current OC port is a light-bulk fork-progress replay; SSB binding/release, Okazaki geometry, and RNAP collision dwell/pause remain deferred."
+    - "The raw MATLAB Replication.m file was not present in this worktree, so the row uses the checked-in Karr extract docs and allocation notes as the source proxy."
+    - "No Replication-specific calcFluxBounds helper exists in the current OC repository state."
+  note: "This row captures source-to-port wiring and the observed implementation gaps without inflating the scope beyond what the local sources support."
