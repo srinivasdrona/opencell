@@ -319,12 +319,12 @@ dependencies:
     - "Metabolism"
   note: "Translation consumes mature transcripts, charged tRNAs, and energy/water pools, then feeds the post-translation maturation pipeline."
 ordering_constraints:
-  hard_before:
+  hard_before: []
+  hard_after:
     - "tRNAAminoacylation"
-  hard_after: []
   soft_before: []
   soft_after: []
-  note: "Simulation.evolveState hard-codes the only explicit translation order exception: tRNAAminoacylation must precede Translation."
+  note: "Simulation.evolveState hard-codes the only explicit translation order exception: tRNAAminoacylation must precede Translation (evolveState.m:48-55)."
 source_anchors:
   matlab_blocks:
     class_identity:
@@ -365,7 +365,7 @@ source_anchors:
       note: "Main translation update loop."
     ordering_check:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m"
-      lines: "51-53"
+      lines: "48-55"
       note: "Hard process-order exception: tRNAAminoacylation must be evaluated before Translation."
     polymerize_helper:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+util/polymerize.m"
