@@ -1,0 +1,389 @@
+schema_version: "1.0"
+process:
+  name: "DNARepair"
+  matlab_class: "DNARepair"
+  matlab_file: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m"
+  oc_class: "KarrDNARepairProcess"
+  oc_file: "opencell/vivarium/karr_dna_repair.py"
+  whole_cell_model_id: "Process_DNARepair"
+  functional_area: "dna-replication-and-maintenance"
+  state_shape_role: "chromosome-primary repair process with substrate/allocation coupling"
+  notes: "The raw MATLAB source file is not present in this checkout; MATLAB-side anchors therefore use the DNARepair extract plus Simulation allocation docs."
+methods:
+  calcResourceRequirements_Current:
+    matlab:
+      symbol: "calcResourceRequirements_Current"
+      source:
+        path: "docs/karr_extracts/architecture/01_simulation_loop.md"
+        lines: "149-160"
+        note: "Generic per-process allocator request pass in Simulation.evolveState."
+      note: "DNARepair participates in the shared allocator request pass; no DNARepair-specific source body is available in this checkout."
+    oc:
+      symbol: "KarrDNARepairProcess.next_update"
+      source:
+        path: "opencell/vivarium/karr_dna_repair.py"
+        lines: "317-347"
+        note: "Builds per-tick substrate requests from desired repairs."
+      supporting:
+        - path: "opencell/vivarium/karr_dna_repair.py"
+          lines: "678-763"
+          note: "Pathway capacity, per-event cost, and allocator bounding helpers."
+      note: "Current OC folds request calculation into next_update rather than a dedicated request-calculator class."
+    status: "partial"
+    note: "The request contract exists, but it is embedded in next_update instead of a standalone MATLAB-style request method."
+  evolveState:
+    matlab:
+      symbol: "evolveState"
+      source:
+        path: "docs/karr_extracts/process/05_DNARepair.md"
+        lines: "275-294"
+        note: "Six-subfunction repair algorithm and random-order execution inside evolveState."
+      note: "This extract is the only process-local source material available here."
+    oc:
+      symbol: "KarrDNARepairProcess.next_update"
+      source:
+        path: "opencell/vivarium/karr_dna_repair.py"
+        lines: "317-386"
+        note: "Aggregated repair update, substrate writeback, and chromosome repair deltas."
+      supporting:
+        - path: "opencell/vivarium/karr_dna_repair.py"
+          lines: "391-543"
+          note: "Damage-site read/write helpers."
+        - path: "opencell/vivarium/karr_dna_repair.py"
+          lines: "652-789"
+          note: "Pathway-capacity and bounded-repair helpers."
+      note: "OC implements the repair loop in one aggregated update instead of Karr's six randomly ordered subfunctions."
+    status: "partial"
+    note: "Implemented, but the algorithm is collapsed to pathway-level aggregate repair rather than per-subfunction random order."
+  calcFluxBounds:
+    matlab:
+      symbol: "calcFluxBounds"
+      source:
+        path: "docs/karr_extracts/process/05_DNARepair.md"
+        lines: "257-270"
+        note: "Reaction stoichiometry, enzymes, and bounds are described here; no dedicated DNARepair flux-bound body was recovered."
+      note: "Nearest available DNARepair-local material; no standalone calcFluxBounds implementation was found in the checkout."
+    oc:
+      symbol: "NOT_IMPLEMENTED"
+      source:
+        path: "opencell/vivarium/karr_dna_repair.py"
+        lines: "317-386"
+        note: "OC DNARepair has no LP-style flux-bound layer; request logic lives in next_update."
+      note: "The OC port does not expose a dedicated flux-bound method for DNARepair."
+    status: "not_implemented"
+    note: "No DNARepair-specific calcFluxBounds analog is present in current OC."
+allocator:
+  mode:
+    karr: "allocation"
+    oc_current: "allocation"
+    note: "Both sides use allocation gating; the OC process reads `substrates_allocated[karr_dna_repair]` before repair."
+  request_formula:
+    matlab: "r = sum_pathways( repair_count[pathway] * per_event_cost[pathway] ), with per_event_cost[pathway] = [ATP_cost[pathway], patch_length_nt[pathway] * dntp_split] and desired_repairs limited by pathway capacity and lesion count"
+    oc: "requests = _substrate_needs_for_repairs(desired_repairs); desired_repairs = min(Poisson(pathway_capacity_per_s * dt * lesion_count), lesion_count); available = substrates_allocated[self.name]"
+    note: "Symbolic summary only; the OC request path is folded into next_update."
+  requests:
+    - wid: "ATP"
+      compartment: "cytosol"
+      source: "karr"
+      note: "Canonical repair-energy request."
+    - wid: "DATP"
+      compartment: "cytosol"
+      source: "karr"
+      note: "DNA patch synthesis request."
+    - wid: "DCTP"
+      compartment: "cytosol"
+      source: "karr"
+      note: "DNA patch synthesis request."
+    - wid: "DGTP"
+      compartment: "cytosol"
+      source: "karr"
+      note: "DNA patch synthesis request."
+    - wid: "DTTP"
+      compartment: "cytosol"
+      source: "karr"
+      note: "DNA patch synthesis request."
+  bypasses:
+    - wid: "AMET"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Current OC reads the global substrate pool directly for the conditional MunI methylation side effect."
+    - wid: "AHCYS"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Current OC writes this methylation product directly in next_update."
+    - wid: "H"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Current OC writes this methylation product directly in next_update."
+    - wid: "NAD"
+      compartment: "cytosol"
+      source: "deviation"
+      note: "Karr ligation chemistry uses NAD, but the current OC port does not model that metabolite."
+    - wid: "NMN"
+      compartment: "cytosol"
+      source: "deviation"
+      note: "Karr ligation chemistry produces NMN; current OC omits the full ligation metabolite product set."
+consume_stoichiometry:
+  - wid: "ATP"
+    compartment: "cytosol"
+    formula_or_constant: "sum_pathways(repair_count[pathway] * pathway_atp_cost[pathway])"
+    matlab_anchor:
+      path: "docs/karr_extracts/process/05_DNARepair.md"
+      lines: "257-294"
+      note: "Stoichiometry, enzymes, and the six-subfunction repair loop."
+    oc_anchor:
+      path: "opencell/vivarium/karr_dna_repair.py"
+      lines: "699-720"
+      note: "Per-pathway ATP cost and aggregate substrate-demand calculation."
+  - wid: "DATP"
+    compartment: "cytosol"
+    formula_or_constant: "sum_pathways(repair_count[pathway] * pathway_patch_length_nt[pathway] * dntp_split[0])"
+    matlab_anchor:
+      path: "docs/karr_extracts/process/05_DNARepair.md"
+      lines: "246-270"
+      note: "Substrate synchronization and repair-reaction stoichiometry."
+    oc_anchor:
+      path: "opencell/vivarium/karr_dna_repair.py"
+      lines: "704-711"
+      note: "Per-event dNTP split across the four deoxynucleotides."
+  - wid: "DCTP"
+    compartment: "cytosol"
+    formula_or_constant: "sum_pathways(repair_count[pathway] * pathway_patch_length_nt[pathway] * dntp_split[1])"
+    matlab_anchor:
+      path: "docs/karr_extracts/process/05_DNARepair.md"
+      lines: "246-270"
+      note: "Substrate synchronization and repair-reaction stoichiometry."
+    oc_anchor:
+      path: "opencell/vivarium/karr_dna_repair.py"
+      lines: "704-711"
+      note: "Per-event dNTP split across the four deoxynucleotides."
+  - wid: "DGTP"
+    compartment: "cytosol"
+    formula_or_constant: "sum_pathways(repair_count[pathway] * pathway_patch_length_nt[pathway] * dntp_split[2])"
+    matlab_anchor:
+      path: "docs/karr_extracts/process/05_DNARepair.md"
+      lines: "246-270"
+      note: "Substrate synchronization and repair-reaction stoichiometry."
+    oc_anchor:
+      path: "opencell/vivarium/karr_dna_repair.py"
+      lines: "704-711"
+      note: "Per-event dNTP split across the four deoxynucleotides."
+  - wid: "DTTP"
+    compartment: "cytosol"
+    formula_or_constant: "sum_pathways(repair_count[pathway] * pathway_patch_length_nt[pathway] * dntp_split[3])"
+    matlab_anchor:
+      path: "docs/karr_extracts/process/05_DNARepair.md"
+      lines: "246-270"
+      note: "Substrate synchronization and repair-reaction stoichiometry."
+    oc_anchor:
+      path: "opencell/vivarium/karr_dna_repair.py"
+      lines: "704-711"
+      note: "Per-event dNTP split across the four deoxynucleotides."
+produce_stoichiometry:
+  - wid: "AMP"
+    compartment: "cytosol"
+    formula_or_constant: "ligation_repair_events * 1"
+    matlab_anchor:
+      path: "docs/karr_extracts/process/05_DNARepair.md"
+      lines: "257-294"
+      note: "Karr ligation chemistry is part of the DNA repair loop."
+    oc_anchor:
+      path: "opencell/vivarium/karr_dna_repair.py"
+      lines: "317-386"
+      note: "Current OC aggregate repair path does not emit AMP."
+    note: "Karr product from DNA_ligation_repair; current OC omits this product."
+  - wid: "PPI"
+    compartment: "cytosol"
+    formula_or_constant: "polymerization_repair_events * 1"
+    matlab_anchor:
+      path: "docs/karr_extracts/process/05_DNARepair.md"
+      lines: "257-294"
+      note: "Karr polymerization chemistry is part of the DNA repair loop."
+    oc_anchor:
+      path: "opencell/vivarium/karr_dna_repair.py"
+      lines: "317-386"
+      note: "Current OC aggregate repair path does not emit PPI."
+    note: "Karr product from DNA_polymerization_*_repair; current OC omits this product."
+  - wid: "AHCYS"
+    compartment: "cytosol"
+    formula_or_constant: "rm_methylation_events * 1"
+    matlab_anchor:
+      path: "docs/karr_extracts/process/05_DNARepair.md"
+      lines: "183-194"
+      note: "Restriction/modification section of the DNARepair extract."
+    oc_anchor:
+      path: "opencell/vivarium/karr_dna_repair.py"
+      lines: "339-360"
+      note: "Conditional AMET -> AHCYS + H side effect."
+    note: "Current OC models this conditional RM product directly."
+  - wid: "H"
+    compartment: "cytosol"
+    formula_or_constant: "rm_methylation_events * 1"
+    matlab_anchor:
+      path: "docs/karr_extracts/process/05_DNARepair.md"
+      lines: "183-194"
+      note: "Restriction/modification section of the DNARepair extract."
+    oc_anchor:
+      path: "opencell/vivarium/karr_dna_repair.py"
+      lines: "339-360"
+      note: "Conditional AMET -> AHCYS + H side effect."
+    note: "Current OC models this conditional RM product directly."
+compartment_routing:
+  - wid: "ATP"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Repair-energy demand stays in the cytosolic substrate pool."
+  - wid: "DATP"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "dNTP patch synthesis is cytosolic."
+  - wid: "DCTP"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "dNTP patch synthesis is cytosolic."
+  - wid: "DGTP"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "dNTP patch synthesis is cytosolic."
+  - wid: "DTTP"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "dNTP patch synthesis is cytosolic."
+  - wid: "AMP"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Karr ligation product; OC currently omits this emission."
+  - wid: "PPI"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Karr polymerization product; OC currently omits this emission."
+  - wid: "AHCYS"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Conditional RM product remains cytosolic."
+  - wid: "H"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Conditional RM product remains cytosolic."
+unit_conversion_chain:
+  source_units: "repair events/tick"
+  target_units: "molecules/tick"
+  steps:
+    - from_units: "repair events/tick"
+      to_units: "per-pathway substrate demand/tick"
+      operation: "*pathway_atp_cost[pathway] and *pathway_patch_length_nt[pathway] * dntp_split"
+      constants: ["pathway_atp_cost", "pathway_patch_length_nt", "dntp_split"]
+      anchor:
+        path: "opencell/vivarium/karr_dna_repair.py"
+        lines: "699-720"
+        note: "Per-pathway stoichiometric demand per repair event."
+    - from_units: "per-pathway substrate demand/tick"
+      to_units: "substrate store deltas/tick"
+      operation: "allocator gating -> bounded actual repairs -> direct negative substrate deltas"
+      constants: ["substrates_allocated", "pathway_capacity_per_s", "dt"]
+      anchor:
+        path: "opencell/vivarium/karr_dna_repair.py"
+        lines: "723-789"
+        note: "Allocator bounding and final writeback."
+  note: "DNARepair already works in discrete repair-event counts, so the chain is much simpler than the Metabolism mmol/gDW/hr conversion."
+dependencies:
+  produces_inputs_for:
+    - "Metabolism"
+  consumes_outputs_of:
+    - "Metabolism"
+  note: "The non-substrate coupling to DNADamage/Replication is via chromosome damage state, not the shared substrate channel, so it is omitted here."
+ordering_constraints:
+  hard_before: []
+  hard_after: []
+  soft_before: []
+  soft_after: []
+  note: "No DNARepair-specific ordering rule was found in the available material; the canonical global hard constraint in Simulation.evolveState remains tRNAAminoacylation before Translation."
+source_anchors:
+  matlab_blocks:
+    process_header:
+      path: "docs/karr_extracts/process/05_DNARepair.md"
+      lines: "1-6"
+      note: "Identity block: source file, WholeCellModelID, fixture path, and status."
+    repair_description:
+      path: "docs/karr_extracts/process/05_DNARepair.md"
+      lines: "16-94"
+      note: "Docstring summary for DDR/BER/NER/HR and repair chemistry."
+    substrate_and_enzyme_setup:
+      path: "docs/karr_extracts/process/05_DNARepair.md"
+      lines: "246-270"
+      note: "Substrate synchronization, stoichiometry factoring, catalysis matrix, and enzyme bounds."
+    repair_loop:
+      path: "docs/karr_extracts/process/05_DNARepair.md"
+      lines: "275-294"
+      note: "Six-subfunction random-order repair loop."
+    allocator_request:
+      path: "docs/karr_extracts/architecture/01_simulation_loop.md"
+      lines: "125-160"
+      note: "Generic process request/allocator pass in Simulation.evolveState."
+  oc_blocks:
+    process_class:
+      path: "opencell/vivarium/karr_dna_repair.py"
+      lines: "133-259"
+      note: "KarrDNARepairProcess definition, fixture load, and pathway setup."
+    ports_schema:
+      path: "opencell/vivarium/karr_dna_repair.py"
+      lines: "261-315"
+      note: "Chromosome, protein, complex, substrates, requests, and substrates_allocated ports."
+    next_update:
+      path: "opencell/vivarium/karr_dna_repair.py"
+      lines: "317-386"
+      note: "Per-tick aggregated repair update and chromosome writeback."
+    damage_helpers:
+      path: "opencell/vivarium/karr_dna_repair.py"
+      lines: "391-543"
+      note: "Damage-site normalization and sparse chromosome writeback."
+    pathway_cost_helpers:
+      path: "opencell/vivarium/karr_dna_repair.py"
+      lines: "652-789"
+      note: "Pathway capacity, ATP cost, per-event substrate cost, and allocator bounding."
+provenance:
+  fixture_files:
+    - "data/karr_fixtures/per_process/DNARepair_flat.mat"
+    - "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
+  kb_version: "karr_native_m1__v2"
+  extraction_date_utc: "2026-06-30"
+  notes: >-
+    last_audited=2026-06-29; audited_by=gpt-5.4-mini (codex; row authored Day-43 EOD);
+    oc_commit_sha=61a5a06e8031af3159dffa436655ade330be1fd9;
+    matlab_files_referenced=[none in checkout; the raw DNARepair.m file was not present,
+    so the row uses docs/karr_extracts/process/05_DNARepair.md and
+    docs/karr_extracts/architecture/01_simulation_loop.md as the closest MATLAB-side
+    evidence];
+    oc_files_referenced=[opencell/vivarium/karr_dna_repair.py, opencell/vivarium/karr_request_calculators.py,
+    opencell/vivarium/karr_allocation_step.py];
+    fixture_files=[data/karr_fixtures/per_process/DNARepair_flat.mat,
+    data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat];
+    kb_version=karr_native_m1__v2.
+deviations:
+  lp_bounds_source:
+    karr: "allocation"
+    oc_current: "allocation"
+    matlab_anchor:
+      path: "docs/karr_extracts/architecture/01_simulation_loop.md"
+      lines: "125-160"
+      note: "Shared allocator request pass; no DNARepair-specific LP-bound body was recovered."
+    oc_anchor:
+      path: "opencell/vivarium/karr_dna_repair.py"
+      lines: "317-347"
+      note: "Request/allocation logic is embedded in next_update."
+  shared_pool_projection_merges_compartments: false
+  known_deviations:
+    - "Karr executes six randomly ordered repair subfunctions; OC collapses the process to one aggregated pathway-level update."
+    - "OC models only ATP/dNTP repair demand plus the conditional AMET -> AHCYS + H restriction/modification side effect."
+    - "Karr ligation/polymerization products such as AMP, PPI, and NMN are visible in the fixture chemistry but are not emitted by the current OC port."
+    - "The raw MATLAB source file was not present in this checkout, so MATLAB-side evidence is anchored to the DNARepair extract and the generic allocation docs rather than a direct .m read."
+  note: "The row keeps known gaps explicit so the wiring DB does not overstate the fidelity of the current OC port."
