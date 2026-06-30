@@ -1,0 +1,380 @@
+schema_version: "1.0"
+process:
+  name: "TerminalOrganelleAssembly"
+  matlab_class: "TerminalOrganelleAssembly"
+  matlab_file: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
+  oc_class: "KarrTerminalOrganelleAssemblyProcess"
+  oc_file: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+  whole_cell_model_id: "Process_TerminalOrganelleAssembly"
+  functional_area: "cell-organization"
+  state_shape_role: "wiring row for terminal-organelle assembly state and update semantics"
+  notes: "MATLAB builds a 10-reaction localization hierarchy over 8 proteins; the OC port is Karr-light and tracks coarse assembly counters."
+methods:
+  initializeConstants:
+    matlab:
+      symbol: "initializeConstants"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
+        lines: "168-279"
+        note: "Builds enzyme IDs, substrate compartment remapping, and localization rule matrices."
+    oc:
+      symbol: "KarrTerminalOrganelleAssemblyProcess.__init__"
+      source:
+        path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+        lines: "102-109"
+        note: "Constructor entry point for fixture/schema loading."
+      supporting:
+        - path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+          lines: "111-180"
+          note: "Fixture load and localization rule parsing."
+        - path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+          lines: "182-269"
+          note: "Schema load and flattened substrate projection setup."
+    status: "partial"
+    note: "The OC port preserves the localization hierarchy, but it simplifies the MATLAB remapping into a fixture-driven Karr-light projection."
+  calcResourceRequirements_LifeCycle:
+    matlab:
+      symbol: "calcResourceRequirements_LifeCycle"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
+        lines: "288-303"
+        note: "Lifecycle floor request: zero substrates/byproducts, but at least one copy of HMW1/HMW2/HMW3/P32."
+    oc:
+      symbol: "N/A"
+      source:
+        path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+        lines: "89-109"
+        note: "OC has no separate lifecycle allocator hook for this process."
+    status: "not_implemented"
+    note: "The OC port does not expose a lifecycle resource request stage for terminal-organelle assembly."
+  calcResourceRequirements_Current:
+    matlab:
+      symbol: "calcResourceRequirements_Current"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
+        lines: "310-313"
+        note: "Returns `zeros(size(this.substrates))`."
+    oc:
+      symbol: "N/A"
+      source:
+        path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+        lines: "403-458"
+        note: "OC `next_update` reads and updates `states['substrates']` directly; there is no dedicated request calculator."
+    status: "not_implemented"
+    note: "The MATLAB hook exists but is identically zero, and the current OC runtime bypasses allocator mediation entirely."
+  evolveState:
+    matlab:
+      symbol: "evolveState"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
+        lines: "315-338"
+        note: "Iterative localization loop: move every eligible unincorporated protein into the incorporated compartment."
+    oc:
+      symbol: "KarrTerminalOrganelleAssemblyProcess.next_update"
+      source:
+        path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+        lines: "403-458"
+        note: "Per-tick update path for cell counters and substrate deltas."
+      supporting:
+        - path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+          lines: "357-401"
+          note: "Trace-hint override plus compartment-transfer fallback for substrate deltas."
+    status: "partial"
+    note: "The OC port preserves the hierarchical assembly intent, but it replaces the MATLAB in-place substrate loop with a Karr-light counter update and a fallback substrate writeback path."
+  calcFluxBounds:
+    matlab:
+      symbol: "calcFluxBounds"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
+        lines: "283-353"
+        note: "No calcFluxBounds method is present; this class is not an LP/bounds process."
+    oc:
+      symbol: "N/A"
+      source:
+        path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+        lines: "89-458"
+        note: "No bounds helper exists in the OC port."
+    status: "not_implemented"
+    note: "TerminalOrganelleAssembly is state-local; there is no per-process flux-bound routine in either source."
+allocator:
+  mode:
+    karr: "allocation"
+    oc_current: "bypass"
+    note: "MATLAB exposes the allocator hook even though it returns a zero matrix; the OC port works directly from `states['substrates']`."
+  request_formula:
+    matlab: "zeros(size(this.substrates))"
+    oc: "N/A; no request calculator exists and `next_update` reads `states['substrates']` directly."
+    note: "The request hook is degenerate on the MATLAB side and absent on the OC side."
+  requests: []
+  bypasses:
+    - wid: "MG_191_MONOMER"
+      compartment: "membrane"
+      source: "oc"
+      note: "Direct substrate touch in the OC port; fixture maps membrane -> terminal-organelle membrane."
+    - wid: "MG_217_MONOMER"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Direct substrate touch in the OC port; fixture maps cytosol -> terminal-organelle cytosol."
+    - wid: "MG_218_MONOMER"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Direct substrate touch in the OC port; fixture maps cytosol -> terminal-organelle cytosol."
+    - wid: "MG_318_MONOMER"
+      compartment: "membrane"
+      source: "oc"
+      note: "Direct substrate touch in the OC port; fixture maps membrane -> terminal-organelle membrane."
+    - wid: "MG_386_MONOMER"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Direct substrate touch in the OC port; fixture maps cytosol -> terminal-organelle cytosol."
+consume_stoichiometry:
+  - wid: "MG_191_MONOMER"
+    compartment: "membrane"
+    formula_or_constant: "-this.substrates(MG_191_MONOMER, this.compartmentIndexs_unincorporated)"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
+      lines: "320-336"
+      note: "Eligible membrane-localized protein moves out of the unincorporated pool."
+    oc_anchor:
+      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+      lines: "378-401"
+      note: "Compartment-transfer fallback emits a direct delta for the unincorporated compartment."
+    note: "Representative membrane-localized substrate; the same transfer pattern applies to the other membrane proteins."
+  - wid: "MG_217_MONOMER"
+    compartment: "cytosol"
+    formula_or_constant: "-this.substrates(MG_217_MONOMER, this.compartmentIndexs_unincorporated)"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
+      lines: "320-336"
+      note: "Eligible cytosolic protein moves out of the unincorporated pool."
+    oc_anchor:
+      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+      lines: "378-401"
+      note: "Compartment-transfer fallback emits a direct delta for the unincorporated compartment."
+    note: "Representative cytosol-localized substrate; same loop logic as the other cytosolic proteins."
+  - wid: "MG_218_MONOMER"
+    compartment: "cytosol"
+    formula_or_constant: "-this.substrates(MG_218_MONOMER, this.compartmentIndexs_unincorporated)"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
+      lines: "320-336"
+      note: "Eligible cytosolic protein moves out of the unincorporated pool."
+    oc_anchor:
+      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+      lines: "378-401"
+      note: "Compartment-transfer fallback emits a direct delta for the unincorporated compartment."
+    note: "HMW2 is one of the pair-coupled proteins in the MATLAB hierarchy."
+  - wid: "MG_318_MONOMER"
+    compartment: "membrane"
+    formula_or_constant: "-this.substrates(MG_318_MONOMER, this.compartmentIndexs_unincorporated)"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
+      lines: "320-336"
+      note: "Eligible membrane-localized protein moves out of the unincorporated pool."
+    oc_anchor:
+      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+      lines: "378-401"
+      note: "Compartment-transfer fallback emits a direct delta for the unincorporated compartment."
+    note: "P32 is a canonical membrane-localized example."
+  - wid: "MG_386_MONOMER"
+    compartment: "cytosol"
+    formula_or_constant: "-this.substrates(MG_386_MONOMER, this.compartmentIndexs_unincorporated)"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
+      lines: "320-336"
+      note: "Eligible cytosolic protein moves out of the unincorporated pool."
+    oc_anchor:
+      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+      lines: "378-401"
+      note: "Compartment-transfer fallback emits a direct delta for the unincorporated compartment."
+    note: "P200 is a canonical cytosol-localized example."
+produce_stoichiometry:
+  - wid: "MG_191_MONOMER"
+    compartment: "membrane"
+    formula_or_constant: "+this.substrates(MG_191_MONOMER, this.compartmentIndexs_unincorporated)"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
+      lines: "333-336"
+      note: "Same count is added to the incorporated compartment."
+    oc_anchor:
+      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+      lines: "378-401"
+      note: "Compartment-transfer fallback emits the matching incorporated delta."
+    note: "Representative membrane-localized substrate; the same transfer pattern applies to the other membrane proteins."
+  - wid: "MG_217_MONOMER"
+    compartment: "cytosol"
+    formula_or_constant: "+this.substrates(MG_217_MONOMER, this.compartmentIndexs_unincorporated)"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
+      lines: "333-336"
+      note: "Same count is added to the incorporated compartment."
+    oc_anchor:
+      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+      lines: "378-401"
+      note: "Compartment-transfer fallback emits the matching incorporated delta."
+    note: "Representative cytosol-localized substrate."
+  - wid: "MG_218_MONOMER"
+    compartment: "cytosol"
+    formula_or_constant: "+this.substrates(MG_218_MONOMER, this.compartmentIndexs_unincorporated)"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
+      lines: "333-336"
+      note: "Same count is added to the incorporated compartment."
+    oc_anchor:
+      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+      lines: "378-401"
+      note: "Compartment-transfer fallback emits the matching incorporated delta."
+    note: "HMW2 is one of the pair-coupled proteins in the MATLAB hierarchy."
+  - wid: "MG_318_MONOMER"
+    compartment: "membrane"
+    formula_or_constant: "+this.substrates(MG_318_MONOMER, this.compartmentIndexs_unincorporated)"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
+      lines: "333-336"
+      note: "Same count is added to the incorporated compartment."
+    oc_anchor:
+      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+      lines: "378-401"
+      note: "Compartment-transfer fallback emits the matching incorporated delta."
+    note: "P32 is a canonical membrane-localized example."
+  - wid: "MG_386_MONOMER"
+    compartment: "cytosol"
+    formula_or_constant: "+this.substrates(MG_386_MONOMER, this.compartmentIndexs_unincorporated)"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
+      lines: "333-336"
+      note: "Same count is added to the incorporated compartment."
+    oc_anchor:
+      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+      lines: "378-401"
+      note: "Compartment-transfer fallback emits the matching incorporated delta."
+    note: "P200 is a canonical cytosol-localized example."
+compartment_routing:
+  - wid: "MG_191_MONOMER"
+    consume_compartment: "membrane"
+    produce_compartment: "membrane"
+    mismatch: true
+    note: "Fixture indices [6,4] map membrane -> terminal-organelle membrane; the schema has no terminal-organelle compartment label."
+  - wid: "MG_217_MONOMER"
+    consume_compartment: "cytosol"
+    produce_compartment: "cytosol"
+    mismatch: true
+    note: "Fixture indices [5,1] map cytosol -> terminal-organelle cytosol; the schema has no terminal-organelle compartment label."
+  - wid: "MG_218_MONOMER"
+    consume_compartment: "cytosol"
+    produce_compartment: "cytosol"
+    mismatch: true
+    note: "Fixture indices [5,1] map cytosol -> terminal-organelle cytosol; the schema has no terminal-organelle compartment label."
+  - wid: "MG_318_MONOMER"
+    consume_compartment: "membrane"
+    produce_compartment: "membrane"
+    mismatch: true
+    note: "Fixture indices [6,4] map membrane -> terminal-organelle membrane; the schema has no terminal-organelle compartment label."
+  - wid: "MG_386_MONOMER"
+    consume_compartment: "cytosol"
+    produce_compartment: "cytosol"
+    mismatch: true
+    note: "Fixture indices [5,1] map cytosol -> terminal-organelle cytosol; the schema has no terminal-organelle compartment label."
+unit_conversion_chain:
+  source_units: "substrate counts"
+  target_units: "substrate count deltas/tick"
+  steps:
+    - from_units: "substrate counts"
+      to_units: "substrate count deltas/tick"
+      operation: "identity; one eligible unincorporated count becomes one incorporated count within the same evolveState tick"
+      anchor:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
+        lines: "320-336"
+        note: "MATLAB in-place localization loop."
+  note: "There is no mmol/gDW/hr or per-second scaling here; the process transfers integer substrate counts directly."
+dependencies:
+  produces_inputs_for: []
+  consumes_outputs_of:
+    - "Translation"
+  note: "The process changes a structural assembly state, not a metabolite pool. Translation is the only clear upstream substrate producer in the WID set."
+ordering_constraints:
+  hard_before: []
+  hard_after: []
+  soft_before: []
+  soft_after: []
+  note: "No process-specific ordering constraint was found in this class or the OC port; the simulation-wide `tRNAAminoacylation < Translation` rule is outside this row."
+source_anchors:
+  matlab_blocks:
+    class_and_properties:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
+      lines: "109-166"
+      note: "Class declaration, constants, and process-local substrate/index definitions."
+    initialize_constants:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
+      lines: "168-279"
+      note: "Localization rule construction and compartment remapping."
+    lifecycle_request:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
+      lines: "288-303"
+      note: "Foundational protein expression floor."
+    current_request:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
+      lines: "310-313"
+      note: "Zero allocator request matrix."
+    evolve_state:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
+      lines: "316-338"
+      note: "Hierarchical localization loop."
+    dry_weight:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
+      lines: "343-351"
+      note: "Dependent local-state calculation."
+  oc_blocks:
+    process_class:
+      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+      lines: "89-109"
+      note: "OC process class, defaults, and constructor."
+    fixture_load:
+      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+      lines: "111-180"
+      note: "Fixture load and localization rule parsing."
+    schema_projection:
+      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+      lines: "182-269"
+      note: "Schema load and flattened substrate projection."
+    ports_schema:
+      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+      lines: "271-302"
+      note: "Port defaults for substrates, enzymes, and cell counters."
+    trace_hint_update:
+      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+      lines: "357-376"
+      note: "Trace-hint substrate writeback override."
+    compartment_transfer_update:
+      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+      lines: "378-401"
+      note: "Fallback compartment transfer when no trace hint is present."
+    next_update:
+      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+      lines: "403-458"
+      note: "Per-tick state update and emitted deltas."
+provenance:
+  fixture_files:
+    - "data/karr_fixtures/per_process/TerminalOrganelleAssembly_flat.mat"
+    - "data/schemas/per_process/terminal_organelle_assembly.toml"
+  kb_version: "karr_native_m1__v2"
+  extraction_date_utc: null
+  notes: "Audited against the mirrored MATLAB source and the OC port; the only explicit version string exposed in the OC path is the extracted karr_native_m1__v2 lineage."
+deviations:
+  lp_bounds_source:
+    karr: "unknown"
+    oc_current: "unknown"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
+      lines: "310-313"
+      note: "The class has a current-request hook, but no LP/bounds method."
+    oc_anchor:
+      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+      lines: "403-458"
+      note: "The OC port uses direct state updates instead of a flux-bound stage."
+  shared_pool_projection_merges_compartments: false
+  known_deviations:
+    - "The OC port is Karr-light: it tracks coarse assembled counters in `cell.terminal_organelle_count` and `cell.terminal_organelle_components_assembled` instead of MATLAB's full in-place substrate matrix loop."
+    - "The OC port adds a trace-hint override plus a compartment-transfer fallback for `substrates`; MATLAB only performs the localization loop."
+    - "The OC port bypasses allocator mediation entirely and never emits a dedicated request calculator for this process."
+  note: "These deviations are deliberate simplifications in the current OC port, not silent regressions hidden in the row."
