@@ -1,0 +1,457 @@
+schema_version: "1.0"
+process:
+  name: "DNASupercoiling"
+  matlab_class: "DNASupercoiling"
+  matlab_file: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+  oc_class: "KarrDNASupercoilingProcess"
+  oc_file: "opencell/vivarium/karr_dna_supercoiling.py"
+  whole_cell_model_id: "Process_DNASupercoiling"
+  functional_area: "DNA-replication-and-maintenance"
+  state_shape_role: "chromosome-linked stochastic controller; allocator-facing ATP/H2O budget"
+  notes: "MATLAB source was read from the WholeCell mirror; current OC port uses a sparse chromosome store and a shared allocator. The current OC runtime reads allocated ATP/H2O from substrates_allocated[self.name] and emits ADP/PI/H directly from executed ATP hydrolysis."
+methods:
+  initializeConstants:
+    matlab:
+      symbol: "initializeConstants"
+      source:
+        path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+        lines: "236-250"
+        note: "Loads RNAPolymerase reference, transcription-unit indices, and chromosome-derived constants."
+      note: "Initialization hook for process-local constants and state references."
+    oc:
+      symbol: "KarrDNASupercoilingProcess.__init__"
+      source:
+        path: "opencell/vivarium/karr_dna_supercoiling.py"
+        lines: "155-245"
+        note: "Constructor plus fixture loading and constant extraction."
+      supporting:
+        - path: "opencell/vivarium/karr_dna_supercoiling.py"
+          lines: "188-245"
+          note: "Fixture parse and constant materialization."
+      note: "OC folds constant initialization into constructor-time fixture loading."
+    status: "partial"
+    note: "OC initializes the same constant surface, but not via a separate MATLAB-style initializeConstants hook."
+  calcResourceRequirements_LifeCycle:
+    matlab:
+      symbol: "calcResourceRequirements_LifeCycle"
+      source:
+        path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+        lines: "272-313"
+        note: "Lifecycle allocator helper: replication-linked LK demand, topoI compensation term, and ATP cost."
+      note: "This is the broader lifecycle budget, not the current per-tick request helper."
+    oc:
+      symbol: "NOT_IMPLEMENTED"
+      source:
+        path: "opencell/vivarium/karr_dna_supercoiling.py"
+        lines: "1-1038"
+        note: "No lifecycle-budget helper exists in the OC port."
+      note: "The OC port exposes only the per-tick request/update path."
+    status: "not_implemented"
+    note: "The lifecycle budgeting helper has no dedicated OC implementation."
+  initializeState:
+    matlab:
+      symbol: "initializeState"
+      source:
+        path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+        lines: "320-330"
+        note: "Binds gyrase at initialization and seeds RNAPolymerase supercoiling fold-change."
+      note: "MATLAB startup hook for enzyme binding and transcription coupling."
+    oc:
+      symbol: "KarrDNASupercoilingProcess.build_default_chromosome_state"
+      source:
+        path: "opencell/vivarium/karr_dna_supercoiling.py"
+        lines: "259-290"
+        note: "Builds a default chromosome state with polymerizedRegions, linkingNumbers, and supercoiled flag."
+      supporting:
+        - path: "opencell/vivarium/karr_dna_supercoiling.py"
+          lines: "292-358"
+          note: "Ports schema exposes the default chromosome and substrate surfaces."
+      note: "OC initializes chromosome defaults, but it does not mirror the RNAPolymerase fold-change side effect."
+    status: "partial"
+    note: "Initialization is represented by OC default-state construction, not a one-for-one initializeState hook."
+  calcResourceRequirements_Current:
+    matlab:
+      symbol: "calcResourceRequirements_Current"
+      source:
+        path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+        lines: "333-353"
+        note: "Per-tick ATP/H2O request for gyrase activity only."
+      note: "Returns the allocator-facing per-tick resource demand."
+    oc:
+      symbol: "KarrDNASupercoilingProcess._atp_request"
+      source:
+        path: "opencell/vivarium/karr_dna_supercoiling.py"
+        lines: "976-1022"
+        note: "Current OC request calculator used by next_update."
+      supporting:
+        - path: "opencell/vivarium/karr_dna_supercoiling.py"
+          lines: "459-462"
+          note: "Reads allocated ATP/H2O from substrates_allocated[self.name]."
+        - path: "opencell/vivarium/karr_dna_supercoiling.py"
+          lines: "560-577"
+          note: "Writes the request vector for both ATP and H2O."
+        - path: "opencell/vivarium/karr_allocation_step.py"
+          lines: "79-84"
+          note: "DNASupercoiling is enrolled as an ATP+H2O allocation consumer."
+      note: "OC merges request calculation into the per-tick controller and adds topoIV/replication terms to the request budget."
+    status: "partial"
+    note: "Implemented, but the OC controller is broader than the MATLAB current-request helper."
+  evolveState:
+    matlab:
+      symbol: "evolveState"
+      source:
+        path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+        lines: "356-508"
+        note: "Region resolution, random enzyme-order binding/release, LK updates, ATP accounting, and RNAPolymerase fold-change writeback."
+      note: "Main per-tick update loop."
+    oc:
+      symbol: "KarrDNASupercoilingProcess.next_update"
+      source:
+        path: "opencell/vivarium/karr_dna_supercoiling.py"
+        lines: "360-644"
+        note: "Current OC per-tick update path."
+      supporting:
+        - path: "opencell/vivarium/karr_dna_supercoiling.py"
+          lines: "459-462"
+          note: "Allocator budget read."
+        - path: "opencell/vivarium/karr_dna_supercoiling.py"
+          lines: "555-577"
+          note: "Request emission for ATP/H2O."
+        - path: "opencell/vivarium/karr_dna_supercoiling.py"
+          lines: "1024-1035"
+          note: "Per-tick ATP/H2O consumption and ADP/PI/H production."
+      note: "OC folds request emission and state writeback into one controller and uses the sparse chromosome-store representation."
+    status: "partial"
+    note: "Implemented, but not as a literal MATLAB control-flow clone."
+  calcRNAPolymeraseBindingProbFoldChange:
+    matlab:
+      symbol: "calcRNAPolymeraseBindingProbFoldChange"
+      source:
+        path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+        lines: "510-542"
+        note: "Sigma-dependent transcription fold-change helper."
+      note: "Used to propagate supercoiling into RNAPolymerase binding probability."
+    oc:
+      symbol: "NOT_IMPLEMENTED"
+      source:
+        path: "opencell/vivarium/karr_dna_supercoiling.py"
+        lines: "1-1038"
+        note: "No direct transcription-fold-change helper exists in the OC port."
+      note: "The OC port surfaces supercoiled state, but not the MATLAB fold-change matrix."
+    status: "not_implemented"
+    note: "No direct OC counterpart was found for the RNAPolymerase fold-change helper."
+  buildEnzymeProperties:
+    matlab:
+      symbol: "buildEnzymeProperties"
+      source:
+        path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+        lines: "544-573"
+        note: "Per-enzyme constants: sigma limits, ATP costs, activity rates, and logistic gates."
+      note: "Constructs the enzyme property table used by both request and evolve logic."
+    oc:
+      symbol: "KarrDNASupercoilingProcess._load_fixture"
+      source:
+        path: "opencell/vivarium/karr_dna_supercoiling.py"
+        lines: "188-245"
+        note: "Loads the same fixture constants into OC fields."
+      supporting:
+        - path: "opencell/vivarium/karr_dna_supercoiling.py"
+          lines: "842-861"
+          note: "Logistic activity gate implementation."
+      note: "OC materializes the same constants during fixture load and uses _activity_probability for the logistic gate."
+    status: "partial"
+    note: "Implemented as fixture loading plus helper gates rather than a MATLAB-style struct factory."
+  calcFluxBounds:
+    matlab:
+      symbol: "calcFluxBounds"
+      source:
+        path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+        lines: "272-313"
+        note: "Schema placeholder; the class has no calcFluxBounds method, so this anchor points at the closest allocator-facing helper."
+      note: "DNASupercoiling is not an LP-bound process."
+    oc:
+      symbol: "NOT_IMPLEMENTED"
+      source:
+        path: "opencell/vivarium/karr_dna_supercoiling.py"
+        lines: "1-1038"
+        note: "No flux-bounds helper exists for this process."
+      note: "The OC port has no flux-bound stage."
+    status: "not_implemented"
+    note: "This is a schema-required placeholder rather than a real DNASupercoiling method."
+allocator:
+  mode:
+    karr: "allocation"
+    oc_current: "allocation"
+    note: "Karr requests ATP/H2O for supercoiling and the OC port reads allocated ATP/H2O from substrates_allocated[self.name]."
+  request_formula:
+    matlab: "nATP = enzProps.atpCost * ceil((enzymes(gyraseIndex) + boundEnzymes(gyraseIndex)) * enzProps.activityRate * max(enzProps.probOfActivityFunc(sigmas, c))); result(ATP) = nATP; result(H2O) = nATP"
+    oc: "requestNeed = min(request_max_atp, ceil(request_safety_factor * (expected_gyrase_events * gyrase_atp_cost + expected_topoIV_events * topoiv_atp_cost + replication_extra * gyrase_atp_cost))); ATP and H2O both receive requestNeed"
+    note: "The OC controller is a superset of the MATLAB current-request helper because it merges the broader lifecycle terms into the same request path."
+  requests:
+    - wid: "ATP"
+      compartment: "cytosol"
+      source: "both"
+      note: "Requested through the allocator and then consumed directly when ATP hydrolysis executes."
+    - wid: "H2O"
+      compartment: "cytosol"
+      source: "both"
+      note: "Co-substrate request; executed hydrolysis is gated by min(allocated ATP, allocated H2O)."
+  bypasses:
+    - wid: "ATP"
+      compartment: "cytosol"
+      source: "both"
+      note: "Direct post-allocation consumption delta."
+    - wid: "H2O"
+      compartment: "cytosol"
+      source: "both"
+      note: "Direct post-allocation consumption delta."
+    - wid: "ADP"
+      compartment: "cytosol"
+      source: "both"
+      note: "Direct hydrolysis product."
+    - wid: "PI"
+      compartment: "cytosol"
+      source: "both"
+      note: "Direct hydrolysis product."
+    - wid: "H"
+      compartment: "cytosol"
+      source: "both"
+      note: "Direct hydrolysis product when the fixture exposes hydrogen."
+consume_stoichiometry:
+  - wid: "ATP"
+    compartment: "cytosol"
+    formula_or_constant: "nATP = nStrandPassingEvents * atpCost"
+    matlab_anchor:
+      path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+      lines: "494-499"
+      note: "ATP subtraction after strand-passing events."
+    oc_anchor:
+      path: "opencell/vivarium/karr_dna_supercoiling.py"
+      lines: "555-577"
+      note: "ATP request/update controller and allocated-budget path."
+    note: "Executed ATP hydrolysis is the sum of gyrase and topoIV event counts times their ATP costs."
+  - wid: "H2O"
+    compartment: "cytosol"
+    formula_or_constant: "nH2O = nStrandPassingEvents * atpCost"
+    matlab_anchor:
+      path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+      lines: "494-499"
+      note: "Water subtraction is paired with ATP hydrolysis."
+    oc_anchor:
+      path: "opencell/vivarium/karr_dna_supercoiling.py"
+      lines: "1024-1035"
+      note: "Water is decremented 1:1 with ATP usage."
+    note: "Co-substrate consumption mirrors ATP hydrolysis."
+produce_stoichiometry:
+  - wid: "ADP"
+    compartment: "cytosol"
+    formula_or_constant: "+nATP"
+    matlab_anchor:
+      path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+      lines: "494-499"
+      note: "Hydrolysis product emitted after ATP consumption."
+    oc_anchor:
+      path: "opencell/vivarium/karr_dna_supercoiling.py"
+      lines: "1027-1035"
+      note: "Hydrolysis product emitted by _substrate_delta."
+    note: "Direct hydrolysis product."
+  - wid: "PI"
+    compartment: "cytosol"
+    formula_or_constant: "+nATP"
+    matlab_anchor:
+      path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+      lines: "494-499"
+      note: "Hydrolysis product emitted after ATP consumption."
+    oc_anchor:
+      path: "opencell/vivarium/karr_dna_supercoiling.py"
+      lines: "1027-1035"
+      note: "Hydrolysis product emitted by _substrate_delta."
+    note: "Direct hydrolysis product."
+  - wid: "H"
+    compartment: "cytosol"
+    formula_or_constant: "+nATP"
+    matlab_anchor:
+      path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+      lines: "494-499"
+      note: "Hydrogen product is present when the fixture exposes H."
+    oc_anchor:
+      path: "opencell/vivarium/karr_dna_supercoiling.py"
+      lines: "1027-1035"
+      note: "Hydrogen product emitted only when h_wid is available."
+    note: "Hydrogen is emitted when present in the fixture."
+compartment_routing:
+  - wid: "ATP"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Energy budget is cytosolic."
+  - wid: "H2O"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Co-substrate budget is cytosolic."
+  - wid: "ADP"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Hydrolysis product stays cytosolic."
+  - wid: "PI"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Hydrolysis product stays cytosolic."
+  - wid: "H"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Hydrolysis product stays cytosolic."
+unit_conversion_chain:
+  source_units: "enzyme counts and activity rates (events/s)"
+  target_units: "molecules/tick"
+  steps:
+    - from_units: "enzyme counts and activity rates (events/s)"
+      to_units: "expected strand-passing events/tick"
+      operation: "count free/bound enzymes, apply sigma gating, multiply by activity rate, then stochastic-round"
+      constants: ["activityRate", "probOfActivity", "dt"]
+      anchor:
+        path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+        lines: "333-353"
+        note: "Current request helper; the current MATLAB fixture uses a 1 s step, so dt is implicit there."
+    - from_units: "expected strand-passing events/tick"
+      to_units: "ATP molecules/tick"
+      operation: "multiply by ATP cost per enzyme class and sum across gyrase/topoIV"
+      constants: ["gyraseATPCost", "topoIVATPCost"]
+      anchor:
+        path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+        lines: "494-499"
+        note: "ATP hydrolysis accounting."
+    - from_units: "ATP molecules/tick"
+      to_units: "executed molecules/tick"
+      operation: "min(allocated ATP, allocated H2O)"
+      constants: ["allocated ATP", "allocated H2O"]
+      anchor:
+        path: "opencell/vivarium/karr_dna_supercoiling.py"
+        lines: "459-462"
+        note: "Allocated budget gate."
+    - from_units: "executed molecules/tick"
+      to_units: "substrate deltas (molecules/tick)"
+      operation: "ATP/H2O:-1; ADP/PI/H:+1"
+      constants: ["atp_used"]
+      anchor:
+        path: "opencell/vivarium/karr_dna_supercoiling.py"
+        lines: "1024-1035"
+        note: "Direct substrate delta emission."
+  note: "This controller is discrete-count based; there is no Metabolism-style mmol/gDW/hr layer."
+dependencies:
+  produces_inputs_for:
+    - "Metabolism"
+  consumes_outputs_of:
+    - "Metabolism"
+  note: "The direct shared-substrate dependency is the ATP/H2O in / ADP/PI/H out loop with Metabolism; chromosome-state coupling to other processes is real but not substrate-mediated."
+ordering_constraints:
+  hard_before: []
+  hard_after: []
+  soft_before: []
+  soft_after: []
+  note: "No DNASupercoiling-specific ordering rule was found; the canonical hard constraint in Simulation.evolveState is tRNAAminoacylation before Translation."
+source_anchors:
+  matlab_blocks:
+    class_identity:
+      path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+      lines: "127-175"
+      note: "Class definition, substrate/enzyme IDs, and fixed constants."
+    initialize_constants:
+      path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+      lines: "236-250"
+      note: "RNAPolymerase reference and transcription-unit indices."
+    lifecycle_allocator:
+      path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+      lines: "272-313"
+      note: "Lifecycle resource requirement helper."
+    initialize_state:
+      path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+      lines: "320-330"
+      note: "Initialization hook for gyrase binding and transcription fold-change."
+    current_request:
+      path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+      lines: "333-353"
+      note: "Current allocator-facing ATP/H2O request helper."
+    evolve_state:
+      path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+      lines: "356-508"
+      note: "Main per-tick state update."
+    transcription_coupling:
+      path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+      lines: "510-542"
+      note: "RNAPolymerase fold-change helper."
+    enzyme_properties:
+      path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+      lines: "544-573"
+      note: "Per-enzyme constants and logistic gating."
+    simulation_ordering:
+      path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m"
+      lines: "48-57"
+      note: "Canonical hard ordering constraint: tRNAAminoacylation before Translation."
+  oc_blocks:
+    process_class:
+      path: "opencell/vivarium/karr_dna_supercoiling.py"
+      lines: "115-245"
+      note: "Class definition, defaults, and fixture loading."
+    build_default_state:
+      path: "opencell/vivarium/karr_dna_supercoiling.py"
+      lines: "259-290"
+      note: "Default chromosome state construction."
+    ports_schema:
+      path: "opencell/vivarium/karr_dna_supercoiling.py"
+      lines: "292-358"
+      note: "Chromosome, substrate, request, and allocation ports."
+    next_update:
+      path: "opencell/vivarium/karr_dna_supercoiling.py"
+      lines: "360-644"
+      note: "Current per-tick update path."
+    request_budget:
+      path: "opencell/vivarium/karr_dna_supercoiling.py"
+      lines: "976-1022"
+      note: "ATP request calculator."
+    substrate_delta:
+      path: "opencell/vivarium/karr_dna_supercoiling.py"
+      lines: "1024-1035"
+      note: "ATP/H2O consumption and ADP/PI/H production."
+    allocator_consumer_vector:
+      path: "opencell/vivarium/karr_allocation_step.py"
+      lines: "79-84"
+      note: "DNASupercoiling is declared as an ATP+H2O allocator consumer."
+    allocation_step:
+      path: "opencell/vivarium/karr_allocation_step.py"
+      lines: "167-280"
+      note: "Shared allocator that consumes requests and writes substrates_allocated."
+    composite_enrollment:
+      path: "opencell/vivarium/karr_composite.py"
+      lines: "2107-2113"
+      note: "Composite wiring for the DNASupercoiling process ports."
+provenance:
+  fixture_files:
+    - "data/karr_fixtures/per_process/DNASupercoiling_flat.mat"
+    - "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
+  kb_version: "karr_native_m1__v2"
+  extraction_date_utc: null
+  notes: "last_audited=2026-06-29; audited_by=gpt-5.4-mini (codex; row authored Day-43 EOD); oc_commit_sha=61a5a06e8031af3159dffa436655ade330be1fd9; matlab_files_referenced=[E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m, E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m, E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/Simulation.m]; oc_files_referenced=[opencell/vivarium/karr_dna_supercoiling.py, opencell/vivarium/karr_allocation_step.py, opencell/vivarium/karr_composite.py, opencell/vivarium/karr_replication_initiation.py]; fixture_sources=[data/karr_fixtures/per_process/DNASupercoiling_flat.mat, data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat]."
+deviations:
+  lp_bounds_source:
+    karr: "unknown"
+    oc_current: "unknown"
+    matlab_anchor:
+      path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+      lines: "272-313"
+      note: "DNASupercoiling is not an LP-bound process; this is the closest allocator-style helper."
+    oc_anchor:
+      path: "opencell/vivarium/karr_dna_supercoiling.py"
+      lines: "976-1035"
+      note: "OC uses a per-tick request/update controller and no flux-bounds stage."
+  shared_pool_projection_merges_compartments: false
+  known_deviations:
+    - "OC merges the request calculation and per-tick update into one next_update controller, while MATLAB splits calcResourceRequirements_Current and evolveState."
+    - "OC makes dt explicit in the request controller and sparse chromosome update, while the MATLAB current-request body relies on the simulation tick / fixture step size implicitly."
+    - "OC does not expose the MATLAB RNAPolymerase fold-change matrix helper; it surfaces only the supercoiled chromosome state."
+    - "OC uses a sparse chromosome-store/replay-hint implementation rather than the MATLAB doubleStrandedRegions / monomerBoundSites / complexBoundSites control surface."
+  note: "No compartment-merging projection is involved here; the remaining deviations are controller-shape and state-representation differences."
