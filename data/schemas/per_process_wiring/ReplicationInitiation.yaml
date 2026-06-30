@@ -155,8 +155,7 @@ allocator:
 consume_stoichiometry:
   - wid: "ATP"
     compartment: "cytosol"
-    formula_or_constant: "nActivations = min(this.substrates(this.substrateIndexs_atp), this.enzymes(this.enzymeIndexs_DnaA)); ATP consumed =
-      nActivations"
+    formula_or_constant: "nActivations = min(this.substrates(this.substrateIndexs_atp), this.enzymes(this.enzymeIndexs_DnaA)); ATP consumed = nActivations"
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
       lines: "536-550"
@@ -249,18 +248,16 @@ unit_conversion_chain:
         note: "calcResourceRequirements_Current does not rescale by time or mass."
   note: "No concentration, mass, or volume conversion is applied; the process works on raw counts."
 dependencies:
-  produces_inputs_for:
-    - "Metabolism"
+  produces_inputs_for: []
   consumes_outputs_of:
     - "Metabolism"
-  note: "The only clear substrate-level dependency is the shared metabolite pool; chromosome-state effects are handled separately."
+  note: "Removed Metabolism from produces_inputs_for because Metabolism is producer-only at the substrate-pool layer."
 ordering_constraints:
   hard_before: []
   hard_after: []
   soft_before: []
   soft_after: []
-  note: "No ReplicationInitiation-specific order rule was identified; the canonical global hard constraint lives in Simulation.evolveState for
-    tRNAAminoacylation < Translation."
+  note: "No ReplicationInitiation-specific order rule was identified; the canonical global hard constraint lives in Simulation.evolveState for tRNAAminoacylation < Translation."
 source_anchors:
   matlab_blocks:
     docstring_overview:

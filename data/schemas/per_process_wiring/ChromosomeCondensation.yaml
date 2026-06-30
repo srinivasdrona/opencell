@@ -130,8 +130,7 @@ allocator:
   mode:
     karr: "allocation"
     oc_current: "mixed"
-    note: "Karr declares allocator demand explicitly; OC reads `substrates_allocated` first but falls back to global `substrates` when the allocated
-      value is zero."
+    note: "Karr declares allocator demand explicitly; OC reads `substrates_allocated` first but falls back to global `substrates` when the allocated value is zero."
   request_formula:
     matlab: "result(ATP) = this.enzymes(this.enzymeIndexs_SMC); result(H2O) = this.enzymes(this.enzymeIndexs_SMC)"
     oc: "requests[self.name][ATP] = request_need; requests[self.name][H2O] = request_need; no standalone request-calculator class"
@@ -260,18 +259,16 @@ unit_conversion_chain:
   steps: []
   note: "No dimensional conversion; both MATLAB and OC operate directly on integer counts."
 dependencies:
-  produces_inputs_for:
-    - "Metabolism"
+  produces_inputs_for: []
   consumes_outputs_of:
     - "Metabolism"
-  note: "The only shared-substrate coupling is to the metabolic pool: ChromosomeCondensation consumes ATP/H2O and returns ADP/PI/H."
+  note: "Removed Metabolism from produces_inputs_for because Metabolism is producer-only at the substrate-pool layer."
 ordering_constraints:
   hard_before: []
   hard_after: []
   soft_before: []
   soft_after: []
-  note: "No process-specific ordering rule appears in ChromosomeCondensation.m; the only canonical hard order in Simulation.evolveState is tRNAAminoacylation
-    before Translation."
+  note: "No process-specific ordering rule appears in ChromosomeCondensation.m; the only canonical hard order in Simulation.evolveState is tRNAAminoacylation before Translation."
 source_anchors:
   matlab_blocks:
     class_def:

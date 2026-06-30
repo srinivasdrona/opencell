@@ -304,51 +304,51 @@ produce_stoichiometry:
 compartment_routing:
   - wid: "GLC"
     consume_compartment: "extracellular"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "External nutrient uptake stays extracellular in the consume surface."
   - wid: "O2"
     consume_compartment: "extracellular"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "External nutrient uptake stays extracellular in the consume surface."
   - wid: "ATP"
     consume_compartment: "cytosol"
-    produce_compartment: null
+    produce_compartment:
     mismatch: false
     note: "Maintenance/hydrolysis consumption is cytosolic."
   - wid: "ADP"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Hydrolysis product is cytosolic."
   - wid: "PI"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Hydrolysis product is cytosolic."
   - wid: "H"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Hydrolysis product is cytosolic."
   - wid: "AMP"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Recycled internal exchange product is cytosolic."
   - wid: "GMP"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Recycled internal exchange product is cytosolic."
   - wid: "LIPOATE"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Biomass-production exemplar is cytosolic."
   - wid: "THF"
-    consume_compartment: null
+    consume_compartment:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Biomass-production exemplar is cytosolic."
@@ -407,10 +407,8 @@ dependencies:
     - "DNARepair"
     - "DNASupercoiling"
     - "FtsZPolymerization"
-    - "TerminalOrganelleAssembly"
-    - "HostInteraction"
   consumes_outputs_of: []
-  note: "Metabolism is a one-way provider at the chassis layer: it supplies shared-pool substrates/cofactors to downstream consumers, while any recycled cofactors re-enter through the shared substrate pool rather than a reverse process dependency. No chassis-layer counterexample was found in the referenced sources."
+  note: "Removed TerminalOrganelleAssembly and HostInteraction from produces_inputs_for because both rows are structural or qualitative couplings rather than direct metabolite consumers."
 ordering_constraints:
   hard_before: []
   hard_after: []
@@ -525,7 +523,7 @@ provenance:
     - "data/karr_fixtures/karr_native_m1.json"
     - "data/karr_fixtures/karr_native_m1.npz"
   kb_version: "karr_native_m1__v2"
-  extraction_date_utc: null
+  extraction_date_utc:
   notes: "Schema-authoring row; references are path-based anchors from the prompt and repo, not filesystem-verified existence checks."
 deviations:
   lp_bounds_source:

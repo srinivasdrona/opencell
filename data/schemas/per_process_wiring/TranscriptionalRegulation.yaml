@@ -136,19 +136,17 @@ unit_conversion_chain:
         lines: "391-423"
         note: "Fold-change product and per-TU writeback."
 dependencies:
-  produces_inputs_for:
-    - "Transcription"
+  produces_inputs_for: []
   consumes_outputs_of:
     - "Translation"
     - "MacromolecularComplexation"
-  note: "Fold-change output feeds the transcription wrapper; TF abundances are supplied by translated monomers and complex assembly."
+  note: "Removed Transcription from produces_inputs_for because the consumer rows do not expose a direct stoichiometric handoff; the coupling is state-only or shared-pool mediated."
 ordering_constraints:
   hard_before: []
   hard_after: []
   soft_before: []
   soft_after: []
-  note: "No process-specific ordering rule is explicitly stated in the local Karr extracts. The only canonical hard ordering constraint found
-    in Simulation.evolveState is tRNAAminoacylation < Translation."
+  note: "No process-specific ordering rule is explicitly stated in the local Karr extracts. The only canonical hard ordering constraint found in Simulation.evolveState is tRNAAminoacylation < Translation."
 source_anchors:
   matlab_blocks:
     process_docstring:

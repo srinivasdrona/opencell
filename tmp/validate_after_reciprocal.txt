@@ -1,0 +1,4 @@
+[CROSS] cyclic ordering: Translation hard_before tRNAAminoacylation and tRNAAminoacylation hard_before Translation
+[CROSS] cyclic ordering: tRNAAminoacylation hard_before Translation and Translation hard_before tRNAAminoacylation
+[CROSS] 0 reciprocal mismatches, 2 cyclic ordering, 0 missing rows
+FAIL

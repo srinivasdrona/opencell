@@ -78,8 +78,7 @@ methods:
         - path: "opencell/vivarium/karr_protein_decay_light.py"
           lines: "450-500"
           note: "Trace-hint replay short-circuit."
-      note: "The OC light port covers complex decay plus optional latent monomer substrate replay, but omits the MATLAB misfold/refold and aborted-polypeptide
-        helpers."
+      note: "The OC light port covers complex decay plus optional latent monomer substrate replay, but omits the MATLAB misfold/refold and aborted-polypeptide helpers."
     status: "partial"
     note: "OC next_update is the per-tick analog, but it only implements a subset of the MATLAB helper chain."
   calcFluxBounds:
@@ -103,8 +102,7 @@ allocator:
   mode:
     karr: "allocation"
     oc_current: "bypass"
-    note: "Karr declares current-tick resource requirements; the OC light port reads `states['substrates']` directly and never consumes `substrates_allocated`
-      inside `next_update`."
+    note: "Karr declares current-tick resource requirements; the OC light port reads `states['substrates']` directly and never consumes `substrates_allocated` inside `next_update`."
   request_formula:
     matlab: >-
       result = zeros(size(substrates));
@@ -307,20 +305,15 @@ unit_conversion_chain:
         note: "Karr substrate writeback for monomer decay."
   note: "No Avogadro or gDW conversion is needed here; ProteinDecay already operates in whole-molecule counts."
 dependencies:
-  produces_inputs_for:
-    - "tRNAAminoacylation"
-    - "Translation"
-    - "Metabolism"
+  produces_inputs_for: []
   consumes_outputs_of:
     - "Translation"
     - "ProteinFolding"
     - "ProteinProcessingI"
     - "ProteinProcessingII"
     - "MacromolecularComplexation"
-  note: >-
-    ProteinDecay's amino-acid release feeds the translation/aminoacylation
-    substrate pool, while its direct protein/complex turnover consumes the
-    outputs of synthesis and processing processes.
+    - "Metabolism"
+  note: "Removed tRNAAminoacylation, Translation, Metabolism from produces_inputs_for because the downstream rows do not expose a direct stoichiometric handoff; added Metabolism to consumes_outputs_of because this row directly draws from the shared metabolite pool."
 ordering_constraints:
   hard_before: []
   hard_after: []
@@ -454,8 +447,7 @@ deviations:
       note: "The light port has no flux-bound method either."
   shared_pool_projection_merges_compartments: true
   known_deviations:
-    - "OC is ProteinDecayLightProcess, a complex-decay-only subset of MATLAB ProteinDecay; misfold/refold, aborted-polypeptide decay, and full
-      monomer decay are not implemented."
+    - "OC is ProteinDecayLightProcess, a complex-decay-only subset of MATLAB ProteinDecay; misfold/refold, aborted-polypeptide decay, and full monomer decay are not implemented."
     - "The OC process never reads `substrates_allocated`; it reads `states['substrates']` directly and emits direct substrate deltas in `next_update`."
     - "The OC allocator alias maps `protein_decay_light` to `karr_protein_decay_light`, so the request key differs from the process slug."
     - "The OC port flattens Karr's compartmented ProteinDecay surfaces into a per-WID substrate projection."

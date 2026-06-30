@@ -74,8 +74,7 @@ allocator:
   mode:
     karr: "allocation"
     oc_current: "allocation"
-    note: "Karr's allocation block calls `calcResourceRequirements_Current`; OC reads `substrates_allocated[self.name]` for GTP and falls back
-      to `substrates` only when allocation is absent."
+    note: "Karr's allocation block calls `calcResourceRequirements_Current`; OC reads `substrates_allocated[self.name]` for GTP and falls back to `substrates` only when allocation is absent."
   request_formula:
     matlab: "GTP request is allocator-facing; the checked-in extract does not preserve a dedicated FtsZ-specific formula body."
     oc: "request_gtp = max(0, int(next_counts[ftsz] + next_counts[ftsz_gdp]))"
@@ -207,8 +206,7 @@ unit_conversion_chain:
       anchor:
         path: "opencell/vivarium/karr_ftsz_polymerization.py"
         lines: "155-485"
-        note: "Geometry volume is loaded from the fixture, then counts are converted to concentration. (normalized from invalid lines='155-167,481-485'
-          for schema validation)"
+        note: "Geometry volume is loaded from the fixture, then counts are converted to concentration. (normalized from invalid lines='155-167,481-485' for schema validation)"
     - from_units: "molecules·L^-1"
       to_units: "molecules"
       operation: "×(_N_AVOGADRO × geometry_volume)"
@@ -224,18 +222,16 @@ unit_conversion_chain:
       anchor:
         path: "opencell/vivarium/karr_ftsz_polymerization.py"
         lines: "405-587"
-        note: "Discrete state recovery, substrate-delta rounding, and nonnegative clamping. (normalized from invalid lines='405-436,548-587' for
-          schema validation)"
+        note: "Discrete state recovery, substrate-delta rounding, and nonnegative clamping. (normalized from invalid lines='405-436,548-587' for schema validation)"
 dependencies:
-  produces_inputs_for:
-    - "Cytokinesis"
+  produces_inputs_for: []
   consumes_outputs_of:
     - "Translation"
     - "ProteinProcessingI"
     - "ProteinProcessingII"
     - "ProteinFolding"
-  note: "The explicit shared-substrate dependency is GTP; the other edges are biological precursor / downstream coupling notes from the phase-C
-    chassis design."
+    - "Metabolism"
+  note: "Removed Cytokinesis from produces_inputs_for because the downstream rows do not expose a direct stoichiometric handoff; added Metabolism to consumes_outputs_of because this row directly draws from the shared metabolite pool."
 ordering_constraints:
   hard_before: []
   hard_after: []
@@ -315,10 +311,7 @@ deviations:
       note: "OC implements direct ODE / clamp logic, not LP bounds."
   shared_pool_projection_merges_compartments: false
   known_deviations:
-    - "The raw MATLAB `.m` file was not present in this checkout; MATLAB anchors therefore use the checked-in extract doc rather than a direct
-      source-file read."
+    - "The raw MATLAB `.m` file was not present in this checkout; MATLAB anchors therefore use the checked-in extract doc rather than a direct source-file read."
     - "OC emits the GTP request directly from `next_update` instead of a separate request-calculator module."
-    - "OC reads allocated GTP from `substrates_allocated[self.name]` but still keeps a direct substrate-store fallback path for the no-allocation
-      case."
-  note: "The main divergence is wiring shape, not biochemistry: the OC port is direct-update + allocator-compatible, while the MATLAB evidence
-    available here is extract-level rather than file-level."
+    - "OC reads allocated GTP from `substrates_allocated[self.name]` but still keeps a direct substrate-store fallback path for the no-allocation case."
+  note: "The main divergence is wiring shape, not biochemistry: the OC port is direct-update + allocator-compatible, while the MATLAB evidence available here is extract-level rather than file-level."

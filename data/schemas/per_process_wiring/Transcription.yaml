@@ -9,8 +9,7 @@ process:
   whole_cell_model_id: "Process_Transcription"
   functional_area: "transcription"
   state_shape_role: "process wiring row; RNAP state machine, allocator requests, and RNA output wiring"
-  notes: "MATLAB Transcription is the Karr M1 process. Current OC wiring is split across the allocator-aware v3 wrapper, the legacy analytical
-    wrapper, and the transcription request calculator."
+  notes: "MATLAB Transcription is the Karr M1 process. Current OC wiring is split across the allocator-aware v3 wrapper, the legacy analytical wrapper, and the transcription request calculator."
 methods:
   calcResourceRequirements_Current:
     matlab:
@@ -127,13 +126,10 @@ allocator:
   mode:
     karr: "allocation"
     oc_current: "mixed"
-    note: "MATLAB uses allocator requests. OC has an allocation-aware v3 path plus a legacy direct-substrate wrapper, so the current surface is
-      mixed rather than purely one mode."
+    note: "MATLAB uses allocator requests. OC has an allocation-aware v3 path plus a legacy direct-substrate wrapper, so the current surface is mixed rather than purely one mode."
   request_formula:
-    matlab: "result(ATP, CTP, GTP, UTP) = 2 * sum(this.metabolite.nmpComposition, 2) * this.rnaPolymerases.nActive * this.rnaPolymeraseElongationRate;
-      result(H2O) = this.rnaPolymerases.nActive"
-    oc: "if use_allocator_budget: per_ntp_need = total_nt / 4 * dt; requests[self.name][ATP/CTP/GTP/UTP] = per_ntp_need; else zero requests; water
-      is not requested in the current OC calculator"
+    matlab: "result(ATP, CTP, GTP, UTP) = 2 * sum(this.metabolite.nmpComposition, 2) * this.rnaPolymerases.nActive * this.rnaPolymeraseElongationRate; result(H2O) = this.rnaPolymerases.nActive"
+    oc: "if use_allocator_budget: per_ntp_need = total_nt / 4 * dt; requests[self.name][ATP/CTP/GTP/UTP] = per_ntp_need; else zero requests; water is not requested in the current OC calculator"
     note: "MATLAB requests both NTPs and water; current OC allocator requests only the NTP quartet."
   requests:
     - wid: "ATP"
@@ -308,20 +304,16 @@ unit_conversion_chain:
 dependencies:
   produces_inputs_for:
     - "RNAProcessing"
-    - "RNAModification"
     - "Translation"
-    - "tRNAAminoacylation"
   consumes_outputs_of:
     - "Metabolism"
-  note: "Shared-substrate dependency only. Transcription feeds the RNA-processing / translation pipeline and consumes NTPs and water supplied
-    by metabolism."
+  note: "Removed RNAModification, tRNAAminoacylation from produces_inputs_for because the consumer rows do not expose a direct stoichiometric handoff; the coupling is state-only or shared-pool mediated."
 ordering_constraints:
   hard_before: []
   hard_after: []
   soft_before: []
   soft_after: []
-  note: "Simulation.evolveState has the canonical hard order constraint tRNAAminoacylation < Translation; Transcription itself has no documented
-    special ordering rule."
+  note: "Simulation.evolveState has the canonical hard order constraint tRNAAminoacylation < Translation; Transcription itself has no documented special ordering rule."
 source_anchors:
   matlab_blocks:
     class_header:
@@ -402,8 +394,7 @@ provenance:
     - "data/karr_fixtures/karr_native_m2_v2.npz"
   kb_version: "karr_native_m2__v4"
   extraction_date_utc: "2026-06-29"
-  notes: "Authoring used the MATLAB source in the full OpenCell checkout plus the current OC transcription ports. No MATLAB runtime was executed
-    in this turn."
+  notes: "Authoring used the MATLAB source in the full OpenCell checkout plus the current OC transcription ports. No MATLAB runtime was executed in this turn."
   last_audited: '2026-06-29'
   audited_by: gpt-5.4-mini + parallel codex fleet (Day-43 EOD batch)
   oc_commit_sha: 61a5a06
@@ -432,8 +423,6 @@ deviations:
   known_deviations:
     - "Current OC allocator requests only ATP/CTP/GTP/UTP; MATLAB calcResourceRequirements_Current also requests water."
     - "Current OC evolveState is a mechanism-based transcription wrapper, not the MATLAB RNAP state-machine implementation."
-    - "Legacy KarrTranscriptionProcess bypasses allocator mediation and writes direct substrate deltas when used without the allocator-budget
-      path."
-    - "OC bootstrap is split across constructor fixture loads, ports_schema defaults, and composite wiring rather than a single initializeState
-      method."
+    - "Legacy KarrTranscriptionProcess bypasses allocator mediation and writes direct substrate deltas when used without the allocator-budget path."
+    - "OC bootstrap is split across constructor fixture loads, ports_schema defaults, and composite wiring rather than a single initializeState method."
   note: "The deviations list is intentionally explicit so reviewers can grep the current OC surfaces without assuming a 1:1 port."

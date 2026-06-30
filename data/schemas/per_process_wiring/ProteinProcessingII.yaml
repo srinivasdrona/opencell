@@ -9,8 +9,7 @@ process:
   whole_cell_model_id: "Process_ProteinProcessingII"
   functional_area: "protein-processing"
   state_shape_role: "state-shape catalog row; wiring row adds integration semantics"
-  notes: "Lipoprotein and secreted protein maturation. Karr requests allocator-backed substrate budgets, while the OC port keeps the substrate
-    schema flat and reads from substrates_allocated[self.name]."
+  notes: "Lipoprotein and secreted protein maturation. Karr requests allocator-backed substrate budgets, while the OC port keeps the substrate schema flat and reads from substrates_allocated[self.name]."
 methods:
   initializeConstants:
     matlab:
@@ -112,8 +111,7 @@ methods:
           lines: "2063-2067"
           note: "Current chassis wiring for karr_protein_processing_ii."
     status: "partial"
-    note: "The OC request path is allocator-backed, but it requests available substrate pools rather than the exact MATLAB min(enzyme-limit, monomer-count)
-      formula."
+    note: "The OC request path is allocator-backed, but it requests available substrate pools rather than the exact MATLAB min(enzyme-limit, monomer-count) formula."
   evolveState:
     matlab:
       symbol: "evolveState"
@@ -138,8 +136,7 @@ methods:
           lines: "2063-2067"
           note: "Current chassis wiring for karr_protein_processing_ii."
     status: "partial"
-    note: "OC preserves the count-space maturation logic, but it is strict-zero on allocator input and does not materialize the nominal diacylglycerolCys
-      product."
+    note: "OC preserves the count-space maturation logic, but it is strict-zero on allocator input and does not materialize the nominal diacylglycerolCys product."
   calcFluxBounds:
     matlab:
       symbol: "calcFluxBounds"
@@ -171,8 +168,7 @@ allocator:
       pp2_req = {wid: 0.0 for wid in substrate_wids};
       pp2_req.update(_request_from_available(substrate_state, _pp2_consumed, active=pp2_active));
       _pp2_consumed is derived from reaction_stoich and currently resolves to H2O and PG160.
-    note: "MATLAB caps demand by enzyme rate and monomer availability; OC currently requests the available consumed substrates from the shared
-      substrate pool."
+    note: "MATLAB caps demand by enzyme rate and monomer availability; OC currently requests the available consumed substrates from the shared substrate pool."
   requests:
     - wid: "H2O"
       compartment: "cytosol"
@@ -307,15 +303,14 @@ dependencies:
     - "Translation"
     - "ProteinProcessingI"
     - "ProteinTranslocation"
-  note: "PP2 mutates the shared protein pool populated by the translation and protein-maturation chain; the current OC wire-up does not expose
-    a separate downstream class that consumes PP2-specific processed_counts or signal_sequence_counts directly."
+    - "Metabolism"
+  note: "Added Metabolism to consumes_outputs_of because this row directly draws from the shared metabolite pool in its consume_stoichiometry."
 ordering_constraints:
   hard_before: []
   hard_after: []
   soft_before: []
   soft_after: []
-  note: "The only documented hard ordering rule in Simulation.evolveState is tRNAAminoacylation < Translation; ProteinProcessingII has no bespoke
-    order constraint."
+  note: "The only documented hard ordering rule in Simulation.evolveState is tRNAAminoacylation < Translation; ProteinProcessingII has no bespoke order constraint."
 source_anchors:
   matlab_blocks:
     class_identity:
@@ -413,8 +408,7 @@ deviations:
   shared_pool_projection_merges_compartments: false
   known_deviations:
     - "OC reads from substrates_allocated[self.name] with a strict-zero guard instead of falling back to the global substrates pool."
-    - "OC request calculation is availability-based (_request_from_available) rather than the exact MATLAB min(enzyme-limit, monomer-count) request
-      formula."
+    - "OC request calculation is availability-based (_request_from_available) rather than the exact MATLAB min(enzyme-limit, monomer-count) request formula."
     - "The nominal diacylglycerolCys chemistry product named in the MATLAB comment is not materialized by either implementation."
     - "ProteinProcessingII has no calcFluxBounds analogue in the current OC port."
   note: "This row is count-space and allocator-backed, not an LP-bound metabolic row."

@@ -42,8 +42,7 @@ methods:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m"
         lines: "201-203"
         note: "Zero-grant audit cites the substrate gate/consumption branch for this process."
-      note: "MATLAB process consumes from the allocated substrate vector and gates progression on replicated + supercoiled + enzyme + gtpCost
-        conditions."
+      note: "MATLAB process consumes from the allocated substrate vector and gates progression on replicated + supercoiled + enzyme + gtpCost conditions."
     oc:
       symbol: "KarrChromosomeSegregationProcess.next_update"
       source:
@@ -81,11 +80,9 @@ allocator:
   mode:
     karr: "allocation"
     oc_current: "allocation"
-    note: "Both sides gate on per-process allocated substrates; OC reads states['substrates_allocated'][self.name] and does not fall back to the
-      global substrate pool."
+    note: "Both sides gate on per-process allocated substrates; OC reads states['substrates_allocated'][self.name] and does not fall back to the global substrate pool."
   request_formula:
-    matlab: "if replicated && supercoiled && all(required segregation proteins are present) && ~segregated then request GTP = gtpCost and H2O
-      = gtpCost, else request 0"
+    matlab: "if replicated && supercoiled && all(required segregation proteins are present) && ~segregated then request GTP = gtpCost and H2O = gtpCost, else request 0"
     oc: "request_gtp = request_h2o = gtp_cost when can_progress else 0.0"
     note: "Symbolic formula only; the MATLAB source is documented as a boolean gate with gtpCost, while the OC port inlines the same logic."
   requests:
@@ -215,25 +212,19 @@ unit_conversion_chain:
       constants: ["gtpCost", "dt"]
   note: "There is no mmol/gDW/hr conversion chain here; the process already works in per-tick molecule counts."
 dependencies:
-  produces_inputs_for:
-    - "Cytokinesis"
-    - "Metabolism"
+  produces_inputs_for: []
   consumes_outputs_of:
     - "Replication"
     - "DNASupercoiling"
     - "ChromosomeCondensation"
     - "Metabolism"
-  note: >-
-    Cytokinesis is the immediate downstream control-state consumer of
-    segregation_complete; Metabolism is the shared-pool substrate producer and
-    recycler for the GTP/H2O/GDP/H/PI pool.
+  note: "Removed Cytokinesis, Metabolism from produces_inputs_for because the consumer rows do not expose a direct stoichiometric handoff; the coupling is state-only or shared-pool mediated."
 ordering_constraints:
   hard_before: []
   hard_after: []
   soft_before: []
   soft_after: []
-  note: "No process-specific order constraint is documented for ChromosomeSegregation; the only canonical hard order in the global simulation
-    is tRNAAminoacylation < Translation."
+  note: "No process-specific order constraint is documented for ChromosomeSegregation; the only canonical hard order in the global simulation is tRNAAminoacylation < Translation."
 source_anchors:
   matlab_blocks:
     docstring_and_gate:
@@ -304,10 +295,8 @@ deviations:
       note: "The OC port has no dedicated flux-bound helper; request/update are handled inline."
   shared_pool_projection_merges_compartments: false
   known_deviations:
-    - "OC exposes continuous segregation_progress and daughter_pole_positions to support downstream chassis logic; the Karr source description
-      is boolean and event-gated."
-    - "OC adds optional include_topoiv_gate and gtp_cost_override parameters; the Karr extract only exposes gtpCost and the four core segregation
-      proteins."
+    - "OC exposes continuous segregation_progress and daughter_pole_positions to support downstream chassis logic; the Karr source description is boolean and event-gated."
+    - "OC adds optional include_topoiv_gate and gtp_cost_override parameters; the Karr extract only exposes gtpCost and the four core segregation proteins."
   note: >-
     Wiring matches the Karr allocation contract: both sides gate from
     allocated GTP/H2O and do not fall back to the global substrate pool.

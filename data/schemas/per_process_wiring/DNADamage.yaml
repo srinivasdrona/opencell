@@ -9,8 +9,7 @@ process:
   whole_cell_model_id: "Process_DNADamage"
   functional_area: "dna-replication-and-maintenance"
   state_shape_role: "chromosome-primary stochastic damage writer with flat substrate surface"
-  notes: "The canonical MATLAB source file is not present in this checkout; the local verbatim extract doc is the only source-backed proxy available
-    here."
+  notes: "The canonical MATLAB source file is not present in this checkout; the local verbatim extract doc is the only source-backed proxy available here."
 methods:
   calcResourceRequirements_Current:
     matlab:
@@ -18,16 +17,14 @@ methods:
       source:
         path: "docs/karr_extracts/process/04_DNADamage.md"
         lines: "134-178"
-        note: "Verbatim extract shows direct substrate/stimulus usage and the reaction matrix split, but no allocator request block is exposed
-          in the local extract."
+        note: "Verbatim extract shows direct substrate/stimulus usage and the reaction matrix split, but no allocator request block is exposed in the local extract."
       note: "DNADamage is treated as direct-state damage chemistry rather than an allocator-coupled resource consumer in the available source."
     oc:
       symbol: "not_implemented"
       source:
         path: "opencell/vivarium/karr_dna_damage.py"
         lines: "111-226"
-        note: "Current OC port exposes only chromosome damage state plus direct `substrates` reads; there is no request-calculator or `substrates_allocated`
-          path."
+        note: "Current OC port exposes only chromosome damage state plus direct `substrates` reads; there is no request-calculator or `substrates_allocated` path."
     status: "not_implemented"
     note: "The current OC port bypasses allocator mediation."
   evolveState:
@@ -291,22 +288,18 @@ unit_conversion_chain:
         path: "opencell/vivarium/karr_dna_damage.py"
         lines: "228-259"
         note: "Current OC computes `lam = rate_per_s * dt` before Poisson sampling."
-  note: "The DNADamage rate table is already in per-second units; the OC port converts to per-tick event counts by multiplying with the tick duration
-    and sampling Poisson events."
+  note: "The DNADamage rate table is already in per-second units; the OC port converts to per-tick event counts by multiplying with the tick duration and sampling Poisson events."
 dependencies:
-  produces_inputs_for:
-    - "DNARepair"
+  produces_inputs_for: []
   consumes_outputs_of:
     - "Metabolism"
-  note: "The strongest shared-substrate link is the DNADamage→DNARepair lesion handoff; the reverse direction is the shared free-metabolite pool
-    that includes water and small-molecule byproducts."
+  note: "Removed DNARepair from produces_inputs_for because the consumer rows do not expose a direct stoichiometric handoff; the coupling is state-only or shared-pool mediated."
 ordering_constraints:
   hard_before: []
   hard_after: []
   soft_before: []
   soft_after: []
-  note: "No DNADamage-specific process-order exception is surfaced in the local extract; the only canonical hard order called out in the wider
-    Karr scheduler is `tRNAAminoacylation < Translation`."
+  note: "No DNADamage-specific process-order exception is surfaced in the local extract; the only canonical hard order called out in the wider Karr scheduler is `tRNAAminoacylation < Translation`."
 source_anchors:
   matlab_blocks:
     biology_summary:
@@ -378,10 +371,8 @@ deviations:
       note: "Current OC port has no flux-bound helper or LP-bound wiring."
   shared_pool_projection_merges_compartments: false
   known_deviations:
-    - "The current OC port is lesion-creation only; it does not implement the full reactionSmallMoleculeStoichiometryMatrix / reactionDNAStoichiometryMatrix
-      / reactionRadiationStoichiometryMatrix chemistry described in the extract."
+    - "The current OC port is lesion-creation only; it does not implement the full reactionSmallMoleculeStoichiometryMatrix / reactionDNAStoichiometryMatrix / reactionRadiationStoichiometryMatrix chemistry described in the extract."
     - "The current OC port bypasses allocator mediation entirely and reads `states[\"substrates\"]` directly."
     - "Repair chemistry, lesion-specific arrays, and any downstream DNARepair coupling are deferred to a later port."
     - "Trace-derived kind rates are optional; when the trace file is unavailable, the OC port falls back to configured per-kind rates."
-  note: "Known deviations are kept explicit so the row does not imply full MATLAB parity where the current OC implementation is intentionally
-    narrower."
+  note: "Known deviations are kept explicit so the row does not imply full MATLAB parity where the current OC implementation is intentionally narrower."

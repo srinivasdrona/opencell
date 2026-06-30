@@ -275,8 +275,7 @@ unit_conversion_chain:
   steps:
     - from_units: "enzyme-constrained reaction opportunities"
       to_units: "substrate molecule counts/tick"
-      operation: "max(0, -reactantByproductMatrix) × min(ceil(min(enzymes(:, ones(size(catalysisMatrix, 2), 1)) ./ catalysisMatrix * stepSizeSec,
-        [], 1))', unprocessedRNAs)"
+      operation: "max(0, -reactantByproductMatrix) × min(ceil(min(enzymes(:, ones(size(catalysisMatrix, 2), 1)) ./ catalysisMatrix * stepSizeSec, [], 1))', unprocessedRNAs)"
       anchor:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m"
         lines: "406-472"
@@ -290,14 +289,10 @@ dependencies:
   produces_inputs_for:
     - "RibosomeAssembly"
     - "Translation"
-    - "tRNAAminoacylation"
   consumes_outputs_of:
     - "Metabolism"
     - "Transcription"
-  note: >-
-    The process feeds mature RNA pools used downstream by translation,
-    tRNA charging, and ribosome assembly, and it consumes ATP plus newly
-    transcribed RNA output from upstream processes.
+  note: "Removed tRNAAminoacylation from produces_inputs_for because the consumer rows do not expose a direct stoichiometric handoff; the coupling is state-only or shared-pool mediated."
 ordering_constraints:
   hard_before: []
   hard_after: []
@@ -402,8 +397,7 @@ deviations:
       note: "No OC LP-bound helper exists for this process."
   shared_pool_projection_merges_compartments: false
   known_deviations:
-    - "OC RequestCalculatorRNAPathway is shared with RNAModification and requests the current available substrate pool when active; it does not
-      reproduce the MATLAB enzyme/unprocessedRNA cap literally."
+    - "OC RequestCalculatorRNAPathway is shared with RNAModification and requests the current available substrate pool when active; it does not reproduce the MATLAB enzyme/unprocessedRNA cap literally."
     - "OC next_update consumes from substrates_allocated[self.name], while MATLAB evolves from the local substrates state."
     - "OC omits the MATLAB intergenicRNAs state/output entirely; the replay port only updates substrates and rna.counts."
     - "OC prefixes colliding processed RNA IDs with processed:: to keep mature and nascent pools from cancelling in the shared rna.counts store."

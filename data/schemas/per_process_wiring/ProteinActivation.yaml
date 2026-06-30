@@ -236,8 +236,7 @@ unit_conversion_chain:
   steps:
     - from_units: "boolean rule output + protein counts"
       to_units: "count transitions per tick"
-      operation: "no unit conversion; evaluate the boolean rule per compartment and move whole counts between substrates and inactivatedSubstrates
-        in the same tick"
+      operation: "no unit conversion; evaluate the boolean rule per compartment and move whole counts between substrates and inactivatedSubstrates in the same tick"
       anchor:
         path: "docs/karr_extracts/process/20_ProteinActivation.md"
         lines: "49-117"
@@ -245,30 +244,20 @@ unit_conversion_chain:
       constants: []
   note: "The process works directly on counts; there is no mmol/gDW/hr-style scaling chain."
 dependencies:
-  produces_inputs_for:
-    - "ProteinDecay"
-    - "ProteinFolding"
-    - "ProteinModification"
-    - "ProteinTranslocation"
-    - "TranscriptionalRegulation"
+  produces_inputs_for: []
   consumes_outputs_of:
     - "Metabolism"
     - "HostInteraction"
     - "Translation"
     - "ProteinProcessingI"
     - "ProteinProcessingII"
-  note: >-
-    Canonical downstream consumers of protein activity are the protein-pathway
-    and transcriptional-regulation modules; canonical upstream sources are the
-    metabolism/host/stress signals and the protein maturation chain that creates
-    the mature protein pools being toggled.
+  note: "Removed ProteinDecay, ProteinFolding, ProteinModification, ProteinTranslocation, TranscriptionalRegulation from produces_inputs_for because the consumer rows do not expose a direct stoichiometric handoff; the coupling is state-only or shared-pool mediated."
 ordering_constraints:
   hard_before: []
   hard_after: []
   soft_before: []
   soft_after: []
-  note: "ProteinActivation itself has no process-order exception in the source extract; the only canonical hard order mentioned in the surrounding
-    simulation is tRNAAminoacylation < Translation."
+  note: "ProteinActivation itself has no process-order exception in the source extract; the only canonical hard order mentioned in the surrounding simulation is tRNAAminoacylation < Translation."
 source_anchors:
   matlab_blocks:
     class_identity:

@@ -9,8 +9,7 @@ process:
   whole_cell_model_id: "Process_DNASupercoiling"
   functional_area: "DNA-replication-and-maintenance"
   state_shape_role: "chromosome-linked stochastic controller; allocator-facing ATP/H2O budget"
-  notes: "MATLAB source was read from the WholeCell mirror; current OC port uses a sparse chromosome store and a shared allocator. The current
-    OC runtime reads allocated ATP/H2O from substrates_allocated[self.name] and emits ADP/PI/H directly from executed ATP hydrolysis."
+  notes: "MATLAB source was read from the WholeCell mirror; current OC port uses a sparse chromosome store and a shared allocator. The current OC runtime reads allocated ATP/H2O from substrates_allocated[self.name] and emits ADP/PI/H directly from executed ATP hydrolysis."
 methods:
   initializeConstants:
     matlab:
@@ -186,12 +185,9 @@ allocator:
     oc_current: "allocation"
     note: "Karr requests ATP/H2O for supercoiling and the OC port reads allocated ATP/H2O from substrates_allocated[self.name]."
   request_formula:
-    matlab: "nATP = enzProps.atpCost * ceil((enzymes(gyraseIndex) + boundEnzymes(gyraseIndex)) * enzProps.activityRate * max(enzProps.probOfActivityFunc(sigmas,
-      c))); result(ATP) = nATP; result(H2O) = nATP"
-    oc: "requestNeed = min(request_max_atp, ceil(request_safety_factor * (expected_gyrase_events * gyrase_atp_cost + expected_topoIV_events *
-      topoiv_atp_cost + replication_extra * gyrase_atp_cost))); ATP and H2O both receive requestNeed"
-    note: "The OC controller is a superset of the MATLAB current-request helper because it merges the broader lifecycle terms into the same request
-      path."
+    matlab: "nATP = enzProps.atpCost * ceil((enzymes(gyraseIndex) + boundEnzymes(gyraseIndex)) * enzProps.activityRate * max(enzProps.probOfActivityFunc(sigmas, c))); result(ATP) = nATP; result(H2O) = nATP"
+    oc: "requestNeed = min(request_max_atp, ceil(request_safety_factor * (expected_gyrase_events * gyrase_atp_cost + expected_topoIV_events * topoiv_atp_cost + replication_extra * gyrase_atp_cost))); ATP and H2O both receive requestNeed"
+    note: "The OC controller is a superset of the MATLAB current-request helper because it merges the broader lifecycle terms into the same request path."
   requests:
     - wid: "ATP"
       compartment: "cytosol"
@@ -348,19 +344,16 @@ unit_conversion_chain:
         note: "Direct substrate delta emission."
   note: "This controller is discrete-count based; there is no Metabolism-style mmol/gDW/hr layer."
 dependencies:
-  produces_inputs_for:
-    - "Metabolism"
+  produces_inputs_for: []
   consumes_outputs_of:
     - "Metabolism"
-  note: "The direct shared-substrate dependency is the ATP/H2O in / ADP/PI/H out loop with Metabolism; chromosome-state coupling to other processes
-    is real but not substrate-mediated."
+  note: "Removed Metabolism from produces_inputs_for because Metabolism is producer-only at the substrate-pool layer."
 ordering_constraints:
   hard_before: []
   hard_after: []
   soft_before: []
   soft_after: []
-  note: "No DNASupercoiling-specific ordering rule was found; the canonical hard constraint in Simulation.evolveState is tRNAAminoacylation before
-    Translation."
+  note: "No DNASupercoiling-specific ordering rule was found; the canonical hard constraint in Simulation.evolveState is tRNAAminoacylation before Translation."
 source_anchors:
   matlab_blocks:
     class_identity:
@@ -442,11 +435,7 @@ provenance:
     - "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
   kb_version: "karr_native_m1__v2"
   extraction_date_utc:
-  notes: "last_audited=2026-06-29; audited_by=gpt-5.4-mini (codex; row authored Day-43 EOD); oc_commit_sha=61a5a06e8031af3159dffa436655ade330be1fd9;
-    matlab_files_referenced=[E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m, E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m,
-    E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/Simulation.m]; oc_files_referenced=[opencell/vivarium/karr_dna_supercoiling.py,
-    opencell/vivarium/karr_allocation_step.py, opencell/vivarium/karr_composite.py, opencell/vivarium/karr_replication_initiation.py]; fixture_sources=[data/karr_fixtures/per_process/DNASupercoiling_flat.mat,
-    data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat]."
+  notes: "last_audited=2026-06-29; audited_by=gpt-5.4-mini (codex; row authored Day-43 EOD); oc_commit_sha=61a5a06e8031af3159dffa436655ade330be1fd9; matlab_files_referenced=[E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m, E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m, E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/Simulation.m]; oc_files_referenced=[opencell/vivarium/karr_dna_supercoiling.py, opencell/vivarium/karr_allocation_step.py, opencell/vivarium/karr_composite.py, opencell/vivarium/karr_replication_initiation.py]; fixture_sources=[data/karr_fixtures/per_process/DNASupercoiling_flat.mat, data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat]."
   last_audited: '2026-06-29'
   audited_by: gpt-5.4-mini + parallel codex fleet (Day-43 EOD batch)
   oc_commit_sha: 61a5a06
@@ -471,11 +460,8 @@ deviations:
       note: "OC uses a per-tick request/update controller and no flux-bounds stage."
   shared_pool_projection_merges_compartments: false
   known_deviations:
-    - "OC merges the request calculation and per-tick update into one next_update controller, while MATLAB splits calcResourceRequirements_Current
-      and evolveState."
-    - "OC makes dt explicit in the request controller and sparse chromosome update, while the MATLAB current-request body relies on the simulation
-      tick / fixture step size implicitly."
+    - "OC merges the request calculation and per-tick update into one next_update controller, while MATLAB splits calcResourceRequirements_Current and evolveState."
+    - "OC makes dt explicit in the request controller and sparse chromosome update, while the MATLAB current-request body relies on the simulation tick / fixture step size implicitly."
     - "OC does not expose the MATLAB RNAPolymerase fold-change matrix helper; it surfaces only the supercoiled chromosome state."
-    - "OC uses a sparse chromosome-store/replay-hint implementation rather than the MATLAB doubleStrandedRegions / monomerBoundSites / complexBoundSites
-      control surface."
+    - "OC uses a sparse chromosome-store/replay-hint implementation rather than the MATLAB doubleStrandedRegions / monomerBoundSites / complexBoundSites control surface."
   note: "No compartment-merging projection is involved here; the remaining deviations are controller-shape and state-representation differences."
