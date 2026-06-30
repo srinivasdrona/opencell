@@ -1,0 +1,274 @@
+schema_version: "1.0"
+process:
+  name: "Cytokinesis"
+  matlab_class: "Cytokinesis"
+  matlab_file: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m"
+  oc_class: "KarrCytokinesisProcess"
+  oc_file: "opencell/vivarium/karr_cytokinesis.py"
+  whole_cell_model_id: "Process_Cytokinesis"
+  functional_area: "cytokinesis"
+  state_shape_role: "state-shape catalog row; wiring row adds integration semantics"
+  notes: "Small substrate row: the MATLAB source exposes PI/H2O/H as the only substrate channel, while the OC port keeps a legacy zero GTP request slot for compatibility."
+methods:
+  calcResourceRequirements_Current:
+    matlab:
+      symbol: "calcResourceRequirements_Current"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m"
+        lines: "165-170"
+        note: "Allocator-facing current water request."
+      note: "Requests water proportional to the current FtsZ-GTP polymer pool."
+    oc:
+      symbol: "KarrCytokinesisProcess.next_update"
+      source:
+        path: "opencell/vivarium/karr_cytokinesis.py"
+        lines: "330-410"
+        note: "Embedded request emission and state update share one OC method."
+      supporting:
+        - path: "opencell/vivarium/karr_cytokinesis.py"
+          lines: "485-503"
+          note: "_water_request gate used by next_update."
+      note: "OC embeds allocator request emission inside the per-tick update instead of a dedicated request-calculator class."
+    status: partial
+    note: "The OC request formula is geometry/gating aware, so this is a faithful but not line-for-line port of MATLAB's current allocator request."
+  calcResourceRequirements_LifeCycle:
+    matlab:
+      symbol: "calcResourceRequirements_LifeCycle"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m"
+        lines: "138-159"
+        note: "Lifecycle water/byproduct accounting and minimum FtsZ-GTP polymer expression."
+      note: "Lifecycle-level resource accounting, distinct from the current-tick allocator request."
+    oc:
+      symbol: "NOT_IMPLEMENTED"
+      source:
+        path: "opencell/vivarium/karr_cytokinesis.py"
+        lines: "330-410"
+        note: "No dedicated lifecycle resource method exists in the current OC port."
+      note: "Lifecycle resource accounting is folded into the current per-tick update path instead."
+    status: not_implemented
+    note: "Retained as a placeholder because the MATLAB class has a distinct lifecycle resource method that the OC port does not expose separately."
+  evolveState:
+    matlab:
+      symbol: "evolveState"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m"
+        lines: "173-259"
+        note: "Five-phase ring evolution, substrate writeback, and pinched-diameter update."
+      note: "This is the main per-tick Cytokinesis update block."
+    oc:
+      symbol: "KarrCytokinesisProcess.next_update"
+      source:
+        path: "opencell/vivarium/karr_cytokinesis.py"
+        lines: "330-410"
+        note: "Per-tick update entrypoint."
+      supporting:
+        - path: "opencell/vivarium/karr_cytokinesis.py"
+          lines: "505-614"
+          note: "Binding, unbinding, hydrolysis, and dissociation phase helpers."
+        - path: "opencell/vivarium/karr_cytokinesis.py"
+          lines: "621-675"
+          note: "Geometry helpers for edge counts and pinched-diameter evolution."
+      note: "The OC update keeps the MATLAB phase ordering but packages it inside next_update."
+    status: implemented
+    note: "Faithful at the phase level; the OC method boundary is broader because it also emits requests."
+  calcFluxBounds:
+    matlab:
+      symbol: "calcFluxBounds"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m"
+        lines: "60-300"
+        note: "No local override is defined in Cytokinesis.m; the class only exposes allocator and evolveState logic."
+      note: "Cytokinesis has no dedicated LP-bounds method in this source file."
+    oc:
+      symbol: "NOT_IMPLEMENTED"
+      source:
+        path: "opencell/vivarium/karr_cytokinesis.py"
+        lines: "115-678"
+        note: "The current OC port is a process updater and does not define a flux-bounds path."
+      note: "No OC flux-bounds correspondence was found."
+    status: not_implemented
+    note: "Required by schema, but Cytokinesis does not implement an LP-bounds method in the source we audited."
+allocator:
+  mode:
+    karr: "allocation"
+    oc_current: "allocation"
+    note: "The MATLAB process requests substrate share input, and the OC port reads from `states['substrates_allocated'][self.name]` before applying the per-tick substrate delta."
+  request_formula:
+    matlab: "result(this.substrateIndexs_water) = this.ftsZRing.numFtsZSubunitsPerFilament * this.enzymes(this.enzymeIndexs_ftsZ_GTP_polymer);"
+    oc: "if segregated and not pinched then 2 * numFtsZSubunitsPerFilament * max(0, potential_hydrolysis_edges) else 0"
+    note: "MATLAB requests water from the current FtsZ-GTP polymer pool; OC requests water from hydrolysis opportunity gated by ring geometry and chromosome segregation."
+  requests:
+    - wid: "H2O"
+      compartment: "cytosol"
+      source: "both"
+      note: "The only actual allocator-facing substrate request in the MATLAB source and the current OC port."
+  bypasses:
+    - wid: "H2O"
+      compartment: "cytosol"
+      source: "both"
+      note: "The same water tuple is also decremented directly from the substrate pool during hydrolysis."
+    - wid: "PI"
+      compartment: "cytosol"
+      source: "both"
+      note: "Direct hydrolysis byproduct writeback."
+    - wid: "H"
+      compartment: "cytosol"
+      source: "both"
+      note: "Direct hydrolysis byproduct writeback."
+consume_stoichiometry:
+  - wid: "H2O"
+    compartment: "cytosol"
+    formula_or_constant: "2 * numFtsZSubunitsPerFilament * nHydrolyzedEdges"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m"
+      lines: "219-231"
+      note: "Hydrolysis branch consumes H2O in discrete quanta."
+    oc_anchor:
+      path: "opencell/vivarium/karr_cytokinesis.py"
+      lines: "555-583"
+      note: "_phase_hydrolyze_and_bend subtracts water during each successful hydrolysis event."
+    note: "The symbolic `nHydrolyzedEdges` stands for the count of successful hydrolysis events in the tick."
+produce_stoichiometry:
+  - wid: "PI"
+    compartment: "cytosol"
+    formula_or_constant: "2 * numFtsZSubunitsPerFilament * nHydrolyzedEdges"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m"
+      lines: "219-231"
+      note: "Hydrolysis branch produces phosphate."
+    oc_anchor:
+      path: "opencell/vivarium/karr_cytokinesis.py"
+      lines: "555-583"
+      note: "_phase_hydrolyze_and_bend adds phosphate during each successful hydrolysis event."
+  - wid: "H"
+    compartment: "cytosol"
+    formula_or_constant: "2 * numFtsZSubunitsPerFilament * nHydrolyzedEdges"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m"
+      lines: "219-231"
+      note: "Hydrolysis branch produces hydrogen."
+    oc_anchor:
+      path: "opencell/vivarium/karr_cytokinesis.py"
+      lines: "555-583"
+      note: "_phase_hydrolyze_and_bend adds hydrogen during each successful hydrolysis event."
+compartment_routing:
+  - wid: "H2O"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Water is consumed from the cytosolic substrate pool."
+  - wid: "PI"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Phosphate is produced into the cytosolic substrate pool."
+  - wid: "H"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Hydrogen ion is produced into the cytosolic substrate pool."
+unit_conversion_chain:
+  source_units: "discrete molecule counts"
+  target_units: "molecules/tick"
+  steps:
+    - from_units: "discrete molecule counts"
+      to_units: "molecules/tick"
+      operation: "identity; Cytokinesis already stores and mutates integer molecule counts per tick, so no continuous unit conversion is applied."
+      anchor:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m"
+        lines: "166-170"
+        note: "Current request formula is count-based."
+  note: "Unlike metabolism-style processes, Cytokinesis does not pass through a mmol/gDW/hr conversion chain."
+dependencies:
+  produces_inputs_for:
+    - "Metabolism"
+  consumes_outputs_of:
+    - "Metabolism"
+  note: "Shared small-molecule loop only: Cytokinesis consumes cytosolic water and emits phosphate/hydrogen back into the metabolite pool; no other clear substrate-level dependencies were evident in the audited sources."
+ordering_constraints:
+  hard_before: []
+  hard_after: []
+  soft_before: []
+  soft_after:
+    - "ChromosomeSegregation"
+  note: "The MATLAB source gates `evolveState` on `chromosome.segregated`; this is a state gate rather than a Simulation-level hard schedule rule. The repository-wide hard order exception remains `tRNAAminoacylation < Translation`."
+source_anchors:
+  matlab_blocks:
+    class_identity:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m"
+      lines: "60-99"
+      note: "Class declaration, substrate IDs, enzyme IDs, and fixed constants."
+    lifecycle_requirements:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m"
+      lines: "138-159"
+      note: "Lifecycle water/byproduct calculation and minimum enzyme expression."
+    allocator_request:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m"
+      lines: "166-170"
+      note: "Current allocator-facing water request."
+    evolve_state:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m"
+      lines: "173-259"
+      note: "Main per-tick update and substrate writeback."
+    pinching_helpers:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m"
+      lines: "264-300"
+      note: "Pinch geometry helpers and required-cycle calculator."
+  oc_blocks:
+    fixture_loading:
+      path: "opencell/vivarium/karr_cytokinesis.py"
+      lines: "135-188"
+      note: "Loads the Cytokinesis fixture MAT and the ring/geometry JSON fixtures."
+    ports_schema:
+      path: "opencell/vivarium/karr_cytokinesis.py"
+      lines: "215-328"
+      note: "Declares cell, chromosome, geometry, ring, substrate, and allocator-facing ports."
+    next_update:
+      path: "opencell/vivarium/karr_cytokinesis.py"
+      lines: "330-410"
+      note: "Embedded request emission plus per-tick state update."
+    gating_and_request_helpers:
+      path: "opencell/vivarium/karr_cytokinesis.py"
+      lines: "412-503"
+      note: "Geometry/ring reconstruction, allocator read, and water request gate."
+    phase_updates:
+      path: "opencell/vivarium/karr_cytokinesis.py"
+      lines: "505-614"
+      note: "Binding, unbinding, hydrolysis, and dissociation phase helpers."
+    geometry_helpers:
+      path: "opencell/vivarium/karr_cytokinesis.py"
+      lines: "621-675"
+      note: "Pinched-diameter and edge-count helpers."
+provenance:
+  fixture_files:
+    - "data/karr_fixtures/per_process/Cytokinesis_flat.mat"
+    - "data/karr_fixtures/per_process/FtsZRing.json"
+    - "data/karr_fixtures/per_process/CellGeometry.json"
+  kb_version: "karr_native_m1__v2"
+  extraction_date_utc: "2026-06-30T00:00:00Z"
+  notes: >-
+    Requested audit metadata recorded here because the current schema only allows
+    fixture_files/kb_version/extraction_date_utc/notes. last_audited=2026-06-29;
+    audited_by="gpt-5.4-mini (codex; row authored Day-43 EOD)";
+    oc_commit_sha=61a5a06e8031af3159dffa436655ade330be1fd9;
+    matlab_files_referenced=["data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m"];
+    oc_files_referenced=["opencell/vivarium/karr_cytokinesis.py","opencell/vivarium/karr_request_calculators.py","tests/vivarium/_l2_2_design_a_runner_helpers.py","tests/vivarium/test_karr_cytokinesis.py"].
+deviations:
+  lp_bounds_source:
+    karr: "unknown"
+    oc_current: "unknown"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m"
+      lines: "60-300"
+      note: "Cytokinesis.m has no local LP-bounds method override."
+    oc_anchor:
+      path: "opencell/vivarium/karr_cytokinesis.py"
+      lines: "115-678"
+      note: "The current OC port is a process updater and does not expose a flux-bounds path."
+  shared_pool_projection_merges_compartments: false
+  known_deviations:
+    - "OC embeds request emission in `KarrCytokinesisProcess.next_update` and bases the water request on ring geometry / hydrolysis opportunity, while MATLAB's `calcResourceRequirements_Current` requests water from the current FtsZ-GTP polymer count."
+    - "The OC port preserves a zero-valued GTP request key for compatibility, but Cytokinesis.m only requests water."
+    - "The MATLAB class has a separate lifecycle resource method; the OC port does not expose a separate lifecycle calculator."
+  note: "Known divergences are intentionally explicit so the wiring row can be diff-checked instead of inferred."
