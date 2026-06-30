@@ -1,0 +1,452 @@
+schema_version: "1.0"
+process:
+  name: "Translation"
+  matlab_class: "Translation"
+  matlab_file: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m"
+  oc_class: "KarrTranslationV3Process"
+  oc_file: "opencell/vivarium/karr_translation_v3.py"
+  whole_cell_model_id: "Process_Translation"
+  functional_area: "gene-expression"
+  state_shape_role: "state-shape catalog row; wiring row adds integration semantics"
+  notes: "Current OC runtime is allocator-mixed: AA demand is allocator-mediated, but GTP/H2O are still read directly from the shared substrate pool; the legacy fixed-rate wrapper remains in opencell/vivarium/karr_translation.py."
+methods:
+  initializeConstants:
+    matlab:
+      symbol: "initializeConstants"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m"
+        lines: "298-310"
+        note: "Populates translation constants from the knowledge base."
+      note: "This is the MATLAB setup hook for translation-specific constants."
+    oc:
+      symbol: "KarrTranslationV3Process.__init__"
+      source:
+        path: "opencell/vivarium/karr_translation_v3.py"
+        lines: "70-99"
+        note: "Loads fixture-backed kinetics/mechanism inputs."
+      supporting:
+        - path: "opencell/m3/translation.py"
+          lines: "119-145"
+          note: "Main translation model fixture loader."
+        - path: "opencell/m3/translation_v2.py"
+          lines: "79-94"
+          note: "Mechanism-input fixture loader."
+      note: "OC initializes from committed fixtures rather than a MATLAB knowledge base."
+    status: "partial"
+    note: "Implemented as fixture-backed constructor/setup, not as a line-for-line MATLAB KB loader."
+  calcResourceRequirements_Current:
+    matlab:
+      symbol: "calcResourceRequirements_Current"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m"
+        lines: "570-596"
+        note: "Allocator-facing request vector; GTP and water are the only explicit metabolite requests."
+      note: "The water assignment is overwritten twice; the final expression is the last assignment in the body."
+    oc:
+      symbol: "RequestCalculatorTranslation.next_update"
+      source:
+        path: "opencell/vivarium/karr_request_calculators.py"
+        lines: "605-655"
+        note: "Current OC request calculator for translation AA demand."
+      supporting:
+        - path: "opencell/vivarium/karr_translation_v3.py"
+          lines: "601-617"
+          note: "Consumes the AA allocator grants or falls back to direct substrate reads."
+      note: "OC current requests AA pools from the mechanism-based surrogate; it does not mirror MATLAB's GTP/H2O request vector."
+    status: "partial"
+    note: "Semantically divergent: MATLAB requests energy/water; current OC requests the 20 standard amino-acid pool."
+  evolveState:
+    matlab:
+      symbol: "evolveState"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m"
+        lines: "599-911"
+        note: "Ribosome initiation/elongation/termination, tmRNA handling, and substrate writeback."
+      note: "This is the main per-tick biology update, including the direct substrate decrements/additions."
+    oc:
+      symbol: "KarrTranslationV3Process.next_update"
+      source:
+        path: "opencell/vivarium/karr_translation_v3.py"
+        lines: "520-618"
+        note: "Current per-tick translation update."
+      supporting:
+        - path: "opencell/vivarium/karr_translation_v3.py"
+          lines: "299-436"
+          note: "Biology-transition helper used by next_update for enzymes/bound enzymes."
+        - path: "opencell/vivarium/karr_translation.py"
+          lines: "175-295"
+          note: "Legacy fixed-rate wrapper for translation protein/AA deltas."
+      note: "OC reproduces the ribosome/bound-enzyme update shape, but the substrate side is AA-surrogate driven rather than a full charged-tRNA/polymerize replay."
+    status: "partial"
+    note: "Implemented, but the current OC path is mechanism-based and keeps a direct GTP/H2O side gate."
+  calcFluxBounds:
+    matlab:
+      symbol: "calcFluxBounds"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m"
+        lines: "181-280"
+        note: "Class header / property block; no calcFluxBounds method is defined in this class."
+      note: "Translation.m does not define a flux-bounds method."
+    oc:
+      symbol: "n/a"
+      source:
+        path: "opencell/vivarium/karr_translation_v3.py"
+        lines: "56-166"
+        note: "Process class definition and port schema only; no flux-bounds analogue."
+      note: "No dedicated flux-bound calculation exists in the current OC translation wrapper."
+    status: "not_implemented"
+    note: "Absent on both sides as a standalone wiring method."
+allocator:
+  mode:
+    karr: "allocation"
+    oc_current: "mixed"
+    note: "The current OC chassis sets use_allocator_budget=True, so AA demand is allocator-mediated, but GTP/H2O remain direct substrate reads and make the runtime mixed."
+  request_formula:
+    matlab: "GTP = nInitiations + 2*nElongations + 3*nTerminations; H2O = nElongations (final overwrite after intermediate assignments)"
+    oc: "requests[AA] = max(0, predict_synthesis_per_s(n_active) × base_counts[:, AA] × timestep); zero request when use_allocator_budget is false"
+    note: "MATLAB requests energy/water; current OC requests the 20 standard amino-acid pools and then clips them by allocation."
+  requests:
+    - wid: "ALA"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Representative allocator-mediated amino-acid request in the current OC path."
+    - wid: "MET"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Initiator-residue surrogate in the current OC path."
+    - wid: "LYS"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Representative allocator-mediated amino-acid request in the current OC path."
+    - wid: "GLY"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Representative allocator-mediated amino-acid request in the current OC path."
+    - wid: "VAL"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Representative allocator-mediated amino-acid request in the current OC path."
+  bypasses:
+    - wid: "GTP"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Direct substrate gate used by the current OC helper even when AA demand is allocated."
+    - wid: "H2O"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Direct substrate gate used by the current OC helper even when AA demand is allocated."
+consume_stoichiometry:
+  - wid: "GTP"
+    compartment: "cytosol"
+    formula_or_constant: "nInitiations + 2*nElongations + 3*nTerminations"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m"
+      lines: "570-590"
+      note: "Allocator request / energy budget for translation."
+    oc_anchor:
+      path: "opencell/vivarium/karr_translation_v3.py"
+      lines: "341-352"
+      note: "OC still gates elongation on the direct GTP/H2O pools."
+    note: "Karr's direct substrate pool and the current OC side gate both touch GTP."
+  - wid: "H2O"
+    compartment: "cytosol"
+    formula_or_constant: "nElongations"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m"
+      lines: "591-595"
+      note: "Water request is overwritten twice; the final expression is the last assignment."
+    oc_anchor:
+      path: "opencell/vivarium/karr_translation_v3.py"
+      lines: "341-352"
+      note: "OC still gates elongation on the direct GTP/H2O pools."
+    note: "The current OC helper reads H2O directly even when the AA allocator path is enabled."
+  - wid: "ALA"
+    compartment: "cytosol"
+    formula_or_constant: "sum_i (predict_synthesis_per_s_i * base_counts[i, ALA]) * timestep"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m"
+      lines: "775-778"
+      note: "Charged-tRNA polymerization surrogate; MATLAB does not expose a separate free-Ala pool here."
+    oc_anchor:
+      path: "opencell/vivarium/karr_request_calculators.py"
+      lines: "639-655"
+      note: "AA demand request computed from predicted synthesis per second."
+    note: "OC allocator-side amino-acid surrogate for the charged-tRNA demand."
+  - wid: "MET"
+    compartment: "cytosol"
+    formula_or_constant: "sum_i (predict_synthesis_per_s_i * base_counts[i, MET]) * timestep"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m"
+      lines: "775-778"
+      note: "Initiator residue demand is folded into the polymerization/tRNA path."
+    oc_anchor:
+      path: "opencell/vivarium/karr_request_calculators.py"
+      lines: "639-655"
+      note: "AA demand request computed from predicted synthesis per second."
+    note: "Current OC uses MET as the initiator-residue surrogate; MATLAB's substrate vocabulary also includes FMET."
+  - wid: "LYS"
+    compartment: "cytosol"
+    formula_or_constant: "sum_i (predict_synthesis_per_s_i * base_counts[i, LYS]) * timestep"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m"
+      lines: "775-778"
+      note: "Charged-tRNA polymerization surrogate."
+    oc_anchor:
+      path: "opencell/vivarium/karr_request_calculators.py"
+      lines: "639-655"
+      note: "AA demand request computed from predicted synthesis per second."
+    note: "Representative amino-acid drain in the current OC allocator path."
+produce_stoichiometry:
+  - wid: "GDP"
+    compartment: "cytosol"
+    formula_or_constant: "energyAllocation - availableEnergy"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m"
+      lines: "906-910"
+      note: "Energy writeback after translation and termination."
+    oc_anchor:
+      path: "opencell/vivarium/karr_translation_v3.py"
+      lines: "590-618"
+      note: "OC does not emit GDP; protein output is the paired product surface."
+    note: "Karr metabolite byproduct; no direct OC substrate-byproduct analogue."
+  - wid: "PI"
+    compartment: "cytosol"
+    formula_or_constant: "energyAllocation - availableEnergy"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m"
+      lines: "906-910"
+      note: "Energy writeback after translation and termination."
+    oc_anchor:
+      path: "opencell/vivarium/karr_translation_v3.py"
+      lines: "590-618"
+      note: "OC does not emit phosphate; protein output is the paired product surface."
+    note: "Karr metabolite byproduct; no direct OC substrate-byproduct analogue."
+  - wid: "H"
+    compartment: "cytosol"
+    formula_or_constant: "energyAllocation - availableEnergy + sum(translationCost)"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m"
+      lines: "906-911"
+      note: "Hydrogen byproduct writeback combines translation cost with the GTP bookkeeping."
+    oc_anchor:
+      path: "opencell/vivarium/karr_translation_v3.py"
+      lines: "590-618"
+      note: "OC does not emit this hydrogen byproduct; protein output is the paired product surface."
+    note: "Karr metabolite byproduct; current OC uses a protein-output surrogate instead."
+compartment_routing:
+  - wid: "GTP"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Translation energy gate is cytosolic in both source and current OC helper."
+  - wid: "H2O"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Water gate is cytosolic in both source and current OC helper."
+  - wid: "ALA"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Allocator-side amino-acid surrogate is cytosolic."
+  - wid: "MET"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Allocator-side initiator-residue surrogate is cytosolic."
+  - wid: "LYS"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Allocator-side amino-acid surrogate is cytosolic."
+  - wid: "GDP"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Karr byproduct stays cytosolic."
+  - wid: "PI"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Karr byproduct stays cytosolic."
+  - wid: "H"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Karr byproduct stays cytosolic."
+unit_conversion_chain:
+  source_units: "proteins/s and amino-acid demand rates"
+  target_units: "molecules/tick"
+  steps:
+    - from_units: "proteins/s"
+      to_units: "amino-acid molecules/s"
+      operation: "predict_synthesis_per_s × base_counts[:, AA]"
+      constants: ["n_active_ribosomes", "elongation_rate_aa_per_s", "base_counts", "aa_col_indices"]
+      anchor:
+        path: "opencell/m3/translation_v2.py"
+        lines: "97-113"
+        note: "Mechanism-based protein production rate."
+    - from_units: "amino-acid molecules/s"
+      to_units: "amino-acid molecules/tick"
+      operation: "× timestep"
+      constants: ["timestep"]
+      anchor:
+        path: "opencell/vivarium/karr_request_calculators.py"
+        lines: "639-655"
+        note: "Request calculator applies the current timestep through _safe_dt(timestep)."
+    - from_units: "amino-acid molecules/tick"
+      to_units: "integer molecules/tick"
+      operation: "stochastic_round_nonnegative"
+      constants: ["rng_seed"]
+      anchor:
+        path: "opencell/vivarium/karr_translation_v3.py"
+        lines: "207-213"
+        note: "Integral nonnegative rounding used by the current OC wrapper."
+  note: "The MATLAB process is already count-based in `evolveState`; this chain documents the OC AA-demand surrogate that is converted from a rate to per-tick integer deltas."
+dependencies:
+  produces_inputs_for:
+    - "ProteinProcessingI"
+    - "ProteinProcessingII"
+    - "ProteinFolding"
+    - "ProteinModification"
+    - "ProteinTranslocation"
+  consumes_outputs_of:
+    - "Transcription"
+    - "RNAProcessing"
+    - "RNAModification"
+    - "tRNAAminoacylation"
+    - "Metabolism"
+  note: "Translation consumes mature transcripts, charged tRNAs, and energy/water pools, then feeds the post-translation maturation pipeline."
+ordering_constraints:
+  hard_before:
+    - "tRNAAminoacylation"
+  hard_after: []
+  soft_before: []
+  soft_after: []
+  note: "Simulation.evolveState hard-codes the only explicit translation order exception: tRNAAminoacylation must precede Translation."
+source_anchors:
+  matlab_blocks:
+    class_identity:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m"
+      lines: "181-213"
+      note: "Class definition and substrate/enzyme index declarations."
+    initialize_constants:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m"
+      lines: "298-310"
+      note: "Knowledge-base constant extraction."
+    copy_from_state:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m"
+      lines: "313-334"
+      note: "State pullback from simulation."
+    copy_to_state:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m"
+      lines: "337-349"
+      note: "State pushback to simulation."
+    allocate_memory:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m"
+      lines: "354-364"
+      note: "Per-timepoint storage allocation."
+    lifecycle_resource_req:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m"
+      lines: "383-436"
+      note: "Auxiliary life-cycle biomass / enzyme requirement helper."
+    initialize_state:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m"
+      lines: "444-560"
+      note: "Ribosome and polypeptide initialization, plus monomer count correction."
+    resource_req_current:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m"
+      lines: "570-596"
+      note: "Current allocator request vector."
+    evolve_state:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m"
+      lines: "599-911"
+      note: "Main translation update loop."
+    ordering_check:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m"
+      lines: "51-53"
+      note: "Hard process-order exception: tRNAAminoacylation must be evaluated before Translation."
+    polymerize_helper:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+util/polymerize.m"
+      lines: "17-95"
+      note: "Greedy polymerization helper used by Translation."
+  oc_blocks:
+    composite_translation_process:
+      path: "opencell/vivarium/karr_composite.py"
+      lines: "747-754"
+      note: "Current chassis instantiates KarrTranslationV3Process with use_allocator_budget=True."
+    translation_process_class:
+      path: "opencell/vivarium/karr_translation_v3.py"
+      lines: "56-166"
+      note: "Process definition and ports schema."
+    translation_update:
+      path: "opencell/vivarium/karr_translation_v3.py"
+      lines: "520-618"
+      note: "Current per-tick update path."
+    translation_biology_helper:
+      path: "opencell/vivarium/karr_translation_v3.py"
+      lines: "299-436"
+      note: "Enzyme / bound-enzyme transition helper."
+    request_calculator:
+      path: "opencell/vivarium/karr_request_calculators.py"
+      lines: "605-655"
+      note: "Current translation AA request calculator."
+    legacy_wrapper:
+      path: "opencell/vivarium/karr_translation.py"
+      lines: "175-295"
+      note: "Legacy fixed-rate translation wrapper."
+    model_fixture:
+      path: "opencell/m3/translation.py"
+      lines: "119-145"
+      note: "Committed translation model fixture loader."
+    mechanism_fixture:
+      path: "opencell/m3/translation_v2.py"
+      lines: "79-94"
+      note: "Mechanism-input fixture loader."
+provenance:
+  fixture_files:
+    - "data/karr_fixtures/karr_native_m3.json"
+    - "data/karr_fixtures/karr_native_m3.npz"
+    - "data/karr_fixtures/karr_native_m3_vocab.json"
+    - "data/karr_fixtures/karr_native_m3_v2.json"
+    - "data/karr_fixtures/karr_native_m3_v2.npz"
+    - "data/karr_archive/karr_archive.npz"
+  kb_version: "karr_native_m3__v1"
+  extraction_date_utc: null
+  notes: "OC init loads the main translation fixture, the AA vocab sidecar, the v2 mechanism-input fixture, and an optional replay archive seed; the current chassis wires the process with use_allocator_budget=True."
+  last_audited: "2026-06-29"
+  audited_by: "gpt-5.4-mini (codex; row authored Day-43 EOD)"
+  oc_commit_sha: "61a5a06e8031af3159dffa436655ade330be1fd9"
+  matlab_files_referenced:
+    - "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m"
+    - "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/Simulation.m"
+    - "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m"
+    - "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+util/polymerize.m"
+  oc_files_referenced:
+    - "opencell/vivarium/karr_translation_v3.py"
+    - "opencell/vivarium/karr_translation.py"
+    - "opencell/vivarium/karr_request_calculators.py"
+    - "opencell/vivarium/karr_composite.py"
+    - "opencell/m3/translation.py"
+    - "opencell/m3/translation_v2.py"
+  notes: "Translation is a mixed OC runtime: allocator-mediated AA demand plus direct GTP/H2O gating. The OC wrapper also relies on a fixture-backed M3 model and mechanism-input pair instead of MATLAB KB constants."
+deviations:
+  lp_bounds_source:
+    karr: "allocation"
+    oc_current: "allocation"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m"
+      lines: "570-596"
+      note: "MATLAB declares an allocator-facing resource request vector."
+    oc_anchor:
+      path: "opencell/vivarium/karr_translation_v3.py"
+      lines: "601-617"
+      note: "Current OC still applies an allocator-mediated substrate cap for AA demand."
+  shared_pool_projection_merges_compartments: false
+  known_deviations:
+    - "MATLAB requests GTP/H2O, while current OC requests the 20 standard amino-acid pools through RequestCalculatorTranslation."
+    - "Current OC still reads GTP/H2O directly from states['substrates'] inside the biology helper, so the runtime is mixed rather than pure allocation."
+    - "MATLAB's substrate vocabulary includes FMET; current OC exposes only the 20 standard amino acids and uses MET as the initiator-residue surrogate."
+    - "MATLAB writes GDP/PI/H as substrate byproducts; current OC writes protein.unprocessed_counts instead and does not emit those metabolites."
+    - "MATLAB's full charged-tRNA/polymerize bookkeeping is collapsed in OC into a fixture-backed synthesis-rate surrogate plus stochastic rounding."
+  note: "The row intentionally preserves the MATLAB request/update semantics while making the current OC deviations explicit instead of hiding them."
