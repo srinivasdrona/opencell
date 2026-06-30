@@ -1,0 +1,217 @@
+schema_version: "1.0"
+process:
+  name: "TranscriptionalRegulation"
+  matlab_class: "TranscriptionalRegulation"
+  matlab_file: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TranscriptionalRegulation.m"
+  oc_class: "KarrTranscriptionalRegulationProcess"
+  oc_file: "opencell/vivarium/karr_transcriptional_regulation.py"
+  whole_cell_model_id: "Process_TranscriptionalRegulation"
+  functional_area: "RNA-synthesis-and-maturation"
+  state_shape_role: "regulatory surface (TF binding + fold-change); no substrate stoichiometry"
+  notes: >-
+    The raw MATLAB .m file is not present in this checkout; anchors below use the
+    checked-in Karr extract and design notes as the local source surrogate.
+methods:
+  calcResourceRequirements_Current:
+    matlab:
+      symbol: "calcResourceRequirements_Current"
+      source:
+        path: "docs/karr_extracts/process/10_TranscriptionalRegulation.md"
+        lines: "79-106"
+        note: "Process extract covers regulatory biology, initialization, and simulation summary; no allocator request block is described."
+    oc:
+      symbol: "KarrTranscriptionalRegulationProcess.next_update"
+      source:
+        path: "opencell/vivarium/karr_transcriptional_regulation.py"
+        lines: "350-463"
+        note: "Current OC runtime reads TF abundance directly and emits TF binding / fold-change updates; there is no request-calculator path."
+    status: "not_implemented"
+    note: "Regulatory-only process; no resource-requirement method or substrates_allocated surface was found in the local source set."
+  evolveState:
+    matlab:
+      symbol: "evolveState"
+      source:
+        path: "docs/karr_extracts/process/10_TranscriptionalRegulation.md"
+        lines: "94-106"
+        note: "Initialization and simulation summary for TF-promoter binding; the raw function body is not in the checkout."
+    oc:
+      symbol: "KarrTranscriptionalRegulationProcess.next_update"
+      source:
+        path: "opencell/vivarium/karr_transcriptional_regulation.py"
+        lines: "350-463"
+        note: "Per-tick TF copy read, weighted binding, fold-change product, and trace-hint writeback."
+    status: "implemented"
+    note: "OC implements the per-tick regulatory sweep in next_update rather than a MATLAB-named evolveState method."
+  calcFluxBounds:
+    matlab:
+      symbol: "calcFluxBounds"
+      source:
+        path: "docs/karr_extracts/process/10_TranscriptionalRegulation.md"
+        lines: "79-106"
+        note: "No flux-bound or LP-bound logic is described for this process."
+    oc:
+      symbol: "NOT_IMPLEMENTED"
+      source:
+        path: "opencell/vivarium/karr_transcriptional_regulation.py"
+        lines: "281-463"
+        note: "No flux-bound helper exists for the current regulatory-only implementation."
+    status: "not_implemented"
+    note: "This process does not expose a flux-bound surface in either the extract or the OC port."
+allocator:
+  mode:
+    karr: "bypass"
+    oc_current: "bypass"
+    note: "The process has no substrate allocator contract; the OC port reads protein/complex counts directly."
+  request_formula:
+    matlab: "none; the extracted Karr material describes TF binding/activity only, not a calcResourceRequirements_Current substrate request"
+    oc: "none; no request calculator exists in karr_transcriptional_regulation.py"
+    note: "Both sides are bypass-mode for this process."
+  requests: []
+  bypasses:
+    - wid: "MG_101_MONOMER"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Read directly from protein.counts; TF abundance input."
+    - wid: "MG_127_MONOMER"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Read directly from protein.counts; TF abundance input."
+    - wid: "MG_236_MONOMER"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Read directly from protein.counts; TF abundance input."
+    - wid: "MG_205_DIMER"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Read directly from complex.counts; TF abundance input."
+    - wid: "MG_428_DIMER"
+      compartment: "cytosol"
+      source: "oc"
+      note: "Read directly from complex.counts; TF abundance input."
+consume_stoichiometry: []
+produce_stoichiometry: []
+compartment_routing:
+  - wid: "MG_101_MONOMER"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Direct read-only pool touch; no mass transfer."
+  - wid: "MG_127_MONOMER"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Direct read-only pool touch; no mass transfer."
+  - wid: "MG_236_MONOMER"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Direct read-only pool touch; no mass transfer."
+  - wid: "MG_205_DIMER"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Direct read-only pool touch; no mass transfer."
+  - wid: "MG_428_DIMER"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Direct read-only pool touch; no mass transfer."
+unit_conversion_chain:
+  source_units: "TF copy counts and dimensionless fold-change weights"
+  target_units: "per-tick binding deltas and per-TU fold-change multipliers"
+  steps:
+    - from_units: "copy counts"
+      to_units: "integer binding deltas"
+      operation: "floor to available copies; emit +/-1 per TF-TU binding or unbinding event"
+      anchor:
+        path: "opencell/vivarium/karr_transcriptional_regulation.py"
+        lines: "352-387"
+        note: "Per-TF availability and weighted binding sweep."
+    - from_units: "binding occupancy and fold-change matrix"
+      to_units: "dimensionless tx_rate_fold_change"
+      operation: "multiply bound TF effects per TU with neutral element 1.0 for unbound TUs"
+      anchor:
+        path: "opencell/vivarium/karr_transcriptional_regulation.py"
+        lines: "391-423"
+        note: "Fold-change product and per-TU writeback."
+dependencies:
+  produces_inputs_for:
+    - "Transcription"
+  consumes_outputs_of:
+    - "Translation"
+    - "MacromolecularComplexation"
+  note: "Fold-change output feeds the transcription wrapper; TF abundances are supplied by translated monomers and complex assembly."
+ordering_constraints:
+  hard_before: []
+  hard_after: []
+  soft_before: []
+  soft_after: []
+  note: "No process-specific ordering rule is explicitly stated in the local Karr extracts. The only canonical hard ordering constraint found in Simulation.evolveState is tRNAAminoacylation < Translation."
+source_anchors:
+  matlab_blocks:
+    process_docstring:
+      path: "docs/karr_extracts/process/10_TranscriptionalRegulation.md"
+      lines: "1-123"
+      note: "Checked-in extract for the canonical MATLAB source file and docstring summary."
+    allocation_surface:
+      path: "docs/karr_extracts/architecture/03_variable_allocation.md"
+      lines: "7-29"
+      note: "Global allocator block showing how calcResourceRequirements_Current is used when present."
+    simulation_ordering:
+      path: "docs/karr_extracts/architecture/01_simulation_loop.md"
+      lines: "148-180"
+      note: "Per-tick process loop and the only hard ordering constraint in the simulation harness."
+    regulatory_summary:
+      path: "docs/design/pb_turn3_transcriptional_regulation.md"
+      lines: "7-32"
+      note: "Turn-3 design summary of TF abundance reads and tx_rate_fold_change writes."
+  oc_blocks:
+    process_class:
+      path: "opencell/vivarium/karr_transcriptional_regulation.py"
+      lines: "234-318"
+      note: "Process definition, defaults, and port schema."
+    tf_read_and_binding:
+      path: "opencell/vivarium/karr_transcriptional_regulation.py"
+      lines: "320-387"
+      note: "Protein/complex read path and TF-promoter binding sweep."
+    fold_change_and_hints:
+      path: "opencell/vivarium/karr_transcriptional_regulation.py"
+      lines: "391-463"
+      note: "Fold-change product, update emission, and trace-hint writeback."
+    composite_topology:
+      path: "opencell/vivarium/karr_composite.py"
+      lines: "1342-1346"
+      note: "Top-level wiring for protein, complex, tf_binding, and tx_rate_fold_change ports."
+    chassis_seeding:
+      path: "opencell/vivarium/karr_composite.py"
+      lines: "1035-1045"
+      note: "Complex TF seeding for the chassis builder."
+provenance:
+  fixture_files:
+    - "data/karr_fixtures/per_process/TranscriptionalRegulation_flat.mat"
+    - "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
+  kb_version: "unknown"
+  extraction_date_utc: null
+  notes: >-
+    last_audited=2026-06-29; audited_by=gpt-5.4-mini (codex; row authored Day-43 EOD);
+    oc_commit_sha=61a5a06e8031af3159dffa436655ade330be1fd9; matlab_files_referenced=none in
+    this checkout (raw .m file absent; local surrogate used); oc_files_referenced=
+    opencell/vivarium/karr_transcriptional_regulation.py, opencell/vivarium/karr_composite.py.
+deviations:
+  lp_bounds_source:
+    karr: "unknown"
+    oc_current: "unknown"
+    matlab_anchor:
+      path: "docs/karr_extracts/process/10_TranscriptionalRegulation.md"
+      lines: "79-106"
+      note: "No LP or flux-bound logic is described for this regulatory-only process."
+    oc_anchor:
+      path: "opencell/vivarium/karr_transcriptional_regulation.py"
+      lines: "281-463"
+      note: "No flux-bound helper exists in the OC port."
+  shared_pool_projection_merges_compartments: false
+  known_deviations:
+    - "The raw MATLAB .m file is absent from this checkout; source anchors use the checked-in extract/design docs instead."
+    - "OC does not implement a request-calculator surface for this process; it reads protein.counts / complex.counts directly."
+    - "OC initializes tf_binding from the first tick rather than performing Karr's documented t=0 pre-binding sweep."
+  note: "Regulatory-only process: no substrate stoichiometry, no LP bounds, and no allocator request path were exposed by the local source set."
