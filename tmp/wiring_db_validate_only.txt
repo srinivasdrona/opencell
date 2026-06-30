@@ -1,0 +1,85 @@
+[FAIL row=ChromosomeCondensation] missing top-level keys: schema_date; schema_date missing or not YYYY-MM-DD; provenance.last_audited missing or not YYYY-MM-DD; provenance.matlab_files_referenced: expected non-empty list; provenance.oc_files_referenced: expected non-empty list
+[FAIL row=ChromosomeSegregation] missing top-level keys: schema_date; schema_date missing or not YYYY-MM-DD; provenance.last_audited missing or not YYYY-MM-DD; provenance.matlab_files_referenced: expected non-empty list; provenance.oc_files_referenced: expected non-empty list
+[FAIL row=Cytokinesis] missing top-level keys: schema_date; schema_date missing or not YYYY-MM-DD; provenance.last_audited missing or not YYYY-MM-DD; provenance.matlab_files_referenced: expected non-empty list; provenance.oc_files_referenced: expected non-empty list
+[FAIL row=DNADamage] missing top-level keys: schema_date; schema_date missing or not YYYY-MM-DD; provenance.last_audited missing or not YYYY-MM-DD; provenance.matlab_files_referenced: expected non-empty list; provenance.oc_files_referenced: expected non-empty list
+[FAIL row=DNARepair] missing top-level keys: schema_date; schema_date missing or not YYYY-MM-DD; provenance.last_audited missing or not YYYY-MM-DD; provenance.matlab_files_referenced: expected non-empty list; provenance.oc_files_referenced: expected non-empty list
+[FAIL row=DNASupercoiling] missing top-level keys: schema_date; schema_date missing or not YYYY-MM-DD; provenance.last_audited missing or not YYYY-MM-DD; provenance.matlab_files_referenced: expected non-empty list; provenance.oc_files_referenced: expected non-empty list
+[FAIL row=FtsZPolymerization] missing top-level keys: schema_date; schema_date missing or not YYYY-MM-DD; unit_conversion_chain.steps[0].anchor: lines must match start-end; unit_conversion_chain.steps[2].anchor: lines must match start-end; provenance.last_audited missing or not YYYY-MM-DD; provenance.matlab_files_referenced: expected non-empty list; provenance.oc_files_referenced: expected non-empty list
+[FAIL row=HostInteraction] missing top-level keys: schema_date; schema_date missing or not YYYY-MM-DD; provenance.last_audited missing or not YYYY-MM-DD; provenance.matlab_files_referenced: expected non-empty list; provenance.oc_files_referenced: expected non-empty list
+[FAIL row=MacromolecularComplexation] missing top-level keys: schema_date; schema_date missing or not YYYY-MM-DD; provenance.matlab_files_referenced: expected non-empty list
+[FAIL row=ProteinActivation] missing top-level keys: schema_date; schema_date missing or not YYYY-MM-DD; provenance.last_audited missing or not YYYY-MM-DD; provenance.matlab_files_referenced: expected non-empty list; provenance.oc_files_referenced: expected non-empty list
+[FAIL row=ProteinDecay] missing top-level keys: schema_date; schema_date missing or not YYYY-MM-DD; provenance.last_audited missing or not YYYY-MM-DD; provenance.matlab_files_referenced: expected non-empty list; provenance.oc_files_referenced: expected non-empty list
+[FAIL row=ProteinFolding] missing top-level keys: schema_date; schema_date missing or not YYYY-MM-DD; provenance.last_audited missing or not YYYY-MM-DD; provenance.matlab_files_referenced: expected non-empty list; provenance.oc_files_referenced: expected non-empty list
+[FAIL row=ProteinModification] missing top-level keys: schema_date; schema_date missing or not YYYY-MM-DD; unit_conversion_chain.steps[0].anchor: lines must match start-end; unit_conversion_chain.steps[2].anchor: lines must match start-end; provenance.last_audited missing or not YYYY-MM-DD; provenance.matlab_files_referenced: expected non-empty list; provenance.oc_files_referenced: expected non-empty list
+[FAIL row=ProteinProcessingI] missing top-level keys: schema_date; schema_date missing or not YYYY-MM-DD
+[FAIL row=ProteinProcessingII] missing top-level keys: schema_date; schema_date missing or not YYYY-MM-DD; provenance.last_audited missing or not YYYY-MM-DD; provenance.matlab_files_referenced: expected non-empty list; provenance.oc_files_referenced: expected non-empty list
+[FAIL row=ProteinTranslocation] missing top-level keys: schema_date; schema_date missing or not YYYY-MM-DD; provenance.matlab_files_referenced: expected non-empty list
+[FAIL row=RNADecay] missing top-level keys: schema_date; schema_date missing or not YYYY-MM-DD; provenance.matlab_files_referenced: expected non-empty list
+[FAIL row=RNAModification] missing top-level keys: schema_date; schema_date missing or not YYYY-MM-DD; provenance.last_audited missing or not YYYY-MM-DD; provenance.matlab_files_referenced: expected non-empty list; provenance.oc_files_referenced: expected non-empty list
+[FAIL row=RNAProcessing] missing top-level keys: schema_date; schema_date missing or not YYYY-MM-DD; provenance.last_audited missing or not YYYY-MM-DD; provenance.matlab_files_referenced: expected non-empty list; provenance.oc_files_referenced: expected non-empty list
+[FAIL row=Replication] missing top-level keys: schema_date; schema_date missing or not YYYY-MM-DD; provenance.last_audited missing or not YYYY-MM-DD; provenance.matlab_files_referenced: expected non-empty list; provenance.oc_files_referenced: expected non-empty list
+[FAIL row=ReplicationInitiation] missing top-level keys: schema_date; schema_date missing or not YYYY-MM-DD; provenance.last_audited missing or not YYYY-MM-DD; provenance.matlab_files_referenced: expected non-empty list; provenance.oc_files_referenced: expected non-empty list
+[FAIL row=RibosomeAssembly] missing top-level keys: schema_date; schema_date missing or not YYYY-MM-DD; provenance.last_audited missing or not YYYY-MM-DD; provenance.matlab_files_referenced: expected non-empty list; provenance.oc_files_referenced: expected non-empty list
+[FAIL row=TerminalOrganelleAssembly] missing top-level keys: schema_date; schema_date missing or not YYYY-MM-DD; compartment_routing[0]: mismatch=True does not match compartments 'membrane'/'membrane'; compartment_routing[1]: mismatch=True does not match compartments 'cytosol'/'cytosol'; compartment_routing[2]: mismatch=True does not match compartments 'cytosol'/'cytosol'; compartment_routing[3]: mismatch=True does not match compartments 'membrane'/'membrane'; compartment_routing[4]: mismatch=True does not match compartments 'cytosol'/'cytosol'; provenance.last_audited missing or not YYYY-MM-DD; provenance.matlab_files_referenced: expected non-empty list; provenance.oc_files_referenced: expected non-empty list
+[FAIL row=Transcription] missing top-level keys: schema_date; schema_date missing or not YYYY-MM-DD; provenance.last_audited missing or not YYYY-MM-DD; provenance.matlab_files_referenced: expected non-empty list; provenance.oc_files_referenced: expected non-empty list
+[FAIL row=TranscriptionalRegulation] missing top-level keys: schema_date; schema_date missing or not YYYY-MM-DD; provenance.last_audited missing or not YYYY-MM-DD; provenance.matlab_files_referenced: expected non-empty list; provenance.oc_files_referenced: expected non-empty list
+[FAIL row=Translation] missing top-level keys: schema_date; schema_date missing or not YYYY-MM-DD
+[FAIL row=tRNAAminoacylation] missing top-level keys: schema_date; schema_date missing or not YYYY-MM-DD
+[CROSS] reciprocal mismatch: ChromosomeCondensation -> Metabolism (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: ChromosomeSegregation -> Cytokinesis (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: ChromosomeSegregation -> Metabolism (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: Cytokinesis -> Metabolism (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: DNADamage -> DNARepair (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: DNARepair -> Metabolism (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: DNASupercoiling -> Metabolism (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: FtsZPolymerization -> Cytokinesis (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: MacromolecularComplexation -> RibosomeAssembly (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: MacromolecularComplexation -> Translation (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: MacromolecularComplexation -> Transcription (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: MacromolecularComplexation -> ProteinTranslocation (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: Metabolism -> RNAModification (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: Metabolism -> RNADecay (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: Metabolism -> ProteinProcessingI (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: Metabolism -> ProteinProcessingII (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: Metabolism -> ProteinTranslocation (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: Metabolism -> ProteinDecay (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: Metabolism -> ProteinFolding (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: Metabolism -> ProteinModification (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: Metabolism -> RibosomeAssembly (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: Metabolism -> MacromolecularComplexation (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: Metabolism -> FtsZPolymerization (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: Metabolism -> TerminalOrganelleAssembly (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: Metabolism -> HostInteraction (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: ProteinActivation -> ProteinDecay (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: ProteinActivation -> ProteinFolding (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: ProteinActivation -> ProteinModification (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: ProteinActivation -> ProteinTranslocation (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: ProteinActivation -> TranscriptionalRegulation (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: ProteinDecay -> tRNAAminoacylation (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: ProteinDecay -> Translation (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: ProteinDecay -> Metabolism (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: ProteinFolding -> ProteinActivation (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: ProteinModification -> ProteinActivation (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: ProteinModification -> ProteinDecay (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: ProteinModification -> ProteinTranslocation (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: ProteinModification -> MacromolecularComplexation (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: ProteinProcessingI -> ProteinTranslocation (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: ProteinTranslocation -> ProteinFolding (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: ProteinTranslocation -> ProteinModification (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: ProteinTranslocation -> ProteinDecay (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: ProteinTranslocation -> MacromolecularComplexation (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: RNADecay -> Metabolism (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: RNAModification -> tRNAAminoacylation (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: RNAProcessing -> tRNAAminoacylation (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: Replication -> Metabolism (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: ReplicationInitiation -> Metabolism (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: RibosomeAssembly -> Translation (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: Transcription -> RNAModification (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: Transcription -> tRNAAminoacylation (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: TranscriptionalRegulation -> Transcription (missing consumes_outputs_of back-edge)
+[CROSS] reciprocal mismatch: tRNAAminoacylation -> Metabolism (missing consumes_outputs_of back-edge)
+[CROSS] cyclic ordering: Translation hard_before tRNAAminoacylation and tRNAAminoacylation hard_before Translation
+[CROSS] cyclic ordering: tRNAAminoacylation hard_before Translation and Translation hard_before tRNAAminoacylation
+[CROSS] 53 reciprocal mismatches, 2 cyclic ordering, 0 missing rows
+FAIL
+EXIT_CODE:1
