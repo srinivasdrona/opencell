@@ -1,0 +1,322 @@
+schema_version: "1.0"
+process:
+  name: "ProteinProcessingI"
+  matlab_class: "ProteinProcessingI"
+  matlab_file: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
+  oc_class: "KarrProteinProcessingIProcess"
+  oc_file: "opencell/vivarium/karr_protein_processing_i.py"
+  whole_cell_model_id: "Process_ProteinProcessingI"
+  functional_area: "protein-synthesis-and-maturation"
+  state_shape_role: "state-shape catalog row; wiring row adds integration semantics"
+  notes: "Count-domain, allocation-backed maturation process: water is the only allocator-mediated input, while H/MET/FOR are direct writeback side effects."
+methods:
+  initializeConstants:
+    matlab:
+      symbol: "initializeConstants"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
+        lines: "143-150"
+        note: "Loads processed/unprocessed monomer IDs and the methionine-cleavage mask from the knowledge base."
+    oc:
+      symbol: "KarrProteinProcessingIProcess._load_fixture"
+      source:
+        path: "opencell/vivarium/karr_protein_processing_i.py"
+        lines: "68-119"
+        note: "Loads fixture WIDs, rates, cleavage mask, and enzyme indices during construction."
+      supporting:
+        - path: "opencell/vivarium/karr_protein_processing_i.py"
+          lines: "43-66"
+          note: "Constructor that calls the fixture loader and validates indices."
+    status: "partial"
+    note: "OC folds MATLAB constant initialization into fixture loading plus constructor validation."
+  calcResourceRequirements_Current:
+    matlab:
+      symbol: "calcResourceRequirements_Current"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
+        lines: "218-231"
+        note: "Returns the per-tick H2O requirement upper bound from deformylation plus methionine-cleavage capacity."
+    oc:
+      symbol: "RequestCalculatorProteinPathway.next_update"
+      source:
+        path: "opencell/vivarium/karr_request_calculators.py"
+        lines: "468-543"
+        note: "Current OC allocator request step; PP1 emits only H2O when unprocessed proteins are present."
+      supporting:
+        - path: "opencell/vivarium/karr_composite.py"
+          lines: "1107-1158"
+          note: "Wires the protein-pathway request calculator and allocation step."
+    status: "partial"
+    note: "The request logic is externalized in OC rather than living on the process class."
+  evolveState:
+    matlab:
+      symbol: "evolveState"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
+        lines: "236-319"
+        note: "Enzyme-limited stochastic selection, water gating, and substrate / monomer writeback."
+    oc:
+      symbol: "KarrProteinProcessingIProcess.next_update"
+      source:
+        path: "opencell/vivarium/karr_protein_processing_i.py"
+        lines: "182-310"
+        note: "Allocator-backed tick update with water gating, stochastic event sampling, and writeback."
+      supporting:
+        - path: "opencell/vivarium/karr_protein_processing_i.py"
+          lines: "312-378"
+          note: "Helper readers that split protein enzyme sourcing from substrate allocation."
+    status: "partial"
+    note: "OC preserves the count-domain flow but uses a different stochastic sampler than MATLAB."
+  calcFluxBounds:
+    matlab:
+      symbol: "calcFluxBounds"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
+        lines: "1-80"
+        note: "No dedicated flux-bound routine is exposed in this process; the file is count-based and stops at the simulation loop."
+    oc:
+      symbol: "KarrProteinProcessingIProcess"
+      source:
+        path: "opencell/vivarium/karr_protein_processing_i.py"
+        lines: "33-419"
+        note: "Current OC port has no LP-bound API; resource control is handled through the request calculator and next_update."
+    status: "not_implemented"
+    note: "ProteinProcessingI is not an LP-bound process in either the raw MATLAB file or the current OC port."
+allocator:
+  mode:
+    karr: "allocation"
+    oc_current: "allocation"
+    note: "OC reads only `substrates_allocated[self.name]` and never falls back to the global substrate pool."
+  request_formula:
+    matlab: "result(H2O) = min(deformylaseLimit, sum(unprocessedMonomers)) + min(cleavageLimit, nascentMonomerNTerminalMethionineCleavages' * unprocessedMonomers); all other substrate requests are zero."
+    oc: "if pp1_active then H2O request = max(0, substrate_state['H2O']) else 0; all other requests remain zero."
+    note: "The MATLAB request is a count-domain upper bound; the OC request calculator emits the currently available H2O as the allocator demand."
+  requests:
+    - wid: "H2O"
+      compartment: "cytosol"
+      source: "both"
+      note: "Only allocator-mediated input: water for deformylation / cleavage capacity."
+  bypasses:
+    - wid: "H"
+      compartment: "cytosol"
+      source: "both"
+      note: "Direct tick writeback side effect, not an allocator-mediated input."
+    - wid: "MET"
+      compartment: "cytosol"
+      source: "both"
+      note: "Direct tick writeback side effect for cleaved proteins."
+    - wid: "FOR"
+      compartment: "cytosol"
+      source: "both"
+      note: "Direct tick writeback side effect from deformylation."
+consume_stoichiometry:
+  - wid: "H2O"
+    compartment: "cytosol"
+    formula_or_constant: "-sum(transformations) - sum(transformations(cleavageMask))"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
+      lines: "285-292"
+      note: "Water is consumed once for every processed peptide plus one additional water for the cleavable subset."
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_processing_i.py"
+      lines: "273-308"
+      note: "Water delta is computed from total processed events and the cleavable subset."
+produce_stoichiometry:
+  - wid: "H"
+    compartment: "cytosol"
+    formula_or_constant: "+sum(transformations)"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
+      lines: "286-288"
+      note: "Hydrogen is released with every processed peptide."
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_processing_i.py"
+      lines: "273-308"
+      note: "Hydrogen delta follows the total processed count."
+  - wid: "FOR"
+    compartment: "cytosol"
+    formula_or_constant: "+sum(transformations)"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
+      lines: "286-288"
+      note: "Formate is released with every processed peptide."
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_processing_i.py"
+      lines: "273-308"
+      note: "Formate delta follows the total processed count."
+  - wid: "MET"
+    compartment: "cytosol"
+    formula_or_constant: "+sum(transformations(cleavageMask))"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
+      lines: "290-292"
+      note: "Methionine is released only for peptides that require N-terminal cleavage."
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_processing_i.py"
+      lines: "273-308"
+      note: "Methionine delta follows the cleavable subset only."
+compartment_routing:
+  - wid: "H2O"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Allocator-mediated water input stays in the cytosolic count surface."
+  - wid: "H"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Hydrogen is produced in the same cytosolic surface."
+  - wid: "FOR"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Formate is produced in the same cytosolic surface."
+  - wid: "MET"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Methionine is produced in the same cytosolic surface for the cleavable subset."
+unit_conversion_chain:
+  source_units: "enzyme-count × specific-rate × stepSizeSec; then count-domain event selection"
+  target_units: "molecules/tick"
+  steps:
+    - from_units: "enzyme-count × specific-rate"
+      to_units: "candidate events/tick"
+      operation: "×stepSizeSec; ceil to the per-tick cap"
+      constants: ["stepSizeSec", "deformylaseSpecificRate", "methionineAminoPeptidaseSpecificRate"]
+      anchor:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
+        lines: "218-223"
+        note: "Per-enzyme reaction limits are turned into tick-local caps."
+    - from_units: "candidate events/tick"
+      to_units: "selected events/tick"
+      operation: "stochasticRound + mnrnd/min clipping against unprocessed and water pools"
+      constants: ["stepSizeSec"]
+      anchor:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
+        lines: "242-309"
+        note: "MATLAB stochastic selection and water-limited clipping."
+    - from_units: "selected events/tick"
+      to_units: "molecule deltas/tick"
+      operation: "write processed/unprocessed monomer deltas and substrate sign vectors"
+      constants: []
+      anchor:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
+        lines: "278-318"
+        note: "Final monomer and substrate writeback."
+  note: "This process is already in count space; there is no mmol/gDW/hr conversion chain."
+dependencies:
+  produces_inputs_for:
+    - "ProteinProcessingII"
+    - "ProteinFolding"
+    - "ProteinModification"
+    - "ProteinTranslocation"
+    - "ProteinActivation"
+  consumes_outputs_of:
+    - "Translation"
+  note: "ProteinProcessingI consumes translated nascent proteins and feeds later maturation / utilization steps through the shared protein pool."
+ordering_constraints:
+  hard_before: []
+  hard_after: []
+  soft_before: []
+  soft_after:
+    - "Translation"
+  note: "The docstring states the process runs following translation; there is no additional hard scheduler exception beyond the global tRNAAminoacylation < Translation rule."
+source_anchors:
+  matlab_blocks:
+    header_and_representation:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
+      lines: "1-80"
+      note: "Docstring, constants, and the process-level simulation summary."
+    initialize_constants:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
+      lines: "143-150"
+      note: "Loads the processed/unprocessed monomer WID sets and cleavage mask."
+    copy_state:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
+      lines: "153-166"
+      note: "Copy from / to state for monomer counts."
+    allocate_memory:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
+      lines: "171-176"
+      note: "Allocates the local monomer count buffers."
+    resource_requirements:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
+      lines: "218-231"
+      note: "Per-tick H2O requirement upper bound."
+    evolve_state:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
+      lines: "236-319"
+      note: "Stochastic deformylation / methionine-cleavage loop plus writeback."
+    simulation_allocation_loop:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m"
+      lines: "24-37"
+      note: "Per-process requirements are gathered and allocated before each tick."
+  oc_blocks:
+    process_class:
+      path: "opencell/vivarium/karr_protein_processing_i.py"
+      lines: "33-119"
+      note: "Class definition, fixture loading, and validation."
+    ports_schema:
+      path: "opencell/vivarium/karr_protein_processing_i.py"
+      lines: "121-180"
+      note: "Allocator, protein, and substrate store shape."
+    next_update:
+      path: "opencell/vivarium/karr_protein_processing_i.py"
+      lines: "182-310"
+      note: "Allocator-backed tick update and writeback."
+    helper_reads:
+      path: "opencell/vivarium/karr_protein_processing_i.py"
+      lines: "312-378"
+      note: "Allocator substrate read and enzyme-source split."
+    request_calculator:
+      path: "opencell/vivarium/karr_request_calculators.py"
+      lines: "362-543"
+      note: "Protein-pathway request calculator; PP1 emits the H2O request."
+    composite_wiring:
+      path: "opencell/vivarium/karr_composite.py"
+      lines: "1107-1158"
+      note: "Protein-pathway request calculator and allocation-step wiring."
+    topology:
+      path: "opencell/vivarium/karr_composite.py"
+      lines: "2056-2062"
+      note: "ProteinProcessingI process topology wiring."
+provenance:
+  fixture_files:
+    - "data/karr_fixtures/per_process/ProteinProcessingI_flat.mat"
+    - "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
+    - "data/karr_fixtures/per_process/RibosomeAssembly_flat.mat"
+  kb_version: "karr_native_m1__v2"
+  extraction_date_utc: null
+  matlab_files_referenced:
+    - "E:/opencell/data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
+    - "E:/opencell/data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m"
+  oc_files_referenced:
+    - "opencell/vivarium/karr_protein_processing_i.py"
+    - "opencell/vivarium/karr_request_calculators.py"
+    - "opencell/vivarium/karr_composite.py"
+    - "tests/vivarium/test_karr_protein_processing_i.py"
+    - "tests/vivarium/test_karr_request_calculators.py"
+  notes: "Raw MATLAB source was available at the original repo root (`E:/opencell`) for line anchors; the worktree uses the same fixture family and OC port."
+  last_audited: "2026-06-29"
+  audited_by: "gpt-5.4-mini (codex; row authored Day-43 EOD)"
+  oc_commit_sha: "61a5a06e8031af3159dffa436655ade330be1fd9"
+deviations:
+  lp_bounds_source:
+    karr: "unknown"
+    oc_current: "unknown"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
+      lines: "1-80"
+      note: "The process file is count-domain and does not expose a separate LP-bound routine in the local extract."
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_processing_i.py"
+      lines: "33-419"
+      note: "Current OC port has no flux-bound API."
+  shared_pool_projection_merges_compartments: false
+  known_deviations:
+    - "OC uses a strict-zero allocator contract: `next_update` reads `substrates_allocated[self.name]` and never falls back to `substrates`."
+    - "OC samples events with `multivariate_hypergeometric` (or a fallback choice loop) instead of MATLAB's `stochasticRound` + `mnrnd` + `min` clipping."
+    - "MATLAB keeps the request and state-update logic inside `ProteinProcessingI.m`; OC splits them between `RequestCalculatorProteinPathway` and `KarrProteinProcessingIProcess`."
+    - "No standalone `calcFluxBounds` implementation exists for this process in the current OC port."
+  note: "The row preserves the count-domain biology while making the OC allocator split explicit."
