@@ -1,0 +1,296 @@
+schema_version: "1.0"
+process:
+  name: "ChromosomeSegregation"
+  matlab_class: "ChromosomeSegregation"
+  matlab_file: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m"
+  oc_class: "KarrChromosomeSegregationProcess"
+  oc_file: "opencell/vivarium/karr_chromosome_segregation.py"
+  whole_cell_model_id: "Process_ChromosomeSegregation"
+  functional_area: "DNA-replication-and-maintenance"
+  state_shape_role: "allocation-gated chromosome segregation"
+  notes: >-
+    Canonical MATLAB source file was not physically present in this checkout;
+    MATLAB anchors below are reconstructed from the checked-in extract docs and
+    zero-grant validation notes, while OC anchors come from the current port.
+methods:
+  calcResourceRequirements_Current:
+    matlab:
+      symbol: "calcResourceRequirements_Current"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m"
+        lines: "67-75"
+        note: "Docstring extract for the gate: replicated, supercoiled, proteins present, and at least gtpCost GTP."
+      note: "No separate helper body was recoverable locally; the request is a one-event GTP/H2O gate derived from the documented simulation rule."
+    oc:
+      symbol: "KarrChromosomeSegregationProcess.next_update"
+      source:
+        path: "opencell/vivarium/karr_chromosome_segregation.py"
+        lines: "355-405"
+        note: "Reads substrates_allocated[self.name] and emits requests for GTP/H2O when progress is still possible."
+      supporting:
+        - path: "opencell/vivarium/karr_chromosome_segregation.py"
+          lines: "269-275"
+          note: "Strict nonnegative allocated-substrate helper."
+      note: "Request logic is inlined in next_update rather than a separate request-calculator class."
+    status: "partial"
+    note: "Implemented in OC, but only as an inlined request/update path rather than a dedicated request-calculator helper."
+  evolveState:
+    matlab:
+      symbol: "evolveState"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m"
+        lines: "201-203"
+        note: "Zero-grant audit cites the substrate gate/consumption branch for this process."
+      note: "MATLAB process consumes from the allocated substrate vector and gates progression on replicated + supercoiled + enzyme + gtpCost conditions."
+    oc:
+      symbol: "KarrChromosomeSegregationProcess.next_update"
+      source:
+        path: "opencell/vivarium/karr_chromosome_segregation.py"
+        lines: "333-412"
+        note: "Gate, progress update, substrate writeback, and request emission are all inlined here."
+      supporting:
+        - path: "opencell/vivarium/karr_chromosome_segregation.py"
+          lines: "355-378"
+          note: "Allocated-substrate read plus GTP/H2O consumption and GDP/H/PI production."
+        - path: "opencell/vivarium/karr_chromosome_segregation.py"
+          lines: "388-399"
+          note: "Completion latch and chromosome writeback."
+      note: "OC adds continuous progress and pole-position interpolation on top of the same allocation-gated substrate wiring."
+    status: "partial"
+    note: "Behavior is implemented, but the OC port is a continuous projection of the boolean Karr gate rather than a literal MATLAB state machine."
+  calcFluxBounds:
+    matlab:
+      symbol: "calcFluxBounds"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m"
+        lines: "49-75"
+        note: "The process description is gate-based; no LP-flux-bound construction is described in the extract."
+      note: "No process-specific flux-bound helper was recovered for ChromosomeSegregation."
+    oc:
+      symbol: "NOT_IMPLEMENTED"
+      source:
+        path: "opencell/vivarium/karr_chromosome_segregation.py"
+        lines: "1-415"
+        note: "OC port has no dedicated flux-bound helper for this process."
+      note: "This process is not LP-bounded in the current port."
+    status: "not_implemented"
+    note: "ChromosomeSegregation is allocator-gated, not LP-bound."
+allocator:
+  mode:
+    karr: "allocation"
+    oc_current: "allocation"
+    note: "Both sides gate on per-process allocated substrates; OC reads states['substrates_allocated'][self.name] and does not fall back to the global substrate pool."
+  request_formula:
+    matlab: "if replicated && supercoiled && all(required segregation proteins are present) && ~segregated then request GTP = gtpCost and H2O = gtpCost, else request 0"
+    oc: "request_gtp = request_h2o = gtp_cost when can_progress else 0.0"
+    note: "Symbolic formula only; the MATLAB source is documented as a boolean gate with gtpCost, while the OC port inlines the same logic."
+  requests:
+    - wid: "GTP"
+      compartment: "cytosol"
+      source: "karr"
+      note: "Primary energy substrate requested through the allocator."
+    - wid: "H2O"
+      compartment: "cytosol"
+      source: "karr"
+      note: "Hydrolysis partner requested through the allocator in the current OC port."
+  bypasses:
+    - wid: "MG_470_MONOMER"
+      compartment: "cytosol"
+      source: "both"
+      note: "Direct gate input read from protein.counts, not from the allocator."
+    - wid: "MG_221_OCTAMER"
+      compartment: "cytosol"
+      source: "both"
+      note: "Direct gate input read from complex.counts / protein counts, not from the allocator."
+    - wid: "MG_387_MONOMER"
+      compartment: "cytosol"
+      source: "both"
+      note: "Direct gate input read from protein.counts, not from the allocator."
+    - wid: "MG_384_MONOMER"
+      compartment: "cytosol"
+      source: "both"
+      note: "Direct gate input read from protein.counts, not from the allocator."
+    - wid: "MG_203_204_TETRAMER"
+      compartment: "cytosol"
+      source: "oc"
+      note: "OC-only optional topoIV gate; not mandatory in the default Karr documentation."
+consume_stoichiometry:
+  - wid: "GTP"
+    compartment: "cytosol"
+    formula_or_constant: "gtpCost * 1 if gate_open and not segregated else 0"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m"
+      lines: "201-203"
+      note: "Zero-grant audit cites the GTP gate/consumption branch."
+    oc_anchor:
+      path: "opencell/vivarium/karr_chromosome_segregation.py"
+      lines: "369-378"
+      note: "Consumes allocated GTP when can_progress and max_events >= 1."
+  - wid: "H2O"
+    compartment: "cytosol"
+    formula_or_constant: "gtpCost * 1 if gate_open and not segregated else 0"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m"
+      lines: "201-203"
+      note: "Zero-grant audit cites the water gate/consumption branch."
+    oc_anchor:
+      path: "opencell/vivarium/karr_chromosome_segregation.py"
+      lines: "369-378"
+      note: "Consumes allocated H2O in lockstep with GTP."
+produce_stoichiometry:
+  - wid: "GDP"
+    compartment: "cytosol"
+    formula_or_constant: "gtpCost * 1 if gate_open and not segregated else 0"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m"
+      lines: "201-203"
+      note: "Hydrolysis product paired with the GTP gate."
+    oc_anchor:
+      path: "opencell/vivarium/karr_chromosome_segregation.py"
+      lines: "371-377"
+      note: "Produced alongside PI and H when progress advances."
+  - wid: "H"
+    compartment: "cytosol"
+    formula_or_constant: "gtpCost * 1 if gate_open and not segregated else 0"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m"
+      lines: "201-203"
+      note: "Hydrolysis proton product."
+    oc_anchor:
+      path: "opencell/vivarium/karr_chromosome_segregation.py"
+      lines: "371-377"
+      note: "Produced alongside GDP and PI."
+  - wid: "PI"
+    compartment: "cytosol"
+    formula_or_constant: "gtpCost * 1 if gate_open and not segregated else 0"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m"
+      lines: "201-203"
+      note: "Hydrolysis phosphate product."
+    oc_anchor:
+      path: "opencell/vivarium/karr_chromosome_segregation.py"
+      lines: "371-377"
+      note: "Produced alongside GDP and H."
+compartment_routing:
+  - wid: "GTP"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Allocator-gated energy substrate is cytosolic."
+  - wid: "H2O"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Allocator-gated hydrolysis partner is cytosolic."
+  - wid: "GDP"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Hydrolysis product returns to the cytosolic pool."
+  - wid: "H"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Hydrolysis product returns to the cytosolic pool."
+  - wid: "PI"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Hydrolysis product returns to the cytosolic pool."
+unit_conversion_chain:
+  source_units: "allocator grant counts"
+  target_units: "molecules/tick"
+  steps:
+    - from_units: "allocator grant counts"
+      to_units: "molecules/tick"
+      operation: "identity for stoichiometry; dt only scales segregation_progress, not substrate counts"
+      anchor:
+        path: "docs/design/pc-t5-segregation.md"
+        lines: "68-90"
+        note: "Per-tick algorithm summary: request, consume GTP/H2O, produce GDP/H/PI."
+      constants: ["gtpCost", "dt"]
+  note: "There is no mmol/gDW/hr conversion chain here; the process already works in per-tick molecule counts."
+dependencies:
+  produces_inputs_for:
+    - "Cytokinesis"
+    - "Metabolism"
+  consumes_outputs_of:
+    - "Replication"
+    - "DNASupercoiling"
+    - "ChromosomeCondensation"
+    - "Metabolism"
+  note: >-
+    Cytokinesis is the immediate downstream control-state consumer of
+    segregation_complete; Metabolism is the shared-pool substrate producer and
+    recycler for the GTP/H2O/GDP/H/PI pool.
+ordering_constraints:
+  hard_before: []
+  hard_after: []
+  soft_before: []
+  soft_after: []
+  note: "No process-specific order constraint is documented for ChromosomeSegregation; the only canonical hard order in the global simulation is tRNAAminoacylation < Translation."
+source_anchors:
+  matlab_blocks:
+    docstring_and_gate:
+      path: "docs/karr_extracts/process/08_ChromosomeSegregation.md"
+      lines: "49-75"
+      note: "Docstring extract: gtpCost, gate conditions, and the four segregation proteins."
+    strict_zero_evidence:
+      path: "opencell/validation/swarm/l5/karr_zero_grant_behavior.md"
+      lines: "29-64"
+      note: "Validation note summarizing the allocation overwrite and the ChromosomeSegregation line citation."
+    allocation_loop:
+      path: "docs/karr_extracts/architecture/01_simulation_loop.md"
+      lines: "122-194"
+      note: "Global allocate-before-process semantics and per-tick overwrite into mod.substrates."
+    phase_c_design:
+      path: "docs/design/pc-t5-segregation.md"
+      lines: "17-90"
+      note: "Process-level Karr-LIGHT summary, ports, and per-tick behavior."
+  oc_blocks:
+    fixture_and_schema:
+      path: "opencell/vivarium/karr_chromosome_segregation.py"
+      lines: "109-267"
+      note: "Fixture load, derived WIDs, ports schema, and request/allocation stores."
+    gate_and_update:
+      path: "opencell/vivarium/karr_chromosome_segregation.py"
+      lines: "333-412"
+      note: "Allocated read, gate evaluation, substrate writeback, and request emission."
+    canonical_complex_lookup:
+      path: "opencell/vivarium/karr_chromosome_segregation.py"
+      lines: "77-92"
+      note: "Shared helper that loads MacromolecularComplexation and RibosomeAssembly fixtures."
+provenance:
+  fixture_files:
+    - "data/karr_fixtures/per_process/ChromosomeSegregation_flat.mat"
+    - "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
+    - "data/karr_fixtures/per_process/RibosomeAssembly_flat.mat"
+  kb_version: "karr_native_m1__v2"
+  extraction_date_utc: "2026-06-30T00:00:00Z"
+  notes: >-
+    last_audited=2026-06-29; audited_by=gpt-5.4-mini (codex; row authored
+    Day-43 EOD); oc_commit_sha=61a5a06e8031af3159dffa436655ade330be1fd9;
+    matlab_files_referenced=[] because the canonical ChromosomeSegregation.m
+    file was not present in this checkout; oc_files_referenced=
+    [opencell/vivarium/karr_chromosome_segregation.py]; validation sources used
+    for MATLAB anchors: docs/karr_extracts/process/08_ChromosomeSegregation.md
+    and opencell/validation/swarm/l5/karr_zero_grant_behavior.md.
+deviations:
+  lp_bounds_source:
+    karr: "unknown"
+    oc_current: "unknown"
+    matlab_anchor:
+      path: "docs/design/pc-t5-segregation.md"
+      lines: "17-26"
+      note: "The process is described as a boolean gate with gtpCost, not an LP-bounded flux process."
+    oc_anchor:
+      path: "opencell/vivarium/karr_chromosome_segregation.py"
+      lines: "333-412"
+      note: "The OC port has no dedicated flux-bound helper; request/update are handled inline."
+  shared_pool_projection_merges_compartments: false
+  known_deviations:
+    - "OC exposes continuous segregation_progress and daughter_pole_positions to support downstream chassis logic; the Karr source description is boolean and event-gated."
+    - "OC adds optional include_topoiv_gate and gtp_cost_override parameters; the Karr extract only exposes gtpCost and the four core segregation proteins."
+  note: >-
+    Wiring matches the Karr allocation contract: both sides gate from
+    allocated GTP/H2O and do not fall back to the global substrate pool.
