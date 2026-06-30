@@ -1,0 +1,452 @@
+schema_version: "1.0"
+process:
+  name: "RibosomeAssembly"
+  matlab_class: "RibosomeAssembly"
+  matlab_file: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
+  oc_class: "KarrRibosomeAssemblyProcess"
+  oc_file: "opencell/vivarium/karr_ribosome_assembly.py"
+  whole_cell_model_id: "Process_RibosomeAssembly"
+  functional_area: "protein-synthesis-and-maturation"
+  state_shape_role: "cytosolic two-particle ribosome assembly row"
+  notes: "Assembles the 30S and 50S ribosomal particles from rRNA and ribosomal protein subunits, with GTP/H2O request and GDP/PI/H byproducts."
+methods:
+  initializeConstants:
+    matlab:
+      symbol: "initializeConstants"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
+        lines: "155-194"
+        note: "Loads cytosolic RNA/monomer composition and catalytic GTPase assignments."
+      note: "MATLAB keeps constant loading in a dedicated initialization callback."
+    oc:
+      symbol: "KarrRibosomeAssemblyProcess._load_fixture"
+      source:
+        path: "opencell/vivarium/karr_ribosome_assembly.py"
+        lines: "115-147"
+        note: "Loads the flattened RibosomeAssembly fixture and extracts WIDs plus stoichiometry."
+      supporting:
+        - path: "opencell/vivarium/karr_ribosome_assembly.py"
+          lines: "85-88"
+          note: "Constructor wires fixture loading into object construction."
+      note: "OC folds constant loading into fixture ingestion instead of a MATLAB-style callback."
+    status: "implemented"
+    note: "The constant-loading semantics are present in OC, but construction-time rather than callback-based."
+  initializeState:
+    matlab:
+      symbol: "initializeState"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
+        lines: "264-274"
+        note: "Seeds maximal formed particles from the initialized RNA and monomer pools."
+      note: "MATLAB performs a runtime initialization push into formed ribosomal complexes."
+    oc:
+      symbol: "NOT_IMPLEMENTED"
+      source:
+        path: "opencell/vivarium/karr_ribosome_assembly.py"
+        lines: "75-147"
+        note: "OC has no separate runtime initializeState method; fixture loading happens during construction."
+      note: "Initialization is collapsed into construction-time fixture loading in OC."
+    status: "not_implemented"
+    note: "The OC port relies on fixture contents for initialized state, so there is no dedicated runtime initializeState method."
+  calcResourceRequirements_LifeCycle:
+    matlab:
+      symbol: "calcResourceRequirements_LifeCycle"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
+        lines: "231-255"
+        note: "Lifecycle biomass-production and enzyme-expression demand block."
+      note: "MATLAB-only lifecycle demand helper; not part of the per-tick assembly loop."
+    oc:
+      symbol: "NOT_IMPLEMENTED"
+      source:
+        path: "opencell/vivarium/karr_ribosome_assembly.py"
+        lines: "75-383"
+        note: "No dedicated OC lifecycle resource-requirements method exists for this process."
+      supporting:
+        - path: "opencell/vivarium/karr_request_calculators.py"
+          lines: "163-226"
+          note: "Current OC demand is split into RequestCalculatorRibAsm.next_update."
+      note: "OC has no direct lifecycle analogue for the allocator-facing biomass/expression request block."
+    status: "not_implemented"
+    note: "Lifecycle resource demand is present in MATLAB but not exposed as a separate OC method."
+  calcResourceRequirements_Current:
+    matlab:
+      symbol: "calcResourceRequirements_Current"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
+        lines: "277-298"
+        note: "Allocator-facing request block for GTP and water."
+      note: "The MATLAB request block is explicit in the process class and feeds the global allocator pass."
+    oc:
+      symbol: "RequestCalculatorRibAsm.next_update"
+      source:
+        path: "opencell/vivarium/karr_request_calculators.py"
+        lines: "163-226"
+        note: "Dedicated request step that computes GTP/H2O demand from the current subunit state."
+      supporting:
+        - path: "opencell/vivarium/karr_ribosome_assembly.py"
+          lines: "273-287"
+          note: "Formable-particle estimator used by the request step."
+      note: "OC keeps the same allocator-facing request semantics but routes them through a separate request-calculator step; the estimator reads current RNA, monomer, and enzyme state, then multiplies formable particles by per-particle GTPase counts."
+    status: "implemented"
+    note: "The request path is allocation-backed on both sides; OC splits the calculation out of the process class and uses per-particle hydrolysis counts in the request calculator."
+  evolveState:
+    matlab:
+      symbol: "evolveState"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
+        lines: "301-340"
+        note: "Randomized two-particle greedy assembly loop with immediate state writeback."
+      note: "Helper `getGtpPerComplex` is part of the same behavior."
+    oc:
+      symbol: "KarrRibosomeAssemblyProcess.next_update"
+      source:
+        path: "opencell/vivarium/karr_ribosome_assembly.py"
+        lines: "334-383"
+        note: "Current per-tick update path."
+      supporting:
+        - path: "opencell/vivarium/karr_ribosome_assembly.py"
+          lines: "239-271"
+          note: "Binary enzyme gate and per-particle resource limits."
+        - path: "opencell/vivarium/karr_ribosome_assembly.py"
+          lines: "289-332"
+          note: "Delta builder for substrates, RNA, protein, and complexes."
+      note: "OC preserves the randomized order and sequential depletion behavior, and its catalytic-enzyme gate matches the MATLAB presence check."
+    status: "implemented"
+    note: "The current OC process reads `substrates_allocated` and matches the MATLAB per-particle update shape except for the early-return divergence captured below."
+  calcFluxBounds:
+    matlab:
+      symbol: "calcFluxBounds"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
+        lines: "73-370"
+        note: "No process-local flux-bounds method appears in the class body."
+      note: "RibosomeAssembly does not define a flux-bounds method in the source we read."
+    oc:
+      symbol: "NOT_IMPLEMENTED"
+      source:
+        path: "opencell/vivarium/karr_ribosome_assembly.py"
+        lines: "75-383"
+        note: "No OC flux-bounds analogue exists for this process."
+      note: "There is no current OC flux-bounds implementation to bind."
+    status: "not_implemented"
+    note: "This slot is present because the schema requires it, not because RibosomeAssembly is a flux-bounds process."
+allocator:
+  mode:
+    karr: "allocation"
+    oc_current: "allocation"
+    note: "Both source trees use allocator-gated GTP/H2O request semantics."
+  request_formula:
+    matlab: "result(GTP) = result(H2O) = getGtpPerComplex(2) * all(enzymes_30S) * (1 + min(RNAs_30S, monomers_30S)) + getGtpPerComplex(2) * all(enzymes_50S) * (1 + min(RNAs_50S, monomers_50S))"
+    oc: "request(GTP) = request(H2O) = sum_{particle in {30S,50S}} formable_particle_count[particle] * n_gtpases_per_particle[particle]"
+    note: "Symbolic and grep-friendly; the OC request step preserves the same demand shape but routes through RequestCalculatorRibAsm and per-particle hydrolysis counts."
+  requests:
+    - wid: "GTP"
+      compartment: "cytosol"
+      source: "both"
+      note: "Canonical allocator request substrate."
+    - wid: "H2O"
+      compartment: "cytosol"
+      source: "both"
+      note: "Canonical allocator request substrate."
+  bypasses:
+    - wid: "MG_329_MONOMER"
+      compartment: "cytosol"
+      source: "both"
+      note: "Direct catalytic-enzyme presence check; not allocator-mediated."
+    - wid: "MG_387_MONOMER"
+      compartment: "cytosol"
+      source: "both"
+      note: "Direct catalytic-enzyme presence check; not allocator-mediated."
+    - wid: "MG_143_MONOMER"
+      compartment: "cytosol"
+      source: "both"
+      note: "Direct catalytic-enzyme presence check; not allocator-mediated."
+    - wid: "MGrrnA16S"
+      compartment: "cytosol"
+      source: "both"
+      note: "Direct RNA pool read/subtraction in the update path."
+    - wid: "RIBOSOME_30S"
+      compartment: "cytosol"
+      source: "both"
+      note: "Direct complex count increment in the update path."
+consume_stoichiometry:
+  - wid: "GTP"
+    compartment: "cytosol"
+    formula_or_constant: "-n_form * n_gtpases_per_particle[particle]"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
+      lines: "323-338"
+      note: "GTP is consumed together with the other hydrolysis substrates."
+    oc_anchor:
+      path: "opencell/vivarium/karr_ribosome_assembly.py"
+      lines: "363-372"
+      note: "Local allocation is decremented in-step before the next particle is considered."
+  - wid: "H2O"
+    compartment: "cytosol"
+    formula_or_constant: "-n_form * n_gtpases_per_particle[particle]"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
+      lines: "323-338"
+      note: "Water is consumed in lockstep with GTP."
+    oc_anchor:
+      path: "opencell/vivarium/karr_ribosome_assembly.py"
+      lines: "363-372"
+      note: "Water allocation is decremented in the same local loop."
+  - wid: "MGrrnA16S"
+    compartment: "cytosol"
+    formula_or_constant: "-n_form * proteinComplexRNAComposition[ridx, particle]"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
+      lines: "323-336"
+      note: "RNA subunit subtraction for the 30S path."
+    oc_anchor:
+      path: "opencell/vivarium/karr_ribosome_assembly.py"
+      lines: "374-381"
+      note: "RNA pool is decremented in-place after a successful particle formation."
+  - wid: "MGrrnA23S"
+    compartment: "cytosol"
+    formula_or_constant: "-n_form * proteinComplexRNAComposition[ridx, particle]"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
+      lines: "323-336"
+      note: "RNA subunit subtraction for the 50S path."
+    oc_anchor:
+      path: "opencell/vivarium/karr_ribosome_assembly.py"
+      lines: "374-381"
+      note: "RNA pool is decremented in-place after a successful particle formation."
+  - wid: "MG_417_MONOMER"
+    compartment: "cytosol"
+    formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
+      lines: "323-336"
+      note: "Ribosomal protein subtraction from the monomer pool."
+    oc_anchor:
+      path: "opencell/vivarium/karr_ribosome_assembly.py"
+      lines: "378-381"
+      note: "Protein pool is decremented in-place after a successful particle formation."
+produce_stoichiometry:
+  - wid: "GDP"
+    compartment: "cytosol"
+    formula_or_constant: "+n_form * n_gtpases_per_particle[particle]"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
+      lines: "338-338"
+      note: "GDP is produced by the hydrolysis update."
+    oc_anchor:
+      path: "opencell/vivarium/karr_ribosome_assembly.py"
+      lines: "313-318"
+      note: "Hydrolysis products are emitted together from the update builder."
+  - wid: "PI"
+    compartment: "cytosol"
+    formula_or_constant: "+n_form * n_gtpases_per_particle[particle]"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
+      lines: "338-338"
+      note: "Inorganic phosphate is produced by the hydrolysis update."
+    oc_anchor:
+      path: "opencell/vivarium/karr_ribosome_assembly.py"
+      lines: "313-318"
+      note: "Hydrolysis products are emitted together from the update builder."
+  - wid: "H"
+    compartment: "cytosol"
+    formula_or_constant: "+n_form * n_gtpases_per_particle[particle]"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
+      lines: "338-338"
+      note: "Proton is produced by the hydrolysis update."
+    oc_anchor:
+      path: "opencell/vivarium/karr_ribosome_assembly.py"
+      lines: "313-318"
+      note: "Hydrolysis products are emitted together from the update builder."
+  - wid: "RIBOSOME_30S"
+    compartment: "cytosol"
+    formula_or_constant: "+n_form"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
+      lines: "333-333"
+      note: "Particle count increment for the 30S complex."
+    oc_anchor:
+      path: "opencell/vivarium/karr_ribosome_assembly.py"
+      lines: "370-383"
+      note: "Positive complex delta is emitted from the accumulated update."
+  - wid: "RIBOSOME_50S"
+    compartment: "cytosol"
+    formula_or_constant: "+n_form"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
+      lines: "333-333"
+      note: "Particle count increment for the 50S complex."
+    oc_anchor:
+      path: "opencell/vivarium/karr_ribosome_assembly.py"
+      lines: "370-383"
+      note: "Positive complex delta is emitted from the accumulated update."
+compartment_routing:
+  - wid: "GTP"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Allocator-requested and then consumed in cytosol."
+  - wid: "H2O"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Allocator-requested and then consumed in cytosol."
+  - wid: "GDP"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Hydrolysis byproduct produced in cytosol."
+  - wid: "PI"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Hydrolysis byproduct produced in cytosol."
+  - wid: "H"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Hydrolysis byproduct produced in cytosol."
+  - wid: "MGrrnA16S"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "RNA subunit read from and subtracted in cytosol."
+  - wid: "MGrrnA23S"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "RNA subunit read from and subtracted in cytosol."
+  - wid: "MG_417_MONOMER"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: false
+    note: "Ribosomal protein monomer read from and subtracted in cytosol."
+  - wid: "RIBOSOME_30S"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Complex product emitted in cytosol."
+  - wid: "RIBOSOME_50S"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Complex product emitted in cytosol."
+unit_conversion_chain:
+  source_units: "counts/tick"
+  target_units: "counts/tick"
+  steps: []
+  note: "No unit conversion is needed here; the process already operates on integer counts at the tick scale."
+dependencies:
+  produces_inputs_for:
+    - "Translation"
+  consumes_outputs_of:
+    - "Transcription"
+    - "RNAProcessing"
+    - "RNAModification"
+    - "Translation"
+    - "ProteinProcessingI"
+    - "ProteinProcessingII"
+  note: "RibosomeAssembly consumes mature rRNA/protein pools and feeds ribosomes into Translation."
+ordering_constraints:
+  hard_before: []
+  hard_after: []
+  soft_before: []
+  soft_after: []
+  note: "No process-specific ordering constraint is stated for RibosomeAssembly; the canonical global rule in `@Simulation/evolveState.m` remains tRNAAminoacylation before Translation."
+source_anchors:
+  matlab_blocks:
+    docstring_and_constants:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
+      lines: "1-154"
+      note: "Header docstring, state names, substrate/enzyme IDs, and fixed constants."
+    initialize_constants:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
+      lines: "155-194"
+      note: "Loads cytosolic RNA/monomer composition and the six GTPase assignments."
+    initialize_state:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
+      lines: "264-274"
+      note: "Seeds maximal formed particles from the initialized RNA and monomer pools."
+    calc_resource_requirements_lifecycle:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
+      lines: "231-255"
+      note: "Lifecycle biomass-production and enzyme-expression demand block."
+    calc_resource_requirements_current:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
+      lines: "277-298"
+      note: "Allocator-facing GTP/H2O request block."
+    evolve_state:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
+      lines: "301-340"
+      note: "Randomized two-particle greedy update loop."
+    get_gtp_per_complex:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
+      lines: "366-367"
+      note: "Helper that counts required GTPases per particle."
+    simulation_order_constraint:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m"
+      lines: "48-56"
+      note: "Global hard order: tRNAAminoacylation must precede Translation."
+  oc_blocks:
+    process_init_and_fixture:
+      path: "opencell/vivarium/karr_ribosome_assembly.py"
+      lines: "75-147"
+      note: "Process class, default fixture path, and fixture loading."
+    ports_schema:
+      path: "opencell/vivarium/karr_ribosome_assembly.py"
+      lines: "149-217"
+      note: "Substrate, RNA, protein, complex, requests, and allocated-substrate ports."
+    particle_resource_limits:
+      path: "opencell/vivarium/karr_ribosome_assembly.py"
+      lines: "239-271"
+      note: "Binary catalytic-enzyme gate and RNA/monomer limits."
+    estimate_formable:
+      path: "opencell/vivarium/karr_ribosome_assembly.py"
+      lines: "273-287"
+      note: "Formable-particle estimator used by the request step."
+    build_update:
+      path: "opencell/vivarium/karr_ribosome_assembly.py"
+      lines: "289-332"
+      note: "Aggregates RNA, protein, substrate, and complex deltas."
+    next_update:
+      path: "opencell/vivarium/karr_ribosome_assembly.py"
+      lines: "334-383"
+      note: "Current per-tick update path."
+    request_calculator:
+      path: "opencell/vivarium/karr_request_calculators.py"
+      lines: "163-226"
+      note: "Dedicated GTP/H2O request calculator step."
+provenance:
+  fixture_files:
+    - "data/karr_fixtures/per_process/RibosomeAssembly_flat.mat"
+  kb_version: "karr_native_m1__v2"
+  extraction_date_utc: null
+  notes: >-
+    last_audited=2026-06-29; audited_by=gpt-5.4-mini (codex; row authored Day-43 EOD);
+    oc_commit_sha=0f3d634ed198388796ebf240dbd0dd17d4faf966;
+    matlab_files_referenced=[data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m, data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m];
+    oc_files_referenced=[opencell/vivarium/karr_ribosome_assembly.py, opencell/vivarium/karr_request_calculators.py];
+    fixture_files=[data/karr_fixtures/per_process/RibosomeAssembly_flat.mat];
+    kb_version=karr_native_m1__v2;
+    docs_cross_checked=[docs/karr_extracts/process/24_RibosomeAssembly.md].
+deviations:
+  lp_bounds_source:
+    karr: "unknown"
+    oc_current: "unknown"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
+      lines: "277-298"
+      note: "Closest allocator-facing analogue in a process that does not define flux bounds."
+    oc_anchor:
+      path: "opencell/vivarium/karr_ribosome_assembly.py"
+      lines: "163-226"
+      note: "Closest OC analogue is the dedicated request calculator, not a process-local flux-bounds method."
+  shared_pool_projection_merges_compartments: false
+  known_deviations:
+    - "OC splits request generation into RequestCalculatorRibAsm while MATLAB keeps the allocator request on the process class."
+    - "MATLAB calcResourceRequirements_Current hardcodes getGtpPerComplex(2) in both particle terms; OC RequestCalculatorRibAsm computes hydrolysis demand from each particle's actual n_gtpases_per_particle."
+    - "OC collapses initializeState into construction-time fixture loading instead of exposing a runtime initialization callback."
+    - "OC returns early when allocated GTP or H2O is non-positive, while Karr only returns early when GTP is zero."
+  note: "The audited divergence is narrow but real: request-step placement, lifecycle-demand exposure, construction-time initialization, and the stricter OC early-return condition."
