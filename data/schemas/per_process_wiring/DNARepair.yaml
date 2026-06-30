@@ -9,8 +9,7 @@ process:
   whole_cell_model_id: "Process_DNARepair"
   functional_area: "dna-replication-and-maintenance"
   state_shape_role: "chromosome-primary repair process with substrate/allocation coupling"
-  notes: "The raw MATLAB source file is not present in this checkout; MATLAB-side anchors therefore use the DNARepair extract plus Simulation
-    allocation docs."
+  notes: "The raw MATLAB source file is not present in this checkout; MATLAB-side anchors therefore use the DNARepair extract plus Simulation allocation docs."
 methods:
   calcResourceRequirements_Current:
     matlab:
@@ -80,10 +79,8 @@ allocator:
     oc_current: "allocation"
     note: "Both sides use allocation gating; the OC process reads `substrates_allocated[karr_dna_repair]` before repair."
   request_formula:
-    matlab: "r = sum_pathways( repair_count[pathway] * per_event_cost[pathway] ), with per_event_cost[pathway] = [ATP_cost[pathway], patch_length_nt[pathway]
-      * dntp_split] and desired_repairs limited by pathway capacity and lesion count"
-    oc: "requests = _substrate_needs_for_repairs(desired_repairs); desired_repairs = min(Poisson(pathway_capacity_per_s * dt * lesion_count),
-      lesion_count); available = substrates_allocated[self.name]"
+    matlab: "r = sum_pathways( repair_count[pathway] * per_event_cost[pathway] ), with per_event_cost[pathway] = [ATP_cost[pathway], patch_length_nt[pathway] * dntp_split] and desired_repairs limited by pathway capacity and lesion count"
+    oc: "requests = _substrate_needs_for_repairs(desired_repairs); desired_repairs = min(Poisson(pathway_capacity_per_s * dt * lesion_count), lesion_count); available = substrates_allocated[self.name]"
     note: "Symbolic summary only; the OC request path is folded into next_update."
   requests:
     - wid: "ATP"
@@ -300,19 +297,16 @@ unit_conversion_chain:
         note: "Allocator bounding and final writeback."
   note: "DNARepair already works in discrete repair-event counts, so the chain is much simpler than the Metabolism mmol/gDW/hr conversion."
 dependencies:
-  produces_inputs_for:
-    - "Metabolism"
+  produces_inputs_for: []
   consumes_outputs_of:
     - "Metabolism"
-  note: "The non-substrate coupling to DNADamage/Replication is via chromosome damage state, not the shared substrate channel, so it is omitted
-    here."
+  note: "Removed Metabolism from produces_inputs_for because Metabolism is producer-only at the substrate-pool layer."
 ordering_constraints:
   hard_before: []
   hard_after: []
   soft_before: []
   soft_after: []
-  note: "No DNARepair-specific ordering rule was found in the available material; the canonical global hard constraint in Simulation.evolveState
-    remains tRNAAminoacylation before Translation."
+  note: "No DNARepair-specific ordering rule was found in the available material; the canonical global hard constraint in Simulation.evolveState remains tRNAAminoacylation before Translation."
 source_anchors:
   matlab_blocks:
     process_header:
@@ -398,8 +392,6 @@ deviations:
   known_deviations:
     - "Karr executes six randomly ordered repair subfunctions; OC collapses the process to one aggregated pathway-level update."
     - "OC models only ATP/dNTP repair demand plus the conditional AMET -> AHCYS + H restriction/modification side effect."
-    - "Karr ligation/polymerization products such as AMP, PPI, and NMN are visible in the fixture chemistry but are not emitted by the current
-      OC port."
-    - "The raw MATLAB source file was not present in this checkout, so MATLAB-side evidence is anchored to the DNARepair extract and the generic
-      allocation docs rather than a direct .m read."
+    - "Karr ligation/polymerization products such as AMP, PPI, and NMN are visible in the fixture chemistry but are not emitted by the current OC port."
+    - "The raw MATLAB source file was not present in this checkout, so MATLAB-side evidence is anchored to the DNARepair extract and the generic allocation docs rather than a direct .m read."
   note: "The row keeps known gaps explicit so the wiring DB does not overstate the fidelity of the current OC port."

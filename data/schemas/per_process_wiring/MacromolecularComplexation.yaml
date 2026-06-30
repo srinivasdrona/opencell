@@ -302,18 +302,14 @@ unit_conversion_chain:
 dependencies:
   produces_inputs_for:
     - "ProteinDecay"
-    - "RibosomeAssembly"
-    - "Translation"
-    - "Transcription"
-    - "ProteinTranslocation"
   consumes_outputs_of:
     - "Transcription"
     - "Translation"
     - "tRNAAminoacylation"
     - "RNAProcessing"
     - "RNAModification"
-  note: "Complex outputs feed downstream decay/translation machinery; the substrate pool is replenished by transcription, translation, and RNA/protein
-    maturation processes."
+    - "Metabolism"
+  note: "Removed RibosomeAssembly, Translation, Transcription, ProteinTranslocation from produces_inputs_for because the downstream rows do not expose a direct stoichiometric handoff; added Metabolism to consumes_outputs_of because this row directly draws from the shared metabolite pool."
 ordering_constraints:
   hard_before: []
   hard_after: []
@@ -384,8 +380,7 @@ provenance:
     - "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
   kb_version: "unknown"
   extraction_date_utc:
-  notes: "Primary .m source is not checked into this worktree; MATLAB anchors come from the repo's verbatim design excerpts and the OC port is
-    validated against the fixture-backed Python implementation."
+  notes: "Primary .m source is not checked into this worktree; MATLAB anchors come from the repo's verbatim design excerpts and the OC port is validated against the fixture-backed Python implementation."
 deviations:
   lp_bounds_source:
     karr: "allocation"
@@ -400,8 +395,6 @@ deviations:
       note: "Current OC zero-request step."
   shared_pool_projection_merges_compartments: false
   known_deviations:
-    - "OC's _per_cluster_mc samples a Poisson multiplicity and can form multiple complexes per iteration; Karr forms exactly one copy per Monte
-      Carlo iteration."
-    - "OC adds a cluster-1 fallback from _closed_form_bounds into _per_cluster_mc when the deterministic bound appears to overconsume; that guard
-      is not present in the preserved Karr excerpt."
+    - "OC's _per_cluster_mc samples a Poisson multiplicity and can form multiple complexes per iteration; Karr forms exactly one copy per Monte Carlo iteration."
+    - "OC adds a cluster-1 fallback from _closed_form_bounds into _per_cluster_mc when the deterministic bound appears to overconsume; that guard is not present in the preserved Karr excerpt."
   note: "The request surface is intentionally zero in both Karr and OC; the meaningful divergence is in the competitive Monte Carlo kernel."

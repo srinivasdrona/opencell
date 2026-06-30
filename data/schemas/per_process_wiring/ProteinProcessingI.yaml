@@ -9,8 +9,7 @@ process:
   whole_cell_model_id: "Process_ProteinProcessingI"
   functional_area: "protein-synthesis-and-maturation"
   state_shape_role: "state-shape catalog row; wiring row adds integration semantics"
-  notes: "Count-domain, allocation-backed maturation process: water is the only allocator-mediated input, while H/MET/FOR are direct writeback
-    side effects."
+  notes: "Count-domain, allocation-backed maturation process: water is the only allocator-mediated input, while H/MET/FOR are direct writeback side effects."
 methods:
   initializeConstants:
     matlab:
@@ -90,8 +89,7 @@ allocator:
     oc_current: "allocation"
     note: "OC reads only `substrates_allocated[self.name]` and never falls back to the global substrate pool."
   request_formula:
-    matlab: "result(H2O) = min(deformylaseLimit, sum(unprocessedMonomers)) + min(cleavageLimit, nascentMonomerNTerminalMethionineCleavages' *
-      unprocessedMonomers); all other substrate requests are zero."
+    matlab: "result(H2O) = min(deformylaseLimit, sum(unprocessedMonomers)) + min(cleavageLimit, nascentMonomerNTerminalMethionineCleavages' * unprocessedMonomers); all other substrate requests are zero."
     oc: "if pp1_active then H2O request = max(0, substrate_state['H2O']) else 0; all other requests remain zero."
     note: "The MATLAB request is a count-domain upper bound; the OC request calculator emits the currently available H2O as the allocator demand."
   requests:
@@ -213,19 +211,18 @@ dependencies:
     - "ProteinProcessingII"
     - "ProteinFolding"
     - "ProteinModification"
-    - "ProteinTranslocation"
     - "ProteinActivation"
   consumes_outputs_of:
     - "Translation"
-  note: "ProteinProcessingI consumes translated nascent proteins and feeds later maturation / utilization steps through the shared protein pool."
+    - "Metabolism"
+  note: "Removed ProteinTranslocation from produces_inputs_for because the downstream rows do not expose a direct stoichiometric handoff; added Metabolism to consumes_outputs_of because this row directly draws from the shared metabolite pool."
 ordering_constraints:
   hard_before: []
   hard_after: []
   soft_before: []
   soft_after:
     - "Translation"
-  note: "The docstring states the process runs following translation; there is no additional hard scheduler exception beyond the global tRNAAminoacylation
-    < Translation rule."
+  note: "The docstring states the process runs following translation; there is no additional hard scheduler exception beyond the global tRNAAminoacylation < Translation rule."
 source_anchors:
   matlab_blocks:
     header_and_representation:
@@ -301,8 +298,7 @@ provenance:
     - "opencell/vivarium/karr_composite.py"
     - "tests/vivarium/test_karr_protein_processing_i.py"
     - "tests/vivarium/test_karr_request_calculators.py"
-  notes: "Raw MATLAB source was available at the original repo root (`E:/opencell`) for line anchors; the worktree uses the same fixture family
-    and OC port."
+  notes: "Raw MATLAB source was available at the original repo root (`E:/opencell`) for line anchors; the worktree uses the same fixture family and OC port."
   last_audited: "2026-06-29"
   audited_by: "gpt-5.4-mini (codex; row authored Day-43 EOD)"
   oc_commit_sha: "61a5a06e8031af3159dffa436655ade330be1fd9"
@@ -321,9 +317,7 @@ deviations:
   shared_pool_projection_merges_compartments: false
   known_deviations:
     - "OC uses a strict-zero allocator contract: `next_update` reads `substrates_allocated[self.name]` and never falls back to `substrates`."
-    - "OC samples events with `multivariate_hypergeometric` (or a fallback choice loop) instead of MATLAB's `stochasticRound` + `mnrnd` + `min`
-      clipping."
-    - "MATLAB keeps the request and state-update logic inside `ProteinProcessingI.m`; OC splits them between `RequestCalculatorProteinPathway`
-      and `KarrProteinProcessingIProcess`."
+    - "OC samples events with `multivariate_hypergeometric` (or a fallback choice loop) instead of MATLAB's `stochasticRound` + `mnrnd` + `min` clipping."
+    - "MATLAB keeps the request and state-update logic inside `ProteinProcessingI.m`; OC splits them between `RequestCalculatorProteinPathway` and `KarrProteinProcessingIProcess`."
     - "No standalone `calcFluxBounds` implementation exists for this process in the current OC port."
   note: "The row preserves the count-domain biology while making the OC allocator split explicit."

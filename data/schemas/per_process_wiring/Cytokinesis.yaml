@@ -9,8 +9,7 @@ process:
   whole_cell_model_id: "Process_Cytokinesis"
   functional_area: "cytokinesis"
   state_shape_role: "state-shape catalog row; wiring row adds integration semantics"
-  notes: "Small substrate row: the MATLAB source exposes PI/H2O/H as the only substrate channel, while the OC port keeps a legacy zero GTP request
-    slot for compatibility."
+  notes: "Small substrate row: the MATLAB source exposes PI/H2O/H as the only substrate channel, while the OC port keeps a legacy zero GTP request slot for compatibility."
 methods:
   calcResourceRequirements_Current:
     matlab:
@@ -95,13 +94,11 @@ allocator:
   mode:
     karr: "allocation"
     oc_current: "allocation"
-    note: "The MATLAB process requests substrate share input, and the OC port reads from `states['substrates_allocated'][self.name]` before applying
-      the per-tick substrate delta."
+    note: "The MATLAB process requests substrate share input, and the OC port reads from `states['substrates_allocated'][self.name]` before applying the per-tick substrate delta."
   request_formula:
     matlab: "result(this.substrateIndexs_water) = this.ftsZRing.numFtsZSubunitsPerFilament * this.enzymes(this.enzymeIndexs_ftsZ_GTP_polymer);"
     oc: "if segregated and not pinched then 2 * numFtsZSubunitsPerFilament * max(0, potential_hydrolysis_edges) else 0"
-    note: "MATLAB requests water from the current FtsZ-GTP polymer pool; OC requests water from hydrolysis opportunity gated by ring geometry
-      and chromosome segregation."
+    note: "MATLAB requests water from the current FtsZ-GTP polymer pool; OC requests water from hydrolysis opportunity gated by ring geometry and chromosome segregation."
   requests:
     - wid: "H2O"
       compartment: "cytosol"
@@ -185,20 +182,17 @@ unit_conversion_chain:
         note: "Current request formula is count-based."
   note: "Unlike metabolism-style processes, Cytokinesis does not pass through a mmol/gDW/hr conversion chain."
 dependencies:
-  produces_inputs_for:
-    - "Metabolism"
+  produces_inputs_for: []
   consumes_outputs_of:
     - "Metabolism"
-  note: "Shared small-molecule loop only: Cytokinesis consumes cytosolic water and emits phosphate/hydrogen back into the metabolite pool; no
-    other clear substrate-level dependencies were evident in the audited sources."
+  note: "Removed Metabolism from produces_inputs_for because Metabolism is producer-only at the substrate-pool layer."
 ordering_constraints:
   hard_before: []
   hard_after: []
   soft_before: []
   soft_after:
     - "ChromosomeSegregation"
-  note: "The MATLAB source gates `evolveState` on `chromosome.segregated`; this is a state gate rather than a Simulation-level hard schedule rule.
-    The repository-wide hard order exception remains `tRNAAminoacylation < Translation`."
+  note: "The MATLAB source gates `evolveState` on `chromosome.segregated`; this is a state gate rather than a Simulation-level hard schedule rule. The repository-wide hard order exception remains `tRNAAminoacylation < Translation`."
 source_anchors:
   matlab_blocks:
     class_identity:
@@ -281,8 +275,7 @@ deviations:
       note: "The current OC port is a process updater and does not expose a flux-bounds path."
   shared_pool_projection_merges_compartments: false
   known_deviations:
-    - "OC embeds request emission in `KarrCytokinesisProcess.next_update` and bases the water request on ring geometry / hydrolysis opportunity,
-      while MATLAB's `calcResourceRequirements_Current` requests water from the current FtsZ-GTP polymer count."
+    - "OC embeds request emission in `KarrCytokinesisProcess.next_update` and bases the water request on ring geometry / hydrolysis opportunity, while MATLAB's `calcResourceRequirements_Current` requests water from the current FtsZ-GTP polymer count."
     - "The OC port preserves a zero-valued GTP request key for compatibility, but Cytokinesis.m only requests water."
     - "The MATLAB class has a separate lifecycle resource method; the OC port does not expose a separate lifecycle calculator."
   note: "Known divergences are intentionally explicit so the wiring row can be diff-checked instead of inferred."

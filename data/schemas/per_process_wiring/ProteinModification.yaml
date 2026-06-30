@@ -59,8 +59,7 @@ methods:
           note: "Strict-zero allocator read path and substrate writeback."
       note: "OC follows the same stochastic structure, but it also has replay-only hint short-circuiting."
     status: "partial"
-    note: "The biology sampler is present, but the OC port has a replay-only trace_hint gate and strict-zero allocator plumbing that are not part
-      of the MATLAB process body."
+    note: "The biology sampler is present, but the OC port has a replay-only trace_hint gate and strict-zero allocator plumbing that are not part of the MATLAB process body."
   calcFluxBounds:
     matlab:
       symbol: "calcFluxBounds"
@@ -82,8 +81,7 @@ allocator:
   mode:
     karr: "allocation"
     oc_current: "allocation"
-    note: "Karr declares resource requirements and the current OC port reads from substrates_allocated[self.name] rather than the global substrates
-      pool."
+    note: "Karr declares resource requirements and the current OC port reads from substrates_allocated[self.name] rather than the global substrates pool."
   request_formula:
     matlab: "if any(unmodifiedMonomers > 0), request consumed substrate rows as max(0, available substrate counts); else request zero"
     oc: "pm_req.update(_request_from_available(substrate_state, self._pm_consumed, active=pm_active))"
@@ -264,17 +262,14 @@ unit_conversion_chain:
         lines: "196-481"
         note: "Process update and sampling helpers. (normalized from invalid lines='196-354, 373-481' for schema validation)"
 dependencies:
-  produces_inputs_for:
-    - "ProteinActivation"
-    - "ProteinDecay"
-    - "ProteinTranslocation"
-    - "MacromolecularComplexation"
+  produces_inputs_for: []
   consumes_outputs_of:
     - "Translation"
     - "ProteinProcessingI"
     - "ProteinProcessingII"
     - "ProteinFolding"
-  note: "PCV-2 treats ProteinModification as part of the protein lifecycle downstream of Translation and upstream of activation/decay/translocation."
+    - "Metabolism"
+  note: "Removed ProteinActivation, ProteinDecay, ProteinTranslocation, MacromolecularComplexation from produces_inputs_for because the downstream rows do not expose a direct stoichiometric handoff; added Metabolism to consumes_outputs_of because this row directly draws from the shared metabolite pool."
 ordering_constraints:
   hard_before: []
   hard_after: []
@@ -287,8 +282,7 @@ ordering_constraints:
     - "ProteinActivation"
     - "ProteinDecay"
     - "ProteinTranslocation"
-  note: "Pipeline evidence in the repo shows Translation -> ProteinProcessingI -> ProteinFolding -> ProteinModification -> ProteinActivation;
-    no ProteinModification-specific hard order is documented."
+  note: "Pipeline evidence in the repo shows Translation -> ProteinProcessingI -> ProteinFolding -> ProteinModification -> ProteinActivation; no ProteinModification-specific hard order is documented."
 source_anchors:
   matlab_blocks:
     class_and_scope:
@@ -369,8 +363,6 @@ deviations:
   shared_pool_projection_merges_compartments: false
   known_deviations:
     - "OC has a replay-only trace_hint.unmodifiedMonomers_next short-circuit that bypasses the biology sampler when present."
-    - "OC reads substrates from substrates_allocated[self.name] rather than the global substrates store; this is equivalent under scheduler control
-      but different plumbing."
-    - "OC retains a legacy _n_completed scratch vector and a max_stochastic_iterations cap for replay/test compatibility; MATLAB does not expose
-      those implementation details."
+    - "OC reads substrates from substrates_allocated[self.name] rather than the global substrates store; this is equivalent under scheduler control but different plumbing."
+    - "OC retains a legacy _n_completed scratch vector and a max_stochastic_iterations cap for replay/test compatibility; MATLAB does not expose those implementation details."
   note: "The known differences are plumbing and replay controls rather than the chemistry itself."

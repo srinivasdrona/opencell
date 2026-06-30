@@ -259,16 +259,14 @@ unit_conversion_chain:
         note: "Direct substrate projection from decay stoichiometry."
   note: "No mmol/gDW/hr conversion is needed; RNADecay already operates in counts and seconds."
 dependencies:
-  produces_inputs_for:
-    - "Metabolism"
+  produces_inputs_for: []
   consumes_outputs_of:
     - "Transcription"
     - "RNAProcessing"
     - "RNAModification"
     - "tRNAAminoacylation"
-  note: >-
-    RNADecay feeds the small-molecule pool through its byproducts and consumes
-    RNA species produced by the RNA synthesis/maturation processes.
+    - "Metabolism"
+  note: "Removed Metabolism from produces_inputs_for because the downstream rows do not expose a direct stoichiometric handoff; added Metabolism to consumes_outputs_of because this row directly draws from the shared metabolite pool."
 ordering_constraints:
   hard_before: []
   hard_after: []

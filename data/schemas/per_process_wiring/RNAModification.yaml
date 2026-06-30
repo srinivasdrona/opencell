@@ -95,10 +95,8 @@ allocator:
       Karr requests resource share via calcResourceRequirements_Current, and
       current OC consumes the allocated surface at states["substrates_allocated"][self.name].
   request_formula:
-    matlab: "max(0, -this.reactionStoichiometryMatrix) * min(ceil(this.reactionCatalysisMatrix * this.enzymes * this.stepSizeSec), (this.reactionModificationMatrix
-      * this.unmodifiedRNAs))"
-    oc: "if any(unmodified RNA > 0), rm_request[wid] = max(0, substrate_state[wid]) for each consumed wid; else zero requests (shared RNA-pathway
-      calculator)"
+    matlab: "max(0, -this.reactionStoichiometryMatrix) * min(ceil(this.reactionCatalysisMatrix * this.enzymes * this.stepSizeSec), (this.reactionModificationMatrix * this.unmodifiedRNAs))"
+    oc: "if any(unmodified RNA > 0), rm_request[wid] = max(0, substrate_state[wid]) for each consumed wid; else zero requests (shared RNA-pathway calculator)"
     note: "Formula is symbolic and grep-friendly, not executable."
   requests:
     - wid: "AMET"
@@ -326,14 +324,11 @@ unit_conversion_chain:
   note: "No biomass/Avogadro conversion is needed here; both sides operate on integer molecule counts per tick."
 dependencies:
   produces_inputs_for:
-    - "tRNAAminoacylation"
     - "RibosomeAssembly"
   consumes_outputs_of:
     - "RNAProcessing"
-  note: >-
-    RNAModification matures RNAs that feed tRNA charging and ribosome
-    assembly. It sits downstream of RNAProcessing; Translation is indirect via
-    those downstream stages.
+    - "Metabolism"
+  note: "Removed tRNAAminoacylation from produces_inputs_for because the downstream rows do not expose a direct stoichiometric handoff; added Metabolism to consumes_outputs_of because this row directly draws from the shared metabolite pool."
 ordering_constraints:
   hard_before: []
   hard_after: []

@@ -88,11 +88,9 @@ methods:
         - path: "opencell/vivarium/karr_ribosome_assembly.py"
           lines: "273-287"
           note: "Formable-particle estimator used by the request step."
-      note: "OC keeps the same allocator-facing request semantics but routes them through a separate request-calculator step; the estimator reads
-        current RNA, monomer, and enzyme state, then multiplies formable particles by per-particle GTPase counts."
+      note: "OC keeps the same allocator-facing request semantics but routes them through a separate request-calculator step; the estimator reads current RNA, monomer, and enzyme state, then multiplies formable particles by per-particle GTPase counts."
     status: "implemented"
-    note: "The request path is allocation-backed on both sides; OC splits the calculation out of the process class and uses per-particle hydrolysis
-      counts in the request calculator."
+    note: "The request path is allocation-backed on both sides; OC splits the calculation out of the process class and uses per-particle hydrolysis counts in the request calculator."
   evolveState:
     matlab:
       symbol: "evolveState"
@@ -116,8 +114,7 @@ methods:
           note: "Delta builder for substrates, RNA, protein, and complexes."
       note: "OC preserves the randomized order and sequential depletion behavior, and its catalytic-enzyme gate matches the MATLAB presence check."
     status: "implemented"
-    note: "The current OC process reads `substrates_allocated` and matches the MATLAB per-particle update shape except for the early-return divergence
-      captured below."
+    note: "The current OC process reads `substrates_allocated` and matches the MATLAB per-particle update shape except for the early-return divergence captured below."
   calcFluxBounds:
     matlab:
       symbol: "calcFluxBounds"
@@ -141,11 +138,9 @@ allocator:
     oc_current: "allocation"
     note: "Both source trees use allocator-gated GTP/H2O request semantics."
   request_formula:
-    matlab: "result(GTP) = result(H2O) = getGtpPerComplex(2) * all(enzymes_30S) * (1 + min(RNAs_30S, monomers_30S)) + getGtpPerComplex(2) * all(enzymes_50S)
-      * (1 + min(RNAs_50S, monomers_50S))"
+    matlab: "result(GTP) = result(H2O) = getGtpPerComplex(2) * all(enzymes_30S) * (1 + min(RNAs_30S, monomers_30S)) + getGtpPerComplex(2) * all(enzymes_50S) * (1 + min(RNAs_50S, monomers_50S))"
     oc: "request(GTP) = request(H2O) = sum_{particle in {30S,50S}} formable_particle_count[particle] * n_gtpases_per_particle[particle]"
-    note: "Symbolic and grep-friendly; the OC request step preserves the same demand shape but routes through RequestCalculatorRibAsm and per-particle
-      hydrolysis counts."
+    note: "Symbolic and grep-friendly; the OC request step preserves the same demand shape but routes through RequestCalculatorRibAsm and per-particle hydrolysis counts."
   requests:
     - wid: "GTP"
       compartment: "cytosol"
@@ -345,8 +340,7 @@ unit_conversion_chain:
   steps: []
   note: "No unit conversion is needed here; the process already operates on integer counts at the tick scale."
 dependencies:
-  produces_inputs_for:
-    - "Translation"
+  produces_inputs_for: []
   consumes_outputs_of:
     - "Transcription"
     - "RNAProcessing"
@@ -354,14 +348,14 @@ dependencies:
     - "Translation"
     - "ProteinProcessingI"
     - "ProteinProcessingII"
-  note: "RibosomeAssembly consumes mature rRNA/protein pools and feeds ribosomes into Translation."
+    - "Metabolism"
+  note: "Removed Translation from produces_inputs_for because the downstream rows do not expose a direct stoichiometric handoff; added Metabolism to consumes_outputs_of because this row directly draws from the shared metabolite pool."
 ordering_constraints:
   hard_before: []
   hard_after: []
   soft_before: []
   soft_after: []
-  note: "No process-specific ordering constraint is stated for RibosomeAssembly; the canonical global rule in `@Simulation/evolveState.m` remains
-    tRNAAminoacylation before Translation."
+  note: "No process-specific ordering constraint is stated for RibosomeAssembly; the canonical global rule in `@Simulation/evolveState.m` remains tRNAAminoacylation before Translation."
 source_anchors:
   matlab_blocks:
     docstring_and_constants:
@@ -462,9 +456,7 @@ deviations:
   shared_pool_projection_merges_compartments: false
   known_deviations:
     - "OC splits request generation into RequestCalculatorRibAsm while MATLAB keeps the allocator request on the process class."
-    - "MATLAB calcResourceRequirements_Current hardcodes getGtpPerComplex(2) in both particle terms; OC RequestCalculatorRibAsm computes hydrolysis
-      demand from each particle's actual n_gtpases_per_particle."
+    - "MATLAB calcResourceRequirements_Current hardcodes getGtpPerComplex(2) in both particle terms; OC RequestCalculatorRibAsm computes hydrolysis demand from each particle's actual n_gtpases_per_particle."
     - "OC collapses initializeState into construction-time fixture loading instead of exposing a runtime initialization callback."
     - "OC returns early when allocated GTP or H2O is non-positive, while Karr only returns early when GTP is zero."
-  note: "The audited divergence is narrow but real: request-step placement, lifecycle-demand exposure, construction-time initialization, and the
-    stricter OC early-return condition."
+  note: "The audited divergence is narrow but real: request-step placement, lifecycle-demand exposure, construction-time initialization, and the stricter OC early-return condition."
