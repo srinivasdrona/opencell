@@ -1,4 +1,5 @@
 schema_version: "1.0"
+schema_date: "2026-06-29"
 process:
   name: "Metabolism"
   matlab_class: "Metabolism"
@@ -27,6 +28,7 @@ methods:
       supporting:
         - path: "opencell/vivarium/karr_allocation_step.py"
           lines: "210-280"
+          symbol: "KarrAllocationStep.next_update"
           note: "Allocator grant step that consumes requests."
       note: "The request calculator is the grep target for A1 comparison."
     status: "partial"
@@ -47,9 +49,11 @@ methods:
       supporting:
         - path: "opencell/m1/karr_metabolism_writeback.py"
           lines: "90-159"
+          symbol: "apply_karr_substrate_writeback"
           note: "Five-step substrate writeback + clip."
         - path: "opencell/m1/karr_metabolism_writeback.py"
           lines: "164-179"
+          symbol: "project_to_flat_per_wid"
           note: "Flat per-WID projection that merges compartments."
       note: "This is the row's A3b and A4 grep anchor."
     status: "partial"
@@ -70,6 +74,7 @@ methods:
       supporting:
         - path: "opencell/m1/compartmented.py"
           lines: "42-95"
+          symbol: "mmol_per_gdwh_to_molecules_per_s"
           note: "Unit conversion helper used by the compartmented model."
       note: "A3 compares whether the bounds come from allocation or the internal pool."
     status: "implemented"
@@ -119,10 +124,12 @@ consume_stoichiometry:
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m"
       lines: "1213-1215"
+      symbol: "evolveState"
       note: "Step 1 nutrient uptake."
     oc_anchor:
       path: "opencell/m1/karr_metabolism_writeback.py"
       lines: "98-109"
+      symbol: "apply_karr_substrate_writeback"
       note: "apply_karr_substrate_writeback step 1."
   - wid: "O2"
     compartment: "extracellular"
@@ -130,33 +137,143 @@ consume_stoichiometry:
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m"
       lines: "1213-1215"
+      symbol: "evolveState"
       note: "Same external-exchange step as GLC."
     oc_anchor:
       path: "opencell/m1/karr_metabolism_writeback.py"
       lines: "98-109"
+      symbol: "apply_karr_substrate_writeback"
       note: "apply_karr_substrate_writeback step 1."
+  - wid: "AMP"
+    compartment: "cytosol"
+    formula_or_constant: "stochasticRound(v[internal_exchange_AMP])"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m"
+      lines: "1218-1220"
+      symbol: "evolveState"
+      note: "Step 2 recycled internal exchange."
+    oc_anchor:
+      path: "opencell/m1/karr_metabolism_writeback.py"
+      lines: "111-115"
+      symbol: "apply_karr_substrate_writeback"
+      note: "Internal exchange writeback to cytosol."
+  - wid: "GMP"
+    compartment: "cytosol"
+    formula_or_constant: "stochasticRound(v[internal_exchange_GMP])"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m"
+      lines: "1218-1220"
+      symbol: "evolveState"
+      note: "Step 2 recycled internal exchange."
+    oc_anchor:
+      path: "opencell/m1/karr_metabolism_writeback.py"
+      lines: "111-115"
+      symbol: "apply_karr_substrate_writeback"
+      note: "Internal exchange writeback to cytosol."
+  - wid: "LIPOATE"
+    compartment: "cytosol"
+    formula_or_constant: "stochasticRound(metabolismNewProduction[LIPOATE] * growth_per_s * stepSizeSec)"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m"
+      lines: "1223-1225"
+      symbol: "evolveState"
+      note: "Step 3 biomass production."
+    oc_anchor:
+      path: "opencell/m1/karr_metabolism_writeback.py"
+      lines: "116-123"
+      symbol: "apply_karr_substrate_writeback"
+      note: "Biomass-production writeback to the compartmented state."
+  - wid: "THF"
+    compartment: "cytosol"
+    formula_or_constant: "stochasticRound(metabolismNewProduction[THF] * growth_per_s * stepSizeSec)"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m"
+      lines: "1223-1225"
+      symbol: "evolveState"
+      note: "Step 3 biomass production."
+    oc_anchor:
+      path: "opencell/m1/karr_metabolism_writeback.py"
+      lines: "116-123"
+      symbol: "apply_karr_substrate_writeback"
+      note: "Biomass-production writeback to the compartmented state."
   - wid: "ATP"
     compartment: "cytosol"
     formula_or_constant: "unaccountedEnergyConsumption * growth_per_s * stepSizeSec"
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m"
       lines: "1228-1231"
+      symbol: "evolveState"
       note: "Step 4 ATP hydrolysis branch."
     oc_anchor:
       path: "opencell/m1/karr_metabolism_writeback.py"
       lines: "124-144"
+      symbol: "apply_karr_substrate_writeback"
       note: "ATP hydrolysis sign vector and rounding."
 produce_stoichiometry:
+  - wid: "AMP"
+    compartment: "cytosol"
+    formula_or_constant: "stochasticRound(v[internal_exchange_AMP])"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m"
+      lines: "1218-1220"
+      symbol: "evolveState"
+      note: "Step 2 recycled internal exchange."
+    oc_anchor:
+      path: "opencell/m1/karr_metabolism_writeback.py"
+      lines: "111-115"
+      symbol: "apply_karr_substrate_writeback"
+      note: "Internal exchange writeback to cytosol."
+  - wid: "GMP"
+    compartment: "cytosol"
+    formula_or_constant: "stochasticRound(v[internal_exchange_GMP])"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m"
+      lines: "1218-1220"
+      symbol: "evolveState"
+      note: "Step 2 recycled internal exchange."
+    oc_anchor:
+      path: "opencell/m1/karr_metabolism_writeback.py"
+      lines: "111-115"
+      symbol: "apply_karr_substrate_writeback"
+      note: "Internal exchange writeback to cytosol."
+  - wid: "LIPOATE"
+    compartment: "cytosol"
+    formula_or_constant: "stochasticRound(metabolismNewProduction[LIPOATE] * growth_per_s * stepSizeSec)"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m"
+      lines: "1223-1225"
+      symbol: "evolveState"
+      note: "Step 3 biomass production."
+    oc_anchor:
+      path: "opencell/m1/karr_metabolism_writeback.py"
+      lines: "116-123"
+      symbol: "apply_karr_substrate_writeback"
+      note: "Biomass-production writeback to the compartmented state."
+  - wid: "THF"
+    compartment: "cytosol"
+    formula_or_constant: "stochasticRound(metabolismNewProduction[THF] * growth_per_s * stepSizeSec)"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m"
+      lines: "1223-1225"
+      symbol: "evolveState"
+      note: "Step 3 biomass production."
+    oc_anchor:
+      path: "opencell/m1/karr_metabolism_writeback.py"
+      lines: "116-123"
+      symbol: "apply_karr_substrate_writeback"
+      note: "Biomass-production writeback to the compartmented state."
   - wid: "ADP"
     compartment: "cytosol"
     formula_or_constant: "unaccountedEnergyConsumption * growth_per_s * stepSizeSec"
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m"
       lines: "1228-1231"
+      symbol: "evolveState"
       note: "Step 4 hydrolysis product."
     oc_anchor:
       path: "opencell/m1/karr_metabolism_writeback.py"
       lines: "124-144"
+      symbol: "apply_karr_substrate_writeback"
       note: "ATP hydrolysis sign vector and rounding."
   - wid: "PI"
     compartment: "cytosol"
@@ -164,10 +281,12 @@ produce_stoichiometry:
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m"
       lines: "1228-1231"
+      symbol: "evolveState"
       note: "Step 4 hydrolysis product."
     oc_anchor:
       path: "opencell/m1/karr_metabolism_writeback.py"
       lines: "124-144"
+      symbol: "apply_karr_substrate_writeback"
       note: "ATP hydrolysis sign vector and rounding."
   - wid: "H"
     compartment: "cytosol"
@@ -175,10 +294,12 @@ produce_stoichiometry:
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m"
       lines: "1228-1231"
+      symbol: "evolveState"
       note: "Step 4 hydrolysis product."
     oc_anchor:
       path: "opencell/m1/karr_metabolism_writeback.py"
       lines: "124-144"
+      symbol: "apply_karr_substrate_writeback"
       note: "ATP hydrolysis sign vector and rounding."
 compartment_routing:
   - wid: "GLC"
@@ -211,6 +332,26 @@ compartment_routing:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Hydrolysis product is cytosolic."
+  - wid: "AMP"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Recycled internal exchange product is cytosolic."
+  - wid: "GMP"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Recycled internal exchange product is cytosolic."
+  - wid: "LIPOATE"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Biomass-production exemplar is cytosolic."
+  - wid: "THF"
+    consume_compartment: null
+    produce_compartment: "cytosol"
+    mismatch: false
+    note: "Biomass-production exemplar is cytosolic."
 unit_conversion_chain:
   source_units: "mmol·gDW^-1·hr^-1"
   target_units: "molecules/tick"
@@ -222,6 +363,7 @@ unit_conversion_chain:
       anchor:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m"
         lines: "380-410"
+        symbol: "initializeConstants"
         note: "MATLAB unit conversion block."
     - from_units: "molecules·gDW^-1·s^-1"
       to_units: "molecules·s^-1"
@@ -230,6 +372,7 @@ unit_conversion_chain:
       anchor:
         path: "opencell/m1/compartmented.py"
         lines: "94-95"
+        symbol: "mmol_per_gdwh_to_molecules_per_s"
         note: "OC conversion helper."
     - from_units: "molecules·s^-1"
       to_units: "molecules/tick"
@@ -238,6 +381,7 @@ unit_conversion_chain:
       anchor:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m"
         lines: "380-410"
+        symbol: "initializeConstants"
         note: "MATLAB applies the step-size factor in the same conversion chain."
 dependencies:
   produces_inputs_for:
@@ -246,29 +390,27 @@ dependencies:
     - "tRNAAminoacylation"
     - "RNAProcessing"
     - "RNAModification"
+    - "RNADecay"
     - "ProteinProcessingI"
     - "ProteinProcessingII"
     - "ProteinTranslocation"
+    - "ProteinDecay"
+    - "ProteinFolding"
+    - "ProteinModification"
     - "Replication"
     - "ReplicationInitiation"
     - "RibosomeAssembly"
     - "MacromolecularComplexation"
-  consumes_outputs_of:
-    - "Transcription"
-    - "Translation"
-    - "tRNAAminoacylation"
-    - "RNAProcessing"
-    - "RNAModification"
-    - "ProteinProcessingI"
-    - "ProteinProcessingII"
-    - "ProteinTranslocation"
-    - "Replication"
-    - "ReplicationInitiation"
-    - "RibosomeAssembly"
     - "ChromosomeCondensation"
     - "ChromosomeSegregation"
     - "Cytokinesis"
-  note: "These are canonical downstreams and upstream demanders; later rows may expand the list."
+    - "DNARepair"
+    - "DNASupercoiling"
+    - "FtsZPolymerization"
+    - "TerminalOrganelleAssembly"
+    - "HostInteraction"
+  consumes_outputs_of: []
+  note: "Metabolism is a one-way provider at the chassis layer: it supplies shared-pool substrates/cofactors to downstream consumers, while any recycled cofactors re-enter through the shared substrate pool rather than a reverse process dependency. No chassis-layer counterexample was found in the referenced sources."
 ordering_constraints:
   hard_before: []
   hard_after: []
@@ -277,79 +419,114 @@ ordering_constraints:
   note: "Metabolism has no documented process-order exception of its own; the canonical hard order in `Simulation.evolveState` is tRNAAminoacylation before Translation."
 source_anchors:
   matlab_blocks:
-    compartment_indexing:
+    compartment_indices_init:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m"
       lines: "298-300"
-      note: "Karr compartment indices: cytosol=1, extracellular=2, membrane=3."
+      symbol: "compartment_indices_init"
+      note: "initializeConstants compartment indices: cytosol=1, extracellular=2, membrane=3."
+    simulation_evolve_state:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m"
+      lines: "1-78"
+      symbol: "evolveState"
+      note: "Simulation tick orchestration and allocator/process order."
     resource_req:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m"
       lines: "1188-1196"
+      symbol: "calcResourceRequirements_Current"
       note: "calcResourceRequirements_Current block."
     evolve_state_step_1:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m"
       lines: "1213-1215"
+      symbol: "evolveState"
       note: "Nutrient uptake."
     evolve_state_step_2:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m"
       lines: "1218-1220"
+      symbol: "evolveState"
       note: "Recycled metabolites."
     evolve_state_step_3:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m"
       lines: "1223-1225"
+      symbol: "evolveState"
       note: "New biomass."
     evolve_state_step_4:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m"
       lines: "1228-1231"
+      symbol: "evolveState"
       note: "Unaccounted energy."
     evolve_state_clip:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m"
       lines: "1235-1253"
+      symbol: "evolveState"
       note: "Metabolite-row clip."
     calc_flux_bounds:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m"
       lines: "1318-1380"
+      symbol: "calcFluxBounds"
       note: "LP bound construction."
   oc_blocks:
     process_class:
       path: "opencell/vivarium/karr_metabolism.py"
       lines: "118-179"
+      symbol: "KarrMetabolismProcess"
       note: "KarrMetabolismProcess definition and init."
     dynamic_update:
       path: "opencell/vivarium/karr_metabolism.py"
       lines: "465-606"
+      symbol: "KarrMetabolismProcess._dynamic_update"
       note: "Current per-tick update path."
     request_calculator:
       path: "opencell/vivarium/karr_request_calculators.py"
       lines: "758-820"
+      symbol: "RequestCalculatorMetabolism.next_update"
       note: "Allocator request emission for Metabolism."
     allocator_step:
       path: "opencell/vivarium/karr_allocation_step.py"
       lines: "210-280"
+      symbol: "KarrAllocationStep.next_update"
       note: "Allocator grant computation."
     writeback_steps:
       path: "opencell/m1/karr_metabolism_writeback.py"
       lines: "90-159"
+      symbol: "apply_karr_substrate_writeback"
       note: "Five-step substrate writeback and clip."
     flat_projection:
       path: "opencell/m1/karr_metabolism_writeback.py"
       lines: "164-179"
+      symbol: "project_to_flat_per_wid"
       note: "Compartment merge into flat per-WID deltas."
     compute_bounds:
       path: "opencell/m1/calc_flux_bounds.py"
       lines: "108-170"
+      symbol: "compute_bounds"
       note: "Current LP bound construction."
     unit_conversion:
       path: "opencell/m1/compartmented.py"
       lines: "42-95"
+      symbol: "mmol_per_gdwh_to_molecules_per_s"
       note: "Conversion helper and constants."
 provenance:
+  last_audited: "2026-06-29"
+  audited_by: "claude-opus-4.7 + operator review (Day-43 audit) + gpt-5.4-mini (schema authoring)"
+  oc_commit_sha: "61a5a06"
+  matlab_files_referenced:
+    - "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m"
+    - "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m"
+  oc_files_referenced:
+    - "opencell/vivarium/karr_metabolism.py"
+    - "opencell/m1/karr_metabolism_writeback.py"
+    - "opencell/vivarium/karr_request_calculators.py"
+    - "opencell/vivarium/karr_allocation_step.py"
+    - "opencell/m1/calc_flux_bounds.py"
+    - "opencell/m1/compartmented.py"
+    - "opencell/m1/karr_metabolism.py"
   fixture_files:
     - "data/karr_fixtures/per_process/Metabolism_flat.mat"
     - "data/karr_fixtures/karr_native_m1.json"
     - "data/karr_fixtures/karr_native_m1.npz"
   kb_version: "karr_native_m1__v2"
   extraction_date_utc: null
-  notes: "Example row uses the fixture and OC anchors named in the task prompt; no new re-audit was run."
+  notes: "Schema-authoring row; references are path-based anchors from the prompt and repo, not filesystem-verified existence checks."
 deviations:
   lp_bounds_source:
     karr: "allocation"
@@ -357,10 +534,12 @@ deviations:
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m"
       lines: "1318-1380"
+      symbol: "calcFluxBounds"
       note: "Karr derives LP bounds from allocator-facing resource requirements."
     oc_anchor:
       path: "opencell/m1/calc_flux_bounds.py"
       lines: "108-170"
+      symbol: "compute_bounds"
       note: "Current OC derives LP bounds from the internal pool / dynamic state."
   shared_pool_projection_merges_compartments: true
   known_deviations:
