@@ -64,6 +64,29 @@ def _make_matlab_file(path: Path) -> None:
     )
 
 
+def _make_latin1_matlab_file(path: Path) -> None:
+    lines = [
+        "classdef SynthProcess",
+        "methods",
+        "function out = calcResourceRequirements_Current(obj)",
+        "out = 0;",
+        "end",
+        "function out = evolveState(obj)",
+        "out = 0;",
+        "end",
+        "function out = calcFluxBounds(obj)",
+        "out = 0;",
+        "end",
+        "function out = initializeConstants(obj)",
+        "out = 0;",
+        "end",
+        "end",
+        "end",
+        "% caf\xe9",
+    ]
+    path.write_bytes("\n".join(lines).encode("latin-1"))
+
+
 def _make_python_file(path: Path) -> None:
     path.write_text(
         "\n".join(
@@ -85,6 +108,20 @@ def _make_python_file(path: Path) -> None:
                 "class KarrAllocationStep:",
                 "    def next_update(self) -> int:",
                 "        return 0",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+
+def _make_extract_doc_file(path: Path, *, symbols: list[str]) -> None:
+    prose = "\n".join(f"- Derived summary mentions `{symbol}` in prose." for symbol in symbols)
+    path.write_text(
+        "\n".join(
+            [
+                "# Synthetic extracted process doc",
+                "",
+                prose,
             ]
         ),
         encoding="utf-8",
@@ -361,3 +398,119 @@ def test_cyclic_ordering_partner_valid_process_passes_check_6() -> None:
     report = _json_report(result)
     row = _row_by_name(report, "Translation")
     assert row["checks"]["check_ordering_constraints_reference_valid_processes"]["verdict"] == "PASS"
+
+
+def test_check1_latin1_matlab_file_decodes(tmp_path: Path) -> None:
+    matlab_path = tmp_path / "latin1_synthetic.m"
+    python_path = tmp_path / "synthetic.py"
+    _make_latin1_matlab_file(matlab_path)
+    _make_python_file(python_path)
+    row = _synthetic_row(
+        process_name="SyntheticProcess",
+        matlab_path=matlab_path,
+        python_path=python_path,
+    )
+    env = _write_synthetic_env(
+        tmp_path,
+        row_payload=row,
+        process_name="SyntheticProcess",
+        state_groups={"substrates": ["GLC", "ATP"], "enzymes": [], "monomers": [], "complexs": [], "rnas": []},
+    )
+
+    result = _run_l1b("--format", "json", env_overrides=env)
+    assert result.returncode == 0
+    report = _json_report(result)
+    row_report = _row_by_name(report, "SyntheticProcess")
+    assert row_report["checks"]["check_matlab_anchors_resolve"]["verdict"] == "PASS"
+
+
+def test_check1_mirror_path_rewrite(tmp_path: Path) -> None:
+    mirror_relative = Path("tmp") / "test_check1_mirror_path_rewrite.m"
+    rewritten_matlab_path = _REPO_ROOT / mirror_relative
+    mirror_matlab_path = Path(f"E:/opencell-mirrors/opencell/{mirror_relative.as_posix()}")
+    python_path = tmp_path / "synthetic.py"
+
+    rewritten_matlab_path.parent.mkdir(parents=True, exist_ok=True)
+    _make_matlab_file(rewritten_matlab_path)
+    _make_python_file(python_path)
+    row = _synthetic_row(
+        process_name="SyntheticProcess",
+        matlab_path=mirror_matlab_path,
+        python_path=python_path,
+    )
+    env = _write_synthetic_env(
+        tmp_path,
+        row_payload=row,
+        process_name="SyntheticProcess",
+        state_groups={"substrates": ["GLC", "ATP"], "enzymes": [], "monomers": [], "complexs": [], "rnas": []},
+    )
+
+    try:
+        result = _run_l1b("--format", "json", env_overrides=env)
+    finally:
+        rewritten_matlab_path.unlink(missing_ok=True)
+
+    assert result.returncode == 0
+    report = _json_report(result)
+    row_report = _row_by_name(report, "SyntheticProcess")
+    check_1 = row_report["checks"]["check_matlab_anchors_resolve"]
+    assert check_1["verdict"] == "PASS"
+    assert any("mirror anchor path rewritten" in detail for detail in check_1["details"])
+
+
+def test_check1_md_extract_doc_permissive(tmp_path: Path) -> None:
+    python_path = tmp_path / "synthetic.py"
+    _make_python_file(python_path)
+
+    md_with_symbols = tmp_path / "extract_with_symbols.md"
+    _make_extract_doc_file(
+        md_with_symbols,
+        symbols=[
+            "calcResourceRequirements_Current",
+            "evolveState",
+            "calcFluxBounds",
+            "initializeConstants",
+        ],
+    )
+    row_pass = _synthetic_row(
+        process_name="SyntheticProcess",
+        matlab_path=md_with_symbols,
+        python_path=python_path,
+    )
+    env_pass = _write_synthetic_env(
+        tmp_path / "pass_case",
+        row_payload=row_pass,
+        process_name="SyntheticProcess",
+        state_groups={"substrates": ["GLC", "ATP"], "enzymes": [], "monomers": [], "complexs": [], "rnas": []},
+    )
+    result_pass = _run_l1b("--format", "json", env_overrides=env_pass)
+    assert result_pass.returncode == 0
+    report_pass = _json_report(result_pass)
+    row_report_pass = _row_by_name(report_pass, "SyntheticProcess")
+    check_1_pass = row_report_pass["checks"]["check_matlab_anchors_resolve"]
+    assert check_1_pass["verdict"] == "PASS"
+    assert any("derived-doc .md anchor" in detail for detail in check_1_pass["details"])
+
+    md_without_symbols = tmp_path / "extract_without_symbols.md"
+    md_without_symbols.write_text(
+        "# Synthetic extracted process doc\n\nNo MATLAB symbol names are present here.\n",
+        encoding="utf-8",
+    )
+    row_fail = _synthetic_row(
+        process_name="SyntheticProcess",
+        matlab_path=md_without_symbols,
+        python_path=python_path,
+    )
+    env_fail = _write_synthetic_env(
+        tmp_path / "fail_case",
+        row_payload=row_fail,
+        process_name="SyntheticProcess",
+        state_groups={"substrates": ["GLC", "ATP"], "enzymes": [], "monomers": [], "complexs": [], "rnas": []},
+    )
+    result_fail = _run_l1b("--format", "json", env_overrides=env_fail)
+    assert result_fail.returncode == 1
+    report_fail = _json_report(result_fail)
+    row_report_fail = _row_by_name(report_fail, "SyntheticProcess")
+    check_1_fail = row_report_fail["checks"]["check_matlab_anchors_resolve"]
+    assert check_1_fail["verdict"] == "FAIL"
+    assert any("not found in derived-doc file" in detail for detail in check_1_fail["details"])

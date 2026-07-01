@@ -1,0 +1,592 @@
+# L1b Wiring Conformance Report
+
+- Overall verdict: **PASS**
+- Rows: **28/28 PASS**, **0 FAIL**
+- Strict anchors: `False`
+
+## Per-Check Aggregate
+
+| Check | Failed rows | Warning rows |
+| --- | ---: | ---: |
+| check_matlab_anchors_resolve | 0 | 12 |
+| check_oc_anchors_resolve | 0 | 0 |
+| check_consume_produce_wids_in_schema_toml | 0 | 2 |
+| check_allocator_requests_wids_in_schema_toml | 0 | 6 |
+| check_unit_conversion_chain_coherent | 0 | 0 |
+| check_ordering_constraints_reference_valid_processes | 0 | 0 |
+| check_deviations_reference_valid_anchors | 0 | 5 |
+
+## Row Verdicts
+
+| Process | Verdict | Failed checks | Warnings |
+| --- | --- | --- | ---: |
+| ChromosomeCondensation | PASS | - | 0 |
+| ChromosomeSegregation | PASS | - | 5 |
+| Cytokinesis | PASS | - | 1 |
+| DNADamage | PASS | - | 2 |
+| DNARepair | PASS | - | 2 |
+| DNASupercoiling | PASS | - | 0 |
+| FtsZPolymerization | PASS | - | 2 |
+| HostInteraction | PASS | - | 0 |
+| MacromolecularComplexation | PASS | - | 12 |
+| Metabolism | PASS | - | 2 |
+| ProteinActivation | PASS | - | 2 |
+| ProteinDecay | PASS | - | 0 |
+| ProteinFolding | PASS | - | 3 |
+| ProteinModification | PASS | - | 7 |
+| ProteinProcessingI | PASS | - | 1 |
+| ProteinProcessingII | PASS | - | 0 |
+| ProteinTranslocation | PASS | - | 2 |
+| RNADecay | PASS | - | 2 |
+| RNAModification | PASS | - | 5 |
+| RNAProcessing | PASS | - | 0 |
+| Replication | PASS | - | 3 |
+| ReplicationInitiation | PASS | - | 0 |
+| RibosomeAssembly | PASS | - | 10 |
+| TerminalOrganelleAssembly | PASS | - | 0 |
+| Transcription | PASS | - | 0 |
+| TranscriptionalRegulation | PASS | - | 7 |
+| Translation | PASS | - | 0 |
+| tRNAAminoacylation | PASS | - | 0 |
+
+## Row Details
+
+### ChromosomeCondensation (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 6 anchors
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 7 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML chromosome_condensation.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML chromosome_condensation.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### ChromosomeSegregation (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML chromosome_segregation.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML chromosome_segregation.toml
+  - WARN: WID 'MG_203_204_TETRAMER' present in chromosome_segregation.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_221_OCTAMER' present in chromosome_segregation.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_384_MONOMER' present in chromosome_segregation.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_387_MONOMER' present in chromosome_segregation.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_470_MONOMER' present in chromosome_segregation.toml groups ['enzymes'], not in substrates
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### Cytokinesis (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 4 anchors
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 4 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML cytokinesis.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML cytokinesis.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 1 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - WARN: deviations.known_deviations[1] references missing file Cytokinesis.m
+
+### DNADamage (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 3 anchors
+  - WARN: methods.calcResourceRequirements_Current.matlab.source accepted process-summary .md anchor for generic method symbol 'calcResourceRequirements_Current'
+  - WARN: methods.evolveState.matlab.source accepted process-summary .md anchor for generic method symbol 'evolveState'
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML dna_damage.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML dna_damage.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### DNARepair (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 3 anchors
+  - WARN: methods.calcResourceRequirements_Current.matlab.source resolved derived-doc .md anchor with permissive symbol match for 'calcResourceRequirements_Current'
+  - WARN: methods.evolveState.matlab.source resolved derived-doc .md anchor with permissive symbol match for 'evolveState'
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML dna_repair.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML dna_repair.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### DNASupercoiling (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 8 anchors
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 8 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML dna_supercoiling.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML dna_supercoiling.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### FtsZPolymerization (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 3 anchors
+  - WARN: methods.calcResourceRequirements_Current.matlab.source resolved derived-doc .md anchor with permissive symbol match for 'calcResourceRequirements_Current'
+  - WARN: methods.evolveState.matlab.source accepted process-summary .md anchor for generic method symbol 'evolveState'
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML fts_z_polymerization.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML fts_z_polymerization.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### HostInteraction (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML host_interaction.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML host_interaction.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 1 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### MacromolecularComplexation (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 5 anchors
+  - WARN: methods.calcResourceRequirements_Current.matlab.source resolved derived-doc .md anchor with permissive symbol match for 'calcResourceRequirements_Current'
+  - WARN: methods.evolveState.matlab.source resolved derived-doc .md anchor with permissive symbol match for 'evolveState'
+  - WARN: methods.buildProteinComplexs_bounds.matlab.source resolved derived-doc .md anchor with permissive symbol match for 'buildProteinComplexs_bounds'
+  - WARN: methods.buildProteinComplexs_montecarlokinetic.matlab.source resolved derived-doc .md anchor with permissive symbol match for 'buildProteinComplexs_montecarlokinetic'
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 5 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML macromolecular_complexation.toml
+  - WARN: WID 'DNA_GYRASE' present in macromolecular_complexation.toml groups ['complexs'], not in substrates
+  - WARN: WID 'DNA_POLYMERASE_CORE' present in macromolecular_complexation.toml groups ['complexs'], not in substrates
+  - WARN: WID 'MG_005_DIMER' present in macromolecular_complexation.toml groups ['complexs'], not in substrates
+  - WARN: WID 'RNA_POLYMERASE' present in macromolecular_complexation.toml groups ['complexs'], not in substrates
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML macromolecular_complexation.toml
+  - WARN: WID 'DNA_GYRASE' present in macromolecular_complexation.toml groups ['complexs'], not in substrates
+  - WARN: WID 'DNA_POLYMERASE_CORE' present in macromolecular_complexation.toml groups ['complexs'], not in substrates
+  - WARN: WID 'MG_005_DIMER' present in macromolecular_complexation.toml groups ['complexs'], not in substrates
+  - WARN: WID 'RNA_POLYMERASE' present in macromolecular_complexation.toml groups ['complexs'], not in substrates
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### Metabolism (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 30 anchors
+  - WARN: source_anchors.matlab_blocks.compartment_indices_init used line-span fallback because symbol 'compartment_indices_init' was not found
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 30 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML metabolism.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML metabolism.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 3 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - WARN: deviations.known_deviations[0] references missing file karr_allocation_step.py
+
+### ProteinActivation (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 3 anchors
+  - WARN: methods.calcResourceRequirements_Current.matlab.source accepted process-summary .md anchor for generic method symbol 'calcResourceRequirements_Current'
+  - WARN: methods.evolveState.matlab.source resolved derived-doc .md anchor with permissive symbol match for 'evolveState'
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_activation.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_activation.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### ProteinDecay (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 4 anchors
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 4 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_decay.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_decay.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### ProteinFolding (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 3 anchors
+  - WARN: methods.calcResourceRequirements_Current.matlab.source accepted process-summary .md anchor for generic method symbol 'calcResourceRequirements_Current'
+  - WARN: methods.evolveState.matlab.source accepted process-summary .md anchor for generic method symbol 'evolveState'
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_folding.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_folding.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - WARN: deviations.known_deviations[2] references missing file ProteinFolding.m
+
+### ProteinModification (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 3 anchors
+  - WARN: methods.calcResourceRequirements_Current.matlab.source resolved derived-doc .md anchor with permissive symbol match for 'calcResourceRequirements_Current'
+  - WARN: methods.evolveState.matlab.source resolved derived-doc .md anchor with permissive symbol match for 'evolveState'
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_modification.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_modification.toml
+  - WARN: WID 'MG_012_MONOMER' present in protein_modification.toml groups ['enzymes', 'monomers'], not in substrates
+  - WARN: WID 'MG_070_MONOMER' present in protein_modification.toml groups ['monomers'], not in substrates
+  - WARN: WID 'MG_109_DIMER' present in protein_modification.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_166_MONOMER' present in protein_modification.toml groups ['monomers'], not in substrates
+  - WARN: WID 'MG_270_MONOMER' present in protein_modification.toml groups ['enzymes', 'monomers'], not in substrates
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 3 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 7 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### ProteinProcessingI (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 4 anchors
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 4 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_processing_i.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_processing_i.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 1 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - WARN: deviations.known_deviations[2] references missing file ProteinProcessingI.m
+
+### ProteinProcessingII (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 8 anchors
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 8 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_processing_ii.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_processing_ii.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### ProteinTranslocation (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 3 anchors
+  - WARN: methods.calcResourceRequirements_Current.matlab.source accepted process-summary .md anchor for generic method symbol 'calcResourceRequirements_Current'
+  - WARN: methods.evolveState.matlab.source resolved derived-doc .md anchor with permissive symbol match for 'evolveState'
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_translocation.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_translocation.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### RNADecay (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 3 anchors
+  - WARN: methods.calcResourceRequirements_Current.matlab.source resolved derived-doc .md anchor with permissive symbol match for 'calcResourceRequirements_Current'
+  - WARN: methods.evolveState.matlab.source accepted process-summary .md anchor for generic method symbol 'evolveState'
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML rna_decay.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML rna_decay.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### RNAModification (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML rna_modification.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML rna_modification.toml
+  - WARN: WID 'MG_084_TETRAMER' present in rna_modification.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_252_DIMER' present in rna_modification.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_346_DIMER' present in rna_modification.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_380_MONOMER' present in rna_modification.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_463_MONOMER' present in rna_modification.toml groups ['enzymes'], not in substrates
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### RNAProcessing (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 5 anchors
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 5 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML rna_processing.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML rna_processing.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### Replication (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 3 anchors
+  - WARN: methods.calcResourceRequirements_Current.matlab.source resolved derived-doc .md anchor with permissive symbol match for 'calcResourceRequirements_Current'
+  - WARN: methods.evolveState.matlab.source accepted process-summary .md anchor for generic method symbol 'evolveState'
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML replication.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML replication.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - WARN: deviations.known_deviations[2] references missing file Replication.m
+
+### ReplicationInitiation (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 6 anchors
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 6 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML replication_initiation.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML replication_initiation.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### RibosomeAssembly (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 6 anchors
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 6 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML ribosome_assembly.toml
+  - WARN: WID 'MG_417_MONOMER' present in ribosome_assembly.toml groups ['monomers'], not in substrates
+  - WARN: WID 'MGrrnA16S' present in ribosome_assembly.toml groups ['rnas'], not in substrates
+  - WARN: WID 'MGrrnA23S' present in ribosome_assembly.toml groups ['rnas'], not in substrates
+  - WARN: WID 'RIBOSOME_30S' present in ribosome_assembly.toml groups ['complexs'], not in substrates
+  - WARN: WID 'RIBOSOME_50S' present in ribosome_assembly.toml groups ['complexs'], not in substrates
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML ribosome_assembly.toml
+  - WARN: WID 'MG_143_MONOMER' present in ribosome_assembly.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_329_MONOMER' present in ribosome_assembly.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_387_MONOMER' present in ribosome_assembly.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MGrrnA16S' present in ribosome_assembly.toml groups ['rnas'], not in substrates
+  - WARN: WID 'RIBOSOME_30S' present in ribosome_assembly.toml groups ['complexs'], not in substrates
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### TerminalOrganelleAssembly (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 5 anchors
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 5 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML terminal_organelle_assembly.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML terminal_organelle_assembly.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### Transcription (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 5 anchors
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 5 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML transcription.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML transcription.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### TranscriptionalRegulation (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 3 anchors
+  - WARN: methods.calcResourceRequirements_Current.matlab.source accepted process-summary .md anchor for generic method symbol 'calcResourceRequirements_Current'
+  - WARN: methods.evolveState.matlab.source accepted process-summary .md anchor for generic method symbol 'evolveState'
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML transcriptional_regulation.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML transcriptional_regulation.toml
+  - WARN: WID 'MG_101_MONOMER' present in transcriptional_regulation.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_127_MONOMER' present in transcriptional_regulation.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_205_DIMER' present in transcriptional_regulation.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_236_MONOMER' present in transcriptional_regulation.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_428_DIMER' present in transcriptional_regulation.toml groups ['enzymes'], not in substrates
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### Translation (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 4 anchors
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 4 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML translation.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML translation.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 1 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### tRNAAminoacylation (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 7 anchors
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 7 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML trna_aminoacylation.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML trna_aminoacylation.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 1 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+

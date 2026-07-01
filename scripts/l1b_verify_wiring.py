@@ -32,6 +32,15 @@ CHECK_ORDER = (
 )
 
 FILE_REF_RE = re.compile(r"([A-Za-z0-9_./+\-@]+?\.(?:py|m))")
+MIRROR_ROOT_PREFIX = "e:/opencell-mirrors/"
+MIRROR_REWRITE_PREFIX = "e:/opencell-mirrors/opencell/"
+PROCESS_EXTRACT_DOC_PREFIX = "docs/karr_extracts/process/"
+PROCESS_SUMMARY_METHOD_SYMBOLS = {
+    "calcresourcerequirementscurrent",
+    "evolvestate",
+    "calcfluxbounds",
+    "initializeconstants",
+}
 
 
 class CheckResult(TypedDict):
@@ -104,7 +113,10 @@ class FileCache:
 
     def text(self, path: Path) -> str:
         if path not in self._text:
-            self._text[path] = path.read_text(encoding="utf-8")
+            if path.suffix.lower() == ".m":
+                self._text[path] = _read_matlab_source(path)
+            else:
+                self._text[path] = path.read_text(encoding="utf-8")
         return self._text[path]
 
     def lines(self, path: Path) -> list[str]:
@@ -156,6 +168,39 @@ def _resolve_anchor_path(anchor_path: str, repo_root: Path) -> Path:
     return repo_root / as_path
 
 
+def _read_matlab_source(path: Path) -> str:
+    """Read MATLAB source with encoding fallback (Karr sources are latin-1)."""
+    try:
+        return path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return path.read_text(encoding="latin-1")
+
+
+def _resolve_matlab_anchor_path(anchor_path: str, repo_root: Path) -> tuple[Path, str | None]:
+    resolved = _resolve_anchor_path(anchor_path, repo_root)
+    normalized = anchor_path.replace("\\", "/")
+    if not normalized.lower().startswith(MIRROR_ROOT_PREFIX):
+        return resolved, None
+
+    if not normalized.lower().startswith(MIRROR_REWRITE_PREFIX):
+        return resolved, None
+
+    relative_suffix = normalized[len(MIRROR_REWRITE_PREFIX) :]
+    rewritten = repo_root / Path(relative_suffix)
+    if not rewritten.exists():
+        return resolved, None
+
+    try:
+        rewritten_display = rewritten.relative_to(repo_root).as_posix()
+    except ValueError:
+        rewritten_display = str(rewritten)
+
+    warning = (
+        f"WARN: mirror anchor path rewritten for portability: {anchor_path} -> {rewritten_display}"
+    )
+    return rewritten, warning
+
+
 def _parse_line_span(lines: str) -> tuple[int, int] | None:
     match = re.fullmatch(r"(\d+)-(\d+)", str(lines).strip())
     if match is None:
@@ -172,6 +217,31 @@ def _parse_line_span(lines: str) -> tuple[int, int] | None:
 def _symbol_leaf(symbol: str) -> str:
     parts = [item for item in symbol.split(".") if item]
     return parts[-1] if parts else symbol
+
+
+def _normalize_symbol_text(value: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", value.lower())
+
+
+def _is_placeholder_symbol(symbol: str) -> bool:
+    normalized = _normalize_symbol_text(symbol)
+    return normalized in {"notimplemented", "na"}
+
+
+def _md_symbol_documented(text: str, symbol: str) -> bool:
+    if symbol.lower() in text.lower():
+        return True
+    normalized_symbol = _normalize_symbol_text(symbol)
+    if not normalized_symbol:
+        return False
+    return normalized_symbol in _normalize_symbol_text(text)
+
+
+def _is_process_extract_doc(path: str, text: str) -> bool:
+    normalized_path = path.replace("\\", "/").lower()
+    return normalized_path.startswith(PROCESS_EXTRACT_DOC_PREFIX) and (
+        "# karr process -" in text.lower() or "@wholecellmodelid" in text.lower()
+    )
 
 
 def _symbol_exists_anywhere(text: str, symbol: str) -> bool:
@@ -260,6 +330,12 @@ def _anchor_from_mapping(mapping: Any, label: str, symbol_override: str | None =
 
 def _collect_matlab_anchors(row: dict[str, Any]) -> list[AnchorRef]:
     anchors: list[AnchorRef] = []
+    matlab_class = None
+    process_meta = row.get("process")
+    if isinstance(process_meta, dict):
+        raw_matlab_class = process_meta.get("matlab_class")
+        if isinstance(raw_matlab_class, str) and raw_matlab_class.strip():
+            matlab_class = raw_matlab_class.strip()
 
     methods = row.get("methods")
     if isinstance(methods, dict):
@@ -268,10 +344,20 @@ def _collect_matlab_anchors(row: dict[str, Any]) -> list[AnchorRef]:
                 continue
             matlab_block = binding.get("matlab")
             if isinstance(matlab_block, dict):
+                symbol_override = matlab_block.get("symbol") if isinstance(matlab_block.get("symbol"), str) else None
+                status = binding.get("status")
+                if (
+                    isinstance(status, str)
+                    and status.strip().lower() == "not_implemented"
+                    and isinstance(symbol_override, str)
+                    and _is_placeholder_symbol(symbol_override)
+                    and matlab_class is not None
+                ):
+                    symbol_override = matlab_class
                 anchor = _anchor_from_mapping(
                     matlab_block.get("source"),
                     f"methods.{method_name}.matlab.source",
-                    matlab_block.get("symbol") if isinstance(matlab_block.get("symbol"), str) else None,
+                    symbol_override,
                 )
                 if anchor is not None:
                     anchors.append(anchor)
@@ -397,12 +483,20 @@ def _validate_anchor_refs(
     cache: FileCache,
     require_ast_for_python: bool,
     allow_source_block_line_fallback: bool,
+    allow_md_extract_docs: bool,
+    resolve_matlab_paths: bool,
 ) -> CheckResult:
     failures: list[str] = []
     warnings: list[str] = []
 
     for anchor in anchor_refs:
-        resolved = _resolve_anchor_path(anchor.path, repo_root)
+        if resolve_matlab_paths:
+            resolved, maybe_warning = _resolve_matlab_anchor_path(anchor.path, repo_root)
+            if maybe_warning is not None:
+                warnings.append(maybe_warning)
+        else:
+            resolved = _resolve_anchor_path(anchor.path, repo_root)
+
         if not resolved.exists():
             failures.append(f"{anchor.label}: missing file {anchor.path}")
             continue
@@ -411,6 +505,23 @@ def _validate_anchor_refs(
             text = cache.text(resolved)
         except Exception as exc:
             failures.append(f"{anchor.label}: could not read file {anchor.path}: {exc}")
+            continue
+
+        if allow_md_extract_docs and resolved.suffix.lower() == ".md":
+            if _md_symbol_documented(text, anchor.symbol):
+                warnings.append(
+                    f"WARN: {anchor.label} resolved derived-doc .md anchor with permissive symbol match for {anchor.symbol!r}"
+                )
+            elif _is_process_extract_doc(anchor.path, text) and (
+                _normalize_symbol_text(anchor.symbol) in PROCESS_SUMMARY_METHOD_SYMBOLS
+            ):
+                warnings.append(
+                    f"WARN: {anchor.label} accepted process-summary .md anchor for generic method symbol {anchor.symbol!r}"
+                )
+            else:
+                failures.append(
+                    f"{anchor.label}: symbol {anchor.symbol!r} not found in derived-doc file {anchor.path}"
+                )
             continue
 
         if strict_anchors:
@@ -503,6 +614,8 @@ def check_matlab_anchors_resolve(
         cache=cache,
         require_ast_for_python=False,
         allow_source_block_line_fallback=True,
+        allow_md_extract_docs=True,
+        resolve_matlab_paths=True,
     )
 
 
@@ -525,6 +638,8 @@ def check_oc_anchors_resolve(
         cache=cache,
         require_ast_for_python=True,
         allow_source_block_line_fallback=False,
+        allow_md_extract_docs=False,
+        resolve_matlab_paths=False,
     )
 
 

@@ -3,7 +3,7 @@ schema_date: '2026-06-29'
 process:
   name: "DNASupercoiling"
   matlab_class: "DNASupercoiling"
-  matlab_file: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+  matlab_file: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
   oc_class: "KarrDNASupercoilingProcess"
   oc_file: "opencell/vivarium/karr_dna_supercoiling.py"
   whole_cell_model_id: "Process_DNASupercoiling"
@@ -15,7 +15,7 @@ methods:
     matlab:
       symbol: "initializeConstants"
       source:
-        path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
         lines: "236-250"
         note: "Loads RNAPolymerase reference, transcription-unit indices, and chromosome-derived constants."
       note: "Initialization hook for process-local constants and state references."
@@ -36,7 +36,7 @@ methods:
     matlab:
       symbol: "calcResourceRequirements_LifeCycle"
       source:
-        path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
         lines: "272-313"
         note: "Lifecycle allocator helper: replication-linked LK demand, topoI compensation term, and ATP cost."
       note: "This is the broader lifecycle budget, not the current per-tick request helper."
@@ -53,7 +53,7 @@ methods:
     matlab:
       symbol: "initializeState"
       source:
-        path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
         lines: "320-330"
         note: "Binds gyrase at initialization and seeds RNAPolymerase supercoiling fold-change."
       note: "MATLAB startup hook for enzyme binding and transcription coupling."
@@ -74,7 +74,7 @@ methods:
     matlab:
       symbol: "calcResourceRequirements_Current"
       source:
-        path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
         lines: "333-353"
         note: "Per-tick ATP/H2O request for gyrase activity only."
       note: "Returns the allocator-facing per-tick resource demand."
@@ -101,7 +101,7 @@ methods:
     matlab:
       symbol: "evolveState"
       source:
-        path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
         lines: "356-508"
         note: "Region resolution, random enzyme-order binding/release, LK updates, ATP accounting, and RNAPolymerase fold-change writeback."
       note: "Main per-tick update loop."
@@ -128,7 +128,7 @@ methods:
     matlab:
       symbol: "calcRNAPolymeraseBindingProbFoldChange"
       source:
-        path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
         lines: "510-542"
         note: "Sigma-dependent transcription fold-change helper."
       note: "Used to propagate supercoiling into RNAPolymerase binding probability."
@@ -145,7 +145,7 @@ methods:
     matlab:
       symbol: "buildEnzymeProperties"
       source:
-        path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
         lines: "544-573"
         note: "Per-enzyme constants: sigma limits, ATP costs, activity rates, and logistic gates."
       note: "Constructs the enzyme property table used by both request and evolve logic."
@@ -166,7 +166,7 @@ methods:
     matlab:
       symbol: "DNASupercoiling"
       source:
-        path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
         lines: "272-313"
         note: "Schema placeholder; the class has no calcFluxBounds method, so this anchor points at the closest allocator-facing helper. Class-level anchor used to record calcFluxBounds absence."
       note: "DNASupercoiling is not an LP-bound process. This process does not have Karr's calcFluxBounds method; it does not participate in FBA."
@@ -223,7 +223,7 @@ consume_stoichiometry:
     compartment: "cytosol"
     formula_or_constant: "nATP = nStrandPassingEvents * atpCost"
     matlab_anchor:
-      path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
       lines: "494-499"
       note: "ATP subtraction after strand-passing events."
     oc_anchor:
@@ -235,7 +235,7 @@ consume_stoichiometry:
     compartment: "cytosol"
     formula_or_constant: "nH2O = nStrandPassingEvents * atpCost"
     matlab_anchor:
-      path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
       lines: "494-499"
       note: "Water subtraction is paired with ATP hydrolysis."
     oc_anchor:
@@ -248,7 +248,7 @@ produce_stoichiometry:
     compartment: "cytosol"
     formula_or_constant: "+nATP"
     matlab_anchor:
-      path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
       lines: "494-499"
       note: "Hydrolysis product emitted after ATP consumption."
     oc_anchor:
@@ -260,7 +260,7 @@ produce_stoichiometry:
     compartment: "cytosol"
     formula_or_constant: "+nATP"
     matlab_anchor:
-      path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
       lines: "494-499"
       note: "Hydrolysis product emitted after ATP consumption."
     oc_anchor:
@@ -272,7 +272,7 @@ produce_stoichiometry:
     compartment: "cytosol"
     formula_or_constant: "+nATP"
     matlab_anchor:
-      path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
       lines: "494-499"
       note: "Hydrogen product is present when the fixture exposes H."
     oc_anchor:
@@ -334,39 +334,39 @@ ordering_constraints:
 source_anchors:
   matlab_blocks:
     class_identity:
-      path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
       lines: "127-175"
       note: "Class definition, substrate/enzyme IDs, and fixed constants."
     initialize_constants:
-      path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
       lines: "236-250"
       note: "RNAPolymerase reference and transcription-unit indices."
     lifecycle_allocator:
-      path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
       lines: "272-313"
       note: "Lifecycle resource requirement helper."
     initialize_state:
-      path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
       lines: "320-330"
       note: "Initialization hook for gyrase binding and transcription fold-change."
     current_request:
-      path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
       lines: "333-353"
       note: "Current allocator-facing ATP/H2O request helper."
     evolve_state:
-      path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
       lines: "356-508"
       note: "Main per-tick state update."
     transcription_coupling:
-      path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
       lines: "510-542"
       note: "RNAPolymerase fold-change helper."
     enzyme_properties:
-      path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
       lines: "544-573"
       note: "Per-enzyme constants and logistic gating."
     simulation_ordering:
-      path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m"
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m"
       lines: "48-57"
       note: "Canonical hard ordering constraint: tRNAAminoacylation before Translation."
   oc_blocks:
@@ -412,13 +412,13 @@ provenance:
     - "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
   kb_version: "karr_native_m1__v2"
   extraction_date_utc:
-  notes: "last_audited=2026-06-29; audited_by=gpt-5.4-mini (codex; row authored Day-43 EOD); oc_commit_sha=61a5a06e8031af3159dffa436655ade330be1fd9; matlab_files_referenced=[E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m, E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m, E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/Simulation.m]; oc_files_referenced=[opencell/vivarium/karr_dna_supercoiling.py, opencell/vivarium/karr_allocation_step.py, opencell/vivarium/karr_composite.py, opencell/vivarium/karr_replication_initiation.py]; fixture_sources=[data/karr_fixtures/per_process/DNASupercoiling_flat.mat, data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat]."
+  notes: "last_audited=2026-06-29; audited_by=gpt-5.4-mini (codex; row authored Day-43 EOD); oc_commit_sha=61a5a06e8031af3159dffa436655ade330be1fd9; matlab_files_referenced=[data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m, data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m, data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/Simulation.m]; oc_files_referenced=[opencell/vivarium/karr_dna_supercoiling.py, opencell/vivarium/karr_allocation_step.py, opencell/vivarium/karr_composite.py, opencell/vivarium/karr_replication_initiation.py]; fixture_sources=[data/karr_fixtures/per_process/DNASupercoiling_flat.mat, data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat]."
   last_audited: '2026-06-29'
   audited_by: gpt-5.4-mini + parallel codex fleet (Day-43 EOD batch)
   oc_commit_sha: 61a5a06
   matlab_files_referenced:
-    - E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m
-    - E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m
+    - data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m
+    - data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m
   oc_files_referenced:
     - opencell/vivarium/karr_dna_supercoiling.py
     - opencell/vivarium/karr_allocation_step.py
@@ -428,7 +428,7 @@ deviations:
     karr: "unknown"
     oc_current: "unknown"
     matlab_anchor:
-      path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
       lines: "272-313"
       note: "DNASupercoiling is not an LP-bound process; this is the closest allocator-style helper."
     oc_anchor:
@@ -443,3 +443,4 @@ deviations:
     - "OC uses a sparse chromosome-store/replay-hint implementation rather than the MATLAB doubleStrandedRegions / monomerBoundSites / complexBoundSites control surface."
     - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
   note: "No compartment-merging projection is involved here; the remaining deviations are controller-shape and state-representation differences."
+

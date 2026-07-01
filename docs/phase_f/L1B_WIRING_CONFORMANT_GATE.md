@@ -121,6 +121,45 @@ Decision D5
 - Falsifier: if triage requires opening script internals to determine failing tuple, attribution schema must be enriched.
 - Operator escalation needed? no.
 
+Decision D6 (2026-07-01 post-hoc)
+- Question: how should Check 1 handle MATLAB source files that are not UTF-8 decodable?
+- Options considered:
+1. Fail immediately on Unicode decode error.
+2. Fall back to latin-1 only when UTF-8 decode fails.
+3. Attempt broad codec guessing.
+- Chosen option: 2.
+- Rationale: Karr `.m` sources include legacy bytes; latin-1 fallback preserves static anchor checks without masking non-decode errors.
+- Tradeoffs accepted: latin-1 decode can admit mojibake in comments, but symbol detection remains reliable.
+- Beat-4 inversion: fallback could accidentally hide a genuinely corrupted file.
+- Falsifier: if symbol extraction quality regresses after fallback, tighten to extension- and check-scoped decoding rules.
+- Operator escalation needed? no.
+
+Decision D7 (2026-07-01 post-hoc)
+- Question: how should Check 1 treat `E:/opencell-mirrors/...` anchor paths?
+- Options considered:
+1. Treat as normal absolute path and fail if mirror is absent.
+2. Attempt rewrite to repo-relative when mirror-style prefix is detected.
+3. Auto-rewrite rows in-memory without warning.
+- Chosen option: 2.
+- Rationale: improves environment portability while preserving explicit diagnostics for non-canonical rows.
+- Tradeoffs accepted: rewrite logic adds path-policy branching in Check 1.
+- Beat-4 inversion: silent rewrites could conceal stale row authorship practices.
+- Falsifier: if mirror rewrites appear in stable rows repeatedly, promote row canonicalization to a separate hard gate.
+- Operator escalation needed? no.
+
+Decision D8 (2026-07-01 post-hoc)
+- Question: should `.md` extract-doc anchors be accepted in Check 1?
+- Options considered:
+1. Reject non-`.m` anchors for MATLAB-side checks.
+2. Allow `.md` anchors with case-insensitive symbol substring checks and warning.
+3. Treat `.md` anchors equivalently to MATLAB syntax anchors.
+- Chosen option: 2.
+- Rationale: derived extract docs can document symbol intent even when MATLAB syntax is absent; warning preserves second-class status.
+- Tradeoffs accepted: substring checks are weaker than syntax-aware checks and can false-pass on incidental mentions.
+- Beat-4 inversion: permissive matching could become the default authoring path and reduce anchor fidelity.
+- Falsifier: if `.md` anchors dominate rows where canonical `.m` anchors exist, tighten policy or block by default.
+- Operator escalation needed? no.
+
 ## Slot-3 Self-Audit Table
 | L1b check | Implemented function | Governing decision(s) | Acceptance criterion | Self-audit |
 | --- | --- | --- | --- | --- |
