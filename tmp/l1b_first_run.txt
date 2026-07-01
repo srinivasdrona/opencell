@@ -1,0 +1,696 @@
+# L1b Wiring Conformance Report
+
+- Overall verdict: **FAIL**
+- Rows: **1/28 PASS**, **27 FAIL**
+- Strict anchors: `False`
+
+## Per-Check Aggregate
+
+| Check | Failed rows | Warning rows |
+| --- | ---: | ---: |
+| check_matlab_anchors_resolve | 27 | 1 |
+| check_oc_anchors_resolve | 26 | 0 |
+| check_consume_produce_wids_in_schema_toml | 0 | 2 |
+| check_allocator_requests_wids_in_schema_toml | 0 | 6 |
+| check_unit_conversion_chain_coherent | 20 | 0 |
+| check_ordering_constraints_reference_valid_processes | 0 | 0 |
+| check_deviations_reference_valid_anchors | 0 | 5 |
+
+## Row Verdicts
+
+| Process | Verdict | Failed checks | Warnings |
+| --- | --- | --- | ---: |
+| ChromosomeCondensation | FAIL | check_matlab_anchors_resolve, check_oc_anchors_resolve, check_unit_conversion_chain_coherent | 0 |
+| ChromosomeSegregation | FAIL | check_matlab_anchors_resolve, check_oc_anchors_resolve | 5 |
+| Cytokinesis | FAIL | check_matlab_anchors_resolve, check_oc_anchors_resolve | 1 |
+| DNADamage | FAIL | check_matlab_anchors_resolve, check_oc_anchors_resolve | 0 |
+| DNARepair | FAIL | check_matlab_anchors_resolve, check_oc_anchors_resolve, check_unit_conversion_chain_coherent | 0 |
+| DNASupercoiling | FAIL | check_matlab_anchors_resolve, check_oc_anchors_resolve, check_unit_conversion_chain_coherent | 0 |
+| FtsZPolymerization | FAIL | check_matlab_anchors_resolve, check_oc_anchors_resolve, check_unit_conversion_chain_coherent | 0 |
+| HostInteraction | FAIL | check_matlab_anchors_resolve, check_oc_anchors_resolve, check_unit_conversion_chain_coherent | 0 |
+| MacromolecularComplexation | FAIL | check_matlab_anchors_resolve, check_oc_anchors_resolve, check_unit_conversion_chain_coherent | 8 |
+| Metabolism | PASS | - | 2 |
+| ProteinActivation | FAIL | check_matlab_anchors_resolve, check_oc_anchors_resolve | 0 |
+| ProteinDecay | FAIL | check_matlab_anchors_resolve, check_oc_anchors_resolve, check_unit_conversion_chain_coherent | 0 |
+| ProteinFolding | FAIL | check_matlab_anchors_resolve, check_oc_anchors_resolve, check_unit_conversion_chain_coherent | 1 |
+| ProteinModification | FAIL | check_matlab_anchors_resolve, check_oc_anchors_resolve | 5 |
+| ProteinProcessingI | FAIL | check_matlab_anchors_resolve, check_unit_conversion_chain_coherent | 1 |
+| ProteinProcessingII | FAIL | check_matlab_anchors_resolve, check_oc_anchors_resolve, check_unit_conversion_chain_coherent | 0 |
+| ProteinTranslocation | FAIL | check_matlab_anchors_resolve, check_oc_anchors_resolve, check_unit_conversion_chain_coherent | 0 |
+| RNADecay | FAIL | check_matlab_anchors_resolve, check_oc_anchors_resolve, check_unit_conversion_chain_coherent | 0 |
+| RNAModification | FAIL | check_matlab_anchors_resolve, check_oc_anchors_resolve, check_unit_conversion_chain_coherent | 5 |
+| RNAProcessing | FAIL | check_matlab_anchors_resolve, check_oc_anchors_resolve | 0 |
+| Replication | FAIL | check_matlab_anchors_resolve, check_oc_anchors_resolve, check_unit_conversion_chain_coherent | 1 |
+| ReplicationInitiation | FAIL | check_matlab_anchors_resolve, check_oc_anchors_resolve, check_unit_conversion_chain_coherent | 0 |
+| RibosomeAssembly | FAIL | check_matlab_anchors_resolve, check_oc_anchors_resolve, check_unit_conversion_chain_coherent | 10 |
+| TerminalOrganelleAssembly | FAIL | check_matlab_anchors_resolve, check_oc_anchors_resolve | 0 |
+| Transcription | FAIL | check_matlab_anchors_resolve, check_oc_anchors_resolve, check_unit_conversion_chain_coherent | 0 |
+| TranscriptionalRegulation | FAIL | check_matlab_anchors_resolve, check_oc_anchors_resolve, check_unit_conversion_chain_coherent | 5 |
+| Translation | FAIL | check_matlab_anchors_resolve, check_oc_anchors_resolve, check_unit_conversion_chain_coherent | 0 |
+| tRNAAminoacylation | FAIL | check_matlab_anchors_resolve, check_oc_anchors_resolve, check_unit_conversion_chain_coherent | 0 |
+
+## Row Details
+
+### ChromosomeCondensation (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.calcFluxBounds.matlab.source: symbol 'calcFluxBounds' not found in file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m
+- `check_oc_anchors_resolve`: **FAIL**
+  - methods.calcResourceRequirements_LifeCycle.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_chromosome_condensation.py
+  - methods.calcResourceRequirements_LifeCycle.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 145-442 ±5 in opencell/vivarium/karr_chromosome_condensation.py
+  - methods.calcNewRegions.oc.source: symbol 'KarrChromosomeCondensationProcess._build_available_intervals / _sample_binding_positions' not found in file opencell/vivarium/karr_chromosome_condensation.py
+  - methods.calcNewRegions.oc.source: AST symbol 'KarrChromosomeCondensationProcess._build_available_intervals / _sample_binding_positions' not found in line window 652-755 ±5 in opencell/vivarium/karr_chromosome_condensation.py
+  - methods.calcFluxBounds.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_chromosome_condensation.py
+  - methods.calcFluxBounds.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 145-442 ±5 in opencell/vivarium/karr_chromosome_condensation.py
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML chromosome_condensation.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML chromosome_condensation.toml
+- `check_unit_conversion_chain_coherent`: **FAIL**
+  - unit_conversion_chain.steps missing/empty
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### ChromosomeSegregation (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.calcFluxBounds.matlab.source: symbol 'calcFluxBounds' not found in file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m
+- `check_oc_anchors_resolve`: **FAIL**
+  - methods.calcFluxBounds.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_chromosome_segregation.py
+  - methods.calcFluxBounds.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 1-415 ±5 in opencell/vivarium/karr_chromosome_segregation.py
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML chromosome_segregation.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML chromosome_segregation.toml
+  - WARN: WID 'MG_203_204_TETRAMER' present in chromosome_segregation.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_221_OCTAMER' present in chromosome_segregation.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_384_MONOMER' present in chromosome_segregation.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_387_MONOMER' present in chromosome_segregation.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_470_MONOMER' present in chromosome_segregation.toml groups ['enzymes'], not in substrates
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### Cytokinesis (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.calcFluxBounds.matlab.source: symbol 'calcFluxBounds' not found in file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m
+- `check_oc_anchors_resolve`: **FAIL**
+  - methods.calcResourceRequirements_LifeCycle.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_cytokinesis.py
+  - methods.calcResourceRequirements_LifeCycle.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 330-410 ±5 in opencell/vivarium/karr_cytokinesis.py
+  - methods.calcFluxBounds.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_cytokinesis.py
+  - methods.calcFluxBounds.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 115-678 ±5 in opencell/vivarium/karr_cytokinesis.py
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML cytokinesis.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML cytokinesis.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 1 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - WARN: deviations.known_deviations[1] references missing file Cytokinesis.m
+
+### DNADamage (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.calcResourceRequirements_Current.matlab.source: symbol 'calcResourceRequirements_Current' not found in file docs/karr_extracts/process/04_DNADamage.md
+  - methods.evolveState.matlab.source: symbol 'evolveState' not found in file docs/karr_extracts/process/04_DNADamage.md
+  - methods.calcFluxBounds.matlab.source: symbol 'calcFluxBounds' not found in file docs/karr_extracts/process/04_DNADamage.md
+- `check_oc_anchors_resolve`: **FAIL**
+  - methods.calcResourceRequirements_Current.oc.source: symbol 'not_implemented' not found in file opencell/vivarium/karr_dna_damage.py
+  - methods.calcResourceRequirements_Current.oc.source: AST symbol 'not_implemented' not found in line window 111-226 ±5 in opencell/vivarium/karr_dna_damage.py
+  - methods.calcFluxBounds.oc.source: symbol 'not_implemented' not found in file opencell/vivarium/karr_dna_damage.py
+  - methods.calcFluxBounds.oc.source: AST symbol 'not_implemented' not found in line window 111-486 ±5 in opencell/vivarium/karr_dna_damage.py
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML dna_damage.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML dna_damage.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### DNARepair (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.calcFluxBounds.matlab.source: symbol 'calcFluxBounds' not found in file docs/karr_extracts/process/05_DNARepair.md
+- `check_oc_anchors_resolve`: **FAIL**
+  - methods.calcFluxBounds.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_dna_repair.py
+  - methods.calcFluxBounds.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 317-386 ±5 in opencell/vivarium/karr_dna_repair.py
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML dna_repair.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML dna_repair.toml
+- `check_unit_conversion_chain_coherent`: **FAIL**
+  - unit_conversion_chain.steps[-1].to_units does not match unit_conversion_chain.target_units
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### DNASupercoiling (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.initializeConstants.matlab.source: missing file E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m
+  - methods.calcResourceRequirements_LifeCycle.matlab.source: missing file E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m
+  - methods.initializeState.matlab.source: missing file E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m
+  - methods.calcResourceRequirements_Current.matlab.source: missing file E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m
+  - methods.evolveState.matlab.source: missing file E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m
+  - methods.calcRNAPolymeraseBindingProbFoldChange.matlab.source: missing file E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m
+  - methods.buildEnzymeProperties.matlab.source: missing file E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m
+  - methods.calcFluxBounds.matlab.source: missing file E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m
+- `check_oc_anchors_resolve`: **FAIL**
+  - methods.calcResourceRequirements_LifeCycle.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_dna_supercoiling.py
+  - methods.calcResourceRequirements_LifeCycle.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 1-1038 ±5 in opencell/vivarium/karr_dna_supercoiling.py
+  - methods.calcRNAPolymeraseBindingProbFoldChange.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_dna_supercoiling.py
+  - methods.calcRNAPolymeraseBindingProbFoldChange.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 1-1038 ±5 in opencell/vivarium/karr_dna_supercoiling.py
+  - methods.calcFluxBounds.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_dna_supercoiling.py
+  - methods.calcFluxBounds.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 1-1038 ±5 in opencell/vivarium/karr_dna_supercoiling.py
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML dna_supercoiling.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML dna_supercoiling.toml
+- `check_unit_conversion_chain_coherent`: **FAIL**
+  - unit_conversion_chain.steps[-1].to_units does not match unit_conversion_chain.target_units
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### FtsZPolymerization (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.evolveState.matlab.source: symbol 'evolveState' not found in file docs/karr_extracts/process/25_FtsZPolymerization.md
+  - methods.calcFluxBounds.matlab.source: symbol 'calcFluxBounds' not found in file docs/karr_extracts/process/25_FtsZPolymerization.md
+- `check_oc_anchors_resolve`: **FAIL**
+  - methods.calcFluxBounds.oc.source: symbol 'not_implemented' not found in file opencell/vivarium/karr_ftsz_polymerization.py
+  - methods.calcFluxBounds.oc.source: AST symbol 'not_implemented' not found in line window 1-13 ±5 in opencell/vivarium/karr_ftsz_polymerization.py
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML fts_z_polymerization.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML fts_z_polymerization.toml
+- `check_unit_conversion_chain_coherent`: **FAIL**
+  - unit_conversion_chain.steps[0].from_units does not match unit_conversion_chain.source_units
+  - unit_conversion_chain break at steps[1] -> steps[2]: 'molecules' != 'floating molecules'
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### HostInteraction (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.calcResourceRequirements_Current.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m: 'utf-8' codec can't decode byte 0xa0 in position 8322: invalid start byte
+  - methods.evolveState.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m: 'utf-8' codec can't decode byte 0xa0 in position 8322: invalid start byte
+  - methods.calcFluxBounds.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m: 'utf-8' codec can't decode byte 0xa0 in position 8322: invalid start byte
+- `check_oc_anchors_resolve`: **FAIL**
+  - methods.calcResourceRequirements_Current.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_host_interaction.py
+  - methods.calcResourceRequirements_Current.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 153-300 ±5 in opencell/vivarium/karr_host_interaction.py
+  - methods.calcFluxBounds.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_host_interaction.py
+  - methods.calcFluxBounds.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 153-300 ±5 in opencell/vivarium/karr_host_interaction.py
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML host_interaction.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML host_interaction.toml
+- `check_unit_conversion_chain_coherent`: **FAIL**
+  - unit_conversion_chain.steps missing/empty
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 1 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### MacromolecularComplexation (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.calcFluxBounds.matlab.source: symbol 'calcFluxBounds' not found in file docs/design/a3_step3_joint_design_v1.md
+- `check_oc_anchors_resolve`: **FAIL**
+  - methods.calcFluxBounds.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_macromolecular_complexation.py
+  - methods.calcFluxBounds.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 143-258 ±5 in opencell/vivarium/karr_macromolecular_complexation.py
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML macromolecular_complexation.toml
+  - WARN: WID 'DNA_GYRASE' present in macromolecular_complexation.toml groups ['complexs'], not in substrates
+  - WARN: WID 'DNA_POLYMERASE_CORE' present in macromolecular_complexation.toml groups ['complexs'], not in substrates
+  - WARN: WID 'MG_005_DIMER' present in macromolecular_complexation.toml groups ['complexs'], not in substrates
+  - WARN: WID 'RNA_POLYMERASE' present in macromolecular_complexation.toml groups ['complexs'], not in substrates
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML macromolecular_complexation.toml
+  - WARN: WID 'DNA_GYRASE' present in macromolecular_complexation.toml groups ['complexs'], not in substrates
+  - WARN: WID 'DNA_POLYMERASE_CORE' present in macromolecular_complexation.toml groups ['complexs'], not in substrates
+  - WARN: WID 'MG_005_DIMER' present in macromolecular_complexation.toml groups ['complexs'], not in substrates
+  - WARN: WID 'RNA_POLYMERASE' present in macromolecular_complexation.toml groups ['complexs'], not in substrates
+- `check_unit_conversion_chain_coherent`: **FAIL**
+  - unit_conversion_chain.steps[0].from_units does not match unit_conversion_chain.source_units
+  - unit_conversion_chain.steps[-1].to_units does not match unit_conversion_chain.target_units
+  - unit_conversion_chain break at steps[0] -> steps[1]: 'integer molecules' != 'integer subunit counts'
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### Metabolism (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 30 anchors
+  - WARN: source_anchors.matlab_blocks.compartment_indices_init used line-span fallback because symbol 'compartment_indices_init' was not found
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 30 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML metabolism.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML metabolism.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 3 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - WARN: deviations.known_deviations[0] references missing file karr_allocation_step.py
+
+### ProteinActivation (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.calcResourceRequirements_Current.matlab.source: symbol 'calcResourceRequirements_Current' not found in file docs/karr_extracts/process/20_ProteinActivation.md
+  - methods.calcFluxBounds.matlab.source: symbol 'calcFluxBounds' not found in file docs/karr_extracts/process/20_ProteinActivation.md
+- `check_oc_anchors_resolve`: **FAIL**
+  - methods.calcResourceRequirements_Current.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_protein_activation.py
+  - methods.calcResourceRequirements_Current.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 137-271 ±5 in opencell/vivarium/karr_protein_activation.py
+  - methods.calcFluxBounds.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_protein_activation.py
+  - methods.calcFluxBounds.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 137-271 ±5 in opencell/vivarium/karr_protein_activation.py
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_activation.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_activation.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### ProteinDecay (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.calcFluxBounds.matlab.source: symbol 'calcFluxBounds' not found in file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m
+- `check_oc_anchors_resolve`: **FAIL**
+  - methods.calcResourceRequirements_LifeCycle.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_request_calculators.py
+  - methods.calcResourceRequirements_LifeCycle.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 92-152 ±5 in opencell/vivarium/karr_request_calculators.py
+  - methods.calcFluxBounds.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_protein_decay_light.py
+  - methods.calcFluxBounds.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 97-591 ±5 in opencell/vivarium/karr_protein_decay_light.py
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_decay.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_decay.toml
+- `check_unit_conversion_chain_coherent`: **FAIL**
+  - unit_conversion_chain.steps[0].from_units does not match unit_conversion_chain.source_units
+  - unit_conversion_chain.steps[-1].to_units does not match unit_conversion_chain.target_units
+  - unit_conversion_chain break at steps[1] -> steps[2]: 'molecule deltas/tick' != 'expected decays/tick'
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### ProteinFolding (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.calcResourceRequirements_Current.matlab.source: symbol 'calcResourceRequirements_Current' not found in file docs/karr_extracts/process/19_ProteinFolding.md
+  - methods.evolveState.matlab.source: symbol 'evolveState' not found in file docs/karr_extracts/process/19_ProteinFolding.md
+  - methods.calcFluxBounds.matlab.source: symbol 'calcFluxBounds' not found in file docs/karr_extracts/process/19_ProteinFolding.md
+- `check_oc_anchors_resolve`: **FAIL**
+  - methods.calcFluxBounds.oc.source: symbol 'n/a' not found in file opencell/vivarium/karr_protein_folding.py
+  - methods.calcFluxBounds.oc.source: AST symbol 'n/a' not found in line window 98-479 ±5 in opencell/vivarium/karr_protein_folding.py
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_folding.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_folding.toml
+- `check_unit_conversion_chain_coherent`: **FAIL**
+  - unit_conversion_chain.steps[-1].to_units does not match unit_conversion_chain.target_units
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - WARN: deviations.known_deviations[2] references missing file ProteinFolding.m
+
+### ProteinModification (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.calcFluxBounds.matlab.source: symbol 'calcFluxBounds' not found in file docs/design/pb_turn8_protein_modification.md
+- `check_oc_anchors_resolve`: **FAIL**
+  - methods.calcFluxBounds.oc.source: symbol 'n/a' not found in file opencell/vivarium/karr_protein_modification.py
+  - methods.calcFluxBounds.oc.source: AST symbol 'n/a' not found in line window 61-133 ±5 in opencell/vivarium/karr_protein_modification.py
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_modification.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_modification.toml
+  - WARN: WID 'MG_012_MONOMER' present in protein_modification.toml groups ['enzymes', 'monomers'], not in substrates
+  - WARN: WID 'MG_070_MONOMER' present in protein_modification.toml groups ['monomers'], not in substrates
+  - WARN: WID 'MG_109_DIMER' present in protein_modification.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_166_MONOMER' present in protein_modification.toml groups ['monomers'], not in substrates
+  - WARN: WID 'MG_270_MONOMER' present in protein_modification.toml groups ['enzymes', 'monomers'], not in substrates
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 3 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 7 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### ProteinProcessingI (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.initializeConstants.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m: 'utf-8' codec can't decode byte 0x96 in position 1370: invalid start byte
+  - methods.calcResourceRequirements_Current.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m: 'utf-8' codec can't decode byte 0x96 in position 1370: invalid start byte
+  - methods.evolveState.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m: 'utf-8' codec can't decode byte 0x96 in position 1370: invalid start byte
+  - methods.calcFluxBounds.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m: 'utf-8' codec can't decode byte 0x96 in position 1370: invalid start byte
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 4 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_processing_i.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_processing_i.toml
+- `check_unit_conversion_chain_coherent`: **FAIL**
+  - unit_conversion_chain.steps[0].from_units does not match unit_conversion_chain.source_units
+  - unit_conversion_chain.steps[-1].to_units does not match unit_conversion_chain.target_units
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 1 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - WARN: deviations.known_deviations[2] references missing file ProteinProcessingI.m
+
+### ProteinProcessingII (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.initializeConstants.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m: 'utf-8' codec can't decode byte 0x96 in position 1220: invalid start byte
+  - methods.copyFromState.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m: 'utf-8' codec can't decode byte 0x96 in position 1220: invalid start byte
+  - methods.copyToState.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m: 'utf-8' codec can't decode byte 0x96 in position 1220: invalid start byte
+  - methods.allocateMemoryForState.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m: 'utf-8' codec can't decode byte 0x96 in position 1220: invalid start byte
+  - methods.calcResourceRequirements_LifeCycle.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m: 'utf-8' codec can't decode byte 0x96 in position 1220: invalid start byte
+  - methods.calcResourceRequirements_Current.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m: 'utf-8' codec can't decode byte 0x96 in position 1220: invalid start byte
+  - methods.evolveState.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m: 'utf-8' codec can't decode byte 0x96 in position 1220: invalid start byte
+  - methods.calcFluxBounds.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m: 'utf-8' codec can't decode byte 0x96 in position 1220: invalid start byte
+- `check_oc_anchors_resolve`: **FAIL**
+  - methods.calcResourceRequirements_LifeCycle.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_protein_processing_ii.py
+  - methods.calcResourceRequirements_LifeCycle.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 49-437 ±5 in opencell/vivarium/karr_protein_processing_ii.py
+  - methods.calcFluxBounds.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_protein_processing_ii.py
+  - methods.calcFluxBounds.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 49-437 ±5 in opencell/vivarium/karr_protein_processing_ii.py
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_processing_ii.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_processing_ii.toml
+- `check_unit_conversion_chain_coherent`: **FAIL**
+  - unit_conversion_chain.steps[0].from_units does not match unit_conversion_chain.source_units
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### ProteinTranslocation (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.calcResourceRequirements_Current.matlab.source: symbol 'calcResourceRequirements_Current' not found in file docs/karr_extracts/process/22_ProteinTranslocation.md
+  - methods.calcFluxBounds.matlab.source: symbol 'calcFluxBounds' not found in file docs/karr_extracts/process/22_ProteinTranslocation.md
+- `check_oc_anchors_resolve`: **FAIL**
+  - methods.calcFluxBounds.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_protein_translocation.py
+  - methods.calcFluxBounds.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 1-446 ±5 in opencell/vivarium/karr_protein_translocation.py
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_translocation.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_translocation.toml
+- `check_unit_conversion_chain_coherent`: **FAIL**
+  - unit_conversion_chain.steps[0].from_units does not match unit_conversion_chain.source_units
+  - unit_conversion_chain.steps[-1].to_units does not match unit_conversion_chain.target_units
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### RNADecay (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.evolveState.matlab.source: symbol 'evolveState' not found in file docs/karr_extracts/process/13_RNADecay.md
+  - methods.calcFluxBounds.matlab.source: symbol 'calcFluxBounds' not found in file docs/karr_extracts/process/13_RNADecay.md
+- `check_oc_anchors_resolve`: **FAIL**
+  - methods.calcFluxBounds.oc.source: symbol 'n/a' not found in file opencell/vivarium/karr_rna_decay.py
+  - methods.calcFluxBounds.oc.source: AST symbol 'n/a' not found in line window 81-260 ±5 in opencell/vivarium/karr_rna_decay.py
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML rna_decay.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML rna_decay.toml
+- `check_unit_conversion_chain_coherent`: **FAIL**
+  - unit_conversion_chain.steps[0].from_units does not match unit_conversion_chain.source_units
+  - unit_conversion_chain.steps[-1].to_units does not match unit_conversion_chain.target_units
+  - unit_conversion_chain break at steps[0] -> steps[1]: 'decay rate per second' != 'RNA counts and decay rate per second'
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### RNAModification (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.calcFluxBounds.matlab.source: symbol 'calcFluxBounds' not found in file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m
+- `check_oc_anchors_resolve`: **FAIL**
+  - methods.calcFluxBounds.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_rna_modification.py
+  - methods.calcFluxBounds.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 56-380 ±5 in opencell/vivarium/karr_rna_modification.py
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML rna_modification.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML rna_modification.toml
+  - WARN: WID 'MG_084_TETRAMER' present in rna_modification.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_252_DIMER' present in rna_modification.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_346_DIMER' present in rna_modification.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_380_MONOMER' present in rna_modification.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_463_MONOMER' present in rna_modification.toml groups ['enzymes'], not in substrates
+- `check_unit_conversion_chain_coherent`: **FAIL**
+  - unit_conversion_chain.steps[0].from_units does not match unit_conversion_chain.source_units
+  - unit_conversion_chain.steps[-1].to_units does not match unit_conversion_chain.target_units
+  - unit_conversion_chain break at steps[1] -> steps[2]: 'substrate molecules/tick' != 'reaction opportunities/tick'
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### RNAProcessing (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.calcResourceRequirements_LifeCycle.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m: 'utf-8' codec can't decode byte 0xfc in position 4002: invalid start byte
+  - methods.calcResourceRequirements_Current.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m: 'utf-8' codec can't decode byte 0xfc in position 4002: invalid start byte
+  - methods.evolveState.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m: 'utf-8' codec can't decode byte 0xfc in position 4002: invalid start byte
+  - methods.calcFluxBounds.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m: 'utf-8' codec can't decode byte 0xfc in position 4002: invalid start byte
+  - methods.getDryWeight.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m: 'utf-8' codec can't decode byte 0xfc in position 4002: invalid start byte
+- `check_oc_anchors_resolve`: **FAIL**
+  - methods.calcResourceRequirements_LifeCycle.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_rna_processing.py
+  - methods.calcResourceRequirements_LifeCycle.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 42-477 ±5 in opencell/vivarium/karr_rna_processing.py
+  - methods.calcFluxBounds.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_rna_processing.py
+  - methods.calcFluxBounds.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 42-477 ±5 in opencell/vivarium/karr_rna_processing.py
+  - methods.getDryWeight.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_rna_processing.py
+  - methods.getDryWeight.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 42-477 ±5 in opencell/vivarium/karr_rna_processing.py
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML rna_processing.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML rna_processing.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### Replication (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.evolveState.matlab.source: symbol 'evolveState' not found in file docs/karr_extracts/process/03_Replication.md
+  - methods.calcFluxBounds.matlab.source: symbol 'calcFluxBounds' not found in file docs/karr_extracts/process/03_Replication.md
+- `check_oc_anchors_resolve`: **FAIL**
+  - methods.calcFluxBounds.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_replication.py
+  - methods.calcFluxBounds.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 227-1033 ±5 in opencell/vivarium/karr_replication.py
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML replication.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML replication.toml
+- `check_unit_conversion_chain_coherent`: **FAIL**
+  - unit_conversion_chain.steps[0].from_units does not match unit_conversion_chain.source_units
+  - unit_conversion_chain.steps[-1].to_units does not match unit_conversion_chain.target_units
+  - unit_conversion_chain break at steps[2] -> steps[3]: 'dNTP molecules/tick' != 's^-1'
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - WARN: deviations.known_deviations[2] references missing file Replication.m
+
+### ReplicationInitiation (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.calcFluxBounds.matlab.source: symbol 'calcFluxBounds' not found in file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m
+- `check_oc_anchors_resolve`: **FAIL**
+  - methods.calcFluxBounds.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_replication_initiation.py
+  - methods.calcFluxBounds.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 61-959 ±5 in opencell/vivarium/karr_replication_initiation.py
+  - methods.initializeStateBasedOnFinalConditions.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_replication_initiation.py
+  - methods.initializeStateBasedOnFinalConditions.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 61-218 ±5 in opencell/vivarium/karr_replication_initiation.py
+  - methods.initializeStateBasedOnTheory.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_replication_initiation.py
+  - methods.initializeStateBasedOnTheory.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 61-218 ±5 in opencell/vivarium/karr_replication_initiation.py
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML replication_initiation.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML replication_initiation.toml
+- `check_unit_conversion_chain_coherent`: **FAIL**
+  - unit_conversion_chain.steps[0].from_units does not match unit_conversion_chain.source_units
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### RibosomeAssembly (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.initializeConstants.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m: 'utf-8' codec can't decode byte 0x96 in position 406: invalid start byte
+  - methods.initializeState.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m: 'utf-8' codec can't decode byte 0x96 in position 406: invalid start byte
+  - methods.calcResourceRequirements_LifeCycle.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m: 'utf-8' codec can't decode byte 0x96 in position 406: invalid start byte
+  - methods.calcResourceRequirements_Current.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m: 'utf-8' codec can't decode byte 0x96 in position 406: invalid start byte
+  - methods.evolveState.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m: 'utf-8' codec can't decode byte 0x96 in position 406: invalid start byte
+  - methods.calcFluxBounds.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m: 'utf-8' codec can't decode byte 0x96 in position 406: invalid start byte
+- `check_oc_anchors_resolve`: **FAIL**
+  - methods.initializeState.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_ribosome_assembly.py
+  - methods.initializeState.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 75-147 ±5 in opencell/vivarium/karr_ribosome_assembly.py
+  - methods.calcResourceRequirements_LifeCycle.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_ribosome_assembly.py
+  - methods.calcResourceRequirements_LifeCycle.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 75-383 ±5 in opencell/vivarium/karr_ribosome_assembly.py
+  - methods.calcFluxBounds.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_ribosome_assembly.py
+  - methods.calcFluxBounds.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 75-383 ±5 in opencell/vivarium/karr_ribosome_assembly.py
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML ribosome_assembly.toml
+  - WARN: WID 'MG_417_MONOMER' present in ribosome_assembly.toml groups ['monomers'], not in substrates
+  - WARN: WID 'MGrrnA16S' present in ribosome_assembly.toml groups ['rnas'], not in substrates
+  - WARN: WID 'MGrrnA23S' present in ribosome_assembly.toml groups ['rnas'], not in substrates
+  - WARN: WID 'RIBOSOME_30S' present in ribosome_assembly.toml groups ['complexs'], not in substrates
+  - WARN: WID 'RIBOSOME_50S' present in ribosome_assembly.toml groups ['complexs'], not in substrates
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML ribosome_assembly.toml
+  - WARN: WID 'MG_143_MONOMER' present in ribosome_assembly.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_329_MONOMER' present in ribosome_assembly.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_387_MONOMER' present in ribosome_assembly.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MGrrnA16S' present in ribosome_assembly.toml groups ['rnas'], not in substrates
+  - WARN: WID 'RIBOSOME_30S' present in ribosome_assembly.toml groups ['complexs'], not in substrates
+- `check_unit_conversion_chain_coherent`: **FAIL**
+  - unit_conversion_chain.steps missing/empty
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### TerminalOrganelleAssembly (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.initializeConstants.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m: 'utf-8' codec can't decode byte 0xa0 in position 4829: invalid start byte
+  - methods.calcResourceRequirements_LifeCycle.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m: 'utf-8' codec can't decode byte 0xa0 in position 4829: invalid start byte
+  - methods.calcResourceRequirements_Current.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m: 'utf-8' codec can't decode byte 0xa0 in position 4829: invalid start byte
+  - methods.evolveState.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m: 'utf-8' codec can't decode byte 0xa0 in position 4829: invalid start byte
+  - methods.calcFluxBounds.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m: 'utf-8' codec can't decode byte 0xa0 in position 4829: invalid start byte
+- `check_oc_anchors_resolve`: **FAIL**
+  - methods.calcResourceRequirements_LifeCycle.oc.source: symbol 'N/A' not found in file opencell/vivarium/karr_terminal_organelle_assembly.py
+  - methods.calcResourceRequirements_LifeCycle.oc.source: AST symbol 'N/A' not found in line window 89-109 ±5 in opencell/vivarium/karr_terminal_organelle_assembly.py
+  - methods.calcResourceRequirements_Current.oc.source: symbol 'N/A' not found in file opencell/vivarium/karr_terminal_organelle_assembly.py
+  - methods.calcResourceRequirements_Current.oc.source: AST symbol 'N/A' not found in line window 403-458 ±5 in opencell/vivarium/karr_terminal_organelle_assembly.py
+  - methods.calcFluxBounds.oc.source: symbol 'N/A' not found in file opencell/vivarium/karr_terminal_organelle_assembly.py
+  - methods.calcFluxBounds.oc.source: AST symbol 'N/A' not found in line window 89-458 ±5 in opencell/vivarium/karr_terminal_organelle_assembly.py
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML terminal_organelle_assembly.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML terminal_organelle_assembly.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### Transcription (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.calcFluxBounds.matlab.source: symbol 'calcFluxBounds' not found in file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Transcription.m
+- `check_oc_anchors_resolve`: **FAIL**
+  - methods.initializeState.oc.source: symbol 'build_karr_composite / ports_schema bootstrap' not found in file opencell/vivarium/karr_composite.py
+  - methods.initializeState.oc.source: AST symbol 'build_karr_composite / ports_schema bootstrap' not found in line window 778-834 ±5 in opencell/vivarium/karr_composite.py
+  - methods.calcFluxBounds.oc.source: symbol 'n/a' not found in file opencell/vivarium/karr_transcription_v3.py
+  - methods.calcFluxBounds.oc.source: AST symbol 'n/a' not found in line window 170-223 ±5 in opencell/vivarium/karr_transcription_v3.py
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML transcription.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML transcription.toml
+- `check_unit_conversion_chain_coherent`: **FAIL**
+  - unit_conversion_chain.steps[-1].to_units does not match unit_conversion_chain.target_units
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### TranscriptionalRegulation (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.calcResourceRequirements_Current.matlab.source: symbol 'calcResourceRequirements_Current' not found in file docs/karr_extracts/process/10_TranscriptionalRegulation.md
+  - methods.evolveState.matlab.source: symbol 'evolveState' not found in file docs/karr_extracts/process/10_TranscriptionalRegulation.md
+  - methods.calcFluxBounds.matlab.source: symbol 'calcFluxBounds' not found in file docs/karr_extracts/process/10_TranscriptionalRegulation.md
+- `check_oc_anchors_resolve`: **FAIL**
+  - methods.calcFluxBounds.oc.source: symbol 'NOT_IMPLEMENTED' not found in file opencell/vivarium/karr_transcriptional_regulation.py
+  - methods.calcFluxBounds.oc.source: AST symbol 'NOT_IMPLEMENTED' not found in line window 281-463 ±5 in opencell/vivarium/karr_transcriptional_regulation.py
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML transcriptional_regulation.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML transcriptional_regulation.toml
+  - WARN: WID 'MG_101_MONOMER' present in transcriptional_regulation.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_127_MONOMER' present in transcriptional_regulation.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_205_DIMER' present in transcriptional_regulation.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_236_MONOMER' present in transcriptional_regulation.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_428_DIMER' present in transcriptional_regulation.toml groups ['enzymes'], not in substrates
+- `check_unit_conversion_chain_coherent`: **FAIL**
+  - unit_conversion_chain.steps[0].from_units does not match unit_conversion_chain.source_units
+  - unit_conversion_chain.steps[-1].to_units does not match unit_conversion_chain.target_units
+  - unit_conversion_chain break at steps[0] -> steps[1]: 'integer binding deltas' != 'binding occupancy and fold-change matrix'
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### Translation (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.calcFluxBounds.matlab.source: symbol 'calcFluxBounds' not found in file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m
+- `check_oc_anchors_resolve`: **FAIL**
+  - methods.calcFluxBounds.oc.source: symbol 'n/a' not found in file opencell/vivarium/karr_translation_v3.py
+  - methods.calcFluxBounds.oc.source: AST symbol 'n/a' not found in line window 56-166 ±5 in opencell/vivarium/karr_translation_v3.py
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML translation.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML translation.toml
+- `check_unit_conversion_chain_coherent`: **FAIL**
+  - unit_conversion_chain.steps[0].from_units does not match unit_conversion_chain.source_units
+  - unit_conversion_chain.steps[-1].to_units does not match unit_conversion_chain.target_units
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 1 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### tRNAAminoacylation (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.calcFluxBounds.matlab.source: symbol 'calcFluxBounds' not found in file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m
+- `check_oc_anchors_resolve`: **FAIL**
+  - methods.calcResourceRequirements_LifeCycle.oc.source: symbol 'not_implemented' not found in file opencell/vivarium/karr_trna_aminoacylation.py
+  - methods.calcResourceRequirements_LifeCycle.oc.source: AST symbol 'not_implemented' not found in line window 67-487 ±5 in opencell/vivarium/karr_trna_aminoacylation.py
+  - methods.initializeState.oc.source: symbol 'not_implemented' not found in file opencell/vivarium/karr_trna_aminoacylation.py
+  - methods.initializeState.oc.source: AST symbol 'not_implemented' not found in line window 80-141 ±5 in opencell/vivarium/karr_trna_aminoacylation.py
+  - methods.calcFluxBounds.oc.source: symbol 'not_implemented' not found in file opencell/vivarium/karr_trna_aminoacylation.py
+  - methods.calcFluxBounds.oc.source: AST symbol 'not_implemented' not found in line window 67-487 ±5 in opencell/vivarium/karr_trna_aminoacylation.py
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML trna_aminoacylation.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML trna_aminoacylation.toml
+- `check_unit_conversion_chain_coherent`: **FAIL**
+  - unit_conversion_chain.steps[0].from_units does not match unit_conversion_chain.source_units
+  - unit_conversion_chain.steps[-1].to_units does not match unit_conversion_chain.target_units
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 1 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
