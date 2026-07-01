@@ -1,12 +1,14 @@
-## L-ladder (canonical, reconciled 2026-06-04)
+## L-ladder (canonical, reconciled 2026-07-01 with L1 family split)
 
-The L-ladder went through a terminology drift around L2.2 vs L2.2.k (composition harness) vs L3 (direct coupling). Reconciled definitions:
+The L-ladder went through a terminology drift around L2.2 vs L2.2.k (composition harness) vs L3 (direct coupling), then again on 2026-07-01 when the original L1 was found to be under-scoped and split into L1a/L1b/L1c (the "aliveness family" — everything that runs before oracle comparison). Reconciled definitions:
 
 ```
-L1   "did it fire?"                                                 [composite chassis runtime]
+L1a  process fires (trace bytes > threshold)                        [alive check — the ORIGINAL L1]
+L1b  wiring conformant (row-vs-code static verification)            [NEW 2026-07-01, Day-45]
+L1c  chassis conserves mass + energy (autonomous run)               [NEW 2026-07-01, Day-45; renamed from lonely "L1c" orphan of 2026-05-28]
 L2.0 schema audit (static)                                          [ports_schema vs karr_obs]
-L2.1 bit-identity (per-process, single trace, σ=0)                  [GREEN as of 2026-06-03]
-L2.2 distributional fidelity (per-process, ensemble)                [stochastic gate; NOT STARTED]
+L2.1 bit-identity (per-process, single trace, σ=0)                  [oracle comparison begins here]
+L2.2 distributional fidelity (per-process, ensemble)                [stochastic gate per process]
 L2.5 shared-pool composition (k processes, single trace,            [was "L2.2.k"; PAUSED pending L2.2]
      allocator-mediated; CAUSE_1-7 taxonomy)
 L3   direct coupling (2 processes, direct port hand-off, no pool)   [PCV framework sketched, not started]
@@ -14,9 +16,23 @@ L4   submodule (cluster vs Karr submodel oracle)
 L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 ```
 
-**Sequencing decision (2026-06-04):** L2.5 starts only after L2.2 is all-green for every stochastic process intended to participate in any planned L2.5 pair. Reason: L2.5 currently absorbs stochastic divergence via L2.1's calibrated-tolerance shortcut; without L2.2 closing that gap first, L2.5 silently rides on calibrated tolerances and can pass while distributional behavior is wrong.
+**L1 family (2026-07-01 split) — the aliveness rungs:**
+
+L1 was originally under-scoped to "did the trace produce bytes above threshold" — a necessary-but-insufficient aliveness signal. Day-13 identified the gap ("Metabolism can write a busy trace and still be collapsing ATP underneath"), created "L1c" as a placeholder, then never renamed L1 to make room for it. Day-45 completes the rename.
+
+- **L1a — "process fires"**: trace bytes above `L1_ENSEMBLE_EXPECTATIONS.md` thresholds; existing `ensemble_fire_audit.py` implements it. **28/28 GREEN.** This is what the OLD L1 checked.
+- **L1b — "wiring conformant"**: for each process, the wiring DB row's declared consume/produce/allocator/anchors/compartment routing MATCHES the OC code. Static verification, no runtime, no oracle. Uses `data/schemas/per_process_wiring/*.yaml` + OC source + `data/schemas/per_process/*.toml` (state-shape TOMLs). Design + implementation starts Day-45.
+- **L1c — "chassis conserves"**: over autonomous multi-tick runs (σ=0 first, stochastic second), the shared-pool substrate deltas satisfy `Δpool_measured == Σ_processes(produced − consumed)` per substrate per compartment. Element balance (C/N/O/P/S/H) and energy balance (ATP/GTP throughput) also asserted. Wiring DB provides the per-process ledger; runtime provides the measured deltas. Design starts after L1b lands.
+
+**All three L1 gates run WITHOUT the Karr oracle.** L2+ is where oracle comparison begins.
+
+**Sequencing decision (2026-07-01):** L1b runs before L1c because L1c will misattribute drift if any row lies about what its code does. Both L1b and L1c run before promoting any L2.x score to a chassis claim.
+
+**Sequencing decision (2026-06-04, still in force for L2.5):** L2.5 starts only after L2.2 is all-green for every stochastic process intended to participate in any planned L2.5 pair. Reason: L2.5 currently absorbs stochastic divergence via L2.1's calibrated-tolerance shortcut; without L2.2 closing that gap first, L2.5 silently rides on calibrated tolerances and can pass while distributional behavior is wrong.
 
 **Plans:**
+- `docs/phase_f/L1B_WIRING_CONFORMANT_GATE.md` — L1b design (TO BE DRAFTED Day-45)
+- `docs/phase_f/L1C_CHASSIS_CONSERVATION_GATE.md` — L1c design (TO BE DRAFTED after L1b lands)
 - `docs/phase_f/L2_5_PLAN.md` — L2.5 composition harness closure (PAUSED).
 - `docs/phase_f/L2_5_HARNESS_DESIGN.md` — name predates rename; canonical L2.5 design doc.
 - `docs/phase_f/L2_2_D1_UNION_MASTER_LIST.md` — name predates rename; canonical L2.5 D1 design.
@@ -101,12 +117,13 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds)
 | L2.5 honest PASS | 15/256 | 15/256 (3 Metab DS pairs FAIL = consistent with chassis bugs A1/A3/A3b/A4) |
 | **Per-process wiring DB** | NOT BUILT | **28/28 PASS** (Day-44) |
 
-**Day-45 priorities — sequenced based on Day-43 EOD methodology decision + Day-44 wiring DB:**
+**Day-45 priorities — sequenced based on 2026-07-01 L1 family split:**
 
-1. **L1c gate design + build** — `l2c-energy-ledger-gate` + `l1c-atp-collapse-diagnose` todos, ~3-5 days work. The wiring DB now provides the per-process ledger of what each process consumes/produces; L1c will sum these and compare against actual chassis trajectory.
-2. **A4 + A3b localized fixes** — once L1c is instrumented, apply the candidate fixes (remove `project_to_flat_per_wid`'s compartment-sum; remove asymmetric consumption clip OR make LP bounds match allocation) and watch L1c metrics move. ~1 day.
-3. **A3b consumption-clip audit-hook population** — 0/28 rows currently populate this. Mechanical pass once we know which rows actually have the asymmetric-clip pattern.
-4. **Re-audit existing 17 L2.2 GENUINE processes** against the wiring DB. Likely surfaces similar bugs in other processes.
+1. **L1b gate design + build** (row-vs-code static verification) — primary Day-45 task. Uses gpt-5.3-codex. Static gate: reads wiring DB + OC source + schema TOMLs, asserts row declarations match code. Catches: row typos, WID naming drift, anchor rot, missing WIDs, allocator-request mismatches.
+2. **L1c gate design + build** (chassis conservation) — after L1b lands. Autonomous chassis run + per-substrate mass/energy balance ledger driven off wiring DB. Deterministic (σ=0) first, stochastic tolerance policy second. Catches: A3b, A4, off-by-one stoichiometry, compartment routing errors.
+3. **A4 + A3b localized fixes** — once L1c is instrumented, apply the candidate fixes and watch L1c metrics move. ~1 day.
+4. **A3b consumption-clip audit-hook population** — 0/28 rows currently populate this. Mechanical pass once we know which rows actually have the asymmetric-clip pattern.
+5. **Re-audit existing 17 L2.2 GENUINE processes** against the wiring DB after L1b and L1c green. Likely surfaces similar bugs in other processes.
 
 **Deferred (no longer Day-45 priority):**
 - ~~Part 3: Karr-flux-injection scaffolding~~ — was meant as L3/L4/L5 workaround for Metabolism; if A3/A3b/A4 fixes make actual chassis metabolism work, this scaffolding may not be needed.

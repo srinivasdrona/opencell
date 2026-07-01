@@ -12,19 +12,22 @@
 > - **DEC-003** (`7b70c67`): FVA reframe decision card — Metabolism per-tick LP-vertex feasibility ratified as 99.9997% PASS; chassis integration explicitly NOT verified
 > - **Methodology decision** (`2026-06-29 | opencell | l1c-skipped-lower-rung-greens-misread`): L1/L2.1/L2.2 are structurally blind to chassis integration bugs; 4 wiring bugs (A1/A2/A3/A3b/A4) found via side-by-side MATLAB↔OC audit on Day-43 evening
 >
-> **Scoreboard (Day-44 EOD) — re-framed:**
+> **Scoreboard (Day-44 EOD → Day-45 morning reframe with L1 family split):**
 >
-> | Gate | What it measures | Day-42 EOD | Day-44 EOD |
-> |---|---|---:|---:|
-> | L1 firing | trace bytes > threshold | 28/28 | 28/28 |
-> | L1c integrated energy balance | NEW GATE — NOT YET BUILT | 0 | **0** (todos pending; design starts Day-45) |
-> | L2.0 schema | ports_schema vs karr_obs | 28/28 | 28/28 |
-> | L2.1 GENUINE | bit-identity, isolated replay | 19/28 | 19/28 |
-> | L2.2 VERIFIED_GENUINE | W1 vs null, isolated replay | 17/22 | 17/22 |
-> | L2.2 NOT_WIRED | infrastructure missing | 2 | 2 |
-> | L2.2 VERIFIED_FAIL | Metabolism W1=161, threshold 102 | 1 | 1 (DEC-003 reframe is per-tick LP-vertex feasibility; does NOT change chassis claim) |
-> | L2.5 honest PASS | shared-pool composition | 15/256 | 15/256 (3 Metab DS pairs FAIL consistent with chassis bugs) |
-> | **Per-process wiring DB** | chassis-layer integration audit | NOT BUILT | **28/28 PASS ✅** |
+> | Gate | What it measures | Day-42 EOD | Day-44 EOD | Day-45 morning |
+> |---|---|---:|---:|---:|
+> | **L1a** process fires (was: L1) | trace bytes > threshold | 28/28 | 28/28 | 28/28 |
+> | **L1b** wiring conformant | row-vs-code static verification | — | — | **0/28** (design + build Day-45) |
+> | **L1c** chassis conserves | mass + energy balance across autonomous ticks | NOT BUILT | NOT BUILT | **0/28** (design after L1b lands) |
+> | L2.0 schema | ports_schema vs karr_obs | 28/28 | 28/28 | 28/28 |
+> | L2.1 GENUINE | bit-identity, isolated replay | 19/28 | 19/28 | 19/28 |
+> | L2.2 VERIFIED_GENUINE | W1 vs null, isolated replay | 17/22 | 17/22 | 17/22 |
+> | L2.2 NOT_WIRED | infrastructure missing | 2 | 2 | 2 |
+> | L2.2 VERIFIED_FAIL | Metabolism W1=161, threshold 102 | 1 | 1 | 1 |
+> | L2.5 honest PASS | shared-pool composition | 15/256 | 15/256 | 15/256 |
+> | **Per-process wiring DB** | chassis-layer integration audit substrate | NOT BUILT | **28/28 PASS ✅** | 28/28 PASS ✅ |
+>
+> **L1 family split rationale (2026-07-01):** the original "L1 = did it fire" was under-scoped. Actual aliveness has three facets: L1a fires (existing), L1b wiring conformant (new — verifies wiring DB row matches OC code, static), L1c chassis conserves (new — mass + energy balance over autonomous runs). All three run WITHOUT the Karr oracle. L2+ is where oracle comparison begins.
 >
 > **Important framing change**: L2.1/L2.2 greens do NOT imply chassis correctness. Each green is a per-process unit test in replay mode where allocator + shared-pool projection are bypassed by construction. The wiring DB is the standing artifact for chassis-level audits; L1c is the gate that will check whether the chassis actually conserves mass and energy.
 >
