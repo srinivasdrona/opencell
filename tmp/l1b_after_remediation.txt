@@ -1,0 +1,606 @@
+# L1b Wiring Conformance Report
+
+- Overall verdict: **FAIL**
+- Rows: **12/28 PASS**, **16 FAIL**
+- Strict anchors: `False`
+
+## Per-Check Aggregate
+
+| Check | Failed rows | Warning rows |
+| --- | ---: | ---: |
+| check_matlab_anchors_resolve | 16 | 1 |
+| check_oc_anchors_resolve | 0 | 0 |
+| check_consume_produce_wids_in_schema_toml | 0 | 2 |
+| check_allocator_requests_wids_in_schema_toml | 0 | 6 |
+| check_unit_conversion_chain_coherent | 0 | 0 |
+| check_ordering_constraints_reference_valid_processes | 0 | 0 |
+| check_deviations_reference_valid_anchors | 0 | 5 |
+
+## Row Verdicts
+
+| Process | Verdict | Failed checks | Warnings |
+| --- | --- | --- | ---: |
+| ChromosomeCondensation | PASS | - | 0 |
+| ChromosomeSegregation | PASS | - | 5 |
+| Cytokinesis | PASS | - | 1 |
+| DNADamage | FAIL | check_matlab_anchors_resolve | 0 |
+| DNARepair | FAIL | check_matlab_anchors_resolve | 0 |
+| DNASupercoiling | FAIL | check_matlab_anchors_resolve | 0 |
+| FtsZPolymerization | FAIL | check_matlab_anchors_resolve | 0 |
+| HostInteraction | FAIL | check_matlab_anchors_resolve | 0 |
+| MacromolecularComplexation | PASS | - | 8 |
+| Metabolism | PASS | - | 2 |
+| ProteinActivation | FAIL | check_matlab_anchors_resolve | 0 |
+| ProteinDecay | PASS | - | 0 |
+| ProteinFolding | FAIL | check_matlab_anchors_resolve | 1 |
+| ProteinModification | PASS | - | 5 |
+| ProteinProcessingI | FAIL | check_matlab_anchors_resolve | 1 |
+| ProteinProcessingII | FAIL | check_matlab_anchors_resolve | 0 |
+| ProteinTranslocation | FAIL | check_matlab_anchors_resolve | 0 |
+| RNADecay | FAIL | check_matlab_anchors_resolve | 0 |
+| RNAModification | PASS | - | 5 |
+| RNAProcessing | FAIL | check_matlab_anchors_resolve | 0 |
+| Replication | FAIL | check_matlab_anchors_resolve | 1 |
+| ReplicationInitiation | PASS | - | 0 |
+| RibosomeAssembly | FAIL | check_matlab_anchors_resolve | 10 |
+| TerminalOrganelleAssembly | FAIL | check_matlab_anchors_resolve | 0 |
+| Transcription | PASS | - | 0 |
+| TranscriptionalRegulation | FAIL | check_matlab_anchors_resolve | 5 |
+| Translation | PASS | - | 0 |
+| tRNAAminoacylation | PASS | - | 0 |
+
+## Row Details
+
+### ChromosomeCondensation (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 6 anchors
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 7 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML chromosome_condensation.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML chromosome_condensation.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### ChromosomeSegregation (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML chromosome_segregation.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML chromosome_segregation.toml
+  - WARN: WID 'MG_203_204_TETRAMER' present in chromosome_segregation.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_221_OCTAMER' present in chromosome_segregation.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_384_MONOMER' present in chromosome_segregation.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_387_MONOMER' present in chromosome_segregation.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_470_MONOMER' present in chromosome_segregation.toml groups ['enzymes'], not in substrates
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### Cytokinesis (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 4 anchors
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 4 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML cytokinesis.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML cytokinesis.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 1 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - WARN: deviations.known_deviations[1] references missing file Cytokinesis.m
+
+### DNADamage (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.calcResourceRequirements_Current.matlab.source: symbol 'calcResourceRequirements_Current' not found in file docs/karr_extracts/process/04_DNADamage.md
+  - methods.evolveState.matlab.source: symbol 'evolveState' not found in file docs/karr_extracts/process/04_DNADamage.md
+  - methods.calcFluxBounds.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNADamage.m: 'utf-8' codec can't decode byte 0xa0 in position 9421: invalid start byte
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML dna_damage.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML dna_damage.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### DNARepair (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.calcFluxBounds.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m: 'utf-8' codec can't decode byte 0xe9 in position 15134: invalid continuation byte
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML dna_repair.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML dna_repair.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### DNASupercoiling (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.initializeConstants.matlab.source: missing file E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m
+  - methods.calcResourceRequirements_LifeCycle.matlab.source: missing file E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m
+  - methods.initializeState.matlab.source: missing file E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m
+  - methods.calcResourceRequirements_Current.matlab.source: missing file E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m
+  - methods.evolveState.matlab.source: missing file E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m
+  - methods.calcRNAPolymeraseBindingProbFoldChange.matlab.source: missing file E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m
+  - methods.buildEnzymeProperties.matlab.source: missing file E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m
+  - methods.calcFluxBounds.matlab.source: missing file E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 8 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML dna_supercoiling.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML dna_supercoiling.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### FtsZPolymerization (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.evolveState.matlab.source: symbol 'evolveState' not found in file docs/karr_extracts/process/25_FtsZPolymerization.md
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML fts_z_polymerization.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML fts_z_polymerization.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### HostInteraction (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.calcResourceRequirements_Current.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m: 'utf-8' codec can't decode byte 0xa0 in position 8322: invalid start byte
+  - methods.evolveState.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m: 'utf-8' codec can't decode byte 0xa0 in position 8322: invalid start byte
+  - methods.calcFluxBounds.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m: 'utf-8' codec can't decode byte 0xa0 in position 8322: invalid start byte
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML host_interaction.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML host_interaction.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 1 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### MacromolecularComplexation (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 5 anchors
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 5 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML macromolecular_complexation.toml
+  - WARN: WID 'DNA_GYRASE' present in macromolecular_complexation.toml groups ['complexs'], not in substrates
+  - WARN: WID 'DNA_POLYMERASE_CORE' present in macromolecular_complexation.toml groups ['complexs'], not in substrates
+  - WARN: WID 'MG_005_DIMER' present in macromolecular_complexation.toml groups ['complexs'], not in substrates
+  - WARN: WID 'RNA_POLYMERASE' present in macromolecular_complexation.toml groups ['complexs'], not in substrates
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML macromolecular_complexation.toml
+  - WARN: WID 'DNA_GYRASE' present in macromolecular_complexation.toml groups ['complexs'], not in substrates
+  - WARN: WID 'DNA_POLYMERASE_CORE' present in macromolecular_complexation.toml groups ['complexs'], not in substrates
+  - WARN: WID 'MG_005_DIMER' present in macromolecular_complexation.toml groups ['complexs'], not in substrates
+  - WARN: WID 'RNA_POLYMERASE' present in macromolecular_complexation.toml groups ['complexs'], not in substrates
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### Metabolism (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 30 anchors
+  - WARN: source_anchors.matlab_blocks.compartment_indices_init used line-span fallback because symbol 'compartment_indices_init' was not found
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 30 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML metabolism.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML metabolism.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 3 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - WARN: deviations.known_deviations[0] references missing file karr_allocation_step.py
+
+### ProteinActivation (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.calcResourceRequirements_Current.matlab.source: symbol 'calcResourceRequirements_Current' not found in file docs/karr_extracts/process/20_ProteinActivation.md
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_activation.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_activation.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### ProteinDecay (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 4 anchors
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 4 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_decay.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_decay.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### ProteinFolding (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.calcResourceRequirements_Current.matlab.source: symbol 'calcResourceRequirements_Current' not found in file docs/karr_extracts/process/19_ProteinFolding.md
+  - methods.evolveState.matlab.source: symbol 'evolveState' not found in file docs/karr_extracts/process/19_ProteinFolding.md
+  - methods.calcFluxBounds.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinFolding.m: 'utf-8' codec can't decode byte 0x96 in position 1347: invalid start byte
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_folding.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_folding.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - WARN: deviations.known_deviations[2] references missing file ProteinFolding.m
+
+### ProteinModification (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_modification.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_modification.toml
+  - WARN: WID 'MG_012_MONOMER' present in protein_modification.toml groups ['enzymes', 'monomers'], not in substrates
+  - WARN: WID 'MG_070_MONOMER' present in protein_modification.toml groups ['monomers'], not in substrates
+  - WARN: WID 'MG_109_DIMER' present in protein_modification.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_166_MONOMER' present in protein_modification.toml groups ['monomers'], not in substrates
+  - WARN: WID 'MG_270_MONOMER' present in protein_modification.toml groups ['enzymes', 'monomers'], not in substrates
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 3 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 7 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### ProteinProcessingI (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.initializeConstants.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m: 'utf-8' codec can't decode byte 0x96 in position 1370: invalid start byte
+  - methods.calcResourceRequirements_Current.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m: 'utf-8' codec can't decode byte 0x96 in position 1370: invalid start byte
+  - methods.evolveState.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m: 'utf-8' codec can't decode byte 0x96 in position 1370: invalid start byte
+  - methods.calcFluxBounds.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m: 'utf-8' codec can't decode byte 0x96 in position 1370: invalid start byte
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 4 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_processing_i.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_processing_i.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 1 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - WARN: deviations.known_deviations[2] references missing file ProteinProcessingI.m
+
+### ProteinProcessingII (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.initializeConstants.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m: 'utf-8' codec can't decode byte 0x96 in position 1220: invalid start byte
+  - methods.copyFromState.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m: 'utf-8' codec can't decode byte 0x96 in position 1220: invalid start byte
+  - methods.copyToState.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m: 'utf-8' codec can't decode byte 0x96 in position 1220: invalid start byte
+  - methods.allocateMemoryForState.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m: 'utf-8' codec can't decode byte 0x96 in position 1220: invalid start byte
+  - methods.calcResourceRequirements_LifeCycle.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m: 'utf-8' codec can't decode byte 0x96 in position 1220: invalid start byte
+  - methods.calcResourceRequirements_Current.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m: 'utf-8' codec can't decode byte 0x96 in position 1220: invalid start byte
+  - methods.evolveState.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m: 'utf-8' codec can't decode byte 0x96 in position 1220: invalid start byte
+  - methods.calcFluxBounds.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m: 'utf-8' codec can't decode byte 0x96 in position 1220: invalid start byte
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 8 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_processing_ii.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_processing_ii.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### ProteinTranslocation (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.calcResourceRequirements_Current.matlab.source: symbol 'calcResourceRequirements_Current' not found in file docs/karr_extracts/process/22_ProteinTranslocation.md
+  - methods.calcFluxBounds.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinTranslocation.m: 'utf-8' codec can't decode byte 0x96 in position 2708: invalid start byte
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_translocation.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML protein_translocation.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### RNADecay (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.evolveState.matlab.source: symbol 'evolveState' not found in file docs/karr_extracts/process/13_RNADecay.md
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML rna_decay.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML rna_decay.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### RNAModification (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML rna_modification.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML rna_modification.toml
+  - WARN: WID 'MG_084_TETRAMER' present in rna_modification.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_252_DIMER' present in rna_modification.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_346_DIMER' present in rna_modification.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_380_MONOMER' present in rna_modification.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_463_MONOMER' present in rna_modification.toml groups ['enzymes'], not in substrates
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### RNAProcessing (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.calcResourceRequirements_LifeCycle.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m: 'utf-8' codec can't decode byte 0xfc in position 4002: invalid start byte
+  - methods.calcResourceRequirements_Current.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m: 'utf-8' codec can't decode byte 0xfc in position 4002: invalid start byte
+  - methods.evolveState.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m: 'utf-8' codec can't decode byte 0xfc in position 4002: invalid start byte
+  - methods.calcFluxBounds.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m: 'utf-8' codec can't decode byte 0xfc in position 4002: invalid start byte
+  - methods.getDryWeight.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m: 'utf-8' codec can't decode byte 0xfc in position 4002: invalid start byte
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 5 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML rna_processing.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML rna_processing.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### Replication (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.evolveState.matlab.source: symbol 'evolveState' not found in file docs/karr_extracts/process/03_Replication.md
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML replication.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML replication.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - WARN: deviations.known_deviations[2] references missing file Replication.m
+
+### ReplicationInitiation (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 6 anchors
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 6 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML replication_initiation.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML replication_initiation.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### RibosomeAssembly (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.initializeConstants.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m: 'utf-8' codec can't decode byte 0x96 in position 406: invalid start byte
+  - methods.initializeState.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m: 'utf-8' codec can't decode byte 0x96 in position 406: invalid start byte
+  - methods.calcResourceRequirements_LifeCycle.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m: 'utf-8' codec can't decode byte 0x96 in position 406: invalid start byte
+  - methods.calcResourceRequirements_Current.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m: 'utf-8' codec can't decode byte 0x96 in position 406: invalid start byte
+  - methods.evolveState.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m: 'utf-8' codec can't decode byte 0x96 in position 406: invalid start byte
+  - methods.calcFluxBounds.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m: 'utf-8' codec can't decode byte 0x96 in position 406: invalid start byte
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 6 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML ribosome_assembly.toml
+  - WARN: WID 'MG_417_MONOMER' present in ribosome_assembly.toml groups ['monomers'], not in substrates
+  - WARN: WID 'MGrrnA16S' present in ribosome_assembly.toml groups ['rnas'], not in substrates
+  - WARN: WID 'MGrrnA23S' present in ribosome_assembly.toml groups ['rnas'], not in substrates
+  - WARN: WID 'RIBOSOME_30S' present in ribosome_assembly.toml groups ['complexs'], not in substrates
+  - WARN: WID 'RIBOSOME_50S' present in ribosome_assembly.toml groups ['complexs'], not in substrates
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML ribosome_assembly.toml
+  - WARN: WID 'MG_143_MONOMER' present in ribosome_assembly.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_329_MONOMER' present in ribosome_assembly.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_387_MONOMER' present in ribosome_assembly.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MGrrnA16S' present in ribosome_assembly.toml groups ['rnas'], not in substrates
+  - WARN: WID 'RIBOSOME_30S' present in ribosome_assembly.toml groups ['complexs'], not in substrates
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### TerminalOrganelleAssembly (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.initializeConstants.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m: 'utf-8' codec can't decode byte 0xa0 in position 4829: invalid start byte
+  - methods.calcResourceRequirements_LifeCycle.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m: 'utf-8' codec can't decode byte 0xa0 in position 4829: invalid start byte
+  - methods.calcResourceRequirements_Current.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m: 'utf-8' codec can't decode byte 0xa0 in position 4829: invalid start byte
+  - methods.evolveState.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m: 'utf-8' codec can't decode byte 0xa0 in position 4829: invalid start byte
+  - methods.calcFluxBounds.matlab.source: could not read file data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m: 'utf-8' codec can't decode byte 0xa0 in position 4829: invalid start byte
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 5 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML terminal_organelle_assembly.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML terminal_organelle_assembly.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### Transcription (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 5 anchors
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 5 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML transcription.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML transcription.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### TranscriptionalRegulation (FAIL)
+
+- `check_matlab_anchors_resolve`: **FAIL**
+  - methods.calcResourceRequirements_Current.matlab.source: symbol 'calcResourceRequirements_Current' not found in file docs/karr_extracts/process/10_TranscriptionalRegulation.md
+  - methods.evolveState.matlab.source: symbol 'evolveState' not found in file docs/karr_extracts/process/10_TranscriptionalRegulation.md
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 3 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML transcriptional_regulation.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML transcriptional_regulation.toml
+  - WARN: WID 'MG_101_MONOMER' present in transcriptional_regulation.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_127_MONOMER' present in transcriptional_regulation.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_205_DIMER' present in transcriptional_regulation.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_236_MONOMER' present in transcriptional_regulation.toml groups ['enzymes'], not in substrates
+  - WARN: WID 'MG_428_DIMER' present in transcriptional_regulation.toml groups ['enzymes'], not in substrates
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 0 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### Translation (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 4 anchors
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 4 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML translation.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML translation.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 1 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+
+### tRNAAminoacylation (PASS)
+
+- `check_matlab_anchors_resolve`: **PASS**
+  - validated 7 anchors
+- `check_oc_anchors_resolve`: **PASS**
+  - validated 7 anchors
+- `check_consume_produce_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML trna_aminoacylation.toml
+- `check_allocator_requests_wids_in_schema_toml`: **PASS**
+  - resolved schema TOML trna_aminoacylation.toml
+- `check_unit_conversion_chain_coherent`: **PASS**
+  - validated 1 conversion steps
+- `check_ordering_constraints_reference_valid_processes`: **PASS**
+  - validated 1 ordering partner references
+- `check_deviations_reference_valid_anchors`: **PASS**
+  - no deviation reference warnings
+

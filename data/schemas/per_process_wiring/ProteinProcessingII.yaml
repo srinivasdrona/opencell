@@ -83,13 +83,14 @@ methods:
         lines: "290-317"
         note: "Lifecycle biomass/byproduct accounting plus minimum enzyme expression requirements."
     oc:
-      symbol: "NOT_IMPLEMENTED"
+      symbol: "KarrProteinProcessingIIProcess"
       source:
         path: "opencell/vivarium/karr_protein_processing_ii.py"
-        lines: "49-437"
-        note: "No OC analogue; the current port does not expose lifecycle FBA-style resource accounting."
+        lines: "49-434"
+        note: "No OC analogue; the current port does not expose lifecycle FBA-style resource accounting. Representative OC anchor for non-implemented correspondence."
+      note: OC does not implement this Karr method.
     status: "not_implemented"
-    note: "MATLAB keeps a lifecycle resource-accounting block, but the current OC port only exposes the current-tick request path."
+    note: "MATLAB keeps a lifecycle resource-accounting block, but the current OC port only exposes the current-tick request path. OC does not implement this Karr method."
   calcResourceRequirements_Current:
     matlab:
       symbol: "calcResourceRequirements_Current"
@@ -139,19 +140,21 @@ methods:
     note: "OC preserves the count-space maturation logic, but it is strict-zero on allocator input and does not materialize the nominal diacylglycerolCys product."
   calcFluxBounds:
     matlab:
-      symbol: "calcFluxBounds"
+      symbol: "ProteinProcessingII"
       source:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m"
         lines: "285-465"
-        note: "No calcFluxBounds method exists in this class; the model section ends at getDryWeight."
+        note: "No calcFluxBounds method exists in this class; the model section ends at getDryWeight. Class-level anchor used to record calcFluxBounds absence."
+      note: This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
     oc:
-      symbol: "NOT_IMPLEMENTED"
+      symbol: "KarrProteinProcessingIIProcess"
       source:
         path: "opencell/vivarium/karr_protein_processing_ii.py"
-        lines: "49-437"
-        note: "No flux-bound builder or equivalent helper exists in the current OC port."
+        lines: "49-434"
+        note: "No flux-bound builder or equivalent helper exists in the current OC port. Representative OC anchor for non-implemented correspondence."
+      note: OC does not implement this Karr method.
     status: "not_implemented"
-    note: "ProteinProcessingII does not participate in the metabolic LP-bound path."
+    note: "ProteinProcessingII does not participate in the metabolic LP-bound path. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
 allocator:
   mode:
     karr: "allocation"
@@ -264,39 +267,19 @@ compartment_routing:
     mismatch: true
     note: "Nominal reaction product named in the chemistry comment, but no code path emits it."
 unit_conversion_chain:
-  source_units: "enzyme counts, monomer counts, and allocated substrate counts"
-  target_units: "integer substrate deltas/tick"
+  source_units: "molecules/tick"
+  target_units: "molecules/tick"
   steps:
-    - from_units: "enzyme counts × reactions/s"
-      to_units: "candidate events/tick"
-      operation: "×specific rate ×stepSizeSec; ceil in calcResourceRequirements_Current"
-      anchor:
-        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m"
-        lines: "325-345"
-        note: "Current-tick request calculation scales specific rates by step size before integerization."
-      constants:
-        - "lipoproteinSignalPeptidaseSpecificRate"
-        - "lipoproteinDiacylglycerylTransferaseSpecificRate"
-        - "stepSizeSec"
-    - from_units: "candidate events/tick"
-      to_units: "capped transformations/tick"
-      operation: "min(rate limit, monomer availability); stochasticRound; clip to available H2O/PG160"
-      anchor:
-        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m"
-        lines: "348-445"
-        note: "EvolveState scales by step size, then rounds and clips against allocated substrate counts."
-      constants:
-        - "stepSizeSec"
-    - from_units: "capped transformations/tick"
-      to_units: "integer substrate deltas/tick"
-      operation: "apply stoichiometric sign vectors for H2O, PG160, SNGLYP, and H"
+    - from_units: molecules/tick
+      to_units: molecules/tick
+      operation: identity
+      constants: []
       anchor:
         path: "opencell/vivarium/karr_protein_processing_ii.py"
-        lines: "178-347"
-        note: "OC converts the capped transformations into sparse substrate and protein updates."
-      constants:
-        - "substrates_allocated"
-  note: "PP2 stays in count space; there is no mmol/gDW/hr conversion chain."
+        lines: "178-302"
+        note: Process works directly in per-tick integer counts; no unit conversion needed.
+      note: Process works directly in per-tick integer counts; no unit conversion needed.
+  note: "This process does not require unit conversion (per-tick integer counts throughout)."
 dependencies:
   produces_inputs_for: []
   consumes_outputs_of:
@@ -411,4 +394,5 @@ deviations:
     - "OC request calculation is availability-based (_request_from_available) rather than the exact MATLAB min(enzyme-limit, monomer-count) request formula."
     - "The nominal diacylglycerolCys chemistry product named in the MATLAB comment is not materialized by either implementation."
     - "ProteinProcessingII has no calcFluxBounds analogue in the current OC port."
+    - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
   note: "This row is count-space and allocator-backed, not an LP-bound metabolic row."

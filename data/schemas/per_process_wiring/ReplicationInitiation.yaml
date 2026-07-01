@@ -57,20 +57,21 @@ methods:
     note: "The MATLAB evolveState sequence is preserved, but the OC port is reorganized around next_update and trace hints."
   calcFluxBounds:
     matlab:
-      symbol: "calcFluxBounds"
+      symbol: "ReplicationInitiation"
       source:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
-        lines: "134-530"
-        note: "No calcFluxBounds method is defined in this process file."
-      note: "Schema-required placeholder for a process that does not expose LP-bound construction."
+        lines: "1-1"
+        note: "No calcFluxBounds method is defined in this process file. Class-level anchor used to record calcFluxBounds absence."
+      note: "Schema-required placeholder for a process that does not expose LP-bound construction. This process does not have Karr's calcFluxBounds method; it does not participate in FBA."
     oc:
-      symbol: "NOT_IMPLEMENTED"
+      symbol: "KarrReplicationInitiationProcess"
       source:
         path: "opencell/vivarium/karr_replication_initiation.py"
-        lines: "61-959"
-        note: "No LP-bound builder or flux-bound helper exists in this module."
+        lines: "61-956"
+        note: "No LP-bound builder or flux-bound helper exists in this module. Representative OC anchor for non-implemented correspondence."
+      note: OC does not implement this Karr method.
     status: "not_implemented"
-    note: "This process has no process-local flux-bound builder in either source tree."
+    note: "This process has no process-local flux-bound builder in either source tree. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
   initializeState:
     matlab:
       symbol: "initializeState"
@@ -99,13 +100,14 @@ methods:
         lines: "393-424"
         note: "Final-conditions steady-state construction and oriC seeding."
     oc:
-      symbol: "NOT_IMPLEMENTED"
+      symbol: "KarrReplicationInitiationProcess"
       source:
         path: "opencell/vivarium/karr_replication_initiation.py"
-        lines: "61-218"
-        note: "No direct OC counterpart; initialization is handled by process bootstrap and fixture loading."
+        lines: "61-956"
+        note: "No direct OC counterpart; initialization is handled by process bootstrap and fixture loading. Representative OC anchor for non-implemented correspondence."
+      note: OC does not implement this Karr method.
     status: "not_implemented"
-    note: "The final-conditions steady-state solver is absent from the OC port."
+    note: "The final-conditions steady-state solver is absent from the OC port. OC does not implement this Karr method."
   initializeStateBasedOnTheory:
     matlab:
       symbol: "initializeStateBasedOnTheory"
@@ -114,13 +116,14 @@ methods:
         lines: "426-492"
         note: "Alternative theory-based steady-state solve and rounding."
     oc:
-      symbol: "NOT_IMPLEMENTED"
+      symbol: "KarrReplicationInitiationProcess"
       source:
         path: "opencell/vivarium/karr_replication_initiation.py"
-        lines: "61-218"
-        note: "No direct OC counterpart; no theory solve or cubic-root steady-state helper."
+        lines: "61-956"
+        note: "No direct OC counterpart; no theory solve or cubic-root steady-state helper. Representative OC anchor for non-implemented correspondence."
+      note: OC does not implement this Karr method.
     status: "not_implemented"
-    note: "The OC port does not implement the theory-based initialization path or its cubic-root helper."
+    note: "The OC port does not implement the theory-based initialization path or its cubic-root helper. OC does not implement this Karr method."
 allocator:
   mode:
     karr: "allocation"
@@ -236,17 +239,19 @@ compartment_routing:
     mismatch: false
     note: "Direct cytosolic hydrolysis product."
 unit_conversion_chain:
-  source_units: "raw molecule counts per tick"
+  source_units: "molecules/tick"
   target_units: "molecules/tick"
   steps:
-    - from_units: "raw molecule counts"
-      to_units: "molecules/tick"
-      operation: "identity; the request vector is already expressed as a per-tick molecule count"
+    - from_units: molecules/tick
+      to_units: molecules/tick
+      operation: identity
+      constants: []
       anchor:
-        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
-        lines: "495-503"
-        note: "calcResourceRequirements_Current does not rescale by time or mass."
-  note: "No concentration, mass, or volume conversion is applied; the process works on raw counts."
+        path: "opencell/vivarium/karr_replication_initiation.py"
+        lines: "288-441"
+        note: Process works directly in per-tick integer counts; no unit conversion needed.
+      note: Process works directly in per-tick integer counts; no unit conversion needed.
+  note: "This process does not require unit conversion (per-tick integer counts throughout)."
 dependencies:
   produces_inputs_for: []
   consumes_outputs_of:
@@ -368,4 +373,5 @@ deviations:
     - "OC emits and consumes allocator state inside next_update instead of a dedicated request-calculator class."
     - "OC initialization is fixture/bootstrap based and does not reproduce MATLAB's final-conditions or theory steady-state solve."
     - "MATLAB's calcFluxBounds slot is absent for this process, so the schema-required row entry is marked not_implemented."
+    - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
   note: "The port keeps substrate wiring explicit and compartment-local; no compartment-flattening projection is involved."

@@ -65,11 +65,11 @@ methods:
         note: "RNAP state initialization, binding, and mature-RNA seeding."
       note: "Major bootstrap method for the MATLAB process."
     oc:
-      symbol: "build_karr_composite / ports_schema bootstrap"
+      symbol: "build_karr_chassis_v3"
       source:
         path: "opencell/vivarium/karr_composite.py"
-        lines: "778-834"
-        note: "Composite wiring and initial state seeding for the transcription process."
+        lines: "683-955"
+        note: "Composite wiring and initial state seeding for the transcription process. Normalized composite OC symbol for methods.initializeState."
       supporting:
         - path: "opencell/vivarium/karr_transcription_v3.py"
           lines: "91-132"
@@ -103,25 +103,25 @@ methods:
     note: "The OC implementation uses a different derivation path rather than a direct helper port."
   calcFluxBounds:
     matlab:
-      symbol: "calcFluxBounds"
+      symbol: "Transcription"
       source:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Transcription.m"
-        lines: "1-35"
-        note: "Transcription.m does not define a flux-bounds method; this anchor marks the class header / absence of a bound-construction block."
-      note: "No calcFluxBounds method exists on the MATLAB process."
+        lines: "1-1"
+        note: "Transcription.m does not define a flux-bounds method; this anchor marks the class header / absence of a bound-construction block. Class-level anchor used to record calcFluxBounds absence."
+      note: "No calcFluxBounds method exists on the MATLAB process. This process does not have Karr's calcFluxBounds method; it does not participate in FBA."
     oc:
-      symbol: "n/a"
+      symbol: "KarrTranscriptionV3Process"
       source:
         path: "opencell/vivarium/karr_transcription_v3.py"
-        lines: "170-223"
-        note: "No flux-bounds method in the current OC transcription ports; allocator and per-tick update are separate."
+        lines: "32-223"
+        note: "No flux-bounds method in the current OC transcription ports; allocator and per-tick update are separate. Representative OC anchor for non-implemented correspondence."
       supporting:
         - path: "opencell/vivarium/karr_request_calculators.py"
           lines: "552-602"
           note: "Allocator request analogue, not a flux-bounds method."
-      note: "Transcription does not have a flux-bounds surface in either implementation."
+      note: "Transcription does not have a flux-bounds surface in either implementation. OC does not implement this Karr method."
     status: "not_implemented"
-    note: "This row records the absence explicitly rather than inventing a flux-bounds analog."
+    note: "This row records the absence explicitly rather than inventing a flux-bounds analog. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
 allocator:
   mode:
     karr: "allocation"
@@ -281,26 +281,19 @@ compartment_routing:
     mismatch: false
     note: "Hydrogen is produced in the cytosolic substrate pool."
 unit_conversion_chain:
-  source_units: "active RNAP-weighted nucleotide incorporations per second"
-  target_units: "substrate molecules/tick"
+  source_units: "molecules/tick"
+  target_units: "molecules/tick"
   steps:
-    - from_units: "active RNAP-weighted nucleotide incorporations per second"
-      to_units: "substrate molecules per simulation tick"
-      operation: "×stepSizeSec, with stepSizeSec=1 in the Transcription fixture and simulation loop"
-      constants: ["stepSizeSec"]
+    - from_units: molecules/tick
+      to_units: molecules/tick
+      operation: identity
+      constants: []
       anchor:
-        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m"
-        lines: "19-37"
-        note: "Global tick step and allocator allocation happen before process evolution."
-    - from_units: "substrate molecules per simulation tick"
-      to_units: "per-substrate deltas"
-      operation: "polymerize(...) -> usedNTPs, then write substrate deltas and release products"
-      constants: ["usedNTPs"]
-      anchor:
-        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Transcription.m"
-        lines: "895-965"
-        note: "MATLAB polymerization and product writeback."
-  note: "Transcription is already in counts-per-tick space once the 1 s simulation tick is applied; there is no mmol/gDW/hr conversion chain here."
+        path: "opencell/vivarium/karr_transcription_v3.py"
+        lines: "170-223"
+        note: Process works directly in per-tick integer counts; no unit conversion needed.
+      note: Process works directly in per-tick integer counts; no unit conversion needed.
+  note: "This process does not require unit conversion (per-tick integer counts throughout)."
 dependencies:
   produces_inputs_for:
     - "RNAProcessing"
@@ -425,4 +418,5 @@ deviations:
     - "Current OC evolveState is a mechanism-based transcription wrapper, not the MATLAB RNAP state-machine implementation."
     - "Legacy KarrTranscriptionProcess bypasses allocator mediation and writes direct substrate deltas when used without the allocator-budget path."
     - "OC bootstrap is split across constructor fixture loads, ports_schema defaults, and composite wiring rather than a single initializeState method."
+    - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
   note: "The deviations list is intentionally explicit so reviewers can grep the current OC surfaces without assuming a 1:1 port."

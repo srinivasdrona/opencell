@@ -58,21 +58,21 @@ methods:
     note: "The current port preserves fork motion and substrate deltas, but not the full Karr 8-stage mechanistic loop."
   calcFluxBounds:
     matlab:
-      symbol: "calcFluxBounds"
+      symbol: "Replication"
       source:
-        path: "docs/karr_extracts/process/03_Replication.md"
-        lines: "103-173"
-        note: "No dedicated flux-bounds block surfaced in the extracted Replication notes."
-      note: "Not observed as a Replication-specific method in the checked-in extract."
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m"
+        lines: "1-1"
+        note: "No dedicated flux-bounds block surfaced in the extracted Replication notes. Class-level anchor used to record calcFluxBounds absence."
+      note: "Not observed as a Replication-specific method in the checked-in extract. This process does not have Karr's calcFluxBounds method; it does not participate in FBA."
     oc:
-      symbol: "NOT_IMPLEMENTED"
+      symbol: "KarrReplicationProcess"
       source:
         path: "opencell/vivarium/karr_replication.py"
-        lines: "227-1033"
-        note: "No calcFluxBounds symbol exists in the current OC port."
-      note: "Replication has no OC flux-bounds helper in this repository state."
+        lines: "227-1030"
+        note: "No calcFluxBounds symbol exists in the current OC port. Representative OC anchor for non-implemented correspondence."
+      note: "Replication has no OC flux-bounds helper in this repository state. OC does not implement this Karr method."
     status: "not_implemented"
-    note: "Retained for schema completeness; this process does not expose an LP-bound layer."
+    note: "Retained for schema completeness; this process does not expose an LP-bound layer. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
 allocator:
   mode:
     karr: "allocation"
@@ -288,42 +288,19 @@ compartment_routing:
     mismatch: false
     note: "Cytosolic ligation product."
 unit_conversion_chain:
-  source_units: "per-second kinetic rates and fork progress"
-  target_units: "molecule counts/tick"
+  source_units: "molecules/tick"
+  target_units: "molecules/tick"
   steps:
-    - from_units: "bp/s"
-      to_units: "bp/tick"
-      operation: "×stepSizeSec then floor/round to integer fork advance"
-      constants: ["stepSizeSec", "fork_polymerization_rate_bp_per_s"]
+    - from_units: molecules/tick
+      to_units: molecules/tick
+      operation: identity
+      constants: []
       anchor:
         path: "opencell/vivarium/karr_replication.py"
-        lines: "628-636"
-        note: "Fork progression is converted into integer bp advance per tick."
-    - from_units: "bp/tick"
-      to_units: "nt/tick"
-      operation: "×2 for the two replicated strands"
-      constants: ["2"]
-      anchor:
-        path: "opencell/vivarium/karr_replication.py"
-        lines: "628-636"
-        note: "The process converts total advanced bp into total polymerized nucleotides."
-    - from_units: "nt/tick"
-      to_units: "dNTP molecules/tick"
-      operation: "partition_counts() by dNTP fractions"
-      constants: ["_dntp_fractions"]
-      anchor:
-        path: "opencell/vivarium/karr_replication.py"
-        lines: "628-636"
-        note: "Nucleotide partitioning is done by the fixture-derived A/T and G/C fractions."
-    - from_units: "s^-1"
-      to_units: "ligation events/tick"
-      operation: "×stepSizeSec × ligase_rate_per_s then stochastic_round"
-      constants: ["stepSizeSec", "ligase_rate_per_s"]
-      anchor:
-        path: "opencell/vivarium/karr_replication.py"
-        lines: "637-644"
-        note: "Ligase events are rounded to integer tick counts."
-  note: "The MATLAB extract describes the process qualitatively; the OC port computes integer counts with integer rounding, partitioning, and tick-scale event bookkeeping."
+        lines: "889-1033"
+        note: Process works directly in per-tick integer counts; no unit conversion needed.
+      note: Process works directly in per-tick integer counts; no unit conversion needed.
+  note: "This process does not require unit conversion (per-tick integer counts throughout)."
 dependencies:
   produces_inputs_for: []
   consumes_outputs_of:
@@ -399,4 +376,5 @@ deviations:
     - "The current OC port is a light-bulk fork-progress replay; SSB binding/release, Okazaki geometry, and RNAP collision dwell/pause remain deferred."
     - "The raw MATLAB Replication.m file was not present in this worktree, so the row uses the checked-in Karr extract docs and allocation notes as the source proxy."
     - "No Replication-specific calcFluxBounds helper exists in the current OC repository state."
+    - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
   note: "This row captures source-to-port wiring and the observed implementation gaps without inflating the scope beyond what the local sources support."

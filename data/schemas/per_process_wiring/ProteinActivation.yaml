@@ -22,18 +22,18 @@ methods:
         note: "The extract describes boolean rule evaluation and state flips only; no allocator block is present."
       note: "ProteinActivation is allocator-free in the extracted source shape."
     oc:
-      symbol: "NOT_IMPLEMENTED"
+      symbol: "KarrProteinActivationProcess"
       source:
         path: "opencell/vivarium/karr_protein_activation.py"
         lines: "137-271"
-        note: "The OC port reads substrates and stimuli directly; it has no request calculator or substrates_allocated path."
+        note: "The OC port reads substrates and stimuli directly; it has no request calculator or substrates_allocated path. Representative OC anchor for non-implemented correspondence."
       supporting:
         - path: "opencell/vivarium/karr_composite.py"
           lines: "1397-1401"
           note: "Composite wiring maps only substrates, stimuli, and protein for this process."
-      note: "Current OC mirrors the allocator-free shape."
+      note: "Current OC mirrors the allocator-free shape. OC does not implement this Karr method."
     status: "not_implemented"
-    note: "No per-process resource-request method is described for ProteinActivation in the available source extract."
+    note: "No per-process resource-request method is described for ProteinActivation in the available source extract. OC does not implement this Karr method."
   evolveState:
     matlab:
       symbol: "evolveState"
@@ -60,21 +60,21 @@ methods:
     note: "This is the core per-tick behavior and is implemented directly in the OC port."
   calcFluxBounds:
     matlab:
-      symbol: "calcFluxBounds"
+      symbol: "ProteinActivation"
       source:
-        path: "docs/karr_extracts/process/20_ProteinActivation.md"
-        lines: "49-68"
-        note: "The extracted process description contains no LP / flux-bound semantics."
-      note: "No flux-bound analogue is described for this rule-only process."
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m"
+        lines: "118-118"
+        note: "The extracted process description contains no LP / flux-bound semantics. Class-level anchor used to record calcFluxBounds absence."
+      note: "No flux-bound analogue is described for this rule-only process. This process does not have Karr's calcFluxBounds method; it does not participate in FBA."
     oc:
-      symbol: "NOT_IMPLEMENTED"
+      symbol: "KarrProteinActivationProcess"
       source:
         path: "opencell/vivarium/karr_protein_activation.py"
         lines: "137-271"
-        note: "There is no flux-bound or LP code path in the current OC shim."
-      note: "No calcFluxBounds implementation exists for ProteinActivation."
+        note: "There is no flux-bound or LP code path in the current OC shim. Representative OC anchor for non-implemented correspondence."
+      note: "No calcFluxBounds implementation exists for ProteinActivation. OC does not implement this Karr method."
     status: "not_implemented"
-    note: "ProteinActivation does not participate in the Metabolism-style flux-bound surface."
+    note: "ProteinActivation does not participate in the Metabolism-style flux-bound surface. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
 allocator:
   mode:
     karr: "bypass"
@@ -334,7 +334,8 @@ deviations:
       lines: "137-271"
       note: "The OC shim has no LP or flux-bound code path."
   shared_pool_projection_merges_compartments: false
-  known_deviations: []
+  known_deviations:
+    - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
   note: >-
     No known MATLAB↔OC behavioral deviation was identified from the available
     source extract and current OC port; both are rule-only and allocator-free.

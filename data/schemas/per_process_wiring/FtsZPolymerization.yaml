@@ -55,21 +55,21 @@ methods:
     note: "The OC port follows the Karr flow but is instrumented as an event-class process with allocator-bounded GTP."
   calcFluxBounds:
     matlab:
-      symbol: "calcFluxBounds"
+      symbol: "FtsZPolymerization"
       source:
-        path: "docs/karr_extracts/process/25_FtsZPolymerization.md"
-        lines: "29-37"
-        note: "No separate flux-bounds method is described in the extract."
-      note: "Not a flux-bounds process; the allocator surface is request/allocate GTP rather than LP bounds."
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/FtsZPolymerization.m"
+        lines: "1-1"
+        note: "No separate flux-bounds method is described in the extract. Class-level anchor used to record calcFluxBounds absence."
+      note: "Not a flux-bounds process; the allocator surface is request/allocate GTP rather than LP bounds. This process does not have Karr's calcFluxBounds method; it does not participate in FBA."
     oc:
-      symbol: "not_implemented"
+      symbol: "KarrFtsZPolymerizationProcess"
       source:
         path: "opencell/vivarium/karr_ftsz_polymerization.py"
-        lines: "1-13"
-        note: "FtsZ process does not expose flux-bound logic."
-      note: "No FtsZ-specific flux-bounds helper exists in OC."
+        lines: "64-598"
+        note: "FtsZ process does not expose flux-bound logic. Representative OC anchor for non-implemented correspondence."
+      note: "No FtsZ-specific flux-bounds helper exists in OC. OC does not implement this Karr method."
     status: "not_implemented"
-    note: "This process has no LP-style bound construction comparable to Metabolism."
+    note: "This process has no LP-style bound construction comparable to Metabolism. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
 allocator:
   mode:
     karr: "allocation"
@@ -196,33 +196,19 @@ compartment_routing:
     mismatch: false
     note: "Hydrolysis hydrogen byproduct is cytosolic."
 unit_conversion_chain:
-  source_units: "molecules / fractional ODE state"
-  target_units: "integer molecules/tick"
+  source_units: "molecules/tick"
+  target_units: "molecules/tick"
   steps:
-    - from_units: "molecules"
-      to_units: "molecules·L^-1"
-      operation: "÷(_N_AVOGADRO × geometry_volume)"
-      constants: ["_N_AVOGADRO", "geometry_volume"]
+    - from_units: molecules/tick
+      to_units: molecules/tick
+      operation: identity
+      constants: []
       anchor:
         path: "opencell/vivarium/karr_ftsz_polymerization.py"
-        lines: "155-485"
-        note: "Geometry volume is loaded from the fixture, then counts are converted to concentration. (normalized from invalid lines='155-167,481-485' for schema validation)"
-    - from_units: "molecules·L^-1"
-      to_units: "molecules"
-      operation: "×(_N_AVOGADRO × geometry_volume)"
-      constants: ["_N_AVOGADRO", "geometry_volume"]
-      anchor:
-        path: "opencell/vivarium/karr_ftsz_polymerization.py"
-        lines: "481-485"
-        note: "Concentration is projected back to molecule counts after integration."
-    - from_units: "floating molecules"
-      to_units: "integer molecules/tick"
-      operation: "stochasticRound → clamp to nonnegative int"
-      constants: ["rng_seed", "time_step"]
-      anchor:
-        path: "opencell/vivarium/karr_ftsz_polymerization.py"
-        lines: "405-587"
-        note: "Discrete state recovery, substrate-delta rounding, and nonnegative clamping. (normalized from invalid lines='405-436,548-587' for schema validation)"
+        lines: "216-293"
+        note: Process works directly in per-tick integer counts; no unit conversion needed.
+      note: Process works directly in per-tick integer counts; no unit conversion needed.
+  note: This process does not require unit conversion (per-tick integer counts throughout).
 dependencies:
   produces_inputs_for: []
   consumes_outputs_of:
@@ -314,4 +300,5 @@ deviations:
     - "The raw MATLAB `.m` file was not present in this checkout; MATLAB anchors therefore use the checked-in extract doc rather than a direct source-file read."
     - "OC emits the GTP request directly from `next_update` instead of a separate request-calculator module."
     - "OC reads allocated GTP from `substrates_allocated[self.name]` but still keeps a direct substrate-store fallback path for the no-allocation case."
+    - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
   note: "The main divergence is wiring shape, not biochemistry: the OC port is direct-update + allocator-compatible, while the MATLAB evidence available here is extract-level rather than file-level."

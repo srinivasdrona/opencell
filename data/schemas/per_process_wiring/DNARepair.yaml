@@ -58,21 +58,21 @@ methods:
     note: "Implemented, but the algorithm is collapsed to pathway-level aggregate repair rather than per-subfunction random order."
   calcFluxBounds:
     matlab:
-      symbol: "calcFluxBounds"
+      symbol: "DNARepair"
       source:
-        path: "docs/karr_extracts/process/05_DNARepair.md"
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m"
         lines: "257-270"
-        note: "Reaction stoichiometry, enzymes, and bounds are described here; no dedicated DNARepair flux-bound body was recovered."
-      note: "Nearest available DNARepair-local material; no standalone calcFluxBounds implementation was found in the checkout."
+        note: "Reaction stoichiometry, enzymes, and bounds are described here; no dedicated DNARepair flux-bound body was recovered. Class-level anchor used to record calcFluxBounds absence."
+      note: "Nearest available DNARepair-local material; no standalone calcFluxBounds implementation was found in the checkout. This process does not have Karr's calcFluxBounds method; it does not participate in FBA."
     oc:
-      symbol: "NOT_IMPLEMENTED"
+      symbol: "KarrDNARepairProcess"
       source:
         path: "opencell/vivarium/karr_dna_repair.py"
-        lines: "317-386"
-        note: "OC DNARepair has no LP-style flux-bound layer; request logic lives in next_update."
-      note: "The OC port does not expose a dedicated flux-bound method for DNARepair."
+        lines: "133-789"
+        note: "OC DNARepair has no LP-style flux-bound layer; request logic lives in next_update. Representative OC anchor for non-implemented correspondence."
+      note: "The OC port does not expose a dedicated flux-bound method for DNARepair. OC does not implement this Karr method."
     status: "not_implemented"
-    note: "No DNARepair-specific calcFluxBounds analog is present in current OC."
+    note: "No DNARepair-specific calcFluxBounds analog is present in current OC. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
 allocator:
   mode:
     karr: "allocation"
@@ -276,26 +276,19 @@ compartment_routing:
     mismatch: false
     note: "Conditional RM product remains cytosolic."
 unit_conversion_chain:
-  source_units: "repair events/tick"
+  source_units: "molecules/tick"
   target_units: "molecules/tick"
   steps:
-    - from_units: "repair events/tick"
-      to_units: "per-pathway substrate demand/tick"
-      operation: "*pathway_atp_cost[pathway] and *pathway_patch_length_nt[pathway] * dntp_split"
-      constants: ["pathway_atp_cost", "pathway_patch_length_nt", "dntp_split"]
+    - from_units: molecules/tick
+      to_units: molecules/tick
+      operation: identity
+      constants: []
       anchor:
         path: "opencell/vivarium/karr_dna_repair.py"
-        lines: "699-720"
-        note: "Per-pathway stoichiometric demand per repair event."
-    - from_units: "per-pathway substrate demand/tick"
-      to_units: "substrate store deltas/tick"
-      operation: "allocator gating -> bounded actual repairs -> direct negative substrate deltas"
-      constants: ["substrates_allocated", "pathway_capacity_per_s", "dt"]
-      anchor:
-        path: "opencell/vivarium/karr_dna_repair.py"
-        lines: "723-789"
-        note: "Allocator bounding and final writeback."
-  note: "DNARepair already works in discrete repair-event counts, so the chain is much simpler than the Metabolism mmol/gDW/hr conversion."
+        lines: "317-386"
+        note: Process works directly in per-tick integer counts; no unit conversion needed.
+      note: Process works directly in per-tick integer counts; no unit conversion needed.
+  note: "This process does not require unit conversion (per-tick integer counts throughout)."
 dependencies:
   produces_inputs_for: []
   consumes_outputs_of:
@@ -394,4 +387,5 @@ deviations:
     - "OC models only ATP/dNTP repair demand plus the conditional AMET -> AHCYS + H restriction/modification side effect."
     - "Karr ligation/polymerization products such as AMP, PPI, and NMN are visible in the fixture chemistry but are not emitted by the current OC port."
     - "The raw MATLAB source file was not present in this checkout, so MATLAB-side evidence is anchored to the DNARepair extract and the generic allocation docs rather than a direct .m read."
+    - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
   note: "The row keeps known gaps explicit so the wiring DB does not overstate the fidelity of the current OC port."

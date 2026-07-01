@@ -41,14 +41,14 @@ methods:
         note: "Seeds maximal formed particles from the initialized RNA and monomer pools."
       note: "MATLAB performs a runtime initialization push into formed ribosomal complexes."
     oc:
-      symbol: "NOT_IMPLEMENTED"
+      symbol: "KarrRibosomeAssemblyProcess"
       source:
         path: "opencell/vivarium/karr_ribosome_assembly.py"
-        lines: "75-147"
-        note: "OC has no separate runtime initializeState method; fixture loading happens during construction."
-      note: "Initialization is collapsed into construction-time fixture loading in OC."
+        lines: "75-383"
+        note: "OC has no separate runtime initializeState method; fixture loading happens during construction. Representative OC anchor for non-implemented correspondence."
+      note: "Initialization is collapsed into construction-time fixture loading in OC. OC does not implement this Karr method."
     status: "not_implemented"
-    note: "The OC port relies on fixture contents for initialized state, so there is no dedicated runtime initializeState method."
+    note: "The OC port relies on fixture contents for initialized state, so there is no dedicated runtime initializeState method. OC does not implement this Karr method."
   calcResourceRequirements_LifeCycle:
     matlab:
       symbol: "calcResourceRequirements_LifeCycle"
@@ -58,18 +58,18 @@ methods:
         note: "Lifecycle biomass-production and enzyme-expression demand block."
       note: "MATLAB-only lifecycle demand helper; not part of the per-tick assembly loop."
     oc:
-      symbol: "NOT_IMPLEMENTED"
+      symbol: "KarrRibosomeAssemblyProcess"
       source:
         path: "opencell/vivarium/karr_ribosome_assembly.py"
         lines: "75-383"
-        note: "No dedicated OC lifecycle resource-requirements method exists for this process."
+        note: "No dedicated OC lifecycle resource-requirements method exists for this process. Representative OC anchor for non-implemented correspondence."
       supporting:
         - path: "opencell/vivarium/karr_request_calculators.py"
           lines: "163-226"
           note: "Current OC demand is split into RequestCalculatorRibAsm.next_update."
-      note: "OC has no direct lifecycle analogue for the allocator-facing biomass/expression request block."
+      note: "OC has no direct lifecycle analogue for the allocator-facing biomass/expression request block. OC does not implement this Karr method."
     status: "not_implemented"
-    note: "Lifecycle resource demand is present in MATLAB but not exposed as a separate OC method."
+    note: "Lifecycle resource demand is present in MATLAB but not exposed as a separate OC method. OC does not implement this Karr method."
   calcResourceRequirements_Current:
     matlab:
       symbol: "calcResourceRequirements_Current"
@@ -117,21 +117,21 @@ methods:
     note: "The current OC process reads `substrates_allocated` and matches the MATLAB per-particle update shape except for the early-return divergence captured below."
   calcFluxBounds:
     matlab:
-      symbol: "calcFluxBounds"
+      symbol: "RibosomeAssembly"
       source:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
         lines: "73-370"
-        note: "No process-local flux-bounds method appears in the class body."
-      note: "RibosomeAssembly does not define a flux-bounds method in the source we read."
+        note: "No process-local flux-bounds method appears in the class body. Class-level anchor used to record calcFluxBounds absence."
+      note: "RibosomeAssembly does not define a flux-bounds method in the source we read. This process does not have Karr's calcFluxBounds method; it does not participate in FBA."
     oc:
-      symbol: "NOT_IMPLEMENTED"
+      symbol: "KarrRibosomeAssemblyProcess"
       source:
         path: "opencell/vivarium/karr_ribosome_assembly.py"
         lines: "75-383"
-        note: "No OC flux-bounds analogue exists for this process."
-      note: "There is no current OC flux-bounds implementation to bind."
+        note: "No OC flux-bounds analogue exists for this process. Representative OC anchor for non-implemented correspondence."
+      note: "There is no current OC flux-bounds implementation to bind. OC does not implement this Karr method."
     status: "not_implemented"
-    note: "This slot is present because the schema requires it, not because RibosomeAssembly is a flux-bounds process."
+    note: "This slot is present because the schema requires it, not because RibosomeAssembly is a flux-bounds process. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
 allocator:
   mode:
     karr: "allocation"
@@ -335,10 +335,19 @@ compartment_routing:
     mismatch: false
     note: "Complex product emitted in cytosol."
 unit_conversion_chain:
-  source_units: "counts/tick"
-  target_units: "counts/tick"
-  steps: []
-  note: "No unit conversion is needed here; the process already operates on integer counts at the tick scale."
+  source_units: "molecules/tick"
+  target_units: "molecules/tick"
+  steps:
+    - from_units: molecules/tick
+      to_units: molecules/tick
+      operation: identity
+      constants: []
+      anchor:
+        path: "opencell/vivarium/karr_ribosome_assembly.py"
+        lines: "334-383"
+        note: Process works directly in per-tick integer counts; no unit conversion needed.
+      note: Process works directly in per-tick integer counts; no unit conversion needed.
+  note: "This process does not require unit conversion (per-tick integer counts throughout)."
 dependencies:
   produces_inputs_for: []
   consumes_outputs_of:
@@ -459,4 +468,5 @@ deviations:
     - "MATLAB calcResourceRequirements_Current hardcodes getGtpPerComplex(2) in both particle terms; OC RequestCalculatorRibAsm computes hydrolysis demand from each particle's actual n_gtpases_per_particle."
     - "OC collapses initializeState into construction-time fixture loading instead of exposing a runtime initialization callback."
     - "OC returns early when allocated GTP or H2O is non-positive, while Karr only returns early when GTP is zero."
+    - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
   note: "The audited divergence is narrow but real: request-step placement, lifecycle-demand exposure, construction-time initialization, and the stricter OC early-return condition."

@@ -72,21 +72,21 @@ methods:
       to the MATLAB loop.
   calcFluxBounds:
     matlab:
-      symbol: "calcFluxBounds"
+      symbol: "RNAModification"
       source:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m"
-        lines: "81-381"
-        note: "RNAModification does not define a local flux-bounds override; the class body ends without one."
-      note: "Included as a schema-required placeholder for a process that is not LP-bound."
+        lines: "81-81"
+        note: "RNAModification does not define a local flux-bounds override; the class body ends without one. Class-level anchor used to record calcFluxBounds absence."
+      note: "Included as a schema-required placeholder for a process that is not LP-bound. This process does not have Karr's calcFluxBounds method; it does not participate in FBA."
     oc:
-      symbol: "NOT_IMPLEMENTED"
+      symbol: "KarrRNAModificationProcess"
       source:
         path: "opencell/vivarium/karr_rna_modification.py"
-        lines: "56-380"
-        note: "No OC flux-bound routine exists for RNAModification."
-      note: "No current OC analogue."
+        lines: "56-504"
+        note: "No OC flux-bound routine exists for RNAModification. Representative OC anchor for non-implemented correspondence."
+      note: "No current OC analogue. OC does not implement this Karr method."
     status: "not_implemented"
-    note: "RNAModification is allocator-fed and reaction-driven rather than LP-bound."
+    note: "RNAModification is allocator-fed and reaction-driven rather than LP-bound. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
 allocator:
   mode:
     karr: "allocation"
@@ -294,34 +294,19 @@ compartment_routing:
     mismatch: false
     note: "Cytosolic product of one-carbon transfer reactions."
 unit_conversion_chain:
-  source_units: "enzyme activity / RNA counts / reaction events"
+  source_units: "molecules/tick"
   target_units: "molecules/tick"
   steps:
-    - from_units: "enzyme activity (1/s)"
-      to_units: "reaction opportunities/tick"
-      operation: "×stepSizeSec and ceil(reactionCatalysisMatrix * enzymes * stepSizeSec)"
-      constants: ["stepSizeSec"]
-      anchor:
-        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m"
-        lines: "221-235"
-        note: "Builds the per-step species matrices with step-size-scaled enzyme bounds."
-    - from_units: "reaction opportunities/tick"
-      to_units: "substrate molecules/tick"
-      operation: "reactionStoichiometryMatrix * reactionModificationMatrix(:, rnaMask_modified) * reactionFluxes"
-      constants: []
-      anchor:
-        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m"
-        lines: "355-361"
-        note: "MATLAB substrate writeback from completed reaction counts."
-    - from_units: "reaction opportunities/tick"
-      to_units: "RNA completion counts/tick"
-      operation: "transition_events from min(reactionFluxes(required_rxn)); update unmodifiedRNAs and modifiedRNAs by ±transition_events"
+    - from_units: molecules/tick
+      to_units: molecules/tick
+      operation: identity
       constants: []
       anchor:
         path: "opencell/vivarium/karr_rna_modification.py"
-        lines: "253-299"
-        note: "OC completion counting and RNA writeback."
-  note: "No biomass/Avogadro conversion is needed here; both sides operate on integer molecule counts per tick."
+        lines: "173-303"
+        note: Process works directly in per-tick integer counts; no unit conversion needed.
+      note: Process works directly in per-tick integer counts; no unit conversion needed.
+  note: "This process does not require unit conversion (per-tick integer counts throughout)."
 dependencies:
   produces_inputs_for:
     - "RibosomeAssembly"
@@ -442,4 +427,5 @@ deviations:
     - "OC splits enzyme inputs into protein.counts and complex.counts; MATLAB uses one enzyme vector."
     - "OC request emission is handled by shared RequestCalculatorRNAPathway instead of a process-local request method."
     - "OC next_update uses an explicit max_stochastic_iterations cap and zero-fallback guards; MATLAB uses an unbounded while true loop."
+    - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
   note: "The OC port is allocator-equivalent, but the wiring surfaces are adapted to the current chassis."

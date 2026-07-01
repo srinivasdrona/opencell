@@ -45,18 +45,18 @@ methods:
         note: "Lifecycle resource requirements block."
       note: "Refolding, complex decay, monomer decay, signal-sequence decay, and stalled-polypeptide decay lifecycle budget."
     oc:
-      symbol: "NOT_IMPLEMENTED"
+      symbol: "RequestCalculatorPD.__init__"
       source:
         path: "opencell/vivarium/karr_request_calculators.py"
-        lines: "92-152"
-        note: "Closest current-tick request analogue; no dedicated lifecycle budgeter exists in the light port."
+        lines: "98-104"
+        note: "Closest current-tick request analogue; no dedicated lifecycle budgeter exists in the light port. Representative OC anchor for non-implemented correspondence."
       supporting:
         - path: "opencell/vivarium/karr_protein_decay_light.py"
           lines: "502-591"
           note: "OC process update path emits requests but does not expose a lifecycle-budget method."
-      note: "No OC lifecycle-budget method is present for ProteinDecay; the light port only exposes the current-tick request surface."
+      note: "No OC lifecycle-budget method is present for ProteinDecay; the light port only exposes the current-tick request surface. OC does not implement this Karr method."
     status: "not_implemented"
-    note: "The light port collapses lifecycle budgeting into the current-tick request calculator and direct update logic."
+    note: "The light port collapses lifecycle budgeting into the current-tick request calculator and direct update logic. OC does not implement this Karr method."
   evolveState:
     matlab:
       symbol: "evolveState"
@@ -83,21 +83,21 @@ methods:
     note: "OC next_update is the per-tick analog, but it only implements a subset of the MATLAB helper chain."
   calcFluxBounds:
     matlab:
-      symbol: "calcFluxBounds"
+      symbol: "ProteinDecay"
       source:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m"
-        lines: "1-938"
-        note: "Whole file searched; no calcFluxBounds symbol is defined in ProteinDecay.m."
-      note: "ProteinDecay is not an LP-bound process in the MATLAB source."
+        lines: "152-152"
+        note: "Whole file searched; no calcFluxBounds symbol is defined in ProteinDecay.m. Class-level anchor used to record calcFluxBounds absence."
+      note: "ProteinDecay is not an LP-bound process in the MATLAB source. This process does not have Karr's calcFluxBounds method; it does not participate in FBA."
     oc:
-      symbol: "NOT_IMPLEMENTED"
+      symbol: "ProteinDecayLightProcess"
       source:
         path: "opencell/vivarium/karr_protein_decay_light.py"
-        lines: "97-591"
-        note: "OC light process has no flux-bound method."
-      note: "No OC flux-bound analogue exists for this process."
+        lines: "82-588"
+        note: "OC light process has no flux-bound method. Representative OC anchor for non-implemented correspondence."
+      note: "No OC flux-bound analogue exists for this process. OC does not implement this Karr method."
     status: "not_implemented"
-    note: "Neither the MATLAB process nor the OC light port exposes a dedicated flux-bound method."
+    note: "Neither the MATLAB process nor the OC light port exposes a dedicated flux-bound method. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
 allocator:
   mode:
     karr: "allocation"
@@ -276,34 +276,19 @@ compartment_routing:
     mismatch: false
     note: "Amino-acid release from monomer decay is cytosolic."
 unit_conversion_chain:
-  source_units: "whole-molecule counts and per-second rates"
+  source_units: "molecules/tick"
   target_units: "molecules/tick"
   steps:
-    - from_units: "complex counts and 1/s decay rates"
-      to_units: "expected decays/tick"
-      operation: "×stepSizeSec"
-      constants: ["stepSizeSec"]
-      anchor:
-        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m"
-        lines: "686-690"
-        note: "Karr complex-decay rate scaling."
-    - from_units: "expected decays/tick"
-      to_units: "molecule deltas/tick"
-      operation: "matrix multiply by decayReactions, then integer round / clamp"
+    - from_units: molecules/tick
+      to_units: molecules/tick
+      operation: identity
       constants: []
       anchor:
-        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m"
-        lines: "737-754"
-        note: "Karr substrate writeback for complex decay."
-    - from_units: "expected decays/tick"
-      to_units: "molecule deltas/tick"
-      operation: "matrix multiply by monomerDecayReactions, then integer round / clamp"
-      constants: []
-      anchor:
-        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m"
-        lines: "908-914"
-        note: "Karr substrate writeback for monomer decay."
-  note: "No Avogadro or gDW conversion is needed here; ProteinDecay already operates in whole-molecule counts."
+        path: "opencell/vivarium/karr_protein_decay_light.py"
+        lines: "502-591"
+        note: Process works directly in per-tick integer counts; no unit conversion needed.
+      note: Process works directly in per-tick integer counts; no unit conversion needed.
+  note: "This process does not require unit conversion (per-tick integer counts throughout)."
 dependencies:
   produces_inputs_for: []
   consumes_outputs_of:
@@ -451,4 +436,5 @@ deviations:
     - "The OC process never reads `substrates_allocated`; it reads `states['substrates']` directly and emits direct substrate deltas in `next_update`."
     - "The OC allocator alias maps `protein_decay_light` to `karr_protein_decay_light`, so the request key differs from the process slug."
     - "The OC port flattens Karr's compartmented ProteinDecay surfaces into a per-WID substrate projection."
+    - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
   note: "These deviations are deliberate and should remain visible in the wiring DB row."

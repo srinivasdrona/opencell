@@ -55,21 +55,21 @@ methods:
     note: "Implemented, but not faithful line-by-line: OC batches per species, reads allocator budget, and uses raw enzyme counts rather than Karr's rate-scaled capacity checks."
   calcFluxBounds:
     matlab:
-      symbol: "calcFluxBounds"
+      symbol: "ProteinTranslocation"
       source:
-        path: "docs/karr_extracts/process/22_ProteinTranslocation.md"
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinTranslocation.m"
         lines: "1-131"
-        note: "Process extract does not describe any flux-bounds method for ProteinTranslocation; slot retained because the schema requires it."
-      note: "No ProteinTranslocation-specific flux-bound method is documented in the checked-in extract."
+        note: "Process extract does not describe any flux-bounds method for ProteinTranslocation; slot retained because the schema requires it. Class-level anchor used to record calcFluxBounds absence."
+      note: "No ProteinTranslocation-specific flux-bound method is documented in the checked-in extract. This process does not have Karr's calcFluxBounds method; it does not participate in FBA."
     oc:
-      symbol: "NOT_IMPLEMENTED"
+      symbol: "KarrProteinTranslocationProcess"
       source:
         path: "opencell/vivarium/karr_protein_translocation.py"
-        lines: "1-446"
-        note: "OC port has no flux-bounds implementation for this process."
-      note: "No equivalent OC symbol exists."
+        lines: "95-443"
+        note: "OC port has no flux-bounds implementation for this process. Representative OC anchor for non-implemented correspondence."
+      note: "No equivalent OC symbol exists. OC does not implement this Karr method."
     status: "not_implemented"
-    note: "ProteinTranslocation is not an LP-bounded process; this schema slot is intentionally empty."
+    note: "ProteinTranslocation is not an LP-bounded process; this schema slot is intentionally empty. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
 allocator:
   mode:
     karr: "allocation"
@@ -225,33 +225,19 @@ compartment_routing:
     mismatch: false
     note: "H+ is produced in the same cytosolic pool."
 unit_conversion_chain:
-  source_units: "queued protein-copy counts + allocated substrate counts"
+  source_units: "molecules/tick"
   target_units: "molecules/tick"
   steps:
-    - from_units: "queued protein-copy counts"
-      to_units: "per-copy hydrolysis demand"
-      operation: "ceil(monomerLength / preproteinTranslocase_aaTranslocatedPerATP) and SRP_GTPUsedPerMonomer"
-      constants: ["preproteinTranslocase_aaTranslocatedPerATP", "SRP_GTPUsedPerMonomer"]
-      anchor:
-        path: "docs/karr_extracts/process/22_ProteinTranslocation.md"
-        lines: "103-111"
-        note: "Process extract describes the per-monomer ATP and SRP GTP costs."
-    - from_units: "per-copy hydrolysis demand"
-      to_units: "rate-scaled capacity per tick"
-      operation: "×stepSizeSec and ×translocaseSpecificRate / aaPerATP for the translocase gate; ×stepSizeSec for SRP"
-      constants: ["stepSizeSec", "translocaseSpecificRate", "aaPerATP"]
+    - from_units: molecules/tick
+      to_units: molecules/tick
+      operation: identity
+      constants: []
       anchor:
         path: "opencell/vivarium/karr_protein_translocation.py"
-        lines: "342-365"
-        note: "Fixture scalar load plus the per-tick capacity conversion in the OC port."
-    - from_units: "rate-scaled capacity per tick"
-      to_units: "substrate deltas per tick"
-      operation: "randperm-driven first-failure copy execution, then aggregate ATP/GTP/H2O decrement and ADP/GDP/PI/H production"
-      anchor:
-        path: "docs/phase_f/sut_audits/ptransloc_oc_vs_karr.md"
-        lines: "48-72"
-        note: "Parity audit explains the per-copy Karr loop and the OC batched approximation."
-  note: "ProteinTranslocation stays in count space; the only time scaling is the SRP/translocase gate conversion by `stepSizeSec`."
+        lines: "307-445"
+        note: Process works directly in per-tick integer counts; no unit conversion needed.
+      note: Process works directly in per-tick integer counts; no unit conversion needed.
+  note: "This process does not require unit conversion (per-tick integer counts throughout)."
 dependencies:
   produces_inputs_for:
     - "ProteinProcessingII"
@@ -336,3 +322,4 @@ deviations:
     - "OC request magnitude uses a current-pool floor (`max(need, current_pool)`), which can over-request relative to pure need."
     - "OC represents moved proteins with `protein.location` plus `protein.unprocessed_counts` deltas instead of Karr's compartment-resolved monomer matrix."
     - "OC excludes `MG_191_MONOMER` and `MG_192_MONOMER` during fixture loading, which makes terminal-organelle handling a load-time omission rather than a compartment remap."
+    - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.

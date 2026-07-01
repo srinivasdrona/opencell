@@ -41,14 +41,14 @@ methods:
         note: "Lifecycle allocator helper: replication-linked LK demand, topoI compensation term, and ATP cost."
       note: "This is the broader lifecycle budget, not the current per-tick request helper."
     oc:
-      symbol: "NOT_IMPLEMENTED"
+      symbol: "KarrDNASupercoilingProcess"
       source:
         path: "opencell/vivarium/karr_dna_supercoiling.py"
-        lines: "1-1038"
-        note: "No lifecycle-budget helper exists in the OC port."
-      note: "The OC port exposes only the per-tick request/update path."
+        lines: "115-1035"
+        note: "No lifecycle-budget helper exists in the OC port. Representative OC anchor for non-implemented correspondence."
+      note: "The OC port exposes only the per-tick request/update path. OC does not implement this Karr method."
     status: "not_implemented"
-    note: "The lifecycle budgeting helper has no dedicated OC implementation."
+    note: "The lifecycle budgeting helper has no dedicated OC implementation. OC does not implement this Karr method."
   initializeState:
     matlab:
       symbol: "initializeState"
@@ -133,14 +133,14 @@ methods:
         note: "Sigma-dependent transcription fold-change helper."
       note: "Used to propagate supercoiling into RNAPolymerase binding probability."
     oc:
-      symbol: "NOT_IMPLEMENTED"
+      symbol: "KarrDNASupercoilingProcess"
       source:
         path: "opencell/vivarium/karr_dna_supercoiling.py"
-        lines: "1-1038"
-        note: "No direct transcription-fold-change helper exists in the OC port."
-      note: "The OC port surfaces supercoiled state, but not the MATLAB fold-change matrix."
+        lines: "115-1035"
+        note: "No direct transcription-fold-change helper exists in the OC port. Representative OC anchor for non-implemented correspondence."
+      note: "The OC port surfaces supercoiled state, but not the MATLAB fold-change matrix. OC does not implement this Karr method."
     status: "not_implemented"
-    note: "No direct OC counterpart was found for the RNAPolymerase fold-change helper."
+    note: "No direct OC counterpart was found for the RNAPolymerase fold-change helper. OC does not implement this Karr method."
   buildEnzymeProperties:
     matlab:
       symbol: "buildEnzymeProperties"
@@ -164,21 +164,21 @@ methods:
     note: "Implemented as fixture loading plus helper gates rather than a MATLAB-style struct factory."
   calcFluxBounds:
     matlab:
-      symbol: "calcFluxBounds"
+      symbol: "DNASupercoiling"
       source:
         path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
         lines: "272-313"
-        note: "Schema placeholder; the class has no calcFluxBounds method, so this anchor points at the closest allocator-facing helper."
-      note: "DNASupercoiling is not an LP-bound process."
+        note: "Schema placeholder; the class has no calcFluxBounds method, so this anchor points at the closest allocator-facing helper. Class-level anchor used to record calcFluxBounds absence."
+      note: "DNASupercoiling is not an LP-bound process. This process does not have Karr's calcFluxBounds method; it does not participate in FBA."
     oc:
-      symbol: "NOT_IMPLEMENTED"
+      symbol: "KarrDNASupercoilingProcess"
       source:
         path: "opencell/vivarium/karr_dna_supercoiling.py"
-        lines: "1-1038"
-        note: "No flux-bounds helper exists for this process."
-      note: "The OC port has no flux-bound stage."
+        lines: "115-1035"
+        note: "No flux-bounds helper exists for this process. Representative OC anchor for non-implemented correspondence."
+      note: "The OC port has no flux-bound stage. OC does not implement this Karr method."
     status: "not_implemented"
-    note: "This is a schema-required placeholder rather than a real DNASupercoiling method."
+    note: "This is a schema-required placeholder rather than a real DNASupercoiling method. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
 allocator:
   mode:
     karr: "allocation"
@@ -307,42 +307,19 @@ compartment_routing:
     mismatch: false
     note: "Hydrolysis product stays cytosolic."
 unit_conversion_chain:
-  source_units: "enzyme counts and activity rates (events/s)"
+  source_units: "molecules/tick"
   target_units: "molecules/tick"
   steps:
-    - from_units: "enzyme counts and activity rates (events/s)"
-      to_units: "expected strand-passing events/tick"
-      operation: "count free/bound enzymes, apply sigma gating, multiply by activity rate, then stochastic-round"
-      constants: ["activityRate", "probOfActivity", "dt"]
-      anchor:
-        path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
-        lines: "333-353"
-        note: "Current request helper; the current MATLAB fixture uses a 1 s step, so dt is implicit there."
-    - from_units: "expected strand-passing events/tick"
-      to_units: "ATP molecules/tick"
-      operation: "multiply by ATP cost per enzyme class and sum across gyrase/topoIV"
-      constants: ["gyraseATPCost", "topoIVATPCost"]
-      anchor:
-        path: "E:/opencell-mirrors/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m"
-        lines: "494-499"
-        note: "ATP hydrolysis accounting."
-    - from_units: "ATP molecules/tick"
-      to_units: "executed molecules/tick"
-      operation: "min(allocated ATP, allocated H2O)"
-      constants: ["allocated ATP", "allocated H2O"]
+    - from_units: molecules/tick
+      to_units: molecules/tick
+      operation: identity
+      constants: []
       anchor:
         path: "opencell/vivarium/karr_dna_supercoiling.py"
-        lines: "459-462"
-        note: "Allocated budget gate."
-    - from_units: "executed molecules/tick"
-      to_units: "substrate deltas (molecules/tick)"
-      operation: "ATP/H2O:-1; ADP/PI/H:+1"
-      constants: ["atp_used"]
-      anchor:
-        path: "opencell/vivarium/karr_dna_supercoiling.py"
-        lines: "1024-1035"
-        note: "Direct substrate delta emission."
-  note: "This controller is discrete-count based; there is no Metabolism-style mmol/gDW/hr layer."
+        lines: "360-644"
+        note: Process works directly in per-tick integer counts; no unit conversion needed.
+      note: Process works directly in per-tick integer counts; no unit conversion needed.
+  note: "This process does not require unit conversion (per-tick integer counts throughout)."
 dependencies:
   produces_inputs_for: []
   consumes_outputs_of:
@@ -464,4 +441,5 @@ deviations:
     - "OC makes dt explicit in the request controller and sparse chromosome update, while the MATLAB current-request body relies on the simulation tick / fixture step size implicitly."
     - "OC does not expose the MATLAB RNAPolymerase fold-change matrix helper; it surfaces only the supercoiled chromosome state."
     - "OC uses a sparse chromosome-store/replay-hint implementation rather than the MATLAB doubleStrandedRegions / monomerBoundSites / complexBoundSites control surface."
+    - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
   note: "No compartment-merging projection is involved here; the remaining deviations are controller-shape and state-representation differences."
