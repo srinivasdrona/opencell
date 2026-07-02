@@ -167,9 +167,21 @@ consume_stoichiometry:
       path: "opencell/vivarium/karr_replication_initiation.py"
       lines: "740-747"
       note: "Activation helper subtracts allocated ATP."
+  - wid: "ATP"
+    compartment: "cytosol"
+    formula_or_constant: "nReactivations = stochasticRound(min(this.substrates(this.substrateIndexs_atp), this.enzymes(this.enzymeIndexs_DnaAADP)) * this.reactivationRate); ATP consumed = nReactivations"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
+      lines: "865-883"
+      note: "reactivateFreeDnaAADP consumes ATP while regenerating free DnaA-ATP."
+    oc_anchor:
+      path: "opencell/vivarium/karr_replication_initiation.py"
+      lines: "923-938"
+      note: "Reactivation helper updates protein pools only and does not emit ATP substrate decrement."
+    note: "MATLAB decrements ATP in reactivation; OC does not. See known_deviations."
   - wid: "H2O"
     compartment: "cytosol"
-    formula_or_constant: "nDissociatingMonomers = (2:7) * nDissociatingPolymers; water consumed = nDissociatingMonomers after clipping to availability"
+    formula_or_constant: "MATLAB: nDissociatingMonomers = (2:7) * nDissociatingPolymers with water clipping; OC: hydrolysis events are sampled from free DnaA-ATP and then clipped to available H2O (non-equivalent formula family)."
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
       lines: "560-581"
@@ -177,19 +189,21 @@ consume_stoichiometry:
     oc_anchor:
       path: "opencell/vivarium/karr_replication_initiation.py"
       lines: "749-777"
-      note: "Hydrolysis helper is water-limited and writes ADP/PI/H deltas."
+      note: "Hydrolysis helper uses free-DnaA-ATP binomial dissociation with H2O clipping; this is not MATLAB's polymer-indexed formula."
+    note: "MATLAB enforces polymer-indexed hydrolysis demand; OC uses free-pool event sampling instead (CODE_DEVIATES)."
 produce_stoichiometry:
   - wid: "ADP"
     compartment: "cytosol"
-    formula_or_constant: "nDissociatingMonomers"
+    formula_or_constant: "MATLAB: ADP produced = nReactivations in reactivateFreeDnaAADP (ATP -> ADP); OC: ADP produced = nDissociatingMonomers in hydrolysis helper."
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
-      lines: "576-581"
-      note: "Hydrolysis product from inactivateFreeDnaAATP."
+      lines: "865-883"
+      note: "reactivateFreeDnaAADP produces substrate ADP while consuming ATP."
     oc_anchor:
       path: "opencell/vivarium/karr_replication_initiation.py"
       lines: "774-777"
-      note: "Hydrolysis product written directly to substrates."
+      note: "Hydrolysis product written directly to substrates; OC reactivation helper does not emit substrate ADP."
+    note: "MATLAB ADP production is reactivation-coupled; OC ADP production is hydrolysis-coupled. See known_deviations."
   - wid: "PI"
     compartment: "cytosol"
     formula_or_constant: "nDissociatingMonomers"
@@ -374,4 +388,6 @@ deviations:
     - "OC initialization is fixture/bootstrap based and does not reproduce MATLAB's final-conditions or theory steady-state solve."
     - "MATLAB's calcFluxBounds slot is absent for this process, so the schema-required row entry is marked not_implemented."
     - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
+    - "MATLAB reactivation consumes ATP and produces ADP (ATP -> ADP), but OC reactivation updates protein pools only and emits no ATP/ADP substrate deltas."
+    - "MATLAB hydrolysis water demand is polymer-indexed ((2:7) * nDissociatingPolymers), while OC hydrolysis water demand is driven by free-DnaA-ATP event sampling with clipping."
   note: "The port keeps substrate wiring explicit and compartment-local; no compartment-flattening projection is involved."
