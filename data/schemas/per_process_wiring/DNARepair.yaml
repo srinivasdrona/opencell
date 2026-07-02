@@ -9,7 +9,10 @@ process:
   whole_cell_model_id: "Process_DNARepair"
   functional_area: "dna-replication-and-maintenance"
   state_shape_role: "chromosome-primary repair process with substrate/allocation coupling"
-  notes: "The raw MATLAB source file is not present in this checkout; MATLAB-side anchors therefore use the DNARepair extract plus Simulation allocation docs."
+  notes: >-
+    This row is exemplar-scoped; canonical exemplars are listed and are not an
+    exhaustive enumeration. MATLAB anchors include executable DNARepair.m lines
+    plus extract/architecture references where useful.
 methods:
   calcResourceRequirements_Current:
     matlab:
@@ -79,9 +82,9 @@ allocator:
     oc_current: "allocation"
     note: "Both sides use allocation gating; the OC process reads `substrates_allocated[karr_dna_repair]` before repair."
   request_formula:
-    matlab: "r = sum_pathways( repair_count[pathway] * per_event_cost[pathway] ), with per_event_cost[pathway] = [ATP_cost[pathway], patch_length_nt[pathway] * dntp_split] and desired_repairs limited by pathway capacity and lesion count"
+    matlab: "r = max(0, -S) * min(ceil(C * E * dt), rates), where rates are lesion-driven repair reaction capacities in calcResourceRequirements_Current"
     oc: "requests = _substrate_needs_for_repairs(desired_repairs); desired_repairs = min(Poisson(pathway_capacity_per_s * dt * lesion_count), lesion_count); available = substrates_allocated[self.name]"
-    note: "Symbolic summary only; the OC request path is folded into next_update."
+    note: "MATLAB request demand follows executable stoichiometry/catalysis matrix shape; OC computes a pathway-level Poisson approximation in next_update."
   requests:
     - wid: "ATP"
       compartment: "cytosol"
@@ -138,48 +141,88 @@ consume_stoichiometry:
       note: "Per-pathway ATP cost and aggregate substrate-demand calculation."
   - wid: "DATP"
     compartment: "cytosol"
-    formula_or_constant: "sum_pathways(repair_count[pathway] * pathway_patch_length_nt[pathway] * dntp_split[0])"
+    formula_or_constant: "MATLAB: sequence/reaction-driven dNTP usage (polymerize base costs + NER subsequence counts + stoichiometry writeback); OC approximation: dntp_total * dntp_split[0]"
     matlab_anchor:
-      path: "docs/karr_extracts/process/05_DNARepair.md"
-      lines: "246-270"
-      note: "Substrate synchronization and repair-reaction stoichiometry."
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m"
+      lines: "1176-1204"
+      note: "dNTP usage is sequence/reaction-driven in executable MATLAB logic."
     oc_anchor:
       path: "opencell/vivarium/karr_dna_repair.py"
       lines: "704-711"
-      note: "Per-event dNTP split across the four deoxynucleotides."
+      note: "Current OC uses a fixed dNTP split across DATP/DCTP/DGTP/DTTP."
+    note: "MATLAB does not use a global fixed split; OC does. See known_deviations."
   - wid: "DCTP"
     compartment: "cytosol"
-    formula_or_constant: "sum_pathways(repair_count[pathway] * pathway_patch_length_nt[pathway] * dntp_split[1])"
+    formula_or_constant: "MATLAB: sequence/reaction-driven dNTP usage (polymerize base costs + NER subsequence counts + stoichiometry writeback); OC approximation: dntp_total * dntp_split[1]"
     matlab_anchor:
-      path: "docs/karr_extracts/process/05_DNARepair.md"
-      lines: "246-270"
-      note: "Substrate synchronization and repair-reaction stoichiometry."
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m"
+      lines: "1176-1204"
+      note: "dNTP usage is sequence/reaction-driven in executable MATLAB logic."
     oc_anchor:
       path: "opencell/vivarium/karr_dna_repair.py"
       lines: "704-711"
-      note: "Per-event dNTP split across the four deoxynucleotides."
+      note: "Current OC uses a fixed dNTP split across DATP/DCTP/DGTP/DTTP."
+    note: "MATLAB does not use a global fixed split; OC does. See known_deviations."
   - wid: "DGTP"
     compartment: "cytosol"
-    formula_or_constant: "sum_pathways(repair_count[pathway] * pathway_patch_length_nt[pathway] * dntp_split[2])"
+    formula_or_constant: "MATLAB: sequence/reaction-driven dNTP usage (polymerize base costs + NER subsequence counts + stoichiometry writeback); OC approximation: dntp_total * dntp_split[2]"
     matlab_anchor:
-      path: "docs/karr_extracts/process/05_DNARepair.md"
-      lines: "246-270"
-      note: "Substrate synchronization and repair-reaction stoichiometry."
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m"
+      lines: "1176-1204"
+      note: "dNTP usage is sequence/reaction-driven in executable MATLAB logic."
     oc_anchor:
       path: "opencell/vivarium/karr_dna_repair.py"
       lines: "704-711"
-      note: "Per-event dNTP split across the four deoxynucleotides."
+      note: "Current OC uses a fixed dNTP split across DATP/DCTP/DGTP/DTTP."
+    note: "MATLAB does not use a global fixed split; OC does. See known_deviations."
   - wid: "DTTP"
     compartment: "cytosol"
-    formula_or_constant: "sum_pathways(repair_count[pathway] * pathway_patch_length_nt[pathway] * dntp_split[3])"
+    formula_or_constant: "MATLAB: sequence/reaction-driven dNTP usage (polymerize base costs + NER subsequence counts + stoichiometry writeback); OC approximation: dntp_total * dntp_split[3]"
     matlab_anchor:
-      path: "docs/karr_extracts/process/05_DNARepair.md"
-      lines: "246-270"
-      note: "Substrate synchronization and repair-reaction stoichiometry."
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m"
+      lines: "1176-1204"
+      note: "dNTP usage is sequence/reaction-driven in executable MATLAB logic."
     oc_anchor:
       path: "opencell/vivarium/karr_dna_repair.py"
       lines: "704-711"
-      note: "Per-event dNTP split across the four deoxynucleotides."
+      note: "Current OC uses a fixed dNTP split across DATP/DCTP/DGTP/DTTP."
+    note: "MATLAB does not use a global fixed split; OC does. See known_deviations."
+  - wid: "NAD"
+    compartment: "cytosol"
+    formula_or_constant: "ligation_repair_events * 1"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m"
+      lines: "1466-1469"
+      note: "Ligation reaction stoichiometry consumes NAD."
+    oc_anchor:
+      path: "opencell/vivarium/karr_dna_repair.py"
+      lines: "350-360"
+      note: "Current OC substrate writeback does not decrement NAD."
+    note: "MATLAB decrements NAD; OC does not. See known_deviations."
+  - wid: "AMET"
+    compartment: "cytosol"
+    formula_or_constant: "rm_methylation_events * 1"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m"
+      lines: "1513-1516"
+      note: "MunI methylation reaction stoichiometry consumes AMET."
+    oc_anchor:
+      path: "opencell/vivarium/karr_dna_repair.py"
+      lines: "338-359"
+      note: "Current OC conditionally decrements AMET in the methylation side effect."
+    note: "Both MATLAB and OC consume AMET; OC currently does so via a direct bypass path."
+  - wid: "H2O"
+    compartment: "cytosol"
+    formula_or_constant: "rm_restriction_events * 1"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m"
+      lines: "1546-1549"
+      note: "MunI restriction reaction stoichiometry consumes H2O."
+    oc_anchor:
+      path: "opencell/vivarium/karr_dna_repair.py"
+      lines: "350-360"
+      note: "Current OC substrate writeback does not decrement H2O."
+    note: "MATLAB decrements H2O; OC does not. See known_deviations."
 produce_stoichiometry:
   - wid: "AMP"
     compartment: "cytosol"
@@ -229,6 +272,102 @@ produce_stoichiometry:
       lines: "339-360"
       note: "Conditional AMET -> AHCYS + H side effect."
     note: "Current OC models this conditional RM product directly."
+  - wid: "ADP"
+    compartment: "cytosol"
+    formula_or_constant: "reaction-stoichiometry writeback (event- and lesion-dependent)"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m"
+      lines: "1173-1204"
+      note: "Correction branches and reaction stoichiometry produce ADP."
+    oc_anchor:
+      path: "opencell/vivarium/karr_dna_repair.py"
+      lines: "350-360"
+      note: "Current OC substrate writeback does not emit ADP."
+    note: "MATLAB emits ADP; OC does not. See known_deviations."
+  - wid: "PI"
+    compartment: "cytosol"
+    formula_or_constant: "reaction-stoichiometry writeback (event- and lesion-dependent)"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m"
+      lines: "1173-1204"
+      note: "Correction branches and reaction stoichiometry produce PI."
+    oc_anchor:
+      path: "opencell/vivarium/karr_dna_repair.py"
+      lines: "350-360"
+      note: "Current OC substrate writeback does not emit PI."
+    note: "MATLAB emits PI; OC does not. See known_deviations."
+  - wid: "NMN"
+    compartment: "cytosol"
+    formula_or_constant: "ligation_repair_events * 1"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m"
+      lines: "1439-1440"
+      note: "Ligation chemistry produces NMN."
+    oc_anchor:
+      path: "opencell/vivarium/karr_dna_repair.py"
+      lines: "350-360"
+      note: "Current OC substrate writeback does not emit NMN."
+    note: "MATLAB emits NMN; OC does not. See known_deviations."
+  - wid: "DAMP"
+    compartment: "cytosol"
+    formula_or_constant: "reaction-stoichiometry writeback (event- and lesion-dependent)"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m"
+      lines: "1173-1204"
+      note: "Correction branches/reaction stoichiometry can emit DAMP."
+    oc_anchor:
+      path: "opencell/vivarium/karr_dna_repair.py"
+      lines: "350-360"
+      note: "Current OC substrate writeback does not emit DAMP."
+    note: "MATLAB emits DAMP; OC does not. See known_deviations."
+  - wid: "DCMP"
+    compartment: "cytosol"
+    formula_or_constant: "reaction-stoichiometry writeback (event- and lesion-dependent)"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m"
+      lines: "1173-1204"
+      note: "Correction branches/reaction stoichiometry can emit DCMP."
+    oc_anchor:
+      path: "opencell/vivarium/karr_dna_repair.py"
+      lines: "350-360"
+      note: "Current OC substrate writeback does not emit DCMP."
+    note: "MATLAB emits DCMP; OC does not. See known_deviations."
+  - wid: "DGMP"
+    compartment: "cytosol"
+    formula_or_constant: "reaction-stoichiometry writeback (event- and lesion-dependent)"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m"
+      lines: "1173-1204"
+      note: "Correction branches/reaction stoichiometry can emit DGMP."
+    oc_anchor:
+      path: "opencell/vivarium/karr_dna_repair.py"
+      lines: "350-360"
+      note: "Current OC substrate writeback does not emit DGMP."
+    note: "MATLAB emits DGMP; OC does not. See known_deviations."
+  - wid: "DTMP"
+    compartment: "cytosol"
+    formula_or_constant: "reaction-stoichiometry writeback (event- and lesion-dependent)"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m"
+      lines: "1173-1204"
+      note: "Correction branches/reaction stoichiometry can emit DTMP."
+    oc_anchor:
+      path: "opencell/vivarium/karr_dna_repair.py"
+      lines: "350-360"
+      note: "Current OC substrate writeback does not emit DTMP."
+    note: "MATLAB emits DTMP; OC does not. See known_deviations."
+  - wid: "DR5P"
+    compartment: "cytosol"
+    formula_or_constant: "reaction-stoichiometry writeback (event- and lesion-dependent)"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m"
+      lines: "1173-1204"
+      note: "Correction branches/reaction stoichiometry can emit DR5P."
+    oc_anchor:
+      path: "opencell/vivarium/karr_dna_repair.py"
+      lines: "350-360"
+      note: "Current OC substrate writeback does not emit DR5P."
+    note: "MATLAB emits DR5P; OC does not. See known_deviations."
 compartment_routing:
   - wid: "ATP"
     consume_compartment: "cytosol"
@@ -258,13 +397,13 @@ compartment_routing:
   - wid: "AMP"
     consume_compartment:
     produce_compartment: "cytosol"
-    mismatch: false
-    note: "Karr ligation product; OC currently omits this emission."
+    mismatch: true
+    note: "MATLAB emits AMP to cytosol; OC does not emit an AMP tuple in DNARepair update."
   - wid: "PPI"
     consume_compartment:
     produce_compartment: "cytosol"
-    mismatch: false
-    note: "Karr polymerization product; OC currently omits this emission."
+    mismatch: true
+    note: "MATLAB emits PPI to cytosol; OC does not emit a PPI tuple in DNARepair update."
   - wid: "AHCYS"
     consume_compartment:
     produce_compartment: "cytosol"
@@ -365,6 +504,7 @@ provenance:
   audited_by: gpt-5.4-mini + parallel codex fleet (Day-43 EOD batch)
   oc_commit_sha: 61a5a06
   matlab_files_referenced:
+    - data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m
     - docs/karr_extracts/process/05_DNARepair.md
     - docs/karr_extracts/architecture/01_simulation_loop.md
   oc_files_referenced:
@@ -385,7 +525,10 @@ deviations:
   known_deviations:
     - "Karr executes six randomly ordered repair subfunctions; OC collapses the process to one aggregated pathway-level update."
     - "OC models only ATP/dNTP repair demand plus the conditional AMET -> AHCYS + H restriction/modification side effect."
-    - "Karr ligation/polymerization products such as AMP, PPI, and NMN are visible in the fixture chemistry but are not emitted by the current OC port."
-    - "The raw MATLAB source file was not present in this checkout, so MATLAB-side evidence is anchored to the DNARepair extract and the generic allocation docs rather than a direct .m read."
+    - "MATLAB calcResourceRequirements_Current uses max(0, -S) * min(ceil(C * E * dt), rates); OC computes pathway-level Poisson desired repairs before substrate need projection."
+    - "MATLAB dNTP usage is sequence/reaction-driven; OC uses a fixed dntp_split approximation."
+    - "MATLAB decrements NAD and H2O via ligation/restriction chemistry; current OC DNARepair does not decrement those metabolites."
+    - "MATLAB emits AMP, PPI, ADP, PI, NMN, DAMP/DCMP/DGMP/DTMP, DR5P, and additional damaged-base products via stoichiometry writeback; current OC does not emit this broader product set."
+    - "MATLAB-side evidence uses both executable DNARepair.m anchors and extract/architecture documentation where simulation-loop context is needed."
     - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
   note: "The row keeps known gaps explicit so the wiring DB does not overstate the fidelity of the current OC port."
