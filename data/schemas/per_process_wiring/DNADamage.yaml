@@ -15,10 +15,10 @@ methods:
     matlab:
       symbol: "calcResourceRequirements_Current"
       source:
-        path: "docs/karr_extracts/process/04_DNADamage.md"
-        lines: "134-178"
-        note: "Verbatim extract shows direct substrate/stimulus usage and the reaction matrix split, but no allocator request block is exposed in the local extract."
-      note: "DNADamage is treated as direct-state damage chemistry rather than an allocator-coupled resource consumer in the available source."
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNADamage.m"
+        lines: "469-471"
+        note: "MATLAB implements calcResourceRequirements_Current as max(0, -reactionSmallMoleculeStoichiometryMatrix * calcExpectedReactionRates())."
+      note: "MATLAB computes allocator request demand from expected reaction rates (including radiation-gated rates via calcExpectedReactionRates)."
     oc:
       symbol: "KarrDNADamageProcess"
       source:
@@ -27,7 +27,7 @@ methods:
         note: "Current OC port exposes only chromosome damage state plus direct `substrates` reads; there is no request-calculator or `substrates_allocated` path. Representative OC anchor for non-implemented correspondence."
       note: OC does not implement this Karr method.
     status: "not_implemented"
-    note: "The current OC port bypasses allocator mediation. OC does not implement this Karr method."
+    note: "MATLAB implements allocator request demand in calcResourceRequirements_Current; current OC bypasses allocator mediation and does not implement this Karr method."
   evolveState:
     matlab:
       symbol: "evolveState"
@@ -71,13 +71,13 @@ methods:
     note: "DNADamage does not expose a flux-bound path in the current port. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
 allocator:
   mode:
-    karr: "bypass"
+    karr: "allocation"
     oc_current: "bypass"
-    note: "The available DNADamage extract and OC port both operate directly on state; neither side exposes an allocator request surface."
+    note: "MATLAB engages request/grant allocation via calcResourceRequirements_Current and simulation allocation injection; current OC remains allocator-bypassed."
   request_formula:
-    matlab: "N/A; no calcResourceRequirements_Current contract is exposed in the local DNADamage extract."
+    matlab: "max(0, -reactionSmallMoleculeStoichiometryMatrix * calcExpectedReactionRates())"
     oc: "N/A; current OC reads `states[\"substrates\"]` directly and never reads `states[\"substrates_allocated\"][self.name]`."
-    note: "No allocator formula is documented for this process in the local source bundle."
+    note: "MATLAB request formula is implemented in DNADamage.calcResourceRequirements_Current; OC has no request surface."
   requests: []
   bypasses:
     - wid: "UVB_radiation"
@@ -90,39 +90,17 @@ allocator:
       note: "Gamma-radiation gate read directly from the substrate pool."
     - wid: "H2O"
       compartment: "cytosol"
-      source: "both"
-      note: "Water participates in several lesion chemistries, but not through allocator mediation."
+      source: "oc"
+      note: "OC is lesion-only and allocator-bypassed; MATLAB allocates small-molecule demand before evolveState."
     - wid: "H"
       compartment: "cytosol"
-      source: "both"
-      note: "Hydrogen ion changes arise directly in the reaction chemistry."
+      source: "oc"
+      note: "OC does not emit metabolite-product deltas through an allocation-mediated path."
     - wid: "NH3"
       compartment: "cytosol"
-      source: "both"
-      note: "Ammonia changes arise directly in the reaction chemistry."
+      source: "oc"
+      note: "OC does not emit metabolite-product deltas through an allocation-mediated path."
 consume_stoichiometry:
-  - wid: "UVB_radiation"
-    compartment: "extracellular"
-    formula_or_constant: "-1 per UV-B lesion event"
-    matlab_anchor:
-      path: "docs/karr_extracts/process/04_DNADamage.md"
-      lines: "107-113"
-      note: "UV-B rate table in the extract; UV-B photodimerization uses the radiation stimulus."
-    oc_anchor:
-      path: "opencell/vivarium/karr_dna_damage.py"
-      lines: "247-253"
-      note: "Current OC gates `uv_like` events on `states[\"substrates\"][\"UVB_radiation\"]`."
-  - wid: "gamma_radiation"
-    compartment: "extracellular"
-    formula_or_constant: "-1 per gamma-ray lesion event"
-    matlab_anchor:
-      path: "docs/karr_extracts/process/04_DNADamage.md"
-      lines: "107-113"
-      note: "Gamma-ray rate table in the extract; gamma-induced oxidation and strand-break reactions are radiation-gated."
-    oc_anchor:
-      path: "opencell/vivarium/karr_dna_damage.py"
-      lines: "247-253"
-      note: "Current OC gates `oxidative` events on `states[\"substrates\"][\"gamma_radiation\"]`."
   - wid: "H2O"
     compartment: "cytosol"
     formula_or_constant: "-1 per spontaneous base-deamination event"
@@ -201,13 +179,35 @@ produce_stoichiometry:
       path: "opencell/vivarium/karr_dna_damage.py"
       lines: "228-294"
       note: "Current OC does not emit substrate stoichiometry deltas."
-  - wid: "DR5P"
+  - wid: "CO2"
     compartment: "cytosol"
-    formula_or_constant: "+1 per abasic-site / strand-break product event"
+    formula_or_constant: "+1 per oxidative-damage product event"
     matlab_anchor:
-      path: "docs/karr_extracts/process/04_DNADamage.md"
-      lines: "170-178"
-      note: "Deoxyribose-5-phosphate is one of the explicit free-metabolite products in the extract."
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNADamage.m"
+      lines: "454-455"
+      note: "CO2 is in the positive branch of reactionSmallMoleculeStoichiometryMatrix products."
+    oc_anchor:
+      path: "opencell/vivarium/karr_dna_damage.py"
+      lines: "228-294"
+      note: "Current OC does not emit substrate stoichiometry deltas."
+  - wid: "H"
+    compartment: "cytosol"
+    formula_or_constant: "+1 per oxidation/strand-break product event"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNADamage.m"
+      lines: "454-455"
+      note: "H is in the positive branch of reactionSmallMoleculeStoichiometryMatrix products."
+    oc_anchor:
+      path: "opencell/vivarium/karr_dna_damage.py"
+      lines: "228-294"
+      note: "Current OC does not emit substrate stoichiometry deltas."
+  - wid: "NH3"
+    compartment: "cytosol"
+    formula_or_constant: "+1 per spontaneous deamination product event"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNADamage.m"
+      lines: "454-455"
+      note: "NH3 is in the positive branch of reactionSmallMoleculeStoichiometryMatrix products."
     oc_anchor:
       path: "opencell/vivarium/karr_dna_damage.py"
       lines: "228-294"
@@ -217,12 +217,12 @@ compartment_routing:
     consume_compartment: "extracellular"
     produce_compartment:
     mismatch: false
-    note: "Radiation stimulus is read directly from the flat substrate surface."
+    note: "MATLAB uses UVB_radiation as a non-consumptive extracellular gate; current composite topology wires DNADamage only to chromosome, so OC substrate routing is not active there."
   - wid: "gamma_radiation"
     consume_compartment: "extracellular"
     produce_compartment:
     mismatch: false
-    note: "Radiation stimulus is read directly from the flat substrate surface."
+    note: "MATLAB uses gamma_radiation as a non-consumptive extracellular gate; current composite topology wires DNADamage only to chromosome, so OC substrate routing is not active there."
   - wid: "H2O"
     consume_compartment: "cytosol"
     produce_compartment:
@@ -258,11 +258,6 @@ compartment_routing:
     produce_compartment: "cytosol"
     mismatch: false
     note: "Thymine is produced as a free-metabolite outcome in the damage matrix."
-  - wid: "DR5P"
-    consume_compartment:
-    produce_compartment: "cytosol"
-    mismatch: false
-    note: "Deoxyribose-5-phosphate is produced by base-loss / strand-break chemistry."
   - wid: "H"
     consume_compartment:
     produce_compartment: "cytosol"
@@ -290,7 +285,7 @@ unit_conversion_chain:
         path: "opencell/vivarium/karr_dna_damage.py"
         lines: "228-259"
         note: "Current OC computes `lam = rate_per_s * dt` before Poisson sampling."
-  note: "The DNADamage rate table is already in per-second units; the OC port converts to per-tick event counts by multiplying with the tick duration and sampling Poisson events."
+  note: "The DNADamage rate table is already in per-second units; process-local OC code converts to per-tick event counts by multiplying with tick duration and sampling Poisson events, but the current karr_composite topology maps DNADamage only to chromosome."
 dependencies:
   produces_inputs_for: []
   consumes_outputs_of:
@@ -371,10 +366,15 @@ deviations:
       path: "opencell/vivarium/karr_dna_damage.py"
       lines: "111-294"
       note: "Current OC port has no flux-bound helper or LP-bound wiring."
-  shared_pool_projection_merges_compartments: false
+  shared_pool_projection_merges_compartments: true
   known_deviations:
     - "The current OC port is lesion-creation only; it does not implement the full reactionSmallMoleculeStoichiometryMatrix / reactionDNAStoichiometryMatrix / reactionRadiationStoichiometryMatrix chemistry described in the extract."
     - "The current OC port bypasses allocator mediation entirely and reads `states[\"substrates\"]` directly."
+    - "UVB_radiation and gamma_radiation are non-consumptive lesion-rate gates in MATLAB and OC process-local logic; executed paths do not decrement these stimuli as consumed stoichiometry."
+    - "MATLAB emits CO2, H, and NH3 via reactionSmallMoleculeStoichiometryMatrix writeback; current OC does not emit metabolite stoichiometry deltas."
+    - "DR5P is factored into MATLAB reactionDNAStoichiometryMatrix and is not emitted through reactionSmallMoleculeStoichiometryMatrix writeback."
+    - "Current composite wiring maps `karr_dna_damage` only to `chromosome` (opencell/vivarium/karr_composite.py), so OC process-local substrate/stimulus reads are not active in that composition."
+    - "MATLAB engages allocator request/grant through calcResourceRequirements_Current and Simulation.evolveState allocation injection; current OC remains allocator-bypassed."
     - "Repair chemistry, lesion-specific arrays, and any downstream DNARepair coupling are deferred to a later port."
     - "Trace-derived kind rates are optional; when the trace file is unavailable, the OC port falls back to configured per-kind rates."
     - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
