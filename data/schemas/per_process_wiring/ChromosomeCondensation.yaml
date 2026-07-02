@@ -65,7 +65,7 @@ methods:
       supporting:
         - path: "opencell/vivarium/karr_chromosome_condensation.py"
           lines: "323-326"
-          note: "Reads `substrates_allocated` first, then falls back through the helper."
+          note: "Reads `substrates_allocated` first, then applies `_allocated_or_state` as a non-negative clamp."
         - path: "opencell/vivarium/karr_chromosome_condensation.py"
           lines: "435-441"
           note: "Writes ATP/H2O request values each tick."
@@ -90,7 +90,7 @@ methods:
           note: "No-hints binding sampler and bound-site reconstruction."
         - path: "opencell/vivarium/karr_chromosome_condensation.py"
           lines: "832-838"
-          note: "Allocation fallback helper that returns the allocated value or the global substrate value."
+          note: "Allocated-value helper that clamps `substrates_allocated` grants to non-negative values."
     status: "partial"
     note: "Implemented as Karr-light aggregate semantics, not the full per-position chromosome model."
   calcNewRegions:
@@ -136,8 +136,8 @@ methods:
 allocator:
   mode:
     karr: "allocation"
-    oc_current: "mixed"
-    note: "Karr declares allocator demand explicitly; OC reads `substrates_allocated` first but falls back to global `substrates` when the allocated value is zero."
+    oc_current: "allocation"
+    note: "Karr declares allocator demand explicitly; OC reads ATP/H2O from `substrates_allocated` via `_allocated_or_state` (allocated-only non-negative clamp)."
   request_formula:
     matlab: "result(ATP) = this.enzymes(this.enzymeIndexs_SMC); result(H2O) = this.enzymes(this.enzymeIndexs_SMC)"
     oc: "requests[self.name][ATP] = request_need; requests[self.name][H2O] = request_need; no standalone request-calculator class"
@@ -152,14 +152,6 @@ allocator:
       source: "karr"
       note: "Allocator-facing hydrolysis co-substrate demand."
   bypasses:
-    - wid: "ATP"
-      compartment: "cytosol"
-      source: "oc"
-      note: "Helper fallback can read the global substrate pool when allocation is zero."
-    - wid: "H2O"
-      compartment: "cytosol"
-      source: "oc"
-      note: "Helper fallback can read the global substrate pool when allocation is zero."
     - wid: "ADP"
       compartment: "cytosol"
       source: "oc"
@@ -284,7 +276,7 @@ ordering_constraints:
   hard_after: []
   soft_before: []
   soft_after: []
-  note: "No process-specific ordering rule appears in ChromosomeCondensation.m; the only canonical hard order in Simulation.evolveState is tRNAAminoacylation before Translation."
+  note: "MATLAB enforces per-tick `calcResourceRequirements_Current -> allocation injection -> evolveState` in Simulation.evolveState (`@Simulation/evolveState.m:24-37,63-70`); OC emits ChromosomeCondensation requests inside `next_update`, but composite flow feeds `karr_allocation_step` only from standalone request-calculator steps (`karr_composite.py:2320-2357`), so equivalent same-tick request/grant timing is not explicitly encoded (CODE_DEVIATES)."
 source_anchors:
   matlab_blocks:
     class_def:
@@ -313,8 +305,8 @@ source_anchors:
       note: "Binding helper used by stochastic region selection."
     simulation_ordering:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m"
-      lines: "48-55"
-      note: "Global hard ordering constraint for tRNAAminoacylation vs Translation."
+      lines: "24-70"
+      note: "Per-tick requirements/allocation/evolve sequence plus global hard ordering for tRNAAminoacylation vs Translation."
   oc_blocks:
     process_class:
       path: "opencell/vivarium/karr_chromosome_condensation.py"
@@ -347,7 +339,7 @@ source_anchors:
     allocated_helper:
       path: "opencell/vivarium/karr_chromosome_condensation.py"
       lines: "832-838"
-      note: "Allocation fallback helper."
+      note: "Allocated-grant clamp helper (`max(0, allocated)`)."
     composite_wiring:
       path: "opencell/vivarium/karr_composite.py"
       lines: "2115-2120"
@@ -398,11 +390,12 @@ deviations:
       path: "opencell/vivarium/karr_chromosome_condensation.py"
       lines: "321-442"
       note: "Nearest update block; OC also lacks an LP-bound phase for this process."
-  shared_pool_projection_merges_compartments: false
+  shared_pool_projection_merges_compartments: true
   known_deviations:
     - "OC is Karr-light v1 aggregate condensation, not the full per-position chromosome topology."
     - "OC merges request emission into next_update instead of a standalone request-calculator method."
-    - "OC uses `_allocated_or_state`, so zero-grant ticks can still read the global substrate pool."
+    - "MATLAB substrate routing/writeback is compartment-indexed, but OC ChromosomeCondensation uses a flat per-WID shared substrate surface (merged compartment projection)."
+    - "MATLAB enforces per-tick request -> allocation -> evolve ordering for this process; OC emits requests in-process and does not encode an explicit edge from ChromosomeCondensation request emission to `karr_allocation_step`."
     - "Karr initializeState performs a 20-step warm-up loop with ATP/H2O set to Inf; OC seeds from fixture and trace defaults instead."
     - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
   note: "Known differences are recorded here so the wiring DB can distinguish fidelity gaps from intentional simplifications."
