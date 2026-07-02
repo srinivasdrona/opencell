@@ -1,0 +1,2386 @@
+{
+  "generated_by": "scripts/build_karr_method_inventory.py",
+  "processes": {
+    "ChromosomeCondensation": {
+      "class": "ChromosomeCondensation",
+      "matlab_file": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m",
+      "method_count_excl_ctor": 7,
+      "methods": [
+        {
+          "category": "constructor",
+          "is_constructor": true,
+          "line": 163,
+          "name": "ChromosomeCondensation"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 171,
+          "name": "storeObjectReferences"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 177,
+          "name": "initializeConstants"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 187,
+          "name": "calcResourceRequirements_LifeCycle"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 222,
+          "name": "initializeState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 233,
+          "name": "calcResourceRequirements_Current"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 240,
+          "name": "evolveState"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 286,
+          "name": "calcNewRegions"
+        }
+      ],
+      "require_oc_counterpart_count": 6
+    },
+    "ChromosomeSegregation": {
+      "class": "ChromosomeSegregation",
+      "matlab_file": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m",
+      "method_count_excl_ctor": 6,
+      "methods": [
+        {
+          "category": "constructor",
+          "is_constructor": true,
+          "line": 128,
+          "name": "ChromosomeSegregation"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 136,
+          "name": "storeObjectReferences"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 142,
+          "name": "initializeConstants"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 155,
+          "name": "calcResourceRequirements_LifeCycle"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 175,
+          "name": "initializeState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 179,
+          "name": "calcResourceRequirements_Current"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 193,
+          "name": "evolveState"
+        }
+      ],
+      "require_oc_counterpart_count": 5
+    },
+    "Cytokinesis": {
+      "class": "Cytokinesis",
+      "matlab_file": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m",
+      "method_count_excl_ctor": 8,
+      "methods": [
+        {
+          "category": "constructor",
+          "is_constructor": true,
+          "line": 108,
+          "name": "Cytokinesis"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 115,
+          "name": "storeObjectReferences"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 127,
+          "name": "initializeConstants"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 138,
+          "name": "calcResourceRequirements_LifeCycle"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 162,
+          "name": "initializeState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 166,
+          "name": "calcResourceRequirements_Current"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 173,
+          "name": "evolveState"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 264,
+          "name": "calcNextPinchedDiameter"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 289,
+          "name": "calcRequiredPinchingCycles"
+        }
+      ],
+      "require_oc_counterpart_count": 7
+    },
+    "DNADamage": {
+      "class": "DNADamage",
+      "matlab_file": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNADamage.m",
+      "method_count_excl_ctor": 8,
+      "methods": [
+        {
+          "category": "constructor",
+          "is_constructor": true,
+          "line": 256,
+          "name": "DNADamage"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 264,
+          "name": "storeObjectReferences"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 270,
+          "name": "initializeConstants"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 448,
+          "name": "calcResourceRequirements_LifeCycle"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 465,
+          "name": "initializeState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 469,
+          "name": "calcResourceRequirements_Current"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 474,
+          "name": "calcExpectedReactionRates"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 490,
+          "name": "calcNumberVulnerableSites"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 535,
+          "name": "evolveState"
+        }
+      ],
+      "require_oc_counterpart_count": 7
+    },
+    "DNARepair": {
+      "class": "DNARepair",
+      "matlab_file": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m",
+      "method_count_excl_ctor": 15,
+      "methods": [
+        {
+          "category": "constructor",
+          "is_constructor": true,
+          "line": 462,
+          "name": "DNARepair"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 470,
+          "name": "storeObjectReferences"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 476,
+          "name": "initializeConstants"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 672,
+          "name": "calcResourceRequirements_LifeCycle"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 691,
+          "name": "calcExpectedReactionRates"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 821,
+          "name": "initializeState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 829,
+          "name": "calcResourceRequirements_Current"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 894,
+          "name": "evolveState"
+        },
+        {
+          "category": "biology_substep",
+          "is_constructor": false,
+          "line": 927,
+          "name": "evolveState_BER"
+        },
+        {
+          "category": "biology_substep",
+          "is_constructor": false,
+          "line": 1096,
+          "name": "evolveState_NER"
+        },
+        {
+          "category": "biology_substep",
+          "is_constructor": false,
+          "line": 1222,
+          "name": "evolveState_HR"
+        },
+        {
+          "category": "biology_substep",
+          "is_constructor": false,
+          "line": 1365,
+          "name": "evolveState_Polymerize"
+        },
+        {
+          "category": "biology_substep",
+          "is_constructor": false,
+          "line": 1454,
+          "name": "evolveState_Ligate"
+        },
+        {
+          "category": "biology_substep",
+          "is_constructor": false,
+          "line": 1488,
+          "name": "evolveState_DisA"
+        },
+        {
+          "category": "biology_substep",
+          "is_constructor": false,
+          "line": 1500,
+          "name": "evolveState_Modification"
+        },
+        {
+          "category": "biology_substep",
+          "is_constructor": false,
+          "line": 1533,
+          "name": "evolveState_Restriction"
+        }
+      ],
+      "require_oc_counterpart_count": 14
+    },
+    "DNASupercoiling": {
+      "class": "DNASupercoiling",
+      "matlab_file": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m",
+      "method_count_excl_ctor": 8,
+      "methods": [
+        {
+          "category": "constructor",
+          "is_constructor": true,
+          "line": 219,
+          "name": "DNASupercoiling"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 227,
+          "name": "storeObjectReferences"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 236,
+          "name": "initializeConstants"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 272,
+          "name": "calcResourceRequirements_LifeCycle"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 320,
+          "name": "initializeState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 333,
+          "name": "calcResourceRequirements_Current"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 356,
+          "name": "evolveState"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 510,
+          "name": "calcRNAPolymeraseBindingProbFoldChange"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 544,
+          "name": "buildEnzymeProperties"
+        }
+      ],
+      "require_oc_counterpart_count": 7
+    },
+    "FtsZPolymerization": {
+      "class": "FtsZPolymerization",
+      "matlab_file": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/FtsZPolymerization.m",
+      "method_count_excl_ctor": 10,
+      "methods": [
+        {
+          "category": "constructor",
+          "is_constructor": true,
+          "line": 114,
+          "name": "FtsZPolymerization"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 122,
+          "name": "initializeConstants"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 133,
+          "name": "calcResourceRequirements_LifeCycle"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 166,
+          "name": "initializeState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 189,
+          "name": "calcResourceRequirements_Current"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 197,
+          "name": "evolveState"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 220,
+          "name": "integrateODEs"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 374,
+          "name": "discretizeEnzymes"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 403,
+          "name": "applySubstrateLimits"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 436,
+          "name": "moleculesToConcentration"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 441,
+          "name": "concentrationToMolecules"
+        }
+      ],
+      "require_oc_counterpart_count": 10
+    },
+    "HostInteraction": {
+      "class": "HostInteraction",
+      "matlab_file": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m",
+      "method_count_excl_ctor": 6,
+      "methods": [
+        {
+          "category": "constructor",
+          "is_constructor": true,
+          "line": 222,
+          "name": "HostInteraction"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 230,
+          "name": "storeObjectReferences"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 241,
+          "name": "initializeConstants"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 252,
+          "name": "calcResourceRequirements_LifeCycle"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 261,
+          "name": "initializeState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 266,
+          "name": "calcResourceRequirements_Current"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 271,
+          "name": "evolveState"
+        }
+      ],
+      "require_oc_counterpart_count": 5
+    },
+    "MacromolecularComplexation": {
+      "class": "MacromolecularComplexation",
+      "matlab_file": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/MacromolecularComplexation.m",
+      "method_count_excl_ctor": 10,
+      "methods": [
+        {
+          "category": "constructor",
+          "is_constructor": true,
+          "line": 128,
+          "name": "MacromolecularComplexation"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 136,
+          "name": "initializeConstants"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 174,
+          "name": "initializeComplexNetworks"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 210,
+          "name": "copyFromState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 228,
+          "name": "copyToState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 249,
+          "name": "allocateMemoryForState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 261,
+          "name": "calcResourceRequirements_LifeCycle"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 280,
+          "name": "initializeState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 285,
+          "name": "calcResourceRequirements_Current"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 290,
+          "name": "evolveState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 319,
+          "name": "getDryWeight"
+        }
+      ],
+      "require_oc_counterpart_count": 6
+    },
+    "Metabolism": {
+      "class": "Metabolism",
+      "matlab_file": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m",
+      "method_count_excl_ctor": 15,
+      "methods": [
+        {
+          "category": "constructor",
+          "is_constructor": true,
+          "line": 267,
+          "name": "Metabolism"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 275,
+          "name": "storeObjectReferences"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 284,
+          "name": "initializeConstants"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 418,
+          "name": "formulateFBA"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 771,
+          "name": "calcResourceRequirements_LifeCycle"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 809,
+          "name": "fitEnzymes"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 935,
+          "name": "adjustEnzymeExpressionSparsely"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 981,
+          "name": "adjustEnzymeExpressionSparselyHelper"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 1012,
+          "name": "calcMinMaxEnzymes"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 1142,
+          "name": "calcEnzymeKineticallyLimitedReactions"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 1161,
+          "name": "calcEffectiveFBANetwork"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 1182,
+          "name": "initializeState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 1188,
+          "name": "calcResourceRequirements_Current"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 1200,
+          "name": "evolveState"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 1264,
+          "name": "calcGrowthRate"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 1318,
+          "name": "calcFluxBounds"
+        }
+      ],
+      "require_oc_counterpart_count": 14
+    },
+    "ProteinActivation": {
+      "class": "ProteinActivation",
+      "matlab_file": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m",
+      "method_count_excl_ctor": 11,
+      "methods": [
+        {
+          "category": "constructor",
+          "is_constructor": true,
+          "line": 151,
+          "name": "ProteinActivation"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 159,
+          "name": "initializeConstants"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 255,
+          "name": "transcodeActivationRules"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 262,
+          "name": "copyFromState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 288,
+          "name": "copyToState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 318,
+          "name": "allocateMemoryForState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 330,
+          "name": "calcResourceRequirements_LifeCycle"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 349,
+          "name": "initializeState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 354,
+          "name": "calcResourceRequirements_Current"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 359,
+          "name": "evolveState"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 369,
+          "name": "evaluateActivationRules"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 400,
+          "name": "getDryWeight"
+        }
+      ],
+      "require_oc_counterpart_count": 7
+    },
+    "ProteinDecay": {
+      "class": "ProteinDecay",
+      "matlab_file": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m",
+      "method_count_excl_ctor": 15,
+      "methods": [
+        {
+          "category": "constructor",
+          "is_constructor": true,
+          "line": 257,
+          "name": "ProteinDecay"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 265,
+          "name": "storeObjectReferences"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 273,
+          "name": "initializeConstants"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 384,
+          "name": "copyFromState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 393,
+          "name": "copyToState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 404,
+          "name": "allocateMemoryForState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 420,
+          "name": "calcResourceRequirements_LifeCycle"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 484,
+          "name": "initializeState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 488,
+          "name": "calcResourceRequirements_Current"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 532,
+          "name": "evolveState"
+        },
+        {
+          "category": "biology_substep",
+          "is_constructor": false,
+          "line": 544,
+          "name": "evolveState_MisfoldProteins"
+        },
+        {
+          "category": "biology_substep",
+          "is_constructor": false,
+          "line": 598,
+          "name": "evolveState_RefoldProteins"
+        },
+        {
+          "category": "biology_substep",
+          "is_constructor": false,
+          "line": 681,
+          "name": "evolveState_DegradeComplexes"
+        },
+        {
+          "category": "biology_substep",
+          "is_constructor": false,
+          "line": 766,
+          "name": "evolveState_DegradeAbortedPolypeptides"
+        },
+        {
+          "category": "biology_substep",
+          "is_constructor": false,
+          "line": 844,
+          "name": "evolveState_DegradeMonomers"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 920,
+          "name": "getDryWeight"
+        }
+      ],
+      "require_oc_counterpart_count": 10
+    },
+    "ProteinFolding": {
+      "class": "ProteinFolding",
+      "matlab_file": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinFolding.m",
+      "method_count_excl_ctor": 10,
+      "methods": [
+        {
+          "category": "constructor",
+          "is_constructor": true,
+          "line": 254,
+          "name": "ProteinFolding"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 262,
+          "name": "initializeConstants"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 361,
+          "name": "initializeSpeciesNetwork"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 380,
+          "name": "copyFromState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 415,
+          "name": "copyToState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 456,
+          "name": "allocateMemoryForState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 471,
+          "name": "calcResourceRequirements_LifeCycle"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 501,
+          "name": "initializeState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 507,
+          "name": "calcResourceRequirements_Current"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 519,
+          "name": "evolveState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 586,
+          "name": "getDryWeight"
+        }
+      ],
+      "require_oc_counterpart_count": 6
+    },
+    "ProteinModification": {
+      "class": "ProteinModification",
+      "matlab_file": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinModification.m",
+      "method_count_excl_ctor": 10,
+      "methods": [
+        {
+          "category": "constructor",
+          "is_constructor": true,
+          "line": 139,
+          "name": "ProteinModification"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 147,
+          "name": "initializeConstants"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 210,
+          "name": "initializeSpeciesNetwork"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 228,
+          "name": "copyFromState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 260,
+          "name": "copyToState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 294,
+          "name": "allocateMemoryForState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 306,
+          "name": "calcResourceRequirements_LifeCycle"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 320,
+          "name": "initializeState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 324,
+          "name": "calcResourceRequirements_Current"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 331,
+          "name": "evolveState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 398,
+          "name": "getDryWeight"
+        }
+      ],
+      "require_oc_counterpart_count": 6
+    },
+    "ProteinProcessingI": {
+      "class": "ProteinProcessingI",
+      "matlab_file": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m",
+      "method_count_excl_ctor": 9,
+      "methods": [
+        {
+          "category": "constructor",
+          "is_constructor": true,
+          "line": 135,
+          "name": "ProteinProcessingI"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 143,
+          "name": "initializeConstants"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 153,
+          "name": "copyFromState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 161,
+          "name": "copyToState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 171,
+          "name": "allocateMemoryForState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 184,
+          "name": "calcResourceRequirements_LifeCycle"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 214,
+          "name": "initializeState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 218,
+          "name": "calcResourceRequirements_Current"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 236,
+          "name": "evolveState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 325,
+          "name": "getDryWeight"
+        }
+      ],
+      "require_oc_counterpart_count": 5
+    },
+    "ProteinProcessingII": {
+      "class": "ProteinProcessingII",
+      "matlab_file": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m",
+      "method_count_excl_ctor": 9,
+      "methods": [
+        {
+          "category": "constructor",
+          "is_constructor": true,
+          "line": 169,
+          "name": "ProteinProcessingII"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 177,
+          "name": "initializeConstants"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 199,
+          "name": "copyFromState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 234,
+          "name": "copyToState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 275,
+          "name": "allocateMemoryForState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 290,
+          "name": "calcResourceRequirements_LifeCycle"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 321,
+          "name": "initializeState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 325,
+          "name": "calcResourceRequirements_Current"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 348,
+          "name": "evolveState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 451,
+          "name": "getDryWeight"
+        }
+      ],
+      "require_oc_counterpart_count": 5
+    },
+    "ProteinTranslocation": {
+      "class": "ProteinTranslocation",
+      "matlab_file": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinTranslocation.m",
+      "method_count_excl_ctor": 9,
+      "methods": [
+        {
+          "category": "constructor",
+          "is_constructor": true,
+          "line": 184,
+          "name": "ProteinTranslocation"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 192,
+          "name": "initializeConstants"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 207,
+          "name": "copyFromState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 214,
+          "name": "copyToState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 223,
+          "name": "allocateMemoryForState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 235,
+          "name": "calcResourceRequirements_LifeCycle"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 277,
+          "name": "initializeState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 281,
+          "name": "calcResourceRequirements_Current"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 305,
+          "name": "evolveState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 375,
+          "name": "getDryWeight"
+        }
+      ],
+      "require_oc_counterpart_count": 5
+    },
+    "RNADecay": {
+      "class": "RNADecay",
+      "matlab_file": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNADecay.m",
+      "method_count_excl_ctor": 10,
+      "methods": [
+        {
+          "category": "constructor",
+          "is_constructor": true,
+          "line": 146,
+          "name": "RNADecay"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 154,
+          "name": "storeObjectReferences"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 162,
+          "name": "initializeConstants"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 213,
+          "name": "copyFromState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 220,
+          "name": "copyToState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 229,
+          "name": "allocateMemoryForState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 241,
+          "name": "calcResourceRequirements_LifeCycle"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 278,
+          "name": "initializeState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 282,
+          "name": "calcResourceRequirements_Current"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 297,
+          "name": "evolveState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 385,
+          "name": "getDryWeight"
+        }
+      ],
+      "require_oc_counterpart_count": 5
+    },
+    "RNAModification": {
+      "class": "RNAModification",
+      "matlab_file": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m",
+      "method_count_excl_ctor": 10,
+      "methods": [
+        {
+          "category": "constructor",
+          "is_constructor": true,
+          "line": 148,
+          "name": "RNAModification"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 156,
+          "name": "initializeConstants"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 221,
+          "name": "initializeSpeciesNetwork"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 239,
+          "name": "copyFromState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 247,
+          "name": "copyToState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 257,
+          "name": "allocateMemoryForState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 270,
+          "name": "calcResourceRequirements_LifeCycle"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 285,
+          "name": "initializeState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 289,
+          "name": "calcResourceRequirements_Current"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 297,
+          "name": "evolveState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 367,
+          "name": "getDryWeight"
+        }
+      ],
+      "require_oc_counterpart_count": 6
+    },
+    "RNAProcessing": {
+      "class": "RNAProcessing",
+      "matlab_file": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m",
+      "method_count_excl_ctor": 10,
+      "methods": [
+        {
+          "category": "constructor",
+          "is_constructor": true,
+          "line": 280,
+          "name": "RNAProcessing"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 287,
+          "name": "initializeConstants"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 353,
+          "name": "copyFromState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 362,
+          "name": "copyToState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 373,
+          "name": "allocateMemoryForState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 387,
+          "name": "calcResourceRequirements_LifeCycle"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 402,
+          "name": "initializeState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 406,
+          "name": "calcResourceRequirements_Current"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 413,
+          "name": "evolveState"
+        },
+        {
+          "category": "biology_substep",
+          "is_constructor": false,
+          "line": 422,
+          "name": "evolveState_Helper"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 476,
+          "name": "getDryWeight"
+        }
+      ],
+      "require_oc_counterpart_count": 6
+    },
+    "Replication": {
+      "class": "Replication",
+      "matlab_file": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m",
+      "method_count_excl_ctor": 41,
+      "methods": [
+        {
+          "category": "constructor",
+          "is_constructor": true,
+          "line": 344,
+          "name": "Replication"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 352,
+          "name": "storeObjectReferences"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 358,
+          "name": "initializeConstants"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 414,
+          "name": "calculatePrimaseBindingLocations"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 436,
+          "name": "calcResourceRequirements_LifeCycle"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 515,
+          "name": "initializeState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 519,
+          "name": "calcResourceRequirements_Current"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 568,
+          "name": "evolveState"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 616,
+          "name": "initiateReplication"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 692,
+          "name": "unwindAndPolymerizeDNA"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 950,
+          "name": "dissociateFreeSSBComplexes"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 958,
+          "name": "freeAndBindSSBs"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 1030,
+          "name": "initiateOkazakiFragment"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 1095,
+          "name": "terminateOkazakiFragment"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 1220,
+          "name": "ligateDNA"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 1253,
+          "name": "terminateReplication"
+        },
+        {
+          "category": "property_getter_setter",
+          "is_constructor": false,
+          "line": 1279,
+          "name": "get.isDnaAORIComplexAssembled"
+        },
+        {
+          "category": "property_getter_setter",
+          "is_constructor": false,
+          "line": 1301,
+          "name": "get.isAnyHelicaseBound"
+        },
+        {
+          "category": "property_getter_setter",
+          "is_constructor": false,
+          "line": 1306,
+          "name": "get.isAnyPolymeraseBound"
+        },
+        {
+          "category": "property_getter_setter",
+          "is_constructor": false,
+          "line": 1314,
+          "name": "get.leadingStrandElongating"
+        },
+        {
+          "category": "property_getter_setter",
+          "is_constructor": false,
+          "line": 1320,
+          "name": "get.laggingStrandElongating"
+        },
+        {
+          "category": "property_getter_setter",
+          "is_constructor": false,
+          "line": 1324,
+          "name": "get.leadingStrandPolymerized"
+        },
+        {
+          "category": "property_getter_setter",
+          "is_constructor": false,
+          "line": 1338,
+          "name": "get.laggingStrandPolymerized"
+        },
+        {
+          "category": "property_getter_setter",
+          "is_constructor": false,
+          "line": 1352,
+          "name": "get.strandPolymerized"
+        },
+        {
+          "category": "property_getter_setter",
+          "is_constructor": false,
+          "line": 1358,
+          "name": "get.numLigations"
+        },
+        {
+          "category": "property_getter_setter",
+          "is_constructor": false,
+          "line": 1398,
+          "name": "get.strandLigated"
+        },
+        {
+          "category": "property_getter_setter",
+          "is_constructor": false,
+          "line": 1404,
+          "name": "get.strandDuplicated"
+        },
+        {
+          "category": "property_getter_setter",
+          "is_constructor": false,
+          "line": 1415,
+          "name": "get.helicasePosition"
+        },
+        {
+          "category": "property_getter_setter",
+          "is_constructor": false,
+          "line": 1434,
+          "name": "get.leadingPolymerasePosition"
+        },
+        {
+          "category": "property_getter_setter",
+          "is_constructor": false,
+          "line": 1457,
+          "name": "get.laggingPolymerasePosition"
+        },
+        {
+          "category": "property_getter_setter",
+          "is_constructor": false,
+          "line": 1471,
+          "name": "get.leadingPosition"
+        },
+        {
+          "category": "property_getter_setter",
+          "is_constructor": false,
+          "line": 1482,
+          "name": "get.laggingPosition"
+        },
+        {
+          "category": "property_getter_setter",
+          "is_constructor": false,
+          "line": 1493,
+          "name": "get.laggingBackupBetaClampPosition"
+        },
+        {
+          "category": "property_getter_setter",
+          "is_constructor": false,
+          "line": 1507,
+          "name": "get.okazakiFragmentIndex"
+        },
+        {
+          "category": "property_getter_setter",
+          "is_constructor": false,
+          "line": 1527,
+          "name": "get.okazakiFragmentPosition"
+        },
+        {
+          "category": "property_getter_setter",
+          "is_constructor": false,
+          "line": 1538,
+          "name": "get.okazakiFragmentLength"
+        },
+        {
+          "category": "property_getter_setter",
+          "is_constructor": false,
+          "line": 1565,
+          "name": "get.okazakiFragmentProgress"
+        },
+        {
+          "category": "property_getter_setter",
+          "is_constructor": false,
+          "line": 1582,
+          "name": "get.leadingStrandBoundSSBs"
+        },
+        {
+          "category": "property_getter_setter",
+          "is_constructor": false,
+          "line": 1609,
+          "name": "get.laggingStrandBoundSSBs"
+        },
+        {
+          "category": "property_getter_setter",
+          "is_constructor": false,
+          "line": 1644,
+          "name": "get.numLeadingTemplateBoundSSBs"
+        },
+        {
+          "category": "property_getter_setter",
+          "is_constructor": false,
+          "line": 1648,
+          "name": "get.numLaggingTemplateBoundSSBs"
+        },
+        {
+          "category": "property_getter_setter",
+          "is_constructor": false,
+          "line": 1652,
+          "name": "get.areLaggingStrandSSBSitesBound"
+        }
+      ],
+      "require_oc_counterpart_count": 14
+    },
+    "ReplicationInitiation": {
+      "class": "ReplicationInitiation",
+      "matlab_file": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m",
+      "method_count_excl_ctor": 31,
+      "methods": [
+        {
+          "category": "constructor",
+          "is_constructor": true,
+          "line": 239,
+          "name": "ReplicationInitiation"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 246,
+          "name": "storeObjectReferences"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 255,
+          "name": "initializeConstants"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 287,
+          "name": "sampleDnaABoxes"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 314,
+          "name": "calcDnaAxpReleaseReactions"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 344,
+          "name": "calcResourceRequirements_LifeCycle"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 365,
+          "name": "initializeState"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 393,
+          "name": "initializeStateBasedOnFinalConditions"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 426,
+          "name": "initializeStateBasedOnTheory"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 468,
+          "name": "initializeState_cubicRoot"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 495,
+          "name": "calcResourceRequirements_Current"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 506,
+          "name": "evolveState"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 536,
+          "name": "activateFreeDnaA"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 560,
+          "name": "inactivateFreeDnaAATP"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 584,
+          "name": "bindAndPolymerizeDnaAATP"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 640,
+          "name": "bindAndPolymerizeDnaAADP"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 714,
+          "name": "polymerizeDnaAATP"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 739,
+          "name": "polymerizeDnaAADP"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 765,
+          "name": "bindDnaAATP"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 778,
+          "name": "bindDnaAADP"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 791,
+          "name": "releaseDnaAAxP"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 858,
+          "name": "reactivateFreeDnaAADP"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 889,
+          "name": "calculateDnaAR1234ATPPolymerizationRates"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 917,
+          "name": "calculateDnaAR1234ADPPolymerizationRates"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 939,
+          "name": "calculateDnaAR1234ATPPolymerizationCooperativity"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 958,
+          "name": "calculateDnaAATPBindingRates"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 1016,
+          "name": "calculateDnaAADPBindingRates"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 1060,
+          "name": "calculateDnaAR1234Polymerization"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 1104,
+          "name": "calculateDnaAR1234ComplexSize"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 1108,
+          "name": "calcuateIsDnaAR5Occupied"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 1120,
+          "name": "calculateIsDnaAORIComplexAssembled"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 1133,
+          "name": "calculateDnaABoxStatus"
+        }
+      ],
+      "require_oc_counterpart_count": 30
+    },
+    "RibosomeAssembly": {
+      "class": "RibosomeAssembly",
+      "matlab_file": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m",
+      "method_count_excl_ctor": 10,
+      "methods": [
+        {
+          "category": "constructor",
+          "is_constructor": true,
+          "line": 147,
+          "name": "RibosomeAssembly"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 155,
+          "name": "initializeConstants"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 197,
+          "name": "copyFromState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 206,
+          "name": "copyToState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 217,
+          "name": "allocateMemoryForState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 231,
+          "name": "calcResourceRequirements_LifeCycle"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 264,
+          "name": "initializeState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 277,
+          "name": "calcResourceRequirements_Current"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 301,
+          "name": "evolveState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 345,
+          "name": "getDryWeight"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 366,
+          "name": "getGtpPerComplex"
+        }
+      ],
+      "require_oc_counterpart_count": 6
+    },
+    "TerminalOrganelleAssembly": {
+      "class": "TerminalOrganelleAssembly",
+      "matlab_file": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m",
+      "method_count_excl_ctor": 6,
+      "methods": [
+        {
+          "category": "constructor",
+          "is_constructor": true,
+          "line": 160,
+          "name": "TerminalOrganelleAssembly"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 168,
+          "name": "initializeConstants"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 288,
+          "name": "calcResourceRequirements_LifeCycle"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 307,
+          "name": "initializeState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 311,
+          "name": "calcResourceRequirements_Current"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 316,
+          "name": "evolveState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 343,
+          "name": "getDryWeight"
+        }
+      ],
+      "require_oc_counterpart_count": 5
+    },
+    "Transcription": {
+      "class": "Transcription",
+      "matlab_file": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Transcription.m",
+      "method_count_excl_ctor": 12,
+      "methods": [
+        {
+          "category": "constructor",
+          "is_constructor": true,
+          "line": 299,
+          "name": "Transcription"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 307,
+          "name": "storeObjectReferences"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 318,
+          "name": "initializeConstants"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 353,
+          "name": "copyFromState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 360,
+          "name": "copyToState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 369,
+          "name": "allocateMemoryForState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 383,
+          "name": "calcResourceRequirements_LifeCycle"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 433,
+          "name": "initializeState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 609,
+          "name": "calcResourceRequirements_Current"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 618,
+          "name": "evolveState"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 978,
+          "name": "computeRNAPolymeraseTUBindingProbabilities"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 1004,
+          "name": "calcStateTransitionProbabilities"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 1044,
+          "name": "getDryWeight"
+        }
+      ],
+      "require_oc_counterpart_count": 7
+    },
+    "TranscriptionalRegulation": {
+      "class": "TranscriptionalRegulation",
+      "matlab_file": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TranscriptionalRegulation.m",
+      "method_count_excl_ctor": 10,
+      "methods": [
+        {
+          "category": "constructor",
+          "is_constructor": true,
+          "line": 164,
+          "name": "TranscriptionalRegulation"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 172,
+          "name": "storeObjectReferences"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 181,
+          "name": "initializeConstants"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 315,
+          "name": "calcResourceRequirements_LifeCycle"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 329,
+          "name": "initializeState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 334,
+          "name": "calcResourceRequirements_Current"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 339,
+          "name": "evolveState"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 349,
+          "name": "bindTranscriptionFactors"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 383,
+          "name": "calcBindingProbabilityFoldChange"
+        },
+        {
+          "category": "property_getter_setter",
+          "is_constructor": false,
+          "line": 405,
+          "name": "get.tfBoundPromoters"
+        },
+        {
+          "category": "property_getter_setter",
+          "is_constructor": false,
+          "line": 409,
+          "name": "get.boundTFs"
+        }
+      ],
+      "require_oc_counterpart_count": 7
+    },
+    "Translation": {
+      "class": "Translation",
+      "matlab_file": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m",
+      "method_count_excl_ctor": 10,
+      "methods": [
+        {
+          "category": "constructor",
+          "is_constructor": true,
+          "line": 282,
+          "name": "Translation"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 290,
+          "name": "storeObjectReferences"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 299,
+          "name": "initializeConstants"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 313,
+          "name": "copyFromState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 337,
+          "name": "copyToState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 354,
+          "name": "allocateMemoryForState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 383,
+          "name": "calcResourceRequirements_LifeCycle"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 444,
+          "name": "initializeState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 570,
+          "name": "calcResourceRequirements_Current"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 599,
+          "name": "evolveState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 917,
+          "name": "getDryWeight"
+        }
+      ],
+      "require_oc_counterpart_count": 5
+    },
+    "tRNAAminoacylation": {
+      "class": "tRNAAminoacylation",
+      "matlab_file": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m",
+      "method_count_excl_ctor": 12,
+      "methods": [
+        {
+          "category": "constructor",
+          "is_constructor": true,
+          "line": 164,
+          "name": "tRNAAminoacylation"
+        },
+        {
+          "category": "init_contract",
+          "is_constructor": false,
+          "line": 172,
+          "name": "initializeConstants"
+        },
+        {
+          "category": "process_specific_helper",
+          "is_constructor": false,
+          "line": 283,
+          "name": "initializeSpeciesNetwork"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 302,
+          "name": "copyFromState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 310,
+          "name": "copyToState"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 320,
+          "name": "allocateMemoryForState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 333,
+          "name": "calcResourceRequirements_LifeCycle"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 373,
+          "name": "initializeState"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 380,
+          "name": "calcResourceRequirements_Current"
+        },
+        {
+          "category": "biology_contract",
+          "is_constructor": false,
+          "line": 387,
+          "name": "evolveState"
+        },
+        {
+          "category": "property_getter_setter",
+          "is_constructor": false,
+          "line": 469,
+          "name": "get.tRNASynthetases"
+        },
+        {
+          "category": "property_getter_setter",
+          "is_constructor": false,
+          "line": 473,
+          "name": "get.tRNATransferases"
+        },
+        {
+          "category": "framework_override",
+          "is_constructor": false,
+          "line": 480,
+          "name": "getDryWeight"
+        }
+      ],
+      "require_oc_counterpart_count": 6
+    }
+  },
+  "provenance": "4-parser reconciliation (2 orchestrator + Haiku + codex gpt-5.4-mini); 6 discrepancies resolved by source inspection; see script docstring.",
+  "resolved_discrepancies": {
+    "FtsZPolymerization.diff": "file-local fn after classdef end (L449); excluded",
+    "FtsZPolymerization.jacobian": "file-local fn after classdef end (L500); excluded",
+    "MacromolecularComplexation.buildProteinComplexs_bounds": "file-local fn (L390); excluded",
+    "MacromolecularComplexation.buildProteinComplexs_montecarlokinetic": "file-local fn after classdef (L334); excluded",
+    "MacromolecularComplexation.buildProteinComplexs_rates_collisionTheory": "file-local fn (L360); excluded",
+    "Metabolism.calcGrowthRate": "real class method, multi-line signature (L1266-67); included"
+  },
+  "schema": "karr_process_method_inventory/1.0",
+  "totals": {
+    "biology_contract": 112,
+    "biology_substep": 14,
+    "class_methods_excl_ctor": 328,
+    "framework_override": 76,
+    "init_contract": 31,
+    "process_specific_helper": 65,
+    "processes": 28,
+    "property_getter_setter": 30,
+    "require_oc_counterpart": 222
+  }
+}
