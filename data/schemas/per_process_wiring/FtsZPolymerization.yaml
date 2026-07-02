@@ -15,10 +15,10 @@ methods:
     matlab:
       symbol: "calcResourceRequirements_Current"
       source:
-        path: "docs/karr_extracts/architecture/01_simulation_loop.md"
-        lines: "148-161"
-        note: "Global allocation block that invokes every process request method."
-      note: "No FtsZ-specific MATLAB request body was available locally; the process family is allocator-facing through the simulation loop."
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/FtsZPolymerization.m"
+        lines: "189-193"
+        note: "Raw MATLAB request body: `result(gtp) = enzymes(FtsZ) + enzymes(FtsZ_GDP)`."
+      note: "MATLAB request formula is explicitly defined in-process and participates in global allocation."
     oc:
       symbol: "KarrFtsZPolymerizationProcess.next_update"
       source:
@@ -76,9 +76,9 @@ allocator:
     oc_current: "allocation"
     note: "Karr's allocation block calls `calcResourceRequirements_Current`; OC reads `substrates_allocated[self.name]` for GTP and falls back to `substrates` only when allocation is absent."
   request_formula:
-    matlab: "GTP request is allocator-facing; the checked-in extract does not preserve a dedicated FtsZ-specific formula body."
+    matlab: "request_gtp = enzymes(FtsZ) + enzymes(FtsZ_GDP)"
     oc: "request_gtp = max(0, int(next_counts[ftsz] + next_counts[ftsz_gdp]))"
-    note: "OC emits the request directly from the post-update FtsZ/GDP-bound counts."
+    note: "MATLAB computes request from current enzyme counts (FtsZ + FtsZ_GDP); OC computes from post-update `next_counts` in `next_update` (CODE_DEVIATES)."
   requests:
     - wid: "GTP"
       compartment: "cytosol"
@@ -300,5 +300,6 @@ deviations:
     - "The raw MATLAB `.m` file was not present in this checkout; MATLAB anchors therefore use the checked-in extract doc rather than a direct source-file read."
     - "OC emits the GTP request directly from `next_update` instead of a separate request-calculator module."
     - "OC reads allocated GTP from `substrates_allocated[self.name]` but still keeps a direct substrate-store fallback path for the no-allocation case."
+    - "OC clamp loops add defensive early-break guards (`positive.size <= 0`, `FtsZ_GDP <= 0`) in `apply_substrate_limits`; MATLAB `applySubstrateLimits` loop body has no corresponding guards."
     - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
-  note: "The main divergence is wiring shape, not biochemistry: the OC port is direct-update + allocator-compatible, while the MATLAB evidence available here is extract-level rather than file-level."
+  note: "Divergences include request timing (MATLAB current counts vs OC post-update counts) and OC-only defensive clamp guards; these are implementation-shape differences around otherwise matched reaction families."
