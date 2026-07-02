@@ -232,7 +232,8 @@ produce_stoichiometry:
     oc_anchor:
       path: "opencell/vivarium/karr_transcription.py"
       lines: "658-673"
-      note: "Legacy wrapper emits the NTP substrate delta that corresponds to polymerization consumption."
+      note: "Legacy wrapper emits only NTP substrate deltas and does not emit PPI."
+    note: "MATLAB emits PPI from polymerization; current OC transcription wrappers do not emit PPI. See known_deviations."
   - wid: "H"
     compartment: "cytosol"
     formula_or_constant: "+nTrmPols"
@@ -268,18 +269,18 @@ compartment_routing:
   - wid: "H2O"
     consume_compartment: "cytosol"
     produce_compartment:
-    mismatch: false
-    note: "Water is consumed only during termination and stays cytosolic."
+    mismatch: true
+    note: "MATLAB consumes cytosolic H2O during termination; current OC transcription wrappers do not consume H2O. See known_deviations."
   - wid: "PPI"
     consume_compartment:
     produce_compartment: "cytosol"
-    mismatch: false
-    note: "Diphosphate is produced in the cytosolic substrate pool."
+    mismatch: true
+    note: "MATLAB produces cytosolic PPI; current OC transcription wrappers do not emit PPI. See known_deviations."
   - wid: "H"
     consume_compartment:
     produce_compartment: "cytosol"
-    mismatch: false
-    note: "Hydrogen is produced in the cytosolic substrate pool."
+    mismatch: true
+    note: "MATLAB produces cytosolic H during termination; current OC transcription wrappers do not emit H. See known_deviations."
 unit_conversion_chain:
   source_units: "molecules/tick"
   target_units: "molecules/tick"
@@ -416,6 +417,7 @@ deviations:
   known_deviations:
     - "Current OC allocator requests only ATP/CTP/GTP/UTP; MATLAB calcResourceRequirements_Current also requests water."
     - "Current OC evolveState is a mechanism-based transcription wrapper, not the MATLAB RNAP state-machine implementation."
+    - "MATLAB Transcription substrate writeback includes H2O consumption and PPI/H production at termination/polymerization, while current OC transcription wrappers update only NTP substrate deltas."
     - "Legacy KarrTranscriptionProcess bypasses allocator mediation and writes direct substrate deltas when used without the allocator-budget path."
     - "OC bootstrap is split across constructor fixture loads, ports_schema defaults, and composite wiring rather than a single initializeState method."
     - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
