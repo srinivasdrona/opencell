@@ -29,7 +29,7 @@ REPO = Path(__file__).resolve().parents[1]
 MAP = REPO / "data/karr_method_inventory/oc_method_map.yaml"
 FRAG_DIR = REPO / "tmp/oc_map_confirm"
 
-VALID = {"confirmed", "inlined", "gap"}
+VALID = {"confirmed", "inlined", "gap", "noop"}
 
 
 def main() -> int:

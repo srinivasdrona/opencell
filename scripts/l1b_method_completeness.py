@@ -111,7 +111,7 @@ def main() -> int:
     map_procs = mp.get("processes", {})
 
     per_process = {}
-    total = {"confirmed": 0, "inlined": 0, "gap": 0, "unconfirmed": 0, "error": 0}
+    total = {"confirmed": 0, "inlined": 0, "gap": 0, "noop": 0, "unconfirmed": 0, "error": 0}
     failures: list[str] = []
 
     for cls, pdata in inv["processes"].items():
@@ -119,7 +119,7 @@ def main() -> int:
         if not runtime:
             continue
         entries = (map_procs.get(cls) or {}).get("runtime_methods", {})
-        counts = {"confirmed": 0, "inlined": 0, "gap": 0, "unconfirmed": 0, "error": 0}
+        counts = {"confirmed": 0, "inlined": 0, "gap": 0, "noop": 0, "unconfirmed": 0, "error": 0}
         for m in runtime:
             name = m["name"]
             e = entries.get(name)
@@ -131,12 +131,12 @@ def main() -> int:
             if status in ("needs_confirmation", None):
                 counts["unconfirmed"] += 1
                 failures.append(f"{cls}.{name}: needs_confirmation")
-            elif status == "gap":
+            elif status in ("gap", "noop"):
                 if not (e.get("note") or "").strip():
                     counts["error"] += 1
-                    failures.append(f"{cls}.{name}: gap without justification note")
+                    failures.append(f"{cls}.{name}: {status} without justification note")
                 else:
-                    counts["gap"] += 1
+                    counts["gap" if status == "gap" else "noop"] += 1
             elif status in ("confirmed", "inlined"):
                 anchor = e.get("oc")
                 if not anchor:
@@ -157,7 +157,7 @@ def main() -> int:
             total[k] += counts[k]
 
     ok = total["unconfirmed"] == 0 and total["error"] == 0
-    resolved = total["confirmed"] + total["inlined"] + total["gap"]
+    resolved = total["confirmed"] + total["inlined"] + total["gap"] + total["noop"]
     grand = resolved + total["unconfirmed"] + total["error"]
 
     if args.format == "json":
@@ -171,7 +171,8 @@ def main() -> int:
     print("=" * 84)
     print(f"  confirmed:   {total['confirmed']}")
     print(f"  inlined:     {total['inlined']}")
-    print(f"  gap:         {total['gap']}")
+    print(f"  gap:         {total['gap']}  <-- real porting gaps")
+    print(f"  noop:        {total['noop']}  <-- Karr no-op (returns zeros); OC correctly omits")
     print(f"  unconfirmed: {total['unconfirmed']}  <-- fleet TODO")
     print(f"  error:       {total['error']}  <-- unresolvable anchors / missing justification")
     print()
