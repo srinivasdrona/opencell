@@ -10,8 +10,10 @@ process:
   functional_area: "protein-synthesis-and-maturation"
   state_shape_role: "rule-based active/inactive protein-state flip; no stoichiometric chemistry"
   notes: >-
-    Raw MATLAB source was not present in this checkout, so the row was anchored to
-    the verified verbatim extract at docs/karr_extracts/process/20_ProteinActivation.md.
+    This row is exemplar-scoped; canonical exemplars are listed and are not an
+    exhaustive enumeration. Raw MATLAB source was not present in the original Day-43
+    authoring checkout, so many anchors point to the verified extract at
+    docs/karr_extracts/process/20_ProteinActivation.md.
 methods:
   calcResourceRequirements_Current:
     matlab:
@@ -81,7 +83,7 @@ allocator:
     oc_current: "bypass"
     note: "Both sides read substrate/state and stimuli directly; there is no `requests` or `substrates_allocated` path."
   request_formula:
-    matlab: "NOT_APPLICABLE: ProteinActivation has no calcResourceRequirements_Current; boolean rules directly gate state flips."
+    matlab: "ProteinActivation defines calcResourceRequirements_Current but returns zeros(size(this.substrates)); allocator demand is effectively bypassed."
     oc: "NOT_APPLICABLE: current OC shim has no request calculator and no `substrates_allocated` dependency."
     note: "Allocator mediation is absent for this process."
   requests: []
@@ -209,40 +211,42 @@ compartment_routing:
     consume_compartment: "cytosol"
     produce_compartment: "cytosol"
     mismatch: false
-    note: "Active/inactive bookkeeping stays within the same intracellular pool."
+    note: "Exemplar routing entry: MATLAB evaluates and writes per (wid, compartment) tuple, while OC projects to a flat per-WID activation_substrates pool."
   - wid: "MG_127_MONOMER"
     consume_compartment: "cytosol"
     produce_compartment: "cytosol"
     mismatch: false
-    note: "Active/inactive bookkeeping stays within the same intracellular pool."
+    note: "Exemplar routing entry: MATLAB evaluates and writes per (wid, compartment) tuple, while OC projects to a flat per-WID activation_substrates pool."
   - wid: "MG_205_DIMER"
     consume_compartment: "cytosol"
     produce_compartment: "cytosol"
     mismatch: false
-    note: "Active/inactive bookkeeping stays within the same intracellular pool."
+    note: "Exemplar routing entry: MATLAB evaluates and writes per (wid, compartment) tuple, while OC projects to a flat per-WID activation_substrates pool."
   - wid: "MG_236_MONOMER"
     consume_compartment: "cytosol"
     produce_compartment: "cytosol"
     mismatch: false
-    note: "Active/inactive bookkeeping stays within the same intracellular pool."
+    note: "Exemplar routing entry: MATLAB evaluates and writes per (wid, compartment) tuple, while OC projects to a flat per-WID activation_substrates pool."
   - wid: "MG_409_DIMER"
     consume_compartment: "cytosol"
     produce_compartment: "cytosol"
     mismatch: false
-    note: "Active/inactive bookkeeping stays within the same intracellular pool."
+    note: "Exemplar routing entry: MATLAB evaluates and writes per (wid, compartment) tuple, while OC projects to a flat per-WID activation_substrates pool."
 unit_conversion_chain:
-  source_units: "boolean rule output + protein counts"
+  source_units: "MATLAB: counts -> concentration for non-stimulus signals; OC: raw scalar substrate/stimuli values"
   target_units: "count transitions per tick"
   steps:
-    - from_units: "boolean rule output + protein counts"
+    - from_units: "MATLAB: counts -> concentration for non-stimulus signals; OC: raw scalar substrate/stimuli values"
       to_units: "count transitions per tick"
-      operation: "no unit conversion; evaluate the boolean rule per compartment and move whole counts between substrates and inactivatedSubstrates in the same tick"
+      operation: "MATLAB divides non-stimulus rule signals by (nAvogadro/1000) and geometry.volume before per-compartment rule evaluation; OC evaluates flat raw scalar signals and applies whole-count transfers"
       anchor:
-        path: "docs/karr_extracts/process/20_ProteinActivation.md"
-        lines: "49-117"
-        note: "Boolean syntax plus per-compartment state update semantics."
-      constants: []
-  note: "The process works directly on counts; there is no mmol/gDW/hr-style scaling chain."
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m"
+        lines: "370-375"
+        note: "MATLAB concentration conversion prior to activation-rule evaluation."
+      constants:
+        - "nAvogadro/1000"
+        - "geometry.volume"
+  note: "MATLAB and OC diverge here: MATLAB converts non-stimulus rule signals and evaluates per compartment, while OC evaluates raw flat-store values (CODE_DEVIATES)."
 dependencies:
   produces_inputs_for: []
   consumes_outputs_of:
@@ -333,9 +337,11 @@ deviations:
       path: "opencell/vivarium/karr_protein_activation.py"
       lines: "137-271"
       note: "The OC shim has no LP or flux-bound code path."
-  shared_pool_projection_merges_compartments: false
+  shared_pool_projection_merges_compartments: true
   known_deviations:
     - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
+    - "MATLAB converts non-stimulus activation-rule signals to concentration and evaluates per compartment; OC evaluates raw flat-store scalars."
+    - "MATLAB updates compartmented (wid, compartment) substrate tuples; OC projects the surface to flat per-WID activation_substrates stores."
   note: >-
-    No known MATLAB↔OC behavioral deviation was identified from the available
-    source extract and current OC port; both are rule-only and allocator-free.
+    MATLAB and OC are both rule-only and allocator-bypass for this process, but
+    known divergences remain in rule-signal conversion and compartment projection.
