@@ -53,7 +53,7 @@ methods:
           lines: "153-280"
           note: "Allocated pool comes from the shared allocator step."
     status: "partial"
-    note: "Core control flow is ported, but the competitive helper adds Poisson multiplicity and a cluster-1 fallback."
+    note: "Core control flow is ported; known divergence is the OC cluster-1 fallback guard (see deviations)."
   buildProteinComplexs_bounds:
     matlab:
       symbol: "buildProteinComplexs_bounds"
@@ -81,9 +81,9 @@ methods:
       source:
         path: "opencell/vivarium/karr_macromolecular_complexation.py"
         lines: "93-140"
-        note: "Competitive helper with extra Poisson multiplicity."
+        note: "Competitive helper; one-copy-per-iteration update matches MATLAB."
     status: "partial"
-    note: "Network partitioning matches, but OC is not one-copy-per-iteration."
+    note: "Network partitioning matches; known divergence is the OC cluster-1 fallback guard (see deviations)."
   calcFluxBounds:
     matlab:
       symbol: "MacromolecularComplexation"
@@ -105,7 +105,7 @@ allocator:
   mode:
     karr: "allocation"
     oc_current: "allocation"
-    note: "Karr allocates before evolveState; OC reads from substrates_allocated. The request values are still zero."
+    note: "MATLAB evolveState consumes this.substrates directly; OC evolveState consumes substrates_allocated grants and returns no-op when grants are zero (CODE_DEVIATES)."
   request_formula:
     matlab: "zeros(size(this.substrates))"
     oc: "dict(self._zero_requests)"
@@ -391,9 +391,10 @@ deviations:
       path: "opencell/vivarium/karr_request_calculators.py"
       lines: "53-89"
       note: "Current OC zero-request step."
-  shared_pool_projection_merges_compartments: false
+  shared_pool_projection_merges_compartments: true
   known_deviations:
-    - "OC's _per_cluster_mc samples a Poisson multiplicity and can form multiple complexes per iteration; Karr forms exactly one copy per Monte Carlo iteration."
+    - "MATLAB writes compartment-indexed complex counts, while OC emits flat complex.counts[wid]; compartment-specific complex production is projected/merged on the OC side."
+    - "MATLAB complexation consumes this.substrates inside evolveState, while OC complexation consumes allocator grants from substrates_allocated and no-ops when grants are zero."
     - "OC adds a cluster-1 fallback from _closed_form_bounds into _per_cluster_mc when the deterministic bound appears to overconsume; that guard is not present in the preserved Karr excerpt."
     - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
-  note: "The request surface is intentionally zero in both Karr and OC; the meaningful divergence is in the competitive Monte Carlo kernel."
+  note: "The request surface is intentionally zero in both Karr and OC; meaningful divergences are OC grant-gated substrate consumption, compartment projection/merge on complex outputs, and the cluster-1 fallback guard."
