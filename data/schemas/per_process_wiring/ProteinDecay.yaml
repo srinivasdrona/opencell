@@ -13,7 +13,8 @@ process:
     MATLAB ProteinDecay includes misfolding, refolding, complex decay,
     aborted-polypeptide decay, and monomer decay. The OC port in this repo
     is intentionally a light variant that preserves the request/update wiring
-    for complex decay but not full MATLAB parity.
+    for complex decay but not full MATLAB parity. This row is
+    exemplar-scoped; canonical exemplars listed, not exhaustive enumeration.
 methods:
   calcResourceRequirements_Current:
     matlab:
@@ -169,15 +170,16 @@ consume_stoichiometry:
       note: "Light port emits H2O request and direct substrate writeback from complex-decay totals."
   - wid: "H"
     compartment: "cytosol"
-    formula_or_constant: "max(0, -complexDecayReactions(:, mature_or_modified_complexs)) * decayedComplexCount"
+    formula_or_constant: "MATLAB: max(0, -complexDecayReactions(:, mature_or_modified_complexs)) * decayedComplexCount; OC: Poisson complex-decay projection with positive-only clipping when ATP/H2O demand <= 0"
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m"
       lines: "681-754"
-      note: "Complex-decay substrate update is matrix-driven and can consume hydrogen."
+      note: "Complex-decay substrate update uses stochasticRound/while-loop gating and can consume hydrogen."
     oc_anchor:
       path: "opencell/vivarium/karr_protein_decay_light.py"
-      lines: "528-583"
-      note: "Light port applies the same per-row stoichiometric projection on complex decay."
+      lines: "525-566"
+      note: "OC uses Poisson decays and clips negative substrate deltas when ATP/H2O demand is nonpositive, so hydrogen consume can be suppressed (CODE_DEVIATES)."
+    note: "MATLAB enforces full complex-decay consume semantics; OC composite applies a clipping gate and is not formula-equivalent."
 produce_stoichiometry:
   - wid: "ADP"
     compartment: "cytosol"
@@ -210,8 +212,9 @@ produce_stoichiometry:
       note: "Monomer hydrolysis releases amino acids."
     oc_anchor:
       path: "opencell/vivarium/karr_protein_decay_light.py"
-      lines: "299-448"
-      note: "Latent monomer substrate helper models amino-acid release in replay contexts."
+      lines: "209-305"
+      note: "Amino-acid release is on a latent helper path gated by `_latent_enabled`; constructor shape checks disable this path by default (CODE_DEVIATES)."
+    note: "MATLAB emits this amino-acid product; OC default runtime does not actively fabricate it."
   - wid: "GLY"
     compartment: "cytosol"
     formula_or_constant: "monomerDecayReactions(:, matureIndexs) * sum(decayedProteins, 2)"
@@ -221,8 +224,9 @@ produce_stoichiometry:
       note: "Monomer hydrolysis releases amino acids."
     oc_anchor:
       path: "opencell/vivarium/karr_protein_decay_light.py"
-      lines: "299-448"
-      note: "Latent monomer substrate helper models amino-acid release in replay contexts."
+      lines: "209-305"
+      note: "Amino-acid release is on a latent helper path gated by `_latent_enabled`; constructor shape checks disable this path by default (CODE_DEVIATES)."
+    note: "MATLAB emits this amino-acid product; OC default runtime does not actively fabricate it."
   - wid: "MET"
     compartment: "cytosol"
     formula_or_constant: "monomerDecayReactions(:, matureIndexs) * sum(decayedProteins, 2)"
@@ -232,49 +236,50 @@ produce_stoichiometry:
       note: "Monomer hydrolysis releases amino acids."
     oc_anchor:
       path: "opencell/vivarium/karr_protein_decay_light.py"
-      lines: "299-448"
-      note: "Latent monomer substrate helper models amino-acid release in replay contexts."
+      lines: "209-305"
+      note: "Amino-acid release is on a latent helper path gated by `_latent_enabled`; constructor shape checks disable this path by default (CODE_DEVIATES)."
+    note: "MATLAB emits this amino-acid product; OC default runtime does not actively fabricate it."
 compartment_routing:
   - wid: "ATP"
     consume_compartment: "cytosol"
     produce_compartment:
-    mismatch: false
-    note: "Allocator-facing ATP demand is cytosolic."
+    mismatch: true
+    note: "MATLAB demand is cytosolic, but OC flattens compartmented shared-pool deltas into one per-WID projection (shared_pool_projection_merges_compartments=true)."
   - wid: "H2O"
     consume_compartment: "cytosol"
     produce_compartment:
-    mismatch: false
-    note: "Water demand is cytosolic."
+    mismatch: true
+    note: "MATLAB demand is cytosolic, but OC flattens compartmented shared-pool deltas into one per-WID projection (shared_pool_projection_merges_compartments=true)."
   - wid: "H"
     consume_compartment: "cytosol"
     produce_compartment:
-    mismatch: false
-    note: "Hydrogen is handled in the cytosolic substrate pool."
+    mismatch: true
+    note: "MATLAB consume routing is cytosolic, but OC flattens compartmented shared-pool deltas into one per-WID projection (shared_pool_projection_merges_compartments=true)."
   - wid: "ADP"
     consume_compartment:
     produce_compartment: "cytosol"
-    mismatch: false
-    note: "Refolding returns ADP to the cytosolic substrate pool."
+    mismatch: true
+    note: "MATLAB produce routing is cytosolic, but OC flattens compartmented shared-pool deltas into one per-WID projection (shared_pool_projection_merges_compartments=true)."
   - wid: "PI"
     consume_compartment:
     produce_compartment: "cytosol"
-    mismatch: false
-    note: "Refolding returns inorganic phosphate to the cytosolic substrate pool."
+    mismatch: true
+    note: "MATLAB produce routing is cytosolic, but OC flattens compartmented shared-pool deltas into one per-WID projection (shared_pool_projection_merges_compartments=true)."
   - wid: "ALA"
     consume_compartment:
     produce_compartment: "cytosol"
-    mismatch: false
-    note: "Amino-acid release from monomer decay is cytosolic."
+    mismatch: true
+    note: "MATLAB produce routing is cytosolic, but OC flattens compartmented shared-pool deltas into one per-WID projection (shared_pool_projection_merges_compartments=true)."
   - wid: "GLY"
     consume_compartment:
     produce_compartment: "cytosol"
-    mismatch: false
-    note: "Amino-acid release from monomer decay is cytosolic."
+    mismatch: true
+    note: "MATLAB produce routing is cytosolic, but OC flattens compartmented shared-pool deltas into one per-WID projection (shared_pool_projection_merges_compartments=true)."
   - wid: "MET"
     consume_compartment:
     produce_compartment: "cytosol"
-    mismatch: false
-    note: "Amino-acid release from monomer decay is cytosolic."
+    mismatch: true
+    note: "MATLAB produce routing is cytosolic, but OC flattens compartmented shared-pool deltas into one per-WID projection (shared_pool_projection_merges_compartments=true)."
 unit_conversion_chain:
   source_units: "molecules/tick"
   target_units: "molecules/tick"
@@ -305,9 +310,11 @@ ordering_constraints:
   soft_before: []
   soft_after: []
   note: >-
-    ProteinDecay itself does not impose a process-local ordering rule. The
-    only canonical global hard constraint in Karr's simulation loop is
-    tRNAAminoacylation before Translation (`@Simulation/evolveState.m:48-55`).
+    MATLAB enforces only the canonical global hard constraint
+    tRNAAminoacylation before Translation (`@Simulation/evolveState.m:48-55`);
+    there is no ProteinDecay-local process edge. OC composite step flow does
+    enforce `request_calculator_pd` before `karr_allocation_step`, but the
+    process still bypasses `substrates_allocated` (CODE_DEVIATES).
 source_anchors:
   matlab_blocks:
     class_header:
@@ -436,5 +443,8 @@ deviations:
     - "The OC process never reads `substrates_allocated`; it reads `states['substrates']` directly and emits direct substrate deltas in `next_update`."
     - "The OC allocator alias maps `protein_decay_light` to `karr_protein_decay_light`, so the request key differs from the process slug."
     - "The OC port flattens Karr's compartmented ProteinDecay surfaces into a per-WID substrate projection."
+    - "For hydrogen consume in complex decay, MATLAB uses full stoichiometric consume semantics while OC applies Poisson projection plus a positive-only clipping gate when ATP/H2O demand is nonpositive."
+    - "ALA/GLY/MET amino-acid fabrication is latent in OC (`_latent_enabled` path) and is disabled by default on shape mismatch; MATLAB emits these products in monomer/aborted-polypeptide decay."
+    - "OC requires step-flow ordering `request_calculator_pd` -> `karr_allocation_step`; MATLAB has no ProteinDecay-local process ordering edge beyond the global tRNAAminoacylation-before-Translation rule."
     - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
   note: "These deviations are deliberate and should remain visible in the wiring DB row."

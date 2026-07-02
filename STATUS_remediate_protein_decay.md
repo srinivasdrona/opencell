@@ -4,6 +4,7 @@
 - Target row: `data/schemas/per_process_wiring/ProteinDecay.yaml`
 - Audit source: `docs/phase_f/audits/ProteinDecay_semantic_audit.md`
 - Applied only Priority-1 `ROW_WRONG` / `MISSING` items; no schema/code edits.
+- Run date: `2026-07-02`
 
 ## Fixed Audit Entries
 - `PD-S1-01` (`MISSING`) - **Pattern M2**
