@@ -135,151 +135,238 @@ allocator:
 consume_stoichiometry:
   - wid: "MG_191_MONOMER"
     compartment: "membrane"
-    formula_or_constant: "-this.substrates(MG_191_MONOMER, this.compartmentIndexs_unincorporated)"
+    formula_or_constant: "MATLAB: -this.substrates(MG_191_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: -1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
       lines: "320-336"
       note: "Eligible membrane-localized protein moves out of the unincorporated pool."
     oc_anchor:
       path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "378-401"
-      note: "Compartment-transfer fallback emits a direct delta for the unincorporated compartment."
-    note: "Representative membrane-localized substrate; the same transfer pattern applies to the other membrane proteins."
+      lines: "357-401"
+      note: "Trace-hint path can apply arbitrary integral deltas; fallback path decrements one copy from unincorporated per tick."
+    note: "Canonical membrane-localized substrate transfer entry."
+  - wid: "MG_192_MONOMER"
+    compartment: "membrane"
+    formula_or_constant: "MATLAB: -this.substrates(MG_192_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: -1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
+      lines: "320-336"
+      note: "Eligible membrane-localized protein moves out of the unincorporated pool."
+    oc_anchor:
+      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+      lines: "357-401"
+      note: "Trace-hint path can apply arbitrary integral deltas; fallback path decrements one copy from unincorporated per tick."
+    note: "Canonical membrane-localized substrate transfer entry (P110)."
   - wid: "MG_217_MONOMER"
     compartment: "cytosol"
-    formula_or_constant: "-this.substrates(MG_217_MONOMER, this.compartmentIndexs_unincorporated)"
+    formula_or_constant: "MATLAB: -this.substrates(MG_217_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: -1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
       lines: "320-336"
       note: "Eligible cytosolic protein moves out of the unincorporated pool."
     oc_anchor:
       path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "378-401"
-      note: "Compartment-transfer fallback emits a direct delta for the unincorporated compartment."
-    note: "Representative cytosol-localized substrate; same loop logic as the other cytosolic proteins."
+      lines: "357-401"
+      note: "Trace-hint path can apply arbitrary integral deltas; fallback path decrements one copy from unincorporated per tick."
+    note: "Canonical cytosol-localized substrate transfer entry."
   - wid: "MG_218_MONOMER"
     compartment: "cytosol"
-    formula_or_constant: "-this.substrates(MG_218_MONOMER, this.compartmentIndexs_unincorporated)"
+    formula_or_constant: "MATLAB: -this.substrates(MG_218_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: -1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
       lines: "320-336"
       note: "Eligible cytosolic protein moves out of the unincorporated pool."
     oc_anchor:
       path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "378-401"
-      note: "Compartment-transfer fallback emits a direct delta for the unincorporated compartment."
-    note: "HMW2 is one of the pair-coupled proteins in the MATLAB hierarchy."
+      lines: "357-401"
+      note: "Trace-hint path can apply arbitrary integral deltas; fallback path decrements one copy from unincorporated per tick."
+    note: "Canonical cytosol-localized substrate transfer entry (HMW2)."
+  - wid: "MG_312_MONOMER"
+    compartment: "cytosol"
+    formula_or_constant: "MATLAB: -this.substrates(MG_312_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: -1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
+      lines: "320-336"
+      note: "Eligible cytosolic protein moves out of the unincorporated pool."
+    oc_anchor:
+      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+      lines: "357-401"
+      note: "Trace-hint path can apply arbitrary integral deltas; fallback path decrements one copy from unincorporated per tick."
+    note: "Canonical cytosol-localized substrate transfer entry (HMW1)."
+  - wid: "MG_317_MONOMER"
+    compartment: "cytosol"
+    formula_or_constant: "MATLAB: -this.substrates(MG_317_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: -1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
+      lines: "320-336"
+      note: "Eligible cytosolic protein moves out of the unincorporated pool."
+    oc_anchor:
+      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+      lines: "357-401"
+      note: "Trace-hint path can apply arbitrary integral deltas; fallback path decrements one copy from unincorporated per tick."
+    note: "Canonical cytosol-localized substrate transfer entry (HMW3)."
   - wid: "MG_318_MONOMER"
     compartment: "membrane"
-    formula_or_constant: "-this.substrates(MG_318_MONOMER, this.compartmentIndexs_unincorporated)"
+    formula_or_constant: "MATLAB: -this.substrates(MG_318_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: -1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
       lines: "320-336"
       note: "Eligible membrane-localized protein moves out of the unincorporated pool."
     oc_anchor:
       path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "378-401"
-      note: "Compartment-transfer fallback emits a direct delta for the unincorporated compartment."
-    note: "P32 is a canonical membrane-localized example."
+      lines: "357-401"
+      note: "Trace-hint path can apply arbitrary integral deltas; fallback path decrements one copy from unincorporated per tick."
+    note: "Canonical membrane-localized substrate transfer entry (P32)."
   - wid: "MG_386_MONOMER"
     compartment: "cytosol"
-    formula_or_constant: "-this.substrates(MG_386_MONOMER, this.compartmentIndexs_unincorporated)"
+    formula_or_constant: "MATLAB: -this.substrates(MG_386_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: -1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
       lines: "320-336"
       note: "Eligible cytosolic protein moves out of the unincorporated pool."
     oc_anchor:
       path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "378-401"
-      note: "Compartment-transfer fallback emits a direct delta for the unincorporated compartment."
-    note: "P200 is a canonical cytosol-localized example."
+      lines: "357-401"
+      note: "Trace-hint path can apply arbitrary integral deltas; fallback path decrements one copy from unincorporated per tick."
+    note: "Canonical cytosol-localized substrate transfer entry (P200)."
 produce_stoichiometry:
   - wid: "MG_191_MONOMER"
     compartment: "membrane"
-    formula_or_constant: "+this.substrates(MG_191_MONOMER, this.compartmentIndexs_unincorporated)"
+    formula_or_constant: "MATLAB: +this.substrates(MG_191_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: +1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
       lines: "333-336"
       note: "Same count is added to the incorporated compartment."
     oc_anchor:
       path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "378-401"
-      note: "Compartment-transfer fallback emits the matching incorporated delta."
-    note: "Representative membrane-localized substrate; the same transfer pattern applies to the other membrane proteins."
+      lines: "357-401"
+      note: "Trace-hint path can apply arbitrary integral deltas; fallback path increments one copy into incorporated per tick."
+    note: "Canonical membrane-localized substrate transfer entry."
+  - wid: "MG_192_MONOMER"
+    compartment: "membrane"
+    formula_or_constant: "MATLAB: +this.substrates(MG_192_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: +1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
+      lines: "333-336"
+      note: "Same count is added to the incorporated compartment."
+    oc_anchor:
+      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+      lines: "357-401"
+      note: "Trace-hint path can apply arbitrary integral deltas; fallback path increments one copy into incorporated per tick."
+    note: "Canonical membrane-localized substrate transfer entry (P110)."
   - wid: "MG_217_MONOMER"
     compartment: "cytosol"
-    formula_or_constant: "+this.substrates(MG_217_MONOMER, this.compartmentIndexs_unincorporated)"
+    formula_or_constant: "MATLAB: +this.substrates(MG_217_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: +1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
       lines: "333-336"
       note: "Same count is added to the incorporated compartment."
     oc_anchor:
       path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "378-401"
-      note: "Compartment-transfer fallback emits the matching incorporated delta."
-    note: "Representative cytosol-localized substrate."
+      lines: "357-401"
+      note: "Trace-hint path can apply arbitrary integral deltas; fallback path increments one copy into incorporated per tick."
+    note: "Canonical cytosol-localized substrate transfer entry."
   - wid: "MG_218_MONOMER"
     compartment: "cytosol"
-    formula_or_constant: "+this.substrates(MG_218_MONOMER, this.compartmentIndexs_unincorporated)"
+    formula_or_constant: "MATLAB: +this.substrates(MG_218_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: +1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
       lines: "333-336"
       note: "Same count is added to the incorporated compartment."
     oc_anchor:
       path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "378-401"
-      note: "Compartment-transfer fallback emits the matching incorporated delta."
-    note: "HMW2 is one of the pair-coupled proteins in the MATLAB hierarchy."
+      lines: "357-401"
+      note: "Trace-hint path can apply arbitrary integral deltas; fallback path increments one copy into incorporated per tick."
+    note: "Canonical cytosol-localized substrate transfer entry (HMW2)."
+  - wid: "MG_312_MONOMER"
+    compartment: "cytosol"
+    formula_or_constant: "MATLAB: +this.substrates(MG_312_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: +1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
+      lines: "333-336"
+      note: "Same count is added to the incorporated compartment."
+    oc_anchor:
+      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+      lines: "357-401"
+      note: "Trace-hint path can apply arbitrary integral deltas; fallback path increments one copy into incorporated per tick."
+    note: "Canonical cytosol-localized substrate transfer entry (HMW1)."
+  - wid: "MG_317_MONOMER"
+    compartment: "cytosol"
+    formula_or_constant: "MATLAB: +this.substrates(MG_317_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: +1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
+      lines: "333-336"
+      note: "Same count is added to the incorporated compartment."
+    oc_anchor:
+      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
+      lines: "357-401"
+      note: "Trace-hint path can apply arbitrary integral deltas; fallback path increments one copy into incorporated per tick."
+    note: "Canonical cytosol-localized substrate transfer entry (HMW3)."
   - wid: "MG_318_MONOMER"
     compartment: "membrane"
-    formula_or_constant: "+this.substrates(MG_318_MONOMER, this.compartmentIndexs_unincorporated)"
+    formula_or_constant: "MATLAB: +this.substrates(MG_318_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: +1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
       lines: "333-336"
       note: "Same count is added to the incorporated compartment."
     oc_anchor:
       path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "378-401"
-      note: "Compartment-transfer fallback emits the matching incorporated delta."
-    note: "P32 is a canonical membrane-localized example."
+      lines: "357-401"
+      note: "Trace-hint path can apply arbitrary integral deltas; fallback path increments one copy into incorporated per tick."
+    note: "Canonical membrane-localized substrate transfer entry (P32)."
   - wid: "MG_386_MONOMER"
     compartment: "cytosol"
-    formula_or_constant: "+this.substrates(MG_386_MONOMER, this.compartmentIndexs_unincorporated)"
+    formula_or_constant: "MATLAB: +this.substrates(MG_386_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: +1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
       lines: "333-336"
       note: "Same count is added to the incorporated compartment."
     oc_anchor:
       path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "378-401"
-      note: "Compartment-transfer fallback emits the matching incorporated delta."
-    note: "P200 is a canonical cytosol-localized example."
+      lines: "357-401"
+      note: "Trace-hint path can apply arbitrary integral deltas; fallback path increments one copy into incorporated per tick."
+    note: "Canonical cytosol-localized substrate transfer entry (P200)."
 compartment_routing:
   - wid: "MG_191_MONOMER"
     consume_compartment: "membrane"
-    produce_compartment: "membrane"
-    mismatch: false
-    note: "Fixture indices [6,4] map membrane -> terminal-organelle membrane; the schema has no terminal-organelle compartment label."
+    produce_compartment: null
+    mismatch: true
+    note: "MATLAB routes unincorporated membrane [6] -> incorporated terminal-organelle membrane [4]; schema enum has no terminal-organelle label, so produce_compartment is null. OC projection is compartment_1 -> compartment_0."
+  - wid: "MG_192_MONOMER"
+    consume_compartment: "membrane"
+    produce_compartment: null
+    mismatch: true
+    note: "MATLAB routes unincorporated membrane [6] -> incorporated terminal-organelle membrane [4]; schema enum has no terminal-organelle label, so produce_compartment is null. OC projection is compartment_1 -> compartment_0."
   - wid: "MG_217_MONOMER"
     consume_compartment: "cytosol"
-    produce_compartment: "cytosol"
-    mismatch: false
-    note: "Fixture indices [5,1] map cytosol -> terminal-organelle cytosol; the schema has no terminal-organelle compartment label."
+    produce_compartment: null
+    mismatch: true
+    note: "MATLAB routes unincorporated cytosol [5] -> incorporated terminal-organelle cytosol [1]; schema enum has no terminal-organelle label, so produce_compartment is null. OC projection is compartment_1 -> compartment_0."
   - wid: "MG_218_MONOMER"
     consume_compartment: "cytosol"
-    produce_compartment: "cytosol"
-    mismatch: false
-    note: "Fixture indices [5,1] map cytosol -> terminal-organelle cytosol; the schema has no terminal-organelle compartment label."
+    produce_compartment: null
+    mismatch: true
+    note: "MATLAB routes unincorporated cytosol [5] -> incorporated terminal-organelle cytosol [1]; schema enum has no terminal-organelle label, so produce_compartment is null. OC projection is compartment_1 -> compartment_0."
+  - wid: "MG_312_MONOMER"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: true
+    note: "MATLAB routes unincorporated cytosol [5] -> incorporated terminal-organelle cytosol [1]; schema enum has no terminal-organelle label, so produce_compartment is null. OC projection is compartment_1 -> compartment_0."
+  - wid: "MG_317_MONOMER"
+    consume_compartment: "cytosol"
+    produce_compartment: null
+    mismatch: true
+    note: "MATLAB routes unincorporated cytosol [5] -> incorporated terminal-organelle cytosol [1]; schema enum has no terminal-organelle label, so produce_compartment is null. OC projection is compartment_1 -> compartment_0."
   - wid: "MG_318_MONOMER"
     consume_compartment: "membrane"
-    produce_compartment: "membrane"
-    mismatch: false
-    note: "Fixture indices [6,4] map membrane -> terminal-organelle membrane; the schema has no terminal-organelle compartment label."
+    produce_compartment: null
+    mismatch: true
+    note: "MATLAB routes unincorporated membrane [6] -> incorporated terminal-organelle membrane [4]; schema enum has no terminal-organelle label, so produce_compartment is null. OC projection is compartment_1 -> compartment_0."
   - wid: "MG_386_MONOMER"
     consume_compartment: "cytosol"
-    produce_compartment: "cytosol"
-    mismatch: false
-    note: "Fixture indices [5,1] map cytosol -> terminal-organelle cytosol; the schema has no terminal-organelle compartment label."
+    produce_compartment: null
+    mismatch: true
+    note: "MATLAB routes unincorporated cytosol [5] -> incorporated terminal-organelle cytosol [1]; schema enum has no terminal-organelle label, so produce_compartment is null. OC projection is compartment_1 -> compartment_0."
 unit_conversion_chain:
   source_units: "substrate counts"
   target_units: "substrate count deltas/tick"
@@ -387,7 +474,8 @@ deviations:
   shared_pool_projection_merges_compartments: false
   known_deviations:
     - "The OC port is Karr-light: it tracks coarse assembled counters in `cell.terminal_organelle_count` and `cell.terminal_organelle_components_assembled` instead of MATLAB's full in-place substrate matrix loop."
-    - "The OC port adds a trace-hint override plus a compartment-transfer fallback for `substrates`; MATLAB only performs the localization loop."
+    - "MATLAB transfers the full unincorporated pool into incorporated in one tick, while OC applies either a trace-hint delta override or a one-copy-per-tick fallback transfer for `substrates`."
+    - "MATLAB routes unincorporated cytosol/membrane into terminal-organelle compartments; OC exposes projected `compartment_1 -> compartment_0` substrate keys and does not preserve terminal-organelle labels."
     - "The OC port bypasses allocator mediation entirely and never emits a dedicated request calculator for this process."
     - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
   note: "These deviations are deliberate simplifications in the current OC port, not silent regressions hidden in the row."
