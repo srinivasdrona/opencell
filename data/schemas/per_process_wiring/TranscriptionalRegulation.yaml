@@ -10,16 +10,16 @@ process:
   functional_area: "RNA-synthesis-and-maturation"
   state_shape_role: "regulatory surface (TF binding + fold-change); no substrate stoichiometry"
   notes: >-
-    The raw MATLAB .m file is not present in this checkout; anchors below use the
-    checked-in Karr extract and design notes as the local source surrogate.
+    Row anchors use the checked-in MATLAB and OC sources for executable
+    TranscriptionalRegulation semantics.
 methods:
   calcResourceRequirements_Current:
     matlab:
       symbol: "calcResourceRequirements_Current"
       source:
-        path: "docs/karr_extracts/process/10_TranscriptionalRegulation.md"
-        lines: "79-106"
-        note: "Process extract covers regulatory biology, initialization, and simulation summary; no allocator request block is described."
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TranscriptionalRegulation.m"
+        lines: "334-336"
+        note: "MATLAB exposes the request hook and returns a zero vector over this.substrates."
     oc:
       symbol: "KarrTranscriptionalRegulationProcess.next_update"
       source:
@@ -27,14 +27,14 @@ methods:
         lines: "350-463"
         note: "Current OC runtime reads TF abundance directly and emits TF binding / fold-change updates; there is no request-calculator path."
     status: "not_implemented"
-    note: "Regulatory-only process; no resource-requirement method or substrates_allocated surface was found in the local source set."
+    note: "MATLAB exposes calcResourceRequirements_Current with a zero-request vector; OC does not implement a corresponding request-calculator/substrates_allocated path for this process."
   evolveState:
     matlab:
       symbol: "evolveState"
       source:
-        path: "docs/karr_extracts/process/10_TranscriptionalRegulation.md"
-        lines: "94-106"
-        note: "Initialization and simulation summary for TF-promoter binding; the raw function body is not in the checkout."
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TranscriptionalRegulation.m"
+        lines: "339-400"
+        note: "Per-tick TF binding and fold-change update; includes accessibility gating via chromosome.isRegionPolymerized."
     oc:
       symbol: "KarrTranscriptionalRegulationProcess.next_update"
       source:
@@ -42,7 +42,7 @@ methods:
         lines: "350-463"
         note: "Per-tick TF copy read, weighted binding, fold-change product, and trace-hint writeback."
     status: "implemented"
-    note: "OC implements the per-tick regulatory sweep in next_update rather than a MATLAB-named evolveState method."
+    note: "OC implements the per-tick regulatory sweep in next_update rather than a MATLAB-named evolveState method; MATLAB gates candidate binding sites by chromosome accessibility (isRegionPolymerized) but OC currently has no chromosome accessibility gate. See known_deviations."
   calcFluxBounds:
     matlab:
       symbol: "TranscriptionalRegulation"
@@ -62,13 +62,13 @@ methods:
     note: "This process does not expose a flux-bound surface in either the extract or the OC port. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
 allocator:
   mode:
-    karr: "bypass"
+    karr: "allocation"
     oc_current: "bypass"
-    note: "The process has no substrate allocator contract; the OC port reads protein/complex counts directly."
+    note: "MATLAB participates in allocator sequencing via calcResourceRequirements_Current (zero request vector), while OC bypasses allocator mediation and reads protein/complex counts directly."
   request_formula:
-    matlab: "none; the extracted Karr material describes TF binding/activity only, not a calcResourceRequirements_Current substrate request"
+    matlab: "result = zeros(size(this.substrates))"
     oc: "none; no request calculator exists in karr_transcriptional_regulation.py"
-    note: "Both sides are bypass-mode for this process."
+    note: "MATLAB is engaged-zero-request; OC remains bypass-mode for this process."
   requests: []
   bypasses:
     - wid: "MG_101_MONOMER"
@@ -218,10 +218,12 @@ deviations:
       path: "opencell/vivarium/karr_transcriptional_regulation.py"
       lines: "281-463"
       note: "No flux-bound helper exists in the OC port."
-  shared_pool_projection_merges_compartments: false
+  shared_pool_projection_merges_compartments: true
   known_deviations:
-    - "The raw MATLAB .m file is absent from this checkout; source anchors use the checked-in extract/design docs instead."
     - "OC does not implement a request-calculator surface for this process; it reads protein.counts / complex.counts directly."
+    - "MATLAB binds TFs only on chromosome-accessible sites (isRegionPolymerized); OC currently samples from unbound affinity-positive sites without chromosome accessibility gating."
+    - "MATLAB participates in allocator sequencing with calcResourceRequirements_Current (zero request vector); OC bypasses allocator mediation for this process."
+    - "MATLAB stores tx_rate_fold_change with a strand axis (nTU x 2), while OC emits a single scalar fold-change per TU."
     - "OC initializes tf_binding from the first tick rather than performing Karr's documented t=0 pre-binding sweep."
     - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
-  note: "Regulatory-only process: no substrate stoichiometry, no LP bounds, and no allocator request path were exposed by the local source set."
+  note: "Regulatory-only process with no substrate stoichiometry or LP bounds; MATLAB participates in allocation via a zero-request hook, OC bypasses allocation, and OC projects MATLAB strand-resolved fold-change state to one scalar per TU."
