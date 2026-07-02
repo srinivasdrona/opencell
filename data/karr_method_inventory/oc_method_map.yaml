@@ -1,0 +1,985 @@
+schema: oc_method_map/1.0
+purpose: Map each runtime_port_required Karr method to its OpenCell counterpart. Filled by source-confirmation
+  fleet; enforced by the L1b method-completeness gate.
+status_legend:
+  needs_confirmation: "not yet verified at source \u2014 fleet TODO (a `hint` may suggest the OC location\
+    \ but is non-authoritative)"
+  confirmed: a real OC def implements this method (oc = file:symbol:line)
+  inlined: behavior folded into a larger OC method (oc = file:parent:line, note names parent)
+  gap: "genuinely absent in OC (oc = null, note explains) \u2014 a real porting gap to fix"
+processes:
+  ChromosomeCondensation:
+    oc_files:
+    - opencell/vivarium/karr_chromosome_condensation.py
+    - opencell/vivarium/karr_composite.py
+    - opencell/vivarium/karr_request_calculators.py
+    runtime_methods:
+      calcResourceRequirements_Current:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m:calcResourceRequirements_Current:233
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: COVERED_REQCALC
+        note: ''
+      evolveState:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m:evolveState:240
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_chromosome_condensation.py:KarrChromosomeCondensationProcess.next_update:321
+        hint_kind: FOUND_CONTRACT
+        note: ''
+      calcNewRegions:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m:calcNewRegions:286
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+  ChromosomeSegregation:
+    oc_files:
+    - opencell/vivarium/karr_chromosome_segregation.py
+    - opencell/vivarium/karr_request_calculators.py
+    runtime_methods:
+      calcResourceRequirements_Current:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m:calcResourceRequirements_Current:179
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: COVERED_REQCALC
+        note: ''
+      evolveState:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m:evolveState:193
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_chromosome_segregation.py:KarrChromosomeSegregationProcess.next_update:333
+        hint_kind: FOUND_CONTRACT
+        note: ''
+  Cytokinesis:
+    oc_files:
+    - opencell/vivarium/karr_cytokinesis.py
+    - opencell/vivarium/karr_request_calculators.py
+    runtime_methods:
+      calcResourceRequirements_Current:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m:calcResourceRequirements_Current:166
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: COVERED_REQCALC
+        note: ''
+      evolveState:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m:evolveState:173
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_cytokinesis.py:KarrCytokinesisProcess.next_update:330
+        hint_kind: FOUND_CONTRACT
+        note: ''
+      calcNextPinchedDiameter:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m:calcNextPinchedDiameter:264
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_cytokinesis.py:KarrCytokinesisProcess.calc_next_pinched_diameter:645
+        hint_kind: FOUND_NAME
+        note: ''
+  DNADamage:
+    oc_files:
+    - opencell/vivarium/karr_dna_damage.py
+    - opencell/vivarium/karr_request_calculators.py
+    runtime_methods:
+      calcResourceRequirements_Current:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNADamage.m:calcResourceRequirements_Current:469
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: COVERED_REQCALC
+        note: ''
+      calcExpectedReactionRates:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNADamage.m:calcExpectedReactionRates:474
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      calcNumberVulnerableSites:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNADamage.m:calcNumberVulnerableSites:490
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      evolveState:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNADamage.m:evolveState:535
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_dna_damage.py:KarrDNADamageProcess.next_update:228
+        hint_kind: FOUND_CONTRACT
+        note: ''
+  DNARepair:
+    oc_files:
+    - opencell/vivarium/karr_dna_repair.py
+    - opencell/vivarium/karr_request_calculators.py
+    runtime_methods:
+      calcResourceRequirements_Current:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:calcResourceRequirements_Current:829
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: COVERED_REQCALC
+        note: ''
+      evolveState:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState:894
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess.next_update:317
+        hint_kind: FOUND_CONTRACT
+        note: ''
+      evolveState_BER:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_BER:927
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      evolveState_NER:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_NER:1096
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      evolveState_HR:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_HR:1222
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      evolveState_Polymerize:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_Polymerize:1365
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      evolveState_Ligate:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_Ligate:1454
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      evolveState_DisA:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_DisA:1488
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      evolveState_Modification:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_Modification:1500
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      evolveState_Restriction:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_Restriction:1533
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+  DNASupercoiling:
+    oc_files:
+    - opencell/vivarium/karr_allocation_step.py
+    - opencell/vivarium/karr_composite.py
+    - opencell/vivarium/karr_dna_supercoiling.py
+    - opencell/vivarium/karr_request_calculators.py
+    runtime_methods:
+      calcResourceRequirements_Current:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m:calcResourceRequirements_Current:333
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: COVERED_REQCALC
+        note: ''
+      evolveState:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m:evolveState:356
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_allocation_step.py:KarrAllocationStep.next_update:210
+        hint_kind: FOUND_CONTRACT
+        note: ''
+      calcRNAPolymeraseBindingProbFoldChange:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m:calcRNAPolymeraseBindingProbFoldChange:510
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+  FtsZPolymerization:
+    oc_files:
+    - opencell/vivarium/karr_composite.py
+    - opencell/vivarium/karr_ftsz_polymerization.py
+    - opencell/vivarium/karr_request_calculators.py
+    runtime_methods:
+      calcResourceRequirements_Current:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/FtsZPolymerization.m:calcResourceRequirements_Current:189
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: COVERED_REQCALC
+        note: ''
+      evolveState:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/FtsZPolymerization.m:evolveState:197
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_ftsz_polymerization.py:KarrFtsZPolymerizationProcess.next_update:216
+        hint_kind: FOUND_CONTRACT
+        note: ''
+      integrateODEs:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/FtsZPolymerization.m:integrateODEs:220
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      discretizeEnzymes:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/FtsZPolymerization.m:discretizeEnzymes:374
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_ftsz_polymerization.py:KarrFtsZPolymerizationProcess.discretize_enzymes:405
+        hint_kind: FOUND_NAME
+        note: ''
+      applySubstrateLimits:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/FtsZPolymerization.m:applySubstrateLimits:403
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_ftsz_polymerization.py:KarrFtsZPolymerizationProcess.apply_substrate_limits:438
+        hint_kind: FOUND_NAME
+        note: ''
+      moleculesToConcentration:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/FtsZPolymerization.m:moleculesToConcentration:436
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_ftsz_polymerization.py:KarrFtsZPolymerizationProcess.molecules_to_concentration:481
+        hint_kind: FOUND_NAME
+        note: ''
+      concentrationToMolecules:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/FtsZPolymerization.m:concentrationToMolecules:441
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_ftsz_polymerization.py:KarrFtsZPolymerizationProcess.concentration_to_molecules:484
+        hint_kind: FOUND_NAME
+        note: ''
+  HostInteraction:
+    oc_files:
+    - opencell/vivarium/karr_composite.py
+    - opencell/vivarium/karr_host_interaction.py
+    - opencell/vivarium/karr_request_calculators.py
+    runtime_methods:
+      calcResourceRequirements_Current:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m:calcResourceRequirements_Current:266
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: COVERED_REQCALC
+        note: ''
+      evolveState:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m:evolveState:271
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_host_interaction.py:KarrHostInteractionProcess.next_update:255
+        hint_kind: FOUND_CONTRACT
+        note: ''
+  MacromolecularComplexation:
+    oc_files:
+    - opencell/vivarium/karr_allocation_step.py
+    - opencell/vivarium/karr_macromolecular_complexation.py
+    - opencell/vivarium/karr_request_calculators.py
+    runtime_methods:
+      calcResourceRequirements_Current:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/MacromolecularComplexation.m:calcResourceRequirements_Current:285
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: COVERED_REQCALC
+        note: ''
+      evolveState:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/MacromolecularComplexation.m:evolveState:290
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_allocation_step.py:KarrAllocationStep.next_update:210
+        hint_kind: FOUND_CONTRACT
+        note: ''
+  Metabolism:
+    oc_files:
+    - opencell/m1/calc_flux_bounds.py
+    - opencell/m1/compartmented.py
+    - opencell/m1/karr_metabolism_writeback.py
+    - opencell/vivarium/karr_allocation_step.py
+    - opencell/vivarium/karr_metabolism.py
+    - opencell/vivarium/karr_request_calculators.py
+    runtime_methods:
+      calcResourceRequirements_Current:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m:calcResourceRequirements_Current:1188
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: COVERED_REQCALC
+        note: ''
+      evolveState:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m:evolveState:1200
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_allocation_step.py:KarrAllocationStep.next_update:210
+        hint_kind: FOUND_CONTRACT
+        note: ''
+      calcGrowthRate:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m:calcGrowthRate:1264
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      calcFluxBounds:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m:calcFluxBounds:1318
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+  ProteinActivation:
+    oc_files:
+    - opencell/vivarium/karr_composite.py
+    - opencell/vivarium/karr_protein_activation.py
+    - opencell/vivarium/karr_request_calculators.py
+    runtime_methods:
+      calcResourceRequirements_Current:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m:calcResourceRequirements_Current:354
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: COVERED_REQCALC
+        note: ''
+      evolveState:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m:evolveState:359
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_protein_activation.py:KarrProteinActivationProcess.next_update:240
+        hint_kind: FOUND_CONTRACT
+        note: ''
+      evaluateActivationRules:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m:evaluateActivationRules:369
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+  ProteinDecay:
+    oc_files:
+    - opencell/vivarium/karr_allocation_step.py
+    - opencell/vivarium/karr_composite.py
+    - opencell/vivarium/karr_protein_decay_light.py
+    - opencell/vivarium/karr_request_calculators.py
+    runtime_methods:
+      calcResourceRequirements_Current:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m:calcResourceRequirements_Current:488
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: COVERED_REQCALC
+        note: ''
+      evolveState:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m:evolveState:532
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_allocation_step.py:KarrAllocationStep.next_update:210
+        hint_kind: FOUND_CONTRACT
+        note: ''
+      evolveState_MisfoldProteins:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m:evolveState_MisfoldProteins:544
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      evolveState_RefoldProteins:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m:evolveState_RefoldProteins:598
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      evolveState_DegradeComplexes:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m:evolveState_DegradeComplexes:681
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      evolveState_DegradeAbortedPolypeptides:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m:evolveState_DegradeAbortedPolypeptides:766
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      evolveState_DegradeMonomers:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m:evolveState_DegradeMonomers:844
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+  ProteinFolding:
+    oc_files:
+    - opencell/vivarium/karr_protein_folding.py
+    - opencell/vivarium/karr_request_calculators.py
+    - tests/vivarium/test_karr_request_calculators.py
+    runtime_methods:
+      calcResourceRequirements_Current:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinFolding.m:calcResourceRequirements_Current:507
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: COVERED_REQCALC
+        note: ''
+      evolveState:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinFolding.m:evolveState:519
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_protein_folding.py:KarrProteinFoldingProcess.next_update:237
+        hint_kind: FOUND_CONTRACT
+        note: ''
+  ProteinModification:
+    oc_files:
+    - opencell/vivarium/karr_allocation_step.py
+    - opencell/vivarium/karr_protein_modification.py
+    - opencell/vivarium/karr_request_calculators.py
+    runtime_methods:
+      calcResourceRequirements_Current:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinModification.m:calcResourceRequirements_Current:324
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: COVERED_REQCALC
+        note: ''
+      evolveState:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinModification.m:evolveState:331
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_allocation_step.py:KarrAllocationStep.next_update:210
+        hint_kind: FOUND_CONTRACT
+        note: ''
+  ProteinProcessingI:
+    oc_files:
+    - opencell/vivarium/karr_composite.py
+    - opencell/vivarium/karr_protein_processing_i.py
+    - opencell/vivarium/karr_request_calculators.py
+    runtime_methods:
+      calcResourceRequirements_Current:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m:calcResourceRequirements_Current:218
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: COVERED_REQCALC
+        note: ''
+      evolveState:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m:evolveState:236
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_protein_processing_i.py:KarrProteinProcessingIProcess.next_update:182
+        hint_kind: FOUND_CONTRACT
+        note: ''
+  ProteinProcessingII:
+    oc_files:
+    - opencell/vivarium/karr_composite.py
+    - opencell/vivarium/karr_protein_processing_ii.py
+    - opencell/vivarium/karr_request_calculators.py
+    runtime_methods:
+      calcResourceRequirements_Current:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m:calcResourceRequirements_Current:325
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: COVERED_REQCALC
+        note: ''
+      evolveState:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m:evolveState:348
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_protein_processing_ii.py:KarrProteinProcessingIIProcess.next_update:178
+        hint_kind: FOUND_CONTRACT
+        note: ''
+  ProteinTranslocation:
+    oc_files:
+    - opencell/vivarium/karr_composite.py
+    - opencell/vivarium/karr_protein_translocation.py
+    - opencell/vivarium/karr_request_calculators.py
+    runtime_methods:
+      calcResourceRequirements_Current:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinTranslocation.m:calcResourceRequirements_Current:281
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: COVERED_REQCALC
+        note: ''
+      evolveState:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinTranslocation.m:evolveState:305
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_protein_translocation.py:KarrProteinTranslocationProcess.next_update:307
+        hint_kind: FOUND_CONTRACT
+        note: ''
+  RNADecay:
+    oc_files:
+    - opencell/vivarium/karr_allocation_step.py
+    - opencell/vivarium/karr_composite.py
+    - opencell/vivarium/karr_request_calculators.py
+    - opencell/vivarium/karr_rna_decay.py
+    runtime_methods:
+      calcResourceRequirements_Current:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNADecay.m:calcResourceRequirements_Current:282
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: COVERED_REQCALC
+        note: ''
+      evolveState:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNADecay.m:evolveState:297
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_allocation_step.py:KarrAllocationStep.next_update:210
+        hint_kind: FOUND_CONTRACT
+        note: ''
+  RNAModification:
+    oc_files:
+    - opencell/vivarium/karr_composite.py
+    - opencell/vivarium/karr_request_calculators.py
+    - opencell/vivarium/karr_rna_modification.py
+    runtime_methods:
+      calcResourceRequirements_Current:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m:calcResourceRequirements_Current:289
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: COVERED_REQCALC
+        note: ''
+      evolveState:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m:evolveState:297
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_request_calculators.py:RequestCalculatorD2.next_update:87
+        hint_kind: FOUND_CONTRACT
+        note: ''
+  RNAProcessing:
+    oc_files:
+    - opencell/vivarium/karr_composite.py
+    - opencell/vivarium/karr_request_calculators.py
+    - opencell/vivarium/karr_rna_processing.py
+    runtime_methods:
+      calcResourceRequirements_Current:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m:calcResourceRequirements_Current:406
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: COVERED_REQCALC
+        note: ''
+      evolveState:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m:evolveState:413
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_request_calculators.py:RequestCalculatorD2.next_update:87
+        hint_kind: FOUND_CONTRACT
+        note: ''
+      evolveState_Helper:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m:evolveState_Helper:422
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+  Replication:
+    oc_files:
+    - opencell/vivarium/karr_replication.py
+    - opencell/vivarium/karr_request_calculators.py
+    runtime_methods:
+      calcResourceRequirements_Current:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m:calcResourceRequirements_Current:519
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: COVERED_REQCALC
+        note: ''
+      evolveState:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m:evolveState:568
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_replication.py:KarrReplicationProcess.next_update:889
+        hint_kind: FOUND_CONTRACT
+        note: ''
+      initiateReplication:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m:initiateReplication:616
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      unwindAndPolymerizeDNA:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m:unwindAndPolymerizeDNA:692
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      dissociateFreeSSBComplexes:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m:dissociateFreeSSBComplexes:950
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      freeAndBindSSBs:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m:freeAndBindSSBs:958
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      initiateOkazakiFragment:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m:initiateOkazakiFragment:1030
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      terminateOkazakiFragment:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m:terminateOkazakiFragment:1095
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      ligateDNA:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m:ligateDNA:1220
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      terminateReplication:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m:terminateReplication:1253
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+  ReplicationInitiation:
+    oc_files:
+    - opencell/vivarium/karr_replication_initiation.py
+    - opencell/vivarium/karr_request_calculators.py
+    runtime_methods:
+      calcResourceRequirements_Current:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:calcResourceRequirements_Current:495
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: COVERED_REQCALC
+        note: ''
+      evolveState:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:evolveState:506
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess.next_update:288
+        hint_kind: FOUND_CONTRACT
+        note: ''
+      activateFreeDnaA:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:activateFreeDnaA:536
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      inactivateFreeDnaAATP:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:inactivateFreeDnaAATP:560
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      bindAndPolymerizeDnaAATP:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:bindAndPolymerizeDnaAATP:584
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      bindAndPolymerizeDnaAADP:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:bindAndPolymerizeDnaAADP:640
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      polymerizeDnaAATP:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:polymerizeDnaAATP:714
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      polymerizeDnaAADP:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:polymerizeDnaAADP:739
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      bindDnaAATP:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:bindDnaAATP:765
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      bindDnaAADP:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:bindDnaAADP:778
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      releaseDnaAAxP:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:releaseDnaAAxP:791
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      reactivateFreeDnaAADP:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:reactivateFreeDnaAADP:858
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      calculateDnaAR1234ATPPolymerizationRates:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:calculateDnaAR1234ATPPolymerizationRates:889
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      calculateDnaAR1234ADPPolymerizationRates:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:calculateDnaAR1234ADPPolymerizationRates:917
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      calculateDnaAR1234ATPPolymerizationCooperativity:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:calculateDnaAR1234ATPPolymerizationCooperativity:939
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      calculateDnaAATPBindingRates:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:calculateDnaAATPBindingRates:958
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      calculateDnaAADPBindingRates:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:calculateDnaAADPBindingRates:1016
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      calculateDnaAR1234Polymerization:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:calculateDnaAR1234Polymerization:1060
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      calculateDnaAR1234ComplexSize:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:calculateDnaAR1234ComplexSize:1104
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      calcuateIsDnaAR5Occupied:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:calcuateIsDnaAR5Occupied:1108
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      calculateIsDnaAORIComplexAssembled:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:calculateIsDnaAORIComplexAssembled:1120
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      calculateDnaABoxStatus:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:calculateDnaABoxStatus:1133
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+  RibosomeAssembly:
+    oc_files:
+    - opencell/vivarium/karr_request_calculators.py
+    - opencell/vivarium/karr_ribosome_assembly.py
+    runtime_methods:
+      calcResourceRequirements_Current:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m:calcResourceRequirements_Current:277
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: COVERED_REQCALC
+        note: ''
+      evolveState:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m:evolveState:301
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_request_calculators.py:RequestCalculatorD2.next_update:87
+        hint_kind: FOUND_CONTRACT
+        note: ''
+      getGtpPerComplex:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m:getGtpPerComplex:366
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+  TerminalOrganelleAssembly:
+    oc_files:
+    - opencell/vivarium/karr_request_calculators.py
+    - opencell/vivarium/karr_terminal_organelle_assembly.py
+    runtime_methods:
+      calcResourceRequirements_Current:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m:calcResourceRequirements_Current:311
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: COVERED_REQCALC
+        note: ''
+      evolveState:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m:evolveState:316
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_request_calculators.py:RequestCalculatorD2.next_update:87
+        hint_kind: FOUND_CONTRACT
+        note: ''
+  Transcription:
+    oc_files:
+    - opencell/m2/transcription_v2.py
+    - opencell/vivarium/karr_composite.py
+    - opencell/vivarium/karr_request_calculators.py
+    - opencell/vivarium/karr_transcription.py
+    - opencell/vivarium/karr_transcription_v3.py
+    runtime_methods:
+      calcResourceRequirements_Current:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Transcription.m:calcResourceRequirements_Current:609
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: COVERED_REQCALC
+        note: ''
+      evolveState:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Transcription.m:evolveState:618
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_request_calculators.py:RequestCalculatorD2.next_update:87
+        hint_kind: FOUND_CONTRACT
+        note: ''
+      computeRNAPolymeraseTUBindingProbabilities:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Transcription.m:computeRNAPolymeraseTUBindingProbabilities:978
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+  TranscriptionalRegulation:
+    oc_files:
+    - opencell/vivarium/karr_composite.py
+    - opencell/vivarium/karr_request_calculators.py
+    - opencell/vivarium/karr_transcriptional_regulation.py
+    runtime_methods:
+      calcResourceRequirements_Current:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TranscriptionalRegulation.m:calcResourceRequirements_Current:334
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: COVERED_REQCALC
+        note: ''
+      evolveState:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TranscriptionalRegulation.m:evolveState:339
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_request_calculators.py:RequestCalculatorD2.next_update:87
+        hint_kind: FOUND_CONTRACT
+        note: ''
+      bindTranscriptionFactors:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TranscriptionalRegulation.m:bindTranscriptionFactors:349
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+      calcBindingProbabilityFoldChange:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TranscriptionalRegulation.m:calcBindingProbabilityFoldChange:383
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: null
+        note: ''
+  Translation:
+    oc_files:
+    - opencell/m3/translation.py
+    - opencell/m3/translation_v2.py
+    - opencell/vivarium/karr_composite.py
+    - opencell/vivarium/karr_request_calculators.py
+    - opencell/vivarium/karr_translation.py
+    - opencell/vivarium/karr_translation_v3.py
+    runtime_methods:
+      calcResourceRequirements_Current:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m:calcResourceRequirements_Current:570
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: COVERED_REQCALC
+        note: ''
+      evolveState:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m:evolveState:599
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_request_calculators.py:RequestCalculatorD2.next_update:87
+        hint_kind: FOUND_CONTRACT
+        note: ''
+  tRNAAminoacylation:
+    oc_files:
+    - opencell/vivarium/karr_request_calculators.py
+    - opencell/vivarium/karr_trna_aminoacylation.py
+    runtime_methods:
+      calcResourceRequirements_Current:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m:calcResourceRequirements_Current:380
+        status: needs_confirmation
+        oc: null
+        hint: null
+        hint_kind: COVERED_REQCALC
+        note: ''
+      evolveState:
+        matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m:evolveState:387
+        status: needs_confirmation
+        oc: null
+        hint: opencell/vivarium/karr_request_calculators.py:RequestCalculatorD2.next_update:87
+        hint_kind: FOUND_CONTRACT
+        note: ''
