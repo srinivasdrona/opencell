@@ -110,9 +110,8 @@ ordering_constraints:
   hard_before: []
   hard_after: []
   soft_before: []
-  soft_after:
-    - "TerminalOrganelleAssembly"
-  note: "No explicit Karr order exception is documented for HostInteraction; the only practical ordering pressure is that it reads terminal-organelle readiness."
+  soft_after: []
+  note: "MATLAB does not enforce a HostInteraction-specific scheduler edge (Simulation order is random except tRNAAminoacylation < Translation), and the OC composite also has no HostInteraction flow edge. TerminalOrganelleAssembly is an advisory read-dependency only (captured in dependencies.consumes_outputs_of), not an executable ordering constraint."
 source_anchors:
   matlab_blocks:
     docstring_and_representation:
@@ -207,4 +206,5 @@ deviations:
     - "OC replaces Karr's boolean host cascade with a Karr-light aggregate adhesion model (`host_adhesion_strength` and `host_attached`)."
     - "OC reads `cell.terminal_organelle_count` plus `protein.counts`; Karr reads its own `host` state and `enzymes` array."
     - "No substrate stoichiometry or allocator request surface exists in the current OC port because HostInteraction's fixture has no substrate WIDs."
+    - "`soft_after: TerminalOrganelleAssembly` is advisory-only; neither MATLAB nor OC encodes an executable HostInteraction-after-TerminalOrganelleAssembly scheduler edge."
   note: "The row records the current OC approximation honestly instead of implying a literal MATLAB port."
