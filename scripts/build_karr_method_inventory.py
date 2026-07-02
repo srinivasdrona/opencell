@@ -50,6 +50,7 @@ import argparse
 import json
 import re
 import sys
+from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -82,6 +83,112 @@ REQUIRE_CATEGORIES = {
     "init_contract",
     "process_specific_helper",
 }
+
+# ---------------------------------------------------------------------------
+# Call-graph reachability -> port_requirement tier (2026-07-03).
+#
+# A required Karr method is a per-tick RUNTIME port only if it is reachable
+# (via this.<m> / obj.<m> calls) from evolveState or calcResourceRequirements_
+# Current. Methods reachable only from init/fitting roots are covered in OC via
+# fixtures (their fitted outputs are baked into the knowledge base), not as
+# per-process runtime ports.
+#
+# Roots:
+#   runtime : evolveState (+ evolveState_* substeps), calcResourceRequirements_Current
+#   init    : initializeState*, initializeConstants*
+#   fitting : calcResourceRequirements_LifeCycle
+#
+# Six methods have NO in-file dot-caller (externally invoked / handle-dispatched /
+# dead); each is resolved by verified source evidence in ORPHAN_OVERRIDE below.
+# ---------------------------------------------------------------------------
+RUNTIME_ROOT_NAMES = {"evolveState", "calcResourceRequirements_Current"}
+INIT_ROOT_PREFIXES = ("initializeState", "initializeConstants")
+FITTING_ROOT_NAMES = {"calcResourceRequirements_LifeCycle"}
+
+# (class, method) -> (tier, evidence). Verified against source 2026-07-03.
+ORPHAN_OVERRIDE = {
+    ("Metabolism", "formulateFBA"):
+        ("fitting", "no in-file caller; built by FBA.m:39/82 + FbaLPWriter.m:15 (FBA network construction)"),
+    ("Transcription", "calcStateTransitionProbabilities"):
+        ("fitting", "no in-file caller; called by FitConstants.m:1582 (fitting)"),
+    ("ReplicationInitiation", "sampleDnaABoxes"):
+        ("dead", "defined at L287; no caller anywhere in WholeCell src (dead/handle-dispatched)"),
+    ("ReplicationInitiation", "calcuateIsDnaAR5Occupied"):
+        ("runtime", "state query; called by SummaryLogger.m:307 + calculateIsDnaAORIComplexAssembled"),
+    ("ReplicationInitiation", "calculateIsDnaAORIComplexAssembled"):
+        ("runtime", "oriC-assembled state query (replication-initiation trigger)"),
+    ("ReplicationInitiation", "calculateDnaABoxStatus"):
+        ("runtime", "state query; called by CellState.m:187-188"),
+}
+
+_OVERRIDE_TIER_TO_PORT = {
+    "runtime": "runtime_port_required",
+    "fitting": "fitting_fixture_inherited",
+    "dead": "uncalled_no_port",
+}
+
+
+def _build_callgraph(methods: list[dict], lines: list[str]) -> dict[str, set[str]]:
+    names = {m["name"] for m in methods}
+    by_line = sorted(methods, key=lambda m: m["line"])
+    call_re = re.compile(r"(?:this|obj|p|self)\.(" + "|".join(re.escape(n) for n in names) + r")\b")
+    graph: dict[str, set[str]] = {}
+    for i, m in enumerate(by_line):
+        s = m["line"]
+        e = by_line[i + 1]["line"] if i + 1 < len(by_line) else len(lines) + 1
+        body = "\n".join(lines[s:e - 1])
+        graph[m["name"]] = {c for c in call_re.findall(body) if c != m["name"]}
+    return graph
+
+
+def _reachable(graph: dict[str, set[str]], roots: set[str], names: set[str]) -> set[str]:
+    seen: set[str] = set()
+    q = deque(r for r in roots if r in names)
+    while q:
+        cur = q.popleft()
+        if cur in seen:
+            continue
+        seen.add(cur)
+        for nxt in graph.get(cur, ()):
+            if nxt not in seen:
+                q.append(nxt)
+    return seen
+
+
+def assign_port_requirements(cls: str, methods: list[dict], lines: list[str]) -> None:
+    names = {m["name"] for m in methods}
+    graph = _build_callgraph(methods, lines)
+    runtime_roots = {n for n in names if n in RUNTIME_ROOT_NAMES or n.startswith("evolveState")}
+    init_roots = {n for n in names if n.startswith(INIT_ROOT_PREFIXES)}
+    fitting_roots = {n for n in names if n in FITTING_ROOT_NAMES}
+    R = _reachable(graph, runtime_roots, names)
+    I = _reachable(graph, init_roots, names)
+    F = _reachable(graph, fitting_roots, names)
+    for m in methods:
+        n = m["name"]
+        if m["is_constructor"]:
+            m["port_requirement"] = "n/a_constructor"
+            continue
+        if m["category"] == "property_getter_setter":
+            m["port_requirement"] = "exempt_accessor"
+            continue
+        if m["category"] == "framework_override":
+            m["port_requirement"] = "chassis_level"
+            continue
+        key = (cls, n)
+        if key in ORPHAN_OVERRIDE:
+            tier, why = ORPHAN_OVERRIDE[key]
+            m["port_requirement"] = _OVERRIDE_TIER_TO_PORT[tier]
+            m["port_note"] = why
+            continue
+        if n in R:
+            m["port_requirement"] = "runtime_port_required"
+        elif n in init_roots or n in I:
+            m["port_requirement"] = "init_fixture_or_logic"
+        elif n in fitting_roots or n in F:
+            m["port_requirement"] = "fitting_fixture_inherited"
+        else:
+            m["port_requirement"] = "needs_manual_resolution"
 
 
 @dataclass(frozen=True)
@@ -256,6 +363,12 @@ def build() -> dict:
     inv = {}
     for mf in sorted(PROC_DIR.glob("*.m")):
         parsed = parse_process(mf, framework)
+        raw_lines = mf.read_text(encoding="utf-8", errors="replace").splitlines()
+        assign_port_requirements(parsed["class"], parsed["methods"], raw_lines)
+        # recompute require count as RUNTIME ports only
+        parsed["runtime_port_required_count"] = sum(
+            1 for m in parsed["methods"] if m.get("port_requirement") == "runtime_port_required"
+        )
         inv[parsed["class"]] = parsed
     totals = {"processes": len(inv)}
     for cat in (
@@ -269,12 +382,33 @@ def build() -> dict:
         totals[cat] = sum(
             1 for p in inv.values() for m in p["methods"] if m.get("category") == cat
         )
+    for pr in (
+        "runtime_port_required",
+        "init_fixture_or_logic",
+        "fitting_fixture_inherited",
+        "uncalled_no_port",
+        "chassis_level",
+        "exempt_accessor",
+        "needs_manual_resolution",
+    ):
+        totals[pr] = sum(
+            1 for p in inv.values() for m in p["methods"] if m.get("port_requirement") == pr
+        )
     totals["require_oc_counterpart"] = sum(p["require_oc_counterpart_count"] for p in inv.values())
     totals["class_methods_excl_ctor"] = sum(p["method_count_excl_ctor"] for p in inv.values())
     return {
-        "schema": "karr_process_method_inventory/1.0",
+        "schema": "karr_process_method_inventory/1.1",
         "generated_by": "scripts/build_karr_method_inventory.py",
-        "provenance": "4-parser reconciliation (2 orchestrator + Haiku + codex gpt-5.4-mini); 6 discrepancies resolved by source inspection; see script docstring.",
+        "provenance": "4-parser reconciliation (2 orchestrator + Haiku + codex gpt-5.4-mini); 6 discrepancies resolved by source inspection; port_requirement via call-graph reachability from evolveState/calcResourceRequirements_Current vs init/fitting roots; 6 orphans resolved by source evidence (see ORPHAN_OVERRIDE).",
+        "port_requirement_legend": {
+            "runtime_port_required": "reachable from evolveState/calcResourceRequirements_Current; MUST have a per-process OC runtime port",
+            "init_fixture_or_logic": "init method; fixture-load OK for once-at-t0 init, real logic required for per-cell-cycle init",
+            "fitting_fixture_inherited": "offline fitting (FitConstants/FBA build); outputs inherited via fixtures; verify provenance once, not per-process port",
+            "uncalled_no_port": "defined but never called in Karr source; no OC port required",
+            "chassis_level": "framework override of base Process.m plumbing; verified once at chassis level",
+            "exempt_accessor": "get.*/set.* property accessor; exempt",
+            "needs_manual_resolution": "call-graph could not classify; requires manual source confirmation",
+        },
         "resolved_discrepancies": {
             "FtsZPolymerization.diff": "file-local fn after classdef end (L449); excluded",
             "FtsZPolymerization.jacobian": "file-local fn after classdef end (L500); excluded",
@@ -283,6 +417,8 @@ def build() -> dict:
             "MacromolecularComplexation.buildProteinComplexs_bounds": "file-local fn (L390); excluded",
             "Metabolism.calcGrowthRate": "real class method, multi-line signature (L1266-67); included",
         },
+        "orphan_resolutions": {f"{c}.{m}": {"tier": t, "evidence": e}
+                               for (c, m), (t, e) in ORPHAN_OVERRIDE.items()},
         "totals": totals,
         "processes": inv,
     }
@@ -313,13 +449,15 @@ def main() -> int:
     print(f"Wrote {OUT_JSON.relative_to(REPO)}")
     print(f"  processes:                 {t['processes']}")
     print(f"  class methods (excl ctor): {t['class_methods_excl_ctor']}")
-    print(f"  REQUIRE OC counterpart:    {t['require_oc_counterpart']}")
-    print(f"    biology_contract:        {t['biology_contract']}")
-    print(f"    biology_substep:         {t['biology_substep']}")
-    print(f"    init_contract:           {t['init_contract']}")
-    print(f"    process_specific_helper: {t['process_specific_helper']}")
-    print(f"  framework_override:        {t['framework_override']}  (chassis-level)")
-    print(f"  property_getter_setter:    {t['property_getter_setter']}  (exempt)")
+    print(f"  biology-category require:  {t['require_oc_counterpart']}")
+    print("  --- port_requirement (call-graph reachability) ---")
+    print(f"    runtime_port_required:     {t['runtime_port_required']}   <-- true per-process OC port target")
+    print(f"    init_fixture_or_logic:     {t['init_fixture_or_logic']}")
+    print(f"    fitting_fixture_inherited: {t['fitting_fixture_inherited']}")
+    print(f"    uncalled_no_port:          {t['uncalled_no_port']}")
+    print(f"    needs_manual_resolution:   {t['needs_manual_resolution']}")
+    print(f"    chassis_level:             {t['chassis_level']}  (framework overrides)")
+    print(f"    exempt_accessor:           {t['exempt_accessor']}  (get/set)")
     return 0
 
 

@@ -40,56 +40,82 @@ class methods from file-local helpers.
 
 ## Classification
 
-`require_oc_counterpart` = every method that does process-specific work and must
-have an OpenCell counterpart. Framework overrides are verified once at the
-chassis level; property accessors are exempt.
+Two orthogonal dimensions are recorded per method:
 
-| Category | Count | Completeness rule |
+**1. `category`** — what kind of method it is (structural):
+
+| Category | Count | Meaning |
 |---|---:|---|
-| `biology_contract` (evolveState, calcResourceRequirements_Current/_LifeCycle) | 112 | require OC counterpart |
-| `process_specific_helper` (formulateFBA, unwindAndPolymerizeDNA, …) | 65 | require OC counterpart |
-| `init_contract` (initializeConstants/State + variants) | 31 | require (fixture-load allowed for once-at-t0 init) |
-| `biology_substep` (evolveState_* sub-steps) | 14 | require OC counterpart |
-| **REQUIRE OC COUNTERPART (total)** | **222** | — |
-| `framework_override` (copyFromState/copyToState/getDryWeight…) | 76 | verified at chassis level |
-| `property_getter_setter` (get.*/set.*) | 30 | exempt |
-| **Class methods (excl. constructor)** | **328** | — |
+| `biology_contract` | 112 | evolveState, calcResourceRequirements_Current/_LifeCycle |
+| `process_specific_helper` | 65 | one-class helpers (formulateFBA, unwindAndPolymerizeDNA, …) |
+| `init_contract` | 31 | initializeConstants/State + variants |
+| `biology_substep` | 14 | evolveState_* sub-steps |
+| `framework_override` | 76 | base Process.m plumbing overridden per process |
+| `property_getter_setter` | 30 | get.*/set.* accessors |
 
-## Per-process completeness target
+**2. `port_requirement`** — whether OC must implement a per-process runtime port,
+computed by **call-graph reachability** (is the method reachable via `this.<m>`
+calls from `evolveState`/`calcResourceRequirements_Current`, vs only from
+init/fitting roots):
 
-`require` = methods requiring a verified OC counterpart; `total` = all class
-methods (excl. constructor).
+| port_requirement | Count | Rule |
+|---|---:|---|
+| **`runtime_port_required`** | **115** | reachable from evolveState/calcResourceRequirements_Current → **MUST have a per-process OC runtime port** |
+| `init_fixture_or_logic` | 68 | init method → fixture-load OK for once-at-t0 init; real logic required for per-cell-cycle init |
+| `fitting_fixture_inherited` | 38 | offline fitting (FitConstants / FBA build) → outputs inherited via fixtures; verify provenance once, not per-process |
+| `uncalled_no_port` | 1 | defined but never called in Karr source (`ReplicationInitiation.sampleDnaABoxes`) → no port needed |
+| `chassis_level` | 76 | framework override → verified once at chassis level |
+| `exempt_accessor` | 30 | property accessor → exempt |
+| `needs_manual_resolution` | 0 | all resolved |
 
-| Process | require | total |
-|---|---:|---:|
-| ReplicationInitiation | 30 | 31 |
-| DNARepair | 14 | 15 |
-| Metabolism | 14 | 15 |
-| Replication | 14 | 41 |
-| FtsZPolymerization | 10 | 10 |
-| ProteinDecay | 10 | 15 |
-| Cytokinesis | 7 | 8 |
-| DNADamage | 7 | 8 |
-| DNASupercoiling | 7 | 8 |
-| ProteinActivation | 7 | 11 |
-| Transcription | 7 | 12 |
-| TranscriptionalRegulation | 7 | 10 |
-| ChromosomeCondensation | 6 | 7 |
-| MacromolecularComplexation | 6 | 10 |
-| ProteinFolding | 6 | 10 |
-| ProteinModification | 6 | 10 |
-| RNAModification | 6 | 10 |
-| RNAProcessing | 6 | 10 |
-| RibosomeAssembly | 6 | 10 |
-| tRNAAminoacylation | 6 | 12 |
-| ChromosomeSegregation | 5 | 6 |
-| HostInteraction | 5 | 6 |
-| ProteinProcessingI | 5 | 9 |
-| ProteinProcessingII | 5 | 9 |
-| ProteinTranslocation | 5 | 9 |
-| RNADecay | 5 | 10 |
-| TerminalOrganelleAssembly | 5 | 6 |
-| Translation | 5 | 10 |
+**The true per-process runtime-port target is 115** (not the naive 222 biology-
+category count). The 68 init + 38 fitting are covered via fixtures (OC loads
+Karr's fitted knowledge base rather than re-running the offline fitting/init).
+
+### The three-layer resource framework (why lifecycle ≠ allocator)
+
+Karr embeds allocation in `Simulation.evolveState` and fitting in `FitConstants`
+(offline). OC split these, so the two Karr resource-requirement methods map to
+different OC layers:
+
+| Karr method | Role | OC representation | Validated by |
+|---|---|---|---|
+| `calcResourceRequirements_Current` | per-tick request | `RequestCalculator*` classes + `KarrAllocationStep` | L2.0a (allocator arithmetic) |
+| `calcResourceRequirements_LifeCycle` | offline fitting: biomass objective + expression bounds | fitted outputs inherited via fixtures (`biomass_col`, `fba_rxn_idx_biomass_production`, `metabolism_new_production`) | fixture provenance |
+| *(none — `KarrAllocationStep` is OC-only)* | per-tick allocation, refactored out of `Simulation.evolveState` | standalone Vivarium Step | L2.0a + L2.4 |
+
+OC's allocator is a **per-tick** Step; `calcResourceRequirements_LifeCycle` is an
+**offline fitting** method — they are different layers, and the allocator does
+NOT satisfy lifecycle. Lifecycle's *outputs* are inherited via fixtures.
+
+Six methods with no in-file dot-caller were resolved by source evidence (see
+`orphan_resolutions` in the JSON): `formulateFBA` (FBA.m build) and
+`calcStateTransitionProbabilities` (FitConstants) → fitting; three DnaA-box
+state queries → runtime; `sampleDnaABoxes` → dead code.
+
+## Per-process runtime-port target
+
+`run` = runtime_port_required (the real per-process OC port target);
+`init` = init_fixture_or_logic; `fit` = fitting_fixture_inherited.
+
+| Process | run | init | fit |
+|---|---:|---:|---:|
+| ReplicationInitiation | 22 | 6 | 1 |
+| DNARepair | 10 | 2 | 2 |
+| Replication | 10 | 3 | 1 |
+| FtsZPolymerization | 7 | 2 | 1 |
+| ProteinDecay | 7 | 2 | 1 |
+| DNADamage | 4 | 2 | 1 |
+| Metabolism | 4 | 2 | 8 |
+| TranscriptionalRegulation | 4 | 2 | 1 |
+| ChromosomeCondensation | 3 | 2 | 1 |
+| Cytokinesis | 3 | 2 | 2 |
+| DNASupercoiling | 3 | 3 | 1 |
+| ProteinActivation | 3 | 3 | 1 |
+| RNAProcessing | 3 | 2 | 1 |
+| RibosomeAssembly | 3 | 2 | 1 |
+| Transcription | 3 | 2 | 2 |
+| 13 simpler processes | 2 each | 2–3 | 1 |
 
 ## Regenerating
 

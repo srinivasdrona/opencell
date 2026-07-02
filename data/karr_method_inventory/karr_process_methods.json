@@ -1,5 +1,40 @@
 {
   "generated_by": "scripts/build_karr_method_inventory.py",
+  "orphan_resolutions": {
+    "Metabolism.formulateFBA": {
+      "evidence": "no in-file caller; built by FBA.m:39/82 + FbaLPWriter.m:15 (FBA network construction)",
+      "tier": "fitting"
+    },
+    "ReplicationInitiation.calcuateIsDnaAR5Occupied": {
+      "evidence": "state query; called by SummaryLogger.m:307 + calculateIsDnaAORIComplexAssembled",
+      "tier": "runtime"
+    },
+    "ReplicationInitiation.calculateDnaABoxStatus": {
+      "evidence": "state query; called by CellState.m:187-188",
+      "tier": "runtime"
+    },
+    "ReplicationInitiation.calculateIsDnaAORIComplexAssembled": {
+      "evidence": "oriC-assembled state query (replication-initiation trigger)",
+      "tier": "runtime"
+    },
+    "ReplicationInitiation.sampleDnaABoxes": {
+      "evidence": "defined at L287; no caller anywhere in WholeCell src (dead/handle-dispatched)",
+      "tier": "dead"
+    },
+    "Transcription.calcStateTransitionProbabilities": {
+      "evidence": "no in-file caller; called by FitConstants.m:1582 (fitting)",
+      "tier": "fitting"
+    }
+  },
+  "port_requirement_legend": {
+    "chassis_level": "framework override of base Process.m plumbing; verified once at chassis level",
+    "exempt_accessor": "get.*/set.* property accessor; exempt",
+    "fitting_fixture_inherited": "offline fitting (FitConstants/FBA build); outputs inherited via fixtures; verify provenance once, not per-process port",
+    "init_fixture_or_logic": "init method; fixture-load OK for once-at-t0 init, real logic required for per-cell-cycle init",
+    "needs_manual_resolution": "call-graph could not classify; requires manual source confirmation",
+    "runtime_port_required": "reachable from evolveState/calcResourceRequirements_Current; MUST have a per-process OC runtime port",
+    "uncalled_no_port": "defined but never called in Karr source; no OC port required"
+  },
   "processes": {
     "ChromosomeCondensation": {
       "class": "ChromosomeCondensation",
@@ -10,52 +45,61 @@
           "category": "constructor",
           "is_constructor": true,
           "line": 163,
-          "name": "ChromosomeCondensation"
+          "name": "ChromosomeCondensation",
+          "port_requirement": "n/a_constructor"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 171,
-          "name": "storeObjectReferences"
+          "name": "storeObjectReferences",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 177,
-          "name": "initializeConstants"
+          "name": "initializeConstants",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 187,
-          "name": "calcResourceRequirements_LifeCycle"
+          "name": "calcResourceRequirements_LifeCycle",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 222,
-          "name": "initializeState"
+          "name": "initializeState",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 233,
-          "name": "calcResourceRequirements_Current"
+          "name": "calcResourceRequirements_Current",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 240,
-          "name": "evolveState"
+          "name": "evolveState",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 286,
-          "name": "calcNewRegions"
+          "name": "calcNewRegions",
+          "port_requirement": "runtime_port_required"
         }
       ],
-      "require_oc_counterpart_count": 6
+      "require_oc_counterpart_count": 6,
+      "runtime_port_required_count": 3
     },
     "ChromosomeSegregation": {
       "class": "ChromosomeSegregation",
@@ -66,46 +110,54 @@
           "category": "constructor",
           "is_constructor": true,
           "line": 128,
-          "name": "ChromosomeSegregation"
+          "name": "ChromosomeSegregation",
+          "port_requirement": "n/a_constructor"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 136,
-          "name": "storeObjectReferences"
+          "name": "storeObjectReferences",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 142,
-          "name": "initializeConstants"
+          "name": "initializeConstants",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 155,
-          "name": "calcResourceRequirements_LifeCycle"
+          "name": "calcResourceRequirements_LifeCycle",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 175,
-          "name": "initializeState"
+          "name": "initializeState",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 179,
-          "name": "calcResourceRequirements_Current"
+          "name": "calcResourceRequirements_Current",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 193,
-          "name": "evolveState"
+          "name": "evolveState",
+          "port_requirement": "runtime_port_required"
         }
       ],
-      "require_oc_counterpart_count": 5
+      "require_oc_counterpart_count": 5,
+      "runtime_port_required_count": 2
     },
     "Cytokinesis": {
       "class": "Cytokinesis",
@@ -116,58 +168,68 @@
           "category": "constructor",
           "is_constructor": true,
           "line": 108,
-          "name": "Cytokinesis"
+          "name": "Cytokinesis",
+          "port_requirement": "n/a_constructor"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 115,
-          "name": "storeObjectReferences"
+          "name": "storeObjectReferences",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 127,
-          "name": "initializeConstants"
+          "name": "initializeConstants",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 138,
-          "name": "calcResourceRequirements_LifeCycle"
+          "name": "calcResourceRequirements_LifeCycle",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 162,
-          "name": "initializeState"
+          "name": "initializeState",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 166,
-          "name": "calcResourceRequirements_Current"
+          "name": "calcResourceRequirements_Current",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 173,
-          "name": "evolveState"
+          "name": "evolveState",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 264,
-          "name": "calcNextPinchedDiameter"
+          "name": "calcNextPinchedDiameter",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 289,
-          "name": "calcRequiredPinchingCycles"
+          "name": "calcRequiredPinchingCycles",
+          "port_requirement": "fitting_fixture_inherited"
         }
       ],
-      "require_oc_counterpart_count": 7
+      "require_oc_counterpart_count": 7,
+      "runtime_port_required_count": 3
     },
     "DNADamage": {
       "class": "DNADamage",
@@ -178,58 +240,68 @@
           "category": "constructor",
           "is_constructor": true,
           "line": 256,
-          "name": "DNADamage"
+          "name": "DNADamage",
+          "port_requirement": "n/a_constructor"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 264,
-          "name": "storeObjectReferences"
+          "name": "storeObjectReferences",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 270,
-          "name": "initializeConstants"
+          "name": "initializeConstants",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 448,
-          "name": "calcResourceRequirements_LifeCycle"
+          "name": "calcResourceRequirements_LifeCycle",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 465,
-          "name": "initializeState"
+          "name": "initializeState",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 469,
-          "name": "calcResourceRequirements_Current"
+          "name": "calcResourceRequirements_Current",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 474,
-          "name": "calcExpectedReactionRates"
+          "name": "calcExpectedReactionRates",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 490,
-          "name": "calcNumberVulnerableSites"
+          "name": "calcNumberVulnerableSites",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 535,
-          "name": "evolveState"
+          "name": "evolveState",
+          "port_requirement": "runtime_port_required"
         }
       ],
-      "require_oc_counterpart_count": 7
+      "require_oc_counterpart_count": 7,
+      "runtime_port_required_count": 4
     },
     "DNARepair": {
       "class": "DNARepair",
@@ -240,100 +312,117 @@
           "category": "constructor",
           "is_constructor": true,
           "line": 462,
-          "name": "DNARepair"
+          "name": "DNARepair",
+          "port_requirement": "n/a_constructor"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 470,
-          "name": "storeObjectReferences"
+          "name": "storeObjectReferences",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 476,
-          "name": "initializeConstants"
+          "name": "initializeConstants",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 672,
-          "name": "calcResourceRequirements_LifeCycle"
+          "name": "calcResourceRequirements_LifeCycle",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 691,
-          "name": "calcExpectedReactionRates"
+          "name": "calcExpectedReactionRates",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 821,
-          "name": "initializeState"
+          "name": "initializeState",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 829,
-          "name": "calcResourceRequirements_Current"
+          "name": "calcResourceRequirements_Current",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 894,
-          "name": "evolveState"
+          "name": "evolveState",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_substep",
           "is_constructor": false,
           "line": 927,
-          "name": "evolveState_BER"
+          "name": "evolveState_BER",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_substep",
           "is_constructor": false,
           "line": 1096,
-          "name": "evolveState_NER"
+          "name": "evolveState_NER",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_substep",
           "is_constructor": false,
           "line": 1222,
-          "name": "evolveState_HR"
+          "name": "evolveState_HR",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_substep",
           "is_constructor": false,
           "line": 1365,
-          "name": "evolveState_Polymerize"
+          "name": "evolveState_Polymerize",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_substep",
           "is_constructor": false,
           "line": 1454,
-          "name": "evolveState_Ligate"
+          "name": "evolveState_Ligate",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_substep",
           "is_constructor": false,
           "line": 1488,
-          "name": "evolveState_DisA"
+          "name": "evolveState_DisA",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_substep",
           "is_constructor": false,
           "line": 1500,
-          "name": "evolveState_Modification"
+          "name": "evolveState_Modification",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_substep",
           "is_constructor": false,
           "line": 1533,
-          "name": "evolveState_Restriction"
+          "name": "evolveState_Restriction",
+          "port_requirement": "runtime_port_required"
         }
       ],
-      "require_oc_counterpart_count": 14
+      "require_oc_counterpart_count": 14,
+      "runtime_port_required_count": 10
     },
     "DNASupercoiling": {
       "class": "DNASupercoiling",
@@ -344,58 +433,68 @@
           "category": "constructor",
           "is_constructor": true,
           "line": 219,
-          "name": "DNASupercoiling"
+          "name": "DNASupercoiling",
+          "port_requirement": "n/a_constructor"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 227,
-          "name": "storeObjectReferences"
+          "name": "storeObjectReferences",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 236,
-          "name": "initializeConstants"
+          "name": "initializeConstants",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 272,
-          "name": "calcResourceRequirements_LifeCycle"
+          "name": "calcResourceRequirements_LifeCycle",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 320,
-          "name": "initializeState"
+          "name": "initializeState",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 333,
-          "name": "calcResourceRequirements_Current"
+          "name": "calcResourceRequirements_Current",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 356,
-          "name": "evolveState"
+          "name": "evolveState",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 510,
-          "name": "calcRNAPolymeraseBindingProbFoldChange"
+          "name": "calcRNAPolymeraseBindingProbFoldChange",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 544,
-          "name": "buildEnzymeProperties"
+          "name": "buildEnzymeProperties",
+          "port_requirement": "init_fixture_or_logic"
         }
       ],
-      "require_oc_counterpart_count": 7
+      "require_oc_counterpart_count": 7,
+      "runtime_port_required_count": 3
     },
     "FtsZPolymerization": {
       "class": "FtsZPolymerization",
@@ -406,70 +505,82 @@
           "category": "constructor",
           "is_constructor": true,
           "line": 114,
-          "name": "FtsZPolymerization"
+          "name": "FtsZPolymerization",
+          "port_requirement": "n/a_constructor"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 122,
-          "name": "initializeConstants"
+          "name": "initializeConstants",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 133,
-          "name": "calcResourceRequirements_LifeCycle"
+          "name": "calcResourceRequirements_LifeCycle",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 166,
-          "name": "initializeState"
+          "name": "initializeState",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 189,
-          "name": "calcResourceRequirements_Current"
+          "name": "calcResourceRequirements_Current",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 197,
-          "name": "evolveState"
+          "name": "evolveState",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 220,
-          "name": "integrateODEs"
+          "name": "integrateODEs",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 374,
-          "name": "discretizeEnzymes"
+          "name": "discretizeEnzymes",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 403,
-          "name": "applySubstrateLimits"
+          "name": "applySubstrateLimits",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 436,
-          "name": "moleculesToConcentration"
+          "name": "moleculesToConcentration",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 441,
-          "name": "concentrationToMolecules"
+          "name": "concentrationToMolecules",
+          "port_requirement": "runtime_port_required"
         }
       ],
-      "require_oc_counterpart_count": 10
+      "require_oc_counterpart_count": 10,
+      "runtime_port_required_count": 7
     },
     "HostInteraction": {
       "class": "HostInteraction",
@@ -480,46 +591,54 @@
           "category": "constructor",
           "is_constructor": true,
           "line": 222,
-          "name": "HostInteraction"
+          "name": "HostInteraction",
+          "port_requirement": "n/a_constructor"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 230,
-          "name": "storeObjectReferences"
+          "name": "storeObjectReferences",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 241,
-          "name": "initializeConstants"
+          "name": "initializeConstants",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 252,
-          "name": "calcResourceRequirements_LifeCycle"
+          "name": "calcResourceRequirements_LifeCycle",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 261,
-          "name": "initializeState"
+          "name": "initializeState",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 266,
-          "name": "calcResourceRequirements_Current"
+          "name": "calcResourceRequirements_Current",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 271,
-          "name": "evolveState"
+          "name": "evolveState",
+          "port_requirement": "runtime_port_required"
         }
       ],
-      "require_oc_counterpart_count": 5
+      "require_oc_counterpart_count": 5,
+      "runtime_port_required_count": 2
     },
     "MacromolecularComplexation": {
       "class": "MacromolecularComplexation",
@@ -530,70 +649,82 @@
           "category": "constructor",
           "is_constructor": true,
           "line": 128,
-          "name": "MacromolecularComplexation"
+          "name": "MacromolecularComplexation",
+          "port_requirement": "n/a_constructor"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 136,
-          "name": "initializeConstants"
+          "name": "initializeConstants",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 174,
-          "name": "initializeComplexNetworks"
+          "name": "initializeComplexNetworks",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 210,
-          "name": "copyFromState"
+          "name": "copyFromState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 228,
-          "name": "copyToState"
+          "name": "copyToState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 249,
-          "name": "allocateMemoryForState"
+          "name": "allocateMemoryForState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 261,
-          "name": "calcResourceRequirements_LifeCycle"
+          "name": "calcResourceRequirements_LifeCycle",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 280,
-          "name": "initializeState"
+          "name": "initializeState",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 285,
-          "name": "calcResourceRequirements_Current"
+          "name": "calcResourceRequirements_Current",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 290,
-          "name": "evolveState"
+          "name": "evolveState",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 319,
-          "name": "getDryWeight"
+          "name": "getDryWeight",
+          "port_requirement": "chassis_level"
         }
       ],
-      "require_oc_counterpart_count": 6
+      "require_oc_counterpart_count": 6,
+      "runtime_port_required_count": 2
     },
     "Metabolism": {
       "class": "Metabolism",
@@ -604,100 +735,118 @@
           "category": "constructor",
           "is_constructor": true,
           "line": 267,
-          "name": "Metabolism"
+          "name": "Metabolism",
+          "port_requirement": "n/a_constructor"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 275,
-          "name": "storeObjectReferences"
+          "name": "storeObjectReferences",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 284,
-          "name": "initializeConstants"
+          "name": "initializeConstants",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 418,
-          "name": "formulateFBA"
+          "name": "formulateFBA",
+          "port_note": "no in-file caller; built by FBA.m:39/82 + FbaLPWriter.m:15 (FBA network construction)",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 771,
-          "name": "calcResourceRequirements_LifeCycle"
+          "name": "calcResourceRequirements_LifeCycle",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 809,
-          "name": "fitEnzymes"
+          "name": "fitEnzymes",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 935,
-          "name": "adjustEnzymeExpressionSparsely"
+          "name": "adjustEnzymeExpressionSparsely",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 981,
-          "name": "adjustEnzymeExpressionSparselyHelper"
+          "name": "adjustEnzymeExpressionSparselyHelper",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 1012,
-          "name": "calcMinMaxEnzymes"
+          "name": "calcMinMaxEnzymes",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 1142,
-          "name": "calcEnzymeKineticallyLimitedReactions"
+          "name": "calcEnzymeKineticallyLimitedReactions",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 1161,
-          "name": "calcEffectiveFBANetwork"
+          "name": "calcEffectiveFBANetwork",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 1182,
-          "name": "initializeState"
+          "name": "initializeState",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 1188,
-          "name": "calcResourceRequirements_Current"
+          "name": "calcResourceRequirements_Current",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 1200,
-          "name": "evolveState"
+          "name": "evolveState",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 1264,
-          "name": "calcGrowthRate"
+          "name": "calcGrowthRate",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 1318,
-          "name": "calcFluxBounds"
+          "name": "calcFluxBounds",
+          "port_requirement": "runtime_port_required"
         }
       ],
-      "require_oc_counterpart_count": 14
+      "require_oc_counterpart_count": 14,
+      "runtime_port_required_count": 4
     },
     "ProteinActivation": {
       "class": "ProteinActivation",
@@ -708,76 +857,89 @@
           "category": "constructor",
           "is_constructor": true,
           "line": 151,
-          "name": "ProteinActivation"
+          "name": "ProteinActivation",
+          "port_requirement": "n/a_constructor"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 159,
-          "name": "initializeConstants"
+          "name": "initializeConstants",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 255,
-          "name": "transcodeActivationRules"
+          "name": "transcodeActivationRules",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 262,
-          "name": "copyFromState"
+          "name": "copyFromState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 288,
-          "name": "copyToState"
+          "name": "copyToState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 318,
-          "name": "allocateMemoryForState"
+          "name": "allocateMemoryForState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 330,
-          "name": "calcResourceRequirements_LifeCycle"
+          "name": "calcResourceRequirements_LifeCycle",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 349,
-          "name": "initializeState"
+          "name": "initializeState",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 354,
-          "name": "calcResourceRequirements_Current"
+          "name": "calcResourceRequirements_Current",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 359,
-          "name": "evolveState"
+          "name": "evolveState",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 369,
-          "name": "evaluateActivationRules"
+          "name": "evaluateActivationRules",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 400,
-          "name": "getDryWeight"
+          "name": "getDryWeight",
+          "port_requirement": "chassis_level"
         }
       ],
-      "require_oc_counterpart_count": 7
+      "require_oc_counterpart_count": 7,
+      "runtime_port_required_count": 3
     },
     "ProteinDecay": {
       "class": "ProteinDecay",
@@ -788,100 +950,117 @@
           "category": "constructor",
           "is_constructor": true,
           "line": 257,
-          "name": "ProteinDecay"
+          "name": "ProteinDecay",
+          "port_requirement": "n/a_constructor"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 265,
-          "name": "storeObjectReferences"
+          "name": "storeObjectReferences",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 273,
-          "name": "initializeConstants"
+          "name": "initializeConstants",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 384,
-          "name": "copyFromState"
+          "name": "copyFromState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 393,
-          "name": "copyToState"
+          "name": "copyToState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 404,
-          "name": "allocateMemoryForState"
+          "name": "allocateMemoryForState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 420,
-          "name": "calcResourceRequirements_LifeCycle"
+          "name": "calcResourceRequirements_LifeCycle",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 484,
-          "name": "initializeState"
+          "name": "initializeState",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 488,
-          "name": "calcResourceRequirements_Current"
+          "name": "calcResourceRequirements_Current",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 532,
-          "name": "evolveState"
+          "name": "evolveState",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_substep",
           "is_constructor": false,
           "line": 544,
-          "name": "evolveState_MisfoldProteins"
+          "name": "evolveState_MisfoldProteins",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_substep",
           "is_constructor": false,
           "line": 598,
-          "name": "evolveState_RefoldProteins"
+          "name": "evolveState_RefoldProteins",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_substep",
           "is_constructor": false,
           "line": 681,
-          "name": "evolveState_DegradeComplexes"
+          "name": "evolveState_DegradeComplexes",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_substep",
           "is_constructor": false,
           "line": 766,
-          "name": "evolveState_DegradeAbortedPolypeptides"
+          "name": "evolveState_DegradeAbortedPolypeptides",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_substep",
           "is_constructor": false,
           "line": 844,
-          "name": "evolveState_DegradeMonomers"
+          "name": "evolveState_DegradeMonomers",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 920,
-          "name": "getDryWeight"
+          "name": "getDryWeight",
+          "port_requirement": "chassis_level"
         }
       ],
-      "require_oc_counterpart_count": 10
+      "require_oc_counterpart_count": 10,
+      "runtime_port_required_count": 7
     },
     "ProteinFolding": {
       "class": "ProteinFolding",
@@ -892,70 +1071,82 @@
           "category": "constructor",
           "is_constructor": true,
           "line": 254,
-          "name": "ProteinFolding"
+          "name": "ProteinFolding",
+          "port_requirement": "n/a_constructor"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 262,
-          "name": "initializeConstants"
+          "name": "initializeConstants",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 361,
-          "name": "initializeSpeciesNetwork"
+          "name": "initializeSpeciesNetwork",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 380,
-          "name": "copyFromState"
+          "name": "copyFromState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 415,
-          "name": "copyToState"
+          "name": "copyToState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 456,
-          "name": "allocateMemoryForState"
+          "name": "allocateMemoryForState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 471,
-          "name": "calcResourceRequirements_LifeCycle"
+          "name": "calcResourceRequirements_LifeCycle",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 501,
-          "name": "initializeState"
+          "name": "initializeState",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 507,
-          "name": "calcResourceRequirements_Current"
+          "name": "calcResourceRequirements_Current",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 519,
-          "name": "evolveState"
+          "name": "evolveState",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 586,
-          "name": "getDryWeight"
+          "name": "getDryWeight",
+          "port_requirement": "chassis_level"
         }
       ],
-      "require_oc_counterpart_count": 6
+      "require_oc_counterpart_count": 6,
+      "runtime_port_required_count": 2
     },
     "ProteinModification": {
       "class": "ProteinModification",
@@ -966,70 +1157,82 @@
           "category": "constructor",
           "is_constructor": true,
           "line": 139,
-          "name": "ProteinModification"
+          "name": "ProteinModification",
+          "port_requirement": "n/a_constructor"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 147,
-          "name": "initializeConstants"
+          "name": "initializeConstants",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 210,
-          "name": "initializeSpeciesNetwork"
+          "name": "initializeSpeciesNetwork",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 228,
-          "name": "copyFromState"
+          "name": "copyFromState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 260,
-          "name": "copyToState"
+          "name": "copyToState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 294,
-          "name": "allocateMemoryForState"
+          "name": "allocateMemoryForState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 306,
-          "name": "calcResourceRequirements_LifeCycle"
+          "name": "calcResourceRequirements_LifeCycle",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 320,
-          "name": "initializeState"
+          "name": "initializeState",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 324,
-          "name": "calcResourceRequirements_Current"
+          "name": "calcResourceRequirements_Current",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 331,
-          "name": "evolveState"
+          "name": "evolveState",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 398,
-          "name": "getDryWeight"
+          "name": "getDryWeight",
+          "port_requirement": "chassis_level"
         }
       ],
-      "require_oc_counterpart_count": 6
+      "require_oc_counterpart_count": 6,
+      "runtime_port_required_count": 2
     },
     "ProteinProcessingI": {
       "class": "ProteinProcessingI",
@@ -1040,64 +1243,75 @@
           "category": "constructor",
           "is_constructor": true,
           "line": 135,
-          "name": "ProteinProcessingI"
+          "name": "ProteinProcessingI",
+          "port_requirement": "n/a_constructor"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 143,
-          "name": "initializeConstants"
+          "name": "initializeConstants",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 153,
-          "name": "copyFromState"
+          "name": "copyFromState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 161,
-          "name": "copyToState"
+          "name": "copyToState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 171,
-          "name": "allocateMemoryForState"
+          "name": "allocateMemoryForState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 184,
-          "name": "calcResourceRequirements_LifeCycle"
+          "name": "calcResourceRequirements_LifeCycle",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 214,
-          "name": "initializeState"
+          "name": "initializeState",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 218,
-          "name": "calcResourceRequirements_Current"
+          "name": "calcResourceRequirements_Current",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 236,
-          "name": "evolveState"
+          "name": "evolveState",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 325,
-          "name": "getDryWeight"
+          "name": "getDryWeight",
+          "port_requirement": "chassis_level"
         }
       ],
-      "require_oc_counterpart_count": 5
+      "require_oc_counterpart_count": 5,
+      "runtime_port_required_count": 2
     },
     "ProteinProcessingII": {
       "class": "ProteinProcessingII",
@@ -1108,64 +1322,75 @@
           "category": "constructor",
           "is_constructor": true,
           "line": 169,
-          "name": "ProteinProcessingII"
+          "name": "ProteinProcessingII",
+          "port_requirement": "n/a_constructor"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 177,
-          "name": "initializeConstants"
+          "name": "initializeConstants",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 199,
-          "name": "copyFromState"
+          "name": "copyFromState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 234,
-          "name": "copyToState"
+          "name": "copyToState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 275,
-          "name": "allocateMemoryForState"
+          "name": "allocateMemoryForState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 290,
-          "name": "calcResourceRequirements_LifeCycle"
+          "name": "calcResourceRequirements_LifeCycle",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 321,
-          "name": "initializeState"
+          "name": "initializeState",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 325,
-          "name": "calcResourceRequirements_Current"
+          "name": "calcResourceRequirements_Current",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 348,
-          "name": "evolveState"
+          "name": "evolveState",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 451,
-          "name": "getDryWeight"
+          "name": "getDryWeight",
+          "port_requirement": "chassis_level"
         }
       ],
-      "require_oc_counterpart_count": 5
+      "require_oc_counterpart_count": 5,
+      "runtime_port_required_count": 2
     },
     "ProteinTranslocation": {
       "class": "ProteinTranslocation",
@@ -1176,64 +1401,75 @@
           "category": "constructor",
           "is_constructor": true,
           "line": 184,
-          "name": "ProteinTranslocation"
+          "name": "ProteinTranslocation",
+          "port_requirement": "n/a_constructor"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 192,
-          "name": "initializeConstants"
+          "name": "initializeConstants",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 207,
-          "name": "copyFromState"
+          "name": "copyFromState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 214,
-          "name": "copyToState"
+          "name": "copyToState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 223,
-          "name": "allocateMemoryForState"
+          "name": "allocateMemoryForState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 235,
-          "name": "calcResourceRequirements_LifeCycle"
+          "name": "calcResourceRequirements_LifeCycle",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 277,
-          "name": "initializeState"
+          "name": "initializeState",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 281,
-          "name": "calcResourceRequirements_Current"
+          "name": "calcResourceRequirements_Current",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 305,
-          "name": "evolveState"
+          "name": "evolveState",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 375,
-          "name": "getDryWeight"
+          "name": "getDryWeight",
+          "port_requirement": "chassis_level"
         }
       ],
-      "require_oc_counterpart_count": 5
+      "require_oc_counterpart_count": 5,
+      "runtime_port_required_count": 2
     },
     "RNADecay": {
       "class": "RNADecay",
@@ -1244,70 +1480,82 @@
           "category": "constructor",
           "is_constructor": true,
           "line": 146,
-          "name": "RNADecay"
+          "name": "RNADecay",
+          "port_requirement": "n/a_constructor"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 154,
-          "name": "storeObjectReferences"
+          "name": "storeObjectReferences",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 162,
-          "name": "initializeConstants"
+          "name": "initializeConstants",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 213,
-          "name": "copyFromState"
+          "name": "copyFromState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 220,
-          "name": "copyToState"
+          "name": "copyToState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 229,
-          "name": "allocateMemoryForState"
+          "name": "allocateMemoryForState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 241,
-          "name": "calcResourceRequirements_LifeCycle"
+          "name": "calcResourceRequirements_LifeCycle",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 278,
-          "name": "initializeState"
+          "name": "initializeState",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 282,
-          "name": "calcResourceRequirements_Current"
+          "name": "calcResourceRequirements_Current",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 297,
-          "name": "evolveState"
+          "name": "evolveState",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 385,
-          "name": "getDryWeight"
+          "name": "getDryWeight",
+          "port_requirement": "chassis_level"
         }
       ],
-      "require_oc_counterpart_count": 5
+      "require_oc_counterpart_count": 5,
+      "runtime_port_required_count": 2
     },
     "RNAModification": {
       "class": "RNAModification",
@@ -1318,70 +1566,82 @@
           "category": "constructor",
           "is_constructor": true,
           "line": 148,
-          "name": "RNAModification"
+          "name": "RNAModification",
+          "port_requirement": "n/a_constructor"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 156,
-          "name": "initializeConstants"
+          "name": "initializeConstants",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 221,
-          "name": "initializeSpeciesNetwork"
+          "name": "initializeSpeciesNetwork",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 239,
-          "name": "copyFromState"
+          "name": "copyFromState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 247,
-          "name": "copyToState"
+          "name": "copyToState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 257,
-          "name": "allocateMemoryForState"
+          "name": "allocateMemoryForState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 270,
-          "name": "calcResourceRequirements_LifeCycle"
+          "name": "calcResourceRequirements_LifeCycle",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 285,
-          "name": "initializeState"
+          "name": "initializeState",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 289,
-          "name": "calcResourceRequirements_Current"
+          "name": "calcResourceRequirements_Current",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 297,
-          "name": "evolveState"
+          "name": "evolveState",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 367,
-          "name": "getDryWeight"
+          "name": "getDryWeight",
+          "port_requirement": "chassis_level"
         }
       ],
-      "require_oc_counterpart_count": 6
+      "require_oc_counterpart_count": 6,
+      "runtime_port_required_count": 2
     },
     "RNAProcessing": {
       "class": "RNAProcessing",
@@ -1392,70 +1652,82 @@
           "category": "constructor",
           "is_constructor": true,
           "line": 280,
-          "name": "RNAProcessing"
+          "name": "RNAProcessing",
+          "port_requirement": "n/a_constructor"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 287,
-          "name": "initializeConstants"
+          "name": "initializeConstants",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 353,
-          "name": "copyFromState"
+          "name": "copyFromState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 362,
-          "name": "copyToState"
+          "name": "copyToState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 373,
-          "name": "allocateMemoryForState"
+          "name": "allocateMemoryForState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 387,
-          "name": "calcResourceRequirements_LifeCycle"
+          "name": "calcResourceRequirements_LifeCycle",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 402,
-          "name": "initializeState"
+          "name": "initializeState",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 406,
-          "name": "calcResourceRequirements_Current"
+          "name": "calcResourceRequirements_Current",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 413,
-          "name": "evolveState"
+          "name": "evolveState",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_substep",
           "is_constructor": false,
           "line": 422,
-          "name": "evolveState_Helper"
+          "name": "evolveState_Helper",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 476,
-          "name": "getDryWeight"
+          "name": "getDryWeight",
+          "port_requirement": "chassis_level"
         }
       ],
-      "require_oc_counterpart_count": 6
+      "require_oc_counterpart_count": 6,
+      "runtime_port_required_count": 3
     },
     "Replication": {
       "class": "Replication",
@@ -1466,256 +1738,299 @@
           "category": "constructor",
           "is_constructor": true,
           "line": 344,
-          "name": "Replication"
+          "name": "Replication",
+          "port_requirement": "n/a_constructor"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 352,
-          "name": "storeObjectReferences"
+          "name": "storeObjectReferences",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 358,
-          "name": "initializeConstants"
+          "name": "initializeConstants",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 414,
-          "name": "calculatePrimaseBindingLocations"
+          "name": "calculatePrimaseBindingLocations",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 436,
-          "name": "calcResourceRequirements_LifeCycle"
+          "name": "calcResourceRequirements_LifeCycle",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 515,
-          "name": "initializeState"
+          "name": "initializeState",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 519,
-          "name": "calcResourceRequirements_Current"
+          "name": "calcResourceRequirements_Current",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 568,
-          "name": "evolveState"
+          "name": "evolveState",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 616,
-          "name": "initiateReplication"
+          "name": "initiateReplication",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 692,
-          "name": "unwindAndPolymerizeDNA"
+          "name": "unwindAndPolymerizeDNA",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 950,
-          "name": "dissociateFreeSSBComplexes"
+          "name": "dissociateFreeSSBComplexes",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 958,
-          "name": "freeAndBindSSBs"
+          "name": "freeAndBindSSBs",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 1030,
-          "name": "initiateOkazakiFragment"
+          "name": "initiateOkazakiFragment",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 1095,
-          "name": "terminateOkazakiFragment"
+          "name": "terminateOkazakiFragment",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 1220,
-          "name": "ligateDNA"
+          "name": "ligateDNA",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 1253,
-          "name": "terminateReplication"
+          "name": "terminateReplication",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "property_getter_setter",
           "is_constructor": false,
           "line": 1279,
-          "name": "get.isDnaAORIComplexAssembled"
+          "name": "get.isDnaAORIComplexAssembled",
+          "port_requirement": "exempt_accessor"
         },
         {
           "category": "property_getter_setter",
           "is_constructor": false,
           "line": 1301,
-          "name": "get.isAnyHelicaseBound"
+          "name": "get.isAnyHelicaseBound",
+          "port_requirement": "exempt_accessor"
         },
         {
           "category": "property_getter_setter",
           "is_constructor": false,
           "line": 1306,
-          "name": "get.isAnyPolymeraseBound"
+          "name": "get.isAnyPolymeraseBound",
+          "port_requirement": "exempt_accessor"
         },
         {
           "category": "property_getter_setter",
           "is_constructor": false,
           "line": 1314,
-          "name": "get.leadingStrandElongating"
+          "name": "get.leadingStrandElongating",
+          "port_requirement": "exempt_accessor"
         },
         {
           "category": "property_getter_setter",
           "is_constructor": false,
           "line": 1320,
-          "name": "get.laggingStrandElongating"
+          "name": "get.laggingStrandElongating",
+          "port_requirement": "exempt_accessor"
         },
         {
           "category": "property_getter_setter",
           "is_constructor": false,
           "line": 1324,
-          "name": "get.leadingStrandPolymerized"
+          "name": "get.leadingStrandPolymerized",
+          "port_requirement": "exempt_accessor"
         },
         {
           "category": "property_getter_setter",
           "is_constructor": false,
           "line": 1338,
-          "name": "get.laggingStrandPolymerized"
+          "name": "get.laggingStrandPolymerized",
+          "port_requirement": "exempt_accessor"
         },
         {
           "category": "property_getter_setter",
           "is_constructor": false,
           "line": 1352,
-          "name": "get.strandPolymerized"
+          "name": "get.strandPolymerized",
+          "port_requirement": "exempt_accessor"
         },
         {
           "category": "property_getter_setter",
           "is_constructor": false,
           "line": 1358,
-          "name": "get.numLigations"
+          "name": "get.numLigations",
+          "port_requirement": "exempt_accessor"
         },
         {
           "category": "property_getter_setter",
           "is_constructor": false,
           "line": 1398,
-          "name": "get.strandLigated"
+          "name": "get.strandLigated",
+          "port_requirement": "exempt_accessor"
         },
         {
           "category": "property_getter_setter",
           "is_constructor": false,
           "line": 1404,
-          "name": "get.strandDuplicated"
+          "name": "get.strandDuplicated",
+          "port_requirement": "exempt_accessor"
         },
         {
           "category": "property_getter_setter",
           "is_constructor": false,
           "line": 1415,
-          "name": "get.helicasePosition"
+          "name": "get.helicasePosition",
+          "port_requirement": "exempt_accessor"
         },
         {
           "category": "property_getter_setter",
           "is_constructor": false,
           "line": 1434,
-          "name": "get.leadingPolymerasePosition"
+          "name": "get.leadingPolymerasePosition",
+          "port_requirement": "exempt_accessor"
         },
         {
           "category": "property_getter_setter",
           "is_constructor": false,
           "line": 1457,
-          "name": "get.laggingPolymerasePosition"
+          "name": "get.laggingPolymerasePosition",
+          "port_requirement": "exempt_accessor"
         },
         {
           "category": "property_getter_setter",
           "is_constructor": false,
           "line": 1471,
-          "name": "get.leadingPosition"
+          "name": "get.leadingPosition",
+          "port_requirement": "exempt_accessor"
         },
         {
           "category": "property_getter_setter",
           "is_constructor": false,
           "line": 1482,
-          "name": "get.laggingPosition"
+          "name": "get.laggingPosition",
+          "port_requirement": "exempt_accessor"
         },
         {
           "category": "property_getter_setter",
           "is_constructor": false,
           "line": 1493,
-          "name": "get.laggingBackupBetaClampPosition"
+          "name": "get.laggingBackupBetaClampPosition",
+          "port_requirement": "exempt_accessor"
         },
         {
           "category": "property_getter_setter",
           "is_constructor": false,
           "line": 1507,
-          "name": "get.okazakiFragmentIndex"
+          "name": "get.okazakiFragmentIndex",
+          "port_requirement": "exempt_accessor"
         },
         {
           "category": "property_getter_setter",
           "is_constructor": false,
           "line": 1527,
-          "name": "get.okazakiFragmentPosition"
+          "name": "get.okazakiFragmentPosition",
+          "port_requirement": "exempt_accessor"
         },
         {
           "category": "property_getter_setter",
           "is_constructor": false,
           "line": 1538,
-          "name": "get.okazakiFragmentLength"
+          "name": "get.okazakiFragmentLength",
+          "port_requirement": "exempt_accessor"
         },
         {
           "category": "property_getter_setter",
           "is_constructor": false,
           "line": 1565,
-          "name": "get.okazakiFragmentProgress"
+          "name": "get.okazakiFragmentProgress",
+          "port_requirement": "exempt_accessor"
         },
         {
           "category": "property_getter_setter",
           "is_constructor": false,
           "line": 1582,
-          "name": "get.leadingStrandBoundSSBs"
+          "name": "get.leadingStrandBoundSSBs",
+          "port_requirement": "exempt_accessor"
         },
         {
           "category": "property_getter_setter",
           "is_constructor": false,
           "line": 1609,
-          "name": "get.laggingStrandBoundSSBs"
+          "name": "get.laggingStrandBoundSSBs",
+          "port_requirement": "exempt_accessor"
         },
         {
           "category": "property_getter_setter",
           "is_constructor": false,
           "line": 1644,
-          "name": "get.numLeadingTemplateBoundSSBs"
+          "name": "get.numLeadingTemplateBoundSSBs",
+          "port_requirement": "exempt_accessor"
         },
         {
           "category": "property_getter_setter",
           "is_constructor": false,
           "line": 1648,
-          "name": "get.numLaggingTemplateBoundSSBs"
+          "name": "get.numLaggingTemplateBoundSSBs",
+          "port_requirement": "exempt_accessor"
         },
         {
           "category": "property_getter_setter",
           "is_constructor": false,
           "line": 1652,
-          "name": "get.areLaggingStrandSSBSitesBound"
+          "name": "get.areLaggingStrandSSBSitesBound",
+          "port_requirement": "exempt_accessor"
         }
       ],
-      "require_oc_counterpart_count": 14
+      "require_oc_counterpart_count": 14,
+      "runtime_port_required_count": 10
     },
     "ReplicationInitiation": {
       "class": "ReplicationInitiation",
@@ -1726,196 +2041,233 @@
           "category": "constructor",
           "is_constructor": true,
           "line": 239,
-          "name": "ReplicationInitiation"
+          "name": "ReplicationInitiation",
+          "port_requirement": "n/a_constructor"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 246,
-          "name": "storeObjectReferences"
+          "name": "storeObjectReferences",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 255,
-          "name": "initializeConstants"
+          "name": "initializeConstants",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 287,
-          "name": "sampleDnaABoxes"
+          "name": "sampleDnaABoxes",
+          "port_note": "defined at L287; no caller anywhere in WholeCell src (dead/handle-dispatched)",
+          "port_requirement": "uncalled_no_port"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 314,
-          "name": "calcDnaAxpReleaseReactions"
+          "name": "calcDnaAxpReleaseReactions",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 344,
-          "name": "calcResourceRequirements_LifeCycle"
+          "name": "calcResourceRequirements_LifeCycle",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 365,
-          "name": "initializeState"
+          "name": "initializeState",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 393,
-          "name": "initializeStateBasedOnFinalConditions"
+          "name": "initializeStateBasedOnFinalConditions",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 426,
-          "name": "initializeStateBasedOnTheory"
+          "name": "initializeStateBasedOnTheory",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 468,
-          "name": "initializeState_cubicRoot"
+          "name": "initializeState_cubicRoot",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 495,
-          "name": "calcResourceRequirements_Current"
+          "name": "calcResourceRequirements_Current",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 506,
-          "name": "evolveState"
+          "name": "evolveState",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 536,
-          "name": "activateFreeDnaA"
+          "name": "activateFreeDnaA",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 560,
-          "name": "inactivateFreeDnaAATP"
+          "name": "inactivateFreeDnaAATP",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 584,
-          "name": "bindAndPolymerizeDnaAATP"
+          "name": "bindAndPolymerizeDnaAATP",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 640,
-          "name": "bindAndPolymerizeDnaAADP"
+          "name": "bindAndPolymerizeDnaAADP",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 714,
-          "name": "polymerizeDnaAATP"
+          "name": "polymerizeDnaAATP",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 739,
-          "name": "polymerizeDnaAADP"
+          "name": "polymerizeDnaAADP",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 765,
-          "name": "bindDnaAATP"
+          "name": "bindDnaAATP",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 778,
-          "name": "bindDnaAADP"
+          "name": "bindDnaAADP",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 791,
-          "name": "releaseDnaAAxP"
+          "name": "releaseDnaAAxP",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 858,
-          "name": "reactivateFreeDnaAADP"
+          "name": "reactivateFreeDnaAADP",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 889,
-          "name": "calculateDnaAR1234ATPPolymerizationRates"
+          "name": "calculateDnaAR1234ATPPolymerizationRates",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 917,
-          "name": "calculateDnaAR1234ADPPolymerizationRates"
+          "name": "calculateDnaAR1234ADPPolymerizationRates",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 939,
-          "name": "calculateDnaAR1234ATPPolymerizationCooperativity"
+          "name": "calculateDnaAR1234ATPPolymerizationCooperativity",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 958,
-          "name": "calculateDnaAATPBindingRates"
+          "name": "calculateDnaAATPBindingRates",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 1016,
-          "name": "calculateDnaAADPBindingRates"
+          "name": "calculateDnaAADPBindingRates",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 1060,
-          "name": "calculateDnaAR1234Polymerization"
+          "name": "calculateDnaAR1234Polymerization",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 1104,
-          "name": "calculateDnaAR1234ComplexSize"
+          "name": "calculateDnaAR1234ComplexSize",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 1108,
-          "name": "calcuateIsDnaAR5Occupied"
+          "name": "calcuateIsDnaAR5Occupied",
+          "port_note": "state query; called by SummaryLogger.m:307 + calculateIsDnaAORIComplexAssembled",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 1120,
-          "name": "calculateIsDnaAORIComplexAssembled"
+          "name": "calculateIsDnaAORIComplexAssembled",
+          "port_note": "oriC-assembled state query (replication-initiation trigger)",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 1133,
-          "name": "calculateDnaABoxStatus"
+          "name": "calculateDnaABoxStatus",
+          "port_note": "state query; called by CellState.m:187-188",
+          "port_requirement": "runtime_port_required"
         }
       ],
-      "require_oc_counterpart_count": 30
+      "require_oc_counterpart_count": 30,
+      "runtime_port_required_count": 22
     },
     "RibosomeAssembly": {
       "class": "RibosomeAssembly",
@@ -1926,70 +2278,82 @@
           "category": "constructor",
           "is_constructor": true,
           "line": 147,
-          "name": "RibosomeAssembly"
+          "name": "RibosomeAssembly",
+          "port_requirement": "n/a_constructor"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 155,
-          "name": "initializeConstants"
+          "name": "initializeConstants",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 197,
-          "name": "copyFromState"
+          "name": "copyFromState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 206,
-          "name": "copyToState"
+          "name": "copyToState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 217,
-          "name": "allocateMemoryForState"
+          "name": "allocateMemoryForState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 231,
-          "name": "calcResourceRequirements_LifeCycle"
+          "name": "calcResourceRequirements_LifeCycle",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 264,
-          "name": "initializeState"
+          "name": "initializeState",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 277,
-          "name": "calcResourceRequirements_Current"
+          "name": "calcResourceRequirements_Current",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 301,
-          "name": "evolveState"
+          "name": "evolveState",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 345,
-          "name": "getDryWeight"
+          "name": "getDryWeight",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 366,
-          "name": "getGtpPerComplex"
+          "name": "getGtpPerComplex",
+          "port_requirement": "runtime_port_required"
         }
       ],
-      "require_oc_counterpart_count": 6
+      "require_oc_counterpart_count": 6,
+      "runtime_port_required_count": 3
     },
     "TerminalOrganelleAssembly": {
       "class": "TerminalOrganelleAssembly",
@@ -2000,46 +2364,54 @@
           "category": "constructor",
           "is_constructor": true,
           "line": 160,
-          "name": "TerminalOrganelleAssembly"
+          "name": "TerminalOrganelleAssembly",
+          "port_requirement": "n/a_constructor"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 168,
-          "name": "initializeConstants"
+          "name": "initializeConstants",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 288,
-          "name": "calcResourceRequirements_LifeCycle"
+          "name": "calcResourceRequirements_LifeCycle",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 307,
-          "name": "initializeState"
+          "name": "initializeState",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 311,
-          "name": "calcResourceRequirements_Current"
+          "name": "calcResourceRequirements_Current",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 316,
-          "name": "evolveState"
+          "name": "evolveState",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 343,
-          "name": "getDryWeight"
+          "name": "getDryWeight",
+          "port_requirement": "chassis_level"
         }
       ],
-      "require_oc_counterpart_count": 5
+      "require_oc_counterpart_count": 5,
+      "runtime_port_required_count": 2
     },
     "Transcription": {
       "class": "Transcription",
@@ -2050,82 +2422,97 @@
           "category": "constructor",
           "is_constructor": true,
           "line": 299,
-          "name": "Transcription"
+          "name": "Transcription",
+          "port_requirement": "n/a_constructor"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 307,
-          "name": "storeObjectReferences"
+          "name": "storeObjectReferences",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 318,
-          "name": "initializeConstants"
+          "name": "initializeConstants",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 353,
-          "name": "copyFromState"
+          "name": "copyFromState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 360,
-          "name": "copyToState"
+          "name": "copyToState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 369,
-          "name": "allocateMemoryForState"
+          "name": "allocateMemoryForState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 383,
-          "name": "calcResourceRequirements_LifeCycle"
+          "name": "calcResourceRequirements_LifeCycle",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 433,
-          "name": "initializeState"
+          "name": "initializeState",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 609,
-          "name": "calcResourceRequirements_Current"
+          "name": "calcResourceRequirements_Current",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 618,
-          "name": "evolveState"
+          "name": "evolveState",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 978,
-          "name": "computeRNAPolymeraseTUBindingProbabilities"
+          "name": "computeRNAPolymeraseTUBindingProbabilities",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 1004,
-          "name": "calcStateTransitionProbabilities"
+          "name": "calcStateTransitionProbabilities",
+          "port_note": "no in-file caller; called by FitConstants.m:1582 (fitting)",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 1044,
-          "name": "getDryWeight"
+          "name": "getDryWeight",
+          "port_requirement": "chassis_level"
         }
       ],
-      "require_oc_counterpart_count": 7
+      "require_oc_counterpart_count": 7,
+      "runtime_port_required_count": 3
     },
     "TranscriptionalRegulation": {
       "class": "TranscriptionalRegulation",
@@ -2136,70 +2523,82 @@
           "category": "constructor",
           "is_constructor": true,
           "line": 164,
-          "name": "TranscriptionalRegulation"
+          "name": "TranscriptionalRegulation",
+          "port_requirement": "n/a_constructor"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 172,
-          "name": "storeObjectReferences"
+          "name": "storeObjectReferences",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 181,
-          "name": "initializeConstants"
+          "name": "initializeConstants",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 315,
-          "name": "calcResourceRequirements_LifeCycle"
+          "name": "calcResourceRequirements_LifeCycle",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 329,
-          "name": "initializeState"
+          "name": "initializeState",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 334,
-          "name": "calcResourceRequirements_Current"
+          "name": "calcResourceRequirements_Current",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 339,
-          "name": "evolveState"
+          "name": "evolveState",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 349,
-          "name": "bindTranscriptionFactors"
+          "name": "bindTranscriptionFactors",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 383,
-          "name": "calcBindingProbabilityFoldChange"
+          "name": "calcBindingProbabilityFoldChange",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "property_getter_setter",
           "is_constructor": false,
           "line": 405,
-          "name": "get.tfBoundPromoters"
+          "name": "get.tfBoundPromoters",
+          "port_requirement": "exempt_accessor"
         },
         {
           "category": "property_getter_setter",
           "is_constructor": false,
           "line": 409,
-          "name": "get.boundTFs"
+          "name": "get.boundTFs",
+          "port_requirement": "exempt_accessor"
         }
       ],
-      "require_oc_counterpart_count": 7
+      "require_oc_counterpart_count": 7,
+      "runtime_port_required_count": 4
     },
     "Translation": {
       "class": "Translation",
@@ -2210,70 +2609,82 @@
           "category": "constructor",
           "is_constructor": true,
           "line": 282,
-          "name": "Translation"
+          "name": "Translation",
+          "port_requirement": "n/a_constructor"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 290,
-          "name": "storeObjectReferences"
+          "name": "storeObjectReferences",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 299,
-          "name": "initializeConstants"
+          "name": "initializeConstants",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 313,
-          "name": "copyFromState"
+          "name": "copyFromState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 337,
-          "name": "copyToState"
+          "name": "copyToState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 354,
-          "name": "allocateMemoryForState"
+          "name": "allocateMemoryForState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 383,
-          "name": "calcResourceRequirements_LifeCycle"
+          "name": "calcResourceRequirements_LifeCycle",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 444,
-          "name": "initializeState"
+          "name": "initializeState",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 570,
-          "name": "calcResourceRequirements_Current"
+          "name": "calcResourceRequirements_Current",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 599,
-          "name": "evolveState"
+          "name": "evolveState",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 917,
-          "name": "getDryWeight"
+          "name": "getDryWeight",
+          "port_requirement": "chassis_level"
         }
       ],
-      "require_oc_counterpart_count": 5
+      "require_oc_counterpart_count": 5,
+      "runtime_port_required_count": 2
     },
     "tRNAAminoacylation": {
       "class": "tRNAAminoacylation",
@@ -2284,85 +2695,99 @@
           "category": "constructor",
           "is_constructor": true,
           "line": 164,
-          "name": "tRNAAminoacylation"
+          "name": "tRNAAminoacylation",
+          "port_requirement": "n/a_constructor"
         },
         {
           "category": "init_contract",
           "is_constructor": false,
           "line": 172,
-          "name": "initializeConstants"
+          "name": "initializeConstants",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "process_specific_helper",
           "is_constructor": false,
           "line": 283,
-          "name": "initializeSpeciesNetwork"
+          "name": "initializeSpeciesNetwork",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 302,
-          "name": "copyFromState"
+          "name": "copyFromState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 310,
-          "name": "copyToState"
+          "name": "copyToState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 320,
-          "name": "allocateMemoryForState"
+          "name": "allocateMemoryForState",
+          "port_requirement": "chassis_level"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 333,
-          "name": "calcResourceRequirements_LifeCycle"
+          "name": "calcResourceRequirements_LifeCycle",
+          "port_requirement": "fitting_fixture_inherited"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 373,
-          "name": "initializeState"
+          "name": "initializeState",
+          "port_requirement": "init_fixture_or_logic"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 380,
-          "name": "calcResourceRequirements_Current"
+          "name": "calcResourceRequirements_Current",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "biology_contract",
           "is_constructor": false,
           "line": 387,
-          "name": "evolveState"
+          "name": "evolveState",
+          "port_requirement": "runtime_port_required"
         },
         {
           "category": "property_getter_setter",
           "is_constructor": false,
           "line": 469,
-          "name": "get.tRNASynthetases"
+          "name": "get.tRNASynthetases",
+          "port_requirement": "exempt_accessor"
         },
         {
           "category": "property_getter_setter",
           "is_constructor": false,
           "line": 473,
-          "name": "get.tRNATransferases"
+          "name": "get.tRNATransferases",
+          "port_requirement": "exempt_accessor"
         },
         {
           "category": "framework_override",
           "is_constructor": false,
           "line": 480,
-          "name": "getDryWeight"
+          "name": "getDryWeight",
+          "port_requirement": "chassis_level"
         }
       ],
-      "require_oc_counterpart_count": 6
+      "require_oc_counterpart_count": 6,
+      "runtime_port_required_count": 2
     }
   },
-  "provenance": "4-parser reconciliation (2 orchestrator + Haiku + codex gpt-5.4-mini); 6 discrepancies resolved by source inspection; see script docstring.",
+  "provenance": "4-parser reconciliation (2 orchestrator + Haiku + codex gpt-5.4-mini); 6 discrepancies resolved by source inspection; port_requirement via call-graph reachability from evolveState/calcResourceRequirements_Current vs init/fitting roots; 6 orphans resolved by source evidence (see ORPHAN_OVERRIDE).",
   "resolved_discrepancies": {
     "FtsZPolymerization.diff": "file-local fn after classdef end (L449); excluded",
     "FtsZPolymerization.jacobian": "file-local fn after classdef end (L500); excluded",
@@ -2371,16 +2796,23 @@
     "MacromolecularComplexation.buildProteinComplexs_rates_collisionTheory": "file-local fn (L360); excluded",
     "Metabolism.calcGrowthRate": "real class method, multi-line signature (L1266-67); included"
   },
-  "schema": "karr_process_method_inventory/1.0",
+  "schema": "karr_process_method_inventory/1.1",
   "totals": {
     "biology_contract": 112,
     "biology_substep": 14,
+    "chassis_level": 76,
     "class_methods_excl_ctor": 328,
+    "exempt_accessor": 30,
+    "fitting_fixture_inherited": 38,
     "framework_override": 76,
     "init_contract": 31,
+    "init_fixture_or_logic": 68,
+    "needs_manual_resolution": 0,
     "process_specific_helper": 65,
     "processes": 28,
     "property_getter_setter": 30,
-    "require_oc_counterpart": 222
+    "require_oc_counterpart": 222,
+    "runtime_port_required": 115,
+    "uncalled_no_port": 1
   }
 }
