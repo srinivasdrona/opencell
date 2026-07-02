@@ -74,11 +74,14 @@ methods:
           lines: "340-477"
           note: "Reaction-cap calculation, random sampling, and state delta construction."
       note: >-
-        The OC port preserves the count-space tick update, but it reads from
-        substrates_allocated[self.name] rather than the MATLAB local substrates
-        store and omits the MATLAB intergenicRNAs state.
+        The OC port preserves the main count-space substrate/RNA delta kernel,
+        but it reads from substrates_allocated[self.name] rather than the
+        MATLAB local substrates store, omits the MATLAB intergenicRNAs state,
+        and adds replay-specific gating branches
+        (suppress_trna_for_rrna_tick and first-maturation activation lag) that
+        are not present in MATLAB evolveState_Helper. See known_deviations.
     status: "partial"
-    note: "Implemented, with replay-oriented state-shape simplifications."
+    note: "Implemented, with replay-oriented state-shape and gating simplifications."
   calcFluxBounds:
     matlab:
       symbol: "RNAProcessing"
@@ -299,9 +302,13 @@ ordering_constraints:
   soft_before: []
   soft_after: []
   note: >-
-    RNAProcessing itself has no process-specific ordering rule in the source.
-    The only canonical hard ordering cited elsewhere in the Karr simulation is
-    tRNAAminoacylation before Translation.
+    MATLAB enforces per-tick `calcResourceRequirements_Current -> allocation
+    injection -> evolveState` in `@Simulation/evolveState.m:24-37,60-73`; OC
+    wires `request_calculator_rna_pathway` into `karr_allocation_step`
+    (`karr_composite.py:1545-1562`) and RNAProcessing reads
+    `substrates_allocated[self.name]` (`karr_rna_processing.py:248-252`), but
+    the composite does not encode a process-local hard edge proving strict
+    same-tick request/grant timing equivalence (CODE_DEVIATES).
 source_anchors:
   matlab_blocks:
     class_identity:
@@ -399,7 +406,9 @@ deviations:
   known_deviations:
     - "OC RequestCalculatorRNAPathway is shared with RNAModification and requests the current available substrate pool when active; it does not reproduce the MATLAB enzyme/unprocessedRNA cap literally."
     - "OC next_update consumes from substrates_allocated[self.name], while MATLAB evolves from the local substrates state."
+    - "OC evolveState adds `suppress_trna_for_rrna_tick` and a first-maturation activation-lag gate that MATLAB RNAProcessing.evolveState_Helper does not apply."
     - "OC omits the MATLAB intergenicRNAs state/output entirely; the replay port only updates substrates and rna.counts."
+    - "MATLAB enforces same-tick `calcResourceRequirements_Current -> allocation -> evolveState` for RNAProcessing; OC wiring does not encode an explicit RNAProcessing-local ordering edge that proves equivalent same-tick request/grant timing (CODE_DEVIATES)."
     - "OC prefixes colliding processed RNA IDs with processed:: to keep mature and nascent pools from cancelling in the shared rna.counts store."
     - "OC can source enzyme counts from protein/complex stores when an explicit enzymes store is absent; MATLAB reads this.enzymes directly."
     - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
