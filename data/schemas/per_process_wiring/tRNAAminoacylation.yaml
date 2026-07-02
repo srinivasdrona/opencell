@@ -9,7 +9,12 @@ process:
   whole_cell_model_id: "Process_tRNAAminoacylation"
   functional_area: "rna-synthesis-and-maturation"
   state_shape_role: "allocation-mediated reaction process with cytosolic substrates and free/aminoacylated RNA state"
-  notes: "MATLAB is a ReactionProcess; OC splits the request path into a dedicated request calculator and consumes allocator grants from substrates_allocated in next_update."
+  notes: >-
+    MATLAB is a ReactionProcess; OC splits the request path into a dedicated
+    request calculator and consumes allocator grants from substrates_allocated
+    in next_update. This row is exemplar-scoped for
+    consume_stoichiometry/produce_stoichiometry/allocator.requests; canonical
+    exemplars listed, not exhaustive enumeration.
 methods:
   initializeConstants:
     matlab:
@@ -369,7 +374,7 @@ ordering_constraints:
   hard_after: []
   soft_before: []
   soft_after: []
-  note: "Karr's Simulation.evolveState resamples randperm until tRNAAminoacylation is ordered before Translation."
+  note: "MATLAB enforces tRNAAminoacylation before Translation via Simulation.evolveState randperm resampling (@Simulation/evolveState.m:50-57); OC composite does not encode a corresponding hard process edge between karr_trna_aminoacylation and karr_translation_v3 (CODE_DEVIATES)."
 source_anchors:
   matlab_blocks:
     class_definition:
@@ -470,5 +475,6 @@ deviations:
     - "OC _compute_rna_fluxes adds a max_stochastic_iterations guard and rounds reaction events / substrate deltas with np.rint; MATLAB uses an unbounded while-loop and direct matrix writeback."
     - "OC retains legacy vector-to-WID fallbacks for RNA state inputs; MATLAB reads structured process state directly."
     - "MATLAB initializeState explicitly reseeds the free/aminoacylated RNA split; the OC port relies on fixture/chassis setup instead of a process-local initializer."
+    - "MATLAB enforces tRNAAminoacylation before Translation in Simulation.evolveState; current OC composite does not encode an explicit hard process-order edge for that pair."
     - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
   note: "These deviations are intentional porting choices and are called out so the row can distinguish faithful surfaces from approximation layers."
