@@ -59,36 +59,43 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-07-02 ~12:30 IST, Day-46 morning):** 1 watcher running:
-- `WATCHER_REMEDIATION_V2` PID 46144 — 4-concurrent codex fleet on gpt-5.3-codex, applying audit Priority-1 fixes to 16 remaining wiring rows. 8 already done and pushed (DNADamage, DNARepair, Translation, ProteinModification, MacromolecularComplexation, ProteinDecay, Replication, ProteinActivation). Success detected via STATUS_remediate_<slug>.md in parent repo. Est. ~1 hour remaining.
+**Live processes / agents (2026-07-03 ~02:00 IST, Day-47):** none running.
 
-**🛑 NEXT (Day-46 rest of day + Day-47): resume gate ladder** — the fleet remediation lands 24 wiring row fixes, leaving 4 already-clean rows plus 24 remediated = **28/28 semantically-truthed rows** (target). After that: build L2.0a (allocator arithmetic vs Karr per-process input state) as the next runtime gate, then L2.4 (chassis autonomous conservation) as the gate that catches wiring integration bugs A1-A4. L2.4 was renamed from "L1c" per `2026-07-02 | opencell | ladder-rename-l1c-to-l2_4`.
+**🛑 NEXT (Day-47): L1b rebuilt on real ground truth — the completeness pass.** A rubber-duck review (GPT-5.4) + 5 full audits found the Day-45 L1b "28/28 PASS" was hollow: the gate discarded its own schema (`del schema_contract`), silently dropped ~95% of anchors (missing `symbol` fields), and rewrote `NOT_IMPLEMENTED` to auto-pass. 1,623 verified defects across schema/semantic/cross-row/gate/CI dimensions. Root cause: gold-standard row omitted `symbol` on method anchors; every fanout row copied it; gate never enforced. Before rebuilding the gate we established **ground truth**:
+
+- **Karr method inventory committed** (`846107b`, `ddcf3f2`): `data/karr_method_inventory/` — every method each of the 28 Karr process classes defines. Verified by 4 independent parsers (2 orchestrator + Haiku + codex gpt-5.4-mini); 6 discrepancies resolved by source. Generator `scripts/build_karr_method_inventory.py` (`--check` for CI drift).
+- **328 class methods; port_requirement via call-graph reachability:**
+  - **`runtime_port_required`: 115** ← the TRUE per-process OC runtime-port target (was naively 222)
+  - `init_fixture_or_logic`: 68 (fixture-load OK for t0; logic for per-cycle)
+  - `fitting_fixture_inherited`: 38 (28 lifecycle + Metabolism fitting suite + FBA build; outputs inherited via fixtures)
+  - `uncalled_no_port`: 1 (ReplicationInitiation.sampleDnaABoxes = dead)
+  - chassis_level 76, exempt_accessor 30.
+- **`calcResourceRequirements_LifeCycle` ≠ allocator**: it's offline fitting (FitConstants → biomass objective + expression bounds), inherited via fixtures (`biomass_col`, `fba_rxn_idx_biomass_production`, `metabolism_new_production`). OC's `KarrAllocationStep` is a per-tick Step (refactor of `Simulation.evolveState`), validated by L2.0a — NOT a lifecycle counterpart.
+- **OC-side completeness (runtime-scoped)**: 115 → 61 covered, 48 inlined/renamed (need source confirm), 6 likely-gap (all token-artifacts, actually inlined). **~0 confirmed genuine runtime gaps.** Diagnostic: `scripts/check_oc_method_completeness.py` (uncommitted).
+
+**The remaining L1b work is now precisely bounded:** confirm the ~54 inlined runtime biology helpers at source (ReplicationInitiation 20 DnaA-ATP methods = bulk; Replication 7; ProteinDecay 5; DNARepair 5), filling each required method's `oc_anchor.symbol` to point at the real OC counterpart. This IS the row-authoring / symbol-backfill pass — the same task as the completeness verification. Then: enforcing gate (schema validation, no silent anchor-drop, integration-layer checks), then CI, then L2.0a/L2.4.
+
+**Fix plan for the enforcing L1b gate (agreed, not yet built):** Phase 0 make gate honest (fix `fields:`→`properties:` schema typo, remove `del schema_contract`, stop silent symbol-less anchor drop, kill NOT_IMPLEMENTED rewrite); Phase 1 schema evolution (no `not_implemented` escape hatch — every Karr method Karr actually has needs an OC counterpart or documented deviation); Phase 2 mechanical row completion via small-model fleet BEHIND the enforcing gate; Phase 3 substantive fixes; Phase 4 CI (drop `|| true`, add `@pytest.mark.gate`); Phase 5 L2.0a/L2.4.
+
+**Day-46 completed:** L-ladder rename L1c→L2.4 (`982743c`); wiring-row remediation fleet 24/24 (`274a88a`..`905290c`).
 
 **Day-45 work (2026-07-01, completed):**
 
 1. **L-ladder split** committed 822d3aa: L1 → L1a/L1b/L1c aliveness family. L1a = process fires (existing 28/28), L1b = wiring conformant (new), L1c = chassis conserves (new). *[Note: L1c renamed to L2.4 on 2026-07-02 for ladder-monotonicity reasons.]*
-2. **L1b gate built** commits 3c70a6c/aea8b58/10172a5: static row-vs-code check with 7 sub-checks (anchor resolution, WID validation, unit-chain coherence, ordering references, deviations). First-run 1/28 → after gap remediation 12/28 → after Check 1 tooling fixes (latin-1 fallback, mirror-path rewrite, .md permissive) **28/28 PASS**.
-3. **Semantic audit methodology** committed 072ff40/f997372: SEMANTIC_AUDIT_TEMPLATE.md (methodology), PROMPT_semantic_audit_TEMPLATE.md (per-process prompt template), Metabolism_semantic_audit.md (worked example: 13 VERIFIED, 4 CODE_DEVIATES for A1-A4). Mini fitness eval verdict RED → use gpt-5.3-codex for fleet.
-4. **Audit fleet — 27/27 completed overnight** (finished 00:49 IST Day-46). All pushed. Aggregate: 194 VERIFIED / 58 ROW_WRONG / 62 CODE_DEVIATES / 26 MISSING across 340 claims. 4 rows clean: Cytokinesis, Metabolism, ProteinProcessingII, RNAModification. 24 rows need row remediation.
+2. **L1b gate built** commits 3c70a6c/aea8b58/10172a5: static row-vs-code check with 7 sub-checks. Reported 28/28 PASS — **later found hollow (2026-07-03), see NEXT block above.**
+3. **Semantic audit methodology** committed 072ff40/f997372: SEMANTIC_AUDIT_TEMPLATE.md + per-process prompt template + Metabolism worked example.
+4. **Audit fleet — 27/27 completed overnight.** Aggregate: 194 VERIFIED / 58 ROW_WRONG / 62 CODE_DEVIATES / 26 MISSING across 340 claims.
 
-**Day-46 work so far (2026-07-02 morning):**
-
-1. **Worktree pruning** — 58 obsolete worktrees + 58 branches + 138 disk dirs cleaned up. Repo down to single main worktree + old-phase (`bug*`, `audit-dimer-port`, etc.) leftovers.
-2. **Remediation fleet fired** — 4-concurrent codex on gpt-5.3-codex; 8/24 committed and pushed (worst offenders first: DNADamage, Replication, ProteinActivation, ProteinDecay, then Translation, ProteinModification, DNARepair, MacromolecularComplexation).
-3. **L-ladder monotonicity fix** committed today: L1c → L2.4, placed BEFORE L2.5 (diagnostic dependency: L2.5 needs allocator+wiring proven correct; L2.4 proves those). New L2.0a slot added between L2.0 and L2.1 (allocator arithmetic gate, planned).
-
-**Aggregate across all 28 audits (final): 194 VERIFIED (57%), 58 ROW_WRONG (17%), 62 CODE_DEVIATES (18%), 26 MISSING (8%).** Emerging patterns:
-- **A4 (compartment merge) mis-documented in ~4/5 rows** (wiring authors didn't realize OC's flat store loses the compartment axis). Confirmed systemic.
+**Emerging wiring-row patterns (Day-45/46 audits):**
+- **A4 (compartment merge) mis-documented in ~4/5 rows** (OC's flat store loses the compartment axis). Confirmed systemic.
 - **Allocator engagement misrepresented in ~3/5 rows** (v3 vs legacy paths conflated).
 - **Row scope policy implicit** in most rows (exemplar-vs-strict not declared).
 
-**Day-46 rest-of-day + Day-47 priorities:**
-1. **Remediation fleet completes** — expected ~1 hour more; target 24/24 done → 28/28 semantically-clean rows
-2. **L2.0a design + build** (codex, gpt-5.3-codex) — allocator arithmetic verification: given Karr's pre-tick global pool + OC's request calculators, does OC's KarrAllocationStep produce Karr's per-process `states_before` (= per-process pre-tick input state)? Fixture-available; no MATLAB re-extraction needed.
-3. **L2.4 design + build** (codex, gpt-5.3-codex) — chassis autonomous conservation gate: 28 processes × ≤100 ticks, no output oracle, assert `Δpool_measured == Σ(produced−consumed)` per substrate per compartment. Uses wiring DB (now semantically clean) as per-process ledger source. Attribution mechanism: subtract each process's expected delta, see which subtraction closes the gap.
-4. **A4 + A3b localized fixes** — once L2.4 is instrumented, apply candidate fixes and watch metrics move.
-5. **A3b consumption-clip audit-hook population** — 0/28 rows currently populate this. Mechanical pass.
-6. **L2.5 re-audit** with clean wiring — the 3/3 Metab pairs failure was mis-attributed Day-33; L2.4 fixes should improve L2.5 too.
+**Standing gate-ladder priorities (after L1b rebuild):**
+1. **L2.0a design + build** — allocator arithmetic: given Karr's pre-tick global pool + OC's request calculators, does OC's KarrAllocationStep produce Karr's per-process `states_before`? Fixture-available.
+2. **L2.4 design + build** — chassis autonomous conservation: 28 procs × ≤100 ticks, no output oracle, assert `Δpool_measured == Σ(produced−consumed)` per substrate per compartment. Catches A1-A4.
+3. **A4 + A3b localized fixes** — once L2.4 instrumented.
+4. **L2.5 re-audit** with clean wiring — the 3/3 Metab pairs failure was mis-attributed Day-33.
 
 **Deferred:**
 - Old-phase leftover directories (`audit-dimer-port`, `biology-firing-test`, `bug*`, etc.) — non-blocking cleanup, user call.
