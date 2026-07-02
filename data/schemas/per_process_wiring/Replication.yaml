@@ -77,7 +77,7 @@ allocator:
   mode:
     karr: "allocation"
     oc_current: "allocation"
-    note: "OC reads substrates_allocated[self.name] in the main update path, with a raw substrates fallback only when the allocation surface is absent."
+    note: "MATLAB evolves with allocator grants injected by Simulation.evolveState; OC non-hint next_update reads substrates_allocated[self.name] for requested WIDs and does not provide a raw-substrates fallback on that path."
   request_formula:
     matlab: "allocations = max(0, fix(requirements .* tmp(:, ones(nProcesses, 1))))"
     oc: "requests are built inline in KarrReplicationProcess.next_update from _demand_from_advances; zero outside elongating state, then clipped against substrates_allocated[self.name]"
@@ -103,15 +103,23 @@ allocator:
       compartment: cytosol
       source: karr
       note: "Energy request for fork unwinding and clamp loading."
+    - wid: "H2O"
+      compartment: cytosol
+      source: karr
+      note: "MATLAB request surface includes water alongside ATP for initiation/unwinding/clamp loading hydrolysis demand."
+    - wid: "NAD"
+      compartment: cytosol
+      source: karr
+      note: "MATLAB request surface includes NAD for ligation demand."
   bypasses:
     - wid: "H2O"
       compartment: cytosol
       source: oc
-      note: "Directly consumed in the ATP hydrolysis bookkeeping, not requested via the allocator."
+      note: "OC trace-hint replay consumes H2O directly in ATP hydrolysis bookkeeping; OC non-hint allocator requests do not include H2O."
     - wid: "NAD"
       compartment: cytosol
       source: oc
-      note: "Direct ligation cofactor consumed outside the allocator request surface."
+      note: "OC trace-hint replay consumes NAD for ligation; OC non-hint allocator requests do not include NAD."
     - wid: "NMN"
       compartment: cytosol
       source: oc
@@ -127,48 +135,48 @@ allocator:
 consume_stoichiometry:
   - wid: "DATP"
     compartment: cytosol
-    formula_or_constant: "partition_counts(2 * total_advanced_bp)[0]"
+    formula_or_constant: "MATLAB: subsequenceBaseCounts(...) A-count; OC: partition_counts(2 * total_advanced_bp)[0]"
     matlab_anchor:
-      path: "docs/karr_extracts/process/03_Replication.md"
-      lines: "114-131"
-      note: "Advance replisomes: available dNTP for polymerization and energy for unwinding."
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m"
+      lines: "939-946"
+      note: "MATLAB computes sequence-exact usedDNTPs via subsequenceBaseCounts over leading and lagging strand segments."
     oc_anchor:
       path: "opencell/vivarium/karr_replication.py"
-      lines: "628-636"
-      note: "_demand_from_advances partitions the total advanced bp into dNTP counts."
+      lines: "616-635"
+      note: "OC non-hint demand partitions total advanced bp by GC-fraction/remainder rather than sequence-exact base counting."
   - wid: "DCTP"
     compartment: cytosol
-    formula_or_constant: "partition_counts(2 * total_advanced_bp)[1]"
+    formula_or_constant: "MATLAB: subsequenceBaseCounts(...) C-count; OC: partition_counts(2 * total_advanced_bp)[1]"
     matlab_anchor:
-      path: "docs/karr_extracts/process/03_Replication.md"
-      lines: "114-131"
-      note: "Same advance-replisomes block as DATP."
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m"
+      lines: "939-946"
+      note: "MATLAB computes sequence-exact usedDNTPs via subsequenceBaseCounts over leading and lagging strand segments."
     oc_anchor:
       path: "opencell/vivarium/karr_replication.py"
-      lines: "628-636"
-      note: "_demand_from_advances partitions the total advanced bp into dNTP counts."
+      lines: "616-635"
+      note: "OC non-hint demand partitions total advanced bp by GC-fraction/remainder rather than sequence-exact base counting."
   - wid: "DGTP"
     compartment: cytosol
-    formula_or_constant: "partition_counts(2 * total_advanced_bp)[2]"
+    formula_or_constant: "MATLAB: subsequenceBaseCounts(...) G-count; OC: partition_counts(2 * total_advanced_bp)[2]"
     matlab_anchor:
-      path: "docs/karr_extracts/process/03_Replication.md"
-      lines: "114-131"
-      note: "Same advance-replisomes block as DATP."
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m"
+      lines: "939-946"
+      note: "MATLAB computes sequence-exact usedDNTPs via subsequenceBaseCounts over leading and lagging strand segments."
     oc_anchor:
       path: "opencell/vivarium/karr_replication.py"
-      lines: "628-636"
-      note: "_demand_from_advances partitions the total advanced bp into dNTP counts."
+      lines: "616-635"
+      note: "OC non-hint demand partitions total advanced bp by GC-fraction/remainder rather than sequence-exact base counting."
   - wid: "DTTP"
     compartment: cytosol
-    formula_or_constant: "partition_counts(2 * total_advanced_bp)[3]"
+    formula_or_constant: "MATLAB: subsequenceBaseCounts(...) T-count; OC: partition_counts(2 * total_advanced_bp)[3]"
     matlab_anchor:
-      path: "docs/karr_extracts/process/03_Replication.md"
-      lines: "114-131"
-      note: "Same advance-replisomes block as DATP."
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m"
+      lines: "939-946"
+      note: "MATLAB computes sequence-exact usedDNTPs via subsequenceBaseCounts over leading and lagging strand segments."
     oc_anchor:
       path: "opencell/vivarium/karr_replication.py"
-      lines: "628-636"
-      note: "_demand_from_advances partitions the total advanced bp into dNTP counts."
+      lines: "616-635"
+      note: "OC non-hint demand partitions total advanced bp by GC-fraction/remainder rather than sequence-exact base counting."
   - wid: "ATP"
     compartment: cytosol
     formula_or_constant: "initiation_cost + catalytic_atp_events"
@@ -180,62 +188,95 @@ consume_stoichiometry:
       path: "opencell/vivarium/karr_replication.py"
       lines: "637-644"
       note: "ATP events are split between initiation, helicase, and beta-clamp loading."
+  - wid: "H2O"
+    compartment: cytosol
+    formula_or_constant: "initiation_cost + catalytic_atp_events"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m"
+      lines: "667-668"
+      note: "MATLAB decrements water with ATP hydrolysis demand in initiation and unwinding/clamp-loading branches."
+    oc_anchor:
+      path: "opencell/vivarium/karr_replication.py"
+      lines: "753-757"
+      note: "MATLAB decrements H2O; OC does so only in the trace-hint replay branch, not the main non-hint update path."
+  - wid: "NAD"
+    compartment: cytosol
+    formula_or_constant: "ligations"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m"
+      lines: "1228-1231"
+      note: "MATLAB consumes NAD as ligation cofactor."
+    oc_anchor:
+      path: "opencell/vivarium/karr_replication.py"
+      lines: "758-761"
+      note: "MATLAB decrements NAD; OC does so only in the trace-hint replay branch, not the main non-hint update path."
 produce_stoichiometry:
   - wid: "ADP"
     compartment: cytosol
     formula_or_constant: "atp_events"
     matlab_anchor:
-      path: "docs/karr_extracts/process/03_Replication.md"
-      lines: "114-131"
-      note: "Hydrolysis bookkeeping is implied by the unwinding energy demand."
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m"
+      lines: "909-913"
+      note: "MATLAB ATP hydrolysis bookkeeping emits ADP."
     oc_anchor:
       path: "opencell/vivarium/karr_replication.py"
-      lines: "978-1012"
-      note: "ATP consumption writes ADP/PI/H directly into substrate deltas."
+      lines: "854-873"
+      note: "OC emits ADP only in trace-hint replay; non-hint next_update does not emit ADP."
   - wid: "PI"
     compartment: cytosol
     formula_or_constant: "atp_events"
     matlab_anchor:
-      path: "docs/karr_extracts/process/03_Replication.md"
-      lines: "114-131"
-      note: "Hydrolysis bookkeeping is implied by the unwinding energy demand."
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m"
+      lines: "909-913"
+      note: "MATLAB ATP hydrolysis bookkeeping emits phosphate."
     oc_anchor:
       path: "opencell/vivarium/karr_replication.py"
-      lines: "978-1012"
-      note: "ATP consumption writes ADP/PI/H directly into substrate deltas."
+      lines: "854-873"
+      note: "OC emits PI only in trace-hint replay; non-hint next_update does not emit PI."
   - wid: "H"
     compartment: cytosol
-    formula_or_constant: "atp_events"
+    formula_or_constant: "atp_events + ligations"
     matlab_anchor:
-      path: "docs/karr_extracts/process/03_Replication.md"
-      lines: "114-131"
-      note: "Hydrolysis bookkeeping is implied by the unwinding energy demand."
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m"
+      lines: "909-1247"
+      note: "MATLAB emits hydrogen from ATP hydrolysis and from ligation."
     oc_anchor:
       path: "opencell/vivarium/karr_replication.py"
-      lines: "978-1012"
-      note: "ATP consumption writes ADP/PI/H directly into substrate deltas."
+      lines: "854-873"
+      note: "OC emits H only in trace-hint replay; non-hint next_update does not emit H."
   - wid: "PPI"
     compartment: cytosol
     formula_or_constant: "sum(used_dntp)"
     matlab_anchor:
-      path: "docs/karr_extracts/process/03_Replication.md"
-      lines: "114-131"
-      note: "dNTP polymerization implies pyrophosphate release."
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m"
+      lines: "945-946"
+      note: "MATLAB emits diphosphate from polymerized dNTP totals."
     oc_anchor:
       path: "opencell/vivarium/karr_replication.py"
-      lines: "978-1012"
-      note: "dNTP consumption writes PPI directly into substrate deltas."
+      lines: "854-873"
+      note: "OC emits PPI only in trace-hint replay; non-hint next_update does not emit PPI."
   - wid: "NMN"
     compartment: cytosol
     formula_or_constant: "ligations"
     matlab_anchor:
-      path: "docs/karr_extracts/process/03_Replication.md"
-      lines: "166-173"
-      note: "Ligate DNA: NAD availability."
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m"
+      lines: "1244-1247"
+      note: "MATLAB ligation emits NMN."
     oc_anchor:
       path: "opencell/vivarium/karr_replication.py"
-      lines: "978-1012"
-      note: "Ligase bookkeeping writes NMN/AMP directly into substrate deltas."
+      lines: "854-873"
+      note: "OC emits NMN only in trace-hint replay; non-hint next_update does not emit NMN."
+  - wid: "AMP"
+    compartment: cytosol
+    formula_or_constant: "ligations"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m"
+      lines: "1244-1247"
+      note: "MATLAB ligation emits AMP."
+    oc_anchor:
+      path: "opencell/vivarium/karr_replication.py"
+      lines: "854-873"
+      note: "OC emits AMP only in trace-hint replay; non-hint next_update does not emit AMP."
 compartment_routing:
   - wid: "DATP"
     consume_compartment: cytosol
@@ -262,6 +303,16 @@ compartment_routing:
     produce_compartment:
     mismatch: false
     note: "Cytosolic energy input for fork progression."
+  - wid: "H2O"
+    consume_compartment: cytosol
+    produce_compartment:
+    mismatch: false
+    note: "Cytosolic hydrolysis reactant in initiation/unwinding/clamp loading."
+  - wid: "NAD"
+    consume_compartment: cytosol
+    produce_compartment:
+    mismatch: false
+    note: "Cytosolic ligation cofactor."
   - wid: "ADP"
     consume_compartment:
     produce_compartment: cytosol
@@ -283,6 +334,11 @@ compartment_routing:
     mismatch: false
     note: "Cytosolic pyrophosphate product of dNTP incorporation."
   - wid: "NMN"
+    consume_compartment:
+    produce_compartment: cytosol
+    mismatch: false
+    note: "Cytosolic ligation product."
+  - wid: "AMP"
     consume_compartment:
     produce_compartment: cytosol
     mismatch: false
@@ -349,11 +405,12 @@ provenance:
     - "data/karr_fixtures/per_process/Chromosome_flat.mat"
   kb_version: "unknown"
   extraction_date_utc: "2026-06-30"
-  notes: "last_audited=2026-06-29; audited_by=gpt-5.4-mini (codex; row authored Day-43 EOD); oc_commit_sha=61a5a06e8031af3159dffa436655ade330be1fd9; matlab_files_referenced=[] because the raw Replication.m file was not present in this worktree; oc_files_referenced=['opencell/vivarium/karr_replication.py']; MATLAB anchors use the checked-in Karr extract docs and allocation notes as the recoverable source proxy."
+  notes: "last_audited=2026-06-29; audited_by=gpt-5.4-mini (codex; row authored Day-43 EOD); oc_commit_sha=61a5a06e8031af3159dffa436655ade330be1fd9; MATLAB anchors include executable Replication.m spans plus checked-in extract/allocator docs where needed; oc_files_referenced=['opencell/vivarium/karr_replication.py']."
   last_audited: '2026-06-29'
   audited_by: gpt-5.4-mini + parallel codex fleet (Day-43 EOD batch)
   oc_commit_sha: 61a5a06
   matlab_files_referenced:
+    - data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m
     - docs/karr_extracts/process/03_Replication.md
     - docs/karr_extracts/architecture/03_variable_allocation.md
   oc_files_referenced:
@@ -370,11 +427,15 @@ deviations:
       path: "opencell/vivarium/karr_replication.py"
       lines: "889-1033"
       note: "The current OC port has no calcFluxBounds helper for Replication."
-  shared_pool_projection_merges_compartments: false
+  shared_pool_projection_merges_compartments: true
   known_deviations:
     - "OC request logic is embedded in KarrReplicationProcess.next_update instead of a standalone request-calculator class."
     - "The current OC port is a light-bulk fork-progress replay; SSB binding/release, Okazaki geometry, and RNAP collision dwell/pause remain deferred."
-    - "The raw MATLAB Replication.m file was not present in this worktree, so the row uses the checked-in Karr extract docs and allocation notes as the source proxy."
     - "No Replication-specific calcFluxBounds helper exists in the current OC repository state."
     - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
+    - "MATLAB dNTP consumption is sequence-exact via subsequenceBaseCounts; OC non-hint uses a partition_counts approximation from total advanced bp."
+    - "MATLAB emits ADP, PI, H, PPI, NMN, and AMP in the main execution path; OC emits these byproducts only in trace-hint replay, while non-hint next_update decrements requested substrates only."
+    - "MATLAB decrements H2O and NAD in executable branches; OC non-hint next_update does not decrement H2O or NAD."
+    - "MATLAB allocator requirements include H2O and NAD; OC request emission currently includes DATP/DCTP/DGTP/DTTP/ATP only."
+    - "MATLAB evolveState receives allocator grants before process execution; OC non-hint next_update has no raw-substrates fallback when allocation grants are absent."
   note: "This row captures source-to-port wiring and the observed implementation gaps without inflating the scope beyond what the local sources support."
