@@ -61,7 +61,18 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 **Live processes / agents (2026-07-03 ~02:00 IST, Day-47):** none running.
 
-**🛑 NEXT (Day-47): L1b rebuilt on real ground truth — the completeness pass.** A rubber-duck review (GPT-5.4) + 5 full audits found the Day-45 L1b "28/28 PASS" was hollow: the gate discarded its own schema (`del schema_contract`), silently dropped ~95% of anchors (missing `symbol` fields), and rewrote `NOT_IMPLEMENTED` to auto-pass. 1,623 verified defects across schema/semantic/cross-row/gate/CI dimensions. Root cause: gold-standard row omitted `symbol` on method anchors; every fanout row copied it; gate never enforced. Before rebuilding the gate we established **ground truth**:
+**🛑 NEXT (Day-47): L1b method-completeness gate now PASSES 115/115 — triage the 11 real gaps.** The source-confirmation fleet (28 processes: gpt-5.4 for 5 complex, gpt-5.4-mini for 23 simple) read Karr .m + OC source for every runtime method. Result committed (`846107b`..`01d73f3`): 55 confirmed, 45 inlined, **11 real porting gaps**, 4 benign noop, 0 unconfirmed. The full map is `data/karr_method_inventory/oc_method_map.yaml`; gate is `scripts/l1b_method_completeness.py` (PASS). Original ground-truth build (below) preceded this.
+
+**The 11 real gaps (OC does not implement Karr behavior; several are OC-documented v2 deferrals, now enumerated centrally):**
+- ProteinDecay (light port): MisfoldProteins, RefoldProteins, DegradeAbortedPolypeptides
+- DNARepair: evolveState_DisA, _Modification, _Restriction
+- Replication: dissociateFreeSSBComplexes, freeAndBindSSBs (SSB binding/release cycle)
+- DNADamage: calcNumberVulnerableSites, calcResourceRequirements_Current
+- DNASupercoiling: calcRNAPolymeraseBindingProbFoldChange (supercoil→tx-rate feedback)
+
+**Next after gap triage:** the enforcing wiring-row gate rebuild (Phase 0-1 from the fix plan below) remains — method-completeness is one half of L1b; the wiring-row conformance gate (schema enforcement, no silent anchor-drop, integration-layer checks) is the other. Then CI, then L2.0a/L2.4.
+
+**Ground-truth build (Day-47, preceded the completeness pass):** A rubber-duck review (GPT-5.4) + 5 full audits found the Day-45 L1b "28/28 PASS" was hollow: the gate discarded its own schema (`del schema_contract`), silently dropped ~95% of anchors (missing `symbol` fields), and rewrote `NOT_IMPLEMENTED` to auto-pass. 1,623 verified defects across schema/semantic/cross-row/gate/CI dimensions. Root cause: gold-standard row omitted `symbol` on method anchors; every fanout row copied it; gate never enforced. Before rebuilding the gate we established **ground truth**:
 
 - **Karr method inventory committed** (`846107b`, `ddcf3f2`): `data/karr_method_inventory/` — every method each of the 28 Karr process classes defines. Verified by 4 independent parsers (2 orchestrator + Haiku + codex gpt-5.4-mini); 6 discrepancies resolved by source. Generator `scripts/build_karr_method_inventory.py` (`--check` for CI drift).
 - **328 class methods; port_requirement via call-graph reachability:**
