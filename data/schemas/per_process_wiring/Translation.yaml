@@ -147,8 +147,8 @@ consume_stoichiometry:
     oc_anchor:
       path: "opencell/vivarium/karr_translation_v3.py"
       lines: "341-352"
-      note: "OC still gates elongation on the direct GTP/H2O pools."
-    note: "Karr's direct substrate pool and the current OC side gate both touch GTP."
+      note: "Read-side gating only on shared GTP/H2O pools; this path does not emit GTP consume deltas."
+    note: "MATLAB decrements GTP via substrate writeback; OC only reads GTP as a side gate and does not emit a Translation consume delta. See known_deviations."
   - wid: "H2O"
     compartment: "cytosol"
     formula_or_constant: "nElongations"
@@ -159,8 +159,8 @@ consume_stoichiometry:
     oc_anchor:
       path: "opencell/vivarium/karr_translation_v3.py"
       lines: "341-352"
-      note: "OC still gates elongation on the direct GTP/H2O pools."
-    note: "The current OC helper reads H2O directly even when the AA allocator path is enabled."
+      note: "Read-side gating only on shared GTP/H2O pools; this path does not emit H2O consume deltas."
+    note: "MATLAB decrements H2O via substrate writeback; OC only reads H2O as a side gate and does not emit a Translation consume delta. See known_deviations."
   - wid: "ALA"
     compartment: "cytosol"
     formula_or_constant: "sum_i (predict_synthesis_per_s_i * base_counts[i, ALA]) * timestep"
@@ -238,43 +238,43 @@ compartment_routing:
   - wid: "GTP"
     consume_compartment: "cytosol"
     produce_compartment:
-    mismatch: false
-    note: "Translation energy gate is cytosolic in both source and current OC helper."
+    mismatch: true
+    note: "MATLAB consume routing is cytosolic, but OC reads a flat shared substrate key (no compartment axis; shared_pool_projection_merges_compartments=true)."
   - wid: "H2O"
     consume_compartment: "cytosol"
     produce_compartment:
-    mismatch: false
-    note: "Water gate is cytosolic in both source and current OC helper."
+    mismatch: true
+    note: "MATLAB consume routing is cytosolic, but OC reads a flat shared substrate key (no compartment axis; shared_pool_projection_merges_compartments=true)."
   - wid: "ALA"
     consume_compartment: "cytosol"
     produce_compartment:
-    mismatch: false
-    note: "Allocator-side amino-acid surrogate is cytosolic."
+    mismatch: true
+    note: "MATLAB consume routing is cytosolic, but OC AA updates use flat shared substrate keys without a compartment axis."
   - wid: "MET"
     consume_compartment: "cytosol"
     produce_compartment:
-    mismatch: false
-    note: "Allocator-side initiator-residue surrogate is cytosolic."
+    mismatch: true
+    note: "MATLAB consume routing is cytosolic, but OC AA updates use flat shared substrate keys without a compartment axis."
   - wid: "LYS"
     consume_compartment: "cytosol"
     produce_compartment:
-    mismatch: false
-    note: "Allocator-side amino-acid surrogate is cytosolic."
+    mismatch: true
+    note: "MATLAB consume routing is cytosolic, but OC AA updates use flat shared substrate keys without a compartment axis."
   - wid: "GDP"
     consume_compartment:
     produce_compartment: "cytosol"
-    mismatch: false
-    note: "Karr byproduct stays cytosolic."
+    mismatch: true
+    note: "MATLAB produces cytosolic GDP; current OC Translation emits no GDP metabolite route."
   - wid: "PI"
     consume_compartment:
     produce_compartment: "cytosol"
-    mismatch: false
-    note: "Karr byproduct stays cytosolic."
+    mismatch: true
+    note: "MATLAB produces cytosolic PI; current OC Translation emits no PI metabolite route."
   - wid: "H"
     consume_compartment:
     produce_compartment: "cytosol"
-    mismatch: false
-    note: "Karr byproduct stays cytosolic."
+    mismatch: true
+    note: "MATLAB produces cytosolic H; current OC Translation emits no H metabolite route."
 unit_conversion_chain:
   source_units: "molecules/tick"
   target_units: "molecules/tick"
@@ -309,7 +309,7 @@ ordering_constraints:
     - "tRNAAminoacylation"
   soft_before: []
   soft_after: []
-  note: "Simulation.evolveState hard-codes the only explicit translation order exception: tRNAAminoacylation must precede Translation (evolveState.m:48-55)."
+  note: "MATLAB enforces tRNAAminoacylation before Translation in Simulation.evolveState (evolveState.m:48-55); OC composite does not encode a corresponding hard process edge between karr_trna_aminoacylation and karr_translation_v3 (CODE_DEVIATES)."
 source_anchors:
   matlab_blocks:
     class_identity:
@@ -427,12 +427,15 @@ deviations:
       path: "opencell/vivarium/karr_translation_v3.py"
       lines: "601-617"
       note: "Current OC still applies an allocator-mediated substrate cap for AA demand."
-  shared_pool_projection_merges_compartments: false
+  shared_pool_projection_merges_compartments: true
   known_deviations:
     - "MATLAB requests GTP/H2O, while current OC requests the 20 standard amino-acid pools through RequestCalculatorTranslation."
     - "Current OC still reads GTP/H2O directly from states['substrates'] inside the biology helper, so the runtime is mixed rather than pure allocation."
+    - "MATLAB decrements GTP/H2O substrate counts in Translation writeback; current OC uses GTP/H2O as read-side gating only and emits no negative GTP/H2O substrate deltas."
     - "MATLAB's substrate vocabulary includes FMET; current OC exposes only the 20 standard amino acids and uses MET as the initiator-residue surrogate."
     - "MATLAB writes GDP/PI/H as substrate byproducts; current OC writes protein.unprocessed_counts instead and does not emit those metabolites."
+    - "MATLAB substrate routing is compartment-indexed, but current OC Translation uses a flat shared substrate surface (per-WID projection with merged compartments)."
     - "MATLAB's full charged-tRNA/polymerize bookkeeping is collapsed in OC into a fixture-backed synthesis-rate surrogate plus stochastic rounding."
+    - "MATLAB enforces tRNAAminoacylation before Translation; current OC composite does not encode an explicit hard process-order edge for that pair."
     - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
   note: "The row intentionally preserves the MATLAB request/update semantics while making the current OC deviations explicit instead of hiding them."
