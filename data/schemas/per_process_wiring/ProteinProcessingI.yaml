@@ -207,9 +207,8 @@ ordering_constraints:
   hard_before: []
   hard_after: []
   soft_before: []
-  soft_after:
-    - "Translation"
-  note: "The docstring states the process runs following translation; there is no additional hard scheduler exception beyond the global tRNAAminoacylation < Translation rule."
+  soft_after: []
+  note: "MATLAB class prose says ProteinProcessingI runs after translation, but executable scheduling in `@Simulation/evolveState.m` randomizes process order except for tRNAAminoacylation < Translation; OC composite likewise has no explicit Translation -> ProteinProcessingI process edge."
 source_anchors:
   matlab_blocks:
     header_and_representation:
@@ -306,6 +305,7 @@ deviations:
     - "OC uses a strict-zero allocator contract: `next_update` reads `substrates_allocated[self.name]` and never falls back to `substrates`."
     - "OC samples events with `multivariate_hypergeometric` (or a fallback choice loop) instead of MATLAB's `stochasticRound` + `mnrnd` + `min` clipping."
     - "MATLAB keeps the request and state-update logic inside `ProteinProcessingI.m`; OC splits them between `RequestCalculatorProteinPathway` and `KarrProteinProcessingIProcess`."
+    - "ProteinProcessingI class prose says 'following translation', but neither MATLAB runtime scheduling nor OC composite wiring enforces a Translation -> ProteinProcessingI process-order edge."
     - "No standalone `calcFluxBounds` implementation exists for this process in the current OC port."
     - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
   note: "The row preserves the count-domain biology while making the OC allocator split explicit."
