@@ -228,8 +228,8 @@ consume_stoichiometry:
       note: "ATP subtraction after strand-passing events."
     oc_anchor:
       path: "opencell/vivarium/karr_dna_supercoiling.py"
-      lines: "555-577"
-      note: "ATP request/update controller and allocated-budget path."
+      lines: "1024-1035"
+      note: "ATP is decremented in _substrate_delta and emitted via update[\"substrates\"] in next_update."
     note: "Executed ATP hydrolysis is the sum of gyrase and topoIV event counts times their ATP costs."
   - wid: "H2O"
     compartment: "cytosol"
@@ -330,7 +330,7 @@ ordering_constraints:
   hard_after: []
   soft_before: []
   soft_after: []
-  note: "No DNASupercoiling-specific ordering rule was found; the canonical hard constraint in Simulation.evolveState is tRNAAminoacylation before Translation."
+  note: "MATLAB enforces per-tick `calcResourceRequirements_Current -> allocation injection -> evolveState` for DNASupercoiling in Simulation.evolveState (`@Simulation/evolveState.m:24-37,59-71`); OC emits DNASupercoiling requests inside `next_update` (`karr_dna_supercoiling.py:560-577`), but composite flow dependencies feed `karr_allocation_step` from standalone request-calculator steps (`karr_composite.py:2335-2356`), so equivalent same-tick request/grant timing is not explicitly encoded (CODE_DEVIATES)."
 source_anchors:
   matlab_blocks:
     class_identity:
@@ -438,6 +438,7 @@ deviations:
   shared_pool_projection_merges_compartments: false
   known_deviations:
     - "OC merges the request calculation and per-tick update into one next_update controller, while MATLAB splits calcResourceRequirements_Current and evolveState."
+    - "MATLAB enforces per-tick request -> allocation -> evolve ordering for DNASupercoiling; OC emits requests in-process and does not encode an explicit edge from DNASupercoiling request emission to `karr_allocation_step`."
     - "OC makes dt explicit in the request controller and sparse chromosome update, while the MATLAB current-request body relies on the simulation tick / fixture step size implicitly."
     - "OC does not expose the MATLAB RNAPolymerase fold-change matrix helper; it surfaces only the supercoiled chromosome state."
     - "OC uses a sparse chromosome-store/replay-hint implementation rather than the MATLAB doubleStrandedRegions / monomerBoundSites / complexBoundSites control surface."
