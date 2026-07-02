@@ -120,74 +120,108 @@ processes:
     runtime_methods:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:calcResourceRequirements_Current:829
-        status: needs_confirmation
-        oc: null
-        hint: null
-        hint_kind: COVERED_REQCALC
-        note: ''
+        status: inlined
+        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess.next_update:317
+        note: 'No DNARepair RequestCalculator* exists in karr_request_calculators.py
+
+          (search returned no matches). next_update computes
+
+          `requests = self._substrate_needs_for_repairs(desired_repairs)` and
+
+          emits `"requests": {self.name: {wid: float(requests[wid]) ...}}`.'
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState:894
-        status: needs_confirmation
-        oc: null
-        hint: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess.next_update:317
-        hint_kind: FOUND_CONTRACT
-        note: ''
+        status: confirmed
+        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess.next_update:317
+        note: 'Direct process runtime method. next_update applies the repair result
+
+          with `if consumed_total > 0:` and writes
+
+          `update["chromosome"] = chromosome_update`.'
       evolveState_BER:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_BER:927
-        status: needs_confirmation
-        oc: null
-        hint: null
-        hint_kind: null
-        note: ''
+        status: inlined
+        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess._desired_repairs:678
+        note: 'BER is folded into pathway bucketing:
+
+          `indices_by_pathway[self._pathway_for_damage_type(site.damage_type)].append(idx)`;
+
+          `_pathway_for_damage_type` maps `abasic_site`/`damaged_base` -> "ber",
+
+          and `_load_fixture` wires `"ber"` to `reactionIndexs_BER`.'
       evolveState_NER:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_NER:1096
-        status: needs_confirmation
-        oc: null
-        hint: null
-        hint_kind: null
-        note: ''
+        status: inlined
+        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess._desired_repairs:678
+        note: 'NER is folded into the same pathway bucket logic:
+
+          `_pathway_for_damage_type` maps `intrastrand_crosslink` -> "ner",
+
+          and `_load_fixture` wires `"ner"` to `reactionIndexs_NER`.'
       evolveState_HR:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_HR:1222
-        status: needs_confirmation
-        oc: null
-        hint: null
-        hint_kind: null
-        note: ''
+        status: inlined
+        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess._desired_repairs:678
+        note: 'HR is folded into pathway bucketing:
+
+          `_pathway_for_damage_type` maps `double_strand_break` -> "hr",
+
+          and `_load_fixture` wires `"hr"` to `reactionIndexs_HR_dsbr`.'
       evolveState_Polymerize:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_Polymerize:1365
-        status: needs_confirmation
-        oc: null
-        hint: null
-        hint_kind: null
-        note: ''
+        status: inlined
+        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess._per_event_substrate_cost:704
+        note: 'Polymerization is abstracted as per-pathway patch cost:
+
+          `dntp_total = float(self.pathway_patch_length_nt[pathway])`
+
+          and `out[wid] = float(dntp_total * self.dntp_split[idx])`.
+
+          next_update uses this helper to charge dNTP demand instead of a
+
+          separate polymerase routine.'
       evolveState_Ligate:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_Ligate:1454
-        status: needs_confirmation
-        oc: null
-        hint: null
-        hint_kind: null
-        note: ''
+        status: inlined
+        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess._per_event_substrate_cost:704
+        note: 'Ligase is folded into the same aggregate repair cost:
+
+          `out[self.atp_wid] = float(self.pathway_atp_cost[pathway])`,
+
+          and `_load_fixture` comments that
+
+          `# NHEJ-like fallback uses ligation machinery as an aggregate proxy.`'
       evolveState_DisA:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_DisA:1488
-        status: needs_confirmation
+        status: gap
         oc: null
-        hint: null
-        hint_kind: null
-        note: ''
+        note: 'Searched karr_dna_repair.py for `DisA`/`damagedSites_excm6AD`; only the
+
+          top docstring says this is deferred to v2. OC has no runtime code that
+
+          binds DisA or writes chromosome damage state, so the Karr scan/binding
+
+          behavior is absent.'
       evolveState_Modification:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_Modification:1500
-        status: needs_confirmation
+        status: gap
         oc: null
-        hint: null
-        hint_kind: null
-        note: ''
+        note: 'Searched karr_dna_repair.py for `hemiunmethylatedMunIRMSites`/`m6AD`/
+
+          `restrict` and found only the lumped `rm_methylation` metabolite tweak in
+
+          next_update (`AMET` -> `AHCYS` + `H`). OC never does Karr''s site-level
+
+          methylation or `c.damagedBases(posStrnds) = ...m6AD` writeback.'
       evolveState_Restriction:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_Restriction:1533
-        status: needs_confirmation
+        status: gap
         oc: null
-        hint: null
-        hint_kind: null
-        note: ''
+        note: 'Searched karr_dna_repair.py for `restrictableMunIRMSites` / strand-break
+
+          writeback and found no site-level restriction logic. Karr cleaves
+
+          unmethylated MunI sites; OC has no corresponding chromosome update.'
   DNASupercoiling:
     oc_files:
     - opencell/vivarium/karr_allocation_step.py
@@ -952,18 +986,21 @@ processes:
     runtime_methods:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m:calcResourceRequirements_Current:570
-        status: needs_confirmation
-        oc: null
-        hint: null
-        hint_kind: COVERED_REQCALC
-        note: ''
+        status: confirmed
+        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorTranslation.next_update:639
+        note: OC implements the per-tick request surface as a dedicated Translation request calculator
+          (AA budget, not Karr's GTP/H2O bookkeeping); karr_composite.py:788 wires RequestCalculatorTranslation
+          for m3_proc, and the core line is need_by_aa = self._tl_proc._predict_substrate_need(rates,
+          self._safe_dt(timestep)) before requests are returned.
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m:evolveState:599
-        status: needs_confirmation
-        oc: null
-        hint: opencell/vivarium/karr_request_calculators.py:RequestCalculatorD2.next_update:87
-        hint_kind: FOUND_CONTRACT
-        note: ''
+        status: confirmed
+        oc: opencell/vivarium/karr_translation_v3.py:KarrTranslationV3Process.next_update:520
+        note: Karr evolveState mutates ribosome/polypeptide state directly. OC's canonical runtime class
+          is KarrTranslationV3Process (karr_composite.py:211 maps karr_translation to it); next_update
+          computes synth_per_s = tl_v2.predict_synthesis_per_s(self.mechanism_inputs, n_active=n_active_ribosomes)
+          and then applies enzyme_deltas, bound_deltas = self._compute_enzyme_transitions_from_biology(states,
+          timestep).
   tRNAAminoacylation:
     oc_files:
     - opencell/vivarium/karr_request_calculators.py
