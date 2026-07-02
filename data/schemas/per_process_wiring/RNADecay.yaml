@@ -10,17 +10,18 @@ process:
   functional_area: "rna-synthesis-and-maturation"
   state_shape_role: "stochastic RNA decay with H2O allocation and flat substrate writeback"
   notes: >-
-    Raw RNADecay.m is not present in this checkout; the row is grounded in the
-    checked-in RNADecay extract, allocator-consumer inventory, and OC port.
+    This row is exemplar-scoped; canonical exemplars are listed and are not an
+    exhaustive enumeration. MATLAB anchors use executable RNADecay.m lines plus
+    architecture extracts where useful.
 methods:
   calcResourceRequirements_Current:
     matlab:
       symbol: "calcResourceRequirements_Current"
       source:
-        path: "docs/karr_extracts/architecture/03_variable_allocation.md"
-        lines: "10-23"
-        note: "Karr scheduler calls each process's request method before proportional fair-share allocation."
-      note: "RNADecay is a water-only allocation consumer in the checked-in extract notes."
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNADecay.m"
+        lines: "282-294"
+        note: "Current-tick H2O request from decay stoichiometry with aborted-transcript water add."
+      note: "RNADecay computes request mass directly in calcResourceRequirements_Current."
     oc:
       symbol: "RnaDecayLightProcess.next_update"
       source:
@@ -37,9 +38,9 @@ methods:
       note: "OC does not expose a dedicated RequestCalculator; the request is emitted inside next_update."
     status: "partial"
     note: >-
-      The MATLAB request formula is inferred from the documented lambda and the
-      H2O-only consumer inventory; the OC port computes the request inline from
-      sampled decay counts.
+      MATLAB computes result = max(0, -decayReactions' * (min(1, decayRates) .*
+      RNAs)) and then adds aborted-transcript water on substrateIndexs_water.
+      The OC port computes the request inline from sampled decay counts.
   evolveState:
     matlab:
       symbol: "evolveState"
@@ -86,12 +87,12 @@ allocator:
     oc_current: "allocation"
     note: "Both sides route H2O through the allocator when the allocated store is present."
   request_formula:
-    matlab: "lambda = RNAs .* decayRates * stepSizeSec; H2O_request = waterNeedPerDecay' * lambda"
+    matlab: "result = max(0, -decayReactions' * (min(1, decayRates) .* RNAs)); if abortedTranscripts nonempty: H2O_request += sum(abortedTranscripts(:, 2) - 1)"
     oc: "sampled_decay = Poisson(lambda); raw_h2o_need = water_need_per_decay' * sampled_decay"
     note: >-
-      The MATLAB side is inferred from the documented decay lambda and the
-      allocator-consumer inventory; the OC side is the inline request emitted in
-      next_update.
+      MATLAB request is the executable calcResourceRequirements_Current
+      expression plus aborted-transcript water term; the OC side is the inline
+      request emitted in next_update.
   requests:
     - wid: "H2O"
       compartment: "cytosol"
@@ -252,9 +253,13 @@ ordering_constraints:
   soft_before: []
   soft_after: []
   note: >-
-    No RNADecay-specific ordering rule appears in the available extract. The
-    only canonical hard ordering in Simulation.evolveState is tRNAAminoacylation
-    before Translation.
+    MATLAB enforces same-tick allocator coupling via
+    calcResourceRequirements_Current -> allocations -> evolveState in
+    Simulation.evolveState (`@Simulation/evolveState.m:24-39,58-72`). OC
+    RNADecay emits requests inline in next_update
+    (`karr_rna_decay.py:327-334`), and the OC composite does not encode a
+    corresponding RNADecay-specific hard ordering edge for equivalent same-tick
+    request/allocation semantics (CODE_DEVIATES).
 source_anchors:
   matlab_blocks:
     process_docstring:
@@ -299,6 +304,8 @@ provenance:
   audited_by: "gpt-5.4-mini (codex; row authored Day-43 EOD)"
   oc_commit_sha: "61a5a06e8031af3159dffa436655ade330be1fd9"
   matlab_files_referenced:
+    - data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNADecay.m
+    - data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m
     - docs/karr_extracts/process/13_RNADecay.md
     - docs/karr_extracts/architecture/03_variable_allocation.md
     - docs/karr_extracts/architecture/01_simulation_loop.md
@@ -313,9 +320,8 @@ provenance:
   kb_version: "unknown"
   extraction_date_utc:
   notes: >-
-    Raw RNADecay.m was not present in this checkout. Evidence was assembled
-    from the checked-in RNADecay extract, scheduler/allocation extracts, the
-    RNADecay allocation-consumer inventory, and the OC port plus its tests.
+    Evidence includes executable RNADecay.m and Simulation.evolveState.m,
+    checked-in extracts, and the OC port plus its tests.
 deviations:
   lp_bounds_source:
     karr: "unknown"
@@ -328,11 +334,12 @@ deviations:
       path: "opencell/vivarium/karr_rna_decay.py"
       lines: "81-260"
       note: "RNADecay port contains no LP or flux-bound machinery."
-  shared_pool_projection_merges_compartments: false
+  shared_pool_projection_merges_compartments: true
   known_deviations:
     - "OC folds request emission into next_update instead of exposing a dedicated RequestCalculator class."
+    - "MATLAB substrate routing is compartment-indexed, but OC RNADecay reads/writes a flat per-WID substrates store, so shared-pool compartment identity is projected/merged."
+    - "MATLAB enforces same-tick request->allocation->evolve execution; OC composite does not encode a corresponding RNADecay-specific hard ordering edge."
     - "OC adds a trace-hint short-circuit for replay harnesses that is not part of the Karr extract."
     - "OC includes fallback initialization and half-life guards that are absent from the local RNADecay extract."
-    - "The raw MATLAB source file is absent in this checkout, so MATLAB anchors use checked-in extracts rather than the original .m body."
     - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
-  note: "Known deviations are limited to the provenance gap and OC-only harness/fallback conveniences."
+  note: "Known deviations capture OC request placement, flat substrate projection, and OC-only harness/fallback conveniences."
