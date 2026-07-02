@@ -50,9 +50,9 @@ methods:
         - path: "opencell/vivarium/karr_request_calculators.py"
           lines: "658-710"
           note: "Allocator input path read by the process."
-      note: "OC keeps the same substrate ledger terms but changes the execution order to species-phase batching."
+      note: "OC mirrors Karr's copy-level randperm traversal, rate-scaled translocase/SRP capacity checks, and break-on-first-insufficient-copy behavior."
     status: "partial"
-    note: "Implemented, but not faithful line-by-line: OC batches per species, reads allocator budget, and uses raw enzyme counts rather than Karr's rate-scaled capacity checks."
+    note: "Implemented with parity on per-copy ordering and rate-scaled capacities; residual differences are documented in known_deviations."
   calcFluxBounds:
     matlab:
       symbol: "ProteinTranslocation"
@@ -76,9 +76,9 @@ allocator:
     oc_current: "allocation"
     note: "OC reads only `substrates_allocated[self.name]`; the process itself is allocator-mediated."
   request_formula:
-    matlab: "ATP_need = sum(count_i * ceil(monomerLength_i / preproteinTranslocase_aaTranslocatedPerATP)); GTP_need = SRP_GTPUsedPerMonomer * count_srp; H2O_need = ATP_need + GTP_need; requests = [ATP_need; GTP_need; H2O_need]"
+    matlab: "ATP_need = min(translocases, sum(count_i * ceil(monomerLength_i / preproteinTranslocase_aaTranslocatedPerATP))); GTP_need = min(SRPs, SRP_GTPUsedPerMonomer * count_srp); H2O_need = ATP_need + GTP_need; requests = [ATP_need; GTP_need; H2O_need]"
     oc: "requests[ATP/GTP/H2O] = max(need, current_pool) after aggregating queued cytoplasmic proteins by pathway"
-    note: "MATLAB text is inferred from the process extract and fixture scalars; OC over-requests by flooring at the current substrate pool."
+    note: "MATLAB request terms include translocase/SRP capacity clipping before hydrolysis summation; OC over-requests by flooring at the current substrate pool."
   requests:
     - wid: "ATP"
       compartment: "cytosol"
@@ -317,8 +317,6 @@ deviations:
       note: "OC request calculator emits allocator-facing ATP/GTP/H2O demand."
   shared_pool_projection_merges_compartments: true
   known_deviations:
-    - "OC batches translocation per species and phase, while Karr randomizes individual monomer copies in one mixed randperm and stops on the first infeasible copy."
-    - "OC reads allocator-granted ATP/GTP/H2O from `substrates_allocated` and raw enzyme counts; Karr uses current substrate pools and rate-scaled translocase/SRP capacities."
     - "OC request magnitude uses a current-pool floor (`max(need, current_pool)`), which can over-request relative to pure need."
     - "OC represents moved proteins with `protein.location` plus `protein.unprocessed_counts` deltas instead of Karr's compartment-resolved monomer matrix."
     - "OC excludes `MG_191_MONOMER` and `MG_192_MONOMER` during fixture loading, which makes terminal-organelle handling a load-time omission rather than a compartment remap."
