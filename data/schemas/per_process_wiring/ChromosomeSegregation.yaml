@@ -82,9 +82,9 @@ allocator:
     oc_current: "allocation"
     note: "Both sides gate on per-process allocated substrates; OC reads states['substrates_allocated'][self.name] and does not fall back to the global substrate pool."
   request_formula:
-    matlab: "if replicated && supercoiled && all(required segregation proteins are present) && ~segregated then request GTP = gtpCost and H2O = gtpCost, else request 0"
+    matlab: "if replicated && all(required segregation proteins are present) && ~segregated then request GTP = gtpCost and H2O = gtpCost, else request 0"
     oc: "request_gtp = request_h2o = gtp_cost when can_progress else 0.0"
-    note: "Symbolic formula only; the MATLAB source is documented as a boolean gate with gtpCost, while the OC port inlines the same logic."
+    note: "Symbolic formula only; both sides are allocation-gated with gtpCost, but OC default gating also requires supercoiled while MATLAB request gating does not (see known_deviations)."
   requests:
     - wid: "GTP"
       compartment: "cytosol"
@@ -113,8 +113,8 @@ allocator:
       note: "Direct gate input read from protein.counts, not from the allocator."
     - wid: "MG_203_204_TETRAMER"
       compartment: "cytosol"
-      source: "oc"
-      note: "OC-only optional topoIV gate; not mandatory in the default Karr documentation."
+      source: "both"
+      note: "Gate input read from counts on both sides; MATLAB requires TopoIV in the enzyme gate, while OC treats it as optional by default."
 consume_stoichiometry:
   - wid: "GTP"
     compartment: "cytosol"
@@ -296,6 +296,8 @@ deviations:
   shared_pool_projection_merges_compartments: false
   known_deviations:
     - "OC exposes continuous segregation_progress and daughter_pole_positions to support downstream chassis logic; the Karr source description is boolean and event-gated."
+    - "MATLAB request gating does not require supercoiled, but OC default _gates_satisfied does (require_supercoiled=True)."
+    - "MATLAB requires TopoIV (MG_203_204_TETRAMER) via all(this.enzymes), while OC defaults to TopoIV-optional gating (include_topoiv_gate=False)."
     - "OC adds optional include_topoiv_gate and gtp_cost_override parameters; the Karr extract only exposes gtpCost and the four core segregation proteins."
     - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
   note: >-
