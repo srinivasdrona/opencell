@@ -39,7 +39,7 @@ methods:
         path: "docs/karr_extracts/process/19_ProteinFolding.md"
         lines: "1-175"
         note: "Process extract and reconstruction notes; the raw MATLAB method body is unavailable here."
-      note: "The extract describes the two-phase folding mechanism: ion/prosthetic-group binding, then ATP-gated chaperone folding."
+      note: "The extract describes a two-phase folding mechanism with ion/prosthetic-group-constrained stochastic folding; MATLAB substrate writeback is prosthetic-matrix-driven (no explicit ATP decrement term)."
     oc:
       symbol: "KarrProteinFoldingProcess.next_update"
       source:
@@ -82,14 +82,14 @@ allocator:
     oc_current: "allocation"
     note: "Both Karr and current OC route ProteinFolding through per-process substrate allocation; OC reads from substrates_allocated[self.name]."
   request_formula:
-    matlab: "if unfoldedMonomers present, request ATP plus required prosthetic-group ions (Fe2/Fe3/K/Mg/Mn/Na/Zn as applicable); fold demand is zero otherwise"
+    matlab: "calcResourceRequirements_Current = proteinProstheticGroupMatrix' * ([unfoldedMonomers; unfoldedComplexs] when all enzymes are available, else ((min(enzymes(:, ones(size(proteinChaperoneMatrix, 1), 1))' ./ proteinChaperoneMatrix, [], 2) > 0) .* [unfoldedMonomers; unfoldedComplexs]))"
     oc: "RequestCalculatorProteinPathway.next_update sets ProteinFolding requests to max(0, substrate_state[wid]) for ATP, FE2, MG, and ZN when any unfolded monomer is present."
-    note: "The request path is shared with the other protein-maturation processes, so this row records the ProteinFolding slice only."
+    note: "MATLAB request demand is prosthetic-matrix-only (enzyme-gated) with no ATP additive term; OC request path is shared with other protein-maturation processes and records the current ProteinFolding slice."
   requests:
     - wid: "ATP"
       compartment: "cytosol"
-      source: "both"
-      note: "Chaperone-cycle allocator request."
+      source: "oc"
+      note: "OC-only chaperone-cycle allocator request; MATLAB request demand is prosthetic-matrix-only."
     - wid: "FE2"
       compartment: "cytosol"
       source: "both"
@@ -110,15 +110,16 @@ allocator:
 consume_stoichiometry:
   - wid: "ATP"
     compartment: "cytosol"
-    formula_or_constant: "min(available_ATP, 4 * n_chaperone_dependent_fold_events)"
+    formula_or_constant: "OC-only ATP handling: phase-2 uses feasibility gate atp_remaining < 0 and per-event ATP decrement min(atp_remaining, 4); MATLAB evolveState has no ATP substrate decrement or ATP-gating term"
     matlab_anchor:
-      path: "docs/karr_extracts/process/19_ProteinFolding.md"
-      lines: "1-175"
-      note: "ATP-gated chaperone folding described in the process extract."
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinFolding.m"
+      lines: "533-570"
+      note: "MATLAB evolveState computes stochastic fold fluxes and writes back only prosthetic-matrix substrate deltas (no ATP-specific decrement)."
     oc_anchor:
       path: "opencell/vivarium/karr_protein_folding.py"
       lines: "427-479"
-      note: "Phase-2 chaperone folding consumes 4 ATP per ATP-gated fold."
+      note: "Phase-2 chaperone folding applies ATP feasibility via atp_remaining < 0 and decrements ATP by min(atp_remaining, 4) per accepted chaperone-dependent fold."
+    note: "MATLAB decrements prosthetic-group substrates; OC decrements ATP in phase 2. See known_deviations."
   - wid: "FE2"
     compartment: "cytosol"
     formula_or_constant: "proteinProstheticGroupMatrix[i, FE2] * fold_events_i"
@@ -141,6 +142,28 @@ consume_stoichiometry:
       path: "opencell/vivarium/karr_protein_folding.py"
       lines: "392-426"
       note: "Ion-binding phase consumes required prosthetic-group ions."
+  - wid: "MN"
+    compartment: "cytosol"
+    formula_or_constant: "proteinProstheticGroupMatrix[i, MN] * fold_events_i"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinFolding.m"
+      lines: "264-570"
+      note: "MN is in the prosthetic-group substrate surface and is consumed via matrix-driven substrate writeback."
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_folding.py"
+      lines: "392-426"
+      note: "Ion-binding phase decrements required prosthetic-group ions from the configured matrix."
+  - wid: "NA"
+    compartment: "cytosol"
+    formula_or_constant: "proteinProstheticGroupMatrix[i, NA] * fold_events_i"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinFolding.m"
+      lines: "264-570"
+      note: "NA is in the prosthetic-group substrate surface and is consumed via matrix-driven substrate writeback."
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_folding.py"
+      lines: "392-426"
+      note: "Ion-binding phase decrements required prosthetic-group ions from the configured matrix."
   - wid: "ZN"
     compartment: "cytosol"
     formula_or_constant: "proteinProstheticGroupMatrix[i, ZN] * fold_events_i"
@@ -161,8 +184,8 @@ consume_stoichiometry:
       note: "Ion-binding matrix includes K for a minority of proteins."
     oc_anchor:
       path: "opencell/vivarium/karr_protein_folding.py"
-      lines: "120-183"
-      note: "Fixture parser loads the K slot, but the current request helper does not surface it."
+      lines: "392-426"
+      note: "Ion-binding phase consumes required prosthetic-group ions."
 produce_stoichiometry: []
 compartment_routing:
   - wid: "ATP"
@@ -303,7 +326,9 @@ deviations:
       note: "Current OC port has no calcFluxBounds routine."
   shared_pool_projection_merges_compartments: false
   known_deviations:
+    - "MATLAB calcResourceRequirements_Current requests prosthetic-matrix demand only (enzyme-gated) and has no ATP additive term; OC request helper currently includes ATP in the ProteinFolding request slice."
     - "The current OC request helper is shared across protein maturation and only explicitly surfaces ATP, FE2, MG, and ZN for ProteinFolding; the Karr prosthetic-ion surface is broader (including K/MN/NA/Fe3), and those are not request-emitted by the shared helper."
+    - "MATLAB evolveState substrate writeback decrements only proteinProstheticGroupMatrix terms and has no ATP-gating term; OC phase-2 chaperone folding uses ATP feasibility (atp_remaining < 0) and decrements ATP by min(atp_remaining, 4)."
     - "The current OC runtime omits the fixture channels unfoldedComplexs and foldedComplexs, even though the Karr fixture exposes them."
     - "The raw MATLAB ProteinFolding.m body was absent from this checkout, so the MATLAB-side method anchors are reconstructed from the process extract and downstream audit notes."
     - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
