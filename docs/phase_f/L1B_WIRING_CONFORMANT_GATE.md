@@ -33,7 +33,7 @@ PM sanity-check sentence:
 ## 1) Design Contract
 Contract:
 - Required behavior: provide a static, deterministic row-vs-code conformance gate over all wiring rows (or one targeted row) with seven named checks.
-- Why this matters: L1a proves process firing exists, but L1b proves row assertions reflect real code/schema wiring and catches anchor or WID drift before L1c.
+- Why this matters: L1a proves process firing exists, but L1b proves row assertions reflect real code/schema wiring and catches anchor or WID drift before L2.4 (chassis autonomous conservation; renamed from "L1c" on 2026-07-02).
 - Done = property statement: any repo state can be evaluated into reproducible per-check/per-row verdicts and aggregate gate verdict, without dynamic simulation execution.
 
 Beat-4 inversion:
@@ -179,7 +179,7 @@ In scope:
 
 Out of scope:
 1. Remediation of existing failing rows.
-2. Runtime/chassis/L1c conservation verification.
+2. Runtime/chassis/L2.4 conservation verification (was called "L1c" before the 2026-07-02 rename).
 3. Re-authoring row schema or process TOML content.
 
 Deferred follow-ups:

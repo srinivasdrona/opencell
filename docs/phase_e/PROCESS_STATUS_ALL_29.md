@@ -1,8 +1,10 @@
 # All-29 Process Status - 2026-06-03 ~14:30 IST (L2.1 SWEEP COMPLETE)
 
-> **🛑 Day-44 EOD update (2026-06-30): per-process wiring DB shipped (28/28 PASS); scoreboard re-framed per `2026-06-29 | opencell | l1c-skipped-lower-rung-greens-misread` decision. L1/L2.1/L2.2 greens are per-process correctness — they do NOT imply chassis correctness. The wiring DB is now the standing artifact for chassis-level audits; L1c gate design starts Day-45.**
+> **🛑 Day-46 update (2026-07-02): L-ladder rename L1c→L2.4 landed. Also new L2.0a slot inserted. Ladder now sorted by diagnostic dependency, not just structural complexity. See `D:\OneDrive - Microsoft\.pm-os\DECISIONS.md` entry `2026-07-02 | opencell | ladder-rename-l1c-to-l2_4`.**
 >
-> **What landed Day-43→Day-44 (committed and pushed to `srinivasdrona/opencell` main):**
+> **Day-44 EOD context (2026-06-30, retained):** per-process wiring DB shipped (28/28 PASS); scoreboard re-framed per `2026-06-29 | opencell | l1c-skipped-lower-rung-greens-misread` decision. L1a/L2.1/L2.2 greens are per-process correctness — they do NOT imply chassis correctness. The wiring DB is now the standing artifact for chassis-level audits; L2.4 (was "L1c") gate design planned for Day-46/47.
+>
+> **What landed Day-43→Day-46 (committed and pushed to `srinivasdrona/opencell` main):**
 > - **Wiring DB** (`cac09ae`..`78c5140`, 37 commits across 4 phases):
 >   - Schema design + Metabolism example row (operator-ratified D1-D5: YAML, one-per-process, string formulas, nested method bindings, per-row semver)
 >   - Generator + cross-row consistency checker + 3 pytest tests (`scripts/build_wiring_db.py`)
@@ -10,42 +12,51 @@
 >   - Cross-row reciprocal mismatches: 53→0; cyclic ordering: 2→0; row-level: 27 FAIL → 0 FAIL
 >   - Final validator state: `PASS` (0 mismatches, 0 cyclic, 0 missing)
 > - **DEC-003** (`7b70c67`): FVA reframe decision card — Metabolism per-tick LP-vertex feasibility ratified as 99.9997% PASS; chassis integration explicitly NOT verified
-> - **Methodology decision** (`2026-06-29 | opencell | l1c-skipped-lower-rung-greens-misread`): L1/L2.1/L2.2 are structurally blind to chassis integration bugs; 4 wiring bugs (A1/A2/A3/A3b/A4) found via side-by-side MATLAB↔OC audit on Day-43 evening
+> - **Methodology decision** (`2026-06-29 | opencell | l1c-skipped-lower-rung-greens-misread`): L1a/L2.1/L2.2 are structurally blind to chassis integration bugs; 4 wiring bugs (A1/A2/A3/A3b/A4) found via side-by-side MATLAB↔OC audit on Day-43 evening
+> - **L1b gate** (Day-45): row-vs-code static verification. 28/28 PASS.
+> - **Semantic audit fleet** (Day-45→46): 27 per-process semantic audits. Aggregate: 57% VERIFIED, 17% ROW_WRONG, 18% CODE_DEVIATES, 8% MISSING. Triggered row remediation pass (in progress Day-46).
 >
-> **Scoreboard (Day-44 EOD → Day-45 morning reframe with L1 family split):**
+> **Scoreboard (Day-46 morning reframe with L2.4 relocation):**
 >
-> | Gate | What it measures | Day-42 EOD | Day-44 EOD | Day-45 morning |
+> | Gate | What it measures | Day-42 EOD | Day-44 EOD | Day-46 morning |
 > |---|---|---:|---:|---:|
 > | **L1a** process fires (was: L1) | trace bytes > threshold | 28/28 | 28/28 | 28/28 |
-> | **L1b** wiring conformant | row-vs-code static verification | — | — | **0/28** (design + build Day-45) |
-> | **L1c** chassis conserves | mass + energy balance across autonomous ticks | NOT BUILT | NOT BUILT | **0/28** (design after L1b lands) |
+> | **L1b** wiring conformant | row-vs-code static verification | — | — | **28/28 PASS** |
 > | L2.0 schema | ports_schema vs karr_obs | 28/28 | 28/28 | 28/28 |
+> | **L2.0a** allocator arithmetic | OC allocator vs Karr per-process input state | — | — | NOT BUILT (design Day-46/47) |
 > | L2.1 GENUINE | bit-identity, isolated replay | 19/28 | 19/28 | 19/28 |
 > | L2.2 VERIFIED_GENUINE | W1 vs null, isolated replay | 17/22 | 17/22 | 17/22 |
 > | L2.2 NOT_WIRED | infrastructure missing | 2 | 2 | 2 |
 > | L2.2 VERIFIED_FAIL | Metabolism W1=161, threshold 102 | 1 | 1 | 1 |
+> | **L2.4** chassis autonomous conservation (was: "L1c") | mass + energy balance, 28 procs × ≤100 ticks | NOT BUILT | NOT BUILT | NOT BUILT (design Day-46/47) |
 > | L2.5 honest PASS | shared-pool composition | 15/256 | 15/256 | 15/256 |
-> | **Per-process wiring DB** | chassis-layer integration audit substrate | NOT BUILT | **28/28 PASS ✅** | 28/28 PASS ✅ |
+> | **Per-process wiring DB** | chassis-layer integration audit substrate | NOT BUILT | **28/28 PASS ✅** | 28/28 PASS ✅ (semantic audits done, row remediation in progress) |
 >
-> **L1 family split rationale (2026-07-01):** the original "L1 = did it fire" was under-scoped. Actual aliveness has three facets: L1a fires (existing), L1b wiring conformant (new — verifies wiring DB row matches OC code, static), L1c chassis conserves (new — mass + energy balance over autonomous runs). All three run WITHOUT the Karr oracle. L2+ is where oracle comparison begins.
+> **L-ladder reframe rationale (2026-07-02):**
 >
-> **Important framing change**: L2.1/L2.2 greens do NOT imply chassis correctness. Each green is a per-process unit test in replay mode where allocator + shared-pool projection are bypassed by construction. The wiring DB is the standing artifact for chassis-level audits; L1c is the gate that will check whether the chassis actually conserves mass and energy.
+> 1. **L1 family split (2026-07-01)**: L1 was originally under-scoped ("did trace produce bytes"). Split into L1a (fires), L1b (wiring conformant, static), and initially "L1c" (chassis conserves).
+> 2. **L1c relocation (2026-07-02)**: "L1c" as originally coined (28 procs × 5K ticks autonomous) was structurally more complex than L2.0/L2.1/L2.2/L2.5. Renamed to **L2.4** and moved BEFORE L2.5. Rationale: diagnostic dependency — L2.5 needs allocator+wiring proven correct, and L2.4 proves those; therefore L2.4 must precede L2.5.
+> 3. **L2.0a insertion (2026-07-02)**: New runtime gate between L2.0 and L2.1. Verifies OC's allocator produces the same per-process input state as Karr's allocator, given the same pool and requests. Testable today using existing per-process traces (Karr's `states_before[process][tick]` IS the allocation input to `mod.evolveState`).
+>
+> **Important framing change (Day-44, still in force)**: L2.1/L2.2 greens do NOT imply chassis correctness. Each green is a per-process unit test in replay mode where allocator + shared-pool projection are bypassed by construction. The wiring DB is the standing artifact for chassis-level audits; L2.4 is the gate that will check whether the chassis actually conserves mass and energy.
 >
 > **Day-43 evening audit findings (still open):**
 >
 > | # | Finding | Status |
 > |---|---|---|
-> | A1 | OC allocator caps scale at `min(1.0, ...)`; Karr's can be >1 (over-allocates surplus) | Documented in 28 rows; fix deferred until L1c instrumented |
+> | A1 | OC allocator caps scale at `min(1.0, ...)`; Karr's can be >1 (over-allocates surplus) | Documented in 28 rows; fix deferred until L2.4 instrumented |
 > | A2 | OC uses Vivarium topological deterministic order; Karr uses `randStream.randperm` per tick | Benign for mass balance; documented |
-> | A3 | OC's metabolism LP bounds from `_sub_state` (pool), Karr's from allocation | Documented; needs L1c-driven fix |
+> | A3 | OC's metabolism LP bounds from `_sub_state` (pool), Karr's from allocation | Documented; needs L2.4-driven fix |
 > | A3b | OC writeback clips only consumption entries to allocation, not production | Documented; 0/28 rows currently populate the audit hook (mechanical pass pending) |
 > | A4 | `project_to_flat_per_wid` merges (585,3) compartmented delta across compartments | Documented in 28 rows; fix is `~30 lines` in karr_metabolism_writeback.py |
 >
-> **Day-45 priorities:**
-> 1. L1c gate design + build — primary task
-> 2. A4 + A3b localized fixes once L1c is instrumented
-> 3. A3b audit-hook population across 28 rows (mechanical)
-> 4. Re-audit existing 17 L2.2 GENUINE processes against wiring DB
+> **Day-46/47 priorities:**
+> 1. Row remediation fleet completes (in progress — 8/24 done as of 11:00 IST)
+> 2. **L2.0a** gate design + build (allocator arithmetic verification)
+> 3. **L2.4** gate design + build (chassis autonomous conservation)
+> 4. A4 + A3b localized fixes once L2.4 is instrumented
+> 5. A3b audit-hook population across 28 rows (mechanical)
+> 6. Re-audit existing 17 L2.2 GENUINE processes against wiring DB
 
 > **⚠️ Day-42 EOD FINAL update: 12 probes today converged the picture. The W1=161 gap is REAL and COMPOUNDS over 100-tick trajectory (linear drift to 4.70M L1; TRP over-accumulated 1,234×). Only (d) GLPK 4.x oracle and FVA reframe remain viable; ε-objective and accept-floor empirically dead. Scoreboard unchanged.** *(SUPERSEDED by Day-44 EOD block above — Day-43 found that "vertex bias" was downstream symptom of chassis wiring bugs; Day-44 shipped wiring DB to audit those bugs systematically)*
 >
