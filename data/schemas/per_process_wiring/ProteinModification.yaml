@@ -19,9 +19,9 @@ methods:
     matlab:
       symbol: "calcResourceRequirements_Current"
       source:
-        path: "plan.md"
-        lines: "1209-1222"
-        note: "Repo audit note citing ProteinModification.m lines 354-365 as the feasibility/request oracle."
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinModification.m"
+        lines: "324-327"
+        note: "Executable MATLAB allocator-demand formula."
       note: "Allocator-facing feasibility block; requests are driven by the active unmodified-protein pool and the consumed substrate rows."
     oc:
       symbol: "RequestCalculatorProteinPathway.next_update"
@@ -40,9 +40,9 @@ methods:
     matlab:
       symbol: "evolveState"
       source:
-        path: "plan.md"
-        lines: "1198-1209"
-        note: "Repo audit note citing ProteinModification.m lines 361-375 for stochasticRound + randsample."
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinModification.m"
+        lines: "359-379"
+        note: "Executable MATLAB stochasticRound feasibility and weighted randsample loop."
       note: "Per-tick stochastic completion loop with feasibility screening before the weighted reaction draw."
     oc:
       symbol: "KarrProteinModificationProcess.next_update"
@@ -83,7 +83,7 @@ allocator:
     oc_current: "allocation"
     note: "Karr declares resource requirements and the current OC port reads from substrates_allocated[self.name] rather than the global substrates pool."
   request_formula:
-    matlab: "if any(unmodifiedMonomers > 0), request consumed substrate rows as max(0, available substrate counts); else request zero"
+    matlab: "max(0, -reactionStoichiometryMatrix) * min(ceil(reactionCatalysisMatrix * enzymes * stepSizeSec), reactionModificationMatrix * unmodifiedMonomers)"
     oc: "pm_req.update(_request_from_available(substrate_state, self._pm_consumed, active=pm_active))"
     note: "Only the consumed metabolite rows are requested: ATP, GLU, and LIPOYLAMP."
   requests:
@@ -123,18 +123,18 @@ allocator:
 consume_stoichiometry:
   - wid: "ATP"
     compartment: "cytosol"
-    formula_or_constant: "reactionStoichiometryMatrix(ATP,:) * reactionFluxes"
+    formula_or_constant: "reactionStoichiometryMatrix(ATP,:) * reactionModificationMatrix(:,monomerIndexs_modified) * reactionFluxes"
     matlab_anchor:
-      path: "plan.md"
-      lines: "1198-1222"
-      note: "Audit note tying the stochastic and feasibility blocks to the MATLAB oracle."
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinModification.m"
+      lines: "387-389"
+      note: "Substrate update projection in executable MATLAB."
     oc_anchor:
       path: "opencell/vivarium/karr_protein_modification.py"
       lines: "244-263"
       note: "substrate_delta = self.reaction_stoich @ reaction_fluxes"
   - wid: "GLU"
     compartment: "cytosol"
-    formula_or_constant: "reactionStoichiometryMatrix(GLU,:) * reactionFluxes"
+    formula_or_constant: "reactionStoichiometryMatrix(GLU,:) * reactionModificationMatrix(:,monomerIndexs_modified) * reactionFluxes"
     matlab_anchor:
       path: "docs/design/pb_turn8_protein_modification.md"
       lines: "5-21"
@@ -145,7 +145,7 @@ consume_stoichiometry:
       note: "Same stoichiometric projection as ATP."
   - wid: "LIPOYLAMP"
     compartment: "cytosol"
-    formula_or_constant: "reactionStoichiometryMatrix(LIPOYLAMP,:) * reactionFluxes"
+    formula_or_constant: "reactionStoichiometryMatrix(LIPOYLAMP,:) * reactionModificationMatrix(:,monomerIndexs_modified) * reactionFluxes"
     matlab_anchor:
       path: "docs/design/pb_turn8_protein_modification.md"
       lines: "5-21"
@@ -157,18 +157,18 @@ consume_stoichiometry:
 produce_stoichiometry:
   - wid: "ADP"
     compartment: "cytosol"
-    formula_or_constant: "reactionStoichiometryMatrix(ADP,:) * reactionFluxes"
+    formula_or_constant: "reactionStoichiometryMatrix(ADP,:) * reactionModificationMatrix(:,monomerIndexs_modified) * reactionFluxes"
     matlab_anchor:
-      path: "plan.md"
-      lines: "1198-1222"
-      note: "Audit note identifies the ATP hydrolysis branch in the MATLAB oracle."
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinModification.m"
+      lines: "387-389"
+      note: "Substrate update projection in executable MATLAB."
     oc_anchor:
       path: "opencell/vivarium/karr_protein_modification.py"
       lines: "244-263"
       note: "Same substrate_delta projection."
   - wid: "AMP"
     compartment: "cytosol"
-    formula_or_constant: "reactionStoichiometryMatrix(AMP,:) * reactionFluxes"
+    formula_or_constant: "reactionStoichiometryMatrix(AMP,:) * reactionModificationMatrix(:,monomerIndexs_modified) * reactionFluxes"
     matlab_anchor:
       path: "docs/design/pb_turn8_protein_modification.md"
       lines: "14-21"
@@ -179,22 +179,22 @@ produce_stoichiometry:
       note: "Same substrate_delta projection."
   - wid: "H"
     compartment: "cytosol"
-    formula_or_constant: "reactionStoichiometryMatrix(H,:) * reactionFluxes"
+    formula_or_constant: "reactionStoichiometryMatrix(H,:) * reactionModificationMatrix(:,monomerIndexs_modified) * reactionFluxes"
     matlab_anchor:
-      path: "plan.md"
-      lines: "1198-1222"
-      note: "Audit note calls out the stochastic sampler and feasibility arithmetic."
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinModification.m"
+      lines: "387-389"
+      note: "Substrate update projection in executable MATLAB."
     oc_anchor:
       path: "opencell/vivarium/karr_protein_modification.py"
       lines: "244-263"
       note: "Same substrate_delta projection."
   - wid: "PI"
     compartment: "cytosol"
-    formula_or_constant: "reactionStoichiometryMatrix(PI,:) * reactionFluxes"
+    formula_or_constant: "reactionStoichiometryMatrix(PI,:) * reactionModificationMatrix(:,monomerIndexs_modified) * reactionFluxes"
     matlab_anchor:
-      path: "plan.md"
-      lines: "1198-1222"
-      note: "ATP-to-ADP/PI byproduct branch in the audit note."
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinModification.m"
+      lines: "387-389"
+      note: "Substrate update projection in executable MATLAB."
     oc_anchor:
       path: "opencell/vivarium/karr_protein_modification.py"
       lines: "244-263"
@@ -290,13 +290,13 @@ source_anchors:
       lines: "1-24"
       note: "Process identity, enzyme count, and fixture scope."
     request_formula:
-      path: "plan.md"
-      lines: "1209-1222"
-      note: "Audit note pointing at ProteinModification.m lines 354-365 as the feasibility oracle."
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinModification.m"
+      lines: "324-327"
+      note: "Executable MATLAB allocator-demand formula."
     stochastic_update:
-      path: "plan.md"
-      lines: "1198-1209"
-      note: "Audit note pointing at ProteinModification.m lines 361-375 and the stochasticRound+randsample path."
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinModification.m"
+      lines: "359-379"
+      note: "Executable MATLAB stochasticRound feasibility and weighted randsample loop."
     lifecycle_context:
       path: "docs/design/pb_final_chassis_v4_integration.md"
       lines: "65-65"
