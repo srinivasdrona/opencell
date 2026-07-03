@@ -164,17 +164,21 @@ def test_one_tick_damage_delta_sign() -> None:
         assert int(site["age_ticks"]) == 0
 
 
-def test_no_substrate_allocation_contract() -> None:
+def test_emits_substrate_requests_from_vulnerable_site_rates() -> None:
     process = KarrDNADamageProcess({"rng_seed": 1})
     schema = process.ports_schema()
-    assert "requests" not in schema
-    assert "substrates_allocated" not in schema
+    assert "requests" in schema
+    assert "substrates_allocated" in schema
+    assert process.name in schema["requests"]
+    assert process.name in schema["substrates_allocated"]
     for field in _SPARSE_FIELDS:
         assert field in schema["chromosome"]
 
     update = process.next_update(1.0, _base_state())
-    assert "requests" not in update
-    assert "substrates_allocated" not in update
+    assert "requests" in update
+    emitted = update["requests"][process.name]
+    assert set(emitted) == set(process.allocation_substrate_wids)
+    assert all(float(v) >= 0.0 for v in emitted.values())
 
 
 def test_replication_stall_flag_on_fork_hit() -> None:
@@ -313,4 +317,3 @@ def test_no_nan_no_negative_regression() -> None:
 
     assert np.isfinite(float(state["chromosome"]["replication_stall_flag"]))
     assert float(state["chromosome"]["replication_stall_flag"]) >= 0.0
-

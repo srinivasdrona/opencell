@@ -85,17 +85,13 @@ processes:
     runtime_methods:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNADamage.m:calcResourceRequirements_Current:469
-        status: gap
-        oc: null
-        note: No DNADamage request path in OC. I searched `opencell/vivarium/karr_request_calculators.py`
-          and `opencell/vivarium/karr_composite.py`; the composite wires `karr_dna_damage` with only `chromosome`
-          (2129-2131) and instantiates request calculators only for D2/PD/RibAsm/TRNA/RNAPathway/ProteinPathway/PTransloc/Metabolism/Transcription/Translation
-          (72-82, 784-790). Karr computes demand from `max(0, -S * calcExpectedReactionRates())`; OC v1
-          only does lesion creation in `next_update`.
+        status: confirmed
+        oc: opencell/vivarium/karr_dna_damage.py:KarrDNADamageProcess.calcResourceRequirements_Current:365
+        note: Dedicated method now computes `max(0, -reactionSmallMoleculeStoichiometryMatrix @ calcExpectedReactionRates())` and `next_update` emits it on `requests`.
       calcExpectedReactionRates:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNADamage.m:calcExpectedReactionRates:474
         status: inlined
-        oc: opencell/vivarium/karr_dna_damage.py:KarrDNADamageProcess.next_update:245
+        oc: opencell/vivarium/karr_dna_damage.py:KarrDNADamageProcess.next_update:313
         note: Folded into `KarrDNADamageProcess.next_update`; the rate loop does `rate_per_s = max(0.0,
           float(self.kind_rates_per_s.get(kind, 0.0)))`, applies `gate_count` from the radiation substrate,
           then `lam = rate_per_s * dt` before Poisson sampling. OC also has `expected_events_per_tick`
@@ -103,16 +99,13 @@ processes:
           configured/trace `kind_rates_per_s` (138-151), not Karr's `calcNumberVulnerableSites` chain.
       calcNumberVulnerableSites:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNADamage.m:calcNumberVulnerableSites:490
-        status: gap
-        oc: null
-        note: No OC helper counts motif-specific vulnerable sites. I searched `karr_dna_damage.py`, `karr_request_calculators.py`,
-          and `karr_composite.py`; OC v1 only seeds `kind_rates_per_s`, samples positions via `_sample_positions`
-          (300-341), and tracks occupancy/fork hits. Karr's `polDNA / damagedSites / reactionVulnerableMotifs`
-          logic is omitted.
+        status: confirmed
+        oc: opencell/vivarium/karr_dna_damage.py:KarrDNADamageProcess.calcNumberVulnerableSites:395
+        note: Dedicated helper ports Karr’s motif loop over polymerized DNA + damaged-site motif intersections (including sparse chromosome fields and MunI m6AD exclusion surface).
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNADamage.m:evolveState:535
         status: confirmed
-        oc: opencell/vivarium/karr_dna_damage.py:KarrDNADamageProcess.next_update:228
+        oc: opencell/vivarium/karr_dna_damage.py:KarrDNADamageProcess.next_update:287
         note: 'Dedicated process step; `next_update` is the runtime body. It performs stochastic lesion
           creation, fork-hit detection, and returns `{"chromosome": chromosome_update}`.'
   DNARepair:
@@ -123,7 +116,7 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:calcResourceRequirements_Current:829
         status: inlined
-        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess.next_update:317
+        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess.next_update:370
         note: 'No DNARepair RequestCalculator* exists in karr_request_calculators.py
 
           (search returned no matches). next_update computes
@@ -134,7 +127,7 @@ processes:
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState:894
         status: confirmed
-        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess.next_update:317
+        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess.next_update:370
         note: 'Direct process runtime method. next_update applies the repair result
 
           with `if consumed_total > 0:` and writes
@@ -143,7 +136,7 @@ processes:
       evolveState_BER:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_BER:927
         status: inlined
-        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess._desired_repairs:678
+        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess._desired_repairs:1134
         note: 'BER is folded into pathway bucketing:
 
           `indices_by_pathway[self._pathway_for_damage_type(site.damage_type)].append(idx)`;
@@ -154,7 +147,7 @@ processes:
       evolveState_NER:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_NER:1096
         status: inlined
-        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess._desired_repairs:678
+        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess._desired_repairs:1134
         note: 'NER is folded into the same pathway bucket logic:
 
           `_pathway_for_damage_type` maps `intrastrand_crosslink` -> "ner",
@@ -163,7 +156,7 @@ processes:
       evolveState_HR:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_HR:1222
         status: inlined
-        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess._desired_repairs:678
+        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess._desired_repairs:1134
         note: 'HR is folded into pathway bucketing:
 
           `_pathway_for_damage_type` maps `double_strand_break` -> "hr",
@@ -172,7 +165,7 @@ processes:
       evolveState_Polymerize:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_Polymerize:1365
         status: inlined
-        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess._per_event_substrate_cost:704
+        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess._per_event_substrate_cost:1160
         note: 'Polymerization is abstracted as per-pathway patch cost:
 
           `dntp_total = float(self.pathway_patch_length_nt[pathway])`
@@ -185,7 +178,7 @@ processes:
       evolveState_Ligate:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_Ligate:1454
         status: inlined
-        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess._per_event_substrate_cost:704
+        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess._per_event_substrate_cost:1160
         note: 'Ligase is folded into the same aggregate repair cost:
 
           `out[self.atp_wid] = float(self.pathway_atp_cost[pathway])`,
@@ -206,24 +199,14 @@ processes:
           behavior is absent.'
       evolveState_Modification:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_Modification:1500
-        status: gap
-        oc: null
-        note: 'Searched karr_dna_repair.py for `hemiunmethylatedMunIRMSites`/`m6AD`/
-
-          `restrict` and found only the lumped `rm_methylation` metabolite tweak in
-
-          next_update (`AMET` -> `AHCYS` + `H`). OC never does Karr''s site-level
-
-          methylation or `c.damagedBases(posStrnds) = ...m6AD` writeback.'
+        status: confirmed
+        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess.evolveState_Modification:674
+        note: Dedicated method methylates `hemiunmethylatedMunIRMSites` with type-II enzyme/substrate bounds, writes m6AD into `damagedBases`, and applies fixture stoichiometry (AMET->AHCYS+H).
       evolveState_Restriction:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_Restriction:1533
-        status: gap
-        oc: null
-        note: 'Searched karr_dna_repair.py for `restrictableMunIRMSites` / strand-break
-
-          writeback and found no site-level restriction logic. Karr cleaves
-
-          unmethylated MunI sites; OC has no corresponding chromosome update.'
+        status: confirmed
+        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess.evolveState_Restriction:721
+        note: Dedicated method cleaves `restrictableMunIRMSites`, writes strand breaks at selected MunI cleavage coordinates, and applies reaction stoichiometry from the fixture.
   DNASupercoiling:
     oc_files:
     - opencell/vivarium/karr_allocation_step.py

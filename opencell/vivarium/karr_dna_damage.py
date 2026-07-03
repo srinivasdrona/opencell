@@ -133,6 +133,14 @@ class KarrDNADamageProcess(Process):
         self.chromosome_shape = (self.chromosome_length, ChromosomeStore.DEFAULT_N_COMPARTMENTS)
         self.substrate_wids: list[str] = []
         self.enzyme_wids: list[str] = []
+        self.allocation_substrate_wids: list[str] = []
+        self._allocation_substrate_indices: list[int] = []
+        self.sequence_gc_content = 0.5
+        self.reaction_bounds = np.zeros((0, 2), dtype=np.float64)
+        self.reaction_small_molecule_stoich = np.zeros((0, 0), dtype=np.float64)
+        self.reaction_radiation = np.zeros((0,), dtype=np.int64)
+        self.reaction_vulnerable_motifs: list[object] = []
+        self.reaction_vulnerable_motif_types: list[str] = []
         self._load_schema_observables(self.parameters.get("fixture_path", _DEFAULT_FIXTURE_PATH))
 
         configured_rates = self.parameters.get("kind_rates_per_s") or {}
@@ -175,6 +183,45 @@ class KarrDNADamageProcess(Process):
             self.substrate_wids = [str(_coerce_scalar(raw)) for raw in np.asarray(substrate_ids, dtype=object).ravel()]
         if enzyme_ids is not None:
             self.enzyme_wids = [str(_coerce_scalar(raw)) for raw in np.asarray(enzyme_ids, dtype=object).ravel()]
+        reaction_bounds = getattr(fixture, "reactionBounds", None)
+        reaction_small_stoich = getattr(fixture, "reactionSmallMoleculeStoichiometryMatrix", None)
+        reaction_radiation = getattr(fixture, "reactionRadiation", None)
+        reaction_vulnerable_motifs = getattr(fixture, "reactionVulnerableMotifs", None)
+        reaction_vulnerable_motif_types = getattr(fixture, "reactionVulnerableMotifTypes", None)
+        if reaction_bounds is not None:
+            self.reaction_bounds = np.asarray(reaction_bounds, dtype=np.float64)
+        if reaction_small_stoich is not None:
+            self.reaction_small_molecule_stoich = np.asarray(reaction_small_stoich, dtype=np.float64)
+            consumed_idx = np.flatnonzero(
+                np.any(self.reaction_small_molecule_stoich < 0.0, axis=1)
+            ).tolist()
+            self._allocation_substrate_indices = [int(idx) for idx in consumed_idx]
+            self.allocation_substrate_wids = [
+                self.substrate_wids[int(idx)]
+                for idx in consumed_idx
+                if 0 <= int(idx) < len(self.substrate_wids)
+            ]
+        if reaction_radiation is not None:
+            self.reaction_radiation = np.asarray(reaction_radiation, dtype=np.int64).reshape(-1)
+        if reaction_vulnerable_motifs is not None:
+            self.reaction_vulnerable_motifs = [
+                _coerce_scalar(raw) for raw in np.asarray(reaction_vulnerable_motifs, dtype=object).ravel()
+            ]
+        if reaction_vulnerable_motif_types is not None:
+            self.reaction_vulnerable_motif_types = [
+                str(_coerce_scalar(raw))
+                for raw in np.asarray(reaction_vulnerable_motif_types, dtype=object).ravel()
+            ]
+
+        states = np.asarray(getattr(fixture, "states", []), dtype=object).ravel()
+        for state in states:
+            cls = str(getattr(state, "x_class_", ""))
+            if not cls.endswith("Chromosome"):
+                continue
+            gc = getattr(state, "sequenceGCContent", None)
+            if _is_finite_number(gc):
+                self.sequence_gc_content = float(gc)
+            break
 
     def ports_schema(self) -> dict[str, Any]:
         chromosome_schema = {
@@ -223,13 +270,34 @@ class KarrDNADamageProcess(Process):
                 wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                 for wid in self.enzyme_wids
             },
+            "requests": {
+                self.name: {
+                    wid: {"_default": 0.0, "_updater": "set", "_emit": False}
+                    for wid in self.allocation_substrate_wids
+                }
+            },
+            "substrates_allocated": {
+                self.name: {
+                    wid: {"_default": 0.0, "_emit": False}
+                    for wid in self.allocation_substrate_wids
+                }
+            },
         }
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         dt = float(timestep) if timestep > 0 else float(self.parameters["time_step"])
         self._tick_index += 1
+        current_requests = self.calcResourceRequirements_Current(states)
+        requests_update = {
+            self.name: {
+                self.substrate_wids[idx]: float(current_requests[idx])
+                for idx in self._allocation_substrate_indices
+                if 0 <= int(idx) < len(self.substrate_wids) and int(idx) < current_requests.size
+            }
+        }
+        update: dict[str, Any] = {"requests": requests_update}
         if dt <= 0:
-            return {}
+            return update
 
         chromosome_state = states.get("chromosome", {})
         existing_sites = current_damage_sites(states)
@@ -283,7 +351,7 @@ class KarrDNADamageProcess(Process):
                     occupied_positions.add(int(pos))
 
         if not new_sites:
-            return {}
+            return update
 
         fork_hit = self._fork_hit(new_sites, fork_positions)
         chromosome_update: dict[str, Any] = {"damage_events_cumulative": new_sites}
@@ -291,11 +359,165 @@ class KarrDNADamageProcess(Process):
         if fork_hit:
             chromosome_update["replication_stall_flag"] = 1.0
 
-        return {"chromosome": chromosome_update}
+        update["chromosome"] = chromosome_update
+        return update
+
+    def calcResourceRequirements_Current(self, states: dict[str, Any] | None = None) -> np.ndarray:
+        if states is None:
+            states = {}
+        rates = self.calcExpectedReactionRates(states)
+        if self.reaction_small_molecule_stoich.size == 0 or rates.size == 0:
+            return np.zeros((len(self.substrate_wids),), dtype=np.float64)
+        requirements = np.maximum(
+            0.0,
+            -self.reaction_small_molecule_stoich @ rates,
+        )
+        return np.asarray(requirements, dtype=np.float64).reshape(-1)
+
+    def calcExpectedReactionRates(self, states: dict[str, Any] | None = None) -> np.ndarray:
+        if states is None:
+            states = {}
+        if self.reaction_bounds.size == 0:
+            return np.zeros((0,), dtype=np.float64)
+        n_vulnerable_sites = self.calcNumberVulnerableSites(states)
+        rates = np.asarray(n_vulnerable_sites, dtype=np.float64) * self.reaction_bounds[:, 1]
+        substrates_state = states.get("substrates", {})
+        for rxn_idx, radiation_sub_idx in enumerate(self.reaction_radiation.tolist()):
+            if int(radiation_sub_idx) == 0:
+                continue
+            local_idx = int(radiation_sub_idx) - 1
+            if local_idx < 0 or local_idx >= len(self.substrate_wids):
+                continue
+            wid = self.substrate_wids[local_idx]
+            rates[rxn_idx] *= max(0.0, float(substrates_state.get(wid, 0.0)))
+        return rates
+
+    def calcNumberVulnerableSites(self, states: dict[str, Any] | None = None) -> np.ndarray:
+        if states is None:
+            states = {}
+        n_reactions = int(self.reaction_bounds.shape[0]) if self.reaction_bounds.ndim >= 2 else 0
+        out = np.zeros((n_reactions,), dtype=np.float64)
+        if n_reactions <= 0:
+            return out
+
+        chromosome_state = states.get("chromosome", {})
+        chromosome_store = self._resolve_chromosome_store(chromosome_state)
+        polymerized_nt = self._polymerized_nt_count(chromosome_store)
+        dntp_composition = np.asarray(
+            [
+                (1.0 - float(self.sequence_gc_content)) / 2.0,
+                float(self.sequence_gc_content) / 2.0,
+                float(self.sequence_gc_content) / 2.0,
+                (1.0 - float(self.sequence_gc_content)) / 2.0,
+            ],
+            dtype=np.float64,
+        )
+        base_to_idx = {"A": 0, "C": 1, "G": 2, "T": 3}
+
+        damaged_sites = self._damaged_sites_value_map(chromosome_store, chromosome_state)
+        damaged_coords_by_value: dict[int, set[tuple[int, int]]] = {}
+        for coord, value in damaged_sites.items():
+            damaged_coords_by_value.setdefault(int(value), set()).add(coord)
+
+        for rxn_idx in range(min(n_reactions, len(self.reaction_vulnerable_motifs))):
+            motif = self.reaction_vulnerable_motifs[rxn_idx]
+            motif_type = (
+                self.reaction_vulnerable_motif_types[rxn_idx]
+                if rxn_idx < len(self.reaction_vulnerable_motif_types)
+                else ""
+            )
+            if isinstance(motif, str):
+                letters = [base_to_idx[base] for base in motif if base in base_to_idx]
+                if not letters:
+                    out[rxn_idx] = 0.0
+                    continue
+                out[rxn_idx] = float(polymerized_nt) * float(np.prod(dntp_composition[letters]))
+                continue
+
+            try:
+                motif_value = int(motif)
+            except (TypeError, ValueError):
+                continue
+            if not motif_type or not hasattr(chromosome_store, "get_field"):
+                continue
+            try:
+                specific_triplet = chromosome_store.get_field(str(motif_type))
+            except KeyError:
+                continue
+            specific_coords = {
+                (int(position), int(strand))
+                for position, strand, value in zip(
+                    specific_triplet.positions.tolist(),
+                    specific_triplet.strands.tolist(),
+                    specific_triplet.values.tolist(),
+                    strict=False,
+                )
+                if int(value) == motif_value
+            }
+            if not specific_coords:
+                continue
+            damaged_coords = damaged_coords_by_value.get(motif_value, set())
+            if not damaged_coords:
+                continue
+            out[rxn_idx] = float(len(specific_coords & damaged_coords))
+        return out
 
     def expected_events_per_tick(self, timestep: float = 1.0) -> dict[str, float]:
         dt = max(0.0, float(timestep))
         return {kind: float(self.kind_rates_per_s[kind] * dt) for kind in self.damage_kinds}
+
+    def _polymerized_nt_count(self, chromosome_store: ChromosomeStore) -> float:
+        try:
+            polymerized = chromosome_store.get_field("polymerizedRegions")
+        except KeyError:
+            polymerized = SparseTriplet.empty(*self.chromosome_shape)
+        total = float(np.sum(np.asarray(polymerized.values, dtype=np.float64)))
+        if total > 0.0:
+            return total
+        return float(2 * self.sequence_length_nt)
+
+    def _damaged_sites_value_map(
+        self,
+        chromosome_store: ChromosomeStore,
+        chromosome_state: dict[str, Any],
+    ) -> dict[tuple[int, int], int]:
+        m6ad_coords = self._rm_m6ad_coords(chromosome_state)
+        combined: dict[tuple[int, int], int] = {}
+        for field_name in (
+            "damagedBases",
+            "gapSites",
+            "abasicSites",
+            "damagedSugarPhosphates",
+            "intrastrandCrossLinks",
+            "strandBreaks",
+            "hollidayJunctions",
+        ):
+            triplet = chromosome_store.get_field(field_name)
+            for position, strand, value in zip(
+                triplet.positions.tolist(),
+                triplet.strands.tolist(),
+                triplet.values.tolist(),
+                strict=False,
+            ):
+                coord = (int(position), int(strand))
+                if field_name == "damagedBases" and coord in m6ad_coords:
+                    continue
+                combined[coord] = int(combined.get(coord, 0) + int(value))
+        return combined
+
+    def _rm_m6ad_coords(self, chromosome_state: dict[str, Any]) -> set[tuple[int, int]]:
+        raw = chromosome_state.get("m6ADMethylatedSites")
+        if not isinstance(raw, dict):
+            return set()
+        triplet = SparseTriplet.from_state(raw, shape=self.chromosome_shape)
+        return {
+            (int(position), int(strand))
+            for position, strand in zip(
+                triplet.positions.tolist(),
+                triplet.strands.tolist(),
+                strict=False,
+            )
+        }
 
     def _sample_positions(self, n_events: int, occupied_positions: set[int]) -> np.ndarray:
         if n_events <= 0:

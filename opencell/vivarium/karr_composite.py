@@ -1743,6 +1743,7 @@ def build_karr_chassis_v5(
         | {supercoil_proc.atp_wid, supercoil_proc.h2o_wid}
         | {condensation_proc.atp_wid, condensation_proc.water_wid}
         | {segregation_proc.gtp_wid, segregation_proc.h2o_wid}
+        | set(dna_damage_proc.allocation_substrate_wids)
         | set(dna_repair_proc.tracked_substrates)
         | {ftsz_proc.gtp_wid}
         | {cytokinesis_proc.gtp_wid}
@@ -1778,6 +1779,7 @@ def build_karr_chassis_v5(
                     segregation_proc.name,
                     [segregation_proc.gtp_wid, segregation_proc.h2o_wid],
                 ),
+                (dna_damage_proc.name, list(dna_damage_proc.allocation_substrate_wids)),
                 (dna_repair_proc.name, list(dna_repair_proc.tracked_substrates)),
                 (ftsz_proc.name, [ftsz_proc.gtp_wid]),
                 (cytokinesis_proc.name, [cytokinesis_proc.gtp_wid]),
@@ -2129,6 +2131,9 @@ def build_karr_chassis_v5(
         },
         "karr_dna_damage": {
             "chromosome": ("chromosome",),
+            "substrates": ("substrates",),
+            "requests": ("requests",),
+            "substrates_allocated": ("substrates_allocated",),
         },
         "karr_dna_repair": {
             "chromosome": ("chromosome",),
