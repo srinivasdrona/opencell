@@ -37,6 +37,11 @@ _DAMAGE_FIELDS = (
     "abasicSites",
     "damagedSugarPhosphates",
 )
+_RM_DERIVED_FIELDS = (
+    "m6ADMethylatedSites",
+    "hemiunmethylatedMunIRMSites",
+    "restrictableMunIRMSites",
+)
 
 _DAMAGE_TYPE_ALIASES: dict[str, str] = {
     "abasic": "abasic_site",
@@ -130,6 +135,22 @@ def _normalize_dntp_split(raw: object | None) -> np.ndarray:
     return arr / total
 
 
+def _split_circular_region(start: int, length: int, sequence_len: int) -> list[tuple[int, int]]:
+    if length <= 0:
+        return []
+    start = int(start) % sequence_len
+    length = int(length)
+    if length >= sequence_len:
+        return [(0, sequence_len - 1)]
+    end = start + length - 1
+    if end < sequence_len:
+        return [(start, end)]
+    return [
+        (start, sequence_len - 1),
+        (0, end % sequence_len),
+    ]
+
+
 class KarrDNARepairProcess(Process):
     """Karr DNARepair (light) with pathway-level aggregate repair events."""
 
@@ -213,6 +234,32 @@ class KarrDNARepairProcess(Process):
             if rxn_idx.size == 0:
                 raise ValueError(f"DNARepair pathway {pathway} has no mapped reactions")
         self._rm_muni_methylation_idx = self.reaction_wids.index("DNA_RM_MunI_Methylation")
+        self._rm_muni_restriction_idx = self.reaction_wids.index("DNA_RM_MunI_Restriction")
+        self._rm_typeii_enzyme_idx = int(_coerce_scalar(fx.enzymeIndexs_RM_typeII)) - 1
+        self._rm_typeii_enzyme_wid = self.enzyme_wids[self._rm_typeii_enzyme_idx]
+        self._substrate_global_indices = _parse_index_array(fx.substrateGlobalIndexs)
+        self._m6ad_local_idx = int(_coerce_scalar(fx.substrateIndexs_m6AD)) - 1
+        self._m6ad_global_index = int(self._substrate_global_indices[self._m6ad_local_idx])
+        self._rm_muni_sites = (np.asarray(fx.RM_MunI_RecognitionSites, dtype=np.int64) - 1) % max(
+            1,
+            self.chromosome_length,
+        )
+        self._rm_muni_methylated_positions = (
+            _parse_index_array(fx.RM_MunI_MethylatedPositions) - 1
+        ).astype(np.int64)
+        self._rm_muni_restriction_positions = (
+            _parse_index_array(fx.RM_MunI_RestrictionPositions) - 1
+        ).astype(np.int64)
+        if self._rm_muni_methylated_positions.size != 2:
+            raise ValueError(
+                "DNARepair expected 2 MunI methylated positions, got "
+                f"{self._rm_muni_methylated_positions.size}"
+            )
+        if self._rm_muni_restriction_positions.size != 2:
+            raise ValueError(
+                "DNARepair expected 2 MunI restriction positions, got "
+                f"{self._rm_muni_restriction_positions.size}"
+            )
 
         if "ATP" not in self.substrate_wids:
             raise ValueError("DNARepair fixture missing ATP substrate")
@@ -263,6 +310,12 @@ class KarrDNARepairProcess(Process):
             field: sparse_triplet_schema(self.chromosome_shape, emit=(field in set(_DAMAGE_FIELDS)))
             for field in _DAMAGE_FIELDS
         }
+        chromosome_schema.update(
+            {
+                field: sparse_triplet_schema(self.chromosome_shape, emit=True)
+                for field in _RM_DERIVED_FIELDS
+            }
+        )
         chromosome_schema.update(
             {
                 "damage_events_cumulative": {"_default": [], "_updater": "accumulate", "_emit": True},
@@ -316,8 +369,9 @@ class KarrDNARepairProcess(Process):
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         dt = float(timestep) if timestep > 0 else float(self.parameters["time_step"])
+        chrom_state = states.get("chromosome", {})
 
-        damage_sites = self._damage_sites(states.get("chromosome", {}), states)
+        damage_sites = self._damage_sites(chrom_state, states)
 
         enzyme_counts = self._enzyme_counts(states)
         desired_repairs, indices_by_pathway = self._desired_repairs(
@@ -335,29 +389,19 @@ class KarrDNARepairProcess(Process):
 
         substrate_consumption = self._substrate_needs_for_repairs(actual_repairs)
         consumed_total = int(sum(actual_repairs.values()))
-        substrates_state = states.get("substrates", {})
-        rm_methylation = int(
-            "AMET" in substrates_state
-            and float(substrates_state.get("AMET", 0.0)) >= 1.0
-            and self._rm_rng.random()
-            < float(enzyme_counts.get("MG_184_DIMER", 0.0)) * float(self.reaction_ub[self._rm_muni_methylation_idx]) * dt
-        )
+        substrate_delta: dict[str, float] = {}
 
         update: dict[str, Any] = {
             "requests": {self.name: {wid: float(requests[wid]) for wid in self.tracked_substrates}}
         }
 
         if any(val > 0.0 for val in substrate_consumption.values()):
-            update["substrates"] = {
-                wid: -float(substrate_consumption[wid])
-                for wid in self.tracked_substrates
-                if substrate_consumption[wid] > 0.0
-            }
-        if rm_methylation:
-            update.setdefault("substrates", {})
-            update["substrates"]["AMET"] = float(update["substrates"].get("AMET", 0.0) - rm_methylation)
-            update["substrates"]["AHCYS"] = float(update["substrates"].get("AHCYS", 0.0) + rm_methylation)
-            update["substrates"]["H"] = float(update["substrates"].get("H", 0.0) + rm_methylation)
+            for wid in self.tracked_substrates:
+                value = float(substrate_consumption[wid])
+                if value > 0.0:
+                    substrate_delta[wid] = substrate_delta.get(wid, 0.0) - value
+
+        chromosome_update: dict[str, Any] = {}
 
         if consumed_total > 0:
             repaired_indices = self._sample_repaired_indices(indices_by_pathway, actual_repairs)
@@ -365,7 +409,7 @@ class KarrDNARepairProcess(Process):
                 self._repair_event_from_site(damage_sites[idx].payload)
                 for idx in sorted(repaired_indices)
             ]
-            chromosome_update: dict[str, Any] = {
+            chromosome_update = {
                 "repair_events_cumulative": repair_events,
                 "repair_count": float(consumed_total),
                 "repair_count_by_pathway": {
@@ -375,18 +419,427 @@ class KarrDNARepairProcess(Process):
                 },
             }
             chromosome_sparse_delta = self._chromosome_damage_writeback(
-                chrom_state=states.get("chromosome", {}),
+                chrom_state=chrom_state,
                 damage_sites=damage_sites,
                 repaired_indices=repaired_indices,
             )
             if chromosome_sparse_delta:
                 chromosome_update.update(chromosome_sparse_delta)
+
+        rm_chrom_state = dict(chrom_state)
+        for field_name in _DAMAGE_FIELDS:
+            if field_name in chromosome_update:
+                rm_chrom_state[field_name] = chromosome_update[field_name]
+
+        rm_chromosome_update, rm_substrate_delta = self._evolve_state_restriction_modification(
+            chrom_state=rm_chrom_state,
+            enzyme_counts=enzyme_counts,
+            dt=dt,
+            substrate_state=states.get("substrates", {}),
+            substrate_delta=substrate_delta,
+        )
+        if rm_chromosome_update:
+            chromosome_update.update(rm_chromosome_update)
+        for wid, delta in rm_substrate_delta.items():
+            substrate_delta[wid] = substrate_delta.get(wid, 0.0) + float(delta)
+
+        if chromosome_update:
             update["chromosome"] = chromosome_update
+        if any(abs(delta) > 0.0 for delta in substrate_delta.values()):
+            update["substrates"] = {
+                wid: float(delta) for wid, delta in substrate_delta.items() if abs(float(delta)) > 0.0
+            }
 
         return update
 
     def _resolve_chromosome_store(self, chrom_state: dict[str, Any]) -> ChromosomeStore:
         return ChromosomeStore.from_state_mapping(chrom_state, shape=self.chromosome_shape)
+
+    def _sparse_field_map(self, chrom_state: dict[str, Any], field_name: str) -> dict[tuple[int, int], int]:
+        raw = chrom_state.get(field_name)
+        if not isinstance(raw, dict):
+            return {}
+        triplet = SparseTriplet.from_state(raw, shape=self.chromosome_shape)
+        return {
+            (int(position), int(strand)): int(value)
+            for position, strand, value in zip(
+                triplet.positions.tolist(),
+                triplet.strands.tolist(),
+                triplet.values.tolist(),
+                strict=False,
+            )
+            if int(value) != 0
+        }
+
+    def _triplet_state_from_map(self, coord_values: dict[tuple[int, int], int]) -> dict[str, Any]:
+        entries = sorted(coord_values.items(), key=lambda item: (item[0][0], item[0][1]))
+        if entries:
+            positions = np.asarray([coord[0] for coord, _ in entries], dtype=np.int64)
+            strands = np.asarray([coord[1] for coord, _ in entries], dtype=np.int64)
+            values = np.asarray([value for _, value in entries], dtype=np.int64)
+        else:
+            positions = np.array([], dtype=np.int64)
+            strands = np.array([], dtype=np.int64)
+            values = np.array([], dtype=np.int64)
+        return SparseTriplet(
+            positions=positions,
+            strands=strands,
+            values=values,
+            shape=self.chromosome_shape,
+        ).to_state()
+
+    def _polymerized_intervals_by_strand(
+        self,
+        chrom_state: dict[str, Any],
+    ) -> dict[int, list[tuple[int, int]]]:
+        raw = chrom_state.get("polymerizedRegions")
+        if not isinstance(raw, dict):
+            return {}
+        triplet = SparseTriplet.from_state(raw, shape=self.chromosome_shape)
+        out: dict[int, list[tuple[int, int]]] = {}
+        for start, strand, length in zip(
+            triplet.positions.tolist(),
+            triplet.strands.tolist(),
+            triplet.values.tolist(),
+            strict=False,
+        ):
+            intervals = _split_circular_region(int(start), int(length), self.chromosome_length)
+            if not intervals:
+                continue
+            out.setdefault(int(strand), []).extend(intervals)
+        return out
+
+    @staticmethod
+    def _is_polymerized_coord(
+        coord: tuple[int, int],
+        intervals_by_strand: dict[int, list[tuple[int, int]]],
+    ) -> bool:
+        position, strand = coord
+        for start, end in intervals_by_strand.get(int(strand), []):
+            if int(start) <= int(position) <= int(end):
+                return True
+        return False
+
+    def _muni_site_sets(
+        self,
+        *,
+        field_maps: dict[str, dict[tuple[int, int], int]],
+        polymerized_intervals: dict[int, list[tuple[int, int]]],
+    ) -> dict[str, list[tuple[int, int]]]:
+        damaged_bases = field_maps["damagedBases"]
+        strand_breaks = field_maps["strandBreaks"]
+        non_break_damage_coords: set[tuple[int, int]] = set()
+        for field_name in (
+            "damagedBases",
+            "gapSites",
+            "abasicSites",
+            "damagedSugarPhosphates",
+            "intrastrandCrossLinks",
+            "hollidayJunctions",
+        ):
+            non_break_damage_coords.update(field_maps[field_name].keys())
+        all_damage_coords = set(non_break_damage_coords) | set(strand_breaks.keys())
+
+        hemi_targets: set[tuple[int, int]] = set()
+        restrictable_targets: set[tuple[int, int]] = set()
+        methylated_coords: set[tuple[int, int]] = set()
+        n_sites = int(self._rm_muni_sites.shape[0])
+        methyl_pos_a = int(self._rm_muni_methylated_positions[0])
+        methyl_pos_b = int(self._rm_muni_methylated_positions[1])
+        restrict_pos_a = int(self._rm_muni_restriction_positions[0])
+        restrict_pos_b = int(self._rm_muni_restriction_positions[1])
+
+        for strand_a, strand_b in ((0, 1), (2, 3)):
+            for site_idx in range(n_sites):
+                site_positions = self._rm_muni_sites[site_idx, :]
+
+                methyl_coord_a = (int(site_positions[methyl_pos_a]), int(strand_a))
+                methyl_coord_b = (int(site_positions[methyl_pos_b]), int(strand_b))
+                restriction_coord_a = (int(site_positions[restrict_pos_a]), int(strand_a))
+                restriction_coord_b = (int(site_positions[restrict_pos_b]), int(strand_b))
+
+                is_methylated_a = damaged_bases.get(methyl_coord_a, 0) == self._m6ad_global_index
+                is_methylated_b = damaged_bases.get(methyl_coord_b, 0) == self._m6ad_global_index
+
+                if is_methylated_a:
+                    methylated_coords.add(methyl_coord_a)
+                if is_methylated_b:
+                    methylated_coords.add(methyl_coord_b)
+
+                is_site_methylated = bool(is_methylated_a and is_methylated_b)
+                is_site_unmethylated = bool((not is_methylated_a) and (not is_methylated_b))
+                is_site_hemimethylated = bool((not is_site_methylated) and (not is_site_unmethylated))
+                if is_site_hemimethylated:
+                    if not is_methylated_a:
+                        hemi_targets.add(methyl_coord_a)
+                    if not is_methylated_b:
+                        hemi_targets.add(methyl_coord_b)
+
+                motif_coords = [
+                    (int(position), int(strand_a)) for position in site_positions.tolist()
+                ] + [
+                    (int(position), int(strand_b)) for position in site_positions.tolist()
+                ]
+                restriction_coords = {restriction_coord_a, restriction_coord_b}
+                is_site_damaged = False
+                for coord in motif_coords:
+                    if coord not in all_damage_coords:
+                        continue
+                    if (
+                        coord in restriction_coords
+                        and coord in strand_breaks
+                        and coord not in non_break_damage_coords
+                    ):
+                        # Karr calcRestrictableMunIRMSites ignores strand breaks at cleavage positions.
+                        continue
+                    is_site_damaged = True
+                    break
+
+                if not is_site_unmethylated or is_site_damaged:
+                    continue
+                if self._is_polymerized_coord(restriction_coord_a, polymerized_intervals):
+                    restrictable_targets.add(restriction_coord_a)
+                if self._is_polymerized_coord(restriction_coord_b, polymerized_intervals):
+                    restrictable_targets.add(restriction_coord_b)
+
+        return {
+            "hemiunmethylatedMunIRMSites": sorted(hemi_targets),
+            "restrictableMunIRMSites": sorted(restrictable_targets),
+            "m6ADMethylatedSites": sorted(methylated_coords),
+        }
+
+    def _stochastic_round(self, expected: float) -> int:
+        if expected <= 0.0:
+            return 0
+        base = int(np.floor(expected))
+        frac = float(expected - base)
+        if frac <= 0.0:
+            return base
+        return base + int(self._rm_rng.random() < frac)
+
+    def _effective_substrate_amount(
+        self,
+        *,
+        wid: str,
+        substrate_state: dict[str, Any],
+        substrate_delta: dict[str, float],
+    ) -> float:
+        return max(
+            0.0,
+            float(substrate_state.get(wid, 0.0)) + float(substrate_delta.get(wid, 0.0)),
+        )
+
+    def _reaction_substrate_capacity(
+        self,
+        *,
+        reaction_idx: int,
+        substrate_state: dict[str, Any],
+        substrate_delta: dict[str, float],
+    ) -> int:
+        stoich_col = self.reaction_small_molecule_stoich[:, int(reaction_idx)]
+        consumed_idx = np.flatnonzero(stoich_col < 0.0)
+        if consumed_idx.size == 0:
+            return int(np.iinfo(np.int32).max)
+        capacities: list[int] = []
+        for sub_idx in consumed_idx.tolist():
+            wid = self.substrate_wids[int(sub_idx)]
+            needed = float(-stoich_col[int(sub_idx)])
+            if needed <= 0.0:
+                continue
+            available = self._effective_substrate_amount(
+                wid=wid,
+                substrate_state=substrate_state,
+                substrate_delta=substrate_delta,
+            )
+            capacities.append(int(np.floor(available / needed)))
+        if not capacities:
+            return int(np.iinfo(np.int32).max)
+        return max(0, int(min(capacities)))
+
+    def _apply_reaction_substrate_stoich(
+        self,
+        *,
+        reaction_idx: int,
+        n_reactions: int,
+        substrate_delta: dict[str, float],
+    ) -> None:
+        if n_reactions <= 0:
+            return
+        stoich_col = self.reaction_small_molecule_stoich[:, int(reaction_idx)]
+        for sub_idx in np.flatnonzero(stoich_col != 0.0).tolist():
+            wid = self.substrate_wids[int(sub_idx)]
+            delta = float(stoich_col[int(sub_idx)]) * float(n_reactions)
+            substrate_delta[wid] = substrate_delta.get(wid, 0.0) + delta
+
+    def evolveState_Modification(
+        self,
+        *,
+        field_maps: dict[str, dict[tuple[int, int], int]],
+        polymerized_intervals: dict[int, list[tuple[int, int]]],
+        substrate_state: dict[str, Any],
+        substrate_delta: dict[str, float],
+        enzyme_counts: dict[str, float],
+        dt: float,
+    ) -> int:
+        muni_sets = self._muni_site_sets(field_maps=field_maps, polymerized_intervals=polymerized_intervals)
+        candidate_coords = muni_sets["hemiunmethylatedMunIRMSites"]
+        if not candidate_coords:
+            return 0
+
+        reaction_idx = int(self._rm_muni_methylation_idx)
+        substrate_cap = self._reaction_substrate_capacity(
+            reaction_idx=reaction_idx,
+            substrate_state=substrate_state,
+            substrate_delta=substrate_delta,
+        )
+        enzyme_cap = self._stochastic_round(
+            float(enzyme_counts.get(self._rm_typeii_enzyme_wid, 0.0))
+            * float(dt)
+            * float(self.reaction_ub[reaction_idx])
+        )
+        n_reactions = max(0, min(len(candidate_coords), substrate_cap, enzyme_cap))
+        if n_reactions <= 0:
+            return 0
+
+        candidate_idx = np.arange(len(candidate_coords), dtype=np.int64)
+        if n_reactions < len(candidate_coords):
+            chosen = self._rm_rng.choice(candidate_idx, size=int(n_reactions), replace=False)
+            chosen_idx = np.asarray(chosen, dtype=np.int64).reshape(-1)
+        else:
+            chosen_idx = candidate_idx
+        for idx in chosen_idx.tolist():
+            coord = candidate_coords[int(idx)]
+            field_maps["damagedBases"][coord] = int(self._m6ad_global_index)
+
+        self._apply_reaction_substrate_stoich(
+            reaction_idx=reaction_idx,
+            n_reactions=int(n_reactions),
+            substrate_delta=substrate_delta,
+        )
+        return int(n_reactions)
+
+    def evolveState_Restriction(
+        self,
+        *,
+        field_maps: dict[str, dict[tuple[int, int], int]],
+        polymerized_intervals: dict[int, list[tuple[int, int]]],
+        substrate_state: dict[str, Any],
+        substrate_delta: dict[str, float],
+        enzyme_counts: dict[str, float],
+        dt: float,
+    ) -> int:
+        muni_sets = self._muni_site_sets(field_maps=field_maps, polymerized_intervals=polymerized_intervals)
+        candidate_coords = muni_sets["restrictableMunIRMSites"]
+        if not candidate_coords:
+            return 0
+
+        reaction_idx = int(self._rm_muni_restriction_idx)
+        substrate_cap = self._reaction_substrate_capacity(
+            reaction_idx=reaction_idx,
+            substrate_state=substrate_state,
+            substrate_delta=substrate_delta,
+        )
+        enzyme_cap = self._stochastic_round(
+            float(enzyme_counts.get(self._rm_typeii_enzyme_wid, 0.0))
+            * float(dt)
+            * float(self.reaction_ub[reaction_idx])
+        )
+        n_reactions = max(0, min(len(candidate_coords), substrate_cap, enzyme_cap))
+        if n_reactions <= 0:
+            return 0
+
+        candidate_idx = np.arange(len(candidate_coords), dtype=np.int64)
+        if n_reactions < len(candidate_coords):
+            chosen = self._rm_rng.choice(candidate_idx, size=int(n_reactions), replace=False)
+            chosen_idx = np.asarray(chosen, dtype=np.int64).reshape(-1)
+        else:
+            chosen_idx = candidate_idx
+        for idx in chosen_idx.tolist():
+            coord = candidate_coords[int(idx)]
+            field_maps["strandBreaks"][coord] = 1
+
+        self._apply_reaction_substrate_stoich(
+            reaction_idx=reaction_idx,
+            n_reactions=int(n_reactions),
+            substrate_delta=substrate_delta,
+        )
+        return int(n_reactions)
+
+    def _evolve_state_restriction_modification(
+        self,
+        *,
+        chrom_state: dict[str, Any],
+        enzyme_counts: dict[str, float],
+        dt: float,
+        substrate_state: dict[str, Any],
+        substrate_delta: dict[str, float],
+    ) -> tuple[dict[str, Any], dict[str, float]]:
+        field_maps: dict[str, dict[tuple[int, int], int]] = {
+            "damagedBases": self._sparse_field_map(chrom_state, "damagedBases"),
+            "strandBreaks": self._sparse_field_map(chrom_state, "strandBreaks"),
+            "gapSites": self._sparse_field_map(chrom_state, "gapSites"),
+            "abasicSites": self._sparse_field_map(chrom_state, "abasicSites"),
+            "damagedSugarPhosphates": self._sparse_field_map(chrom_state, "damagedSugarPhosphates"),
+            "intrastrandCrossLinks": self._sparse_field_map(chrom_state, "intrastrandCrossLinks"),
+            "hollidayJunctions": self._sparse_field_map(chrom_state, "hollidayJunctions"),
+        }
+        polymerized_intervals = self._polymerized_intervals_by_strand(chrom_state)
+        rm_substrate_delta: dict[str, float] = {}
+        merged_substrate_delta = dict(substrate_delta)
+
+        if self._rm_rng.random() > 0.5:
+            self.evolveState_Modification(
+                field_maps=field_maps,
+                polymerized_intervals=polymerized_intervals,
+                substrate_state=substrate_state,
+                substrate_delta=merged_substrate_delta,
+                enzyme_counts=enzyme_counts,
+                dt=dt,
+            )
+            self.evolveState_Restriction(
+                field_maps=field_maps,
+                polymerized_intervals=polymerized_intervals,
+                substrate_state=substrate_state,
+                substrate_delta=merged_substrate_delta,
+                enzyme_counts=enzyme_counts,
+                dt=dt,
+            )
+        else:
+            self.evolveState_Restriction(
+                field_maps=field_maps,
+                polymerized_intervals=polymerized_intervals,
+                substrate_state=substrate_state,
+                substrate_delta=merged_substrate_delta,
+                enzyme_counts=enzyme_counts,
+                dt=dt,
+            )
+            self.evolveState_Modification(
+                field_maps=field_maps,
+                polymerized_intervals=polymerized_intervals,
+                substrate_state=substrate_state,
+                substrate_delta=merged_substrate_delta,
+                enzyme_counts=enzyme_counts,
+                dt=dt,
+            )
+
+        for wid, value in merged_substrate_delta.items():
+            delta = float(value) - float(substrate_delta.get(wid, 0.0))
+            if delta != 0.0:
+                rm_substrate_delta[wid] = delta
+
+        muni_sets = self._muni_site_sets(
+            field_maps=field_maps,
+            polymerized_intervals=polymerized_intervals,
+        )
+
+        chromosome_update: dict[str, Any] = {
+            "damagedBases": self._triplet_state_from_map(field_maps["damagedBases"]),
+            "strandBreaks": self._triplet_state_from_map(field_maps["strandBreaks"]),
+        }
+        for field_name in _RM_DERIVED_FIELDS:
+            coord_map = {coord: 1 for coord in muni_sets[field_name]}
+            chromosome_update[field_name] = self._triplet_state_from_map(coord_map)
+        return chromosome_update, rm_substrate_delta
 
     def _damage_sites(self, chrom_state: dict[str, Any], states: dict[str, Any]) -> list[_DamageSite]:
         sparse_sites = self._damage_sites_from_sparse(chrom_state)
@@ -412,6 +865,9 @@ class KarrDNARepairProcess(Process):
                 triplet.values.tolist(),
                 strict=False,
             ):
+                if field_name == "damagedBases" and int(value) == int(self._m6ad_global_index):
+                    # MunI methyl marks are not DNA lesions for BER/NER/HR routing.
+                    continue
                 site_id = f"{field_name}:{int(position)}:{int(strand)}"
                 payload = {
                     "id": site_id,
