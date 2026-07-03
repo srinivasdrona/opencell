@@ -5,7 +5,6 @@ sparse triple. ``chromosome.fork_position_bp`` remains as a legacy mirror for
 consumers that still read the scalar fork counters.
 
 Deferred from full Karr:
-- SSB binding/release cycle
 - exact strand-fragment geometry beyond the sparse-triple replay oracle
 - RNAP collision dwell / pause mechanics
 """
@@ -308,6 +307,8 @@ class KarrReplicationProcess(Process):
         self.enzyme_index_helicase = int(_coerce_scalar(replication_fixture.enzymeIndexs_helicase)) - 1
         self.enzyme_index_beta_clamp = int(_coerce_scalar(replication_fixture.enzymeIndexs_betaClamp)) - 1
         self.enzyme_index_ligase = int(_coerce_scalar(replication_fixture.enzymeIndexs_ligase)) - 1
+        self.enzyme_index_ssb4mer = int(_coerce_scalar(replication_fixture.enzymeIndexs_ssb4mer)) - 1
+        self.enzyme_index_ssb8mer = int(_coerce_scalar(replication_fixture.enzymeIndexs_ssb8mer)) - 1
 
         self.enzyme_wid_2core_beta_clamp_gamma_complex_primase = self.enzyme_wids[
             self.enzyme_index_2core_beta_clamp_gamma_complex_primase
@@ -321,12 +322,24 @@ class KarrReplicationProcess(Process):
         self.enzyme_wid_helicase = self.enzyme_wids[self.enzyme_index_helicase]
         self.enzyme_wid_beta_clamp = self.enzyme_wids[self.enzyme_index_beta_clamp]
         self.enzyme_wid_ligase = self.enzyme_wids[self.enzyme_index_ligase]
+        self.enzyme_wid_ssb4mer = self.enzyme_wids[self.enzyme_index_ssb4mer]
+        self.enzyme_wid_ssb8mer = self.enzyme_wids[self.enzyme_index_ssb8mer]
 
         self.dna_polymerase_elongation_rate_bp_per_s = float(
             _coerce_scalar(replication_fixture.dnaPolymeraseElongationRate)
         )
         self.primer_length = int(_coerce_scalar(replication_fixture.primerLength))
         self.ligase_rate_per_s = float(_coerce_scalar(replication_fixture.ligaseRate))
+        self.ssb_dissociation_rate_per_s = float(_coerce_scalar(replication_fixture.ssbDissociationRate))
+        self.ssb_complex_spacing_bp = int(_coerce_scalar(replication_fixture.ssbComplexSpacing))
+        self.enzyme_global_indexs = np.asarray(
+            replication_fixture.enzymeGlobalIndexs,
+            dtype=np.int64,
+        ).reshape(-1)
+        self.enzyme_dna_footprints = np.asarray(
+            replication_fixture.enzymeDNAFootprints,
+            dtype=np.int64,
+        ).reshape(-1)
         self.enzyme_dna_footprints_3_prime = np.asarray(
             replication_fixture.enzymeDNAFootprints3Prime,
             dtype=np.int64,
@@ -337,6 +350,19 @@ class KarrReplicationProcess(Process):
         ).reshape(-1)
         self.oric_position_bp = int(_coerce_scalar(replication_fixture.oriCPosition))
         self.terc_position_bp = int(_coerce_scalar(replication_fixture.terCPosition))
+        self.ssb8mer_global_index = int(self.enzyme_global_indexs[self.enzyme_index_ssb8mer])
+        self.ssb8mer_footprint_bp = int(self.enzyme_dna_footprints[self.enzyme_index_ssb8mer])
+        enzyme_composition = np.asarray(replication_fixture.enzymeComposition, dtype=np.int64)
+        if (
+            enzyme_composition.ndim == 2
+            and self.enzyme_index_ssb4mer < enzyme_composition.shape[0]
+            and self.enzyme_index_ssb8mer < enzyme_composition.shape[1]
+        ):
+            self.ssb4mers_per_ssb8mer = int(
+                max(1, enzyme_composition[self.enzyme_index_ssb4mer, self.enzyme_index_ssb8mer])
+            )
+        else:
+            self.ssb4mers_per_ssb8mer = 1
         self._initiation_unwind_len = int(
             max(
                 0,
@@ -640,6 +666,319 @@ class KarrReplicationProcess(Process):
             chrom_update["events"] = {"replication_complete": 1.0}
             self._completion_emitted = True
         return {"chromosome": chrom_update}
+
+    @staticmethod
+    def _triplet_equal(lhs: SparseTriplet, rhs: SparseTriplet) -> bool:
+        return (
+            lhs.shape == rhs.shape
+            and np.array_equal(lhs.positions, rhs.positions)
+            and np.array_equal(lhs.strands, rhs.strands)
+            and np.array_equal(lhs.values, rhs.values)
+        )
+
+    def _unpolymerized_regions_for_strand(
+        self,
+        *,
+        polymerized: SparseTriplet,
+        strand: int,
+    ) -> list[tuple[int, int]]:
+        sequence_len = int(self.sequence_len_bp)
+        occupied: list[tuple[int, int]] = []
+        for position, region_strand, value in polymerized.to_regions():
+            if int(region_strand) != int(strand):
+                continue
+            length = int(value)
+            if length <= 0:
+                continue
+            if length >= sequence_len:
+                return []
+            start = int(position) % sequence_len
+            end = start + length
+            if end <= sequence_len:
+                occupied.append((start, end))
+            else:
+                occupied.append((start, sequence_len))
+                occupied.append((0, end - sequence_len))
+
+        if not occupied:
+            return [(0, sequence_len)]
+
+        occupied.sort(key=lambda item: item[0])
+        merged: list[tuple[int, int]] = []
+        for start, end in occupied:
+            if not merged or start > merged[-1][1]:
+                merged.append((start, end))
+                continue
+            merged[-1] = (merged[-1][0], max(merged[-1][1], end))
+
+        regions: list[tuple[int, int]] = []
+        n_intervals = len(merged)
+        for idx, (_, end) in enumerate(merged):
+            next_start = merged[(idx + 1) % n_intervals][0]
+            if idx + 1 == n_intervals:
+                next_start += sequence_len
+            gap_len = int(next_start - end)
+            if gap_len <= 0:
+                continue
+            start = int(end) % sequence_len
+            if start + gap_len <= sequence_len:
+                regions.append((start, gap_len))
+            else:
+                first_len = int(sequence_len - start)
+                second_len = int(gap_len - first_len)
+                if first_len > 0:
+                    regions.append((start, first_len))
+                if second_len > 0:
+                    regions.append((0, second_len))
+        return [(start, length) for start, length in regions if length > 0]
+
+    def _subtract_circular_region(
+        self,
+        *,
+        regions: list[tuple[int, int]],
+        start: int,
+        length: int,
+    ) -> list[tuple[int, int]]:
+        if not regions or length <= 0:
+            return regions
+        sequence_len = int(self.sequence_len_bp)
+        if length >= sequence_len:
+            return []
+
+        cuts: list[tuple[int, int]] = []
+        cut_start = int(start) % sequence_len
+        cut_end = cut_start + int(length)
+        if cut_end <= sequence_len:
+            cuts.append((cut_start, cut_end))
+        else:
+            cuts.append((cut_start, sequence_len))
+            cuts.append((0, cut_end - sequence_len))
+
+        current = list(regions)
+        for left, right in cuts:
+            next_regions: list[tuple[int, int]] = []
+            for region_start, region_len in current:
+                region_end = region_start + region_len
+                if right <= region_start or left >= region_end:
+                    next_regions.append((region_start, region_len))
+                    continue
+                if left > region_start:
+                    next_regions.append((region_start, left - region_start))
+                if right < region_end:
+                    next_regions.append((right, region_end - right))
+            current = next_regions
+        return [(region_start, region_len) for region_start, region_len in current if region_len > 0]
+
+    def _candidate_ssb_binding_sites(
+        self,
+        *,
+        regions_by_strand: dict[int, list[tuple[int, int]]],
+    ) -> tuple[list[int], list[int]]:
+        footprint = int(self.ssb8mer_footprint_bp)
+        spacing = int(self.ssb_complex_spacing_bp)
+        split_size = footprint + spacing
+        terc = int(self.terc_position_bp)
+
+        region_pos_strands: list[tuple[int, int]] = []
+        region_lens: list[int] = []
+        for strand, regions in regions_by_strand.items():
+            for start, length in regions:
+                if length <= 0:
+                    continue
+                region_pos_strands.append((int(start), int(strand)))
+                region_lens.append(int(length))
+
+        if not region_pos_strands:
+            return ([], [])
+
+        split_pos_strands: list[tuple[int, int]] = []
+        split_lens: list[int] = []
+        for (start, strand), length in zip(region_pos_strands, region_lens, strict=False):
+            end = start + length - 1
+            if start <= terc < end:
+                left_len = terc - start + 1
+                right_len = length - left_len
+                if left_len > 0:
+                    split_pos_strands.append((start, strand))
+                    split_lens.append(left_len)
+                if right_len > 0:
+                    split_pos_strands.append((terc + 1, strand))
+                    split_lens.append(right_len)
+            else:
+                split_pos_strands.append((start, strand))
+                split_lens.append(length)
+
+        candidate_positions: list[int] = []
+        candidate_strands: list[int] = []
+        for (start, strand), length in zip(split_pos_strands, split_lens, strict=False):
+            run_start = int(start)
+            run_len = int(length)
+            if run_len <= 0:
+                continue
+            directed_start = run_start
+            directed_len = run_len
+            if run_start > terc:
+                directed_start = run_start + run_len - footprint
+                directed_len = -run_len
+
+            abs_len = abs(directed_len)
+            if abs_len < footprint:
+                continue
+            n_sites = 1 + (abs_len - footprint) // split_size
+            if n_sites <= 0:
+                continue
+            for idx in range(int(n_sites)):
+                offset = idx * split_size
+                pos = directed_start + offset if directed_len > 0 else directed_start - offset
+                candidate_positions.append(int(pos) % int(self.sequence_len_bp))
+                candidate_strands.append(int(strand))
+
+        return candidate_positions, candidate_strands
+
+    def dissociate_free_ssb_complexes(self, *, enzymes_next: dict[str, float]) -> None:
+        free_ssb8 = _read_nonnegative_int(enzymes_next.get(self.enzyme_wid_ssb8mer, 0.0))
+        if free_ssb8 <= 0:
+            return
+        free_ssb4 = _read_nonnegative_int(enzymes_next.get(self.enzyme_wid_ssb4mer, 0.0))
+        enzymes_next[self.enzyme_wid_ssb4mer] = float(
+            free_ssb4 + self.ssb4mers_per_ssb8mer * free_ssb8
+        )
+        enzymes_next[self.enzyme_wid_ssb8mer] = 0.0
+
+    def free_and_bind_ssbs(
+        self,
+        *,
+        dt: float,
+        chromosome_store: ChromosomeStore,
+        enzymes_next: dict[str, float],
+        bound_next: dict[str, float],
+    ) -> SparseTriplet:
+        complex_bound_sites = chromosome_store.get_field("complexBoundSites")
+        positions = complex_bound_sites.positions.copy()
+        strands = complex_bound_sites.strands.copy()
+        values = complex_bound_sites.values.copy()
+
+        ssb_indices = np.flatnonzero(values == int(self.ssb8mer_global_index))
+        n_released = 0
+        if ssb_indices.size > 0:
+            dissociation_p = float(np.clip(self.ssb_dissociation_rate_per_s * float(dt), a_min=0.0, a_max=1.0))
+            release_mask = self._rng.random(ssb_indices.size) < dissociation_p
+            released = ssb_indices[release_mask]
+            n_released = int(released.size)
+            if n_released > 0:
+                keep = np.ones(values.size, dtype=bool)
+                keep[released] = False
+                positions = positions[keep]
+                strands = strands[keep]
+                values = values[keep]
+
+                bound_ssb8 = _read_nonnegative_int(bound_next.get(self.enzyme_wid_ssb8mer, 0.0))
+                bound_next[self.enzyme_wid_ssb8mer] = float(max(0, bound_ssb8 - n_released))
+                free_ssb8 = _read_nonnegative_int(enzymes_next.get(self.enzyme_wid_ssb8mer, 0.0))
+                free_ssb4 = _read_nonnegative_int(enzymes_next.get(self.enzyme_wid_ssb4mer, 0.0))
+                enzymes_next[self.enzyme_wid_ssb8mer] = float(free_ssb8 + n_released)
+                enzymes_next[self.enzyme_wid_ssb4mer] = float(
+                    free_ssb4 + self.ssb4mers_per_ssb8mer * n_released
+                )
+                enzymes_next[self.enzyme_wid_ssb8mer] = float(
+                    _read_nonnegative_int(enzymes_next.get(self.enzyme_wid_ssb8mer, 0.0)) - n_released
+                )
+
+        n_possible_ssb8mers = (
+            _read_nonnegative_int(enzymes_next.get(self.enzyme_wid_ssb4mer, 0.0))
+            // int(self.ssb4mers_per_ssb8mer)
+        )
+        if n_possible_ssb8mers < 1:
+            return SparseTriplet(positions=positions, strands=strands, values=values, shape=self.chromosome_shape)
+
+        polymerized = chromosome_store.get_field("polymerizedRegions")
+        regions_by_strand: dict[int, list[tuple[int, int]]] = {}
+        for strand in range(self.chromosome_shape[1]):
+            regions_by_strand[int(strand)] = self._unpolymerized_regions_for_strand(
+                polymerized=polymerized,
+                strand=int(strand),
+            )
+
+        if ssb_indices.size > 0 or n_released > 0:
+            for strand_id in range(self.chromosome_shape[1]):
+                strand_regions = regions_by_strand[int(strand_id)]
+                strand_sites = positions[(strands == int(strand_id)) & (values == int(self.ssb8mer_global_index))]
+                if strand_sites.size == 0:
+                    continue
+                next_regions = list(strand_regions)
+                for site_position in strand_sites.tolist():
+                    next_regions = self._subtract_circular_region(
+                        regions=next_regions,
+                        start=int(site_position) - int(self.ssb_complex_spacing_bp),
+                        length=int(self.ssb8mer_footprint_bp + 2 * self.ssb_complex_spacing_bp),
+                    )
+                    if not next_regions:
+                        break
+                regions_by_strand[int(strand_id)] = next_regions
+
+        candidate_positions, candidate_strands = self._candidate_ssb_binding_sites(
+            regions_by_strand=regions_by_strand
+        )
+        if not candidate_positions:
+            return SparseTriplet(positions=positions, strands=strands, values=values, shape=self.chromosome_shape)
+
+        n_bindings = min(len(candidate_positions), int(n_possible_ssb8mers))
+        if n_bindings <= 0:
+            return SparseTriplet(positions=positions, strands=strands, values=values, shape=self.chromosome_shape)
+
+        if n_bindings < len(candidate_positions):
+            chosen_idx = np.sort(self._rng.choice(len(candidate_positions), size=n_bindings, replace=False))
+        else:
+            chosen_idx = np.arange(len(candidate_positions), dtype=np.int64)
+
+        chosen_positions = np.asarray([candidate_positions[int(i)] for i in chosen_idx], dtype=np.int64)
+        chosen_strands = np.asarray([candidate_strands[int(i)] for i in chosen_idx], dtype=np.int8)
+        chosen_values = np.full(shape=(n_bindings,), fill_value=int(self.ssb8mer_global_index), dtype=np.int32)
+
+        if positions.size > 0:
+            next_positions = np.concatenate((positions, chosen_positions))
+            next_strands = np.concatenate((strands, chosen_strands))
+            next_values = np.concatenate((values, chosen_values))
+        else:
+            next_positions = chosen_positions
+            next_strands = chosen_strands
+            next_values = chosen_values
+
+        free_ssb4 = _read_nonnegative_int(enzymes_next.get(self.enzyme_wid_ssb4mer, 0.0))
+        bound_ssb8 = _read_nonnegative_int(bound_next.get(self.enzyme_wid_ssb8mer, 0.0))
+        enzymes_next[self.enzyme_wid_ssb4mer] = float(
+            max(0, free_ssb4 - self.ssb4mers_per_ssb8mer * n_bindings)
+        )
+        bound_next[self.enzyme_wid_ssb8mer] = float(bound_ssb8 + n_bindings)
+
+        return SparseTriplet(
+            positions=next_positions,
+            strands=next_strands,
+            values=next_values,
+            shape=self.chromosome_shape,
+        )
+
+    def _apply_ssb_cycle(
+        self,
+        *,
+        dt: float,
+        chromosome_store: ChromosomeStore,
+        enzymes_next: dict[str, float],
+        bound_next: dict[str, float],
+        update: dict[str, Any],
+    ) -> None:
+        self.dissociate_free_ssb_complexes(enzymes_next=enzymes_next)
+        complex_bound_before = chromosome_store.get_field("complexBoundSites")
+        complex_bound_next = self.free_and_bind_ssbs(
+            dt=dt,
+            chromosome_store=chromosome_store,
+            enzymes_next=enzymes_next,
+            bound_next=bound_next,
+        )
+        if self._triplet_equal(complex_bound_before, complex_bound_next):
+            return
+        update.setdefault("chromosome", {})
+        update["chromosome"]["complexBoundSites"] = complex_bound_next.to_state()
 
     def _stochastic_round(self, value: float) -> int:
         if value <= 0.0:
@@ -954,10 +1293,19 @@ class KarrReplicationProcess(Process):
             # Unknown state: keep requests at zero and do nothing.
             return _finalize_no_hint_update(update)
 
+        self._apply_ssb_cycle(
+            dt=dt,
+            chromosome_store=chromosome_store,
+            enzymes_next=enzymes_next,
+            bound_next=bound_next,
+            update=update,
+        )
+
         remaining_left_bp = max(0, self.terc_position_bp - left_pos_bp)
         remaining_right_bp = max(0, self.terc_position_bp - right_pos_bp)
         if remaining_left_bp <= 0 and remaining_right_bp <= 0:
-            update["chromosome"] = {"polymerizedRegions": self._completed_polymerized_regions().to_state()}
+            update.setdefault("chromosome", {})
+            update["chromosome"]["polymerizedRegions"] = self._completed_polymerized_regions().to_state()
             update["chromosome"].update(self._completion_update()["chromosome"])
             return _finalize_no_hint_update(update)
 
@@ -972,7 +1320,8 @@ class KarrReplicationProcess(Process):
 
         if desired_left_bp <= 0 and desired_right_bp <= 0:
             if remaining_left_bp <= 0 and remaining_right_bp <= 0:
-                update.update(self._completion_update())
+                update.setdefault("chromosome", {})
+                update["chromosome"].update(self._completion_update()["chromosome"])
             return _finalize_no_hint_update(update)
 
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
@@ -1017,10 +1366,13 @@ class KarrReplicationProcess(Process):
             right_progress_bp=next_right_bp,
         )
 
-        update["chromosome"] = {
-            "polymerizedRegions": next_polymerized.to_state(),
-            "fork_position_bp": fork_delta,
-        }
+        update.setdefault("chromosome", {})
+        update["chromosome"].update(
+            {
+                "polymerizedRegions": next_polymerized.to_state(),
+                "fork_position_bp": fork_delta,
+            }
+        )
 
         if next_left_bp >= self.terc_position_bp and next_right_bp >= self.terc_position_bp:
             completion = self._completion_update()
