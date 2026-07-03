@@ -116,7 +116,7 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:calcResourceRequirements_Current:829
         status: inlined
-        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess.next_update:370
+        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess.next_update:378
         note: 'No DNARepair RequestCalculator* exists in karr_request_calculators.py
 
           (search returned no matches). next_update computes
@@ -127,7 +127,7 @@ processes:
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState:894
         status: confirmed
-        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess.next_update:370
+        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess.next_update:378
         note: 'Direct process runtime method. next_update applies the repair result
 
           with `if consumed_total > 0:` and writes
@@ -136,7 +136,7 @@ processes:
       evolveState_BER:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_BER:927
         status: inlined
-        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess._desired_repairs:1134
+        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess._desired_repairs:1246
         note: 'BER is folded into pathway bucketing:
 
           `indices_by_pathway[self._pathway_for_damage_type(site.damage_type)].append(idx)`;
@@ -147,7 +147,7 @@ processes:
       evolveState_NER:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_NER:1096
         status: inlined
-        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess._desired_repairs:1134
+        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess._desired_repairs:1246
         note: 'NER is folded into the same pathway bucket logic:
 
           `_pathway_for_damage_type` maps `intrastrand_crosslink` -> "ner",
@@ -156,7 +156,7 @@ processes:
       evolveState_HR:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_HR:1222
         status: inlined
-        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess._desired_repairs:1134
+        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess._desired_repairs:1246
         note: 'HR is folded into pathway bucketing:
 
           `_pathway_for_damage_type` maps `double_strand_break` -> "hr",
@@ -165,7 +165,7 @@ processes:
       evolveState_Polymerize:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_Polymerize:1365
         status: inlined
-        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess._per_event_substrate_cost:1160
+        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess._per_event_substrate_cost:1272
         note: 'Polymerization is abstracted as per-pathway patch cost:
 
           `dntp_total = float(self.pathway_patch_length_nt[pathway])`
@@ -178,7 +178,7 @@ processes:
       evolveState_Ligate:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_Ligate:1454
         status: inlined
-        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess._per_event_substrate_cost:1160
+        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess._per_event_substrate_cost:1272
         note: 'Ligase is folded into the same aggregate repair cost:
 
           `out[self.atp_wid] = float(self.pathway_atp_cost[pathway])`,
@@ -188,24 +188,18 @@ processes:
           `# NHEJ-like fallback uses ligation machinery as an aggregate proxy.`'
       evolveState_DisA:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_DisA:1488
-        status: gap
-        oc: null
-        note: 'Searched karr_dna_repair.py for `DisA`/`damagedSites_excm6AD`; only the
-
-          top docstring says this is deferred to v2. OC has no runtime code that
-
-          binds DisA or writes chromosome damage state, so the Karr scan/binding
-
-          behavior is absent.'
+        status: confirmed
+        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess.evolveState_DisA:899
+        note: Dedicated method builds `damagedSites_excm6AD` from sparse chromosome damage minus `m6ADMethylatedSites` and binds free DisA into `boundEnzymes` via fixture-derived index/footprint limits.
       evolveState_Modification:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_Modification:1500
         status: confirmed
-        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess.evolveState_Modification:674
+        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess.evolveState_Modification:692
         note: Dedicated method methylates `hemiunmethylatedMunIRMSites` with type-II enzyme/substrate bounds, writes m6AD into `damagedBases`, and applies fixture stoichiometry (AMET->AHCYS+H).
       evolveState_Restriction:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNARepair.m:evolveState_Restriction:1533
         status: confirmed
-        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess.evolveState_Restriction:721
+        oc: opencell/vivarium/karr_dna_repair.py:KarrDNARepairProcess.evolveState_Restriction:739
         note: Dedicated method cleaves `restrictableMunIRMSites`, writes strand breaks at selected MunI cleavage coordinates, and applies reaction stoichiometry from the fixture.
   DNASupercoiling:
     oc_files:

@@ -237,6 +237,14 @@ class KarrDNARepairProcess(Process):
         self._rm_muni_restriction_idx = self.reaction_wids.index("DNA_RM_MunI_Restriction")
         self._rm_typeii_enzyme_idx = int(_coerce_scalar(fx.enzymeIndexs_RM_typeII)) - 1
         self._rm_typeii_enzyme_wid = self.enzyme_wids[self._rm_typeii_enzyme_idx]
+        self._disa_enzyme_idx = int(_coerce_scalar(fx.enzymeIndexs_DisA)) - 1
+        self._disa_enzyme_wid = self.enzyme_wids[self._disa_enzyme_idx]
+        self._disa_dna_footprint = int(
+            max(
+                1,
+                int(np.asarray(fx.enzymeDNAFootprints, dtype=np.int64).reshape(-1)[self._disa_enzyme_idx]),
+            )
+        )
         self._substrate_global_indices = _parse_index_array(fx.substrateGlobalIndexs)
         self._m6ad_local_idx = int(_coerce_scalar(fx.substrateIndexs_m6AD)) - 1
         self._m6ad_global_index = int(self._substrate_global_indices[self._m6ad_local_idx])
@@ -443,8 +451,18 @@ class KarrDNARepairProcess(Process):
         for wid, delta in rm_substrate_delta.items():
             substrate_delta[wid] = substrate_delta.get(wid, 0.0) + float(delta)
 
+        disa_enzyme_delta, disa_bound_enzyme_delta = self.evolveState_DisA(
+            chrom_state={**dict(chrom_state), **chromosome_update},
+            states=states,
+            enzyme_counts=enzyme_counts,
+        )
+
         if chromosome_update:
             update["chromosome"] = chromosome_update
+        if disa_enzyme_delta:
+            update["enzymes"] = disa_enzyme_delta
+        if disa_bound_enzyme_delta:
+            update["boundEnzymes"] = disa_bound_enzyme_delta
         if any(abs(delta) > 0.0 for delta in substrate_delta.values()):
             update["substrates"] = {
                 wid: float(delta) for wid, delta in substrate_delta.items() if abs(float(delta)) > 0.0
@@ -840,6 +858,100 @@ class KarrDNARepairProcess(Process):
             coord_map = {coord: 1 for coord in muni_sets[field_name]}
             chromosome_update[field_name] = self._triplet_state_from_map(coord_map)
         return chromosome_update, rm_substrate_delta
+
+    def _damaged_sites_excm6ad(self, chrom_state: dict[str, Any]) -> list[tuple[int, int]]:
+        m6ad_sites = set(self._sparse_field_map(chrom_state, "m6ADMethylatedSites").keys())
+        candidate_fields = (
+            "damagedBases",
+            "gapSites",
+            "abasicSites",
+            "damagedSugarPhosphates",
+            "intrastrandCrossLinks",
+            "strandBreaks",
+            "hollidayJunctions",
+        )
+        out: set[tuple[int, int]] = set()
+        for field_name in candidate_fields:
+            coords = set(self._sparse_field_map(chrom_state, field_name).keys())
+            if field_name == "damagedBases":
+                coords -= m6ad_sites
+            out.update(coords)
+        return sorted(out, key=lambda coord: (coord[0], coord[1]))
+
+    def _disa_bindable_capacity(self, coords: list[tuple[int, int]]) -> int:
+        if not coords:
+            return 0
+        min_spacing = int(max(1, self._disa_dna_footprint))
+        by_strand: dict[int, list[int]] = {}
+        for position, strand in coords:
+            by_strand.setdefault(int(strand), []).append(int(position))
+
+        n_bindable = 0
+        for positions in by_strand.values():
+            unique_sorted = sorted(set(positions))
+            last_pos: int | None = None
+            for position in unique_sorted:
+                if last_pos is None or int(position) - int(last_pos) >= min_spacing:
+                    n_bindable += 1
+                    last_pos = int(position)
+        return int(n_bindable)
+
+    def evolveState_DisA(
+        self,
+        *,
+        chrom_state: dict[str, Any],
+        states: dict[str, Any],
+        enzyme_counts: dict[str, float],
+    ) -> tuple[dict[str, float], dict[str, float]]:
+        damaged_sites_excm6ad = self._damaged_sites_excm6ad(chrom_state)
+        if not damaged_sites_excm6ad:
+            return {}, {}
+
+        polymerized_intervals = self._polymerized_intervals_by_strand(chrom_state)
+        if polymerized_intervals:
+            damaged_sites_excm6ad = [
+                coord
+                for coord in damaged_sites_excm6ad
+                if self._is_polymerized_coord(coord, polymerized_intervals)
+            ]
+            if not damaged_sites_excm6ad:
+                return {}, {}
+
+        enzymes_state = states.get("enzymes", {})
+        if isinstance(enzymes_state, dict):
+            free_dis_a = float(
+                max(
+                    0.0,
+                    enzymes_state.get(
+                        self._disa_enzyme_wid,
+                        enzyme_counts.get(self._disa_enzyme_wid, 0.0),
+                    ),
+                )
+            )
+        else:
+            free_dis_a = float(max(0.0, enzyme_counts.get(self._disa_enzyme_wid, 0.0)))
+
+        bound_state = states.get("boundEnzymes", {})
+        if isinstance(bound_state, dict):
+            bound_dis_a = float(max(0.0, bound_state.get(self._disa_enzyme_wid, 0.0)))
+        else:
+            bound_dis_a = 0.0
+
+        free_dis_a_i = int(np.floor(free_dis_a))
+        bound_dis_a_i = int(np.floor(bound_dis_a))
+        if free_dis_a_i <= 0:
+            return {}, {}
+
+        bindable_capacity = self._disa_bindable_capacity(damaged_sites_excm6ad)
+        available_sites = int(max(0, bindable_capacity - bound_dis_a_i))
+        n_bind = int(min(free_dis_a_i, available_sites))
+        if n_bind <= 0:
+            return {}, {}
+
+        return (
+            {self._disa_enzyme_wid: -float(n_bind)},
+            {self._disa_enzyme_wid: float(n_bind)},
+        )
 
     def _damage_sites(self, chrom_state: dict[str, Any], states: dict[str, Any]) -> list[_DamageSite]:
         sparse_sites = self._damage_sites_from_sparse(chrom_state)
