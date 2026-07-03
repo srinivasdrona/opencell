@@ -428,54 +428,50 @@ processes:
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m:evolveState:532
         status: confirmed
-        oc: opencell/vivarium/karr_protein_decay_light.py:ProteinDecayLightProcess.next_update:502
+        oc: opencell/vivarium/karr_protein_decay_light.py:ProteinDecayLightProcess.next_update:946
         note: 'Direct runtime method for the OC ProteinDecay class actually wired into
 
           the chassis. The file header says `Vivarium Process for Karr
 
-          ProteinDecay-light complex decay only` and the class docstring says
+          ProteinDecay-light` and the class docstring says
 
-          `Karr ProteinDecay sub-process #3 (complex decay), light variant`
+          `Karr ProteinDecay process (misfold/refold + complex decay + abort proteolysis)`
 
-          (`karr_protein_decay_light.py:1,83`). `next_update` then executes the
+          (`karr_protein_decay_light.py:1,102`). `next_update` executes the
 
-          process by sampling `n_decay = self._rng.poisson(expected)` and emitting
+          process in Karr order: misfold, refold, complex decay, aborted-polypeptide
 
-          complex / protein / RNA / substrate deltas (`karr_protein_decay_light.py:523-587`).'
+          degradation, and latent monomer decay proxy, then emits store deltas
+
+          (`karr_protein_decay_light.py:946-1044`).'
       evolveState_MisfoldProteins:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m:evolveState_MisfoldProteins:544
-        status: gap
-        oc: null
-        note: 'Karr misfolds mature / bound / inactivated monomers and complexes into
+        status: confirmed
+        oc: opencell/vivarium/karr_protein_decay_light.py:ProteinDecayLightProcess.evolveState_MisfoldProteins:509
+        note: 'Direct port of Karr misfolding (`ProteinDecay.m:544-596`): reads
 
-          misfolded states (`ProteinDecay.m:544-596`). In OC, the wired class is
+          mature/bound/inactivated monomer and complex forms, stochastically rounds
 
-          explicitly `complex decay only` (`karr_protein_decay_light.py:1,83`), and
+          with process RNG at `proteinMisfoldingRate * timestep`, zeroes membrane and
 
-          repo-wide search over `opencell/**/*.py` for
+          terminal-organelle-membrane columns, and moves counts into misfolded rows
 
-          `misfold|proteinMisfoldingRate` returned no runtime implementation. No
-
-          OC method writes misfolded protein state for ProteinDecay.'
+          (`karr_protein_decay_light.py:509-543`).'
       evolveState_RefoldProteins:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m:evolveState_RefoldProteins:598
-        status: gap
-        oc: null
-        note: 'Karr refolds misfolded monomers / complexes via ClpB while consuming
+        status: confirmed
+        oc: opencell/vivarium/karr_protein_decay_light.py:ProteinDecayLightProcess.evolveState_RefoldProteins:545
+        note: 'Direct port of Karr ClpB refolding (`ProteinDecay.m:598-679`):
 
-          ATP/H2O (`ProteinDecay.m:598-679`). OC has no `refold` / `clpB`
+          stochastically selects misfolded cytosolic/terminal-cytosolic monomers and
 
-          implementation in the ProteinDecay files or repo-wide search results; the
+          complexes up to ATP/H2O and ClpB limits, converts them to mature forms, and
 
-          only PD-light request logic is `expected_decays` from current complex
-
-          counts (`karr_request_calculators.py:134-149`). No OC runtime path reads
-
-          misfolded-protein state and converts it back to mature state.'
+          applies ATP/H2O -> ADP/Pi/H stoichiometry (`karr_protein_decay_light.py:545-624`).'
       evolveState_DegradeComplexes:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m:evolveState_DegradeComplexes:681
         status: inlined
-        oc: opencell/vivarium/karr_protein_decay_light.py:ProteinDecayLightProcess.next_update:502
+        oc: opencell/vivarium/karr_protein_decay_light.py:ProteinDecayLightProcess.next_update:946
         note: 'Folded into `ProteinDecayLightProcess.next_update`. The inlined complex
 
           decay path is `n_decay = self._rng.poisson(expected)`,
@@ -491,25 +487,21 @@ processes:
           `complex`, `protein`, `rna`, and `substrates`.'
       evolveState_DegradeAbortedPolypeptides:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m:evolveState_DegradeAbortedPolypeptides:766
-        status: gap
-        oc: null
-        note: 'Karr degrades `polypeptide.abortedPolypeptides` through the FtsH /
+        status: confirmed
+        oc: opencell/vivarium/karr_protein_decay_light.py:ProteinDecayLightProcess.evolveState_DegradeAbortedPolypeptides:626
+        note: 'Direct port of aborted-polypeptide proteolysis (`ProteinDecay.m:766-843`):
 
-          peptidase path (`ProteinDecay.m:766-843`). Repo-wide search over
+          randomizes `polypeptide.abortedPolypeptides`, computes cleavage/peptidase/FtsH
 
-          `opencell/**/*.py` for `abortedPolypeptides|abortedSequenceLengths|ftsH`
+          and ATP/H2O constraints, degrades feasible rows to amino acids via
 
-          found no runtime implementation. The only explicit PD-light mention is a
+          sequence-derived base counts, applies ATP/H2O -> ADP/Pi/H energy updates,
 
-          comment that replay skips `the proteolysis path` because it would require
-
-          `polypeptide sibling-state extraction we do not have in the trace today`
-
-          (`karr_protein_decay_light.py:456-457`).'
+          and removes reacted aborted rows (`karr_protein_decay_light.py:626-715`).'
       evolveState_DegradeMonomers:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m:evolveState_DegradeMonomers:844
         status: inlined
-        oc: opencell/vivarium/karr_protein_decay_light.py:ProteinDecayLightProcess._latent_monomer_substrate_delta:299
+        oc: opencell/vivarium/karr_protein_decay_light.py:ProteinDecayLightProcess._latent_monomer_substrate_delta:743
         note: 'Only a latent proxy exists, folded into
 
           `ProteinDecayLightProcess._latent_monomer_substrate_delta` and called from
@@ -518,17 +510,17 @@ processes:
 
           `latent_sub_deltas = self._latent_monomer_substrate_delta(timestep, states)`
 
-          (`karr_protein_decay_light.py:529`). The helper updates internal latent
+          (`karr_protein_decay_light.py:1002`). The helper updates internal latent
 
           counts with `self._latent_monomers = self._latent_monomers - decayed` and
 
           emits `delta = (self._latent_monomer_decay_reactions @ decayed_by_species)`
 
-          (`karr_protein_decay_light.py:406-408`), but the file also says
+          (`karr_protein_decay_light.py:850-852`), but the file also says
 
           `Disable latent decay until a canonical projection exists`
 
-          (`karr_protein_decay_light.py:214-217`). A default WSL instantiation probe
+          (`karr_protein_decay_light.py:291-294`). A default WSL instantiation probe
 
           returned `_latent_enabled=False`, so this is an inlined, currently-disabled
 
