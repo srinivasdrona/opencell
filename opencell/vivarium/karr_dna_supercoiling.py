@@ -247,6 +247,47 @@ class KarrDNASupercoilingProcess(Process):
             fallback=float(self.parameters["equilibrium_supercoil_density"]),
         )
 
+        self.fold_change_slopes = np.asarray(
+            getattr(fx, "foldChangeSlopes", np.array([], dtype=np.float64)),
+            dtype=np.float64,
+        ).reshape(-1)
+        self.fold_change_intercepts = np.asarray(
+            getattr(fx, "foldChangeIntercepts", np.array([], dtype=np.float64)),
+            dtype=np.float64,
+        ).reshape(-1)
+        self.fold_change_lower_sigma_limit = float(
+            getattr(fx, "foldChangeLowerSigmaLimit", self.parameters["supercoil_density_min"])
+        )
+        self.fold_change_upper_sigma_limit = float(
+            getattr(fx, "foldChangeUpperSigmaLimit", self.parameters["supercoil_density_max"])
+        )
+        self.num_transcription_units = int(
+            _coerce_scalar(getattr(fx, "numTranscriptionUnits", 0))
+        )
+        self.fold_change_tu_indices = np.asarray(
+            getattr(fx, "tuIndexs", np.array([], dtype=np.int64)),
+            dtype=np.int64,
+        ).reshape(-1)
+        self.fold_change_tu_coordinates = np.asarray(
+            getattr(fx, "tuCoordinates", np.array([], dtype=np.int64)),
+            dtype=np.int64,
+        ).reshape(-1)
+        fold_change_size = min(
+            int(self.fold_change_slopes.size),
+            int(self.fold_change_intercepts.size),
+            int(self.fold_change_tu_indices.size),
+            int(self.fold_change_tu_coordinates.size),
+        )
+        self.fold_change_slopes = self.fold_change_slopes[:fold_change_size]
+        self.fold_change_intercepts = self.fold_change_intercepts[:fold_change_size]
+        self.fold_change_tu_indices = self.fold_change_tu_indices[:fold_change_size] - 1
+        self.fold_change_tu_coordinates = self.fold_change_tu_coordinates[:fold_change_size]
+        self.supercoiling_tu_wids = tuple(
+            f"TU_{tu_index + 1:03d}"
+            for tu_index in self.fold_change_tu_indices.tolist()
+            if 0 <= int(tu_index) < self.num_transcription_units
+        )
+
     def _load_equilibrium_sigma(self, fixture: object, fallback: float) -> float:
         states = np.asarray(getattr(fixture, "states", []), dtype=object).ravel()
         for state in states:
@@ -354,6 +395,11 @@ class KarrDNASupercoilingProcess(Process):
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
                     for wid in self.complex_enzyme_wids
                 }
+            }
+        if self.supercoiling_tu_wids:
+            schema["tx_rate_fold_change"] = {
+                tu_wid: {"_default": 1.0, "_updater": "set", "_emit": True}
+                for tu_wid in self.supercoiling_tu_wids
             }
         return schema
 
@@ -540,16 +586,21 @@ class KarrDNASupercoilingProcess(Process):
             if isinstance(next_hint, dict):
                 linking_next = SparseTriplet.from_state(next_hint, shape=self.chromosome_shape)
 
+        linking_next_values = self._align_positive_region_values(
+            positive_regions=positive_regions,
+            linking_numbers=linking_next,
+            fallback_sigma=self.equilibrium_sigma,
+        )
         sigma_next = self._weighted_sigma(
             positive_regions=positive_regions,
             sigma_values=self._region_sigmas(
                 positive_regions=positive_regions,
-                linking_values=self._align_positive_region_values(
-                    positive_regions=positive_regions,
-                    linking_numbers=linking_next,
-                    fallback_sigma=self.equilibrium_sigma,
-                ),
+                linking_values=linking_next_values,
             ),
+        )
+        tx_rate_fold_change = self.calc_rna_polymerase_binding_prob_fold_change(
+            positive_regions=positive_regions,
+            linking_values=linking_next_values,
         )
 
         atp_used = (
@@ -576,26 +627,29 @@ class KarrDNASupercoilingProcess(Process):
                     self.h2o_wid: request_need,
                 }
             },
+            "tx_rate_fold_change": tx_rate_fold_change,
         }
 
         substrates_now_raw = states.get("substrates", {})
         substrates_now = substrates_now_raw if isinstance(substrates_now_raw, dict) else {}
-        substrates_next_effective = {
-            wid: float(substrates_now.get(wid, 0.0)) for wid in self.substrate_wids
+        substrate_delta_out: dict[str, float] = {
+            wid: float(delta)
+            for wid, delta in self._substrate_delta(atp_used).items()
+            if float(delta) != 0.0
         }
-        substrate_delta = self._substrate_delta(atp_used)
-        for wid, delta in substrate_delta.items():
-            substrates_next_effective[wid] = float(
-                substrates_next_effective.get(wid, 0.0) + float(delta)
-            )
 
         substrates_next_raw = hint.get("substrates_next", {})
         substrates_next = substrates_next_raw if isinstance(substrates_next_raw, dict) else {}
         if substrates_next:
-            for wid in self.substrate_wids:
-                substrates_next_effective[wid] = float(
-                    substrates_next.get(wid, substrates_next_effective.get(wid, 0.0))
-                )
+            for wid, after_raw in substrates_next.items():
+                if wid not in self.substrate_wids:
+                    continue
+                now = float(substrates_now.get(wid, 0.0))
+                delta = float(after_raw) - now
+                if delta != 0.0:
+                    substrate_delta_out[wid] = float(delta)
+                elif wid in substrate_delta_out:
+                    del substrate_delta_out[wid]
 
         bound_next_effective = {wid: float(bound_now.get(wid, 0.0)) for wid in self.enzyme_wids}
         enzymes_next_effective = {wid: float(enzymes_now.get(wid, 0.0)) for wid in self.enzyme_wids}
@@ -620,13 +674,6 @@ class KarrDNASupercoilingProcess(Process):
                     )
                 )
 
-        substrate_delta_out: dict[str, float] = {}
-        for wid in self.substrate_wids:
-            now = float(substrates_now.get(wid, 0.0))
-            after = float(substrates_next_effective.get(wid, now))
-            delta = after - now
-            if delta != 0.0:
-                substrate_delta_out[wid] = float(delta)
         update["substrates"] = substrate_delta_out
 
         bound_delta_out: dict[str, float] = {}
@@ -652,6 +699,64 @@ class KarrDNASupercoilingProcess(Process):
             )
             return ChromosomeStore.from_state_mapping(default_state, shape=self.chromosome_shape)
         return store
+
+    def calc_rna_polymerase_binding_prob_fold_change(
+        self,
+        *,
+        positive_regions: list[tuple[int, int, int]],
+        linking_values: np.ndarray,
+    ) -> dict[str, float]:
+        if (
+            self.num_transcription_units <= 0
+            or self.fold_change_tu_indices.size == 0
+            or not positive_regions
+            or linking_values.size == 0
+        ):
+            return {tu_wid: 1.0 for tu_wid in self.supercoiling_tu_wids}
+
+        starts = np.asarray([start for start, _, _ in positive_regions], dtype=np.int64)
+        strands = np.asarray([strand for _, strand, _ in positive_regions], dtype=np.int64)
+        lengths_i64 = np.asarray([length for _, _, length in positive_regions], dtype=np.int64)
+        relaxed = lengths_i64.astype(np.float64) / float(self.parameters["bp_per_turn"])
+        sigmas = (linking_values.astype(np.float64) - relaxed) / np.maximum(1.0, relaxed)
+
+        fold_change = np.ones((self.num_transcription_units, 2), dtype=np.float64)
+        assigned = np.zeros((self.num_transcription_units, 2), dtype=bool)
+        for i, tu_coord in enumerate(self.fold_change_tu_coordinates.tolist()):
+            tu_index = int(self.fold_change_tu_indices[i])
+            if tu_index < 0 or tu_index >= self.num_transcription_units:
+                continue
+            region_indices = np.flatnonzero(
+                (starts <= int(tu_coord)) & (starts + lengths_i64 - 1 >= int(tu_coord))
+            )
+            for region_idx in region_indices.tolist():
+                thresholded_sigma = float(
+                    np.clip(
+                        sigmas[region_idx],
+                        self.fold_change_lower_sigma_limit,
+                        self.fold_change_upper_sigma_limit,
+                    )
+                )
+                chromosome_idx = int(strands[region_idx] // 2)
+                if chromosome_idx < 0 or chromosome_idx >= fold_change.shape[1]:
+                    continue
+                fold_change[tu_index, chromosome_idx] = float(
+                    self.fold_change_intercepts[i] + self.fold_change_slopes[i] * thresholded_sigma
+                )
+                assigned[tu_index, chromosome_idx] = True
+
+        out: dict[str, float] = {}
+        for tu_index in self.fold_change_tu_indices.tolist():
+            idx = int(tu_index)
+            if idx < 0 or idx >= self.num_transcription_units:
+                continue
+            tu_wid = f"TU_{idx + 1:03d}"
+            present = assigned[idx]
+            if np.any(present):
+                out[tu_wid] = float(np.mean(fold_change[idx, present]))
+            else:
+                out[tu_wid] = 1.0
+        return out
 
     def _ensure_polymerized_regions(self, polymerized: SparseTriplet) -> SparseTriplet:
         if polymerized.calc_num_edges() > 0:

@@ -234,23 +234,20 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m:calcResourceRequirements_Current:333
         status: inlined
-        oc: opencell/vivarium/karr_dna_supercoiling.py:KarrDNASupercoilingProcess.next_update:360
+        oc: opencell/vivarium/karr_dna_supercoiling.py:KarrDNASupercoilingProcess.next_update:406
         note: 'Folded into KarrDNASupercoilingProcess.next_update: request_need = self._atp_request(...)
           and update[''requests''] = {self.name: {ATP, H2O}} (560-577).'
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m:evolveState:356
         status: confirmed
-        oc: opencell/vivarium/karr_dna_supercoiling.py:KarrDNASupercoilingProcess.next_update:360
+        oc: opencell/vivarium/karr_dna_supercoiling.py:KarrDNASupercoilingProcess.next_update:406
         note: 'KarrDNASupercoilingProcess.next_update is the runtime state step: it computes chromosome,
           substrates, boundEnzymes, and enzymes deltas, then returns update (567-644).'
       calcRNAPolymeraseBindingProbFoldChange:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m:calcRNAPolymeraseBindingProbFoldChange:510
-        status: gap
-        oc: null
-        note: No OC runtime method computes a supercoil-derived tx_rate_fold_change; KarrDNASupercoilingProcess.next_update
-          only returns chromosome/requests/substrates/boundEnzymes/enzymes (567-644), karr_composite.py
-          only seeds tx_rate_fold_change at init (2242-2244), karr_transcriptional_regulation.py writes
-          tx_rate_fold_change from TF binding (420-424), and karr_transcription_v3.py only reads it (182-200).
+        status: confirmed
+        oc: opencell/vivarium/karr_dna_supercoiling.py:KarrDNASupercoilingProcess.calc_rna_polymerase_binding_prob_fold_change:703
+        note: Dedicated structural port of Karr's sigma-thresholded linear fold-change method; next_update computes and emits tx_rate_fold_change from current linking-number supercoiling state.
   FtsZPolymerization:
     oc_files:
     - opencell/vivarium/karr_composite.py

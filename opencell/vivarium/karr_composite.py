@@ -2111,6 +2111,7 @@ def build_karr_chassis_v5(
             "substrates": ("substrates",),
             "requests": ("requests",),
             "substrates_allocated": ("substrates_allocated",),
+            "tx_rate_fold_change": ("tx_rate_fold_change",),
         },
         "karr_chromosome_condensation": {
             "chromosome": ("chromosome",),
