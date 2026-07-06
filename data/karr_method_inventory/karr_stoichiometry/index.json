@@ -19306,29 +19306,186 @@
     },
     {
       "process": "ReplicationInitiation",
-      "source": "data/karr_fixtures/per_process/ReplicationInitiation_flat.mat + data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m inspection",
-      "status": "BLOCKER",
-      "reason": "No non-empty reaction stoichiometry matrix field found in fixture (checked reactionStoichiometryMatrix-family fields).",
-      "checked_matrix_fields": [
-        "reactionStoichiometryMatrix",
-        "reactionSmallMoleculeStoichiometryMatrix",
-        "fbaReactionStoichiometryMatrix"
+      "class": "inline",
+      "source": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:evolveState substrate arithmetic + data/karr_fixtures/per_process/ReplicationInitiation_flat.mat:substrateIndexs_* mapping to substrateWholeCellModelIDs",
+      "substrates": [
+        {
+          "wid": "ATP",
+          "role": "consume",
+          "net_coefficient": -1.0,
+          "consume_coefficient_total": 1.0,
+          "produce_coefficient_total": 0.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        },
+        {
+          "wid": "ADP",
+          "role": "produce",
+          "net_coefficient": 1.0,
+          "consume_coefficient_total": 0.0,
+          "produce_coefficient_total": 1.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        },
+        {
+          "wid": "PI",
+          "role": "produce",
+          "net_coefficient": 1.0,
+          "consume_coefficient_total": 0.0,
+          "produce_coefficient_total": 1.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        },
+        {
+          "wid": "H2O",
+          "role": "consume",
+          "net_coefficient": -1.0,
+          "consume_coefficient_total": 1.0,
+          "produce_coefficient_total": 0.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        },
+        {
+          "wid": "H",
+          "role": "produce",
+          "net_coefficient": 1.0,
+          "consume_coefficient_total": 0.0,
+          "produce_coefficient_total": 1.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        }
       ],
-      "available_stoichiometry_fields": [],
-      "n_substrate_ids": 5
+      "n_substrates": 5,
+      "n_reactions": 0,
+      "n_entries": 5,
+      "note": "evolveState helper paths: ATP activation/regeneration and ATP-hydrolysis on DnaA polymer dissociation"
     },
     {
       "process": "Replication",
-      "source": "data/karr_fixtures/per_process/Replication_flat.mat + data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m inspection",
-      "status": "BLOCKER",
-      "reason": "No non-empty reaction stoichiometry matrix field found in fixture (checked reactionStoichiometryMatrix-family fields).",
-      "checked_matrix_fields": [
-        "reactionStoichiometryMatrix",
-        "reactionSmallMoleculeStoichiometryMatrix",
-        "fbaReactionStoichiometryMatrix"
+      "class": "inline",
+      "source": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m:evolveState substrate arithmetic + data/karr_fixtures/per_process/Replication_flat.mat:substrateIndexs_* mapping to substrateWholeCellModelIDs",
+      "substrates": [
+        {
+          "wid": "DATP",
+          "role": "consume",
+          "net_coefficient": -1.0,
+          "consume_coefficient_total": 1.0,
+          "produce_coefficient_total": 0.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        },
+        {
+          "wid": "DCTP",
+          "role": "consume",
+          "net_coefficient": -1.0,
+          "consume_coefficient_total": 1.0,
+          "produce_coefficient_total": 0.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        },
+        {
+          "wid": "DGTP",
+          "role": "consume",
+          "net_coefficient": -1.0,
+          "consume_coefficient_total": 1.0,
+          "produce_coefficient_total": 0.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        },
+        {
+          "wid": "DTTP",
+          "role": "consume",
+          "net_coefficient": -1.0,
+          "consume_coefficient_total": 1.0,
+          "produce_coefficient_total": 0.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        },
+        {
+          "wid": "ATP",
+          "role": "consume",
+          "net_coefficient": -1.0,
+          "consume_coefficient_total": 1.0,
+          "produce_coefficient_total": 0.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        },
+        {
+          "wid": "PPI",
+          "role": "produce",
+          "net_coefficient": 1.0,
+          "consume_coefficient_total": 0.0,
+          "produce_coefficient_total": 1.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        },
+        {
+          "wid": "H2O",
+          "role": "consume",
+          "net_coefficient": -1.0,
+          "consume_coefficient_total": 1.0,
+          "produce_coefficient_total": 0.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        },
+        {
+          "wid": "H",
+          "role": "produce",
+          "net_coefficient": 1.0,
+          "consume_coefficient_total": 0.0,
+          "produce_coefficient_total": 1.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        },
+        {
+          "wid": "NAD",
+          "role": "consume",
+          "net_coefficient": -1.0,
+          "consume_coefficient_total": 1.0,
+          "produce_coefficient_total": 0.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        },
+        {
+          "wid": "NMN",
+          "role": "produce",
+          "net_coefficient": 1.0,
+          "consume_coefficient_total": 0.0,
+          "produce_coefficient_total": 1.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        },
+        {
+          "wid": "ADP",
+          "role": "produce",
+          "net_coefficient": 1.0,
+          "consume_coefficient_total": 0.0,
+          "produce_coefficient_total": 1.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        },
+        {
+          "wid": "AMP",
+          "role": "produce",
+          "net_coefficient": 1.0,
+          "consume_coefficient_total": 0.0,
+          "produce_coefficient_total": 1.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        },
+        {
+          "wid": "PI",
+          "role": "produce",
+          "net_coefficient": 1.0,
+          "consume_coefficient_total": 0.0,
+          "produce_coefficient_total": 1.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        }
       ],
-      "available_stoichiometry_fields": [],
-      "n_substrate_ids": 16
+      "n_substrates": 13,
+      "n_reactions": 0,
+      "n_entries": 13
     },
     {
       "process": "DNADamage",
@@ -20236,42 +20393,168 @@
     },
     {
       "process": "DNASupercoiling",
-      "source": "data/karr_fixtures/per_process/DNASupercoiling_flat.mat + data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m inspection",
-      "status": "BLOCKER",
-      "reason": "No non-empty reaction stoichiometry matrix field found in fixture (checked reactionStoichiometryMatrix-family fields).",
-      "checked_matrix_fields": [
-        "reactionStoichiometryMatrix",
-        "reactionSmallMoleculeStoichiometryMatrix",
-        "fbaReactionStoichiometryMatrix"
+      "class": "inline",
+      "source": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m:evolveState substrate arithmetic + data/karr_fixtures/per_process/DNASupercoiling_flat.mat:substrateIndexs_* mapping to substrateWholeCellModelIDs",
+      "substrates": [
+        {
+          "wid": "ATP",
+          "role": "consume",
+          "net_coefficient": -1.0,
+          "consume_coefficient_total": 1.0,
+          "produce_coefficient_total": 0.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        },
+        {
+          "wid": "ADP",
+          "role": "produce",
+          "net_coefficient": 1.0,
+          "consume_coefficient_total": 0.0,
+          "produce_coefficient_total": 1.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        },
+        {
+          "wid": "PI",
+          "role": "produce",
+          "net_coefficient": 1.0,
+          "consume_coefficient_total": 0.0,
+          "produce_coefficient_total": 1.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        },
+        {
+          "wid": "H2O",
+          "role": "consume",
+          "net_coefficient": -1.0,
+          "consume_coefficient_total": 1.0,
+          "produce_coefficient_total": 0.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        },
+        {
+          "wid": "H",
+          "role": "produce",
+          "net_coefficient": 1.0,
+          "consume_coefficient_total": 0.0,
+          "produce_coefficient_total": 1.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        }
       ],
-      "available_stoichiometry_fields": [],
-      "n_substrate_ids": 5
+      "n_substrates": 5,
+      "n_reactions": 0,
+      "n_entries": 5
     },
     {
       "process": "ChromosomeCondensation",
-      "source": "data/karr_fixtures/per_process/ChromosomeCondensation_flat.mat + data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m inspection",
-      "status": "BLOCKER",
-      "reason": "No non-empty reaction stoichiometry matrix field found in fixture (checked reactionStoichiometryMatrix-family fields).",
-      "checked_matrix_fields": [
-        "reactionStoichiometryMatrix",
-        "reactionSmallMoleculeStoichiometryMatrix",
-        "fbaReactionStoichiometryMatrix"
+      "class": "inline",
+      "source": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m:evolveState substrate arithmetic + data/karr_fixtures/per_process/ChromosomeCondensation_flat.mat:substrateIndexs_* mapping to substrateWholeCellModelIDs",
+      "substrates": [
+        {
+          "wid": "ATP",
+          "role": "consume",
+          "net_coefficient": -1.0,
+          "consume_coefficient_total": 1.0,
+          "produce_coefficient_total": 0.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        },
+        {
+          "wid": "ADP",
+          "role": "produce",
+          "net_coefficient": 1.0,
+          "consume_coefficient_total": 0.0,
+          "produce_coefficient_total": 1.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        },
+        {
+          "wid": "PI",
+          "role": "produce",
+          "net_coefficient": 1.0,
+          "consume_coefficient_total": 0.0,
+          "produce_coefficient_total": 1.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        },
+        {
+          "wid": "H2O",
+          "role": "consume",
+          "net_coefficient": -1.0,
+          "consume_coefficient_total": 1.0,
+          "produce_coefficient_total": 0.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        },
+        {
+          "wid": "H",
+          "role": "produce",
+          "net_coefficient": 1.0,
+          "consume_coefficient_total": 0.0,
+          "produce_coefficient_total": 1.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        }
       ],
-      "available_stoichiometry_fields": [],
-      "n_substrate_ids": 5
+      "n_substrates": 5,
+      "n_reactions": 0,
+      "n_entries": 5
     },
     {
       "process": "ChromosomeSegregation",
-      "source": "data/karr_fixtures/per_process/ChromosomeSegregation_flat.mat + data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m inspection",
-      "status": "BLOCKER",
-      "reason": "No non-empty reaction stoichiometry matrix field found in fixture (checked reactionStoichiometryMatrix-family fields).",
-      "checked_matrix_fields": [
-        "reactionStoichiometryMatrix",
-        "reactionSmallMoleculeStoichiometryMatrix",
-        "fbaReactionStoichiometryMatrix"
+      "class": "inline",
+      "source": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m:evolveState substrate arithmetic + data/karr_fixtures/per_process/ChromosomeSegregation_flat.mat:substrateIndexs_* mapping to substrateWholeCellModelIDs",
+      "substrates": [
+        {
+          "wid": "GTP",
+          "role": "consume",
+          "net_coefficient": -1.0,
+          "consume_coefficient_total": 1.0,
+          "produce_coefficient_total": 0.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        },
+        {
+          "wid": "GDP",
+          "role": "produce",
+          "net_coefficient": 1.0,
+          "consume_coefficient_total": 0.0,
+          "produce_coefficient_total": 1.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        },
+        {
+          "wid": "H",
+          "role": "produce",
+          "net_coefficient": 1.0,
+          "consume_coefficient_total": 0.0,
+          "produce_coefficient_total": 1.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        },
+        {
+          "wid": "H2O",
+          "role": "consume",
+          "net_coefficient": -1.0,
+          "consume_coefficient_total": 1.0,
+          "produce_coefficient_total": 0.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        },
+        {
+          "wid": "PI",
+          "role": "produce",
+          "net_coefficient": 1.0,
+          "consume_coefficient_total": 0.0,
+          "produce_coefficient_total": 1.0,
+          "nonzero_reaction_count": 0,
+          "reaction_coefficients": []
+        }
       ],
-      "available_stoichiometry_fields": [],
-      "n_substrate_ids": 5
+      "n_substrates": 5,
+      "n_reactions": 0,
+      "n_entries": 5
     },
     {
       "process": "Transcription",
@@ -23858,6 +24141,6 @@
     }
   ],
   "n_processes": 28,
-  "n_blockers": 22,
-  "total_substrate_entries": 875
+  "n_blockers": 17,
+  "total_substrate_entries": 908
 }
