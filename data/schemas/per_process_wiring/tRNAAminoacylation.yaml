@@ -1,5 +1,5 @@
-schema_version: "1.0"
-schema_date: '2026-06-29'
+schema_version: "2.0"
+schema_date: '2026-07-07'
 process:
   name: "tRNAAminoacylation"
   matlab_class: "tRNAAminoacylation"
@@ -15,67 +15,7 @@ process:
     in next_update. This row is exemplar-scoped for
     consume_stoichiometry/produce_stoichiometry/allocator.requests; canonical
     exemplars listed, not exhaustive enumeration.
-methods:
-  initializeConstants:
-    matlab:
-      symbol: "initializeConstants"
-      source:
-        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m"
-        lines: "172-279"
-        note: "Loads compartment, substrate, enzyme, and reaction index constants."
-    oc:
-      symbol: "KarrTRNAAminoacylationProcess.__init__"
-      source:
-        path: "opencell/vivarium/karr_trna_aminoacylation.py"
-        lines: "80-141"
-        note: "Fixture load plus index derivation happens during init."
-      supporting:
-        - path: "opencell/vivarium/karr_trna_aminoacylation.py"
-          lines: "54-64"
-          note: "Canonical complex WID classification helper used during init."
-        - path: "opencell/vivarium/karr_trna_aminoacylation.py"
-          lines: "143-201"
-          note: "Port schema declares the stores the process initializes against."
-    status: partial
-    note: "OC splits MATLAB's constant initialization across init, fixture loading, and schema declaration."
-  initializeSpeciesNetwork:
-    matlab:
-      symbol: "initializeSpeciesNetwork"
-      source:
-        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m"
-        lines: "281-299"
-        note: "Builds the species reactant/byproduct matrices for the greedy solver."
-    oc:
-      symbol: "KarrTRNAAminoacylationProcess._compute_rna_fluxes"
-      source:
-        path: "opencell/vivarium/karr_trna_aminoacylation.py"
-        lines: "352-426"
-        note: "Consumes the precomputed species matrices to realize the same solver shape."
-      supporting:
-        - path: "opencell/vivarium/karr_trna_aminoacylation.py"
-          lines: "80-141"
-          note: "Matrix fields are loaded during fixture init."
-        - path: "opencell/vivarium/karr_trna_aminoacylation.py"
-          lines: "143-201"
-          note: "Port schema exposes the stores that the solver consumes."
-    status: partial
-    note: "OC realizes the species network as fixture-backed numpy arrays instead of a separate MATLAB-style builder method."
-  calcResourceRequirements_LifeCycle:
-    matlab:
-      symbol: "calcResourceRequirements_LifeCycle"
-      source:
-        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m"
-        lines: "333-368"
-        note: "Life-cycle biomass/byproduct and minimum enzyme expression estimator."
-    oc:
-      symbol: "KarrTRNAAminoacylationProcess"
-      source:
-        path: "opencell/vivarium/karr_trna_aminoacylation.py"
-        lines: "67-484"
-        note: "No OC method exists for the MATLAB lifecycle-expression estimator. Representative OC anchor for non-implemented correspondence."
-      note: OC does not implement this Karr method.
-    status: not_implemented
-    note: "This estimator is not surfaced in the current OC port; lifecycle demand synthesis is handled elsewhere in the chassis. OC does not implement this Karr method."
+integration_touchpoints:
   calcResourceRequirements_Current:
     matlab:
       symbol: "calcResourceRequirements_Current"
@@ -83,37 +23,25 @@ methods:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m"
         lines: "380-384"
         note: "Per-tick allocator request formula."
+        symbol: "calcResourceRequirements_Current"
     oc:
       symbol: "RequestCalculatorTRNA.next_update"
       source:
         path: "opencell/vivarium/karr_request_calculators.py"
         lines: "266-283"
         note: "Availability-based request builder for allocation."
+        symbol: "RequestCalculatorTRNA.next_update"
       supporting:
         - path: "opencell/vivarium/karr_request_calculators.py"
           lines: "229-264"
           note: "Ports schema defines the request store keyed by process name."
+          symbol: RequestCalculatorTRNA
         - path: "opencell/vivarium/karr_trna_aminoacylation.py"
           lines: "143-201"
           note: "Current process consumes allocator grants from substrates_allocated."
+          symbol: KarrTRNAAminoacylationProcess.ports_schema
     status: partial
     note: "OC request logic is a parity shim, not a verbatim port of MATLAB's min(...) expression."
-  initializeState:
-    matlab:
-      symbol: "initializeState"
-      source:
-        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m"
-        lines: "373-377"
-        note: "Initializes tRNAs to the aminoacylated split."
-    oc:
-      symbol: "KarrTRNAAminoacylationProcess"
-      source:
-        path: "opencell/vivarium/karr_trna_aminoacylation.py"
-        lines: "67-484"
-        note: "Initial aminoacylation split is not re-applied in the OC process; initial state comes from fixture/chassis setup. Representative OC anchor for non-implemented correspondence."
-      note: OC does not implement this Karr method.
-    status: not_implemented
-    note: "MATLAB explicitly reshapes the RNA split at process init time; OC relies on the seeded fixture state instead. OC does not implement this Karr method."
   evolveState:
     matlab:
       symbol: "evolveState"
@@ -121,19 +49,23 @@ methods:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m"
         lines: "387-464"
         note: "Greedy stochastic reaction loop and substrate/RNA updates."
+        symbol: "evolveState"
     oc:
       symbol: "KarrTRNAAminoacylationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_trna_aminoacylation.py"
         lines: "203-301"
         note: "Per-tick update path that consumes allocated substrates and mutates RNA counts."
+        symbol: "KarrTRNAAminoacylationProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_trna_aminoacylation.py"
           lines: "303-350"
           note: "Enzyme-vector reconstruction from split stores."
+          symbol: KarrTRNAAminoacylationProcess._read_enzyme_vector
         - path: "opencell/vivarium/karr_trna_aminoacylation.py"
           lines: "352-447"
           note: "Flux solver, species limits, and stochastic rounding helpers."
+          symbol: KarrTRNAAminoacylationProcess._compute_rna_fluxes
     status: partial
     note: "OC preserves the same overall substrate/RNA mutation flow but factors the solver into helpers and adds an iteration guard."
   calcFluxBounds:
@@ -143,6 +75,7 @@ methods:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m"
         lines: "85-85"
         note: "No process-local calcFluxBounds method is defined in this class; full class span cited to document absence. Class-level anchor used to record calcFluxBounds absence."
+        symbol: "tRNAAminoacylation"
       note: This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
     oc:
       symbol: "KarrTRNAAminoacylationProcess"
@@ -150,6 +83,7 @@ methods:
         path: "opencell/vivarium/karr_trna_aminoacylation.py"
         lines: "67-484"
         note: "No OC flux-bound method exists for this process. Representative OC anchor for non-implemented correspondence."
+        symbol: "KarrTRNAAminoacylationProcess"
       note: OC does not implement this Karr method.
     status: not_implemented
     note: "Allocator request logic is the only bound-like surface for this row. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
@@ -192,10 +126,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m"
       lines: "457-459"
       note: "Net substrate update row; ATP row is negative for the charging reactions and can be -2 on the transfer branch."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_trna_aminoacylation.py"
       lines: "267-282"
       note: "Reaction events are projected back to substrate deltas in next_update."
+      symbol: KarrTRNAAminoacylationProcess.next_update
+    kind: per_flux
   - wid: "ALA"
     compartment: cytosol
     formula_or_constant: "this.reactionStoichiometryMatrix(this.substrateIndexs_aminoAcids, :) * this.reactionModificationMatrix * reactionFluxes"
@@ -203,10 +140,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m"
       lines: "457-459"
       note: "Ala is one row inside the amino-acid donor block."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_trna_aminoacylation.py"
       lines: "267-282"
       note: "Same row-level projection from reaction events to substrate deltas."
+      symbol: KarrTRNAAminoacylationProcess.next_update
+    kind: per_flux
   - wid: "GLN"
     compartment: cytosol
     formula_or_constant: "this.reactionStoichiometryMatrix(this.substrateIndexs_glutamine, :) * this.reactionModificationMatrix * reactionFluxes"
@@ -214,10 +154,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m"
       lines: "266-270"
       note: "Transfer-reaction special case remaps the glutamine donor row."
+      symbol: tRNAAminoacylation
     oc_anchor:
       path: "opencell/vivarium/karr_trna_aminoacylation.py"
       lines: "267-282"
       note: "Net substrate delta is still computed from the same event projection."
+      symbol: KarrTRNAAminoacylationProcess.next_update
+    kind: per_flux
   - wid: "H2O"
     compartment: cytosol
     formula_or_constant: "this.reactionStoichiometryMatrix(this.substrateIndexs_water, :) * this.reactionModificationMatrix * reactionFluxes"
@@ -225,10 +168,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m"
       lines: "403-417"
       note: "Water is excluded from the limiting search and then consumed on the transfer branch."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_trna_aminoacylation.py"
       lines: "371-391"
       note: "Water is masked from limit calculations before the event projection."
+      symbol: KarrTRNAAminoacylationProcess._compute_rna_fluxes
+    kind: per_flux
   - wid: "FTHF10"
     compartment: cytosol
     formula_or_constant: "this.reactionStoichiometryMatrix(this.substrateIndexs_fthf10, :) * this.reactionModificationMatrix * reactionFluxes"
@@ -236,10 +182,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m"
       lines: "457-459"
       note: "Formyltransfer branch uses the FTHF10 donor row."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_trna_aminoacylation.py"
       lines: "267-282"
       note: "Same donor row after reaction event projection."
+      symbol: KarrTRNAAminoacylationProcess.next_update
+    kind: per_flux
 produce_stoichiometry:
   - wid: "ADP"
     compartment: cytosol
@@ -248,10 +197,13 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m"
       lines: "457-459"
       note: "ADP is produced on the ATP-cost branch."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_trna_aminoacylation.py"
       lines: "267-282"
       note: "Event projection yields the same byproduct count."
+      symbol: KarrTRNAAminoacylationProcess.next_update
+    kind: per_flux
   - wid: "AMP"
     compartment: cytosol
     formula_or_constant: "this.reactionStoichiometryMatrix(this.substrateIndexs_amp, :) * this.reactionModificationMatrix * reactionFluxes"
@@ -259,10 +211,13 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m"
       lines: "457-459"
       note: "AMP is the main aminoacylation product byproduct."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_trna_aminoacylation.py"
       lines: "267-282"
       note: "Same projected byproduct."
+      symbol: KarrTRNAAminoacylationProcess.next_update
+    kind: per_flux
   - wid: "PPI"
     compartment: cytosol
     formula_or_constant: "this.reactionStoichiometryMatrix(this.substrateIndexs_diphosphate, :) * this.reactionModificationMatrix * reactionFluxes"
@@ -270,10 +225,13 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m"
       lines: "457-459"
       note: "Diphosphate/pyrophosphate byproduct from aminoacylation."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_trna_aminoacylation.py"
       lines: "267-282"
       note: "Same projected byproduct."
+      symbol: KarrTRNAAminoacylationProcess.next_update
+    kind: per_flux
   - wid: "PI"
     compartment: cytosol
     formula_or_constant: "this.reactionStoichiometryMatrix(this.substrateIndexs_phosphate, :) * this.reactionModificationMatrix * reactionFluxes"
@@ -281,10 +239,13 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m"
       lines: "266-270"
       note: "Transfer branch remaps phosphate production."
+      symbol: tRNAAminoacylation
     oc_anchor:
       path: "opencell/vivarium/karr_trna_aminoacylation.py"
       lines: "267-282"
       note: "Event projection preserves the phosphate byproduct."
+      symbol: KarrTRNAAminoacylationProcess.next_update
+    kind: per_flux
   - wid: "THF"
     compartment: cytosol
     formula_or_constant: "this.reactionStoichiometryMatrix(this.substrateIndexs_thf, :) * this.reactionModificationMatrix * reactionFluxes"
@@ -292,10 +253,18 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m"
       lines: "266-270"
       note: "Formyltransfer branch produces THF."
+      symbol: tRNAAminoacylation
     oc_anchor:
       path: "opencell/vivarium/karr_trna_aminoacylation.py"
       lines: "267-282"
       note: "Same byproduct projection."
+      symbol: KarrTRNAAminoacylationProcess.next_update
+    kind: per_flux
+stoichiometry_oracle:
+  class: matrix
+  record_path: data/karr_method_inventory/karr_stoichiometry/tRNAAminoacylation.json
+  substrate_count: 29
+  note: Exhaustive per-tick substrate set lives in the HB1 oracle; this row's consume/produce arrays carry integration-relevant hand-curated entries.
 compartment_routing:
   - wid: "ATP"
     consume_compartment: cytosol
@@ -359,6 +328,7 @@ unit_conversion_chain:
         path: "opencell/vivarium/karr_trna_aminoacylation.py"
         lines: "203-301"
         note: Process works directly in per-tick integer counts; no unit conversion needed.
+        symbol: KarrTRNAAminoacylationProcess.next_update
       note: Process works directly in per-tick integer counts; no unit conversion needed.
   note: "This process does not require unit conversion (per-tick integer counts throughout)."
 dependencies:
@@ -381,67 +351,83 @@ source_anchors:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m"
       lines: "85-166"
       note: "Class declaration and constructor."
+      symbol: tRNAAminoacylation
     initialize_constants:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m"
       lines: "172-279"
       note: "Constants, substrate indices, enzyme indices, and reaction modifications."
+      symbol: tRNAAminoacylation
     initialize_species_network:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m"
       lines: "281-299"
       note: "Species reactant/byproduct matrices for the greedy solver."
+      symbol: tRNAAminoacylation
     lifecycle_requirements:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m"
       lines: "333-368"
       note: "Life-cycle biomass/byproduct and minimum expression estimator."
+      symbol: calcResourceRequirements_LifeCycle
     initialize_state:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m"
       lines: "373-377"
       note: "Initial aminoacylated/free RNA split."
+      symbol: calcResourceRequirements_LifeCycle
     resource_request_current:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m"
       lines: "380-384"
       note: "Allocator-facing request formula."
+      symbol: calcResourceRequirements_Current
     evolve_state:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m"
       lines: "387-464"
       note: "Greedy stochastic update and substrate/RNA writeback."
+      symbol: calcResourceRequirements_Current
     simulation_ordering:
       path: "docs/karr_extracts/architecture/01_simulation_loop.md"
       lines: "172-179"
       note: "Extracted Karr Simulation.evolveState ordering rule: tRNAAminoacylation before Translation."
+      symbol: Verbatim extract - `evolveState.m` per-tick algorithm
   oc_blocks:
     module_fixture_loaders:
       path: "opencell/vivarium/karr_trna_aminoacylation.py"
       lines: "54-64"
       note: "Helper fixtures used to classify complex enzymes."
+      symbol: _canonical_complex_wids
     process_init_and_fixture_load:
       path: "opencell/vivarium/karr_trna_aminoacylation.py"
       lines: "80-141"
       note: "Fixture load and matrix/index derivation."
+      symbol: KarrTRNAAminoacylationProcess.__init__
     ports_schema:
       path: "opencell/vivarium/karr_trna_aminoacylation.py"
       lines: "143-201"
       note: "Allocated substrate store plus RNA/enzyme stores."
+      symbol: KarrTRNAAminoacylationProcess.ports_schema
     allocation_read_path:
       path: "opencell/vivarium/karr_trna_aminoacylation.py"
       lines: "215-219"
       note: "Process update reads substrates_allocated for the current tick."
+      symbol: KarrTRNAAminoacylationProcess.next_update
     next_update:
       path: "opencell/vivarium/karr_trna_aminoacylation.py"
       lines: "203-301"
       note: "Per-tick process update and substrate writeback."
+      symbol: KarrTRNAAminoacylationProcess.next_update
     enzyme_vector_helper:
       path: "opencell/vivarium/karr_trna_aminoacylation.py"
       lines: "303-350"
       note: "Builds the enzyme vector from split stores."
+      symbol: KarrTRNAAminoacylationProcess._read_enzyme_vector
     flux_solver:
       path: "opencell/vivarium/karr_trna_aminoacylation.py"
       lines: "352-447"
       note: "Flux limits, stochastic rounding, and reaction-event selection."
+      symbol: KarrTRNAAminoacylationProcess._compute_rna_fluxes
     request_calculator_trna:
       path: "opencell/vivarium/karr_request_calculators.py"
       lines: "229-283"
       note: "OC request calculator for the allocator-facing demand surface."
+      symbol: RequestCalculatorTRNA
 provenance:
   last_audited: "2026-06-29"
   audited_by: "gpt-5.4-mini (codex; row authored Day-43 EOD)"
@@ -465,10 +451,12 @@ deviations:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m"
       lines: "380-384"
       note: "Allocator request is the only bound-like surface in this process."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_request_calculators.py"
       lines: "229-283"
       note: "OC request calculator is the matching bound-like surface."
+      symbol: RequestCalculatorTRNA
   shared_pool_projection_merges_compartments: false
   known_deviations:
     - "OC request logic is split into RequestCalculatorTRNA and uses an availability-based approximation; ATP scales as avail * 25.0 instead of matching MATLAB's exact min(...) expression."

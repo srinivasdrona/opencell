@@ -1,5 +1,5 @@
-schema_version: "1.0"
-schema_date: '2026-06-29'
+schema_version: "2.0"
+schema_date: '2026-07-07'
 process:
   name: "HostInteraction"
   matlab_class: "HostInteraction"
@@ -10,7 +10,7 @@ process:
   functional_area: "host-interaction"
   state_shape_role: "qualitative host-interface state; wiring row adds integration semantics"
   notes: "MATLAB source is documented in the extract and mirrored upstream; the current OC port is Karr-light and only approximates the boolean cascade with aggregate adhesion state."
-methods:
+integration_touchpoints:
   calcResourceRequirements_Current:
     matlab:
       symbol: "calcResourceRequirements_Current"
@@ -18,16 +18,19 @@ methods:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m"
         lines: "265-268"
         note: "Returns an all-zero resource vector over the empty substrate list."
+        symbol: "calcResourceRequirements_Current"
     oc:
       symbol: "KarrHostInteractionProcess"
       source:
         path: "opencell/vivarium/karr_host_interaction.py"
         lines: "153-300"
         note: "Current OC port has no request-calculator surface and never reads substrates_allocated or substrates. Representative OC anchor for non-implemented correspondence."
+        symbol: "KarrHostInteractionProcess"
       supporting:
         - path: "opencell/vivarium/karr_composite.py"
           lines: "2449-2454"
           note: "Composite wiring connects HostInteraction only to cell and protein stores."
+          symbol: build_karr_chassis_v6
       note: OC does not implement this Karr method.
     status: "not_implemented"
     note: "Karr declares the method, but the current OC port bypasses allocator mediation entirely. OC does not implement this Karr method."
@@ -38,19 +41,23 @@ methods:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m"
         lines: "271-303"
         note: "Boolean host-interface simulation over adhesion, TLR, NF-kB, and inflammatory response."
+        symbol: "evolveState"
     oc:
       symbol: "KarrHostInteractionProcess.next_update"
       source:
         path: "opencell/vivarium/karr_host_interaction.py"
         lines: "255-300"
         note: "Current OC per-tick update computes stochastic aggregate adhesion and host_attached/host_adhesion_strength."
+        symbol: "KarrHostInteractionProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_host_interaction.py"
           lines: "217-243"
           note: "Port schema exposes cell and protein stores used by next_update."
+          symbol: KarrHostInteractionProcess.ports_schema
         - path: "opencell/vivarium/karr_composite.py"
           lines: "2449-2454"
           note: "Topology wiring only exposes cell and protein stores to the process."
+          symbol: build_karr_chassis_v6
     status: "partial"
     note: "Implemented in OC as a Karr-light approximation, not a literal port of the MATLAB boolean cascade."
   calcFluxBounds:
@@ -60,12 +67,14 @@ methods:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m"
         lines: "247-304"
         note: "No calcFluxBounds method is defined in HostInteraction.m."
+        symbol: "NOT_IMPLEMENTED"
     oc:
       symbol: "KarrHostInteractionProcess"
       source:
         path: "opencell/vivarium/karr_host_interaction.py"
         lines: "153-300"
         note: "No flux-bound equivalent exists in the current OC port. Representative OC anchor for non-implemented correspondence."
+        symbol: "KarrHostInteractionProcess"
       note: OC does not implement this Karr method.
     status: "not_implemented"
     note: "HostInteraction has no LP-style flux bounds in either code path. OC does not implement this Karr method."
@@ -82,6 +91,11 @@ allocator:
   bypasses: []
 consume_stoichiometry: []
 produce_stoichiometry: []
+stoichiometry_oracle:
+  class: none
+  record_path: data/karr_method_inventory/karr_stoichiometry/HostInteraction.json
+  substrate_count: 0
+  note: Exhaustive per-tick substrate set lives in the HB1 oracle; this row's consume/produce arrays carry integration-relevant hand-curated entries.
 compartment_routing: []
 unit_conversion_chain:
   source_units: "molecules/tick"
@@ -95,6 +109,7 @@ unit_conversion_chain:
         path: "opencell/vivarium/karr_host_interaction.py"
         lines: "255-300"
         note: Process works directly in per-tick integer counts; no unit conversion needed.
+        symbol: KarrHostInteractionProcess.next_update
       note: Process works directly in per-tick integer counts; no unit conversion needed.
   note: "This process does not require unit conversion (per-tick integer counts throughout)."
 dependencies:
@@ -118,55 +133,68 @@ source_anchors:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m"
       lines: "1-139"
       note: "Docstring, representation, and qualitative host model."
+      symbol: HostInteraction
     class_and_constants:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m"
       lines: "173-213"
       note: "Class definition, enzyme lists, and host-interaction state indices."
+      symbol: HostInteraction
     lifecycle_requirements:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m"
       lines: "252-257"
       note: "Life-cycle resource requirements stub."
+      symbol: calcResourceRequirements_LifeCycle
     initialize_state:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m"
       lines: "259-263"
       note: "Initialize by running evolveState once."
+      symbol: calcResourceRequirements_LifeCycle
     calc_resource_requirements_current:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m"
       lines: "265-268"
       note: "Zero request vector."
+      symbol: calcResourceRequirements_LifeCycle
     evolve_state:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m"
       lines: "271-303"
       note: "Boolean host-interface state update."
+      symbol: calcResourceRequirements_Current
   oc_blocks:
     module_docstring:
       path: "opencell/vivarium/karr_host_interaction.py"
       lines: "1-24"
       note: "Karr-light v1 module header and fixture defaults."
+      symbol: <module>
     trace_rate_helpers:
       path: "opencell/vivarium/karr_host_interaction.py"
       lines: "27-150"
       note: "Trace parsing and inferred adhesion-rate helpers."
+      symbol: _resolve_path
     process_class:
       path: "opencell/vivarium/karr_host_interaction.py"
       lines: "153-193"
       note: "Process class definition and constructor."
+      symbol: KarrHostInteractionProcess
     fixture_loader:
       path: "opencell/vivarium/karr_host_interaction.py"
       lines: "195-215"
       note: "Fixture-backed enzyme and substrate loading."
+      symbol: KarrHostInteractionProcess._load_fixture
     ports_schema:
       path: "opencell/vivarium/karr_host_interaction.py"
       lines: "217-243"
       note: "Cell and protein ports used by the process."
+      symbol: KarrHostInteractionProcess.ports_schema
     next_update:
       path: "opencell/vivarium/karr_host_interaction.py"
       lines: "255-300"
       note: "Current OC per-tick adhesion update."
+      symbol: KarrHostInteractionProcess.next_update
     composite_wiring:
       path: "opencell/vivarium/karr_composite.py"
       lines: "2449-2454"
       note: "HostInteraction topology wiring in the chassis."
+      symbol: build_karr_chassis_v6
 provenance:
   fixture_files:
     - "data/karr_fixtures/per_process/HostInteraction_flat.mat"
@@ -197,10 +225,12 @@ deviations:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m"
       lines: "265-268"
       note: "Karr exposes the resource-requirements method but returns an empty/zero vector."
+      symbol: calcResourceRequirements_LifeCycle
     oc_anchor:
       path: "opencell/vivarium/karr_host_interaction.py"
       lines: "153-300"
       note: "Current OC port has no LP or request-calculator path."
+      symbol: KarrHostInteractionProcess
   shared_pool_projection_merges_compartments: false
   known_deviations:
     - "OC replaces Karr's boolean host cascade with a Karr-light aggregate adhesion model (`host_adhesion_strength` and `host_attached`)."

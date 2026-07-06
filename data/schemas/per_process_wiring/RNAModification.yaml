@@ -1,5 +1,5 @@
-schema_version: "1.0"
-schema_date: '2026-06-29'
+schema_version: "2.0"
+schema_date: '2026-07-07'
 process:
   name: "RNAModification"
   matlab_class: "RNAModification"
@@ -14,7 +14,7 @@ process:
     RNA targets in the flat fixture, and 13 enzymes; the current OC port trims
     to the 38 active RNA targets and splits enzyme inputs across protein.counts
     and complex.counts.
-methods:
+integration_touchpoints:
   calcResourceRequirements_Current:
     matlab:
       symbol: "calcResourceRequirements_Current"
@@ -22,6 +22,7 @@ methods:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m"
         lines: "289-294"
         note: "Per-tick request formula: enzyme capacity capped by available unmodified RNAs."
+        symbol: "calcResourceRequirements_Current"
       note: "This is the Karr allocator-facing request surface for RNAModification."
     oc:
       symbol: "RequestCalculatorRNAPathway.next_update"
@@ -29,10 +30,12 @@ methods:
         path: "opencell/vivarium/karr_request_calculators.py"
         lines: "286-359"
         note: "Shared RNAProcessing + RNAModification request step."
+        symbol: "RequestCalculatorRNAPathway.next_update"
       supporting:
         - path: "opencell/vivarium/karr_composite.py"
           lines: "1052-1138"
           note: "Current chassis wiring that instantiates the shared RNA-pathway request calculator."
+          symbol: build_karr_chassis_v4
       note: >-
         Current OC request logic is shared across the RNA pathway and requests
         the currently available consumed substrates when RNAs are active; it is
@@ -48,6 +51,7 @@ methods:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m"
         lines: "297-362"
         note: "Stochastic reaction loop, substrate updates, and RNA writeback."
+        symbol: "evolveState"
       note: "This is the per-tick maturation loop for modified and unmodified RNAs."
     oc:
       symbol: "KarrRNAModificationProcess.next_update"
@@ -55,13 +59,16 @@ methods:
         path: "opencell/vivarium/karr_rna_modification.py"
         lines: "173-303"
         note: "Per-tick update path that reads allocated substrates and writes substrate/RNA deltas."
+        symbol: "KarrRNAModificationProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_rna_modification.py"
           lines: "305-322"
           note: "Declared-enzyme input guard."
+          symbol: KarrRNAModificationProcess._require_declared_enzyme_inputs
         - path: "opencell/vivarium/karr_rna_modification.py"
           lines: "324-380"
           note: "Deterministic plus stochastic residual reaction sampler."
+          symbol: KarrRNAModificationProcess._compute_reaction_fluxes
       note: >-
         OC reproduces the reaction-stoichiometry update through
         substrates_allocated, split enzyme stores, and an explicit stochastic
@@ -77,6 +84,7 @@ methods:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m"
         lines: "81-81"
         note: "RNAModification does not define a local flux-bounds override; the class body ends without one. Class-level anchor used to record calcFluxBounds absence."
+        symbol: "RNAModification"
       note: "Included as a schema-required placeholder for a process that is not LP-bound. This process does not have Karr's calcFluxBounds method; it does not participate in FBA."
     oc:
       symbol: "KarrRNAModificationProcess"
@@ -84,6 +92,7 @@ methods:
         path: "opencell/vivarium/karr_rna_modification.py"
         lines: "56-504"
         note: "No OC flux-bound routine exists for RNAModification. Representative OC anchor for non-implemented correspondence."
+        symbol: "KarrRNAModificationProcess"
       note: "No current OC analogue. OC does not implement this Karr method."
     status: "not_implemented"
     note: "RNAModification is allocator-fed and reaction-driven rather than LP-bound. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
@@ -148,11 +157,14 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m"
       lines: "297-362"
       note: "Representative methyl-donor consumption family."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_rna_modification.py"
       lines: "244-281"
       note: "Net substrate delta is assembled from reaction stoichiometry and completed reaction events."
+      symbol: KarrRNAModificationProcess.next_update
     note: "Representative per-reaction coefficient; the total delta is the stoichiometric row dot product."
+    kind: constant
   - wid: "ATP"
     compartment: "cytosol"
     formula_or_constant: "-1"
@@ -160,11 +172,14 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m"
       lines: "297-362"
       note: "Representative ATP-coupled family."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_rna_modification.py"
       lines: "244-281"
       note: "Same substrate-delta writeback path."
+      symbol: KarrRNAModificationProcess.next_update
     note: "Representative coefficient; several reaction families consume ATP."
+    kind: constant
   - wid: "CYS"
     compartment: "cytosol"
     formula_or_constant: "-1"
@@ -172,11 +187,14 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m"
       lines: "297-362"
       note: "Representative sulfur-transfer family."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_rna_modification.py"
       lines: "244-281"
       note: "Same substrate-delta writeback path."
+      symbol: KarrRNAModificationProcess.next_update
     note: "Representative coefficient; sulfur-transfer reactions consume cysteine."
+    kind: constant
   - wid: "FTHF5"
     compartment: "cytosol"
     formula_or_constant: "-1"
@@ -184,11 +202,14 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m"
       lines: "297-362"
       note: "Representative one-carbon transfer family."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_rna_modification.py"
       lines: "244-281"
       note: "Same substrate-delta writeback path."
+      symbol: KarrRNAModificationProcess.next_update
     note: "Representative coefficient; one-carbon reactions consume FTHF5 with glycine."
+    kind: constant
   - wid: "LYS"
     compartment: "cytosol"
     formula_or_constant: "-1"
@@ -196,11 +217,14 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m"
       lines: "297-362"
       note: "Representative lysidine family."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_rna_modification.py"
       lines: "244-281"
       note: "Same substrate-delta writeback path."
+      symbol: KarrRNAModificationProcess.next_update
     note: "Representative coefficient; lysidine synthesis consumes lysine."
+    kind: constant
 produce_stoichiometry:
   - wid: "AHCYS"
     compartment: "cytosol"
@@ -209,11 +233,14 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m"
       lines: "297-362"
       note: "Representative methyl-transfer product."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_rna_modification.py"
       lines: "244-281"
       note: "Same substrate-delta writeback path."
+      symbol: KarrRNAModificationProcess.next_update
     note: "Representative coefficient; many methyl-transfer reactions produce AHCYS."
+    kind: constant
   - wid: "AMP"
     compartment: "cytosol"
     formula_or_constant: "+1"
@@ -221,11 +248,14 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m"
       lines: "297-362"
       note: "Representative ATP-coupled byproduct."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_rna_modification.py"
       lines: "244-281"
       note: "Same substrate-delta writeback path."
+      symbol: KarrRNAModificationProcess.next_update
     note: "Representative coefficient; ATP-driven families produce AMP."
+    kind: constant
   - wid: "H"
     compartment: "cytosol"
     formula_or_constant: "+1"
@@ -233,11 +263,14 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m"
       lines: "297-362"
       note: "Representative proton/byproduct family."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_rna_modification.py"
       lines: "244-281"
       note: "Same substrate-delta writeback path."
+      symbol: KarrRNAModificationProcess.next_update
     note: "Representative coefficient; some families produce H as a byproduct."
+    kind: constant
   - wid: "PPI"
     compartment: "cytosol"
     formula_or_constant: "+1"
@@ -245,11 +278,14 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m"
       lines: "297-362"
       note: "Representative pyrophosphate byproduct family."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_rna_modification.py"
       lines: "244-281"
       note: "Same substrate-delta writeback path."
+      symbol: KarrRNAModificationProcess.next_update
     note: "Representative coefficient; ATP-coupled families produce pyrophosphate."
+    kind: constant
   - wid: "THF"
     compartment: "cytosol"
     formula_or_constant: "+1"
@@ -257,11 +293,19 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m"
       lines: "297-362"
       note: "Representative one-carbon transfer product."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_rna_modification.py"
       lines: "244-281"
       note: "Same substrate-delta writeback path."
+      symbol: KarrRNAModificationProcess.next_update
     note: "Representative coefficient; one-carbon reactions produce THF."
+    kind: constant
+stoichiometry_oracle:
+  class: matrix
+  record_path: data/karr_method_inventory/karr_stoichiometry/RNAModification.json
+  substrate_count: 13
+  note: Exhaustive per-tick substrate set lives in the HB1 oracle; this row's consume/produce arrays carry integration-relevant hand-curated entries.
 compartment_routing:
   - wid: "AMET"
     consume_compartment: "cytosol"
@@ -305,6 +349,7 @@ unit_conversion_chain:
         path: "opencell/vivarium/karr_rna_modification.py"
         lines: "173-303"
         note: Process works directly in per-tick integer counts; no unit conversion needed.
+        symbol: KarrRNAModificationProcess.next_update
       note: Process works directly in per-tick integer counts; no unit conversion needed.
   note: "This process does not require unit conversion (per-tick integer counts throughout)."
 dependencies:
@@ -329,63 +374,78 @@ source_anchors:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m"
       lines: "81-151"
       note: "Class declaration, process description, properties, and constructor."
+      symbol: RNAModification
     initialize_constants:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m"
       lines: "156-217"
       note: "Maps substrate/enzyme IDs and trims the reaction matrices."
+      symbol: RNAModification
     initialize_species_network:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m"
       lines: "221-236"
       note: "Builds the species-reactant matrices used by evolveState."
+      symbol: RNAModification
     state_sync_and_memory:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m"
       lines: "239-261"
       note: "copyFromState, copyToState, and allocation for local RNA state."
+      symbol: RNAModification
     lifecycle_requirements:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m"
       lines: "270-281"
       note: "Lifecycle biomass and enzyme requirement helper."
+      symbol: calcResourceRequirements_LifeCycle
     resource_requirements_current:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m"
       lines: "289-294"
       note: "Current-tick allocator request formula."
+      symbol: calcResourceRequirements_Current
     evolve_state:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m"
       lines: "297-362"
       note: "Stochastic RNA modification loop and substrate/RNA writeback."
+      symbol: calcResourceRequirements_Current
     simulation_ordering:
       path: "docs/phase_f/L2_5_HARNESS_DESIGN.md"
       lines: "83-89"
       note: "Documented hard ordering constraint `tRNAAminoacylation < Translation`."
+      symbol: 4) Baseline facts and constraints
   oc_blocks:
     process_class:
       path: "opencell/vivarium/karr_rna_modification.py"
       lines: "56-113"
       note: "Class definition, fixture loading, and enzyme splitting."
+      symbol: KarrRNAModificationProcess
     ports_schema:
       path: "opencell/vivarium/karr_rna_modification.py"
       lines: "115-171"
       note: "Substrate, enzyme, RNA, request, and allocator port wiring."
+      symbol: KarrRNAModificationProcess.ports_schema
     next_update:
       path: "opencell/vivarium/karr_rna_modification.py"
       lines: "173-303"
       note: "Allocator-fed per-tick update and RNA writeback."
+      symbol: KarrRNAModificationProcess.next_update
     enzyme_guard:
       path: "opencell/vivarium/karr_rna_modification.py"
       lines: "305-322"
       note: "Declared protein.counts / complex.counts inputs."
+      symbol: KarrRNAModificationProcess._require_declared_enzyme_inputs
     flux_sampler:
       path: "opencell/vivarium/karr_rna_modification.py"
       lines: "324-380"
       note: "Deterministic plus stochastic residual reaction sampler."
+      symbol: KarrRNAModificationProcess._compute_reaction_fluxes
     request_calculator:
       path: "opencell/vivarium/karr_request_calculators.py"
       lines: "286-359"
       note: "Shared RNAProcessing + RNAModification request calculator."
+      symbol: RequestCalculatorRNAPathway
     chassis_wiring:
       path: "opencell/vivarium/karr_composite.py"
       lines: "1052-1138"
       note: "Current chassis builder wires RNAModification and the RNA-pathway request step."
+      symbol: build_karr_chassis_v4
 provenance:
   fixture_files:
     - "data/karr_fixtures/per_process/RNAModification_flat.mat"
@@ -418,10 +478,12 @@ deviations:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m"
       lines: "289-294"
       note: "Closest request-side analogue; RNAModification does not define a flux-bound routine."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_request_calculators.py"
       lines: "286-359"
       note: "Shared RNA-pathway request calculator is the closest OC analogue."
+      symbol: RequestCalculatorRNAPathway
   shared_pool_projection_merges_compartments: false
   known_deviations:
     - "OC splits enzyme inputs into protein.counts and complex.counts; MATLAB uses one enzyme vector."

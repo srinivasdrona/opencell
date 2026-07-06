@@ -1,5 +1,5 @@
-schema_version: "1.0"
-schema_date: '2026-06-29'
+schema_version: "2.0"
+schema_date: '2026-07-07'
 process:
   name: "ChromosomeSegregation"
   matlab_class: "ChromosomeSegregation"
@@ -13,7 +13,7 @@ process:
     Canonical MATLAB source file was not physically present in this checkout;
     MATLAB anchors below are reconstructed from the checked-in extract docs and
     zero-grant validation notes, while OC anchors come from the current port.
-methods:
+integration_touchpoints:
   calcResourceRequirements_Current:
     matlab:
       symbol: "calcResourceRequirements_Current"
@@ -21,6 +21,7 @@ methods:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m"
         lines: "67-75"
         note: "Docstring extract for the gate: replicated, supercoiled, proteins present, and at least gtpCost GTP."
+        symbol: "calcResourceRequirements_Current"
       note: "No separate helper body was recoverable locally; the request is a one-event GTP/H2O gate derived from the documented simulation rule."
     oc:
       symbol: "KarrChromosomeSegregationProcess.next_update"
@@ -28,10 +29,12 @@ methods:
         path: "opencell/vivarium/karr_chromosome_segregation.py"
         lines: "355-405"
         note: "Reads substrates_allocated[self.name] and emits requests for GTP/H2O when progress is still possible."
+        symbol: "KarrChromosomeSegregationProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_chromosome_segregation.py"
           lines: "269-275"
           note: "Strict nonnegative allocated-substrate helper."
+          symbol: KarrChromosomeSegregationProcess._allocated_or_state
       note: "Request logic is inlined in next_update rather than a separate request-calculator class."
     status: "partial"
     note: "Implemented in OC, but only as an inlined request/update path rather than a dedicated request-calculator helper."
@@ -42,6 +45,7 @@ methods:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m"
         lines: "201-203"
         note: "Zero-grant audit cites the substrate gate/consumption branch for this process."
+        symbol: "evolveState"
       note: "MATLAB process consumes from the allocated substrate vector and gates progression on replicated + supercoiled + enzyme + gtpCost conditions."
     oc:
       symbol: "KarrChromosomeSegregationProcess.next_update"
@@ -49,13 +53,16 @@ methods:
         path: "opencell/vivarium/karr_chromosome_segregation.py"
         lines: "333-412"
         note: "Gate, progress update, substrate writeback, and request emission are all inlined here."
+        symbol: "KarrChromosomeSegregationProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_chromosome_segregation.py"
           lines: "355-378"
           note: "Allocated-substrate read plus GTP/H2O consumption and GDP/H/PI production."
+          symbol: KarrChromosomeSegregationProcess.next_update
         - path: "opencell/vivarium/karr_chromosome_segregation.py"
           lines: "388-399"
           note: "Completion latch and chromosome writeback."
+          symbol: KarrChromosomeSegregationProcess.next_update
       note: "OC adds continuous progress and pole-position interpolation on top of the same allocation-gated substrate wiring."
     status: "partial"
     note: "Behavior is implemented, but the OC port is a continuous projection of the boolean Karr gate rather than a literal MATLAB state machine."
@@ -66,6 +73,7 @@ methods:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m"
         lines: "85-85"
         note: "The process description is gate-based; no LP-flux-bound construction is described in the extract. Class-level anchor used to record calcFluxBounds absence."
+        symbol: "ChromosomeSegregation"
       note: "No process-specific flux-bound helper was recovered for ChromosomeSegregation. This process does not have Karr's calcFluxBounds method; it does not participate in FBA."
     oc:
       symbol: "KarrChromosomeSegregationProcess"
@@ -73,6 +81,7 @@ methods:
         path: "opencell/vivarium/karr_chromosome_segregation.py"
         lines: "95-412"
         note: "OC port has no dedicated flux-bound helper for this process. Representative OC anchor for non-implemented correspondence."
+        symbol: "KarrChromosomeSegregationProcess"
       note: "This process is not LP-bounded in the current port. OC does not implement this Karr method."
     status: "not_implemented"
     note: "ChromosomeSegregation is allocator-gated, not LP-bound. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
@@ -123,10 +132,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m"
       lines: "201-203"
       note: "Zero-grant audit cites the GTP gate/consumption branch."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_chromosome_segregation.py"
       lines: "369-378"
       note: "Consumes allocated GTP when can_progress and max_events >= 1."
+      symbol: KarrChromosomeSegregationProcess.next_update
+    kind: expression
   - wid: "H2O"
     compartment: "cytosol"
     formula_or_constant: "gtpCost * 1 if gate_open and not segregated else 0"
@@ -134,10 +146,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m"
       lines: "201-203"
       note: "Zero-grant audit cites the water gate/consumption branch."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_chromosome_segregation.py"
       lines: "369-378"
       note: "Consumes allocated H2O in lockstep with GTP."
+      symbol: KarrChromosomeSegregationProcess.next_update
+    kind: expression
 produce_stoichiometry:
   - wid: "GDP"
     compartment: "cytosol"
@@ -146,10 +161,13 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m"
       lines: "201-203"
       note: "Hydrolysis product paired with the GTP gate."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_chromosome_segregation.py"
       lines: "371-377"
       note: "Produced alongside PI and H when progress advances."
+      symbol: KarrChromosomeSegregationProcess.next_update
+    kind: expression
   - wid: "H"
     compartment: "cytosol"
     formula_or_constant: "gtpCost * 1 if gate_open and not segregated else 0"
@@ -157,10 +175,13 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m"
       lines: "201-203"
       note: "Hydrolysis proton product."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_chromosome_segregation.py"
       lines: "371-377"
       note: "Produced alongside GDP and PI."
+      symbol: KarrChromosomeSegregationProcess.next_update
+    kind: expression
   - wid: "PI"
     compartment: "cytosol"
     formula_or_constant: "gtpCost * 1 if gate_open and not segregated else 0"
@@ -168,10 +189,18 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m"
       lines: "201-203"
       note: "Hydrolysis phosphate product."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_chromosome_segregation.py"
       lines: "371-377"
       note: "Produced alongside GDP and H."
+      symbol: KarrChromosomeSegregationProcess.next_update
+    kind: expression
+stoichiometry_oracle:
+  class: inline
+  record_path: data/karr_method_inventory/karr_stoichiometry/ChromosomeSegregation.json
+  substrate_count: 5
+  note: Exhaustive per-tick substrate set lives in the HB1 oracle; this row's consume/produce arrays carry integration-relevant hand-curated entries.
 compartment_routing:
   - wid: "GTP"
     consume_compartment: "cytosol"
@@ -209,6 +238,7 @@ unit_conversion_chain:
         path: "docs/design/pc-t5-segregation.md"
         lines: "68-90"
         note: "Per-tick algorithm summary: request, consume GTP/H2O, produce GDP/H/PI."
+        symbol: Algorithm (v1)
       constants: ["gtpCost", "dt"]
   note: "There is no mmol/gDW/hr conversion chain here; the process already works in per-tick molecule counts."
 dependencies:
@@ -231,31 +261,38 @@ source_anchors:
       path: "docs/karr_extracts/process/08_ChromosomeSegregation.md"
       lines: "49-75"
       note: "Docstring extract: gtpCost, gate conditions, and the four segregation proteins."
+      symbol: Verbatim docstring extract
     strict_zero_evidence:
       path: "opencell/validation/swarm/l5/karr_zero_grant_behavior.md"
       lines: "29-64"
       note: "Validation note summarizing the allocation overwrite and the ChromosomeSegregation line citation."
+      symbol: Zero grant behavior in process code
     allocation_loop:
       path: "docs/karr_extracts/architecture/01_simulation_loop.md"
       lines: "122-194"
       note: "Global allocate-before-process semantics and per-tick overwrite into mod.substrates."
+      symbol: Verbatim extract - `evolveState.m` per-tick algorithm
     phase_c_design:
       path: "docs/design/pc-t5-segregation.md"
       lines: "17-90"
       note: "Process-level Karr-LIGHT summary, ports, and per-tick behavior."
+      symbol: Process summary (Karr fidelity)
   oc_blocks:
     fixture_and_schema:
       path: "opencell/vivarium/karr_chromosome_segregation.py"
       lines: "109-267"
       note: "Fixture load, derived WIDs, ports schema, and request/allocation stores."
+      symbol: KarrChromosomeSegregationProcess.__init__
     gate_and_update:
       path: "opencell/vivarium/karr_chromosome_segregation.py"
       lines: "333-412"
       note: "Allocated read, gate evaluation, substrate writeback, and request emission."
+      symbol: KarrChromosomeSegregationProcess.next_update
     canonical_complex_lookup:
       path: "opencell/vivarium/karr_chromosome_segregation.py"
       lines: "77-92"
       note: "Shared helper that loads MacromolecularComplexation and RibosomeAssembly fixtures."
+      symbol: _canonical_complex_wids
 provenance:
   fixture_files:
     - "data/karr_fixtures/per_process/ChromosomeSegregation_flat.mat"
@@ -289,10 +326,12 @@ deviations:
       path: "docs/design/pc-t5-segregation.md"
       lines: "17-26"
       note: "The process is described as a boolean gate with gtpCost, not an LP-bounded flux process."
+      symbol: Process summary (Karr fidelity)
     oc_anchor:
       path: "opencell/vivarium/karr_chromosome_segregation.py"
       lines: "333-412"
       note: "The OC port has no dedicated flux-bound helper; request/update are handled inline."
+      symbol: KarrChromosomeSegregationProcess.next_update
   shared_pool_projection_merges_compartments: false
   known_deviations:
     - "OC exposes continuous segregation_progress and daughter_pole_positions to support downstream chassis logic; the Karr source description is boolean and event-gated."

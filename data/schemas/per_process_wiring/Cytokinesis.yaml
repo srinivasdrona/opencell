@@ -1,5 +1,5 @@
-schema_version: "1.0"
-schema_date: '2026-06-29'
+schema_version: "2.0"
+schema_date: '2026-07-07'
 process:
   name: "Cytokinesis"
   matlab_class: "Cytokinesis"
@@ -10,7 +10,7 @@ process:
   functional_area: "cytokinesis"
   state_shape_role: "state-shape catalog row; wiring row adds integration semantics"
   notes: "Small substrate row: the MATLAB source exposes PI/H2O/H as the only substrate channel, while the OC port keeps a legacy zero GTP request slot for compatibility."
-methods:
+integration_touchpoints:
   calcResourceRequirements_Current:
     matlab:
       symbol: "calcResourceRequirements_Current"
@@ -18,6 +18,7 @@ methods:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m"
         lines: "165-170"
         note: "Allocator-facing current water request."
+        symbol: "calcResourceRequirements_Current"
       note: "Requests water proportional to the current FtsZ-GTP polymer pool."
     oc:
       symbol: "KarrCytokinesisProcess.next_update"
@@ -25,30 +26,15 @@ methods:
         path: "opencell/vivarium/karr_cytokinesis.py"
         lines: "330-410"
         note: "Embedded request emission and state update share one OC method."
+        symbol: "KarrCytokinesisProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_cytokinesis.py"
           lines: "485-503"
           note: "_water_request gate used by next_update."
+          symbol: KarrCytokinesisProcess._water_request
       note: "OC embeds allocator request emission inside the per-tick update instead of a dedicated request-calculator class."
     status: partial
     note: "The OC request formula is geometry/gating aware, so this is a faithful but not line-for-line port of MATLAB's current allocator request."
-  calcResourceRequirements_LifeCycle:
-    matlab:
-      symbol: "calcResourceRequirements_LifeCycle"
-      source:
-        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m"
-        lines: "138-159"
-        note: "Lifecycle water/byproduct accounting and minimum FtsZ-GTP polymer expression."
-      note: "Lifecycle-level resource accounting, distinct from the current-tick allocator request."
-    oc:
-      symbol: "KarrCytokinesisProcess"
-      source:
-        path: "opencell/vivarium/karr_cytokinesis.py"
-        lines: "115-675"
-        note: "No dedicated lifecycle resource method exists in the current OC port. Representative OC anchor for non-implemented correspondence."
-      note: "Lifecycle resource accounting is folded into the current per-tick update path instead. OC does not implement this Karr method."
-    status: not_implemented
-    note: "Retained as a placeholder because the MATLAB class has a distinct lifecycle resource method that the OC port does not expose separately. OC does not implement this Karr method."
   evolveState:
     matlab:
       symbol: "evolveState"
@@ -56,6 +42,7 @@ methods:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m"
         lines: "173-259"
         note: "Five-phase ring evolution, substrate writeback, and pinched-diameter update."
+        symbol: "evolveState"
       note: "This is the main per-tick Cytokinesis update block."
     oc:
       symbol: "KarrCytokinesisProcess.next_update"
@@ -63,13 +50,16 @@ methods:
         path: "opencell/vivarium/karr_cytokinesis.py"
         lines: "330-410"
         note: "Per-tick update entrypoint."
+        symbol: "KarrCytokinesisProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_cytokinesis.py"
           lines: "505-614"
           note: "Binding, unbinding, hydrolysis, and dissociation phase helpers."
+          symbol: KarrCytokinesisProcess._phase_bind_first_and_second_straight
         - path: "opencell/vivarium/karr_cytokinesis.py"
           lines: "621-675"
           note: "Geometry helpers for edge counts and pinched-diameter evolution."
+          symbol: KarrCytokinesisProcess._division_progress
       note: "The OC update keeps the MATLAB phase ordering but packages it inside next_update."
     status: implemented
     note: "Faithful at the phase level; the OC method boundary is broader because it also emits requests."
@@ -80,6 +70,7 @@ methods:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m"
         lines: "1-1"
         note: "No local override is defined in Cytokinesis.m; the class only exposes allocator and evolveState logic. Class-level anchor used to record calcFluxBounds absence."
+        symbol: "Cytokinesis"
       note: "Cytokinesis has no dedicated LP-bounds method in this source file. This process does not have Karr's calcFluxBounds method; it does not participate in FBA."
     oc:
       symbol: "KarrCytokinesisProcess"
@@ -87,6 +78,7 @@ methods:
         path: "opencell/vivarium/karr_cytokinesis.py"
         lines: "115-675"
         note: "The current OC port is a process updater and does not define a flux-bounds path. Representative OC anchor for non-implemented correspondence."
+        symbol: "KarrCytokinesisProcess"
       note: "No OC flux-bounds correspondence was found. OC does not implement this Karr method."
     status: not_implemented
     note: "Required by schema, but Cytokinesis does not implement an LP-bounds method in the source we audited. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
@@ -125,11 +117,14 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m"
       lines: "219-231"
       note: "Hydrolysis branch consumes H2O in discrete quanta."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_cytokinesis.py"
       lines: "555-583"
       note: "_phase_hydrolyze_and_bend subtracts water during each successful hydrolysis event."
+      symbol: KarrCytokinesisProcess._phase_hydrolyze_and_bend
     note: "The symbolic `nHydrolyzedEdges` stands for the count of successful hydrolysis events in the tick."
+    kind: expression
 produce_stoichiometry:
   - wid: "PI"
     compartment: "cytosol"
@@ -138,10 +133,13 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m"
       lines: "219-231"
       note: "Hydrolysis branch produces phosphate."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_cytokinesis.py"
       lines: "555-583"
       note: "_phase_hydrolyze_and_bend adds phosphate during each successful hydrolysis event."
+      symbol: KarrCytokinesisProcess._phase_hydrolyze_and_bend
+    kind: expression
   - wid: "H"
     compartment: "cytosol"
     formula_or_constant: "2 * numFtsZSubunitsPerFilament * nHydrolyzedEdges"
@@ -149,10 +147,18 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m"
       lines: "219-231"
       note: "Hydrolysis branch produces hydrogen."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_cytokinesis.py"
       lines: "555-583"
       note: "_phase_hydrolyze_and_bend adds hydrogen during each successful hydrolysis event."
+      symbol: KarrCytokinesisProcess._phase_hydrolyze_and_bend
+    kind: expression
+stoichiometry_oracle:
+  class: inline
+  record_path: data/karr_method_inventory/karr_stoichiometry/Cytokinesis.json
+  substrate_count: 3
+  note: Exhaustive per-tick substrate set lives in the HB1 oracle; this row's consume/produce arrays carry integration-relevant hand-curated entries.
 compartment_routing:
   - wid: "H2O"
     consume_compartment: "cytosol"
@@ -180,6 +186,7 @@ unit_conversion_chain:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m"
         lines: "166-170"
         note: "Current request formula is count-based."
+        symbol: calcResourceRequirements_Current
   note: "Unlike metabolism-style processes, Cytokinesis does not pass through a mmol/gDW/hr conversion chain."
 dependencies:
   produces_inputs_for: []
@@ -199,47 +206,58 @@ source_anchors:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m"
       lines: "60-99"
       note: "Class declaration, substrate IDs, enzyme IDs, and fixed constants."
+      symbol: Cytokinesis
     lifecycle_requirements:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m"
       lines: "138-159"
       note: "Lifecycle water/byproduct calculation and minimum enzyme expression."
+      symbol: calcResourceRequirements_LifeCycle
     allocator_request:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m"
       lines: "166-170"
       note: "Current allocator-facing water request."
+      symbol: calcResourceRequirements_Current
     evolve_state:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m"
       lines: "173-259"
       note: "Main per-tick update and substrate writeback."
+      symbol: calcResourceRequirements_Current
     pinching_helpers:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m"
       lines: "264-300"
       note: "Pinch geometry helpers and required-cycle calculator."
+      symbol: calcNextPinchedDiameter
   oc_blocks:
     fixture_loading:
       path: "opencell/vivarium/karr_cytokinesis.py"
       lines: "135-188"
       note: "Loads the Cytokinesis fixture MAT and the ring/geometry JSON fixtures."
+      symbol: KarrCytokinesisProcess.__init__
     ports_schema:
       path: "opencell/vivarium/karr_cytokinesis.py"
       lines: "215-328"
       note: "Declares cell, chromosome, geometry, ring, substrate, and allocator-facing ports."
+      symbol: KarrCytokinesisProcess.ports_schema
     next_update:
       path: "opencell/vivarium/karr_cytokinesis.py"
       lines: "330-410"
       note: "Embedded request emission plus per-tick state update."
+      symbol: KarrCytokinesisProcess.next_update
     gating_and_request_helpers:
       path: "opencell/vivarium/karr_cytokinesis.py"
       lines: "412-503"
       note: "Geometry/ring reconstruction, allocator read, and water request gate."
+      symbol: KarrCytokinesisProcess._geometry_state
     phase_updates:
       path: "opencell/vivarium/karr_cytokinesis.py"
       lines: "505-614"
       note: "Binding, unbinding, hydrolysis, and dissociation phase helpers."
+      symbol: KarrCytokinesisProcess._phase_bind_first_and_second_straight
     geometry_helpers:
       path: "opencell/vivarium/karr_cytokinesis.py"
       lines: "621-675"
       note: "Pinched-diameter and edge-count helpers."
+      symbol: KarrCytokinesisProcess._division_progress
 provenance:
   fixture_files:
     - "data/karr_fixtures/per_process/Cytokinesis_flat.mat"
@@ -269,10 +287,12 @@ deviations:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m"
       lines: "60-300"
       note: "Cytokinesis.m has no local LP-bounds method override."
+      symbol: Cytokinesis
     oc_anchor:
       path: "opencell/vivarium/karr_cytokinesis.py"
       lines: "115-678"
       note: "The current OC port is a process updater and does not expose a flux-bounds path."
+      symbol: KarrCytokinesisProcess
   shared_pool_projection_merges_compartments: false
   known_deviations:
     - "OC embeds request emission in `KarrCytokinesisProcess.next_update` and bases the water request on ring geometry / hydrolysis opportunity, while MATLAB's `calcResourceRequirements_Current` requests water from the current FtsZ-GTP polymer count."
