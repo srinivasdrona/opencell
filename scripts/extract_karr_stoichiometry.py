@@ -65,6 +65,7 @@ class MatrixSpec:
     field: str
     orientation: str  # "sr" for substrates x reactions, "rs" for reactions x substrates
     row_selector_attr: str | None = None
+    multiplier: float = 1.0
 
 
 @dataclass(frozen=True)
@@ -93,13 +94,14 @@ MATRIX_OVERRIDES: dict[str, tuple[MatrixSpec, ...]] = {
             "proteinProstheticGroupMatrix",
             "rs",
             row_selector_attr="monomerComplexIndexs_folded",
+            multiplier=-1.0,
         ),
     ),
     "ProteinDecay": (
         MatrixSpec("complexDecayReactions", "sr"),
         MatrixSpec("monomerDecayReactions", "sr"),
     ),
-    "MacromolecularComplexation": (MatrixSpec("complexComposition", "sr"),),
+    "MacromolecularComplexation": (MatrixSpec("complexComposition", "sr", multiplier=-1.0),),
 }
 
 
@@ -468,6 +470,7 @@ def _build_override_matrix(process_name: str, fx: Any) -> tuple[list[str], np.nd
             mat_sr = arr.T
         else:
             raise ValueError(f"Unsupported orientation {spec.orientation!r}")
+        mat_sr = mat_sr * float(spec.multiplier)
 
         parts.append(mat_sr)
         field_names.append(spec.field)

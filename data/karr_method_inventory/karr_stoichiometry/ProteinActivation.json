@@ -1,13 +1,10 @@
 {
   "process": "ProteinActivation",
-  "source": "data/karr_fixtures/per_process/ProteinActivation_flat.mat + data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m inspection",
-  "status": "BLOCKER",
-  "reason": "No non-empty reaction stoichiometry matrix field found in fixture (checked reactionStoichiometryMatrix-family fields).",
-  "checked_matrix_fields": [
-    "reactionStoichiometryMatrix",
-    "reactionSmallMoleculeStoichiometryMatrix",
-    "fbaReactionStoichiometryMatrix"
-  ],
-  "available_stoichiometry_fields": [],
-  "n_substrate_ids": 10
+  "class": "none",
+  "source": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m + data/karr_fixtures/per_process/ProteinActivation_flat.mat",
+  "note": "evolveState toggles protein activation state between substrates/inactivatedSubstrates pools; no small-molecule substrate stoichiometry.",
+  "substrates": [],
+  "n_substrates": 0,
+  "n_reactions": 0,
+  "n_entries": 0
 }

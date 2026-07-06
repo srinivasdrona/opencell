@@ -1,13 +1,455 @@
 {
   "process": "ProteinFolding",
-  "source": "data/karr_fixtures/per_process/ProteinFolding_flat.mat + data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinFolding.m inspection",
-  "status": "BLOCKER",
-  "reason": "No non-empty reaction stoichiometry matrix field found in fixture (checked reactionStoichiometryMatrix-family fields).",
-  "checked_matrix_fields": [
-    "reactionStoichiometryMatrix",
-    "reactionSmallMoleculeStoichiometryMatrix",
-    "fbaReactionStoichiometryMatrix"
+  "class": "matrix",
+  "source": "data/karr_fixtures/per_process/ProteinFolding_flat.mat:data.fixture.proteinProstheticGroupMatrix; MATLAB source: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinFolding.m",
+  "matrix_field": "proteinProstheticGroupMatrix",
+  "matrix_shape": [
+    11,
+    487
   ],
-  "available_stoichiometry_fields": [],
-  "n_substrate_ids": 11
+  "substrates": [
+    {
+      "wid": "FE2",
+      "role": "consume",
+      "net_coefficient": -5.0,
+      "consume_coefficient_total": 5.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 3,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 107,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 175,
+          "coefficient": -2.0
+        },
+        {
+          "reaction_index": 235,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "K",
+      "role": "consume",
+      "net_coefficient": -4.0,
+      "consume_coefficient_total": 4.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 4,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 8,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 45,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 221,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 448,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG",
+      "role": "consume",
+      "net_coefficient": -68.0,
+      "consume_coefficient_total": 68.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 55,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 6,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 9,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 22,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 28,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 31,
+          "coefficient": -2.0
+        },
+        {
+          "reaction_index": 32,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 36,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 45,
+          "coefficient": -2.0
+        },
+        {
+          "reaction_index": 51,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 58,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 63,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 66,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 85,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 108,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 115,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 129,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 137,
+          "coefficient": -3.0
+        },
+        {
+          "reaction_index": 174,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 187,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 193,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 201,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 216,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 220,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 221,
+          "coefficient": -3.0
+        },
+        {
+          "reaction_index": 233,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 245,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 246,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 251,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 260,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 278,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 281,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 284,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 302,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 309,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 340,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 364,
+          "coefficient": -4.0
+        },
+        {
+          "reaction_index": 365,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 370,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 371,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 381,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 386,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 392,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 396,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 397,
+          "coefficient": -2.0
+        },
+        {
+          "reaction_index": 422,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 437,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 441,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 449,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 464,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 466,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 469,
+          "coefficient": -2.0
+        },
+        {
+          "reaction_index": 473,
+          "coefficient": -2.0
+        },
+        {
+          "reaction_index": 484,
+          "coefficient": -2.0
+        },
+        {
+          "reaction_index": 485,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 486,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MN",
+      "role": "consume",
+      "net_coefficient": -11.0,
+      "consume_coefficient_total": 11.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 7,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 12,
+          "coefficient": -2.0
+        },
+        {
+          "reaction_index": 18,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 286,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 334,
+          "coefficient": -2.0
+        },
+        {
+          "reaction_index": 406,
+          "coefficient": -2.0
+        },
+        {
+          "reaction_index": 442,
+          "coefficient": -2.0
+        },
+        {
+          "reaction_index": 471,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "NA",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 21,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "ZN",
+      "role": "consume",
+      "net_coefficient": -33.0,
+      "consume_coefficient_total": 33.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 25,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 17,
+          "coefficient": -2.0
+        },
+        {
+          "reaction_index": 19,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 21,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 44,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 50,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 72,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 111,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 140,
+          "coefficient": -2.0
+        },
+        {
+          "reaction_index": 167,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 186,
+          "coefficient": -2.0
+        },
+        {
+          "reaction_index": 241,
+          "coefficient": -3.0
+        },
+        {
+          "reaction_index": 256,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 259,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 270,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 301,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 357,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 389,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 403,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 409,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 423,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 433,
+          "coefficient": -2.0
+        },
+        {
+          "reaction_index": 435,
+          "coefficient": -2.0
+        },
+        {
+          "reaction_index": 468,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 483,
+          "coefficient": -2.0
+        },
+        {
+          "reaction_index": 487,
+          "coefficient": -1.0
+        }
+      ]
+    }
+  ],
+  "n_substrates": 6,
+  "n_reactions": 487,
+  "n_entries": 6
 }
