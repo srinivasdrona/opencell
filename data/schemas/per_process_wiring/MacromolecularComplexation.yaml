@@ -24,7 +24,7 @@ integration_touchpoints:
       symbol: "RequestCalculatorD2.next_update"
       source:
         path: "opencell/vivarium/karr_request_calculators.py"
-        lines: "53-89"
+        lines: "87-87"
         note: "Writes zero requests for karr_macromolecular_complexation."
         symbol: "RequestCalculatorD2.next_update"
       supporting:
@@ -47,7 +47,7 @@ integration_touchpoints:
       symbol: "MacromolecularComplexationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_macromolecular_complexation.py"
-        lines: "206-258"
+        lines: "206-206"
         note: "Reads substrates_allocated, clusters by disconnected network, and emits substrate + complex deltas."
         symbol: "MacromolecularComplexationProcess.next_update"
       supporting:

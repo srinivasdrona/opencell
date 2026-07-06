@@ -27,7 +27,7 @@ integration_touchpoints:
       symbol: "KarrChromosomeSegregationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_chromosome_segregation.py"
-        lines: "355-405"
+        lines: "364-364"
         note: "Reads substrates_allocated[self.name] and emits requests for GTP/H2O when progress is still possible."
         symbol: "KarrChromosomeSegregationProcess.next_update"
       supporting:
@@ -51,7 +51,7 @@ integration_touchpoints:
       symbol: "KarrChromosomeSegregationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_chromosome_segregation.py"
-        lines: "333-412"
+        lines: "333-333"
         note: "Gate, progress update, substrate writeback, and request emission are all inlined here."
         symbol: "KarrChromosomeSegregationProcess.next_update"
       supporting:

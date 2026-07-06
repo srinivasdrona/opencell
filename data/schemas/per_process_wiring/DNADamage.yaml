@@ -21,12 +21,12 @@ integration_touchpoints:
         symbol: "calcResourceRequirements_Current"
       note: "MATLAB computes allocator request demand from expected reaction rates (including radiation-gated rates via calcExpectedReactionRates)."
     oc:
-      symbol: "KarrDNADamageProcess"
+      symbol: "KarrDNADamageProcess.calcResourceRequirements_Current"
       source:
         path: "opencell/vivarium/karr_dna_damage.py"
-        lines: "111-483"
+        lines: "365-365"
         note: "Current OC port exposes only chromosome damage state plus direct `substrates` reads; there is no request-calculator or `substrates_allocated` path. Representative OC anchor for non-implemented correspondence."
-        symbol: "KarrDNADamageProcess"
+        symbol: "KarrDNADamageProcess.calcResourceRequirements_Current"
       note: OC does not implement this Karr method.
     status: "not_implemented"
     note: "MATLAB implements allocator request demand in calcResourceRequirements_Current; current OC bypasses allocator mediation and does not implement this Karr method."
@@ -43,7 +43,7 @@ integration_touchpoints:
       symbol: "KarrDNADamageProcess.next_update"
       source:
         path: "opencell/vivarium/karr_dna_damage.py"
-        lines: "228-294"
+        lines: "287-287"
         note: "Current OC per-tick update: Poisson lesion sampling, chromosome damage writeback, and replication-stall flagging."
         symbol: "KarrDNADamageProcess.next_update"
       supporting:

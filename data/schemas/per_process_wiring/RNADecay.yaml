@@ -27,7 +27,7 @@ integration_touchpoints:
       symbol: "RnaDecayLightProcess.next_update"
       source:
         path: "opencell/vivarium/karr_rna_decay.py"
-        lines: "316-334"
+        lines: "298-298"
         note: "Inline request emission before water gating."
         symbol: "RnaDecayLightProcess.next_update"
       supporting:
@@ -58,7 +58,7 @@ integration_touchpoints:
       symbol: "RnaDecayLightProcess.next_update"
       source:
         path: "opencell/vivarium/karr_rna_decay.py"
-        lines: "339-389"
+        lines: "298-298"
         note: "Stochastic decay sampling, peptidyl-hydrolase gating, water gate, RNA and substrate writeback."
         symbol: "RnaDecayLightProcess.next_update"
       supporting:

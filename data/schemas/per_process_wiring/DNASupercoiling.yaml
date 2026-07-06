@@ -21,12 +21,12 @@ integration_touchpoints:
         symbol: "calcResourceRequirements_Current"
       note: "Returns the allocator-facing per-tick resource demand."
     oc:
-      symbol: "KarrDNASupercoilingProcess._atp_request"
+      symbol: "KarrDNASupercoilingProcess.next_update"
       source:
         path: "opencell/vivarium/karr_dna_supercoiling.py"
-        lines: "976-1022"
+        lines: "406-406"
         note: "Current OC request calculator used by next_update."
-        symbol: "KarrDNASupercoilingProcess._atp_request"
+        symbol: "KarrDNASupercoilingProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_dna_supercoiling.py"
           lines: "459-462"
@@ -56,7 +56,7 @@ integration_touchpoints:
       symbol: "KarrDNASupercoilingProcess.next_update"
       source:
         path: "opencell/vivarium/karr_dna_supercoiling.py"
-        lines: "360-644"
+        lines: "406-406"
         note: "Current OC per-tick update path."
         symbol: "KarrDNASupercoilingProcess.next_update"
       supporting:

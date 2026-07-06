@@ -27,7 +27,7 @@ integration_touchpoints:
       symbol: "KarrDNARepairProcess.next_update"
       source:
         path: "opencell/vivarium/karr_dna_repair.py"
-        lines: "317-347"
+        lines: "378-378"
         note: "Builds per-tick substrate requests from desired repairs."
         symbol: "KarrDNARepairProcess.next_update"
       supporting:
@@ -51,7 +51,7 @@ integration_touchpoints:
       symbol: "KarrDNARepairProcess.next_update"
       source:
         path: "opencell/vivarium/karr_dna_repair.py"
-        lines: "317-386"
+        lines: "378-378"
         note: "Aggregated repair update, substrate writeback, and chromosome repair deltas."
         symbol: "KarrDNARepairProcess.next_update"
       supporting:

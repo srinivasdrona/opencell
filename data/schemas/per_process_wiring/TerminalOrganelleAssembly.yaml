@@ -41,7 +41,7 @@ integration_touchpoints:
       symbol: "KarrTerminalOrganelleAssemblyProcess.next_update"
       source:
         path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-        lines: "403-458"
+        lines: "403-403"
         note: "Per-tick update path for cell counters and substrate deltas."
         symbol: "KarrTerminalOrganelleAssemblyProcess.next_update"
       supporting:

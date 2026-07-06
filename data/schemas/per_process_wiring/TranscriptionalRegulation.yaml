@@ -42,7 +42,7 @@ integration_touchpoints:
       symbol: "KarrTranscriptionalRegulationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_transcriptional_regulation.py"
-        lines: "350-463"
+        lines: "350-350"
         note: "Per-tick TF copy read, weighted binding, fold-change product, and trace-hint writeback."
         symbol: "KarrTranscriptionalRegulationProcess.next_update"
     status: "implemented"

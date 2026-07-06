@@ -52,7 +52,7 @@ integration_touchpoints:
       symbol: "KarrProteinActivationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_protein_activation.py"
-        lines: "229-271"
+        lines: "240-240"
         note: "Per-tick boolean evaluation and active/inactive writeback."
         symbol: "KarrProteinActivationProcess.next_update"
       supporting:

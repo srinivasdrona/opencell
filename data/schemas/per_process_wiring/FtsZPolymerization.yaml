@@ -24,7 +24,7 @@ integration_touchpoints:
       symbol: "KarrFtsZPolymerizationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_ftsz_polymerization.py"
-        lines: "216-283"
+        lines: "216-216"
         note: "Emits the GTP request directly into `requests[self.name][gtp_wid]`."
         symbol: "KarrFtsZPolymerizationProcess.next_update"
       supporting:
@@ -48,7 +48,7 @@ integration_touchpoints:
       symbol: "KarrFtsZPolymerizationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_ftsz_polymerization.py"
-        lines: "216-293"
+        lines: "216-216"
         note: "Per-tick update flow: gate, integrate, discretize, clamp, emit deltas."
         symbol: "KarrFtsZPolymerizationProcess.next_update"
       supporting:

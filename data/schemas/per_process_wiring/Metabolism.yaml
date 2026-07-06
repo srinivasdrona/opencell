@@ -24,7 +24,7 @@ integration_touchpoints:
       source:
         path: "opencell/vivarium/karr_request_calculators.py"
         symbol: "RequestCalculatorMetabolism.next_update"
-        lines: "806-820"
+        lines: "806-806"
         note: "Current OC request calculator."
       supporting:
         - path: "opencell/vivarium/karr_allocation_step.py"
@@ -46,7 +46,7 @@ integration_touchpoints:
       source:
         path: "opencell/vivarium/karr_metabolism.py"
         symbol: "KarrMetabolismProcess.next_update"
-        lines: "386-394"
+        lines: "386-386"
         note: "Runtime entry dispatches Metabolism updates."
       supporting:
         - path: "opencell/vivarium/karr_metabolism.py"
@@ -76,7 +76,7 @@ integration_touchpoints:
       source:
         path: "opencell/m1/calc_flux_bounds.py"
         symbol: "compute_bounds"
-        lines: "108-170"
+        lines: "108-108"
         note: "Current OC bound construction."
       supporting:
         - path: "opencell/m1/compartmented.py"

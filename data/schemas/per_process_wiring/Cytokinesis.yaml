@@ -24,7 +24,7 @@ integration_touchpoints:
       symbol: "KarrCytokinesisProcess.next_update"
       source:
         path: "opencell/vivarium/karr_cytokinesis.py"
-        lines: "330-410"
+        lines: "330-330"
         note: "Embedded request emission and state update share one OC method."
         symbol: "KarrCytokinesisProcess.next_update"
       supporting:
@@ -48,7 +48,7 @@ integration_touchpoints:
       symbol: "KarrCytokinesisProcess.next_update"
       source:
         path: "opencell/vivarium/karr_cytokinesis.py"
-        lines: "330-410"
+        lines: "330-330"
         note: "Per-tick update entrypoint."
         symbol: "KarrCytokinesisProcess.next_update"
       supporting:

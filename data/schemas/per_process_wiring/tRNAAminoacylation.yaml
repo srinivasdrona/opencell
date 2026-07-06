@@ -28,7 +28,7 @@ integration_touchpoints:
       symbol: "RequestCalculatorTRNA.next_update"
       source:
         path: "opencell/vivarium/karr_request_calculators.py"
-        lines: "266-283"
+        lines: "266-266"
         note: "Availability-based request builder for allocation."
         symbol: "RequestCalculatorTRNA.next_update"
       supporting:
@@ -54,7 +54,7 @@ integration_touchpoints:
       symbol: "KarrTRNAAminoacylationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_trna_aminoacylation.py"
-        lines: "203-301"
+        lines: "203-203"
         note: "Per-tick update path that consumes allocated substrates and mutates RNA counts."
         symbol: "KarrTRNAAminoacylationProcess.next_update"
       supporting:

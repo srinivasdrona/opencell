@@ -23,7 +23,7 @@ integration_touchpoints:
       symbol: "RequestCalculatorProteinPathway.next_update"
       source:
         path: "opencell/vivarium/karr_request_calculators.py"
-        lines: "468-543"
+        lines: "468-468"
         note: "Current OC allocator request step; PP1 emits only H2O when unprocessed proteins are present."
         symbol: "RequestCalculatorProteinPathway.next_update"
       supporting:
@@ -45,7 +45,7 @@ integration_touchpoints:
       symbol: "KarrProteinProcessingIProcess.next_update"
       source:
         path: "opencell/vivarium/karr_protein_processing_i.py"
-        lines: "182-310"
+        lines: "182-182"
         note: "Allocator-backed tick update with water gating, stochastic event sampling, and writeback."
         symbol: "KarrProteinProcessingIProcess.next_update"
       supporting:

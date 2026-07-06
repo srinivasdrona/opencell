@@ -24,7 +24,7 @@ integration_touchpoints:
       symbol: "RequestCalculatorTranslation.next_update"
       source:
         path: "opencell/vivarium/karr_request_calculators.py"
-        lines: "605-655"
+        lines: "639-639"
         note: "Current OC request calculator for translation AA demand."
         symbol: "RequestCalculatorTranslation.next_update"
       supporting:
@@ -48,7 +48,7 @@ integration_touchpoints:
       symbol: "KarrTranslationV3Process.next_update"
       source:
         path: "opencell/vivarium/karr_translation_v3.py"
-        lines: "520-618"
+        lines: "520-520"
         note: "Current per-tick translation update."
         symbol: "KarrTranslationV3Process.next_update"
       supporting:

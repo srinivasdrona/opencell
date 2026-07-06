@@ -24,7 +24,7 @@ integration_touchpoints:
       symbol: "RequestCalculatorRibAsm.next_update"
       source:
         path: "opencell/vivarium/karr_request_calculators.py"
-        lines: "163-226"
+        lines: "210-210"
         note: "Dedicated request step that computes GTP/H2O demand from the current subunit state."
         symbol: "RequestCalculatorRibAsm.next_update"
       supporting:
@@ -48,7 +48,7 @@ integration_touchpoints:
       symbol: "KarrRibosomeAssemblyProcess.next_update"
       source:
         path: "opencell/vivarium/karr_ribosome_assembly.py"
-        lines: "334-383"
+        lines: "334-334"
         note: "Current per-tick update path."
         symbol: "KarrRibosomeAssemblyProcess.next_update"
       supporting:

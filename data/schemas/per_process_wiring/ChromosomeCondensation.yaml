@@ -26,7 +26,7 @@ integration_touchpoints:
       symbol: "KarrChromosomeCondensationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_chromosome_condensation.py"
-        lines: "321-442"
+        lines: "321-321"
         note: "Merged request emission plus per-tick state update; requests are written into the update dict."
         symbol: "KarrChromosomeCondensationProcess.next_update"
       supporting:
@@ -52,7 +52,7 @@ integration_touchpoints:
       symbol: "KarrChromosomeCondensationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_chromosome_condensation.py"
-        lines: "321-442"
+        lines: "321-321"
         note: "Per-tick aggregate update for bound SMC count and substrate deltas."
         symbol: "KarrChromosomeCondensationProcess.next_update"
       supporting:

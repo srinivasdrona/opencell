@@ -24,7 +24,7 @@ integration_touchpoints:
       symbol: "KarrReplicationInitiationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_replication_initiation.py"
-        lines: "288-441"
+        lines: "288-288"
         note: "Main update path emits the request dict and reads from substrates_allocated[self.name]."
         symbol: "KarrReplicationInitiationProcess.next_update"
       supporting:
@@ -47,7 +47,7 @@ integration_touchpoints:
       symbol: "KarrReplicationInitiationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_replication_initiation.py"
-        lines: "288-441"
+        lines: "288-288"
         note: "Per-tick update path with allocated substrate reads and chromosome/protein writeback."
         symbol: "KarrReplicationInitiationProcess.next_update"
       supporting:

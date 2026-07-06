@@ -23,7 +23,7 @@ integration_touchpoints:
       symbol: "RequestCalculatorProteinPathway.next_update"
       source:
         path: "opencell/vivarium/karr_request_calculators.py"
-        lines: "365-549"
+        lines: "513-513"
         note: "Protein-pathway request calculator that emits the PP2 request slice."
         symbol: "RequestCalculatorProteinPathway.next_update"
       supporting:
@@ -49,7 +49,7 @@ integration_touchpoints:
       symbol: "KarrProteinProcessingIIProcess.next_update"
       source:
         path: "opencell/vivarium/karr_protein_processing_ii.py"
-        lines: "178-302"
+        lines: "178-178"
         note: "Reads allocated substrates, applies the same two-phase maturation, and returns sparse deltas."
         symbol: "KarrProteinProcessingIIProcess.next_update"
       supporting:

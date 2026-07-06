@@ -24,7 +24,7 @@ integration_touchpoints:
       symbol: "RequestCalculatorPTransloc.next_update"
       source:
         path: "opencell/vivarium/karr_request_calculators.py"
-        lines: "658-710"
+        lines: "710-710"
         note: "Current OC request calculator aggregates ATP/GTP/H2O demand from queued translocating proteins."
         symbol: "RequestCalculatorPTransloc.next_update"
       supporting:
@@ -48,7 +48,7 @@ integration_touchpoints:
       symbol: "KarrProteinTranslocationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_protein_translocation.py"
-        lines: "307-445"
+        lines: "307-307"
         note: "Current OC per-tick translocation update."
         symbol: "KarrProteinTranslocationProcess.next_update"
       supporting:

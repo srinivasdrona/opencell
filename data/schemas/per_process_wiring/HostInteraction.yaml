@@ -46,7 +46,7 @@ integration_touchpoints:
       symbol: "KarrHostInteractionProcess.next_update"
       source:
         path: "opencell/vivarium/karr_host_interaction.py"
-        lines: "255-300"
+        lines: "255-255"
         note: "Current OC per-tick update computes stochastic aggregate adhesion and host_attached/host_adhesion_strength."
         symbol: "KarrHostInteractionProcess.next_update"
       supporting:

@@ -29,7 +29,7 @@ integration_touchpoints:
       symbol: "RequestCalculatorPD.next_update"
       source:
         path: "opencell/vivarium/karr_request_calculators.py"
-        lines: "92-152"
+        lines: "122-122"
         note: "Current OC request path for ProteinDecay-light."
         symbol: "RequestCalculatorPD.next_update"
       supporting:
@@ -53,7 +53,7 @@ integration_touchpoints:
       symbol: "ProteinDecayLightProcess.next_update"
       source:
         path: "opencell/vivarium/karr_protein_decay_light.py"
-        lines: "502-591"
+        lines: "946-946"
         note: "Current OC per-tick update path."
         symbol: "ProteinDecayLightProcess.next_update"
       supporting:

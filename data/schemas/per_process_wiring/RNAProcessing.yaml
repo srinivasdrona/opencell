@@ -27,7 +27,7 @@ integration_touchpoints:
       symbol: "RequestCalculatorRNAPathway.next_update"
       source:
         path: "opencell/vivarium/karr_request_calculators.py"
-        lines: "286-351"
+        lines: "335-335"
         note: "Shared RNA-pathway request step for RNAProcessing and RNAModification."
         symbol: "RequestCalculatorRNAPathway.next_update"
       supporting:
@@ -54,7 +54,7 @@ integration_touchpoints:
       symbol: "KarrRNAProcessingProcess.next_update"
       source:
         path: "opencell/vivarium/karr_rna_processing.py"
-        lines: "236-284"
+        lines: "236-236"
         note: "Allocated-substrate read plus substrate/RNA writeback."
         symbol: "KarrRNAProcessingProcess.next_update"
       supporting:
