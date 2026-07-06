@@ -1,5 +1,5 @@
-schema_version: "1.0"
-schema_date: '2026-06-29'
+schema_version: "2.0"
+schema_date: '2026-07-07'
 process:
   name: "ReplicationInitiation"
   matlab_class: "ReplicationInitiation"
@@ -10,7 +10,7 @@ process:
   functional_area: "DNA-replication-and-maintenance"
   state_shape_role: "DnaA/OriC gate process; consumes shared ATP and water, updates chromosome-bound DnaA state."
   notes: "Fixture-backed port of the replication-initiation gate."
-methods:
+integration_touchpoints:
   calcResourceRequirements_Current:
     matlab:
       symbol: "calcResourceRequirements_Current"
@@ -18,6 +18,7 @@ methods:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
         lines: "495-503"
         note: "Allocator-facing resource demand: ATP for activation plus H2O for polymer hydrolysis."
+        symbol: "calcResourceRequirements_Current"
       note: "Per-tick resource request vector for the shared metabolite allocator."
     oc:
       symbol: "KarrReplicationInitiationProcess.next_update"
@@ -25,10 +26,12 @@ methods:
         path: "opencell/vivarium/karr_replication_initiation.py"
         lines: "288-441"
         note: "Main update path emits the request dict and reads from substrates_allocated[self.name]."
+        symbol: "KarrReplicationInitiationProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_replication_initiation.py"
           lines: "605-694"
           note: "Trace-hint replay branch emits the same request keys."
+          symbol: KarrReplicationInitiationProcess._next_update_from_trace_hint
       note: "No dedicated request-calculator module exists in the OC port."
     status: "partial"
     note: "Equivalent request semantics are embedded in next_update rather than a standalone calculator."
@@ -39,19 +42,23 @@ methods:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
         lines: "506-530"
         note: "Deterministic activation/inactivation, then stochastic binding/release and reactivation."
+        symbol: "evolveState"
     oc:
       symbol: "KarrReplicationInitiationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_replication_initiation.py"
         lines: "288-441"
         note: "Per-tick update path with allocated substrate reads and chromosome/protein writeback."
+        symbol: "KarrReplicationInitiationProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_replication_initiation.py"
           lines: "740-777"
           note: "ATP activation and water-limited hydrolysis deltas."
+          symbol: KarrReplicationInitiationProcess._activate_free_dnaa
         - path: "opencell/vivarium/karr_replication_initiation.py"
           lines: "779-938"
           note: "Polymerization, binding, release, and reactivation helpers."
+          symbol: KarrReplicationInitiationProcess._polymerize_dnaa_atp
       note: "Replay-friendly trace-hint handling keeps the wiring aligned with the MATLAB step order."
     status: "partial"
     note: "The MATLAB evolveState sequence is preserved, but the OC port is reorganized around next_update and trace hints."
@@ -62,6 +69,7 @@ methods:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
         lines: "1-1"
         note: "No calcFluxBounds method is defined in this process file. Class-level anchor used to record calcFluxBounds absence."
+        symbol: "ReplicationInitiation"
       note: "Schema-required placeholder for a process that does not expose LP-bound construction. This process does not have Karr's calcFluxBounds method; it does not participate in FBA."
     oc:
       symbol: "KarrReplicationInitiationProcess"
@@ -69,61 +77,10 @@ methods:
         path: "opencell/vivarium/karr_replication_initiation.py"
         lines: "61-956"
         note: "No LP-bound builder or flux-bound helper exists in this module. Representative OC anchor for non-implemented correspondence."
+        symbol: "KarrReplicationInitiationProcess"
       note: OC does not implement this Karr method.
     status: "not_implemented"
     note: "This process has no process-local flux-bound builder in either source tree. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
-  initializeState:
-    matlab:
-      symbol: "initializeState"
-      source:
-        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
-        lines: "365-391"
-        note: "Steady-state bootstrap entry point; delegates to the final-conditions initializer."
-    oc:
-      symbol: "KarrReplicationInitiationProcess.build_default_chromosome_state"
-      source:
-        path: "opencell/vivarium/karr_replication_initiation.py"
-        lines: "206-218"
-        note: "Fixture-backed bootstrap of the default chromosome state."
-      supporting:
-        - path: "opencell/vivarium/karr_replication_initiation.py"
-          lines: "82-198"
-          note: "Fixture load and process bootstrap."
-      note: "OC bootstraps the chromosome and fixture-derived counts but does not reproduce the MATLAB steady-state solve."
-    status: "partial"
-    note: "The OC port initializes a compatible default state, but not MATLAB's optimization-based steady-state initialization."
-  initializeStateBasedOnFinalConditions:
-    matlab:
-      symbol: "initializeStateBasedOnFinalConditions"
-      source:
-        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
-        lines: "393-424"
-        note: "Final-conditions steady-state construction and oriC seeding."
-    oc:
-      symbol: "KarrReplicationInitiationProcess"
-      source:
-        path: "opencell/vivarium/karr_replication_initiation.py"
-        lines: "61-956"
-        note: "No direct OC counterpart; initialization is handled by process bootstrap and fixture loading. Representative OC anchor for non-implemented correspondence."
-      note: OC does not implement this Karr method.
-    status: "not_implemented"
-    note: "The final-conditions steady-state solver is absent from the OC port. OC does not implement this Karr method."
-  initializeStateBasedOnTheory:
-    matlab:
-      symbol: "initializeStateBasedOnTheory"
-      source:
-        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
-        lines: "426-492"
-        note: "Alternative theory-based steady-state solve and rounding."
-    oc:
-      symbol: "KarrReplicationInitiationProcess"
-      source:
-        path: "opencell/vivarium/karr_replication_initiation.py"
-        lines: "61-956"
-        note: "No direct OC counterpart; no theory solve or cubic-root steady-state helper. Representative OC anchor for non-implemented correspondence."
-      note: OC does not implement this Karr method.
-    status: "not_implemented"
-    note: "The OC port does not implement the theory-based initialization path or its cubic-root helper. OC does not implement this Karr method."
 allocator:
   mode:
     karr: "allocation"
@@ -163,10 +120,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
       lines: "536-550"
       note: "activateFreeDnaA consumes ATP one-for-one with DnaA activation."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_replication_initiation.py"
       lines: "740-747"
       note: "Activation helper subtracts allocated ATP."
+      symbol: KarrReplicationInitiationProcess._activate_free_dnaa
+    kind: expression
   - wid: "ATP"
     compartment: "cytosol"
     formula_or_constant: "nReactivations = stochasticRound(min(this.substrates(this.substrateIndexs_atp), this.enzymes(this.enzymeIndexs_DnaAADP)) * this.reactivationRate); ATP consumed = nReactivations"
@@ -174,11 +134,14 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
       lines: "865-883"
       note: "reactivateFreeDnaAADP consumes ATP while regenerating free DnaA-ATP."
+      symbol: releaseDnaAAxP
     oc_anchor:
       path: "opencell/vivarium/karr_replication_initiation.py"
       lines: "923-938"
       note: "Reactivation helper updates protein pools only and does not emit ATP substrate decrement."
+      symbol: KarrReplicationInitiationProcess._reactivate_free_dnaa_adp
     note: "MATLAB decrements ATP in reactivation; OC does not. See known_deviations."
+    kind: expression
   - wid: "H2O"
     compartment: "cytosol"
     formula_or_constant: "MATLAB: nDissociatingMonomers = (2:7) * nDissociatingPolymers with water clipping; OC: hydrolysis events are sampled from free DnaA-ATP and then clipped to available H2O (non-equivalent formula family)."
@@ -186,11 +149,14 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
       lines: "560-581"
       note: "inactivateFreeDnaAATP hydrolyzes DnaA polymers and consumes water."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_replication_initiation.py"
       lines: "749-777"
       note: "Hydrolysis helper uses free-DnaA-ATP binomial dissociation with H2O clipping; this is not MATLAB's polymer-indexed formula."
+      symbol: KarrReplicationInitiationProcess._inactivate_free_dnaa_atp
     note: "MATLAB enforces polymer-indexed hydrolysis demand; OC uses free-pool event sampling instead (CODE_DEVIATES)."
+    kind: expression
 produce_stoichiometry:
   - wid: "ADP"
     compartment: "cytosol"
@@ -199,11 +165,14 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
       lines: "865-883"
       note: "reactivateFreeDnaAADP produces substrate ADP while consuming ATP."
+      symbol: releaseDnaAAxP
     oc_anchor:
       path: "opencell/vivarium/karr_replication_initiation.py"
       lines: "774-777"
       note: "Hydrolysis product written directly to substrates; OC reactivation helper does not emit substrate ADP."
+      symbol: KarrReplicationInitiationProcess._inactivate_free_dnaa_atp
     note: "MATLAB ADP production is reactivation-coupled; OC ADP production is hydrolysis-coupled. See known_deviations."
+    kind: expression
   - wid: "PI"
     compartment: "cytosol"
     formula_or_constant: "nDissociatingMonomers"
@@ -211,10 +180,13 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
       lines: "576-581"
       note: "Hydrolysis product from inactivateFreeDnaAATP."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_replication_initiation.py"
       lines: "774-777"
       note: "Hydrolysis product written directly to substrates."
+      symbol: KarrReplicationInitiationProcess._inactivate_free_dnaa_atp
+    kind: expression
   - wid: "H"
     compartment: "cytosol"
     formula_or_constant: "nDissociatingMonomers"
@@ -222,10 +194,18 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
       lines: "576-581"
       note: "Hydrolysis product from inactivateFreeDnaAATP."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_replication_initiation.py"
       lines: "774-777"
       note: "Hydrolysis product written directly to substrates."
+      symbol: KarrReplicationInitiationProcess._inactivate_free_dnaa_atp
+    kind: expression
+stoichiometry_oracle:
+  class: inline
+  record_path: data/karr_method_inventory/karr_stoichiometry/ReplicationInitiation.json
+  substrate_count: 5
+  note: Exhaustive per-tick substrate set lives in the HB1 oracle; this row's consume/produce arrays carry integration-relevant hand-curated entries.
 compartment_routing:
   - wid: "ATP"
     consume_compartment: "cytosol"
@@ -264,6 +244,7 @@ unit_conversion_chain:
         path: "opencell/vivarium/karr_replication_initiation.py"
         lines: "288-441"
         note: Process works directly in per-tick integer counts; no unit conversion needed.
+        symbol: KarrReplicationInitiationProcess.next_update
       note: Process works directly in per-tick integer counts; no unit conversion needed.
   note: "This process does not require unit conversion (per-tick integer counts throughout)."
 dependencies:
@@ -283,71 +264,88 @@ source_anchors:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
       lines: "1-133"
       note: "Process biology, representation, initialization, and simulation-order notes."
+      symbol: ReplicationInitiation
     initialize_state:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
       lines: "365-391"
       note: "Steady-state bootstrap entry point."
+      symbol: calcResourceRequirements_LifeCycle
     initialize_state_final_conditions:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
       lines: "393-424"
       note: "Final-conditions steady-state initialization."
+      symbol: calcResourceRequirements_LifeCycle
     initialize_state_theory:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
       lines: "426-492"
       note: "Theory-based steady-state solve and cubic-root helper."
+      symbol: calcResourceRequirements_LifeCycle
     resource_req:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
       lines: "495-503"
       note: "Allocator-facing resource request block."
+      symbol: calcResourceRequirements_Current
     evolve_state:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
       lines: "506-530"
       note: "Deterministic step order for activation, inactivation, binding, release, and reactivation."
+      symbol: calcResourceRequirements_Current
     activation_and_hydrolysis:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
       lines: "536-582"
       note: "ATP activation and polymer hydrolysis helpers."
+      symbol: calcResourceRequirements_Current
     binding_polymerization_release:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
       lines: "584-694"
       note: "Polymerization, binding, release, and trace-hint-aligned update logic."
+      symbol: bindAndPolymerizeDnaAATP
   oc_blocks:
     process_bootstrap:
       path: "opencell/vivarium/karr_replication_initiation.py"
       lines: "61-218"
       note: "Class definition, fixture load, and default chromosome bootstrap."
+      symbol: KarrReplicationInitiationProcess
     ports_schema:
       path: "opencell/vivarium/karr_replication_initiation.py"
       lines: "229-286"
       note: "Ports including requests and substrates_allocated."
+      symbol: KarrReplicationInitiationProcess.ports_schema
     next_update:
       path: "opencell/vivarium/karr_replication_initiation.py"
       lines: "288-441"
       note: "Main per-tick update path and request emission."
+      symbol: KarrReplicationInitiationProcess.next_update
     chromosome_helpers:
       path: "opencell/vivarium/karr_replication_initiation.py"
       lines: "443-594"
       note: "Chromosome-store resolution, hemimethylation checks, and complex encoding."
+      symbol: KarrReplicationInitiationProcess._resolve_chromosome_store
     trace_hint_update:
       path: "opencell/vivarium/karr_replication_initiation.py"
       lines: "605-694"
       note: "Replay-friendly trace-hint path and request emission."
+      symbol: KarrReplicationInitiationProcess._next_update_from_trace_hint
     substrate_activation_hydrolysis:
       path: "opencell/vivarium/karr_replication_initiation.py"
       lines: "740-777"
       note: "ATP activation and water-limited hydrolysis deltas."
+      symbol: KarrReplicationInitiationProcess._activate_free_dnaa
     binding_polymerization:
       path: "opencell/vivarium/karr_replication_initiation.py"
       lines: "779-883"
       note: "OriC polymerization and free-site binding."
+      symbol: KarrReplicationInitiationProcess._polymerize_dnaa_atp
     release_reactivation:
       path: "opencell/vivarium/karr_replication_initiation.py"
       lines: "885-938"
       note: "Release and membrane-regeneration helpers."
+      symbol: KarrReplicationInitiationProcess._release_dnaa_atp
     initiation_trigger:
       path: "opencell/vivarium/karr_replication_initiation.py"
       lines: "946-951"
       note: "Replication initiation predicate."
+      symbol: KarrReplicationInitiationProcess._check_initiation_trigger
 provenance:
   fixture_files:
     - "data/karr_fixtures/per_process/ReplicationInitiation_flat.mat"
@@ -378,10 +376,12 @@ deviations:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m"
       lines: "495-530"
       note: "No process-local LP-bound builder exists; this is the closest allocator-facing block."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_replication_initiation.py"
       lines: "288-441"
       note: "No LP-bound helper exists in the OC port; request/update logic lives directly in next_update."
+      symbol: KarrReplicationInitiationProcess.next_update
   shared_pool_projection_merges_compartments: false
   known_deviations:
     - "OC emits and consumes allocator state inside next_update instead of a dedicated request-calculator class."

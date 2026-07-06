@@ -1,5 +1,5 @@
-schema_version: "1.0"
-schema_date: '2026-06-29'
+schema_version: "2.0"
+schema_date: '2026-07-07'
 process:
   name: "RibosomeAssembly"
   matlab_class: "RibosomeAssembly"
@@ -10,66 +10,7 @@ process:
   functional_area: "protein-synthesis-and-maturation"
   state_shape_role: "cytosolic two-particle ribosome assembly row"
   notes: "Assembles the 30S and 50S ribosomal particles from rRNA and ribosomal protein subunits, with GTP/H2O request and GDP/PI/H byproducts."
-methods:
-  initializeConstants:
-    matlab:
-      symbol: "initializeConstants"
-      source:
-        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
-        lines: "155-194"
-        note: "Loads cytosolic RNA/monomer composition and catalytic GTPase assignments."
-      note: "MATLAB keeps constant loading in a dedicated initialization callback."
-    oc:
-      symbol: "KarrRibosomeAssemblyProcess._load_fixture"
-      source:
-        path: "opencell/vivarium/karr_ribosome_assembly.py"
-        lines: "115-147"
-        note: "Loads the flattened RibosomeAssembly fixture and extracts WIDs plus stoichiometry."
-      supporting:
-        - path: "opencell/vivarium/karr_ribosome_assembly.py"
-          lines: "85-88"
-          note: "Constructor wires fixture loading into object construction."
-      note: "OC folds constant loading into fixture ingestion instead of a MATLAB-style callback."
-    status: "implemented"
-    note: "The constant-loading semantics are present in OC, but construction-time rather than callback-based."
-  initializeState:
-    matlab:
-      symbol: "initializeState"
-      source:
-        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
-        lines: "264-274"
-        note: "Seeds maximal formed particles from the initialized RNA and monomer pools."
-      note: "MATLAB performs a runtime initialization push into formed ribosomal complexes."
-    oc:
-      symbol: "KarrRibosomeAssemblyProcess"
-      source:
-        path: "opencell/vivarium/karr_ribosome_assembly.py"
-        lines: "75-383"
-        note: "OC has no separate runtime initializeState method; fixture loading happens during construction. Representative OC anchor for non-implemented correspondence."
-      note: "Initialization is collapsed into construction-time fixture loading in OC. OC does not implement this Karr method."
-    status: "not_implemented"
-    note: "The OC port relies on fixture contents for initialized state, so there is no dedicated runtime initializeState method. OC does not implement this Karr method."
-  calcResourceRequirements_LifeCycle:
-    matlab:
-      symbol: "calcResourceRequirements_LifeCycle"
-      source:
-        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
-        lines: "231-255"
-        note: "Lifecycle biomass-production and enzyme-expression demand block."
-      note: "MATLAB-only lifecycle demand helper; not part of the per-tick assembly loop."
-    oc:
-      symbol: "KarrRibosomeAssemblyProcess"
-      source:
-        path: "opencell/vivarium/karr_ribosome_assembly.py"
-        lines: "75-383"
-        note: "No dedicated OC lifecycle resource-requirements method exists for this process. Representative OC anchor for non-implemented correspondence."
-      supporting:
-        - path: "opencell/vivarium/karr_request_calculators.py"
-          lines: "163-226"
-          note: "Current OC demand is split into RequestCalculatorRibAsm.next_update."
-      note: "OC has no direct lifecycle analogue for the allocator-facing biomass/expression request block. OC does not implement this Karr method."
-    status: "not_implemented"
-    note: "Lifecycle resource demand is present in MATLAB but not exposed as a separate OC method. OC does not implement this Karr method."
+integration_touchpoints:
   calcResourceRequirements_Current:
     matlab:
       symbol: "calcResourceRequirements_Current"
@@ -77,6 +18,7 @@ methods:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
         lines: "277-298"
         note: "Allocator-facing request block for GTP and water."
+        symbol: "calcResourceRequirements_Current"
       note: "The MATLAB request block is explicit in the process class and feeds the global allocator pass."
     oc:
       symbol: "RequestCalculatorRibAsm.next_update"
@@ -84,10 +26,12 @@ methods:
         path: "opencell/vivarium/karr_request_calculators.py"
         lines: "163-226"
         note: "Dedicated request step that computes GTP/H2O demand from the current subunit state."
+        symbol: "RequestCalculatorRibAsm.next_update"
       supporting:
         - path: "opencell/vivarium/karr_ribosome_assembly.py"
           lines: "273-287"
           note: "Formable-particle estimator used by the request step."
+          symbol: KarrRibosomeAssemblyProcess.estimate_formable_without_substrates
       note: "OC keeps the same allocator-facing request semantics but routes them through a separate request-calculator step; the estimator reads current RNA, monomer, and enzyme state, then multiplies formable particles by per-particle GTPase counts."
     status: "implemented"
     note: "The request path is allocation-backed on both sides; OC splits the calculation out of the process class and uses per-particle hydrolysis counts in the request calculator."
@@ -98,6 +42,7 @@ methods:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
         lines: "301-340"
         note: "Randomized two-particle greedy assembly loop with immediate state writeback."
+        symbol: "evolveState"
       note: "Helper `getGtpPerComplex` is part of the same behavior."
     oc:
       symbol: "KarrRibosomeAssemblyProcess.next_update"
@@ -105,13 +50,16 @@ methods:
         path: "opencell/vivarium/karr_ribosome_assembly.py"
         lines: "334-383"
         note: "Current per-tick update path."
+        symbol: "KarrRibosomeAssemblyProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_ribosome_assembly.py"
           lines: "239-271"
           note: "Binary enzyme gate and per-particle resource limits."
+          symbol: KarrRibosomeAssemblyProcess._particle_resource_limits
         - path: "opencell/vivarium/karr_ribosome_assembly.py"
           lines: "289-332"
           note: "Delta builder for substrates, RNA, protein, and complexes."
+          symbol: KarrRibosomeAssemblyProcess._build_update
       note: "OC preserves the randomized order and sequential depletion behavior, and its catalytic-enzyme gate matches the MATLAB presence check."
     status: "implemented"
     note: "The current OC process reads `substrates_allocated` and matches the MATLAB per-particle update shape except for the early-return divergence captured below."
@@ -122,6 +70,7 @@ methods:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
         lines: "73-370"
         note: "No process-local flux-bounds method appears in the class body. Class-level anchor used to record calcFluxBounds absence."
+        symbol: "RibosomeAssembly"
       note: "RibosomeAssembly does not define a flux-bounds method in the source we read. This process does not have Karr's calcFluxBounds method; it does not participate in FBA."
     oc:
       symbol: "KarrRibosomeAssemblyProcess"
@@ -129,6 +78,7 @@ methods:
         path: "opencell/vivarium/karr_ribosome_assembly.py"
         lines: "75-383"
         note: "No OC flux-bounds analogue exists for this process. Representative OC anchor for non-implemented correspondence."
+        symbol: "KarrRibosomeAssemblyProcess"
       note: "There is no current OC flux-bounds implementation to bind. OC does not implement this Karr method."
     status: "not_implemented"
     note: "This slot is present because the schema requires it, not because RibosomeAssembly is a flux-bounds process. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
@@ -179,10 +129,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-338"
       note: "GTP is consumed together with the other hydrolysis substrates."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "363-372"
       note: "Local allocation is decremented in-step before the next particle is considered."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "H2O"
     compartment: "cytosol"
     formula_or_constant: "-n_form * n_gtpases_per_particle[particle]"
@@ -190,10 +143,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-338"
       note: "Water is consumed in lockstep with GTP."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "363-372"
       note: "Water allocation is decremented in the same local loop."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MGrrnA16S"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexRNAComposition[ridx, particle]"
@@ -201,10 +157,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "RNA subunit subtraction for the 30S path."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "374-381"
       note: "RNA pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MGrrnA23S"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexRNAComposition[ridx, particle]"
@@ -212,10 +171,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "RNA subunit subtraction for the 50S path."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "374-381"
       note: "RNA pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MGrrnA5S"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexRNAComposition[ridx, particle]"
@@ -223,10 +185,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "RNA subunit subtraction for ribosome assembly."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "374-381"
       note: "RNA pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_473_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -234,10 +199,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_070_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -245,10 +213,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_081_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -256,10 +227,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_082_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -267,10 +241,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_087_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -278,10 +255,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_088_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -289,10 +269,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_090_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -300,10 +283,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_092_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -311,10 +297,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_093_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -322,10 +311,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_150_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -333,10 +325,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_151_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -344,10 +339,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_152_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -355,10 +353,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_153_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -366,10 +367,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_154_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -377,10 +381,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_155_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -388,10 +395,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_156_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -399,10 +409,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_157_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -410,10 +423,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_158_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -421,10 +437,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_159_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -432,10 +451,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_160_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -443,10 +465,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_161_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -454,10 +479,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_162_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -465,10 +493,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_163_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -476,10 +507,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_164_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -487,10 +521,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_165_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -498,10 +535,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_166_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -509,10 +549,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_167_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -520,10 +563,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_168_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -531,10 +577,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_169_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -542,10 +591,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_174_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -553,10 +605,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_175_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -564,10 +619,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_176_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -575,10 +633,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_178_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -586,10 +647,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_197_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -597,10 +661,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_198_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -608,10 +675,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_481_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -619,10 +689,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_232_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -630,10 +703,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_234_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -641,10 +717,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_257_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -652,10 +731,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_311_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -663,10 +745,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_325_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -674,10 +759,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_361_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -685,10 +773,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_362_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -696,10 +787,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_363_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -707,10 +801,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_522_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -718,10 +815,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_417_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -729,10 +829,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_418_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -740,10 +843,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_424_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -751,10 +857,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_426_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -762,10 +871,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_444_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -773,10 +885,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_446_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -784,10 +899,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "MG_466_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "-n_form * proteinComplexMonomerComposition[midx, particle]"
@@ -795,10 +913,13 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "323-336"
       note: "Ribosomal protein subtraction from the monomer pool."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "378-381"
       note: "Protein pool is decremented in-place after a successful particle formation."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
 produce_stoichiometry:
   - wid: "GDP"
     compartment: "cytosol"
@@ -807,10 +928,13 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "338-338"
       note: "GDP is produced by the hydrolysis update."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "313-318"
       note: "Hydrolysis products are emitted together from the update builder."
+      symbol: KarrRibosomeAssemblyProcess._build_update
+    kind: expression
   - wid: "PI"
     compartment: "cytosol"
     formula_or_constant: "+n_form * n_gtpases_per_particle[particle]"
@@ -818,10 +942,13 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "338-338"
       note: "Inorganic phosphate is produced by the hydrolysis update."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "313-318"
       note: "Hydrolysis products are emitted together from the update builder."
+      symbol: KarrRibosomeAssemblyProcess._build_update
+    kind: expression
   - wid: "H"
     compartment: "cytosol"
     formula_or_constant: "+n_form * n_gtpases_per_particle[particle]"
@@ -829,10 +956,13 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "338-338"
       note: "Proton is produced by the hydrolysis update."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "313-318"
       note: "Hydrolysis products are emitted together from the update builder."
+      symbol: KarrRibosomeAssemblyProcess._build_update
+    kind: expression
   - wid: "RIBOSOME_30S"
     compartment: "cytosol"
     formula_or_constant: "+n_form"
@@ -840,10 +970,13 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "333-333"
       note: "Particle count increment for the 30S complex."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "370-383"
       note: "Positive complex delta is emitted from the accumulated update."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
   - wid: "RIBOSOME_50S"
     compartment: "cytosol"
     formula_or_constant: "+n_form"
@@ -851,10 +984,18 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "333-333"
       note: "Particle count increment for the 50S complex."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "370-383"
       note: "Positive complex delta is emitted from the accumulated update."
+      symbol: KarrRibosomeAssemblyProcess.next_update
+    kind: expression
+stoichiometry_oracle:
+  class: inline
+  record_path: data/karr_method_inventory/karr_stoichiometry/RibosomeAssembly.json
+  substrate_count: 5
+  note: Exhaustive per-tick substrate set lives in the HB1 oracle; this row's consume/produce arrays carry integration-relevant hand-curated entries.
 compartment_routing:
   - wid: "GTP"
     consume_compartment: "cytosol"
@@ -918,6 +1059,7 @@ unit_conversion_chain:
         path: "opencell/vivarium/karr_ribosome_assembly.py"
         lines: "334-383"
         note: Process works directly in per-tick integer counts; no unit conversion needed.
+        symbol: KarrRibosomeAssemblyProcess.next_update
       note: Process works directly in per-tick integer counts; no unit conversion needed.
   note: "This process does not require unit conversion (per-tick integer counts throughout)."
 dependencies:
@@ -943,63 +1085,78 @@ source_anchors:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "1-154"
       note: "Header docstring, state names, substrate/enzyme IDs, and fixed constants."
+      symbol: RibosomeAssembly
     initialize_constants:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "155-194"
       note: "Loads cytosolic RNA/monomer composition and the six GTPase assignments."
+      symbol: RibosomeAssembly
     initialize_state:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "264-274"
       note: "Seeds maximal formed particles from the initialized RNA and monomer pools."
+      symbol: calcResourceRequirements_LifeCycle
     calc_resource_requirements_lifecycle:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "231-255"
       note: "Lifecycle biomass-production and enzyme-expression demand block."
+      symbol: calcResourceRequirements_LifeCycle
     calc_resource_requirements_current:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "277-298"
       note: "Allocator-facing GTP/H2O request block."
+      symbol: calcResourceRequirements_Current
     evolve_state:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "301-340"
       note: "Randomized two-particle greedy update loop."
+      symbol: calcResourceRequirements_Current
     get_gtp_per_complex:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "366-367"
       note: "Helper that counts required GTPases per particle."
+      symbol: getGtpPerComplex
     simulation_order_constraint:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m"
       lines: "48-56"
       note: "Global hard order: tRNAAminoacylation must precede Translation."
+      symbol: evolveState
   oc_blocks:
     process_init_and_fixture:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "75-147"
       note: "Process class, default fixture path, and fixture loading."
+      symbol: KarrRibosomeAssemblyProcess
     ports_schema:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "149-217"
       note: "Substrate, RNA, protein, complex, requests, and allocated-substrate ports."
+      symbol: KarrRibosomeAssemblyProcess.ports_schema
     particle_resource_limits:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "239-271"
       note: "Binary catalytic-enzyme gate and RNA/monomer limits."
+      symbol: KarrRibosomeAssemblyProcess._particle_resource_limits
     estimate_formable:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "273-287"
       note: "Formable-particle estimator used by the request step."
+      symbol: KarrRibosomeAssemblyProcess.estimate_formable_without_substrates
     build_update:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "289-332"
       note: "Aggregates RNA, protein, substrate, and complex deltas."
+      symbol: KarrRibosomeAssemblyProcess._build_update
     next_update:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "334-383"
       note: "Current per-tick update path."
+      symbol: KarrRibosomeAssemblyProcess.next_update
     request_calculator:
       path: "opencell/vivarium/karr_request_calculators.py"
       lines: "163-226"
       note: "Dedicated GTP/H2O request calculator step."
+      symbol: RequestCalculatorRibAsm
 provenance:
   fixture_files:
     - "data/karr_fixtures/per_process/RibosomeAssembly_flat.mat"
@@ -1030,10 +1187,12 @@ deviations:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m"
       lines: "277-298"
       note: "Closest allocator-facing analogue in a process that does not define flux bounds."
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_ribosome_assembly.py"
       lines: "163-226"
       note: "Closest OC analogue is the dedicated request calculator, not a process-local flux-bounds method."
+      symbol: KarrRibosomeAssemblyProcess.ports_schema
   shared_pool_projection_merges_compartments: false
   known_deviations:
     - "OC splits request generation into RequestCalculatorRibAsm while MATLAB keeps the allocator request on the process class."

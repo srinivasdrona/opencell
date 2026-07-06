@@ -1,5 +1,5 @@
-schema_version: "1.0"
-schema_date: '2026-06-29'
+schema_version: "2.0"
+schema_date: '2026-07-07'
 process:
   name: "TranscriptionalRegulation"
   matlab_class: "TranscriptionalRegulation"
@@ -12,7 +12,7 @@ process:
   notes: >-
     Row anchors use the checked-in MATLAB and OC sources for executable
     TranscriptionalRegulation semantics.
-methods:
+integration_touchpoints:
   calcResourceRequirements_Current:
     matlab:
       symbol: "calcResourceRequirements_Current"
@@ -20,12 +20,14 @@ methods:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TranscriptionalRegulation.m"
         lines: "334-336"
         note: "MATLAB exposes the request hook and returns a zero vector over this.substrates."
+        symbol: "calcResourceRequirements_Current"
     oc:
       symbol: "KarrTranscriptionalRegulationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_transcriptional_regulation.py"
         lines: "350-463"
         note: "Current OC runtime reads TF abundance directly and emits TF binding / fold-change updates; there is no request-calculator path."
+        symbol: "KarrTranscriptionalRegulationProcess.next_update"
     status: "not_implemented"
     note: "MATLAB exposes calcResourceRequirements_Current with a zero-request vector; OC does not implement a corresponding request-calculator/substrates_allocated path for this process."
   evolveState:
@@ -35,12 +37,14 @@ methods:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TranscriptionalRegulation.m"
         lines: "339-400"
         note: "Per-tick TF binding and fold-change update; includes accessibility gating via chromosome.isRegionPolymerized."
+        symbol: "evolveState"
     oc:
       symbol: "KarrTranscriptionalRegulationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_transcriptional_regulation.py"
         lines: "350-463"
         note: "Per-tick TF copy read, weighted binding, fold-change product, and trace-hint writeback."
+        symbol: "KarrTranscriptionalRegulationProcess.next_update"
     status: "implemented"
     note: "OC implements the per-tick regulatory sweep in next_update rather than a MATLAB-named evolveState method; MATLAB gates candidate binding sites by chromosome accessibility (isRegionPolymerized) but OC currently has no chromosome accessibility gate. See known_deviations."
   calcFluxBounds:
@@ -50,6 +54,7 @@ methods:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TranscriptionalRegulation.m"
         lines: "110-110"
         note: "No flux-bound or LP-bound logic is described for this process. Class-level anchor used to record calcFluxBounds absence."
+        symbol: "TranscriptionalRegulation"
       note: This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
     oc:
       symbol: "KarrTranscriptionalRegulationProcess"
@@ -57,6 +62,7 @@ methods:
         path: "opencell/vivarium/karr_transcriptional_regulation.py"
         lines: "234-463"
         note: "No flux-bound helper exists for the current regulatory-only implementation. Representative OC anchor for non-implemented correspondence."
+        symbol: "KarrTranscriptionalRegulationProcess"
       note: OC does not implement this Karr method.
     status: "not_implemented"
     note: "This process does not expose a flux-bound surface in either the extract or the OC port. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
@@ -93,6 +99,11 @@ allocator:
       note: "Read directly from complex.counts; TF abundance input."
 consume_stoichiometry: []
 produce_stoichiometry: []
+stoichiometry_oracle:
+  class: none
+  record_path: data/karr_method_inventory/karr_stoichiometry/TranscriptionalRegulation.json
+  substrate_count: 0
+  note: Exhaustive per-tick substrate set lives in the HB1 oracle; this row's consume/produce arrays carry integration-relevant hand-curated entries.
 compartment_routing:
   - wid: "MG_101_MONOMER"
     consume_compartment: "cytosol"
@@ -131,6 +142,7 @@ unit_conversion_chain:
         path: "opencell/vivarium/karr_transcriptional_regulation.py"
         lines: "350-463"
         note: Process works directly in per-tick integer counts; no unit conversion needed.
+        symbol: KarrTranscriptionalRegulationProcess.next_update
       note: Process works directly in per-tick integer counts; no unit conversion needed.
   note: This process does not require unit conversion (per-tick integer counts throughout).
 dependencies:
@@ -151,39 +163,48 @@ source_anchors:
       path: "docs/karr_extracts/process/10_TranscriptionalRegulation.md"
       lines: "1-123"
       note: "Checked-in extract for the canonical MATLAB source file and docstring summary."
+      symbol: Karr Process - TranscriptionalRegulation
     allocation_surface:
       path: "docs/karr_extracts/architecture/03_variable_allocation.md"
       lines: "7-29"
       note: "Global allocator block showing how calcResourceRequirements_Current is used when present."
+      symbol: Verbatim extract - allocation block
     simulation_ordering:
       path: "docs/karr_extracts/architecture/01_simulation_loop.md"
       lines: "148-180"
       note: "Per-tick process loop and the only hard ordering constraint in the simulation harness."
+      symbol: Verbatim extract - `evolveState.m` per-tick algorithm
     regulatory_summary:
       path: "docs/design/pb_turn3_transcriptional_regulation.md"
       lines: "7-32"
       note: "Turn-3 design summary of TF abundance reads and tx_rate_fold_change writes."
+      symbol: Why this is Phase B Turn 3
   oc_blocks:
     process_class:
       path: "opencell/vivarium/karr_transcriptional_regulation.py"
       lines: "234-318"
       note: "Process definition, defaults, and port schema."
+      symbol: KarrTranscriptionalRegulationProcess
     tf_read_and_binding:
       path: "opencell/vivarium/karr_transcriptional_regulation.py"
       lines: "320-387"
       note: "Protein/complex read path and TF-promoter binding sweep."
+      symbol: KarrTranscriptionalRegulationProcess._read_tf_counts
     fold_change_and_hints:
       path: "opencell/vivarium/karr_transcriptional_regulation.py"
       lines: "391-463"
       note: "Fold-change product, update emission, and trace-hint writeback."
+      symbol: KarrTranscriptionalRegulationProcess.next_update
     composite_topology:
       path: "opencell/vivarium/karr_composite.py"
       lines: "1342-1346"
       note: "Top-level wiring for protein, complex, tf_binding, and tx_rate_fold_change ports."
+      symbol: build_karr_chassis_v4
     chassis_seeding:
       path: "opencell/vivarium/karr_composite.py"
       lines: "1035-1045"
       note: "Complex TF seeding for the chassis builder."
+      symbol: build_karr_chassis_v4
 provenance:
   fixture_files:
     - "data/karr_fixtures/per_process/TranscriptionalRegulation_flat.mat"
@@ -214,10 +235,12 @@ deviations:
       path: "docs/karr_extracts/process/10_TranscriptionalRegulation.md"
       lines: "79-106"
       note: "No LP or flux-bound logic is described for this regulatory-only process."
+      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_transcriptional_regulation.py"
       lines: "281-463"
       note: "No flux-bound helper exists in the OC port."
+      symbol: KarrTranscriptionalRegulationProcess.ports_schema
   shared_pool_projection_merges_compartments: true
   known_deviations:
     - "OC does not implement a request-calculator surface for this process; it reads protein.counts / complex.counts directly."

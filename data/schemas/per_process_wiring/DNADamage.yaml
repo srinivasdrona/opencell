@@ -1,5 +1,5 @@
-schema_version: "1.0"
-schema_date: '2026-06-29'
+schema_version: "2.0"
+schema_date: '2026-07-07'
 process:
   name: "DNADamage"
   matlab_class: "DNADamage"
@@ -10,7 +10,7 @@ process:
   functional_area: "dna-replication-and-maintenance"
   state_shape_role: "chromosome-primary stochastic damage writer with flat substrate surface"
   notes: "The canonical MATLAB source file is not present in this checkout; the local verbatim extract doc is the only source-backed proxy available here."
-methods:
+integration_touchpoints:
   calcResourceRequirements_Current:
     matlab:
       symbol: "calcResourceRequirements_Current"
@@ -18,6 +18,7 @@ methods:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNADamage.m"
         lines: "469-471"
         note: "MATLAB implements calcResourceRequirements_Current as max(0, -reactionSmallMoleculeStoichiometryMatrix * calcExpectedReactionRates())."
+        symbol: "calcResourceRequirements_Current"
       note: "MATLAB computes allocator request demand from expected reaction rates (including radiation-gated rates via calcExpectedReactionRates)."
     oc:
       symbol: "KarrDNADamageProcess"
@@ -25,6 +26,7 @@ methods:
         path: "opencell/vivarium/karr_dna_damage.py"
         lines: "111-483"
         note: "Current OC port exposes only chromosome damage state plus direct `substrates` reads; there is no request-calculator or `substrates_allocated` path. Representative OC anchor for non-implemented correspondence."
+        symbol: "KarrDNADamageProcess"
       note: OC does not implement this Karr method.
     status: "not_implemented"
     note: "MATLAB implements allocator request demand in calcResourceRequirements_Current; current OC bypasses allocator mediation and does not implement this Karr method."
@@ -35,6 +37,7 @@ methods:
         path: "docs/karr_extracts/process/04_DNADamage.md"
         lines: "168-179"
         note: "Simulation steps: compute vulnerability, select damage, mark chromosome damage state, then adjust free metabolites."
+        symbol: "evolveState"
       note: "This is the damage-creation / state-writeback loop described in the extract."
     oc:
       symbol: "KarrDNADamageProcess.next_update"
@@ -42,13 +45,16 @@ methods:
         path: "opencell/vivarium/karr_dna_damage.py"
         lines: "228-294"
         note: "Current OC per-tick update: Poisson lesion sampling, chromosome damage writeback, and replication-stall flagging."
+        symbol: "KarrDNADamageProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_dna_damage.py"
           lines: "243-253"
           note: "Direct radiation-gated substrate reads from `states[\"substrates\"]`."
+          symbol: KarrDNADamageProcess.ports_schema
         - path: "opencell/vivarium/karr_dna_damage.py"
           lines: "267-292"
           note: "Chromosome update construction and stall flag emission."
+          symbol: KarrDNADamageProcess.ports_schema
       note: "The OC port intentionally stops at lesion creation and advisory stall signaling."
     status: "partial"
     note: "Repair chemistry and full reaction stoichiometry are deferred in the current OC port."
@@ -59,6 +65,7 @@ methods:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNADamage.m"
         lines: "146-179"
         note: "The available extract describes reaction matrices and simulation behavior, but does not surface a flux-bound method for DNADamage. Class-level anchor used to record calcFluxBounds absence."
+        symbol: "DNADamage"
       note: "No LP/flux-bound contract is visible in the local extract. This process does not have Karr's calcFluxBounds method; it does not participate in FBA."
     oc:
       symbol: "KarrDNADamageProcess"
@@ -66,6 +73,7 @@ methods:
         path: "opencell/vivarium/karr_dna_damage.py"
         lines: "111-483"
         note: "Module has no flux-bound helper or LP-bound wiring. Representative OC anchor for non-implemented correspondence."
+        symbol: "KarrDNADamageProcess"
       note: OC does not implement this Karr method.
     status: "not_implemented"
     note: "DNADamage does not expose a flux-bound path in the current port. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
@@ -108,10 +116,13 @@ consume_stoichiometry:
       path: "docs/karr_extracts/process/04_DNADamage.md"
       lines: "146-178"
       note: "Free-metabolite stoichiometry matrix described by the extract; water is repeatedly consumed in the listed damage chemistries."
+      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_dna_damage.py"
       lines: "228-294"
       note: "Current OC does not emit metabolite stoichiometry writeback."
+      symbol: KarrDNADamageProcess.ports_schema
+    kind: expression
   - wid: "H2O"
     compartment: "cytosol"
     formula_or_constant: "-2 per thymine-glycol / cytosine-glycol oxidation event"
@@ -119,10 +130,13 @@ consume_stoichiometry:
       path: "docs/karr_extracts/process/04_DNADamage.md"
       lines: "146-178"
       note: "Several oxidation reactions in the extract consume two waters."
+      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_dna_damage.py"
       lines: "228-294"
       note: "Current OC does not emit metabolite stoichiometry writeback."
+      symbol: KarrDNADamageProcess.ports_schema
+    kind: expression
   - wid: "H2O"
     compartment: "cytosol"
     formula_or_constant: "-1 per abasic-site / strand-break reaction event"
@@ -130,10 +144,13 @@ consume_stoichiometry:
       path: "docs/karr_extracts/process/04_DNADamage.md"
       lines: "146-178"
       note: "Abasic-site and strand-break chemistries also consume water."
+      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_dna_damage.py"
       lines: "228-294"
       note: "Current OC does not emit metabolite stoichiometry writeback."
+      symbol: KarrDNADamageProcess.ports_schema
+    kind: per_reaction
 produce_stoichiometry:
   - wid: "AD"
     compartment: "cytosol"
@@ -142,10 +159,13 @@ produce_stoichiometry:
       path: "docs/karr_extracts/process/04_DNADamage.md"
       lines: "170-178"
       note: "Adenine is one of the explicit base-damage outcomes in the extract."
+      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_dna_damage.py"
       lines: "228-294"
       note: "Current OC does not emit substrate stoichiometry deltas."
+      symbol: KarrDNADamageProcess.ports_schema
+    kind: expression
   - wid: "CSN"
     compartment: "cytosol"
     formula_or_constant: "+1 per cytosine-damage product event"
@@ -153,10 +173,13 @@ produce_stoichiometry:
       path: "docs/karr_extracts/process/04_DNADamage.md"
       lines: "170-178"
       note: "Cytosine damage outcomes are part of the reaction table."
+      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_dna_damage.py"
       lines: "228-294"
       note: "Current OC does not emit substrate stoichiometry deltas."
+      symbol: KarrDNADamageProcess.ports_schema
+    kind: expression
   - wid: "GN"
     compartment: "cytosol"
     formula_or_constant: "+1 per guanine-damage product event"
@@ -164,10 +187,13 @@ produce_stoichiometry:
       path: "docs/karr_extracts/process/04_DNADamage.md"
       lines: "170-178"
       note: "Guanine damage outcomes are part of the reaction table."
+      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_dna_damage.py"
       lines: "228-294"
       note: "Current OC does not emit substrate stoichiometry deltas."
+      symbol: KarrDNADamageProcess.ports_schema
+    kind: expression
   - wid: "THY"
     compartment: "cytosol"
     formula_or_constant: "+1 per thymine-release / thymine-damage product event"
@@ -175,10 +201,13 @@ produce_stoichiometry:
       path: "docs/karr_extracts/process/04_DNADamage.md"
       lines: "170-178"
       note: "Thymine damage outcomes and base-loss reactions are described in the extract."
+      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_dna_damage.py"
       lines: "228-294"
       note: "Current OC does not emit substrate stoichiometry deltas."
+      symbol: KarrDNADamageProcess.ports_schema
+    kind: expression
   - wid: "CO2"
     compartment: "cytosol"
     formula_or_constant: "+1 per oxidative-damage product event"
@@ -186,10 +215,13 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNADamage.m"
       lines: "454-455"
       note: "CO2 is in the positive branch of reactionSmallMoleculeStoichiometryMatrix products."
+      symbol: calcResourceRequirements_LifeCycle
     oc_anchor:
       path: "opencell/vivarium/karr_dna_damage.py"
       lines: "228-294"
       note: "Current OC does not emit substrate stoichiometry deltas."
+      symbol: KarrDNADamageProcess.ports_schema
+    kind: expression
   - wid: "H"
     compartment: "cytosol"
     formula_or_constant: "+1 per oxidation/strand-break product event"
@@ -197,10 +229,13 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNADamage.m"
       lines: "454-455"
       note: "H is in the positive branch of reactionSmallMoleculeStoichiometryMatrix products."
+      symbol: calcResourceRequirements_LifeCycle
     oc_anchor:
       path: "opencell/vivarium/karr_dna_damage.py"
       lines: "228-294"
       note: "Current OC does not emit substrate stoichiometry deltas."
+      symbol: KarrDNADamageProcess.ports_schema
+    kind: expression
   - wid: "NH3"
     compartment: "cytosol"
     formula_or_constant: "+1 per spontaneous deamination product event"
@@ -208,10 +243,18 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNADamage.m"
       lines: "454-455"
       note: "NH3 is in the positive branch of reactionSmallMoleculeStoichiometryMatrix products."
+      symbol: calcResourceRequirements_LifeCycle
     oc_anchor:
       path: "opencell/vivarium/karr_dna_damage.py"
       lines: "228-294"
       note: "Current OC does not emit substrate stoichiometry deltas."
+      symbol: KarrDNADamageProcess.ports_schema
+    kind: expression
+stoichiometry_oracle:
+  class: matrix
+  record_path: data/karr_method_inventory/karr_stoichiometry/DNADamage.json
+  substrate_count: 8
+  note: Exhaustive per-tick substrate set lives in the HB1 oracle; this row's consume/produce arrays carry integration-relevant hand-curated entries.
 compartment_routing:
   - wid: "UVB_radiation"
     consume_compartment: "extracellular"
@@ -285,6 +328,7 @@ unit_conversion_chain:
         path: "opencell/vivarium/karr_dna_damage.py"
         lines: "228-259"
         note: "Current OC computes `lam = rate_per_s * dt` before Poisson sampling."
+        symbol: KarrDNADamageProcess.ports_schema
   note: "The DNADamage rate table is already in per-second units; process-local OC code converts to per-tick event counts by multiplying with tick duration and sampling Poisson events, but the current karr_composite topology maps DNADamage only to chromosome."
 dependencies:
   produces_inputs_for: []
@@ -303,39 +347,48 @@ source_anchors:
       path: "docs/karr_extracts/process/04_DNADamage.md"
       lines: "14-63"
       note: "Verbatim extract of the DNA-damage biology summary and chromosome-state motivation."
+      symbol: Verbatim docstring extract
     knowledge_base_and_rates:
       path: "docs/karr_extracts/process/04_DNADamage.md"
       lines: "65-120"
       note: "Reactions/rates table for the major DNADamage chemistries."
+      symbol: Verbatim docstring extract
     representation_and_simulation:
       path: "docs/karr_extracts/process/04_DNADamage.md"
       lines: "122-179"
       note: "Representation block plus the 4-step simulation sketch."
+      symbol: Verbatim docstring extract
   oc_blocks:
     module_header:
       path: "opencell/vivarium/karr_dna_damage.py"
       lines: "1-10"
       note: "Current OC port scope statement: stochastic lesion creation and advisory replication stall signaling."
+      symbol: <module>
     class_init_and_fixture_loading:
       path: "opencell/vivarium/karr_dna_damage.py"
       lines: "111-177"
       note: "Class defaults, fixture loading, and substrate/enzyme observables."
+      symbol: KarrDNADamageProcess
     ports_schema:
       path: "opencell/vivarium/karr_dna_damage.py"
       lines: "179-226"
       note: "Current OC state surface: chromosome plus flat substrates/enzymes/boundEnzymes."
+      symbol: KarrDNADamageProcess._load_schema_observables
     next_update:
       path: "opencell/vivarium/karr_dna_damage.py"
       lines: "228-294"
       note: "Per-tick damage creation, direct substrate gating, and chromosome writeback."
+      symbol: KarrDNADamageProcess.ports_schema
     sequence_length_loader:
       path: "opencell/vivarium/karr_dna_damage.py"
       lines: "432-449"
       note: "Sequence length inferred from the fixture when present."
+      symbol: KarrDNADamageProcess.calcNumberVulnerableSites
     trace_rate_loader:
       path: "opencell/vivarium/karr_dna_damage.py"
       lines: "451-483"
       note: "Optional trace-derived per-kind rate calibration."
+      symbol: KarrDNADamageProcess.calcNumberVulnerableSites
 provenance:
   fixture_files:
     - "data/karr_fixtures/per_process/DNADamage_flat.mat"
@@ -362,10 +415,12 @@ deviations:
       path: "docs/karr_extracts/process/04_DNADamage.md"
       lines: "146-179"
       note: "The available extract exposes reaction-matrix chemistry but not a flux-bound contract."
+      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_dna_damage.py"
       lines: "111-294"
       note: "Current OC port has no flux-bound helper or LP-bound wiring."
+      symbol: KarrDNADamageProcess
   shared_pool_projection_merges_compartments: true
   known_deviations:
     - "The current OC port is lesion-creation only; it does not implement the full reactionSmallMoleculeStoichiometryMatrix / reactionDNAStoichiometryMatrix / reactionRadiationStoichiometryMatrix chemistry described in the extract."

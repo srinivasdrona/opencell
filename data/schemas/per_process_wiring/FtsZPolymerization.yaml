@@ -1,5 +1,5 @@
-schema_version: "1.0"
-schema_date: '2026-06-29'
+schema_version: "2.0"
+schema_date: '2026-07-07'
 process:
   name: "FtsZPolymerization"
   matlab_class: "FtsZPolymerization"
@@ -10,7 +10,7 @@ process:
   functional_area: "cytokinesis"
   state_shape_role: "event-class / ring-state wiring row"
   notes: "The raw MATLAB source file was not present in this checkout; MATLAB anchors below use the checked-in extract doc as the source proxy."
-methods:
+integration_touchpoints:
   calcResourceRequirements_Current:
     matlab:
       symbol: "calcResourceRequirements_Current"
@@ -18,6 +18,7 @@ methods:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/FtsZPolymerization.m"
         lines: "189-193"
         note: "Raw MATLAB request body: `result(gtp) = enzymes(FtsZ) + enzymes(FtsZ_GDP)`."
+        symbol: "calcResourceRequirements_Current"
       note: "MATLAB request formula is explicitly defined in-process and participates in global allocation."
     oc:
       symbol: "KarrFtsZPolymerizationProcess.next_update"
@@ -25,10 +26,12 @@ methods:
         path: "opencell/vivarium/karr_ftsz_polymerization.py"
         lines: "216-283"
         note: "Emits the GTP request directly into `requests[self.name][gtp_wid]`."
+        symbol: "KarrFtsZPolymerizationProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_composite.py"
           lines: "1723-1783"
           note: "Composite allocation consumer list includes `karr_ftsz_polymerization` with GTP."
+          symbol: build_karr_chassis_v5
       note: "Request handling lives in-process rather than in a separate request-calculator helper."
     status: "partial"
     note: "Allocator-compatible, but no dedicated FtsZ request-calculator module exists in OC."
@@ -39,6 +42,7 @@ methods:
         path: "docs/karr_extracts/process/25_FtsZPolymerization.md"
         lines: "11-37"
         note: "Extracted Karr algorithm summary: multi-stage FtsZ ODE, discretization, and clamp."
+        symbol: "evolveState"
       note: "The raw `.m` body was unavailable locally; this extract is the repository's checked-in summary of the MATLAB process."
     oc:
       symbol: "KarrFtsZPolymerizationProcess.next_update"
@@ -46,10 +50,12 @@ methods:
         path: "opencell/vivarium/karr_ftsz_polymerization.py"
         lines: "216-293"
         note: "Per-tick update flow: gate, integrate, discretize, clamp, emit deltas."
+        symbol: "KarrFtsZPolymerizationProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_ftsz_polymerization.py"
           lines: "295-479"
           note: "ODE system and substrate-limit clamps."
+          symbol: KarrFtsZPolymerizationProcess.integrate_odes
       note: "Implemented in OC as a direct `next_update` path."
     status: "partial"
     note: "The OC port follows the Karr flow but is instrumented as an event-class process with allocator-bounded GTP."
@@ -60,6 +66,7 @@ methods:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/FtsZPolymerization.m"
         lines: "1-1"
         note: "No separate flux-bounds method is described in the extract. Class-level anchor used to record calcFluxBounds absence."
+        symbol: "FtsZPolymerization"
       note: "Not a flux-bounds process; the allocator surface is request/allocate GTP rather than LP bounds. This process does not have Karr's calcFluxBounds method; it does not participate in FBA."
     oc:
       symbol: "KarrFtsZPolymerizationProcess"
@@ -67,6 +74,7 @@ methods:
         path: "opencell/vivarium/karr_ftsz_polymerization.py"
         lines: "64-598"
         note: "FtsZ process does not expose flux-bound logic. Representative OC anchor for non-implemented correspondence."
+        symbol: "KarrFtsZPolymerizationProcess"
       note: "No FtsZ-specific flux-bounds helper exists in OC. OC does not implement this Karr method."
     status: "not_implemented"
     note: "This process has no LP-style bound construction comparable to Metabolism. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
@@ -109,10 +117,13 @@ consume_stoichiometry:
       path: "docs/karr_extracts/process/25_FtsZPolymerization.md"
       lines: "29-37"
       note: "Extract summary for the ODE/discretize flow; raw MATLAB body unavailable locally."
+      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_ftsz_polymerization.py"
       lines: "448-479"
       note: "GTP is decremented in `apply_substrate_limits` and optionally compensated during GDP shortfall."
+      symbol: KarrFtsZPolymerizationProcess.apply_substrate_limits
+    kind: expression
   - wid: "GDP"
     compartment: "cytosol"
     formula_or_constant: "dot(n_gdp, enzymes - current_counts)"
@@ -120,10 +131,13 @@ consume_stoichiometry:
       path: "docs/karr_extracts/process/25_FtsZPolymerization.md"
       lines: "20-37"
       note: "GDP-bound monomer state is part of the extracted multi-state FtsZ model."
+      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_ftsz_polymerization.py"
       lines: "471-479"
       note: "GDP is decremented from the enzyme delta before any shortfall compensation."
+      symbol: KarrFtsZPolymerizationProcess.apply_substrate_limits
+    kind: expression
   - wid: "H2O"
     compartment: "cytosol"
     formula_or_constant: "gdp_shortfall"
@@ -131,10 +145,13 @@ consume_stoichiometry:
       path: "docs/karr_extracts/process/25_FtsZPolymerization.md"
       lines: "29-37"
       note: "Hydrolysis / clamp compensation is described only at the process-summary level in the checked-in extract."
+      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_ftsz_polymerization.py"
       lines: "475-479"
       note: "Water is consumed when the GDP shortfall branch fires."
+      symbol: KarrFtsZPolymerizationProcess.apply_substrate_limits
+    kind: expression
 produce_stoichiometry:
   - wid: "GDP"
     compartment: "cytosol"
@@ -143,10 +160,13 @@ produce_stoichiometry:
       path: "docs/karr_extracts/process/25_FtsZPolymerization.md"
       lines: "29-37"
       note: "Hydrolysis compensation is part of the extracted process summary."
+      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_ftsz_polymerization.py"
       lines: "475-479"
       note: "GDP is replenished during the compensation branch."
+      symbol: KarrFtsZPolymerizationProcess.apply_substrate_limits
+    kind: expression
   - wid: "PI"
     compartment: "cytosol"
     formula_or_constant: "gdp_shortfall"
@@ -154,10 +174,13 @@ produce_stoichiometry:
       path: "docs/karr_extracts/process/25_FtsZPolymerization.md"
       lines: "29-37"
       note: "Phosphate byproduct belongs to the hydrolysis compensation branch."
+      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_ftsz_polymerization.py"
       lines: "475-479"
       note: "Phosphate is produced when the GDP shortfall branch fires."
+      symbol: KarrFtsZPolymerizationProcess.apply_substrate_limits
+    kind: expression
   - wid: "H"
     compartment: "cytosol"
     formula_or_constant: "gdp_shortfall"
@@ -165,10 +188,18 @@ produce_stoichiometry:
       path: "docs/karr_extracts/process/25_FtsZPolymerization.md"
       lines: "29-37"
       note: "Hydrogen byproduct belongs to the hydrolysis compensation branch."
+      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_ftsz_polymerization.py"
       lines: "475-479"
       note: "Hydrogen is produced when the GDP shortfall branch fires."
+      symbol: KarrFtsZPolymerizationProcess.apply_substrate_limits
+    kind: expression
+stoichiometry_oracle:
+  class: inline
+  record_path: data/karr_method_inventory/karr_stoichiometry/FtsZPolymerization.json
+  substrate_count: 5
+  note: Exhaustive per-tick substrate set lives in the HB1 oracle; this row's consume/produce arrays carry integration-relevant hand-curated entries.
 compartment_routing:
   - wid: "GTP"
     consume_compartment: "cytosol"
@@ -207,6 +238,7 @@ unit_conversion_chain:
         path: "opencell/vivarium/karr_ftsz_polymerization.py"
         lines: "216-293"
         note: Process works directly in per-tick integer counts; no unit conversion needed.
+        symbol: KarrFtsZPolymerizationProcess.next_update
       note: Process works directly in per-tick integer counts; no unit conversion needed.
   note: This process does not require unit conversion (per-tick integer counts throughout).
 dependencies:
@@ -230,35 +262,43 @@ source_anchors:
       path: "docs/karr_extracts/process/25_FtsZPolymerization.md"
       lines: "11-37"
       note: "Checked-in Karr process extract summarizing the ODE/discretize FtsZ model."
+      symbol: Verbatim docstring extract
     allocation_block:
       path: "docs/karr_extracts/architecture/01_simulation_loop.md"
       lines: "148-161"
       note: "Global allocation block that calls every process request method."
+      symbol: Verbatim extract - `evolveState.m` per-tick algorithm
     global_order:
       path: "docs/karr_extracts/architecture/01_simulation_loop.md"
       lines: "172-180"
       note: "Canonical hard order: tRNAAminoacylation must occur before Translation."
+      symbol: Verbatim extract - `evolveState.m` per-tick algorithm
   oc_blocks:
     process_class:
       path: "opencell/vivarium/karr_ftsz_polymerization.py"
       lines: "64-214"
       note: "Fixture load, state shape, and ports schema."
+      symbol: KarrFtsZPolymerizationProcess
     next_update:
       path: "opencell/vivarium/karr_ftsz_polymerization.py"
       lines: "216-293"
       note: "Per-tick update flow, request emission, and output writeback."
+      symbol: KarrFtsZPolymerizationProcess.next_update
     solver_and_clamps:
       path: "opencell/vivarium/karr_ftsz_polymerization.py"
       lines: "295-479"
       note: "ODE integration, discretization, and substrate-limit clamps."
+      symbol: KarrFtsZPolymerizationProcess.integrate_odes
     unit_helpers:
       path: "opencell/vivarium/karr_ftsz_polymerization.py"
       lines: "481-587"
       note: "Concentration conversion and substrate-delta extraction helpers."
+      symbol: KarrFtsZPolymerizationProcess.molecules_to_concentration
     composite_allocation:
       path: "opencell/vivarium/karr_composite.py"
       lines: "1723-1783"
       note: "Composite allocation consumer list wires FtsZ to GTP."
+      symbol: build_karr_chassis_v5
 provenance:
   fixture_files:
     - "data/karr_fixtures/per_process/FtsZPolymerization_flat.mat"
@@ -291,10 +331,12 @@ deviations:
       path: "docs/karr_extracts/process/25_FtsZPolymerization.md"
       lines: "29-37"
       note: "FtsZ is not an LP-flux process; this field is retained for schema compatibility."
+      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_ftsz_polymerization.py"
       lines: "216-479"
       note: "OC implements direct ODE / clamp logic, not LP bounds."
+      symbol: KarrFtsZPolymerizationProcess.next_update
   shared_pool_projection_merges_compartments: false
   known_deviations:
     - "The raw MATLAB `.m` file was not present in this checkout; MATLAB anchors therefore use the checked-in extract doc rather than a direct source-file read."
