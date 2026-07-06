@@ -1189,6 +1189,109 @@ def _load_external_wids(repo_root: Path) -> tuple[set[str] | None, str]:
     return external_wids, f"{display_path} via Metabolism.substrateIndexs_externalExchangedMetabolites"
 
 
+def _build_dependency_graph(
+    rows: list[tuple[Path, dict[str, Any]]],
+    roster: set[str],
+) -> dict[str, set[str]]:
+    graph = {process_name: set() for process_name in roster}
+
+    for row_path, row in rows:
+        process_name = _process_name(row, row_path.stem)
+        for downstream in _collect_dependency_names(row, "produces_inputs_for"):
+            if downstream in roster:
+                graph[process_name].add(downstream)
+
+        ordering = row.get("ordering_constraints")
+        if not isinstance(ordering, dict):
+            continue
+        hard_before = ordering.get("hard_before")
+        if not isinstance(hard_before, list):
+            continue
+        for downstream in hard_before:
+            if isinstance(downstream, str) and downstream.strip() and downstream.strip() in roster:
+                graph[process_name].add(downstream.strip())
+
+    return graph
+
+
+def _canonical_cycle(cycle_nodes: list[str]) -> tuple[str, ...]:
+    rotations = [
+        tuple(cycle_nodes[idx:] + cycle_nodes[:idx])
+        for idx in range(len(cycle_nodes))
+    ]
+    return min(rotations)
+
+
+def _find_cycles(graph: dict[str, set[str]]) -> list[list[str]]:
+    visit_state = {node: 0 for node in graph}
+    stack: list[str] = []
+    stack_index: dict[str, int] = {}
+    seen_cycles: set[tuple[str, ...]] = set()
+    cycles: list[list[str]] = []
+
+    def dfs(node: str) -> None:
+        visit_state[node] = 1
+        stack_index[node] = len(stack)
+        stack.append(node)
+
+        for downstream in sorted(graph[node]):
+            state = visit_state.get(downstream, 0)
+            if state == 0:
+                dfs(downstream)
+                continue
+            if state != 1:
+                continue
+
+            cycle_nodes = stack[stack_index[downstream] :].copy()
+            if not cycle_nodes:
+                continue
+            cycle_key = _canonical_cycle(cycle_nodes)
+            if cycle_key in seen_cycles:
+                continue
+            seen_cycles.add(cycle_key)
+            cycles.append([*cycle_key, cycle_key[0]])
+
+        stack.pop()
+        stack_index.pop(node, None)
+        visit_state[node] = 2
+
+    for node in sorted(graph):
+        if visit_state[node] == 0:
+            dfs(node)
+
+    cycles.sort()
+    return cycles
+
+
+def _check_no_dependency_cycles(
+    rows: list[tuple[Path, dict[str, Any]]],
+    roster: set[str],
+) -> dict[str, Any]:
+    graph = _build_dependency_graph(rows, roster)
+    cycles = _find_cycles(graph)
+    edge_count = sum(len(targets) for targets in graph.values())
+
+    if cycles:
+        return {
+            "verdict": "FAIL",
+            "cycles": cycles,
+            "details": [
+                f"dependency/ordering graph contains {len(cycles)} cycle(s)",
+                *[f"cycle: {' -> '.join(cycle)}" for cycle in cycles],
+            ],
+            "node_count": len(graph),
+            "edge_count": edge_count,
+        }
+
+    return {
+        "verdict": "PASS",
+        "cycles": [],
+        "details": [f"validated acyclic dependency/order graph ({len(graph)} nodes, {edge_count} edges)"],
+        "node_count": len(graph),
+        "edge_count": edge_count,
+    }
+
+
 def _wid_check(
     *,
     row: dict[str, Any],
@@ -1763,6 +1866,11 @@ def _build_report(
     dep_index = _build_dependency_index(rows)
     produced_wids = _build_produced_wids(rows)
     external_wids, external_wids_source = _load_external_wids(REPO_ROOT)
+    graph_checks = {
+        "no_dependency_cycles": _check_no_dependency_cycles(rows, roster),
+    }
+    if graph_checks["no_dependency_cycles"]["verdict"] == "FAIL":
+        load_failures.extend(graph_checks["no_dependency_cycles"]["details"])
 
     selected_rows = rows
     if process_filter is not None:
@@ -1815,7 +1923,9 @@ def _build_report(
         load_failures.append(f"requested process {process_filter!r} not found in {wiring_dir}")
 
     overall_verdict = "PASS"
-    if rows_fail > 0 or load_failures:
+    if rows_fail > 0 or load_failures or any(
+        result["verdict"] == "FAIL" for result in graph_checks.values()
+    ):
         overall_verdict = "FAIL"
 
     return {
@@ -1831,6 +1941,7 @@ def _build_report(
             "rows_fail": rows_fail,
             "check_failures": check_failures,
             "check_warnings": check_warnings,
+            "graph_checks": graph_checks,
         },
         "rows": row_reports,
     }
@@ -1847,6 +1958,14 @@ def _render_plain(report: dict[str, Any]) -> str:
         lines.append("load failures:")
         for item in report["load_failures"]:
             lines.append(f"- {item}")
+
+    graph_checks = aggregate.get("graph_checks", {})
+    if graph_checks:
+        lines.append("graph checks:")
+        for check_name, result in graph_checks.items():
+            lines.append(f"- {check_name}: {result['verdict']}")
+            for detail in result.get("details", []):
+                lines.append(f"  - {detail}")
 
     lines.append("per-check failures:")
     for check_name in CHECK_ORDER:
@@ -1889,6 +2008,16 @@ def _render_markdown(report: dict[str, Any]) -> str:
         lines.append("")
         for item in report["load_failures"]:
             lines.append(f"- {item}")
+        lines.append("")
+
+    graph_checks = aggregate.get("graph_checks", {})
+    if graph_checks:
+        lines.append("## Graph Checks")
+        lines.append("")
+        for check_name, result in graph_checks.items():
+            lines.append(f"- `{check_name}`: **{result['verdict']}**")
+            for detail in result.get("details", []):
+                lines.append(f"  - {detail}")
         lines.append("")
 
     lines.append("## Per-Check Aggregate")

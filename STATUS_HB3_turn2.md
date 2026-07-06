@@ -17,11 +17,15 @@
 - Committed C5: `5e01570` (`hb3: add dependency symmetry check`).
 - Implemented C6 `check_orphan_consume_wids` with a corpus-wide `produced_wids` index and an external allowlist derived from `data/karr_fixtures/per_process/Metabolism_flat.mat` via `substrateWholeCellModelIDs` + `substrateIndexs_externalExchangedMetabolites`.
 - Verified the existing integration suite still passes after C6: `bin\oc-pytest.cmd tests/integration/test_l1b_verify_wiring.py -q` -> `14 passed in 64.18s`.
+- Committed C6: `d8c0f18` (`hb3: add orphan consume wid check`).
+- Implemented C7 `no_dependency_cycles` as a gate-level aggregate check over `dependencies.produces_inputs_for` plus `ordering_constraints.hard_before`; cycle failures now populate both `load_failures` and `aggregate.graph_checks`.
+- Verified the existing integration suite still passes after C7: `bin\oc-pytest.cmd tests/integration/test_l1b_verify_wiring.py -q` -> `14 passed in 62.37s`.
 
 ## Commits
 
 - `5e01570` - `hb3: add dependency symmetry check`
-- Pending: C6 commit next.
+- `d8c0f18` - `hb3: add orphan consume wid check`
+- Pending: C7 commit next.
 
 ## Gate Evidence
 
@@ -33,6 +37,8 @@
 - Result: `14 passed in 27.23s`
 - `bin\oc-pytest.cmd tests/integration/test_l1b_verify_wiring.py -q`
 - Result: `14 passed in 64.18s`
+- `bin\oc-pytest.cmd tests/integration/test_l1b_verify_wiring.py -q`
+- Result: `14 passed in 62.37s`
 
 ## Blockers / Notes
 
