@@ -24,10 +24,24 @@ L1a + L1b green. See `plan.md` L-ladder.
 3-role loop: Opus 4.8 planner / gpt-5.3-codex doer / Sonnet 5 checker. Queue
 `hb-1`..`hb-6` (see session todos). Exhaustive coverage (operator: sampling can't
 prove output matches Karr). GPT-5.4-critiqued design D1-D7 (see plan.md handoff).
-HB1 (extract Karr stoichiometry) partial: 6/28 extracted, 22 BLOCKER — needs
-re-run against `.m`/WholeCellKB (matrix not in flat fixtures). A2/A4 assigned to
-runtime gates L2.0a/L2.4 (static gate cannot prove scheduler order / runtime
-projection); A1/A3/A3b + exhaustive-stoich are Half B static scope.
+
+**Status (2026-07-07, Day-47): HB1✓ HB2✓ HB3✓ done & checker-ACCEPTED; HB4-HB6 remain.**
+- **HB1 ✓** exhaustive Karr stoichiometry oracle — 28 records / 0 blockers /
+  13 inline + 10 matrix + 5 none. Checker corrected MacromolecularComplexation
+  (complexComposition = protein monomers, not substrates) → `class: none`.
+- **HB2 ✓** wiring schema v2 (`ce1a78a`): `fields:`→`properties:` root fix,
+  `integration_touchpoints`, `stoich_entry.kind`, `stoichiometry_oracle` block.
+- **HB3 ✓** Gate B rebuilt honest: 3 hollow-green mechanisms removed, 7 checks
+  added (4 row-local + 3 cross-row). Metabolism migrated to v2 as reference.
+  Gate correctly FAIL 0/28 (honest — 27 rows still v1). Both codex turns
+  Sonnet-ACCEPTED. C5 found 16 asymmetric-dep rows, C6 found 20 orphan rows.
+- **HB4** migrate 27 rows to v2 (fleet). **HB5** fix 16 asymmetries + 20 orphans
+  (WID-backed; incl. allocator.bypasses coverage advisory). **HB6** wire both
+  gates into CI blocking (ci.yml wires neither today).
+
+A2/A4 assigned to runtime gates L2.0a/L2.4 (static gate cannot prove scheduler
+order / runtime projection); A1/A3/A3b + exhaustive-stoich are Half B static
+scope. Termination = both L1b gates PASS 28/28 + tests green.
 
 ## Framing (operator-ratified 2026-07-03)
 
