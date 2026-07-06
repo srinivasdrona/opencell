@@ -1,5 +1,6 @@
 {
   "process": "Metabolism",
+  "class": "matrix",
   "source": "data/karr_fixtures/per_process/Metabolism_flat.mat:data.fixture.reactionStoichiometryMatrix; matrix encodes explicit compartment axis (3D substrates x reactions x compartments); MATLAB source: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m",
   "matrix_field": "reactionStoichiometryMatrix",
   "matrix_shape": [

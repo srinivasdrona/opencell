@@ -1,5 +1,6 @@
 {
   "process": "DNADamage",
+  "class": "matrix",
   "source": "data/karr_fixtures/per_process/DNADamage_flat.mat:data.fixture.reactionSmallMoleculeStoichiometryMatrix; matrix is compartment-flat (2D substrates x reactions); compartment omitted; MATLAB source: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNADamage.m",
   "matrix_field": "reactionSmallMoleculeStoichiometryMatrix",
   "matrix_shape": [

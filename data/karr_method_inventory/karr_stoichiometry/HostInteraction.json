@@ -1,13 +1,10 @@
 {
   "process": "HostInteraction",
-  "source": "data/karr_fixtures/per_process/HostInteraction_flat.mat + data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m inspection",
-  "status": "BLOCKER",
-  "reason": "No non-empty reaction stoichiometry matrix field found in fixture (checked reactionStoichiometryMatrix-family fields).",
-  "checked_matrix_fields": [
-    "reactionStoichiometryMatrix",
-    "reactionSmallMoleculeStoichiometryMatrix",
-    "fbaReactionStoichiometryMatrix"
-  ],
-  "available_stoichiometry_fields": [],
-  "n_substrate_ids": 0
+  "class": "none",
+  "source": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m + data/karr_fixtures/per_process/HostInteraction_flat.mat",
+  "note": "No process substrates are declared (substrateWholeCellModelIDs empty); evolveState updates host signaling booleans only.",
+  "substrates": [],
+  "n_substrates": 0,
+  "n_reactions": 0,
+  "n_entries": 0
 }

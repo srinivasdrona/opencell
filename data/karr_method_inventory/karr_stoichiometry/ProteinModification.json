@@ -1,5 +1,6 @@
 {
   "process": "ProteinModification",
+  "class": "matrix",
   "source": "data/karr_fixtures/per_process/ProteinModification_flat.mat:data.fixture.reactionStoichiometryMatrix; matrix is compartment-flat (2D substrates x reactions); compartment omitted; MATLAB source: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinModification.m",
   "matrix_field": "reactionStoichiometryMatrix",
   "matrix_shape": [
