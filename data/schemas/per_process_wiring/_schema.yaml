@@ -40,7 +40,7 @@ definitions:
         description: "Repo-relative file path."
       symbol:
         type: string
-        description: "Enclosing function, method, or class symbol for the anchor."
+        description: "Enclosing function, method, or class symbol for code anchors (.py/.m). For documentation anchors (.md/.txt/.rst) it is the nearest enclosing section heading; for module-scope code with no enclosing def it is '<module>'."
       lines:
         type: string
         pattern: "^[0-9]+-[0-9]+$"
