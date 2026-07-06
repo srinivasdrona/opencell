@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import os
 import subprocess
@@ -13,6 +14,7 @@ import yaml
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SCRIPT = _REPO_ROOT / "scripts" / "l1b_verify_wiring.py"
+_SCHEMA = _REPO_ROOT / "data" / "schemas" / "per_process_wiring" / "_schema.yaml"
 
 
 def _run_l1b(
@@ -137,6 +139,33 @@ def _anchor(path: Path, symbol: str, lines: str = "1-200") -> dict[str, str]:
     }
 
 
+def _stub_method_map(
+    *,
+    process_name: str,
+    request_symbol: str = "calc_resource_requirements",
+    evolve_symbol: str = "evolve_state",
+    bounds_symbol: str = "compute_bounds",
+) -> dict[str, Any]:
+    return {
+        "schema": "oc_method_map/1.0",
+        "processes": {
+            process_name: {
+                "runtime_methods": {
+                    "calcResourceRequirements_Current": {
+                        "oc": f"synthetic.py:{request_symbol}:1",
+                    },
+                    "evolveState": {
+                        "oc": f"synthetic.py:{evolve_symbol}:1",
+                    },
+                    "calcFluxBounds": {
+                        "oc": f"synthetic.py:{bounds_symbol}:1",
+                    },
+                }
+            }
+        },
+    }
+
+
 def _synthetic_row(
     *,
     process_name: str,
@@ -151,8 +180,8 @@ def _synthetic_row(
     first_to_units = "molecules/s"
     second_from_units = "molecules/s" if coherent_units else "wrong_units"
     return {
-        "schema_version": "1.0",
-        "schema_date": "2026-06-29",
+        "schema_version": "2.0",
+        "schema_date": "2026-07-07",
         "process": {
             "name": process_name,
             "matlab_class": process_name,
@@ -161,15 +190,27 @@ def _synthetic_row(
             "oc_file": str(python_path),
             "whole_cell_model_id": f"Process_{process_name}",
         },
-        "methods": {
+        "integration_touchpoints": {
             "calcResourceRequirements_Current": {
-                "matlab": {"symbol": "calcResourceRequirements_Current", "source": _anchor(matlab_path, "calcResourceRequirements_Current")},
-                "oc": {"symbol": "calc_resource_requirements", "source": _anchor(python_path, "calc_resource_requirements")},
+                "matlab": {
+                    "symbol": "calcResourceRequirements_Current",
+                    "source": _anchor(matlab_path, "calcResourceRequirements_Current"),
+                },
+                "oc": {
+                    "symbol": "calc_resource_requirements",
+                    "source": _anchor(python_path, "calc_resource_requirements"),
+                },
                 "status": "implemented",
             },
             "evolveState": {
                 "matlab": {"symbol": "evolveState", "source": _anchor(matlab_path, "evolveState")},
-                "oc": {"symbol": "evolve_state", "source": _anchor(python_path, "evolve_state")},
+                "oc": {
+                    "symbol": "evolve_state",
+                    "source": _anchor(python_path, "evolve_state"),
+                    "supporting": [
+                        _anchor(python_path, "compute_bounds", lines="1-50"),
+                    ],
+                },
                 "status": "implemented",
             },
             "calcFluxBounds": {
@@ -188,6 +229,7 @@ def _synthetic_row(
             {
                 "wid": consume_wid,
                 "compartment": "cytosol",
+                "kind": "constant",
                 "formula_or_constant": "1",
                 "matlab_anchor": _anchor(matlab_path, "evolveState"),
                 "oc_anchor": _anchor(python_path, "evolve_state"),
@@ -197,11 +239,18 @@ def _synthetic_row(
             {
                 "wid": produce_wid,
                 "compartment": "cytosol",
+                "kind": "constant",
                 "formula_or_constant": "1",
                 "matlab_anchor": _anchor(matlab_path, "evolveState"),
                 "oc_anchor": _anchor(python_path, "evolve_state"),
             }
         ],
+        "stoichiometry_oracle": {
+            "class": "matrix",
+            "record_path": "__AUTO_ORACLE__",
+            "substrate_count": 2,
+            "note": "synthetic oracle",
+        },
         "compartment_routing": [],
         "unit_conversion_chain": {
             "source_units": "mmol",
@@ -228,7 +277,7 @@ def _synthetic_row(
             "oc_blocks": {"main": _anchor(python_path, "evolve_state")},
         },
         "provenance": {
-            "last_audited": "2026-06-29",
+            "last_audited": "2026-07-07",
             "audited_by": "test",
             "oc_commit_sha": "deadbeef",
             "matlab_files_referenced": [str(matlab_path)],
@@ -253,21 +302,32 @@ def _write_synthetic_env(
     row_payload: dict[str, Any],
     process_name: str,
     state_groups: dict[str, list[str]],
+    method_map_payload: dict[str, Any] | None = None,
 ) -> dict[str, str]:
     wiring_dir = tmp_path / "wiring"
     schema_dir = tmp_path / "per_process"
     wiring_dir.mkdir(parents=True, exist_ok=True)
     schema_dir.mkdir(parents=True, exist_ok=True)
 
-    _write_yaml(
-        wiring_dir / "_schema.yaml",
-        {
-            "schema_version": "1.0",
-            "schema_date": "2026-06-29",
-            "kind": "per_process_wiring_row",
-        },
+    (wiring_dir / "_schema.yaml").write_text(_SCHEMA.read_text(encoding="utf-8"), encoding="utf-8")
+    row_copy = copy.deepcopy(row_payload)
+    oracle_path = tmp_path / "oracle.json"
+    oracle_path.write_text(
+        json.dumps(
+            {
+                "process": process_name,
+                "class": "matrix",
+                "n_substrates": 2,
+                "substrates": [
+                    {"wid": "GLC", "compartment": "cytosol"},
+                    {"wid": "ATP", "compartment": "cytosol"},
+                ],
+            }
+        ),
+        encoding="utf-8",
     )
-    _write_yaml(wiring_dir / f"{process_name}.yaml", row_payload)
+    row_copy["stoichiometry_oracle"]["record_path"] = str(oracle_path)
+    _write_yaml(wiring_dir / f"{process_name}.yaml", row_copy)
 
     stem = "synthetic_process"
     (schema_dir / f"{stem}.toml").write_text(
@@ -287,10 +347,15 @@ def _write_synthetic_env(
         encoding="utf-8",
     )
 
-    return {
+    env = {
         "OC_L1B_WIRING_DIR": str(wiring_dir),
         "OC_L1B_PROCESS_SCHEMA_DIR": str(schema_dir),
     }
+    if method_map_payload is not None:
+        method_map_path = tmp_path / "oc_method_map.yaml"
+        _write_yaml(method_map_path, method_map_payload)
+        env["OC_L1B_OC_METHOD_MAP"] = str(method_map_path)
+    return env
 
 
 def _json_report(result: subprocess.CompletedProcess[str]) -> dict[str, Any]:
@@ -514,3 +579,145 @@ def test_check1_md_extract_doc_permissive(tmp_path: Path) -> None:
     check_1_fail = row_report_fail["checks"]["check_matlab_anchors_resolve"]
     assert check_1_fail["verdict"] == "FAIL"
     assert any("not found in derived-doc file" in detail for detail in check_1_fail["details"])
+
+
+def test_synthetic_v2_row_passes_new_row_local_checks(tmp_path: Path) -> None:
+    matlab_path = tmp_path / "synthetic.m"
+    python_path = tmp_path / "synthetic.py"
+    _make_matlab_file(matlab_path)
+    _make_python_file(python_path)
+    row = _synthetic_row(
+        process_name="SyntheticProcess",
+        matlab_path=matlab_path,
+        python_path=python_path,
+    )
+    env = _write_synthetic_env(
+        tmp_path,
+        row_payload=row,
+        process_name="SyntheticProcess",
+        state_groups={"substrates": ["GLC", "ATP"], "enzymes": [], "monomers": [], "complexs": [], "rnas": []},
+        method_map_payload=_stub_method_map(process_name="SyntheticProcess"),
+    )
+
+    result = _run_l1b("--format", "json", env_overrides=env)
+    assert result.returncode == 0
+    report = _json_report(result)
+    row_report = _row_by_name(report, "SyntheticProcess")
+    assert report["aggregate"]["overall_verdict"] == "PASS"
+    assert row_report["checks"]["check_schema_conformance"]["verdict"] == "PASS"
+    assert row_report["checks"]["check_stoichiometry_oracle_matches"]["verdict"] == "PASS"
+    assert row_report["checks"]["check_half_a_b_consistency"]["verdict"] == "PASS"
+    assert row_report["checks"]["check_a_invariants"]["verdict"] == "PASS"
+
+
+def test_synthetic_v2_row_missing_source_anchor_symbol_fails_schema_conformance(tmp_path: Path) -> None:
+    matlab_path = tmp_path / "synthetic.m"
+    python_path = tmp_path / "synthetic.py"
+    _make_matlab_file(matlab_path)
+    _make_python_file(python_path)
+    row = _synthetic_row(
+        process_name="SyntheticProcess",
+        matlab_path=matlab_path,
+        python_path=python_path,
+    )
+    del row["integration_touchpoints"]["evolveState"]["oc"]["source"]["symbol"]
+    env = _write_synthetic_env(
+        tmp_path,
+        row_payload=row,
+        process_name="SyntheticProcess",
+        state_groups={"substrates": ["GLC", "ATP"], "enzymes": [], "monomers": [], "complexs": [], "rnas": []},
+        method_map_payload=_stub_method_map(process_name="SyntheticProcess"),
+    )
+
+    result = _run_l1b("--format", "json", env_overrides=env)
+    assert result.returncode == 1
+    report = _json_report(result)
+    row_report = _row_by_name(report, "SyntheticProcess")
+    assert report["aggregate"]["overall_verdict"] == "FAIL"
+    assert row_report["checks"]["check_schema_conformance"]["verdict"] == "FAIL"
+    assert any("integration_touchpoints/evolveState/oc/source" in detail for detail in row_report["checks"]["check_schema_conformance"]["details"])
+
+
+def test_synthetic_v2_row_wrong_oracle_count_fails_stoichiometry_check(tmp_path: Path) -> None:
+    matlab_path = tmp_path / "synthetic.m"
+    python_path = tmp_path / "synthetic.py"
+    _make_matlab_file(matlab_path)
+    _make_python_file(python_path)
+    row = _synthetic_row(
+        process_name="SyntheticProcess",
+        matlab_path=matlab_path,
+        python_path=python_path,
+    )
+    row["stoichiometry_oracle"]["substrate_count"] = 99
+    env = _write_synthetic_env(
+        tmp_path,
+        row_payload=row,
+        process_name="SyntheticProcess",
+        state_groups={"substrates": ["GLC", "ATP"], "enzymes": [], "monomers": [], "complexs": [], "rnas": []},
+        method_map_payload=_stub_method_map(process_name="SyntheticProcess"),
+    )
+
+    result = _run_l1b("--format", "json", env_overrides=env)
+    assert result.returncode == 1
+    report = _json_report(result)
+    row_report = _row_by_name(report, "SyntheticProcess")
+    assert report["aggregate"]["overall_verdict"] == "FAIL"
+    assert row_report["checks"]["check_stoichiometry_oracle_matches"]["verdict"] == "FAIL"
+    assert any("substrate_count mismatch" in detail for detail in row_report["checks"]["check_stoichiometry_oracle_matches"]["details"])
+
+
+def test_synthetic_v2_row_drifted_oc_symbol_fails_half_a_b_consistency(tmp_path: Path) -> None:
+    matlab_path = tmp_path / "synthetic.m"
+    python_path = tmp_path / "synthetic.py"
+    _make_matlab_file(matlab_path)
+    _make_python_file(python_path)
+    row = _synthetic_row(
+        process_name="SyntheticProcess",
+        matlab_path=matlab_path,
+        python_path=python_path,
+    )
+    row["integration_touchpoints"]["evolveState"]["oc"]["symbol"] = "drifted_symbol"
+    env = _write_synthetic_env(
+        tmp_path,
+        row_payload=row,
+        process_name="SyntheticProcess",
+        state_groups={"substrates": ["GLC", "ATP"], "enzymes": [], "monomers": [], "complexs": [], "rnas": []},
+        method_map_payload=_stub_method_map(process_name="SyntheticProcess"),
+    )
+
+    result = _run_l1b("--format", "json", env_overrides=env)
+    assert result.returncode == 1
+    report = _json_report(result)
+    row_report = _row_by_name(report, "SyntheticProcess")
+    assert report["aggregate"]["overall_verdict"] == "FAIL"
+    assert row_report["checks"]["check_half_a_b_consistency"]["verdict"] == "FAIL"
+    assert any("Half A/B drift for evolveState" in detail for detail in row_report["checks"]["check_half_a_b_consistency"]["details"])
+
+
+def test_synthetic_v2_row_a1_violation_fails_a_invariants(tmp_path: Path) -> None:
+    matlab_path = tmp_path / "synthetic.m"
+    python_path = tmp_path / "synthetic.py"
+    _make_matlab_file(matlab_path)
+    _make_python_file(python_path)
+    row = _synthetic_row(
+        process_name="SyntheticProcess",
+        matlab_path=matlab_path,
+        python_path=python_path,
+    )
+    row["integration_touchpoints"]["calcResourceRequirements_Current"]["status"] = "not_implemented"
+    row["allocator"]["request_formula"]["oc"] = "NOT_IMPLEMENTED"
+    env = _write_synthetic_env(
+        tmp_path,
+        row_payload=row,
+        process_name="SyntheticProcess",
+        state_groups={"substrates": ["GLC", "ATP"], "enzymes": [], "monomers": [], "complexs": [], "rnas": []},
+        method_map_payload=_stub_method_map(process_name="SyntheticProcess"),
+    )
+
+    result = _run_l1b("--format", "json", env_overrides=env)
+    assert result.returncode == 1
+    report = _json_report(result)
+    row_report = _row_by_name(report, "SyntheticProcess")
+    assert report["aggregate"]["overall_verdict"] == "FAIL"
+    assert row_report["checks"]["check_a_invariants"]["verdict"] == "FAIL"
+    assert any(detail.startswith("A1:") for detail in row_report["checks"]["check_a_invariants"]["details"])

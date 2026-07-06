@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import hashlib
 import json
 import os
 import re
@@ -13,15 +14,36 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, TypedDict
 
+import jsonschema
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_WIRING_DIR = REPO_ROOT / "data" / "schemas" / "per_process_wiring"
 DEFAULT_PROCESS_SCHEMA_DIR = REPO_ROOT / "data" / "schemas" / "per_process"
+DEFAULT_OC_METHOD_MAP = REPO_ROOT / "data" / "karr_method_inventory" / "oc_method_map.yaml"
 WIRING_DIR_ENV = "OC_L1B_WIRING_DIR"
 PROCESS_SCHEMA_DIR_ENV = "OC_L1B_PROCESS_SCHEMA_DIR"
+OC_METHOD_MAP_ENV = "OC_L1B_OC_METHOD_MAP"
+TOUCHPOINT_METHODS = (
+    "calcResourceRequirements_Current",
+    "evolveState",
+    "calcFluxBounds",
+)
+REQUEST_FORMULA_SENTINELS = {
+    "",
+    "todo",
+    "notimplemented",
+    "not_implemented",
+    "n/a",
+    "na",
+    "none",
+}
 
 CHECK_ORDER = (
+    "check_schema_conformance",
+    "check_stoichiometry_oracle_matches",
+    "check_half_a_b_consistency",
+    "check_a_invariants",
     "check_matlab_anchors_resolve",
     "check_oc_anchors_resolve",
     "check_consume_produce_wids_in_schema_toml",
@@ -223,11 +245,6 @@ def _normalize_symbol_text(value: str) -> str:
     return re.sub(r"[^a-z0-9]", "", value.lower())
 
 
-def _is_placeholder_symbol(symbol: str) -> bool:
-    normalized = _normalize_symbol_text(symbol)
-    return normalized in {"notimplemented", "na"}
-
-
 def _md_symbol_documented(text: str, symbol: str) -> bool:
     if symbol.lower() in text.lower():
         return True
@@ -330,34 +347,17 @@ def _anchor_from_mapping(mapping: Any, label: str, symbol_override: str | None =
 
 def _collect_matlab_anchors(row: dict[str, Any]) -> list[AnchorRef]:
     anchors: list[AnchorRef] = []
-    matlab_class = None
-    process_meta = row.get("process")
-    if isinstance(process_meta, dict):
-        raw_matlab_class = process_meta.get("matlab_class")
-        if isinstance(raw_matlab_class, str) and raw_matlab_class.strip():
-            matlab_class = raw_matlab_class.strip()
-
-    methods = row.get("methods")
-    if isinstance(methods, dict):
-        for method_name, binding in methods.items():
+    touchpoints = row.get("integration_touchpoints")
+    if isinstance(touchpoints, dict):
+        for method_name, binding in touchpoints.items():
             if not isinstance(binding, dict):
                 continue
             matlab_block = binding.get("matlab")
             if isinstance(matlab_block, dict):
-                symbol_override = matlab_block.get("symbol") if isinstance(matlab_block.get("symbol"), str) else None
-                status = binding.get("status")
-                if (
-                    isinstance(status, str)
-                    and status.strip().lower() == "not_implemented"
-                    and isinstance(symbol_override, str)
-                    and _is_placeholder_symbol(symbol_override)
-                    and matlab_class is not None
-                ):
-                    symbol_override = matlab_class
                 anchor = _anchor_from_mapping(
                     matlab_block.get("source"),
-                    f"methods.{method_name}.matlab.source",
-                    symbol_override,
+                    f"integration_touchpoints.{method_name}.matlab.source",
+                    matlab_block.get("symbol") if isinstance(matlab_block.get("symbol"), str) else None,
                 )
                 if anchor is not None:
                     anchors.append(anchor)
@@ -413,16 +413,16 @@ def _collect_matlab_anchors(row: dict[str, Any]) -> list[AnchorRef]:
 def _collect_oc_anchors(row: dict[str, Any]) -> list[AnchorRef]:
     anchors: list[AnchorRef] = []
 
-    methods = row.get("methods")
-    if isinstance(methods, dict):
-        for method_name, binding in methods.items():
+    touchpoints = row.get("integration_touchpoints")
+    if isinstance(touchpoints, dict):
+        for method_name, binding in touchpoints.items():
             if not isinstance(binding, dict):
                 continue
             oc_block = binding.get("oc")
             if isinstance(oc_block, dict):
                 anchor = _anchor_from_mapping(
                     oc_block.get("source"),
-                    f"methods.{method_name}.oc.source",
+                    f"integration_touchpoints.{method_name}.oc.source",
                     oc_block.get("symbol") if isinstance(oc_block.get("symbol"), str) else None,
                 )
                 if anchor is not None:
@@ -433,7 +433,7 @@ def _collect_oc_anchors(row: dict[str, Any]) -> list[AnchorRef]:
                     for idx, support_anchor in enumerate(supporting):
                         anchor = _anchor_from_mapping(
                             support_anchor,
-                            f"methods.{method_name}.oc.supporting[{idx}]",
+                            f"integration_touchpoints.{method_name}.oc.supporting[{idx}]",
                         )
                         if anchor is not None:
                             anchors.append(anchor)
@@ -595,6 +595,339 @@ def _validate_anchor_refs(
     return CheckResult(verdict="PASS", details=[f"validated {len(anchor_refs)} anchors", *warnings])
 
 
+def _normalize_sentinel_text(value: str) -> str:
+    return re.sub(r"[^a-z0-9/]+", "", value.lower())
+
+
+def _extract_touchpoint(row: dict[str, Any], method_name: str) -> dict[str, Any] | None:
+    touchpoints = row.get("integration_touchpoints")
+    if not isinstance(touchpoints, dict):
+        return None
+    binding = touchpoints.get(method_name)
+    return binding if isinstance(binding, dict) else None
+
+
+def _parse_method_map_symbol(oc_value: Any) -> str | None:
+    if not isinstance(oc_value, str):
+        return None
+    parts = oc_value.split(":")
+    if len(parts) < 3:
+        return None
+    symbol = ":".join(parts[1:-1]).strip()
+    return symbol or None
+
+
+def _resolve_method_map_process(
+    row: dict[str, Any],
+    method_map_contract: dict[str, Any] | None,
+) -> tuple[str | None, dict[str, Any] | None]:
+    if not isinstance(method_map_contract, dict):
+        return None, None
+    processes = method_map_contract.get("processes")
+    if not isinstance(processes, dict):
+        return None, None
+
+    candidates: list[str] = []
+    process_name = _process_name(row, "")
+    if process_name:
+        candidates.append(process_name)
+    process_meta = row.get("process")
+    if isinstance(process_meta, dict):
+        matlab_class = process_meta.get("matlab_class")
+        if isinstance(matlab_class, str) and matlab_class.strip():
+            candidates.append(matlab_class.strip())
+
+    normalized_candidates = {_normalize_name(candidate): candidate for candidate in candidates if candidate}
+    for process_key, payload in processes.items():
+        if not isinstance(process_key, str) or not isinstance(payload, dict):
+            continue
+        if process_key in candidates or _normalize_name(process_key) in normalized_candidates:
+            return process_key, payload
+    return None, None
+
+
+def _text_mentions_projection(value: Any) -> bool:
+    if not isinstance(value, str):
+        return False
+    lowered = value.lower()
+    return "project" in lowered or "flat" in lowered
+
+
+def check_schema_conformance(
+    row: dict[str, Any],
+    *,
+    strict_anchors: bool,
+    repo_root: Path,
+    cache: FileCache,
+    roster: set[str],
+    process_schema_dir: Path,
+    schema_contract: dict[str, Any] | None = None,
+    method_map_contract: dict[str, Any] | None = None,
+    method_map_path: Path | None = None,
+) -> CheckResult:
+    del strict_anchors
+    del repo_root
+    del cache
+    del roster
+    del process_schema_dir
+    del method_map_contract
+    del method_map_path
+
+    if not isinstance(schema_contract, dict):
+        return CheckResult(verdict="FAIL", details=["schema contract unavailable"])
+
+    schema_obj = {
+        key: schema_contract[key]
+        for key in ("type", "additionalProperties", "required", "properties", "definitions")
+    }
+    validator = jsonschema.Draft7Validator(schema_obj)
+    errors = sorted(validator.iter_errors(row), key=lambda exc: list(exc.absolute_path))
+    if errors:
+        return CheckResult(
+            verdict="FAIL",
+            details=[f"{'/'.join(map(str, err.absolute_path))}: {err.message}" for err in errors],
+        )
+    return CheckResult(verdict="PASS", details=["row conforms to schema contract"])
+
+
+def check_stoichiometry_oracle_matches(
+    row: dict[str, Any],
+    *,
+    strict_anchors: bool,
+    repo_root: Path,
+    cache: FileCache,
+    roster: set[str],
+    process_schema_dir: Path,
+    schema_contract: dict[str, Any] | None = None,
+    method_map_contract: dict[str, Any] | None = None,
+    method_map_path: Path | None = None,
+) -> CheckResult:
+    del strict_anchors
+    del cache
+    del roster
+    del process_schema_dir
+    del schema_contract
+    del method_map_contract
+    del method_map_path
+
+    oracle_block = row.get("stoichiometry_oracle")
+    if not isinstance(oracle_block, dict):
+        return CheckResult(verdict="FAIL", details=["stoichiometry_oracle block absent"])
+
+    record_path = oracle_block.get("record_path")
+    if not isinstance(record_path, str) or not record_path.strip():
+        return CheckResult(verdict="FAIL", details=["stoichiometry_oracle.record_path missing/invalid"])
+
+    resolved_record = _resolve_anchor_path(record_path, repo_root)
+    try:
+        oracle_bytes = resolved_record.read_bytes()
+        oracle = json.loads(oracle_bytes.decode("utf-8"))
+    except Exception as exc:
+        return CheckResult(
+            verdict="FAIL",
+            details=[f"stoichiometry_oracle.record_path could not be read: {record_path} ({exc})"],
+        )
+
+    failures: list[str] = []
+    oracle_class = oracle.get("class")
+    row_class = oracle_block.get("class")
+    if row_class != oracle_class:
+        failures.append(
+            f"stoichiometry_oracle.class mismatch: row={row_class!r} oracle={oracle_class!r}"
+        )
+
+    substrates = oracle.get("substrates")
+    if not isinstance(substrates, list):
+        failures.append("oracle.substrates missing/not a list")
+        substrates = []
+
+    oracle_count = oracle.get("n_substrates", len(substrates))
+    if oracle.get("n_substrates") is not None and oracle.get("n_substrates") != len(substrates):
+        failures.append(
+            "oracle n_substrates disagrees with substrates length: "
+            f"n_substrates={oracle.get('n_substrates')!r} len(substrates)={len(substrates)}"
+        )
+
+    row_count = oracle_block.get("substrate_count")
+    if row_count != oracle_count:
+        failures.append(
+            f"stoichiometry_oracle.substrate_count mismatch: row={row_count!r} oracle={oracle_count!r}"
+        )
+
+    row_hash = oracle_block.get("sha256")
+    if row_hash is not None:
+        if not isinstance(row_hash, str) or not row_hash.strip():
+            failures.append("stoichiometry_oracle.sha256 missing/invalid")
+        else:
+            actual_hash = hashlib.sha256(oracle_bytes).hexdigest()
+            if row_hash != actual_hash:
+                failures.append(
+                    f"stoichiometry_oracle.sha256 mismatch: row={row_hash!r} oracle={actual_hash!r}"
+                )
+
+    if failures:
+        return CheckResult(verdict="FAIL", details=failures)
+    return CheckResult(
+        verdict="PASS",
+        details=[f"oracle matched {record_path} ({oracle_count} substrates)"],
+    )
+
+
+def check_half_a_b_consistency(
+    row: dict[str, Any],
+    *,
+    strict_anchors: bool,
+    repo_root: Path,
+    cache: FileCache,
+    roster: set[str],
+    process_schema_dir: Path,
+    schema_contract: dict[str, Any] | None = None,
+    method_map_contract: dict[str, Any] | None = None,
+    method_map_path: Path | None = None,
+) -> CheckResult:
+    del strict_anchors
+    del repo_root
+    del cache
+    del roster
+    del process_schema_dir
+    del schema_contract
+
+    if not isinstance(method_map_contract, dict):
+        path_display = str(method_map_path) if method_map_path is not None else "unknown"
+        return CheckResult(
+            verdict="FAIL",
+            details=[f"Half A method map unavailable: {path_display}"],
+        )
+
+    process_key, process_entry = _resolve_method_map_process(row, method_map_contract)
+    if process_entry is None:
+        return CheckResult(
+            verdict="PASS",
+            details=[f"WARN: Half A method map has no process entry for {_process_name(row, 'unknown')}"],
+        )
+
+    runtime_methods = process_entry.get("runtime_methods")
+    if not isinstance(runtime_methods, dict):
+        return CheckResult(
+            verdict="PASS",
+            details=[f"WARN: Half A method map entry for {process_key} has no runtime_methods mapping"],
+        )
+
+    failures: list[str] = []
+    warnings: list[str] = []
+    for method_name in TOUCHPOINT_METHODS:
+        binding = _extract_touchpoint(row, method_name)
+        if binding is None:
+            continue
+
+        method_entry = runtime_methods.get(method_name)
+        if not isinstance(method_entry, dict):
+            warnings.append(f"WARN: Half A has no entry for ({process_key}, {method_name})")
+            continue
+
+        mapped_symbol = _parse_method_map_symbol(method_entry.get("oc"))
+        if mapped_symbol is None:
+            warnings.append(f"WARN: Half A has no OC symbol for ({process_key}, {method_name})")
+            continue
+
+        oc_block = binding.get("oc")
+        row_symbol = oc_block.get("symbol") if isinstance(oc_block, dict) else None
+        if not isinstance(row_symbol, str) or not row_symbol.strip():
+            failures.append(f"integration_touchpoints.{method_name}.oc.symbol missing/invalid")
+            continue
+
+        if row_symbol != mapped_symbol:
+            failures.append(
+                f"Half A/B drift for {method_name}: row oc.symbol={row_symbol!r} Half A={mapped_symbol!r}"
+            )
+
+    if failures:
+        return CheckResult(verdict="FAIL", details=[*failures, *warnings])
+    return CheckResult(
+        verdict="PASS",
+        details=[f"validated Half A/B touchpoints for {process_key}", *warnings],
+    )
+
+
+def check_a_invariants(
+    row: dict[str, Any],
+    *,
+    strict_anchors: bool,
+    repo_root: Path,
+    cache: FileCache,
+    roster: set[str],
+    process_schema_dir: Path,
+    schema_contract: dict[str, Any] | None = None,
+    method_map_contract: dict[str, Any] | None = None,
+    method_map_path: Path | None = None,
+) -> CheckResult:
+    del strict_anchors
+    del repo_root
+    del cache
+    del roster
+    del process_schema_dir
+    del schema_contract
+    del method_map_contract
+    del method_map_path
+
+    failures: list[str] = []
+    calc_request = _extract_touchpoint(row, "calcResourceRequirements_Current")
+    if calc_request is None:
+        failures.append("A1: integration_touchpoints.calcResourceRequirements_Current missing")
+    else:
+        status = calc_request.get("status")
+        if status != "implemented":
+            failures.append(
+                "A1: integration_touchpoints.calcResourceRequirements_Current.status must be 'implemented'"
+            )
+
+    allocator = row.get("allocator")
+    request_formula = allocator.get("request_formula") if isinstance(allocator, dict) else None
+    request_formula_oc = request_formula.get("oc") if isinstance(request_formula, dict) else None
+    if not isinstance(request_formula_oc, str) or not request_formula_oc.strip():
+        failures.append("A1: allocator.request_formula.oc missing/empty")
+    elif _normalize_sentinel_text(request_formula_oc) in REQUEST_FORMULA_SENTINELS:
+        failures.append(
+            f"A1: allocator.request_formula.oc must not be a sentinel value ({request_formula_oc!r})"
+        )
+
+    evolve_state = _extract_touchpoint(row, "evolveState")
+    if evolve_state is None:
+        failures.append("A3: integration_touchpoints.evolveState missing")
+    else:
+        status = evolve_state.get("status")
+        if status != "implemented":
+            failures.append("A3: integration_touchpoints.evolveState.status must be 'implemented'")
+
+    deviations = row.get("deviations")
+    merges = deviations.get("shared_pool_projection_merges_compartments") if isinstance(deviations, dict) else None
+    if merges is True:
+        oc_block = evolve_state.get("oc") if isinstance(evolve_state, dict) else None
+        supporting = oc_block.get("supporting") if isinstance(oc_block, dict) else None
+        has_projection_anchor = False
+        if isinstance(supporting, list):
+            for anchor in supporting:
+                if not isinstance(anchor, dict):
+                    continue
+                if _text_mentions_projection(anchor.get("symbol")) or _text_mentions_projection(anchor.get("note")):
+                    has_projection_anchor = True
+                    break
+
+        known_deviations = deviations.get("known_deviations") if isinstance(deviations, dict) else None
+        mentions_projection = False
+        if isinstance(known_deviations, list):
+            mentions_projection = any(_text_mentions_projection(item) for item in known_deviations)
+
+        if not has_projection_anchor and not mentions_projection:
+            failures.append(
+                "A3b: shared_pool_projection_merges_compartments=true requires a projection/flat supporting anchor or known deviation"
+            )
+
+    if failures:
+        return CheckResult(verdict="FAIL", details=failures)
+    return CheckResult(verdict="PASS", details=["A-invariants satisfied"])
+
+
 def check_matlab_anchors_resolve(
     row: dict[str, Any],
     *,
@@ -603,9 +936,15 @@ def check_matlab_anchors_resolve(
     cache: FileCache,
     roster: set[str],
     process_schema_dir: Path,
+    schema_contract: dict[str, Any] | None = None,
+    method_map_contract: dict[str, Any] | None = None,
+    method_map_path: Path | None = None,
 ) -> CheckResult:
     del roster
     del process_schema_dir
+    del schema_contract
+    del method_map_contract
+    del method_map_path
     anchors = _collect_matlab_anchors(row)
     return _validate_anchor_refs(
         anchor_refs=anchors,
@@ -627,9 +966,15 @@ def check_oc_anchors_resolve(
     cache: FileCache,
     roster: set[str],
     process_schema_dir: Path,
+    schema_contract: dict[str, Any] | None = None,
+    method_map_contract: dict[str, Any] | None = None,
+    method_map_path: Path | None = None,
 ) -> CheckResult:
     del roster
     del process_schema_dir
+    del schema_contract
+    del method_map_contract
+    del method_map_path
     anchors = _collect_oc_anchors(row)
     return _validate_anchor_refs(
         anchor_refs=anchors,
@@ -734,11 +1079,17 @@ def check_consume_produce_wids_in_schema_toml(
     cache: FileCache,
     roster: set[str],
     process_schema_dir: Path,
+    schema_contract: dict[str, Any] | None = None,
+    method_map_contract: dict[str, Any] | None = None,
+    method_map_path: Path | None = None,
 ) -> CheckResult:
     del strict_anchors
     del repo_root
     del cache
     del roster
+    del schema_contract
+    del method_map_contract
+    del method_map_path
     return _wid_check(
         row=row,
         process_schema_dir=process_schema_dir,
@@ -757,11 +1108,17 @@ def check_allocator_requests_wids_in_schema_toml(
     cache: FileCache,
     roster: set[str],
     process_schema_dir: Path,
+    schema_contract: dict[str, Any] | None = None,
+    method_map_contract: dict[str, Any] | None = None,
+    method_map_path: Path | None = None,
 ) -> CheckResult:
     del strict_anchors
     del repo_root
     del cache
     del roster
+    del schema_contract
+    del method_map_contract
+    del method_map_path
     allocator = row.get("allocator")
     requests: Any = []
     bypasses: Any = []
@@ -783,12 +1140,18 @@ def check_unit_conversion_chain_coherent(
     cache: FileCache,
     roster: set[str],
     process_schema_dir: Path,
+    schema_contract: dict[str, Any] | None = None,
+    method_map_contract: dict[str, Any] | None = None,
+    method_map_path: Path | None = None,
 ) -> CheckResult:
     del strict_anchors
     del repo_root
     del cache
     del roster
     del process_schema_dir
+    del schema_contract
+    del method_map_contract
+    del method_map_path
 
     chain = row.get("unit_conversion_chain")
     if not isinstance(chain, dict):
@@ -846,11 +1209,17 @@ def check_ordering_constraints_reference_valid_processes(
     cache: FileCache,
     roster: set[str],
     process_schema_dir: Path,
+    schema_contract: dict[str, Any] | None = None,
+    method_map_contract: dict[str, Any] | None = None,
+    method_map_path: Path | None = None,
 ) -> CheckResult:
     del strict_anchors
     del repo_root
     del cache
     del process_schema_dir
+    del schema_contract
+    del method_map_contract
+    del method_map_path
 
     ordering = row.get("ordering_constraints")
     if not isinstance(ordering, dict):
@@ -888,11 +1257,17 @@ def check_deviations_reference_valid_anchors(
     cache: FileCache,
     roster: set[str],
     process_schema_dir: Path,
+    schema_contract: dict[str, Any] | None = None,
+    method_map_contract: dict[str, Any] | None = None,
+    method_map_path: Path | None = None,
 ) -> CheckResult:
     del strict_anchors
     del cache
     del roster
     del process_schema_dir
+    del schema_contract
+    del method_map_contract
+    del method_map_path
 
     warnings: list[str] = []
     deviations = row.get("deviations")
@@ -929,6 +1304,10 @@ def check_deviations_reference_valid_anchors(
 
 
 CHECK_FUNCTIONS = {
+    "check_schema_conformance": check_schema_conformance,
+    "check_stoichiometry_oracle_matches": check_stoichiometry_oracle_matches,
+    "check_half_a_b_consistency": check_half_a_b_consistency,
+    "check_a_invariants": check_a_invariants,
     "check_matlab_anchors_resolve": check_matlab_anchors_resolve,
     "check_oc_anchors_resolve": check_oc_anchors_resolve,
     "check_consume_produce_wids_in_schema_toml": check_consume_produce_wids_in_schema_toml,
@@ -948,6 +1327,9 @@ def _build_row_report(
     cache: FileCache,
     roster: set[str],
     process_schema_dir: Path,
+    schema_contract: dict[str, Any],
+    method_map_contract: dict[str, Any] | None,
+    method_map_path: Path,
 ) -> dict[str, Any]:
     process_name = _process_name(row, row_file.stem)
     checks: dict[str, CheckResult] = {}
@@ -962,6 +1344,9 @@ def _build_row_report(
             cache=cache,
             roster=roster,
             process_schema_dir=process_schema_dir,
+            schema_contract=schema_contract,
+            method_map_contract=method_map_contract,
+            method_map_path=method_map_path,
         )
         checks[check_name] = result
         if result["verdict"] == "FAIL":
@@ -1002,11 +1387,11 @@ def _build_report(
     wiring_dir: Path,
     process_schema_dir: Path,
     schema_contract: dict[str, Any],
+    method_map_contract: dict[str, Any] | None,
+    method_map_path: Path,
     process_filter: str | None,
     strict_anchors: bool,
 ) -> dict[str, Any]:
-    del schema_contract
-
     rows, load_failures = _discover_rows(wiring_dir)
     roster = {_process_name(payload, row_path.stem) for row_path, payload in rows}
 
@@ -1030,6 +1415,9 @@ def _build_report(
                 cache=cache,
                 roster=roster,
                 process_schema_dir=process_schema_dir,
+                schema_contract=schema_contract,
+                method_map_contract=method_map_contract,
+                method_map_path=method_map_path,
             )
         )
 
@@ -1199,6 +1587,7 @@ def main() -> int:
 
     wiring_dir = Path(os.environ.get(WIRING_DIR_ENV, str(DEFAULT_WIRING_DIR)))
     process_schema_dir = Path(os.environ.get(PROCESS_SCHEMA_DIR_ENV, str(DEFAULT_PROCESS_SCHEMA_DIR)))
+    method_map_path = Path(os.environ.get(OC_METHOD_MAP_ENV, str(DEFAULT_OC_METHOD_MAP)))
 
     schema_path = wiring_dir / "_schema.yaml"
     if not schema_path.exists():
@@ -1227,10 +1616,26 @@ def main() -> int:
             args.out.write_text(message + "\n", encoding="utf-8")
         return 1
 
+    method_map_contract: dict[str, Any] | None = None
+    if not method_map_path.exists():
+        print(f"WARN: Half A method map not found: {method_map_path}")
+    else:
+        try:
+            loaded_method_map = _load_yaml(method_map_path)
+        except Exception as exc:  # pragma: no cover - exercised through CLI
+            print(f"WARN: failed to read Half A method map {method_map_path}: {exc}")
+        else:
+            if isinstance(loaded_method_map, dict):
+                method_map_contract = loaded_method_map
+            else:
+                print(f"WARN: Half A method map {method_map_path} did not parse as mapping")
+
     report = _build_report(
         wiring_dir=wiring_dir,
         process_schema_dir=process_schema_dir,
         schema_contract=schema_contract,
+        method_map_contract=method_map_contract,
+        method_map_path=method_map_path,
         process_filter=args.process,
         strict_anchors=args.strict_anchors,
     )
