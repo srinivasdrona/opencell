@@ -1,4 +1,4 @@
-schema_version: "1.0"
+schema_version: "2.0"
 kind: per_process_wiring_row
 title: "OpenCell per-process wiring DB row"
 description: >-
@@ -13,10 +13,11 @@ required:
   - schema_version
   - schema_date
   - process
-  - methods
+  - integration_touchpoints
   - allocator
   - consume_stoichiometry
   - produce_stoichiometry
+  - stoichiometry_oracle
   - compartment_routing
   - unit_conversion_chain
   - dependencies
@@ -105,12 +106,21 @@ definitions:
   stoich_entry:
     type: object
     additionalProperties: false
-    required: [wid, compartment, formula_or_constant, matlab_anchor, oc_anchor]
+    required: [wid, compartment, kind, formula_or_constant, matlab_anchor, oc_anchor]
     properties:
       wid:
         type: string
       compartment:
         $ref: "#/definitions/compartment_name"
+      kind:
+        type: string
+        enum: [constant, per_reaction, per_flux, expression]
+        description: >-
+          D2 machine-checkable tag. 'constant' => formula_or_constant parses as
+          a number; 'per_reaction'/'per_flux' => coefficient scaled by a
+          reaction/flux variable named in formula_or_constant; 'expression' =>
+          symbolic, must still reference declared WIDs/params. Gate B validates
+          the string shape against this tag.
       formula_or_constant:
         type: string
         description: "Symbolic formula or literal constant, kept as a string."
@@ -138,6 +148,8 @@ definitions:
         type: array
         items:
           type: string
+      note:
+        type: string
   dependency_block:
     type: object
     additionalProperties: false
@@ -153,14 +165,14 @@ definitions:
           type: string
       note:
         type: string
-fields:
+properties:
   schema_version:
     type: string
-    const: "1.0"
+    const: "2.0"
     description: "Row schema version."
   schema_date:
     type: string
-    const: "2026-06-29"
+    const: "2026-07-07"
     description: "Date this schema version was finalized."
   process:
     type: object
@@ -185,12 +197,15 @@ fields:
         type: string
       notes:
         type: string
-  methods:
+  integration_touchpoints:
     type: object
-    description: "Map of MATLAB method name -> OC correspondence block."
+    additionalProperties: false
+    description: >-
+      D1: the three wiring-critical method bindings only. Full runtime-method
+      correspondence lives in Half A (data/karr_method_inventory/oc_method_map.yaml);
+      this block is NOT a duplicate inventory. Only the integration touchpoints
+      the wiring gate's A1/A3/A3b invariants grep against are listed here.
     required: [calcResourceRequirements_Current, evolveState, calcFluxBounds]
-    additionalProperties:
-      $ref: "#/definitions/method_binding"
     properties:
       calcResourceRequirements_Current:
         $ref: "#/definitions/method_binding"
@@ -247,6 +262,35 @@ fields:
     description: "Per-tick produced substrate entries."
     items:
       $ref: "#/definitions/stoich_entry"
+  stoichiometry_oracle:
+    type: object
+    additionalProperties: false
+    description: >-
+      D6 exhaustive-stoich contract. The consume/produce arrays above carry the
+      integration-relevant hand-curated entries; the exhaustive per-tick
+      substrate set is diffed by Gate B against the HB1 oracle record named here
+      (data/karr_method_inventory/karr_stoichiometry/<Process>.json). 'class'
+      MUST equal the HB1 record's class; 'substrate_count' MUST equal the
+      oracle's entry count; Gate B fails on any drift. This replaces the v1
+      'example shape, not a full enumeration' escape hatch.
+    required: [class, record_path, substrate_count]
+    properties:
+      class:
+        type: string
+        enum: [inline, matrix, none]
+        description: "MUST match the HB1 oracle record's class field."
+      record_path:
+        type: string
+        description: "Repo-relative path to the HB1 oracle JSON for this process."
+      substrate_count:
+        type: integer
+        minimum: 0
+        description: "MUST equal len(substrates) in the HB1 oracle record."
+      sha256:
+        type: string
+        description: "Optional content hash of the oracle record for drift detection."
+      note:
+        type: string
   compartment_routing:
     type: array
     items:
