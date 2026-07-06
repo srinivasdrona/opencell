@@ -57,6 +57,8 @@ DEFAULT_FIELD_ORDER = [
     "fbaReactionStoichiometryMatrix",
 ]
 
+MAX_REACTION_COEFFICIENTS_PER_SUBSTRATE = 256
+
 
 @dataclass(frozen=True)
 class MatrixSpec:
@@ -363,15 +365,20 @@ def _build_matrix_entry(
     compartment: str | None = None,
 ) -> dict[str, Any]:
     role, consume_total, produce_total = _role_from_vector(vector)
+    nz_count = int(np.count_nonzero(vector))
     entry: dict[str, Any] = {
         "wid": wid,
         "role": role,
         "net_coefficient": float(np.sum(vector)),
         "consume_coefficient_total": consume_total,
         "produce_coefficient_total": produce_total,
-        "nonzero_reaction_count": int(np.count_nonzero(vector)),
-        "reaction_coefficients": _reaction_coefficients(vector),
+        "nonzero_reaction_count": nz_count,
     }
+    if nz_count <= MAX_REACTION_COEFFICIENTS_PER_SUBSTRATE:
+        entry["reaction_coefficients"] = _reaction_coefficients(vector)
+    else:
+        entry["reaction_coefficients"] = []
+        entry["reaction_coefficients_omitted"] = True
     if compartment is not None:
         entry["compartment"] = compartment
     return entry

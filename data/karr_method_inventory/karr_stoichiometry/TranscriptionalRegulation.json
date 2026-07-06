@@ -1,13 +1,10 @@
 {
   "process": "TranscriptionalRegulation",
-  "source": "data/karr_fixtures/per_process/TranscriptionalRegulation_flat.mat + data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TranscriptionalRegulation.m inspection",
-  "status": "BLOCKER",
-  "reason": "No non-empty reaction stoichiometry matrix field found in fixture (checked reactionStoichiometryMatrix-family fields).",
-  "checked_matrix_fields": [
-    "reactionStoichiometryMatrix",
-    "reactionSmallMoleculeStoichiometryMatrix",
-    "fbaReactionStoichiometryMatrix"
-  ],
-  "available_stoichiometry_fields": [],
-  "n_substrate_ids": 0
+  "class": "none",
+  "source": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TranscriptionalRegulation.m + data/karr_fixtures/per_process/TranscriptionalRegulation_flat.mat",
+  "note": "No process substrates are declared (substrateWholeCellModelIDs empty); evolveState updates TF/chromosome binding state only.",
+  "substrates": [],
+  "n_substrates": 0,
+  "n_reactions": 0,
+  "n_entries": 0
 }
