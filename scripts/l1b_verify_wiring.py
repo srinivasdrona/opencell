@@ -50,6 +50,7 @@ CHECK_ORDER = (
     "check_allocator_requests_wids_in_schema_toml",
     "check_unit_conversion_chain_coherent",
     "check_ordering_constraints_reference_valid_processes",
+    "check_dependency_symmetry",
     "check_deviations_reference_valid_anchors",
 )
 
@@ -664,6 +665,7 @@ def check_schema_conformance(
     schema_contract: dict[str, Any] | None = None,
     method_map_contract: dict[str, Any] | None = None,
     method_map_path: Path | None = None,
+    dep_index: dict[str, dict[str, set[str]]] | None = None,
 ) -> CheckResult:
     del strict_anchors
     del repo_root
@@ -672,6 +674,7 @@ def check_schema_conformance(
     del process_schema_dir
     del method_map_contract
     del method_map_path
+    del dep_index
 
     if not isinstance(schema_contract, dict):
         return CheckResult(verdict="FAIL", details=["schema contract unavailable"])
@@ -701,6 +704,7 @@ def check_stoichiometry_oracle_matches(
     schema_contract: dict[str, Any] | None = None,
     method_map_contract: dict[str, Any] | None = None,
     method_map_path: Path | None = None,
+    dep_index: dict[str, dict[str, set[str]]] | None = None,
 ) -> CheckResult:
     del strict_anchors
     del cache
@@ -709,6 +713,7 @@ def check_stoichiometry_oracle_matches(
     del schema_contract
     del method_map_contract
     del method_map_path
+    del dep_index
 
     oracle_block = row.get("stoichiometry_oracle")
     if not isinstance(oracle_block, dict):
@@ -784,6 +789,7 @@ def check_half_a_b_consistency(
     schema_contract: dict[str, Any] | None = None,
     method_map_contract: dict[str, Any] | None = None,
     method_map_path: Path | None = None,
+    dep_index: dict[str, dict[str, set[str]]] | None = None,
 ) -> CheckResult:
     del strict_anchors
     del repo_root
@@ -791,6 +797,7 @@ def check_half_a_b_consistency(
     del roster
     del process_schema_dir
     del schema_contract
+    del dep_index
 
     if not isinstance(method_map_contract, dict):
         path_display = str(method_map_path) if method_map_path is not None else "unknown"
@@ -860,6 +867,7 @@ def check_a_invariants(
     schema_contract: dict[str, Any] | None = None,
     method_map_contract: dict[str, Any] | None = None,
     method_map_path: Path | None = None,
+    dep_index: dict[str, dict[str, set[str]]] | None = None,
 ) -> CheckResult:
     del strict_anchors
     del repo_root
@@ -869,6 +877,7 @@ def check_a_invariants(
     del schema_contract
     del method_map_contract
     del method_map_path
+    del dep_index
 
     failures: list[str] = []
     calc_request = _extract_touchpoint(row, "calcResourceRequirements_Current")
@@ -939,12 +948,14 @@ def check_matlab_anchors_resolve(
     schema_contract: dict[str, Any] | None = None,
     method_map_contract: dict[str, Any] | None = None,
     method_map_path: Path | None = None,
+    dep_index: dict[str, dict[str, set[str]]] | None = None,
 ) -> CheckResult:
     del roster
     del process_schema_dir
     del schema_contract
     del method_map_contract
     del method_map_path
+    del dep_index
     anchors = _collect_matlab_anchors(row)
     return _validate_anchor_refs(
         anchor_refs=anchors,
@@ -969,12 +980,14 @@ def check_oc_anchors_resolve(
     schema_contract: dict[str, Any] | None = None,
     method_map_contract: dict[str, Any] | None = None,
     method_map_path: Path | None = None,
+    dep_index: dict[str, dict[str, set[str]]] | None = None,
 ) -> CheckResult:
     del roster
     del process_schema_dir
     del schema_contract
     del method_map_contract
     del method_map_path
+    del dep_index
     anchors = _collect_oc_anchors(row)
     return _validate_anchor_refs(
         anchor_refs=anchors,
@@ -1016,6 +1029,56 @@ def _load_state_groups(toml_path: Path) -> tuple[dict[str, set[str]] | None, str
         if isinstance(members, list):
             groups[group_name] = {item for item in members if isinstance(item, str)}
     return groups, None
+
+
+def _collect_dependency_names(row: dict[str, Any], key: str) -> set[str]:
+    dependencies = row.get("dependencies")
+    if not isinstance(dependencies, dict):
+        return set()
+    values = dependencies.get(key)
+    if not isinstance(values, list):
+        return set()
+    return {
+        value.strip()
+        for value in values
+        if isinstance(value, str) and value.strip()
+    }
+
+
+def _dependency_partners_from_row(
+    row: dict[str, Any],
+    *,
+    key: str,
+) -> tuple[list[str] | None, list[str]]:
+    dependencies = row.get("dependencies")
+    if not isinstance(dependencies, dict):
+        return None, ["dependencies missing or not a mapping"]
+
+    values = dependencies.get(key)
+    if not isinstance(values, list):
+        return None, [f"dependencies.{key} missing/not a list"]
+
+    failures: list[str] = []
+    partners: list[str] = []
+    for idx, value in enumerate(values):
+        if not isinstance(value, str) or not value.strip():
+            failures.append(f"dependencies.{key}[{idx}] invalid process name {value!r}")
+            continue
+        partners.append(value.strip())
+    return partners, failures
+
+
+def _build_dependency_index(
+    rows: list[tuple[Path, dict[str, Any]]],
+) -> dict[str, dict[str, set[str]]]:
+    dep_index: dict[str, dict[str, set[str]]] = {}
+    for row_path, row in rows:
+        process_name = _process_name(row, row_path.stem)
+        dep_index[process_name] = {
+            "produces_inputs_for": _collect_dependency_names(row, "produces_inputs_for"),
+            "consumes_outputs_of": _collect_dependency_names(row, "consumes_outputs_of"),
+        }
+    return dep_index
 
 
 def _wid_check(
@@ -1082,6 +1145,7 @@ def check_consume_produce_wids_in_schema_toml(
     schema_contract: dict[str, Any] | None = None,
     method_map_contract: dict[str, Any] | None = None,
     method_map_path: Path | None = None,
+    dep_index: dict[str, dict[str, set[str]]] | None = None,
 ) -> CheckResult:
     del strict_anchors
     del repo_root
@@ -1090,6 +1154,7 @@ def check_consume_produce_wids_in_schema_toml(
     del schema_contract
     del method_map_contract
     del method_map_path
+    del dep_index
     return _wid_check(
         row=row,
         process_schema_dir=process_schema_dir,
@@ -1111,6 +1176,7 @@ def check_allocator_requests_wids_in_schema_toml(
     schema_contract: dict[str, Any] | None = None,
     method_map_contract: dict[str, Any] | None = None,
     method_map_path: Path | None = None,
+    dep_index: dict[str, dict[str, set[str]]] | None = None,
 ) -> CheckResult:
     del strict_anchors
     del repo_root
@@ -1119,6 +1185,7 @@ def check_allocator_requests_wids_in_schema_toml(
     del schema_contract
     del method_map_contract
     del method_map_path
+    del dep_index
     allocator = row.get("allocator")
     requests: Any = []
     bypasses: Any = []
@@ -1143,6 +1210,7 @@ def check_unit_conversion_chain_coherent(
     schema_contract: dict[str, Any] | None = None,
     method_map_contract: dict[str, Any] | None = None,
     method_map_path: Path | None = None,
+    dep_index: dict[str, dict[str, set[str]]] | None = None,
 ) -> CheckResult:
     del strict_anchors
     del repo_root
@@ -1152,6 +1220,7 @@ def check_unit_conversion_chain_coherent(
     del schema_contract
     del method_map_contract
     del method_map_path
+    del dep_index
 
     chain = row.get("unit_conversion_chain")
     if not isinstance(chain, dict):
@@ -1212,6 +1281,7 @@ def check_ordering_constraints_reference_valid_processes(
     schema_contract: dict[str, Any] | None = None,
     method_map_contract: dict[str, Any] | None = None,
     method_map_path: Path | None = None,
+    dep_index: dict[str, dict[str, set[str]]] | None = None,
 ) -> CheckResult:
     del strict_anchors
     del repo_root
@@ -1220,6 +1290,7 @@ def check_ordering_constraints_reference_valid_processes(
     del schema_contract
     del method_map_contract
     del method_map_path
+    del dep_index
 
     ordering = row.get("ordering_constraints")
     if not isinstance(ordering, dict):
@@ -1249,6 +1320,74 @@ def check_ordering_constraints_reference_valid_processes(
     return CheckResult(verdict="PASS", details=[f"validated {total_refs} ordering partner references"])
 
 
+def check_dependency_symmetry(
+    row: dict[str, Any],
+    *,
+    strict_anchors: bool,
+    repo_root: Path,
+    cache: FileCache,
+    roster: set[str],
+    process_schema_dir: Path,
+    schema_contract: dict[str, Any] | None = None,
+    method_map_contract: dict[str, Any] | None = None,
+    method_map_path: Path | None = None,
+    dep_index: dict[str, dict[str, set[str]]] | None = None,
+) -> CheckResult:
+    del strict_anchors
+    del repo_root
+    del cache
+    del process_schema_dir
+    del schema_contract
+    del method_map_contract
+    del method_map_path
+
+    if dep_index is None:
+        return CheckResult(verdict="FAIL", details=["dependency index missing"])
+
+    process_name = _process_name(row, "unknown")
+    failures: list[str] = []
+
+    produces_inputs_for, produce_failures = _dependency_partners_from_row(
+        row,
+        key="produces_inputs_for",
+    )
+    failures.extend(produce_failures)
+
+    consumes_outputs_of, consume_failures = _dependency_partners_from_row(
+        row,
+        key="consumes_outputs_of",
+    )
+    failures.extend(consume_failures)
+
+    for downstream in sorted(produces_inputs_for or []):
+        if downstream not in roster:
+            failures.append(f"dependency references unknown process {downstream!r}")
+            continue
+        if process_name not in dep_index[downstream]["consumes_outputs_of"]:
+            failures.append(
+                "dependency asymmetry: "
+                f"{process_name}.produces_inputs_for -> {downstream} "
+                f"but {downstream}.consumes_outputs_of lacks {process_name}"
+            )
+
+    for upstream in sorted(consumes_outputs_of or []):
+        if upstream not in roster:
+            failures.append(f"dependency references unknown process {upstream!r}")
+            continue
+        if process_name not in dep_index[upstream]["produces_inputs_for"]:
+            failures.append(
+                "dependency asymmetry: "
+                f"{process_name}.consumes_outputs_of -> {upstream} "
+                f"but {upstream}.produces_inputs_for lacks {process_name}"
+            )
+
+    if failures:
+        return CheckResult(verdict="FAIL", details=failures)
+
+    total_edges = len(produces_inputs_for or []) + len(consumes_outputs_of or [])
+    return CheckResult(verdict="PASS", details=[f"validated {total_edges} dependency edges"])
+
+
 def check_deviations_reference_valid_anchors(
     row: dict[str, Any],
     *,
@@ -1260,6 +1399,7 @@ def check_deviations_reference_valid_anchors(
     schema_contract: dict[str, Any] | None = None,
     method_map_contract: dict[str, Any] | None = None,
     method_map_path: Path | None = None,
+    dep_index: dict[str, dict[str, set[str]]] | None = None,
 ) -> CheckResult:
     del strict_anchors
     del cache
@@ -1268,6 +1408,7 @@ def check_deviations_reference_valid_anchors(
     del schema_contract
     del method_map_contract
     del method_map_path
+    del dep_index
 
     warnings: list[str] = []
     deviations = row.get("deviations")
@@ -1314,6 +1455,7 @@ CHECK_FUNCTIONS = {
     "check_allocator_requests_wids_in_schema_toml": check_allocator_requests_wids_in_schema_toml,
     "check_unit_conversion_chain_coherent": check_unit_conversion_chain_coherent,
     "check_ordering_constraints_reference_valid_processes": check_ordering_constraints_reference_valid_processes,
+    "check_dependency_symmetry": check_dependency_symmetry,
     "check_deviations_reference_valid_anchors": check_deviations_reference_valid_anchors,
 }
 
@@ -1330,6 +1472,7 @@ def _build_row_report(
     schema_contract: dict[str, Any],
     method_map_contract: dict[str, Any] | None,
     method_map_path: Path,
+    dep_index: dict[str, dict[str, set[str]]],
 ) -> dict[str, Any]:
     process_name = _process_name(row, row_file.stem)
     checks: dict[str, CheckResult] = {}
@@ -1347,6 +1490,7 @@ def _build_row_report(
             schema_contract=schema_contract,
             method_map_contract=method_map_contract,
             method_map_path=method_map_path,
+            dep_index=dep_index,
         )
         checks[check_name] = result
         if result["verdict"] == "FAIL":
@@ -1394,6 +1538,7 @@ def _build_report(
 ) -> dict[str, Any]:
     rows, load_failures = _discover_rows(wiring_dir)
     roster = {_process_name(payload, row_path.stem) for row_path, payload in rows}
+    dep_index = _build_dependency_index(rows)
 
     selected_rows = rows
     if process_filter is not None:
@@ -1418,6 +1563,7 @@ def _build_report(
                 schema_contract=schema_contract,
                 method_map_contract=method_map_contract,
                 method_map_path=method_map_path,
+                dep_index=dep_index,
             )
         )
 
