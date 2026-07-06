@@ -166,6 +166,13 @@ def _stub_method_map(
     }
 
 
+def _stub_method_map_many(*process_names: str) -> dict[str, Any]:
+    payload = {"schema": "oc_method_map/1.0", "processes": {}}
+    for process_name in process_names:
+        payload["processes"][process_name] = _stub_method_map(process_name=process_name)["processes"][process_name]
+    return payload
+
+
 def _synthetic_row(
     *,
     process_name: str,
@@ -346,6 +353,90 @@ def _write_synthetic_env(
         ),
         encoding="utf-8",
     )
+
+    env = {
+        "OC_L1B_WIRING_DIR": str(wiring_dir),
+        "OC_L1B_PROCESS_SCHEMA_DIR": str(schema_dir),
+    }
+    if method_map_payload is not None:
+        method_map_path = tmp_path / "oc_method_map.yaml"
+        _write_yaml(method_map_path, method_map_payload)
+        env["OC_L1B_OC_METHOD_MAP"] = str(method_map_path)
+    return env
+
+
+def _write_synthetic_corpus_env(
+    tmp_path: Path,
+    *,
+    row_payloads: list[dict[str, Any]],
+    state_groups_by_process: dict[str, dict[str, list[str]]],
+    method_map_payload: dict[str, Any] | None = None,
+) -> dict[str, str]:
+    wiring_dir = tmp_path / "wiring"
+    schema_dir = tmp_path / "per_process"
+    wiring_dir.mkdir(parents=True, exist_ok=True)
+    schema_dir.mkdir(parents=True, exist_ok=True)
+
+    (wiring_dir / "_schema.yaml").write_text(_SCHEMA.read_text(encoding="utf-8"), encoding="utf-8")
+
+    for row_payload in row_payloads:
+        row_copy = copy.deepcopy(row_payload)
+        process_name = row_copy["process"]["name"]
+
+        oracle_substrates: list[dict[str, str]] = []
+        seen_pairs: set[tuple[str, str]] = set()
+        for entry in [*row_copy.get("consume_stoichiometry", []), *row_copy.get("produce_stoichiometry", [])]:
+            if not isinstance(entry, dict):
+                continue
+            wid = entry.get("wid")
+            compartment = entry.get("compartment")
+            if not isinstance(wid, str) or not isinstance(compartment, str):
+                continue
+            pair = (wid, compartment)
+            if pair in seen_pairs:
+                continue
+            seen_pairs.add(pair)
+            oracle_substrates.append({"wid": wid, "compartment": compartment})
+
+        if not oracle_substrates:
+            oracle_substrates = [
+                {"wid": "GLC", "compartment": "cytosol"},
+                {"wid": "ATP", "compartment": "cytosol"},
+            ]
+
+        row_copy["stoichiometry_oracle"]["substrate_count"] = len(oracle_substrates)
+        oracle_path = tmp_path / f"{process_name}_oracle.json"
+        oracle_path.write_text(
+            json.dumps(
+                {
+                    "process": process_name,
+                    "class": "matrix",
+                    "n_substrates": len(oracle_substrates),
+                    "substrates": oracle_substrates,
+                }
+            ),
+            encoding="utf-8",
+        )
+        row_copy["stoichiometry_oracle"]["record_path"] = str(oracle_path)
+        _write_yaml(wiring_dir / f"{process_name}.yaml", row_copy)
+
+    for process_name, state_groups in state_groups_by_process.items():
+        (schema_dir / f"{process_name.lower()}.toml").write_text(
+            "\n".join(
+                [
+                    "[process]",
+                    f'name = "{process_name}"',
+                    "",
+                    "[state_groups]",
+                    f'substrates = {state_groups.get("substrates", [])!r}'.replace("'", '"'),
+                    f'enzymes = {state_groups.get("enzymes", [])!r}'.replace("'", '"'),
+                    f'monomers = {state_groups.get("monomers", [])!r}'.replace("'", '"'),
+                    f'complexs = {state_groups.get("complexs", [])!r}'.replace("'", '"'),
+                    f'rnas = {state_groups.get("rnas", [])!r}'.replace("'", '"'),
+                ]
+            ),
+            encoding="utf-8",
+        )
 
     env = {
         "OC_L1B_WIRING_DIR": str(wiring_dir),
@@ -721,3 +812,196 @@ def test_synthetic_v2_row_a1_violation_fails_a_invariants(tmp_path: Path) -> Non
     assert report["aggregate"]["overall_verdict"] == "FAIL"
     assert row_report["checks"]["check_a_invariants"]["verdict"] == "FAIL"
     assert any(detail.startswith("A1:") for detail in row_report["checks"]["check_a_invariants"]["details"])
+
+
+def test_dependency_symmetry_passes_then_fails(tmp_path: Path) -> None:
+    matlab_path = tmp_path / "synthetic.m"
+    python_path = tmp_path / "synthetic.py"
+    _make_matlab_file(matlab_path)
+    _make_python_file(python_path)
+
+    row_a = _synthetic_row(
+        process_name="ProcessA",
+        matlab_path=matlab_path,
+        python_path=python_path,
+        consume_wid="GLC",
+        produce_wid="ATP",
+        request_wid="GLC",
+    )
+    row_b = _synthetic_row(
+        process_name="ProcessB",
+        matlab_path=matlab_path,
+        python_path=python_path,
+        consume_wid="ATP",
+        produce_wid="GLC",
+        request_wid="ATP",
+    )
+    row_a["dependencies"]["produces_inputs_for"] = ["ProcessB"]
+    row_b["dependencies"]["consumes_outputs_of"] = ["ProcessA"]
+
+    env_pass = _write_synthetic_corpus_env(
+        tmp_path / "pass_case",
+        row_payloads=[row_a, row_b],
+        state_groups_by_process={
+            "ProcessA": {"substrates": ["GLC", "ATP"], "enzymes": [], "monomers": [], "complexs": [], "rnas": []},
+            "ProcessB": {"substrates": ["GLC", "ATP"], "enzymes": [], "monomers": [], "complexs": [], "rnas": []},
+        },
+        method_map_payload=_stub_method_map_many("ProcessA", "ProcessB"),
+    )
+    result_pass = _run_l1b("--format", "json", env_overrides=env_pass)
+    assert result_pass.returncode == 0
+    report_pass = _json_report(result_pass)
+    assert _row_by_name(report_pass, "ProcessA")["checks"]["check_dependency_symmetry"]["verdict"] == "PASS"
+    assert _row_by_name(report_pass, "ProcessB")["checks"]["check_dependency_symmetry"]["verdict"] == "PASS"
+
+    row_b_fail = copy.deepcopy(row_b)
+    row_b_fail["dependencies"]["consumes_outputs_of"] = []
+    env_fail = _write_synthetic_corpus_env(
+        tmp_path / "fail_case",
+        row_payloads=[row_a, row_b_fail],
+        state_groups_by_process={
+            "ProcessA": {"substrates": ["GLC", "ATP"], "enzymes": [], "monomers": [], "complexs": [], "rnas": []},
+            "ProcessB": {"substrates": ["GLC", "ATP"], "enzymes": [], "monomers": [], "complexs": [], "rnas": []},
+        },
+        method_map_payload=_stub_method_map_many("ProcessA", "ProcessB"),
+    )
+    result_fail = _run_l1b("--format", "json", env_overrides=env_fail)
+    assert result_fail.returncode == 1
+    report_fail = _json_report(result_fail)
+    row_a_fail = _row_by_name(report_fail, "ProcessA")
+    assert row_a_fail["checks"]["check_dependency_symmetry"]["verdict"] == "FAIL"
+    assert any(
+        "ProcessA.produces_inputs_for -> ProcessB" in detail
+        for detail in row_a_fail["checks"]["check_dependency_symmetry"]["details"]
+    )
+
+
+def test_orphan_consume_wids_fail_then_clear(tmp_path: Path) -> None:
+    matlab_path = tmp_path / "synthetic.m"
+    python_path = tmp_path / "synthetic.py"
+    _make_matlab_file(matlab_path)
+    _make_python_file(python_path)
+
+    row_a = _synthetic_row(
+        process_name="ProcessA",
+        matlab_path=matlab_path,
+        python_path=python_path,
+        consume_wid="X_orphan",
+        produce_wid="ATP",
+        request_wid="X_orphan",
+    )
+    row_b = _synthetic_row(
+        process_name="ProcessB",
+        matlab_path=matlab_path,
+        python_path=python_path,
+        consume_wid="ATP",
+        produce_wid="GLC",
+        request_wid="ATP",
+    )
+
+    env_fail = _write_synthetic_corpus_env(
+        tmp_path / "fail_case",
+        row_payloads=[row_a, row_b],
+        state_groups_by_process={
+            "ProcessA": {"substrates": ["X_orphan", "ATP"], "enzymes": [], "monomers": [], "complexs": [], "rnas": []},
+            "ProcessB": {"substrates": ["GLC", "ATP", "X_orphan"], "enzymes": [], "monomers": [], "complexs": [], "rnas": []},
+        },
+        method_map_payload=_stub_method_map_many("ProcessA", "ProcessB"),
+    )
+    result_fail = _run_l1b("--format", "json", env_overrides=env_fail)
+    assert result_fail.returncode == 1
+    report_fail = _json_report(result_fail)
+    row_a_fail = _row_by_name(report_fail, "ProcessA")
+    assert row_a_fail["checks"]["check_orphan_consume_wids"]["verdict"] == "FAIL"
+    assert any("X_orphan" in detail for detail in row_a_fail["checks"]["check_orphan_consume_wids"]["details"])
+
+    row_b_clear = copy.deepcopy(row_b)
+    row_b_clear["produce_stoichiometry"][0]["wid"] = "X_orphan"
+    env_pass = _write_synthetic_corpus_env(
+        tmp_path / "pass_case",
+        row_payloads=[row_a, row_b_clear],
+        state_groups_by_process={
+            "ProcessA": {"substrates": ["X_orphan", "ATP"], "enzymes": [], "monomers": [], "complexs": [], "rnas": []},
+            "ProcessB": {"substrates": ["GLC", "ATP", "X_orphan"], "enzymes": [], "monomers": [], "complexs": [], "rnas": []},
+        },
+        method_map_payload=_stub_method_map_many("ProcessA", "ProcessB"),
+    )
+    result_pass = _run_l1b("--format", "json", env_overrides=env_pass)
+    assert result_pass.returncode == 0
+    report_pass = _json_report(result_pass)
+    row_a_pass = _row_by_name(report_pass, "ProcessA")
+    assert row_a_pass["checks"]["check_orphan_consume_wids"]["verdict"] == "PASS"
+
+
+def test_dependency_cycle_fails_then_passes(tmp_path: Path) -> None:
+    matlab_path = tmp_path / "synthetic.m"
+    python_path = tmp_path / "synthetic.py"
+    _make_matlab_file(matlab_path)
+    _make_python_file(python_path)
+
+    row_a = _synthetic_row(
+        process_name="ProcessA",
+        matlab_path=matlab_path,
+        python_path=python_path,
+        consume_wid="GLC",
+        produce_wid="ATP",
+        request_wid="GLC",
+    )
+    row_b = _synthetic_row(
+        process_name="ProcessB",
+        matlab_path=matlab_path,
+        python_path=python_path,
+        consume_wid="ATP",
+        produce_wid="GLC",
+        request_wid="ATP",
+    )
+    row_a["dependencies"] = {
+        "produces_inputs_for": ["ProcessB"],
+        "consumes_outputs_of": ["ProcessB"],
+    }
+    row_b["dependencies"] = {
+        "produces_inputs_for": ["ProcessA"],
+        "consumes_outputs_of": ["ProcessA"],
+    }
+
+    env_fail = _write_synthetic_corpus_env(
+        tmp_path / "fail_case",
+        row_payloads=[row_a, row_b],
+        state_groups_by_process={
+            "ProcessA": {"substrates": ["GLC", "ATP"], "enzymes": [], "monomers": [], "complexs": [], "rnas": []},
+            "ProcessB": {"substrates": ["GLC", "ATP"], "enzymes": [], "monomers": [], "complexs": [], "rnas": []},
+        },
+        method_map_payload=_stub_method_map_many("ProcessA", "ProcessB"),
+    )
+    result_fail = _run_l1b("--format", "json", env_overrides=env_fail)
+    assert result_fail.returncode == 1
+    report_fail = _json_report(result_fail)
+    graph_fail = report_fail["aggregate"]["graph_checks"]["no_dependency_cycles"]
+    assert graph_fail["verdict"] == "FAIL"
+    assert ["ProcessA", "ProcessB", "ProcessA"] in graph_fail["cycles"]
+
+    row_b_pass = copy.deepcopy(row_b)
+    row_b_pass["dependencies"] = {
+        "produces_inputs_for": [],
+        "consumes_outputs_of": ["ProcessA"],
+    }
+    row_a_pass = copy.deepcopy(row_a)
+    row_a_pass["dependencies"] = {
+        "produces_inputs_for": ["ProcessB"],
+        "consumes_outputs_of": [],
+    }
+    env_pass = _write_synthetic_corpus_env(
+        tmp_path / "pass_case",
+        row_payloads=[row_a_pass, row_b_pass],
+        state_groups_by_process={
+            "ProcessA": {"substrates": ["GLC", "ATP"], "enzymes": [], "monomers": [], "complexs": [], "rnas": []},
+            "ProcessB": {"substrates": ["GLC", "ATP"], "enzymes": [], "monomers": [], "complexs": [], "rnas": []},
+        },
+        method_map_payload=_stub_method_map_many("ProcessA", "ProcessB"),
+    )
+    result_pass = _run_l1b("--format", "json", env_overrides=env_pass)
+    assert result_pass.returncode == 0
+    report_pass = _json_report(result_pass)
+    graph_pass = report_pass["aggregate"]["graph_checks"]["no_dependency_cycles"]
+    assert graph_pass["verdict"] == "PASS"
+    assert graph_pass["cycles"] == []
