@@ -80,6 +80,8 @@ definitions:
             description: "Optional supporting OC anchors for helper functions."
             items:
               $ref: "#/definitions/source_anchor"
+          note:
+            type: string
       status:
         type: string
         enum: [implemented, partial, not_implemented]

@@ -102,7 +102,7 @@ class _SymbolCollector(ast.NodeVisitor):
             SymbolOccurrence(
                 full_name=full_name,
                 short_name=node.name,
-                start_line=node.lineno,
+                start_line=min([node.lineno, *(d.lineno for d in node.decorator_list)]),
                 end_line=getattr(node, "end_lineno", node.lineno),
             )
         )
@@ -124,7 +124,7 @@ class _SymbolCollector(ast.NodeVisitor):
             SymbolOccurrence(
                 full_name=full_name,
                 short_name=node.name,
-                start_line=node.lineno,
+                start_line=min([node.lineno, *(d.lineno for d in node.decorator_list)]),
                 end_line=getattr(node, "end_lineno", node.lineno),
             )
         )
@@ -510,6 +510,23 @@ def _validate_anchor_refs(
             text = cache.text(resolved)
         except Exception as exc:
             failures.append(f"{anchor.label}: could not read file {anchor.path}: {exc}")
+            continue
+
+        # Documentation anchors (.md/.txt/.rst) and module-scope code anchors
+        # ('<module>' marker) carry a descriptive symbol (section heading or
+        # module marker), not a verifiable code symbol. Verify the path exists
+        # (done above) and the line span is in range; skip the code-symbol-in-
+        # window check, which is meaningless for these.
+        if resolved.suffix.lower() in (".md", ".txt", ".rst") or anchor.symbol == "<module>":
+            span = _parse_line_span(anchor.lines)
+            if span is None:
+                failures.append(f"{anchor.label}: invalid lines span {anchor.lines!r}")
+            else:
+                lines = cache.lines(resolved)
+                if not (1 <= span[0] <= max(1, len(lines))):
+                    failures.append(
+                        f"{anchor.label}: lines {anchor.lines!r} out of range in {anchor.path}"
+                    )
             continue
 
         if allow_md_extract_docs and resolved.suffix.lower() == ".md":
