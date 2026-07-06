@@ -1,5 +1,5 @@
-schema_version: "2.0"
-schema_date: '2026-07-07'
+schema_version: "1.0"
+schema_date: '2026-06-29'
 process:
   name: "ChromosomeCondensation"
   matlab_class: "ChromosomeCondensation"
@@ -12,7 +12,42 @@ process:
   notes: >-
     Karr-light v1 aggregate model: keeps allocator-mediated ATP/H2O demand
     and substrate writeback, but not the full per-position chromosome topology.
-integration_touchpoints:
+methods:
+  calcResourceRequirements_LifeCycle:
+    matlab:
+      symbol: "calcResourceRequirements_LifeCycle"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m"
+        lines: "187-218"
+        note: "Cell-cycle resource requirement and minimum enzyme expression block."
+    oc:
+      symbol: "KarrChromosomeCondensationProcess"
+      source:
+        path: "opencell/vivarium/karr_chromosome_condensation.py"
+        lines: "145-937"
+        note: "No lifecycle FBA/resource requirement phase in the current OC port. Representative OC anchor for non-implemented correspondence."
+      note: OC does not implement this Karr method.
+    status: "not_implemented"
+    note: "Karr computes lifecycle ATP and minimum-enzyme requirements here; OC light model omits that phase. OC does not implement this Karr method."
+  initializeState:
+    matlab:
+      symbol: "initializeState"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m"
+        lines: "220-230"
+        note: "Seeds a steady SMC-bound state by forcing ATP/H2O to Inf and iterating evolveState 20 times."
+    oc:
+      symbol: "KarrChromosomeCondensationProcess.__init__"
+      source:
+        path: "opencell/vivarium/karr_chromosome_condensation.py"
+        lines: "165-257"
+        note: "Fixture/trace-driven initialization and default state seeding."
+      supporting:
+        - path: "opencell/vivarium/karr_chromosome_condensation.py"
+          lines: "270-274"
+          note: "Default condensation level derived from fixture ATP and trace anchor."
+    status: "partial"
+    note: "OC replaces the warm-start loop with fixture/trace-derived defaults."
   calcResourceRequirements_Current:
     matlab:
       symbol: "calcResourceRequirements_Current"
@@ -20,7 +55,6 @@ integration_touchpoints:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m"
         lines: "232-237"
         note: "Allocator-facing ATP/H2O request vector."
-        symbol: "calcResourceRequirements_Current"
       note: "Returns ATP and H2O demand equal to free SMC count."
     oc:
       symbol: "KarrChromosomeCondensationProcess.next_update"
@@ -28,16 +62,13 @@ integration_touchpoints:
         path: "opencell/vivarium/karr_chromosome_condensation.py"
         lines: "321-442"
         note: "Merged request emission plus per-tick state update; requests are written into the update dict."
-        symbol: "KarrChromosomeCondensationProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_chromosome_condensation.py"
           lines: "323-326"
           note: "Reads `substrates_allocated` first, then applies `_allocated_or_state` as a non-negative clamp."
-          symbol: KarrChromosomeCondensationProcess.next_update
         - path: "opencell/vivarium/karr_chromosome_condensation.py"
           lines: "435-441"
           note: "Writes ATP/H2O request values each tick."
-          symbol: KarrChromosomeCondensationProcess.next_update
     status: "partial"
     note: "No standalone request-calculator class; allocator demand is embedded in next_update."
   evolveState:
@@ -47,25 +78,44 @@ integration_touchpoints:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m"
         lines: "240-284"
         note: "Dissociate SMC-ADP, bind SMCs stochastically, and apply ATP/H2O -> ADP/PI/H substrate deltas."
-        symbol: "evolveState"
     oc:
       symbol: "KarrChromosomeCondensationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_chromosome_condensation.py"
         lines: "321-442"
         note: "Per-tick aggregate update for bound SMC count and substrate deltas."
-        symbol: "KarrChromosomeCondensationProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_chromosome_condensation.py"
           lines: "444-560"
           note: "No-hints binding sampler and bound-site reconstruction."
-          symbol: KarrChromosomeCondensationProcess._sample_smc_binding_no_hints
         - path: "opencell/vivarium/karr_chromosome_condensation.py"
           lines: "832-838"
           note: "Allocated-value helper that clamps `substrates_allocated` grants to non-negative values."
-          symbol: KarrChromosomeCondensationProcess._allocated_or_state
     status: "partial"
     note: "Implemented as Karr-light aggregate semantics, not the full per-position chromosome model."
+  calcNewRegions:
+    matlab:
+      symbol: "calcNewRegions"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m"
+        lines: "286-292"
+        note: "Helper used by stochastic binding to prune candidate intervals and score region lengths."
+    oc:
+      symbol: "KarrChromosomeCondensationProcess._build_available_intervals"
+      source:
+        path: "opencell/vivarium/karr_chromosome_condensation.py"
+        lines: "652-691"
+        note: "Current OC interval exclusion and random binding position sampling. Normalized composite OC symbol for methods.calcNewRegions."
+      supporting:
+        - path: "opencell/vivarium/karr_chromosome_condensation.py"
+          lines: "759-789"
+          note: "Appends the sampled bound sites back into the sparse chromosome representation."
+        - path: "opencell/vivarium/karr_chromosome_condensation.py"
+          symbol: KarrChromosomeCondensationProcess._sample_binding_positions
+          lines: 693-757
+          note: Supporting OC anchor for methods.calcNewRegions.
+    status: "partial"
+    note: "Same conceptual helper, but OC reconstructs intervals on sparse aggregate state."
   calcFluxBounds:
     matlab:
       symbol: "ChromosomeCondensation"
@@ -73,7 +123,6 @@ integration_touchpoints:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m"
         lines: "1-1"
         note: "No calcFluxBounds body exists in this class; included for schema completeness. Class-level anchor used to record calcFluxBounds absence."
-        symbol: "ChromosomeCondensation"
       note: This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
     oc:
       symbol: "KarrChromosomeCondensationProcess"
@@ -81,7 +130,6 @@ integration_touchpoints:
         path: "opencell/vivarium/karr_chromosome_condensation.py"
         lines: "145-937"
         note: "No LP-bound construction path for this process. Representative OC anchor for non-implemented correspondence."
-        symbol: "KarrChromosomeCondensationProcess"
       note: OC does not implement this Karr method.
     status: "not_implemented"
     note: "ChromosomeCondensation has no dedicated flux-bound phase in either source tree. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
@@ -124,14 +172,11 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m"
       lines: "273-281"
       note: "ATP is spent during the post-bind update."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_chromosome_condensation.py"
       lines: "393-399"
       note: "ATP delta is applied after n_bound is computed."
-      symbol: KarrChromosomeCondensationProcess.next_update
     note: "One ATP is spent for each bound SMC."
-    kind: expression
   - wid: "H2O"
     compartment: "cytosol"
     formula_or_constant: "-nBound"
@@ -139,14 +184,11 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m"
       lines: "273-281"
       note: "Water is consumed in the same hydrolysis update."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_chromosome_condensation.py"
       lines: "397-400"
       note: "Water delta is applied alongside ATP."
-      symbol: KarrChromosomeCondensationProcess.next_update
     note: "One water molecule is spent for each bound SMC."
-    kind: expression
 produce_stoichiometry:
   - wid: "ADP"
     compartment: "cytosol"
@@ -155,14 +197,11 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m"
       lines: "241-244"
       note: "SMC-ADP dissociation returns ADP to the substrate pool."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_chromosome_condensation.py"
       lines: "364-366"
       note: "All free SMC-ADP dissociates at the top of next_update."
-      symbol: KarrChromosomeCondensationProcess.next_update
     note: "Dissociation returns the ADP bookkeeping to the substrate pool."
-    kind: expression
   - wid: "PI"
     compartment: "cytosol"
     formula_or_constant: "+nBound"
@@ -170,14 +209,11 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m"
       lines: "273-283"
       note: "Hydrolysis branch produces phosphate."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_chromosome_condensation.py"
       lines: "397-400"
       note: "Phosphate delta is applied with the ATP consumption block."
-      symbol: KarrChromosomeCondensationProcess.next_update
     note: "Hydrolysis releases inorganic phosphate."
-    kind: expression
   - wid: "H"
     compartment: "cytosol"
     formula_or_constant: "+nBound"
@@ -185,19 +221,11 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m"
       lines: "273-283"
       note: "Hydrolysis branch produces hydrogen."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_chromosome_condensation.py"
       lines: "400-402"
       note: "Hydrogen delta is applied with the ATP consumption block."
-      symbol: KarrChromosomeCondensationProcess.next_update
     note: "Hydrolysis releases protons."
-    kind: expression
-stoichiometry_oracle:
-  class: inline
-  record_path: data/karr_method_inventory/karr_stoichiometry/ChromosomeCondensation.json
-  substrate_count: 5
-  note: Exhaustive per-tick substrate set lives in the HB1 oracle; this row's consume/produce arrays carry integration-relevant hand-curated entries.
 compartment_routing:
   - wid: "ATP"
     consume_compartment: "cytosol"
@@ -236,7 +264,6 @@ unit_conversion_chain:
         path: "opencell/vivarium/karr_chromosome_condensation.py"
         lines: "321-442"
         note: Process works directly in per-tick integer counts; no unit conversion needed.
-        symbol: KarrChromosomeCondensationProcess.next_update
       note: Process works directly in per-tick integer counts; no unit conversion needed.
   note: "This process does not require unit conversion (per-tick integer counts throughout)."
 dependencies:
@@ -256,88 +283,71 @@ source_anchors:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m"
       lines: "122-123"
       note: "Class declaration and inheritance."
-      symbol: ChromosomeCondensation
     lifecycle_requirements:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m"
       lines: "187-218"
       note: "calcResourceRequirements_LifeCycle block."
-      symbol: calcResourceRequirements_LifeCycle
     initialize_state:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m"
       lines: "220-230"
       note: "Steady-state warm-up loop."
-      symbol: calcResourceRequirements_LifeCycle
     current_requirements:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m"
       lines: "232-237"
       note: "calcResourceRequirements_Current block."
-      symbol: calcResourceRequirements_LifeCycle
     evolve_state:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m"
       lines: "240-284"
       note: "Per-tick SMC dissociation, binding, and substrate writeback."
-      symbol: calcResourceRequirements_Current
     calc_new_regions:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m"
       lines: "286-292"
       note: "Binding helper used by stochastic region selection."
-      symbol: calcNewRegions
     simulation_ordering:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m"
       lines: "24-70"
       note: "Per-tick requirements/allocation/evolve sequence plus global hard ordering for tRNAAminoacylation vs Translation."
-      symbol: evolveState
   oc_blocks:
     process_class:
       path: "opencell/vivarium/karr_chromosome_condensation.py"
       lines: "145-168"
       note: "Class definition and constructor defaults."
-      symbol: KarrChromosomeCondensationProcess
     fixture_load:
       path: "opencell/vivarium/karr_chromosome_condensation.py"
       lines: "186-231"
       note: "Fixture load and WID/index extraction."
-      symbol: KarrChromosomeCondensationProcess._load_fixture
     trace_anchor_load:
       path: "opencell/vivarium/karr_chromosome_condensation.py"
       lines: "233-257"
       note: "Trace anchor load and empty-trace flag."
-      symbol: KarrChromosomeCondensationProcess._load_trace_anchor
     ports_schema:
       path: "opencell/vivarium/karr_chromosome_condensation.py"
       lines: "276-319"
       note: "Ports for chromosome, substrates, requests, and substrates_allocated."
-      symbol: KarrChromosomeCondensationProcess.ports_schema
     next_update:
       path: "opencell/vivarium/karr_chromosome_condensation.py"
       lines: "321-442"
       note: "Merged request emission and per-tick update."
-      symbol: KarrChromosomeCondensationProcess.next_update
     binding_sampler:
       path: "opencell/vivarium/karr_chromosome_condensation.py"
       lines: "444-560"
       note: "No-hints binding sampler and sparse-site synthesis."
-      symbol: KarrChromosomeCondensationProcess._sample_smc_binding_no_hints
     interval_builder:
       path: "opencell/vivarium/karr_chromosome_condensation.py"
       lines: "652-755"
       note: "Interval exclusion and stochastic binding position sampling."
-      symbol: KarrChromosomeCondensationProcess._build_available_intervals
     allocated_helper:
       path: "opencell/vivarium/karr_chromosome_condensation.py"
       lines: "832-838"
       note: "Allocated-grant clamp helper (`max(0, allocated)`)."
-      symbol: KarrChromosomeCondensationProcess._allocated_or_state
     composite_wiring:
       path: "opencell/vivarium/karr_composite.py"
       lines: "2115-2120"
       note: "Port mapping for karr_chromosome_condensation in the chassis."
-      symbol: build_karr_chassis_v5
     composite_registration:
       path: "opencell/vivarium/karr_composite.py"
       lines: "2312-2312"
       note: "Process registration in the chassis assembly."
-      symbol: build_karr_chassis_v5
 provenance:
   fixture_files:
     - "data/karr_fixtures/per_process/ChromosomeCondensation_flat.mat"
@@ -376,12 +386,10 @@ deviations:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m"
       lines: "187-237"
       note: "Nearest resource-update block; no dedicated flux-bound phase exists in this class."
-      symbol: calcResourceRequirements_LifeCycle
     oc_anchor:
       path: "opencell/vivarium/karr_chromosome_condensation.py"
       lines: "321-442"
       note: "Nearest update block; OC also lacks an LP-bound phase for this process."
-      symbol: KarrChromosomeCondensationProcess.next_update
   shared_pool_projection_merges_compartments: true
   known_deviations:
     - "OC is Karr-light v1 aggregate condensation, not the full per-position chromosome topology."

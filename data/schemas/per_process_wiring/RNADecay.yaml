@@ -1,5 +1,5 @@
-schema_version: "2.0"
-schema_date: '2026-07-07'
+schema_version: "1.0"
+schema_date: '2026-06-29'
 process:
   name: "RNADecay"
   matlab_class: "RNADecay"
@@ -13,7 +13,7 @@ process:
     This row is exemplar-scoped; canonical exemplars are listed and are not an
     exhaustive enumeration. MATLAB anchors use executable RNADecay.m lines plus
     architecture extracts where useful.
-integration_touchpoints:
+methods:
   calcResourceRequirements_Current:
     matlab:
       symbol: "calcResourceRequirements_Current"
@@ -21,7 +21,6 @@ integration_touchpoints:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNADecay.m"
         lines: "282-294"
         note: "Current-tick H2O request from decay stoichiometry with aborted-transcript water add."
-        symbol: "calcResourceRequirements_Current"
       note: "RNADecay computes request mass directly in calcResourceRequirements_Current."
     oc:
       symbol: "RnaDecayLightProcess.next_update"
@@ -29,16 +28,13 @@ integration_touchpoints:
         path: "opencell/vivarium/karr_rna_decay.py"
         lines: "316-334"
         note: "Inline request emission before water gating."
-        symbol: "RnaDecayLightProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_composite.py"
           lines: "2441-2447"
           note: "RNADecay topology wiring includes requests and substrates_allocated."
-          symbol: build_karr_chassis_v6
         - path: "opencell/vivarium/karr_allocation_step.py"
           lines: "210-280"
           note: "Allocator grant step that consumes the request vector."
-          symbol: KarrAllocationStep.next_update
       note: "OC does not expose a dedicated RequestCalculator; the request is emitted inside next_update."
     status: "partial"
     note: >-
@@ -52,7 +48,6 @@ integration_touchpoints:
         path: "docs/karr_extracts/process/13_RNADecay.md"
         lines: "75-92"
         note: "Verbatim extract of the RNADecay algorithm summary."
-        symbol: "evolveState"
       note: "The raw MATLAB body is absent here, so the extract is the best local source."
     oc:
       symbol: "RnaDecayLightProcess.next_update"
@@ -60,12 +55,10 @@ integration_touchpoints:
         path: "opencell/vivarium/karr_rna_decay.py"
         lines: "339-389"
         note: "Stochastic decay sampling, peptidyl-hydrolase gating, water gate, RNA and substrate writeback."
-        symbol: "RnaDecayLightProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_rna_decay.py"
           lines: "443-450"
           note: "Allocator-first H2O read with substrates fallback."
-          symbol: RnaDecayLightProcess._available_water
       note: "Core biology is implemented in next_update; OC adds trace-hint replay and fallback paths."
     status: "partial"
     note: >-
@@ -78,7 +71,6 @@ integration_touchpoints:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNADecay.m"
         lines: "86-86"
         note: "No flux-bounds or LP block is described for RNADecay in the local extract. Class-level anchor used to record calcFluxBounds absence."
-        symbol: "RNADecay"
       note: "RNADecay is not an LP/flux process in the available source material. This process does not have Karr's calcFluxBounds method; it does not participate in FBA."
     oc:
       symbol: "RnaDecayLightProcess"
@@ -86,7 +78,6 @@ integration_touchpoints:
         path: "opencell/vivarium/karr_rna_decay.py"
         lines: "81-500"
         note: "Process class, fixture loading, and ports schema only; no flux-bound equivalent exists. Representative OC anchor for non-implemented correspondence."
-        symbol: "RnaDecayLightProcess"
       note: "OC has no calcFluxBounds analogue for RNADecay. OC does not implement this Karr method."
     status: "not_implemented"
     note: "This slot is retained for schema uniformity only. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
@@ -136,14 +127,11 @@ consume_stoichiometry:
       path: "docs/karr_extracts/process/13_RNADecay.md"
       lines: "84-92"
       note: "Algorithm says water is the only reactant and byproducts are updated after the decay loop."
-      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_rna_decay.py"
       lines: "355-368"
       note: "Water gate during weighted acceptance of decay events."
-      symbol: RnaDecayLightProcess.next_update
     note: "RNADecay consumes only water as a reactant."
-    kind: expression
 produce_stoichiometry:
   - wid: "ALA"
     compartment: "cytosol"
@@ -152,14 +140,11 @@ produce_stoichiometry:
       path: "docs/karr_extracts/process/13_RNADecay.md"
       lines: "91-92"
       note: "Byproduct update step."
-      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_rna_decay.py"
       lines: "379-387"
       note: "Direct substrate writeback from decay stoichiometry."
-      symbol: RnaDecayLightProcess.next_update
     note: "Fixture-dependent amino-acid byproduct from aminoacylated RNA decay."
-    kind: per_reaction
   - wid: "AMP"
     compartment: "cytosol"
     formula_or_constant: "(decayEvents @ decayReactions)"
@@ -167,14 +152,11 @@ produce_stoichiometry:
       path: "docs/karr_extracts/process/13_RNADecay.md"
       lines: "91-92"
       note: "Byproduct update step."
-      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_rna_decay.py"
       lines: "379-387"
       note: "Direct substrate writeback from decay stoichiometry."
-      symbol: RnaDecayLightProcess.next_update
     note: "Canonical nucleotide monophosphate byproduct."
-    kind: per_reaction
   - wid: "CMP"
     compartment: "cytosol"
     formula_or_constant: "(decayEvents @ decayReactions)"
@@ -182,14 +164,11 @@ produce_stoichiometry:
       path: "docs/karr_extracts/process/13_RNADecay.md"
       lines: "91-92"
       note: "Byproduct update step."
-      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_rna_decay.py"
       lines: "379-387"
       note: "Direct substrate writeback from decay stoichiometry."
-      symbol: RnaDecayLightProcess.next_update
     note: "Canonical nucleotide monophosphate byproduct."
-    kind: per_reaction
   - wid: "GMP"
     compartment: "cytosol"
     formula_or_constant: "(decayEvents @ decayReactions)"
@@ -197,14 +176,11 @@ produce_stoichiometry:
       path: "docs/karr_extracts/process/13_RNADecay.md"
       lines: "91-92"
       note: "Byproduct update step."
-      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_rna_decay.py"
       lines: "379-387"
       note: "Direct substrate writeback from decay stoichiometry."
-      symbol: RnaDecayLightProcess.next_update
     note: "Canonical nucleotide monophosphate byproduct."
-    kind: per_reaction
   - wid: "UMP"
     compartment: "cytosol"
     formula_or_constant: "(decayEvents @ decayReactions)"
@@ -212,19 +188,11 @@ produce_stoichiometry:
       path: "docs/karr_extracts/process/13_RNADecay.md"
       lines: "91-92"
       note: "Byproduct update step."
-      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_rna_decay.py"
       lines: "379-387"
       note: "Direct substrate writeback from decay stoichiometry."
-      symbol: RnaDecayLightProcess.next_update
     note: "Canonical nucleotide monophosphate byproduct."
-    kind: per_reaction
-stoichiometry_oracle:
-  class: matrix
-  record_path: data/karr_method_inventory/karr_stoichiometry/RNADecay.json
-  substrate_count: 37
-  note: Exhaustive per-tick substrate set lives in the HB1 oracle; this row's consume/produce arrays carry integration-relevant hand-curated entries.
 compartment_routing:
   - wid: "H2O"
     consume_compartment: "cytosol"
@@ -268,7 +236,6 @@ unit_conversion_chain:
         path: "opencell/vivarium/karr_rna_decay.py"
         lines: "339-389"
         note: Process works directly in per-tick integer counts; no unit conversion needed.
-        symbol: RnaDecayLightProcess.next_update
       note: Process works directly in per-tick integer counts; no unit conversion needed.
   note: "This process does not require unit conversion (per-tick integer counts throughout)."
 dependencies:
@@ -299,48 +266,39 @@ source_anchors:
       path: "docs/karr_extracts/process/13_RNADecay.md"
       lines: "16-92"
       note: "Verbatim RNADecay description and algorithm summary."
-      symbol: Verbatim docstring extract
     allocation_loop:
       path: "docs/karr_extracts/architecture/03_variable_allocation.md"
       lines: "10-23"
       note: "Process request collection and proportional fair-share allocation."
-      symbol: Verbatim extract - allocation block
     simulation_order:
       path: "docs/karr_extracts/architecture/01_simulation_loop.md"
       lines: "166-197"
       note: "Sequential process execution and the tRNAAminoacylation/Translation order constraint."
-      symbol: Verbatim extract - `evolveState.m` per-tick algorithm
     allocation_consumer_inventory:
       path: "docs/design/allocation_consumer_enrollment.md"
       lines: "13-24"
       note: "RNADecay must be enrolled as an H2O allocator consumer."
-      symbol: RNADecay substrate inventory
   oc_blocks:
     process_class:
       path: "opencell/vivarium/karr_rna_decay.py"
       lines: "81-186"
       note: "Class definition, defaults, and fixture loading."
-      symbol: RnaDecayLightProcess
     ports_and_update:
       path: "opencell/vivarium/karr_rna_decay.py"
       lines: "230-389"
       note: "Ports schema, trace-hint path, request emission, decay gating, and substrate writeback."
-      symbol: RnaDecayLightProcess.ports_schema
     water_gate:
       path: "opencell/vivarium/karr_rna_decay.py"
       lines: "443-450"
       note: "Allocator-first water lookup with substrate fallback."
-      symbol: RnaDecayLightProcess._available_water
     composite_wiring:
       path: "opencell/vivarium/karr_composite.py"
       lines: "2441-2447"
       note: "RNADecay process registration and topology wiring."
-      symbol: build_karr_chassis_v6
     allocation_step:
       path: "opencell/vivarium/karr_allocation_step.py"
       lines: "210-280"
       note: "Allocator grant logic used by RNADecay's H2O requests."
-      symbol: KarrAllocationStep.next_update
 provenance:
   last_audited: "2026-06-29"
   audited_by: "gpt-5.4-mini (codex; row authored Day-43 EOD)"
@@ -372,12 +330,10 @@ deviations:
       path: "docs/karr_extracts/process/13_RNADecay.md"
       lines: "75-92"
       note: "The local extract describes stochastic decay and byproduct updates but no flux-bound block."
-      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_rna_decay.py"
       lines: "81-260"
       note: "RNADecay port contains no LP or flux-bound machinery."
-      symbol: RnaDecayLightProcess
   shared_pool_projection_merges_compartments: true
   known_deviations:
     - "OC folds request emission into next_update instead of exposing a dedicated RequestCalculator class."

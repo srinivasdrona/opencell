@@ -512,12 +512,19 @@ def _validate_anchor_refs(
             failures.append(f"{anchor.label}: could not read file {anchor.path}: {exc}")
             continue
 
-        # Documentation anchors (.md/.txt/.rst) and module-scope code anchors
-        # ('<module>' marker) carry a descriptive symbol (section heading or
-        # module marker), not a verifiable code symbol. Verify the path exists
-        # (done above) and the line span is in range; skip the code-symbol-in-
-        # window check, which is meaningless for these.
-        if resolved.suffix.lower() in (".md", ".txt", ".rst") or anchor.symbol == "<module>":
+        # Module-scope code anchors ('<module>' marker) and placeholder anchors
+        # for genuinely-absent methods (NOT_IMPLEMENTED etc.) carry a
+        # descriptive symbol, not a verifiable code symbol. Verify the path
+        # exists (done above) and the line span is in range; skip the
+        # code-symbol-in-window check, which is meaningless for these.
+        # (Documentation .md anchors are handled by the allow_md_extract_docs
+        # block below.) NOTE: honesty is preserved because check_a_invariants
+        # separately FAILS when a REQUIRED touchpoint (A1 request path / A3
+        # evolveState) is not implemented — exempting a placeholder from
+        # resolution is the opposite of the removed NOT_IMPLEMENTED->classname
+        # laundering.
+        _marker = anchor.symbol.strip().lower() if isinstance(anchor.symbol, str) else ""
+        if _marker in ("<module>", "not_implemented", "todo", "tbd", "n/a"):
             span = _parse_line_span(anchor.lines)
             if span is None:
                 failures.append(f"{anchor.label}: invalid lines span {anchor.lines!r}")

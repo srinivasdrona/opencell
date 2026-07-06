@@ -1,5 +1,5 @@
-schema_version: "2.0"
-schema_date: '2026-07-07'
+schema_version: "1.0"
+schema_date: '2026-06-29'
 process:
   name: "ProteinActivation"
   matlab_class: "ProteinActivation"
@@ -14,7 +14,7 @@ process:
     exhaustive enumeration. Raw MATLAB source was not present in the original Day-43
     authoring checkout, so many anchors point to the verified extract at
     docs/karr_extracts/process/20_ProteinActivation.md.
-integration_touchpoints:
+methods:
   calcResourceRequirements_Current:
     matlab:
       symbol: "calcResourceRequirements_Current"
@@ -22,7 +22,6 @@ integration_touchpoints:
         path: "docs/karr_extracts/process/20_ProteinActivation.md"
         lines: "49-117"
         note: "The extract describes boolean rule evaluation and state flips only; no allocator block is present."
-        symbol: "calcResourceRequirements_Current"
       note: "ProteinActivation is allocator-free in the extracted source shape."
     oc:
       symbol: "KarrProteinActivationProcess"
@@ -30,12 +29,10 @@ integration_touchpoints:
         path: "opencell/vivarium/karr_protein_activation.py"
         lines: "137-271"
         note: "The OC port reads substrates and stimuli directly; it has no request calculator or substrates_allocated path. Representative OC anchor for non-implemented correspondence."
-        symbol: "KarrProteinActivationProcess"
       supporting:
         - path: "opencell/vivarium/karr_composite.py"
           lines: "1397-1401"
           note: "Composite wiring maps only substrates, stimuli, and protein for this process."
-          symbol: build_karr_chassis_v4
       note: "Current OC mirrors the allocator-free shape. OC does not implement this Karr method."
     status: "not_implemented"
     note: "No per-process resource-request method is described for ProteinActivation in the available source extract. OC does not implement this Karr method."
@@ -46,7 +43,6 @@ integration_touchpoints:
         path: "docs/karr_extracts/process/20_ProteinActivation.md"
         lines: "102-117"
         note: "Per-compartment boolean activation/deactivation update."
-        symbol: "evolveState"
       note: "Rules are evaluated independently per compartment and toggle active/inactive pools."
     oc:
       symbol: "KarrProteinActivationProcess.next_update"
@@ -54,16 +50,13 @@ integration_touchpoints:
         path: "opencell/vivarium/karr_protein_activation.py"
         lines: "229-271"
         note: "Per-tick boolean evaluation and active/inactive writeback."
-        symbol: "KarrProteinActivationProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_protein_activation.py"
           lines: "195-227"
           note: "Ports schema for substrates, inactivatedSubstrates, stimuli, and protein activity."
-          symbol: KarrProteinActivationProcess.ports_schema
         - path: "opencell/vivarium/karr_composite.py"
           lines: "1397-1401"
           note: "Composite port wiring for the process."
-          symbol: build_karr_chassis_v4
       note: "OC implements the MATLAB evolveState semantics as a pure next_update shim."
     status: "implemented"
     note: "This is the core per-tick behavior and is implemented directly in the OC port."
@@ -74,7 +67,6 @@ integration_touchpoints:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m"
         lines: "118-118"
         note: "The extracted process description contains no LP / flux-bound semantics. Class-level anchor used to record calcFluxBounds absence."
-        symbol: "ProteinActivation"
       note: "No flux-bound analogue is described for this rule-only process. This process does not have Karr's calcFluxBounds method; it does not participate in FBA."
     oc:
       symbol: "KarrProteinActivationProcess"
@@ -82,7 +74,6 @@ integration_touchpoints:
         path: "opencell/vivarium/karr_protein_activation.py"
         lines: "137-271"
         note: "There is no flux-bound or LP code path in the current OC shim. Representative OC anchor for non-implemented correspondence."
-        symbol: "KarrProteinActivationProcess"
       note: "No calcFluxBounds implementation exists for ProteinActivation. OC does not implement this Karr method."
     status: "not_implemented"
     note: "ProteinActivation does not participate in the Metabolism-style flux-bound surface. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
@@ -125,14 +116,11 @@ consume_stoichiometry:
       path: "docs/karr_extracts/process/20_ProteinActivation.md"
       lines: "102-117"
       note: "The false-rule branch moves the protein out of the active pool."
-      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_protein_activation.py"
       lines: "250-270"
       note: "next_update transfers counts between substrates and inactivatedSubstrates."
-      symbol: KarrProteinActivationProcess.next_update
     note: "Canonical deactivation example."
-    kind: expression
   - wid: "MG_127_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "inactivatedSubstrates(MG_127_MONOMER, compartment) when rule(MG_127_MONOMER, compartment)"
@@ -140,14 +128,11 @@ consume_stoichiometry:
       path: "docs/karr_extracts/process/20_ProteinActivation.md"
       lines: "102-117"
       note: "The true-rule branch moves the protein into the active pool."
-      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_protein_activation.py"
       lines: "250-270"
       note: "next_update transfers counts between substrates and inactivatedSubstrates."
-      symbol: KarrProteinActivationProcess.next_update
     note: "Canonical activation example."
-    kind: expression
   - wid: "MG_205_DIMER"
     compartment: "cytosol"
     formula_or_constant: "inactivatedSubstrates(MG_205_DIMER, compartment) when rule(MG_205_DIMER, compartment)"
@@ -155,14 +140,11 @@ consume_stoichiometry:
       path: "docs/karr_extracts/process/20_ProteinActivation.md"
       lines: "102-117"
       note: "The true-rule branch moves the protein into the active pool."
-      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_protein_activation.py"
       lines: "250-270"
       note: "next_update transfers counts between substrates and inactivatedSubstrates."
-      symbol: KarrProteinActivationProcess.next_update
     note: "Canonical activation example."
-    kind: expression
   - wid: "MG_409_DIMER"
     compartment: "cytosol"
     formula_or_constant: "substrates(MG_409_DIMER, compartment) when ~rule(MG_409_DIMER, compartment)"
@@ -170,14 +152,11 @@ consume_stoichiometry:
       path: "docs/karr_extracts/process/20_ProteinActivation.md"
       lines: "102-117"
       note: "The false-rule branch moves the protein out of the active pool."
-      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_protein_activation.py"
       lines: "250-270"
       note: "next_update transfers counts between substrates and inactivatedSubstrates."
-      symbol: KarrProteinActivationProcess.next_update
     note: "Canonical deactivation example."
-    kind: expression
 produce_stoichiometry:
   - wid: "MG_101_MONOMER"
     compartment: "cytosol"
@@ -186,14 +165,11 @@ produce_stoichiometry:
       path: "docs/karr_extracts/process/20_ProteinActivation.md"
       lines: "102-117"
       note: "False-rule branch produces the inactive pool."
-      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_protein_activation.py"
       lines: "250-270"
       note: "next_update transfers counts between substrates and inactivatedSubstrates."
-      symbol: KarrProteinActivationProcess.next_update
     note: "Deactivation product."
-    kind: expression
   - wid: "MG_127_MONOMER"
     compartment: "cytosol"
     formula_or_constant: "substrates(MG_127_MONOMER, compartment) when rule(MG_127_MONOMER, compartment)"
@@ -201,14 +177,11 @@ produce_stoichiometry:
       path: "docs/karr_extracts/process/20_ProteinActivation.md"
       lines: "102-117"
       note: "True-rule branch produces the active pool."
-      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_protein_activation.py"
       lines: "250-270"
       note: "next_update transfers counts between substrates and inactivatedSubstrates."
-      symbol: KarrProteinActivationProcess.next_update
     note: "Activation product."
-    kind: expression
   - wid: "MG_205_DIMER"
     compartment: "cytosol"
     formula_or_constant: "substrates(MG_205_DIMER, compartment) when rule(MG_205_DIMER, compartment)"
@@ -216,14 +189,11 @@ produce_stoichiometry:
       path: "docs/karr_extracts/process/20_ProteinActivation.md"
       lines: "102-117"
       note: "True-rule branch produces the active pool."
-      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_protein_activation.py"
       lines: "250-270"
       note: "next_update transfers counts between substrates and inactivatedSubstrates."
-      symbol: KarrProteinActivationProcess.next_update
     note: "Activation product."
-    kind: expression
   - wid: "MG_409_DIMER"
     compartment: "cytosol"
     formula_or_constant: "inactivatedSubstrates(MG_409_DIMER, compartment) when ~rule(MG_409_DIMER, compartment)"
@@ -231,19 +201,11 @@ produce_stoichiometry:
       path: "docs/karr_extracts/process/20_ProteinActivation.md"
       lines: "102-117"
       note: "False-rule branch produces the inactive pool."
-      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_protein_activation.py"
       lines: "250-270"
       note: "next_update transfers counts between substrates and inactivatedSubstrates."
-      symbol: KarrProteinActivationProcess.next_update
     note: "Deactivation product."
-    kind: expression
-stoichiometry_oracle:
-  class: none
-  record_path: data/karr_method_inventory/karr_stoichiometry/ProteinActivation.json
-  substrate_count: 0
-  note: Exhaustive per-tick substrate set lives in the HB1 oracle; this row's consume/produce arrays carry integration-relevant hand-curated entries.
 compartment_routing:
   - wid: "MG_101_MONOMER"
     consume_compartment: "cytosol"
@@ -281,7 +243,6 @@ unit_conversion_chain:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m"
         lines: "370-375"
         note: "MATLAB concentration conversion prior to activation-rule evaluation."
-        symbol: evaluateActivationRules
       constants:
         - "nAvogadro/1000"
         - "geometry.volume"
@@ -307,53 +268,43 @@ source_anchors:
       path: "docs/karr_extracts/process/20_ProteinActivation.md"
       lines: "1-7"
       note: "Canonical metadata header for the process extract."
-      symbol: Karr Process - ProteinActivation
     biology_and_rule_scope:
       path: "docs/karr_extracts/process/20_ProteinActivation.md"
       lines: "13-47"
       note: "Docstring biology and the six regulated proteins."
-      symbol: Verbatim docstring extract
     rule_syntax:
       path: "docs/karr_extracts/process/20_ProteinActivation.md"
       lines: "49-68"
       note: "Boolean operators and signal types."
-      symbol: Verbatim docstring extract
     representation_and_initialization:
       path: "docs/karr_extracts/process/20_ProteinActivation.md"
       lines: "76-100"
       note: "substrates/inactivatedSubstrates/stimuli semantics and initialization path."
-      symbol: Verbatim docstring extract
     evolve_state:
       path: "docs/karr_extracts/process/20_ProteinActivation.md"
       lines: "102-117"
       note: "Per-compartment update loop and active/inactive transition rules."
-      symbol: Verbatim docstring extract
   oc_blocks:
     module_and_fixture_load:
       path: "opencell/vivarium/karr_protein_activation.py"
       lines: "1-19"
       note: "Module docstring, imports, and default fixture path."
-      symbol: <module>
     fixture_and_rule_compile:
       path: "opencell/vivarium/karr_protein_activation.py"
       lines: "146-193"
       note: "Fixture load, WID parsing, and rule compilation."
-      symbol: KarrProteinActivationProcess.__init__
     ports_schema:
       path: "opencell/vivarium/karr_protein_activation.py"
       lines: "195-227"
       note: "Ports for substrates, inactivatedSubstrates, enzymes, stimuli, and protein activity."
-      symbol: KarrProteinActivationProcess.ports_schema
     next_update:
       path: "opencell/vivarium/karr_protein_activation.py"
       lines: "229-271"
       note: "Per-tick boolean evaluation and writeback."
-      symbol: KarrProteinActivationProcess._collect_rule_signals
     composite_wiring:
       path: "opencell/vivarium/karr_composite.py"
       lines: "1397-1401"
       note: "Composite maps the process to activation_substrates, stimuli, and protein stores."
-      symbol: build_karr_chassis_v4
 provenance:
   fixture_files:
     - "data/karr_fixtures/per_process/ProteinActivation_flat.mat"
@@ -382,12 +333,10 @@ deviations:
       path: "docs/karr_extracts/process/20_ProteinActivation.md"
       lines: "49-117"
       note: "No LP or flux-bound surface is described for this process."
-      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_protein_activation.py"
       lines: "137-271"
       note: "The OC shim has no LP or flux-bound code path."
-      symbol: KarrProteinActivationProcess
   shared_pool_projection_merges_compartments: true
   known_deviations:
     - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.

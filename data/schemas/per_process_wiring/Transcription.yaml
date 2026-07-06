@@ -1,5 +1,5 @@
-schema_version: "2.0"
-schema_date: '2026-07-07'
+schema_version: "1.0"
+schema_date: '2026-06-29'
 process:
   name: "Transcription"
   matlab_class: "Transcription"
@@ -10,7 +10,7 @@ process:
   functional_area: "transcription"
   state_shape_role: "process wiring row; RNAP state machine, allocator requests, and RNA output wiring"
   notes: "MATLAB Transcription is the Karr M1 process. Current OC wiring is split across the allocator-aware v3 wrapper, the legacy analytical wrapper, and the transcription request calculator."
-integration_touchpoints:
+methods:
   calcResourceRequirements_Current:
     matlab:
       symbol: "calcResourceRequirements_Current"
@@ -18,7 +18,6 @@ integration_touchpoints:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Transcription.m"
         lines: "609-615"
         note: "Allocator-facing per-tick substrate demand; includes NTPs and water."
-        symbol: "calcResourceRequirements_Current"
       note: "This is the canonical MATLAB allocator request block."
     oc:
       symbol: "RequestCalculatorTranscription.next_update"
@@ -26,12 +25,10 @@ integration_touchpoints:
         path: "opencell/vivarium/karr_request_calculators.py"
         lines: "552-602"
         note: "Current OC allocator request calculator for mechanism-driven transcription."
-        symbol: "RequestCalculatorTranscription.next_update"
       supporting:
         - path: "opencell/vivarium/karr_composite.py"
           lines: "778-789"
           note: "Composite wiring that instantiates the transcription request calculator."
-          symbol: build_karr_chassis_v3
       note: "Current OC requests only ATP/CTP/GTP/UTP; water is not part of the request calculator today."
     status: "partial"
     note: "Implemented in OC, but the request surface is narrower than MATLAB because water is omitted from the current allocator path."
@@ -42,7 +39,6 @@ integration_touchpoints:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Transcription.m"
         lines: "618-973"
         note: "Full RNA-polymerase state machine, elongation, termination, and substrate writeback."
-        symbol: "evolveState"
       note: "This is the canonical per-tick process update."
     oc:
       symbol: "KarrTranscriptionV3Process.next_update"
@@ -50,19 +46,61 @@ integration_touchpoints:
         path: "opencell/vivarium/karr_transcription_v3.py"
         lines: "170-223"
         note: "Current OC mechanism-based per-tick transcription update."
-        symbol: "KarrTranscriptionV3Process.next_update"
       supporting:
         - path: "opencell/vivarium/karr_transcription.py"
           lines: "628-674"
           note: "Legacy analytical transcription wrapper; direct substrate-delta path."
-          symbol: KarrTranscriptionProcess.next_update
         - path: "opencell/m2/transcription_v2.py"
           lines: "1-95"
           note: "Mechanism-rate derivation used by the v3 wrapper."
-          symbol: <module>
       note: "OC preserves the transcription contract qualitatively, but not the MATLAB state-machine details."
     status: "partial"
     note: "Implemented via a mechanism-based approximation in OC, not a bit-identical port of the MATLAB RNAP state machine."
+  initializeState:
+    matlab:
+      symbol: "initializeState"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Transcription.m"
+        lines: "433-605"
+        note: "RNAP state initialization, binding, and mature-RNA seeding."
+      note: "Major bootstrap method for the MATLAB process."
+    oc:
+      symbol: "build_karr_chassis_v3"
+      source:
+        path: "opencell/vivarium/karr_composite.py"
+        lines: "683-955"
+        note: "Composite wiring and initial state seeding for the transcription process. Normalized composite OC symbol for methods.initializeState."
+      supporting:
+        - path: "opencell/vivarium/karr_transcription_v3.py"
+          lines: "91-132"
+          note: "Ports schema defaults for RNA counts, RNAP complex counts, and optional allocator budget inputs."
+        - path: "opencell/vivarium/karr_transcription.py"
+          lines: "538-574"
+          note: "Legacy wrapper ports schema for RNA and substrate defaults."
+      note: "OC has no dedicated initializeState method; bootstrap is split across process schemas and the composite builder."
+    status: "partial"
+    note: "Bootstrap is distributed across OC wiring code rather than concentrated in one method."
+  computeRNAPolymeraseTUBindingProbabilities:
+    matlab:
+      symbol: "computeRNAPolymeraseTUBindingProbabilities"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Transcription.m"
+        lines: "978-1002"
+        note: "Transcription-unit binding probability construction with DnaA-box protection."
+      note: "Major helper for transcription-unit selection."
+    oc:
+      symbol: "predict_tu_synthesis_per_s"
+      source:
+        path: "opencell/m2/transcription_v2.py"
+        lines: "76-95"
+        note: "Mechanism-rate helper that replaces the MATLAB TU binding-probability machinery."
+      supporting:
+        - path: "opencell/vivarium/karr_transcription_v3.py"
+          lines: "179-205"
+          note: "Uses the mechanism-rate helper and then applies the current transcription scaling."
+      note: "OC does not reproduce the MATLAB TU-binding helper directly; it replaces it with a mechanism-rate oracle."
+    status: "partial"
+    note: "The OC implementation uses a different derivation path rather than a direct helper port."
   calcFluxBounds:
     matlab:
       symbol: "Transcription"
@@ -70,7 +108,6 @@ integration_touchpoints:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Transcription.m"
         lines: "1-1"
         note: "Transcription.m does not define a flux-bounds method; this anchor marks the class header / absence of a bound-construction block. Class-level anchor used to record calcFluxBounds absence."
-        symbol: "Transcription"
       note: "No calcFluxBounds method exists on the MATLAB process. This process does not have Karr's calcFluxBounds method; it does not participate in FBA."
     oc:
       symbol: "KarrTranscriptionV3Process"
@@ -78,12 +115,10 @@ integration_touchpoints:
         path: "opencell/vivarium/karr_transcription_v3.py"
         lines: "32-223"
         note: "No flux-bounds method in the current OC transcription ports; allocator and per-tick update are separate. Representative OC anchor for non-implemented correspondence."
-        symbol: "KarrTranscriptionV3Process"
       supporting:
         - path: "opencell/vivarium/karr_request_calculators.py"
           lines: "552-602"
           note: "Allocator request analogue, not a flux-bounds method."
-          symbol: RequestCalculatorTranscription
       note: "Transcription does not have a flux-bounds surface in either implementation. OC does not implement this Karr method."
     status: "not_implemented"
     note: "This row records the absence explicitly rather than inventing a flux-bounds analog. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
@@ -138,13 +173,10 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Transcription.m"
       lines: "895-897"
       note: "polymerize(...) consumes ATP as one of the four NTPs."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_transcription.py"
       lines: "659-673"
       note: "Legacy wrapper emits direct NTP substrate deltas."
-      symbol: KarrTranscriptionProcess.next_update
-    kind: expression
   - wid: "CTP"
     compartment: "cytosol"
     formula_or_constant: "-usedNTPs(CTP)"
@@ -152,13 +184,10 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Transcription.m"
       lines: "895-897"
       note: "polymerize(...) consumes CTP as one of the four NTPs."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_transcription.py"
       lines: "659-673"
       note: "Legacy wrapper emits direct NTP substrate deltas."
-      symbol: KarrTranscriptionProcess.next_update
-    kind: expression
   - wid: "GTP"
     compartment: "cytosol"
     formula_or_constant: "-usedNTPs(GTP)"
@@ -166,13 +195,10 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Transcription.m"
       lines: "895-897"
       note: "polymerize(...) consumes GTP as one of the four NTPs."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_transcription.py"
       lines: "659-673"
       note: "Legacy wrapper emits direct NTP substrate deltas."
-      symbol: KarrTranscriptionProcess.next_update
-    kind: expression
   - wid: "UTP"
     compartment: "cytosol"
     formula_or_constant: "-usedNTPs(UTP)"
@@ -180,13 +206,10 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Transcription.m"
       lines: "895-897"
       note: "polymerize(...) consumes UTP as one of the four NTPs."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_transcription.py"
       lines: "659-673"
       note: "Legacy wrapper emits direct NTP substrate deltas."
-      symbol: KarrTranscriptionProcess.next_update
-    kind: expression
   - wid: "H2O"
     compartment: "cytosol"
     formula_or_constant: "-nTrmPols"
@@ -194,13 +217,10 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Transcription.m"
       lines: "922-951"
       note: "Termination consumes water one-for-one with terminated polymerases."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_request_calculators.py"
       lines: "552-602"
       note: "Current OC request calculator does not request water; this is the main request-surface divergence."
-      symbol: RequestCalculatorTranscription
-    kind: expression
 produce_stoichiometry:
   - wid: "PPI"
     compartment: "cytosol"
@@ -209,14 +229,11 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Transcription.m"
       lines: "961-965"
       note: "Diphosphate released by polymerization."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_transcription.py"
       lines: "658-673"
       note: "Legacy wrapper emits only NTP substrate deltas and does not emit PPI."
-      symbol: KarrTranscriptionProcess.next_update
     note: "MATLAB emits PPI from polymerization; current OC transcription wrappers do not emit PPI. See known_deviations."
-    kind: expression
   - wid: "H"
     compartment: "cytosol"
     formula_or_constant: "+nTrmPols"
@@ -224,18 +241,10 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Transcription.m"
       lines: "922-951"
       note: "Termination produces hydrogen one-for-one with terminated polymerases."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_transcription.py"
       lines: "658-673"
       note: "Legacy wrapper does not model water/hydrogen explicitly; this is a MATLAB-only product in the current port."
-      symbol: KarrTranscriptionProcess.next_update
-    kind: expression
-stoichiometry_oracle:
-  class: inline
-  record_path: data/karr_method_inventory/karr_stoichiometry/Transcription.json
-  substrate_count: 7
-  note: Exhaustive per-tick substrate set lives in the HB1 oracle; this row's consume/produce arrays carry integration-relevant hand-curated entries.
 compartment_routing:
   - wid: "ATP"
     consume_compartment: "cytosol"
@@ -284,7 +293,6 @@ unit_conversion_chain:
         path: "opencell/vivarium/karr_transcription_v3.py"
         lines: "170-223"
         note: Process works directly in per-tick integer counts; no unit conversion needed.
-        symbol: KarrTranscriptionV3Process.next_update
       note: Process works directly in per-tick integer counts; no unit conversion needed.
   note: "This process does not require unit conversion (per-tick integer counts throughout)."
 dependencies:
@@ -306,88 +314,71 @@ source_anchors:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Transcription.m"
       lines: "1-35"
       note: "Process identity and biology header."
-      symbol: Transcription
     identity_and_state:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Transcription.m"
       lines: "227-295"
       note: "Classdef, substrate/enzyme IDs, and state-local properties."
-      symbol: Transcription
     initialize_constants:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Transcription.m"
       lines: "317-350"
       note: "Knowledge-base loading and transcription-unit constants."
-      symbol: Transcription
     initialize_state:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Transcription.m"
       lines: "433-605"
       note: "RNAP initialization, binding, and mature-RNA seeding."
-      symbol: calcResourceRequirements_LifeCycle
     resource_req:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Transcription.m"
       lines: "609-615"
       note: "calcResourceRequirements_Current."
-      symbol: calcResourceRequirements_Current
     evolve_state:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Transcription.m"
       lines: "618-973"
       note: "Per-tick RNAP state machine and substrate writeback."
-      symbol: calcResourceRequirements_Current
     binding_probabilities:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Transcription.m"
       lines: "978-1002"
       note: "Transcription-unit binding probabilities and DnaA-box protection."
-      symbol: computeRNAPolymeraseTUBindingProbabilities
     simulation_order_gate:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m"
       lines: "1-57"
       note: "Canonical hard evaluation-order constraint tRNAAminoacylation < Translation."
-      symbol: evolveState
   oc_blocks:
     legacy_init:
       path: "opencell/vivarium/karr_transcription.py"
       lines: "95-223"
       note: "Legacy analytical transcription constructor and fixture runtime loader."
-      symbol: KarrTranscriptionProcess.__init__
     legacy_ports_schema:
       path: "opencell/vivarium/karr_transcription.py"
       lines: "538-597"
       note: "Legacy wrapper ports schema and throttle wiring."
-      symbol: KarrTranscriptionProcess.ports_schema
     legacy_next_update:
       path: "opencell/vivarium/karr_transcription.py"
       lines: "628-674"
       note: "Legacy direct-substrate update path."
-      symbol: KarrTranscriptionProcess.next_update
     v3_init:
       path: "opencell/vivarium/karr_transcription_v3.py"
       lines: "51-89"
       note: "Mechanism-based transcription constructor and scaling setup."
-      symbol: KarrTranscriptionV3Process.__init__
     v3_ports_schema:
       path: "opencell/vivarium/karr_transcription_v3.py"
       lines: "91-132"
       note: "RNA / RNAP / optional allocator-budget ports."
-      symbol: KarrTranscriptionV3Process.ports_schema
     v3_next_update:
       path: "opencell/vivarium/karr_transcription_v3.py"
       lines: "170-223"
       note: "Current mechanism-based per-tick transcription update."
-      symbol: KarrTranscriptionV3Process.next_update
     request_calculator:
       path: "opencell/vivarium/karr_request_calculators.py"
       lines: "552-602"
       note: "Allocator request emission for mechanism-driven transcription."
-      symbol: RequestCalculatorTranscription
     composite_wiring:
       path: "opencell/vivarium/karr_composite.py"
       lines: "778-834"
       note: "Current composite instantiation and topology wiring for transcription."
-      symbol: build_karr_chassis_v3
     mechanism_helper:
       path: "opencell/m2/transcription_v2.py"
       lines: "1-95"
       note: "Mechanism-rate oracle used by the v3 transcription path."
-      symbol: <module>
 provenance:
   fixture_files:
     - "data/karr_fixtures/per_process/Transcription_flat.mat"
@@ -418,12 +409,10 @@ deviations:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Transcription.m"
       lines: "609-615"
       note: "Allocator request surface, not an LP-bound surface."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_request_calculators.py"
       lines: "552-602"
       note: "Current OC allocator analogue; Transcription has no flux-bound method."
-      symbol: RequestCalculatorTranscription
   shared_pool_projection_merges_compartments: false
   known_deviations:
     - "Current OC allocator requests only ATP/CTP/GTP/UTP; MATLAB calcResourceRequirements_Current also requests water."

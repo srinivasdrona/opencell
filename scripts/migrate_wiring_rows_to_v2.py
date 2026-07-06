@@ -469,6 +469,21 @@ def _migrate_row(row_path: Path, *, dry_run: bool, yaml_backend: str) -> dict[st
         row_report=row_report,
     )
 
+    # source_anchors.*_blocks entries are plain source_anchors and must not
+    # carry a 'supporting' array (that is a method_binding-only field). Drop
+    # stray v1 ones so the row validates against the v2 source_anchor shape.
+    src_anchors = migrated.get("source_anchors")
+    if isinstance(src_anchors, dict):
+        for block_group in ("matlab_blocks", "oc_blocks"):
+            blocks = src_anchors.get(block_group)
+            if isinstance(blocks, dict):
+                for block_name, block_anchor in blocks.items():
+                    if isinstance(block_anchor, dict) and "supporting" in block_anchor:
+                        block_anchor.pop("supporting", None)
+                        row_report.setdefault("dropped_block_supporting", []).append(
+                            f"{block_group}.{block_name}"
+                        )
+
     oracle_block, blocker = _build_oracle_block(process_name)
     if blocker is not None:
         row_report["blocked"].append(blocker)

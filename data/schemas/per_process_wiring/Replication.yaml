@@ -1,5 +1,5 @@
-schema_version: "2.0"
-schema_date: '2026-07-07'
+schema_version: "1.0"
+schema_date: '2026-06-29'
 process:
   name: "Replication"
   matlab_class: "Replication"
@@ -10,7 +10,7 @@ process:
   functional_area: "dna-replication-and-maintenance"
   state_shape_role: "process wiring row; state-shape catalog row adds integration semantics"
   notes: "The checked-in extract describes 8 replication subfunctions; the current OC port replays fork progression and substrate bookkeeping, while SSB and RNAP collision mechanics remain deferred."
-integration_touchpoints:
+methods:
   calcResourceRequirements_Current:
     matlab:
       symbol: "calcResourceRequirements_Current"
@@ -18,7 +18,6 @@ integration_touchpoints:
         path: "docs/karr_extracts/architecture/03_variable_allocation.md"
         lines: "13-23"
         note: "Simulation-level allocator loop that invokes the process request method; no raw Replication.m body was recoverable in this worktree."
-        symbol: "calcResourceRequirements_Current"
       note: "Allocator-facing request path."
     oc:
       symbol: "KarrReplicationProcess.next_update"
@@ -26,12 +25,10 @@ integration_touchpoints:
         path: "opencell/vivarium/karr_replication.py"
         lines: "937-981"
         note: "Inline request construction and allocator clipping."
-        symbol: "KarrReplicationProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_replication.py"
           lines: "578-583"
           note: "Request and substrates_allocated state schema."
-          symbol: KarrReplicationProcess.ports_schema
       note: "Requests are built inline rather than via a standalone request-calculator class."
     status: "partial"
     note: "Current OC exposes the allocator behavior inside next_update instead of a dedicated request method."
@@ -42,7 +39,6 @@ integration_touchpoints:
         path: "docs/karr_extracts/process/03_Replication.md"
         lines: "103-173"
         note: "Eight-subfunction replication simulation summary from the extracted source doc."
-        symbol: "evolveState"
       note: "Primary per-tick process logic."
     oc:
       symbol: "KarrReplicationProcess.next_update"
@@ -50,16 +46,13 @@ integration_touchpoints:
         path: "opencell/vivarium/karr_replication.py"
         lines: "889-1033"
         note: "Current per-tick update path."
-        symbol: "KarrReplicationProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_replication.py"
           lines: "702-744"
           note: "Trace-hint replay branch."
-          symbol: KarrReplicationProcess._unpolymerized_regions_for_strand
         - path: "opencell/vivarium/karr_replication.py"
           lines: "578-583"
           note: "Request and allocation state schema."
-          symbol: KarrReplicationProcess.ports_schema
       note: "Light-bulk OC replay of fork progression and substrate bookkeeping."
     status: "partial"
     note: "The current port preserves fork motion and substrate deltas, but not the full Karr 8-stage mechanistic loop."
@@ -70,7 +63,6 @@ integration_touchpoints:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m"
         lines: "1-1"
         note: "No dedicated flux-bounds block surfaced in the extracted Replication notes. Class-level anchor used to record calcFluxBounds absence."
-        symbol: "Replication"
       note: "Not observed as a Replication-specific method in the checked-in extract. This process does not have Karr's calcFluxBounds method; it does not participate in FBA."
     oc:
       symbol: "KarrReplicationProcess"
@@ -78,7 +70,6 @@ integration_touchpoints:
         path: "opencell/vivarium/karr_replication.py"
         lines: "227-1030"
         note: "No calcFluxBounds symbol exists in the current OC port. Representative OC anchor for non-implemented correspondence."
-        symbol: "KarrReplicationProcess"
       note: "Replication has no OC flux-bounds helper in this repository state. OC does not implement this Karr method."
     status: "not_implemented"
     note: "Retained for schema completeness; this process does not expose an LP-bound layer. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
@@ -149,13 +140,10 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m"
       lines: "939-946"
       note: "MATLAB computes sequence-exact usedDNTPs via subsequenceBaseCounts over leading and lagging strand segments."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_replication.py"
       lines: "616-635"
       note: "OC non-hint demand partitions total advanced bp by GC-fraction/remainder rather than sequence-exact base counting."
-      symbol: KarrReplicationProcess
-    kind: expression
   - wid: "DCTP"
     compartment: cytosol
     formula_or_constant: "MATLAB: subsequenceBaseCounts(...) C-count; OC: partition_counts(2 * total_advanced_bp)[1]"
@@ -163,13 +151,10 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m"
       lines: "939-946"
       note: "MATLAB computes sequence-exact usedDNTPs via subsequenceBaseCounts over leading and lagging strand segments."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_replication.py"
       lines: "616-635"
       note: "OC non-hint demand partitions total advanced bp by GC-fraction/remainder rather than sequence-exact base counting."
-      symbol: KarrReplicationProcess
-    kind: expression
   - wid: "DGTP"
     compartment: cytosol
     formula_or_constant: "MATLAB: subsequenceBaseCounts(...) G-count; OC: partition_counts(2 * total_advanced_bp)[2]"
@@ -177,13 +162,10 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m"
       lines: "939-946"
       note: "MATLAB computes sequence-exact usedDNTPs via subsequenceBaseCounts over leading and lagging strand segments."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_replication.py"
       lines: "616-635"
       note: "OC non-hint demand partitions total advanced bp by GC-fraction/remainder rather than sequence-exact base counting."
-      symbol: KarrReplicationProcess
-    kind: expression
   - wid: "DTTP"
     compartment: cytosol
     formula_or_constant: "MATLAB: subsequenceBaseCounts(...) T-count; OC: partition_counts(2 * total_advanced_bp)[3]"
@@ -191,13 +173,10 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m"
       lines: "939-946"
       note: "MATLAB computes sequence-exact usedDNTPs via subsequenceBaseCounts over leading and lagging strand segments."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_replication.py"
       lines: "616-635"
       note: "OC non-hint demand partitions total advanced bp by GC-fraction/remainder rather than sequence-exact base counting."
-      symbol: KarrReplicationProcess
-    kind: expression
   - wid: "ATP"
     compartment: cytosol
     formula_or_constant: "initiation_cost + catalytic_atp_events"
@@ -205,13 +184,10 @@ consume_stoichiometry:
       path: "docs/karr_extracts/process/03_Replication.md"
       lines: "114-131"
       note: "Advance replisomes: energy for unwinding."
-      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_replication.py"
       lines: "637-644"
       note: "ATP events are split between initiation, helicase, and beta-clamp loading."
-      symbol: KarrReplicationProcess._available_replay_count
-    kind: expression
   - wid: "H2O"
     compartment: cytosol
     formula_or_constant: "initiation_cost + catalytic_atp_events"
@@ -219,13 +195,10 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m"
       lines: "667-668"
       note: "MATLAB decrements water with ATP hydrolysis demand in initiation and unwinding/clamp-loading branches."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_replication.py"
       lines: "753-757"
       note: "MATLAB decrements H2O; OC does so only in the trace-hint replay branch, not the main non-hint update path."
-      symbol: KarrReplicationProcess._subtract_circular_region
-    kind: expression
   - wid: "NAD"
     compartment: cytosol
     formula_or_constant: "ligations"
@@ -233,13 +206,10 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m"
       lines: "1228-1231"
       note: "MATLAB consumes NAD as ligation cofactor."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_replication.py"
       lines: "758-761"
       note: "MATLAB decrements NAD; OC does so only in the trace-hint replay branch, not the main non-hint update path."
-      symbol: KarrReplicationProcess._subtract_circular_region
-    kind: expression
 produce_stoichiometry:
   - wid: "ADP"
     compartment: cytosol
@@ -248,13 +218,10 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m"
       lines: "909-913"
       note: "MATLAB ATP hydrolysis bookkeeping emits ADP."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_replication.py"
       lines: "854-873"
       note: "OC emits ADP only in trace-hint replay; non-hint next_update does not emit ADP."
-      symbol: KarrReplicationProcess.free_and_bind_ssbs
-    kind: expression
   - wid: "PI"
     compartment: cytosol
     formula_or_constant: "atp_events"
@@ -262,13 +229,10 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m"
       lines: "909-913"
       note: "MATLAB ATP hydrolysis bookkeeping emits phosphate."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_replication.py"
       lines: "854-873"
       note: "OC emits PI only in trace-hint replay; non-hint next_update does not emit PI."
-      symbol: KarrReplicationProcess.free_and_bind_ssbs
-    kind: expression
   - wid: "H"
     compartment: cytosol
     formula_or_constant: "atp_events + ligations"
@@ -276,13 +240,10 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m"
       lines: "909-1247"
       note: "MATLAB emits hydrogen from ATP hydrolysis and from ligation."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_replication.py"
       lines: "854-873"
       note: "OC emits H only in trace-hint replay; non-hint next_update does not emit H."
-      symbol: KarrReplicationProcess.free_and_bind_ssbs
-    kind: expression
   - wid: "PPI"
     compartment: cytosol
     formula_or_constant: "sum(used_dntp)"
@@ -290,13 +251,10 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m"
       lines: "945-946"
       note: "MATLAB emits diphosphate from polymerized dNTP totals."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_replication.py"
       lines: "854-873"
       note: "OC emits PPI only in trace-hint replay; non-hint next_update does not emit PPI."
-      symbol: KarrReplicationProcess.free_and_bind_ssbs
-    kind: expression
   - wid: "NMN"
     compartment: cytosol
     formula_or_constant: "ligations"
@@ -304,13 +262,10 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m"
       lines: "1244-1247"
       note: "MATLAB ligation emits NMN."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_replication.py"
       lines: "854-873"
       note: "OC emits NMN only in trace-hint replay; non-hint next_update does not emit NMN."
-      symbol: KarrReplicationProcess.free_and_bind_ssbs
-    kind: expression
   - wid: "AMP"
     compartment: cytosol
     formula_or_constant: "ligations"
@@ -318,18 +273,10 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m"
       lines: "1244-1247"
       note: "MATLAB ligation emits AMP."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_replication.py"
       lines: "854-873"
       note: "OC emits AMP only in trace-hint replay; non-hint next_update does not emit AMP."
-      symbol: KarrReplicationProcess.free_and_bind_ssbs
-    kind: expression
-stoichiometry_oracle:
-  class: inline
-  record_path: data/karr_method_inventory/karr_stoichiometry/Replication.json
-  substrate_count: 13
-  note: Exhaustive per-tick substrate set lives in the HB1 oracle; this row's consume/produce arrays carry integration-relevant hand-curated entries.
 compartment_routing:
   - wid: "DATP"
     consume_compartment: cytosol
@@ -408,7 +355,6 @@ unit_conversion_chain:
         path: "opencell/vivarium/karr_replication.py"
         lines: "889-1033"
         note: Process works directly in per-tick integer counts; no unit conversion needed.
-        symbol: KarrReplicationProcess.free_and_bind_ssbs
       note: Process works directly in per-tick integer counts; no unit conversion needed.
   note: "This process does not require unit conversion (per-tick integer counts throughout)."
 dependencies:
@@ -428,38 +374,31 @@ source_anchors:
       path: "docs/karr_extracts/process/03_Replication.md"
       lines: "1-17"
       note: "Process identity, WholeCellModelID, and extracted source header."
-      symbol: Karr Process - Replication
     simulation_subfunctions:
       path: "docs/karr_extracts/process/03_Replication.md"
       lines: "103-173"
       note: "Eight subfunctions and their source-described sequencing."
-      symbol: Verbatim docstring extract
     allocator_loop:
       path: "docs/karr_extracts/architecture/03_variable_allocation.md"
       lines: "13-23"
       note: "Simulation-level request aggregation and fair-share allocation."
-      symbol: Verbatim extract - allocation block
   oc_blocks:
     fixture_load:
       path: "opencell/vivarium/karr_replication.py"
       lines: "258-269"
       note: "loadmat calls for Replication_flat.mat and Chromosome_flat.mat."
-      symbol: KarrReplicationProcess._load_fixtures
     request_schema:
       path: "opencell/vivarium/karr_replication.py"
       lines: "578-583"
       note: "requests and substrates_allocated state schema."
-      symbol: KarrReplicationProcess.ports_schema
     trace_hint_replay:
       path: "opencell/vivarium/karr_replication.py"
       lines: "702-744"
       note: "Trace-hint replay still consults substrates_allocated."
-      symbol: KarrReplicationProcess._unpolymerized_regions_for_strand
     next_update:
       path: "opencell/vivarium/karr_replication.py"
       lines: "889-1033"
       note: "Current per-tick update and request clipping path."
-      symbol: KarrReplicationProcess.free_and_bind_ssbs
 provenance:
   fixture_files:
     - "data/karr_fixtures/per_process/Replication_flat.mat"
@@ -484,12 +423,10 @@ deviations:
       path: "docs/karr_extracts/process/03_Replication.md"
       lines: "103-173"
       note: "The extracted Replication notes do not expose a dedicated LP-bound block."
-      symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_replication.py"
       lines: "889-1033"
       note: "The current OC port has no calcFluxBounds helper for Replication."
-      symbol: KarrReplicationProcess.free_and_bind_ssbs
   shared_pool_projection_merges_compartments: true
   known_deviations:
     - "OC request logic is embedded in KarrReplicationProcess.next_update instead of a standalone request-calculator class."

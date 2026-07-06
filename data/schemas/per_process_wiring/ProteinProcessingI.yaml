@@ -1,5 +1,5 @@
-schema_version: "2.0"
-schema_date: '2026-07-07'
+schema_version: "1.0"
+schema_date: '2026-06-29'
 process:
   name: "ProteinProcessingI"
   matlab_class: "ProteinProcessingI"
@@ -10,7 +10,26 @@ process:
   functional_area: "protein-synthesis-and-maturation"
   state_shape_role: "state-shape catalog row; wiring row adds integration semantics"
   notes: "Count-domain, allocation-backed maturation process: water is the only allocator-mediated input, while H/MET/FOR are direct writeback side effects."
-integration_touchpoints:
+methods:
+  initializeConstants:
+    matlab:
+      symbol: "initializeConstants"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
+        lines: "143-150"
+        note: "Loads processed/unprocessed monomer IDs and the methionine-cleavage mask from the knowledge base."
+    oc:
+      symbol: "KarrProteinProcessingIProcess._load_fixture"
+      source:
+        path: "opencell/vivarium/karr_protein_processing_i.py"
+        lines: "68-119"
+        note: "Loads fixture WIDs, rates, cleavage mask, and enzyme indices during construction."
+      supporting:
+        - path: "opencell/vivarium/karr_protein_processing_i.py"
+          lines: "43-66"
+          note: "Constructor that calls the fixture loader and validates indices."
+    status: "partial"
+    note: "OC folds MATLAB constant initialization into fixture loading plus constructor validation."
   calcResourceRequirements_Current:
     matlab:
       symbol: "calcResourceRequirements_Current"
@@ -18,19 +37,16 @@ integration_touchpoints:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
         lines: "218-231"
         note: "Returns the per-tick H2O requirement upper bound from deformylation plus methionine-cleavage capacity."
-        symbol: "calcResourceRequirements_Current"
     oc:
       symbol: "RequestCalculatorProteinPathway.next_update"
       source:
         path: "opencell/vivarium/karr_request_calculators.py"
         lines: "468-543"
         note: "Current OC allocator request step; PP1 emits only H2O when unprocessed proteins are present."
-        symbol: "RequestCalculatorProteinPathway.next_update"
       supporting:
         - path: "opencell/vivarium/karr_composite.py"
           lines: "1107-1158"
           note: "Wires the protein-pathway request calculator and allocation step."
-          symbol: build_karr_chassis_v4
     status: "partial"
     note: "The request logic is externalized in OC rather than living on the process class."
   evolveState:
@@ -40,19 +56,16 @@ integration_touchpoints:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
         lines: "236-319"
         note: "Enzyme-limited stochastic selection, water gating, and substrate / monomer writeback."
-        symbol: "evolveState"
     oc:
       symbol: "KarrProteinProcessingIProcess.next_update"
       source:
         path: "opencell/vivarium/karr_protein_processing_i.py"
         lines: "182-310"
         note: "Allocator-backed tick update with water gating, stochastic event sampling, and writeback."
-        symbol: "KarrProteinProcessingIProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_protein_processing_i.py"
           lines: "312-378"
           note: "Helper readers that split protein enzyme sourcing from substrate allocation."
-          symbol: KarrProteinProcessingIProcess._read_enzyme_counts
     status: "partial"
     note: "OC preserves the count-domain flow but uses a different stochastic sampler than MATLAB."
   calcFluxBounds:
@@ -62,7 +75,6 @@ integration_touchpoints:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
         lines: "1-80"
         note: "No dedicated flux-bound routine is exposed in this process; the file is count-based and stops at the simulation loop. Class-level anchor used to record calcFluxBounds absence."
-        symbol: "ProteinProcessingI"
       note: This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
     oc:
       symbol: "KarrProteinProcessingIProcess"
@@ -70,7 +82,6 @@ integration_touchpoints:
         path: "opencell/vivarium/karr_protein_processing_i.py"
         lines: "33-416"
         note: "Current OC port has no LP-bound API; resource control is handled through the request calculator and next_update. Representative OC anchor for non-implemented correspondence."
-        symbol: "KarrProteinProcessingIProcess"
       note: OC does not implement this Karr method.
     status: "not_implemented"
     note: "ProteinProcessingI is not an LP-bound process in either the raw MATLAB file or the current OC port. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
@@ -109,13 +120,10 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
       lines: "285-292"
       note: "Water is consumed once for every processed peptide plus one additional water for the cleavable subset."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_protein_processing_i.py"
       lines: "273-308"
       note: "Water delta is computed from total processed events and the cleavable subset."
-      symbol: KarrProteinProcessingIProcess.next_update
-    kind: expression
 produce_stoichiometry:
   - wid: "H"
     compartment: "cytosol"
@@ -124,13 +132,10 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
       lines: "286-288"
       note: "Hydrogen is released with every processed peptide."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_protein_processing_i.py"
       lines: "273-308"
       note: "Hydrogen delta follows the total processed count."
-      symbol: KarrProteinProcessingIProcess.next_update
-    kind: expression
   - wid: "FOR"
     compartment: "cytosol"
     formula_or_constant: "+sum(transformations)"
@@ -138,13 +143,10 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
       lines: "286-288"
       note: "Formate is released with every processed peptide."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_protein_processing_i.py"
       lines: "273-308"
       note: "Formate delta follows the total processed count."
-      symbol: KarrProteinProcessingIProcess.next_update
-    kind: expression
   - wid: "MET"
     compartment: "cytosol"
     formula_or_constant: "+sum(transformations(cleavageMask))"
@@ -152,18 +154,10 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
       lines: "290-292"
       note: "Methionine is released only for peptides that require N-terminal cleavage."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_protein_processing_i.py"
       lines: "273-308"
       note: "Methionine delta follows the cleavable subset only."
-      symbol: KarrProteinProcessingIProcess.next_update
-    kind: expression
-stoichiometry_oracle:
-  class: inline
-  record_path: data/karr_method_inventory/karr_stoichiometry/ProteinProcessingI.json
-  substrate_count: 4
-  note: Exhaustive per-tick substrate set lives in the HB1 oracle; this row's consume/produce arrays carry integration-relevant hand-curated entries.
 compartment_routing:
   - wid: "H2O"
     consume_compartment: "cytosol"
@@ -197,7 +191,6 @@ unit_conversion_chain:
         path: "opencell/vivarium/karr_protein_processing_i.py"
         lines: "182-310"
         note: Process works directly in per-tick integer counts; no unit conversion needed.
-        symbol: KarrProteinProcessingIProcess.next_update
       note: Process works directly in per-tick integer counts; no unit conversion needed.
   note: "This process does not require unit conversion (per-tick integer counts throughout)."
 dependencies:
@@ -222,73 +215,59 @@ source_anchors:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
       lines: "1-80"
       note: "Docstring, constants, and the process-level simulation summary."
-      symbol: ProteinProcessingI
     initialize_constants:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
       lines: "143-150"
       note: "Loads the processed/unprocessed monomer WID sets and cleavage mask."
-      symbol: ProteinProcessingI
     copy_state:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
       lines: "153-166"
       note: "Copy from / to state for monomer counts."
-      symbol: ProteinProcessingI
     allocate_memory:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
       lines: "171-176"
       note: "Allocates the local monomer count buffers."
-      symbol: ProteinProcessingI
     resource_requirements:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
       lines: "218-231"
       note: "Per-tick H2O requirement upper bound."
-      symbol: calcResourceRequirements_Current
     evolve_state:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
       lines: "236-319"
       note: "Stochastic deformylation / methionine-cleavage loop plus writeback."
-      symbol: calcResourceRequirements_Current
     simulation_allocation_loop:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m"
       lines: "24-37"
       note: "Per-process requirements are gathered and allocated before each tick."
-      symbol: evolveState
   oc_blocks:
     process_class:
       path: "opencell/vivarium/karr_protein_processing_i.py"
       lines: "33-119"
       note: "Class definition, fixture loading, and validation."
-      symbol: KarrProteinProcessingIProcess
     ports_schema:
       path: "opencell/vivarium/karr_protein_processing_i.py"
       lines: "121-180"
       note: "Allocator, protein, and substrate store shape."
-      symbol: KarrProteinProcessingIProcess.ports_schema
     next_update:
       path: "opencell/vivarium/karr_protein_processing_i.py"
       lines: "182-310"
       note: "Allocator-backed tick update and writeback."
-      symbol: KarrProteinProcessingIProcess.next_update
     helper_reads:
       path: "opencell/vivarium/karr_protein_processing_i.py"
       lines: "312-378"
       note: "Allocator substrate read and enzyme-source split."
-      symbol: KarrProteinProcessingIProcess._read_enzyme_counts
     request_calculator:
       path: "opencell/vivarium/karr_request_calculators.py"
       lines: "362-543"
       note: "Protein-pathway request calculator; PP1 emits the H2O request."
-      symbol: RequestCalculatorProteinPathway
     composite_wiring:
       path: "opencell/vivarium/karr_composite.py"
       lines: "1107-1158"
       note: "Protein-pathway request calculator and allocation-step wiring."
-      symbol: build_karr_chassis_v4
     topology:
       path: "opencell/vivarium/karr_composite.py"
       lines: "2056-2062"
       note: "ProteinProcessingI process topology wiring."
-      symbol: build_karr_chassis_v5
 provenance:
   fixture_files:
     - "data/karr_fixtures/per_process/ProteinProcessingI_flat.mat"
@@ -317,12 +296,10 @@ deviations:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m"
       lines: "1-80"
       note: "The process file is count-domain and does not expose a separate LP-bound routine in the local extract."
-      symbol: ProteinProcessingI
     oc_anchor:
       path: "opencell/vivarium/karr_protein_processing_i.py"
       lines: "33-419"
       note: "Current OC port has no flux-bound API."
-      symbol: KarrProteinProcessingIProcess
   shared_pool_projection_merges_compartments: false
   known_deviations:
     - "OC uses a strict-zero allocator contract: `next_update` reads `substrates_allocated[self.name]` and never falls back to `substrates`."

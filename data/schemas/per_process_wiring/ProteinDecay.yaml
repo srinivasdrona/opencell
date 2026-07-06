@@ -1,5 +1,5 @@
-schema_version: "2.0"
-schema_date: '2026-07-07'
+schema_version: "1.0"
+schema_date: '2026-06-29'
 process:
   name: "ProteinDecay"
   matlab_class: "ProteinDecay"
@@ -15,7 +15,7 @@ process:
     is intentionally a light variant that preserves the request/update wiring
     for complex decay but not full MATLAB parity. This row is
     exemplar-scoped; canonical exemplars listed, not exhaustive enumeration.
-integration_touchpoints:
+methods:
   calcResourceRequirements_Current:
     matlab:
       symbol: "calcResourceRequirements_Current"
@@ -23,7 +23,6 @@ integration_touchpoints:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m"
         lines: "487-529"
         note: "Current-tick allocator request formula."
-        symbol: "calcResourceRequirements_Current"
       note: "Includes refolding, complex decay, monomer decay, and aborted-polypeptide hydrolysis requirements."
     oc:
       symbol: "RequestCalculatorPD.next_update"
@@ -31,15 +30,34 @@ integration_touchpoints:
         path: "opencell/vivarium/karr_request_calculators.py"
         lines: "92-152"
         note: "Current OC request path for ProteinDecay-light."
-        symbol: "RequestCalculatorPD.next_update"
       supporting:
         - path: "opencell/vivarium/karr_composite.py"
           lines: "769-785"
           note: "Composite wires the request calculator into the allocator step."
-          symbol: build_karr_chassis_v3
       note: "OC budgets ATP/H2O from complex-decay expectation only; the full MATLAB lifecycle budget is broader."
     status: "partial"
     note: "Implemented as a separate request calculator, but narrower than MATLAB's full current-resource formula."
+  calcResourceRequirements_LifeCycle:
+    matlab:
+      symbol: "calcResourceRequirements_LifeCycle"
+      source:
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m"
+        lines: "420-480"
+        note: "Lifecycle resource requirements block."
+      note: "Refolding, complex decay, monomer decay, signal-sequence decay, and stalled-polypeptide decay lifecycle budget."
+    oc:
+      symbol: "RequestCalculatorPD.__init__"
+      source:
+        path: "opencell/vivarium/karr_request_calculators.py"
+        lines: "98-104"
+        note: "Closest current-tick request analogue; no dedicated lifecycle budgeter exists in the light port. Representative OC anchor for non-implemented correspondence."
+      supporting:
+        - path: "opencell/vivarium/karr_protein_decay_light.py"
+          lines: "502-591"
+          note: "OC process update path emits requests but does not expose a lifecycle-budget method."
+      note: "No OC lifecycle-budget method is present for ProteinDecay; the light port only exposes the current-tick request surface. OC does not implement this Karr method."
+    status: "not_implemented"
+    note: "The light port collapses lifecycle budgeting into the current-tick request calculator and direct update logic. OC does not implement this Karr method."
   evolveState:
     matlab:
       symbol: "evolveState"
@@ -47,7 +65,6 @@ integration_touchpoints:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m"
         lines: "532-538"
         note: "Per-tick driver that sequences the helper stages."
-        symbol: "evolveState"
       note: "Calls misfold, refold, complex decay, aborted-polypeptide decay, and monomer decay in sequence."
     oc:
       symbol: "ProteinDecayLightProcess.next_update"
@@ -55,16 +72,13 @@ integration_touchpoints:
         path: "opencell/vivarium/karr_protein_decay_light.py"
         lines: "502-591"
         note: "Current OC per-tick update path."
-        symbol: "ProteinDecayLightProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_protein_decay_light.py"
           lines: "299-448"
           note: "Latent monomer substrate delta helper (replay / partial parity path)."
-          symbol: ProteinDecayLightProcess.__init__
         - path: "opencell/vivarium/karr_protein_decay_light.py"
           lines: "450-500"
           note: "Trace-hint replay short-circuit."
-          symbol: ProteinDecayLightProcess._matrix_delta_update
       note: "The OC light port covers complex decay plus optional latent monomer substrate replay, but omits the MATLAB misfold/refold and aborted-polypeptide helpers."
     status: "partial"
     note: "OC next_update is the per-tick analog, but it only implements a subset of the MATLAB helper chain."
@@ -75,7 +89,6 @@ integration_touchpoints:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m"
         lines: "152-152"
         note: "Whole file searched; no calcFluxBounds symbol is defined in ProteinDecay.m. Class-level anchor used to record calcFluxBounds absence."
-        symbol: "ProteinDecay"
       note: "ProteinDecay is not an LP-bound process in the MATLAB source. This process does not have Karr's calcFluxBounds method; it does not participate in FBA."
     oc:
       symbol: "ProteinDecayLightProcess"
@@ -83,7 +96,6 @@ integration_touchpoints:
         path: "opencell/vivarium/karr_protein_decay_light.py"
         lines: "82-588"
         note: "OC light process has no flux-bound method. Representative OC anchor for non-implemented correspondence."
-        symbol: "ProteinDecayLightProcess"
       note: "No OC flux-bound analogue exists for this process. OC does not implement this Karr method."
     status: "not_implemented"
     note: "Neither the MATLAB process nor the OC light port exposes a dedicated flux-bound method. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
@@ -141,13 +153,10 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m"
       lines: "494-502"
       note: "Refolding ATP requirement."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_request_calculators.py"
       lines: "122-151"
       note: "OC request calculator emits ATP demand from expected complex decays only; the light port still uses the ATP request surface."
-      symbol: RequestCalculatorPD.next_update
-    kind: expression
   - wid: "H2O"
     compartment: "cytosol"
     formula_or_constant: "nRefolding + sum(abortedSequenceLengths - 1) + hydrolysis_terms"
@@ -155,13 +164,10 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m"
       lines: "517-527"
       note: "Water demand from stalled-polypeptide degradation and refolding."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_protein_decay_light.py"
       lines: "548-583"
       note: "Light port emits H2O request and direct substrate writeback from complex-decay totals."
-      symbol: ProteinDecayLightProcess.evolveState_RefoldProteins
-    kind: expression
   - wid: "H"
     compartment: "cytosol"
     formula_or_constant: "MATLAB: max(0, -complexDecayReactions(:, mature_or_modified_complexs)) * decayedComplexCount; OC: Poisson complex-decay projection with positive-only clipping when ATP/H2O demand <= 0"
@@ -169,14 +175,11 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m"
       lines: "681-754"
       note: "Complex-decay substrate update uses stochasticRound/while-loop gating and can consume hydrogen."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_protein_decay_light.py"
       lines: "525-566"
       note: "OC uses Poisson decays and clips negative substrate deltas when ATP/H2O demand is nonpositive, so hydrogen consume can be suppressed (CODE_DEVIATES)."
-      symbol: ProteinDecayLightProcess.evolveState_MisfoldProteins
     note: "MATLAB enforces full complex-decay consume semantics; OC composite applies a clipping gate and is not formula-equivalent."
-    kind: per_reaction
 produce_stoichiometry:
   - wid: "ADP"
     compartment: "cytosol"
@@ -185,13 +188,10 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m"
       lines: "645-647"
       note: "Refolding produces ADP as part of the ATP->ADP/PI/H bookkeeping."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_protein_decay_light.py"
       lines: "548-583"
       note: "Light port exposes the same request/update surface, but only the direct complex-decay path is active by default."
-      symbol: ProteinDecayLightProcess.evolveState_RefoldProteins
-    kind: expression
   - wid: "PI"
     compartment: "cytosol"
     formula_or_constant: "numFoldingProteins"
@@ -199,13 +199,10 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m"
       lines: "645-647"
       note: "Refolding produces inorganic phosphate."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_protein_decay_light.py"
       lines: "548-583"
       note: "Light port exposes the same request/update surface, but only the direct complex-decay path is active by default."
-      symbol: ProteinDecayLightProcess.evolveState_RefoldProteins
-    kind: expression
   - wid: "ALA"
     compartment: "cytosol"
     formula_or_constant: "monomerDecayReactions(:, matureIndexs) * sum(decayedProteins, 2)"
@@ -213,14 +210,11 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m"
       lines: "908-914"
       note: "Monomer hydrolysis releases amino acids."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_protein_decay_light.py"
       lines: "209-305"
       note: "Amino-acid release is on a latent helper path gated by `_latent_enabled`; constructor shape checks disable this path by default (CODE_DEVIATES)."
-      symbol: ProteinDecayLightProcess.__init__
     note: "MATLAB emits this amino-acid product; OC default runtime does not actively fabricate it."
-    kind: per_reaction
   - wid: "GLY"
     compartment: "cytosol"
     formula_or_constant: "monomerDecayReactions(:, matureIndexs) * sum(decayedProteins, 2)"
@@ -228,14 +222,11 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m"
       lines: "908-914"
       note: "Monomer hydrolysis releases amino acids."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_protein_decay_light.py"
       lines: "209-305"
       note: "Amino-acid release is on a latent helper path gated by `_latent_enabled`; constructor shape checks disable this path by default (CODE_DEVIATES)."
-      symbol: ProteinDecayLightProcess.__init__
     note: "MATLAB emits this amino-acid product; OC default runtime does not actively fabricate it."
-    kind: per_reaction
   - wid: "MET"
     compartment: "cytosol"
     formula_or_constant: "monomerDecayReactions(:, matureIndexs) * sum(decayedProteins, 2)"
@@ -243,19 +234,11 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m"
       lines: "908-914"
       note: "Monomer hydrolysis releases amino acids."
-      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_protein_decay_light.py"
       lines: "209-305"
       note: "Amino-acid release is on a latent helper path gated by `_latent_enabled`; constructor shape checks disable this path by default (CODE_DEVIATES)."
-      symbol: ProteinDecayLightProcess.__init__
     note: "MATLAB emits this amino-acid product; OC default runtime does not actively fabricate it."
-    kind: per_reaction
-stoichiometry_oracle:
-  class: matrix
-  record_path: data/karr_method_inventory/karr_stoichiometry/ProteinDecay.json
-  substrate_count: 51
-  note: Exhaustive per-tick substrate set lives in the HB1 oracle; this row's consume/produce arrays carry integration-relevant hand-curated entries.
 compartment_routing:
   - wid: "ATP"
     consume_compartment: "cytosol"
@@ -309,7 +292,6 @@ unit_conversion_chain:
         path: "opencell/vivarium/karr_protein_decay_light.py"
         lines: "502-591"
         note: Process works directly in per-tick integer counts; no unit conversion needed.
-        symbol: ProteinDecayLightProcess._compute_decay_reaction
       note: Process works directly in per-tick integer counts; no unit conversion needed.
   note: "This process does not require unit conversion (per-tick integer counts throughout)."
 dependencies:
@@ -339,103 +321,83 @@ source_anchors:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m"
       lines: "1-260"
       note: "Class declaration, constants, and state fields."
-      symbol: ProteinDecay
     initialize_constants:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m"
       lines: "272-380"
       note: "Fixture-derived substrate, monomer, complex, and RNA mapping."
-      symbol: ProteinDecay
     lifecycle_requirements:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m"
       lines: "420-480"
       note: "Lifecycle resource requirements."
-      symbol: calcResourceRequirements_LifeCycle
     current_requirements:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m"
       lines: "487-529"
       note: "Current allocator request logic."
-      symbol: calcResourceRequirements_LifeCycle
     evolve_state:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m"
       lines: "532-538"
       note: "Helper sequencing entrypoint."
-      symbol: calcResourceRequirements_Current
     evolve_state_misfold:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m"
       lines: "540-588"
       note: "Protein misfolding helper."
-      symbol: calcResourceRequirements_Current
     evolve_state_refold:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m"
       lines: "590-664"
       note: "Protein refolding helper."
-      symbol: calcResourceRequirements_Current
     evolve_state_degrade_complexes:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m"
       lines: "666-754"
       note: "Complex decay helper."
-      symbol: calcResourceRequirements_Current
     evolve_state_degrade_aborted_polypeptides:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m"
       lines: "756-833"
       note: "Aborted-polypeptide decay helper."
-      symbol: calcResourceRequirements_Current
     evolve_state_degrade_monomers:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m"
       lines: "835-915"
       note: "Monomer decay helper."
-      symbol: calcResourceRequirements_Current
     simulation_order_constraint:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m"
       lines: "48-55"
       note: "Canonical tRNAAminoacylation before Translation constraint."
-      symbol: evolveState
   oc_blocks:
     process_class:
       path: "opencell/vivarium/karr_protein_decay_light.py"
       lines: "82-218"
       note: "Class declaration, fixture loading, and derived state setup."
-      symbol: _coerce_aa_sequence
     ports_schema:
       path: "opencell/vivarium/karr_protein_decay_light.py"
       lines: "219-271"
       note: "Current OC ports, including requests and substrates_allocated."
-      symbol: ProteinDecayLightProcess.__init__
     latent_monomer_decay:
       path: "opencell/vivarium/karr_protein_decay_light.py"
       lines: "281-448"
       note: "Replay / latent monomer substrate helper."
-      symbol: ProteinDecayLightProcess.__init__
     replay_short_circuit:
       path: "opencell/vivarium/karr_protein_decay_light.py"
       lines: "450-500"
       note: "Trace-hint replay short-circuit."
-      symbol: ProteinDecayLightProcess._matrix_delta_update
     next_update:
       path: "opencell/vivarium/karr_protein_decay_light.py"
       lines: "502-591"
       note: "Per-tick update path for the light port."
-      symbol: ProteinDecayLightProcess._compute_decay_reaction
     request_calculator:
       path: "opencell/vivarium/karr_request_calculators.py"
       lines: "92-152"
       note: "ATP/H2O request calculator for ProteinDecay-light."
-      symbol: RequestCalculatorPD
     allocator_key_mapping:
       path: "opencell/vivarium/karr_allocation_step.py"
       lines: "18-24"
       note: "Allocator alias from protein_decay_light to karr_protein_decay_light."
-      symbol: <module>
     composite_enrollment:
       path: "opencell/vivarium/karr_composite.py"
       lines: "769-785"
       note: "ProteinDecay-light consumer enrollment and request calculator wiring."
-      symbol: build_karr_chassis_v3
     composite_topology:
       path: "opencell/vivarium/karr_composite.py"
       lines: "847-853"
       note: "ProteinDecay-light shared topology."
-      symbol: build_karr_chassis_v3
 provenance:
   fixture_files:
     - "data/karr_fixtures/per_process/ProteinDecay_flat.mat"
@@ -471,12 +433,10 @@ deviations:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m"
       lines: "1-938"
       note: "ProteinDecay has no calcFluxBounds symbol in the MATLAB file."
-      symbol: ProteinDecay
     oc_anchor:
       path: "opencell/vivarium/karr_protein_decay_light.py"
       lines: "97-591"
       note: "The light port has no flux-bound method either."
-      symbol: _d2_complex_wids
   shared_pool_projection_merges_compartments: true
   known_deviations:
     - "OC is ProteinDecayLightProcess, a complex-decay-only subset of MATLAB ProteinDecay; misfold/refold, aborted-polypeptide decay, and full monomer decay are not implemented."
