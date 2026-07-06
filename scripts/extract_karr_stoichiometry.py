@@ -101,7 +101,6 @@ MATRIX_OVERRIDES: dict[str, tuple[MatrixSpec, ...]] = {
         MatrixSpec("complexDecayReactions", "sr"),
         MatrixSpec("monomerDecayReactions", "sr"),
     ),
-    "MacromolecularComplexation": (MatrixSpec("complexComposition", "sr", multiplier=-1.0),),
 }
 
 
@@ -232,6 +231,7 @@ NONE_PROCESS_NOTES = {
     "TranscriptionalRegulation": "No process substrates are declared (substrateWholeCellModelIDs empty); evolveState updates TF/chromosome binding state only.",
     "HostInteraction": "No process substrates are declared (substrateWholeCellModelIDs empty); evolveState updates host signaling booleans only.",
     "TerminalOrganelleAssembly": "evolveState relocates terminal-organelle proteins across compartments; no small-molecule substrate stoichiometry.",
+    "MacromolecularComplexation": "Passive macromolecular complexation: consumes NO small-molecule substrates (calcResourceRequirements_LifeCycle states 'no substrates or enzymes required'). The complexComposition matrix is a protein-monomer/RNA-subunit x complex adjacency matrix (protein/complex state layer), NOT small-molecule substrate stoichiometry; excluded from the metabolite oracle. Verified by Sonnet checker 2026-07-07.",
     "ProteinActivation": "evolveState toggles protein activation state between substrates/inactivatedSubstrates pools; no small-molecule substrate stoichiometry.",
 }
 
