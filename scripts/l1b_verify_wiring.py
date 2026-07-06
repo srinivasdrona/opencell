@@ -15,12 +15,15 @@ from pathlib import Path
 from typing import Any, TypedDict
 
 import jsonschema
+import numpy as np
 import yaml
+from scipy.io import loadmat
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_WIRING_DIR = REPO_ROOT / "data" / "schemas" / "per_process_wiring"
 DEFAULT_PROCESS_SCHEMA_DIR = REPO_ROOT / "data" / "schemas" / "per_process"
 DEFAULT_OC_METHOD_MAP = REPO_ROOT / "data" / "karr_method_inventory" / "oc_method_map.yaml"
+DEFAULT_EXTERNAL_WID_FIXTURE = REPO_ROOT / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"
 WIRING_DIR_ENV = "OC_L1B_WIRING_DIR"
 PROCESS_SCHEMA_DIR_ENV = "OC_L1B_PROCESS_SCHEMA_DIR"
 OC_METHOD_MAP_ENV = "OC_L1B_OC_METHOD_MAP"
@@ -51,6 +54,7 @@ CHECK_ORDER = (
     "check_unit_conversion_chain_coherent",
     "check_ordering_constraints_reference_valid_processes",
     "check_dependency_symmetry",
+    "check_orphan_consume_wids",
     "check_deviations_reference_valid_anchors",
 )
 
@@ -666,6 +670,9 @@ def check_schema_conformance(
     method_map_contract: dict[str, Any] | None = None,
     method_map_path: Path | None = None,
     dep_index: dict[str, dict[str, set[str]]] | None = None,
+    produced_wids: set[str] | None = None,
+    external_wids: set[str] | None = None,
+    external_wids_source: str | None = None,
 ) -> CheckResult:
     del strict_anchors
     del repo_root
@@ -675,6 +682,9 @@ def check_schema_conformance(
     del method_map_contract
     del method_map_path
     del dep_index
+    del produced_wids
+    del external_wids
+    del external_wids_source
 
     if not isinstance(schema_contract, dict):
         return CheckResult(verdict="FAIL", details=["schema contract unavailable"])
@@ -705,6 +715,9 @@ def check_stoichiometry_oracle_matches(
     method_map_contract: dict[str, Any] | None = None,
     method_map_path: Path | None = None,
     dep_index: dict[str, dict[str, set[str]]] | None = None,
+    produced_wids: set[str] | None = None,
+    external_wids: set[str] | None = None,
+    external_wids_source: str | None = None,
 ) -> CheckResult:
     del strict_anchors
     del cache
@@ -714,6 +727,9 @@ def check_stoichiometry_oracle_matches(
     del method_map_contract
     del method_map_path
     del dep_index
+    del produced_wids
+    del external_wids
+    del external_wids_source
 
     oracle_block = row.get("stoichiometry_oracle")
     if not isinstance(oracle_block, dict):
@@ -790,6 +806,9 @@ def check_half_a_b_consistency(
     method_map_contract: dict[str, Any] | None = None,
     method_map_path: Path | None = None,
     dep_index: dict[str, dict[str, set[str]]] | None = None,
+    produced_wids: set[str] | None = None,
+    external_wids: set[str] | None = None,
+    external_wids_source: str | None = None,
 ) -> CheckResult:
     del strict_anchors
     del repo_root
@@ -798,6 +817,9 @@ def check_half_a_b_consistency(
     del process_schema_dir
     del schema_contract
     del dep_index
+    del produced_wids
+    del external_wids
+    del external_wids_source
 
     if not isinstance(method_map_contract, dict):
         path_display = str(method_map_path) if method_map_path is not None else "unknown"
@@ -868,6 +890,9 @@ def check_a_invariants(
     method_map_contract: dict[str, Any] | None = None,
     method_map_path: Path | None = None,
     dep_index: dict[str, dict[str, set[str]]] | None = None,
+    produced_wids: set[str] | None = None,
+    external_wids: set[str] | None = None,
+    external_wids_source: str | None = None,
 ) -> CheckResult:
     del strict_anchors
     del repo_root
@@ -878,6 +903,9 @@ def check_a_invariants(
     del method_map_contract
     del method_map_path
     del dep_index
+    del produced_wids
+    del external_wids
+    del external_wids_source
 
     failures: list[str] = []
     calc_request = _extract_touchpoint(row, "calcResourceRequirements_Current")
@@ -949,6 +977,9 @@ def check_matlab_anchors_resolve(
     method_map_contract: dict[str, Any] | None = None,
     method_map_path: Path | None = None,
     dep_index: dict[str, dict[str, set[str]]] | None = None,
+    produced_wids: set[str] | None = None,
+    external_wids: set[str] | None = None,
+    external_wids_source: str | None = None,
 ) -> CheckResult:
     del roster
     del process_schema_dir
@@ -956,6 +987,9 @@ def check_matlab_anchors_resolve(
     del method_map_contract
     del method_map_path
     del dep_index
+    del produced_wids
+    del external_wids
+    del external_wids_source
     anchors = _collect_matlab_anchors(row)
     return _validate_anchor_refs(
         anchor_refs=anchors,
@@ -981,6 +1015,9 @@ def check_oc_anchors_resolve(
     method_map_contract: dict[str, Any] | None = None,
     method_map_path: Path | None = None,
     dep_index: dict[str, dict[str, set[str]]] | None = None,
+    produced_wids: set[str] | None = None,
+    external_wids: set[str] | None = None,
+    external_wids_source: str | None = None,
 ) -> CheckResult:
     del roster
     del process_schema_dir
@@ -988,6 +1025,9 @@ def check_oc_anchors_resolve(
     del method_map_contract
     del method_map_path
     del dep_index
+    del produced_wids
+    del external_wids
+    del external_wids_source
     anchors = _collect_oc_anchors(row)
     return _validate_anchor_refs(
         anchor_refs=anchors,
@@ -1081,6 +1121,74 @@ def _build_dependency_index(
     return dep_index
 
 
+def _collect_wids(entries: Any) -> set[str]:
+    if not isinstance(entries, list):
+        return set()
+
+    wids: set[str] = set()
+    for entry in entries:
+        if isinstance(entry, dict):
+            wid = entry.get("wid")
+            if isinstance(wid, str) and wid.strip():
+                wids.add(wid.strip())
+            elif wid is not None:
+                wids.add(str(wid))
+            continue
+        if isinstance(entry, str) and entry.strip():
+            wids.add(entry.strip())
+    return wids
+
+
+def _build_produced_wids(rows: list[tuple[Path, dict[str, Any]]]) -> set[str]:
+    produced_wids: set[str] = set()
+    allocator_output_keys = ("produces", "produced", "produced_wids", "outputs")
+
+    for _row_path, row in rows:
+        produced_wids.update(_collect_wids(row.get("produce_stoichiometry", [])))
+
+        allocator = row.get("allocator")
+        if not isinstance(allocator, dict):
+            continue
+        for key in allocator_output_keys:
+            produced_wids.update(_collect_wids(allocator.get(key, [])))
+
+    return produced_wids
+
+
+def _load_external_wids(repo_root: Path) -> tuple[set[str] | None, str]:
+    fixture_path = DEFAULT_EXTERNAL_WID_FIXTURE
+    if not fixture_path.exists():
+        return None, f"missing external-WID fixture {fixture_path}"
+
+    try:
+        mat = loadmat(fixture_path, squeeze_me=True, struct_as_record=False)
+        fixture = mat["data"].fixture
+        substrate_wids = [
+            str(item)
+            for item in np.asarray(fixture.substrateWholeCellModelIDs, dtype=object).reshape(-1)
+        ]
+        external_idx = (
+            np.asarray(fixture.substrateIndexs_externalExchangedMetabolites, dtype=np.int64).reshape(-1)
+            - 1
+        )
+    except Exception as exc:
+        return None, f"failed to load external-WID fixture {fixture_path}: {exc}"
+
+    external_wids = {
+        substrate_wids[idx]
+        for idx in external_idx
+        if 0 <= idx < len(substrate_wids)
+    }
+    if not external_wids:
+        return None, f"external-WID fixture {fixture_path} resolved zero WIDs"
+
+    try:
+        display_path = fixture_path.relative_to(repo_root).as_posix()
+    except ValueError:
+        display_path = str(fixture_path)
+    return external_wids, f"{display_path} via Metabolism.substrateIndexs_externalExchangedMetabolites"
+
+
 def _wid_check(
     *,
     row: dict[str, Any],
@@ -1146,6 +1254,9 @@ def check_consume_produce_wids_in_schema_toml(
     method_map_contract: dict[str, Any] | None = None,
     method_map_path: Path | None = None,
     dep_index: dict[str, dict[str, set[str]]] | None = None,
+    produced_wids: set[str] | None = None,
+    external_wids: set[str] | None = None,
+    external_wids_source: str | None = None,
 ) -> CheckResult:
     del strict_anchors
     del repo_root
@@ -1155,6 +1266,9 @@ def check_consume_produce_wids_in_schema_toml(
     del method_map_contract
     del method_map_path
     del dep_index
+    del produced_wids
+    del external_wids
+    del external_wids_source
     return _wid_check(
         row=row,
         process_schema_dir=process_schema_dir,
@@ -1177,6 +1291,9 @@ def check_allocator_requests_wids_in_schema_toml(
     method_map_contract: dict[str, Any] | None = None,
     method_map_path: Path | None = None,
     dep_index: dict[str, dict[str, set[str]]] | None = None,
+    produced_wids: set[str] | None = None,
+    external_wids: set[str] | None = None,
+    external_wids_source: str | None = None,
 ) -> CheckResult:
     del strict_anchors
     del repo_root
@@ -1186,6 +1303,9 @@ def check_allocator_requests_wids_in_schema_toml(
     del method_map_contract
     del method_map_path
     del dep_index
+    del produced_wids
+    del external_wids
+    del external_wids_source
     allocator = row.get("allocator")
     requests: Any = []
     bypasses: Any = []
@@ -1211,6 +1331,9 @@ def check_unit_conversion_chain_coherent(
     method_map_contract: dict[str, Any] | None = None,
     method_map_path: Path | None = None,
     dep_index: dict[str, dict[str, set[str]]] | None = None,
+    produced_wids: set[str] | None = None,
+    external_wids: set[str] | None = None,
+    external_wids_source: str | None = None,
 ) -> CheckResult:
     del strict_anchors
     del repo_root
@@ -1221,6 +1344,9 @@ def check_unit_conversion_chain_coherent(
     del method_map_contract
     del method_map_path
     del dep_index
+    del produced_wids
+    del external_wids
+    del external_wids_source
 
     chain = row.get("unit_conversion_chain")
     if not isinstance(chain, dict):
@@ -1282,6 +1408,9 @@ def check_ordering_constraints_reference_valid_processes(
     method_map_contract: dict[str, Any] | None = None,
     method_map_path: Path | None = None,
     dep_index: dict[str, dict[str, set[str]]] | None = None,
+    produced_wids: set[str] | None = None,
+    external_wids: set[str] | None = None,
+    external_wids_source: str | None = None,
 ) -> CheckResult:
     del strict_anchors
     del repo_root
@@ -1291,6 +1420,9 @@ def check_ordering_constraints_reference_valid_processes(
     del method_map_contract
     del method_map_path
     del dep_index
+    del produced_wids
+    del external_wids
+    del external_wids_source
 
     ordering = row.get("ordering_constraints")
     if not isinstance(ordering, dict):
@@ -1332,6 +1464,9 @@ def check_dependency_symmetry(
     method_map_contract: dict[str, Any] | None = None,
     method_map_path: Path | None = None,
     dep_index: dict[str, dict[str, set[str]]] | None = None,
+    produced_wids: set[str] | None = None,
+    external_wids: set[str] | None = None,
+    external_wids_source: str | None = None,
 ) -> CheckResult:
     del strict_anchors
     del repo_root
@@ -1340,6 +1475,9 @@ def check_dependency_symmetry(
     del schema_contract
     del method_map_contract
     del method_map_path
+    del produced_wids
+    del external_wids
+    del external_wids_source
 
     if dep_index is None:
         return CheckResult(verdict="FAIL", details=["dependency index missing"])
@@ -1388,6 +1526,77 @@ def check_dependency_symmetry(
     return CheckResult(verdict="PASS", details=[f"validated {total_edges} dependency edges"])
 
 
+def check_orphan_consume_wids(
+    row: dict[str, Any],
+    *,
+    strict_anchors: bool,
+    repo_root: Path,
+    cache: FileCache,
+    roster: set[str],
+    process_schema_dir: Path,
+    schema_contract: dict[str, Any] | None = None,
+    method_map_contract: dict[str, Any] | None = None,
+    method_map_path: Path | None = None,
+    dep_index: dict[str, dict[str, set[str]]] | None = None,
+    produced_wids: set[str] | None = None,
+    external_wids: set[str] | None = None,
+    external_wids_source: str | None = None,
+) -> CheckResult:
+    del strict_anchors
+    del repo_root
+    del cache
+    del roster
+    del process_schema_dir
+    del schema_contract
+    del method_map_contract
+    del method_map_path
+    del dep_index
+
+    if produced_wids is None:
+        return CheckResult(verdict="FAIL", details=["produced WID index missing"])
+
+    allocator = row.get("allocator")
+    requests = allocator.get("requests", []) if isinstance(allocator, dict) else []
+    target_wids = _collect_wids(row.get("consume_stoichiometry", []))
+    target_wids.update(_collect_wids(requests))
+
+    candidate_orphans = sorted(wid for wid in target_wids if wid not in produced_wids)
+    if not candidate_orphans:
+        return CheckResult(
+            verdict="PASS",
+            details=[f"validated {len(target_wids)} consume/request WIDs against produced corpus"],
+        )
+
+    if external_wids is None:
+        warnings = [
+            "WARN: external WID allowlist unresolved; potential orphans kept as warnings "
+            f"({external_wids_source or 'no source'})"
+        ]
+        warnings.extend(
+            [
+                f"WARN: orphan candidate consume/request WID {wid!r} not produced by any row"
+                for wid in candidate_orphans
+            ]
+        )
+        return CheckResult(verdict="PASS", details=warnings)
+
+    failures = [
+        f"orphan consume/request WID {wid!r}: not produced by any row and not in external allowlist"
+        for wid in candidate_orphans
+        if wid not in external_wids
+    ]
+    if failures:
+        return CheckResult(verdict="FAIL", details=failures)
+
+    external_hits = sum(1 for wid in candidate_orphans if wid in external_wids)
+    return CheckResult(
+        verdict="PASS",
+        details=[
+            f"validated {len(target_wids)} consume/request WIDs ({external_hits} allowlisted external via {external_wids_source})"
+        ],
+    )
+
+
 def check_deviations_reference_valid_anchors(
     row: dict[str, Any],
     *,
@@ -1400,6 +1609,9 @@ def check_deviations_reference_valid_anchors(
     method_map_contract: dict[str, Any] | None = None,
     method_map_path: Path | None = None,
     dep_index: dict[str, dict[str, set[str]]] | None = None,
+    produced_wids: set[str] | None = None,
+    external_wids: set[str] | None = None,
+    external_wids_source: str | None = None,
 ) -> CheckResult:
     del strict_anchors
     del cache
@@ -1409,6 +1621,9 @@ def check_deviations_reference_valid_anchors(
     del method_map_contract
     del method_map_path
     del dep_index
+    del produced_wids
+    del external_wids
+    del external_wids_source
 
     warnings: list[str] = []
     deviations = row.get("deviations")
@@ -1456,6 +1671,7 @@ CHECK_FUNCTIONS = {
     "check_unit_conversion_chain_coherent": check_unit_conversion_chain_coherent,
     "check_ordering_constraints_reference_valid_processes": check_ordering_constraints_reference_valid_processes,
     "check_dependency_symmetry": check_dependency_symmetry,
+    "check_orphan_consume_wids": check_orphan_consume_wids,
     "check_deviations_reference_valid_anchors": check_deviations_reference_valid_anchors,
 }
 
@@ -1473,6 +1689,9 @@ def _build_row_report(
     method_map_contract: dict[str, Any] | None,
     method_map_path: Path,
     dep_index: dict[str, dict[str, set[str]]],
+    produced_wids: set[str],
+    external_wids: set[str] | None,
+    external_wids_source: str,
 ) -> dict[str, Any]:
     process_name = _process_name(row, row_file.stem)
     checks: dict[str, CheckResult] = {}
@@ -1491,6 +1710,9 @@ def _build_row_report(
             method_map_contract=method_map_contract,
             method_map_path=method_map_path,
             dep_index=dep_index,
+            produced_wids=produced_wids,
+            external_wids=external_wids,
+            external_wids_source=external_wids_source,
         )
         checks[check_name] = result
         if result["verdict"] == "FAIL":
@@ -1539,6 +1761,8 @@ def _build_report(
     rows, load_failures = _discover_rows(wiring_dir)
     roster = {_process_name(payload, row_path.stem) for row_path, payload in rows}
     dep_index = _build_dependency_index(rows)
+    produced_wids = _build_produced_wids(rows)
+    external_wids, external_wids_source = _load_external_wids(REPO_ROOT)
 
     selected_rows = rows
     if process_filter is not None:
@@ -1564,6 +1788,9 @@ def _build_report(
                 method_map_contract=method_map_contract,
                 method_map_path=method_map_path,
                 dep_index=dep_index,
+                produced_wids=produced_wids,
+                external_wids=external_wids,
+                external_wids_source=external_wids_source,
             )
         )
 

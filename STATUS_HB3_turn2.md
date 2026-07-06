@@ -14,10 +14,14 @@
 - Investigating authoritative external-WID allowlist sources under `data/` before implementing `check_orphan_consume_wids`.
 - Implemented C5 `check_dependency_symmetry` with a corpus-wide `dep_index` built once in `_build_report` and threaded into `_build_row_report`/check dispatch.
 - Verified the existing integration suite still passes after C5: `bin\oc-pytest.cmd tests/integration/test_l1b_verify_wiring.py -q` -> `14 passed in 27.23s`.
+- Committed C5: `5e01570` (`hb3: add dependency symmetry check`).
+- Implemented C6 `check_orphan_consume_wids` with a corpus-wide `produced_wids` index and an external allowlist derived from `data/karr_fixtures/per_process/Metabolism_flat.mat` via `substrateWholeCellModelIDs` + `substrateIndexs_externalExchangedMetabolites`.
+- Verified the existing integration suite still passes after C6: `bin\oc-pytest.cmd tests/integration/test_l1b_verify_wiring.py -q` -> `14 passed in 64.18s`.
 
 ## Commits
 
-- Pending: C5 commit next.
+- `5e01570` - `hb3: add dependency symmetry check`
+- Pending: C6 commit next.
 
 ## Gate Evidence
 
@@ -27,7 +31,9 @@
 
 - `bin\oc-pytest.cmd tests/integration/test_l1b_verify_wiring.py -q`
 - Result: `14 passed in 27.23s`
+- `bin\oc-pytest.cmd tests/integration/test_l1b_verify_wiring.py -q`
+- Result: `14 passed in 64.18s`
 
 ## Blockers / Notes
 
-- None yet.
+- External-WID allowlist source resolved from the checked-in Karr Metabolism flat fixture; no planner escalation needed for C6 source discovery.
