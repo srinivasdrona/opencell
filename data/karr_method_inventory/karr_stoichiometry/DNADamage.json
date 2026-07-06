@@ -1,0 +1,258 @@
+{
+  "process": "DNADamage",
+  "source": "data/karr_fixtures/per_process/DNADamage_flat.mat:data.fixture.reactionSmallMoleculeStoichiometryMatrix; matrix is compartment-flat (2D substrates x reactions); compartment omitted; MATLAB source: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNADamage.m",
+  "matrix_field": "reactionSmallMoleculeStoichiometryMatrix",
+  "matrix_shape": [
+    48,
+    32
+  ],
+  "substrates": [
+    {
+      "wid": "AD",
+      "role": "produce",
+      "net_coefficient": 1.0,
+      "consume_coefficient_total": 0.0,
+      "produce_coefficient_total": 1.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 19,
+          "coefficient": 1.0
+        }
+      ]
+    },
+    {
+      "wid": "CO2",
+      "role": "produce",
+      "net_coefficient": 1.0,
+      "consume_coefficient_total": 0.0,
+      "produce_coefficient_total": 1.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 10,
+          "coefficient": 1.0
+        }
+      ]
+    },
+    {
+      "wid": "CSN",
+      "role": "produce",
+      "net_coefficient": 1.0,
+      "consume_coefficient_total": 0.0,
+      "produce_coefficient_total": 1.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 20,
+          "coefficient": 1.0
+        }
+      ]
+    },
+    {
+      "wid": "GN",
+      "role": "produce",
+      "net_coefficient": 1.0,
+      "consume_coefficient_total": 0.0,
+      "produce_coefficient_total": 1.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 21,
+          "coefficient": 1.0
+        }
+      ]
+    },
+    {
+      "wid": "H",
+      "role": "produce",
+      "net_coefficient": 22.0,
+      "consume_coefficient_total": 0.0,
+      "produce_coefficient_total": 22.0,
+      "nonzero_reaction_count": 11,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 2,
+          "coefficient": 2.0
+        },
+        {
+          "reaction_index": 8,
+          "coefficient": 2.0
+        },
+        {
+          "reaction_index": 9,
+          "coefficient": 2.0
+        },
+        {
+          "reaction_index": 10,
+          "coefficient": 2.0
+        },
+        {
+          "reaction_index": 11,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 13,
+          "coefficient": 2.0
+        },
+        {
+          "reaction_index": 14,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 29,
+          "coefficient": 2.0
+        },
+        {
+          "reaction_index": 30,
+          "coefficient": 2.0
+        },
+        {
+          "reaction_index": 31,
+          "coefficient": 4.0
+        },
+        {
+          "reaction_index": 32,
+          "coefficient": 2.0
+        }
+      ]
+    },
+    {
+      "wid": "H2O",
+      "role": "consume",
+      "net_coefficient": -24.0,
+      "consume_coefficient_total": 24.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 21,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 1,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 2,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 8,
+          "coefficient": -2.0
+        },
+        {
+          "reaction_index": 9,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 10,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 11,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 12,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 13,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 14,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 15,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 16,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 17,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 18,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 19,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 20,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 21,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 22,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 29,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 30,
+          "coefficient": -2.0
+        },
+        {
+          "reaction_index": 31,
+          "coefficient": -2.0
+        },
+        {
+          "reaction_index": 32,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "NH3",
+      "role": "produce",
+      "net_coefficient": 4.0,
+      "consume_coefficient_total": 0.0,
+      "produce_coefficient_total": 4.0,
+      "nonzero_reaction_count": 4,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 15,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 16,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 17,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 18,
+          "coefficient": 1.0
+        }
+      ]
+    },
+    {
+      "wid": "THY",
+      "role": "produce",
+      "net_coefficient": 1.0,
+      "consume_coefficient_total": 0.0,
+      "produce_coefficient_total": 1.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 22,
+          "coefficient": 1.0
+        }
+      ]
+    }
+  ],
+  "n_substrates": 8,
+  "n_reactions": 32,
+  "n_entries": 8
+}

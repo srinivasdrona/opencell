@@ -1,0 +1,848 @@
+{
+  "process": "ProteinModification",
+  "source": "data/karr_fixtures/per_process/ProteinModification_flat.mat:data.fixture.reactionStoichiometryMatrix; matrix is compartment-flat (2D substrates x reactions); compartment omitted; MATLAB source: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinModification.m",
+  "matrix_field": "reactionStoichiometryMatrix",
+  "matrix_shape": [
+    15,
+    63
+  ],
+  "substrates": [
+    {
+      "wid": "ADP",
+      "role": "produce",
+      "net_coefficient": 65.0,
+      "consume_coefficient_total": 0.0,
+      "produce_coefficient_total": 65.0,
+      "nonzero_reaction_count": 62,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 1,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 2,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 3,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 4,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 5,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 6,
+          "coefficient": 4.0
+        },
+        {
+          "reaction_index": 7,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 9,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 10,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 11,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 12,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 13,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 14,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 15,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 16,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 17,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 18,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 19,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 20,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 21,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 22,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 23,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 24,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 25,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 26,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 27,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 28,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 29,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 30,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 31,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 32,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 33,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 34,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 35,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 36,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 37,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 38,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 39,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 40,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 41,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 42,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 43,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 44,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 45,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 46,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 47,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 48,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 49,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 50,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 51,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 52,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 53,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 54,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 55,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 56,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 57,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 58,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 59,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 60,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 61,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 62,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 63,
+          "coefficient": 1.0
+        }
+      ]
+    },
+    {
+      "wid": "AMP",
+      "role": "produce",
+      "net_coefficient": 1.0,
+      "consume_coefficient_total": 0.0,
+      "produce_coefficient_total": 1.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 8,
+          "coefficient": 1.0
+        }
+      ]
+    },
+    {
+      "wid": "ATP",
+      "role": "consume",
+      "net_coefficient": -65.0,
+      "consume_coefficient_total": 65.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 62,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 1,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 2,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 3,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 4,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 5,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 6,
+          "coefficient": -4.0
+        },
+        {
+          "reaction_index": 7,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 9,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 10,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 11,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 12,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 13,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 14,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 15,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 16,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 17,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 18,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 19,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 20,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 21,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 22,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 23,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 24,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 25,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 26,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 27,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 28,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 29,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 30,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 31,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 32,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 33,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 34,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 35,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 36,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 37,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 38,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 39,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 40,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 41,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 42,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 43,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 44,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 45,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 46,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 47,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 48,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 49,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 50,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 51,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 52,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 53,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 54,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 55,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 56,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 57,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 58,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 59,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 60,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 61,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 62,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 63,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "GLU",
+      "role": "consume",
+      "net_coefficient": -4.0,
+      "consume_coefficient_total": 4.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 6,
+          "coefficient": -4.0
+        }
+      ]
+    },
+    {
+      "wid": "H",
+      "role": "produce",
+      "net_coefficient": 67.0,
+      "consume_coefficient_total": 0.0,
+      "produce_coefficient_total": 67.0,
+      "nonzero_reaction_count": 63,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 1,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 2,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 3,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 4,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 5,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 6,
+          "coefficient": 4.0
+        },
+        {
+          "reaction_index": 7,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 8,
+          "coefficient": 2.0
+        },
+        {
+          "reaction_index": 9,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 10,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 11,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 12,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 13,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 14,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 15,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 16,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 17,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 18,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 19,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 20,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 21,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 22,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 23,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 24,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 25,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 26,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 27,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 28,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 29,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 30,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 31,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 32,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 33,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 34,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 35,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 36,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 37,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 38,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 39,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 40,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 41,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 42,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 43,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 44,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 45,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 46,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 47,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 48,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 49,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 50,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 51,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 52,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 53,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 54,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 55,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 56,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 57,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 58,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 59,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 60,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 61,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 62,
+          "coefficient": 1.0
+        },
+        {
+          "reaction_index": 63,
+          "coefficient": 1.0
+        }
+      ]
+    },
+    {
+      "wid": "LIPOYLAMP",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 8,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "PI",
+      "role": "produce",
+      "net_coefficient": 4.0,
+      "consume_coefficient_total": 0.0,
+      "produce_coefficient_total": 4.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 6,
+          "coefficient": 4.0
+        }
+      ]
+    }
+  ],
+  "n_substrates": 7,
+  "n_reactions": 63,
+  "n_entries": 7
+}

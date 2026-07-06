@@ -1,0 +1,13 @@
+{
+  "process": "RNADecay",
+  "source": "data/karr_fixtures/per_process/RNADecay_flat.mat + data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNADecay.m inspection",
+  "status": "BLOCKER",
+  "reason": "No non-empty reaction stoichiometry matrix field found in fixture (checked reactionStoichiometryMatrix-family fields).",
+  "checked_matrix_fields": [
+    "reactionStoichiometryMatrix",
+    "reactionSmallMoleculeStoichiometryMatrix",
+    "fbaReactionStoichiometryMatrix"
+  ],
+  "available_stoichiometry_fields": [],
+  "n_substrate_ids": 39
+}
