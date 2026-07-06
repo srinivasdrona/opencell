@@ -1,13 +1,56 @@
 {
   "process": "FtsZPolymerization",
-  "source": "data/karr_fixtures/per_process/FtsZPolymerization_flat.mat + data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/FtsZPolymerization.m inspection",
-  "status": "BLOCKER",
-  "reason": "No non-empty reaction stoichiometry matrix field found in fixture (checked reactionStoichiometryMatrix-family fields).",
-  "checked_matrix_fields": [
-    "reactionStoichiometryMatrix",
-    "reactionSmallMoleculeStoichiometryMatrix",
-    "fbaReactionStoichiometryMatrix"
+  "class": "inline",
+  "source": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/FtsZPolymerization.m:evolveState substrate arithmetic + data/karr_fixtures/per_process/FtsZPolymerization_flat.mat:substrateIndexs_* mapping to substrateWholeCellModelIDs",
+  "substrates": [
+    {
+      "wid": "GDP",
+      "role": "both",
+      "net_coefficient": 0.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 1.0,
+      "nonzero_reaction_count": 0,
+      "reaction_coefficients": []
+    },
+    {
+      "wid": "GTP",
+      "role": "both",
+      "net_coefficient": 0.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 1.0,
+      "nonzero_reaction_count": 0,
+      "reaction_coefficients": []
+    },
+    {
+      "wid": "PI",
+      "role": "produce",
+      "net_coefficient": 1.0,
+      "consume_coefficient_total": 0.0,
+      "produce_coefficient_total": 1.0,
+      "nonzero_reaction_count": 0,
+      "reaction_coefficients": []
+    },
+    {
+      "wid": "H2O",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 0,
+      "reaction_coefficients": []
+    },
+    {
+      "wid": "H",
+      "role": "produce",
+      "net_coefficient": 1.0,
+      "consume_coefficient_total": 0.0,
+      "produce_coefficient_total": 1.0,
+      "nonzero_reaction_count": 0,
+      "reaction_coefficients": []
+    }
   ],
-  "available_stoichiometry_fields": [],
-  "n_substrate_ids": 5
+  "n_substrates": 5,
+  "n_reactions": 0,
+  "n_entries": 5,
+  "note": "applySubstrateLimits updates GTP/GDP with both exchange and hydrolysis correction terms"
 }

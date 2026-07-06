@@ -1,13 +1,2963 @@
 {
   "process": "MacromolecularComplexation",
-  "source": "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat + data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/MacromolecularComplexation.m inspection",
-  "status": "BLOCKER",
-  "reason": "No non-empty reaction stoichiometry matrix field found in fixture (checked reactionStoichiometryMatrix-family fields).",
-  "checked_matrix_fields": [
-    "reactionStoichiometryMatrix",
-    "reactionSmallMoleculeStoichiometryMatrix",
-    "fbaReactionStoichiometryMatrix"
+  "class": "matrix",
+  "source": "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat:data.fixture.complexComposition; MATLAB source: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/MacromolecularComplexation.m",
+  "matrix_field": "complexComposition",
+  "matrix_shape": [
+    210,
+    147
   ],
-  "available_stoichiometry_fields": [],
-  "n_substrate_ids": 210
+  "substrates": [
+    {
+      "wid": "MG_003_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 1,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_004_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 1,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_005_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 6,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_006_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 7,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_007_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 3,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_008_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 8,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_013_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 9,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_014_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 10,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_015_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 10,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_019_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 11,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_021_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 12,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_022_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 147,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_023_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 13,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_029_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 14,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_030_MONOMER",
+      "role": "consume",
+      "net_coefficient": -3.0,
+      "consume_coefficient_total": 3.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 15,
+          "coefficient": -3.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_031_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 2,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_033_MONOMER",
+      "role": "consume",
+      "net_coefficient": -4.0,
+      "consume_coefficient_total": 4.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 16,
+          "coefficient": -4.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_034_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 17,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_035_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 18,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_036_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 19,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_038_MONOMER",
+      "role": "consume",
+      "net_coefficient": -4.0,
+      "consume_coefficient_total": 4.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 20,
+          "coefficient": -4.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_039_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 21,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_040_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 22,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_041_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 2,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 23,
+          "coefficient": -1.0
+        },
+        {
+          "reaction_index": 24,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_042_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 25,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_043_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 25,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_044_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 25,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_045_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 25,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_046_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 26,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_047_MONOMER",
+      "role": "consume",
+      "net_coefficient": -4.0,
+      "consume_coefficient_total": 4.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 27,
+          "coefficient": -4.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_048_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 4,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_049_MONOMER",
+      "role": "consume",
+      "net_coefficient": -6.0,
+      "consume_coefficient_total": 6.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 28,
+          "coefficient": -6.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_051_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 29,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_052_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 30,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_053_MONOMER",
+      "role": "consume",
+      "net_coefficient": -3.0,
+      "consume_coefficient_total": 3.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 31,
+          "coefficient": -3.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_055_MONOMER",
+      "role": "consume",
+      "net_coefficient": -4.0,
+      "consume_coefficient_total": 4.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 32,
+          "coefficient": -4.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_058_MONOMER",
+      "role": "consume",
+      "net_coefficient": -6.0,
+      "consume_coefficient_total": 6.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 33,
+          "coefficient": -6.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_062_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 23,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_063_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 34,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_064_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 35,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_065_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 35,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_066_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 36,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_069_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 24,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_072_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 37,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_073_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 38,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_077_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 39,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_078_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 39,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_079_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 39,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_080_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 39,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_084_MONOMER",
+      "role": "consume",
+      "net_coefficient": -4.0,
+      "consume_coefficient_total": 4.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 40,
+          "coefficient": -4.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_085_MONOMER",
+      "role": "consume",
+      "net_coefficient": -6.0,
+      "consume_coefficient_total": 6.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 41,
+          "coefficient": -6.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_089_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 42,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_091_MONOMER",
+      "role": "consume",
+      "net_coefficient": -4.0,
+      "consume_coefficient_total": 4.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 43,
+          "coefficient": -4.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_094_MONOMER",
+      "role": "consume",
+      "net_coefficient": -6.0,
+      "consume_coefficient_total": 6.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 44,
+          "coefficient": -6.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_098_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 45,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_099_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 45,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_100_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 45,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_102_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 46,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_476_MONOMER",
+      "role": "consume",
+      "net_coefficient": -4.0,
+      "consume_coefficient_total": 4.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 32,
+          "coefficient": -4.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_105_MONOMER",
+      "role": "consume",
+      "net_coefficient": -8.0,
+      "consume_coefficient_total": 8.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 47,
+          "coefficient": -8.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_106_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 48,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_107_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 49,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_109_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 50,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_111_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 51,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_112_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 52,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_113_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 53,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_114_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 54,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_118_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 55,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_119_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 22,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_120_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 22,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_121_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 22,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_123_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 56,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_126_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 57,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_128_MONOMER",
+      "role": "consume",
+      "net_coefficient": -6.0,
+      "consume_coefficient_total": 6.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 58,
+          "coefficient": -6.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_132_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 59,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_136_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 60,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_137_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 61,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_139_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 62,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_170_MONOMER",
+      "role": "consume",
+      "net_coefficient": -4.0,
+      "consume_coefficient_total": 4.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 32,
+          "coefficient": -4.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_177_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 147,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_179_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 63,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_180_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 63,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_181_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 63,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_182_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 64,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_184_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 65,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_186_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 66,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_187_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 66,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_188_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 66,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_189_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 66,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_194_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 67,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_195_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 67,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_201_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 68,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_203_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 69,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_204_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 69,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_205_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 70,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_206_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 38,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_208_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 71,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_482_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 146,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_213_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 72,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_214_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 72,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_215_MONOMER",
+      "role": "consume",
+      "net_coefficient": -4.0,
+      "consume_coefficient_total": 4.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 73,
+          "coefficient": -4.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_216_MONOMER",
+      "role": "consume",
+      "net_coefficient": -4.0,
+      "consume_coefficient_total": 4.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 74,
+          "coefficient": -4.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_221_MONOMER",
+      "role": "consume",
+      "net_coefficient": -8.0,
+      "consume_coefficient_total": 8.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 75,
+          "coefficient": -8.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_225_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 76,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_226_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 77,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_227_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 78,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_228_MONOMER",
+      "role": "consume",
+      "net_coefficient": -4.0,
+      "consume_coefficient_total": 4.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 79,
+          "coefficient": -4.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_229_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 80,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_231_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 80,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_239_MONOMER",
+      "role": "consume",
+      "net_coefficient": -6.0,
+      "consume_coefficient_total": 6.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 81,
+          "coefficient": -6.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_240_MONOMER",
+      "role": "consume",
+      "net_coefficient": -6.0,
+      "consume_coefficient_total": 6.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 82,
+          "coefficient": -6.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_244_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 83,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_251_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 84,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_252_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 85,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_259_MONOMER",
+      "role": "consume",
+      "net_coefficient": -4.0,
+      "consume_coefficient_total": 4.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 86,
+          "coefficient": -4.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_261_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 2,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_265_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 87,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_0001",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 4,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_271_MONOMER",
+      "role": "consume",
+      "net_coefficient": -12.0,
+      "consume_coefficient_total": 12.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 88,
+          "coefficient": -12.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_272_MONOMER",
+      "role": "consume",
+      "net_coefficient": -60.0,
+      "consume_coefficient_total": 60.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 88,
+          "coefficient": -60.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_273_MONOMER",
+      "role": "consume",
+      "net_coefficient": -60.0,
+      "consume_coefficient_total": 60.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 88,
+          "coefficient": -60.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_274_MONOMER",
+      "role": "consume",
+      "net_coefficient": -60.0,
+      "consume_coefficient_total": 60.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 88,
+          "coefficient": -60.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_275_MONOMER",
+      "role": "consume",
+      "net_coefficient": -4.0,
+      "consume_coefficient_total": 4.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 89,
+          "coefficient": -4.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_276_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 90,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_277_MONOMER",
+      "role": "consume",
+      "net_coefficient": -4.0,
+      "consume_coefficient_total": 4.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 32,
+          "coefficient": -4.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_278_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 91,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_283_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 92,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_289_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 93,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_290_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 93,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_291_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 93,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_292_MONOMER",
+      "role": "consume",
+      "net_coefficient": -4.0,
+      "consume_coefficient_total": 4.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 94,
+          "coefficient": -4.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_293_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 95,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_298_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 72,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_299_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 96,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_301_MONOMER",
+      "role": "consume",
+      "net_coefficient": -4.0,
+      "consume_coefficient_total": 4.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 97,
+          "coefficient": -4.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_302_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 98,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_303_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 98,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_304_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 98,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_315_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 3,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_316_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 99,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_321_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 39,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_322_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 100,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_323_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 100,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_0003",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 5,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_333_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 101,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_336_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 102,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_340_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 147,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_341_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 147,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_346_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 103,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_347_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 104,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_349_MONOMER",
+      "role": "consume",
+      "net_coefficient": -6.0,
+      "consume_coefficient_total": 6.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 105,
+          "coefficient": -6.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_351_MONOMER",
+      "role": "consume",
+      "net_coefficient": -6.0,
+      "consume_coefficient_total": 6.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 106,
+          "coefficient": -6.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_352_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 107,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_353_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 108,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_355_MONOMER",
+      "role": "consume",
+      "net_coefficient": -6.0,
+      "consume_coefficient_total": 6.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 109,
+          "coefficient": -6.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_357_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 110,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_358_MONOMER",
+      "role": "consume",
+      "net_coefficient": -4.0,
+      "consume_coefficient_total": 4.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 111,
+          "coefficient": -4.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_359_MONOMER",
+      "role": "consume",
+      "net_coefficient": -6.0,
+      "consume_coefficient_total": 6.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 111,
+          "coefficient": -6.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_367_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 112,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_368_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 113,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_369_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 114,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_372_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 115,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_375_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 116,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_376_MONOMER",
+      "role": "consume",
+      "net_coefficient": -6.0,
+      "consume_coefficient_total": 6.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 117,
+          "coefficient": -6.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_379_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 8,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_382_MONOMER",
+      "role": "consume",
+      "net_coefficient": -4.0,
+      "consume_coefficient_total": 4.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 118,
+          "coefficient": -4.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_383_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 119,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_385_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 120,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_390_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 121,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_391_MONOMER",
+      "role": "consume",
+      "net_coefficient": -6.0,
+      "consume_coefficient_total": 6.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 122,
+          "coefficient": -6.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_392_MONOMER",
+      "role": "consume",
+      "net_coefficient": -14.0,
+      "consume_coefficient_total": 14.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 123,
+          "coefficient": -14.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_393_MONOMER",
+      "role": "consume",
+      "net_coefficient": -7.0,
+      "consume_coefficient_total": 7.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 123,
+          "coefficient": -7.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_394_MONOMER",
+      "role": "consume",
+      "net_coefficient": -4.0,
+      "consume_coefficient_total": 4.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 124,
+          "coefficient": -4.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_396_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 125,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_398_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 126,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_399_MONOMER",
+      "role": "consume",
+      "net_coefficient": -3.0,
+      "consume_coefficient_total": 3.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 126,
+          "coefficient": -3.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_400_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 126,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_401_MONOMER",
+      "role": "consume",
+      "net_coefficient": -3.0,
+      "consume_coefficient_total": 3.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 126,
+          "coefficient": -3.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_402_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 126,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_403_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 126,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_404_MONOMER",
+      "role": "consume",
+      "net_coefficient": -10.0,
+      "consume_coefficient_total": 10.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 126,
+          "coefficient": -10.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_405_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 126,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_407_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 127,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_409_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 128,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_410_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 129,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_411_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 129,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_412_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 129,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_419_MONOMER",
+      "role": "consume",
+      "net_coefficient": -4.0,
+      "consume_coefficient_total": 4.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 3,
+          "coefficient": -4.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_421_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 38,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_425_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 130,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_427_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 131,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_428_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 132,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_429_MONOMER",
+      "role": "consume",
+      "net_coefficient": -4.0,
+      "consume_coefficient_total": 4.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 2,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 23,
+          "coefficient": -2.0
+        },
+        {
+          "reaction_index": 24,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_431_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 133,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_433_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 134,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_434_MONOMER",
+      "role": "consume",
+      "net_coefficient": -6.0,
+      "consume_coefficient_total": 6.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 135,
+          "coefficient": -6.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_437_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 136,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_445_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 137,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_451_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 138,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_453_MONOMER",
+      "role": "consume",
+      "net_coefficient": -4.0,
+      "consume_coefficient_total": 4.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 139,
+          "coefficient": -4.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_454_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 140,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_455_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 141,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_457_MONOMER",
+      "role": "consume",
+      "net_coefficient": -6.0,
+      "consume_coefficient_total": 6.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 142,
+          "coefficient": -6.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_458_MONOMER",
+      "role": "consume",
+      "net_coefficient": -4.0,
+      "consume_coefficient_total": 4.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 143,
+          "coefficient": -4.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_460_MONOMER",
+      "role": "consume",
+      "net_coefficient": -4.0,
+      "consume_coefficient_total": 4.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 144,
+          "coefficient": -4.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_464_MONOMER",
+      "role": "consume",
+      "net_coefficient": -4.0,
+      "consume_coefficient_total": 4.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 32,
+          "coefficient": -4.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_465_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 5,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_467_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 145,
+          "coefficient": -1.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_468_MONOMER",
+      "role": "consume",
+      "net_coefficient": -2.0,
+      "consume_coefficient_total": 2.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 145,
+          "coefficient": -2.0
+        }
+      ]
+    },
+    {
+      "wid": "MG_526_MONOMER",
+      "role": "consume",
+      "net_coefficient": -1.0,
+      "consume_coefficient_total": 1.0,
+      "produce_coefficient_total": 0.0,
+      "nonzero_reaction_count": 1,
+      "reaction_coefficients": [
+        {
+          "reaction_index": 145,
+          "coefficient": -1.0
+        }
+      ]
+    }
+  ],
+  "n_substrates": 210,
+  "n_reactions": 147,
+  "n_entries": 210
 }
