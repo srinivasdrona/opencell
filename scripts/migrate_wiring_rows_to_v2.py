@@ -46,6 +46,8 @@ TOP_LEVEL_ORDER = (
 )
 PER_FLUX_RE = re.compile(r"flux", re.IGNORECASE)
 PER_REACTION_RE = re.compile(r"(reaction|rxn|\[i\]|_i\b)", re.IGNORECASE)
+DOC_HEADING_RE = re.compile(r"^#{1,6}\s+(.*)$")
+TEXT_DOC_SUFFIXES = {".md", ".txt", ".rst"}
 MATLAB_FUNCTION_RE = re.compile(
     r"^\s*function\b(?:\s+\[[^\]]*\]\s*=\s*|\s+[A-Za-z_]\w*\s*=\s*)?(?P<name>[A-Za-z_]\w*)\b"
 )
@@ -148,7 +150,7 @@ def _extract_python_symbol(cache: Any, resolved: Path, start_line: int) -> str |
         if item.start_line <= start_line <= item.end_line
     ]
     if not containing:
-        return None
+        return "<module>"
     innermost = min(
         containing,
         key=lambda item: (item.end_line - item.start_line, -item.start_line),
@@ -178,6 +180,21 @@ def _extract_matlab_symbol(cache: Any, resolved: Path, start_line: int) -> str |
     return class_name
 
 
+def _extract_doc_heading_symbol(cache: Any, resolved: Path, start_line: int) -> str:
+    lines = cache.lines(resolved)
+    if not lines:
+        return resolved.stem
+
+    search_end = min(max(start_line, 1), len(lines))
+    for line_number in range(search_end, 0, -1):
+        match = DOC_HEADING_RE.match(lines[line_number - 1])
+        if match is not None:
+            heading = match.group(1).strip()
+            if heading:
+                return heading
+    return resolved.stem
+
+
 def _extract_symbol_from_anchor(anchor: Any, cache: Any) -> str | None:
     anchor_path = anchor.get("path")
     lines_text = anchor.get("lines")
@@ -198,6 +215,8 @@ def _extract_symbol_from_anchor(anchor: Any, cache: Any) -> str | None:
         return _extract_python_symbol(cache, resolved, start_line)
     if suffix == ".m":
         return _extract_matlab_symbol(cache, resolved, start_line)
+    if suffix in TEXT_DOC_SUFFIXES:
+        return _extract_doc_heading_symbol(cache, resolved, start_line)
     return None
 
 
