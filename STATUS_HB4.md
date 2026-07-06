@@ -83,7 +83,8 @@ cmd /c bin\oc-py scripts/migrate_wiring_rows_to_v2.py --dry-run --report-json tm
 ## Commit SHAs
 
 - Script commit: `9d67b61` (`hb4: add deterministic wiring row migrator`)
-- Status/report commit: pending
+- Status/report commit: `6191e35` (`hb4: record dry-run migration report`)
+- Migrated-row commit: not created; dry-run stop condition prevented in-place row writes
 
 ## Stop Decision
 
