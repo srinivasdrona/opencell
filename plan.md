@@ -59,18 +59,25 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-07-03 ~02:00 IST, Day-47):** none running.
+**Live processes / agents (2026-07-07 ~01:20 IST, Day-47 late):** none running (HB1 codex exited; loop paused for bookkeeping+blog).
 
-**🛑 NEXT (Day-47): L1b method-completeness gate now PASSES 115/115 — triage the 11 real gaps.** The source-confirmation fleet (28 processes: gpt-5.4 for 5 complex, gpt-5.4-mini for 23 simple) read Karr .m + OC source for every runtime method. Result committed (`846107b`..`01d73f3`): 55 confirmed, 45 inlined, **11 real porting gaps**, 4 benign noop, 0 unconfirmed. The full map is `data/karr_method_inventory/oc_method_map.yaml`; gate is `scripts/l1b_method_completeness.py` (PASS). Original ground-truth build (below) preceded this.
+**🛑 WHERE WE ARE: L1b Half A (method-completeness) GREEN; Half B (wiring conformance) loop STARTED.**
 
-**The 11 real gaps (OC does not implement Karr behavior; several are OC-documented v2 deferrals, now enumerated centrally):**
-- ProteinDecay (light port): MisfoldProteins, RefoldProteins, DegradeAbortedPolypeptides
-- DNARepair: evolveState_DisA, _Modification, _Restriction
-- Replication: dissociateFreeSSBComplexes, freeAndBindSSBs (SSB binding/release cycle)
-- DNADamage: calcNumberVulnerableSites, calcResourceRequirements_Current
-- DNASupercoiling: calcRNAPolymeraseBindingProbFoldChange (supercoil→tx-rate feedback)
+**Half A — DONE + all 11 gaps implemented + pushed.** The source-confirmation fleet flipped the map to gate-green (115/115). Then all 11 real gaps were implemented via codex (gpt-5.3-codex) as 5 biological subsystems S1-S5 (pushed through `4f3af71`):
+- **S1** (`52d16ea`) DNASupercoiling→tx fold-change — output-only port, verified no regressions.
+- **S2** (`f54a7b5`) Replication SSB binding/release cycle — fixture-backed, process-RNG, verified pre-existing-only failures.
+- **S3** (`0ea4aad`+`cc4aa83`) MunI restriction-modification (DNADamage+DNARepair, coupled) — gate green, BUT introduced a DNARepair L2-replay regression (see flag below).
+- **S4** (`1ad8a73`) DNARepair DisA scan — built on S3 state, clean.
+- **S5** (`1822b33`+`71d07ca`) ProteinDecay proteolysis (full port from light) — Misfold/Refold/DegradeAborted all implemented (added full-form monomer/complex + abortedPolypeptides ports).
+- Gate now: **115/115, gap 0, noop 4, 0 error.**
 
-**Next after gap triage:** the enforcing wiring-row gate rebuild (Phase 0-1 from the fix plan below) remains — method-completeness is one half of L1b; the wiring-row conformance gate (schema enforcement, no silent anchor-drop, integration-layer checks) is the other. Then CI, then L2.0a/L2.4.
+**🚩 S3 REGRESSION (flagged, deferred to L2.1):** `test_karr_dna_repair_l2_replay_identity_per_tick[rng_seed_0]` PASSED pre-S3, FAILS post-S3 (bisected to S3). Divergence: `tick=8, observable=substrates, index=2, oc_val=0.0, karr_val=1.0` — a 1-molecule integer shift from the new MunI per-tick substrate bookkeeping. Non-pathological (no NaN/negative/explosion). Bug-vs-expected is oracle-dependent → L2.1. Todo `l2-regress-dnarepair-replay-s3`.
+
+**Half B — loop started, HB1 partial.** The 3-role loop (Opus planner / gpt-5.3-codex doer / Sonnet 5 checker) runs the 6-phase Half B queue (`hb-1`..`hb-6` todos). HB1 (`4f3af71`, extract exhaustive Karr stoichiometry oracle) came back **partial: 6/28 processes extracted, 22 BLOCKER, 875 entries** — the `reactionStoichiometryMatrix` is NOT in the flat fixtures for most processes; it's built in Karr `.m` `initializeConstants` from the KB. **HB1 needs a re-run pointing codex at the `.m`/WholeCellKB source (not the flat fixtures).** Generator: `scripts/extract_karr_stoichiometry.py`; output: `data/karr_method_inventory/karr_stoichiometry/`.
+
+**Half B design (ratified with GPT-5.4 critique):** exhaustive coverage (not exemplar — sampling can't prove output matches Karr). D1 keep integration_touchpoints (drop dup runtime-method entries); D2 machine-checkable formulas + block-refs; D3 allow `note` + schema v2 bump; D4 gate-fail on asymmetric deps/orphan WIDs (manual WID-backed fix, no blind mirror); D5 honest gate (fix `fields:`→`properties:`, remove `del schema_contract`, typed A1/A3/A3b invariants, Half A↔B consistency checks) + CI; D6 exhaustive-stoich diff vs Karr; D7 A2/A4 explicitly assigned to runtime gates L2.0a/L2.4 (a static gate cannot prove scheduler order or runtime projection). Critique's highest-risk finding: a clean validator that still can't catch A1-A4 = hollow green again — closed by D5+D6+D7.
+
+**Next loop iterations:** re-run HB1 against `.m`/KB → HB2 schema v2 → HB3 rebuild Gate B → HB4 exhaustive rows (fleet) → HB5 fix 43 deps + 65 orphans → HB6 CI. Termination = both L1b gates PASS on 28/28 + tests green. Human checkpoints: schema-shape ratify (HB2), regression adjudication (bug-vs-expected), push confirmation.
 
 **Ground-truth build (Day-47, preceded the completeness pass):** A rubber-duck review (GPT-5.4) + 5 full audits found the Day-45 L1b "28/28 PASS" was hollow: the gate discarded its own schema (`del schema_contract`), silently dropped ~95% of anchors (missing `symbol` fields), and rewrote `NOT_IMPLEMENTED` to auto-pass. 1,623 verified defects across schema/semantic/cross-row/gate/CI dimensions. Root cause: gold-standard row omitted `symbol` on method anchors; every fanout row copied it; gate never enforced. Before rebuilding the gate we established **ground truth**:
 

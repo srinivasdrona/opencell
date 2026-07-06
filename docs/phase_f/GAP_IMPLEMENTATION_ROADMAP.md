@@ -1,11 +1,33 @@
 # Gap-Implementation Roadmap — closing the 11 L1b method-completeness gaps
 
-**Status:** Track A (implement 11 missing Karr runtime behaviors) — in progress.
+**Status:** Track A (implement 11 missing Karr runtime behaviors) — **COMPLETE**
+(S1-S5 done; gate `l1b_method_completeness.py` PASS 115/115, gap 0). Track B
+(wiring-row conformance) — loop started (HB1-HB6).
 **Ladder position:** L1b (oracle-free). No L2 work until all 28 processes are
 L1a + L1b green. See `plan.md` L-ladder.
 **Substrate:** `data/karr_method_inventory/oc_method_map.yaml` (gate:
-`scripts/l1b_method_completeness.py`, currently PASS with 11 `gap` entries that
-must become `confirmed`/`inlined`).
+`scripts/l1b_method_completeness.py`, PASS; all 11 `gap` entries now
+`confirmed`/`inlined`).
+
+## Track A completion (S1-S5, 2026-07-03)
+
+| Subsystem | Commit(s) | Result |
+|---|---|---|
+| S1 DNASupercoiling→tx fold-change | `52d16ea` | output-only port; no regressions |
+| S2 Replication SSB cycle | `f54a7b5` | fixture-backed, process-RNG; pre-existing-only failures |
+| S3 MunI R-M (DNADamage+DNARepair) | `0ea4aad`+`cc4aa83` | coupled port; **introduced DNARepair L2-replay regression → L2.1** (`l2-regress-dnarepair-replay-s3`) |
+| S4 DNARepair DisA scan | `1ad8a73` | built on S3 state; clean |
+| S5 ProteinDecay proteolysis | `1822b33`+`71d07ca` | full port from light (Misfold/Refold/DegradeAborted) |
+
+## Track B loop (HB1-HB6)
+
+3-role loop: Opus 4.8 planner / gpt-5.3-codex doer / Sonnet 5 checker. Queue
+`hb-1`..`hb-6` (see session todos). Exhaustive coverage (operator: sampling can't
+prove output matches Karr). GPT-5.4-critiqued design D1-D7 (see plan.md handoff).
+HB1 (extract Karr stoichiometry) partial: 6/28 extracted, 22 BLOCKER — needs
+re-run against `.m`/WholeCellKB (matrix not in flat fixtures). A2/A4 assigned to
+runtime gates L2.0a/L2.4 (static gate cannot prove scheduler order / runtime
+projection); A1/A3/A3b + exhaustive-stoich are Half B static scope.
 
 ## Framing (operator-ratified 2026-07-03)
 
