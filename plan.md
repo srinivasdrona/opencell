@@ -59,9 +59,9 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-07-07 ~03:15 IST, Day-47 late):** none running (HB3 turn-1 codex 34296 + turn-2 codex 55824 both exited cleanly; both checker-ACCEPTED). PID 31608 is the VS Code ChatGPT extension app-server (benign, unrelated). 13 commits unpushed (b8a2714..1bf71aa) awaiting push confirmation → srinivasdrona/opencell.
+**Live processes / agents (2026-07-07 ~04:30 IST, Day-47 late):** none running (HB4 codex delegations all exited cleanly; all checker-ACCEPTED). PID 31608 is the VS Code ChatGPT extension app-server (benign). ~20 commits unpushed (b8a2714..35b5005) awaiting push confirmation → srinivasdrona/opencell.
 
-**🛑 WHERE WE ARE: L1b Half A GREEN (115/115); Half B loop through HB3 DONE (honest Gate B live).**
+**🛑 WHERE WE ARE: L1b Half A GREEN (115/115); Half B HB1-HB4 DONE (all 28 rows valid schema v2); HB5 (content-truthing) + HB6 (CI) remain.**
 
 **Half A — DONE + all 11 gaps implemented + pushed.** The source-confirmation fleet flipped the map to gate-green (115/115). Then all 11 real gaps were implemented via codex (gpt-5.3-codex) as 5 biological subsystems S1-S5 (pushed through `4f3af71`):
 - **S1** (`52d16ea`) DNASupercoiling→tx fold-change — output-only port, verified no regressions.
@@ -81,6 +81,16 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **🚩 HB5 advisories (from turn-2 checker):** (1) `allocator.bypasses` WIDs excluded from both produced+orphan sets (under-coverage, fold into HB5); (2) orphan check downgrades PASS-with-warnings if fixture missing. C5 surfaced **16 asymmetric-dep rows**, C6 surfaced **20 orphan-bearing rows** (GTP/VAL confirmed true-positive) — the precise HB5 work list.
 
 **Next loop iterations (HB4→HB6):** HB4 migrate the 27 remaining rows to schema v2 (fleet; each row needs `integration_touchpoints`, `symbol` on every anchor, `kind` on every stoich entry, `stoichiometry_oracle` block from the HB1 record) → makes schema_conformance + oracle + a_invariants green. HB5 fix the 16 asymmetric deps + 20 orphan-rows (WID-backed, no blind mirror; fold in the allocator.bypasses advisory) → makes symmetry + orphan green. HB6 wire both L1b gates into CI as BLOCKING jobs (ci.yml currently wires NEITHER; native `python scripts/l1b_*.py`, no `|| true`). Termination = both gates PASS 28/28 + tests green. Human checkpoints: push confirmation (pending now), regression adjudication.
+
+**✅ HB4 DONE (2026-07-07, checker-ACCEPTED):** deterministic migrator `scripts/migrate_wiring_rows_to_v2.py` migrated all 27 rows to v2 (0 invented symbols — code-extracted / doc-heading / `<module>` markers). Gate now **schema_conformance 0, stoichiometry_oracle_matches 0, matlab_anchors_resolve 0** across all 28 rows. Fixes en route: schema allows `note` on oc binding; `_SymbolCollector` decorator-aware start_line; resolve exemption for `<module>`/placeholder symbols (verified NOT a laundering hole — a_invariants independently enforces status). Commits `9d67b61`..`35b5005`.
+
+**🔧 HB5 = content-truthing (the honest residual Gate B failures, NOT mechanical):**
+- **oc_anchors_resolve: 4** (DNARepair, DNASupercoiling, ProteinDecay, Replication) — STALE v1 anchor lines: `oc.source.lines` point at a different function than the named symbol (e.g. DNARepair `calcResourceRequirements_Current` symbol=`...next_update` but lines 317-347 enclose `ports_schema`; real `next_update` at line 378). Fix = correct the lines (or symbol) to the true correspondence.
+- **half_a_b_consistency: 2** (DNADamage, DNASupercoiling) — row `oc.symbol` = class only, drifts from Half A `class.method`. Align to Half A.
+- **a_invariants: 26** — touchpoints with `status != implemented` and/or sentinel `request_formula`. Requires honest per-process determination: implemented → set implemented + real anchor; genuinely bypass → document as WID-backed deviation (design a deviation-passing rule, no blind implemented-flip).
+- **dependency_symmetry: 16** + **orphan_consume_wids: 20** — WID-backed manual fixes (D4, no blind mirror). Fold in allocator.bypasses coverage advisory.
+
+**⚠️ Repo hygiene (flag for operator):** 66 tracked `STATUS_*.md` handoff artifacts committed across prior sessions despite `.gitignore` `/STATUS_*.md`. Not swept autonomously (provenance/scope). Decide whether to `git rm --cached` the batch.
 
 **Ground-truth build (Day-47, preceded the completeness pass):** A rubber-duck review (GPT-5.4) + 5 full audits found the Day-45 L1b "28/28 PASS" was hollow: the gate discarded its own schema (`del schema_contract`), silently dropped ~95% of anchors (missing `symbol` fields), and rewrote `NOT_IMPLEMENTED` to auto-pass. 1,623 verified defects across schema/semantic/cross-row/gate/CI dimensions. Root cause: gold-standard row omitted `symbol` on method anchors; every fanout row copied it; gate never enforced. Before rebuilding the gate we established **ground truth**:
 
