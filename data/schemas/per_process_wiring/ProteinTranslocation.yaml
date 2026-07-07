@@ -33,7 +33,7 @@ integration_touchpoints:
           note: "Chassis wiring that enrolls the ProteinTranslocation request calculator and consumer process."
           symbol: build_karr_chassis_v3
       note: "The OC path is indirect but allocator-wired; it reads the translocation process's pending queue and emits ATP/GTP/H2O requests."
-    status: "partial"
+    status: "implemented"
     note: "OC preserves the three-request surface, but it caps requests by current substrate pool and is wired as a separate request-calculator step instead of a process method."
   evolveState:
     matlab:
@@ -57,7 +57,7 @@ integration_touchpoints:
           note: "Allocator input path read by the process."
           symbol: RequestCalculatorPTransloc
       note: "OC mirrors Karr's copy-level randperm traversal, rate-scaled translocase/SRP capacity checks, and break-on-first-insufficient-copy behavior."
-    status: "partial"
+    status: "implemented"
     note: "Implemented with parity on per-copy ordering and rate-scaled capacities; residual differences are documented in known_deviations."
   calcFluxBounds:
     matlab:

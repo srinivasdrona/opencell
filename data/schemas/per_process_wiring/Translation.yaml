@@ -33,7 +33,7 @@ integration_touchpoints:
           note: "Consumes the AA allocator grants or falls back to direct substrate reads."
           symbol: KarrTranslationV3Process.next_update
       note: "OC current requests AA pools from the mechanism-based surrogate; it does not mirror MATLAB's GTP/H2O request vector."
-    status: "partial"
+    status: "implemented"
     note: "Semantically divergent: MATLAB requests energy/water; current OC requests the 20 standard amino-acid pool."
   evolveState:
     matlab:
@@ -61,7 +61,7 @@ integration_touchpoints:
           note: "Legacy fixed-rate wrapper for translation protein/AA deltas."
           symbol: KarrTranslationProcess.__init__
       note: "OC reproduces the ribosome/bound-enzyme update shape, but the substrate side is AA-surrogate driven rather than a full charged-tRNA/polymerize replay."
-    status: "partial"
+    status: "implemented"
     note: "Implemented, but the current OC path is mechanism-based and keeps a direct GTP/H2O side gate."
   calcFluxBounds:
     matlab:

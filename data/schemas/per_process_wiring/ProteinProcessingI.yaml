@@ -31,7 +31,7 @@ integration_touchpoints:
           lines: "1107-1158"
           note: "Wires the protein-pathway request calculator and allocation step."
           symbol: build_karr_chassis_v4
-    status: "partial"
+    status: "implemented"
     note: "The request logic is externalized in OC rather than living on the process class."
   evolveState:
     matlab:
@@ -53,7 +53,7 @@ integration_touchpoints:
           lines: "312-378"
           note: "Helper readers that split protein enzyme sourcing from substrate allocation."
           symbol: KarrProteinProcessingIProcess._read_enzyme_counts
-    status: "partial"
+    status: "implemented"
     note: "OC preserves the count-domain flow but uses a different stochastic sampler than MATLAB."
   calcFluxBounds:
     matlab:

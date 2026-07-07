@@ -36,7 +36,7 @@ integration_touchpoints:
           note: "Pathway capacity, per-event cost, and allocator bounding helpers."
           symbol: KarrDNARepairProcess._apply_reaction_substrate_stoich
       note: "Current OC folds request calculation into next_update rather than a dedicated request-calculator class."
-    status: "partial"
+    status: "implemented"
     note: "The request contract exists, but it is embedded in next_update instead of a standalone MATLAB-style request method."
   evolveState:
     matlab:
@@ -64,7 +64,7 @@ integration_touchpoints:
           note: "Pathway-capacity and bounded-repair helpers."
           symbol: KarrDNARepairProcess._reaction_substrate_capacity
       note: "OC implements the repair loop in one aggregated update instead of Karr's six randomly ordered subfunctions."
-    status: "partial"
+    status: "implemented"
     note: "Implemented, but the algorithm is collapsed to pathway-level aggregate repair rather than per-subfunction random order."
   calcFluxBounds:
     matlab:

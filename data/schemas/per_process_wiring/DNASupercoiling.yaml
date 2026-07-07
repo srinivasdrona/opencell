@@ -41,7 +41,7 @@ integration_touchpoints:
           note: "DNASupercoiling is enrolled as an ATP+H2O allocation consumer."
           symbol: <module>
       note: "OC merges request calculation into the per-tick controller and adds topoIV/replication terms to the request budget."
-    status: "partial"
+    status: "implemented"
     note: "Implemented, but the OC controller is broader than the MATLAB current-request helper."
   evolveState:
     matlab:
@@ -73,7 +73,7 @@ integration_touchpoints:
           note: "Per-tick ATP/H2O consumption and ADP/PI/H production."
           symbol: KarrDNASupercoilingProcess._limit_events_by_atp
       note: "OC folds request emission and state writeback into one controller and uses the sparse chromosome-store representation."
-    status: "partial"
+    status: "implemented"
     note: "Implemented, but not as a literal MATLAB control-flow clone."
   calcFluxBounds:
     matlab:

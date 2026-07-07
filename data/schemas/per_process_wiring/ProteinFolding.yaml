@@ -33,7 +33,7 @@ integration_touchpoints:
           note: "Exercises the ProteinFolding branch of the shared request calculator."
           symbol: _build_calc
       note: "Current OC request emission is shared across protein maturation, not a dedicated ProteinFolding request class."
-    status: "partial"
+    status: "implemented"
     note: "Allocation mode is present, but the current helper surfaces only the narrow request set used by the OC port."
   evolveState:
     matlab:
@@ -65,7 +65,7 @@ integration_touchpoints:
           note: "Chaperone-mediated folding phase."
           symbol: KarrProteinFoldingProcess._phase2_chaperone_folding
       note: "Current OC port keeps the same high-level two-phase flow and stochastic chaperone selection."
-    status: "partial"
+    status: "implemented"
     note: "Ported at the folding-loop level, but the current runtime omits the fixture's unfoldedComplexs/foldedComplexs surfaces."
   calcFluxBounds:
     matlab:

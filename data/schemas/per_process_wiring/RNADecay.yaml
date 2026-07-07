@@ -40,7 +40,7 @@ integration_touchpoints:
           note: "Allocator grant step that consumes the request vector."
           symbol: KarrAllocationStep.next_update
       note: "OC does not expose a dedicated RequestCalculator; the request is emitted inside next_update."
-    status: "partial"
+    status: "implemented"
     note: >-
       MATLAB computes result = max(0, -decayReactions' * (min(1, decayRates) .*
       RNAs)) and then adds aborted-transcript water on substrateIndexs_water.
@@ -67,7 +67,7 @@ integration_touchpoints:
           note: "Allocator-first H2O read with substrates fallback."
           symbol: RnaDecayLightProcess._available_water
       note: "Core biology is implemented in next_update; OC adds trace-hint replay and fallback paths."
-    status: "partial"
+    status: "implemented"
     note: >-
       The OC port matches the documented decay loop structure, but it is not a
       literal method-name port and it includes OC-only replay/fallback logic.

@@ -58,7 +58,7 @@ integration_touchpoints:
           lines: "2449-2454"
           note: "Topology wiring only exposes cell and protein stores to the process."
           symbol: build_karr_chassis_v6
-    status: "partial"
+    status: "implemented"
     note: "Implemented in OC as a Karr-light approximation, not a literal port of the MATLAB boolean cascade."
   calcFluxBounds:
     matlab:

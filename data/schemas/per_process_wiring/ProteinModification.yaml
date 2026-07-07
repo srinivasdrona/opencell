@@ -65,7 +65,7 @@ integration_touchpoints:
           note: "Strict-zero allocator read path and substrate writeback."
           symbol: KarrProteinModificationProcess.next_update
       note: "OC follows the same stochastic structure, but it also has replay-only hint short-circuiting."
-    status: "partial"
+    status: "implemented"
     note: "The biology sampler is present, but the OC port has a replay-only trace_hint gate and strict-zero allocator plumbing that are not part of the MATLAB process body."
   calcFluxBounds:
     matlab:

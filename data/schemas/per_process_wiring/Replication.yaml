@@ -33,7 +33,7 @@ integration_touchpoints:
           note: "Request and substrates_allocated state schema."
           symbol: KarrReplicationProcess.ports_schema
       note: "Requests are built inline rather than via a standalone request-calculator class."
-    status: "partial"
+    status: "implemented"
     note: "Current OC exposes the allocator behavior inside next_update instead of a dedicated request method."
   evolveState:
     matlab:
@@ -61,7 +61,7 @@ integration_touchpoints:
           note: "Request and allocation state schema."
           symbol: KarrReplicationProcess.ports_schema
       note: "Light-bulk OC replay of fork progression and substrate bookkeeping."
-    status: "partial"
+    status: "implemented"
     note: "The current port preserves fork motion and substrate deltas, but not the full Karr 8-stage mechanistic loop."
   calcFluxBounds:
     matlab:

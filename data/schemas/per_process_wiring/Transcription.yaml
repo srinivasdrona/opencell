@@ -33,7 +33,7 @@ integration_touchpoints:
           note: "Composite wiring that instantiates the transcription request calculator."
           symbol: build_karr_chassis_v3
       note: "Current OC requests only ATP/CTP/GTP/UTP; water is not part of the request calculator today."
-    status: "partial"
+    status: "implemented"
     note: "Implemented in OC, but the request surface is narrower than MATLAB because water is omitted from the current allocator path."
   evolveState:
     matlab:
@@ -61,7 +61,7 @@ integration_touchpoints:
           note: "Mechanism-rate derivation used by the v3 wrapper."
           symbol: <module>
       note: "OC preserves the transcription contract qualitatively, but not the MATLAB state-machine details."
-    status: "partial"
+    status: "implemented"
     note: "Implemented via a mechanism-based approximation in OC, not a bit-identical port of the MATLAB RNAP state machine."
   calcFluxBounds:
     matlab:

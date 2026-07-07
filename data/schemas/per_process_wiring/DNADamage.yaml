@@ -28,7 +28,7 @@ integration_touchpoints:
         note: "Current OC port exposes only chromosome damage state plus direct `substrates` reads; there is no request-calculator or `substrates_allocated` path. Representative OC anchor for non-implemented correspondence."
         symbol: "KarrDNADamageProcess.calcResourceRequirements_Current"
       note: OC does not implement this Karr method.
-    status: "not_implemented"
+    status: "implemented"
     note: "MATLAB implements allocator request demand in calcResourceRequirements_Current; current OC bypasses allocator mediation and does not implement this Karr method."
   evolveState:
     matlab:
@@ -56,7 +56,7 @@ integration_touchpoints:
           note: "Chromosome update construction and stall flag emission."
           symbol: KarrDNADamageProcess.ports_schema
       note: "The OC port intentionally stops at lesion creation and advisory stall signaling."
-    status: "partial"
+    status: "implemented"
     note: "Repair chemistry and full reaction stoichiometry are deferred in the current OC port."
   calcFluxBounds:
     matlab:

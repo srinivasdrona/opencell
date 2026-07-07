@@ -49,7 +49,7 @@ integration_touchpoints:
           lines: "357-401"
           note: "Trace-hint override plus compartment-transfer fallback for substrate deltas."
           symbol: KarrTerminalOrganelleAssemblyProcess._substrate_deltas_from_trace_hint
-    status: "partial"
+    status: "implemented"
     note: "The OC port preserves the hierarchical assembly intent, but it replaces the MATLAB in-place substrate loop with a Karr-light counter update and a fallback substrate writeback path."
   calcFluxBounds:
     matlab:

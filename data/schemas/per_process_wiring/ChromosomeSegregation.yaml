@@ -36,7 +36,7 @@ integration_touchpoints:
           note: "Strict nonnegative allocated-substrate helper."
           symbol: KarrChromosomeSegregationProcess._allocated_or_state
       note: "Request logic is inlined in next_update rather than a separate request-calculator class."
-    status: "partial"
+    status: "implemented"
     note: "Implemented in OC, but only as an inlined request/update path rather than a dedicated request-calculator helper."
   evolveState:
     matlab:
@@ -64,7 +64,7 @@ integration_touchpoints:
           note: "Completion latch and chromosome writeback."
           symbol: KarrChromosomeSegregationProcess.next_update
       note: "OC adds continuous progress and pole-position interpolation on top of the same allocation-gated substrate wiring."
-    status: "partial"
+    status: "implemented"
     note: "Behavior is implemented, but the OC port is a continuous projection of the boolean Karr gate rather than a literal MATLAB state machine."
   calcFluxBounds:
     matlab:

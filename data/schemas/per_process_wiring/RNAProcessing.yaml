@@ -39,7 +39,7 @@ integration_touchpoints:
         The OC request step is allocation-backed but simplified: it asks for the
         currently available substrate pool when active, rather than reproducing
         the MATLAB enzyme/unprocessedRNA cap exactly.
-    status: "partial"
+    status: "implemented"
     note: "Implemented in the OC replay path, but the request formula is not a literal MATLAB clone."
   evolveState:
     matlab:
@@ -69,7 +69,7 @@ integration_touchpoints:
         and adds replay-specific gating branches
         (suppress_trna_for_rrna_tick and first-maturation activation lag) that
         are not present in MATLAB evolveState_Helper. See known_deviations.
-    status: "partial"
+    status: "implemented"
     note: "Implemented, with replay-oriented state-shape and gating simplifications."
   calcFluxBounds:
     matlab:

@@ -33,7 +33,7 @@ integration_touchpoints:
           note: "Composite allocation consumer list includes `karr_ftsz_polymerization` with GTP."
           symbol: build_karr_chassis_v5
       note: "Request handling lives in-process rather than in a separate request-calculator helper."
-    status: "partial"
+    status: "implemented"
     note: "Allocator-compatible, but no dedicated FtsZ request-calculator module exists in OC."
   evolveState:
     matlab:
@@ -57,7 +57,7 @@ integration_touchpoints:
           note: "ODE system and substrate-limit clamps."
           symbol: KarrFtsZPolymerizationProcess.integrate_odes
       note: "Implemented in OC as a direct `next_update` path."
-    status: "partial"
+    status: "implemented"
     note: "The OC port follows the Karr flow but is instrumented as an event-class process with allocator-bounded GTP."
   calcFluxBounds:
     matlab:

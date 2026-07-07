@@ -40,7 +40,7 @@ integration_touchpoints:
         Current OC request logic is shared across the RNA pathway and requests
         the currently available consumed substrates when RNAs are active; it is
         not a process-local LP or request calculator.
-    status: "partial"
+    status: "implemented"
     note: >-
       The OC request path is implemented, but the surface is shared and
       simplified relative to the MATLAB expression.
@@ -73,7 +73,7 @@ integration_touchpoints:
         OC reproduces the reaction-stoichiometry update through
         substrates_allocated, split enzyme stores, and an explicit stochastic
         residual loop.
-    status: "partial"
+    status: "implemented"
     note: >-
       Behavior is implemented, but the OC port is not line-for-line identical
       to the MATLAB loop.

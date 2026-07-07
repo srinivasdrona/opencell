@@ -38,7 +38,7 @@ integration_touchpoints:
           lines: "435-441"
           note: "Writes ATP/H2O request values each tick."
           symbol: KarrChromosomeCondensationProcess.next_update
-    status: "partial"
+    status: "implemented"
     note: "No standalone request-calculator class; allocator demand is embedded in next_update."
   evolveState:
     matlab:
@@ -64,7 +64,7 @@ integration_touchpoints:
           lines: "832-838"
           note: "Allocated-value helper that clamps `substrates_allocated` grants to non-negative values."
           symbol: KarrChromosomeCondensationProcess._allocated_or_state
-    status: "partial"
+    status: "implemented"
     note: "Implemented as Karr-light aggregate semantics, not the full per-position chromosome model."
   calcFluxBounds:
     matlab:

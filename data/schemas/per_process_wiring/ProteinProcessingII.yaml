@@ -35,7 +35,7 @@ integration_touchpoints:
           lines: "2063-2067"
           note: "Current chassis wiring for karr_protein_processing_ii."
           symbol: build_karr_chassis_v5
-    status: "partial"
+    status: "implemented"
     note: "The OC request path is allocator-backed, but it requests available substrate pools rather than the exact MATLAB min(enzyme-limit, monomer-count) formula."
   evolveState:
     matlab:
@@ -65,7 +65,7 @@ integration_touchpoints:
           lines: "2063-2067"
           note: "Current chassis wiring for karr_protein_processing_ii."
           symbol: build_karr_chassis_v5
-    status: "partial"
+    status: "implemented"
     note: "OC preserves the count-space maturation logic, but it is strict-zero on allocator input and does not materialize the nominal diacylglycerolCys product."
   calcFluxBounds:
     matlab:

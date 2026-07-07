@@ -33,7 +33,7 @@ integration_touchpoints:
           note: "_water_request gate used by next_update."
           symbol: KarrCytokinesisProcess._water_request
       note: "OC embeds allocator request emission inside the per-tick update instead of a dedicated request-calculator class."
-    status: partial
+    status: implemented
     note: "The OC request formula is geometry/gating aware, so this is a faithful but not line-for-line port of MATLAB's current allocator request."
   evolveState:
     matlab:

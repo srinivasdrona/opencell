@@ -33,7 +33,7 @@ integration_touchpoints:
           note: "Trace-hint replay branch emits the same request keys."
           symbol: KarrReplicationInitiationProcess._next_update_from_trace_hint
       note: "No dedicated request-calculator module exists in the OC port."
-    status: "partial"
+    status: "implemented"
     note: "Equivalent request semantics are embedded in next_update rather than a standalone calculator."
   evolveState:
     matlab:
@@ -60,7 +60,7 @@ integration_touchpoints:
           note: "Polymerization, binding, release, and reactivation helpers."
           symbol: KarrReplicationInitiationProcess._polymerize_dnaa_atp
       note: "Replay-friendly trace-hint handling keeps the wiring aligned with the MATLAB step order."
-    status: "partial"
+    status: "implemented"
     note: "The MATLAB evolveState sequence is preserved, but the OC port is reorganized around next_update and trace hints."
   calcFluxBounds:
     matlab:

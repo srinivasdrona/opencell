@@ -40,7 +40,7 @@ integration_touchpoints:
           lines: "143-201"
           note: "Current process consumes allocator grants from substrates_allocated."
           symbol: KarrTRNAAminoacylationProcess.ports_schema
-    status: partial
+    status: implemented
     note: "OC request logic is a parity shim, not a verbatim port of MATLAB's min(...) expression."
   evolveState:
     matlab:
@@ -66,7 +66,7 @@ integration_touchpoints:
           lines: "352-447"
           note: "Flux solver, species limits, and stochastic rounding helpers."
           symbol: KarrTRNAAminoacylationProcess._compute_rna_fluxes
-    status: partial
+    status: implemented
     note: "OC preserves the same overall substrate/RNA mutation flow but factors the solver into helpers and adds an iteration guard."
   calcFluxBounds:
     matlab:

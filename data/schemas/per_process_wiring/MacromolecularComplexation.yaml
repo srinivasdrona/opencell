@@ -59,7 +59,7 @@ integration_touchpoints:
           lines: "153-280"
           note: "Allocated pool comes from the shared allocator step."
           symbol: KarrAllocationStep
-    status: "partial"
+    status: "implemented"
     note: "Core control flow is ported; known divergence is the OC cluster-1 fallback guard (see deviations)."
   calcFluxBounds:
     matlab:
