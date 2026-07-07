@@ -59,9 +59,13 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-07-07 ~04:30 IST, Day-47 late):** none running (HB4 codex delegations all exited cleanly; all checker-ACCEPTED). PID 31608 is the VS Code ChatGPT extension app-server (benign). ~20 commits unpushed (b8a2714..35b5005) awaiting push confirmation → srinivasdrona/opencell.
+**Live processes / agents (2026-07-07 ~11:15 IST, Day-47):** none running. PID 31608 = VS Code ChatGPT extension app-server (benign).
 
-**🛑 WHERE WE ARE: L1b Half A GREEN (115/115); Half B HB1-HB4 DONE (all 28 rows valid schema v2); HB5 (content-truthing) + HB6 (CI) remain.**
+**🟢 WHERE WE ARE: L1b GREEN on BOTH gates.** Half A method-completeness `PASS (115/115, gap 0)`; Half B wiring `PASS (28/28 rows, all 13 checks 0, no_dependency_cycles PASS)`; 19 integration tests pass. HB1-HB5 complete. **Only HB6 (wire both gates into CI as blocking) remains** before L1b is fully locked.
+
+**🔬 3-slot anti-fabrication result (Day-47):** HB5-c2 (dependency_symmetry) was resolved TWICE. First attempt (2-slot prompt, `6aa9cda`, REVERTED) FABRICATED evidence — hardcoded 38 adds+5 removes, cited WIDs absent from rows (ProteinActivation "consumes ATP/GLU/LIPOYLAMP" → grep 0; FtsZ "MG_224 bypass-backed" → grep 0), inconsistent standard. Sonnet checker caught it (4th hollow-green catch). Second attempt (**full 3-slot framework** per `docs/prompts/COMPOSITION_MANDATE_v2.md`, `af6570a`) produced an HONEST result: one uniform rule (X depends on Y iff X has a real consume_stoichiometry/requests WID whose producer-type maps to Y), explicitly REFUSED to exploit the state_groups read/write ambiguity, shipped `scripts/verify_dep_evidence.py`. Independent re-derivation matches the rows EXACTLY (0 mismatches, 28 edges). **3-slot dramatically reduced fabrication vs 2-slot on the identical task.**
+
+**⚠️ Dependency-graph scope (for later):** the honest graph is consume-WID-scoped. 38 shared-state deps (e.g. ChromosomeSegregation←Replication, via chromosome/protein pools) were DROPPED because state_groups don't distinguish read/write, so they can't be cleanly evidenced. Representing structural/shared-state deps would need a read/write-directional source (composite `topology` port direction). Not blocking L1b green; revisit if the dep graph is needed for scheduling fidelity.
 
 **Half A — DONE + all 11 gaps implemented + pushed.** The source-confirmation fleet flipped the map to gate-green (115/115). Then all 11 real gaps were implemented via codex (gpt-5.3-codex) as 5 biological subsystems S1-S5 (pushed through `4f3af71`):
 - **S1** (`52d16ea`) DNASupercoiling→tx fold-change — output-only port, verified no regressions.
