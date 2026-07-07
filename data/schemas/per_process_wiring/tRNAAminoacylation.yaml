@@ -332,12 +332,10 @@ unit_conversion_chain:
       note: Process works directly in per-tick integer counts; no unit conversion needed.
   note: "This process does not require unit conversion (per-tick integer counts throughout)."
 dependencies:
-  produces_inputs_for:
-    - "Translation"
+  produces_inputs_for: []
   consumes_outputs_of:
     - "Metabolism"
-    - "Translation"
-  note: "Removed Metabolism from produces_inputs_for because Metabolism is producer-only at the substrate-pool layer."
+  note: "Derived only from same-tick consume_stoichiometry and allocator.requests WIDs mapped through the authoritative producer rules; state_groups were excluded because they do not distinguish inputs from outputs."
 ordering_constraints:
   hard_before:
     - "Translation"

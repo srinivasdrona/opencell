@@ -306,18 +306,13 @@ unit_conversion_chain:
   note: "This process does not require unit conversion (per-tick integer counts throughout)."
 dependencies:
   produces_inputs_for:
-    - "ProteinProcessingI"
-    - "ProteinProcessingII"
-    - "ProteinFolding"
-    - "ProteinModification"
-    - "ProteinTranslocation"
+    - "MacromolecularComplexation"
+    - "ProteinActivation"
+    - "RibosomeAssembly"
+    - "TerminalOrganelleAssembly"
   consumes_outputs_of:
-    - "Transcription"
-    - "RNAProcessing"
-    - "RNAModification"
-    - "tRNAAminoacylation"
     - "Metabolism"
-  note: "Translation consumes mature transcripts, charged tRNAs, and energy/water pools, then feeds the post-translation maturation pipeline."
+  note: "Derived only from same-tick consume_stoichiometry and allocator.requests WIDs mapped through the authoritative producer rules; state_groups were excluded because they do not distinguish inputs from outputs."
 ordering_constraints:
   hard_before: []
   hard_after:

@@ -288,12 +288,10 @@ unit_conversion_chain:
       note: Process works directly in per-tick integer counts; no unit conversion needed.
   note: "This process does not require unit conversion (per-tick integer counts throughout)."
 dependencies:
-  produces_inputs_for:
-    - "RNAProcessing"
-    - "Translation"
+  produces_inputs_for: []
   consumes_outputs_of:
     - "Metabolism"
-  note: "Removed RNAModification, tRNAAminoacylation from produces_inputs_for because the consumer rows do not expose a direct stoichiometric handoff; the coupling is state-only or shared-pool mediated."
+  note: "Derived only from same-tick consume_stoichiometry and allocator.requests WIDs mapped through the authoritative producer rules; state_groups were excluded because they do not distinguish inputs from outputs."
 ordering_constraints:
   hard_before: []
   hard_after: []

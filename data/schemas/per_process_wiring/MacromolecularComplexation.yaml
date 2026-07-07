@@ -308,15 +308,10 @@ unit_conversion_chain:
   note: This process does not require unit conversion (per-tick integer counts throughout).
 dependencies:
   produces_inputs_for:
-    - "ProteinDecay"
+    - "ProteinActivation"
   consumes_outputs_of:
-    - "Transcription"
     - "Translation"
-    - "tRNAAminoacylation"
-    - "RNAProcessing"
-    - "RNAModification"
-    - "Metabolism"
-  note: "Removed RibosomeAssembly, Translation, Transcription, ProteinTranslocation from produces_inputs_for because the downstream rows do not expose a direct stoichiometric handoff; added Metabolism to consumes_outputs_of because this row directly draws from the shared metabolite pool."
+  note: "Derived only from same-tick consume_stoichiometry and allocator.requests WIDs mapped through the authoritative producer rules; state_groups were excluded because they do not distinguish inputs from outputs."
 ordering_constraints:
   hard_before: []
   hard_after: []
