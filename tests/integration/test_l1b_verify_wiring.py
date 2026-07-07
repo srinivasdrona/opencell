@@ -1011,6 +1011,109 @@ def test_orphan_consume_wids_fail_then_clear(tmp_path: Path) -> None:
     assert row_a_pass["checks"]["check_orphan_consume_wids"]["verdict"] == "PASS"
 
 
+def test_orphan_consume_wids_uses_metabolism_oracle_and_skips_macromolecules(tmp_path: Path) -> None:
+    matlab_path = tmp_path / "synthetic.m"
+    python_path = tmp_path / "synthetic.py"
+    _make_matlab_file(matlab_path)
+    _make_python_file(python_path)
+
+    row_a = _synthetic_row(
+        process_name="ProcessA",
+        matlab_path=matlab_path,
+        python_path=python_path,
+        consume_wid="MET_OK",
+        produce_wid="ATP",
+        request_wid="MET_OK",
+    )
+    row_a["consume_stoichiometry"].extend(
+        [
+            {
+                "wid": "MG_001_MONOMER",
+                "compartment": "cytosol",
+                "kind": "constant",
+                "formula_or_constant": "1",
+                "matlab_anchor": _anchor(matlab_path, "evolveState"),
+                "oc_anchor": _anchor(python_path, "evolve_state"),
+            },
+            {
+                "wid": "X_orphan",
+                "compartment": "cytosol",
+                "kind": "constant",
+                "formula_or_constant": "1",
+                "matlab_anchor": _anchor(matlab_path, "evolveState"),
+                "oc_anchor": _anchor(python_path, "evolve_state"),
+            },
+        ]
+    )
+    row_a["allocator"]["requests"].extend(
+        [
+            {"wid": "MG_001_MONOMER", "compartment": "cytosol", "source": "karr", "note": "synthetic"},
+            {"wid": "X_orphan", "compartment": "cytosol", "source": "karr", "note": "synthetic"},
+        ]
+    )
+
+    row_b = _synthetic_row(
+        process_name="ProcessB",
+        matlab_path=matlab_path,
+        python_path=python_path,
+        consume_wid="ATP",
+        produce_wid="GLC",
+        request_wid="ATP",
+    )
+
+    env = _write_synthetic_corpus_env(
+        tmp_path / "oracle_and_macromolecule_case",
+        row_payloads=[row_a, row_b],
+        state_groups_by_process={
+            "ProcessA": {
+                "substrates": ["MET_OK", "ATP", "X_orphan"],
+                "enzymes": [],
+                "monomers": ["MG_001_MONOMER"],
+                "complexs": [],
+                "rnas": [],
+            },
+            "ProcessB": {
+                "substrates": ["GLC", "ATP", "MET_OK", "X_orphan"],
+                "enzymes": [],
+                "monomers": [],
+                "complexs": [],
+                "rnas": [],
+            },
+        },
+        method_map_payload=_stub_method_map_many("ProcessA", "ProcessB"),
+    )
+    oracle_path = tmp_path / "stub_metabolism.json"
+    oracle_path.write_text(
+        json.dumps(
+            {
+                "process": "Metabolism",
+                "substrates": [
+                    {"wid": "MET_OK"},
+                    {"wid": "OTHER_MET"},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    env.update(
+        {
+            "OC_L1B_METABOLISM_ORACLE_JSON": str(oracle_path),
+            "OC_L1B_EXTERNAL_WID_FIXTURE": str(tmp_path / "missing_metabolism_flat.mat"),
+        }
+    )
+
+    result = _run_l1b("--format", "json", env_overrides=env)
+    assert result.returncode == 1
+    report = _json_report(result)
+    row_a_report = _row_by_name(report, "ProcessA")
+    orphan_check = row_a_report["checks"]["check_orphan_consume_wids"]
+    assert orphan_check["verdict"] == "FAIL"
+    assert any("X_orphan" in detail for detail in orphan_check["details"])
+    assert not any("MET_OK" in detail for detail in orphan_check["details"])
+    assert not any("MG_001_MONOMER" in detail for detail in orphan_check["details"])
+    assert any("missing external-WID fixture" in detail for detail in orphan_check["details"])
+
+
 def test_dependency_cycle_fails_then_passes(tmp_path: Path) -> None:
     matlab_path = tmp_path / "synthetic.m"
     python_path = tmp_path / "synthetic.py"

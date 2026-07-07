@@ -11,6 +11,7 @@ import os
 import re
 import tomllib
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, TypedDict
 
@@ -24,9 +25,14 @@ DEFAULT_WIRING_DIR = REPO_ROOT / "data" / "schemas" / "per_process_wiring"
 DEFAULT_PROCESS_SCHEMA_DIR = REPO_ROOT / "data" / "schemas" / "per_process"
 DEFAULT_OC_METHOD_MAP = REPO_ROOT / "data" / "karr_method_inventory" / "oc_method_map.yaml"
 DEFAULT_EXTERNAL_WID_FIXTURE = REPO_ROOT / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"
+DEFAULT_METABOLISM_ORACLE = (
+    REPO_ROOT / "data" / "karr_method_inventory" / "karr_stoichiometry" / "Metabolism.json"
+)
 WIRING_DIR_ENV = "OC_L1B_WIRING_DIR"
 PROCESS_SCHEMA_DIR_ENV = "OC_L1B_PROCESS_SCHEMA_DIR"
 OC_METHOD_MAP_ENV = "OC_L1B_OC_METHOD_MAP"
+EXTERNAL_WID_FIXTURE_ENV = "OC_L1B_EXTERNAL_WID_FIXTURE"
+METABOLISM_ORACLE_ENV = "OC_L1B_METABOLISM_ORACLE_JSON"
 TOUCHPOINT_METHODS = (
     "calcResourceRequirements_Current",
     "evolveState",
@@ -1184,10 +1190,20 @@ def _build_produced_wids(rows: list[tuple[Path, dict[str, Any]]]) -> set[str]:
     return produced_wids
 
 
-def _load_external_wids(repo_root: Path) -> tuple[set[str] | None, str]:
-    fixture_path = DEFAULT_EXTERNAL_WID_FIXTURE
+def _display_path(path: Path, repo_root: Path) -> str:
+    try:
+        return path.relative_to(repo_root).as_posix()
+    except ValueError:
+        return str(path)
+
+
+@lru_cache(maxsize=None)
+def _load_external_wids(
+    repo_root: Path,
+    fixture_path: Path,
+) -> tuple[set[str], list[str], str | None]:
     if not fixture_path.exists():
-        return None, f"missing external-WID fixture {fixture_path}"
+        return set(), [f"WARN: missing external-WID fixture {fixture_path}"], None
 
     try:
         mat = loadmat(fixture_path, squeeze_me=True, struct_as_record=False)
@@ -1201,7 +1217,7 @@ def _load_external_wids(repo_root: Path) -> tuple[set[str] | None, str]:
             - 1
         )
     except Exception as exc:
-        return None, f"failed to load external-WID fixture {fixture_path}: {exc}"
+        return set(), [f"WARN: failed to load external-WID fixture {fixture_path}: {exc}"], None
 
     external_wids = {
         substrate_wids[idx]
@@ -1209,13 +1225,94 @@ def _load_external_wids(repo_root: Path) -> tuple[set[str] | None, str]:
         if 0 <= idx < len(substrate_wids)
     }
     if not external_wids:
-        return None, f"external-WID fixture {fixture_path} resolved zero WIDs"
+        return (
+            set(),
+            [f"WARN: external-WID fixture {fixture_path} resolved zero WIDs"],
+            None,
+        )
+
+    display_path = _display_path(fixture_path, repo_root)
+    return (
+        external_wids,
+        [],
+        f"{display_path} via Metabolism.substrateIndexs_externalExchangedMetabolites",
+    )
+
+
+@lru_cache(maxsize=None)
+def _load_metabolism_oracle_wids(
+    repo_root: Path,
+    oracle_path: Path,
+) -> tuple[set[str], list[str], str | None]:
+    if not oracle_path.exists():
+        return set(), [f"WARN: missing Metabolism oracle substrate file {oracle_path}"], None
 
     try:
-        display_path = fixture_path.relative_to(repo_root).as_posix()
-    except ValueError:
-        display_path = str(fixture_path)
-    return external_wids, f"{display_path} via Metabolism.substrateIndexs_externalExchangedMetabolites"
+        payload = json.loads(oracle_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        return set(), [f"WARN: failed to load Metabolism oracle substrate file {oracle_path}: {exc}"], None
+
+    substrates = payload.get("substrates")
+    if not isinstance(substrates, list):
+        return (
+            set(),
+            [f"WARN: Metabolism oracle substrate file {oracle_path} missing substrates list"],
+            None,
+        )
+
+    oracle_wids = {
+        wid.strip()
+        for entry in substrates
+        if isinstance(entry, dict)
+        for wid in [entry.get("wid")]
+        if isinstance(wid, str) and wid.strip()
+    }
+    if not oracle_wids:
+        return (
+            set(),
+            [f"WARN: Metabolism oracle substrate file {oracle_path} resolved zero WIDs"],
+            None,
+        )
+
+    display_path = _display_path(oracle_path, repo_root)
+    return (
+        oracle_wids,
+        [],
+        f"{display_path} via Metabolism.substrates[*].wid",
+    )
+
+
+@lru_cache(maxsize=None)
+def _load_available_smallmol(repo_root: Path) -> tuple[set[str], list[str], str]:
+    fixture_path = Path(os.environ.get(EXTERNAL_WID_FIXTURE_ENV, str(DEFAULT_EXTERNAL_WID_FIXTURE)))
+    oracle_path = Path(os.environ.get(METABOLISM_ORACLE_ENV, str(DEFAULT_METABOLISM_ORACLE)))
+
+    external_wids, external_warnings, external_source = _load_external_wids(repo_root, fixture_path)
+    oracle_wids, oracle_warnings, oracle_source = _load_metabolism_oracle_wids(repo_root, oracle_path)
+
+    available_smallmol = external_wids | oracle_wids
+    warnings = [*external_warnings, *oracle_warnings]
+    sources = [source for source in (external_source, oracle_source) if source is not None]
+    source_text = " + ".join(sources) if sources else "no small-molecule allowlist sources resolved"
+    return available_smallmol, warnings, source_text
+
+
+@lru_cache(maxsize=None)
+def _load_macromolecular_wids(process_schema_dir: Path) -> tuple[set[str], list[str], str]:
+    macromolecular_wids: set[str] = set()
+    warnings: list[str] = []
+    toml_paths = sorted(process_schema_dir.glob("*.toml"))
+
+    for toml_path in toml_paths:
+        groups, error = _load_state_groups(toml_path)
+        if error is not None or groups is None:
+            warnings.append(f"WARN: {error or f'could not load {toml_path.name}'}")
+            continue
+        for group_name in ("monomers", "complexs", "rnas"):
+            macromolecular_wids.update(groups.get(group_name, set()))
+
+    source_text = f"{process_schema_dir} [state_groups.monomers|complexs|rnas] across {len(toml_paths)} TOMLs"
+    return macromolecular_wids, warnings, source_text
 
 
 def _build_dependency_graph(
@@ -1675,10 +1772,8 @@ def check_orphan_consume_wids(
     external_wids_source: str | None = None,
 ) -> CheckResult:
     del strict_anchors
-    del repo_root
     del cache
     del roster
-    del process_schema_dir
     del schema_contract
     del method_map_contract
     del method_map_path
@@ -1692,39 +1787,42 @@ def check_orphan_consume_wids(
     target_wids = _collect_wids(row.get("consume_stoichiometry", []))
     target_wids.update(_collect_wids(requests))
 
-    candidate_orphans = sorted(wid for wid in target_wids if wid not in produced_wids)
-    if not candidate_orphans:
-        return CheckResult(
-            verdict="PASS",
-            details=[f"validated {len(target_wids)} consume/request WIDs against produced corpus"],
-        )
+    available_smallmol, available_warnings, available_source = _load_available_smallmol(repo_root)
+    macromolecular_wids, macromolecular_warnings, macromolecular_source = _load_macromolecular_wids(
+        process_schema_dir
+    )
+    warnings = [*available_warnings, *macromolecular_warnings]
 
-    if external_wids is None:
-        warnings = [
-            "WARN: external WID allowlist unresolved; potential orphans kept as warnings "
-            f"({external_wids_source or 'no source'})"
-        ]
-        warnings.extend(
-            [
-                f"WARN: orphan candidate consume/request WID {wid!r} not produced by any row"
-                for wid in candidate_orphans
-            ]
-        )
-        return CheckResult(verdict="PASS", details=warnings)
+    candidate_orphans = sorted(
+        wid
+        for wid in target_wids
+        if wid not in macromolecular_wids and wid not in produced_wids and wid not in available_smallmol
+    )
 
     failures = [
-        f"orphan consume/request WID {wid!r}: not produced by any row and not in external allowlist"
+        "orphan consume/request WID "
+        f"{wid!r}: not produced by any row, not in available small-molecule set, "
+        "and not declared macromolecular in schema state groups"
         for wid in candidate_orphans
-        if wid not in external_wids
     ]
     if failures:
-        return CheckResult(verdict="FAIL", details=failures)
+        return CheckResult(verdict="FAIL", details=[*failures, *warnings])
 
-    external_hits = sum(1 for wid in candidate_orphans if wid in external_wids)
+    allowlisted_hits = sum(
+        1 for wid in target_wids if wid not in produced_wids and wid in available_smallmol
+    )
+    macromolecular_hits = sum(
+        1 for wid in target_wids if wid not in produced_wids and wid in macromolecular_wids
+    )
     return CheckResult(
         verdict="PASS",
         details=[
-            f"validated {len(target_wids)} consume/request WIDs ({external_hits} allowlisted external via {external_wids_source})"
+            (
+                f"validated {len(target_wids)} consume/request WIDs "
+                f"({allowlisted_hits} allowlisted small-molecule via {available_source}; "
+                f"{macromolecular_hits} out-of-scope macromolecular via {macromolecular_source})"
+            ),
+            *warnings,
         ],
     )
 
@@ -1894,7 +1992,7 @@ def _build_report(
     roster = {_process_name(payload, row_path.stem) for row_path, payload in rows}
     dep_index = _build_dependency_index(rows)
     produced_wids = _build_produced_wids(rows)
-    external_wids, external_wids_source = _load_external_wids(REPO_ROOT)
+    external_wids, _external_wids_warnings, external_wids_source = _load_available_smallmol(REPO_ROOT)
     graph_checks = {
         "no_dependency_cycles": _check_no_dependency_cycles(rows, roster),
     }
