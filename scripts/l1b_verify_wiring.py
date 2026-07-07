@@ -1025,6 +1025,17 @@ def check_matlab_anchors_resolve(
     del produced_wids
     del external_wids
     del external_wids_source
+    matlab_root = repo_root / "data" / "m1_sources" / "WholeCell"
+    if not matlab_root.exists():
+        return CheckResult(
+            verdict="PASS",
+            details=[
+                "WARN: MATLAB source tree (data/m1_sources/WholeCell) not present; "
+                "MATLAB-anchor resolution skipped. That tree is a gitignored external "
+                "clone (absent in CI). MATLAB anchors are verified locally / in the "
+                "nightly full-source job where the clone is present.",
+            ],
+        )
     anchors = _collect_matlab_anchors(row)
     return _validate_anchor_refs(
         anchor_refs=anchors,

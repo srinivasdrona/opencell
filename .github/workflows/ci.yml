@@ -51,6 +51,29 @@ jobs:
       - name: Run property-based tests
         run: pytest tests/property/ -x -v --tb=short || true  # no property tests yet
 
+  # ── L1b gates (method-completeness + wiring conformance) — BLOCKING ──
+  # Both L1b halves are enforced on every PR and push. No `|| true`: a failure
+  # here blocks the merge. The wiring gate auto-skips MATLAB-anchor resolution
+  # when data/m1_sources/WholeCell (a gitignored external clone) is absent, which
+  # it is in CI; those anchors are verified locally / in the nightly full-source
+  # job. All other 12 wiring checks run against tracked repo data.
+  l1b-gates:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+      - name: L1b Half A — method completeness (gap must be 0/115)
+        run: python scripts/l1b_method_completeness.py
+      - name: L1b Half B — wiring conformance (28/28 rows must PASS)
+        run: python scripts/l1b_verify_wiring.py
+      - name: L1b wiring gate self-tests
+        run: pytest tests/integration/test_l1b_verify_wiring.py -q
+
   # ── Tier 2: Nightly scientific regression ──
   test-scientific:
     runs-on: ubuntu-latest
