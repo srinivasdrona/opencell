@@ -319,16 +319,39 @@ def _write_synthetic_env(
     (wiring_dir / "_schema.yaml").write_text(_SCHEMA.read_text(encoding="utf-8"), encoding="utf-8")
     row_copy = copy.deepcopy(row_payload)
     oracle_path = tmp_path / "oracle.json"
+    oracle_block = row_copy.get("stoichiometry_oracle")
+    oracle_class = oracle_block.get("class") if isinstance(oracle_block, dict) else "matrix"
+    if oracle_class == "none":
+        oracle_substrates: list[dict[str, str]] = []
+    else:
+        oracle_substrates = []
+        seen_pairs: set[tuple[str, str]] = set()
+        for entry in [*row_copy.get("consume_stoichiometry", []), *row_copy.get("produce_stoichiometry", [])]:
+            if not isinstance(entry, dict):
+                continue
+            wid = entry.get("wid")
+            compartment = entry.get("compartment")
+            if not isinstance(wid, str) or not isinstance(compartment, str):
+                continue
+            pair = (wid, compartment)
+            if pair in seen_pairs:
+                continue
+            seen_pairs.add(pair)
+            oracle_substrates.append({"wid": wid, "compartment": compartment})
+        if not oracle_substrates:
+            oracle_substrates = [
+                {"wid": "GLC", "compartment": "cytosol"},
+                {"wid": "ATP", "compartment": "cytosol"},
+            ]
+    if isinstance(row_copy.get("stoichiometry_oracle"), dict):
+        row_copy["stoichiometry_oracle"].setdefault("substrate_count", len(oracle_substrates))
     oracle_path.write_text(
         json.dumps(
             {
                 "process": process_name,
-                "class": "matrix",
-                "n_substrates": 2,
-                "substrates": [
-                    {"wid": "GLC", "compartment": "cytosol"},
-                    {"wid": "ATP", "compartment": "cytosol"},
-                ],
+                "class": oracle_class,
+                "n_substrates": len(oracle_substrates),
+                "substrates": oracle_substrates,
             }
         ),
         encoding="utf-8",
@@ -383,34 +406,40 @@ def _write_synthetic_corpus_env(
         row_copy = copy.deepcopy(row_payload)
         process_name = row_copy["process"]["name"]
 
-        oracle_substrates: list[dict[str, str]] = []
-        seen_pairs: set[tuple[str, str]] = set()
-        for entry in [*row_copy.get("consume_stoichiometry", []), *row_copy.get("produce_stoichiometry", [])]:
-            if not isinstance(entry, dict):
-                continue
-            wid = entry.get("wid")
-            compartment = entry.get("compartment")
-            if not isinstance(wid, str) or not isinstance(compartment, str):
-                continue
-            pair = (wid, compartment)
-            if pair in seen_pairs:
-                continue
-            seen_pairs.add(pair)
-            oracle_substrates.append({"wid": wid, "compartment": compartment})
+        oracle_block = row_copy.get("stoichiometry_oracle")
+        oracle_class = oracle_block.get("class") if isinstance(oracle_block, dict) else "matrix"
+        if oracle_class == "none":
+            oracle_substrates = []
+        else:
+            oracle_substrates = []
+            seen_pairs: set[tuple[str, str]] = set()
+            for entry in [*row_copy.get("consume_stoichiometry", []), *row_copy.get("produce_stoichiometry", [])]:
+                if not isinstance(entry, dict):
+                    continue
+                wid = entry.get("wid")
+                compartment = entry.get("compartment")
+                if not isinstance(wid, str) or not isinstance(compartment, str):
+                    continue
+                pair = (wid, compartment)
+                if pair in seen_pairs:
+                    continue
+                seen_pairs.add(pair)
+                oracle_substrates.append({"wid": wid, "compartment": compartment})
 
-        if not oracle_substrates:
-            oracle_substrates = [
-                {"wid": "GLC", "compartment": "cytosol"},
-                {"wid": "ATP", "compartment": "cytosol"},
-            ]
+            if not oracle_substrates:
+                oracle_substrates = [
+                    {"wid": "GLC", "compartment": "cytosol"},
+                    {"wid": "ATP", "compartment": "cytosol"},
+                ]
 
-        row_copy["stoichiometry_oracle"]["substrate_count"] = len(oracle_substrates)
+        if isinstance(row_copy.get("stoichiometry_oracle"), dict):
+            row_copy["stoichiometry_oracle"].setdefault("substrate_count", len(oracle_substrates))
         oracle_path = tmp_path / f"{process_name}_oracle.json"
         oracle_path.write_text(
             json.dumps(
                 {
                     "process": process_name,
-                    "class": "matrix",
+                    "class": oracle_class,
                     "n_substrates": len(oracle_substrates),
                     "substrates": oracle_substrates,
                 }
@@ -812,6 +841,55 @@ def test_synthetic_v2_row_a1_violation_fails_a_invariants(tmp_path: Path) -> Non
     assert report["aggregate"]["overall_verdict"] == "FAIL"
     assert row_report["checks"]["check_a_invariants"]["verdict"] == "FAIL"
     assert any(detail.startswith("A1:") for detail in row_report["checks"]["check_a_invariants"]["details"])
+
+
+def test_synthetic_v2_row_a1_noop_escape_is_scoped_to_oracle_none(tmp_path: Path) -> None:
+    matlab_path = tmp_path / "synthetic.m"
+    python_path = tmp_path / "synthetic.py"
+    _make_matlab_file(matlab_path)
+    _make_python_file(python_path)
+    base_row = _synthetic_row(
+        process_name="SyntheticProcess",
+        matlab_path=matlab_path,
+        python_path=python_path,
+    )
+
+    row_none = copy.deepcopy(base_row)
+    row_none["integration_touchpoints"]["calcResourceRequirements_Current"]["status"] = "not_implemented"
+    row_none["stoichiometry_oracle"]["class"] = "none"
+    row_none["stoichiometry_oracle"]["substrate_count"] = 0
+    row_none["consume_stoichiometry"] = []
+    row_none["produce_stoichiometry"] = []
+    row_none["allocator"]["requests"] = []
+    env_none = _write_synthetic_env(
+        tmp_path / "oracle_none",
+        row_payload=row_none,
+        process_name="SyntheticProcess",
+        state_groups={"substrates": [], "enzymes": [], "monomers": [], "complexs": [], "rnas": []},
+        method_map_payload=_stub_method_map(process_name="SyntheticProcess"),
+    )
+
+    result_none = _run_l1b("--format", "json", env_overrides=env_none)
+    report_none = _json_report(result_none)
+    row_report_none = _row_by_name(report_none, "SyntheticProcess")
+    assert row_report_none["checks"]["check_a_invariants"]["verdict"] == "PASS"
+
+    row_inline = copy.deepcopy(base_row)
+    row_inline["integration_touchpoints"]["calcResourceRequirements_Current"]["status"] = "not_implemented"
+    row_inline["stoichiometry_oracle"]["class"] = "inline"
+    env_inline = _write_synthetic_env(
+        tmp_path / "oracle_inline",
+        row_payload=row_inline,
+        process_name="SyntheticProcess",
+        state_groups={"substrates": ["GLC", "ATP"], "enzymes": [], "monomers": [], "complexs": [], "rnas": []},
+        method_map_payload=_stub_method_map(process_name="SyntheticProcess"),
+    )
+
+    result_inline = _run_l1b("--format", "json", env_overrides=env_inline)
+    report_inline = _json_report(result_inline)
+    row_report_inline = _row_by_name(report_inline, "SyntheticProcess")
+    assert row_report_inline["checks"]["check_a_invariants"]["verdict"] == "FAIL"
+    assert any(detail.startswith("A1:") for detail in row_report_inline["checks"]["check_a_invariants"]["details"])
 
 
 def test_dependency_symmetry_passes_then_fails(tmp_path: Path) -> None:

@@ -937,7 +937,12 @@ def check_a_invariants(
         failures.append("A1: integration_touchpoints.calcResourceRequirements_Current missing")
     else:
         status = calc_request.get("status")
-        if status != "implemented":
+        oracle_block = row.get("stoichiometry_oracle")
+        oracle_class = oracle_block.get("class") if isinstance(oracle_block, dict) else None
+        # HB1 oracle class `none` is the authoritative statement that the process
+        # consumes no small-molecule substrates, so a no-op
+        # calcResourceRequirements_Current is the correct wiring rather than a gap.
+        if status != "implemented" and oracle_class != "none":
             failures.append(
                 "A1: integration_touchpoints.calcResourceRequirements_Current.status must be 'implemented'"
             )
