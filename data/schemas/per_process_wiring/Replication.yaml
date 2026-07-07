@@ -60,6 +60,10 @@ integration_touchpoints:
           lines: "578-583"
           note: "Request and allocation state schema."
           symbol: KarrReplicationProcess.ports_schema
+        - path: "opencell/vivarium/karr_replication.py"
+          lines: "1240-1263"
+          note: "Flat substrate projection/writeback from the internal replication ledger into the shared `substrates` delta payload."
+          symbol: KarrReplicationProcess.next_update
       note: "Light-bulk OC replay of fork progression and substrate bookkeeping."
     status: "implemented"
     note: "The current port preserves fork motion and substrate deltas, but not the full Karr 8-stage mechanistic loop."

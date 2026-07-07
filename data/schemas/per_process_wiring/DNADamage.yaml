@@ -429,6 +429,7 @@ deviations:
     - "MATLAB emits CO2, H, and NH3 via reactionSmallMoleculeStoichiometryMatrix writeback; current OC does not emit metabolite stoichiometry deltas."
     - "DR5P is factored into MATLAB reactionDNAStoichiometryMatrix and is not emitted through reactionSmallMoleculeStoichiometryMatrix writeback."
     - "Current composite wiring maps `karr_dna_damage` only to `chromosome` (opencell/vivarium/karr_composite.py), so OC process-local substrate/stimulus reads are not active in that composition."
+    - "No flat/shared-pool projection helper exists in opencell/vivarium/karr_dna_damage.py; the current OC port reads flat radiation/substrate gates and writes chromosome damage only, so planner should review whether shared_pool_projection_merges_compartments should remain true."
     - "MATLAB engages allocator request/grant through calcResourceRequirements_Current and Simulation.evolveState allocation injection; current OC remains allocator-bypassed."
     - "Repair chemistry, lesion-specific arrays, and any downstream DNARepair coupling are deferred to a later port."
     - "Trace-derived kind rates are optional; when the trace file is unavailable, the OC port falls back to configured per-kind rates."

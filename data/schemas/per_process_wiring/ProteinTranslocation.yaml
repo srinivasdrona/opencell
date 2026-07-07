@@ -56,6 +56,10 @@ integration_touchpoints:
           lines: "658-710"
           note: "Allocator input path read by the process."
           symbol: RequestCalculatorPTransloc
+        - path: "opencell/vivarium/karr_protein_translocation.py"
+          lines: "420-442"
+          note: "Flat substrate projection/writeback from per-copy hydrolysis totals into the shared `substrates` pool."
+          symbol: KarrProteinTranslocationProcess.next_update
       note: "OC mirrors Karr's copy-level randperm traversal, rate-scaled translocase/SRP capacity checks, and break-on-first-insufficient-copy behavior."
     status: "implemented"
     note: "Implemented with parity on per-copy ordering and rate-scaled capacities; residual differences are documented in known_deviations."

@@ -45,6 +45,11 @@ integration_touchpoints:
         lines: "350-350"
         note: "Per-tick TF copy read, weighted binding, fold-change product, and trace-hint writeback."
         symbol: "KarrTranscriptionalRegulationProcess.next_update"
+      supporting:
+        - path: "opencell/vivarium/karr_transcriptional_regulation.py"
+          lines: "391-423"
+          note: "Flat projection from the TF-by-TU fold-change matrix into the per-TU `tx_rate_fold_change` output."
+          symbol: KarrTranscriptionalRegulationProcess.next_update
     status: "implemented"
     note: "OC implements the per-tick regulatory sweep in next_update rather than a MATLAB-named evolveState method; MATLAB gates candidate binding sites by chromosome accessibility (isRegionPolymerized) but OC currently has no chromosome accessibility gate. See known_deviations."
   calcFluxBounds:
