@@ -121,13 +121,23 @@ process runs, and `mets.counts = counts + (substrates_after - allocation)`.
   allocation arithmetic (`fix`, uncapped scale). THE authoritative spec.
 - [A04] `@Simulation/evolveState.m:63-73` | oracle | allocation-consumption +
   unused-return semantics (context for why over-allocation is benign in Karr).
-- [A05] `data/karr_fixtures/per_process/*.mat` | fixture | `states_before`
-  per-channel snapshots (`cell_vector(handle,"states_before",field,tick)`,
-  l2_replay_common.py:310). Pool = substrates `states_before` at the tick.
-- [A06] `tests/vivarium/l2_replay_common.py` | code | fixture resolution,
-  `states_before` loading, WID projection helpers — reuse, do not reinvent.
+- [A05] `data/karr_fixtures/per_process/*.mat` | fixture | per-process snapshots.
+  **CORRECTION (design review 2026-07-08):** `states_before` here is the target
+  process's substrate state *after allocation* (what the process sees post-
+  partition), NOT the global pre-allocation pool. And the current extractor
+  (`scripts/matlab/extract_per_process_traces_v2.m`) emits only `states_before`,
+  `states_after`, `metadata` — it does NOT emit the global pool, `requirements`,
+  or `allocations`. So the L2.0a oracle IS NOT PRESENT in the current fixtures.
+  See D1 — build-step-0 must extend the extraction. Do NOT use
+  `states_before.substrates` as the global pool.
+- [A06] `tests/vivarium/l2_replay_common.py` | code | fixture resolution +
+  WID projection helpers — reuse the loaders, but see A05 re: pool semantics.
 - [A07] `data/schemas/per_process/*.toml` `[state_groups].substrates` | schema |
   per-process substrate WID sets (which WIDs each process requests).
+- [A08] `scripts/matlab/extract_per_process_traces_v2.m` | code | the MATLAB
+  extractor to EXTEND (build-step-0) to emit `pool_before` (global mets.counts
+  pre-allocation), `requirements` (evolveState.m:31-35), and `allocations`
+  (evolveState.m:37) per tick.
 
 Inventory Beat-4 inversion: the allocation oracle (`allocations` matrix) may not
 be captured in the current per-process fixtures (they carry `states_before`, not
@@ -142,23 +152,33 @@ oracle extraction" the explicit first build step.
 - Options: (1) recompute the oracle in Python from Karr's requirements + pool
   using evolveState.m:36-37 arithmetic; (2) read a captured `allocations`/
   `substrates_allocated` matrix from the fixtures; (3) extend the MATLAB
-  extraction to emit per-tick `allocations`.
-- Chosen: **(2) if present, else (3); NEVER (1) alone.** Recomputing the oracle
-  in Python re-implements the very arithmetic under test (tautology). The gate
-  must compare OC's `KarrAllocationStep` output to a Karr-*produced* number.
-- Falsifier: if neither the fixture nor a feasible extraction yields per-process
-  Karr allocations at a fixed tick, L2.0a cannot be an oracle gate — reopen.
-- Build-step-0 (needs WSL/MATLAB): inspect a fixture for an allocation field;
-  if absent, extend `scripts/matlab/extract_per_process_traces_v2.m`.
+  extraction to emit per-tick `pool_before` + `requirements` + `allocations`.
+- Chosen: **(3) — extend the extraction; NEVER (1) alone.** Design review
+  (2026-07-08) confirmed the current fixtures do NOT contain the allocation
+  oracle: `extract_per_process_traces_v2.m` emits only `states_before` /
+  `states_after` / `metadata`, and `states_before` is the process's
+  post-allocation substrate state, not the global pre-allocation pool. So the
+  oracle must be extracted fresh (option 3). Recomputing it in Python from
+  evolveState.m:36-37 (option 1) is forbidden — it re-implements the arithmetic
+  under test (tautology). The gate must compare OC's `KarrAllocationStep` output
+  to a Karr-*produced* number.
+- **Build-step-0 (blocking prerequisite, needs WSL/MATLAB):** extend
+  `extract_per_process_traces_v2.m` to emit, per tick: the global pre-allocation
+  pool `mets.counts` (`pool_before`), the `requirements` matrix
+  (evolveState.m:31-35), and the `allocations` matrix (evolveState.m:37). L2.0a
+  cannot be built until this lands. If MATLAB re-extraction is infeasible,
+  L2.0a cannot be an oracle gate as specified — reopen.
+- Falsifier: if the extended extraction cannot capture per-process allocations
+  at a fixed tick, reopen D1.
 
 **D2 — Comparison metric.**
 - Options: (1) integer equality per (process, WID); (2) tolerance-based;
   (3) pool-level column-sum equality.
 - Chosen: **(1) exact integer equality per (process, WID).** Karr allocations
   are `fix(...)` integer counts; OC uses `np.floor(...)`. For non-negative
-  operands `fix == floor`, so exact equality is the correct, tolerance-free
-  metric (this is a σ=0 boundary, like L2.1). (3) is rejected — it is the
-  Beat-4 aggregation false-pass.
+  operands `fix == floor` (confirmed, design review), so exact equality is the
+  correct, tolerance-free metric (this is a σ=0 boundary, like L2.1). (3) is
+  rejected — it is the Beat-4 aggregation false-pass.
 - Falsifier: any legitimate source of non-integer or seed-dependent allocation
   would break exact equality — none exists at this boundary (allocation is
   deterministic given pool + requirements).
@@ -171,6 +191,12 @@ oracle extraction" the explicit first build step.
 - The gate MUST enroll all 28 processes as consumers, overriding the 3-consumer
   default (`_default_consumer_processes`) — otherwise 25 processes are silently
   unchecked (a Beat-4 coverage hole).
+- **Zero-demand rows must not vanish (design review):** `next_update` builds its
+  process rows from `requests.keys()` (karr_allocation_step.py:216-229), so a
+  process whose requirements are all zero at the tick drops out of the output.
+  The gate's verdict loader MUST emit all 28 named process rows explicitly
+  (asserting allocation==0 for zero-demand processes against the Karr oracle),
+  not just the nonzero-demand rows the allocator returns.
 
 **D4 — The scale-cap arithmetic fork (the first expected finding).**
 - Observation (grounded): OC caps `scale = min(1, available/total_demand)`
@@ -216,17 +242,28 @@ oracle extraction" the explicit first build step.
 | Pre-deciding the D4 fork by editing OC first | D4: gate measures before any OC change | build sequencing |
 
 **Open items (build-time, need WSL/MATLAB — currently BLOCKED, WSL down):**
-1. D1/Build-step-0: confirm the per-process fixtures carry a Karr `allocations`
-   field at a fixed tick, or extend the MATLAB extraction to emit it.
-2. D5: confirm Karr per-process `requirements` at a tick are recoverable from the
-   same fixture (or the trace).
+1. **D1/Build-step-0 (confirmed blocking by design review):** extend
+   `extract_per_process_traces_v2.m` to emit per-tick `pool_before`,
+   `requirements`, `allocations`. The current fixtures do NOT carry the oracle,
+   and `states_before` is post-allocation process state, not the global pool.
+2. D5: the `requirements` come from the same extended extraction (step 1).
 3. D4 first-run: measure the over-supply divergence on real fixtures.
 
 ## Build sequence (once WSL restored)
-1. Build-step-0 (D1/D5): fixture-field audit; extend extraction if needed.
-2. Implement `scripts/l2_0a_verify_allocator.py`: load pool + Karr requirements
-   for tick 0 of each process; run `KarrAllocationStep.next_update`; compare to
-   Karr `allocations`; per-(process, WID) integer verdicts + aggregate.
+1. **Build-step-0 (D1):** extend the MATLAB extractor to emit `pool_before` +
+   `requirements` + `allocations` per tick; re-extract per-process fixtures.
+   (This is a hard prerequisite — the gate is not buildable without it.)
+2. Implement `scripts/l2_0a_verify_allocator.py`: load `pool_before` + Karr
+   `requirements` for tick 0 of each process; run `KarrAllocationStep.next_update`
+   with all 28 process rows enrolled (incl. zero-demand); compare to Karr
+   `allocations`; per-(process, WID) integer verdicts + aggregate.
 3. Synthetic self-test: plant a misallocation → assert FAIL; parity → PASS.
 4. First real-fixture run: record honest verdict; adjudicate D4.
 5. CI: add as a blocking job alongside `l1b-gates` once green (HB6 pattern).
+
+## Design review log
+- **2026-07-08 (gpt-5.4 rubber-duck):** D4 arithmetic divergence CONFIRMED sound;
+  D5 isolation logic CONFIRMED sound. Found blocking flaw: `states_before` is
+  post-allocation process state (not the global pool) and the extractor does not
+  emit `requirements`/`allocations` — corrected in A05/A08/D1 (build-step-0 now
+  requires extending the extraction). Added zero-demand-row guard to D3.
