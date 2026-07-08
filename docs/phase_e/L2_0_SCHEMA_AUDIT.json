@@ -86,6 +86,8 @@
         "cell",
         "chromosome",
         "enzymes",
+        "ftsZRing",
+        "geometry",
         "requests",
         "substrates",
         "substrates_allocated"
@@ -99,6 +101,8 @@
       "oc_only": [
         "cell",
         "chromosome",
+        "ftsZRing",
+        "geometry",
         "requests",
         "substrates_allocated"
       ],
@@ -118,7 +122,9 @@
         "boundEnzymes",
         "chromosome",
         "enzymes",
-        "substrates"
+        "requests",
+        "substrates",
+        "substrates_allocated"
       ],
       "overlap": [
         "boundEnzymes",
@@ -127,7 +133,9 @@
       ],
       "karr_only": [],
       "oc_only": [
-        "chromosome"
+        "chromosome",
+        "requests",
+        "substrates_allocated"
       ],
       "verdict": "GREEN",
       "error": null
@@ -184,7 +192,8 @@
         "protein",
         "requests",
         "substrates",
-        "substrates_allocated"
+        "substrates_allocated",
+        "tx_rate_fold_change"
       ],
       "overlap": [
         "boundEnzymes",
@@ -197,7 +206,8 @@
         "complex",
         "protein",
         "requests",
-        "substrates_allocated"
+        "substrates_allocated",
+        "tx_rate_fold_change"
       ],
       "verdict": "GREEN",
       "error": null
@@ -335,6 +345,7 @@
       "oc_obs": [
         "boundEnzymes",
         "enzymes",
+        "inactivatedSubstrates",
         "protein",
         "stimuli",
         "substrates"
@@ -346,6 +357,7 @@
       ],
       "karr_only": [],
       "oc_only": [
+        "inactivatedSubstrates",
         "protein",
         "stimuli"
       ],
@@ -369,6 +381,7 @@
         "complexs",
         "enzymes",
         "monomers",
+        "polypeptide",
         "protein",
         "requests",
         "rna",
@@ -385,6 +398,7 @@
       "karr_only": [],
       "oc_only": [
         "complex",
+        "polypeptide",
         "protein",
         "requests",
         "rna",
@@ -470,6 +484,43 @@
       "error": null
     },
     {
+      "process": "ProteinProcessingII",
+      "module": "karr_protein_processing_ii",
+      "class": "KarrProteinProcessingIIProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "enzymes",
+        "processedMonomers",
+        "substrates",
+        "unprocessedMonomers"
+      ],
+      "oc_obs": [
+        "boundEnzymes",
+        "enzymes",
+        "processedMonomers",
+        "protein",
+        "requests",
+        "substrates",
+        "substrates_allocated",
+        "unprocessedMonomers"
+      ],
+      "overlap": [
+        "boundEnzymes",
+        "enzymes",
+        "processedMonomers",
+        "substrates",
+        "unprocessedMonomers"
+      ],
+      "karr_only": [],
+      "oc_only": [
+        "protein",
+        "requests",
+        "substrates_allocated"
+      ],
+      "verdict": "GREEN",
+      "error": null
+    },
+    {
       "process": "ProteinProcessingI",
       "module": "karr_protein_processing_i",
       "class": "KarrProteinProcessingIProcess",
@@ -509,43 +560,6 @@
       "error": null
     },
     {
-      "process": "ProteinProcessingII",
-      "module": "karr_protein_processing_ii",
-      "class": "KarrProteinProcessingIIProcess",
-      "karr_obs": [
-        "boundEnzymes",
-        "enzymes",
-        "processedMonomers",
-        "substrates",
-        "unprocessedMonomers"
-      ],
-      "oc_obs": [
-        "boundEnzymes",
-        "enzymes",
-        "processedMonomers",
-        "protein",
-        "requests",
-        "substrates",
-        "substrates_allocated",
-        "unprocessedMonomers"
-      ],
-      "overlap": [
-        "boundEnzymes",
-        "enzymes",
-        "processedMonomers",
-        "substrates",
-        "unprocessedMonomers"
-      ],
-      "karr_only": [],
-      "oc_only": [
-        "protein",
-        "requests",
-        "substrates_allocated"
-      ],
-      "verdict": "GREEN",
-      "error": null
-    },
-    {
       "process": "ProteinTranslocation",
       "module": "karr_protein_translocation",
       "class": "KarrProteinTranslocationProcess",
@@ -576,111 +590,6 @@
         "complex",
         "protein",
         "requests",
-        "substrates_allocated"
-      ],
-      "verdict": "GREEN",
-      "error": null
-    },
-    {
-      "process": "Replication",
-      "module": "karr_replication",
-      "class": "KarrReplicationProcess",
-      "karr_obs": [
-        "boundEnzymes",
-        "enzymes",
-        "substrates"
-      ],
-      "oc_obs": [
-        "boundEnzymes",
-        "chromosome",
-        "enzymes",
-        "requests",
-        "substrates",
-        "substrates_allocated"
-      ],
-      "overlap": [
-        "boundEnzymes",
-        "enzymes",
-        "substrates"
-      ],
-      "karr_only": [],
-      "oc_only": [
-        "chromosome",
-        "requests",
-        "substrates_allocated"
-      ],
-      "verdict": "GREEN",
-      "error": null
-    },
-    {
-      "process": "ReplicationInitiation",
-      "module": "karr_replication_initiation",
-      "class": "KarrReplicationInitiationProcess",
-      "karr_obs": [
-        "boundEnzymes",
-        "enzymes",
-        "substrates"
-      ],
-      "oc_obs": [
-        "boundEnzymes",
-        "chromosome",
-        "enzymes",
-        "protein",
-        "requests",
-        "substrates",
-        "substrates_allocated"
-      ],
-      "overlap": [
-        "boundEnzymes",
-        "enzymes",
-        "substrates"
-      ],
-      "karr_only": [],
-      "oc_only": [
-        "chromosome",
-        "protein",
-        "requests",
-        "substrates_allocated"
-      ],
-      "verdict": "GREEN",
-      "error": null
-    },
-    {
-      "process": "RibosomeAssembly",
-      "module": "karr_ribosome_assembly",
-      "class": "KarrRibosomeAssemblyProcess",
-      "karr_obs": [
-        "boundEnzymes",
-        "complexs",
-        "enzymes",
-        "monomers",
-        "substrates"
-      ],
-      "oc_obs": [
-        "boundEnzymes",
-        "complex",
-        "complexs",
-        "enzymes",
-        "monomers",
-        "protein",
-        "requests",
-        "rna",
-        "substrates",
-        "substrates_allocated"
-      ],
-      "overlap": [
-        "boundEnzymes",
-        "complexs",
-        "enzymes",
-        "monomers",
-        "substrates"
-      ],
-      "karr_only": [],
-      "oc_only": [
-        "complex",
-        "protein",
-        "requests",
-        "rna",
         "substrates_allocated"
       ],
       "verdict": "GREEN",
@@ -787,6 +696,111 @@
         "processedRNAs",
         "substrates",
         "unprocessedRNAs"
+      ],
+      "karr_only": [],
+      "oc_only": [
+        "complex",
+        "protein",
+        "requests",
+        "rna",
+        "substrates_allocated"
+      ],
+      "verdict": "GREEN",
+      "error": null
+    },
+    {
+      "process": "ReplicationInitiation",
+      "module": "karr_replication_initiation",
+      "class": "KarrReplicationInitiationProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "enzymes",
+        "substrates"
+      ],
+      "oc_obs": [
+        "boundEnzymes",
+        "chromosome",
+        "enzymes",
+        "protein",
+        "requests",
+        "substrates",
+        "substrates_allocated"
+      ],
+      "overlap": [
+        "boundEnzymes",
+        "enzymes",
+        "substrates"
+      ],
+      "karr_only": [],
+      "oc_only": [
+        "chromosome",
+        "protein",
+        "requests",
+        "substrates_allocated"
+      ],
+      "verdict": "GREEN",
+      "error": null
+    },
+    {
+      "process": "Replication",
+      "module": "karr_replication",
+      "class": "KarrReplicationProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "enzymes",
+        "substrates"
+      ],
+      "oc_obs": [
+        "boundEnzymes",
+        "chromosome",
+        "enzymes",
+        "requests",
+        "substrates",
+        "substrates_allocated"
+      ],
+      "overlap": [
+        "boundEnzymes",
+        "enzymes",
+        "substrates"
+      ],
+      "karr_only": [],
+      "oc_only": [
+        "chromosome",
+        "requests",
+        "substrates_allocated"
+      ],
+      "verdict": "GREEN",
+      "error": null
+    },
+    {
+      "process": "RibosomeAssembly",
+      "module": "karr_ribosome_assembly",
+      "class": "KarrRibosomeAssemblyProcess",
+      "karr_obs": [
+        "boundEnzymes",
+        "complexs",
+        "enzymes",
+        "monomers",
+        "substrates"
+      ],
+      "oc_obs": [
+        "boundEnzymes",
+        "complex",
+        "complexs",
+        "enzymes",
+        "monomers",
+        "protein",
+        "requests",
+        "rna",
+        "substrates",
+        "substrates_allocated"
+      ],
+      "overlap": [
+        "boundEnzymes",
+        "complexs",
+        "enzymes",
+        "monomers",
+        "substrates"
       ],
       "karr_only": [],
       "oc_only": [

@@ -95,9 +95,65 @@ def verdict(karr: set[str], oc: set[str], err: str | None) -> str:
     return "AMBER"
 
 
-def main() -> None:
+def _gate_result(
+    rows: list[dict[str, Any]], counts: dict[str, int], expected_n: int
+) -> tuple[int, str]:
+    """Pure gate decision — no I/O, unit-testable without oracle .mat inputs.
+
+    Returns ``(returncode, message)``:
+      (1, ...) incomplete oracle set (fewer than ``expected_n`` processes)
+      (1, ...) one or more processes not GREEN
+      (0, ...) all GREEN
+    """
+    total = sum(counts.values())
+    if total < expected_n:
+        missing = expected_n - total
+        return 1, (
+            f"L2.0 SCHEMA GATE: FAIL — incomplete oracle set "
+            f"({total}/{expected_n} mapped processes present, {missing} missing)."
+        )
+    non_green = counts["AMBER"] + counts["RED"] + counts["ERROR"]
+    if non_green:
+        offenders = [
+            f"{r['process']}={r['verdict']}" for r in rows if r["verdict"] != "GREEN"
+        ]
+        return 1, (
+            f"L2.0 SCHEMA GATE: FAIL — {non_green} process(es) not GREEN: "
+            + ", ".join(offenders)
+        )
+    return 0, (
+        f"L2.0 SCHEMA GATE: PASS ({counts['GREEN']}/{expected_n} processes GREEN, "
+        "karr_obs ⊆ oc_obs)"
+    )
+
+
+def main() -> int:
+    """Run the L2.0 schema audit as a gate.
+
+    Exit semantics (so CI can enforce it):
+      0  PASS  — all 28 processes GREEN (karr_obs ⊆ oc_obs)
+      0  SKIP  — oracle .mat inputs absent (gitignored external artifacts;
+                 enforced locally / in the nightly full-source run, mirroring the
+                 L1b wiring gate's MATLAB-anchor skip)
+      1  FAIL  — any AMBER/RED/ERROR verdict, or an incomplete oracle set
+                 (fewer than the 28 mapped processes present)
+    """
+    expected_n = len(PROCESS_MAP)
+    mats = sorted(MATS_DIR.glob("*_100ticks.mat")) if MATS_DIR.exists() else []
+    if not mats:
+        try:
+            shown = MATS_DIR.relative_to(REPO)
+        except ValueError:
+            shown = MATS_DIR
+        print(
+            f"L2.0 SCHEMA GATE: SKIPPED — oracle inputs absent at {shown} "
+            "(gitignored external artifacts). "
+            "Run locally or in the nightly full-source job to enforce."
+        )
+        return 0
+
     rows: list[dict[str, Any]] = []
-    for mat in sorted(MATS_DIR.glob("*_100ticks.mat")):
+    for mat in mats:
         stem = mat.stem.replace("_100ticks", "")
         if stem not in PROCESS_MAP:
             print(f"SKIP unmapped: {stem}")
@@ -202,6 +258,11 @@ def main() -> None:
     print(f"Wrote {OUT_JSON}")
     print(f"Counts: {counts}")
 
+    # ── Gate verdict ──────────────────────────────────────────────────────
+    code, message = _gate_result(rows, counts, expected_n)
+    print(f"\n{message}")
+    return code
+
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

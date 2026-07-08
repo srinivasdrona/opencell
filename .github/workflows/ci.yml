@@ -74,6 +74,30 @@ jobs:
       - name: L1b wiring gate self-tests
         run: pytest tests/integration/test_l1b_verify_wiring.py -q
 
+  # ── L2.0 observable-schema gate — BLOCKING ──
+  # Verifies, for each of the 28 Karr processes, that karr_obs ⊆ oc_obs
+  # (every channel the .mat oracle records under states_before/ is emitted by
+  # the OC process's ports_schema()). A RED/AMBER/ERROR verdict blocks the merge.
+  # The per-process *.mat oracle inputs are gitignored external artifacts absent
+  # in CI, so the gate script SKIPs cleanly (exit 0) on the hosted runner and is
+  # enforced locally / in the nightly full-source job — mirroring the L1b wiring
+  # gate's MATLAB-anchor skip. The pure gate logic (verdict + _gate_result +
+  # oracle-absent SKIP path) is covered unconditionally by the self-tests below.
+  l2-0-gate:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+      - name: L2.0 observable-schema gate (karr_obs ⊆ oc_obs; 28/28 GREEN or clean SKIP)
+        run: python scripts/probe_l2_0_schema_audit.py
+      - name: L2.0 schema gate self-tests
+        run: pytest tests/integration/test_l2_0_schema_gate.py -q
+
   # ── Tier 2: Nightly scientific regression ──
   test-scientific:
     runs-on: ubuntu-latest

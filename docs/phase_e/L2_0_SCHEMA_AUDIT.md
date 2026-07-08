@@ -24,27 +24,27 @@ per-process .mat oracle) vs `oc_obs` (top-level keys returned by the OC process'
 |---|---|---:|---:|---:|---|---|
 | ChromosomeCondensation | 🟢 GREEN | 3 | 6 | 3 | — | chromosome, requests, substrates_allocated |
 | ChromosomeSegregation | 🟢 GREEN | 3 | 8 | 3 | — | chromosome, complex, protein, requests (+1 more) |
-| Cytokinesis | 🟢 GREEN | 3 | 7 | 3 | — | cell, chromosome, requests, substrates_allocated |
-| DNADamage | 🟢 GREEN | 3 | 4 | 3 | — | chromosome |
+| Cytokinesis | 🟢 GREEN | 3 | 9 | 3 | — | cell, chromosome, ftsZRing, geometry (+2 more) |
+| DNADamage | 🟢 GREEN | 3 | 6 | 3 | — | chromosome, requests, substrates_allocated |
 | DNARepair | 🟢 GREEN | 3 | 8 | 3 | — | chromosome, complex, protein, requests (+1 more) |
-| DNASupercoiling | 🟢 GREEN | 3 | 8 | 3 | — | chromosome, complex, protein, requests (+1 more) |
+| DNASupercoiling | 🟢 GREEN | 3 | 9 | 3 | — | chromosome, complex, protein, requests (+2 more) |
 | FtsZPolymerization | 🟢 GREEN | 3 | 6 | 3 | — | cell, requests, substrates_allocated |
 | HostInteraction | 🟢 GREEN | 3 | 5 | 3 | — | cell, protein |
 | MacromolecularComplexation | 🟢 GREEN | 4 | 7 | 4 | — | complex, requests, substrates_allocated |
 | Metabolism | 🟢 GREEN | 3 | 4 | 3 | — | metabolic_reaction |
-| ProteinActivation | 🟢 GREEN | 3 | 5 | 3 | — | protein, stimuli |
-| ProteinDecay | 🟢 GREEN | 5 | 10 | 5 | — | complex, protein, requests, rna (+1 more) |
+| ProteinActivation | 🟢 GREEN | 3 | 6 | 3 | — | inactivatedSubstrates, protein, stimuli |
+| ProteinDecay | 🟢 GREEN | 5 | 11 | 5 | — | complex, polypeptide, protein, requests (+2 more) |
 | ProteinFolding | 🟢 GREEN | 5 | 8 | 5 | — | complex, protein, substrates_allocated |
 | ProteinModification | 🟢 GREEN | 5 | 9 | 5 | — | complex, protein, requests, substrates_allocated |
-| ProteinProcessingI | 🟢 GREEN | 5 | 9 | 5 | — | complex, protein, requests, substrates_allocated |
 | ProteinProcessingII | 🟢 GREEN | 5 | 8 | 5 | — | protein, requests, substrates_allocated |
+| ProteinProcessingI | 🟢 GREEN | 5 | 9 | 5 | — | complex, protein, requests, substrates_allocated |
 | ProteinTranslocation | 🟢 GREEN | 4 | 8 | 4 | — | complex, protein, requests, substrates_allocated |
-| Replication | 🟢 GREEN | 3 | 6 | 3 | — | chromosome, requests, substrates_allocated |
-| ReplicationInitiation | 🟢 GREEN | 3 | 7 | 3 | — | chromosome, protein, requests, substrates_allocated |
-| RibosomeAssembly | 🟢 GREEN | 5 | 10 | 5 | — | complex, protein, requests, rna (+1 more) |
 | RNADecay | 🟢 GREEN | 3 | 6 | 3 | — | requests, rna, substrates_allocated |
 | RNAModification | 🟢 GREEN | 5 | 10 | 5 | — | complex, protein, requests, rna (+1 more) |
 | RNAProcessing | 🟢 GREEN | 5 | 10 | 5 | — | complex, protein, requests, rna (+1 more) |
+| ReplicationInitiation | 🟢 GREEN | 3 | 7 | 3 | — | chromosome, protein, requests, substrates_allocated |
+| Replication | 🟢 GREEN | 3 | 6 | 3 | — | chromosome, requests, substrates_allocated |
+| RibosomeAssembly | 🟢 GREEN | 5 | 10 | 5 | — | complex, protein, requests, rna (+1 more) |
 | TerminalOrganelleAssembly | 🟢 GREEN | 3 | 5 | 3 | — | cell, protein |
 | Transcription | 🟢 GREEN | 3 | 4 | 3 | — | rna |
 | TranscriptionalRegulation | 🟢 GREEN | 3 | 7 | 3 | — | complex, protein, tf_binding, tx_rate_fold_change |
