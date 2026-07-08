@@ -65,6 +65,18 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 **➡️ NEXT: L2 family = 6 sub-gates.** L2.0 (static schema, probe exists), L2.0a (allocator input — NOT built), L2.1 (per-process bit-identity replay — ~44/46 strict last known + flagged S3 DNARepair regress), L2.2 (distributional — 2/7 DEEP landed, partial), L2.4 (chassis conservation — NOT built), L2.5 (composition — PAUSED). Critical path: L2.0→L2.0a→L2.1→L2.2→L2.4→L2.5. Current step (chosen 2026-07-08): verify L2.0+L2.1 baseline — BLOCKED on WSL.
 
+**📋 L2 EXECUTION RUNWAY (resume point when WSL restored; sequenced by diagnostic dependency):**
+| # | Gate | Current state | Next action | Needs |
+|---|------|---------------|-------------|-------|
+| 1 | **L2.0** static schema | probe built (`probe_l2_0_schema_audit.py`: karr_obs vs oc_obs, GREEN/AMBER/RED) | RUN → record verdict; formalize exit-code + CI | WSL |
+| 2 | **L2.0a** allocator input | **DESIGNED + review-corrected** (`L2_0A_ALLOCATOR_INPUT_GATE.md`) | build-step-0: extend `extract_per_process_traces_v2.m` → pool_before+requirements+allocations; then build gate | WSL/MATLAB |
+| 3 | **L2.1** bit-identity replay | built; ~44/46 strict + S3 DNARepair regress | RUN 28 replays → true baseline; fix S3 regress (`l2-regress-dnarepair-replay-s3`) | WSL |
+| 4 | **L2.2** distributional | partial (2/7 DEEP; `L2_2_PLAN.md`); LP-degenerate metric redesign in progress | finish 7 DEEP-process gates | WSL |
+| 5 | **L2.4** chassis conservation | **DESIGNED + review-corrected** (`L2_4_CHASSIS_CONSERVATION_GATE.md`); v1 catches A1 only (A2/A4 = v2) | stability probe → build flat-WID gate (exclude 124 exchange WIDs, fail-closed audit) | WSL |
+| 6 | **L2.5** composition | PAUSED pending L2.2; harness + pair matrix exist | resume after L2.2 all-green | WSL |
+**Both L2.0a + L2.4 gate designs are done, gpt-5.4-reviewed, and pushed (`9c44454`,`b447701`,`5107652`).** The two build-blocked prerequisites are named: L2.0a needs the MATLAB extraction extended; L2.4 needs a stability probe. Everything downstream is WSL-blocked until the Insider-build WSL breakage is repaired.
+**Deferred (WSL down):** log the L2-design review to `data/provenance/llm_interactions.jsonl` (captured in-doc meanwhile).
+
 **🔬 3-slot anti-fabrication result (Day-47):** HB5-c2 (dependency_symmetry) was resolved TWICE. First attempt (2-slot prompt, `6aa9cda`, REVERTED) FABRICATED evidence — hardcoded 38 adds+5 removes, cited WIDs absent from rows (ProteinActivation "consumes ATP/GLU/LIPOYLAMP" → grep 0; FtsZ "MG_224 bypass-backed" → grep 0), inconsistent standard. Sonnet checker caught it (4th hollow-green catch). Second attempt (**full 3-slot framework** per `docs/prompts/COMPOSITION_MANDATE_v2.md`, `af6570a`) produced an HONEST result: one uniform rule (X depends on Y iff X has a real consume_stoichiometry/requests WID whose producer-type maps to Y), explicitly REFUSED to exploit the state_groups read/write ambiguity, shipped `scripts/verify_dep_evidence.py`. Independent re-derivation matches the rows EXACTLY (0 mismatches, 28 edges). **3-slot dramatically reduced fabrication vs 2-slot on the identical task.**
 
 **⚠️ Dependency-graph scope (for later):** the honest graph is consume-WID-scoped. 38 shared-state deps (e.g. ChromosomeSegregation←Replication, via chromosome/protein pools) were DROPPED because state_groups don't distinguish read/write, so they can't be cleanly evidenced. Representing structural/shared-state deps would need a read/write-directional source (composite `topology` port direction). Not blocking L1b green; revisit if the dep graph is needed for scheduling fidelity.
