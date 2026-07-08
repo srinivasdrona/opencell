@@ -48,8 +48,8 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 **Plans:**
 - `docs/phase_f/L1B_WIRING_CONFORMANT_GATE.md` — L1b design (LANDED)
-- `docs/phase_f/L2_0A_ALLOCATOR_INPUT_GATE.md` — L2.0a design (TO BE DRAFTED)
-- `docs/phase_f/L2_4_CHASSIS_CONSERVATION_GATE.md` — L2.4 design (TO BE DRAFTED; supersedes any earlier L1C_* plan doc)
+- `docs/phase_f/L2_0A_ALLOCATOR_INPUT_GATE.md` — L2.0a design (DRAFTED 2026-07-08, `9c44454`; build blocked on WSL)
+- `docs/phase_f/L2_4_CHASSIS_CONSERVATION_GATE.md` — L2.4 design (DRAFTED 2026-07-08; supersedes any earlier L1C_* plan doc; build blocked on WSL)
 - `docs/phase_f/L2_5_PLAN.md` — L2.5 composition harness closure (PAUSED).
 - `docs/phase_f/L2_5_HARNESS_DESIGN.md` — name predates rename; canonical L2.5 design doc.
 - `docs/phase_f/L2_2_D1_UNION_MASTER_LIST.md` — name predates rename; canonical L2.5 D1 design.
@@ -59,9 +59,11 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-07-07 ~11:15 IST, Day-47):** none running. PID 31608 = VS Code ChatGPT extension app-server (benign).
+**Live processes / agents (2026-07-08 ~12:15 IST):** none running. **🛑 BLOCKER: WSL is down** — `wsl -d Ubuntu-22.04` fails with `Wsl/Service/CreateInstance/CreateVm/HCS/ERROR_FILE_NOT_FOUND`. Diagnosed: ext4.vhdx present (`E:\wsl\Ubuntu-22.04\ext4.vhdx`), `vmcompute`+`hns` Running, WSL 2.9.3.0 up-to-date, no CBS reboot pending, no `.wslconfig`. `wsl --shutdown` + `wsl --update --web-download` did NOT fix. ROOT CAUSE FOUND: MSIX re-register fails with `0x8007007E ERROR_MOD_NOT_FOUND — Failed to load the extension DLL`; a WSL package framework-dependency module is missing/unloadable after the Insider update, and that same missing module is what HCS can't find at CreateVm. Fails WSL-wide (docker-desktop distro + `wsl --system` both fail identically); HypervisorPresent=True, vmcompute+hns Running, all WSL files intact (kernel/initrd/vhdx present), MSIX Status=Ok. Fresh Insider build (booted ~2h before failure). Needs OPERATOR action: elevated VirtualMachinePlatform feature bounce + reboot, and/or install the matching Insider/WSL framework update, and/or roll back the Insider build. Non-elevated recovery EXHAUSTED (--shutdown, --update, service checks, .wslconfig, distro isolation, MSIX re-register all tried). **All Python/pytest execution is blocked until WSL is restored** (project rule: no Windows-venv fallback for oracle tests). L2.0/L2.1 baseline verification PAUSED on this blocker. PID 31608 = VS Code ChatGPT extension (benign).
 
-**🟢 WHERE WE ARE: L1b GREEN on BOTH gates + CI-ENFORCED (HB1-HB6 all done).** Half A method-completeness `PASS (115/115, gap 0)`; Half B wiring `PASS (28/28 rows, all 13 checks 0, no_dependency_cycles PASS)`; 19 integration tests pass. **HB6 done:** a blocking `l1b-gates` CI job (needs: lint, on push + PR, no `|| true`) now enforces both gates + self-tests on every PR (`3b81428`). The wiring gate auto-skips MATLAB-anchor resolution when the gitignored `data/m1_sources/WholeCell` clone is absent (CI); the other 12 checks run on tracked data. **L1b is fully locked. Next ladder rung: L2.**
+**🟢 L1b GREEN on BOTH gates + CI-ENFORCED (HB1-HB6 all done).** Half A method-completeness `PASS (115/115, gap 0)`; Half B wiring `PASS (28/28 rows, all 13 checks 0, no_dependency_cycles PASS)`; 19 integration tests pass. HB6: blocking `l1b-gates` CI job (`3b81428`). L1b fully locked.
+
+**➡️ NEXT: L2 family = 6 sub-gates.** L2.0 (static schema, probe exists), L2.0a (allocator input — NOT built), L2.1 (per-process bit-identity replay — ~44/46 strict last known + flagged S3 DNARepair regress), L2.2 (distributional — 2/7 DEEP landed, partial), L2.4 (chassis conservation — NOT built), L2.5 (composition — PAUSED). Critical path: L2.0→L2.0a→L2.1→L2.2→L2.4→L2.5. Current step (chosen 2026-07-08): verify L2.0+L2.1 baseline — BLOCKED on WSL.
 
 **🔬 3-slot anti-fabrication result (Day-47):** HB5-c2 (dependency_symmetry) was resolved TWICE. First attempt (2-slot prompt, `6aa9cda`, REVERTED) FABRICATED evidence — hardcoded 38 adds+5 removes, cited WIDs absent from rows (ProteinActivation "consumes ATP/GLU/LIPOYLAMP" → grep 0; FtsZ "MG_224 bypass-backed" → grep 0), inconsistent standard. Sonnet checker caught it (4th hollow-green catch). Second attempt (**full 3-slot framework** per `docs/prompts/COMPOSITION_MANDATE_v2.md`, `af6570a`) produced an HONEST result: one uniform rule (X depends on Y iff X has a real consume_stoichiometry/requests WID whose producer-type maps to Y), explicitly REFUSED to exploit the state_groups read/write ambiguity, shipped `scripts/verify_dep_evidence.py`. Independent re-derivation matches the rows EXACTLY (0 mismatches, 28 edges). **3-slot dramatically reduced fabrication vs 2-slot on the identical task.**
 
