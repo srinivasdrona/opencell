@@ -21,11 +21,10 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 
-import jax.numpy as jnp
 import numpy as np
 
 # Propensity function: given state y, return reaction propensities
-PropensityFn = Callable[[jnp.ndarray], jnp.ndarray]
+PropensityFn = Callable[[np.ndarray], np.ndarray]
 
 
 @dataclass(frozen=True)
@@ -96,7 +95,7 @@ def tau_leap(
     ys_list = [y.copy()]
 
     while t < t1:
-        props = np.array(propensity_fn(jnp.array(y)), dtype=np.float64)
+        props = np.array(propensity_fn(np.array(y)), dtype=np.float64)
 
         # All propensities zero -> system is dead
         if np.sum(props) == 0:
