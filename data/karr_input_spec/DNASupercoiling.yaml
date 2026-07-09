@@ -1,0 +1,452 @@
+params:
+  boundEnzymes:
+  - 47
+  - 0
+  - 0
+  chromosome: <handle:edu.stanford.covert.cell.sim.state.Chromosome:1x1>
+  compartment: <handle:edu.stanford.covert.cell.sim.constant.Compartment:1x1>
+  complex: <handle:edu.stanford.covert.cell.sim.state.ProteinComplex:1x1>
+  enzymeDNAFootprints:
+  - 140
+  - 34
+  - 19
+  enzymeDNAFootprints3Prime:
+  - 69
+  - 16
+  - 9
+  enzymeDNAFootprints5Prime:
+  - 70
+  - 17
+  - 9
+  enzymeMolecularWeights:
+  - 334028.22159999993
+  - 320223.5136
+  - 82569.50759999998
+  enzymeNames:
+  - DNA gyrase
+  - topoisomerase IV
+  - DNA topoisomerase I
+  enzymeProperties:
+    dtype: object
+    sha256: aecfaf0feb628bcafd90f0d0ac3cad83532164a4a986b59ff0e62bc933743c70
+    shape:
+    - 3
+  enzymes:
+  - 3
+  - 12
+  - 129
+  fittedConstantNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  fixedConstantNames__:
+    dtype: object
+    sha256: 0b07f90ca2a0caf6e90e696a7d928ec98532d564da80de1e887989d482f6794e
+    shape:
+    - 20
+  foldChangeIntercepts:
+  - 3.57
+  - 1.07
+  - 0.56
+  foldChangeLowerSigmaLimit: -0.08
+  foldChangeSlopes:
+  - 42.8
+  - 1.1
+  - -7.4
+  foldChangeUpperSigmaLimit: 0.07
+  gene: <handle:edu.stanford.covert.cell.sim.constant.Gene:1x1>
+  geometry: <handle:edu.stanford.covert.cell.sim.state.CellGeometry:1x1>
+  gyrLogisiticConst: -100
+  gyraseATPCost: 2
+  gyraseActivityRate: 1.2
+  gyraseDeltaLK: -2
+  gyraseMeanDwellTime: 45
+  gyraseSigmaLimit: -0.1
+  initialized: 1
+  localStateNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  metabolite: <handle:edu.stanford.covert.cell.sim.state.Metabolite:1x1>
+  monomer: <handle:edu.stanford.covert.cell.sim.state.ProteinMonomer:1x1>
+  name: DNA supercoiling
+  numTranscriptionUnits: 335
+  optionNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  parameterIndexs:
+    dtype: object
+    sha256: 919b50eeeb1e15fe157eaceb9b56082e5b8b94e5d1617595f8b5cca761fe6b84
+    shape:
+    - 23
+  parameterNames:
+    dtype: object
+    sha256: 51495ae7066d3258fe15df1f415a88169d10036860322369852ce1687b761ae2
+    shape:
+    - 23
+  randStream: <handle:edu.stanford.covert.util.RandStream:1x1>
+  rna: <handle:edu.stanford.covert.cell.sim.state.Rna:1x1>
+  rnaPolymerase: <handle:edu.stanford.covert.cell.sim.state.RNAPolymerase:1x1>
+  seed: 1
+  simulationStateSideEffects:
+    items: <unreadable:MATLAB:needMoreRhsOutputs>
+    x_class_: edu.stanford.covert.cell.sim.SimulationStateSideEffect
+  states:
+    dtype: object
+    sha256: b9cb9563584b1cb59c8afbc39d06de830985e9ce9a69272517432dda56bfa1b4
+    shape:
+    - 7
+  stepSizeSec: 1
+  stimuli:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  stimuliNames:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  stimulus: <handle:edu.stanford.covert.cell.sim.state.Stimulus:1x1>
+  substrateMolecularWeights:
+  - 503.14889999999997
+  - 424.1769
+  - 95.9793
+  - 18.0152
+  - 1.0079
+  substrateNames:
+  - ATP
+  - ADP
+  - phosphate
+  - water
+  - hydrogen ion
+  substrates:
+  - 36234
+  - 3623
+  - 7246
+  - 309737899
+  - 13042
+  topoIATPCost: 0
+  topoIActivityRate: 1
+  topoIDeltaLK: 1
+  topoILogisiticConst: 100
+  topoISigmaLimit: 0
+  topoIVATPCost: 2
+  topoIVActivityRate: 2.5
+  topoIVDeltaLK: -2
+  topoIVSigmaLimit: 0
+  tuCoordinates:
+  - 2845
+  - 240323
+  - 144973
+  verbosity: 0
+  wholeCellModelID: Process_DNASupercoiling
+  x_class_: edu.stanford.covert.cell.sim.process.DNASupercoiling
+process: DNASupercoiling
+role_groups:
+  enzymeBoundComplexGlobalCompartmentIndexs:
+    indices:
+    - 604
+    - 681
+    wids: null
+  enzymeBoundMonomerGlobalCompartmentIndexs:
+    indices:
+    - 3497
+    wids: null
+  enzymeBoundRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeComplexCompartmentIndexs:
+    indices:
+    - 1
+    - 1
+    wids: null
+  enzymeComplexGlobalCompartmentIndexs:
+    indices:
+    - 202
+    - 279
+    wids: null
+  enzymeComplexGlobalIndexs:
+    indices:
+    - 1
+    - 78
+    wids: null
+  enzymeComplexLocalIndexs:
+    indices:
+    - 1
+    - 2
+    wids: null
+  enzymeGlobalIndexs:
+    indices:
+    - 1
+    - 78
+    - 123
+    wids: null
+  enzymeIndexs_gyrase:
+    indices:
+    - 1
+    wids:
+    - DNA_GYRASE
+  enzymeIndexs_topoI:
+    indices:
+    - 3
+    wids:
+    - MG_122_MONOMER
+  enzymeIndexs_topoIV:
+    indices:
+    - 2
+    wids:
+    - MG_203_204_TETRAMER
+  enzymeMetaboliteCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteLocalIndexs:
+    indices: []
+    wids: null
+  enzymeMonomerCompartmentIndexs:
+    indices:
+    - 1
+    wids: null
+  enzymeMonomerGlobalCompartmentIndexs:
+    indices:
+    - 2533
+    wids: null
+  enzymeMonomerGlobalIndexs:
+    indices:
+    - 123
+    wids: null
+  enzymeMonomerLocalIndexs:
+    indices:
+    - 3
+    wids: null
+  enzymeRNACompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeRNAGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeRNALocalIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusLocalIndexs:
+    indices: []
+    wids: null
+  stimulusComplexCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusComplexGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusComplexLocalIndexs:
+    indices: []
+    wids: null
+  stimulusGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteLocalIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerLocalIndexs:
+    indices: []
+    wids: null
+  stimulusRNACompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusRNAGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusRNALocalIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusLocalIndexs:
+    indices: []
+    wids: null
+  substrateComplexCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateComplexGlobalIndexs:
+    indices: []
+    wids: null
+  substrateComplexLocalIndexs:
+    indices: []
+    wids: null
+  substrateGlobalIndexs:
+    indices:
+    - 54
+    - 11
+    - 611
+    - 386
+    - 385
+    wids: null
+  substrateIndexs_adp:
+    indices:
+    - 2
+    wids:
+    - ADP
+  substrateIndexs_atp:
+    indices:
+    - 1
+    wids:
+    - ATP
+  substrateIndexs_hydrogen:
+    indices:
+    - 5
+    wids:
+    - H
+  substrateIndexs_phosphate:
+    indices:
+    - 3
+    wids:
+    - PI
+  substrateIndexs_water:
+    indices:
+    - 4
+    wids:
+    - H2O
+  substrateMetaboliteCompartmentIndexs:
+    indices:
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    wids: null
+  substrateMetaboliteGlobalCompartmentIndexs:
+    indices:
+    - 54
+    - 11
+    - 611
+    - 386
+    - 385
+    wids: null
+  substrateMetaboliteGlobalIndexs:
+    indices:
+    - 54
+    - 11
+    - 611
+    - 386
+    - 385
+    wids: null
+  substrateMetaboliteLocalIndexs:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    wids: null
+  substrateMonomerCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateMonomerGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateMonomerGlobalIndexs:
+    indices: []
+    wids: null
+  substrateMonomerLocalIndexs:
+    indices: []
+    wids: null
+  substrateRNACompartmentIndexs:
+    indices: []
+    wids: null
+  substrateRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateRNAGlobalIndexs:
+    indices: []
+    wids: null
+  substrateRNALocalIndexs:
+    indices: []
+    wids: null
+  substrateStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  substrateStimulusLocalIndexs:
+    indices: []
+    wids: null
+  tuIndexs:
+    indices:
+    - 2
+    - 124
+    - 74
+    wids: null
+source:
+  fixture: data/karr_fixtures/per_process/DNASupercoiling_flat.mat
+  fixture_sha256: 9b182eb91761300f3b3f057c9e1ea1155e81d922882980211d08ded6a637540c
+vocabularies:
+  enzymeWholeCellModelIDs:
+  - DNA_GYRASE
+  - MG_203_204_TETRAMER
+  - MG_122_MONOMER
+  stimuliWholeCellModelIDs: []
+  substrateWholeCellModelIDs:
+  - ATP
+  - ADP
+  - PI
+  - H2O
+  - H

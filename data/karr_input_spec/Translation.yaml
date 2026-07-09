@@ -1,0 +1,911 @@
+params:
+  aminoacylatedTMRNA: 6
+  aminoacylatedTMRNAWholeCellModelID: MG_0004
+  aminoacylatedTRNAs:
+    dtype: uint8
+    sha256: cc2236447c23ce92ca0a9bacf2b156cb79ab8d25ab24f92775420ffc81d17d3a
+    shape:
+    - 36
+  boundEnzymes:
+  - 0
+  - 0
+  - 0
+  - 68
+  - 68
+  - 68
+  - 68
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 56
+  - 0
+  - 0
+  - 0
+  boundTMRNA: 0
+  compartment: <handle:edu.stanford.covert.cell.sim.constant.Compartment:1x1>
+  complex: <handle:edu.stanford.covert.cell.sim.state.ProteinComplex:1x1>
+  enzymeMolecularWeights:
+  - 7986.361
+  - 67765.3674
+  - 20936.397399999998
+  - 153052.67299999998
+  - 21909.842999999997
+  - 86436.8832
+  - 68272.11080000001
+  - 40805.0486
+  - 21522.5771
+  - 799107.8255999999
+  - 820044.2229999999
+  - 1373072.8532
+  - 2172180.6788
+  - 124295.23519999998
+  - 16879.783799999997
+  - 21837.0155
+  enzymeNames:
+  - translation initiation factor IF-1
+  - translation initiation factor IF-2
+  - translation initiation factor IF-3
+  - translation elongation factor G
+  - translation elongation factor P
+  - translation elongation factor Tu
+  - translation elongation factor Ts
+  - peptide chain release factor 1
+  - ribosome recycling factor
+  - 30S ribosomal subunit
+  - 30S ribosomal subunit - translation initiation factor IF-3 complex
+  - 50S ribosomal subunit
+  - 70S ribosome
+  - transfer-messenger RNA, tmRNA, MCS6, 10Sa RNA
+  - SsrA-binding protein
+  - peptidyl-tRNA hydrolase
+  enzymes:
+  - 39
+  - 24
+  - 206
+  - 65
+  - 50
+  - 71
+  - 54
+  - 198
+  - 19
+  - 25
+  - 0
+  - 12
+  - 0
+  - 2
+  - 33
+  - 15
+  fittedConstantNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  fixedConstantNames__:
+  - ribosomeElongationRate
+  - tmRNABindingProbability
+  freeTMRNA: 2
+  freeTRNAs:
+    dtype: uint8
+    sha256: 0712fccb0a0188fdaa9a04cf07439b883f16b9edcd35efbb18b501a3f4a57b61
+    shape:
+    - 36
+  gene: <handle:edu.stanford.covert.cell.sim.constant.Gene:1x1>
+  geometry: <handle:edu.stanford.covert.cell.sim.state.CellGeometry:1x1>
+  initialized: 1
+  localStateNames__:
+  - mRNAs
+  - freeTRNAs
+  - aminoacylatedTRNAs
+  - aminoacylatedTMRNA
+  - monomers
+  mRNAs:
+    dtype: uint8
+    sha256: 701436e29e3a71f2d635427c7be59ff582105e4e07c3871a54c0b38c6e9b6970
+    shape:
+    - 482
+  metabolite: <handle:edu.stanford.covert.cell.sim.state.Metabolite:1x1>
+  monomer: <handle:edu.stanford.covert.cell.sim.state.ProteinMonomer:1x1>
+  monomers:
+    dtype: uint8
+    sha256: 5a521f5097f43c39eb902347b266e62e95a8c059f0a59fcf1a20f1ce1febeaa3
+    shape:
+    - 482
+  name: Translation
+  optionNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  parameterNames:
+  - ribosomeElongationRate
+  - tmRNABindingProbability
+  polypeptide: <handle:edu.stanford.covert.cell.sim.state.Polypeptide:1x1>
+  randStream: <handle:edu.stanford.covert.util.RandStream:1x1>
+  ribosome: <handle:edu.stanford.covert.cell.sim.state.Ribosome:1x1>
+  ribosomeElongationRate: 16
+  rna: <handle:edu.stanford.covert.cell.sim.state.Rna:1x1>
+  seed: 1
+  simulationStateSideEffects:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  states:
+    dtype: object
+    sha256: 3f0532ee66ba74515f7186ec014d81f0d13d9a38d2bbe9a1f088fd8f960f2e37
+    shape:
+    - 7
+  stepSizeSec: 1
+  stimuli:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  stimuliNames:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  stimulus: <handle:edu.stanford.covert.cell.sim.state.Stimulus:1x1>
+  substrateMolecularWeights:
+    dtype: float64
+    sha256: 823dd62f6879368f6138135e839ed32251f976fce14c3e0796a09725c583270e
+    shape:
+    - 26
+  substrateNames:
+    dtype: object
+    sha256: ea9216bc8d665c8239b266795f21ef3b5481d1fc36ff6a69052413f1ed624fec
+    shape:
+    - 26
+  substrates:
+    dtype: int32
+    sha256: 193a320cde8f867457c0020db9a3646144e1c587bb7e59bf9d0f1aefee817129
+    shape:
+    - 26
+  tmRNABindingProbability: 1.0e-05
+  tmRNAGlobalIndex: 239
+  verbosity: 0
+  wholeCellModelID: Process_Translation
+  x_class_: edu.stanford.covert.cell.sim.process.Translation
+process: Translation
+role_groups:
+  enzymeBoundComplexGlobalCompartmentIndexs:
+    indices:
+    - 650
+    - 774
+    - 770
+    - 799
+    - 800
+    - 801
+    - 802
+    wids: null
+  enzymeBoundMonomerGlobalCompartmentIndexs:
+    indices:
+    - 3550
+    - 3518
+    - 3572
+    - 3398
+    - 3639
+    - 3821
+    - 3433
+    - 3457
+    wids: null
+  enzymeBoundRNAGlobalCompartmentIndexs:
+    indices:
+    - 1279
+    wids: null
+  enzymeComplexCompartmentIndexs:
+    indices:
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    wids: null
+  enzymeComplexGlobalCompartmentIndexs:
+    indices:
+    - 248
+    - 372
+    - 368
+    - 397
+    - 398
+    - 399
+    - 400
+    wids: null
+  enzymeComplexGlobalIndexs:
+    indices:
+    - 47
+    - 171
+    - 167
+    - 196
+    - 197
+    - 198
+    - 199
+    wids: null
+  enzymeComplexLocalIndexs:
+    indices:
+    - 4
+    - 6
+    - 7
+    - 10
+    - 11
+    - 12
+    - 13
+    wids: null
+  enzymeGlobalIndexs:
+    indices:
+    - 176
+    - 144
+    - 198
+    - 47
+    - 24
+    - 171
+    - 167
+    - 265
+    - 447
+    - 196
+    - 197
+    - 198
+    - 199
+    - 239
+    - 59
+    - 83
+    wids: null
+  enzymeIndexs_abortiveTranslationEnzymes:
+    indices:
+    - 14
+    - 15
+    - 16
+    wids:
+    - MG_0004
+    - MG_059_MONOMER
+    - MG_083_MONOMER
+  enzymeIndexs_elongationFactors:
+    indices:
+    - 4
+    - 5
+    - 6
+    - 7
+    wids:
+    - MG_089_DIMER
+    - MG_026_MONOMER
+    - MG_451_DIMER
+    - MG_433_DIMER
+  enzymeIndexs_elongationGFactor:
+    indices:
+    - 4
+    wids:
+    - MG_089_DIMER
+  enzymeIndexs_initiationFactor1:
+    indices:
+    - 1
+    wids:
+    - MG_173_MONOMER
+  enzymeIndexs_initiationFactor2:
+    indices:
+    - 2
+    wids:
+    - MG_142_MONOMER
+  enzymeIndexs_initiationFactor3:
+    indices:
+    - 3
+    wids:
+    - MG_196_MONOMER
+  enzymeIndexs_initiationFactors:
+    indices:
+    - 1
+    - 2
+    - 3
+    wids:
+    - MG_173_MONOMER
+    - MG_142_MONOMER
+    - MG_196_MONOMER
+  enzymeIndexs_peptidylTRNAHydrolase:
+    indices:
+    - 16
+    wids:
+    - MG_083_MONOMER
+  enzymeIndexs_recyclingFactor:
+    indices:
+    - 9
+    wids:
+    - MG_435_MONOMER
+  enzymeIndexs_ribosome30S:
+    indices:
+    - 10
+    wids:
+    - RIBOSOME_30S
+  enzymeIndexs_ribosome30SIF3:
+    indices:
+    - 11
+    wids:
+    - RIBOSOME_30S_IF3
+  enzymeIndexs_ribosome50S:
+    indices:
+    - 12
+    wids:
+    - RIBOSOME_50S
+  enzymeIndexs_ribosome70S:
+    indices:
+    - 13
+    wids:
+    - RIBOSOME_70S
+  enzymeIndexs_terminationFactor:
+    indices:
+    - 8
+    wids:
+    - MG_258_MONOMER
+  enzymeIndexs_tmRNA:
+    indices:
+    - 14
+    wids:
+    - MG_0004
+  enzymeIndexs_tmRNABindingProtein:
+    indices:
+    - 15
+    wids:
+    - MG_059_MONOMER
+  enzymeIndexs_translationFactors:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    wids:
+    - MG_173_MONOMER
+    - MG_142_MONOMER
+    - MG_196_MONOMER
+    - MG_089_DIMER
+    - MG_026_MONOMER
+    - MG_451_DIMER
+    - MG_433_DIMER
+    - MG_258_MONOMER
+    - MG_435_MONOMER
+  enzymeMetaboliteCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteLocalIndexs:
+    indices: []
+    wids: null
+  enzymeMonomerCompartmentIndexs:
+    indices:
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    wids: null
+  enzymeMonomerGlobalCompartmentIndexs:
+    indices:
+    - 2586
+    - 2554
+    - 2608
+    - 2434
+    - 2675
+    - 2857
+    - 2469
+    - 2493
+    wids: null
+  enzymeMonomerGlobalIndexs:
+    indices:
+    - 176
+    - 144
+    - 198
+    - 24
+    - 265
+    - 447
+    - 59
+    - 83
+    wids: null
+  enzymeMonomerLocalIndexs:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 5
+    - 8
+    - 9
+    - 15
+    - 16
+    wids: null
+  enzymeRNACompartmentIndexs:
+    indices:
+    - 1
+    wids: null
+  enzymeRNAGlobalCompartmentIndexs:
+    indices:
+    - 932
+    wids: null
+  enzymeRNAGlobalIndexs:
+    indices:
+    - 239
+    wids: null
+  enzymeRNALocalIndexs:
+    indices:
+    - 14
+    wids: null
+  enzymeStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusLocalIndexs:
+    indices: []
+    wids: null
+  parameterIndexs:
+    indices: []
+    wids: null
+  stimulusComplexCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusComplexGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusComplexLocalIndexs:
+    indices: []
+    wids: null
+  stimulusGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteLocalIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerLocalIndexs:
+    indices: []
+    wids: null
+  stimulusRNACompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusRNAGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusRNALocalIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusLocalIndexs:
+    indices: []
+    wids: null
+  substrateComplexCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateComplexGlobalIndexs:
+    indices: []
+    wids: null
+  substrateComplexLocalIndexs:
+    indices: []
+    wids: null
+  substrateGlobalIndexs:
+    indices:
+    - 17
+    - 48
+    - 50
+    - 52
+    - 133
+    - 362
+    - 364
+    - 369
+    - 393
+    - 429
+    - 439
+    - 446
+    - 500
+    - 608
+    - 620
+    - 652
+    - 678
+    - 695
+    - 701
+    - 716
+    - 295
+    - 384
+    - 329
+    - 611
+    - 386
+    - 385
+    wids: null
+  substrateIndexs_aminoAcids:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+    - 13
+    - 14
+    - 15
+    - 16
+    - 17
+    - 18
+    - 19
+    - 20
+    wids:
+    - ALA
+    - ARG
+    - ASN
+    - ASP
+    - CYS
+    - GLN
+    - GLU
+    - GLY
+    - HIS
+    - ILE
+    - LEU
+    - LYS
+    - MET
+    - PHE
+    - PRO
+    - SER
+    - THR
+    - TRP
+    - TYR
+    - VAL
+  substrateIndexs_fMet:
+    indices:
+    - 21
+    wids:
+    - FMET
+  substrateIndexs_gdp:
+    indices:
+    - 23
+    wids:
+    - GDP
+  substrateIndexs_gtp:
+    indices:
+    - 22
+    wids:
+    - GTP
+  substrateIndexs_hydrogen:
+    indices:
+    - 26
+    wids:
+    - H
+  substrateIndexs_phosphate:
+    indices:
+    - 24
+    wids:
+    - PI
+  substrateIndexs_water:
+    indices:
+    - 25
+    wids:
+    - H2O
+  substrateMetaboliteCompartmentIndexs:
+    indices:
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    wids: null
+  substrateMetaboliteGlobalCompartmentIndexs:
+    indices:
+    - 17
+    - 48
+    - 50
+    - 52
+    - 133
+    - 362
+    - 364
+    - 369
+    - 393
+    - 429
+    - 439
+    - 446
+    - 500
+    - 608
+    - 620
+    - 652
+    - 678
+    - 695
+    - 701
+    - 716
+    - 295
+    - 384
+    - 329
+    - 611
+    - 386
+    - 385
+    wids: null
+  substrateMetaboliteGlobalIndexs:
+    indices:
+    - 17
+    - 48
+    - 50
+    - 52
+    - 133
+    - 362
+    - 364
+    - 369
+    - 393
+    - 429
+    - 439
+    - 446
+    - 500
+    - 608
+    - 620
+    - 652
+    - 678
+    - 695
+    - 701
+    - 716
+    - 295
+    - 384
+    - 329
+    - 611
+    - 386
+    - 385
+    wids: null
+  substrateMetaboliteLocalIndexs:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+    - 13
+    - 14
+    - 15
+    - 16
+    - 17
+    - 18
+    - 19
+    - 20
+    - 21
+    - 22
+    - 23
+    - 24
+    - 25
+    - 26
+    wids: null
+  substrateMonomerCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateMonomerGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateMonomerGlobalIndexs:
+    indices: []
+    wids: null
+  substrateMonomerLocalIndexs:
+    indices: []
+    wids: null
+  substrateRNACompartmentIndexs:
+    indices: []
+    wids: null
+  substrateRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateRNAGlobalIndexs:
+    indices: []
+    wids: null
+  substrateRNALocalIndexs:
+    indices: []
+    wids: null
+  substrateStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  substrateStimulusLocalIndexs:
+    indices: []
+    wids: null
+source:
+  fixture: data/karr_fixtures/per_process/Translation_flat.mat
+  fixture_sha256: cbc6f5d9808c31f86ae426faab0fe5b50c18f8124cc1a48f0bdb6322e704a85f
+vocabularies:
+  aminoacylatedTRNAWholeCellModelIDs:
+  - MG471
+  - MG472
+  - MG475
+  - MG479
+  - MG483
+  - MG484
+  - MG485
+  - MG486
+  - MG487
+  - MG488
+  - MG489
+  - MG490
+  - MG492
+  - MG493
+  - MG495
+  - MG496
+  - MG497
+  - MG499
+  - MG500
+  - MG501
+  - MG502
+  - MG503
+  - MG504
+  - MG506
+  - MG507
+  - MG508
+  - MG509
+  - MG510
+  - MG511
+  - MG512
+  - MG513
+  - MG514
+  - MG518
+  - MG519
+  - MG520
+  - MG523
+  enzymeWholeCellModelIDs:
+  - MG_173_MONOMER
+  - MG_142_MONOMER
+  - MG_196_MONOMER
+  - MG_089_DIMER
+  - MG_026_MONOMER
+  - MG_451_DIMER
+  - MG_433_DIMER
+  - MG_258_MONOMER
+  - MG_435_MONOMER
+  - RIBOSOME_30S
+  - RIBOSOME_30S_IF3
+  - RIBOSOME_50S
+  - RIBOSOME_70S
+  - MG_0004
+  - MG_059_MONOMER
+  - MG_083_MONOMER
+  freeTRNAWholeCellModelIDs:
+  - MG471
+  - MG472
+  - MG475
+  - MG479
+  - MG483
+  - MG484
+  - MG485
+  - MG486
+  - MG487
+  - MG488
+  - MG489
+  - MG490
+  - MG492
+  - MG493
+  - MG495
+  - MG496
+  - MG497
+  - MG499
+  - MG500
+  - MG501
+  - MG502
+  - MG503
+  - MG504
+  - MG506
+  - MG507
+  - MG508
+  - MG509
+  - MG510
+  - MG511
+  - MG512
+  - MG513
+  - MG514
+  - MG518
+  - MG519
+  - MG520
+  - MG523
+  stimuliWholeCellModelIDs: []
+  substrateWholeCellModelIDs:
+  - ALA
+  - ARG
+  - ASN
+  - ASP
+  - CYS
+  - GLN
+  - GLU
+  - GLY
+  - HIS
+  - ILE
+  - LEU
+  - LYS
+  - MET
+  - PHE
+  - PRO
+  - SER
+  - THR
+  - TRP
+  - TYR
+  - VAL
+  - FMET
+  - GTP
+  - GDP
+  - PI
+  - H2O
+  - H

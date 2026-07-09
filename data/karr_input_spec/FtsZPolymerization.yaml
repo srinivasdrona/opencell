@@ -1,0 +1,534 @@
+params:
+  activationFwd: 1.1
+  activationRev: 0.01
+  boundEnzymes:
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  compartment: <handle:edu.stanford.covert.cell.sim.constant.Compartment:1x1>
+  complex: <handle:edu.stanford.covert.cell.sim.state.ProteinComplex:1x1>
+  elongationFwd: 5100000
+  elongationRev: 2.9
+  enzymeMolecularWeights:
+  - 41609.08239999999
+  - 42049.25869999999
+  - 42128.23069999999
+  - 84256.46139999999
+  - 126384.69209999999
+  - 168512.92279999997
+  - 210641.15349999996
+  - 252769.38419999994
+  - 294897.6148999999
+  - 337025.84559999994
+  - 379154.07629999996
+  enzymeNames:
+  - cell division protein FtsZ
+  - cell division protein ftsZ hydrolysed
+  - cell division protein ftsZ activated
+  - cell division protein ftsZ activated 2mer
+  - cell division protein ftsZ activated 3mer
+  - cell division protein ftsZ activated 4mer
+  - cell division protein ftsZ activated 5mer
+  - cell division protein ftsZ activated 6mer
+  - cell division protein ftsZ activated 7mer
+  - cell division protein ftsZ activated 8mer
+  - cell division protein ftsZ activated 9mer
+  enzymes:
+  - 0
+  - 3
+  - 6
+  - 1
+  - 1
+  - 2
+  - 3
+  - 5
+  - 8
+  - 12
+  - 20
+  exchangeFwd: 10000
+  exchangeRev: 5000
+  fittedConstantNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  fixedConstantNames__:
+  - maxPolymerLength
+  - activationFwd
+  - activationRev
+  - exchangeFwd
+  - exchangeRev
+  - nucleationFwd
+  - nucleationRev
+  - elongationFwd
+  - elongationRev
+  gene: <handle:edu.stanford.covert.cell.sim.constant.Gene:1x1>
+  geometry: <handle:edu.stanford.covert.cell.sim.state.CellGeometry:1x1>
+  initialized: 1
+  localStateNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  maxPolymerLength: 9
+  metabolite: <handle:edu.stanford.covert.cell.sim.state.Metabolite:1x1>
+  monomer: <handle:edu.stanford.covert.cell.sim.state.ProteinMonomer:1x1>
+  name: FtsZ Polymerization
+  nucleationFwd: 4200000
+  nucleationRev: 40
+  optionNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  parameterNames:
+  - activationFwd
+  - activationRev
+  - elongationFwd
+  - elongationRev
+  - exchangeFwd
+  - exchangeRev
+  - nucleationFwd
+  - nucleationRev
+  randStream: <handle:edu.stanford.covert.util.RandStream:1x1>
+  rna: <handle:edu.stanford.covert.cell.sim.state.Rna:1x1>
+  seed: 1
+  simulationStateSideEffects:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  states:
+    dtype: object
+    sha256: da8d2dfbc0ccb5681391442364b01d3184786ce7b5841025aad3448f7c0363cf
+    shape:
+    - 5
+  stepSizeSec: 1
+  stimuli:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  stimuliNames:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  stimulus: <handle:edu.stanford.covert.cell.sim.state.Stimulus:1x1>
+  substrateMolecularWeights:
+  - 440.1763
+  - 519.1483000000001
+  - 95.9793
+  - 18.0152
+  - 1.0079
+  substrateNames:
+  - GDP
+  - GTP
+  - phosphate
+  - water
+  - hydrogen ion
+  substrates:
+  - 3623
+  - 36234
+  - 7246
+  - 309737899
+  - 13042
+  verbosity: 0
+  wholeCellModelID: Process_FtsZPolymerization
+  x_class_: edu.stanford.covert.cell.sim.process.FtsZPolymerization
+process: FtsZPolymerization
+role_groups:
+  enzymeBoundComplexGlobalCompartmentIndexs:
+    indices:
+    - 698
+    - 699
+    - 689
+    - 690
+    - 691
+    - 692
+    - 693
+    - 694
+    - 695
+    - 697
+    wids: null
+  enzymeBoundMonomerGlobalCompartmentIndexs:
+    indices:
+    - 3604
+    wids: null
+  enzymeBoundRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeComplexCompartmentIndexs:
+    indices:
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    wids: null
+  enzymeComplexGlobalCompartmentIndexs:
+    indices:
+    - 296
+    - 297
+    - 287
+    - 288
+    - 289
+    - 290
+    - 291
+    - 292
+    - 293
+    - 295
+    wids: null
+  enzymeComplexGlobalIndexs:
+    indices:
+    - 95
+    - 96
+    - 86
+    - 87
+    - 88
+    - 89
+    - 90
+    - 91
+    - 92
+    - 94
+    wids: null
+  enzymeComplexLocalIndexs:
+    indices:
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    - 11
+    wids: null
+  enzymeGlobalIndexs:
+    indices:
+    - 230
+    - 95
+    - 96
+    - 86
+    - 87
+    - 88
+    - 89
+    - 90
+    - 91
+    - 92
+    - 94
+    wids: null
+  enzymeIndexs_FtsZ:
+    indices:
+    - 1
+    wids:
+    - MG_224_MONOMER
+  enzymeIndexs_FtsZ_9mer:
+    indices:
+    - 11
+    wids:
+    - MG_224_9MER_GTP
+  enzymeIndexs_FtsZ_GDP:
+    indices:
+    - 2
+    wids:
+    - MG_224_MONOMER_GDP
+  enzymeIndexs_FtsZ_GTP:
+    indices:
+    - 3
+    wids:
+    - MG_224_MONOMER_GTP
+  enzymeIndexs_FtsZ_activated:
+    indices:
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    - 11
+    wids:
+    - MG_224_MONOMER_GTP
+    - MG_224_2MER_GTP
+    - MG_224_3MER_GTP
+    - MG_224_4MER_GTP
+    - MG_224_5MER_GTP
+    - MG_224_6MER_GTP
+    - MG_224_7MER_GTP
+    - MG_224_8MER_GTP
+    - MG_224_9MER_GTP
+  enzymeIndexs_FtsZ_dimer:
+    indices:
+    - 4
+    wids:
+    - MG_224_2MER_GTP
+  enzymeMetaboliteCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteLocalIndexs:
+    indices: []
+    wids: null
+  enzymeMonomerCompartmentIndexs:
+    indices:
+    - 1
+    wids: null
+  enzymeMonomerGlobalCompartmentIndexs:
+    indices:
+    - 2640
+    wids: null
+  enzymeMonomerGlobalIndexs:
+    indices:
+    - 230
+    wids: null
+  enzymeMonomerLocalIndexs:
+    indices:
+    - 1
+    wids: null
+  enzymeRNACompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeRNAGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeRNALocalIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusLocalIndexs:
+    indices: []
+    wids: null
+  parameterIndexs:
+    indices: []
+    wids: null
+  stimulusComplexCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusComplexGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusComplexLocalIndexs:
+    indices: []
+    wids: null
+  stimulusGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteLocalIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerLocalIndexs:
+    indices: []
+    wids: null
+  stimulusRNACompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusRNAGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusRNALocalIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusLocalIndexs:
+    indices: []
+    wids: null
+  substrateComplexCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateComplexGlobalIndexs:
+    indices: []
+    wids: null
+  substrateComplexLocalIndexs:
+    indices: []
+    wids: null
+  substrateGlobalIndexs:
+    indices:
+    - 329
+    - 384
+    - 611
+    - 386
+    - 385
+    wids: null
+  substrateIndexs_gdp:
+    indices:
+    - 1
+    wids:
+    - GDP
+  substrateIndexs_gtp:
+    indices:
+    - 2
+    wids:
+    - GTP
+  substrateIndexs_hydrogen:
+    indices:
+    - 5
+    wids:
+    - H
+  substrateIndexs_phosphate:
+    indices:
+    - 3
+    wids:
+    - PI
+  substrateIndexs_water:
+    indices:
+    - 4
+    wids:
+    - H2O
+  substrateMetaboliteCompartmentIndexs:
+    indices:
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    wids: null
+  substrateMetaboliteGlobalCompartmentIndexs:
+    indices:
+    - 329
+    - 384
+    - 611
+    - 386
+    - 385
+    wids: null
+  substrateMetaboliteGlobalIndexs:
+    indices:
+    - 329
+    - 384
+    - 611
+    - 386
+    - 385
+    wids: null
+  substrateMetaboliteLocalIndexs:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    wids: null
+  substrateMonomerCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateMonomerGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateMonomerGlobalIndexs:
+    indices: []
+    wids: null
+  substrateMonomerLocalIndexs:
+    indices: []
+    wids: null
+  substrateRNACompartmentIndexs:
+    indices: []
+    wids: null
+  substrateRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateRNAGlobalIndexs:
+    indices: []
+    wids: null
+  substrateRNALocalIndexs:
+    indices: []
+    wids: null
+  substrateStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  substrateStimulusLocalIndexs:
+    indices: []
+    wids: null
+source:
+  fixture: data/karr_fixtures/per_process/FtsZPolymerization_flat.mat
+  fixture_sha256: 33babb02e5ce33023c67db99740c788842ab22518bdf047be132fb426cae8a8b
+vocabularies:
+  enzymeWholeCellModelIDs:
+  - MG_224_MONOMER
+  - MG_224_MONOMER_GDP
+  - MG_224_MONOMER_GTP
+  - MG_224_2MER_GTP
+  - MG_224_3MER_GTP
+  - MG_224_4MER_GTP
+  - MG_224_5MER_GTP
+  - MG_224_6MER_GTP
+  - MG_224_7MER_GTP
+  - MG_224_8MER_GTP
+  - MG_224_9MER_GTP
+  stimuliWholeCellModelIDs: []
+  substrateWholeCellModelIDs:
+  - GDP
+  - GTP
+  - PI
+  - H2O
+  - H

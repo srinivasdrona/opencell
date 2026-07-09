@@ -1,0 +1,1187 @@
+params:
+  boundEnzymes:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  chromosome: <handle:edu.stanford.covert.cell.sim.state.Chromosome:1x1>
+  compartment: <handle:edu.stanford.covert.cell.sim.constant.Compartment:1x1>
+  complex: <handle:edu.stanford.covert.cell.sim.state.ProteinComplex:1x1>
+  enzymeBounds:
+    dtype: float64
+    sha256: 8be97a5454a60dd835595ecaf73bee6c1b688b69f52fc1a6d3a0eefba64c273f
+    shape:
+    - 32
+    - 2
+  enzymeDNAFootprints:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  enzymeDNAFootprints3Prime:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  enzymeDNAFootprints5Prime:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  enzymeMolecularWeights:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  enzymeNames:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  enzymes:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  fittedConstantNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  fixedConstantNames__:
+  - reactionVulnerableMotifs
+  - reactionVulnerableMotifTypes
+  - reactionDamageTypes
+  - reactionSmallMoleculeStoichiometryMatrix
+  - reactionDNAStoichiometryMatrix
+  - reactionRadiationStoichiometryMatrix
+  - reactionDNAProduct
+  - reactionRadiation
+  gene: <handle:edu.stanford.covert.cell.sim.constant.Gene:1x1>
+  geometry: <handle:edu.stanford.covert.cell.sim.state.CellGeometry:1x1>
+  initialized: 1
+  localStateNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  metabolite: <handle:edu.stanford.covert.cell.sim.state.Metabolite:1x1>
+  monomer: <handle:edu.stanford.covert.cell.sim.state.ProteinMonomer:1x1>
+  name: DNA damage
+  optionNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  parameterNames:
+  - strandBreakClassifiction_doubleStrandBreakSeparation
+  - strandBreakClassifiction_segmentLength
+  randStream: <handle:edu.stanford.covert.util.RandStream:1x1>
+  reactionBounds:
+    dtype: float64
+    sha256: 0d38822b154d09efdc9f5d65b835ebb8733f55a53b09d5c19979f57bb79e3b00
+    shape:
+    - 32
+    - 2
+  reactionDNAProduct:
+    dtype: uint16
+    sha256: 8758c2991e76ee47852497385477a9bbf9a99b68a5c271a1b76fcdaf5e16c692
+    shape:
+    - 32
+  reactionDamageTypes:
+    dtype: object
+    sha256: 0fed6db8068d581ed664dd0063556c0a42deaca9e402bc7fa299f6c171a2afc3
+    shape:
+    - 32
+  reactionNames:
+    dtype: object
+    sha256: 5401ed8b642f1d5dfd42e19c4f03b8f639d7d2bf5d2cc8ca4295a7398588c9ca
+    shape:
+    - 32
+  reactionRadiation:
+    dtype: uint8
+    sha256: f9da91cd1b507cdd41310d9f1fe28e68e1902545bc9f73ed3db89377ec405595
+    shape:
+    - 32
+  reactionTypes:
+    dtype: object
+    sha256: 6e7c4d5838017831725101afabc5b777e14a73d183de908ce308c20e87113a7c
+    shape:
+    - 32
+  reactionVulnerableMotifTypes:
+    dtype: object
+    sha256: efaa1466dd7d6700aba4f0f0679ae7efb038134b769d7dbd0ea160a27ba2ad24
+    shape:
+    - 32
+  reactionVulnerableMotifs:
+    dtype: object
+    sha256: 42bf6af18b9ff63a41f9bd01a4ebd777c744e76ac5ae55ee8c7b0ca26f6fd83e
+    shape:
+    - 32
+  rna: <handle:edu.stanford.covert.cell.sim.state.Rna:1x1>
+  seed: 1
+  simulationStateSideEffects:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  states:
+    dtype: object
+    sha256: 9e2805bbaeefda9782787b477219be9c49f2f12ed38ba0cdf3b9a8bdcd276be9
+    shape:
+    - 6
+  stepSizeSec: 1
+  stimuli:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  stimuliNames:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  stimulus: <handle:edu.stanford.covert.cell.sim.state.Stimulus:1x1>
+  substrateMolecularWeights:
+    dtype: float64
+    sha256: 524237649cb0fc91f6ee4ad6fb27301fd45a577de517c138345c09cb70aec7bf
+    shape:
+    - 48
+  substrateNames:
+    dtype: object
+    sha256: 8199eda850c03aa88b5adcb10a60faf677ef10c5e8f655652ee0dd48b9d238f5
+    shape:
+    - 48
+  substrates:
+    dtype: float64
+    sha256: 6a822910da3eb11684a543ffb9060b77862796b6d93d80da17987e0da225290c
+    shape:
+    - 48
+  unmodifiedNucleobases: ACGT
+  verbosity: 0
+  wholeCellModelID: Process_DNADamage
+  x_class_: edu.stanford.covert.cell.sim.process.DNADamage
+process: DNADamage
+role_groups:
+  enzymeBoundComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeBoundMonomerGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeBoundRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeComplexCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeComplexGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeComplexLocalIndexs:
+    indices: []
+    wids: null
+  enzymeGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteLocalIndexs:
+    indices: []
+    wids: null
+  enzymeMonomerCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeMonomerGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeMonomerGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeMonomerLocalIndexs:
+    indices: []
+    wids: null
+  enzymeRNACompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeRNAGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeRNALocalIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusLocalIndexs:
+    indices: []
+    wids: null
+  parameterIndexs:
+    indices: []
+    wids: null
+  reactionIndexs_baseAlkylation:
+    indices: []
+    wids: []
+  reactionIndexs_baseAmination:
+    indices: []
+    wids: []
+  reactionIndexs_baseEthylation:
+    indices: []
+    wids: []
+  reactionIndexs_baseGlucosylTransfer:
+    indices: []
+    wids: []
+  reactionIndexs_baseMethylation:
+    indices: []
+    wids: []
+  reactionIndexs_baseReduction:
+    indices: []
+    wids: []
+  reactionIndexs_gammaRayBaseOxidation:
+    indices:
+    - 1
+    - 2
+    - 8
+    - 9
+    - 10
+    - 12
+    - 13
+    - 29
+    - 30
+    - 31
+    - 32
+    wids:
+    - DNADamage_AD_FAPyAD_hydroxyl_radical
+    - DNADamage_AD_oxo8AD_hydroxyl_radical
+    - DNADamage_CSN_CSN_GLYC_hydroxyl_radical
+    - DNADamage_CSN_ho5CSN_hydroxyl_radical
+    - DNADamage_DHURA_ho5Hydantoin_hydroxyl_radical
+    - DNADamage_GN_FAPyGN_hydroxyl_radical
+    - DNADamage_GN_oxo8GN_hydroxyl_radical
+    - DNADamage_THY_hm5URA_hydroxyl_radical
+    - DNADamage_THY_THY_GLYC_hydroxyl_radical
+    - DNADamage_URA_DHURA_hydroxyl_radical
+    - DNADamage_URA_ho5URA_hydroxyl_radical
+  reactionIndexs_photooxidation:
+    indices: []
+    wids: []
+  reactionIndexs_spontaneousBaseDeamination:
+    indices:
+    - 15
+    - 16
+    - 17
+    - 18
+    wids:
+    - DNADamage_SpontaneousBaseDeamination_adenine
+    - DNADamage_SpontaneousBaseDeamination_cytosine
+    - DNADamage_SpontaneousBaseDeamination_guanine
+    - DNADamage_SpontaneousBaseDeamination_m5C
+  reactionIndexs_spontaneousBaseLoss:
+    indices:
+    - 19
+    - 20
+    - 21
+    - 22
+    wids:
+    - DNADamage_SpontaneousBaseLoss_adenine
+    - DNADamage_SpontaneousBaseLoss_cytosine
+    - DNADamage_SpontaneousBaseLoss_guanine
+    - DNADamage_SpontaneousBaseLoss_thymine
+  reactionIndexs_strandBreak:
+    indices:
+    - 11
+    - 14
+    wids:
+    - DNADamage_GammaRadiationInducedStrandBreak
+    - DNADamage_SpontaneousAbasicSiteStrandBreak
+  reactionIndexs_uvbDimerization:
+    indices:
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 23
+    - 24
+    - 25
+    - 26
+    - 27
+    - 28
+    wids:
+    - DNADamage_CSN64CSN_CSN64CSN_dewar_UVB_radiation
+    - DNADamage_CSN64THY_CSN64THY_dewar_UVB_radiation
+    - DNADamage_CSNCSN_cyclobutane_CSNCSN_UVB_radiation
+    - DNADamage_CSNTHY_CSN64THY_UVB_radiation
+    - DNADamage_CSNTHY_cyclobutane_CSNTHY_UVB_radiation
+    - DNADamage_THY64CSN_THY64CSN_dewar_UVB_radiation
+    - DNADamage_THY64THY_THY64THY_dewar_UVB_radiation
+    - DNADamage_THYCSN_cyclobutane_THYCSN_UVB_radiation
+    - DNADamage_THYCSN_THY64CSN_UVB_radiation
+    - DNADamage_THYTHY_cyclobutane_THYTHY_UVB_radiation
+    - DNADamage_THYTHY_THY64THY_UVB_radiation
+  stimulusComplexCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusComplexGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusComplexLocalIndexs:
+    indices: []
+    wids: null
+  stimulusGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteLocalIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerLocalIndexs:
+    indices: []
+    wids: null
+  stimulusRNACompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusRNAGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusRNALocalIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusLocalIndexs:
+    indices: []
+    wids: null
+  substrateComplexCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateComplexGlobalIndexs:
+    indices: []
+    wids: null
+  substrateComplexLocalIndexs:
+    indices: []
+    wids: null
+  substrateGlobalIndexs:
+    indices:
+    - 9
+    - 105
+    - 109
+    - 110
+    - 111
+    - 112
+    - 113
+    - 114
+    - 137
+    - 143
+    - 146
+    - 152
+    - 168
+    - 170
+    - 183
+    - 196
+    - 199
+    - 205
+    - 286
+    - 291
+    - 376
+    - 385
+    - 386
+    - 427
+    - 536
+    - 680
+    - 681
+    - 682
+    - 683
+    - 684
+    - 685
+    - 713
+    - 10
+    - 720
+    - 117
+    - 118
+    - 127
+    - 128
+    - 198
+    - 3
+    - 406
+    - 408
+    - 422
+    - 419
+    - 426
+    - 475
+    - 581
+    - 586
+    wids: null
+  substrateIndexs_DR5P:
+    indices:
+    - 16
+    wids:
+    - DR5P
+  substrateIndexs_dRibose5P_dRibose5P:
+    indices:
+    - 39
+    wids:
+    - dRibose5P_dRibose5P
+  substrateIndexs_hydrogen:
+    indices:
+    - 22
+    wids:
+    - H
+  substrateIndexs_hydroxylRadical:
+    indices:
+    - 45
+    wids:
+    - hydroxyl_radical
+  substrateIndexs_modifiedDNMPs:
+    indices: []
+    wids: []
+  substrateIndexs_modifiedNucleobases:
+    indices:
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 15
+    - 19
+    - 20
+    - 24
+    - 27
+    - 28
+    - 29
+    - 30
+    - 31
+    - 32
+    - 34
+    - 35
+    - 36
+    - 37
+    - 38
+    - 41
+    - 42
+    - 43
+    - 44
+    - 46
+    - 47
+    - 48
+    wids:
+    - CSN64CSN
+    - CSN64CSN_dewar
+    - CSN64THY
+    - CSN64THY_dewar
+    - CSN_GLYC
+    - DHURA
+    - FAPyAD
+    - FAPyGN
+    - HYXN
+    - THY64CSN
+    - THY64CSN_dewar
+    - THY64THY
+    - THY64THY_dewar
+    - THY_GLYC
+    - URA
+    - XAN
+    - cyclobutane_CSNCSN
+    - cyclobutane_CSNTHY
+    - cyclobutane_THYCSN
+    - cyclobutane_THYTHY
+    - hm5URA
+    - ho5CSN
+    - ho5URA
+    - ho5hydantoin
+    - m5CSN
+    - oxo8AD
+    - oxo8GN
+  substrateIndexs_modifiedNucleosides:
+    indices: []
+    wids: []
+  substrateIndexs_radiation:
+    indices:
+    - 33
+    - 40
+    wids:
+    - UVB_radiation
+    - gamma_radiation
+  substrateIndexs_unmodifiedDNMPs:
+    indices:
+    - 10
+    - 12
+    - 14
+    - 18
+    wids:
+    - DAMP
+    - DCMP
+    - DGMP
+    - DTMP
+  substrateIndexs_unmodifiedNucleobases:
+    indices:
+    - 1
+    - 3
+    - 21
+    - 26
+    wids:
+    - AD
+    - CSN
+    - GN
+    - THY
+  substrateIndexs_unmodifiedNucleosides:
+    indices:
+    - 9
+    - 11
+    - 13
+    - 17
+    wids:
+    - DA
+    - DC
+    - DG
+    - DT
+  substrateIndexs_water:
+    indices:
+    - 23
+    wids:
+    - H2O
+  substrateMetaboliteCompartmentIndexs:
+    indices:
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    wids: null
+  substrateMetaboliteGlobalCompartmentIndexs:
+    indices:
+    - 9
+    - 105
+    - 109
+    - 110
+    - 111
+    - 112
+    - 113
+    - 114
+    - 137
+    - 143
+    - 146
+    - 152
+    - 168
+    - 170
+    - 183
+    - 196
+    - 199
+    - 205
+    - 286
+    - 291
+    - 376
+    - 385
+    - 386
+    - 427
+    - 536
+    - 680
+    - 681
+    - 682
+    - 683
+    - 684
+    - 685
+    - 713
+    - 720
+    - 117
+    - 118
+    - 127
+    - 128
+    - 198
+    - 406
+    - 408
+    - 422
+    - 419
+    - 426
+    - 475
+    - 581
+    - 586
+    wids: null
+  substrateMetaboliteGlobalIndexs:
+    indices:
+    - 9
+    - 105
+    - 109
+    - 110
+    - 111
+    - 112
+    - 113
+    - 114
+    - 137
+    - 143
+    - 146
+    - 152
+    - 168
+    - 170
+    - 183
+    - 196
+    - 199
+    - 205
+    - 286
+    - 291
+    - 376
+    - 385
+    - 386
+    - 427
+    - 536
+    - 680
+    - 681
+    - 682
+    - 683
+    - 684
+    - 685
+    - 713
+    - 720
+    - 117
+    - 118
+    - 127
+    - 128
+    - 198
+    - 406
+    - 408
+    - 422
+    - 419
+    - 426
+    - 475
+    - 581
+    - 586
+    wids: null
+  substrateMetaboliteLocalIndexs:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+    - 13
+    - 14
+    - 15
+    - 16
+    - 17
+    - 18
+    - 19
+    - 20
+    - 21
+    - 22
+    - 23
+    - 24
+    - 25
+    - 26
+    - 27
+    - 28
+    - 29
+    - 30
+    - 31
+    - 32
+    - 34
+    - 35
+    - 36
+    - 37
+    - 38
+    - 39
+    - 41
+    - 42
+    - 43
+    - 44
+    - 45
+    - 46
+    - 47
+    - 48
+    wids: null
+  substrateMonomerCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateMonomerGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateMonomerGlobalIndexs:
+    indices: []
+    wids: null
+  substrateMonomerLocalIndexs:
+    indices: []
+    wids: null
+  substrateRNACompartmentIndexs:
+    indices: []
+    wids: null
+  substrateRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateRNAGlobalIndexs:
+    indices: []
+    wids: null
+  substrateRNALocalIndexs:
+    indices: []
+    wids: null
+  substrateStimulusCompartmentIndexs:
+    indices:
+    - 3
+    - 3
+    wids: null
+  substrateStimulusGlobalCompartmentIndexs:
+    indices:
+    - 30
+    - 23
+    wids: null
+  substrateStimulusGlobalIndexs:
+    indices:
+    - 10
+    - 3
+    wids: null
+  substrateStimulusLocalIndexs:
+    indices:
+    - 33
+    - 40
+    wids: null
+source:
+  fixture: data/karr_fixtures/per_process/DNADamage_flat.mat
+  fixture_sha256: 3ed7510504b3f9b246cb5f843983ad214d419698832db612f1366a9b67c404c1
+stoichiometry:
+  reactionCatalysisMatrix:
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  reactionCoenzymeMatrix:
+    sha256: f3cc103136423a57975750907ebc1d367e2985ac6338976d4d5a439f50323f4a
+    shape:
+    - 32
+    - 48
+  reactionDNAStoichiometryMatrix:
+    sha256: b73a70220fa97f96877d4a10878419cb6fa4d6819ea7283e55775c704c980703
+    shape:
+    - 48
+    - 32
+  reactionModificationMatrix:
+    sha256: ac8f5613c4b176d380009fa1306c49a027644dba38b9703ed102634c60f8d5ff
+    shape:
+    - 32
+    - 525
+  reactionRadiationStoichiometryMatrix:
+    sha256: 92e64f1dbc58f3f995bf37a2cdf3f2178cecdf42c19773931ce6d722499ac6da
+    shape:
+    - 48
+    - 32
+  reactionSmallMoleculeStoichiometryMatrix:
+    sha256: 64a1d6fd12f8c448b27aaec374e414be6d18fff8969084ac3abe2c3174706758
+    shape:
+    - 48
+    - 32
+  reactionStoichiometryMatrix:
+    sha256: 644de59ce473726c92ff5ff121bc76acab2ba58a08f48b354904e1b45e3dce4c
+    shape:
+    - 48
+    - 32
+  reactionWholeCellModelIDs: &id001
+  - DNADamage_AD_FAPyAD_hydroxyl_radical
+  - DNADamage_AD_oxo8AD_hydroxyl_radical
+  - DNADamage_CSN64CSN_CSN64CSN_dewar_UVB_radiation
+  - DNADamage_CSN64THY_CSN64THY_dewar_UVB_radiation
+  - DNADamage_CSNCSN_cyclobutane_CSNCSN_UVB_radiation
+  - DNADamage_CSNTHY_CSN64THY_UVB_radiation
+  - DNADamage_CSNTHY_cyclobutane_CSNTHY_UVB_radiation
+  - DNADamage_CSN_CSN_GLYC_hydroxyl_radical
+  - DNADamage_CSN_ho5CSN_hydroxyl_radical
+  - DNADamage_DHURA_ho5Hydantoin_hydroxyl_radical
+  - DNADamage_GammaRadiationInducedStrandBreak
+  - DNADamage_GN_FAPyGN_hydroxyl_radical
+  - DNADamage_GN_oxo8GN_hydroxyl_radical
+  - DNADamage_SpontaneousAbasicSiteStrandBreak
+  - DNADamage_SpontaneousBaseDeamination_adenine
+  - DNADamage_SpontaneousBaseDeamination_cytosine
+  - DNADamage_SpontaneousBaseDeamination_guanine
+  - DNADamage_SpontaneousBaseDeamination_m5C
+  - DNADamage_SpontaneousBaseLoss_adenine
+  - DNADamage_SpontaneousBaseLoss_cytosine
+  - DNADamage_SpontaneousBaseLoss_guanine
+  - DNADamage_SpontaneousBaseLoss_thymine
+  - DNADamage_THY64CSN_THY64CSN_dewar_UVB_radiation
+  - DNADamage_THY64THY_THY64THY_dewar_UVB_radiation
+  - DNADamage_THYCSN_cyclobutane_THYCSN_UVB_radiation
+  - DNADamage_THYCSN_THY64CSN_UVB_radiation
+  - DNADamage_THYTHY_cyclobutane_THYTHY_UVB_radiation
+  - DNADamage_THYTHY_THY64THY_UVB_radiation
+  - DNADamage_THY_hm5URA_hydroxyl_radical
+  - DNADamage_THY_THY_GLYC_hydroxyl_radical
+  - DNADamage_URA_DHURA_hydroxyl_radical
+  - DNADamage_URA_ho5URA_hydroxyl_radical
+  reactions:
+    DNADamage_AD_FAPyAD_hydroxyl_radical:
+      consume:
+        AD: 1
+        H: 1
+        gamma_radiation: 1
+        hydroxyl_radical: 1
+      produce:
+        FAPyAD: 1
+    DNADamage_AD_oxo8AD_hydroxyl_radical:
+      consume:
+        AD: 1
+        gamma_radiation: 1
+        hydroxyl_radical: 1
+      produce:
+        H: 1
+        oxo8AD: 1
+    DNADamage_CSN64CSN_CSN64CSN_dewar_UVB_radiation:
+      consume:
+        CSN64CSN: 1
+        UVB_radiation: 1
+      produce:
+        CSN64CSN_dewar: 1
+    DNADamage_CSN64THY_CSN64THY_dewar_UVB_radiation:
+      consume:
+        CSN64THY: 1
+        UVB_radiation: 1
+      produce:
+        CSN64THY_dewar: 1
+    DNADamage_CSNCSN_cyclobutane_CSNCSN_UVB_radiation:
+      consume:
+        CSN: 2
+        UVB_radiation: 1
+      produce:
+        cyclobutane_CSNCSN: 1
+    DNADamage_CSNTHY_CSN64THY_UVB_radiation:
+      consume:
+        CSN: 1
+        THY: 1
+        UVB_radiation: 1
+      produce:
+        CSN64THY: 1
+    DNADamage_CSNTHY_cyclobutane_CSNTHY_UVB_radiation:
+      consume:
+        CSN: 1
+        THY: 1
+        UVB_radiation: 1
+      produce:
+        cyclobutane_CSNTHY: 1
+    DNADamage_CSN_CSN_GLYC_hydroxyl_radical:
+      consume:
+        CSN: 1
+        gamma_radiation: 1
+        hydroxyl_radical: 2
+      produce:
+        CSN_GLYC: 1
+    DNADamage_CSN_ho5CSN_hydroxyl_radical:
+      consume:
+        CSN: 1
+        gamma_radiation: 1
+        hydroxyl_radical: 1
+      produce:
+        H: 1
+        ho5CSN: 1
+    DNADamage_DHURA_ho5Hydantoin_hydroxyl_radical:
+      consume:
+        DHURA: 1
+        H2O: 1
+        gamma_radiation: 1
+      produce:
+        CO2: 1
+        H: 2
+        ho5hydantoin: 1
+    DNADamage_GN_FAPyGN_hydroxyl_radical:
+      consume:
+        GN: 1
+        H: 1
+        gamma_radiation: 1
+        hydroxyl_radical: 1
+      produce:
+        FAPyGN: 1
+    DNADamage_GN_oxo8GN_hydroxyl_radical:
+      consume:
+        GN: 1
+        gamma_radiation: 1
+        hydroxyl_radical: 1
+      produce:
+        H: 1
+        oxo8GN: 1
+    DNADamage_GammaRadiationInducedStrandBreak:
+      consume:
+        H2O: 1
+        dRibose5P_dRibose5P: 1
+        gamma_radiation: 1
+      produce:
+        DR5P: 2
+        H: 1
+    DNADamage_SpontaneousAbasicSiteStrandBreak:
+      consume:
+        H2O: 1
+        dRibose5P_dRibose5P: 1
+      produce:
+        DR5P: 2
+        H: 1
+    DNADamage_SpontaneousBaseDeamination_adenine:
+      consume:
+        AD: 1
+        H2O: 1
+      produce:
+        HYXN: 1
+        NH3: 1
+    DNADamage_SpontaneousBaseDeamination_cytosine:
+      consume:
+        CSN: 1
+        H2O: 1
+      produce:
+        NH3: 1
+        URA: 1
+    DNADamage_SpontaneousBaseDeamination_guanine:
+      consume:
+        GN: 1
+        H2O: 1
+      produce:
+        NH3: 1
+        XAN: 1
+    DNADamage_SpontaneousBaseDeamination_m5C:
+      consume:
+        H2O: 1
+        m5CSN: 1
+      produce:
+        NH3: 1
+        THY: 1
+    DNADamage_SpontaneousBaseLoss_adenine:
+      consume:
+        DAMP: 1
+        H2O: 1
+      produce:
+        AD: 1
+        DR5P: 1
+    DNADamage_SpontaneousBaseLoss_cytosine:
+      consume:
+        DCMP: 1
+        H2O: 1
+      produce:
+        CSN: 1
+        DR5P: 1
+    DNADamage_SpontaneousBaseLoss_guanine:
+      consume:
+        DGMP: 1
+        H2O: 1
+      produce:
+        DR5P: 1
+        GN: 1
+    DNADamage_SpontaneousBaseLoss_thymine:
+      consume:
+        DTMP: 1
+        H2O: 1
+      produce:
+        DR5P: 1
+        THY: 1
+    DNADamage_THY64CSN_THY64CSN_dewar_UVB_radiation:
+      consume:
+        THY64CSN: 1
+        UVB_radiation: 1
+      produce:
+        THY64CSN_dewar: 1
+    DNADamage_THY64THY_THY64THY_dewar_UVB_radiation:
+      consume:
+        THY64THY: 1
+        UVB_radiation: 1
+      produce:
+        THY64THY_dewar: 1
+    DNADamage_THYCSN_THY64CSN_UVB_radiation:
+      consume:
+        CSN: 1
+        THY: 1
+        UVB_radiation: 1
+      produce:
+        THY64CSN: 1
+    DNADamage_THYCSN_cyclobutane_THYCSN_UVB_radiation:
+      consume:
+        CSN: 1
+        THY: 1
+        UVB_radiation: 1
+      produce:
+        cyclobutane_THYCSN: 1
+    DNADamage_THYTHY_THY64THY_UVB_radiation:
+      consume:
+        THY: 2
+        UVB_radiation: 1
+      produce:
+        THY64THY: 1
+    DNADamage_THYTHY_cyclobutane_THYTHY_UVB_radiation:
+      consume:
+        THY: 2
+        UVB_radiation: 1
+      produce:
+        cyclobutane_THYTHY: 1
+    DNADamage_THY_THY_GLYC_hydroxyl_radical:
+      consume:
+        THY: 1
+        gamma_radiation: 1
+        hydroxyl_radical: 2
+      produce:
+        THY_GLYC: 1
+    DNADamage_THY_hm5URA_hydroxyl_radical:
+      consume:
+        THY: 1
+        gamma_radiation: 1
+        hydroxyl_radical: 1
+      produce:
+        H: 1
+        hm5URA: 1
+    DNADamage_URA_DHURA_hydroxyl_radical:
+      consume:
+        URA: 1
+        gamma_radiation: 1
+        hydroxyl_radical: 2
+      produce:
+        DHURA: 1
+        H: 2
+    DNADamage_URA_ho5URA_hydroxyl_radical:
+      consume:
+        URA: 1
+        gamma_radiation: 1
+        hydroxyl_radical: 1
+      produce:
+        H: 1
+        ho5URA: 1
+vocabularies:
+  enzymeWholeCellModelIDs: []
+  reactionWholeCellModelIDs: *id001
+  stimuliWholeCellModelIDs: []
+  substrateWholeCellModelIDs:
+  - AD
+  - CO2
+  - CSN
+  - CSN64CSN
+  - CSN64CSN_dewar
+  - CSN64THY
+  - CSN64THY_dewar
+  - CSN_GLYC
+  - DA
+  - DAMP
+  - DC
+  - DCMP
+  - DG
+  - DGMP
+  - DHURA
+  - DR5P
+  - DT
+  - DTMP
+  - FAPyAD
+  - FAPyGN
+  - GN
+  - H
+  - H2O
+  - HYXN
+  - NH3
+  - THY
+  - THY64CSN
+  - THY64CSN_dewar
+  - THY64THY
+  - THY64THY_dewar
+  - THY_GLYC
+  - URA
+  - UVB_radiation
+  - XAN
+  - cyclobutane_CSNCSN
+  - cyclobutane_CSNTHY
+  - cyclobutane_THYCSN
+  - cyclobutane_THYTHY
+  - dRibose5P_dRibose5P
+  - gamma_radiation
+  - hm5URA
+  - ho5CSN
+  - ho5URA
+  - ho5hydantoin
+  - hydroxyl_radical
+  - m5CSN
+  - oxo8AD
+  - oxo8GN

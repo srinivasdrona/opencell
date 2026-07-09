@@ -1,0 +1,813 @@
+params:
+  boundEnzymes:
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  chromosome: <handle:edu.stanford.covert.cell.sim.state.Chromosome:1x1>
+  compartment: <handle:edu.stanford.covert.cell.sim.constant.Compartment:1x1>
+  complex: <handle:edu.stanford.covert.cell.sim.state.ProteinComplex:1x1>
+  dnaAFunctionalBoxStartPositions:
+  - 578595
+  - 578791
+  - 578895
+  - 578923
+  - 579010
+  dnaPolymeraseElongationRate: 100
+  enzymeComposition:
+    dtype: uint8
+    sha256: 935990882328119fe1d6e5ac9a804402449c1d58556494679f4eac8100ee6306
+    shape:
+    - 13
+    - 13
+  enzymeDNAFootprints:
+  - 44
+  - 49
+  - 49
+  - 49
+  - 24
+  - 26
+  - 25
+  - 25
+  - 20
+  - 19
+  - 14
+  - 72
+  - 145
+  enzymeDNAFootprints3Prime:
+  - 21
+  - 24
+  - 24
+  - 24
+  - 11
+  - 12
+  - 12
+  - 12
+  - 9
+  - 9
+  - 6
+  - 35
+  - 72
+  enzymeDNAFootprints5Prime:
+  - 22
+  - 24
+  - 24
+  - 24
+  - 12
+  - 13
+  - 12
+  - 12
+  - 10
+  - 9
+  - 7
+  - 36
+  - 72
+  enzymeMolecularWeights:
+  - 1447123.7662999998
+  - 1035248.5930999999
+  - 696174.4489
+  - 427653.7935999999
+  - 267939.06759999995
+  - 339655.7319
+  - 44289.8247
+  - 88579.6494
+  - 323295.52379999997
+  - 75426.42489999998
+  - 71135.07659999999
+  - 71854.75
+  - 143709.5
+  enzymeNames:
+  - Replisome
+  - DNA polymerase (2) core, Î²-clamp, Î³-complex, and primase
+  - DNA polymerase core, &beta;-clamp, and &gamma;-complex
+  - DNA polymerase core, &beta;-clamp, and primase
+  - DNA-directed DNA polymerase
+  - DNA-directed DNA polymerase gamma complex
+  - DNA polymerase III, beta subunit
+  - DNA polymerase III, beta clamp
+  - replicative DNA helicase
+  - DNA ligase, NAD-dependent
+  - DNA primase
+  - single-strand binding protein family, tetramer
+  - single-strand binding protein family, octamer
+  enzymes:
+  - 0
+  - 0
+  - 0
+  - 0
+  - 26
+  - 14
+  - 60
+  - 0
+  - 36
+  - 19
+  - 33
+  - 65
+  - 0
+  fittedConstantNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  fixedConstantNames__:
+  - oriCPosition
+  - terCPosition
+  - enzymeComposition
+  - primaseBindingLocations
+  - primerLength
+  - dnaPolymeraseElongationRate
+  - ssbComplexSpacing
+  - okazakiFragmentMeanLength
+  - ligaseRate
+  - laggingBackupClampReloadingLength
+  - startingOkazakiLoopLength
+  - rnaPolymeraseCollisionMeanDwellTime
+  - ssbDissociationRate
+  - dnaAFunctionalBoxStartPositions
+  gene: <handle:edu.stanford.covert.cell.sim.constant.Gene:1x1>
+  geometry: <handle:edu.stanford.covert.cell.sim.state.CellGeometry:1x1>
+  initialized: 1
+  laggingBackupClampReloadingLength: 750
+  ligaseRate: 0.04
+  localStateNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  metabolite: <handle:edu.stanford.covert.cell.sim.state.Metabolite:1x1>
+  monomer: <handle:edu.stanford.covert.cell.sim.state.ProteinMonomer:1x1>
+  name: Replication
+  okazakiFragmentMeanLength: 1500
+  optionNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  oriCPosition: 1
+  parameterNames:
+  - dnaPolymeraseElongationRate
+  - laggingBackupClampReloadingLength
+  - ligaseRate
+  - okazakiFragmentMeanLength
+  - primerLength
+  - ssbComplexSpacing
+  - startingOkazakiLoopLength
+  - rnaPolymeraseCollisionMeanDwellTime
+  - ssbDissociationRate
+  primaseBindingLocations:
+    dtype: object
+    sha256: 084df0431a48f2dfc20678f1c68f27065fa167022695ff08b53c1b39055930cf
+    shape:
+    - 2
+  primerLength: 11
+  randStream: <handle:edu.stanford.covert.util.RandStream:1x1>
+  rna: <handle:edu.stanford.covert.cell.sim.state.Rna:1x1>
+  rnaPolymeraseCollisionMeanDwellTime: 1.7
+  seed: 1
+  simulationStateSideEffects:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  ssbComplexSpacing: 30
+  ssbDissociationRate: 0.3
+  startingOkazakiLoopLength: 50
+  states:
+    dtype: object
+    sha256: 9e2805bbaeefda9782787b477219be9c49f2f12ed38ba0cdf3b9a8bdcd276be9
+    shape:
+    - 6
+  stepSizeSec: 1
+  stimuli:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  stimuliNames:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  stimulus: <handle:edu.stanford.covert.cell.sim.state.Stimulus:1x1>
+  substrateMolecularWeights:
+  - 487.1495
+  - 463.1248
+  - 503.14889999999997
+  - 478.1361
+  - 503.14889999999997
+  - 479.12420000000003
+  - 519.1483000000001
+  - 480.109
+  - 174.9513
+  - 18.0152
+  - 1.0079
+  - 662.4161999999999
+  - 333.2107
+  - 424.1769
+  - 345.20489999999995
+  - 95.9793
+  substrateNames:
+  - dATP
+  - dCTP
+  - dGTP
+  - dTTP
+  - ATP
+  - CTP
+  - GTP
+  - UTP
+  - diphosphate
+  - water
+  - hydrogen ion
+  - nicotinamide adenine dinucleotide, oxidized
+  - nicotinamide mononucleotide
+  - ADP
+  - AMP
+  - phosphate
+  substrates:
+  - 30264
+  - 14039
+  - 14040
+  - 30265
+  - 36234
+  - 0
+  - 36234
+  - 0
+  - 5796
+  - 309737899
+  - 13042
+  - 23159
+  - 0
+  - 3623
+  - 1449
+  - 7246
+  terCPosition: 290038
+  verbosity: 0
+  wholeCellModelID: Process_Replication
+  x_class_: edu.stanford.covert.cell.sim.process.Replication
+process: Replication
+role_groups:
+  complexIndexs_DnaA_1mer_ATP:
+    indices:
+    - 181
+    wids: null
+  complexIndexs_DnaA_7mer_ATP:
+    indices:
+    - 193
+    wids: null
+  dnaAFunctionalBoxIndexs_R1234:
+    indices:
+    - 5
+    - 4
+    - 3
+    - 2
+    wids: null
+  dnaAFunctionalBoxIndexs_R5:
+    indices:
+    - 1
+    wids: null
+  enzymeBoundComplexGlobalCompartmentIndexs:
+    indices:
+    - 798
+    - 605
+    - 607
+    - 608
+    - 606
+    - 609
+    - 613
+    - 653
+    - 652
+    - 651
+    wids: null
+  enzymeBoundMonomerGlobalCompartmentIndexs:
+    indices:
+    - 3375
+    - 3634
+    - 3630
+    wids: null
+  enzymeBoundRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeComplexCompartmentIndexs:
+    indices:
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    wids: null
+  enzymeComplexGlobalCompartmentIndexs:
+    indices:
+    - 396
+    - 203
+    - 205
+    - 206
+    - 204
+    - 207
+    - 211
+    - 251
+    - 250
+    - 249
+    wids: null
+  enzymeComplexGlobalIndexs:
+    indices:
+    - 195
+    - 2
+    - 4
+    - 5
+    - 3
+    - 6
+    - 10
+    - 50
+    - 49
+    - 48
+    wids: null
+  enzymeComplexLocalIndexs:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 8
+    - 9
+    - 12
+    - 13
+    wids: null
+  enzymeGlobalIndexs:
+    indices:
+    - 195
+    - 2
+    - 4
+    - 5
+    - 3
+    - 6
+    - 1
+    - 10
+    - 50
+    - 260
+    - 256
+    - 49
+    - 48
+    wids: null
+  enzymeIndexs_2coreBetaClampGammaComplexPrimase:
+    indices:
+    - 2
+    wids:
+    - DNA_POLYMERASE_2CORE_BETA_CLAMP_GAMMA_COMPLEX_PRIMASE
+  enzymeIndexs_betaClamp:
+    indices:
+    - 8
+    wids:
+    - MG_001_DIMER
+  enzymeIndexs_betaClampMonomer:
+    indices:
+    - 7
+    wids:
+    - MG_001_MONOMER
+  enzymeIndexs_core:
+    indices:
+    - 5
+    wids:
+    - DNA_POLYMERASE_CORE
+  enzymeIndexs_coreBetaClampGammaComplex:
+    indices:
+    - 3
+    wids:
+    - DNA_POLYMERASE_CORE_BETA_CLAMP_GAMMA_COMPLEX
+  enzymeIndexs_coreBetaClampPrimase:
+    indices:
+    - 4
+    wids:
+    - DNA_POLYMERASE_CORE_BETA_CLAMP_PRIMASE
+  enzymeIndexs_gammaComplex:
+    indices:
+    - 6
+    wids:
+    - DNA_POLYMERASE_GAMMA_COMPLEX
+  enzymeIndexs_helicase:
+    indices:
+    - 9
+    wids:
+    - MG_094_HEXAMER
+  enzymeIndexs_ligase:
+    indices:
+    - 10
+    wids:
+    - MG_254_MONOMER
+  enzymeIndexs_primase:
+    indices:
+    - 11
+    wids:
+    - MG_250_MONOMER
+  enzymeIndexs_replisome:
+    indices:
+    - 1
+    wids:
+    - REPLISOME
+  enzymeIndexs_ssb4mer:
+    indices:
+    - 12
+    wids:
+    - MG_091_TETRAMER
+  enzymeIndexs_ssb8mer:
+    indices:
+    - 13
+    wids:
+    - MG_091_OCTAMER
+  enzymeMetaboliteCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteLocalIndexs:
+    indices: []
+    wids: null
+  enzymeMonomerCompartmentIndexs:
+    indices:
+    - 1
+    - 1
+    - 1
+    wids: null
+  enzymeMonomerGlobalCompartmentIndexs:
+    indices:
+    - 2411
+    - 2670
+    - 2666
+    wids: null
+  enzymeMonomerGlobalIndexs:
+    indices:
+    - 1
+    - 260
+    - 256
+    wids: null
+  enzymeMonomerLocalIndexs:
+    indices:
+    - 7
+    - 10
+    - 11
+    wids: null
+  enzymeRNACompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeRNAGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeRNALocalIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusLocalIndexs:
+    indices: []
+    wids: null
+  laggingStrandIndexs:
+    indices:
+    - 3
+    - 2
+    wids: null
+  leadingStrandIndexs:
+    indices:
+    - 1
+    - 4
+    wids: null
+  parameterIndexs:
+    indices: []
+    wids: null
+  stimulusComplexCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusComplexGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusComplexLocalIndexs:
+    indices: []
+    wids: null
+  stimulusGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteLocalIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerLocalIndexs:
+    indices: []
+    wids: null
+  stimulusRNACompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusRNAGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusRNALocalIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusLocalIndexs:
+    indices: []
+    wids: null
+  substrateComplexCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateComplexGlobalIndexs:
+    indices: []
+    wids: null
+  substrateComplexLocalIndexs:
+    indices: []
+    wids: null
+  substrateGlobalIndexs:
+    indices:
+    - 145
+    - 159
+    - 172
+    - 212
+    - 54
+    - 115
+    - 384
+    - 715
+    - 617
+    - 386
+    - 385
+    - 530
+    - 540
+    - 11
+    - 21
+    - 611
+    wids: null
+  substrateIndexs_adp:
+    indices:
+    - 14
+    wids:
+    - ADP
+  substrateIndexs_amp:
+    indices:
+    - 15
+    wids:
+    - AMP
+  substrateIndexs_atp:
+    indices:
+    - 5
+    wids:
+    - ATP
+  substrateIndexs_diphosphate:
+    indices:
+    - 9
+    wids:
+    - PPI
+  substrateIndexs_dntp:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    wids:
+    - DATP
+    - DCTP
+    - DGTP
+    - DTTP
+  substrateIndexs_hydrogen:
+    indices:
+    - 11
+    wids:
+    - H
+  substrateIndexs_nad:
+    indices:
+    - 12
+    wids:
+    - NAD
+  substrateIndexs_nmn:
+    indices:
+    - 13
+    wids:
+    - NMN
+  substrateIndexs_ntp:
+    indices:
+    - 5
+    - 6
+    - 7
+    - 8
+    wids:
+    - ATP
+    - CTP
+    - GTP
+    - UTP
+  substrateIndexs_phosphate:
+    indices:
+    - 16
+    wids:
+    - PI
+  substrateIndexs_water:
+    indices:
+    - 10
+    wids:
+    - H2O
+  substrateMetaboliteCompartmentIndexs:
+    indices:
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    wids: null
+  substrateMetaboliteGlobalCompartmentIndexs:
+    indices:
+    - 145
+    - 159
+    - 172
+    - 212
+    - 54
+    - 115
+    - 384
+    - 715
+    - 617
+    - 386
+    - 385
+    - 530
+    - 540
+    - 11
+    - 21
+    - 611
+    wids: null
+  substrateMetaboliteGlobalIndexs:
+    indices:
+    - 145
+    - 159
+    - 172
+    - 212
+    - 54
+    - 115
+    - 384
+    - 715
+    - 617
+    - 386
+    - 385
+    - 530
+    - 540
+    - 11
+    - 21
+    - 611
+    wids: null
+  substrateMetaboliteLocalIndexs:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+    - 13
+    - 14
+    - 15
+    - 16
+    wids: null
+  substrateMonomerCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateMonomerGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateMonomerGlobalIndexs:
+    indices: []
+    wids: null
+  substrateMonomerLocalIndexs:
+    indices: []
+    wids: null
+  substrateRNACompartmentIndexs:
+    indices: []
+    wids: null
+  substrateRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateRNAGlobalIndexs:
+    indices: []
+    wids: null
+  substrateRNALocalIndexs:
+    indices: []
+    wids: null
+  substrateStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  substrateStimulusLocalIndexs:
+    indices: []
+    wids: null
+source:
+  fixture: data/karr_fixtures/per_process/Replication_flat.mat
+  fixture_sha256: a6b55bf9392153c3cddbc9d4407b0bac518870028d6919f91015f7c6a4df1662
+vocabularies:
+  enzymeWholeCellModelIDs:
+  - REPLISOME
+  - DNA_POLYMERASE_2CORE_BETA_CLAMP_GAMMA_COMPLEX_PRIMASE
+  - DNA_POLYMERASE_CORE_BETA_CLAMP_GAMMA_COMPLEX
+  - DNA_POLYMERASE_CORE_BETA_CLAMP_PRIMASE
+  - DNA_POLYMERASE_CORE
+  - DNA_POLYMERASE_GAMMA_COMPLEX
+  - MG_001_MONOMER
+  - MG_001_DIMER
+  - MG_094_HEXAMER
+  - MG_254_MONOMER
+  - MG_250_MONOMER
+  - MG_091_TETRAMER
+  - MG_091_OCTAMER
+  stimuliWholeCellModelIDs: []
+  substrateWholeCellModelIDs:
+  - DATP
+  - DCTP
+  - DGTP
+  - DTTP
+  - ATP
+  - CTP
+  - GTP
+  - UTP
+  - PPI
+  - H2O
+  - H
+  - NAD
+  - NMN
+  - ADP
+  - AMP
+  - PI

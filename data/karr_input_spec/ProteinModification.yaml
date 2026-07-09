@@ -1,0 +1,2628 @@
+params:
+  boundEnzymes:
+  - 0
+  - 0
+  - 0
+  compartment: <handle:edu.stanford.covert.cell.sim.constant.Compartment:1x1>
+  complex: <handle:edu.stanford.covert.cell.sim.state.ProteinComplex:1x1>
+  enzymeBounds:
+    dtype: float64
+    sha256: f4c230909fa9e80db4b29ea63d37e68d0e4789296ac743be3251cd94656fb2ce
+    shape:
+    - 63
+    - 2
+  enzymeMolecularWeights:
+  - 32849.4213
+  - 38971.3307
+  - 89271.14799999997
+  enzymeNames:
+  - alpha-L-glutamate ligase
+  - lipoyltransferase/lipoate-protein ligase, putative
+  - serine/threonine protein kinase, putative
+  enzymes:
+  - 33
+  - 773
+  - 34
+  fittedConstantNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  fixedConstantNames__: monomerCompartments
+  gene: <handle:edu.stanford.covert.cell.sim.constant.Gene:1x1>
+  geometry: <handle:edu.stanford.covert.cell.sim.state.CellGeometry:1x1>
+  initialized: 1
+  localStateNames__:
+  - unmodifiedMonomers
+  - modifiedMonomers
+  metabolite: <handle:edu.stanford.covert.cell.sim.state.Metabolite:1x1>
+  modifiedMonomers:
+    dtype: uint16
+    sha256: fdf2dc9f2532f5318f92ce3360a8fac4e637905502a8ae32fd18a5dc3f9bcfc7
+    shape:
+    - 482
+  monomer: <handle:edu.stanford.covert.cell.sim.state.ProteinMonomer:1x1>
+  monomerCompartments:
+    dtype: uint32
+    sha256: 1f27518688671c6e4f733b9db1b6cb3c8e5e9353234f9ea5c1bb42596d64deb4
+    shape:
+    - 482
+  name: Protein modification
+  optionNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  parameterNames:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  randStream: <handle:edu.stanford.covert.util.RandStream:1x1>
+  reactionBounds:
+    dtype: float64
+    sha256: 4f82f2b9caa4c27ca6f13d8395d12667d04670aa0f036c00c840bef17449bf65
+    shape:
+    - 63
+    - 2
+  reactionNames:
+    dtype: object
+    sha256: a7789b0bb7eafdc22808f969696765ad7b6696db535bae430ba16cf116c7c982
+    shape:
+    - 63
+  reactionTypes:
+    dtype: object
+    sha256: eeb17eb24ce8049b90e16ecb38612fe347e0c454caf71d96ffa7658e9152e57e
+    shape:
+    - 63
+  rna: <handle:edu.stanford.covert.cell.sim.state.Rna:1x1>
+  seed: 1
+  simulationStateSideEffects:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  speciesReactantByproductMatrix:
+    dtype: float64
+    sha256: ebe8eb8d8235d26e1ee7e58303eb341da4b12df6575ebceb4b1aedfadf46a4f9
+    shape:
+    - 20
+    - 38
+  speciesReactantMatrix:
+    dtype: float64
+    sha256: c3e6eff51fc5455dea0c98f469372b29d9366689d71b873abf6846008ac8bf6e
+    shape:
+    - 20
+    - 38
+  states:
+    dtype: object
+    sha256: da8d2dfbc0ccb5681391442364b01d3184786ce7b5841025aad3448f7c0363cf
+    shape:
+    - 5
+  stepSizeSec: 1
+  stimuli:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  stimuliNames:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  stimulus: <handle:edu.stanford.covert.cell.sim.state.Stimulus:1x1>
+  substrateMolecularWeights:
+  - 424.1769
+  - 345.20489999999995
+  - 503.14889999999997
+  - 146.12099999999998
+  - 1.0079
+  - 534.5226
+  - 334.4968
+  - 147.1949
+  - 95.9793
+  - 183.0564
+  - 197.08290000000002
+  - 259.1522
+  - 105.0923
+  - 119.1188
+  - 181.1881
+  substrateNames:
+  - ADP
+  - AMP
+  - ATP
+  - L-Glutamate
+  - hydrogen ion
+  - lipoyl-AMP
+  - N(6)-(lipoyl)lysine
+  - L-Lysine
+  - phosphate
+  - phosphoserine
+  - phosphothreonine
+  - Phosphotyrosine
+  - L-Serine
+  - L-Threonine
+  - L-tyrosine
+  substrates:
+  - 3623
+  - 1449
+  - 36234
+  - 9518
+  - 13042
+  - 0
+  - 0
+  - 15094
+  - 7246
+  - 0
+  - 0
+  - 16
+  - 8749
+  - 4460
+  - 5375
+  unmodifiedMonomers:
+    dtype: uint8
+    sha256: 5a521f5097f43c39eb902347b266e62e95a8c059f0a59fcf1a20f1ce1febeaa3
+    shape:
+    - 482
+  verbosity: 0
+  wholeCellModelID: Process_ProteinModification
+  x_class_: edu.stanford.covert.cell.sim.process.ProteinModification
+process: ProteinModification
+role_groups:
+  enzymeBoundComplexGlobalCompartmentIndexs:
+    indices:
+    - 4278
+    wids: null
+  enzymeBoundMonomerGlobalCompartmentIndexs:
+    indices:
+    - 3386
+    - 3652
+    wids: null
+  enzymeBoundRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeComplexCompartmentIndexs:
+    indices:
+    - 4
+    wids: null
+  enzymeComplexGlobalCompartmentIndexs:
+    indices:
+    - 3876
+    wids: null
+  enzymeComplexGlobalIndexs:
+    indices:
+    - 57
+    wids: null
+  enzymeComplexLocalIndexs:
+    indices:
+    - 3
+    wids: null
+  enzymeGlobalIndexs:
+    indices:
+    - 12
+    - 278
+    - 57
+    wids: null
+  enzymeIndexs_glutamateLigase:
+    indices:
+    - 1
+    wids:
+    - MG_012_MONOMER
+  enzymeIndexs_lipoylTransferase:
+    indices:
+    - 2
+    wids:
+    - MG_270_MONOMER
+  enzymeIndexs_serineThreonineKinase:
+    indices:
+    - 3
+    wids:
+    - MG_109_DIMER
+  enzymeMetaboliteCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteLocalIndexs:
+    indices: []
+    wids: null
+  enzymeMonomerCompartmentIndexs:
+    indices:
+    - 1
+    - 1
+    wids: null
+  enzymeMonomerGlobalCompartmentIndexs:
+    indices:
+    - 2422
+    - 2688
+    wids: null
+  enzymeMonomerGlobalIndexs:
+    indices:
+    - 12
+    - 278
+    wids: null
+  enzymeMonomerLocalIndexs:
+    indices:
+    - 1
+    - 2
+    wids: null
+  enzymeRNACompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeRNAGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeRNALocalIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusLocalIndexs:
+    indices: []
+    wids: null
+  monomerIndexs_modified:
+    indices:
+    - 70
+    - 169
+    - 222
+    - 224
+    - 280
+    - 281
+    - 282
+    - 290
+    - 314
+    - 326
+    - 338
+    - 354
+    - 391
+    - 407
+    - 416
+    - 422
+    - 439
+    - 449
+    - 462
+    - 471
+    wids: null
+  monomerIndexs_notmodified:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+    - 13
+    - 14
+    - 15
+    - 16
+    - 17
+    - 18
+    - 19
+    - 20
+    - 21
+    - 22
+    - 23
+    - 24
+    - 25
+    - 26
+    - 27
+    - 28
+    - 29
+    - 30
+    - 31
+    - 32
+    - 33
+    - 34
+    - 35
+    - 36
+    - 37
+    - 38
+    - 39
+    - 40
+    - 41
+    - 42
+    - 43
+    - 44
+    - 45
+    - 46
+    - 47
+    - 48
+    - 49
+    - 50
+    - 51
+    - 52
+    - 53
+    - 54
+    - 55
+    - 56
+    - 57
+    - 58
+    - 59
+    - 60
+    - 61
+    - 62
+    - 63
+    - 64
+    - 65
+    - 66
+    - 67
+    - 68
+    - 69
+    - 71
+    - 72
+    - 73
+    - 74
+    - 75
+    - 76
+    - 77
+    - 78
+    - 79
+    - 80
+    - 81
+    - 82
+    - 83
+    - 84
+    - 85
+    - 86
+    - 87
+    - 88
+    - 89
+    - 90
+    - 91
+    - 92
+    - 93
+    - 94
+    - 95
+    - 96
+    - 97
+    - 98
+    - 99
+    - 100
+    - 101
+    - 102
+    - 103
+    - 104
+    - 105
+    - 106
+    - 107
+    - 108
+    - 109
+    - 110
+    - 111
+    - 112
+    - 113
+    - 114
+    - 115
+    - 116
+    - 117
+    - 118
+    - 119
+    - 120
+    - 121
+    - 122
+    - 123
+    - 124
+    - 125
+    - 126
+    - 127
+    - 128
+    - 129
+    - 130
+    - 131
+    - 132
+    - 133
+    - 134
+    - 135
+    - 136
+    - 137
+    - 138
+    - 139
+    - 140
+    - 141
+    - 142
+    - 143
+    - 144
+    - 145
+    - 146
+    - 147
+    - 148
+    - 149
+    - 150
+    - 151
+    - 152
+    - 153
+    - 154
+    - 155
+    - 156
+    - 157
+    - 158
+    - 159
+    - 160
+    - 161
+    - 162
+    - 163
+    - 164
+    - 165
+    - 166
+    - 167
+    - 168
+    - 170
+    - 171
+    - 172
+    - 173
+    - 174
+    - 175
+    - 176
+    - 177
+    - 178
+    - 179
+    - 180
+    - 181
+    - 182
+    - 183
+    - 184
+    - 185
+    - 186
+    - 187
+    - 188
+    - 189
+    - 190
+    - 191
+    - 192
+    - 193
+    - 194
+    - 195
+    - 196
+    - 197
+    - 198
+    - 199
+    - 200
+    - 201
+    - 202
+    - 203
+    - 204
+    - 205
+    - 206
+    - 207
+    - 208
+    - 209
+    - 210
+    - 211
+    - 212
+    - 213
+    - 214
+    - 215
+    - 216
+    - 217
+    - 218
+    - 219
+    - 220
+    - 221
+    - 223
+    - 225
+    - 226
+    - 227
+    - 228
+    - 229
+    - 230
+    - 231
+    - 232
+    - 233
+    - 234
+    - 235
+    - 236
+    - 237
+    - 238
+    - 239
+    - 240
+    - 241
+    - 242
+    - 243
+    - 244
+    - 245
+    - 246
+    - 247
+    - 248
+    - 249
+    - 250
+    - 251
+    - 252
+    - 253
+    - 254
+    - 255
+    - 256
+    - 257
+    - 258
+    - 259
+    - 260
+    - 261
+    - 262
+    - 263
+    - 264
+    - 265
+    - 266
+    - 267
+    - 268
+    - 269
+    - 270
+    - 271
+    - 272
+    - 273
+    - 274
+    - 275
+    - 276
+    - 277
+    - 278
+    - 279
+    - 283
+    - 284
+    - 285
+    - 286
+    - 287
+    - 288
+    - 289
+    - 291
+    - 292
+    - 293
+    - 294
+    - 295
+    - 296
+    - 297
+    - 298
+    - 299
+    - 300
+    - 301
+    - 302
+    - 303
+    - 304
+    - 305
+    - 306
+    - 307
+    - 308
+    - 309
+    - 310
+    - 311
+    - 312
+    - 313
+    - 315
+    - 316
+    - 317
+    - 318
+    - 319
+    - 320
+    - 321
+    - 322
+    - 323
+    - 324
+    - 325
+    - 327
+    - 328
+    - 329
+    - 330
+    - 331
+    - 332
+    - 333
+    - 334
+    - 335
+    - 336
+    - 337
+    - 339
+    - 340
+    - 341
+    - 342
+    - 343
+    - 344
+    - 345
+    - 346
+    - 347
+    - 348
+    - 349
+    - 350
+    - 351
+    - 352
+    - 353
+    - 355
+    - 356
+    - 357
+    - 358
+    - 359
+    - 360
+    - 361
+    - 362
+    - 363
+    - 364
+    - 365
+    - 366
+    - 367
+    - 368
+    - 369
+    - 370
+    - 371
+    - 372
+    - 373
+    - 374
+    - 375
+    - 376
+    - 377
+    - 378
+    - 379
+    - 380
+    - 381
+    - 382
+    - 383
+    - 384
+    - 385
+    - 386
+    - 387
+    - 388
+    - 389
+    - 390
+    - 392
+    - 393
+    - 394
+    - 395
+    - 396
+    - 397
+    - 398
+    - 399
+    - 400
+    - 401
+    - 402
+    - 403
+    - 404
+    - 405
+    - 406
+    - 408
+    - 409
+    - 410
+    - 411
+    - 412
+    - 413
+    - 414
+    - 415
+    - 417
+    - 418
+    - 419
+    - 420
+    - 421
+    - 423
+    - 424
+    - 425
+    - 426
+    - 427
+    - 428
+    - 429
+    - 430
+    - 431
+    - 432
+    - 433
+    - 434
+    - 435
+    - 436
+    - 437
+    - 438
+    - 440
+    - 441
+    - 442
+    - 443
+    - 444
+    - 445
+    - 446
+    - 447
+    - 448
+    - 450
+    - 451
+    - 452
+    - 453
+    - 454
+    - 455
+    - 456
+    - 457
+    - 458
+    - 459
+    - 460
+    - 461
+    - 463
+    - 464
+    - 465
+    - 466
+    - 467
+    - 468
+    - 469
+    - 470
+    - 472
+    - 473
+    - 474
+    - 475
+    - 476
+    - 477
+    - 478
+    - 479
+    - 480
+    - 481
+    - 482
+    wids: null
+  parameterIndexs:
+    indices: []
+    wids: null
+  reactionIndexs_adduction:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 7
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+    - 13
+    - 14
+    - 15
+    - 16
+    - 17
+    - 18
+    - 19
+    - 20
+    - 21
+    - 22
+    - 23
+    - 24
+    - 25
+    - 26
+    - 27
+    - 28
+    - 29
+    - 30
+    - 31
+    - 32
+    - 33
+    - 34
+    - 35
+    - 36
+    - 37
+    - 38
+    - 39
+    - 40
+    - 41
+    - 42
+    - 43
+    - 44
+    - 45
+    - 46
+    - 47
+    - 48
+    - 49
+    - 50
+    - 51
+    - 52
+    - 53
+    - 54
+    - 55
+    - 56
+    - 57
+    - 58
+    - 59
+    - 60
+    - 61
+    - 62
+    - 63
+    wids:
+    - MG_070_MONOMER_MODIFICATION_001
+    - MG_070_MONOMER_MODIFICATION_002
+    - MG_070_MONOMER_MODIFICATION_003
+    - MG_070_MONOMER_MODIFICATION_004
+    - MG_070_MONOMER_MODIFICATION_005
+    - MG_217_MONOMER_MODIFICATION_001
+    - MG_272_MONOMER_MODIFICATION_001
+    - MG_273_MONOMER_MODIFICATION_001
+    - MG_274_MONOMER_MODIFICATION_001
+    - MG_282_MONOMER_MODIFICATION_001
+    - MG_305_MONOMER_MODIFICATION_001
+    - MG_305_MONOMER_MODIFICATION_002
+    - MG_317_MONOMER_MODIFICATION_001
+    - MG_317_MONOMER_MODIFICATION_002
+    - MG_317_MONOMER_MODIFICATION_003
+    - MG_317_MONOMER_MODIFICATION_004
+    - MG_317_MONOMER_MODIFICATION_005
+    - MG_328_MONOMER_MODIFICATION_001
+    - MG_342_MONOMER_MODIFICATION_001
+    - MG_377_MONOMER_MODIFICATION_001
+    - MG_377_MONOMER_MODIFICATION_002
+    - MG_377_MONOMER_MODIFICATION_003
+    - MG_377_MONOMER_MODIFICATION_004
+    - MG_377_MONOMER_MODIFICATION_005
+    - MG_377_MONOMER_MODIFICATION_006
+    - MG_377_MONOMER_MODIFICATION_007
+    - MG_377_MONOMER_MODIFICATION_008
+    - MG_377_MONOMER_MODIFICATION_009
+    - MG_377_MONOMER_MODIFICATION_010
+    - MG_377_MONOMER_MODIFICATION_011
+    - MG_392_MONOMER_MODIFICATION_001
+    - MG_392_MONOMER_MODIFICATION_002
+    - MG_401_MONOMER_MODIFICATION_001
+    - MG_401_MONOMER_MODIFICATION_002
+    - MG_401_MONOMER_MODIFICATION_003
+    - MG_401_MONOMER_MODIFICATION_004
+    - MG_401_MONOMER_MODIFICATION_005
+    - MG_401_MONOMER_MODIFICATION_006
+    - MG_401_MONOMER_MODIFICATION_007
+    - MG_401_MONOMER_MODIFICATION_008
+    - MG_401_MONOMER_MODIFICATION_009
+    - MG_407_MONOMER_MODIFICATION_001
+    - MG_407_MONOMER_MODIFICATION_002
+    - MG_407_MONOMER_MODIFICATION_003
+    - MG_427_MONOMER_MODIFICATION_001
+    - MG_427_MONOMER_MODIFICATION_002
+    - MG_438_MONOMER_MODIFICATION_001
+    - MG_438_MONOMER_MODIFICATION_002
+    - MG_438_MONOMER_MODIFICATION_003
+    - MG_438_MONOMER_MODIFICATION_004
+    - MG_438_MONOMER_MODIFICATION_005
+    - MG_438_MONOMER_MODIFICATION_006
+    - MG_438_MONOMER_MODIFICATION_007
+    - MG_438_MONOMER_MODIFICATION_008
+    - MG_438_MONOMER_MODIFICATION_009
+    - MG_451_MONOMER_MODIFICATION_001
+    - MG_451_MONOMER_MODIFICATION_002
+    - MG_451_MONOMER_MODIFICATION_003
+    - MG_460_MONOMER_MODIFICATION_001
+    - MG_460_MONOMER_MODIFICATION_002
+    - MG_460_MONOMER_MODIFICATION_003
+    - MG_491_MONOMER_MODIFICATION_001
+  reactionIndexs_ligation:
+    indices:
+    - 6
+    wids:
+    - MG_166_MONOMER_MODIFICATION_001
+  speciesIndexs_enzymes:
+    indices:
+    - 16
+    - 17
+    - 18
+    wids: null
+  stimulusComplexCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusComplexGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusComplexLocalIndexs:
+    indices: []
+    wids: null
+  stimulusGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteLocalIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerLocalIndexs:
+    indices: []
+    wids: null
+  stimulusRNACompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusRNAGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusRNALocalIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusLocalIndexs:
+    indices: []
+    wids: null
+  substrateComplexCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateComplexGlobalIndexs:
+    indices: []
+    wids: null
+  substrateComplexLocalIndexs:
+    indices: []
+    wids: null
+  substrateGlobalIndexs:
+    indices:
+    - 11
+    - 21
+    - 54
+    - 364
+    - 385
+    - 443
+    - 444
+    - 446
+    - 611
+    - 624
+    - 627
+    - 629
+    - 652
+    - 678
+    - 701
+    wids: null
+  substrateIndexs_adp:
+    indices:
+    - 1
+    wids:
+    - ADP
+  substrateIndexs_aminoAcids:
+    indices:
+    - 4
+    - 8
+    - 13
+    - 14
+    - 15
+    wids:
+    - GLU
+    - LYS
+    - SER
+    - THR
+    - TYR
+  substrateIndexs_amp:
+    indices:
+    - 2
+    wids:
+    - AMP
+  substrateIndexs_atp:
+    indices:
+    - 3
+    wids:
+    - ATP
+  substrateIndexs_glutamate:
+    indices:
+    - 4
+    wids:
+    - GLU
+  substrateIndexs_hydrogen:
+    indices:
+    - 5
+    wids:
+    - H
+  substrateIndexs_lipoylAmp:
+    indices:
+    - 6
+    wids:
+    - LIPOYLAMP
+  substrateIndexs_lipoylLys:
+    indices:
+    - 7
+    wids:
+    - LIPOYLLYS
+  substrateIndexs_modifiedAminoAcids:
+    indices:
+    - 7
+    - 10
+    - 11
+    - 12
+    wids:
+    - LIPOYLLYS
+    - pSER
+    - pTHR
+    - pTYR
+  substrateIndexs_phosphate:
+    indices:
+    - 9
+    wids:
+    - PI
+  substrateMetaboliteCompartmentIndexs:
+    indices:
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    wids: null
+  substrateMetaboliteGlobalCompartmentIndexs:
+    indices:
+    - 11
+    - 21
+    - 54
+    - 364
+    - 385
+    - 443
+    - 444
+    - 446
+    - 611
+    - 624
+    - 627
+    - 629
+    - 652
+    - 678
+    - 701
+    wids: null
+  substrateMetaboliteGlobalIndexs:
+    indices:
+    - 11
+    - 21
+    - 54
+    - 364
+    - 385
+    - 443
+    - 444
+    - 446
+    - 611
+    - 624
+    - 627
+    - 629
+    - 652
+    - 678
+    - 701
+    wids: null
+  substrateMetaboliteLocalIndexs:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+    - 13
+    - 14
+    - 15
+    wids: null
+  substrateMonomerCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateMonomerGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateMonomerGlobalIndexs:
+    indices: []
+    wids: null
+  substrateMonomerLocalIndexs:
+    indices: []
+    wids: null
+  substrateRNACompartmentIndexs:
+    indices: []
+    wids: null
+  substrateRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateRNAGlobalIndexs:
+    indices: []
+    wids: null
+  substrateRNALocalIndexs:
+    indices: []
+    wids: null
+  substrateStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  substrateStimulusLocalIndexs:
+    indices: []
+    wids: null
+source:
+  fixture: data/karr_fixtures/per_process/ProteinModification_flat.mat
+  fixture_sha256: b89663e37c5ab6a68a8f978e670ecbedf05c5a2af4a5569b4e83d803b2c5807b
+stoichiometry:
+  reactionCatalysisMatrix:
+    sha256: 7fa7f9f94bd715b95d96befd9518c2c68c6d3b09d1ee03078c0a8c8ddd46ce9d
+    shape:
+    - 63
+    - 3
+  reactionCoenzymeMatrix:
+    sha256: 993fed825058c9b4af4809a1886320d3424b1ff67618706021f2da673e076008
+    shape:
+    - 63
+    - 15
+  reactionModificationMatrix:
+    sha256: fe86ea06e2b56dd52102752a325a4314b9f18b9e9af8767bdb511561bf68f34b
+    shape:
+    - 63
+    - 482
+  reactionStoichiometryMatrix:
+    sha256: a8c20c90c3a1c271d23a2fbed29248b32a98baa82a26e20fd5f547749a28c02e
+    shape:
+    - 15
+    - 63
+  reactionWholeCellModelIDs: &id001
+  - MG_070_MONOMER_MODIFICATION_001
+  - MG_070_MONOMER_MODIFICATION_002
+  - MG_070_MONOMER_MODIFICATION_003
+  - MG_070_MONOMER_MODIFICATION_004
+  - MG_070_MONOMER_MODIFICATION_005
+  - MG_166_MONOMER_MODIFICATION_001
+  - MG_217_MONOMER_MODIFICATION_001
+  - MG_272_MONOMER_MODIFICATION_001
+  - MG_273_MONOMER_MODIFICATION_001
+  - MG_274_MONOMER_MODIFICATION_001
+  - MG_282_MONOMER_MODIFICATION_001
+  - MG_305_MONOMER_MODIFICATION_001
+  - MG_305_MONOMER_MODIFICATION_002
+  - MG_317_MONOMER_MODIFICATION_001
+  - MG_317_MONOMER_MODIFICATION_002
+  - MG_317_MONOMER_MODIFICATION_003
+  - MG_317_MONOMER_MODIFICATION_004
+  - MG_317_MONOMER_MODIFICATION_005
+  - MG_328_MONOMER_MODIFICATION_001
+  - MG_342_MONOMER_MODIFICATION_001
+  - MG_377_MONOMER_MODIFICATION_001
+  - MG_377_MONOMER_MODIFICATION_002
+  - MG_377_MONOMER_MODIFICATION_003
+  - MG_377_MONOMER_MODIFICATION_004
+  - MG_377_MONOMER_MODIFICATION_005
+  - MG_377_MONOMER_MODIFICATION_006
+  - MG_377_MONOMER_MODIFICATION_007
+  - MG_377_MONOMER_MODIFICATION_008
+  - MG_377_MONOMER_MODIFICATION_009
+  - MG_377_MONOMER_MODIFICATION_010
+  - MG_377_MONOMER_MODIFICATION_011
+  - MG_392_MONOMER_MODIFICATION_001
+  - MG_392_MONOMER_MODIFICATION_002
+  - MG_401_MONOMER_MODIFICATION_001
+  - MG_401_MONOMER_MODIFICATION_002
+  - MG_401_MONOMER_MODIFICATION_003
+  - MG_401_MONOMER_MODIFICATION_004
+  - MG_401_MONOMER_MODIFICATION_005
+  - MG_401_MONOMER_MODIFICATION_006
+  - MG_401_MONOMER_MODIFICATION_007
+  - MG_401_MONOMER_MODIFICATION_008
+  - MG_401_MONOMER_MODIFICATION_009
+  - MG_407_MONOMER_MODIFICATION_001
+  - MG_407_MONOMER_MODIFICATION_002
+  - MG_407_MONOMER_MODIFICATION_003
+  - MG_427_MONOMER_MODIFICATION_001
+  - MG_427_MONOMER_MODIFICATION_002
+  - MG_438_MONOMER_MODIFICATION_001
+  - MG_438_MONOMER_MODIFICATION_002
+  - MG_438_MONOMER_MODIFICATION_003
+  - MG_438_MONOMER_MODIFICATION_004
+  - MG_438_MONOMER_MODIFICATION_005
+  - MG_438_MONOMER_MODIFICATION_006
+  - MG_438_MONOMER_MODIFICATION_007
+  - MG_438_MONOMER_MODIFICATION_008
+  - MG_438_MONOMER_MODIFICATION_009
+  - MG_451_MONOMER_MODIFICATION_001
+  - MG_451_MONOMER_MODIFICATION_002
+  - MG_451_MONOMER_MODIFICATION_003
+  - MG_460_MONOMER_MODIFICATION_001
+  - MG_460_MONOMER_MODIFICATION_002
+  - MG_460_MONOMER_MODIFICATION_003
+  - MG_491_MONOMER_MODIFICATION_001
+  reactions:
+    MG_070_MONOMER_MODIFICATION_001:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_070_MONOMER_MODIFICATION_002:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_070_MONOMER_MODIFICATION_003:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_070_MONOMER_MODIFICATION_004:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_070_MONOMER_MODIFICATION_005:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_166_MONOMER_MODIFICATION_001:
+      consume:
+        ATP: 4
+        GLU: 4
+      produce:
+        ADP: 4
+        H: 4
+        PI: 4
+    MG_217_MONOMER_MODIFICATION_001:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_272_MONOMER_MODIFICATION_001:
+      consume:
+        LIPOYLAMP: 1
+      produce:
+        AMP: 1
+        H: 2
+    MG_273_MONOMER_MODIFICATION_001:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_274_MONOMER_MODIFICATION_001:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_282_MONOMER_MODIFICATION_001:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_305_MONOMER_MODIFICATION_001:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_305_MONOMER_MODIFICATION_002:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_317_MONOMER_MODIFICATION_001:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_317_MONOMER_MODIFICATION_002:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_317_MONOMER_MODIFICATION_003:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_317_MONOMER_MODIFICATION_004:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_317_MONOMER_MODIFICATION_005:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_328_MONOMER_MODIFICATION_001:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_342_MONOMER_MODIFICATION_001:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_377_MONOMER_MODIFICATION_001:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_377_MONOMER_MODIFICATION_002:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_377_MONOMER_MODIFICATION_003:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_377_MONOMER_MODIFICATION_004:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_377_MONOMER_MODIFICATION_005:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_377_MONOMER_MODIFICATION_006:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_377_MONOMER_MODIFICATION_007:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_377_MONOMER_MODIFICATION_008:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_377_MONOMER_MODIFICATION_009:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_377_MONOMER_MODIFICATION_010:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_377_MONOMER_MODIFICATION_011:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_392_MONOMER_MODIFICATION_001:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_392_MONOMER_MODIFICATION_002:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_401_MONOMER_MODIFICATION_001:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_401_MONOMER_MODIFICATION_002:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_401_MONOMER_MODIFICATION_003:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_401_MONOMER_MODIFICATION_004:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_401_MONOMER_MODIFICATION_005:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_401_MONOMER_MODIFICATION_006:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_401_MONOMER_MODIFICATION_007:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_401_MONOMER_MODIFICATION_008:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_401_MONOMER_MODIFICATION_009:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_407_MONOMER_MODIFICATION_001:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_407_MONOMER_MODIFICATION_002:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_407_MONOMER_MODIFICATION_003:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_427_MONOMER_MODIFICATION_001:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_427_MONOMER_MODIFICATION_002:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_438_MONOMER_MODIFICATION_001:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_438_MONOMER_MODIFICATION_002:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_438_MONOMER_MODIFICATION_003:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_438_MONOMER_MODIFICATION_004:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_438_MONOMER_MODIFICATION_005:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_438_MONOMER_MODIFICATION_006:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_438_MONOMER_MODIFICATION_007:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_438_MONOMER_MODIFICATION_008:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_438_MONOMER_MODIFICATION_009:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_451_MONOMER_MODIFICATION_001:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_451_MONOMER_MODIFICATION_002:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_451_MONOMER_MODIFICATION_003:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_460_MONOMER_MODIFICATION_001:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_460_MONOMER_MODIFICATION_002:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_460_MONOMER_MODIFICATION_003:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+    MG_491_MONOMER_MODIFICATION_001:
+      consume:
+        ATP: 1
+      produce:
+        ADP: 1
+        H: 1
+vocabularies:
+  enzymeWholeCellModelIDs:
+  - MG_012_MONOMER
+  - MG_270_MONOMER
+  - MG_109_DIMER
+  modifiedMonomerWholeCellModelIDs:
+  - MG_001_MONOMER
+  - MG_002_MONOMER
+  - MG_003_MONOMER
+  - MG_004_MONOMER
+  - MG_005_MONOMER
+  - MG_006_MONOMER
+  - MG_007_MONOMER
+  - MG_008_MONOMER
+  - MG_009_MONOMER
+  - MG_010_MONOMER
+  - MG_011_MONOMER
+  - MG_012_MONOMER
+  - MG_013_MONOMER
+  - MG_014_MONOMER
+  - MG_015_MONOMER
+  - MG_018_MONOMER
+  - MG_019_MONOMER
+  - MG_020_MONOMER
+  - MG_021_MONOMER
+  - MG_022_MONOMER
+  - MG_023_MONOMER
+  - MG_024_MONOMER
+  - MG_025_MONOMER
+  - MG_026_MONOMER
+  - MG_027_MONOMER
+  - MG_028_MONOMER
+  - MG_029_MONOMER
+  - MG_030_MONOMER
+  - MG_031_MONOMER
+  - MG_032_MONOMER
+  - MG_033_MONOMER
+  - MG_034_MONOMER
+  - MG_035_MONOMER
+  - MG_036_MONOMER
+  - MG_037_MONOMER
+  - MG_038_MONOMER
+  - MG_039_MONOMER
+  - MG_040_MONOMER
+  - MG_041_MONOMER
+  - MG_042_MONOMER
+  - MG_043_MONOMER
+  - MG_044_MONOMER
+  - MG_045_MONOMER
+  - MG_046_MONOMER
+  - MG_047_MONOMER
+  - MG_048_MONOMER
+  - MG_049_MONOMER
+  - MG_050_MONOMER
+  - MG_051_MONOMER
+  - MG_052_MONOMER
+  - MG_053_MONOMER
+  - MG_054_MONOMER
+  - MG_055_MONOMER
+  - MG_473_MONOMER
+  - MG_474_MONOMER
+  - MG_056_MONOMER
+  - MG_057_MONOMER
+  - MG_058_MONOMER
+  - MG_059_MONOMER
+  - MG_060_MONOMER
+  - MG_061_MONOMER
+  - MG_062_MONOMER
+  - MG_063_MONOMER
+  - MG_064_MONOMER
+  - MG_065_MONOMER
+  - MG_066_MONOMER
+  - MG_067_MONOMER
+  - MG_068_MONOMER
+  - MG_069_MONOMER
+  - MG_070_MONOMER
+  - MG_071_MONOMER
+  - MG_072_MONOMER
+  - MG_073_MONOMER
+  - MG_074_MONOMER
+  - MG_075_MONOMER
+  - MG_076_MONOMER
+  - MG_077_MONOMER
+  - MG_078_MONOMER
+  - MG_079_MONOMER
+  - MG_080_MONOMER
+  - MG_081_MONOMER
+  - MG_082_MONOMER
+  - MG_083_MONOMER
+  - MG_084_MONOMER
+  - MG_085_MONOMER
+  - MG_086_MONOMER
+  - MG_087_MONOMER
+  - MG_088_MONOMER
+  - MG_089_MONOMER
+  - MG_090_MONOMER
+  - MG_091_MONOMER
+  - MG_092_MONOMER
+  - MG_093_MONOMER
+  - MG_094_MONOMER
+  - MG_095_MONOMER
+  - MG_096_MONOMER
+  - MG_097_MONOMER
+  - MG_098_MONOMER
+  - MG_099_MONOMER
+  - MG_100_MONOMER
+  - MG_101_MONOMER
+  - MG_102_MONOMER
+  - MG_103_MONOMER
+  - MG_476_MONOMER
+  - MG_104_MONOMER
+  - MG_105_MONOMER
+  - MG_106_MONOMER
+  - MG_107_MONOMER
+  - MG_108_MONOMER
+  - MG_109_MONOMER
+  - MG_110_MONOMER
+  - MG_111_MONOMER
+  - MG_112_MONOMER
+  - MG_113_MONOMER
+  - MG_114_MONOMER
+  - MG_115_MONOMER
+  - MG_116_MONOMER
+  - MG_117_MONOMER
+  - MG_118_MONOMER
+  - MG_119_MONOMER
+  - MG_120_MONOMER
+  - MG_121_MONOMER
+  - MG_122_MONOMER
+  - MG_123_MONOMER
+  - MG_124_MONOMER
+  - MG_125_MONOMER
+  - MG_126_MONOMER
+  - MG_127_MONOMER
+  - MG_128_MONOMER
+  - MG_129_MONOMER
+  - MG_130_MONOMER
+  - MG_131_MONOMER
+  - MG_132_MONOMER
+  - MG_133_MONOMER
+  - MG_134_MONOMER
+  - MG_135_MONOMER
+  - MG_136_MONOMER
+  - MG_137_MONOMER
+  - MG_138_MONOMER
+  - MG_139_MONOMER
+  - MG_140_MONOMER
+  - MG_141_MONOMER
+  - MG_477_MONOMER
+  - MG_142_MONOMER
+  - MG_143_MONOMER
+  - MG_144_MONOMER
+  - MG_145_MONOMER
+  - MG_146_MONOMER
+  - MG_147_MONOMER
+  - MG_148_MONOMER
+  - MG_149_MONOMER
+  - MG_478_MONOMER
+  - MG_150_MONOMER
+  - MG_151_MONOMER
+  - MG_152_MONOMER
+  - MG_153_MONOMER
+  - MG_154_MONOMER
+  - MG_155_MONOMER
+  - MG_156_MONOMER
+  - MG_157_MONOMER
+  - MG_158_MONOMER
+  - MG_159_MONOMER
+  - MG_160_MONOMER
+  - MG_161_MONOMER
+  - MG_162_MONOMER
+  - MG_163_MONOMER
+  - MG_164_MONOMER
+  - MG_165_MONOMER
+  - MG_166_MONOMER
+  - MG_167_MONOMER
+  - MG_168_MONOMER
+  - MG_169_MONOMER
+  - MG_170_MONOMER
+  - MG_171_MONOMER
+  - MG_172_MONOMER
+  - MG_173_MONOMER
+  - MG_174_MONOMER
+  - MG_175_MONOMER
+  - MG_176_MONOMER
+  - MG_177_MONOMER
+  - MG_178_MONOMER
+  - MG_179_MONOMER
+  - MG_180_MONOMER
+  - MG_181_MONOMER
+  - MG_182_MONOMER
+  - MG_183_MONOMER
+  - MG_184_MONOMER
+  - MG_185_MONOMER
+  - MG_186_MONOMER
+  - MG_187_MONOMER
+  - MG_188_MONOMER
+  - MG_189_MONOMER
+  - MG_190_MONOMER
+  - MG_191_MONOMER
+  - MG_192_MONOMER
+  - MG_194_MONOMER
+  - MG_195_MONOMER
+  - MG_196_MONOMER
+  - MG_197_MONOMER
+  - MG_198_MONOMER
+  - MG_199_MONOMER
+  - MG_200_MONOMER
+  - MG_201_MONOMER
+  - MG_202_MONOMER
+  - MG_203_MONOMER
+  - MG_204_MONOMER
+  - MG_205_MONOMER
+  - MG_206_MONOMER
+  - MG_207_MONOMER
+  - MG_208_MONOMER
+  - MG_209_MONOMER
+  - MG_210_MONOMER
+  - MG_480_MONOMER
+  - MG_481_MONOMER
+  - MG_211_MONOMER
+  - MG_482_MONOMER
+  - MG_212_MONOMER
+  - MG_213_MONOMER
+  - MG_214_MONOMER
+  - MG_215_MONOMER
+  - MG_216_MONOMER
+  - MG_217_MONOMER
+  - MG_218_MONOMER
+  - MG_491_MONOMER
+  - MG_219_MONOMER
+  - MG_220_MONOMER
+  - MG_221_MONOMER
+  - MG_222_MONOMER
+  - MG_223_MONOMER
+  - MG_224_MONOMER
+  - MG_225_MONOMER
+  - MG_226_MONOMER
+  - MG_227_MONOMER
+  - MG_228_MONOMER
+  - MG_229_MONOMER
+  - MG_230_MONOMER
+  - MG_231_MONOMER
+  - MG_232_MONOMER
+  - MG_233_MONOMER
+  - MG_234_MONOMER
+  - MG_235_MONOMER
+  - MG_236_MONOMER
+  - MG_237_MONOMER
+  - MG_238_MONOMER
+  - MG_239_MONOMER
+  - MG_240_MONOMER
+  - MG_241_MONOMER
+  - MG_242_MONOMER
+  - MG_243_MONOMER
+  - MG_244_MONOMER
+  - MG_245_MONOMER
+  - MG_246_MONOMER
+  - MG_247_MONOMER
+  - MG_248_MONOMER
+  - MG_249_MONOMER
+  - MG_250_MONOMER
+  - MG_251_MONOMER
+  - MG_252_MONOMER
+  - MG_253_MONOMER
+  - MG_254_MONOMER
+  - MG_255_MONOMER
+  - MG_494_MONOMER
+  - MG_256_MONOMER
+  - MG_257_MONOMER
+  - MG_258_MONOMER
+  - MG_259_MONOMER
+  - MG_260_MONOMER
+  - MG_261_MONOMER
+  - MG_262_MONOMER
+  - MG_498_MONOMER
+  - MG_263_MONOMER
+  - MG_264_MONOMER
+  - MG_265_MONOMER
+  - MG_266_MONOMER
+  - MG_267_MONOMER
+  - MG_268_MONOMER
+  - MG_269_MONOMER
+  - MG_270_MONOMER
+  - MG_271_MONOMER
+  - MG_272_MONOMER
+  - MG_273_MONOMER
+  - MG_274_MONOMER
+  - MG_275_MONOMER
+  - MG_276_MONOMER
+  - MG_277_MONOMER
+  - MG_278_MONOMER
+  - MG_279_MONOMER
+  - MG_280_MONOMER
+  - MG_281_MONOMER
+  - MG_282_MONOMER
+  - MG_283_MONOMER
+  - MG_284_MONOMER
+  - MG_285_MONOMER
+  - MG_286_MONOMER
+  - MG_287_MONOMER
+  - MG_288_MONOMER
+  - MG_289_MONOMER
+  - MG_290_MONOMER
+  - MG_291_MONOMER
+  - MG_505_MONOMER
+  - MG_292_MONOMER
+  - MG_293_MONOMER
+  - MG_294_MONOMER
+  - MG_295_MONOMER
+  - MG_296_MONOMER
+  - MG_297_MONOMER
+  - MG_298_MONOMER
+  - MG_299_MONOMER
+  - MG_300_MONOMER
+  - MG_301_MONOMER
+  - MG_302_MONOMER
+  - MG_303_MONOMER
+  - MG_304_MONOMER
+  - MG_305_MONOMER
+  - MG_306_MONOMER
+  - MG_307_MONOMER
+  - MG_308_MONOMER
+  - MG_309_MONOMER
+  - MG_310_MONOMER
+  - MG_311_MONOMER
+  - MG_312_MONOMER
+  - MG_313_MONOMER
+  - MG_314_MONOMER
+  - MG_315_MONOMER
+  - MG_316_MONOMER
+  - MG_317_MONOMER
+  - MG_318_MONOMER
+  - MG_319_MONOMER
+  - MG_320_MONOMER
+  - MG_321_MONOMER
+  - MG_322_MONOMER
+  - MG_323_MONOMER
+  - MG_515_MONOMER
+  - MG_324_MONOMER
+  - MG_325_MONOMER
+  - MG_326_MONOMER
+  - MG_327_MONOMER
+  - MG_328_MONOMER
+  - MG_329_MONOMER
+  - MG_330_MONOMER
+  - MG_331_MONOMER
+  - MG_332_MONOMER
+  - MG_333_MONOMER
+  - MG_334_MONOMER
+  - MG_335_MONOMER
+  - MG_516_MONOMER
+  - MG_517_MONOMER
+  - MG_336_MONOMER
+  - MG_337_MONOMER
+  - MG_338_MONOMER
+  - MG_339_MONOMER
+  - MG_340_MONOMER
+  - MG_341_MONOMER
+  - MG_342_MONOMER
+  - MG_343_MONOMER
+  - MG_344_MONOMER
+  - MG_345_MONOMER
+  - MG_346_MONOMER
+  - MG_347_MONOMER
+  - MG_348_MONOMER
+  - MG_349_MONOMER
+  - MG_350_MONOMER
+  - MG_521_MONOMER
+  - MG_351_MONOMER
+  - MG_352_MONOMER
+  - MG_353_MONOMER
+  - MG_354_MONOMER
+  - MG_355_MONOMER
+  - MG_356_MONOMER
+  - MG_357_MONOMER
+  - MG_358_MONOMER
+  - MG_359_MONOMER
+  - MG_360_MONOMER
+  - MG_361_MONOMER
+  - MG_362_MONOMER
+  - MG_363_MONOMER
+  - MG_522_MONOMER
+  - MG_364_MONOMER
+  - MG_365_MONOMER
+  - MG_366_MONOMER
+  - MG_367_MONOMER
+  - MG_368_MONOMER
+  - MG_369_MONOMER
+  - MG_370_MONOMER
+  - MG_371_MONOMER
+  - MG_372_MONOMER
+  - MG_373_MONOMER
+  - MG_374_MONOMER
+  - MG_375_MONOMER
+  - MG_376_MONOMER
+  - MG_377_MONOMER
+  - MG_378_MONOMER
+  - MG_379_MONOMER
+  - MG_380_MONOMER
+  - MG_381_MONOMER
+  - MG_382_MONOMER
+  - MG_383_MONOMER
+  - MG_384_MONOMER
+  - MG_524_MONOMER
+  - MG_385_MONOMER
+  - MG_386_MONOMER
+  - MG_387_MONOMER
+  - MG_388_MONOMER
+  - MG_389_MONOMER
+  - MG_390_MONOMER
+  - MG_391_MONOMER
+  - MG_392_MONOMER
+  - MG_393_MONOMER
+  - MG_394_MONOMER
+  - MG_395_MONOMER
+  - MG_396_MONOMER
+  - MG_397_MONOMER
+  - MG_398_MONOMER
+  - MG_399_MONOMER
+  - MG_400_MONOMER
+  - MG_401_MONOMER
+  - MG_402_MONOMER
+  - MG_403_MONOMER
+  - MG_404_MONOMER
+  - MG_405_MONOMER
+  - MG_406_MONOMER
+  - MG_407_MONOMER
+  - MG_408_MONOMER
+  - MG_409_MONOMER
+  - MG_410_MONOMER
+  - MG_411_MONOMER
+  - MG_412_MONOMER
+  - MG_414_MONOMER
+  - MG_525_MONOMER
+  - MG_417_MONOMER
+  - MG_418_MONOMER
+  - MG_419_MONOMER
+  - MG_421_MONOMER
+  - MG_422_MONOMER
+  - MG_423_MONOMER
+  - MG_424_MONOMER
+  - MG_425_MONOMER
+  - MG_426_MONOMER
+  - MG_427_MONOMER
+  - MG_428_MONOMER
+  - MG_429_MONOMER
+  - MG_430_MONOMER
+  - MG_431_MONOMER
+  - MG_432_MONOMER
+  - MG_433_MONOMER
+  - MG_434_MONOMER
+  - MG_435_MONOMER
+  - MG_437_MONOMER
+  - MG_438_MONOMER
+  - MG_439_MONOMER
+  - MG_440_MONOMER
+  - MG_441_MONOMER
+  - MG_442_MONOMER
+  - MG_443_MONOMER
+  - MG_444_MONOMER
+  - MG_445_MONOMER
+  - MG_446_MONOMER
+  - MG_447_MONOMER
+  - MG_448_MONOMER
+  - MG_449_MONOMER
+  - MG_450_MONOMER
+  - MG_451_MONOMER
+  - MG_452_MONOMER
+  - MG_453_MONOMER
+  - MG_454_MONOMER
+  - MG_455_MONOMER
+  - MG_456_MONOMER
+  - MG_457_MONOMER
+  - MG_458_MONOMER
+  - MG_459_MONOMER
+  - MG_460_MONOMER
+  - MG_461_MONOMER
+  - MG_462_MONOMER
+  - MG_463_MONOMER
+  - MG_464_MONOMER
+  - MG_465_MONOMER
+  - MG_466_MONOMER
+  - MG_467_MONOMER
+  - MG_468_MONOMER
+  - MG_526_MONOMER
+  - MG_469_MONOMER
+  - MG_470_MONOMER
+  reactionWholeCellModelIDs: *id001
+  stimuliWholeCellModelIDs: []
+  substrateWholeCellModelIDs:
+  - ADP
+  - AMP
+  - ATP
+  - GLU
+  - H
+  - LIPOYLAMP
+  - LIPOYLLYS
+  - LYS
+  - PI
+  - pSER
+  - pTHR
+  - pTYR
+  - SER
+  - THR
+  - TYR
+  unmodifiedMonomerWholeCellModelIDs:
+  - MG_001_MONOMER
+  - MG_002_MONOMER
+  - MG_003_MONOMER
+  - MG_004_MONOMER
+  - MG_005_MONOMER
+  - MG_006_MONOMER
+  - MG_007_MONOMER
+  - MG_008_MONOMER
+  - MG_009_MONOMER
+  - MG_010_MONOMER
+  - MG_011_MONOMER
+  - MG_012_MONOMER
+  - MG_013_MONOMER
+  - MG_014_MONOMER
+  - MG_015_MONOMER
+  - MG_018_MONOMER
+  - MG_019_MONOMER
+  - MG_020_MONOMER
+  - MG_021_MONOMER
+  - MG_022_MONOMER
+  - MG_023_MONOMER
+  - MG_024_MONOMER
+  - MG_025_MONOMER
+  - MG_026_MONOMER
+  - MG_027_MONOMER
+  - MG_028_MONOMER
+  - MG_029_MONOMER
+  - MG_030_MONOMER
+  - MG_031_MONOMER
+  - MG_032_MONOMER
+  - MG_033_MONOMER
+  - MG_034_MONOMER
+  - MG_035_MONOMER
+  - MG_036_MONOMER
+  - MG_037_MONOMER
+  - MG_038_MONOMER
+  - MG_039_MONOMER
+  - MG_040_MONOMER
+  - MG_041_MONOMER
+  - MG_042_MONOMER
+  - MG_043_MONOMER
+  - MG_044_MONOMER
+  - MG_045_MONOMER
+  - MG_046_MONOMER
+  - MG_047_MONOMER
+  - MG_048_MONOMER
+  - MG_049_MONOMER
+  - MG_050_MONOMER
+  - MG_051_MONOMER
+  - MG_052_MONOMER
+  - MG_053_MONOMER
+  - MG_054_MONOMER
+  - MG_055_MONOMER
+  - MG_473_MONOMER
+  - MG_474_MONOMER
+  - MG_056_MONOMER
+  - MG_057_MONOMER
+  - MG_058_MONOMER
+  - MG_059_MONOMER
+  - MG_060_MONOMER
+  - MG_061_MONOMER
+  - MG_062_MONOMER
+  - MG_063_MONOMER
+  - MG_064_MONOMER
+  - MG_065_MONOMER
+  - MG_066_MONOMER
+  - MG_067_MONOMER
+  - MG_068_MONOMER
+  - MG_069_MONOMER
+  - MG_070_MONOMER
+  - MG_071_MONOMER
+  - MG_072_MONOMER
+  - MG_073_MONOMER
+  - MG_074_MONOMER
+  - MG_075_MONOMER
+  - MG_076_MONOMER
+  - MG_077_MONOMER
+  - MG_078_MONOMER
+  - MG_079_MONOMER
+  - MG_080_MONOMER
+  - MG_081_MONOMER
+  - MG_082_MONOMER
+  - MG_083_MONOMER
+  - MG_084_MONOMER
+  - MG_085_MONOMER
+  - MG_086_MONOMER
+  - MG_087_MONOMER
+  - MG_088_MONOMER
+  - MG_089_MONOMER
+  - MG_090_MONOMER
+  - MG_091_MONOMER
+  - MG_092_MONOMER
+  - MG_093_MONOMER
+  - MG_094_MONOMER
+  - MG_095_MONOMER
+  - MG_096_MONOMER
+  - MG_097_MONOMER
+  - MG_098_MONOMER
+  - MG_099_MONOMER
+  - MG_100_MONOMER
+  - MG_101_MONOMER
+  - MG_102_MONOMER
+  - MG_103_MONOMER
+  - MG_476_MONOMER
+  - MG_104_MONOMER
+  - MG_105_MONOMER
+  - MG_106_MONOMER
+  - MG_107_MONOMER
+  - MG_108_MONOMER
+  - MG_109_MONOMER
+  - MG_110_MONOMER
+  - MG_111_MONOMER
+  - MG_112_MONOMER
+  - MG_113_MONOMER
+  - MG_114_MONOMER
+  - MG_115_MONOMER
+  - MG_116_MONOMER
+  - MG_117_MONOMER
+  - MG_118_MONOMER
+  - MG_119_MONOMER
+  - MG_120_MONOMER
+  - MG_121_MONOMER
+  - MG_122_MONOMER
+  - MG_123_MONOMER
+  - MG_124_MONOMER
+  - MG_125_MONOMER
+  - MG_126_MONOMER
+  - MG_127_MONOMER
+  - MG_128_MONOMER
+  - MG_129_MONOMER
+  - MG_130_MONOMER
+  - MG_131_MONOMER
+  - MG_132_MONOMER
+  - MG_133_MONOMER
+  - MG_134_MONOMER
+  - MG_135_MONOMER
+  - MG_136_MONOMER
+  - MG_137_MONOMER
+  - MG_138_MONOMER
+  - MG_139_MONOMER
+  - MG_140_MONOMER
+  - MG_141_MONOMER
+  - MG_477_MONOMER
+  - MG_142_MONOMER
+  - MG_143_MONOMER
+  - MG_144_MONOMER
+  - MG_145_MONOMER
+  - MG_146_MONOMER
+  - MG_147_MONOMER
+  - MG_148_MONOMER
+  - MG_149_MONOMER
+  - MG_478_MONOMER
+  - MG_150_MONOMER
+  - MG_151_MONOMER
+  - MG_152_MONOMER
+  - MG_153_MONOMER
+  - MG_154_MONOMER
+  - MG_155_MONOMER
+  - MG_156_MONOMER
+  - MG_157_MONOMER
+  - MG_158_MONOMER
+  - MG_159_MONOMER
+  - MG_160_MONOMER
+  - MG_161_MONOMER
+  - MG_162_MONOMER
+  - MG_163_MONOMER
+  - MG_164_MONOMER
+  - MG_165_MONOMER
+  - MG_166_MONOMER
+  - MG_167_MONOMER
+  - MG_168_MONOMER
+  - MG_169_MONOMER
+  - MG_170_MONOMER
+  - MG_171_MONOMER
+  - MG_172_MONOMER
+  - MG_173_MONOMER
+  - MG_174_MONOMER
+  - MG_175_MONOMER
+  - MG_176_MONOMER
+  - MG_177_MONOMER
+  - MG_178_MONOMER
+  - MG_179_MONOMER
+  - MG_180_MONOMER
+  - MG_181_MONOMER
+  - MG_182_MONOMER
+  - MG_183_MONOMER
+  - MG_184_MONOMER
+  - MG_185_MONOMER
+  - MG_186_MONOMER
+  - MG_187_MONOMER
+  - MG_188_MONOMER
+  - MG_189_MONOMER
+  - MG_190_MONOMER
+  - MG_191_MONOMER
+  - MG_192_MONOMER
+  - MG_194_MONOMER
+  - MG_195_MONOMER
+  - MG_196_MONOMER
+  - MG_197_MONOMER
+  - MG_198_MONOMER
+  - MG_199_MONOMER
+  - MG_200_MONOMER
+  - MG_201_MONOMER
+  - MG_202_MONOMER
+  - MG_203_MONOMER
+  - MG_204_MONOMER
+  - MG_205_MONOMER
+  - MG_206_MONOMER
+  - MG_207_MONOMER
+  - MG_208_MONOMER
+  - MG_209_MONOMER
+  - MG_210_MONOMER
+  - MG_480_MONOMER
+  - MG_481_MONOMER
+  - MG_211_MONOMER
+  - MG_482_MONOMER
+  - MG_212_MONOMER
+  - MG_213_MONOMER
+  - MG_214_MONOMER
+  - MG_215_MONOMER
+  - MG_216_MONOMER
+  - MG_217_MONOMER
+  - MG_218_MONOMER
+  - MG_491_MONOMER
+  - MG_219_MONOMER
+  - MG_220_MONOMER
+  - MG_221_MONOMER
+  - MG_222_MONOMER
+  - MG_223_MONOMER
+  - MG_224_MONOMER
+  - MG_225_MONOMER
+  - MG_226_MONOMER
+  - MG_227_MONOMER
+  - MG_228_MONOMER
+  - MG_229_MONOMER
+  - MG_230_MONOMER
+  - MG_231_MONOMER
+  - MG_232_MONOMER
+  - MG_233_MONOMER
+  - MG_234_MONOMER
+  - MG_235_MONOMER
+  - MG_236_MONOMER
+  - MG_237_MONOMER
+  - MG_238_MONOMER
+  - MG_239_MONOMER
+  - MG_240_MONOMER
+  - MG_241_MONOMER
+  - MG_242_MONOMER
+  - MG_243_MONOMER
+  - MG_244_MONOMER
+  - MG_245_MONOMER
+  - MG_246_MONOMER
+  - MG_247_MONOMER
+  - MG_248_MONOMER
+  - MG_249_MONOMER
+  - MG_250_MONOMER
+  - MG_251_MONOMER
+  - MG_252_MONOMER
+  - MG_253_MONOMER
+  - MG_254_MONOMER
+  - MG_255_MONOMER
+  - MG_494_MONOMER
+  - MG_256_MONOMER
+  - MG_257_MONOMER
+  - MG_258_MONOMER
+  - MG_259_MONOMER
+  - MG_260_MONOMER
+  - MG_261_MONOMER
+  - MG_262_MONOMER
+  - MG_498_MONOMER
+  - MG_263_MONOMER
+  - MG_264_MONOMER
+  - MG_265_MONOMER
+  - MG_266_MONOMER
+  - MG_267_MONOMER
+  - MG_268_MONOMER
+  - MG_269_MONOMER
+  - MG_270_MONOMER
+  - MG_271_MONOMER
+  - MG_272_MONOMER
+  - MG_273_MONOMER
+  - MG_274_MONOMER
+  - MG_275_MONOMER
+  - MG_276_MONOMER
+  - MG_277_MONOMER
+  - MG_278_MONOMER
+  - MG_279_MONOMER
+  - MG_280_MONOMER
+  - MG_281_MONOMER
+  - MG_282_MONOMER
+  - MG_283_MONOMER
+  - MG_284_MONOMER
+  - MG_285_MONOMER
+  - MG_286_MONOMER
+  - MG_287_MONOMER
+  - MG_288_MONOMER
+  - MG_289_MONOMER
+  - MG_290_MONOMER
+  - MG_291_MONOMER
+  - MG_505_MONOMER
+  - MG_292_MONOMER
+  - MG_293_MONOMER
+  - MG_294_MONOMER
+  - MG_295_MONOMER
+  - MG_296_MONOMER
+  - MG_297_MONOMER
+  - MG_298_MONOMER
+  - MG_299_MONOMER
+  - MG_300_MONOMER
+  - MG_301_MONOMER
+  - MG_302_MONOMER
+  - MG_303_MONOMER
+  - MG_304_MONOMER
+  - MG_305_MONOMER
+  - MG_306_MONOMER
+  - MG_307_MONOMER
+  - MG_308_MONOMER
+  - MG_309_MONOMER
+  - MG_310_MONOMER
+  - MG_311_MONOMER
+  - MG_312_MONOMER
+  - MG_313_MONOMER
+  - MG_314_MONOMER
+  - MG_315_MONOMER
+  - MG_316_MONOMER
+  - MG_317_MONOMER
+  - MG_318_MONOMER
+  - MG_319_MONOMER
+  - MG_320_MONOMER
+  - MG_321_MONOMER
+  - MG_322_MONOMER
+  - MG_323_MONOMER
+  - MG_515_MONOMER
+  - MG_324_MONOMER
+  - MG_325_MONOMER
+  - MG_326_MONOMER
+  - MG_327_MONOMER
+  - MG_328_MONOMER
+  - MG_329_MONOMER
+  - MG_330_MONOMER
+  - MG_331_MONOMER
+  - MG_332_MONOMER
+  - MG_333_MONOMER
+  - MG_334_MONOMER
+  - MG_335_MONOMER
+  - MG_516_MONOMER
+  - MG_517_MONOMER
+  - MG_336_MONOMER
+  - MG_337_MONOMER
+  - MG_338_MONOMER
+  - MG_339_MONOMER
+  - MG_340_MONOMER
+  - MG_341_MONOMER
+  - MG_342_MONOMER
+  - MG_343_MONOMER
+  - MG_344_MONOMER
+  - MG_345_MONOMER
+  - MG_346_MONOMER
+  - MG_347_MONOMER
+  - MG_348_MONOMER
+  - MG_349_MONOMER
+  - MG_350_MONOMER
+  - MG_521_MONOMER
+  - MG_351_MONOMER
+  - MG_352_MONOMER
+  - MG_353_MONOMER
+  - MG_354_MONOMER
+  - MG_355_MONOMER
+  - MG_356_MONOMER
+  - MG_357_MONOMER
+  - MG_358_MONOMER
+  - MG_359_MONOMER
+  - MG_360_MONOMER
+  - MG_361_MONOMER
+  - MG_362_MONOMER
+  - MG_363_MONOMER
+  - MG_522_MONOMER
+  - MG_364_MONOMER
+  - MG_365_MONOMER
+  - MG_366_MONOMER
+  - MG_367_MONOMER
+  - MG_368_MONOMER
+  - MG_369_MONOMER
+  - MG_370_MONOMER
+  - MG_371_MONOMER
+  - MG_372_MONOMER
+  - MG_373_MONOMER
+  - MG_374_MONOMER
+  - MG_375_MONOMER
+  - MG_376_MONOMER
+  - MG_377_MONOMER
+  - MG_378_MONOMER
+  - MG_379_MONOMER
+  - MG_380_MONOMER
+  - MG_381_MONOMER
+  - MG_382_MONOMER
+  - MG_383_MONOMER
+  - MG_384_MONOMER
+  - MG_524_MONOMER
+  - MG_385_MONOMER
+  - MG_386_MONOMER
+  - MG_387_MONOMER
+  - MG_388_MONOMER
+  - MG_389_MONOMER
+  - MG_390_MONOMER
+  - MG_391_MONOMER
+  - MG_392_MONOMER
+  - MG_393_MONOMER
+  - MG_394_MONOMER
+  - MG_395_MONOMER
+  - MG_396_MONOMER
+  - MG_397_MONOMER
+  - MG_398_MONOMER
+  - MG_399_MONOMER
+  - MG_400_MONOMER
+  - MG_401_MONOMER
+  - MG_402_MONOMER
+  - MG_403_MONOMER
+  - MG_404_MONOMER
+  - MG_405_MONOMER
+  - MG_406_MONOMER
+  - MG_407_MONOMER
+  - MG_408_MONOMER
+  - MG_409_MONOMER
+  - MG_410_MONOMER
+  - MG_411_MONOMER
+  - MG_412_MONOMER
+  - MG_414_MONOMER
+  - MG_525_MONOMER
+  - MG_417_MONOMER
+  - MG_418_MONOMER
+  - MG_419_MONOMER
+  - MG_421_MONOMER
+  - MG_422_MONOMER
+  - MG_423_MONOMER
+  - MG_424_MONOMER
+  - MG_425_MONOMER
+  - MG_426_MONOMER
+  - MG_427_MONOMER
+  - MG_428_MONOMER
+  - MG_429_MONOMER
+  - MG_430_MONOMER
+  - MG_431_MONOMER
+  - MG_432_MONOMER
+  - MG_433_MONOMER
+  - MG_434_MONOMER
+  - MG_435_MONOMER
+  - MG_437_MONOMER
+  - MG_438_MONOMER
+  - MG_439_MONOMER
+  - MG_440_MONOMER
+  - MG_441_MONOMER
+  - MG_442_MONOMER
+  - MG_443_MONOMER
+  - MG_444_MONOMER
+  - MG_445_MONOMER
+  - MG_446_MONOMER
+  - MG_447_MONOMER
+  - MG_448_MONOMER
+  - MG_449_MONOMER
+  - MG_450_MONOMER
+  - MG_451_MONOMER
+  - MG_452_MONOMER
+  - MG_453_MONOMER
+  - MG_454_MONOMER
+  - MG_455_MONOMER
+  - MG_456_MONOMER
+  - MG_457_MONOMER
+  - MG_458_MONOMER
+  - MG_459_MONOMER
+  - MG_460_MONOMER
+  - MG_461_MONOMER
+  - MG_462_MONOMER
+  - MG_463_MONOMER
+  - MG_464_MONOMER
+  - MG_465_MONOMER
+  - MG_466_MONOMER
+  - MG_467_MONOMER
+  - MG_468_MONOMER
+  - MG_526_MONOMER
+  - MG_469_MONOMER
+  - MG_470_MONOMER

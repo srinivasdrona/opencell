@@ -1,0 +1,441 @@
+params:
+  boundEnzymes:
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  chromosome: <handle:edu.stanford.covert.cell.sim.state.Chromosome:1x1>
+  compartment: <handle:edu.stanford.covert.cell.sim.constant.Compartment:1x1>
+  complex: <handle:edu.stanford.covert.cell.sim.state.ProteinComplex:1x1>
+  enzymeDNAFootprints:
+  - 20
+  - 85
+  - 19
+  - 19
+  - 34
+  enzymeDNAFootprints3Prime:
+  - 9
+  - 42
+  - 9
+  - 9
+  - 16
+  enzymeDNAFootprints5Prime:
+  - 10
+  - 42
+  - 9
+  - 9
+  - 17
+  enzymeMolecularWeights:
+  - 29840.229699999996
+  - 130434.51599999997
+  - 33736.32139999999
+  - 48173.7086
+  - 320223.5136
+  enzymeNames:
+  - CobQ/CobB/MinD/ParA nucleotide binding domain
+  - mraZ protein
+  - GTP-binding protein Era
+  - GTPase1 Obg
+  - topoisomerase IV
+  enzymes:
+  - 64
+  - 12
+  - 20
+  - 20
+  - 12
+  fittedConstantNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  fixedConstantNames__: gtpCost
+  gene: <handle:edu.stanford.covert.cell.sim.constant.Gene:1x1>
+  geometry: <handle:edu.stanford.covert.cell.sim.state.CellGeometry:1x1>
+  gtpCost: 1
+  initialized: 1
+  localStateNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  metabolite: <handle:edu.stanford.covert.cell.sim.state.Metabolite:1x1>
+  monomer: <handle:edu.stanford.covert.cell.sim.state.ProteinMonomer:1x1>
+  name: Chromosome Segregation
+  optionNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  parameterNames: gtpCost
+  randStream: <handle:edu.stanford.covert.util.RandStream:1x1>
+  rna: <handle:edu.stanford.covert.cell.sim.state.Rna:1x1>
+  seed: 1
+  simulationStateSideEffects:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  states:
+    dtype: object
+    sha256: 9e2805bbaeefda9782787b477219be9c49f2f12ed38ba0cdf3b9a8bdcd276be9
+    shape:
+    - 6
+  stepSizeSec: 1
+  stimuli:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  stimuliNames:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  stimulus: <handle:edu.stanford.covert.cell.sim.state.Stimulus:1x1>
+  substrateMolecularWeights:
+  - 519.1483000000001
+  - 440.1763
+  - 1.0079
+  - 18.0152
+  - 95.9793
+  substrateNames:
+  - GTP
+  - GDP
+  - hydrogen ion
+  - water
+  - phosphate
+  substrates:
+  - 36234
+  - 3623
+  - 13042
+  - 309737899
+  - 7246
+  verbosity: 0
+  wholeCellModelID: Process_ChromosomeSegregation
+  x_class_: edu.stanford.covert.cell.sim.process.ChromosomeSegregation
+process: ChromosomeSegregation
+role_groups:
+  enzymeBoundComplexGlobalCompartmentIndexs:
+    indices:
+    - 688
+    - 681
+    wids: null
+  enzymeBoundMonomerGlobalCompartmentIndexs:
+    indices:
+    - 3856
+    - 3776
+    - 3772
+    wids: null
+  enzymeBoundRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeComplexCompartmentIndexs:
+    indices:
+    - 1
+    - 1
+    wids: null
+  enzymeComplexGlobalCompartmentIndexs:
+    indices:
+    - 286
+    - 279
+    wids: null
+  enzymeComplexGlobalIndexs:
+    indices:
+    - 85
+    - 78
+    wids: null
+  enzymeComplexLocalIndexs:
+    indices:
+    - 2
+    - 5
+    wids: null
+  enzymeGlobalIndexs:
+    indices:
+    - 482
+    - 85
+    - 402
+    - 398
+    - 78
+    wids: null
+  enzymeIndexs_cobQ:
+    indices:
+    - 1
+    wids:
+    - MG_470_MONOMER
+  enzymeIndexs_era:
+    indices:
+    - 4
+    wids:
+    - MG_384_MONOMER
+  enzymeIndexs_mraZ:
+    indices:
+    - 2
+    wids:
+    - MG_221_OCTAMER
+  enzymeIndexs_obg:
+    indices:
+    - 3
+    wids:
+    - MG_387_MONOMER
+  enzymeIndexs_topoIV:
+    indices:
+    - 5
+    wids:
+    - MG_203_204_TETRAMER
+  enzymeMetaboliteCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteLocalIndexs:
+    indices: []
+    wids: null
+  enzymeMonomerCompartmentIndexs:
+    indices:
+    - 1
+    - 1
+    - 1
+    wids: null
+  enzymeMonomerGlobalCompartmentIndexs:
+    indices:
+    - 2892
+    - 2812
+    - 2808
+    wids: null
+  enzymeMonomerGlobalIndexs:
+    indices:
+    - 482
+    - 402
+    - 398
+    wids: null
+  enzymeMonomerLocalIndexs:
+    indices:
+    - 1
+    - 3
+    - 4
+    wids: null
+  enzymeRNACompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeRNAGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeRNALocalIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusLocalIndexs:
+    indices: []
+    wids: null
+  parameterIndexs:
+    indices: []
+    wids: null
+  stimulusComplexCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusComplexGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusComplexLocalIndexs:
+    indices: []
+    wids: null
+  stimulusGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteLocalIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerLocalIndexs:
+    indices: []
+    wids: null
+  stimulusRNACompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusRNAGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusRNALocalIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusLocalIndexs:
+    indices: []
+    wids: null
+  substrateComplexCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateComplexGlobalIndexs:
+    indices: []
+    wids: null
+  substrateComplexLocalIndexs:
+    indices: []
+    wids: null
+  substrateGlobalIndexs:
+    indices:
+    - 384
+    - 329
+    - 385
+    - 386
+    - 611
+    wids: null
+  substrateIndexs_gdp:
+    indices:
+    - 2
+    wids:
+    - GDP
+  substrateIndexs_gtp:
+    indices:
+    - 1
+    wids:
+    - GTP
+  substrateIndexs_hydrogen:
+    indices:
+    - 3
+    wids:
+    - H
+  substrateIndexs_phosphate:
+    indices:
+    - 5
+    wids:
+    - PI
+  substrateIndexs_water:
+    indices:
+    - 4
+    wids:
+    - H2O
+  substrateMetaboliteCompartmentIndexs:
+    indices:
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    wids: null
+  substrateMetaboliteGlobalCompartmentIndexs:
+    indices:
+    - 384
+    - 329
+    - 385
+    - 386
+    - 611
+    wids: null
+  substrateMetaboliteGlobalIndexs:
+    indices:
+    - 384
+    - 329
+    - 385
+    - 386
+    - 611
+    wids: null
+  substrateMetaboliteLocalIndexs:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    wids: null
+  substrateMonomerCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateMonomerGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateMonomerGlobalIndexs:
+    indices: []
+    wids: null
+  substrateMonomerLocalIndexs:
+    indices: []
+    wids: null
+  substrateRNACompartmentIndexs:
+    indices: []
+    wids: null
+  substrateRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateRNAGlobalIndexs:
+    indices: []
+    wids: null
+  substrateRNALocalIndexs:
+    indices: []
+    wids: null
+  substrateStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  substrateStimulusLocalIndexs:
+    indices: []
+    wids: null
+source:
+  fixture: data/karr_fixtures/per_process/ChromosomeSegregation_flat.mat
+  fixture_sha256: 5687460959b1aadaee49b5990b2e92c946c66001f392bec099477a6cbb6bf513
+vocabularies:
+  enzymeWholeCellModelIDs:
+  - MG_470_MONOMER
+  - MG_221_OCTAMER
+  - MG_387_MONOMER
+  - MG_384_MONOMER
+  - MG_203_204_TETRAMER
+  stimuliWholeCellModelIDs: []
+  substrateWholeCellModelIDs:
+  - GTP
+  - GDP
+  - H
+  - H2O
+  - PI

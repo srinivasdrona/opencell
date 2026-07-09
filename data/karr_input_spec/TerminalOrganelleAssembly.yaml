@@ -1,0 +1,676 @@
+params:
+  boundEnzymes:
+    dtype: uint8
+    sha256: 5d89f056865052bcb89c910d2d62872e029fb273c3db03f8968a52a41593c1b5
+    shape:
+    - 4
+    - 6
+  compartment: <handle:edu.stanford.covert.cell.sim.constant.Compartment:1x1>
+  complex: <handle:edu.stanford.covert.cell.sim.state.ProteinComplex:1x1>
+  enzymeBounds:
+    dtype: float64
+    sha256: 4a9abf9eb892f054c162e26be8e3dbb6f086123653949bbc17b5889865093f12
+    shape:
+    - 10
+    - 2
+  enzymeMolecularWeights:
+  - 216261.42260000002
+  - 130374.18559999998
+  - 69108.5539
+  - 32159.285599999996
+  enzymeNames:
+  - high molecular weight cytadherence accessory protein 2
+  - high molecular weight cytadherence accessory protein 1
+  - high molecular weight cytadherence accessory protein 3
+  - P32 adhesin
+  enzymes:
+    dtype: uint8
+    sha256: 556356eae4fac6c52a67288decdf67e5fb7e6523f63487437f25d76f39ccf02c
+    shape:
+    - 4
+    - 6
+  fittedConstantNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  fixedConstantNames__:
+  - localizationReactions
+  - localizationSubstrates
+  - localizationThreshold
+  gene: <handle:edu.stanford.covert.cell.sim.constant.Gene:1x1>
+  geometry: <handle:edu.stanford.covert.cell.sim.state.CellGeometry:1x1>
+  initialized: 1
+  localStateNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  localizationReactions:
+    dtype: uint8
+    sha256: 523fb9443ebe4fb023b8cc179bc347e70a074e6afcfd9414e1f577e09bdf37fe
+    shape:
+    - 10
+    - 8
+    - 2
+  localizationSubstrates:
+    dtype: uint8
+    sha256: fd91f392d8e7eabcb7ba78263e7b1057410f01d5b2797ca4e56d7588c37cd1c9
+    shape:
+    - 10
+    - 8
+  localizationThreshold:
+  - 1
+  - 0
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  metabolite: <handle:edu.stanford.covert.cell.sim.state.Metabolite:1x1>
+  monomer: <handle:edu.stanford.covert.cell.sim.state.ProteinMonomer:1x1>
+  name: Terminal organelle assembly
+  optionNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  parameterNames:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  randStream: <handle:edu.stanford.covert.util.RandStream:1x1>
+  reactionBounds:
+    dtype: float64
+    sha256: 7a3f6dc909e56c317cf4c24930f3e4bc813731ba9fa47ddefde63e0e965f881d
+    shape:
+    - 10
+    - 2
+  reactionNames:
+  - MgPa terminal organelle assembly
+  - P110 terminal organelle assembly
+  - P65 terminal organelle assembly
+  - HMW2 terminal organelle assembly
+  - HMW2 terminal organelle assembly
+  - HMW1 terminal organelle assembly
+  - HMW1 terminal organelle assembly
+  - HMW3 terminal organelle assembly
+  - P32 terminal organelle assembly
+  - P200 terminal organelle assembly
+  reactionTypes:
+  - []
+  - []
+  - []
+  - []
+  - []
+  - []
+  - []
+  - []
+  - []
+  - []
+  rna: <handle:edu.stanford.covert.cell.sim.state.Rna:1x1>
+  seed: 1
+  simulationStateSideEffects:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  states:
+    dtype: object
+    sha256: da8d2dfbc0ccb5681391442364b01d3184786ce7b5841025aad3448f7c0363cf
+    shape:
+    - 5
+  stepSizeSec: 1
+  stimuli:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  stimuliNames:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  stimulus: <handle:edu.stanford.covert.cell.sim.state.Stimulus:1x1>
+  substrateMolecularWeights:
+  - 159662.94799999997
+  - 114447.02759999999
+  - 44723.31679999999
+  - 216261.42260000002
+  - 130374.18559999998
+  - 69108.5539
+  - 32159.285599999996
+  - 185415.52169999998
+  substrateNames:
+  - MgPa adhesin
+  - P110 protein
+  - P65 adhesin
+  - high molecular weight cytadherence accessory protein 2
+  - high molecular weight cytadherence accessory protein 1
+  - high molecular weight cytadherence accessory protein 3
+  - P32 adhesin
+  - P200 protein
+  substrateWholeCellModelIDs__:
+  - MG_191_MONOMER
+  - MG_192_MONOMER
+  - MG_217_MONOMER
+  - MG_218_MONOMER
+  - MG_312_MONOMER
+  - MG_317_MONOMER
+  - MG_318_MONOMER
+  - MG_386_MONOMER
+  substrates:
+  - - 31
+    - 0
+  - - 31
+    - 0
+  - - 17
+    - 0
+  - - 33
+    - 0
+  - - 26
+    - 0
+  - - 19
+    - 0
+  - - 24
+    - 0
+  - - 11
+    - 0
+  verbosity: 0
+  wholeCellModelID: Process_TerminalOrganelleAssembly
+  x_class_: edu.stanford.covert.cell.sim.process.TerminalOrganelleAssembly
+process: TerminalOrganelleAssembly
+role_groups:
+  compartmentIndexs_incorporated:
+    indices:
+    - 1
+    wids: null
+  compartmentIndexs_unincorporated:
+    indices:
+    - 2
+    wids: null
+  enzymeBoundComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeBoundMonomerGlobalCompartmentIndexs:
+    indices:
+    - 3597
+    - 8417
+    - 13237
+    - 18057
+    - 22877
+    - 27697
+    - 3695
+    - 8515
+    - 13335
+    - 18155
+    - 22975
+    - 27795
+    - 3700
+    - 8520
+    - 13340
+    - 18160
+    - 22980
+    - 27800
+    - 3701
+    - 8521
+    - 13341
+    - 18161
+    - 22981
+    - 27801
+    wids: null
+  enzymeBoundRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeComplexCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeComplexGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeComplexLocalIndexs:
+    indices: []
+    wids: null
+  enzymeGlobalIndexs:
+    indices:
+    - 223
+    - 321
+    - 326
+    - 327
+    wids: null
+  enzymeIndexs_HMW1:
+    indices:
+    - 2
+    wids:
+    - MG_312_MONOMER
+  enzymeIndexs_HMW2:
+    indices:
+    - 1
+    wids:
+    - MG_218_MONOMER
+  enzymeIndexs_HMW3:
+    indices:
+    - 3
+    wids:
+    - MG_317_MONOMER
+  enzymeIndexs_P32:
+    indices:
+    - 4
+    wids:
+    - MG_318_MONOMER
+  enzymeMetaboliteCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteLocalIndexs:
+    indices: []
+    wids: null
+  enzymeMonomerCompartmentIndexs:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    wids: null
+  enzymeMonomerGlobalCompartmentIndexs:
+    indices:
+    - 2633
+    - 7453
+    - 12273
+    - 17093
+    - 21913
+    - 26733
+    - 2731
+    - 7551
+    - 12371
+    - 17191
+    - 22011
+    - 26831
+    - 2736
+    - 7556
+    - 12376
+    - 17196
+    - 22016
+    - 26836
+    - 2737
+    - 7557
+    - 12377
+    - 17197
+    - 22017
+    - 26837
+    wids: null
+  enzymeMonomerGlobalIndexs:
+    indices:
+    - 223
+    - 223
+    - 223
+    - 223
+    - 223
+    - 223
+    - 321
+    - 321
+    - 321
+    - 321
+    - 321
+    - 321
+    - 326
+    - 326
+    - 326
+    - 326
+    - 326
+    - 326
+    - 327
+    - 327
+    - 327
+    - 327
+    - 327
+    - 327
+    wids: null
+  enzymeMonomerLocalIndexs:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    wids: null
+  enzymeRNACompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeRNAGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeRNALocalIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusLocalIndexs:
+    indices: []
+    wids: null
+  parameterIndexs:
+    indices: []
+    wids: null
+  stimulusComplexCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusComplexGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusComplexLocalIndexs:
+    indices: []
+    wids: null
+  stimulusGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteLocalIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerLocalIndexs:
+    indices: []
+    wids: null
+  stimulusRNACompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusRNAGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusRNALocalIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusLocalIndexs:
+    indices: []
+    wids: null
+  substrateComplexCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateComplexGlobalIndexs:
+    indices: []
+    wids: null
+  substrateComplexLocalIndexs:
+    indices: []
+    wids: null
+  substrateGlobalIndexs:
+    indices:
+    - 194
+    - 195
+    - 222
+    - 223
+    - 321
+    - 326
+    - 327
+    - 401
+    wids: null
+  substrateIndexs_HMW1:
+    indices:
+    - 5
+    wids:
+    - MG_312_MONOMER
+  substrateIndexs_HMW2:
+    indices:
+    - 4
+    wids:
+    - MG_218_MONOMER
+  substrateIndexs_HMW3:
+    indices:
+    - 6
+    wids:
+    - MG_317_MONOMER
+  substrateIndexs_MgPa:
+    indices:
+    - 1
+    wids:
+    - MG_191_MONOMER
+  substrateIndexs_P110:
+    indices:
+    - 2
+    wids:
+    - MG_192_MONOMER
+  substrateIndexs_P200:
+    indices:
+    - 8
+    wids:
+    - MG_386_MONOMER
+  substrateIndexs_P32:
+    indices:
+    - 7
+    wids:
+    - MG_318_MONOMER
+  substrateIndexs_P65:
+    indices:
+    - 3
+    wids:
+    - MG_217_MONOMER
+  substrateMetaboliteCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateMetaboliteGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateMetaboliteGlobalIndexs:
+    indices: []
+    wids: null
+  substrateMetaboliteLocalIndexs:
+    indices: []
+    wids: null
+  substrateMonomerCompartmentIndexs:
+    indices:
+    - 6
+    - 4
+    - 6
+    - 4
+    - 5
+    - 1
+    - 5
+    - 1
+    - 5
+    - 1
+    - 5
+    - 1
+    - 6
+    - 4
+    - 5
+    - 1
+    wids: null
+  substrateMonomerGlobalCompartmentIndexs:
+    indices:
+    - 26704
+    - 17064
+    - 26705
+    - 17065
+    - 21912
+    - 2632
+    - 21913
+    - 2633
+    - 22011
+    - 2731
+    - 22016
+    - 2736
+    - 26837
+    - 17197
+    - 22091
+    - 2811
+    wids: null
+  substrateMonomerGlobalIndexs:
+    indices:
+    - 194
+    - 194
+    - 195
+    - 195
+    - 222
+    - 222
+    - 223
+    - 223
+    - 321
+    - 321
+    - 326
+    - 326
+    - 327
+    - 327
+    - 401
+    - 401
+    wids: null
+  substrateMonomerLocalIndexs:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    wids: null
+  substrateRNACompartmentIndexs:
+    indices: []
+    wids: null
+  substrateRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateRNAGlobalIndexs:
+    indices: []
+    wids: null
+  substrateRNALocalIndexs:
+    indices: []
+    wids: null
+  substrateStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  substrateStimulusLocalIndexs:
+    indices: []
+    wids: null
+source:
+  fixture: data/karr_fixtures/per_process/TerminalOrganelleAssembly_flat.mat
+  fixture_sha256: cdf3c89d8f32cd429d130cc650b01c53f855a520faa796e318dbead75bcbeabe
+stoichiometry:
+  reactionCatalysisMatrix:
+    sha256: bef57ca4c9c5463d5612054bb0c0981a0484efaaa1804270b03376ee887b8bc9
+    shape:
+    - 10
+    - 4
+    - 6
+  reactionCoenzymeMatrix:
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  reactionModificationMatrix:
+    sha256: 1026a7161a368c15f2bff6fbbd5105a3c51c3424404c19adafa45a6c39800a77
+    shape:
+    - 10
+    - 525
+    - 6
+  reactionStoichiometryMatrix:
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  reactionWholeCellModelIDs: &id001
+  - MG_191_TerminalOrganelleAssembly_01
+  - MG_192_TerminalOrganelleAssembly_01
+  - MG_217_TerminalOrganelleAssembly_01
+  - MG_218_TerminalOrganelleAssembly_01
+  - MG_218_TerminalOrganelleAssembly_02
+  - MG_312_TerminalOrganelleAssembly_01
+  - MG_312_TerminalOrganelleAssembly_02
+  - MG_317_TerminalOrganelleAssembly_01
+  - MG_318_TerminalOrganelleAssembly_01
+  - MG_386_TerminalOrganelleAssembly_01
+vocabularies:
+  enzymeWholeCellModelIDs:
+  - MG_218_MONOMER
+  - MG_312_MONOMER
+  - MG_317_MONOMER
+  - MG_318_MONOMER
+  reactionWholeCellModelIDs: *id001
+  stimuliWholeCellModelIDs: []
+  substrateWholeCellModelIDs:
+  - MG_191_MONOMER
+  - MG_192_MONOMER
+  - MG_217_MONOMER
+  - MG_218_MONOMER
+  - MG_312_MONOMER
+  - MG_317_MONOMER
+  - MG_318_MONOMER
+  - MG_386_MONOMER

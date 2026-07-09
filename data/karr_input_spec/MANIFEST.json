@@ -1,0 +1,114 @@
+{
+  "ChromosomeCondensation": {
+    "fixture_sha256": "d8a5813d3010ac2af315e0ca964be0a8d68d230da02a93ee0d699c1696a96883",
+    "spec_sha256": "1bc54a1ff363975018e056a4a91253046eec67b1755cec7465008d66e10b5b2f"
+  },
+  "ChromosomeSegregation": {
+    "fixture_sha256": "5687460959b1aadaee49b5990b2e92c946c66001f392bec099477a6cbb6bf513",
+    "spec_sha256": "6826b6903d3f48ea9323bb9e13e9c7bc0e3e961a6d8f33ee1301bf7ee4a72066"
+  },
+  "Cytokinesis": {
+    "fixture_sha256": "1906c32e2499481bb6d354447627865609fbafdb5ab9a85e17af1ed703b1d7cb",
+    "spec_sha256": "0d5ce974369ce4d6d2e0945ceb3e797285a782adc82e1d5746a5b8106df14788"
+  },
+  "DNADamage": {
+    "fixture_sha256": "3ed7510504b3f9b246cb5f843983ad214d419698832db612f1366a9b67c404c1",
+    "spec_sha256": "7e11ed0e237284f91d59053b05c0866b8588e615e427f7c3ebb79e780363e49d"
+  },
+  "DNARepair": {
+    "fixture_sha256": "bcadae85937f6fd9dbfeb0099fc5f6f43b15e1427a902cf246d4d8479bb974a7",
+    "spec_sha256": "8b9cde85b85de441fde9e99dd1b7b99a5612d2ea719df97a47fd18f6108f7118"
+  },
+  "DNASupercoiling": {
+    "fixture_sha256": "9b182eb91761300f3b3f057c9e1ea1155e81d922882980211d08ded6a637540c",
+    "spec_sha256": "4b846656ad462af2e15886922c795f6641867bf259380f0fbe351bc4e0697616"
+  },
+  "FtsZPolymerization": {
+    "fixture_sha256": "33babb02e5ce33023c67db99740c788842ab22518bdf047be132fb426cae8a8b",
+    "spec_sha256": "90a8c4b6a75d9af1091f8f1684e306a4c0b7796d6f7bdd855eedc86b39d50db5"
+  },
+  "HostInteraction": {
+    "fixture_sha256": "3da8d8fae1204828b2886cdfb395e7c22644b0ce8704d78456e6a8acb9766776",
+    "spec_sha256": "99385a55caa8a3f967f07375dd2095eaede43cd26b2be3c8ffaeded88b4e5b78"
+  },
+  "MacromolecularComplexation": {
+    "fixture_sha256": "658e25f30acd8ea84f7bf4b1b2536bf994ad389d9cb575dfeefbf628fe151f01",
+    "spec_sha256": "c340a043b365c9db77ec2f8d5b442cdce8e87ca406f8b038d93b90d8af9fe9ba"
+  },
+  "Metabolism": {
+    "fixture_sha256": "331a90c56aec5af19072ea39d3e5a69977c9986075fe5ec1c645031ac4d1f670",
+    "spec_sha256": "eb37da2139aa031e302acc698eaa8c257b3c94cedad646606d294fdf25b0e38f"
+  },
+  "ProteinActivation": {
+    "fixture_sha256": "ea58c5d4ca279e2b10dff12bffe89e04926f4515324f0c13fb677759a4094a52",
+    "spec_sha256": "6a0b6d40ff9f3c57fc6478238e165e22b1ce01308a8edda4c2022d54761569cd"
+  },
+  "ProteinDecay": {
+    "fixture_sha256": "020aae58a97fb3ab56eb58eb443d6b189cecf769eb420a3b89eacead47970538",
+    "spec_sha256": "e9af7d5a4e4c50e82ca4969903585070e42d62370785ed4674e22d6904d054b5"
+  },
+  "ProteinFolding": {
+    "fixture_sha256": "d91be6c57d1cce69cd16898a6e414fc3cecf9563aa48c67bde732e9caf1ae63c",
+    "spec_sha256": "80e305a2993754d89642801dd1c385e719614ec6f3bac912666a806f44553236"
+  },
+  "ProteinModification": {
+    "fixture_sha256": "b89663e37c5ab6a68a8f978e670ecbedf05c5a2af4a5569b4e83d803b2c5807b",
+    "spec_sha256": "f421e4b6a695d01037f9bbbef7b798a01dcaf95bdf3e383d1f8e9e68a863bf7c"
+  },
+  "ProteinProcessingI": {
+    "fixture_sha256": "0a4ce7ad57266e4c1241f7fba34e6e9a20183855f8f396ca70e7b23d63acd535",
+    "spec_sha256": "bbf66dd5129afab9c6199e364c598580db0b2dd9180b7c28e062eb0ed3f9061b"
+  },
+  "ProteinProcessingII": {
+    "fixture_sha256": "a386207b68bc7d306b8385a0a0aa34ea28bc68d2af0f1530da113f80808699af",
+    "spec_sha256": "e05d35dc6c5532dd35f152b69cb4c46a8fee692b97a9b96267ba7bb1d1efe08b"
+  },
+  "ProteinTranslocation": {
+    "fixture_sha256": "1c02cba3d4422d7384a3d0c369b4bb02585705b9bed37d72c9c7b87515b0b41d",
+    "spec_sha256": "26fddf30574abb4605b22291ad712f5448dec2bd9153e13c6d72baa4592901b4"
+  },
+  "RNADecay": {
+    "fixture_sha256": "ff50cad3841556964d8c5ed55c0514b7a2ade7be3898cd22a360ba72e53316d3",
+    "spec_sha256": "80d766440f560c86f88c83a308323997f23849d581c9fa9bd07831307f2e4ed7"
+  },
+  "RNAModification": {
+    "fixture_sha256": "64e096360369eb89005318f006063fcec04ed690c0aa61c0a3c630807a0f449a",
+    "spec_sha256": "1695b085090291df9f1736043f566d54fa8ae79d78f9332411c4eff988217028"
+  },
+  "RNAProcessing": {
+    "fixture_sha256": "0760c3b23845029039cc1f47020c260cbc52fa5a69595775a291534ca4b28006",
+    "spec_sha256": "2fb0c7a7d321e3ddd9ef1b97bde0474cfe94e606735bf727908f6f1b20cbbb32"
+  },
+  "Replication": {
+    "fixture_sha256": "a6b55bf9392153c3cddbc9d4407b0bac518870028d6919f91015f7c6a4df1662",
+    "spec_sha256": "0d3d22163e208c319059df6c8065e2177417894376aacc5ec64630e21a014be1"
+  },
+  "ReplicationInitiation": {
+    "fixture_sha256": "ea0a22a435849d31ce84a401a443ec513a724a6fdc6eeb844031b2c1d3855d36",
+    "spec_sha256": "bde3fc1419cbec137312664b90a1ce699aab86eac91cc0c67054ad3de2317edd"
+  },
+  "RibosomeAssembly": {
+    "fixture_sha256": "d1b17ea39a9b90fe1dd3ae400e4c976e507aa22802d65f8c2544daeda76020ec",
+    "spec_sha256": "ed9ccba2b1ea43609eca9813eca80ed339f34a488e9722edba23361d163d36d8"
+  },
+  "TerminalOrganelleAssembly": {
+    "fixture_sha256": "cdf3c89d8f32cd429d130cc650b01c53f855a520faa796e318dbead75bcbeabe",
+    "spec_sha256": "e7ef8771302dea0d9457b699157ebd7c73400c3c49749f848916a4454d6ba0ac"
+  },
+  "Transcription": {
+    "fixture_sha256": "de4bab119d2ebf61bdefb4a4c1bedb5ddd589241638f3adfa5a0b6535c7d50b2",
+    "spec_sha256": "a480cc590109d3e45a01d0846b46c102ef6c344be8b733bac807a5ddf570461e"
+  },
+  "TranscriptionalRegulation": {
+    "fixture_sha256": "c553fd09f6f782db0a76fa0513746296a63b2b0096cf49ce7570cf78724a2744",
+    "spec_sha256": "d707a02d2a0f5a8188b50b24cab614b00d211297c68881d89acdda87720d3a79"
+  },
+  "Translation": {
+    "fixture_sha256": "cbc6f5d9808c31f86ae426faab0fe5b50c18f8124cc1a48f0bdb6322e704a85f",
+    "spec_sha256": "a448e553a95fba21d17fc963060a9159f4577676828644a5062cfd44c26c98de"
+  },
+  "tRNAAminoacylation": {
+    "fixture_sha256": "5e7fe972081172c196542029ae76eef939f88dc891b355492a13e3206c3aa3fa",
+    "spec_sha256": "2b04c0169e23857d42ae9db64a84601d82441d5b4a25a344d8d78dd520dd173e"
+  }
+}

@@ -1,0 +1,3399 @@
+params:
+  HR_PolA_ResectionLength: 8
+  HR_RecA_Spacing: 3
+  HR_RecU_CleavagePosition: 3
+  HR_RecU_CleavageSequence: WTTS
+  HR_RuvAB_JunctionMigrationHop: 2.2
+  NER_PcrA_StepSize: 1
+  NER_UvrABC_IncisionMargin3: 4
+  NER_UvrABC_IncisionMargin5: 7
+  RM_EcoD_MethylationPosition: 3
+  RM_EcoD_RecognitionSequence: TTANNNNNNNGTCY
+  RM_EcoD_RecognitionSites:
+    dtype: int32
+    sha256: d0e9beb73c7ac21d6a53e0e3df85efbf7b3bb1eb67ed24831b930bc4d9ed2915
+    shape:
+    - 58
+    - 14
+  RM_EcoD_RestrictionPosition:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  RM_MunI_MethylatedPositions:
+  - 3
+  - 4
+  RM_MunI_MethylationPosition: 3
+  RM_MunI_RecognitionSequence: CAATTG
+  RM_MunI_RecognitionSites:
+    dtype: int32
+    sha256: 385e690feb324d19f1433cef338c42b2b9046fc2d1c59b503a8252e2727a3850
+    shape:
+    - 380
+    - 6
+  RM_MunI_RestrictionPosition: 1
+  RM_MunI_RestrictionPositions:
+  - 1
+  - 5
+  boundEnzymes:
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  chromosome: <handle:edu.stanford.covert.cell.sim.state.Chromosome:1x1>
+  compartment: <handle:edu.stanford.covert.cell.sim.constant.Compartment:1x1>
+  complex: <handle:edu.stanford.covert.cell.sim.state.ProteinComplex:1x1>
+  enzymeBounds:
+    dtype: float64
+    sha256: e4e0ab36663d39c8809b4695e3e456b415bf75552c2be1f111f460dd54f1b202
+    shape:
+    - 32
+    - 2
+  enzymeDNAFootprints:
+  - 25
+  - 9
+  - 13
+  - 7
+  - 19
+  - 20
+  - 9
+  - 3
+  - 14
+  - 18
+  - 6
+  - 15
+  - 28
+  - 52
+  enzymeDNAFootprints3Prime:
+  - 12
+  - 4
+  - 6
+  - 3
+  - 9
+  - 9
+  - 4
+  - 1
+  - 6
+  - 8
+  - 2
+  - 7
+  - 13
+  - 25
+  enzymeDNAFootprints5Prime:
+  - 12
+  - 4
+  - 6
+  - 3
+  - 9
+  - 10
+  - 4
+  - 1
+  - 7
+  - 9
+  - 3
+  - 7
+  - 14
+  - 26
+  enzymeMolecularWeights:
+  - 44289.8247
+  - 357131.12489999994
+  - 28194.385599999998
+  - 181297.10479999997
+  - 74186.41619999998
+  - 36445.839599999985
+  - 32588.0321
+  - 163932.4252
+  - 75426.42489999998
+  - 33142.95129999999
+  - 34803.7936
+  - 38825.12719999999
+  - 305061.7692
+  - 44836.86229999999
+  - 32698.948299999993
+  enzymeNames:
+  - DNA polymerase III, beta subunit
+  - DNA incision complex
+  - uracil-DNA glycosylase, putative
+  - putative DNA integrity scanning protein
+  - adenine-specific DNA modification methylase
+  - phosphoesterase
+  - apurinic endonuclease
+  - 3-5' helicase
+  - DNA ligase, NAD-dependent
+  - polI-like 5'-3' exonuclease, putative
+  - recombination protein, strand exchange
+  - Holliday junction endonuclease
+  - Holliday junction DNA helicase
+  - type I restriction modification DNA specificity domain protein
+  - formamidopyrimidine-DNA glycosylase
+  enzymes:
+  - 60
+  - 16
+  - 12
+  - 11
+  - 29
+  - 6
+  - 210
+  - 8
+  - 19
+  - 27
+  - 12
+  - 18
+  - 13
+  - 13
+  - 25
+  fittedConstantNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  fixedConstantNames__:
+    dtype: object
+    sha256: 6db0bfa0d9ef2529c1082530762906d1f2d26afbc5533f84f229ad24d925c918
+    shape:
+    - 22
+  gene: <handle:edu.stanford.covert.cell.sim.constant.Gene:1x1>
+  geometry: <handle:edu.stanford.covert.cell.sim.state.CellGeometry:1x1>
+  hollidayJunctionResolutionSites:
+    dtype: int32
+    sha256: c8495f4af9113072493ca9615183e3dd6b5f4330335f6bcfd6651ad3ba6a739b
+    shape:
+    - 34049
+    - 2
+  initialized: 1
+  localStateNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  metabolite: <handle:edu.stanford.covert.cell.sim.state.Metabolite:1x1>
+  monomer: <handle:edu.stanford.covert.cell.sim.state.ProteinMonomer:1x1>
+  name: DNA repair
+  optionNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  parameterNames:
+  - doubleStrandBreakSeparation
+  - HR_PolA_ResectionLength
+  - HR_RecA_Spacing
+  - HR_RecU_CleavagePosition
+  - HR_RecU_CleavageSequence
+  - HR_RuvAB_JunctionMigrationHop
+  - NER_PcrA_StepSize
+  - NER_UvrABC_IncisionMargin3
+  - NER_UvrABC_IncisionMargin5
+  - RM_EcoD_MethylationPosition
+  - RM_EcoD_RecognitionSequence
+  - RM_EcoD_RestrictionPosition
+  - RM_MunI_MethylationPosition
+  - RM_MunI_RecognitionSequence
+  - RM_MunI_RestrictionPosition
+  randStream: <handle:edu.stanford.covert.util.RandStream:1x1>
+  reactionBounds:
+    dtype: float64
+    sha256: 9fb5162c1d8bf81f076f0221279a119a6be3b7bf1b8280109a8d032d570dda4f
+    shape:
+    - 32
+    - 2
+  reactionDNABase:
+    dtype: uint16
+    sha256: 22ac2e7fdc73ec7e3cd1958454c0f9340d34ebd98f8ac55fda86b21460e82ca3
+    shape:
+    - 32
+  reactionNames:
+    dtype: object
+    sha256: 1c1757ac9e2513fea669389b3bb660f9cda068a654821aa788fd7131ac0ab510
+    shape:
+    - 32
+  reactionTypes:
+    dtype: object
+    sha256: 7fbd894c63b61dc4fd175164bf7c9b9f054e09f98d68b721f6cf0bc8a9202c11
+    shape:
+    - 32
+  rna: <handle:edu.stanford.covert.cell.sim.state.Rna:1x1>
+  seed: 1
+  simulationStateSideEffects:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  states:
+    dtype: object
+    sha256: 9e2805bbaeefda9782787b477219be9c49f2f12ed38ba0cdf3b9a8bdcd276be9
+    shape:
+    - 6
+  stepSizeSec: 1
+  stimuli:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  stimuliNames:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  stimulus: <handle:edu.stanford.covert.cell.sim.state.Stimulus:1x1>
+  substrateMolecularWeights:
+    dtype: float64
+    sha256: 12676fbf907521a67b9794955a60338044712b20499b621e6da7707d50c2c5d5
+    shape:
+    - 277
+  substrateNames:
+    dtype: object
+    sha256: c9be6fae8f74a3d2fb13af9760bd0dea8e697801c2aabff261aed2a4a8ddce8f
+    shape:
+    - 277
+  substrates:
+    dtype: int32
+    sha256: 01d9a086fddf22d31cde2bb089bd2fb7514bdf5ce8160e676d45f0d688393dca
+    shape:
+    - 277
+  verbosity: 0
+  wholeCellModelID: Process_DNARepair
+  x_class_: edu.stanford.covert.cell.sim.process.DNARepair
+process: DNARepair
+role_groups:
+  enzymeBoundComplexGlobalCompartmentIndexs:
+    indices:
+    - 646
+    - 657
+    - 677
+    - 708
+    - 742
+    - 746
+    wids: null
+  enzymeBoundMonomerGlobalCompartmentIndexs:
+    indices:
+    - 3375
+    - 3471
+    - 3567
+    - 3615
+    - 3634
+    - 3643
+    - 3725
+    - 3823
+    - 3644
+    wids: null
+  enzymeBoundRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeComplexCompartmentIndexs:
+    indices:
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    wids: null
+  enzymeComplexGlobalCompartmentIndexs:
+    indices:
+    - 244
+    - 255
+    - 275
+    - 306
+    - 340
+    - 344
+    wids: null
+  enzymeComplexGlobalIndexs:
+    indices:
+    - 43
+    - 54
+    - 74
+    - 105
+    - 139
+    - 143
+    wids: null
+  enzymeComplexLocalIndexs:
+    indices:
+    - 2
+    - 4
+    - 5
+    - 8
+    - 12
+    - 13
+    wids: null
+  enzymeGlobalIndexs:
+    indices:
+    - 1
+    - 43
+    - 97
+    - 54
+    - 74
+    - 193
+    - 241
+    - 105
+    - 260
+    - 269
+    - 351
+    - 139
+    - 143
+    - 449
+    - 270
+    wids: null
+  enzymeIndexs_BER_baseExcision:
+    indices:
+    - 3
+    - 15
+    wids:
+    - MG_097_MONOMER
+    - MG_498_MONOMER
+  enzymeIndexs_DisA:
+    indices:
+    - 4
+    wids:
+    - MG_105_OCTAMER
+  enzymeIndexs_RM_typeI:
+    indices:
+    - 14
+    wids:
+    - MG_438_MONOMER
+  enzymeIndexs_RM_typeII:
+    indices:
+    - 5
+    wids:
+    - MG_184_DIMER
+  enzymeIndexs_apurinicEndonuclease:
+    indices:
+    - 7
+    wids:
+    - MG_235_MONOMER
+  enzymeIndexs_exonuclease53:
+    indices:
+    - 10
+    wids:
+    - MG_262_MONOMER
+  enzymeIndexs_formamidopyrimidineGlycosylase:
+    indices:
+    - 15
+    wids:
+    - MG_498_MONOMER
+  enzymeIndexs_helicase35:
+    indices:
+    - 8
+    wids:
+    - MG_244_DIMER
+  enzymeIndexs_hollidayJunctionEndonuclease:
+    indices:
+    - 12
+    wids:
+    - MG_352_DIMER
+  enzymeIndexs_hollidayJunctionHelicase:
+    indices:
+    - 13
+    wids:
+    - MG_358_359_10MER
+  enzymeIndexs_incisionComplex:
+    indices:
+    - 2
+    wids:
+    - MG_073_206_421_TETRAMER
+  enzymeIndexs_ligase:
+    indices:
+    - 9
+    wids:
+    - MG_254_MONOMER
+  enzymeIndexs_phosphoesterase:
+    indices:
+    - 6
+    wids:
+    - MG_190_MONOMER
+  enzymeIndexs_polymerase:
+    indices:
+    - 1
+    wids:
+    - MG_001_MONOMER
+  enzymeIndexs_recombinationStrandExchange:
+    indices:
+    - 11
+    wids:
+    - MG_339_MONOMER
+  enzymeIndexs_uracilGlycosylase:
+    indices:
+    - 3
+    wids:
+    - MG_097_MONOMER
+  enzymeMetaboliteCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteLocalIndexs:
+    indices: []
+    wids: null
+  enzymeMonomerCompartmentIndexs:
+    indices:
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    wids: null
+  enzymeMonomerGlobalCompartmentIndexs:
+    indices:
+    - 2411
+    - 2507
+    - 2603
+    - 2651
+    - 2670
+    - 2679
+    - 2761
+    - 2859
+    - 2680
+    wids: null
+  enzymeMonomerGlobalIndexs:
+    indices:
+    - 1
+    - 97
+    - 193
+    - 241
+    - 260
+    - 269
+    - 351
+    - 449
+    - 270
+    wids: null
+  enzymeMonomerLocalIndexs:
+    indices:
+    - 1
+    - 3
+    - 6
+    - 7
+    - 9
+    - 10
+    - 11
+    - 14
+    - 15
+    wids: null
+  enzymeRNACompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeRNAGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeRNALocalIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusLocalIndexs:
+    indices: []
+    wids: null
+  parameterIndexs:
+    indices: []
+    wids: null
+  reactionIndexs_BER:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 17
+    - 25
+    - 26
+    - 27
+    - 28
+    - 31
+    - 32
+    wids:
+    - AP_endonuclease
+    - AP_lyase
+    - deoxyribosephosphodiesterase
+    - dRiboseP_lyase
+    - MutM_FAPyAD
+    - MutM_FAPyGN
+    - MutM_oxo8AD
+    - MutM_oxo8GN
+    - Ung_ho5URA
+    - Ung_URA
+  reactionIndexs_BER_apendonuclease:
+    indices:
+    - 1
+    wids:
+    - AP_endonuclease
+  reactionIndexs_BER_aplyase:
+    indices:
+    - 2
+    wids:
+    - AP_lyase
+  reactionIndexs_BER_baseexcision:
+    indices:
+    - 25
+    - 26
+    - 27
+    - 28
+    - 31
+    - 32
+    wids:
+    - MutM_FAPyAD
+    - MutM_FAPyGN
+    - MutM_oxo8AD
+    - MutM_oxo8GN
+    - Ung_ho5URA
+    - Ung_URA
+  reactionIndexs_BER_dr5plyase:
+    indices:
+    - 17
+    wids:
+    - dRiboseP_lyase
+  reactionIndexs_BER_drpesterase:
+    indices:
+    - 3
+    wids:
+    - deoxyribosephosphodiesterase
+  reactionIndexs_DNACleavage:
+    indices:
+    - 4
+    - 5
+    - 6
+    - 7
+    wids:
+    - DNAProcessiveCleavage_dAMP
+    - DNAProcessiveCleavage_dCMP
+    - DNAProcessiveCleavage_dGMP
+    - DNAProcessiveCleavage_dTMP
+  reactionIndexs_HR_DNAResection:
+    indices:
+    - 18
+    - 19
+    - 20
+    - 21
+    wids:
+    - HR_DNAResection_dAMP
+    - HR_DNAResection_dCMP
+    - HR_DNAResection_dGMP
+    - HR_DNAResection_dTMP
+  reactionIndexs_HR_dsbr:
+    indices:
+    - 18
+    - 19
+    - 20
+    - 21
+    - 22
+    - 23
+    - 24
+    wids:
+    - HR_DNAResection_dAMP
+    - HR_DNAResection_dCMP
+    - HR_DNAResection_dGMP
+    - HR_DNAResection_dTMP
+    - HR_junctionMigration
+    - HR_junctionResolution
+    - HR_strandExchange
+  reactionIndexs_HR_junctionMigration:
+    indices:
+    - 22
+    wids:
+    - HR_junctionMigration
+  reactionIndexs_HR_junctionResolution:
+    indices:
+    - 23
+    wids:
+    - HR_junctionResolution
+  reactionIndexs_HR_strandExchange:
+    indices:
+    - 24
+    wids:
+    - HR_strandExchange
+  reactionIndexs_NER:
+    indices:
+    - 29
+    - 30
+    wids:
+    - NER_DNAExcision
+    - NER_DNAIncision
+  reactionIndexs_NER_excision:
+    indices:
+    - 29
+    wids:
+    - NER_DNAExcision
+  reactionIndexs_NER_incision:
+    indices:
+    - 30
+    wids:
+    - NER_DNAIncision
+  reactionIndexs_RM:
+    indices:
+    - 13
+    - 14
+    - 15
+    - 16
+    wids:
+    - DNA_RM_EcoD_Methylation
+    - DNA_RM_EcoD_Restriction
+    - DNA_RM_MunI_Methylation
+    - DNA_RM_MunI_Restriction
+  reactionIndexs_RM_EcoD_Methylation:
+    indices:
+    - 13
+    wids:
+    - DNA_RM_EcoD_Methylation
+  reactionIndexs_RM_EcoD_Restriction:
+    indices:
+    - 14
+    wids:
+    - DNA_RM_EcoD_Restriction
+  reactionIndexs_RM_MunI_Methylation:
+    indices:
+    - 15
+    wids:
+    - DNA_RM_MunI_Methylation
+  reactionIndexs_RM_MunI_Restriction:
+    indices:
+    - 16
+    wids:
+    - DNA_RM_MunI_Restriction
+  reactionIndexs_ligation:
+    indices:
+    - 8
+    wids:
+    - DNA_ligation_repair
+  reactionIndexs_polymerization:
+    indices:
+    - 9
+    - 10
+    - 11
+    - 12
+    wids:
+    - DNA_polymerization_dATP_repair
+    - DNA_polymerization_dCTP_repair
+    - DNA_polymerization_dGTP_repair
+    - DNA_polymerization_dTTP_repair
+  stimulusComplexCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusComplexGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusComplexLocalIndexs:
+    indices: []
+    wids: null
+  stimulusGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteLocalIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerLocalIndexs:
+    indices: []
+    wids: null
+  stimulusRNACompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusRNAGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusRNALocalIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusLocalIndexs:
+    indices: []
+    wids: null
+  substrateComplexCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateComplexGlobalIndexs:
+    indices: []
+    wids: null
+  substrateComplexLocalIndexs:
+    indices: []
+    wids: null
+  substrateGlobalIndexs:
+    indices:
+    - 9
+    - 11
+    - 13
+    - 19
+    - 21
+    - 54
+    - 55
+    - 56
+    - 57
+    - 58
+    - 59
+    - 60
+    - 68
+    - 69
+    - 70
+    - 73
+    - 74
+    - 75
+    - 109
+    - 110
+    - 111
+    - 112
+    - 113
+    - 114
+    - 117
+    - 118
+    - 119
+    - 120
+    - 121
+    - 122
+    - 123
+    - 124
+    - 125
+    - 126
+    - 127
+    - 128
+    - 129
+    - 130
+    - 131
+    - 132
+    - 143
+    - 144
+    - 145
+    - 147
+    - 148
+    - 149
+    - 150
+    - 152
+    - 153
+    - 154
+    - 155
+    - 156
+    - 157
+    - 158
+    - 159
+    - 160
+    - 170
+    - 171
+    - 172
+    - 174
+    - 175
+    - 176
+    - 177
+    - 179
+    - 180
+    - 181
+    - 182
+    - 183
+    - 187
+    - 188
+    - 196
+    - 198
+    - 200
+    - 201
+    - 202
+    - 203
+    - 205
+    - 206
+    - 207
+    - 208
+    - 209
+    - 210
+    - 211
+    - 212
+    - 213
+    - 214
+    - 216
+    - 218
+    - 219
+    - 220
+    - 221
+    - 222
+    - 223
+    - 224
+    - 225
+    - 226
+    - 227
+    - 228
+    - 229
+    - 230
+    - 231
+    - 232
+    - 233
+    - 234
+    - 235
+    - 236
+    - 237
+    - 238
+    - 239
+    - 240
+    - 242
+    - 243
+    - 244
+    - 245
+    - 246
+    - 247
+    - 248
+    - 249
+    - 250
+    - 251
+    - 252
+    - 253
+    - 254
+    - 255
+    - 256
+    - 261
+    - 262
+    - 263
+    - 264
+    - 265
+    - 266
+    - 267
+    - 268
+    - 269
+    - 270
+    - 271
+    - 272
+    - 279
+    - 280
+    - 281
+    - 286
+    - 287
+    - 288
+    - 289
+    - 290
+    - 291
+    - 356
+    - 357
+    - 358
+    - 359
+    - 360
+    - 361
+    - 365
+    - 366
+    - 368
+    - 376
+    - 385
+    - 386
+    - 395
+    - 396
+    - 397
+    - 398
+    - 399
+    - 400
+    - 401
+    - 402
+    - 403
+    - 404
+    - 405
+    - 406
+    - 408
+    - 409
+    - 410
+    - 411
+    - 412
+    - 413
+    - 414
+    - 415
+    - 416
+    - 417
+    - 418
+    - 419
+    - 420
+    - 421
+    - 422
+    - 427
+    - 448
+    - 449
+    - 450
+    - 451
+    - 452
+    - 455
+    - 458
+    - 459
+    - 460
+    - 461
+    - 462
+    - 463
+    - 464
+    - 465
+    - 466
+    - 467
+    - 468
+    - 469
+    - 470
+    - 471
+    - 472
+    - 475
+    - 476
+    - 477
+    - 481
+    - 483
+    - 484
+    - 485
+    - 486
+    - 487
+    - 488
+    - 489
+    - 492
+    - 493
+    - 494
+    - 495
+    - 524
+    - 525
+    - 526
+    - 530
+    - 540
+    - 547
+    - 548
+    - 549
+    - 550
+    - 551
+    - 552
+    - 553
+    - 554
+    - 555
+    - 556
+    - 557
+    - 558
+    - 559
+    - 560
+    - 561
+    - 562
+    - 563
+    - 564
+    - 565
+    - 566
+    - 567
+    - 568
+    - 569
+    - 570
+    - 578
+    - 579
+    - 580
+    - 581
+    - 582
+    - 583
+    - 584
+    - 585
+    - 586
+    - 587
+    - 588
+    - 589
+    - 611
+    - 617
+    - 630
+    - 631
+    - 632
+    - 680
+    - 681
+    - 682
+    - 683
+    - 684
+    - 685
+    - 713
+    - 714
+    - 720
+    wids: null
+  substrateIndexs_AMP:
+    indices:
+    - 5
+    wids:
+    - AMP
+  substrateIndexs_DR5P:
+    indices:
+    - 71
+    wids:
+    - DR5P
+  substrateIndexs_NAD:
+    indices:
+    - 226
+    wids:
+    - NAD
+  substrateIndexs_NMN:
+    indices:
+    - 227
+    wids:
+    - NMN
+  substrateIndexs_PPI:
+    indices:
+    - 265
+    wids:
+    - PPI
+  substrateIndexs_dNMPs:
+    indices:
+    - 41
+    - 48
+    - 57
+    - 77
+    wids:
+    - DAMP
+    - DCMP
+    - DGMP
+    - DTMP
+  substrateIndexs_dNTPs:
+    indices:
+    - 43
+    - 55
+    - 59
+    - 84
+    wids:
+    - DATP
+    - DCTP
+    - DGTP
+    - DTTP
+  substrateIndexs_dNpdNps:
+    indices:
+    - 42
+    - 54
+    - 58
+    - 83
+    wids:
+    - dApdAp
+    - dCpdCp
+    - dGpdGp
+    - dTpdTp
+  substrateIndexs_dRibose5P_dRibose5P:
+    indices:
+    - 72
+    wids:
+    - dRibose5P_dRibose5P
+  substrateIndexs_damagedDNMPs:
+    indices:
+    - 8
+    - 12
+    - 14
+    - 18
+    - 29
+    - 30
+    - 33
+    - 34
+    - 38
+    - 40
+    - 49
+    - 50
+    - 51
+    - 52
+    - 53
+    - 61
+    - 63
+    - 65
+    - 70
+    - 78
+    - 79
+    - 80
+    - 81
+    - 82
+    - 87
+    - 89
+    - 92
+    - 94
+    - 99
+    - 101
+    - 103
+    - 105
+    - 110
+    - 113
+    - 116
+    - 119
+    - 121
+    - 124
+    - 127
+    - 131
+    - 134
+    - 136
+    - 139
+    - 143
+    - 145
+    - 149
+    - 151
+    - 154
+    - 161
+    - 164
+    - 166
+    - 169
+    - 173
+    - 175
+    - 177
+    - 179
+    - 184
+    - 189
+    - 191
+    - 196
+    - 198
+    - 200
+    - 202
+    - 207
+    - 210
+    - 213
+    - 216
+    - 218
+    - 221
+    - 225
+    - 230
+    - 232
+    - 236
+    - 238
+    - 241
+    - 244
+    - 247
+    - 250
+    - 254
+    - 257
+    - 259
+    - 262
+    - 267
+    wids:
+    - aza6dTMP
+    - aza8dAMP
+    - c5dUMP
+    - carbamoylmethyl6dAMP
+    - cyclobutane_dCMPdCMP
+    - cyclobutane_dCMPdTMP
+    - cyclobutane_dTMPdCMP
+    - cyclobutane_dTMPdTMP
+    - cyclodAMP
+    - cyclodGMP
+    - dCMP64dCMP
+    - dCMP64dCMP_dewar
+    - dCMP64dTMP
+    - dCMP64dTMP_dewar
+    - dCMP_GLYC
+    - DHdTMP
+    - DHdUMP
+    - dhpdUMP
+    - dINSMP
+    - dTMP64dCMP
+    - dTMP64dCMP_dewar
+    - dTMP64dTMP
+    - dTMP64dTMP_dewar
+    - dTMP_GLYC
+    - DUMP
+    - dXANMP
+    - e1dAMP
+    - e1dGMP
+    - e3dAMP
+    - e3dCMP
+    - e3dGMP
+    - e3dTMP
+    - e4dCMP
+    - e5dCMP
+    - e6dAMP
+    - e7dAMP
+    - e7dGMP
+    - e8dGMP
+    - epsilon1N2dGMP
+    - epsilon1N6dAMP
+    - epsilon3N4dCMP
+    - epsilonN23dGMP
+    - f5dUMP
+    - FAPydAMP
+    - FAPydGMP
+    - glchm5dCMP
+    - glchm5dUMP
+    - gludTMP
+    - hm3dCMP
+    - hm5dCMP
+    - hm5dUMP
+    - hm5hydantoin_dRiboseMP
+    - ho5dCMP
+    - ho5dUMP
+    - ho5ho6dTMP
+    - ho5ho6dUMP
+    - ho5hydantoin_dRiboseMP
+    - m1dAMP
+    - m1dGMP
+    - m3dAMP
+    - m3dCMP
+    - m3dGMP
+    - m3dTMP
+    - m4dCMP
+    - m5dCMP
+    - m6dAMP
+    - m7dAMP
+    - m7dGMP
+    - m8dGMP
+    - n2dAMP
+    - O2edCMP
+    - O2edTMP
+    - O2mdCMP
+    - O2mdTMP
+    - O4edTMP
+    - O4mdTMP
+    - O6edGMP
+    - O6mdGMP
+    - oxo2dAMP
+    - oxo8dAMP
+    - oxo8dGMP
+    - oxoethyl7dGMP
+    - putdTMP
+  substrateIndexs_damagedNucleobases:
+    indices:
+    - 9
+    - 10
+    - 15
+    - 16
+    - 20
+    - 21
+    - 22
+    - 23
+    - 24
+    - 25
+    - 26
+    - 35
+    - 36
+    - 66
+    - 67
+    - 68
+    - 90
+    - 95
+    - 96
+    - 97
+    - 106
+    - 107
+    - 108
+    - 111
+    - 114
+    - 117
+    - 122
+    - 125
+    - 128
+    - 129
+    - 132
+    - 137
+    - 140
+    - 141
+    - 146
+    - 147
+    - 152
+    - 155
+    - 159
+    - 162
+    - 167
+    - 170
+    - 171
+    - 180
+    - 181
+    - 182
+    - 185
+    - 186
+    - 187
+    - 192
+    - 193
+    - 194
+    - 203
+    - 204
+    - 205
+    - 208
+    - 211
+    - 214
+    - 219
+    - 222
+    - 223
+    - 228
+    - 233
+    - 234
+    - 239
+    - 242
+    - 245
+    - 248
+    - 251
+    - 252
+    - 255
+    - 260
+    - 263
+    - 268
+    - 270
+    - 271
+    - 272
+    - 273
+    - 274
+    - 275
+    - 277
+    wids:
+    - aza6THY
+    - aza8AD
+    - c5URA
+    - carbamoylmethyl6AD
+    - CSN64CSN
+    - CSN64CSN_dewar
+    - CSN64THY
+    - CSN64THY_dewar
+    - CSN_GLYC
+    - cyclobutane_CSNCSN
+    - cyclobutane_CSNTHY
+    - cyclobutane_THYCSN
+    - cyclobutane_THYTHY
+    - dhpURA
+    - DHTHY
+    - DHURA
+    - e1AD
+    - e1GN
+    - e3AD
+    - e3CSN
+    - e3GN
+    - e3THY
+    - e4CSN
+    - e5CSN
+    - e6AD
+    - e7AD
+    - e7GN
+    - e8GN
+    - epsilon1N2GN
+    - epsilon1N6AD
+    - epsilon3N4CSN
+    - epsilonN23GN
+    - f5URA
+    - FAPyAD
+    - FAPyGN
+    - glchm5CSN
+    - glchm5URA
+    - gluTHY
+    - hm3CSN
+    - hm5CSN
+    - hm5hydantoin
+    - hm5URA
+    - ho5CSN
+    - ho5ho6THY
+    - ho5ho6URA
+    - ho5hydantoin
+    - ho5URA
+    - HYXN
+    - m1AD
+    - m1GN
+    - m3AD
+    - m3CSN
+    - m3GN
+    - m3THY
+    - m4CSN
+    - m5CSN
+    - m6AD
+    - m7AD
+    - m7GN
+    - m8GN
+    - n2AD
+    - O2eCSN
+    - O2eTHY
+    - O2mCSN
+    - O2mTHY
+    - O4eTHY
+    - O4mTHY
+    - O6eGN
+    - O6mGN
+    - oxo2AD
+    - oxo8AD
+    - oxo8GN
+    - oxoethyl7GN
+    - putTHY
+    - THY64CSN
+    - THY64CSN_dewar
+    - THY64THY
+    - THY64THY_dewar
+    - THY_GLYC
+    - URA
+    - XAN
+  substrateIndexs_damagedNucleosides:
+    indices:
+    - 7
+    - 11
+    - 13
+    - 17
+    - 27
+    - 28
+    - 31
+    - 32
+    - 37
+    - 39
+    - 44
+    - 45
+    - 46
+    - 47
+    - 56
+    - 60
+    - 62
+    - 64
+    - 69
+    - 73
+    - 74
+    - 75
+    - 76
+    - 85
+    - 86
+    - 88
+    - 91
+    - 93
+    - 98
+    - 100
+    - 102
+    - 104
+    - 109
+    - 112
+    - 115
+    - 118
+    - 120
+    - 123
+    - 126
+    - 130
+    - 133
+    - 135
+    - 138
+    - 142
+    - 144
+    - 148
+    - 150
+    - 153
+    - 160
+    - 163
+    - 165
+    - 168
+    - 172
+    - 174
+    - 176
+    - 178
+    - 183
+    - 188
+    - 190
+    - 195
+    - 197
+    - 199
+    - 201
+    - 206
+    - 209
+    - 212
+    - 215
+    - 217
+    - 220
+    - 224
+    - 229
+    - 231
+    - 235
+    - 237
+    - 240
+    - 243
+    - 246
+    - 249
+    - 253
+    - 256
+    - 258
+    - 261
+    - 266
+    - 276
+    wids:
+    - aza6dT
+    - aza8dA
+    - c5dU
+    - carbamoylmethyl6dA
+    - cyclobutane_dCdC
+    - cyclobutane_dCdT
+    - cyclobutane_dTdC
+    - cyclobutane_dTdT
+    - cyclodA
+    - cyclodG
+    - dC64dC
+    - dC64dC_dewar
+    - dC64dT
+    - dC64dT_dewar
+    - dC_GLYC
+    - DHdT
+    - DHdU
+    - dhpdU
+    - dINS
+    - dT64dC
+    - dT64dC_dewar
+    - dT64dT
+    - dT64dT_dewar
+    - dT_GLYC
+    - DU
+    - dXAN
+    - e1dA
+    - e1dG
+    - e3dA
+    - e3dC
+    - e3dG
+    - e3dT
+    - e4dC
+    - e5dC
+    - e6dA
+    - e7dA
+    - e7dG
+    - e8dG
+    - epsilon1N2dG
+    - epsilon1N6dA
+    - epsilon3N4dC
+    - epsilonN23dG
+    - f5dU
+    - FAPydA
+    - FAPydG
+    - glchm5dC
+    - glchm5dU
+    - gludT
+    - hm3dC
+    - hm5dC
+    - hm5dU
+    - hm5hydantoin_dRibose
+    - ho5dC
+    - ho5dU
+    - ho5ho6dT
+    - ho5ho6dU
+    - ho5hydantoin_dRibose
+    - m1dA
+    - m1dG
+    - m3dA
+    - m3dC
+    - m3dG
+    - m3dT
+    - m4dC
+    - m5dC
+    - m6dA
+    - m7dA
+    - m7dG
+    - m8dG
+    - n2dA
+    - O2edC
+    - O2edT
+    - O2mdC
+    - O2mdT
+    - O4edT
+    - O4mdT
+    - O6edG
+    - O6mdG
+    - oxo2dA
+    - oxo8dA
+    - oxo8dG
+    - oxoethyl7dG
+    - putdT
+    - URI
+  substrateIndexs_hydrogen:
+    indices:
+    - 157
+    wids:
+    - H
+  substrateIndexs_m6AD:
+    indices:
+    - 211
+    wids:
+    - m6AD
+  substrateIndexs_undamagedNucleobases:
+    indices:
+    - 1
+    - 19
+    - 156
+    - 269
+    wids:
+    - AD
+    - CSN
+    - GN
+    - THY
+  substrateIndexs_water:
+    indices:
+    - 158
+    wids:
+    - H2O
+  substrateMetaboliteCompartmentIndexs:
+    indices:
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    wids: null
+  substrateMetaboliteGlobalCompartmentIndexs:
+    indices:
+    - 9
+    - 11
+    - 13
+    - 19
+    - 21
+    - 54
+    - 55
+    - 56
+    - 57
+    - 58
+    - 59
+    - 60
+    - 68
+    - 69
+    - 70
+    - 73
+    - 74
+    - 75
+    - 109
+    - 110
+    - 111
+    - 112
+    - 113
+    - 114
+    - 117
+    - 118
+    - 119
+    - 120
+    - 121
+    - 122
+    - 123
+    - 124
+    - 125
+    - 126
+    - 127
+    - 128
+    - 129
+    - 130
+    - 131
+    - 132
+    - 143
+    - 144
+    - 145
+    - 147
+    - 148
+    - 149
+    - 150
+    - 152
+    - 153
+    - 154
+    - 155
+    - 156
+    - 157
+    - 158
+    - 159
+    - 160
+    - 170
+    - 171
+    - 172
+    - 174
+    - 175
+    - 176
+    - 177
+    - 179
+    - 180
+    - 181
+    - 182
+    - 183
+    - 187
+    - 188
+    - 196
+    - 198
+    - 200
+    - 201
+    - 202
+    - 203
+    - 205
+    - 206
+    - 207
+    - 208
+    - 209
+    - 210
+    - 211
+    - 212
+    - 213
+    - 214
+    - 216
+    - 218
+    - 219
+    - 220
+    - 221
+    - 222
+    - 223
+    - 224
+    - 225
+    - 226
+    - 227
+    - 228
+    - 229
+    - 230
+    - 231
+    - 232
+    - 233
+    - 234
+    - 235
+    - 236
+    - 237
+    - 238
+    - 239
+    - 240
+    - 242
+    - 243
+    - 244
+    - 245
+    - 246
+    - 247
+    - 248
+    - 249
+    - 250
+    - 251
+    - 252
+    - 253
+    - 254
+    - 255
+    - 256
+    - 261
+    - 262
+    - 263
+    - 264
+    - 265
+    - 266
+    - 267
+    - 268
+    - 269
+    - 270
+    - 271
+    - 272
+    - 279
+    - 280
+    - 281
+    - 286
+    - 287
+    - 288
+    - 289
+    - 290
+    - 291
+    - 356
+    - 357
+    - 358
+    - 359
+    - 360
+    - 361
+    - 365
+    - 366
+    - 368
+    - 376
+    - 385
+    - 386
+    - 395
+    - 396
+    - 397
+    - 398
+    - 399
+    - 400
+    - 401
+    - 402
+    - 403
+    - 404
+    - 405
+    - 406
+    - 408
+    - 409
+    - 410
+    - 411
+    - 412
+    - 413
+    - 414
+    - 415
+    - 416
+    - 417
+    - 418
+    - 419
+    - 420
+    - 421
+    - 422
+    - 427
+    - 448
+    - 449
+    - 450
+    - 451
+    - 452
+    - 455
+    - 458
+    - 459
+    - 460
+    - 461
+    - 462
+    - 463
+    - 464
+    - 465
+    - 466
+    - 467
+    - 468
+    - 469
+    - 470
+    - 471
+    - 472
+    - 475
+    - 476
+    - 477
+    - 481
+    - 483
+    - 484
+    - 485
+    - 486
+    - 487
+    - 488
+    - 489
+    - 492
+    - 493
+    - 494
+    - 495
+    - 524
+    - 525
+    - 526
+    - 530
+    - 540
+    - 547
+    - 548
+    - 549
+    - 550
+    - 551
+    - 552
+    - 553
+    - 554
+    - 555
+    - 556
+    - 557
+    - 558
+    - 559
+    - 560
+    - 561
+    - 562
+    - 563
+    - 564
+    - 565
+    - 566
+    - 567
+    - 568
+    - 569
+    - 570
+    - 578
+    - 579
+    - 580
+    - 581
+    - 582
+    - 583
+    - 584
+    - 585
+    - 586
+    - 587
+    - 588
+    - 589
+    - 611
+    - 617
+    - 630
+    - 631
+    - 632
+    - 680
+    - 681
+    - 682
+    - 683
+    - 684
+    - 685
+    - 713
+    - 714
+    - 720
+    wids: null
+  substrateMetaboliteGlobalIndexs:
+    indices:
+    - 9
+    - 11
+    - 13
+    - 19
+    - 21
+    - 54
+    - 55
+    - 56
+    - 57
+    - 58
+    - 59
+    - 60
+    - 68
+    - 69
+    - 70
+    - 73
+    - 74
+    - 75
+    - 109
+    - 110
+    - 111
+    - 112
+    - 113
+    - 114
+    - 117
+    - 118
+    - 119
+    - 120
+    - 121
+    - 122
+    - 123
+    - 124
+    - 125
+    - 126
+    - 127
+    - 128
+    - 129
+    - 130
+    - 131
+    - 132
+    - 143
+    - 144
+    - 145
+    - 147
+    - 148
+    - 149
+    - 150
+    - 152
+    - 153
+    - 154
+    - 155
+    - 156
+    - 157
+    - 158
+    - 159
+    - 160
+    - 170
+    - 171
+    - 172
+    - 174
+    - 175
+    - 176
+    - 177
+    - 179
+    - 180
+    - 181
+    - 182
+    - 183
+    - 187
+    - 188
+    - 196
+    - 198
+    - 200
+    - 201
+    - 202
+    - 203
+    - 205
+    - 206
+    - 207
+    - 208
+    - 209
+    - 210
+    - 211
+    - 212
+    - 213
+    - 214
+    - 216
+    - 218
+    - 219
+    - 220
+    - 221
+    - 222
+    - 223
+    - 224
+    - 225
+    - 226
+    - 227
+    - 228
+    - 229
+    - 230
+    - 231
+    - 232
+    - 233
+    - 234
+    - 235
+    - 236
+    - 237
+    - 238
+    - 239
+    - 240
+    - 242
+    - 243
+    - 244
+    - 245
+    - 246
+    - 247
+    - 248
+    - 249
+    - 250
+    - 251
+    - 252
+    - 253
+    - 254
+    - 255
+    - 256
+    - 261
+    - 262
+    - 263
+    - 264
+    - 265
+    - 266
+    - 267
+    - 268
+    - 269
+    - 270
+    - 271
+    - 272
+    - 279
+    - 280
+    - 281
+    - 286
+    - 287
+    - 288
+    - 289
+    - 290
+    - 291
+    - 356
+    - 357
+    - 358
+    - 359
+    - 360
+    - 361
+    - 365
+    - 366
+    - 368
+    - 376
+    - 385
+    - 386
+    - 395
+    - 396
+    - 397
+    - 398
+    - 399
+    - 400
+    - 401
+    - 402
+    - 403
+    - 404
+    - 405
+    - 406
+    - 408
+    - 409
+    - 410
+    - 411
+    - 412
+    - 413
+    - 414
+    - 415
+    - 416
+    - 417
+    - 418
+    - 419
+    - 420
+    - 421
+    - 422
+    - 427
+    - 448
+    - 449
+    - 450
+    - 451
+    - 452
+    - 455
+    - 458
+    - 459
+    - 460
+    - 461
+    - 462
+    - 463
+    - 464
+    - 465
+    - 466
+    - 467
+    - 468
+    - 469
+    - 470
+    - 471
+    - 472
+    - 475
+    - 476
+    - 477
+    - 481
+    - 483
+    - 484
+    - 485
+    - 486
+    - 487
+    - 488
+    - 489
+    - 492
+    - 493
+    - 494
+    - 495
+    - 524
+    - 525
+    - 526
+    - 530
+    - 540
+    - 547
+    - 548
+    - 549
+    - 550
+    - 551
+    - 552
+    - 553
+    - 554
+    - 555
+    - 556
+    - 557
+    - 558
+    - 559
+    - 560
+    - 561
+    - 562
+    - 563
+    - 564
+    - 565
+    - 566
+    - 567
+    - 568
+    - 569
+    - 570
+    - 578
+    - 579
+    - 580
+    - 581
+    - 582
+    - 583
+    - 584
+    - 585
+    - 586
+    - 587
+    - 588
+    - 589
+    - 611
+    - 617
+    - 630
+    - 631
+    - 632
+    - 680
+    - 681
+    - 682
+    - 683
+    - 684
+    - 685
+    - 713
+    - 714
+    - 720
+    wids: null
+  substrateMetaboliteLocalIndexs:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+    - 13
+    - 14
+    - 15
+    - 16
+    - 17
+    - 18
+    - 19
+    - 20
+    - 21
+    - 22
+    - 23
+    - 24
+    - 25
+    - 26
+    - 27
+    - 28
+    - 29
+    - 30
+    - 31
+    - 32
+    - 33
+    - 34
+    - 35
+    - 36
+    - 37
+    - 38
+    - 39
+    - 40
+    - 41
+    - 42
+    - 43
+    - 44
+    - 45
+    - 46
+    - 47
+    - 48
+    - 49
+    - 50
+    - 51
+    - 52
+    - 53
+    - 54
+    - 55
+    - 56
+    - 57
+    - 58
+    - 59
+    - 60
+    - 61
+    - 62
+    - 63
+    - 64
+    - 65
+    - 66
+    - 67
+    - 68
+    - 69
+    - 70
+    - 71
+    - 72
+    - 73
+    - 74
+    - 75
+    - 76
+    - 77
+    - 78
+    - 79
+    - 80
+    - 81
+    - 82
+    - 83
+    - 84
+    - 85
+    - 86
+    - 87
+    - 88
+    - 89
+    - 90
+    - 91
+    - 92
+    - 93
+    - 94
+    - 95
+    - 96
+    - 97
+    - 98
+    - 99
+    - 100
+    - 101
+    - 102
+    - 103
+    - 104
+    - 105
+    - 106
+    - 107
+    - 108
+    - 109
+    - 110
+    - 111
+    - 112
+    - 113
+    - 114
+    - 115
+    - 116
+    - 117
+    - 118
+    - 119
+    - 120
+    - 121
+    - 122
+    - 123
+    - 124
+    - 125
+    - 126
+    - 127
+    - 128
+    - 129
+    - 130
+    - 131
+    - 132
+    - 133
+    - 134
+    - 135
+    - 136
+    - 137
+    - 138
+    - 139
+    - 140
+    - 141
+    - 142
+    - 143
+    - 144
+    - 145
+    - 146
+    - 147
+    - 148
+    - 149
+    - 150
+    - 151
+    - 152
+    - 153
+    - 154
+    - 155
+    - 156
+    - 157
+    - 158
+    - 159
+    - 160
+    - 161
+    - 162
+    - 163
+    - 164
+    - 165
+    - 166
+    - 167
+    - 168
+    - 169
+    - 170
+    - 171
+    - 172
+    - 173
+    - 174
+    - 175
+    - 176
+    - 177
+    - 178
+    - 179
+    - 180
+    - 181
+    - 182
+    - 183
+    - 184
+    - 185
+    - 186
+    - 187
+    - 188
+    - 189
+    - 190
+    - 191
+    - 192
+    - 193
+    - 194
+    - 195
+    - 196
+    - 197
+    - 198
+    - 199
+    - 200
+    - 201
+    - 202
+    - 203
+    - 204
+    - 205
+    - 206
+    - 207
+    - 208
+    - 209
+    - 210
+    - 211
+    - 212
+    - 213
+    - 214
+    - 215
+    - 216
+    - 217
+    - 218
+    - 219
+    - 220
+    - 221
+    - 222
+    - 223
+    - 224
+    - 225
+    - 226
+    - 227
+    - 228
+    - 229
+    - 230
+    - 231
+    - 232
+    - 233
+    - 234
+    - 235
+    - 236
+    - 237
+    - 238
+    - 239
+    - 240
+    - 241
+    - 242
+    - 243
+    - 244
+    - 245
+    - 246
+    - 247
+    - 248
+    - 249
+    - 250
+    - 251
+    - 252
+    - 253
+    - 254
+    - 255
+    - 256
+    - 257
+    - 258
+    - 259
+    - 260
+    - 261
+    - 262
+    - 263
+    - 264
+    - 265
+    - 266
+    - 267
+    - 268
+    - 269
+    - 270
+    - 271
+    - 272
+    - 273
+    - 274
+    - 275
+    - 276
+    - 277
+    wids: null
+  substrateMonomerCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateMonomerGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateMonomerGlobalIndexs:
+    indices: []
+    wids: null
+  substrateMonomerLocalIndexs:
+    indices: []
+    wids: null
+  substrateRNACompartmentIndexs:
+    indices: []
+    wids: null
+  substrateRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateRNAGlobalIndexs:
+    indices: []
+    wids: null
+  substrateRNALocalIndexs:
+    indices: []
+    wids: null
+  substrateStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  substrateStimulusLocalIndexs:
+    indices: []
+    wids: null
+source:
+  fixture: data/karr_fixtures/per_process/DNARepair_flat.mat
+  fixture_sha256: bcadae85937f6fd9dbfeb0099fc5f6f43b15e1427a902cf246d4d8479bb974a7
+stoichiometry:
+  reactionCatalysisMatrix:
+    sha256: 888033fdee3b8d71788f6dd49fdb25d9b8d5ea6b958e56f35508e06f26c106db
+    shape:
+    - 32
+    - 15
+  reactionCoenzymeMatrix:
+    sha256: 5eab30cb3c7fd30e82726fa35210a21731bae90ab7f6bb50bba46049f7526125
+    shape:
+    - 32
+    - 277
+  reactionDNAStoichiometryMatrix:
+    sha256: a0c3cef5fe5fc21cf0c9bd8a784655e857b742bb8be598e60dd19aff587244d1
+    shape:
+    - 277
+    - 32
+  reactionModificationMatrix:
+    sha256: ac8f5613c4b176d380009fa1306c49a027644dba38b9703ed102634c60f8d5ff
+    shape:
+    - 32
+    - 525
+  reactionSmallMoleculeStoichiometryMatrix:
+    sha256: fe7b1a27120cb7d497af2fa4297f4fa7d021114413cb91eb1989ada5dbb35c52
+    shape:
+    - 277
+    - 32
+  reactionStoichiometryMatrix:
+    sha256: 0d4f7a609f8232afd61ea70ed9ce4270d90f92c22295c20924b879288b84f2ab
+    shape:
+    - 277
+    - 32
+  reactionWholeCellModelIDs: &id001
+  - AP_endonuclease
+  - AP_lyase
+  - deoxyribosephosphodiesterase
+  - DNAProcessiveCleavage_dAMP
+  - DNAProcessiveCleavage_dCMP
+  - DNAProcessiveCleavage_dGMP
+  - DNAProcessiveCleavage_dTMP
+  - DNA_ligation_repair
+  - DNA_polymerization_dATP_repair
+  - DNA_polymerization_dCTP_repair
+  - DNA_polymerization_dGTP_repair
+  - DNA_polymerization_dTTP_repair
+  - DNA_RM_EcoD_Methylation
+  - DNA_RM_EcoD_Restriction
+  - DNA_RM_MunI_Methylation
+  - DNA_RM_MunI_Restriction
+  - dRiboseP_lyase
+  - HR_DNAResection_dAMP
+  - HR_DNAResection_dCMP
+  - HR_DNAResection_dGMP
+  - HR_DNAResection_dTMP
+  - HR_junctionMigration
+  - HR_junctionResolution
+  - HR_strandExchange
+  - MutM_FAPyAD
+  - MutM_FAPyGN
+  - MutM_oxo8AD
+  - MutM_oxo8GN
+  - NER_DNAExcision
+  - NER_DNAIncision
+  - Ung_ho5URA
+  - Ung_URA
+  reactions:
+    AP_endonuclease:
+      consume:
+        H2O: 1
+        dRibose5P_dRibose5P: 1
+      produce:
+        DR5P: 2
+        H: 1
+    AP_lyase:
+      consume:
+        H2O: 1
+        dRibose5P_dRibose5P: 1
+      produce:
+        DR5P: 2
+        H: 1
+    DNAProcessiveCleavage_dAMP:
+      consume:
+        H2O: 1
+        dApdAp: 1
+      produce:
+        DAMP: 2
+        H: 1
+    DNAProcessiveCleavage_dCMP:
+      consume:
+        H2O: 1
+        dCpdCp: 1
+      produce:
+        DCMP: 2
+        H: 1
+    DNAProcessiveCleavage_dGMP:
+      consume:
+        H2O: 1
+        dGpdGp: 1
+      produce:
+        DGMP: 2
+        H: 1
+    DNAProcessiveCleavage_dTMP:
+      consume:
+        H2O: 1
+        dTpdTp: 1
+      produce:
+        DTMP: 2
+        H: 1
+    DNA_RM_EcoD_Methylation:
+      consume:
+        AD: 1
+        AMET: 1
+      produce:
+        AHCYS: 1
+        H: 1
+        m6AD: 1
+    DNA_RM_EcoD_Restriction:
+      consume:
+        ATP: 1
+        H2O: 3
+        dRibose5P_dRibose5P: 2
+      produce:
+        ADP: 1
+        DR5P: 4
+        H: 3
+        PI: 1
+    DNA_RM_MunI_Methylation:
+      consume:
+        AD: 1
+        AMET: 1
+      produce:
+        AHCYS: 1
+        H: 1
+        m6AD: 1
+    DNA_RM_MunI_Restriction:
+      consume:
+        H2O: 2
+        dRibose5P_dRibose5P: 2
+      produce:
+        DR5P: 4
+        H: 2
+    DNA_ligation_repair:
+      consume:
+        DR5P: 2
+        NAD: 1
+      produce:
+        AMP: 1
+        H: 1
+        NMN: 1
+        dRibose5P_dRibose5P: 1
+    DNA_polymerization_dATP_repair:
+      consume:
+        DAMP: 1
+        DATP: 1
+      produce:
+        PPI: 1
+        dApdAp: 1
+    DNA_polymerization_dCTP_repair:
+      consume:
+        DCMP: 1
+        DCTP: 1
+      produce:
+        PPI: 1
+        dCpdCp: 1
+    DNA_polymerization_dGTP_repair:
+      consume:
+        DGMP: 1
+        DGTP: 1
+      produce:
+        PPI: 1
+        dGpdGp: 1
+    DNA_polymerization_dTTP_repair:
+      consume:
+        DTMP: 1
+        DTTP: 1
+      produce:
+        PPI: 1
+        dTpdTp: 1
+    HR_DNAResection_dAMP:
+      consume:
+        H2O: 1
+        dApdAp: 1
+      produce:
+        DAMP: 2
+        H: 1
+    HR_DNAResection_dCMP:
+      consume:
+        H2O: 1
+        dCpdCp: 1
+      produce:
+        DCMP: 2
+        H: 1
+    HR_DNAResection_dGMP:
+      consume:
+        H2O: 1
+        dGpdGp: 1
+      produce:
+        DGMP: 2
+        H: 1
+    HR_DNAResection_dTMP:
+      consume:
+        H2O: 1
+        dTpdTp: 1
+      produce:
+        DTMP: 2
+        H: 1
+    HR_junctionMigration:
+      consume:
+        ATP: 1
+        H2O: 1
+      produce:
+        ADP: 1
+        H: 1
+        PI: 1
+    HR_junctionResolution:
+      consume:
+        H2O: 2
+        dRibose5P_dRibose5P: 2
+      produce:
+        DR5P: 4
+        H: 2
+    HR_strandExchange:
+      consume:
+        ATP: 1
+        H2O: 1
+      produce:
+        ADP: 1
+        H: 1
+        PI: 1
+    MutM_FAPyAD:
+      consume:
+        FAPydAMP: 1
+        H2O: 1
+      produce:
+        DR5P: 1
+        FAPyAD: 1
+    MutM_FAPyGN:
+      consume:
+        FAPydGMP: 1
+        H2O: 1
+      produce:
+        DR5P: 1
+        FAPyGN: 1
+    MutM_oxo8AD:
+      consume:
+        H2O: 1
+        oxo8dAMP: 1
+      produce:
+        DR5P: 1
+        oxo8AD: 1
+    MutM_oxo8GN:
+      consume:
+        H2O: 1
+        oxo8dGMP: 1
+      produce:
+        DR5P: 1
+        oxo8GN: 1
+    NER_DNAExcision:
+      consume:
+        ATP: 1
+        H2O: 1
+      produce:
+        ADP: 1
+        H: 1
+        PI: 1
+    NER_DNAIncision:
+      consume:
+        ATP: 1
+        H2O: 3
+        dRibose5P_dRibose5P: 2
+      produce:
+        ADP: 1
+        DR5P: 4
+        H: 3
+        PI: 1
+    Ung_URA:
+      consume:
+        DUMP: 1
+        H2O: 1
+      produce:
+        DR5P: 1
+        URA: 1
+    Ung_ho5URA:
+      consume:
+        H2O: 1
+        ho5dUMP: 1
+      produce:
+        DR5P: 1
+        ho5URA: 1
+    dRiboseP_lyase:
+      consume:
+        H2O: 1
+        dRibose5P_dRibose5P: 1
+      produce:
+        DR5P: 2
+        H: 1
+    deoxyribosephosphodiesterase:
+      consume:
+        H2O: 1
+        dRibose5P_dRibose5P: 1
+      produce:
+        DR5P: 2
+        H: 1
+vocabularies:
+  enzymeWholeCellModelIDs:
+  - MG_001_MONOMER
+  - MG_073_206_421_TETRAMER
+  - MG_097_MONOMER
+  - MG_105_OCTAMER
+  - MG_184_DIMER
+  - MG_190_MONOMER
+  - MG_235_MONOMER
+  - MG_244_DIMER
+  - MG_254_MONOMER
+  - MG_262_MONOMER
+  - MG_339_MONOMER
+  - MG_352_DIMER
+  - MG_358_359_10MER
+  - MG_438_MONOMER
+  - MG_498_MONOMER
+  reactionWholeCellModelIDs: *id001
+  stimuliWholeCellModelIDs: []
+  substrateWholeCellModelIDs:
+  - AD
+  - ADP
+  - AHCYS
+  - AMET
+  - AMP
+  - ATP
+  - aza6dT
+  - aza6dTMP
+  - aza6THY
+  - aza8AD
+  - aza8dA
+  - aza8dAMP
+  - c5dU
+  - c5dUMP
+  - c5URA
+  - carbamoylmethyl6AD
+  - carbamoylmethyl6dA
+  - carbamoylmethyl6dAMP
+  - CSN
+  - CSN64CSN
+  - CSN64CSN_dewar
+  - CSN64THY
+  - CSN64THY_dewar
+  - CSN_GLYC
+  - cyclobutane_CSNCSN
+  - cyclobutane_CSNTHY
+  - cyclobutane_dCdC
+  - cyclobutane_dCdT
+  - cyclobutane_dCMPdCMP
+  - cyclobutane_dCMPdTMP
+  - cyclobutane_dTdC
+  - cyclobutane_dTdT
+  - cyclobutane_dTMPdCMP
+  - cyclobutane_dTMPdTMP
+  - cyclobutane_THYCSN
+  - cyclobutane_THYTHY
+  - cyclodA
+  - cyclodAMP
+  - cyclodG
+  - cyclodGMP
+  - DAMP
+  - dApdAp
+  - DATP
+  - dC64dC
+  - dC64dC_dewar
+  - dC64dT
+  - dC64dT_dewar
+  - DCMP
+  - dCMP64dCMP
+  - dCMP64dCMP_dewar
+  - dCMP64dTMP
+  - dCMP64dTMP_dewar
+  - dCMP_GLYC
+  - dCpdCp
+  - DCTP
+  - dC_GLYC
+  - DGMP
+  - dGpdGp
+  - DGTP
+  - DHdT
+  - DHdTMP
+  - DHdU
+  - DHdUMP
+  - dhpdU
+  - dhpdUMP
+  - dhpURA
+  - DHTHY
+  - DHURA
+  - dINS
+  - dINSMP
+  - DR5P
+  - dRibose5P_dRibose5P
+  - dT64dC
+  - dT64dC_dewar
+  - dT64dT
+  - dT64dT_dewar
+  - DTMP
+  - dTMP64dCMP
+  - dTMP64dCMP_dewar
+  - dTMP64dTMP
+  - dTMP64dTMP_dewar
+  - dTMP_GLYC
+  - dTpdTp
+  - DTTP
+  - dT_GLYC
+  - DU
+  - DUMP
+  - dXAN
+  - dXANMP
+  - e1AD
+  - e1dA
+  - e1dAMP
+  - e1dG
+  - e1dGMP
+  - e1GN
+  - e3AD
+  - e3CSN
+  - e3dA
+  - e3dAMP
+  - e3dC
+  - e3dCMP
+  - e3dG
+  - e3dGMP
+  - e3dT
+  - e3dTMP
+  - e3GN
+  - e3THY
+  - e4CSN
+  - e4dC
+  - e4dCMP
+  - e5CSN
+  - e5dC
+  - e5dCMP
+  - e6AD
+  - e6dA
+  - e6dAMP
+  - e7AD
+  - e7dA
+  - e7dAMP
+  - e7dG
+  - e7dGMP
+  - e7GN
+  - e8dG
+  - e8dGMP
+  - e8GN
+  - epsilon1N2dG
+  - epsilon1N2dGMP
+  - epsilon1N2GN
+  - epsilon1N6AD
+  - epsilon1N6dA
+  - epsilon1N6dAMP
+  - epsilon3N4CSN
+  - epsilon3N4dC
+  - epsilon3N4dCMP
+  - epsilonN23dG
+  - epsilonN23dGMP
+  - epsilonN23GN
+  - f5dU
+  - f5dUMP
+  - f5URA
+  - FAPyAD
+  - FAPydA
+  - FAPydAMP
+  - FAPydG
+  - FAPydGMP
+  - FAPyGN
+  - glchm5CSN
+  - glchm5dC
+  - glchm5dCMP
+  - glchm5dU
+  - glchm5dUMP
+  - glchm5URA
+  - gludT
+  - gludTMP
+  - gluTHY
+  - GN
+  - H
+  - H2O
+  - hm3CSN
+  - hm3dC
+  - hm3dCMP
+  - hm5CSN
+  - hm5dC
+  - hm5dCMP
+  - hm5dU
+  - hm5dUMP
+  - hm5hydantoin
+  - hm5hydantoin_dRibose
+  - hm5hydantoin_dRiboseMP
+  - hm5URA
+  - ho5CSN
+  - ho5dC
+  - ho5dCMP
+  - ho5dU
+  - ho5dUMP
+  - ho5ho6dT
+  - ho5ho6dTMP
+  - ho5ho6dU
+  - ho5ho6dUMP
+  - ho5ho6THY
+  - ho5ho6URA
+  - ho5hydantoin
+  - ho5hydantoin_dRibose
+  - ho5hydantoin_dRiboseMP
+  - ho5URA
+  - HYXN
+  - m1AD
+  - m1dA
+  - m1dAMP
+  - m1dG
+  - m1dGMP
+  - m1GN
+  - m3AD
+  - m3CSN
+  - m3dA
+  - m3dAMP
+  - m3dC
+  - m3dCMP
+  - m3dG
+  - m3dGMP
+  - m3dT
+  - m3dTMP
+  - m3GN
+  - m3THY
+  - m4CSN
+  - m4dC
+  - m4dCMP
+  - m5CSN
+  - m5dC
+  - m5dCMP
+  - m6AD
+  - m6dA
+  - m6dAMP
+  - m7AD
+  - m7dA
+  - m7dAMP
+  - m7dG
+  - m7dGMP
+  - m7GN
+  - m8dG
+  - m8dGMP
+  - m8GN
+  - n2AD
+  - n2dA
+  - n2dAMP
+  - NAD
+  - NMN
+  - O2eCSN
+  - O2edC
+  - O2edCMP
+  - O2edT
+  - O2edTMP
+  - O2eTHY
+  - O2mCSN
+  - O2mdC
+  - O2mdCMP
+  - O2mdT
+  - O2mdTMP
+  - O2mTHY
+  - O4edT
+  - O4edTMP
+  - O4eTHY
+  - O4mdT
+  - O4mdTMP
+  - O4mTHY
+  - O6edG
+  - O6edGMP
+  - O6eGN
+  - O6mdG
+  - O6mdGMP
+  - O6mGN
+  - oxo2AD
+  - oxo2dA
+  - oxo2dAMP
+  - oxo8AD
+  - oxo8dA
+  - oxo8dAMP
+  - oxo8dG
+  - oxo8dGMP
+  - oxo8GN
+  - oxoethyl7dG
+  - oxoethyl7dGMP
+  - oxoethyl7GN
+  - PI
+  - PPI
+  - putdT
+  - putdTMP
+  - putTHY
+  - THY
+  - THY64CSN
+  - THY64CSN_dewar
+  - THY64THY
+  - THY64THY_dewar
+  - THY_GLYC
+  - URA
+  - URI
+  - XAN

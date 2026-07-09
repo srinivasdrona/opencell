@@ -1,0 +1,609 @@
+params:
+  RNAs:
+    dtype: uint8
+    sha256: 81b8d80236765ec92280dd5729f1b38be70fdf825bbab93add3e72888194af5c
+    shape:
+    - 335
+  boundEnzymes:
+  - 0
+  - 0
+  - 0
+  - 0
+  - 40
+  - 0
+  chromosome: <handle:edu.stanford.covert.cell.sim.state.Chromosome:1x1>
+  compartment: <handle:edu.stanford.covert.cell.sim.constant.Compartment:1x1>
+  complex: <handle:edu.stanford.covert.cell.sim.state.ProteinComplex:1x1>
+  enzymeDNAFootprints:
+  - 58
+  - 10
+  - 15
+  - 10
+  - 75
+  - 75
+  enzymeDNAFootprints3Prime:
+  - 28
+  - 4
+  - 7
+  - 4
+  - 37
+  - 37
+  enzymeDNAFootprints5Prime:
+  - 29
+  - 5
+  - 7
+  - 5
+  - 37
+  - 37
+  enzymeMolecularWeights:
+  - 57660.808499999985
+  - 18233.1571
+  - 59744.4549
+  - 17483.1754
+  - 392888.08739999996
+  - 450548.89589999994
+  enzymeNames:
+  - RNA polymerase sigma factor RpoD
+  - transcription elongation factor GreA
+  - transcription termination factor NusA
+  - transcription termination/antitermination protein NusB
+  - DNA-directed RNA polymerase
+  - DNA-directed RNA polymerase holoenzyme
+  enzymes:
+  - 13
+  - 50
+  - 17
+  - 124
+  - 0
+  - 0
+  fittedConstantNames__: transcriptionUnitBindingProbabilities
+  fixedConstantNames__:
+  - rnaPolymeraseElongationRate
+  - transcriptionUnitBaseCounts
+  - transcriptionUnitBindingProbabilities
+  gene: <handle:edu.stanford.covert.cell.sim.constant.Gene:1x1>
+  geometry: <handle:edu.stanford.covert.cell.sim.state.CellGeometry:1x1>
+  initialized: 1
+  localStateNames__: RNAs
+  metabolite: <handle:edu.stanford.covert.cell.sim.state.Metabolite:1x1>
+  monomer: <handle:edu.stanford.covert.cell.sim.state.ProteinMonomer:1x1>
+  name: Transcription
+  optionNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  parameterNames:
+  - rnaPolymeraseElongationRate
+  - nInitMax
+  - nSpecBoundMax
+  randStream: <handle:edu.stanford.covert.util.RandStream:1x1>
+  rna: <handle:edu.stanford.covert.cell.sim.state.Rna:1x1>
+  rnaPolymeraseElongationRate: 50
+  rnaPolymerases: <handle:edu.stanford.covert.cell.sim.state.RNAPolymerase:1x1>
+  seed: 1
+  simulationStateSideEffects:
+    dtype: object
+    sha256: 69e3eb59c38f0a0908f0e9cc36decfe1948a6bd5789fbe7120aaf4be31159ea6
+    shape:
+    - 5
+  stateTransitionProbabilities:
+  - - 0.9886450211159166
+    - 1.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 0.1
+    - 0.1
+  - - 0.011354978884083475
+    - 0.0
+    - 0.9
+    - 0.9
+  - - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+  states:
+    dtype: object
+    sha256: ad9179fdcde71bde2579dd56b6e2cd262462114f8f79b2751ada1e8005f3ba69
+    shape:
+    - 8
+  stepSizeSec: 1
+  stimuli:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  stimuliNames:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  stimulus: <handle:edu.stanford.covert.cell.sim.state.Stimulus:1x1>
+  substrateMolecularWeights:
+  - 503.14889999999997
+  - 479.12420000000003
+  - 519.1483000000001
+  - 480.109
+  - 345.20489999999995
+  - 321.1802
+  - 361.2043
+  - 322.16499999999996
+  - 424.1769
+  - 174.9513
+  - 18.0152
+  - 1.0079
+  substrateNames:
+  - ATP
+  - CTP
+  - GTP
+  - UTP
+  - AMP
+  - CMP
+  - GMP
+  - UMP
+  - ADP
+  - diphosphate
+  - water
+  - hydrogen ion
+  substrates:
+  - 36234
+  - 0
+  - 36234
+  - 0
+  - 1449
+  - 1449
+  - 1449
+  - 1449
+  - 3623
+  - 5796
+  - 309737899
+  - 13042
+  transcriptionUnitBaseCounts:
+    dtype: uint16
+    sha256: 9967caed5a3478a298ffdc39159998189f68118fd469d0d94da0707958d97723
+    shape:
+    - 335
+    - 12
+  transcriptionUnitBindingProbabilities:
+    dtype: float64
+    sha256: 02c4fe03968f4fa27f87c490d994276431d8637dcb3a997c0a6c3dba73c98805
+    shape:
+    - 335
+  transcripts: <handle:edu.stanford.covert.cell.sim.state.Transcript:1x1>
+  verbosity: 0
+  wholeCellModelID: Process_Transcription
+  x_class_: edu.stanford.covert.cell.sim.process.Transcription
+process: Transcription
+role_groups:
+  complexIndexs_DnaA_ATP:
+    indices:
+    - 181
+    - 182
+    - 183
+    - 184
+    - 185
+    - 186
+    - 187
+    - 188
+    - 189
+    - 190
+    - 191
+    - 192
+    - 193
+    wids: null
+  enzymeBoundComplexGlobalCompartmentIndexs:
+    indices:
+    - 803
+    - 804
+    wids: null
+  enzymeBoundMonomerGlobalCompartmentIndexs:
+    indices:
+    - 3629
+    - 3664
+    - 3516
+    - 3399
+    wids: null
+  enzymeBoundRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeComplexCompartmentIndexs:
+    indices:
+    - 1
+    - 1
+    wids: null
+  enzymeComplexGlobalCompartmentIndexs:
+    indices:
+    - 401
+    - 402
+    wids: null
+  enzymeComplexGlobalIndexs:
+    indices:
+    - 200
+    - 201
+    wids: null
+  enzymeComplexLocalIndexs:
+    indices:
+    - 5
+    - 6
+    wids: null
+  enzymeGlobalIndexs:
+    indices:
+    - 255
+    - 290
+    - 142
+    - 25
+    - 200
+    - 201
+    wids: null
+  enzymeIndexs_antiterminationFactor:
+    indices:
+    - 4
+    wids:
+    - MG_027_MONOMER
+  enzymeIndexs_elongationFactor:
+    indices:
+    - 2
+    wids:
+    - MG_282_MONOMER
+  enzymeIndexs_rnaPolymerase:
+    indices:
+    - 5
+    wids:
+    - RNA_POLYMERASE
+  enzymeIndexs_rnaPolymeraseHoloenzyme:
+    indices:
+    - 6
+    wids:
+    - RNA_POLYMERASE_HOLOENZYME
+  enzymeIndexs_sigmaFactor:
+    indices:
+    - 1
+    wids:
+    - MG_249_MONOMER
+  enzymeIndexs_terminationFactor:
+    indices:
+    - 3
+    wids:
+    - MG_141_MONOMER
+  enzymeIndexs_transcriptionFactors:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    wids:
+    - MG_249_MONOMER
+    - MG_282_MONOMER
+    - MG_141_MONOMER
+    - MG_027_MONOMER
+  enzymeMetaboliteCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteLocalIndexs:
+    indices: []
+    wids: null
+  enzymeMonomerCompartmentIndexs:
+    indices:
+    - 1
+    - 1
+    - 1
+    - 1
+    wids: null
+  enzymeMonomerGlobalCompartmentIndexs:
+    indices:
+    - 2665
+    - 2700
+    - 2552
+    - 2435
+    wids: null
+  enzymeMonomerGlobalIndexs:
+    indices:
+    - 255
+    - 290
+    - 142
+    - 25
+    wids: null
+  enzymeMonomerLocalIndexs:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    wids: null
+  enzymeRNACompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeRNAGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeRNALocalIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusLocalIndexs:
+    indices: []
+    wids: null
+  parameterIndexs:
+    indices: []
+    wids: null
+  stimulusComplexCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusComplexGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusComplexLocalIndexs:
+    indices: []
+    wids: null
+  stimulusGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteLocalIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerLocalIndexs:
+    indices: []
+    wids: null
+  stimulusRNACompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusRNAGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusRNALocalIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusLocalIndexs:
+    indices: []
+    wids: null
+  substrateComplexCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateComplexGlobalIndexs:
+    indices: []
+    wids: null
+  substrateComplexLocalIndexs:
+    indices: []
+    wids: null
+  substrateGlobalIndexs:
+    indices:
+    - 54
+    - 115
+    - 384
+    - 715
+    - 21
+    - 103
+    - 373
+    - 711
+    - 11
+    - 617
+    - 386
+    - 385
+    wids: null
+  substrateIndexs_adp:
+    indices:
+    - 9
+    wids:
+    - ADP
+  substrateIndexs_atp:
+    indices:
+    - 1
+    wids:
+    - ATP
+  substrateIndexs_diphosphate:
+    indices:
+    - 10
+    wids:
+    - PPI
+  substrateIndexs_hydrogen:
+    indices:
+    - 12
+    wids:
+    - H
+  substrateIndexs_nmp:
+    indices:
+    - 5
+    - 6
+    - 7
+    - 8
+    wids:
+    - AMP
+    - CMP
+    - GMP
+    - UMP
+  substrateIndexs_ntp:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    wids:
+    - ATP
+    - CTP
+    - GTP
+    - UTP
+  substrateIndexs_water:
+    indices:
+    - 11
+    wids:
+    - H2O
+  substrateMetaboliteCompartmentIndexs:
+    indices:
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    wids: null
+  substrateMetaboliteGlobalCompartmentIndexs:
+    indices:
+    - 54
+    - 115
+    - 384
+    - 715
+    - 21
+    - 103
+    - 373
+    - 711
+    - 11
+    - 617
+    - 386
+    - 385
+    wids: null
+  substrateMetaboliteGlobalIndexs:
+    indices:
+    - 54
+    - 115
+    - 384
+    - 715
+    - 21
+    - 103
+    - 373
+    - 711
+    - 11
+    - 617
+    - 386
+    - 385
+    wids: null
+  substrateMetaboliteLocalIndexs:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+    wids: null
+  substrateMonomerCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateMonomerGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateMonomerGlobalIndexs:
+    indices: []
+    wids: null
+  substrateMonomerLocalIndexs:
+    indices: []
+    wids: null
+  substrateRNACompartmentIndexs:
+    indices: []
+    wids: null
+  substrateRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateRNAGlobalIndexs:
+    indices: []
+    wids: null
+  substrateRNALocalIndexs:
+    indices: []
+    wids: null
+  substrateStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  substrateStimulusLocalIndexs:
+    indices: []
+    wids: null
+  transcriptionUnitIndexs_DnaAR12345Boxes:
+    indices:
+    - 335
+    wids: null
+source:
+  fixture: data/karr_fixtures/per_process/Transcription_flat.mat
+  fixture_sha256: de4bab119d2ebf61bdefb4a4c1bedb5ddd589241638f3adfa5a0b6535c7d50b2
+vocabularies:
+  enzymeWholeCellModelIDs:
+  - MG_249_MONOMER
+  - MG_282_MONOMER
+  - MG_141_MONOMER
+  - MG_027_MONOMER
+  - RNA_POLYMERASE
+  - RNA_POLYMERASE_HOLOENZYME
+  stimuliWholeCellModelIDs: []
+  substrateWholeCellModelIDs:
+  - ATP
+  - CTP
+  - GTP
+  - UTP
+  - AMP
+  - CMP
+  - GMP
+  - UMP
+  - ADP
+  - PPI
+  - H2O
+  - H

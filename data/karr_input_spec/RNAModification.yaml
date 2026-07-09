@@ -1,0 +1,2613 @@
+params:
+  boundEnzymes:
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  compartment: <handle:edu.stanford.covert.cell.sim.constant.Compartment:1x1>
+  complex: <handle:edu.stanford.covert.cell.sim.state.ProteinComplex:1x1>
+  enzymeBounds:
+    dtype: float64
+    sha256: 1ef9fed05cefde1ff74c92f79363114a3ec325d738d3662e96f46a3ce2d08295
+    shape:
+    - 91
+    - 2
+  enzymeMolecularWeights:
+  - 35013.63879999999
+  - 41901.1971
+  - 37976.0176
+  - 22182.744899999998
+  - 29972.9896
+  - 239749.69939999998
+  - 138601.88119999997
+  - 55226.197
+  - 55436.3786
+  - 38642.39799999999
+  - 49611.284400000004
+  - 88418.3882
+  - 52956.1378
+  enzymeNames:
+  - 23S rRNA pseudouridine synthase; U955, U2504, U2580
+  - tRNA U34 sulfurtransferase
+  - 23S rRNA pseudouridine synthase; U1911, U1915, U1917
+  - methyltransferase GidB
+  - dimethyladenosine transferase
+  - tRNA uridine 5-carboxymethylaminomethyl modification enzyme
+  - tRNA(Ile)-lysidine synthetase
+  - Pseudouridylate synthase
+  - 23S rRNA methyltransferase
+  - 23S rRNA methyltransferase
+  - tRNA (guanine-N(7)-)-methyltransferase
+  - thiamine biosynthesis/tRNA modification protein ThiI
+  - tRNA (guanine-N1)-methyltransferase
+  enzymes:
+  - 40
+  - 39
+  - 14
+  - 22
+  - 46
+  - 18
+  - 18
+  - 13
+  - 9
+  - 13
+  - 11
+  - 108
+  - 107
+  fittedConstantNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  fixedConstantNames__:
+  - speciesReactantByproductMatrix
+  - speciesReactantMatrix
+  gene: <handle:edu.stanford.covert.cell.sim.constant.Gene:1x1>
+  geometry: <handle:edu.stanford.covert.cell.sim.state.CellGeometry:1x1>
+  initialized: 1
+  localStateNames__:
+  - unmodifiedRNAs
+  - modifiedRNAs
+  metabolite: <handle:edu.stanford.covert.cell.sim.state.Metabolite:1x1>
+  modifiedRNAs:
+    dtype: uint8
+    sha256: 68afee357d7a2d1a9705f884b5144affebc3ff357723f63185f825888f93d713
+    shape:
+    - 347
+  monomer: <handle:edu.stanford.covert.cell.sim.state.ProteinMonomer:1x1>
+  name: RNA modification
+  optionNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  parameterNames:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  randStream: <handle:edu.stanford.covert.util.RandStream:1x1>
+  reactionBounds:
+    dtype: float64
+    sha256: 0b59d44a723f68e789a5b4e2ab4044f0eef461846cee1f5fe81449fb8a2c5e13
+    shape:
+    - 91
+    - 2
+  reactionNames:
+    dtype: object
+    sha256: c1db624db321ea532b942ec137e71b69f268db1121841cfd3bd6f6f57bb30f6e
+    shape:
+    - 91
+  reactionTypes:
+    dtype: object
+    sha256: d7923ac301c0a298a8997a954f1c8e13f2474271f43979077bf13ec0f0fa4fb9
+    shape:
+    - 91
+  rna: <handle:edu.stanford.covert.cell.sim.state.Rna:1x1>
+  rnaMask_modified:
+    dtype: uint8
+    sha256: 61d3ea9aaadc9a1d13a90d04e3d816a78fc1e8b14ada30c4d156517cf2bb9305
+    shape:
+    - 347
+  rnaMask_unmodified:
+    dtype: uint8
+    sha256: f88d438d3b809f73efa4677795a14ffbf11e6a1d4855201b6dc30d344710da13
+    shape:
+    - 347
+  seed: 1
+  simulationStateSideEffects:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  speciesReactantByproductMatrix:
+    dtype: float64
+    sha256: f79f62d28368f0be2f956d074fbd5050545c893b1cf460754b0309690bc4bdee
+    shape:
+    - 38
+    - 80
+  speciesReactantMatrix:
+    dtype: float64
+    sha256: c55f3d62c21b0a6899231bcc37dc68a6873c8889e48931a4e31833e75658bf21
+    shape:
+    - 38
+    - 80
+  states:
+    dtype: object
+    sha256: da8d2dfbc0ccb5681391442364b01d3184786ce7b5841025aad3448f7c0363cf
+    shape:
+    - 5
+  stepSizeSec: 1
+  stimuli:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  stimuliNames:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  stimulus: <handle:edu.stanford.covert.cell.sim.state.Stimulus:1x1>
+  substrateMolecularWeights:
+    dtype: float64
+    sha256: 4a7e7e0e6c6023b5ccb70b655a03cfa6856db7daad63d2308a9ab7efa6d5eef5
+    shape:
+    - 29
+  substrateNames:
+    dtype: object
+    sha256: c7e8c2c3362e9085a23b9ea3869200fcfd3eec6e14ef78869184597ef3663328
+    shape:
+    - 29
+  substrates:
+    dtype: int32
+    sha256: 411c48d5604ab836fda935165989eff5316d84237c84f93ad7c27b6eac3cae1d
+    shape:
+    - 29
+  unmodifiedRNAs:
+    dtype: uint8
+    sha256: 750432eed067048b25e6b9c15dce5f4c19e9013f955b5dcb509ed46078b1cc57
+    shape:
+    - 347
+  verbosity: 0
+  wholeCellModelID: Process_RNAModification
+  x_class_: edu.stanford.covert.cell.sim.process.RNAModification
+process: RNAModification
+role_groups:
+  enzymeBoundComplexGlobalCompartmentIndexs:
+    indices:
+    - 616
+    - 648
+    - 676
+    - 710
+    - 738
+    - 739
+    - 750
+    - 773
+    wids: null
+  enzymeBoundMonomerGlobalCompartmentIndexs:
+    indices:
+    - 3585
+    - 3678
+    - 3758
+    - 3768
+    - 3848
+    wids: null
+  enzymeBoundRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeComplexCompartmentIndexs:
+    indices:
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    wids: null
+  enzymeComplexGlobalCompartmentIndexs:
+    indices:
+    - 214
+    - 246
+    - 274
+    - 308
+    - 336
+    - 337
+    - 348
+    - 371
+    wids: null
+  enzymeComplexGlobalIndexs:
+    indices:
+    - 13
+    - 45
+    - 73
+    - 107
+    - 135
+    - 136
+    - 147
+    - 170
+    wids: null
+  enzymeComplexLocalIndexs:
+    indices:
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+    - 13
+    wids: null
+  enzymeGlobalIndexs:
+    indices:
+    - 211
+    - 304
+    - 384
+    - 394
+    - 474
+    - 13
+    - 45
+    - 73
+    - 107
+    - 135
+    - 136
+    - 147
+    - 170
+    wids: null
+  enzymeIndexs_rRNA16SDimethyladenosineTransferase:
+    indices:
+    - 5
+    wids:
+    - MG_463_MONOMER
+  enzymeIndexs_rRNA16SMethyltransferaseGidB:
+    indices:
+    - 4
+    wids:
+    - MG_380_MONOMER
+  enzymeIndexs_rRNA23SMethyltransferaseI:
+    indices:
+    - 9
+    wids:
+    - MG_252_DIMER
+  enzymeIndexs_rRNA23SMethyltransferaseII:
+    indices:
+    - 10
+    wids:
+    - MG_346_DIMER
+  enzymeIndexs_rRNA23SPseudouridineSynthaseI:
+    indices:
+    - 1
+    wids:
+    - MG_209_MONOMER
+  enzymeIndexs_rRNA23SPseudouridineSynthaseII:
+    indices:
+    - 3
+    wids:
+    - MG_370_MONOMER
+  enzymeIndexs_tRNAGuanineN1Methyltransferase:
+    indices:
+    - 13
+    wids:
+    - MG_445_DIMER
+  enzymeIndexs_tRNAGuanineN7Methyltransferase:
+    indices:
+    - 11
+    wids:
+    - MG_347_DIMER
+  enzymeIndexs_tRNALysidineSynthetase:
+    indices:
+    - 7
+    wids:
+    - MG_084_TETRAMER
+  enzymeIndexs_tRNAPseudouridineSynthase:
+    indices:
+    - 8
+    wids:
+    - MG_182_DIMER
+  enzymeIndexs_tRNAUracil2Sulfurtransferase:
+    indices:
+    - 2
+    wids:
+    - MG_295_MONOMER
+  enzymeIndexs_tRNAUracil4Sulfurtransferase:
+    indices:
+    - 12
+    wids:
+    - MG_372_DIMER
+  enzymeIndexs_tRNAUracil5Carboxymethylaminomethyl:
+    indices:
+    - 6
+    wids:
+    - MG_008_379_TETRAMER
+  enzymeMetaboliteCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteLocalIndexs:
+    indices: []
+    wids: null
+  enzymeMonomerCompartmentIndexs:
+    indices:
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    wids: null
+  enzymeMonomerGlobalCompartmentIndexs:
+    indices:
+    - 2621
+    - 2714
+    - 2794
+    - 2804
+    - 2884
+    wids: null
+  enzymeMonomerGlobalIndexs:
+    indices:
+    - 211
+    - 304
+    - 384
+    - 394
+    - 474
+    wids: null
+  enzymeMonomerLocalIndexs:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    wids: null
+  enzymeRNACompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeRNAGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeRNALocalIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusLocalIndexs:
+    indices: []
+    wids: null
+  parameterIndexs:
+    indices: []
+    wids: null
+  rnaIndexs_modified:
+    indices:
+    - 7
+    - 8
+    - 38
+    - 89
+    - 90
+    - 126
+    - 137
+    - 138
+    - 139
+    - 140
+    - 141
+    - 142
+    - 143
+    - 144
+    - 149
+    - 169
+    - 171
+    - 172
+    - 176
+    - 191
+    - 192
+    - 193
+    - 194
+    - 195
+    - 200
+    - 226
+    - 227
+    - 229
+    - 230
+    - 231
+    - 232
+    - 233
+    - 234
+    - 235
+    - 260
+    - 262
+    - 264
+    - 288
+    wids: null
+  rnaIndexs_unmodified:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 9
+    - 10
+    - 11
+    - 12
+    - 13
+    - 14
+    - 15
+    - 16
+    - 17
+    - 18
+    - 19
+    - 20
+    - 21
+    - 22
+    - 23
+    - 24
+    - 25
+    - 26
+    - 27
+    - 28
+    - 29
+    - 30
+    - 31
+    - 32
+    - 33
+    - 34
+    - 35
+    - 36
+    - 37
+    - 39
+    - 40
+    - 41
+    - 42
+    - 43
+    - 44
+    - 45
+    - 46
+    - 47
+    - 48
+    - 49
+    - 50
+    - 51
+    - 52
+    - 53
+    - 54
+    - 55
+    - 56
+    - 57
+    - 58
+    - 59
+    - 60
+    - 61
+    - 62
+    - 63
+    - 64
+    - 65
+    - 66
+    - 67
+    - 68
+    - 69
+    - 70
+    - 71
+    - 72
+    - 73
+    - 74
+    - 75
+    - 76
+    - 77
+    - 78
+    - 79
+    - 80
+    - 81
+    - 82
+    - 83
+    - 84
+    - 85
+    - 86
+    - 87
+    - 88
+    - 91
+    - 92
+    - 93
+    - 94
+    - 95
+    - 96
+    - 97
+    - 98
+    - 99
+    - 100
+    - 101
+    - 102
+    - 103
+    - 104
+    - 105
+    - 106
+    - 107
+    - 108
+    - 109
+    - 110
+    - 111
+    - 112
+    - 113
+    - 114
+    - 115
+    - 116
+    - 117
+    - 118
+    - 119
+    - 120
+    - 121
+    - 122
+    - 123
+    - 124
+    - 125
+    - 127
+    - 128
+    - 129
+    - 130
+    - 131
+    - 132
+    - 133
+    - 134
+    - 135
+    - 136
+    - 145
+    - 146
+    - 147
+    - 148
+    - 150
+    - 151
+    - 152
+    - 153
+    - 154
+    - 155
+    - 156
+    - 157
+    - 158
+    - 159
+    - 160
+    - 161
+    - 162
+    - 163
+    - 164
+    - 165
+    - 166
+    - 167
+    - 168
+    - 170
+    - 173
+    - 174
+    - 175
+    - 177
+    - 178
+    - 179
+    - 180
+    - 181
+    - 182
+    - 183
+    - 184
+    - 185
+    - 186
+    - 187
+    - 188
+    - 189
+    - 190
+    - 196
+    - 197
+    - 198
+    - 199
+    - 201
+    - 202
+    - 203
+    - 204
+    - 205
+    - 206
+    - 207
+    - 208
+    - 209
+    - 210
+    - 211
+    - 212
+    - 213
+    - 214
+    - 215
+    - 216
+    - 217
+    - 218
+    - 219
+    - 220
+    - 221
+    - 222
+    - 223
+    - 224
+    - 225
+    - 228
+    - 236
+    - 237
+    - 238
+    - 239
+    - 240
+    - 241
+    - 242
+    - 243
+    - 244
+    - 245
+    - 246
+    - 247
+    - 248
+    - 249
+    - 250
+    - 251
+    - 252
+    - 253
+    - 254
+    - 255
+    - 256
+    - 257
+    - 258
+    - 259
+    - 261
+    - 263
+    - 265
+    - 266
+    - 267
+    - 268
+    - 269
+    - 270
+    - 271
+    - 272
+    - 273
+    - 274
+    - 275
+    - 276
+    - 277
+    - 278
+    - 279
+    - 280
+    - 281
+    - 282
+    - 283
+    - 284
+    - 285
+    - 286
+    - 287
+    - 289
+    - 290
+    - 291
+    - 292
+    - 293
+    - 294
+    - 295
+    - 296
+    - 297
+    - 298
+    - 299
+    - 300
+    - 301
+    - 302
+    - 303
+    - 304
+    - 305
+    - 306
+    - 307
+    - 308
+    - 309
+    - 310
+    - 311
+    - 312
+    - 313
+    - 314
+    - 315
+    - 316
+    - 317
+    - 318
+    - 319
+    - 320
+    - 321
+    - 322
+    - 323
+    - 324
+    - 325
+    - 326
+    - 327
+    - 328
+    - 329
+    - 330
+    - 331
+    - 332
+    - 333
+    - 334
+    - 335
+    - 336
+    - 337
+    - 338
+    - 339
+    - 340
+    - 341
+    - 342
+    - 343
+    - 344
+    - 345
+    - 346
+    - 347
+    wids: null
+  speciesIndexs_enzymes:
+    indices:
+    - 30
+    - 31
+    - 32
+    - 33
+    - 34
+    - 35
+    - 36
+    - 37
+    - 38
+    - 39
+    - 40
+    - 41
+    - 42
+    wids: null
+  stimulusComplexCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusComplexGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusComplexLocalIndexs:
+    indices: []
+    wids: null
+  stimulusGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteLocalIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerLocalIndexs:
+    indices: []
+    wids: null
+  stimulusRNACompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusRNAGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusRNALocalIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusLocalIndexs:
+    indices: []
+    wids: null
+  substrateComplexCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateComplexGlobalIndexs:
+    indices: []
+    wids: null
+  substrateComplexLocalIndexs:
+    indices: []
+    wids: null
+  substrateGlobalIndexs:
+    indices:
+    - 13
+    - 19
+    - 21
+    - 54
+    - 102
+    - 103
+    - 133
+    - 283
+    - 302
+    - 369
+    - 372
+    - 373
+    - 385
+    - 386
+    - 437
+    - 446
+    - 454
+    - 457
+    - 479
+    - 482
+    - 491
+    - 617
+    - 626
+    - 645
+    - 647
+    - 652
+    - 675
+    - 710
+    - 711
+    wids: null
+  substrateIndexs_amet:
+    indices:
+    - 2
+    wids:
+    - AMET
+  substrateIndexs_atp:
+    indices:
+    - 4
+    wids:
+    - ATP
+  substrateIndexs_cys:
+    indices:
+    - 7
+    wids:
+    - CYS
+  substrateIndexs_fthf5:
+    indices:
+    - 9
+    wids:
+    - FTHF5
+  substrateIndexs_gly:
+    indices:
+    - 10
+    wids:
+    - GLY
+  substrateIndexs_hydrogen:
+    indices:
+    - 13
+    wids:
+    - H
+  substrateIndexs_lys:
+    indices:
+    - 16
+    wids:
+    - LYS
+  substrateIndexs_modifiedNMP:
+    indices:
+    - 5
+    - 11
+    - 15
+    - 17
+    - 18
+    - 19
+    - 20
+    - 21
+    - 23
+    - 24
+    - 25
+    - 28
+    wids:
+    - cmnm5s2UMP
+    - GmMP
+    - k2CMP
+    - m1GMP
+    - m2GMP
+    - m62AMP
+    - m6AMP
+    - m7GMP
+    - PSIURIMP
+    - s2UMP
+    - s4UMP
+    - UmMP
+  substrateIndexs_nmp:
+    indices:
+    - 3
+    - 6
+    - 12
+    - 29
+    wids:
+    - AMP
+    - CMP
+    - GMP
+    - UMP
+  substrateIndexs_water:
+    indices:
+    - 14
+    wids:
+    - H2O
+  substrateMetaboliteCompartmentIndexs:
+    indices:
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    wids: null
+  substrateMetaboliteGlobalCompartmentIndexs:
+    indices:
+    - 13
+    - 19
+    - 21
+    - 54
+    - 102
+    - 103
+    - 133
+    - 283
+    - 302
+    - 369
+    - 372
+    - 373
+    - 385
+    - 386
+    - 437
+    - 446
+    - 454
+    - 457
+    - 479
+    - 482
+    - 491
+    - 617
+    - 626
+    - 645
+    - 647
+    - 652
+    - 675
+    - 710
+    - 711
+    wids: null
+  substrateMetaboliteGlobalIndexs:
+    indices:
+    - 13
+    - 19
+    - 21
+    - 54
+    - 102
+    - 103
+    - 133
+    - 283
+    - 302
+    - 369
+    - 372
+    - 373
+    - 385
+    - 386
+    - 437
+    - 446
+    - 454
+    - 457
+    - 479
+    - 482
+    - 491
+    - 617
+    - 626
+    - 645
+    - 647
+    - 652
+    - 675
+    - 710
+    - 711
+    wids: null
+  substrateMetaboliteLocalIndexs:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+    - 13
+    - 14
+    - 15
+    - 16
+    - 17
+    - 18
+    - 19
+    - 20
+    - 21
+    - 22
+    - 23
+    - 24
+    - 25
+    - 26
+    - 27
+    - 28
+    - 29
+    wids: null
+  substrateMonomerCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateMonomerGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateMonomerGlobalIndexs:
+    indices: []
+    wids: null
+  substrateMonomerLocalIndexs:
+    indices: []
+    wids: null
+  substrateRNACompartmentIndexs:
+    indices: []
+    wids: null
+  substrateRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateRNAGlobalIndexs:
+    indices: []
+    wids: null
+  substrateRNALocalIndexs:
+    indices: []
+    wids: null
+  substrateStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  substrateStimulusLocalIndexs:
+    indices: []
+    wids: null
+source:
+  fixture: data/karr_fixtures/per_process/RNAModification_flat.mat
+  fixture_sha256: 64e096360369eb89005318f006063fcec04ed690c0aa61c0a3c630807a0f449a
+stoichiometry:
+  reactionCatalysisMatrix:
+    sha256: c7fe59d945062f5efa21959a4c6e2c3a03204970b6dd3ea621ec86b843584995
+    shape:
+    - 91
+    - 13
+  reactionCoenzymeMatrix:
+    sha256: 32ed3fcac5b84645e2ad4378d56d815c95d1ba979a4f3fcb2c8b8702f5a2cf20
+    shape:
+    - 91
+    - 29
+  reactionModificationMatrix:
+    sha256: 085c0ac98d3882282e91af66fdbde21e2496a93dcd5898324931b25aacc11565
+    shape:
+    - 91
+    - 347
+  reactionStoichiometryMatrix:
+    sha256: 16c06a5981c748a76bf96b2b610ae01195f407bfdf2dc419fb769d02ed1f6959
+    shape:
+    - 29
+    - 91
+  reactionWholeCellModelIDs: &id001
+  - MG471_MODIFICATION_001
+  - MG471_MODIFICATION_002
+  - MG471_MODIFICATION_003
+  - MG472_MODIFICATION_001
+  - MG472_MODIFICATION_002
+  - MG475_MODIFICATION_001
+  - MG479_MODIFICATION_001
+  - MG483_MODIFICATION_001
+  - MG483_MODIFICATION_002
+  - MG484_MODIFICATION_001
+  - MG484_MODIFICATION_002
+  - MG484_MODIFICATION_003
+  - MG485_MODIFICATION_001
+  - MG485_MODIFICATION_002
+  - MG486_MODIFICATION_001
+  - MG486_MODIFICATION_002
+  - MG486_MODIFICATION_003
+  - MG486_MODIFICATION_004
+  - MG487_MODIFICATION_001
+  - MG487_MODIFICATION_002
+  - MG488_MODIFICATION_001
+  - MG488_MODIFICATION_002
+  - MG488_MODIFICATION_003
+  - MG489_MODIFICATION_001
+  - MG490_MODIFICATION_001
+  - MG490_MODIFICATION_002
+  - MG492_MODIFICATION_001
+  - MG492_MODIFICATION_002
+  - MG493_MODIFICATION_001
+  - MG495_MODIFICATION_001
+  - MG495_MODIFICATION_002
+  - MG496_MODIFICATION_001
+  - MG497_MODIFICATION_001
+  - MG497_MODIFICATION_002
+  - MG499_MODIFICATION_001
+  - MG500_MODIFICATION_001
+  - MG500_MODIFICATION_002
+  - MG501_MODIFICATION_001
+  - MG501_MODIFICATION_002
+  - MG501_MODIFICATION_003
+  - MG501_MODIFICATION_004
+  - MG501_MODIFICATION_005
+  - MG502_MODIFICATION_001
+  - MG502_MODIFICATION_002
+  - MG502_MODIFICATION_003
+  - MG502_MODIFICATION_004
+  - MG503_MODIFICATION_001
+  - MG503_MODIFICATION_002
+  - MG504_MODIFICATION_001
+  - MG504_MODIFICATION_002
+  - MG504_MODIFICATION_003
+  - MG506_MODIFICATION_001
+  - MG507_MODIFICATION_001
+  - MG508_MODIFICATION_001
+  - MG508_MODIFICATION_002
+  - MG508_MODIFICATION_003
+  - MG509_MODIFICATION_001
+  - MG509_MODIFICATION_002
+  - MG509_MODIFICATION_003
+  - MG510_MODIFICATION_001
+  - MG510_MODIFICATION_002
+  - MG510_MODIFICATION_003
+  - MG511_MODIFICATION_001
+  - MG511_MODIFICATION_002
+  - MG512_MODIFICATION_001
+  - MG512_MODIFICATION_002
+  - MG512_MODIFICATION_003
+  - MG513_MODIFICATION_001
+  - MG513_MODIFICATION_002
+  - MG513_MODIFICATION_003
+  - MG514_MODIFICATION_001
+  - MG514_MODIFICATION_002
+  - MG518_MODIFICATION_001
+  - MG518_MODIFICATION_002
+  - MG519_MODIFICATION_001
+  - MG519_MODIFICATION_002
+  - MG519_MODIFICATION_003
+  - MG520_MODIFICATION_001
+  - MG523_MODIFICATION_001
+  - MG523_MODIFICATION_002
+  - MGrrnA16S_MODIFICATION_001
+  - MGrrnA16S_MODIFICATION_003
+  - MGrrnA16S_MODIFICATION_004
+  - MGrrnA16S_MODIFICATION_005
+  - MGrrnA16S_MODIFICATION_006
+  - MGrrnA23S_MODIFICATION_002
+  - MGrrnA23S_MODIFICATION_003
+  - MGrrnA23S_MODIFICATION_004
+  - MGrrnA23S_MODIFICATION_005
+  - MGrrnA23S_MODIFICATION_006
+  - MGrrnA23S_MODIFICATION_007
+  reactions:
+    MG471_MODIFICATION_001:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+    MG471_MODIFICATION_002:
+      consume: {}
+      produce: {}
+    MG471_MODIFICATION_003:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG472_MODIFICATION_001:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+    MG472_MODIFICATION_002:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG475_MODIFICATION_001:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG479_MODIFICATION_001:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG483_MODIFICATION_001:
+      consume: {}
+      produce: {}
+    MG483_MODIFICATION_002:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG484_MODIFICATION_001:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+        H: 1
+    MG484_MODIFICATION_002:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+    MG484_MODIFICATION_003:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG485_MODIFICATION_001:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+    MG485_MODIFICATION_002:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG486_MODIFICATION_001:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+    MG486_MODIFICATION_002:
+      consume:
+        ATP: 1
+        LYS: 1
+      produce:
+        AMP: 1
+        H: 2
+        PPI: 1
+    MG486_MODIFICATION_003:
+      consume: {}
+      produce: {}
+    MG486_MODIFICATION_004:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG487_MODIFICATION_001:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+        H: 1
+    MG487_MODIFICATION_002:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG488_MODIFICATION_001:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+    MG488_MODIFICATION_002:
+      consume: {}
+      produce: {}
+    MG488_MODIFICATION_003:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG489_MODIFICATION_001:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG490_MODIFICATION_001:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+    MG490_MODIFICATION_002:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG492_MODIFICATION_001:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+    MG492_MODIFICATION_002:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG493_MODIFICATION_001:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG495_MODIFICATION_001:
+      consume: {}
+      produce: {}
+    MG495_MODIFICATION_002:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG496_MODIFICATION_001:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG497_MODIFICATION_001:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+    MG497_MODIFICATION_002:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG499_MODIFICATION_001:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG500_MODIFICATION_001:
+      consume: {}
+      produce: {}
+    MG500_MODIFICATION_002:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG501_MODIFICATION_001:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+    MG501_MODIFICATION_002:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG501_MODIFICATION_003:
+      consume:
+        FTHF5: 1
+        GLY: 1
+      produce:
+        H2O: 1
+        THF: 1
+    MG501_MODIFICATION_004:
+      consume: {}
+      produce: {}
+    MG501_MODIFICATION_005:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG502_MODIFICATION_001:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG502_MODIFICATION_002:
+      consume:
+        FTHF5: 1
+        GLY: 1
+      produce:
+        H2O: 1
+        THF: 1
+    MG502_MODIFICATION_003:
+      consume: {}
+      produce: {}
+    MG502_MODIFICATION_004:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG503_MODIFICATION_001:
+      consume: {}
+      produce: {}
+    MG503_MODIFICATION_002:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG504_MODIFICATION_001:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+    MG504_MODIFICATION_002:
+      consume: {}
+      produce: {}
+    MG504_MODIFICATION_003:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG506_MODIFICATION_001:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG507_MODIFICATION_001:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG508_MODIFICATION_001:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+        H: 1
+    MG508_MODIFICATION_002:
+      consume: {}
+      produce: {}
+    MG508_MODIFICATION_003:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG509_MODIFICATION_001:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+    MG509_MODIFICATION_002:
+      consume: {}
+      produce: {}
+    MG509_MODIFICATION_003:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG510_MODIFICATION_001:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+    MG510_MODIFICATION_002:
+      consume: {}
+      produce: {}
+    MG510_MODIFICATION_003:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG511_MODIFICATION_001:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+    MG511_MODIFICATION_002:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG512_MODIFICATION_001:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+    MG512_MODIFICATION_002:
+      consume: {}
+      produce: {}
+    MG512_MODIFICATION_003:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG513_MODIFICATION_001:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG513_MODIFICATION_002:
+      consume:
+        FTHF5: 1
+        GLY: 1
+      produce:
+        H2O: 1
+        THF: 1
+    MG513_MODIFICATION_003:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG514_MODIFICATION_001:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+    MG514_MODIFICATION_002:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG518_MODIFICATION_001:
+      consume: {}
+      produce: {}
+    MG518_MODIFICATION_002:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG519_MODIFICATION_001:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+        H: 1
+    MG519_MODIFICATION_002:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+    MG519_MODIFICATION_003:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG520_MODIFICATION_001:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MG523_MODIFICATION_001:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+    MG523_MODIFICATION_002:
+      consume:
+        ATP: 1
+        CYS: 1
+        H2O: 1
+      produce:
+        AMP: 1
+        H: 1
+        PPI: 1
+        SER: 1
+    MGrrnA16S_MODIFICATION_001:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+        H: 1
+    MGrrnA16S_MODIFICATION_003:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+        H: 1
+    MGrrnA16S_MODIFICATION_004:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+        H: 1
+    MGrrnA16S_MODIFICATION_005:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+        H: 1
+    MGrrnA16S_MODIFICATION_006:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+        H: 1
+    MGrrnA23S_MODIFICATION_002:
+      consume: {}
+      produce: {}
+    MGrrnA23S_MODIFICATION_003:
+      consume: {}
+      produce: {}
+    MGrrnA23S_MODIFICATION_004:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+        H: 1
+    MGrrnA23S_MODIFICATION_005:
+      consume: {}
+      produce: {}
+    MGrrnA23S_MODIFICATION_006:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+        H: 1
+    MGrrnA23S_MODIFICATION_007:
+      consume: {}
+      produce: {}
+vocabularies:
+  enzymeWholeCellModelIDs:
+  - MG_209_MONOMER
+  - MG_295_MONOMER
+  - MG_370_MONOMER
+  - MG_380_MONOMER
+  - MG_463_MONOMER
+  - MG_008_379_TETRAMER
+  - MG_084_TETRAMER
+  - MG_182_DIMER
+  - MG_252_DIMER
+  - MG_346_DIMER
+  - MG_347_DIMER
+  - MG_372_DIMER
+  - MG_445_DIMER
+  modifiedRNAWholeCellModelIDs:
+  - TU_001
+  - TU_002
+  - TU_003
+  - TU_004
+  - TU_005
+  - TU_006
+  - MG471
+  - MG472
+  - TU_008
+  - TU_009
+  - TU_010
+  - TU_011
+  - TU_012
+  - TU_013
+  - TU_014
+  - TU_015
+  - TU_016
+  - TU_017
+  - TU_018
+  - TU_019
+  - TU_020
+  - TU_021
+  - TU_022
+  - TU_023
+  - TU_024
+  - TU_025
+  - TU_026
+  - TU_027
+  - TU_028
+  - TU_029
+  - TU_030
+  - TU_031
+  - TU_032
+  - TU_033
+  - TU_034
+  - TU_035
+  - TU_036
+  - MG475
+  - TU_038
+  - TU_039
+  - TU_040
+  - TU_041
+  - TU_042
+  - TU_043
+  - TU_044
+  - TU_045
+  - TU_046
+  - TU_047
+  - TU_048
+  - TU_049
+  - TU_050
+  - TU_051
+  - TU_052
+  - TU_053
+  - TU_054
+  - TU_055
+  - TU_056
+  - TU_057
+  - TU_058
+  - TU_059
+  - TU_060
+  - TU_061
+  - TU_062
+  - TU_063
+  - TU_064
+  - TU_065
+  - TU_066
+  - TU_067
+  - TU_068
+  - TU_069
+  - TU_070
+  - TU_071
+  - TU_072
+  - TU_073
+  - TU_074
+  - TU_075
+  - TU_076
+  - TU_077
+  - TU_078
+  - TU_079
+  - TU_080
+  - TU_081
+  - TU_082
+  - TU_083
+  - TU_084
+  - TU_085
+  - TU_086
+  - TU_087
+  - MGrrnA16S
+  - MGrrnA23S
+  - MGrrnA5S
+  - TU_089
+  - TU_090
+  - TU_091
+  - TU_092
+  - TU_093
+  - TU_094
+  - TU_095
+  - TU_096
+  - TU_097
+  - TU_098
+  - TU_099
+  - TU_100
+  - TU_101
+  - TU_102
+  - TU_103
+  - TU_104
+  - TU_105
+  - TU_106
+  - TU_107
+  - TU_108
+  - TU_109
+  - TU_110
+  - TU_111
+  - TU_112
+  - TU_113
+  - TU_114
+  - TU_115
+  - TU_116
+  - TU_117
+  - TU_118
+  - TU_119
+  - TU_120
+  - TU_121
+  - TU_122
+  - MG479
+  - TU_124
+  - TU_125
+  - TU_126
+  - TU_127
+  - TU_128
+  - TU_129
+  - TU_130
+  - TU_131
+  - TU_132
+  - TU_133
+  - MG483
+  - MG484
+  - MG485
+  - MG486
+  - MG487
+  - MG488
+  - MG489
+  - MG490
+  - TU_142
+  - TU_143
+  - TU_144
+  - TU_145
+  - MG492
+  - TU_147
+  - TU_148
+  - TU_149
+  - TU_150
+  - TU_151
+  - TU_152
+  - TU_153
+  - TU_154
+  - TU_155
+  - TU_156
+  - TU_157
+  - TU_158
+  - TU_159
+  - TU_160
+  - TU_161
+  - TU_162
+  - TU_163
+  - TU_164
+  - TU_165
+  - MG493
+  - TU_167
+  - MG495
+  - MG496
+  - TU_169
+  - TU_170
+  - TU_171
+  - MG497
+  - TU_173
+  - TU_174
+  - TU_175
+  - TU_176
+  - TU_177
+  - MG_0001
+  - TU_179
+  - TU_180
+  - MG_0002
+  - TU_182
+  - TU_183
+  - TU_184
+  - TU_185
+  - TU_186
+  - MG499
+  - MG500
+  - MG501
+  - MG502
+  - MG503
+  - TU_190
+  - TU_191
+  - TU_192
+  - TU_193
+  - MG504
+  - TU_195
+  - TU_196
+  - TU_197
+  - TU_198
+  - TU_199
+  - TU_200
+  - TU_201
+  - TU_202
+  - TU_203
+  - TU_204
+  - TU_205
+  - TU_206
+  - TU_207
+  - TU_208
+  - TU_209
+  - TU_210
+  - TU_211
+  - TU_212
+  - TU_213
+  - TU_214
+  - TU_215
+  - TU_216
+  - TU_217
+  - TU_218
+  - TU_219
+  - MG506
+  - MG507
+  - TU_222
+  - MG508
+  - MG509
+  - MG510
+  - MG511
+  - MG512
+  - MG513
+  - MG514
+  - TU_224
+  - TU_225
+  - MG_0003
+  - MG_0004
+  - TU_228
+  - TU_229
+  - TU_230
+  - TU_231
+  - TU_232
+  - TU_233
+  - TU_234
+  - TU_235
+  - TU_236
+  - TU_237
+  - TU_238
+  - TU_239
+  - TU_240
+  - TU_241
+  - TU_242
+  - TU_243
+  - TU_244
+  - TU_245
+  - TU_246
+  - TU_247
+  - MG518
+  - TU_249
+  - MG519
+  - TU_251
+  - MG520
+  - TU_253
+  - TU_254
+  - TU_255
+  - TU_256
+  - TU_257
+  - TU_258
+  - TU_259
+  - TU_260
+  - TU_261
+  - TU_262
+  - TU_263
+  - TU_264
+  - TU_265
+  - TU_266
+  - TU_267
+  - TU_268
+  - TU_269
+  - TU_270
+  - TU_271
+  - TU_272
+  - TU_273
+  - TU_274
+  - TU_275
+  - MG523
+  - TU_277
+  - TU_278
+  - TU_279
+  - TU_280
+  - TU_281
+  - TU_282
+  - TU_283
+  - TU_284
+  - TU_285
+  - TU_286
+  - TU_287
+  - TU_288
+  - TU_289
+  - TU_290
+  - TU_291
+  - TU_292
+  - TU_293
+  - TU_294
+  - TU_295
+  - TU_296
+  - TU_297
+  - TU_298
+  - TU_299
+  - TU_300
+  - TU_301
+  - TU_302
+  - TU_303
+  - TU_304
+  - TU_305
+  - TU_306
+  - TU_307
+  - TU_308
+  - TU_309
+  - TU_310
+  - TU_311
+  - TU_312
+  - TU_313
+  - TU_314
+  - TU_315
+  - TU_316
+  - TU_317
+  - TU_318
+  - TU_319
+  - TU_320
+  - TU_321
+  - TU_322
+  - TU_323
+  - TU_324
+  - TU_325
+  - TU_326
+  - TU_327
+  - TU_328
+  - TU_329
+  - TU_330
+  - TU_331
+  - TU_332
+  - TU_333
+  - TU_334
+  - TU_335
+  reactionWholeCellModelIDs: *id001
+  stimuliWholeCellModelIDs: []
+  substrateWholeCellModelIDs:
+  - AHCYS
+  - AMET
+  - AMP
+  - ATP
+  - cmnm5s2UMP
+  - CMP
+  - CYS
+  - FAD
+  - FTHF5
+  - GLY
+  - GmMP
+  - GMP
+  - H
+  - H2O
+  - k2CMP
+  - LYS
+  - m1GMP
+  - m2GMP
+  - m62AMP
+  - m6AMP
+  - m7GMP
+  - PPI
+  - PSIURIMP
+  - s2UMP
+  - s4UMP
+  - SER
+  - THF
+  - UmMP
+  - UMP
+  unmodifiedRNAWholeCellModelIDs:
+  - TU_001
+  - TU_002
+  - TU_003
+  - TU_004
+  - TU_005
+  - TU_006
+  - MG471
+  - MG472
+  - TU_008
+  - TU_009
+  - TU_010
+  - TU_011
+  - TU_012
+  - TU_013
+  - TU_014
+  - TU_015
+  - TU_016
+  - TU_017
+  - TU_018
+  - TU_019
+  - TU_020
+  - TU_021
+  - TU_022
+  - TU_023
+  - TU_024
+  - TU_025
+  - TU_026
+  - TU_027
+  - TU_028
+  - TU_029
+  - TU_030
+  - TU_031
+  - TU_032
+  - TU_033
+  - TU_034
+  - TU_035
+  - TU_036
+  - MG475
+  - TU_038
+  - TU_039
+  - TU_040
+  - TU_041
+  - TU_042
+  - TU_043
+  - TU_044
+  - TU_045
+  - TU_046
+  - TU_047
+  - TU_048
+  - TU_049
+  - TU_050
+  - TU_051
+  - TU_052
+  - TU_053
+  - TU_054
+  - TU_055
+  - TU_056
+  - TU_057
+  - TU_058
+  - TU_059
+  - TU_060
+  - TU_061
+  - TU_062
+  - TU_063
+  - TU_064
+  - TU_065
+  - TU_066
+  - TU_067
+  - TU_068
+  - TU_069
+  - TU_070
+  - TU_071
+  - TU_072
+  - TU_073
+  - TU_074
+  - TU_075
+  - TU_076
+  - TU_077
+  - TU_078
+  - TU_079
+  - TU_080
+  - TU_081
+  - TU_082
+  - TU_083
+  - TU_084
+  - TU_085
+  - TU_086
+  - TU_087
+  - MGrrnA16S
+  - MGrrnA23S
+  - MGrrnA5S
+  - TU_089
+  - TU_090
+  - TU_091
+  - TU_092
+  - TU_093
+  - TU_094
+  - TU_095
+  - TU_096
+  - TU_097
+  - TU_098
+  - TU_099
+  - TU_100
+  - TU_101
+  - TU_102
+  - TU_103
+  - TU_104
+  - TU_105
+  - TU_106
+  - TU_107
+  - TU_108
+  - TU_109
+  - TU_110
+  - TU_111
+  - TU_112
+  - TU_113
+  - TU_114
+  - TU_115
+  - TU_116
+  - TU_117
+  - TU_118
+  - TU_119
+  - TU_120
+  - TU_121
+  - TU_122
+  - MG479
+  - TU_124
+  - TU_125
+  - TU_126
+  - TU_127
+  - TU_128
+  - TU_129
+  - TU_130
+  - TU_131
+  - TU_132
+  - TU_133
+  - MG483
+  - MG484
+  - MG485
+  - MG486
+  - MG487
+  - MG488
+  - MG489
+  - MG490
+  - TU_142
+  - TU_143
+  - TU_144
+  - TU_145
+  - MG492
+  - TU_147
+  - TU_148
+  - TU_149
+  - TU_150
+  - TU_151
+  - TU_152
+  - TU_153
+  - TU_154
+  - TU_155
+  - TU_156
+  - TU_157
+  - TU_158
+  - TU_159
+  - TU_160
+  - TU_161
+  - TU_162
+  - TU_163
+  - TU_164
+  - TU_165
+  - MG493
+  - TU_167
+  - MG495
+  - MG496
+  - TU_169
+  - TU_170
+  - TU_171
+  - MG497
+  - TU_173
+  - TU_174
+  - TU_175
+  - TU_176
+  - TU_177
+  - MG_0001
+  - TU_179
+  - TU_180
+  - MG_0002
+  - TU_182
+  - TU_183
+  - TU_184
+  - TU_185
+  - TU_186
+  - MG499
+  - MG500
+  - MG501
+  - MG502
+  - MG503
+  - TU_190
+  - TU_191
+  - TU_192
+  - TU_193
+  - MG504
+  - TU_195
+  - TU_196
+  - TU_197
+  - TU_198
+  - TU_199
+  - TU_200
+  - TU_201
+  - TU_202
+  - TU_203
+  - TU_204
+  - TU_205
+  - TU_206
+  - TU_207
+  - TU_208
+  - TU_209
+  - TU_210
+  - TU_211
+  - TU_212
+  - TU_213
+  - TU_214
+  - TU_215
+  - TU_216
+  - TU_217
+  - TU_218
+  - TU_219
+  - MG506
+  - MG507
+  - TU_222
+  - MG508
+  - MG509
+  - MG510
+  - MG511
+  - MG512
+  - MG513
+  - MG514
+  - TU_224
+  - TU_225
+  - MG_0003
+  - MG_0004
+  - TU_228
+  - TU_229
+  - TU_230
+  - TU_231
+  - TU_232
+  - TU_233
+  - TU_234
+  - TU_235
+  - TU_236
+  - TU_237
+  - TU_238
+  - TU_239
+  - TU_240
+  - TU_241
+  - TU_242
+  - TU_243
+  - TU_244
+  - TU_245
+  - TU_246
+  - TU_247
+  - MG518
+  - TU_249
+  - MG519
+  - TU_251
+  - MG520
+  - TU_253
+  - TU_254
+  - TU_255
+  - TU_256
+  - TU_257
+  - TU_258
+  - TU_259
+  - TU_260
+  - TU_261
+  - TU_262
+  - TU_263
+  - TU_264
+  - TU_265
+  - TU_266
+  - TU_267
+  - TU_268
+  - TU_269
+  - TU_270
+  - TU_271
+  - TU_272
+  - TU_273
+  - TU_274
+  - TU_275
+  - MG523
+  - TU_277
+  - TU_278
+  - TU_279
+  - TU_280
+  - TU_281
+  - TU_282
+  - TU_283
+  - TU_284
+  - TU_285
+  - TU_286
+  - TU_287
+  - TU_288
+  - TU_289
+  - TU_290
+  - TU_291
+  - TU_292
+  - TU_293
+  - TU_294
+  - TU_295
+  - TU_296
+  - TU_297
+  - TU_298
+  - TU_299
+  - TU_300
+  - TU_301
+  - TU_302
+  - TU_303
+  - TU_304
+  - TU_305
+  - TU_306
+  - TU_307
+  - TU_308
+  - TU_309
+  - TU_310
+  - TU_311
+  - TU_312
+  - TU_313
+  - TU_314
+  - TU_315
+  - TU_316
+  - TU_317
+  - TU_318
+  - TU_319
+  - TU_320
+  - TU_321
+  - TU_322
+  - TU_323
+  - TU_324
+  - TU_325
+  - TU_326
+  - TU_327
+  - TU_328
+  - TU_329
+  - TU_330
+  - TU_331
+  - TU_332
+  - TU_333
+  - TU_334
+  - TU_335

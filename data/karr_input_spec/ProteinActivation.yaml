@@ -1,0 +1,1026 @@
+params:
+  activationRules:
+  - ~stimulus_gluconate
+  - stimulus_thiolStress
+  - stimulus_ironStress
+  - ~ciprofloxacin & ~difloxacin & ~sparfloxacin
+  - G6P>5
+  - ~ciprofloxacin & ~difloxacin & ~sparfloxacin
+  - temperature>=43
+  - PI>20
+  - ~gentamicin & ~spectinomycin & ~streptomycin & ~tetracycline
+  - ~azithromycin & ~chloramphenicol & ~clarithromycin & ~clindamycin & ~erythromycin & ~lincomycin & ~pristinamycin
+  boundEnzymes:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  compartment: <handle:edu.stanford.covert.cell.sim.constant.Compartment:1x1>
+  complex: <handle:edu.stanford.covert.cell.sim.state.ProteinComplex:1x1>
+  enzymeMolecularWeights:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  enzymeNames:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  enzymes:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  fittedConstantNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  fixedConstantNames__: activationRules
+  gene: <handle:edu.stanford.covert.cell.sim.constant.Gene:1x1>
+  geometry: <handle:edu.stanford.covert.cell.sim.state.CellGeometry:1x1>
+  inactivatedSubstrates:
+    dtype: uint8
+    sha256: 218128a6bfdd080ec614371c057588a29837a4c537c196af196fbe595e1e37d6
+    shape:
+    - 10
+    - 6
+  initialized: 1
+  localStateNames__: inactivatedSubstrates
+  metabolite: <handle:edu.stanford.covert.cell.sim.state.Metabolite:1x1>
+  monomer: <handle:edu.stanford.covert.cell.sim.state.ProteinMonomer:1x1>
+  name: Protein activation
+  optionNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  parameterNames:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  randStream: <handle:edu.stanford.covert.util.RandStream:1x1>
+  rna: <handle:edu.stanford.covert.cell.sim.state.Rna:1x1>
+  seed: 1
+  simulationStateSideEffects:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  states:
+    dtype: object
+    sha256: da8d2dfbc0ccb5681391442364b01d3184786ce7b5841025aad3448f7c0363cf
+    shape:
+    - 5
+  stepSizeSec: 1
+  stimuli:
+    dtype: float64
+    sha256: c4b299313fbedb6506bd41c741d06a5991ef64840af455f7995870b612330241
+    shape:
+    - 20
+    - 6
+  stimuliNames:
+    dtype: object
+    sha256: b48731512e92625a63e9af9b3c8a0f0629cbe42504102ec59bae5133b15b2d3f
+    shape:
+    - 20
+  stimulus: <handle:edu.stanford.covert.cell.sim.state.Stimulus:1x1>
+  substrateMolecularWeights:
+  - 26004.559499999996
+  - 16575.047599999994
+  - 16520.795799999996
+  - 334028.22159999993
+  - 208286.58780000004
+  - 320223.5136
+  - 79046.9286
+  - 54083.683999999994
+  - 799107.8255999999
+  - 1373072.8532
+  substrateNames:
+  - Uncharacterized HTH-type transcriptional regulator
+  - Spx subfamily protein
+  - ferric uptake repressor
+  - DNA gyrase
+  - HPr(Ser) kinase/phosphatase
+  - topoisomerase IV
+  - heat-inducible transcription repressor HrcA, putative
+  - phosphate transport system regulatory protein PhoU, putative
+  - 30S ribosomal subunit
+  - 50S ribosomal subunit
+  substrates:
+    dtype: uint8
+    sha256: bbae0c38f4bb78fa4a069c13f34894af205722c5f2c463c2359c794ec657e8d3
+    shape:
+    - 10
+    - 6
+  verbosity: 0
+  wholeCellModelID: Process_ProteinActivation
+  x_class_: edu.stanford.covert.cell.sim.process.ProteinActivation
+process: ProteinActivation
+role_groups:
+  enzymeBoundComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeBoundMonomerGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeBoundRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeComplexCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeComplexGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeComplexLocalIndexs:
+    indices: []
+    wids: null
+  enzymeGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteLocalIndexs:
+    indices: []
+    wids: null
+  enzymeMonomerCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeMonomerGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeMonomerGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeMonomerLocalIndexs:
+    indices: []
+    wids: null
+  enzymeRNACompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeRNAGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeRNALocalIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusLocalIndexs:
+    indices: []
+    wids: null
+  inactivatedSubstrateComplexGlobalCompartmentIndexs:
+    indices:
+    - 403
+    - 1609
+    - 2815
+    - 4021
+    - 5227
+    - 6433
+    - 448
+    - 1654
+    - 2860
+    - 4066
+    - 5272
+    - 6478
+    - 480
+    - 1686
+    - 2892
+    - 4098
+    - 5304
+    - 6510
+    - 481
+    - 1687
+    - 2893
+    - 4099
+    - 5305
+    - 6511
+    - 562
+    - 1768
+    - 2974
+    - 4180
+    - 5386
+    - 6592
+    - 598
+    - 1804
+    - 3010
+    - 4216
+    - 5422
+    - 6628
+    - 600
+    - 1806
+    - 3012
+    - 4218
+    - 5424
+    - 6630
+    wids: null
+  inactivatedSubstrateMonomerGlobalCompartmentIndexs:
+    indices:
+    - 2993
+    - 7813
+    - 12633
+    - 17453
+    - 22273
+    - 27093
+    - 3020
+    - 7840
+    - 12660
+    - 17480
+    - 22300
+    - 27120
+    - 3134
+    - 7954
+    - 12774
+    - 17594
+    - 22414
+    - 27234
+    wids: null
+  parameterIndexs:
+    indices: []
+    wids: null
+  stimulusComplexCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusComplexGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusComplexLocalIndexs:
+    indices: []
+    wids: null
+  stimulusGlobalIndexs:
+    indices:
+    - 309
+    - 611
+    - 61
+    - 88
+    - 93
+    - 99
+    - 100
+    - 186
+    - 273
+    - 331
+    - 441
+    - 619
+    - 658
+    - 659
+    - 5
+    - 6
+    - 7
+    - 662
+    - 8
+    - 673
+    wids: null
+  stimulusMetaboliteCompartmentIndexs:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    wids: null
+  stimulusMetaboliteGlobalCompartmentIndexs:
+    indices:
+    - 309
+    - 1031
+    - 1753
+    - 2475
+    - 3197
+    - 3919
+    - 611
+    - 1333
+    - 2055
+    - 2777
+    - 3499
+    - 4221
+    - 61
+    - 783
+    - 1505
+    - 2227
+    - 2949
+    - 3671
+    - 88
+    - 810
+    - 1532
+    - 2254
+    - 2976
+    - 3698
+    - 93
+    - 815
+    - 1537
+    - 2259
+    - 2981
+    - 3703
+    - 99
+    - 821
+    - 1543
+    - 2265
+    - 2987
+    - 3709
+    - 100
+    - 822
+    - 1544
+    - 2266
+    - 2988
+    - 3710
+    - 186
+    - 908
+    - 1630
+    - 2352
+    - 3074
+    - 3796
+    - 273
+    - 995
+    - 1717
+    - 2439
+    - 3161
+    - 3883
+    - 331
+    - 1053
+    - 1775
+    - 2497
+    - 3219
+    - 3941
+    - 441
+    - 1163
+    - 1885
+    - 2607
+    - 3329
+    - 4051
+    - 619
+    - 1341
+    - 2063
+    - 2785
+    - 3507
+    - 4229
+    - 658
+    - 1380
+    - 2102
+    - 2824
+    - 3546
+    - 4268
+    - 659
+    - 1381
+    - 2103
+    - 2825
+    - 3547
+    - 4269
+    - 662
+    - 1384
+    - 2106
+    - 2828
+    - 3550
+    - 4272
+    - 673
+    - 1395
+    - 2117
+    - 2839
+    - 3561
+    - 4283
+    wids: null
+  stimulusMetaboliteGlobalIndexs:
+    indices:
+    - 309
+    - 309
+    - 309
+    - 309
+    - 309
+    - 309
+    - 611
+    - 611
+    - 611
+    - 611
+    - 611
+    - 611
+    - 61
+    - 61
+    - 61
+    - 61
+    - 61
+    - 61
+    - 88
+    - 88
+    - 88
+    - 88
+    - 88
+    - 88
+    - 93
+    - 93
+    - 93
+    - 93
+    - 93
+    - 93
+    - 99
+    - 99
+    - 99
+    - 99
+    - 99
+    - 99
+    - 100
+    - 100
+    - 100
+    - 100
+    - 100
+    - 100
+    - 186
+    - 186
+    - 186
+    - 186
+    - 186
+    - 186
+    - 273
+    - 273
+    - 273
+    - 273
+    - 273
+    - 273
+    - 331
+    - 331
+    - 331
+    - 331
+    - 331
+    - 331
+    - 441
+    - 441
+    - 441
+    - 441
+    - 441
+    - 441
+    - 619
+    - 619
+    - 619
+    - 619
+    - 619
+    - 619
+    - 658
+    - 658
+    - 658
+    - 658
+    - 658
+    - 658
+    - 659
+    - 659
+    - 659
+    - 659
+    - 659
+    - 659
+    - 662
+    - 662
+    - 662
+    - 662
+    - 662
+    - 662
+    - 673
+    - 673
+    - 673
+    - 673
+    - 673
+    - 673
+    wids: null
+  stimulusMetaboliteLocalIndexs:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+    - 13
+    - 14
+    - 18
+    - 20
+    wids: null
+  stimulusMonomerCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerLocalIndexs:
+    indices: []
+    wids: null
+  stimulusRNACompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusRNAGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusRNALocalIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusCompartmentIndexs:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    wids: null
+  stimulusStimulusGlobalCompartmentIndexs:
+    indices:
+    - 5
+    - 15
+    - 25
+    - 35
+    - 45
+    - 55
+    - 6
+    - 16
+    - 26
+    - 36
+    - 46
+    - 56
+    - 7
+    - 17
+    - 27
+    - 37
+    - 47
+    - 57
+    - 8
+    - 18
+    - 28
+    - 38
+    - 48
+    - 58
+    wids: null
+  stimulusStimulusGlobalIndexs:
+    indices:
+    - 5
+    - 5
+    - 5
+    - 5
+    - 5
+    - 5
+    - 6
+    - 6
+    - 6
+    - 6
+    - 6
+    - 6
+    - 7
+    - 7
+    - 7
+    - 7
+    - 7
+    - 7
+    - 8
+    - 8
+    - 8
+    - 8
+    - 8
+    - 8
+    wids: null
+  stimulusStimulusLocalIndexs:
+    indices:
+    - 15
+    - 16
+    - 17
+    - 19
+    wids: null
+  substrateComplexCompartmentIndexs:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    wids: null
+  substrateComplexGlobalCompartmentIndexs:
+    indices:
+    - 202
+    - 1408
+    - 2614
+    - 3820
+    - 5026
+    - 6232
+    - 247
+    - 1453
+    - 2659
+    - 3865
+    - 5071
+    - 6277
+    - 279
+    - 1485
+    - 2691
+    - 3897
+    - 5103
+    - 6309
+    - 280
+    - 1486
+    - 2692
+    - 3898
+    - 5104
+    - 6310
+    - 361
+    - 1567
+    - 2773
+    - 3979
+    - 5185
+    - 6391
+    - 397
+    - 1603
+    - 2809
+    - 4015
+    - 5221
+    - 6427
+    - 399
+    - 1605
+    - 2811
+    - 4017
+    - 5223
+    - 6429
+    wids: null
+  substrateComplexGlobalIndexs:
+    indices:
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 46
+    - 46
+    - 46
+    - 46
+    - 46
+    - 46
+    - 78
+    - 78
+    - 78
+    - 78
+    - 78
+    - 78
+    - 79
+    - 79
+    - 79
+    - 79
+    - 79
+    - 79
+    - 160
+    - 160
+    - 160
+    - 160
+    - 160
+    - 160
+    - 196
+    - 196
+    - 196
+    - 196
+    - 196
+    - 196
+    - 198
+    - 198
+    - 198
+    - 198
+    - 198
+    - 198
+    wids: null
+  substrateComplexLocalIndexs:
+    indices:
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    wids: null
+  substrateGlobalIndexs:
+    indices:
+    - 101
+    - 128
+    - 242
+    - 1
+    - 46
+    - 78
+    - 79
+    - 160
+    - 196
+    - 198
+    wids: null
+  substrateMetaboliteCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateMetaboliteGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateMetaboliteGlobalIndexs:
+    indices: []
+    wids: null
+  substrateMetaboliteLocalIndexs:
+    indices: []
+    wids: null
+  substrateMonomerCompartmentIndexs:
+    indices:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    wids: null
+  substrateMonomerGlobalCompartmentIndexs:
+    indices:
+    - 2511
+    - 7331
+    - 12151
+    - 16971
+    - 21791
+    - 26611
+    - 2538
+    - 7358
+    - 12178
+    - 16998
+    - 21818
+    - 26638
+    - 2652
+    - 7472
+    - 12292
+    - 17112
+    - 21932
+    - 26752
+    wids: null
+  substrateMonomerGlobalIndexs:
+    indices:
+    - 101
+    - 101
+    - 101
+    - 101
+    - 101
+    - 101
+    - 128
+    - 128
+    - 128
+    - 128
+    - 128
+    - 128
+    - 242
+    - 242
+    - 242
+    - 242
+    - 242
+    - 242
+    wids: null
+  substrateMonomerLocalIndexs:
+    indices:
+    - 1
+    - 2
+    - 3
+    wids: null
+  substrateRNACompartmentIndexs:
+    indices: []
+    wids: null
+  substrateRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateRNAGlobalIndexs:
+    indices: []
+    wids: null
+  substrateRNALocalIndexs:
+    indices: []
+    wids: null
+  substrateStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  substrateStimulusLocalIndexs:
+    indices: []
+    wids: null
+source:
+  fixture: data/karr_fixtures/per_process/ProteinActivation_flat.mat
+  fixture_sha256: ea58c5d4ca279e2b10dff12bffe89e04926f4515324f0c13fb677759a4094a52
+vocabularies:
+  enzymeWholeCellModelIDs: []
+  stimuliWholeCellModelIDs:
+  - G6P
+  - PI
+  - azithromycin
+  - chloramphenicol
+  - ciprofloxacin
+  - clarithromycin
+  - clindamycin
+  - difloxacin
+  - erythromycin
+  - gentamicin
+  - lincomycin
+  - pristinamycin
+  - sparfloxacin
+  - spectinomycin
+  - stimulus_gluconate
+  - stimulus_ironStress
+  - stimulus_thiolStress
+  - streptomycin
+  - temperature
+  - tetracycline
+  substrateWholeCellModelIDs:
+  - MG_101_MONOMER
+  - MG_127_MONOMER
+  - MG_236_MONOMER
+  - DNA_GYRASE
+  - MG_085_HEXAMER
+  - MG_203_204_TETRAMER
+  - MG_205_DIMER
+  - MG_409_DIMER
+  - RIBOSOME_30S
+  - RIBOSOME_50S

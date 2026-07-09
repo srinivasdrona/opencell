@@ -1,0 +1,825 @@
+params:
+  boundEnzymes:
+  - 1
+  - 0
+  - 0
+  - 0
+  - 2
+  chromosome: <handle:edu.stanford.covert.cell.sim.state.Chromosome:1x1>
+  compartment: <handle:edu.stanford.covert.cell.sim.constant.Compartment:1x1>
+  complex: <handle:edu.stanford.covert.cell.sim.state.ProteinComplex:1x1>
+  enzymeDNAFootprints:
+  - 30
+  - 25
+  - 33
+  - 36
+  - 28
+  enzymeDNAFootprints3Prime:
+  - 14
+  - 12
+  - 16
+  - 17
+  - 13
+  enzymeDNAFootprints5Prime:
+  - 15
+  - 12
+  - 16
+  - 18
+  - 14
+  enzymeMolecularWeights:
+  - 26004.559499999996
+  - 16575.047599999994
+  - 79046.9286
+  - 16520.795799999996
+  - 40542.4202
+  enzymeNames:
+  - Uncharacterized HTH-type transcriptional regulator
+  - Spx subfamily protein
+  - heat-inducible transcription repressor HrcA, putative
+  - ferric uptake repressor
+  - LuxR bacterial regulatory protein, putative
+  enzymes:
+  - 35
+  - 0
+  - 0
+  - 0
+  - 8
+  fittedConstantNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  fixedConstantNames__:
+  - tfIndexs
+  - tuIndexs
+  - tfAffinities
+  - tfActivities
+  - tfPositionStrands
+  - otherActivities
+  gene: <handle:edu.stanford.covert.cell.sim.constant.Gene:1x1>
+  geometry: <handle:edu.stanford.covert.cell.sim.state.CellGeometry:1x1>
+  initialized: 1
+  localStateNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  metabolite: <handle:edu.stanford.covert.cell.sim.state.Metabolite:1x1>
+  monomer: <handle:edu.stanford.covert.cell.sim.state.ProteinMonomer:1x1>
+  name: Transcriptional regulation
+  optionNames__:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  otherActivities:
+    dtype: float64
+    sha256: 2b80fd265efc4ddc6656228d56a7b3557e69d5723f152c2930f26753f492c3d1
+    shape:
+    - 335
+    - 5
+  parameterNames:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  randStream: <handle:edu.stanford.covert.util.RandStream:1x1>
+  rna: <handle:edu.stanford.covert.cell.sim.state.Rna:1x1>
+  rnaPolymerase: <handle:edu.stanford.covert.cell.sim.state.RNAPolymerase:1x1>
+  seed: 1
+  simulationStateSideEffects:
+    items: <unreadable:MATLAB:needMoreRhsOutputs>
+    x_class_: edu.stanford.covert.cell.sim.SimulationStateSideEffect
+  states:
+    dtype: object
+    sha256: b9cb9563584b1cb59c8afbc39d06de830985e9ce9a69272517432dda56bfa1b4
+    shape:
+    - 7
+  stepSizeSec: 1
+  stimuli:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  stimuliNames:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  stimulus: <handle:edu.stanford.covert.cell.sim.state.Stimulus:1x1>
+  substrateMolecularWeights:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  substrateNames:
+    dtype: object
+    sha256: 4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+    shape:
+    - 0
+  substrates:
+    dtype: uint8
+    sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    shape:
+    - 0
+  tfActivities:
+    dtype: float64
+    sha256: 84ebaffc481dc93eb529afb6047fe910540297b95e0e945370e9cf5ce0921de8
+    shape:
+    - 17
+    - 2
+  tfAffinities:
+    dtype: float64
+    sha256: a62e65786ae7ef9fd6dc7cee0ed27354779a3c8f2a8787106f32f2efa7d5198f
+    shape:
+    - 17
+    - 2
+  tfPositionStrands:
+    dtype: int32
+    sha256: 8ec366d601141b3dad91c0ab16c4f82ab6dd7bb86f8a662093aa411641cd28b2
+    shape:
+    - 34
+    - 2
+  verbosity: 0
+  wholeCellModelID: Process_TranscriptionalRegulation
+  x_class_: edu.stanford.covert.cell.sim.process.TranscriptionalRegulation
+process: TranscriptionalRegulation
+role_groups:
+  enzymeBoundComplexGlobalCompartmentIndexs:
+    indices:
+    - 682
+    - 768
+    wids: null
+  enzymeBoundMonomerGlobalCompartmentIndexs:
+    indices:
+    - 3475
+    - 3502
+    - 3616
+    wids: null
+  enzymeBoundRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeComplexCompartmentIndexs:
+    indices:
+    - 1
+    - 1
+    wids: null
+  enzymeComplexGlobalCompartmentIndexs:
+    indices:
+    - 280
+    - 366
+    wids: null
+  enzymeComplexGlobalIndexs:
+    indices:
+    - 79
+    - 165
+    wids: null
+  enzymeComplexLocalIndexs:
+    indices:
+    - 3
+    - 5
+    wids: null
+  enzymeGlobalIndexs:
+    indices:
+    - 101
+    - 128
+    - 79
+    - 242
+    - 165
+    wids: null
+  enzymeIndexs_fur:
+    indices:
+    - 4
+    wids:
+    - MG_236_MONOMER
+  enzymeIndexs_gntR:
+    indices:
+    - 1
+    wids:
+    - MG_101_MONOMER
+  enzymeIndexs_hrcA:
+    indices:
+    - 3
+    wids:
+    - MG_205_DIMER
+  enzymeIndexs_luxR:
+    indices:
+    - 5
+    wids:
+    - MG_428_DIMER
+  enzymeIndexs_spx:
+    indices:
+    - 2
+    wids:
+    - MG_127_MONOMER
+  enzymeMetaboliteCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeMetaboliteLocalIndexs:
+    indices: []
+    wids: null
+  enzymeMonomerCompartmentIndexs:
+    indices:
+    - 1
+    - 1
+    - 1
+    wids: null
+  enzymeMonomerGlobalCompartmentIndexs:
+    indices:
+    - 2511
+    - 2538
+    - 2652
+    wids: null
+  enzymeMonomerGlobalIndexs:
+    indices:
+    - 101
+    - 128
+    - 242
+    wids: null
+  enzymeMonomerLocalIndexs:
+    indices:
+    - 1
+    - 2
+    - 4
+    wids: null
+  enzymeRNACompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeRNAGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeRNALocalIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  enzymeStimulusLocalIndexs:
+    indices: []
+    wids: null
+  parameterIndexs:
+    indices: []
+    wids: null
+  stimulusComplexCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusComplexGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusComplexLocalIndexs:
+    indices: []
+    wids: null
+  stimulusGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMetaboliteLocalIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusMonomerLocalIndexs:
+    indices: []
+    wids: null
+  stimulusRNACompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusRNAGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusRNALocalIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  stimulusStimulusLocalIndexs:
+    indices: []
+    wids: null
+  substrateComplexCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateComplexGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateComplexGlobalIndexs:
+    indices: []
+    wids: null
+  substrateComplexLocalIndexs:
+    indices: []
+    wids: null
+  substrateGlobalIndexs:
+    indices: []
+    wids: null
+  substrateMetaboliteCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateMetaboliteGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateMetaboliteGlobalIndexs:
+    indices: []
+    wids: null
+  substrateMetaboliteLocalIndexs:
+    indices: []
+    wids: null
+  substrateMonomerCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateMonomerGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateMonomerGlobalIndexs:
+    indices: []
+    wids: null
+  substrateMonomerLocalIndexs:
+    indices: []
+    wids: null
+  substrateRNACompartmentIndexs:
+    indices: []
+    wids: null
+  substrateRNAGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateRNAGlobalIndexs:
+    indices: []
+    wids: null
+  substrateRNALocalIndexs:
+    indices: []
+    wids: null
+  substrateStimulusCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateStimulusGlobalCompartmentIndexs:
+    indices: []
+    wids: null
+  substrateStimulusGlobalIndexs:
+    indices: []
+    wids: null
+  substrateStimulusLocalIndexs:
+    indices: []
+    wids: null
+  tfIndexs:
+    indices:
+    - 4
+    - 4
+    - 3
+    - 3
+    - 4
+    - 4
+    - 1
+    - 1
+    - 5
+    - 5
+    - 4
+    - 4
+    - 4
+    - 4
+    - 3
+    - 3
+    - 3
+    - 3
+    - 4
+    - 4
+    - 4
+    - 4
+    - 3
+    - 3
+    - 4
+    - 4
+    - 4
+    - 4
+    - 3
+    - 3
+    - 3
+    - 3
+    - 5
+    - 5
+    wids: null
+  tuIndexs:
+    indices:
+    - 8
+    - 8
+    - 10
+    - 10
+    - 16
+    - 16
+    - 63
+    - 63
+    - 63
+    - 63
+    - 85
+    - 85
+    - 97
+    - 97
+    - 122
+    - 122
+    - 155
+    - 155
+    - 196
+    - 196
+    - 207
+    - 207
+    - 208
+    - 208
+    - 222
+    - 222
+    - 249
+    - 249
+    - 258
+    - 258
+    - 285
+    - 285
+    - 318
+    - 318
+    wids: null
+source:
+  fixture: data/karr_fixtures/per_process/TranscriptionalRegulation_flat.mat
+  fixture_sha256: c553fd09f6f782db0a76fa0513746296a63b2b0096cf49ce7570cf78724a2744
+vocabularies:
+  enzymeWholeCellModelIDs:
+  - MG_101_MONOMER
+  - MG_127_MONOMER
+  - MG_205_DIMER
+  - MG_236_MONOMER
+  - MG_428_DIMER
+  stimuliWholeCellModelIDs: []
+  substrateWholeCellModelIDs: []
+  transcriptionUnitWholeCellModelIDs:
+  - TU_001
+  - TU_002
+  - TU_003
+  - TU_004
+  - TU_005
+  - TU_006
+  - TU_007
+  - TU_008
+  - TU_009
+  - TU_010
+  - TU_011
+  - TU_012
+  - TU_013
+  - TU_014
+  - TU_015
+  - TU_016
+  - TU_017
+  - TU_018
+  - TU_019
+  - TU_020
+  - TU_021
+  - TU_022
+  - TU_023
+  - TU_024
+  - TU_025
+  - TU_026
+  - TU_027
+  - TU_028
+  - TU_029
+  - TU_030
+  - TU_031
+  - TU_032
+  - TU_033
+  - TU_034
+  - TU_035
+  - TU_036
+  - TU_037
+  - TU_038
+  - TU_039
+  - TU_040
+  - TU_041
+  - TU_042
+  - TU_043
+  - TU_044
+  - TU_045
+  - TU_046
+  - TU_047
+  - TU_048
+  - TU_049
+  - TU_050
+  - TU_051
+  - TU_052
+  - TU_053
+  - TU_054
+  - TU_055
+  - TU_056
+  - TU_057
+  - TU_058
+  - TU_059
+  - TU_060
+  - TU_061
+  - TU_062
+  - TU_063
+  - TU_064
+  - TU_065
+  - TU_066
+  - TU_067
+  - TU_068
+  - TU_069
+  - TU_070
+  - TU_071
+  - TU_072
+  - TU_073
+  - TU_074
+  - TU_075
+  - TU_076
+  - TU_077
+  - TU_078
+  - TU_079
+  - TU_080
+  - TU_081
+  - TU_082
+  - TU_083
+  - TU_084
+  - TU_085
+  - TU_086
+  - TU_087
+  - TU_088
+  - TU_089
+  - TU_090
+  - TU_091
+  - TU_092
+  - TU_093
+  - TU_094
+  - TU_095
+  - TU_096
+  - TU_097
+  - TU_098
+  - TU_099
+  - TU_100
+  - TU_101
+  - TU_102
+  - TU_103
+  - TU_104
+  - TU_105
+  - TU_106
+  - TU_107
+  - TU_108
+  - TU_109
+  - TU_110
+  - TU_111
+  - TU_112
+  - TU_113
+  - TU_114
+  - TU_115
+  - TU_116
+  - TU_117
+  - TU_118
+  - TU_119
+  - TU_120
+  - TU_121
+  - TU_122
+  - TU_123
+  - TU_124
+  - TU_125
+  - TU_126
+  - TU_127
+  - TU_128
+  - TU_129
+  - TU_130
+  - TU_131
+  - TU_132
+  - TU_133
+  - TU_134
+  - TU_135
+  - TU_136
+  - TU_137
+  - TU_138
+  - TU_139
+  - TU_140
+  - TU_141
+  - TU_142
+  - TU_143
+  - TU_144
+  - TU_145
+  - TU_146
+  - TU_147
+  - TU_148
+  - TU_149
+  - TU_150
+  - TU_151
+  - TU_152
+  - TU_153
+  - TU_154
+  - TU_155
+  - TU_156
+  - TU_157
+  - TU_158
+  - TU_159
+  - TU_160
+  - TU_161
+  - TU_162
+  - TU_163
+  - TU_164
+  - TU_165
+  - TU_166
+  - TU_167
+  - TU_168
+  - TU_169
+  - TU_170
+  - TU_171
+  - TU_172
+  - TU_173
+  - TU_174
+  - TU_175
+  - TU_176
+  - TU_177
+  - TU_178
+  - TU_179
+  - TU_180
+  - TU_181
+  - TU_182
+  - TU_183
+  - TU_184
+  - TU_185
+  - TU_186
+  - TU_187
+  - TU_188
+  - TU_189
+  - TU_190
+  - TU_191
+  - TU_192
+  - TU_193
+  - TU_194
+  - TU_195
+  - TU_196
+  - TU_197
+  - TU_198
+  - TU_199
+  - TU_200
+  - TU_201
+  - TU_202
+  - TU_203
+  - TU_204
+  - TU_205
+  - TU_206
+  - TU_207
+  - TU_208
+  - TU_209
+  - TU_210
+  - TU_211
+  - TU_212
+  - TU_213
+  - TU_214
+  - TU_215
+  - TU_216
+  - TU_217
+  - TU_218
+  - TU_219
+  - TU_220
+  - TU_221
+  - TU_222
+  - TU_223
+  - TU_224
+  - TU_225
+  - TU_226
+  - TU_227
+  - TU_228
+  - TU_229
+  - TU_230
+  - TU_231
+  - TU_232
+  - TU_233
+  - TU_234
+  - TU_235
+  - TU_236
+  - TU_237
+  - TU_238
+  - TU_239
+  - TU_240
+  - TU_241
+  - TU_242
+  - TU_243
+  - TU_244
+  - TU_245
+  - TU_246
+  - TU_247
+  - TU_248
+  - TU_249
+  - TU_250
+  - TU_251
+  - TU_252
+  - TU_253
+  - TU_254
+  - TU_255
+  - TU_256
+  - TU_257
+  - TU_258
+  - TU_259
+  - TU_260
+  - TU_261
+  - TU_262
+  - TU_263
+  - TU_264
+  - TU_265
+  - TU_266
+  - TU_267
+  - TU_268
+  - TU_269
+  - TU_270
+  - TU_271
+  - TU_272
+  - TU_273
+  - TU_274
+  - TU_275
+  - TU_276
+  - TU_277
+  - TU_278
+  - TU_279
+  - TU_280
+  - TU_281
+  - TU_282
+  - TU_283
+  - TU_284
+  - TU_285
+  - TU_286
+  - TU_287
+  - TU_288
+  - TU_289
+  - TU_290
+  - TU_291
+  - TU_292
+  - TU_293
+  - TU_294
+  - TU_295
+  - TU_296
+  - TU_297
+  - TU_298
+  - TU_299
+  - TU_300
+  - TU_301
+  - TU_302
+  - TU_303
+  - TU_304
+  - TU_305
+  - TU_306
+  - TU_307
+  - TU_308
+  - TU_309
+  - TU_310
+  - TU_311
+  - TU_312
+  - TU_313
+  - TU_314
+  - TU_315
+  - TU_316
+  - TU_317
+  - TU_318
+  - TU_319
+  - TU_320
+  - TU_321
+  - TU_322
+  - TU_323
+  - TU_324
+  - TU_325
+  - TU_326
+  - TU_327
+  - TU_328
+  - TU_329
+  - TU_330
+  - TU_331
+  - TU_332
+  - TU_333
+  - TU_334
+  - TU_335
