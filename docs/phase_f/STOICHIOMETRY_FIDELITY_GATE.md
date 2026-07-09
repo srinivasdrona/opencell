@@ -22,6 +22,16 @@ hollow green, so it is explicitly out of scope.
 Authoritative spec = the extracted Karr stoichiometry oracle, one JSON per
 process: `data/karr_method_inventory/karr_stoichiometry/<Process>.json`.
 
+Related derived artifact note: `data/karr_input_spec/<Process>.yaml` now keeps
+two stoichiometry annotations when the fixture exposes both matrices:
+`stoichiometry.reactions` is derived from the combined
+`reactionStoichiometryMatrix`, while `stoichiometry.reactions_small_molecule` is
+derived from `reactionSmallMoleculeStoichiometryMatrix`. For split
+small-molecule/DNA processes such as DNARepair and DNADamage, the extracted
+oracle aligns with the **small-molecule** view, so gate comparisons should
+reason from `reactions_small_molecule` rather than the combined `reactions`
+annotation.
+
 Verified shape facts (probed 2026-07-09, drive the whole design):
 
 - **`role` has THREE values, not two:** `consume`, `produce`, **`both`**.
