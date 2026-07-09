@@ -420,7 +420,10 @@ role_groups:
     - 1
     - 2
     - 5
-    wids: null
+    wids:
+    - MG_019_DIMER
+    - MG_201_DIMER
+    - MG_392_393_21MER
   enzymeGlobalIndexs:
     indices:
     - 16
@@ -465,7 +468,7 @@ role_groups:
     wids: null
   enzymeMetaboliteLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   enzymeMonomerCompartmentIndexs:
     indices:
     - 1
@@ -485,7 +488,9 @@ role_groups:
     indices:
     - 3
     - 4
-    wids: null
+    wids:
+    - MG_238_MONOMER
+    - MG_305_MONOMER
   enzymeRNACompartmentIndexs:
     indices: []
     wids: null
@@ -497,7 +502,7 @@ role_groups:
     wids: null
   enzymeRNALocalIndexs:
     indices: []
-    wids: null
+    wids: []
   enzymeStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -509,7 +514,7 @@ role_groups:
     wids: null
   enzymeStimulusLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   foldedComplexCompartmentIndexs:
     indices:
     - 202
@@ -2683,8 +2688,9 @@ role_groups:
     indices: []
     wids: null
   stimulusComplexLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusGlobalIndexs:
     indices: []
     wids: null
@@ -2698,8 +2704,9 @@ role_groups:
     indices: []
     wids: null
   stimulusMetaboliteLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusMonomerCompartmentIndexs:
     indices: []
     wids: null
@@ -2710,8 +2717,9 @@ role_groups:
     indices: []
     wids: null
   stimulusMonomerLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusRNACompartmentIndexs:
     indices: []
     wids: null
@@ -2722,8 +2730,9 @@ role_groups:
     indices: []
     wids: null
   stimulusRNALocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -2734,8 +2743,9 @@ role_groups:
     indices: []
     wids: null
   stimulusStimulusLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   substrateComplexCompartmentIndexs:
     indices: []
     wids: null
@@ -2747,7 +2757,7 @@ role_groups:
     wids: null
   substrateComplexLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   substrateGlobalIndexs:
     indices:
     - 11
@@ -2860,6 +2870,7 @@ role_groups:
     - 722
     wids: null
   substrateMetaboliteLocalIndexs:
+    identity_over_vocab: true
     indices:
     - 1
     - 2
@@ -2872,7 +2883,18 @@ role_groups:
     - 9
     - 10
     - 11
-    wids: null
+    wids:
+    - ADP
+    - ATP
+    - FE2
+    - H
+    - H2O
+    - K
+    - MG
+    - MN
+    - NA
+    - PI
+    - ZN
   substrateMonomerCompartmentIndexs:
     indices: []
     wids: null
@@ -2884,7 +2906,7 @@ role_groups:
     wids: null
   substrateMonomerLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   substrateRNACompartmentIndexs:
     indices: []
     wids: null
@@ -2896,7 +2918,7 @@ role_groups:
     wids: null
   substrateRNALocalIndexs:
     indices: []
-    wids: null
+    wids: []
   substrateStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -2908,7 +2930,7 @@ role_groups:
     wids: null
   substrateStimulusLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   unfoldedComplexCompartmentIndexs:
     indices:
     - 1

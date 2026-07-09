@@ -359,7 +359,21 @@ role_groups:
     - 19
     - 20
     - 21
-    wids: null
+    wids:
+    - MG_005_DIMER
+    - MG_021_DIMER
+    - MG_035_DIMER
+    - MG_036_DIMER
+    - MG_098_099_100_TRIMER
+    - MG_113_DIMER
+    - MG_126_DIMER
+    - MG_136_DIMER
+    - MG_194_195_TETRAMER
+    - MG_251_DIMER
+    - MG_283_DIMER
+    - MG_292_TETRAMER
+    - MG_375_DIMER
+    - MG_455_DIMER
   enzymeGlobalIndexs:
     indices:
     - 259
@@ -580,7 +594,7 @@ role_groups:
     wids: null
   enzymeMetaboliteLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   enzymeMonomerCompartmentIndexs:
     indices:
     - 1
@@ -620,7 +634,14 @@ role_groups:
     - 5
     - 6
     - 7
-    wids: null
+    wids:
+    - MG_253_MONOMER
+    - MG_266_MONOMER
+    - MG_334_MONOMER
+    - MG_345_MONOMER
+    - MG_365_MONOMER
+    - MG_378_MONOMER
+    - MG_462_MONOMER
   enzymeRNACompartmentIndexs:
     indices:
     - 1
@@ -780,7 +801,44 @@ role_groups:
     - 56
     - 57
     - 58
-    wids: null
+    wids:
+    - MG471
+    - MG472
+    - MG475
+    - MG479
+    - MG483
+    - MG484
+    - MG485
+    - MG486
+    - MG487
+    - MG488
+    - MG489
+    - MG490
+    - MG492
+    - MG493
+    - MG495
+    - MG496
+    - MG497
+    - MG499
+    - MG500
+    - MG501
+    - MG502
+    - MG503
+    - MG504
+    - MG506
+    - MG507
+    - MG508
+    - MG509
+    - MG510
+    - MG511
+    - MG512
+    - MG513
+    - MG514
+    - MG518
+    - MG519
+    - MG520
+    - MG523
+    - MG_0004
   enzymeStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -792,7 +850,7 @@ role_groups:
     wids: null
   enzymeStimulusLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   parameterIndexs:
     indices: []
     wids: null
@@ -924,8 +982,9 @@ role_groups:
     indices: []
     wids: null
   stimulusComplexLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusGlobalIndexs:
     indices: []
     wids: null
@@ -939,8 +998,9 @@ role_groups:
     indices: []
     wids: null
   stimulusMetaboliteLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusMonomerCompartmentIndexs:
     indices: []
     wids: null
@@ -951,8 +1011,9 @@ role_groups:
     indices: []
     wids: null
   stimulusMonomerLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusRNACompartmentIndexs:
     indices: []
     wids: null
@@ -963,8 +1024,9 @@ role_groups:
     indices: []
     wids: null
   stimulusRNALocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -975,8 +1037,9 @@ role_groups:
     indices: []
     wids: null
   stimulusStimulusLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   substrateComplexCompartmentIndexs:
     indices: []
     wids: null
@@ -988,7 +1051,7 @@ role_groups:
     wids: null
   substrateComplexLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   substrateGlobalIndexs:
     indices:
     - 11
@@ -1230,6 +1293,7 @@ role_groups:
     - 362
     wids: null
   substrateMetaboliteLocalIndexs:
+    identity_over_vocab: true
     indices:
     - 1
     - 2
@@ -1261,7 +1325,37 @@ role_groups:
     - 28
     - 29
     - 30
-    wids: null
+    wids:
+    - ADP
+    - ALA
+    - AMP
+    - ARG
+    - ASN
+    - ASP
+    - ATP
+    - CYS
+    - FMET
+    - FTHF10
+    - GLU
+    - GLY
+    - H
+    - H2O
+    - HIS
+    - ILE
+    - LEU
+    - LYS
+    - MET
+    - PHE
+    - PI
+    - PPI
+    - PRO
+    - SER
+    - THF
+    - THR
+    - TRP
+    - TYR
+    - VAL
+    - GLN
   substrateMonomerCompartmentIndexs:
     indices: []
     wids: null
@@ -1273,7 +1367,7 @@ role_groups:
     wids: null
   substrateMonomerLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   substrateRNACompartmentIndexs:
     indices: []
     wids: null
@@ -1285,7 +1379,7 @@ role_groups:
     wids: null
   substrateRNALocalIndexs:
     indices: []
-    wids: null
+    wids: []
   substrateStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -1297,7 +1391,7 @@ role_groups:
     wids: null
   substrateStimulusLocalIndexs:
     indices: []
-    wids: null
+    wids: []
 source:
   fixture: data/karr_fixtures/per_process/tRNAAminoacylation_flat.mat
   fixture_sha256: 5e7fe972081172c196542029ae76eef939f88dc891b355492a13e3206c3aa3fa
@@ -1322,46 +1416,6 @@ stoichiometry:
     shape:
     - 30
     - 39
-  reactionWholeCellModelIDs: &id001
-  - MG471_Aminoacylation
-  - MG472_Aminoacylation
-  - MG475_Aminoacylation
-  - MG479_Aminoacylation
-  - MG483_Aminoacylation
-  - MG484_Aminoacylation
-  - MG485_Aminoacylation
-  - MG486_Aminoacylation
-  - MG487_Aminoacylation
-  - MG488_Aminoacylation
-  - MG488_Formyltransferase
-  - MG489_Aminoacylation
-  - MG490_Aminoacylation
-  - MG492_Aminoacylation
-  - MG493_Aminoacylation
-  - MG495_Aminoacylation
-  - MG496_Aminoacylation
-  - MG497_Aminoacylation
-  - MG499_Aminoacylation
-  - MG500_Aminoacylation
-  - MG501_Aminoacylation
-  - MG502_Amidotransferase
-  - MG502_Aminoacylation
-  - MG503_Aminoacylation
-  - MG504_Aminoacylation
-  - MG506_Aminoacylation
-  - MG507_Aminoacylation
-  - MG508_Aminoacylation
-  - MG509_Aminoacylation
-  - MG510_Aminoacylation
-  - MG511_Aminoacylation
-  - MG512_Aminoacylation
-  - MG513_Aminoacylation
-  - MG514_Aminoacylation
-  - MG518_Aminoacylation
-  - MG519_Aminoacylation
-  - MG520_Aminoacylation
-  - MG523_Aminoacylation
-  - MG_0004_Aminoacylation
   reactions:
     MG471_Aminoacylation:
       consume:
@@ -1637,6 +1691,7 @@ stoichiometry:
       produce:
         AMP: 1
         PPI: 1
+  reactions_source_field: reactionStoichiometryMatrix
 vocabularies:
   aminoacylatedRNAWholeCellModelIDs:
   - MG471
@@ -1775,7 +1830,46 @@ vocabularies:
   - MG519
   - MG520
   - MG523
-  reactionWholeCellModelIDs: *id001
+  reactionWholeCellModelIDs:
+  - MG471_Aminoacylation
+  - MG472_Aminoacylation
+  - MG475_Aminoacylation
+  - MG479_Aminoacylation
+  - MG483_Aminoacylation
+  - MG484_Aminoacylation
+  - MG485_Aminoacylation
+  - MG486_Aminoacylation
+  - MG487_Aminoacylation
+  - MG488_Aminoacylation
+  - MG488_Formyltransferase
+  - MG489_Aminoacylation
+  - MG490_Aminoacylation
+  - MG492_Aminoacylation
+  - MG493_Aminoacylation
+  - MG495_Aminoacylation
+  - MG496_Aminoacylation
+  - MG497_Aminoacylation
+  - MG499_Aminoacylation
+  - MG500_Aminoacylation
+  - MG501_Aminoacylation
+  - MG502_Amidotransferase
+  - MG502_Aminoacylation
+  - MG503_Aminoacylation
+  - MG504_Aminoacylation
+  - MG506_Aminoacylation
+  - MG507_Aminoacylation
+  - MG508_Aminoacylation
+  - MG509_Aminoacylation
+  - MG510_Aminoacylation
+  - MG511_Aminoacylation
+  - MG512_Aminoacylation
+  - MG513_Aminoacylation
+  - MG514_Aminoacylation
+  - MG518_Aminoacylation
+  - MG519_Aminoacylation
+  - MG520_Aminoacylation
+  - MG523_Aminoacylation
+  - MG_0004_Aminoacylation
   stimuliWholeCellModelIDs: []
   substrateWholeCellModelIDs:
   - ADP

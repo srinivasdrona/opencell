@@ -181,7 +181,8 @@ role_groups:
   enzymeComplexLocalIndexs:
     indices:
     - 15
-    wids: null
+    wids:
+    - MG_410_411_412_PENTAMER
   enzymeGlobalIndexs:
     indices:
     - 75
@@ -324,7 +325,7 @@ role_groups:
     wids: null
   enzymeMetaboliteLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   enzymeMonomerCompartmentIndexs:
     indices:
     - 4
@@ -392,7 +393,21 @@ role_groups:
     - 12
     - 13
     - 14
-    wids: null
+    wids:
+    - MG_075_MONOMER
+    - MG_149_MONOMER
+    - MG_191_MONOMER
+    - MG_192_MONOMER
+    - MG_200_MONOMER
+    - MG_217_MONOMER
+    - MG_218_MONOMER
+    - MG_288_MONOMER
+    - MG_309_MONOMER
+    - MG_312_MONOMER
+    - MG_317_MONOMER
+    - MG_318_MONOMER
+    - MG_386_MONOMER
+    - MG_412_MONOMER
   enzymeRNACompartmentIndexs:
     indices: []
     wids: null
@@ -404,7 +419,7 @@ role_groups:
     wids: null
   enzymeRNALocalIndexs:
     indices: []
-    wids: null
+    wids: []
   enzymeStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -416,7 +431,7 @@ role_groups:
     wids: null
   enzymeStimulusLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   parameterIndexs:
     indices: []
     wids: null
@@ -430,8 +445,9 @@ role_groups:
     indices: []
     wids: null
   stimulusComplexLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusGlobalIndexs:
     indices: []
     wids: null
@@ -445,8 +461,9 @@ role_groups:
     indices: []
     wids: null
   stimulusMetaboliteLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusMonomerCompartmentIndexs:
     indices: []
     wids: null
@@ -457,8 +474,9 @@ role_groups:
     indices: []
     wids: null
   stimulusMonomerLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusRNACompartmentIndexs:
     indices: []
     wids: null
@@ -469,8 +487,9 @@ role_groups:
     indices: []
     wids: null
   stimulusRNALocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -481,8 +500,9 @@ role_groups:
     indices: []
     wids: null
   stimulusStimulusLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   substrateComplexCompartmentIndexs:
     indices: []
     wids: null
@@ -493,8 +513,9 @@ role_groups:
     indices: []
     wids: null
   substrateComplexLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   substrateGlobalIndexs:
     indices: []
     wids: null
@@ -508,8 +529,9 @@ role_groups:
     indices: []
     wids: null
   substrateMetaboliteLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   substrateMonomerCompartmentIndexs:
     indices: []
     wids: null
@@ -520,8 +542,9 @@ role_groups:
     indices: []
     wids: null
   substrateMonomerLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   substrateRNACompartmentIndexs:
     indices: []
     wids: null
@@ -532,8 +555,9 @@ role_groups:
     indices: []
     wids: null
   substrateRNALocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   substrateStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -544,8 +568,9 @@ role_groups:
     indices: []
     wids: null
   substrateStimulusLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
 source:
   fixture: data/karr_fixtures/per_process/HostInteraction_flat.mat
   fixture_sha256: 3da8d8fae1204828b2886cdfb395e7c22644b0ce8704d78456e6a8acb9766776

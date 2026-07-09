@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import re
 from typing import Any
 
 import numpy as np
@@ -45,6 +46,12 @@ PROCESS_NAMES = (
     "Translation",
     "tRNAAminoacylation",
 )
+
+WHOLE_CELL_MODEL_IDS_SUFFIX = "WholeCellModelIDs"
+CAMEL_TOKEN_RE = re.compile(r"[A-Z]+(?![a-z])|[A-Z]?[a-z]+|\d+")
+LOCAL_ROOT_ALIASES = {
+    "stimulus": "stimuli",
+}
 
 
 def sha256_bytes(payload: bytes) -> str:
@@ -333,12 +340,13 @@ def _stoich_coeff(value: Any) -> Any:
 def _reaction_breakdown(
     matrix: Any,
     *,
+    field_name: str,
     substrate_wids: list[str],
     reaction_wids: list[str],
 ) -> tuple[dict[str, Any] | None, str | None]:
     arr = _dense_array(matrix)
     if arr.ndim != 2:
-        return None, f"reactionStoichiometryMatrix is not 2-D (shape={list(arr.shape)})"
+        return None, f"{field_name} is not 2-D (shape={list(arr.shape)})"
 
     expected_shape = (len(substrate_wids), len(reaction_wids))
     transposed_shape = (len(reaction_wids), len(substrate_wids))
@@ -346,13 +354,13 @@ def _reaction_breakdown(
     if arr.shape != expected_shape:
         return (
             None,
-            "reactionStoichiometryMatrix shape does not align to "
+            f"{field_name} shape does not align to "
             f"substrates x reactions (shape={list(arr.shape)}, expected={list(expected_shape)}, "
             f"transpose={list(transposed_shape)})",
         )
 
     if expected_shape == transposed_shape:
-        return None, "reactionStoichiometryMatrix axis orientation is ambiguous because substrate and reaction counts match"
+        return None, f"{field_name} axis orientation is ambiguous because substrate and reaction counts match"
 
     reactions: dict[str, Any] = {}
     for reaction_index, reaction_wid in enumerate(reaction_wids):
@@ -369,6 +377,64 @@ def _reaction_breakdown(
                 produce[substrate_wid] = coeff
         reactions[reaction_wid] = {"consume": consume, "produce": produce}
     return reactions, None
+
+
+def _camel_tokens(value: str) -> list[str]:
+    tokens = CAMEL_TOKEN_RE.findall(value)
+    return tokens if tokens else [value]
+
+
+def _resolve_indices_against_vocab(indices: list[int], vocab: list[str]) -> list[str] | None:
+    resolved_wids: list[str] = []
+    for index in indices:
+        zero_based = index - 1
+        if zero_based < 0 or zero_based >= len(vocab):
+            return None
+        resolved_wids.append(vocab[zero_based])
+    return resolved_wids
+
+
+def _candidate_vocab_fields_for_local_prefix(prefix: str, vocabularies: dict[str, list[str]]) -> list[str]:
+    local_root = prefix.split("Local", 1)[0]
+    tokens = _camel_tokens(local_root)
+    candidates: list[str] = []
+    seen: set[str] = set()
+
+    for token_count in range(len(tokens), 0, -1):
+        raw_root = "".join(tokens[:token_count])
+        for root in (raw_root, LOCAL_ROOT_ALIASES.get(raw_root)):
+            if not root or root in seen:
+                continue
+            seen.add(root)
+            vocab_field = f"{root}{WHOLE_CELL_MODEL_IDS_SUFFIX}"
+            if vocab_field in vocabularies:
+                candidates.append(vocab_field)
+
+    return candidates
+
+
+def _resolve_role_group(
+    field_name: str,
+    *,
+    indices: list[int],
+    vocabularies: dict[str, list[str]],
+) -> tuple[list[str] | None, str | None, bool]:
+    prefix = field_name.split("Indexs", 1)[0]
+    exact_vocab_field = f"{prefix}{WHOLE_CELL_MODEL_IDS_SUFFIX}"
+    if exact_vocab_field in vocabularies:
+        return (
+            _resolve_indices_against_vocab(indices, vocabularies[exact_vocab_field]),
+            exact_vocab_field,
+            False,
+        )
+
+    if "Local" not in prefix:
+        return None, None, False
+
+    for vocab_field in _candidate_vocab_fields_for_local_prefix(prefix, vocabularies):
+        return _resolve_indices_against_vocab(indices, vocabularies[vocab_field]), vocab_field, True
+
+    return None, None, False
 
 
 def derive_process_spec(process_name: str, *, output_dir: Path) -> dict[str, Any]:
@@ -390,18 +456,21 @@ def derive_process_spec(process_name: str, *, output_dir: Path) -> dict[str, Any
     params: dict[str, Any] = {}
     unresolved_role_groups: list[str] = []
     ambiguous_stoichiometry: list[str] = []
+    sentinel_index_fields_moved_to_params: list[str] = []
+    newly_resolved_local_role_groups: list[str] = []
+    identity_over_vocab_role_groups: list[str] = []
 
     fields = _fixture_field_names(fixture)
 
     for field_name in fields:
         raw_value = getattr(fixture, field_name)
-        if field_name.endswith("WholeCellModelIDs"):
+        if field_name.endswith(WHOLE_CELL_MODEL_IDS_SUFFIX):
             vocabularies[field_name] = _extract_string_list(raw_value)
 
     for field_name in fields:
         raw_value = getattr(fixture, field_name)
 
-        if field_name.endswith("WholeCellModelIDs"):
+        if field_name.endswith(WHOLE_CELL_MODEL_IDS_SUFFIX):
             continue
 
         if "Indexs" in field_name:
@@ -411,22 +480,32 @@ def derive_process_spec(process_name: str, *, output_dir: Path) -> dict[str, Any
                 params[field_name] = _emit_param_value(raw_value)
                 continue
 
-            prefix = field_name.split("Indexs", 1)[0]
-            vocab_field = f"{prefix}WholeCellModelIDs"
-            vocab = vocabularies.get(vocab_field)
-            resolved_wids: list[str] | None = []
-            if vocab is None:
-                resolved_wids = None
-            else:
-                for index in indices:
-                    zero_based = index - 1
-                    if zero_based < 0 or zero_based >= len(vocab):
-                        resolved_wids = None
-                        break
-                    resolved_wids.append(vocab[zero_based])
+            if any(index == 0 for index in indices):
+                params[field_name] = _emit_param_value(raw_value)
+                sentinel_index_fields_moved_to_params.append(field_name)
+                continue
+
+            resolved_wids, vocab_field, used_local_fallback = _resolve_role_group(
+                field_name,
+                indices=indices,
+                vocabularies=vocabularies,
+            )
             if resolved_wids is None:
                 unresolved_role_groups.append(field_name)
-            role_groups[field_name] = {"indices": indices, "wids": resolved_wids}
+
+            role_group_entry: dict[str, Any] = {"indices": indices, "wids": resolved_wids}
+            if (
+                resolved_wids is not None
+                and "Local" in field_name
+                and vocab_field is not None
+                and resolved_wids == vocabularies[vocab_field]
+            ):
+                role_group_entry["identity_over_vocab"] = True
+                identity_over_vocab_role_groups.append(field_name)
+            if resolved_wids is not None and used_local_fallback:
+                newly_resolved_local_role_groups.append(field_name)
+
+            role_groups[field_name] = role_group_entry
             continue
 
         if field_name.startswith("reaction") and field_name.endswith("Matrix"):
@@ -441,23 +520,41 @@ def derive_process_spec(process_name: str, *, output_dir: Path) -> dict[str, Any
                 if substrate_wids and reaction_wids:
                     reactions, issue = _reaction_breakdown(
                         raw_value,
+                        field_name=field_name,
                         substrate_wids=substrate_wids,
                         reaction_wids=reaction_wids,
                     )
                     if reactions is not None:
                         stoichiometry["reactions"] = reactions
+                        stoichiometry["reactions_source_field"] = field_name
                     if issue is not None:
                         ambiguous_stoichiometry.append(issue)
                 else:
                     ambiguous_stoichiometry.append(
                         "reactionStoichiometryMatrix could not be resolved because substrateWholeCellModelIDs or reactionWholeCellModelIDs is missing"
                     )
+            if field_name == "reactionSmallMoleculeStoichiometryMatrix":
+                substrate_wids = vocabularies.get("substrateWholeCellModelIDs")
+                reaction_wids = vocabularies.get("reactionWholeCellModelIDs")
+                if substrate_wids and reaction_wids:
+                    reactions, issue = _reaction_breakdown(
+                        raw_value,
+                        field_name=field_name,
+                        substrate_wids=substrate_wids,
+                        reaction_wids=reaction_wids,
+                    )
+                    if reactions is not None:
+                        stoichiometry["reactions_small_molecule"] = reactions
+                        stoichiometry["reactions_small_molecule_source_field"] = field_name
+                    if issue is not None:
+                        ambiguous_stoichiometry.append(issue)
+                else:
+                    ambiguous_stoichiometry.append(
+                        "reactionSmallMoleculeStoichiometryMatrix could not be resolved because substrateWholeCellModelIDs or reactionWholeCellModelIDs is missing"
+                    )
             continue
 
         params[field_name] = _emit_param_value(raw_value)
-
-    if stoichiometry and "reactionWholeCellModelIDs" in vocabularies:
-        stoichiometry["reactionWholeCellModelIDs"] = vocabularies["reactionWholeCellModelIDs"]
 
     payload: dict[str, Any] = {
         "params": params,
@@ -488,16 +585,25 @@ def derive_process_spec(process_name: str, *, output_dir: Path) -> dict[str, Any
     output_path.write_bytes(output_bytes)
 
     substrate_fixture = _extract_string_list(getattr(fixture, "substrateWholeCellModelIDs", []))
+    vocabulary_matches_fixture = {
+        field_name: vocabularies[field_name] == _extract_string_list(getattr(fixture, field_name))
+        for field_name in fields
+        if field_name.endswith(WHOLE_CELL_MODEL_IDS_SUFFIX)
+    }
 
     return {
         "ambiguous_stoichiometry": ambiguous_stoichiometry,
         "fixture_relpath": fixture_relpath,
         "fixture_sha256": fixture_sha,
+        "identity_over_vocab_role_groups": identity_over_vocab_role_groups,
+        "newly_resolved_local_role_groups": newly_resolved_local_role_groups,
         "output_path": _path_for_report(output_path),
         "process_name": process_name,
+        "sentinel_index_fields_moved_to_params": sentinel_index_fields_moved_to_params,
         "spec_sha256": sha256_bytes(output_bytes),
         "substrate_vocab_count": len(vocabularies.get("substrateWholeCellModelIDs", [])),
         "substrate_vocab_matches_fixture": vocabularies.get("substrateWholeCellModelIDs", []) == substrate_fixture,
+        "vocabulary_matches_fixture": vocabulary_matches_fixture,
         "unresolved_role_groups": unresolved_role_groups,
     }
 
@@ -539,6 +645,21 @@ def derive_input_specs(
         for process_name, report in reports.items()
         if report["ambiguous_stoichiometry"]
     }
+    identity_over_vocab_role_groups = {
+        process_name: report["identity_over_vocab_role_groups"]
+        for process_name, report in reports.items()
+        if report["identity_over_vocab_role_groups"]
+    }
+    newly_resolved_local_role_groups = {
+        process_name: report["newly_resolved_local_role_groups"]
+        for process_name, report in reports.items()
+        if report["newly_resolved_local_role_groups"]
+    }
+    sentinel_index_fields_moved_to_params = {
+        process_name: report["sentinel_index_fields_moved_to_params"]
+        for process_name, report in reports.items()
+        if report["sentinel_index_fields_moved_to_params"]
+    }
     substrate_vocab_counts = {
         process_name: {
             "count": report["substrate_vocab_count"],
@@ -546,16 +667,24 @@ def derive_input_specs(
         }
         for process_name, report in reports.items()
     }
+    vocabulary_matches_fixture = {
+        process_name: report["vocabulary_matches_fixture"]
+        for process_name, report in reports.items()
+    }
 
     return {
         "ambiguous_stoichiometry": ambiguous_stoichiometry,
+        "identity_over_vocab_role_groups": identity_over_vocab_role_groups,
         "manifest_path": _path_for_report(manifest_path),
         "missing_fixtures": missing_fixtures,
+        "newly_resolved_local_role_groups": newly_resolved_local_role_groups,
         "process_reports": reports,
         "produced_processes": sorted(reports),
         "requested_processes": list(process_names),
+        "sentinel_index_fields_moved_to_params": sentinel_index_fields_moved_to_params,
         "substrate_vocab_counts": substrate_vocab_counts,
         "unresolved_role_groups": unresolved_role_groups,
+        "vocabulary_matches_fixture": vocabulary_matches_fixture,
     }
 
 

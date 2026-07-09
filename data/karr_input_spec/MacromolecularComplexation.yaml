@@ -588,8 +588,9 @@ role_groups:
     indices: []
     wids: null
   enzymeComplexLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   enzymeGlobalIndexs:
     indices: []
     wids: null
@@ -603,8 +604,9 @@ role_groups:
     indices: []
     wids: null
   enzymeMetaboliteLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   enzymeMonomerCompartmentIndexs:
     indices: []
     wids: null
@@ -615,8 +617,9 @@ role_groups:
     indices: []
     wids: null
   enzymeMonomerLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   enzymeRNACompartmentIndexs:
     indices: []
     wids: null
@@ -627,8 +630,9 @@ role_groups:
     indices: []
     wids: null
   enzymeRNALocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   enzymeStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -639,8 +643,9 @@ role_groups:
     indices: []
     wids: null
   enzymeStimulusLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   parameterIndexs:
     indices: []
     wids: null
@@ -654,8 +659,9 @@ role_groups:
     indices: []
     wids: null
   stimulusComplexLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusGlobalIndexs:
     indices: []
     wids: null
@@ -669,8 +675,9 @@ role_groups:
     indices: []
     wids: null
   stimulusMetaboliteLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusMonomerCompartmentIndexs:
     indices: []
     wids: null
@@ -681,8 +688,9 @@ role_groups:
     indices: []
     wids: null
   stimulusMonomerLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusRNACompartmentIndexs:
     indices: []
     wids: null
@@ -693,8 +701,9 @@ role_groups:
     indices: []
     wids: null
   stimulusRNALocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -705,8 +714,9 @@ role_groups:
     indices: []
     wids: null
   stimulusStimulusLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   substrateComplexCompartmentIndexs:
     indices: []
     wids: null
@@ -718,7 +728,7 @@ role_groups:
     wids: null
   substrateComplexLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   substrateGlobalIndexs:
     indices:
     - 3
@@ -943,7 +953,7 @@ role_groups:
     wids: null
   substrateMetaboliteLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   substrateMonomerCompartmentIndexs:
     indices:
     - 1
@@ -1787,7 +1797,215 @@ role_groups:
     - 208
     - 209
     - 210
-    wids: null
+    wids:
+    - MG_003_MONOMER
+    - MG_004_MONOMER
+    - MG_005_MONOMER
+    - MG_006_MONOMER
+    - MG_007_MONOMER
+    - MG_008_MONOMER
+    - MG_013_MONOMER
+    - MG_014_MONOMER
+    - MG_015_MONOMER
+    - MG_019_MONOMER
+    - MG_021_MONOMER
+    - MG_022_MONOMER
+    - MG_023_MONOMER
+    - MG_029_MONOMER
+    - MG_030_MONOMER
+    - MG_031_MONOMER
+    - MG_033_MONOMER
+    - MG_034_MONOMER
+    - MG_035_MONOMER
+    - MG_036_MONOMER
+    - MG_038_MONOMER
+    - MG_039_MONOMER
+    - MG_040_MONOMER
+    - MG_041_MONOMER
+    - MG_042_MONOMER
+    - MG_043_MONOMER
+    - MG_044_MONOMER
+    - MG_045_MONOMER
+    - MG_046_MONOMER
+    - MG_047_MONOMER
+    - MG_048_MONOMER
+    - MG_049_MONOMER
+    - MG_051_MONOMER
+    - MG_052_MONOMER
+    - MG_053_MONOMER
+    - MG_055_MONOMER
+    - MG_058_MONOMER
+    - MG_062_MONOMER
+    - MG_063_MONOMER
+    - MG_064_MONOMER
+    - MG_065_MONOMER
+    - MG_066_MONOMER
+    - MG_069_MONOMER
+    - MG_072_MONOMER
+    - MG_073_MONOMER
+    - MG_077_MONOMER
+    - MG_078_MONOMER
+    - MG_079_MONOMER
+    - MG_080_MONOMER
+    - MG_084_MONOMER
+    - MG_085_MONOMER
+    - MG_089_MONOMER
+    - MG_091_MONOMER
+    - MG_094_MONOMER
+    - MG_098_MONOMER
+    - MG_099_MONOMER
+    - MG_100_MONOMER
+    - MG_102_MONOMER
+    - MG_476_MONOMER
+    - MG_105_MONOMER
+    - MG_106_MONOMER
+    - MG_107_MONOMER
+    - MG_109_MONOMER
+    - MG_111_MONOMER
+    - MG_112_MONOMER
+    - MG_113_MONOMER
+    - MG_114_MONOMER
+    - MG_118_MONOMER
+    - MG_119_MONOMER
+    - MG_120_MONOMER
+    - MG_121_MONOMER
+    - MG_123_MONOMER
+    - MG_126_MONOMER
+    - MG_128_MONOMER
+    - MG_132_MONOMER
+    - MG_136_MONOMER
+    - MG_137_MONOMER
+    - MG_139_MONOMER
+    - MG_170_MONOMER
+    - MG_177_MONOMER
+    - MG_179_MONOMER
+    - MG_180_MONOMER
+    - MG_181_MONOMER
+    - MG_182_MONOMER
+    - MG_184_MONOMER
+    - MG_186_MONOMER
+    - MG_187_MONOMER
+    - MG_188_MONOMER
+    - MG_189_MONOMER
+    - MG_194_MONOMER
+    - MG_195_MONOMER
+    - MG_201_MONOMER
+    - MG_203_MONOMER
+    - MG_204_MONOMER
+    - MG_205_MONOMER
+    - MG_206_MONOMER
+    - MG_208_MONOMER
+    - MG_482_MONOMER
+    - MG_213_MONOMER
+    - MG_214_MONOMER
+    - MG_215_MONOMER
+    - MG_216_MONOMER
+    - MG_221_MONOMER
+    - MG_225_MONOMER
+    - MG_226_MONOMER
+    - MG_227_MONOMER
+    - MG_228_MONOMER
+    - MG_229_MONOMER
+    - MG_231_MONOMER
+    - MG_239_MONOMER
+    - MG_240_MONOMER
+    - MG_244_MONOMER
+    - MG_251_MONOMER
+    - MG_252_MONOMER
+    - MG_259_MONOMER
+    - MG_261_MONOMER
+    - MG_265_MONOMER
+    - MG_271_MONOMER
+    - MG_272_MONOMER
+    - MG_273_MONOMER
+    - MG_274_MONOMER
+    - MG_275_MONOMER
+    - MG_276_MONOMER
+    - MG_277_MONOMER
+    - MG_278_MONOMER
+    - MG_283_MONOMER
+    - MG_289_MONOMER
+    - MG_290_MONOMER
+    - MG_291_MONOMER
+    - MG_292_MONOMER
+    - MG_293_MONOMER
+    - MG_298_MONOMER
+    - MG_299_MONOMER
+    - MG_301_MONOMER
+    - MG_302_MONOMER
+    - MG_303_MONOMER
+    - MG_304_MONOMER
+    - MG_315_MONOMER
+    - MG_316_MONOMER
+    - MG_321_MONOMER
+    - MG_322_MONOMER
+    - MG_323_MONOMER
+    - MG_333_MONOMER
+    - MG_336_MONOMER
+    - MG_340_MONOMER
+    - MG_341_MONOMER
+    - MG_346_MONOMER
+    - MG_347_MONOMER
+    - MG_349_MONOMER
+    - MG_351_MONOMER
+    - MG_352_MONOMER
+    - MG_353_MONOMER
+    - MG_355_MONOMER
+    - MG_357_MONOMER
+    - MG_358_MONOMER
+    - MG_359_MONOMER
+    - MG_367_MONOMER
+    - MG_368_MONOMER
+    - MG_369_MONOMER
+    - MG_372_MONOMER
+    - MG_375_MONOMER
+    - MG_376_MONOMER
+    - MG_379_MONOMER
+    - MG_382_MONOMER
+    - MG_383_MONOMER
+    - MG_385_MONOMER
+    - MG_390_MONOMER
+    - MG_391_MONOMER
+    - MG_392_MONOMER
+    - MG_393_MONOMER
+    - MG_394_MONOMER
+    - MG_396_MONOMER
+    - MG_398_MONOMER
+    - MG_399_MONOMER
+    - MG_400_MONOMER
+    - MG_401_MONOMER
+    - MG_402_MONOMER
+    - MG_403_MONOMER
+    - MG_404_MONOMER
+    - MG_405_MONOMER
+    - MG_407_MONOMER
+    - MG_409_MONOMER
+    - MG_410_MONOMER
+    - MG_411_MONOMER
+    - MG_412_MONOMER
+    - MG_419_MONOMER
+    - MG_421_MONOMER
+    - MG_425_MONOMER
+    - MG_427_MONOMER
+    - MG_428_MONOMER
+    - MG_429_MONOMER
+    - MG_431_MONOMER
+    - MG_433_MONOMER
+    - MG_434_MONOMER
+    - MG_437_MONOMER
+    - MG_445_MONOMER
+    - MG_451_MONOMER
+    - MG_453_MONOMER
+    - MG_454_MONOMER
+    - MG_455_MONOMER
+    - MG_457_MONOMER
+    - MG_458_MONOMER
+    - MG_460_MONOMER
+    - MG_464_MONOMER
+    - MG_465_MONOMER
+    - MG_467_MONOMER
+    - MG_468_MONOMER
+    - MG_526_MONOMER
   substrateRNACompartmentIndexs:
     indices:
     - 1
@@ -1807,7 +2025,9 @@ role_groups:
     indices:
     - 118
     - 144
-    wids: null
+    wids:
+    - MG_0001
+    - MG_0003
   substrateStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -1819,7 +2039,7 @@ role_groups:
     wids: null
   substrateStimulusLocalIndexs:
     indices: []
-    wids: null
+    wids: []
 source:
   fixture: data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat
   fixture_sha256: 658e25f30acd8ea84f7bf4b1b2536bf994ad389d9cb575dfeefbf628fe151f01

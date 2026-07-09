@@ -248,7 +248,15 @@ role_groups:
     - 11
     - 12
     - 13
-    wids: null
+    wids:
+    - MG_008_379_TETRAMER
+    - MG_084_TETRAMER
+    - MG_182_DIMER
+    - MG_252_DIMER
+    - MG_346_DIMER
+    - MG_347_DIMER
+    - MG_372_DIMER
+    - MG_445_DIMER
   enzymeGlobalIndexs:
     indices:
     - 211
@@ -341,7 +349,7 @@ role_groups:
     wids: null
   enzymeMetaboliteLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   enzymeMonomerCompartmentIndexs:
     indices:
     - 1
@@ -373,7 +381,12 @@ role_groups:
     - 3
     - 4
     - 5
-    wids: null
+    wids:
+    - MG_209_MONOMER
+    - MG_295_MONOMER
+    - MG_370_MONOMER
+    - MG_380_MONOMER
+    - MG_463_MONOMER
   enzymeRNACompartmentIndexs:
     indices: []
     wids: null
@@ -385,7 +398,7 @@ role_groups:
     wids: null
   enzymeRNALocalIndexs:
     indices: []
-    wids: null
+    wids: []
   enzymeStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -397,7 +410,7 @@ role_groups:
     wids: null
   enzymeStimulusLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   parameterIndexs:
     indices: []
     wids: null
@@ -780,8 +793,9 @@ role_groups:
     indices: []
     wids: null
   stimulusComplexLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusGlobalIndexs:
     indices: []
     wids: null
@@ -795,8 +809,9 @@ role_groups:
     indices: []
     wids: null
   stimulusMetaboliteLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusMonomerCompartmentIndexs:
     indices: []
     wids: null
@@ -807,8 +822,9 @@ role_groups:
     indices: []
     wids: null
   stimulusMonomerLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusRNACompartmentIndexs:
     indices: []
     wids: null
@@ -819,8 +835,9 @@ role_groups:
     indices: []
     wids: null
   stimulusRNALocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -831,8 +848,9 @@ role_groups:
     indices: []
     wids: null
   stimulusStimulusLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   substrateComplexCompartmentIndexs:
     indices: []
     wids: null
@@ -844,7 +862,7 @@ role_groups:
     wids: null
   substrateComplexLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   substrateGlobalIndexs:
     indices:
     - 13
@@ -1052,6 +1070,7 @@ role_groups:
     - 711
     wids: null
   substrateMetaboliteLocalIndexs:
+    identity_over_vocab: true
     indices:
     - 1
     - 2
@@ -1082,7 +1101,36 @@ role_groups:
     - 27
     - 28
     - 29
-    wids: null
+    wids:
+    - AHCYS
+    - AMET
+    - AMP
+    - ATP
+    - cmnm5s2UMP
+    - CMP
+    - CYS
+    - FAD
+    - FTHF5
+    - GLY
+    - GmMP
+    - GMP
+    - H
+    - H2O
+    - k2CMP
+    - LYS
+    - m1GMP
+    - m2GMP
+    - m62AMP
+    - m6AMP
+    - m7GMP
+    - PPI
+    - PSIURIMP
+    - s2UMP
+    - s4UMP
+    - SER
+    - THF
+    - UmMP
+    - UMP
   substrateMonomerCompartmentIndexs:
     indices: []
     wids: null
@@ -1094,7 +1142,7 @@ role_groups:
     wids: null
   substrateMonomerLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   substrateRNACompartmentIndexs:
     indices: []
     wids: null
@@ -1106,7 +1154,7 @@ role_groups:
     wids: null
   substrateRNALocalIndexs:
     indices: []
-    wids: null
+    wids: []
   substrateStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -1118,7 +1166,7 @@ role_groups:
     wids: null
   substrateStimulusLocalIndexs:
     indices: []
-    wids: null
+    wids: []
 source:
   fixture: data/karr_fixtures/per_process/RNAModification_flat.mat
   fixture_sha256: 64e096360369eb89005318f006063fcec04ed690c0aa61c0a3c630807a0f449a
@@ -1143,98 +1191,6 @@ stoichiometry:
     shape:
     - 29
     - 91
-  reactionWholeCellModelIDs: &id001
-  - MG471_MODIFICATION_001
-  - MG471_MODIFICATION_002
-  - MG471_MODIFICATION_003
-  - MG472_MODIFICATION_001
-  - MG472_MODIFICATION_002
-  - MG475_MODIFICATION_001
-  - MG479_MODIFICATION_001
-  - MG483_MODIFICATION_001
-  - MG483_MODIFICATION_002
-  - MG484_MODIFICATION_001
-  - MG484_MODIFICATION_002
-  - MG484_MODIFICATION_003
-  - MG485_MODIFICATION_001
-  - MG485_MODIFICATION_002
-  - MG486_MODIFICATION_001
-  - MG486_MODIFICATION_002
-  - MG486_MODIFICATION_003
-  - MG486_MODIFICATION_004
-  - MG487_MODIFICATION_001
-  - MG487_MODIFICATION_002
-  - MG488_MODIFICATION_001
-  - MG488_MODIFICATION_002
-  - MG488_MODIFICATION_003
-  - MG489_MODIFICATION_001
-  - MG490_MODIFICATION_001
-  - MG490_MODIFICATION_002
-  - MG492_MODIFICATION_001
-  - MG492_MODIFICATION_002
-  - MG493_MODIFICATION_001
-  - MG495_MODIFICATION_001
-  - MG495_MODIFICATION_002
-  - MG496_MODIFICATION_001
-  - MG497_MODIFICATION_001
-  - MG497_MODIFICATION_002
-  - MG499_MODIFICATION_001
-  - MG500_MODIFICATION_001
-  - MG500_MODIFICATION_002
-  - MG501_MODIFICATION_001
-  - MG501_MODIFICATION_002
-  - MG501_MODIFICATION_003
-  - MG501_MODIFICATION_004
-  - MG501_MODIFICATION_005
-  - MG502_MODIFICATION_001
-  - MG502_MODIFICATION_002
-  - MG502_MODIFICATION_003
-  - MG502_MODIFICATION_004
-  - MG503_MODIFICATION_001
-  - MG503_MODIFICATION_002
-  - MG504_MODIFICATION_001
-  - MG504_MODIFICATION_002
-  - MG504_MODIFICATION_003
-  - MG506_MODIFICATION_001
-  - MG507_MODIFICATION_001
-  - MG508_MODIFICATION_001
-  - MG508_MODIFICATION_002
-  - MG508_MODIFICATION_003
-  - MG509_MODIFICATION_001
-  - MG509_MODIFICATION_002
-  - MG509_MODIFICATION_003
-  - MG510_MODIFICATION_001
-  - MG510_MODIFICATION_002
-  - MG510_MODIFICATION_003
-  - MG511_MODIFICATION_001
-  - MG511_MODIFICATION_002
-  - MG512_MODIFICATION_001
-  - MG512_MODIFICATION_002
-  - MG512_MODIFICATION_003
-  - MG513_MODIFICATION_001
-  - MG513_MODIFICATION_002
-  - MG513_MODIFICATION_003
-  - MG514_MODIFICATION_001
-  - MG514_MODIFICATION_002
-  - MG518_MODIFICATION_001
-  - MG518_MODIFICATION_002
-  - MG519_MODIFICATION_001
-  - MG519_MODIFICATION_002
-  - MG519_MODIFICATION_003
-  - MG520_MODIFICATION_001
-  - MG523_MODIFICATION_001
-  - MG523_MODIFICATION_002
-  - MGrrnA16S_MODIFICATION_001
-  - MGrrnA16S_MODIFICATION_003
-  - MGrrnA16S_MODIFICATION_004
-  - MGrrnA16S_MODIFICATION_005
-  - MGrrnA16S_MODIFICATION_006
-  - MGrrnA23S_MODIFICATION_002
-  - MGrrnA23S_MODIFICATION_003
-  - MGrrnA23S_MODIFICATION_004
-  - MGrrnA23S_MODIFICATION_005
-  - MGrrnA23S_MODIFICATION_006
-  - MGrrnA23S_MODIFICATION_007
   reactions:
     MG471_MODIFICATION_001:
       consume:
@@ -1868,6 +1824,7 @@ stoichiometry:
     MGrrnA23S_MODIFICATION_007:
       consume: {}
       produce: {}
+  reactions_source_field: reactionStoichiometryMatrix
 vocabularies:
   enzymeWholeCellModelIDs:
   - MG_209_MONOMER
@@ -2231,7 +2188,98 @@ vocabularies:
   - TU_333
   - TU_334
   - TU_335
-  reactionWholeCellModelIDs: *id001
+  reactionWholeCellModelIDs:
+  - MG471_MODIFICATION_001
+  - MG471_MODIFICATION_002
+  - MG471_MODIFICATION_003
+  - MG472_MODIFICATION_001
+  - MG472_MODIFICATION_002
+  - MG475_MODIFICATION_001
+  - MG479_MODIFICATION_001
+  - MG483_MODIFICATION_001
+  - MG483_MODIFICATION_002
+  - MG484_MODIFICATION_001
+  - MG484_MODIFICATION_002
+  - MG484_MODIFICATION_003
+  - MG485_MODIFICATION_001
+  - MG485_MODIFICATION_002
+  - MG486_MODIFICATION_001
+  - MG486_MODIFICATION_002
+  - MG486_MODIFICATION_003
+  - MG486_MODIFICATION_004
+  - MG487_MODIFICATION_001
+  - MG487_MODIFICATION_002
+  - MG488_MODIFICATION_001
+  - MG488_MODIFICATION_002
+  - MG488_MODIFICATION_003
+  - MG489_MODIFICATION_001
+  - MG490_MODIFICATION_001
+  - MG490_MODIFICATION_002
+  - MG492_MODIFICATION_001
+  - MG492_MODIFICATION_002
+  - MG493_MODIFICATION_001
+  - MG495_MODIFICATION_001
+  - MG495_MODIFICATION_002
+  - MG496_MODIFICATION_001
+  - MG497_MODIFICATION_001
+  - MG497_MODIFICATION_002
+  - MG499_MODIFICATION_001
+  - MG500_MODIFICATION_001
+  - MG500_MODIFICATION_002
+  - MG501_MODIFICATION_001
+  - MG501_MODIFICATION_002
+  - MG501_MODIFICATION_003
+  - MG501_MODIFICATION_004
+  - MG501_MODIFICATION_005
+  - MG502_MODIFICATION_001
+  - MG502_MODIFICATION_002
+  - MG502_MODIFICATION_003
+  - MG502_MODIFICATION_004
+  - MG503_MODIFICATION_001
+  - MG503_MODIFICATION_002
+  - MG504_MODIFICATION_001
+  - MG504_MODIFICATION_002
+  - MG504_MODIFICATION_003
+  - MG506_MODIFICATION_001
+  - MG507_MODIFICATION_001
+  - MG508_MODIFICATION_001
+  - MG508_MODIFICATION_002
+  - MG508_MODIFICATION_003
+  - MG509_MODIFICATION_001
+  - MG509_MODIFICATION_002
+  - MG509_MODIFICATION_003
+  - MG510_MODIFICATION_001
+  - MG510_MODIFICATION_002
+  - MG510_MODIFICATION_003
+  - MG511_MODIFICATION_001
+  - MG511_MODIFICATION_002
+  - MG512_MODIFICATION_001
+  - MG512_MODIFICATION_002
+  - MG512_MODIFICATION_003
+  - MG513_MODIFICATION_001
+  - MG513_MODIFICATION_002
+  - MG513_MODIFICATION_003
+  - MG514_MODIFICATION_001
+  - MG514_MODIFICATION_002
+  - MG518_MODIFICATION_001
+  - MG518_MODIFICATION_002
+  - MG519_MODIFICATION_001
+  - MG519_MODIFICATION_002
+  - MG519_MODIFICATION_003
+  - MG520_MODIFICATION_001
+  - MG523_MODIFICATION_001
+  - MG523_MODIFICATION_002
+  - MGrrnA16S_MODIFICATION_001
+  - MGrrnA16S_MODIFICATION_003
+  - MGrrnA16S_MODIFICATION_004
+  - MGrrnA16S_MODIFICATION_005
+  - MGrrnA16S_MODIFICATION_006
+  - MGrrnA23S_MODIFICATION_002
+  - MGrrnA23S_MODIFICATION_003
+  - MGrrnA23S_MODIFICATION_004
+  - MGrrnA23S_MODIFICATION_005
+  - MGrrnA23S_MODIFICATION_006
+  - MGrrnA23S_MODIFICATION_007
   stimuliWholeCellModelIDs: []
   substrateWholeCellModelIDs:
   - AHCYS

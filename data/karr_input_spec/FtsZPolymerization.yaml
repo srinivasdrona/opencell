@@ -217,7 +217,17 @@ role_groups:
     - 9
     - 10
     - 11
-    wids: null
+    wids:
+    - MG_224_MONOMER_GDP
+    - MG_224_MONOMER_GTP
+    - MG_224_2MER_GTP
+    - MG_224_3MER_GTP
+    - MG_224_4MER_GTP
+    - MG_224_5MER_GTP
+    - MG_224_6MER_GTP
+    - MG_224_7MER_GTP
+    - MG_224_8MER_GTP
+    - MG_224_9MER_GTP
   enzymeGlobalIndexs:
     indices:
     - 230
@@ -289,7 +299,7 @@ role_groups:
     wids: null
   enzymeMetaboliteLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   enzymeMonomerCompartmentIndexs:
     indices:
     - 1
@@ -305,7 +315,8 @@ role_groups:
   enzymeMonomerLocalIndexs:
     indices:
     - 1
-    wids: null
+    wids:
+    - MG_224_MONOMER
   enzymeRNACompartmentIndexs:
     indices: []
     wids: null
@@ -317,7 +328,7 @@ role_groups:
     wids: null
   enzymeRNALocalIndexs:
     indices: []
-    wids: null
+    wids: []
   enzymeStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -329,7 +340,7 @@ role_groups:
     wids: null
   enzymeStimulusLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   parameterIndexs:
     indices: []
     wids: null
@@ -343,8 +354,9 @@ role_groups:
     indices: []
     wids: null
   stimulusComplexLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusGlobalIndexs:
     indices: []
     wids: null
@@ -358,8 +370,9 @@ role_groups:
     indices: []
     wids: null
   stimulusMetaboliteLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusMonomerCompartmentIndexs:
     indices: []
     wids: null
@@ -370,8 +383,9 @@ role_groups:
     indices: []
     wids: null
   stimulusMonomerLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusRNACompartmentIndexs:
     indices: []
     wids: null
@@ -382,8 +396,9 @@ role_groups:
     indices: []
     wids: null
   stimulusRNALocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -394,8 +409,9 @@ role_groups:
     indices: []
     wids: null
   stimulusStimulusLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   substrateComplexCompartmentIndexs:
     indices: []
     wids: null
@@ -407,7 +423,7 @@ role_groups:
     wids: null
   substrateComplexLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   substrateGlobalIndexs:
     indices:
     - 329
@@ -466,13 +482,19 @@ role_groups:
     - 385
     wids: null
   substrateMetaboliteLocalIndexs:
+    identity_over_vocab: true
     indices:
     - 1
     - 2
     - 3
     - 4
     - 5
-    wids: null
+    wids:
+    - GDP
+    - GTP
+    - PI
+    - H2O
+    - H
   substrateMonomerCompartmentIndexs:
     indices: []
     wids: null
@@ -484,7 +506,7 @@ role_groups:
     wids: null
   substrateMonomerLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   substrateRNACompartmentIndexs:
     indices: []
     wids: null
@@ -496,7 +518,7 @@ role_groups:
     wids: null
   substrateRNALocalIndexs:
     indices: []
-    wids: null
+    wids: []
   substrateStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -508,7 +530,7 @@ role_groups:
     wids: null
   substrateStimulusLocalIndexs:
     indices: []
-    wids: null
+    wids: []
 source:
   fixture: data/karr_fixtures/per_process/FtsZPolymerization_flat.mat
   fixture_sha256: 33babb02e5ce33023c67db99740c788842ab22518bdf047be132fb426cae8a8b

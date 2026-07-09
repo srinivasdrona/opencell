@@ -196,7 +196,8 @@ role_groups:
   enzymeComplexLocalIndexs:
     indices:
     - 3
-    wids: null
+    wids:
+    - MG_109_DIMER
   enzymeGlobalIndexs:
     indices:
     - 12
@@ -229,7 +230,7 @@ role_groups:
     wids: null
   enzymeMetaboliteLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   enzymeMonomerCompartmentIndexs:
     indices:
     - 1
@@ -249,7 +250,9 @@ role_groups:
     indices:
     - 1
     - 2
-    wids: null
+    wids:
+    - MG_012_MONOMER
+    - MG_270_MONOMER
   enzymeRNACompartmentIndexs:
     indices: []
     wids: null
@@ -261,7 +264,7 @@ role_groups:
     wids: null
   enzymeRNALocalIndexs:
     indices: []
-    wids: null
+    wids: []
   enzymeStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -273,7 +276,7 @@ role_groups:
     wids: null
   enzymeStimulusLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   monomerIndexs_modified:
     indices:
     - 70
@@ -913,8 +916,9 @@ role_groups:
     indices: []
     wids: null
   stimulusComplexLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusGlobalIndexs:
     indices: []
     wids: null
@@ -928,8 +932,9 @@ role_groups:
     indices: []
     wids: null
   stimulusMetaboliteLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusMonomerCompartmentIndexs:
     indices: []
     wids: null
@@ -940,8 +945,9 @@ role_groups:
     indices: []
     wids: null
   stimulusMonomerLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusRNACompartmentIndexs:
     indices: []
     wids: null
@@ -952,8 +958,9 @@ role_groups:
     indices: []
     wids: null
   stimulusRNALocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -964,8 +971,9 @@ role_groups:
     indices: []
     wids: null
   stimulusStimulusLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   substrateComplexCompartmentIndexs:
     indices: []
     wids: null
@@ -977,7 +985,7 @@ role_groups:
     wids: null
   substrateComplexLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   substrateGlobalIndexs:
     indices:
     - 11
@@ -1115,6 +1123,7 @@ role_groups:
     - 701
     wids: null
   substrateMetaboliteLocalIndexs:
+    identity_over_vocab: true
     indices:
     - 1
     - 2
@@ -1131,7 +1140,22 @@ role_groups:
     - 13
     - 14
     - 15
-    wids: null
+    wids:
+    - ADP
+    - AMP
+    - ATP
+    - GLU
+    - H
+    - LIPOYLAMP
+    - LIPOYLLYS
+    - LYS
+    - PI
+    - pSER
+    - pTHR
+    - pTYR
+    - SER
+    - THR
+    - TYR
   substrateMonomerCompartmentIndexs:
     indices: []
     wids: null
@@ -1143,7 +1167,7 @@ role_groups:
     wids: null
   substrateMonomerLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   substrateRNACompartmentIndexs:
     indices: []
     wids: null
@@ -1155,7 +1179,7 @@ role_groups:
     wids: null
   substrateRNALocalIndexs:
     indices: []
-    wids: null
+    wids: []
   substrateStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -1167,7 +1191,7 @@ role_groups:
     wids: null
   substrateStimulusLocalIndexs:
     indices: []
-    wids: null
+    wids: []
 source:
   fixture: data/karr_fixtures/per_process/ProteinModification_flat.mat
   fixture_sha256: b89663e37c5ab6a68a8f978e670ecbedf05c5a2af4a5569b4e83d803b2c5807b
@@ -1192,70 +1216,6 @@ stoichiometry:
     shape:
     - 15
     - 63
-  reactionWholeCellModelIDs: &id001
-  - MG_070_MONOMER_MODIFICATION_001
-  - MG_070_MONOMER_MODIFICATION_002
-  - MG_070_MONOMER_MODIFICATION_003
-  - MG_070_MONOMER_MODIFICATION_004
-  - MG_070_MONOMER_MODIFICATION_005
-  - MG_166_MONOMER_MODIFICATION_001
-  - MG_217_MONOMER_MODIFICATION_001
-  - MG_272_MONOMER_MODIFICATION_001
-  - MG_273_MONOMER_MODIFICATION_001
-  - MG_274_MONOMER_MODIFICATION_001
-  - MG_282_MONOMER_MODIFICATION_001
-  - MG_305_MONOMER_MODIFICATION_001
-  - MG_305_MONOMER_MODIFICATION_002
-  - MG_317_MONOMER_MODIFICATION_001
-  - MG_317_MONOMER_MODIFICATION_002
-  - MG_317_MONOMER_MODIFICATION_003
-  - MG_317_MONOMER_MODIFICATION_004
-  - MG_317_MONOMER_MODIFICATION_005
-  - MG_328_MONOMER_MODIFICATION_001
-  - MG_342_MONOMER_MODIFICATION_001
-  - MG_377_MONOMER_MODIFICATION_001
-  - MG_377_MONOMER_MODIFICATION_002
-  - MG_377_MONOMER_MODIFICATION_003
-  - MG_377_MONOMER_MODIFICATION_004
-  - MG_377_MONOMER_MODIFICATION_005
-  - MG_377_MONOMER_MODIFICATION_006
-  - MG_377_MONOMER_MODIFICATION_007
-  - MG_377_MONOMER_MODIFICATION_008
-  - MG_377_MONOMER_MODIFICATION_009
-  - MG_377_MONOMER_MODIFICATION_010
-  - MG_377_MONOMER_MODIFICATION_011
-  - MG_392_MONOMER_MODIFICATION_001
-  - MG_392_MONOMER_MODIFICATION_002
-  - MG_401_MONOMER_MODIFICATION_001
-  - MG_401_MONOMER_MODIFICATION_002
-  - MG_401_MONOMER_MODIFICATION_003
-  - MG_401_MONOMER_MODIFICATION_004
-  - MG_401_MONOMER_MODIFICATION_005
-  - MG_401_MONOMER_MODIFICATION_006
-  - MG_401_MONOMER_MODIFICATION_007
-  - MG_401_MONOMER_MODIFICATION_008
-  - MG_401_MONOMER_MODIFICATION_009
-  - MG_407_MONOMER_MODIFICATION_001
-  - MG_407_MONOMER_MODIFICATION_002
-  - MG_407_MONOMER_MODIFICATION_003
-  - MG_427_MONOMER_MODIFICATION_001
-  - MG_427_MONOMER_MODIFICATION_002
-  - MG_438_MONOMER_MODIFICATION_001
-  - MG_438_MONOMER_MODIFICATION_002
-  - MG_438_MONOMER_MODIFICATION_003
-  - MG_438_MONOMER_MODIFICATION_004
-  - MG_438_MONOMER_MODIFICATION_005
-  - MG_438_MONOMER_MODIFICATION_006
-  - MG_438_MONOMER_MODIFICATION_007
-  - MG_438_MONOMER_MODIFICATION_008
-  - MG_438_MONOMER_MODIFICATION_009
-  - MG_451_MONOMER_MODIFICATION_001
-  - MG_451_MONOMER_MODIFICATION_002
-  - MG_451_MONOMER_MODIFICATION_003
-  - MG_460_MONOMER_MODIFICATION_001
-  - MG_460_MONOMER_MODIFICATION_002
-  - MG_460_MONOMER_MODIFICATION_003
-  - MG_491_MONOMER_MODIFICATION_001
   reactions:
     MG_070_MONOMER_MODIFICATION_001:
       consume:
@@ -1637,6 +1597,7 @@ stoichiometry:
       produce:
         ADP: 1
         H: 1
+  reactions_source_field: reactionStoichiometryMatrix
 vocabularies:
   enzymeWholeCellModelIDs:
   - MG_012_MONOMER
@@ -2125,7 +2086,70 @@ vocabularies:
   - MG_526_MONOMER
   - MG_469_MONOMER
   - MG_470_MONOMER
-  reactionWholeCellModelIDs: *id001
+  reactionWholeCellModelIDs:
+  - MG_070_MONOMER_MODIFICATION_001
+  - MG_070_MONOMER_MODIFICATION_002
+  - MG_070_MONOMER_MODIFICATION_003
+  - MG_070_MONOMER_MODIFICATION_004
+  - MG_070_MONOMER_MODIFICATION_005
+  - MG_166_MONOMER_MODIFICATION_001
+  - MG_217_MONOMER_MODIFICATION_001
+  - MG_272_MONOMER_MODIFICATION_001
+  - MG_273_MONOMER_MODIFICATION_001
+  - MG_274_MONOMER_MODIFICATION_001
+  - MG_282_MONOMER_MODIFICATION_001
+  - MG_305_MONOMER_MODIFICATION_001
+  - MG_305_MONOMER_MODIFICATION_002
+  - MG_317_MONOMER_MODIFICATION_001
+  - MG_317_MONOMER_MODIFICATION_002
+  - MG_317_MONOMER_MODIFICATION_003
+  - MG_317_MONOMER_MODIFICATION_004
+  - MG_317_MONOMER_MODIFICATION_005
+  - MG_328_MONOMER_MODIFICATION_001
+  - MG_342_MONOMER_MODIFICATION_001
+  - MG_377_MONOMER_MODIFICATION_001
+  - MG_377_MONOMER_MODIFICATION_002
+  - MG_377_MONOMER_MODIFICATION_003
+  - MG_377_MONOMER_MODIFICATION_004
+  - MG_377_MONOMER_MODIFICATION_005
+  - MG_377_MONOMER_MODIFICATION_006
+  - MG_377_MONOMER_MODIFICATION_007
+  - MG_377_MONOMER_MODIFICATION_008
+  - MG_377_MONOMER_MODIFICATION_009
+  - MG_377_MONOMER_MODIFICATION_010
+  - MG_377_MONOMER_MODIFICATION_011
+  - MG_392_MONOMER_MODIFICATION_001
+  - MG_392_MONOMER_MODIFICATION_002
+  - MG_401_MONOMER_MODIFICATION_001
+  - MG_401_MONOMER_MODIFICATION_002
+  - MG_401_MONOMER_MODIFICATION_003
+  - MG_401_MONOMER_MODIFICATION_004
+  - MG_401_MONOMER_MODIFICATION_005
+  - MG_401_MONOMER_MODIFICATION_006
+  - MG_401_MONOMER_MODIFICATION_007
+  - MG_401_MONOMER_MODIFICATION_008
+  - MG_401_MONOMER_MODIFICATION_009
+  - MG_407_MONOMER_MODIFICATION_001
+  - MG_407_MONOMER_MODIFICATION_002
+  - MG_407_MONOMER_MODIFICATION_003
+  - MG_427_MONOMER_MODIFICATION_001
+  - MG_427_MONOMER_MODIFICATION_002
+  - MG_438_MONOMER_MODIFICATION_001
+  - MG_438_MONOMER_MODIFICATION_002
+  - MG_438_MONOMER_MODIFICATION_003
+  - MG_438_MONOMER_MODIFICATION_004
+  - MG_438_MONOMER_MODIFICATION_005
+  - MG_438_MONOMER_MODIFICATION_006
+  - MG_438_MONOMER_MODIFICATION_007
+  - MG_438_MONOMER_MODIFICATION_008
+  - MG_438_MONOMER_MODIFICATION_009
+  - MG_451_MONOMER_MODIFICATION_001
+  - MG_451_MONOMER_MODIFICATION_002
+  - MG_451_MONOMER_MODIFICATION_003
+  - MG_460_MONOMER_MODIFICATION_001
+  - MG_460_MONOMER_MODIFICATION_002
+  - MG_460_MONOMER_MODIFICATION_003
+  - MG_491_MONOMER_MODIFICATION_001
   stimuliWholeCellModelIDs: []
   substrateWholeCellModelIDs:
   - ADP

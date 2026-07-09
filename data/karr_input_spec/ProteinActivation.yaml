@@ -139,8 +139,9 @@ role_groups:
     indices: []
     wids: null
   enzymeComplexLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   enzymeGlobalIndexs:
     indices: []
     wids: null
@@ -154,8 +155,9 @@ role_groups:
     indices: []
     wids: null
   enzymeMetaboliteLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   enzymeMonomerCompartmentIndexs:
     indices: []
     wids: null
@@ -166,8 +168,9 @@ role_groups:
     indices: []
     wids: null
   enzymeMonomerLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   enzymeRNACompartmentIndexs:
     indices: []
     wids: null
@@ -178,8 +181,9 @@ role_groups:
     indices: []
     wids: null
   enzymeRNALocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   enzymeStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -190,8 +194,9 @@ role_groups:
     indices: []
     wids: null
   enzymeStimulusLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   inactivatedSubstrateComplexGlobalCompartmentIndexs:
     indices:
     - 403
@@ -272,7 +277,7 @@ role_groups:
     wids: null
   stimulusComplexLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   stimulusGlobalIndexs:
     indices:
     - 309
@@ -611,7 +616,23 @@ role_groups:
     - 14
     - 18
     - 20
-    wids: null
+    wids:
+    - G6P
+    - PI
+    - azithromycin
+    - chloramphenicol
+    - ciprofloxacin
+    - clarithromycin
+    - clindamycin
+    - difloxacin
+    - erythromycin
+    - gentamicin
+    - lincomycin
+    - pristinamycin
+    - sparfloxacin
+    - spectinomycin
+    - streptomycin
+    - tetracycline
   stimulusMonomerCompartmentIndexs:
     indices: []
     wids: null
@@ -623,7 +644,7 @@ role_groups:
     wids: null
   stimulusMonomerLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   stimulusRNACompartmentIndexs:
     indices: []
     wids: null
@@ -635,7 +656,7 @@ role_groups:
     wids: null
   stimulusRNALocalIndexs:
     indices: []
-    wids: null
+    wids: []
   stimulusStimulusCompartmentIndexs:
     indices:
     - 1
@@ -723,7 +744,11 @@ role_groups:
     - 16
     - 17
     - 19
-    wids: null
+    wids:
+    - stimulus_gluconate
+    - stimulus_ironStress
+    - stimulus_thiolStress
+    - temperature
   substrateComplexCompartmentIndexs:
     indices:
     - 1
@@ -868,7 +893,14 @@ role_groups:
     - 8
     - 9
     - 10
-    wids: null
+    wids:
+    - DNA_GYRASE
+    - MG_085_HEXAMER
+    - MG_203_204_TETRAMER
+    - MG_205_DIMER
+    - MG_409_DIMER
+    - RIBOSOME_30S
+    - RIBOSOME_50S
   substrateGlobalIndexs:
     indices:
     - 101
@@ -893,7 +925,7 @@ role_groups:
     wids: null
   substrateMetaboliteLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   substrateMonomerCompartmentIndexs:
     indices:
     - 1
@@ -962,7 +994,10 @@ role_groups:
     - 1
     - 2
     - 3
-    wids: null
+    wids:
+    - MG_101_MONOMER
+    - MG_127_MONOMER
+    - MG_236_MONOMER
   substrateRNACompartmentIndexs:
     indices: []
     wids: null
@@ -974,7 +1009,7 @@ role_groups:
     wids: null
   substrateRNALocalIndexs:
     indices: []
-    wids: null
+    wids: []
   substrateStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -986,7 +1021,7 @@ role_groups:
     wids: null
   substrateStimulusLocalIndexs:
     indices: []
-    wids: null
+    wids: []
 source:
   fixture: data/karr_fixtures/per_process/ProteinActivation_flat.mat
   fixture_sha256: ea58c5d4ca279e2b10dff12bffe89e04926f4515324f0c13fb677759a4094a52

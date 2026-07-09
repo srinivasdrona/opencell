@@ -34,6 +34,21 @@ params:
     shape:
     - 15
     - 15
+  dnaARelease_remainingDnaAIndexs:
+  - 0
+  - 0
+  - 2
+  - 2
+  - 4
+  - 4
+  - 6
+  - 6
+  - 8
+  - 8
+  - 10
+  - 10
+  - 12
+  - 12
   dnaARelease_remainingDnaAMatrix:
     dtype: uint8
     sha256: 419859f82f5940af4abee3d46e42efc36c87daed8a2f3b2a29362fe796369540
@@ -2567,23 +2582,6 @@ role_groups:
     - 1
     - 2
     wids: null
-  dnaARelease_remainingDnaAIndexs:
-    indices:
-    - 0
-    - 0
-    - 2
-    - 2
-    - 4
-    - 4
-    - 6
-    - 6
-    - 8
-    - 8
-    - 10
-    - 10
-    - 12
-    - 12
-    wids: null
   enzymeBoundComplexGlobalCompartmentIndexs:
     indices:
     - 783
@@ -2675,7 +2673,21 @@ role_groups:
     - 12
     - 13
     - 14
-    wids: null
+    wids:
+    - MG_469_1MER_ADP
+    - MG_469_1MER_ATP
+    - MG_469_2MER_1ATP_ADP
+    - MG_469_2MER_ATP
+    - MG_469_3MER_2ATP_ADP
+    - MG_469_3MER_ATP
+    - MG_469_4MER_3ATP_ADP
+    - MG_469_4MER_ATP
+    - MG_469_5MER_4ATP_ADP
+    - MG_469_5MER_ATP
+    - MG_469_6MER_5ATP_ADP
+    - MG_469_6MER_ATP
+    - MG_469_7MER_6ATP_ADP
+    - MG_469_7MER_ATP
   enzymeGlobalIndexs:
     indices:
     - 180
@@ -2784,7 +2796,7 @@ role_groups:
     wids: null
   enzymeMetaboliteLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   enzymeMonomerCompartmentIndexs:
     indices:
     - 1
@@ -2800,7 +2812,8 @@ role_groups:
   enzymeMonomerLocalIndexs:
     indices:
     - 15
-    wids: null
+    wids:
+    - MG_469_MONOMER
   enzymeRNACompartmentIndexs:
     indices: []
     wids: null
@@ -2812,7 +2825,7 @@ role_groups:
     wids: null
   enzymeRNALocalIndexs:
     indices: []
-    wids: null
+    wids: []
   enzymeStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -2824,7 +2837,7 @@ role_groups:
     wids: null
   enzymeStimulusLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   parameterIndexs:
     indices: []
     wids: null
@@ -2838,8 +2851,9 @@ role_groups:
     indices: []
     wids: null
   stimulusComplexLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusGlobalIndexs:
     indices: []
     wids: null
@@ -2853,8 +2867,9 @@ role_groups:
     indices: []
     wids: null
   stimulusMetaboliteLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusMonomerCompartmentIndexs:
     indices: []
     wids: null
@@ -2865,8 +2880,9 @@ role_groups:
     indices: []
     wids: null
   stimulusMonomerLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusRNACompartmentIndexs:
     indices: []
     wids: null
@@ -2877,8 +2893,9 @@ role_groups:
     indices: []
     wids: null
   stimulusRNALocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -2889,8 +2906,9 @@ role_groups:
     indices: []
     wids: null
   stimulusStimulusLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   substrateComplexCompartmentIndexs:
     indices: []
     wids: null
@@ -2902,7 +2920,7 @@ role_groups:
     wids: null
   substrateComplexLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   substrateGlobalIndexs:
     indices:
     - 54
@@ -2961,13 +2979,19 @@ role_groups:
     - 385
     wids: null
   substrateMetaboliteLocalIndexs:
+    identity_over_vocab: true
     indices:
     - 1
     - 2
     - 3
     - 4
     - 5
-    wids: null
+    wids:
+    - ATP
+    - ADP
+    - PI
+    - H2O
+    - H
   substrateMonomerCompartmentIndexs:
     indices: []
     wids: null
@@ -2979,7 +3003,7 @@ role_groups:
     wids: null
   substrateMonomerLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   substrateRNACompartmentIndexs:
     indices: []
     wids: null
@@ -2991,7 +3015,7 @@ role_groups:
     wids: null
   substrateRNALocalIndexs:
     indices: []
-    wids: null
+    wids: []
   substrateStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -3003,7 +3027,7 @@ role_groups:
     wids: null
   substrateStimulusLocalIndexs:
     indices: []
-    wids: null
+    wids: []
 source:
   fixture: data/karr_fixtures/per_process/ReplicationInitiation_flat.mat
   fixture_sha256: ea0a22a435849d31ce84a401a443ec513a724a6fdc6eeb844031b2c1d3855d36

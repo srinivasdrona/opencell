@@ -237,7 +237,7 @@ role_groups:
     wids: null
   enzymeComplexLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   enzymeGlobalIndexs:
     indices:
     - 223
@@ -276,7 +276,7 @@ role_groups:
     wids: null
   enzymeMetaboliteLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   enzymeMonomerCompartmentIndexs:
     indices:
     - 1
@@ -359,12 +359,17 @@ role_groups:
     - 327
     wids: null
   enzymeMonomerLocalIndexs:
+    identity_over_vocab: true
     indices:
     - 1
     - 2
     - 3
     - 4
-    wids: null
+    wids:
+    - MG_218_MONOMER
+    - MG_312_MONOMER
+    - MG_317_MONOMER
+    - MG_318_MONOMER
   enzymeRNACompartmentIndexs:
     indices: []
     wids: null
@@ -376,7 +381,7 @@ role_groups:
     wids: null
   enzymeRNALocalIndexs:
     indices: []
-    wids: null
+    wids: []
   enzymeStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -388,7 +393,7 @@ role_groups:
     wids: null
   enzymeStimulusLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   parameterIndexs:
     indices: []
     wids: null
@@ -402,8 +407,9 @@ role_groups:
     indices: []
     wids: null
   stimulusComplexLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusGlobalIndexs:
     indices: []
     wids: null
@@ -417,8 +423,9 @@ role_groups:
     indices: []
     wids: null
   stimulusMetaboliteLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusMonomerCompartmentIndexs:
     indices: []
     wids: null
@@ -429,8 +436,9 @@ role_groups:
     indices: []
     wids: null
   stimulusMonomerLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusRNACompartmentIndexs:
     indices: []
     wids: null
@@ -441,8 +449,9 @@ role_groups:
     indices: []
     wids: null
   stimulusRNALocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -453,8 +462,9 @@ role_groups:
     indices: []
     wids: null
   stimulusStimulusLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   substrateComplexCompartmentIndexs:
     indices: []
     wids: null
@@ -466,7 +476,7 @@ role_groups:
     wids: null
   substrateComplexLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   substrateGlobalIndexs:
     indices:
     - 194
@@ -529,7 +539,7 @@ role_groups:
     wids: null
   substrateMetaboliteLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   substrateMonomerCompartmentIndexs:
     indices:
     - 6
@@ -588,6 +598,7 @@ role_groups:
     - 401
     wids: null
   substrateMonomerLocalIndexs:
+    identity_over_vocab: true
     indices:
     - 1
     - 2
@@ -597,7 +608,15 @@ role_groups:
     - 6
     - 7
     - 8
-    wids: null
+    wids:
+    - MG_191_MONOMER
+    - MG_192_MONOMER
+    - MG_217_MONOMER
+    - MG_218_MONOMER
+    - MG_312_MONOMER
+    - MG_317_MONOMER
+    - MG_318_MONOMER
+    - MG_386_MONOMER
   substrateRNACompartmentIndexs:
     indices: []
     wids: null
@@ -609,7 +628,7 @@ role_groups:
     wids: null
   substrateRNALocalIndexs:
     indices: []
-    wids: null
+    wids: []
   substrateStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -621,7 +640,7 @@ role_groups:
     wids: null
   substrateStimulusLocalIndexs:
     indices: []
-    wids: null
+    wids: []
 source:
   fixture: data/karr_fixtures/per_process/TerminalOrganelleAssembly_flat.mat
   fixture_sha256: cdf3c89d8f32cd429d130cc650b01c53f855a520faa796e318dbead75bcbeabe
@@ -646,7 +665,13 @@ stoichiometry:
     sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
     shape:
     - 0
-  reactionWholeCellModelIDs: &id001
+vocabularies:
+  enzymeWholeCellModelIDs:
+  - MG_218_MONOMER
+  - MG_312_MONOMER
+  - MG_317_MONOMER
+  - MG_318_MONOMER
+  reactionWholeCellModelIDs:
   - MG_191_TerminalOrganelleAssembly_01
   - MG_192_TerminalOrganelleAssembly_01
   - MG_217_TerminalOrganelleAssembly_01
@@ -657,13 +682,6 @@ stoichiometry:
   - MG_317_TerminalOrganelleAssembly_01
   - MG_318_TerminalOrganelleAssembly_01
   - MG_386_TerminalOrganelleAssembly_01
-vocabularies:
-  enzymeWholeCellModelIDs:
-  - MG_218_MONOMER
-  - MG_312_MONOMER
-  - MG_317_MONOMER
-  - MG_318_MONOMER
-  reactionWholeCellModelIDs: *id001
   stimuliWholeCellModelIDs: []
   substrateWholeCellModelIDs:
   - MG_191_MONOMER

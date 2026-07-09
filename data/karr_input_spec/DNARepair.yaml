@@ -326,7 +326,13 @@ role_groups:
     - 8
     - 12
     - 13
-    wids: null
+    wids:
+    - MG_073_206_421_TETRAMER
+    - MG_105_OCTAMER
+    - MG_184_DIMER
+    - MG_244_DIMER
+    - MG_352_DIMER
+    - MG_358_359_10MER
   enzymeGlobalIndexs:
     indices:
     - 1
@@ -438,7 +444,7 @@ role_groups:
     wids: null
   enzymeMetaboliteLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   enzymeMonomerCompartmentIndexs:
     indices:
     - 1
@@ -486,7 +492,16 @@ role_groups:
     - 11
     - 14
     - 15
-    wids: null
+    wids:
+    - MG_001_MONOMER
+    - MG_097_MONOMER
+    - MG_190_MONOMER
+    - MG_235_MONOMER
+    - MG_254_MONOMER
+    - MG_262_MONOMER
+    - MG_339_MONOMER
+    - MG_438_MONOMER
+    - MG_498_MONOMER
   enzymeRNACompartmentIndexs:
     indices: []
     wids: null
@@ -498,7 +513,7 @@ role_groups:
     wids: null
   enzymeRNALocalIndexs:
     indices: []
-    wids: null
+    wids: []
   enzymeStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -510,7 +525,7 @@ role_groups:
     wids: null
   enzymeStimulusLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   parameterIndexs:
     indices: []
     wids: null
@@ -700,8 +715,9 @@ role_groups:
     indices: []
     wids: null
   stimulusComplexLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusGlobalIndexs:
     indices: []
     wids: null
@@ -715,8 +731,9 @@ role_groups:
     indices: []
     wids: null
   stimulusMetaboliteLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusMonomerCompartmentIndexs:
     indices: []
     wids: null
@@ -727,8 +744,9 @@ role_groups:
     indices: []
     wids: null
   stimulusMonomerLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusRNACompartmentIndexs:
     indices: []
     wids: null
@@ -739,8 +757,9 @@ role_groups:
     indices: []
     wids: null
   stimulusRNALocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   stimulusStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -751,8 +770,9 @@ role_groups:
     indices: []
     wids: null
   stimulusStimulusLocalIndexs:
+    identity_over_vocab: true
     indices: []
-    wids: null
+    wids: []
   substrateComplexCompartmentIndexs:
     indices: []
     wids: null
@@ -764,7 +784,7 @@ role_groups:
     wids: null
   substrateComplexLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   substrateGlobalIndexs:
     indices:
     - 9
@@ -2480,6 +2500,7 @@ role_groups:
     - 720
     wids: null
   substrateMetaboliteLocalIndexs:
+    identity_over_vocab: true
     indices:
     - 1
     - 2
@@ -2758,7 +2779,284 @@ role_groups:
     - 275
     - 276
     - 277
-    wids: null
+    wids:
+    - AD
+    - ADP
+    - AHCYS
+    - AMET
+    - AMP
+    - ATP
+    - aza6dT
+    - aza6dTMP
+    - aza6THY
+    - aza8AD
+    - aza8dA
+    - aza8dAMP
+    - c5dU
+    - c5dUMP
+    - c5URA
+    - carbamoylmethyl6AD
+    - carbamoylmethyl6dA
+    - carbamoylmethyl6dAMP
+    - CSN
+    - CSN64CSN
+    - CSN64CSN_dewar
+    - CSN64THY
+    - CSN64THY_dewar
+    - CSN_GLYC
+    - cyclobutane_CSNCSN
+    - cyclobutane_CSNTHY
+    - cyclobutane_dCdC
+    - cyclobutane_dCdT
+    - cyclobutane_dCMPdCMP
+    - cyclobutane_dCMPdTMP
+    - cyclobutane_dTdC
+    - cyclobutane_dTdT
+    - cyclobutane_dTMPdCMP
+    - cyclobutane_dTMPdTMP
+    - cyclobutane_THYCSN
+    - cyclobutane_THYTHY
+    - cyclodA
+    - cyclodAMP
+    - cyclodG
+    - cyclodGMP
+    - DAMP
+    - dApdAp
+    - DATP
+    - dC64dC
+    - dC64dC_dewar
+    - dC64dT
+    - dC64dT_dewar
+    - DCMP
+    - dCMP64dCMP
+    - dCMP64dCMP_dewar
+    - dCMP64dTMP
+    - dCMP64dTMP_dewar
+    - dCMP_GLYC
+    - dCpdCp
+    - DCTP
+    - dC_GLYC
+    - DGMP
+    - dGpdGp
+    - DGTP
+    - DHdT
+    - DHdTMP
+    - DHdU
+    - DHdUMP
+    - dhpdU
+    - dhpdUMP
+    - dhpURA
+    - DHTHY
+    - DHURA
+    - dINS
+    - dINSMP
+    - DR5P
+    - dRibose5P_dRibose5P
+    - dT64dC
+    - dT64dC_dewar
+    - dT64dT
+    - dT64dT_dewar
+    - DTMP
+    - dTMP64dCMP
+    - dTMP64dCMP_dewar
+    - dTMP64dTMP
+    - dTMP64dTMP_dewar
+    - dTMP_GLYC
+    - dTpdTp
+    - DTTP
+    - dT_GLYC
+    - DU
+    - DUMP
+    - dXAN
+    - dXANMP
+    - e1AD
+    - e1dA
+    - e1dAMP
+    - e1dG
+    - e1dGMP
+    - e1GN
+    - e3AD
+    - e3CSN
+    - e3dA
+    - e3dAMP
+    - e3dC
+    - e3dCMP
+    - e3dG
+    - e3dGMP
+    - e3dT
+    - e3dTMP
+    - e3GN
+    - e3THY
+    - e4CSN
+    - e4dC
+    - e4dCMP
+    - e5CSN
+    - e5dC
+    - e5dCMP
+    - e6AD
+    - e6dA
+    - e6dAMP
+    - e7AD
+    - e7dA
+    - e7dAMP
+    - e7dG
+    - e7dGMP
+    - e7GN
+    - e8dG
+    - e8dGMP
+    - e8GN
+    - epsilon1N2dG
+    - epsilon1N2dGMP
+    - epsilon1N2GN
+    - epsilon1N6AD
+    - epsilon1N6dA
+    - epsilon1N6dAMP
+    - epsilon3N4CSN
+    - epsilon3N4dC
+    - epsilon3N4dCMP
+    - epsilonN23dG
+    - epsilonN23dGMP
+    - epsilonN23GN
+    - f5dU
+    - f5dUMP
+    - f5URA
+    - FAPyAD
+    - FAPydA
+    - FAPydAMP
+    - FAPydG
+    - FAPydGMP
+    - FAPyGN
+    - glchm5CSN
+    - glchm5dC
+    - glchm5dCMP
+    - glchm5dU
+    - glchm5dUMP
+    - glchm5URA
+    - gludT
+    - gludTMP
+    - gluTHY
+    - GN
+    - H
+    - H2O
+    - hm3CSN
+    - hm3dC
+    - hm3dCMP
+    - hm5CSN
+    - hm5dC
+    - hm5dCMP
+    - hm5dU
+    - hm5dUMP
+    - hm5hydantoin
+    - hm5hydantoin_dRibose
+    - hm5hydantoin_dRiboseMP
+    - hm5URA
+    - ho5CSN
+    - ho5dC
+    - ho5dCMP
+    - ho5dU
+    - ho5dUMP
+    - ho5ho6dT
+    - ho5ho6dTMP
+    - ho5ho6dU
+    - ho5ho6dUMP
+    - ho5ho6THY
+    - ho5ho6URA
+    - ho5hydantoin
+    - ho5hydantoin_dRibose
+    - ho5hydantoin_dRiboseMP
+    - ho5URA
+    - HYXN
+    - m1AD
+    - m1dA
+    - m1dAMP
+    - m1dG
+    - m1dGMP
+    - m1GN
+    - m3AD
+    - m3CSN
+    - m3dA
+    - m3dAMP
+    - m3dC
+    - m3dCMP
+    - m3dG
+    - m3dGMP
+    - m3dT
+    - m3dTMP
+    - m3GN
+    - m3THY
+    - m4CSN
+    - m4dC
+    - m4dCMP
+    - m5CSN
+    - m5dC
+    - m5dCMP
+    - m6AD
+    - m6dA
+    - m6dAMP
+    - m7AD
+    - m7dA
+    - m7dAMP
+    - m7dG
+    - m7dGMP
+    - m7GN
+    - m8dG
+    - m8dGMP
+    - m8GN
+    - n2AD
+    - n2dA
+    - n2dAMP
+    - NAD
+    - NMN
+    - O2eCSN
+    - O2edC
+    - O2edCMP
+    - O2edT
+    - O2edTMP
+    - O2eTHY
+    - O2mCSN
+    - O2mdC
+    - O2mdCMP
+    - O2mdT
+    - O2mdTMP
+    - O2mTHY
+    - O4edT
+    - O4edTMP
+    - O4eTHY
+    - O4mdT
+    - O4mdTMP
+    - O4mTHY
+    - O6edG
+    - O6edGMP
+    - O6eGN
+    - O6mdG
+    - O6mdGMP
+    - O6mGN
+    - oxo2AD
+    - oxo2dA
+    - oxo2dAMP
+    - oxo8AD
+    - oxo8dA
+    - oxo8dAMP
+    - oxo8dG
+    - oxo8dGMP
+    - oxo8GN
+    - oxoethyl7dG
+    - oxoethyl7dGMP
+    - oxoethyl7GN
+    - PI
+    - PPI
+    - putdT
+    - putdTMP
+    - putTHY
+    - THY
+    - THY64CSN
+    - THY64CSN_dewar
+    - THY64THY
+    - THY64THY_dewar
+    - THY_GLYC
+    - URA
+    - URI
+    - XAN
   substrateMonomerCompartmentIndexs:
     indices: []
     wids: null
@@ -2770,7 +3068,7 @@ role_groups:
     wids: null
   substrateMonomerLocalIndexs:
     indices: []
-    wids: null
+    wids: []
   substrateRNACompartmentIndexs:
     indices: []
     wids: null
@@ -2782,7 +3080,7 @@ role_groups:
     wids: null
   substrateRNALocalIndexs:
     indices: []
-    wids: null
+    wids: []
   substrateStimulusCompartmentIndexs:
     indices: []
     wids: null
@@ -2794,7 +3092,7 @@ role_groups:
     wids: null
   substrateStimulusLocalIndexs:
     indices: []
-    wids: null
+    wids: []
 source:
   fixture: data/karr_fixtures/per_process/DNARepair_flat.mat
   fixture_sha256: bcadae85937f6fd9dbfeb0099fc5f6f43b15e1427a902cf246d4d8479bb974a7
@@ -2829,39 +3127,6 @@ stoichiometry:
     shape:
     - 277
     - 32
-  reactionWholeCellModelIDs: &id001
-  - AP_endonuclease
-  - AP_lyase
-  - deoxyribosephosphodiesterase
-  - DNAProcessiveCleavage_dAMP
-  - DNAProcessiveCleavage_dCMP
-  - DNAProcessiveCleavage_dGMP
-  - DNAProcessiveCleavage_dTMP
-  - DNA_ligation_repair
-  - DNA_polymerization_dATP_repair
-  - DNA_polymerization_dCTP_repair
-  - DNA_polymerization_dGTP_repair
-  - DNA_polymerization_dTTP_repair
-  - DNA_RM_EcoD_Methylation
-  - DNA_RM_EcoD_Restriction
-  - DNA_RM_MunI_Methylation
-  - DNA_RM_MunI_Restriction
-  - dRiboseP_lyase
-  - HR_DNAResection_dAMP
-  - HR_DNAResection_dCMP
-  - HR_DNAResection_dGMP
-  - HR_DNAResection_dTMP
-  - HR_junctionMigration
-  - HR_junctionResolution
-  - HR_strandExchange
-  - MutM_FAPyAD
-  - MutM_FAPyGN
-  - MutM_oxo8AD
-  - MutM_oxo8GN
-  - NER_DNAExcision
-  - NER_DNAIncision
-  - Ung_ho5URA
-  - Ung_URA
   reactions:
     AP_endonuclease:
       consume:
@@ -3100,6 +3365,198 @@ stoichiometry:
       produce:
         DR5P: 2
         H: 1
+  reactions_small_molecule:
+    AP_endonuclease:
+      consume:
+        H2O: 1
+      produce:
+        H: 1
+    AP_lyase:
+      consume:
+        H2O: 1
+      produce:
+        H: 1
+    DNAProcessiveCleavage_dAMP:
+      consume:
+        H2O: 1
+      produce:
+        DAMP: 1
+        H: 1
+    DNAProcessiveCleavage_dCMP:
+      consume:
+        H2O: 1
+      produce:
+        DCMP: 1
+        H: 1
+    DNAProcessiveCleavage_dGMP:
+      consume:
+        H2O: 1
+      produce:
+        DGMP: 1
+        H: 1
+    DNAProcessiveCleavage_dTMP:
+      consume:
+        H2O: 1
+      produce:
+        DTMP: 1
+        H: 1
+    DNA_RM_EcoD_Methylation:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+        H: 1
+    DNA_RM_EcoD_Restriction:
+      consume:
+        ATP: 1
+        H2O: 3
+      produce:
+        ADP: 1
+        H: 3
+        PI: 1
+    DNA_RM_MunI_Methylation:
+      consume:
+        AMET: 1
+      produce:
+        AHCYS: 1
+        H: 1
+    DNA_RM_MunI_Restriction:
+      consume:
+        H2O: 2
+      produce:
+        H: 2
+    DNA_ligation_repair:
+      consume:
+        NAD: 1
+      produce:
+        AMP: 1
+        H: 1
+        NMN: 1
+    DNA_polymerization_dATP_repair:
+      consume:
+        DATP: 1
+      produce:
+        PPI: 1
+    DNA_polymerization_dCTP_repair:
+      consume:
+        DCTP: 1
+      produce:
+        PPI: 1
+    DNA_polymerization_dGTP_repair:
+      consume:
+        DGTP: 1
+      produce:
+        PPI: 1
+    DNA_polymerization_dTTP_repair:
+      consume:
+        DTTP: 1
+      produce:
+        PPI: 1
+    HR_DNAResection_dAMP:
+      consume:
+        H2O: 1
+      produce:
+        DAMP: 1
+        H: 1
+    HR_DNAResection_dCMP:
+      consume:
+        H2O: 1
+      produce:
+        DCMP: 1
+        H: 1
+    HR_DNAResection_dGMP:
+      consume:
+        H2O: 1
+      produce:
+        DGMP: 1
+        H: 1
+    HR_DNAResection_dTMP:
+      consume:
+        H2O: 1
+      produce:
+        DTMP: 1
+        H: 1
+    HR_junctionMigration:
+      consume:
+        ATP: 1
+        H2O: 1
+      produce:
+        ADP: 1
+        H: 1
+        PI: 1
+    HR_junctionResolution:
+      consume:
+        H2O: 2
+      produce:
+        H: 2
+    HR_strandExchange:
+      consume:
+        ATP: 1
+        H2O: 1
+      produce:
+        ADP: 1
+        H: 1
+        PI: 1
+    MutM_FAPyAD:
+      consume:
+        H2O: 1
+      produce:
+        FAPyAD: 1
+    MutM_FAPyGN:
+      consume:
+        H2O: 1
+      produce:
+        FAPyGN: 1
+    MutM_oxo8AD:
+      consume:
+        H2O: 1
+      produce:
+        oxo8AD: 1
+    MutM_oxo8GN:
+      consume:
+        H2O: 1
+      produce:
+        oxo8GN: 1
+    NER_DNAExcision:
+      consume:
+        ATP: 1
+        H2O: 1
+      produce:
+        ADP: 1
+        H: 1
+        PI: 1
+    NER_DNAIncision:
+      consume:
+        ATP: 1
+        H2O: 3
+      produce:
+        ADP: 1
+        H: 3
+        PI: 1
+    Ung_URA:
+      consume:
+        H2O: 1
+      produce:
+        URA: 1
+    Ung_ho5URA:
+      consume:
+        H2O: 1
+      produce:
+        ho5URA: 1
+    dRiboseP_lyase:
+      consume:
+        H2O: 1
+      produce:
+        DR5P: 1
+        H: 1
+    deoxyribosephosphodiesterase:
+      consume:
+        H2O: 1
+      produce:
+        DR5P: 1
+        H: 1
+  reactions_small_molecule_source_field: reactionSmallMoleculeStoichiometryMatrix
+  reactions_source_field: reactionStoichiometryMatrix
 vocabularies:
   enzymeWholeCellModelIDs:
   - MG_001_MONOMER
@@ -3117,7 +3574,39 @@ vocabularies:
   - MG_358_359_10MER
   - MG_438_MONOMER
   - MG_498_MONOMER
-  reactionWholeCellModelIDs: *id001
+  reactionWholeCellModelIDs:
+  - AP_endonuclease
+  - AP_lyase
+  - deoxyribosephosphodiesterase
+  - DNAProcessiveCleavage_dAMP
+  - DNAProcessiveCleavage_dCMP
+  - DNAProcessiveCleavage_dGMP
+  - DNAProcessiveCleavage_dTMP
+  - DNA_ligation_repair
+  - DNA_polymerization_dATP_repair
+  - DNA_polymerization_dCTP_repair
+  - DNA_polymerization_dGTP_repair
+  - DNA_polymerization_dTTP_repair
+  - DNA_RM_EcoD_Methylation
+  - DNA_RM_EcoD_Restriction
+  - DNA_RM_MunI_Methylation
+  - DNA_RM_MunI_Restriction
+  - dRiboseP_lyase
+  - HR_DNAResection_dAMP
+  - HR_DNAResection_dCMP
+  - HR_DNAResection_dGMP
+  - HR_DNAResection_dTMP
+  - HR_junctionMigration
+  - HR_junctionResolution
+  - HR_strandExchange
+  - MutM_FAPyAD
+  - MutM_FAPyGN
+  - MutM_oxo8AD
+  - MutM_oxo8GN
+  - NER_DNAExcision
+  - NER_DNAIncision
+  - Ung_ho5URA
+  - Ung_URA
   stimuliWholeCellModelIDs: []
   substrateWholeCellModelIDs:
   - AD
