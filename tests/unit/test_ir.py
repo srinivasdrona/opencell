@@ -139,17 +139,13 @@ class TestStoichiometryMatrix:
         # ATP→ADP: mass difference = 427.20 - 507.18 = -79.98 (Pi + H2O missing)
         assert residuals["atp_hydrolysis"] != 0  # unbalanced without Pi + H2O
 
-    def test_jax_array(self) -> None:
-        import jax
-
-        jax.config.update("jax_enable_x64", True)
-
+    def test_dense_array(self) -> None:
         reg = IRSpeciesRegistry()
         reg.register(make_atp())
         rxn = ReactionInfo(id="r1", name="r1", stoichiometry={"atp_c": -1})
         S = StoichiometryMatrix.from_reactions([rxn], reg)
-        jax_S = S.as_jax
-        assert jax_S.shape == (1, 1)
+        arr = S.as_dense_array
+        assert arr.shape == (1, 1)
 
 
 class TestSubModelContract:

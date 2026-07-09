@@ -24,8 +24,6 @@ class RunManifest:
     timestamp: str = ""
     git_sha: str = ""
     python_version: str = ""
-    jax_version: str = ""
-    diffrax_version: str = ""
     scipy_version: str = ""
     numpy_version: str = ""
     platform_info: str = ""
@@ -40,8 +38,6 @@ class RunManifest:
     @classmethod
     def capture(cls, rng_seed: int = 0, solver_config: dict[str, Any] | None = None) -> RunManifest:
         """Capture current environment into a manifest."""
-        import diffrax
-        import jax
         import numpy as np
         import scipy
 
@@ -62,8 +58,6 @@ class RunManifest:
             timestamp=datetime.now(UTC).isoformat(),
             git_sha=git_sha,
             python_version=platform.python_version(),
-            jax_version=jax.__version__,
-            diffrax_version=diffrax.__version__,
             scipy_version=scipy.__version__,
             numpy_version=np.__version__,
             platform_info=platform.platform(),

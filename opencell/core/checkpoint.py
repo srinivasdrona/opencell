@@ -1,7 +1,7 @@
 """Checkpoint/restart: serialize simulation state to HDF5.
 
 Enables resuming from any saved checkpoint. Note: exact-restart
-is narrowed to same JAX/Diffrax/Python versions only — cross-version
+is narrowed to the same numpy/scipy/Python versions only — cross-version
 bitwise identity is not guaranteed.
 """
 
@@ -13,7 +13,6 @@ from pathlib import Path
 from typing import Any
 
 import h5py
-import jax.numpy as jnp
 import numpy as np
 
 logger = logging.getLogger(__name__)
@@ -22,9 +21,9 @@ logger = logging.getLogger(__name__)
 def save_checkpoint(
     filepath: str | Path,
     time_s: float,
-    counts: np.ndarray | jnp.ndarray,
+    counts: np.ndarray,
     species_ids: list[str],
-    rng_key_data: np.ndarray | jnp.ndarray,
+    rng_key_data: np.ndarray,
     metadata: dict[str, Any] | None = None,
 ) -> Path:
     """Save simulation state to HDF5 checkpoint.

@@ -10,16 +10,12 @@ import logging
 import time
 from dataclasses import dataclass, field
 
-import jax
-import jax.numpy as jnp
 import numpy as np
 
 from opencell.core.ir import IRSpeciesRegistry
 from opencell.core.resource_ledger import ResourceLedger
 from opencell.core.state import CellState
 from opencell.models.base import SubModel
-
-jax.config.update("jax_enable_x64", True)
 
 logger = logging.getLogger(__name__)
 
@@ -132,10 +128,10 @@ class Engine:
 
                 # Update state
                 t += dt
-                new_key, _ = jax.random.split(state.rng_key)
+                new_key = state.rng_key.spawn(1)[0]
                 state = CellState(
                     time_s=t,
-                    counts=jnp.array(new_counts),
+                    counts=new_counts,
                     registry=state.registry,
                     geometry=state.geometry,
                     rng_key=new_key,

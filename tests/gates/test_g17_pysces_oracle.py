@@ -2,7 +2,7 @@
 
 Encode the same ODE system in a completely independent third-party
 solver (PySCeS — the Python Simulator for Cellular Systems) and compare
-trajectories against our JAX and SciPy solvers.
+trajectories against our SciPy solver.
 
 This is the single strongest protection against self-consistent-but-wrong
 simulation: PySCeS has no shared code with our stack, and it has been
@@ -10,6 +10,9 @@ used by the systems-biology community for ~20 years.
 
 Agreement must be better than 1e-3 relative on both species across the
 full trajectory (not just the endpoint).
+
+Note: the JAX/Diffrax arm was removed per the Day-3 (2026-04-24) decision;
+the SciPy-vs-PySCeS and PySCeS-vs-analytical checks carry the gate.
 """
 
 from __future__ import annotations
@@ -18,15 +21,10 @@ import shutil
 import tempfile
 from pathlib import Path
 
-import jax
-import jax.numpy as jnp
 import numpy as np
 import pytest
 
-jax.config.update("jax_enable_x64", True)
-
 from opencell.models.micro_model import MicroModelParams
-from opencell.solvers.ode import ODESolverConfig, solve_ode
 from opencell.solvers.ode_scipy import solve_ode_scipy
 
 PARAMS = MicroModelParams()
@@ -39,17 +37,6 @@ def _micro_model_rhs(t, y, params: MicroModelParams):
         [
             params.alpha_m - params.beta_m * m,
             params.alpha_p * m - params.beta_p * p,
-        ]
-    )
-
-
-def _micro_model_rhs_jax(t, y, args):
-    m, p = y[0], y[1]
-    alpha_m, beta_m, alpha_p, beta_p = args
-    return jnp.array(
-        [
-            alpha_m - beta_m * m,
-            alpha_p * m - beta_p * p,
         ]
     )
 
@@ -82,7 +69,7 @@ def pysces_trajectory():
 
 @pytest.mark.gate
 class TestGateG17PyscesOracle:
-    """G1.7: JAX + SciPy solvers must agree with PySCeS to 1e-3 relative."""
+    """G1.7: the SciPy solver must agree with PySCeS to 1e-3 relative."""
 
     def test_pysces_recovers_analytical_steady_state(self, pysces_trajectory) -> None:
         """Sanity: PySCeS itself converges to the analytical SS we derived."""
@@ -128,26 +115,3 @@ class TestGateG17PyscesOracle:
         np.testing.assert_allclose(m_sci[mask], m_py[mask], rtol=1e-3)
         mask_p = t_py > 30.0
         np.testing.assert_allclose(p_sci[mask_p], p_py[mask_p], rtol=1e-3)
-
-    def test_jax_agrees_with_pysces(self, pysces_trajectory) -> None:
-        """JAX (diffrax) solver output must match PySCeS within 1e-3 relative."""
-        t_py, m_py, p_py = pysces_trajectory
-
-        y0 = jnp.array([0.0, 0.0])
-        args = (PARAMS.alpha_m, PARAMS.beta_m, PARAMS.alpha_p, PARAMS.beta_p)
-        config = ODESolverConfig(method="tsit5")
-        result = solve_ode(
-            _micro_model_rhs_jax,
-            y0,
-            t_span=(0.0, 500.0),
-            args=args,
-            config=config,
-            saveat=jnp.array(t_py),
-        )
-        m_jax = np.array(result.ys[:, 0])
-        p_jax = np.array(result.ys[:, 1])
-
-        mask = t_py > 1.0
-        np.testing.assert_allclose(m_jax[mask], m_py[mask], rtol=1e-3)
-        mask_p = t_py > 30.0
-        np.testing.assert_allclose(p_jax[mask_p], p_py[mask_p], rtol=1e-3)

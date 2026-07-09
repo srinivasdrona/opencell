@@ -4,6 +4,13 @@ The most important test in the entire project. If our simulation engine
 cannot reproduce a textbook analytical solution with published parameters,
 nothing else we build can be trusted.
 
+The JAX/Diffrax solver was removed per the Day-3 (2026-04-24) decision (JAX
+dispatch overhead exceeds integration work at whole-cell scale). The SciPy
+reference solver is validated against the analytical solution at both steady
+state and across the full time course. The former JAX-vs-SciPy cross-solver
+gate (G1.3) is retired with the JAX arm; the analytical-vs-SciPy check below
+carries the validation.
+
 References:
   Alon (2006) Chapter 1, Box 1.1
   Thattai & van Oudenaarden (2001) PNAS 98(15), 8614–8619
@@ -11,15 +18,10 @@ References:
 
 from __future__ import annotations
 
-import jax
-import jax.numpy as jnp
 import numpy as np
 import pytest
 
-jax.config.update("jax_enable_x64", True)
-
 from opencell.models.micro_model import MicroModelParams
-from opencell.solvers.ode import ODESolverConfig, solve_ode
 from opencell.solvers.ode_scipy import solve_ode_scipy
 
 # Published parameters (Thattai 2001, Figure 1 caption "base case")
@@ -32,15 +34,6 @@ def _micro_model_rhs(t, y, params: MicroModelParams):
     dm_dt = params.alpha_m - params.beta_m * m
     dp_dt = params.alpha_p * m - params.beta_p * p
     return np.array([dm_dt, dp_dt])
-
-
-def _micro_model_rhs_jax(t, y, args):
-    """JAX-compatible RHS."""
-    m, p = y[0], y[1]
-    alpha_m, beta_m, alpha_p, beta_p = args
-    dm_dt = alpha_m - beta_m * m
-    dp_dt = alpha_p * m - beta_p * p
-    return jnp.array([dm_dt, dp_dt])
 
 
 # ── Gate G1.2: Deterministic solver matches analytical solution ──
@@ -68,73 +61,8 @@ class TestGateG12:
         assert PARAMS.p_ss == pytest.approx(expected_p, rel=1e-10)
 
     @pytest.mark.gate
-    def test_jax_solver_matches_analytical_steady_state(self) -> None:
-        """Run JAX solver to steady state, compare with analytical."""
-        y0 = jnp.array([0.0, 0.0])
-        args = (PARAMS.alpha_m, PARAMS.beta_m, PARAMS.alpha_p, PARAMS.beta_p)
-
-        # Save at regular intervals including endpoint
-        t_eval = jnp.linspace(0.0, 2000.0, 201)
-        config = ODESolverConfig(method="tsit5")
-        result = solve_ode(
-            _micro_model_rhs_jax,
-            y0,
-            t_span=(0.0, 2000.0),
-            args=args,
-            config=config,
-            saveat=t_eval,
-        )
-
-        final_m = float(result.ys[-1, 0])
-        final_p = float(result.ys[-1, 1])
-
-        assert final_m == pytest.approx(PARAMS.m_ss, rel=1e-6), (
-            f"mRNA: got {final_m}, expected {PARAMS.m_ss}"
-        )
-        assert final_p == pytest.approx(PARAMS.p_ss, rel=1e-4), (
-            f"Protein: got {final_p}, expected {PARAMS.p_ss}"
-        )
-
-    @pytest.mark.gate
-    def test_jax_solver_matches_analytical_timecourse(self) -> None:
-        """Compare full time course, not just endpoint."""
-        y0 = jnp.array([0.0, 0.0])
-        args = (PARAMS.alpha_m, PARAMS.beta_m, PARAMS.alpha_p, PARAMS.beta_p)
-
-        t_eval = jnp.linspace(0.0, 500.0, 501)
-        config = ODESolverConfig(method="tsit5")
-        result = solve_ode(
-            _micro_model_rhs_jax,
-            y0,
-            t_span=(0.0, 500.0),
-            args=args,
-            config=config,
-            saveat=t_eval,
-        )
-
-        ts = np.array(result.ts)
-        ys = np.array(result.ys)
-
-        # Compare at multiple timepoints
-        for i in range(0, len(ts), max(1, len(ts) // 20)):
-            t = float(ts[i])
-            m_analytical = PARAMS.m_exact(t)
-            p_analytical = PARAMS.p_exact(t)
-            m_numerical = float(ys[i, 0])
-            p_numerical = float(ys[i, 1])
-
-            if t > 1.0:  # skip t=0 (both zero)
-                assert m_numerical == pytest.approx(m_analytical, rel=1e-4), (
-                    f"mRNA at t={t:.1f}: got {m_numerical}, expected {m_analytical}"
-                )
-            if t > 50.0:  # protein needs time to accumulate
-                assert p_numerical == pytest.approx(p_analytical, rel=1e-3), (
-                    f"Protein at t={t:.1f}: got {p_numerical}, expected {p_analytical}"
-                )
-
-    @pytest.mark.gate
     def test_scipy_solver_matches_analytical_steady_state(self) -> None:
-        """SciPy reference solver must also match analytical."""
+        """SciPy reference solver must match the analytical steady state."""
         y0 = np.array([0.0, 0.0])
 
         def rhs(t, y):
@@ -143,68 +71,41 @@ class TestGateG12:
         t_eval = np.linspace(0.0, 2000.0, 201)
         result = solve_ode_scipy(rhs, y0, t_span=(0.0, 2000.0), t_eval=t_eval)
 
-        # SciPy returns ys as (n_species, n_steps) — transpose
+        # SciPy returns ys as (n_species, n_steps)
         final_m = result.ys[0, -1]
         final_p = result.ys[1, -1]
 
         assert final_m == pytest.approx(PARAMS.m_ss, rel=1e-6)
         assert final_p == pytest.approx(PARAMS.p_ss, rel=1e-4)
 
-
-# ── Gate G1.3: Cross-solver validation ──
-
-
-class TestGateG13:
-    """G1.3: JAX and SciPy solvers must agree on the same problem."""
-
     @pytest.mark.gate
-    def test_jax_vs_scipy_agreement(self) -> None:
-        """Both solvers must produce the same trajectory."""
-        y0_jax = jnp.array([0.0, 0.0])
-        y0_scipy = np.array([0.0, 0.0])
-        args = (PARAMS.alpha_m, PARAMS.beta_m, PARAMS.alpha_p, PARAMS.beta_p)
-
-        # Use same evaluation points for both
-        t_eval_np = np.linspace(0.0, 500.0, 101)
-        t_eval_jax = jnp.array(t_eval_np)
-
-        config = ODESolverConfig(method="tsit5")
-        result_jax = solve_ode(
-            _micro_model_rhs_jax,
-            y0_jax,
-            t_span=(0.0, 500.0),
-            args=args,
-            config=config,
-            saveat=t_eval_jax,
-        )
+    def test_scipy_solver_matches_analytical_timecourse(self) -> None:
+        """SciPy solver must match the analytical solution across the time course."""
+        y0 = np.array([0.0, 0.0])
 
         def rhs(t, y):
             return _micro_model_rhs(t, y, PARAMS)
 
-        result_scipy = solve_ode_scipy(
-            rhs,
-            y0_scipy,
-            t_span=(0.0, 500.0),
-            t_eval=t_eval_np,
-        )
+        t_eval = np.linspace(0.0, 500.0, 501)
+        result = solve_ode_scipy(rhs, y0, t_span=(0.0, 500.0), t_eval=t_eval)
 
-        ys_jax = np.array(result_jax.ys)  # (n_steps, n_species)
-        ys_scipy = result_scipy.ys.T  # transpose to (n_steps, n_species)
+        ts = np.asarray(result.ts)
+        ys = np.asarray(result.ys)  # (n_species, n_steps)
 
-        # Compare at all shared timepoints (skip first few where both ≈ 0)
-        for i in range(5, len(t_eval_np)):
-            m_jax = ys_jax[i, 0]
-            m_sci = ys_scipy[i, 0]
-            p_jax = ys_jax[i, 1]
-            p_sci = ys_scipy[i, 1]
+        for i in range(0, len(ts), max(1, len(ts) // 20)):
+            t = float(ts[i])
+            m_analytical = PARAMS.m_exact(t)
+            p_analytical = PARAMS.p_exact(t)
+            m_numerical = float(ys[0, i])
+            p_numerical = float(ys[1, i])
 
-            if abs(m_jax) > 0.01:
-                assert m_jax == pytest.approx(m_sci, rel=1e-4), (
-                    f"mRNA at t={t_eval_np[i]:.1f}: JAX={m_jax}, SciPy={m_sci}"
+            if t > 1.0:  # skip t=0 (both zero)
+                assert m_numerical == pytest.approx(m_analytical, rel=1e-4), (
+                    f"mRNA at t={t:.1f}: got {m_numerical}, expected {m_analytical}"
                 )
-            if abs(p_jax) > 0.1:
-                assert p_jax == pytest.approx(p_sci, rel=1e-3), (
-                    f"Protein at t={t_eval_np[i]:.1f}: JAX={p_jax}, SciPy={p_sci}"
+            if t > 50.0:  # protein needs time to accumulate
+                assert p_numerical == pytest.approx(p_analytical, rel=1e-3), (
+                    f"Protein at t={t:.1f}: got {p_numerical}, expected {p_analytical}"
                 )
 
 
