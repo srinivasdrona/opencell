@@ -1,0 +1,2684 @@
+{
+  "categories": [
+    "stimuli",
+    "substrates",
+    "enzymes",
+    "boundEnzymes",
+    "localStateNames",
+    "globalStateNames",
+    "fittedConstantNames",
+    "fixedConstantNames"
+  ],
+  "per_process": {
+    "ChromosomeCondensation": {
+      "stimuli": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "ChromosomeCondensation.m:137"
+      },
+      "substrates": {
+        "declared": true,
+        "count": 5,
+        "origin": "LITERAL",
+        "wids": [
+          "ATP",
+          "ADP",
+          "PI",
+          "H2O",
+          "H"
+        ],
+        "evidence": "ChromosomeCondensation.m:139"
+      },
+      "enzymes": {
+        "declared": true,
+        "count": 2,
+        "origin": "LITERAL",
+        "wids": [
+          "MG_213_214_298_6MER",
+          "MG_213_214_298_6MER_ADP"
+        ],
+        "evidence": "ChromosomeCondensation.m:147"
+      },
+      "boundEnzymes": {
+        "uses": false,
+        "evidence": null
+      },
+      "localStateNames": {
+        "declared": true,
+        "values": [
+          "stimuli",
+          "substrates",
+          "enzymes",
+          "boundEnzymes"
+        ],
+        "evidence": "Process.m:980; ChromosomeCondensation.m:132"
+      },
+      "fixedConstantNames": {
+        "declared": true,
+        "values": [
+          "stimuliCompartments",
+          "substrateCompartments",
+          "enzymeCompartments",
+          "substrateMolecularWeights",
+          "enzymeMolecularWeights",
+          "smcSepNt",
+          "smcSepProbCenter"
+        ],
+        "evidence": "Process.m:947; ChromosomeCondensation.m:127"
+      },
+      "fittedConstantNames": {
+        "declared": true,
+        "values": [],
+        "evidence": "Process.m:966; ChromosomeCondensation.m:131"
+      },
+      "optionNames": {
+        "declared": true,
+        "values": [
+          "stepSizeSec",
+          "verbosity",
+          "seed"
+        ],
+        "evidence": "Process.m:942; ChromosomeCondensation.m:126"
+      },
+      "globalStateNames": {
+        "declared": true,
+        "values": [
+          "Geometry",
+          "Stimulus",
+          "Metabolite",
+          "Rna",
+          "ProteinMonomer",
+          "ProteinComplex",
+          "Chromosome"
+        ],
+        "evidence": "Process.m:295; ChromosomeProcessAspect.m:24"
+      }
+    },
+    "ChromosomeSegregation": {
+      "stimuli": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "ChromosomeSegregation.m:97"
+      },
+      "substrates": {
+        "declared": true,
+        "count": 5,
+        "origin": "LITERAL",
+        "wids": [
+          "GTP",
+          "GDP",
+          "H",
+          "H2O",
+          "PI"
+        ],
+        "evidence": "ChromosomeSegregation.m:99"
+      },
+      "enzymes": {
+        "declared": true,
+        "count": 5,
+        "origin": "LITERAL",
+        "wids": [
+          "MG_470_MONOMER",
+          "MG_221_OCTAMER",
+          "MG_387_MONOMER",
+          "MG_384_MONOMER",
+          "MG_203_204_TETRAMER"
+        ],
+        "evidence": "ChromosomeSegregation.m:107"
+      },
+      "boundEnzymes": {
+        "uses": false,
+        "evidence": null
+      },
+      "localStateNames": {
+        "declared": true,
+        "values": [
+          "stimuli",
+          "substrates",
+          "enzymes",
+          "boundEnzymes"
+        ],
+        "evidence": "Process.m:980; ChromosomeSegregation.m:92"
+      },
+      "fixedConstantNames": {
+        "declared": true,
+        "values": [
+          "stimuliCompartments",
+          "substrateCompartments",
+          "enzymeCompartments",
+          "substrateMolecularWeights",
+          "enzymeMolecularWeights",
+          "gtpCost"
+        ],
+        "evidence": "Process.m:947; ChromosomeSegregation.m:89"
+      },
+      "fittedConstantNames": {
+        "declared": true,
+        "values": [],
+        "evidence": "Process.m:966; ChromosomeSegregation.m:91"
+      },
+      "optionNames": {
+        "declared": true,
+        "values": [
+          "stepSizeSec",
+          "verbosity",
+          "seed"
+        ],
+        "evidence": "Process.m:942; ChromosomeSegregation.m:88"
+      },
+      "globalStateNames": {
+        "declared": true,
+        "values": [
+          "Geometry",
+          "Stimulus",
+          "Metabolite",
+          "Rna",
+          "ProteinMonomer",
+          "ProteinComplex",
+          "Chromosome"
+        ],
+        "evidence": "Process.m:295; ChromosomeProcessAspect.m:24"
+      }
+    },
+    "Cytokinesis": {
+      "stimuli": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "Cytokinesis.m:75"
+      },
+      "substrates": {
+        "declared": true,
+        "count": 3,
+        "origin": "LITERAL",
+        "wids": [
+          "PI",
+          "H2O",
+          "H"
+        ],
+        "evidence": "Cytokinesis.m:77"
+      },
+      "enzymes": {
+        "declared": true,
+        "count": 4,
+        "origin": "LITERAL",
+        "wids": [
+          "MG_224_9MER_GTP",
+          "MG_224_9MER_GDP",
+          "MG_224_MONOMER_GDP",
+          "MG_224_MONOMER_GTP"
+        ],
+        "evidence": "Cytokinesis.m:83"
+      },
+      "boundEnzymes": {
+        "uses": true,
+        "evidence": "Cytokinesis.m:187"
+      },
+      "localStateNames": {
+        "declared": true,
+        "values": [
+          "stimuli",
+          "substrates",
+          "enzymes",
+          "boundEnzymes"
+        ],
+        "evidence": "Process.m:980; Cytokinesis.m:70"
+      },
+      "fixedConstantNames": {
+        "declared": true,
+        "values": [
+          "stimuliCompartments",
+          "substrateCompartments",
+          "enzymeCompartments",
+          "substrateMolecularWeights",
+          "enzymeMolecularWeights",
+          "rateFtsZGtpHydrolysis",
+          "rateFilamentBindingMembrane",
+          "rateFilamentDissociation"
+        ],
+        "evidence": "Process.m:947; Cytokinesis.m:64"
+      },
+      "fittedConstantNames": {
+        "declared": true,
+        "values": [],
+        "evidence": "Process.m:966; Cytokinesis.m:69"
+      },
+      "optionNames": {
+        "declared": true,
+        "values": [
+          "stepSizeSec",
+          "verbosity",
+          "seed"
+        ],
+        "evidence": "Process.m:942; Cytokinesis.m:63"
+      },
+      "globalStateNames": {
+        "declared": true,
+        "values": [
+          "Geometry",
+          "Stimulus",
+          "Metabolite",
+          "Rna",
+          "ProteinMonomer",
+          "ProteinComplex",
+          "Chromosome",
+          "FtsZRing"
+        ],
+        "evidence": "Process.m:295; ChromosomeProcessAspect.m:24; Cytokinesis.m:119"
+      }
+    },
+    "DNADamage": {
+      "stimuli": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "ReactionProcess.m:23"
+      },
+      "substrates": {
+        "declared": true,
+        "count": null,
+        "origin": "KB_COMPUTED",
+        "wids": null,
+        "origin_expression": "unique([\n                this.substrateWholeCellModelIDs;\n                'DA'; 'DC'; 'DG'; 'DT'])",
+        "resolvable_from_kb_on_disk": true,
+        "evidence": "DNADamage.m:279"
+      },
+      "enzymes": {
+        "declared": true,
+        "count": null,
+        "origin": "KB_COMPUTED",
+        "wids": null,
+        "origin_expression": "{ ...\n                this.rna.wholeCellModelIDs{this.rna.matureIndexs(enzymeRNAIndexs)} ...\n                this.monomer.wholeCellModelIDs{this.monomer.matureIndexs(enzymeMonomerIndexs)} ...\n                this.complex.wholeCellModelIDs{this.complex.matureIndexs(enzymeComplexIndexs)}}'",
+        "resolvable_from_kb_on_disk": true,
+        "evidence": "ReactionProcess.m:139"
+      },
+      "boundEnzymes": {
+        "uses": false,
+        "evidence": null
+      },
+      "localStateNames": {
+        "declared": true,
+        "values": [
+          "stimuli",
+          "substrates",
+          "enzymes",
+          "boundEnzymes"
+        ],
+        "evidence": "Process.m:980; DNADamage.m:205"
+      },
+      "fixedConstantNames": {
+        "declared": true,
+        "values": [
+          "stimuliCompartments",
+          "substrateCompartments",
+          "enzymeCompartments",
+          "substrateMolecularWeights",
+          "enzymeMolecularWeights",
+          "reactionNames",
+          "reactionTypes",
+          "reactionStoichiometryMatrix",
+          "reactionCatalysisMatrix",
+          "reactionModificationMatrix",
+          "reactionCoenzymeMatrix",
+          "enzymeBounds",
+          "reactionBounds",
+          "reactionVulnerableMotifs",
+          "reactionVulnerableMotifTypes",
+          "reactionDamageTypes",
+          "reactionSmallMoleculeStoichiometryMatrix",
+          "reactionDNAStoichiometryMatrix",
+          "reactionRadiationStoichiometryMatrix",
+          "reactionDNAProduct",
+          "reactionRadiation"
+        ],
+        "evidence": "Process.m:947; ReactionProcess.m:227; DNADamage.m:194"
+      },
+      "fittedConstantNames": {
+        "declared": true,
+        "values": [],
+        "evidence": "Process.m:966; DNADamage.m:204"
+      },
+      "optionNames": {
+        "declared": true,
+        "values": [
+          "stepSizeSec",
+          "verbosity",
+          "seed"
+        ],
+        "evidence": "Process.m:942; DNADamage.m:193"
+      },
+      "globalStateNames": {
+        "declared": true,
+        "values": [
+          "Geometry",
+          "Stimulus",
+          "Metabolite",
+          "Rna",
+          "ProteinMonomer",
+          "ProteinComplex",
+          "Chromosome"
+        ],
+        "evidence": "Process.m:295; ChromosomeProcessAspect.m:24"
+      }
+    },
+    "DNARepair": {
+      "stimuli": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "ReactionProcess.m:23"
+      },
+      "substrates": {
+        "declared": true,
+        "count": null,
+        "origin": "KB_COMPUTED",
+        "wids": null,
+        "origin_expression": "unique([\n                this.substrateWholeCellModelIDs;\n                {additionalSubstrates.wholeCellModelID}';\n                'AD'; 'CSN'; 'GN'; 'THY'])",
+        "resolvable_from_kb_on_disk": true,
+        "evidence": "DNARepair.m:488"
+      },
+      "enzymes": {
+        "declared": true,
+        "count": null,
+        "origin": "KB_COMPUTED",
+        "wids": null,
+        "origin_expression": "unique([this.enzymeWholeCellModelIDs; 'MG_105_OCTAMER'])",
+        "resolvable_from_kb_on_disk": true,
+        "evidence": "DNARepair.m:500"
+      },
+      "boundEnzymes": {
+        "uses": false,
+        "evidence": null
+      },
+      "localStateNames": {
+        "declared": true,
+        "values": [
+          "stimuli",
+          "substrates",
+          "enzymes",
+          "boundEnzymes"
+        ],
+        "evidence": "Process.m:980; DNARepair.m:366"
+      },
+      "fixedConstantNames": {
+        "declared": true,
+        "values": [
+          "stimuliCompartments",
+          "substrateCompartments",
+          "enzymeCompartments",
+          "substrateMolecularWeights",
+          "enzymeMolecularWeights",
+          "reactionNames",
+          "reactionTypes",
+          "reactionStoichiometryMatrix",
+          "reactionCatalysisMatrix",
+          "reactionModificationMatrix",
+          "reactionCoenzymeMatrix",
+          "enzymeBounds",
+          "reactionBounds",
+          "HR_PolA_ResectionLength",
+          "HR_RecA_Spacing",
+          "HR_RuvAB_JunctionMigrationHop",
+          "HR_RecU_CleavageSequence",
+          "HR_RecU_CleavagePosition",
+          "NER_UvrABC_IncisionMargin3",
+          "NER_UvrABC_IncisionMargin5",
+          "NER_PcrA_StepSize",
+          "hollidayJunctionResolutionSites",
+          "RM_EcoD_RecognitionSequence",
+          "RM_EcoD_RecognitionSites",
+          "RM_EcoD_MethylationPosition",
+          "RM_EcoD_RestrictionPosition",
+          "RM_MunI_RecognitionSequence",
+          "RM_MunI_RecognitionSites",
+          "RM_MunI_MethylationPosition",
+          "RM_MunI_RestrictionPosition",
+          "RM_MunI_MethylatedPositions",
+          "RM_MunI_RestrictionPositions",
+          "reactionSmallMoleculeStoichiometryMatrix",
+          "reactionDNAStoichiometryMatrix",
+          "reactionDNABase"
+        ],
+        "evidence": "Process.m:947; ReactionProcess.m:227; DNARepair.m:341"
+      },
+      "fittedConstantNames": {
+        "declared": true,
+        "values": [],
+        "evidence": "Process.m:966; DNARepair.m:365"
+      },
+      "optionNames": {
+        "declared": true,
+        "values": [
+          "stepSizeSec",
+          "verbosity",
+          "seed"
+        ],
+        "evidence": "Process.m:942; DNARepair.m:340"
+      },
+      "globalStateNames": {
+        "declared": true,
+        "values": [
+          "Geometry",
+          "Stimulus",
+          "Metabolite",
+          "Rna",
+          "ProteinMonomer",
+          "ProteinComplex",
+          "Chromosome"
+        ],
+        "evidence": "Process.m:295; ChromosomeProcessAspect.m:24"
+      }
+    },
+    "DNASupercoiling": {
+      "stimuli": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "DNASupercoiling.m:159"
+      },
+      "substrates": {
+        "declared": true,
+        "count": 5,
+        "origin": "LITERAL",
+        "wids": [
+          "ATP",
+          "ADP",
+          "PI",
+          "H2O",
+          "H"
+        ],
+        "evidence": "DNASupercoiling.m:160"
+      },
+      "enzymes": {
+        "declared": true,
+        "count": 3,
+        "origin": "LITERAL",
+        "wids": [
+          "DNA_GYRASE",
+          "MG_203_204_TETRAMER",
+          "MG_122_MONOMER"
+        ],
+        "evidence": "DNASupercoiling.m:168"
+      },
+      "boundEnzymes": {
+        "uses": true,
+        "evidence": "DNASupercoiling.m:348"
+      },
+      "localStateNames": {
+        "declared": true,
+        "values": [
+          "stimuli",
+          "substrates",
+          "enzymes",
+          "boundEnzymes"
+        ],
+        "evidence": "Process.m:980; DNASupercoiling.m:154"
+      },
+      "fixedConstantNames": {
+        "declared": true,
+        "values": [
+          "stimuliCompartments",
+          "substrateCompartments",
+          "enzymeCompartments",
+          "substrateMolecularWeights",
+          "enzymeMolecularWeights",
+          "gyraseMeanDwellTime",
+          "gyraseSigmaLimit",
+          "topoISigmaLimit",
+          "topoIVSigmaLimit",
+          "gyraseDeltaLK",
+          "topoIDeltaLK",
+          "topoIVDeltaLK",
+          "gyraseActivityRate",
+          "topoIActivityRate",
+          "topoIVActivityRate",
+          "gyraseATPCost",
+          "topoIATPCost",
+          "topoIVATPCost",
+          "foldChangeSlopes",
+          "foldChangeIntercepts",
+          "foldChangeLowerSigmaLimit",
+          "foldChangeUpperSigmaLimit",
+          "numTranscriptionUnits",
+          "tuIndexs",
+          "tuCoordinates"
+        ],
+        "evidence": "Process.m:947; DNASupercoiling.m:131"
+      },
+      "fittedConstantNames": {
+        "declared": true,
+        "values": [],
+        "evidence": "Process.m:966; DNASupercoiling.m:153"
+      },
+      "optionNames": {
+        "declared": true,
+        "values": [
+          "stepSizeSec",
+          "verbosity",
+          "seed"
+        ],
+        "evidence": "Process.m:942; DNASupercoiling.m:130"
+      },
+      "globalStateNames": {
+        "declared": true,
+        "values": [
+          "Geometry",
+          "Stimulus",
+          "Metabolite",
+          "Rna",
+          "ProteinMonomer",
+          "ProteinComplex",
+          "Chromosome",
+          "RNAPolymerase"
+        ],
+        "evidence": "Process.m:295; ChromosomeProcessAspect.m:24; DNASupercoiling.m:231"
+      }
+    },
+    "FtsZPolymerization": {
+      "stimuli": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "FtsZPolymerization.m:68"
+      },
+      "substrates": {
+        "declared": true,
+        "count": 5,
+        "origin": "LITERAL",
+        "wids": [
+          "GDP",
+          "GTP",
+          "PI",
+          "H2O",
+          "H"
+        ],
+        "evidence": "FtsZPolymerization.m:70"
+      },
+      "enzymes": {
+        "declared": true,
+        "count": 11,
+        "origin": "LITERAL",
+        "wids": [
+          "MG_224_MONOMER",
+          "MG_224_MONOMER_GDP",
+          "MG_224_MONOMER_GTP",
+          "MG_224_2MER_GTP",
+          "MG_224_3MER_GTP",
+          "MG_224_4MER_GTP",
+          "MG_224_5MER_GTP",
+          "MG_224_6MER_GTP",
+          "MG_224_7MER_GTP",
+          "MG_224_8MER_GTP",
+          "MG_224_9MER_GTP"
+        ],
+        "evidence": "FtsZPolymerization.m:78"
+      },
+      "boundEnzymes": {
+        "uses": false,
+        "evidence": null
+      },
+      "localStateNames": {
+        "declared": true,
+        "values": [
+          "stimuli",
+          "substrates",
+          "enzymes",
+          "boundEnzymes"
+        ],
+        "evidence": "Process.m:980; FtsZPolymerization.m:63"
+      },
+      "fixedConstantNames": {
+        "declared": true,
+        "values": [
+          "stimuliCompartments",
+          "substrateCompartments",
+          "enzymeCompartments",
+          "substrateMolecularWeights",
+          "enzymeMolecularWeights",
+          "maxPolymerLength",
+          "activationFwd",
+          "activationRev",
+          "exchangeFwd",
+          "exchangeRev",
+          "nucleationFwd",
+          "nucleationRev",
+          "elongationFwd",
+          "elongationRev"
+        ],
+        "evidence": "Process.m:947; FtsZPolymerization.m:51"
+      },
+      "fittedConstantNames": {
+        "declared": true,
+        "values": [],
+        "evidence": "Process.m:966; FtsZPolymerization.m:62"
+      },
+      "optionNames": {
+        "declared": true,
+        "values": [
+          "stepSizeSec",
+          "verbosity",
+          "seed"
+        ],
+        "evidence": "Process.m:942; FtsZPolymerization.m:50"
+      },
+      "globalStateNames": {
+        "declared": true,
+        "values": [
+          "Geometry",
+          "Stimulus",
+          "Metabolite",
+          "Rna",
+          "ProteinMonomer",
+          "ProteinComplex"
+        ],
+        "evidence": "Process.m:295"
+      }
+    },
+    "HostInteraction": {
+      "stimuli": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "HostInteraction.m:184"
+      },
+      "substrates": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "HostInteraction.m:185"
+      },
+      "enzymes": {
+        "declared": true,
+        "count": 15,
+        "origin": "LITERAL",
+        "wids": [
+          "MG_075_MONOMER",
+          "MG_149_MONOMER",
+          "MG_191_MONOMER",
+          "MG_192_MONOMER",
+          "MG_200_MONOMER",
+          "MG_217_MONOMER",
+          "MG_218_MONOMER",
+          "MG_288_MONOMER",
+          "MG_309_MONOMER",
+          "MG_312_MONOMER",
+          "MG_317_MONOMER",
+          "MG_318_MONOMER",
+          "MG_386_MONOMER",
+          "MG_412_MONOMER",
+          "MG_410_411_412_PENTAMER"
+        ],
+        "evidence": "HostInteraction.m:187"
+      },
+      "boundEnzymes": {
+        "uses": false,
+        "evidence": null
+      },
+      "localStateNames": {
+        "declared": true,
+        "values": [
+          "stimuli",
+          "substrates",
+          "enzymes",
+          "boundEnzymes"
+        ],
+        "evidence": "Process.m:980; HostInteraction.m:179"
+      },
+      "fixedConstantNames": {
+        "declared": true,
+        "values": [
+          "stimuliCompartments",
+          "substrateCompartments",
+          "enzymeCompartments",
+          "substrateMolecularWeights",
+          "enzymeMolecularWeights"
+        ],
+        "evidence": "Process.m:947; HostInteraction.m:177"
+      },
+      "fittedConstantNames": {
+        "declared": true,
+        "values": [],
+        "evidence": "Process.m:966; HostInteraction.m:178"
+      },
+      "optionNames": {
+        "declared": true,
+        "values": [
+          "stepSizeSec",
+          "verbosity",
+          "seed"
+        ],
+        "evidence": "Process.m:942; HostInteraction.m:176"
+      },
+      "globalStateNames": {
+        "declared": true,
+        "values": [
+          "Geometry",
+          "Stimulus",
+          "Metabolite",
+          "Rna",
+          "ProteinMonomer",
+          "ProteinComplex",
+          "Host"
+        ],
+        "evidence": "Process.m:295; HostInteraction.m:233"
+      }
+    },
+    "MacromolecularComplexation": {
+      "stimuli": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "MacromolecularComplexation.m:103"
+      },
+      "substrates": {
+        "declared": true,
+        "count": null,
+        "origin": "KB_COMPUTED",
+        "wids": null,
+        "origin_expression": "this.substrateWholeCellModelIDs(this.substrates2complexNetworks > 0)",
+        "resolvable_from_kb_on_disk": true,
+        "evidence": "MacromolecularComplexation.m:197"
+      },
+      "enzymes": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "MacromolecularComplexation.m:105"
+      },
+      "boundEnzymes": {
+        "uses": false,
+        "evidence": null
+      },
+      "localStateNames": {
+        "declared": true,
+        "values": [
+          "stimuli",
+          "substrates",
+          "enzymes",
+          "boundEnzymes",
+          "complexs"
+        ],
+        "evidence": "Process.m:980; MacromolecularComplexation.m:97"
+      },
+      "fixedConstantNames": {
+        "declared": true,
+        "values": [
+          "stimuliCompartments",
+          "substrateCompartments",
+          "enzymeCompartments",
+          "substrateMolecularWeights",
+          "enzymeMolecularWeights",
+          "complexComposition",
+          "complexNetworks",
+          "substrates2complexNetworks",
+          "complexs2complexNetworks"
+        ],
+        "evidence": "Process.m:947; MacromolecularComplexation.m:90"
+      },
+      "fittedConstantNames": {
+        "declared": true,
+        "values": [],
+        "evidence": "Process.m:966; MacromolecularComplexation.m:96"
+      },
+      "optionNames": {
+        "declared": true,
+        "values": [
+          "stepSizeSec",
+          "verbosity",
+          "seed"
+        ],
+        "evidence": "Process.m:942; MacromolecularComplexation.m:89"
+      },
+      "globalStateNames": {
+        "declared": true,
+        "values": [
+          "Geometry",
+          "Stimulus",
+          "Metabolite",
+          "Rna",
+          "ProteinMonomer",
+          "ProteinComplex"
+        ],
+        "evidence": "Process.m:295"
+      }
+    },
+    "Metabolism": {
+      "stimuli": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "ReactionProcess.m:23"
+      },
+      "substrates": {
+        "declared": true,
+        "count": null,
+        "origin": "KB_COMPUTED",
+        "wids": null,
+        "origin_expression": "[\n                this.stimulus.wholeCellModelIDs(stimuliIndexs);\n                this.metabolite.wholeCellModelIDs(metaboliteIndexs);\n                this.rna.wholeCellModelIDs(this.rna.matureIndexs(rnaIndexs));\n                this.monomer.wholeCellModelIDs(this.monomer.matureIndexs(monomerIndexs));\n                this.complex.wholeCellModelIDs(this.complex.matureIndexs(complexIndexs))]",
+        "resolvable_from_kb_on_disk": true,
+        "evidence": "ReactionProcess.m:113"
+      },
+      "enzymes": {
+        "declared": true,
+        "count": null,
+        "origin": "KB_COMPUTED",
+        "wids": null,
+        "origin_expression": "{ ...\n                this.rna.wholeCellModelIDs{this.rna.matureIndexs(enzymeRNAIndexs)} ...\n                this.monomer.wholeCellModelIDs{this.monomer.matureIndexs(enzymeMonomerIndexs)} ...\n                this.complex.wholeCellModelIDs{this.complex.matureIndexs(enzymeComplexIndexs)}}'",
+        "resolvable_from_kb_on_disk": true,
+        "evidence": "ReactionProcess.m:139"
+      },
+      "boundEnzymes": {
+        "uses": false,
+        "evidence": null
+      },
+      "localStateNames": {
+        "declared": true,
+        "values": [
+          "stimuli",
+          "substrates",
+          "enzymes",
+          "boundEnzymes"
+        ],
+        "evidence": "Process.m:980; Metabolism.m:167"
+      },
+      "fixedConstantNames": {
+        "declared": true,
+        "values": [
+          "stimuliCompartments",
+          "substrateCompartments",
+          "enzymeCompartments",
+          "substrateMolecularWeights",
+          "enzymeMolecularWeights",
+          "reactionNames",
+          "reactionTypes",
+          "reactionStoichiometryMatrix",
+          "reactionCatalysisMatrix",
+          "reactionModificationMatrix",
+          "reactionCoenzymeMatrix",
+          "enzymeBounds",
+          "reactionBounds",
+          "growthAssociatedMaintenance",
+          "nonGrowthAssociatedMaintenance",
+          "cellCycleLength",
+          "exchangeRateUpperBound_carbon",
+          "exchangeRateUpperBound_noncarbon",
+          "fbaObjective",
+          "fbaRightHandSide",
+          "fbaReactionStoichiometryMatrix",
+          "fbaReactionCatalysisMatrix",
+          "fbaReactionBounds",
+          "fbaEnzymeBounds",
+          "metabolismProduction",
+          "monomerCompartments"
+        ],
+        "evidence": "Process.m:947; ReactionProcess.m:227; Metabolism.m:148"
+      },
+      "fittedConstantNames": {
+        "declared": true,
+        "values": [
+          "macromoleculeStateInitializationGrowthFactor",
+          "unaccountedEnergyConsumption"
+        ],
+        "evidence": "Process.m:966; Metabolism.m:163"
+      },
+      "optionNames": {
+        "declared": true,
+        "values": [
+          "linearProgrammingOptions",
+          "macromoleculeStateInitialization",
+          "tolerance",
+          "realmax",
+          "stepSizeSec",
+          "verbosity",
+          "seed"
+        ],
+        "evidence": "Process.m:942; Metabolism.m:142"
+      },
+      "globalStateNames": {
+        "declared": true,
+        "values": [
+          "Geometry",
+          "Stimulus",
+          "Metabolite",
+          "Rna",
+          "ProteinMonomer",
+          "ProteinComplex",
+          "Mass",
+          "MetabolicReaction",
+          "Time"
+        ],
+        "evidence": "Process.m:295; Metabolism.m:278; Metabolism.m:279; Metabolism.m:295"
+      }
+    },
+    "ProteinActivation": {
+      "stimuli": {
+        "declared": true,
+        "count": null,
+        "origin": "KB_COMPUTED",
+        "wids": null,
+        "origin_expression": "unique(regulatorIDs)",
+        "resolvable_from_kb_on_disk": true,
+        "evidence": "ProteinActivation.m:232"
+      },
+      "substrates": {
+        "declared": true,
+        "count": null,
+        "origin": "KB_COMPUTED",
+        "wids": null,
+        "origin_expression": "{\n                monomers.wholeCellModelID ...\n                complexs.wholeCellModelID}'",
+        "resolvable_from_kb_on_disk": true,
+        "evidence": "ProteinActivation.m:165"
+      },
+      "enzymes": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "ProteinActivation.m:133"
+      },
+      "boundEnzymes": {
+        "uses": false,
+        "evidence": null
+      },
+      "localStateNames": {
+        "declared": true,
+        "values": [
+          "stimuli",
+          "substrates",
+          "enzymes",
+          "boundEnzymes",
+          "inactivatedSubstrates"
+        ],
+        "evidence": "Process.m:980; ProteinActivation.m:125"
+      },
+      "fixedConstantNames": {
+        "declared": true,
+        "values": [
+          "stimuliCompartments",
+          "substrateCompartments",
+          "enzymeCompartments",
+          "substrateMolecularWeights",
+          "enzymeMolecularWeights",
+          "activationRules"
+        ],
+        "evidence": "Process.m:947; ProteinActivation.m:122"
+      },
+      "fittedConstantNames": {
+        "declared": true,
+        "values": [],
+        "evidence": "Process.m:966; ProteinActivation.m:124"
+      },
+      "optionNames": {
+        "declared": true,
+        "values": [
+          "stepSizeSec",
+          "verbosity",
+          "seed"
+        ],
+        "evidence": "Process.m:942; ProteinActivation.m:121"
+      },
+      "globalStateNames": {
+        "declared": true,
+        "values": [
+          "Geometry",
+          "Stimulus",
+          "Metabolite",
+          "Rna",
+          "ProteinMonomer",
+          "ProteinComplex"
+        ],
+        "evidence": "Process.m:295"
+      }
+    },
+    "ProteinDecay": {
+      "stimuli": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "ProteinDecay.m:180"
+      },
+      "substrates": {
+        "declared": true,
+        "count": null,
+        "origin": "KB_COMPUTED",
+        "wids": null,
+        "origin_expression": "unique([\n                this.metabolite.wholeCellModelIDs(...\n                any(decayReaction_nascentMonomers,     2) | ...\n                any(decayReaction_processedIMonomers,  2) | ...\n                any(decayReaction_processedIIMonomers, 2) | ...\n                any(decayReaction_signalSequence,      2) | ...\n                any(decayReaction_foldedMonomers,      2) | ...\n                any(decayReaction_matureMonomers,      2) | ...\n                any(decayReaction_nascentComplexs,     2) | ...\n                any(decayReaction_matureComplexs,      2));\n                'ATP'; 'ADP'; 'PI'; 'H'; 'H2O'; 'NH3'; 'FOR'])",
+        "resolvable_from_kb_on_disk": true,
+        "evidence": "ProteinDecay.m:301"
+      },
+      "enzymes": {
+        "declared": true,
+        "count": 9,
+        "origin": "LITERAL",
+        "wids": [
+          "MG_355_HEXAMER",
+          "MG_239_HEXAMER",
+          "MG_457_HEXAMER",
+          "MG_183_MONOMER",
+          "MG_324_MONOMER",
+          "MG_391_HEXAMER",
+          "MG_208_DIMER",
+          "MG_046_DIMER",
+          "MG_020_MONOMER"
+        ],
+        "evidence": "ProteinDecay.m:196"
+      },
+      "boundEnzymes": {
+        "uses": false,
+        "evidence": null
+      },
+      "localStateNames": {
+        "declared": true,
+        "values": [
+          "stimuli",
+          "substrates",
+          "enzymes",
+          "boundEnzymes",
+          "monomers",
+          "complexs",
+          "RNAs"
+        ],
+        "evidence": "Process.m:980; ProteinDecay.m:172"
+      },
+      "fixedConstantNames": {
+        "declared": true,
+        "values": [
+          "stimuliCompartments",
+          "substrateCompartments",
+          "enzymeCompartments",
+          "substrateMolecularWeights",
+          "enzymeMolecularWeights",
+          "lonProteaseSpecificRate",
+          "lonProteaseEnergyCost",
+          "lonProteaseFragmentLength",
+          "ftsHProteaseSpecificRate",
+          "ftsHProteaseEnergyCost",
+          "ftsHProteaseFragmentLength",
+          "oligoendopeptidaseFSpecificRate",
+          "proteinMisfoldingRate",
+          "proteinComplexRNAComposition",
+          "proteinComplexMonomerComposition",
+          "monomerLonProteaseCleavages",
+          "monomerDecayReactions",
+          "complexDecayReactions"
+        ],
+        "evidence": "Process.m:947; ProteinDecay.m:156"
+      },
+      "fittedConstantNames": {
+        "declared": true,
+        "values": [],
+        "evidence": "Process.m:966; ProteinDecay.m:171"
+      },
+      "optionNames": {
+        "declared": true,
+        "values": [
+          "stepSizeSec",
+          "verbosity",
+          "seed"
+        ],
+        "evidence": "Process.m:942; ProteinDecay.m:155"
+      },
+      "globalStateNames": {
+        "declared": true,
+        "values": [
+          "Geometry",
+          "Stimulus",
+          "Metabolite",
+          "Rna",
+          "ProteinMonomer",
+          "ProteinComplex",
+          "Polypeptide"
+        ],
+        "evidence": "Process.m:295; ProteinDecay.m:268"
+      }
+    },
+    "ProteinFolding": {
+      "stimuli": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "ProteinFolding.m:183"
+      },
+      "substrates": {
+        "declared": true,
+        "count": null,
+        "origin": "KB_COMPUTED",
+        "wids": null,
+        "origin_expression": "unique([...\n                this.substrateWholeCellModelIDs;\n                this.metabolite.wholeCellModelIDs(sum(this.proteinProstheticGroupMatrix)>0)])",
+        "resolvable_from_kb_on_disk": true,
+        "evidence": "ProteinFolding.m:267"
+      },
+      "enzymes": {
+        "declared": true,
+        "count": null,
+        "origin": "KB_COMPUTED",
+        "wids": null,
+        "origin_expression": "unique([\n                this.enzymeWholeCellModelIDs\n                this.monomer.wholeCellModelIDs{this.monomer.matureIndexs(proteinMonomerChaperoneIndexs)}\n                this.complex.wholeCellModelIDs{this.complex.matureIndexs(proteinComplexChaperoneIndexs)}\n                ])",
+        "resolvable_from_kb_on_disk": true,
+        "evidence": "ProteinFolding.m:288"
+      },
+      "boundEnzymes": {
+        "uses": false,
+        "evidence": null
+      },
+      "localStateNames": {
+        "declared": true,
+        "values": [
+          "stimuli",
+          "substrates",
+          "enzymes",
+          "boundEnzymes",
+          "unfoldedMonomers",
+          "unfoldedComplexs",
+          "foldedMonomers",
+          "foldedComplexs"
+        ],
+        "evidence": "Process.m:980; ProteinFolding.m:174"
+      },
+      "fixedConstantNames": {
+        "declared": true,
+        "values": [
+          "stimuliCompartments",
+          "substrateCompartments",
+          "enzymeCompartments",
+          "substrateMolecularWeights",
+          "enzymeMolecularWeights",
+          "proteinProstheticGroupMatrix",
+          "proteinChaperoneMatrix",
+          "monomerCompartments",
+          "complexCompartments"
+        ],
+        "evidence": "Process.m:947; ProteinFolding.m:167"
+      },
+      "fittedConstantNames": {
+        "declared": true,
+        "values": [],
+        "evidence": "Process.m:966; ProteinFolding.m:173"
+      },
+      "optionNames": {
+        "declared": true,
+        "values": [
+          "stepSizeSec",
+          "verbosity",
+          "seed"
+        ],
+        "evidence": "Process.m:942; ProteinFolding.m:166"
+      },
+      "globalStateNames": {
+        "declared": true,
+        "values": [
+          "Geometry",
+          "Stimulus",
+          "Metabolite",
+          "Rna",
+          "ProteinMonomer",
+          "ProteinComplex"
+        ],
+        "evidence": "Process.m:295"
+      }
+    },
+    "ProteinModification": {
+      "stimuli": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "ReactionProcess.m:23"
+      },
+      "substrates": {
+        "declared": true,
+        "count": null,
+        "origin": "KB_COMPUTED",
+        "wids": null,
+        "origin_expression": "[\n                this.stimulus.wholeCellModelIDs(stimuliIndexs);\n                this.metabolite.wholeCellModelIDs(metaboliteIndexs);\n                this.rna.wholeCellModelIDs(this.rna.matureIndexs(rnaIndexs));\n                this.monomer.wholeCellModelIDs(this.monomer.matureIndexs(monomerIndexs));\n                this.complex.wholeCellModelIDs(this.complex.matureIndexs(complexIndexs))]",
+        "resolvable_from_kb_on_disk": true,
+        "evidence": "ReactionProcess.m:113"
+      },
+      "enzymes": {
+        "declared": true,
+        "count": null,
+        "origin": "KB_COMPUTED",
+        "wids": null,
+        "origin_expression": "{ ...\n                this.rna.wholeCellModelIDs{this.rna.matureIndexs(enzymeRNAIndexs)} ...\n                this.monomer.wholeCellModelIDs{this.monomer.matureIndexs(enzymeMonomerIndexs)} ...\n                this.complex.wholeCellModelIDs{this.complex.matureIndexs(enzymeComplexIndexs)}}'",
+        "resolvable_from_kb_on_disk": true,
+        "evidence": "ReactionProcess.m:139"
+      },
+      "boundEnzymes": {
+        "uses": false,
+        "evidence": null
+      },
+      "localStateNames": {
+        "declared": true,
+        "values": [
+          "stimuli",
+          "substrates",
+          "enzymes",
+          "boundEnzymes",
+          "unmodifiedMonomers",
+          "modifiedMonomers"
+        ],
+        "evidence": "Process.m:980; ProteinModification.m:88"
+      },
+      "fixedConstantNames": {
+        "declared": true,
+        "values": [
+          "stimuliCompartments",
+          "substrateCompartments",
+          "enzymeCompartments",
+          "substrateMolecularWeights",
+          "enzymeMolecularWeights",
+          "reactionNames",
+          "reactionTypes",
+          "reactionStoichiometryMatrix",
+          "reactionCatalysisMatrix",
+          "reactionModificationMatrix",
+          "reactionCoenzymeMatrix",
+          "enzymeBounds",
+          "reactionBounds",
+          "monomerCompartments"
+        ],
+        "evidence": "Process.m:947; ReactionProcess.m:227; ProteinModification.m:84"
+      },
+      "fittedConstantNames": {
+        "declared": true,
+        "values": [],
+        "evidence": "Process.m:966; ProteinModification.m:87"
+      },
+      "optionNames": {
+        "declared": true,
+        "values": [
+          "stepSizeSec",
+          "verbosity",
+          "seed"
+        ],
+        "evidence": "Process.m:942; ProteinModification.m:83"
+      },
+      "globalStateNames": {
+        "declared": true,
+        "values": [
+          "Geometry",
+          "Stimulus",
+          "Metabolite",
+          "Rna",
+          "ProteinMonomer",
+          "ProteinComplex"
+        ],
+        "evidence": "Process.m:295"
+      }
+    },
+    "ProteinProcessingI": {
+      "stimuli": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "ProteinProcessingI.m:98"
+      },
+      "substrates": {
+        "declared": true,
+        "count": 4,
+        "origin": "LITERAL",
+        "wids": [
+          "H2O",
+          "H",
+          "MET",
+          "FOR"
+        ],
+        "evidence": "ProteinProcessingI.m:100"
+      },
+      "enzymes": {
+        "declared": true,
+        "count": 2,
+        "origin": "LITERAL",
+        "wids": [
+          "MG_106_DIMER",
+          "MG_172_MONOMER"
+        ],
+        "evidence": "ProteinProcessingI.m:110"
+      },
+      "boundEnzymes": {
+        "uses": false,
+        "evidence": null
+      },
+      "localStateNames": {
+        "declared": true,
+        "values": [
+          "stimuli",
+          "substrates",
+          "enzymes",
+          "boundEnzymes",
+          "unprocessedMonomers",
+          "processedMonomers"
+        ],
+        "evidence": "Process.m:980; ProteinProcessingI.m:91"
+      },
+      "fixedConstantNames": {
+        "declared": true,
+        "values": [
+          "stimuliCompartments",
+          "substrateCompartments",
+          "enzymeCompartments",
+          "substrateMolecularWeights",
+          "enzymeMolecularWeights",
+          "deformylaseSpecificRate",
+          "methionineAminoPeptidaseSpecificRate",
+          "nascentMonomerNTerminalMethionineCleavages"
+        ],
+        "evidence": "Process.m:947; ProteinProcessingI.m:85"
+      },
+      "fittedConstantNames": {
+        "declared": true,
+        "values": [],
+        "evidence": "Process.m:966; ProteinProcessingI.m:90"
+      },
+      "optionNames": {
+        "declared": true,
+        "values": [
+          "stepSizeSec",
+          "verbosity",
+          "seed"
+        ],
+        "evidence": "Process.m:942; ProteinProcessingI.m:84"
+      },
+      "globalStateNames": {
+        "declared": true,
+        "values": [
+          "Geometry",
+          "Stimulus",
+          "Metabolite",
+          "Rna",
+          "ProteinMonomer",
+          "ProteinComplex"
+        ],
+        "evidence": "Process.m:295"
+      }
+    },
+    "ProteinProcessingII": {
+      "stimuli": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "ProteinProcessingII.m:122"
+      },
+      "substrates": {
+        "declared": true,
+        "count": 5,
+        "origin": "LITERAL",
+        "wids": [
+          "H2O",
+          "diacylglycerolCys",
+          "PG160",
+          "SNGLYP",
+          "H"
+        ],
+        "evidence": "ProteinProcessingII.m:124"
+      },
+      "enzymes": {
+        "declared": true,
+        "count": 2,
+        "origin": "LITERAL",
+        "wids": [
+          "MG_210_MONOMER",
+          "MG_086_MONOMER"
+        ],
+        "evidence": "ProteinProcessingII.m:136"
+      },
+      "boundEnzymes": {
+        "uses": false,
+        "evidence": null
+      },
+      "localStateNames": {
+        "declared": true,
+        "values": [
+          "stimuli",
+          "substrates",
+          "enzymes",
+          "boundEnzymes",
+          "unprocessedMonomers",
+          "processedMonomers",
+          "signalSequenceMonomers"
+        ],
+        "evidence": "Process.m:980; ProteinProcessingII.m:114"
+      },
+      "fixedConstantNames": {
+        "declared": true,
+        "values": [
+          "stimuliCompartments",
+          "substrateCompartments",
+          "enzymeCompartments",
+          "substrateMolecularWeights",
+          "enzymeMolecularWeights",
+          "lipoproteinSignalPeptidaseSpecificRate",
+          "lipoproteinDiacylglycerylTransferaseSpecificRate"
+        ],
+        "evidence": "Process.m:947; ProteinProcessingII.m:109"
+      },
+      "fittedConstantNames": {
+        "declared": true,
+        "values": [],
+        "evidence": "Process.m:966; ProteinProcessingII.m:113"
+      },
+      "optionNames": {
+        "declared": true,
+        "values": [
+          "stepSizeSec",
+          "verbosity",
+          "seed"
+        ],
+        "evidence": "Process.m:942; ProteinProcessingII.m:108"
+      },
+      "globalStateNames": {
+        "declared": true,
+        "values": [
+          "Geometry",
+          "Stimulus",
+          "Metabolite",
+          "Rna",
+          "ProteinMonomer",
+          "ProteinComplex"
+        ],
+        "evidence": "Process.m:295"
+      }
+    },
+    "ProteinTranslocation": {
+      "stimuli": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "ProteinTranslocation.m:139"
+      },
+      "substrates": {
+        "declared": true,
+        "count": 7,
+        "origin": "LITERAL",
+        "wids": [
+          "ATP",
+          "GTP",
+          "ADP",
+          "GDP",
+          "H",
+          "H2O",
+          "PI"
+        ],
+        "evidence": "ProteinTranslocation.m:141"
+      },
+      "enzymes": {
+        "declared": true,
+        "count": 4,
+        "origin": "LITERAL",
+        "wids": [
+          "MG_0001_048",
+          "MG_297_MONOMER",
+          "MG_072_DIMER",
+          "MG_055_170_277_464_476_20MER"
+        ],
+        "evidence": "ProteinTranslocation.m:151"
+      },
+      "boundEnzymes": {
+        "uses": false,
+        "evidence": null
+      },
+      "localStateNames": {
+        "declared": true,
+        "values": [
+          "stimuli",
+          "substrates",
+          "enzymes",
+          "boundEnzymes",
+          "monomers"
+        ],
+        "evidence": "Process.m:980; ProteinTranslocation.m:133"
+      },
+      "fixedConstantNames": {
+        "declared": true,
+        "values": [
+          "stimuliCompartments",
+          "substrateCompartments",
+          "enzymeCompartments",
+          "substrateMolecularWeights",
+          "enzymeMolecularWeights",
+          "translocaseSpecificRate",
+          "preproteinTranslocase_aaTranslocatedPerATP",
+          "SRP_GTPUsedPerMonomer",
+          "monomerLengths",
+          "monomerCompartments",
+          "monomerSRPPathways"
+        ],
+        "evidence": "Process.m:947; ProteinTranslocation.m:124"
+      },
+      "fittedConstantNames": {
+        "declared": true,
+        "values": [],
+        "evidence": "Process.m:966; ProteinTranslocation.m:132"
+      },
+      "optionNames": {
+        "declared": true,
+        "values": [
+          "stepSizeSec",
+          "verbosity",
+          "seed"
+        ],
+        "evidence": "Process.m:942; ProteinTranslocation.m:123"
+      },
+      "globalStateNames": {
+        "declared": true,
+        "values": [
+          "Geometry",
+          "Stimulus",
+          "Metabolite",
+          "Rna",
+          "ProteinMonomer",
+          "ProteinComplex"
+        ],
+        "evidence": "Process.m:295"
+      }
+    },
+    "Replication": {
+      "stimuli": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "Replication.m:232"
+      },
+      "substrates": {
+        "declared": true,
+        "count": 16,
+        "origin": "LITERAL",
+        "wids": [
+          "DATP",
+          "DCTP",
+          "DGTP",
+          "DTTP",
+          "ATP",
+          "CTP",
+          "GTP",
+          "UTP",
+          "PPI",
+          "H2O",
+          "H",
+          "NAD",
+          "NMN",
+          "ADP",
+          "AMP",
+          "PI"
+        ],
+        "evidence": "Replication.m:234"
+      },
+      "enzymes": {
+        "declared": true,
+        "count": 13,
+        "origin": "LITERAL",
+        "wids": [
+          "REPLISOME",
+          "DNA_POLYMERASE_2CORE_BETA_CLAMP_GAMMA_COMPLEX_PRIMASE",
+          "DNA_POLYMERASE_CORE_BETA_CLAMP_GAMMA_COMPLEX",
+          "DNA_POLYMERASE_CORE_BETA_CLAMP_PRIMASE",
+          "DNA_POLYMERASE_CORE",
+          "DNA_POLYMERASE_GAMMA_COMPLEX",
+          "MG_001_MONOMER",
+          "MG_001_DIMER",
+          "MG_094_HEXAMER",
+          "MG_254_MONOMER",
+          "MG_250_MONOMER",
+          "MG_091_TETRAMER",
+          "MG_091_OCTAMER"
+        ],
+        "evidence": "Replication.m:251"
+      },
+      "boundEnzymes": {
+        "uses": true,
+        "evidence": "Replication.m:570"
+      },
+      "localStateNames": {
+        "declared": true,
+        "values": [
+          "stimuli",
+          "substrates",
+          "enzymes",
+          "boundEnzymes"
+        ],
+        "evidence": "Process.m:980; Replication.m:224"
+      },
+      "fixedConstantNames": {
+        "declared": true,
+        "values": [
+          "stimuliCompartments",
+          "substrateCompartments",
+          "enzymeCompartments",
+          "substrateMolecularWeights",
+          "enzymeMolecularWeights",
+          "oriCPosition",
+          "terCPosition",
+          "enzymeComposition",
+          "primaseBindingLocations",
+          "primerLength",
+          "dnaPolymeraseElongationRate",
+          "ssbComplexSpacing",
+          "okazakiFragmentMeanLength",
+          "ligaseRate",
+          "laggingBackupClampReloadingLength",
+          "startingOkazakiLoopLength",
+          "rnaPolymeraseCollisionMeanDwellTime",
+          "ssbDissociationRate",
+          "dnaAFunctionalBoxStartPositions"
+        ],
+        "evidence": "Process.m:947; Replication.m:207"
+      },
+      "fittedConstantNames": {
+        "declared": true,
+        "values": [],
+        "evidence": "Process.m:966; Replication.m:223"
+      },
+      "optionNames": {
+        "declared": true,
+        "values": [
+          "stepSizeSec",
+          "verbosity",
+          "seed"
+        ],
+        "evidence": "Process.m:942; Replication.m:206"
+      },
+      "globalStateNames": {
+        "declared": true,
+        "values": [
+          "Geometry",
+          "Stimulus",
+          "Metabolite",
+          "Rna",
+          "ProteinMonomer",
+          "ProteinComplex",
+          "Chromosome"
+        ],
+        "evidence": "Process.m:295; ChromosomeProcessAspect.m:24"
+      }
+    },
+    "ReplicationInitiation": {
+      "stimuli": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "ReplicationInitiation.m:166"
+      },
+      "substrates": {
+        "declared": true,
+        "count": 5,
+        "origin": "LITERAL",
+        "wids": [
+          "ATP",
+          "ADP",
+          "PI",
+          "H2O",
+          "H"
+        ],
+        "evidence": "ReplicationInitiation.m:168"
+      },
+      "enzymes": {
+        "declared": true,
+        "count": 15,
+        "origin": "LITERAL",
+        "wids": [
+          "MG_469_1MER_ADP",
+          "MG_469_1MER_ATP",
+          "MG_469_2MER_1ATP_ADP",
+          "MG_469_2MER_ATP",
+          "MG_469_3MER_2ATP_ADP",
+          "MG_469_3MER_ATP",
+          "MG_469_4MER_3ATP_ADP",
+          "MG_469_4MER_ATP",
+          "MG_469_5MER_4ATP_ADP",
+          "MG_469_5MER_ATP",
+          "MG_469_6MER_5ATP_ADP",
+          "MG_469_6MER_ATP",
+          "MG_469_7MER_6ATP_ADP",
+          "MG_469_7MER_ATP",
+          "MG_469_MONOMER"
+        ],
+        "evidence": "ReplicationInitiation.m:176"
+      },
+      "boundEnzymes": {
+        "uses": true,
+        "evidence": "ReplicationInitiation.m:369"
+      },
+      "localStateNames": {
+        "declared": true,
+        "values": [
+          "stimuli",
+          "substrates",
+          "enzymes",
+          "boundEnzymes"
+        ],
+        "evidence": "Process.m:980; ReplicationInitiation.m:153"
+      },
+      "fixedConstantNames": {
+        "declared": true,
+        "values": [
+          "stimuliCompartments",
+          "substrateCompartments",
+          "enzymeCompartments",
+          "substrateMolecularWeights",
+          "enzymeMolecularWeights",
+          "dnaABoxStartPositions",
+          "siteCooperativity",
+          "stateCooperativity",
+          "kb1ATP",
+          "kb2ATP",
+          "kd1ATP",
+          "kb1ADP",
+          "kb2ADP",
+          "kd1ADP",
+          "k_Regen",
+          "K_Regen_P4",
+          "k_inact"
+        ],
+        "evidence": "Process.m:947; ReplicationInitiation.m:138"
+      },
+      "fittedConstantNames": {
+        "declared": true,
+        "values": [],
+        "evidence": "Process.m:966; ReplicationInitiation.m:152"
+      },
+      "optionNames": {
+        "declared": true,
+        "values": [
+          "stepSizeSec",
+          "verbosity",
+          "seed"
+        ],
+        "evidence": "Process.m:942; ReplicationInitiation.m:137"
+      },
+      "globalStateNames": {
+        "declared": true,
+        "values": [
+          "Geometry",
+          "Stimulus",
+          "Metabolite",
+          "Rna",
+          "ProteinMonomer",
+          "ProteinComplex",
+          "Chromosome",
+          "Mass"
+        ],
+        "evidence": "Process.m:295; ChromosomeProcessAspect.m:24; ReplicationInitiation.m:250"
+      }
+    },
+    "RibosomeAssembly": {
+      "stimuli": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "RibosomeAssembly.m:92"
+      },
+      "substrates": {
+        "declared": true,
+        "count": 5,
+        "origin": "LITERAL",
+        "wids": [
+          "GTP",
+          "GDP",
+          "PI",
+          "H2O",
+          "H"
+        ],
+        "evidence": "RibosomeAssembly.m:94"
+      },
+      "enzymes": {
+        "declared": true,
+        "count": 6,
+        "origin": "LITERAL",
+        "wids": [
+          "MG_329_MONOMER",
+          "MG_335_MONOMER",
+          "MG_387_MONOMER",
+          "MG_384_MONOMER",
+          "MG_143_MONOMER",
+          "MG_442_MONOMER"
+        ],
+        "evidence": "RibosomeAssembly.m:102"
+      },
+      "boundEnzymes": {
+        "uses": false,
+        "evidence": null
+      },
+      "localStateNames": {
+        "declared": true,
+        "values": [
+          "stimuli",
+          "substrates",
+          "enzymes",
+          "boundEnzymes",
+          "RNAs",
+          "monomers",
+          "complexs"
+        ],
+        "evidence": "Process.m:980; RibosomeAssembly.m:83"
+      },
+      "fixedConstantNames": {
+        "declared": true,
+        "values": [
+          "stimuliCompartments",
+          "substrateCompartments",
+          "enzymeCompartments",
+          "substrateMolecularWeights",
+          "enzymeMolecularWeights",
+          "complexationCatalysisMatrix",
+          "proteinComplexRNAComposition",
+          "proteinComplexMonomerComposition"
+        ],
+        "evidence": "Process.m:947; RibosomeAssembly.m:77"
+      },
+      "fittedConstantNames": {
+        "declared": true,
+        "values": [],
+        "evidence": "Process.m:966; RibosomeAssembly.m:82"
+      },
+      "optionNames": {
+        "declared": true,
+        "values": [
+          "stepSizeSec",
+          "verbosity",
+          "seed"
+        ],
+        "evidence": "Process.m:942; RibosomeAssembly.m:76"
+      },
+      "globalStateNames": {
+        "declared": true,
+        "values": [
+          "Geometry",
+          "Stimulus",
+          "Metabolite",
+          "Rna",
+          "ProteinMonomer",
+          "ProteinComplex"
+        ],
+        "evidence": "Process.m:295"
+      }
+    },
+    "RNADecay": {
+      "stimuli": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "RNADecay.m:103"
+      },
+      "substrates": {
+        "declared": true,
+        "count": null,
+        "origin": "KB_COMPUTED",
+        "wids": null,
+        "origin_expression": "unique([simulation.state('Metabolite').wholeCellModelIDs(...\n                any(decayReactions_nascentRNA,       1) | ...\n                any(decayReactions_processedRNA,     1) | ...\n                any(decayReactions_intergenicRNA,    1) | ...\n                any(decayReactions_matureRNA,        1) | ...\n                any(decayReactions_aminoacylatedRNA, 1));\n                'H';'H2O';'NH3';'FOR';\n                'ALA';'ARG';'ASN';'ASP';'CYS';'GLN';'GLU';'GLY';'HIS';'ILE';'LEU';'LYS';'MET';'PHE';'PRO';'SER';'THR';'TRP';'TYR';'VAL';'FMET'])",
+        "resolvable_from_kb_on_disk": true,
+        "evidence": "RNADecay.m:173"
+      },
+      "enzymes": {
+        "declared": true,
+        "count": 2,
+        "origin": "LITERAL",
+        "wids": [
+          "MG_104_MONOMER",
+          "MG_083_MONOMER"
+        ],
+        "evidence": "RNADecay.m:117"
+      },
+      "boundEnzymes": {
+        "uses": false,
+        "evidence": null
+      },
+      "localStateNames": {
+        "declared": true,
+        "values": [
+          "stimuli",
+          "substrates",
+          "enzymes",
+          "boundEnzymes",
+          "RNAs"
+        ],
+        "evidence": "Process.m:980; RNADecay.m:97"
+      },
+      "fixedConstantNames": {
+        "declared": true,
+        "values": [
+          "stimuliCompartments",
+          "substrateCompartments",
+          "enzymeCompartments",
+          "substrateMolecularWeights",
+          "enzymeMolecularWeights",
+          "peptidylTRNAHydrolaseSpecificRate",
+          "ribonucleaseRFragmentLength",
+          "decayReactions"
+        ],
+        "evidence": "Process.m:947; RNADecay.m:91"
+      },
+      "fittedConstantNames": {
+        "declared": true,
+        "values": [],
+        "evidence": "Process.m:966; RNADecay.m:96"
+      },
+      "optionNames": {
+        "declared": true,
+        "values": [
+          "stepSizeSec",
+          "verbosity",
+          "seed"
+        ],
+        "evidence": "Process.m:942; RNADecay.m:90"
+      },
+      "globalStateNames": {
+        "declared": true,
+        "values": [
+          "Geometry",
+          "Stimulus",
+          "Metabolite",
+          "Rna",
+          "ProteinMonomer",
+          "ProteinComplex",
+          "Transcript"
+        ],
+        "evidence": "Process.m:295; RNADecay.m:157"
+      }
+    },
+    "RNAModification": {
+      "stimuli": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "ReactionProcess.m:23"
+      },
+      "substrates": {
+        "declared": true,
+        "count": null,
+        "origin": "KB_COMPUTED",
+        "wids": null,
+        "origin_expression": "[\n                this.stimulus.wholeCellModelIDs(stimuliIndexs);\n                this.metabolite.wholeCellModelIDs(metaboliteIndexs);\n                this.rna.wholeCellModelIDs(this.rna.matureIndexs(rnaIndexs));\n                this.monomer.wholeCellModelIDs(this.monomer.matureIndexs(monomerIndexs));\n                this.complex.wholeCellModelIDs(this.complex.matureIndexs(complexIndexs))]",
+        "resolvable_from_kb_on_disk": true,
+        "evidence": "ReactionProcess.m:113"
+      },
+      "enzymes": {
+        "declared": true,
+        "count": null,
+        "origin": "KB_COMPUTED",
+        "wids": null,
+        "origin_expression": "{ ...\n                this.rna.wholeCellModelIDs{this.rna.matureIndexs(enzymeRNAIndexs)} ...\n                this.monomer.wholeCellModelIDs{this.monomer.matureIndexs(enzymeMonomerIndexs)} ...\n                this.complex.wholeCellModelIDs{this.complex.matureIndexs(enzymeComplexIndexs)}}'",
+        "resolvable_from_kb_on_disk": true,
+        "evidence": "ReactionProcess.m:139"
+      },
+      "boundEnzymes": {
+        "uses": false,
+        "evidence": null
+      },
+      "localStateNames": {
+        "declared": true,
+        "values": [
+          "stimuli",
+          "substrates",
+          "enzymes",
+          "boundEnzymes",
+          "unmodifiedRNAs",
+          "modifiedRNAs"
+        ],
+        "evidence": "Process.m:980; RNAModification.m:91"
+      },
+      "fixedConstantNames": {
+        "declared": true,
+        "values": [
+          "stimuliCompartments",
+          "substrateCompartments",
+          "enzymeCompartments",
+          "substrateMolecularWeights",
+          "enzymeMolecularWeights",
+          "reactionNames",
+          "reactionTypes",
+          "reactionStoichiometryMatrix",
+          "reactionCatalysisMatrix",
+          "reactionModificationMatrix",
+          "reactionCoenzymeMatrix",
+          "enzymeBounds",
+          "reactionBounds",
+          "speciesReactantByproductMatrix",
+          "speciesReactantMatrix"
+        ],
+        "evidence": "Process.m:947; ReactionProcess.m:227; RNAModification.m:86"
+      },
+      "fittedConstantNames": {
+        "declared": true,
+        "values": [],
+        "evidence": "Process.m:966; RNAModification.m:90"
+      },
+      "optionNames": {
+        "declared": true,
+        "values": [
+          "stepSizeSec",
+          "verbosity",
+          "seed"
+        ],
+        "evidence": "Process.m:942; RNAModification.m:85"
+      },
+      "globalStateNames": {
+        "declared": true,
+        "values": [
+          "Geometry",
+          "Stimulus",
+          "Metabolite",
+          "Rna",
+          "ProteinMonomer",
+          "ProteinComplex"
+        ],
+        "evidence": "Process.m:295"
+      }
+    },
+    "RNAProcessing": {
+      "stimuli": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "RNAProcessing.m:207"
+      },
+      "substrates": {
+        "declared": true,
+        "count": 7,
+        "origin": "LITERAL",
+        "wids": [
+          "ATP",
+          "GTP",
+          "ADP",
+          "GDP",
+          "PI",
+          "H2O",
+          "H"
+        ],
+        "evidence": "RNAProcessing.m:208"
+      },
+      "enzymes": {
+        "declared": true,
+        "count": 5,
+        "origin": "LITERAL",
+        "wids": [
+          "MG_367_DIMER",
+          "MG_139_DIMER",
+          "MG_0003_465",
+          "MG_110_MONOMER",
+          "MG_425_DIMER"
+        ],
+        "evidence": "RNAProcessing.m:222"
+      },
+      "boundEnzymes": {
+        "uses": false,
+        "evidence": null
+      },
+      "localStateNames": {
+        "declared": true,
+        "values": [
+          "stimuli",
+          "substrates",
+          "enzymes",
+          "boundEnzymes",
+          "unprocessedRNAs",
+          "processedRNAs",
+          "intergenicRNAs"
+        ],
+        "evidence": "Process.m:980; RNAProcessing.m:199"
+      },
+      "fixedConstantNames": {
+        "declared": true,
+        "values": [
+          "stimuliCompartments",
+          "substrateCompartments",
+          "enzymeCompartments",
+          "substrateMolecularWeights",
+          "enzymeMolecularWeights",
+          "enzymeSpecificRate_DeaD",
+          "enzymeSpecificRate_RsgA",
+          "enzymeSpecificRate_RNAseP",
+          "enzymeSpecificRate_RNAseIII",
+          "enzymeSpecificRate_RNAseJ",
+          "enzymeEnergyCost_DeaD",
+          "enzymeEnergyCost_RsgA",
+          "reactantByproductMatrix",
+          "catalysisMatrix"
+        ],
+        "evidence": "Process.m:947; RNAProcessing.m:187"
+      },
+      "fittedConstantNames": {
+        "declared": true,
+        "values": [],
+        "evidence": "Process.m:966; RNAProcessing.m:198"
+      },
+      "optionNames": {
+        "declared": true,
+        "values": [
+          "stepSizeSec",
+          "verbosity",
+          "seed"
+        ],
+        "evidence": "Process.m:942; RNAProcessing.m:186"
+      },
+      "globalStateNames": {
+        "declared": true,
+        "values": [
+          "Geometry",
+          "Stimulus",
+          "Metabolite",
+          "Rna",
+          "ProteinMonomer",
+          "ProteinComplex"
+        ],
+        "evidence": "Process.m:295"
+      }
+    },
+    "TerminalOrganelleAssembly": {
+      "stimuli": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "ReactionProcess.m:23"
+      },
+      "substrates": {
+        "declared": true,
+        "count": null,
+        "origin": "KB_COMPUTED",
+        "wids": null,
+        "origin_expression": "sort(this.substrateWholeCellModelIDs__)",
+        "resolvable_from_kb_on_disk": true,
+        "evidence": "TerminalOrganelleAssembly.m:182"
+      },
+      "enzymes": {
+        "declared": true,
+        "count": null,
+        "origin": "KB_COMPUTED",
+        "wids": null,
+        "origin_expression": "{ ...\n                this.rna.wholeCellModelIDs{this.rna.matureIndexs(enzymeRNAIndexs)} ...\n                this.monomer.wholeCellModelIDs{this.monomer.matureIndexs(enzymeMonomerIndexs)} ...\n                this.complex.wholeCellModelIDs{this.complex.matureIndexs(enzymeComplexIndexs)}}'",
+        "resolvable_from_kb_on_disk": true,
+        "evidence": "ReactionProcess.m:139"
+      },
+      "boundEnzymes": {
+        "uses": false,
+        "evidence": null
+      },
+      "localStateNames": {
+        "declared": true,
+        "values": [
+          "stimuli",
+          "substrates",
+          "enzymes",
+          "boundEnzymes"
+        ],
+        "evidence": "Process.m:980; TerminalOrganelleAssembly.m:119"
+      },
+      "fixedConstantNames": {
+        "declared": true,
+        "values": [
+          "stimuliCompartments",
+          "substrateCompartments",
+          "enzymeCompartments",
+          "substrateMolecularWeights",
+          "enzymeMolecularWeights",
+          "reactionNames",
+          "reactionTypes",
+          "reactionStoichiometryMatrix",
+          "reactionCatalysisMatrix",
+          "reactionModificationMatrix",
+          "reactionCoenzymeMatrix",
+          "enzymeBounds",
+          "reactionBounds",
+          "localizationReactions",
+          "localizationSubstrates",
+          "localizationThreshold"
+        ],
+        "evidence": "Process.m:947; ReactionProcess.m:227; TerminalOrganelleAssembly.m:113"
+      },
+      "fittedConstantNames": {
+        "declared": true,
+        "values": [],
+        "evidence": "Process.m:966; TerminalOrganelleAssembly.m:118"
+      },
+      "optionNames": {
+        "declared": true,
+        "values": [
+          "stepSizeSec",
+          "verbosity",
+          "seed"
+        ],
+        "evidence": "Process.m:942; TerminalOrganelleAssembly.m:112"
+      },
+      "globalStateNames": {
+        "declared": true,
+        "values": [
+          "Geometry",
+          "Stimulus",
+          "Metabolite",
+          "Rna",
+          "ProteinMonomer",
+          "ProteinComplex"
+        ],
+        "evidence": "Process.m:295"
+      }
+    },
+    "Transcription": {
+      "stimuli": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "Transcription.m:245"
+      },
+      "substrates": {
+        "declared": true,
+        "count": 12,
+        "origin": "LITERAL",
+        "wids": [
+          "ATP",
+          "CTP",
+          "GTP",
+          "UTP",
+          "AMP",
+          "CMP",
+          "GMP",
+          "UMP",
+          "ADP",
+          "PPI",
+          "H2O",
+          "H"
+        ],
+        "evidence": "Transcription.m:247"
+      },
+      "enzymes": {
+        "declared": true,
+        "count": 6,
+        "origin": "LITERAL",
+        "wids": [
+          "MG_249_MONOMER",
+          "MG_282_MONOMER",
+          "MG_141_MONOMER",
+          "MG_027_MONOMER",
+          "RNA_POLYMERASE",
+          "RNA_POLYMERASE_HOLOENZYME"
+        ],
+        "evidence": "Transcription.m:259"
+      },
+      "boundEnzymes": {
+        "uses": true,
+        "evidence": "Transcription.m:453"
+      },
+      "localStateNames": {
+        "declared": true,
+        "values": [
+          "stimuli",
+          "substrates",
+          "enzymes",
+          "boundEnzymes",
+          "RNAs"
+        ],
+        "evidence": "Process.m:980; Transcription.m:239"
+      },
+      "fixedConstantNames": {
+        "declared": true,
+        "values": [
+          "stimuliCompartments",
+          "substrateCompartments",
+          "enzymeCompartments",
+          "substrateMolecularWeights",
+          "enzymeMolecularWeights",
+          "rnaPolymeraseElongationRate",
+          "transcriptionUnitBaseCounts",
+          "transcriptionUnitBindingProbabilities"
+        ],
+        "evidence": "Process.m:947; Transcription.m:231"
+      },
+      "fittedConstantNames": {
+        "declared": true,
+        "values": [
+          "transcriptionUnitBindingProbabilities"
+        ],
+        "evidence": "Process.m:966; Transcription.m:236"
+      },
+      "optionNames": {
+        "declared": true,
+        "values": [
+          "stepSizeSec",
+          "verbosity",
+          "seed"
+        ],
+        "evidence": "Process.m:942; Transcription.m:230"
+      },
+      "globalStateNames": {
+        "declared": true,
+        "values": [
+          "Geometry",
+          "Stimulus",
+          "Metabolite",
+          "Rna",
+          "ProteinMonomer",
+          "ProteinComplex",
+          "Chromosome",
+          "RNAPolymerase",
+          "Transcript"
+        ],
+        "evidence": "Process.m:295; ChromosomeProcessAspect.m:24; Transcription.m:311; Transcription.m:312"
+      }
+    },
+    "TranscriptionalRegulation": {
+      "stimuli": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "TranscriptionalRegulation.m:128"
+      },
+      "substrates": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "TranscriptionalRegulation.m:129"
+      },
+      "enzymes": {
+        "declared": true,
+        "count": null,
+        "origin": "KB_COMPUTED",
+        "wids": null,
+        "origin_expression": "unique({\n                monomers.wholeCellModelID...\n                complexs.wholeCellModelID}')",
+        "resolvable_from_kb_on_disk": true,
+        "evidence": "TranscriptionalRegulation.m:197"
+      },
+      "boundEnzymes": {
+        "uses": false,
+        "evidence": null
+      },
+      "localStateNames": {
+        "declared": true,
+        "values": [
+          "stimuli",
+          "substrates",
+          "enzymes",
+          "boundEnzymes"
+        ],
+        "evidence": "Process.m:980; TranscriptionalRegulation.m:123"
+      },
+      "fixedConstantNames": {
+        "declared": true,
+        "values": [
+          "stimuliCompartments",
+          "substrateCompartments",
+          "enzymeCompartments",
+          "substrateMolecularWeights",
+          "enzymeMolecularWeights",
+          "tfIndexs",
+          "tuIndexs",
+          "tfAffinities",
+          "tfActivities",
+          "tfPositionStrands",
+          "otherActivities"
+        ],
+        "evidence": "Process.m:947; TranscriptionalRegulation.m:114"
+      },
+      "fittedConstantNames": {
+        "declared": true,
+        "values": [],
+        "evidence": "Process.m:966; TranscriptionalRegulation.m:122"
+      },
+      "optionNames": {
+        "declared": true,
+        "values": [
+          "stepSizeSec",
+          "verbosity",
+          "seed"
+        ],
+        "evidence": "Process.m:942; TranscriptionalRegulation.m:113"
+      },
+      "globalStateNames": {
+        "declared": true,
+        "values": [
+          "Geometry",
+          "Stimulus",
+          "Metabolite",
+          "Rna",
+          "ProteinMonomer",
+          "ProteinComplex",
+          "Chromosome",
+          "RNAPolymerase"
+        ],
+        "evidence": "Process.m:295; ChromosomeProcessAspect.m:24; TranscriptionalRegulation.m:176"
+      }
+    },
+    "Translation": {
+      "stimuli": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "Translation.m:201"
+      },
+      "substrates": {
+        "declared": true,
+        "count": 26,
+        "origin": "LITERAL",
+        "wids": [
+          "ALA",
+          "ARG",
+          "ASN",
+          "ASP",
+          "CYS",
+          "GLN",
+          "GLU",
+          "GLY",
+          "HIS",
+          "ILE",
+          "LEU",
+          "LYS",
+          "MET",
+          "PHE",
+          "PRO",
+          "SER",
+          "THR",
+          "TRP",
+          "TYR",
+          "VAL",
+          "FMET",
+          "GTP",
+          "GDP",
+          "PI",
+          "H2O",
+          "H"
+        ],
+        "evidence": "Translation.m:203"
+      },
+      "enzymes": {
+        "declared": true,
+        "count": 16,
+        "origin": "LITERAL",
+        "wids": [
+          "MG_173_MONOMER",
+          "MG_142_MONOMER",
+          "MG_196_MONOMER",
+          "MG_089_DIMER",
+          "MG_026_MONOMER",
+          "MG_451_DIMER",
+          "MG_433_DIMER",
+          "MG_258_MONOMER",
+          "MG_435_MONOMER",
+          "RIBOSOME_30S",
+          "RIBOSOME_30S_IF3",
+          "RIBOSOME_50S",
+          "RIBOSOME_70S",
+          "MG_0004",
+          "MG_059_MONOMER",
+          "MG_083_MONOMER"
+        ],
+        "evidence": "Translation.m:215"
+      },
+      "boundEnzymes": {
+        "uses": true,
+        "evidence": "Translation.m:458"
+      },
+      "localStateNames": {
+        "declared": true,
+        "values": [
+          "stimuli",
+          "substrates",
+          "enzymes",
+          "boundEnzymes",
+          "mRNAs",
+          "freeTRNAs",
+          "aminoacylatedTRNAs",
+          "aminoacylatedTMRNA",
+          "monomers"
+        ],
+        "evidence": "Process.m:980; Translation.m:190"
+      },
+      "fixedConstantNames": {
+        "declared": true,
+        "values": [
+          "stimuliCompartments",
+          "substrateCompartments",
+          "enzymeCompartments",
+          "substrateMolecularWeights",
+          "enzymeMolecularWeights",
+          "ribosomeElongationRate",
+          "tmRNABindingProbability"
+        ],
+        "evidence": "Process.m:947; Translation.m:185"
+      },
+      "fittedConstantNames": {
+        "declared": true,
+        "values": [],
+        "evidence": "Process.m:966; Translation.m:189"
+      },
+      "optionNames": {
+        "declared": true,
+        "values": [
+          "stepSizeSec",
+          "verbosity",
+          "seed"
+        ],
+        "evidence": "Process.m:942; Translation.m:184"
+      },
+      "globalStateNames": {
+        "declared": true,
+        "values": [
+          "Geometry",
+          "Stimulus",
+          "Metabolite",
+          "Rna",
+          "ProteinMonomer",
+          "ProteinComplex",
+          "Polypeptide",
+          "Ribosome"
+        ],
+        "evidence": "Process.m:295; Translation.m:293; Translation.m:294"
+      }
+    },
+    "tRNAAminoacylation": {
+      "stimuli": {
+        "declared": true,
+        "count": 0,
+        "origin": "LITERAL",
+        "wids": [],
+        "evidence": "ReactionProcess.m:23"
+      },
+      "substrates": {
+        "declared": true,
+        "count": null,
+        "origin": "KB_COMPUTED",
+        "wids": null,
+        "origin_expression": "[this.substrateWholeCellModelIDs; 'GLN']",
+        "resolvable_from_kb_on_disk": true,
+        "evidence": "tRNAAminoacylation.m:185"
+      },
+      "enzymes": {
+        "declared": true,
+        "count": null,
+        "origin": "KB_COMPUTED",
+        "wids": null,
+        "origin_expression": "[\n                this.enzymeWholeCellModelIDs;\n                this.rna.wholeCellModelIDs(this.rna.matureIndexs(this.rna.matureTRNAIndexs));\n                'MG_0004']",
+        "resolvable_from_kb_on_disk": true,
+        "evidence": "tRNAAminoacylation.m:206"
+      },
+      "boundEnzymes": {
+        "uses": false,
+        "evidence": null
+      },
+      "localStateNames": {
+        "declared": true,
+        "values": [
+          "stimuli",
+          "substrates",
+          "enzymes",
+          "boundEnzymes",
+          "freeRNAs",
+          "aminoacylatedRNAs"
+        ],
+        "evidence": "Process.m:980; tRNAAminoacylation.m:93"
+      },
+      "fixedConstantNames": {
+        "declared": true,
+        "values": [
+          "stimuliCompartments",
+          "substrateCompartments",
+          "enzymeCompartments",
+          "substrateMolecularWeights",
+          "enzymeMolecularWeights",
+          "reactionNames",
+          "reactionTypes",
+          "reactionStoichiometryMatrix",
+          "reactionCatalysisMatrix",
+          "reactionModificationMatrix",
+          "reactionCoenzymeMatrix",
+          "enzymeBounds",
+          "reactionBounds",
+          "monomerTRNACounts"
+        ],
+        "evidence": "Process.m:947; ReactionProcess.m:227; tRNAAminoacylation.m:89"
+      },
+      "fittedConstantNames": {
+        "declared": true,
+        "values": [],
+        "evidence": "Process.m:966; tRNAAminoacylation.m:92"
+      },
+      "optionNames": {
+        "declared": true,
+        "values": [
+          "stepSizeSec",
+          "verbosity",
+          "seed"
+        ],
+        "evidence": "Process.m:942; tRNAAminoacylation.m:88"
+      },
+      "globalStateNames": {
+        "declared": true,
+        "values": [
+          "Geometry",
+          "Stimulus",
+          "Metabolite",
+          "Rna",
+          "ProteinMonomer",
+          "ProteinComplex"
+        ],
+        "evidence": "Process.m:295"
+      }
+    }
+  }
+}
