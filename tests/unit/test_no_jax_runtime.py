@@ -27,15 +27,13 @@ from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 
-# The runtime surface that must stay JAX-free: the Karr vivarium processes,
-# the state/chromosome layer they use, and the stochastic solver they call.
+# The entire opencell package must stay JAX-free (Day-3 decision, fully enforced
+# after the 2026-07-09 de-JAX of the Phase-1 core: the Diffrax ODE solver was
+# deleted and the IR/engine/state RNG was moved to numpy Generators).
 _RUNTIME_DIRS = (
-    _REPO_ROOT / "opencell" / "vivarium",
-    _REPO_ROOT / "opencell" / "state",
+    _REPO_ROOT / "opencell",
 )
-_RUNTIME_FILES = (
-    _REPO_ROOT / "opencell" / "solvers" / "stochastic.py",
-)
+_RUNTIME_FILES: tuple[Path, ...] = ()
 
 _JAX_IMPORT_RE = re.compile(
     r"^\s*(?:import\s+(?:jax|jaxlib|diffrax)\b|from\s+(?:jax|jaxlib|diffrax)\b)",
@@ -71,8 +69,8 @@ def test_karr_runtime_import_loads_no_jax() -> None:
     )
 
 
-def test_runtime_source_has_no_direct_jax_imports() -> None:
-    """Static guard: no `import jax|jaxlib|diffrax` in the runtime surface."""
+def test_opencell_source_has_no_jax_imports() -> None:
+    """Static guard: no `import jax|jaxlib|diffrax` anywhere in opencell/."""
     offenders: list[str] = []
     py_files: list[Path] = list(_RUNTIME_FILES)
     for d in _RUNTIME_DIRS:
@@ -86,6 +84,6 @@ def test_runtime_source_has_no_direct_jax_imports() -> None:
             rel = path.relative_to(_REPO_ROOT)
             offenders.append(f"{rel}:{line_no}: {m.group(0).strip()}")
     assert not offenders, (
-        "JAX/Diffrax imports found in the JAX-free runtime surface "
+        "JAX/Diffrax imports found in the JAX-free opencell package "
         "(Day-3 decision):\n" + "\n".join(offenders)
     )

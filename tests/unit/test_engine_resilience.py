@@ -4,10 +4,7 @@ import json
 import tempfile
 from pathlib import Path
 
-import jax
 import numpy as np
-
-jax.config.update("jax_enable_x64", True)
 
 from opencell.core.checkpoint import load_checkpoint, save_checkpoint
 from opencell.core.crash_bundle import CrashBundle, capture_crash_bundle
@@ -211,7 +208,7 @@ class TestCheckpoint:
     def test_save_and_load_roundtrip(self) -> None:
         counts = np.array([100.0, 50.0, 25.0])
         species_ids = ["atp", "adp", "amp"]
-        rng_key = np.array(jax.random.PRNGKey(42))
+        rng_key = np.array([42, 0], dtype=np.uint32)
 
         with tempfile.TemporaryDirectory() as tmpdir:
             path = save_checkpoint(
@@ -235,7 +232,7 @@ class TestManifest:
     def test_capture(self) -> None:
         m = RunManifest.capture(rng_seed=42)
         assert m.python_version != ""
-        assert m.jax_version != ""
+        assert m.numpy_version != ""
         assert m.rng_seed == 42
 
     def test_save(self) -> None:
@@ -245,4 +242,4 @@ class TestManifest:
             assert path.exists()
             with open(path) as f:
                 data = json.load(f)
-            assert "jax_version" in data
+            assert "numpy_version" in data

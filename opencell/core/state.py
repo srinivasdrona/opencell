@@ -1,6 +1,6 @@
 """Cell state container for OpenCell.
 
-The CellState holds all dynamic simulation state as JAX-compatible arrays.
+The CellState holds all dynamic simulation state as numpy arrays.
 It is backed by the IR (species registry) and compartment model.
 Design principle: data-oriented (flat arrays), not Python object graphs.
 """
@@ -9,8 +9,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-import jax
-import jax.numpy as jnp
 import numpy as np
 
 from opencell.core.compartments import CellGeometry
@@ -22,22 +20,22 @@ class CellState:
     """Complete simulation state at a point in time.
 
     All species amounts are stored in a single flat array indexed
-    by the species registry. This makes the state JAX-compatible
-    and efficient for vectorized operations.
+    by the species registry. This makes the state efficient for
+    vectorized numpy operations.
 
     Attributes:
         time_s: Current simulation time in seconds
         counts: Array of molecule counts (shape: [n_species])
         registry: Species registry for ID ↔ index mapping
         geometry: Cell geometry (volumes, surface areas)
-        rng_key: JAX PRNG key for stochastic processes
+        rng_key: numpy Generator for stochastic processes
     """
 
     time_s: float
-    counts: jax.Array  # shape: (n_species,), dtype: float64
+    counts: np.ndarray  # shape: (n_species,), dtype: float64
     registry: IRSpeciesRegistry
     geometry: CellGeometry
-    rng_key: jax.Array
+    rng_key: np.random.Generator
 
     @classmethod
     def initialize(
@@ -53,7 +51,7 @@ class CellState:
             registry: Frozen species registry
             initial_counts: Dict of species_id → initial count
             geometry: Cell geometry (defaults to M. genitalium-like)
-            rng_seed: Seed for JAX PRNG
+            rng_seed: Seed for the numpy Generator
         """
         if not registry._frozen:
             registry.freeze()
@@ -63,14 +61,12 @@ class CellState:
             idx = registry.index(species_id)
             counts_array[idx] = count
 
-        jax.config.update("jax_enable_x64", True)
-
         return cls(
             time_s=0.0,
-            counts=jnp.array(counts_array),
+            counts=counts_array,
             registry=registry,
             geometry=geometry or CellGeometry.default_mycoplasma(),
-            rng_key=jax.random.PRNGKey(rng_seed),
+            rng_key=np.random.default_rng(rng_seed),
         )
 
     def get_count(self, species_id: str) -> float:
@@ -119,15 +115,21 @@ class CellState:
         """Check that all counts are non-negative. Returns list of violations."""
         violations = []
         negative_mask = self.counts < 0
-        if jnp.any(negative_mask):
+        if np.any(negative_mask):
             for i in range(self.registry.size):
                 if float(self.counts[i]) < 0:
                     sp_id = self.registry.id_at(i)
                     violations.append(f"{sp_id}: count = {float(self.counts[i]):.6e}")
         return violations
 
-    def split_rng(self) -> tuple[jax.Array, jax.Array]:
-        """Split the PRNG key, returning (new_state_key, use_key)."""
-        new_key, use_key = jax.random.split(self.rng_key)
-        self.rng_key = new_key
-        return new_key, use_key
+    def split_rng(self) -> tuple[np.random.Generator, np.random.Generator]:
+        """Spawn two independent child Generators (new_state_gen, use_gen).
+
+        Uses ``numpy.random.Generator.spawn`` (SeedSequence-based), which the
+        project's RNG-discipline rule endorses for independent streams. The
+        first child advances the state generator; the second is for immediate
+        use.
+        """
+        new_gen, use_gen = self.rng_key.spawn(2)
+        self.rng_key = new_gen
+        return new_gen, use_gen

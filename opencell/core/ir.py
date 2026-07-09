@@ -20,9 +20,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum, auto
 
-import jax.numpy as jnp
 import numpy as np
-from jax.typing import ArrayLike
 
 
 class Compartment(Enum):
@@ -218,9 +216,9 @@ class StoichiometryMatrix:
         return self._matrix
 
     @property
-    def as_jax(self) -> ArrayLike:
-        """JAX-compatible array for use in solvers."""
-        return jnp.array(self._matrix)
+    def as_dense_array(self) -> np.ndarray:
+        """Dense stoichiometry matrix for use in solvers."""
+        return np.asarray(self._matrix)
 
     @property
     def n_species(self) -> int:
