@@ -2,8 +2,8 @@
 # Anchored to repo root with leading `/` so docs/archive/{prompts,status}/ still ships.
 /PROMPT.md
 /PROMPT_*.md
+/STATUS.md
 /STATUS_*.md
-!/STATUS.md
 .codex_*_pid.txt
 codex_*.log
 
