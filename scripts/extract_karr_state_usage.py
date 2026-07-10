@@ -9,9 +9,14 @@ process actually reads.
 
 This extracts the USAGE list instead: for each process `.m`, the set of state
 classes it actually accesses via `this.<state>.<member>` (a dot access — the bare
-`this.rna = simulation.state('Rna')` assignment does NOT match). That is the
-authoritative surface Gate 2 must validate OC against (does OC reach every state
-Karr's process actually uses?). Pure text parse — no MATLAB required.
+`this.rna = simulation.state('Rna')` assignment does NOT match) **within its
+runtime methods only**. Init/allocation methods (`initializeConstants`,
+`allocateMemory`, the constructor, `storeObjectReferences`, the `compute*Names`
+annotation getters) are EXCLUDED, because their state accesses are array-sizing /
+ID-list / index-mapping bookkeeping (e.g. `numel(this.rna.wholeCellModelIDs)`),
+not per-tick input coupling. That is the authoritative surface Gate 2 must
+validate OC against (does OC reach every state Karr's process actually uses at
+runtime?). Pure text parse — no MATLAB required.
 
 Output: `data/karr_input_spec/_karr_state_usage.json`
   { "<Process>": {"states_used": [<StateClass>, ...],
@@ -31,6 +36,22 @@ _PROC_DIR = (
     / "+edu" / "+stanford" / "+covert" / "+cell" / "+sim" / "+process"
 )
 _OUT = _REPO / "data" / "karr_input_spec" / "_karr_state_usage.json"
+
+# Method names whose bodies are init/allocation bookkeeping, not runtime input
+# usage — their `this.<state>.` accesses are array sizing / ID lists / index maps
+# and must NOT count as state usage. The per-class constructor (== process name)
+# is excluded separately.
+_INIT_METHODS: frozenset[str] = frozenset({
+    "initializeconstants",
+    "allocatememory",
+    "storeobjectreferences",
+    "computefixedconstantsnames",
+    "computefittedconstantsnames",
+    "computelocalstatenames",
+    "computeoptionsnames",
+})
+
+_FUNCTION_NAME_RE = re.compile(r"function\s+(?:\[?[\w,\s~]*\]?\s*=\s*)?(\w+)\s*\(")
 
 # state property name (as accessed via this.<prop>) -> Karr state class.
 # Derived from every `this.<prop> = simulation.state('<Class>')` across the source.
@@ -66,10 +87,32 @@ _PROCESSES: tuple[str, ...] = (
 )
 
 
+def _runtime_text(text: str, process: str) -> str:
+    """Return the concatenation of method bodies that are NOT init/allocation.
+
+    Splits the class source on `function` declarations and drops the constructor
+    (name == process) and the known init/annotation methods, so only runtime
+    methods (evolveState, calcResourceRequirements*, and their helpers) remain.
+    """
+    matches = list(_FUNCTION_NAME_RE.finditer(text))
+    if not matches:
+        return text
+    excluded = _INIT_METHODS | {process.lower()}
+    kept: list[str] = []
+    for i, match in enumerate(matches):
+        name = match.group(1).lower()
+        start = match.start()
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+        if name not in excluded:
+            kept.append(text[start:end])
+    return "\n".join(kept)
+
+
 def extract() -> dict[str, dict[str, object]]:
     result: dict[str, dict[str, object]] = {}
     for proc in _PROCESSES:
-        text = (_PROC_DIR / f"{proc}.m").read_text(encoding="utf-8", errors="replace")
+        raw = (_PROC_DIR / f"{proc}.m").read_text(encoding="utf-8", errors="replace")
+        text = _runtime_text(raw, proc)
         counts: dict[str, int] = {}
         for prop, cls in _STATE_PROPS.items():
             n = len(re.findall(r"this\." + re.escape(prop) + r"\.", text))
