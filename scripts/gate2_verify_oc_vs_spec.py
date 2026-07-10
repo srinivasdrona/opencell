@@ -46,13 +46,17 @@ _ROLE_ATTR_CANDIDATES = {
     "substrates": (
         "substrate_wids",
         "_substrate_wids",
+        "fixture_substrate_wids",
         "allocation_substrate_wids",
         "aa_ids",
     ),
     "enzymes": (
         "enzyme_wids",
+        "fixture_enzyme_wids",
         "gtpase_wids",
         "enzyme_component_wids",
+        "catalytic_enzyme_wids",
+        "complex_enzyme_wids",
     ),
     "stimuli": (
         "stimuli_wids",
