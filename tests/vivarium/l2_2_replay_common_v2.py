@@ -199,7 +199,8 @@ _PROCESS_SPECS: dict[str, _ProcessSpec] = {
             "enzymes": "enzyme_wids",
             "boundEnzymes": "enzyme_wids",
         },
-        index_projection_literal={"substrates": np.arange(4)},
+        # Faithful 12-species transcription substrate vocabulary from fixture.
+        index_projection_literal={"substrates": np.arange(12)},
         trace_after_hint_observables=("enzymes", "boundEnzymes", "substrates"),
     ),
     "RNADecay": _ProcessSpec(

@@ -21,7 +21,21 @@ def test_process_builds(model: tx.KarrTranscriptionModel) -> None:
     proc = KarrTranscriptionProcess({"model": model})
     schema = proc.ports_schema()
     assert len(schema["rna"]["counts"]) == 525
-    assert set(schema["substrates"]) == {"ATP", "CTP", "GTP", "UTP"}
+    # Faithful 12-species transcription substrate vocabulary from fixture.
+    assert tuple(schema["substrates"]) == (
+        "ATP",
+        "CTP",
+        "GTP",
+        "UTP",
+        "AMP",
+        "CMP",
+        "GMP",
+        "UMP",
+        "ADP",
+        "PPI",
+        "H2O",
+        "H",
+    )
 
 
 def test_engine_runs_100_steps_without_drift(
@@ -69,4 +83,3 @@ def test_engine_starting_from_zero_approaches_steady_state(
     assert float(np.max(rel)) < 0.05, (
         f"fast genes not at steady state: max rel = {rel.max():.4f} (n_fast={int(fast.sum())})"
     )
-

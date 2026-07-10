@@ -18,6 +18,9 @@ _DEFAULT_RNAP_ELONGATION_RATE_NT_PER_S = 50.0
 _DEFAULT_ACTIVE_RNAP_FRACTION = 0.86
 _RNAP_WID = "RNA_POLYMERASE"
 _RNAP_HOLO_WID = "RNA_POLYMERASE_HOLOENZYME"
+_PPI_SUBSTRATE_INDEX = 9
+_WATER_SUBSTRATE_INDEX = 10
+_HYDROGEN_SUBSTRATE_INDEX = 11
 _BASE_TO_NTP: dict[str, str] = {
     "A": "ATP",
     "C": "CTP",
@@ -60,7 +63,8 @@ class KarrTranscriptionProcess(Process):
     For every 525 genes:  dRNA_i/dt = s_i - k_i * RNA_i, integrated in
     closed form per tick.  Writes:
       - rna.counts (525-dict by WCM ID, 'set' updater)
-      - substrates.{ATP,CTP,GTP,UTP} (deltas, 'accumulate', negative)
+      - substrates.{ATP,CTP,GTP,UTP,AMP,CMP,GMP,UMP,ADP,PPI,H2O,H}
+        (sparse deltas, 'accumulate')
 
     `condition` parameter (0/1/2) selects synthesis-rate column.  Default
     1 (Karr's mean condition).
@@ -102,12 +106,12 @@ class KarrTranscriptionProcess(Process):
         self.gene_ids = self.model.gene_wcm_ids
         self.enable_throttle: bool = bool(self.parameters["enable_throttle"])
         self.consumed_substrates: tuple[str, ...] = _M2_CONSUMED_SUBSTRATES
-        self.substrate_wids: tuple[str, ...] = self.consumed_substrates
         rng_seed = int(self.parameters["rng_seed"])
         self._rng = np.random.default_rng(rng_seed)
         self._polymerization_rng = np.random.default_rng(rng_seed)
         (
             self.enzyme_wids,
+            substrate_wids,
             self._ntp_base_prob,
             self._rna_polymerase_elongation_rate_nt_per_s,
             self._tu_sequences,
@@ -115,6 +119,10 @@ class KarrTranscriptionProcess(Process):
             self._polymerase_slots,
             self._active_rnap_fraction,
         ) = self._load_fixture_runtime(self.parameters["fixture_path"])
+        self.substrate_wids: tuple[str, ...] = tuple(substrate_wids)
+        self._ppi_wid = self._fixture_substrate_wid(_PPI_SUBSTRATE_INDEX)
+        self._water_wid = self._fixture_substrate_wid(_WATER_SUBSTRATE_INDEX)
+        self._hydrogen_wid = self._fixture_substrate_wid(_HYDROGEN_SUBSTRATE_INDEX)
 
         # E.1b calibration: build a chassis-operative model whose
         # synthesis rate is recalibrated so dRNA/dt = 0 at counts_mature.
@@ -136,6 +144,7 @@ class KarrTranscriptionProcess(Process):
         self, fixture_path: str | Path
     ) -> tuple[
         list[str],
+        list[str],
         np.ndarray,
         float,
         tuple[str, ...],
@@ -149,6 +158,7 @@ class KarrTranscriptionProcess(Process):
         except Exception:
             return (
                 [],
+                list(_M2_CONSUMED_SUBSTRATES),
                 _DEFAULT_NTP_BASE_PROB.copy(),
                 _DEFAULT_RNAP_ELONGATION_RATE_NT_PER_S,
                 tuple(),
@@ -159,6 +169,12 @@ class KarrTranscriptionProcess(Process):
 
         enzyme_ids = getattr(fixture, "enzymeWholeCellModelIDs", None)
         enzyme_wids = _parse_wid_array(enzyme_ids) if enzyme_ids is not None else []
+        substrate_ids = getattr(fixture, "substrateWholeCellModelIDs", None)
+        substrate_wids = (
+            _parse_wid_array(substrate_ids)
+            if substrate_ids is not None
+            else list(_M2_CONSUMED_SUBSTRATES)
+        )
 
         ntp_base_prob = _DEFAULT_NTP_BASE_PROB.copy()
         base_counts = getattr(fixture, "transcriptionUnitBaseCounts", None)
@@ -279,6 +295,7 @@ class KarrTranscriptionProcess(Process):
 
         return (
             enzyme_wids,
+            substrate_wids,
             ntp_base_prob,
             float(elongation_rate),
             tu_sequences,
@@ -286,6 +303,11 @@ class KarrTranscriptionProcess(Process):
             polymerase_slots,
             float(active_rnap_fraction),
         )
+
+    def _fixture_substrate_wid(self, index: int) -> str | None:
+        if 0 <= index < len(self.substrate_wids):
+            return str(self.substrate_wids[index])
+        return None
 
     @staticmethod
     def _coerce_nonnegative_int(value: object) -> int:
@@ -555,12 +577,12 @@ class KarrTranscriptionProcess(Process):
             for i, gid in enumerate(self.gene_ids)
         }
         substrates_schema = {
-            ntp: {
+            wid: {
                 "_default": float(self.parameters["substrate_default"]),
                 "_updater": "accumulate",
                 "_emit": True,
             }
-            for ntp in self.consumed_substrates
+            for wid in self.substrate_wids
         }
         schema: dict[str, Any] = {
             "rna": {"counts": rna_schema},
@@ -713,7 +735,7 @@ def build_karr_m2_engine(
         },
         initial_state={
             "rna": {"counts": rna_init},
-            "substrates": {"ATP": 0.0, "CTP": 0.0, "GTP": 0.0, "UTP": 0.0},
+            "substrates": {wid: 0.0 for wid in proc.substrate_wids},
         },
         emit_step=emit_step_s or time_step_s,
     )

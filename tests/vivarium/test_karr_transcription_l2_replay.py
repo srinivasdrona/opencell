@@ -55,9 +55,9 @@ _SCRATCH_RESET = {}
 # attr falls back to heuristic inference from process attrs / state schema.
 _OBSERVABLE_TO_WIDS_ATTR = {'substrates': 'substrate_wids', 'enzymes': 'enzyme_wids', 'boundEnzymes': 'enzyme_wids'}
 
-# L2.1 harness override (Pattern A residue, reclassified to D). Karr records
-# 12 transcription substrates; OC tracks the first 4 NTP entries only.
-_INDEX_PROJECTION_LITERAL = {'substrates': np.arange(4)}
+# Faithful 12-species transcription substrate replay: compare the full fixture
+# vocabulary so PPI/H2O/H are replayed from trace too.
+_INDEX_PROJECTION_LITERAL = {'substrates': np.arange(12)}
 
 
 def _assert_delta_integral(label: str, deltas: dict[str, float]) -> None:
