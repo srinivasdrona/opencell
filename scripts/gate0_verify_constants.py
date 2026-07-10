@@ -358,6 +358,80 @@ def _compare_entry(
     findings.append(f"{path}: unsupported SOURCE kind {kind!r}")
 
 
+# The three `*Compartments` properties are MATLAB `Dependent` (computed) getters
+# (Process.m:1069-1091 getComponentCompartments), so MATLAB does not persist them
+# on save and the flat fixtures lack them. Their inputs — the *LocalIndexs /
+# *CompartmentIndexs / *GlobalIndexs arrays — ARE persisted, so we reconstruct the
+# derived view in Python (exact mirror of the getter) and verify it against source.
+_DERIVED_COMPARTMENTS: dict[str, tuple[str, str]] = {
+    "stimuliCompartments": ("stimulus", "stimuli"),
+    "substrateCompartments": ("substrate", "substrate"),
+    "enzymeCompartments": ("enzyme", "enzyme"),
+}
+
+_COMPONENT_KINDS = ("Stimulus", "Metabolite", "RNA", "Monomer", "Complex")
+
+
+def _fx_field(fx: object, name: str) -> np.ndarray:
+    if not hasattr(fx, name):
+        return np.zeros((0,), dtype=np.float64)
+    return np.asarray(getattr(fx, name))
+
+
+def _kind_compartment_indexs(fx: object, type_: str, kind: str, n_loc: int) -> np.ndarray | None:
+    """Return the [nLocal x nCompartments] CompartmentIndexs matrix for one
+    component kind, resolving scipy `squeeze_me` ambiguity: a squeezed 1-D array
+    is the compartment row when there is a single local index, else a column."""
+    ci = _fx_field(fx, f"{type_}{kind}CompartmentIndexs")
+    if ci.size == 0:
+        return None
+    ci = ci.astype(np.float64)
+    if ci.ndim >= 2:
+        return ci
+    if ci.ndim == 0:
+        return ci.reshape(1, 1)
+    return ci.reshape(1, -1) if n_loc == 1 else ci.reshape(-1, 1)
+
+
+def _reconstruct_compartments(fx: object, type_: str, types_: str) -> np.ndarray:
+    """Mirror MATLAB Process.getComponentCompartments: assemble the
+    [n_components x n_compartments] compartment-index matrix from the fixture's
+    persisted *LocalIndexs / *CompartmentIndexs arrays (1-based, column-major
+    scatter), so the Dependent *Compartments view can be verified without the
+    fixture persisting the computed property itself."""
+    n_rows = int(_fx_field(fx, f"{types_}WholeCellModelIDs").reshape(-1).shape[0])
+    scatters: list[tuple[np.ndarray, np.ndarray]] = []
+    n_comp = 1
+    for kind in _COMPONENT_KINDS:
+        loc = _fx_field(fx, f"{type_}{kind}LocalIndexs").reshape(-1)
+        if loc.size == 0:
+            continue
+        ci = _kind_compartment_indexs(fx, type_, kind, int(loc.size))
+        if ci is None:
+            continue
+        scatters.append((loc.astype(np.int64), ci))
+        n_comp = max(n_comp, ci.shape[1])
+
+    value = np.zeros((n_rows, n_comp), dtype=np.float64)
+    for loc, ci in scatters:
+        value[loc - 1, : ci.shape[1]] = ci
+    return value
+
+
+def _source_has_no_nonzeros(src_const: dict[str, object]) -> bool:
+    """A *Compartments matrix with zero nonzeros carries no compartment
+    assignments. MATLAB renders an empty component list as a degenerate
+    [1x1]-zero (from a 1x0-empty ID cell), so an all-zero source is equivalent
+    to an empty reconstruction — this lets us match without weakening the
+    general numeric shape check."""
+    kind = str(src_const.get("kind"))
+    if kind == "empty":
+        return True
+    if kind == "numeric":
+        return len(src_const.get("nz_idx", [])) == 0  # type: ignore[arg-type]
+    return False
+
+
 def main() -> int:
     if not _SRC_CONSTANTS.exists():
         print(
@@ -371,6 +445,7 @@ def main() -> int:
     coverage_gaps: list[str] = []
     n_processes = 0
     n_checked = 0
+    n_reconstructed = 0
 
     for proc_entry in src["processes"]:
         proc = str(proc_entry["name"])
@@ -391,6 +466,19 @@ def main() -> int:
                 continue
 
             if not hasattr(fx, name):
+                if name in _DERIVED_COMPARTMENTS:
+                    type_, types_ = _DERIVED_COMPARTMENTS[name]
+                    recon = _reconstruct_compartments(fx, type_, types_)
+                    if _source_has_no_nonzeros(src_const) and not np.any(recon):
+                        n_checked += 1
+                        n_reconstructed += 1
+                        continue
+                    before = len(findings)
+                    _compare_entry(f"{proc}.{name}", src_const, recon, findings)
+                    if len(findings) == before:
+                        n_checked += 1
+                        n_reconstructed += 1
+                    continue
                 coverage_gaps.append(f"{proc}.{name}")
                 continue
 
@@ -414,8 +502,9 @@ def main() -> int:
 
     print(
         f"GATE 0 (constants): PASS — {n_processes} processes, "
-        f"{n_checked} constants matched; {len(coverage_gaps)} source constants "
-        "not fixture-persisted (INFO)."
+        f"{n_checked} constants matched "
+        f"({n_reconstructed} derived *Compartments reconstructed from fixture index "
+        f"arrays); {len(coverage_gaps)} source constants not fixture-persisted (INFO)."
     )
     if coverage_gaps:
         print(
