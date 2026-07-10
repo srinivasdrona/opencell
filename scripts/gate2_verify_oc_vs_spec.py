@@ -85,9 +85,37 @@ _STOICH_FULL_MATRIX_TERMINALS = {
 _STOICH_PARTIAL_MATRIX_TERMINALS = {
     "reaction_small_molecule_stoich",
 }
+_STOICH_CATALYSIS_TERMINALS = {
+    "reaction_catalysis",
+}
 _STOICH_SUBSTRATE_ID_TERMINALS = {
     "substrate_wids",
     "substrate_wids_585",
+}
+_STOICH_ENZYME_ID_TERMINALS = {
+    "enzyme_wids",
+    "catalytic_enzyme_wids",
+    "complex_enzyme_wids",
+    "monomer_enzyme_wids",
+}
+_STATE_REF_PORT_SYNONYMS = {
+    "Geometry": ("geometry",),
+    "CellGeometry": ("geometry", "cell"),
+    "CellMass": ("mass", "cell"),
+    "Chromosome": ("chromosome",),
+    "FtsZRing": ("ftsZRing",),
+    "Host": ("host", "cell"),
+    "Mass": ("mass",),
+    "MetabolicReaction": ("metabolic_reaction",),
+    "Metabolite": ("metabolite", "substrates"),
+    "Polypeptide": ("polypeptide", "protein"),
+    "ProteinComplex": ("complex", "complexs"),
+    "ProteinMonomer": ("monomer", "monomers", "protein"),
+    "RNAPolymerase": ("rnaPolymerases", "enzymes"),
+    "Ribosome": ("ribosome", "complex", "complexs"),
+    "Rna": ("rna",),
+    "Transcript": ("transcript", "transcripts", "rna"),
+    "Stimulus": ("stimuli", "stimulus"),
 }
 
 
@@ -387,6 +415,21 @@ def _coerce_matrix(value: Any) -> np.ndarray | None:
     return matrix if matrix.ndim == 2 else None
 
 
+def _normalize_surface_name(value: str) -> str:
+    return "".join(ch for ch in value.lower() if ch.isalnum())
+
+
+def _spec_reaction_ids(spec_payload: Mapping[str, Any]) -> list[str]:
+    vocabularies = spec_payload.get("vocabularies") or {}
+    reaction_ids = vocabularies.get("reactionWholeCellModelIDs")
+    if isinstance(reaction_ids, Iterable) and not isinstance(reaction_ids, str | bytes):
+        out = [str(item) for item in reaction_ids]
+        if out:
+            return out
+    spec_species = _spec_reaction_species(spec_payload) or {}
+    return list(spec_species)
+
+
 def _spec_reaction_species(spec_payload: Mapping[str, Any]) -> dict[str, set[str]] | None:
     stoichiometry = spec_payload.get("stoichiometry") or {}
     reactions = stoichiometry.get("reactions")
@@ -400,22 +443,95 @@ def _spec_reaction_species(spec_payload: Mapping[str, Any]) -> dict[str, set[str
     return out
 
 
+def _build_oc_reaction_species_from_mapping(value: Any) -> dict[str, set[str]] | None:
+    if not isinstance(value, Mapping):
+        return None
+    out: dict[str, set[str]] = {}
+    for reaction_id, payload in value.items():
+        if isinstance(payload, Mapping):
+            if "consume" in payload or "produce" in payload:
+                consume = payload.get("consume") or {}
+                produce = payload.get("produce") or {}
+                species = {str(item) for item in consume} | {str(item) for item in produce}
+            else:
+                species = {str(item) for item in payload}
+        else:
+            species = {str(item) for item in _normalize_vocab_value(payload)}
+        out[str(reaction_id)] = {_normalize_wid(species_id) for species_id in species}
+    return out
+
+
 def _build_oc_reaction_species(
     *,
     reaction_ids: list[str],
     substrate_ids: list[str],
     stoich_matrix: np.ndarray,
 ) -> dict[str, set[str]] | None:
-    if stoich_matrix.shape != (len(substrate_ids), len(reaction_ids)):
+    if not reaction_ids or not substrate_ids:
         return None
     out: dict[str, set[str]] = {}
-    for reaction_index, reaction_id in enumerate(reaction_ids):
-        column = stoich_matrix[:, reaction_index]
-        species = {
-            substrate_ids[row_index]
-            for row_index in np.flatnonzero(column).tolist()
-        }
-        out[reaction_id] = species
+    if stoich_matrix.shape == (len(substrate_ids), len(reaction_ids)):
+        for reaction_index, reaction_id in enumerate(reaction_ids):
+            column = stoich_matrix[:, reaction_index]
+            out[reaction_id] = {
+                substrate_ids[row_index]
+                for row_index in np.flatnonzero(column).tolist()
+            }
+        return out
+    if stoich_matrix.shape == (len(reaction_ids), len(substrate_ids)):
+        for reaction_index, reaction_id in enumerate(reaction_ids):
+            row = stoich_matrix[reaction_index, :]
+            out[reaction_id] = {
+                substrate_ids[column_index]
+                for column_index in np.flatnonzero(row).tolist()
+            }
+        return out
+    return None
+
+
+def _build_oc_reaction_species_from_surface(
+    *,
+    matrix_value: Any,
+    reaction_ids: list[str],
+    species_ids: list[str],
+) -> dict[str, set[str]] | None:
+    mapping = _build_oc_reaction_species_from_mapping(matrix_value)
+    if mapping is not None:
+        return mapping
+    matrix = _coerce_matrix(matrix_value)
+    if matrix is None:
+        return None
+    return _build_oc_reaction_species(
+        reaction_ids=reaction_ids,
+        substrate_ids=species_ids,
+        stoich_matrix=matrix,
+    )
+
+
+def _reaction_id_candidates(
+    leaves: Mapping[str, Any],
+    *,
+    spec_reaction_ids: list[str],
+) -> list[tuple[str, list[str]]]:
+    candidates: list[tuple[str, list[str]]] = []
+    for path, value in _find_surface_candidates(leaves, _STOICH_REACTION_ID_TERMINALS):
+        reaction_ids = _coerce_string_list(value)
+        if reaction_ids:
+            candidates.append((path, reaction_ids))
+    if spec_reaction_ids:
+        candidates.append(("spec.vocabularies.reactionWholeCellModelIDs(order fallback)", spec_reaction_ids))
+    return candidates
+
+
+def _state_ref_candidates(state_ref: str) -> tuple[set[str], bool]:
+    explicit = set(_STATE_REF_PORT_SYNONYMS.get(state_ref, ()))
+    explicit.add(state_ref)
+    return ({_normalize_surface_name(candidate) for candidate in explicit}, state_ref in _STATE_REF_PORT_SYNONYMS)
+
+
+def _ports_schema(process: Any) -> dict[str, Any]:
+    schema = process.ports_schema()
+    return schema if isinstance(schema, dict) else {}
     return out
 
 
@@ -425,51 +541,70 @@ def _evaluate_stoichiometry_class(process: Any, spec_payload: Mapping[str, Any])
         return ClassResult(status=_STATUS_CONFORM)
 
     leaves = _collect_surface_leaves(process)
-    reaction_id_candidates = _find_surface_candidates(leaves, _STOICH_REACTION_ID_TERMINALS)
+    spec_reaction_ids = _spec_reaction_ids(spec_payload)
+    reaction_id_candidates = _reaction_id_candidates(leaves, spec_reaction_ids=spec_reaction_ids)
     full_matrix_candidates = _find_surface_candidates(leaves, _STOICH_FULL_MATRIX_TERMINALS)
     partial_matrix_candidates = _find_surface_candidates(leaves, _STOICH_PARTIAL_MATRIX_TERMINALS)
+    catalysis_candidates = _find_surface_candidates(leaves, _STOICH_CATALYSIS_TERMINALS)
     substrate_id_candidates = _find_surface_candidates(leaves, _STOICH_SUBSTRATE_ID_TERMINALS)
+    enzyme_id_candidates = _find_surface_candidates(leaves, _STOICH_ENZYME_ID_TERMINALS)
 
-    best_species: dict[str, set[str]] | None = None
-    best_reaction_path: str | None = None
-    best_matrix_path: str | None = None
-    best_substrate_path: str | None = None
+    best_species: dict[str, set[str]] = {}
+    used_surfaces: list[str] = []
+    aligned_surface_found = False
 
-    for reaction_path, reaction_value in reaction_id_candidates:
-        reaction_ids = _coerce_string_list(reaction_value)
-        for substrate_path, substrate_value in substrate_id_candidates:
-            substrate_ids = [_normalize_wid(item) for item in _coerce_string_list(substrate_value)]
-            for matrix_path, matrix_value in full_matrix_candidates:
-                matrix = _coerce_matrix(matrix_value)
-                if matrix is None:
-                    continue
-                species = _build_oc_reaction_species(
-                    reaction_ids=reaction_ids,
-                    substrate_ids=substrate_ids,
-                    stoich_matrix=matrix,
-                )
-                if species is None:
-                    continue
-                best_species = species
-                best_reaction_path = reaction_path
-                best_matrix_path = matrix_path
-                best_substrate_path = substrate_path
-                break
-            if best_species is not None:
-                break
-        if best_species is not None:
-            break
+    matrix_groups = (
+        ("reaction_stoich", full_matrix_candidates, substrate_id_candidates),
+        ("reaction_small_molecule_stoich", partial_matrix_candidates, substrate_id_candidates),
+        ("reaction_catalysis", catalysis_candidates, enzyme_id_candidates),
+    )
+    for matrix_kind, matrix_candidates, species_candidates in matrix_groups:
+        if matrix_kind == "reaction_catalysis" and best_species:
+            continue
+        for reaction_path, reaction_ids in reaction_id_candidates:
+            for species_path, species_value in species_candidates:
+                species_ids = [_normalize_wid(item) for item in _coerce_string_list(species_value)]
+                for matrix_path, matrix_value in matrix_candidates:
+                    species = _build_oc_reaction_species_from_surface(
+                        matrix_value=matrix_value,
+                        reaction_ids=reaction_ids,
+                        species_ids=species_ids,
+                    )
+                    if species is None:
+                        continue
+                    aligned_surface_found = True
+                    for reaction_id, reaction_species in species.items():
+                        best_species.setdefault(reaction_id, set()).update(reaction_species)
+                    used_surfaces.append(
+                        f"{matrix_kind}:{matrix_path} reaction_ids:{reaction_path} species:{species_path}"
+                    )
+                    break
 
-    if best_species is None:
-        reason = "OC does not expose a comparable reaction-id + full stoichiometry surface."
-        if reaction_id_candidates and partial_matrix_candidates:
-            reason = (
-                "OC exposes reaction ids and partial small-molecule stoichiometry, but not a "
-                "comparable full reaction species surface."
+    if not aligned_surface_found:
+        exposed_surface_parts: list[str] = []
+        if full_matrix_candidates:
+            exposed_surface_parts.append("reaction_stoich")
+        if partial_matrix_candidates:
+            exposed_surface_parts.append("reaction_small_molecule_stoich")
+        if catalysis_candidates:
+            exposed_surface_parts.append("reaction_catalysis")
+        if reaction_id_candidates:
+            exposed_surface_parts.append("reaction_ids")
+        if substrate_id_candidates:
+            exposed_surface_parts.append("substrate_ids")
+        if enzyme_id_candidates:
+            exposed_surface_parts.append("enzyme_ids")
+        if exposed_surface_parts:
+            return ClassResult(
+                status=_STATUS_DIVERGE,
+                details=[
+                    "Unable to align exposed OC reaction surfaces: "
+                    + ", ".join(exposed_surface_parts)
+                ],
             )
         return ClassResult(
             status=_STATUS_NOT_EXPOSED,
-            details=[reason],
+            details=["OC does not expose a comparable reaction surface."],
         )
 
     spec_reactions = sorted(spec_species)
@@ -503,10 +638,7 @@ def _evaluate_stoichiometry_class(process: Any, spec_payload: Mapping[str, Any])
         )
 
     if details:
-        details.append(
-            "surface="
-            f"reaction_ids:{best_reaction_path} matrix:{best_matrix_path} substrates:{best_substrate_path}"
-        )
+        details.append("surface=" + "; ".join(used_surfaces))
         return ClassResult(status=_STATUS_DIVERGE, details=details)
 
     return ClassResult(status=_STATUS_CONFORM)
@@ -517,11 +649,37 @@ def _evaluate_state_refs_class(
     process: Any,
     source_truth: Mapping[str, dict[str, Any]],
 ) -> ClassResult:
-    del process_name, process, source_truth
-    return ClassResult(
-        status=_STATUS_NOT_EXPOSED,
-        details=["State-ref validation not yet wired in this chunk."],
-    )
+    spec_entry = source_truth.get(process_name, {})
+    expected_refs = [str(item) for item in spec_entry.get("state_refs", []) if str(item).strip()]
+    try:
+        ports = sorted(_ports_schema(process))
+    except Exception as exc:  # noqa: BLE001
+        return ClassResult(
+            status=_STATUS_DIVERGE,
+            details=[f"ports_schema() failed: {exc.__class__.__name__}: {exc}"],
+        )
+
+    normalized_ports = {_normalize_surface_name(port): port for port in ports}
+    missing_in_oc: list[str] = []
+    unmapped_names: list[str] = []
+    for state_ref in expected_refs:
+        candidates, had_explicit_mapping = _state_ref_candidates(state_ref)
+        if any(candidate in normalized_ports for candidate in candidates):
+            continue
+        missing_in_oc.append(state_ref)
+        if not had_explicit_mapping:
+            unmapped_names.append(state_ref)
+
+    if not missing_in_oc:
+        return ClassResult(status=_STATUS_CONFORM)
+
+    details = [
+        f"missing_in_oc={_preview_items(missing_in_oc)}",
+        f"oc_ports={_preview_items(ports)}",
+    ]
+    if unmapped_names:
+        details.append(f"unmapped_name={_preview_items(sorted(set(unmapped_names)))}")
+    return ClassResult(status=_STATUS_DIVERGE, details=details)
 
 
 def _evaluate_constants_class(
