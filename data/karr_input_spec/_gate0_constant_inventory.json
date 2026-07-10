@@ -1,0 +1,3955 @@
+{
+  "generated_by": "gate0_inventory_constants.m",
+  "source": "Simulation_fitted.mat via karr_bootstrap",
+  "processes": [
+    {
+      "name": "Chromosome Condensation",
+      "class": "edu.stanford.covert.cell.sim.process.ChromosomeCondensation",
+      "fixed": [
+        {
+          "name": "stimuliCompartments",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "substrateCompartments",
+          "class": "double",
+          "size": [
+            5,
+            1
+          ],
+          "numel": 5,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeCompartments",
+          "class": "double",
+          "size": [
+            2,
+            1
+          ],
+          "numel": 2,
+          "status": "OK"
+        },
+        {
+          "name": "substrateMolecularWeights",
+          "class": "double",
+          "size": [
+            5,
+            1
+          ],
+          "numel": 5,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeMolecularWeights",
+          "class": "double",
+          "size": [
+            2,
+            1
+          ],
+          "numel": 2,
+          "status": "OK"
+        },
+        {
+          "name": "smcSepNt",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "smcSepProbCenter",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        }
+      ],
+      "fitted": [],
+      "n_fixed": 7,
+      "n_fitted": 0
+    },
+    {
+      "name": "Chromosome Segregation",
+      "class": "edu.stanford.covert.cell.sim.process.ChromosomeSegregation",
+      "fixed": [
+        {
+          "name": "stimuliCompartments",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "substrateCompartments",
+          "class": "double",
+          "size": [
+            5,
+            1
+          ],
+          "numel": 5,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeCompartments",
+          "class": "double",
+          "size": [
+            5,
+            1
+          ],
+          "numel": 5,
+          "status": "OK"
+        },
+        {
+          "name": "substrateMolecularWeights",
+          "class": "double",
+          "size": [
+            5,
+            1
+          ],
+          "numel": 5,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeMolecularWeights",
+          "class": "double",
+          "size": [
+            5,
+            1
+          ],
+          "numel": 5,
+          "status": "OK"
+        },
+        {
+          "name": "gtpCost",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        }
+      ],
+      "fitted": [],
+      "n_fixed": 6,
+      "n_fitted": 0
+    },
+    {
+      "name": "Cytokinesis",
+      "class": "edu.stanford.covert.cell.sim.process.Cytokinesis",
+      "fixed": [
+        {
+          "name": "stimuliCompartments",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "substrateCompartments",
+          "class": "double",
+          "size": [
+            3,
+            1
+          ],
+          "numel": 3,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeCompartments",
+          "class": "double",
+          "size": [
+            4,
+            1
+          ],
+          "numel": 4,
+          "status": "OK"
+        },
+        {
+          "name": "substrateMolecularWeights",
+          "class": "double",
+          "size": [
+            3,
+            1
+          ],
+          "numel": 3,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeMolecularWeights",
+          "class": "double",
+          "size": [
+            4,
+            1
+          ],
+          "numel": 4,
+          "status": "OK"
+        },
+        {
+          "name": "rateFtsZGtpHydrolysis",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "rateFilamentBindingMembrane",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "rateFilamentDissociation",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        }
+      ],
+      "fitted": [],
+      "n_fixed": 8,
+      "n_fitted": 0
+    },
+    {
+      "name": "DNA damage",
+      "class": "edu.stanford.covert.cell.sim.process.DNADamage",
+      "fixed": [
+        {
+          "name": "stimuliCompartments",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "substrateCompartments",
+          "class": "double",
+          "size": [
+            48,
+            1
+          ],
+          "numel": 48,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeCompartments",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "substrateMolecularWeights",
+          "class": "double",
+          "size": [
+            48,
+            1
+          ],
+          "numel": 48,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeMolecularWeights",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "reactionVulnerableMotifs",
+          "class": "cell",
+          "size": [
+            32,
+            1
+          ],
+          "numel": 32,
+          "status": "OK"
+        },
+        {
+          "name": "reactionVulnerableMotifTypes",
+          "class": "cell",
+          "size": [
+            32,
+            1
+          ],
+          "numel": 32,
+          "status": "OK"
+        },
+        {
+          "name": "reactionDamageTypes",
+          "class": "cell",
+          "size": [
+            32,
+            1
+          ],
+          "numel": 32,
+          "status": "OK"
+        },
+        {
+          "name": "reactionSmallMoleculeStoichiometryMatrix",
+          "class": "double",
+          "size": [
+            48,
+            32
+          ],
+          "numel": 1536,
+          "status": "OK"
+        },
+        {
+          "name": "reactionDNAStoichiometryMatrix",
+          "class": "double",
+          "size": [
+            48,
+            32
+          ],
+          "numel": 1536,
+          "status": "OK"
+        },
+        {
+          "name": "reactionRadiationStoichiometryMatrix",
+          "class": "double",
+          "size": [
+            48,
+            32
+          ],
+          "numel": 1536,
+          "status": "OK"
+        },
+        {
+          "name": "reactionDNAProduct",
+          "class": "double",
+          "size": [
+            32,
+            1
+          ],
+          "numel": 32,
+          "status": "OK"
+        },
+        {
+          "name": "reactionRadiation",
+          "class": "double",
+          "size": [
+            32,
+            1
+          ],
+          "numel": 32,
+          "status": "OK"
+        },
+        {
+          "name": "reactionNames",
+          "class": "cell",
+          "size": [
+            32,
+            1
+          ],
+          "numel": 32,
+          "status": "OK"
+        },
+        {
+          "name": "reactionTypes",
+          "class": "cell",
+          "size": [
+            32,
+            1
+          ],
+          "numel": 32,
+          "status": "OK"
+        },
+        {
+          "name": "reactionStoichiometryMatrix",
+          "class": "double",
+          "size": [
+            48,
+            32
+          ],
+          "numel": 1536,
+          "status": "OK"
+        },
+        {
+          "name": "reactionCatalysisMatrix",
+          "class": "double",
+          "size": [
+            32,
+            0
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "reactionModificationMatrix",
+          "class": "double",
+          "size": [
+            32,
+            525
+          ],
+          "numel": 16800,
+          "status": "OK"
+        },
+        {
+          "name": "reactionCoenzymeMatrix",
+          "class": "double",
+          "size": [
+            32,
+            48
+          ],
+          "numel": 1536,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeBounds",
+          "class": "double",
+          "size": [
+            32,
+            2
+          ],
+          "numel": 64,
+          "status": "OK"
+        },
+        {
+          "name": "reactionBounds",
+          "class": "double",
+          "size": [
+            32,
+            2
+          ],
+          "numel": 64,
+          "status": "OK"
+        }
+      ],
+      "fitted": [],
+      "n_fixed": 21,
+      "n_fitted": 0
+    },
+    {
+      "name": "DNA repair",
+      "class": "edu.stanford.covert.cell.sim.process.DNARepair",
+      "fixed": [
+        {
+          "name": "stimuliCompartments",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "substrateCompartments",
+          "class": "double",
+          "size": [
+            277,
+            1
+          ],
+          "numel": 277,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeCompartments",
+          "class": "double",
+          "size": [
+            15,
+            1
+          ],
+          "numel": 15,
+          "status": "OK"
+        },
+        {
+          "name": "substrateMolecularWeights",
+          "class": "double",
+          "size": [
+            277,
+            1
+          ],
+          "numel": 277,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeMolecularWeights",
+          "class": "double",
+          "size": [
+            15,
+            1
+          ],
+          "numel": 15,
+          "status": "OK"
+        },
+        {
+          "name": "HR_PolA_ResectionLength",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "HR_RecA_Spacing",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "HR_RuvAB_JunctionMigrationHop",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "HR_RecU_CleavageSequence",
+          "class": "char",
+          "size": [
+            1,
+            4
+          ],
+          "numel": 4,
+          "status": "OK"
+        },
+        {
+          "name": "HR_RecU_CleavagePosition",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "NER_UvrABC_IncisionMargin3",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "NER_UvrABC_IncisionMargin5",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "NER_PcrA_StepSize",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "hollidayJunctionResolutionSites",
+          "class": "double",
+          "size": [
+            34049,
+            2
+          ],
+          "numel": 68098,
+          "status": "OK"
+        },
+        {
+          "name": "RM_EcoD_RecognitionSequence",
+          "class": "char",
+          "size": [
+            1,
+            14
+          ],
+          "numel": 14,
+          "status": "OK"
+        },
+        {
+          "name": "RM_EcoD_RecognitionSites",
+          "class": "double",
+          "size": [
+            58,
+            14
+          ],
+          "numel": 812,
+          "status": "OK"
+        },
+        {
+          "name": "RM_EcoD_MethylationPosition",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "RM_EcoD_RestrictionPosition",
+          "class": "cell",
+          "size": [
+            0,
+            0
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "RM_MunI_RecognitionSequence",
+          "class": "char",
+          "size": [
+            1,
+            6
+          ],
+          "numel": 6,
+          "status": "OK"
+        },
+        {
+          "name": "RM_MunI_RecognitionSites",
+          "class": "double",
+          "size": [
+            380,
+            6
+          ],
+          "numel": 2280,
+          "status": "OK"
+        },
+        {
+          "name": "RM_MunI_MethylationPosition",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "RM_MunI_RestrictionPosition",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "RM_MunI_MethylatedPositions",
+          "class": "double",
+          "size": [
+            1,
+            2
+          ],
+          "numel": 2,
+          "status": "OK"
+        },
+        {
+          "name": "RM_MunI_RestrictionPositions",
+          "class": "double",
+          "size": [
+            1,
+            2
+          ],
+          "numel": 2,
+          "status": "OK"
+        },
+        {
+          "name": "reactionSmallMoleculeStoichiometryMatrix",
+          "class": "double",
+          "size": [
+            277,
+            32
+          ],
+          "numel": 8864,
+          "status": "OK"
+        },
+        {
+          "name": "reactionDNAStoichiometryMatrix",
+          "class": "double",
+          "size": [
+            277,
+            32
+          ],
+          "numel": 8864,
+          "status": "OK"
+        },
+        {
+          "name": "reactionDNABase",
+          "class": "double",
+          "size": [
+            32,
+            1
+          ],
+          "numel": 32,
+          "status": "OK"
+        },
+        {
+          "name": "reactionNames",
+          "class": "cell",
+          "size": [
+            32,
+            1
+          ],
+          "numel": 32,
+          "status": "OK"
+        },
+        {
+          "name": "reactionTypes",
+          "class": "cell",
+          "size": [
+            32,
+            1
+          ],
+          "numel": 32,
+          "status": "OK"
+        },
+        {
+          "name": "reactionStoichiometryMatrix",
+          "class": "double",
+          "size": [
+            277,
+            32
+          ],
+          "numel": 8864,
+          "status": "OK"
+        },
+        {
+          "name": "reactionCatalysisMatrix",
+          "class": "double",
+          "size": [
+            32,
+            15
+          ],
+          "numel": 480,
+          "status": "OK"
+        },
+        {
+          "name": "reactionModificationMatrix",
+          "class": "double",
+          "size": [
+            32,
+            525
+          ],
+          "numel": 16800,
+          "status": "OK"
+        },
+        {
+          "name": "reactionCoenzymeMatrix",
+          "class": "double",
+          "size": [
+            32,
+            277
+          ],
+          "numel": 8864,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeBounds",
+          "class": "double",
+          "size": [
+            32,
+            2
+          ],
+          "numel": 64,
+          "status": "OK"
+        },
+        {
+          "name": "reactionBounds",
+          "class": "double",
+          "size": [
+            32,
+            2
+          ],
+          "numel": 64,
+          "status": "OK"
+        }
+      ],
+      "fitted": [],
+      "n_fixed": 35,
+      "n_fitted": 0
+    },
+    {
+      "name": "DNA supercoiling",
+      "class": "edu.stanford.covert.cell.sim.process.DNASupercoiling",
+      "fixed": [
+        {
+          "name": "stimuliCompartments",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "substrateCompartments",
+          "class": "double",
+          "size": [
+            5,
+            1
+          ],
+          "numel": 5,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeCompartments",
+          "class": "double",
+          "size": [
+            3,
+            1
+          ],
+          "numel": 3,
+          "status": "OK"
+        },
+        {
+          "name": "substrateMolecularWeights",
+          "class": "double",
+          "size": [
+            5,
+            1
+          ],
+          "numel": 5,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeMolecularWeights",
+          "class": "double",
+          "size": [
+            3,
+            1
+          ],
+          "numel": 3,
+          "status": "OK"
+        },
+        {
+          "name": "gyraseMeanDwellTime",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "gyraseSigmaLimit",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "topoISigmaLimit",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "topoIVSigmaLimit",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "gyraseDeltaLK",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "topoIDeltaLK",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "topoIVDeltaLK",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "gyraseActivityRate",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "topoIActivityRate",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "topoIVActivityRate",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "gyraseATPCost",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "topoIATPCost",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "topoIVATPCost",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "foldChangeSlopes",
+          "class": "double",
+          "size": [
+            3,
+            1
+          ],
+          "numel": 3,
+          "status": "OK"
+        },
+        {
+          "name": "foldChangeIntercepts",
+          "class": "double",
+          "size": [
+            3,
+            1
+          ],
+          "numel": 3,
+          "status": "OK"
+        },
+        {
+          "name": "foldChangeLowerSigmaLimit",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "foldChangeUpperSigmaLimit",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "numTranscriptionUnits",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "tuIndexs",
+          "class": "double",
+          "size": [
+            3,
+            1
+          ],
+          "numel": 3,
+          "status": "OK"
+        },
+        {
+          "name": "tuCoordinates",
+          "class": "double",
+          "size": [
+            3,
+            1
+          ],
+          "numel": 3,
+          "status": "OK"
+        }
+      ],
+      "fitted": [],
+      "n_fixed": 25,
+      "n_fitted": 0
+    },
+    {
+      "name": "FtsZ Polymerization",
+      "class": "edu.stanford.covert.cell.sim.process.FtsZPolymerization",
+      "fixed": [
+        {
+          "name": "stimuliCompartments",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "substrateCompartments",
+          "class": "double",
+          "size": [
+            5,
+            1
+          ],
+          "numel": 5,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeCompartments",
+          "class": "double",
+          "size": [
+            11,
+            1
+          ],
+          "numel": 11,
+          "status": "OK"
+        },
+        {
+          "name": "substrateMolecularWeights",
+          "class": "double",
+          "size": [
+            5,
+            1
+          ],
+          "numel": 5,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeMolecularWeights",
+          "class": "double",
+          "size": [
+            11,
+            1
+          ],
+          "numel": 11,
+          "status": "OK"
+        },
+        {
+          "name": "maxPolymerLength",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "activationFwd",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "activationRev",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "exchangeFwd",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "exchangeRev",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "nucleationFwd",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "nucleationRev",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "elongationFwd",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "elongationRev",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        }
+      ],
+      "fitted": [],
+      "n_fixed": 14,
+      "n_fitted": 0
+    },
+    {
+      "name": "Host interaction",
+      "class": "edu.stanford.covert.cell.sim.process.HostInteraction",
+      "fixed": [
+        {
+          "name": "stimuliCompartments",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "substrateCompartments",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "enzymeCompartments",
+          "class": "double",
+          "size": [
+            15,
+            1
+          ],
+          "numel": 15,
+          "status": "OK"
+        },
+        {
+          "name": "substrateMolecularWeights",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "enzymeMolecularWeights",
+          "class": "double",
+          "size": [
+            15,
+            1
+          ],
+          "numel": 15,
+          "status": "OK"
+        }
+      ],
+      "fitted": [],
+      "n_fixed": 5,
+      "n_fitted": 0
+    },
+    {
+      "name": "Macromolecular complexation",
+      "class": "edu.stanford.covert.cell.sim.process.MacromolecularComplexation",
+      "fixed": [
+        {
+          "name": "stimuliCompartments",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "substrateCompartments",
+          "class": "double",
+          "size": [
+            210,
+            1
+          ],
+          "numel": 210,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeCompartments",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "substrateMolecularWeights",
+          "class": "double",
+          "size": [
+            210,
+            1
+          ],
+          "numel": 210,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeMolecularWeights",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "complexComposition",
+          "class": "double",
+          "size": [
+            210,
+            147
+          ],
+          "numel": 30870,
+          "status": "OK"
+        },
+        {
+          "name": "complexNetworks",
+          "class": "cell",
+          "size": [
+            2,
+            1
+          ],
+          "numel": 2,
+          "status": "OK"
+        },
+        {
+          "name": "substrates2complexNetworks",
+          "class": "double",
+          "size": [
+            210,
+            1
+          ],
+          "numel": 210,
+          "status": "OK"
+        },
+        {
+          "name": "complexs2complexNetworks",
+          "class": "double",
+          "size": [
+            147,
+            1
+          ],
+          "numel": 147,
+          "status": "OK"
+        }
+      ],
+      "fitted": [],
+      "n_fixed": 9,
+      "n_fitted": 0
+    },
+    {
+      "name": "Metabolism",
+      "class": "edu.stanford.covert.cell.sim.process.Metabolism",
+      "fixed": [
+        {
+          "name": "stimuliCompartments",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "substrateCompartments",
+          "class": "double",
+          "size": [
+            585,
+            3
+          ],
+          "numel": 1755,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeCompartments",
+          "class": "double",
+          "size": [
+            104,
+            1
+          ],
+          "numel": 104,
+          "status": "OK"
+        },
+        {
+          "name": "substrateMolecularWeights",
+          "class": "double",
+          "size": [
+            585,
+            1
+          ],
+          "numel": 585,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeMolecularWeights",
+          "class": "double",
+          "size": [
+            104,
+            1
+          ],
+          "numel": 104,
+          "status": "OK"
+        },
+        {
+          "name": "growthAssociatedMaintenance",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "nonGrowthAssociatedMaintenance",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "cellCycleLength",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "exchangeRateUpperBound_carbon",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "exchangeRateUpperBound_noncarbon",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "fbaObjective",
+          "class": "double",
+          "size": [
+            504,
+            1
+          ],
+          "numel": 504,
+          "status": "OK"
+        },
+        {
+          "name": "fbaRightHandSide",
+          "class": "double",
+          "size": [
+            376,
+            1
+          ],
+          "numel": 376,
+          "status": "OK"
+        },
+        {
+          "name": "fbaReactionStoichiometryMatrix",
+          "class": "double",
+          "size": [
+            376,
+            504
+          ],
+          "numel": 189504,
+          "status": "OK"
+        },
+        {
+          "name": "fbaReactionCatalysisMatrix",
+          "class": "double",
+          "size": [
+            504,
+            104
+          ],
+          "numel": 52416,
+          "status": "OK"
+        },
+        {
+          "name": "fbaReactionBounds",
+          "class": "double",
+          "size": [
+            504,
+            2
+          ],
+          "numel": 1008,
+          "status": "OK"
+        },
+        {
+          "name": "fbaEnzymeBounds",
+          "class": "double",
+          "size": [
+            504,
+            2
+          ],
+          "numel": 1008,
+          "status": "OK"
+        },
+        {
+          "name": "metabolismProduction",
+          "class": "double",
+          "size": [
+            585,
+            3
+          ],
+          "numel": 1755,
+          "status": "OK"
+        },
+        {
+          "name": "monomerCompartments",
+          "class": "uint32",
+          "size": [
+            482,
+            1
+          ],
+          "numel": 482,
+          "status": "OK"
+        },
+        {
+          "name": "reactionNames",
+          "class": "cell",
+          "size": [
+            645,
+            1
+          ],
+          "numel": 645,
+          "status": "OK"
+        },
+        {
+          "name": "reactionTypes",
+          "class": "cell",
+          "size": [
+            645,
+            1
+          ],
+          "numel": 645,
+          "status": "OK"
+        },
+        {
+          "name": "reactionStoichiometryMatrix",
+          "class": "double",
+          "size": [
+            585,
+            645,
+            3
+          ],
+          "numel": 1.131975E+6,
+          "status": "OK"
+        },
+        {
+          "name": "reactionCatalysisMatrix",
+          "class": "double",
+          "size": [
+            645,
+            104
+          ],
+          "numel": 67080,
+          "status": "OK"
+        },
+        {
+          "name": "reactionModificationMatrix",
+          "class": "double",
+          "size": [
+            645,
+            525
+          ],
+          "numel": 338625,
+          "status": "OK"
+        },
+        {
+          "name": "reactionCoenzymeMatrix",
+          "class": "double",
+          "size": [
+            645,
+            585,
+            3
+          ],
+          "numel": 1.131975E+6,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeBounds",
+          "class": "double",
+          "size": [
+            645,
+            2
+          ],
+          "numel": 1290,
+          "status": "OK"
+        },
+        {
+          "name": "reactionBounds",
+          "class": "double",
+          "size": [
+            645,
+            2
+          ],
+          "numel": 1290,
+          "status": "OK"
+        }
+      ],
+      "fitted": [
+        {
+          "name": "macromoleculeStateInitializationGrowthFactor",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "unaccountedEnergyConsumption",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        }
+      ],
+      "n_fixed": 26,
+      "n_fitted": 2
+    },
+    {
+      "name": "Protein activation",
+      "class": "edu.stanford.covert.cell.sim.process.ProteinActivation",
+      "fixed": [
+        {
+          "name": "stimuliCompartments",
+          "class": "double",
+          "size": [
+            20,
+            6
+          ],
+          "numel": 120,
+          "status": "OK"
+        },
+        {
+          "name": "substrateCompartments",
+          "class": "double",
+          "size": [
+            10,
+            6
+          ],
+          "numel": 60,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeCompartments",
+          "class": "double",
+          "size": [
+            0,
+            6
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "substrateMolecularWeights",
+          "class": "double",
+          "size": [
+            10,
+            1
+          ],
+          "numel": 10,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeMolecularWeights",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "activationRules",
+          "class": "cell",
+          "size": [
+            10,
+            1
+          ],
+          "numel": 10,
+          "status": "OK"
+        }
+      ],
+      "fitted": [],
+      "n_fixed": 6,
+      "n_fitted": 0
+    },
+    {
+      "name": "Protein decay",
+      "class": "edu.stanford.covert.cell.sim.process.ProteinDecay",
+      "fixed": [
+        {
+          "name": "stimuliCompartments",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "substrateCompartments",
+          "class": "double",
+          "size": [
+            53,
+            1
+          ],
+          "numel": 53,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeCompartments",
+          "class": "double",
+          "size": [
+            9,
+            1
+          ],
+          "numel": 9,
+          "status": "OK"
+        },
+        {
+          "name": "substrateMolecularWeights",
+          "class": "double",
+          "size": [
+            53,
+            1
+          ],
+          "numel": 53,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeMolecularWeights",
+          "class": "double",
+          "size": [
+            9,
+            1
+          ],
+          "numel": 9,
+          "status": "OK"
+        },
+        {
+          "name": "lonProteaseSpecificRate",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "lonProteaseEnergyCost",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "lonProteaseFragmentLength",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "ftsHProteaseSpecificRate",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "ftsHProteaseEnergyCost",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "ftsHProteaseFragmentLength",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "oligoendopeptidaseFSpecificRate",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "proteinMisfoldingRate",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "proteinComplexRNAComposition",
+          "class": "double",
+          "size": [
+            7,
+            1206
+          ],
+          "numel": 8442,
+          "status": "OK"
+        },
+        {
+          "name": "proteinComplexMonomerComposition",
+          "class": "double",
+          "size": [
+            482,
+            1206
+          ],
+          "numel": 581292,
+          "status": "OK"
+        },
+        {
+          "name": "monomerLonProteaseCleavages",
+          "class": "double",
+          "size": [
+            4820,
+            1
+          ],
+          "numel": 4820,
+          "status": "OK"
+        },
+        {
+          "name": "monomerDecayReactions",
+          "class": "double",
+          "size": [
+            53,
+            4820
+          ],
+          "numel": 255460,
+          "status": "OK"
+        },
+        {
+          "name": "complexDecayReactions",
+          "class": "double",
+          "size": [
+            53,
+            1206
+          ],
+          "numel": 63918,
+          "status": "OK"
+        }
+      ],
+      "fitted": [],
+      "n_fixed": 18,
+      "n_fitted": 0
+    },
+    {
+      "name": "Protein folding",
+      "class": "edu.stanford.covert.cell.sim.process.ProteinFolding",
+      "fixed": [
+        {
+          "name": "stimuliCompartments",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "substrateCompartments",
+          "class": "double",
+          "size": [
+            11,
+            1
+          ],
+          "numel": 11,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeCompartments",
+          "class": "double",
+          "size": [
+            5,
+            1
+          ],
+          "numel": 5,
+          "status": "OK"
+        },
+        {
+          "name": "substrateMolecularWeights",
+          "class": "double",
+          "size": [
+            11,
+            1
+          ],
+          "numel": 11,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeMolecularWeights",
+          "class": "double",
+          "size": [
+            5,
+            1
+          ],
+          "numel": 5,
+          "status": "OK"
+        },
+        {
+          "name": "proteinProstheticGroupMatrix",
+          "class": "double",
+          "size": [
+            683,
+            11
+          ],
+          "numel": 7513,
+          "status": "OK"
+        },
+        {
+          "name": "proteinChaperoneMatrix",
+          "class": "double",
+          "size": [
+            683,
+            5
+          ],
+          "numel": 3415,
+          "status": "OK"
+        },
+        {
+          "name": "monomerCompartments",
+          "class": "double",
+          "size": [
+            482,
+            1
+          ],
+          "numel": 482,
+          "status": "OK"
+        },
+        {
+          "name": "complexCompartments",
+          "class": "double",
+          "size": [
+            201,
+            1
+          ],
+          "numel": 201,
+          "status": "OK"
+        }
+      ],
+      "fitted": [],
+      "n_fixed": 9,
+      "n_fitted": 0
+    },
+    {
+      "name": "Protein modification",
+      "class": "edu.stanford.covert.cell.sim.process.ProteinModification",
+      "fixed": [
+        {
+          "name": "stimuliCompartments",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "substrateCompartments",
+          "class": "double",
+          "size": [
+            15,
+            1
+          ],
+          "numel": 15,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeCompartments",
+          "class": "double",
+          "size": [
+            3,
+            1
+          ],
+          "numel": 3,
+          "status": "OK"
+        },
+        {
+          "name": "substrateMolecularWeights",
+          "class": "double",
+          "size": [
+            15,
+            1
+          ],
+          "numel": 15,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeMolecularWeights",
+          "class": "double",
+          "size": [
+            3,
+            1
+          ],
+          "numel": 3,
+          "status": "OK"
+        },
+        {
+          "name": "monomerCompartments",
+          "class": "uint32",
+          "size": [
+            482,
+            1
+          ],
+          "numel": 482,
+          "status": "OK"
+        },
+        {
+          "name": "reactionNames",
+          "class": "cell",
+          "size": [
+            63,
+            1
+          ],
+          "numel": 63,
+          "status": "OK"
+        },
+        {
+          "name": "reactionTypes",
+          "class": "cell",
+          "size": [
+            63,
+            1
+          ],
+          "numel": 63,
+          "status": "OK"
+        },
+        {
+          "name": "reactionStoichiometryMatrix",
+          "class": "double",
+          "size": [
+            15,
+            63
+          ],
+          "numel": 945,
+          "status": "OK"
+        },
+        {
+          "name": "reactionCatalysisMatrix",
+          "class": "double",
+          "size": [
+            63,
+            3
+          ],
+          "numel": 189,
+          "status": "OK"
+        },
+        {
+          "name": "reactionModificationMatrix",
+          "class": "logical",
+          "size": [
+            63,
+            482
+          ],
+          "numel": 30366,
+          "status": "OK"
+        },
+        {
+          "name": "reactionCoenzymeMatrix",
+          "class": "double",
+          "size": [
+            63,
+            15
+          ],
+          "numel": 945,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeBounds",
+          "class": "double",
+          "size": [
+            63,
+            2
+          ],
+          "numel": 126,
+          "status": "OK"
+        },
+        {
+          "name": "reactionBounds",
+          "class": "double",
+          "size": [
+            63,
+            2
+          ],
+          "numel": 126,
+          "status": "OK"
+        }
+      ],
+      "fitted": [],
+      "n_fixed": 14,
+      "n_fitted": 0
+    },
+    {
+      "name": "Protein processing I",
+      "class": "edu.stanford.covert.cell.sim.process.ProteinProcessingI",
+      "fixed": [
+        {
+          "name": "stimuliCompartments",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "substrateCompartments",
+          "class": "double",
+          "size": [
+            4,
+            1
+          ],
+          "numel": 4,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeCompartments",
+          "class": "double",
+          "size": [
+            2,
+            1
+          ],
+          "numel": 2,
+          "status": "OK"
+        },
+        {
+          "name": "substrateMolecularWeights",
+          "class": "double",
+          "size": [
+            4,
+            1
+          ],
+          "numel": 4,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeMolecularWeights",
+          "class": "double",
+          "size": [
+            2,
+            1
+          ],
+          "numel": 2,
+          "status": "OK"
+        },
+        {
+          "name": "deformylaseSpecificRate",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "methionineAminoPeptidaseSpecificRate",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "nascentMonomerNTerminalMethionineCleavages",
+          "class": "logical",
+          "size": [
+            482,
+            1
+          ],
+          "numel": 482,
+          "status": "OK"
+        }
+      ],
+      "fitted": [],
+      "n_fixed": 8,
+      "n_fitted": 0
+    },
+    {
+      "name": "Protein processing II",
+      "class": "edu.stanford.covert.cell.sim.process.ProteinProcessingII",
+      "fixed": [
+        {
+          "name": "stimuliCompartments",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "substrateCompartments",
+          "class": "double",
+          "size": [
+            5,
+            1
+          ],
+          "numel": 5,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeCompartments",
+          "class": "double",
+          "size": [
+            2,
+            1
+          ],
+          "numel": 2,
+          "status": "OK"
+        },
+        {
+          "name": "substrateMolecularWeights",
+          "class": "double",
+          "size": [
+            5,
+            1
+          ],
+          "numel": 5,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeMolecularWeights",
+          "class": "double",
+          "size": [
+            2,
+            1
+          ],
+          "numel": 2,
+          "status": "OK"
+        },
+        {
+          "name": "lipoproteinSignalPeptidaseSpecificRate",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "lipoproteinDiacylglycerylTransferaseSpecificRate",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        }
+      ],
+      "fitted": [],
+      "n_fixed": 7,
+      "n_fitted": 0
+    },
+    {
+      "name": "Protein translocation",
+      "class": "edu.stanford.covert.cell.sim.process.ProteinTranslocation",
+      "fixed": [
+        {
+          "name": "stimuliCompartments",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "substrateCompartments",
+          "class": "double",
+          "size": [
+            7,
+            1
+          ],
+          "numel": 7,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeCompartments",
+          "class": "double",
+          "size": [
+            4,
+            1
+          ],
+          "numel": 4,
+          "status": "OK"
+        },
+        {
+          "name": "substrateMolecularWeights",
+          "class": "double",
+          "size": [
+            7,
+            1
+          ],
+          "numel": 7,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeMolecularWeights",
+          "class": "double",
+          "size": [
+            4,
+            1
+          ],
+          "numel": 4,
+          "status": "OK"
+        },
+        {
+          "name": "translocaseSpecificRate",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "preproteinTranslocase_aaTranslocatedPerATP",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "SRP_GTPUsedPerMonomer",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "monomerLengths",
+          "class": "double",
+          "size": [
+            482,
+            1
+          ],
+          "numel": 482,
+          "status": "OK"
+        },
+        {
+          "name": "monomerCompartments",
+          "class": "double",
+          "size": [
+            482,
+            1
+          ],
+          "numel": 482,
+          "status": "OK"
+        },
+        {
+          "name": "monomerSRPPathways",
+          "class": "logical",
+          "size": [
+            482,
+            1
+          ],
+          "numel": 482,
+          "status": "OK"
+        }
+      ],
+      "fitted": [],
+      "n_fixed": 11,
+      "n_fitted": 0
+    },
+    {
+      "name": "Replication",
+      "class": "edu.stanford.covert.cell.sim.process.Replication",
+      "fixed": [
+        {
+          "name": "stimuliCompartments",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "substrateCompartments",
+          "class": "double",
+          "size": [
+            16,
+            1
+          ],
+          "numel": 16,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeCompartments",
+          "class": "double",
+          "size": [
+            13,
+            1
+          ],
+          "numel": 13,
+          "status": "OK"
+        },
+        {
+          "name": "substrateMolecularWeights",
+          "class": "double",
+          "size": [
+            16,
+            1
+          ],
+          "numel": 16,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeMolecularWeights",
+          "class": "double",
+          "size": [
+            13,
+            1
+          ],
+          "numel": 13,
+          "status": "OK"
+        },
+        {
+          "name": "oriCPosition",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "terCPosition",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeComposition",
+          "class": "double",
+          "size": [
+            13,
+            13
+          ],
+          "numel": 169,
+          "status": "OK"
+        },
+        {
+          "name": "primaseBindingLocations",
+          "class": "cell",
+          "size": [
+            1,
+            2
+          ],
+          "numel": 2,
+          "status": "OK"
+        },
+        {
+          "name": "primerLength",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "dnaPolymeraseElongationRate",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "ssbComplexSpacing",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "okazakiFragmentMeanLength",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "ligaseRate",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "laggingBackupClampReloadingLength",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "startingOkazakiLoopLength",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "rnaPolymeraseCollisionMeanDwellTime",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "ssbDissociationRate",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "dnaAFunctionalBoxStartPositions",
+          "class": "double",
+          "size": [
+            5,
+            1
+          ],
+          "numel": 5,
+          "status": "OK"
+        }
+      ],
+      "fitted": [],
+      "n_fixed": 19,
+      "n_fitted": 0
+    },
+    {
+      "name": "Replication Initiation",
+      "class": "edu.stanford.covert.cell.sim.process.ReplicationInitiation",
+      "fixed": [
+        {
+          "name": "stimuliCompartments",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "substrateCompartments",
+          "class": "double",
+          "size": [
+            5,
+            1
+          ],
+          "numel": 5,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeCompartments",
+          "class": "double",
+          "size": [
+            15,
+            1
+          ],
+          "numel": 15,
+          "status": "OK"
+        },
+        {
+          "name": "substrateMolecularWeights",
+          "class": "double",
+          "size": [
+            5,
+            1
+          ],
+          "numel": 5,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeMolecularWeights",
+          "class": "double",
+          "size": [
+            15,
+            1
+          ],
+          "numel": 15,
+          "status": "OK"
+        },
+        {
+          "name": "dnaABoxStartPositions",
+          "class": "double",
+          "size": [
+            2283,
+            1
+          ],
+          "numel": 2283,
+          "status": "OK"
+        },
+        {
+          "name": "siteCooperativity",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "stateCooperativity",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "kb1ATP",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "kb2ATP",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "kd1ATP",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "kb1ADP",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "kb2ADP",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "kd1ADP",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "k_Regen",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "K_Regen_P4",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "k_inact",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        }
+      ],
+      "fitted": [],
+      "n_fixed": 17,
+      "n_fitted": 0
+    },
+    {
+      "name": "Ribosome assembly",
+      "class": "edu.stanford.covert.cell.sim.process.RibosomeAssembly",
+      "fixed": [
+        {
+          "name": "stimuliCompartments",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "substrateCompartments",
+          "class": "double",
+          "size": [
+            5,
+            1
+          ],
+          "numel": 5,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeCompartments",
+          "class": "double",
+          "size": [
+            6,
+            1
+          ],
+          "numel": 6,
+          "status": "OK"
+        },
+        {
+          "name": "substrateMolecularWeights",
+          "class": "double",
+          "size": [
+            5,
+            1
+          ],
+          "numel": 5,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeMolecularWeights",
+          "class": "double",
+          "size": [
+            6,
+            1
+          ],
+          "numel": 6,
+          "status": "OK"
+        },
+        {
+          "name": "complexationCatalysisMatrix",
+          "class": "logical",
+          "size": [
+            6,
+            2
+          ],
+          "numel": 12,
+          "status": "OK"
+        },
+        {
+          "name": "proteinComplexRNAComposition",
+          "class": "logical",
+          "size": [
+            3,
+            2
+          ],
+          "numel": 6,
+          "status": "OK"
+        },
+        {
+          "name": "proteinComplexMonomerComposition",
+          "class": "logical",
+          "size": [
+            52,
+            2
+          ],
+          "numel": 104,
+          "status": "OK"
+        }
+      ],
+      "fitted": [],
+      "n_fixed": 8,
+      "n_fitted": 0
+    },
+    {
+      "name": "RNA decay",
+      "class": "edu.stanford.covert.cell.sim.process.RNADecay",
+      "fixed": [
+        {
+          "name": "stimuliCompartments",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "substrateCompartments",
+          "class": "double",
+          "size": [
+            39,
+            1
+          ],
+          "numel": 39,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeCompartments",
+          "class": "double",
+          "size": [
+            2,
+            1
+          ],
+          "numel": 2,
+          "status": "OK"
+        },
+        {
+          "name": "substrateMolecularWeights",
+          "class": "double",
+          "size": [
+            39,
+            1
+          ],
+          "numel": 39,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeMolecularWeights",
+          "class": "double",
+          "size": [
+            2,
+            1
+          ],
+          "numel": 2,
+          "status": "OK"
+        },
+        {
+          "name": "peptidylTRNAHydrolaseSpecificRate",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "ribonucleaseRFragmentLength",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "decayReactions",
+          "class": "double",
+          "size": [
+            2428,
+            39
+          ],
+          "numel": 94692,
+          "status": "OK"
+        }
+      ],
+      "fitted": [],
+      "n_fixed": 8,
+      "n_fitted": 0
+    },
+    {
+      "name": "RNA modification",
+      "class": "edu.stanford.covert.cell.sim.process.RNAModification",
+      "fixed": [
+        {
+          "name": "stimuliCompartments",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "substrateCompartments",
+          "class": "double",
+          "size": [
+            29,
+            1
+          ],
+          "numel": 29,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeCompartments",
+          "class": "double",
+          "size": [
+            13,
+            1
+          ],
+          "numel": 13,
+          "status": "OK"
+        },
+        {
+          "name": "substrateMolecularWeights",
+          "class": "double",
+          "size": [
+            29,
+            1
+          ],
+          "numel": 29,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeMolecularWeights",
+          "class": "double",
+          "size": [
+            13,
+            1
+          ],
+          "numel": 13,
+          "status": "OK"
+        },
+        {
+          "name": "speciesReactantByproductMatrix",
+          "class": "double",
+          "size": [
+            38,
+            80
+          ],
+          "numel": 3040,
+          "status": "OK"
+        },
+        {
+          "name": "speciesReactantMatrix",
+          "class": "double",
+          "size": [
+            38,
+            80
+          ],
+          "numel": 3040,
+          "status": "OK"
+        },
+        {
+          "name": "reactionNames",
+          "class": "cell",
+          "size": [
+            91,
+            1
+          ],
+          "numel": 91,
+          "status": "OK"
+        },
+        {
+          "name": "reactionTypes",
+          "class": "cell",
+          "size": [
+            91,
+            1
+          ],
+          "numel": 91,
+          "status": "OK"
+        },
+        {
+          "name": "reactionStoichiometryMatrix",
+          "class": "double",
+          "size": [
+            29,
+            91
+          ],
+          "numel": 2639,
+          "status": "OK"
+        },
+        {
+          "name": "reactionCatalysisMatrix",
+          "class": "double",
+          "size": [
+            91,
+            13
+          ],
+          "numel": 1183,
+          "status": "OK"
+        },
+        {
+          "name": "reactionModificationMatrix",
+          "class": "double",
+          "size": [
+            91,
+            347
+          ],
+          "numel": 31577,
+          "status": "OK"
+        },
+        {
+          "name": "reactionCoenzymeMatrix",
+          "class": "double",
+          "size": [
+            91,
+            29
+          ],
+          "numel": 2639,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeBounds",
+          "class": "double",
+          "size": [
+            91,
+            2
+          ],
+          "numel": 182,
+          "status": "OK"
+        },
+        {
+          "name": "reactionBounds",
+          "class": "double",
+          "size": [
+            91,
+            2
+          ],
+          "numel": 182,
+          "status": "OK"
+        }
+      ],
+      "fitted": [],
+      "n_fixed": 15,
+      "n_fitted": 0
+    },
+    {
+      "name": "RNA processing",
+      "class": "edu.stanford.covert.cell.sim.process.RNAProcessing",
+      "fixed": [
+        {
+          "name": "stimuliCompartments",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "substrateCompartments",
+          "class": "double",
+          "size": [
+            7,
+            1
+          ],
+          "numel": 7,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeCompartments",
+          "class": "double",
+          "size": [
+            5,
+            1
+          ],
+          "numel": 5,
+          "status": "OK"
+        },
+        {
+          "name": "substrateMolecularWeights",
+          "class": "double",
+          "size": [
+            7,
+            1
+          ],
+          "numel": 7,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeMolecularWeights",
+          "class": "double",
+          "size": [
+            5,
+            1
+          ],
+          "numel": 5,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeSpecificRate_DeaD",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeSpecificRate_RsgA",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeSpecificRate_RNAseP",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeSpecificRate_RNAseIII",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeSpecificRate_RNAseJ",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeEnergyCost_DeaD",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeEnergyCost_RsgA",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "reactantByproductMatrix",
+          "class": "double",
+          "size": [
+            7,
+            335
+          ],
+          "numel": 2345,
+          "status": "OK"
+        },
+        {
+          "name": "catalysisMatrix",
+          "class": "double",
+          "size": [
+            5,
+            335
+          ],
+          "numel": 1675,
+          "status": "OK"
+        }
+      ],
+      "fitted": [],
+      "n_fixed": 14,
+      "n_fitted": 0
+    },
+    {
+      "name": "Terminal organelle assembly",
+      "class": "edu.stanford.covert.cell.sim.process.TerminalOrganelleAssembly",
+      "fixed": [
+        {
+          "name": "stimuliCompartments",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "substrateCompartments",
+          "class": "double",
+          "size": [
+            8,
+            2
+          ],
+          "numel": 16,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeCompartments",
+          "class": "double",
+          "size": [
+            4,
+            6
+          ],
+          "numel": 24,
+          "status": "OK"
+        },
+        {
+          "name": "substrateMolecularWeights",
+          "class": "double",
+          "size": [
+            8,
+            1
+          ],
+          "numel": 8,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeMolecularWeights",
+          "class": "double",
+          "size": [
+            4,
+            1
+          ],
+          "numel": 4,
+          "status": "OK"
+        },
+        {
+          "name": "localizationReactions",
+          "class": "double",
+          "size": [
+            10,
+            8,
+            2
+          ],
+          "numel": 160,
+          "status": "OK"
+        },
+        {
+          "name": "localizationSubstrates",
+          "class": "double",
+          "size": [
+            10,
+            8
+          ],
+          "numel": 80,
+          "status": "OK"
+        },
+        {
+          "name": "localizationThreshold",
+          "class": "double",
+          "size": [
+            10,
+            1
+          ],
+          "numel": 10,
+          "status": "OK"
+        },
+        {
+          "name": "reactionNames",
+          "class": "cell",
+          "size": [
+            10,
+            1
+          ],
+          "numel": 10,
+          "status": "OK"
+        },
+        {
+          "name": "reactionTypes",
+          "class": "cell",
+          "size": [
+            10,
+            1
+          ],
+          "numel": 10,
+          "status": "OK"
+        },
+        {
+          "name": "reactionStoichiometryMatrix",
+          "class": "double",
+          "size": [
+            0,
+            10
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "reactionCatalysisMatrix",
+          "class": "double",
+          "size": [
+            10,
+            4,
+            6
+          ],
+          "numel": 240,
+          "status": "OK"
+        },
+        {
+          "name": "reactionModificationMatrix",
+          "class": "double",
+          "size": [
+            10,
+            525,
+            6
+          ],
+          "numel": 31500,
+          "status": "OK"
+        },
+        {
+          "name": "reactionCoenzymeMatrix",
+          "class": "double",
+          "size": [
+            10,
+            0
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "enzymeBounds",
+          "class": "double",
+          "size": [
+            10,
+            2
+          ],
+          "numel": 20,
+          "status": "OK"
+        },
+        {
+          "name": "reactionBounds",
+          "class": "double",
+          "size": [
+            10,
+            2
+          ],
+          "numel": 20,
+          "status": "OK"
+        }
+      ],
+      "fitted": [],
+      "n_fixed": 16,
+      "n_fitted": 0
+    },
+    {
+      "name": "Transcription",
+      "class": "edu.stanford.covert.cell.sim.process.Transcription",
+      "fixed": [
+        {
+          "name": "stimuliCompartments",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "substrateCompartments",
+          "class": "double",
+          "size": [
+            12,
+            1
+          ],
+          "numel": 12,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeCompartments",
+          "class": "double",
+          "size": [
+            6,
+            1
+          ],
+          "numel": 6,
+          "status": "OK"
+        },
+        {
+          "name": "substrateMolecularWeights",
+          "class": "double",
+          "size": [
+            12,
+            1
+          ],
+          "numel": 12,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeMolecularWeights",
+          "class": "double",
+          "size": [
+            6,
+            1
+          ],
+          "numel": 6,
+          "status": "OK"
+        },
+        {
+          "name": "rnaPolymeraseElongationRate",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "transcriptionUnitBaseCounts",
+          "class": "double",
+          "size": [
+            335,
+            12
+          ],
+          "numel": 4020,
+          "status": "OK"
+        },
+        {
+          "name": "transcriptionUnitBindingProbabilities",
+          "class": "double",
+          "size": [
+            335,
+            1
+          ],
+          "numel": 335,
+          "status": "OK"
+        }
+      ],
+      "fitted": [
+        {
+          "name": "transcriptionUnitBindingProbabilities",
+          "class": "double",
+          "size": [
+            335,
+            1
+          ],
+          "numel": 335,
+          "status": "OK"
+        }
+      ],
+      "n_fixed": 8,
+      "n_fitted": 1
+    },
+    {
+      "name": "Transcriptional regulation",
+      "class": "edu.stanford.covert.cell.sim.process.TranscriptionalRegulation",
+      "fixed": [
+        {
+          "name": "stimuliCompartments",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "substrateCompartments",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "enzymeCompartments",
+          "class": "double",
+          "size": [
+            5,
+            1
+          ],
+          "numel": 5,
+          "status": "OK"
+        },
+        {
+          "name": "substrateMolecularWeights",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "enzymeMolecularWeights",
+          "class": "double",
+          "size": [
+            5,
+            1
+          ],
+          "numel": 5,
+          "status": "OK"
+        },
+        {
+          "name": "tfIndexs",
+          "class": "double",
+          "size": [
+            17,
+            2
+          ],
+          "numel": 34,
+          "status": "OK"
+        },
+        {
+          "name": "tuIndexs",
+          "class": "double",
+          "size": [
+            17,
+            2
+          ],
+          "numel": 34,
+          "status": "OK"
+        },
+        {
+          "name": "tfAffinities",
+          "class": "double",
+          "size": [
+            17,
+            2
+          ],
+          "numel": 34,
+          "status": "OK"
+        },
+        {
+          "name": "tfActivities",
+          "class": "double",
+          "size": [
+            17,
+            2
+          ],
+          "numel": 34,
+          "status": "OK"
+        },
+        {
+          "name": "tfPositionStrands",
+          "class": "double",
+          "size": [
+            34,
+            2
+          ],
+          "numel": 68,
+          "status": "OK"
+        },
+        {
+          "name": "otherActivities",
+          "class": "double",
+          "size": [
+            335,
+            5
+          ],
+          "numel": 1675,
+          "status": "OK"
+        }
+      ],
+      "fitted": [],
+      "n_fixed": 11,
+      "n_fitted": 0
+    },
+    {
+      "name": "Translation",
+      "class": "edu.stanford.covert.cell.sim.process.Translation",
+      "fixed": [
+        {
+          "name": "stimuliCompartments",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "substrateCompartments",
+          "class": "double",
+          "size": [
+            26,
+            1
+          ],
+          "numel": 26,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeCompartments",
+          "class": "double",
+          "size": [
+            16,
+            1
+          ],
+          "numel": 16,
+          "status": "OK"
+        },
+        {
+          "name": "substrateMolecularWeights",
+          "class": "double",
+          "size": [
+            26,
+            1
+          ],
+          "numel": 26,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeMolecularWeights",
+          "class": "double",
+          "size": [
+            16,
+            1
+          ],
+          "numel": 16,
+          "status": "OK"
+        },
+        {
+          "name": "ribosomeElongationRate",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        },
+        {
+          "name": "tmRNABindingProbability",
+          "class": "double",
+          "size": [
+            1,
+            1
+          ],
+          "numel": 1,
+          "status": "OK"
+        }
+      ],
+      "fitted": [],
+      "n_fixed": 7,
+      "n_fitted": 0
+    },
+    {
+      "name": "tRNA aminoacylation",
+      "class": "edu.stanford.covert.cell.sim.process.tRNAAminoacylation",
+      "fixed": [
+        {
+          "name": "stimuliCompartments",
+          "class": "double",
+          "size": [
+            0,
+            1
+          ],
+          "numel": 0,
+          "status": "EMPTY"
+        },
+        {
+          "name": "substrateCompartments",
+          "class": "double",
+          "size": [
+            30,
+            1
+          ],
+          "numel": 30,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeCompartments",
+          "class": "double",
+          "size": [
+            58,
+            1
+          ],
+          "numel": 58,
+          "status": "OK"
+        },
+        {
+          "name": "substrateMolecularWeights",
+          "class": "double",
+          "size": [
+            30,
+            1
+          ],
+          "numel": 30,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeMolecularWeights",
+          "class": "double",
+          "size": [
+            58,
+            1
+          ],
+          "numel": 58,
+          "status": "OK"
+        },
+        {
+          "name": "monomerTRNACounts",
+          "class": "double",
+          "size": [
+            482,
+            36
+          ],
+          "numel": 17352,
+          "status": "OK"
+        },
+        {
+          "name": "reactionNames",
+          "class": "cell",
+          "size": [
+            39,
+            1
+          ],
+          "numel": 39,
+          "status": "OK"
+        },
+        {
+          "name": "reactionTypes",
+          "class": "cell",
+          "size": [
+            39,
+            1
+          ],
+          "numel": 39,
+          "status": "OK"
+        },
+        {
+          "name": "reactionStoichiometryMatrix",
+          "class": "double",
+          "size": [
+            30,
+            39
+          ],
+          "numel": 1170,
+          "status": "OK"
+        },
+        {
+          "name": "reactionCatalysisMatrix",
+          "class": "double",
+          "size": [
+            39,
+            21
+          ],
+          "numel": 819,
+          "status": "OK"
+        },
+        {
+          "name": "reactionModificationMatrix",
+          "class": "double",
+          "size": [
+            39,
+            37
+          ],
+          "numel": 1443,
+          "status": "OK"
+        },
+        {
+          "name": "reactionCoenzymeMatrix",
+          "class": "double",
+          "size": [
+            39,
+            30
+          ],
+          "numel": 1170,
+          "status": "OK"
+        },
+        {
+          "name": "enzymeBounds",
+          "class": "double",
+          "size": [
+            39,
+            2
+          ],
+          "numel": 78,
+          "status": "OK"
+        },
+        {
+          "name": "reactionBounds",
+          "class": "double",
+          "size": [
+            39,
+            2
+          ],
+          "numel": 78,
+          "status": "OK"
+        }
+      ],
+      "fitted": [],
+      "n_fixed": 14,
+      "n_fitted": 0
+    }
+  ]
+}
