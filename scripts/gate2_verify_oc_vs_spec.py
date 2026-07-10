@@ -32,6 +32,7 @@ DEFAULT_FIXTURE_DIR = derive_input_spec.FIXTURE_ROOT
 _REPLAY_COMMON_PATH = REPO_ROOT / "tests" / "vivarium" / "l2_2_replay_common_v2.py"
 _SOURCE_TRUTH_PATH = DEFAULT_SPEC_DIR / "_gate0_source_truth.json"
 _CONSTANT_INVENTORY_PATH = DEFAULT_SPEC_DIR / "_gate0_constant_inventory.json"
+_STATE_USAGE_PATH = DEFAULT_SPEC_DIR / "_karr_state_usage.json"
 
 _STATUS_CONFORM = "CONFORM"
 _STATUS_DIVERGE = "DIVERGE"
@@ -99,24 +100,44 @@ _STOICH_ENZYME_ID_TERMINALS = {
     "complex_enzyme_wids",
     "monomer_enzyme_wids",
 }
-_STATE_REF_PORT_SYNONYMS = {
-    "Geometry": ("geometry",),
-    "CellGeometry": ("geometry", "cell"),
-    "CellMass": ("mass", "cell"),
-    "Chromosome": ("chromosome",),
-    "FtsZRing": ("ftsZRing",),
-    "Host": ("host", "cell"),
-    "Mass": ("mass",),
-    "MetabolicReaction": ("metabolic_reaction",),
-    "Metabolite": ("metabolite", "substrates"),
-    "Polypeptide": ("polypeptide", "protein"),
-    "ProteinComplex": ("complex", "complexs"),
-    "ProteinMonomer": ("monomer", "monomers", "protein"),
-    "RNAPolymerase": ("rnaPolymerases", "enzymes"),
-    "Ribosome": ("ribosome", "complex", "complexs"),
-    "Rna": ("rna",),
-    "Transcript": ("transcript", "transcripts", "rna"),
-    "Stimulus": ("stimuli", "stimulus"),
+_IGNORED_STATE_USAGE_PORTS = {
+    "boundenzymes",
+    "requests",
+    "substratesallocated",
+    "txratefoldchange",
+}
+_PORT_STATE_CLASSES = {
+    "cell": {"Geometry"},
+    "chromosome": {"Chromosome"},
+    "complex": {"ProteinComplex"},
+    "complexs": {"ProteinComplex"},
+    "enzymes": {"ProteinComplex", "ProteinMonomer"},
+    "ftszring": {"FtsZRing"},
+    "geometry": {"Geometry"},
+    "host": {"Host"},
+    "mass": {"Mass"},
+    "metabolicreaction": {"MetabolicReaction"},
+    "metabolite": {"Metabolite"},
+    "monomer": {"ProteinMonomer"},
+    "monomers": {"ProteinMonomer"},
+    "polypeptide": {"Polypeptide"},
+    "protein": {"ProteinMonomer"},
+    "ribosome": {"Ribosome"},
+    "rna": {"Rna"},
+    "rnapolymerase": {"RNAPolymerase"},
+    "rnapolymerases": {"RNAPolymerase"},
+    "stimuli": {"Stimulus"},
+    "stimulus": {"Stimulus"},
+    "substrates": {"Metabolite"},
+    "transcript": {"Transcript"},
+    "transcripts": {"Transcript"},
+}
+_FIXTURE_LOCAL_INDEX_STATE_CLASSES = {
+    "Complex": "ProteinComplex",
+    "Metabolite": "Metabolite",
+    "Monomer": "ProteinMonomer",
+    "RNA": "Rna",
+    "Stimulus": "Stimulus",
 }
 
 
@@ -193,7 +214,18 @@ def _load_constant_inventory(path: Path) -> dict[str, list[str]]:
     return out
 
 
-def _load_fixture(path: Path) -> Any:
+def _load_state_usage(path: Path) -> dict[str, list[str]]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    out: dict[str, list[str]] = {}
+    for process_name, entry in payload.items():
+        if not isinstance(entry, Mapping):
+            continue
+        states = [str(item) for item in entry.get("states_used", []) if str(item).strip()]
+        out[str(process_name)] = states
+    return out
+
+
+def _load_fixture(path: Path) -> object:
     return loadmat(str(path), squeeze_me=True, struct_as_record=False)["data"].fixture
 
 
@@ -235,7 +267,7 @@ def _expected_vocab(spec_payload: Mapping[str, Any], *, role: str) -> list[str]:
     return [_normalize_wid(str(item)) for item in vocabularies.get(field_name, [])]
 
 
-def _resolve_role_vocab(process: Any, *, role: str) -> tuple[list[str], str | None, bool]:
+def _resolve_role_vocab(process: object, *, role: str) -> tuple[list[str], str | None, bool]:
     first_existing_attr: str | None = None
     for attr_name in _ROLE_ATTR_CANDIDATES[role]:
         if not hasattr(process, attr_name):
@@ -311,7 +343,11 @@ def _combine_statuses(statuses: Iterable[str]) -> str:
     return _STATUS_CONFORM
 
 
-def _evaluate_vocabulary_class(process_name: str, process: Any, spec_payload: Mapping[str, Any]) -> ClassResult:
+def _evaluate_vocabulary_class(
+    process_name: str,
+    process: object,
+    spec_payload: Mapping[str, Any],
+) -> ClassResult:
     role_results: list[RoleComparison] = []
     for role in ("substrates", "enzymes", "stimuli"):
         expected = _expected_vocab(spec_payload, role=role)
@@ -351,7 +387,14 @@ def _tokens(value: str) -> list[str]:
     return [token.lower() for token in _TOKEN_RE.findall(value)]
 
 
-def _walk_surface(value: Any, *, path: str, depth: int, leaves: dict[str, Any], seen: set[int]) -> None:
+def _walk_surface(
+    value: object,
+    *,
+    path: str,
+    depth: int,
+    leaves: dict[str, object],
+    seen: set[int],
+) -> None:
     if value is None:
         return
     if isinstance(value, (str, bytes, bytearray, bool, int, float, np.ndarray, list, tuple, set)):
@@ -392,8 +435,8 @@ def _walk_surface(value: Any, *, path: str, depth: int, leaves: dict[str, Any], 
         )
 
 
-def _collect_surface_leaves(process: Any) -> dict[str, Any]:
-    leaves: dict[str, Any] = {}
+def _collect_surface_leaves(process: object) -> dict[str, object]:
+    leaves: dict[str, object] = {}
     _walk_surface(process, path="", depth=2, leaves=leaves, seen=set())
     return leaves
 
@@ -406,11 +449,11 @@ def _find_surface_candidates(leaves: Mapping[str, Any], terminals: set[str]) -> 
     ]
 
 
-def _coerce_string_list(value: Any) -> list[str]:
+def _coerce_string_list(value: object) -> list[str]:
     return [str(item) for item in _normalize_vocab_value(value)]
 
 
-def _coerce_matrix(value: Any) -> np.ndarray | None:
+def _coerce_matrix(value: object) -> np.ndarray | None:
     if isinstance(value, np.ndarray):
         return value
     try:
@@ -452,7 +495,7 @@ def _spec_reaction_species(
     return out
 
 
-def _build_oc_reaction_species_from_mapping(value: Any) -> dict[str, set[str]] | None:
+def _build_oc_reaction_species_from_mapping(value: object) -> dict[str, set[str]] | None:
     if not isinstance(value, Mapping):
         return None
     out: dict[str, set[str]] = {}
@@ -500,7 +543,7 @@ def _build_oc_reaction_species(
 
 def _build_oc_reaction_species_from_surface(
     *,
-    matrix_value: Any,
+    matrix_value: object,
     reaction_ids: list[str],
     species_ids: list[str],
 ) -> dict[str, set[str]] | None:
@@ -535,20 +578,43 @@ def _reaction_id_candidates(
     return candidates
 
 
-def _state_ref_candidates(state_ref: str) -> tuple[set[str], bool]:
-    explicit = set(_STATE_REF_PORT_SYNONYMS.get(state_ref, ()))
-    explicit.add(state_ref)
-    return ({_normalize_surface_name(candidate) for candidate in explicit}, state_ref in _STATE_REF_PORT_SYNONYMS)
-
-
-def _ports_schema(process: Any) -> dict[str, Any]:
+def _ports_schema(process: object) -> dict[str, object]:
     schema = process.ports_schema()
     return schema if isinstance(schema, dict) else {}
-    return out
+
+
+def _fixture_field_has_values(fixture: object, field_name: str) -> bool:
+    if not hasattr(fixture, field_name):
+        return False
+    value = getattr(fixture, field_name)
+    try:
+        return np.asarray(value).size > 0
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def _reachable_states_from_ports(ports: Iterable[str]) -> set[str]:
+    reachable: set[str] = set()
+    for port in ports:
+        normalized = _normalize_surface_name(port)
+        if normalized in _IGNORED_STATE_USAGE_PORTS:
+            continue
+        reachable.update(_PORT_STATE_CLASSES.get(normalized, set()))
+    return reachable
+
+
+def _reachable_states_from_fixture(fixture: object) -> set[str]:
+    reachable: set[str] = set()
+    for prefix in ("substrate", "enzyme"):
+        for fixture_state, state_class in _FIXTURE_LOCAL_INDEX_STATE_CLASSES.items():
+            field_name = f"{prefix}{fixture_state}LocalIndexs"
+            if _fixture_field_has_values(fixture, field_name):
+                reachable.add(state_class)
+    return reachable
 
 
 def _evaluate_stoichiometry_class(
-    process: Any,
+    process: object,
     spec_payload: Mapping[str, Any],
     *,
     fixture_path: Path,
@@ -670,13 +736,13 @@ def _evaluate_stoichiometry_class(
     return ClassResult(status=_STATUS_CONFORM)
 
 
-def _evaluate_state_refs_class(
+def _evaluate_state_usage_class(
     process_name: str,
-    process: Any,
-    source_truth: Mapping[str, dict[str, Any]],
+    process: object,
+    *,
+    fixture_path: Path,
+    state_usage: Mapping[str, list[str]],
 ) -> ClassResult:
-    spec_entry = source_truth.get(process_name, {})
-    expected_refs = [str(item) for item in spec_entry.get("state_refs", []) if str(item).strip()]
     try:
         ports = sorted(_ports_schema(process))
     except Exception as exc:  # noqa: BLE001
@@ -685,32 +751,29 @@ def _evaluate_state_refs_class(
             details=[f"ports_schema() failed: {exc.__class__.__name__}: {exc}"],
         )
 
-    normalized_ports = {_normalize_surface_name(port): port for port in ports}
-    missing_in_oc: list[str] = []
-    unmapped_names: list[str] = []
-    for state_ref in expected_refs:
-        candidates, had_explicit_mapping = _state_ref_candidates(state_ref)
-        if any(candidate in normalized_ports for candidate in candidates):
-            continue
-        missing_in_oc.append(state_ref)
-        if not had_explicit_mapping:
-            unmapped_names.append(state_ref)
+    fixture = _load_fixture(fixture_path)
+    states_used = sorted(set(state_usage.get(process_name, [])))
+    oc_reachable = sorted(
+        _reachable_states_from_ports(ports) | _reachable_states_from_fixture(fixture)
+    )
+    missing_states = sorted(set(states_used) - set(oc_reachable))
 
-    if not missing_in_oc:
+    if not missing_states:
         return ClassResult(status=_STATUS_CONFORM)
 
-    details = [
-        f"missing_in_oc={_preview_items(missing_in_oc)}",
-        f"oc_ports={_preview_items(ports)}",
-    ]
-    if unmapped_names:
-        details.append(f"unmapped_name={_preview_items(sorted(set(unmapped_names)))}")
-    return ClassResult(status=_STATUS_DIVERGE, details=details)
+    return ClassResult(
+        status=_STATUS_DIVERGE,
+        details=[
+            f"missing_states={_preview_items(missing_states)}",
+            f"states_used={_preview_items(states_used)}",
+            f"oc_reachable={_preview_items(oc_reachable)}",
+        ],
+    )
 
 
 def _evaluate_constants_class(
     process_name: str,
-    process: Any,
+    process: object,
     spec_payload: Mapping[str, Any],
     constant_inventory: Mapping[str, list[str]],
 ) -> ClassResult:
@@ -731,13 +794,13 @@ def _process_spec_items(
 
 
 def _matrix_lines(process_results: list[tuple[str, dict[str, ClassResult]]]) -> list[str]:
-    headers = ("Process", "Vocab", "Stoich", "StateRefs", "Constants")
+    headers = ("Process", "Vocab", "Stoich", "StateUsage", "Constants")
     rows = [
         (
             process_name,
             class_results["vocab"].status,
             class_results["stoich"].status,
-            class_results["state_refs"].status,
+            class_results["state_usage"].status,
             class_results["constants"].status,
         )
         for process_name, class_results in process_results
@@ -801,12 +864,12 @@ def _gate_result(
             f"{len(missing_fixture_files)}/{len(expected)} expected process(es): {preview}."
         )
 
-    source_truth = _load_source_truth(_SOURCE_TRUTH_PATH) if _SOURCE_TRUTH_PATH.exists() else {}
     constant_inventory = (
         _load_constant_inventory(_CONSTANT_INVENTORY_PATH)
         if _CONSTANT_INVENTORY_PATH.exists()
         else {}
     )
+    state_usage = _load_state_usage(_STATE_USAGE_PATH) if _STATE_USAGE_PATH.exists() else {}
 
     process_results: list[tuple[str, dict[str, ClassResult]]] = []
     construct_errors: list[str] = []
@@ -824,7 +887,7 @@ def _gate_result(
                             details=[f"Missing frozen spec file {_display_path(spec_path)}"],
                         ),
                         "stoich": ClassResult(status=_STATUS_NOT_EXPOSED),
-                        "state_refs": ClassResult(status=_STATUS_NOT_EXPOSED),
+                        "state_usage": ClassResult(status=_STATUS_DIVERGE),
                         "constants": ClassResult(status=_STATUS_NOT_EXPOSED),
                     },
                 )
@@ -845,7 +908,7 @@ def _gate_result(
                     {
                         "vocab": ClassResult(status=_STATUS_DIVERGE, details=["Process construction failed."]),
                         "stoich": ClassResult(status=_STATUS_NOT_EXPOSED),
-                        "state_refs": ClassResult(status=_STATUS_NOT_EXPOSED),
+                        "state_usage": ClassResult(status=_STATUS_DIVERGE),
                         "constants": ClassResult(status=_STATUS_NOT_EXPOSED),
                     },
                 )
@@ -859,7 +922,12 @@ def _gate_result(
                 spec_payload,
                 fixture_path=fixture_path,
             ),
-            "state_refs": _evaluate_state_refs_class(process_name, process, source_truth),
+            "state_usage": _evaluate_state_usage_class(
+                process_name,
+                process,
+                fixture_path=fixture_path,
+                state_usage=state_usage,
+            ),
             "constants": _evaluate_constants_class(
                 process_name,
                 process,
