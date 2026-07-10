@@ -21,6 +21,7 @@ Progress:
   - compare source vs fixture `nz_val` with `np.array_equal(..., equal_nan=True)`,
   - remove the resolved-vs-raw `fixedConstantNames__` / `fittedConstantNames__` set checks,
   - classify source-declared but fixture-unpersisted constants as INFO coverage gaps.
+- Committed comparator + verification chunk: `5908beb` (`Correct gate0 constants comparison semantics`).
 - Ruff clean:
   `bin\oc-py -m ruff check scripts/gate0_verify_constants.py`
 - Gate verification pass:
