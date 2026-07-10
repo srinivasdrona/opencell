@@ -37,6 +37,7 @@ _STATE_USAGE_PATH = DEFAULT_SPEC_DIR / "_karr_state_usage.json"
 _STATUS_CONFORM = "CONFORM"
 _STATUS_DIVERGE = "DIVERGE"
 _STATUS_NOT_EXPOSED = "NOT_EXPOSED"
+_STATUS_NA = "N/A"
 
 _PREVIEW_LIMIT = 12
 _ROLE_TO_SPEC_FIELD = {
@@ -267,6 +268,22 @@ def _expected_vocab(spec_payload: Mapping[str, Any], *, role: str) -> list[str]:
     return [_normalize_wid(str(item)) for item in vocabularies.get(field_name, [])]
 
 
+def _model_substrate_wids(process: object) -> list[str]:
+    """Metabolism holds its 585 substrates in the FBA model, not a flat attr.
+    Reach `process.model.raw['ids']['substrate_wcm_585']` so its substrate vocab
+    is validatable instead of NOT_EXPOSED."""
+    model = getattr(process, "model", None)
+    raw = getattr(model, "raw", None)
+    if isinstance(raw, Mapping):
+        ids = raw.get("ids")
+        if isinstance(ids, Mapping):
+            for key in ("substrate_wcm_585", "substrate_wcm"):
+                value = ids.get(key)
+                if value is not None:
+                    return [str(item) for item in value]
+    return []
+
+
 def _resolve_role_vocab(process: object, *, role: str) -> tuple[list[str], str | None, bool]:
     first_existing_attr: str | None = None
     for attr_name in _ROLE_ATTR_CANDIDATES[role]:
@@ -278,6 +295,14 @@ def _resolve_role_vocab(process: object, *, role: str) -> tuple[list[str], str |
         values = [_normalize_wid(item) for item in _normalize_vocab_value(raw_value)]
         if values:
             return values, attr_name, True
+    if role == "substrates":
+        model_subs = _model_substrate_wids(process)
+        if model_subs:
+            return (
+                [_normalize_wid(item) for item in model_subs],
+                "model.raw['ids']['substrate_wcm_585']",
+                True,
+            )
     return [], first_existing_attr, first_existing_attr is not None
 
 
@@ -641,7 +666,10 @@ def _evaluate_stoichiometry_class(
 
     spec_species = _spec_reaction_species(spec_payload, reaction_field=selected_spec_field)
     if spec_species is None:
-        return ClassResult(status=_STATUS_CONFORM)
+        return ClassResult(
+            status=_STATUS_NA,
+            details=["No stoichiometry section in spec (process defines no reactions)."],
+        )
 
     spec_reaction_ids = list(spec_species) or _spec_reaction_ids(spec_payload)
     fixture = _load_fixture(fixture_path)
@@ -949,6 +977,11 @@ def _gate_result(
         for _, class_results in process_results
         for class_result in class_results.values()
     )
+    na_cells = sum(
+        class_result.status == _STATUS_NA
+        for _, class_results in process_results
+        for class_result in class_results.values()
+    )
 
     if construct_errors:
         details.extend(f"construct_error: {item}" for item in construct_errors)
@@ -956,7 +989,7 @@ def _gate_result(
     summary = (
         f"GATE 2 (OC vs spec): {'FAIL' if diverge_cells else 'PASS'} — "
         f"diverge_cells={diverge_cells}, not_exposed_cells={not_exposed_cells}, "
-        f"processes={len(expected)}"
+        f"na_cells={na_cells}, processes={len(expected)}"
     )
     message_lines = [summary, "Matrix:", *matrix_lines]
     if details:
