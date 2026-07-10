@@ -799,17 +799,135 @@ def _evaluate_state_usage_class(
     )
 
 
+def _significant_tokens(name: str) -> set[str]:
+    return {tok.lower() for tok in _tokens(name) if len(tok) >= 3 and not tok.isdigit()}
+
+
+def _oc_attribute_values(process: object) -> dict[str, object]:
+    out: dict[str, object] = {}
+    for attr, value in vars(process).items():
+        if attr.startswith("__"):
+            continue
+        out[attr] = value
+    return out
+
+
+def _spec_constant_shape(spec_val: object) -> list[int] | None:
+    if isinstance(spec_val, Mapping) and "shape" in spec_val:
+        return [int(x) for x in spec_val["shape"]]
+    return None
+
+
+def _values_match(spec_val: object, oc_val: object) -> bool | None:
+    """True/False if comparable; None if not confidently comparable."""
+    shape = _spec_constant_shape(spec_val)
+    if shape is not None:
+        arr = _coerce_matrix(oc_val)
+        if arr is None:
+            oc_arr = np.asarray(oc_val)
+            if oc_arr.dtype == object:
+                return None
+            arr = oc_arr
+        oc_shape = [d for d in arr.shape]
+        return sorted(d for d in oc_shape if d != 1) == sorted(d for d in shape if d != 1)
+    if isinstance(spec_val, bool):
+        return bool(oc_val) == spec_val if isinstance(oc_val, (bool, int)) else None
+    if isinstance(spec_val, (int, float)):
+        try:
+            oc_num = float(np.asarray(oc_val, dtype=float).reshape(-1)[0]) if np.ndim(oc_val) else float(oc_val)
+        except (TypeError, ValueError):
+            return None
+        return abs(float(spec_val) - oc_num) <= 1e-9 + 1e-6 * abs(float(spec_val))
+    if isinstance(spec_val, str):
+        return str(oc_val) == spec_val if isinstance(oc_val, (str, bytes, np.str_)) else None
+    if isinstance(spec_val, list):
+        oc_list = _normalize_vocab_value(oc_val)
+        spec_list = [str(x) for x in spec_val]
+        if oc_list and all(_looks_numeric(x) for x in spec_list):
+            try:
+                return np.allclose(
+                    np.asarray(spec_val, dtype=float),
+                    np.asarray(oc_val, dtype=float).reshape(-1),
+                )
+            except (TypeError, ValueError):
+                return None
+        return oc_list == spec_list if oc_list else None
+    return None
+
+
+def _looks_numeric(value: str) -> bool:
+    try:
+        float(value)
+    except (TypeError, ValueError):
+        return False
+    return True
+
+
 def _evaluate_constants_class(
     process_name: str,
     process: object,
     spec_payload: Mapping[str, Any],
     constant_inventory: Mapping[str, list[str]],
 ) -> ClassResult:
-    del process_name, process, spec_payload, constant_inventory
-    return ClassResult(
-        status=_STATUS_NOT_EXPOSED,
-        details=["Constant validation not yet wired in this chunk."],
-    )
+    names = constant_inventory.get(process_name, [])
+    params = spec_payload.get("params", {})
+    if not names or not isinstance(params, Mapping):
+        return ClassResult(
+            status=_STATUS_NOT_EXPOSED,
+            details=["No constant inventory / params available for this process."],
+        )
+
+    oc_attrs = _oc_attribute_values(process)
+    oc_tokens = {attr: _significant_tokens(attr) for attr in oc_attrs}
+
+    matched: list[str] = []
+    value_mismatch: list[str] = []
+    not_confirmed: list[str] = []
+
+    for name in names:
+        if name not in params:
+            not_confirmed.append(name)
+            continue
+        spec_val = params[name]
+        want = _significant_tokens(name)
+        # OC attributes whose name corresponds to this constant (>=2 shared tokens,
+        # or the constant's whole token set is contained in the attr's).
+        corresponded = [
+            attr
+            for attr, toks in oc_tokens.items()
+            if want and (len(want & toks) >= 2 or want <= toks)
+        ]
+        if not corresponded:
+            not_confirmed.append(name)
+            continue
+        verdicts = [_values_match(spec_val, oc_attrs[attr]) for attr in corresponded]
+        if any(v is True for v in verdicts):
+            matched.append(name)
+        elif all(v is False for v in verdicts):
+            value_mismatch.append(f"{name}(oc_attrs={corresponded[:3]})")
+        else:
+            not_confirmed.append(name)
+
+    details = [
+        f"matched={len(matched)}/{len(names)}  "
+        f"potential_mismatch={len(value_mismatch)}  not_confirmed={len(not_confirmed)}",
+        "NOTE: constants VALUE fidelity is authoritatively validated by Gate 0 "
+        "(spec==source) + Gate 1 (spec==fixture) + replay (behavioral). This is a "
+        "best-effort static coverage layer; name-matching is fuzzy so it is INFO-only "
+        "(does not fail the gate).",
+    ]
+    if value_mismatch:
+        details.append(
+            "potential value differences (name-corresponded, VERIFY MANUALLY — may be "
+            f"name collisions): {value_mismatch[:8]}"
+        )
+    if not_confirmed:
+        details.append(f"not_confirmed (no corresponding OC attr): {not_confirmed[:12]}")
+
+    # Constants never fail the gate (fuzzy static matching); report coverage as INFO.
+    if matched and not not_confirmed and not value_mismatch:
+        return ClassResult(status=_STATUS_CONFORM, details=details)
+    return ClassResult(status=_STATUS_NOT_EXPOSED, details=details)
 
 
 def _process_spec_items(
