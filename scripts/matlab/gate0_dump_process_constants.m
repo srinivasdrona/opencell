@@ -143,7 +143,7 @@ function entry = local_encode_constant(v)
         entry.class = class(v);
         entry.size = int64(size(M));
         entry.nz_idx = int64(idx(:)');
-        entry.nz_val = vals(:)';
+        entry.nz_val = local_encode_numeric_json_values(vals(:)');
         return;
     end
 
@@ -219,4 +219,20 @@ end
 
 function tf = local_is_string_scalar(v)
     tf = ischar(v) || (isstring(v) && isscalar(v));
+end
+
+function out = local_encode_numeric_json_values(vals)
+    out = cell(size(vals));
+    for k = 1:numel(vals)
+        x = vals(k);
+        if isfinite(x)
+            out{k} = double(x);
+        elseif isnan(x)
+            out{k} = 'NaN';
+        elseif x > 0
+            out{k} = 'Inf';
+        else
+            out{k} = '-Inf';
+        end
+    end
 end
