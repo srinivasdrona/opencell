@@ -154,7 +154,11 @@ class KarrTranscriptionProcess(Process):
     ]:
         try:
             resolved = _resolve_fixture_path(fixture_path)
-            fixture = loadmat(str(resolved), squeeze_me=True, struct_as_record=False)["data"].fixture
+            fixture = loadmat(
+                str(resolved),
+                squeeze_me=True,
+                struct_as_record=False,
+            )["data"].fixture
         except Exception:
             return (
                 [],
@@ -414,7 +418,12 @@ class KarrTranscriptionProcess(Process):
         if not self._tu_sequences:
             return 0
         if self._tu_binding_prob.size == len(self._tu_sequences):
-            return int(self._polymerization_rng.choice(len(self._tu_sequences), p=self._tu_binding_prob))
+            return int(
+                self._polymerization_rng.choice(
+                    len(self._tu_sequences),
+                    p=self._tu_binding_prob,
+                )
+            )
         return int(self._polymerization_rng.integers(0, len(self._tu_sequences)))
 
     def _synchronize_polymerase_activity(
@@ -443,7 +452,7 @@ class KarrTranscriptionProcess(Process):
                 self._polymerase_slots[idx]["active"] = False
         elif len(active_indices) < target_active:
             needed = target_active - len(active_indices)
-            for idx, slot in enumerate(self._polymerase_slots):
+            for _idx, slot in enumerate(self._polymerase_slots):
                 if needed <= 0:
                     break
                 if bool(slot.get("active", False)):
@@ -495,6 +504,7 @@ class KarrTranscriptionProcess(Process):
             return {}
 
         consumed = {wid: 0 for wid in self.consumed_substrates}
+        completed_transcripts = 0
         if self._polymerase_slots and self._tu_sequences:
             active_indices = self._synchronize_polymerase_activity(effective_bound_counts)
             if not active_indices:
@@ -540,6 +550,8 @@ class KarrTranscriptionProcess(Process):
                     available[ntp_wid] -= 1
                     consumed[ntp_wid] += 1
                     position += 1
+                    if position > len(sequence):
+                        completed_transcripts += 1
 
                 slot["tu_idx"] = tu_idx
                 slot["position"] = position
@@ -555,7 +567,17 @@ class KarrTranscriptionProcess(Process):
                     available[ntp_wid] -= 1
                     consumed[ntp_wid] += 1
 
-        return {wid: float(-count) for wid, count in consumed.items() if count > 0}
+        deltas = {wid: float(-count) for wid, count in consumed.items() if count > 0}
+        total_ntp_consumed = sum(consumed.values())
+        if total_ntp_consumed > 0 and self._ppi_wid is not None:
+            deltas[self._ppi_wid] = float(total_ntp_consumed)
+        if completed_transcripts > 0:
+            if self._water_wid is not None:
+                deltas[self._water_wid] = float(-completed_transcripts)
+            if self._hydrogen_wid is not None:
+                deltas[self._hydrogen_wid] = float(completed_transcripts)
+
+        return deltas
 
     def ports_schema(self) -> dict[str, Any]:
         # Initial RNA counts: Karr State_Rna mature cytosol counts

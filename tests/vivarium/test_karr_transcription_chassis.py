@@ -38,6 +38,39 @@ def test_process_builds(model: tx.KarrTranscriptionModel) -> None:
     )
 
 
+def test_simulation_path_emits_karr_byproducts(model: tx.KarrTranscriptionModel) -> None:
+    proc = KarrTranscriptionProcess({"model": model, "rng_seed": 0})
+    proc._tu_sequences = ("A",)
+    proc._tu_binding_prob = np.asarray([1.0], dtype=float)
+    proc._polymerase_slots = [
+        {
+            "active": True,
+            "tu_idx": 0,
+            "position": 1,
+            "chromosome_pos": 0,
+        }
+    ]
+
+    substrate_state = {wid: 0.0 for wid in proc.substrate_wids}
+    substrate_state["ATP"] = 1.0
+
+    deltas = proc._simulate_polymerization_substrate_deltas(
+        timestep=1.0,
+        states={"substrates": substrate_state},
+        effective_bound_counts={
+            "RNA_POLYMERASE": 1,
+            "RNA_POLYMERASE_HOLOENZYME": 0,
+        },
+    )
+
+    assert deltas == {
+        "ATP": -1.0,
+        "PPI": 1.0,
+        "H2O": -1.0,
+        "H": 1.0,
+    }
+
+
 def test_engine_runs_100_steps_without_drift(
     model: tx.KarrTranscriptionModel,
 ) -> None:
