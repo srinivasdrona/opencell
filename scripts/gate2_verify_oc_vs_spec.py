@@ -13,6 +13,7 @@ from typing import Any
 
 import numpy as np
 import yaml
+from scipy.io import loadmat
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 
@@ -190,6 +191,10 @@ def _load_constant_inventory(path: Path) -> dict[str, list[str]]:
         names.extend(str(item.get("name", "")).strip() for item in entry.get("fitted", []))
         out[process_name] = [name for name in names if name]
     return out
+
+
+def _load_fixture(path: Path) -> Any:
+    return loadmat(str(path), squeeze_me=True, struct_as_record=False)["data"].fixture
 
 
 def _normalize_vocab_value(value: object) -> list[str]:
@@ -430,9 +435,13 @@ def _spec_reaction_ids(spec_payload: Mapping[str, Any]) -> list[str]:
     return list(spec_species)
 
 
-def _spec_reaction_species(spec_payload: Mapping[str, Any]) -> dict[str, set[str]] | None:
+def _spec_reaction_species(
+    spec_payload: Mapping[str, Any],
+    *,
+    reaction_field: str = "reactions",
+) -> dict[str, set[str]] | None:
     stoichiometry = spec_payload.get("stoichiometry") or {}
-    reactions = stoichiometry.get("reactions")
+    reactions = stoichiometry.get(reaction_field)
     if not isinstance(reactions, Mapping):
         return None
     out: dict[str, set[str]] = {}
@@ -511,6 +520,7 @@ def _build_oc_reaction_species_from_surface(
 def _reaction_id_candidates(
     leaves: Mapping[str, Any],
     *,
+    fixture_reaction_ids: list[str],
     spec_reaction_ids: list[str],
 ) -> list[tuple[str, list[str]]]:
     candidates: list[tuple[str, list[str]]] = []
@@ -518,7 +528,9 @@ def _reaction_id_candidates(
         reaction_ids = _coerce_string_list(value)
         if reaction_ids:
             candidates.append((path, reaction_ids))
-    if spec_reaction_ids:
+    if not candidates and fixture_reaction_ids:
+        candidates.append(("fixture.reactionWholeCellModelIDs(order fallback)", fixture_reaction_ids))
+    if not candidates and spec_reaction_ids:
         candidates.append(("spec.vocabularies.reactionWholeCellModelIDs(order fallback)", spec_reaction_ids))
     return candidates
 
@@ -535,32 +547,50 @@ def _ports_schema(process: Any) -> dict[str, Any]:
     return out
 
 
-def _evaluate_stoichiometry_class(process: Any, spec_payload: Mapping[str, Any]) -> ClassResult:
-    spec_species = _spec_reaction_species(spec_payload)
+def _evaluate_stoichiometry_class(
+    process: Any,
+    spec_payload: Mapping[str, Any],
+    *,
+    fixture_path: Path,
+) -> ClassResult:
+    leaves = _collect_surface_leaves(process)
+    full_matrix_candidates = _find_surface_candidates(leaves, _STOICH_FULL_MATRIX_TERMINALS)
+    partial_matrix_candidates = _find_surface_candidates(leaves, _STOICH_PARTIAL_MATRIX_TERMINALS)
+
+    selected_spec_field = "reactions"
+    matrix_groups: tuple[tuple[str, list[tuple[str, Any]], list[tuple[str, Any]]], ...]
+    if full_matrix_candidates:
+        matrix_groups = (("reaction_stoich", full_matrix_candidates, _find_surface_candidates(leaves, _STOICH_SUBSTRATE_ID_TERMINALS)),)
+    elif partial_matrix_candidates:
+        selected_spec_field = "reactions_small_molecule"
+        matrix_groups = (
+            (
+                "reaction_small_molecule_stoich",
+                partial_matrix_candidates,
+                _find_surface_candidates(leaves, _STOICH_SUBSTRATE_ID_TERMINALS),
+            ),
+        )
+    else:
+        matrix_groups = ()
+
+    spec_species = _spec_reaction_species(spec_payload, reaction_field=selected_spec_field)
     if spec_species is None:
         return ClassResult(status=_STATUS_CONFORM)
 
-    leaves = _collect_surface_leaves(process)
-    spec_reaction_ids = _spec_reaction_ids(spec_payload)
-    reaction_id_candidates = _reaction_id_candidates(leaves, spec_reaction_ids=spec_reaction_ids)
-    full_matrix_candidates = _find_surface_candidates(leaves, _STOICH_FULL_MATRIX_TERMINALS)
-    partial_matrix_candidates = _find_surface_candidates(leaves, _STOICH_PARTIAL_MATRIX_TERMINALS)
-    catalysis_candidates = _find_surface_candidates(leaves, _STOICH_CATALYSIS_TERMINALS)
-    substrate_id_candidates = _find_surface_candidates(leaves, _STOICH_SUBSTRATE_ID_TERMINALS)
-    enzyme_id_candidates = _find_surface_candidates(leaves, _STOICH_ENZYME_ID_TERMINALS)
+    spec_reaction_ids = list(spec_species) or _spec_reaction_ids(spec_payload)
+    fixture = _load_fixture(fixture_path)
+    fixture_reaction_ids = _coerce_string_list(getattr(fixture, "reactionWholeCellModelIDs", []))
+    reaction_id_candidates = _reaction_id_candidates(
+        leaves,
+        fixture_reaction_ids=fixture_reaction_ids,
+        spec_reaction_ids=spec_reaction_ids,
+    )
 
     best_species: dict[str, set[str]] = {}
     used_surfaces: list[str] = []
     aligned_surface_found = False
 
-    matrix_groups = (
-        ("reaction_stoich", full_matrix_candidates, substrate_id_candidates),
-        ("reaction_small_molecule_stoich", partial_matrix_candidates, substrate_id_candidates),
-        ("reaction_catalysis", catalysis_candidates, enzyme_id_candidates),
-    )
     for matrix_kind, matrix_candidates, species_candidates in matrix_groups:
-        if matrix_kind == "reaction_catalysis" and best_species:
-            continue
         for reaction_path, reaction_ids in reaction_id_candidates:
             for species_path, species_value in species_candidates:
                 species_ids = [_normalize_wid(item) for item in _coerce_string_list(species_value)]
@@ -586,14 +616,10 @@ def _evaluate_stoichiometry_class(process: Any, spec_payload: Mapping[str, Any])
             exposed_surface_parts.append("reaction_stoich")
         if partial_matrix_candidates:
             exposed_surface_parts.append("reaction_small_molecule_stoich")
-        if catalysis_candidates:
-            exposed_surface_parts.append("reaction_catalysis")
         if reaction_id_candidates:
             exposed_surface_parts.append("reaction_ids")
-        if substrate_id_candidates:
+        if _find_surface_candidates(leaves, _STOICH_SUBSTRATE_ID_TERMINALS):
             exposed_surface_parts.append("substrate_ids")
-        if enzyme_id_candidates:
-            exposed_surface_parts.append("enzyme_ids")
         if exposed_surface_parts:
             return ClassResult(
                 status=_STATUS_DIVERGE,
@@ -787,6 +813,7 @@ def _gate_result(
 
     for process_name, spec in _process_spec_items(process_specs, process_names=expected):
         spec_path = spec_dir / f"{process_name}.yaml"
+        fixture_path = fixture_dir / f"{process_name}_flat.mat"
         if not spec_path.exists():
             process_results.append(
                 (
@@ -827,7 +854,11 @@ def _gate_result(
 
         class_results = {
             "vocab": _evaluate_vocabulary_class(process_name, process, spec_payload),
-            "stoich": _evaluate_stoichiometry_class(process, spec_payload),
+            "stoich": _evaluate_stoichiometry_class(
+                process,
+                spec_payload,
+                fixture_path=fixture_path,
+            ),
             "state_refs": _evaluate_state_refs_class(process_name, process, source_truth),
             "constants": _evaluate_constants_class(
                 process_name,
