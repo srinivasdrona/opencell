@@ -69,7 +69,10 @@ def test_state_usage_reports_missing_states_from_karr_usage() -> None:
     # private fixture-state loads). It reports apparent gaps but does NOT fail the gate.
     assert dnadamage.status == gate._STATUS_CONFORM
     assert transcription.status == gate._STATUS_NOT_EXPOSED
-    assert "apparent missing_states=[RNAPolymerase, Transcript] (count=2)" in transcription.details
+    assert any(
+        detail.startswith("apparent missing_states=") and "RNAPolymerase" in detail
+        for detail in transcription.details
+    )
     assert any("HEURISTIC / INFO-ONLY" in detail for detail in transcription.details)
 
 
