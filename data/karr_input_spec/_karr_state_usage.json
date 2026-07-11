@@ -1,7 +1,7 @@
 {
   "ChromosomeCondensation": {
     "counts": {
-      "Chromosome": 2,
+      "Chromosome": 16,
       "ProteinComplex": 1
     },
     "states_used": [
@@ -10,14 +10,18 @@
     ]
   },
   "ChromosomeSegregation": {
-    "counts": {},
-    "states_used": []
+    "counts": {
+      "Chromosome": 20
+    },
+    "states_used": [
+      "Chromosome"
+    ]
   },
   "Cytokinesis": {
     "counts": {
       "Chromosome": 1,
-      "FtsZRing": 6,
-      "Geometry": 7
+      "FtsZRing": 35,
+      "Geometry": 6
     },
     "states_used": [
       "Chromosome",
@@ -27,7 +31,7 @@
   },
   "DNADamage": {
     "counts": {
-      "Chromosome": 1
+      "Chromosome": 9
     },
     "states_used": [
       "Chromosome"
@@ -35,7 +39,7 @@
   },
   "DNARepair": {
     "counts": {
-      "Chromosome": 2,
+      "Chromosome": 1072,
       "Metabolite": 1,
       "Stimulus": 1
     },
@@ -47,10 +51,10 @@
   },
   "DNASupercoiling": {
     "counts": {
-      "RNAPolymerase": 2
+      "Chromosome": 148
     },
     "states_used": [
-      "RNAPolymerase"
+      "Chromosome"
     ]
   },
   "FtsZPolymerization": {
@@ -64,12 +68,16 @@
     ]
   },
   "HostInteraction": {
-    "counts": {},
-    "states_used": []
+    "counts": {
+      "Host": 16
+    },
+    "states_used": [
+      "Host"
+    ]
   },
   "MacromolecularComplexation": {
     "counts": {
-      "ProteinComplex": 8
+      "ProteinComplex": 7
     },
     "states_used": [
       "ProteinComplex"
@@ -94,8 +102,8 @@
   "ProteinActivation": {
     "counts": {
       "Geometry": 1,
-      "ProteinComplex": 8,
-      "ProteinMonomer": 8
+      "ProteinComplex": 7,
+      "ProteinMonomer": 7
     },
     "states_used": [
       "Geometry",
@@ -105,10 +113,10 @@
   },
   "ProteinDecay": {
     "counts": {
-      "Polypeptide": 13,
-      "ProteinComplex": 47,
-      "ProteinMonomer": 60,
-      "Rna": 6
+      "Polypeptide": 11,
+      "ProteinComplex": 46,
+      "ProteinMonomer": 59,
+      "Rna": 5
     },
     "states_used": [
       "Polypeptide",
@@ -119,8 +127,8 @@
   },
   "ProteinFolding": {
     "counts": {
-      "ProteinComplex": 24,
-      "ProteinMonomer": 24
+      "ProteinComplex": 22,
+      "ProteinMonomer": 22
     },
     "states_used": [
       "ProteinComplex",
@@ -129,7 +137,7 @@
   },
   "ProteinModification": {
     "counts": {
-      "ProteinMonomer": 32
+      "ProteinMonomer": 30
     },
     "states_used": [
       "ProteinMonomer"
@@ -137,7 +145,7 @@
   },
   "ProteinProcessingI": {
     "counts": {
-      "ProteinMonomer": 16
+      "ProteinMonomer": 14
     },
     "states_used": [
       "ProteinMonomer"
@@ -145,7 +153,7 @@
   },
   "ProteinProcessingII": {
     "counts": {
-      "ProteinMonomer": 44
+      "ProteinMonomer": 42
     },
     "states_used": [
       "ProteinMonomer"
@@ -153,7 +161,7 @@
   },
   "ProteinTranslocation": {
     "counts": {
-      "ProteinMonomer": 8
+      "ProteinMonomer": 7
     },
     "states_used": [
       "ProteinMonomer"
@@ -161,8 +169,8 @@
   },
   "RNADecay": {
     "counts": {
-      "Rna": 16,
-      "Transcript": 5
+      "Rna": 14,
+      "Transcript": 4
     },
     "states_used": [
       "Rna",
@@ -171,7 +179,7 @@
   },
   "RNAModification": {
     "counts": {
-      "Rna": 16
+      "Rna": 14
     },
     "states_used": [
       "Rna"
@@ -179,7 +187,7 @@
   },
   "RNAProcessing": {
     "counts": {
-      "Rna": 27
+      "Rna": 24
     },
     "states_used": [
       "Rna"
@@ -187,17 +195,19 @@
   },
   "Replication": {
     "counts": {
-      "Chromosome": 26,
+      "Chromosome": 755,
+      "Metabolite": 14,
       "ProteinComplex": 2
     },
     "states_used": [
       "Chromosome",
+      "Metabolite",
       "ProteinComplex"
     ]
   },
   "ReplicationInitiation": {
     "counts": {
-      "Chromosome": 19,
+      "Chromosome": 47,
       "Geometry": 10,
       "Mass": 2
     },
@@ -225,12 +235,14 @@
   },
   "Transcription": {
     "counts": {
+      "Chromosome": 16,
       "Metabolite": 1,
-      "RNAPolymerase": 8,
-      "Rna": 9,
-      "Transcript": 3
+      "RNAPolymerase": 370,
+      "Rna": 46,
+      "Transcript": 131
     },
     "states_used": [
+      "Chromosome",
       "Metabolite",
       "RNAPolymerase",
       "Rna",
@@ -239,23 +251,25 @@
   },
   "TranscriptionalRegulation": {
     "counts": {
-      "Chromosome": 2,
-      "RNAPolymerase": 1
+      "Chromosome": 2
     },
     "states_used": [
-      "Chromosome",
-      "RNAPolymerase"
+      "Chromosome"
     ]
   },
   "Translation": {
     "counts": {
-      "Polypeptide": 7,
-      "ProteinMonomer": 4,
-      "Rna": 22
+      "Polypeptide": 127,
+      "ProteinComplex": 12,
+      "ProteinMonomer": 47,
+      "Ribosome": 88,
+      "Rna": 120
     },
     "states_used": [
       "Polypeptide",
+      "ProteinComplex",
       "ProteinMonomer",
+      "Ribosome",
       "Rna"
     ]
   },

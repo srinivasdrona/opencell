@@ -52,6 +52,23 @@ _INIT_METHODS: frozenset[str] = frozenset({
 })
 
 _FUNCTION_NAME_RE = re.compile(r"function\s+(?:\[?[\w,\s~]*\]?\s*=\s*)?(\w+)\s*\(")
+# An occurrence is a WRITE (excluded) if the member access is the LHS of an
+# assignment: `this.rna.X = ...` or `this.rna.X(idx) = ...` (but not `==`/`~=`/`<=`/`>=`).
+_ASSIGN_AFTER_RE = re.compile(r"\s*(\([^)]*\))?\s*=(?![=])")
+# Alias binding: `var = this.<prop>;` (no further member) — lets us follow
+# `rnaPols = this.rnaPolymerases; rnaPols.states` as a read of RNAPolymerase.
+_ALIAS_RE = re.compile(r"\b([A-Za-z]\w*)\s*=\s*this\.(\w+)\s*;")
+
+
+def _count_reads(text: str, base: str) -> int:
+    """Count member READS of `<base>.<member>` (base = `this.<prop>` or an alias var),
+    excluding LHS writes."""
+    count = 0
+    for match in re.finditer(re.escape(base) + r"\.(\w+)", text):
+        if _ASSIGN_AFTER_RE.match(text[match.end():]):
+            continue  # write, not a read
+        count += 1
+    return count
 
 # state property name (as accessed via this.<prop>) -> Karr state class.
 # Derived from every `this.<prop> = simulation.state('<Class>')` across the source.
@@ -114,8 +131,18 @@ def extract() -> dict[str, dict[str, object]]:
         raw = (_PROC_DIR / f"{proc}.m").read_text(encoding="utf-8", errors="replace")
         text = _runtime_text(raw, proc)
         counts: dict[str, int] = {}
+        # Direct reads: this.<prop>.<member> (excluding writes).
         for prop, cls in _STATE_PROPS.items():
-            n = len(re.findall(r"this\." + re.escape(prop) + r"\.", text))
+            n = _count_reads(text, f"this.{prop}")
+            if n:
+                counts[cls] = counts.get(cls, 0) + n
+        # Alias reads: `var = this.<prop>;` then `var.<member>` (excluding writes).
+        for match in _ALIAS_RE.finditer(text):
+            var, prop = match.group(1), match.group(2)
+            cls = _STATE_PROPS.get(prop)
+            if cls is None or var == "this":
+                continue
+            n = _count_reads(text, var)
             if n:
                 counts[cls] = counts.get(cls, 0) + n
         result[proc] = {
