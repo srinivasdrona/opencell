@@ -632,6 +632,57 @@ def _build_oc_reaction_signed_from_surface(
     return None
 
 
+def _evaluate_metabolism_fba(process: object, fixture_path: Path) -> ClassResult | None:
+    """Metabolism's spec stoichiometry is a raw-matrix fingerprint (no expanded reactions
+    dict), so the reaction-dict check returns N/A. But OC's Metabolism loads a Karr-native
+    FBA snapshot (`model.raw['matrix_npz']`) whose matrices we CAN validate directly against
+    the fixture's FBA matrices (fixture == spec == live source, via Gate 0/1). Returns a
+    ClassResult if this is an FBA-model process, else None (caller falls back to N/A)."""
+    model = getattr(process, "model", None)
+    raw = getattr(model, "raw", None)
+    if not isinstance(raw, Mapping) or "matrix_npz" not in raw:
+        return None
+    npz_path = REPO_ROOT / str(raw["matrix_npz"])
+    if not npz_path.exists():
+        return None
+    npz = np.load(npz_path, allow_pickle=True)
+    required_fba_keys = {"S", "lb", "ub", "obj", "enz_bounds"}
+    if not required_fba_keys.issubset(set(npz.files)):
+        return None  # not an FBA snapshot (e.g. Transcription's matrix_npz)
+    fixture = _load_fixture(fixture_path)
+    if not hasattr(fixture, "fbaReactionStoichiometryMatrix"):
+        return None  # fixture carries no FBA matrices to validate against
+    fba_bounds = np.asarray(fixture.fbaReactionBounds, dtype=np.float64)
+    # OC npz key -> fixture FBA matrix
+    pairs: list[tuple[str, np.ndarray, np.ndarray]] = [
+        ("S", np.asarray(npz["S"], float), np.asarray(fixture.fbaReactionStoichiometryMatrix, float)),
+        ("lb", np.asarray(npz["lb"], float), fba_bounds[:, 0]),
+        ("ub", np.asarray(npz["ub"], float), fba_bounds[:, 1]),
+        ("obj", np.asarray(npz["obj"], float), np.asarray(fixture.fbaObjective, float)),
+        ("enz_bounds", np.asarray(npz["enz_bounds"], float), np.asarray(fixture.fbaEnzymeBounds, float)),
+    ]
+    if "RHS" in npz and hasattr(fixture, "fbaRightHandSide"):
+        pairs.append(("RHS", np.asarray(npz["RHS"], float), np.asarray(fixture.fbaRightHandSide, float)))
+    findings: list[str] = []
+    for name, oc_arr, fx_arr in pairs:
+        if oc_arr.shape != fx_arr.shape:
+            findings.append(f"{name}: SHAPE oc={oc_arr.shape} fixture={fx_arr.shape}")
+        elif not np.array_equal(oc_arr, fx_arr, equal_nan=True):
+            findings.append(f"{name}: VALUE mismatch (max|diff|={float(np.nanmax(np.abs(oc_arr - fx_arr))):g})")
+    if findings:
+        return ClassResult(
+            status=_STATUS_DIVERGE,
+            details=["OC FBA matrices vs fixture FBA:", *findings],
+        )
+    return ClassResult(
+        status=_STATUS_CONFORM,
+        details=[
+            "OC Karr-native FBA snapshot (model.raw['matrix_npz']) == fixture FBA matrices "
+            "(S/lb/ub/obj/enz_bounds/RHS, exact); fixture == spec == source via Gate 0/1."
+        ],
+    )
+
+
 def _build_oc_reaction_species_from_mapping(value: object) -> dict[str, set[str]] | None:
     if not isinstance(value, Mapping):
         return None
@@ -778,6 +829,9 @@ def _evaluate_stoichiometry_class(
 
     spec_signed = _spec_reaction_signed(spec_payload, reaction_field=selected_spec_field)
     if spec_signed is None:
+        fba_result = _evaluate_metabolism_fba(process, fixture_path)
+        if fba_result is not None:
+            return fba_result
         return ClassResult(
             status=_STATUS_NA,
             details=["No stoichiometry section in spec (process defines no reactions)."],
