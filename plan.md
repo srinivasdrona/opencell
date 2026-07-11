@@ -59,9 +59,24 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live processes / agents (2026-07-10 ~17:00 IST):** none running. MATLAB **UNLOCKED** (trial license working — `E:\MATLAB\bin\matlab.exe -batch`). WSL up (`.venv-wsl`; deadsnakes python3.12 recovery if distro rootfs resets). **✅ JAX FULLY EXCISED** (`83bb93c`). **✅ ROOT CLEANED** — durable status docs under `docs/archive/status/`, root `/STATUS_*.md` + `/PROMPT_*.md` gitignored.
+**Live processes / agents (2026-07-11 ~01:30 IST):** none running. MATLAB **UNLOCKED**. WSL up (`.venv-wsl`).
 
-**✅ ALL PUSHED — `origin/main == 4f129be` (nothing unpushed).** Today's 9 Gate-0 commits landed: `ce853e4` (vocab) → `eb61596` (stoich) → `ff5436c` (inventory) → `3b44888`+`1578b88` (constants build) → `d6b0571`+`5908beb` (constants fix) → `e3011e7` (STATUS archive) → `4f129be` (compartment reconstruction).
+**🛑 GATE 2 STATUS (post GPT-5.4 rubber-duck) — honest scope: a PARTIAL static audit, NOT "complete input-wiring validation".** `scripts/gate2_verify_oc_vs_spec.py` compares each OC `Karr<X>Process` to the frozen spec across 4 classes. After the rubber-duck (logged: `sha256:ab399ac…`), strengthened + made honest:
+- **Vocab (substrates/enzymes/stimuli): STRENGTHENED to ORDERED comparison** (index alignment, not sets) + surfaces `@compartment` representation (TOA) instead of stripping it. 27 CONFORM, **1 DIVERGE = Translation** (loads 20 AAs via `aa_ids`, omits GTP/H2O reads + write-products GDP/PI/H/FMET). This is the ONE reliable red. Metabolism 585 now validated via `model.raw['ids']['substrate_wcm_585']`.
+- **Stoichiometry: STRENGTHENED to SIGNED coefficients** (consumed −, produced +; catches wrong coeff/sign/direction, not just species presence). 5 real CONFORM (DNADamage/DNARepair/ProteinModification/RNAModification/tRNAAminoacylation — verified non-vacuous, coeffs+signs match); **23 N/A** (Metabolism/TOA fingerprint-only + 21 non-reaction procs).
+- **State-usage: DEMOTED to INFO** (unsound heuristic — Karr text-parse counts writes-as-reads + misses MATLAB alias reads; OC reachability ignores PRIVATE fixture-state loads in `__init__`, e.g. Transcription privately loads RNAP/Transcript → its [RNAPolymerase,Transcript] was a likely FALSE red). Reports apparent gaps for visibility, does NOT fail the gate. Karr usage source-of-truth: `data/karr_input_spec/_karr_state_usage.json` (`scripts/extract_karr_state_usage.py`, runtime-method-scoped).
+- **Constants: INFO coverage** (static value-match is fragile → name collisions; authoritative validation = Gate 0 + Gate 1 + replay).
+- **Gate verdict: FAIL, diverge_cells=1 (Translation vocab only).** Self-tests: `tests/integration/test_gate2_oc_vs_spec_gate.py` (4 pass). NOT yet CI-wired.
+
+**➡️ GATE 2 DEFERRED REWORK (from rubber-duck — do next):**
+1. **State-usage soundness**: read-only + MATLAB-alias-aware `.m` extraction; model OC's PRIVATE fixture-state loads (build a true OC read-surface inventory) — then re-promote from INFO to a real class.
+2. **Metabolism/TOA stoich**: add a DIRECT OC-loaded-matrix (`model.S/lb/ub/catalysis`) vs spec hash/shape/value check (N/A currently = unvalidated by Gate 2, only Gate 0/1).
+3. **Vocab read/write role split** so Translation finding is precise (GTP/H2O = real missing reads; GDP/PI/H = write-products).
+4. **Constants**: OC loaded-artifact inventory (model/fixture/archive files) hashed vs spec — a real (non-fuzzy) check.
+5. **Composer-wiring gate**: validate topology/store-path mapping in the shipped composition (Gate 2 only checks process surfaces, not wiring).
+6. **Fix Translation vocab** (the confirmed bug — declare + wire GTP/H2O like the Transcription fix).
+
+**Gate 2 commits (this session):** `f447f04` (initial) → `97f1e91`/`2d3231b` (vocab) → `7b4bb81` (stoich+state) → `27b7c9f`/`ab3fd16` (state-usage extract+refine) → `7653046` (Metabolism vocab+N/A stoich) → `9243015` (constants INFO) → `2bb1647` (ordered vocab) → `3f56323` (signed stoich) → `e2c6301` (state-usage→INFO).
 
 **✅ GATE 0 COMPLETE — fixture ⟺ live MATLAB source, ALL source-declared input classes green:**
 - **Vocab** (substrate/enzyme/stimulus): PASS 28×3 = 84 checks (`scripts/gate0_verify_input_vocab.py`, dump `_gate0_source_truth.json`).
