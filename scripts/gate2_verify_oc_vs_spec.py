@@ -903,15 +903,24 @@ def _evaluate_state_usage_class(
     )
     missing_states = sorted(set(states_used) - set(oc_reachable))
 
+    caveat = (
+        "HEURISTIC / INFO-ONLY (does not fail the gate): the Karr-side usage is a text "
+        "parse that counts writes-as-reads and misses MATLAB alias reads, and the OC-side "
+        "reachability (ports + fixture LocalIndexs) does not model OC's PRIVATE fixture-state "
+        "loads in __init__. So both false-positives and false-negatives are possible. Pending "
+        "rework to read-only/alias-aware extraction + true OC read-surface inventory."
+    )
+
     if not missing_states:
-        return ClassResult(status=_STATUS_CONFORM)
+        return ClassResult(status=_STATUS_CONFORM, details=[caveat])
 
     return ClassResult(
-        status=_STATUS_DIVERGE,
+        status=_STATUS_NOT_EXPOSED,
         details=[
-            f"missing_states={_preview_items(missing_states)}",
-            f"states_used={_preview_items(states_used)}",
-            f"oc_reachable={_preview_items(oc_reachable)}",
+            f"apparent missing_states={_preview_items(missing_states)}",
+            f"states_used(parsed)={_preview_items(states_used)}",
+            f"oc_reachable(inferred)={_preview_items(oc_reachable)}",
+            caveat,
         ],
     )
 

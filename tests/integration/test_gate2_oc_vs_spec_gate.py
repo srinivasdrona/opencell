@@ -64,11 +64,13 @@ def test_state_usage_reports_missing_states_from_karr_usage() -> None:
         state_usage=_STATE_USAGE,
     )
 
+    # State-usage is now INFO-only (demoted from a hard gate) because the heuristic
+    # has known false-positives/negatives (writes-as-reads, missed MATLAB aliases, OC
+    # private fixture-state loads). It reports apparent gaps but does NOT fail the gate.
     assert dnadamage.status == gate._STATUS_CONFORM
-    assert transcription.status == gate._STATUS_DIVERGE
-    assert "missing_states=[RNAPolymerase, Transcript] (count=2)" in transcription.details
-    assert "states_used=[Metabolite, RNAPolymerase, Rna, Transcript] (count=4)" in transcription.details
-    assert "oc_reachable=[Metabolite, ProteinComplex, ProteinMonomer, Rna] (count=4)" in transcription.details
+    assert transcription.status == gate._STATUS_NOT_EXPOSED
+    assert "apparent missing_states=[RNAPolymerase, Transcript] (count=2)" in transcription.details
+    assert any("HEURISTIC / INFO-ONLY" in detail for detail in transcription.details)
 
 
 def test_compare_vocab_sets_reports_missing_and_extra_members() -> None:
