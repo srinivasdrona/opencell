@@ -68,15 +68,15 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - **Constants: INFO coverage** (static value-match is fragile → name collisions; authoritative validation = Gate 0 + Gate 1 + replay).
 - **Gate verdict: FAIL, diverge_cells=1 (Translation vocab only).** Self-tests: `tests/integration/test_gate2_oc_vs_spec_gate.py` (4 pass). NOT yet CI-wired.
 
-**➡️ GATE 2 DEFERRED REWORK (from rubber-duck — do next):**
-1. **State-usage soundness**: read-only + MATLAB-alias-aware `.m` extraction; model OC's PRIVATE fixture-state loads (build a true OC read-surface inventory) — then re-promote from INFO to a real class.
-2. **Metabolism/TOA stoich**: add a DIRECT OC-loaded-matrix (`model.S/lb/ub/catalysis`) vs spec hash/shape/value check (N/A currently = unvalidated by Gate 2, only Gate 0/1).
-3. **Vocab read/write role split** so Translation finding is precise (GTP/H2O = real missing reads; GDP/PI/H = write-products).
+**➡️ GATE 2 DEFERRED REWORK (from rubber-duck):**
+1. **State-usage soundness**: ✅ Karr-side DONE — read-only + MATLAB-alias-aware `.m` extraction (`f211a2d`: excludes writes, follows `var = this.<state>;` aliases; dropped DNASupercoiling/TransReg RNAPolymerase-write false-positives, captured Transcription rnaPols/trnspts alias reads). ⏳ REMAINING: OC-side — model OC's PRIVATE fixture-state loads (`states[6]/[7]`) via a true OC read-surface inventory (best via a **runtime read/write tracer**: run each process's `next_update` with a recording `states` proxy → actual reads/writes). Then re-promote state-usage from INFO to a real class. This same tracer also gives the vocab read/write split (#3).
+2. **Metabolism/TOA stoich** (N/A = unvalidated by Gate 2): NOTE — OC Metabolism loads a DERIVED FBA archive (`model.raw['matrix_npz']`/`source_archive`), NOT the raw Karr 3-D matrices (`reactionStoichiometryMatrix` [585,645,3]). So a direct hash/shape compare is apples-to-oranges; needs the raw→FBA reconciliation (or validate the archive's own provenance to Karr). Bigger than a hash check.
+3. **Vocab read/write role split** — falls out of the runtime tracer (#1). Translation shown to be nuanced: v3 READS GTP/H2O (`_optional_integral_substrate_count`, lines 341-342) but they're not in `allocation_substrate_wids` (20 AAs); FMET/GDP/PI/H genuinely unhandled.
 4. **Constants**: OC loaded-artifact inventory (model/fixture/archive files) hashed vs spec — a real (non-fuzzy) check.
 5. **Composer-wiring gate**: validate topology/store-path mapping in the shipped composition (Gate 2 only checks process surfaces, not wiring).
-6. **Fix Translation vocab** (the confirmed bug — declare + wire GTP/H2O like the Transcription fix).
+6. **Fix Translation vocab** — ⏳ IN FLIGHT (codex, this session). v3 26-species energy stoichiometry (verified `Translation.m:406-413`): `E = 2*residues + 3*proteins`; GTP/H2O −= E; GDP/PI/H += E; FMET zero-flux. Mirrors the Transcription 12-species fix.
 
-**Gate 2 commits (this session):** `f447f04` (initial) → `97f1e91`/`2d3231b` (vocab) → `7b4bb81` (stoich+state) → `27b7c9f`/`ab3fd16` (state-usage extract+refine) → `7653046` (Metabolism vocab+N/A stoich) → `9243015` (constants INFO) → `2bb1647` (ordered vocab) → `3f56323` (signed stoich) → `e2c6301` (state-usage→INFO).
+**Gate 2 commits (this session):** `f447f04` (initial) → `97f1e91`/`2d3231b` (vocab) → `7b4bb81` (stoich+state) → `27b7c9f`/`ab3fd16` (state-usage extract+refine) → `7653046` (Metabolism vocab+N/A stoich) → `9243015` (constants INFO) → `2bb1647` (ordered vocab) → `3f56323` (signed stoich) → `e2c6301` (state-usage→INFO) → `f211a2d` (state read-only+alias) → `1b8d6c3` (test).
 
 **✅ GATE 0 COMPLETE — fixture ⟺ live MATLAB source, ALL source-declared input classes green:**
 - **Vocab** (substrate/enzyme/stimulus): PASS 28×3 = 84 checks (`scripts/gate0_verify_input_vocab.py`, dump `_gate0_source_truth.json`).
