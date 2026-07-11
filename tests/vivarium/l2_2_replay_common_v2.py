@@ -175,8 +175,8 @@ _PROCESS_SPECS: dict[str, _ProcessSpec] = {
             "boundEnzymes": "enzyme_wids",
             "monomers": "protein_ids",
         },
-        index_projection_literal={"substrates": np.arange(20)},
-        trace_after_hint_observables=("enzymes", "boundEnzymes"),
+        index_projection_literal={"substrates": np.arange(26)},
+        trace_after_hint_observables=("enzymes", "boundEnzymes", "substrates"),
     ),
     "RNAProcessing": _ProcessSpec(
         process_cls=KarrRNAProcessingProcess,

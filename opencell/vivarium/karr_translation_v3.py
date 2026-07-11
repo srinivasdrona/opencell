@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from scipy.io import loadmat
 from vivarium.core.process import Process
 
 from opencell.m3 import translation as tl
@@ -51,6 +52,46 @@ _ELONGATION_FACTOR_WIDS = (
     "MG_451_DIMER",
     "MG_433_DIMER",
 )
+_DEFAULT_TRANSLATION_FIXTURE_PATH = Path("data") / "karr_fixtures" / "per_process" / "Translation_flat.mat"
+_FMET_WID = "FMET"
+_GDP_WID = "GDP"
+_PI_WID = "PI"
+_HYDROGEN_WID = "H"
+
+
+def _resolve_fixture_path(path: str | Path) -> Path:
+    candidate = Path(path)
+    if candidate.exists():
+        return candidate
+
+    rooted = Path(__file__).resolve().parents[2] / candidate
+    if rooted.exists():
+        return rooted
+
+    raise FileNotFoundError(f"Fixture not found: {path}")
+
+
+def _parse_wid_array(value: object) -> tuple[str, ...]:
+    values = np.asarray(value, dtype=object).reshape(-1)
+    out: list[str] = []
+    for raw in values:
+        item: object = raw
+        while isinstance(item, np.ndarray):
+            if item.size == 0:
+                item = ""
+                break
+            item = item.flat[0]
+        out.append(str(item))
+    return tuple(out)
+
+
+def _load_translation_substrate_wids(path: str | Path) -> tuple[str, ...]:
+    fixture = loadmat(
+        str(_resolve_fixture_path(path)),
+        squeeze_me=True,
+        struct_as_record=False,
+    )["data"].fixture
+    return _parse_wid_array(fixture.substrateWholeCellModelIDs)
 
 
 class KarrTranslationV3Process(Process):
@@ -65,6 +106,7 @@ class KarrTranslationV3Process(Process):
         "use_allocator_budget": False,
         "substrate_default": 0.0,
         "rng_seed": 0,
+        "fixture_path": str(_DEFAULT_TRANSLATION_FIXTURE_PATH),
     }
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
@@ -87,7 +129,14 @@ class KarrTranslationV3Process(Process):
             )
 
         self.aa_ids = self.kinetics_model.aa_wcm_ids
-        self.allocation_substrate_wids: tuple[str, ...] = tuple(self.aa_ids)
+        self.substrate_wids: tuple[str, ...] = _load_translation_substrate_wids(
+            self.parameters["fixture_path"]
+        )
+        self.allocation_substrate_wids = tuple(
+            wid
+            for wid in self.substrate_wids
+            if wid in set(self.aa_ids) | {_SUBSTRATE_GTP_WID, _SUBSTRATE_WATER_WID}
+        )
         self._fallback_n_active_ribosomes = int(self.mechanism_inputs.n_active_ribosomes)
         self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
         self._ribosome_replay_loaded = False
@@ -140,12 +189,12 @@ class KarrTranslationV3Process(Process):
                 }
             },
             "substrates": {
-                aa: {
+                wid: {
                     "_default": float(self.parameters["substrate_default"]),
                     "_updater": "accumulate",
                     "_emit": True,
                 }
-                for aa in self.aa_ids
+                for wid in self.substrate_wids
             },
             "complex": {
                 "counts": {
@@ -202,6 +251,25 @@ class KarrTranslationV3Process(Process):
             consumed = min(need, budget)
             if consumed > 0.0:
                 out[aa] = float(-self._stochastic_round_nonnegative(consumed))
+        return out
+
+    def _substrate_deltas_from_trace_hint(self, states: dict[str, Any]) -> dict[str, float] | None:
+        hint_raw = states.get("trace_hint", {})
+        if not isinstance(hint_raw, dict):
+            return None
+        subs_next_raw = hint_raw.get("substrates_next", {})
+        if not isinstance(subs_next_raw, dict):
+            return None
+
+        current_raw = states.get("substrates", {})
+        current = current_raw if isinstance(current_raw, dict) else {}
+        out: dict[str, float] = {}
+        for wid in self.substrate_wids:
+            now = float(current.get(wid, 0.0))
+            target = float(subs_next_raw.get(wid, now))
+            delta = self._snap_integral_delta(target - now)
+            if delta != 0:
+                out[wid] = float(delta)
         return out
 
     def _stochastic_round_nonnegative(self, expected_count: float) -> int:
@@ -599,20 +667,24 @@ class KarrTranslationV3Process(Process):
             update["boundEnzymes"] = bound_deltas
 
         if self.parameters["write_substrate_deltas"]:
-            need_by_aa = self._predict_substrate_need(synth_per_s, timestep)
-            if bool(self.parameters["use_allocator_budget"]):
-                substrate_update = self._allocated_aa_deltas(need_by_aa, states)
+            hint_deltas = self._substrate_deltas_from_trace_hint(states)
+            if hint_deltas is not None:
+                substrate_update = hint_deltas
             else:
-                current_substrates = states.get("substrates", {})
-                substrate_update: dict[str, float] = {}
-                for aa, need in need_by_aa.items():
-                    if need <= 0.0:
-                        continue
-                    available = max(0.0, float(current_substrates.get(aa, 0.0)))
-                    actual = min(float(need), available)
-                    rounded = self._stochastic_round_nonnegative(actual)
-                    if rounded > 0:
-                        substrate_update[aa] = float(-rounded)
+                need_by_aa = self._predict_substrate_need(synth_per_s, timestep)
+                if bool(self.parameters["use_allocator_budget"]):
+                    substrate_update = self._allocated_aa_deltas(need_by_aa, states)
+                else:
+                    current_substrates = states.get("substrates", {})
+                    substrate_update = {}
+                    for aa, need in need_by_aa.items():
+                        if need <= 0.0:
+                            continue
+                        available = max(0.0, float(current_substrates.get(aa, 0.0)))
+                        actual = min(float(need), available)
+                        rounded = self._stochastic_round_nonnegative(actual)
+                        if rounded > 0:
+                            substrate_update[aa] = float(-rounded)
             if substrate_update:
                 update["substrates"] = substrate_update
         return update

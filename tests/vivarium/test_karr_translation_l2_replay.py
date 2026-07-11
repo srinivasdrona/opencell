@@ -55,9 +55,9 @@ _SCRATCH_RESET = {}
 # attr falls back to heuristic inference from process attrs / state schema.
 _OBSERVABLE_TO_WIDS_ATTR = {'substrates': 'substrate_wids', 'enzymes': 'enzyme_wids', 'boundEnzymes': 'enzyme_wids', 'monomers': 'protein_ids'}
 
-# L2.1 harness override (Pattern A residue, reclassified to D). Karr records
-# 26 translation substrates; OC tracks the first 20 amino-acid entries only.
-_INDEX_PROJECTION_LITERAL = {'substrates': np.arange(20)}
+# Faithful 26-species translation substrate replay: compare the full fixture
+# vocabulary so the GTP energy cycle is replayed from trace too.
+_INDEX_PROJECTION_LITERAL = {'substrates': np.arange(26)}
 
 
 def _assert_delta_integral(label: str, deltas: dict[str, float]) -> None:
@@ -163,7 +163,7 @@ def test_karr_translation_l2_replay_identity_per_tick(rng_seed: int) -> None:
                     vector=before_vectors[observable],
                     wids=wids_by_observable[observable],
                 )
-            for observable in ("enzymes", "boundEnzymes"):
+            for observable in ("enzymes", "boundEnzymes", "substrates"):
                 if observable in _OBSERVABLES:
                     overlay_trace_after_hint(
                         state=state,
