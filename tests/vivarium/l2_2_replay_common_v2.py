@@ -30,7 +30,6 @@ if str(_HELPER_DIR) not in sys.path:
 from l2_replay_common import (
     apply_count_update,
     assert_delta_integral,
-    assert_identity_or_tolerance as _assert_identity_or_tolerance_shared,
     audit_trace_mutated_ticks,
     build_state_template,
     cell_vector,
@@ -43,10 +42,14 @@ from l2_replay_common import (
     refresh_allocator_views,
     resolve_trace_path,
 )
+from l2_replay_common import (
+    assert_identity_or_tolerance as _assert_identity_or_tolerance_shared,
+)
+
 from opencell.state.chromosome_store import ChromosomeStore
-from opencell.vivarium.karr_cytokinesis import KarrCytokinesisProcess
 from opencell.vivarium.karr_chromosome_condensation import KarrChromosomeCondensationProcess
 from opencell.vivarium.karr_chromosome_segregation import KarrChromosomeSegregationProcess
+from opencell.vivarium.karr_cytokinesis import KarrCytokinesisProcess
 from opencell.vivarium.karr_dna_damage import KarrDNADamageProcess
 from opencell.vivarium.karr_dna_repair import KarrDNARepairProcess
 from opencell.vivarium.karr_dna_supercoiling import KarrDNASupercoilingProcess
@@ -72,7 +75,6 @@ from opencell.vivarium.karr_transcription import KarrTranscriptionProcess
 from opencell.vivarium.karr_transcriptional_regulation import KarrTranscriptionalRegulationProcess
 from opencell.vivarium.karr_translation_v3 import KarrTranslationV3Process
 from opencell.vivarium.karr_trna_aminoacylation import KarrTRNAAminoacylationProcess
-
 
 _COMPOSITION_ORDER_V2 = (
     "Translation",

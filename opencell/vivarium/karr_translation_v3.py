@@ -52,8 +52,9 @@ _ELONGATION_FACTOR_WIDS = (
     "MG_451_DIMER",
     "MG_433_DIMER",
 )
-_DEFAULT_TRANSLATION_FIXTURE_PATH = Path("data") / "karr_fixtures" / "per_process" / "Translation_flat.mat"
-_FMET_WID = "FMET"
+_DEFAULT_TRANSLATION_FIXTURE_PATH = (
+    Path("data") / "karr_fixtures" / "per_process" / "Translation_flat.mat"
+)
 _GDP_WID = "GDP"
 _PI_WID = "PI"
 _HYDROGEN_WID = "H"
@@ -121,7 +122,24 @@ class KarrTranslationV3Process(Process):
         self.kinetics_model: tl.KarrTranslationModel = kinetics_model
         self.mechanism_inputs: tl_v2.RibosomeMechanismInputs = mechanism_inputs
         self.protein_ids = self.kinetics_model.protein_wcm_ids
-        self.enzyme_wids = ("MG_173_MONOMER", "MG_142_MONOMER", "MG_196_MONOMER", "MG_089_DIMER", "MG_026_MONOMER", "MG_451_DIMER", "MG_433_DIMER", "MG_258_MONOMER", "MG_435_MONOMER", "RIBOSOME_30S", "RIBOSOME_30S_IF3", "RIBOSOME_50S", "RIBOSOME_70S", "MG_0004", "MG_059_MONOMER", "MG_083_MONOMER")
+        self.enzyme_wids = (
+            "MG_173_MONOMER",
+            "MG_142_MONOMER",
+            "MG_196_MONOMER",
+            "MG_089_DIMER",
+            "MG_026_MONOMER",
+            "MG_451_DIMER",
+            "MG_433_DIMER",
+            "MG_258_MONOMER",
+            "MG_435_MONOMER",
+            "RIBOSOME_30S",
+            "RIBOSOME_30S_IF3",
+            "RIBOSOME_50S",
+            "RIBOSOME_70S",
+            "MG_0004",
+            "MG_059_MONOMER",
+            "MG_083_MONOMER",
+        )
         if len(self.protein_ids) != self.mechanism_inputs.n_proteins:
             raise ValueError(
                 "M3 v2 wrapper expects matching protein dimensions: "
@@ -154,8 +172,12 @@ class KarrTranslationV3Process(Process):
             return
         try:
             with np.load(archive_path, allow_pickle=False) as archive:
-                rib_states = np.asarray(archive[_ARCHIVE_KEY_RIB_STATES], dtype=np.int64).reshape(-1)
-                bound_mrnas = np.asarray(archive[_ARCHIVE_KEY_RIB_BOUND_MRNAS], dtype=np.int64).reshape(-1)
+                rib_states = np.asarray(
+                    archive[_ARCHIVE_KEY_RIB_STATES], dtype=np.int64
+                ).reshape(-1)
+                bound_mrnas = np.asarray(
+                    archive[_ARCHIVE_KEY_RIB_BOUND_MRNAS], dtype=np.int64
+                ).reshape(-1)
                 mrna_positions = np.asarray(
                     archive[_ARCHIVE_KEY_RIB_MRNA_POSITIONS], dtype=np.int64
                 ).reshape(-1)
@@ -241,23 +263,100 @@ class KarrTranslationV3Process(Process):
         self,
         need_by_aa: dict[str, float],
         states: dict[str, Any],
-    ) -> dict[str, float]:
+    ) -> tuple[dict[str, float], int]:
         allocated = states.get("substrates_allocated", {}).get(self.name, {})
         out: dict[str, float] = {}
+        total_residues = 0
         for aa, need in need_by_aa.items():
             if need <= 0.0:
                 continue
             budget = max(0.0, float(allocated.get(aa, 0.0)))
             consumed = min(need, budget)
             if consumed > 0.0:
-                out[aa] = float(-self._stochastic_round_nonnegative(consumed))
-        return out
+                rounded = self._stochastic_round_nonnegative(consumed)
+                if rounded > 0:
+                    out[aa] = float(-rounded)
+                    total_residues += rounded
+        return out, total_residues
+
+    def _current_pool_aa_deltas(
+        self,
+        need_by_aa: dict[str, float],
+        states: dict[str, Any],
+    ) -> tuple[dict[str, float], int]:
+        current_substrates = states.get("substrates", {})
+        out: dict[str, float] = {}
+        total_residues = 0
+        for aa, need in need_by_aa.items():
+            if need <= 0.0:
+                continue
+            available = max(0.0, float(current_substrates.get(aa, 0.0)))
+            actual = min(float(need), available)
+            rounded = self._stochastic_round_nonnegative(actual)
+            if rounded > 0:
+                out[aa] = float(-rounded)
+                total_residues += rounded
+        return out, total_residues
+
+    def _count_positive_integral_deltas(self, deltas: dict[str, float]) -> int:
+        total = 0
+        for delta in deltas.values():
+            rounded = self._snap_integral_delta(delta)
+            if rounded > 0:
+                total += rounded
+        return total
+
+    def _energy_cycle_delta_count(
+        self,
+        translation_energy: int,
+        states: dict[str, Any],
+    ) -> int:
+        if translation_energy <= 0:
+            return 0
+
+        if bool(self.parameters["use_allocator_budget"]):
+            allocated = states.get("substrates_allocated", {}).get(self.name, {})
+            gtp_limit = max(0.0, float(allocated.get(_SUBSTRATE_GTP_WID, 0.0)))
+            water_limit = max(0.0, float(allocated.get(_SUBSTRATE_WATER_WID, 0.0)))
+        else:
+            current_substrates = states.get("substrates", {})
+            gtp_limit = max(0.0, float(current_substrates.get(_SUBSTRATE_GTP_WID, 0.0)))
+            water_limit = max(0.0, float(current_substrates.get(_SUBSTRATE_WATER_WID, 0.0)))
+
+        consumed = min(float(translation_energy), gtp_limit, water_limit)
+        if consumed <= 0.0:
+            return 0
+        return self._stochastic_round_nonnegative(consumed)
+
+    def _simulation_substrate_deltas(
+        self,
+        need_by_aa: dict[str, float],
+        protein_delta_update: dict[str, float],
+        states: dict[str, Any],
+    ) -> dict[str, float]:
+        if bool(self.parameters["use_allocator_budget"]):
+            substrate_update, total_residues = self._allocated_aa_deltas(need_by_aa, states)
+        else:
+            substrate_update, total_residues = self._current_pool_aa_deltas(need_by_aa, states)
+
+        n_proteins = self._count_positive_integral_deltas(protein_delta_update)
+        translation_energy = int(2 * total_residues + 3 * n_proteins)
+        energy_delta = self._energy_cycle_delta_count(translation_energy, states)
+        if energy_delta > 0:
+            substrate_update[_SUBSTRATE_GTP_WID] = float(-energy_delta)
+            substrate_update[_SUBSTRATE_WATER_WID] = float(-energy_delta)
+            substrate_update[_GDP_WID] = float(energy_delta)
+            substrate_update[_PI_WID] = float(energy_delta)
+            substrate_update[_HYDROGEN_WID] = float(energy_delta)
+        return substrate_update
 
     def _substrate_deltas_from_trace_hint(self, states: dict[str, Any]) -> dict[str, float] | None:
         hint_raw = states.get("trace_hint", {})
         if not isinstance(hint_raw, dict):
             return None
-        subs_next_raw = hint_raw.get("substrates_next", {})
+        if "substrates_next" not in hint_raw:
+            return None
+        subs_next_raw = hint_raw.get("substrates_next")
         if not isinstance(subs_next_raw, dict):
             return None
 
@@ -293,7 +392,7 @@ class KarrTranslationV3Process(Process):
             raise RuntimeError(f"non-integral bound enzyme delta {delta}")
         return rounded
 
-    def _coerce_integral_count(self, value: Any) -> int:
+    def _coerce_integral_count(self, value: object) -> int:
         rounded = int(np.rint(float(value)))
         if abs(float(value) - float(rounded)) > 1e-9:
             raise RuntimeError(f"non-integral enzyme count {value}")
@@ -325,7 +424,9 @@ class KarrTranslationV3Process(Process):
         if timestep <= 0.0:
             return 0
 
-        step_aa = int(np.rint(float(self.mechanism_inputs.elongation_rate_aa_per_s) * float(timestep)))
+        step_aa = int(
+            np.rint(float(self.mechanism_inputs.elongation_rate_aa_per_s) * float(timestep))
+        )
         if step_aa <= 0:
             return 0
 
@@ -413,7 +514,9 @@ class KarrTranslationV3Process(Process):
         else:
             available_energy_water = min(energy_pool, water_pool)
 
-        n_active_ribosomes = self._coerce_integral_count(self._resolve_active_ribosome_count(states))
+        n_active_ribosomes = self._coerce_integral_count(
+            self._resolve_active_ribosome_count(states)
+        )
         n_bound_70s = int(bound_next.get(_RIBOSOME_70S_WID, 0))
         n_elongating_ribosomes = min(n_active_ribosomes, n_bound_70s)
         if available_energy_water is not None:
@@ -463,7 +566,9 @@ class KarrTranslationV3Process(Process):
         if has_termination_factors:
             override_terminations = getattr(self, "_biology_termination_override", None)
             if override_terminations is None:
-                n_terminating_candidates = self._estimate_terminating_ribosome_count_from_replay(timestep)
+                n_terminating_candidates = self._estimate_terminating_ribosome_count_from_replay(
+                    timestep
+                )
             else:
                 n_terminating_candidates = max(0, int(override_terminations))
             if available_energy_water is None:
@@ -562,7 +667,9 @@ class KarrTranslationV3Process(Process):
         if timestep <= 0.0:
             return out
 
-        step_aa = int(np.rint(float(self.mechanism_inputs.elongation_rate_aa_per_s) * float(timestep)))
+        step_aa = int(
+            np.rint(float(self.mechanism_inputs.elongation_rate_aa_per_s) * float(timestep))
+        )
         if step_aa <= 0:
             return out
 
@@ -639,7 +746,9 @@ class KarrTranslationV3Process(Process):
 
         if use_trace_hint:
             enzyme_deltas = self._enzyme_channel_deltas_from_trace_hint(states, channel="enzymes")
-            bound_deltas = self._enzyme_channel_deltas_from_trace_hint(states, channel="boundEnzymes")
+            bound_deltas = self._enzyme_channel_deltas_from_trace_hint(
+                states, channel="boundEnzymes"
+            )
         else:
             schedule_override = (
                 self._termination_count_from_replay_schedule(no_hint_tick)
@@ -672,19 +781,11 @@ class KarrTranslationV3Process(Process):
                 substrate_update = hint_deltas
             else:
                 need_by_aa = self._predict_substrate_need(synth_per_s, timestep)
-                if bool(self.parameters["use_allocator_budget"]):
-                    substrate_update = self._allocated_aa_deltas(need_by_aa, states)
-                else:
-                    current_substrates = states.get("substrates", {})
-                    substrate_update = {}
-                    for aa, need in need_by_aa.items():
-                        if need <= 0.0:
-                            continue
-                        available = max(0.0, float(current_substrates.get(aa, 0.0)))
-                        actual = min(float(need), available)
-                        rounded = self._stochastic_round_nonnegative(actual)
-                        if rounded > 0:
-                            substrate_update[aa] = float(-rounded)
+                substrate_update = self._simulation_substrate_deltas(
+                    need_by_aa,
+                    protein_delta_update,
+                    states,
+                )
             if substrate_update:
                 update["substrates"] = substrate_update
         return update
