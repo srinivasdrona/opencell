@@ -560,6 +560,78 @@ def _spec_reaction_species(
     return out
 
 
+def _spec_reaction_signed(
+    spec_payload: Mapping[str, Any],
+    *,
+    reaction_field: str = "reactions",
+) -> dict[str, dict[str, float]] | None:
+    """Spec reactions as SIGNED coefficients: consumed species negative, produced
+    positive, keyed by normalized species WID. Enables coefficient + sign + direction
+    comparison (not just species presence)."""
+    stoichiometry = spec_payload.get("stoichiometry") or {}
+    reactions = stoichiometry.get(reaction_field)
+    if not isinstance(reactions, Mapping):
+        return None
+    out: dict[str, dict[str, float]] = {}
+    for reaction_wid, reaction_payload in reactions.items():
+        coeffs: dict[str, float] = {}
+        for species, value in (reaction_payload.get("consume") or {}).items():
+            key = _normalize_wid(str(species))
+            coeffs[key] = coeffs.get(key, 0.0) - float(value)
+        for species, value in (reaction_payload.get("produce") or {}).items():
+            key = _normalize_wid(str(species))
+            coeffs[key] = coeffs.get(key, 0.0) + float(value)
+        out[str(reaction_wid)] = {k: v for k, v in coeffs.items() if v != 0.0}
+    return out
+
+
+def _build_oc_reaction_signed_from_surface(
+    *,
+    matrix_value: object,
+    reaction_ids: list[str],
+    species_ids: list[str],
+) -> dict[str, dict[str, float]] | None:
+    """OC reactions as SIGNED coefficients from a [species x reactions] (or transposed)
+    matrix, or a consume/produce mapping. Values kept with sign (consumed negative,
+    produced positive per the stoichiometry-matrix convention)."""
+    if isinstance(matrix_value, Mapping):
+        out: dict[str, dict[str, float]] = {}
+        for reaction_id, payload in matrix_value.items():
+            coeffs: dict[str, float] = {}
+            if isinstance(payload, Mapping):
+                if "consume" in payload or "produce" in payload:
+                    for species, value in (payload.get("consume") or {}).items():
+                        key = _normalize_wid(str(species))
+                        coeffs[key] = coeffs.get(key, 0.0) - float(value)
+                    for species, value in (payload.get("produce") or {}).items():
+                        key = _normalize_wid(str(species))
+                        coeffs[key] = coeffs.get(key, 0.0) + float(value)
+                else:
+                    for species, value in payload.items():
+                        coeffs[_normalize_wid(str(species))] = float(value)
+            out[str(reaction_id)] = {k: v for k, v in coeffs.items() if v != 0.0}
+        return out
+    matrix = _coerce_matrix(matrix_value)
+    if matrix is None or not reaction_ids or not species_ids:
+        return None
+    out = {}
+    if matrix.shape == (len(species_ids), len(reaction_ids)):
+        for j, reaction_id in enumerate(reaction_ids):
+            column = matrix[:, j]
+            out[reaction_id] = {
+                species_ids[i]: float(column[i]) for i in np.flatnonzero(column).tolist()
+            }
+        return out
+    if matrix.shape == (len(reaction_ids), len(species_ids)):
+        for j, reaction_id in enumerate(reaction_ids):
+            row = matrix[j, :]
+            out[reaction_id] = {
+                species_ids[i]: float(row[i]) for i in np.flatnonzero(row).tolist()
+            }
+        return out
+    return None
+
+
 def _build_oc_reaction_species_from_mapping(value: object) -> dict[str, set[str]] | None:
     if not isinstance(value, Mapping):
         return None
@@ -704,14 +776,14 @@ def _evaluate_stoichiometry_class(
     else:
         matrix_groups = ()
 
-    spec_species = _spec_reaction_species(spec_payload, reaction_field=selected_spec_field)
-    if spec_species is None:
+    spec_signed = _spec_reaction_signed(spec_payload, reaction_field=selected_spec_field)
+    if spec_signed is None:
         return ClassResult(
             status=_STATUS_NA,
             details=["No stoichiometry section in spec (process defines no reactions)."],
         )
 
-    spec_reaction_ids = list(spec_species) or _spec_reaction_ids(spec_payload)
+    spec_reaction_ids = list(spec_signed) or _spec_reaction_ids(spec_payload)
     fixture = _load_fixture(fixture_path)
     fixture_reaction_ids = _coerce_string_list(getattr(fixture, "reactionWholeCellModelIDs", []))
     reaction_id_candidates = _reaction_id_candidates(
@@ -720,7 +792,7 @@ def _evaluate_stoichiometry_class(
         spec_reaction_ids=spec_reaction_ids,
     )
 
-    best_species: dict[str, set[str]] = {}
+    best_signed: dict[str, dict[str, float]] = {}
     used_surfaces: list[str] = []
     aligned_surface_found = False
 
@@ -729,16 +801,16 @@ def _evaluate_stoichiometry_class(
             for species_path, species_value in species_candidates:
                 species_ids = [_normalize_wid(item) for item in _coerce_string_list(species_value)]
                 for matrix_path, matrix_value in matrix_candidates:
-                    species = _build_oc_reaction_species_from_surface(
+                    signed = _build_oc_reaction_signed_from_surface(
                         matrix_value=matrix_value,
                         reaction_ids=reaction_ids,
                         species_ids=species_ids,
                     )
-                    if species is None:
+                    if signed is None:
                         continue
                     aligned_surface_found = True
-                    for reaction_id, reaction_species in species.items():
-                        best_species.setdefault(reaction_id, set()).update(reaction_species)
+                    for reaction_id, reaction_coeffs in signed.items():
+                        best_signed.setdefault(reaction_id, {}).update(reaction_coeffs)
                     used_surfaces.append(
                         f"{matrix_kind}:{matrix_path} reaction_ids:{reaction_path} species:{species_path}"
                     )
@@ -767,35 +839,40 @@ def _evaluate_stoichiometry_class(
             details=["OC does not expose a comparable reaction surface."],
         )
 
-    spec_reactions = sorted(spec_species)
-    oc_reactions = sorted(best_species)
+    spec_reactions = sorted(spec_signed)
+    oc_reactions = sorted(best_signed)
     missing_in_oc, extra_in_oc = _compare_vocab_sets(expected=spec_reactions, actual=oc_reactions)
 
-    shared = sorted(set(spec_species) & set(best_species))
-    species_mismatches: list[str] = []
+    shared = sorted(set(spec_signed) & set(best_signed))
+    reaction_mismatches: list[str] = []
     for reaction_id in shared:
-        spec_set = spec_species[reaction_id]
-        oc_set = best_species[reaction_id]
-        if spec_set == oc_set:
+        spec_c = spec_signed[reaction_id]
+        oc_c = best_signed[reaction_id]
+        missing_species = sorted(set(spec_c) - set(oc_c))
+        extra_species = sorted(set(oc_c) - set(spec_c))
+        coeff_mismatch = [
+            f"{s}(spec={spec_c[s]:g},oc={oc_c[s]:g})"
+            for s in sorted(set(spec_c) & set(oc_c))
+            if abs(spec_c[s] - oc_c[s]) > 1e-6 + 1e-6 * abs(spec_c[s])
+        ]
+        if not (missing_species or extra_species or coeff_mismatch):
             continue
-        missing_species, extra_species = _compare_vocab_sets(expected=spec_set, actual=oc_set)
         detail = f"{reaction_id}:"
         if missing_species:
             detail += f" missing_species={_preview_items(missing_species)}"
         if extra_species:
             detail += f" extra_species={_preview_items(extra_species)}"
-        species_mismatches.append(detail)
+        if coeff_mismatch:
+            detail += f" coeff/sign_mismatch={_preview_items(coeff_mismatch)}"
+        reaction_mismatches.append(detail)
 
     details: list[str] = []
     if missing_in_oc:
         details.append(f"reactions missing_in_oc={_preview_items(missing_in_oc)}")
     if extra_in_oc:
         details.append(f"reactions extra_in_oc={_preview_items(extra_in_oc)}")
-    if species_mismatches:
-        details.append(
-            "species_mismatches="
-            + _preview_items(species_mismatches)
-        )
+    if reaction_mismatches:
+        details.append("reaction_mismatches=" + _preview_items(reaction_mismatches))
 
     if details:
         details.append("surface=" + "; ".join(used_surfaces))
