@@ -292,18 +292,30 @@ def _resolve_role_vocab(process: object, *, role: str) -> tuple[list[str], str |
         if first_existing_attr is None:
             first_existing_attr = attr_name
         raw_value = getattr(process, attr_name)
-        values = [_normalize_wid(item) for item in _normalize_vocab_value(raw_value)]
+        # RAW (un-normalized) so callers can check ORDER + detect @compartment tags
+        # instead of collapsing them.
+        values = [str(item) for item in _normalize_vocab_value(raw_value)]
         if values:
             return values, attr_name, True
     if role == "substrates":
         model_subs = _model_substrate_wids(process)
         if model_subs:
             return (
-                [_normalize_wid(item) for item in model_subs],
+                [str(item) for item in model_subs],
                 "model.raw['ids']['substrate_wcm_585']",
                 True,
             )
     return [], first_existing_attr, first_existing_attr is not None
+
+
+def _dedupe_preserving_order(items: list[str]) -> list[str]:
+    seen: set[str] = set()
+    out: list[str] = []
+    for item in items:
+        if item not in seen:
+            seen.add(item)
+            out.append(item)
+    return out
 
 
 def _evaluate_vocab_role(
@@ -315,47 +327,75 @@ def _evaluate_vocab_role(
     attr_used: str | None,
     had_any_attr: bool,
 ) -> RoleComparison:
-    missing_in_oc, extra_in_oc = _compare_vocab_sets(expected=expected, actual=actual)
+    # `actual` is RAW (may carry @compartment_N tags and duplicates). Detect the
+    # compartment-qualified representation explicitly rather than silently collapsing it.
+    has_compartment = any("@compartment" in item for item in actual)
+    actual_bare = [_normalize_wid(item) for item in actual]
+    missing_in_oc, extra_in_oc = _compare_vocab_sets(expected=expected, actual=actual_bare)
 
     if process_name == "Metabolism" and role == "substrates" and not actual:
         return RoleComparison(
-            role=role,
-            status=_STATUS_NOT_EXPOSED,
-            expected_count=len(set(expected)),
-            actual_count=0,
-            attr_used=attr_used,
+            role=role, status=_STATUS_NOT_EXPOSED,
+            expected_count=len(set(expected)), actual_count=0, attr_used=attr_used,
             note=(
                 "OC exposes metabolism substrates through the FBA model rather than a "
                 "flat 585-WID list, so a comparable flat substrate surface is not exposed."
             ),
         )
 
+    # Species-set mismatch (or absent attr) — same as before, DIVERGE / NOT_EXPOSED.
     if missing_in_oc or extra_in_oc:
         status = _STATUS_DIVERGE
         note = None
         if not actual and expected and not had_any_attr:
-            status = _STATUS_NOT_EXPOSED
-            note = "No OC attribute exposed this vocabulary role."
+            status, note = _STATUS_NOT_EXPOSED, "No OC attribute exposed this vocabulary role."
         elif not actual and expected:
-            status = _STATUS_NOT_EXPOSED
-            note = f"Candidate OC attribute {attr_used!r} is empty."
+            status, note = _STATUS_NOT_EXPOSED, f"Candidate OC attribute {attr_used!r} is empty."
         return RoleComparison(
-            role=role,
-            status=status,
-            missing_in_oc=missing_in_oc,
-            extra_in_oc=extra_in_oc,
-            expected_count=len(set(expected)),
-            actual_count=len(set(actual)),
-            attr_used=attr_used,
-            note=note,
+            role=role, status=status, missing_in_oc=missing_in_oc, extra_in_oc=extra_in_oc,
+            expected_count=len(set(expected)), actual_count=len(set(actual_bare)),
+            attr_used=attr_used, note=note,
         )
 
+    # Species set matches — now enforce ORDER (index alignment) and surface compartment
+    # qualification / duplicates instead of hiding them.
+    compare_list = _dedupe_preserving_order(actual_bare) if has_compartment else actual_bare
+    order_ok = compare_list == expected
+    has_dupes = (not has_compartment) and len(actual_bare) != len(set(actual_bare))
+    notes: list[str] = []
+    if has_compartment:
+        notes.append(
+            f"OC uses compartment-qualified WIDs ({len(actual)} entries -> "
+            f"{len(compare_list)} species); compartment ASSIGNMENT is not validated by "
+            "the vocab check."
+        )
+    if not order_ok:
+        first_diff = next(
+            (i for i in range(min(len(compare_list), len(expected)))
+             if compare_list[i] != expected[i]),
+            min(len(compare_list), len(expected)),
+        )
+        notes.append(
+            f"ORDER/length mismatch (index alignment): first diff at position {first_diff} "
+            f"(spec={expected[first_diff] if first_diff < len(expected) else '<end>'} "
+            f"oc={compare_list[first_diff] if first_diff < len(compare_list) else '<end>'}); "
+            f"len spec={len(expected)} oc={len(compare_list)}"
+        )
+    if has_dupes:
+        notes.append(f"OC vocab has duplicate WIDs (len={len(actual_bare)}, unique={len(set(actual_bare))})")
+
+    # Order/length mismatch is a real (index-alignment) DIVERGE. Compartment-qualified
+    # representation with matching species+order is CONFORM-with-note (species right).
+    if not order_ok:
+        return RoleComparison(
+            role=role, status=_STATUS_DIVERGE,
+            expected_count=len(set(expected)), actual_count=len(set(actual_bare)),
+            attr_used=attr_used, note=" | ".join(notes),
+        )
     return RoleComparison(
-        role=role,
-        status=_STATUS_CONFORM,
-        expected_count=len(set(expected)),
-        actual_count=len(set(actual)),
-        attr_used=attr_used,
+        role=role, status=_STATUS_CONFORM,
+        expected_count=len(set(expected)), actual_count=len(set(actual_bare)),
+        attr_used=attr_used, note=" | ".join(notes) if notes else None,
     )
 
 
@@ -391,7 +431,7 @@ def _evaluate_vocabulary_class(
     status = _combine_statuses(result.status for result in role_results)
     details: list[str] = []
     for result in role_results:
-        if result.status == _STATUS_CONFORM:
+        if result.status == _STATUS_CONFORM and not result.note:
             continue
         detail = (
             f"{result.role}: {result.status} "
@@ -968,7 +1008,7 @@ def _detail_lines(process_results: list[tuple[str, dict[str, ClassResult]]]) -> 
     lines: list[str] = []
     for process_name, class_results in process_results:
         for class_name, class_result in class_results.items():
-            if class_result.status == _STATUS_CONFORM:
+            if class_result.status == _STATUS_CONFORM and not class_result.details:
                 continue
             lines.append(f"{process_name} [{class_name}] {class_result.status}")
             for detail in class_result.details:
