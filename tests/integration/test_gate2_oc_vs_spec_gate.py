@@ -16,7 +16,6 @@ sys.modules[_spec.name] = gate
 _spec.loader.exec_module(gate)
 
 _PROCESS_SPECS = gate._load_process_specs()
-_STATE_USAGE = gate._load_state_usage(gate._STATE_USAGE_PATH)
 
 
 def _make_process(process_name: str):
@@ -31,7 +30,6 @@ def test_gate_runs_and_reports_current_tree_without_crashing() -> None:
     assert message.startswith("GATE 2 (OC vs spec): ")
     assert "processes=28" in message
     assert "StateUsage" in message
-    assert "missing_states=" in message
     assert "Transcription: substrates" not in message
 
 
@@ -50,30 +48,19 @@ def test_small_molecule_stoich_processes_match_small_molecule_spec_basis() -> No
         assert result.details == []
 
 
-def test_state_usage_reports_missing_states_from_karr_usage() -> None:
-    dnadamage = gate._evaluate_state_usage_class(
-        "DNADamage",
-        _make_process("DNADamage"),
-        fixture_path=gate.DEFAULT_FIXTURE_DIR / "DNADamage_flat.mat",
-        state_usage=_STATE_USAGE,
-    )
-    transcription = gate._evaluate_state_usage_class(
-        "Transcription",
-        _make_process("Transcription"),
-        fixture_path=gate.DEFAULT_FIXTURE_DIR / "Transcription_flat.mat",
-        state_usage=_STATE_USAGE,
-    )
-
-    # State-usage is now INFO-only (demoted from a hard gate) because the heuristic
-    # has known false-positives/negatives (writes-as-reads, missed MATLAB aliases, OC
-    # private fixture-state loads). It reports apparent gaps but does NOT fail the gate.
-    assert dnadamage.status == gate._STATUS_CONFORM
-    assert transcription.status == gate._STATUS_NOT_EXPOSED
-    assert any(
-        detail.startswith("apparent missing_states=") and "RNAPolymerase" in detail
-        for detail in transcription.details
-    )
-    assert any("HEURISTIC / INFO-ONLY" in detail for detail in transcription.details)
+def test_state_usage_is_descoped_to_a_cross_process_pointer() -> None:
+    # State-usage (which shared Karr state objects a process couples to) is a
+    # CROSS-PROCESS concern, not per-process input fidelity. It is deliberately
+    # out of scope for Gate 2: metabolite producer/consumer deps are validated by
+    # L1b Half B (dependency_symmetry), and state-object hand-off is deferred to L3.
+    # The class returns a uniform N/A pointer for every process and never fails the gate.
+    for process_name in ("DNADamage", "Transcription", "Metabolism"):
+        result = gate._evaluate_state_usage_class(process_name)
+        assert result.status == gate._STATUS_NA
+        assert len(result.details) == 1
+        assert result.details[0].startswith("OUT OF SCOPE for Gate 2")
+        assert "L1b Half B" in result.details[0]
+        assert "L3" in result.details[0]
 
 
 def test_compare_vocab_sets_reports_missing_and_extra_members() -> None:

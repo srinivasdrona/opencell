@@ -32,7 +32,6 @@ DEFAULT_FIXTURE_DIR = derive_input_spec.FIXTURE_ROOT
 _REPLAY_COMMON_PATH = REPO_ROOT / "tests" / "vivarium" / "l2_2_replay_common_v2.py"
 _SOURCE_TRUTH_PATH = DEFAULT_SPEC_DIR / "_gate0_source_truth.json"
 _CONSTANT_INVENTORY_PATH = DEFAULT_SPEC_DIR / "_gate0_constant_inventory.json"
-_STATE_USAGE_PATH = DEFAULT_SPEC_DIR / "_karr_state_usage.json"
 
 _STATUS_CONFORM = "CONFORM"
 _STATUS_DIVERGE = "DIVERGE"
@@ -101,45 +100,14 @@ _STOICH_ENZYME_ID_TERMINALS = {
     "complex_enzyme_wids",
     "monomer_enzyme_wids",
 }
-_IGNORED_STATE_USAGE_PORTS = {
-    "boundenzymes",
-    "requests",
-    "substratesallocated",
-    "txratefoldchange",
-}
-_PORT_STATE_CLASSES = {
-    "cell": {"Geometry"},
-    "chromosome": {"Chromosome"},
-    "complex": {"ProteinComplex"},
-    "complexs": {"ProteinComplex"},
-    "enzymes": {"ProteinComplex", "ProteinMonomer"},
-    "ftszring": {"FtsZRing"},
-    "geometry": {"Geometry"},
-    "host": {"Host"},
-    "mass": {"Mass"},
-    "metabolicreaction": {"MetabolicReaction"},
-    "metabolite": {"Metabolite"},
-    "monomer": {"ProteinMonomer"},
-    "monomers": {"ProteinMonomer"},
-    "polypeptide": {"Polypeptide"},
-    "protein": {"ProteinMonomer"},
-    "ribosome": {"Ribosome"},
-    "rna": {"Rna"},
-    "rnapolymerase": {"RNAPolymerase"},
-    "rnapolymerases": {"RNAPolymerase"},
-    "stimuli": {"Stimulus"},
-    "stimulus": {"Stimulus"},
-    "substrates": {"Metabolite"},
-    "transcript": {"Transcript"},
-    "transcripts": {"Transcript"},
-}
-_FIXTURE_LOCAL_INDEX_STATE_CLASSES = {
-    "Complex": "ProteinComplex",
-    "Metabolite": "Metabolite",
-    "Monomer": "ProteinMonomer",
-    "RNA": "Rna",
-    "Stimulus": "Stimulus",
-}
+_STATE_USAGE_POINTER = (
+    "OUT OF SCOPE for Gate 2 (per-process input fidelity = vocab + reaction "
+    "stoichiometry). Cross-process state coupling is validated elsewhere: metabolite "
+    "producer/consumer dependencies by L1b Half B (dependency_symmetry, green 28/28); "
+    "state-object hand-off (RNAPolymerase/Transcript/Chromosome, etc.) is deferred to "
+    "L3 (direct coupling, runtime). A per-process reachability heuristic here produced "
+    "false reds and is intentionally removed."
+)
 
 
 @dataclass(slots=True)
@@ -212,17 +180,6 @@ def _load_constant_inventory(path: Path) -> dict[str, list[str]]:
         names = [str(item.get("name", "")).strip() for item in entry.get("fixed", [])]
         names.extend(str(item.get("name", "")).strip() for item in entry.get("fitted", []))
         out[process_name] = [name for name in names if name]
-    return out
-
-
-def _load_state_usage(path: Path) -> dict[str, list[str]]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    out: dict[str, list[str]] = {}
-    for process_name, entry in payload.items():
-        if not isinstance(entry, Mapping):
-            continue
-        states = [str(item) for item in entry.get("states_used", []) if str(item).strip()]
-        out[str(process_name)] = states
     return out
 
 
@@ -771,36 +728,6 @@ def _ports_schema(process: object) -> dict[str, object]:
     return schema if isinstance(schema, dict) else {}
 
 
-def _fixture_field_has_values(fixture: object, field_name: str) -> bool:
-    if not hasattr(fixture, field_name):
-        return False
-    value = getattr(fixture, field_name)
-    try:
-        return np.asarray(value).size > 0
-    except Exception:  # noqa: BLE001
-        return False
-
-
-def _reachable_states_from_ports(ports: Iterable[str]) -> set[str]:
-    reachable: set[str] = set()
-    for port in ports:
-        normalized = _normalize_surface_name(port)
-        if normalized in _IGNORED_STATE_USAGE_PORTS:
-            continue
-        reachable.update(_PORT_STATE_CLASSES.get(normalized, set()))
-    return reachable
-
-
-def _reachable_states_from_fixture(fixture: object) -> set[str]:
-    reachable: set[str] = set()
-    for prefix in ("substrate", "enzyme"):
-        for fixture_state, state_class in _FIXTURE_LOCAL_INDEX_STATE_CLASSES.items():
-            field_name = f"{prefix}{fixture_state}LocalIndexs"
-            if _fixture_field_has_values(fixture, field_name):
-                reachable.add(state_class)
-    return reachable
-
-
 def _evaluate_stoichiometry_class(
     process: object,
     spec_payload: Mapping[str, Any],
@@ -935,48 +862,15 @@ def _evaluate_stoichiometry_class(
     return ClassResult(status=_STATUS_CONFORM)
 
 
-def _evaluate_state_usage_class(
-    process_name: str,
-    process: object,
-    *,
-    fixture_path: Path,
-    state_usage: Mapping[str, list[str]],
-) -> ClassResult:
-    try:
-        ports = sorted(_ports_schema(process))
-    except Exception as exc:  # noqa: BLE001
-        return ClassResult(
-            status=_STATUS_DIVERGE,
-            details=[f"ports_schema() failed: {exc.__class__.__name__}: {exc}"],
-        )
-
-    fixture = _load_fixture(fixture_path)
-    states_used = sorted(set(state_usage.get(process_name, [])))
-    oc_reachable = sorted(
-        _reachable_states_from_ports(ports) | _reachable_states_from_fixture(fixture)
-    )
-    missing_states = sorted(set(states_used) - set(oc_reachable))
-
-    caveat = (
-        "HEURISTIC / INFO-ONLY (does not fail the gate): the Karr-side usage is a text "
-        "parse that counts writes-as-reads and misses MATLAB alias reads, and the OC-side "
-        "reachability (ports + fixture LocalIndexs) does not model OC's PRIVATE fixture-state "
-        "loads in __init__. So both false-positives and false-negatives are possible. Pending "
-        "rework to read-only/alias-aware extraction + true OC read-surface inventory."
-    )
-
-    if not missing_states:
-        return ClassResult(status=_STATUS_CONFORM, details=[caveat])
-
-    return ClassResult(
-        status=_STATUS_NOT_EXPOSED,
-        details=[
-            f"apparent missing_states={_preview_items(missing_states)}",
-            f"states_used(parsed)={_preview_items(states_used)}",
-            f"oc_reachable(inferred)={_preview_items(oc_reachable)}",
-            caveat,
-        ],
-    )
+def _evaluate_state_usage_class(process_name: str) -> ClassResult:
+    """State-usage (which shared Karr state objects a process couples to) is a
+    CROSS-PROCESS concern and is deliberately OUT OF SCOPE for Gate 2, which
+    validates per-process input fidelity vs the frozen spec (vocab + reaction
+    stoichiometry). See the pointer below. A per-process reachability heuristic
+    here produced false reds (e.g. Transcription's __init__ fixture loads of
+    RNAPolymerase/Transcript, which never flow through ports) and is removed."""
+    del process_name  # scope pointer is identical for every process
+    return ClassResult(status=_STATUS_NA, details=[_STATE_USAGE_POINTER])
 
 
 def _significant_tokens(name: str) -> set[str]:
@@ -1195,7 +1089,6 @@ def _gate_result(
         if _CONSTANT_INVENTORY_PATH.exists()
         else {}
     )
-    state_usage = _load_state_usage(_STATE_USAGE_PATH) if _STATE_USAGE_PATH.exists() else {}
 
     process_results: list[tuple[str, dict[str, ClassResult]]] = []
     construct_errors: list[str] = []
@@ -1213,7 +1106,7 @@ def _gate_result(
                             details=[f"Missing frozen spec file {_display_path(spec_path)}"],
                         ),
                         "stoich": ClassResult(status=_STATUS_NOT_EXPOSED),
-                        "state_usage": ClassResult(status=_STATUS_DIVERGE),
+                        "state_usage": ClassResult(status=_STATUS_NA, details=[_STATE_USAGE_POINTER]),
                         "constants": ClassResult(status=_STATUS_NOT_EXPOSED),
                     },
                 )
@@ -1234,7 +1127,7 @@ def _gate_result(
                     {
                         "vocab": ClassResult(status=_STATUS_DIVERGE, details=["Process construction failed."]),
                         "stoich": ClassResult(status=_STATUS_NOT_EXPOSED),
-                        "state_usage": ClassResult(status=_STATUS_DIVERGE),
+                        "state_usage": ClassResult(status=_STATUS_NA, details=[_STATE_USAGE_POINTER]),
                         "constants": ClassResult(status=_STATUS_NOT_EXPOSED),
                     },
                 )
@@ -1248,12 +1141,7 @@ def _gate_result(
                 spec_payload,
                 fixture_path=fixture_path,
             ),
-            "state_usage": _evaluate_state_usage_class(
-                process_name,
-                process,
-                fixture_path=fixture_path,
-                state_usage=state_usage,
-            ),
+            "state_usage": _evaluate_state_usage_class(process_name),
             "constants": _evaluate_constants_class(
                 process_name,
                 process,
