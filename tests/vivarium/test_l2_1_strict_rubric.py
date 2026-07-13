@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import Any
 
 import h5py
 import numpy as np
@@ -42,18 +41,18 @@ if str(_HELPER_DIR) not in sys.path:
 from l2_2_replay_common_v2 import (  # type: ignore
     _PROCESS_SPECS,
     _build_context,
+    _inject_hidden_read_surface,
     _project_trace_vector,
     resolve_trace_path,
 )
 from l2_replay_common import (  # type: ignore
+    apply_count_update,
     build_state_template,
+    collect_count_delta_dicts,
     overlay_observable_into_state,
     project_observable_from_state,
     refresh_allocator_views,
-    apply_count_update,
-    collect_count_delta_dicts,
 )
-
 
 # Day-37 (2026-06-23) Phase B+ baseline — oracle-type-aware rubric
 # Stochastic processes (oracle_type=distributional) no longer require per-tick
@@ -66,10 +65,13 @@ EXPECTED_VERDICTS = {
     # detection — their biology fires on tf_binding/tx_rate_fold_change/
     # metabolic_reaction.fluxs which the strict rubric now recognizes)
     #
-    # DNARepair remains COINCIDENTAL in this harness because `_classify()`
-    # overlays only standard observables before calling `next_update`; it does
-    # not inject DNARepair's chromosome hidden-read surface or replay hints the
-    # dedicated per-process L2 replay test uses.
+    # DNARepair stays COINCIDENTAL, but NOT because the harness lacks its inputs:
+    # `_classify()` now injects the chromosome hidden-read surface (states_before,
+    # via `_inject_hidden_read_surface`), so DNARepair fires real biology on 8/100
+    # ticks (BER/NER/HR repairs + MunI methylation). It remains COINCIDENTAL because
+    # its single Karr-active tick is the stochastic-rare (~3%/tick) MunI maintenance
+    # methylation, which OC fires on different ticks in a single trace. That is an
+    # L2.2 (distributional rate) concern, not a per-tick fire-rate one.
     "DNARepair": "COINCIDENTAL",
     "DNASupercoiling": "GENUINE",
     "FtsZPolymerization": "GENUINE",
@@ -150,6 +152,12 @@ def _classify(name: str) -> dict:
                     vector=before, wids=wids_by_observable[obs],
                     store_path_override=spec.store_path_override,
                 )
+            # Inject the process's declared hidden read-surface (e.g. chromosome) from the
+            # recorded states_before -- the real INPUT the process reads, not the recorded
+            # outcome. Without this, chromosome-coupled processes see only template defaults
+            # and cannot fire their real biology, yielding spurious COINCIDENTAL verdicts.
+            # No-op when the trace lacks the channel (e.g. chromosome-less traces).
+            _inject_hidden_read_surface(ctx=ctx, state=state, tick=tick)
 
             refresh_allocator_views(process, state)
             update = process.next_update(1.0, state)
