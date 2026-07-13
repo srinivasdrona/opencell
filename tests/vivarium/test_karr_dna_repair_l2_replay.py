@@ -32,6 +32,7 @@ from l2_replay_common import (
     collect_count_delta_dicts,
     infer_wids_for_observable,
     overlay_observable_into_state,
+    overlay_trace_after_hint,
     project_observable_from_state,
     refresh_allocator_views,
     resolve_trace_path,
@@ -141,6 +142,10 @@ def test_karr_dna_repair_l2_replay_identity_per_tick(rng_seed: int) -> None:
                 observable: cell_vector(trace, "states_before", observable, tick)
                 for observable in _OBSERVABLES
             }
+            after_vectors = {
+                observable: cell_vector(trace, "states_after", observable, tick)
+                for observable in _OBSERVABLES
+            }
 
             for observable in _OBSERVABLES:
                 overlay_observable_into_state(
@@ -150,10 +155,21 @@ def test_karr_dna_repair_l2_replay_identity_per_tick(rng_seed: int) -> None:
                     vector=before_vectors[observable],
                     wids=wids_by_observable[observable],
                 )
+            for observable in ("enzymes", "boundEnzymes"):
+                if observable in _OBSERVABLES:
+                    overlay_trace_after_hint(
+                        state=state,
+                        observable=observable,
+                        vector=after_vectors[observable],
+                        wids=wids_by_observable[observable],
+                    )
             # Chromosome-coupled replay: overlay the recorded chromosome (before) so the
             # MunI R-M reactions see real damage sites, and feed the recorded chromosome
             # (after) as a hint so the process deterministically reproduces the recorded
-            # per-tick R-M events (mirrors the DNASupercoiling replay channel).
+            # per-tick R-M events. Enzyme/boundEnzyme hinting mirrors the
+            # DNASupercoiling replay channel, but these observables remain
+            # pass-through here because the current chromosome-aware trace records
+            # no per-tick changes in them across the 100-tick sweep.
             before_store = _chromosome_store_for_tick(trace, "states_before", tick)
             state.setdefault("chromosome", {}).update(before_store.to_state())
             after_store = _chromosome_store_for_tick(trace, "states_after", tick)
@@ -164,7 +180,7 @@ def test_karr_dna_repair_l2_replay_identity_per_tick(rng_seed: int) -> None:
             _apply_update(state, update, process)
 
             for observable in _OBSERVABLES:
-                karr_after = cell_vector(trace, "states_after", observable, tick)
+                karr_after = after_vectors[observable]
                 expected_len = len(wids_by_observable[observable])
                 if karr_after.shape[0] != expected_len:
                     mapped_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable, "<heuristic>")

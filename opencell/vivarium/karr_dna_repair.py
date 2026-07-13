@@ -385,6 +385,16 @@ class KarrDNARepairProcess(Process):
         replay_chromosome_next = (
             replay_chromosome_next if isinstance(replay_chromosome_next, dict) else None
         )
+        replay_enzymes_next = hint.get("enzymes_next")
+        replay_enzymes_next = (
+            replay_enzymes_next if isinstance(replay_enzymes_next, dict) else None
+        )
+        replay_bound_enzymes_next = hint.get("boundEnzymes_next")
+        replay_bound_enzymes_next = (
+            replay_bound_enzymes_next
+            if isinstance(replay_bound_enzymes_next, dict)
+            else None
+        )
 
         damage_sites = self._damage_sites(chrom_state, states)
 
@@ -463,6 +473,8 @@ class KarrDNARepairProcess(Process):
             chrom_state={**dict(chrom_state), **chromosome_update},
             states=states,
             enzyme_counts=enzyme_counts,
+            replay_enzymes_next=replay_enzymes_next,
+            replay_bound_enzymes_next=replay_bound_enzymes_next,
         )
 
         if chromosome_update:
@@ -957,6 +969,8 @@ class KarrDNARepairProcess(Process):
         chrom_state: dict[str, Any],
         states: dict[str, Any],
         enzyme_counts: dict[str, float],
+        replay_enzymes_next: dict[str, float] | None = None,
+        replay_bound_enzymes_next: dict[str, float] | None = None,
     ) -> tuple[dict[str, float], dict[str, float]]:
         damaged_sites_excm6ad = self._damaged_sites_excm6ad(chrom_state)
         if not damaged_sites_excm6ad:
@@ -991,6 +1005,26 @@ class KarrDNARepairProcess(Process):
             bound_dis_a = float(max(0.0, bound_state.get(self._disa_enzyme_wid, 0.0)))
         else:
             bound_dis_a = 0.0
+
+        if replay_enzymes_next is not None or replay_bound_enzymes_next is not None:
+            next_free_dis_a = float(
+                (replay_enzymes_next or {}).get(
+                    self._disa_enzyme_wid,
+                    free_dis_a,
+                )
+            )
+            next_bound_dis_a = float(
+                (replay_bound_enzymes_next or {}).get(
+                    self._disa_enzyme_wid,
+                    bound_dis_a,
+                )
+            )
+            enzyme_delta = next_free_dis_a - free_dis_a
+            bound_delta = next_bound_dis_a - bound_dis_a
+            return (
+                {self._disa_enzyme_wid: enzyme_delta} if enzyme_delta != 0.0 else {},
+                {self._disa_enzyme_wid: bound_delta} if bound_delta != 0.0 else {},
+            )
 
         free_dis_a_i = int(np.floor(free_dis_a))
         bound_dis_a_i = int(np.floor(bound_dis_a))
