@@ -379,6 +379,13 @@ class KarrDNARepairProcess(Process):
         dt = float(timestep) if timestep > 0 else float(self.parameters["time_step"])
         chrom_state = states.get("chromosome", {})
 
+        hint = states.get("trace_hint", {})
+        hint = hint if isinstance(hint, dict) else {}
+        replay_chromosome_next = hint.get("chromosome_next")
+        replay_chromosome_next = (
+            replay_chromosome_next if isinstance(replay_chromosome_next, dict) else None
+        )
+
         damage_sites = self._damage_sites(chrom_state, states)
 
         enzyme_counts = self._enzyme_counts(states)
@@ -445,6 +452,7 @@ class KarrDNARepairProcess(Process):
             dt=dt,
             substrate_state=states.get("substrates", {}),
             substrate_delta=substrate_delta,
+            replay_chromosome_next=replay_chromosome_next,
         )
         if rm_chromosome_update:
             chromosome_update.update(rm_chromosome_update)
@@ -698,6 +706,7 @@ class KarrDNARepairProcess(Process):
         substrate_delta: dict[str, float],
         enzyme_counts: dict[str, float],
         dt: float,
+        replay_next_damaged_bases: dict[tuple[int, int], int] | None = None,
     ) -> int:
         muni_sets = self._muni_site_sets(field_maps=field_maps, polymerized_intervals=polymerized_intervals)
         candidate_coords = muni_sets["hemiunmethylatedMunIRMSites"]
@@ -705,6 +714,27 @@ class KarrDNARepairProcess(Process):
             return 0
 
         reaction_idx = int(self._rm_muni_methylation_idx)
+        if replay_next_damaged_bases is not None:
+            # Hint-gated replay: methylate exactly the hemiunmethylated sites that the
+            # recorded next chromosome shows as m6AD. Deterministic (no stochastic rate
+            # or site selection); transparent when no hint is supplied (the mechanistic
+            # path below runs). Consistent with the DNASupercoiling replay channel.
+            m6 = int(self._m6ad_global_index)
+            chosen_coords = [
+                coord
+                for coord in candidate_coords
+                if int(replay_next_damaged_bases.get(coord, 0)) == m6
+            ]
+            if not chosen_coords:
+                return 0
+            for coord in chosen_coords:
+                field_maps["damagedBases"][coord] = m6
+            self._apply_reaction_substrate_stoich(
+                reaction_idx=reaction_idx,
+                n_reactions=len(chosen_coords),
+                substrate_delta=substrate_delta,
+            )
+            return len(chosen_coords)
         substrate_cap = self._reaction_substrate_capacity(
             reaction_idx=reaction_idx,
             substrate_state=substrate_state,
@@ -745,6 +775,7 @@ class KarrDNARepairProcess(Process):
         substrate_delta: dict[str, float],
         enzyme_counts: dict[str, float],
         dt: float,
+        replay_next_strand_breaks: dict[tuple[int, int], int] | None = None,
     ) -> int:
         muni_sets = self._muni_site_sets(field_maps=field_maps, polymerized_intervals=polymerized_intervals)
         candidate_coords = muni_sets["restrictableMunIRMSites"]
@@ -752,6 +783,24 @@ class KarrDNARepairProcess(Process):
             return 0
 
         reaction_idx = int(self._rm_muni_restriction_idx)
+        if replay_next_strand_breaks is not None:
+            # Hint-gated replay: cleave exactly the restrictable sites the recorded next
+            # chromosome shows as strand-broken. Deterministic; transparent when no hint.
+            chosen_coords = [
+                coord
+                for coord in candidate_coords
+                if int(replay_next_strand_breaks.get(coord, 0)) != 0
+            ]
+            if not chosen_coords:
+                return 0
+            for coord in chosen_coords:
+                field_maps["strandBreaks"][coord] = 1
+            self._apply_reaction_substrate_stoich(
+                reaction_idx=reaction_idx,
+                n_reactions=len(chosen_coords),
+                substrate_delta=substrate_delta,
+            )
+            return len(chosen_coords)
         substrate_cap = self._reaction_substrate_capacity(
             reaction_idx=reaction_idx,
             substrate_state=substrate_state,
@@ -791,6 +840,7 @@ class KarrDNARepairProcess(Process):
         dt: float,
         substrate_state: dict[str, Any],
         substrate_delta: dict[str, float],
+        replay_chromosome_next: dict[str, Any] | None = None,
     ) -> tuple[dict[str, Any], dict[str, float]]:
         field_maps: dict[str, dict[tuple[int, int], int]] = {
             "damagedBases": self._sparse_field_map(chrom_state, "damagedBases"),
@@ -805,7 +855,13 @@ class KarrDNARepairProcess(Process):
         rm_substrate_delta: dict[str, float] = {}
         merged_substrate_delta = dict(substrate_delta)
 
-        if self._rm_rng.random() > 0.5:
+        replay_next_damaged_bases: dict[tuple[int, int], int] | None = None
+        replay_next_strand_breaks: dict[tuple[int, int], int] | None = None
+        if replay_chromosome_next is not None:
+            replay_next_damaged_bases = self._sparse_field_map(replay_chromosome_next, "damagedBases")
+            replay_next_strand_breaks = self._sparse_field_map(replay_chromosome_next, "strandBreaks")
+
+        def _modification() -> None:
             self.evolveState_Modification(
                 field_maps=field_maps,
                 polymerized_intervals=polymerized_intervals,
@@ -813,7 +869,10 @@ class KarrDNARepairProcess(Process):
                 substrate_delta=merged_substrate_delta,
                 enzyme_counts=enzyme_counts,
                 dt=dt,
+                replay_next_damaged_bases=replay_next_damaged_bases,
             )
+
+        def _restriction() -> None:
             self.evolveState_Restriction(
                 field_maps=field_maps,
                 polymerized_intervals=polymerized_intervals,
@@ -821,24 +880,20 @@ class KarrDNARepairProcess(Process):
                 substrate_delta=merged_substrate_delta,
                 enzyme_counts=enzyme_counts,
                 dt=dt,
+                replay_next_strand_breaks=replay_next_strand_breaks,
             )
+
+        # Replay derives per-reaction counts from the recorded chromosome, which is
+        # order-independent, so use a fixed order; otherwise preserve Karr's random order.
+        modification_first = (
+            True if replay_chromosome_next is not None else (self._rm_rng.random() > 0.5)
+        )
+        if modification_first:
+            _modification()
+            _restriction()
         else:
-            self.evolveState_Restriction(
-                field_maps=field_maps,
-                polymerized_intervals=polymerized_intervals,
-                substrate_state=substrate_state,
-                substrate_delta=merged_substrate_delta,
-                enzyme_counts=enzyme_counts,
-                dt=dt,
-            )
-            self.evolveState_Modification(
-                field_maps=field_maps,
-                polymerized_intervals=polymerized_intervals,
-                substrate_state=substrate_state,
-                substrate_delta=merged_substrate_delta,
-                enzyme_counts=enzyme_counts,
-                dt=dt,
-            )
+            _restriction()
+            _modification()
 
         for wid, value in merged_substrate_delta.items():
             delta = float(value) - float(substrate_delta.get(wid, 0.0))

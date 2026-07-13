@@ -36,6 +36,7 @@ from l2_replay_common import (
     refresh_allocator_views,
     resolve_trace_path,
 )
+from opencell.state.chromosome_store import ChromosomeStore
 from opencell.vivarium.karr_dna_repair import KarrDNARepairProcess
 
 _TRACE_PROCESS_NAME = "DNARepair"
@@ -67,6 +68,12 @@ def _apply_update(
     for label, deltas in collect_count_delta_dicts(update):
         _assert_delta_integral(label, deltas)
     apply_count_update(state, update)
+
+
+def _chromosome_store_for_tick(trace: h5py.File, group: str, tick: int) -> ChromosomeStore:
+    dataset = trace[f"{group}/chromosome"]
+    ref = dataset[0, tick] if dataset.shape[0] == 1 else dataset[tick, 0]
+    return ChromosomeStore.from_hdf5_group(trace[ref])
 
 
 def _audit_trace_mutated_ticks(
@@ -143,6 +150,14 @@ def test_karr_dna_repair_l2_replay_identity_per_tick(rng_seed: int) -> None:
                     vector=before_vectors[observable],
                     wids=wids_by_observable[observable],
                 )
+            # Chromosome-coupled replay: overlay the recorded chromosome (before) so the
+            # MunI R-M reactions see real damage sites, and feed the recorded chromosome
+            # (after) as a hint so the process deterministically reproduces the recorded
+            # per-tick R-M events (mirrors the DNASupercoiling replay channel).
+            before_store = _chromosome_store_for_tick(trace, "states_before", tick)
+            state.setdefault("chromosome", {}).update(before_store.to_state())
+            after_store = _chromosome_store_for_tick(trace, "states_after", tick)
+            state.setdefault("trace_hint", {})["chromosome_next"] = after_store.to_state()
             refresh_allocator_views(process, state)
 
             update = process.next_update(1.0, state)
