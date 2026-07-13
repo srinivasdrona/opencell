@@ -1,4 +1,4 @@
-function extract_per_process_traces_v2(process_names, output_subdir, n_ticks, seed)
+function extract_per_process_traces_v2(process_names, output_subdir, n_ticks, seed, tick_offset)
 % extract_per_process_traces_v2
 % Allocator-correct per-process trace extraction with per-tick tap points.
 %
@@ -6,6 +6,13 @@ function extract_per_process_traces_v2(process_names, output_subdir, n_ticks, se
 % scheduler/allocation loop each tick and captures:
 %   states_before: target process properties after copyFromState + allocation
 %   states_after:  target process properties after evolveState (before copyToState)
+%
+% tick_offset (optional, default 0): number of full-simulation burn-in ticks to
+%   advance BEFORE snapshotting begins. Use this to capture an "event window" for
+%   processes that are quiescent at cell birth (t=0) but active later -- e.g.
+%   RibosomeAssembly's first assembly event is ~tick 238, so tick_offset=200 with
+%   n_ticks=100 snapshots ticks 200..299 and captures the firing window. With the
+%   default tick_offset=0 the behaviour is identical to the original extractor.
 %
 % Output file:
 %   data/m1_sources/karr_native/<output_subdir>/<Process>_<n_ticks>ticks.mat
@@ -15,6 +22,11 @@ if nargin < 4 || isempty(seed)
     seed = uint32(0);
 else
     seed = uint32(seed);
+end
+if nargin < 5 || isempty(tick_offset)
+    tick_offset = 0;
+else
+    tick_offset = double(tick_offset);
 end
 if nargin < 2 || isempty(output_subdir)
     if seed == 0
@@ -74,6 +86,13 @@ for i = 1:numel(process_names)
 
     seed_simulation(sim, seed);
 
+    % Optional event-window burn-in: advance the whole simulation tick_offset
+    % ticks without snapshotting, so the subsequent n_ticks capture a window
+    % where an otherwise-quiescent-at-birth process is active.
+    for bt = 1:tick_offset
+        [sim, ~, ~] = evolve_state_with_tap(sim, target_idx, snapshot_props);
+    end
+
     ok = true;
     error_message = '';
     for t = 1:n_ticks
@@ -101,6 +120,7 @@ for i = 1:numel(process_names)
         'process_name', canonical_name, ...
         'n_ticks', n_ticks, ...
         'rng_seed', seed, ...
+        'tick_offset', tick_offset, ...
         'timestamp', datestr(now, 'yyyy-mm-dd HH:MM:SS'), ...
         'snapshot_properties', {snapshot_props} ...
     );
