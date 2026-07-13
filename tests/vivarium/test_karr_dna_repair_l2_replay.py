@@ -24,9 +24,6 @@ if str(_HELPER_DIR) not in sys.path:
 
 from l2_replay_common import (
     apply_count_update,
-    assert_delta_integral as _assert_delta_integral_shared,
-    assert_identity_or_tolerance as _assert_identity_or_tolerance_shared,
-    audit_trace_mutated_ticks as _audit_trace_mutated_ticks_shared,
     build_state_template,
     cell_vector,
     collect_count_delta_dicts,
@@ -37,23 +34,37 @@ from l2_replay_common import (
     refresh_allocator_views,
     resolve_trace_path,
 )
+from l2_replay_common import (
+    assert_delta_integral as _assert_delta_integral_shared,
+)
+from l2_replay_common import (
+    assert_identity_or_tolerance as _assert_identity_or_tolerance_shared,
+)
+from l2_replay_common import (
+    audit_trace_mutated_ticks as _audit_trace_mutated_ticks_shared,
+)
+
 from opencell.state.chromosome_store import ChromosomeStore
 from opencell.vivarium.karr_dna_repair import KarrDNARepairProcess
 
 _TRACE_PROCESS_NAME = "DNARepair"
-_OBSERVABLES = ('substrates', 'enzymes', 'boundEnzymes')
+_OBSERVABLES = ("substrates", "enzymes", "boundEnzymes")
 
 # Observables Karr records but `next_update` does not write into. Their
 # `oc_after` MUST be rebuilt from `states_before` (Rule 7 pass-through
 # provenance).
-_PASS_THROUGH = frozenset({'boundEnzymes', 'enzymes'})
+_PASS_THROUGH = frozenset({"boundEnzymes", "enzymes"})
 
 # Rule 4b manifest (declared for mechanical lint coverage).
 _SCRATCH_RESET = {}
 
 # Optional explicit observable->WID attribute mapping. Any missing or unknown
 # attr falls back to heuristic inference from process attrs / state schema.
-_OBSERVABLE_TO_WIDS_ATTR = {'substrates': 'substrate_wids', 'enzymes': 'enzyme_wids', 'boundEnzymes': 'enzyme_wids'}
+_OBSERVABLE_TO_WIDS_ATTR = {
+    "substrates": "substrate_wids",
+    "enzymes": "enzyme_wids",
+    "boundEnzymes": "enzyme_wids",
+}
 
 
 def _assert_delta_integral(label: str, deltas: dict[str, float]) -> None:

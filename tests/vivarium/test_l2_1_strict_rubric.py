@@ -61,11 +61,16 @@ from l2_replay_common import (  # type: ignore
 # processes (oracle_type=bit_identity). This is the correct rubric per
 # process class and restores the L2.2 ⊆ L2.1 hierarchy expectation.
 EXPECTED_VERDICTS = {
-    # GENUINE: 19 (was 16; Day-37 PM: +TerminalOrg from schema-v2.1 fallback,
+    # GENUINE: 18 (was 16; Day-37 PM: +TerminalOrg from schema-v2.1 fallback,
     # +TranscriptionalRegulation and +Metabolism from non-standard channel
     # detection — their biology fires on tf_binding/tx_rate_fold_change/
     # metabolic_reaction.fluxs which the strict rubric now recognizes)
-    "DNARepair": "GENUINE",
+    #
+    # DNARepair remains COINCIDENTAL in this harness because `_classify()`
+    # overlays only standard observables before calling `next_update`; it does
+    # not inject DNARepair's chromosome hidden-read surface or replay hints the
+    # dedicated per-process L2 replay test uses.
+    "DNARepair": "COINCIDENTAL",
     "DNASupercoiling": "GENUINE",
     "FtsZPolymerization": "GENUINE",
     "MacromolecularComplexation": "GENUINE",
@@ -91,8 +96,9 @@ EXPECTED_VERDICTS = {
     "HostInteraction": "UNINFORMATIVE",
     "RNAModification": "UNINFORMATIVE",
     "RibosomeAssembly": "UNINFORMATIVE",
-    # COINCIDENTAL: 2 (Metabolism + TxReg now GENUINE via non-standard channels;
-    # ProteinDecay and Replication still biology-silent on standard channels — real gaps)
+    # COINCIDENTAL: 3 (Metabolism + TxReg now GENUINE via non-standard channels;
+    # DNARepair, ProteinDecay, and Replication are still biology-silent on this
+    # standard-observable-only strict-rubric surface — real gaps)
     "ProteinDecay": "COINCIDENTAL",
     "Replication": "COINCIDENTAL",
     # FAIL: 1 (bit-identity broken for deterministic process)

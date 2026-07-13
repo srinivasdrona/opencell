@@ -13,9 +13,9 @@ Deferred to v2:
 
 from __future__ import annotations
 
-from functools import lru_cache
 import math
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -220,8 +220,12 @@ class KarrDNARepairProcess(Process):
             )
         }
         canonical_complex_wids = _canonical_complex_wids()
-        self.complex_enzyme_wids = [wid for wid in self.enzyme_wids if wid in canonical_complex_wids]
-        self.protein_enzyme_wids = [wid for wid in self.enzyme_wids if wid not in canonical_complex_wids]
+        self.complex_enzyme_wids = [
+            wid for wid in self.enzyme_wids if wid in canonical_complex_wids
+        ]
+        self.protein_enzyme_wids = [
+            wid for wid in self.enzyme_wids if wid not in canonical_complex_wids
+        ]
 
         self.pathway_reaction_indices: dict[str, np.ndarray] = {
             "ber": _parse_index_array(fx.reactionIndexs_BER) - 1,
@@ -242,7 +246,11 @@ class KarrDNARepairProcess(Process):
         self._disa_dna_footprint = int(
             max(
                 1,
-                int(np.asarray(fx.enzymeDNAFootprints, dtype=np.int64).reshape(-1)[self._disa_enzyme_idx]),
+                int(
+                    np.asarray(fx.enzymeDNAFootprints, dtype=np.int64).reshape(-1)[
+                        self._disa_enzyme_idx
+                    ]
+                ),
             )
         )
         self._substrate_global_indices = _parse_index_array(fx.substrateGlobalIndexs)
@@ -282,7 +290,8 @@ class KarrDNARepairProcess(Process):
         expected_dntp_wids = {"DATP", "DCTP", "DGTP", "DTTP"}
         if set(self.dntp_wids) != expected_dntp_wids:
             raise ValueError(
-                f"DNARepair dNTP WIDs mismatch: expected {expected_dntp_wids}, got {set(self.dntp_wids)}"
+                "DNARepair dNTP WIDs mismatch: expected "
+                f"{expected_dntp_wids}, got {set(self.dntp_wids)}"
             )
 
         self.ner_patch_length_nt = float(
@@ -305,9 +314,7 @@ class KarrDNARepairProcess(Process):
         }
         self.dntp_split = _normalize_dntp_split(self.parameters.get("dntp_split"))
 
-        self.pathway_atp_cost = {
-            pathway: self._pathway_atp_cost(pathway) for pathway in _PATHWAYS
-        }
+        self.pathway_atp_cost = {pathway: self._pathway_atp_cost(pathway) for pathway in _PATHWAYS}
         self.tracked_substrates = [self.atp_wid, *self.dntp_wids]
         self.pathway_per_event_substrate_cost = {
             pathway: self._per_event_substrate_cost(pathway) for pathway in _PATHWAYS
@@ -326,8 +333,16 @@ class KarrDNARepairProcess(Process):
         )
         chromosome_schema.update(
             {
-                "damage_events_cumulative": {"_default": [], "_updater": "accumulate", "_emit": True},
-                "repair_events_cumulative": {"_default": [], "_updater": "accumulate", "_emit": True},
+                "damage_events_cumulative": {
+                    "_default": [],
+                    "_updater": "accumulate",
+                    "_emit": True,
+                },
+                "repair_events_cumulative": {
+                    "_default": [],
+                    "_updater": "accumulate",
+                    "_emit": True,
+                },
                 "repair_count": {"_default": 0.0, "_updater": "accumulate", "_emit": True},
                 "repair_count_by_pathway": {
                     pathway: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
@@ -354,7 +369,11 @@ class KarrDNARepairProcess(Process):
                 for wid in self.tracked_substrates
             },
             "enzymes": {
-                wid: {"_default": self.enzyme_defaults.get(wid, 0.0), "_updater": "accumulate", "_emit": False}
+                wid: {
+                    "_default": self.enzyme_defaults.get(wid, 0.0),
+                    "_updater": "accumulate",
+                    "_emit": False,
+                }
                 for wid in self.enzyme_wids
             },
             "boundEnzymes": {
@@ -369,8 +388,7 @@ class KarrDNARepairProcess(Process):
             },
             "substrates_allocated": {
                 self.name: {
-                    wid: {"_default": 0.0, "_emit": False}
-                    for wid in self.tracked_substrates
+                    wid: {"_default": 0.0, "_emit": False} for wid in self.tracked_substrates
                 }
             },
         }
@@ -386,14 +404,10 @@ class KarrDNARepairProcess(Process):
             replay_chromosome_next if isinstance(replay_chromosome_next, dict) else None
         )
         replay_enzymes_next = hint.get("enzymes_next")
-        replay_enzymes_next = (
-            replay_enzymes_next if isinstance(replay_enzymes_next, dict) else None
-        )
+        replay_enzymes_next = replay_enzymes_next if isinstance(replay_enzymes_next, dict) else None
         replay_bound_enzymes_next = hint.get("boundEnzymes_next")
         replay_bound_enzymes_next = (
-            replay_bound_enzymes_next
-            if isinstance(replay_bound_enzymes_next, dict)
-            else None
+            replay_bound_enzymes_next if isinstance(replay_bound_enzymes_next, dict) else None
         )
 
         damage_sites = self._damage_sites(chrom_state, states)
@@ -485,7 +499,9 @@ class KarrDNARepairProcess(Process):
             update["boundEnzymes"] = disa_bound_enzyme_delta
         if any(abs(delta) > 0.0 for delta in substrate_delta.values()):
             update["substrates"] = {
-                wid: float(delta) for wid, delta in substrate_delta.items() if abs(float(delta)) > 0.0
+                wid: float(delta)
+                for wid, delta in substrate_delta.items()
+                if abs(float(delta)) > 0.0
             }
 
         return update
@@ -493,7 +509,9 @@ class KarrDNARepairProcess(Process):
     def _resolve_chromosome_store(self, chrom_state: dict[str, Any]) -> ChromosomeStore:
         return ChromosomeStore.from_state_mapping(chrom_state, shape=self.chromosome_shape)
 
-    def _sparse_field_map(self, chrom_state: dict[str, Any], field_name: str) -> dict[tuple[int, int], int]:
+    def _sparse_field_map(
+        self, chrom_state: dict[str, Any], field_name: str
+    ) -> dict[tuple[int, int], int]:
         raw = chrom_state.get(field_name)
         if not isinstance(raw, dict):
             return {}
@@ -606,7 +624,9 @@ class KarrDNARepairProcess(Process):
 
                 is_site_methylated = bool(is_methylated_a and is_methylated_b)
                 is_site_unmethylated = bool((not is_methylated_a) and (not is_methylated_b))
-                is_site_hemimethylated = bool((not is_site_methylated) and (not is_site_unmethylated))
+                is_site_hemimethylated = bool(
+                    (not is_site_methylated) and (not is_site_unmethylated)
+                )
                 if is_site_hemimethylated:
                     if not is_methylated_a:
                         hemi_targets.add(methyl_coord_a)
@@ -615,9 +635,7 @@ class KarrDNARepairProcess(Process):
 
                 motif_coords = [
                     (int(position), int(strand_a)) for position in site_positions.tolist()
-                ] + [
-                    (int(position), int(strand_b)) for position in site_positions.tolist()
-                ]
+                ] + [(int(position), int(strand_b)) for position in site_positions.tolist()]
                 restriction_coords = {restriction_coord_a, restriction_coord_b}
                 is_site_damaged = False
                 for coord in motif_coords:
@@ -628,7 +646,8 @@ class KarrDNARepairProcess(Process):
                         and coord in strand_breaks
                         and coord not in non_break_damage_coords
                     ):
-                        # Karr calcRestrictableMunIRMSites ignores strand breaks at cleavage positions.
+                        # Karr calcRestrictableMunIRMSites ignores strand breaks
+                        # at cleavage positions.
                         continue
                     is_site_damaged = True
                     break
@@ -709,7 +728,7 @@ class KarrDNARepairProcess(Process):
             delta = float(stoich_col[int(sub_idx)]) * float(n_reactions)
             substrate_delta[wid] = substrate_delta.get(wid, 0.0) + delta
 
-    def evolveState_Modification(
+    def evolveState_Modification(  # noqa: N802
         self,
         *,
         field_maps: dict[str, dict[tuple[int, int], int]],
@@ -720,7 +739,9 @@ class KarrDNARepairProcess(Process):
         dt: float,
         replay_next_damaged_bases: dict[tuple[int, int], int] | None = None,
     ) -> int:
-        muni_sets = self._muni_site_sets(field_maps=field_maps, polymerized_intervals=polymerized_intervals)
+        muni_sets = self._muni_site_sets(
+            field_maps=field_maps, polymerized_intervals=polymerized_intervals
+        )
         candidate_coords = muni_sets["hemiunmethylatedMunIRMSites"]
         if not candidate_coords:
             return 0
@@ -778,7 +799,7 @@ class KarrDNARepairProcess(Process):
         )
         return int(n_reactions)
 
-    def evolveState_Restriction(
+    def evolveState_Restriction(  # noqa: N802
         self,
         *,
         field_maps: dict[str, dict[tuple[int, int], int]],
@@ -789,7 +810,9 @@ class KarrDNARepairProcess(Process):
         dt: float,
         replay_next_strand_breaks: dict[tuple[int, int], int] | None = None,
     ) -> int:
-        muni_sets = self._muni_site_sets(field_maps=field_maps, polymerized_intervals=polymerized_intervals)
+        muni_sets = self._muni_site_sets(
+            field_maps=field_maps, polymerized_intervals=polymerized_intervals
+        )
         candidate_coords = muni_sets["restrictableMunIRMSites"]
         if not candidate_coords:
             return 0
@@ -870,8 +893,12 @@ class KarrDNARepairProcess(Process):
         replay_next_damaged_bases: dict[tuple[int, int], int] | None = None
         replay_next_strand_breaks: dict[tuple[int, int], int] | None = None
         if replay_chromosome_next is not None:
-            replay_next_damaged_bases = self._sparse_field_map(replay_chromosome_next, "damagedBases")
-            replay_next_strand_breaks = self._sparse_field_map(replay_chromosome_next, "strandBreaks")
+            replay_next_damaged_bases = self._sparse_field_map(
+                replay_chromosome_next, "damagedBases"
+            )
+            replay_next_strand_breaks = self._sparse_field_map(
+                replay_chromosome_next, "strandBreaks"
+            )
 
         def _modification() -> None:
             self.evolveState_Modification(
@@ -963,7 +990,7 @@ class KarrDNARepairProcess(Process):
                     last_pos = int(position)
         return int(n_bindable)
 
-    def evolveState_DisA(
+    def evolveState_DisA(  # noqa: N802
         self,
         *,
         chrom_state: dict[str, Any],
@@ -1042,7 +1069,9 @@ class KarrDNARepairProcess(Process):
             {self._disa_enzyme_wid: float(n_bind)},
         )
 
-    def _damage_sites(self, chrom_state: dict[str, Any], states: dict[str, Any]) -> list[_DamageSite]:
+    def _damage_sites(
+        self, chrom_state: dict[str, Any], states: dict[str, Any]
+    ) -> list[_DamageSite]:
         sparse_sites = self._damage_sites_from_sparse(chrom_state)
         if sparse_sites:
             return sparse_sites
@@ -1101,7 +1130,11 @@ class KarrDNARepairProcess(Process):
             if pair_key in break_values:
                 seen_breaks.add((position, strand))
                 seen_breaks.add(pair_key)
-                site_id = f"strandBreaks:{position}:{min(strand, paired_strand)}-{max(strand, paired_strand)}"
+                site_id = (
+                    "strandBreaks:"
+                    f"{position}:{min(strand, paired_strand)}-"
+                    f"{max(strand, paired_strand)}"
+                )
                 payload = {
                     "id": site_id,
                     "site_id": site_id,
@@ -1114,7 +1147,9 @@ class KarrDNARepairProcess(Process):
                     ],
                     "value": int(value) + int(break_values[pair_key]),
                 }
-                out.append(_DamageSite(site_id=site_id, damage_type="double_strand_break", payload=payload))
+                out.append(
+                    _DamageSite(site_id=site_id, damage_type="double_strand_break", payload=payload)
+                )
                 continue
 
             seen_breaks.add((position, strand))
@@ -1129,7 +1164,9 @@ class KarrDNARepairProcess(Process):
                 "coordinates": [(int(position), int(strand))],
                 "value": int(value),
             }
-            out.append(_DamageSite(site_id=site_id, damage_type="single_strand_break", payload=payload))
+            out.append(
+                _DamageSite(site_id=site_id, damage_type="single_strand_break", payload=payload)
+            )
 
         return out
 
@@ -1182,7 +1219,9 @@ class KarrDNARepairProcess(Process):
 
         chromosome_update: dict[str, Any] = {}
         for field_name in sorted(touched_fields):
-            entries = sorted(by_field[field_name].items(), key=lambda item: (item[0][0], item[0][1]))
+            entries = sorted(
+                by_field[field_name].items(), key=lambda item: (item[0][0], item[0][1])
+            )
             if entries:
                 positions = np.asarray([coord[0] for coord, _ in entries], dtype=np.int64)
                 strands = np.asarray([coord[1] for coord, _ in entries], dtype=np.int64)
@@ -1225,8 +1264,10 @@ class KarrDNARepairProcess(Process):
             payload: dict[str, Any]
             if isinstance(rec, dict):
                 payload = dict(rec)
-                damage_raw = payload.get("damage_type", payload.get("type", payload.get("kind", "unknown")))
-                site_raw = payload.get("site_id", payload.get("id", None))
+                damage_raw = payload.get(
+                    "damage_type", payload.get("type", payload.get("kind", "unknown"))
+                )
+                site_raw = payload.get("site_id", payload.get("id"))
             elif isinstance(rec, (tuple, list)):
                 if len(rec) >= 2:
                     payload = {"position": rec[0], "damage_type": rec[1]}
@@ -1252,17 +1293,16 @@ class KarrDNARepairProcess(Process):
             payload["damage_type"] = damage_type
             payload["site_id"] = site_id
             payload.setdefault("id", site_id)
-            normalized.append(_DamageSite(site_id=site_id, damage_type=damage_type, payload=payload))
+            normalized.append(
+                _DamageSite(site_id=site_id, damage_type=damage_type, payload=payload)
+            )
         return normalized
 
     def _repair_event_from_site(self, site: dict[str, Any]) -> dict[str, Any]:
         site_id = str(site.get("id", site.get("site_id", "")))
         if not site_id:
             damage_type = str(site.get("damage_type", site.get("kind", "unknown")))
-            if "position" in site:
-                site_id = f"{damage_type}@{site['position']}"
-            else:
-                site_id = damage_type
+            site_id = f"{damage_type}@{site['position']}" if "position" in site else damage_type
         event = {
             "id": site_id,
             "site_id": site_id,
@@ -1394,7 +1434,8 @@ class KarrDNARepairProcess(Process):
             scale = min(scale, have / need)
 
         actual = {
-            pathway: int(max(0, math.floor(float(n) * scale))) for pathway, n in desired_repairs.items()
+            pathway: int(max(0, math.floor(float(n) * scale)))
+            for pathway, n in desired_repairs.items()
         }
 
         consumed = self._substrate_needs_for_repairs(actual)
@@ -1410,7 +1451,9 @@ class KarrDNARepairProcess(Process):
                 if actual[pathway] >= desired_repairs[pathway]:
                     continue
                 per_event = self.pathway_per_event_substrate_cost[pathway]
-                feasible = all(remaining[wid] + 1e-12 >= per_event[wid] for wid in self.tracked_substrates)
+                feasible = all(
+                    remaining[wid] + 1e-12 >= per_event[wid] for wid in self.tracked_substrates
+                )
                 if not feasible:
                     continue
                 actual[pathway] += 1
