@@ -121,78 +121,120 @@ def test_karr_rna_modification_l2_replay_identity_per_tick(rng_seed: int) -> Non
                 f"nonzero-delta counts: {mutated_tick_counts}."
             )
 
-        process = KarrRNAModificationProcess({"rng_seed": int(rng_seed)})
-        state_template = build_state_template(process)
+        _run_replay(trace, n_ticks, int(rng_seed))
 
-        wids_by_observable: dict[str, list[str]] = {}
-        for observable in _OBSERVABLES:
-            karr_before = cell_vector(trace, "states_before", observable, 0)
-            explicit_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable)
-            wids_by_observable[observable] = infer_wids_for_observable(
+
+def _run_replay(trace: h5py.File, n_ticks: int, rng_seed: int) -> None:
+    """Shared per-tick L2.1 bit-identity replay body (used by the standard and
+    event-window tests). Assumes the trace is open and has been audited as active."""
+    process = KarrRNAModificationProcess({"rng_seed": int(rng_seed)})
+    state_template = build_state_template(process)
+
+    wids_by_observable: dict[str, list[str]] = {}
+    for observable in _OBSERVABLES:
+        karr_before = cell_vector(trace, "states_before", observable, 0)
+        explicit_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable)
+        wids_by_observable[observable] = infer_wids_for_observable(
+            process,
+            state_template,
+            observable,
+            karr_len=int(karr_before.shape[0]),
+            explicit_attr=explicit_attr,
+            canonical_wids_override=_CANONICAL_WIDS,
+        )
+
+    for tick in range(n_ticks):
+        state = build_state_template(process)
+        before_vectors = {
+            observable: project_karr_vector(
                 process,
-                state_template,
                 observable,
-                karr_len=int(karr_before.shape[0]),
-                explicit_attr=explicit_attr,
-                canonical_wids_override=_CANONICAL_WIDS,
+                cell_vector(trace, "states_before", observable, tick),
+                index_projection_attr=_INDEX_PROJECTION_ATTR,
+                index_projection_literal=_INDEX_PROJECTION_LITERAL,
+            )
+            for observable in _OBSERVABLES
+        }
+
+        for observable in _OBSERVABLES:
+            overlay_observable_into_state(
+                process=process,
+                state=state,
+                observable=observable,
+                vector=before_vectors[observable],
+                wids=wids_by_observable[observable],
+                store_path_override=_STORE_PATH_OVERRIDE,
+            )
+        refresh_allocator_views(process, state)
+
+        update = process.next_update(1.0, state)
+        _apply_update(state, update, process)
+
+        for observable in _OBSERVABLES:
+            karr_after = project_karr_vector(
+                process,
+                observable,
+                cell_vector(trace, "states_after", observable, tick),
+                index_projection_attr=_INDEX_PROJECTION_ATTR,
+                index_projection_literal=_INDEX_PROJECTION_LITERAL,
+            )
+            expected_len = len(wids_by_observable[observable])
+            if karr_after.shape[0] != expected_len:
+                mapped_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable, "<heuristic>")
+                pytest.fail(
+                    "L2a wid-length drift: "
+                    f"tick={tick}, observable={observable}, "
+                    f"karr_len={karr_after.shape[0]}, "
+                    f"mapped_len={expected_len}, mapped_attr={mapped_attr}"
+                )
+
+            oc_after = project_observable_from_state(
+                process=process,
+                state=state,
+                observable=observable,
+                wids=wids_by_observable[observable],
+                bound_enzymes_before=before_vectors.get("boundEnzymes"),
+                store_path_override=_STORE_PATH_OVERRIDE,
+            )
+            _assert_identity_or_tolerance(
+                tick=tick,
+                observable=observable,
+                oc_after=oc_after,
+                karr_after=karr_after,
             )
 
-        for tick in range(n_ticks):
-            state = build_state_template(process)
-            before_vectors = {
-                observable: project_karr_vector(
-                    process,
-                    observable,
-                    cell_vector(trace, "states_before", observable, tick),
-                    index_projection_attr=_INDEX_PROJECTION_ATTR,
-                    index_projection_literal=_INDEX_PROJECTION_LITERAL,
-                )
-                for observable in _OBSERVABLES
-            }
 
-            for observable in _OBSERVABLES:
-                overlay_observable_into_state(
-                    process=process,
-                    state=state,
-                    observable=observable,
-                    vector=before_vectors[observable],
-                    wids=wids_by_observable[observable],
-                    store_path_override=_STORE_PATH_OVERRIDE,
-                )
-            refresh_allocator_views(process, state)
+def _resolve_event_trace_path(seed: int) -> Path:
+    """Resolve the event-window trace path for RNAModification (tick_offset burn-in)."""
+    rel = Path(
+        f"data/m1_sources/karr_native/per_process_traces_v2_event_s{seed:03d}/RNAModification_100ticks.mat"
+    )
+    candidates = [_REPO_ROOT / rel, Path("E:/opencell") / rel, Path("/mnt/e/opencell") / rel]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[0]
 
-            update = process.next_update(1.0, state)
-            _apply_update(state, update, process)
 
-            for observable in _OBSERVABLES:
-                karr_after = project_karr_vector(
-                    process,
-                    observable,
-                    cell_vector(trace, "states_after", observable, tick),
-                    index_projection_attr=_INDEX_PROJECTION_ATTR,
-                    index_projection_literal=_INDEX_PROJECTION_LITERAL,
-                )
-                expected_len = len(wids_by_observable[observable])
-                if karr_after.shape[0] != expected_len:
-                    mapped_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable, "<heuristic>")
-                    pytest.fail(
-                        "L2a wid-length drift: "
-                        f"tick={tick}, observable={observable}, "
-                        f"karr_len={karr_after.shape[0]}, "
-                        f"mapped_len={expected_len}, mapped_attr={mapped_attr}"
-                    )
+@pytest.mark.parametrize("rng_seed", [0], ids=["event_seed_0"])
+def test_karr_rna_modification_l2_event_replay(rng_seed: int) -> None:
+    """L2 replay on an event-window trace. RNAModification is quiescent at cell birth
+    (t=0..100 shows zero deltas) but modifies RNAs on ~34/100 ticks once new rRNA/tRNA
+    appear; the event-window trace (tick_offset burn-in) captures that active window."""
+    trace_path = _resolve_event_trace_path(rng_seed)
+    if not trace_path.exists():
+        pytest.skip(f"Event-window trace not found: {trace_path}")
 
-                oc_after = project_observable_from_state(
-                    process=process,
-                    state=state,
-                    observable=observable,
-                    wids=wids_by_observable[observable],
-                    bound_enzymes_before=before_vectors.get("boundEnzymes"),
-                    store_path_override=_STORE_PATH_OVERRIDE,
-                )
-                _assert_identity_or_tolerance(
-                    tick=tick,
-                    observable=observable,
-                    oc_after=oc_after,
-                    karr_after=karr_after,
-                )
+    with h5py.File(trace_path, "r") as trace:
+        n_ticks = int(np.asarray(trace["metadata/n_ticks"][()]).reshape(-1)[0])
+        assert n_ticks == 100
+
+        mutated_obs = tuple(o for o in _OBSERVABLES if o not in _PASS_THROUGH)
+        mutated_tick_counts = _audit_trace_mutated_ticks(trace, mutated_obs, n_ticks)
+        if sum(mutated_tick_counts.values()) == 0:
+            pytest.skip(
+                f"Event-window trace seed {rng_seed} has no events. "
+                f"Per-observable counts: {mutated_tick_counts}."
+            )
+
+        _run_replay(trace, n_ticks, int(rng_seed))
