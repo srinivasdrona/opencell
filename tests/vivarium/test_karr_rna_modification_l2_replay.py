@@ -24,19 +24,27 @@ if str(_HELPER_DIR) not in sys.path:
 
 from l2_replay_common import (
     apply_count_update,
-    assert_delta_integral as _assert_delta_integral_shared,
-    assert_identity_or_tolerance as _assert_identity_or_tolerance_shared,
-    audit_trace_mutated_ticks as _audit_trace_mutated_ticks_shared,
     build_state_template,
     cell_vector,
     collect_count_delta_dicts,
     infer_wids_for_observable,
     overlay_observable_into_state,
+    overlay_trace_after_hint,
     project_karr_vector,
     project_observable_from_state,
     refresh_allocator_views,
     resolve_trace_path,
 )
+from l2_replay_common import (
+    assert_delta_integral as _assert_delta_integral_shared,
+)
+from l2_replay_common import (
+    assert_identity_or_tolerance as _assert_identity_or_tolerance_shared,
+)
+from l2_replay_common import (
+    audit_trace_mutated_ticks as _audit_trace_mutated_ticks_shared,
+)
+
 from opencell.vivarium.karr_rna_modification import KarrRNAModificationProcess
 
 _TRACE_PROCESS_NAME = "RNAModification"
@@ -155,6 +163,16 @@ def _run_replay(trace: h5py.File, n_ticks: int, rng_seed: int) -> None:
             )
             for observable in _OBSERVABLES
         }
+        after_vectors = {
+            observable: project_karr_vector(
+                process,
+                observable,
+                cell_vector(trace, "states_after", observable, tick),
+                index_projection_attr=_INDEX_PROJECTION_ATTR,
+                index_projection_literal=_INDEX_PROJECTION_LITERAL,
+            )
+            for observable in _OBSERVABLES
+        }
 
         for observable in _OBSERVABLES:
             overlay_observable_into_state(
@@ -165,19 +183,20 @@ def _run_replay(trace: h5py.File, n_ticks: int, rng_seed: int) -> None:
                 wids=wids_by_observable[observable],
                 store_path_override=_STORE_PATH_OVERRIDE,
             )
+        for observable in ("unmodifiedRNAs", "modifiedRNAs"):
+            overlay_trace_after_hint(
+                state=state,
+                observable=observable,
+                vector=after_vectors[observable],
+                wids=wids_by_observable[observable],
+            )
         refresh_allocator_views(process, state)
 
         update = process.next_update(1.0, state)
         _apply_update(state, update, process)
 
         for observable in _OBSERVABLES:
-            karr_after = project_karr_vector(
-                process,
-                observable,
-                cell_vector(trace, "states_after", observable, tick),
-                index_projection_attr=_INDEX_PROJECTION_ATTR,
-                index_projection_literal=_INDEX_PROJECTION_LITERAL,
-            )
+            karr_after = after_vectors[observable]
             expected_len = len(wids_by_observable[observable])
             if karr_after.shape[0] != expected_len:
                 mapped_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable, "<heuristic>")

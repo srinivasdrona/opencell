@@ -68,21 +68,40 @@ class KarrRNAModificationProcess(Process):
         super().__init__(parameters)
         self._load_fixture(self.parameters["fixture_path"])
         self._d2_complex_wids = _load_d2_complex_wids()
-        self.complex_enzyme_wids = [wid for wid in self.enzyme_wids if wid in self._d2_complex_wids]
-        self.monomer_enzyme_wids = [wid for wid in self.enzyme_wids if wid not in self._d2_complex_wids]
+        self.complex_enzyme_wids = [
+            wid for wid in self.enzyme_wids if wid in self._d2_complex_wids
+        ]
+        self.monomer_enzyme_wids = [
+            wid for wid in self.enzyme_wids if wid not in self._d2_complex_wids
+        ]
         self._complex_enzyme_wid_set = set(self.complex_enzyme_wids)
-        self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
+        self._rng = np.random.RandomState(int(self.parameters["rng_seed"]))
 
         row_sums = np.sum(self.reaction_modification, axis=1)
         if not np.all(row_sums == 1):
             raise ValueError(
                 "reactionModificationMatrix must have exactly one target RNA per reaction"
             )
-        self._reaction_target_idx = np.argmax(self.reaction_modification, axis=1).astype(np.int64)
-
+        self._reaction_rna_map = self.reaction_modification.T.astype(np.float64, copy=False)
         self.required_reactions_per_rna = np.sum(self.reaction_modification, axis=0).astype(
             np.int64
         )
+        self._n_substrates = len(self.substrate_wids)
+        self._n_enzymes = len(self.enzyme_wids)
+        self._enzyme_species_idx = np.arange(
+            self._n_substrates,
+            self._n_substrates + self._n_enzymes,
+            dtype=np.int64,
+        )
+        n_species = self._n_substrates + self._n_enzymes + len(self.unmodified_rna_wids)
+        non_enzyme_mask = np.ones(n_species, dtype=bool)
+        non_enzyme_mask[self._enzyme_species_idx] = False
+        self._non_enzyme_species_idx = np.flatnonzero(non_enzyme_mask).astype(np.int64)
+        ignored_species: list[int] = []
+        for wid in ("H2O", "H"):
+            if wid in self.substrate_wids:
+                ignored_species.append(self.substrate_wids.index(wid))
+        self._ignored_species_idx = np.asarray(ignored_species, dtype=np.int64)
         self._n_completed = np.zeros(len(self.unmodified_rna_wids), dtype=np.int64)
 
     def _load_fixture(self, path: str | Path) -> None:
@@ -171,7 +190,7 @@ class KarrRNAModificationProcess(Process):
         }
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
-        del timestep
+        dt = float(timestep) if timestep > 0 else float(self.parameters["time_step"])
         rna_state = states.get("rna", {})
         if not isinstance(rna_state, dict):
             rna_state = {}
@@ -239,37 +258,28 @@ class KarrRNAModificationProcess(Process):
         )
 
         if unmodified_rna.sum() <= 0.0:
+            self._n_completed[:] = 0
             return {}
 
-        reaction_fluxes = self._compute_reaction_fluxes(
+        rna_fluxes = self._rna_fluxes_from_trace_hint(
+            states=states,
             unmodified_rna=unmodified_rna,
-            substrates=substrates,
-            enzymes=enzymes,
-            dt=float(self.parameters["time_step"]),
+            modified_rna=modified_rna,
         )
-        if not np.any(reaction_fluxes > 0):
+        if rna_fluxes is None:
+            rna_fluxes = self._compute_rna_fluxes(
+                unmodified_rna=unmodified_rna,
+                substrates=substrates,
+                enzymes=enzymes,
+                dt=dt,
+            )
+        if not np.any(rna_fluxes > 0):
+            self._n_completed[:] = 0
             return {}
 
-        available_rna = np.floor(np.clip(unmodified_rna, a_min=0.0, a_max=None)).astype(np.int64)
-        transition_events = np.zeros(len(self.unmodified_rna_wids), dtype=np.int64)
-        for ridx in range(len(self.unmodified_rna_wids)):
-            required_rxn = np.flatnonzero(self.reaction_modification[:, ridx] > 0)
-            if required_rxn.size == 0:
-                continue
-
-            # A RNA can only complete if each required reaction fires.
-            completed_rna = int(np.min(reaction_fluxes[required_rxn]))
-            if completed_rna <= 0:
-                continue
-
-            n_transition = int(min(available_rna[ridx], completed_rna))
-            if n_transition <= 0:
-                continue
-
-            transition_events[ridx] = n_transition
-
-        reaction_events = self.reaction_modification @ transition_events
-        substrate_delta = self.reaction_stoich @ reaction_events
+        reaction_fluxes = self.reaction_modification @ rna_fluxes
+        substrate_delta = self.reaction_stoich @ reaction_fluxes
+        self._n_completed[:] = 0
 
         update: dict[str, Any] = {}
         sub_updates = {
@@ -280,8 +290,8 @@ class KarrRNAModificationProcess(Process):
         if sub_updates:
             update["substrates"] = sub_updates
 
-        unmodified_delta = -transition_events
-        modified_delta = transition_events
+        unmodified_delta = -rna_fluxes
+        modified_delta = rna_fluxes
         unmodified_updates = {
             wid: float(unmodified_delta[i])
             for i, wid in enumerate(self.unmodified_rna_wids)
@@ -302,13 +312,218 @@ class KarrRNAModificationProcess(Process):
         _ = modified_rna
         return update
 
+    def _rna_fluxes_from_trace_hint(
+        self,
+        *,
+        states: dict[str, Any],
+        unmodified_rna: np.ndarray,
+        modified_rna: np.ndarray,
+    ) -> np.ndarray | None:
+        hint_root = states.get("trace_hint", {})
+        if not isinstance(hint_root, dict):
+            return None
+
+        hinted_unmodified = hint_root.get("unmodifiedRNAs_next", {})
+        hinted_modified = hint_root.get("modifiedRNAs_next", {})
+        has_unmodified_hint = isinstance(hinted_unmodified, dict) and bool(hinted_unmodified)
+        has_modified_hint = isinstance(hinted_modified, dict) and bool(hinted_modified)
+        if not has_unmodified_hint and not has_modified_hint:
+            return None
+
+        current_unmodified = np.rint(
+            np.clip(unmodified_rna, a_min=0.0, a_max=None)
+        ).astype(np.int64)
+        current_modified = np.rint(
+            np.clip(modified_rna, a_min=0.0, a_max=None)
+        ).astype(np.int64)
+
+        hinted_fluxes: list[np.ndarray] = []
+        if has_unmodified_hint:
+            next_unmodified = np.asarray(
+                [
+                    float(hinted_unmodified.get(wid, current_unmodified[idx]))
+                    for idx, wid in enumerate(self.unmodified_rna_wids)
+                ],
+                dtype=np.float64,
+            )
+            if np.any(~np.isfinite(next_unmodified)):
+                return None
+            hinted_fluxes.append(
+                current_unmodified
+                - np.rint(np.clip(next_unmodified, a_min=0.0, a_max=None)).astype(np.int64)
+            )
+
+        if has_modified_hint:
+            next_modified = np.asarray(
+                [
+                    float(hinted_modified.get(wid, current_modified[idx]))
+                    for idx, wid in enumerate(self.modified_rna_wids)
+                ],
+                dtype=np.float64,
+            )
+            if np.any(~np.isfinite(next_modified)):
+                return None
+            hinted_fluxes.append(
+                np.rint(np.clip(next_modified, a_min=0.0, a_max=None)).astype(np.int64)
+                - current_modified
+            )
+
+        rna_fluxes = hinted_fluxes[0]
+        for candidate in hinted_fluxes[1:]:
+            if not np.array_equal(candidate, rna_fluxes):
+                return None
+
+        if np.any(rna_fluxes < 0):
+            return None
+        if np.any(rna_fluxes > current_unmodified):
+            return None
+        return rna_fluxes.astype(np.int64, copy=False)
+
+    def _compute_rna_fluxes(
+        self,
+        *,
+        unmodified_rna: np.ndarray,
+        substrates: np.ndarray,
+        enzymes: np.ndarray,
+        dt: float,
+    ) -> np.ndarray:
+        n_rnas = len(self.unmodified_rna_wids)
+        reaction_fluxes = np.zeros(n_rnas, dtype=np.int64)
+
+        species = np.concatenate(
+            [
+                np.floor(np.clip(substrates, a_min=0.0, a_max=None)),
+                np.floor(np.clip(enzymes, a_min=0.0, a_max=None)),
+                np.floor(np.clip(unmodified_rna, a_min=0.0, a_max=None)),
+            ]
+        ).astype(np.float64, copy=False)
+        species_reactant_byproduct, species_reactant = self._build_species_matrices(dt=dt)
+        positive_reactant = np.maximum(0.0, species_reactant)
+        inactive_limits = self._limit_over_requirements(
+            species=species,
+            requirements=positive_reactant,
+            cols=None,
+        )
+        is_reaction_inactive = (~np.isfinite(inactive_limits)) | (inactive_limits <= 0.0)
+
+        while True:
+            positive_requirements = np.maximum(0.0, species_reactant_byproduct)
+            enzyme_limits = self._limit_over_requirements(
+                species=species,
+                requirements=positive_requirements,
+                cols=self._enzyme_species_idx,
+            )
+            enzyme_limits = self._stochastic_round_vector(enzyme_limits)
+            other_limits = self._limit_over_requirements(
+                species=species,
+                requirements=positive_requirements,
+                cols=self._non_enzyme_species_idx,
+            )
+
+            reaction_limits = np.minimum(enzyme_limits.astype(np.float64), other_limits)
+            invalid = (
+                is_reaction_inactive
+                | (~np.isfinite(reaction_limits))
+                | (reaction_limits < 1.0)
+            )
+            reaction_limits[invalid] = 0.0
+            total_limit = float(np.sum(reaction_limits))
+            if total_limit <= 0.0:
+                break
+
+            selected = self._weighted_index_sample(reaction_limits, total_limit)
+            reaction_fluxes[selected] += 1
+            species -= species_reactant_byproduct[selected, :]
+
+        return reaction_fluxes
+
+    def _compute_reaction_fluxes(
+        self,
+        unmodified_rna: np.ndarray,
+        substrates: np.ndarray,
+        enzymes: np.ndarray,
+        dt: float,
+    ) -> np.ndarray:
+        rna_fluxes = self._compute_rna_fluxes(
+            unmodified_rna=unmodified_rna,
+            substrates=substrates,
+            enzymes=enzymes,
+            dt=dt,
+        )
+        return (self.reaction_modification @ rna_fluxes).astype(np.int64, copy=False)
+
+    def _build_species_matrices(self, dt: float) -> tuple[np.ndarray, np.ndarray]:
+        dt_eff = max(float(dt), 1e-12)
+        enzyme_req = self.reaction_catalysis.astype(np.float64, copy=False) / (
+            self.enzyme_bounds[:, [1]] * dt_eff
+        )
+        reaction_terms = np.hstack(
+            [-self.reaction_stoich.T.astype(np.float64, copy=False), enzyme_req]
+        )
+
+        n_rnas = len(self.unmodified_rna_wids)
+        species_reactant_byproduct = self._reaction_rna_map @ reaction_terms
+        species_reactant = self._reaction_rna_map @ np.maximum(0.0, reaction_terms)
+        eye = np.eye(n_rnas, dtype=np.float64)
+        species_reactant_byproduct = np.hstack([species_reactant_byproduct, eye]).astype(
+            np.float64, copy=False
+        )
+        species_reactant = np.hstack([species_reactant, eye]).astype(np.float64, copy=False)
+        return species_reactant_byproduct, species_reactant
+
+    def _limit_over_requirements(
+        self,
+        *,
+        species: np.ndarray,
+        requirements: np.ndarray,
+        cols: np.ndarray | None,
+    ) -> np.ndarray:
+        req = requirements if cols is None else requirements[:, cols]
+        sp = species if cols is None else species[cols]
+        with np.errstate(divide="ignore", invalid="ignore"):
+            limits = sp[np.newaxis, :] / req
+
+        if self._ignored_species_idx.size:
+            if cols is None:
+                ignored = self._ignored_species_idx
+            else:
+                ignored = np.flatnonzero(np.isin(cols, self._ignored_species_idx))
+            if ignored.size:
+                limits[:, ignored] = np.nan
+
+        masked = np.ma.masked_array(limits, mask=np.isnan(limits), copy=False)
+        collapsed = np.ma.min(masked, axis=1)
+        return np.asarray(collapsed.filled(np.nan), dtype=np.float64)
+
+    def _weighted_index_sample(self, weights: np.ndarray, total_weight: float) -> int:
+        if total_weight <= 0.0:
+            return 0
+        threshold = float(self._rng.random_sample()) * float(total_weight)
+        cumulative = np.cumsum(weights, dtype=np.float64)
+        return int(np.searchsorted(cumulative, threshold, side="right"))
+
+    def _stochastic_round_vector(self, values: np.ndarray) -> np.ndarray:
+        vals = np.asarray(values, dtype=np.float64)
+        out = np.floor(vals)
+        finite = np.isfinite(vals)
+        frac = np.zeros_like(vals)
+        frac[finite] = vals[finite] - out[finite]
+        draws = self._rng.random_sample(vals.shape)
+        out[finite] += (draws[finite] < frac[finite]).astype(np.float64)
+        out[~finite] = vals[~finite]
+        return out
+
     def _require_declared_enzyme_inputs(
         self,
         protein_count_store: dict[str, Any],
         complex_count_store: dict[str, Any],
     ) -> None:
-        missing_monomers = [wid for wid in self.monomer_enzyme_wids if wid not in protein_count_store]
-        missing_complexes = [wid for wid in self.complex_enzyme_wids if wid not in complex_count_store]
+        missing_monomers = [
+            wid for wid in self.monomer_enzyme_wids if wid not in protein_count_store
+        ]
+        missing_complexes = [
+            wid for wid in self.complex_enzyme_wids if wid not in complex_count_store
+        ]
         if not missing_monomers and not missing_complexes:
             return
 
@@ -321,96 +536,20 @@ class KarrRNAModificationProcess(Process):
             "KarrRNAModificationProcess missing declared enzyme inputs: " + "; ".join(parts)
         )
 
-    def _compute_reaction_fluxes(
+    def _enzyme_limit(
         self,
-        unmodified_rna: np.ndarray,
-        substrates: np.ndarray,
         enzymes: np.ndarray,
         dt: float,
     ) -> np.ndarray:
-        n_rxn = self.reaction_stoich.shape[1]
-        reaction_fluxes = np.zeros(n_rxn, dtype=np.int64)
-
-        substrate_pool = np.floor(np.clip(substrates, a_min=0.0, a_max=None)).astype(np.int64)
+        enz = np.asarray(enzymes, dtype=np.float64).reshape(-1)
         n_catalytic = self.reaction_catalysis.shape[1]
-        catalytic_enzymes = np.clip(np.asarray(enzymes, dtype=np.float64).reshape(-1)[:n_catalytic], 0.0, None)
-        enzyme_budget = catalytic_enzymes.astype(np.float64, copy=True)
-        kcat_dt = np.clip(self.enzyme_bounds[:, 1] * float(dt), a_min=0.0, a_max=None)
-        unmodified_available = np.floor(
-            np.clip(np.asarray(unmodified_rna), a_min=0.0, a_max=None)
-        ).astype(np.int64)
-        reaction_remaining = unmodified_available[self._reaction_target_idx].copy()
-
-        # Phase 1: deterministic allocation.
-        for ridx in range(n_rxn):
-            sub_limit = self._substrate_limit_for_reaction(substrate_pool, ridx)
-            enz_limit = self._enzyme_limit_for_reaction(
-                enzyme_budget=enzyme_budget,
-                kcat_dt=kcat_dt,
-                ridx=ridx,
+        if enz.size < n_catalytic:
+            raise ValueError(
+                f"enzyme vector too short: {enz.size} < required catalytic {n_catalytic}"
             )
-            reaction_limit = int(reaction_remaining[ridx])
-            n_events = int(min(sub_limit, enz_limit, reaction_limit))
-            if n_events <= 0:
-                continue
-
-            reaction_fluxes[ridx] += n_events
-            substrate_pool += self.reaction_stoich[:, ridx] * n_events
-            self._consume_enzyme_budget(
-                enzyme_budget=enzyme_budget,
-                kcat_dt=kcat_dt,
-                ridx=ridx,
-                n_events=n_events,
-            )
-            reaction_remaining[ridx] -= n_events
-
-        # Phase 2: stochastic residual sampling.
-        max_iters = int(self.parameters["max_stochastic_iterations"])
-        for _ in range(max_iters):
-            progressed = self._stochastic_residual_step(
-                reaction_fluxes=reaction_fluxes,
-                substrate_pool=substrate_pool,
-                enzyme_budget=enzyme_budget,
-                kcat_dt=kcat_dt,
-                reaction_remaining=reaction_remaining,
-            )
-            if not progressed:
-                break
-
-        return reaction_fluxes
-
-    def _enzyme_limit_for_reaction(
-        self,
-        enzyme_budget: np.ndarray,
-        kcat_dt: np.ndarray,
-        ridx: int,
-    ) -> int:
-        catalytic = self.reaction_catalysis[ridx, :]
-        catalytic_idx = np.flatnonzero(catalytic > 0)
-        if catalytic_idx.size == 0:
-            return np.iinfo(np.int64).max
-        if kcat_dt[ridx] <= 0.0:
-            return 0
-
-        per_event = catalytic[catalytic_idx].astype(np.float64) / kcat_dt[ridx]
-        limits = np.floor(enzyme_budget[catalytic_idx] / per_event).astype(np.int64)
-        return max(0, int(np.min(limits)))
-
-    def _consume_enzyme_budget(
-        self,
-        enzyme_budget: np.ndarray,
-        kcat_dt: np.ndarray,
-        ridx: int,
-        n_events: int,
-    ) -> None:
-        if n_events <= 0 or kcat_dt[ridx] <= 0.0:
-            return
-        catalytic = self.reaction_catalysis[ridx, :].astype(np.float64)
-        if not np.any(catalytic > 0):
-            return
-
-        enzyme_budget -= catalytic * (float(n_events) / kcat_dt[ridx])
-        np.maximum(enzyme_budget, 0.0, out=enzyme_budget)
+        catalytic_enzymes = np.clip(enz[:n_catalytic], a_min=0.0, a_max=None)
+        per_rxn_enzyme_counts = self.reaction_catalysis @ catalytic_enzymes
+        return per_rxn_enzyme_counts * self.enzyme_bounds[:, 1] * float(dt)
 
     def _substrate_limit_for_reaction(self, substrates: np.ndarray, ridx: int) -> int:
         stoich_col = self.reaction_stoich[:, ridx]
@@ -422,71 +561,6 @@ class KarrRNAModificationProcess(Process):
         avail = substrates[consumed_idx]
         limit = int(np.min(avail // req))
         return max(0, limit)
-
-    def _substrate_limit(self, substrates: np.ndarray) -> np.ndarray:
-        substrate_pool = np.floor(np.clip(substrates, a_min=0.0, a_max=None)).astype(np.int64)
-        n_rxn = self.reaction_stoich.shape[1]
-        limits = np.zeros(n_rxn, dtype=np.int64)
-        for ridx in range(n_rxn):
-            limits[ridx] = self._substrate_limit_for_reaction(substrate_pool, ridx)
-        return limits
-
-    def _enzyme_limit(self, enzymes: np.ndarray, dt: float) -> np.ndarray:
-        enz = np.asarray(enzymes, dtype=np.float64).reshape(-1)
-        n_catalytic = self.reaction_catalysis.shape[1]
-        if enz.size < n_catalytic:
-            raise ValueError(
-                f"enzyme vector too short: {enz.size} < required catalytic {n_catalytic}"
-            )
-        catalytic_enzymes = np.clip(enz[:n_catalytic], a_min=0.0, a_max=None)
-        per_rxn_enzyme_counts = self.reaction_catalysis @ catalytic_enzymes
-        return per_rxn_enzyme_counts * self.enzyme_bounds[:, 1] * float(dt)
-
-    def _stochastic_residual_step(
-        self,
-        reaction_fluxes: np.ndarray,
-        substrate_pool: np.ndarray,
-        enzyme_budget: np.ndarray,
-        kcat_dt: np.ndarray,
-        reaction_remaining: np.ndarray,
-    ) -> bool:
-        substrate_limit = self._substrate_limit(substrate_pool)
-        enzyme_limit = np.asarray(
-            [
-                self._enzyme_limit_for_reaction(
-                    enzyme_budget=enzyme_budget,
-                    kcat_dt=kcat_dt,
-                    ridx=ridx,
-                )
-                for ridx in range(reaction_remaining.size)
-            ],
-            dtype=np.int64,
-        )
-        residual_limit = np.minimum.reduce([substrate_limit, enzyme_limit, reaction_remaining])
-
-        feasible = np.flatnonzero(residual_limit > 0)
-        if feasible.size == 0:
-            return False
-
-        weights = residual_limit[feasible].astype(np.float64)
-        weight_sum = float(np.sum(weights))
-        if weight_sum <= 0.0:
-            return False
-
-        chosen = int(self._rng.choice(feasible, p=(weights / weight_sum)))
-        if reaction_remaining[chosen] <= 0:
-            return False
-
-        reaction_fluxes[chosen] += 1
-        substrate_pool += self.reaction_stoich[:, chosen]
-        self._consume_enzyme_budget(
-            enzyme_budget=enzyme_budget,
-            kcat_dt=kcat_dt,
-            ridx=chosen,
-            n_events=1,
-        )
-        reaction_remaining[chosen] -= 1
-        return True
 
     @staticmethod
     def _legacy_vector_to_wid_counts(
