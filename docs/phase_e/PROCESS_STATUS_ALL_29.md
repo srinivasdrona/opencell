@@ -23,7 +23,7 @@
 > | **L1a** process fires (was: L1) | trace bytes > threshold | 28/28 | 28/28 | 28/28 |
 > | **L1b** wiring conformant | row-vs-code static verification | — | — | **28/28 PASS** |
 > | L2.0 schema | ports_schema vs karr_obs | 28/28 | 28/28 | 28/28 |
-> | **L2.0a** allocator arithmetic | OC allocator vs Karr per-process input state | — | — | NOT BUILT (design Day-46/47) |
+> | **L2.0a** allocator arithmetic | OC allocator vs Karr per-process input state | — | — | ✅ **BUILT 2026-07-14 — 403/403 GREEN with A1 fix** (was RED 111, all oversupply-cap fork). Gate `scripts/probe_l2_0a_allocator_input.py` + 5 anti-cheat tests. A1 fix held on `agent/l2-0a-uncap` pending L2.4. |
 > | L2.1 GENUINE | bit-identity, isolated replay | 19/28 | 19/28 | 19/28 |
 > | L2.2 VERIFIED_GENUINE | W1 vs null, isolated replay | 17/22 | 17/22 | 17/22 |
 > | L2.2 NOT_WIRED | infrastructure missing | 2 | 2 | 2 |
@@ -44,7 +44,7 @@
 >
 > | # | Finding | Status |
 > |---|---|---|
-> | A1 | OC allocator caps scale at `min(1.0, ...)`; Karr's can be >1 (over-allocates surplus) | Documented in 28 rows; fix deferred until L2.4 instrumented |
+> | A1 | OC allocator caps scale at `min(1.0, ...)`; Karr's can be >1 (over-allocates surplus) | ✅ **ROOT-CAUSED + FIX PREPARED (2026-07-14, `agent/l2-0a-uncap` @ `adf2d1a`, pushed, NOT landed).** Cap removed → allocator bit-matches `evolveState.m:36-37`; 24-consumer safety audit (`docs/phase_f/A1_ALLOCATOR_UNCAP_CONSUMPTION_AUDIT.md`, AMOUNT=0, consumption≤allocation ⇒ pool can't go negative). L2.0a RED 111 → **403/403 GREEN**; L2.1 28/28; L2.2-strict. Held pending L2.4 (chassis integer-count: v6 chassis's scope-reduced v3 transcription emits fractional NTP). See `decisions/dec-004-allocator-oversupply-cap-removal.md`. |
 > | A2 | OC uses Vivarium topological deterministic order; Karr uses `randStream.randperm` per tick | Benign for mass balance; documented |
 > | A3 | OC's metabolism LP bounds from `_sub_state` (pool), Karr's from allocation | Documented; needs L2.4-driven fix |
 > | A3b | OC writeback clips only consumption entries to allocation, not production | Documented; 0/28 rows currently populate the audit hook (mechanical pass pending) |

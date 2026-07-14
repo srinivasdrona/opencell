@@ -59,6 +59,16 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Live state (2026-07-14 ~23:35 IST):** no processes/agents running. MATLAB UNLOCKED; WSL up (`.venv-wsl`).
+- **Active branch:** `agent/l2-0a-uncap` @ `d4f69ef`, **pushed** to `origin/agent/l2-0a-uncap` (srinivasdrona/opencell). Contains the **prepared A1 fix** (allocator uncap, `adf2d1a`) + plan/status update (`d4f69ef`), stacked on the L2.0a gate commits (`9376f27`,`87b7acd`). **NOT merged to main** — held pending L2.4 (chassis integer-count integrity). See A1 bug-table entry.
+- **This session's outcome:** L2.0a gate BUILT + baseline resolved (RED 111-cap-fork → **403/403 GREEN** with A1 fix). A1 root-caused to the single `min(1.0)` cap; 24-consumer safety audit at `docs/phase_f/A1_ALLOCATOR_UNCAP_CONSUMPTION_AUDIT.md` (AMOUNT=0, consumption≤allocation ⇒ pool can't go negative). Uncap can't land standalone: v6 chassis's scope-reduced **v3** transcription emits fractional NTP (`total_nt/4·dt`), which the cap was incidentally integerizing → ~24 integration tests trip translation's integer-count check. That is L2.4's job, not an allocator defect.
+- **Operational trap (this project):** the L2.0a/L2.1/L2.2 gates run in **isolated replay** and bind transcription to the **faithful v1** `KarrTranscriptionProcess`; only the **v6 chassis** (integration tests) uses the scope-reduced **v3**. Don't judge an allocator/pool change by v6-chassis CI — judge it by the gates. Chassis integer-count integrity has no gate yet (L2.4 NOT BUILT).
+- **Next move when resuming:** either build L2.4 (chassis conservation) so A1 can land, or advance L2.2 (active front, 2/7 DEEP).
+
+---
+
+### (historical) Gate-2 era handoff — 2026-07-11 ~01:30 IST
+
 **Live processes / agents (2026-07-11 ~01:30 IST):** none running. MATLAB **UNLOCKED**. WSL up (`.venv-wsl`).
 
 **🛑 GATE 2 STATUS (post GPT-5.4 rubber-duck) — honest scope: per-process INPUT FIDELITY (vocab + reaction stoichiometry) vs the frozen spec. NOT cross-process wiring (that is L1b Half B + L3).** `scripts/gate2_verify_oc_vs_spec.py` compares each OC `Karr<X>Process` to the frozen spec. After the rubber-duck (logged: `sha256:ab399ac…`), strengthened + correctly scoped:

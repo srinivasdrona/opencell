@@ -38,3 +38,14 @@ decisions:
       - "L4 paper review challenges the FVA-feasibility methodology"
     superseded_by: null
 
+  - id: dec-004
+    title: "Remove allocator oversupply cap (bug A1) — match Karr evolveState exactly"
+    file: decisions/dec-004-allocator-oversupply-cap-removal.md
+    status: prepared_not_landed
+    created: 2026-07-14
+    invalidation_triggers:
+      - "L2.4 (chassis conservation) is built and green — A1 fix can then land"
+      - "Chassis transcription integer-count fix lands (v3 NTP rounding, or chassis switched to faithful v1)"
+      - "A new/changed consumer violates the consumption<=allocation invariant (re-audit required)"
+    superseded_by: null
+
