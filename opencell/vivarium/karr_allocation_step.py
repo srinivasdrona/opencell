@@ -244,13 +244,19 @@ class KarrAllocationStep(Step):
         )
         counts_requested_clamped = np.maximum(counts_requested, 0.0)
         total_demand = counts_requested_clamped.sum(axis=0)
-        counts_scale = np.divide(
-            counts_available,
-            total_demand,
-            out=np.zeros_like(total_demand),
-            where=total_demand > 0.0,
-        )
-        counts_scale = np.minimum(1.0, counts_scale)
+        # Karr evolveState.m:36-37 computes the proportional share UNCAPPED:
+        #   allocations = fix(requirements .* (pool ./ max(1, sum(requirements,2))))
+        # In oversupply (pool > total demand) each process receives its full
+        # proportional share, which EXCEEDS its request; the surplus is safe
+        # because every downstream consumer enforces consumption <= allocation
+        # (verified across all 24 consumers in tmp/AUDIT_substrates_allocated.md,
+        # AMOUNT=0). A prior `np.minimum(1.0, counts_scale)` cap deviated from
+        # Karr by starving oversupplied processes to their raw request, producing
+        # the L2.0a oversupply-cap divergence fork. The `max(1, total_demand)`
+        # denominator matches Karr exactly and avoids over-allocation on the
+        # fractional sub-1 total-demand edge (where the raw `pool / total_demand`
+        # form would hand the entire pool to a process requesting < 1 unit).
+        counts_scale = counts_available / np.maximum(1.0, total_demand)
         counts_allocated = np.floor(counts_requested_clamped * counts_scale)
 
         if ASSERT_POSITIVE_COUNTS and np.any(counts_allocated < 0):

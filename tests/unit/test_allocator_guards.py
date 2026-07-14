@@ -115,4 +115,8 @@ def test_allocator_guards_flag_off_skips_checks(monkeypatch: pytest.MonkeyPatch)
     )
 
     assert update["substrates_allocated"]["consumer_a"]["ATP"] == 0.0
-    assert update["substrates_allocated"]["consumer_b"]["ATP"] == 1.0
+    # Karr uncapped share: pool=10 >> total demand=1, scale=10/max(1,1)=10, so
+    # the sole positive demander takes the whole pool: floor(1*10)=10 (was 1
+    # under the removed min(1.0) cap). This test's purpose is the guard-skip
+    # (negative -5.0 clamped to 0 without raising), not the exact overshoot.
+    assert update["substrates_allocated"]["consumer_b"]["ATP"] == 10.0

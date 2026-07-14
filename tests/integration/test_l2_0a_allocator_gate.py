@@ -142,13 +142,27 @@ def _real_oracle_result():
 
 
 @pytest.mark.skipif(not ORACLE_PATH.exists(), reason="local allocator oracle absent")
-def test_real_oracle_baseline_is_red_for_oversupply_cap_only() -> None:
+def test_real_oracle_baseline_is_green_after_uncap() -> None:
+    """OC's allocator is bit-identical to Karr's evolveState.m after removing the
+    `min(1.0)` oversupply cap (karr_allocation_step.py). Previously this baseline
+    was RED with every failure in the oversupply-cap fork; the fix flips it GREEN.
+
+    The coverage assertions (checked_count, Metabolism/tRNAAminoacylation checked)
+    guard against a vacuous green from the gate silently checking nothing.
+    """
     result = _real_oracle_result()
     metabolism = next(summary for summary in result.process_summaries if summary.process_name == "Metabolism")
+    trna = next(summary for summary in result.process_summaries if summary.process_name == "tRNAAminoacylation")
 
-    assert result.returncode == 1
-    assert result.failed_count > 0
-    assert result.oversupply_fail_count == result.failed_count
+    assert result.returncode == 0
+    assert result.failed_count == 0
+    assert result.oversupply_fail_count == 0
     assert result.other_fail_count == 0
+    # Real coverage must remain — a green with zero checks would be vacuous.
+    assert result.checked_count > 0
     assert result.unmapped_count > 0
-    assert metabolism.failed > 0
+    assert metabolism.checked > 0
+    assert metabolism.failed == 0
+    # tRNAAminoacylation was the 2nd-largest divergence source pre-fix (23 cells).
+    assert trna.checked > 0
+    assert trna.failed == 0
