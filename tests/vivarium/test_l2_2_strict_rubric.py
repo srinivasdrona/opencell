@@ -65,11 +65,28 @@ EXPECTED_L2_2_VERDICTS = {
     "Translation": "VERIFIED_GENUINE",
     # 1 VERIFIED_FAIL — real biology divergence (claim was wrong)
     "Metabolism": "VERIFIED_FAIL",
-    # 2 UNVALIDATABLE — runner refuses (EVENT_CLASS bucket needs L2.event)
+    # 2 design-A UNVALIDATABLE (runner correctly refuses EVENT_CLASS to avoid
+    # fake zero-W1 passes). These verdicts pin the DESIGN-A audit output ONLY;
+    # they are NOT the whole validation picture — see the two-axis note below.
+    #   - RibosomeAssembly: COVERED via the event-window replay track —
+    #     test_karr_ribosome_assembly_l2_replay.py::test_karr_ribosome_assembly_l2_event_replay
+    #     PASSES bit-identically on the tick_offset=200 event window (253
+    #     events/cycle). Catalog already marks it "L2.2 GREEN". NOT an open gap.
+    #   - Cytokinesis: GENUINELY unvalidatable in isolation — evolveState returns
+    #     until chromosome.segregated (end-of-cycle), so no isolated oracle window
+    #     can exist. Its division event is a full-cycle phenotype → L5 (2026-07-15).
     "Cytokinesis": "UNVALIDATABLE_EVENT_CLASS",
     "RibosomeAssembly": "UNVALIDATABLE_EVENT_CLASS",
-    # 2 NOT_WIRED — 4 of 4 in-scope chromosome processes wired on Day-39
-    # (DNADamage + FtsZ remain NOT_WIRED because they are EVENT_CLASS, out of design-A scope)
+    # 2 design-A NOT_WIRED (EVENT_CLASS, out of design-A scope). Split by reality:
+    #   - FtsZPolymerization: COVERED via the bit-identity replay track —
+    #     test_karr_ftsz_polymerization_l2_replay.py PASSES on an ACTIVE window
+    #     (substrates 60/100, enzymes 100/100 ticks). ODE-deterministic port, so
+    #     bit-identity is the right bar. NOT an open gap; "needs distributional"
+    #     catalog note is stale (pre-ODE-port).
+    #   - DNADamage: GENUINELY open — standard trace is a sampling-artifact no-op
+    #     (~8 spontaneous events/cycle per DNADamage.m:94, ~1/4000 ticks). Fix =
+    #     full-cycle MATLAB scan to locate firing ticks → event-window replay
+    #     harness (mirrors RibosomeAssembly). Pending 2026-07-15.
     "Replication": "VERIFIED_GENUINE",
     "ReplicationInitiation": "VERIFIED_GENUINE",
     "DNASupercoiling": "VERIFIED_GENUINE",
