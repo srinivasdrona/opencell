@@ -46,6 +46,7 @@ class KarrTranscriptionV3Process(Process):
         "write_substrate_deltas": True,
         "use_allocator_budget": False,
         "substrate_default": 0.0,
+        "rng_seed": 0,
     }
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
@@ -87,6 +88,7 @@ class KarrTranscriptionV3Process(Process):
                 f"({pred_total_per_s}); cannot derive calibration scale."
             )
         self._mechanism_scale: float = target_total_per_s / pred_total_per_s
+        self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
 
     def ports_schema(self) -> dict[str, Any]:
         rna_ss = self.kinetics_model.counts_mature[:, 1]
@@ -150,6 +152,21 @@ class KarrTranscriptionV3Process(Process):
         )
         return float(total_nt * self._mechanism_scale)
 
+    def _stochastic_round_nonnegative(self, expected_count: float) -> int:
+        if not np.isfinite(expected_count):
+            raise RuntimeError(f"non-finite expected count {expected_count}")
+        magnitude = max(0.0, float(expected_count))
+        base = int(np.floor(magnitude))
+        frac = float(np.clip(magnitude - float(base), 0.0, 1.0))
+        return base + int(self._rng.binomial(1, frac))
+
+    def _stochastic_round_delta(self, expected_delta: float) -> int:
+        if not np.isfinite(expected_delta):
+            raise RuntimeError(f"non-finite expected delta {expected_delta}")
+        sign = -1 if expected_delta < 0.0 else 1
+        rounded_mag = self._stochastic_round_nonnegative(abs(float(expected_delta)))
+        return sign * rounded_mag
+
     def _allocated_ntp_deltas(
         self,
         timestep: float,
@@ -164,7 +181,9 @@ class KarrTranscriptionV3Process(Process):
             budget = max(0.0, float(allocated.get(ntp, 0.0)))
             consumed = min(per_ntp_need, budget)
             if consumed > 0.0:
-                out[ntp] = -consumed
+                rounded = self._stochastic_round_nonnegative(consumed)
+                if rounded > 0:
+                    out[ntp] = float(-rounded)
         return out
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
@@ -215,9 +234,20 @@ class KarrTranscriptionV3Process(Process):
             else:
                 total_nt = self._predict_total_nt_polymerization_per_s(n_active_rnap)
                 per_ntp = max(0.0, total_nt / 4.0) * float(timestep)
-                substrate_update = {
-                    ntp: -per_ntp for ntp in self.consumed_substrates if per_ntp > 0.0
-                }
+                if isinstance(states.get("substrates"), dict):
+                    rounded_per_ntp = self._stochastic_round_nonnegative(per_ntp)
+                    substrate_update = (
+                        {
+                            ntp: float(-rounded_per_ntp)
+                            for ntp in self.consumed_substrates
+                        }
+                        if rounded_per_ntp > 0
+                        else {}
+                    )
+                else:
+                    substrate_update = {
+                        ntp: -per_ntp for ntp in self.consumed_substrates if per_ntp > 0.0
+                    }
             if substrate_update:
                 update["substrates"] = substrate_update
         return update
