@@ -384,8 +384,15 @@ class KarrProteinTranslocationProcess(Process):
         atp_spent = 0.0
         gtp_spent = 0.0
 
+        # Preserve the MATLAB randperm replay stream when available, but allow
+        # Generator-reseeded chassis runs to iterate over a native permutation.
+        if hasattr(self._rng, "randperm"):
+            copy_order = self._rng.randperm(total_copies)
+        else:
+            copy_order = self._rng.permutation(total_copies)
+
         # Match Karr's randperm over individual copies without expanding a copy list.
-        for copy_index in self._rng.randperm(total_copies):
+        for copy_index in copy_order:
             wid_index = int(np.searchsorted(cumulative_counts, int(copy_index), side="left"))
             wid = translocating_wids[wid_index]
             atp_per_monomer = int(self.atp_cost_by_wid[wid])

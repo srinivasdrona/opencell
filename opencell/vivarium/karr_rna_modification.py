@@ -498,7 +498,7 @@ class KarrRNAModificationProcess(Process):
     def _weighted_index_sample(self, weights: np.ndarray, total_weight: float) -> int:
         if total_weight <= 0.0:
             return 0
-        threshold = float(self._rng.random_sample()) * float(total_weight)
+        threshold = float(self._rng.random()) * float(total_weight)
         cumulative = np.cumsum(weights, dtype=np.float64)
         return int(np.searchsorted(cumulative, threshold, side="right"))
 
@@ -508,7 +508,7 @@ class KarrRNAModificationProcess(Process):
         finite = np.isfinite(vals)
         frac = np.zeros_like(vals)
         frac[finite] = vals[finite] - out[finite]
-        draws = self._rng.random_sample(vals.shape)
+        draws = self._rng.random(vals.shape)
         out[finite] += (draws[finite] < frac[finite]).astype(np.float64)
         out[~finite] = vals[~finite]
         return out
