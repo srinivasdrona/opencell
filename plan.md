@@ -59,14 +59,30 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live state (2026-07-16 ~23:45 IST):** one job running; L2.4 probe DONE (found a blocker); uncap caveat RESOLVED.
-- ✅ **L2.4 stability probe DONE** (codex, `docs/phase_f/L2_4_STABILITY_PROBE_FINDINGS.md`). Result: the capped-baseline v6 chassis via `run_chassis_v6_32400t.py` **crashes at tick 1 on all seeds 0-3** — NOT a conservation issue. Root cause: the runner's `_seed_entities` (line 279) reseeds every process `_rng` to `np.random.default_rng(...)` (a **Generator**, correct SeedSequence RNG discipline), but 3 processes use `RandomState`-only methods the Generator lacks: `karr_rna_modification.py:501,511` (`random_sample`), `karr_protein_modification.py:488,489,499` (`random_sample`), `karr_rna_decay.py:416,424,472` (`.rand()`). Masked in Engine-based integration tests (no reseed); surfaced by the L2.4 runner. **L2.4 earned its keep — this is exactly the chassis-integration class isolated replay can't catch.** Fix = mechanical `random_sample`/`.rand()` → `.random()` (alias on RandomState so L2.1 streams unchanged; native on Generator). Conservation baseline UNMEASURED until this is fixed + re-run.
-- ✅ **Uncap caveat RESOLVED:** `karr_allocation_step.py` restored to HEAD (uncapped, `git status` clean). No pending working-tree reverts.
-- ⚙️ **RUNNING: MATLAB DNADamage full-cycle extraction** (worker PID 34104; output `data/m1_sources/karr_native/dnadamage_fullcycle/DNADamage_32400ticks.mat`; wait shell `wait-dnadamage2`; quiet log is normal — no per-tick logging). Orphan MATLABs 22280,26180 (07-10) idle — ignore.
-- **Active branch:** `agent/l2-0a-uncap` @ `a85b220` (tip after event-class reconciliation), **pushed** to `origin/agent/l2-0a-uncap` (srinivasdrona/opencell). Contains the **prepared A1 fix** (allocator uncap, `adf2d1a`), plan/status (`d4f69ef`,`311f006`), bookkeeping (`ea0241b`), blog (`41a8db4`), event-class scoreboard reconcile (`a85b220`). **NOT merged to main** — A1 held pending L2.4 (chassis integer-count integrity).
-- **This session's outcome:** L2.0a gate BUILT + baseline resolved (RED 111-cap-fork → **403/403 GREEN** with A1 fix). A1 root-caused to the single `min(1.0)` cap; 24-consumer safety audit at `docs/phase_f/A1_ALLOCATOR_UNCAP_CONSUMPTION_AUDIT.md` (AMOUNT=0, consumption≤allocation ⇒ pool can't go negative). Uncap can't land standalone: v6 chassis's scope-reduced **v3** transcription emits fractional NTP (`total_nt/4·dt`), which the cap was incidentally integerizing → ~24 integration tests trip translation's integer-count check. That is L2.4's job, not an allocator defect.
-- **Operational trap (this project):** the L2.0a/L2.1/L2.2 gates run in **isolated replay** and bind transcription to the **faithful v1** `KarrTranscriptionProcess`; only the **v6 chassis** (integration tests) uses the scope-reduced **v3**. Don't judge an allocator/pool change by v6-chassis CI — judge it by the gates. Chassis integer-count integrity has no gate yet (L2.4 NOT BUILT).
-- **Next move when resuming:** either build L2.4 (chassis conservation) so A1 can land, or advance L2.2 (active front, 2/7 DEEP).
+**Live state (2026-07-19 ~02:45 IST):** transcription-v3 fix LANDED — **A1 uncap unblocked at the chassis level**; L2.4 design HARDENED; ready to build the L2.4 gate.
+- ✅ **transcription-v3 stochastic-round fix DONE** (codex `3fe4bef`). Added `_stochastic_round_nonnegative/_delta` (from translation-v3) + `rng_seed`/`_rng` Generator; rounds NTP substrate consumption (only when a real `substrates` store is wired). **RNA-delta rounding (step 5) BACKED OUT** — it regressed 2 v3-trajectory tests (`test_delta_matches_scaled_mechanism_step`, `test_fold_change_tu_key_scales_target_gene_only`); reported, not deleted (Rule-8). Substrate-only rounding sufficed. **Result: UNCAPPED chassis runs 200/200 ticks, `max_abs_unattributed_delta = 1.5e-11`, NO non-integral crash** → transcription-v3 confirmed as the lone fractional source. L2.1/L2.2 strict 50 passed; txv3 suite 31 passed; v1 gates unaffected.
+- ⚠️ **2 pre-existing test failures (NOT from this session):** `test_c1_metabolism_responds_to_atp_demand` (ATP-stationarity tol=2) fails IDENTICALLY on the capped baseline `87b7acd` (verified) — too-tight tolerance, not the uncap/fix. `test_bug5_long_horizon...` is an **xfail** that timed out (env slowness); its non-xfail siblings pass.
+- ✅ **RNG-mismatch crash FIXED** (`04d15e1`, prior): 4 procs called RandomState-only APIs on the chassis-reseeded Generator (rna_modification/protein_modification/rna_decay `random_sample`/`.rand` + protein_translocation `randperm`). Capped chassis then ran 100/100 ticks (2.27e-12).
+- ✅ **L2.4 design HARDENED** (`docs/phase_f/L2_4_CHASSIS_CONSERVATION_GATE.md`, gpt-5.5 review + Day-53 probe): **D8** two-part gate (Part A store-attribution + Part B integer/allocation integrity; verdict on the UNCAPPED branch, capped = smoke only); **D9** full-horizon required, crash = STABILITY_FAIL; **D3-rev** integer-validity before residual; **D2-rev** exchange-WID shadow audit; **D6-rev** mechanical snapshot audit; + coverage matrix + empirical anchor.
+- **Key architectural finding:** fractional-count is UNIQUE to transcription-v3. The 3 continuous processes are TX-v3, TL-v3, Metabolism(FBA); Metabolism (`karr_metabolism_writeback.py:130-160`) and Translation-v3 (`karr_translation_v3.py:374-380`) already stochastic-round at the store boundary; transcription-v3 was the lone omitter. Uncap unblock was a small, precedented single-process fix.
+- **Active branch:** `agent/l2-0a-uncap` @ `3fe4bef` (uncap `adf2d1a` + RNG fix `04d15e1` + txv3 fix `3fe4bef`), **pushed** through `04d15e1`; `3fe4bef` + doc/plan commits **NOT yet pushed** (confirm-before-push). NOT merged to main.
+- **Next move when resuming:** build the L2.4 gate (`scripts/l2_4_verify_conservation.py`, Part A + Part B per the hardened design) and take the verdict on THIS uncapped branch (D8). If green → the uncap can land. Then confirm-before-push the branch.
+
+---
+
+<!-- ============================================================= -->
+<!-- ARCHIVE_DIVIDER -->
+> # ⬇️⬇️⬇️ ARCHIVE BELOW THIS LINE — HISTORICAL / SUPERSEDED ⬇️⬇️⬇️
+>
+> **Everything below is a chronological log of superseded handoffs, prior
+> statuses, and the original design/vision doc. DO NOT read any block below as
+> current state.** The only current, authoritative content is ABOVE this line:
+> the L-ladder reference (top) + the live "Operational handoff" block. When
+> searching (`grep`) this file for current status, ignore every hit that falls
+> below `ARCHIVE_DIVIDER`. (This divider is interim insurance against stale-fact
+> contamination; the full archive+vision split is deferred to the next
+> inter-workstream lull — see the split plan in session notes.)
+<!-- ============================================================= -->
 
 ---
 
