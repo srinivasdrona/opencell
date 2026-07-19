@@ -19,6 +19,7 @@ import sys
 from collections import defaultdict
 from dataclasses import asdict
 from dataclasses import dataclass
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -41,6 +42,7 @@ INTEGER_TOL = 1e-9
 TOP_FAILURE_ROWS = 25
 PASS = "PASS"
 CONSERVATION_FAIL = "CONSERVATION_FAIL"
+PARTB_FAIL = "PARTB_FAIL"
 STABILITY_FAIL = "STABILITY_FAIL"
 
 try:
@@ -140,6 +142,10 @@ class TickFailure:
     rounded_value: int | None
     unattributed: int | None
     magnitude: float
+    gate_part: str = "A"
+    process_name: str | None = None
+    consumed: int | None = None
+    allocated: int | None = None
 
 
 @dataclass(frozen=True)
@@ -179,6 +185,8 @@ class GateSummary:
     exchange_wid_source: str
     per_seed: tuple[SeedRunResult, ...]
     total_failures: int
+    part_a_failures: int
+    part_b_failures: int
     max_abs_unattributed: int
     top_failures: tuple[TickFailure, ...]
     stability_failure: StabilityErrorInfo | None
@@ -199,6 +207,9 @@ class ConservationCollector:
         self._composite = composite
         self._current_tick = {"tick": 0}
         self.per_tick_process_sums: dict[str, float] = defaultdict(float)
+        self.per_tick_process_wid_deltas: dict[str, dict[str, float]] = defaultdict(
+            lambda: defaultdict(float)
+        )
         self._entities: dict[str, Any] = {}
         self._entities.update(getattr(composite, "processes", {}))
         self._entities.update(getattr(composite, "steps", {}))
@@ -208,6 +219,7 @@ class ConservationCollector:
     def set_tick(self, tick: int) -> None:
         self._current_tick["tick"] = int(tick)
         self.per_tick_process_sums.clear()
+        self.per_tick_process_wid_deltas.clear()
 
     def _seed_entities(self, *, seed: int) -> None:
         names = sorted(self._entities.keys())
@@ -246,6 +258,7 @@ class ConservationCollector:
                 timestep: float,
                 states: dict[str, Any],
                 *,
+                _entity_name: str = entity_name,
                 _original: Any = original_next_update,
                 _shared_ports: dict[str, tuple[str, ...]] = shared_ports,
                 _port_updaters: dict[str, dict[str, str]] = port_updaters,
@@ -284,6 +297,7 @@ class ConservationCollector:
                             continue
                         if store_path and store_path[0] == "substrates":
                             self.per_tick_process_sums[wid_str] += float(delta)
+                            self.per_tick_process_wid_deltas[_entity_name][wid_str] += float(delta)
                 return update
 
             entity_obj.next_update = wrapped_next_update
@@ -296,13 +310,30 @@ def _parse_seeds(raw: str) -> tuple[int, ...]:
     return seeds
 
 
+def _snapshot_store_dict(engine: Engine, path: tuple[str, ...]) -> dict[str, Any]:
+    store = engine.state.get_path(path)
+    value = store.get_value() if store is not None else {}
+    return value if isinstance(value, dict) else {}
+
+
 def _snapshot_substrates(engine: Engine) -> dict[str, float]:
-    state = _snapshot_runtime_state(engine)
-    substrates = state.get("substrates", {})
+    substrates = _snapshot_store_dict(engine, ("substrates",))
     out: dict[str, float] = {}
     if isinstance(substrates, dict):
         for wid, value in substrates.items():
             out[str(wid)] = _to_float(value, default=0.0)
+    return out
+
+
+def _snapshot_substrates_allocated(engine: Engine) -> dict[str, dict[str, float]]:
+    allocations = _snapshot_store_dict(engine, ("substrates_allocated",))
+    out: dict[str, dict[str, float]] = {}
+    for process_name, wid_allocations in allocations.items():
+        if not isinstance(wid_allocations, dict):
+            continue
+        out[str(process_name)] = {
+            str(wid): _to_float(value, default=0.0) for wid, value in wid_allocations.items()
+        }
     return out
 
 
@@ -364,6 +395,22 @@ def _integer_or_failure(
             magnitude=abs(value - rounded),
         )
     return rounded, None
+
+
+def _part_b_context(
+    failure: TickFailure,
+    *,
+    process_name: str | None = None,
+    consumed: int | None = None,
+    allocated: int | None = None,
+) -> TickFailure:
+    return replace(
+        failure,
+        gate_part="B",
+        process_name=process_name,
+        consumed=consumed,
+        allocated=allocated,
+    )
 
 
 def evaluate_tick_part_a(
@@ -442,6 +489,114 @@ def evaluate_tick_part_a(
     )
 
 
+def evaluate_tick_part_b(
+    *,
+    seed: int,
+    tick: int,
+    after: dict[str, float],
+    proc_deltas: dict[str, dict[str, float]],
+    substrates_allocated: dict[str, dict[str, float]],
+) -> TickOutcome:
+    failures: list[TickFailure] = []
+
+    for process_name in sorted(substrates_allocated):
+        allocated_by_wid = substrates_allocated.get(process_name, {})
+        if not isinstance(allocated_by_wid, dict):
+            continue
+        process_deltas = proc_deltas.get(process_name, {})
+        if not isinstance(process_deltas, dict):
+            process_deltas = {}
+
+        for wid in sorted(allocated_by_wid):
+            allocated_int, allocated_failure = _integer_or_failure(
+                seed=seed,
+                tick=tick,
+                wid=wid,
+                field="allocated",
+                value=_to_float(allocated_by_wid.get(wid, 0.0), default=0.0),
+            )
+            if allocated_failure is not None:
+                failures.append(
+                    _part_b_context(
+                        allocated_failure,
+                        process_name=process_name,
+                    )
+                )
+
+            consumed_value = max(0.0, -_to_float(process_deltas.get(wid, 0.0), default=0.0))
+            consumed_int, consumed_failure = _integer_or_failure(
+                seed=seed,
+                tick=tick,
+                wid=wid,
+                field="consumed",
+                value=consumed_value,
+            )
+            if consumed_failure is not None:
+                failures.append(
+                    _part_b_context(
+                        consumed_failure,
+                        process_name=process_name,
+                    )
+                )
+
+            if allocated_int is None or consumed_int is None:
+                continue
+
+            if consumed_int > allocated_int:
+                failures.append(
+                    TickFailure(
+                        seed=seed,
+                        tick=tick,
+                        wid=wid,
+                        failure_kind="over_allocation",
+                        field="consumed_vs_allocated",
+                        observed_value=float(consumed_int),
+                        rounded_value=consumed_int,
+                        unattributed=None,
+                        magnitude=float(consumed_int - allocated_int),
+                        gate_part="B",
+                        process_name=process_name,
+                        consumed=consumed_int,
+                        allocated=allocated_int,
+                    )
+                )
+
+    for wid in sorted(after):
+        after_int, after_failure = _integer_or_failure(
+            seed=seed,
+            tick=tick,
+            wid=wid,
+            field="after",
+            value=_to_float(after.get(wid, 0.0), default=0.0),
+        )
+        if after_failure is not None:
+            failures.append(_part_b_context(after_failure))
+            continue
+        if after_int is not None and after_int < 0:
+            failures.append(
+                TickFailure(
+                    seed=seed,
+                    tick=tick,
+                    wid=wid,
+                    failure_kind="negative_pool",
+                    field="after",
+                    observed_value=float(after_int),
+                    rounded_value=after_int,
+                    unattributed=None,
+                    magnitude=float(abs(after_int)),
+                    gate_part="B",
+                )
+            )
+
+    return TickOutcome(
+        seed=seed,
+        tick=tick,
+        exchange_wids_skipped=0,
+        max_abs_unattributed=0,
+        failures=tuple(failures),
+    )
+
+
 def run_seed_horizon(
     *,
     seed: int,
@@ -470,6 +625,11 @@ def run_seed_horizon(
         except Exception as exc:
             raise SeedStabilityError(seed=seed, tick=tick, exc=exc) from exc
         after = _snapshot_substrates(engine)
+        substrates_allocated = _snapshot_substrates_allocated(engine)
+        per_process_wid_deltas = {
+            process_name: dict(wid_deltas)
+            for process_name, wid_deltas in collector.per_tick_process_wid_deltas.items()
+        }
         outcome = evaluate_tick_part_a(
             seed=seed,
             tick=tick,
@@ -478,7 +638,15 @@ def run_seed_horizon(
             proc_delta=dict(collector.per_tick_process_sums),
             exchange_wids=exchange_wids,
         )
+        part_b_outcome = evaluate_tick_part_b(
+            seed=seed,
+            tick=tick,
+            after=after,
+            proc_deltas=per_process_wid_deltas,
+            substrates_allocated=substrates_allocated,
+        )
         failures.extend(outcome.failures)
+        failures.extend(part_b_outcome.failures)
         ticks_completed = tick
         exchange_wids_skipped += outcome.exchange_wids_skipped
         max_abs_unattributed = max(max_abs_unattributed, outcome.max_abs_unattributed)
@@ -504,10 +672,21 @@ def summarize_gate_runs(
     stability_failure: StabilityErrorInfo | None = None,
 ) -> GateSummary:
     all_failures = [failure for seed_result in per_seed for failure in seed_result.failures]
+    part_a_failures = sum(1 for failure in all_failures if failure.gate_part == "A")
+    part_b_failures = sum(1 for failure in all_failures if failure.gate_part == "B")
     top_failures = tuple(
         sorted(
             all_failures,
-            key=lambda item: (-item.magnitude, item.seed, item.tick, item.wid, item.failure_kind, item.field),
+            key=lambda item: (
+                -item.magnitude,
+                item.seed,
+                item.tick,
+                item.wid,
+                item.failure_kind,
+                item.field,
+                item.gate_part,
+                item.process_name or "",
+            ),
         )[:TOP_FAILURE_ROWS]
     )
     max_abs_unattributed = max(
@@ -516,8 +695,10 @@ def summarize_gate_runs(
     )
     if stability_failure is not None:
         verdict = STABILITY_FAIL
-    elif all_failures:
+    elif part_a_failures:
         verdict = CONSERVATION_FAIL
+    elif part_b_failures:
+        verdict = PARTB_FAIL
     else:
         verdict = PASS
     return GateSummary(
@@ -528,6 +709,8 @@ def summarize_gate_runs(
         exchange_wid_source=exchange_wid_source,
         per_seed=per_seed,
         total_failures=len(all_failures),
+        part_a_failures=part_a_failures,
+        part_b_failures=part_b_failures,
         max_abs_unattributed=max_abs_unattributed,
         top_failures=top_failures,
         stability_failure=stability_failure,
@@ -549,11 +732,15 @@ def write_report(summary: GateSummary, *, out_dir: Path) -> None:
                 "seed",
                 "tick",
                 "wid",
+                "gate_part",
+                "process_name",
                 "failure_kind",
                 "field",
                 "observed_value",
                 "rounded_value",
                 "unattributed",
+                "consumed",
+                "allocated",
                 "magnitude",
             ]
         )
@@ -563,11 +750,15 @@ def write_report(summary: GateSummary, *, out_dir: Path) -> None:
                     failure.seed,
                     failure.tick,
                     failure.wid,
+                    failure.gate_part,
+                    "" if failure.process_name is None else failure.process_name,
                     failure.failure_kind,
                     failure.field,
                     f"{failure.observed_value:.12g}" if math.isfinite(failure.observed_value) else str(failure.observed_value),
                     "" if failure.rounded_value is None else failure.rounded_value,
                     "" if failure.unattributed is None else failure.unattributed,
+                    "" if failure.consumed is None else failure.consumed,
+                    "" if failure.allocated is None else failure.allocated,
                     f"{failure.magnitude:.12g}" if math.isfinite(failure.magnitude) else str(failure.magnitude),
                 ]
             )
@@ -659,7 +850,16 @@ def main(argv: list[str] | None = None) -> int:
     if summary.verdict == CONSERVATION_FAIL:
         print(
             f"CONSERVATION_FAIL failures={summary.total_failures} "
+            f"part_a_failures={summary.part_a_failures} "
+            f"part_b_failures={summary.part_b_failures} "
             f"max_abs_unattributed={summary.max_abs_unattributed}",
+            flush=True,
+        )
+        return 1
+    if summary.verdict == PARTB_FAIL:
+        print(
+            f"PARTB_FAIL failures={summary.total_failures} "
+            f"part_b_failures={summary.part_b_failures}",
             flush=True,
         )
         return 1

@@ -5,8 +5,10 @@ from pathlib import Path
 
 from scripts.l2_4_verify_conservation import CONSERVATION_FAIL
 from scripts.l2_4_verify_conservation import PASS
+from scripts.l2_4_verify_conservation import PARTB_FAIL
 from scripts.l2_4_verify_conservation import SeedRunResult
 from scripts.l2_4_verify_conservation import evaluate_tick_part_a
+from scripts.l2_4_verify_conservation import evaluate_tick_part_b
 from scripts.l2_4_verify_conservation import run_part_a_gate
 from scripts.l2_4_verify_conservation import summarize_gate_runs
 
@@ -59,3 +61,87 @@ def test_one_tick_uncapped_smoke_verdict(tmp_path: Path) -> None:
     payload = json.loads((out_dir / "summary.json").read_text(encoding="utf-8"))
     assert payload["verdict"] == PASS
     assert payload["exchange_wid_count"] == 124
+
+
+def test_planted_over_allocation_returns_part_b_fail() -> None:
+    outcome = evaluate_tick_part_b(
+        seed=11,
+        tick=3,
+        after={"ATP": 7.0},
+        proc_deltas={"consumer_a": {"ATP": -5.0}},
+        substrates_allocated={"consumer_a": {"ATP": 4.0}},
+    )
+    summary = summarize_gate_runs(
+        requested_ticks=3,
+        seeds=(11,),
+        exchange_wids=frozenset(),
+        exchange_wid_source="synthetic",
+        per_seed=(
+            SeedRunResult(
+                seed=11,
+                ticks_requested=3,
+                ticks_completed=3,
+                horizon_completed=True,
+                exchange_wids_skipped=0,
+                max_abs_unattributed=0,
+                failures=outcome.failures,
+            ),
+        ),
+    )
+
+    assert summary.verdict == PARTB_FAIL
+    assert summary.part_b_failures == 1
+    assert summary.top_failures[0].failure_kind == "over_allocation"
+    assert summary.top_failures[0].process_name == "consumer_a"
+    assert summary.top_failures[0].wid == "ATP"
+    assert summary.top_failures[0].consumed == 5
+    assert summary.top_failures[0].allocated == 4
+
+
+def test_planted_negative_pool_returns_part_b_fail() -> None:
+    outcome = evaluate_tick_part_b(
+        seed=13,
+        tick=2,
+        after={"H2O": -1.0},
+        proc_deltas={},
+        substrates_allocated={},
+    )
+    summary = summarize_gate_runs(
+        requested_ticks=2,
+        seeds=(13,),
+        exchange_wids=frozenset(),
+        exchange_wid_source="synthetic",
+        per_seed=(
+            SeedRunResult(
+                seed=13,
+                ticks_requested=2,
+                ticks_completed=2,
+                horizon_completed=True,
+                exchange_wids_skipped=0,
+                max_abs_unattributed=0,
+                failures=outcome.failures,
+            ),
+        ),
+    )
+
+    assert summary.verdict == PARTB_FAIL
+    assert summary.part_b_failures == 1
+    assert summary.top_failures[0].failure_kind == "negative_pool"
+    assert summary.top_failures[0].wid == "H2O"
+    assert summary.top_failures[0].rounded_value == -1
+
+
+def test_planted_fractional_part_a_delta_returns_fractional_failure() -> None:
+    outcome = evaluate_tick_part_a(
+        seed=17,
+        tick=4,
+        before={"SYNTH_INTERNAL": 10.0},
+        after={"SYNTH_INTERNAL": 10.5},
+        proc_delta={"SYNTH_INTERNAL": 0.5},
+        exchange_wids=frozenset(),
+    )
+
+    fractional_failures = [failure for failure in outcome.failures if failure.failure_kind == "fractional"]
+
+    assert len(fractional_failures) == 2
+    assert {failure.field for failure in fractional_failures} == {"after", "proc_delta"}
