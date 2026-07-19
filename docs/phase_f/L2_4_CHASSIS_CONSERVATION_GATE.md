@@ -1,11 +1,14 @@
 # L2.4 Chassis Autonomous Conservation Gate — Design
 
-**Status:** DESIGN (drafted 2026-07-08, Day-48; **revised 2026-07-08 after gpt-5.4
-design review** — scope corrected; **revised again 2026-07-19, Day-53, after
-gpt-5.5 review + the Day-53 conservation probe** — two-part gate (D8), full-horizon
-requirement (D9), integer-validity (D3-rev), exchange shadow-audit (D2-rev),
-mechanical write-surface audit (D6-rev), coverage matrix, empirical anchor; see
-review log). Gate NOT yet built.
+**Status:** DESIGN + **BUILT (Part A+B GREEN on the uncapped branch, 2026-07-19)**.
+Drafted 2026-07-08 (Day-48); revised 2026-07-08 (gpt-5.4) — scope corrected;
+revised 2026-07-19 (Day-53, gpt-5.5 + conservation probe) — two-part gate (D8),
+full-horizon (D9), integer-validity (D3-rev), mechanical write-surface audit
+(D6-rev), coverage matrix, empirical anchor. **2026-07-19 (later): D2 ELEVATED —
+Metabolism boundary-flux emission (2b) is now the completion of L2.4; the exchange
+shadow-audit is WITHDRAWN as unsound on shared WIDs (see D2). Part A+B shipped
+GREEN with the interim (2a) exchange exclusion, certifying the A1 uncap; 2b (with
+a necessity probe) is the remaining Batch-3 completion.** See review log.
 **Scope (review-corrected):** **v1 catches A1** (allocator-bypass / unaccounted
 substrate leaks) via flat-per-WID integer-exact conservation with a fail-closed
 write-surface audit. **A4 (compartment merge) and A2 (process-order/randperm)
@@ -208,18 +211,42 @@ wiring rows' produce/consume WIDs).
   - **(2b) Observe/emit the boundary.** Add a named Metabolism exchange-flux
     observable and include it in the invariant:
     `Δpool == Σ_p net_write + exchange_flux`. Stronger; requires a new emit port.
-- Chosen for v1 (**gpt-5.5-revised, SS#3**): (2a) ALONE is TOO BROAD — excluding
-  a whole WID treats every delta on it as boundary flux, but the fixture shows
-  the external-exchange set overlaps **12 internal-exchange rows, 3 ATP-hydrolysis
-  rows, and 27 nonzero biomass-production rows**, so an A3/A3b metabolism bug on
-  those WIDs would hide behind the "exchange" label. v1 therefore does (2a) PLUS
-  a mandatory **SHADOW AUDIT: FAIL whenever a skipped exchange WID also receives a
-  non-boundary internal / biomass / ATP-hydrolysis delta in the same tick.** Full
-  (2b) — a named, emitted Metabolism boundary-flux term in the invariant
-  (`Δpool == Σ_p net_write + exchange_flux`) — remains the v2 target and is
-  preferred if the emit port is cheap.
-- Falsifier: if a WID outside the 124-exchange set shows a persistent
-  unattributed delta, that is a real A1 leak, not a boundary artifact.
+- **Chosen (2026-07-19 — 2b ELEVATED to the completion of L2.4, was "v2"):**
+  the (2a) whole-WID exclusion is too broad (gpt-5.5 SS#3), and the Day-53
+  exchange-set audit made it concrete: the 124-WID external-exchange set is NOT
+  just medium nutrients — it includes shared reaction byproducts (**H2O, H, PI,
+  AMP**, emitted by many processes) and all **10 metal ions** (MG, ZN, MN, CA, K,
+  NA, CL, CO, NI, CU — MG/ZN are consumed by ProteinFolding). A "non-boundary
+  write" SHADOW AUDIT is therefore UNSOUND on these WIDs: it would false-fail
+  every process that emits H2O/PI or consumes MG/ZN. **The shadow audit is
+  withdrawn.** The correct resolution is **(2b): Metabolism EMITS its external-
+  exchange flux as an observable** (already computed internally —
+  `karr_metabolism_writeback.py:130`, `delta[sub_idx_external, EXTRACELLULAR] -=
+  stochastic_round(ext_flow)`; 2b exposes an EXISTING quantity, it does NOT
+  require more Metabolism fidelity) and L2.4 folds it into the invariant for the
+  exchange WIDs: `Δpool[wid] == Σ_p net_write[wid] + exchange_flux[wid]`,
+  conserving all 124 WIDs directly and shrinking the exclusion set to zero.
+- **OPEN QUESTION for 2b (empirically testable, flagged for review):** is 2b even
+  NECESSARY, or is the exclusion already unnecessary? Metabolism's writeback
+  flattens its `(585,3)` delta — INCLUDING the extracellular external-exchange
+  term — via `project_to_flat_per_wid` and emits it to the shared `substrates`
+  store. If that flat emit is captured by the gate's `proc_delta`, then exchange
+  WIDs may ALREADY conserve (`Δpool == Σ_p net_write`) with no separate boundary
+  term, making both the exclusion AND 2b moot. This is testable in <30 min:
+  un-exclude the 124 WIDs and re-run Part A. THREE outcomes: (i) they conserve →
+  drop the exclusion, 2b unneeded; (ii) they show a residual EQUAL to the
+  extracellular term → 2b needed to attribute it; (iii) they show a residual that
+  is NOT the extracellular term → a real A3/A3b leak, a genuine finding. **Run
+  this probe before building 2b.**
+- **Interim shipped (2a-exclusion, NO shadow audit):** L2.4 Part A+B is GREEN on
+  the uncapped branch with the 124 exchange WIDs EXCLUDED from the Part-A
+  residual. This correctly certifies the A1 uncap because (i) the uncap's failure
+  mode is fractional NTP on NON-exchange substrates, and (ii) Part B
+  (consumption ≤ allocation) already checks ALL WIDs including exchange ones
+  (e.g. ProteinFolding/MG). The shadow audit was never built.
+- Falsifier: a WID outside the 124-set with a persistent unattributed delta is a
+  real A1 leak. With 2b (or if the probe shows exchange WIDs already conserve),
+  the same falsifier extends to exchange WIDs.
 
 **D3 — Integer-exact, and integer-VALIDITY asserted BEFORE the residual (gpt-5.5, MAJOR-5).**
 - Chosen: counts are integers; conservation is exact, tolerance 0. A 1-molecule
@@ -335,7 +362,7 @@ wiring rows' produce/consume WIDs).
 | **A1** — unaccounted FLAT substrate write (non-exchange, on a visible path) | **CATCHES** | Part A residual + D6 fail-closed mechanical audit |
 | **A1** — allocator oversupply / cap mismatch | **CATCHES via Part B only** | the integer + `consumption ≤ allocation` checks (D8 Part B); NOT via the Part A residual alone |
 | **A2** — process-order / `randperm` divergence | **NO** | OC is fixed-order; needs a v2 randperm order sweep (D5) |
-| **A3/A3b** — metabolism LP-bounds / clipping / byproduct fidelity | **MOSTLY NO** | flat conservation is blind to LP-internal fidelity; the D2 shadow audit only catches exchange-WID mislabeling |
+| **A3/A3b** — metabolism LP-bounds / clipping / byproduct fidelity | **MOSTLY NO (v1); IMPROVES with 2b** | flat conservation is blind to LP-internal fidelity; once 2b emits the boundary flux and exchange WIDs are conserved, an internal A3/A3b delta that is NOT boundary-attributable becomes a residual (a real finding) |
 | **A4** — compartment merge (nets to zero flat-per-WID) | **NO** | needs a v2 compartment ledger (D4) |
 
 **Verdict language (gpt-5.5, MINOR-8):** every L2.4 PASS report MUST state:
@@ -378,7 +405,7 @@ gpt-5.5 review produced converging evidence that drove D8/D9/D3-rev:
 | (v1 blind spot, documented) A2 order divergence not exercised | D5: A2 OUT of v1; needs OC randperm ordering (v2) | scope boundary |
 | Fractional delta nets to 0 residual (capped-green false-pass) | D3-rev + D8 Part B: integer-validity asserted BEFORE the residual | integer check |
 | Truncated / vacuous PASS on a crash | D9: full horizon required, else STABILITY_FAIL (nonzero) | verdict / exit |
-| Exchange-WID exclusion hides a metabolism bug | D2-rev: shadow audit FAILs a non-boundary delta on a skipped WID | invariant scope |
+| Exchange-WID exclusion hides a metabolism bug | **D2-ELEVATED: 2b emits Metabolism's boundary flux → conserve exchange WIDs directly (shadow audit WITHDRAWN — unsound on shared WIDs H2O/H/PI/AMP + metals)** | invariant scope |
 | Verdict taken on the capped, not uncapped, chassis | D8: verdict target = uncapped branch; capped = smoke only | verdict target |
 | In-place / off-path substrate mutation | D6-rev: mechanical before/after snapshot of ALL substrate leaves | accounting audit |
 
@@ -393,9 +420,15 @@ gpt-5.5 review produced converging evidence that drove D8/D9/D3-rev:
    add the **Part-B integer/allocation-integrity checks** (D8): finite+integer
    deltas & pools (D3-rev), `consumption ≤ allocation`, and the **mechanical**
    before/after write-surface snapshot audit (D6-rev).
-3. Resolve the Metabolism boundary (D2): v1 = exclude the 124 external-exchange
-   WIDs **plus** the shadow audit (fail on a non-boundary delta to a skipped WID);
-   full boundary-flux emit (2b) is v2.
+3. **Resolve the Metabolism boundary — 2b ELEVATED (was v2, now the L2.4
+   completion).** Interim shipped: (2a) exclude the 124 external-exchange WIDs
+   from the Part-A residual (Part A+B GREEN, uncap certified). The shadow audit is
+   WITHDRAWN (unsound on shared WIDs). Batch 3 = **2b**: (a) run the necessity
+   probe (un-exclude the 124 WIDs, re-run Part A — do they already conserve via
+   Metabolism's flat emit?); (b) if a boundary residual remains, have Metabolism
+   emit its external-exchange flux (`karr_metabolism_writeback.py:130`) and fold
+   it into the invariant `Δpool == Σ_p net_write + exchange_flux` for exchange
+   WIDs, driving the exclusion set to zero.
 4. (v2 prerequisites, not v1) compartment ledger for A4 (D4); OC randperm
    ordering for A2 (D5).
 
@@ -449,3 +482,18 @@ gpt-5.5 review produced converging evidence that drove D8/D9/D3-rev:
   mismatch crash (commit `04d15e1`) and localized the uncapped fractional source
   to transcription-v3 (the lone continuous process missing store-boundary
   stochastic rounding; metabolism + translation-v3 already round).
+- **2026-07-19 (Day-53, BUILD + D2 elevation):** L2.4 Part A+B BUILT and GREEN on
+  the uncapped branch (`scripts/l2_4_verify_conservation.py`, commits `593038b`,
+  `c2a913d`, off-by-one fix `2ecf97c`): integer-exact conservation on non-exchange
+  WIDs (100t×4s, `max_abs_unattributed=0`) + Part B `consumption ≤ allocation` +
+  nonnegative pools; 6 non-vacuous self-tests. A Part-B false `over_allocation`
+  (307 rows) was caught and root-caused to an allocation-snapshot off-by-one
+  (`substrates_allocated` read AFTER `engine.update()` = next-tick allocation);
+  fixed by snapshotting before the update. **D2 ELEVATED:** the Day-53 exchange-set
+  audit showed the 124-WID set includes shared byproducts (H2O/H/PI/AMP) and 10
+  metal ions (MG/ZN/…) emitted/consumed by many processes, so the planned shadow
+  audit is UNSOUND (would false-fail legitimate writes) → **shadow audit
+  WITHDRAWN**; 2b (Metabolism boundary-flux emission) is promoted from "v2" to the
+  L2.4 completion, gated by a necessity probe (does Metabolism's flat emit already
+  conserve exchange WIDs?). Interim (2a) exclusion certifies the uncap correctly
+  (uncap failure mode is non-exchange; Part B covers exchange allocation).
