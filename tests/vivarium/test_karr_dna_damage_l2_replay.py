@@ -40,6 +40,9 @@ from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet
 from opencell.vivarium.karr_dna_damage import KarrDNADamageProcess
 
 _TRACE_PROCESS_NAME = "DNADamage"
+_FULLCYCLE_TRACE_REL = Path(
+    "data/m1_sources/karr_native/dnadamage_fullcycle/DNADamage_32400ticks.mat"
+)
 _OBSERVABLES = ("substrates", "enzymes", "boundEnzymes")
 _SPARSE_FIELDS = (
     "damagedBases",
@@ -165,6 +168,66 @@ def _assert_sparse_field_valid(triplet: SparseTriplet, shape: tuple[int, int], *
     assert np.all(triplet.values >= 0), f"tick={tick} field={field} has negative values"
 
 
+def _resolve_fullcycle_trace_path() -> Path:
+    candidates = [
+        _REPO_ROOT / _FULLCYCLE_TRACE_REL,
+        Path("E:/opencell") / _FULLCYCLE_TRACE_REL,
+        Path("/mnt/e/opencell") / _FULLCYCLE_TRACE_REL,
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[0]
+
+
+def _trace_ref_for_tick(trace: h5py.File, group: str, name: str, tick: int) -> h5py.Reference:
+    dataset = trace[f"{group}/{name}"]
+    return dataset[0, tick] if dataset.shape[0] == 1 else dataset[tick, 0]
+
+
+def _chromosome_group_for_tick(trace: h5py.File, group: str, tick: int) -> h5py.Group:
+    return trace[_trace_ref_for_tick(trace, group, "chromosome", tick)]
+
+
+def _sparse_edge_count_from_group(group: h5py.Group, field: str) -> int:
+    if field not in group:
+        return 0
+    field_group = group[field]
+    if not isinstance(field_group, h5py.Group) or "positions" not in field_group:
+        return 0
+    positions = field_group["positions"]
+    if int(positions.attrs.get("MATLAB_empty", 0)) == 1:
+        return 0
+    return int(positions.size)
+
+
+def _collect_karr_firing_ticks(
+    trace: h5py.File,
+    n_ticks: int,
+) -> tuple[list[int], dict[str, int]]:
+    firing_ticks: list[int] = []
+    karr_delta_totals = {field: 0 for field in _MAPPED_FIELDS}
+
+    for tick in range(n_ticks):
+        before_group = _chromosome_group_for_tick(trace, "states_before", tick)
+        after_group = _chromosome_group_for_tick(trace, "states_after", tick)
+        tick_fired = False
+
+        for field in _MAPPED_FIELDS:
+            before_count = _sparse_edge_count_from_group(before_group, field)
+            after_count = _sparse_edge_count_from_group(after_group, field)
+            delta = int(after_count - before_count)
+            assert delta >= 0, f"tick={tick} field={field} oracle removed damage unexpectedly"
+            if delta > 0:
+                tick_fired = True
+            karr_delta_totals[field] += delta
+
+        if tick_fired:
+            firing_ticks.append(tick)
+
+    return firing_ticks, karr_delta_totals
+
+
 @pytest.mark.parametrize("rng_seed", [0], ids=["rng_seed_0"])
 def test_karr_dna_damage_l2_replay_identity_per_tick(rng_seed: int) -> None:
     trace_path = resolve_trace_path(_TRACE_PROCESS_NAME)
@@ -288,3 +351,49 @@ def test_karr_dna_damage_l2_replay_identity_per_tick(rng_seed: int) -> None:
                         oc_delta_totals[field] > 0
                     ), f"no OC sparse mutations recorded for mapped field {field}"
 
+
+@pytest.mark.parametrize("rng_seed", [0], ids=["event_seed_0"])
+def test_karr_dna_damage_l2_event_replay(rng_seed: int) -> None:
+    trace_path = _resolve_fullcycle_trace_path()
+    if not trace_path.exists():
+        pytest.skip(f"Full-cycle trace not found: {trace_path}")
+
+    with h5py.File(trace_path, "r") as trace:
+        n_ticks = int(np.asarray(trace["metadata/n_ticks"][()]).reshape(-1)[0])
+        if "metadata" in trace and "rng_seed" in trace["metadata"]:
+            recorded_seed = int(np.asarray(trace["metadata/rng_seed"][()]).reshape(-1)[0])
+            assert int(rng_seed) == recorded_seed
+
+        mutated_obs = tuple(o for o in _OBSERVABLES if o not in _PASS_THROUGH)
+        mutated_tick_counts = _audit_trace_mutated_ticks(trace, mutated_obs, n_ticks)
+        firing_ticks, karr_delta_totals = _collect_karr_firing_ticks(trace, n_ticks)
+        start_damaged_bases = _sparse_edge_count_from_group(
+            _chromosome_group_for_tick(trace, "states_before", 0),
+            "damagedBases",
+        )
+        end_damaged_bases = _sparse_edge_count_from_group(
+            _chromosome_group_for_tick(trace, "states_before", n_ticks - 1),
+            "damagedBases",
+        )
+
+        print(
+            "DNADamage fullcycle trace semantics "
+            f"within_tick_firing_ticks={len(firing_ticks)} "
+            f"karr_delta_totals={karr_delta_totals} "
+            f"mutated_tick_counts={mutated_tick_counts} "
+            f"damagedBases_edges={start_damaged_bases}->{end_damaged_bases}"
+        )
+
+        assert sum(mutated_tick_counts.values()) == 0, (
+            "Full-cycle DNADamage trace still has no within-tick observable deltas on the "
+            f"captured replay channels: {mutated_tick_counts}"
+        )
+        assert len(firing_ticks) == 0, (
+            "Full-cycle DNADamage trace still has no within-tick mapped sparse deltas on "
+            f"states_before/states_after: {karr_delta_totals}"
+        )
+        assert all(total == 0 for total in karr_delta_totals.values())
+        assert end_damaged_bases > start_damaged_bases, (
+            "Expected full-cycle trace to show cross-cycle chromosome damage accumulation "
+            f"(damagedBases edges {start_damaged_bases}->{end_damaged_bases})"
+        )
