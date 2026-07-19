@@ -620,12 +620,17 @@ def run_seed_horizon(
     for tick in range(1, ticks + 1):
         collector.set_tick(tick)
         before = _snapshot_substrates(engine)
+        # Allocation of record for THIS tick is the value present BEFORE the
+        # update — processes read substrates_allocated during their next_update.
+        # Snapshotting it AFTER engine.update() captures the allocator's freshly
+        # computed allocation for the NEXT tick (off-by-one) and spuriously
+        # reports over_allocation once the pool depletes.
+        substrates_allocated = _snapshot_substrates_allocated(engine)
         try:
             engine.update(float(time_step_s))
         except Exception as exc:
             raise SeedStabilityError(seed=seed, tick=tick, exc=exc) from exc
         after = _snapshot_substrates(engine)
-        substrates_allocated = _snapshot_substrates_allocated(engine)
         per_process_wid_deltas = {
             process_name: dict(wid_deltas)
             for process_name, wid_deltas in collector.per_tick_process_wid_deltas.items()

@@ -63,6 +63,25 @@ def test_one_tick_uncapped_smoke_verdict(tmp_path: Path) -> None:
     assert payload["exchange_wid_count"] == 124
 
 
+def test_multi_tick_uncapped_no_false_over_allocation(tmp_path: Path) -> None:
+    """Regression guard for the Part-B allocation-snapshot off-by-one.
+
+    The over_allocation false positive only appears once an allocator-mediated
+    pool depletes over several ticks (the allocation of record for tick T is the
+    value present BEFORE the update, not the allocator's freshly recomputed value
+    after it). A 1-tick smoke run cannot catch it; this multi-tick run can.
+    """
+    out_dir = tmp_path / "part_b_multitick"
+    summary = run_part_a_gate(ticks=14, seeds=(0,), out_dir=out_dir, fresh=True)
+
+    assert summary.verdict == PASS, (
+        "multi-tick uncapped gate must be clean; a Part-B over_allocation here "
+        "means the allocation snapshot regressed to the post-update (next-tick) value"
+    )
+    assert summary.total_failures == 0
+    assert summary.per_seed[0].ticks_completed == 14
+
+
 def test_planted_over_allocation_returns_part_b_fail() -> None:
     outcome = evaluate_tick_part_b(
         seed=11,
