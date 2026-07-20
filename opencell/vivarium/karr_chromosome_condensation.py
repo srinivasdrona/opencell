@@ -25,6 +25,7 @@ from vivarium.core.process import Process
 
 from opencell.m_gen_constants import GENOME_LENGTH_BP, N_CHROMOSOME_COMPARTMENTS
 from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet, sparse_triplet_schema
+from opencell.vivarium.karr_protein_decay_light import _Mcg16807
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/ChromosomeCondensation_flat.mat"
 _DEFAULT_TRACE_PATH = (
@@ -166,7 +167,7 @@ class KarrChromosomeCondensationProcess(Process):
         super().__init__(parameters)
         self._load_fixture(self.parameters["fixture_path"])
         self._load_trace_anchor(self.parameters["trace_path"])
-        self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
+        self._rng = _Mcg16807(int(self.parameters["rng_seed"]))
         self.chromosome_shape = (
             int(self.parameters["genome_length_bp"]),
             int(N_CHROMOSOME_COMPARTMENTS),
@@ -456,26 +457,6 @@ class KarrChromosomeCondensationProcess(Process):
         store = self._resolve_chromosome_store(chrom_state)
         polymerized = store.get_field("polymerizedRegions")
         complex_bound_input = store.get_field("complexBoundSites")
-        if (
-            self._synthetic_complex_bound is None
-            and complex_bound_input.calc_num_edges() == 0
-            and current_bound_smc > 0
-        ):
-            n_gap = max(0, self.default_target_bound - current_bound_smc)
-            n_bound = min(n_binding_max, n_gap)
-            seeded_count = max(0, current_bound_smc + n_bound)
-            self._synthetic_complex_bound = self._seed_evenly_spaced_bound_sites(
-                polymerized=polymerized,
-                n_sites=seeded_count,
-            )
-            if "complexBoundSites" in chrom_state and isinstance(
-                chrom_state.get("complexBoundSites"),
-                dict,
-            ):
-                self._prev_bound_smc_nohint = int(current_bound_smc)
-                return n_bound, self._synthetic_complex_bound
-            self._prev_bound_smc_nohint = int(current_bound_smc)
-            return n_bound, None
 
         if complex_bound_input.calc_num_edges() > 0:
             complex_bound = complex_bound_input
@@ -487,61 +468,18 @@ class KarrChromosomeCondensationProcess(Process):
         else:
             complex_bound = SparseTriplet.empty(*polymerized.shape)
 
-        complex_bound = self._reconcile_complex_bound_count(
-            polymerized=polymerized,
-            complex_bound=complex_bound,
-            desired_count=current_bound_smc,
-        )
         self._synthetic_complex_bound = complex_bound
-
-        if current_bound_smc > 0 and complex_bound.calc_num_edges() == 0:
-            n_gap = max(0, self.default_target_bound - current_bound_smc)
-            return min(n_binding_max, n_gap), None
 
         intervals_by_strand = self._build_available_intervals(
             polymerized=polymerized,
             complex_bound=complex_bound,
         )
-        bind_cap = int(n_binding_max)
-        recent_drop = (
-            self._prev_bound_smc_nohint is not None
-            and int(current_bound_smc) < int(self._prev_bound_smc_nohint)
-        )
-        if recent_drop:
-            self._pending_post_drop_rebind_bonus = True
-        if recent_drop:
-            bind_cap = min(
-                bind_cap,
-                max(0, self.default_target_bound - int(current_bound_smc)),
-            )
         bound_positions, bound_strands = self._sample_binding_positions(
             intervals_by_strand=intervals_by_strand,
-            n_to_bind=bind_cap,
+            n_to_bind=int(n_binding_max),
             sequence_len=polymerized.shape[0],
         )
-        if (
-            not recent_drop
-            and int(current_bound_smc) == self.default_target_bound - 1
-            and int(n_binding_max) >= 2
-            and len(bound_positions) == 1
-        ):
-            rebound_pos = int((bound_positions[0] + self._smc_bindable_span) % polymerized.shape[0])
-            bound_positions.append(rebound_pos)
-            bound_strands.append(int(bound_strands[0]))
-        if (
-            self._pending_post_drop_rebind_bonus
-            and not recent_drop
-            and bound_positions
-            and int(n_binding_max) > len(bound_positions)
-        ):
-            bonus_pos = int((bound_positions[-1] + self._smc_bindable_span) % polymerized.shape[0])
-            bound_positions.append(bonus_pos)
-            bound_strands.append(int(bound_strands[-1]))
-            self._pending_post_drop_rebind_bonus = False
-        elif recent_drop:
-            self._pending_post_drop_rebind_bonus = True
         n_bound = len(bound_positions)
-        self._prev_bound_smc_nohint = int(current_bound_smc)
         if n_bound == 0:
             return 0, None
 
@@ -558,96 +496,6 @@ class KarrChromosomeCondensationProcess(Process):
         ):
             return n_bound, None
         return n_bound, complex_next
-
-    def _reconcile_complex_bound_count(
-        self,
-        *,
-        polymerized: SparseTriplet,
-        complex_bound: SparseTriplet,
-        desired_count: int,
-    ) -> SparseTriplet:
-        desired = max(0, int(desired_count))
-        current = int(complex_bound.calc_num_edges())
-        if current == desired:
-            return complex_bound
-        if current == 0 and desired > 0:
-            return self._seed_evenly_spaced_bound_sites(
-                polymerized=polymerized,
-                n_sites=desired,
-            )
-
-        if current > desired:
-            if desired == 0:
-                return SparseTriplet.empty(*complex_bound.shape)
-            keep_idx = np.sort(self._rng.choice(current, size=desired, replace=False))
-            return SparseTriplet(
-                positions=complex_bound.positions[keep_idx],
-                strands=complex_bound.strands[keep_idx],
-                values=complex_bound.values[keep_idx],
-                shape=complex_bound.shape,
-            )
-
-        missing = desired - current
-        intervals_by_strand = self._build_available_intervals(
-            polymerized=polymerized,
-            complex_bound=complex_bound,
-        )
-        add_positions, add_strands = self._sample_binding_positions(
-            intervals_by_strand=intervals_by_strand,
-            n_to_bind=missing,
-            sequence_len=polymerized.shape[0],
-        )
-        if not add_positions:
-            return complex_bound
-        return self._append_bound_sites(
-            complex_bound=complex_bound,
-            bound_positions=add_positions,
-            bound_strands=add_strands,
-        )
-
-    def _seed_evenly_spaced_bound_sites(
-        self,
-        *,
-        polymerized: SparseTriplet,
-        n_sites: int,
-    ) -> SparseTriplet:
-        desired = max(0, int(n_sites))
-        if desired == 0:
-            return SparseTriplet.empty(*polymerized.shape)
-
-        sequence_len, n_compartments = polymerized.shape
-        strand_candidates: list[int] = []
-        for _, strand, length in polymerized.to_regions():
-            if int(length) > 0:
-                strand_i = int(strand)
-                if strand_i not in strand_candidates:
-                    strand_candidates.append(strand_i)
-        if not strand_candidates:
-            strand_candidates = [0]
-        strand_candidates = sorted(
-            strand for strand in strand_candidates if 0 <= strand < max(1, n_compartments)
-        )
-        if not strand_candidates:
-            strand_candidates = [0]
-
-        positions = np.linspace(
-            0,
-            max(0, sequence_len - 1),
-            num=desired,
-            dtype=np.int64,
-            endpoint=True,
-        )
-        strands = np.asarray(
-            [strand_candidates[i % len(strand_candidates)] for i in range(desired)],
-            dtype=np.int64,
-        )
-        values = np.full(desired, int(self.smc_adp_global_index), dtype=np.int64)
-        return SparseTriplet(
-            positions=positions,
-            strands=strands,
-            values=values,
-            shape=polymerized.shape,
-        )
 
     def _build_available_intervals(
         self,
@@ -719,10 +567,9 @@ class KarrChromosomeCondensationProcess(Process):
             if total_weight <= 0.0:
                 break
 
-            region_pick_u = float(self._rng.random())
-            cumulative = np.cumsum(weights, dtype=np.float64)
-            threshold = region_pick_u * total_weight
-            region_idx = int(np.searchsorted(cumulative, threshold, side="right"))
+            region_idx = self._rng.randsample_one(weights)
+            if region_idx is None:
+                break
             if region_idx >= len(regions):
                 region_idx = len(regions) - 1
             region_start, region_strand, region_len = regions[region_idx]
@@ -730,7 +577,7 @@ class KarrChromosomeCondensationProcess(Process):
             if max_offset < 0:
                 continue
             # Mirror MATLAB calcBindingPosition: ceil(rand * n_bind_positions) - 1.
-            rand_real = float(self._rng.random())
+            rand_real = float(self._rng.rand((1,))[0])
             n_bind_positions = float(max_offset + 1)
             if n_bind_positions <= 1.0:
                 offset = 0
