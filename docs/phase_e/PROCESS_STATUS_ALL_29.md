@@ -1,5 +1,21 @@
 # All-29 Process Status - 2026-06-03 ~14:30 IST (L2.1 SWEEP COMPLETE)
 
+> ## ⚠️ CORRECTION (2026-07-23) — THE L2.2 SCOREBOARD BELOW IS HOLLOW
+>
+> The **"L2.2 VERIFIED_GENUINE 17/22"** figure in the scoreboard below is **NOT
+> reproducible** and must not be trusted. Verified live 2026-07-23: the L2.2 pin
+> (`tests/vivarium/test_l2_2_strict_rubric.py`) is a tautology (pin == hardcoded
+> `EMPIRICAL_VERDICTS` dict in `scripts/probe_l2_2_strict_audit.py`);
+> `tmp/l2_2_audit/` is empty; a live `l2_2_design_a_runner.py` run returns
+> **ProteinDecay = FAIL** (W1 2.09 vs threshold 1.0) and **RNAModification =
+> unsupported**. The test docstring itself admits *"Real upper bound on honest
+> L2.2 PASSes: 4 of 22."* The **L2.1 "19/28"** figure is also stale (live pin =
+> 18 GENUINE).
+>
+> **Current authority for true state:** `docs/phase_f/LADDER_TRUE_STATE_2026-07-22.md`
+> (with its own 2026-07-23 correction banner). Treat NO process as "L2.2
+> validated" until a live re-baseline replaces the pins.
+
 > **🛑 Day-46 update (2026-07-02): L-ladder rename L1c→L2.4 landed. Also new L2.0a slot inserted. Ladder now sorted by diagnostic dependency, not just structural complexity. See `D:\OneDrive - Microsoft\.pm-os\DECISIONS.md` entry `2026-07-02 | opencell | ladder-rename-l1c-to-l2_4`.**
 >
 > **Day-44 EOD context (2026-06-30, retained):** per-process wiring DB shipped (28/28 PASS); scoreboard re-framed per `2026-06-29 | opencell | l1c-skipped-lower-rung-greens-misread` decision. L1a/L2.1/L2.2 greens are per-process correctness — they do NOT imply chassis correctness. The wiring DB is now the standing artifact for chassis-level audits; L2.4 (was "L1c") gate design planned for Day-46/47.
