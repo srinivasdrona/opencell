@@ -73,13 +73,25 @@ production set of 16, not just the 11 that passed) correctly reports their
 seeds 2-49 as `file does not exist` — this is the expected, honest result,
 not a regression:
 
-| Process | Missing entries (of 48 checked, seeds 2-49) | Seed1 present? | Loader `canonical_seed_count` |
+| Process | Missing entries (of 48 checked, seeds 2-49) | Seed1 present? | Loader behavior (`load_karr_oracle`) |
 |---|---|---|---|
-| ProteinDecay | 48 | yes (Phase 2) | n/a — loader falls through to single-seed/blocked path |
-| ProteinFolding | 48 | yes (Phase 2) | n/a |
-| ProteinProcessingII | 48 | yes (Phase 2) | n/a |
-| RNADecay | 48 | yes (Phase 2) | n/a |
-| RNAProcessing | 48 | yes (Phase 2) | n/a |
+| ProteinDecay | 48 | yes (Phase 2) | raises schema-drift `ValueError` (fail-closed) |
+| ProteinFolding | 48 | yes (Phase 2) | raises schema-drift `ValueError` (fail-closed) |
+| ProteinProcessingII | 48 | yes (Phase 2) | raises schema-drift `ValueError` (fail-closed) |
+| RNADecay | 48 | yes (Phase 2) | raises schema-drift `ValueError` (fail-closed) |
+| RNAProcessing | 48 | yes (Phase 2) | raises schema-drift `ValueError` (fail-closed) |
+
+Correction (post-acceptance review): the loader does not "fall through to a
+single-seed/blocked path" for these 5 processes — that phrasing in an
+earlier draft of this report mischaracterized the mechanism. Empirically,
+`load_karr_oracle(process)` raises the same schema-drift `ValueError` that
+`_seed_schema_preflight` raises standalone (documented correctly already in
+`L22_PHASE2_PREFLIGHT_REPORT.md`'s "Loader dispatch details" section) — a
+loud, fail-closed error naming the process and the offending channel, not a
+silent fallback to some other code path. This correction does not change
+the substantive result: these 5 processes remain genuinely incomplete
+(`INCOMPLETE`, not `PASS`) for the reasons already stated; only the
+description of *how* the loader fails has been corrected.
 
 Total missing/failing entries across the full report: **240** (= 5 processes
 × 48 seeds), matching exactly the expected gap from the 5 still-blocked
@@ -109,3 +121,18 @@ decision, not made in this task.
 - Extractor source SHA-256: recorded in `artifacts/l22_full_extraction/phase3_final_report.json` (`extractor_source_sha256`), matches the Phase 2 preflight's extractor hash (no extractor changes occurred between Phase 2 and Phase 3).
 - Raw `.mat` files remain gitignored (per policy); this report and its JSON companion are the tracked evidence artifacts. Individual file SHA-256 and metadata (process name, n_ticks, rng_seed, tick_offset, timestamp) for every one of the 561 validated files (11×50 + 2 specialized-loader checks + carried-forward 5×2) are recorded in `artifacts/l22_full_extraction/phase3_final_report.json` under `files.<process>.<seed>`.
 - Run state / per-worker logs: `artifacts/l22_full_extraction/run_state_20260728_015937.json`, `artifacts/l22_full_extraction/logs/worker{0,1}_20260728_015937.{stdout,stderr}.log` (gitignored, regenerable evidence, not committed — consistent with the existing `artifacts/` convention for run-specific logs).
+
+## Test count correction (post-acceptance review)
+
+The Phase 3 commit message (`2b5dca0`) reported "40/40 passing" for
+`tests/scripts/`. That figure was the raw `pytest tests/scripts/` collection
+total, which includes 3 pre-existing tests
+(`tests/scripts/test_canary_tracer_ports.py`) that predate this task and are
+unrelated to the L2.2 extraction work. **This task's own test count is 37**:
+31 added in Phase 1 (`test_l22_derive_scope.py`, `test_l22_launcher_planning.py`,
+`test_l22_trace_validation.py`) + 6 added in Phase 3
+(`test_l22_report_final.py`). All 37 pass; the 3 unrelated canary tests also
+pass and were untouched. This note corrects the imprecise wording without
+altering any already-accepted commit; the underlying test runs and their
+pass/fail outcomes are unchanged.
+
