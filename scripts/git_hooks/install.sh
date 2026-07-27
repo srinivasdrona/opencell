@@ -69,13 +69,24 @@ install_composed_hook () {
         return 1
     fi
 
-    for (( i = 1; i < ${#steps[@]}; i += 2 )); do
-        local relpath="${steps[$i]}"
-        if [ ! -f "${REPO_ROOT}/${relpath}" ]; then
-            echo "install: ERROR source not found: ${REPO_ROOT}/${relpath}" >&2
-            return 1
-        fi
-    done
+    # NOTE: we deliberately do *not* require every component source to
+    # exist in the *installing* worktree/branch here. The generated shim
+    # lives in the *common* .git/hooks dir and is shared across every
+    # worktree of this repo, each of which may be checked out on a
+    # different branch. A branch that predates one of these components
+    # (or that reverted it) would otherwise brick commit-msg for that
+    # worktree with an exit-127 "no such file" from the shim, for a reason
+    # entirely unrelated to what's actually being committed there. Missing
+    # components are instead guarded at *hook-run time* (see below): each
+    # step checks for its own source file immediately before running it
+    # and skips with a warning if absent, so a lagging branch degrades to
+    # "fewer checks enforced" rather than "no commits possible at all".
+    # Once a component's source *is* present, it still runs and still
+    # fails closed exactly as before.
+    if [ ${#steps[@]} -eq 0 ]; then
+        echo "install: ERROR install_composed_hook needs at least one (runner, relpath) pair" >&2
+        return 1
+    fi
 
     if [ -f "$dst" ]; then
         if grep -qE "${MANAGED_MARKER}|${LEGACY_MARKER}" "$dst" 2>/dev/null; then
@@ -99,27 +110,39 @@ install_composed_hook () {
         for (( i = 0; i < ${#steps[@]}; i += 2 )); do
             local runner="${steps[$i]}"
             local relpath="${steps[$((i + 1))]}"
+            # Runtime existence guard (see rationale above install_composed_hook):
+            # a worktree checked out on a branch that lacks this component's
+            # source is not an enforcement failure -- it's a "this check
+            # doesn't apply here yet/anymore" case. Skip with a warning
+            # rather than exit-127'ing the whole shim. Once the file exists,
+            # it runs and fails closed exactly as before.
+            echo "if [ ! -f \"\${REPO_ROOT}/${relpath}\" ]; then"
+            echo "    echo \"commit-msg: WARNING skipping ${relpath} (not present on this branch)\" >&2"
             if [ "$runner" = "AUTO_PYTHON" ]; then
+                echo "else"
                 # Resolve a working Python interpreter fresh on every run
                 # (not baked in at install time -- see rationale above).
                 # Verifying with a trivial `-c` invocation, not just
                 # `command -v`, catches the Windows app-execution-alias
                 # stub case, where the binary exists on PATH but always
                 # exits non-zero without running anything.
-                echo '_python_bin=""'
-                echo 'for _candidate in python3 python; do'
-                echo '    if command -v "$_candidate" >/dev/null 2>&1 && "$_candidate" -c "import sys" >/dev/null 2>&1; then'
-                echo '        _python_bin="$_candidate"'
-                echo "        break"
+                echo '    _python_bin=""'
+                echo '    for _candidate in python3 python; do'
+                echo '        if command -v "$_candidate" >/dev/null 2>&1 && "$_candidate" -c "import sys" >/dev/null 2>&1; then'
+                echo '            _python_bin="$_candidate"'
+                echo "            break"
+                echo "        fi"
+                echo "    done"
+                echo '    if [ -z "$_python_bin" ]; then'
+                echo '        echo "commit-msg: ERROR no working python interpreter found on PATH (tried: python3, python)" >&2'
+                echo "        exit 1"
                 echo "    fi"
-                echo "done"
-                echo 'if [ -z "$_python_bin" ]; then'
-                echo '    echo "commit-msg: ERROR no working python interpreter found on PATH (tried: python3, python)" >&2'
-                echo "    exit 1"
+                echo "    \"\$_python_bin\" \"\${REPO_ROOT}/${relpath}\" \"\$@\""
                 echo "fi"
-                echo "\"\$_python_bin\" \"\${REPO_ROOT}/${relpath}\" \"\$@\""
             else
-                echo "${runner} \"\${REPO_ROOT}/${relpath}\" \"\$@\""
+                echo "else"
+                echo "    ${runner} \"\${REPO_ROOT}/${relpath}\" \"\$@\""
+                echo "fi"
             fi
         done
     } > "$dst"

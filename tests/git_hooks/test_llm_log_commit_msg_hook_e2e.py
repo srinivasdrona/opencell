@@ -329,6 +329,112 @@ class TestLinkedWorktreeInstall:
         assert passed.returncode == 0, f"stdout={passed.stdout!r} stderr={passed.stderr!r}"
 
 
+class TestMissingComponentGuard:
+    """The generated `commit-msg` shim lives in the *common* .git/hooks
+    dir and is shared by every worktree of a repo, each of which may be
+    checked out on a different branch. A branch that lacks one (or both)
+    of the composed check's source files -- because it predates that
+    component, or reverted it -- must not brick commits in that worktree
+    with an exit-127 "no such file" from the shim: that's an environment
+    mismatch, not something the commit being made is responsible for.
+    Once a component's source *is* present on a branch, it must still run
+    and still fail closed exactly as before."""
+
+    @pytest.fixture()
+    def repo_with_lagging_branch(
+        self, tmp_path: Path
+    ) -> tuple[Path, Path, Path, Path]:
+        """Returns (main, worktree_missing_catalog, worktree_missing_llm,
+        worktree_missing_both), where the shared commit-msg shim is
+        installed once from `main` (which has both components), and each
+        other worktree is checked out on its own branch with one or both
+        component sources removed -- reproducing a lagging/reverted
+        branch in a linked worktree."""
+        main = tmp_path / "main"
+        main.mkdir()
+        _run(["git", "init", "-q"], cwd=main)
+        _run(["git", "config", "user.email", "test@example.com"], cwd=main)
+        _run(["git", "config", "user.name", "Test User"], cwd=main)
+        _seed_repo_scripts(main)
+        _run(["git", "add", "-A"], cwd=main)
+        _run(["git", "commit", "-m", "initial commit"], cwd=main)
+        _install_hook(main)
+
+        def _worktree_missing(branch: str, *rel_paths: str) -> Path:
+            wt = tmp_path / branch.replace("/", "-")
+            _run(["git", "worktree", "add", "-b", branch, str(wt)], cwd=main)
+            for rel in rel_paths:
+                _run(["git", "rm", "-q", rel], cwd=wt)
+            _run(
+                ["git", "-c", "user.email=t@e.com", "-c", "user.name=T", "commit", "-m", "drop component"],
+                cwd=wt,
+            )
+            return wt
+
+        missing_catalog = _worktree_missing(
+            "lagging/missing-catalog", "scripts/git_hooks/commit-msg-l2-catalog-conformance.sh"
+        )
+        missing_llm = _worktree_missing(
+            "lagging/missing-llm", "scripts/hooks/check_llm_log_on_commit.py"
+        )
+        missing_both = _worktree_missing(
+            "lagging/missing-both",
+            "scripts/git_hooks/commit-msg-l2-catalog-conformance.sh",
+            "scripts/hooks/check_llm_log_on_commit.py",
+        )
+        return main, missing_catalog, missing_llm, missing_both
+
+    def test_lagging_branch_missing_catalog_script_commits_without_exit_127(
+        self, repo_with_lagging_branch: tuple[Path, Path, Path, Path]
+    ) -> None:
+        _main, missing_catalog, _missing_llm, _missing_both = repo_with_lagging_branch
+        _write_and_stage(missing_catalog, "NOTE.md", content="hi\n")
+        result = _commit(missing_catalog, "chore: change", "Regular Dev", "dev@example.com")
+        assert result.returncode == 0, f"stdout={result.stdout!r} stderr={result.stderr!r}"
+        assert "not present on this branch" in result.stderr
+
+    def test_lagging_branch_missing_llm_script_commits_without_exit_127(
+        self, repo_with_lagging_branch: tuple[Path, Path, Path, Path]
+    ) -> None:
+        _main, _missing_catalog, missing_llm, _missing_both = repo_with_lagging_branch
+        _write_and_stage(missing_llm, "NOTE.md", content="hi\n")
+        result = _commit(missing_llm, "chore: change", "GitHub Copilot", "copilot@github.com")
+        # LLM-log check is the one missing here, so a Copilot-authored
+        # commit with no log entry must NOT be blocked -- there is no
+        # enforcement to apply on this branch, only a warning.
+        assert result.returncode == 0, f"stdout={result.stdout!r} stderr={result.stderr!r}"
+        assert "not present on this branch" in result.stderr
+
+    def test_lagging_branch_missing_both_scripts_commits_without_exit_127(
+        self, repo_with_lagging_branch: tuple[Path, Path, Path, Path]
+    ) -> None:
+        _main, _missing_catalog, _missing_llm, missing_both = repo_with_lagging_branch
+        _write_and_stage(missing_both, "NOTE.md", content="hi\n")
+        result = _commit(missing_both, "chore: change", "GitHub Copilot", "copilot@github.com")
+        assert result.returncode == 0, f"stdout={result.stdout!r} stderr={result.stderr!r}"
+        assert result.stderr.count("not present on this branch") == 2
+
+    def test_capable_branch_still_blocks_planted_violation_after_guard_added(
+        self, repo_with_lagging_branch: tuple[Path, Path, Path, Path]
+    ) -> None:
+        """The guard only skips *missing* components. A worktree/branch
+        that still has both sources must keep failing closed exactly as
+        before -- proven here on the same `main` checkout used to install
+        the shared shim, right after exercising the lagging branches
+        above."""
+        main, _missing_catalog, _missing_llm, _missing_both = repo_with_lagging_branch
+        _write_and_stage(main, "NOTE.md", content="hi\n")
+        blocked = _commit(main, "feat: change", "GitHub Copilot", "copilot@github.com")
+        assert blocked.returncode != 0
+        assert "no LLM log entry for today" in blocked.stderr
+        assert "not present on this branch" not in blocked.stderr
+
+        _add_today_log_entry(main)
+        _write_and_stage(main, "NOTE2.md", content="hi\n")
+        passed = _commit(main, "feat: change 2", "GitHub Copilot", "copilot@github.com")
+        assert passed.returncode == 0, f"stdout={passed.stdout!r} stderr={passed.stderr!r}"
+
+
 class TestCoexistenceWithCatalogHook:
     """install.sh composes the L2 catalog-conformance check and this
     LLM-log check into a single `commit-msg` shim. Both must run, in
