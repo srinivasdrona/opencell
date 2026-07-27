@@ -216,6 +216,63 @@ own Phase-3 run had already finished (0 active MATLAB processes elsewhere),
 so this run's worker count was chosen consistent with the task's bounded-
 load policy (≤4 total active compute MATLAB processes system-wide).
 
+## 7d. Remaining four processes: results and final validation (commit C)
+
+Ran `scripts/matlab/run_l22_seed_shards.ps1 -Processes
+"ProteinDecay,ProteinFolding,ProteinProcessingII,RNAProcessing" -Seeds
+"1-49" -Workers 2 -NoWait` (run tag `stale5_remaining4`), unmodified
+launcher/driver, using 2 workers since the sibling worktree
+`l22-full-extract` had 0 active MATLAB processes at launch time (confirmed
+via `Get-Process matlab` immediately before launch) — well within the
+task's ≤4-total-active-compute-processes budget. PIDs 22792 (worker 0, odd
+seeds 1,3,...,49) and 16372 (worker 1, even seeds 2,4,...,48). Both workers
+exited with empty stderr logs (no errors) after ~21 minutes wall clock
+(launched ~04:34 UTC, all 196 files present by ~04:55 UTC). No license
+contention or FlexLM errors observed at either 1 or 2 concurrent workers.
+
+Final validation, all five processes together, all 50 seeds each:
+
+```
+bin\oc-py scripts/l22_extraction/report.py final --seeds 1-49 \
+    --processes ProteinDecay,ProteinFolding,ProteinProcessingII,RNADecay,RNAProcessing \
+    --skip-specialized --out artifacts/l22_stale5_regen/final_report.json
+```
+
+Result: **`"result": "PASS"`, `"missing_or_failing": []`**. Per-process real
+`load_karr_oracle` dispatch (`loader_results`), all five identical shape:
+
+| Process | ok | canonical_seed_count | warnings |
+|---|---|---|---|
+| ProteinDecay | true | 50 | [] |
+| ProteinFolding | true | 50 | [] |
+| ProteinProcessingII | true | 50 | [] |
+| RNADecay | true | 50 | [] |
+| RNAProcessing | true | 50 | [] |
+
+Additional independent checks (beyond `report.py final`'s structural +
+loader validation), sampling seeds {0, 1, 2, 3, 25, 49} per process:
+
+- **Required-channel presence**: every process's required extra channel(s)
+  (§2 table) present in **both** `states_before` and `states_after` at
+  every sampled seed, not merely seed 0.
+- **Non-vacuity / seed independence**: SHA256 of each sampled seed's `.mat`
+  file is pairwise distinct within every process (30 hashes total across
+  the 5 processes, all unique) — no seed silently reused another seed's
+  trace, and no seed is a degenerate/empty duplicate.
+- **File count**: exactly 49 seed-suffixed files (`per_process_traces_v2_s001`
+  through `_s049`) per process, plus exactly 1 canonical unsuffixed file
+  (`per_process_traces_v2/<Process>_100ticks.mat`) — 50 distinct Karr seeds
+  per process, 250 files total across the five processes.
+- **No `_s000` anywhere**: `Get-ChildItem -Recurse -Directory -Filter
+  "*_s000"` under `data/m1_sources/karr_native/` returns nothing, for the
+  entire worktree, not just these five processes.
+
+All five processes fully satisfy the task's completion criteria: 50
+distinct Karr seeds, exact schema consistency, required channels present
+where applicable, biological non-vacuity, real loader
+`canonical_seed_count=50`/`warnings=[]`, no missing/corrupt files, no
+`_s000`.
+
 ## 8. Out of scope / unaffected
 
 This regeneration touches only local worktree copies of the five named
