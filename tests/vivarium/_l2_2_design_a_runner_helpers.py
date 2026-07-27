@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import filecmp
 import json
 import sys
 from functools import lru_cache
@@ -135,7 +136,66 @@ def _karr_native_candidate_roots(process_name: str) -> tuple[Path, ...]:
     return tuple(unique)
 
 
+def _v2_canonical_seed0_mat_path(process_name: str) -> Path:
+    """Resolve the extractor's normal (non-suffixed) seed-0 output path.
+
+    `extract_per_process_traces_v2.m`'s default invocation (no explicit
+    `output_subdir`/seed override) writes seed 0 directly to the unsuffixed
+    `per_process_traces_v2/` directory, not to a seed-padded `_s000/`
+    subdirectory. This is the canonical, first-class location for seed 0.
+    """
+    rel = Path("per_process_traces_v2") / f"{process_name}_100ticks.mat"
+    for root in _karr_native_candidate_roots(process_name):
+        candidate = root / rel
+        if candidate.exists():
+            return candidate
+    return _karr_native_root() / rel
+
+
+def _v2_suffixed_seed_mat_path(process_name: str, seed: int) -> Path | None:
+    """Resolve a seed-padded `per_process_traces_v2_s{seed:03d}/` path, if present."""
+    rel = Path(f"per_process_traces_v2_s{int(seed):03d}") / f"{process_name}_100ticks.mat"
+    for root in _karr_native_candidate_roots(process_name):
+        candidate = root / rel
+        if candidate.exists():
+            return candidate
+    return None
+
+
 def _v2_seed_mat_path(process_name: str, seed: int) -> Path:
+    """Resolve the on-disk seed trace path for the generic v2 layout.
+
+    Seed 0 precedence: the canonical unsuffixed `per_process_traces_v2/`
+    trace is authoritative (see `_v2_canonical_seed0_mat_path`). A seed-padded
+    `per_process_traces_v2_s000/` file (e.g. from a bounded multi-seed pilot)
+    is only used as a fallback when the canonical file is absent. If *both*
+    exist, they must be byte-identical; a mismatch means the two sources
+    disagree about what "seed 0" is (e.g. one is stale/regenerated with a
+    different extractor schema) and we fail loudly rather than silently pick
+    one, per the seed-mixing policy in
+    `docs/phase_f/l2_2_design_a/MULTISEED_PILOT_REPORT.md`.
+
+    Seeds > 0 are unaffected: they only ever live under the seed-padded
+    `_sNNN/` directory.
+    """
+    if int(seed) == 0:
+        canonical = _v2_canonical_seed0_mat_path(process_name)
+        suffixed = _v2_suffixed_seed_mat_path(process_name, 0)
+        if canonical.exists() and suffixed is not None:
+            if not filecmp.cmp(canonical, suffixed, shallow=False):
+                raise ValueError(
+                    f"Seed-0 conflict for {process_name!r}: canonical unsuffixed trace "
+                    f"{canonical} and seed-padded trace {suffixed} both exist and differ. "
+                    "Canonical unsuffixed seed 0 is authoritative; refusing to silently "
+                    "choose between two divergent seed-0 sources. Remove or regenerate the "
+                    "stale one (see docs/phase_f/l2_2_design_a/MULTISEED_PILOT_REPORT.md)."
+                )
+            return canonical
+        if canonical.exists():
+            return canonical
+        if suffixed is not None:
+            return suffixed
+        return canonical
     rel = Path(f"per_process_traces_v2_s{int(seed):03d}") / f"{process_name}_100ticks.mat"
     for root in _karr_native_candidate_roots(process_name):
         candidate = root / rel
@@ -197,7 +257,85 @@ def _matlab_channel_matrix(handle: h5py.File, dataset: h5py.Dataset) -> np.ndarr
     return np.asarray(np.stack(vectors, axis=0), dtype=np.float64)
 
 
-def _load_seeded_mat_channels(seed_paths: list[Path]) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray], int]:
+def _mat_channel_width(handle: h5py.File, dataset: h5py.Dataset) -> int:
+    """Return a channel's per-tick vector width by resolving only its first ref.
+
+    Used by the schema preflight, which only needs shapes (not full per-tick
+    data) to detect drift cheaply before the expensive full stack-and-load.
+    """
+    first_ref = dataset[0, 0] if dataset.shape[0] == 1 else dataset[0, 0]
+    return int(_matlab_ref_to_vector(handle, first_ref).shape[0])
+
+
+def _seed_schema_preflight(seed_paths: list[Path], *, process_name: str | None = None) -> None:
+    """Reject an incompatible seed set before any stacking is attempted.
+
+    Compares every seed trace's `states_before`/`states_after` channel keys
+    and per-channel vector widths against the first seed in `seed_paths`.
+    Raises `ValueError` naming the process, the offending seed file(s), and
+    the mismatched channel(s) on any drift, so a partial/incompatible seed
+    range (e.g. an old fixture missing channels a newer extractor emits) is
+    rejected loudly instead of silently truncated or corrupted by a failed
+    `np.stack` deep inside the loader.
+
+    This is a standalone preflight (usable on its own, e.g. for an audit
+    report across `per_process_traces_v2_s*/`) and is also integrated
+    directly into `_load_seeded_mat_channels`, which every generic v2/
+    specialized-ensemble loader path goes through.
+    """
+    if len(seed_paths) < 2:
+        return
+    label = process_name or "<unknown process>"
+    reference_path = seed_paths[0]
+    expected_keys: dict[str, tuple[str, ...]] = {}
+    expected_widths: dict[str, tuple[int, Path]] = {}
+
+    for seed_path in seed_paths:
+        with h5py.File(seed_path, "r") as handle:
+            for section in ("states_before", "states_after"):
+                if section not in handle:
+                    raise ValueError(
+                        f"Schema drift for {label} seed set {[str(p) for p in seed_paths]}: "
+                        f"{seed_path} is missing the {section!r} group present in "
+                        f"{reference_path}. Regenerate this process's complete seed range "
+                        "together instead of mixing schemas."
+                    )
+                group = handle[section]
+                keys = tuple(sorted(str(key) for key in group.keys()))
+                if section not in expected_keys:
+                    expected_keys[section] = keys
+                elif keys != expected_keys[section]:
+                    missing = sorted(set(expected_keys[section]) - set(keys))
+                    extra = sorted(set(keys) - set(expected_keys[section]))
+                    raise ValueError(
+                        f"Schema drift for {label} seed set {[str(p) for p in seed_paths]}: "
+                        f"{seed_path} '{section}' channels {keys} do not match "
+                        f"{reference_path} '{section}' channels {expected_keys[section]} "
+                        f"(missing={missing}, extra={extra}). Regenerate this process's "
+                        "complete seed range together instead of mixing schemas."
+                    )
+                for channel in keys:
+                    if channel == "chromosome":
+                        continue
+                    width = _mat_channel_width(handle, group[channel])
+                    width_key = f"{section}/{channel}"
+                    if width_key not in expected_widths:
+                        expected_widths[width_key] = (width, seed_path)
+                        continue
+                    expected_width, expected_source = expected_widths[width_key]
+                    if width != expected_width:
+                        raise ValueError(
+                            f"Schema drift for {label} seed set {[str(p) for p in seed_paths]}: "
+                            f"{seed_path} channel {width_key!r} has width {width} but "
+                            f"{expected_source} has width {expected_width}. Regenerate this "
+                            "process's complete seed range together instead of mixing schemas."
+                        )
+
+
+def _load_seeded_mat_channels(
+    seed_paths: list[Path], *, process_name: str | None = None
+) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray], int]:
+    _seed_schema_preflight(seed_paths, process_name=process_name)
     before_by_channel: dict[str, list[np.ndarray]] = {}
     after_by_channel: dict[str, list[np.ndarray]] = {}
     before_keys_expected: tuple[str, ...] | None = None
@@ -875,7 +1013,9 @@ def _load_v2_ensemble(process_name: str, max_seeds: int = 50) -> dict[str, Any] 
                 seed_paths = candidate_seed_paths
     if not seed_paths:
         return None
-    before_channels, after_channels, _ = _load_seeded_mat_channels(seed_paths)
+    before_channels, after_channels, _ = _load_seeded_mat_channels(
+        seed_paths, process_name=process_name
+    )
     return _format_ensemble_oracle(
         process_name=process_name,
         oracle_path=seed_paths[0],
@@ -894,7 +1034,9 @@ def _load_ensembles_layout(process_name: str, max_seeds: int = 50) -> dict[str, 
     if not seed_paths:
         return None
 
-    before_channels, after_channels, _ = _load_seeded_mat_channels(seed_paths)
+    before_channels, after_channels, _ = _load_seeded_mat_channels(
+        seed_paths, process_name=process_name
+    )
     manifest_path = _ensembles_manifest_path(process_name)
     if manifest_path.exists():
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))

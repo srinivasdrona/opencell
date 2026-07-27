@@ -189,3 +189,45 @@ production L2.2 gate run** and does not pin any threshold or verdict.
    already supports `(seedFirst, seedLast, tickFirst, tickLast, dataTypes)`
    and idempotent skip-on-exist — no new launcher is needed for that future
    step either.
+
+## 6.1 Update: generic seed-0 fix and schema preflight landed (option (a))
+
+Item 1 above (option (a), the generic 1-function fix) has since landed in
+`agent/l22-loader-alias` (`_l2_2_design_a_runner_helpers.py`), together with
+item 2's schema-consistency preflight, without bulk-materializing data per
+option (b). Final policy, reviewed and tested against this pilot's own
+RNADecay/ProteinDecay evidence:
+
+- **Canonical seed 0 is authoritative.** `_v2_seed_mat_path` now maps seed 0
+  to the unsuffixed `per_process_traces_v2/<Process>_100ticks.mat` first. A
+  suffixed `_s000/<Process>_100ticks.mat` is used only as a fallback when no
+  canonical file exists (preserves prior single-seed-fixture tests). If
+  *both* exist: byte-identical → silently prefer canonical; byte-differing →
+  loud `ValueError` naming both paths (no silent pick). Seeds >0 are
+  unchanged (suffixed `_sNNN/` dirs only).
+- **Schema-drift preflight.** A new `_seed_schema_preflight` validates key
+  sets and per-channel widths across a process's seed set *before* stacking,
+  wired into `_load_seeded_mat_channels`; failures name the process, the
+  offending seed file paths, and the mismatched channel(s). This generalizes
+  the ad-hoc drift check this pilot hit manually for Translation (§6.2/item
+  2) into a reusable, tested guard for any process/seed combination.
+- **Specialized ensembles unaffected.** Transcription/Translation's 50-seed
+  specialized ensemble loaders remain preferred and unchanged; verified
+  unmocked that Transcription still resolves `canonical_seed_count=50` via
+  the specialized ensemble after the fix.
+- **`KARR_SINGLE_SEED_REUSED`** is preserved for genuinely single-seed
+  processes and does not fire once a second genuine seed is discovered
+  through canonical-seed0 recognition (verified unmocked for RNADecay/
+  ProteinDecay: `canonical_seed_count=2`, no warnings).
+
+This worktree's own `per_process_traces_v2/{RNADecay,ProteinDecay}_100ticks.mat`
+(seed 0) and `per_process_traces_v2_s001/{RNADecay,ProteinDecay}_100ticks.mat`
+(seed 1) were populated from this pilot's own freshly-regenerated,
+schema-correct fixtures (same evidence referenced in §3/§5 above, copied
+from the sibling `l22-multiseed` worktree) — not from the main repo's
+stale (schema-drifted) canonical seed-0 files — to give an unmocked,
+non-mocked end-to-end check of the new loader against real data. No
+biology, thresholds, or verdicts were changed by this update; items 1 and 2
+above are now resolved. Item 3 (git hygiene) and item 5 (full-scale
+extraction) remain open, as does item 4 (pre-existing unrelated Metabolism
+test failures, still not fixed, still out of scope).
