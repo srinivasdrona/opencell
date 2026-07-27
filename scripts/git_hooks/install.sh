@@ -1,15 +1,25 @@
 #!/usr/bin/env bash
-# install.sh - install the L2 catalog-conformance pre-commit hook.
+# install.sh - install the L2 catalog-conformance commit-msg hook.
 #
 # Copies (or symlinks where supported) scripts/git_hooks/* into .git/hooks/.
-# Idempotent. Refuses to overwrite a non-managed pre-commit hook unless
+# Idempotent. Refuses to overwrite a non-managed commit-msg hook unless
 # called with --force.
+#
+# The check runs at the `commit-msg` phase (not `pre-commit`): Git only
+# writes the commit message to disk once `commit-msg` runs, so this is the
+# earliest phase at which both the staged files (still uncommitted) and the
+# actual commit message are simultaneously available.
 
 set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 HOOKS_SRC="${REPO_ROOT}/scripts/git_hooks"
-HOOKS_DST="${REPO_ROOT}/.git/hooks"
+# Hooks live in the *common* git dir, which is shared by all worktrees of a
+# repo. `${REPO_ROOT}/.git` is wrong here when run from a linked worktree:
+# there, `.git` is a file (a gitdir pointer), not the directory that holds
+# `hooks/`. `git rev-parse --git-common-dir` resolves correctly in both the
+# main checkout and any linked worktree.
+HOOKS_DST="$(git rev-parse --git-common-dir)/hooks"
 
 FORCE=0
 if [ "${1:-}" = "--force" ]; then
@@ -48,9 +58,19 @@ EOF
     echo "install: ${hook_name} -> ${src}"
 }
 
-install_hook "pre-commit" "pre-commit-l2-catalog-conformance.sh"
+install_hook "commit-msg" "commit-msg-l2-catalog-conformance.sh"
+
+# Migration cleanup: earlier versions of this installer wired the check up
+# as `pre-commit`, exec'ing a script that has since been renamed/moved to
+# `commit-msg`. Remove a stale managed pre-commit shim so it doesn't fail
+# every commit by exec'ing a path that no longer exists.
+LEGACY_PRE_COMMIT="${HOOKS_DST}/pre-commit"
+if [ -f "$LEGACY_PRE_COMMIT" ] && grep -q "L2-CATALOG-CONFORMANCE-HOOK-MANAGED" "$LEGACY_PRE_COMMIT" 2>/dev/null; then
+    rm -f "$LEGACY_PRE_COMMIT"
+    echo "install: removed stale managed pre-commit shim (superseded by commit-msg)"
+fi
 
 echo ""
-echo "L2 catalog-conformance pre-commit hook installed."
+echo "L2 catalog-conformance commit-msg hook installed."
 echo "Bypass with: git commit --no-verify"
 echo "Or use trailer: Catalog-Entry: N/A (justification: ...)"

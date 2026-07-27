@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# pre-commit-l2-catalog-conformance.sh
+# commit-msg-l2-catalog-conformance.sh
 #
 # Enforces the COMPOSITION_MANDATE v2 spec-authority rule at the commit boundary
 # for any change to L2.2 Design-A runner / helpers / catalog / oracle-loader code.
@@ -14,6 +14,16 @@
 # but document-level rules drift. This hook makes the rule executable at the
 # only chokepoint that matters: commit landing.
 #
+# Runs as a `commit-msg` hook, not `pre-commit`. Git only writes the commit
+# message to disk (and passes its path as $1) once the `commit-msg` phase
+# begins; at `pre-commit` time no message exists yet, so a message-content
+# check installed as `pre-commit` cannot see the current commit's message
+# (see history: it previously read a stale/absent COMMIT_EDITMSG, which
+# always failed on a repo's or worktree's very first commit). Staged files
+# are still fully accessible via `git diff --cached` at `commit-msg` time
+# because the commit object has not been created yet, so the trigger-file
+# detection below is unaffected by the phase move.
+#
 # Bypass (use sparingly, leaves a forensic trail in git log):
 #   git commit --no-verify   (skips ALL hooks)
 #   - OR -
@@ -26,7 +36,11 @@
 set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
-COMMIT_MSG_FILE="${REPO_ROOT}/.git/COMMIT_EDITMSG"
+
+# Git invokes commit-msg hooks with the path to the message file as $1. Fall
+# back to `git rev-parse --git-path COMMIT_EDITMSG` (worktree-correct, unlike
+# a hardcoded "${REPO_ROOT}/.git/COMMIT_EDITMSG") for manual/test invocation.
+COMMIT_MSG_FILE="${1:-$(git rev-parse --git-path COMMIT_EDITMSG)}"
 
 WATCHED_PATTERNS=(
     "tests/vivarium/l2_2_design_a_runner\.py"
@@ -55,14 +69,14 @@ if [ "$TRIGGERED" -eq 0 ]; then
 fi
 
 if [ ! -f "$COMMIT_MSG_FILE" ]; then
-    echo "pre-commit-l2: ERROR no commit message file at $COMMIT_MSG_FILE" >&2
+    echo "commit-msg-l2: ERROR no commit message file at $COMMIT_MSG_FILE" >&2
     exit 1
 fi
 
 MSG_BODY="$(cat "$COMMIT_MSG_FILE")"
 
 if echo "$MSG_BODY" | grep -E -q "^Catalog-Entry: N/A \(justification:"; then
-    echo "pre-commit-l2: PASS (Catalog-Entry: N/A justification present)" >&2
+    echo "commit-msg-l2: PASS (Catalog-Entry: N/A justification present)" >&2
     exit 0
 fi
 
@@ -74,10 +88,10 @@ if echo "$MSG_BODY" | grep -E -q "^Catalog-Entry:"; then
         in_block { lines++ }
         END { exit (saw_close && lines > 0 ? 0 : 1) }
     '; then
-        echo "pre-commit-l2: PASS (Catalog-Entry trailer with yaml block)" >&2
+        echo "commit-msg-l2: PASS (Catalog-Entry trailer with yaml block)" >&2
         exit 0
     else
-        echo "pre-commit-l2: ERROR Catalog-Entry trailer present but no fenced yaml block follows it." >&2
+        echo "commit-msg-l2: ERROR Catalog-Entry trailer present but no fenced yaml block follows it." >&2
         echo "  Format required:" >&2
         echo "    Catalog-Entry:" >&2
         echo "    \`\`\`yaml" >&2
@@ -90,7 +104,7 @@ fi
 
 echo "" >&2
 echo "==================================================================" >&2
-echo "pre-commit-l2: BLOCKED" >&2
+echo "commit-msg-l2: BLOCKED" >&2
 echo "==================================================================" >&2
 echo "" >&2
 echo "Your commit touches L2.2 Design-A code:" >&2

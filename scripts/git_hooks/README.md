@@ -6,7 +6,7 @@ Repo-managed git hooks. These are version-controlled so any clone of the repo ca
 
 | File | Purpose |
 |---|---|
-| `pre-commit-l2-catalog-conformance.sh` | Refuses to commit changes touching L2.2 Design-A runner / helpers / catalog files unless the commit message body contains a `Catalog-Entry:` trailer with a fenced YAML block (or an explicit `N/A` justification). Enforces COMPOSITION_MANDATE v2 spec-authority rule at the only chokepoint that matters — commit landing. |
+| `commit-msg-l2-catalog-conformance.sh` | Refuses to commit changes touching L2.2 Design-A runner / helpers / catalog files unless the commit message body contains a `Catalog-Entry:` trailer with a fenced YAML block (or an explicit `N/A` justification). Enforces COMPOSITION_MANDATE v2 spec-authority rule at the only chokepoint that matters — commit landing. Installed as the `commit-msg` hook (not `pre-commit`) because the commit message does not exist on disk until the `commit-msg` phase; staged files are still fully accessible at that phase since the commit object hasn't been created yet. |
 | `install.sh` | Installs the hooks into `.git/hooks/` via thin shims that exec back into this directory. Idempotent. Refuses to overwrite non-managed hooks unless `--force`. |
 
 ## Why
