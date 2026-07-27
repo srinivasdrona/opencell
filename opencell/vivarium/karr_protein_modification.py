@@ -485,8 +485,8 @@ class KarrProteinModificationProcess(Process):
         # MATLAB's `randsample` is implemented in the stats toolbox and advances
         # the stream with extra internal draws versus a one-liner CDF sample.
         for _ in range(_RANDSAMPLE_STREAM_BURN):
-            self._rng.random_sample()
-        threshold = float(self._rng.random_sample()) * float(total_weight)
+            self._rng.random()
+        threshold = float(self._rng.random()) * float(total_weight)
         cumulative = np.cumsum(weights, dtype=np.float64)
         return int(np.searchsorted(cumulative, threshold, side="right"))
 
@@ -496,7 +496,7 @@ class KarrProteinModificationProcess(Process):
         finite = np.isfinite(vals)
         frac = np.zeros_like(vals)
         frac[finite] = vals[finite] - out[finite]
-        draws = self._rng.random_sample(vals.shape)
+        draws = self._rng.random(vals.shape)
         out[finite] += (draws[finite] < frac[finite]).astype(np.float64)
         out[~finite] = vals[~finite]
         return out

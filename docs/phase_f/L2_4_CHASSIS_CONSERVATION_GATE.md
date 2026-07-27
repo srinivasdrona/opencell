@@ -1,7 +1,14 @@
 # L2.4 Chassis Autonomous Conservation Gate — Design
 
-**Status:** DESIGN (drafted 2026-07-08, Day-48; **revised same day after gpt-5.4
-design review** — scope corrected, see review log). Gate NOT yet built.
+**Status:** DESIGN + **BUILT (Part A+B GREEN on the uncapped branch, 2026-07-19)**.
+Drafted 2026-07-08 (Day-48); revised 2026-07-08 (gpt-5.4) — scope corrected;
+revised 2026-07-19 (Day-53, gpt-5.5 + conservation probe) — two-part gate (D8),
+full-horizon (D9), integer-validity (D3-rev), mechanical write-surface audit
+(D6-rev), coverage matrix, empirical anchor. **2026-07-19 (later): D2 ELEVATED —
+Metabolism boundary-flux emission (2b) is now the completion of L2.4; the exchange
+shadow-audit is WITHDRAWN as unsound on shared WIDs (see D2). Part A+B shipped
+GREEN with the interim (2a) exchange exclusion, certifying the A1 uncap; 2b (with
+a necessity probe) is the remaining Batch-3 completion.** See review log.
 **Scope (review-corrected):** **v1 catches A1** (allocator-bypass / unaccounted
 substrate leaks) via flat-per-WID integer-exact conservation with a fail-closed
 write-surface audit. **A4 (compartment merge) and A2 (process-order/randperm)
@@ -80,9 +87,11 @@ compartment-ledger work, D4, not v1.)
 **PM sanity-check.** This design assumes the chassis can run 28 processes × 100
 ticks autonomously (no Karr injection) and that the existing
 `run_chassis_v6_32400t.py` conservation accounting is correct enough to lift into
-a flat-WID gate; if the 100-tick autonomous run is not stable (e.g. a process
-explodes before tick 100), the gate scope must drop to the max stable tick and
-that becomes a separate stability finding.
+a flat-WID gate. **Full-horizon completion is a PASS precondition (D9), not a
+soft assumption:** if any seed crashes before the requested tick count the gate
+returns STABILITY_FAIL (nonzero exit), NOT a reduced-scope "max stable tick"
+pass — a conservation verdict over a truncated run is vacuous and must never
+unblock A1.
 
 ---
 
@@ -101,7 +110,8 @@ Prototype already in the tree (`scripts/run_chassis_v6_32400t.py`): it snapshots
 substrates `before`/`after` at `conservation_stride`, accumulates
 `per_tick_process_sums[wid] += delta` over substrate writes (lines 349-353), and
 reports `max_abs_unattributed_delta` (lines 774-776). L2.4 formalizes this into a
-per-(WID, compartment), integer-exact, seed-swept, blocking gate.
+flat-per-WID (v1; per-compartment is v2, D4), integer-exact, seed-swept, blocking
+gate.
 
 The A1-A4 wiring bugs L2.4 is built to catch (grounded in the per-process
 semantic audits, `docs/phase_f/audits/*_semantic_audit.md`):
@@ -172,7 +182,8 @@ wiring rows' produce/consume WIDs).
 ## 5) Decision Ledger
 
 **D1 — The invariant.**
-- Chosen: per-tick, per-(WID, compartment) **integer-exact** conservation:
+- Chosen: per-tick, per-WID (flat, v1 — per-compartment is v2, D4) **integer-exact**
+  conservation:
   `Δpool == Σ_p net_write`, i.e. `unattributed_delta == 0`. Rejected: aggregate
   "max_abs over the run" as the only signal (hides which WID/tick/process; keep
   it as a summary but fail per-cell).
@@ -200,16 +211,54 @@ wiring rows' produce/consume WIDs).
   - **(2b) Observe/emit the boundary.** Add a named Metabolism exchange-flux
     observable and include it in the invariant:
     `Δpool == Σ_p net_write + exchange_flux`. Stronger; requires a new emit port.
-- Chosen for v1: **(2a)** — exclude the 124 exchange WIDs, assert conservation on
-  the internal set, and record the exchange WIDs as a documented open-boundary
-  exclusion (not a silent skip). (2b) is a v2 hardening.
-- Falsifier: if a WID outside the 124-exchange set shows a persistent
-  unattributed delta, that is a real A1 leak, not a boundary artifact.
+- **Chosen (2026-07-19 — 2b ELEVATED to the completion of L2.4, was "v2"):**
+  the (2a) whole-WID exclusion is too broad (gpt-5.5 SS#3), and the Day-53
+  exchange-set audit made it concrete: the 124-WID external-exchange set is NOT
+  just medium nutrients — it includes shared reaction byproducts (**H2O, H, PI,
+  AMP**, emitted by many processes) and all **10 metal ions** (MG, ZN, MN, CA, K,
+  NA, CL, CO, NI, CU — MG/ZN are consumed by ProteinFolding). A "non-boundary
+  write" SHADOW AUDIT is therefore UNSOUND on these WIDs: it would false-fail
+  every process that emits H2O/PI or consumes MG/ZN. **The shadow audit is
+  withdrawn.** The correct resolution is **(2b): Metabolism EMITS its external-
+  exchange flux as an observable** (already computed internally —
+  `karr_metabolism_writeback.py:130`, `delta[sub_idx_external, EXTRACELLULAR] -=
+  stochastic_round(ext_flow)`; 2b exposes an EXISTING quantity, it does NOT
+  require more Metabolism fidelity) and L2.4 folds it into the invariant for the
+  exchange WIDs: `Δpool[wid] == Σ_p net_write[wid] + exchange_flux[wid]`,
+  conserving all 124 WIDs directly and shrinking the exclusion set to zero.
+- **OPEN QUESTION for 2b (empirically testable, flagged for review):** is 2b even
+  NECESSARY, or is the exclusion already unnecessary? Metabolism's writeback
+  flattens its `(585,3)` delta — INCLUDING the extracellular external-exchange
+  term — via `project_to_flat_per_wid` and emits it to the shared `substrates`
+  store. If that flat emit is captured by the gate's `proc_delta`, then exchange
+  WIDs may ALREADY conserve (`Δpool == Σ_p net_write`) with no separate boundary
+  term, making both the exclusion AND 2b moot. This is testable in <30 min:
+  un-exclude the 124 WIDs and re-run Part A. THREE outcomes: (i) they conserve →
+  drop the exclusion, 2b unneeded; (ii) they show a residual EQUAL to the
+  extracellular term → 2b needed to attribute it; (iii) they show a residual that
+  is NOT the extracellular term → a real A3/A3b leak, a genuine finding. **Run
+  this probe before building 2b.**
+- **Interim shipped (2a-exclusion, NO shadow audit):** L2.4 Part A+B is GREEN on
+  the uncapped branch with the 124 exchange WIDs EXCLUDED from the Part-A
+  residual. This correctly certifies the A1 uncap because (i) the uncap's failure
+  mode is fractional NTP on NON-exchange substrates, and (ii) Part B
+  (consumption ≤ allocation) already checks ALL WIDs including exchange ones
+  (e.g. ProteinFolding/MG). The shadow audit was never built.
+- Falsifier: a WID outside the 124-set with a persistent unattributed delta is a
+  real A1 leak. With 2b (or if the probe shows exchange WIDs already conserve),
+  the same falsifier extends to exchange WIDs.
 
-**D3 — Tolerance = 0 (integer-exact).**
-- Chosen: counts are integers; conservation is exact. No float tolerance. A
-  1-molecule unattributed delta is a FAIL (it is exactly the S3-class
-  1-molecule bug that L2.1 flagged).
+**D3 — Integer-exact, and integer-VALIDITY asserted BEFORE the residual (gpt-5.5, MAJOR-5).**
+- Chosen: counts are integers; conservation is exact, tolerance 0. A 1-molecule
+  unattributed delta is a FAIL (the S3-class 1-molecule bug L2.1 flagged).
+- **Revised (gpt-5.5):** a zero residual is NOT the same as integer integrity — a
+  fractional delta applied to the store can yield `unattributed_delta == 0`
+  EXACTLY while still violating molecule-count integrity (this is precisely the
+  uncapped v3-transcription fractional-NTP failure mode; see Empirical Anchor).
+  So BEFORE the residual comparison, assert every substrate delta AND every
+  post-tick pool count is finite and integer-valued (`x == round(x)`); any
+  fractional value is a Part-B FAIL (D8). Then compare INTEGER residuals, not
+  floats-with-tolerance.
 
 **D4 — Compartment resolution (design-review corrected — flat-WID v1).**
 - The intent (per-compartment, to catch A4) is right, BUT the review confirmed
@@ -253,11 +302,93 @@ wiring rows' produce/consume WIDs).
   `store_path[0] == "substrates"` (`run_chassis_v6_32400t.py:352`); a substrate
   effect through any other path would otherwise be silently uncounted — the
   fail-closed audit converts that blind spot into an explicit failure.
+- **Revised (gpt-5.5, MAJOR-6):** deriving allowed paths from topology + L1b rows
+  alone only catches paths already known to the inventory; it can miss in-place
+  state mutation, command-style updates, or nested nonstandard stores later
+  projected to substrates. So the audit MUST be mechanical, not inventory-derived
+  only: snapshot ALL substrate-like numeric leaves before/after each tick and FAIL
+  on any changed WID/path not in the declared allowed-update set, INCLUDING
+  in-place changes.
 
 **D7 — No output oracle.**
 - Chosen: L2.4 reads NO Karr process-output trace. Its only oracle is the
   conservation identity (physics). This is what lets it run at 28×100 without the
   per-process Karr fixtures and what makes it the integration gate L2.1 cannot be.
+
+**D8 — Two-part gate + verdict on the UNCAPPED target branch (gpt-5.5, SS#1).**
+- The conservation residual (`Δpool == Σ process net_write`) sums the SAME
+  substrate deltas Vivarium then applies to the store. For ordinary substrate
+  ports it passes BY CONSTRUCTION even if the biology is wrong, the allocator
+  over/under-allocates, a process consumes beyond its request, or the uncap
+  produces fractional counts. So flat-conservation ALONE validates store
+  attribution, not chassis integrity — and a green on the CAPPED baseline
+  certifies a DIFFERENT chassis than the uncapped one the A1 decision ships.
+  (Empirically confirmed — see Empirical Anchor: capped conserves to 2.27e-12,
+  uncapped crashes on fractional NTP.)
+- Chosen: L2.4 is **TWO-PART**, both required to PASS:
+  - **Part A — store-attribution conservation:** no unaccounted substrate store
+    change (the flat-per-WID `unattributed_delta == 0`, D1/D3).
+  - **Part B — chassis integer/allocation integrity:** every substrate delta and
+    post-tick pool count is finite and integer-valued (D3-revised); nonnegative
+    where applicable; on a declared write surface (D6); and every consumer
+    enforces `consumption ≤ allocation` (the L2.0a allocator contract, re-checked
+    in the integrated run).
+- **Verdict target:** the blocking L2.4 verdict MUST be taken on the exact
+  UNCAPPED target branch (the branch that lands the A1 uncap). The capped
+  baseline is a HARNESS SMOKE TEST only and MUST NOT be used to unblock A1.
+- Falsifier: if Part A is green but Part B fails (e.g. a fractional NTP delta
+  that nets to a 0 residual), the gate FAILs — that is the A1-uncap fractional
+  failure mode, caught.
+
+**D9 — Full-horizon completion is part of the gate; no truncated PASS (gpt-5.5, SS#2).**
+- The first draft's "if a process explodes before tick 100, drop scope to the max
+  stable tick" is UNSAFE: a conservation verdict over 0 completed ticks has no
+  conservation meaning, and a truncated green could unblock A1 vacuously. The
+  Day-53 probe already found tick-1 crashes on all seeds.
+- Chosen: the requested horizon (default 100 ticks, all swept seeds) MUST
+  complete. If any seed crashes before the requested tick count, L2.4 exits
+  nonzero as **STABILITY_FAIL** — NOT PASS-with-shorter-scope. A
+  `--max-stable-tick` mode may exist ONLY as exploratory diagnostics and MUST NOT
+  unblock A1.
+- Falsifier: a chassis that cannot survive the horizon is not conservation-proven;
+  STABILITY_FAIL is the correct, non-vacuous verdict.
+
+---
+
+## Coverage Matrix (what v1 does / does NOT catch — gpt-5.5, MAJOR-4)
+
+| Bug class | v1 verdict | How / why |
+|---|---|---|
+| **A1** — unaccounted FLAT substrate write (non-exchange, on a visible path) | **CATCHES** | Part A residual + D6 fail-closed mechanical audit |
+| **A1** — allocator oversupply / cap mismatch | **CATCHES via Part B only** | the integer + `consumption ≤ allocation` checks (D8 Part B); NOT via the Part A residual alone |
+| **A2** — process-order / `randperm` divergence | **NO** | OC is fixed-order; needs a v2 randperm order sweep (D5) |
+| **A3/A3b** — metabolism LP-bounds / clipping / byproduct fidelity | **MOSTLY NO (v1); IMPROVES with 2b** | flat conservation is blind to LP-internal fidelity; once 2b emits the boundary flux and exchange WIDs are conserved, an internal A3/A3b delta that is NOT boundary-attributable becomes a residual (a real finding) |
+| **A4** — compartment merge (nets to zero flat-per-WID) | **NO** | needs a v2 compartment ledger (D4) |
+
+**Verdict language (gpt-5.5, MINOR-8):** every L2.4 PASS report MUST state:
+"L2.4 PASS means no unaccounted flat substrate store change AND integer/allocation
+integrity under this run **on the uncapped chassis**; it is NOT an output-fidelity
+or Karr-parity certificate."
+
+## Empirical Anchor (Day-53 probe, 2026-07-18/19)
+
+The L2.4 stability + conservation probe (`run_chassis_v6_32400t.py`) plus the
+gpt-5.5 review produced converging evidence that drove D8/D9/D3-rev:
+- **RNG-mismatch crash (FIXED):** the chassis reseeds every process `_rng` to a
+  `Generator`; 4 processes called `RandomState`-only APIs
+  (`random_sample`/`.rand`/`randperm`) → tick-1 `AttributeError` on all seeds.
+  Fixed (commit `04d15e1`); the capped chassis then ran 100/100 ticks.
+- **Capped conserves to machine epsilon:** on the CAPPED baseline,
+  `max_abs_unattributed_delta = 2.27e-12` (top WID `H`, tick 32). Empirical proof
+  of D8/SS#1 — flat conservation is GREEN on the capped chassis, which is NOT the
+  uncapped chassis the A1 decision ships.
+- **Uncapped crashes on fractional NTP:** the uncapped chassis emits fractional
+  NTP from v3 mean-field transcription (`karr_transcription_v3.py:160,217`, no
+  stochastic rounding) → `non-integral enzyme count`. This is the exact Part-B /
+  D3-revised failure mode (a fractional delta a Part-A residual would NOT catch).
+  Fix in flight: port translation-v3's `_stochastic_round_*` into transcription-v3
+  (the lone continuous process missing store-boundary discretization; metabolism
+  and translation-v3 already round).
 
 ---
 
@@ -272,27 +403,52 @@ wiring rows' produce/consume WIDs).
 | False-fail on Metabolism exchange flux | D2: exclude 124 external-exchange WIDs (documented open boundary) | invariant scope |
 | (v1 blind spot, documented) A4 compartment-merge nets to zero flat-per-WID | D4: A4 OUT of v1; needs compartment ledger (v2) | scope boundary |
 | (v1 blind spot, documented) A2 order divergence not exercised | D5: A2 OUT of v1; needs OC randperm ordering (v2) | scope boundary |
+| Fractional delta nets to 0 residual (capped-green false-pass) | D3-rev + D8 Part B: integer-validity asserted BEFORE the residual | integer check |
+| Truncated / vacuous PASS on a crash | D9: full horizon required, else STABILITY_FAIL (nonzero) | verdict / exit |
+| Exchange-WID exclusion hides a metabolism bug | **D2-ELEVATED: 2b emits Metabolism's boundary flux → conserve exchange WIDs directly (shadow audit WITHDRAWN — unsound on shared WIDs H2O/H/PI/AMP + metals)** | invariant scope |
+| Verdict taken on the capped, not uncapped, chassis | D8: verdict target = uncapped branch; capped = smoke only | verdict target |
+| In-place / off-path substrate mutation | D6-rev: mechanical before/after snapshot of ALL substrate leaves | accounting audit |
 
-**Open items (build-time, need WSL — currently BLOCKED, WSL down):**
-1. Confirm the chassis runs 28 procs × 100 ticks autonomously with
-   replenishment OFF (stability); if not, set scope = max stable tick.
+**Open items (build-time):**
+1. Confirm the chassis runs 28 procs × 100 ticks autonomously with replenishment
+   OFF **on the UNCAPPED branch** (D8 verdict target); if any seed crashes before
+   the horizon, that is **STABILITY_FAIL** (D9) — NOT a reduced-scope pass.
+   (Probe status: capped runs 100/100 ticks; uncapped pending the transcription-v3
+   stochastic-round fix — the lone remaining fractional source.)
 2. Lift `run_chassis_v6_32400t.py` conservation accounting into a gate at
-   flat-WID granularity (NOT per-compartment — the prototype is flat-only) and
-   build the fail-closed write-surface audit (D6).
-3. Resolve the Metabolism boundary (D2): default v1 = exclude the 124
-   external-exchange WIDs; record them as a documented open boundary.
+   flat-WID granularity (NOT per-compartment — the prototype is flat-only), and
+   add the **Part-B integer/allocation-integrity checks** (D8): finite+integer
+   deltas & pools (D3-rev), `consumption ≤ allocation`, and the **mechanical**
+   before/after write-surface snapshot audit (D6-rev).
+3. **Resolve the Metabolism boundary — 2b ELEVATED (was v2, now the L2.4
+   completion).** Interim shipped: (2a) exclude the 124 external-exchange WIDs
+   from the Part-A residual (Part A+B GREEN, uncap certified). The shadow audit is
+   WITHDRAWN (unsound on shared WIDs). Batch 3 = **2b**: (a) run the necessity
+   probe (un-exclude the 124 WIDs, re-run Part A — do they already conserve via
+   Metabolism's flat emit?); (b) if a boundary residual remains, have Metabolism
+   emit its external-exchange flux (`karr_metabolism_writeback.py:130`) and fold
+   it into the invariant `Δpool == Σ_p net_write + exchange_flux` for exchange
+   WIDs, driving the exclusion set to zero.
 4. (v2 prerequisites, not v1) compartment ledger for A4 (D4); OC randperm
    ordering for A2 (D5).
 
-## Build sequence (once WSL restored)
-1. Stability probe: `build_karr_chassis_v6(enable_pool_replenishment=False)`,
-   step 100 ticks, seed 0 — does it complete? Record max stable tick.
+## Build sequence
+1. Stability probe (**DONE 2026-07-18**): capped runs 100/100 ticks
+   (`max_abs_unattributed_delta = 2.27e-12`); uncapped pending the
+   transcription-v3 stochastic-round fix. **Full-horizon completion on the
+   UNCAPPED branch is a PASS precondition (D9); a crash before the horizon is
+   STABILITY_FAIL, not a reduced scope.**
 2. Implement `scripts/l2_4_verify_conservation.py`: per-tick, **flat-per-WID**
-   integer-exact accounting lifted from the prototype; exclude the 124
-   exchange WIDs (D2); fail-closed write-surface audit (D6); multi-seed sweep.
+   integer-exact **Part-A** accounting lifted from the prototype (exclude the 124
+   exchange WIDs + shadow audit, D2-rev), PLUS **Part-B** integer/allocation
+   integrity (D8): finite+integer deltas & pools (D3-rev), `consumption ≤
+   allocation`, mechanical write-surface snapshot audit (D6-rev); multi-seed
+   sweep (labelled stochastic-smoke, D5 — NOT A2 coverage).
 3. Synthetic self-tests: planted flat-WID leak → FAIL; a substrate write on an
-   unlisted store path → fail-closed audit FAILs (prove D6).
-4. First real run: record honest verdict; attribute flat-WID failures to A1.
+   unlisted store path → mechanical audit FAILs (prove D6); a planted fractional
+   delta that nets to a 0 residual → Part-B FAILs (prove D3-rev/D8).
+4. First real run **on the uncapped branch**: record honest verdict; attribute
+   flat-WID failures to A1; a pre-horizon crash is STABILITY_FAIL (D9).
 5. (v2) compartment ledger → A4; OC randperm order → A2; then A4/A3b fixes
    (plan.md line 134).
 6. CI: add as a blocking job (HB6 pattern) once green.
@@ -308,3 +464,36 @@ wiring rows' produce/consume WIDs).
   out of v1; (D2) the "explicit boundary term" was hand-wave → v1 excludes the
   124 external-exchange WIDs as documented open boundary; (D6) write-surface
   guard strengthened to fail-closed. v1 honestly catches **A1** only.
+- **2026-07-19 (gpt-5.5 rubber-duck + Day-53 probe):** 3 SHOWSTOPPERs + 6 majors/
+  minors, all incorporated. **SS#1 → D8** (two-part gate: Part A store-attribution
+  + Part B integer/allocation integrity; verdict on the UNCAPPED branch, capped =
+  smoke only) — empirically confirmed (capped conserves to 2.27e-12 while the
+  uncapped chassis crashes on fractional NTP). **SS#2 → D9** (full-horizon
+  required; crash = STABILITY_FAIL, not a truncated PASS; removed the unsafe
+  "drop to max stable tick" language from the PM sanity-check / open items /
+  build sequence). **SS#3 → D2-revised** (whole-WID exclusion too broad — fixture
+  overlaps 12 internal-exchange / 3 ATP-hydrolysis / 27 biomass rows; added a
+  mandatory shadow audit; full boundary-flux emit = v2). **MAJOR-5 → D3-revised**
+  (assert integer-VALIDITY of deltas+pools BEFORE the residual — the fractional-
+  NTP failure mode). **MAJOR-6 → D6-revised** (mechanical before/after snapshot,
+  not inventory-derived alone). **MAJOR-4 → Coverage Matrix** added. **MINOR-8**
+  → verdict language sharpened; **MINOR-9** → stale per-compartment wording fixed
+  (D1, Spec Authority now say flat-per-WID v1). The probe also fixed an RNG-
+  mismatch crash (commit `04d15e1`) and localized the uncapped fractional source
+  to transcription-v3 (the lone continuous process missing store-boundary
+  stochastic rounding; metabolism + translation-v3 already round).
+- **2026-07-19 (Day-53, BUILD + D2 elevation):** L2.4 Part A+B BUILT and GREEN on
+  the uncapped branch (`scripts/l2_4_verify_conservation.py`, commits `593038b`,
+  `c2a913d`, off-by-one fix `2ecf97c`): integer-exact conservation on non-exchange
+  WIDs (100t×4s, `max_abs_unattributed=0`) + Part B `consumption ≤ allocation` +
+  nonnegative pools; 6 non-vacuous self-tests. A Part-B false `over_allocation`
+  (307 rows) was caught and root-caused to an allocation-snapshot off-by-one
+  (`substrates_allocated` read AFTER `engine.update()` = next-tick allocation);
+  fixed by snapshotting before the update. **D2 ELEVATED:** the Day-53 exchange-set
+  audit showed the 124-WID set includes shared byproducts (H2O/H/PI/AMP) and 10
+  metal ions (MG/ZN/…) emitted/consumed by many processes, so the planned shadow
+  audit is UNSOUND (would false-fail legitimate writes) → **shadow audit
+  WITHDRAWN**; 2b (Metabolism boundary-flux emission) is promoted from "v2" to the
+  L2.4 completion, gated by a necessity probe (does Metabolism's flat emit already
+  conserve exchange WIDs?). Interim (2a) exclusion certifies the uncap correctly
+  (uncap failure mode is non-exchange; Part B covers exchange allocation).

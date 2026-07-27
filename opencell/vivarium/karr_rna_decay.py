@@ -413,7 +413,7 @@ class RnaDecayLightProcess(Process):
         total = int(np.sum(weights))
         if total <= 0:
             return None
-        threshold = float(self._rng.rand()) * float(total)
+        threshold = float(self._rng.random()) * float(total)
         cumulative = np.cumsum(weights, dtype=np.int64)
         return int(np.searchsorted(cumulative, threshold, side="right"))
 
@@ -421,7 +421,7 @@ class RnaDecayLightProcess(Process):
         lam_vec = np.asarray(lam, dtype=np.float64).reshape(-1)
         out = np.zeros(lam_vec.size, dtype=np.int64)
         for idx in range(lam_vec.size):
-            threshold = float(self._rng.rand())
+            threshold = float(self._rng.random())
             rate = float(lam_vec[idx])
             if not np.isfinite(rate) or rate <= 0.0:
                 continue
@@ -469,7 +469,7 @@ class RnaDecayLightProcess(Process):
         frac = float(value - base)
         if frac <= 0.0:
             return base
-        return base + int(float(self._rng.rand()) < frac)
+        return base + int(float(self._rng.random()) < frac)
 
     def _read_enzyme_counts(self, *, states: dict[str, Any]) -> np.ndarray:
         enzyme_state = states.get("enzymes", {})

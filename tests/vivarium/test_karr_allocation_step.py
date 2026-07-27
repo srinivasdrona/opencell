@@ -38,13 +38,19 @@ def _run_allocation(
     return update["substrates_allocated"]
 
 
-def test_under_demand_everyone_full() -> None:
+def test_oversupply_proportional_overshoot() -> None:
+    # Karr evolveState.m allocates the FULL proportional share, uncapped. With
+    # pool=100 > total demand=80, scale = 100/80 = 1.25, so each process is
+    # allocated MORE than it requested: floor(30*1.25)=37, floor(50*1.25)=62.
+    # The surplus (allocation - actual consumption) is returned to the pool
+    # downstream (every consumer enforces consumption <= allocation). A prior
+    # min(1.0) cap wrongly clamped these to 30/50.
     allocated = _run_allocation(
         substrates={"ATP": 100.0},
         requests={"consumer_a": {"ATP": 30.0}, "consumer_b": {"ATP": 50.0}},
     )
-    assert allocated["consumer_a"]["ATP"] == 30.0
-    assert allocated["consumer_b"]["ATP"] == 50.0
+    assert allocated["consumer_a"]["ATP"] == 37.0
+    assert allocated["consumer_b"]["ATP"] == 62.0
 
 
 def test_over_demand_proportional_floor() -> None:
@@ -66,12 +72,15 @@ def test_exact_supply() -> None:
 
 
 def test_zero_request_consumer() -> None:
+    # pool=100 > total demand=50 (oversupply). A zero-request consumer still
+    # gets 0. Under Karr's uncapped share, consumer_b (the only demander) takes
+    # the whole pool: scale = 100/50 = 2.0, floor(50*2.0)=100 (was 50 with cap).
     allocated = _run_allocation(
         substrates={"ATP": 100.0},
         requests={"consumer_a": {"ATP": 0.0}, "consumer_b": {"ATP": 50.0}},
     )
     assert allocated["consumer_a"]["ATP"] == 0.0
-    assert allocated["consumer_b"]["ATP"] == 50.0
+    assert allocated["consumer_b"]["ATP"] == 100.0
 
 
 def test_zero_supply() -> None:
