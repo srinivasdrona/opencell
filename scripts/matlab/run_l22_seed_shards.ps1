@@ -153,8 +153,18 @@ foreach ($w in $Plan.workers) {
     $pidFile = Join-Path $RepoRoot ".matlab_l22_${RunTag}_worker$($w.worker_id).pid"
 
     Write-Host "[run_l22_seed_shards] launching worker $($w.worker_id): seeds=$(($w.jobs | ForEach-Object { $_.seed }) -join ',') -> $workerLog"
+    if ($combined -match '"') {
+        throw "matlab_command for worker $($w.worker_id) contains a double-quote; the -batch value is wrapped in double quotes below and cannot safely contain one (got: $combined)"
+    }
+    # Start-Process -ArgumentList as an array does NOT quote elements containing
+    # spaces before joining them into the child process's raw command line, so
+    # MATLAB silently received only the substring up to the first space (e.g.
+    # just "addpath('scripts/matlab');") and exited having done nothing -- no
+    # error, no diary, no trace files. Passing one pre-quoted string instead
+    # makes PowerShell hand the whole -batch value through as a single argument.
+    $argString = "-batch `"$combined`""
     $proc = Start-Process -FilePath $MatlabExe `
-        -ArgumentList @("-batch", $combined) `
+        -ArgumentList $argString `
         -WorkingDirectory $RepoRoot `
         -RedirectStandardOutput $workerLog `
         -RedirectStandardError $workerErr `
