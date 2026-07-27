@@ -152,7 +152,71 @@ historical run, but again not a per-run pin that was ever recorded.
 Never create or retain any `per_process_traces_v2_s000/` directory for any
 of the five processes — canonical seed 0 is always the unsuffixed directory.
 
-## 7. Out of scope / unaffected
+## 7a. Canonical seed-0 regeneration results
+
+Ran once, all five processes in a single MATLAB `-batch` session (1 worker,
+`E:\MATLAB\bin\matlab.exe`, R2026a Update 2, ~a few seconds total), targeting
+the canonical unsuffixed output directory explicitly (`extract_per_process_traces_v2({...}, 'per_process_traces_v2', 100, uint32(0))`).
+All five old stale files had already been deleted by `seed0_regen.py`'s
+`apply_seed0_invalidations` (§6) before this call, so the extractor's own
+existence-only skip check could not silently keep a stale file.
+
+| Process | Snapshot properties (per MATLAB stdout) | Required channel present |
+|---|---|---|
+| ProteinDecay | RNAs, boundEnzymes, complexs, enzymes, monomers, substrates | RNAs ✅ |
+| ProteinFolding | boundEnzymes, enzymes, foldedComplexs, foldedMonomers, substrates, unfoldedComplexs, unfoldedMonomers | foldedComplexs, unfoldedComplexs ✅ |
+| ProteinProcessingII | boundEnzymes, enzymes, processedMonomers, signalSequenceMonomers, substrates, unprocessedMonomers | signalSequenceMonomers ✅ |
+| RNADecay | RNAs, boundEnzymes, enzymes, substrates | RNAs ✅ |
+| RNAProcessing | boundEnzymes, enzymes, intergenicRNAs, processedRNAs, substrates, unprocessedRNAs | intergenicRNAs ✅ |
+
+All five new seed-0 files independently re-validated via
+`trace_validation.validate_structural` (structurally sound, `ok=True`,
+zero errors) and confirmed to carry their required extra channel(s) in
+**both** `states_before` and `states_after` groups (not just one side).
+
+## 7b. Atomic canary: RNADecay, all 50 seeds
+
+Per the task's canary requirement, ran one full process (RNADecay — the
+smallest file, chosen for fastest turnaround) through canonical seed 0
+(above) plus seeds 1-49 (`scripts/matlab/run_l22_seed_shards.ps1
+-Processes RNADecay -Seeds "1-49" -Workers 1`, unmodified launcher/driver,
+run tag `stale5_canary_RNADecay`), then validated with the existing report
+machinery scoped to this one process:
+
+```
+bin\oc-py scripts/l22_extraction/report.py final --seeds 1-49 \
+    --processes RNADecay --skip-specialized \
+    --out artifacts/l22_stale5_regen/canary_RNADecay_final_report.json
+```
+
+Result (full JSON gitignored/regenerable under `artifacts/l22_stale5_regen/`,
+per existing `artifacts/` convention — key fields excerpted here):
+
+- Worker exit code: `0`. Duration: ~24 minutes for 49 seeds (single worker,
+  smallest of the five files).
+- `report.py final`: `"result": "PASS"`, `"missing_or_failing": []`.
+- Real `load_karr_oracle` dispatch (`loader_results.RNADecay`): `"ok": true`,
+  `"canonical_seed_count": 50`, `"warnings": []`.
+- Seed independence / non-vacuity: sampled SHA256 of seeds {0, 1, 2, 3, 25,
+  49} are all pairwise distinct (no seed silently reusing another seed's
+  trace).
+- No `per_process_traces_v2_s000/` directory exists anywhere in this
+  worktree (confirmed via directory listing) — canonical seed 0 stayed in
+  the unsuffixed `per_process_traces_v2/` directory throughout.
+
+Canary PASSED on every dimension required before proceeding to the
+remaining four processes' seeds 1-49.
+
+## 7c. Remaining four processes (ProteinDecay, ProteinFolding,
+ProteinProcessingII, RNAProcessing), seeds 1-49
+
+See the final manifest/report (commit C) for full results. At the time this
+section was written (commit B), the sibling worktree `l22-full-extract`'s
+own Phase-3 run had already finished (0 active MATLAB processes elsewhere),
+so this run's worker count was chosen consistent with the task's bounded-
+load policy (≤4 total active compute MATLAB processes system-wide).
+
+## 8. Out of scope / unaffected
 
 This regeneration touches only local worktree copies of the five named
 processes' traces. It does not modify: the primary checkout's canonical
