@@ -53,22 +53,36 @@ def _parse_seed_spec(spec: str) -> list[int]:
     return sorted(seeds)
 
 
-def build_preflight_report(*, seed: int = 1) -> dict[str, Any]:
+def build_preflight_report(
+    *,
+    seed: int = 1,
+    processes: list[str] | tuple[str, ...] | None = None,
+    include_specialized: bool = True,
+) -> dict[str, Any]:
     """Phase 2: for every production process, does a freshly generated
     `seed` match canonical seed 0's schema? Also audits the two specialized
     ensembles (Transcription/Translation) stay at 50 seeds with no drift.
+
+    `processes`, if given, narrows the production-process loop to an
+    explicit subset (e.g. just the L22_STALE5 set) instead of the full
+    mechanically-derived scope -- used so this report can be run for a
+    partial worktree that only holds a subset of the 16 production
+    processes' trace files, without falsely flagging the rest as missing.
+    Defaults to the full `derive_scope().production` set (unchanged
+    behaviour) when omitted.
     """
     scope = derive_scope()
+    production = tuple(processes) if processes is not None else scope.production
     report: dict[str, Any] = {
         "generated_at": datetime.now(UTC).isoformat(),
         "preflight_seed": seed,
-        "production_processes": list(scope.production),
+        "production_processes": list(production),
         "specialized_processes": list(scope.specialized_excluded.keys()),
         "results": {},
         "blockers": [],
     }
 
-    for process in scope.production:
+    for process in production:
         drift = schema_preflight(process, [seed])
         loader = loader_report(process)
         entry = {"schema_preflight": drift, "loader": loader}
@@ -78,7 +92,7 @@ def build_preflight_report(*, seed: int = 1) -> dict[str, Any]:
         if not loader.get("ok"):
             report["blockers"].append(f"{process}: loader dispatch failed: {loader.get('error')}")
 
-    for process in SPECIALIZED_ENSEMBLE_PROCESSES:
+    for process in SPECIALIZED_ENSEMBLE_PROCESSES if include_specialized else ():
         loader = loader_report(process)
         entry = {"loader": loader}
         ok = (
@@ -98,17 +112,27 @@ def build_preflight_report(*, seed: int = 1) -> dict[str, Any]:
     return report
 
 
-def build_final_report(*, seeds: list[int]) -> dict[str, Any]:
+def build_final_report(
+    *,
+    seeds: list[int],
+    processes: list[str] | tuple[str, ...] | None = None,
+    include_specialized: bool = True,
+) -> dict[str, Any]:
     """Phase 3: validate every expected MAT for the production set, plus the
     real loader dispatch (expects canonical_seed_count == 50, no
     KARR_SINGLE_SEED_REUSED-class warning) for both production and
     specialized-ensemble processes.
+
+    `processes`, if given, narrows the loop to an explicit subset (see
+    `build_preflight_report`'s docstring for the rationale). Defaults to the
+    full `derive_scope().production` set when omitted.
     """
     scope = derive_scope()
+    production = tuple(processes) if processes is not None else scope.production
     report: dict[str, Any] = {
         "generated_at": datetime.now(UTC).isoformat(),
         "seeds_expected": seeds,
-        "production_processes": list(scope.production),
+        "production_processes": list(production),
         "specialized_processes": list(scope.specialized_excluded.keys()),
         "extractor_source_sha256": git_blob_sha256(EXTRACTOR_SCRIPT) if EXTRACTOR_SCRIPT.exists() else None,
         "files": {},
@@ -116,7 +140,7 @@ def build_final_report(*, seeds: list[int]) -> dict[str, Any]:
         "missing_or_failing": [],
     }
 
-    for process in scope.production:
+    for process in production:
         per_process: dict[str, Any] = {}
         seed0 = canonical_seed0_path(process)
         seed0_result = validate_structural(seed0, expected_process=process, expected_seed=0, expected_n_ticks=100)
@@ -140,7 +164,7 @@ def build_final_report(*, seeds: list[int]) -> dict[str, Any]:
         if loader.get("ok") and any("KARR_SINGLE_SEED_REUSED" in w for w in loader.get("warnings", [])):
             report["missing_or_failing"].append(f"{process}: unexpected KARR_SINGLE_SEED_REUSED warning")
 
-    for process in SPECIALIZED_ENSEMBLE_PROCESSES:
+    for process in SPECIALIZED_ENSEMBLE_PROCESSES if include_specialized else ():
         loader = loader_report(process)
         report["loader_results"][process] = loader
         if loader.get("ok") and int(loader.get("canonical_seed_count", 0)) != EXPECTED_FULL_SEED_COUNT:
@@ -159,17 +183,26 @@ def main(argv: list[str] | None = None) -> int:
 
     pre = sub.add_parser("preflight")
     pre.add_argument("--seed", type=int, default=1)
+    pre.add_argument("--processes", help="Comma-separated subset override (default: full derived scope).")
+    pre.add_argument("--skip-specialized", action="store_true")
     pre.add_argument("--out", required=True)
 
     fin = sub.add_parser("final")
     fin.add_argument("--seeds", required=True, help='e.g. "1-49"')
+    fin.add_argument("--processes", help="Comma-separated subset override (default: full derived scope).")
+    fin.add_argument("--skip-specialized", action="store_true")
     fin.add_argument("--out", required=True)
 
     args = parser.parse_args(argv)
+    processes = args.processes.split(",") if getattr(args, "processes", None) else None
     if args.cmd == "preflight":
-        report = build_preflight_report(seed=args.seed)
+        report = build_preflight_report(
+            seed=args.seed, processes=processes, include_specialized=not args.skip_specialized
+        )
     else:
-        report = build_final_report(seeds=_parse_seed_spec(args.seeds))
+        report = build_final_report(
+            seeds=_parse_seed_spec(args.seeds), processes=processes, include_specialized=not args.skip_specialized
+        )
 
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
