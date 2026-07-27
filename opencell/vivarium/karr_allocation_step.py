@@ -249,7 +249,8 @@ class KarrAllocationStep(Step):
         # In oversupply (pool > total demand) each process receives its full
         # proportional share, which EXCEEDS its request; the surplus is safe
         # because every downstream consumer enforces consumption <= allocation
-        # (verified across all 24 consumers in tmp/AUDIT_substrates_allocated.md,
+        # (verified across all 24 consumers in
+        # docs/phase_f/A1_ALLOCATOR_UNCAP_CONSUMPTION_AUDIT.md,
         # AMOUNT=0). A prior `np.minimum(1.0, counts_scale)` cap deviated from
         # Karr by starving oversupplied processes to their raw request, producing
         # the L2.0a oversupply-cap divergence fork. The `max(1, total_demand)`
