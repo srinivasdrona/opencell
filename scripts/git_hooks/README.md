@@ -6,8 +6,11 @@ Repo-managed git hooks. These are version-controlled so any clone of the repo ca
 
 | File | Purpose |
 |---|---|
-| `commit-msg-l2-catalog-conformance.sh` | Refuses to commit changes touching L2.2 Design-A runner / helpers / catalog files unless the commit message body contains a `Catalog-Entry:` trailer with a fenced YAML block (or an explicit `N/A` justification). Enforces COMPOSITION_MANDATE v2 spec-authority rule at the only chokepoint that matters — commit landing. Installed as the `commit-msg` hook (not `pre-commit`) because the commit message does not exist on disk until the `commit-msg` phase; staged files are still fully accessible at that phase since the commit object hasn't been created yet. |
-| `install.sh` | Installs the hooks into `.git/hooks/` via thin shims that exec back into this directory. Idempotent. Refuses to overwrite non-managed hooks unless `--force`. |
+| `commit-msg-l2-catalog-conformance.sh` | Refuses to commit changes touching L2.2 Design-A runner / helpers / catalog files unless the commit message body contains a `Catalog-Entry:` trailer with a fenced YAML block (or an explicit `N/A` justification). Enforces COMPOSITION_MANDATE v2 spec-authority rule at the only chokepoint that matters — commit landing. |
+| `../hooks/check_llm_log_on_commit.py` | Refuses Copilot-authored/co-authored commits (by author name or `Co-authored-by: Copilot` trailer) unless `opencell/provenance/llm_interactions.jsonl` has an entry for today. Lives outside `scripts/git_hooks/` (it's provenance tooling, not catalog tooling) but is installed by this same `install.sh`. |
+| `install.sh` | Installs both checks above as a single, composed `commit-msg` hook into `.git/hooks/` (via a thin generated shim that runs each in order and stops on the first failure). Idempotent. Refuses to overwrite non-managed hooks unless `--force`. Also migrates away any stale `pre-commit`-phase shim from either check's earlier (buggy) installation. |
+
+Both checks run as the `commit-msg` hook, not `pre-commit`, because both depend on the commit message body and Git does not write that message to disk until the `commit-msg` phase; staged files are still fully accessible at that phase since the commit object hasn't been created yet. Git only supports one script per hook name, so `install.sh` composes the two into a single generated shim rather than each independently claiming `commit-msg` (which would mean whichever installs last silently clobbers the other).
 
 ## Why
 

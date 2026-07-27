@@ -123,10 +123,12 @@ sqlite3 opencell_tasks.db                                                      \
     "SELECT id, title, status FROM todos WHERE status='pending' ORDER BY id"
 ```
 
-Install the Copilot LLM-log pre-commit guard:
+Install the repo-managed commit-msg hooks (L2 catalog conformance +
+Copilot LLM-log check, composed into one `commit-msg` hook by
+`scripts/git_hooks/install.sh`; see `scripts/git_hooks/README.md`):
 
 ```bash
-ln -sf ../../scripts/hooks/check_llm_log_on_commit.py .git/hooks/pre-commit
+bash scripts/git_hooks/install.sh
 ```
 
 Recent agent-session checkpoints (decision history, technical context) live

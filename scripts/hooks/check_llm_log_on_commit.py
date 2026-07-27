@@ -1,5 +1,24 @@
 #!/usr/bin/env python3
-"""Pre-commit guard for Copilot-authored commits."""
+"""Commit-msg guard for Copilot-authored commits.
+
+Runs as a `commit-msg` hook, not `pre-commit`: the enforcement below depends
+on the commit message body (the `co-authored-by: copilot` trailer check),
+and Git does not write that message to disk until the `commit-msg` phase.
+A `pre-commit`-phase check has no reliable message to read -- on a repo's or
+worktree's very first commit there is no prior `COMMIT_EDITMSG` at all, and
+on established checkouts it would see a stale message left over from the
+previous commit. `.git` is also a *file* (a gitdir pointer) in any linked
+worktree, so a hardcoded `<repo_root>/.git/COMMIT_EDITMSG` path is doubly
+wrong there. Staged files are still fully inspectable via `git diff --cached`
+at `commit-msg` time because the commit object has not been created yet, so
+moving phases does not weaken the staged-file trigger this hook depends on.
+
+Git invokes commit-msg hooks with the message file path as $1. This script
+also accepts that as its first CLI argument, falling back to
+`git rev-parse --git-path COMMIT_EDITMSG` (worktree-correct, unlike a
+hardcoded `.git/COMMIT_EDITMSG`) for manual/test invocation without an
+argument.
+"""
 
 from __future__ import annotations
 
@@ -28,8 +47,16 @@ def _git_output(*args: str) -> str:
     return result.stdout.strip()
 
 
-def _read_commit_message(repo_root: Path) -> str:
-    msg_path = repo_root / ".git" / "COMMIT_EDITMSG"
+def _resolve_commit_msg_path(argv: list[str]) -> Path:
+    """Message file path: Git's $1 if provided, else the worktree-correct
+    fallback for manual invocation (matches Git's own resolution, unlike a
+    hardcoded `.git/COMMIT_EDITMSG`)."""
+    if len(argv) > 1 and argv[1]:
+        return Path(argv[1])
+    return Path(_git_output("rev-parse", "--git-path", "COMMIT_EDITMSG"))
+
+
+def _read_commit_message(msg_path: Path) -> str:
     if not msg_path.exists():
         return ""
     return msg_path.read_text(encoding="utf-8", errors="replace")
@@ -64,7 +91,8 @@ def main() -> int:
         return 0
 
     author = os.environ.get("GIT_AUTHOR_NAME") or _git_output("config", "user.name")
-    commit_message = _read_commit_message(repo_root)
+    msg_path = _resolve_commit_msg_path(sys.argv)
+    commit_message = _read_commit_message(msg_path)
     if not _is_copilot_commit(author, commit_message):
         return 0
 

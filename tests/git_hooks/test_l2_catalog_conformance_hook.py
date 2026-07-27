@@ -69,11 +69,40 @@ def fresh_repo(tmp_path: Path) -> Path:
     return repo
 
 
+def _seed_llm_log_sources(repo: Path) -> None:
+    """Mirror the LLM-log check's source tree into a throwaway repo.
+    install.sh composes commit-msg-l2-catalog-conformance.sh with
+    scripts/hooks/check_llm_log_on_commit.py into one `commit-msg` shim, so
+    both must exist for install.sh to succeed, exactly as in any real
+    clone/worktree of this repo."""
+    for rel in (
+        "scripts/hooks/check_llm_log_on_commit.py",
+        "opencell/provenance/llm_log.py",
+    ):
+        src_file = REPO_ROOT / rel
+        dest_file = repo / rel
+        dest_file.parent.mkdir(parents=True, exist_ok=True)
+        dest_file.write_bytes(src_file.read_bytes())
+        dest_file.chmod(src_file.stat().st_mode)
+    (repo / "opencell" / "__init__.py").write_text("", encoding="utf-8")
+    (repo / "opencell" / "provenance" / "__init__.py").write_text("", encoding="utf-8")
+    log_path = repo / "opencell" / "provenance" / "llm_interactions.jsonl"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    log_path.write_text("", encoding="utf-8")
+
+
 def _install_hook(repo: Path) -> None:
     """Mirror scripts/git_hooks/ into the throwaway repo, then run the real,
     tracked install.sh against it. install.sh resolves paths relative to
     `git rev-parse --show-toplevel`, so it must operate on a repo that has
-    its own copy of scripts/git_hooks/ (as any real clone/worktree does)."""
+    its own copy of scripts/git_hooks/ (as any real clone/worktree does).
+
+    install.sh composes this catalog check with the LLM-log check
+    (scripts/hooks/check_llm_log_on_commit.py) into one `commit-msg` shim
+    (see scripts/git_hooks/install.sh and
+    tests/git_hooks/test_llm_log_commit_msg_hook_e2e.py), so both source
+    trees must exist for install.sh to succeed -- exactly as they do in any
+    real clone/worktree of this repo."""
     dest_hooks_dir = repo / "scripts" / "git_hooks"
     dest_hooks_dir.mkdir(parents=True, exist_ok=True)
     src_hooks_dir = REPO_ROOT / "scripts" / "git_hooks"
@@ -81,6 +110,9 @@ def _install_hook(repo: Path) -> None:
         dest_file = dest_hooks_dir / src_file.name
         dest_file.write_bytes(src_file.read_bytes())
         dest_file.chmod(src_file.stat().st_mode)
+
+    _seed_llm_log_sources(repo)
+
     result = _run(["bash", str(dest_hooks_dir / "install.sh")], cwd=repo)
     assert result.returncode == 0, result.stderr
 
@@ -209,6 +241,7 @@ class TestLinkedWorktreeInstall:
             dest_file = hooks_dir / src_file.name
             dest_file.write_bytes(src_file.read_bytes())
             dest_file.chmod(src_file.stat().st_mode)
+        _seed_llm_log_sources(main)
         _run(["git", "add", "-A"], cwd=main)
         _run(["git", "commit", "-m", "initial commit"], cwd=main)
 
