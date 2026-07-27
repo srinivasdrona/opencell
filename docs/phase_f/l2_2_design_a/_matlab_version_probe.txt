@@ -1,0 +1,3 @@
+MATLAB 26.1.0.3251617 (R2026a) Update 2 -- Trial License
+Probed via: E:\MATLAB\bin\matlab.exe -batch "disp(version); disp(version('-release'));"
+Recorded: 2026-07-27 (session: L2.2 bounded multi-seed pilot, agent/l22-multiseed)

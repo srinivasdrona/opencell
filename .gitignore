@@ -35,6 +35,8 @@ data/m1_sources/WholeCellKB/
 data/m1_sources/karr_native/initial_states/
 data/m1_sources/karr_native/per_process_traces/
 data/m1_sources/karr_native/per_process_traces_v2/
+data/m1_sources/karr_native/per_process_traces_v2_s*/
+data/m1_sources/karr_native/per_process_traces_v2_event_s*/
 data/m1_sources/karr_native/*.mat
 
 # Local databases + backups

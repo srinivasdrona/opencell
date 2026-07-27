@@ -1,0 +1,225 @@
+{
+  "generated_at": "2026-07-27T15:28:38.626386+00:00",
+  "harness": "scripts/verify_multiseed_pilot.py",
+  "matlab_tool_version": "MATLAB 26.1.0.3251617 (R2026a) Update 2 -- Trial License\nProbed via: E:\\MATLAB\\bin\\matlab.exe -batch \"disp(version); disp(version('-release'));\"\nRecorded: 2026-07-27 (session: L2.2 bounded multi-seed pilot, agent/l22-multiseed)",
+  "pilot_seeds": [
+    0,
+    1
+  ],
+  "pilot_processes": [
+    "Transcription",
+    "RNADecay",
+    "ProteinDecay"
+  ],
+  "processes": {
+    "Transcription": {
+      "seeds": {
+        "0": {
+          "path": "data/m1_sources/karr_native/per_process_traces_v2_s000/Transcription_100ticks.mat",
+          "sha256": "20abc93f01bd26a4533a87490f8703482bc45f3987df78ba6b938576c7ae687b",
+          "size_bytes": 10800552,
+          "metadata": {
+            "process_name": "Transcription",
+            "n_ticks": 100.0,
+            "rng_seed": 0,
+            "timestamp": "2026-07-27 20:38:37"
+          },
+          "before_channels": [
+            "RNAs",
+            "boundEnzymes",
+            "chromosome",
+            "enzymes",
+            "substrates"
+          ],
+          "after_channels": [
+            "RNAs",
+            "boundEnzymes",
+            "chromosome",
+            "enzymes",
+            "substrates"
+          ]
+        },
+        "1": {
+          "path": "data/m1_sources/karr_native/per_process_traces_v2_s001/Transcription_100ticks.mat",
+          "sha256": "ff94059fe6c1647bbf533a3fa1d421aa8c3eb041a21a82ddaff44d0b8a079026",
+          "size_bytes": 10800672,
+          "metadata": {
+            "process_name": "Transcription",
+            "n_ticks": 100.0,
+            "rng_seed": 1,
+            "timestamp": "2026-07-27 20:35:37"
+          },
+          "before_channels": [
+            "RNAs",
+            "boundEnzymes",
+            "chromosome",
+            "enzymes",
+            "substrates"
+          ],
+          "after_channels": [
+            "RNAs",
+            "boundEnzymes",
+            "chromosome",
+            "enzymes",
+            "substrates"
+          ]
+        }
+      },
+      "non_vacuity_check": {
+        "channel": "substrates",
+        "seeds_compared": [
+          0,
+          1
+        ],
+        "identical_across_seeds": false,
+        "max_abs_diff": 2697814.0
+      },
+      "loader_compatibility": {
+        "canonical_seed_count": 50,
+        "n_ticks_available": 100,
+        "oracle_path": "/mnt/e/opencell-worktrees/l22-multiseed/data/m1_sources/karr_native/ensembles/transcription/MANIFEST.json",
+        "warnings": []
+      }
+    },
+    "RNADecay": {
+      "seeds": {
+        "0": {
+          "path": "data/m1_sources/karr_native/per_process_traces_v2_s000/RNADecay_100ticks.mat",
+          "sha256": "d1f6d09dd824770226fb3c8ded1ae4ce8d3b66d13e6389e43bd412279d5b2ada",
+          "size_bytes": 1020280,
+          "metadata": {
+            "process_name": "RNADecay",
+            "n_ticks": 100.0,
+            "rng_seed": 0,
+            "timestamp": "2026-07-27 20:38:54"
+          },
+          "before_channels": [
+            "RNAs",
+            "boundEnzymes",
+            "enzymes",
+            "substrates"
+          ],
+          "after_channels": [
+            "RNAs",
+            "boundEnzymes",
+            "enzymes",
+            "substrates"
+          ]
+        },
+        "1": {
+          "path": "data/m1_sources/karr_native/per_process_traces_v2_s001/RNADecay_100ticks.mat",
+          "sha256": "8dacd7e82b441fd896ec2b26014c8b596be9e3e016a8d16070dc4c062cb73ac2",
+          "size_bytes": 1020280,
+          "metadata": {
+            "process_name": "RNADecay",
+            "n_ticks": 100.0,
+            "rng_seed": 1,
+            "timestamp": "2026-07-27 20:35:55"
+          },
+          "before_channels": [
+            "RNAs",
+            "boundEnzymes",
+            "enzymes",
+            "substrates"
+          ],
+          "after_channels": [
+            "RNAs",
+            "boundEnzymes",
+            "enzymes",
+            "substrates"
+          ]
+        }
+      },
+      "non_vacuity_check": {
+        "channel": "substrates",
+        "seeds_compared": [
+          0,
+          1
+        ],
+        "identical_across_seeds": false,
+        "max_abs_diff": 33777312.0
+      },
+      "loader_compatibility": {
+        "canonical_seed_count": 2,
+        "n_ticks_available": 100,
+        "oracle_path": "/mnt/e/opencell-worktrees/l22-multiseed/data/m1_sources/karr_native/per_process_traces_v2_s000/RNADecay_100ticks.mat",
+        "warnings": []
+      }
+    },
+    "ProteinDecay": {
+      "seeds": {
+        "0": {
+          "path": "data/m1_sources/karr_native/per_process_traces_v2_s000/ProteinDecay_100ticks.mat",
+          "sha256": "4b066b05f9c8de06b470ccc472ef02375c4ad069dcfaf993dcc0ade53010369f",
+          "size_bytes": 2379255,
+          "metadata": {
+            "process_name": "ProteinDecay",
+            "n_ticks": 100.0,
+            "rng_seed": 0,
+            "timestamp": "2026-07-27 20:41:38"
+          },
+          "before_channels": [
+            "RNAs",
+            "boundEnzymes",
+            "complexs",
+            "enzymes",
+            "monomers",
+            "substrates"
+          ],
+          "after_channels": [
+            "RNAs",
+            "boundEnzymes",
+            "complexs",
+            "enzymes",
+            "monomers",
+            "substrates"
+          ]
+        },
+        "1": {
+          "path": "data/m1_sources/karr_native/per_process_traces_v2_s001/ProteinDecay_100ticks.mat",
+          "sha256": "8d87bfb861677ddafd7a134e8aec2667284d5dfeebe02a3818a416f3cdea6369",
+          "size_bytes": 2377974,
+          "metadata": {
+            "process_name": "ProteinDecay",
+            "n_ticks": 100.0,
+            "rng_seed": 1,
+            "timestamp": "2026-07-27 20:41:58"
+          },
+          "before_channels": [
+            "RNAs",
+            "boundEnzymes",
+            "complexs",
+            "enzymes",
+            "monomers",
+            "substrates"
+          ],
+          "after_channels": [
+            "RNAs",
+            "boundEnzymes",
+            "complexs",
+            "enzymes",
+            "monomers",
+            "substrates"
+          ]
+        }
+      },
+      "non_vacuity_check": {
+        "channel": "substrates",
+        "seeds_compared": [
+          0,
+          1
+        ],
+        "identical_across_seeds": false,
+        "max_abs_diff": 169616910.0
+      },
+      "loader_compatibility": {
+        "canonical_seed_count": 2,
+        "n_ticks_available": 100,
+        "oracle_path": "/mnt/e/opencell-worktrees/l22-multiseed/data/m1_sources/karr_native/per_process_traces_v2_s000/ProteinDecay_100ticks.mat",
+        "warnings": []
+      }
+    }
+  },
+  "result": "PASS",
+  "failures": []
+}
