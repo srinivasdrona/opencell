@@ -231,6 +231,124 @@ check` is clean on all new/modified files.
 Results of steps 1-4 will be appended to this report (or a companion final
 evidence report) once the MATLAB regeneration run completes.
 
+## 7a. Canary: ProteinDecay seed 0 + seed 1
+
+Canary chosen as ProteinDecay (smallest file). MATLAB (`E:\MATLAB\bin\matlab.exe`,
+R2026a Update 2 trial license), 1 worker:
+
+- Seed 0: `-batch "addpath('scripts/matlab'); extract_per_process_traces_v2({'ProteinDecay'}, 'per_process_traces_v2', 200, uint32(0));"`
+  — ran to completion in under 2 minutes, wrote
+  `per_process_traces_v2/ProteinDecay_200ticks.mat` (4,742,805 bytes, no
+  collision with the pre-existing `_100ticks.mat`).
+- Seed 1: `scripts\matlab\run_l22_seed_shards.ps1 -Processes ProteinDecay
+  -Seeds "1" -Workers 1 -NTicks 200` (unmodified launcher/driver) — wrote
+  `per_process_traces_v2_s001/ProteinDecay_200ticks.mat` (4,740,275 bytes).
+
+Both files independently verified via `trace_validation.validate_structural(...,
+expected_n_ticks=200)` BEFORE relabeling: `ok=True`, zero errors,
+`metadata.n_ticks=200`, `metadata.tick_offset=0` (confirming a genuine
+200-consecutive-tick run from `t=0`, not a windowed/offset extraction), and
+both `states_before`/`states_after` channel arrays independently confirmed
+at 200-tick depth (the same check `validate_structural` performs, not just
+the metadata field).
+
+Relabeled both (`depth200_regen.py relabel --processes ProteinDecay --seeds
+"0,1"`): `action: "relabeled"` for both, `real_metadata_n_ticks: 200`, no
+`verify_failed`/`missing_real_file`.
+
+Given the task's "(or full 50 if launcher atomic)" allowance, the canary
+was then extended to ProteinDecay's remaining seeds 2-49 in the same run
+(§7b) to obtain a genuine, immediate loader/runner M=200 smoke result
+(the generic v2 loader stacks across all seeds present for a process, so a
+real "loader can serve M=200" check requires all 50 seeds at consistent
+depth — partial coverage would instead surface a shape-mismatch error
+unrelated to the depth question being tested).
+
+## 7b. Full run: all three processes, all 50 seeds
+
+System load checked immediately before each MATLAB launch (never killing
+or contending with the concurrently active Metabolism FVA Python runner,
+PID 2316, or any other process); no other MATLAB process was ever running
+concurrently with these launches.
+
+| Run | Command | Workers | System load at launch | Wall time | Errors |
+|---|---|---|---|---|---|
+| ProteinDecay seeds 2-49 | `run_l22_seed_shards.ps1 -Processes ProteinDecay -Seeds "2-49" -Workers 2 -NTicks 200 -NoWait` | 2 | 21% | ~15 min | none (both worker stderr logs empty) |
+| DNARepair+ReplicationInitiation seed 0 | direct `matlab.exe -batch` (both processes, one call) | 1 | 13% | ~2.5 min | none |
+| DNARepair+ReplicationInitiation seeds 1-49 | `run_l22_seed_shards.ps1 -Processes "DNARepair,ReplicationInitiation" -Seeds "1-49" -Workers 2 -NTicks 200 -NoWait` | 2 | 13% (peaked ~69% mid-run alongside the FVA runner; never saturated) | ~33 min | none (both worker stderr logs empty) |
+
+At no point were more than 2 MATLAB worker processes active simultaneously,
+consistent with the task's ≤2-worker bound; each stage's workers were
+confirmed exited (no leftover `matlab.exe` process) before the next stage
+was launched.
+
+All 150 real `_200ticks.mat` files (3 processes × 50 seeds) were then
+relabeled onto their legacy `_100ticks.mat` filenames via
+`depth200_regen.py relabel`: **150/150 relabeled, 0 failed/missing**, split
+across three relabel invocations (canary 2 + ProteinDecay remainder 48 +
+DNARepair/ReplicationInitiation seed 0 (2) + seeds 1-49 (98) = 150).
+
+Representative old-vs-new hash/size comparison (seed 0, full data for all
+150 files in the archive manifest + relabel-result JSONs, gitignored):
+
+| Process | Old (100-tick) SHA256 | Old size | New (200-tick, legacy filename) SHA256 | New size |
+|---|---|---|---|---|
+| DNARepair | `c3d73b8a...940942d` | 10,649,080 | `a26696b9...a65d73e2f` | 21,336,928 |
+| ProteinDecay | `1c4d5c58...c503b28b4` | 2,379,255 | `f8699384...bdcf6d52eb` | 4,742,805 |
+| ReplicationInitiation | `0c61c816...703550c0f` | 10,213,104 | `ab83714a...757033403` | 20,466,328 |
+
+Every new file is almost exactly 2x the old file's size (200/100 ticks),
+consistent with a genuine doubling of captured tick depth rather than a
+metadata-only relabel.
+
+## 7c. Final verification (all three processes)
+
+`report.py final --processes DNARepair,ProteinDecay,ReplicationInitiation
+--seeds 1-49 --expected-n-ticks 200 --skip-specialized --out
+artifacts/l22_depth200_regen/final_report_all3.json`:
+
+**Result: `PASS`, `missing_or_failing: []`.**
+
+Real (unmocked) `load_karr_oracle` dispatch, all three processes:
+
+| Process | ok | canonical_seed_count | n_ticks_available | warnings |
+|---|---|---|---|---|
+| DNARepair | true | 50 | 200 | [] |
+| ProteinDecay | true | 50 | 200 | [] |
+| ReplicationInitiation | true | 50 | 200 | [] |
+
+Additional checks, all three processes:
+
+- **Schema consistency**: `preflight.schema_preflight(process, range(50))`
+  returns `ok: True` for all three (identical channel key set + per-channel
+  vector widths across all 50 seeds; uses the loader's own
+  `_seed_schema_preflight`).
+- **Runner-level M=200 depth gate (bounded smoke, not the full expensive OC
+  sweep)**: called the exact function the runner uses,
+  `l2_2_design_a_runner._normalize_seed_axis(before_substrates, seeds,
+  m_ticks)`, directly against the real loaded oracle for each process:
+  `M=200` succeeds (`Requested 200 ticks, but oracle only provides 100.`
+  no longer raised — the array now genuinely has 200 tick-rows:
+  `before_substrates.shape` = `(50, 200, 277)` DNARepair, `(50, 200, 53)`
+  ProteinDecay, `(50, 200, 5)` ReplicationInitiation); `M=201` is correctly
+  still rejected (`Requested 201 ticks, but oracle only provides 200.`),
+  confirming the depth gate itself was not weakened or bypassed.
+- **Non-vacuity / seed independence**: sampled SHA256 of seeds {0, 1, 2, 25,
+  49} per process — all pairwise distinct within each process (15 hashes,
+  all unique) — no seed silently reused another seed's trace.
+- **File census**: exactly 50 `_100ticks.mat` files per process (legacy
+  filename, genuine 200-tick content), 0 leftover `_200ticks.mat` files
+  anywhere (all real files were consumed by the relabel step), 0
+  `per_process_traces_v2_s000` directories anywhere in
+  `data/m1_sources/karr_native/`.
+
+All three processes fully satisfy the task's completion criteria: exact
+seeds 0-49 present, no `_s000`, structurally loadable with correct
+seed/process/tick-depth metadata, identical channel schema/width across
+all 50 seeds, distinct seed hashes/biological states, real loader
+`canonical_seed_count=50`/`warnings=[]` at genuine 200-tick depth, and the
+runner's own M=200 depth gate passes without the original error.
+
 ## 8. Out of scope / unaffected
 
 This regeneration touches only local worktree copies of these three
