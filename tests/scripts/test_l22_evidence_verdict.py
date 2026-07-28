@@ -93,14 +93,23 @@ def test_channel_fail_above_threshold_even_if_stored_verdict_says_pass():
     assert any("exceeds threshold" in reason for reason in reasons)
 
 
-def test_channel_missing_evaluator_for_projection_aggregation():
+def test_channel_missing_evaluator_for_unknown_aggregation():
+    payload = _channel(aggregation="some_future_metric_type")
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == schema.STATUS_MISSING_EVALUATOR
+    assert any("some_future_metric_type" in reason for reason in reasons)
+
+
+def test_channel_missing_evaluator_for_projection_aggregation_without_per_component_block():
+    """aggregation says per_component_scaled but the raw per_component block is absent."""
     payload = _channel(aggregation="per_component_scaled")
     verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
     assert verdict == schema.STATUS_MISSING_EVALUATOR
-    assert any("per_component_scaled" in reason for reason in reasons)
+    assert any("per_component" in reason for reason in reasons)
 
 
-def test_channel_missing_evaluator_for_hurdle_aggregation():
+def test_channel_missing_evaluator_for_hurdle_aggregation_without_hurdle_block():
+    """aggregation says hurdle_* but the raw hurdle block is absent."""
     payload = _channel(aggregation="hurdle_event_rate_plus_conditional_scaled_distance")
     verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
     assert verdict == schema.STATUS_MISSING_EVALUATOR
@@ -129,6 +138,370 @@ def test_channel_event_channel_is_deferred_regardless_of_metrics():
     verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=False)
     assert verdict == "EVENT_CHANNEL_DEFERRED"
     assert reasons == []
+
+
+# --- per_component_scaled ---------------------------------------------------------
+
+
+def _per_component_payload(**component_overrides) -> dict:
+    """A clean, passing 2-component per_component_scaled payload."""
+    payload = {
+        "verdict": "PASS",
+        "aggregation": "per_component_scaled",
+        "is_primary": True,
+        "is_event_channel": False,
+        "per_component": {
+            "component_raw_w1": {"comp_a": 1.0, "comp_b": 0.5},
+            "component_scales": {"comp_a": 5.0, "comp_b": 5.0},
+            "scaled_distance_threshold": 1.0,
+            "component_n_nonzero_oc": {"comp_a": 100, "comp_b": 100},
+            "component_n_nonzero_karr": {"comp_a": 100, "comp_b": 100},
+            "component_verdicts": {"comp_a": "PASS", "comp_b": "PASS"},
+            "joint_verdict": "PASS",
+        },
+    }
+    payload["per_component"].update(component_overrides)
+    return payload
+
+
+def test_per_component_pass_when_all_components_within_threshold():
+    verdict, reasons = vd.rederive_channel("chromosome", _per_component_payload(), is_primary=True)
+    assert verdict == "PASS"
+    assert reasons == []
+
+
+def test_per_component_fail_ignores_tampered_stored_pass():
+    """Stored component_verdicts/joint_verdict say PASS; raw numbers say FAIL."""
+    payload = _per_component_payload(
+        component_raw_w1={"comp_a": 50.0, "comp_b": 0.5},
+        component_verdicts={"comp_a": "PASS", "comp_b": "PASS"},
+        joint_verdict="PASS",
+    )
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == schema.STATUS_FAIL
+    assert any("comp_a" in reason for reason in reasons)
+
+
+def test_per_component_pass_ignores_tampered_stored_fail():
+    """Stored component_verdicts/joint_verdict say FAIL; raw numbers actually PASS."""
+    payload = _per_component_payload(
+        component_verdicts={"comp_a": "FAIL", "comp_b": "FAIL"},
+        joint_verdict="FAIL",
+    )
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == "PASS"
+    assert reasons == []
+
+
+def test_per_component_joint_fails_if_only_one_component_fails():
+    payload = _per_component_payload(component_raw_w1={"comp_a": 1.0, "comp_b": 500.0})
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == schema.STATUS_FAIL
+    assert any("comp_b" in reason for reason in reasons)
+    assert not any("comp_a" in reason for reason in reasons)
+
+
+def test_per_component_boundary_equality_is_pass():
+    """scaled_w1 exactly equal to the threshold is PASS (<=, not <)."""
+    payload = _per_component_payload(component_raw_w1={"comp_a": 5.0, "comp_b": 5.0})
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == "PASS"
+
+
+def test_per_component_missing_raw_field_is_missing_evaluator():
+    payload = _per_component_payload()
+    del payload["per_component"]["component_scales"]
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == schema.STATUS_MISSING_EVALUATOR
+    assert any("component_scales" in reason for reason in reasons)
+
+
+def test_per_component_mismatched_component_name_sets_is_missing_evaluator():
+    payload = _per_component_payload(component_scales={"comp_a": 5.0, "comp_other": 5.0})
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == schema.STATUS_MISSING_EVALUATOR
+
+
+def test_per_component_nan_raw_w1_is_missing_evaluator():
+    payload = _per_component_payload(component_raw_w1={"comp_a": float("nan"), "comp_b": 0.5})
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == schema.STATUS_MISSING_EVALUATOR
+
+
+def test_per_component_inf_raw_w1_is_missing_evaluator():
+    payload = _per_component_payload(component_raw_w1={"comp_a": float("inf"), "comp_b": 0.5})
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == schema.STATUS_MISSING_EVALUATOR
+
+
+def test_per_component_negative_nonzero_count_is_missing_evaluator():
+    payload = _per_component_payload(component_n_nonzero_oc={"comp_a": -1, "comp_b": 100})
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == schema.STATUS_MISSING_EVALUATOR
+
+
+def test_per_component_zero_scale_is_missing_evaluator():
+    payload = _per_component_payload(component_scales={"comp_a": 0.0, "comp_b": 5.0})
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == schema.STATUS_MISSING_EVALUATOR
+
+
+def test_per_component_primary_vacuous_when_all_components_zero_nonzero_both_sides():
+    payload = _per_component_payload(
+        component_raw_w1={"comp_a": 0.0, "comp_b": 0.0},
+        component_n_nonzero_oc={"comp_a": 0, "comp_b": 0},
+        component_n_nonzero_karr={"comp_a": 0, "comp_b": 0},
+    )
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == schema.STATUS_PRIMARY_VACUOUS
+
+
+def test_per_component_not_vacuous_when_only_one_component_is_zero_nonzero():
+    """One trivial (always-zero) component alongside a real one is a genuine PASS, not vacuous."""
+    payload = _per_component_payload(
+        component_n_nonzero_oc={"comp_a": 0, "comp_b": 100},
+        component_n_nonzero_karr={"comp_a": 0, "comp_b": 100},
+    )
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == "PASS"
+
+
+def test_per_component_vacuous_check_skipped_for_non_primary():
+    payload = _per_component_payload(
+        component_raw_w1={"comp_a": 0.0, "comp_b": 0.0},
+        component_n_nonzero_oc={"comp_a": 0, "comp_b": 0},
+        component_n_nonzero_karr={"comp_a": 0, "comp_b": 0},
+    )
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=False)
+    assert verdict == "PASS"
+
+
+# --- hurdle_event_rate_plus_conditional_scaled_distance ---------------------------
+
+
+def _hurdle_payload(**hurdle_overrides) -> dict:
+    """A clean, passing hurdle payload with 2 conditional components."""
+    payload = {
+        "verdict": "PASS",
+        "aggregation": "hurdle_event_rate_plus_conditional_scaled_distance",
+        "is_primary": True,
+        "is_event_channel": False,
+        "hurdle": {
+            "event_rate_diff": 0.02,
+            "event_rate_threshold": 0.10,
+            "conditional_w1_per_component": {"component_1": 1.0, "component_2": 0.5},
+            "conditional_scaled_w1_per_component": {"component_1": 0.2, "component_2": 0.1},
+            "conditional_component_scales": {"component_1": 5.0, "component_2": 5.0},
+            "conditional_scaled_distance_threshold": 1.0,
+            "n_events_oc": 40,
+            "n_events_karr": 42,
+            "component_verdicts": {"component_1": "PASS", "component_2": "PASS"},
+            "joint_verdict": "PASS",
+        },
+    }
+    payload["hurdle"].update(hurdle_overrides)
+    return payload
+
+
+def test_hurdle_pass_when_event_rate_and_all_conditionals_within_threshold():
+    verdict, reasons = vd.rederive_channel("chromosome", _hurdle_payload(), is_primary=True)
+    assert verdict == "PASS"
+    assert reasons == []
+
+
+def test_hurdle_fail_ignores_tampered_stored_pass_on_event_rate():
+    payload = _hurdle_payload(event_rate_diff=0.9, joint_verdict="PASS")
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == schema.STATUS_FAIL
+    assert any("event_rate_diff" in reason for reason in reasons)
+
+
+def test_hurdle_fail_ignores_tampered_stored_pass_on_conditional_component():
+    payload = _hurdle_payload(
+        conditional_w1_per_component={"component_1": 50.0, "component_2": 0.5},
+        component_verdicts={"component_1": "PASS", "component_2": "PASS"},
+        joint_verdict="PASS",
+    )
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == schema.STATUS_FAIL
+    assert any("component_1" in reason for reason in reasons)
+
+
+def test_hurdle_pass_ignores_tampered_stored_fail():
+    payload = _hurdle_payload(component_verdicts={"component_1": "FAIL", "component_2": "FAIL"}, joint_verdict="FAIL")
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == "PASS"
+
+
+def test_hurdle_joint_fails_if_only_one_conditional_component_fails():
+    payload = _hurdle_payload(conditional_w1_per_component={"component_1": 1.0, "component_2": 500.0})
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == schema.STATUS_FAIL
+    assert any("component_2" in reason for reason in reasons)
+    assert not any("component_1" in reason for reason in reasons)
+
+
+def test_hurdle_boundary_equality_on_event_rate_is_pass():
+    payload = _hurdle_payload(event_rate_diff=0.10, event_rate_threshold=0.10)
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == "PASS"
+
+
+def test_hurdle_boundary_equality_on_conditional_distance_is_pass():
+    payload = _hurdle_payload(conditional_w1_per_component={"component_1": 5.0, "component_2": 0.5})
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == "PASS"
+
+
+def test_hurdle_missing_raw_field_is_missing_evaluator():
+    payload = _hurdle_payload()
+    del payload["hurdle"]["conditional_component_scales"]
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == schema.STATUS_MISSING_EVALUATOR
+    assert any("conditional_component_scales" in reason for reason in reasons)
+
+
+def test_hurdle_nan_event_rate_diff_is_missing_evaluator():
+    payload = _hurdle_payload(event_rate_diff=float("nan"))
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == schema.STATUS_MISSING_EVALUATOR
+
+
+def test_hurdle_negative_event_count_is_missing_evaluator():
+    payload = _hurdle_payload(n_events_oc=-5)
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == schema.STATUS_MISSING_EVALUATOR
+
+
+def test_hurdle_zero_events_on_both_sides_is_primary_vacuous_not_pass():
+    """The runner's own joint_verdict is trivially PASS when nothing ever fires
+    on either side (see test_hurdle_distance_handles_all_zero_event_surface in
+    test_l2_2_design_a_projections.py); the mechanical re-derivation must not
+    launder that into a green row."""
+    payload = _hurdle_payload(
+        event_rate_diff=0.0,
+        conditional_w1_per_component={"component_1": 0.0, "component_2": 0.0},
+        n_events_oc=0,
+        n_events_karr=0,
+        joint_verdict="PASS",
+    )
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == schema.STATUS_PRIMARY_VACUOUS
+
+
+def test_hurdle_zero_events_vacuity_skipped_for_non_primary():
+    payload = _hurdle_payload(
+        event_rate_diff=0.0,
+        conditional_w1_per_component={"component_1": 0.0, "component_2": 0.0},
+        n_events_oc=0,
+        n_events_karr=0,
+    )
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=False)
+    assert verdict == "PASS"
+
+
+def test_hurdle_no_conditional_components_gates_on_event_rate_alone():
+    payload = _hurdle_payload(
+        conditional_w1_per_component={},
+        conditional_scaled_w1_per_component={},
+        conditional_component_scales={},
+        component_verdicts={},
+        n_events_oc=40,
+        n_events_karr=42,
+    )
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == "PASS"
+
+
+# --- fva_feasibility ---------------------------------------------------------------
+
+
+def _fva_payload(**overrides) -> dict:
+    payload = {
+        "verdict": "PASS",
+        "aggregation": "fva_feasibility",
+        "is_primary": True,
+        "is_event_channel": False,
+        "fva_feasibility_fraction": 1.0,
+        "fva_feasible_pairs": 100,
+        "fva_pairs_total": 100,
+        "fva_tolerance": 2.0,
+        "fva_threshold": 0.99,
+    }
+    payload.update(overrides)
+    return payload
+
+
+def test_fva_pass_when_fraction_meets_threshold():
+    verdict, reasons = vd.rederive_channel("substrates", _fva_payload(), is_primary=True)
+    assert verdict == "PASS"
+    assert reasons == []
+
+
+def test_fva_fail_ignores_tampered_stored_pass():
+    payload = _fva_payload(verdict="PASS", fva_feasible_pairs=10, fva_feasibility_fraction=0.10)
+    verdict, reasons = vd.rederive_channel("substrates", payload, is_primary=True)
+    assert verdict == schema.STATUS_FAIL
+    assert any("below fva_threshold" in reason for reason in reasons)
+
+
+def test_fva_pass_ignores_tampered_stored_fail():
+    payload = _fva_payload(verdict="FAIL", fva_feasible_pairs=100, fva_pairs_total=100, fva_feasibility_fraction=1.0)
+    verdict, reasons = vd.rederive_channel("substrates", payload, is_primary=True)
+    assert verdict == "PASS"
+
+
+def test_fva_boundary_equality_at_threshold_is_pass():
+    payload = _fva_payload(fva_feasible_pairs=99, fva_pairs_total=100, fva_feasibility_fraction=0.99, fva_threshold=0.99)
+    verdict, reasons = vd.rederive_channel("substrates", payload, is_primary=True)
+    assert verdict == "PASS"
+
+
+def test_fva_just_below_threshold_fails():
+    payload = _fva_payload(fva_feasible_pairs=98, fva_pairs_total=100, fva_feasibility_fraction=0.98, fva_threshold=0.99)
+    verdict, reasons = vd.rederive_channel("substrates", payload, is_primary=True)
+    assert verdict == schema.STATUS_FAIL
+
+
+def test_fva_total_pairs_zero_fails_honest_not_vacuous_pass():
+    payload = _fva_payload(fva_feasible_pairs=0, fva_pairs_total=0, fva_feasibility_fraction=0.0)
+    verdict, reasons = vd.rederive_channel("substrates", payload, is_primary=True)
+    assert verdict == schema.STATUS_FAIL
+    assert any("fva_pairs_total" in reason for reason in reasons)
+
+
+def test_fva_inconsistent_fraction_fails():
+    """Stored fva_feasibility_fraction disagrees with feasible_pairs/total_pairs."""
+    payload = _fva_payload(fva_feasible_pairs=50, fva_pairs_total=100, fva_feasibility_fraction=0.99)
+    verdict, reasons = vd.rederive_channel("substrates", payload, is_primary=True)
+    assert verdict == schema.STATUS_FAIL
+    assert any("inconsistent" in reason for reason in reasons)
+
+
+def test_fva_feasible_exceeds_total_fails():
+    payload = _fva_payload(fva_feasible_pairs=150, fva_pairs_total=100, fva_feasibility_fraction=1.5)
+    verdict, reasons = vd.rederive_channel("substrates", payload, is_primary=True)
+    assert verdict == schema.STATUS_FAIL
+
+
+def test_fva_negative_feasible_pairs_is_missing_evaluator():
+    payload = _fva_payload(fva_feasible_pairs=-1)
+    verdict, reasons = vd.rederive_channel("substrates", payload, is_primary=True)
+    assert verdict == schema.STATUS_MISSING_EVALUATOR
+
+
+def test_fva_nan_threshold_is_missing_evaluator():
+    payload = _fva_payload(fva_threshold=float("nan"))
+    verdict, reasons = vd.rederive_channel("substrates", payload, is_primary=True)
+    assert verdict == schema.STATUS_MISSING_EVALUATOR
+
+
+def test_fva_missing_raw_field_is_missing_evaluator():
+    payload = _fva_payload()
+    del payload["fva_tolerance"]
+    verdict, reasons = vd.rederive_channel("substrates", payload, is_primary=True)
+    assert verdict == schema.STATUS_MISSING_EVALUATOR
+    assert any("fva_tolerance" in reason for reason in reasons)
 
 
 # --- Process-level --------------------------------------------------------------

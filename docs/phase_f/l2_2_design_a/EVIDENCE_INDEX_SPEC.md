@@ -143,20 +143,90 @@ name them all" convention already used by the L2.2 divergence taxonomy in
 ## 6. Mechanical verdict re-derivation (`scripts/l22_evidence/verdict.py`)
 
 **Stored verdict strings inside `result.json` are never trusted.** Every
-channel's verdict is recomputed from raw fields only:
+channel's verdict is recomputed from raw fields only. The evaluator
+dispatches on the channel's own `aggregation` string; four aggregations are
+mechanically re-derivable today:
 
-- `aggregation != "per_tick_vector_w1_mean"` (chromosome-primary
-  `per_component_scaled` / `hurdle_event_rate_plus_conditional_scaled_distance`
-  channels, e.g. `DNARepair`, `Replication`, `DNASupercoiling`, `DNADamage`)
-  → `MISSING_EVALUATOR`. No mechanical re-derivation exists for these metric
-  types yet; the row is non-green with a named missing evaluator rather than
-  falling back to whatever the runner claimed.
+### 6.1 `per_tick_vector_w1_mean` (the generic count-vector channels)
+
 - Missing raw fields (`w1_oc_vs_karr`, `threshold`, `q95_null`,
   `n_nonzero_oc`, `n_nonzero_karr`) → `MISSING_EVALUATOR`.
 - Primary channel with zero nonzero observations on **both** sides →
   `PRIMARY_CHANNEL_VACUOUS` (non-vacuous primary channel requirement).
 - `n_nonzero < 30` (either side) → `INSUFFICIENT_SAMPLES` (non-gating).
 - `w1 <= q95_null` → `SEED_NOISE`; `w1 <= threshold` → `PASS`; else `FAIL`.
+
+### 6.2 `per_component_scaled` (chromosome-primary; `Replication`, `DNASupercoiling`)
+
+Raw source: `channels[c]["per_component"]`, written by
+`per_component_scaled_distance()` in
+`tests/vivarium/_l2_2_design_a_projections.py`. Required raw fields:
+`component_raw_w1`, `component_scales`, `scaled_distance_threshold`,
+`component_n_nonzero_oc`, `component_n_nonzero_karr` (all keyed by the same
+set of component names; the last three were added to the runner's output as
+part of this evaluator so re-derivation never has to trust the runner's own
+`component_verdicts`/`joint_verdict` strings). Any missing field, mismatched
+component-name sets, or a non-finite/non-positive `raw_w1`/`scale` →
+`MISSING_EVALUATOR`.
+
+For each component: `scaled_w1 = raw_w1 / max(scale, 1e-12)`; component
+verdict is `PASS` iff `scaled_w1 <= scaled_distance_threshold`, else `FAIL`
+(exactly the runner's own formula, independently recomputed here rather than
+read from the stored `component_verdicts` dict). If the channel is primary
+and **every** component has zero nonzero observations on both OC and Karr
+→ `PRIMARY_CHANNEL_VACUOUS` (a single trivial-always-zero component
+alongside otherwise-real components is not vacuous by itself). Otherwise:
+any component `FAIL` → channel `FAIL`; all components `PASS` → channel
+`PASS`.
+
+### 6.3 `hurdle_event_rate_plus_conditional_scaled_distance` (chromosome-primary; `DNARepair`)
+
+Raw source: `channels[c]["hurdle"]`, written by
+`hurdle_event_rate_plus_conditional_distance()` in the same projections
+module. Required raw fields: `event_rate_diff`, `event_rate_threshold`,
+`conditional_w1_per_component`, `conditional_component_scales`,
+`conditional_scaled_distance_threshold`, `n_events_oc`, `n_events_karr` (the
+last three added alongside `per_component_scaled`'s additions for the same
+reason). Missing/malformed → `MISSING_EVALUATOR`.
+
+Event-rate verdict is `PASS` iff `event_rate_diff <= event_rate_threshold`.
+Each conditional component is independently re-scored exactly like
+`per_component_scaled` above (`conditional_w1_per_component[name] /
+max(conditional_component_scales[name], 1e-12)` vs
+`conditional_scaled_distance_threshold`), never from the stored
+`component_verdicts`. If the channel is primary and `n_events_oc == 0 and
+n_events_karr == 0` (the event never fired on **either** side across the
+whole ensemble) → `PRIMARY_CHANNEL_VACUOUS`: the runner's own
+`per_component`/`hurdle` calculation forces every conditional distance to a
+trivial `0.0` in that case (there is nothing to compare), so its
+`joint_verdict` is a vacuous `PASS` that this re-derivation refuses to
+launder into green. Otherwise the channel verdict is `PASS` iff the
+event-rate check and every conditional component all pass.
+
+### 6.4 `fva_feasibility` (Metabolism substrates, when FVA-gated)
+
+Raw source: the channel payload's own `fva_feasible_pairs`,
+`fva_pairs_total`, `fva_threshold`, `fva_tolerance`,
+`fva_feasibility_fraction` fields (all pre-existing runner output; no
+schema addition needed). Missing field → `MISSING_EVALUATOR`; negative or
+non-finite counts → `MISSING_EVALUATOR`; `fva_pairs_total <= 0` → `FAIL`
+(feasibility is undefined, never a vacuous pass); `fva_feasible_pairs >
+fva_pairs_total` → `FAIL`. The stored `fva_feasibility_fraction` is never
+trusted directly for the gate -- it is independently recomputed as
+`fva_feasible_pairs / fva_pairs_total`, and a stored value that disagrees
+with the recomputation (outside floating-point tolerance) → `FAIL` (an
+inconsistent stored fraction is itself treated as untrustworthy evidence,
+not silently ignored). Otherwise: `PASS` iff the recomputed fraction
+`>= fva_threshold`.
+
+### 6.5 Any other aggregation string
+
+→ `MISSING_EVALUATOR`, naming the unrecognized aggregation. No mechanical
+re-derivation evaluator has been implemented for it yet; the row is
+non-green rather than falling back to whatever the runner claimed. (As of
+this writing this only affects `DNADamage`, whose `event_class` harness
+does not exist yet -- see gap #2 in section 9 -- so it never reaches this
+evaluator with real evidence in the first place.)
 
 Process-level re-derivation additionally checks, independent of any stored
 verdict:
@@ -249,10 +319,15 @@ None of this is done by this task, and none of it is faked here:
    `NON_GREEN` until it does).
 2. **Build the L2.event harness** for the 4 `event_class` processes; until
    then they remain `MISSING_EVIDENCE` by construction.
-3. **Mechanical evaluators for projection-distance primary channels**
-   (`per_component_scaled`, `hurdle_event_rate_plus_conditional_scaled_distance`)
-   — currently `MISSING_EVALUATOR` for `DNARepair`, `Replication`,
-   `DNASupercoiling`, `DNADamage`.
+3. **Mechanical evaluators for projection-distance primary channels** —
+   **done (2026-07-28)**: `per_component_scaled` (`Replication`,
+   `DNASupercoiling`) and `hurdle_event_rate_plus_conditional_scaled_distance`
+   (`DNARepair`) are now mechanically re-derived from raw metric/threshold
+   fields per section 6.2/6.3, once real evidence exists for those
+   processes (still blocked on gap #1(b) above). `DNADamage` remains
+   `MISSING_EVIDENCE` until the `event_class` harness in gap #2 exists —
+   its projection aggregation was never run through this evaluator with
+   real evidence either way.
 4. **Null-control-must-fail canary, pre-registered/null-derived thresholds,
    H12 evidence generation, hint-off proof, reproducibility canary** — the
    schema has fields ready for these (`h12_evidence_ref`, `decision_ref`,

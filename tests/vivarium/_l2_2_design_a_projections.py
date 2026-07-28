@@ -167,19 +167,33 @@ def per_component_scaled_distance(
         "component_raw_w1": {},
         "component_scales": {},
         "component_verdicts": {},
+        # Raw fields below (added for mechanical verdict re-derivation in
+        # scripts/l22_evidence/verdict.py -- NOT part of the PASS/FAIL
+        # calculation itself): the fixed scaled-distance cutoff used above,
+        # and per-component nonzero-observation counts so a downstream
+        # evaluator can independently detect a channel that is trivially
+        # "passing" only because both OC and Karr never show any signal on
+        # every single component (non-vacuous primary channel requirement).
+        "scaled_distance_threshold": _SCALED_DISTANCE_THRESHOLD,
+        "component_n_nonzero_oc": {},
+        "component_n_nonzero_karr": {},
     }
     joint_pass = True
     for idx, component_name in enumerate(component_names):
         scale = float(component_scales[component_name])
         if scale <= 0.0:
             raise ValueError(f"Scale for component '{component_name}' must be positive; got {scale}")
-        raw_w1 = float(wasserstein_distance(oc[:, :, idx].reshape(-1), karr[:, :, idx].reshape(-1)))
+        oc_component = oc[:, :, idx].reshape(-1)
+        karr_component = karr[:, :, idx].reshape(-1)
+        raw_w1 = float(wasserstein_distance(oc_component, karr_component))
         scaled_w1 = raw_w1 / max(scale, _EPSILON)
         verdict = "PASS" if scaled_w1 <= _SCALED_DISTANCE_THRESHOLD else "FAIL"
         payload[component_name] = float(scaled_w1)
         payload["component_raw_w1"][component_name] = raw_w1
         payload["component_scales"][component_name] = scale
         payload["component_verdicts"][component_name] = verdict
+        payload["component_n_nonzero_oc"][component_name] = int(np.count_nonzero(oc_component))
+        payload["component_n_nonzero_karr"][component_name] = int(np.count_nonzero(karr_component))
         joint_pass = joint_pass and verdict == "PASS"
     payload["joint_verdict"] = "PASS" if joint_pass else "FAIL"
     return payload
@@ -201,6 +215,18 @@ def hurdle_event_rate_plus_conditional_distance(
     oc_event_mask = oc[:, :, 0].reshape(-1) > 0.0
     karr_event_mask = karr[:, :, 0].reshape(-1) > 0.0
     event_rate_diff = float(abs(np.mean(oc_event_mask) - np.mean(karr_event_mask)))
+    # Raw event counts (added for mechanical verdict re-derivation in
+    # scripts/l22_evidence/verdict.py -- NOT part of the PASS/FAIL
+    # calculation itself): every conditional component below is filtered by
+    # this same event mask, so these two counts are also the exact number of
+    # conditional samples backing every conditional_w1_per_component entry.
+    # A downstream evaluator uses them to tell a genuine "rates and
+    # conditional distributions match" PASS apart from a vacuous PASS where
+    # the event never fires on either side (both masks all-False, so the
+    # conditional distance below is trivially forced to 0.0 for every
+    # component rather than actually computed).
+    n_events_oc = int(np.count_nonzero(oc_event_mask))
+    n_events_karr = int(np.count_nonzero(karr_event_mask))
 
     conditional_w1: dict[str, float] = {}
     conditional_scaled_w1: dict[str, float] = {}
@@ -242,6 +268,12 @@ def hurdle_event_rate_plus_conditional_distance(
         "conditional_w1_per_component": conditional_w1,
         "conditional_scaled_w1_per_component": conditional_scaled_w1,
         "conditional_component_scales": conditional_scales,
+        # Raw fields below (added for mechanical verdict re-derivation; see
+        # comment above `n_events_oc` and the `scaled_distance_threshold`
+        # sibling field in `per_component_scaled_distance`).
+        "conditional_scaled_distance_threshold": _SCALED_DISTANCE_THRESHOLD,
+        "n_events_oc": n_events_oc,
+        "n_events_karr": n_events_karr,
         "component_verdicts": component_verdicts,
         "joint_verdict": "PASS" if joint_pass else "FAIL",
     }
