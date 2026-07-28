@@ -38,6 +38,11 @@ from scripts.l22_evidence import catalog as cat  # noqa: E402
 from scripts.l22_evidence import generator as gen  # noqa: E402
 from scripts.l22_evidence import schema  # noqa: E402
 
+from tests.scripts._l22_evidence_fixtures import (  # noqa: E402
+    write_mandatory_sidecars,
+    write_valid_sweep_provenance,
+)
+
 _ENTRIES = cat.in_scope_processes()
 
 
@@ -99,6 +104,8 @@ def _write_evidence_dir(
         {"inputs": inputs or [], "resolved_seeds": result["seeds"], "m_ticks": entry.m_ticks},
     )
     _write_json(evidence_dir / "provenance.json", {"generated_at": "2026-07-28T00:00:00+00:00", "git_sha": "deadbeef"})
+    write_mandatory_sidecars(evidence_dir)
+    write_valid_sweep_provenance(evidence_dir, process=process_name, n_seeds=entry.n_seeds, m_ticks=entry.m_ticks)
     return evidence_dir
 
 
@@ -337,3 +344,127 @@ def test_audit_passes_on_untampered_freshly_generated_index(tmp_path):
     assert result.ok is True
     assert result.aggregate_verdict == "NON_GREEN"  # 21/22 still MISSING_EVIDENCE
     assert result.tally.get(schema.STATUS_PASS) == 1
+
+
+def test_audit_rejects_content_hash_tampered_alone_with_everything_else_untouched(tmp_path):
+    """A payload hand-tampered ONLY in its `content_hash` field (every other
+    field, including every row, still equal to a fresh regeneration) must
+    still be caught. Before the Phase-A audit-hash fix, this check was
+    nested inside the `_strip_volatile(stored) != _strip_volatile(fresh)`
+    branch and would never fire when the rest of the payload still matched
+    a fresh regeneration -- silently accepting an isolated forged/removed
+    content_hash. See generator.audit()'s docstring."""
+    index_path = tmp_path / "evidence_index.json"
+    evidence_root = tmp_path / "evidence"
+    _write_evidence_dir(evidence_root, "Metabolism")
+    payload = gen.build_evidence_index(evidence_root=evidence_root)
+    gen.write_index(payload, index_path)
+
+    tampered = json.loads(index_path.read_text(encoding="utf-8"))
+    tampered["content_hash"] = "0" * 64  # forged; nothing else in the payload changed
+    index_path.write_text(json.dumps(tampered, indent=2), encoding="utf-8")
+
+    result = gen.audit(index_path=index_path, evidence_root=evidence_root)
+    assert result.ok is False
+    assert any("content_hash does not match" in problem for problem in result.problems)
+
+
+def test_audit_rejects_content_hash_field_entirely_removed(tmp_path):
+    """The degenerate case of the same bug: dropping `content_hash` outright
+    (rather than forging it) must also be caught, not silently treated as
+    "nothing to check"."""
+    index_path = tmp_path / "evidence_index.json"
+    evidence_root = tmp_path / "evidence"
+    _write_evidence_dir(evidence_root, "Metabolism")
+    payload = gen.build_evidence_index(evidence_root=evidence_root)
+    gen.write_index(payload, index_path)
+
+    tampered = json.loads(index_path.read_text(encoding="utf-8"))
+    del tampered["content_hash"]
+    index_path.write_text(json.dumps(tampered, indent=2), encoding="utf-8")
+
+    result = gen.audit(index_path=index_path, evidence_root=evidence_root)
+    assert result.ok is False
+    assert any("content_hash does not match" in problem for problem in result.problems)
+
+
+# --- Warnings are carried verbatim into the row, gating or not -----------------
+
+
+def test_non_gating_warning_is_carried_verbatim_into_the_row(tmp_path):
+    """A warning that does not match any hard-fail/H12-demotion sentinel
+    prefix (e.g. Translation's non-gating seed-shift note) must still be
+    visible on the row -- `rederive_process` only ever *acts* on sentinel
+    warnings, but ALL warnings result.json records must remain inspectable,
+    never silently dropped."""
+    non_gating_note = "SEED_SHIFT_NOTE: seed 7 realigned by 1 tick for this process; non-gating"
+    _write_evidence_dir(tmp_path, "Metabolism", warnings=[non_gating_note])
+    payload = gen.build_evidence_index(evidence_root=tmp_path)
+    row = _row_for(payload, "Metabolism")
+    assert row["warnings"] == [non_gating_note]
+    # Non-gating: still green, since this warning matches no hard-fail sentinel.
+    assert row["green"] is True
+
+
+def test_no_warnings_yields_empty_warnings_list(tmp_path):
+    _write_evidence_dir(tmp_path, "Metabolism")
+    payload = gen.build_evidence_index(evidence_root=tmp_path)
+    row = _row_for(payload, "Metabolism")
+    assert row["warnings"] == []
+
+
+# --- sweep_provenance staleness surfaced through the generator -----------------
+
+
+def test_stale_sweep_provenance_unknown_git_sha_is_non_green(tmp_path):
+    evidence_dir = _write_evidence_dir(tmp_path, "Metabolism")
+    prov_path = evidence_dir / schema.SWEEP_PROVENANCE_FILE
+    prov = json.loads(prov_path.read_text(encoding="utf-8"))
+    prov["git_sha"] = "unknown"
+    prov_path.write_text(json.dumps(prov), encoding="utf-8")
+
+    payload = gen.build_evidence_index(evidence_root=tmp_path)
+    row = _row_for(payload, "Metabolism")
+    assert row["green"] is False
+    assert any(schema.STATUS_STALE_PROVENANCE in reason and "git_sha" in reason for reason in row["reasons"])
+
+
+def test_stale_sweep_provenance_source_hash_mismatch_is_non_green(tmp_path):
+    evidence_dir = _write_evidence_dir(tmp_path, "Metabolism")
+    prov_path = evidence_dir / schema.SWEEP_PROVENANCE_FILE
+    prov = json.loads(prov_path.read_text(encoding="utf-8"))
+    prov["source_hashes"]["runner"] = "f" * 64
+    prov_path.write_text(json.dumps(prov), encoding="utf-8")
+
+    payload = gen.build_evidence_index(evidence_root=tmp_path)
+    row = _row_for(payload, "Metabolism")
+    assert row["green"] is False
+    assert any(schema.STATUS_STALE_PROVENANCE in reason and "runner" in reason for reason in row["reasons"])
+
+
+def test_stale_sweep_provenance_evaluator_schema_version_mismatch_is_non_green(tmp_path):
+    evidence_dir = _write_evidence_dir(tmp_path, "Metabolism")
+    prov_path = evidence_dir / schema.SWEEP_PROVENANCE_FILE
+    prov = json.loads(prov_path.read_text(encoding="utf-8"))
+    prov["evaluator_schema_version"] = -1
+    prov_path.write_text(json.dumps(prov), encoding="utf-8")
+
+    payload = gen.build_evidence_index(evidence_root=tmp_path)
+    row = _row_for(payload, "Metabolism")
+    assert row["green"] is False
+    assert any(
+        schema.STATUS_STALE_PROVENANCE in reason and "evaluator_schema_version" in reason for reason in row["reasons"]
+    )
+
+
+def test_missing_sweep_provenance_file_is_missing_evidence(tmp_path):
+    """Evidence dating from before the provenance hardening (no
+    sweep_provenance.json at all) is honestly MISSING_EVIDENCE, never
+    silently grandfathered in as PASS."""
+    evidence_dir = _write_evidence_dir(tmp_path, "Metabolism")
+    (evidence_dir / schema.SWEEP_PROVENANCE_FILE).unlink()
+
+    payload = gen.build_evidence_index(evidence_root=tmp_path)
+    row = _row_for(payload, "Metabolism")
+    assert row["green"] is False
+    assert row["mechanical_verdict"] == schema.STATUS_MISSING_EVIDENCE

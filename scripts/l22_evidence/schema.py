@@ -60,20 +60,74 @@ BUNDLE_ROOT = REPO_ROOT / "docs" / "phase_f" / "l2_2_design_a" / "evidence_bundl
 # --- Authority files ---------------------------------------------------------
 
 REQUIRED_AUTHORITY_FILES = ("result.json", "input_manifest.json", "provenance.json")
-OPTIONAL_SIDECAR_FILES = (
+
+# The runner (`tests/vivarium/l2_2_design_a_runner.py`) unconditionally
+# writes every one of these for every design_a_per_tick process -- see its
+# `_write_json` calls around evidence emission. A missing one means evidence
+# generation itself did not complete (or was truncated/corrupted), never a
+# legitimate "not applicable" case: `analytical_check.json` itself is always
+# written, using `{"applicable": false, "reason": ...}` for processes with no
+# analytical evaluator, rather than omitting the file. These are therefore
+# MANDATORY for a row to be green, exactly like REQUIRED_AUTHORITY_FILES.
+MANDATORY_SIDECAR_FILES = (
     "thresholds.json",
     "null_calibration.json",
     "SUMMARY.json",
-    "allocator_inputs.json",
     "analytical_check.json",
 )
-# Sidecars that hold large raw per-seed/tick arrays: never mirrored into the
-# tracked BUNDLE_ROOT, never committed. Verdict re-derivation only ever reads
-# `result.json`'s own channel payload, so excluding these changes nothing
-# about mechanical_verdict -- it only means their content_hash is absent from
-# a bundle-sourced row (they were never required for audit, only hashed
-# opportunistically when present as extra tamper-evidence).
-BUNDLE_EXCLUDE_FILES = ("allocator_inputs.json",)
+# Recorded informationally (hash + size, inside the tracked
+# sweep_provenance.json sidecar -- see SWEEP_PROVENANCE_FILE below) but never
+# required to exist and never mirrored into the tracked portable bundle:
+# allocator_inputs.json holds large raw per-seed/tick arrays. Its hash/size
+# still needs to be tamper-evident even though the file itself stays
+# gitignored, which is why sweep.py (not this generator) records it at
+# evidence-generation time, in a file that IS bundled/tracked.
+INFORMATIONAL_ONLY_FILES = ("allocator_inputs.json",)
+
+# Back-compat aliases for the pre-hardening names: `OPTIONAL_SIDECAR_FILES`
+# used to mean "hashed when present, mirrored into the bundle when present";
+# that concept is now split into MANDATORY_SIDECAR_FILES (required, always
+# hashed+bundled) and INFORMATIONAL_ONLY_FILES (hash+size recorded via
+# sweep_provenance.json only, never required, never bundled).
+OPTIONAL_SIDECAR_FILES = MANDATORY_SIDECAR_FILES + INFORMATIONAL_ONLY_FILES
+BUNDLE_EXCLUDE_FILES = INFORMATIONAL_ONLY_FILES
+
+# --- Sweep-launcher-written provenance sidecar -------------------------------
+#
+# `provenance.json` above is runner-written and, in this project's WSL/
+# Windows-linked-worktree environment, its own `git_sha` field is always the
+# literal string "unknown" (the runner's plain `git rev-parse HEAD` cannot
+# resolve a Windows-created worktree's `gitdir:` pointer file under native
+# WSL git -- a pre-existing runner limitation that is out of scope to fix,
+# since the runner itself is off-limits to modify). `sweep_provenance.json`
+# is therefore written independently by `scripts/l22_evidence/sweep.py`
+# itself (reusing the already-accepted worktree-gitdir-resolution logic in
+# `populate.py`), AFTER the runner's own mandatory files are confirmed
+# present/parseable/matching -- i.e. its mere presence is the "completion
+# sentinel written last" for a given evidence directory. It records: the
+# REAL git SHA (never "unknown") + dirty flag, sha256 of the runner/helpers/
+# projections/catalog source files as they existed at generation time (so
+# later drift is mechanically detectable, exactly like
+# `_check_current_tree_staleness` already does for `input_manifest.json`'s
+# own inputs), the evaluator schema version that scored the result, and the
+# allocator_inputs.json hash+size (see INFORMATIONAL_ONLY_FILES above).
+SWEEP_PROVENANCE_FILE = "sweep_provenance.json"
+SWEEP_PROVENANCE_SCHEMA_VERSION = 1
+
+RUNNER_SCRIPT = REPO_ROOT / "tests" / "vivarium" / "l2_2_design_a_runner.py"
+RUNNER_HELPERS_MODULE = REPO_ROOT / "tests" / "vivarium" / "_l2_2_design_a_runner_helpers.py"
+RUNNER_PROJECTIONS_MODULE = REPO_ROOT / "tests" / "vivarium" / "_l2_2_design_a_projections.py"
+
+# Named source files whose content hash `sweep_provenance.json` records at
+# generation time and the generator re-checks against the CURRENT tree --
+# the same names are used as dict keys on both sides so drift in any one of
+# them is individually named in `reasons[]`, not just "something changed".
+SWEEP_PROVENANCE_SOURCE_FILES = {
+    "runner": RUNNER_SCRIPT,
+    "helpers": RUNNER_HELPERS_MODULE,
+    "projections": RUNNER_PROJECTIONS_MODULE,
+    "catalog": CATALOG_PATH,
+}
 
 
 def default_evidence_root() -> Path:
@@ -130,5 +184,15 @@ STATUS_PRIMARY_VACUOUS = "PRIMARY_CHANNEL_VACUOUS"
 STATUS_NO_GATEABLE_CHANNELS = "NO_GATEABLE_CHANNELS"
 STATUS_FAIL = "FAIL"
 STATUS_PASS = "PASS"
+# A row whose runner-produced evidence is otherwise complete/matching but
+# whose sweep_provenance.json shows an unknown/missing real git SHA, a
+# source-file (runner/helpers/projections/catalog) hash mismatch versus the
+# CURRENT tree, or an evaluator_schema_version mismatch versus the CURRENT
+# `verdict.EVALUATOR_SCHEMA_VERSION`. Distinct from STATUS_MISSING_EVIDENCE
+# (nothing was produced at all) and STATUS_STALE_VS_TREE (an `input_manifest`
+# source drifted): this specifically means "this evidence was produced
+# before/without the provenance hardening (or under stale source files) and
+# must be regenerated", never inferred as compliant.
+STATUS_STALE_PROVENANCE = "STALE_SWEEP_PROVENANCE"
 
 __all__ = [name for name in globals() if name.isupper()] + ["CATALOG_PATH", "default_evidence_root"]

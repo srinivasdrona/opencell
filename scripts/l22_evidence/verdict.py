@@ -26,6 +26,19 @@ if str(_REPO_ROOT_BOOTSTRAP) not in sys.path:
 from scripts.l22_evidence import schema  # noqa: E402
 from scripts.l22_evidence.catalog import REPO_ROOT, ProcessEntry  # noqa: E402
 
+# Metadata-only version tag for the mechanical re-derivation logic in this
+# module (channel/process verdict functions below) -- bump this whenever
+# `rederive_channel`/`rederive_process`/the per-channel-kind helpers change
+# in a way that could produce a different verdict for the SAME raw
+# result.json payload. This never affects any threshold/metric/biology
+# value itself; it exists purely so `sweep_provenance.json` (written by
+# `scripts/l22_evidence/sweep.py` at evidence-generation time) can record
+# which evaluator logic produced a given row's evidence, and so the
+# generator can mechanically detect "this evidence was generated under an
+# older evaluator and must be re-run" rather than silently re-scoring old
+# raw numbers under new logic and calling that equivalent to a real rerun.
+EVALUATOR_SCHEMA_VERSION = 1
+
 
 @dataclass(frozen=True)
 class ProcessVerdict:

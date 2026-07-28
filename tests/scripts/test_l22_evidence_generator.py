@@ -1,7 +1,12 @@
 """Coverage + determinism tests for scripts/l22_evidence/generator.py against
-the REAL PROCESS_CATALOG.yaml and the real evidence tree (partially
-populated by a real Design-A runner sweep as of this commit -- see
-docs/phase_f/l2_2_design_a/EVIDENCE_INDEX_SPEC.md Section 11).
+the REAL PROCESS_CATALOG.yaml and the real evidence tree.
+
+As of this commit the tree is honestly all MISSING_EVIDENCE: the Phase-A
+provenance-hardening rules (mandatory `sweep_provenance.json` completion
+sentinel) just landed, and the pre-hardening evidence on disk does not
+carry that sentinel yet, so it is correctly demoted rather than
+grandfathered in as compliant -- see
+docs/phase_f/l2_2_design_a/EVIDENCE_INDEX_SPEC.md.
 
 Run via `bin\\oc-pytest tests/scripts/test_l22_evidence_generator.py -v`.
 """
@@ -73,22 +78,21 @@ def test_index_has_exactly_one_row_per_in_scope_process_no_extras():
     assert payload["n_in_scope"] == 22
 
 
-def test_real_sweep_evidence_today_yields_honest_mixed_non_green_index():
-    """As of this commit, a real Design-A runner sweep has populated evidence
-    for 16/18 in-scope design_a_per_tick processes (see
-    docs/phase_f/l2_2_design_a/sweep_status.json): DNASupercoiling and
-    Replication were re-run after the 29749df evaluator cherry-pick so their
-    result.json carries the additive raw fields
-    (scaled_distance_threshold/component_n_nonzero_oc/karr) the real
-    per_component_scaled evaluator needs, and both are now real mechanical
-    PASS instead of MISSING_EVALUATOR. DNARepair, ProteinDecay, and
-    ReplicationInitiation hit a real oracle-data-insufficiency (catalog
-    M_ticks=200 but the populated oracle only has 100 ticks); Metabolism is
-    still executing (FVA is a severe cost outlier); the 4 event_class
-    processes are explicitly out of scope for this sweep. No row may ever be
-    fabricated PASS -- every PASS/FAIL below is a real mechanical
-    re-derivation from raw channel metrics, and the aggregate remains
-    NON_GREEN because not every in-scope process is real-PASS yet."""
+def test_real_sweep_evidence_today_is_honestly_all_missing_pending_provenance_migration():
+    """As of this commit, the Phase-A provenance-hardening rules (mandatory
+    `sweep_provenance.json` completion sentinel with a real git SHA + source
+    hashes matching the CURRENT runner/helpers/projections/catalog files)
+    have just landed, but the real evidence tree under
+    `artifacts/l2_2_gates/` still only holds evidence from BEFORE this
+    hardening -- none of it carries `sweep_provenance.json` yet, since no
+    process has been rerun through the hardened `sweep.py run_job` since.
+    This is the honest, expected transitional state: every previously
+    "PASS"/"FAIL" row is correctly demoted to MISSING_EVIDENCE rather than
+    silently grandfathered in as compliant (see the evidence-gate task's
+    explicit instruction: unprovable prior launches must be marked stale and
+    scheduled for rerun, never inferred as valid). Phase-B reruns/migration
+    will re-populate real PASS/FAIL rows behind this same test file; until
+    then NO row may ever be fabricated PASS."""
     payload = gen.build_evidence_index()
     assert payload["aggregate_verdict"] == "NON_GREEN"
     for row in payload["rows"]:
@@ -96,7 +100,7 @@ def test_real_sweep_evidence_today_yields_honest_mixed_non_green_index():
             assert row["mechanical_verdict"] == schema.STATUS_PASS
         else:
             assert row["mechanical_verdict"] != schema.STATUS_PASS
-    assert payload["tally"] == {schema.STATUS_PASS: 9, schema.STATUS_FAIL: 5, schema.STATUS_MISSING_EVIDENCE: 8}
+    assert payload["tally"] == {schema.STATUS_MISSING_EVIDENCE: 22}
 
 
 def test_content_hash_is_deterministic_across_regenerations():
@@ -135,7 +139,7 @@ def test_write_index_then_audit_round_trips_cleanly(tmp_path):
     result = gen.audit(index_path=index_path, evidence_root=schema.EVIDENCE_ROOT)
     assert result.ok is True
     assert result.aggregate_verdict == "NON_GREEN"
-    assert result.tally == {schema.STATUS_PASS: 9, schema.STATUS_FAIL: 5, schema.STATUS_MISSING_EVIDENCE: 8}
+    assert result.tally == {schema.STATUS_MISSING_EVIDENCE: 22}
 
 
 def test_audit_reports_failure_when_index_file_absent(tmp_path):

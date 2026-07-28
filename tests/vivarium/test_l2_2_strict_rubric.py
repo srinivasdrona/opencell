@@ -13,14 +13,16 @@ This test is the INTEGRITY/AUDIT gate (stage A), not the ACCEPTANCE gate
   - Stage A (this file): passes when the tracked `evidence_index.json` is a
     truthful, untampered, byte-for-byte-reproducible (minus `generated_at`)
     reflection of the current catalog + evidence tree. It is expected and
-  REQUIRED to pass even when today's aggregate verdict is NON_GREEN --
-  a real Design-A runner sweep has populated evidence for 16/18 in-scope
-  design_a_per_tick processes as of this commit (see
-  docs/phase_f/l2_2_design_a/sweep_status.json); some real rows are
-  mechanically PASS, some are mechanically FAIL (demoted convergence
-  warnings without H12 evidence), some are MISSING_EVIDENCE (event_class
-  out of scope, an oracle-tick-depth shortfall for 3 processes, and
-  Metabolism's FVA run still executing). Faking a green result here would
+  REQUIRED to pass even when today's aggregate verdict is NON_GREEN. A real
+  Design-A runner sweep populated evidence for 16/18 in-scope
+  design_a_per_tick processes earlier (2026-07-28), but that evidence
+  predates the provenance-hardening requirement (see
+  docs/phase_f/l2_2_design_a/EVIDENCE_INDEX_SPEC.md Section 13) that every
+  row carry a `sweep_provenance.json` completion sentinel written
+  atomically by `sweep.py run_job`. Since none of it was launched through
+  that sentinel-writing path, it is unprovable and honestly reads
+  MISSING_EVIDENCE for all 22 rows today, pending a hardened sweep rerun
+  (Phase B). Faking a green -- or a fabricated mixed -- result here would
   be exactly the kind of fabrication this rewrite exists to prevent.
   - Stage B (NOT this file): `scripts/l22_evidence/generator.py audit
     --require-all-pass` / `scripts/probe_l2_2_strict_audit.py
@@ -67,19 +69,24 @@ def test_committed_evidence_index_passes_integrity_audit():
 
 def test_committed_evidence_index_is_honestly_non_green_today():
     """This task MUST report a truthful non-green index, never a fabricated
-    PASS. A real Design-A runner sweep has populated evidence for 16/18
-    in-scope design_a_per_tick processes as of this commit; the mixed real
-    PASS/FAIL/MISSING_EVIDENCE breakdown below is not fabricated -- every
-    PASS is a real mechanical re-derivation from raw channel metrics, and
-    the aggregate remains NON_GREEN because 3 processes hit a real
-    oracle-tick-depth shortfall, Metabolism's FVA run is still executing,
-    and the 4 event_class processes are out of scope for this sweep. If
-    this test ever needs to change (to GREEN or to a different tally),
-    that change must be driven by real evidence appearing/changing under
-    artifacts/l2_2_gates/, not by editing this assertion."""
+    PASS. A real Design-A runner sweep populated evidence for 16/18
+    in-scope design_a_per_tick processes earlier (2026-07-28), producing a
+    real mixed PASS/FAIL/MISSING_EVIDENCE breakdown -- but that evidence
+    predates the Section 13 provenance-hardening requirement that every row
+    carry a `sweep_provenance.json` completion sentinel written atomically
+    by `sweep.py run_job`. None of that evidence was launched through the
+    sentinel-writing code path, so it is unprovable under the hardened
+    rules and honestly reads MISSING_EVIDENCE rather than being trusted by
+    inference. This is a deliberate demotion (per this task's "if not
+    provable, mark stale and schedule rerun rather than infer"
+    requirement), not a regression or a fabrication. If this test ever
+    needs to change (to GREEN, to a mixed tally, or otherwise), that change
+    must be driven by real sentinel-carrying evidence appearing/changing
+    under artifacts/l2_2_gates/ via a hardened sweep rerun, not by editing
+    this assertion."""
     result = gen.audit()
     assert result.aggregate_verdict == "NON_GREEN"
-    assert result.tally == {schema.STATUS_PASS: 9, schema.STATUS_FAIL: 5, schema.STATUS_MISSING_EVIDENCE: 8}
+    assert result.tally == {schema.STATUS_MISSING_EVIDENCE: 22}
 
 
 def test_committed_evidence_index_covers_scope_exactly_once():

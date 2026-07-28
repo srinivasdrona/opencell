@@ -126,6 +126,53 @@ def _check_current_tree_staleness(input_manifest: dict[str, Any]) -> list[str]:
     return reasons
 
 
+def _current_source_hashes() -> dict[str, str | None]:
+    """sha256 of the runner/helpers/projections/catalog files as they exist
+    RIGHT NOW. Mirrors `sweep.current_source_hashes()` exactly (both read
+    the same `schema.SWEEP_PROVENANCE_SOURCE_FILES` dict) -- duplicated here
+    rather than importing `sweep` so this read-only audit/generator module
+    never depends on the execution-launcher module."""
+    return {name: _sha256_file(path) for name, path in schema.SWEEP_PROVENANCE_SOURCE_FILES.items()}
+
+
+def _check_sweep_provenance_staleness(payload: dict[str, Any]) -> list[str]:
+    """Reasons a `sweep_provenance.json` payload makes a row stale: an
+    unknown/missing real git SHA, a source-file (runner/helpers/
+    projections/catalog) hash that no longer matches the CURRENT tree, or an
+    evaluator_schema_version that no longer matches the CURRENT
+    `verdict.EVALUATOR_SCHEMA_VERSION`. Distinct from
+    `_check_current_tree_staleness` (which checks `input_manifest.json`'s
+    OWN recorded inputs, e.g. the oracle .mat file) -- this checks the
+    sweep-launcher's independent provenance record instead, since the
+    runner's `provenance.json["git_sha"]` can never itself be trusted (see
+    schema.py's SWEEP_PROVENANCE_FILE docstring)."""
+    reasons: list[str] = []
+    git_sha = payload.get("git_sha")
+    if not git_sha or git_sha == "unknown":
+        reasons.append(f"{schema.STATUS_STALE_PROVENANCE}: sweep_provenance.json git_sha is missing/unknown")
+
+    recorded_hashes = payload.get("source_hashes") or {}
+    for name, current in _current_source_hashes().items():
+        recorded = recorded_hashes.get(name)
+        if current is None:
+            reasons.append(f"{schema.STATUS_STALE_PROVENANCE}: current source file for {name!r} no longer exists on disk")
+        elif recorded is None:
+            reasons.append(f"{schema.STATUS_STALE_PROVENANCE}: sweep_provenance.json missing source hash for {name!r}")
+        elif recorded != current:
+            reasons.append(
+                f"{schema.STATUS_STALE_PROVENANCE}: {name} source changed since evidence was generated "
+                f"(recorded={recorded[:12]}.., current={current[:12]}..)"
+            )
+
+    recorded_schema_version = payload.get("evaluator_schema_version")
+    if recorded_schema_version != vd.EVALUATOR_SCHEMA_VERSION:
+        reasons.append(
+            f"{schema.STATUS_STALE_PROVENANCE}: evaluator_schema_version {recorded_schema_version!r} "
+            f"!= current {vd.EVALUATOR_SCHEMA_VERSION!r}"
+        )
+    return reasons
+
+
 def build_process_row(entry: cat.ProcessEntry, evidence_root: Path) -> dict[str, Any]:
     evidence_dir = _evidence_dir_for(entry, evidence_root)
     row: dict[str, Any] = {
@@ -150,7 +197,14 @@ def build_process_row(entry: cat.ProcessEntry, evidence_root: Path) -> dict[str,
         "artifact_hashes": {},
     }
 
-    missing_authority = [name for name in schema.REQUIRED_AUTHORITY_FILES if not (evidence_dir / name).is_file()]
+    # Mandatory files: the three runner authority files, every mandatory
+    # sidecar the runner unconditionally writes alongside them, and the
+    # sweep-launcher's own sweep_provenance.json completion sentinel (see
+    # schema.py). Missing ANY of these means evidence generation itself did
+    # not complete (or predates the provenance hardening) -- MISSING_EVIDENCE,
+    # never inferred as compliant.
+    mandatory_files = schema.REQUIRED_AUTHORITY_FILES + schema.MANDATORY_SIDECAR_FILES + (schema.SWEEP_PROVENANCE_FILE,)
+    missing_authority = [name for name in mandatory_files if not (evidence_dir / name).is_file()]
     if missing_authority:
         # Deliberately does not interpolate `row["evidence_dir"]` here: that
         # field is environment-relative (live artifacts/ tree vs. the
@@ -163,14 +217,14 @@ def build_process_row(entry: cat.ProcessEntry, evidence_root: Path) -> dict[str,
         # from the live tree. `row["evidence_dir"]` remains available as its
         # own field for humans who want the concrete path.
         row["reasons"].append(
-            f"{schema.STATUS_MISSING_EVIDENCE}: missing required authority file(s) {missing_authority} "
+            f"{schema.STATUS_MISSING_EVIDENCE}: missing required/mandatory file(s) {missing_authority} "
             f"for process {entry.name}"
         )
         row["mechanical_verdict"] = schema.STATUS_MISSING_EVIDENCE
         row["green"] = False
         return row
 
-    # BUNDLE_EXCLUDE_FILES (large raw per-seed/tick arrays, e.g.
+    # INFORMATIONAL_ONLY_FILES (large raw per-seed/tick arrays, e.g.
     # allocator_inputs.json) are deliberately never mirrored into the
     # tracked portable bundle and never read for verdict re-derivation --
     # so they must also never be hashed into artifact_hashes here. If they
@@ -178,9 +232,21 @@ def build_process_row(entry: cat.ProcessEntry, evidence_root: Path) -> dict[str,
     # exist) would carry an extra hash entry a bundle-sourced regeneration
     # of the SAME evidence could never reproduce, making the tracked index
     # falsely non-portable even though nothing about the actual evidence
-    # differs.
-    hashable_sidecars = tuple(name for name in schema.OPTIONAL_SIDECAR_FILES if name not in schema.BUNDLE_EXCLUDE_FILES)
-    for fname in schema.REQUIRED_AUTHORITY_FILES + hashable_sidecars:
+    # differs. Their hash+size is instead recorded inside the tracked
+    # sweep_provenance.json (which IS bundled byte-for-byte) and surfaced
+    # below via `row["sweep_provenance"]["allocator_inputs"]`.
+    #
+    # `input_manifest.json` is excluded from `artifact_hashes` for a related
+    # but distinct reason: `bundle_process_evidence` normalizes its
+    # `inputs[*]["path"]` entries to repo-relative before mirroring into the
+    # tracked bundle (so a fresh clone never has this machine's absolute
+    # worktree path baked into a tracked file), so its raw bytes legitimately
+    # differ between the live tree and the bundle even for byte-identical
+    # underlying evidence. Its actual content (resolved_seeds/m_ticks/inputs)
+    # is still read and mechanically checked below regardless of hashing.
+    for fname in mandatory_files:
+        if fname == "input_manifest.json":
+            continue
         digest = _sha256_file(evidence_dir / fname)
         if digest is not None:
             row["artifact_hashes"][fname] = digest
@@ -188,17 +254,23 @@ def build_process_row(entry: cat.ProcessEntry, evidence_root: Path) -> dict[str,
     result_payload, result_err = _load_json(evidence_dir / "result.json")
     manifest_payload, manifest_err = _load_json(evidence_dir / "input_manifest.json")
     provenance_payload, provenance_err = _load_json(evidence_dir / "provenance.json")
+    sweep_provenance_payload, sweep_provenance_err = _load_json(evidence_dir / schema.SWEEP_PROVENANCE_FILE)
 
     schema_reasons: list[str] = []
     for label, err in (
         ("result.json", result_err),
         ("input_manifest.json", manifest_err),
         ("provenance.json", provenance_err),
+        (schema.SWEEP_PROVENANCE_FILE, sweep_provenance_err),
     ):
         if err:
             schema_reasons.append(f"{schema.STATUS_SCHEMA_INVALID}: {label} {err}")
+    for fname in schema.MANDATORY_SIDECAR_FILES:
+        _, sidecar_err = _load_json(evidence_dir / fname)
+        if sidecar_err:
+            schema_reasons.append(f"{schema.STATUS_SCHEMA_INVALID}: {fname} {sidecar_err}")
 
-    if result_payload is None or manifest_payload is None or provenance_payload is None:
+    if result_payload is None or manifest_payload is None or provenance_payload is None or sweep_provenance_payload is None:
         row["reasons"].extend(schema_reasons)
         row["mechanical_verdict"] = schema.STATUS_SCHEMA_INVALID
         row["green"] = False
@@ -206,10 +278,17 @@ def build_process_row(entry: cat.ProcessEntry, evidence_root: Path) -> dict[str,
 
     all_reasons: list[str] = list(schema_reasons)
     all_reasons.extend(_check_current_tree_staleness(manifest_payload))
+    all_reasons.extend(_check_sweep_provenance_staleness(sweep_provenance_payload))
 
     process_verdict = vd.rederive_process(entry.name, entry, result_payload)
     all_reasons.extend(process_verdict.reasons)
     row["channel_verdicts"] = process_verdict.channel_verdicts
+    # Every warning result.json records verbatim, gating or not (e.g. a
+    # non-gating Translation seed-shift note) -- `rederive_process` only
+    # ever *acts* on the subset that matches a hard-fail/H12-demotion
+    # sentinel prefix; the full list must still be visible here so a
+    # non-gating warning is never silently dropped from the tracked index.
+    row["warnings"] = [str(warning) for warning in result_payload.get("warnings", ())]
 
     final_verdict = process_verdict.mechanical_verdict
     if all_reasons and final_verdict == schema.STATUS_PASS:
@@ -221,7 +300,14 @@ def build_process_row(entry: cat.ProcessEntry, evidence_root: Path) -> dict[str,
     row["mechanical_verdict"] = final_verdict
     row["green"] = final_verdict == schema.STATUS_PASS
     row["provenance_git_sha"] = provenance_payload.get("git_sha")
+    row["sweep_provenance"] = {
+        "git_sha": sweep_provenance_payload.get("git_sha"),
+        "git_dirty": sweep_provenance_payload.get("git_dirty"),
+        "evaluator_schema_version": sweep_provenance_payload.get("evaluator_schema_version"),
+        "allocator_inputs": sweep_provenance_payload.get("allocator_inputs"),
+    }
     return row
+
 
 
 def build_evidence_index(
@@ -344,6 +430,17 @@ def audit(
 
     fresh = build_evidence_index(evidence_root=evidence_root, catalog_path=catalog_path)
 
+    # Always validate the stored content_hash against the stored payload,
+    # regardless of whether `_strip_volatile(stored) != _strip_volatile(fresh)`
+    # below fires. This must never be nested inside that branch: a payload
+    # hand-tampered ONLY in a way `_strip_volatile` doesn't compare (e.g. the
+    # `content_hash` field itself, in isolation) would otherwise pass through
+    # this check entirely uncaught whenever the rest of the stored payload
+    # happens to still equal a fresh regeneration.
+    recorded_hash = stored.get("content_hash")
+    if recorded_hash != content_hash(stored):
+        problems.append("stored content_hash does not match the stored payload (index was edited after hashing)")
+
     if _strip_volatile(stored) != _strip_volatile(fresh):
         problems.append(
             "stored evidence_index.json does not match a fresh regeneration from the current catalog + "
@@ -356,9 +453,6 @@ def audit(
                 f"row-set mismatch: stored has extra {sorted(stored_processes - fresh_processes)}, "
                 f"missing {sorted(fresh_processes - stored_processes)}"
             )
-        recorded_hash = stored.get("content_hash")
-        if recorded_hash and recorded_hash != content_hash(stored):
-            problems.append("stored content_hash does not match the stored payload (index was edited after hashing)")
 
     return AuditResult(
         ok=not problems,
@@ -366,6 +460,31 @@ def audit(
         tally=fresh["tally"],
         problems=problems,
     )
+
+
+def _normalize_input_manifest_paths(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return a copy of an `input_manifest.json` payload with every
+    `inputs[*]["path"]` rewritten to a repo-relative POSIX path.
+
+    The runner (off-limits to modify) always records absolute paths rooted
+    in whatever worktree produced the evidence. Bundling those bytes
+    verbatim would bake this machine's absolute worktree path into a
+    tracked file, which both leaks local filesystem layout and breaks in a
+    fresh clone at a different location. Paths that cannot be resolved
+    under the current `cat.REPO_ROOT` (or that already live outside it) are
+    left untouched rather than guessed at.
+    """
+    normalized = copy.deepcopy(payload)
+    for record in normalized.get("inputs", ()):
+        path_str = record.get("path")
+        if not path_str:
+            continue
+        resolved = _resolve_input_path(str(path_str))
+        try:
+            record["path"] = resolved.relative_to(cat.REPO_ROOT).as_posix()
+        except ValueError:
+            continue  # not under REPO_ROOT (or unresolved) -- leave as recorded
+    return normalized
 
 
 def bundle_process_evidence(
@@ -379,19 +498,24 @@ def bundle_process_evidence(
     (large raw per-seed/tick arrays that stay local-only under the gitignored
     live `artifacts/` tree).
 
-    Pure byte-for-byte copy, so every hash in a bundle-sourced evidence row
-    matches the live tree exactly -- this changes nothing about which
-    verdict is produced, only where the bytes live. Never touches
-    `source_root`. A process with no evidence yet under `source_root` is
-    simply skipped (its existing bundle entry, if any, is left alone -- this
-    never silently deletes a previously-committed bundle for a process that
-    happens to be unavailable in the *current* source tree).
+    Every mandatory file is copied byte-for-byte EXCEPT `input_manifest.json`,
+    whose `inputs[*]["path"]` entries are normalized to repo-relative POSIX
+    paths first (see `_normalize_input_manifest_paths`) so the tracked bundle
+    never embeds an absolute worktree path. `artifact_hashes` in a generated
+    row therefore also excludes `input_manifest.json` (see `build_process_row`)
+    so this legitimate byte-level rewrite can never look like tampering.
+    All other files -- including the new `sweep_provenance.json` sentinel --
+    are copied verbatim, so their hashes match the live tree exactly. Never
+    touches `source_root`. A process with no evidence yet under `source_root`
+    is simply skipped (its existing bundle entry, if any, is left alone --
+    this never silently deletes a previously-committed bundle for a process
+    that happens to be unavailable in the *current* source tree).
     """
     if source_root is None:
         source_root = schema.EVIDENCE_ROOT
     entries = cat.in_scope_processes(catalog_path)
     wanted_files = [
-        name for name in (schema.REQUIRED_AUTHORITY_FILES + schema.OPTIONAL_SIDECAR_FILES)
+        name for name in (schema.REQUIRED_AUTHORITY_FILES + schema.OPTIONAL_SIDECAR_FILES + (schema.SWEEP_PROVENANCE_FILE,))
         if name not in schema.BUNDLE_EXCLUDE_FILES
     ]
     copied: dict[str, list[str]] = {}
@@ -406,9 +530,19 @@ def bundle_process_evidence(
         copied_files: list[str] = []
         for fname in wanted_files:
             src_file = src_dir / fname
-            if src_file.is_file():
+            if not src_file.is_file():
+                continue
+            if fname == "input_manifest.json":
+                payload, err = _load_json(src_file)
+                if payload is None:
+                    continue  # unreadable -- generator will report this via schema_reasons
+                normalized = _normalize_input_manifest_paths(payload)
+                (dst_dir / fname).write_text(
+                    json.dumps(normalized, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+                )
+            else:
                 (dst_dir / fname).write_bytes(src_file.read_bytes())
-                copied_files.append(fname)
+            copied_files.append(fname)
         copied[name] = copied_files
     return copied
 

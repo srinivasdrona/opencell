@@ -27,6 +27,8 @@ if str(REPO_ROOT) not in sys.path:
 from scripts.l22_evidence import schema  # noqa: E402
 from scripts.l22_evidence import sweep  # noqa: E402
 
+from tests.scripts._l22_evidence_fixtures import write_mandatory_sidecars, write_valid_sweep_provenance  # noqa: E402
+
 
 # --- plan_sweep against the REAL catalog ---------------------------------------
 
@@ -85,6 +87,8 @@ def _write_valid_evidence(job: sweep.SweepJob) -> None:
         json.dumps({"resolved_seeds": expected_seeds, "m_ticks": job.m_ticks, "inputs": []}), encoding="utf-8"
     )
     (job.output_dir / "provenance.json").write_text(json.dumps({"git_sha": "deadbeef"}), encoding="utf-8")
+    write_mandatory_sidecars(job.output_dir)
+    write_valid_sweep_provenance(job.output_dir, process=job.process, n_seeds=job.seeds, m_ticks=job.m_ticks)
 
 
 def test_evidence_is_valid_missing_directory_is_invalid(tmp_path):
@@ -140,6 +144,7 @@ def test_evidence_is_valid_unparseable_json_is_invalid(tmp_path):
     (job.output_dir / "result.json").write_text("{not json", encoding="utf-8")
     (job.output_dir / "input_manifest.json").write_text("{}", encoding="utf-8")
     (job.output_dir / "provenance.json").write_text("{}", encoding="utf-8")
+    write_mandatory_sidecars(job.output_dir)
     valid, reason = sweep.evidence_is_valid(job)
     assert valid is False
     assert "parse" in reason
@@ -149,7 +154,11 @@ def test_evidence_is_valid_unparseable_json_is_invalid(tmp_path):
 
 
 def _fake_ok_command(job: sweep.SweepJob) -> list[str]:
-    """A fake 'runner' that writes valid matching evidence and exits 0."""
+    """A fake 'runner' that writes valid matching evidence (authority files
+    plus all four mandatory sidecars) and exits 0. `sweep_provenance.json`
+    is deliberately NOT written here -- `run_job` itself writes that as the
+    completion sentinel after validating this output, exactly like the real
+    runner + sweep launcher."""
     script = (
         "import json,sys\n"
         f"import pathlib\n"
@@ -159,6 +168,10 @@ def _fake_ok_command(job: sweep.SweepJob) -> list[str]:
         f"(out / 'result.json').write_text(json.dumps(dict(process={job.process!r}, seeds=seeds, ticks={job.m_ticks}, verdict='PASS')))\n"
         f"(out / 'input_manifest.json').write_text(json.dumps(dict(resolved_seeds=seeds, m_ticks={job.m_ticks}, inputs=[])))\n"
         "(out / 'provenance.json').write_text(json.dumps(dict(git_sha='fake')))\n"
+        "(out / 'thresholds.json').write_text(json.dumps(dict(channels={})))\n"
+        "(out / 'null_calibration.json').write_text(json.dumps(dict(channels={})))\n"
+        "(out / 'SUMMARY.json').write_text(json.dumps(dict(note='fake')))\n"
+        "(out / 'analytical_check.json').write_text(json.dumps(dict(applicable=False, reason='fake')))\n"
         "print('fake runner ok')\n"
     )
     return [sys.executable, "-c", script]
@@ -169,7 +182,20 @@ def _fake_failing_command(job: sweep.SweepJob) -> list[str]:
 
 
 def _fake_slow_command(job: sweep.SweepJob, delay_s: float = 0.3) -> list[str]:
-    script = f"import time; time.sleep({delay_s}); print('slow runner done')"
+    script = (
+        f"import time,json,pathlib; time.sleep({delay_s})\n"
+        f"out = pathlib.Path(r'{job.output_dir}')\n"
+        "out.mkdir(parents=True, exist_ok=True)\n"
+        f"seeds = list(range({job.seeds}))\n"
+        f"(out / 'result.json').write_text(json.dumps(dict(process={job.process!r}, seeds=seeds, ticks={job.m_ticks}, verdict='PASS')))\n"
+        f"(out / 'input_manifest.json').write_text(json.dumps(dict(resolved_seeds=seeds, m_ticks={job.m_ticks}, inputs=[])))\n"
+        "(out / 'provenance.json').write_text(json.dumps(dict(git_sha='fake')))\n"
+        "(out / 'thresholds.json').write_text(json.dumps(dict(channels={})))\n"
+        "(out / 'null_calibration.json').write_text(json.dumps(dict(channels={})))\n"
+        "(out / 'SUMMARY.json').write_text(json.dumps(dict(note='fake')))\n"
+        "(out / 'analytical_check.json').write_text(json.dumps(dict(applicable=False, reason='fake')))\n"
+        "print('slow runner done')\n"
+    )
     return [sys.executable, "-c", script]
 
 
@@ -371,7 +397,11 @@ def test_cli_run_with_fake_process_via_monkeypatched_runner_script(tmp_path, mon
         "seeds = list(range(int(a.seeds)))\n"
         "(out / 'result.json').write_text(json.dumps(dict(process=a.process, seeds=seeds, ticks=int(a.ticks), verdict='PASS')))\n"
         "(out / 'input_manifest.json').write_text(json.dumps(dict(resolved_seeds=seeds, m_ticks=int(a.ticks), inputs=[])))\n"
-        "(out / 'provenance.json').write_text(json.dumps(dict(git_sha='fake')))\n",
+        "(out / 'provenance.json').write_text(json.dumps(dict(git_sha='fake')))\n"
+        "(out / 'thresholds.json').write_text(json.dumps(dict(channels={})))\n"
+        "(out / 'null_calibration.json').write_text(json.dumps(dict(channels={})))\n"
+        "(out / 'SUMMARY.json').write_text(json.dumps(dict(note='fake')))\n"
+        "(out / 'analytical_check.json').write_text(json.dumps(dict(applicable=False, reason='fake')))\n",
         encoding="utf-8",
     )
     monkeypatch.setattr(sweep, "RUNNER_SCRIPT", fake_runner)
@@ -397,3 +427,212 @@ def test_cli_run_with_fake_process_via_monkeypatched_runner_script(tmp_path, mon
     report = json.loads((tmp_path / "report.json").read_text(encoding="utf-8"))
     assert report["tally"][sweep.JOB_STATUS_RAN_OK] == 1
     assert (evidence_root / "Metabolism" / "latest" / "result.json").is_file()
+
+
+# --- sweep exit code: `run` must return nonzero on ANY hard child failure -------
+
+
+def _fake_runner_script(tmp_path: Path, *, body: str) -> Path:
+    fake_runner = tmp_path / "fake_runner_exit.py"
+    fake_runner.write_text(
+        "import argparse\n"
+        "p = argparse.ArgumentParser()\n"
+        "p.add_argument('--process', required=True)\n"
+        "p.add_argument('--seeds', required=True)\n"
+        "p.add_argument('--ticks', required=True)\n"
+        "p.add_argument('--output-dir', required=True)\n"
+        "a = p.parse_args()\n" + body,
+        encoding="utf-8",
+    )
+    return fake_runner
+
+
+def test_cli_run_returns_nonzero_when_child_exits_nonzero(tmp_path, monkeypatch):
+    fake_runner = _fake_runner_script(tmp_path, body="import sys; sys.exit(3)\n")
+    monkeypatch.setattr(sweep, "RUNNER_SCRIPT", fake_runner)
+    exit_code = sweep.main(
+        [
+            "run",
+            "--processes",
+            "Metabolism",
+            "--max-workers",
+            "1",
+            "--evidence-root",
+            str(tmp_path / "evidence"),
+            "--log-dir",
+            str(tmp_path / "logs"),
+            "--report-out",
+            str(tmp_path / "report.json"),
+        ]
+    )
+    assert exit_code != 0
+    report = json.loads((tmp_path / "report.json").read_text(encoding="utf-8"))
+    assert report["tally"][sweep.JOB_STATUS_RAN_FAIL] == 1
+
+
+def test_cli_run_returns_nonzero_when_exit_0_but_no_valid_evidence_produced(tmp_path, monkeypatch):
+    """A child that exits 0 without producing complete, request-matching
+    evidence (e.g. a runner bug, or a crash after partial writes) must still
+    be treated as a hard sweep failure -- exit 0 alone is never sufficient."""
+    fake_runner = _fake_runner_script(tmp_path, body="print('did nothing useful')\n")
+    monkeypatch.setattr(sweep, "RUNNER_SCRIPT", fake_runner)
+    exit_code = sweep.main(
+        [
+            "run",
+            "--processes",
+            "Metabolism",
+            "--max-workers",
+            "1",
+            "--evidence-root",
+            str(tmp_path / "evidence"),
+            "--log-dir",
+            str(tmp_path / "logs"),
+            "--report-out",
+            str(tmp_path / "report.json"),
+        ]
+    )
+    assert exit_code != 0
+    report = json.loads((tmp_path / "report.json").read_text(encoding="utf-8"))
+    assert report["tally"][sweep.JOB_STATUS_RAN_INVALID_EVIDENCE] == 1
+
+
+def test_cmd_run_treats_skipped_valid_as_non_failure(tmp_path):
+    """`_cmd_run`'s hard-failure set must never include JOB_STATUS_SKIPPED_VALID
+    -- already-valid, resumed evidence is a legitimate "nothing to do", not
+    a failure."""
+    assert sweep.JOB_STATUS_SKIPPED_VALID not in (
+        sweep.JOB_STATUS_START_ERROR,
+        sweep.JOB_STATUS_RAN_FAIL,
+        sweep.JOB_STATUS_RAN_INVALID_EVIDENCE,
+    )
+    job = _make_job(tmp_path, process="AlreadyValidCli")
+    _write_valid_evidence(job)
+    result = sweep.run_job(job, command_builder=_fake_failing_command)  # would fail if actually (re)run
+    assert result.status == sweep.JOB_STATUS_SKIPPED_VALID
+
+
+# --- resume/staleness: unknown git_sha / source-hash mismatch / schema drift ----
+
+
+def _make_valid_job_with_provenance(tmp_path: Path, **overrides) -> sweep.SweepJob:
+    job = _make_job(tmp_path, process="StaleCheck")
+    _write_valid_evidence(job)
+    payload = json.loads((job.output_dir / schema.SWEEP_PROVENANCE_FILE).read_text(encoding="utf-8"))
+    payload.update(overrides)
+    (job.output_dir / schema.SWEEP_PROVENANCE_FILE).write_text(json.dumps(payload), encoding="utf-8")
+    return job
+
+
+def test_evidence_is_valid_rejects_unknown_git_sha(tmp_path):
+    job = _make_valid_job_with_provenance(tmp_path, git_sha="unknown")
+    valid, reason = sweep.evidence_is_valid(job)
+    assert valid is False
+    assert "git_sha" in reason
+
+
+def test_evidence_is_valid_rejects_missing_git_sha(tmp_path):
+    job = _make_valid_job_with_provenance(tmp_path, git_sha=None)
+    valid, reason = sweep.evidence_is_valid(job)
+    assert valid is False
+    assert "git_sha" in reason
+
+
+def test_evidence_is_valid_rejects_stale_source_hash(tmp_path):
+    job = _make_valid_job_with_provenance(tmp_path, source_hashes={"runner": "deadbeef" * 8})
+    valid, reason = sweep.evidence_is_valid(job)
+    assert valid is False
+    assert "source hash" in reason
+
+
+def test_evidence_is_valid_rejects_stale_evaluator_schema_version(tmp_path):
+    job = _make_valid_job_with_provenance(tmp_path, evaluator_schema_version=-999)
+    valid, reason = sweep.evidence_is_valid(job)
+    assert valid is False
+    assert "evaluator_schema_version" in reason
+
+
+def test_evidence_is_valid_rejects_missing_sweep_provenance_file(tmp_path):
+    """Evidence written before the provenance hardening (no
+    sweep_provenance.json at all) must be treated as stale, never DONE_VALID."""
+    job = _make_job(tmp_path, process="PreHardening")
+    job.output_dir.mkdir(parents=True, exist_ok=True)
+    expected_seeds = list(range(job.seeds))
+    (job.output_dir / "result.json").write_text(
+        json.dumps({"process": job.process, "seeds": expected_seeds, "ticks": job.m_ticks, "verdict": "PASS"}),
+        encoding="utf-8",
+    )
+    (job.output_dir / "input_manifest.json").write_text(
+        json.dumps({"resolved_seeds": expected_seeds, "m_ticks": job.m_ticks, "inputs": []}), encoding="utf-8"
+    )
+    (job.output_dir / "provenance.json").write_text(json.dumps({"git_sha": "deadbeef"}), encoding="utf-8")
+    write_mandatory_sidecars(job.output_dir)
+    valid, reason = sweep.evidence_is_valid(job)
+    assert valid is False
+    assert schema.SWEEP_PROVENANCE_FILE in reason
+
+
+# --- atomic force / crash recovery / concurrent lock ----------------------------
+
+
+def test_force_rerun_atomically_replaces_prior_valid_evidence(tmp_path):
+    job = _make_job(tmp_path, process="AtomicForce")
+    _write_valid_evidence(job)
+    old_provenance = json.loads((job.output_dir / schema.SWEEP_PROVENANCE_FILE).read_text(encoding="utf-8"))
+    result = sweep.run_job(job, force=True, command_builder=_fake_ok_command)
+    assert result.status == sweep.JOB_STATUS_RAN_OK
+    new_provenance = json.loads((job.output_dir / schema.SWEEP_PROVENANCE_FILE).read_text(encoding="utf-8"))
+    # A genuinely fresh, real run_job-written sentinel (not the manually
+    # fixture-authored one `_write_valid_evidence` writes) proves the swap
+    # actually replaced the directory rather than silently keeping the old one.
+    assert new_provenance["written_at"] != old_provenance["written_at"]
+    # No leftover temp/backup dirs after a clean swap.
+    leftovers = list(job.output_dir.parent.glob(f".{job.output_dir.name}.*"))
+    assert leftovers == []
+
+
+def test_crashed_swap_backup_is_recovered_before_validity_check(tmp_path):
+    """Simulate a crash between `_atomic_replace_dir`'s two renames: the
+    final `output_dir` is missing but its `<name>.prev` backup (the
+    last-known-good evidence) still exists on disk. `evidence_is_valid` (and
+    therefore `run_job`) must recover it automatically rather than treating
+    the process as never having valid evidence."""
+    job = _make_job(tmp_path, process="CrashRecover")
+    _write_valid_evidence(job)
+    good_bytes = (job.output_dir / "result.json").read_bytes()
+
+    backup_dir = job.output_dir.parent / f"{job.output_dir.name}.prev"
+    job.output_dir.rename(backup_dir)
+    assert not job.output_dir.exists()
+    assert backup_dir.is_dir()
+
+    valid, reason = sweep.evidence_is_valid(job)
+    assert valid is True, reason
+    assert job.output_dir.is_dir()
+    assert not backup_dir.exists()
+    assert (job.output_dir / "result.json").read_bytes() == good_bytes
+
+
+def test_concurrent_lock_prevents_double_launch_and_preserves_evidence(tmp_path):
+    """A second, concurrently-running `sweep.py run` invocation that already
+    holds this process's O_EXCL lock must not be able to relaunch it -- and
+    must leave existing evidence (valid or not) completely untouched."""
+    job = _make_job(tmp_path, process="LockedConcurrent")
+    _write_valid_evidence(job)  # so a real relaunch (if it happened) would be visible as a change
+    before = (job.output_dir / "result.json").read_bytes()
+
+    lock_path = sweep._lock_path_for(job)
+    lock_fd = sweep._acquire_lock(lock_path)
+    try:
+        result = sweep.run_job(job, force=True, command_builder=_fake_ok_command)
+    finally:
+        sweep._release_lock(lock_fd, lock_path)
+
+    assert result.status == sweep.JOB_STATUS_LOCKED_SKIPPED
+    assert (job.output_dir / "result.json").read_bytes() == before
+
+
+def test_concurrent_lock_released_after_run_allows_next_invocation(tmp_path):
+    job = _make_job(tmp_path, process="LockReleased")
+    lock_path = sweep._lock_path_for(job)
+    sweep.run_job(job, command_builder=_fake_ok_command)
+    assert not lock_path.exists()

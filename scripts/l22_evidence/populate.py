@@ -253,6 +253,32 @@ def _git_sha(path: Path) -> str | None:
         return None
 
 
+def _git_dirty(path: Path) -> bool | None:
+    """True if the git repository/worktree at `path` has any uncommitted
+    changes (`git status --porcelain` is non-empty), `False` if clean, or
+    `None` if `path` isn't a git repository at all (explicit, never
+    fabricated) -- mirrors `_git_sha`'s worktree-gitdir resolution so this
+    works identically for a Windows-created linked worktree read under
+    WSL."""
+    worktree_gitdir = _resolve_worktree_gitdir(path)
+    args = (
+        ["git", "--git-dir", str(worktree_gitdir), "--work-tree", str(path), "status", "--porcelain"]
+        if worktree_gitdir is not None
+        else ["git", "-C", str(path), "status", "--porcelain"]
+    )
+    try:
+        result = subprocess.run(
+            args,
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=10,
+        )
+        return bool(result.stdout.strip())
+    except Exception:
+        return None
+
+
 def _observe(relative_paths: list[Path], sources: list[SourceRoot]) -> dict[str, dict[str, FileObservation]]:
     """relative_path -> {source_name: FileObservation} for paths that exist in >=1 source."""
     observations: dict[str, dict[str, FileObservation]] = {}

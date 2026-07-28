@@ -25,6 +25,7 @@ index.
 
 from __future__ import annotations
 
+import json
 import shutil
 import sys
 from pathlib import Path
@@ -59,7 +60,12 @@ def test_bundle_excludes_large_array_sidecars():
 def test_bundle_mirrors_every_process_with_real_live_evidence():
     """Every process that currently has real evidence under the live
     artifacts/l2_2_gates tree must also have a bundle entry with matching
-    required-authority-file content (byte-identical copy)."""
+    required-authority-file content. `result.json`/`provenance.json` are
+    byte-identical copies; `input_manifest.json` is a semantically-matching
+    but NOT byte-identical copy, since `bundle_process_evidence` normalizes
+    its `inputs[*]["path"]` entries to repo-relative POSIX paths so the
+    tracked bundle never embeds this machine's absolute worktree path (see
+    `generator._normalize_input_manifest_paths`)."""
     catalog_entries = cat.in_scope_processes()
     for name, entry in sorted(catalog_entries.items()):
         subdir = schema.EVENT_CLASS_SUBDIR if entry.harness_type == "event_class" else schema.DESIGN_A_SUBDIR
@@ -67,11 +73,25 @@ def test_bundle_mirrors_every_process_with_real_live_evidence():
         if not all((live_dir / fname).is_file() for fname in schema.REQUIRED_AUTHORITY_FILES):
             continue  # no real evidence for this process yet locally; nothing to compare
         bundle_dir = schema.BUNDLE_ROOT / name / subdir
-        for fname in schema.REQUIRED_AUTHORITY_FILES:
+        for fname in ("result.json", "provenance.json"):
             live_bytes = (live_dir / fname).read_bytes()
             bundle_file = bundle_dir / fname
             assert bundle_file.is_file(), f"{name}: {fname} missing from tracked bundle at {bundle_file}"
             assert bundle_file.read_bytes() == live_bytes, f"{name}: bundled {fname} is not byte-identical to the live copy"
+
+        live_manifest = json.loads((live_dir / "input_manifest.json").read_text(encoding="utf-8"))
+        bundle_manifest_file = bundle_dir / "input_manifest.json"
+        assert bundle_manifest_file.is_file(), f"{name}: input_manifest.json missing from tracked bundle"
+        bundle_manifest = json.loads(bundle_manifest_file.read_text(encoding="utf-8"))
+        assert bundle_manifest["resolved_seeds"] == live_manifest["resolved_seeds"], name
+        assert bundle_manifest["m_ticks"] == live_manifest["m_ticks"], name
+        assert len(bundle_manifest["inputs"]) == len(live_manifest["inputs"]), name
+        for bundled_input in bundle_manifest["inputs"]:
+            path = bundled_input.get("path")
+            assert path, f"{name}: bundled input_manifest.json has an empty path"
+            assert not Path(path).is_absolute(), (
+                f"{name}: bundled input_manifest.json path {path!r} must be repo-relative, not absolute"
+            )
 
 
 def test_audit_succeeds_from_a_temp_root_with_no_local_artifacts_tree(tmp_path):
@@ -102,8 +122,18 @@ def test_generate_falls_back_to_bundle_when_evidence_root_absent(tmp_path, monke
     """`schema.default_evidence_root()` -- and therefore `build_evidence_index()`
     with no explicit `evidence_root` -- must resolve to the tracked bundle
     when the live tree does not exist at all (the literal fresh-clone case),
-    not silently produce an all-MISSING_EVIDENCE index while a perfectly
-    good tracked bundle sits right there unused."""
+    not silently produce a DIFFERENT index than the live tree would.
+
+    As of this commit no row is real PASS yet (the Phase-A provenance
+    hardening demotes every pre-hardening evidence dir to MISSING_EVIDENCE
+    until it is rerun through the hardened sweep -- see
+    test_l22_evidence_generator.py), so this only asserts the bundle-sourced
+    fallback reproduces the SAME honest tally as the live tree, not that it
+    contains a PASS row; once Phase-B reruns repopulate real PASS/FAIL rows
+    this assertion set should be tightened back to require at least one
+    real PASS."""
+    live_payload = gen.build_evidence_index(evidence_root=schema.EVIDENCE_ROOT)
+
     nonexistent_live_root = tmp_path / "artifacts_that_do_not_exist" / "l2_2_gates"
     assert not nonexistent_live_root.exists()
     monkeypatch.setattr(schema, "EVIDENCE_ROOT", nonexistent_live_root)
@@ -113,9 +143,7 @@ def test_generate_falls_back_to_bundle_when_evidence_root_absent(tmp_path, monke
 
     payload = gen.build_evidence_index()  # no explicit evidence_root -> must use the fallback above
     assert payload["n_in_scope"] == 22
-    assert any(row["mechanical_verdict"] == schema.STATUS_PASS for row in payload["rows"]), (
-        "bundle-sourced fallback generation produced zero real PASS rows -- bundle is not actually portable"
-    )
+    assert payload["tally"] == live_payload["tally"]
 
 
 def test_default_evidence_root_prefers_live_tree_when_present(tmp_path, monkeypatch):
