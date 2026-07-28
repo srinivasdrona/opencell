@@ -249,12 +249,14 @@ def evidence_is_valid(job: SweepJob) -> tuple[bool, str | None]:
     request-matching runner evidence AND a tracked, current
     `sweep_provenance.json` completion sentinel -- never existence-only, and
     never true for evidence that predates the provenance hardening (missing
-    sweep_provenance.json), has an unknown/missing real git SHA, was
-    generated against a since-changed runner/helpers/projections/catalog
-    source file, or was scored by a since-changed evaluator schema version.
-    Returns (False, <reason>) for every way it can be invalid, so
-    `--force`-less reruns have an honest, inspectable reason for why a job
-    was (not) skipped."""
+    sweep_provenance.json), was generated against a since-changed
+    runner/helpers/projections/catalog source file, or was scored by a
+    since-changed evaluator schema version. An unknown/missing git SHA does
+    NOT alone invalidate evidence whose source hashes and evaluator schema
+    version all still match (see build_sweep_provenance below). Returns
+    (False, <reason>) for every way it can be invalid, so `--force`-less
+    reruns have an honest, inspectable reason for why a job was (not)
+    skipped."""
     _recover_crashed_swap(job.output_dir)
 
     ok, reason = _authority_and_sidecars_match(job.output_dir, process=job.process, seeds=job.seeds, m_ticks=job.m_ticks)
@@ -275,10 +277,11 @@ def evidence_is_valid(job: SweepJob) -> tuple[bool, str | None]:
     if int(sweep_prov.get("n_seeds", -1)) != job.seeds or int(sweep_prov.get("m_ticks", -1)) != job.m_ticks:
         return False, f"{schema.SWEEP_PROVENANCE_FILE} n_seeds/m_ticks do not match current catalog request"
 
-    git_sha = sweep_prov.get("git_sha")
-    if not git_sha or git_sha == "unknown":
-        return False, f"{schema.SWEEP_PROVENANCE_FILE} git_sha is missing/unknown"
-
+    # git_sha/git_dirty are recorded informationally (see build_sweep_provenance)
+    # but are NOT gating authority here: source content hashes below are what
+    # actually prove the evidence matches the code now on disk, and Windows-
+    # linked-worktree git plumbing is fragile enough that an unknown SHA alone
+    # must not invalidate otherwise-matching, otherwise-current evidence.
     recorded_hashes = sweep_prov.get("source_hashes") or {}
     for name, current in current_source_hashes().items():
         if current is None or recorded_hashes.get(name) != current:
@@ -302,15 +305,13 @@ def build_sweep_provenance(job: SweepJob, *, output_dir: Path, repo_root: Path =
     Records the REAL git SHA + dirty flag (reusing the already-accepted
     worktree-gitdir resolution in `populate.py`, since the runner's own
     `provenance.json["git_sha"]` is permanently "unknown" in this project's
-    WSL/Windows-linked-worktree environment), sha256 of the four source
-    files staleness depends on, the evaluator schema version that scored
-    this result, and allocator_inputs.json's hash+size (informational only:
-    the file itself stays gitignored/unbundled, but its hash+size still
-    needs to be tamper-evident -- see schema.INFORMATIONAL_ONLY_FILES)."""
-    allocator_path = output_dir / "allocator_inputs.json"
-    allocator_info: dict[str, Any] | None = None
-    if allocator_path.is_file():
-        allocator_info = {"sha256": _sha256_file(allocator_path), "size_bytes": allocator_path.stat().st_size}
+    WSL/Windows-linked-worktree environment) purely informationally --
+    gating authority is `source_hashes` + `evaluator_schema_version` below,
+    since content hashes are what actually prove the evidence was generated
+    against the code now on disk (see `evidence_is_valid`). Deliberately
+    does NOT track `allocator_inputs.json`: it is large diagnostic bulk that
+    no verdict calculation ever reads, so hashing it would be authority
+    theater, not evidence (see `schema.INFORMATIONAL_ONLY_FILES`)."""
     return {
         "schema_version": schema.SWEEP_PROVENANCE_SCHEMA_VERSION,
         "process": job.process,
@@ -320,7 +321,6 @@ def build_sweep_provenance(job: SweepJob, *, output_dir: Path, repo_root: Path =
         "git_dirty": _git_dirty(repo_root),
         "source_hashes": current_source_hashes(),
         "evaluator_schema_version": vd.EVALUATOR_SCHEMA_VERSION,
-        "allocator_inputs": allocator_info,
         "written_at": datetime.now(UTC).isoformat(),
     }
 

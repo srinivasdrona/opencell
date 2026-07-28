@@ -416,7 +416,11 @@ def test_no_warnings_yields_empty_warnings_list(tmp_path):
 # --- sweep_provenance staleness surfaced through the generator -----------------
 
 
-def test_stale_sweep_provenance_unknown_git_sha_is_non_green(tmp_path):
+def test_unknown_git_sha_alone_does_not_demote_when_hashes_match(tmp_path):
+    """git SHA is informational only, not gating (scope-corrected): an
+    unknown git_sha with otherwise-current source hashes/evaluator schema
+    version must remain green, and `row["sweep_provenance"]["git_sha"]`
+    still surfaces the unknown value for human inspection."""
     evidence_dir = _write_evidence_dir(tmp_path, "Metabolism")
     prov_path = evidence_dir / schema.SWEEP_PROVENANCE_FILE
     prov = json.loads(prov_path.read_text(encoding="utf-8"))
@@ -425,8 +429,9 @@ def test_stale_sweep_provenance_unknown_git_sha_is_non_green(tmp_path):
 
     payload = gen.build_evidence_index(evidence_root=tmp_path)
     row = _row_for(payload, "Metabolism")
-    assert row["green"] is False
-    assert any(schema.STATUS_STALE_PROVENANCE in reason and "git_sha" in reason for reason in row["reasons"])
+    assert row["green"] is True
+    assert not any(schema.STATUS_STALE_PROVENANCE in reason for reason in row["reasons"])
+    assert row["sweep_provenance"]["git_sha"] == "unknown"
 
 
 def test_stale_sweep_provenance_source_hash_mismatch_is_non_green(tmp_path):

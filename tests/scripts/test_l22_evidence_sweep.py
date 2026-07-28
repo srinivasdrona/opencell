@@ -523,18 +523,32 @@ def _make_valid_job_with_provenance(tmp_path: Path, **overrides) -> sweep.SweepJ
     return job
 
 
-def test_evidence_is_valid_rejects_unknown_git_sha(tmp_path):
+def test_evidence_is_valid_accepts_unknown_git_sha_when_hashes_match(tmp_path):
+    """git SHA is informational only, not gating: an unknown git_sha alone
+    must not invalidate evidence whose source hashes and evaluator schema
+    version still match the CURRENT tree (scope-corrected -- content
+    hashes are the gating authority, not Windows-linked-worktree git
+    plumbing)."""
     job = _make_valid_job_with_provenance(tmp_path, git_sha="unknown")
     valid, reason = sweep.evidence_is_valid(job)
-    assert valid is False
-    assert "git_sha" in reason
+    assert valid is True
+    assert reason is None
 
 
-def test_evidence_is_valid_rejects_missing_git_sha(tmp_path):
+def test_evidence_is_valid_accepts_missing_git_sha_when_hashes_match(tmp_path):
     job = _make_valid_job_with_provenance(tmp_path, git_sha=None)
     valid, reason = sweep.evidence_is_valid(job)
+    assert valid is True
+    assert reason is None
+
+
+def test_evidence_is_valid_still_rejects_stale_hash_even_with_unknown_git_sha(tmp_path):
+    """Unknown git_sha does not grant a free pass: a stale source hash must
+    still invalidate evidence regardless of git_sha state."""
+    job = _make_valid_job_with_provenance(tmp_path, git_sha="unknown", source_hashes={"runner": "deadbeef" * 8})
+    valid, reason = sweep.evidence_is_valid(job)
     assert valid is False
-    assert "git_sha" in reason
+    assert "source hash" in reason
 
 
 def test_evidence_is_valid_rejects_stale_source_hash(tmp_path):

@@ -136,21 +136,22 @@ def _current_source_hashes() -> dict[str, str | None]:
 
 
 def _check_sweep_provenance_staleness(payload: dict[str, Any]) -> list[str]:
-    """Reasons a `sweep_provenance.json` payload makes a row stale: an
-    unknown/missing real git SHA, a source-file (runner/helpers/
-    projections/catalog) hash that no longer matches the CURRENT tree, or an
-    evaluator_schema_version that no longer matches the CURRENT
-    `verdict.EVALUATOR_SCHEMA_VERSION`. Distinct from
-    `_check_current_tree_staleness` (which checks `input_manifest.json`'s
-    OWN recorded inputs, e.g. the oracle .mat file) -- this checks the
-    sweep-launcher's independent provenance record instead, since the
-    runner's `provenance.json["git_sha"]` can never itself be trusted (see
+    """Reasons a `sweep_provenance.json` payload makes a row stale: a
+    source-file (runner/helpers/projections/catalog) hash that no longer
+    matches the CURRENT tree, or an evaluator_schema_version that no longer
+    matches the CURRENT `verdict.EVALUATOR_SCHEMA_VERSION`. An unknown/
+    missing real git SHA is recorded on the row informationally (see
+    `row["sweep_provenance"]["git_sha"]` in `build_process_row`) but does
+    NOT by itself add a reason here: content hashes are the gating
+    authority, since they directly prove the evidence matches the code now
+    on disk, whereas git plumbing for a Windows-linked worktree is
+    inherently more fragile. Distinct from `_check_current_tree_staleness`
+    (which checks `input_manifest.json`'s OWN recorded inputs, e.g. the
+    oracle .mat file) -- this checks the sweep-launcher's independent
+    provenance record instead, since the runner's
+    `provenance.json["git_sha"]` can never itself be trusted (see
     schema.py's SWEEP_PROVENANCE_FILE docstring)."""
     reasons: list[str] = []
-    git_sha = payload.get("git_sha")
-    if not git_sha or git_sha == "unknown":
-        reasons.append(f"{schema.STATUS_STALE_PROVENANCE}: sweep_provenance.json git_sha is missing/unknown")
-
     recorded_hashes = payload.get("source_hashes") or {}
     for name, current in _current_source_hashes().items():
         recorded = recorded_hashes.get(name)
@@ -226,15 +227,15 @@ def build_process_row(entry: cat.ProcessEntry, evidence_root: Path) -> dict[str,
 
     # INFORMATIONAL_ONLY_FILES (large raw per-seed/tick arrays, e.g.
     # allocator_inputs.json) are deliberately never mirrored into the
-    # tracked portable bundle and never read for verdict re-derivation --
-    # so they must also never be hashed into artifact_hashes here. If they
-    # were, a row generated from the live tree (where the file happens to
-    # exist) would carry an extra hash entry a bundle-sourced regeneration
-    # of the SAME evidence could never reproduce, making the tracked index
-    # falsely non-portable even though nothing about the actual evidence
-    # differs. Their hash+size is instead recorded inside the tracked
-    # sweep_provenance.json (which IS bundled byte-for-byte) and surfaced
-    # below via `row["sweep_provenance"]["allocator_inputs"]`.
+    # tracked portable bundle, never read for verdict re-derivation, and
+    # never hashed anywhere (not even in sweep_provenance.json) -- no
+    # verdict calculation ever consumes them, so tracking a hash for them
+    # would be authority theater, not evidence. If they were hashed into
+    # `artifact_hashes` here, a row generated from the live tree (where the
+    # file happens to exist) would carry an extra hash entry a
+    # bundle-sourced regeneration of the SAME evidence could never
+    # reproduce, making the tracked index falsely non-portable even though
+    # nothing about the actual evidence differs.
     #
     # `input_manifest.json` is excluded from `artifact_hashes` for a related
     # but distinct reason: `bundle_process_evidence` normalizes its
@@ -301,10 +302,12 @@ def build_process_row(entry: cat.ProcessEntry, evidence_root: Path) -> dict[str,
     row["green"] = final_verdict == schema.STATUS_PASS
     row["provenance_git_sha"] = provenance_payload.get("git_sha")
     row["sweep_provenance"] = {
+        # Informational only -- see _check_sweep_provenance_staleness: an
+        # unknown/missing git_sha here does NOT by itself change
+        # `mechanical_verdict`/`green` above.
         "git_sha": sweep_provenance_payload.get("git_sha"),
         "git_dirty": sweep_provenance_payload.get("git_dirty"),
         "evaluator_schema_version": sweep_provenance_payload.get("evaluator_schema_version"),
-        "allocator_inputs": sweep_provenance_payload.get("allocator_inputs"),
     }
     return row
 

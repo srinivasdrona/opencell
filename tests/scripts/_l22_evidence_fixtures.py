@@ -5,9 +5,11 @@ test_l22_evidence_anticheat.py, test_l22_evidence_portability.py).
 Since the Phase-A provenance hardening, evidence is only ever considered
 valid/current when it carries the four mandatory sidecars
 (thresholds.json/null_calibration.json/SUMMARY.json/analytical_check.json)
-AND a tracked `sweep_provenance.json` completion sentinel with a real git
-SHA and source hashes matching the CURRENT runner/helpers/projections/
-catalog files. These helpers build exactly that -- using the REAL current
+AND a tracked `sweep_provenance.json` completion sentinel whose source
+hashes (runner/helpers/projections/catalog) and evaluator schema version
+match the CURRENT tree -- the gating authority. Git SHA/dirty are recorded
+for human inspection but are informational only, never gating. These
+helpers build exactly that -- using the REAL current
 `sweep.current_source_hashes()` / `populate._git_sha` / `populate._git_dirty`
 / `verdict.EVALUATOR_SCHEMA_VERSION` -- so tests exercise the real
 staleness-detection code path rather than a parallel hand-rolled one that
@@ -49,8 +51,9 @@ def write_mandatory_sidecars(evidence_dir: Path) -> None:
 
 def valid_sweep_provenance_payload(*, process: str, n_seeds: int, m_ticks: int) -> dict[str, Any]:
     """A `sweep_provenance.json` payload that will pass EVERY staleness
-    check against the CURRENT tree (real git SHA, real current source
-    hashes, real current evaluator schema version) -- exactly what
+    check against the CURRENT tree (real current source hashes, real
+    current evaluator schema version -- the gating authority; git SHA is
+    included for realism but is informational only) -- exactly what
     `sweep.build_sweep_provenance` would have produced right now."""
     return {
         "schema_version": schema.SWEEP_PROVENANCE_SCHEMA_VERSION,
@@ -61,7 +64,6 @@ def valid_sweep_provenance_payload(*, process: str, n_seeds: int, m_ticks: int) 
         "git_dirty": _git_dirty(REPO_ROOT),
         "source_hashes": sweep.current_source_hashes(),
         "evaluator_schema_version": vd.EVALUATOR_SCHEMA_VERSION,
-        "allocator_inputs": None,
         "written_at": "2026-01-01T00:00:00+00:00",
     }
 

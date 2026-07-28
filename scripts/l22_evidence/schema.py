@@ -75,20 +75,20 @@ MANDATORY_SIDECAR_FILES = (
     "SUMMARY.json",
     "analytical_check.json",
 )
-# Recorded informationally (hash + size, inside the tracked
-# sweep_provenance.json sidecar -- see SWEEP_PROVENANCE_FILE below) but never
-# required to exist and never mirrored into the tracked portable bundle:
-# allocator_inputs.json holds large raw per-seed/tick arrays. Its hash/size
-# still needs to be tamper-evident even though the file itself stays
-# gitignored, which is why sweep.py (not this generator) records it at
-# evidence-generation time, in a file that IS bundled/tracked.
+# Never required to exist and never mirrored into the tracked portable
+# bundle: allocator_inputs.json holds large raw per-seed/tick arrays that no
+# verdict calculation reads (it is diagnostic bulk, not gating authority --
+# see scope-correction note in EVIDENCE_INDEX_SPEC.md Section 13.7). It is
+# intentionally NOT tracked or hashed anywhere, including
+# sweep_provenance.json: tracking a hash for a file nothing ever checks
+# would be authority theater, not evidence.
 INFORMATIONAL_ONLY_FILES = ("allocator_inputs.json",)
 
 # Back-compat aliases for the pre-hardening names: `OPTIONAL_SIDECAR_FILES`
 # used to mean "hashed when present, mirrored into the bundle when present";
 # that concept is now split into MANDATORY_SIDECAR_FILES (required, always
-# hashed+bundled) and INFORMATIONAL_ONLY_FILES (hash+size recorded via
-# sweep_provenance.json only, never required, never bundled).
+# hashed+bundled) and INFORMATIONAL_ONLY_FILES (never required, never
+# hashed, never bundled -- purely diagnostic bulk).
 OPTIONAL_SIDECAR_FILES = MANDATORY_SIDECAR_FILES + INFORMATIONAL_ONLY_FILES
 BUNDLE_EXCLUDE_FILES = INFORMATIONAL_ONLY_FILES
 
@@ -105,12 +105,22 @@ BUNDLE_EXCLUDE_FILES = INFORMATIONAL_ONLY_FILES
 # `populate.py`), AFTER the runner's own mandatory files are confirmed
 # present/parseable/matching -- i.e. its mere presence is the "completion
 # sentinel written last" for a given evidence directory. It records: the
-# REAL git SHA (never "unknown") + dirty flag, sha256 of the runner/helpers/
-# projections/catalog source files as they existed at generation time (so
-# later drift is mechanically detectable, exactly like
-# `_check_current_tree_staleness` already does for `input_manifest.json`'s
-# own inputs), the evaluator schema version that scored the result, and the
-# allocator_inputs.json hash+size (see INFORMATIONAL_ONLY_FILES above).
+# REAL git SHA (never "unknown") + dirty flag when resolvable -- recorded
+# for human inspection but NOT itself gating (see scope-correction note
+# below), sha256 of the runner/helpers/projections/catalog source files as
+# they existed at generation time (so later drift is mechanically
+# detectable, exactly like `_check_current_tree_staleness` already does for
+# `input_manifest.json`'s own inputs), and the evaluator schema version that
+# scored the result.
+#
+# Gating authority is the source-file content hashes + evaluator schema
+# version, NOT git_sha/git_dirty: an unknown/missing git SHA alone does not
+# make a row stale as long as every recorded source hash and the evaluator
+# schema version still match the CURRENT tree. Git plumbing (resolving a
+# Windows-linked worktree's real HEAD) is inherently more fragile than a
+# plain sha256 comparison, and content hashes are what actually prove the
+# evidence was generated against the code now on disk -- the SHA is
+# corroborating metadata, not the authority itself.
 SWEEP_PROVENANCE_FILE = "sweep_provenance.json"
 SWEEP_PROVENANCE_SCHEMA_VERSION = 1
 
@@ -185,14 +195,18 @@ STATUS_NO_GATEABLE_CHANNELS = "NO_GATEABLE_CHANNELS"
 STATUS_FAIL = "FAIL"
 STATUS_PASS = "PASS"
 # A row whose runner-produced evidence is otherwise complete/matching but
-# whose sweep_provenance.json shows an unknown/missing real git SHA, a
-# source-file (runner/helpers/projections/catalog) hash mismatch versus the
-# CURRENT tree, or an evaluator_schema_version mismatch versus the CURRENT
-# `verdict.EVALUATOR_SCHEMA_VERSION`. Distinct from STATUS_MISSING_EVIDENCE
-# (nothing was produced at all) and STATUS_STALE_VS_TREE (an `input_manifest`
-# source drifted): this specifically means "this evidence was produced
-# before/without the provenance hardening (or under stale source files) and
-# must be regenerated", never inferred as compliant.
+# whose sweep_provenance.json shows a source-file (runner/helpers/
+# projections/catalog) hash mismatch versus the CURRENT tree, or an
+# evaluator_schema_version mismatch versus the CURRENT
+# `verdict.EVALUATOR_SCHEMA_VERSION`. An unknown/missing git SHA alone does
+# NOT trigger this status as long as every source hash and the evaluator
+# schema version still match (git SHA is recorded informationally, not
+# gating -- see the SWEEP_PROVENANCE_FILE docstring above). Distinct from
+# STATUS_MISSING_EVIDENCE (nothing was produced at all) and
+# STATUS_STALE_VS_TREE (an `input_manifest` source drifted): this
+# specifically means "this evidence was produced before/without the
+# provenance hardening (or under stale source files) and must be
+# regenerated", never inferred as compliant.
 STATUS_STALE_PROVENANCE = "STALE_SWEEP_PROVENANCE"
 
 __all__ = [name for name in globals() if name.isupper()] + ["CATALOG_PATH", "default_evidence_root"]

@@ -79,8 +79,8 @@ artifacts/l2_2_gates/
 │   │   ├── null_calibration.json  # required sidecar (runner writes unconditionally)
 │   │   ├── SUMMARY.json           # required sidecar (runner writes unconditionally)
 │   │   ├── analytical_check.json  # required sidecar ({"applicable": false, ...} when N/A)
-│   │   ├── sweep_provenance.json  # required completion sentinel -- written by sweep.py, NOT the runner (see Section 14)
-│   │   └── allocator_inputs.json  # informational only -- never required, never bundled (see Section 14.1)
+│   │   ├── sweep_provenance.json  # required completion sentinel -- written by sweep.py, NOT the runner (see Section 13.1)
+│   │   └── allocator_inputs.json  # informational only -- never required, never bundled, never hashed (see Section 13.7)
 │   └── latest_event/      # event_class harness evidence (L2.event; not yet built)
 ```
 
@@ -119,7 +119,7 @@ event-class processes, which the generator reports as explicit
   "channel_verdicts": {"substrates": "PASS"},
   "warnings": [],
   "provenance_git_sha": "...",
-  "sweep_provenance": {"git_sha": "...", "git_dirty": false, "evaluator_schema_version": 1, "allocator_inputs": {"sha256": "...", "size_bytes": 12345}},
+  "sweep_provenance": {"git_sha": "...", "git_dirty": false, "evaluator_schema_version": 1},
   "reasons": [],
   "mechanical_verdict": "PASS",
   "green": true
@@ -127,12 +127,13 @@ event-class processes, which the generator reports as explicit
 ```
 
 `input_manifest.json` is deliberately EXCLUDED from `artifact_hashes` (see
-Section 14.1 for why) even though it is still read and mechanically
+Section 13.4 for why) even though it is still read and mechanically
 checked for current-tree staleness like every other input. `warnings` is
 the verbatim `result.json["warnings"]` list, always present (possibly
-empty) regardless of whether any warning is gating — see Section 14.3.
+empty) regardless of whether any warning is gating — see Section 13.3.
 `sweep_provenance` is an informational sub-object surfacing the sentinel's
-own fields (not itself gating beyond what Section 14 already checks).
+own fields (not itself gating beyond what Section 13 already checks; see
+13.7 for which of its fields are gating vs. purely informational).
 
 `catalog_soft_flags` are **soft**: hashing `PROCESS_CATALOG.yaml`
 (`catalog_sha256` at the index root) proves the catalog text hasn't changed,
@@ -148,11 +149,11 @@ name them all" convention already used by the L2.2 divergence taxonomy in
 
 | Value | Meaning | Green? |
 |---|---|---|
-| `PASS` | Evidence present, schema valid, hashes current, N/M match, every gateable channel mechanically re-derives to `PASS`/`SEED_NOISE`, no sentinel warnings, no unsupported `DEFERRED`/H12 claims, and `sweep_provenance.json` is present/current (see Section 14). | **yes** |
+| `PASS` | Evidence present, schema valid, hashes current, N/M match, every gateable channel mechanically re-derives to `PASS`/`SEED_NOISE`, no sentinel warnings, no unsupported `DEFERRED`/H12 claims, and `sweep_provenance.json` is present/current (see Section 13). | **yes** |
 | `MISSING_EVIDENCE` | One or more of the mandatory files (`result.json`/`input_manifest.json`/`provenance.json`/`thresholds.json`/`null_calibration.json`/`SUMMARY.json`/`analytical_check.json`/`sweep_provenance.json`) is absent -- including evidence generated before the provenance hardening landed, which never wrote `sweep_provenance.json` and is therefore honestly demoted here rather than grandfathered in. | no |
 | `SCHEMA_INVALID` | A mandatory file exists but is not parseable JSON, or `result.json` has no channel marked `is_primary`. | no |
 | `NO_GATEABLE_CHANNELS` | Every channel is `EVENT_CHANNEL_DEFERRED` or `INSUFFICIENT_SAMPLES`. | no |
-| `FAIL` | Any other non-green condition (raw `w1 > threshold`, `NM_MISMATCH`, `STALE_VS_TREE`, `STALE_SWEEP_PROVENANCE` (see Section 14), `SENTINEL_FAIL`, `MISSING_EVALUATOR`, `PRIMARY_CHANNEL_VACUOUS`, `PROCESS_NAME_MISMATCH`, `DEFERRED`). See `reasons[]` for exactly which. | no |
+| `FAIL` | Any other non-green condition (raw `w1 > threshold`, `NM_MISMATCH`, `STALE_VS_TREE`, `STALE_SWEEP_PROVENANCE` (see Section 13), `SENTINEL_FAIL`, `MISSING_EVALUATOR`, `PRIMARY_CHANNEL_VACUOUS`, `PROCESS_NAME_MISMATCH`, `DEFERRED`). See `reasons[]` for exactly which. | no |
 
 ## 6. Mechanical verdict re-derivation (`scripts/l22_evidence/verdict.py`)
 
@@ -785,8 +786,11 @@ in a validated evidence directory is the completion sentinel. It carries:
   `populate._git_sha`/`populate._git_dirty`, reusing the already-accepted
   WSL/Windows-linked-worktree gitdir resolution), since the runner's own
   `provenance.json["git_sha"]` is permanently `"unknown"` in this project's
-  environment and can never be trusted for staleness. An unknown/missing
-  `git_sha` is always non-green, never inferred.
+  environment and can never be trusted for staleness. Recorded for human
+  inspection; **not itself gating** (see Section 13.7 — scope-corrected:
+  `source_hashes`/`evaluator_schema_version` below are the gating
+  authority, since Windows-linked-worktree git plumbing is inherently more
+  fragile than a plain content-hash comparison).
 - `source_hashes` — sha256 of the runner script, the runner helpers
   module, the projections module, and `PROCESS_CATALOG.yaml`
   (`schema.SWEEP_PROVENANCE_SOURCE_FILES`) AS THEY EXISTED when the run
@@ -798,15 +802,17 @@ in a validated evidence directory is the completion sentinel. It carries:
 - `evaluator_schema_version` — `verdict.EVALUATOR_SCHEMA_VERSION`, bumped
   whenever `verdict.py`'s mechanical re-derivation logic changes in a way
   that could change a prior verdict; a mismatch is stale.
-- `allocator_inputs` — `{"sha256": ..., "size_bytes": ...}` for
-  `allocator_inputs.json` when present. This file itself stays gitignored
-  and unbundled (`schema.INFORMATIONAL_ONLY_FILES`), but its hash+size is
-  still tamper-evident via this tracked sentinel.
 
-A git-dirty working tree is recorded but NOT itself gating — active
+`allocator_inputs.json` is deliberately NOT tracked or hashed anywhere
+(not even here): no verdict calculation ever reads it (it is large
+diagnostic bulk, `schema.INFORMATIONAL_ONLY_FILES`), so recording a hash
+for it would be authority theater, not evidence — see Section 13.7.
+
+A git-dirty working tree is recorded but NOT gating — active
 development on a dirty tree is normal and would otherwise make it
-impossible to ever produce valid evidence pre-commit; only an
-unknown/missing SHA invalidates.
+impossible to ever produce valid evidence pre-commit. An unknown/missing
+git SHA is likewise non-gating on its own, as long as `source_hashes` and
+`evaluator_schema_version` still match the current tree.
 
 ### 13.2 Atomicity and per-process locking (`sweep.py run_job`)
 
@@ -891,6 +897,43 @@ a regression. Re-populating real PASS/FAIL rows by rerunning the sweep
 through the hardened `run_job` is the next (Phase-B) step, tracked
 separately from this hardening commit.
 
+### 13.7 Scope correction: content hashes, not git plumbing, are gating authority
+
+A follow-up operator review judged the initial cut of this hardening
+over-scoped in two specific ways, and this section documents the
+walk-back (implemented in the same commit series, immediately after
+13.1–13.6 above landed):
+
+- **git SHA/dirty are informational, not gating.** The original design
+  hard-failed any row/job whose `sweep_provenance.json` had an
+  unknown/missing real git SHA, independent of whether its recorded
+  source hashes matched the current tree. This over-weighted a fragile,
+  environment-specific plumbing step (resolving a Windows-linked
+  worktree's real HEAD under WSL git) as if it were necessary evidence,
+  when the actual proof that evidence matches the code now on disk is the
+  `source_hashes`/`evaluator_schema_version` comparison, which does not
+  depend on git at all. `git_sha`/`git_dirty` are still recorded on every
+  sentinel and still surfaced on every row for human inspection — they
+  are simply no longer part of `evidence_is_valid()`'s or
+  `_check_sweep_provenance_staleness()`'s pass/fail logic.
+- **`allocator_inputs.json` is not tracked or hashed at all.** The
+  original design recorded its sha256+size inside `sweep_provenance.json`
+  "for tamper-evidence", but no verdict calculation in `verdict.py` ever
+  reads this file — it is large raw per-seed/tick diagnostic bulk, not
+  gating authority. Tracking a hash nothing ever checks is authority
+  theater dressed up as rigor, so `build_sweep_provenance()` no longer
+  computes it and the field has been removed from the schema.
+
+Both changes preserve every anti-false-green property this hardening
+exists for (tampered/stale evidence is still caught via content hashes;
+`allocator_inputs.json` was never part of any verdict computation, so
+dropping its tracking removes zero real coverage) while removing gating
+surface that mapped to no observed failure mode. Everything else in
+13.1–13.6 (mandatory sidecars, the completion sentinel, atomic/locked
+force-rerun, warnings-verbatim, the audit content-hash fix,
+`source_hashes`/`evaluator_schema_version` staleness) is retained
+unchanged.
+
 ## 14. Files
 
 - `scripts/l22_evidence/catalog.py` — catalog access (scope derivation).
@@ -923,10 +966,11 @@ separately from this hardening commit.
   runner sweep launcher (`plan`/`run`/`status` CLI); see Sections 11, 13.
   Now atomic/locked with mandatory-sidecar + `sweep_provenance.json`
   staleness checks (Section 13).
-- `tests/scripts/test_l22_evidence_sweep.py` — 39 tests: real-catalog
+- `tests/scripts/test_l22_evidence_sweep.py` — 40 tests: real-catalog
   `plan_sweep()` derivation, resume-by-validation/staleness semantics
-  (unknown git SHA, source-hash drift, evaluator-schema-version drift,
-  missing `sweep_provenance.json`), bounded parallelism, atomic/locked
+  (source-hash drift, evaluator-schema-version drift, missing
+  `sweep_provenance.json`; unknown/missing git SHA is accepted when hashes
+  still match -- Section 13.7), bounded parallelism, atomic/locked
   force reruns (crash-mid-swap recovery, concurrent-lock exclusion),
   exit-code capture (including `RAN_EXIT_0_INVALID_EVIDENCE`), compact
   report/status writers, CLI smoke tests including nonzero-exit-on-
