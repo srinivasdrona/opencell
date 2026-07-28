@@ -312,10 +312,16 @@ generating `result.json`/etc evidence (still open, see Section 9 #1(b)).
   - `INSUFFICIENT_DATA`: fewer seeds than the catalog requires even after
     merging every eligible source.
 - `--apply` is the only mode that copies files and writes the tracked
-  `oracle_population_manifest.json` (source names/paths/git SHAs -- `null`
-  when unresolvable, e.g. a Windows-worktree `.git` gitdir pointer that
-  doesn't translate cleanly from WSL bash -- and per process: layout, seed
-  count, and per-file source attribution + hash). It refuses outright unless
+  `oracle_population_manifest.json` (source names/paths/git SHAs -- resolved
+  for every source, including linked worktrees whose `.git` is a Windows-style
+  `gitdir:` pointer file (e.g. `gitdir: E:/opencell/.git/worktrees/<name>`):
+  `_git_sha` translates that pointer to its WSL `/mnt/<drive>/...` mount
+  equivalent and reads the worktree-specific gitdir directly via
+  `git --git-dir=<resolved> rev-parse HEAD`, falling back to plain
+  `git -C <path> rev-parse HEAD` for ordinary (non-worktree) repos; `git_sha`
+  is `null` only when `path` genuinely isn't a git repository at all -- and
+  per process: layout, seed count, and per-file source attribution + hash).
+  It refuses outright unless
   **every** requested process is `RESOLVED` -- no partial population -- and
   refuses to overwrite an existing destination file whose content differs
   from the resolved source (never silently clobbers local data). Without
@@ -369,6 +375,30 @@ reports `MISSING_EVIDENCE` for all 22 in-scope processes and aggregate
 does not itself produce `result.json`/`input_manifest.json`/
 `provenance.json` runner evidence (Section 9 #1(b), still open, out of
 scope for this task).
+
+**`git_sha` fix and manifest regeneration (2026-07-28):** every worktree in
+this repo (main checkout and all `E:\opencell-worktrees\*` linked
+worktrees, including `clean11`/`stale5`) has a `.git` FILE containing an
+absolute Windows-style `gitdir: E:/opencell/.git/worktrees/<name>` pointer.
+Native Windows git resolves this transparently; WSL/Linux git cannot (it
+treats `E:/...` as a relative fragment and fails with "not a git
+repository"), so `_git_sha()` originally recorded `null` for every source
+when invoked from WSL. Fixed by translating the pointer's target to its
+WSL `/mnt/<drive>/...` mount equivalent and reading it directly via
+`git --git-dir=<resolved> rev-parse HEAD`, falling back to the original
+`git -C <path> rev-parse HEAD` for ordinary (non-worktree) repositories;
+`git_sha` remains explicitly `null` only when `path` genuinely isn't a git
+repository. The tracked manifest was regenerated against the
+already-populated destination (idempotent re-run: 0 files copied, all 16
+processes still `RESOLVED` 50/50, destination check still `OK`) with
+`--source-scope current=Transcription,Translation` added so the
+already-copied `current`-tree bytes cannot out-rank `clean11`/`stale5` in
+the per-file source-attribution tie-break now that the destination already
+holds identical copies -- preserving the original, correct provenance
+attribution while only changing `git_sha`/`generated_at`. Resulting
+non-null SHAs: `clean11` = `a7233a5a7fcc9a50310dcc6620828a192d01b7f5`,
+`stale5` = `2d8f06a6bdce84ff24ff94e141f67713814211a3`, `current` = HEAD at
+generation time.
 
 ## 11. Files
 

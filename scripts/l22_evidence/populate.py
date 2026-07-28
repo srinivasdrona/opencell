@@ -50,6 +50,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -160,10 +161,88 @@ def _ensembles_relative_paths(process: str) -> list[Path]:
     return paths
 
 
+_WINDOWS_DRIVE_PATH_RE = re.compile(r"^([A-Za-z]):[\\/](.*)$")
+
+
+def _windows_path_to_wsl(path_str: str) -> str:
+    """Translate a Windows-style absolute drive path (`E:\\foo\\bar` or
+    `E:/foo/bar`) to its WSL `/mnt/<drive>/...` mount equivalent. A pure
+    string transform -- no subprocess/shell involvement, so there is no
+    injection surface. Paths that don't match the drive-letter pattern
+    (already POSIX, or relative) are returned unchanged."""
+    match = _WINDOWS_DRIVE_PATH_RE.match(path_str)
+    if not match:
+        return path_str
+    drive, rest = match.groups()
+    return f"/mnt/{drive.lower()}/{rest.replace(chr(92), '/')}"
+
+
+def _maybe_translate_windows_path(path_str: str, *, platform: str | None = None) -> str:
+    """Translate a Windows-style absolute path to its WSL mount equivalent,
+    but ONLY when not running natively on Windows -- there, `E:\\...` paths
+    are already correct as-is, and translating them would break them.
+    `platform` defaults to `sys.platform`; tests inject a value directly so
+    the branch is exercised without depending on the real host platform."""
+    if platform is None:
+        platform = sys.platform
+    if platform.startswith("win32"):
+        return path_str
+    return _windows_path_to_wsl(path_str)
+
+
+def _resolve_worktree_gitdir(path: Path) -> Path | None:
+    """If `path` is a linked git *worktree* (its `.git` is a FILE containing
+    `gitdir: <target>`, not an ordinary `.git` directory), read and resolve
+    that target -- translating a Windows-style absolute target to its WSL
+    mount equivalent when necessary.
+
+    Every worktree in this project is created on Windows, so every linked
+    worktree's `.git` file's target is always an absolute `E:/...`-style
+    path (e.g. `gitdir: E:/opencell/.git/worktrees/l22-full-extract`).
+    Native WSL/Linux `git` cannot itself resolve that (`git -C <path>` ends
+    up concatenating the unrecognized `E:/...` fragment onto the cwd and
+    fails with "not a git repository") -- so this project's tooling must
+    translate it itself before invoking git.
+
+    Returns None if `path`'s `.git` is an ordinary directory (a ordinary,
+    non-worktree repo -- caller falls back to plain `git -C <path>`), if
+    `.git` doesn't exist at all, or if the resolved target isn't an actual
+    directory (e.g. stale/broken pointer) -- in every such case the caller
+    falls through to its existing behavior, so nothing about resolution or
+    copy semantics changes for non-worktree sources.
+    """
+    git_marker = path / ".git"
+    if not git_marker.is_file():
+        return None
+    try:
+        content = git_marker.read_text(encoding="utf-8").strip()
+    except OSError:
+        return None
+    prefix = "gitdir:"
+    if not content.startswith(prefix):
+        return None
+    target = content[len(prefix) :].strip()
+    translated = _maybe_translate_windows_path(target)
+    resolved = Path(translated)
+    return resolved if resolved.is_dir() else None
+
+
 def _git_sha(path: Path) -> str | None:
+    """The HEAD commit SHA of the git repository/worktree at `path`, or
+    `None` if `path` isn't a git repository at all (explicit, never
+    fabricated). Linked worktrees (see `_resolve_worktree_gitdir`) are
+    resolved via their own `--git-dir` rather than `-C <path>`, since a
+    Windows-created worktree's `.git` pointer file is otherwise
+    unresolvable by native WSL/Linux git."""
+    worktree_gitdir = _resolve_worktree_gitdir(path)
+    args = (
+        ["git", "--git-dir", str(worktree_gitdir), "rev-parse", "HEAD"]
+        if worktree_gitdir is not None
+        else ["git", "-C", str(path), "rev-parse", "HEAD"]
+    )
     try:
         result = subprocess.run(
-            ["git", "-C", str(path), "rev-parse", "HEAD"],
+            args,
             capture_output=True,
             text=True,
             check=True,
@@ -547,7 +626,7 @@ def main(argv: list[str] | None = None) -> int:
         if not name or name in seen_names:
             parser.error(f"--source name must be non-empty and unique, got {name!r}")
         seen_names.add(name)
-        sources.append(SourceRoot(name=name, path=Path(path_str)))
+        sources.append(SourceRoot(name=name, path=Path(_maybe_translate_windows_path(path_str))))
 
     scopes: dict[str, frozenset[str]] = {}
     for raw in args.source_scope:

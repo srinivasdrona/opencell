@@ -502,3 +502,151 @@ def test_cli_check_destination_after_apply_is_ok(tmp_path, monkeypatch):
         ]
     )
     assert exit_code == 0
+
+
+# --- _git_sha / Windows-worktree-path resolution under WSL ------------------
+#
+# Every worktree in this repo (main checkout + every `E:\opencell-worktrees\*`
+# linked worktree, including sibling raw-oracle source roots like clean11 and
+# stale5) has a `.git` FILE -- not directory -- containing an absolute
+# Windows-style `gitdir: E:/opencell/.git/worktrees/<name>` pointer. Native
+# Windows git resolves this fine; WSL/Linux git cannot recognize `E:/...` as
+# an absolute path and fails with "not a git repository". These tests cover
+# the translation/resolution fix and its fallbacks.
+
+
+def _run_git(args: list[str], cwd: Path, env: dict[str, str] | None = None) -> str:
+    import os
+    import subprocess
+
+    full_env = dict(os.environ)
+    if env:
+        full_env.update(env)
+    result = subprocess.run(
+        ["git", *args],
+        cwd=str(cwd),
+        capture_output=True,
+        text=True,
+        check=True,
+        env=full_env,
+        timeout=20,
+    )
+    return result.stdout.strip()
+
+
+_GIT_IDENTITY_ENV = {
+    "GIT_AUTHOR_NAME": "L2.2 Evidence Gate Test",
+    "GIT_AUTHOR_EMAIL": "l22-evidence-gate-test@example.invalid",
+    "GIT_COMMITTER_NAME": "L2.2 Evidence Gate Test",
+    "GIT_COMMITTER_EMAIL": "l22-evidence-gate-test@example.invalid",
+}
+
+
+@pytest.mark.parametrize(
+    "raw,expected",
+    [
+        ("E:/opencell/.git/worktrees/foo", "/mnt/e/opencell/.git/worktrees/foo"),
+        ("E:\\opencell\\.git\\worktrees\\foo", "/mnt/e/opencell/.git/worktrees/foo"),
+        ("e:/opencell/.git/worktrees/foo", "/mnt/e/opencell/.git/worktrees/foo"),
+        ("C:\\Users\\me\\repo", "/mnt/c/Users/me/repo"),
+    ],
+)
+def test_windows_path_to_wsl_translates_drive_paths(raw, expected):
+    assert populate._windows_path_to_wsl(raw) == expected
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        "/mnt/e/opencell/.git/worktrees/foo",
+        "../..",
+        "relative/path",
+    ],
+)
+def test_windows_path_to_wsl_passes_through_non_drive_paths(raw):
+    assert populate._windows_path_to_wsl(raw) == raw
+
+
+def test_maybe_translate_windows_path_translates_when_not_native_windows():
+    translated = populate._maybe_translate_windows_path("E:/opencell/.git/worktrees/foo", platform="linux")
+    assert translated == "/mnt/e/opencell/.git/worktrees/foo"
+
+
+def test_maybe_translate_windows_path_leaves_untouched_on_native_windows():
+    """On native Windows (`sys.platform == 'win32'`), an `E:\\...` path is
+    already correct as-is -- translating it would break it. This is a mocked
+    platform test since this project's tests never actually execute on
+    native Windows (per repo convention, all Python/pytest runs go through
+    WSL)."""
+    raw = "E:\\opencell\\.git\\worktrees\\foo"
+    assert populate._maybe_translate_windows_path(raw, platform="win32") == raw
+
+
+def test_git_sha_ordinary_repo_directory_uses_dash_c_fallback(tmp_path):
+    """A plain (non-worktree) git repo has an ordinary `.git` DIRECTORY, so
+    `_resolve_worktree_gitdir` must return None and `_git_sha` must fall back
+    to its original `git -C <path>` behavior."""
+    repo = tmp_path / "ordinary_repo"
+    repo.mkdir()
+    _run_git(["init", "--quiet"], repo)
+    _run_git(["commit", "--allow-empty", "--quiet", "-m", "initial"], repo, env=_GIT_IDENTITY_ENV)
+    expected_sha = _run_git(["rev-parse", "HEAD"], repo)
+
+    assert populate._resolve_worktree_gitdir(repo) is None
+    assert populate._git_sha(repo) == expected_sha
+
+
+def test_git_sha_not_a_git_repo_returns_none_explicitly(tmp_path):
+    not_a_repo = tmp_path / "just_a_directory"
+    not_a_repo.mkdir()
+    assert populate._git_sha(not_a_repo) is None
+
+
+def test_git_sha_resolves_windows_style_linked_worktree_pointer(tmp_path, monkeypatch):
+    """Simulates the real failure mode: `path/.git` is a FILE containing an
+    absolute Windows-style `gitdir: E:/...` pointer (as every worktree in
+    this repo actually has). Real `/mnt/<drive>` mount emulation can't be
+    fabricated inside a portable tmp_path fixture, so the translation
+    function itself is monkeypatched to map the fabricated Windows string to
+    the real (POSIX) gitdir this test creates via `git worktree add` --
+    proving `_resolve_worktree_gitdir`/`_git_sha` correctly read, translate,
+    and dispatch to `--git-dir` rather than the broken `-C <path>` route."""
+    main_repo = tmp_path / "main_repo"
+    main_repo.mkdir()
+    _run_git(["init", "--quiet"], main_repo)
+    _run_git(["commit", "--allow-empty", "--quiet", "-m", "initial"], main_repo, env=_GIT_IDENTITY_ENV)
+    expected_sha = _run_git(["rev-parse", "HEAD"], main_repo)
+
+    worktree_path = tmp_path / "linked_worktree"
+    _run_git(["worktree", "add", "--quiet", "--detach", str(worktree_path), expected_sha], main_repo)
+
+    real_gitdir_target = (worktree_path / ".git").read_text(encoding="utf-8").strip()[len("gitdir:") :].strip()
+    fake_windows_target = "E:/fake/path/main_repo/.git/worktrees/linked_worktree"
+    (worktree_path / ".git").write_text(f"gitdir: {fake_windows_target}\n", encoding="utf-8")
+
+    def _fake_translate(path_str: str, *, platform: str | None = None) -> str:
+        if path_str == fake_windows_target:
+            return real_gitdir_target
+        return populate._windows_path_to_wsl(path_str)
+
+    monkeypatch.setattr(populate, "_maybe_translate_windows_path", _fake_translate)
+
+    resolved = populate._resolve_worktree_gitdir(worktree_path)
+    assert resolved is not None
+    assert resolved.is_dir()
+    assert populate._git_sha(worktree_path) == expected_sha
+
+
+def test_git_sha_stale_worktree_pointer_target_missing_returns_none(tmp_path, monkeypatch):
+    """If the translated gitdir target doesn't actually exist (broken/stale
+    pointer), `_resolve_worktree_gitdir` must return None -- and `_git_sha`
+    must then fall through to the `-C` path, which itself fails against a
+    file (not a real repo dir), so the overall result is the honest `None`,
+    never a fabricated SHA."""
+    fake_worktree = tmp_path / "broken_worktree"
+    fake_worktree.mkdir()
+    (fake_worktree / ".git").write_text("gitdir: E:/nowhere/that/exists\n", encoding="utf-8")
+
+    assert populate._resolve_worktree_gitdir(fake_worktree) is None
+    assert populate._git_sha(fake_worktree) is None
+
