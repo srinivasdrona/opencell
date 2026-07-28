@@ -117,6 +117,7 @@ def build_final_report(
     seeds: list[int],
     processes: list[str] | tuple[str, ...] | None = None,
     include_specialized: bool = True,
+    expected_n_ticks: int = 100,
 ) -> dict[str, Any]:
     """Phase 3: validate every expected MAT for the production set, plus the
     real loader dispatch (expects canonical_seed_count == 50, no
@@ -126,6 +127,17 @@ def build_final_report(
     `processes`, if given, narrows the loop to an explicit subset (see
     `build_preflight_report`'s docstring for the rationale). Defaults to the
     full `derive_scope().production` set when omitted.
+
+    `expected_n_ticks` (default 100, unchanged behaviour) only controls the
+    *internal* tick-depth structural check (`validate_structural`'s
+    `expected_n_ticks`) -- it never affects filename/path resolution
+    (`canonical_seed0_path`/`seed_mat_path` keep resolving the legacy
+    `_100ticks.mat` name regardless). This exists for the narrow
+    `DEPTH200_PROCESSES` case (`scripts/l22_extraction/depth200_regen.py`):
+    those processes' `_100ticks.mat` files genuinely carry 200 real ticks
+    (a deliberate legacy-filename decision, see that module's docstring),
+    so their final verification must pass `expected_n_ticks=200` while every
+    other process keeps the default.
     """
     scope = derive_scope()
     production = tuple(processes) if processes is not None else scope.production
@@ -143,13 +155,17 @@ def build_final_report(
     for process in production:
         per_process: dict[str, Any] = {}
         seed0 = canonical_seed0_path(process)
-        seed0_result = validate_structural(seed0, expected_process=process, expected_seed=0, expected_n_ticks=100)
+        seed0_result = validate_structural(
+            seed0, expected_process=process, expected_seed=0, expected_n_ticks=expected_n_ticks
+        )
         per_process["0"] = seed0_result.to_dict()
         if not seed0_result.ok:
             report["missing_or_failing"].append(f"{process} seed0: {seed0_result.errors}")
         for seed in seeds:
             path = seed_mat_path(process, seed)
-            result = validate_structural(path, expected_process=process, expected_seed=seed, expected_n_ticks=100)
+            result = validate_structural(
+                path, expected_process=process, expected_seed=seed, expected_n_ticks=expected_n_ticks
+            )
             per_process[str(seed)] = result.to_dict()
             if not result.ok:
                 report["missing_or_failing"].append(f"{process} seed{seed}: {result.errors}")
@@ -191,6 +207,16 @@ def main(argv: list[str] | None = None) -> int:
     fin.add_argument("--seeds", required=True, help='e.g. "1-49"')
     fin.add_argument("--processes", help="Comma-separated subset override (default: full derived scope).")
     fin.add_argument("--skip-specialized", action="store_true")
+    fin.add_argument(
+        "--expected-n-ticks",
+        type=int,
+        default=100,
+        help=(
+            "Internal tick-depth check only (default 100, unchanged behaviour); never "
+            "affects filename resolution. Use 200 for DEPTH200_PROCESSES (see "
+            "scripts/l22_extraction/depth200_regen.py)."
+        ),
+    )
     fin.add_argument("--out", required=True)
 
     args = parser.parse_args(argv)
@@ -201,7 +227,10 @@ def main(argv: list[str] | None = None) -> int:
         )
     else:
         report = build_final_report(
-            seeds=_parse_seed_spec(args.seeds), processes=processes, include_specialized=not args.skip_specialized
+            seeds=_parse_seed_spec(args.seeds),
+            processes=processes,
+            include_specialized=not args.skip_specialized,
+            expected_n_ticks=args.expected_n_ticks,
         )
 
     out_path = Path(args.out)

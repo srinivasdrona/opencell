@@ -83,6 +83,35 @@ def test_build_final_report_passes_when_all_seeds_present(tmp_path, monkeypatch)
     assert result["files"][process]["2"]["ok"] is True
 
 
+def test_build_final_report_expected_n_ticks_defaults_to_100_and_flags_drift(tmp_path, monkeypatch):
+    """`expected_n_ticks` (new, default 100) only changes the internal
+    tick-depth structural check, never filename/path resolution. A process
+    whose files genuinely carry 200 ticks must FAIL the default-100 check
+    (unchanged legacy behaviour) but PASS when `expected_n_ticks=200` is
+    passed explicitly (the DEPTH200_PROCESSES case)."""
+    process = "FakeDepth200Process"
+    seed0_path = write_synthetic_trace(
+        tmp_path / "canonical" / f"{process}_100ticks.mat", process_name=process, seed=0, n_ticks=200
+    )
+    seed1_path = write_synthetic_trace(
+        tmp_path / "s001" / f"{process}_100ticks.mat", process_name=process, seed=1, n_ticks=200
+    )
+
+    monkeypatch.setattr(report_mod, "derive_scope", lambda: _fake_scope(production=(process,)))
+    monkeypatch.setattr(report_mod, "canonical_seed0_path", lambda proc, **_: seed0_path)
+    monkeypatch.setattr(report_mod, "seed_mat_path", lambda proc, seed, **_: seed1_path)
+    monkeypatch.setattr(report_mod, "loader_report", lambda proc: _healthy_loader())
+    monkeypatch.setattr(report_mod, "git_blob_sha256", lambda path: "deadbeef")
+
+    default_result = report_mod.build_final_report(seeds=[1])
+    assert default_result["result"] == "INCOMPLETE"
+    assert any("n_ticks=200" in item for item in default_result["missing_or_failing"])
+
+    depth200_result = report_mod.build_final_report(seeds=[1], expected_n_ticks=200)
+    assert depth200_result["missing_or_failing"] == []
+    assert depth200_result["result"] == "PASS"
+
+
 def test_build_final_report_flags_missing_seed_file(tmp_path, monkeypatch):
     """A process missing one of its requested seed files must be reported
     in `missing_or_failing` with the exact process/seed identified, and the
