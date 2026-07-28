@@ -831,6 +831,17 @@ def _metabolism_fva_sample_feasibility(
     )
     biomass_value_star = float(info["objective_value"])
     growth_per_s = float(info["biomass_flux_per_s"])
+    # Mechanical perf reduction (no biology/tolerance/threshold change): only
+    # solve FVA for the reactions substrate_delta_range_from_fva actually
+    # reads (fixture.fba_idx_external | fba_idx_internal). All other
+    # reactions' v_min/v_max are never consumed downstream, so restricting
+    # the LP sweep to this subset cannot change any d_min/d_max/feasibility
+    # output -- see benchmarks/bench_fva_reaction_scope.py for the proof that
+    # this is the exact and only reaction set read by substrate_delta_range_from_fva.
+    fva_reaction_subset = np.union1d(
+        np.asarray(fixture.fba_idx_external, dtype=np.int64),
+        np.asarray(fixture.fba_idx_internal, dtype=np.int64),
+    )
     v_min, v_max = fva_range(
         np.asarray(model.S, dtype=np.float64),
         np.asarray(model.RHS, dtype=np.float64),
@@ -838,6 +849,7 @@ def _metabolism_fva_sample_feasibility(
         lb,
         ub,
         biomass_value_star=biomass_value_star,
+        reaction_subset=fva_reaction_subset,
     )
     d_min, d_max = substrate_delta_range_from_fva(
         v_min=v_min,
