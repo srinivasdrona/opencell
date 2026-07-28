@@ -230,11 +230,15 @@ about itself are trusted.
 
 None of this is done by this task, and none of it is faked here:
 
-1. **Populate real evidence.** Run `tests/vivarium/l2_2_design_a_runner.py`
-   for each of the 18 `design_a_per_tick` processes against
-   `artifacts/l2_2_gates/<Process>/latest/`, once full multi-seed Karr
-   oracle extraction closes (tracked separately; see
-   `L22_FULL_EXTRACTION_SCOPE.md`).
+1. **Populate real evidence.** Two sub-steps, both still open:
+   (a) merge the now-complete raw Karr oracle extraction (currently split
+   across sibling worktrees) into `data/m1_sources/karr_native/` via
+   `scripts/l22_evidence/populate.py --apply` (see Section 10 — implemented
+   and unit-tested, but deliberately not yet executed against real data);
+   then (b) run `tests/vivarium/l2_2_design_a_runner.py` for each of the 18
+   `design_a_per_tick` processes against
+   `artifacts/l2_2_gates/<Process>/latest/` to produce actual
+   `result.json`/`input_manifest.json`/`provenance.json` evidence.
 2. **Build the L2.event harness** for the 4 `event_class` processes; until
    then they remain `MISSING_EVIDENCE` by construction.
 3. **Mechanical evaluators for projection-distance primary channels**
@@ -250,7 +254,64 @@ None of this is done by this task, and none of it is faked here:
    deliberately deferred to a follow-up activation commit, per this task's
    explicit two-stage requirement.
 
-## 10. Files
+## 10. Raw oracle population (`scripts/l22_evidence/populate.py`)
+
+**Status (2026-07-28): implemented and unit-tested against synthetic
+fixtures only; NOT yet executed against real data.** Full Design-A Karr
+oracle extraction is now split across two raw-extraction sibling worktrees
+(`clean11` and `stale5`), plus the pre-existing specialized
+Transcription/Translation ensembles already present in the current tree.
+Before any real evidence can be generated, this raw oracle data has to be
+merged into the current repo's fixed oracle location
+(`data/m1_sources/karr_native/`, the same path
+`tests/vivarium/_l2_2_design_a_runner_helpers.py::load_karr_oracle` reads
+from) -- that merge is a distinct, earlier step from actually running the
+runner and generating `result.json`/etc evidence.
+
+`populate.py` performs that merge, conservatively:
+
+- Accepts named source worktree roots explicitly via repeated
+  `--source NAME=PATH` (e.g. `--source clean11=E:\opencell-worktrees\l22-full-extract
+  --source stale5=E:\opencell-worktrees\l22-stale5-regen`). The current repo
+  tree is always an implicit source named `current` -- no flag needed for
+  data that's already in place (e.g. the specialized Transcription/
+  Translation ensembles).
+- For each of the 18 `design_a_per_tick` processes, walks the two known raw
+  layouts (`per_process_traces_v2[_s{NNN}]/` and
+  `ensembles/<process_lower>/seed_{NNN}/` + `MANIFEST.json`) across every
+  given source, and classifies:
+  - `RESOLVED`: the merged file set (combining sources is fine -- e.g. seeds
+    0-24 from one root and 25-49 from another) reaches the catalog's
+    required seed count with no disagreement.
+  - `SPLIT_CONFLICT`: the same relative path exists in more than one source
+    with **different** content -- named explicitly (path + source names +
+    hash prefixes), never silently resolved by picking one side. Byte-
+    identical duplicates across sources are fine (deterministic
+    lexicographically-first-source selection).
+  - `MANIFEST_MISMATCH`: an `ensembles/.../MANIFEST.json` disagrees with the
+    actual merged seed-file count -- never trusted at face value.
+  - `INSUFFICIENT_DATA`: fewer seeds than the catalog requires even after
+    merging every given source.
+- `--apply` is the only mode that copies files and writes the tracked
+  `oracle_population_manifest.json` (source names/paths/git SHAs, and per
+  process: layout, seed count, and per-file source attribution + hash). It
+  refuses outright unless **every** requested process is `RESOLVED` -- no
+  partial population -- and refuses to overwrite an existing destination
+  file whose content differs from the resolved source (never silently
+  clobbers local data). Without `--apply` it is a pure dry-run/readiness
+  report with no side effects, still exiting nonzero if anything is
+  unresolved.
+
+Execution against the real `clean11`/`stale5` worktrees is intentionally
+**not** part of this commit -- it is gated on (a) this Phase-A code being
+committed [done] and (b) the stale5 tracked commits being integrated into
+local main [not yet done as of this commit]. Running `generate`/`audit`
+against the current tree will keep reporting `MISSING_EVIDENCE` until a
+later commit both populates the oracle (`populate.py --apply`) and actually
+invokes the runner to produce `result.json`/`input_manifest.json`/
+`provenance.json` evidence.
+
+## 11. Files
 
 - `scripts/l22_evidence/catalog.py` — catalog access (scope derivation).
 - `scripts/l22_evidence/schema.py` — versioned constants (paths, required
@@ -265,3 +326,9 @@ None of this is done by this task, and none of it is faked here:
   + honest current non-green state (replaces `EXPECTED_L2_2_VERDICTS`).
 - `scripts/probe_l2_2_strict_audit.py` — now a thin human-readable reporter
   over the evidence index (replaces `EMPIRICAL_VERDICTS`/`classify_l2_2`).
+- `scripts/l22_evidence/populate.py` — raw oracle source-root
+  merge/validation tool; `--apply` copies + writes
+  `docs/phase_f/l2_2_design_a/oracle_population_manifest.json` (see
+  Section 10). Not yet run against real data.
+- `tests/scripts/test_l22_evidence_populate.py` — synthetic-fixture tests
+  for `populate.py`.
