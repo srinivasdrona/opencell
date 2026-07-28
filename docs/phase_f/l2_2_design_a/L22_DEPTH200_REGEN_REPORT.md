@@ -51,13 +51,24 @@ Both source worktrees were confirmed git-clean before copying. Their
 to this worktree's (`git diff --no-index`, no output — the extractor is a
 tracked file with no worktree-local modifications anywhere, so "current
 extractor" is unambiguous here). Their `data/m1_sources/WholeCell/` trees
-were confirmed byte-identical to each other via `robocopy /L /E` (list-only
-diff): 859 files, 125,778,037 bytes, zero New/Newer/Older/EXTRA mismatches.
-This worktree's own `WholeCell` tree was then copied from `l22-full-extract`
-via `robocopy /E` (888 files incl. subdirectories beyond `src/`, ~199.63 MB,
+were confirmed byte-identical to each other via `robocopy /L /E /A-:SH`
+(list-only diff, hidden/system attrs included): **888 files, 209,328,386
+bytes** (`Skipped: 888`, `Mismatch: 0`, `Extras: 0` — the earlier draft of
+this report undercounted at 859 files/125,778,037 bytes because the
+verifying `Get-ChildItem -Recurse -File` check omitted `-Force` and
+silently excluded 29 hidden/system files; the file-set and identity
+conclusion are unchanged, only the reported count was wrong). This worktree's
+own `WholeCell` tree was then copied from `l22-full-extract` via
+`robocopy /E` (888 files incl. subdirectories beyond `src/`, ~199.63 MB,
 0 mismatches/failures reported) — so all 150 real 200-tick extractions in
 this task share one single WholeCell source tree, identical to both
-processes' original 100-tick extraction sources.
+processes' original 100-tick extraction sources. As a stronger,
+content-hash (not size+timestamp heuristic) confirmation, an aggregate
+SHA256 tree fingerprint (sort all files by relative path, SHA256 each
+file, concatenate `"{relpath}:{sha256}\n"`, SHA256 the concatenation) was
+computed for all three worktrees' `data/m1_sources/WholeCell` trees and
+found identical: `file_count: 888`,
+`aggregate_sha256: bceec7e084d01278d2e8698570a3b8bee0c657afd309afbbb8aceed7ae42d183`.
 
 ## 3. Filename-vs-content semantics: the "relabel" design
 
@@ -95,6 +106,21 @@ parallel unrecognized names"), the chosen design is:
 No new, loader-unrecognized filename is ever created or left behind; no
 `per_process_traces_v2_s000/` directory is ever created (canonical seed 0
 always lives in the unsuffixed `per_process_traces_v2/` directory).
+
+**Note — this legacy/depth split is catalog-intended, not an
+inconsistency.** `docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml` fixes
+`karr_source_pattern:
+"data/m1_sources/karr_native/per_process_traces_v2_s{NNN}/{Process}_100ticks.mat"`
+(and the analogous `karr_source_seed_0_legacy` for canonical seed 0) as a
+literal, unparameterized `_100ticks.mat` filename pattern for every
+process regardless of its `M_ticks` value, while DNARepair,
+ReplicationInitiation, and ProteinDecay each separately declare `M_ticks:
+200` in their own catalog entries. The catalog itself therefore already
+encodes the design that the on-disk filename is a fixed legacy label and
+the actual required tick depth is carried by `M_ticks`/`metadata.n_ticks`
+and the channel array lengths, not by the filename. The relabel step in
+this task does not introduce that split — it satisfies a split the
+catalog already specifies.
 
 ## 4. Archive of the 150 old 100-tick files being superseded
 
@@ -273,9 +299,18 @@ concurrently with these launches.
 
 | Run | Command | Workers | System load at launch | Wall time | Errors |
 |---|---|---|---|---|---|
-| ProteinDecay seeds 2-49 | `run_l22_seed_shards.ps1 -Processes ProteinDecay -Seeds "2-49" -Workers 2 -NTicks 200 -NoWait` | 2 | 21% | ~15 min | none (both worker stderr logs empty) |
+| ProteinDecay seeds 2-49 | `run_l22_seed_shards.ps1 -Processes ProteinDecay -Seeds "2-49" -Workers 2 -NTicks 200 -NoWait` | 2 | 21% | ~18.5 min | none (both worker stderr logs empty) |
 | DNARepair+ReplicationInitiation seed 0 | direct `matlab.exe -batch` (both processes, one call) | 1 | 13% | ~2.5 min | none |
-| DNARepair+ReplicationInitiation seeds 1-49 | `run_l22_seed_shards.ps1 -Processes "DNARepair,ReplicationInitiation" -Seeds "1-49" -Workers 2 -NTicks 200 -NoWait` | 2 | 13% (peaked ~69% mid-run alongside the FVA runner; never saturated) | ~33 min | none (both worker stderr logs empty) |
+| DNARepair+ReplicationInitiation seeds 1-49 | `run_l22_seed_shards.ps1 -Processes "DNARepair,ReplicationInitiation" -Seeds "1-49" -Workers 2 -NTicks 200 -NoWait` | 2 | 13% (peaked ~69% mid-run alongside the FVA runner; never saturated) | ~37.6 min | none (both worker stderr logs empty) |
+
+Wall times above were re-derived from worker log file timestamps (not the
+rough live-polling estimates in an earlier draft of this report): the
+ProteinDecay seeds 2-49 stage's worker stderr logs were created at
+17:02:22 and its stdout logs last written at 17:20:41/17:20:48 (worker1/
+worker0) — 18 min 26 s, i.e. ~18.5 min. The DNARepair+ReplicationInitiation
+seeds 1-49 stage's worker stderr logs were created at 17:44:15 and its
+stdout logs last written at 18:20:30/18:21:51 (worker1/worker0) — 37 min
+36 s, i.e. ~37.6 min.
 
 At no point were more than 2 MATLAB worker processes active simultaneously,
 consistent with the task's ≤2-worker bound; each stage's workers were
@@ -285,8 +320,11 @@ was launched.
 All 150 real `_200ticks.mat` files (3 processes × 50 seeds) were then
 relabeled onto their legacy `_100ticks.mat` filenames via
 `depth200_regen.py relabel`: **150/150 relabeled, 0 failed/missing**, split
-across three relabel invocations (canary 2 + ProteinDecay remainder 48 +
-DNARepair/ReplicationInitiation seed 0 (2) + seeds 1-49 (98) = 150).
+across four relabel invocations (canary `--processes ProteinDecay --seeds
+"0,1"` (2) + ProteinDecay remainder `--seeds "2-49"` (48) +
+DNARepair/ReplicationInitiation seed 0 `--seeds "0"` (2) + seeds 1-49
+`--seeds "1-49"` (98) = 150; an earlier draft of this report undercounted
+these as "three" invocations).
 
 Representative old-vs-new hash/size comparison (seed 0, full data for all
 150 files in the archive manifest + relabel-result JSONs, gitignored):
