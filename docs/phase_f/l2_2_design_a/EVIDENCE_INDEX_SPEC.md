@@ -507,8 +507,8 @@ mechanically re-derived verdicts):
 
 | Process | Real result | Mechanical verdict | Note |
 |---|---|---|---|
-| DNASupercoiling | ran, stored PASS | `FAIL` | `MISSING_EVALUATOR` — no re-derivation evaluator yet for `per_component_scaled` aggregation |
-| Replication | ran, stored PASS | `FAIL` | same `MISSING_EVALUATOR` gap as DNASupercoiling |
+| DNASupercoiling | ran, stored PASS | `FAIL` | `MISSING_EVALUATOR` — a real `per_component_scaled` re-derivation evaluator now exists (`29749df`), but this process's `result.json` predates the additive raw fields (`scaled_distance_threshold`, `component_n_nonzero_oc/karr`) it needs, so it is honestly non-green pending a re-run |
+| Replication | ran, stored PASS | `FAIL` | same stale-artifact gap as DNASupercoiling |
 | MacromolecularComplexation | ran, stored PASS | `FAIL` | `SENTINEL_FAIL` — demoted `PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE` warning with no linked H12 evidence |
 | ProteinFolding | ran, stored PASS | `FAIL` | same H12-less demotion |
 | ProteinProcessingI | ran, stored PASS | `FAIL` | same H12-less demotion |
@@ -541,10 +541,29 @@ re-derivation from raw channel data and catalog scope, not a hand edit.
    tick depth in a follow-up task — it is a raw-data availability gap, not
    a catalog or runner bug, and neither the catalog nor the runner should
    be changed to paper over it.
-2. **`per_component_scaled` mechanical re-derivation evaluator is missing**
-   (`DNASupercoiling`, `Replication`; also affects the still-unbuilt
-   `DNADamage` event_class harness per Section 9 #3) — a real, pre-existing
-   gap in `scripts/l22_evidence/verdict.py`, not introduced by this sweep.
+2. **`DNASupercoiling`/`Replication` artifacts are stale relative to the now
+   -implemented `per_component_scaled` evaluator.** `29749df` (cherry-picked
+   from local `main` into this branch) implements real mechanical
+   re-derivation for `per_component_scaled` (also
+   `hurdle_event_rate_plus_conditional_scaled_distance` for `DNARepair` and
+   `fva_feasibility` for `Metabolism`), additively extending
+   `tests/vivarium/_l2_2_design_a_projections.py` to emit the raw fields
+   (`scaled_distance_threshold`, `component_n_nonzero_oc/karr`, and the
+   `DNARepair`-side `conditional_scaled_distance_threshold`/`n_events_oc/karr`
+   equivalents) the evaluator needs to avoid trusting the stored
+   `joint_verdict` string. `DNASupercoiling` and `Replication` ran under this
+   sweep *before* that additive schema change, so their `result.json` lacks
+   these fields; the evaluator correctly reports a named
+   `MISSING_EVALUATOR` reason (missing raw fields) rather than silently
+   falling back to the stale stored `PASS`. Per this task's explicit
+   constraint ("do not rewrite already-generated runner artifacts"), these
+   two processes were not re-run in this commit — a follow-up re-run of just
+   these two (fast: ~20-30 min each per Section 11's original sweep timing)
+   will pick up the new fields and let the real evaluator produce an actual
+   PASS/FAIL. `fva_feasibility` needed no schema change, so once `Metabolism`
+   finishes its current run its raw fields will already support real
+   re-derivation without a second run. This is unrelated to the still
+   -unbuilt `DNADamage` event_class harness gap tracked in Section 9 #3.
 3. **5 processes are blocked on H12 evidence** for their demoted
    `PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE` warning
    (`MacromolecularComplexation`, `ProteinFolding`, `ProteinProcessingI`,

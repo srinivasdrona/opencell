@@ -2,9 +2,9 @@
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
   "catalog_sha256": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
-  "content_hash": "147f5e36a54eceefeda701dd4f6424a7ad412acecd230975c5b21ba398d944ca",
+  "content_hash": "4297d1d0f84a971f5393b92e090c5a3a1cc1181f2b4c8a8e2c1d2a95eeed5b1f",
   "evidence_root": "artifacts/l2_2_gates",
-  "generated_at": "2026-07-28T08:44:33.188769+00:00",
+  "generated_at": "2026-07-28T09:28:50.572066+00:00",
   "n_in_scope": 22,
   "rows": [
     {
@@ -102,7 +102,7 @@
       "process": "DNASupercoiling",
       "provenance_git_sha": "unknown",
       "reasons": [
-        "MISSING_EVALUATOR: channel 'chromosome' uses aggregation='per_component_scaled'; no mechanical re-derivation evaluator implemented for this metric type yet"
+        "MISSING_EVALUATOR: channel 'chromosome' per_component block missing raw field(s) ['scaled_distance_threshold', 'component_n_nonzero_oc', 'component_n_nonzero_karr']"
       ]
     },
     {
@@ -507,7 +507,7 @@
       "process": "Replication",
       "provenance_git_sha": "unknown",
       "reasons": [
-        "MISSING_EVALUATOR: channel 'chromosome' uses aggregation='per_component_scaled'; no mechanical re-derivation evaluator implemented for this metric type yet"
+        "MISSING_EVALUATOR: channel 'chromosome' per_component block missing raw field(s) ['scaled_distance_threshold', 'component_n_nonzero_oc', 'component_n_nonzero_karr']"
       ]
     },
     {
