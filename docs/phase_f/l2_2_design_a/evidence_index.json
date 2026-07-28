@@ -1,0 +1,477 @@
+{
+  "aggregate_verdict": "NON_GREEN",
+  "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
+  "catalog_sha256": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
+  "content_hash": "f957e0fa9fbe96f567daf207823f5135888fd670c355528199804a0fd34fb843",
+  "evidence_root": "artifacts/l2_2_gates",
+  "generated_at": "2026-07-28T00:51:24.080986+00:00",
+  "n_in_scope": 22,
+  "rows": [
+    {
+      "artifact_hashes": {},
+      "bucket": "EVENT_CLASS",
+      "catalog_soft_flags": {
+        "M_ticks": 100,
+        "N_seeds": 50,
+        "closed_form_dominant": "false",
+        "harness_type": "event_class",
+        "in_scope_L2_2": true,
+        "primary_channel": "substrates",
+        "primary_distance": "per_tick_vector_w1_mean"
+      },
+      "evidence_dir": "artifacts/l2_2_gates/Cytokinesis/latest_event",
+      "green": false,
+      "harness_type": "event_class",
+      "mechanical_verdict": "MISSING_EVIDENCE",
+      "process": "Cytokinesis",
+      "reasons": [
+        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/Cytokinesis/latest_event"
+      ]
+    },
+    {
+      "artifact_hashes": {},
+      "bucket": "EVENT_CLASS",
+      "catalog_soft_flags": {
+        "M_ticks": 20,
+        "N_seeds": 50,
+        "closed_form_dominant": "false",
+        "harness_type": "event_class",
+        "in_scope_L2_2": true,
+        "primary_channel": "chromosome",
+        "primary_distance": "hurdle_event_rate_plus_conditional_scaled_distance"
+      },
+      "evidence_dir": "artifacts/l2_2_gates/DNADamage/latest_event",
+      "green": false,
+      "harness_type": "event_class",
+      "mechanical_verdict": "MISSING_EVIDENCE",
+      "process": "DNADamage",
+      "reasons": [
+        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/DNADamage/latest_event"
+      ]
+    },
+    {
+      "artifact_hashes": {},
+      "bucket": "ALGORITHMIC_DEEP",
+      "catalog_soft_flags": {
+        "M_ticks": 200,
+        "N_seeds": 50,
+        "closed_form_dominant": "false",
+        "harness_type": "design_a_per_tick",
+        "in_scope_L2_2": true,
+        "primary_channel": "chromosome",
+        "primary_distance": "hurdle_event_rate_plus_conditional_scaled_distance"
+      },
+      "evidence_dir": "artifacts/l2_2_gates/DNARepair/latest",
+      "green": false,
+      "harness_type": "design_a_per_tick",
+      "mechanical_verdict": "MISSING_EVIDENCE",
+      "process": "DNARepair",
+      "reasons": [
+        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/DNARepair/latest"
+      ]
+    },
+    {
+      "artifact_hashes": {},
+      "bucket": "ALGORITHMIC_SHALLOW",
+      "catalog_soft_flags": {
+        "M_ticks": 100,
+        "N_seeds": 50,
+        "closed_form_dominant": "false",
+        "harness_type": "design_a_per_tick",
+        "in_scope_L2_2": true,
+        "primary_channel": "chromosome",
+        "primary_distance": "per_component_scaled"
+      },
+      "evidence_dir": "artifacts/l2_2_gates/DNASupercoiling/latest",
+      "green": false,
+      "harness_type": "design_a_per_tick",
+      "mechanical_verdict": "MISSING_EVIDENCE",
+      "process": "DNASupercoiling",
+      "reasons": [
+        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/DNASupercoiling/latest"
+      ]
+    },
+    {
+      "artifact_hashes": {},
+      "bucket": "EVENT_CLASS",
+      "catalog_soft_flags": {
+        "M_ticks": 200,
+        "N_seeds": 50,
+        "closed_form_dominant": "false",
+        "harness_type": "event_class",
+        "in_scope_L2_2": true,
+        "primary_channel": "monomers",
+        "primary_distance": "per_tick_vector_w1_mean"
+      },
+      "evidence_dir": "artifacts/l2_2_gates/FtsZPolymerization/latest_event",
+      "green": false,
+      "harness_type": "event_class",
+      "mechanical_verdict": "MISSING_EVIDENCE",
+      "process": "FtsZPolymerization",
+      "reasons": [
+        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/FtsZPolymerization/latest_event"
+      ]
+    },
+    {
+      "artifact_hashes": {},
+      "bucket": "ALGORITHMIC_SHALLOW",
+      "catalog_soft_flags": {
+        "M_ticks": 100,
+        "N_seeds": 50,
+        "closed_form_dominant": "confirmed_biology_validated",
+        "harness_type": "design_a_per_tick",
+        "in_scope_L2_2": true,
+        "primary_channel": "complexs",
+        "primary_distance": "per_tick_vector_w1_mean"
+      },
+      "evidence_dir": "artifacts/l2_2_gates/MacromolecularComplexation/latest",
+      "green": false,
+      "harness_type": "design_a_per_tick",
+      "mechanical_verdict": "MISSING_EVIDENCE",
+      "process": "MacromolecularComplexation",
+      "reasons": [
+        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/MacromolecularComplexation/latest"
+      ]
+    },
+    {
+      "artifact_hashes": {},
+      "bucket": "TRIVIAL_RNG",
+      "catalog_soft_flags": {
+        "M_ticks": 20,
+        "N_seeds": 50,
+        "closed_form_dominant": "false",
+        "harness_type": "design_a_per_tick",
+        "in_scope_L2_2": true,
+        "primary_channel": "substrates",
+        "primary_distance": "per_tick_vector_w1_mean"
+      },
+      "evidence_dir": "artifacts/l2_2_gates/Metabolism/latest",
+      "green": false,
+      "harness_type": "design_a_per_tick",
+      "mechanical_verdict": "MISSING_EVIDENCE",
+      "process": "Metabolism",
+      "reasons": [
+        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/Metabolism/latest"
+      ]
+    },
+    {
+      "artifact_hashes": {},
+      "bucket": "ALGORITHMIC_SHALLOW",
+      "catalog_soft_flags": {
+        "M_ticks": 200,
+        "N_seeds": 50,
+        "closed_form_dominant": "false",
+        "harness_type": "design_a_per_tick",
+        "in_scope_L2_2": true,
+        "primary_channel": "monomers",
+        "primary_distance": "per_tick_vector_w1_mean"
+      },
+      "evidence_dir": "artifacts/l2_2_gates/ProteinDecay/latest",
+      "green": false,
+      "harness_type": "design_a_per_tick",
+      "mechanical_verdict": "MISSING_EVIDENCE",
+      "process": "ProteinDecay",
+      "reasons": [
+        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/ProteinDecay/latest"
+      ]
+    },
+    {
+      "artifact_hashes": {},
+      "bucket": "ALGORITHMIC_SHALLOW",
+      "catalog_soft_flags": {
+        "M_ticks": 100,
+        "N_seeds": 50,
+        "closed_form_dominant": "confirmed_biology_validated",
+        "harness_type": "design_a_per_tick",
+        "in_scope_L2_2": true,
+        "primary_channel": "monomers",
+        "primary_distance": "per_tick_vector_w1_mean"
+      },
+      "evidence_dir": "artifacts/l2_2_gates/ProteinFolding/latest",
+      "green": false,
+      "harness_type": "design_a_per_tick",
+      "mechanical_verdict": "MISSING_EVIDENCE",
+      "process": "ProteinFolding",
+      "reasons": [
+        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/ProteinFolding/latest"
+      ]
+    },
+    {
+      "artifact_hashes": {},
+      "bucket": "ALGORITHMIC_SHALLOW",
+      "catalog_soft_flags": {
+        "M_ticks": 100,
+        "N_seeds": 50,
+        "closed_form_dominant": "false",
+        "harness_type": "design_a_per_tick",
+        "in_scope_L2_2": true,
+        "primary_channel": "monomers",
+        "primary_distance": "per_tick_vector_w1_mean"
+      },
+      "evidence_dir": "artifacts/l2_2_gates/ProteinModification/latest",
+      "green": false,
+      "harness_type": "design_a_per_tick",
+      "mechanical_verdict": "MISSING_EVIDENCE",
+      "process": "ProteinModification",
+      "reasons": [
+        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/ProteinModification/latest"
+      ]
+    },
+    {
+      "artifact_hashes": {},
+      "bucket": "TRIVIAL_RNG",
+      "catalog_soft_flags": {
+        "M_ticks": 20,
+        "N_seeds": 50,
+        "closed_form_dominant": "confirmed_biology_validated",
+        "harness_type": "design_a_per_tick",
+        "in_scope_L2_2": true,
+        "primary_channel": "monomers",
+        "primary_distance": "per_tick_vector_w1_mean"
+      },
+      "evidence_dir": "artifacts/l2_2_gates/ProteinProcessingI/latest",
+      "green": false,
+      "harness_type": "design_a_per_tick",
+      "mechanical_verdict": "MISSING_EVIDENCE",
+      "process": "ProteinProcessingI",
+      "reasons": [
+        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/ProteinProcessingI/latest"
+      ]
+    },
+    {
+      "artifact_hashes": {},
+      "bucket": "TRIVIAL_RNG",
+      "catalog_soft_flags": {
+        "M_ticks": 20,
+        "N_seeds": 50,
+        "closed_form_dominant": "confirmed_biology_validated",
+        "harness_type": "design_a_per_tick",
+        "in_scope_L2_2": true,
+        "primary_channel": "monomers",
+        "primary_distance": "per_tick_vector_w1_mean"
+      },
+      "evidence_dir": "artifacts/l2_2_gates/ProteinProcessingII/latest",
+      "green": false,
+      "harness_type": "design_a_per_tick",
+      "mechanical_verdict": "MISSING_EVIDENCE",
+      "process": "ProteinProcessingII",
+      "reasons": [
+        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/ProteinProcessingII/latest"
+      ]
+    },
+    {
+      "artifact_hashes": {},
+      "bucket": "ALGORITHMIC_SHALLOW",
+      "catalog_soft_flags": {
+        "M_ticks": 100,
+        "N_seeds": 50,
+        "closed_form_dominant": "confirmed_biology_validated",
+        "harness_type": "design_a_per_tick",
+        "in_scope_L2_2": true,
+        "primary_channel": "monomers",
+        "primary_distance": "per_tick_vector_w1_mean"
+      },
+      "evidence_dir": "artifacts/l2_2_gates/ProteinTranslocation/latest",
+      "green": false,
+      "harness_type": "design_a_per_tick",
+      "mechanical_verdict": "MISSING_EVIDENCE",
+      "process": "ProteinTranslocation",
+      "reasons": [
+        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/ProteinTranslocation/latest"
+      ]
+    },
+    {
+      "artifact_hashes": {},
+      "bucket": "ALGORITHMIC_SHALLOW",
+      "catalog_soft_flags": {
+        "M_ticks": 100,
+        "N_seeds": 50,
+        "closed_form_dominant": "false",
+        "harness_type": "design_a_per_tick",
+        "in_scope_L2_2": true,
+        "primary_channel": "rnas",
+        "primary_distance": "per_tick_vector_w1_mean"
+      },
+      "evidence_dir": "artifacts/l2_2_gates/RNADecay/latest",
+      "green": false,
+      "harness_type": "design_a_per_tick",
+      "mechanical_verdict": "MISSING_EVIDENCE",
+      "process": "RNADecay",
+      "reasons": [
+        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/RNADecay/latest"
+      ]
+    },
+    {
+      "artifact_hashes": {},
+      "bucket": "ALGORITHMIC_SHALLOW",
+      "catalog_soft_flags": {
+        "M_ticks": 100,
+        "N_seeds": 50,
+        "closed_form_dominant": "false",
+        "harness_type": "design_a_per_tick",
+        "in_scope_L2_2": true,
+        "primary_channel": "rnas",
+        "primary_distance": "per_tick_vector_w1_mean"
+      },
+      "evidence_dir": "artifacts/l2_2_gates/RNAModification/latest",
+      "green": false,
+      "harness_type": "design_a_per_tick",
+      "mechanical_verdict": "MISSING_EVIDENCE",
+      "process": "RNAModification",
+      "reasons": [
+        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/RNAModification/latest"
+      ]
+    },
+    {
+      "artifact_hashes": {},
+      "bucket": "ALGORITHMIC_SHALLOW",
+      "catalog_soft_flags": {
+        "M_ticks": 100,
+        "N_seeds": 50,
+        "closed_form_dominant": "false",
+        "harness_type": "design_a_per_tick",
+        "in_scope_L2_2": true,
+        "primary_channel": "rnas",
+        "primary_distance": "per_tick_vector_w1_mean"
+      },
+      "evidence_dir": "artifacts/l2_2_gates/RNAProcessing/latest",
+      "green": false,
+      "harness_type": "design_a_per_tick",
+      "mechanical_verdict": "MISSING_EVIDENCE",
+      "process": "RNAProcessing",
+      "reasons": [
+        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/RNAProcessing/latest"
+      ]
+    },
+    {
+      "artifact_hashes": {},
+      "bucket": "ALGORITHMIC_SHALLOW",
+      "catalog_soft_flags": {
+        "M_ticks": 100,
+        "N_seeds": 50,
+        "closed_form_dominant": "false",
+        "harness_type": "design_a_per_tick",
+        "in_scope_L2_2": true,
+        "primary_channel": "chromosome",
+        "primary_distance": "per_component_scaled"
+      },
+      "evidence_dir": "artifacts/l2_2_gates/Replication/latest",
+      "green": false,
+      "harness_type": "design_a_per_tick",
+      "mechanical_verdict": "MISSING_EVIDENCE",
+      "process": "Replication",
+      "reasons": [
+        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/Replication/latest"
+      ]
+    },
+    {
+      "artifact_hashes": {},
+      "bucket": "ALGORITHMIC_DEEP",
+      "catalog_soft_flags": {
+        "M_ticks": 200,
+        "N_seeds": 50,
+        "closed_form_dominant": "false",
+        "harness_type": "design_a_per_tick",
+        "in_scope_L2_2": true,
+        "primary_channel": "complexs",
+        "primary_distance": "per_tick_vector_w1_mean"
+      },
+      "evidence_dir": "artifacts/l2_2_gates/ReplicationInitiation/latest",
+      "green": false,
+      "harness_type": "design_a_per_tick",
+      "mechanical_verdict": "MISSING_EVIDENCE",
+      "process": "ReplicationInitiation",
+      "reasons": [
+        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/ReplicationInitiation/latest"
+      ]
+    },
+    {
+      "artifact_hashes": {},
+      "bucket": "EVENT_CLASS",
+      "catalog_soft_flags": {
+        "M_ticks": 200,
+        "N_seeds": 50,
+        "closed_form_dominant": "false",
+        "harness_type": "event_class",
+        "in_scope_L2_2": true,
+        "primary_channel": "complexs",
+        "primary_distance": "per_tick_vector_w1_mean"
+      },
+      "evidence_dir": "artifacts/l2_2_gates/RibosomeAssembly/latest_event",
+      "green": false,
+      "harness_type": "event_class",
+      "mechanical_verdict": "MISSING_EVIDENCE",
+      "process": "RibosomeAssembly",
+      "reasons": [
+        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/RibosomeAssembly/latest_event"
+      ]
+    },
+    {
+      "artifact_hashes": {},
+      "bucket": "ALGORITHMIC_DEEP",
+      "catalog_soft_flags": {
+        "M_ticks": 100,
+        "N_seeds": 50,
+        "closed_form_dominant": "false",
+        "harness_type": "design_a_per_tick",
+        "in_scope_L2_2": true,
+        "primary_channel": "rnas",
+        "primary_distance": "per_tick_vector_w1_mean"
+      },
+      "evidence_dir": "artifacts/l2_2_gates/Transcription/latest",
+      "green": false,
+      "harness_type": "design_a_per_tick",
+      "mechanical_verdict": "MISSING_EVIDENCE",
+      "process": "Transcription",
+      "reasons": [
+        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/Transcription/latest"
+      ]
+    },
+    {
+      "artifact_hashes": {},
+      "bucket": "ALGORITHMIC_DEEP",
+      "catalog_soft_flags": {
+        "M_ticks": 100,
+        "N_seeds": 50,
+        "closed_form_dominant": "false",
+        "harness_type": "design_a_per_tick",
+        "in_scope_L2_2": true,
+        "primary_channel": "monomers",
+        "primary_distance": "per_tick_vector_w1_mean"
+      },
+      "evidence_dir": "artifacts/l2_2_gates/Translation/latest",
+      "green": false,
+      "harness_type": "design_a_per_tick",
+      "mechanical_verdict": "MISSING_EVIDENCE",
+      "process": "Translation",
+      "reasons": [
+        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/Translation/latest"
+      ]
+    },
+    {
+      "artifact_hashes": {},
+      "bucket": "ALGORITHMIC_SHALLOW",
+      "catalog_soft_flags": {
+        "M_ticks": 50,
+        "N_seeds": 50,
+        "closed_form_dominant": "confirmed_biology_validated",
+        "harness_type": "design_a_per_tick",
+        "in_scope_L2_2": true,
+        "primary_channel": "rnas",
+        "primary_distance": "per_tick_vector_w1_mean"
+      },
+      "evidence_dir": "artifacts/l2_2_gates/tRNAAminoacylation/latest",
+      "green": false,
+      "harness_type": "design_a_per_tick",
+      "mechanical_verdict": "MISSING_EVIDENCE",
+      "process": "tRNAAminoacylation",
+      "reasons": [
+        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/tRNAAminoacylation/latest"
+      ]
+    }
+  ],
+  "schema_version": 1,
+  "tally": {
+    "MISSING_EVIDENCE": 22
+  }
+}

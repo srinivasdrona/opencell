@@ -1,30 +1,29 @@
-"""L2.2 strict-rubric test — pins honest baseline for the 22 L2.2 in-scope GREEN claims.
+"""L2.2 strict-rubric test — integrity/audit gate over the mechanically
+generated evidence index (see docs/phase_f/l2_2_design_a/EVIDENCE_INDEX_SPEC.md).
 
-Sibling test to test_l2_1_strict_rubric.py. Where the L2.1 strict rubric ran
-the actual per-tick biology to measure fire rate, the L2.2 strict rubric is
-a STATIC cross-reference audit because:
-  - The L2.2 design_a runner is not invoked from pytest CI today (the per-process
-    PASS claims in PROCESS_STATUS_ALL_29.md come from offline runs of the runner)
-  - Re-running each L2.2 process ensemble (50 seeds x 100 ticks) is computationally
-    expensive
-  - The L2.1 strict rubric already pins the per-tick verdict; L2.2 cannot be
-    stronger than its underlying L2.1 verdict
+This replaces the old hand-written `EXPECTED_L2_2_VERDICTS` pin (22
+hand-asserted per-process verdict strings cross-referenced against a second
+hand-written `EMPIRICAL_VERDICTS` dict in scripts/probe_l2_2_strict_audit.py).
+That design was circular: both "expected" and "actual" were hand-typed by a
+human, so the test could never catch a wrong claim -- it could only detect
+disagreement between two opinions, neither of which was measured.
 
-This test pins each L2.2 in-scope GREEN claim to its Day-37 strict-rubric
-verdict. Verdicts can be:
-  - LAUNDERED_VIA_HINT_FEED: L2.2 runner explicitly calls overlay_trace_after_hint
-    for this process (Transcription, Translation per current code).
-  - SUSPECT_LAUNDERED: L2.1 strict FAIL or port-mismatch suspect, but L2.2
-    claims PASS. Mechanism by which L2.2 passes is unclear; likely the runner's
-    per-process state overlay accidentally populates the read-surface gap.
-  - UNINFORMATIVE: Karr's L2.1 trace shows no activity for the 100-tick window;
-    distributional comparison reduces to zero=zero.
-  - PROVISIONAL_GENUINE: L2.1 strict GENUINE AND no trace-hint short-circuit AND
-    no port-mismatch AND no explicit hint feed. L2.2 PASS plausibly genuine but
-    still needs distributional verification with disable_trace_hints=True.
-
-If any L2.2 verdict moves from PROVISIONAL_GENUINE -> VERIFIED_GENUINE
-(after a no-hint distributional re-run), update the pin AND celebrate.
+This test is the INTEGRITY/AUDIT gate (stage A), not the ACCEPTANCE gate
+(stage B):
+  - Stage A (this file): passes when the tracked `evidence_index.json` is a
+    truthful, untampered, byte-for-byte-reproducible (minus `generated_at`)
+    reflection of the current catalog + evidence tree. It is expected and
+    REQUIRED to pass even though today's aggregate verdict is NON_GREEN --
+    full Karr oracle extraction is still completing in sibling worktrees, so
+    no per-process runner evidence exists under artifacts/l2_2_gates/ yet.
+    Faking a green result here would be exactly the kind of fabrication this
+    rewrite exists to prevent.
+  - Stage B (NOT this file): `scripts/l22_evidence/generator.py audit
+    --require-all-pass` / `scripts/probe_l2_2_strict_audit.py
+    --require-all-pass` returns nonzero until every in-scope process is
+    mechanically GREEN. It is deliberately NOT wired into pytest/CI yet --
+    that wiring is a follow-up activation commit after process closure, not
+    a silently-skipped or xfail'd test today.
 """
 
 from __future__ import annotations
@@ -32,96 +31,66 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import pytest
-
 _REPO = Path(__file__).resolve().parents[2]
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
-_HELPER_DIR = Path(__file__).resolve().parent
-if str(_HELPER_DIR) not in sys.path:
-    sys.path.insert(0, str(_HELPER_DIR))
+
+from scripts.l22_evidence import catalog as cat  # noqa: E402
+from scripts.l22_evidence import generator as gen  # noqa: E402
+from scripts.l22_evidence import schema  # noqa: E402
 
 
-# Day-37 (2026-06-23) PHASE B baseline — empirically verified via design_a runner
-# Source: scripts/probe_l2_2_strict_audit.py + runner output files in tmp/l2_2_audit/
-# Runner ran with 50 seeds x 10 ticks per process; runner-vs-catalog string-drift bug fixed.
-EXPECTED_L2_2_VERDICTS = {
-    # 13 VERIFIED_GENUINE (Day-37 Phase B baseline + Day-37 PM updates:
-    # +ProteinTranslocation after shape fix, +Transcription/+Translation after
-    # explicit hint-feed removal — biology actually matches Karr distributionally
-    # without the hint, so LAUNDERED classification was overly conservative)
-    "MacromolecularComplexation": "VERIFIED_GENUINE",
-    "ProteinFolding": "VERIFIED_GENUINE",
-    "ProteinProcessingI": "VERIFIED_GENUINE",
-    "ProteinProcessingII": "VERIFIED_GENUINE",
-    "tRNAAminoacylation": "VERIFIED_GENUINE",
-    "ProteinModification": "VERIFIED_GENUINE",
-    "ProteinDecay": "VERIFIED_GENUINE",
-    "RNADecay": "VERIFIED_GENUINE",
-    "RNAModification": "VERIFIED_GENUINE",
-    "RNAProcessing": "VERIFIED_GENUINE",
-    "ProteinTranslocation": "VERIFIED_GENUINE",
-    "Transcription": "VERIFIED_GENUINE",
-    "Translation": "VERIFIED_GENUINE",
-    # 1 VERIFIED_FAIL — real biology divergence (claim was wrong)
-    "Metabolism": "VERIFIED_FAIL",
-    # 2 UNVALIDATABLE — runner refuses (EVENT_CLASS bucket needs L2.event)
-    "Cytokinesis": "UNVALIDATABLE_EVENT_CLASS",
-    "RibosomeAssembly": "UNVALIDATABLE_EVENT_CLASS",
-    # 2 NOT_WIRED — 4 of 4 in-scope chromosome processes wired on Day-39
-    # (DNADamage + FtsZ remain NOT_WIRED because they are EVENT_CLASS, out of design-A scope)
-    "Replication": "VERIFIED_GENUINE",
-    "ReplicationInitiation": "VERIFIED_GENUINE",
-    "DNASupercoiling": "VERIFIED_GENUINE",
-    "DNARepair": "VERIFIED_GENUINE",
-    "DNADamage": "NOT_WIRED",
-    "FtsZPolymerization": "NOT_WIRED",
-}
-
-assert len(EXPECTED_L2_2_VERDICTS) == 22, (
-    f"Expected 22 L2.2 in-scope GREEN claims, found {len(EXPECTED_L2_2_VERDICTS)}"
-)
+def test_committed_evidence_index_exists():
+    assert schema.INDEX_PATH.is_file(), (
+        f"{schema.INDEX_PATH} is missing. It is a generator-only tracked artifact -- "
+        "regenerate it with `bin\\oc-py scripts/l22_evidence/generator.py generate` "
+        "and commit the result; never hand-edit it."
+    )
 
 
-# Imported from the audit script for the live classification
-import importlib.util
+def test_committed_evidence_index_passes_integrity_audit():
+    """The tracked index must be exactly what a fresh regeneration produces.
 
-_audit_path = _REPO / "scripts" / "probe_l2_2_strict_audit.py"
-_spec = importlib.util.spec_from_file_location("_l2_2_audit_module", _audit_path)
-_audit = importlib.util.module_from_spec(_spec)
-assert _spec.loader is not None
-_spec.loader.exec_module(_audit)
-
-
-@pytest.mark.parametrize("process_name", sorted(EXPECTED_L2_2_VERDICTS.keys()))
-def test_l2_2_strict_rubric_matches_expected(process_name: str) -> None:
-    """Pin per-process L2.2 strict-rubric verdict to its Day-37 baseline.
-
-    The strict rubric is static today — derived from L2.1 verdict + trace-hint
-    catalog + port-mismatch catalog + explicit-hint-feed catalog. To upgrade
-    a process from PROVISIONAL_GENUINE to VERIFIED_GENUINE, run the L2.2
-    distributional test with disable_trace_hints=True equivalent AND confirm
-    OC's biology fires non-trivially across the ensemble; then update the
-    expected pin AND add the empirical-verification commit reference here.
-
-    Day-37 baseline scoreboard:
-      LAUNDERED_VIA_HINT_FEED: 2  (Transcription, Translation - runner-injected)
-      SUSPECT_LAUNDERED      : 12 (L2.1 FAIL or port-mismatch; mechanism unclear)
-      UNINFORMATIVE          : 4  (Karr trace all-zero; vacuous)
-      PROVISIONAL_GENUINE    : 4  (DNARepair, ProcI, Folding, MacromolComplex)
-
-    Real upper bound on honest L2.2 PASSes: 4 of 22.
+    `audit()` never trusts anything already written to disk (stored verdict
+    strings, stored content_hash, stored row set) as ground truth -- it
+    rebuilds the index from scratch from the catalog + evidence tree and
+    diffs. This is the sole tamper/staleness defense; see generator.audit's
+    docstring.
     """
-    expected = EXPECTED_L2_2_VERDICTS[process_name]
-    actual, reasoning = _audit.classify_l2_2(process_name)
+    result = gen.audit()
+    assert result.ok, f"evidence_index.json failed integrity audit: {result.problems}"
 
-    if actual != expected:
-        pytest.fail(
-            f"L2.2 strict-rubric verdict drift for {process_name}: "
-            f"expected={expected}, actual={actual}.\n"
-            f"Reasoning: {reasoning}\n"
-            f"If this is intentional (e.g., a trace-hint short-circuit was "
-            f"removed, or a port-mismatch was fixed), update the expected "
-            f"pin in this file AND the source-of-truth audit catalog in "
-            f"scripts/probe_l2_2_strict_audit.py."
-        )
+
+def test_committed_evidence_index_is_honestly_non_green_today():
+    """This task MUST begin with a truthful non-green index, not a fabricated
+    PASS. Final per-process runner evidence is not available yet (extraction
+    still completing in sibling worktrees). If this test ever needs to change
+    to GREEN, that change must be driven by real evidence appearing under
+    artifacts/l2_2_gates/, not by editing this assertion."""
+    result = gen.audit()
+    assert result.aggregate_verdict == "NON_GREEN"
+    assert result.tally == {schema.STATUS_MISSING_EVIDENCE: 22}
+
+
+def test_committed_evidence_index_covers_scope_exactly_once():
+    """One row per in_scope_L2_2 catalog process, exactly once, no extras."""
+    payload = gen.build_evidence_index()
+    entries = cat.in_scope_processes()
+    process_names = [row["process"] for row in payload["rows"]]
+
+    assert len(process_names) == len(set(process_names)), "duplicate rows in evidence index"
+    assert set(process_names) == set(entries.keys())
+    assert payload["n_in_scope"] == len(entries) == 22
+
+
+def test_require_all_pass_acceptance_gate_is_not_yet_wired_into_ci():
+    """Documents (does not silently skip) that stage B is intentionally not
+    active. This is not a fake/xfail acceptance test -- it asserts the CLI
+    machinery for stage B exists and correctly refuses to claim acceptance
+    today, without pytest itself gating CI on `--require-all-pass`."""
+    payload = gen.build_evidence_index()
+    assert payload["aggregate_verdict"] != "GREEN", (
+        "Acceptance gate would need explicit activation (a follow-up commit wiring "
+        "`--require-all-pass` into CI) once this flips to GREEN -- do not wire it "
+        "preemptively while it is still non-green."
+    )
