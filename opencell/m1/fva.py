@@ -91,6 +91,79 @@ def _solve_checked(glp: Any, lp: Any, parm: Any, *, label: str) -> None:
         )
 
 
+# THIRD root cause (see benchmarks/bench_fva_seed0_tick0_j392_diag.py +
+# bench_fva_seed0_tick0_full_subset_repro.py, 2026-07-29): the real full
+# N50xM20 sweep hit a column (sample seed=0/tick=0, j=392, MIN) that timed
+# out (GLP_ETMLIM, 877,903 iterations in 10s) under the shipped PSE-pricing
+# + per-solve `glp_adv_basis` reset -- yet re-solving the IDENTICAL LP data
+# (byte-for-byte same S/rhs/c/lb/ub/biomass_value_star) for this exact
+# sample+column in isolation, and also as part of the full 166-column
+# sequence run standalone, both converged instantly (<0.03s). This was not
+# reproducible on demand, consistent with floating-point-level sensitivity
+# of a near-degenerate LP (e.g. from run-to-run BLAS/thread-scheduling
+# nondeterminism feeding `compute_bounds`/`solve_fba`) rather than a fixed
+# bug: the same solver, given the same inputs, is deterministic, so a
+# transient failure like this can only mean the actual floating-point inputs
+# differed at the ULP level between runs, which for a genuinely
+# near-degenerate face can swing simplex onto a catastrophically long
+# pivot path in one run and not another. Because this class of failure is
+# fundamentally non-reproducible-on-demand, it cannot be eliminated by
+# fixing "the one bad case" -- instead every individual min/max solve now
+# retries, on failure, through a short cascade of alternative
+# algorithmically-independent strategies (different pricing rule and/or
+# different crash-basis constructor) before giving up. Every strategy solves
+# the mathematically IDENTICAL LP (same rows/cols/bounds/objective/
+# objective-face window) -- by LP strong duality, any solve that terminates
+# with GLP_OPT status carries an implicit optimality certificate (its
+# reduced costs/dual values satisfy complementary slackness), so accepting
+# the first strategy to reach GLP_OPT cannot change the mathematical answer,
+# only which deterministic pivot path was used to certify it.
+_FVA_FALLBACK_STRATEGIES: tuple[tuple[str, int], ...] = (
+    ("adv", 0),  # primary: fresh advanced/crash basis, PSE pricing (already tried by caller)
+    ("adv", 1),  # fresh advanced/crash basis, STD (Dantzig) pricing
+    ("std", 0),  # trivial all-slack basis, PSE pricing
+    ("std", 1),  # trivial all-slack basis, STD pricing
+    ("adv", 2),  # fresh advanced/crash basis, PSE pricing, presolve ON
+)
+
+
+def _solve_direction_with_fallback(
+    glp: Any, lp: Any, base_parm: Any, *, j: int, direction: int, label: str
+) -> None:
+    """Solve one min/max direction for column `j`, retrying with independent
+    solver strategies (see `_FVA_FALLBACK_STRATEGIES` above) if earlier
+    strategies fail to certify GLP_OPT. Raises RuntimeError only if every
+    strategy fails."""
+    glp.glp_set_obj_dir(lp, direction)
+    errors: list[str] = []
+    for basis_kind, pricing_variant in _FVA_FALLBACK_STRATEGIES:
+        if basis_kind == "adv":
+            glp.glp_adv_basis(lp, 0)
+        else:
+            glp.glp_std_basis(lp)
+
+        parm = glp.glp_smcp()
+        glp.glp_init_smcp(parm)
+        parm.msg_lev = glp.GLP_MSG_OFF
+        parm.presolve = glp.GLP_ON if pricing_variant == 2 else glp.GLP_OFF
+        parm.meth = glp.GLP_PRIMAL
+        parm.tol_bnd = base_parm.tol_bnd
+        parm.pricing = glp.GLP_PT_STD if pricing_variant == 1 else glp.GLP_PT_PSE
+        parm.it_lim = _FVA_IT_LIM
+        parm.tm_lim = _FVA_TM_LIM_MS
+
+        try:
+            _solve_checked(glp, lp, parm, label=f"{label} [{basis_kind}/{pricing_variant}]")
+            return
+        except RuntimeError as exc:
+            errors.append(str(exc))
+
+    raise RuntimeError(
+        f"{label} failed after exhausting all {len(_FVA_FALLBACK_STRATEGIES)} fallback "
+        f"strategies: " + " | ".join(errors)
+    )
+
+
 def fva_range(
     S: np.ndarray,
     rhs: np.ndarray,
@@ -269,14 +342,15 @@ def fva_range(
             # Cost is small: rebuilding the crash basis for all 143 relevant
             # columns of a representative sample added ~4-5ms/solve and kept
             # every individual solve under 260 iterations.
-            glp.glp_adv_basis(lp, 0)
-            glp.glp_set_obj_dir(lp, glp.GLP_MAX)
-            _solve_checked(glp, lp, parm, label=f"FVA max j={j}")
+            # THIRD root cause fix: if the primary (PSE + fresh advanced
+            # basis) attempt fails to certify GLP_OPT, retry through a small
+            # cascade of algorithmically-independent strategies -- see
+            # `_solve_direction_with_fallback` above for the full rationale
+            # and why this cannot change the mathematical answer.
+            _solve_direction_with_fallback(glp, lp, parm, j=j, direction=glp.GLP_MAX, label=f"FVA max j={j}")
             v_max[j] = float(glp.glp_get_col_prim(lp, j + 1))
 
-            glp.glp_adv_basis(lp, 0)
-            glp.glp_set_obj_dir(lp, glp.GLP_MIN)
-            _solve_checked(glp, lp, parm, label=f"FVA min j={j}")
+            _solve_direction_with_fallback(glp, lp, parm, j=j, direction=glp.GLP_MIN, label=f"FVA min j={j}")
             v_min[j] = float(glp.glp_get_col_prim(lp, j + 1))
 
             glp.glp_set_obj_coef(lp, j + 1, 0.0)
