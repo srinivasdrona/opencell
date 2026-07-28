@@ -281,3 +281,37 @@ files, the extractor script, the loader (`_l2_2_design_a_runner_helpers.py`),
 any process biology/model code, metrics, verdict pins, or `plan.md`/status
 files. The other 11 processes' seeds 2-49 extraction (running in the sibling
 worktree `l22-full-extract`) is untouched and unblocked by this work.
+
+## 9. Test-count correction (post-acceptance wording fix)
+
+Commit `429f8e1`'s message states "Full existing L2.2 test suite (52 tests
+total) passes with no regressions." That figure is overstated for this
+branch and is corrected here without amending the accepted commit.
+
+Verified counts on `agent/l22-stale5-regen` (HEAD `429f8e1` and after):
+
+- The five L2.2-scoped test files tracked on this branch —
+  `tests/scripts/test_l22_derive_scope.py` (10),
+  `tests/scripts/test_l22_launcher_planning.py` (14),
+  `tests/scripts/test_l22_trace_validation.py` (7),
+  `tests/scripts/test_l22_seed0_regen.py` (11, new in this work),
+  `tests/scripts/test_l22_archive_stale5.py` (7, new in this work) —
+  total **49 passed**, 0 failed, 0 skipped:
+  `oc-pytest tests/scripts/test_l22_derive_scope.py
+  tests/scripts/test_l22_launcher_planning.py
+  tests/scripts/test_l22_trace_validation.py
+  tests/scripts/test_l22_seed0_regen.py
+  tests/scripts/test_l22_archive_stale5.py -q` → `49 passed`.
+- The "52" figure came from running the whole `tests/scripts/` directory
+  wildcard (`oc-pytest tests/scripts/ -q` → `52 passed`), which additionally
+  collects `tests/scripts/test_canary_tracer_ports.py` (3 tests). That file
+  is unrelated to the L2.2 stale5 regeneration: it predates this branch
+  (commits `0ba4f7c`/`21c1d0d`/`172562f`, part of the shared ancestor history
+  this branch was cut from) and covers canary-tracer port filtering, not
+  L2.2 per-process trace extraction. It is not part of "the existing L2.2
+  test suite," was not touched by this work, and its 3 tests should not have
+  been folded into that sentence's count.
+- Correct statement: **49/49 L2.2 tests pass on this branch** (18 new +
+  31 pre-existing), with no regressions. The unrelated
+  `test_canary_tracer_ports.py` (3 tests, also passing, also unmodified)
+  is out of scope for this figure.
