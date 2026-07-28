@@ -2,18 +2,19 @@
   "generated_at": "2026-07-28T08:30:27.420218+00:00",
   "inputs": [
     {
-      "path": "/mnt/e/opencell-worktrees/l22-evidence-gate/data/m1_sources/karr_native/per_process_traces_v2/tRNAAminoacylation_100ticks.mat",
+      "path": "data/m1_sources/karr_native/per_process_traces_v2/tRNAAminoacylation_100ticks.mat",
       "sha256": "6e49a379fc493d6ebee884ff29e7b4040a73796917ffbf743108abfa9191d970"
     },
     {
-      "path": "/mnt/e/opencell-worktrees/l22-evidence-gate/tests/vivarium/l2_2_design_a_runner.py",
+      "path": "tests/vivarium/l2_2_design_a_runner.py",
       "sha256": "cceabe79ab2e6d5239d24d39e4dcac9c2560cd75131ef48c64c8f460e59d1d8a"
     },
     {
-      "path": "/mnt/e/opencell-worktrees/l22-evidence-gate/tests/vivarium/_l2_2_design_a_runner_helpers.py",
+      "path": "tests/vivarium/_l2_2_design_a_runner_helpers.py",
       "sha256": "b0692aba4b41bd427f498cf9bc46a94642fda044de2ed9b8f48e54ea1215a40e"
     }
   ],
+  "m_ticks": 50,
   "resolved_seeds": [
     0,
     1,
@@ -65,6 +66,5 @@
     47,
     48,
     49
-  ],
-  "m_ticks": 50
+  ]
 }

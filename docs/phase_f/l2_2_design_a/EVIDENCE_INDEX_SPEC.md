@@ -75,11 +75,12 @@ artifacts/l2_2_gates/
 │   │   ├── result.json            # required (authority)
 │   │   ├── input_manifest.json    # required (authority)
 │   │   ├── provenance.json        # required (authority)
-│   │   ├── thresholds.json        # optional sidecar
-│   │   ├── null_calibration.json  # optional sidecar
-│   │   ├── SUMMARY.json           # optional sidecar
-│   │   ├── allocator_inputs.json  # optional sidecar
-│   │   └── analytical_check.json  # optional sidecar
+│   │   ├── thresholds.json        # required sidecar (runner writes unconditionally)
+│   │   ├── null_calibration.json  # required sidecar (runner writes unconditionally)
+│   │   ├── SUMMARY.json           # required sidecar (runner writes unconditionally)
+│   │   ├── analytical_check.json  # required sidecar ({"applicable": false, ...} when N/A)
+│   │   ├── sweep_provenance.json  # required completion sentinel -- written by sweep.py, NOT the runner (see Section 14)
+│   │   └── allocator_inputs.json  # informational only -- never required, never bundled (see Section 14.1)
 │   └── latest_event/      # event_class harness evidence (L2.event; not yet built)
 ```
 
@@ -114,14 +115,24 @@ event-class processes, which the generator reports as explicit
     "in_scope_L2_2": true
   },
   "evidence_dir": "artifacts/l2_2_gates/Metabolism/latest",
-  "artifact_hashes": {"result.json": "...", "input_manifest.json": "...", "provenance.json": "..."},
+  "artifact_hashes": {"result.json": "...", "provenance.json": "...", "thresholds.json": "...", "null_calibration.json": "...", "SUMMARY.json": "...", "analytical_check.json": "...", "sweep_provenance.json": "..."},
   "channel_verdicts": {"substrates": "PASS"},
+  "warnings": [],
   "provenance_git_sha": "...",
+  "sweep_provenance": {"git_sha": "...", "git_dirty": false, "evaluator_schema_version": 1, "allocator_inputs": {"sha256": "...", "size_bytes": 12345}},
   "reasons": [],
   "mechanical_verdict": "PASS",
   "green": true
 }
 ```
+
+`input_manifest.json` is deliberately EXCLUDED from `artifact_hashes` (see
+Section 14.1 for why) even though it is still read and mechanically
+checked for current-tree staleness like every other input. `warnings` is
+the verbatim `result.json["warnings"]` list, always present (possibly
+empty) regardless of whether any warning is gating — see Section 14.3.
+`sweep_provenance` is an informational sub-object surfacing the sentinel's
+own fields (not itself gating beyond what Section 14 already checks).
 
 `catalog_soft_flags` are **soft**: hashing `PROCESS_CATALOG.yaml`
 (`catalog_sha256` at the index root) proves the catalog text hasn't changed,
@@ -137,11 +148,11 @@ name them all" convention already used by the L2.2 divergence taxonomy in
 
 | Value | Meaning | Green? |
 |---|---|---|
-| `PASS` | Evidence present, schema valid, hashes current, N/M match, every gateable channel mechanically re-derives to `PASS`/`SEED_NOISE`, no sentinel warnings, no unsupported `DEFERRED`/H12 claims. | **yes** |
-| `MISSING_EVIDENCE` | One or more of `result.json`/`input_manifest.json`/`provenance.json` absent. | no |
-| `SCHEMA_INVALID` | An authority file exists but is not parseable JSON, or `result.json` has no channel marked `is_primary`. | no |
+| `PASS` | Evidence present, schema valid, hashes current, N/M match, every gateable channel mechanically re-derives to `PASS`/`SEED_NOISE`, no sentinel warnings, no unsupported `DEFERRED`/H12 claims, and `sweep_provenance.json` is present/current (see Section 14). | **yes** |
+| `MISSING_EVIDENCE` | One or more of the mandatory files (`result.json`/`input_manifest.json`/`provenance.json`/`thresholds.json`/`null_calibration.json`/`SUMMARY.json`/`analytical_check.json`/`sweep_provenance.json`) is absent -- including evidence generated before the provenance hardening landed, which never wrote `sweep_provenance.json` and is therefore honestly demoted here rather than grandfathered in. | no |
+| `SCHEMA_INVALID` | A mandatory file exists but is not parseable JSON, or `result.json` has no channel marked `is_primary`. | no |
 | `NO_GATEABLE_CHANNELS` | Every channel is `EVENT_CHANNEL_DEFERRED` or `INSUFFICIENT_SAMPLES`. | no |
-| `FAIL` | Any other non-green condition (raw `w1 > threshold`, `NM_MISMATCH`, `STALE_VS_TREE`, `SENTINEL_FAIL`, `MISSING_EVALUATOR`, `PRIMARY_CHANNEL_VACUOUS`, `PROCESS_NAME_MISMATCH`, `DEFERRED`). See `reasons[]` for exactly which. | no |
+| `FAIL` | Any other non-green condition (raw `w1 > threshold`, `NM_MISMATCH`, `STALE_VS_TREE`, `STALE_SWEEP_PROVENANCE` (see Section 14), `SENTINEL_FAIL`, `MISSING_EVALUATOR`, `PRIMARY_CHANNEL_VACUOUS`, `PROCESS_NAME_MISMATCH`, `DEFERRED`). See `reasons[]` for exactly which. | no |
 
 ## 6. Mechanical verdict re-derivation (`scripts/l22_evidence/verdict.py`)
 
@@ -315,11 +326,23 @@ None of this is done by this task, and none of it is faked here:
    `design_a_per_tick` processes against
    `artifacts/l2_2_gates/<Process>/latest/` to produce actual
    `result.json`/`input_manifest.json`/`provenance.json` evidence —
-   **partially done (2026-07-28)**: 14/18 processes now have real evidence
-   (9 mechanically PASS, 5 mechanically FAIL); see Section 11 for the full
-   sweep execution, per-process breakdown, and what remains open
-   (`Metabolism` still executing; `DNARepair`/`ProteinDecay`/
-   `ReplicationInitiation` blocked on a real oracle-tick-depth shortfall).
+   **partially done (2026-07-28), then demoted by the Section 13 hardening**:
+   14/18 processes had real evidence (9 mechanically PASS, 5 mechanically
+   FAIL) as of the 2026-07-28 sweep (see Section 11 for the execution
+   narrative and per-process breakdown), but none of that evidence carries
+   a `sweep_provenance.json` completion sentinel (it predates the sentinel's
+   existence), so as of the Section 13 hardening **all 22 rows are honestly
+   `MISSING_EVIDENCE`** — this is a deliberate, correct demotion (per this
+   task's "if not provable, mark stale and schedule rerun rather than
+   infer" requirement), not a regression. Re-running each process through
+   the hardened `sweep.py run_job` (which writes the sentinel atomically
+   after validating all mandatory sidecars) is the remaining Phase B work;
+   `Metabolism` was still executing as a raw (non-sweep-wrapped) subprocess
+   at the time of this hardening commit and must also be re-run through
+   `sweep.py` (or have its evidence re-validated and a provable sentinel
+   attached) once it completes; `DNARepair`/`ProteinDecay`/
+   `ReplicationInitiation` remain additionally blocked on a real
+   oracle-tick-depth shortfall independent of the sentinel gap.
 2. **Build the L2.event harness** for the 4 `event_class` processes; until
    then they remain `MISSING_EVIDENCE` by construction.
 3. **Mechanical evaluators for projection-distance primary channels** —
@@ -327,12 +350,15 @@ None of this is done by this task, and none of it is faked here:
    `DNASupercoiling`) and `hurdle_event_rate_plus_conditional_scaled_distance`
    (`DNARepair`) are now mechanically re-derived from raw metric/threshold
    fields per section 6.2/6.3. `Replication`/`DNASupercoiling` were
-   re-run 2026-07-28 with the additive raw fields and now produce a real
-   mechanical `PASS` (Section 11 gap #2); `DNARepair` remains
-   `MISSING_EVIDENCE` pending gap #1(b)'s oracle-tick-depth shortfall.
-   `DNADamage` remains `MISSING_EVIDENCE` until the `event_class` harness
-   in gap #2 exists — its projection aggregation was never run through
-   this evaluator with real evidence either way.
+   re-run 2026-07-28 with the additive raw fields and produced a real
+   mechanical `PASS` at the time — however, per gap #1(b) above, that
+   evidence now reads as `MISSING_EVIDENCE` pending a sentinel-carrying
+   rerun through the hardened sweep; the evaluator logic itself is
+   unaffected and remains correct. `DNARepair` remains `MISSING_EVIDENCE`
+   pending gap #1(b)'s oracle-tick-depth shortfall. `DNADamage` remains
+   `MISSING_EVIDENCE` until the `event_class` harness in gap #2 exists —
+   its projection aggregation was never run through this evaluator with
+   real evidence either way.
 4. **Null-control-must-fail canary, pre-registered/null-derived thresholds,
    H12 evidence generation, hint-off proof, reproducibility canary** — the
    schema has fields ready for these (`h12_evidence_ref`, `decision_ref`,
@@ -513,10 +539,21 @@ box), then escalated to `--max-workers 4` (confirmed stable: load average
 in the same run as the other 17 so its single worker slot runs in the
 background without blocking the rest.
 
-**Results as of this commit** (14/18 processes have real evidence; see
-`docs/phase_f/l2_2_design_a/sweep_status.json` for the live interim
-snapshot and `docs/phase_f/l2_2_design_a/evidence_index.json` for the
-mechanically re-derived verdicts):
+**Results as of the 2026-07-28 sweep execution** (14/18 processes had real
+evidence at that time; see `docs/phase_f/l2_2_design_a/sweep_status.json`
+for the interim snapshot from that run). **This table is now historical
+narrative, not the current state of `evidence_index.json`.** The Section
+13 provenance hardening (added in a later commit) requires every row to
+carry a `sweep_provenance.json` completion sentinel written atomically by
+`sweep.py run_job`; none of the runs below were launched through that
+sentinel-writing code path (it did not exist yet), so as of the hardening
+commit **all 18 in-scope rows below (plus the 4 out-of-scope `event_class`
+rows) honestly read `MISSING_EVIDENCE`** in the live `evidence_index.json`,
+regardless of what the table says the mechanical verdict was at the time.
+Re-running each process through the hardened `sweep.py` (Phase B, not yet
+done) is required to re-earn a real `PASS`/`FAIL` row; the table is
+retained to document the runner behavior, timings, and per-process
+oracle/evaluator findings from that execution, which remain valid:
 
 | Process | Real result | Mechanical verdict | Note |
 |---|---|---|---|
@@ -539,11 +576,14 @@ mechanically re-derived verdicts):
 | ReplicationInitiation | same runner exit | `MISSING_EVIDENCE` | same 200-vs-100-tick oracle shortfall |
 | Metabolism | **still executing** | `MISSING_EVIDENCE` | FVA (LP-per-sample) metric is a severe cost outlier; empirically >16h estimated for 50x20 samples; left running in the background (see Section 11.1) |
 
-Aggregate: `NON_GREEN` (`PASS: 9`, `FAIL: 5`, `MISSING_EVIDENCE: 8` — the 8
-includes the 3 oracle-shortfall processes, `Metabolism`, and the 4
-out-of-scope `event_class` processes). Nothing here was patched: every
-`FAIL`/`MISSING_EVIDENCE` above is the generator's honest mechanical
-re-derivation from raw channel data and catalog scope, not a hand edit.
+Aggregate at the time of that sweep: `NON_GREEN` (`PASS: 9`, `FAIL: 5`,
+`MISSING_EVIDENCE: 8` — the 8 includes the 3 oracle-shortfall processes,
+`Metabolism`, and the 4 out-of-scope `event_class` processes). Nothing here
+was patched: every `FAIL`/`MISSING_EVIDENCE` above was the generator's
+honest mechanical re-derivation from raw channel data and catalog scope,
+not a hand edit. As noted above, the *current* live aggregate is
+`NON_GREEN` (`MISSING_EVIDENCE: 22`) pending the Phase B sentinel-carrying
+reruns.
 
 **Known gaps this sweep surfaces (not fixed by this task):**
 
@@ -576,7 +616,10 @@ re-derivation from raw channel data and catalog scope, not a hand edit.
    executed 2026-07-28; both completed (`RAN_EXIT_0`, ~37 min and ~32 min
    respectively — see `sweep_report.json`) and their new `result.json`
    files carry the additive raw fields, so the real evaluator now produces
-   an actual mechanical `PASS` for both, not a fallback. `fva_feasibility`
+   an actual mechanical `PASS` for both, not a fallback (again, historical:
+   per the Section 13 hardening note above, this evidence itself has since
+   been demoted to `MISSING_EVIDENCE` pending a sentinel-carrying rerun — the
+   evaluator's correctness demonstrated here is unaffected). `fva_feasibility`
    needed no schema change, so once `Metabolism` finishes its current run
    its raw fields will already support real re-derivation without a second
    run. This is unrelated to the still-unbuilt `DNADamage` event_class
@@ -627,16 +670,22 @@ would see every row as `MISSING_EVIDENCE` regardless of what
 `evidence_index.json` claims — the tracked index would not actually be
 verifiable from the tracked repo alone.
 
-**Fix:** `docs/phase_f/l2_2_design_a/evidence_bundle/` is a tracked,
-byte-for-byte mirror (same `<Process>/<latest|latest_event>/` layout as
-`EVIDENCE_ROOT`) of every compact authority + sidecar file
-(`result.json`, `input_manifest.json`, `provenance.json`,
-`thresholds.json`, `null_calibration.json`, `SUMMARY.json`,
-`analytical_check.json`), deliberately **excluding**
-`schema.BUNDLE_EXCLUDE_FILES` (currently just `allocator_inputs.json`, the
-large raw per-seed/tick array sidecar — ~0.3–1.9 MB per process, never
-read by `verdict.py` for verdict re-derivation, only opportunistically
-hashed when present). Populated/refreshed via:
+**Fix:** `docs/phase_f/l2_2_design_a/evidence_bundle/` is a tracked
+mirror (same `<Process>/<latest|latest_event>/` layout as `EVIDENCE_ROOT`)
+of every mandatory authority + sidecar file (`result.json`,
+`input_manifest.json`, `provenance.json`, `thresholds.json`,
+`null_calibration.json`, `SUMMARY.json`, `analytical_check.json`,
+`sweep_provenance.json`), deliberately **excluding**
+`schema.INFORMATIONAL_ONLY_FILES`/`BUNDLE_EXCLUDE_FILES` (currently just
+`allocator_inputs.json`, the large raw per-seed/tick array sidecar —
+~0.3–1.9 MB per process, never read by `verdict.py` for verdict
+re-derivation; its hash+size is instead recorded inside the tracked
+`sweep_provenance.json` — see Section 13.1). Every file is a byte-for-byte
+copy EXCEPT `input_manifest.json`, whose `inputs[*]["path"]` entries are
+normalized to repo-relative POSIX paths before being written into the
+bundle (see Section 13.1) — its content (`resolved_seeds`/`m_ticks`) is
+still exactly preserved and mechanically checked, only its raw bytes
+legitimately differ from the live copy. Populated/refreshed via:
 
 ```
 bin\oc-py scripts/l22_evidence/generator.py bundle
@@ -689,21 +738,160 @@ scope) — this fix does not attempt to make them portable, only to keep
 staleness-checking from raising a false alarm purely because of *which*
 worktree/clone root ran the check.
 
-**Verification:** `tests/scripts/test_l22_evidence_portability.py` (7
-tests) proves: the bundle never contains `BUNDLE_EXCLUDE_FILES` and stays
-small (compact JSON only); every process with real live evidence has a
-byte-identical bundle entry; `audit()` succeeds — with the identical
-tally/aggregate as the real local audit — from an isolated temp root
-containing *only* a copy of the tracked bundle + tracked index and no
-`artifacts/l2_2_gates` anywhere under it (the literal fresh-clone
-scenario); `default_evidence_root()` falls back to the bundle when the live
-tree is absent and still produces real `PASS` rows from the bundle alone;
-`default_evidence_root()` still prefers the live tree when present
-(no behavior change for local dev); and `_resolve_input_path()` both
-prefers an exact still-existing absolute match and correctly falls back to
-suffix-matching under a different `REPO_ROOT` otherwise.
+**Verification:** `tests/scripts/test_l22_evidence_portability.py` proves:
+the bundle never contains `BUNDLE_EXCLUDE_FILES` and stays small (compact
+JSON only); every process with real live evidence has a bundle entry whose
+`result.json`/`provenance.json` are byte-identical and whose
+`input_manifest.json` matches semantically with repo-relative paths only;
+`audit()` succeeds — with the identical tally/aggregate as the real local
+audit — from an isolated temp root containing *only* a copy of the tracked
+bundle + tracked index and no `artifacts/l2_2_gates` anywhere under it (the
+literal fresh-clone scenario); `default_evidence_root()` falls back to the
+bundle when the live tree is absent and still reproduces the identical
+tally as the live tree; `default_evidence_root()` still prefers the live
+tree when present (no behavior change for local dev); and
+`_resolve_input_path()` both prefers an exact still-existing absolute match
+and correctly falls back to suffix-matching under a different `REPO_ROOT`
+otherwise.
 
-## 13. Files
+## 13. Provenance hardening: `sweep_provenance.json`, mandatory sidecars, atomic/locked sweep
+
+This section documents the hardening that closed three gaps an earlier
+review found in the sweep launcher + evidence bundle: (1) an evidence
+directory could look "complete" while never having been checked against
+the CURRENT runner/helpers/projections/catalog source files or evaluator
+schema version, (2) `sweep.py run` could relaunch and clobber a process a
+second, concurrent invocation was already running, and a crash mid-rerun
+could destroy previously-valid evidence, and (3) `input_manifest.json`'s
+absolute worktree paths would otherwise leak into the tracked bundle.
+
+### 13.1 Mandatory sidecars and `sweep_provenance.json`
+
+`schema.MANDATORY_SIDECAR_FILES` (`thresholds.json`, `null_calibration.json`,
+`SUMMARY.json`, `analytical_check.json`) are no longer optional: the runner
+unconditionally writes all four for every process (`analytical_check.json`
+is `{"applicable": false, ...}` when not applicable, never omitted), so
+requiring them is a simplification, not a new obligation on the runner.
+Missing any one of them — like missing an authority file — is
+`MISSING_EVIDENCE`.
+
+`schema.SWEEP_PROVENANCE_FILE` (`sweep_provenance.json`) is a NEW sidecar,
+written by `scripts/l22_evidence/sweep.py` itself (never the runner, and
+never hand-edited) only after a run's output passes
+`_authority_and_sidecars_match`, and written **last** — its mere presence
+in a validated evidence directory is the completion sentinel. It carries:
+
+- `git_sha` / `git_dirty` — the REAL current worktree git state (via
+  `populate._git_sha`/`populate._git_dirty`, reusing the already-accepted
+  WSL/Windows-linked-worktree gitdir resolution), since the runner's own
+  `provenance.json["git_sha"]` is permanently `"unknown"` in this project's
+  environment and can never be trusted for staleness. An unknown/missing
+  `git_sha` is always non-green, never inferred.
+- `source_hashes` — sha256 of the runner script, the runner helpers
+  module, the projections module, and `PROCESS_CATALOG.yaml`
+  (`schema.SWEEP_PROVENANCE_SOURCE_FILES`) AS THEY EXISTED when the run
+  completed. `evidence_is_valid()`/the generator's
+  `_check_sweep_provenance_staleness()` both recompute these RIGHT NOW and
+  flag any individually-named drift — e.g. a projection-evaluator fix
+  landing after a process's evidence was generated makes that evidence
+  stale, without needing a manual audit sweep.
+- `evaluator_schema_version` — `verdict.EVALUATOR_SCHEMA_VERSION`, bumped
+  whenever `verdict.py`'s mechanical re-derivation logic changes in a way
+  that could change a prior verdict; a mismatch is stale.
+- `allocator_inputs` — `{"sha256": ..., "size_bytes": ...}` for
+  `allocator_inputs.json` when present. This file itself stays gitignored
+  and unbundled (`schema.INFORMATIONAL_ONLY_FILES`), but its hash+size is
+  still tamper-evident via this tracked sentinel.
+
+A git-dirty working tree is recorded but NOT itself gating — active
+development on a dirty tree is normal and would otherwise make it
+impossible to ever produce valid evidence pre-commit; only an
+unknown/missing SHA invalidates.
+
+### 13.2 Atomicity and per-process locking (`sweep.py run_job`)
+
+Every (re)run writes to a freshly-created TEMP sibling output directory and
+log (never the real `<process>/latest/` path directly). Only after the
+child exits 0 AND its output passes `_authority_and_sidecars_match` is
+`sweep_provenance.json` written into the temp directory and the whole temp
+directory atomically swapped into place (`_atomic_replace_dir`); on ANY
+failure — nonzero exit, failed-to-start, or exit-0-but-invalid-evidence
+(`JOB_STATUS_RAN_INVALID_EVIDENCE`) — the real output directory and log are
+left completely untouched, so a crashed or failed rerun never destroys
+prior valid evidence. The failed attempt's raw output/log are preserved at
+their temp paths for postmortem, referenced in the job result's `reason`.
+
+Because POSIX cannot atomically replace a non-empty directory in one
+syscall, the swap is a two-step rename (old dir → `<dir>.prev` backup, then
+temp dir → final dir, best-effort backup cleanup). `_recover_crashed_swap()`
+runs at the top of both `evidence_is_valid()` and `run_job()`: if the final
+directory is missing but its `.prev` backup still exists (a crash between
+the two renames), it restores the backup automatically, so a crash mid-swap
+never silently loses the last-known-good evidence.
+
+A per-process `O_EXCL` lock file (`.{output_dir.name}.sweep.lock`, disjoint
+per process by construction) is held for the duration of a rerun attempt.
+A second, independently-launched `sweep.py run` invocation targeting the
+SAME process gets `JOB_STATUS_LOCKED_SKIPPED` immediately — it never blocks
+and never relaunches the process concurrently; existing evidence (valid or
+not) is left completely untouched.
+
+`_cmd_run()`'s exit code: `JOB_STATUS_START_ERROR`, `JOB_STATUS_RAN_FAIL`,
+and `JOB_STATUS_RAN_INVALID_EVIDENCE` are ALL hard failures — nonzero exit
+regardless of which occurred. `JOB_STATUS_SKIPPED_VALID` and
+`JOB_STATUS_LOCKED_SKIPPED` are both legitimate "nothing needed to happen"
+outcomes and never cause a nonzero exit on their own.
+
+### 13.3 Warnings are always carried verbatim
+
+`row["warnings"]` is the verbatim `result.json["warnings"]` list, always
+present (possibly empty) regardless of whether any entry matches a
+gating sentinel prefix. `verdict.rederive_process` only ever *acts* on the
+sentinel-matching subset (`KARR_SINGLE_SEED_REUSED`,
+`PRIMARY_CHANNEL_ORACLE_LAUNDERING`, etc.) for verdict purposes; a
+non-gating warning (e.g. a Translation seed-shift note) must still be
+visible in the tracked index rather than silently dropped once it stops
+affecting the verdict.
+
+### 13.4 `input_manifest.json` path normalization and the `artifact_hashes` exclusion
+
+`bundle_process_evidence()` normalizes `input_manifest.json["inputs"][*]
+["path"]` to repo-relative POSIX paths (via
+`generator._normalize_input_manifest_paths`) before mirroring it into the
+tracked bundle, so no tracked file ever embeds this machine's absolute
+worktree path. Because this legitimately changes the file's raw bytes
+between the live tree and the bundle for byte-identical underlying
+evidence, `artifact_hashes` excludes `input_manifest.json` entirely (same
+precedent as excluding `INFORMATIONAL_ONLY_FILES`) — its content
+(`resolved_seeds`/`m_ticks`/`inputs`) remains read and mechanically checked
+via `_check_current_tree_staleness()` regardless, so no tamper-evidence is
+lost, only a redundant raw-byte hash that would otherwise make
+`content_hash` diverge between a live-tree-sourced and a bundle-sourced
+generation of the SAME evidence.
+
+### 13.5 Audit content-hash bug fix
+
+`generator.audit()` now unconditionally validates the stored
+`content_hash` field against the stored payload, before/outside the
+`_strip_volatile(stored) != _strip_volatile(fresh)` branch. Previously this
+check was nested inside that branch (and additionally guarded by `if
+recorded_hash and ...`), so a payload hand-tampered ONLY in its
+`content_hash` field (with everything else still equal to a fresh
+regeneration) passed through uncaught. See
+`test_l22_evidence_anticheat.py::test_audit_rejects_content_hash_tampered_alone_with_everything_else_untouched`.
+
+### 13.6 Transitional state as of this commit
+
+Every evidence directory currently on disk predates this hardening (none
+of it carries `sweep_provenance.json`), so ALL 22 in-scope rows are
+honestly `MISSING_EVIDENCE` immediately after this commit — a deliberate,
+correct demotion (per this project's "unprovable prior launches must be
+marked stale and scheduled for rerun, never inferred as valid" rule), NOT
+a regression. Re-populating real PASS/FAIL rows by rerunning the sweep
+through the hardened `run_job` is the next (Phase-B) step, tracked
+separately from this hardening commit.
+
+## 14. Files
 
 - `scripts/l22_evidence/catalog.py` — catalog access (scope derivation).
 - `scripts/l22_evidence/schema.py` — versioned constants (paths, required
@@ -732,27 +920,36 @@ suffix-matching under a different `REPO_ROOT` otherwise.
   per-file hash/source-attribution provenance from the real population run.
   Not hand-edited; regenerated by `populate.py --apply`.
 - `scripts/l22_evidence/sweep.py` — resumable, bounded-parallel Design-A
-  runner sweep launcher (`plan`/`run`/`status` CLI); see Section 11.
-  **Executed against real data 2026-07-28** (14/18 processes with real
-  evidence; `Metabolism` still running).
-- `tests/scripts/test_l22_evidence_sweep.py` — 27 tests: real-catalog
-  `plan_sweep()` derivation, resume-by-validation semantics, bounded
-  parallelism, exit-code capture, compact report/status writers, CLI
-  smoke tests — all against fake fast command builders, never the real
+  runner sweep launcher (`plan`/`run`/`status` CLI); see Sections 11, 13.
+  Now atomic/locked with mandatory-sidecar + `sweep_provenance.json`
+  staleness checks (Section 13).
+- `tests/scripts/test_l22_evidence_sweep.py` — 39 tests: real-catalog
+  `plan_sweep()` derivation, resume-by-validation/staleness semantics
+  (unknown git SHA, source-hash drift, evaluator-schema-version drift,
+  missing `sweep_provenance.json`), bounded parallelism, atomic/locked
+  force reruns (crash-mid-swap recovery, concurrent-lock exclusion),
+  exit-code capture (including `RAN_EXIT_0_INVALID_EVIDENCE`), compact
+  report/status writers, CLI smoke tests including nonzero-exit-on-
+  hard-failure — all against fake fast command builders, never the real
   slow runner.
+- `tests/scripts/_l22_evidence_fixtures.py` — shared fixture helpers
+  (`write_mandatory_sidecars`, `write_valid_sweep_provenance`,
+  `write_full_valid_evidence`) used by the sweep/anticheat test suites,
+  built from the REAL current `sweep.current_source_hashes()`/
+  `populate._git_sha`/`populate._git_dirty`/`verdict.EVALUATOR_SCHEMA_VERSION`
+  so tests exercise the real staleness-detection code path.
 - `docs/phase_f/l2_2_design_a/sweep_status.json` — tracked, compact,
   read-only interim progress snapshot (one row per process: valid/log
   state, stored verdict for human context). Regenerate with
   `sweep.py status`; safe to run while a real sweep is still executing.
 - `docs/phase_f/l2_2_design_a/sweep_report.json` — tracked, compact
   per-job run report (`process`, `status`, `exit_code`, timestamps,
-  `duration_s`, `output_dir`, `log_path`) from the targeted
-  DNASupercoiling/Replication re-run (`RAN_EXIT_0: 2`); written by
+  `duration_s`, `output_dir`, `log_path`); written by
   `sweep.py run --report-out ...`.
 - `docs/phase_f/l2_2_design_a/evidence_bundle/` — tracked, portable mirror
-  of compact per-process authority + sidecar files (excludes
-  `allocator_inputs.json`); see Section 12. Regenerate with
-  `generator.py bundle`.
-- `tests/scripts/test_l22_evidence_portability.py` — 7 tests proving the
-  tracked bundle is sufficient for `audit()` to succeed with no local
+  of mandatory per-process authority + sidecar files (excludes
+  `INFORMATIONAL_ONLY_FILES`/`allocator_inputs.json`); see Sections 12–13.
+  Regenerate with `generator.py bundle`.
+- `tests/scripts/test_l22_evidence_portability.py` — proves the tracked
+  bundle is sufficient for `audit()` to succeed with no local
   `artifacts/l2_2_gates` tree at all; see Section 12.
