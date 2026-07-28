@@ -94,6 +94,31 @@ _PROTEIN_MODIFICATION_MONOMER_STORE_PATH_OVERRIDE = {
     "modifiedMonomers": ("protein", "modified_counts"),
     "unmodifiedMonomers": ("protein", "unmodified_counts"),
 }
+# `_run_*_tick` helpers construct their per-tick process instance keyed on
+# `_sample_seed(seed, tick)` (a fresh SeedSequence-derived value, effectively
+# unique per (seed, tick) pair -- see `_sample_seed`). An `lru_cache` keyed on
+# that value therefore almost never hits: every tick call is a cache *miss*
+# that inserts one more permanently-retained instance. With `maxsize=None`
+# (the historical default for these per-process caches) a full N=50/M=200
+# ensemble retains all 10,000 constructed instances for the life of the
+# process, each carrying its own copy of the process's (identical, re-loaded
+# every construction) fixture-derived arrays -- an unbounded, ever-growing
+# retention that scales with tick count, not with anything the process
+# actually needs concurrently live (only the single most-recently-built
+# instance is ever read from). `ProteinDecayLightProcess` in particular
+# retains large per-instance arrays (AA-sequence tuples, complex/monomer
+# composition matrices) on top of a reloaded `.mat` fixture per construction;
+# empirically (`scripts/probe_protein_decay_memory_staircase.py`) this
+# measured ~2.7-5.5 MiB retained per cached instance with 100% cache-miss
+# rate, i.e. unbounded growth with construction count -- exactly the
+# ~0.78 GiB/min-with-no-plateau RSS growth observed at N=50/M=200. Bounding
+# the cache to a small `maxsize` restores the intended "avoid reconstructing
+# on an immediate re-call with the same key" caching behavior (still fully
+# deterministic and side-effect free -- `_protein_decay_process` is a pure
+# function of `seed`) while capping worst-case retained memory to
+# `maxsize` instances regardless of how many ticks/seeds are swept.
+_PER_TICK_PROCESS_CACHE_MAXSIZE = 4
+
 _RNA_SLOT_COUNTS_STATE_KEY = "_l2_rna_slot_counts"
 _RNA_SLOT_WIDS_STATE_KEY = "_l2_rna_slot_wids"
 _EXTERNAL_V2_PROCESS_ROOT_FALLBACK = frozenset(
@@ -1493,7 +1518,7 @@ def _trna_aminoacylation_process(seed: int) -> KarrTRNAAminoacylationProcess:
     return process
 
 
-@lru_cache(maxsize=None)
+@lru_cache(maxsize=_PER_TICK_PROCESS_CACHE_MAXSIZE)
 def _protein_decay_process(seed: int) -> ProteinDecayLightProcess:
     with forbid_sut_oracle_file_io():
         return ProteinDecayLightProcess({"rng_seed": int(seed)})
