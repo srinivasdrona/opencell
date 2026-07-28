@@ -1,0 +1,32 @@
+{
+  "generated_at": "2026-07-28T17:57:31.043546+00:00",
+  "process": "ReplicationInitiation",
+  "bucket": "ALGORITHMIC_DEEP",
+  "channels": {
+    "substrates": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 200,
+      "q95_null": 1191.4941639999997,
+      "bootstrap_values_summary": {
+        "mean": 1004.0351744999997,
+        "stddev": 112.36122909849756,
+        "min": 665.7371199999998,
+        "max": 1334.4964999999997
+      }
+    },
+    "complexs": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 200,
+      "q95_null": 0.08333066666666664,
+      "bootstrap_values_summary": {
+        "mean": 0.07561444666666665,
+        "stddev": 0.004560251772342788,
+        "min": 0.06326,
+        "max": 0.08951999999999999
+      }
+    }
+  },
+  "warnings": []
+}

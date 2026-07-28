@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.4",
+  "harness_version": "design_a_v1_3",
+  "process": "ReplicationInitiation",
+  "bucket": "ALGORITHMIC_DEEP",
+  "channels": {
+    "substrates": {
+      "q95_null": 1191.4941639999997,
+      "k_eng": 3.0,
+      "absolute_floor": 1.0,
+      "threshold": 3574.482491999999
+    },
+    "complexs": {
+      "q95_null": 0.08333066666666664,
+      "k_eng": 3.0,
+      "absolute_floor": 1.0,
+      "threshold": 1.0
+    }
+  }
+}

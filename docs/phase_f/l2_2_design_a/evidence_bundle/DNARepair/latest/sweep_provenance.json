@@ -1,0 +1,16 @@
+{
+  "evaluator_schema_version": 1,
+  "git_dirty": null,
+  "git_sha": "a7360c78e9e978d533c8d0254bfe9546edfd5e4e",
+  "m_ticks": 200,
+  "n_seeds": 50,
+  "process": "DNARepair",
+  "schema_version": 1,
+  "source_hashes": {
+    "catalog": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
+    "helpers": "b0692aba4b41bd427f498cf9bc46a94642fda044de2ed9b8f48e54ea1215a40e",
+    "projections": "ff2154045ffad25ab5074103ef96989c336cb3e9d3c63444f292a48ecba2eb3b",
+    "runner": "cceabe79ab2e6d5239d24d39e4dcac9c2560cd75131ef48c64c8f460e59d1d8a"
+  },
+  "written_at": "2026-07-28T17:08:02.362679+00:00"
+}

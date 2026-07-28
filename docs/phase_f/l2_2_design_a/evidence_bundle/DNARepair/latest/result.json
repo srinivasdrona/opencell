@@ -1,0 +1,156 @@
+{
+  "process": "DNARepair",
+  "verdict": "PASS",
+  "timestamp": "2026-07-28T17:07:50.208332+00:00",
+  "harness_version": "design_a_v1_3",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49
+  ],
+  "ticks": 200,
+  "n_observations_per_channel": 10000,
+  "bootstrap_B": 1000,
+  "bucket": "ALGORITHMIC_DEEP",
+  "canonical_seed_count": 50,
+  "k_eng": {
+    "TRIVIAL_RNG": 2.0,
+    "ALGORITHMIC_SHALLOW": 2.0,
+    "ALGORITHMIC_DEEP": 3.0
+  },
+  "channels": {
+    "substrates": {
+      "verdict": "SEED_NOISE",
+      "w1_oc_vs_karr": 0.0006227436823104716,
+      "w1_oc_vs_karr_ci95": [
+        6.045903555956737,
+        6.795482861010895
+      ],
+      "q95_null": 6.740843953068657,
+      "threshold": 20.222531859205972,
+      "absolute_floor": 1.0,
+      "ks_stat": 9.386281588419365e-06,
+      "ks_pvalue": 1.0,
+      "n_nonzero_oc": 10918,
+      "n_nonzero_karr": 10892,
+      "samples_oc": {
+        "mean": 10.989791696750903,
+        "stddev": 227.89954667064575,
+        "skew": 35.303158078631824,
+        "kurtosis": 1649.6378845046731,
+        "min": 0.0,
+        "max": 15502.0
+      },
+      "samples_karr": {
+        "mean": 10.989787003610108,
+        "stddev": 227.8995757279823,
+        "skew": 35.30314732871777,
+        "kurtosis": 1649.6370724283458,
+        "min": 0.0,
+        "max": 15502.0
+      },
+      "is_primary": false,
+      "is_event_channel": false,
+      "aggregation": "per_tick_vector_w1_mean",
+      "per_sample_w1_summary": {
+        "mean": 0.0006227436823104716,
+        "max": 0.010830324909747335,
+        "min": 0.0
+      }
+    },
+    "chromosome": {
+      "aggregation": "hurdle_event_rate_plus_conditional_scaled_distance",
+      "w1_oc_vs_karr": 0.0,
+      "is_primary": true,
+      "is_event_channel": false,
+      "hurdle": {
+        "event_rate_diff": 0.0013000000000000025,
+        "event_rate_threshold": 0.1,
+        "conditional_w1_per_component": {
+          "component_1": 0.0,
+          "component_2": 0.0,
+          "component_3": 0.0,
+          "component_4": 0.0,
+          "component_5": 0.0
+        },
+        "conditional_scaled_w1_per_component": {
+          "component_1": 0.0,
+          "component_2": 0.0,
+          "component_3": 0.0,
+          "component_4": 0.0,
+          "component_5": 0.0
+        },
+        "conditional_component_scales": {
+          "component_1": 1.0,
+          "component_2": 1.0,
+          "component_3": 1.0,
+          "component_4": 1.0,
+          "component_5": 1.0
+        },
+        "conditional_scaled_distance_threshold": 1.0,
+        "n_events_oc": 302,
+        "n_events_karr": 289,
+        "component_verdicts": {
+          "component_1": "PASS",
+          "component_2": "PASS",
+          "component_3": "PASS",
+          "component_4": "PASS",
+          "component_5": "PASS"
+        },
+        "joint_verdict": "PASS"
+      },
+      "verdict": "PASS"
+    }
+  },
+  "joint_check": null,
+  "warnings": [],
+  "allocator_inputs_ref": "/mnt/e/opencell-worktrees/l22-evidence-gate/artifacts/l2_2_gates/DNARepair/.latest.rebuild-395-1785255282039313378/allocator_inputs.json",
+  "provenance_ref": "/mnt/e/opencell-worktrees/l22-evidence-gate/artifacts/l2_2_gates/DNARepair/.latest.rebuild-395-1785255282039313378/provenance.json"
+}

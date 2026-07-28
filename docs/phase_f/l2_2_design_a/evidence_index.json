@@ -2,9 +2,9 @@
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
   "catalog_sha256": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
-  "content_hash": "826811934cf9fac5a3aea7a12a637324f99f4dc72a4482cc080ad0d1d32165f2",
+  "content_hash": "d1888de25eff58ad1eeaa0b42114ca4972e67f3e2bb0815ca673462bfc370d60",
   "evidence_root": "artifacts/l2_2_gates",
-  "generated_at": "2026-07-28T13:29:51.090703+00:00",
+  "generated_at": "2026-07-28T18:27:10.771793+00:00",
   "n_in_scope": 22,
   "rows": [
     {
@@ -50,7 +50,15 @@
       ]
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "719e926819bb6bb11dce4cde3e99645a47ac67c7e600f878657cbbce0852b64e",
+        "analytical_check.json": "c37ae0ef71b6663479d1f59b5ee26f798f0eb7846541192f35b7b0f52ea5264c",
+        "null_calibration.json": "0edcce7b39878bc1c712076302b3efdf26491efb62c169a752a34dd5119516ad",
+        "provenance.json": "0e4e63827b718c4b3a9f844535b330d5ac6361e7fd47d792b6146027a89816fa",
+        "result.json": "fdc7c4b004224476f847f167bd116dda6cfab0b440bc36f12b22248ead1f436a",
+        "sweep_provenance.json": "06e24b90a8f23cf34a556b3fa15b842d1c07ca023e1c1ba85d207db530409abc",
+        "thresholds.json": "beeba9da08cbc55b29ef3e231904f67e3a4ec6f9e741d00aa4c58b188238051b"
+      },
       "bucket": "ALGORITHMIC_DEEP",
       "catalog_soft_flags": {
         "M_ticks": 200,
@@ -61,14 +69,23 @@
         "primary_channel": "chromosome",
         "primary_distance": "hurdle_event_rate_plus_conditional_scaled_distance"
       },
+      "channel_verdicts": {
+        "chromosome": "PASS",
+        "substrates": "SEED_NOISE"
+      },
       "evidence_dir": "artifacts/l2_2_gates/DNARepair/latest",
-      "green": false,
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "PASS",
       "process": "DNARepair",
-      "reasons": [
-        "MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process DNARepair"
-      ]
+      "provenance_git_sha": "unknown",
+      "reasons": [],
+      "sweep_provenance": {
+        "evaluator_schema_version": 1,
+        "git_dirty": null,
+        "git_sha": "a7360c78e9e978d533c8d0254bfe9546edfd5e4e"
+      },
+      "warnings": []
     },
     {
       "artifact_hashes": {},
@@ -365,7 +382,15 @@
       ]
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "f54167aaf9596b79255140306cd241d0ad7da4dbc755295bae048259cd91325a",
+        "analytical_check.json": "d40b24b7383e02c3833fabb799ed0d2e28709559cf7c34245fa9331fefeda6f7",
+        "null_calibration.json": "cc44581532b37ea7eca14a23f07fcc8878777b81c3ba6f61cda7a8e16cb3ed33",
+        "provenance.json": "c0704c4afdc04647c912fd5025a382b76185291d5bb3d8951e5c0b0f99f786fb",
+        "result.json": "94f51f20d719a6c3f76f9d68d4e84e0a6158aa738d308e96fe3aaf180d878545",
+        "sweep_provenance.json": "58d21f91abcc5253840ac2ea6557574d8688f79737d418fc9218bc28d85cc232",
+        "thresholds.json": "f371d2d65e25e1cf7d577adb812aeb79fa5f5824ede2d7d73628b3e37d33dd6c"
+      },
       "bucket": "ALGORITHMIC_DEEP",
       "catalog_soft_flags": {
         "M_ticks": 200,
@@ -376,14 +401,23 @@
         "primary_channel": "complexs",
         "primary_distance": "per_tick_vector_w1_mean"
       },
+      "channel_verdicts": {
+        "complexs": "PASS",
+        "substrates": "SEED_NOISE"
+      },
       "evidence_dir": "artifacts/l2_2_gates/ReplicationInitiation/latest",
-      "green": false,
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "PASS",
       "process": "ReplicationInitiation",
-      "reasons": [
-        "MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process ReplicationInitiation"
-      ]
+      "provenance_git_sha": "unknown",
+      "reasons": [],
+      "sweep_provenance": {
+        "evaluator_schema_version": 1,
+        "git_dirty": null,
+        "git_sha": "a7360c78e9e978d533c8d0254bfe9546edfd5e4e"
+      },
+      "warnings": []
     },
     {
       "artifact_hashes": {},
@@ -472,6 +506,7 @@
   ],
   "schema_version": 1,
   "tally": {
-    "MISSING_EVIDENCE": 22
+    "MISSING_EVIDENCE": 20,
+    "PASS": 2
   }
 }

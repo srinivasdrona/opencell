@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.4",
+  "harness_version": "design_a_v1_3",
+  "process": "DNARepair",
+  "bucket": "ALGORITHMIC_DEEP",
+  "channels": {
+    "substrates": {
+      "q95_null": 6.740843953068657,
+      "k_eng": 3.0,
+      "absolute_floor": 1.0,
+      "threshold": 20.222531859205972
+    }
+  }
+}

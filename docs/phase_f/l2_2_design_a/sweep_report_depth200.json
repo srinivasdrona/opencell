@@ -1,0 +1,43 @@
+{
+  "generated_at": "2026-07-28T17:57:44.552890+00:00",
+  "jobs": [
+    {
+      "duration_s": 3190.057797892,
+      "exit_code": 0,
+      "finished_at": "2026-07-28T17:07:52.099547+00:00",
+      "log_path": "artifacts/l2_2_gates/_sweep_logs/DNARepair.log",
+      "output_dir": "artifacts/l2_2_gates/DNARepair/latest",
+      "process": "DNARepair",
+      "reason": null,
+      "started_at": "2026-07-28T16:14:42.041743+00:00",
+      "status": "RAN_EXIT_0"
+    },
+    {
+      "duration_s": 1946.924447188,
+      "exit_code": -15,
+      "finished_at": "2026-07-28T16:47:08.967298+00:00",
+      "log_path": "artifacts/l2_2_gates/_sweep_logs/ProteinDecay.log",
+      "output_dir": "artifacts/l2_2_gates/ProteinDecay/latest",
+      "process": "ProteinDecay",
+      "reason": "nonzero exit -15; log tail: # command: ['/mnt/e/opencell/.venv-wsl/bin/python', '/mnt/e/opencell-worktrees/l22-evidence-gate/tests/vivarium/l2_2_design_a_runner.py', '--process', 'ProteinDecay', '--seeds', '50', '--ticks', '200', '--output-dir', '/mnt/e/opencell-worktrees/l22-evidence-gate/artifacts/l2_2_gates/ProteinDecay/.latest.rebuild-395-1785255282041331966']\n# started_at: 2026-07-28T16:14:42.042865+00:00 (raw failed-attempt output preserved at artifacts/l2_2_gates/ProteinDecay/.latest.rebuild-395-1785255282041331966, log at artifacts/l2_2_gates/_sweep_logs/.ProteinDecay.log.rebuild-395-1785255282041331966)",
+      "started_at": "2026-07-28T16:14:42.042865+00:00",
+      "status": "RAN_NONZERO_EXIT"
+    },
+    {
+      "duration_s": 4225.26000044,
+      "exit_code": 0,
+      "finished_at": "2026-07-28T17:57:34.284173+00:00",
+      "log_path": "artifacts/l2_2_gates/_sweep_logs/ReplicationInitiation.log",
+      "output_dir": "artifacts/l2_2_gates/ReplicationInitiation/latest",
+      "process": "ReplicationInitiation",
+      "reason": null,
+      "started_at": "2026-07-28T16:47:09.024194+00:00",
+      "status": "RAN_EXIT_0"
+    }
+  ],
+  "n_jobs": 3,
+  "tally": {
+    "RAN_EXIT_0": 2,
+    "RAN_NONZERO_EXIT": 1
+  }
+}

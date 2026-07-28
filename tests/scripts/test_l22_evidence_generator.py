@@ -78,21 +78,29 @@ def test_index_has_exactly_one_row_per_in_scope_process_no_extras():
     assert payload["n_in_scope"] == 22
 
 
-def test_real_sweep_evidence_today_is_honestly_all_missing_pending_provenance_migration():
-    """As of this commit, the Phase-A provenance-hardening rules (mandatory
+def test_real_sweep_evidence_today_reflects_hardened_reruns_for_two_processes():
+    """As of this commit, DNARepair and ReplicationInitiation have been
+    rerun through the hardened `sweep.py run_job` at their catalog M=200
+    (the depth200 oracle now provides real 200-tick per-seed traces for
+    these two catalog M=200 processes; ProteinDecay -- also catalog M=200
+    -- could not be completed in this pass because the Design-A harness's
+    memory footprint at M=200 grows roughly linearly without plateauing and
+    was terminated pre-OOM before completion, so it remains MISSING_EVIDENCE
+    pending a follow-up). Their evidence now carries a real
     `sweep_provenance.json` completion sentinel with a real git SHA + source
-    hashes matching the CURRENT runner/helpers/projections/catalog files)
-    have just landed, but the real evidence tree under
-    `artifacts/l2_2_gates/` still only holds evidence from BEFORE this
-    hardening -- none of it carries `sweep_provenance.json` yet, since no
-    process has been rerun through the hardened `sweep.py run_job` since.
-    This is the honest, expected transitional state: every previously
-    "PASS"/"FAIL" row is correctly demoted to MISSING_EVIDENCE rather than
-    silently grandfathered in as compliant (see the evidence-gate task's
-    explicit instruction: unprovable prior launches must be marked stale and
-    scheduled for rerun, never inferred as valid). Phase-B reruns/migration
-    will re-populate real PASS/FAIL rows behind this same test file; until
-    then NO row may ever be fabricated PASS."""
+    hashes matching the CURRENT runner/helpers/projections/catalog files, so
+    they are the first two rows honestly promoted out of MISSING_EVIDENCE.
+    The remaining 16 in-scope processes still only hold evidence from BEFORE
+    the Phase-A provenance hardening landed -- none of it carries
+    `sweep_provenance.json` yet, since those processes have not been rerun
+    through the hardened `sweep.py run_job`. This is the honest, expected
+    transitional state: every one of those previously "PASS"/"FAIL" rows is
+    correctly demoted to MISSING_EVIDENCE rather than silently grandfathered
+    in as compliant (see the evidence-gate task's explicit instruction:
+    unprovable prior launches must be marked stale and scheduled for rerun,
+    never inferred as valid). Further Phase-B reruns/migration will
+    re-populate real PASS/FAIL rows behind this same test file; until then NO
+    other row may ever be fabricated PASS."""
     payload = gen.build_evidence_index()
     assert payload["aggregate_verdict"] == "NON_GREEN"
     for row in payload["rows"]:
@@ -100,7 +108,9 @@ def test_real_sweep_evidence_today_is_honestly_all_missing_pending_provenance_mi
             assert row["mechanical_verdict"] == schema.STATUS_PASS
         else:
             assert row["mechanical_verdict"] != schema.STATUS_PASS
-    assert payload["tally"] == {schema.STATUS_MISSING_EVIDENCE: 22}
+    assert payload["tally"] == {schema.STATUS_MISSING_EVIDENCE: 20, schema.STATUS_PASS: 2}
+    green_rows = {row["process"] for row in payload["rows"] if row["green"]}
+    assert green_rows == {"DNARepair", "ReplicationInitiation"}
 
 
 def test_content_hash_is_deterministic_across_regenerations():
@@ -139,7 +149,7 @@ def test_write_index_then_audit_round_trips_cleanly(tmp_path):
     result = gen.audit(index_path=index_path, evidence_root=schema.EVIDENCE_ROOT)
     assert result.ok is True
     assert result.aggregate_verdict == "NON_GREEN"
-    assert result.tally == {schema.STATUS_MISSING_EVIDENCE: 22}
+    assert result.tally == {schema.STATUS_MISSING_EVIDENCE: 20, schema.STATUS_PASS: 2}
 
 
 def test_audit_reports_failure_when_index_file_absent(tmp_path):

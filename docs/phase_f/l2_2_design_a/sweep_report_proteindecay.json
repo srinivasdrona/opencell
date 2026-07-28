@@ -1,0 +1,20 @@
+{
+  "generated_at": "2026-07-28T18:25:59.876117+00:00",
+  "jobs": [
+    {
+      "duration_s": 1325.25145416,
+      "exit_code": -15,
+      "finished_at": "2026-07-28T18:25:59.845398+00:00",
+      "log_path": "artifacts/l2_2_gates/_sweep_logs/ProteinDecay.log",
+      "output_dir": "artifacts/l2_2_gates/ProteinDecay/latest",
+      "process": "ProteinDecay",
+      "reason": "nonzero exit -15; log tail: # command: ['/mnt/e/opencell/.venv-wsl/bin/python', '/mnt/e/opencell-worktrees/l22-evidence-gate/tests/vivarium/l2_2_design_a_runner.py', '--process', 'ProteinDecay', '--seeds', '50', '--ticks', '200', '--output-dir', '/mnt/e/opencell-worktrees/l22-evidence-gate/artifacts/l2_2_gates/ProteinDecay/.latest.rebuild-373-1785261834592018832']\n# started_at: 2026-07-28T18:03:54.593949+00:00 (raw failed-attempt output preserved at artifacts/l2_2_gates/ProteinDecay/.latest.rebuild-373-1785261834592018832, log at artifacts/l2_2_gates/_sweep_logs/.ProteinDecay.log.rebuild-373-1785261834592018832)",
+      "started_at": "2026-07-28T18:03:54.593949+00:00",
+      "status": "RAN_NONZERO_EXIT"
+    }
+  ],
+  "n_jobs": 1,
+  "tally": {
+    "RAN_NONZERO_EXIT": 1
+  }
+}

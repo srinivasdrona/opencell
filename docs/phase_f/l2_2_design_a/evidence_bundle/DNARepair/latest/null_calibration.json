@@ -1,0 +1,20 @@
+{
+  "generated_at": "2026-07-28T17:07:50.208332+00:00",
+  "process": "DNARepair",
+  "bucket": "ALGORITHMIC_DEEP",
+  "channels": {
+    "substrates": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 200,
+      "q95_null": 6.740843953068657,
+      "bootstrap_values_summary": {
+        "mean": 6.442959883754574,
+        "stddev": 0.19124701658569118,
+        "min": 5.751626353790668,
+        "max": 6.960123826714867
+      }
+    }
+  },
+  "warnings": []
+}

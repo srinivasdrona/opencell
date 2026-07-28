@@ -77,16 +77,23 @@ def test_committed_evidence_index_is_honestly_non_green_today():
     by `sweep.py run_job`. None of that evidence was launched through the
     sentinel-writing code path, so it is unprovable under the hardened
     rules and honestly reads MISSING_EVIDENCE rather than being trusted by
-    inference. This is a deliberate demotion (per this task's "if not
-    provable, mark stale and schedule rerun rather than infer"
-    requirement), not a regression or a fabrication. If this test ever
-    needs to change (to GREEN, to a mixed tally, or otherwise), that change
-    must be driven by real sentinel-carrying evidence appearing/changing
-    under artifacts/l2_2_gates/ via a hardened sweep rerun, not by editing
-    this assertion."""
+    inference. DNARepair and ReplicationInitiation have since been rerun
+    through the hardened sweep at their catalog M=200 (using the newly
+    available depth200 oracle traces) and are the first two rows honestly
+    promoted to PASS with a real `sweep_provenance.json` sentinel;
+    ProteinDecay -- also catalog M=200 -- could not complete in this pass
+    (its Design-A memory footprint at M=200 grows without plateauing and the
+    run was terminated pre-OOM) and remains MISSING_EVIDENCE pending a
+    follow-up. This is a deliberate, evidence-driven promotion/demotion (per
+    this task's "if not provable, mark stale and schedule rerun rather than
+    infer" requirement), not a regression or a fabrication. If this test
+    ever needs to change again, that change must be driven by real
+    sentinel-carrying evidence appearing/changing under
+    artifacts/l2_2_gates/ via a hardened sweep rerun, not by editing this
+    assertion."""
     result = gen.audit()
     assert result.aggregate_verdict == "NON_GREEN"
-    assert result.tally == {schema.STATUS_MISSING_EVIDENCE: 22}
+    assert result.tally == {schema.STATUS_MISSING_EVIDENCE: 20, schema.STATUS_PASS: 2}
 
 
 def test_committed_evidence_index_covers_scope_exactly_once():

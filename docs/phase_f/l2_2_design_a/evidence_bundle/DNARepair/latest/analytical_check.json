@@ -1,0 +1,4 @@
+{
+  "applicable": false,
+  "reason": "DNARepair has no closed-form per-tick check"
+}
