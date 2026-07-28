@@ -95,10 +95,20 @@ def design_a_per_tick_processes(catalog_path: Path = cat.CATALOG_PATH) -> dict[s
 class SourceRoot:
     name: str
     path: Path
+    # None = unrestricted (may contribute to any process it has files for).
+    # Any accepted-oracle worktree source (clean11/stale5) MUST be given an
+    # explicit, non-None allowlist so it can never silently supply data for
+    # a process outside its mechanically-derived accepted set -- e.g. so
+    # clean11's own (stale, pre-regen) canonical seed0 for the 5 blocked
+    # processes can never be selected over stale5's regenerated canonical.
+    allowed_processes: frozenset[str] | None = None
 
     @property
     def karr_native_root(self) -> Path:
         return self.path / KARR_NATIVE_SUBDIR
+
+    def may_contribute(self, process: str) -> bool:
+        return self.allowed_processes is None or process in self.allowed_processes
 
 
 @dataclass(frozen=True)
@@ -230,14 +240,24 @@ def _ensembles_seed_count(selected_without_manifest: list[FileObservation]) -> i
     return len(seeds)
 
 
+def _eligible_sources(process: str, sources: list[SourceRoot]) -> list[SourceRoot]:
+    """Sources scoped (via `SourceRoot.allowed_processes`) OUT of contributing
+    to `process` are dropped entirely before any file is observed -- this is
+    what prevents e.g. clean11's own stale pre-regen canonical seed0 for a
+    stale5-owned process from ever being a candidate, even if the file is
+    physically present in clean11's tree."""
+    return [s for s in sources if s.may_contribute(process)]
+
+
 def evaluate_process(
     process: str, entry: cat.ProcessEntry, sources: list[SourceRoot]
 ) -> ProcessPopulationReport:
     required_seeds = int(entry.n_seeds)
+    eligible = _eligible_sources(process, sources)
 
-    v2_selected, v2_problems = _resolve_layout(process, _v2_relative_paths(process), sources, layout_name="v2")
+    v2_selected, v2_problems = _resolve_layout(process, _v2_relative_paths(process), eligible, layout_name="v2")
     ens_selected_all, ens_problems = _resolve_layout(
-        process, _ensembles_relative_paths(process), sources, layout_name="ensembles"
+        process, _ensembles_relative_paths(process), eligible, layout_name="ensembles"
     )
 
     problems = list(v2_problems) + list(ens_problems)
@@ -302,8 +322,8 @@ def evaluate_process(
         required_seeds=required_seeds,
         problems=[
             f"{STATUS_INSUFFICIENT_DATA}: {process} requires {required_seeds} seed(s); found "
-            f"v2={v2_seed_count}, ensembles={ens_seed_count} after merging sources "
-            f"{[s.name for s in sources]}"
+            f"v2={v2_seed_count}, ensembles={ens_seed_count} after merging ELIGIBLE sources "
+            f"{[s.name for s in eligible]} (of {[s.name for s in sources]} total, source scoping applied)"
         ],
     )
 
@@ -345,6 +365,80 @@ def apply_population(
             shutil.copy2(obs.absolute_path, dest)
             copied += 1
     return copied
+
+
+# Known pre-existing tracked artifact from the Phase 2 seed-1 schema
+# preflight (commit cc66914): a single stray Translation_100ticks.mat landed
+# in the generic v2 layout's seed-1 directory during specialized-ensemble
+# preflight validation, and remains committed there in every worktree
+# descended from that commit (current tree, clean11, stale5 alike). It is
+# harmless -- `load_karr_oracle` always prefers Translation's 50-seed
+# `ensembles/` layout over this lone v2 file by seed count -- and this task
+# must not delete or modify tracked raw MAT evidence. Named explicitly here
+# (mechanical, visible) rather than silently loosening validate_destination's
+# extras check for every unnamed file.
+KNOWN_PRE_EXISTING_V2_EXTRAS: frozenset[str] = frozenset(
+    {"per_process_traces_v2_s001/Translation_100ticks.mat"}
+)
+
+
+@dataclass
+class DestinationValidationReport:
+    expected_processes: list[str]
+    missing: list[str] = field(default_factory=list)
+    extra: list[str] = field(default_factory=list)
+    ignored: list[str] = field(default_factory=list)
+
+    @property
+    def ok(self) -> bool:
+        return not self.missing and not self.extra
+
+
+def validate_destination(
+    dest_karr_native_root: Path,
+    expected_processes: set[str] | frozenset[str],
+    seeds: range = range(1, MAX_SEEDS),
+    ignore_relative_paths: frozenset[str] = KNOWN_PRE_EXISTING_V2_EXTRAS,
+) -> DestinationValidationReport:
+    """Verify the v2-layout destination directories contain EXACTLY the
+    expected process x seed matrix: canonical (`per_process_traces_v2/`,
+    the sole, authoritative location for seed 0 -- per the hard
+    no-competing-`_s000` policy, no `per_process_traces_v2_s000/` directory
+    should ever exist) plus every `per_process_traces_v2_s{seed:03d}/` for
+    `seeds` (default 1-49), one `{process}_100ticks.mat` per expected
+    process, per directory -- no missing files, and no extra/unexpected
+    `.mat` files (e.g. a wrong-process file that leaked in from copying a
+    whole directory instead of the exact named files this tool always
+    copies).
+
+    This is a pure filesystem check -- it does not re-verify content
+    hashes (that is `evaluate_process`'s job); it only verifies *presence*
+    and *absence* of exactly the right file names, which is what "no
+    extras" means at the destination.
+    """
+    missing: list[str] = []
+    extra: list[str] = []
+    ignored: list[str] = []
+    expected_filenames = {f"{p}_100ticks.mat" for p in expected_processes}
+
+    dirnames = ["per_process_traces_v2"] + [f"per_process_traces_v2_s{seed:03d}" for seed in seeds]
+    for dirname in dirnames:
+        dir_path = dest_karr_native_root / dirname
+        present = {p.name for p in dir_path.glob("*.mat")} if dir_path.is_dir() else set()
+        for process in sorted(expected_processes):
+            fname = f"{process}_100ticks.mat"
+            if fname not in present:
+                missing.append(f"{dirname}/{fname}")
+        for fname in sorted(present - expected_filenames):
+            rel = f"{dirname}/{fname}"
+            if rel in ignore_relative_paths:
+                ignored.append(rel)
+            else:
+                extra.append(rel)
+
+    return DestinationValidationReport(
+        expected_processes=sorted(expected_processes), missing=missing, extra=extra, ignored=ignored
+    )
 
 
 def write_manifest(
@@ -389,6 +483,23 @@ def _print_report(reports: dict[str, ProcessPopulationReport], sources: list[Sou
             print(f"  {p}")
 
 
+def _print_destination_report(report: DestinationValidationReport) -> None:
+    print(f"\ndestination check: expected process(es) = {report.expected_processes}")
+    if report.ignored:
+        print(f"  ignored (known pre-existing, unrelated to this population): {report.ignored}")
+    if not report.missing and not report.extra:
+        print("  OK: exact matrix present, no unexpected extras.")
+        return
+    if report.missing:
+        print(f"  MISSING ({len(report.missing)}):")
+        for rel in report.missing:
+            print(f"    {rel}")
+    if report.extra:
+        print(f"  EXTRA/UNEXPECTED ({len(report.extra)}):")
+        for rel in report.extra:
+            print(f"    {rel}")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
@@ -398,12 +509,31 @@ def main(argv: list[str] | None = None) -> int:
         metavar="NAME=PATH",
         help="Named source worktree root (repeatable), e.g. --source clean11=E:\\opencell-worktrees\\l22-full-extract",
     )
+    parser.add_argument(
+        "--source-scope",
+        action="append",
+        default=[],
+        metavar="NAME=Proc1,Proc2,...",
+        help="Restrict a named --source to only ever contribute to this explicit, comma-separated "
+        "process allowlist (repeatable, one per source name). A source with no --source-scope entry "
+        "is unrestricted -- appropriate ONLY for the implicit 'current' source. Any accepted-oracle "
+        "worktree source (e.g. clean11/stale5) MUST be scoped explicitly so it can never silently "
+        "supply data for a process outside its mechanically-derived accepted set.",
+    )
     parser.add_argument("--processes", help="Comma-separated process allowlist; default = all 18 design_a_per_tick.")
     parser.add_argument(
         "--apply",
         action="store_true",
         help="Actually copy resolved files into the current repo tree and write the tracked manifest. "
         "Default is dry-run/report only. Refuses to run at all unless every requested process is RESOLVED.",
+    )
+    parser.add_argument(
+        "--check-destination",
+        action="store_true",
+        help="Validate the current repo tree's v2-layout destination directories contain EXACTLY the "
+        "requested process x seed(0-49) matrix, with no missing files and no unexpected extras. Runs "
+        "standalone (read-only, reports current state) unless combined with --apply, in which case it "
+        "runs AFTER the copy to confirm the result. Exits nonzero if the check fails.",
     )
     parser.add_argument("--out", default=str(MANIFEST_PATH))
     args = parser.parse_args(argv)
@@ -419,6 +549,25 @@ def main(argv: list[str] | None = None) -> int:
         seen_names.add(name)
         sources.append(SourceRoot(name=name, path=Path(path_str)))
 
+    scopes: dict[str, frozenset[str]] = {}
+    for raw in args.source_scope:
+        if "=" not in raw:
+            parser.error(f"--source-scope must be NAME=Proc1,Proc2,..., got {raw!r}")
+        name, _, procs_str = raw.partition("=")
+        if name not in seen_names:
+            parser.error(f"--source-scope refers to unknown source name {name!r}; declare it with --source first")
+        if name in scopes:
+            parser.error(f"--source-scope given more than once for {name!r}")
+        wanted_procs = frozenset(p.strip() for p in procs_str.split(",") if p.strip())
+        if not wanted_procs:
+            parser.error(f"--source-scope for {name!r} must list at least one process")
+        scopes[name] = wanted_procs
+    if scopes:
+        sources = [
+            SourceRoot(name=s.name, path=s.path, allowed_processes=scopes.get(s.name))
+            for s in sources
+        ]
+
     entries = design_a_per_tick_processes()
     if args.processes:
         wanted = {p.strip() for p in args.processes.split(",") if p.strip()}
@@ -429,6 +578,13 @@ def main(argv: list[str] | None = None) -> int:
 
     reports = evaluate_all(sources, entries)
     _print_report(reports, sources)
+
+    if args.check_destination and not args.apply:
+        # Standalone/read-only: report current destination state for the
+        # requested process set without requiring resolution or copying.
+        dest_report = validate_destination(cat.REPO_ROOT / KARR_NATIVE_SUBDIR, frozenset(entries))
+        _print_destination_report(dest_report)
+        return 0 if dest_report.ok else 1
 
     unresolved = {name: r for name, r in reports.items() if not r.resolved}
     if unresolved:
@@ -442,6 +598,13 @@ def main(argv: list[str] | None = None) -> int:
     copied = apply_population(reports, cat.REPO_ROOT)
     write_manifest(reports, sources, Path(args.out))
     print(f"\nApplied: copied {copied} file(s); wrote manifest to {args.out}")
+
+    if args.check_destination:
+        dest_report = validate_destination(cat.REPO_ROOT / KARR_NATIVE_SUBDIR, frozenset(entries))
+        _print_destination_report(dest_report)
+        if not dest_report.ok:
+            print("\nPost-apply destination check FAILED -- see EXTRA/MISSING above.")
+            return 1
     return 0
 
 

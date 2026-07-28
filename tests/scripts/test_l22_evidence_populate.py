@@ -329,3 +329,176 @@ def test_main_apply_copies_and_writes_manifest_for_real_catalog_process(tmp_path
     assert payload["processes"]["ProteinDecay"]["status"] == populate.STATUS_RESOLVED
     for seed in range(50):
         assert _v2_seed_file(fake_current, "ProteinDecay", seed).is_file()
+
+
+# --- Per-source process allowlist scoping --------------------------------------
+
+
+def test_source_scoped_out_of_process_is_never_a_candidate(tmp_path):
+    """A source with an explicit allowlist that does NOT include the requested
+    process must contribute nothing at all -- even if it physically has the
+    files -- exactly like the clean11 worktree's own stale pre-regen canonical
+    for a stale5-owned process must never be selected."""
+    clean11 = populate.SourceRoot(name="clean11", path=tmp_path / "clean11", allowed_processes=frozenset({"OtherProc"}))
+    _populate_all_v2_seeds(clean11.path, "ProteinDecay", range(50))
+
+    report = populate.evaluate_process("ProteinDecay", _entry(name="ProteinDecay"), [clean11])
+    assert report.status == populate.STATUS_INSUFFICIENT_DATA
+    assert report.seed_count == 0
+
+
+def test_source_scoped_in_process_still_resolves(tmp_path):
+    clean11 = populate.SourceRoot(
+        name="clean11", path=tmp_path / "clean11", allowed_processes=frozenset({"ProteinDecay", "OtherProc"})
+    )
+    _populate_all_v2_seeds(clean11.path, "ProteinDecay", range(50))
+
+    report = populate.evaluate_process("ProteinDecay", _entry(name="ProteinDecay"), [clean11])
+    assert report.status == populate.STATUS_RESOLVED
+
+
+def test_scoping_split_conflict_only_considers_eligible_sources(tmp_path):
+    """Regression for the exact real-world scenario: clean11 has a STALE
+    (pre-regen) copy of a stale5-owned process's data, and stale5 has the
+    freshly regenerated data. Without scoping, clean11's data could be
+    selected (e.g. if byte-identical dedup or first-source-wins logic ever
+    changed); WITH scoping, clean11 is never even considered a candidate for
+    that process, so only stale5's data can ever be selected."""
+    clean11 = populate.SourceRoot(
+        name="clean11", path=tmp_path / "clean11", allowed_processes=frozenset({"OtherProc"})
+    )
+    stale5 = populate.SourceRoot(
+        name="stale5", path=tmp_path / "stale5", allowed_processes=frozenset({"ProteinDecay"})
+    )
+    # clean11 has DIFFERENT (stale) content for ProteinDecay's canonical seed0,
+    # but clean11 is scoped OUT of ProteinDecay entirely -- so this must never
+    # surface as a SPLIT_CONFLICT; only stale5's data is ever considered.
+    _write(_v2_canonical_file(clean11.path, "ProteinDecay"), b"STALE-canonical")
+    _write(_v2_canonical_file(stale5.path, "ProteinDecay"), b"FRESH-canonical")
+    _populate_all_v2_seeds(stale5.path, "ProteinDecay", range(1, 50))
+
+    report = populate.evaluate_process("ProteinDecay", _entry(name="ProteinDecay"), [clean11, stale5])
+    assert report.status == populate.STATUS_RESOLVED
+    canonical_obs = next(o for o in report.selected_files if o.relative_path.endswith("per_process_traces_v2/ProteinDecay_100ticks.mat"))
+    assert canonical_obs.source_name == "stale5"
+
+
+def test_cli_source_scope_restricts_contribution(tmp_path, monkeypatch):
+    fake_current = tmp_path / "current_repo"
+    fake_current.mkdir()
+    clean11_root = tmp_path / "clean11"
+    _populate_all_v2_seeds(clean11_root, "ProteinDecay", range(50))
+    monkeypatch.setattr(populate.cat, "REPO_ROOT", fake_current)
+
+    # clean11 physically HAS the ProteinDecay files, but is scoped to a
+    # different process only -- so requesting ProteinDecay must fail.
+    exit_code = populate.main(
+        [
+            "--source",
+            f"clean11={clean11_root}",
+            "--source-scope",
+            "clean11=SomeOtherProcess",
+            "--processes",
+            "ProteinDecay",
+            "--out",
+            str(tmp_path / "manifest.json"),
+        ]
+    )
+    assert exit_code == 1
+
+
+def test_cli_source_scope_unknown_name_errors(tmp_path, monkeypatch):
+    fake_current = tmp_path / "current_repo"
+    fake_current.mkdir()
+    monkeypatch.setattr(populate.cat, "REPO_ROOT", fake_current)
+
+    with pytest.raises(SystemExit):
+        populate.main(
+            [
+                "--source-scope",
+                "nosuchsource=ProteinDecay",
+                "--processes",
+                "ProteinDecay",
+            ]
+        )
+
+
+# --- validate_destination --------------------------------------------------------
+
+
+def test_validate_destination_reports_missing_when_absent(tmp_path):
+    dest = tmp_path / "current_repo" / populate.KARR_NATIVE_SUBDIR
+    report = populate.validate_destination(dest, frozenset({"ProteinDecay"}), seeds=range(3))
+    assert not report.ok
+    assert "per_process_traces_v2/ProteinDecay_100ticks.mat" in report.missing
+    assert "per_process_traces_v2_s000/ProteinDecay_100ticks.mat" in report.missing
+
+
+def test_validate_destination_ok_for_exact_matrix(tmp_path):
+    root = tmp_path / "current_repo"
+    _write(_v2_canonical_file(root, "ProteinDecay"), b"seed0")
+    _populate_all_v2_seeds(root, "ProteinDecay", range(3))
+    dest = root / populate.KARR_NATIVE_SUBDIR
+    report = populate.validate_destination(dest, frozenset({"ProteinDecay"}), seeds=range(3))
+    assert report.ok
+    assert report.missing == []
+    assert report.extra == []
+
+
+def test_validate_destination_flags_wrong_process_extra(tmp_path):
+    root = tmp_path / "current_repo"
+    _write(_v2_canonical_file(root, "ProteinDecay"), b"seed0")
+    _populate_all_v2_seeds(root, "ProteinDecay", range(1))
+    # A stray file for a process NOT in the expected set at seed0 -- e.g. the
+    # exact "whole directory copied blindly" contamination scenario.
+    _write(_v2_seed_file(root, "SomeStrayProcess", 0), b"contamination")
+    dest = root / populate.KARR_NATIVE_SUBDIR
+    report = populate.validate_destination(dest, frozenset({"ProteinDecay"}), seeds=range(1))
+    assert not report.ok
+    assert "per_process_traces_v2_s000/SomeStrayProcess_100ticks.mat" in report.extra
+
+
+def test_validate_destination_ignores_known_pre_existing_translation_stray(tmp_path):
+    root = tmp_path / "current_repo"
+    _write(_v2_canonical_file(root, "ProteinDecay"), b"seed0")
+    _populate_all_v2_seeds(root, "ProteinDecay", range(2))
+    # The known, tracked, harmless pre-existing Translation stray in seed1.
+    _write(_v2_seed_file(root, "Translation", 1), b"pre-existing-tracked-diagnostic")
+    dest = root / populate.KARR_NATIVE_SUBDIR
+    report = populate.validate_destination(dest, frozenset({"ProteinDecay"}), seeds=range(2))
+    assert report.ok, f"known pre-existing stray must not fail the check: {report.extra}"
+    assert "per_process_traces_v2_s001/Translation_100ticks.mat" in report.ignored
+
+
+def test_cli_check_destination_standalone_reports_missing(tmp_path, monkeypatch):
+    fake_current = tmp_path / "current_repo"
+    fake_current.mkdir()
+    monkeypatch.setattr(populate.cat, "REPO_ROOT", fake_current)
+
+    exit_code = populate.main(["--processes", "ProteinDecay", "--check-destination"])
+    assert exit_code == 1
+
+
+def test_cli_check_destination_after_apply_is_ok(tmp_path, monkeypatch):
+    fake_current = tmp_path / "current_repo"
+    fake_current.mkdir()
+    clean11_root = tmp_path / "clean11"
+    # Real convention: canonical unsuffixed seed0 + seed-padded s001-s049,
+    # never a competing s000 directory.
+    _write(_v2_canonical_file(clean11_root, "ProteinDecay"), b"seed0-canonical")
+    _populate_all_v2_seeds(clean11_root, "ProteinDecay", range(1, 50))
+    monkeypatch.setattr(populate.cat, "REPO_ROOT", fake_current)
+
+    exit_code = populate.main(
+        [
+            "--source",
+            f"clean11={clean11_root}",
+            "--processes",
+            "ProteinDecay",
+            "--apply",
+            "--check-destination",
+            "--out",
+            str(tmp_path / "manifest.json"),
+        ]
+    )
+    assert exit_code == 0
