@@ -1,5 +1,7 @@
 """Coverage + determinism tests for scripts/l22_evidence/generator.py against
-the REAL PROCESS_CATALOG.yaml and (currently empty) real evidence tree.
+the REAL PROCESS_CATALOG.yaml and the real evidence tree (partially
+populated by a real Design-A runner sweep as of this commit -- see
+docs/phase_f/l2_2_design_a/EVIDENCE_INDEX_SPEC.md Section 11).
 
 Run via `bin\\oc-pytest tests/scripts/test_l22_evidence_generator.py -v`.
 """
@@ -71,18 +73,25 @@ def test_index_has_exactly_one_row_per_in_scope_process_no_extras():
     assert payload["n_in_scope"] == 22
 
 
-def test_no_real_evidence_today_yields_honest_non_green_index():
-    """This task must begin with a truthful MISSING_EVIDENCE/non-green index,
-    not a fabricated PASS -- final process runner outputs are not available
-    yet (full Karr oracle extraction is still completing in sibling
-    worktrees as of this commit)."""
+def test_real_sweep_evidence_today_yields_honest_mixed_non_green_index():
+    """As of this commit, a real Design-A runner sweep has populated evidence
+    for 14/18 in-scope design_a_per_tick processes (see
+    docs/phase_f/l2_2_design_a/sweep_status.json); DNARepair, ProteinDecay,
+    and ReplicationInitiation hit a real oracle-data-insufficiency (catalog
+    M_ticks=200 but the populated oracle only has 100 ticks); Metabolism is
+    still executing (FVA is a severe cost outlier); the 4 event_class
+    processes are explicitly out of scope for this sweep. No row may ever be
+    fabricated PASS -- every PASS/FAIL below is a real mechanical
+    re-derivation from raw channel metrics, and the aggregate remains
+    NON_GREEN because not every in-scope process is real-PASS yet."""
     payload = gen.build_evidence_index()
     assert payload["aggregate_verdict"] == "NON_GREEN"
     for row in payload["rows"]:
-        assert row["green"] is False
-        assert row["mechanical_verdict"] == schema.STATUS_MISSING_EVIDENCE
-        assert any(reason.startswith(schema.STATUS_MISSING_EVIDENCE) for reason in row["reasons"])
-    assert payload["tally"] == {schema.STATUS_MISSING_EVIDENCE: 22}
+        if row["green"]:
+            assert row["mechanical_verdict"] == schema.STATUS_PASS
+        else:
+            assert row["mechanical_verdict"] != schema.STATUS_PASS
+    assert payload["tally"] == {schema.STATUS_PASS: 7, schema.STATUS_FAIL: 7, schema.STATUS_MISSING_EVIDENCE: 8}
 
 
 def test_content_hash_is_deterministic_across_regenerations():
@@ -116,7 +125,7 @@ def test_write_index_then_audit_round_trips_cleanly(tmp_path):
     result = gen.audit(index_path=index_path, evidence_root=schema.EVIDENCE_ROOT)
     assert result.ok is True
     assert result.aggregate_verdict == "NON_GREEN"
-    assert result.tally == {schema.STATUS_MISSING_EVIDENCE: 22}
+    assert result.tally == {schema.STATUS_PASS: 7, schema.STATUS_FAIL: 7, schema.STATUS_MISSING_EVIDENCE: 8}
 
 
 def test_audit_reports_failure_when_index_file_absent(tmp_path):

@@ -307,16 +307,16 @@ None of this is done by this task, and none of it is faked here:
    16 generic `design_a_per_tick` processes (11 clean + 5 stale-regenerated)
    are now populated at 50 seeds each, plus the pre-existing 2 specialized
    Transcription/Translation ensembles, for the full 18; see Section 10 for
-   detail and provenance. Still open:
+   detail and provenance.
    (b) run `tests/vivarium/l2_2_design_a_runner.py` for each of the 18
    `design_a_per_tick` processes against
    `artifacts/l2_2_gates/<Process>/latest/` to produce actual
-   `result.json`/`input_manifest.json`/`provenance.json` evidence — this is
-   the runner-execution step, distinct from and later than raw-oracle
-   population, and is **not** performed by this task (population enables
-   the runner to execute; it does not itself generate runner evidence, and
-   `evidence_index.json` correctly remains 22x `MISSING_EVIDENCE` /
-   `NON_GREEN` until it does).
+   `result.json`/`input_manifest.json`/`provenance.json` evidence —
+   **partially done (2026-07-28)**: 14/18 processes now have real evidence
+   (7 mechanically PASS, 7 mechanically FAIL); see Section 11 for the full
+   sweep execution, per-process breakdown, and what remains open
+   (`Metabolism` still executing; `DNARepair`/`ProteinDecay`/
+   `ReplicationInitiation` blocked on a real oracle-tick-depth shortfall).
 2. **Build the L2.event harness** for the 4 `event_class` processes; until
    then they remain `MISSING_EVIDENCE` by construction.
 3. **Mechanical evaluators for projection-distance primary channels** —
@@ -444,12 +444,13 @@ git-ignored (`.gitignore` lines 35-40) and therefore not committed; only
 `docs/phase_f/l2_2_design_a/oracle_population_manifest.json` (per-file
 hash/source provenance) is tracked.
 
-Running `generate`/`audit` against the current tree still correctly
-reports `MISSING_EVIDENCE` for all 22 in-scope processes and aggregate
+Running `generate`/`audit` against the tree at the time this population
+step landed (before the sweep in Section 11) correctly reported
+`MISSING_EVIDENCE` for all 22 in-scope processes and aggregate
 `NON_GREEN` — raw oracle population makes the runner *able* to execute; it
 does not itself produce `result.json`/`input_manifest.json`/
-`provenance.json` runner evidence (Section 9 #1(b), still open, out of
-scope for this task).
+`provenance.json` runner evidence. See Section 11 for the runner sweep
+that followed.
 
 **`git_sha` fix and manifest regeneration (2026-07-28):** every worktree in
 this repo (main checkout and all `E:\opencell-worktrees\*` linked
@@ -475,7 +476,110 @@ non-null SHAs: `clean11` = `a7233a5a7fcc9a50310dcc6620828a192d01b7f5`,
 `stale5` = `2d8f06a6bdce84ff24ff94e141f67713814211a3`, `current` = HEAD at
 generation time.
 
-## 11. Files
+## 11. Real Design-A runner sweep (2026-07-28)
+
+**Tooling:** `scripts/l22_evidence/sweep.py` drives the existing,
+unmodified `tests/vivarium/l2_2_design_a_runner.py` across the 18
+`design_a_per_tick` processes at their real catalog `M_ticks`/`N_seeds`
+(never a reduced count), writing to `artifacts/l2_2_gates/<Process>/latest/`
+— the exact layout the generator already reads. `plan_sweep()` derives jobs
+mechanically from the catalog; `evidence_is_valid()` resumes only by
+parsing and matching `result.json`/`input_manifest.json` fields against the
+request (never existence-only); `run_job()`/`run_sweep()` execute a bounded
+number of runner subprocesses concurrently via `ThreadPoolExecutor`, with
+disjoint per-process output/log paths and real captured exit codes;
+`status_snapshot()`/`write_status_snapshot()` are a read-only inspector
+(never touches a running process) used for honest interim progress
+reporting on a sweep that spans multiple sessions. CLI: `sweep.py plan`,
+`sweep.py run [--max-workers N] [--force]`, `sweep.py status`.
+
+**Execution:** ran with `--max-workers 2` initially (per instructions),
+confirmed stable (load average ~2.1, 27 GiB free RAM on a 16-core WSL2
+box), then escalated to `--max-workers 4` (confirmed stable: load average
+~4.25, memory usage stayed under 3 GiB). `Metabolism` was deliberately left
+in the same run as the other 17 so its single worker slot runs in the
+background without blocking the rest.
+
+**Results as of this commit** (14/18 processes have real evidence; see
+`docs/phase_f/l2_2_design_a/sweep_status.json` for the live interim
+snapshot and `docs/phase_f/l2_2_design_a/evidence_index.json` for the
+mechanically re-derived verdicts):
+
+| Process | Real result | Mechanical verdict | Note |
+|---|---|---|---|
+| DNASupercoiling | ran, stored PASS | `FAIL` | `MISSING_EVALUATOR` — no re-derivation evaluator yet for `per_component_scaled` aggregation |
+| Replication | ran, stored PASS | `FAIL` | same `MISSING_EVALUATOR` gap as DNASupercoiling |
+| MacromolecularComplexation | ran, stored PASS | `FAIL` | `SENTINEL_FAIL` — demoted `PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE` warning with no linked H12 evidence |
+| ProteinFolding | ran, stored PASS | `FAIL` | same H12-less demotion |
+| ProteinProcessingI | ran, stored PASS | `FAIL` | same H12-less demotion |
+| ProteinProcessingII | ran, stored PASS | `FAIL` | same H12-less demotion |
+| tRNAAminoacylation | ran, stored PASS | `FAIL` | same H12-less demotion |
+| ProteinModification | ran, stored PASS | `PASS` | real mechanical PASS, no demotion warning |
+| ProteinTranslocation | ran, stored PASS | `PASS` | real mechanical PASS |
+| RNADecay | ran, stored PASS | `PASS` | real mechanical PASS |
+| RNAModification | ran, stored PASS | `PASS` | real mechanical PASS |
+| RNAProcessing | ran, stored PASS | `PASS` | real mechanical PASS |
+| Transcription | ran, stored PASS | `PASS` | real mechanical PASS (specialized ensemble path) |
+| Translation | ran, stored PASS | `PASS` | real mechanical PASS (specialized ensemble path) |
+| DNARepair | **runner exited before writing evidence** | `MISSING_EVIDENCE` | real data gap: `Requested 200 ticks, but oracle only provides 100` — catalog M_ticks=200, populated oracle only has 100 ticks |
+| ProteinDecay | same runner exit | `MISSING_EVIDENCE` | same 200-vs-100-tick oracle shortfall |
+| ReplicationInitiation | same runner exit | `MISSING_EVIDENCE` | same 200-vs-100-tick oracle shortfall |
+| Metabolism | **still executing** | `MISSING_EVIDENCE` | FVA (LP-per-sample) metric is a severe cost outlier; empirically >16h estimated for 50x20 samples; left running in the background (see Section 11.1) |
+
+Aggregate: `NON_GREEN` (`PASS: 7`, `FAIL: 7`, `MISSING_EVIDENCE: 8` — the 8
+includes the 3 oracle-shortfall processes, `Metabolism`, and the 4
+out-of-scope `event_class` processes). Nothing here was patched: every
+`FAIL`/`MISSING_EVIDENCE` above is the generator's honest mechanical
+re-derivation from raw channel data and catalog scope, not a hand edit.
+
+**Known gaps this sweep surfaces (not fixed by this task):**
+
+1. **Oracle tick-depth shortfall for 3 processes** (`DNARepair`,
+   `ProteinDecay`, `ReplicationInitiation`, all catalog `M_ticks=200`): the
+   currently-populated `.mat` oracle data only has 100 ticks per seed. This
+   needs a re-extraction/re-population of these 3 processes at the correct
+   tick depth in a follow-up task — it is a raw-data availability gap, not
+   a catalog or runner bug, and neither the catalog nor the runner should
+   be changed to paper over it.
+2. **`per_component_scaled` mechanical re-derivation evaluator is missing**
+   (`DNASupercoiling`, `Replication`; also affects the still-unbuilt
+   `DNADamage` event_class harness per Section 9 #3) — a real, pre-existing
+   gap in `scripts/l22_evidence/verdict.py`, not introduced by this sweep.
+3. **5 processes are blocked on H12 evidence** for their demoted
+   `PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE` warning
+   (`MacromolecularComplexation`, `ProteinFolding`, `ProteinProcessingI`,
+   `ProteinProcessingII`, `tRNAAminoacylation`) — this is the contract
+   working exactly as designed (Section 8's later-hardening requirement),
+   not a bug.
+4. **`Metabolism`'s FVA metric is a severe cost outlier** — see Section
+   11.1.
+5. **Runner's own `provenance.json["git_sha"]` reads `"unknown"`** for
+   every process run in this sweep: `tests/vivarium/l2_2_design_a_runner.py`
+   has the same Windows-worktree-`.git`-pointer resolution bug already
+   fixed in `populate.py` (Section 10), but the runner is explicitly
+   off-limits to modify in this task ("store runner-native outputs
+   unchanged") — flagged here as a known, separate, pre-existing runner
+   bug, not silently patched.
+
+### 11.1 Metabolism: a real, unresolved cost outlier
+
+`Metabolism`'s primary metric path uses flux-variability analysis (FVA) —
+an LP solve per (seed, tick) sample via GLPK — which is drastically more
+expensive than the vector-W1-distance metric every other process uses. A
+timing probe (2 seeds x 20 ticks = 40 samples) did not complete in 40+
+minutes of real wall-clock time (confirmed alive via `ps aux`, ~97% CPU,
+not hung), implying the real 50-seed x 20-tick = 1000-sample run is on the
+order of 16+ hours. This is inherent to the metric definition, not
+something to work around by reducing seeds/ticks below the catalog values
+or by algorithmic shortcuts — the task's requirements explicitly anticipate
+this class of process may need to run past a single session. As of this
+commit `Metabolism` is running under PID (WSL) tracked in
+`artifacts/l2_2_gates/_sweep_logs/Metabolism.log` (gitignored, regenerable)
+and is safely resumable: re-running `sweep.py run` will skip every already
+-valid process and only continue `Metabolism` (or, if it crashed, restart
+it cleanly — `evidence_is_valid()` never trusts partial/missing output).
+
+## 12. Files
 
 - `scripts/l22_evidence/catalog.py` — catalog access (scope derivation).
 - `scripts/l22_evidence/schema.py` — versioned constants (paths, required
@@ -503,3 +607,16 @@ generation time.
 - `docs/phase_f/l2_2_design_a/oracle_population_manifest.json` — tracked
   per-file hash/source-attribution provenance from the real population run.
   Not hand-edited; regenerated by `populate.py --apply`.
+- `scripts/l22_evidence/sweep.py` — resumable, bounded-parallel Design-A
+  runner sweep launcher (`plan`/`run`/`status` CLI); see Section 11.
+  **Executed against real data 2026-07-28** (14/18 processes with real
+  evidence; `Metabolism` still running).
+- `tests/scripts/test_l22_evidence_sweep.py` — 27 tests: real-catalog
+  `plan_sweep()` derivation, resume-by-validation semantics, bounded
+  parallelism, exit-code capture, compact report/status writers, CLI
+  smoke tests — all against fake fast command builders, never the real
+  slow runner.
+- `docs/phase_f/l2_2_design_a/sweep_status.json` — tracked, compact,
+  read-only interim progress snapshot (one row per process: valid/log
+  state, stored verdict for human context). Regenerate with
+  `sweep.py status`; safe to run while a real sweep is still executing.

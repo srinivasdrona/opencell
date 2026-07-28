@@ -273,7 +273,76 @@ def test_write_sweep_report_is_compact_and_records_tally(tmp_path):
     assert "channels" not in json.dumps(payload)
 
 
-# --- CLI ---------------------------------------------------------------------
+# --- status_snapshot / write_status_snapshot (read-only interim progress) ------
+
+
+def test_status_snapshot_not_started_when_no_output_or_log(tmp_path):
+    job = _make_job(tmp_path, process="Fresh")
+    rows = sweep.status_snapshot([job])
+    assert rows[0]["status"] == sweep.STATUS_NOT_STARTED
+    assert rows[0]["log_path"] is None
+
+
+def test_status_snapshot_done_valid_when_evidence_present(tmp_path):
+    job = _make_job(tmp_path, process="Finished")
+    _write_valid_evidence(job)
+    rows = sweep.status_snapshot([job])
+    assert rows[0]["status"] == sweep.STATUS_DONE_VALID
+    assert rows[0]["stored_verdict"] == "PASS"
+
+
+def test_status_snapshot_in_progress_when_log_exists_but_incomplete(tmp_path):
+    job = _make_job(tmp_path, process="Running")
+    job.log_path.parent.mkdir(parents=True, exist_ok=True)
+    job.log_path.write_text("# command: [...]\n# started_at: now\nsome progress output\n", encoding="utf-8")
+    rows = sweep.status_snapshot([job])
+    assert rows[0]["status"] == sweep.STATUS_IN_PROGRESS
+
+
+def test_status_snapshot_done_failed_when_log_shows_error_but_no_evidence(tmp_path):
+    job = _make_job(tmp_path, process="Crashed")
+    job.log_path.parent.mkdir(parents=True, exist_ok=True)
+    job.log_path.write_text("# command: [...]\nTraceback (most recent call last):\nValueError: boom\n", encoding="utf-8")
+    rows = sweep.status_snapshot([job])
+    assert rows[0]["status"] == sweep.STATUS_DONE_INVALID_OR_FAILED
+
+
+def test_write_status_snapshot_is_compact_and_tallies(tmp_path):
+    done_job = _make_job(tmp_path, process="Done1")
+    _write_valid_evidence(done_job)
+    fresh_job = _make_job(tmp_path, process="Fresh1")
+    rows = sweep.status_snapshot([done_job, fresh_job])
+    out_path = tmp_path / "status.json"
+    payload = sweep.write_status_snapshot(rows, out_path)
+    assert out_path.is_file()
+    on_disk = json.loads(out_path.read_text(encoding="utf-8"))
+    assert on_disk == payload
+    assert payload["tally"][sweep.STATUS_DONE_VALID] == 1
+    assert payload["tally"][sweep.STATUS_NOT_STARTED] == 1
+    assert "channels" not in json.dumps(payload)
+
+
+def test_cli_status_is_read_only_and_reports_real_catalog_processes(tmp_path, capsys):
+    exit_code = sweep.main(
+        [
+            "status",
+            "--processes",
+            "Metabolism,DNARepair",
+            "--evidence-root",
+            str(tmp_path / "evidence"),
+            "--log-dir",
+            str(tmp_path / "logs"),
+            "--status-out",
+            str(tmp_path / "status.json"),
+        ]
+    )
+    assert exit_code == 0
+    payload = json.loads((tmp_path / "status.json").read_text(encoding="utf-8"))
+    assert payload["n_jobs"] == 2
+    assert all(row["status"] == sweep.STATUS_NOT_STARTED for row in payload["jobs"])
+    # Read-only: no evidence/log dirs should have been created as a side effect.
+    assert not (tmp_path / "evidence").exists()
+
 
 
 def test_cli_plan_does_not_execute_anything(tmp_path, capsys):

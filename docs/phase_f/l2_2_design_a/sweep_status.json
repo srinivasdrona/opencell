@@ -1,0 +1,231 @@
+{
+  "generated_at": "2026-07-28T08:57:34.394021+00:00",
+  "jobs": [
+    {
+      "log_path": "artifacts/l2_2_gates/_sweep_logs/DNARepair.log",
+      "log_tail": "# command: ['/mnt/e/opencell/.venv-wsl/bin/python', '/mnt/e/opencell-worktrees/l22-evidence-gate/tests/vivarium/l2_2_design_a_runner.py', '--process', 'DNARepair', '--seeds', '50', '--ticks', '200', '--output-dir', '/mnt/e/opencell-worktrees/l22-evidence-gate/artifacts/l2_2_gates/DNARepair/latest']\n# started_at: 2026-07-28T06:18:01.888092+00:00\nRequested 200 ticks, but oracle only provides 100.",
+      "m_ticks": 200,
+      "output_dir": "artifacts/l2_2_gates/DNARepair/latest",
+      "process": "DNARepair",
+      "reason": "missing required authority file(s): ['result.json', 'input_manifest.json', 'provenance.json']",
+      "seeds": 50,
+      "status": "DONE_NO_VALID_EVIDENCE"
+    },
+    {
+      "log_path": "artifacts/l2_2_gates/_sweep_logs/DNASupercoiling.log",
+      "m_ticks": 100,
+      "output_dir": "artifacts/l2_2_gates/DNASupercoiling/latest",
+      "process": "DNASupercoiling",
+      "reason": null,
+      "seeds": 50,
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "ALGORITHMIC_SHALLOW",
+      "stored_verdict": "PASS",
+      "stored_warnings": []
+    },
+    {
+      "log_path": "artifacts/l2_2_gates/_sweep_logs/MacromolecularComplexation.log",
+      "m_ticks": 100,
+      "output_dir": "artifacts/l2_2_gates/MacromolecularComplexation/latest",
+      "process": "MacromolecularComplexation",
+      "reason": null,
+      "seeds": 50,
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "ALGORITHMIC_SHALLOW",
+      "stored_verdict": "PASS",
+      "stored_warnings": [
+        "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=complexs; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
+      ]
+    },
+    {
+      "log_path": "artifacts/l2_2_gates/_sweep_logs/Metabolism.log",
+      "log_tail": " A: min|aij| =  1.000e+00  max|aij| =  3.567e+08  ratio =  3.567e+08\nGM: min|aij| =  3.575e-02  max|aij| =  2.797e+01  ratio =  7.824e+02\nEQ: min|aij| =  1.278e-03  max|aij| =  1.000e+00  ratio =  7.824e+02\nConstructing initial basis...\nSize of triangular part is 360",
+      "m_ticks": 20,
+      "output_dir": "artifacts/l2_2_gates/Metabolism/latest",
+      "process": "Metabolism",
+      "reason": "missing required authority file(s): ['result.json', 'input_manifest.json', 'provenance.json']",
+      "seeds": 50,
+      "status": "IN_PROGRESS_OR_UNKNOWN"
+    },
+    {
+      "log_path": "artifacts/l2_2_gates/_sweep_logs/ProteinDecay.log",
+      "log_tail": "# command: ['/mnt/e/opencell/.venv-wsl/bin/python', '/mnt/e/opencell-worktrees/l22-evidence-gate/tests/vivarium/l2_2_design_a_runner.py', '--process', 'ProteinDecay', '--seeds', '50', '--ticks', '200', '--output-dir', '/mnt/e/opencell-worktrees/l22-evidence-gate/artifacts/l2_2_gates/ProteinDecay/latest']\n# started_at: 2026-07-28T06:18:42.444418+00:00\nRequested 200 ticks, but oracle only provides 100.",
+      "m_ticks": 200,
+      "output_dir": "artifacts/l2_2_gates/ProteinDecay/latest",
+      "process": "ProteinDecay",
+      "reason": "missing required authority file(s): ['result.json', 'input_manifest.json', 'provenance.json']",
+      "seeds": 50,
+      "status": "DONE_NO_VALID_EVIDENCE"
+    },
+    {
+      "log_path": "artifacts/l2_2_gates/_sweep_logs/ProteinFolding.log",
+      "m_ticks": 100,
+      "output_dir": "artifacts/l2_2_gates/ProteinFolding/latest",
+      "process": "ProteinFolding",
+      "reason": null,
+      "seeds": 50,
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "ALGORITHMIC_SHALLOW",
+      "stored_verdict": "PASS",
+      "stored_warnings": [
+        "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=monomers; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
+      ]
+    },
+    {
+      "log_path": "artifacts/l2_2_gates/_sweep_logs/ProteinModification.log",
+      "m_ticks": 100,
+      "output_dir": "artifacts/l2_2_gates/ProteinModification/latest",
+      "process": "ProteinModification",
+      "reason": null,
+      "seeds": 50,
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "ALGORITHMIC_SHALLOW",
+      "stored_verdict": "PASS",
+      "stored_warnings": []
+    },
+    {
+      "log_path": "artifacts/l2_2_gates/_sweep_logs/ProteinProcessingI.log",
+      "m_ticks": 20,
+      "output_dir": "artifacts/l2_2_gates/ProteinProcessingI/latest",
+      "process": "ProteinProcessingI",
+      "reason": null,
+      "seeds": 50,
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "TRIVIAL_RNG",
+      "stored_verdict": "PASS",
+      "stored_warnings": [
+        "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=monomers; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
+      ]
+    },
+    {
+      "log_path": "artifacts/l2_2_gates/_sweep_logs/ProteinProcessingII.log",
+      "m_ticks": 20,
+      "output_dir": "artifacts/l2_2_gates/ProteinProcessingII/latest",
+      "process": "ProteinProcessingII",
+      "reason": null,
+      "seeds": 50,
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "TRIVIAL_RNG",
+      "stored_verdict": "PASS",
+      "stored_warnings": [
+        "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=monomers; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
+      ]
+    },
+    {
+      "log_path": "artifacts/l2_2_gates/_sweep_logs/ProteinTranslocation.log",
+      "m_ticks": 100,
+      "output_dir": "artifacts/l2_2_gates/ProteinTranslocation/latest",
+      "process": "ProteinTranslocation",
+      "reason": null,
+      "seeds": 50,
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "ALGORITHMIC_SHALLOW",
+      "stored_verdict": "PASS",
+      "stored_warnings": []
+    },
+    {
+      "log_path": "artifacts/l2_2_gates/_sweep_logs/RNADecay.log",
+      "m_ticks": 100,
+      "output_dir": "artifacts/l2_2_gates/RNADecay/latest",
+      "process": "RNADecay",
+      "reason": null,
+      "seeds": 50,
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "ALGORITHMIC_SHALLOW",
+      "stored_verdict": "PASS",
+      "stored_warnings": []
+    },
+    {
+      "log_path": "artifacts/l2_2_gates/_sweep_logs/RNAModification.log",
+      "m_ticks": 100,
+      "output_dir": "artifacts/l2_2_gates/RNAModification/latest",
+      "process": "RNAModification",
+      "reason": null,
+      "seeds": 50,
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "ALGORITHMIC_SHALLOW",
+      "stored_verdict": "PASS",
+      "stored_warnings": []
+    },
+    {
+      "log_path": "artifacts/l2_2_gates/_sweep_logs/RNAProcessing.log",
+      "m_ticks": 100,
+      "output_dir": "artifacts/l2_2_gates/RNAProcessing/latest",
+      "process": "RNAProcessing",
+      "reason": null,
+      "seeds": 50,
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "ALGORITHMIC_SHALLOW",
+      "stored_verdict": "PASS",
+      "stored_warnings": []
+    },
+    {
+      "log_path": "artifacts/l2_2_gates/_sweep_logs/Replication.log",
+      "m_ticks": 100,
+      "output_dir": "artifacts/l2_2_gates/Replication/latest",
+      "process": "Replication",
+      "reason": null,
+      "seeds": 50,
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "ALGORITHMIC_SHALLOW",
+      "stored_verdict": "PASS",
+      "stored_warnings": []
+    },
+    {
+      "log_path": "artifacts/l2_2_gates/_sweep_logs/ReplicationInitiation.log",
+      "log_tail": "# command: ['/mnt/e/opencell/.venv-wsl/bin/python', '/mnt/e/opencell-worktrees/l22-evidence-gate/tests/vivarium/l2_2_design_a_runner.py', '--process', 'ReplicationInitiation', '--seeds', '50', '--ticks', '200', '--output-dir', '/mnt/e/opencell-worktrees/l22-evidence-gate/artifacts/l2_2_gates/ReplicationInitiation/latest']\n# started_at: 2026-07-28T08:06:17.317181+00:00\nRequested 200 ticks, but oracle only provides 100.",
+      "m_ticks": 200,
+      "output_dir": "artifacts/l2_2_gates/ReplicationInitiation/latest",
+      "process": "ReplicationInitiation",
+      "reason": "missing required authority file(s): ['result.json', 'input_manifest.json', 'provenance.json']",
+      "seeds": 50,
+      "status": "DONE_NO_VALID_EVIDENCE"
+    },
+    {
+      "log_path": "artifacts/l2_2_gates/_sweep_logs/Transcription.log",
+      "m_ticks": 100,
+      "output_dir": "artifacts/l2_2_gates/Transcription/latest",
+      "process": "Transcription",
+      "reason": null,
+      "seeds": 50,
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "ALGORITHMIC_DEEP",
+      "stored_verdict": "PASS",
+      "stored_warnings": []
+    },
+    {
+      "log_path": "artifacts/l2_2_gates/_sweep_logs/Translation.log",
+      "m_ticks": 100,
+      "output_dir": "artifacts/l2_2_gates/Translation/latest",
+      "process": "Translation",
+      "reason": null,
+      "seeds": 50,
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "ALGORITHMIC_DEEP",
+      "stored_verdict": "PASS",
+      "stored_warnings": [
+        "SEED_ALIGNMENT_DIAGNOSTIC: OC outputs align better to a shifted Karr seed index on channel=monomers (shift=+47, observed_w1=0.006671, shifted_w1=0.006165)."
+      ]
+    },
+    {
+      "log_path": "artifacts/l2_2_gates/_sweep_logs/tRNAAminoacylation.log",
+      "m_ticks": 50,
+      "output_dir": "artifacts/l2_2_gates/tRNAAminoacylation/latest",
+      "process": "tRNAAminoacylation",
+      "reason": null,
+      "seeds": 50,
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "ALGORITHMIC_SHALLOW",
+      "stored_verdict": "PASS",
+      "stored_warnings": [
+        "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=RNAs; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
+      ]
+    }
+  ],
+  "n_jobs": 18,
+  "tally": {
+    "DONE_NO_VALID_EVIDENCE": 3,
+    "DONE_VALID_EVIDENCE": 14,
+    "IN_PROGRESS_OR_UNKNOWN": 1
+  }
+}

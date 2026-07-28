@@ -2,9 +2,9 @@
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
   "catalog_sha256": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
-  "content_hash": "f957e0fa9fbe96f567daf207823f5135888fd670c355528199804a0fd34fb843",
+  "content_hash": "147f5e36a54eceefeda701dd4f6424a7ad412acecd230975c5b21ba398d944ca",
   "evidence_root": "artifacts/l2_2_gates",
-  "generated_at": "2026-07-28T00:51:24.080986+00:00",
+  "generated_at": "2026-07-28T08:44:33.188769+00:00",
   "n_in_scope": 22,
   "rows": [
     {
@@ -71,7 +71,16 @@
       ]
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "658802fa7e3895278948e839e3dc5d21053aeab0eb7983dba7d44bf727af1c38",
+        "allocator_inputs.json": "301d60ca2489677b51fddfe0f7e15e8f2d37b32f9b9c9fc26c1cf384a608a2d3",
+        "analytical_check.json": "fe7776df0a449ac6226e4a97dddce8cd8b17225d60ad090c4ed22d459aa01733",
+        "input_manifest.json": "b773a4dbd1dc3ae377a9cec6e78a9f5992c988375c1d9e4f88cc25110057b74c",
+        "null_calibration.json": "7f5f1d46102307bc60e27c0c4785199149164bfbf4b1bec2e967a0ac36549244",
+        "provenance.json": "d31af010c2957f84d0b702649ea2ce8f5dfea7fd57bc0479055661b68a01be9b",
+        "result.json": "db08e24b4bafc97bd6f2d476254b0106a19b38c4c10ba5f82a94e5ca1d791080",
+        "thresholds.json": "49bf0423b5e7bbe588caf3f013cf72d2fd7af96b8267859c52eee7914f8ae0cc"
+      },
       "bucket": "ALGORITHMIC_SHALLOW",
       "catalog_soft_flags": {
         "M_ticks": 100,
@@ -82,13 +91,18 @@
         "primary_channel": "chromosome",
         "primary_distance": "per_component_scaled"
       },
+      "channel_verdicts": {
+        "chromosome": "MISSING_EVALUATOR",
+        "substrates": "SEED_NOISE"
+      },
       "evidence_dir": "artifacts/l2_2_gates/DNASupercoiling/latest",
       "green": false,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "FAIL",
       "process": "DNASupercoiling",
+      "provenance_git_sha": "unknown",
       "reasons": [
-        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/DNASupercoiling/latest"
+        "MISSING_EVALUATOR: channel 'chromosome' uses aggregation='per_component_scaled'; no mechanical re-derivation evaluator implemented for this metric type yet"
       ]
     },
     {
@@ -113,7 +127,16 @@
       ]
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "15f8aac6666fead8b8772ef4f89034e49199467605c44de649a2320906e6d9db",
+        "allocator_inputs.json": "b1828f41c209d5d89b67643f403753216e98687cf80fc1c12ac1cb042afcb135",
+        "analytical_check.json": "851bafe04f1a87092a83b1f2f9ea2f84cb9cf2fcfcb2b45899ff5a6c10f22a86",
+        "input_manifest.json": "5ef61ddc38bc56f75ceb728644d5161e6b8af01ace2d899869f3b0f845982f6c",
+        "null_calibration.json": "ee60cbc92bb67c631646fd081db55de2e01a5f6b0e0b8c053c0b777f5fff62c3",
+        "provenance.json": "990c5b3c07d75f76402948caf760152cdc660a68beabdbc1ca9b7004492709ba",
+        "result.json": "1301a60f786f564cf8b8084a816bff4413d1be4d5dca008c6350b5442c07edca",
+        "thresholds.json": "3a3e291235e4d91a90f68fcf684c42dc3c74ede86b0130a58a65aae0f944231a"
+      },
       "bucket": "ALGORITHMIC_SHALLOW",
       "catalog_soft_flags": {
         "M_ticks": 100,
@@ -124,13 +147,19 @@
         "primary_channel": "complexs",
         "primary_distance": "per_tick_vector_w1_mean"
       },
+      "channel_verdicts": {
+        "complexs": "SEED_NOISE",
+        "monomers": "SEED_NOISE",
+        "substrates": "SEED_NOISE"
+      },
       "evidence_dir": "artifacts/l2_2_gates/MacromolecularComplexation/latest",
       "green": false,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "FAIL",
       "process": "MacromolecularComplexation",
+      "provenance_git_sha": "unknown",
       "reasons": [
-        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/MacromolecularComplexation/latest"
+        "SENTINEL_FAIL: PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE demotion claimed without a machine-checked h12_evidence_ref (nontrivial_sample_count > 0); treated as non-green"
       ]
     },
     {
@@ -176,7 +205,16 @@
       ]
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "cbef79f5054196bc71d5aee0ab6be04e5d015814a3e3e3aca13036a95023613d",
+        "allocator_inputs.json": "f0af9e96f266a7f1dd6075cc345696251f506b1c8ac2ca23f5a3842f6351b770",
+        "analytical_check.json": "030974782242b9c2037a6286ef5fbb72009f65fa3189ddfa836f54bd0dcbdeb5",
+        "input_manifest.json": "a74827f8c7eff79a43b20efaace3841216fe002e6519789c6f25aa8a52592de0",
+        "null_calibration.json": "b08bca5aab199ed48a3c3aff987de007e91fecc2cc3047452f0b6cba477a7e29",
+        "provenance.json": "0186a40e1a9223a851063a3b02c49a9f50523b6d4e84bb3c7319ced96f8ab777",
+        "result.json": "45ea543244f6e8bf736331d25f93e463cac6555a649cd72bdcdc6aaf9f43c1e0",
+        "thresholds.json": "67ad0137cbe88e6927828160e3882c366311cd8ab2f9c58cb47940de500adbf9"
+      },
       "bucket": "ALGORITHMIC_SHALLOW",
       "catalog_soft_flags": {
         "M_ticks": 100,
@@ -186,18 +224,32 @@
         "in_scope_L2_2": true,
         "primary_channel": "monomers",
         "primary_distance": "per_tick_vector_w1_mean"
+      },
+      "channel_verdicts": {
+        "monomers": "SEED_NOISE",
+        "substrates": "SEED_NOISE"
       },
       "evidence_dir": "artifacts/l2_2_gates/ProteinFolding/latest",
       "green": false,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "FAIL",
       "process": "ProteinFolding",
+      "provenance_git_sha": "unknown",
       "reasons": [
-        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/ProteinFolding/latest"
+        "SENTINEL_FAIL: PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE demotion claimed without a machine-checked h12_evidence_ref (nontrivial_sample_count > 0); treated as non-green"
       ]
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "2bf4bd70b0c31e7702cc59b429e2e07f074e7b2c8b602f72ee8b695326990ee5",
+        "allocator_inputs.json": "67648dda18a82092dc00b475f6c4685a3a747a00cd9365e11073a43c9c006156",
+        "analytical_check.json": "dec4518901818fb27944fbb0f7efaec4b2ea389140cd33864cce100c67d8462a",
+        "input_manifest.json": "c071c1221ef245f4d8d66eb4a4b07bf9fbc0602ae974e397aa03c5a6c59b0f16",
+        "null_calibration.json": "18663c77d51380be069888b8797c96ec517f0e919e2339bb64fc7810d8399751",
+        "provenance.json": "2ca7ba806a7677254c27a0b666369b20e9e80b4b7c248df72bc10539d025e204",
+        "result.json": "e8a8e9508fff5d60cf2de41a33e4d8e4eaf202245bbf2a50f6be4d3aa2da88de",
+        "thresholds.json": "acabe5573118061ff227d116e0232f426fc498a28402c507a251cdadcaeed442"
+      },
       "bucket": "ALGORITHMIC_SHALLOW",
       "catalog_soft_flags": {
         "M_ticks": 100,
@@ -208,17 +260,29 @@
         "primary_channel": "monomers",
         "primary_distance": "per_tick_vector_w1_mean"
       },
+      "channel_verdicts": {
+        "monomers": "SEED_NOISE",
+        "substrates": "SEED_NOISE"
+      },
       "evidence_dir": "artifacts/l2_2_gates/ProteinModification/latest",
-      "green": false,
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "PASS",
       "process": "ProteinModification",
-      "reasons": [
-        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/ProteinModification/latest"
-      ]
+      "provenance_git_sha": "unknown",
+      "reasons": []
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "8b93a829a2a920b87e5740face7e423e608c9828888fde6b623b17f9cf053146",
+        "allocator_inputs.json": "b942572d53e5c2c9525ce977f027287fe550c7d4501c2dfa32b745229f644fe6",
+        "analytical_check.json": "3141f86a582c7d209a199137ca1795b7d7e9cc0cad1a673eda28079ee33b1c4b",
+        "input_manifest.json": "f4208de72827d7178ce515b8aec473ec9a90866e0aa4796ba086a91a38a92835",
+        "null_calibration.json": "fa8102c974badbf044317b730f50a4792abe50db1c71d61490ac9c35a7833d3d",
+        "provenance.json": "ecaa60047a78257b0d94244a8438bd6710688606c4adad0d6725b442e25d0181",
+        "result.json": "8b10712a318ffd63dd4fbac498d09cdc121d35964ae7a32a040790ef961c4ae9",
+        "thresholds.json": "9a7d816fb435dfa8ca266fb56ae9a85f02c2cbb75c48d6b91e2697bf007fe37b"
+      },
       "bucket": "TRIVIAL_RNG",
       "catalog_soft_flags": {
         "M_ticks": 20,
@@ -228,18 +292,32 @@
         "in_scope_L2_2": true,
         "primary_channel": "monomers",
         "primary_distance": "per_tick_vector_w1_mean"
+      },
+      "channel_verdicts": {
+        "monomers": "SEED_NOISE",
+        "substrates": "SEED_NOISE"
       },
       "evidence_dir": "artifacts/l2_2_gates/ProteinProcessingI/latest",
       "green": false,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "FAIL",
       "process": "ProteinProcessingI",
+      "provenance_git_sha": "unknown",
       "reasons": [
-        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/ProteinProcessingI/latest"
+        "SENTINEL_FAIL: PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE demotion claimed without a machine-checked h12_evidence_ref (nontrivial_sample_count > 0); treated as non-green"
       ]
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "448e8d9676aa84a3cf7dfdb5f180b96e864b380378969ad200ccebcec82ffbc8",
+        "allocator_inputs.json": "4114ea3d98240e1cf06641bae5e3756d6993e8b3f63a032ef6b36a155c13ff40",
+        "analytical_check.json": "dd4dc35123a227c3e69526e949c90aefd27317f77634b5e9cea04f6da4091418",
+        "input_manifest.json": "480095ca43e584ca760ab411c8ec300b29b9a4802417b648617981e141660889",
+        "null_calibration.json": "539bfb6003dd512dff6529cccdd5b97f1d76c7d0b10540601215ebe27afebb78",
+        "provenance.json": "54d147313ce3df0721a6fc0e2c61695657b6e3ab551f01e777f0ea21967f5c19",
+        "result.json": "77110406d1d3ecdf771834e2d8e1b8e90de8a596804e1ce8ac52afbe4e4c3e7f",
+        "thresholds.json": "4ca257b7fdb276d867d21d7ec7620e03024df612d9cdcb5002391e1ca9aed7be"
+      },
       "bucket": "TRIVIAL_RNG",
       "catalog_soft_flags": {
         "M_ticks": 20,
@@ -250,17 +328,31 @@
         "primary_channel": "monomers",
         "primary_distance": "per_tick_vector_w1_mean"
       },
+      "channel_verdicts": {
+        "monomers": "SEED_NOISE",
+        "substrates": "SEED_NOISE"
+      },
       "evidence_dir": "artifacts/l2_2_gates/ProteinProcessingII/latest",
       "green": false,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "FAIL",
       "process": "ProteinProcessingII",
+      "provenance_git_sha": "unknown",
       "reasons": [
-        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/ProteinProcessingII/latest"
+        "SENTINEL_FAIL: PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE demotion claimed without a machine-checked h12_evidence_ref (nontrivial_sample_count > 0); treated as non-green"
       ]
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "72543cfc99c72b4737144d902fc64fbe603850a15e68674a9a387f8607b7f7b3",
+        "allocator_inputs.json": "854268fc00a6881e1a2cd9183fe97eebee56ea918f60546e02c8fa7fc032d3a2",
+        "analytical_check.json": "3575e80493317fa383ba9c3a0850b6a4931204ce76bb75d4c805080b12605183",
+        "input_manifest.json": "8eb738afc14ea369e7e58cc454aa8caaf6c880f288d6f5e369dc6ed75a38f71a",
+        "null_calibration.json": "a029dae00767b98196cc01e7581abc679a2b0a3e610415dd1817b8f545407af5",
+        "provenance.json": "a04f1da527c2802b46d5459dab653d6acb40c7a97c1429feffba4ece8f087769",
+        "result.json": "b330bd1c17e8a12803925f0e10044c3078d7c5b05afad552e3d4950d81d9093c",
+        "thresholds.json": "3848dfed718368ea5355509c548b2151c4f4881030bee4a28ebf8c809835d87f"
+      },
       "bucket": "ALGORITHMIC_SHALLOW",
       "catalog_soft_flags": {
         "M_ticks": 100,
@@ -271,17 +363,29 @@
         "primary_channel": "monomers",
         "primary_distance": "per_tick_vector_w1_mean"
       },
+      "channel_verdicts": {
+        "monomers": "SEED_NOISE",
+        "substrates": "SEED_NOISE"
+      },
       "evidence_dir": "artifacts/l2_2_gates/ProteinTranslocation/latest",
-      "green": false,
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "PASS",
       "process": "ProteinTranslocation",
-      "reasons": [
-        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/ProteinTranslocation/latest"
-      ]
+      "provenance_git_sha": "unknown",
+      "reasons": []
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "3c7d3a12dcdf8b9535766b720eb2c9f098114bdd406941dbb3e61307937780e4",
+        "allocator_inputs.json": "1091fa0584a4bc11c7ee503746a2d818cfeb37f9563fac862407ea593b66224d",
+        "analytical_check.json": "7f609509cd697e8cb411798205cea7f7d07a5a12444d9e18e9daf6d10a38f7be",
+        "input_manifest.json": "9d1f2c1a250efb4d13df1413e0e6e53af39528763fb249959229e788beb44687",
+        "null_calibration.json": "a26baa1b437d455809c9447c2776caa1ed11d2374468ea3d2c657908fab581f6",
+        "provenance.json": "ce803cda60e2558b5393e5471e4bcf37f5ac4799d5d43355bde711efd0656a58",
+        "result.json": "2d268188bad48ab642284a0af06282c130f951517defb07ed67111ae4606bda1",
+        "thresholds.json": "10ae0c5de9bc6e7643d0b762c9938ba4d0b0c19779969228f812cf4e84953c83"
+      },
       "bucket": "ALGORITHMIC_SHALLOW",
       "catalog_soft_flags": {
         "M_ticks": 100,
@@ -291,18 +395,30 @@
         "in_scope_L2_2": true,
         "primary_channel": "rnas",
         "primary_distance": "per_tick_vector_w1_mean"
+      },
+      "channel_verdicts": {
+        "RNAs": "SEED_NOISE",
+        "substrates": "SEED_NOISE"
       },
       "evidence_dir": "artifacts/l2_2_gates/RNADecay/latest",
-      "green": false,
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "PASS",
       "process": "RNADecay",
-      "reasons": [
-        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/RNADecay/latest"
-      ]
+      "provenance_git_sha": "unknown",
+      "reasons": []
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "dc66341429bcb896deaaa6ae2435bc2752d5542196b0096d0f83ab51eb30b90c",
+        "allocator_inputs.json": "7e055631d81c01d433a8ba3f140efea6adfeb5007a12105711b932f9f027951f",
+        "analytical_check.json": "f1e020adeb86b62ed7c22bfe6a583ba85f3bea9a3e2619bc93e0b3ff7a3d84d4",
+        "input_manifest.json": "21f42e76494d5e34a3dd3468c741d8d0857c452f7f13156abd88526740c0f6f4",
+        "null_calibration.json": "1f989d382d274c54af74a5e5f7eb72af0840a8fc7ddae11c015a21299edfb772",
+        "provenance.json": "054beaca31418ad6923ba670469fc5a00a86e3eb55e82f0a5bdf54db09b1a71b",
+        "result.json": "7858ba48989689ce2f7a6e842377f6c537f43a5544e3cb6c400725584f29e711",
+        "thresholds.json": "7604581adf3f814b52af2efb26a92c5120e0e3b8438ef258830eb2585195acbb"
+      },
       "bucket": "ALGORITHMIC_SHALLOW",
       "catalog_soft_flags": {
         "M_ticks": 100,
@@ -312,18 +428,30 @@
         "in_scope_L2_2": true,
         "primary_channel": "rnas",
         "primary_distance": "per_tick_vector_w1_mean"
+      },
+      "channel_verdicts": {
+        "RNAs": "SEED_NOISE",
+        "substrates": "SEED_NOISE"
       },
       "evidence_dir": "artifacts/l2_2_gates/RNAModification/latest",
-      "green": false,
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "PASS",
       "process": "RNAModification",
-      "reasons": [
-        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/RNAModification/latest"
-      ]
+      "provenance_git_sha": "unknown",
+      "reasons": []
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "141c419a875e50d3131ed3737ef2860acc5874b2a773f6a6146f0726f960044b",
+        "allocator_inputs.json": "d31032b6ca45d89b9ec35d7d146f8d319bdfd268aeadc85be8256bdb0099db20",
+        "analytical_check.json": "43f43bf94235670d6aa110ff3def5da7635842f72c7bb4948682515fc23e2c8d",
+        "input_manifest.json": "9ed3fa21efc09b3cf1167d07d0a4019b2f327dd771a2867084b54670baf776b2",
+        "null_calibration.json": "d2a212e4bd388b99b4e1664279283ab8cf7578b242cc77ec21abb466efe658e7",
+        "provenance.json": "771ea989a49250bd8f09247c6e4824013e445ae47e34ede1767303f833dccc5a",
+        "result.json": "e6437e1d0d74d1aefc113dee52db1f7fd220d51784f68074a1a35840b28fba06",
+        "thresholds.json": "e5a23f18e677c15eccac2c8cf6c72261fbd00348f976a330fd0cdbc0e3c02a59"
+      },
       "bucket": "ALGORITHMIC_SHALLOW",
       "catalog_soft_flags": {
         "M_ticks": 100,
@@ -334,17 +462,29 @@
         "primary_channel": "rnas",
         "primary_distance": "per_tick_vector_w1_mean"
       },
+      "channel_verdicts": {
+        "RNAs": "SEED_NOISE",
+        "substrates": "SEED_NOISE"
+      },
       "evidence_dir": "artifacts/l2_2_gates/RNAProcessing/latest",
-      "green": false,
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "PASS",
       "process": "RNAProcessing",
-      "reasons": [
-        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/RNAProcessing/latest"
-      ]
+      "provenance_git_sha": "unknown",
+      "reasons": []
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "77b7b38a67d819bd56ccf1e2b69092a916df52940e6cfa986bd5cd575d972146",
+        "allocator_inputs.json": "f73745e1f3c06376e221c890654020db2787cd3c890922a768d6c99e6e7aa373",
+        "analytical_check.json": "6eb241419d463a4fe42c00805e220ec1da51ba380cd5b84cf8fc6d38362b0b01",
+        "input_manifest.json": "42c53e46b55657058367f306a30c46236ab1c03f3669da202925e7856ede764d",
+        "null_calibration.json": "ff905bfcc7671d47279b2d96e124051a6ddfb116347493a613474b2ee3c146d2",
+        "provenance.json": "fa461c95a85f16d3056002bcd2db5eb036f4c245e1f4a417685fec40077848e6",
+        "result.json": "b3d4850e9129c7066b0be36f283bc05e2bf68aa4e0ba85acfb01ac0d3bfeeabd",
+        "thresholds.json": "5c399248d78b450c0e78114e2a4ac2ee54cae809b382c2bdb611a1782bed4cf9"
+      },
       "bucket": "ALGORITHMIC_SHALLOW",
       "catalog_soft_flags": {
         "M_ticks": 100,
@@ -355,13 +495,19 @@
         "primary_channel": "chromosome",
         "primary_distance": "per_component_scaled"
       },
+      "channel_verdicts": {
+        "boundEnzymes": "SEED_NOISE",
+        "chromosome": "MISSING_EVALUATOR",
+        "substrates": "SEED_NOISE"
+      },
       "evidence_dir": "artifacts/l2_2_gates/Replication/latest",
       "green": false,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "FAIL",
       "process": "Replication",
+      "provenance_git_sha": "unknown",
       "reasons": [
-        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/Replication/latest"
+        "MISSING_EVALUATOR: channel 'chromosome' uses aggregation='per_component_scaled'; no mechanical re-derivation evaluator implemented for this metric type yet"
       ]
     },
     {
@@ -407,7 +553,16 @@
       ]
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "0e7729a21fdd4eb6f52d42268a37c1a6096ae63a8206abfd1e800dc4ec7c8c26",
+        "allocator_inputs.json": "ec1a56beca2e971106f0c12a75fb688044c01ebbc5366fc3acd031174382d077",
+        "analytical_check.json": "8a74b208cdfd2fa3a50ce1a6ea99471bfd657ba3aa918e1c4de159105a114a12",
+        "input_manifest.json": "82ff2d2ce59d909d4391b0872bc7c163e220be446b0d8393c2c679a2437bd30f",
+        "null_calibration.json": "703156714de2b3a5fa416132e51684b3e8137a40b5d00341399ae5fee0b72e02",
+        "provenance.json": "8bb751de88bc2449e23ada12cb012a12d1b5008a3f9e7dbb463cbc2cbedaf11b",
+        "result.json": "ea84c82b4b55b76fea934844adbe32e1edc909a94dacd93b836c27e1b7b82904",
+        "thresholds.json": "7e0139c961df6278c1a2b951bd86ad360fe1a88f4cad12d5c4b0dbd94021eaa2"
+      },
       "bucket": "ALGORITHMIC_DEEP",
       "catalog_soft_flags": {
         "M_ticks": 100,
@@ -418,17 +573,30 @@
         "primary_channel": "rnas",
         "primary_distance": "per_tick_vector_w1_mean"
       },
+      "channel_verdicts": {
+        "RNAs": "PASS",
+        "boundEnzymes": "SEED_NOISE",
+        "substrates": "SEED_NOISE"
+      },
       "evidence_dir": "artifacts/l2_2_gates/Transcription/latest",
-      "green": false,
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "PASS",
       "process": "Transcription",
-      "reasons": [
-        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/Transcription/latest"
-      ]
+      "provenance_git_sha": "unknown",
+      "reasons": []
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "12410be18993c4e09a341074b299efa5c8ca85720045c830ed21d4335e58ce24",
+        "allocator_inputs.json": "5a554b19409fd4cc1f4a19102d9768fdc9d115e79df2fa356ad36c42c1d35c4d",
+        "analytical_check.json": "a26c6baaedf445667a47cb0063e3fdf9567a7995e4b960688339f2680d34f770",
+        "input_manifest.json": "09ec30c76b542e7608b1b6529c8d391933a5b148b508d91f859cba7adeac17d9",
+        "null_calibration.json": "debe344e504de30a5211838c879c40cca287b2801d15e37dd71ad04945b1f2c5",
+        "provenance.json": "1594164c21082db76fdbef94f3ffd1f976597047fd39153d6889e5f630165424",
+        "result.json": "2d9b5b47f37f1b90644a41d4ae7f0618331e5628a3937a66ff73fba55844c140",
+        "thresholds.json": "336ed5353c949d53ada1ca567556de7c9f987edaee54eb647a139ae1112ddcbe"
+      },
       "bucket": "ALGORITHMIC_DEEP",
       "catalog_soft_flags": {
         "M_ticks": 100,
@@ -439,17 +607,30 @@
         "primary_channel": "monomers",
         "primary_distance": "per_tick_vector_w1_mean"
       },
+      "channel_verdicts": {
+        "boundEnzymes": "SEED_NOISE",
+        "monomers": "PASS",
+        "substrates": "SEED_NOISE"
+      },
       "evidence_dir": "artifacts/l2_2_gates/Translation/latest",
-      "green": false,
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "PASS",
       "process": "Translation",
-      "reasons": [
-        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/Translation/latest"
-      ]
+      "provenance_git_sha": "unknown",
+      "reasons": []
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "c580e4e9dc39cfba81592ff799113eaff9b56c3a03a036ed886ee5266a29b206",
+        "allocator_inputs.json": "b6b7bdad577a94bcc42c1f5da91fb814386cb7671ddc8836800aa0fcf89a4ae9",
+        "analytical_check.json": "9a8a426330b338e822497eabc298181dc0518c457c35037365935f7b59f84647",
+        "input_manifest.json": "9af5ae2d7dfa0514aa71f7a6750f42f6ed3b9937f415e226469f92215c760132",
+        "null_calibration.json": "de2a736533fb1ac0e6b949bf8d4830b6bcbbe19697308aa4436168938df409ca",
+        "provenance.json": "49ba973d7eb23e68b33018483e97f606339021f7bc91df1c5e1116894bdef205",
+        "result.json": "a48887c72b152860f536d743829eb992b050478d6192a0e3749284eaa05d3dd8",
+        "thresholds.json": "f07ff6164266532d8986ad48c8fb9c50700f7503d7f6955e664b2fff51d90f97"
+      },
       "bucket": "ALGORITHMIC_SHALLOW",
       "catalog_soft_flags": {
         "M_ticks": 50,
@@ -460,18 +641,25 @@
         "primary_channel": "rnas",
         "primary_distance": "per_tick_vector_w1_mean"
       },
+      "channel_verdicts": {
+        "RNAs": "SEED_NOISE",
+        "substrates": "SEED_NOISE"
+      },
       "evidence_dir": "artifacts/l2_2_gates/tRNAAminoacylation/latest",
       "green": false,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "FAIL",
       "process": "tRNAAminoacylation",
+      "provenance_git_sha": "unknown",
       "reasons": [
-        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/tRNAAminoacylation/latest"
+        "SENTINEL_FAIL: PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE demotion claimed without a machine-checked h12_evidence_ref (nontrivial_sample_count > 0); treated as non-green"
       ]
     }
   ],
   "schema_version": 1,
   "tally": {
-    "MISSING_EVIDENCE": 22
+    "FAIL": 7,
+    "MISSING_EVIDENCE": 8,
+    "PASS": 7
   }
 }

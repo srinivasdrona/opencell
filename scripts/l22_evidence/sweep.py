@@ -50,6 +50,7 @@ REPO_ROOT = cat.REPO_ROOT
 RUNNER_SCRIPT = REPO_ROOT / "tests" / "vivarium" / "l2_2_design_a_runner.py"
 DEFAULT_LOG_DIR = REPO_ROOT / "artifacts" / "l2_2_gates" / "_sweep_logs"
 DEFAULT_REPORT_PATH = REPO_ROOT / "docs" / "phase_f" / "l2_2_design_a" / "sweep_report.json"
+DEFAULT_STATUS_PATH = REPO_ROOT / "docs" / "phase_f" / "l2_2_design_a" / "sweep_status.json"
 
 # Status vocabulary for JobResult.status -- distinct from the evidence
 # index's own mechanical_verdict vocabulary (schema.py), since this module
@@ -281,6 +282,79 @@ def _tail_lines(path: Path, *, n: int = 20) -> str:
     return "\n".join(lines[-n:])
 
 
+# Interim-status vocabulary -- distinct from JobResult.status. `run_sweep()`
+# only returns (and `write_sweep_report()` only writes) once EVERY requested
+# job has finished, which is unusable for honest progress reporting on a
+# long sweep still partway through (e.g. while a multi-hour Metabolism job
+# is still running). `status_snapshot()` is a read-only, non-invasive
+# inspector: it never starts, stops, or waits on any process -- it only
+# looks at what is already on disk right now -- so it is always safe to run
+# concurrently with an in-flight `sweep.py run` invocation.
+STATUS_DONE_VALID = "DONE_VALID_EVIDENCE"
+STATUS_DONE_INVALID_OR_FAILED = "DONE_NO_VALID_EVIDENCE"
+STATUS_IN_PROGRESS = "IN_PROGRESS_OR_UNKNOWN"
+STATUS_NOT_STARTED = "NOT_STARTED"
+
+
+def status_snapshot(jobs: list[SweepJob]) -> list[dict[str, Any]]:
+    """Read-only interim status for `jobs`, safe to call while a real sweep
+    `run` is still executing elsewhere. Never inspects process state (no PID
+    lookups) -- only what is already durably on disk: whether valid evidence
+    exists, whether a log file exists (implying a run was at least attempted
+    and may still be in progress), and the stored (non-authoritative) runner
+    verdict/warnings for human-readable context."""
+    rows: list[dict[str, Any]] = []
+    for job in jobs:
+        valid, reason = evidence_is_valid(job)
+        log_exists = job.log_path.is_file()
+        row: dict[str, Any] = {
+            "process": job.process,
+            "seeds": job.seeds,
+            "m_ticks": job.m_ticks,
+            "output_dir": cat.relative_to_repo(job.output_dir),
+            "log_path": cat.relative_to_repo(job.log_path) if log_exists else None,
+        }
+        if valid:
+            row["status"] = STATUS_DONE_VALID
+            row["reason"] = None
+            result = _load_json_safe(job.output_dir / "result.json")
+            if result is not None:
+                row["stored_verdict"] = result.get("verdict")
+                row["stored_bucket"] = result.get("bucket")
+                row["stored_warnings"] = result.get("warnings", [])
+        elif log_exists:
+            log_text = job.log_path.read_text(encoding="utf-8", errors="replace")
+            log_looks_finished = any(
+                marker in log_text for marker in ("Traceback", "Error", "error", "ticks, but oracle only provides")
+            )
+            row["status"] = STATUS_DONE_INVALID_OR_FAILED if log_looks_finished else STATUS_IN_PROGRESS
+            row["reason"] = reason
+            row["log_tail"] = _tail_lines(job.log_path, n=5)
+        else:
+            row["status"] = STATUS_NOT_STARTED
+            row["reason"] = reason
+        rows.append(row)
+    return rows
+
+
+def write_status_snapshot(rows: list[dict[str, Any]], path: Path) -> dict[str, Any]:
+    """Compact tracked JSON: one interim status row per job, plus a tally.
+    Excludes raw per-tick arrays/channel numbers -- same compactness
+    discipline as `write_sweep_report()`."""
+    tally: dict[str, int] = {}
+    for r in rows:
+        tally[r["status"]] = tally.get(r["status"], 0) + 1
+    payload = {
+        "generated_at": datetime.now(UTC).isoformat(),
+        "n_jobs": len(rows),
+        "tally": tally,
+        "jobs": rows,
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return payload
+
+
 def run_sweep(
     jobs: list[SweepJob],
     *,
@@ -348,6 +422,23 @@ def _cmd_plan(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_status(args: argparse.Namespace) -> int:
+    jobs = plan_sweep(
+        _parse_processes_arg(args.processes),
+        evidence_root=Path(args.evidence_root),
+        log_dir=Path(args.log_dir),
+    )
+    rows = status_snapshot(jobs)
+    report = write_status_snapshot(rows, Path(args.status_out))
+    print(f"wrote {args.status_out} ({report['n_jobs']} jobs)")
+    for status, count in sorted(report["tally"].items()):
+        print(f"  {status}: {count}")
+    for row in rows:
+        extra = f" verdict={row.get('stored_verdict')}" if row["status"] == STATUS_DONE_VALID else ""
+        print(f"    {row['process']:28s} {row['status']}{extra}")
+    return 0
+
+
 def _cmd_run(args: argparse.Namespace) -> int:
     jobs = plan_sweep(
         _parse_processes_arg(args.processes),
@@ -381,6 +472,16 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     run.add_argument("--log-dir", default=str(DEFAULT_LOG_DIR))
     run.add_argument("--report-out", default=str(DEFAULT_REPORT_PATH))
     run.set_defaults(func=_cmd_run)
+
+    status = sub.add_parser(
+        "status",
+        help="Read-only interim progress snapshot; safe to run while `run` is executing elsewhere.",
+    )
+    status.add_argument("--processes", help="Comma-separated subset; default is all 18 design_a_per_tick.")
+    status.add_argument("--evidence-root", default=str(schema.EVIDENCE_ROOT))
+    status.add_argument("--log-dir", default=str(DEFAULT_LOG_DIR))
+    status.add_argument("--status-out", default=str(DEFAULT_STATUS_PATH))
+    status.set_defaults(func=_cmd_status)
 
     return parser
 
