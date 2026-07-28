@@ -1,0 +1,4 @@
+{
+  "applicable": false,
+  "reason": "Replication has no closed-form per-tick check"
+}

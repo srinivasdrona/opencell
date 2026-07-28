@@ -2,9 +2,9 @@
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
   "catalog_sha256": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
-  "content_hash": "4297d1d0f84a971f5393b92e090c5a3a1cc1181f2b4c8a8e2c1d2a95eeed5b1f",
+  "content_hash": "5c8d7d766e999ef77985a5a19370e26eaf66546d06832c21a68d086ae85bc333",
   "evidence_root": "artifacts/l2_2_gates",
-  "generated_at": "2026-07-28T09:28:50.572066+00:00",
+  "generated_at": "2026-07-28T11:11:38.189393+00:00",
   "n_in_scope": 22,
   "rows": [
     {
@@ -25,7 +25,7 @@
       "mechanical_verdict": "MISSING_EVIDENCE",
       "process": "Cytokinesis",
       "reasons": [
-        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/Cytokinesis/latest_event"
+        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] for process Cytokinesis"
       ]
     },
     {
@@ -46,7 +46,7 @@
       "mechanical_verdict": "MISSING_EVIDENCE",
       "process": "DNADamage",
       "reasons": [
-        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/DNADamage/latest_event"
+        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] for process DNADamage"
       ]
     },
     {
@@ -67,18 +67,17 @@
       "mechanical_verdict": "MISSING_EVIDENCE",
       "process": "DNARepair",
       "reasons": [
-        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/DNARepair/latest"
+        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] for process DNARepair"
       ]
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "658802fa7e3895278948e839e3dc5d21053aeab0eb7983dba7d44bf727af1c38",
-        "allocator_inputs.json": "301d60ca2489677b51fddfe0f7e15e8f2d37b32f9b9c9fc26c1cf384a608a2d3",
+        "SUMMARY.json": "2e50ad3c8b7adf9e89e405590b0cfb2f7b61161dbe6c3b7ec5fe3afb7ebdbd53",
         "analytical_check.json": "fe7776df0a449ac6226e4a97dddce8cd8b17225d60ad090c4ed22d459aa01733",
-        "input_manifest.json": "b773a4dbd1dc3ae377a9cec6e78a9f5992c988375c1d9e4f88cc25110057b74c",
-        "null_calibration.json": "7f5f1d46102307bc60e27c0c4785199149164bfbf4b1bec2e967a0ac36549244",
-        "provenance.json": "d31af010c2957f84d0b702649ea2ce8f5dfea7fd57bc0479055661b68a01be9b",
-        "result.json": "db08e24b4bafc97bd6f2d476254b0106a19b38c4c10ba5f82a94e5ca1d791080",
+        "input_manifest.json": "ae3e7e83de74365aa8e0655c01a126ba4538f18d18892d215077225eaf558482",
+        "null_calibration.json": "9183a4dc747215d84d663dad95d4bbcc1affc2ca693804747b099ab95792f3c9",
+        "provenance.json": "fa6e76611d9e3b900ddaad04e35e1d344c881b0298548d8051478e979c2a384d",
+        "result.json": "96b3ffcd611b4c0709763668c44c9086c7525fd3826f94fd5e07a52a938b4eb6",
         "thresholds.json": "49bf0423b5e7bbe588caf3f013cf72d2fd7af96b8267859c52eee7914f8ae0cc"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -92,18 +91,16 @@
         "primary_distance": "per_component_scaled"
       },
       "channel_verdicts": {
-        "chromosome": "MISSING_EVALUATOR",
+        "chromosome": "PASS",
         "substrates": "SEED_NOISE"
       },
       "evidence_dir": "artifacts/l2_2_gates/DNASupercoiling/latest",
-      "green": false,
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "FAIL",
+      "mechanical_verdict": "PASS",
       "process": "DNASupercoiling",
       "provenance_git_sha": "unknown",
-      "reasons": [
-        "MISSING_EVALUATOR: channel 'chromosome' per_component block missing raw field(s) ['scaled_distance_threshold', 'component_n_nonzero_oc', 'component_n_nonzero_karr']"
-      ]
+      "reasons": []
     },
     {
       "artifact_hashes": {},
@@ -123,13 +120,12 @@
       "mechanical_verdict": "MISSING_EVIDENCE",
       "process": "FtsZPolymerization",
       "reasons": [
-        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/FtsZPolymerization/latest_event"
+        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] for process FtsZPolymerization"
       ]
     },
     {
       "artifact_hashes": {
         "SUMMARY.json": "15f8aac6666fead8b8772ef4f89034e49199467605c44de649a2320906e6d9db",
-        "allocator_inputs.json": "b1828f41c209d5d89b67643f403753216e98687cf80fc1c12ac1cb042afcb135",
         "analytical_check.json": "851bafe04f1a87092a83b1f2f9ea2f84cb9cf2fcfcb2b45899ff5a6c10f22a86",
         "input_manifest.json": "5ef61ddc38bc56f75ceb728644d5161e6b8af01ace2d899869f3b0f845982f6c",
         "null_calibration.json": "ee60cbc92bb67c631646fd081db55de2e01a5f6b0e0b8c053c0b777f5fff62c3",
@@ -180,7 +176,7 @@
       "mechanical_verdict": "MISSING_EVIDENCE",
       "process": "Metabolism",
       "reasons": [
-        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/Metabolism/latest"
+        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] for process Metabolism"
       ]
     },
     {
@@ -201,13 +197,12 @@
       "mechanical_verdict": "MISSING_EVIDENCE",
       "process": "ProteinDecay",
       "reasons": [
-        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/ProteinDecay/latest"
+        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] for process ProteinDecay"
       ]
     },
     {
       "artifact_hashes": {
         "SUMMARY.json": "cbef79f5054196bc71d5aee0ab6be04e5d015814a3e3e3aca13036a95023613d",
-        "allocator_inputs.json": "f0af9e96f266a7f1dd6075cc345696251f506b1c8ac2ca23f5a3842f6351b770",
         "analytical_check.json": "030974782242b9c2037a6286ef5fbb72009f65fa3189ddfa836f54bd0dcbdeb5",
         "input_manifest.json": "a74827f8c7eff79a43b20efaace3841216fe002e6519789c6f25aa8a52592de0",
         "null_calibration.json": "b08bca5aab199ed48a3c3aff987de007e91fecc2cc3047452f0b6cba477a7e29",
@@ -242,7 +237,6 @@
     {
       "artifact_hashes": {
         "SUMMARY.json": "2bf4bd70b0c31e7702cc59b429e2e07f074e7b2c8b602f72ee8b695326990ee5",
-        "allocator_inputs.json": "67648dda18a82092dc00b475f6c4685a3a747a00cd9365e11073a43c9c006156",
         "analytical_check.json": "dec4518901818fb27944fbb0f7efaec4b2ea389140cd33864cce100c67d8462a",
         "input_manifest.json": "c071c1221ef245f4d8d66eb4a4b07bf9fbc0602ae974e397aa03c5a6c59b0f16",
         "null_calibration.json": "18663c77d51380be069888b8797c96ec517f0e919e2339bb64fc7810d8399751",
@@ -275,7 +269,6 @@
     {
       "artifact_hashes": {
         "SUMMARY.json": "8b93a829a2a920b87e5740face7e423e608c9828888fde6b623b17f9cf053146",
-        "allocator_inputs.json": "b942572d53e5c2c9525ce977f027287fe550c7d4501c2dfa32b745229f644fe6",
         "analytical_check.json": "3141f86a582c7d209a199137ca1795b7d7e9cc0cad1a673eda28079ee33b1c4b",
         "input_manifest.json": "f4208de72827d7178ce515b8aec473ec9a90866e0aa4796ba086a91a38a92835",
         "null_calibration.json": "fa8102c974badbf044317b730f50a4792abe50db1c71d61490ac9c35a7833d3d",
@@ -310,7 +303,6 @@
     {
       "artifact_hashes": {
         "SUMMARY.json": "448e8d9676aa84a3cf7dfdb5f180b96e864b380378969ad200ccebcec82ffbc8",
-        "allocator_inputs.json": "4114ea3d98240e1cf06641bae5e3756d6993e8b3f63a032ef6b36a155c13ff40",
         "analytical_check.json": "dd4dc35123a227c3e69526e949c90aefd27317f77634b5e9cea04f6da4091418",
         "input_manifest.json": "480095ca43e584ca760ab411c8ec300b29b9a4802417b648617981e141660889",
         "null_calibration.json": "539bfb6003dd512dff6529cccdd5b97f1d76c7d0b10540601215ebe27afebb78",
@@ -345,7 +337,6 @@
     {
       "artifact_hashes": {
         "SUMMARY.json": "72543cfc99c72b4737144d902fc64fbe603850a15e68674a9a387f8607b7f7b3",
-        "allocator_inputs.json": "854268fc00a6881e1a2cd9183fe97eebee56ea918f60546e02c8fa7fc032d3a2",
         "analytical_check.json": "3575e80493317fa383ba9c3a0850b6a4931204ce76bb75d4c805080b12605183",
         "input_manifest.json": "8eb738afc14ea369e7e58cc454aa8caaf6c880f288d6f5e369dc6ed75a38f71a",
         "null_calibration.json": "a029dae00767b98196cc01e7581abc679a2b0a3e610415dd1817b8f545407af5",
@@ -378,7 +369,6 @@
     {
       "artifact_hashes": {
         "SUMMARY.json": "3c7d3a12dcdf8b9535766b720eb2c9f098114bdd406941dbb3e61307937780e4",
-        "allocator_inputs.json": "1091fa0584a4bc11c7ee503746a2d818cfeb37f9563fac862407ea593b66224d",
         "analytical_check.json": "7f609509cd697e8cb411798205cea7f7d07a5a12444d9e18e9daf6d10a38f7be",
         "input_manifest.json": "9d1f2c1a250efb4d13df1413e0e6e53af39528763fb249959229e788beb44687",
         "null_calibration.json": "a26baa1b437d455809c9447c2776caa1ed11d2374468ea3d2c657908fab581f6",
@@ -411,7 +401,6 @@
     {
       "artifact_hashes": {
         "SUMMARY.json": "dc66341429bcb896deaaa6ae2435bc2752d5542196b0096d0f83ab51eb30b90c",
-        "allocator_inputs.json": "7e055631d81c01d433a8ba3f140efea6adfeb5007a12105711b932f9f027951f",
         "analytical_check.json": "f1e020adeb86b62ed7c22bfe6a583ba85f3bea9a3e2619bc93e0b3ff7a3d84d4",
         "input_manifest.json": "21f42e76494d5e34a3dd3468c741d8d0857c452f7f13156abd88526740c0f6f4",
         "null_calibration.json": "1f989d382d274c54af74a5e5f7eb72af0840a8fc7ddae11c015a21299edfb772",
@@ -444,7 +433,6 @@
     {
       "artifact_hashes": {
         "SUMMARY.json": "141c419a875e50d3131ed3737ef2860acc5874b2a773f6a6146f0726f960044b",
-        "allocator_inputs.json": "d31032b6ca45d89b9ec35d7d146f8d319bdfd268aeadc85be8256bdb0099db20",
         "analytical_check.json": "43f43bf94235670d6aa110ff3def5da7635842f72c7bb4948682515fc23e2c8d",
         "input_manifest.json": "9ed3fa21efc09b3cf1167d07d0a4019b2f327dd771a2867084b54670baf776b2",
         "null_calibration.json": "d2a212e4bd388b99b4e1664279283ab8cf7578b242cc77ec21abb466efe658e7",
@@ -476,13 +464,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "77b7b38a67d819bd56ccf1e2b69092a916df52940e6cfa986bd5cd575d972146",
-        "allocator_inputs.json": "f73745e1f3c06376e221c890654020db2787cd3c890922a768d6c99e6e7aa373",
+        "SUMMARY.json": "9f1c0f3e87442144e1b717c70974bcab3f51a4f481777f5b8a96abc478e93267",
         "analytical_check.json": "6eb241419d463a4fe42c00805e220ec1da51ba380cd5b84cf8fc6d38362b0b01",
-        "input_manifest.json": "42c53e46b55657058367f306a30c46236ab1c03f3669da202925e7856ede764d",
-        "null_calibration.json": "ff905bfcc7671d47279b2d96e124051a6ddfb116347493a613474b2ee3c146d2",
-        "provenance.json": "fa461c95a85f16d3056002bcd2db5eb036f4c245e1f4a417685fec40077848e6",
-        "result.json": "b3d4850e9129c7066b0be36f283bc05e2bf68aa4e0ba85acfb01ac0d3bfeeabd",
+        "input_manifest.json": "c6e8c29f900db9c9b09c9fb49da6e645c2b525cb7f68c78e1d1968dce9b7a02f",
+        "null_calibration.json": "ad7934585c88b307e831e584514a2f2ce7ea087350acf6ffa1fc627e1f68e6c3",
+        "provenance.json": "dc5503ee1102cdcef6ca5226d76b23d9aba67f4faf374d7fcf1c4ca3e28bc5ee",
+        "result.json": "c0ddd88d1ce470c73f1b4a56adabe27ee0966ca0ba49b16027c9be070293a634",
         "thresholds.json": "5c399248d78b450c0e78114e2a4ac2ee54cae809b382c2bdb611a1782bed4cf9"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -497,18 +484,16 @@
       },
       "channel_verdicts": {
         "boundEnzymes": "SEED_NOISE",
-        "chromosome": "MISSING_EVALUATOR",
+        "chromosome": "PASS",
         "substrates": "SEED_NOISE"
       },
       "evidence_dir": "artifacts/l2_2_gates/Replication/latest",
-      "green": false,
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "FAIL",
+      "mechanical_verdict": "PASS",
       "process": "Replication",
       "provenance_git_sha": "unknown",
-      "reasons": [
-        "MISSING_EVALUATOR: channel 'chromosome' per_component block missing raw field(s) ['scaled_distance_threshold', 'component_n_nonzero_oc', 'component_n_nonzero_karr']"
-      ]
+      "reasons": []
     },
     {
       "artifact_hashes": {},
@@ -528,7 +513,7 @@
       "mechanical_verdict": "MISSING_EVIDENCE",
       "process": "ReplicationInitiation",
       "reasons": [
-        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/ReplicationInitiation/latest"
+        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] for process ReplicationInitiation"
       ]
     },
     {
@@ -549,13 +534,12 @@
       "mechanical_verdict": "MISSING_EVIDENCE",
       "process": "RibosomeAssembly",
       "reasons": [
-        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] under artifacts/l2_2_gates/RibosomeAssembly/latest_event"
+        "MISSING_EVIDENCE: missing required authority file(s) ['result.json', 'input_manifest.json', 'provenance.json'] for process RibosomeAssembly"
       ]
     },
     {
       "artifact_hashes": {
         "SUMMARY.json": "0e7729a21fdd4eb6f52d42268a37c1a6096ae63a8206abfd1e800dc4ec7c8c26",
-        "allocator_inputs.json": "ec1a56beca2e971106f0c12a75fb688044c01ebbc5366fc3acd031174382d077",
         "analytical_check.json": "8a74b208cdfd2fa3a50ce1a6ea99471bfd657ba3aa918e1c4de159105a114a12",
         "input_manifest.json": "82ff2d2ce59d909d4391b0872bc7c163e220be446b0d8393c2c679a2437bd30f",
         "null_calibration.json": "703156714de2b3a5fa416132e51684b3e8137a40b5d00341399ae5fee0b72e02",
@@ -589,7 +573,6 @@
     {
       "artifact_hashes": {
         "SUMMARY.json": "12410be18993c4e09a341074b299efa5c8ca85720045c830ed21d4335e58ce24",
-        "allocator_inputs.json": "5a554b19409fd4cc1f4a19102d9768fdc9d115e79df2fa356ad36c42c1d35c4d",
         "analytical_check.json": "a26c6baaedf445667a47cb0063e3fdf9567a7995e4b960688339f2680d34f770",
         "input_manifest.json": "09ec30c76b542e7608b1b6529c8d391933a5b148b508d91f859cba7adeac17d9",
         "null_calibration.json": "debe344e504de30a5211838c879c40cca287b2801d15e37dd71ad04945b1f2c5",
@@ -623,7 +606,6 @@
     {
       "artifact_hashes": {
         "SUMMARY.json": "c580e4e9dc39cfba81592ff799113eaff9b56c3a03a036ed886ee5266a29b206",
-        "allocator_inputs.json": "b6b7bdad577a94bcc42c1f5da91fb814386cb7671ddc8836800aa0fcf89a4ae9",
         "analytical_check.json": "9a8a426330b338e822497eabc298181dc0518c457c35037365935f7b59f84647",
         "input_manifest.json": "9af5ae2d7dfa0514aa71f7a6750f42f6ed3b9937f415e226469f92215c760132",
         "null_calibration.json": "de2a736533fb1ac0e6b949bf8d4830b6bcbbe19697308aa4436168938df409ca",
@@ -658,8 +640,8 @@
   ],
   "schema_version": 1,
   "tally": {
-    "FAIL": 7,
+    "FAIL": 5,
     "MISSING_EVIDENCE": 8,
-    "PASS": 7
+    "PASS": 9
   }
 }

@@ -14,15 +14,14 @@ This test is the INTEGRITY/AUDIT gate (stage A), not the ACCEPTANCE gate
     truthful, untampered, byte-for-byte-reproducible (minus `generated_at`)
     reflection of the current catalog + evidence tree. It is expected and
   REQUIRED to pass even when today's aggregate verdict is NON_GREEN --
-  a real Design-A runner sweep has populated evidence for 14/18 in-scope
+  a real Design-A runner sweep has populated evidence for 16/18 in-scope
   design_a_per_tick processes as of this commit (see
   docs/phase_f/l2_2_design_a/sweep_status.json); some real rows are
   mechanically PASS, some are mechanically FAIL (demoted convergence
-  warnings without H12 evidence, or metric types with no re-derivation
-  evaluator yet), some are MISSING_EVIDENCE (event_class out of scope,
-  an oracle-tick-depth shortfall for 3 processes, and Metabolism's FVA
-  run still executing). Faking a green result here would be exactly the
-  kind of fabrication this rewrite exists to prevent.
+  warnings without H12 evidence), some are MISSING_EVIDENCE (event_class
+  out of scope, an oracle-tick-depth shortfall for 3 processes, and
+  Metabolism's FVA run still executing). Faking a green result here would
+  be exactly the kind of fabrication this rewrite exists to prevent.
   - Stage B (NOT this file): `scripts/l22_evidence/generator.py audit
     --require-all-pass` / `scripts/probe_l2_2_strict_audit.py
     --require-all-pass` returns nonzero until every in-scope process is
@@ -68,7 +67,7 @@ def test_committed_evidence_index_passes_integrity_audit():
 
 def test_committed_evidence_index_is_honestly_non_green_today():
     """This task MUST report a truthful non-green index, never a fabricated
-    PASS. A real Design-A runner sweep has populated evidence for 14/18
+    PASS. A real Design-A runner sweep has populated evidence for 16/18
     in-scope design_a_per_tick processes as of this commit; the mixed real
     PASS/FAIL/MISSING_EVIDENCE breakdown below is not fabricated -- every
     PASS is a real mechanical re-derivation from raw channel metrics, and
@@ -80,7 +79,7 @@ def test_committed_evidence_index_is_honestly_non_green_today():
     artifacts/l2_2_gates/, not by editing this assertion."""
     result = gen.audit()
     assert result.aggregate_verdict == "NON_GREEN"
-    assert result.tally == {schema.STATUS_PASS: 7, schema.STATUS_FAIL: 7, schema.STATUS_MISSING_EVIDENCE: 8}
+    assert result.tally == {schema.STATUS_PASS: 9, schema.STATUS_FAIL: 5, schema.STATUS_MISSING_EVIDENCE: 8}
 
 
 def test_committed_evidence_index_covers_scope_exactly_once():

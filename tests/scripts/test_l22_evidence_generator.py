@@ -75,9 +75,14 @@ def test_index_has_exactly_one_row_per_in_scope_process_no_extras():
 
 def test_real_sweep_evidence_today_yields_honest_mixed_non_green_index():
     """As of this commit, a real Design-A runner sweep has populated evidence
-    for 14/18 in-scope design_a_per_tick processes (see
-    docs/phase_f/l2_2_design_a/sweep_status.json); DNARepair, ProteinDecay,
-    and ReplicationInitiation hit a real oracle-data-insufficiency (catalog
+    for 16/18 in-scope design_a_per_tick processes (see
+    docs/phase_f/l2_2_design_a/sweep_status.json): DNASupercoiling and
+    Replication were re-run after the 29749df evaluator cherry-pick so their
+    result.json carries the additive raw fields
+    (scaled_distance_threshold/component_n_nonzero_oc/karr) the real
+    per_component_scaled evaluator needs, and both are now real mechanical
+    PASS instead of MISSING_EVALUATOR. DNARepair, ProteinDecay, and
+    ReplicationInitiation hit a real oracle-data-insufficiency (catalog
     M_ticks=200 but the populated oracle only has 100 ticks); Metabolism is
     still executing (FVA is a severe cost outlier); the 4 event_class
     processes are explicitly out of scope for this sweep. No row may ever be
@@ -91,7 +96,7 @@ def test_real_sweep_evidence_today_yields_honest_mixed_non_green_index():
             assert row["mechanical_verdict"] == schema.STATUS_PASS
         else:
             assert row["mechanical_verdict"] != schema.STATUS_PASS
-    assert payload["tally"] == {schema.STATUS_PASS: 7, schema.STATUS_FAIL: 7, schema.STATUS_MISSING_EVIDENCE: 8}
+    assert payload["tally"] == {schema.STATUS_PASS: 9, schema.STATUS_FAIL: 5, schema.STATUS_MISSING_EVIDENCE: 8}
 
 
 def test_content_hash_is_deterministic_across_regenerations():
@@ -110,11 +115,16 @@ def test_content_hash_is_deterministic_across_regenerations():
 def test_content_hash_changes_when_evidence_root_differs():
     baseline = gen.build_evidence_index()
     alternate = gen.build_evidence_index(evidence_root=schema.EVIDENCE_ROOT.parent / "l2_2_gates_alt")
-    # Different evidence_root recorded in the payload -> different content_hash,
-    # even though both trees are equally empty (proves content_hash is not
-    # blind to which tree was actually inspected).
+    # `evidence_root`/each row's `evidence_dir` are themselves excluded from
+    # content_hash (see generator._scrub_environment_relative -- they record
+    # ambient read-location, not durable evidence identity, since the
+    # portable bundle is a byte-identical mirror of the live tree). This
+    # still changes content_hash here because the *data* genuinely differs:
+    # `l2_2_gates_alt` is empty, so every row becomes MISSING_EVIDENCE
+    # instead of baseline's real mechanically re-derived verdicts.
     assert baseline["content_hash"] != alternate["content_hash"]
     assert baseline["evidence_root"] != alternate["evidence_root"]
+    assert all(row["mechanical_verdict"] == schema.STATUS_MISSING_EVIDENCE for row in alternate["rows"])
 
 
 def test_write_index_then_audit_round_trips_cleanly(tmp_path):
@@ -125,7 +135,7 @@ def test_write_index_then_audit_round_trips_cleanly(tmp_path):
     result = gen.audit(index_path=index_path, evidence_root=schema.EVIDENCE_ROOT)
     assert result.ok is True
     assert result.aggregate_verdict == "NON_GREEN"
-    assert result.tally == {schema.STATUS_PASS: 7, schema.STATUS_FAIL: 7, schema.STATUS_MISSING_EVIDENCE: 8}
+    assert result.tally == {schema.STATUS_PASS: 9, schema.STATUS_FAIL: 5, schema.STATUS_MISSING_EVIDENCE: 8}
 
 
 def test_audit_reports_failure_when_index_file_absent(tmp_path):

@@ -1,0 +1,4 @@
+{
+  "applicable": false,
+  "reason": "tRNAAminoacylation has no closed-form per-tick check"
+}

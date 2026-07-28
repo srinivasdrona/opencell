@@ -42,6 +42,21 @@ EVENT_CLASS_SUBDIR = "latest_event"
 # The one tracked generator output.
 INDEX_PATH = REPO_ROOT / "docs" / "phase_f" / "l2_2_design_a" / "evidence_index.json"
 
+# --- Portable evidence bundle -------------------------------------------------
+#
+# EVIDENCE_ROOT above is fully gitignored (.gitignore line ~30): it is the
+# *live* directory the sweep launcher writes runner-native output to, and it
+# legitimately does not exist in a fresh clone. That is fine for `result.json`
+# et al (compact JSON, cheap to regenerate by re-running the sweep) but it
+# means `generate`/`audit` had no tracked fallback to read from at all in a
+# fresh clone -- the whole index would look like MISSING_EVIDENCE regardless
+# of what is actually committed. BUNDLE_ROOT is a tracked mirror of just the
+# compact authority + sidecar files (never `BUNDLE_EXCLUDE_FILES`, which hold
+# large raw per-seed/tick arrays) under the same `<process>/<subdir>/` layout;
+# see `generator.bundle_process_evidence()`. `default_evidence_root()` below
+# is what `generate`/`audit` actually use when no `--evidence-root` is given.
+BUNDLE_ROOT = REPO_ROOT / "docs" / "phase_f" / "l2_2_design_a" / "evidence_bundle"
+
 # --- Authority files ---------------------------------------------------------
 
 REQUIRED_AUTHORITY_FILES = ("result.json", "input_manifest.json", "provenance.json")
@@ -52,6 +67,30 @@ OPTIONAL_SIDECAR_FILES = (
     "allocator_inputs.json",
     "analytical_check.json",
 )
+# Sidecars that hold large raw per-seed/tick arrays: never mirrored into the
+# tracked BUNDLE_ROOT, never committed. Verdict re-derivation only ever reads
+# `result.json`'s own channel payload, so excluding these changes nothing
+# about mechanical_verdict -- it only means their content_hash is absent from
+# a bundle-sourced row (they were never required for audit, only hashed
+# opportunistically when present as extra tamper-evidence).
+BUNDLE_EXCLUDE_FILES = ("allocator_inputs.json",)
+
+
+def default_evidence_root() -> Path:
+    """The evidence root `generate`/`audit` read from when none is given.
+
+    Prefers the live sweep-output tree (EVIDENCE_ROOT) when it exists and is
+    non-empty locally -- this is the unmodified, pre-existing behavior for
+    anyone iterating against a real local sweep. Falls back to the tracked,
+    portable BUNDLE_ROOT otherwise (e.g. a fresh clone that never ran the
+    sweep locally). Both hold byte-identical copies of every file `generate`
+    actually reads, so this choice never changes which verdict is produced --
+    only where the bytes are read from.
+    """
+    if EVIDENCE_ROOT.is_dir() and any(EVIDENCE_ROOT.iterdir()):
+        return EVIDENCE_ROOT
+    return BUNDLE_ROOT
+
 
 # --- Verdict vocab ------------------------------------------------------------
 
@@ -92,4 +131,4 @@ STATUS_NO_GATEABLE_CHANNELS = "NO_GATEABLE_CHANNELS"
 STATUS_FAIL = "FAIL"
 STATUS_PASS = "PASS"
 
-__all__ = [name for name in globals() if name.isupper()] + ["CATALOG_PATH"]
+__all__ = [name for name in globals() if name.isupper()] + ["CATALOG_PATH", "default_evidence_root"]

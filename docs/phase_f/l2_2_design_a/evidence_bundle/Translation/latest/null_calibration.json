@@ -1,0 +1,46 @@
+{
+  "generated_at": "2026-07-28T08:28:26.790386+00:00",
+  "process": "Translation",
+  "bucket": "ALGORITHMIC_DEEP",
+  "channels": {
+    "substrates": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 100,
+      "q95_null": 218.147323,
+      "bootstrap_values_summary": {
+        "mean": 194.55930683000003,
+        "stddev": 14.192114111243358,
+        "min": 154.19251,
+        "max": 248.22473
+      }
+    },
+    "monomers": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 100,
+      "q95_null": 0.0031539626556016487,
+      "bootstrap_values_summary": {
+        "mean": 0.0030534800829875412,
+        "stddev": 7.006306848379947e-05,
+        "min": 0.0027896265560165877,
+        "max": 0.0032236514522821468
+      }
+    },
+    "boundEnzymes": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 100,
+      "q95_null": 0.4812175,
+      "bootstrap_values_summary": {
+        "mean": 0.4649398,
+        "stddev": 0.011007496069043131,
+        "min": 0.4167375,
+        "max": 0.4908625
+      }
+    }
+  },
+  "warnings": [
+    "SEED_ALIGNMENT_DIAGNOSTIC: OC outputs align better to a shifted Karr seed index on channel=monomers (shift=+47, observed_w1=0.006671, shifted_w1=0.006165)."
+  ]
+}

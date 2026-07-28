@@ -1,0 +1,32 @@
+{
+  "generated_at": "2026-07-28T08:09:30.954493+00:00",
+  "process": "RNAProcessing",
+  "bucket": "ALGORITHMIC_SHALLOW",
+  "channels": {
+    "substrates": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 100,
+      "q95_null": 19047.641644285723,
+      "bootstrap_values_summary": {
+        "mean": 17904.67936651429,
+        "stddev": 694.8151956133152,
+        "min": 15909.66697142858,
+        "max": 20045.75197142858
+      }
+    },
+    "RNAs": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 100,
+      "q95_null": 0.008595786435786457,
+      "bootstrap_values_summary": {
+        "mean": 0.008058067532467546,
+        "stddev": 0.0003099884855822711,
+        "min": 0.006956709956709966,
+        "max": 0.009102453102453117
+      }
+    }
+  },
+  "warnings": []
+}

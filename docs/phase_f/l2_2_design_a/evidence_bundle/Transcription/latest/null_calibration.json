@@ -1,0 +1,44 @@
+{
+  "generated_at": "2026-07-28T08:37:16.773237+00:00",
+  "process": "Transcription",
+  "bucket": "ALGORITHMIC_DEEP",
+  "channels": {
+    "substrates": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 100,
+      "q95_null": 1910.4473616666671,
+      "bootstrap_values_summary": {
+        "mean": 1715.3784147500005,
+        "stddev": 111.37603491613615,
+        "min": 1279.0222833333337,
+        "max": 2109.9528500000006
+      }
+    },
+    "RNAs": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 100,
+      "q95_null": 0.006735047619047617,
+      "bootstrap_values_summary": {
+        "mean": 0.0063278060952380935,
+        "stddev": 0.00024053099593687624,
+        "min": 0.005521904761904758,
+        "max": 0.007096380952380951
+      }
+    },
+    "boundEnzymes": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 100,
+      "q95_null": 0.46680166666666667,
+      "bootstrap_values_summary": {
+        "mean": 0.44256123333333336,
+        "stddev": 0.014597613367754484,
+        "min": 0.3886,
+        "max": 0.4900333333333334
+      }
+    }
+  },
+  "warnings": []
+}

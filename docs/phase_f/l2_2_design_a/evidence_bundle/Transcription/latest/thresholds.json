@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.4",
+  "harness_version": "design_a_v1_3",
+  "process": "Transcription",
+  "bucket": "ALGORITHMIC_DEEP",
+  "channels": {
+    "substrates": {
+      "q95_null": 1910.4473616666671,
+      "k_eng": 3.0,
+      "absolute_floor": 1.0,
+      "threshold": 5731.342085000001
+    },
+    "RNAs": {
+      "q95_null": 0.006735047619047617,
+      "k_eng": 3.0,
+      "absolute_floor": 1.0,
+      "threshold": 1.0
+    },
+    "boundEnzymes": {
+      "q95_null": 0.46680166666666667,
+      "k_eng": 3.0,
+      "absolute_floor": 1.0,
+      "threshold": 1.4004050000000001
+    }
+  }
+}

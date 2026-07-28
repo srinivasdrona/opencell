@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.4",
+  "harness_version": "design_a_v1_3",
+  "process": "RNAProcessing",
+  "bucket": "ALGORITHMIC_SHALLOW",
+  "channels": {
+    "substrates": {
+      "q95_null": 19047.641644285723,
+      "k_eng": 2.0,
+      "absolute_floor": 1.0,
+      "threshold": 38095.283288571445
+    },
+    "RNAs": {
+      "q95_null": 0.008595786435786457,
+      "k_eng": 2.0,
+      "absolute_floor": 1.0,
+      "threshold": 1.0
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "generated_at": "2026-07-28T07:37:36.600976+00:00",
+  "process": "ProteinModification",
+  "bucket": "ALGORITHMIC_SHALLOW",
+  "channels": {
+    "substrates": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 100,
+      "q95_null": 12.896554666666663,
+      "bootstrap_values_summary": {
+        "mean": 10.950191706666665,
+        "stddev": 1.1270701579154185,
+        "min": 7.581826666666666,
+        "max": 15.063066666666662
+      }
+    },
+    "monomers": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 100,
+      "q95_null": 0.05782120331950206,
+      "bootstrap_values_summary": {
+        "mean": 0.05579483402489623,
+        "stddev": 0.0013483156955840928,
+        "min": 0.049956639004149365,
+        "max": 0.05915145228215763
+      }
+    }
+  },
+  "warnings": []
+}

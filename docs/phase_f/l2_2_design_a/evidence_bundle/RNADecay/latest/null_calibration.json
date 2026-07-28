@@ -1,0 +1,32 @@
+{
+  "generated_at": "2026-07-28T08:06:15.833136+00:00",
+  "process": "RNADecay",
+  "bucket": "ALGORITHMIC_SHALLOW",
+  "channels": {
+    "substrates": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 100,
+      "q95_null": 187142.07711333345,
+      "bootstrap_values_summary": {
+        "mean": 173468.76670051296,
+        "stddev": 8077.607671630612,
+        "min": 147712.5482153847,
+        "max": 201833.7113282053
+      }
+    },
+    "RNAs": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 100,
+      "q95_null": 0.19656586490939026,
+      "bootstrap_values_summary": {
+        "mean": 0.18959383105436556,
+        "stddev": 0.0046355021478538165,
+        "min": 0.1730421746293244,
+        "max": 0.19973311367380542
+      }
+    }
+  },
+  "warnings": []
+}

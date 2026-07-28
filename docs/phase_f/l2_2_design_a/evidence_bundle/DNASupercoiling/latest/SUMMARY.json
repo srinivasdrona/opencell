@@ -1,0 +1,31 @@
+{
+  "generated_at": "2026-07-28T10:19:45.440226+00:00",
+  "schema_version": "1.4",
+  "harness_version": "design_a_v1_3",
+  "k_eng": {
+    "TRIVIAL_RNG": 2.0,
+    "ALGORITHMIC_SHALLOW": 2.0,
+    "ALGORITHMIC_DEEP": 3.0
+  },
+  "processes": {
+    "DNASupercoiling": {
+      "verdict": "PASS",
+      "latest_run": "2026-07-28T10:19:45.440226+00:00",
+      "bucket": "ALGORITHMIC_SHALLOW",
+      "failed_channels": [],
+      "n_channels_gated": 2,
+      "n_event_deferred": 0,
+      "n_insufficient": 0,
+      "joint_verdict": null,
+      "n_joint_fail_pairs": 0,
+      "warnings": []
+    }
+  },
+  "tally": {
+    "PASS": 1,
+    "FAIL": 0,
+    "BLOCKED": 0,
+    "SKIPPED": 0,
+    "NO_GATEABLE_CHANNELS": 0
+  }
+}

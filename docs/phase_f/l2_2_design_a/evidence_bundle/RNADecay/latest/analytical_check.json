@@ -1,0 +1,4 @@
+{
+  "applicable": false,
+  "reason": "RNADecay has no closed-form per-tick check"
+}

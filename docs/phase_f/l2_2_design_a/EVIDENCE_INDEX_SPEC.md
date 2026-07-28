@@ -86,7 +86,10 @@ artifacts/l2_2_gates/
 `artifacts/` is gitignored (regeneratable); the raw evidence directories are
 NOT expected to be committed. `docs/phase_f/l2_2_design_a/evidence_index.json`
 (this generator's output) IS the tracked artifact — it records artifact
-hashes and status, not the raw channel data itself.
+hashes and status, not the raw channel data itself. Since `artifacts/` is
+gitignored, a fresh clone has no authority files at all under this path;
+`docs/phase_f/l2_2_design_a/evidence_bundle/` is a tracked, portable
+mirror that closes this gap — see Section 12.
 
 **Event-class routing**: processes with `harness_type: event_class` look for
 evidence under `latest_event/`, not `latest/`, because the L2.event harness
@@ -313,7 +316,7 @@ None of this is done by this task, and none of it is faked here:
    `artifacts/l2_2_gates/<Process>/latest/` to produce actual
    `result.json`/`input_manifest.json`/`provenance.json` evidence —
    **partially done (2026-07-28)**: 14/18 processes now have real evidence
-   (7 mechanically PASS, 7 mechanically FAIL); see Section 11 for the full
+   (9 mechanically PASS, 5 mechanically FAIL); see Section 11 for the full
    sweep execution, per-process breakdown, and what remains open
    (`Metabolism` still executing; `DNARepair`/`ProteinDecay`/
    `ReplicationInitiation` blocked on a real oracle-tick-depth shortfall).
@@ -323,11 +326,13 @@ None of this is done by this task, and none of it is faked here:
    **done (2026-07-28)**: `per_component_scaled` (`Replication`,
    `DNASupercoiling`) and `hurdle_event_rate_plus_conditional_scaled_distance`
    (`DNARepair`) are now mechanically re-derived from raw metric/threshold
-   fields per section 6.2/6.3, once real evidence exists for those
-   processes (still blocked on gap #1(b) above). `DNADamage` remains
-   `MISSING_EVIDENCE` until the `event_class` harness in gap #2 exists —
-   its projection aggregation was never run through this evaluator with
-   real evidence either way.
+   fields per section 6.2/6.3. `Replication`/`DNASupercoiling` were
+   re-run 2026-07-28 with the additive raw fields and now produce a real
+   mechanical `PASS` (Section 11 gap #2); `DNARepair` remains
+   `MISSING_EVIDENCE` pending gap #1(b)'s oracle-tick-depth shortfall.
+   `DNADamage` remains `MISSING_EVIDENCE` until the `event_class` harness
+   in gap #2 exists — its projection aggregation was never run through
+   this evaluator with real evidence either way.
 4. **Null-control-must-fail canary, pre-registered/null-derived thresholds,
    H12 evidence generation, hint-off proof, reproducibility canary** — the
    schema has fields ready for these (`h12_evidence_ref`, `decision_ref`,
@@ -336,6 +341,14 @@ None of this is done by this task, and none of it is faked here:
 5. **CI wiring of `--require-all-pass`** as a blocking acceptance gate —
    deliberately deferred to a follow-up activation commit, per this task's
    explicit two-stage requirement.
+6. **Oracle `.mat` file portability across clones** — the raw
+   `data/m1_sources/karr_native/` oracle data remains gitignored by
+   pre-existing project convention (large raw data). A genuinely fresh
+   clone can `audit()` the tracked evidence bundle (Section 12) fine, but
+   `_check_current_tree_staleness` cannot verify oracle-content drift there
+   without the oracle data present under that clone's own tree — this is a
+   pre-existing, deliberate large-data-tracking boundary, not something
+   this task's portability fix attempts to close.
 
 ## 10. Raw oracle population (`scripts/l22_evidence/populate.py`)
 
@@ -507,8 +520,8 @@ mechanically re-derived verdicts):
 
 | Process | Real result | Mechanical verdict | Note |
 |---|---|---|---|
-| DNASupercoiling | ran, stored PASS | `FAIL` | `MISSING_EVALUATOR` — a real `per_component_scaled` re-derivation evaluator now exists (`29749df`), but this process's `result.json` predates the additive raw fields (`scaled_distance_threshold`, `component_n_nonzero_oc/karr`) it needs, so it is honestly non-green pending a re-run |
-| Replication | ran, stored PASS | `FAIL` | same stale-artifact gap as DNASupercoiling |
+| DNASupercoiling | rerun 2026-07-28 (post-`29749df`), stored PASS | `PASS` | targeted re-run with the cherry-picked `per_component_scaled` evaluator schema now produces a real mechanical PASS (see gap #2 resolution below) |
+| Replication | rerun 2026-07-28 (post-`29749df`), stored PASS | `PASS` | same targeted re-run, same real mechanical PASS |
 | MacromolecularComplexation | ran, stored PASS | `FAIL` | `SENTINEL_FAIL` — demoted `PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE` warning with no linked H12 evidence |
 | ProteinFolding | ran, stored PASS | `FAIL` | same H12-less demotion |
 | ProteinProcessingI | ran, stored PASS | `FAIL` | same H12-less demotion |
@@ -526,7 +539,7 @@ mechanically re-derived verdicts):
 | ReplicationInitiation | same runner exit | `MISSING_EVIDENCE` | same 200-vs-100-tick oracle shortfall |
 | Metabolism | **still executing** | `MISSING_EVIDENCE` | FVA (LP-per-sample) metric is a severe cost outlier; empirically >16h estimated for 50x20 samples; left running in the background (see Section 11.1) |
 
-Aggregate: `NON_GREEN` (`PASS: 7`, `FAIL: 7`, `MISSING_EVIDENCE: 8` — the 8
+Aggregate: `NON_GREEN` (`PASS: 9`, `FAIL: 5`, `MISSING_EVIDENCE: 8` — the 8
 includes the 3 oracle-shortfall processes, `Metabolism`, and the 4
 out-of-scope `event_class` processes). Nothing here was patched: every
 `FAIL`/`MISSING_EVIDENCE` above is the generator's honest mechanical
@@ -541,29 +554,33 @@ re-derivation from raw channel data and catalog scope, not a hand edit.
    tick depth in a follow-up task — it is a raw-data availability gap, not
    a catalog or runner bug, and neither the catalog nor the runner should
    be changed to paper over it.
-2. **`DNASupercoiling`/`Replication` artifacts are stale relative to the now
-   -implemented `per_component_scaled` evaluator.** `29749df` (cherry-picked
-   from local `main` into this branch) implements real mechanical
-   re-derivation for `per_component_scaled` (also
+2. **RESOLVED 2026-07-28: `DNASupercoiling`/`Replication` artifacts were
+   stale relative to the newly-implemented `per_component_scaled`
+   evaluator.** `29749df` (cherry-picked from local `main` into this
+   branch) implements real mechanical re-derivation for
+   `per_component_scaled` (also
    `hurdle_event_rate_plus_conditional_scaled_distance` for `DNARepair` and
    `fva_feasibility` for `Metabolism`), additively extending
    `tests/vivarium/_l2_2_design_a_projections.py` to emit the raw fields
    (`scaled_distance_threshold`, `component_n_nonzero_oc/karr`, and the
    `DNARepair`-side `conditional_scaled_distance_threshold`/`n_events_oc/karr`
    equivalents) the evaluator needs to avoid trusting the stored
-   `joint_verdict` string. `DNASupercoiling` and `Replication` ran under this
-   sweep *before* that additive schema change, so their `result.json` lacks
-   these fields; the evaluator correctly reports a named
-   `MISSING_EVALUATOR` reason (missing raw fields) rather than silently
-   falling back to the stale stored `PASS`. Per this task's explicit
-   constraint ("do not rewrite already-generated runner artifacts"), these
-   two processes were not re-run in this commit — a follow-up re-run of just
-   these two (fast: ~20-30 min each per Section 11's original sweep timing)
-   will pick up the new fields and let the real evaluator produce an actual
-   PASS/FAIL. `fva_feasibility` needed no schema change, so once `Metabolism`
-   finishes its current run its raw fields will already support real
-   re-derivation without a second run. This is unrelated to the still
-   -unbuilt `DNADamage` event_class harness gap tracked in Section 9 #3.
+   `joint_verdict` string. `DNASupercoiling` and `Replication` originally
+   ran under this sweep *before* that additive schema change, so their
+   `result.json` lacked these fields; the evaluator correctly reported a
+   named `MISSING_EVALUATOR` reason (missing raw fields) rather than
+   silently falling back to the stale stored `PASS`. A **targeted re-run of
+   just these two processes** (`sweep.py run --processes
+   DNASupercoiling,Replication --max-workers 2 --force`, at catalog
+   `N=50`/`M=100`, without touching the still-running `Metabolism` job) was
+   executed 2026-07-28; both completed (`RAN_EXIT_0`, ~37 min and ~32 min
+   respectively — see `sweep_report.json`) and their new `result.json`
+   files carry the additive raw fields, so the real evaluator now produces
+   an actual mechanical `PASS` for both, not a fallback. `fva_feasibility`
+   needed no schema change, so once `Metabolism` finishes its current run
+   its raw fields will already support real re-derivation without a second
+   run. This is unrelated to the still-unbuilt `DNADamage` event_class
+   harness gap tracked in Section 9 #3.
 3. **5 processes are blocked on H12 evidence** for their demoted
    `PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE` warning
    (`MacromolecularComplexation`, `ProteinFolding`, `ProteinProcessingI`,
@@ -598,7 +615,95 @@ and is safely resumable: re-running `sweep.py run` will skip every already
 -valid process and only continue `Metabolism` (or, if it crashed, restart
 it cleanly — `evidence_is_valid()` never trusts partial/missing output).
 
-## 12. Files
+## 12. Portable evidence bundle (fresh-clone audit)
+
+**Problem this closes:** `EVIDENCE_ROOT` (`artifacts/l2_2_gates`, Section 4)
+is fully gitignored — it is the *live* directory the sweep launcher writes
+runner-native output to. That is correct for the compact authority files
+(cheap to regenerate by re-running the sweep), but it means a fresh clone
+that never ran the sweep locally has **no** `result.json`/
+`input_manifest.json`/`provenance.json` anywhere, so `generator.py audit`
+would see every row as `MISSING_EVIDENCE` regardless of what
+`evidence_index.json` claims — the tracked index would not actually be
+verifiable from the tracked repo alone.
+
+**Fix:** `docs/phase_f/l2_2_design_a/evidence_bundle/` is a tracked,
+byte-for-byte mirror (same `<Process>/<latest|latest_event>/` layout as
+`EVIDENCE_ROOT`) of every compact authority + sidecar file
+(`result.json`, `input_manifest.json`, `provenance.json`,
+`thresholds.json`, `null_calibration.json`, `SUMMARY.json`,
+`analytical_check.json`), deliberately **excluding**
+`schema.BUNDLE_EXCLUDE_FILES` (currently just `allocator_inputs.json`, the
+large raw per-seed/tick array sidecar — ~0.3–1.9 MB per process, never
+read by `verdict.py` for verdict re-derivation, only opportunistically
+hashed when present). Populated/refreshed via:
+
+```
+bin\oc-py scripts/l22_evidence/generator.py bundle
+```
+
+`bundle_process_evidence()` (`generator.py`) never deletes an existing
+bundle entry for a process that happens to be locally unavailable in the
+current `EVIDENCE_ROOT` — it only adds/overwrites, so a partial local sweep
+never regresses a previously-committed, more-complete bundle.
+
+**Fallback resolution:** `schema.default_evidence_root()` is what
+`generate`/`audit` use whenever no explicit `--evidence-root` is given: it
+prefers the live `EVIDENCE_ROOT` when that directory exists and is
+non-empty (the unmodified, pre-existing behavior for local dev iterating
+against a real sweep), and falls back to the tracked `BUNDLE_ROOT`
+otherwise (the fresh-clone case). Both roots hold byte-identical copies of
+every file `generate` actually reads, so this choice never changes which
+verdict is produced — only where the bytes are physically read from for a
+given invocation.
+
+Because the bytes are identical either way, `content_hash()`/`audit()`
+deliberately **exclude** the top-level `evidence_root` field and each row's
+`evidence_dir` field from comparison (`_scrub_environment_relative()`):
+these record *where this invocation happened to read from*, not durable
+evidence identity, and including them would make the same underlying
+evidence produce a spuriously different hash/audit result purely because
+one invocation read from `artifacts/` and another from
+`evidence_bundle/`. For the same reason, `artifact_hashes` never includes
+an entry for any `BUNDLE_EXCLUDE_FILES` name (even when the live tree has
+it) — otherwise a live-tree-generated row would carry an extra hash a
+bundle-sourced regeneration of the identical evidence could never
+reproduce. The `MISSING_EVIDENCE` reason string also intentionally omits
+the (environment-relative) `evidence_dir` path, naming the process instead.
+
+**Current-tree staleness across clones/worktrees:** separately,
+`input_manifest.json["inputs"][*]["path"]` records *absolute* paths rooted
+in whatever worktree the runner happened to execute in (off-limits to
+change — the runner's own recording behavior). `generator._resolve_input_path()`
+tries the recorded absolute path as-is first (same worktree, unmoved —
+preserves exact prior staleness-detection behavior); only if that path does
+not exist does it fall back to matching the longest path suffix that
+resolves to a real file under the *current* `catalog.REPO_ROOT`, so
+staleness-checking keeps working when the evidence bundle is read from a
+different clone/worktree root than the one that generated it, as long as
+the same oracle `.mat`/source files exist somewhere under that root. This
+is a generator-side robustness fix only; it never touches the runner's own
+path-recording. Note the oracle `.mat` files themselves remain gitignored
+by pre-existing project convention (large raw data, not evidence-index
+scope) — this fix does not attempt to make them portable, only to keep
+staleness-checking from raising a false alarm purely because of *which*
+worktree/clone root ran the check.
+
+**Verification:** `tests/scripts/test_l22_evidence_portability.py` (7
+tests) proves: the bundle never contains `BUNDLE_EXCLUDE_FILES` and stays
+small (compact JSON only); every process with real live evidence has a
+byte-identical bundle entry; `audit()` succeeds — with the identical
+tally/aggregate as the real local audit — from an isolated temp root
+containing *only* a copy of the tracked bundle + tracked index and no
+`artifacts/l2_2_gates` anywhere under it (the literal fresh-clone
+scenario); `default_evidence_root()` falls back to the bundle when the live
+tree is absent and still produces real `PASS` rows from the bundle alone;
+`default_evidence_root()` still prefers the live tree when present
+(no behavior change for local dev); and `_resolve_input_path()` both
+prefers an exact still-existing absolute match and correctly falls back to
+suffix-matching under a different `REPO_ROOT` otherwise.
+
+## 13. Files
 
 - `scripts/l22_evidence/catalog.py` — catalog access (scope derivation).
 - `scripts/l22_evidence/schema.py` — versioned constants (paths, required
@@ -639,3 +744,15 @@ it cleanly — `evidence_is_valid()` never trusts partial/missing output).
   read-only interim progress snapshot (one row per process: valid/log
   state, stored verdict for human context). Regenerate with
   `sweep.py status`; safe to run while a real sweep is still executing.
+- `docs/phase_f/l2_2_design_a/sweep_report.json` — tracked, compact
+  per-job run report (`process`, `status`, `exit_code`, timestamps,
+  `duration_s`, `output_dir`, `log_path`) from the targeted
+  DNASupercoiling/Replication re-run (`RAN_EXIT_0: 2`); written by
+  `sweep.py run --report-out ...`.
+- `docs/phase_f/l2_2_design_a/evidence_bundle/` — tracked, portable mirror
+  of compact per-process authority + sidecar files (excludes
+  `allocator_inputs.json`); see Section 12. Regenerate with
+  `generator.py bundle`.
+- `tests/scripts/test_l22_evidence_portability.py` — 7 tests proving the
+  tracked bundle is sufficient for `audit()` to succeed with no local
+  `artifacts/l2_2_gates` tree at all; see Section 12.

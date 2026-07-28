@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.4",
+  "harness_version": "design_a_v1_3",
+  "process": "Translation",
+  "bucket": "ALGORITHMIC_DEEP",
+  "channels": {
+    "substrates": {
+      "q95_null": 218.147323,
+      "k_eng": 3.0,
+      "absolute_floor": 1.0,
+      "threshold": 654.441969
+    },
+    "monomers": {
+      "q95_null": 0.0031539626556016487,
+      "k_eng": 3.0,
+      "absolute_floor": 1.0,
+      "threshold": 1.0
+    },
+    "boundEnzymes": {
+      "q95_null": 0.4812175,
+      "k_eng": 3.0,
+      "absolute_floor": 1.0,
+      "threshold": 1.4436525
+    }
+  }
+}

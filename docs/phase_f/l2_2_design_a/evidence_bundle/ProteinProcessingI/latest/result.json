@@ -1,0 +1,154 @@
+{
+  "process": "ProteinProcessingI",
+  "verdict": "PASS",
+  "timestamp": "2026-07-28T06:06:22.771284+00:00",
+  "harness_version": "design_a_v1_3",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49
+  ],
+  "ticks": 20,
+  "n_observations_per_channel": 1000,
+  "bootstrap_B": 1000,
+  "bucket": "TRIVIAL_RNG",
+  "canonical_seed_count": 50,
+  "k_eng": {
+    "TRIVIAL_RNG": 2.0,
+    "ALGORITHMIC_SHALLOW": 2.0,
+    "ALGORITHMIC_DEEP": 3.0
+  },
+  "channels": {
+    "substrates": {
+      "verdict": "SEED_NOISE",
+      "w1_oc_vs_karr": 0.0,
+      "w1_oc_vs_karr_ci95": [
+        36302.82259375,
+        41564.6263625
+      ],
+      "q95_null": 41252.420387499995,
+      "threshold": 82504.84077499999,
+      "absolute_floor": 1.0,
+      "ks_stat": 0.0,
+      "ks_pvalue": 1.0,
+      "n_nonzero_oc": 2032,
+      "n_nonzero_karr": 2032,
+      "samples_oc": {
+        "mean": 45237.85275,
+        "stddev": 119445.85342613014,
+        "skew": 2.9417242928212257,
+        "kurtosis": 8.91116627751055,
+        "min": 0.0,
+        "max": 962778.0
+      },
+      "samples_karr": {
+        "mean": 45237.85275,
+        "stddev": 119445.85342613014,
+        "skew": 2.9417242928212257,
+        "kurtosis": 8.91116627751055,
+        "min": 0.0,
+        "max": 962778.0
+      },
+      "is_primary": false,
+      "is_event_channel": false,
+      "aggregation": "per_tick_vector_w1_mean",
+      "per_sample_w1_summary": {
+        "mean": 0.0,
+        "max": 0.0,
+        "min": 0.0
+      }
+    },
+    "monomers": {
+      "verdict": "SEED_NOISE",
+      "w1_oc_vs_karr": 0.0,
+      "w1_oc_vs_karr_ci95": [
+        0.0008132261410788353,
+        0.0010477697095435648
+      ],
+      "q95_null": 0.0010290456431535234,
+      "threshold": 1.0,
+      "absolute_floor": 1.0,
+      "ks_stat": 0.0,
+      "ks_pvalue": 1.0,
+      "n_nonzero_oc": 270,
+      "n_nonzero_karr": 270,
+      "samples_oc": {
+        "mean": 0.0005601659751037345,
+        "stddev": 0.023661195852789658,
+        "skew": 42.216073220621695,
+        "kurtosis": 1780.2042249083977,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "samples_karr": {
+        "mean": 0.0005601659751037345,
+        "stddev": 0.023661195852789658,
+        "skew": 42.216073220621695,
+        "kurtosis": 1780.2042249083977,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "is_primary": true,
+      "is_event_channel": false,
+      "aggregation": "per_tick_vector_w1_mean",
+      "per_sample_w1_summary": {
+        "mean": 0.0,
+        "max": 0.0,
+        "min": 0.0
+      }
+    }
+  },
+  "joint_check": null,
+  "warnings": [
+    "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=monomers; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
+  ],
+  "allocator_inputs_ref": "/mnt/e/opencell-worktrees/l22-evidence-gate/artifacts/l2_2_gates/ProteinProcessingI/latest/allocator_inputs.json",
+  "provenance_ref": "/mnt/e/opencell-worktrees/l22-evidence-gate/artifacts/l2_2_gates/ProteinProcessingI/latest/provenance.json"
+}

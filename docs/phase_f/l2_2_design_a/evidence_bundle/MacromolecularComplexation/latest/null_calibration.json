@@ -1,0 +1,46 @@
+{
+  "generated_at": "2026-07-28T06:50:32.588663+00:00",
+  "process": "MacromolecularComplexation",
+  "bucket": "ALGORITHMIC_SHALLOW",
+  "channels": {
+    "substrates": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 100,
+      "q95_null": 0.09344447619047633,
+      "bootstrap_values_summary": {
+        "mean": 0.08869768476190487,
+        "stddev": 0.0029413850778469194,
+        "min": 0.078264761904762,
+        "max": 0.09739238095238106
+      }
+    },
+    "monomers": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 100,
+      "q95_null": 0.09434298076923088,
+      "bootstrap_values_summary": {
+        "mean": 0.0895505471153847,
+        "stddev": 0.0029696676266723694,
+        "min": 0.07901730769230776,
+        "max": 0.09832884615384624
+      }
+    },
+    "complexs": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 100,
+      "q95_null": 0.0028394557823129283,
+      "bootstrap_values_summary": {
+        "mean": 0.0027136095238095266,
+        "stddev": 7.895532437854253e-05,
+        "min": 0.0024272108843537443,
+        "max": 0.00297823129251701
+      }
+    }
+  },
+  "warnings": [
+    "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=complexs; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
+  ]
+}

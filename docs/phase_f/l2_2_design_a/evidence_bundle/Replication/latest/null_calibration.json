@@ -1,0 +1,32 @@
+{
+  "generated_at": "2026-07-28T10:14:55.165859+00:00",
+  "process": "Replication",
+  "bucket": "ALGORITHMIC_SHALLOW",
+  "channels": {
+    "substrates": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 100,
+      "q95_null": 169082.0404275,
+      "bootstrap_values_summary": {
+        "mean": 155125.27463560004,
+        "stddev": 8245.68911157914,
+        "min": 127202.4197875,
+        "max": 184691.8538125
+      }
+    },
+    "boundEnzymes": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 100,
+      "q95_null": 0.1519084615384614,
+      "bootstrap_values_summary": {
+        "mean": 0.14433895384615378,
+        "stddev": 0.004692007328999454,
+        "min": 0.125676923076923,
+        "max": 0.15944615384615374
+      }
+    }
+  },
+  "warnings": []
+}

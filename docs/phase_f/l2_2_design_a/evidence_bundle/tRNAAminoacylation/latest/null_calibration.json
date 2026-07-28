@@ -1,0 +1,34 @@
+{
+  "generated_at": "2026-07-28T08:30:27.420218+00:00",
+  "process": "tRNAAminoacylation",
+  "bucket": "ALGORITHMIC_SHALLOW",
+  "channels": {
+    "substrates": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 50,
+      "q95_null": 54151.43528466665,
+      "bootstrap_values_summary": {
+        "mean": 48960.237633533325,
+        "stddev": 3168.490258081663,
+        "min": 39788.238186666655,
+        "max": 59498.10914666665
+      }
+    },
+    "RNAs": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 50,
+      "q95_null": 0.2884440540540541,
+      "bootstrap_values_summary": {
+        "mean": 0.27612774594594597,
+        "stddev": 0.007874076433949852,
+        "min": 0.25038918918918923,
+        "max": 0.303972972972973
+      }
+    }
+  },
+  "warnings": [
+    "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=RNAs; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
+  ]
+}

@@ -1,0 +1,4 @@
+{
+  "applicable": false,
+  "reason": "RNAModification has no closed-form per-tick check"
+}

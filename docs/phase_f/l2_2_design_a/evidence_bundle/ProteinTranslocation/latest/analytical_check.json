@@ -1,0 +1,4 @@
+{
+  "applicable": false,
+  "reason": "ProteinTranslocation has no closed-form per-tick check"
+}

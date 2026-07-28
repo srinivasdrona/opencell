@@ -1,0 +1,34 @@
+{
+  "generated_at": "2026-07-28T06:57:17.882405+00:00",
+  "process": "ProteinProcessingII",
+  "bucket": "TRIVIAL_RNG",
+  "channels": {
+    "substrates": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 20,
+      "q95_null": 180.14732999999993,
+      "bootstrap_values_summary": {
+        "mean": 108.89027139999997,
+        "stddev": 43.039165274969506,
+        "min": 5.485199999999999,
+        "max": 295.6059999999999
+      }
+    },
+    "monomers": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 20,
+      "q95_null": 9.128630705394158e-05,
+      "bootstrap_values_summary": {
+        "mean": 7.50788381742736e-05,
+        "stddev": 9.403320930242635e-06,
+        "min": 4.149377593360981e-05,
+        "max": 0.00010788381742738552
+      }
+    }
+  },
+  "warnings": [
+    "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=monomers; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
+  ]
+}

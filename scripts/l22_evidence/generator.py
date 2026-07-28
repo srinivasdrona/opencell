@@ -2,21 +2,27 @@
 
 Reads ``docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml`` for scope and, for
 every ``in_scope_L2_2`` process, looks for machine-produced runner evidence
-under ``artifacts/l2_2_gates/<Process>/{latest,latest_event}/``. Emits one
-row per process (never zero, never duplicated, never extra), mechanically
-re-deriving the process verdict from raw channel numbers via
-``scripts.l22_evidence.verdict`` -- the stored ``result.json["verdict"]``
-string is never trusted as authority.
+under ``<evidence_root>/<Process>/{latest,latest_event}/`` -- by default the
+live, gitignored sweep-output tree (``artifacts/l2_2_gates``) if present
+locally, otherwise the tracked, portable evidence bundle
+(``docs/phase_f/l2_2_design_a/evidence_bundle``); see
+``schema.default_evidence_root()``. Emits one row per process (never zero,
+never duplicated, never extra), mechanically re-deriving the process
+verdict from raw channel numbers via ``scripts.l22_evidence.verdict`` -- the
+stored ``result.json["verdict"]`` string is never trusted as authority.
 
 CLI:
-    bin\\oc-py scripts/l22_evidence/generator.py generate [--out PATH]
-    bin\\oc-py scripts/l22_evidence/generator.py audit [--index PATH] [--require-all-pass]
+    bin\\oc-py scripts/l22_evidence/generator.py bundle [--source-root PATH] [--bundle-root PATH]
+    bin\\oc-py scripts/l22_evidence/generator.py generate [--out PATH] [--evidence-root PATH]
+    bin\\oc-py scripts/l22_evidence/generator.py audit [--index PATH] [--evidence-root PATH] [--require-all-pass]
 
 See ``docs/phase_f/l2_2_design_a/EVIDENCE_INDEX_SPEC.md`` for the full
 contract, including why ``audit`` works by regenerating the index from
 scratch and diffing against the tracked file rather than trusting anything
-already written to disk.
+already written to disk, and why ``bundle`` exists (portable evidence: the
+authority files must not live *only* under gitignored ``artifacts/``).
 """
+
 
 from __future__ import annotations
 
@@ -63,6 +69,37 @@ def _evidence_dir_for(entry: cat.ProcessEntry, evidence_root: Path) -> Path:
     return evidence_root / entry.name / subdir
 
 
+def _resolve_input_path(path_str: str) -> Path:
+    """Resolve one `input_manifest.json["inputs"][*]["path"]` against the
+    CURRENT tree.
+
+    The runner (`tests/vivarium/l2_2_design_a_runner.py`, off-limits to
+    modify per this project's evidence-gate contract) always records
+    *absolute* paths rooted in whatever worktree it happened to execute in.
+    A relative path is resolved against the current `cat.REPO_ROOT` as
+    before. An absolute path is tried as-is first (the common case: same
+    worktree the evidence was generated in, unmoved) -- if that exists we
+    use it directly so genuine content drift is still caught exactly as
+    before. Only if that fails do we fall back to matching the longest path
+    suffix that resolves to a real file under the CURRENT `cat.REPO_ROOT`;
+    this is what lets staleness checking work when the evidence bundle is
+    read from a *different* worktree/clone root than the one that generated
+    it (e.g. a fresh clone, or another worktree of the same repo) without
+    ever touching the runner's own path-recording behavior.
+    """
+    path = Path(str(path_str))
+    if not path.is_absolute():
+        return cat.REPO_ROOT / path
+    if path.is_file():
+        return path
+    parts = path.parts
+    for i in range(1, len(parts)):
+        candidate = cat.REPO_ROOT / Path(*parts[i:])
+        if candidate.is_file():
+            return candidate
+    return path  # give up; caller reports "no longer exists"
+
+
 def _check_current_tree_staleness(input_manifest: dict[str, Any]) -> list[str]:
     """Recompute sha256 of every path input_manifest.json declares it consumed,
     as those files exist *right now* in the working tree, and flag any drift.
@@ -77,9 +114,7 @@ def _check_current_tree_staleness(input_manifest: dict[str, Any]) -> list[str]:
         if not path_str or not recorded_sha:
             reasons.append(f"{schema.STATUS_STALE_VS_TREE}: malformed input_manifest record {record!r}")
             continue
-        path = Path(str(path_str))
-        if not path.is_absolute():
-            path = cat.REPO_ROOT / path
+        path = _resolve_input_path(str(path_str))
         current_sha = _sha256_file(path)
         if current_sha is None:
             reasons.append(f"{schema.STATUS_STALE_VS_TREE}: input {path_str} no longer exists on disk")
@@ -117,15 +152,35 @@ def build_process_row(entry: cat.ProcessEntry, evidence_root: Path) -> dict[str,
 
     missing_authority = [name for name in schema.REQUIRED_AUTHORITY_FILES if not (evidence_dir / name).is_file()]
     if missing_authority:
+        # Deliberately does not interpolate `row["evidence_dir"]` here: that
+        # field is environment-relative (live artifacts/ tree vs. the
+        # tracked portable bundle -- see `schema.default_evidence_root()`)
+        # and is already scrubbed out of audit/content-hash comparison for
+        # exactly that reason (see `_scrub_environment_relative`). Baking
+        # the same path into this reasons string would silently defeat that
+        # scrubbing and make an otherwise byte-identical row compare unequal
+        # purely because one invocation read from the bundle and another
+        # from the live tree. `row["evidence_dir"]` remains available as its
+        # own field for humans who want the concrete path.
         row["reasons"].append(
             f"{schema.STATUS_MISSING_EVIDENCE}: missing required authority file(s) {missing_authority} "
-            f"under {row['evidence_dir']}"
+            f"for process {entry.name}"
         )
         row["mechanical_verdict"] = schema.STATUS_MISSING_EVIDENCE
         row["green"] = False
         return row
 
-    for fname in schema.REQUIRED_AUTHORITY_FILES + schema.OPTIONAL_SIDECAR_FILES:
+    # BUNDLE_EXCLUDE_FILES (large raw per-seed/tick arrays, e.g.
+    # allocator_inputs.json) are deliberately never mirrored into the
+    # tracked portable bundle and never read for verdict re-derivation --
+    # so they must also never be hashed into artifact_hashes here. If they
+    # were, a row generated from the live tree (where the file happens to
+    # exist) would carry an extra hash entry a bundle-sourced regeneration
+    # of the SAME evidence could never reproduce, making the tracked index
+    # falsely non-portable even though nothing about the actual evidence
+    # differs.
+    hashable_sidecars = tuple(name for name in schema.OPTIONAL_SIDECAR_FILES if name not in schema.BUNDLE_EXCLUDE_FILES)
+    for fname in schema.REQUIRED_AUTHORITY_FILES + hashable_sidecars:
         digest = _sha256_file(evidence_dir / fname)
         if digest is not None:
             row["artifact_hashes"][fname] = digest
@@ -171,9 +226,11 @@ def build_process_row(entry: cat.ProcessEntry, evidence_root: Path) -> dict[str,
 
 def build_evidence_index(
     *,
-    evidence_root: Path = schema.EVIDENCE_ROOT,
+    evidence_root: Path | None = None,
     catalog_path: Path = schema.CATALOG_PATH,
 ) -> dict[str, Any]:
+    if evidence_root is None:
+        evidence_root = schema.default_evidence_root()
     entries = cat.in_scope_processes(catalog_path)
     rows = [build_process_row(entries[name], evidence_root) for name in sorted(entries)]
 
@@ -199,17 +256,37 @@ def build_evidence_index(
 
 
 def content_hash(payload: dict[str, Any]) -> str:
-    """Deterministic content hash, excluding `generated_at` and itself.
+    """Deterministic content hash, excluding `generated_at`/`content_hash`
+    itself, `evidence_root`, and each row's `evidence_dir`.
 
     Two calls to build_evidence_index() against an unchanged tree/catalog
     must produce identical content_hash values even though `generated_at`
-    differs between calls.
+    differs between calls. `evidence_root`/`evidence_dir` are excluded for
+    the same reason: they record *where this particular invocation happened
+    to read bytes from* (the live sweep-output tree vs. the tracked,
+    portable bundle -- see `schema.default_evidence_root()`), not durable
+    evidence identity. Since the bundle is a byte-for-byte mirror of the
+    live tree's compact files, `artifact_hashes` (content-based) is already
+    the true tamper-evidence anchor; hashing the ambient read-location on
+    top of that would make the same underlying evidence produce a different
+    content_hash purely depending on which machine/clone regenerated it,
+    which is exactly the false-mismatch this exclusion prevents.
     """
-    scrubbed = copy.deepcopy(payload)
+    scrubbed = _scrub_environment_relative(payload)
     scrubbed.pop("generated_at", None)
     scrubbed.pop("content_hash", None)
     canonical = json.dumps(scrubbed, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _scrub_environment_relative(payload: dict[str, Any]) -> dict[str, Any]:
+    """Deep-copy `payload` with `evidence_root` (top level) and every row's
+    `evidence_dir` removed. See `content_hash()` docstring for why."""
+    scrubbed = copy.deepcopy(payload)
+    scrubbed.pop("evidence_root", None)
+    for row in scrubbed.get("rows", ()):
+        row.pop("evidence_dir", None)
+    return scrubbed
 
 
 def write_index(payload: dict[str, Any], path: Path = schema.INDEX_PATH) -> None:
@@ -226,7 +303,7 @@ class AuditResult:
 
 
 def _strip_volatile(payload: dict[str, Any]) -> dict[str, Any]:
-    scrubbed = copy.deepcopy(payload)
+    scrubbed = _scrub_environment_relative(payload)
     scrubbed.pop("generated_at", None)
     scrubbed.pop("content_hash", None)
     return scrubbed
@@ -235,7 +312,7 @@ def _strip_volatile(payload: dict[str, Any]) -> dict[str, Any]:
 def audit(
     *,
     index_path: Path = schema.INDEX_PATH,
-    evidence_root: Path = schema.EVIDENCE_ROOT,
+    evidence_root: Path | None = None,
     catalog_path: Path = schema.CATALOG_PATH,
 ) -> AuditResult:
     """Integrity check: does the tracked index match a fresh regeneration?
@@ -249,6 +326,12 @@ def audit(
     aggregate verdict is NON_GREEN (that's the honest, expected state before
     process closure); integrity FAILS only when the tracked file has drifted
     from the truth.
+
+    `evidence_root=None` (the default) resolves via
+    `schema.default_evidence_root()`: the live sweep-output tree if present
+    locally, otherwise the tracked, portable evidence bundle -- so this
+    succeeds in a fresh clone that has never run the sweep, not just on a
+    machine that has.
     """
     problems: list[str] = []
     if not index_path.is_file():
@@ -285,18 +368,66 @@ def audit(
     )
 
 
+def bundle_process_evidence(
+    *,
+    source_root: Path | None = None,
+    bundle_root: Path = schema.BUNDLE_ROOT,
+    catalog_path: Path = schema.CATALOG_PATH,
+) -> dict[str, list[str]]:
+    """Mirror compact per-process authority + sidecar files into the tracked,
+    portable BUNDLE_ROOT, deliberately excluding `schema.BUNDLE_EXCLUDE_FILES`
+    (large raw per-seed/tick arrays that stay local-only under the gitignored
+    live `artifacts/` tree).
+
+    Pure byte-for-byte copy, so every hash in a bundle-sourced evidence row
+    matches the live tree exactly -- this changes nothing about which
+    verdict is produced, only where the bytes live. Never touches
+    `source_root`. A process with no evidence yet under `source_root` is
+    simply skipped (its existing bundle entry, if any, is left alone -- this
+    never silently deletes a previously-committed bundle for a process that
+    happens to be unavailable in the *current* source tree).
+    """
+    if source_root is None:
+        source_root = schema.EVIDENCE_ROOT
+    entries = cat.in_scope_processes(catalog_path)
+    wanted_files = [
+        name for name in (schema.REQUIRED_AUTHORITY_FILES + schema.OPTIONAL_SIDECAR_FILES)
+        if name not in schema.BUNDLE_EXCLUDE_FILES
+    ]
+    copied: dict[str, list[str]] = {}
+    for name in sorted(entries):
+        entry = entries[name]
+        subdir = schema.EVENT_CLASS_SUBDIR if entry.harness_type == "event_class" else schema.DESIGN_A_SUBDIR
+        src_dir = source_root / name / subdir
+        if not src_dir.is_dir():
+            continue
+        dst_dir = bundle_root / name / subdir
+        dst_dir.mkdir(parents=True, exist_ok=True)
+        copied_files: list[str] = []
+        for fname in wanted_files:
+            src_file = src_dir / fname
+            if src_file.is_file():
+                (dst_dir / fname).write_bytes(src_file.read_bytes())
+                copied_files.append(fname)
+        copied[name] = copied_files
+    return copied
+
+
 def _cmd_generate(args: argparse.Namespace) -> int:
-    payload = build_evidence_index(evidence_root=Path(args.evidence_root), catalog_path=Path(args.catalog))
+    evidence_root = Path(args.evidence_root) if args.evidence_root else None
+    payload = build_evidence_index(evidence_root=evidence_root, catalog_path=Path(args.catalog))
     out_path = Path(args.out)
     write_index(payload, out_path)
     print(f"wrote {out_path} ({payload['n_in_scope']} rows, aggregate={payload['aggregate_verdict']})")
+    print(f"  evidence_root: {payload['evidence_root']}")
     for status, count in sorted(payload["tally"].items()):
         print(f"  {status}: {count}")
     return 0
 
 
 def _cmd_audit(args: argparse.Namespace) -> int:
-    result = audit(index_path=Path(args.index), evidence_root=Path(args.evidence_root), catalog_path=Path(args.catalog))
+    evidence_root = Path(args.evidence_root) if args.evidence_root else None
+    result = audit(index_path=Path(args.index), evidence_root=evidence_root, catalog_path=Path(args.catalog))
     print(f"integrity: {'OK' if result.ok else 'FAIL'}")
     print(f"aggregate_verdict (mechanically re-derived): {result.aggregate_verdict}")
     for status, count in sorted(result.tally.items()):
@@ -312,19 +443,38 @@ def _cmd_audit(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_bundle(args: argparse.Namespace) -> int:
+    source_root = Path(args.source_root) if args.source_root else None
+    bundle_root = Path(args.bundle_root)
+    copied = bundle_process_evidence(source_root=source_root, bundle_root=bundle_root, catalog_path=Path(args.catalog))
+    n_files = sum(len(files) for files in copied.values())
+    print(f"bundled {len(copied)} process dir(s), {n_files} file(s) into {bundle_root}")
+    for name in sorted(copied):
+        print(f"  {name}: {copied[name]}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
 
     gen = sub.add_parser("generate", help="Regenerate evidence_index.json from the catalog + evidence tree.")
     gen.add_argument("--out", default=str(schema.INDEX_PATH))
-    gen.add_argument("--evidence-root", default=str(schema.EVIDENCE_ROOT))
+    gen.add_argument(
+        "--evidence-root",
+        default=None,
+        help="Default: live artifacts/l2_2_gates if present locally, else the tracked evidence_bundle/.",
+    )
     gen.add_argument("--catalog", default=str(schema.CATALOG_PATH))
     gen.set_defaults(func=_cmd_generate)
 
     aud = sub.add_parser("audit", help="Verify the tracked evidence_index.json is truthful and untampered.")
     aud.add_argument("--index", default=str(schema.INDEX_PATH))
-    aud.add_argument("--evidence-root", default=str(schema.EVIDENCE_ROOT))
+    aud.add_argument(
+        "--evidence-root",
+        default=None,
+        help="Default: live artifacts/l2_2_gates if present locally, else the tracked evidence_bundle/.",
+    )
     aud.add_argument("--catalog", default=str(schema.CATALOG_PATH))
     aud.add_argument(
         "--require-all-pass",
@@ -333,6 +483,16 @@ def main(argv: list[str] | None = None) -> int:
         "Expected to fail (exit 2) until process closure; not yet wired into CI.",
     )
     aud.set_defaults(func=_cmd_audit)
+
+    bun = sub.add_parser(
+        "bundle",
+        help="Mirror compact per-process authority/sidecar files from the live sweep-output tree into the "
+        "tracked, portable evidence_bundle/ (excludes large raw-array sidecars).",
+    )
+    bun.add_argument("--source-root", default=None, help="Default: live artifacts/l2_2_gates.")
+    bun.add_argument("--bundle-root", default=str(schema.BUNDLE_ROOT))
+    bun.add_argument("--catalog", default=str(schema.CATALOG_PATH))
+    bun.set_defaults(func=_cmd_bundle)
 
     args = parser.parse_args(argv)
     return args.func(args)
