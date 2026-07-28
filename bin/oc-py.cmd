@@ -22,4 +22,9 @@ REM both of which work correctly.
 setlocal
 for /f "delims=" %%i in ('wsl wslpath -u "%CD%"') do set "_WSLCWD=%%i"
 wsl -e bash -lc "cd '%_WSLCWD%' && source /mnt/e/opencell/.venv-wsl/bin/activate && python %*"
-endlocal
+REM Capture the WSL child's exit code before endlocal discards it. A bare
+REM `endlocal` as the script's final statement makes cmd.exe report the exit
+REM code of `endlocal` itself (always 0), silently swallowing any failure
+REM from the wrapped command — this must be preserved explicitly.
+set "_RC=%ERRORLEVEL%"
+endlocal & exit /b %_RC%
