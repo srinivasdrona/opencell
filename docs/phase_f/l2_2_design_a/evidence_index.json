@@ -2,9 +2,9 @@
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
   "catalog_sha256": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
-  "content_hash": "c1bab0f16a7626cf1a13e45942153b649989ac9664f812e60577adbc299b50c1",
+  "content_hash": "57f6de3a1a92ead267d0d2c27f4d541753c93f5f31e9ee0047e3c1152d487b41",
   "evidence_root": "artifacts/l2_2_gates",
-  "generated_at": "2026-07-29T15:54:21.346886+00:00",
+  "generated_at": "2026-07-29T18:59:02.137604+00:00",
   "n_in_scope": 22,
   "rows": [
     {
@@ -82,6 +82,8 @@
       "reasons": [
         "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'chromosome_store_module'",
         "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'chromosome_views_module'",
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'm_gen_constants_module'",
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'state_init_module'",
         "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'l2_replay_common'",
         "STALE_SWEEP_PROVENANCE: evaluator_schema_version 1 != current 2"
       ],
@@ -420,6 +422,8 @@
       "provenance_git_sha": "unknown",
       "reasons": [
         "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'chromosome_store_module'",
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'm_gen_constants_module'",
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'state_init_module'",
         "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'l2_replay_common'",
         "STALE_SWEEP_PROVENANCE: evaluator_schema_version 1 != current 2"
       ],

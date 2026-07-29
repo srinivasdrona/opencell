@@ -857,16 +857,31 @@ def test_process_dependency_registry_matches_real_current_import_graph():
     """Sanity check against the REAL (non-monkeypatched) explicit registry:
     verifies today's `schema.PROCESS_DEPENDENCY_FILES` matches the actual
     current import graph (verified by direct AST inspection when F5 wrote
-    this registry -- see `schema.py`'s per-constant comments), so a future
-    edit to any `karr_*.py` file that adds/removes a first-party import is
-    forced to be a deliberate, visible change to this test (and, more
-    importantly, will fail
+    this registry, and B1/C2 extended it -- see `schema.py`'s per-constant
+    comments), so a future edit to any `karr_*.py` file that adds/removes
+    a first-party import is forced to be a deliberate, visible change to
+    this test (and, more importantly, will fail
     `test_l22_evidence_ast_completeness.py::test_zero_uncovered_first_party_
     imports_across_real_in_scope_processes`) rather than silently drifting
     unnoticed."""
-    assert set(schema.PROCESS_DEPENDENCY_FILES["DNARepair"]) == {"chromosome_store_module", "chromosome_views_module"}
+    assert set(schema.PROCESS_DEPENDENCY_FILES["DNARepair"]) == {
+        "chromosome_store_module",
+        "chromosome_views_module",
+        "m_gen_constants_module",
+        "state_init_module",
+    }
     for name in ("DNASupercoiling", "Replication", "ReplicationInitiation"):
         assert "chromosome_store_module" in schema.PROCESS_DEPENDENCY_FILES[name], name
+        # B1: `chromosome_store.py` itself has a one-hop class-body
+        # dependency on `m_gen_constants.py` (the default chromosome
+        # shape), so EVERY chromosome_store consumer registers it now,
+        # not only DNASupercoiling/DNADamage (whose OWN `oc_module` also
+        # imports it directly).
+        assert "m_gen_constants_module" in schema.PROCESS_DEPENDENCY_FILES[name], name
+        # C2: every chromosome_store consumer also registers
+        # `opencell/state/__init__.py` (executed by importing any
+        # `opencell.state.*` submodule).
+        assert "state_init_module" in schema.PROCESS_DEPENDENCY_FILES[name], name
     assert "chromosome_views_module" not in schema.PROCESS_DEPENDENCY_FILES.get("DNASupercoiling", {})
     assert "chromosome_views_module" not in schema.PROCESS_DEPENDENCY_FILES.get("Replication", {})
     assert "chromosome_views_module" not in schema.PROCESS_DEPENDENCY_FILES.get("ReplicationInitiation", {})
@@ -877,9 +892,14 @@ def test_process_dependency_registry_matches_real_current_import_graph():
         "m1_karr_metabolism_module",
         "karr_metabolism_writeback_module",
         "karr_protein_decay_light_module",
+        "m1_init_module",
     }
-    assert set(schema.PROCESS_DEPENDENCY_FILES["Translation"]) == {"m3_translation_module", "karr_translation_v3_module"}
-    assert schema.PROCESS_DEPENDENCY_FILES["Transcription"] == {"m2_transcription_module": schema.M2_TRANSCRIPTION_MODULE}
+    assert set(schema.PROCESS_DEPENDENCY_FILES["Translation"]) == {
+        "m3_translation_module",
+        "karr_translation_v3_module",
+        "m3_init_module",
+    }
+    assert set(schema.PROCESS_DEPENDENCY_FILES["Transcription"]) == {"m2_transcription_module", "m2_init_module"}
     for name in ("ProteinProcessingI", "RNAProcessing"):
         assert schema.PROCESS_DEPENDENCY_FILES[name] == {
             "karr_trna_aminoacylation_module": schema.KARR_TRNA_AMINOACYLATION_MODULE
@@ -888,6 +908,13 @@ def test_process_dependency_registry_matches_real_current_import_graph():
     assert set(schema.PROCESS_DEPENDENCY_FILES["DNASupercoiling"]) == {
         "chromosome_store_module",
         "m_gen_constants_module",
+        "state_init_module",
+    }
+    assert set(schema.PROCESS_DEPENDENCY_FILES["DNADamage"]) == {
+        "chromosome_store_module",
+        "chromosome_views_module",
+        "m_gen_constants_module",
+        "state_init_module",
     }
 
     for name, deps in schema.PROCESS_DEPENDENCY_FILES.items():
@@ -1033,12 +1060,19 @@ def test_util_matlab_rng_change_stales_only_protein_translocation(tmp_path, monk
     assert row_other_after["green"] is True, row_other_after["reasons"]
 
 
-def test_m_gen_constants_change_stales_only_dnasupercoiling(tmp_path, monkeypatch):
-    """F5 addition: DNASupercoiling's `karr_dna_supercoiling.py` imports
-    `GENOME_LENGTH_BP` from `opencell/m_gen_constants.py` -- verified by
+def test_m_gen_constants_change_stales_only_dnasupercoiling_direct_import(tmp_path, monkeypatch):
+    """F5 addition (B1-updated docstring): DNASupercoiling's
+    `karr_dna_supercoiling.py` imports `GENOME_LENGTH_BP` from
+    `opencell/m_gen_constants.py` directly (module scope) -- verified by
     direct inspection. A change to it must stale DNASupercoiling but not
-    DNARepair (which has no `m_gen_constants_module` entry, even though it
-    shares the `chromosome_store_module`/`chromosome_views_module` keys)."""
+    Transcription (which has no `m_gen_constants_module` entry at all).
+    NOTE: since B1, DNARepair/Replication/ReplicationInitiation ALSO
+    register `m_gen_constants_module` (transitively, via
+    `chromosome_store.py`'s own one-hop class-body dependency on it -- see
+    `test_m_gen_constants_change_stales_all_chromosome_store_consumers`
+    below for that coverage), so this test now uses Transcription (which
+    shares NONE of the chromosome-coupled registry keys) as the genuinely
+    unrelated control process instead."""
     fake_module = tmp_path / "src" / "fake_m_gen_constants.py"
     fake_module.parent.mkdir(parents=True, exist_ok=True)
     fake_module.write_text("# fake m_gen_constants v1\n", encoding="utf-8")
@@ -1050,20 +1084,202 @@ def test_m_gen_constants_change_stales_only_dnasupercoiling(tmp_path, monkeypatc
 
     evidence_root = tmp_path / "evidence"
     _write_evidence_dir(evidence_root, "DNASupercoiling")
-    _write_evidence_dir(evidence_root, "DNARepair")
+    _write_evidence_dir(evidence_root, "Transcription")
 
     row_before = gen.build_process_row(_ENTRIES["DNASupercoiling"], evidence_root)
-    row_other_before = gen.build_process_row(_ENTRIES["DNARepair"], evidence_root)
+    row_other_before = gen.build_process_row(_ENTRIES["Transcription"], evidence_root)
     assert row_before["green"] is True, row_before["reasons"]
     assert row_other_before["green"] is True, row_other_before["reasons"]
 
     fake_module.write_text("# fake m_gen_constants v2 -- behavior changed\n", encoding="utf-8")
 
     row_after = gen.build_process_row(_ENTRIES["DNASupercoiling"], evidence_root)
-    row_other_after = gen.build_process_row(_ENTRIES["DNARepair"], evidence_root)
+    row_other_after = gen.build_process_row(_ENTRIES["Transcription"], evidence_root)
     assert row_after["green"] is False
     assert any("m_gen_constants_module" in reason for reason in row_after["reasons"])
     assert row_other_after["green"] is True, row_other_after["reasons"]
+
+
+def test_m_gen_constants_change_stales_all_chromosome_store_consumers(tmp_path, monkeypatch):
+    """B1 (Opus5 "explicit registry REJECT" follow-up): `chromosome_store.py`
+    -- already registered as `chromosome_store_module` for EVERY process
+    that imports it -- has its OWN one-hop, class-body-scope dependency on
+    `opencell/m_gen_constants.py` (`GENOME_LENGTH_BP`/
+    `N_CHROMOSOME_COMPARTMENTS`, consumed as `ChromosomeStore`'s default
+    `shape`), verified by direct inspection. A change to
+    `m_gen_constants.py` must therefore stale ALL FIVE
+    chromosome_store-consuming processes -- DNARepair, DNASupercoiling,
+    Replication, ReplicationInitiation, and (informationally) DNADamage --
+    not just the two (DNASupercoiling/DNADamage) whose OWN `oc_module`
+    happens to import it directly too, and must NOT stale an unrelated
+    process (Transcription, which shares no chromosome-coupled registry
+    keys at all)."""
+    fake_module = tmp_path / "src" / "fake_m_gen_constants.py"
+    fake_module.parent.mkdir(parents=True, exist_ok=True)
+    fake_module.write_text("# fake m_gen_constants v1\n", encoding="utf-8")
+    for name in ("DNARepair", "DNASupercoiling", "Replication", "ReplicationInitiation"):
+        monkeypatch.setitem(
+            schema.PROCESS_DEPENDENCY_FILES,
+            name,
+            {**schema.PROCESS_DEPENDENCY_FILES[name], "m_gen_constants_module": fake_module},
+        )
+
+    evidence_root = tmp_path / "evidence"
+    consumers = ("DNARepair", "DNASupercoiling", "Replication", "ReplicationInitiation")
+    for name in consumers:
+        _write_evidence_dir(evidence_root, name)
+    _write_evidence_dir(evidence_root, "Transcription")
+
+    rows_before = {name: gen.build_process_row(_ENTRIES[name], evidence_root) for name in consumers}
+    row_transcription_before = gen.build_process_row(_ENTRIES["Transcription"], evidence_root)
+    for name, row in rows_before.items():
+        assert row["green"] is True, (name, row["reasons"])
+    assert row_transcription_before["green"] is True, row_transcription_before["reasons"]
+
+    fake_module.write_text("# fake m_gen_constants v2 -- behavior changed\n", encoding="utf-8")
+
+    rows_after = {name: gen.build_process_row(_ENTRIES[name], evidence_root) for name in consumers}
+    row_transcription_after = gen.build_process_row(_ENTRIES["Transcription"], evidence_root)
+    for name, row in rows_after.items():
+        assert row["green"] is False, (name, row["reasons"])
+        assert any("m_gen_constants_module" in reason for reason in row["reasons"]), (name, row["reasons"])
+    assert row_transcription_after["green"] is True, row_transcription_after["reasons"]  # unrelated, unaffected
+
+
+# --- C2: package `__init__.py` execution (m1/m2/m3/state) --------------------
+
+
+def test_m1_init_change_stales_only_metabolism(tmp_path, monkeypatch):
+    """C2: `opencell/m1/__init__.py` executes whenever Metabolism's
+    `oc_module` imports any `opencell.m1` submodule (`from opencell.m1
+    import calc_flux_bounds as cfb` / `from opencell.m1 import
+    karr_metabolism as km`) -- real Python import-machinery behavior, not
+    an artifact of static analysis. A change to it must stale Metabolism
+    but not an unrelated process."""
+    fake_init = tmp_path / "src" / "fake_m1_init.py"
+    fake_init.parent.mkdir(parents=True, exist_ok=True)
+    fake_init.write_text("# fake m1 __init__ v1\n", encoding="utf-8")
+    monkeypatch.setitem(
+        schema.PROCESS_DEPENDENCY_FILES,
+        "Metabolism",
+        {**schema.PROCESS_DEPENDENCY_FILES["Metabolism"], "m1_init_module": fake_init},
+    )
+
+    evidence_root = tmp_path / "evidence"
+    _write_evidence_dir(evidence_root, "Metabolism")
+    _write_evidence_dir(evidence_root, "Transcription")
+
+    row_before = gen.build_process_row(_ENTRIES["Metabolism"], evidence_root)
+    row_other_before = gen.build_process_row(_ENTRIES["Transcription"], evidence_root)
+    assert row_before["green"] is True, row_before["reasons"]
+    assert row_other_before["green"] is True, row_other_before["reasons"]
+
+    fake_init.write_text("# fake m1 __init__ v2 -- behavior changed\n", encoding="utf-8")
+
+    row_after = gen.build_process_row(_ENTRIES["Metabolism"], evidence_root)
+    row_other_after = gen.build_process_row(_ENTRIES["Transcription"], evidence_root)
+    assert row_after["green"] is False
+    assert any("m1_init_module" in reason for reason in row_after["reasons"])
+    assert row_other_after["green"] is True, row_other_after["reasons"]
+
+
+def test_m2_init_change_stales_only_transcription(tmp_path, monkeypatch):
+    """C2: `opencell/m2/__init__.py` executes whenever Transcription's
+    `oc_module` does `from opencell.m2 import transcription as tx`."""
+    fake_init = tmp_path / "src" / "fake_m2_init.py"
+    fake_init.parent.mkdir(parents=True, exist_ok=True)
+    fake_init.write_text("# fake m2 __init__ v1\n", encoding="utf-8")
+    monkeypatch.setitem(
+        schema.PROCESS_DEPENDENCY_FILES,
+        "Transcription",
+        {**schema.PROCESS_DEPENDENCY_FILES["Transcription"], "m2_init_module": fake_init},
+    )
+
+    evidence_root = tmp_path / "evidence"
+    _write_evidence_dir(evidence_root, "Transcription")
+    _write_evidence_dir(evidence_root, "Translation")
+
+    row_before = gen.build_process_row(_ENTRIES["Transcription"], evidence_root)
+    row_other_before = gen.build_process_row(_ENTRIES["Translation"], evidence_root)
+    assert row_before["green"] is True, row_before["reasons"]
+    assert row_other_before["green"] is True, row_other_before["reasons"]
+
+    fake_init.write_text("# fake m2 __init__ v2 -- behavior changed\n", encoding="utf-8")
+
+    row_after = gen.build_process_row(_ENTRIES["Transcription"], evidence_root)
+    row_other_after = gen.build_process_row(_ENTRIES["Translation"], evidence_root)
+    assert row_after["green"] is False
+    assert any("m2_init_module" in reason for reason in row_after["reasons"])
+    assert row_other_after["green"] is True, row_other_after["reasons"]
+
+
+def test_m3_init_change_stales_only_translation(tmp_path, monkeypatch):
+    """C2: `opencell/m3/__init__.py` executes whenever Translation's
+    `oc_module` does `from opencell.m3 import translation as tl`."""
+    fake_init = tmp_path / "src" / "fake_m3_init.py"
+    fake_init.parent.mkdir(parents=True, exist_ok=True)
+    fake_init.write_text("# fake m3 __init__ v1\n", encoding="utf-8")
+    monkeypatch.setitem(
+        schema.PROCESS_DEPENDENCY_FILES,
+        "Translation",
+        {**schema.PROCESS_DEPENDENCY_FILES["Translation"], "m3_init_module": fake_init},
+    )
+
+    evidence_root = tmp_path / "evidence"
+    _write_evidence_dir(evidence_root, "Translation")
+    _write_evidence_dir(evidence_root, "Transcription")
+
+    row_before = gen.build_process_row(_ENTRIES["Translation"], evidence_root)
+    row_other_before = gen.build_process_row(_ENTRIES["Transcription"], evidence_root)
+    assert row_before["green"] is True, row_before["reasons"]
+    assert row_other_before["green"] is True, row_other_before["reasons"]
+
+    fake_init.write_text("# fake m3 __init__ v2 -- behavior changed\n", encoding="utf-8")
+
+    row_after = gen.build_process_row(_ENTRIES["Translation"], evidence_root)
+    row_other_after = gen.build_process_row(_ENTRIES["Transcription"], evidence_root)
+    assert row_after["green"] is False
+    assert any("m3_init_module" in reason for reason in row_after["reasons"])
+    assert row_other_after["green"] is True, row_other_after["reasons"]
+
+
+def test_state_init_change_stales_all_chromosome_store_consumers_not_unrelated(tmp_path, monkeypatch):
+    """C2: `opencell/state/__init__.py` executes whenever ANY of
+    DNARepair/DNASupercoiling/Replication/ReplicationInitiation's
+    `oc_module` imports `opencell.state.chromosome_store` -- real Python
+    import-machinery behavior. A change to it must stale all four (the
+    same mechanically-evidenced set already registering
+    `chromosome_store_module`) but not an unrelated process."""
+    fake_init = tmp_path / "src" / "fake_state_init.py"
+    fake_init.parent.mkdir(parents=True, exist_ok=True)
+    fake_init.write_text("# fake state __init__ v1\n", encoding="utf-8")
+    consumers = ("DNARepair", "DNASupercoiling", "Replication", "ReplicationInitiation")
+    for name in consumers:
+        monkeypatch.setitem(
+            schema.PROCESS_DEPENDENCY_FILES,
+            name,
+            {**schema.PROCESS_DEPENDENCY_FILES[name], "state_init_module": fake_init},
+        )
+
+    evidence_root = tmp_path / "evidence"
+    for name in consumers:
+        _write_evidence_dir(evidence_root, name)
+    _write_evidence_dir(evidence_root, "Transcription")
+
+    rows_before = {name: gen.build_process_row(_ENTRIES[name], evidence_root) for name in consumers}
+    row_transcription_before = gen.build_process_row(_ENTRIES["Transcription"], evidence_root)
+    for name, row in rows_before.items():
+        assert row["green"] is True, (name, row["reasons"])
+    assert row_transcription_before["green"] is True, row_transcription_before["reasons"]
+
+    fake_init.write_text("# fake state __init__ v2 -- behavior changed\n", encoding="utf-8")
+
+    rows_after = {name: gen.build_process_row(_ENTRIES[name], evidence_root) for name in consumers}
+    row_transcription_after = gen.build_process_row(_ENTRIES["Transcription"], evidence_root)
+    for name, row in rows_after.items():
+        assert row["green"] is False, (name, row["reasons"])
+        assert any("state_init_module" in reason for reason in row["reasons"]), (name, row["reasons"])
+    assert row_transcription_after["green"] is True, row_transcription_after["reasons"]  # unrelated, unaffected
 
 
 # --- R3 oracle input manifest: empty inputs / strict mounted-data rehash -------

@@ -1376,6 +1376,124 @@ expected, since no `sweep_provenance.json` in this worktree currently
 carries the old mechanical-derivation keys to newly stale, and no process
 was rerun.
 
+### 13.12 B1/C1/C2: a live transitive registry gap, hardened AST audit control-flow traversal, and package-`__init__.py` execution
+
+A second "explicit registry REJECT" identified three gaps in 13.11's
+design, each addressed independently:
+
+**(B1) A live, previously-uncaught transitive gap.** `chromosome_store.py`
+(already registered as `chromosome_store_module` for every process that
+imports it) has its OWN one-hop, **class-body-scope** dependency on
+`opencell/m_gen_constants.py`:
+
+```python
+class ChromosomeStore:
+    ...
+    from opencell.m_gen_constants import (
+        GENOME_LENGTH_BP as _GENOME_LENGTH_BP,
+        N_CHROMOSOME_COMPARTMENTS as _N_CHROMOSOME_COMPARTMENTS,
+    )
+```
+
+consumed as `ChromosomeStore`'s default `shape` for every instance
+constructed without an explicit shape — a real, consumed runtime numeric
+dependency, invisible to any process whose own `oc_module` only imports
+`chromosome_store` (not `m_gen_constants` directly). Before this fix,
+`DNASupercoiling`/`DNADamage` registered `m_gen_constants_module` only
+because *their own* `oc_module` happens to import it directly too — the
+transitive path through `chromosome_store.py` was unregistered and
+undetectable by the AST audit (class bodies are explicitly out of its
+module-scope-only detection surface, matching Translation's
+function-body-scope precedent in 13.11(c)). `m_gen_constants_module` is
+now also registered for `DNARepair`, `Replication`, and
+`ReplicationInitiation` — the three processes that import
+`chromosome_store` but had no other reason to register it. This is a
+class-body-scope exclusion, closed only via the explicit registry, never
+via audit detection, by design.
+
+**(C1) AST completeness audit: control-flow traversal.** The audit
+previously walked only `tree.body` (top-level statements), so an import
+guarded by `try`/`except`, `if` (including `if TYPE_CHECKING:`), or
+`with` at module scope was invisible to it — a false-negative "this file
+has no undeclared first-party imports" result. `_iter_module_scope_statements()`
+now recursively descends into `ast.Try` (body, every `handler.body`,
+`orelse`, `finalbody`), `ast.If` (body, orelse — this transparently
+covers `TYPE_CHECKING` guards too, since no dedicated sniffing logic is
+needed once generic `If`-traversal exists), `ast.With`/`ast.AsyncWith`
+(body), and `ast.For`/`ast.AsyncFor`/`ast.While` (body, orelse) —
+explicitly **not** `FunctionDef`/`AsyncFunctionDef`/`ClassDef` bodies,
+preserving the existing module-scope-only detection boundary. Relative
+imports are also hardened: an excessive `level` (more `.`s than the
+file's own package depth) now raises `ImportAuditError` immediately
+instead of silently producing an empty package-parts list, and a relative
+import that fails to resolve to either a submodule-with-symbol or a
+package-fallback path now raises rather than being silently skipped. Nine
+new adversarial fixture tests
+(`tests/scripts/test_l22_evidence_ast_completeness.py`, now 23 total)
+cover try/try-else-finally/if/`TYPE_CHECKING`/with/loop-guarded imports,
+a function/class-body-still-excluded control case, excessive relative
+level, and a bare unresolvable relative import. **Real-tree impact is
+zero**: no currently-registered file contains a try-, if-, or
+`TYPE_CHECKING`-guarded first-party import, so this hardening changes
+nothing about the real registry or tally — it only closes a future-drift
+detection gap. The audit remains test-only, never imported by runtime
+code.
+
+**(C2) Package `__init__.py` execution.** Importing `from opencell.m1
+import X` (or `.m2`/`.m3`/`.state`) executes that package's
+`__init__.py` — real Python import-machinery behavior, not a static-
+analysis artifact — so a change to the `__init__.py` itself is a real,
+previously-unregistered runtime dependency for every process whose
+`oc_module` imports through it. `M1_INIT_MODULE` (`opencell/m1/__init__.py`)
+is registered for `Metabolism` (whose `karr_metabolism.py` does `from
+opencell.m1 import calc_flux_bounds as cfb` / `from opencell.m1 import
+karr_metabolism as km`); `M2_INIT_MODULE` (`opencell/m2/__init__.py`) for
+`Transcription` (`from opencell.m2 import transcription as tx`);
+`M3_INIT_MODULE` (`opencell/m3/__init__.py`) for `Translation` (`from
+opencell.m3 import translation as tl`); `STATE_INIT_MODULE`
+(`opencell/state/__init__.py`) for the same five `chromosome_store`
+consumers as `chromosome_store_module` — `DNARepair`, `DNASupercoiling`,
+`Replication`, `ReplicationInitiation`, and (informationally)
+`DNADamage`.
+
+**Explicit one-level-only registry limitation (documented, not fixed, by
+design).** This registry is intentionally **one hop from the
+`oc_module`**, never recursive/transitive beyond that single hop — matching
+13.11(a)'s "no recursive dependency platform" instruction. Two known,
+disclosed residual gaps follow directly from this:
+
+- `opencell/m2/__init__.py` also imports `.transcription_v2`, and
+  `opencell/m3/__init__.py` also imports `.translation_v2` — neither
+  `_v2` file is separately registered. A content-only change to
+  `transcription_v2.py`/`translation_v2.py` (with the `__init__.py`'s
+  import *statement* bytes unchanged) would not stale `Transcription`/
+  `Translation`. Registering the `__init__.py` file catches edits to the
+  init itself (e.g. adding/removing/reordering imports) but not edits
+  inside files it imports.
+- `opencell/vivarium/__init__.py` is a much larger re-export hub
+  (`karr_metabolism.py`, `karr_transcription.py`, `karr_translation.py`,
+  `composite.py`, `karr_composite.py`, `persist.py`, `processes.py`, …),
+  executed by importing *any* of the roughly ten `oc_module` files that
+  live under `opencell/vivarium/`. This is structurally closer to the
+  existing harness-wide `harness_dependency_hashes()` class (shared
+  across nearly all processes) than a small per-process registry entry,
+  and was judged out of scope for this patch — C2's instructions
+  explicitly listed only `m1`/`m2`/`m3`/`state`. Not registered.
+
+Both gaps were investigated, confirmed, and are called out here rather
+than silently fixed (exceeding the requested scope) or silently left
+undocumented.
+
+Per the operator's "no reruns/push" instruction, this is again a
+code-and-tests-only change functionally: `evidence_index.json`/
+`evidence_bundle/` are regenerated in the same commit purely to reflect
+the expanded registry (new `STALE_SWEEP_PROVENANCE: ... missing source
+hash for 'm_gen_constants_module'`/`'state_init_module'` reasons appear
+on `DNARepair`'s and `ReplicationInitiation`'s already-stale rows;
+`content_hash` changes only for that reason plus `generated_at`); the
+tally (`MISSING_EVIDENCE: 20, FAIL: 2`) is unchanged, and no process was
+rerun.
+
 ## 14. Files
 
 - `scripts/l22_evidence/catalog.py` — catalog access (scope derivation).

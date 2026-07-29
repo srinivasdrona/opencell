@@ -250,7 +250,8 @@ UTIL_MODULE = REPO_ROOT / "opencell" / "util" / "__init__.py"
 UTIL_MATLAB_RNG_MODULE = REPO_ROOT / "opencell" / "util" / "matlab_rng.py"
 # `opencell/m_gen_constants.py` is imported by DNASupercoiling's own
 # `oc_module` (`GENOME_LENGTH_BP`) and, for the event-class DNADamage
-# process, its own `oc_module` too.
+# process, its own `oc_module` too -- both DIRECT, module-scope imports,
+# verified by inspection.
 M_GEN_CONSTANTS_MODULE = REPO_ROOT / "opencell" / "m_gen_constants.py"
 # `chromosome_store.py`/`chromosome_views.py` are imported by SOME but not
 # all chromosome-coupled processes' own `oc_module` implementation files
@@ -258,6 +259,76 @@ M_GEN_CONSTANTS_MODULE = REPO_ROOT / "opencell" / "m_gen_constants.py"
 # import only `chromosome_store`; the event-class DNADamage imports both).
 CHROMOSOME_STORE_MODULE = REPO_ROOT / "opencell" / "state" / "chromosome_store.py"
 CHROMOSOME_VIEWS_MODULE = REPO_ROOT / "opencell" / "vivarium" / "chromosome_views.py"
+# B1 (Opus5 "explicit registry REJECT" follow-up): `chromosome_store.py`
+# itself (already registered above as `CHROMOSOME_STORE_MODULE` for every
+# process that imports it) has its OWN one-hop dependency on
+# `opencell/m_gen_constants.py` -- a CLASS-BODY-scope import (`class
+# ChromosomeStore: ... from opencell.m_gen_constants import
+# GENOME_LENGTH_BP as _GENOME_LENGTH_BP, N_CHROMOSOME_COMPARTMENTS as
+# _N_CHROMOSOME_COMPARTMENTS`), executed at module-import time (class
+# bodies execute on import, unlike function bodies) and consumed as the
+# actual numeric default `shape` for every `ChromosomeStore()` constructed
+# without an explicit shape -- verified by direct inspection of
+# `opencell/state/chromosome_store.py`. This was a live gap: DNARepair,
+# Replication, and ReplicationInitiation only import `chromosome_store`
+# directly (never `m_gen_constants` themselves), so a change to
+# `GENOME_LENGTH_BP`/`N_CHROMOSOME_COMPARTMENTS` previously stale NEITHER
+# their `oc_module` hash NOR any registered dependency hash for those
+# three processes, even though it changes their actual runtime chromosome
+# shape default. DNASupercoiling and DNADamage already register
+# `M_GEN_CONSTANTS_MODULE` because THEIR OWN `oc_module` imports it
+# directly (module scope) -- unaffected/retained, not duplicated logic.
+# Because the import lives inside `ChromosomeStore`'s class body, not
+# module scope, it is (like `karr_translation_v3`'s function-body import)
+# outside the TEST-ONLY AST completeness audit's module-scope-only
+# detection surface by design; see the audit module's docstring and
+# `_DOCUMENTED_EXCLUSIONS` in `test_l22_evidence_ast_completeness.py`.
+
+# --- Package `__init__.py` execution (C2, Opus5 "explicit registry REJECT"
+# follow-up) -----------------------------------------------------------------
+#
+# Importing ANY submodule of a Python package (e.g. `from opencell.m1
+# import calc_flux_bounds`) always executes that package's own
+# `__init__.py` first -- a real part of the runtime import surface, not
+# an artifact of static analysis. `opencell/m1/__init__.py`,
+# `opencell/m2/__init__.py`, and `opencell/m3/__init__.py` are registered
+# for Metabolism/Transcription/Translation respectively (the one process
+# each that imports a submodule of that package directly -- verified:
+# `karr_metabolism.py` does `from opencell.m1 import calc_flux_bounds as
+# cfb` / `from opencell.m1 import karr_metabolism as km`;
+# `karr_transcription.py` does `from opencell.m2 import transcription as
+# tx`; `karr_translation.py` does `from opencell.m3 import translation as
+# tl`). `opencell/state/__init__.py` is registered for every process that
+# imports `opencell.state.chromosome_store` -- mechanically confirmed by
+# direct inspection to be exactly DNARepair, DNASupercoiling, Replication,
+# ReplicationInitiation, and DNADamage (the same five processes already
+# registering `CHROMOSOME_STORE_MODULE`; `ChromosomeCondensation` also
+# imports it but is out of catalog scope and never looked up). `opencell/
+# util/__init__.py` is ALREADY registered above as `UTIL_MODULE` for
+# ProteinTranslocation (it IS the direct import target there, not an
+# indirect package-init side effect, so no separate constant is needed).
+#
+# This registers each `__init__.py` FILE itself as one more hop -- the
+# SAME "explicit, one-hop, not recursive" policy as every other entry in
+# this registry (e.g. `karr_metabolism_writeback_module` for Metabolism).
+# It does NOT recursively register whatever THAT `__init__.py` imports in
+# turn: `opencell/m2/__init__.py` additionally does `from . import
+# transcription_v2` and `opencell/m3/__init__.py` does `from . import
+# translation_v2` -- neither `transcription_v2.py` nor `translation_v2.py`
+# is separately hashed here (no evidence either file feeds the actual
+# Design-A metric computation for Transcription/Translation; expanding
+# would require re-verifying that call graph, which is out of this
+# patch's explicit scope). A change to `m2/__init__.py`'s own import
+# statements (e.g. adding/removing what it re-exports) is still caught by
+# this entry; a change to `transcription_v2.py`'s CONTENT while `m2/
+# __init__.py`'s own bytes stay the same would not be -- a disclosed,
+# not-yet-closed residual gap, structurally identical to why this
+# registry is not a generalized recursive-import-graph hasher elsewhere
+# either.
+M1_INIT_MODULE = REPO_ROOT / "opencell" / "m1" / "__init__.py"
+M2_INIT_MODULE = REPO_ROOT / "opencell" / "m2" / "__init__.py"
+M3_INIT_MODULE = REPO_ROOT / "opencell" / "m3" / "__init__.py"
+STATE_INIT_MODULE = REPO_ROOT / "opencell" / "state" / "__init__.py"
 
 # --- Explicit per-process runtime dependency registry (F1, corrected F5) ----
 #
@@ -315,13 +386,16 @@ PROCESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
         "m1_karr_metabolism_module": M1_KARR_METABOLISM_MODULE,
         "karr_metabolism_writeback_module": KARR_METABOLISM_WRITEBACK_MODULE,
         "karr_protein_decay_light_module": KARR_PROTEIN_DECAY_LIGHT_MODULE,
+        "m1_init_module": M1_INIT_MODULE,
     },
     "Translation": {
         "m3_translation_module": M3_TRANSLATION_MODULE,
         "karr_translation_v3_module": KARR_TRANSLATION_V3_MODULE,
+        "m3_init_module": M3_INIT_MODULE,
     },
     "Transcription": {
         "m2_transcription_module": M2_TRANSCRIPTION_MODULE,
+        "m2_init_module": M2_INIT_MODULE,
     },
     "ProteinProcessingI": {
         "karr_trna_aminoacylation_module": KARR_TRNA_AMINOACYLATION_MODULE,
@@ -336,21 +410,29 @@ PROCESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
     "DNARepair": {
         "chromosome_store_module": CHROMOSOME_STORE_MODULE,
         "chromosome_views_module": CHROMOSOME_VIEWS_MODULE,
+        "m_gen_constants_module": M_GEN_CONSTANTS_MODULE,
+        "state_init_module": STATE_INIT_MODULE,
     },
     "DNASupercoiling": {
         "chromosome_store_module": CHROMOSOME_STORE_MODULE,
         "m_gen_constants_module": M_GEN_CONSTANTS_MODULE,
+        "state_init_module": STATE_INIT_MODULE,
     },
     "Replication": {
         "chromosome_store_module": CHROMOSOME_STORE_MODULE,
+        "m_gen_constants_module": M_GEN_CONSTANTS_MODULE,
+        "state_init_module": STATE_INIT_MODULE,
     },
     "ReplicationInitiation": {
         "chromosome_store_module": CHROMOSOME_STORE_MODULE,
+        "m_gen_constants_module": M_GEN_CONSTANTS_MODULE,
+        "state_init_module": STATE_INIT_MODULE,
     },
     "DNADamage": {
         "chromosome_store_module": CHROMOSOME_STORE_MODULE,
         "chromosome_views_module": CHROMOSOME_VIEWS_MODULE,
         "m_gen_constants_module": M_GEN_CONSTANTS_MODULE,
+        "state_init_module": STATE_INIT_MODULE,
     },
 }
 

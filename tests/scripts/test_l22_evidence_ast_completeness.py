@@ -257,3 +257,223 @@ def test_import_idiom_self_import_is_excluded(tmp_path):
 
     resolved = first_party_import_files(tmp_path, caller)
     assert caller.resolve() not in {p.resolve() for p in resolved}
+
+
+# --- C1: module-scope-equivalent control-flow traversal (try/if/with/loops) --
+
+
+def test_import_idiom_try_guarded_import_is_detected(tmp_path):
+    """`try: import X` / `except ImportError: import Y` -- both branches
+    execute unconditionally at import time (exactly one of them, but
+    which one is data/environment-dependent), so BOTH must be detected as
+    real, module-scope-equivalent dependencies (C1)."""
+    _make_pkg(tmp_path, "pkg")
+    primary = tmp_path / "pkg" / "primary.py"
+    primary.write_text("VALUE = 1\n", encoding="utf-8")
+    fallback = tmp_path / "pkg" / "fallback.py"
+    fallback.write_text("VALUE = 2\n", encoding="utf-8")
+    caller = tmp_path / "pkg" / "caller.py"
+    caller.write_text(
+        textwrap.dedent(
+            """
+            try:
+                from . import primary
+            except ImportError:
+                from . import fallback
+            """
+        ),
+        encoding="utf-8",
+    )
+
+    resolved = {p.resolve() for p in first_party_import_files(tmp_path, caller)}
+    assert primary.resolve() in resolved
+    assert fallback.resolve() in resolved
+
+
+def test_import_idiom_try_else_finally_import_is_detected(tmp_path):
+    """Imports in a `try` block's `else`/`finally` clauses also execute
+    unconditionally as part of running the module and must be detected."""
+    _make_pkg(tmp_path, "pkg")
+    else_mod = tmp_path / "pkg" / "else_mod.py"
+    else_mod.write_text("VALUE = 1\n", encoding="utf-8")
+    finally_mod = tmp_path / "pkg" / "finally_mod.py"
+    finally_mod.write_text("VALUE = 2\n", encoding="utf-8")
+    caller = tmp_path / "pkg" / "caller.py"
+    caller.write_text(
+        textwrap.dedent(
+            """
+            try:
+                pass
+            except Exception:
+                pass
+            else:
+                from . import else_mod
+            finally:
+                from . import finally_mod
+            """
+        ),
+        encoding="utf-8",
+    )
+
+    resolved = {p.resolve() for p in first_party_import_files(tmp_path, caller)}
+    assert else_mod.resolve() in resolved
+    assert finally_mod.resolve() in resolved
+
+
+def test_import_idiom_if_guarded_import_is_detected(tmp_path):
+    """`if <condition>: import X else: import Y` -- both module-scope `if`
+    branches must be detected, regardless of which branch is actually live
+    at any given runtime (C1)."""
+    _make_pkg(tmp_path, "pkg")
+    if_mod = tmp_path / "pkg" / "if_mod.py"
+    if_mod.write_text("VALUE = 1\n", encoding="utf-8")
+    else_mod = tmp_path / "pkg" / "else_mod.py"
+    else_mod.write_text("VALUE = 2\n", encoding="utf-8")
+    caller = tmp_path / "pkg" / "caller.py"
+    caller.write_text(
+        textwrap.dedent(
+            """
+            import sys
+            if sys.platform == "win32":
+                from . import if_mod
+            else:
+                from . import else_mod
+            """
+        ),
+        encoding="utf-8",
+    )
+
+    resolved = {p.resolve() for p in first_party_import_files(tmp_path, caller)}
+    assert if_mod.resolve() in resolved
+    assert else_mod.resolve() in resolved
+
+
+def test_import_idiom_type_checking_guarded_import_is_detected(tmp_path):
+    """`if TYPE_CHECKING: import X` -- per the explicit "prefer detection
+    since registry completeness is cheap" policy, a TYPE_CHECKING-guarded
+    import is detected the same as any other `if`-guarded import (not
+    special-cased/ignored), even though it never actually executes at
+    real runtime -- registering it costs nothing and removes any doubt."""
+    _make_pkg(tmp_path, "pkg")
+    typing_only = tmp_path / "pkg" / "typing_only.py"
+    typing_only.write_text("VALUE = 1\n", encoding="utf-8")
+    caller = tmp_path / "pkg" / "caller.py"
+    caller.write_text(
+        textwrap.dedent(
+            """
+            from typing import TYPE_CHECKING
+            if TYPE_CHECKING:
+                from . import typing_only
+            """
+        ),
+        encoding="utf-8",
+    )
+
+    resolved = {p.resolve() for p in first_party_import_files(tmp_path, caller)}
+    assert typing_only.resolve() in resolved
+
+
+def test_import_idiom_with_guarded_import_is_detected(tmp_path):
+    """An import nested inside a module-scope `with` block (unusual but
+    syntactically legal) must be detected."""
+    _make_pkg(tmp_path, "pkg")
+    target = tmp_path / "pkg" / "with_mod.py"
+    target.write_text("VALUE = 1\n", encoding="utf-8")
+    caller = tmp_path / "pkg" / "caller.py"
+    caller.write_text(
+        textwrap.dedent(
+            """
+            from contextlib import suppress
+            with suppress(Exception):
+                from . import with_mod
+            """
+        ),
+        encoding="utf-8",
+    )
+
+    resolved = {p.resolve() for p in first_party_import_files(tmp_path, caller)}
+    assert target.resolve() in resolved
+
+
+def test_import_idiom_loop_guarded_import_is_detected(tmp_path):
+    """An import nested inside a module-scope `for` loop (unusual but
+    syntactically legal -- "loops if imports possible" per the C1
+    instruction) must be detected."""
+    _make_pkg(tmp_path, "pkg")
+    target = tmp_path / "pkg" / "loop_mod.py"
+    target.write_text("VALUE = 1\n", encoding="utf-8")
+    caller = tmp_path / "pkg" / "caller.py"
+    caller.write_text(
+        textwrap.dedent(
+            """
+            for _ in range(1):
+                from . import loop_mod
+            """
+        ),
+        encoding="utf-8",
+    )
+
+    resolved = {p.resolve() for p in first_party_import_files(tmp_path, caller)}
+    assert target.resolve() in resolved
+
+
+def test_import_idiom_function_and_class_body_imports_still_excluded(tmp_path):
+    """C1 only expands traversal into try/if/with/loop bodies -- function
+    and class bodies remain OUT of scope, even though they too execute
+    (a class body at class-definition/import time; a function body only
+    on call), exactly as before C1. This is the control case proving C1's
+    traversal expansion did not accidentally also start descending into
+    function/class bodies."""
+    _make_pkg(tmp_path, "pkg")
+    func_target = tmp_path / "pkg" / "func_mod.py"
+    func_target.write_text("VALUE = 1\n", encoding="utf-8")
+    class_target = tmp_path / "pkg" / "class_mod.py"
+    class_target.write_text("VALUE = 2\n", encoding="utf-8")
+    caller = tmp_path / "pkg" / "caller.py"
+    caller.write_text(
+        textwrap.dedent(
+            """
+            def f():
+                from . import func_mod
+
+            class C:
+                from . import class_mod
+            """
+        ),
+        encoding="utf-8",
+    )
+
+    resolved = {p.resolve() for p in first_party_import_files(tmp_path, caller)}
+    assert func_target.resolve() not in resolved
+    assert class_target.resolve() not in resolved
+
+
+# --- C1: invalid/unresolvable relative imports must raise, never skip -------
+
+
+def test_excessive_relative_import_level_raises(tmp_path):
+    """`from .. import X` used one level too many (i.e. `level - 1` would
+    walk above the importing file's own package depth) must raise
+    `ImportAuditError`, never silently resolve to the repo root or skip
+    the import entirely."""
+    _make_pkg(tmp_path, "pkg")
+    caller = tmp_path / "pkg" / "caller.py"
+    caller.write_text("from .. import something\n", encoding="utf-8")
+
+    with pytest.raises(ImportAuditError):
+        first_party_import_files(tmp_path, caller)
+
+
+def test_bare_unresolvable_relative_import_raises(tmp_path):
+    """A syntactically valid relative import whose target does not exist
+    on disk at all (neither as a submodule file nor as a package `__init__.py`)
+    must raise `ImportAuditError` -- a relative import can only ever name
+    something first-party, so failing to resolve it is never treated as
+    "must be third-party, skip it" the way an unresolved ABSOLUTE import
+    legitimately is."""
+    _make_pkg(tmp_path, "pkg")
+    caller = tmp_path / "pkg" / "caller.py"
+    caller.write_text("from .missing_subpkg import missing_symbol\n", encoding="utf-8")
+
+    with pytest.raises(ImportAuditError):
+        first_party_import_files(tmp_path, caller)
