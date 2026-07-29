@@ -215,9 +215,33 @@ def _telemetry_record_solve_complete(telemetry: dict[str, Any] | None, n_attempt
 # the mathematically IDENTICAL LP (same rows/cols/bounds/objective/
 # objective-face window) -- by LP strong duality, any solve that terminates
 # with GLP_OPT status carries an implicit optimality certificate (its
-# reduced costs/dual values satisfy complementary slackness), so accepting
-# the first strategy to reach GLP_OPT cannot change the mathematical answer,
-# only which deterministic pivot path was used to certify it.
+# reduced costs/dual values satisfy complementary slackness) confirming the
+# SAME OBJECTIVE VALUE, so accepting
+# the first strategy to reach GLP_OPT cannot change which OBJECTIVE VALUE is
+# certified, only which deterministic pivot path was used to certify it.
+#
+# D5 CORRECTION (2026-07-29, Opus5 narrow REJECT #2): an earlier version of
+# this comment overclaimed that switching accepted strategy "cannot change
+# the mathematical answer" at all. Strong duality only guarantees the shared
+# OBJECTIVE VALUE is identical across GLP_OPT-terminating strategies -- on a
+# possibly-degenerate LP face (multiple optimal vertices), the specific
+# v_min/v_max reported for an INDIVIDUAL reaction column CAN differ between
+# strategies; this is standard, expected LP behavior (alternate optima), not
+# a bug. Direct measurement (see
+# test_different_fallback_strategies_mostly_agree_on_identical_lp_feasibility_outcome
+# in tests/m1/test_fva_perf.py, and
+# benchmarks/bench_fva_fallback_strategy_answer_invariance.py) found: (a)
+# a genuine counterexample on the narrower MATLAB ground-truth regression
+# fixture -- `adv_pse` vs `adv_pse_presolve` disagree on 2/1755
+# (substrate, compartment) feasibility pairs; (b) on the systematic,
+# pre-registered, bounded benchmark against the REAL production N50xM20
+# oracle-grid data (50 samples across ticks {0,1,5,9,16}), ZERO such flips
+# were observed (0/252,720 pairs) -- see
+# docs/phase_f/l2_2_design_a/evidence/fva_fallback_strategy_answer_invariance_summary.json.
+# The corrected claim: cascade reordering never changes the certified
+# OBJECTIVE VALUE (proven), and empirically leaves the L2.2 gate's
+# feasibility verdict unchanged on the tested production-representative set
+# (observed, not an absolute per-column guarantee).
 #
 # CASCADE ORDERING (C3 correction, 2026-07-29, see
 # benchmarks/bench_fva_fallback_cascade_telemetry.py): a failure's EXIT CODE
@@ -247,10 +271,10 @@ def _telemetry_record_solve_complete(telemetry: dict[str, Any] | None, n_attempt
 #     actually attempted for a given solve (a timeout may cause fewer than 5
 #     attempts before a different-basis strategy succeeds, or before the
 #     cascade raises `RuntimeError` after exhausting only the strategies it
-#     actually tried) -- it never changes which strategy is ultimately
-#     ACCEPTED once one reaches GLP_OPT, so it cannot change the mathematical
-#     answer (see the strong-duality argument above), only wall time and
-#     which subset of strategies is attempted. Measured effect: see
+#     actually tried) -- it never changes the certified OBJECTIVE VALUE (see
+#     the strong-duality argument above; individual v_min/v_max CAN differ
+#     per the D5 correction above), only wall time and which subset of
+#     strategies is attempted. Measured effect: see
 #     benchmarks/bench_fva_fallback_cascade_telemetry.py for real before/after
 #     wall-time numbers on known-hard samples.
 _FVA_FALLBACK_STRATEGIES: tuple[tuple[str, str, int], ...] = (
@@ -686,8 +710,10 @@ def fva_range(
             # THIRD root cause fix: if the primary (PSE + fresh advanced
             # basis) attempt fails to certify GLP_OPT, retry through a small
             # cascade of algorithmically-independent strategies -- see
-            # `_solve_direction_with_fallback` above for the full rationale
-            # and why this cannot change the mathematical answer.
+            # `_solve_direction_with_fallback` above for the full rationale,
+            # including the D5-corrected scope of what "answer invariance"
+            # actually means here (certified objective value, not every
+            # individual column's v_min/v_max on a possibly-degenerate face).
             _solve_direction_with_fallback(
                 glp, lp, parm, j=j, direction=glp.GLP_MAX,
                 label=f"FVA max j={j}", telemetry=telemetry,

@@ -553,23 +553,27 @@ def test_fva_range_telemetry_matches_real_solve_and_never_changes_result() -> No
 
 def test_face_mode_fx_converges_and_stays_within_bounds() -> None:
     """C2 spot-check (see benchmarks/bench_fva_fx_vs_db_objective_face_equivalence.py
-    and benchmarks/artifacts/fva_fx_vs_db_objective_face_equivalence.json for the
-    full 100-sample pre-registered measurement, which is the actual evidence for
-    the equivalence claim): on the standard regression fixture sample, exact
-    GLP_FX (`_face_mode='fx'`) must converge (no RuntimeError) through the
+    and docs/phase_f/l2_2_design_a/evidence/fva_fx_vs_db_objective_face_equivalence_summary.json
+    for the full 250-sample pre-registered measurement across ticks
+    {0,1,5,9,16}, which is the actual evidence for the equivalence claim):
+    on the standard regression fixture sample, exact GLP_FX
+    (`_face_mode='fx'`) must converge (no RuntimeError) through the
     identical production LP-construction/fallback-cascade code path used by
     `_face_mode='db'`, and every returned value must lie within [lb, ub].
 
     This test deliberately does NOT assert tight pointwise v_min/v_max
-    agreement between FX and DB: the 100-sample benchmark found that a small
-    number of structurally degenerate reactions (near-flat objective
+    agreement between FX and DB: the 250-sample benchmark found that a
+    small number of structurally degenerate reactions (near-flat objective
     coupling) can land on a different LP vertex under FX vs DB pivoting
     without any accompanying feasibility-classification (d_min/d_max) flip
-    (max v-diff ~146.6 on an outlier column, 0/175,500 flips overall). A
-    fast unit test asserting raw closeness would therefore be scientifically
-    wrong to enforce; convergence + bound membership is the correct fast
-    regression guard, with the full flip-rate proof living in the benchmark
-    artifact instead of being re-derived here on every test run.
+    on this measured set (max v-diff ~882.6 on an outlier column at
+    seed=43/tick=16, 0/394,875 flips observed -- reported as an observed
+    outcome, not a magnitude-safety guarantee; see fva.py's objective-face
+    comment for the corrected, honest framing). A fast unit test asserting
+    raw closeness would therefore be scientifically wrong to enforce;
+    convergence + bound membership is the correct fast regression guard,
+    with the full flip-rate proof living in the benchmark artifact instead
+    of being re-derived here on every test run.
     """
     lb, ub, biomass_value_star = _load_sample_bounds()
     model = km.load_default()
@@ -614,3 +618,162 @@ def test_face_mode_rejects_invalid_value() -> None:
             biomass_value_star=biomass_value_star,
             _face_mode="bogus",
         )
+
+
+def test_different_fallback_strategies_mostly_agree_on_identical_lp_feasibility_outcome() -> None:
+    """D5: direct evidence for (bounded) cascade answer-invariance, distinct
+    from (and not to be conflated with) the FX-vs-DB objective-face-
+    equivalence benchmark. FX-vs-DB compares two DIFFERENT LP constructions
+    (exact equality face vs windowed face); it says nothing about whether
+    DIFFERENT FALLBACK STRATEGIES solving the IDENTICAL LP agree. This test
+    forces each of the five distinct `_FVA_FALLBACK_STRATEGIES` entries
+    (basis constructor x pricing-rule x presolve combinations) to be the
+    ONLY strategy attempted (no fallback), on the IDENTICAL production LP
+    construction (`_face_mode='db'`, same
+    S/rhs/c/lb/ub/biomass_value_star/reaction_subset), then projects each
+    strategy's v_min/v_max through the SAME `substrate_delta_range_from_fva`
+    + in-range-tolerance-check math the L2.2 gate actually uses, and compares
+    the resulting per-substrate FEASIBILITY MASK across every pair of
+    strategies that converged solo.
+
+    IMPORTANT, CORRECTED FINDING (this is why this test does NOT assert
+    exact mask equality): on this specific regression fixture (the MATLAB
+    ground-truth sample used elsewhere in this file, NOT the production
+    N50xM20 oracle grid), `adv_pse` (primary) vs `adv_pse_presolve` (last-
+    resort) disagree on 2/1755 pairs. This is a genuine, reproduced
+    counterexample to the previously-overclaimed "cascade reordering cannot
+    change the mathematical answer" text in fva.py's CASCADE ORDERING
+    comment (corrected in this round): LP strong duality guarantees the
+    shared OBJECTIVE VALUE is identical across GLP_OPT-terminating
+    strategies, NOT that every individual variable's value on a possibly-
+    degenerate face is unique -- alternate optima are a standard, expected
+    LP phenomenon, not a bug. The systematic, bounded, PRE-REGISTERED
+    benchmark against the REAL production oracle-grid data (50 samples
+    across ticks {0,1,5,9,16}, see
+    benchmarks/bench_fva_fallback_strategy_answer_invariance.py and
+    docs/phase_f/l2_2_design_a/evidence/
+    fva_fallback_strategy_answer_invariance_summary.json) found ZERO such
+    flips (0/252,720 pairs) -- THAT is the actual evidence for the
+    production metric's practical (not absolute) cascade invariance, not a
+    blanket mathematical guarantee derived from strong duality alone.
+
+    This test locks in the known counterexample count on the narrower GT
+    fixture (bounded, not asymptotically re-derived every run) as a
+    regression guard, while the module docstring above and fva.py's
+    corrected comment carry the actual scope of the invariance claim.
+
+    Not every individual strategy necessarily converges ALONE (without the
+    other fallback entries available) within the production iteration/time
+    caps on every reaction -- that is precisely why the cascade exists. A
+    strategy that fails to reach GLP_OPT solo on this sample (observed for
+    e.g. `std_pse` alone on one column, exit=9/ETMLIM within the production
+    `it_lim`) is recorded and excluded from the comparison rather than
+    failing the test; the assertion requires at least two strategies to
+    converge solo and compares only among those that did."""
+    lb, ub, biomass_value_star = _load_sample_bounds()
+    model = km.load_default()
+    fixture = _fixture()
+    reaction_subset = np.union1d(
+        np.asarray(fixture.fba_idx_external, dtype=np.int64),
+        np.asarray(fixture.fba_idx_internal, dtype=np.int64),
+    )
+
+    S = np.asarray(model.S, dtype=np.float64)
+    rhs = np.asarray(model.RHS, dtype=np.float64)
+    c = np.asarray(model.obj, dtype=np.float64)
+
+    _require(_GT_SAMPLE_PATH)
+    with h5py.File(_GT_SAMPLE_PATH, "r") as handle:
+        pre_sub_raw = np.asarray(handle["pre_sub"], dtype=np.float64)
+        post_sub_raw = np.asarray(handle["post_sub"], dtype=np.float64)
+    pre_sub = pre_sub_raw if pre_sub_raw.shape == (585, 3) else pre_sub_raw.T
+    post_sub = post_sub_raw if post_sub_raw.shape == (585, 3) else post_sub_raw.T
+    karr_delta = post_sub - pre_sub
+
+    _v_star, info = km.solve_fba(
+        model, use_full_objective=True, sense="max", big=_BIG,
+        lb_override=lb, ub_override=ub, solver="glpk",
+    )
+    growth_per_s = float(info["biomass_flux_per_s"])
+    tol = 1e-6  # same order as _METABOLISM_FVA_TOL in l2_2_design_a_runner.py
+
+    masks: dict[str, np.ndarray] = {}
+    v_ranges: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+    skipped: dict[str, str] = {}
+    for strategy in fva_module._FVA_FALLBACK_STRATEGIES:
+        original_strategies = fva_module._FVA_FALLBACK_STRATEGIES
+        fva_module._FVA_FALLBACK_STRATEGIES = (strategy,)
+        try:
+            v_min, v_max = fva_range(
+                S, rhs, c, lb, ub, biomass_value_star=biomass_value_star,
+                reaction_subset=reaction_subset,
+            )
+        except RuntimeError as exc:
+            # This strategy alone could not certify GLP_OPT for at least one
+            # relevant reaction within production caps -- exactly the case
+            # the fallback cascade exists to route around. Not a violation
+            # of cascade answer-invariance: excluded from comparison, not
+            # asserted equal to strategies that did converge.
+            skipped[strategy[0]] = str(exc)
+            continue
+        finally:
+            fva_module._FVA_FALLBACK_STRATEGIES = original_strategies
+        d_min, d_max = substrate_delta_range_from_fva(
+            v_min=v_min, v_max=v_max, fixture=fixture,
+            growth_per_s=growth_per_s, step_size_sec=float(fixture.step_size_sec),
+            pre_state_585x3=pre_sub,
+        )
+        in_range = (
+            np.isfinite(d_min)
+            & np.isfinite(d_max)
+            & (karr_delta >= (d_min - tol))
+            & (karr_delta <= (d_max + tol))
+        )
+        masks[strategy[0]] = in_range
+        v_ranges[strategy[0]] = (v_min[reaction_subset], v_max[reaction_subset])
+
+    assert len(masks) >= 2, (
+        f"need >=2 strategies to converge solo for a meaningful comparison; "
+        f"converged={list(masks)}, skipped(non-convergent alone)={skipped}"
+    )
+    names = sorted(masks)
+    total_flips = 0
+    max_pair_flips = 0
+    for i, name_a in enumerate(names):
+        for name_b in names[i + 1 :]:
+            n_diff = int(np.count_nonzero(masks[name_a] != masks[name_b]))
+            total_flips += n_diff
+            max_pair_flips = max(max_pair_flips, n_diff)
+
+    assert int(np.count_nonzero(next(iter(masks.values())))) > 0, (
+        "sanity: at least one strategy must find some feasible pairs"
+    )
+    # Locks in the known counterexample scale on THIS specific fixture (see
+    # docstring): a small, bounded number of pair-level flips is tolerated
+    # and reported, but a large/unbounded divergence here would indicate a
+    # real regression rather than benign degenerate-face alternate optima.
+    # 1755 = 585 species x 3 compartments (the full per-sample pair count).
+    assert max_pair_flips <= 10, (
+        f"cross-strategy feasibility-mask disagreement ({max_pair_flips} pairs) far "
+        "exceeds the known-counterexample scale (2/1755) on this fixture; investigate "
+        "before trusting the systematic 0-flip benchmark evidence"
+    )
+
+    # Report (not gate on) the largest raw v_min/v_max disagreement across
+    # strategies, as a transparency check that it stays within the same
+    # order of magnitude already documented for FX-vs-DB (~882.6 max, see
+    # fva.py's objective-face comment) rather than blowing up unboundedly --
+    # a much larger divergence here would suggest a real bug, not benign
+    # degeneracy, even though it wouldn't necessarily flip this sample's mask.
+    baseline_name = names[0]
+    max_v_diff = max(
+        float(np.max(np.abs(v_min_other - v_ranges[baseline_name][0])))
+        if name != baseline_name
+        else 0.0
+        for name, (v_min_other, _v_max_other) in v_ranges.items()
+    )
+    assert max_v_diff < 1e4, (
+        f"cross-strategy v_min divergence ({max_v_diff}) far exceeds the documented "
+        "FX-vs-DB degeneracy scale (~882.6); investigate before trusting 0-flip evidence"
+    )
+

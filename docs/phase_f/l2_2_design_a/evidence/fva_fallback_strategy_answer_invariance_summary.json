@@ -1,0 +1,48 @@
+{
+  "summary": {
+    "n_samples": 50,
+    "ticks": [
+      0,
+      1,
+      5,
+      9,
+      16
+    ],
+    "seeds": [
+      0,
+      5,
+      10,
+      15,
+      20,
+      25,
+      30,
+      35,
+      40,
+      45
+    ],
+    "total_pairs_compared": 252720,
+    "total_flips": 0,
+    "flip_rate": 0.0,
+    "max_sample_flips": 0,
+    "max_sample_flip_key": null,
+    "strategy_convergence_counts": {
+      "adv_pse": 50,
+      "adv_std": 29,
+      "std_std": 33,
+      "adv_pse_presolve": 48,
+      "std_pse": 34
+    },
+    "strategy_skip_counts": {
+      "std_pse": 16,
+      "adv_std": 21,
+      "std_std": 17,
+      "adv_pse_presolve": 2
+    },
+    "wall_time_s": 871.978184555
+  },
+  "full_artifact_path": "benchmarks/artifacts/fva_fallback_strategy_answer_invariance.json",
+  "full_artifact_sha256": "2e60967a9b18f4f1b6209ac4754fcd61c4762f0f9211cbae7d3e45b2110bdf73",
+  "generated_by_script": "benchmarks/bench_fva_fallback_strategy_answer_invariance.py",
+  "generated_by_script_sha256": "ec28f465deed16dbcbae92ee4c685a93f800c7fed8b4b592694f981e9fb88e58",
+  "reproduction_command": "bin\\oc-py benchmarks\\bench_fva_fallback_strategy_answer_invariance.py"
+}
