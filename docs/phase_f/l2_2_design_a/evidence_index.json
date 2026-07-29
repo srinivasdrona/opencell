@@ -2,9 +2,9 @@
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
   "catalog_sha256": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
-  "content_hash": "34afddeee1fa5eced1542424bcc3475f09f66de10a1f8e2901b69fdbc5f302ca",
+  "content_hash": "c1bab0f16a7626cf1a13e45942153b649989ac9664f812e60577adbc299b50c1",
   "evidence_root": "artifacts/l2_2_gates",
-  "generated_at": "2026-07-29T05:01:46.793957+00:00",
+  "generated_at": "2026-07-29T11:07:34.898214+00:00",
   "n_in_scope": 22,
   "rows": [
     {
@@ -74,12 +74,17 @@
         "substrates": "SEED_NOISE"
       },
       "evidence_dir": "artifacts/l2_2_gates/DNARepair/latest",
-      "green": true,
+      "green": false,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "PASS",
+      "mechanical_verdict": "FAIL",
       "process": "DNARepair",
       "provenance_git_sha": "unknown",
-      "reasons": [],
+      "reasons": [
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'chromosome_store_module'",
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'chromosome_views_module'",
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'l2_replay_common'",
+        "STALE_SWEEP_PROVENANCE: evaluator_schema_version 1 != current 2"
+      ],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 1,
@@ -408,12 +413,16 @@
         "substrates": "SEED_NOISE"
       },
       "evidence_dir": "artifacts/l2_2_gates/ReplicationInitiation/latest",
-      "green": true,
+      "green": false,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "PASS",
+      "mechanical_verdict": "FAIL",
       "process": "ReplicationInitiation",
       "provenance_git_sha": "unknown",
-      "reasons": [],
+      "reasons": [
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'chromosome_store_module'",
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'l2_replay_common'",
+        "STALE_SWEEP_PROVENANCE: evaluator_schema_version 1 != current 2"
+      ],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 1,
@@ -510,7 +519,7 @@
   ],
   "schema_version": 1,
   "tally": {
-    "MISSING_EVIDENCE": 20,
-    "PASS": 2
+    "FAIL": 2,
+    "MISSING_EVIDENCE": 20
   }
 }

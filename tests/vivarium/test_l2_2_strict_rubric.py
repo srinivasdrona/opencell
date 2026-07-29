@@ -77,26 +77,35 @@ def test_committed_evidence_index_is_honestly_non_green_today():
     by `sweep.py run_job`. None of that evidence was launched through the
     sentinel-writing code path, so it is unprovable under the hardened
     rules and honestly reads MISSING_EVIDENCE rather than being trusted by
-    inference. DNARepair and ReplicationInitiation have now been rerun
-    through the fully R1/R2/R3-hardened sweep (schema_version 2:
-    `completion_status`, `sidecar_hashes` binding every fixed sidecar's
-    sha256 to the sentinel -- including a now-generation-time-normalized
-    `input_manifest.json` so its hash is stable across live tree and the
-    tracked bundle --, `inputs_verified`, process-specific `oc_module`
-    source hash) and hold real, mechanically re-derived PASS rows.
-    ProteinDecay -- also catalog M=200 -- could not complete its
-    (pre-R1/R2/R3) run (its Design-A memory footprint at M=200 grows
-    without plateauing and the run was terminated pre-OOM) and remains
-    MISSING_EVIDENCE pending a separate memory-scaling follow-up. This is a
-    deliberate, evidence-driven promotion/demotion (per this task's "if not
-    provable, mark stale and schedule rerun rather than infer" requirement),
-    not a regression or a fabrication. If this test ever needs to change
-    again, that change must be driven by real sentinel-carrying evidence
-    appearing/changing under artifacts/l2_2_gates/ via a hardened sweep
-    rerun, not by editing this assertion."""
+    inference. DNARepair and ReplicationInitiation were rerun through the
+    fully R1/R2/R3-hardened sweep (schema_version 2) and, at the time,
+    held real, mechanically re-derived PASS rows. A subsequent review
+    (Section 13.10, F1/F3) found the `source_hashes` registry those two
+    sentinels were recorded against was still incomplete (missing the
+    `l2_replay_common` harness dependency and, for the chromosome-coupled
+    processes, `chromosome_store_module`/`chromosome_views_module`) and
+    strengthened `verdict.rederive_process`'s primary-channel check
+    (bumping `EVALUATOR_SCHEMA_VERSION` 1 -> 2). Both sentinels now
+    correctly fail the staleness check and read FAIL
+    (`STALE_SWEEP_PROVENANCE`, not `MISSING_EVIDENCE`, since real evidence
+    files are present -- they are simply stale relative to the current
+    registry/evaluator) pending a rerun under the expanded requirements.
+    This is a deliberate, honest demotion caused by closing a real
+    staleness-detection gap, not a claim that the underlying raw numbers
+    were ever wrong. ProteinDecay -- also catalog M=200 -- could not
+    complete its (pre-R1/R2/R3) run (its Design-A memory footprint at
+    M=200 grows without plateauing and the run was terminated pre-OOM) and
+    remains MISSING_EVIDENCE pending a separate memory-scaling follow-up.
+    This is a deliberate, evidence-driven promotion/demotion (per this
+    task's "if not provable, mark stale and schedule rerun rather than
+    infer" requirement), not a regression or a fabrication. If this test
+    ever needs to change again, that change must be driven by real
+    sentinel-carrying evidence appearing/changing under
+    artifacts/l2_2_gates/ via a hardened sweep rerun, not by editing this
+    assertion."""
     result = gen.audit()
     assert result.aggregate_verdict == "NON_GREEN"
-    assert result.tally == {schema.STATUS_MISSING_EVIDENCE: 20, schema.STATUS_PASS: 2}
+    assert result.tally == {schema.STATUS_MISSING_EVIDENCE: 20, schema.STATUS_FAIL: 2}
 
 
 def test_committed_evidence_index_covers_scope_exactly_once():
