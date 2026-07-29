@@ -1,0 +1,31 @@
+{
+  "generated_at": "2026-07-29T03:43:43.960582+00:00",
+  "jobs": [
+    {
+      "duration_s": 3656.0300004990004,
+      "exit_code": 0,
+      "finished_at": "2026-07-29T03:21:47.289984+00:00",
+      "log_path": "artifacts/l2_2_gates/_sweep_logs/DNARepair.log",
+      "output_dir": "artifacts/l2_2_gates/DNARepair/latest",
+      "process": "DNARepair",
+      "reason": null,
+      "started_at": "2026-07-29T02:20:51.259984+00:00",
+      "status": "RAN_EXIT_0"
+    },
+    {
+      "duration_s": 4962.038686559001,
+      "exit_code": 0,
+      "finished_at": "2026-07-29T03:43:33.298854+00:00",
+      "log_path": "artifacts/l2_2_gates/_sweep_logs/ReplicationInitiation.log",
+      "output_dir": "artifacts/l2_2_gates/ReplicationInitiation/latest",
+      "process": "ReplicationInitiation",
+      "reason": null,
+      "started_at": "2026-07-29T02:20:51.260180+00:00",
+      "status": "RAN_EXIT_0"
+    }
+  ],
+  "n_jobs": 2,
+  "tally": {
+    "RAN_EXIT_0": 2
+  }
+}

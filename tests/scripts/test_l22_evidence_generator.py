@@ -83,26 +83,19 @@ def test_real_sweep_evidence_today_reflects_hardened_reruns_for_two_processes():
     gained new mandatory fields (`completion_status`, `sidecar_hashes` binding
     every fixed authority/sidecar file's sha256 to the sentinel,
     `inputs_verified`, and a process-specific `oc_module` source hash --
-    schema_version 1 -> 2). DNARepair and ReplicationInitiation were
-    previously rerun through the PRE-hardening sweep at their catalog M=200
-    and briefly held real PASS rows; their `sweep_provenance.json` sentinels
-    predate this hardening and therefore lack every one of the new v2 fields.
-    Under the new, stricter `_check_sweep_provenance_staleness`, this is
-    correctly and mechanically detected as staleness (not silently
-    grandfathered in as compliant) and demotes both rows from PASS to FAIL --
-    the raw channel metrics still mechanically re-derive PASS, but an open
-    staleness reason on the row means it can never read green. This is the
-    honest, expected, deliberate consequence of tightening the sentinel
-    contract: both rows are scheduled for a rerun through the now-hardened
-    `sweep.py run_job` (which will write v2-compliant sentinels) in a
-    follow-up commit, at which point they are expected to return to a
-    genuinely provable PASS. The remaining 16 in-scope processes still only
-    hold evidence from BEFORE the original Phase-A provenance hardening
-    landed -- none of it carries `sweep_provenance.json` at all -- so they
-    correctly read MISSING_EVIDENCE throughout. If this test ever needs to
-    change again, that change must be driven by real sentinel-carrying
-    evidence appearing/changing under artifacts/l2_2_gates/ via a hardened
-    sweep rerun, not by editing this assertion."""
+    schema_version 1 -> 2). DNARepair and ReplicationInitiation have now been
+    rerun through the fully v2-hardened `sweep.py run_job` (which also
+    normalizes `input_manifest.json` to repo-relative paths at generation
+    time, so the sentinel's `sidecar_hashes["input_manifest.json"]` matches
+    both the live tree and the bundle byte-for-byte) and hold real,
+    mechanically re-derived PASS rows. The remaining 16 in-scope processes
+    still only hold evidence from BEFORE the original Phase-A provenance
+    hardening landed -- none of it carries `sweep_provenance.json` at all --
+    so they correctly read MISSING_EVIDENCE throughout. If this test ever
+    needs to change again, that change must be driven by real
+    sentinel-carrying evidence appearing/changing under
+    artifacts/l2_2_gates/ via a hardened sweep rerun, not by editing this
+    assertion."""
     payload = gen.build_evidence_index()
     assert payload["aggregate_verdict"] == "NON_GREEN"
     for row in payload["rows"]:
@@ -110,12 +103,9 @@ def test_real_sweep_evidence_today_reflects_hardened_reruns_for_two_processes():
             assert row["mechanical_verdict"] == schema.STATUS_PASS
         else:
             assert row["mechanical_verdict"] != schema.STATUS_PASS
-    assert payload["tally"] == {schema.STATUS_MISSING_EVIDENCE: 20, schema.STATUS_FAIL: 2}
-    stale_rows = {row["process"] for row in payload["rows"] if row["mechanical_verdict"] == schema.STATUS_FAIL}
-    assert stale_rows == {"DNARepair", "ReplicationInitiation"}
-    for row in payload["rows"]:
-        if row["process"] in stale_rows:
-            assert any("STALE_SWEEP_PROVENANCE" in reason for reason in row["reasons"])
+    assert payload["tally"] == {schema.STATUS_MISSING_EVIDENCE: 20, schema.STATUS_PASS: 2}
+    pass_rows = {row["process"] for row in payload["rows"] if row["mechanical_verdict"] == schema.STATUS_PASS}
+    assert pass_rows == {"DNARepair", "ReplicationInitiation"}
 
 
 def test_content_hash_is_deterministic_across_regenerations():
@@ -154,7 +144,7 @@ def test_write_index_then_audit_round_trips_cleanly(tmp_path):
     result = gen.audit(index_path=index_path, evidence_root=schema.EVIDENCE_ROOT)
     assert result.ok is True
     assert result.aggregate_verdict == "NON_GREEN"
-    assert result.tally == {schema.STATUS_MISSING_EVIDENCE: 20, schema.STATUS_FAIL: 2}
+    assert result.tally == {schema.STATUS_MISSING_EVIDENCE: 20, schema.STATUS_PASS: 2}
 
 
 def test_audit_reports_failure_when_index_file_absent(tmp_path):

@@ -979,6 +979,24 @@ re-evaluated as stale rather than silently grandfathered.
   match, on the `result.json` sidecar hash mismatch — that file's real
   content differs per-process by construction). Any missing/mismatched
   entry is stale, never silently accepted.
+  - **`input_manifest.json` normalization moved to generation time.**
+    `sidecar_hashes["input_manifest.json"]` initially reintroduced exactly
+    the byte-divergence problem Section 13.4 already documents and works
+    around for `artifact_hashes`: `run_job` originally wrote
+    `input_manifest.json` with the runner's real absolute worktree paths,
+    so the R1 sentinel hash was computed from those un-normalized bytes —
+    which could never match the bundle's later-normalized (repo-relative)
+    copy produced by `bundle_process_evidence()`, permanently failing a
+    bundle-sourced audit even for a genuinely valid run. Fixed by adding
+    `sweep._normalize_input_manifest_file()`, called in `run_job`
+    immediately after `_verify_input_manifest()` succeeds (which still
+    needs the original absolute paths, since the oracle data is guaranteed
+    mounted at that point) but before `_sanitize_dangling_temp_refs()`/
+    `build_sweep_provenance()` compute sidecar hashes. This makes the
+    live tree's `input_manifest.json` already repo-relative from the
+    moment the sentinel is written, so the bundle's later normalization
+    pass is a no-op and `sidecar_hashes["input_manifest.json"]` agrees
+    between live tree and bundle from generation onward.
 - **R2 — per-process `oc_module` hash.** `catalog.ProcessEntry.oc_module`
   (the catalog row's biology-module path, e.g.
   `opencell/vivarium/karr_dna_repair.py`) is now hashed under a dedicated

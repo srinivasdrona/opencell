@@ -429,6 +429,50 @@ def _verify_input_manifest(manifest: dict[str, Any] | None, *, repo_root: Path =
     return True, None
 
 
+def _normalize_input_manifest_file(tmp_output_dir: Path, *, repo_root: Path = REPO_ROOT) -> None:
+    """Rewrite `input_manifest.json["inputs"][*]["path"]` in-place to
+    repo-relative POSIX paths, run right after `_verify_input_manifest`
+    confirms the recorded (runner-written, always-absolute) paths and
+    hashes are correct.
+
+    Without this, the LIVE tree's `input_manifest.json` keeps the runner's
+    absolute worktree paths while `generator.bundle_process_evidence`
+    separately normalizes a COPY when mirroring it into the tracked bundle
+    (`generator._normalize_input_manifest_paths`) -- two different byte
+    representations of the same logical evidence. R1's
+    `sweep_provenance.json["sidecar_hashes"]["input_manifest.json"]` is
+    computed from whichever bytes exist in `tmp_output_dir` at sentinel-
+    write time, so without this normalization happening BEFORE that hash
+    is taken, a bundle-sourced audit would always see a sidecar_hashes
+    mismatch (the bundle's normalized bytes vs. the sentinel's hash of the
+    live, absolute-path bytes) and incorrectly report every process as
+    stale. Normalizing here, before the sentinel is written, makes the
+    live tree and the (now merely byte-identical-copy) bundle agree from
+    generation time onward, so `generator.bundle_process_evidence`'s own
+    normalization pass becomes a no-op on already-normalized input."""
+    manifest_path = tmp_output_dir / "input_manifest.json"
+    payload = _load_json_safe(manifest_path)
+    if payload is None:
+        return
+    changed = False
+    for record in payload.get("inputs", ()):
+        path_str = record.get("path")
+        if not path_str:
+            continue
+        path = Path(str(path_str))
+        if not path.is_absolute():
+            continue
+        try:
+            logical = path.resolve().relative_to(repo_root).as_posix()
+        except ValueError:
+            continue
+        if record["path"] != logical:
+            record["path"] = logical
+            changed = True
+    if changed:
+        manifest_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
 def _sanitize_dangling_temp_refs(tmp_output_dir: Path, *, final_output_dir: Path, repo_root: Path = REPO_ROOT) -> None:
     """Rewrite the handful of self-referential absolute paths the runner
     bakes into its own output (`result.json["allocator_inputs_ref"
@@ -765,6 +809,7 @@ def run_job(
                 invalid_reason = f"input_manifest verification failed: {inputs_reason}"
 
         if exit_code == 0 and fresh_valid:
+            _normalize_input_manifest_file(tmp_output_dir, repo_root=REPO_ROOT)
             _sanitize_dangling_temp_refs(tmp_output_dir, final_output_dir=job.output_dir, repo_root=REPO_ROOT)
             provenance_payload = build_sweep_provenance(
                 job, output_dir=tmp_output_dir, repo_root=REPO_ROOT, inputs_verified=inputs_verified

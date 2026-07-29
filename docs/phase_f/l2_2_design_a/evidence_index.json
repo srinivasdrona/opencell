@@ -2,9 +2,9 @@
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
   "catalog_sha256": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
-  "content_hash": "458928640352bc8206de52f5addf79163abef62239d4fab6d5ec1e9b7405fc81",
+  "content_hash": "34afddeee1fa5eced1542424bcc3475f09f66de10a1f8e2901b69fdbc5f302ca",
   "evidence_root": "artifacts/l2_2_gates",
-  "generated_at": "2026-07-28T23:58:26.292388+00:00",
+  "generated_at": "2026-07-29T03:46:42.904555+00:00",
   "n_in_scope": 22,
   "rows": [
     {
@@ -51,12 +51,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "719e926819bb6bb11dce4cde3e99645a47ac67c7e600f878657cbbce0852b64e",
+        "SUMMARY.json": "6731ac66641d8d354a9ed9392c6a4c24992085cacbcc3d6a3ead6215bc7858b9",
         "analytical_check.json": "c37ae0ef71b6663479d1f59b5ee26f798f0eb7846541192f35b7b0f52ea5264c",
-        "null_calibration.json": "0edcce7b39878bc1c712076302b3efdf26491efb62c169a752a34dd5119516ad",
-        "provenance.json": "0e4e63827b718c4b3a9f844535b330d5ac6361e7fd47d792b6146027a89816fa",
-        "result.json": "fdc7c4b004224476f847f167bd116dda6cfab0b440bc36f12b22248ead1f436a",
-        "sweep_provenance.json": "06e24b90a8f23cf34a556b3fa15b842d1c07ca023e1c1ba85d207db530409abc",
+        "null_calibration.json": "7128ef72d08bc9ed0619122d26fae8d31d8ef578b620af8f4f38d520a351e4e8",
+        "provenance.json": "5025bc848f6898b12a8a8cb5390daf2063be000fac8cb48911e7143eb9af0a54",
+        "result.json": "3df2fc520ff7dd6efa3f221d993b4ba4a1d02fa2465986025b0a0b1fb6a420ae",
+        "sweep_provenance.json": "d48913d3f9adbcbb8edc2ce605f93a667e79826248cbb9fff74f518de5660099",
         "thresholds.json": "beeba9da08cbc55b29ef3e231904f67e3a4ec6f9e741d00aa4c58b188238051b"
       },
       "bucket": "ALGORITHMIC_DEEP",
@@ -74,29 +74,18 @@
         "substrates": "SEED_NOISE"
       },
       "evidence_dir": "artifacts/l2_2_gates/DNARepair/latest",
-      "green": false,
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "FAIL",
+      "mechanical_verdict": "PASS",
       "process": "DNARepair",
       "provenance_git_sha": "unknown",
-      "reasons": [
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json completion_status=None != 'COMPLETE'",
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json inputs_verified is not True (input_manifest.json inputs were never mechanically re-hashed at generation time)",
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing sidecar_hashes['result.json']",
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing sidecar_hashes['input_manifest.json']",
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing sidecar_hashes['provenance.json']",
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing sidecar_hashes['thresholds.json']",
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing sidecar_hashes['null_calibration.json']",
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing sidecar_hashes['SUMMARY.json']",
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing sidecar_hashes['analytical_check.json']",
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'oc_module'"
-      ],
+      "reasons": [],
       "sweep_provenance": {
-        "completion_status": null,
+        "completion_status": "COMPLETE",
         "evaluator_schema_version": 1,
         "git_dirty": null,
-        "git_sha": "a7360c78e9e978d533c8d0254bfe9546edfd5e4e",
-        "inputs_verified": null
+        "git_sha": "593f0359e7b5fdc4ff560349adb9857ff3670b02",
+        "inputs_verified": true
       },
       "warnings": []
     },
@@ -396,12 +385,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "f54167aaf9596b79255140306cd241d0ad7da4dbc755295bae048259cd91325a",
+        "SUMMARY.json": "33b0378096eed7685c8c73a48c1404817b187e2644432f3e2395e046d1d682ef",
         "analytical_check.json": "d40b24b7383e02c3833fabb799ed0d2e28709559cf7c34245fa9331fefeda6f7",
-        "null_calibration.json": "cc44581532b37ea7eca14a23f07fcc8878777b81c3ba6f61cda7a8e16cb3ed33",
-        "provenance.json": "c0704c4afdc04647c912fd5025a382b76185291d5bb3d8951e5c0b0f99f786fb",
-        "result.json": "94f51f20d719a6c3f76f9d68d4e84e0a6158aa738d308e96fe3aaf180d878545",
-        "sweep_provenance.json": "58d21f91abcc5253840ac2ea6557574d8688f79737d418fc9218bc28d85cc232",
+        "null_calibration.json": "738b51f3d9d309956840d1962992dadd1a08a5db1f381013a872cd679935bd7b",
+        "provenance.json": "f44e89330fdedebaaa6565dde0e6142ba3a5ab463be11a892e72faa22db07e4f",
+        "result.json": "3819ef1fdacc1c0881a13ad6992b87139c218b73ed701c52f966b4d16039883d",
+        "sweep_provenance.json": "d63820a5eb8a774ba19d5d5d94d4fc8497bc8098e7b99eff5e1f5e6479d79f98",
         "thresholds.json": "f371d2d65e25e1cf7d577adb812aeb79fa5f5824ede2d7d73628b3e37d33dd6c"
       },
       "bucket": "ALGORITHMIC_DEEP",
@@ -419,29 +408,18 @@
         "substrates": "SEED_NOISE"
       },
       "evidence_dir": "artifacts/l2_2_gates/ReplicationInitiation/latest",
-      "green": false,
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "FAIL",
+      "mechanical_verdict": "PASS",
       "process": "ReplicationInitiation",
       "provenance_git_sha": "unknown",
-      "reasons": [
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json completion_status=None != 'COMPLETE'",
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json inputs_verified is not True (input_manifest.json inputs were never mechanically re-hashed at generation time)",
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing sidecar_hashes['result.json']",
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing sidecar_hashes['input_manifest.json']",
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing sidecar_hashes['provenance.json']",
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing sidecar_hashes['thresholds.json']",
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing sidecar_hashes['null_calibration.json']",
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing sidecar_hashes['SUMMARY.json']",
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing sidecar_hashes['analytical_check.json']",
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'oc_module'"
-      ],
+      "reasons": [],
       "sweep_provenance": {
-        "completion_status": null,
+        "completion_status": "COMPLETE",
         "evaluator_schema_version": 1,
         "git_dirty": null,
-        "git_sha": "a7360c78e9e978d533c8d0254bfe9546edfd5e4e",
-        "inputs_verified": null
+        "git_sha": "593f0359e7b5fdc4ff560349adb9857ff3670b02",
+        "inputs_verified": true
       },
       "warnings": []
     },
@@ -532,7 +510,7 @@
   ],
   "schema_version": 1,
   "tally": {
-    "FAIL": 2,
-    "MISSING_EVIDENCE": 20
+    "MISSING_EVIDENCE": 20,
+    "PASS": 2
   }
 }
