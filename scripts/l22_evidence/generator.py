@@ -152,7 +152,12 @@ def _check_current_tree_staleness(
         path = _resolve_input_path(str(path_str))
         current_sha = _sha256_file(path)
         if current_sha is None:
-            suffix = " (--verify-input-files requested but oracle data is not mounted here)" if kind == "oracle_data" else ""
+            suffix = (
+                " (--verify-input-files requested but the raw oracle data is not mounted at this path -- "
+                "expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)"
+                if kind == "oracle_data"
+                else ""
+            )
             reasons.append(f"{schema.STATUS_STALE_VS_TREE}: input {path_str} no longer exists on disk{suffix}")
         elif current_sha != recorded_sha:
             reasons.append(
@@ -183,18 +188,28 @@ def _current_source_hashes(entry: cat.ProcessEntry | None = None) -> dict[str, s
     `oc_module` implementation file under the `"oc_module"` key (R2) -- the
     same process-specific SUT hash `sweep.current_source_hashes(oc_module=...)`
     computes at generation time, so a code change to a single
-    `karr_<process>.py` stales only that process's row here too. It also
-    hashes `entry.name`'s registered metric-evaluation dependency modules,
-    if any (`schema.METRIC_DEPENDENCY_FILES`, e.g. Metabolism's
-    `fva_module`/`calc_flux_bounds_module`/`m1_karr_metabolism_module`),
-    same stale-only-that-process property, mirroring
-    `sweep.current_source_hashes(process=...)`."""
+    `karr_<process>.py` stales only that process's row here too, PLUS
+    (F1) sha256 of every module `entry.oc_module`'s own source is
+    mechanically found to import (`schema.mechanical_dependency_hashes`,
+    e.g. `chromosome_store_module`/`chromosome_views_module` for
+    chromosome-coupled processes). It also hashes `entry.name`'s
+    registered metric-evaluation dependency modules, if any
+    (`schema.METRIC_DEPENDENCY_FILES`, e.g. Metabolism's `fva_module`/
+    `calc_flux_bounds_module`/`m1_karr_metabolism_module`/
+    `karr_metabolism_writeback_module`, Translation's
+    `m3_translation_module`), same stale-only-that-process property, and
+    `entry.harness_type`'s shared harness-scoped dependency modules, if any
+    (`schema.HARNESS_DEPENDENCY_FILES`, e.g. every `design_a_per_tick`
+    process's `l2_replay_common` -- never for `event_class`), mirroring
+    `sweep.current_source_hashes(process=..., harness_type=...)`."""
     hashes = {name: _sha256_file(path) for name, path in schema.SWEEP_PROVENANCE_SOURCE_FILES.items()}
     if entry is not None and entry.oc_module:
         hashes["oc_module"] = _sha256_file(cat.REPO_ROOT / entry.oc_module)
+        hashes.update(schema.mechanical_dependency_hashes(entry.oc_module))
     if entry is not None:
         for name, path in schema.METRIC_DEPENDENCY_FILES.get(entry.name, {}).items():
             hashes[name] = _sha256_file(path)
+        hashes.update(schema.harness_dependency_hashes(entry.harness_type))
     return hashes
 
 

@@ -110,7 +110,17 @@ def test_audit_succeeds_from_a_temp_root_with_no_local_artifacts_tree(tmp_path):
     assert not (tmp_path / "artifacts").exists()
     assert not any(p.name == "l2_2_gates" for p in tmp_path.rglob("*"))
 
-    real = gen.audit()  # against the real, local artifacts/l2_2_gates tree
+    # F3 (Opus5 final review): pass explicit index_path/evidence_root for
+    # BOTH sides rather than relying on `gen.audit()`'s ambient
+    # `schema.INDEX_PATH`/`schema.default_evidence_root()` default
+    # arguments -- this test is specifically about proving the *portable*
+    # (tracked-bundle-only) path reproduces the real tally, and should not
+    # itself depend on `audit()`'s own default-argument resolution (that
+    # resolution is separately exercised by
+    # `test_default_evidence_root_prefers_live_tree_when_present` /
+    # `test_generate_falls_back_to_bundle_when_evidence_root_absent` below).
+    real_evidence_root = schema.EVIDENCE_ROOT if schema.EVIDENCE_ROOT.is_dir() else schema.BUNDLE_ROOT
+    real = gen.audit(index_path=schema.INDEX_PATH, evidence_root=real_evidence_root)
     portable = gen.audit(index_path=temp_index_path, evidence_root=temp_bundle_root)
 
     assert portable.ok, f"portable audit (bundle-only, no local artifacts/) failed integrity: {portable.problems}"

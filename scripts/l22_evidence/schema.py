@@ -8,6 +8,8 @@ the row shape and update ``EVIDENCE_INDEX_SPEC.md`` in lockstep.
 
 from __future__ import annotations
 
+import ast
+import hashlib
 import sys
 from pathlib import Path
 
@@ -192,14 +194,136 @@ SWEEP_PROVENANCE_SOURCE_FILES = {
 FVA_MODULE = REPO_ROOT / "opencell" / "m1" / "fva.py"
 CALC_FLUX_BOUNDS_MODULE = REPO_ROOT / "opencell" / "m1" / "calc_flux_bounds.py"
 M1_KARR_METABOLISM_MODULE = REPO_ROOT / "opencell" / "m1" / "karr_metabolism.py"
+# F1 (Opus5 final review): Metabolism's `karr_metabolism.py` (already
+# hashed above) itself imports `opencell.m1.karr_metabolism_writeback` at
+# module scope -- verified by direct inspection of
+# `opencell/vivarium/karr_metabolism.py` -- which is not itself covered by
+# any existing key, so a change to it would silently escape staleness
+# detection.
+KARR_METABOLISM_WRITEBACK_MODULE = REPO_ROOT / "opencell" / "m1" / "karr_metabolism_writeback.py"
+# Translation's own `oc_module` (`opencell/vivarium/karr_translation.py`)
+# directly imports `from opencell.m3 import translation as tl` at module
+# scope -- verified by direct inspection -- so its runtime numeric
+# dependency is not fully covered by the `oc_module` hash alone either.
+M3_TRANSLATION_MODULE = REPO_ROOT / "opencell" / "m3" / "translation.py"
 
 METRIC_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
     "Metabolism": {
         "fva_module": FVA_MODULE,
         "calc_flux_bounds_module": CALC_FLUX_BOUNDS_MODULE,
         "m1_karr_metabolism_module": M1_KARR_METABOLISM_MODULE,
+        "karr_metabolism_writeback_module": KARR_METABOLISM_WRITEBACK_MODULE,
+    },
+    "Translation": {
+        "m3_translation_module": M3_TRANSLATION_MODULE,
     },
 }
+
+# --- Harness-level shared dependency (F1: `l2_replay_common.py`) ------------
+#
+# `tests/vivarium/_l2_2_design_a_runner_helpers.py` (already hashed above as
+# `"helpers"`) does a bare `import l2_replay_common` and calls its state/
+# projection/update-function helpers for every `design_a_per_tick` process
+# -- verified by direct inspection. This is scoped by `harness_type`
+# (bound for all 18 `design_a_per_tick` processes, never the 4
+# `event_class` ones, which do not go through this runner/helpers module at
+# all) rather than by process name, since it is a runner-harness-level
+# dependency, not a per-process one -- keyed the same way
+# `SWEEP_PROVENANCE_SOURCE_FILES` is, just scoped narrower than "always".
+L2_REPLAY_COMMON_MODULE = REPO_ROOT / "tests" / "vivarium" / "l2_replay_common.py"
+
+HARNESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
+    "design_a_per_tick": {"l2_replay_common": L2_REPLAY_COMMON_MODULE},
+}
+
+# --- Mechanically-derived per-process dependency modules (F1) ---------------
+#
+# `chromosome_store.py`/`chromosome_views.py` are imported by SOME but not
+# all `design_a_per_tick` processes' own `oc_module` implementation files
+# (chromosome-coupled processes: DNARepair, DNASupercoiling, Replication,
+# ReplicationInitiation import `opencell.state.chromosome_store`; DNARepair
+# additionally imports `opencell.vivarium.chromosome_views`). Hand-listing
+# "which processes touch chromosome state" would silently drift as
+# `karr_*.py` files are edited over time, so this is instead derived
+# mechanically (see `mechanical_dependency_hashes` below) by parsing each
+# process's own `oc_module` source for a top-level import of one of these
+# two fixed candidate targets -- a small, targeted, single-level AST scan,
+# not a generalized transitive-closure import-graph hasher.
+CHROMOSOME_STORE_MODULE = REPO_ROOT / "opencell" / "state" / "chromosome_store.py"
+CHROMOSOME_VIEWS_MODULE = REPO_ROOT / "opencell" / "vivarium" / "chromosome_views.py"
+
+MECHANICAL_DEPENDENCY_CANDIDATES: dict[str, tuple[str, Path]] = {
+    "opencell.state.chromosome_store": ("chromosome_store_module", CHROMOSOME_STORE_MODULE),
+    "opencell.vivarium.chromosome_views": ("chromosome_views_module", CHROMOSOME_VIEWS_MODULE),
+}
+
+
+def _module_imports_any(source_path: Path, dotted_names: tuple[str, ...]) -> set[str]:
+    """Parse `source_path` (a process's own `oc_module` implementation
+    file) as an AST and return the subset of `dotted_names` it imports via
+    a top-level `import <name>` / `from <name> import ...` /
+    `from <name>.<attr> import ...` statement. Single-level: does not
+    recurse into whatever those targets themselves import -- see
+    `MECHANICAL_DEPENDENCY_CANDIDATES` above. Returns an empty set (never
+    raises) for a missing/unreadable/unparseable file -- callers already
+    treat "no match" as "nothing to bind", so a parse failure here degrades
+    to the same safe default rather than crashing evidence generation."""
+    if not source_path.is_file():
+        return set()
+    try:
+        tree = ast.parse(source_path.read_text(encoding="utf-8"), filename=str(source_path))
+    except (SyntaxError, OSError, UnicodeDecodeError):
+        return set()
+    found: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                for dotted in dotted_names:
+                    if alias.name == dotted or alias.name.startswith(dotted + "."):
+                        found.add(dotted)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            for dotted in dotted_names:
+                if node.module == dotted or node.module.startswith(dotted + "."):
+                    found.add(dotted)
+    return found
+
+
+def mechanical_dependency_hashes(oc_module: str | None) -> dict[str, str | None]:
+    """For a process's own `oc_module` (repo-relative path string, e.g.
+    "opencell/vivarium/karr_dna_repair.py"), sha256 of every module in
+    `MECHANICAL_DEPENDENCY_CANDIDATES` that file's source actually imports
+    -- e.g. DNARepair's `karr_dna_repair.py` imports both
+    `chromosome_store` and `chromosome_views`, so both are bound;
+    DNASupercoiling's `karr_dna_supercoiling.py` imports only
+    `chromosome_store`, so only that one key is present. A process whose
+    `oc_module` imports neither candidate gets an empty dict -- no
+    spurious keys, and therefore no spurious staleness."""
+    if not oc_module:
+        return {}
+    matched = _module_imports_any(REPO_ROOT / oc_module, tuple(MECHANICAL_DEPENDENCY_CANDIDATES))
+    return {
+        MECHANICAL_DEPENDENCY_CANDIDATES[dotted][0]: _sha256_module_file(MECHANICAL_DEPENDENCY_CANDIDATES[dotted][1])
+        for dotted in sorted(matched)
+    }
+
+
+def harness_dependency_hashes(harness_type: str | None) -> dict[str, str | None]:
+    """sha256 of every module registered in `HARNESS_DEPENDENCY_FILES` for
+    `harness_type` (e.g. `l2_replay_common.py` for every
+    `design_a_per_tick` process) -- empty dict for `None`/an unregistered
+    harness_type (e.g. `event_class`, which is intentionally unregistered:
+    that harness does not exist yet and does not go through this runner)."""
+    return {name: _sha256_module_file(path) for name, path in HARNESS_DEPENDENCY_FILES.get(harness_type or "", {}).items()}
+
+
+def _sha256_module_file(path: Path) -> str | None:
+    if not path.is_file():
+        return None
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 # The fixed set of tracked authority/sidecar files R1 binds a
 # sweep_provenance.json sentinel to (via its own `sidecar_hashes` field) --
@@ -296,4 +420,9 @@ STATUS_EMPTY_INPUT_MANIFEST = "EMPTY_INPUT_MANIFEST"
 # in both modes.
 ORACLE_DATA_PATH_PREFIX = "data/"
 
-__all__ = [name for name in globals() if name.isupper()] + ["CATALOG_PATH", "default_evidence_root"]
+__all__ = [name for name in globals() if name.isupper()] + [
+    "CATALOG_PATH",
+    "default_evidence_root",
+    "mechanical_dependency_hashes",
+    "harness_dependency_hashes",
+]

@@ -87,12 +87,21 @@ def valid_sweep_provenance_payload(
     oc_module: str | None = None,
     sidecar_hashes: dict[str, str] | None = None,
     inputs_verified: bool = True,
+    harness_type: str | None = "design_a_per_tick",
 ) -> dict[str, Any]:
     """A `sweep_provenance.json` payload that will pass EVERY staleness
     check against the CURRENT tree (real current source hashes, real
     current evaluator schema version -- the gating authority; git SHA is
     included for realism but is informational only) -- exactly what
     `sweep.build_sweep_provenance` would have produced right now.
+
+    `harness_type` defaults to `"design_a_per_tick"` (every current caller
+    exercises a design_a_per_tick fixture process); pass `"event_class"`
+    (or `None`) explicitly for an event_class fixture so the F1
+    harness-scoped `l2_replay_common` dependency is correctly NOT bound --
+    matching `sweep.current_source_hashes`'s real production contract
+    (`SweepJob.harness_type` is always `"design_a_per_tick"` by
+    construction; see `plan_sweep`).
 
     `sidecar_hashes` should normally be computed via `compute_sidecar_hashes`
     from the SAME `evidence_dir` this sentinel is written into (see
@@ -106,7 +115,7 @@ def valid_sweep_provenance_payload(
         "completion_status": schema.COMPLETION_STATUS_COMPLETE,
         "git_sha": _git_sha(REPO_ROOT),
         "git_dirty": _git_dirty(REPO_ROOT),
-        "source_hashes": sweep.current_source_hashes(oc_module, process=process),
+        "source_hashes": sweep.current_source_hashes(oc_module, process=process, harness_type=harness_type),
         "sidecar_hashes": sidecar_hashes or {},
         "inputs_verified": inputs_verified,
         "evaluator_schema_version": vd.EVALUATOR_SCHEMA_VERSION,
@@ -121,6 +130,7 @@ def write_valid_sweep_provenance(
     n_seeds: int,
     m_ticks: int,
     oc_module: str | None = None,
+    harness_type: str | None = "design_a_per_tick",
 ) -> None:
     """Write a `sweep_provenance.json` sentinel into `evidence_dir` whose
     `sidecar_hashes` are computed from whatever mandatory sidecar files
@@ -134,6 +144,7 @@ def write_valid_sweep_provenance(
             m_ticks=m_ticks,
             oc_module=oc_module,
             sidecar_hashes=compute_sidecar_hashes(evidence_dir),
+            harness_type=harness_type,
         ),
     )
 
@@ -150,6 +161,7 @@ def write_full_valid_evidence(
     result_overrides: dict[str, Any] | None = None,
     inputs: list[dict[str, Any]] | None = None,
     oc_module: str | None = None,
+    harness_type: str | None = "design_a_per_tick",
 ) -> None:
     """Write a complete, currently-valid evidence directory: the three
     runner authority files, all four mandatory sidecars, and a real,
@@ -185,4 +197,6 @@ def write_full_valid_evidence(
     )
     _write_json(evidence_dir / "provenance.json", {"generated_at": "2026-01-01T00:00:00+00:00", "git_sha": "unknown"})
     write_mandatory_sidecars(evidence_dir)
-    write_valid_sweep_provenance(evidence_dir, process=process, n_seeds=seeds, m_ticks=m_ticks, oc_module=oc_module)
+    write_valid_sweep_provenance(
+        evidence_dir, process=process, n_seeds=seeds, m_ticks=m_ticks, oc_module=oc_module, harness_type=harness_type
+    )

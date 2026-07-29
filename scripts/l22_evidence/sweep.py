@@ -104,6 +104,14 @@ class SweepJob:
     # hash), e.g. "opencell/vivarium/karr_dna_repair.py"; None if the
     # catalog declares no implementation for this process.
     oc_module: str | None = None
+    # `plan_sweep` only ever builds jobs from `entry.harness_type ==
+    # "design_a_per_tick"` catalog entries (see below) -- this field is
+    # fixed at that value by construction, never inferred implicitly, so
+    # `current_source_hashes(harness_type=job.harness_type)` binds the
+    # F1 harness-scoped dependency (`l2_replay_common.py`) explicitly
+    # rather than by relying on "this module happens to only ever be
+    # called this way".
+    harness_type: str = "design_a_per_tick"
 
 
 @dataclass
@@ -169,6 +177,7 @@ def plan_sweep(
                 output_dir=evidence_root / name / schema.DESIGN_A_SUBDIR,
                 log_path=log_dir / f"{name}.log",
                 oc_module=entry.oc_module,
+                harness_type=entry.harness_type,
             )
         )
     return jobs
@@ -193,7 +202,9 @@ def _sha256_file(path: Path) -> str | None:
     return digest.hexdigest()
 
 
-def current_source_hashes(oc_module: str | None = None, *, process: str | None = None) -> dict[str, str | None]:
+def current_source_hashes(
+    oc_module: str | None = None, *, process: str | None = None, harness_type: str | None = None
+) -> dict[str, str | None]:
     """sha256 of the runner/helpers/projections/catalog files as they exist
     RIGHT NOW -- both `build_sweep_provenance` (recording what evidence was
     generated against) and `evidence_is_valid` (checking whether that
@@ -204,23 +215,38 @@ def current_source_hashes(oc_module: str | None = None, *, process: str | None =
     `oc_module`, when given (a repo-relative path string, e.g.
     "opencell/vivarium/karr_dna_repair.py" -- see `catalog.ProcessEntry.
     oc_module`), additionally hashes that ONE process's own implementation
-    file under the `"oc_module"` key. This is process-specific by
-    construction (unlike the four shared entries above), which is exactly
-    what makes a code change to a single process's `karr_<process>.py`
-    stale only THAT process's row (R2), never all 18.
+    file under the `"oc_module"` key, PLUS (F1) sha256 of every module in
+    `schema.MECHANICAL_DEPENDENCY_CANDIDATES` that file's own source is
+    mechanically found to import (e.g. `chromosome_store.py`/
+    `chromosome_views.py` for chromosome-coupled processes). This is
+    process-specific by construction (unlike the four shared entries
+    above), which is exactly what makes a code change to a single
+    process's `karr_<process>.py` (or a module it mechanically imports)
+    stale only THAT process's row (R2/F1), never all 18.
 
     `process`, when given and present in `schema.METRIC_DEPENDENCY_FILES`,
     additionally hashes that process's registered metric-evaluation
     dependency modules (e.g. Metabolism's `fva.py`/`calc_flux_bounds.py`/
-    `karr_metabolism.py`) under their own named keys -- same
+    `karr_metabolism.py`/`karr_metabolism_writeback.py`, Translation's
+    `opencell/m3/translation.py`) under their own named keys -- same
     stale-only-that-process property, for source files that are neither
-    one of the four shared entries nor the process's `oc_module`."""
+    one of the four shared entries nor the process's `oc_module`.
+
+    `harness_type`, when given and present in
+    `schema.HARNESS_DEPENDENCY_FILES` (currently just
+    `"design_a_per_tick"` -> `l2_replay_common.py`, F1), additionally
+    hashes that harness's shared dependency modules -- scoped by harness,
+    not by process name, since every `design_a_per_tick` process (never
+    `event_class`) runs through the same `l2_replay_common.py` helpers."""
     hashes = {name: _sha256_file(path) for name, path in schema.SWEEP_PROVENANCE_SOURCE_FILES.items()}
     if oc_module:
         hashes["oc_module"] = _sha256_file(REPO_ROOT / oc_module)
+        hashes.update(schema.mechanical_dependency_hashes(oc_module))
     if process:
         for name, path in schema.METRIC_DEPENDENCY_FILES.get(process, {}).items():
             hashes[name] = _sha256_file(path)
+    if harness_type:
+        hashes.update(schema.harness_dependency_hashes(harness_type))
     return hashes
 
 
@@ -333,7 +359,7 @@ def evidence_is_valid(job: SweepJob) -> tuple[bool, str | None]:
     # linked-worktree git plumbing is fragile enough that an unknown SHA alone
     # must not invalidate otherwise-matching, otherwise-current evidence.
     recorded_hashes = sweep_prov.get("source_hashes") or {}
-    for name, current in current_source_hashes(job.oc_module, process=job.process).items():
+    for name, current in current_source_hashes(job.oc_module, process=job.process, harness_type=job.harness_type).items():
         if current is None or recorded_hashes.get(name) != current:
             return False, f"{schema.SWEEP_PROVENANCE_FILE} source hash for {name!r} is stale/unknown vs current tree"
 
@@ -379,8 +405,16 @@ def build_sweep_provenance(
     stales only that process's row. `source_hashes` additionally carries
     this process's registered metric-evaluation dependency modules, if any
     (`schema.METRIC_DEPENDENCY_FILES`, e.g. Metabolism's `fva_module`/
-    `calc_flux_bounds_module`/`m1_karr_metabolism_module`), same
-    stale-only-that-process property. `inputs_verified` (R3) must be passed
+    `calc_flux_bounds_module`/`m1_karr_metabolism_module`/
+    `karr_metabolism_writeback_module`, Translation's
+    `m3_translation_module`), the mechanically-derived per-process modules
+    a process's own `oc_module` is found to import
+    (`schema.mechanical_dependency_hashes`, e.g. `chromosome_store_module`/
+    `chromosome_views_module` for chromosome-coupled processes), and this
+    job's harness-scoped shared dependency modules, if any
+    (`schema.HARNESS_DEPENDENCY_FILES`, e.g. every `design_a_per_tick`
+    job's `l2_replay_common`) -- same stale-only-that-process(-or-harness)
+    property. `inputs_verified` (R3) must be passed
     in True by the caller ONLY after `_verify_input_manifest` has actually
     rehashed every `input_manifest.json` input against the tree at
     generation time (guaranteed available then) -- never fabricated here."""
@@ -397,7 +431,7 @@ def build_sweep_provenance(
         "completion_status": schema.COMPLETION_STATUS_COMPLETE,
         "git_sha": _git_sha(repo_root),
         "git_dirty": _git_dirty(repo_root),
-        "source_hashes": current_source_hashes(job.oc_module, process=job.process),
+        "source_hashes": current_source_hashes(job.oc_module, process=job.process, harness_type=job.harness_type),
         "sidecar_hashes": sidecar_hashes,
         "inputs_verified": bool(inputs_verified),
         "evaluator_schema_version": vd.EVALUATOR_SCHEMA_VERSION,
@@ -463,12 +497,24 @@ def _normalize_input_manifest_file(tmp_output_dir: Path, *, repo_root: Path = RE
     stale. Normalizing here, before the sentinel is written, makes the
     live tree and the (now merely byte-identical-copy) bundle agree from
     generation time onward, so `generator.bundle_process_evidence`'s own
-    normalization pass becomes a no-op on already-normalized input."""
+    normalization pass becomes a no-op on already-normalized input.
+
+    F2 (Opus5 final review): ALWAYS writes the canonical serialized form
+    (`json.dumps(..., indent=2, sort_keys=True) + "\n"`, matching
+    `generator.bundle_process_evidence`'s own serialization exactly) even
+    when every path is already relative and no `path` value itself
+    changes -- there used to be a `changed` guard that skipped the
+    rewrite entirely in that case, which meant a manifest already holding
+    repo-relative paths but written by the runner with different
+    whitespace/key-ordering than the canonical form would silently keep
+    those different bytes, breaking the live-tree/bundle byte-identity
+    guarantee the docstring above depends on. Removed: this function must
+    make the live tree's bytes match a fresh canonical write
+    unconditionally, not just when there was a path to rewrite."""
     manifest_path = tmp_output_dir / "input_manifest.json"
     payload = _load_json_safe(manifest_path)
     if payload is None:
         return
-    changed = False
     for record in payload.get("inputs", ()):
         path_str = record.get("path")
         if not path_str:
@@ -480,11 +526,8 @@ def _normalize_input_manifest_file(tmp_output_dir: Path, *, repo_root: Path = RE
             logical = path.resolve().relative_to(repo_root).as_posix()
         except ValueError:
             continue
-        if record["path"] != logical:
-            record["path"] = logical
-            changed = True
-    if changed:
-        manifest_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        record["path"] = logical
+    manifest_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 def _sanitize_dangling_temp_refs(tmp_output_dir: Path, *, final_output_dir: Path, repo_root: Path = REPO_ROOT) -> None:

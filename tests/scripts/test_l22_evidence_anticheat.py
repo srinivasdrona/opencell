@@ -108,7 +108,12 @@ def _write_evidence_dir(
     _write_json(evidence_dir / "provenance.json", {"generated_at": "2026-07-28T00:00:00+00:00", "git_sha": "deadbeef"})
     write_mandatory_sidecars(evidence_dir)
     write_valid_sweep_provenance(
-        evidence_dir, process=process_name, n_seeds=entry.n_seeds, m_ticks=entry.m_ticks, oc_module=entry.oc_module
+        evidence_dir,
+        process=process_name,
+        n_seeds=entry.n_seeds,
+        m_ticks=entry.m_ticks,
+        oc_module=entry.oc_module,
+        harness_type=entry.harness_type,
     )
     return evidence_dir
 
@@ -662,6 +667,162 @@ def test_metabolism_source_hashes_include_real_fva_dependency_modules(tmp_path):
 
     row = gen.build_process_row(_ENTRIES["Metabolism"], tmp_path)
     assert row["green"] is True, row["reasons"]
+
+
+def test_karr_metabolism_writeback_and_m3_translation_are_registered_and_hashed(tmp_path):
+    """Sanity check against the REAL (non-monkeypatched) registry for the F1
+    additions: Metabolism's sentinel must carry
+    `karr_metabolism_writeback_module` (its own `karr_metabolism.py` imports
+    `opencell.m1.karr_metabolism_writeback` at module scope) and
+    Translation's sentinel must carry `m3_translation_module` (its own
+    `karr_translation.py` imports `opencell.m3.translation` at module
+    scope) -- both rows must still read green today."""
+    metab_dir = _write_evidence_dir(tmp_path, "Metabolism")
+    metab_prov = json.loads((metab_dir / schema.SWEEP_PROVENANCE_FILE).read_text(encoding="utf-8"))
+    assert metab_prov["source_hashes"].get("karr_metabolism_writeback_module"), (
+        "Metabolism source_hashes missing karr_metabolism_writeback_module"
+    )
+    row_metab = gen.build_process_row(_ENTRIES["Metabolism"], tmp_path)
+    assert row_metab["green"] is True, row_metab["reasons"]
+
+    translation_dir = _write_evidence_dir(tmp_path, "Translation")
+    translation_prov = json.loads((translation_dir / schema.SWEEP_PROVENANCE_FILE).read_text(encoding="utf-8"))
+    assert translation_prov["source_hashes"].get("m3_translation_module"), (
+        "Translation source_hashes missing m3_translation_module"
+    )
+    row_translation = gen.build_process_row(_ENTRIES["Translation"], tmp_path)
+    assert row_translation["green"] is True, row_translation["reasons"]
+
+
+# --- F1: l2_replay_common.py is a harness-scoped shared dependency of every
+# --- design_a_per_tick process, never event_class ------------------------------
+
+
+def test_l2_replay_common_change_stales_every_design_a_process_but_not_event_class(tmp_path, monkeypatch):
+    """A change to `l2_replay_common.py` (imported by
+    `_l2_2_design_a_runner_helpers.py`, which every `design_a_per_tick`
+    process's evidence generation runs through) must stale every
+    `design_a_per_tick` row -- but never an `event_class` row, since that
+    harness does not go through this runner/helpers module at all. Uses a
+    synthetic throwaway file monkeypatched into
+    `schema.HARNESS_DEPENDENCY_FILES["design_a_per_tick"]` (never the real
+    tracked `tests/vivarium/l2_replay_common.py`) so this test never
+    mutates real production code."""
+    fake_common = tmp_path / "src" / "fake_l2_replay_common.py"
+    fake_common.parent.mkdir(parents=True, exist_ok=True)
+    fake_common.write_text("# fake l2_replay_common v1\n", encoding="utf-8")
+    monkeypatch.setitem(schema.HARNESS_DEPENDENCY_FILES, "design_a_per_tick", {"l2_replay_common": fake_common})
+
+    evidence_root = tmp_path / "evidence"
+    _write_evidence_dir(evidence_root, "DNARepair")  # design_a_per_tick
+    _write_evidence_dir(evidence_root, "DNADamage")  # event_class
+
+    row_design_a_before = gen.build_process_row(_ENTRIES["DNARepair"], evidence_root)
+    row_event_before = gen.build_process_row(_ENTRIES["DNADamage"], evidence_root)
+    assert row_design_a_before["green"] is True, row_design_a_before["reasons"]
+    assert row_event_before["green"] is True, row_event_before["reasons"]
+
+    # Simulate a change to the shared l2_replay_common.py dependency.
+    fake_common.write_text("# fake l2_replay_common v2 -- behavior changed\n", encoding="utf-8")
+
+    row_design_a_after = gen.build_process_row(_ENTRIES["DNARepair"], evidence_root)
+    row_event_after = gen.build_process_row(_ENTRIES["DNADamage"], evidence_root)
+    assert row_design_a_after["green"] is False
+    assert any("l2_replay_common" in reason for reason in row_design_a_after["reasons"])
+    assert row_event_after["green"] is True, row_event_after["reasons"]  # event_class never bound this key
+
+
+# --- F1: chromosome_store.py / chromosome_views.py are mechanically derived
+# --- per-process dependencies (not a hand-maintained per-process list) --------
+
+
+def test_chromosome_store_change_mechanically_stales_only_importing_processes(tmp_path, monkeypatch):
+    """`chromosome_store.py` is mechanically detected (via AST scan of each
+    process's own `oc_module` source, not a hand-maintained name list) as a
+    dependency of DNARepair/DNASupercoiling/Replication/ReplicationInitiation
+    but NOT Transcription. A change to it must stale exactly the processes
+    whose `oc_module` actually imports it. Uses a synthetic throwaway file
+    monkeypatched into `schema.MECHANICAL_DEPENDENCY_CANDIDATES` (never the
+    real tracked `opencell/state/chromosome_store.py`) so this test never
+    mutates real production state code; the REAL `karr_dna_repair.py` /
+    `karr_transcription.py` source files are still read as-is to prove the
+    mechanical import-detection itself is genuine, not hand-listed."""
+    fake_store = tmp_path / "src" / "fake_chromosome_store.py"
+    fake_store.parent.mkdir(parents=True, exist_ok=True)
+    fake_store.write_text("# fake chromosome_store v1\n", encoding="utf-8")
+    monkeypatch.setitem(
+        schema.MECHANICAL_DEPENDENCY_CANDIDATES,
+        "opencell.state.chromosome_store",
+        ("chromosome_store_module", fake_store),
+    )
+
+    evidence_root = tmp_path / "evidence"
+    _write_evidence_dir(evidence_root, "DNARepair")  # imports chromosome_store
+    _write_evidence_dir(evidence_root, "Transcription")  # does not
+
+    row_dnarepair_before = gen.build_process_row(_ENTRIES["DNARepair"], evidence_root)
+    row_transcription_before = gen.build_process_row(_ENTRIES["Transcription"], evidence_root)
+    assert row_dnarepair_before["green"] is True, row_dnarepair_before["reasons"]
+    assert row_transcription_before["green"] is True, row_transcription_before["reasons"]
+
+    fake_store.write_text("# fake chromosome_store v2 -- behavior changed\n", encoding="utf-8")
+
+    row_dnarepair_after = gen.build_process_row(_ENTRIES["DNARepair"], evidence_root)
+    row_transcription_after = gen.build_process_row(_ENTRIES["Transcription"], evidence_root)
+    assert row_dnarepair_after["green"] is False
+    assert any("chromosome_store_module" in reason for reason in row_dnarepair_after["reasons"])
+    assert row_transcription_after["green"] is True, row_transcription_after["reasons"]
+
+
+def test_chromosome_views_change_stales_dnarepair_but_not_dnasupercoiling(tmp_path, monkeypatch):
+    """Finer mechanical distinction: DNARepair's `karr_dna_repair.py`
+    imports BOTH `chromosome_store` and `chromosome_views`; DNASupercoiling's
+    `karr_dna_supercoiling.py` imports only `chromosome_store`. A change to
+    `chromosome_views.py` alone must stale DNARepair but leave
+    DNASupercoiling untouched (it never bound that key at all), proving
+    the mechanical detection is genuinely per-target, not "any chromosome
+    module changed -> stale every chromosome-adjacent process"."""
+    fake_views = tmp_path / "src" / "fake_chromosome_views.py"
+    fake_views.parent.mkdir(parents=True, exist_ok=True)
+    fake_views.write_text("# fake chromosome_views v1\n", encoding="utf-8")
+    monkeypatch.setitem(
+        schema.MECHANICAL_DEPENDENCY_CANDIDATES,
+        "opencell.vivarium.chromosome_views",
+        ("chromosome_views_module", fake_views),
+    )
+
+    evidence_root = tmp_path / "evidence"
+    _write_evidence_dir(evidence_root, "DNARepair")  # imports chromosome_views
+    _write_evidence_dir(evidence_root, "DNASupercoiling")  # does not
+
+    row_dnarepair_before = gen.build_process_row(_ENTRIES["DNARepair"], evidence_root)
+    row_supercoiling_before = gen.build_process_row(_ENTRIES["DNASupercoiling"], evidence_root)
+    assert row_dnarepair_before["green"] is True, row_dnarepair_before["reasons"]
+    assert row_supercoiling_before["green"] is True, row_supercoiling_before["reasons"]
+
+    fake_views.write_text("# fake chromosome_views v2 -- behavior changed\n", encoding="utf-8")
+
+    row_dnarepair_after = gen.build_process_row(_ENTRIES["DNARepair"], evidence_root)
+    row_supercoiling_after = gen.build_process_row(_ENTRIES["DNASupercoiling"], evidence_root)
+    assert row_dnarepair_after["green"] is False
+    assert any("chromosome_views_module" in reason for reason in row_dnarepair_after["reasons"])
+    assert row_supercoiling_after["green"] is True, row_supercoiling_after["reasons"]
+
+
+def test_mechanical_dependency_hashes_reflects_real_current_import_graph():
+    """Sanity check against the REAL (non-monkeypatched) catalog/source
+    tree: verifies today's actual mechanical import graph matches what F1
+    was designed against, so a future edit to any `karr_*.py` file that
+    adds/removes one of these two imports is forced to be a deliberate,
+    visible change to this test rather than silently drifting unnoticed."""
+    assert set(schema.mechanical_dependency_hashes(_ENTRIES["DNARepair"].oc_module)) == {
+        "chromosome_store_module",
+        "chromosome_views_module",
+    }
+    for name in ("DNASupercoiling", "Replication", "ReplicationInitiation"):
+        assert set(schema.mechanical_dependency_hashes(_ENTRIES[name].oc_module)) == {"chromosome_store_module"}, name
+    for name in ("Transcription", "Translation", "Metabolism", "ProteinDecay"):
+        assert set(schema.mechanical_dependency_hashes(_ENTRIES[name].oc_module)) == set(), name
 
 
 # --- R3 oracle input manifest: empty inputs / strict mounted-data rehash -------

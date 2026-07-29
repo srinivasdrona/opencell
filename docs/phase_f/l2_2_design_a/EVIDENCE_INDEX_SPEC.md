@@ -1105,6 +1105,155 @@ commit: no process was rerun, and `evidence_index.json`'s tally/content
 no `sweep_provenance.json` in this worktree to newly stale or validate
 against the expanded registry.
 
+### 13.10 F1–F4: registry completeness, unconditional manifest canonicalization, primary-channel exactly-once (schema v2 evaluator)
+
+A final review of 13.9 found the `METRIC_DEPENDENCY_FILES` registry (and
+the surrounding provenance code) still had four gaps:
+
+**F1 — the dependency registry did not cover every runtime numeric
+dependency.** Three more real call-graph edges existed but were not
+hashed anywhere in `source_hashes`:
+
+- Every `design_a_per_tick` job's `output_dir`/`result.json` is actually
+  produced through
+  `tests/vivarium/l2_replay_common.py` (imported by
+  `_l2_2_design_a_runner_helpers.py` for its state/projection/update
+  functions) — a change here can silently change EVERY design_a_per_tick
+  process's evidence, not just one, so this is now a **harness-scoped**
+  dependency (`schema.HARNESS_DEPENDENCY_FILES["design_a_per_tick"] =
+  {"l2_replay_common": ...}`), merged in by `harness_type`, not by
+  process name.
+- `opencell/m1/karr_metabolism_writeback.py` is imported by
+  Metabolism's own `oc_module`
+  (`opencell/vivarium/karr_metabolism.py`) and was missing from
+  `METRIC_DEPENDENCY_FILES["Metabolism"]` alongside the three modules
+  13.9 already added.
+- `opencell/m3/translation.py` is imported by Translation's `oc_module`
+  (`opencell/vivarium/karr_translation.py`) and had no
+  `METRIC_DEPENDENCY_FILES` entry at all.
+
+A further, structurally different gap: the chromosome-coupled processes
+(`DNARepair`, `DNASupercoiling`, `Replication`, `ReplicationInitiation`,
+and the event-class `DNADamage`) each import
+`opencell/state/chromosome_store.py` and/or
+`opencell/vivarium/chromosome_views.py` directly from their own
+`oc_module` — but WHICH processes import which of these two files is not
+a catalog field and was not previously registered anywhere, unlike the
+Metabolism/Translation case where the process name alone determines the
+dependency set. Hand-maintaining "DNARepair imports both,
+DNASupercoiling/Replication/ReplicationInitiation import only
+chromosome_store" as another static `dict[process_name, ...]` table would
+silently drift the next time an import is added or removed from a
+`karr_*.py` file. Instead, `schema.mechanical_dependency_hashes(oc_module)`
+does a **single-level, non-recursive** `ast.parse` of the ONE given
+`oc_module` source file, checking only whether it contains a top-level
+`import X` / `from X import ...` statement naming one of a small FIXED
+candidate list (`schema.MECHANICAL_DEPENDENCY_CANDIDATES`, currently just
+`chromosome_store`/`chromosome_views`) — this is deliberately NOT a
+generalized transitive-closure import-graph hasher (the operator's
+explicit "prefer explicit small registry + documented call graph, not
+recursive import hashing"); it only ever looks one file deep, at a fixed
+candidate list, so its cost and behavior are as predictable as the
+hand-written registries it complements.
+
+`sweep.current_source_hashes()` and `generator._current_source_hashes()`
+now merge THREE dependency sources into the same `source_hashes` dict (no
+new gating code path, same as 13.9): `schema.METRIC_DEPENDENCY_FILES.get(process,
+{})` (hand-maintained, process-keyed), `schema.mechanical_dependency_hashes(oc_module)`
+(mechanically derived from the process's own `oc_module` AST, process-keyed
+via its own import graph), and `schema.harness_dependency_hashes(harness_type)`
+(hand-maintained, harness-keyed — currently only `design_a_per_tick`).
+`SweepJob` gained an explicit `harness_type: str = "design_a_per_tick"`
+field (the only value `plan_sweep()` ever constructs, since it filters
+catalog entries to `harness_type == "design_a_per_tick"` before building
+jobs) so this is passed explicitly rather than assumed.
+
+Verified today's real catalog/tree state matches exactly:
+`mechanical_dependency_hashes` → `{chromosome_store_module,
+chromosome_views_module}` for DNARepair; `{chromosome_store_module}` for
+DNASupercoiling/Replication/ReplicationInitiation; `{}` for
+Transcription/Translation/Metabolism/ProteinDecay.
+`harness_dependency_hashes("design_a_per_tick")` → `{l2_replay_common}`;
+`harness_dependency_hashes("event_class")` → `{}` (no registered entry).
+See `test_l22_evidence_anticheat.py::test_mechanical_dependency_hashes_reflects_real_current_import_graph`
+and the four other new F1 tests (`test_karr_metabolism_writeback_and_m3_translation_are_registered_and_hashed`,
+`test_l2_replay_common_change_stales_every_design_a_process_but_not_event_class`,
+`test_chromosome_store_change_mechanically_stales_only_importing_processes`,
+`test_chromosome_views_change_stales_dnarepair_but_not_dnasupercoiling`).
+
+**Direct consequence for the currently-tracked bundle:** DNARepair and
+ReplicationInitiation's existing `sweep_provenance.json` sentinels (from
+the 13.8/R1-R3-hardened rerun) do not carry these new hash keys and
+therefore now correctly fail `evidence_is_valid`/the generator's
+staleness check — going from `PASS` to non-green until they are rerun
+under this expanded registry. This is the intended, honest consequence of
+closing a real gap, not a regression; see Section 13.6-style transitional
+notes and the tally reported in the commit this section was introduced
+in.
+
+**F2 — `_normalize_input_manifest_file` only rewrote the file `if
+changed`** (i.e. only when at least one `path` value was actually
+absolute and got rewritten to relative). A manifest whose paths were
+ALREADY relative, but serialized with different whitespace or
+key-ordering than the canonical `json.dumps(..., indent=2, sort_keys=True)
++ "\n"` form `generator.bundle_process_evidence` itself always produces,
+would silently keep those non-canonical bytes forever — breaking the
+live-tree/bundle byte-identity guarantee this function exists for. Fixed
+by removing the guard: the file is now ALWAYS rewritten to the canonical
+form, unconditionally. See the new
+`test_l22_evidence_sweep.py::test_normalize_input_manifest_file_always_rewrites_canonical_bytes_even_when_already_relative`
+and `::test_normalize_input_manifest_file_is_idempotent_on_a_second_call`.
+
+**F3 — `rederive_process` only checked that SOME channel was marked
+`is_primary=true`**, not that it was the catalog's actual declared
+`primary_channel`, and not that only one channel claimed it. Two vacuous
+cases previously passed through undetected: (a) two or more channels both
+marked `is_primary=true` (ambiguous — which one is authoritative?), and
+(b) exactly one channel marked `is_primary=true`, but a DIFFERENT channel
+than the catalog's `entry.primary_channel` (a "vacuous primary-channel
+substitution": e.g. a decoy channel claims primacy while the real primary
+channel silently sits at `is_primary=false`, letting the existing
+per-channel non-vacuity check evaluate the wrong channel entirely).
+`rederive_process` now collects every channel name with `is_primary=true`
+into a list and requires exactly one entry, further requiring that single
+name to equal `entry.primary_channel` when the catalog declares one; zero,
+many, or a name-mismatch are all `STATUS_PRIMARY_VACUOUS`/non-green (the
+existing zero-case message is unchanged; the many/mismatch cases are new
+`STATUS_PRIMARY_VACUOUS` reasons). Because this changes what verdict the
+SAME raw `result.json` payload can mechanically produce,
+`verdict.EVALUATOR_SCHEMA_VERSION` was bumped `1 → 2`; any sentinel
+recorded under the old evaluator (`evaluator_schema_version == 1`) is
+therefore explicitly staled by the existing schema-version check in
+`evidence_is_valid`/`_check_sweep_provenance_staleness`, independent of
+the F1 hash-key changes above. See the three new
+`test_l22_evidence_verdict.py` tests:
+`test_process_primary_channel_name_mismatch_is_vacuous_substitution`,
+`test_process_multiple_channels_marked_is_primary_is_non_green`,
+`test_process_primary_channel_matching_catalog_name_exactly_once_is_clean`.
+Also decoupled `test_l22_evidence_portability.py`'s
+`test_audit_succeeds_from_a_temp_root_with_no_local_artifacts_tree` "real"
+comparison side from `gen.audit()`'s own ambient default-argument
+resolution, passing explicit `index_path`/`evidence_root` on both sides so
+the test is purely about the portable/tracked-bundle path, not an
+incidental re-test of default-argument resolution (already covered
+elsewhere).
+
+**F4 — trivial:** improved the `--verify-input-files`-requested-but-
+oracle-not-mounted message in `generator._check_current_tree_staleness`
+to explain this is expected in a fresh clone/bundle-only checkout and to
+suggest omitting the flag, rather than a single terse parenthetical.
+
+Per the operator's explicit "do not rerun DNARepair/RepInit; their
+current sentinels should become stale after new hashes (expected)"
+instruction, this is again a code-and-tests-only commit: no process was
+rerun. The tracked `evidence_index.json`/bundle is regenerated in a
+separate, immediately-following commit once this one is green, and its
+new tally reflects DNARepair/ReplicationInitiation going non-green for
+the reasons above (their old evidence is real and their next rerun will
+almost certainly pass again against the same raw numbers — the concern
+F1/F3 protect against is a change in code silently going undetected, not
+a claim that the old rows were ever incorrect).
+
 ## 14. Files
 
 - `scripts/l22_evidence/catalog.py` — catalog access (scope derivation).

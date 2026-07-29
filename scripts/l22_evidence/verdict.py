@@ -37,7 +37,15 @@ from scripts.l22_evidence.catalog import REPO_ROOT, ProcessEntry  # noqa: E402
 # generator can mechanically detect "this evidence was generated under an
 # older evaluator and must be re-run" rather than silently re-scoring old
 # raw numbers under new logic and calling that equivalent to a real rerun.
-EVALUATOR_SCHEMA_VERSION = 1
+# v2 (F3, Opus5 final review): `rederive_process` now requires the
+# catalog's declared `primary_channel` name to be marked `is_primary=true`
+# on EXACTLY one channel -- previously a boolean OR across channels meant
+# some OTHER channel marked is_primary=true (with the real primary_channel
+# silently False) or more than one channel marked is_primary=true could
+# both pass through undetected. This can change the verdict for the SAME
+# raw result.json payload versus v1, so any evidence generated under v1
+# must be treated as stale, not silently re-scored as equivalent.
+EVALUATOR_SCHEMA_VERSION = 2
 
 
 @dataclass(frozen=True)
@@ -557,19 +565,42 @@ def rederive_process(process_name: str, entry: ProcessEntry, result_payload: dic
     # --- Per-channel mechanical re-derivation.
     channels = result_payload.get("channels", {})
     channel_verdicts: dict[str, str] = {}
-    saw_primary = False
+    primary_channel_names: list[str] = []
     for channel_name, channel_payload in channels.items():
         is_primary = bool(channel_payload.get("is_primary", False))
-        saw_primary = saw_primary or is_primary
+        if is_primary:
+            primary_channel_names.append(channel_name)
         verdict, channel_reasons = rederive_channel(channel_name, channel_payload, is_primary=is_primary)
         channel_verdicts[channel_name] = verdict
         reasons.extend(channel_reasons)
 
-    if channels and not saw_primary:
-        reasons.append(
-            f"{schema.STATUS_SCHEMA_INVALID}: no channel in result.json marked is_primary=true "
-            f"(catalog primary_channel={entry.primary_channel!r})"
-        )
+    # F3: the catalog's declared `primary_channel` name must itself be
+    # marked `is_primary=true` exactly once -- not zero times (the
+    # pre-existing check below), not more than once (ambiguous which
+    # channel is actually primary), and not on some OTHER channel name
+    # while the catalog's declared primary_channel is absent/False (a
+    # "vacuous substitution": e.g. result.json marks a decoy channel
+    # is_primary=true while the real primary_channel silently sits at
+    # is_primary=false, which would otherwise let the mechanical
+    # non-vacuity check above pass against the wrong channel entirely).
+    if channels:
+        if not primary_channel_names:
+            reasons.append(
+                f"{schema.STATUS_SCHEMA_INVALID}: no channel in result.json marked is_primary=true "
+                f"(catalog primary_channel={entry.primary_channel!r})"
+            )
+        elif len(primary_channel_names) > 1:
+            reasons.append(
+                f"{schema.STATUS_PRIMARY_VACUOUS}: {len(primary_channel_names)} channels marked is_primary=true "
+                f"({sorted(primary_channel_names)!r}); exactly one is required "
+                f"(catalog primary_channel={entry.primary_channel!r})"
+            )
+        elif entry.primary_channel and primary_channel_names[0] != entry.primary_channel:
+            reasons.append(
+                f"{schema.STATUS_PRIMARY_VACUOUS}: channel {primary_channel_names[0]!r} is marked "
+                f"is_primary=true but catalog primary_channel={entry.primary_channel!r} is not -- "
+                "vacuous primary-channel substitution"
+            )
 
     gateable = {
         name: verdict

@@ -782,3 +782,88 @@ def test_sanitize_dangling_temp_refs_rewrites_absolute_paths_to_repo_relative(tm
     assert result_payload["allocator_inputs_ref"] == "evidence/SomeProc/latest/allocator_inputs.json"
     assert result_payload["provenance_ref"] == "evidence/SomeProc/latest/provenance.json"
     assert provenance_payload["oracle_path"] == "data/oracle.mat"
+
+
+# --- F2: _normalize_input_manifest_file ALWAYS writes the canonical form -------
+
+
+def test_normalize_input_manifest_file_rewrites_absolute_paths_to_relative(tmp_path):
+    """Baseline (pre-existing) case: an absolute path is rewritten to a
+    repo-relative POSIX path."""
+    repo_root = tmp_path / "repo"
+    output_dir = repo_root / "evidence" / "SomeProc" / "latest"
+    output_dir.mkdir(parents=True)
+    oracle_file = repo_root / "data" / "oracle.mat"
+    oracle_file.parent.mkdir(parents=True)
+    oracle_file.write_bytes(b"oracle-bytes")
+    manifest_path = output_dir / "input_manifest.json"
+    manifest_path.write_text(
+        json.dumps({"inputs": [{"path": str(oracle_file), "sha256": "abc123"}], "m_ticks": 100}),
+        encoding="utf-8",
+    )
+
+    sweep._normalize_input_manifest_file(output_dir, repo_root=repo_root)
+
+    payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert payload["inputs"][0]["path"] == "data/oracle.mat"
+
+
+def test_normalize_input_manifest_file_always_rewrites_canonical_bytes_even_when_already_relative(tmp_path):
+    """F2 (Opus5 final review): the function must ALWAYS write the
+    canonical serialized form (`json.dumps(..., indent=2, sort_keys=True) +
+    "\\n"`, matching `generator.bundle_process_evidence`'s own
+    serialization exactly), even when every `path` value is ALREADY
+    relative and therefore no `path` string itself changes -- there used
+    to be a `changed` guard that skipped the rewrite entirely in that case,
+    which meant a manifest already holding repo-relative paths but written
+    by the runner with different whitespace/key-ordering than the
+    canonical form would silently keep those different bytes, breaking the
+    live-tree/bundle byte-identity guarantee this function exists for.
+    Writes the manifest with compact (no indent, unsorted-key) formatting
+    up front so a no-op result would be trivially detectable as a bug."""
+    repo_root = tmp_path / "repo"
+    output_dir = repo_root / "evidence" / "SomeProc" / "latest"
+    output_dir.mkdir(parents=True)
+    manifest_path = output_dir / "input_manifest.json"
+    already_relative_payload = {
+        "m_ticks": 100,
+        "inputs": [{"path": "tests/vivarium/l2_2_design_a_runner.py", "sha256": "abc123"}],
+    }
+    # Deliberately NOT the canonical serialization: no indent, insertion-order
+    # (not sorted) keys, no trailing newline.
+    non_canonical_bytes = json.dumps(already_relative_payload)
+    manifest_path.write_bytes(non_canonical_bytes.encode("utf-8"))
+    assert manifest_path.read_bytes() != (
+        json.dumps(already_relative_payload, indent=2, sort_keys=True) + "\n"
+    ).encode("utf-8"), "fixture setup bug: pre-write bytes must NOT already equal the canonical form"
+
+    sweep._normalize_input_manifest_file(output_dir, repo_root=repo_root)
+
+    expected_canonical_bytes = (json.dumps(already_relative_payload, indent=2, sort_keys=True) + "\n").encode("utf-8")
+    assert manifest_path.read_bytes() == expected_canonical_bytes, (
+        "already-relative input_manifest.json must still be rewritten to the canonical serialized form"
+    )
+    # Content (not just bytes) must also be preserved exactly -- no data loss.
+    assert json.loads(manifest_path.read_text(encoding="utf-8")) == already_relative_payload
+
+
+def test_normalize_input_manifest_file_is_idempotent_on_a_second_call(tmp_path):
+    """Calling the normalizer twice in a row (as would happen if `run_job`
+    were ever invoked again against the same temp dir) must produce
+    byte-identical output the second time -- proving the canonical form is
+    a true fixed point, not merely "different from the input" once."""
+    repo_root = tmp_path / "repo"
+    output_dir = repo_root / "evidence" / "SomeProc" / "latest"
+    output_dir.mkdir(parents=True)
+    manifest_path = output_dir / "input_manifest.json"
+    manifest_path.write_text(
+        json.dumps({"inputs": [{"path": "tests/vivarium/l2_2_design_a_runner.py", "sha256": "abc123"}]}),
+        encoding="utf-8",
+    )
+
+    sweep._normalize_input_manifest_file(output_dir, repo_root=repo_root)
+    first_pass_bytes = manifest_path.read_bytes()
+    sweep._normalize_input_manifest_file(output_dir, repo_root=repo_root)
+    second_pass_bytes = manifest_path.read_bytes()
+
+    assert first_pass_bytes == second_pass_bytes

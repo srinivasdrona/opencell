@@ -646,3 +646,60 @@ def test_process_missing_primary_channel_marker_is_schema_invalid():
     outcome = vd.rederive_process("FakeProcess", entry, result)
     assert outcome.mechanical_verdict == schema.STATUS_FAIL
     assert any("no channel in result.json marked is_primary" in reason for reason in outcome.reasons)
+
+
+# --- F3: catalog primary_channel must map to exactly one is_primary=true channel
+
+
+def test_process_primary_channel_name_mismatch_is_vacuous_substitution():
+    """A DIFFERENT channel marked is_primary=true while the catalog's real
+    `primary_channel` ("substrates") is present but not primary must be
+    treated as a vacuous substitution, not silently accepted as "some
+    channel is primary, close enough"."""
+    entry = _entry()  # primary_channel="substrates"
+    result = _result(
+        channels={
+            "substrates": _channel(is_primary=False),
+            "decoy": _channel(is_primary=True),
+        }
+    )
+    outcome = vd.rederive_process("FakeProcess", entry, result)
+    assert outcome.mechanical_verdict == schema.STATUS_FAIL
+    assert any(
+        schema.STATUS_PRIMARY_VACUOUS in reason and "decoy" in reason and "substrates" in reason
+        for reason in outcome.reasons
+    ), outcome.reasons
+
+
+def test_process_multiple_channels_marked_is_primary_is_non_green():
+    """Two channels both marked is_primary=true is ambiguous -- which one is
+    actually authoritative? -- and must be non-green, not silently resolved
+    by picking whichever the aggregation loop happens to see first."""
+    entry = _entry()
+    result = _result(
+        channels={
+            "substrates": _channel(is_primary=True),
+            "other": _channel(is_primary=True),
+        }
+    )
+    outcome = vd.rederive_process("FakeProcess", entry, result)
+    assert outcome.mechanical_verdict == schema.STATUS_FAIL
+    assert any(
+        schema.STATUS_PRIMARY_VACUOUS in reason and "2 channels" in reason for reason in outcome.reasons
+    ), outcome.reasons
+
+
+def test_process_primary_channel_matching_catalog_name_exactly_once_is_clean():
+    """The correct, non-vacuous case: exactly one channel is_primary=true
+    AND its name matches the catalog's declared primary_channel -- no new
+    F3 reason should ever fire here."""
+    entry = _entry()  # primary_channel="substrates"
+    result = _result(
+        channels={
+            "substrates": _channel(is_primary=True),
+            "other": _channel(is_primary=False),
+        }
+    )
+    outcome = vd.rederive_process("FakeProcess", entry, result)
+    assert outcome.mechanical_verdict == schema.STATUS_PASS
+    assert outcome.reasons == []
