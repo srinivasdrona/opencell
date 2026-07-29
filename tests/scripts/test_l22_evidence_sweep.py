@@ -573,6 +573,25 @@ def test_evidence_is_valid_rejects_stale_source_hash(tmp_path):
     assert "source hash" in reason
 
 
+def test_evidence_is_valid_rejects_extra_source_hash_key(tmp_path):
+    """F5 bidirectional staleness: a `source_hashes` key that is NOT part
+    of the CURRENT expected dependency set (e.g. a hand-tampered sentinel,
+    or evidence generated against a since-shrunk/renamed
+    `schema.PROCESS_DEPENDENCY_FILES` registry entry) must invalidate the
+    sentinel even when every currently-expected key is still present and
+    correctly matching -- the per-key loop alone only ever checks "is
+    every CURRENTLY-expected key present/matching", never "does the
+    recorded key SET exactly equal the current expected key set", so an
+    extra recorded key would otherwise be silently ignored forever."""
+    job = _make_valid_job_with_provenance(tmp_path)
+    payload = json.loads((job.output_dir / schema.SWEEP_PROVENANCE_FILE).read_text(encoding="utf-8"))
+    payload["source_hashes"]["a_key_no_longer_in_the_registry"] = "deadbeef" * 8
+    (job.output_dir / schema.SWEEP_PROVENANCE_FILE).write_text(json.dumps(payload), encoding="utf-8")
+    valid, reason = sweep.evidence_is_valid(job)
+    assert valid is False
+    assert "extra" in reason
+
+
 def test_evidence_is_valid_rejects_stale_evaluator_schema_version(tmp_path):
     job = _make_valid_job_with_provenance(tmp_path, evaluator_schema_version=-999)
     valid, reason = sweep.evidence_is_valid(job)

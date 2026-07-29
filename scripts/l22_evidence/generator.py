@@ -188,16 +188,14 @@ def _current_source_hashes(entry: cat.ProcessEntry | None = None) -> dict[str, s
     `oc_module` implementation file under the `"oc_module"` key (R2) -- the
     same process-specific SUT hash `sweep.current_source_hashes(oc_module=...)`
     computes at generation time, so a code change to a single
-    `karr_<process>.py` stales only that process's row here too, PLUS
-    (F1) sha256 of every module `entry.oc_module`'s own source is
-    mechanically found to import (`schema.mechanical_dependency_hashes`,
-    e.g. `chromosome_store_module`/`chromosome_views_module` for
-    chromosome-coupled processes). It also hashes `entry.name`'s
-    registered metric-evaluation dependency modules, if any
-    (`schema.METRIC_DEPENDENCY_FILES`, e.g. Metabolism's `fva_module`/
-    `calc_flux_bounds_module`/`m1_karr_metabolism_module`/
-    `karr_metabolism_writeback_module`, Translation's
-    `m3_translation_module`), same stale-only-that-process property, and
+    `karr_<process>.py` stales only that process's row here too. It also
+    hashes `entry.name`'s registered runtime dependency modules, if any
+    (`schema.PROCESS_DEPENDENCY_FILES` -- F5: a single explicit,
+    hand-maintained registry, NEVER mechanically AST-derived here -- e.g.
+    Metabolism's `fva_module`/`calc_flux_bounds_module`/
+    `m1_karr_metabolism_module`/`karr_metabolism_writeback_module`/
+    `karr_protein_decay_light_module`, DNARepair's `chromosome_store_module`/
+    `chromosome_views_module`), same stale-only-that-process property, and
     `entry.harness_type`'s shared harness-scoped dependency modules, if any
     (`schema.HARNESS_DEPENDENCY_FILES`, e.g. every `design_a_per_tick`
     process's `l2_replay_common` -- never for `event_class`), mirroring
@@ -205,9 +203,8 @@ def _current_source_hashes(entry: cat.ProcessEntry | None = None) -> dict[str, s
     hashes = {name: _sha256_file(path) for name, path in schema.SWEEP_PROVENANCE_SOURCE_FILES.items()}
     if entry is not None and entry.oc_module:
         hashes["oc_module"] = _sha256_file(cat.REPO_ROOT / entry.oc_module)
-        hashes.update(schema.mechanical_dependency_hashes(entry.oc_module))
     if entry is not None:
-        for name, path in schema.METRIC_DEPENDENCY_FILES.get(entry.name, {}).items():
+        for name, path in schema.PROCESS_DEPENDENCY_FILES.get(entry.name, {}).items():
             hashes[name] = _sha256_file(path)
         hashes.update(schema.harness_dependency_hashes(entry.harness_type))
     return hashes
@@ -307,7 +304,8 @@ def _check_sweep_provenance_staleness(
             )
 
     recorded_hashes = payload.get("source_hashes") or {}
-    for name, current in _current_source_hashes(entry).items():
+    current_hashes = _current_source_hashes(entry)
+    for name, current in current_hashes.items():
         recorded = recorded_hashes.get(name)
         if current is None:
             reasons.append(f"{schema.STATUS_STALE_PROVENANCE}: current source file for {name!r} no longer exists on disk")
@@ -318,6 +316,20 @@ def _check_sweep_provenance_staleness(
                 f"{schema.STATUS_STALE_PROVENANCE}: {name} source changed since evidence was generated "
                 f"(recorded={recorded[:12]}.., current={current[:12]}..)"
             )
+    # F5 bidirectional check: a key present in the RECORDED source_hashes
+    # but absent from the CURRENT expected set (e.g. a since-shrunk/renamed
+    # `schema.PROCESS_DEPENDENCY_FILES` entry, or a hand-tampered sentinel
+    # that added a spurious key) must also stale the row -- the per-key
+    # loop above only ever checks "is every CURRENTLY-expected key present
+    # and matching", never "does the recorded key SET exactly equal the
+    # current expected key set", so an extra recorded key would otherwise
+    # be silently ignored forever.
+    extra_keys = sorted(set(recorded_hashes) - set(current_hashes))
+    if extra_keys:
+        reasons.append(
+            f"{schema.STATUS_STALE_PROVENANCE}: sweep_provenance.json source_hashes has extra/unexpected "
+            f"key(s) {extra_keys!r} not part of the current expected dependency set"
+        )
 
     recorded_schema_version = payload.get("evaluator_schema_version")
     if recorded_schema_version != vd.EVALUATOR_SCHEMA_VERSION:

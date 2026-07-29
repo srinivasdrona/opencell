@@ -610,13 +610,14 @@ def test_sut_oc_module_change_stales_only_that_process(tmp_path):
     assert row_b_after["green"] is True, row_b_after["reasons"]  # untouched process B remains green
 
 
-# --- Metric-evaluation dependency modules beyond oc_module (e.g. Metabolism's
-# --- opencell/m1/fva.py) -------------------------------------------------------
+# --- Per-process runtime dependency modules beyond oc_module (F5: explicit
+# --- registry `schema.PROCESS_DEPENDENCY_FILES`, e.g. Metabolism's
+# --- opencell/m1/fva.py) --------------------------------------------------------
 
 
 def test_metric_dependency_module_change_stales_only_that_process(tmp_path, monkeypatch):
-    """A change to a process's registered metric-evaluation dependency
-    module (`schema.METRIC_DEPENDENCY_FILES`, e.g. Metabolism's
+    """A change to a process's registered runtime dependency module
+    (`schema.PROCESS_DEPENDENCY_FILES`, e.g. Metabolism's
     `opencell/m1/fva.py`/`calc_flux_bounds.py`/`karr_metabolism.py`, none of
     which are hashed by any other existing key) must stale only that
     process's row, mirroring the R2 `oc_module` property -- exercised here
@@ -624,13 +625,13 @@ def test_metric_dependency_module_change_stales_only_that_process(tmp_path, monk
     `opencell/m1/fva.py`) monkeypatched into the registry under
     "Metabolism", so this test never mutates real production biology/metric
     code. A second, untouched process (DNARepair, which has no entry in
-    `METRIC_DEPENDENCY_FILES`) must remain unaffected -- proving this is not
+    `PROCESS_DEPENDENCY_FILES`) must remain unaffected -- proving this is not
     a generic "hash everything" check but genuinely process-scoped."""
     dep_module = tmp_path / "src" / "fake_fva.py"
     dep_module.parent.mkdir(parents=True, exist_ok=True)
     dep_module.write_text("# fake fva dependency v1\n", encoding="utf-8")
 
-    monkeypatch.setitem(schema.METRIC_DEPENDENCY_FILES, "Metabolism", {"fake_metric_dep": dep_module})
+    monkeypatch.setitem(schema.PROCESS_DEPENDENCY_FILES, "Metabolism", {"fake_metric_dep": dep_module})
 
     evidence_root = tmp_path / "evidence"
     _write_evidence_dir(evidence_root, "Metabolism")
@@ -732,68 +733,78 @@ def test_l2_replay_common_change_stales_every_design_a_process_but_not_event_cla
     assert row_event_after["green"] is True, row_event_after["reasons"]  # event_class never bound this key
 
 
-# --- F1: chromosome_store.py / chromosome_views.py are mechanically derived
-# --- per-process dependencies (not a hand-maintained per-process list) --------
+# --- F5: chromosome_store.py / chromosome_views.py are EXPLICIT per-process
+# --- registry entries (correcting F1's mechanical AST-derivation, which
+# --- Opus5 rejected as a runtime trust surface) --------------------------------
 
 
-def test_chromosome_store_change_mechanically_stales_only_importing_processes(tmp_path, monkeypatch):
-    """`chromosome_store.py` is mechanically detected (via AST scan of each
-    process's own `oc_module` source, not a hand-maintained name list) as a
-    dependency of DNARepair/DNASupercoiling/Replication/ReplicationInitiation
-    but NOT Transcription. A change to it must stale exactly the processes
-    whose `oc_module` actually imports it. Uses a synthetic throwaway file
-    monkeypatched into `schema.MECHANICAL_DEPENDENCY_CANDIDATES` (never the
-    real tracked `opencell/state/chromosome_store.py`) so this test never
-    mutates real production state code; the REAL `karr_dna_repair.py` /
-    `karr_transcription.py` source files are still read as-is to prove the
-    mechanical import-detection itself is genuine, not hand-listed."""
+def test_chromosome_store_change_stales_only_registered_processes(tmp_path, monkeypatch):
+    """`chromosome_store.py` is an EXPLICIT `schema.PROCESS_DEPENDENCY_FILES`
+    entry for DNARepair/DNASupercoiling/Replication/ReplicationInitiation --
+    never mechanically re-derived at hash time (F5 correction of the
+    rejected F1 design). Monkeypatching ONLY DNARepair's registered
+    `chromosome_store_module` entry to a synthetic throwaway file and
+    changing that file must stale DNARepair alone: Replication (whose own
+    registry entry still points at the REAL, untouched
+    `schema.CHROMOSOME_STORE_MODULE`) and Transcription (which has no
+    `chromosome_store_module` entry at all) must both remain green --
+    proving this is a genuinely per-process explicit registry, not a
+    single shared global key that would stale every chromosome-adjacent
+    process at once."""
     fake_store = tmp_path / "src" / "fake_chromosome_store.py"
     fake_store.parent.mkdir(parents=True, exist_ok=True)
     fake_store.write_text("# fake chromosome_store v1\n", encoding="utf-8")
     monkeypatch.setitem(
-        schema.MECHANICAL_DEPENDENCY_CANDIDATES,
-        "opencell.state.chromosome_store",
-        ("chromosome_store_module", fake_store),
+        schema.PROCESS_DEPENDENCY_FILES,
+        "DNARepair",
+        {**schema.PROCESS_DEPENDENCY_FILES["DNARepair"], "chromosome_store_module": fake_store},
     )
 
     evidence_root = tmp_path / "evidence"
-    _write_evidence_dir(evidence_root, "DNARepair")  # imports chromosome_store
-    _write_evidence_dir(evidence_root, "Transcription")  # does not
+    _write_evidence_dir(evidence_root, "DNARepair")
+    _write_evidence_dir(evidence_root, "Replication")
+    _write_evidence_dir(evidence_root, "Transcription")
 
     row_dnarepair_before = gen.build_process_row(_ENTRIES["DNARepair"], evidence_root)
+    row_replication_before = gen.build_process_row(_ENTRIES["Replication"], evidence_root)
     row_transcription_before = gen.build_process_row(_ENTRIES["Transcription"], evidence_root)
     assert row_dnarepair_before["green"] is True, row_dnarepair_before["reasons"]
+    assert row_replication_before["green"] is True, row_replication_before["reasons"]
     assert row_transcription_before["green"] is True, row_transcription_before["reasons"]
 
     fake_store.write_text("# fake chromosome_store v2 -- behavior changed\n", encoding="utf-8")
 
     row_dnarepair_after = gen.build_process_row(_ENTRIES["DNARepair"], evidence_root)
+    row_replication_after = gen.build_process_row(_ENTRIES["Replication"], evidence_root)
     row_transcription_after = gen.build_process_row(_ENTRIES["Transcription"], evidence_root)
     assert row_dnarepair_after["green"] is False
     assert any("chromosome_store_module" in reason for reason in row_dnarepair_after["reasons"])
+    assert row_replication_after["green"] is True, row_replication_after["reasons"]
     assert row_transcription_after["green"] is True, row_transcription_after["reasons"]
 
 
-def test_chromosome_views_change_stales_dnarepair_but_not_dnasupercoiling(tmp_path, monkeypatch):
-    """Finer mechanical distinction: DNARepair's `karr_dna_repair.py`
-    imports BOTH `chromosome_store` and `chromosome_views`; DNASupercoiling's
-    `karr_dna_supercoiling.py` imports only `chromosome_store`. A change to
-    `chromosome_views.py` alone must stale DNARepair but leave
-    DNASupercoiling untouched (it never bound that key at all), proving
-    the mechanical detection is genuinely per-target, not "any chromosome
-    module changed -> stale every chromosome-adjacent process"."""
+def test_chromosome_views_change_stales_only_dnarepair_not_dnasupercoiling(tmp_path, monkeypatch):
+    """DNARepair's EXPLICIT registry entry carries BOTH
+    `chromosome_store_module` and `chromosome_views_module`;
+    DNASupercoiling's entry carries only `chromosome_store_module` (no
+    `chromosome_views_module` key at all) -- reflecting each process's OWN
+    real import graph, verified by direct inspection when this registry
+    was written (see `schema.py`). Monkeypatching DNARepair's
+    `chromosome_views_module` entry alone and changing that file must
+    stale DNARepair while leaving DNASupercoiling untouched (it never
+    bound that key in the first place)."""
     fake_views = tmp_path / "src" / "fake_chromosome_views.py"
     fake_views.parent.mkdir(parents=True, exist_ok=True)
     fake_views.write_text("# fake chromosome_views v1\n", encoding="utf-8")
     monkeypatch.setitem(
-        schema.MECHANICAL_DEPENDENCY_CANDIDATES,
-        "opencell.vivarium.chromosome_views",
-        ("chromosome_views_module", fake_views),
+        schema.PROCESS_DEPENDENCY_FILES,
+        "DNARepair",
+        {**schema.PROCESS_DEPENDENCY_FILES["DNARepair"], "chromosome_views_module": fake_views},
     )
 
     evidence_root = tmp_path / "evidence"
-    _write_evidence_dir(evidence_root, "DNARepair")  # imports chromosome_views
-    _write_evidence_dir(evidence_root, "DNASupercoiling")  # does not
+    _write_evidence_dir(evidence_root, "DNARepair")  # registry includes chromosome_views_module
+    _write_evidence_dir(evidence_root, "DNASupercoiling")  # registry does not
 
     row_dnarepair_before = gen.build_process_row(_ENTRIES["DNARepair"], evidence_root)
     row_supercoiling_before = gen.build_process_row(_ENTRIES["DNASupercoiling"], evidence_root)
@@ -809,20 +820,250 @@ def test_chromosome_views_change_stales_dnarepair_but_not_dnasupercoiling(tmp_pa
     assert row_supercoiling_after["green"] is True, row_supercoiling_after["reasons"]
 
 
-def test_mechanical_dependency_hashes_reflects_real_current_import_graph():
-    """Sanity check against the REAL (non-monkeypatched) catalog/source
-    tree: verifies today's actual mechanical import graph matches what F1
-    was designed against, so a future edit to any `karr_*.py` file that
-    adds/removes one of these two imports is forced to be a deliberate,
-    visible change to this test rather than silently drifting unnoticed."""
-    assert set(schema.mechanical_dependency_hashes(_ENTRIES["DNARepair"].oc_module)) == {
-        "chromosome_store_module",
-        "chromosome_views_module",
-    }
+def test_removed_registry_key_stales_evidence_generated_against_larger_set(tmp_path, monkeypatch):
+    """F5 requirement 4 (bidirectional staleness) at the `generator`
+    audit-path level (mirrors `test_evidence_is_valid_rejects_extra_source_
+    hash_key` in `test_l22_evidence_sweep.py`, which covers the SAME check
+    in `sweep.evidence_is_valid`): evidence generated while a process had
+    an EXTRA registry entry (simulated here as a synthetic dependency key)
+    must go stale once that key is removed from the registry, even though
+    every remaining (smaller) expected key set still matches -- otherwise a
+    shrunk/renamed registry could silently "de-stale" old evidence that
+    was never actually re-validated against the smaller dependency set."""
+    fake_dep = tmp_path / "src" / "fake_dep.py"
+    fake_dep.parent.mkdir(parents=True, exist_ok=True)
+    fake_dep.write_text("# fake dependency\n", encoding="utf-8")
+
+    original_dnarepair_deps = dict(schema.PROCESS_DEPENDENCY_FILES["DNARepair"])
+    monkeypatch.setitem(
+        schema.PROCESS_DEPENDENCY_FILES, "DNARepair", {**original_dnarepair_deps, "fake_extra_dep": fake_dep}
+    )
+    evidence_root = tmp_path / "evidence"
+    _write_evidence_dir(evidence_root, "DNARepair")
+    row_before = gen.build_process_row(_ENTRIES["DNARepair"], evidence_root)
+    assert row_before["green"] is True, row_before["reasons"]
+
+    # Now simulate the registry entry being removed/renamed (never
+    # re-running the sweep): the recorded sentinel still has the old
+    # "fake_extra_dep" key, but the CURRENT expected set no longer
+    # includes it.
+    monkeypatch.setitem(schema.PROCESS_DEPENDENCY_FILES, "DNARepair", original_dnarepair_deps)
+    row_after = gen.build_process_row(_ENTRIES["DNARepair"], evidence_root)
+    assert row_after["green"] is False
+    assert any("extra" in reason and "fake_extra_dep" in reason for reason in row_after["reasons"]), row_after["reasons"]
+
+
+def test_process_dependency_registry_matches_real_current_import_graph():
+    """Sanity check against the REAL (non-monkeypatched) explicit registry:
+    verifies today's `schema.PROCESS_DEPENDENCY_FILES` matches the actual
+    current import graph (verified by direct AST inspection when F5 wrote
+    this registry -- see `schema.py`'s per-constant comments), so a future
+    edit to any `karr_*.py` file that adds/removes a first-party import is
+    forced to be a deliberate, visible change to this test (and, more
+    importantly, will fail
+    `test_l22_evidence_ast_completeness.py::test_zero_uncovered_first_party_
+    imports_across_real_in_scope_processes`) rather than silently drifting
+    unnoticed."""
+    assert set(schema.PROCESS_DEPENDENCY_FILES["DNARepair"]) == {"chromosome_store_module", "chromosome_views_module"}
     for name in ("DNASupercoiling", "Replication", "ReplicationInitiation"):
-        assert set(schema.mechanical_dependency_hashes(_ENTRIES[name].oc_module)) == {"chromosome_store_module"}, name
-    for name in ("Transcription", "Translation", "Metabolism", "ProteinDecay"):
-        assert set(schema.mechanical_dependency_hashes(_ENTRIES[name].oc_module)) == set(), name
+        assert "chromosome_store_module" in schema.PROCESS_DEPENDENCY_FILES[name], name
+    assert "chromosome_views_module" not in schema.PROCESS_DEPENDENCY_FILES.get("DNASupercoiling", {})
+    assert "chromosome_views_module" not in schema.PROCESS_DEPENDENCY_FILES.get("Replication", {})
+    assert "chromosome_views_module" not in schema.PROCESS_DEPENDENCY_FILES.get("ReplicationInitiation", {})
+
+    assert set(schema.PROCESS_DEPENDENCY_FILES["Metabolism"]) == {
+        "fva_module",
+        "calc_flux_bounds_module",
+        "m1_karr_metabolism_module",
+        "karr_metabolism_writeback_module",
+        "karr_protein_decay_light_module",
+    }
+    assert set(schema.PROCESS_DEPENDENCY_FILES["Translation"]) == {"m3_translation_module", "karr_translation_v3_module"}
+    assert schema.PROCESS_DEPENDENCY_FILES["Transcription"] == {"m2_transcription_module": schema.M2_TRANSCRIPTION_MODULE}
+    for name in ("ProteinProcessingI", "RNAProcessing"):
+        assert schema.PROCESS_DEPENDENCY_FILES[name] == {
+            "karr_trna_aminoacylation_module": schema.KARR_TRNA_AMINOACYLATION_MODULE
+        }, name
+    assert set(schema.PROCESS_DEPENDENCY_FILES["ProteinTranslocation"]) == {"util_module", "util_matlab_rng_module"}
+    assert set(schema.PROCESS_DEPENDENCY_FILES["DNASupercoiling"]) == {
+        "chromosome_store_module",
+        "m_gen_constants_module",
+    }
+
+    for name, deps in schema.PROCESS_DEPENDENCY_FILES.items():
+        for key, path in deps.items():
+            assert path.is_file(), f"{name}.{key} -> {path} does not exist on disk"
+
+
+def test_m2_transcription_module_change_stales_only_transcription(tmp_path, monkeypatch):
+    """F5 addition: Transcription's `karr_transcription.py` imports
+    `opencell.m2.transcription` at module scope -- verified by direct
+    inspection. A change to it must stale only Transcription."""
+    fake_module = tmp_path / "src" / "fake_m2_transcription.py"
+    fake_module.parent.mkdir(parents=True, exist_ok=True)
+    fake_module.write_text("# fake m2 transcription v1\n", encoding="utf-8")
+    monkeypatch.setitem(schema.PROCESS_DEPENDENCY_FILES, "Transcription", {"m2_transcription_module": fake_module})
+
+    evidence_root = tmp_path / "evidence"
+    _write_evidence_dir(evidence_root, "Transcription")
+    _write_evidence_dir(evidence_root, "RNAProcessing")
+
+    row_before = gen.build_process_row(_ENTRIES["Transcription"], evidence_root)
+    row_other_before = gen.build_process_row(_ENTRIES["RNAProcessing"], evidence_root)
+    assert row_before["green"] is True, row_before["reasons"]
+    assert row_other_before["green"] is True, row_other_before["reasons"]
+
+    fake_module.write_text("# fake m2 transcription v2 -- behavior changed\n", encoding="utf-8")
+
+    row_after = gen.build_process_row(_ENTRIES["Transcription"], evidence_root)
+    row_other_after = gen.build_process_row(_ENTRIES["RNAProcessing"], evidence_root)
+    assert row_after["green"] is False
+    assert any("m2_transcription_module" in reason for reason in row_after["reasons"])
+    assert row_other_after["green"] is True, row_other_after["reasons"]
+
+
+def test_karr_protein_decay_light_change_stales_metabolism(tmp_path, monkeypatch):
+    """F5 addition: Metabolism's `karr_metabolism.py` imports `_Mcg16807`
+    (the MCG RNG) from `opencell/vivarium/karr_protein_decay_light.py` --
+    verified by direct inspection. A change to it must stale Metabolism
+    (which registers it as an extra dependency) but not ProteinDecay
+    (whose OWN `oc_module` IS this same file, hashed there under the
+    `"oc_module"` key -- a separate, already-covered code path, exercised
+    here via a synthetic throwaway file so this test never touches
+    ProteinDecay's real `oc_module` hash)."""
+    fake_module = tmp_path / "src" / "fake_karr_protein_decay_light.py"
+    fake_module.parent.mkdir(parents=True, exist_ok=True)
+    fake_module.write_text("# fake karr_protein_decay_light v1\n", encoding="utf-8")
+    monkeypatch.setitem(
+        schema.PROCESS_DEPENDENCY_FILES,
+        "Metabolism",
+        {**schema.PROCESS_DEPENDENCY_FILES["Metabolism"], "karr_protein_decay_light_module": fake_module},
+    )
+
+    evidence_root = tmp_path / "evidence"
+    _write_evidence_dir(evidence_root, "Metabolism")
+    _write_evidence_dir(evidence_root, "ProteinDecay")
+
+    row_before = gen.build_process_row(_ENTRIES["Metabolism"], evidence_root)
+    row_decay_before = gen.build_process_row(_ENTRIES["ProteinDecay"], evidence_root)
+    assert row_before["green"] is True, row_before["reasons"]
+    assert row_decay_before["green"] is True, row_decay_before["reasons"]
+
+    fake_module.write_text("# fake karr_protein_decay_light v2 -- behavior changed\n", encoding="utf-8")
+
+    row_after = gen.build_process_row(_ENTRIES["Metabolism"], evidence_root)
+    row_decay_after = gen.build_process_row(_ENTRIES["ProteinDecay"], evidence_root)
+    assert row_after["green"] is False
+    assert any("karr_protein_decay_light_module" in reason for reason in row_after["reasons"])
+    assert row_decay_after["green"] is True, row_decay_after["reasons"]  # unaffected: fake file, not its real oc_module
+
+
+def test_karr_trna_aminoacylation_change_stales_both_registered_processes(tmp_path, monkeypatch):
+    """F5 addition: BOTH ProteinProcessingI's and RNAProcessing's
+    `oc_module` files import helper functions from
+    `opencell/vivarium/karr_trna_aminoacylation.py` -- verified by direct
+    inspection. A change to it must stale both, but not an unrelated
+    process (ProteinTranslocation, which has no such entry)."""
+    fake_module = tmp_path / "src" / "fake_karr_trna_aminoacylation.py"
+    fake_module.parent.mkdir(parents=True, exist_ok=True)
+    fake_module.write_text("# fake karr_trna_aminoacylation v1\n", encoding="utf-8")
+    monkeypatch.setitem(
+        schema.PROCESS_DEPENDENCY_FILES, "ProteinProcessingI", {"karr_trna_aminoacylation_module": fake_module}
+    )
+    monkeypatch.setitem(
+        schema.PROCESS_DEPENDENCY_FILES, "RNAProcessing", {"karr_trna_aminoacylation_module": fake_module}
+    )
+
+    evidence_root = tmp_path / "evidence"
+    _write_evidence_dir(evidence_root, "ProteinProcessingI")
+    _write_evidence_dir(evidence_root, "RNAProcessing")
+    _write_evidence_dir(evidence_root, "ProteinTranslocation")
+
+    row_i_before = gen.build_process_row(_ENTRIES["ProteinProcessingI"], evidence_root)
+    row_rna_before = gen.build_process_row(_ENTRIES["RNAProcessing"], evidence_root)
+    row_translocation_before = gen.build_process_row(_ENTRIES["ProteinTranslocation"], evidence_root)
+    assert row_i_before["green"] is True, row_i_before["reasons"]
+    assert row_rna_before["green"] is True, row_rna_before["reasons"]
+    assert row_translocation_before["green"] is True, row_translocation_before["reasons"]
+
+    fake_module.write_text("# fake karr_trna_aminoacylation v2 -- behavior changed\n", encoding="utf-8")
+
+    row_i_after = gen.build_process_row(_ENTRIES["ProteinProcessingI"], evidence_root)
+    row_rna_after = gen.build_process_row(_ENTRIES["RNAProcessing"], evidence_root)
+    row_translocation_after = gen.build_process_row(_ENTRIES["ProteinTranslocation"], evidence_root)
+    assert row_i_after["green"] is False
+    assert any("karr_trna_aminoacylation_module" in reason for reason in row_i_after["reasons"])
+    assert row_rna_after["green"] is False
+    assert any("karr_trna_aminoacylation_module" in reason for reason in row_rna_after["reasons"])
+    assert row_translocation_after["green"] is True, row_translocation_after["reasons"]
+
+
+def test_util_matlab_rng_change_stales_only_protein_translocation(tmp_path, monkeypatch):
+    """F5 addition: ProteinTranslocation's `oc_module` does `from
+    opencell.util import MatlabRandStream` -- `opencell.util` is a
+    PACKAGE, so both the direct import target (`util_module` ->
+    `opencell/util/__init__.py`) and the file that actually defines the
+    RNG logic it re-exports (`util_matlab_rng_module` ->
+    `opencell/util/matlab_rng.py`) are registered. A change to the RNG
+    implementation file alone must stale ProteinTranslocation."""
+    fake_module = tmp_path / "src" / "fake_matlab_rng.py"
+    fake_module.parent.mkdir(parents=True, exist_ok=True)
+    fake_module.write_text("# fake matlab_rng v1\n", encoding="utf-8")
+    monkeypatch.setitem(
+        schema.PROCESS_DEPENDENCY_FILES,
+        "ProteinTranslocation",
+        {**schema.PROCESS_DEPENDENCY_FILES["ProteinTranslocation"], "util_matlab_rng_module": fake_module},
+    )
+
+    evidence_root = tmp_path / "evidence"
+    _write_evidence_dir(evidence_root, "ProteinTranslocation")
+    _write_evidence_dir(evidence_root, "ProteinFolding")
+
+    row_before = gen.build_process_row(_ENTRIES["ProteinTranslocation"], evidence_root)
+    row_other_before = gen.build_process_row(_ENTRIES["ProteinFolding"], evidence_root)
+    assert row_before["green"] is True, row_before["reasons"]
+    assert row_other_before["green"] is True, row_other_before["reasons"]
+
+    fake_module.write_text("# fake matlab_rng v2 -- behavior changed\n", encoding="utf-8")
+
+    row_after = gen.build_process_row(_ENTRIES["ProteinTranslocation"], evidence_root)
+    row_other_after = gen.build_process_row(_ENTRIES["ProteinFolding"], evidence_root)
+    assert row_after["green"] is False
+    assert any("util_matlab_rng_module" in reason for reason in row_after["reasons"])
+    assert row_other_after["green"] is True, row_other_after["reasons"]
+
+
+def test_m_gen_constants_change_stales_only_dnasupercoiling(tmp_path, monkeypatch):
+    """F5 addition: DNASupercoiling's `karr_dna_supercoiling.py` imports
+    `GENOME_LENGTH_BP` from `opencell/m_gen_constants.py` -- verified by
+    direct inspection. A change to it must stale DNASupercoiling but not
+    DNARepair (which has no `m_gen_constants_module` entry, even though it
+    shares the `chromosome_store_module`/`chromosome_views_module` keys)."""
+    fake_module = tmp_path / "src" / "fake_m_gen_constants.py"
+    fake_module.parent.mkdir(parents=True, exist_ok=True)
+    fake_module.write_text("# fake m_gen_constants v1\n", encoding="utf-8")
+    monkeypatch.setitem(
+        schema.PROCESS_DEPENDENCY_FILES,
+        "DNASupercoiling",
+        {**schema.PROCESS_DEPENDENCY_FILES["DNASupercoiling"], "m_gen_constants_module": fake_module},
+    )
+
+    evidence_root = tmp_path / "evidence"
+    _write_evidence_dir(evidence_root, "DNASupercoiling")
+    _write_evidence_dir(evidence_root, "DNARepair")
+
+    row_before = gen.build_process_row(_ENTRIES["DNASupercoiling"], evidence_root)
+    row_other_before = gen.build_process_row(_ENTRIES["DNARepair"], evidence_root)
+    assert row_before["green"] is True, row_before["reasons"]
+    assert row_other_before["green"] is True, row_other_before["reasons"]
+
+    fake_module.write_text("# fake m_gen_constants v2 -- behavior changed\n", encoding="utf-8")
+
+    row_after = gen.build_process_row(_ENTRIES["DNASupercoiling"], evidence_root)
+    row_other_after = gen.build_process_row(_ENTRIES["DNARepair"], evidence_root)
+    assert row_after["green"] is False
+    assert any("m_gen_constants_module" in reason for reason in row_after["reasons"])
+    assert row_other_after["green"] is True, row_other_after["reasons"]
 
 
 # --- R3 oracle input manifest: empty inputs / strict mounted-data rehash -------

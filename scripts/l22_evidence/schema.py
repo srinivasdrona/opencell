@@ -8,7 +8,6 @@ the row shape and update ``EVIDENCE_INDEX_SPEC.md`` in lockstep.
 
 from __future__ import annotations
 
-import ast
 import hashlib
 import sys
 from pathlib import Path
@@ -201,21 +200,157 @@ M1_KARR_METABOLISM_MODULE = REPO_ROOT / "opencell" / "m1" / "karr_metabolism.py"
 # any existing key, so a change to it would silently escape staleness
 # detection.
 KARR_METABOLISM_WRITEBACK_MODULE = REPO_ROOT / "opencell" / "m1" / "karr_metabolism_writeback.py"
+# F5: `karr_metabolism.py` also imports `_Mcg16807` (the MCG RNG) from
+# `opencell/vivarium/karr_protein_decay_light.py` -- verified by direct
+# inspection. This file is ALSO ProteinDecay's own `oc_module` (hashed
+# there under the `"oc_module"` key already), but for Metabolism it is an
+# extra, separately-registered runtime dependency.
+KARR_PROTEIN_DECAY_LIGHT_MODULE = REPO_ROOT / "opencell" / "vivarium" / "karr_protein_decay_light.py"
 # Translation's own `oc_module` (`opencell/vivarium/karr_translation.py`)
 # directly imports `from opencell.m3 import translation as tl` at module
 # scope -- verified by direct inspection -- so its runtime numeric
 # dependency is not fully covered by the `oc_module` hash alone either.
 M3_TRANSLATION_MODULE = REPO_ROOT / "opencell" / "m3" / "translation.py"
+# F5: `karr_translation.py` also does `from . import karr_translation_v3`
+# at module scope (inside `_install_translation_v3_release_guard()`,
+# called unconditionally at import time) -- verified by direct inspection.
+# Registered here purely so the AST import-completeness audit (see
+# `tests/scripts/_l22_ast_import_audit.py`) has zero uncovered first-party
+# imports for Translation's `oc_module`; it is NOT believed to feed
+# Translation's actual Design-A metric computation (the runner instantiates
+# `KarrTranslationProcess` from `karr_translation.py` itself -- see
+# `_l2_2_design_a_runner_helpers.py::_translation_process` --, never
+# `KarrTranslationV3Process`, and the guard installer is wrapped in a bare
+# `try/except Exception: return`, so a missing/broken `karr_translation_v3.py`
+# does not even prevent Translation's process from working). Registering it
+# anyway costs nothing and removes any doubt.
+KARR_TRANSLATION_V3_MODULE = REPO_ROOT / "opencell" / "vivarium" / "karr_translation_v3.py"
+# Transcription's own `oc_module` (`opencell/vivarium/karr_transcription.py`)
+# imports `from opencell.m2 import transcription as tx` at module scope.
+M2_TRANSCRIPTION_MODULE = REPO_ROOT / "opencell" / "m2" / "transcription.py"
+# ProteinProcessingI's and RNAProcessing's own `oc_module` files both
+# import helper functions (`_parse_wid_array`/`_resolve_fixture_path`)
+# from `opencell/vivarium/karr_trna_aminoacylation.py` -- which is ALSO
+# tRNAAminoacylation's own `oc_module` (hashed there already), but is an
+# extra, separately-registered runtime dependency for these other two
+# processes.
+KARR_TRNA_AMINOACYLATION_MODULE = REPO_ROOT / "opencell" / "vivarium" / "karr_trna_aminoacylation.py"
+# ProteinTranslocation's own `oc_module` does `from opencell.util import
+# MatlabRandStream` at module scope -- verified by direct inspection.
+# `opencell.util` is a PACKAGE (`opencell/util/__init__.py`), not a bare
+# module: `UTIL_MODULE` binds the direct import target (`__init__.py`
+# itself, a 1-line re-export shim), and `UTIL_MATLAB_RNG_MODULE` binds
+# `opencell/util/matlab_rng.py` -- the file that actually defines
+# `MatlabRandStream` and its RNG numeric logic, which `__init__.py`
+# re-exports -- registered explicitly (both, like Metabolism's one-hop
+# `karr_metabolism_writeback_module` above) since a change to the RNG
+# implementation itself must stale ProteinTranslocation even though its
+# `oc_module` only ever imports the package, never the submodule directly.
+UTIL_MODULE = REPO_ROOT / "opencell" / "util" / "__init__.py"
+UTIL_MATLAB_RNG_MODULE = REPO_ROOT / "opencell" / "util" / "matlab_rng.py"
+# `opencell/m_gen_constants.py` is imported by DNASupercoiling's own
+# `oc_module` (`GENOME_LENGTH_BP`) and, for the event-class DNADamage
+# process, its own `oc_module` too.
+M_GEN_CONSTANTS_MODULE = REPO_ROOT / "opencell" / "m_gen_constants.py"
+# `chromosome_store.py`/`chromosome_views.py` are imported by SOME but not
+# all chromosome-coupled processes' own `oc_module` implementation files
+# (DNARepair imports both; DNASupercoiling/Replication/ReplicationInitiation
+# import only `chromosome_store`; the event-class DNADamage imports both).
+CHROMOSOME_STORE_MODULE = REPO_ROOT / "opencell" / "state" / "chromosome_store.py"
+CHROMOSOME_VIEWS_MODULE = REPO_ROOT / "opencell" / "vivarium" / "chromosome_views.py"
 
-METRIC_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
+# --- Explicit per-process runtime dependency registry (F1, corrected F5) ----
+#
+# A prior revision (F1) derived the chromosome_store/chromosome_views
+# entries MECHANICALLY, by AST-scanning each process's own `oc_module`
+# source at RUNTIME (inside `sweep.current_source_hashes`/
+# `generator._current_source_hashes`, i.e. on the hot path that computes
+# `sweep_provenance.json["source_hashes"]`). Opus5's review of that design
+# rejected it: mechanical derivation belongs in a TEST-ONLY completeness
+# AUDIT (see `tests/scripts/_l22_ast_import_audit.py` /
+# `test_l22_evidence_ast_completeness.py`), never in the runtime
+# hashing/staleness path itself -- the set of dependency keys a
+# `sweep_provenance.json` sentinel is bound to must be a small, explicit,
+# reviewable, hand-maintained registry (mirroring the existing
+# `oc_module`/harness-scoped precedents), not a live AST re-parse of
+# arbitrary source files every time evidence is generated or validated.
+#
+# `PROCESS_DEPENDENCY_FILES` (renamed from the narrower `METRIC_DEPENDENCY_
+# FILES`, since it now also covers general per-process state-module
+# imports, not just metric-evaluation call-graph edges) is therefore the
+# ONE place a process's registered runtime numeric dependencies beyond its
+# own `oc_module` and the four shared `SWEEP_PROVENANCE_SOURCE_FILES` live.
+# Every entry here was verified by direct inspection of the corresponding
+# `oc_module`'s actual import statements (see the per-constant comments
+# above) -- never speculative, and never for a module already covered by
+# `SWEEP_PROVENANCE_SOURCE_FILES` or that process's own `oc_module`. The
+# TEST-ONLY AST completeness audit below cross-checks this registry
+# against the real, current import graph and fails loudly if the two ever
+# diverge (a new import added to a `karr_*.py` file without a matching
+# registry entry, or a registry entry for an import that no longer
+# exists) -- catching drift WITHOUT computing hashes from that audit.
+#
+# `sweep.current_source_hashes()`/`generator._current_source_hashes()`
+# merge `PROCESS_DEPENDENCY_FILES.get(<process name>, {})`'s hashes into
+# the SAME `source_hashes` dict `oc_module` already lives in -- no new
+# gating code path: the existing staleness loop already iterates
+# `source_hashes.items()` generically by name.
+#
+# DNADamage's entry below is `event_class` (not `design_a_per_tick`); it
+# is registered here purely for AST-completeness-audit coverage and
+# documentation. No event-class sweep exists yet, so
+# `current_source_hashes(process="DNADamage", ...)` is never actually
+# called by any evidence-generation path today -- this entry has ZERO
+# effect on the Design-A tally.
+#
+# `ChromosomeCondensation` (out of scope: not in `catalog.in_scope_processes()`)
+# is deliberately NOT registered here -- it is never looked up by any
+# in-scope evidence row regardless, so omitting it has no staling impact
+# either way; see EVIDENCE_INDEX_SPEC.md Section 13.11 for why it is
+# excluded from the audit too (out-of-scope processes are never iterated).
+PROCESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
     "Metabolism": {
         "fva_module": FVA_MODULE,
         "calc_flux_bounds_module": CALC_FLUX_BOUNDS_MODULE,
         "m1_karr_metabolism_module": M1_KARR_METABOLISM_MODULE,
         "karr_metabolism_writeback_module": KARR_METABOLISM_WRITEBACK_MODULE,
+        "karr_protein_decay_light_module": KARR_PROTEIN_DECAY_LIGHT_MODULE,
     },
     "Translation": {
         "m3_translation_module": M3_TRANSLATION_MODULE,
+        "karr_translation_v3_module": KARR_TRANSLATION_V3_MODULE,
+    },
+    "Transcription": {
+        "m2_transcription_module": M2_TRANSCRIPTION_MODULE,
+    },
+    "ProteinProcessingI": {
+        "karr_trna_aminoacylation_module": KARR_TRNA_AMINOACYLATION_MODULE,
+    },
+    "RNAProcessing": {
+        "karr_trna_aminoacylation_module": KARR_TRNA_AMINOACYLATION_MODULE,
+    },
+    "ProteinTranslocation": {
+        "util_module": UTIL_MODULE,
+        "util_matlab_rng_module": UTIL_MATLAB_RNG_MODULE,
+    },
+    "DNARepair": {
+        "chromosome_store_module": CHROMOSOME_STORE_MODULE,
+        "chromosome_views_module": CHROMOSOME_VIEWS_MODULE,
+    },
+    "DNASupercoiling": {
+        "chromosome_store_module": CHROMOSOME_STORE_MODULE,
+        "m_gen_constants_module": M_GEN_CONSTANTS_MODULE,
+    },
+    "Replication": {
+        "chromosome_store_module": CHROMOSOME_STORE_MODULE,
+    },
+    "ReplicationInitiation": {
+        "chromosome_store_module": CHROMOSOME_STORE_MODULE,
+    },
+    "DNADamage": {
+        "chromosome_store_module": CHROMOSOME_STORE_MODULE,
+        "chromosome_views_module": CHROMOSOME_VIEWS_MODULE,
+        "m_gen_constants_module": M_GEN_CONSTANTS_MODULE,
     },
 }
 
@@ -235,76 +370,6 @@ L2_REPLAY_COMMON_MODULE = REPO_ROOT / "tests" / "vivarium" / "l2_replay_common.p
 HARNESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
     "design_a_per_tick": {"l2_replay_common": L2_REPLAY_COMMON_MODULE},
 }
-
-# --- Mechanically-derived per-process dependency modules (F1) ---------------
-#
-# `chromosome_store.py`/`chromosome_views.py` are imported by SOME but not
-# all `design_a_per_tick` processes' own `oc_module` implementation files
-# (chromosome-coupled processes: DNARepair, DNASupercoiling, Replication,
-# ReplicationInitiation import `opencell.state.chromosome_store`; DNARepair
-# additionally imports `opencell.vivarium.chromosome_views`). Hand-listing
-# "which processes touch chromosome state" would silently drift as
-# `karr_*.py` files are edited over time, so this is instead derived
-# mechanically (see `mechanical_dependency_hashes` below) by parsing each
-# process's own `oc_module` source for a top-level import of one of these
-# two fixed candidate targets -- a small, targeted, single-level AST scan,
-# not a generalized transitive-closure import-graph hasher.
-CHROMOSOME_STORE_MODULE = REPO_ROOT / "opencell" / "state" / "chromosome_store.py"
-CHROMOSOME_VIEWS_MODULE = REPO_ROOT / "opencell" / "vivarium" / "chromosome_views.py"
-
-MECHANICAL_DEPENDENCY_CANDIDATES: dict[str, tuple[str, Path]] = {
-    "opencell.state.chromosome_store": ("chromosome_store_module", CHROMOSOME_STORE_MODULE),
-    "opencell.vivarium.chromosome_views": ("chromosome_views_module", CHROMOSOME_VIEWS_MODULE),
-}
-
-
-def _module_imports_any(source_path: Path, dotted_names: tuple[str, ...]) -> set[str]:
-    """Parse `source_path` (a process's own `oc_module` implementation
-    file) as an AST and return the subset of `dotted_names` it imports via
-    a top-level `import <name>` / `from <name> import ...` /
-    `from <name>.<attr> import ...` statement. Single-level: does not
-    recurse into whatever those targets themselves import -- see
-    `MECHANICAL_DEPENDENCY_CANDIDATES` above. Returns an empty set (never
-    raises) for a missing/unreadable/unparseable file -- callers already
-    treat "no match" as "nothing to bind", so a parse failure here degrades
-    to the same safe default rather than crashing evidence generation."""
-    if not source_path.is_file():
-        return set()
-    try:
-        tree = ast.parse(source_path.read_text(encoding="utf-8"), filename=str(source_path))
-    except (SyntaxError, OSError, UnicodeDecodeError):
-        return set()
-    found: set[str] = set()
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            for alias in node.names:
-                for dotted in dotted_names:
-                    if alias.name == dotted or alias.name.startswith(dotted + "."):
-                        found.add(dotted)
-        elif isinstance(node, ast.ImportFrom) and node.module:
-            for dotted in dotted_names:
-                if node.module == dotted or node.module.startswith(dotted + "."):
-                    found.add(dotted)
-    return found
-
-
-def mechanical_dependency_hashes(oc_module: str | None) -> dict[str, str | None]:
-    """For a process's own `oc_module` (repo-relative path string, e.g.
-    "opencell/vivarium/karr_dna_repair.py"), sha256 of every module in
-    `MECHANICAL_DEPENDENCY_CANDIDATES` that file's source actually imports
-    -- e.g. DNARepair's `karr_dna_repair.py` imports both
-    `chromosome_store` and `chromosome_views`, so both are bound;
-    DNASupercoiling's `karr_dna_supercoiling.py` imports only
-    `chromosome_store`, so only that one key is present. A process whose
-    `oc_module` imports neither candidate gets an empty dict -- no
-    spurious keys, and therefore no spurious staleness."""
-    if not oc_module:
-        return {}
-    matched = _module_imports_any(REPO_ROOT / oc_module, tuple(MECHANICAL_DEPENDENCY_CANDIDATES))
-    return {
-        MECHANICAL_DEPENDENCY_CANDIDATES[dotted][0]: _sha256_module_file(MECHANICAL_DEPENDENCY_CANDIDATES[dotted][1])
-        for dotted in sorted(matched)
-    }
 
 
 def harness_dependency_hashes(harness_type: str | None) -> dict[str, str | None]:
@@ -423,6 +488,5 @@ ORACLE_DATA_PATH_PREFIX = "data/"
 __all__ = [name for name in globals() if name.isupper()] + [
     "CATALOG_PATH",
     "default_evidence_root",
-    "mechanical_dependency_hashes",
     "harness_dependency_hashes",
 ]

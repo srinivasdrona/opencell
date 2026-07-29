@@ -595,7 +595,22 @@ def rederive_process(process_name: str, entry: ProcessEntry, result_payload: dic
                 f"({sorted(primary_channel_names)!r}); exactly one is required "
                 f"(catalog primary_channel={entry.primary_channel!r})"
             )
-        elif entry.primary_channel and primary_channel_names[0] != entry.primary_channel:
+        elif not entry.primary_channel:
+            # F5/F3 gap fix: the previous `elif entry.primary_channel and
+            # ...` guard silently SKIPPED this whole check whenever the
+            # catalog's own `primary_channel` field was itself empty/None,
+            # meaning ANY single is_primary=true channel passed unchallenged
+            # -- exactly the vacuous-substitution risk this block exists to
+            # prevent, just triggered by a missing catalog declaration
+            # rather than a name mismatch. A non-empty `primary_channel` is
+            # therefore asserted explicitly, never inferred as "nothing to
+            # check against".
+            reasons.append(
+                f"{schema.STATUS_PRIMARY_VACUOUS}: catalog primary_channel is empty/missing for "
+                f"{entry.name!r} -- cannot verify channel {primary_channel_names[0]!r} (is_primary=true) "
+                "is the intended primary channel, not a vacuous substitution"
+            )
+        elif primary_channel_names[0] != entry.primary_channel:
             reasons.append(
                 f"{schema.STATUS_PRIMARY_VACUOUS}: channel {primary_channel_names[0]!r} is marked "
                 f"is_primary=true but catalog primary_channel={entry.primary_channel!r} is not -- "

@@ -1107,6 +1107,20 @@ against the expanded registry.
 
 ### 13.10 F1–F4: registry completeness, unconditional manifest canonicalization, primary-channel exactly-once (schema v2 evaluator)
 
+> **Amended by Section 13.11 (F5).** The mechanical,
+> single-level-`ast.parse`-of-`oc_module` derivation described below
+> (`schema.mechanical_dependency_hashes`/`MECHANICAL_DEPENDENCY_CANDIDATES`)
+> was reviewed and **rejected**: any code path that decides runtime
+> staleness gating by parsing source at generation/sweep time is exactly
+> the kind of "clever" derivation this project's evidence-integrity work
+> is trying to eliminate, even when scoped to a single file and a fixed
+> candidate list. It has been removed from `sweep.py`/`generator.py`
+> entirely and replaced by additional explicit, hand-maintained
+> `schema.PROCESS_DEPENDENCY_FILES` entries, with AST-parsing retained
+> ONLY as a test-only, never-imported-by-runtime-code completeness audit.
+> This subsection is kept for historical record of what F1–F4 actually
+> shipped and why; **13.11 is the current design.**
+
 A final review of 13.9 found the `METRIC_DEPENDENCY_FILES` registry (and
 the surrounding provenance code) still had four gaps:
 
@@ -1253,6 +1267,114 @@ the reasons above (their old evidence is real and their next rerun will
 almost certainly pass again against the same raw numbers — the concern
 F1/F3 protect against is a change in code silently going undetected, not
 a claim that the old rows were ever incorrect).
+
+### 13.11 F5: explicit-registry-only correction (mechanical AST derivation removed from runtime), bidirectional staleness, empty-`primary_channel` hardening
+
+13.10's `schema.mechanical_dependency_hashes(oc_module)` — a single-level,
+fixed-candidate-list `ast.parse` of one process's own `oc_module`, run at
+sweep/generation time to decide which of `chromosome_store`/
+`chromosome_views` that process's `source_hashes` should include — was
+reviewed and **rejected**. Even tightly scoped, letting the staleness-
+gating code itself decide its own dependency set by parsing source is the
+wrong shape for this project: the whole point of `source_hashes` is that
+a human can read `schema.py` and know exactly, unconditionally, which
+files gate which process, with zero code-path variability. The fix has
+two independent halves that must not be conflated:
+
+**(a) Runtime authority is now 100% explicit.** `MECHANICAL_DEPENDENCY_CANDIDATES`,
+`mechanical_dependency_hashes()`, and `_module_imports_any()` are deleted
+from `schema.py`; `sweep.current_source_hashes()` and
+`generator._current_source_hashes()` no longer call anything
+AST-based — they merge exactly two dependency sources per job:
+`schema.PROCESS_DEPENDENCY_FILES.get(process, {})` (renamed from
+`METRIC_DEPENDENCY_FILES`, now covering every process with a first-party
+runtime numeric dependency beyond its own `oc_module`, not only
+Metabolism/Translation) and `schema.harness_dependency_hashes(harness_type)`
+(unchanged from 13.10). The full registry, verified against the real
+current import graph of every in-scope `oc_module` (see (c) below):
+
+| process | dependency keys → real file |
+| --- | --- |
+| `Metabolism` | `fva_module` → `opencell/m1/fva.py`; `calc_flux_bounds_module` → `opencell/m1/calc_flux_bounds.py`; `m1_karr_metabolism_module` → `opencell/m1/karr_metabolism.py`; `karr_metabolism_writeback_module` → `opencell/m1/karr_metabolism_writeback.py`; `karr_protein_decay_light_module` → `opencell/vivarium/karr_protein_decay_light.py` (MCG RNG) |
+| `Translation` | `m3_translation_module` → `opencell/m3/translation.py`; `karr_translation_v3_module` → `opencell/vivarium/karr_translation_v3.py` (imported inside a function body, not module scope — registered defensively; see (c)) |
+| `Transcription` | `m2_transcription_module` → `opencell/m2/transcription.py` |
+| `ProteinProcessingI` | `karr_trna_aminoacylation_module` → `opencell/vivarium/karr_trna_aminoacylation.py` |
+| `RNAProcessing` | `karr_trna_aminoacylation_module` → `opencell/vivarium/karr_trna_aminoacylation.py` |
+| `ProteinTranslocation` | `util_module` → `opencell/util/__init__.py`; `util_matlab_rng_module` → `opencell/util/matlab_rng.py` |
+| `DNARepair` | `chromosome_store_module` → `opencell/state/chromosome_store.py`; `chromosome_views_module` → `opencell/vivarium/chromosome_views.py` |
+| `DNASupercoiling` | `chromosome_store_module`; `m_gen_constants_module` → `opencell/m_gen_constants.py` |
+| `Replication` | `chromosome_store_module` |
+| `ReplicationInitiation` | `chromosome_store_module` |
+| `DNADamage` (event_class — no `design_a_per_tick` sweep row exists yet, so this entry has zero effect on the current tally) | `chromosome_store_module`; `chromosome_views_module`; `m_gen_constants_module` |
+
+`opencell.util` is a **package**, not a bare module:
+`opencell/util/__init__.py` is a one-line `from .matlab_rng import
+MatlabRandStream` re-export. Both the package `__init__.py` (the direct
+import target of `from opencell.util import MatlabRandStream`) and
+`opencell/util/matlab_rng.py` (the file with the actual RNG logic) are
+registered, mirroring the existing Metabolism precedent of registering
+both a process's direct import and that import's own one-hop dependency
+(`karr_metabolism_writeback_module`).
+
+**(b) Bidirectional staleness.** Both `sweep.evidence_is_valid()` and
+`generator._check_sweep_provenance_staleness()` previously only checked
+that every file the CURRENT registry expects is present and hash-matched
+in the recorded `sweep_provenance.json["source_hashes"]` — a recorded
+dict with EXTRA keys beyond what's currently expected silently passed.
+Both functions now additionally compute
+`extra_keys = sorted(set(recorded_hashes) - set(current_hashes))` and
+fail/report non-green when non-empty. This closes a real gap: a sentinel
+copied from a process with a larger dependency set (or recorded against a
+registry that later shrinks) previously could not be caught by the
+existing "missing/mismatched key" check alone, since it only iterated the
+current side.
+
+**(c) Test-only AST completeness audit.** `tests/scripts/_l22_ast_import_audit.py`
+is a NEW module, never imported by any `scripts/l22_evidence/*.py` runtime
+file, that resolves every module-scope first-party import
+(`import a.b.c`, aliases, `from pkg import X`/submodule-or-package-
+re-export disambiguation, relative imports at any level) in a given
+source file to its file path, without recursing into what THAT file
+imports (no transitive closure — deliberately matching the operator's
+"no recursive dependency platform" instruction). It raises
+`ImportAuditError` on read/parse failure rather than silently returning
+empty. `tests/scripts/test_l22_evidence_ast_completeness.py` (14 tests)
+uses it to assert, over the REAL current tree, that every in-scope
+process's `oc_module` has zero first-party module-scope imports that are
+neither its own `oc_module`/a globally-registered common source nor
+explicitly covered by `PROCESS_DEPENDENCY_FILES` — with a small,
+documented exclusion list (`_DOCUMENTED_EXCLUSIONS`) for the one known
+function-body-scoped import (Translation → `karr_translation_v3`, out of
+the audit's module-scope-only detection surface by construction, but
+registered anyway per (a)). This audit runs ONLY in CI/test time; it can
+never affect what a real sweep or generator run gates on.
+
+**(d) Empty-`primary_channel` hardening.** `verdict.rederive_process`'s
+F3 exactly-once check (13.10) required the single `is_primary=true`
+channel name to equal `entry.primary_channel`, but only when
+`entry.primary_channel` was itself truthy — a catalog entry with an
+empty/missing `primary_channel` field silently skipped the check
+entirely (a latent vacuous-substitution gap distinct from the F3 cases).
+A new `elif not entry.primary_channel:` branch now explicitly flags this
+as `STATUS_PRIMARY_VACUOUS`/non-green. A new catalog-level sanity test
+(`test_every_real_in_scope_catalog_entry_has_nonempty_primary_channel`)
+confirms all 22 real in-scope catalog entries currently declare a
+non-empty `primary_channel`, so this hardening causes **zero change** to
+the current tally — it only closes the gap for a future catalog edit.
+This was not explicitly requested by the F5 instructions but was
+discovered as a directly adjacent, zero-risk gap while implementing (a)–(c)
+and is included in the same commit for review.
+
+Per the operator's explicit "no reruns until code/tests committed" /
+"no process reruns" instruction, this is again a code-and-tests-only
+change functionally, with `evidence_index.json`/`evidence_bundle/`
+regenerated in the same commit purely to reflect the renamed/expanded
+registry: regeneration is byte-identical except `generated_at`
+(`content_hash` unchanged), confirming the tally
+(`MISSING_EVIDENCE: 20, FAIL: 2`) and every row's reasons are unaffected —
+expected, since no `sweep_provenance.json` in this worktree currently
+carries the old mechanical-derivation keys to newly stale, and no process
+was rerun.
 
 ## 14. Files
 

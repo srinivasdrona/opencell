@@ -703,3 +703,36 @@ def test_process_primary_channel_matching_catalog_name_exactly_once_is_clean():
     outcome = vd.rederive_process("FakeProcess", entry, result)
     assert outcome.mechanical_verdict == schema.STATUS_PASS
     assert outcome.reasons == []
+
+
+def test_process_empty_catalog_primary_channel_is_non_green_even_with_one_is_primary():
+    """F5 hardening: the pre-existing `elif entry.primary_channel and ...`
+    guard silently SKIPPED the name-match check whenever the catalog's own
+    `primary_channel` field was itself empty/None, meaning ANY single
+    is_primary=true channel would pass unchallenged -- exactly the
+    vacuous-substitution risk this block exists to prevent, just triggered
+    by a missing catalog declaration rather than a name mismatch. An
+    empty/None `primary_channel` with channels present must now be
+    explicitly non-green, never silently treated as "nothing to check
+    against"."""
+    entry = _entry(primary_channel="")
+    result = _result(channels={"substrates": _channel(is_primary=True)})
+    outcome = vd.rederive_process("FakeProcess", entry, result)
+    assert outcome.mechanical_verdict == schema.STATUS_FAIL
+    assert any(
+        schema.STATUS_PRIMARY_VACUOUS in reason and "empty/missing" in reason for reason in outcome.reasons
+    ), outcome.reasons
+
+
+def test_every_real_in_scope_catalog_entry_has_nonempty_primary_channel():
+    """Catalog-level sanity check against the REAL (non-synthetic)
+    PROCESS_CATALOG.yaml: every in-scope process must declare a non-empty
+    `primary_channel` -- if this ever regressed to empty/None for a real
+    process, `test_process_empty_catalog_primary_channel_is_non_green_
+    even_with_one_is_primary` above proves that row would (correctly) go
+    non-green, but this test catches the catalog regression directly,
+    at the source, rather than only downstream via a verdict test."""
+    from scripts.l22_evidence import catalog as cat
+
+    for name, entry in cat.in_scope_processes().items():
+        assert entry.primary_channel, f"{name}: catalog primary_channel is empty/missing"

@@ -215,22 +215,22 @@ def current_source_hashes(
     `oc_module`, when given (a repo-relative path string, e.g.
     "opencell/vivarium/karr_dna_repair.py" -- see `catalog.ProcessEntry.
     oc_module`), additionally hashes that ONE process's own implementation
-    file under the `"oc_module"` key, PLUS (F1) sha256 of every module in
-    `schema.MECHANICAL_DEPENDENCY_CANDIDATES` that file's own source is
-    mechanically found to import (e.g. `chromosome_store.py`/
-    `chromosome_views.py` for chromosome-coupled processes). This is
-    process-specific by construction (unlike the four shared entries
-    above), which is exactly what makes a code change to a single
-    process's `karr_<process>.py` (or a module it mechanically imports)
-    stale only THAT process's row (R2/F1), never all 18.
+    file under the `"oc_module"` key. This is process-specific by
+    construction (unlike the four shared entries above), which is exactly
+    what makes a code change to a single process's `karr_<process>.py`
+    stale only THAT process's row (R2), never all 18.
 
-    `process`, when given and present in `schema.METRIC_DEPENDENCY_FILES`,
-    additionally hashes that process's registered metric-evaluation
-    dependency modules (e.g. Metabolism's `fva.py`/`calc_flux_bounds.py`/
-    `karr_metabolism.py`/`karr_metabolism_writeback.py`, Translation's
-    `opencell/m3/translation.py`) under their own named keys -- same
-    stale-only-that-process property, for source files that are neither
-    one of the four shared entries nor the process's `oc_module`.
+    `process`, when given and present in `schema.PROCESS_DEPENDENCY_FILES`
+    (F5: renamed from the narrower `METRIC_DEPENDENCY_FILES` -- see that
+    registry's module docstring for why this is an explicit, hand-
+    maintained dict rather than mechanically AST-derived), additionally
+    hashes that process's registered runtime dependency modules (e.g.
+    Metabolism's `fva.py`/`calc_flux_bounds.py`/`karr_metabolism.py`/
+    `karr_metabolism_writeback.py`/`karr_protein_decay_light.py`,
+    DNARepair's `chromosome_store.py`/`chromosome_views.py`) under their
+    own named keys -- same stale-only-that-process property, for source
+    files that are neither one of the four shared entries nor the
+    process's `oc_module`.
 
     `harness_type`, when given and present in
     `schema.HARNESS_DEPENDENCY_FILES` (currently just
@@ -241,9 +241,8 @@ def current_source_hashes(
     hashes = {name: _sha256_file(path) for name, path in schema.SWEEP_PROVENANCE_SOURCE_FILES.items()}
     if oc_module:
         hashes["oc_module"] = _sha256_file(REPO_ROOT / oc_module)
-        hashes.update(schema.mechanical_dependency_hashes(oc_module))
     if process:
-        for name, path in schema.METRIC_DEPENDENCY_FILES.get(process, {}).items():
+        for name, path in schema.PROCESS_DEPENDENCY_FILES.get(process, {}).items():
             hashes[name] = _sha256_file(path)
     if harness_type:
         hashes.update(schema.harness_dependency_hashes(harness_type))
@@ -359,9 +358,25 @@ def evidence_is_valid(job: SweepJob) -> tuple[bool, str | None]:
     # linked-worktree git plumbing is fragile enough that an unknown SHA alone
     # must not invalidate otherwise-matching, otherwise-current evidence.
     recorded_hashes = sweep_prov.get("source_hashes") or {}
-    for name, current in current_source_hashes(job.oc_module, process=job.process, harness_type=job.harness_type).items():
+    current_hashes = current_source_hashes(job.oc_module, process=job.process, harness_type=job.harness_type)
+    for name, current in current_hashes.items():
         if current is None or recorded_hashes.get(name) != current:
             return False, f"{schema.SWEEP_PROVENANCE_FILE} source hash for {name!r} is stale/unknown vs current tree"
+    # F5 bidirectional check: a key present in the RECORDED source_hashes
+    # but absent from the CURRENT expected set (e.g. a since-shrunk/renamed
+    # `schema.PROCESS_DEPENDENCY_FILES` entry, or a hand-tampered sentinel
+    # that added a spurious key) must also invalidate the sentinel -- the
+    # per-key loop above only ever checks "is every CURRENTLY-expected key
+    # present and matching", never "does the recorded key SET exactly equal
+    # the current expected key set", so an extra recorded key would
+    # otherwise be silently ignored forever.
+    extra_keys = sorted(set(recorded_hashes) - set(current_hashes))
+    if extra_keys:
+        return (
+            False,
+            f"{schema.SWEEP_PROVENANCE_FILE} source_hashes has extra/unexpected key(s) {extra_keys!r} "
+            "not part of the current expected dependency set",
+        )
 
     if sweep_prov.get("evaluator_schema_version") != vd.EVALUATOR_SCHEMA_VERSION:
         return (
@@ -403,21 +418,20 @@ def build_sweep_provenance(
     `source_hashes["oc_module"]` (R2) is this ONE process's own
     implementation file, so a code change to a single `karr_<process>.py`
     stales only that process's row. `source_hashes` additionally carries
-    this process's registered metric-evaluation dependency modules, if any
-    (`schema.METRIC_DEPENDENCY_FILES`, e.g. Metabolism's `fva_module`/
-    `calc_flux_bounds_module`/`m1_karr_metabolism_module`/
-    `karr_metabolism_writeback_module`, Translation's
-    `m3_translation_module`), the mechanically-derived per-process modules
-    a process's own `oc_module` is found to import
-    (`schema.mechanical_dependency_hashes`, e.g. `chromosome_store_module`/
-    `chromosome_views_module` for chromosome-coupled processes), and this
-    job's harness-scoped shared dependency modules, if any
-    (`schema.HARNESS_DEPENDENCY_FILES`, e.g. every `design_a_per_tick`
-    job's `l2_replay_common`) -- same stale-only-that-process(-or-harness)
-    property. `inputs_verified` (R3) must be passed
-    in True by the caller ONLY after `_verify_input_manifest` has actually
-    rehashed every `input_manifest.json` input against the tree at
-    generation time (guaranteed available then) -- never fabricated here."""
+    this process's registered runtime dependency modules, if any
+    (`schema.PROCESS_DEPENDENCY_FILES` -- F5: a single explicit,
+    hand-maintained registry, NEVER mechanically AST-derived at this
+    hashing site -- e.g. Metabolism's `fva_module`/`calc_flux_bounds_module`/
+    `m1_karr_metabolism_module`/`karr_metabolism_writeback_module`/
+    `karr_protein_decay_light_module`, DNARepair's `chromosome_store_module`/
+    `chromosome_views_module`), and this job's harness-scoped shared
+    dependency modules, if any (`schema.HARNESS_DEPENDENCY_FILES`, e.g.
+    every `design_a_per_tick` job's `l2_replay_common`) -- same
+    stale-only-that-process(-or-harness) property. `inputs_verified` (R3)
+    must be passed in True by the caller ONLY after `_verify_input_manifest`
+    has actually rehashed every `input_manifest.json` input against the
+    tree at generation time (guaranteed available then) -- never
+    fabricated here."""
     sidecar_hashes = {
         fname: _sha256_file(output_dir / fname)
         for fname in schema.SWEEP_PROVENANCE_SIDECAR_FILES
