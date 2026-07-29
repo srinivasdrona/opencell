@@ -415,7 +415,7 @@ def test_fallback_cascade_raises_and_records_telemetry_when_all_strategies_fail(
     monkeypatch.setattr(fva_module, "_run_simplex_attempt", _scripted_attempt_runner(fake_glp, script))
 
     telemetry = fva_module.new_fva_solver_telemetry()
-    with pytest.raises(RuntimeError, match="exhausting all 2 fallback"):
+    with pytest.raises(RuntimeError, match=r"exhausting 2/2 applicable fallback"):
         fva_module._solve_direction_with_fallback(
             fake_glp, lp=None, base_parm=_FakeParm2(), j=0, direction=1, label="test", telemetry=telemetry
         )
@@ -423,6 +423,81 @@ def test_fallback_cascade_raises_and_records_telemetry_when_all_strategies_fail(
     assert telemetry["strategies"]["std_pse"]["failures"] == 1
     assert telemetry["total_solves"] == 1
     assert telemetry["solves_needing_fallback"] == 1
+
+
+def test_fva_timeout_exit_codes_are_exactly_eitlim_and_etmlim() -> None:
+    """C8: `_FVA_TIMEOUT_EXIT_CODES` must be exactly {GLP_EITLIM, GLP_ETMLIM}
+    = {8, 9}, verified against the installed `swiglpk` build's own constants
+    -- NOT {7, 9} (an earlier version of this module incorrectly included 7,
+    which is GLP_EOBJUL/EOBJLL, "objective function limit reached", an
+    unrelated simplex termination condition that never fires in this module
+    since no objective-value limit is ever configured)."""
+    import swiglpk as glp
+
+    assert glp.GLP_EITLIM == 8
+    assert glp.GLP_ETMLIM == 9
+    assert glp.GLP_EOBJUL == 7
+    expected_timeout_codes = frozenset({glp.GLP_EITLIM, glp.GLP_ETMLIM})
+    assert expected_timeout_codes == fva_module._FVA_TIMEOUT_EXIT_CODES
+    assert 7 not in fva_module._FVA_TIMEOUT_EXIT_CODES
+
+
+def test_fallback_cascade_skips_same_basis_retry_after_eitlim_exit_8(monkeypatch) -> None:
+    """C8: exit code 8 (GLP_EITLIM, iteration-limit timeout) must trigger the
+    SAME same-basis-retry-skip behavior as exit code 9 (GLP_ETMLIM) --
+    both are genuine "consumed the entire budget" timeouts."""
+    fake_strategies = (
+        ("adv_pse", "adv", 0),
+        ("adv_std", "adv", 1),
+        ("std_pse", "std", 0),
+        ("std_std", "std", 1),
+    )
+    monkeypatch.setattr(fva_module, "_FVA_FALLBACK_STRATEGIES", fake_strategies)
+
+    fake_glp = _FakeGlp()
+    script = [
+        fva_module._SimplexAttempt(ok=False, simplex_exit=8, sol_status=1, iterations=5_000_000, wall_time_s=10.0),
+        fva_module._SimplexAttempt(ok=True, simplex_exit=0, sol_status=5, iterations=10, wall_time_s=0.001),
+    ]
+    monkeypatch.setattr(fva_module, "_run_simplex_attempt", _scripted_attempt_runner(fake_glp, script))
+
+    telemetry = fva_module.new_fva_solver_telemetry()
+    fva_module._solve_direction_with_fallback(
+        fake_glp, lp=None, base_parm=_FakeParm2(), j=0, direction=1, label="test", telemetry=telemetry
+    )
+
+    # adv_std must have been SKIPPED (exit=8 is a timeout, same as exit=9).
+    assert fake_glp.basis_calls == ["adv", "std"]
+    assert set(telemetry["strategies"].keys()) == {"adv_pse", "std_pse"}
+
+
+def test_fallback_cascade_does_not_skip_after_exit_code_7(monkeypatch) -> None:
+    """C8: exit code 7 (GLP_EOBJUL, unrelated to timeouts) must NOT trigger
+    the same-basis-retry-skip logic -- it must behave like any other
+    non-timeout failure (e.g. GLP_NOFEAS) and attempt the immediately-
+    following same-basis/different-pricing entry."""
+    fake_strategies = (
+        ("adv_pse", "adv", 0),
+        ("adv_std", "adv", 1),
+        ("std_pse", "std", 0),
+    )
+    monkeypatch.setattr(fva_module, "_FVA_FALLBACK_STRATEGIES", fake_strategies)
+
+    fake_glp = _FakeGlp()
+    script = [
+        fva_module._SimplexAttempt(ok=False, simplex_exit=7, sol_status=4, iterations=500, wall_time_s=0.01),
+        fva_module._SimplexAttempt(ok=True, simplex_exit=0, sol_status=5, iterations=20, wall_time_s=0.002),
+    ]
+    monkeypatch.setattr(fva_module, "_run_simplex_attempt", _scripted_attempt_runner(fake_glp, script))
+
+    telemetry = fva_module.new_fva_solver_telemetry()
+    fva_module._solve_direction_with_fallback(
+        fake_glp, lp=None, base_parm=_FakeParm2(), j=0, direction=1, label="test", telemetry=telemetry
+    )
+
+    # adv_std must NOT be skipped: exit=7 is not a timeout code.
+    assert fake_glp.basis_calls == ["adv", "adv"]
+    assert set(telemetry["strategies"].keys()) == {"adv_pse", "adv_std"}
 
 
 def test_new_fva_solver_telemetry_default_shape() -> None:

@@ -62,14 +62,24 @@ _N_COMPARTMENTS = 3
 _FVA_IT_LIM = 5_000_000
 _FVA_TM_LIM_MS = 10_000
 
-# GLP_EITLIM (7) / GLP_ETMLIM (9): the simplex call consumed its ENTIRE
+# GLP_EITLIM (8) / GLP_ETMLIM (9): the simplex call consumed its ENTIRE
 # it_lim/tm_lim budget without resolving to GLP_OPT or a certified
 # infeasible/unbounded status. This is the "genuinely slow/cycling" failure
 # mode. By contrast, simplex_exit == 0 with sol_status == GLP_NOFEAS is a
 # FAST, cheap failure (phase-1 terminates almost immediately once it
 # certifies the current basis's face is empty) -- see the fallback-cascade
 # reordering rationale below (`_solve_direction_with_fallback`).
-_FVA_TIMEOUT_EXIT_CODES = frozenset({7, 9})
+#
+# CORRECTION (Opus5 second review, C8): an earlier version of this module
+# used `frozenset({7, 9})`, confusing GLP_EOBJUL (7, "objective function
+# upper limit reached" -- an unrelated simplex termination condition that
+# never fires here, since no objective-value limit is ever configured) with
+# GLP_EITLIM (8, "iteration limit exceeded"). Verified empirically against
+# the installed `swiglpk` build: `GLP_EITLIM == 8`, `GLP_ETMLIM == 9`,
+# `GLP_EOBJUL == 7`. The set below is corrected to {8, 9}; exit code 7 is
+# deliberately NOT included and must NOT be treated as a timeout by the
+# NOFEAS-vs-timeout skip logic in `_solve_direction_with_fallback`.
+_FVA_TIMEOUT_EXIT_CODES = frozenset({8, 9})
 
 # Absolute (NOT relative) numerical floor for the objective-face window; see
 # the detailed rationale at the `glp_set_row_bnds(lp, biomass_row, ...)` call
@@ -221,7 +231,7 @@ def _telemetry_record_solve_complete(telemetry: dict[str, Any] | None, n_attempt
 #     solve already exhibited a feasible point on it). Retrying immediately
 #     with a different pricing rule under the SAME basis is cheap and often
 #     resolves it.
-#   - simplex_exit in {GLP_EITLIM(7), GLP_ETMLIM(9)}: the attempt consumed
+#   - simplex_exit in {GLP_EITLIM(8), GLP_ETMLIM(9)}: the attempt consumed
 #     its ENTIRE it_lim/tm_lim budget (up to the full 10s tm_lim) without
 #     resolving -- this is the expensive case. Immediately retrying the same
 #     basis with only a different pricing rule risks paying a SECOND full
@@ -229,13 +239,18 @@ def _telemetry_record_solve_complete(telemetry: dict[str, Any] | None, n_attempt
 #     structurally. Since the whole point of `_FVA_FALLBACK_STRATEGIES` is
 #     that different BASIS constructors (not just pricing rules) are the
 #     more likely lever to escape a genuine cycle, a slow (timeout) failure
-#     skips the immediately-following same-basis/different-pricing entry and
-#     jumps straight to the next DIFFERENT-basis strategy. This changes
-#     nothing about which strategies are eventually tried (every strategy in
-#     the list can still be reached), only the ORDER/whether a same-basis
-#     retry is attempted after a genuine timeout -- so it cannot change the
-#     mathematical answer (see the strong-duality argument above), only wall
-#     time. Measured effect: see
+#     INTENTIONALLY skips the immediately-following same-basis/different-
+#     pricing entry for THIS PARTICULAR solve and jumps straight to the next
+#     DIFFERENT-basis strategy -- that skipped entry is deliberately not
+#     attempted for this specific failing solve, not merely delayed. This
+#     changes only the ORDER, and which of the (up to 5) strategies are
+#     actually attempted for a given solve (a timeout may cause fewer than 5
+#     attempts before a different-basis strategy succeeds, or before the
+#     cascade raises `RuntimeError` after exhausting only the strategies it
+#     actually tried) -- it never changes which strategy is ultimately
+#     ACCEPTED once one reaches GLP_OPT, so it cannot change the mathematical
+#     answer (see the strong-duality argument above), only wall time and
+#     which subset of strategies is attempted. Measured effect: see
 #     benchmarks/bench_fva_fallback_cascade_telemetry.py for real before/after
 #     wall-time numbers on known-hard samples.
 _FVA_FALLBACK_STRATEGIES: tuple[tuple[str, str, int], ...] = (
@@ -322,9 +337,18 @@ def _solve_direction_with_fallback(
             idx += 1
 
     _telemetry_record_solve_complete(telemetry, n_attempts)
+    # D6 wording correction: this raises after exhausting the strategies
+    # actually ATTEMPTED for this specific solve (`n_attempts`), which may be
+    # fewer than `len(_FVA_FALLBACK_STRATEGIES)` -- a genuine timeout can
+    # cause a same-basis retry entry to be intentionally skipped (see the
+    # CASCADE ORDERING comment above `_FVA_FALLBACK_STRATEGIES`), not merely
+    # deferred. That is not a contradiction: every strategy remains reachable
+    # in general (across different solves/failure patterns), but for THIS
+    # solve only the strategies applicable to the failures actually observed
+    # were tried.
     raise RuntimeError(
-        f"{label} failed after exhausting all {len(_FVA_FALLBACK_STRATEGIES)} fallback "
-        f"strategies: " + " | ".join(errors)
+        f"{label} failed after exhausting {n_attempts}/{len(_FVA_FALLBACK_STRATEGIES)} "
+        f"applicable fallback strategies for this solve: " + " | ".join(errors)
     )
 
 
@@ -461,7 +485,8 @@ def fva_range(
         # Always use GLP_DB (double-bounded) with at least a tiny numeric
         # floor, never an exact GLP_FX equality, even when epsilon_obj == 0.
         #
-        # WHY THIS ROW EXISTS (corrected 2026-07-29 review pass -- see
+        # WHY THIS ROW EXISTS (corrected 2026-07-29 review pass, SECOND
+        # correction 2026-07-29 Opus5 narrow-REJECT round C8/D1-D6 -- see
         # benchmarks/bench_fva_fx_vs_db_objective_face_equivalence.py for the
         # full reproducible measurement this paragraph summarizes):
         # `biomass_value_star` is computed by a SEPARATE `solve_fba` call on
@@ -487,62 +512,120 @@ def fva_range(
         # by `biomass_value_star`'s own magnitude -- see the constant's
         # definition above for why. Do NOT reason about its safety from "1e-9
         # is obviously tiny": `substrate_delta_range_from_fva` can amplify a
-        # flux-unit epsilon into a downstream d_min/d_max shift of up to
-        # ~2.6e3 whole-molecule counts (larger than the `_METABOLISM_FVA_TOL
-        # = 2.0` count-scale pass tolerance in the L2.2 gate) -- so a window
-        # that were merely "small in flux units" would NOT automatically be
-        # safe on the count scale a caller ultimately reads. Its actual
-        # justification is empirical, not a magnitude argument:
-        #   1. It covers the REAL observed cross-solve mismatch between the
-        #      internal "FVA primary" objective value and
-        #      `biomass_value_star`, which independent measurement across a
-        #      pre-registered 100-sample set (50 seeds x ticks {0,1}; see
-        #      benchmarks/artifacts/fva_fx_vs_db_objective_face_equivalence.json)
-        #      found to have a maximum absolute value of 2.8939350915635487e-13
-        #      (mean 1.32650869455464e-13) -- i.e. the 1e-9 window covers the
-        #      actual observed mismatch with ~3.54 orders of magnitude of
-        #      margin (log10(1e-9 / 2.894e-13) ~= 3.54), it is not an
-        #      arbitrary "small" choice.
-        #   2. Without ANY window (exact GLP_FX equality, epsilon_obj=0 and
-        #      no floor), the *single-attempt* solve (i.e. without the
-        #      fallback cascade below) fails to reach GLP_OPT on 1/100
-        #      pre-registered samples (seed=12/tick=1) and reproducibly on
-        #      the original historically-documented case (seed=20/tick=16,
-        #      column j=417: GLP_NOFEAS, 37595 iterations -- see
-        #      benchmarks/bench_fva_j417_nofeas_diag.py). At seed=20/tick=16
-        #      specifically, exact FX fails EVERY strategy in the full
-        #      5-strategy fallback cascade below (all NOFEAS/ENOPFS, 37595-
-        #      39098 iterations) -- i.e. no amount of pivoting/basis retrying
-        #      recovers that face, which is the strongest evidence the
-        #      window is necessary, not merely convenient, for at least this
-        #      sample. With the shipped fallback cascade active, measured
-        #      exact-FX failure across the full 100-sample set drops to
-        #      0/100, but that cascade is an independent robustness fix
-        #      (root causes #1-#3 above) that a caller should not rely on in
-        #      place of this window: the cascade cannot always recover a
-        #      genuinely-infeasible exact-equality face (as seed=20/tick=16
-        #      demonstrates), so this window remains the correct fix at the
-        #      LP-construction level. NOTE: an earlier (rejected) review
-        #      draft of this comment cited a ~15.7% exact-FX failure rate
-        #      across 102 samples/150,930 pairs; that figure could not be
-        #      reproduced against this 100-sample pre-registered set under
-        #      the shipped cascade and is very likely explained by either a
-        #      wider tick range (the original bug sample is at tick=16,
-        #      outside the {0,1} set measured here) or a baseline that did
-        #      not include the already-shipped fallback cascade. This
-        #      comment reports what was actually independently measured,
-        #      not the earlier unreproduced figure.
-        # The same benchmark also sweeps epsilon_obj across several orders
-        # of magnitude around this floor and confirms the final feasibility
-        # classification (and every d_min/d_max value) is unchanged (0
-        # flips) across the swept range, i.e. this window's exact size is
-        # not something the pass/fail outcome is sensitive to within that
-        # practical bracket -- it is the smallest floor that reliably clears
-        # the observed mismatch, not a fitted/tuned value. This is purely an
-        # IEEE-754 floating-point equality-constraint engineering fix, not a
-        # change to the caller-supplied `epsilon_obj` mathematical range
-        # parameter (which continues to widen the face beyond this floor
-        # exactly as before whenever epsilon_obj > the floor).
+        # flux-unit epsilon into a downstream d_min/d_max shift far larger
+        # than the `_METABOLISM_FVA_TOL = 2.0` count-scale pass tolerance in
+        # the L2.2 gate -- so a window that were merely "small in flux
+        # units" would NOT automatically be safe on the count scale a caller
+        # ultimately reads.
+        #
+        # CORRECTED JUSTIFICATION (D1/D2/D3, this round): the ORIGINAL
+        # version of this comment claimed the 1e-9 window "covers the
+        # observed mismatch with ~3.54 orders of margin" -- that claim was
+        # measured ONLY on a 100-sample set restricted to ticks {0, 1} and
+        # does NOT hold once the historically-documented hardest case
+        # (tick=16) is included. It is corrected/withdrawn below. It is also
+        # no longer claimed that d_min/d_max are "unchanged" between the
+        # exact-FX and shipped-DB objective faces -- they measurably are
+        # NOT: only the final feasibility CLASSIFICATION had zero flips on
+        # the tested set (a materially weaker, purely empirical claim).
+        #
+        # Expanded pre-registered measurement (all 50 seeds x ticks
+        # {0, 1, 5, 9, 16} = 250 samples; see
+        # docs/phase_f/l2_2_design_a/evidence/
+        # fva_fx_vs_db_objective_face_equivalence_summary.json for the
+        # tracked, hash-verifiable summary artifact, and
+        # benchmarks/bench_fva_fx_vs_db_objective_face_equivalence.py to
+        # reproduce it):
+        #   Per-tick |FVA-primary - biomass_value_star| mismatch (n=50/tick):
+        #     tick= 0: max 5.770e-15, mean 5.770e-15, 0 exact-FX failures
+        #     tick= 1: max 2.894e-13, mean 2.595e-13, 0 exact-FX failures
+        #     tick= 5: max 3.394e-08, mean 6.791e-10, 5 exact-FX failures
+        #     tick= 9: max 2.423e-12, mean 4.164e-13, 5 exact-FX failures
+        #     tick=16: max 2.838e-06, mean 7.348e-08, 15 exact-FX failures
+        #   Overall (250 samples): max mismatch 2.8383892848975e-06 (sample
+        #   seed=43/tick=16), mean 1.4831e-08. Overall exact-FX (no window)
+        #   sample-level failure rate: 25/250 (10.0%), heavily concentrated
+        #   at tick=16 (15/50 = 30%; includes the original historically-
+        #   documented seed=20/tick=16 case) -- NOT a uniform ~10% across all
+        #   ticks.
+        #   THE WINDOW DOES NOT COVER THIS MISMATCH BY MAGNITUDE: the 1e-9
+        #   floor is *smaller* than the overall max observed mismatch
+        #   (2.838e-06) by ~3.45 orders of magnitude
+        #   (log10(2.838e-06 / 1e-9) ~= 3.45) -- i.e. NEGATIVE margin, the
+        #   reverse of the original (withdrawn) claim. On the {0,1}-tick-only
+        #   subset the window does numerically dominate the mismatch (as
+        #   originally reported), but that subset excluded the hardest case
+        #   and the claim does not generalize.
+        #   MOST PLAUSIBLE EXPLANATION for why DB mode nonetheless still
+        #   reaches GLP_OPT on these harder samples (0/250 sample-level DB
+        #   failures observed): GLPK's own `tol_bnd` simplex feasibility
+        #   tolerance is configured to 1e-6 (see `_configure_simplex_params`
+        #   and the fallback-cascade parm construction above) -- the SAME
+        #   order of magnitude as the largest observed mismatch (2.838e-06,
+        #   ~2.8x tol_bnd). A bound violation within `tol_bnd` is treated as
+        #   satisfied by GLPK's own simplex feasibility check regardless of
+        #   the nominal `_FVA_OBJ_FACE_NUMERIC_EPS_ABS` window we request, so
+        #   the solver's own numerical slack -- not the nominal 1e-9 window
+        #   size -- is the more likely reason these samples still solve.
+        #   This is a plausible mechanism consistent with the measured
+        #   orders of magnitude, not an independently-instrumented proof
+        #   (GLPK's internal tolerance-check code path was not traced
+        #   directly); it is reported as the best available explanation, not
+        #   a certainty.
+        #   Exact-FX (no window at all) still fails outright on the hardest
+        #   samples even with the full 5-strategy fallback cascade (e.g.
+        #   seed=20/tick=16 fails every strategy, all NOFEAS/ENOPFS) -- this
+        #   remains the strongest evidence that SOME window is necessary at
+        #   the LP-construction level, independent of the cascade.
+        #   FX-vs-DB comparison on relevant reactions, all samples where FX
+        #   converged (225/250): v_min/v_max and d_min/d_max VALUES DO shift
+        #   measurably between FX and DB -- max |v| diff 882.58 (flux
+        #   units), max |d| diff 882.58 (count units) -- these are NOT zero
+        #   and must not be described as "unchanged." Despite these
+        #   nontrivial value shifts, the FINAL feasibility classification
+        #   (in_range) had 0 flips across all 394,875 compared
+        #   species/sample pairs -- reported strictly as an EMPIRICAL
+        #   OUTCOME on this measured set, not a magnitude-based guarantee.
+        #   Joint margin-vs-shift statistics (D3; "margin" = this species'
+        #   own pre-window DB-mode cushion between the observed substrate
+        #   delta and the [d_min-TOL, d_max+TOL] boundary; "shift" = the
+        #   FX-vs-DB change in that species' d_min/d_max): of 19,754
+        #   species-level shifts observed (nonzero FX-vs-DB delta), 95 (in 21
+        #   of the 250 samples) had a shift magnitude EXCEEDING that
+        #   species' own DB-mode margin -- i.e. a flip was mathematically
+        #   POSSIBLE in principle for those species, yet none occurred in
+        #   the observed direction. The minimum observed safety ratio
+        #   (margin / shift) across all shifted species was ~0.00187 (shift
+        #   ~535x larger than margin in the worst case) -- explicitly NOT
+        #   evidence the window is safe by magnitude; it is evidence that
+        #   the OBSERVED shift direction happened not to cross the boundary
+        #   for any tested species, which is a weaker and more honest claim.
+        #   Directionality (descriptive only, not a proven general
+        #   property): d_min shifts skewed positive (5,549 positive vs 261
+        #   negative instances) and d_max shifts skewed negative (16,502
+        #   negative vs 580 positive) in this dataset, i.e. FX tended to
+        #   narrow the [d_min, d_max] range relative to DB more often than it
+        #   widened it here.
+        #   Epsilon-window sweep (25 systematically-chosen samples spanning
+        #   all 5 ticks, epsilon_obj in {1e-9, 1e-8, 1e-7, 1e-6, 1e-5}): 0
+        #   feasibility flips relative to the 1e-9 floor across the swept
+        #   range (max v diff vs floor 7931.6) -- i.e. on this set the
+        #   final pass/fail outcome was not sensitive to the window's exact
+        #   size within this bracket; again reported as an observed outcome,
+        #   not a proof for all possible samples.
+        #   NOTE: an earlier (rejected) review draft of this comment cited a
+        #   ~15.7% exact-FX failure rate across 102 samples/150,930 pairs;
+        #   that figure still does not reconcile with this repo's own
+        #   1,755-pairs-per-sample structure (150,930 / 1,755 = 86, not 102)
+        #   and is not reused here. This comment reports only what was
+        #   independently, reproducibly measured against this repo's own
+        #   pre-registered sample set.
+        # This is purely an IEEE-754 floating-point equality-constraint
+        # engineering fix, not a change to the caller-supplied `epsilon_obj`
+        # mathematical range parameter (which continues to widen the face
+        # beyond this floor exactly as before whenever epsilon_obj > the
+        # floor), and not a change to any biology, bound, tolerance, pass
+        # threshold, or catalog N/M.
         eps = float(max(0.0, epsilon_obj))
         eps = max(eps, _FVA_OBJ_FACE_NUMERIC_EPS_ABS * max(1.0, abs(float(biomass_value_star))))
         if _face_mode == "fx":

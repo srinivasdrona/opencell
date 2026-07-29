@@ -1,0 +1,40 @@
+{
+  "summary": {
+    "n_samples": 250,
+    "sample_set": "all 50 seeds x ticks (0, 1, 5, 9, 16), pre-registered",
+    "obj_mismatch_abs_max": 2.838389284897519e-06,
+    "obj_mismatch_abs_mean": 1.4831073666843331e-08,
+    "obj_face_window_abs": 1e-09,
+    "window_margin_over_max_mismatch_orders_of_magnitude": -3.4530719586650678,
+    "fx_sample_failure_count": 25,
+    "fx_sample_failure_rate": 0.1,
+    "fx_col_dir_failure_count_conservative": 8300,
+    "fx_col_dir_total": 83000,
+    "fx_vs_db_feasibility_flips": 0,
+    "fx_vs_db_pairs_compared": 394875,
+    "fx_vs_db_max_v_diff": 882.5773571916434,
+    "fx_vs_db_max_d_diff": 882.5773571916361,
+    "dshift_n_species_shifted_total": 19754,
+    "dshift_n_species_shift_exceeds_db_margin_total": 95,
+    "dshift_min_safety_ratio_margin_over_shift": 0.0018742662011568103,
+    "dshift_n_dmin_shift_positive_total": 5549,
+    "dshift_n_dmin_shift_negative_total": 261,
+    "dshift_n_dmax_shift_positive_total": 580,
+    "dshift_n_dmax_shift_negative_total": 16502,
+    "epsilon_sweep_samples": 25,
+    "epsilon_sweep_values": [
+      1e-09,
+      1e-08,
+      1e-07,
+      1e-06,
+      1e-05
+    ],
+    "epsilon_sweep_feasibility_flips_total": 0,
+    "epsilon_sweep_max_v_diff": 7931.60305898264,
+    "total_wall_time_s": 855.6625264420001
+  },
+  "full_artifact_sha256": "6af8ea1f80361ba455a4924a621c42d91dc16d4b40097904bf95ce14f834235c",
+  "full_artifact_relative_path": "benchmarks/artifacts/fva_fx_vs_db_objective_face_equivalence.json",
+  "reproduce_with": "bin\\oc-py benchmarks\\bench_fva_fx_vs_db_objective_face_equivalence.py",
+  "generated_by_script_sha256": "c7e121698f07b7998486b0a641db58e6a4e13161f368ee9ccca3017d43a225db"
+}
