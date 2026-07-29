@@ -95,6 +95,25 @@ from opencell.m1 import fva as fva_module  # noqa: E402
 from opencell.m1.fva import fva_range, substrate_delta_range_from_fva  # noqa: E402
 from opencell.m1.karr_metabolism_writeback import KarrWritebackFixture  # noqa: E402
 
+
+def _sha256_lf(path: Path) -> str:
+    """sha256 of `path`'s bytes, normalized to LF line endings first.
+
+    `.gitattributes` declares `*.py text eol=lf`, so git always stores and
+    serves this script's blob LF-normalized regardless of the local
+    checkout's `core.autocrlf` setting. Hashing the raw on-disk bytes
+    directly (as an earlier version of this helper did) is NOT reproducible
+    across checkouts: a Windows worktree with `core.autocrlf=true` has this
+    file materialized with CRLF line endings on disk, so
+    `Path(__file__).read_bytes()` there produces a DIFFERENT hash than the
+    same git blob checked out on Linux (no autocrlf) or via WSL/CI. This
+    normalization (CRLF -> LF only; bare LF is left untouched) makes the
+    hash identical regardless of which line-ending convention the local
+    working tree happened to materialize.
+    """
+    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+
+
 _METABOLISM_FVA_BIG = 1e6
 _METABOLISM_FVA_TOL = 2.0
 _WRITEBACK_FIXTURE_MAT = (
@@ -494,9 +513,7 @@ def main() -> None:
         "reproduce_with": (
             "bin\\oc-py benchmarks\\bench_fva_fx_vs_db_objective_face_equivalence.py"
         ),
-        "generated_by_script_sha256": hashlib.sha256(
-            Path(__file__).read_bytes()
-        ).hexdigest(),
+        "generated_by_script_sha256": _sha256_lf(Path(__file__)),
     }
     _TRACKED_SUMMARY_PATH.write_text(json.dumps(tracked_payload, indent=2) + "\n")
 

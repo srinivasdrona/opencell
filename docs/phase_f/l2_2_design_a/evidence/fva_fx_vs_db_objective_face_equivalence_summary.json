@@ -31,10 +31,10 @@
     ],
     "epsilon_sweep_feasibility_flips_total": 0,
     "epsilon_sweep_max_v_diff": 7931.60305898264,
-    "total_wall_time_s": 855.6625264420001
+    "total_wall_time_s": 858.8743358180002
   },
-  "full_artifact_sha256": "6af8ea1f80361ba455a4924a621c42d91dc16d4b40097904bf95ce14f834235c",
+  "full_artifact_sha256": "3f818c3e49e4efa28e74b251c7c089ede606f587568379457dd70ead711c31ac",
   "full_artifact_relative_path": "benchmarks/artifacts/fva_fx_vs_db_objective_face_equivalence.json",
   "reproduce_with": "bin\\oc-py benchmarks\\bench_fva_fx_vs_db_objective_face_equivalence.py",
-  "generated_by_script_sha256": "c7e121698f07b7998486b0a641db58e6a4e13161f368ee9ccca3017d43a225db"
+  "generated_by_script_sha256": "b571ced358634724faa605c3c72df98f643d1fef97f5e6b49df06151ccdf5738"
 }

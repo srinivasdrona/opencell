@@ -232,15 +232,23 @@ def _telemetry_record_solve_complete(telemetry: dict[str, Any] | None, n_attempt
 # in tests/m1/test_fva_perf.py, and
 # benchmarks/bench_fva_fallback_strategy_answer_invariance.py) found: (a)
 # a genuine counterexample on the narrower MATLAB ground-truth regression
-# fixture -- `adv_pse` vs `adv_pse_presolve` disagree on 2/1755
-# (substrate, compartment) feasibility pairs; (b) on the systematic,
+# fixture, but ONLY when the feasibility check is evaluated at a diagnostic
+# tolerance ~6 orders of magnitude TIGHTER than the real gate tolerance
+# (1e-6 vs the actual _METABOLISM_FVA_TOL=2.0 in
+# tests/vivarium/l2_2_design_a_runner.py) -- at that diagnostic tolerance,
+# `adv_pse` vs `adv_pse_presolve` disagree on 2/1755 (substrate, compartment)
+# feasibility pairs; at the REAL production tolerance, this same fixture and
+# strategy pair shows ZERO flips (the counterexample is fully absorbed by
+# the much wider production tolerance); (b) on the systematic,
 # pre-registered, bounded benchmark against the REAL production N50xM20
-# oracle-grid data (50 samples across ticks {0,1,5,9,16}), ZERO such flips
-# were observed (0/252,720 pairs) -- see
+# oracle-grid data (50 samples across ticks {0,1,5,9,16}), evaluated at the
+# production tolerance, ZERO such flips were observed (0/252,720 pairs) --
+# see
 # docs/phase_f/l2_2_design_a/evidence/fva_fallback_strategy_answer_invariance_summary.json.
 # The corrected claim: cascade reordering never changes the certified
 # OBJECTIVE VALUE (proven), and empirically leaves the L2.2 gate's
-# feasibility verdict unchanged on the tested production-representative set
+# feasibility verdict unchanged -- at the gate's ACTUAL tolerance -- on both
+# the diagnostic fixture and the tested production-representative set
 # (observed, not an absolute per-column guarantee).
 #
 # CASCADE ORDERING (C3 correction, 2026-07-29, see
@@ -659,8 +667,12 @@ def fva_range(
             # (no window at all), reusing the identical LP construction,
             # reaction_subset, and fallback cascade as production `_face_mode
             # == "db"`, so the two modes are an apples-to-apples comparison.
-            # Never used by any production caller (`fva_range`'s public
-            # signature has no `_face_mode` parameter to set this).
+            # `fva_range` DOES expose `_face_mode` as a public keyword
+            # argument (the leading underscore is a naming convention
+            # signaling "diagnostic/benchmark use only", not a Python access
+            # restriction) -- but no PRODUCTION caller (the L2.2 Metabolism
+            # FVA-feasibility gate in tests/vivarium/l2_2_design_a_runner.py)
+            # ever passes anything other than the default `"db"`.
             glp.glp_set_row_bnds(
                 lp, biomass_row, glp.GLP_FX, float(biomass_value_star), float(biomass_value_star)
             )
@@ -794,4 +806,4 @@ def substrate_delta_range_from_fva(
     return d_min, d_max
 
 
-__all__ = ["fva_range", "substrate_delta_range_from_fva"]
+__all__ = ["fva_range", "substrate_delta_range_from_fva", "new_fva_solver_telemetry"]

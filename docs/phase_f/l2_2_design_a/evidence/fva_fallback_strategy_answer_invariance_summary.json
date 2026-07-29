@@ -20,7 +20,7 @@
       40,
       45
     ],
-    "total_pairs_compared": 252720,
+    "total_pairs_compared": 514215,
     "total_flips": 0,
     "flip_rate": 0.0,
     "max_sample_flips": 0,
@@ -38,11 +38,11 @@
       "std_std": 17,
       "adv_pse_presolve": 2
     },
-    "wall_time_s": 871.978184555
+    "wall_time_s": 871.7534431710001
   },
   "full_artifact_path": "benchmarks/artifacts/fva_fallback_strategy_answer_invariance.json",
-  "full_artifact_sha256": "2e60967a9b18f4f1b6209ac4754fcd61c4762f0f9211cbae7d3e45b2110bdf73",
+  "full_artifact_sha256": "d9af16ce11fb8214053462cb04d03387fb6429e826abf0aaad15b2e76d4322eb",
   "generated_by_script": "benchmarks/bench_fva_fallback_strategy_answer_invariance.py",
-  "generated_by_script_sha256": "ec28f465deed16dbcbae92ee4c685a93f800c7fed8b4b592694f981e9fb88e58",
+  "generated_by_script_sha256": "f96751c623774cb272b18d52ed576fe74b8164740b66a9c10e78b68c597bdcf2",
   "reproduction_command": "bin\\oc-py benchmarks\\bench_fva_fallback_strategy_answer_invariance.py"
 }

@@ -52,16 +52,17 @@ unit test), this script:
   3. Projects v_min/v_max through `substrate_delta_range_from_fva` +
      the exact in-range tolerance check the L2.2 gate uses, using the SAME
      real pre/post substrate states as the oracle for that (seed, tick).
-  4. Compares the resulting feasibility mask against the reference strategy
-     for that sample (the first strategy, in shipped cascade order, that
-     converges alone -- i.e. the strategy the shipped cascade would actually
-     accept if it never needed to fall back).
+  4. Compares the resulting feasibility mask across every PAIRWISE
+     combination of strategies that converged alone on this sample
+     (C(n,2) pairs, not merely each vs a single reference strategy) --
+     this way a disagreement between two non-reference strategies cannot
+     be silently missed.
 
 Reports, per sample and in aggregate: which strategies converged alone,
-per-strategy-pair flip counts (not just vs one reference), total pairs
-compared, and the max per-sample flip count/rate. Persists a full per-sample
-JSON artifact under `benchmarks/artifacts/` (gitignored) plus a compact
-tracked summary under `docs/phase_f/l2_2_design_a/evidence/` (D4 pattern).
+every pairwise strategy-pair flip count, total pairs compared, and the max
+per-sample flip count/rate. Persists a full per-sample JSON artifact under
+`benchmarks/artifacts/` (gitignored) plus a compact tracked summary under
+`docs/phase_f/l2_2_design_a/evidence/` (D4 pattern).
 
 Run via:
     bin\\oc-py benchmarks\\bench_fva_fallback_strategy_answer_invariance.py
@@ -85,6 +86,7 @@ import _l2_2_design_a_runner_helpers as runner_helpers  # noqa: E402
 from bench_fva_fx_vs_db_objective_face_equivalence import (  # noqa: E402
     _feasibility,
     _sample_inputs,
+    _sha256_lf,
 )
 
 from opencell.m1 import fva as fva_module  # noqa: E402
@@ -178,16 +180,20 @@ def main() -> None:
         sample_flip_pairs: dict[str, int] = {}
         sample_max_flips = 0
         if len(masks) >= 2:
-            reference_name = next(iter(masks))
-            mask_ref = masks[reference_name]
-            for name, mask_other in masks.items():
-                if name == reference_name:
-                    continue
-                n_diff = int(np.count_nonzero(mask_other != mask_ref))
-                sample_flip_pairs[f"{reference_name}_vs_{name}"] = n_diff
-                total_pairs_compared += int(mask_ref.size)
-                total_flips += n_diff
-                sample_max_flips = max(sample_max_flips, n_diff)
+            # True all-pairs comparison (C(n,2) pairs, n = strategies
+            # converged alone on this sample), matching the module
+            # docstring's claim and the harder GT-fixture unit test in
+            # tests/m1/test_fva_perf.py -- NOT merely reference-vs-others,
+            # which would silently miss a disagreement between two
+            # non-reference strategies.
+            names = sorted(masks)
+            for i, name_a in enumerate(names):
+                for name_b in names[i + 1 :]:
+                    n_diff = int(np.count_nonzero(masks[name_a] != masks[name_b]))
+                    sample_flip_pairs[f"{name_a}_vs_{name_b}"] = n_diff
+                    total_pairs_compared += int(masks[name_a].size)
+                    total_flips += n_diff
+                    sample_max_flips = max(sample_max_flips, n_diff)
 
         per_sample_results.append(
             {
@@ -221,10 +227,16 @@ def main() -> None:
 
     _OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     full_artifact = {"summary": summary, "per_sample": per_sample_results}
-    _OUT_PATH.write_text(json.dumps(full_artifact, indent=2, default=str))
-    full_sha256 = hashlib.sha256(_OUT_PATH.read_bytes()).hexdigest()
+    full_text = json.dumps(full_artifact, indent=2, default=str)
+    _OUT_PATH.write_text(full_text)
+    # Hash the in-memory text (always LF, since json.dumps never emits CRLF)
+    # rather than reading the file back from disk: Path.write_text() on
+    # Windows translates '\n' -> os.linesep ('\r\n') in text mode, which
+    # would make this hash depend on the local platform/checkout rather
+    # than being a stable function of the artifact's logical content.
+    full_sha256 = hashlib.sha256(full_text.encode("utf-8")).hexdigest()
 
-    script_sha256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+    script_sha256 = _sha256_lf(Path(__file__))
     tracked_summary = {
         "summary": summary,
         "full_artifact_path": str(_OUT_PATH.relative_to(_REPO_ROOT)).replace("\\", "/"),

@@ -632,35 +632,46 @@ def test_different_fallback_strategies_mostly_agree_on_identical_lp_feasibility_
     construction (`_face_mode='db'`, same
     S/rhs/c/lb/ub/biomass_value_star/reaction_subset), then projects each
     strategy's v_min/v_max through the SAME `substrate_delta_range_from_fva`
-    + in-range-tolerance-check math the L2.2 gate actually uses, and compares
-    the resulting per-substrate FEASIBILITY MASK across every pair of
-    strategies that converged solo.
+    math the L2.2 gate actually uses, and compares the resulting
+    per-substrate FEASIBILITY MASK across every pair of strategies that
+    converged solo, at TWO tolerances: a tight diagnostic tolerance
+    (`_DIAGNOSTIC_TOL = 1e-6`, ~6 orders of magnitude TIGHTER than the real
+    gate) and the actual production tolerance
+    (`_PRODUCTION_TOL = 2.0`, matching `_METABOLISM_FVA_TOL` in
+    tests/vivarium/l2_2_design_a_runner.py).
 
-    IMPORTANT, CORRECTED FINDING (this is why this test does NOT assert
-    exact mask equality): on this specific regression fixture (the MATLAB
-    ground-truth sample used elsewhere in this file, NOT the production
-    N50xM20 oracle grid), `adv_pse` (primary) vs `adv_pse_presolve` (last-
-    resort) disagree on 2/1755 pairs. This is a genuine, reproduced
-    counterexample to the previously-overclaimed "cascade reordering cannot
-    change the mathematical answer" text in fva.py's CASCADE ORDERING
-    comment (corrected in this round): LP strong duality guarantees the
-    shared OBJECTIVE VALUE is identical across GLP_OPT-terminating
-    strategies, NOT that every individual variable's value on a possibly-
-    degenerate face is unique -- alternate optima are a standard, expected
-    LP phenomenon, not a bug. The systematic, bounded, PRE-REGISTERED
-    benchmark against the REAL production oracle-grid data (50 samples
-    across ticks {0,1,5,9,16}, see
+    CORRECTED FINDING (this is why this test does NOT assert exact mask
+    equality at the diagnostic tolerance): on this specific regression
+    fixture (the MATLAB ground-truth sample used elsewhere in this file,
+    NOT the production N50xM20 oracle grid), at the tight diagnostic
+    tolerance ONLY, `adv_pse` (primary) vs `adv_pse_presolve` (last-resort)
+    disagree on 2/1755 pairs -- a genuine, reproduced demonstration that LP
+    strong duality guarantees only the shared OBJECTIVE VALUE across
+    GLP_OPT-terminating strategies, NOT that every individual variable's
+    value on a possibly-degenerate face is unique (alternate optima are a
+    standard, expected LP phenomenon, not a bug; see fva.py's CASCADE
+    ORDERING comment, corrected in this round). This counterexample is
+    detectable ONLY because `_DIAGNOSTIC_TOL` is deliberately far tighter
+    than the actual gate tolerance, purpose-built to surface genuine
+    solver-level v_min/v_max disagreement that the real gate's much wider
+    tolerance would otherwise absorb -- it does NOT imply the production
+    gate's verdict is at risk. At `_PRODUCTION_TOL` (the tolerance the real
+    gate actually uses), this exact sample and strategy pair shows ZERO
+    flips, asserted below.
+
+    The systematic, bounded, PRE-REGISTERED benchmark against the REAL
+    production oracle-grid data (50 samples across ticks {0,1,5,9,16}, see
     benchmarks/bench_fva_fallback_strategy_answer_invariance.py and
     docs/phase_f/l2_2_design_a/evidence/
-    fva_fallback_strategy_answer_invariance_summary.json) found ZERO such
-    flips (0/252,720 pairs) -- THAT is the actual evidence for the
-    production metric's practical (not absolute) cascade invariance, not a
-    blanket mathematical guarantee derived from strong duality alone.
+    fva_fallback_strategy_answer_invariance_summary.json) also uses the
+    production tolerance and found ZERO flips (0/252,720 pairs) -- THAT is
+    the actual evidence for the production metric's practical (not
+    absolute) cascade invariance, not a blanket mathematical guarantee
+    derived from strong duality alone.
 
-    This test locks in the known counterexample count on the narrower GT
-    fixture (bounded, not asymptotically re-derived every run) as a
-    regression guard, while the module docstring above and fva.py's
-    corrected comment carry the actual scope of the invariance claim.
+    This test locks in both: the bounded diagnostic-tolerance counterexample
+    count (useful nuance, no gate impact) and the zero-flip result at the
+    real production tolerance on this fixture, as regression guards.
 
     Not every individual strategy necessarily converges ALONE (without the
     other fallback entries available) within the production iteration/time
@@ -695,9 +706,14 @@ def test_different_fallback_strategies_mostly_agree_on_identical_lp_feasibility_
         lb_override=lb, ub_override=ub, solver="glpk",
     )
     growth_per_s = float(info["biomass_flux_per_s"])
-    tol = 1e-6  # same order as _METABOLISM_FVA_TOL in l2_2_design_a_runner.py
+    # Deliberately ~6 orders of magnitude TIGHTER than the real gate
+    # tolerance -- a diagnostic probe for genuine per-column alternate-optima
+    # disagreement, NOT a claim about production behavior (see docstring).
+    _DIAGNOSTIC_TOL = 1e-6
+    _PRODUCTION_TOL = 2.0  # matches _METABOLISM_FVA_TOL in l2_2_design_a_runner.py
 
-    masks: dict[str, np.ndarray] = {}
+    masks_diag: dict[str, np.ndarray] = {}
+    masks_prod: dict[str, np.ndarray] = {}
     v_ranges: dict[str, tuple[np.ndarray, np.ndarray]] = {}
     skipped: dict[str, str] = {}
     for strategy in fva_module._FVA_FALLBACK_STRATEGIES:
@@ -723,40 +739,59 @@ def test_different_fallback_strategies_mostly_agree_on_identical_lp_feasibility_
             growth_per_s=growth_per_s, step_size_sec=float(fixture.step_size_sec),
             pre_state_585x3=pre_sub,
         )
-        in_range = (
-            np.isfinite(d_min)
-            & np.isfinite(d_max)
-            & (karr_delta >= (d_min - tol))
-            & (karr_delta <= (d_max + tol))
+        finite = np.isfinite(d_min) & np.isfinite(d_max)
+        masks_diag[strategy[0]] = (
+            finite
+            & (karr_delta >= (d_min - _DIAGNOSTIC_TOL))
+            & (karr_delta <= (d_max + _DIAGNOSTIC_TOL))
         )
-        masks[strategy[0]] = in_range
+        masks_prod[strategy[0]] = (
+            finite
+            & (karr_delta >= (d_min - _PRODUCTION_TOL))
+            & (karr_delta <= (d_max + _PRODUCTION_TOL))
+        )
         v_ranges[strategy[0]] = (v_min[reaction_subset], v_max[reaction_subset])
 
-    assert len(masks) >= 2, (
+    assert len(masks_diag) >= 2, (
         f"need >=2 strategies to converge solo for a meaningful comparison; "
-        f"converged={list(masks)}, skipped(non-convergent alone)={skipped}"
+        f"converged={list(masks_diag)}, skipped(non-convergent alone)={skipped}"
     )
-    names = sorted(masks)
-    total_flips = 0
-    max_pair_flips = 0
-    for i, name_a in enumerate(names):
-        for name_b in names[i + 1 :]:
-            n_diff = int(np.count_nonzero(masks[name_a] != masks[name_b]))
-            total_flips += n_diff
-            max_pair_flips = max(max_pair_flips, n_diff)
+    names = sorted(masks_diag)
 
-    assert int(np.count_nonzero(next(iter(masks.values())))) > 0, (
+    def _max_pairwise_flips(masks: dict[str, np.ndarray]) -> int:
+        max_flips = 0
+        for i, name_a in enumerate(names):
+            for name_b in names[i + 1 :]:
+                n_diff = int(np.count_nonzero(masks[name_a] != masks[name_b]))
+                max_flips = max(max_flips, n_diff)
+        return max_flips
+
+    assert int(np.count_nonzero(masks_diag[names[0]])) > 0, (
         "sanity: at least one strategy must find some feasible pairs"
     )
-    # Locks in the known counterexample scale on THIS specific fixture (see
-    # docstring): a small, bounded number of pair-level flips is tolerated
-    # and reported, but a large/unbounded divergence here would indicate a
-    # real regression rather than benign degenerate-face alternate optima.
+    # Diagnostic tolerance: locks in the known counterexample scale on THIS
+    # specific fixture (see docstring) -- a small, bounded number of
+    # pair-level flips is tolerated and reported at this artificially tight
+    # tolerance, but a large/unbounded divergence here would indicate a real
+    # regression rather than benign degenerate-face alternate optima.
     # 1755 = 585 species x 3 compartments (the full per-sample pair count).
-    assert max_pair_flips <= 10, (
-        f"cross-strategy feasibility-mask disagreement ({max_pair_flips} pairs) far "
-        "exceeds the known-counterexample scale (2/1755) on this fixture; investigate "
-        "before trusting the systematic 0-flip benchmark evidence"
+    max_diag_flips = _max_pairwise_flips(masks_diag)
+    assert max_diag_flips <= 10, (
+        f"cross-strategy feasibility-mask disagreement ({max_diag_flips} pairs) at the "
+        "diagnostic tolerance far exceeds the known-counterexample scale (2/1755) on "
+        "this fixture; investigate before trusting the systematic 0-flip production-"
+        "tolerance benchmark evidence"
+    )
+    # Production tolerance: this is the assertion that actually matters for
+    # the L2.2 gate -- at the REAL _METABOLISM_FVA_TOL=2.0, this sample must
+    # show ZERO cross-strategy flips (confirmed: the diagnostic-tolerance
+    # counterexample above is fully absorbed by the much wider production
+    # tolerance and has no gate impact on this sample).
+    max_prod_flips = _max_pairwise_flips(masks_prod)
+    assert max_prod_flips == 0, (
+        f"cross-strategy feasibility-mask disagreement ({max_prod_flips} pairs) at the "
+        "PRODUCTION tolerance would indicate an actual gate-impacting cascade-answer "
+        "divergence, not merely a diagnostic-tolerance nuance -- investigate immediately"
     )
 
     # Report (not gate on) the largest raw v_min/v_max disagreement across
