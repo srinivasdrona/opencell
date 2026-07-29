@@ -99,6 +99,17 @@ _IDENTITY_ATTR_CANDIDATES: tuple[str, ...] = (
     "mrna_wids",
     "gene_ids",
     "aa_ids",
+    # KarrCytokinesisProcess uses non-standard (private/fixture-prefixed)
+    # attribute names instead of the generic "substrate_wids"/"enzyme_wids"
+    # above, so without these it would silently fall through to an
+    # identity-only comparison. See karr_cytokinesis.py lines 155-185.
+    "_substrate_wids",
+    "fixture_substrate_wids",
+    "fixture_enzyme_wids",
+    "gtp_wid",
+    "pi_wid",
+    "water_wid",
+    "hydrogen_wid",
 )
 
 
@@ -280,6 +291,166 @@ def test_macromol_tick_outputs_identical_bounded_vs_unbounded_cache(
         assert bounded["sample_seed"] == unbounded["sample_seed"]
         for channel in ("substrates", "monomers", "complexs"):
             np.testing.assert_array_equal(bounded[channel], unbounded[channel])
+
+
+# ---------------------------------------------------------------------
+# Targeted next_update before/after-eviction equivalence: Cytokinesis.
+#
+# Cytokinesis was flagged in review because its identity attributes use
+# non-standard names (`_substrate_wids`, `fixture_enzyme_wids`, ...), which
+# meant the generic attribute-equivalence test above previously degraded
+# to an identity-only (`is`/`is not`) check for this one process -- it never
+# actually compared any fixture-derived content. The attribute names have
+# now been added to `_IDENTITY_ATTR_CANDIDATES` (so the generic test is no
+# longer degenerate for Cytokinesis either), and this test goes further: it
+# drives the real `_run_cytokinesis_tick` pipeline (not just attribute
+# introspection) against a pre-eviction instance and a reconstructed
+# post-eviction instance for the same seed, and asserts the produced
+# `next_update`-derived substrate channel is bit-for-bit identical.
+# ---------------------------------------------------------------------
+
+
+def _build_cytokinesis_state(process) -> dict[str, object]:
+    substrate_wids = list(process._substrate_wids)
+    enzyme_wids = list(process.fixture_enzyme_wids)
+    return {
+        "substrate_wids": substrate_wids,
+        "enzyme_wids": enzyme_wids,
+        "oracle_before_substrates": np.zeros(len(substrate_wids), dtype=np.float64),
+        "oracle_before_enzymes": np.zeros(len(enzyme_wids), dtype=np.float64),
+        "oracle_before_bound_enzymes": np.zeros(len(enzyme_wids), dtype=np.float64),
+    }
+
+
+def test_cytokinesis_reconstruction_after_eviction_matches_next_update() -> None:
+    """Numerical (not just attribute) equivalence for Cytokinesis: run
+    `_run_cytokinesis_tick` for seed=0,tick=0 against a fresh instance,
+    force eviction of that cache entry, reconstruct for the same seed, and
+    confirm the reconstructed instance's `next_update`-driven substrate
+    output is identical to the pre-eviction instance's output. This is the
+    non-degenerate replacement for the previous identity-only comparison."""
+    underlying = runner_helpers._cytokinesis_process.__wrapped__
+    maxsize = runner_helpers._PER_TICK_PROCESS_CACHE_MAXSIZE
+    cached_ctor = lru_cache(maxsize=maxsize)(underlying)
+
+    seed0 = runner_helpers._sample_seed(0, 0)
+    pre_eviction_process = cached_ctor(seed0)
+    state = _build_cytokinesis_state(pre_eviction_process)
+
+    original = runner_helpers._cytokinesis_process
+    runner_helpers._cytokinesis_process = cached_ctor
+    try:
+        before_result = runner_helpers._run_cytokinesis_tick(0, 0, state)
+
+        # Force eviction of seed0's entry, then reconstruct for the same
+        # seed/tick -- `is not` proves the object was really rebuilt.
+        for tick in range(1, maxsize + 2):
+            cached_ctor(runner_helpers._sample_seed(0, tick))
+        post_eviction_process = cached_ctor(seed0)
+        assert post_eviction_process is not pre_eviction_process
+
+        after_result = runner_helpers._run_cytokinesis_tick(0, 0, state)
+    finally:
+        runner_helpers._cytokinesis_process = original
+
+    assert before_result["sample_seed"] == after_result["sample_seed"]
+    np.testing.assert_array_equal(before_result["substrates"], after_result["substrates"])
+
+
+# ---------------------------------------------------------------------
+# Documented caveat: RNG-continuity-after-eviction for external stress
+# scripts that intentionally reuse `_sample_seed(seed, tick)` keys.
+#
+# The main sweep never reuses a `(seed, tick)` key, so bounding these
+# caches is retention-only there -- fixed above. But
+# `tests/vivarium/_substrate_stress/trnaaa_stress_v2.py` is a script
+# *outside* this harness fix's scope (per task instructions, no code
+# workaround) whose outer loop over ALPHAS re-runs the exact same
+# (seed, tick) grid once per alpha, calling
+# `runner_helpers._trna_aminoacylation_process(_sample_seed(seed, tick))`
+# each time. Under the old maxsize=None cache, a same-key call recurring
+# across alpha passes was a cache *hit*: it returned the instance left
+# over from a *previous* alpha's `next_update()` call, i.e. an instance
+# whose internal RNG had already advanced -- an unintentional (and
+# arguably incorrect) RNG-state leak across nominally-independent alpha
+# conditions. Under the new bounded cache (maxsize=4), with 500+ distinct
+# keys intervening between recurrences of the same key, that entry is long
+# evicted by the time the next alpha pass reaches it, so each alpha now
+# gets a fresh, independently-seeded reconstruction instead.
+#
+# This test proves the underlying mechanism directly: an instance that has
+# been perturbed (via one `next_update()` call) and then evicted must not
+# influence a same-seed reconstruction -- the reconstruction is bit-for-bit
+# identical to a pristine, never-perturbed instance. This is exactly the
+# eviction behavior `trnaaa_stress_v2.py`'s cross-alpha reuse now relies on
+# to get independent RNG streams per alpha (more correct than the old
+# leaking behavior, but numerically different from it for that one script).
+# No fix is made to the stress script; this documents the caveat only.
+# ---------------------------------------------------------------------
+
+
+def _build_trna_state(process) -> dict[str, object]:
+    metadata = runner_helpers._trna_aminoacylation_channel_metadata()
+    substrate_wids = list(process.substrate_wids)
+    enzyme_wids = list(process.enzyme_wids)
+    n_rnas = len(metadata["free_wids"]) + len(metadata["aminoacylated_wids"])
+    return {
+        "substrate_wids": substrate_wids,
+        "enzyme_wids": enzyme_wids,
+        "oracle_before_substrates": np.zeros(len(substrate_wids), dtype=np.float64),
+        "oracle_before_enzymes": np.zeros(len(enzyme_wids), dtype=np.float64),
+        "oracle_before_bound_enzymes": np.zeros(len(enzyme_wids), dtype=np.float64),
+        "oracle_before_rnas": np.zeros(n_rnas, dtype=np.float64),
+    }
+
+
+def test_trna_aminoacylation_reconstruction_after_eviction_ignores_prior_perturbation() -> None:
+    """A same-seed instance perturbed by a prior `next_update()` call, once
+    evicted, must reconstruct identically to a pristine instance that was
+    never perturbed -- proving eviction yields independence from whatever
+    happened to the discarded evicted instance. This is the concrete
+    mechanism underlying the `trnaaa_stress_v2.py` caveat documented above:
+    it is what makes bounding the cache change cross-alpha reuse from
+    "continue the previous alpha's advanced RNG stream" (old, unbounded) to
+    "start a fresh, independently-seeded stream" (new, bounded)."""
+    underlying = runner_helpers._trna_aminoacylation_process.__wrapped__
+    maxsize = runner_helpers._PER_TICK_PROCESS_CACHE_MAXSIZE
+
+    seed0 = runner_helpers._sample_seed(0, 0)
+
+    # Pristine control: never perturbed, fresh cache, single reconstruction.
+    pristine_cache = lru_cache(maxsize=maxsize)(underlying)
+    pristine_process = pristine_cache(seed0)
+    state = _build_trna_state(pristine_process)
+    original = runner_helpers._trna_aminoacylation_process
+    runner_helpers._trna_aminoacylation_process = pristine_cache
+    try:
+        pristine_result = runner_helpers._run_trna_aminoacylation_tick(0, 0, state)
+    finally:
+        runner_helpers._trna_aminoacylation_process = original
+
+    # Perturbed-then-evicted: run a tick against seed0 (advancing its RNG
+    # state and thus perturbing the cached instance), then evict and
+    # reconstruct for the same seed before running the "real" comparison
+    # tick again.
+    perturbed_cache = lru_cache(maxsize=maxsize)(underlying)
+    runner_helpers._trna_aminoacylation_process = perturbed_cache
+    try:
+        perturbed_process = perturbed_cache(seed0)
+        # Perturb: advance seed0's instance state via a throwaway tick.
+        runner_helpers._run_trna_aminoacylation_tick(0, 0, state)
+        for tick in range(1, maxsize + 2):
+            perturbed_cache(runner_helpers._sample_seed(0, tick))
+        reconstructed_process = perturbed_cache(seed0)
+        assert reconstructed_process is not perturbed_process
+
+        reconstructed_result = runner_helpers._run_trna_aminoacylation_tick(0, 0, state)
+    finally:
+        runner_helpers._trna_aminoacylation_process = original
+
+    assert pristine_result["sample_seed"] == reconstructed_result["sample_seed"]
+    np.testing.assert_array_equal(pristine_result["substrates"], reconstructed_result["substrates"])
+    np.testing.assert_array_equal(pristine_result["RNAs"], reconstructed_result["RNAs"])
 
 
 def test_per_tick_factory_inventory_is_complete() -> None:

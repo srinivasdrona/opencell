@@ -164,6 +164,27 @@ _PROTEIN_MODIFICATION_MONOMER_STORE_PATH_OVERRIDE = {
 #     `_run_protein_modification_tick`: none of these carry an `lru_cache`
 #     decorator at all, so nothing is retained across ticks -- a repeated
 #     per-tick construction cost (performance), not a memory leak.
+#
+# Caveat for external callers that intentionally reuse a `(seed, tick)` key:
+# within this harness's own sweep, `_sample_seed(seed, tick)` keys are never
+# repeated, so bounding these caches is retention-only (no behavior change
+# for the sweep itself -- see the numerical equivalence tests in
+# test_l2_2_design_a_runner_cache_bounds.py). However,
+# tests/vivarium/_substrate_stress/trnaaa_stress_v2.py deliberately re-runs
+# the same (seed, tick) grid once per alpha in its ALPHAS sweep, calling
+# `_trna_aminoacylation_process(_sample_seed(seed, tick))` each time. Under
+# the old maxsize=None cache, a same-key call recurring across alpha passes
+# was a cache *hit*, silently returning the instance left over from a
+# *previous* alpha's `next_update()` call -- an RNG-state leak across
+# nominally-independent alpha conditions. Under this bounded cache, that
+# entry is long evicted by the time the next alpha pass reaches it, so each
+# alpha now gets a fresh, independently-seeded reconstruction instead (more
+# correct, but numerically different from the old behavior for that one
+# script). See
+# test_trna_aminoacylation_reconstruction_after_eviction_ignores_prior_perturbation
+# in test_l2_2_design_a_runner_cache_bounds.py for a direct test of this
+# eviction-independence mechanism. No code change is made to the stress
+# script -- this is a documentation note only.
 _PER_TICK_PROCESS_CACHE_MAXSIZE = 4
 
 _RNA_SLOT_COUNTS_STATE_KEY = "_l2_rna_slot_counts"

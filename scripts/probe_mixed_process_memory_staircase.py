@@ -46,7 +46,29 @@ _PROFILED_FACTORIES: tuple[tuple[str, str], ...] = (
 )
 
 
-def _rss_mb() -> float:
+def _current_rss_mb() -> float:
+    """Current resident set size in MiB, read from /proc/self/status'
+    `VmRSS:` line (Linux/WSL only). This is the correct metric for a
+    before/after-this-step comparison: unlike `ru_maxrss` (see
+    `_high_water_rss_mb` below), it can go up *or* down between two
+    readings, reflecting what is actually live right now."""
+    with open("/proc/self/status", "r", encoding="utf-8") as fh:
+        for line in fh:
+            if line.startswith("VmRSS:"):
+                # Format: "VmRSS:	   12345 kB"
+                return float(line.split()[1]) / 1024.0
+    raise RuntimeError("VmRSS not found in /proc/self/status")
+
+
+def _high_water_rss_mb() -> float:
+    """Peak (high-water mark) RSS in MiB via `ru_maxrss`. This value is
+    monotonically non-decreasing for the process's lifetime -- it can only
+    stay flat or increase, so it must NOT be used as a before/after-step
+    comparison (a flat reading does not prove nothing grew, and a rising
+    reading does not prove the *current* retained set is growing; it may
+    already have shrunk back down). Reported here only as a supplementary,
+    explicitly-labeled high-water figure alongside the current-RSS deltas
+    that actually demonstrate (or refute) a growing/plateauing trend."""
     # ru_maxrss is KB on Linux.
     return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0
 
@@ -59,7 +81,7 @@ def run_step(n_seeds: int, m_ticks: int) -> None:
     for factory_name, _ in _PROFILED_FACTORIES:
         getattr(runner_helpers, factory_name).cache_clear()
     gc.collect()
-    rss_before = _rss_mb()
+    rss_before = _current_rss_mb()
     t0 = time.time()
 
     n_calls = 0
@@ -72,12 +94,14 @@ def run_step(n_seeds: int, m_ticks: int) -> None:
 
     elapsed = time.time() - t0
     gc.collect()
-    rss_after = _rss_mb()
+    rss_after = _current_rss_mb()
+    high_water = _high_water_rss_mb()
     print(
         f"N={n_seeds:3d} M={m_ticks:4d} calls={n_calls:6d} "
         f"rss_before={rss_before:9.1f}MiB rss_after={rss_after:9.1f}MiB "
         f"delta={rss_after - rss_before:9.1f}MiB elapsed_s={elapsed:6.2f} "
-        f"MiB_per_call={(rss_after - rss_before) / max(n_calls, 1):8.4f}",
+        f"MiB_per_call={(rss_after - rss_before) / max(n_calls, 1):8.4f} "
+        f"high_water_rss={high_water:9.1f}MiB",
         flush=True,
     )
     for factory_name, cls_name in _PROFILED_FACTORIES:

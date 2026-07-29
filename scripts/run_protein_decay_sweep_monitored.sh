@@ -9,33 +9,54 @@
 # proactive-stop discipline the two prior manual terminations used, but
 # automated and logged.
 #
-# E1 (scope-C1 follow-up): every poll sample is ALSO appended to a tracked
-# JSONL diagnostic (one compact JSON object per line, so an abrupt SIGKILL
-# never leaves an unparseable half-written JSON array). This replaces the
-# prior behavior of only writing to an untracked/scratch `.log` file --
-# the Phase-1 ProteinDecay run's RSS trace (~0.60-0.64 GiB plateau,
-# reported to the operator) was never persisted anywhere tracked and is
-# NOT reconstructed here; this mechanism only captures timeseries data for
-# runs launched after this change.
+# E1 (scope-C1 follow-up): every poll sample is ALSO appended to a JSONL
+# diagnostic (one compact JSON object per line, so an abrupt SIGKILL never
+# leaves an unparseable half-written JSON array). The file is NEVER
+# truncated: each invocation gets its own RUN_ID (UTC timestamp + PID),
+# every line (including `run_start`/`run_end` markers) carries that
+# `run_id`, and new samples are always appended -- so multiple runs
+# (including reruns of the same PROCESS) accumulate in the same file
+# without clobbering prior diagnostics. By default the trace is written to
+# an untracked path under `artifacts/` (gitignored) so routine monitored
+# runs never dirty the tracked repo; pass a 5th argument to opt into a
+# tracked path (e.g. under docs/) when a diagnostic is explicitly meant to
+# be committed as evidence.
 #
-# Usage: bash scripts/run_protein_decay_sweep_monitored.sh <process> <ceiling_gib> <poll_s> <report_out> <rss_trace_out>
+# The Phase-1 ProteinDecay run's RSS trace (~0.60-0.64 GiB plateau, reported
+# to the operator in chat) predates this mechanism, was never persisted to
+# any file, and is NOT reconstructed here -- this only captures timeseries
+# data for runs launched after this change.
+#
+# Usage: bash scripts/run_protein_decay_sweep_monitored.sh <process> <ceiling_gib> <poll_s> <report_out> [rss_trace_out]
 set -uo pipefail
+
+# Resolve the repo root dynamically (script-relative, then confirmed via
+# git) so this script works from any worktree without a hardcoded path.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && git rev-parse --show-toplevel 2>/dev/null)"
+if [ -z "${REPO_ROOT}" ]; then
+    REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+fi
 
 PROCESS="${1:?process name required, e.g. ProteinDecay}"
 CEILING_GIB="${2:-20}"
 POLL_S="${3:-15}"
 REPORT_OUT="${4:-docs/phase_f/l2_2_design_a/sweep_report_proteindecay.json}"
-RSS_TRACE_OUT="${5:-docs/phase_f/l2_2_design_a/rss_diagnostics/${PROCESS}_rss_timeseries.jsonl}"
+# Default is an untracked, gitignored location -- only use a tracked docs/
+# path when the caller explicitly passes one as the 5th argument.
+RSS_TRACE_OUT="${5:-artifacts/rss_diagnostics/${PROCESS}_rss_timeseries.jsonl}"
 CEILING_KB=$(( CEILING_GIB * 1024 * 1024 ))
 LOG_FILE="artifacts_sweep_monitor_${PROCESS}.log"
+RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)_$$"
 
-cd /mnt/e/opencell-worktrees/l22-proteindecay-memory
+cd "${REPO_ROOT}"
 source /mnt/e/opencell/.venv-wsl/bin/activate
 
 mkdir -p "$(dirname "${RSS_TRACE_OUT}")"
-: > "${RSS_TRACE_OUT}"
+printf '{"marker": "run_start", "run_id": "%s", "ts": "%s", "process": "%s", "ceiling_gib": %s, "poll_s": %s}\n' \
+    "${RUN_ID}" "$(date -Is)" "${PROCESS}" "${CEILING_GIB}" "${POLL_S}" >> "${RSS_TRACE_OUT}"
 
-echo "$(date -Is) starting monitored sweep: process=${PROCESS} ceiling=${CEILING_GIB}GiB poll=${POLL_S}s rss_trace_out=${RSS_TRACE_OUT}" | tee "${LOG_FILE}"
+echo "$(date -Is) starting monitored sweep: run_id=${RUN_ID} process=${PROCESS} ceiling=${CEILING_GIB}GiB poll=${POLL_S}s rss_trace_out=${RSS_TRACE_OUT}" | tee "${LOG_FILE}"
 
 python scripts/l22_evidence/sweep.py run --processes "${PROCESS}" --max-workers 1 --report-out "${REPORT_OUT}" \
     >> "${LOG_FILE}" 2>&1 &
@@ -82,8 +103,8 @@ while kill -0 "${SWEEP_PID}" 2>/dev/null; do
     echo "${NOW_ISO} subtree_rss_kb=${RSS_KB} (${RSS_GIB} GiB)" >> "${LOG_FILE}"
     # Append one self-contained JSON object per sample (JSONL, not a single
     # JSON array) so a mid-run SIGKILL never leaves an unparseable file.
-    printf '{"ts": "%s", "process": "%s", "rss_kb": %s, "rss_gib": %s}\n' \
-        "${NOW_ISO}" "${PROCESS}" "${RSS_KB}" "${RSS_GIB}" >> "${RSS_TRACE_OUT}"
+    printf '{"marker": "sample", "run_id": "%s", "ts": "%s", "process": "%s", "rss_kb": %s, "rss_gib": %s}\n' \
+        "${RUN_ID}" "${NOW_ISO}" "${PROCESS}" "${RSS_KB}" "${RSS_GIB}" >> "${RSS_TRACE_OUT}"
     if [ "${RSS_KB}" -gt "${CEILING_KB}" ]; then
         echo "$(date -Is) CEILING EXCEEDED (${RSS_GIB} GiB > ${CEILING_GIB} GiB) -- stopping subtree safely" | tee -a "${LOG_FILE}"
         for pid in $(descendants "${SWEEP_PID}"); do kill -TERM "${pid}" 2>/dev/null; done
@@ -98,4 +119,6 @@ done
 wait "${SWEEP_PID}" 2>/dev/null
 SWEEP_EXIT=$?
 echo "$(date -Is) sweep.py finished/stopped; exit=${SWEEP_EXIT} stopped_for_ceiling=${STOPPED_FOR_CEILING}" | tee -a "${LOG_FILE}"
+printf '{"marker": "run_end", "run_id": "%s", "ts": "%s", "process": "%s", "exit_code": %s, "stopped_for_ceiling": %s}\n' \
+    "${RUN_ID}" "$(date -Is)" "${PROCESS}" "${SWEEP_EXIT}" "${STOPPED_FOR_CEILING}" >> "${RSS_TRACE_OUT}"
 exit "${SWEEP_EXIT}"
