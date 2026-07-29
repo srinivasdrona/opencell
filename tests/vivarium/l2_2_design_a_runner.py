@@ -37,7 +37,11 @@ from _l2_2_design_a_projections import (  # noqa: E402
     per_component_scaled_distance,
 )
 from opencell.m1 import calc_flux_bounds as cfb  # noqa: E402
-from opencell.m1.fva import fva_range, substrate_delta_range_from_fva  # noqa: E402
+from opencell.m1.fva import (  # noqa: E402
+    fva_range,
+    new_fva_solver_telemetry,
+    substrate_delta_range_from_fva,
+)
 
 
 HARNESS_VERSION = "design_a_v1_3"
@@ -810,6 +814,7 @@ def _metabolism_fva_sample_feasibility(
     pre_sub_585x3: np.ndarray,
     post_sub_585x3: np.ndarray,
     pre_enz_104: np.ndarray,
+    telemetry: dict[str, Any] | None = None,
 ) -> tuple[int, int]:
     model = runner_helpers._metabolism_model()
     fixture = getattr(runner_helpers._metabolism_process(0), "_karr_writeback_fixture", None)
@@ -850,6 +855,7 @@ def _metabolism_fva_sample_feasibility(
         ub,
         biomass_value_star=biomass_value_star,
         reaction_subset=fva_reaction_subset,
+        telemetry=telemetry,
     )
     d_min, d_max = substrate_delta_range_from_fva(
         v_min=v_min,
@@ -997,6 +1003,15 @@ def run_design_a(
     allocator_inputs: list[dict[str, Any]] = []
     fva_feasible_pairs_total = 0
     fva_pairs_total = 0
+    # C4 (non-authoritative diagnostic telemetry): a single telemetry dict
+    # accumulates across every sample's FVA solves for this run -- it never
+    # participates in the PASS/FAIL verdict below (which is computed purely
+    # from fva_feasible_pairs_total/fva_pairs_total, unchanged), it only
+    # surfaces solver-level diagnostics (fallback-cascade usage, wall time,
+    # per-strategy attempt counts) for provenance/SUMMARY artifacts.
+    fva_solver_telemetry = (
+        new_fva_solver_telemetry() if effective_metric_type == "fva_feasibility" else None
+    )
     for seed_index, seed in enumerate(seeds):
         for tick in range(m_ticks):
             sample_state = {
@@ -1110,6 +1125,7 @@ def run_design_a(
                     pre_sub_585x3=metabolism_before_cube[seed_index, tick],
                     post_sub_585x3=metabolism_after_cube[seed_index, tick],
                     pre_enz_104=before_vectors["enzymes"][seed_index, tick],
+                    telemetry=fva_solver_telemetry,
                 )
                 fva_feasible_pairs_total += int(feasible_pairs)
                 fva_pairs_total += int(total_pairs)
@@ -1270,6 +1286,34 @@ def run_design_a(
                 if fva_fraction >= _METABOLISM_FVA_PASS_FRACTION
                 else "FAIL"
             )
+            if fva_solver_telemetry is not None:
+                # Non-authoritative diagnostic tally only -- does not
+                # participate in the "verdict" computed immediately above
+                # (which is fixed purely from fva_fraction vs
+                # _METABOLISM_FVA_PASS_FRACTION). Surfaces per-strategy
+                # fallback-cascade usage/wall-time so a slow or degrading
+                # solver can be spotted from result.json/SUMMARY without
+                # re-running the sweep.
+                total_solves = int(fva_solver_telemetry["total_solves"])
+                channel_payloads[channel]["fva_solver_telemetry"] = {
+                    "total_solves": total_solves,
+                    "solves_needing_fallback": int(
+                        fva_solver_telemetry["solves_needing_fallback"]
+                    ),
+                    "solves_needing_fallback_fraction": float(
+                        fva_solver_telemetry["solves_needing_fallback"] / total_solves
+                        if total_solves > 0
+                        else 0.0
+                    ),
+                    "max_attempts_single_solve": int(
+                        fva_solver_telemetry["max_attempts_single_solve"]
+                    ),
+                    "total_wall_time_s": float(fva_solver_telemetry["total_wall_time_s"]),
+                    "strategies": {
+                        name: dict(stats)
+                        for name, stats in fva_solver_telemetry["strategies"].items()
+                    },
+                }
         if channel in event_channels:
             channel_payloads[channel]["verdict"] = "EVENT_CHANNEL_DEFERRED"
         if channel == primary_channel and primary_projection_payload is not None:

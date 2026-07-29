@@ -108,3 +108,41 @@ def test_metabolism_zero_substrates_cheat_fails_primary_channel(monkeypatch, tmp
     assert primary["w1_oc_vs_karr"] > 0.0
     assert primary["n_nonzero_oc"] == 0
     assert primary["n_nonzero_karr"] > 0
+
+
+def test_metabolism_fva_sample_feasibility_telemetry_is_additive_and_inert() -> None:
+    """C4 correction: threading a telemetry dict through
+    `_metabolism_fva_sample_feasibility` must (a) never change the returned
+    (feasible, total) pair relative to an identical call without telemetry,
+    and (b) populate a plausible non-empty telemetry record. Uses real
+    (non-monkeypatched) oracle/model data for exactly one sample (seed=0,
+    tick=0) to keep runtime practical while still exercising the real
+    `fva_range` call the production runner makes -- this is a fast
+    regression guard for the telemetry wiring itself, not a re-run of the
+    full N50xM20 sweep."""
+    oracle = runner.runner_helpers.load_karr_oracle("Metabolism")
+    before_sub = np.asarray(oracle["before_substrates_cube"], dtype=np.float64)
+    before_enz = np.asarray(oracle["before_enzymes"], dtype=np.float64)
+    after_sub = np.asarray(oracle["after_substrates_cube"], dtype=np.float64)
+    pre_sub = before_sub[0, 0]
+    pre_enz = before_enz[0, 0]
+    post_sub = after_sub[0, 0]
+
+    feasible_no_telemetry, total_no_telemetry = runner._metabolism_fva_sample_feasibility(
+        pre_sub_585x3=pre_sub,
+        post_sub_585x3=post_sub,
+        pre_enz_104=pre_enz,
+    )
+    telemetry = runner.new_fva_solver_telemetry()
+    feasible_with_telemetry, total_with_telemetry = runner._metabolism_fva_sample_feasibility(
+        pre_sub_585x3=pre_sub,
+        post_sub_585x3=post_sub,
+        pre_enz_104=pre_enz,
+        telemetry=telemetry,
+    )
+
+    assert feasible_with_telemetry == feasible_no_telemetry
+    assert total_with_telemetry == total_no_telemetry
+    assert telemetry["total_solves"] > 0
+    assert telemetry["total_wall_time_s"] > 0.0
+    assert "adv_pse" in telemetry["strategies"]
