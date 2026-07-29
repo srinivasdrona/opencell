@@ -9,20 +9,33 @@
 # proactive-stop discipline the two prior manual terminations used, but
 # automated and logged.
 #
-# Usage: bash scripts/run_protein_decay_sweep_monitored.sh <process> <ceiling_gib> <poll_s> <report_out>
+# E1 (scope-C1 follow-up): every poll sample is ALSO appended to a tracked
+# JSONL diagnostic (one compact JSON object per line, so an abrupt SIGKILL
+# never leaves an unparseable half-written JSON array). This replaces the
+# prior behavior of only writing to an untracked/scratch `.log` file --
+# the Phase-1 ProteinDecay run's RSS trace (~0.60-0.64 GiB plateau,
+# reported to the operator) was never persisted anywhere tracked and is
+# NOT reconstructed here; this mechanism only captures timeseries data for
+# runs launched after this change.
+#
+# Usage: bash scripts/run_protein_decay_sweep_monitored.sh <process> <ceiling_gib> <poll_s> <report_out> <rss_trace_out>
 set -uo pipefail
 
 PROCESS="${1:?process name required, e.g. ProteinDecay}"
 CEILING_GIB="${2:-20}"
 POLL_S="${3:-15}"
 REPORT_OUT="${4:-docs/phase_f/l2_2_design_a/sweep_report_proteindecay.json}"
+RSS_TRACE_OUT="${5:-docs/phase_f/l2_2_design_a/rss_diagnostics/${PROCESS}_rss_timeseries.jsonl}"
 CEILING_KB=$(( CEILING_GIB * 1024 * 1024 ))
 LOG_FILE="artifacts_sweep_monitor_${PROCESS}.log"
 
 cd /mnt/e/opencell-worktrees/l22-proteindecay-memory
 source /mnt/e/opencell/.venv-wsl/bin/activate
 
-echo "$(date -Is) starting monitored sweep: process=${PROCESS} ceiling=${CEILING_GIB}GiB poll=${POLL_S}s" | tee "${LOG_FILE}"
+mkdir -p "$(dirname "${RSS_TRACE_OUT}")"
+: > "${RSS_TRACE_OUT}"
+
+echo "$(date -Is) starting monitored sweep: process=${PROCESS} ceiling=${CEILING_GIB}GiB poll=${POLL_S}s rss_trace_out=${RSS_TRACE_OUT}" | tee "${LOG_FILE}"
 
 python scripts/l22_evidence/sweep.py run --processes "${PROCESS}" --max-workers 1 --report-out "${REPORT_OUT}" \
     >> "${LOG_FILE}" 2>&1 &
@@ -65,7 +78,12 @@ STOPPED_FOR_CEILING=0
 while kill -0 "${SWEEP_PID}" 2>/dev/null; do
     RSS_KB=$(total_rss_kb)
     RSS_GIB=$(awk -v kb="${RSS_KB}" 'BEGIN { printf "%.2f", kb/1024/1024 }')
-    echo "$(date -Is) subtree_rss_kb=${RSS_KB} (${RSS_GIB} GiB)" >> "${LOG_FILE}"
+    NOW_ISO="$(date -Is)"
+    echo "${NOW_ISO} subtree_rss_kb=${RSS_KB} (${RSS_GIB} GiB)" >> "${LOG_FILE}"
+    # Append one self-contained JSON object per sample (JSONL, not a single
+    # JSON array) so a mid-run SIGKILL never leaves an unparseable file.
+    printf '{"ts": "%s", "process": "%s", "rss_kb": %s, "rss_gib": %s}\n' \
+        "${NOW_ISO}" "${PROCESS}" "${RSS_KB}" "${RSS_GIB}" >> "${RSS_TRACE_OUT}"
     if [ "${RSS_KB}" -gt "${CEILING_KB}" ]; then
         echo "$(date -Is) CEILING EXCEEDED (${RSS_GIB} GiB > ${CEILING_GIB} GiB) -- stopping subtree safely" | tee -a "${LOG_FILE}"
         for pid in $(descendants "${SWEEP_PID}"); do kill -TERM "${pid}" 2>/dev/null; done

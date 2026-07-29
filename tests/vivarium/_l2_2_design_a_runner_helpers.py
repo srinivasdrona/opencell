@@ -117,6 +117,53 @@ _PROTEIN_MODIFICATION_MONOMER_STORE_PATH_OVERRIDE = {
 # deterministic and side-effect free -- `_protein_decay_process` is a pure
 # function of `seed`) while capping worst-case retained memory to
 # `maxsize` instances regardless of how many ticks/seeds are swept.
+#
+# Scope C1 (mechanical inventory, follow-up to the ProteinDecay-only fix
+# above): this is not specific to ProteinDecay -- every `_run_*_tick`
+# per-process constructor in this file that is (a) decorated
+# `@lru_cache(maxsize=None)` and (b) called with `_sample_seed(seed, tick)`
+# as its cache key has the exact same unbounded-retention shape, for the
+# same reason (the key is effectively unique per (seed, tick) pair). All
+# such factories are bound to this same constant below:
+# `_metabolism_process`, `_transcription_process`, `_translation_process`,
+# `_rna_decay_process`, `_rna_processing_process`, `_rna_modification_process`,
+# `_trna_aminoacylation_process`, `_protein_decay_process`,
+# `_protein_modification_process`, `_protein_folding_process`,
+# `_protein_translocation_process`, `_ribosome_assembly_process`,
+# `_macromol_process`, `_cytokinesis_process`, `_dna_supercoiling_process`,
+# `_replication_process`, `_dna_repair_process`,
+# `_replication_initiation_process`. A single shared bound (rather than a
+# per-process tuned value) is deliberate: every one of these functions is a
+# pure, side-effect-free constructor of its `seed` argument (no shared
+# mutable state escapes eviction), so correctness is identical for any
+# `maxsize >= 1`; there is no empirical basis (and this task forbids
+# guessing) for picking a different bound per process absent a measured
+# need, so the smallest value that preserves the cache's original intent
+# (avoid reconstructing on an immediate repeat call with the same key) is
+# reused everywhere.
+#
+# Deliberately NOT touched, because they are not per-tick-unique-keyed
+# factories:
+#   - Zero-argument caches (`_metabolism_model`, `_metabolism_dynamics`,
+#     `_translation_model`): `maxsize=None` on a zero-arg function can only
+#     ever hold exactly one entry (there is only one possible cache key),
+#     so these are already effectively singleton caches regardless of
+#     `maxsize` -- bounding them further would be a no-op.
+#   - `maxsize=1` metadata/projection caches (`_rna_processing_channel_metadata`,
+#     `_rna_modification_channel_metadata`, `_trna_aminoacylation_channel_metadata`,
+#     `_macromol_channel_metadata`, `_transcription_projection_inputs`,
+#     `_translation_projection_inputs`, `_protein_decay_projection_inputs`):
+#     none take a per-tick-unique key (either zero args, or the
+#     projection-inputs ones call their process factory with the fixed
+#     `seed=0`), and all are already explicitly bounded to 1 -- legitimate
+#     reusable static/singleton caches, not part of this leak shape.
+#   - `_protein_processing_i_process` / `_protein_processing_ii_process`
+#     (called from `_run_protein_processing_i_tick` /
+#     `_run_protein_processing_ii_tick`) and the ad hoc
+#     `KarrProteinFoldingProcess(...)` instantiation inside
+#     `_run_protein_modification_tick`: none of these carry an `lru_cache`
+#     decorator at all, so nothing is retained across ticks -- a repeated
+#     per-tick construction cost (performance), not a memory leak.
 _PER_TICK_PROCESS_CACHE_MAXSIZE = 4
 
 _RNA_SLOT_COUNTS_STATE_KEY = "_l2_rna_slot_counts"
@@ -1437,7 +1484,7 @@ def _metabolism_dynamics() -> Any:
     return cfb.load_default_dynamics()
 
 
-@lru_cache(maxsize=None)
+@lru_cache(maxsize=_PER_TICK_PROCESS_CACHE_MAXSIZE)
 def _metabolism_process(seed: int) -> KarrMetabolismProcess:
     # Day-38: dynamic_bounds=True + Karr's 4-step substrate writeback enabled.
     # See docs/phase_f/METABOLISM_FIX_DESIGN.md for rationale.
@@ -1473,25 +1520,25 @@ def _translation_model() -> Any:
     return m3_karr_translation.load_default()
 
 
-@lru_cache(maxsize=None)
+@lru_cache(maxsize=_PER_TICK_PROCESS_CACHE_MAXSIZE)
 def _transcription_process(seed: int) -> KarrTranscriptionProcess:
     return KarrTranscriptionProcess({"rng_seed": int(seed)})
 
 
-@lru_cache(maxsize=None)
+@lru_cache(maxsize=_PER_TICK_PROCESS_CACHE_MAXSIZE)
 def _translation_process(seed: int) -> KarrTranslationProcess:
     model = _translation_model()
     with forbid_sut_oracle_file_io():
         return KarrTranslationProcess({"rng_seed": int(seed), "model": model})
 
 
-@lru_cache(maxsize=None)
+@lru_cache(maxsize=_PER_TICK_PROCESS_CACHE_MAXSIZE)
 def _rna_decay_process(seed: int) -> RnaDecayLightProcess:
     with forbid_sut_oracle_file_io():
         return RnaDecayLightProcess({"rng_seed": int(seed)})
 
 
-@lru_cache(maxsize=None)
+@lru_cache(maxsize=_PER_TICK_PROCESS_CACHE_MAXSIZE)
 def _rna_processing_process(seed: int) -> KarrRNAProcessingProcess:
     metadata = _rna_processing_channel_metadata()
     with forbid_sut_oracle_file_io():
@@ -1500,7 +1547,7 @@ def _rna_processing_process(seed: int) -> KarrRNAProcessingProcess:
     return process
 
 
-@lru_cache(maxsize=None)
+@lru_cache(maxsize=_PER_TICK_PROCESS_CACHE_MAXSIZE)
 def _rna_modification_process(seed: int) -> KarrRNAModificationProcess:
     metadata = _rna_modification_channel_metadata()
     with forbid_sut_oracle_file_io():
@@ -1509,7 +1556,7 @@ def _rna_modification_process(seed: int) -> KarrRNAModificationProcess:
     return process
 
 
-@lru_cache(maxsize=None)
+@lru_cache(maxsize=_PER_TICK_PROCESS_CACHE_MAXSIZE)
 def _trna_aminoacylation_process(seed: int) -> KarrTRNAAminoacylationProcess:
     metadata = _trna_aminoacylation_channel_metadata()
     with forbid_sut_oracle_file_io():
@@ -1524,7 +1571,7 @@ def _protein_decay_process(seed: int) -> ProteinDecayLightProcess:
         return ProteinDecayLightProcess({"rng_seed": int(seed)})
 
 
-@lru_cache(maxsize=None)
+@lru_cache(maxsize=_PER_TICK_PROCESS_CACHE_MAXSIZE)
 def _protein_modification_process(seed: int) -> KarrProteinModificationProcess:
     with forbid_sut_oracle_file_io():
         process = KarrProteinModificationProcess({"rng_seed": int(seed)})
@@ -1532,7 +1579,7 @@ def _protein_modification_process(seed: int) -> KarrProteinModificationProcess:
     return process
 
 
-@lru_cache(maxsize=None)
+@lru_cache(maxsize=_PER_TICK_PROCESS_CACHE_MAXSIZE)
 def _protein_folding_process(seed: int) -> KarrProteinFoldingProcess:
     with forbid_sut_oracle_file_io():
         process = KarrProteinFoldingProcess({"rng_seed": int(seed)})
@@ -1540,13 +1587,13 @@ def _protein_folding_process(seed: int) -> KarrProteinFoldingProcess:
     return process
 
 
-@lru_cache(maxsize=None)
+@lru_cache(maxsize=_PER_TICK_PROCESS_CACHE_MAXSIZE)
 def _protein_translocation_process(seed: int) -> KarrProteinTranslocationProcess:
     with forbid_sut_oracle_file_io():
         return KarrProteinTranslocationProcess({"rng_seed": int(seed)})
 
 
-@lru_cache(maxsize=None)
+@lru_cache(maxsize=_PER_TICK_PROCESS_CACHE_MAXSIZE)
 def _ribosome_assembly_process(seed: int) -> KarrRibosomeAssemblyProcess:
     with forbid_sut_oracle_file_io():
         process = KarrRibosomeAssemblyProcess({"rng_seed": int(seed)})
@@ -1583,7 +1630,7 @@ def _macromol_channel_metadata() -> dict[str, Any]:
     }
 
 
-@lru_cache(maxsize=None)
+@lru_cache(maxsize=_PER_TICK_PROCESS_CACHE_MAXSIZE)
 def _macromol_process(seed: int) -> MacromolecularComplexationProcess:
     metadata = _macromol_channel_metadata()
     with forbid_sut_oracle_file_io():
@@ -1593,7 +1640,7 @@ def _macromol_process(seed: int) -> MacromolecularComplexationProcess:
     return process
 
 
-@lru_cache(maxsize=None)
+@lru_cache(maxsize=_PER_TICK_PROCESS_CACHE_MAXSIZE)
 def _cytokinesis_process(seed: int) -> KarrCytokinesisProcess:
     with forbid_sut_oracle_file_io():
         return KarrCytokinesisProcess(
@@ -3370,7 +3417,7 @@ def _apply_chromosome_update(
 
 # ---- DNASupercoiling --------------------------------------------------
 
-@lru_cache(maxsize=None)
+@lru_cache(maxsize=_PER_TICK_PROCESS_CACHE_MAXSIZE)
 def _dna_supercoiling_process(seed: int) -> KarrDNASupercoilingProcess:
     with forbid_sut_oracle_file_io():
         return KarrDNASupercoilingProcess({"rng_seed": int(seed)})
@@ -3437,7 +3484,7 @@ def _run_dna_supercoiling_tick(seed: int, tick: int, state: dict[str, Any]) -> d
 
 # ---- Replication ------------------------------------------------------
 
-@lru_cache(maxsize=None)
+@lru_cache(maxsize=_PER_TICK_PROCESS_CACHE_MAXSIZE)
 def _replication_process(seed: int) -> KarrReplicationProcess:
     with forbid_sut_oracle_file_io():
         return KarrReplicationProcess({"rng_seed": int(seed)})
@@ -3513,7 +3560,7 @@ def _run_replication_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[s
 
 # ---- DNARepair --------------------------------------------------------
 
-@lru_cache(maxsize=None)
+@lru_cache(maxsize=_PER_TICK_PROCESS_CACHE_MAXSIZE)
 def _dna_repair_process(seed: int) -> KarrDNARepairProcess:
     with forbid_sut_oracle_file_io():
         return KarrDNARepairProcess({"rng_seed": int(seed)})
@@ -3579,7 +3626,7 @@ def _run_dna_repair_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[st
 
 # ---- ReplicationInitiation --------------------------------------------
 
-@lru_cache(maxsize=None)
+@lru_cache(maxsize=_PER_TICK_PROCESS_CACHE_MAXSIZE)
 def _replication_initiation_process(seed: int) -> KarrReplicationInitiationProcess:
     with forbid_sut_oracle_file_io():
         return KarrReplicationInitiationProcess({"rng_seed": int(seed)})
