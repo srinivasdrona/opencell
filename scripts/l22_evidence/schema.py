@@ -141,12 +141,38 @@ COMPLETION_STATUS_COMPLETE = "COMPLETE"
 RUNNER_SCRIPT = REPO_ROOT / "tests" / "vivarium" / "l2_2_design_a_runner.py"
 RUNNER_HELPERS_MODULE = REPO_ROOT / "tests" / "vivarium" / "_l2_2_design_a_runner_helpers.py"
 RUNNER_PROJECTIONS_MODULE = REPO_ROOT / "tests" / "vivarium" / "_l2_2_design_a_projections.py"
+# "Final zero-cost delta" (Opus5 ACCEPT bbc6aa6 conditional follow-up):
+# every in-scope process's `oc_module` lives under `opencell/vivarium/`
+# (`opencell/vivarium/karr_<process>.py` -- verified against every
+# `PROCESS_CATALOG.yaml` entry, all 22 in-scope processes, not just the 18
+# `design_a_per_tick` ones). Importing ANY of those files always executes
+# `opencell/vivarium/__init__.py` FIRST (ordinary Python package-import
+# semantics, identical in kind to the M1/M2/M3/state package-init entries
+# above -- just wider in reach, since literally every oc_module sits
+# inside this one package). That init module itself does module-scope
+# `from opencell.vivarium.<mod> import ...` for `composite.py`,
+# `karr_composite.py`, `karr_metabolism.py`, `karr_transcription.py`,
+# `karr_translation.py`, `persist.py`, and `processes.py` -- verified by
+# direct inspection -- so a change to `opencell/vivarium/__init__.py`
+# itself (e.g. adding/removing/reordering what it imports/re-exports) is a
+# real runtime dependency of every process's import, not a documentation
+# nicety. Because it is genuinely shared by every process regardless of
+# harness_type (unlike `l2_replay_common.py`, which only `design_a_per_tick`
+# processes route through -- see `HARNESS_DEPENDENCY_FILES` below), it
+# belongs in this always-applies, process-agnostic
+# `SWEEP_PROVENANCE_SOURCE_FILES` dict, not the harness-scoped
+# `HARNESS_DEPENDENCY_FILES` one -- observably, today, this only affects
+# the 18 `design_a_per_tick` rows the sweep actually generates evidence
+# for (no `event_class` sweep/evidence exists yet), but the key applies
+# uniformly to whichever processes are later evaluated, exactly like the
+# other four entries in this dict.
+VIVARIUM_INIT_MODULE = REPO_ROOT / "opencell" / "vivarium" / "__init__.py"
 
 # Named source files whose content hash `sweep_provenance.json` records at
 # generation time and the generator re-checks against the CURRENT tree --
 # the same names are used as dict keys on both sides so drift in any one of
 # them is individually named in `reasons[]`, not just "something changed".
-# These four are process-AGNOSTIC (shared by every process). The process's
+# These five are process-AGNOSTIC (shared by every process). The process's
 # own `oc_module` implementation file is hashed separately, under the
 # `"oc_module"` key, by `sweep.current_source_hashes(oc_module=...)` /
 # `generator._current_source_hashes(entry)` -- it is deliberately NOT part
@@ -157,6 +183,7 @@ SWEEP_PROVENANCE_SOURCE_FILES = {
     "helpers": RUNNER_HELPERS_MODULE,
     "projections": RUNNER_PROJECTIONS_MODULE,
     "catalog": CATALOG_PATH,
+    "vivarium_init": VIVARIUM_INIT_MODULE,
 }
 
 # --- Per-process metric-evaluation dependency modules (beyond the four

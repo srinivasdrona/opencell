@@ -417,6 +417,75 @@ def test_import_idiom_loop_guarded_import_is_detected(tmp_path):
     assert target.resolve() in resolved
 
 
+def test_import_idiom_match_case_guarded_import_is_detected(tmp_path):
+    """`match ...: case A: import X; case B: import Y` -- every `case`
+    clause's own body must be descended (exactly one branch executes at
+    runtime, but which is data-dependent, same reasoning as `if`/`elif`/
+    `else`) -- final zero-cost delta hardening."""
+    _make_pkg(tmp_path, "pkg")
+    case_a = tmp_path / "pkg" / "case_a.py"
+    case_a.write_text("VALUE = 1\n", encoding="utf-8")
+    case_b = tmp_path / "pkg" / "case_b.py"
+    case_b.write_text("VALUE = 2\n", encoding="utf-8")
+    case_default = tmp_path / "pkg" / "case_default.py"
+    case_default.write_text("VALUE = 3\n", encoding="utf-8")
+    caller = tmp_path / "pkg" / "caller.py"
+    caller.write_text(
+        textwrap.dedent(
+            """
+            import sys
+            match sys.platform:
+                case "win32":
+                    from . import case_a
+                case "linux":
+                    from . import case_b
+                case _:
+                    from . import case_default
+            """
+        ),
+        encoding="utf-8",
+    )
+
+    resolved = {p.resolve() for p in first_party_import_files(tmp_path, caller)}
+    assert case_a.resolve() in resolved
+    assert case_b.resolve() in resolved
+    assert case_default.resolve() in resolved
+
+
+def test_import_idiom_trystar_guarded_import_is_detected(tmp_path):
+    """`try: ... except* ValueError: import X` (`ast.TryStar`, Python
+    3.11+ exception groups) -- traversed identically to a plain `ast.Try`
+    (body/handlers/orelse/finalbody) -- final zero-cost delta hardening."""
+    _make_pkg(tmp_path, "pkg")
+    handler_mod = tmp_path / "pkg" / "trystar_handler.py"
+    handler_mod.write_text("VALUE = 1\n", encoding="utf-8")
+    else_mod = tmp_path / "pkg" / "trystar_else.py"
+    else_mod.write_text("VALUE = 2\n", encoding="utf-8")
+    finally_mod = tmp_path / "pkg" / "trystar_finally.py"
+    finally_mod.write_text("VALUE = 3\n", encoding="utf-8")
+    caller = tmp_path / "pkg" / "caller.py"
+    caller.write_text(
+        textwrap.dedent(
+            """
+            try:
+                pass
+            except* ValueError:
+                from . import trystar_handler
+            else:
+                from . import trystar_else
+            finally:
+                from . import trystar_finally
+            """
+        ),
+        encoding="utf-8",
+    )
+
+    resolved = {p.resolve() for p in first_party_import_files(tmp_path, caller)}
+    assert handler_mod.resolve() in resolved
+    assert else_mod.resolve() in resolved
+    assert finally_mod.resolve() in resolved
+
+
 def test_import_idiom_function_and_class_body_imports_still_excluded(tmp_path):
     """C1 only expands traversal into try/if/with/loop bodies -- function
     and class bodies remain OUT of scope, even though they too execute

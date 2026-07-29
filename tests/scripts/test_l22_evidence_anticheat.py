@@ -733,6 +733,67 @@ def test_l2_replay_common_change_stales_every_design_a_process_but_not_event_cla
     assert row_event_after["green"] is True, row_event_after["reasons"]  # event_class never bound this key
 
 
+# --- Final zero-cost delta (Opus5 ACCEPT bbc6aa6 conditional follow-up):
+# --- `opencell/vivarium/__init__.py` is a genuinely PROCESS-AGNOSTIC
+# --- shared dependency (registered in `SWEEP_PROVENANCE_SOURCE_FILES`,
+# --- not the harness-scoped `HARNESS_DEPENDENCY_FILES`) since EVERY
+# --- in-scope process's `oc_module` lives under `opencell/vivarium/` and
+# --- therefore always executes this package's `__init__.py` first -------------
+
+
+def test_vivarium_init_change_stales_every_design_a_process(tmp_path, monkeypatch):
+    """A change to `opencell/vivarium/__init__.py` (executed by Python's
+    ordinary package-import semantics whenever ANY of the 18
+    `design_a_per_tick` processes' `opencell/vivarium/karr_<process>.py`
+    `oc_module` is imported) must stale ALL 18 `design_a_per_tick` rows --
+    not a subset, since this dependency is registered in the always-
+    applies `schema.SWEEP_PROVENANCE_SOURCE_FILES` dict (like `runner`/
+    `helpers`/`projections`/`catalog`), not the per-process
+    `PROCESS_DEPENDENCY_FILES` registry or the harness-scoped
+    `HARNESS_DEPENDENCY_FILES` one. Uses a synthetic throwaway file
+    monkeypatched into `schema.SWEEP_PROVENANCE_SOURCE_FILES["vivarium_init"]`
+    (never the real tracked `opencell/vivarium/__init__.py`) so this test
+    never mutates real production code."""
+    fake_init = tmp_path / "src" / "fake_vivarium_init.py"
+    fake_init.parent.mkdir(parents=True, exist_ok=True)
+    fake_init.write_text("# fake vivarium __init__ v1\n", encoding="utf-8")
+    monkeypatch.setitem(schema.SWEEP_PROVENANCE_SOURCE_FILES, "vivarium_init", fake_init)
+
+    design_a_names = [name for name, entry in _ENTRIES.items() if entry.harness_type == "design_a_per_tick"]
+    assert len(design_a_names) == 18, f"expected exactly 18 design_a_per_tick processes, got {len(design_a_names)}"
+
+    evidence_root = tmp_path / "evidence"
+    for name in design_a_names:
+        _write_evidence_dir(evidence_root, name)
+
+    rows_before = {name: gen.build_process_row(_ENTRIES[name], evidence_root) for name in design_a_names}
+    for name, row in rows_before.items():
+        assert row["green"] is True, (name, row["reasons"])
+
+    # Simulate a change to the shared opencell/vivarium/__init__.py dependency.
+    fake_init.write_text("# fake vivarium __init__ v2 -- behavior changed\n", encoding="utf-8")
+
+    rows_after = {name: gen.build_process_row(_ENTRIES[name], evidence_root) for name in design_a_names}
+    for name, row in rows_after.items():
+        assert row["green"] is False, f"{name} should have gone stale after vivarium_init change"
+        assert any("vivarium_init" in reason for reason in row["reasons"]), (name, row["reasons"])
+
+
+def test_vivarium_init_is_registered_process_agnostically_not_per_harness(tmp_path, monkeypatch):
+    """`vivarium_init` must live in the always-applies
+    `schema.SWEEP_PROVENANCE_SOURCE_FILES` dict, not scoped by
+    `harness_type` -- since EVERY in-scope oc_module (all 22, `event_class`
+    included) lives under `opencell/vivarium/`, this dependency is not
+    narrower than "always", unlike `l2_replay_common.py` (which only
+    `design_a_per_tick` processes route through). This is a structural
+    regression guard: it fails if a future edit accidentally moves
+    `vivarium_init` into `HARNESS_DEPENDENCY_FILES` instead."""
+    assert "vivarium_init" in schema.SWEEP_PROVENANCE_SOURCE_FILES
+    assert schema.SWEEP_PROVENANCE_SOURCE_FILES["vivarium_init"] == schema.VIVARIUM_INIT_MODULE
+    for harness_deps in schema.HARNESS_DEPENDENCY_FILES.values():
+        assert "vivarium_init" not in harness_deps
+
+
 # --- F5: chromosome_store.py / chromosome_views.py are EXPLICIT per-process
 # --- registry entries (correcting F1's mechanical AST-derivation, which
 # --- Opus5 rejected as a runtime trust surface) --------------------------------

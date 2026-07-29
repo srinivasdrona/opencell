@@ -2,9 +2,9 @@
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
   "catalog_sha256": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
-  "content_hash": "57f6de3a1a92ead267d0d2c27f4d541753c93f5f31e9ee0047e3c1152d487b41",
+  "content_hash": "da535198a939358967846dcdcd363cd68f6fc233591a682e64b42d31be8ea292",
   "evidence_root": "artifacts/l2_2_gates",
-  "generated_at": "2026-07-29T18:59:02.137604+00:00",
+  "generated_at": "2026-07-29T21:01:12.743358+00:00",
   "n_in_scope": 22,
   "rows": [
     {
@@ -80,6 +80,7 @@
       "process": "DNARepair",
       "provenance_git_sha": "unknown",
       "reasons": [
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'vivarium_init'",
         "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'chromosome_store_module'",
         "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'chromosome_views_module'",
         "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'm_gen_constants_module'",
@@ -421,6 +422,7 @@
       "process": "ReplicationInitiation",
       "provenance_git_sha": "unknown",
       "reasons": [
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'vivarium_init'",
         "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'chromosome_store_module'",
         "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'm_gen_constants_module'",
         "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'state_init_module'",

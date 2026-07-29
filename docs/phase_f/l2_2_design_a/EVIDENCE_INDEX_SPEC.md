@@ -1456,11 +1456,30 @@ consumers as `chromosome_store_module` — `DNARepair`, `DNASupercoiling`,
 `Replication`, `ReplicationInitiation`, and (informationally)
 `DNADamage`.
 
+**Registry rationale: one-hop *coverage*, not a claim of *exclusive*
+execution.** Registering `M1_INIT_MODULE` for `Metabolism` (etc.) means
+"a change to this file is a runtime dependency this process's sentinel
+must be bound to" — it is not a claim that `Metabolism` is the *only*
+process whose import graph happens to execute `opencell/m1/__init__.py`
+(for `m1`/`m2`/`m3` today it happens to be true, one process each, purely
+because only one in-scope process imports a submodule of that
+particular package directly), nor that `opencell/state/__init__.py`
+executes *only* for its five registered consumers (`ChromosomeCondensation`
+also imports `chromosome_store`, but is out of catalog scope and so is
+never looked up regardless — see 13.11/13.13). Section 13.13's
+`vivarium_init` entry makes this distinction concrete: nearly every
+in-scope process's `oc_module` triggers the same `opencell/vivarium/
+__init__.py` execution, which is exactly why it is registered as a
+process-agnostic `SWEEP_PROVENANCE_SOURCE_FILES` entry rather than
+threaded through this per-process registry one process at a time.
+
 **Explicit one-level-only registry limitation (documented, not fixed, by
 design).** This registry is intentionally **one hop from the
 `oc_module`**, never recursive/transitive beyond that single hop — matching
-13.11(a)'s "no recursive dependency platform" instruction. Two known,
-disclosed residual gaps follow directly from this:
+13.11(a)'s "no recursive dependency platform" instruction. One known,
+disclosed gap follows directly from this (a second, `opencell/vivarium/
+__init__.py`, was also disclosed here originally but has since been
+closed — see below and Section 13.13):
 
 - `opencell/m2/__init__.py` also imports `.transcription_v2`, and
   `opencell/m3/__init__.py` also imports `.translation_v2` — neither
@@ -1473,16 +1492,22 @@ disclosed residual gaps follow directly from this:
 - `opencell/vivarium/__init__.py` is a much larger re-export hub
   (`karr_metabolism.py`, `karr_transcription.py`, `karr_translation.py`,
   `composite.py`, `karr_composite.py`, `persist.py`, `processes.py`, …),
-  executed by importing *any* of the roughly ten `oc_module` files that
-  live under `opencell/vivarium/`. This is structurally closer to the
-  existing harness-wide `harness_dependency_hashes()` class (shared
-  across nearly all processes) than a small per-process registry entry,
-  and was judged out of scope for this patch — C2's instructions
-  explicitly listed only `m1`/`m2`/`m3`/`state`. Not registered.
+  executed by importing *any* `oc_module` file living under
+  `opencell/vivarium/` — which, as Section 13.13 clarifies, is *every*
+  in-scope process's `oc_module`, all 22, not "roughly ten". At the time
+  this section was originally written this was judged out of scope for
+  the C2 patch (C2's instructions explicitly listed only
+  `m1`/`m2`/`m3`/`state`) and left as a disclosed, unregistered gap. This
+  has since been closed — see Section 13.13, which registers it as a
+  process-agnostic `SWEEP_PROVENANCE_SOURCE_FILES` entry (`vivarium_init`),
+  not a `PROCESS_DEPENDENCY_FILES`/`HARNESS_DEPENDENCY_FILES` entry, since
+  it is not narrower than "always applies".
 
-Both gaps were investigated, confirmed, and are called out here rather
-than silently fixed (exceeding the requested scope) or silently left
-undocumented.
+The one remaining disclosed residual gap (the `transcription_v2`/
+`translation_v2` one, above) was investigated, confirmed, and is called
+out here rather than silently fixed (exceeding the requested scope) or
+silently left undocumented; see Section 13.13 for its final disposition
+("approved inert exclusion").
 
 Per the operator's "no reruns/push" instruction, this is again a
 code-and-tests-only change functionally: `evidence_index.json`/
@@ -1492,6 +1517,146 @@ hash for 'm_gen_constants_module'`/`'state_init_module'` reasons appear
 on `DNARepair`'s and `ReplicationInitiation`'s already-stale rows;
 `content_hash` changes only for that reason plus `generated_at`); the
 tally (`MISSING_EVIDENCE: 20, FAIL: 2`) is unchanged, and no process was
+rerun.
+
+### 13.13 Final pre-freeze zero-cost delta: `vivarium_init`, `match`/`try*` AST hardening, approved inert exclusions
+
+Opus5's conditional ACCEPT of 13.12 (`bbc6aa6`) closed on one remaining
+zero-cost delta before the registry is frozen: registering
+`opencell/vivarium/__init__.py`, hardening the test-only AST audit two
+more control-flow forms, and correcting 13.12's wording so it does not
+read as claiming any package-init's execution is *exclusive* to its
+registered consumers.
+
+**All 22 in-scope `oc_module`s live under `opencell/vivarium/`.** Every
+`PROCESS_CATALOG.yaml` entry's `oc_module` field is
+`opencell/vivarium/karr_<process>.py` (verified against every in-scope
+row via `catalog.in_scope_processes()`, not a sample) — including the
+four `event_class` processes (`DNADamage`, `Cytokinesis`,
+`FtsZPolymerization`, `RibosomeAssembly`), not just the 18
+`design_a_per_tick` ones (out-of-scope processes like
+`ChromosomeCondensation` also happen to follow this convention but are
+never iterated by any evidence-generation path regardless). Importing
+*any* of these files therefore
+always executes `opencell/vivarium/__init__.py` first — real Python
+package-import semantics, not an artifact of static analysis — which
+itself does module-scope `from opencell.vivarium.<mod> import ...` for
+`composite.py`, `karr_composite.py`, `karr_metabolism.py`,
+`karr_transcription.py`, `karr_translation.py`, `persist.py`, and
+`processes.py` (verified by direct inspection).
+
+**Registered as `vivarium_init` in `SWEEP_PROVENANCE_SOURCE_FILES`, not
+`PROCESS_DEPENDENCY_FILES`/`HARNESS_DEPENDENCY_FILES`.** Because this
+dependency is genuinely process-agnostic — narrower only than "always"
+in the sense that it is scoped to "any process whose `oc_module` lives
+under `opencell/vivarium/`", which today is every in-scope process, not
+a subset — it belongs beside `runner`/`helpers`/`projections`/`catalog`
+in the always-applies `SWEEP_PROVENANCE_SOURCE_FILES` dict (now five
+entries), not the harness-scoped `HARNESS_DEPENDENCY_FILES["design_a_per_tick"]`
+dict `l2_replay_common` uses (that one is genuinely narrower: only
+`design_a_per_tick` processes route through `l2_replay_common.py`, never
+`event_class`). No `EVALUATOR_SCHEMA_VERSION`/`SWEEP_PROVENANCE_SCHEMA_VERSION`
+bump was needed — this is a new key in an existing generic `source_hashes`
+dict, not a structural/field change to `sweep_provenance.json` itself
+(the same reasoning as the original `l2_replay_common` addition in
+13.9/13.10). `_current_source_hashes()`/`current_source_hashes()` (the
+generator- and sweep-side mirrors) both already iterate
+`SWEEP_PROVENANCE_SOURCE_FILES.items()` generically by name, and the
+existing bidirectional expected-key-set check (13.10 F4) means every
+already-generated `sweep_provenance.json` (none of which recorded a
+`vivarium_init` hash) goes stale on regeneration for this reason alone —
+observed on `DNARepair`'s and `ReplicationInitiation`'s rows, whose
+tally category (already `STALE_SWEEP_PROVENANCE`-non-green) does not
+change. `test_vivarium_init_change_stales_every_design_a_process`
+(`tests/scripts/test_l22_evidence_anticheat.py`) proves a change to this
+one shared file stales all 18 `design_a_per_tick` rows simultaneously (a
+synthetic file monkeypatched into `SWEEP_PROVENANCE_SOURCE_FILES["vivarium_init"]`,
+never the real tracked `__init__.py`), and
+`test_vivarium_init_is_registered_process_agnostically_not_per_harness`
+is a structural regression guard against a future edit accidentally
+moving this entry into the harness-scoped dict instead.
+
+**Future `event_class` behavior (documented, no tally impact).** No
+`event_class` sweep/evidence-generation path exists yet, so this key has
+zero *observable* effect on `DNADamage`'s row today — but because
+`SWEEP_PROVENANCE_SOURCE_FILES` applies unconditionally (not filtered by
+`harness_type`), once an `event_class` sweep exists, a
+`vivarium_init` change will correctly stale those rows too (all
+`event_class` `oc_module`s also live under `opencell/vivarium/`), with no
+further registry change required — this is the intended, forward-looking
+behavior of registering the dependency at its true, process-agnostic
+scope rather than re-deriving it per-harness later.
+
+**Corrected framing: package-init registration is one-hop *coverage*, not
+a claim of *exclusive* execution.** 13.12's original wording for
+`M1_INIT_MODULE`/`M2_INIT_MODULE`/`M3_INIT_MODULE`/`STATE_INIT_MODULE`
+could be read as implying each registered `__init__.py` executes *only*
+for its listed consumer(s). That happens to be true for `m1`/`m2`/`m3`
+(exactly one in-scope process each imports a submodule of that specific
+package directly) and is a documented non-exhaustive approximation for
+`state` (`ChromosomeCondensation` also imports `chromosome_store` but is
+out of catalog scope and never looked up either way). `vivarium_init`
+makes the general rule explicit: registering a package-init dependency
+means "this file is a real one-hop runtime dependency of these
+process(es)' import" — never a claim that no other process's import
+graph also happens to execute it. See 13.12's corrected wording.
+
+**AST audit: `ast.Match`/`ast.TryStar` traversal.** `_iter_module_scope_statements()`
+now additionally descends into `ast.Match` (every `case` clause's own
+`body` — exactly one branch executes at runtime, but which one is
+data-dependent, the same reasoning already applied to `if`/`elif`/`else`)
+and `ast.TryStar` (Python 3.11+ exception groups, `except* ...:` —
+traversed identically to `ast.Try`: `body`, every `handler.body`,
+`orelse`, `finalbody`). Two new adversarial fixture tests
+(`test_import_idiom_match_case_guarded_import_is_detected`,
+`test_import_idiom_trystar_guarded_import_is_detected` in
+`tests/scripts/test_l22_evidence_ast_completeness.py`, now 25 total)
+cover both forms; `FunctionDef`/`AsyncFunctionDef`/`ClassDef` exclusion is
+unaffected. **Real-tree impact is zero**: this repository's Python 3.12
+tree contains no `match`/`case` statement and no `except*` clause in any
+currently-registered or currently-scanned file (confirmed by direct
+grep across `opencell/` and the registered `tests/vivarium/` helpers —
+the sole textual match, `test_l2_2_design_a_ensemble_loader.py`'s
+`match = re.match(...)`, is a plain function call, not a `match`
+statement), so this hardening changes nothing about the real registry or
+tally, exactly like C1's original try/if/with/loop hardening — it only
+closes a future-drift detection gap ahead of these syntax forms
+potentially appearing in a future edit.
+
+**Approved inert exclusions: `transcription_v2.py`/`translation_v2.py`.**
+13.12 disclosed these two files (imported by `opencell/m2/__init__.py`
+and `opencell/m3/__init__.py` respectively, one hop beyond the registered
+`M2_INIT_MODULE`/`M3_INIT_MODULE` entries) as an unregistered, one-hop-deep
+residual gap. Direct inspection confirms both files are **module-scope
+inert**: each defines only a `DEFAULT_FIXTURE_JSON` path constant, a
+`@dataclass`, and plain functions — no top-level code that mutates global
+state, performs I/O, or otherwise executes side effects beyond
+constructing a `Path` object at import time; nothing in either file is
+invoked or read at module-import time by `karr_transcription.py`/
+`karr_translation.py`, `Transcription`'s/`Translation`'s actual Design-A
+metric computation, or the runner's process-construction call graph
+(`_l2_2_design_a_runner_helpers.py::_transcription_process`/
+`_translation_process` instantiate `KarrTranscriptionProcess`/
+`KarrTranslationProcess` from the registered `oc_module` files
+themselves, never anything from `transcription_v2`/`translation_v2`).
+This exclusion is therefore **approved as inert**, not merely disclosed
+as an open gap — it remains contingent on a **watch condition**: if a
+future change ever makes the Design-A metric evaluator for
+`Transcription`/`Translation` consume a value computed by
+`transcription_v2.py`/`translation_v2.py` (directly or via
+`karr_transcription.py`/`karr_translation.py`), that call-graph edge
+must be re-verified and, if real, registered explicitly (mirroring every
+other `PROCESS_DEPENDENCY_FILES` entry) before it can be trusted as
+covered.
+
+Per the operator's "no reruns/push" instruction, this is again a
+code-and-tests-only change functionally: `evidence_index.json`/
+`evidence_bundle/` are regenerated in the same commit purely to reflect
+the new `vivarium_init` key (new `STALE_SWEEP_PROVENANCE: ... missing
+source hash for 'vivarium_init'` reasons appear on `DNARepair`'s and
+`ReplicationInitiation`'s already-stale rows; `content_hash` changes only
+for that reason plus `generated_at`); the tally
+(`MISSING_EVIDENCE: 20, FAIL: 2`) is unchanged, and no process was
 rerun.
 
 ## 14. Files

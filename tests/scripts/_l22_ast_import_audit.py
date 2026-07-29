@@ -19,17 +19,21 @@ test-only, as a completeness CHECK on that registry -- never as the
 source of gating hashes itself.
 
 Scope, by design (not a generalized/recursive import-graph platform):
-  * MODULE-SCOPE-EXECUTING statements only (C1 hardening): top-level
-    `import`/`from ... import` statements, AND those nested inside
-    `try`/`except`/`else`/`finally`, `if`/`elif`/`else` (including
-    `if TYPE_CHECKING:` blocks -- detected, not special-cased: a
-    guard-conditional import is still traversed the same as any other
-    `if` body, per the "prefer detection since completeness is cheap"
-    policy), `with`/`async with`, and `for`/`async for`/`while` bodies
-    (loops CAN contain imports, however unusual) -- since all of these
-    execute unconditionally-at-import-time control flow, unlike a
-    function or class body. Function/class bodies remain OUT of scope by
-    design, even one invoked unconditionally at import time (see
+  * MODULE-SCOPE-EXECUTING statements only (C1 hardening, extended for
+    `match`/`try*`): top-level `import`/`from ... import` statements, AND
+    those nested inside `try`/`except`/`else`/`finally`, `try*`/`except*`
+    (`ast.TryStar`, Python 3.11+ exception groups -- same traversal as
+    `ast.Try`), `if`/`elif`/`else` (including `if TYPE_CHECKING:` blocks
+    -- detected, not special-cased: a guard-conditional import is still
+    traversed the same as any other `if` body, per the "prefer detection
+    since completeness is cheap" policy), `match`/`case` (`ast.Match`,
+    Python 3.10+ -- every `case` clause's own body is descended, exactly
+    one branch executes but which is data-dependent, same reasoning as
+    `if`/`elif`/`else`), `with`/`async with`, and `for`/`async for`/
+    `while` bodies (loops CAN contain imports, however unusual) -- since
+    all of these execute unconditionally-at-import-time control flow,
+    unlike a function or class body. Function/class bodies remain OUT of
+    scope by design, even one invoked unconditionally at import time (see
     `karr_translation.py`'s `_install_translation_v3_release_guard()`, a
     function-body import) or one that executes at class-definition time
     (see `ChromosomeStore`'s class-body `from opencell.m_gen_constants
@@ -105,19 +109,24 @@ def _resolve_dotted_to_file(repo_root: Path, dotted: str) -> Path | None:
 def _iter_module_scope_statements(body: list[ast.stmt]):
     """Yield every statement that executes at MODULE-SCOPE-EQUIVALENT time
     when `body` runs -- i.e. `body` itself, plus recursively descending
-    into `try`/`except`/`else`/`finally`, `if`/`elif`/`else`,
-    `with`/`async with`, and `for`/`async for`/`while` (+ their `else`)
-    bodies (C1 hardening: these all execute unconditionally as part of
-    running the enclosing module, so an import nested inside one of them
-    -- a try-guarded fallback import, an `if TYPE_CHECKING:` guard, etc.
-    -- is still a real, module-scope-equivalent import). Deliberately
-    does NOT descend into `FunctionDef`/`AsyncFunctionDef`/`ClassDef`
-    bodies (or lambdas) -- those only execute later (on call) or execute
-    once at class-definition time but are excluded by design; see the
-    module docstring and `_DOCUMENTED_EXCLUSIONS`."""
+    into `try`/`except`/`else`/`finally`, `try*`/`except*`
+    (`ast.TryStar`, Python 3.11+ exception groups -- identical traversal
+    to `ast.Try`), `if`/`elif`/`else`, `match`/`case` (`ast.Match`,
+    Python 3.10+ -- every `case` clause's own body, since exactly one
+    executes but which one is data-dependent, the same reasoning as
+    `if`/`elif`/`else`), `with`/`async with`, and `for`/`async for`/
+    `while` (+ their `else`) bodies (C1 hardening: these all execute
+    unconditionally as part of running the enclosing module, so an
+    import nested inside one of them -- a try-guarded fallback import, an
+    `if TYPE_CHECKING:` guard, a `match`/`case` branch, etc. -- is still a
+    real, module-scope-equivalent import). Deliberately does NOT descend
+    into `FunctionDef`/`AsyncFunctionDef`/`ClassDef` bodies (or lambdas)
+    -- those only execute later (on call) or execute once at
+    class-definition time but are excluded by design; see the module
+    docstring and `_DOCUMENTED_EXCLUSIONS`."""
     for node in body:
         yield node
-        if isinstance(node, ast.Try):
+        if isinstance(node, (ast.Try, ast.TryStar)):
             yield from _iter_module_scope_statements(node.body)
             for handler in node.handlers:
                 yield from _iter_module_scope_statements(handler.body)
@@ -126,6 +135,9 @@ def _iter_module_scope_statements(body: list[ast.stmt]):
         elif isinstance(node, ast.If):
             yield from _iter_module_scope_statements(node.body)
             yield from _iter_module_scope_statements(node.orelse)
+        elif isinstance(node, ast.Match):
+            for case in node.cases:
+                yield from _iter_module_scope_statements(case.body)
         elif isinstance(node, (ast.With, ast.AsyncWith)):
             yield from _iter_module_scope_statements(node.body)
         elif isinstance(node, (ast.For, ast.AsyncFor, ast.While)):
