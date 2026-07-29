@@ -2,9 +2,9 @@
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
   "catalog_sha256": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
-  "content_hash": "d1888de25eff58ad1eeaa0b42114ca4972e67f3e2bb0815ca673462bfc370d60",
+  "content_hash": "458928640352bc8206de52f5addf79163abef62239d4fab6d5ec1e9b7405fc81",
   "evidence_root": "artifacts/l2_2_gates",
-  "generated_at": "2026-07-28T18:27:10.771793+00:00",
+  "generated_at": "2026-07-28T23:58:26.292388+00:00",
   "n_in_scope": 22,
   "rows": [
     {
@@ -74,16 +74,29 @@
         "substrates": "SEED_NOISE"
       },
       "evidence_dir": "artifacts/l2_2_gates/DNARepair/latest",
-      "green": true,
+      "green": false,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "PASS",
+      "mechanical_verdict": "FAIL",
       "process": "DNARepair",
       "provenance_git_sha": "unknown",
-      "reasons": [],
+      "reasons": [
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json completion_status=None != 'COMPLETE'",
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json inputs_verified is not True (input_manifest.json inputs were never mechanically re-hashed at generation time)",
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing sidecar_hashes['result.json']",
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing sidecar_hashes['input_manifest.json']",
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing sidecar_hashes['provenance.json']",
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing sidecar_hashes['thresholds.json']",
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing sidecar_hashes['null_calibration.json']",
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing sidecar_hashes['SUMMARY.json']",
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing sidecar_hashes['analytical_check.json']",
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'oc_module'"
+      ],
       "sweep_provenance": {
+        "completion_status": null,
         "evaluator_schema_version": 1,
         "git_dirty": null,
-        "git_sha": "a7360c78e9e978d533c8d0254bfe9546edfd5e4e"
+        "git_sha": "a7360c78e9e978d533c8d0254bfe9546edfd5e4e",
+        "inputs_verified": null
       },
       "warnings": []
     },
@@ -406,16 +419,29 @@
         "substrates": "SEED_NOISE"
       },
       "evidence_dir": "artifacts/l2_2_gates/ReplicationInitiation/latest",
-      "green": true,
+      "green": false,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "PASS",
+      "mechanical_verdict": "FAIL",
       "process": "ReplicationInitiation",
       "provenance_git_sha": "unknown",
-      "reasons": [],
+      "reasons": [
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json completion_status=None != 'COMPLETE'",
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json inputs_verified is not True (input_manifest.json inputs were never mechanically re-hashed at generation time)",
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing sidecar_hashes['result.json']",
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing sidecar_hashes['input_manifest.json']",
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing sidecar_hashes['provenance.json']",
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing sidecar_hashes['thresholds.json']",
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing sidecar_hashes['null_calibration.json']",
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing sidecar_hashes['SUMMARY.json']",
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing sidecar_hashes['analytical_check.json']",
+        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'oc_module'"
+      ],
       "sweep_provenance": {
+        "completion_status": null,
         "evaluator_schema_version": 1,
         "git_dirty": null,
-        "git_sha": "a7360c78e9e978d533c8d0254bfe9546edfd5e4e"
+        "git_sha": "a7360c78e9e978d533c8d0254bfe9546edfd5e4e",
+        "inputs_verified": null
       },
       "warnings": []
     },
@@ -506,7 +532,7 @@
   ],
   "schema_version": 1,
   "tally": {
-    "MISSING_EVIDENCE": 20,
-    "PASS": 2
+    "FAIL": 2,
+    "MISSING_EVIDENCE": 20
   }
 }

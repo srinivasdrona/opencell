@@ -79,28 +79,30 @@ def test_index_has_exactly_one_row_per_in_scope_process_no_extras():
 
 
 def test_real_sweep_evidence_today_reflects_hardened_reruns_for_two_processes():
-    """As of this commit, DNARepair and ReplicationInitiation have been
-    rerun through the hardened `sweep.py run_job` at their catalog M=200
-    (the depth200 oracle now provides real 200-tick per-seed traces for
-    these two catalog M=200 processes; ProteinDecay -- also catalog M=200
-    -- could not be completed in this pass because the Design-A harness's
-    memory footprint at M=200 grows roughly linearly without plateauing and
-    was terminated pre-OOM before completion, so it remains MISSING_EVIDENCE
-    pending a follow-up). Their evidence now carries a real
-    `sweep_provenance.json` completion sentinel with a real git SHA + source
-    hashes matching the CURRENT runner/helpers/projections/catalog files, so
-    they are the first two rows honestly promoted out of MISSING_EVIDENCE.
-    The remaining 16 in-scope processes still only hold evidence from BEFORE
-    the Phase-A provenance hardening landed -- none of it carries
-    `sweep_provenance.json` yet, since those processes have not been rerun
-    through the hardened `sweep.py run_job`. This is the honest, expected
-    transitional state: every one of those previously "PASS"/"FAIL" rows is
-    correctly demoted to MISSING_EVIDENCE rather than silently grandfathered
-    in as compliant (see the evidence-gate task's explicit instruction:
-    unprovable prior launches must be marked stale and scheduled for rerun,
-    never inferred as valid). Further Phase-B reruns/migration will
-    re-populate real PASS/FAIL rows behind this same test file; until then NO
-    other row may ever be fabricated PASS."""
+    """As of the R1/R2/R3 provenance-hardening commit, `sweep_provenance.json`
+    gained new mandatory fields (`completion_status`, `sidecar_hashes` binding
+    every fixed authority/sidecar file's sha256 to the sentinel,
+    `inputs_verified`, and a process-specific `oc_module` source hash --
+    schema_version 1 -> 2). DNARepair and ReplicationInitiation were
+    previously rerun through the PRE-hardening sweep at their catalog M=200
+    and briefly held real PASS rows; their `sweep_provenance.json` sentinels
+    predate this hardening and therefore lack every one of the new v2 fields.
+    Under the new, stricter `_check_sweep_provenance_staleness`, this is
+    correctly and mechanically detected as staleness (not silently
+    grandfathered in as compliant) and demotes both rows from PASS to FAIL --
+    the raw channel metrics still mechanically re-derive PASS, but an open
+    staleness reason on the row means it can never read green. This is the
+    honest, expected, deliberate consequence of tightening the sentinel
+    contract: both rows are scheduled for a rerun through the now-hardened
+    `sweep.py run_job` (which will write v2-compliant sentinels) in a
+    follow-up commit, at which point they are expected to return to a
+    genuinely provable PASS. The remaining 16 in-scope processes still only
+    hold evidence from BEFORE the original Phase-A provenance hardening
+    landed -- none of it carries `sweep_provenance.json` at all -- so they
+    correctly read MISSING_EVIDENCE throughout. If this test ever needs to
+    change again, that change must be driven by real sentinel-carrying
+    evidence appearing/changing under artifacts/l2_2_gates/ via a hardened
+    sweep rerun, not by editing this assertion."""
     payload = gen.build_evidence_index()
     assert payload["aggregate_verdict"] == "NON_GREEN"
     for row in payload["rows"]:
@@ -108,9 +110,12 @@ def test_real_sweep_evidence_today_reflects_hardened_reruns_for_two_processes():
             assert row["mechanical_verdict"] == schema.STATUS_PASS
         else:
             assert row["mechanical_verdict"] != schema.STATUS_PASS
-    assert payload["tally"] == {schema.STATUS_MISSING_EVIDENCE: 20, schema.STATUS_PASS: 2}
-    green_rows = {row["process"] for row in payload["rows"] if row["green"]}
-    assert green_rows == {"DNARepair", "ReplicationInitiation"}
+    assert payload["tally"] == {schema.STATUS_MISSING_EVIDENCE: 20, schema.STATUS_FAIL: 2}
+    stale_rows = {row["process"] for row in payload["rows"] if row["mechanical_verdict"] == schema.STATUS_FAIL}
+    assert stale_rows == {"DNARepair", "ReplicationInitiation"}
+    for row in payload["rows"]:
+        if row["process"] in stale_rows:
+            assert any("STALE_SWEEP_PROVENANCE" in reason for reason in row["reasons"])
 
 
 def test_content_hash_is_deterministic_across_regenerations():
@@ -149,7 +154,7 @@ def test_write_index_then_audit_round_trips_cleanly(tmp_path):
     result = gen.audit(index_path=index_path, evidence_root=schema.EVIDENCE_ROOT)
     assert result.ok is True
     assert result.aggregate_verdict == "NON_GREEN"
-    assert result.tally == {schema.STATUS_MISSING_EVIDENCE: 20, schema.STATUS_PASS: 2}
+    assert result.tally == {schema.STATUS_MISSING_EVIDENCE: 20, schema.STATUS_FAIL: 2}
 
 
 def test_audit_reports_failure_when_index_file_absent(tmp_path):

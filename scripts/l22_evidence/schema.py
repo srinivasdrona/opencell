@@ -122,7 +122,20 @@ BUNDLE_EXCLUDE_FILES = INFORMATIONAL_ONLY_FILES
 # evidence was generated against the code now on disk -- the SHA is
 # corroborating metadata, not the authority itself.
 SWEEP_PROVENANCE_FILE = "sweep_provenance.json"
-SWEEP_PROVENANCE_SCHEMA_VERSION = 1
+# Bumped 1 -> 2 for the R1/R2/R3 sentinel-binding hardening series: v2
+# sweep_provenance.json additionally carries `completion_status`,
+# `sidecar_hashes` (R1: binds the sentinel to the exact bytes of every
+# fixed tracked authority/sidecar file sitting next to it -- a sentinel
+# copied wholesale from a different process's evidence dir, even with its
+# `process`/`n_seeds`/`m_ticks` fields hand-edited to match, no longer
+# validates because those files' hashes won't match), a per-process
+# `oc_module` entry in `source_hashes` (R2), and `inputs_verified` (R3).
+# See `sweep.build_sweep_provenance` / `generator._check_sweep_provenance_staleness`.
+SWEEP_PROVENANCE_SCHEMA_VERSION = 2
+
+# The sentinel's own recorded `completion_status` must equal this exact
+# string; anything else (missing, partial, hand-edited) is non-green.
+COMPLETION_STATUS_COMPLETE = "COMPLETE"
 
 RUNNER_SCRIPT = REPO_ROOT / "tests" / "vivarium" / "l2_2_design_a_runner.py"
 RUNNER_HELPERS_MODULE = REPO_ROOT / "tests" / "vivarium" / "_l2_2_design_a_runner_helpers.py"
@@ -132,12 +145,25 @@ RUNNER_PROJECTIONS_MODULE = REPO_ROOT / "tests" / "vivarium" / "_l2_2_design_a_p
 # generation time and the generator re-checks against the CURRENT tree --
 # the same names are used as dict keys on both sides so drift in any one of
 # them is individually named in `reasons[]`, not just "something changed".
+# These four are process-AGNOSTIC (shared by every process). The process's
+# own `oc_module` implementation file is hashed separately, under the
+# `"oc_module"` key, by `sweep.current_source_hashes(oc_module=...)` /
+# `generator._current_source_hashes(entry)` -- it is deliberately NOT part
+# of this fixed dict because it differs per process (R2: a code change to
+# `karr_dna_repair.py` must stale only DNARepair's row, never all 18).
 SWEEP_PROVENANCE_SOURCE_FILES = {
     "runner": RUNNER_SCRIPT,
     "helpers": RUNNER_HELPERS_MODULE,
     "projections": RUNNER_PROJECTIONS_MODULE,
     "catalog": CATALOG_PATH,
 }
+
+# The fixed set of tracked authority/sidecar files R1 binds a
+# sweep_provenance.json sentinel to (via its own `sidecar_hashes` field) --
+# every file `build_process_row` requires unconditionally, minus nothing.
+# Defined once here so sweep.py (writer) and generator.py (verifier) can
+# never drift apart on which files are bound.
+SWEEP_PROVENANCE_SIDECAR_FILES = REQUIRED_AUTHORITY_FILES + MANDATORY_SIDECAR_FILES
 
 
 def default_evidence_root() -> Path:
@@ -208,5 +234,23 @@ STATUS_PASS = "PASS"
 # provenance hardening (or under stale source files) and must be
 # regenerated", never inferred as compliant.
 STATUS_STALE_PROVENANCE = "STALE_SWEEP_PROVENANCE"
+
+# `input_manifest.json["inputs"]` is empty, missing, or every entry is
+# missing a `path`/`sha256` key -- R3: a non-empty, hash-backed inputs list
+# is mandatory for design_a_per_tick evidence to be trusted at all, never
+# silently treated as "nothing to check".
+STATUS_EMPTY_INPUT_MANIFEST = "EMPTY_INPUT_MANIFEST"
+
+# Path prefix convention that marks an `input_manifest.json["inputs"]`
+# entry as raw Karr-oracle data (e.g. "data/m1_sources/karr_native/..."):
+# gitignored, never tracked in git, and intentionally absent in a fresh
+# clone / portable evidence-bundle-only checkout. Entries under this prefix
+# are exempt from `generator._check_current_tree_staleness`'s current-tree
+# rehash UNLESS `--verify-input-files` is explicitly requested (and the
+# data happens to be mounted locally) -- see that function's
+# `strict_input_files` parameter. Every OTHER input path (runner/helpers/
+# projections code, all tracked in git) is always rehashed unconditionally,
+# in both modes.
+ORACLE_DATA_PATH_PREFIX = "data/"
 
 __all__ = [name for name in globals() if name.isupper()] + ["CATALOG_PATH", "default_evidence_root"]

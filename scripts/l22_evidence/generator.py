@@ -13,8 +13,8 @@ stored ``result.json["verdict"]`` string is never trusted as authority.
 
 CLI:
     bin\\oc-py scripts/l22_evidence/generator.py bundle [--source-root PATH] [--bundle-root PATH]
-    bin\\oc-py scripts/l22_evidence/generator.py generate [--out PATH] [--evidence-root PATH]
-    bin\\oc-py scripts/l22_evidence/generator.py audit [--index PATH] [--evidence-root PATH] [--require-all-pass]
+    bin\\oc-py scripts/l22_evidence/generator.py generate [--out PATH] [--evidence-root PATH] [--verify-input-files]
+    bin\\oc-py scripts/l22_evidence/generator.py audit [--index PATH] [--evidence-root PATH] [--require-all-pass] [--verify-input-files]
 
 See ``docs/phase_f/l2_2_design_a/EVIDENCE_INDEX_SPEC.md`` for the full
 contract, including why ``audit`` works by regenerating the index from
@@ -100,49 +100,138 @@ def _resolve_input_path(path_str: str) -> Path:
     return path  # give up; caller reports "no longer exists"
 
 
-def _check_current_tree_staleness(input_manifest: dict[str, Any]) -> list[str]:
+def _check_current_tree_staleness(
+    input_manifest: dict[str, Any],
+    *,
+    entry: cat.ProcessEntry | None = None,
+    strict_input_files: bool = False,
+) -> list[str]:
     """Recompute sha256 of every path input_manifest.json declares it consumed,
     as those files exist *right now* in the working tree, and flag any drift.
 
     This is what catches a committed evidence directory going stale after the
     catalog, the runner source, or an oracle .mat file changes underneath it.
+
+    R3: `inputs` must be non-empty (an empty/missing list is never silently
+    treated as "nothing to check") and every entry needs a `path` + `sha256`.
+    Entries classified as raw Karr-oracle data (`_classify_input_kind` ==
+    "oracle_data") are gitignored and intentionally absent in a portable/
+    fresh-clone evidence-bundle-only checkout -- by default (`strict_input_
+    files=False`) a missing oracle-data file is NOT flagged stale here (the
+    sweep launcher's own `inputs_verified` attestation in
+    `sweep_provenance.json`, checked by `_check_sweep_provenance_staleness`,
+    is the authority for "this hash was confirmed correct once, when the
+    data WAS mounted"); pass `strict_input_files=True` (the CLI's
+    `--verify-input-files`) to instead require the oracle data be mounted
+    and rehash it for real. Every "code" input (runner/helpers/projections,
+    always tracked in git) is unconditionally rehashed in both modes. Also
+    checks `resolved_seeds` covers exactly `range(entry.n_seeds)` -- this is
+    the "seed coverage sufficient to identify all 50" requirement: the
+    single hashed oracle-data file legitimately contains every seed's data
+    internally, so seed coverage is established via this field rather than
+    one hash entry per seed.
     """
     reasons: list[str] = []
-    for record in input_manifest.get("inputs", ()):
+    inputs = input_manifest.get("inputs") or []
+    if not inputs:
+        reasons.append(f"{schema.STATUS_EMPTY_INPUT_MANIFEST}: input_manifest.json has no non-empty 'inputs' list")
+    for record in inputs:
         path_str = record.get("path")
         recorded_sha = record.get("sha256")
         if not path_str or not recorded_sha:
             reasons.append(f"{schema.STATUS_STALE_VS_TREE}: malformed input_manifest record {record!r}")
             continue
+        kind = _classify_input_kind(path_str)
+        if kind == "oracle_data" and not strict_input_files:
+            # Portable/fresh-clone default: trust the sweep-time
+            # inputs_verified attestation instead of requiring the raw,
+            # gitignored oracle .mat file to be physically present (or, if it
+            # happens to be mounted anyway, re-hashed) here. Re-verification
+            # of mounted oracle data is opt-in via strict_input_files.
+            continue
         path = _resolve_input_path(str(path_str))
         current_sha = _sha256_file(path)
         if current_sha is None:
-            reasons.append(f"{schema.STATUS_STALE_VS_TREE}: input {path_str} no longer exists on disk")
+            suffix = " (--verify-input-files requested but oracle data is not mounted here)" if kind == "oracle_data" else ""
+            reasons.append(f"{schema.STATUS_STALE_VS_TREE}: input {path_str} no longer exists on disk{suffix}")
         elif current_sha != recorded_sha:
             reasons.append(
                 f"{schema.STATUS_STALE_VS_TREE}: input {path_str} sha256 changed since evidence was generated "
                 f"(recorded={recorded_sha[:12]}.., current={current_sha[:12]}..)"
             )
+
+    if entry is not None and entry.n_seeds is not None:
+        expected_seeds = list(range(entry.n_seeds))
+        resolved_seeds = input_manifest.get("resolved_seeds")
+        actual_seeds = sorted(resolved_seeds) if isinstance(resolved_seeds, list) else None
+        if actual_seeds != expected_seeds:
+            reasons.append(
+                f"{schema.STATUS_NM_MISMATCH}: input_manifest.json resolved_seeds={actual_seeds!r} "
+                f"do not cover expected {entry.n_seeds} seeds (0..{entry.n_seeds - 1})"
+            )
     return reasons
 
 
-def _current_source_hashes() -> dict[str, str | None]:
+def _current_source_hashes(entry: cat.ProcessEntry | None = None) -> dict[str, str | None]:
     """sha256 of the runner/helpers/projections/catalog files as they exist
     RIGHT NOW. Mirrors `sweep.current_source_hashes()` exactly (both read
     the same `schema.SWEEP_PROVENANCE_SOURCE_FILES` dict) -- duplicated here
     rather than importing `sweep` so this read-only audit/generator module
-    never depends on the execution-launcher module."""
-    return {name: _sha256_file(path) for name, path in schema.SWEEP_PROVENANCE_SOURCE_FILES.items()}
+    never depends on the execution-launcher module.
+
+    `entry`, when given, additionally hashes THAT process's own
+    `oc_module` implementation file under the `"oc_module"` key (R2) -- the
+    same process-specific SUT hash `sweep.current_source_hashes(oc_module=...)`
+    computes at generation time, so a code change to a single
+    `karr_<process>.py` stales only that process's row here too."""
+    hashes = {name: _sha256_file(path) for name, path in schema.SWEEP_PROVENANCE_SOURCE_FILES.items()}
+    if entry is not None and entry.oc_module:
+        hashes["oc_module"] = _sha256_file(cat.REPO_ROOT / entry.oc_module)
+    return hashes
 
 
-def _check_sweep_provenance_staleness(payload: dict[str, Any]) -> list[str]:
-    """Reasons a `sweep_provenance.json` payload makes a row stale: a
-    source-file (runner/helpers/projections/catalog) hash that no longer
-    matches the CURRENT tree, or an evaluator_schema_version that no longer
-    matches the CURRENT `verdict.EVALUATOR_SCHEMA_VERSION`. An unknown/
-    missing real git SHA is recorded on the row informationally (see
-    `row["sweep_provenance"]["git_sha"]` in `build_process_row`) but does
-    NOT by itself add a reason here: content hashes are the gating
+def _classify_input_kind(path_str: str) -> str:
+    """"oracle_data" for a raw Karr-oracle `.mat` input (gitignored, never
+    tracked -- see `schema.ORACLE_DATA_PATH_PREFIX`), "code" for anything
+    else (the runner/helpers/projections source files, always tracked in
+    git and therefore present in any clone). Resolves via
+    `_resolve_input_path` first so this classification works whether the
+    manifest's own path is absolute (live tree) or already repo-relative
+    (bundle)."""
+    resolved = _resolve_input_path(str(path_str))
+    try:
+        rel = resolved.relative_to(cat.REPO_ROOT).as_posix()
+    except ValueError:
+        rel = str(path_str).replace("\\", "/")
+    return "oracle_data" if rel.startswith(schema.ORACLE_DATA_PATH_PREFIX) else "code"
+
+
+def _check_sweep_provenance_staleness(
+    payload: dict[str, Any], entry: cat.ProcessEntry, evidence_dir: Path
+) -> list[str]:
+    """Reasons a `sweep_provenance.json` payload makes a row stale:
+
+    R1 sentinel binding -- the sentinel must actually BELONG to this
+    process/N/M and its completion_status must say the run finished, and
+    its OWN recorded sha256 of every fixed tracked authority/sidecar file
+    (`sidecar_hashes`) must match the bytes actually sitting in
+    `evidence_dir` right now. A `sweep_provenance.json` copied wholesale
+    from a DIFFERENT process's evidence directory fails the process check
+    immediately; one hand-edited to merely rename its `process` field still
+    fails the sidecar-hash check, since those hashes were computed from the
+    other process's (differently-sized/differently-timestamped) files.
+
+    R2 SUT hash -- a source-file (runner/helpers/projections/catalog/
+    oc_module) hash that no longer matches the CURRENT tree.
+
+    R3 input attestation -- `inputs_verified` must be exactly True (the
+    sweep launcher only ever sets this after actually rehashing
+    `input_manifest.json`'s inputs at generation time; see
+    `sweep._verify_input_manifest`).
+
+    An unknown/missing real git SHA is recorded on the row informationally
+    (see `row["sweep_provenance"]["git_sha"]` in `build_process_row`) but
+    does NOT by itself add a reason here: content hashes are the gating
     authority, since they directly prove the evidence matches the code now
     on disk, whereas git plumbing for a Windows-linked worktree is
     inherently more fragile. Distinct from `_check_current_tree_staleness`
@@ -152,8 +241,49 @@ def _check_sweep_provenance_staleness(payload: dict[str, Any]) -> list[str]:
     `provenance.json["git_sha"]` can never itself be trusted (see
     schema.py's SWEEP_PROVENANCE_FILE docstring)."""
     reasons: list[str] = []
+
+    if payload.get("process") != entry.name:
+        reasons.append(
+            f"{schema.STATUS_STALE_PROVENANCE}: sweep_provenance.json process={payload.get('process')!r} "
+            f"!= expected {entry.name!r} (sentinel copied from a different process?)"
+        )
+    if entry.n_seeds is not None and payload.get("n_seeds") != entry.n_seeds:
+        reasons.append(
+            f"{schema.STATUS_STALE_PROVENANCE}: sweep_provenance.json n_seeds={payload.get('n_seeds')!r} "
+            f"!= catalog N_seeds={entry.n_seeds!r}"
+        )
+    if entry.m_ticks is not None and payload.get("m_ticks") != entry.m_ticks:
+        reasons.append(
+            f"{schema.STATUS_STALE_PROVENANCE}: sweep_provenance.json m_ticks={payload.get('m_ticks')!r} "
+            f"!= catalog M_ticks={entry.m_ticks!r}"
+        )
+    if payload.get("completion_status") != schema.COMPLETION_STATUS_COMPLETE:
+        reasons.append(
+            f"{schema.STATUS_STALE_PROVENANCE}: sweep_provenance.json completion_status="
+            f"{payload.get('completion_status')!r} != {schema.COMPLETION_STATUS_COMPLETE!r}"
+        )
+    if payload.get("inputs_verified") is not True:
+        reasons.append(
+            f"{schema.STATUS_STALE_PROVENANCE}: sweep_provenance.json inputs_verified is not True "
+            "(input_manifest.json inputs were never mechanically re-hashed at generation time)"
+        )
+
+    recorded_sidecar_hashes = payload.get("sidecar_hashes") or {}
+    for fname in schema.SWEEP_PROVENANCE_SIDECAR_FILES:
+        current_sidecar = _sha256_file(evidence_dir / fname)
+        recorded_sidecar = recorded_sidecar_hashes.get(fname)
+        if current_sidecar is None:
+            reasons.append(f"{schema.STATUS_STALE_PROVENANCE}: {fname} no longer exists on disk for sentinel binding")
+        elif recorded_sidecar is None:
+            reasons.append(f"{schema.STATUS_STALE_PROVENANCE}: sweep_provenance.json missing sidecar_hashes[{fname!r}]")
+        elif recorded_sidecar != current_sidecar:
+            reasons.append(
+                f"{schema.STATUS_STALE_PROVENANCE}: sweep_provenance.json sidecar_hashes[{fname!r}] "
+                "does not match current file bytes (sentinel does not belong to this evidence)"
+            )
+
     recorded_hashes = payload.get("source_hashes") or {}
-    for name, current in _current_source_hashes().items():
+    for name, current in _current_source_hashes(entry).items():
         recorded = recorded_hashes.get(name)
         if current is None:
             reasons.append(f"{schema.STATUS_STALE_PROVENANCE}: current source file for {name!r} no longer exists on disk")
@@ -174,7 +304,7 @@ def _check_sweep_provenance_staleness(payload: dict[str, Any]) -> list[str]:
     return reasons
 
 
-def build_process_row(entry: cat.ProcessEntry, evidence_root: Path) -> dict[str, Any]:
+def build_process_row(entry: cat.ProcessEntry, evidence_root: Path, *, strict_input_files: bool = False) -> dict[str, Any]:
     evidence_dir = _evidence_dir_for(entry, evidence_root)
     row: dict[str, Any] = {
         "process": entry.name,
@@ -278,8 +408,8 @@ def build_process_row(entry: cat.ProcessEntry, evidence_root: Path) -> dict[str,
         return row
 
     all_reasons: list[str] = list(schema_reasons)
-    all_reasons.extend(_check_current_tree_staleness(manifest_payload))
-    all_reasons.extend(_check_sweep_provenance_staleness(sweep_provenance_payload))
+    all_reasons.extend(_check_current_tree_staleness(manifest_payload, entry=entry, strict_input_files=strict_input_files))
+    all_reasons.extend(_check_sweep_provenance_staleness(sweep_provenance_payload, entry, evidence_dir))
 
     process_verdict = vd.rederive_process(entry.name, entry, result_payload)
     all_reasons.extend(process_verdict.reasons)
@@ -308,6 +438,8 @@ def build_process_row(entry: cat.ProcessEntry, evidence_root: Path) -> dict[str,
         "git_sha": sweep_provenance_payload.get("git_sha"),
         "git_dirty": sweep_provenance_payload.get("git_dirty"),
         "evaluator_schema_version": sweep_provenance_payload.get("evaluator_schema_version"),
+        "completion_status": sweep_provenance_payload.get("completion_status"),
+        "inputs_verified": sweep_provenance_payload.get("inputs_verified"),
     }
     return row
 
@@ -317,11 +449,14 @@ def build_evidence_index(
     *,
     evidence_root: Path | None = None,
     catalog_path: Path = schema.CATALOG_PATH,
+    strict_input_files: bool = False,
 ) -> dict[str, Any]:
     if evidence_root is None:
         evidence_root = schema.default_evidence_root()
     entries = cat.in_scope_processes(catalog_path)
-    rows = [build_process_row(entries[name], evidence_root) for name in sorted(entries)]
+    rows = [
+        build_process_row(entries[name], evidence_root, strict_input_files=strict_input_files) for name in sorted(entries)
+    ]
 
     tally: dict[str, int] = {}
     for row in rows:
@@ -403,6 +538,7 @@ def audit(
     index_path: Path = schema.INDEX_PATH,
     evidence_root: Path | None = None,
     catalog_path: Path = schema.CATALOG_PATH,
+    strict_input_files: bool = False,
 ) -> AuditResult:
     """Integrity check: does the tracked index match a fresh regeneration?
 
@@ -421,6 +557,18 @@ def audit(
     locally, otherwise the tracked, portable evidence bundle -- so this
     succeeds in a fresh clone that has never run the sweep, not just on a
     machine that has.
+
+    `strict_input_files=False` (the default, and the ONLY mode the tracked
+    `evidence_index.json` is ever generated/committed with) never requires
+    the raw, gitignored Karr-oracle `.mat` files to be physically present --
+    a fresh clone that never mounted/populated them still gets an honest
+    audit result (see `_check_current_tree_staleness`). Pass
+    `strict_input_files=True` (the CLI's `--verify-input-files`) as an
+    opt-in DIAGNOSTIC to additionally rehash oracle-data inputs for real
+    when the data IS mounted locally -- this is never used for the tracked
+    index itself, since it would make the same evidence produce a different
+    result depending purely on whether raw data happens to be mounted on
+    the machine that ran it.
     """
     problems: list[str] = []
     if not index_path.is_file():
@@ -431,7 +579,7 @@ def audit(
     except (json.JSONDecodeError, OSError) as exc:
         return AuditResult(ok=False, aggregate_verdict="NON_GREEN", problems=[f"stored index is not valid JSON: {exc}"])
 
-    fresh = build_evidence_index(evidence_root=evidence_root, catalog_path=catalog_path)
+    fresh = build_evidence_index(evidence_root=evidence_root, catalog_path=catalog_path, strict_input_files=strict_input_files)
 
     # Always validate the stored content_hash against the stored payload,
     # regardless of whether `_strip_volatile(stored) != _strip_volatile(fresh)`
@@ -552,7 +700,9 @@ def bundle_process_evidence(
 
 def _cmd_generate(args: argparse.Namespace) -> int:
     evidence_root = Path(args.evidence_root) if args.evidence_root else None
-    payload = build_evidence_index(evidence_root=evidence_root, catalog_path=Path(args.catalog))
+    payload = build_evidence_index(
+        evidence_root=evidence_root, catalog_path=Path(args.catalog), strict_input_files=args.verify_input_files
+    )
     out_path = Path(args.out)
     write_index(payload, out_path)
     print(f"wrote {out_path} ({payload['n_in_scope']} rows, aggregate={payload['aggregate_verdict']})")
@@ -564,7 +714,12 @@ def _cmd_generate(args: argparse.Namespace) -> int:
 
 def _cmd_audit(args: argparse.Namespace) -> int:
     evidence_root = Path(args.evidence_root) if args.evidence_root else None
-    result = audit(index_path=Path(args.index), evidence_root=evidence_root, catalog_path=Path(args.catalog))
+    result = audit(
+        index_path=Path(args.index),
+        evidence_root=evidence_root,
+        catalog_path=Path(args.catalog),
+        strict_input_files=args.verify_input_files,
+    )
     print(f"integrity: {'OK' if result.ok else 'FAIL'}")
     print(f"aggregate_verdict (mechanically re-derived): {result.aggregate_verdict}")
     for status, count in sorted(result.tally.items()):
@@ -603,6 +758,13 @@ def main(argv: list[str] | None = None) -> int:
         help="Default: live artifacts/l2_2_gates if present locally, else the tracked evidence_bundle/.",
     )
     gen.add_argument("--catalog", default=str(schema.CATALOG_PATH))
+    gen.add_argument(
+        "--verify-input-files",
+        action="store_true",
+        help="Diagnostic only, never used for the tracked index: also rehash raw oracle-data "
+        "input_manifest.json inputs against the current tree (requires the data to be mounted "
+        "locally). Default: trust the sweep-time inputs_verified attestation instead.",
+    )
     gen.set_defaults(func=_cmd_generate)
 
     aud = sub.add_parser("audit", help="Verify the tracked evidence_index.json is truthful and untampered.")
@@ -618,6 +780,14 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Acceptance gate: exit nonzero unless every in-scope process is GREEN. "
         "Expected to fail (exit 2) until process closure; not yet wired into CI.",
+    )
+    aud.add_argument(
+        "--verify-input-files",
+        action="store_true",
+        help="Strict mode: also rehash raw oracle-data input_manifest.json inputs against the "
+        "current tree (only succeeds if the gitignored oracle .mat data happens to be mounted "
+        "locally). Default (off): portable -- trusts the sweep-time inputs_verified attestation, "
+        "never requires raw oracle data to be present, e.g. in a fresh clone.",
     )
     aud.set_defaults(func=_cmd_audit)
 

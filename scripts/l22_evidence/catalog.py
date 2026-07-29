@@ -48,6 +48,14 @@ class ProcessEntry:
     event_channels: tuple[str, ...]
     output_channels: tuple[str, ...]
     primary_distance: str
+    # Repo-relative path to the process's opencell/vivarium/karr_*.py
+    # implementation (the SUT -- system under test), e.g.
+    # "opencell/vivarium/karr_dna_repair.py". None/empty means the catalog
+    # row declares no implementation yet. Used to hash the SUT into
+    # sweep_provenance.json's source_hashes (see sweep.current_source_hashes)
+    # so a code change to THIS process's own module stales only its row,
+    # not all 18 (R2 in the evidence-gate hardening series).
+    oc_module: str | None = None
 
     @property
     def uses_projection_distance(self) -> bool:
@@ -87,6 +95,7 @@ def in_scope_processes(path: Path = CATALOG_PATH) -> dict[str, ProcessEntry]:
             event_channels=tuple(raw.get("event_channels") or ()),
             output_channels=tuple(raw.get("output_channels") or ()),
             primary_distance=str(raw.get("primary_distance", "per_tick_vector_w1_mean")),
+            oc_module=(str(raw.get("oc_module")) or None) if raw.get("oc_module") else None,
         )
     return entries
 

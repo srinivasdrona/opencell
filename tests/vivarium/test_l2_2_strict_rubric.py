@@ -77,13 +77,19 @@ def test_committed_evidence_index_is_honestly_non_green_today():
     by `sweep.py run_job`. None of that evidence was launched through the
     sentinel-writing code path, so it is unprovable under the hardened
     rules and honestly reads MISSING_EVIDENCE rather than being trusted by
-    inference. DNARepair and ReplicationInitiation have since been rerun
-    through the hardened sweep at their catalog M=200 (using the newly
-    available depth200 oracle traces) and are the first two rows honestly
-    promoted to PASS with a real `sweep_provenance.json` sentinel;
-    ProteinDecay -- also catalog M=200 -- could not complete in this pass
-    (its Design-A memory footprint at M=200 grows without plateauing and the
-    run was terminated pre-OOM) and remains MISSING_EVIDENCE pending a
+    inference. DNARepair and ReplicationInitiation were subsequently rerun
+    through the (then-current, pre-R1/R2/R3) hardened sweep at their catalog
+    M=200 and briefly held a real PASS. The R1/R2/R3 sentinel-binding
+    hardening (schema_version 1 -> 2: `completion_status`, `sidecar_hashes`,
+    `inputs_verified`, process-specific `oc_module` source hash) then landed;
+    both rows' sentinels predate it and lack every new field, so they are
+    now mechanically and correctly detected as stale and demoted to FAIL
+    (raw metrics still mechanically re-derive PASS, but an open staleness
+    reason means the row can never read green) pending a rerun through the
+    now-hardened sweep in a follow-up commit. ProteinDecay -- also catalog
+    M=200 -- could not complete its (pre-R1/R2/R3) run (its Design-A memory
+    footprint at M=200 grows without plateauing and the run was terminated
+    pre-OOM) and remains MISSING_EVIDENCE pending a separate memory-scaling
     follow-up. This is a deliberate, evidence-driven promotion/demotion (per
     this task's "if not provable, mark stale and schedule rerun rather than
     infer" requirement), not a regression or a fabrication. If this test
@@ -93,7 +99,7 @@ def test_committed_evidence_index_is_honestly_non_green_today():
     assertion."""
     result = gen.audit()
     assert result.aggregate_verdict == "NON_GREEN"
-    assert result.tally == {schema.STATUS_MISSING_EVIDENCE: 20, schema.STATUS_PASS: 2}
+    assert result.tally == {schema.STATUS_MISSING_EVIDENCE: 20, schema.STATUS_FAIL: 2}
 
 
 def test_committed_evidence_index_covers_scope_exactly_once():

@@ -26,6 +26,7 @@ Run via `bin\\oc-pytest tests/scripts/test_l22_evidence_anticheat.py -v`.
 from __future__ import annotations
 
 import copy
+import dataclasses
 import json
 import sys
 from pathlib import Path
@@ -39,6 +40,7 @@ from scripts.l22_evidence import generator as gen  # noqa: E402
 from scripts.l22_evidence import schema  # noqa: E402
 
 from tests.scripts._l22_evidence_fixtures import (  # noqa: E402
+    default_input_records,
     write_mandatory_sidecars,
     write_valid_sweep_provenance,
 )
@@ -101,11 +103,13 @@ def _write_evidence_dir(
 
     _write_json(
         evidence_dir / "input_manifest.json",
-        {"inputs": inputs or [], "resolved_seeds": result["seeds"], "m_ticks": entry.m_ticks},
+        {"inputs": default_input_records() if inputs is None else inputs, "resolved_seeds": result["seeds"], "m_ticks": entry.m_ticks},
     )
     _write_json(evidence_dir / "provenance.json", {"generated_at": "2026-07-28T00:00:00+00:00", "git_sha": "deadbeef"})
     write_mandatory_sidecars(evidence_dir)
-    write_valid_sweep_provenance(evidence_dir, process=process_name, n_seeds=entry.n_seeds, m_ticks=entry.m_ticks)
+    write_valid_sweep_provenance(
+        evidence_dir, process=process_name, n_seeds=entry.n_seeds, m_ticks=entry.m_ticks, oc_module=entry.oc_module
+    )
     return evidence_dir
 
 
@@ -473,3 +477,186 @@ def test_missing_sweep_provenance_file_is_missing_evidence(tmp_path):
     row = _row_for(payload, "Metabolism")
     assert row["green"] is False
     assert row["mechanical_verdict"] == schema.STATUS_MISSING_EVIDENCE
+
+
+# --- R1 sentinel binding: cross-process copy / sidecar tamper ------------------
+
+
+def test_sentinel_copied_from_a_different_process_is_rejected(tmp_path):
+    """Copying ReplicationInitiation's `sweep_provenance.json` verbatim onto
+    Transcription's evidence dir -- the exact R1 attack this hardening
+    exists to prevent -- must be rejected: the sentinel's own `process`
+    field immediately disagrees with the evidence directory it now sits in."""
+    _write_evidence_dir(tmp_path, "ReplicationInitiation")
+    _write_evidence_dir(tmp_path, "Transcription")
+    donor_prov_path = tmp_path / "ReplicationInitiation" / schema.DESIGN_A_SUBDIR / schema.SWEEP_PROVENANCE_FILE
+    donor_prov = json.loads(donor_prov_path.read_text(encoding="utf-8"))
+    victim_dir = tmp_path / "Transcription" / schema.DESIGN_A_SUBDIR
+    (victim_dir / schema.SWEEP_PROVENANCE_FILE).write_text(json.dumps(donor_prov), encoding="utf-8")
+
+    payload = gen.build_evidence_index(evidence_root=tmp_path)
+    row = _row_for(payload, "Transcription")
+    assert row["green"] is False
+    assert any(
+        "process=" in reason and "ReplicationInitiation" in reason and "Transcription" in reason
+        for reason in row["reasons"]
+    )
+
+
+def test_sentinel_hand_edited_process_field_still_rejected_via_sidecar_hash(tmp_path):
+    """Even if an attacker hand-edits the copied sentinel's `process`/
+    `n_seeds`/`m_ticks` fields to match Transcription (defeating the naive
+    field-equality check alone), its `sidecar_hashes` still record
+    ReplicationInitiation's actual result.json/input_manifest.json bytes,
+    which do not match Transcription's real files -- the sentinel can never
+    be laundered onto a different process's evidence this way."""
+    _write_evidence_dir(tmp_path, "ReplicationInitiation")
+    transcription_entry = _ENTRIES["Transcription"]
+    _write_evidence_dir(tmp_path, "Transcription")
+    donor_prov_path = tmp_path / "ReplicationInitiation" / schema.DESIGN_A_SUBDIR / schema.SWEEP_PROVENANCE_FILE
+    donor_prov = json.loads(donor_prov_path.read_text(encoding="utf-8"))
+    donor_prov["process"] = "Transcription"
+    donor_prov["n_seeds"] = transcription_entry.n_seeds
+    donor_prov["m_ticks"] = transcription_entry.m_ticks
+    victim_dir = tmp_path / "Transcription" / schema.DESIGN_A_SUBDIR
+    (victim_dir / schema.SWEEP_PROVENANCE_FILE).write_text(json.dumps(donor_prov), encoding="utf-8")
+
+    payload = gen.build_evidence_index(evidence_root=tmp_path)
+    row = _row_for(payload, "Transcription")
+    assert row["green"] is False
+    assert not any("process=" in reason for reason in row["reasons"])  # the naive check alone now agrees
+    assert any("sidecar_hashes" in reason for reason in row["reasons"])
+
+
+def test_sidecar_tamper_after_generation_invalidates_the_sentinel_binding(tmp_path):
+    """Mutating a mandatory sidecar file's bytes (e.g. thresholds.json) AFTER
+    the sentinel was written, without regenerating the sentinel, must be
+    caught -- the sentinel's recorded `sidecar_hashes[fname]` no longer
+    matches what is actually on disk."""
+    evidence_dir = _write_evidence_dir(tmp_path, "Metabolism")
+    (evidence_dir / "thresholds.json").write_text(json.dumps({"channels": {"tampered": True}}), encoding="utf-8")
+
+    payload = gen.build_evidence_index(evidence_root=tmp_path)
+    row = _row_for(payload, "Metabolism")
+    assert row["green"] is False
+    assert any("sidecar_hashes" in reason and "thresholds.json" in reason for reason in row["reasons"])
+
+
+# --- R2 SUT hash: a code change to one process's karr_<process>.py --------------
+
+
+def test_sut_oc_module_change_stales_only_that_process(tmp_path):
+    """A code change to ONE process's own `karr_<process>.py` implementation
+    must stale only that process's row -- not any other process, even
+    though both share the same fixed runner/helpers/projections/catalog
+    source hashes (R2). Uses synthetic throwaway modules (never the real
+    tracked `opencell/vivarium/karr_*.py` files) so this test never mutates
+    real production biology code."""
+    module_a = tmp_path / "src" / "karr_fake_a.py"
+    module_b = tmp_path / "src" / "karr_fake_b.py"
+    module_a.parent.mkdir(parents=True, exist_ok=True)
+    module_a.write_text("# fake SUT A v1\n", encoding="utf-8")
+    module_b.write_text("# fake SUT B v1\n", encoding="utf-8")
+
+    base = _ENTRIES["Metabolism"]
+    entry_a = dataclasses.replace(base, name="FakeProcA", oc_module=str(module_a))
+    entry_b = dataclasses.replace(base, name="FakeProcB", oc_module=str(module_b))
+
+    evidence_root = tmp_path / "evidence"
+    for entry in (entry_a, entry_b):
+        evidence_dir = evidence_root / entry.name / schema.DESIGN_A_SUBDIR
+        evidence_dir.mkdir(parents=True, exist_ok=True)
+        expected_seeds = list(range(entry.n_seeds))
+        _write_json(
+            evidence_dir / "result.json",
+            {
+                "process": entry.name,
+                "verdict": "PASS",
+                "seeds": expected_seeds,
+                "ticks": entry.m_ticks,
+                "channels": {entry.primary_channel or "substrates": _baseline_channel()},
+                "warnings": [],
+            },
+        )
+        _write_json(
+            evidence_dir / "input_manifest.json",
+            {"inputs": default_input_records(), "resolved_seeds": expected_seeds, "m_ticks": entry.m_ticks},
+        )
+        _write_json(
+            evidence_dir / "provenance.json", {"generated_at": "2026-01-01T00:00:00+00:00", "git_sha": "deadbeef"}
+        )
+        write_mandatory_sidecars(evidence_dir)
+        write_valid_sweep_provenance(
+            evidence_dir, process=entry.name, n_seeds=entry.n_seeds, m_ticks=entry.m_ticks, oc_module=entry.oc_module
+        )
+
+    row_a_before = gen.build_process_row(entry_a, evidence_root)
+    row_b_before = gen.build_process_row(entry_b, evidence_root)
+    assert row_a_before["green"] is True, row_a_before["reasons"]
+    assert row_b_before["green"] is True, row_b_before["reasons"]
+
+    # Simulate a code change to process A's own SUT only.
+    module_a.write_text("# fake SUT A v2 -- behavior changed\n", encoding="utf-8")
+
+    row_a_after = gen.build_process_row(entry_a, evidence_root)
+    row_b_after = gen.build_process_row(entry_b, evidence_root)
+    assert row_a_after["green"] is False
+    assert any("oc_module" in reason for reason in row_a_after["reasons"])
+    assert row_b_after["green"] is True, row_b_after["reasons"]  # untouched process B remains green
+
+
+# --- R3 oracle input manifest: empty inputs / strict mounted-data rehash -------
+
+
+def test_empty_input_manifest_inputs_is_non_green(tmp_path):
+    _write_evidence_dir(tmp_path, "Metabolism", inputs=[])
+    payload = gen.build_evidence_index(evidence_root=tmp_path)
+    row = _row_for(payload, "Metabolism")
+    assert row["green"] is False
+    assert any(schema.STATUS_EMPTY_INPUT_MANIFEST in reason for reason in row["reasons"])
+
+
+def test_default_mode_tolerates_missing_oracle_data_but_strict_mode_requires_mounted_data(monkeypatch, tmp_path):
+    """Default (portable/fresh-clone) mode trusts `sweep_provenance.json`'s
+    `inputs_verified` attestation for a gitignored oracle-data input without
+    requiring it to physically exist. `--verify-input-files`
+    (`strict_input_files=True`) opts into requiring it be mounted."""
+    monkeypatch.setattr(gen.cat, "REPO_ROOT", tmp_path)
+    entry = _ENTRIES["Metabolism"]
+    manifest = {
+        "resolved_seeds": list(range(entry.n_seeds)),
+        "inputs": [{"path": "data/_fixture_probe_oracle.mat", "sha256": "0" * 64}],
+    }
+    default_reasons = gen._check_current_tree_staleness(manifest, entry=entry, strict_input_files=False)
+    assert not any(schema.STATUS_STALE_VS_TREE in reason for reason in default_reasons)
+
+    strict_reasons = gen._check_current_tree_staleness(manifest, entry=entry, strict_input_files=True)
+    assert any(
+        schema.STATUS_STALE_VS_TREE in reason and "not mounted" in reason for reason in strict_reasons
+    )
+
+
+def test_strict_mode_rehashes_mounted_oracle_data_and_detects_mutation(monkeypatch, tmp_path):
+    """When the oracle data genuinely IS mounted, strict mode must actually
+    rehash it and catch a mutation -- an `inputs_verified: true` attestation
+    alone is not sufficient once the caller opts into re-verification."""
+    monkeypatch.setattr(gen.cat, "REPO_ROOT", tmp_path)
+    (tmp_path / "data").mkdir()
+    oracle_file = tmp_path / "data" / "_fixture_probe_oracle.mat"
+    oracle_file.write_bytes(b"mounted-oracle-bytes")
+    original_sha = gen._sha256_file(oracle_file)
+    entry = _ENTRIES["Metabolism"]
+    manifest = {
+        "resolved_seeds": list(range(entry.n_seeds)),
+        "inputs": [{"path": "data/_fixture_probe_oracle.mat", "sha256": original_sha}],
+    }
+    assert gen._check_current_tree_staleness(manifest, entry=entry, strict_input_files=True) == []
+
+    oracle_file.write_bytes(b"mutated-oracle-bytes-swapped")
+    strict_reasons = gen._check_current_tree_staleness(manifest, entry=entry, strict_input_files=True)
+    assert any(schema.STATUS_STALE_VS_TREE in reason and "sha256 changed" in reason for reason in strict_reasons)
+
+    # Default (non-strict) mode never itself rehashes the oracle-data file,
+    # so it stays silent about this same drift.
+    default_reasons = gen._check_current_tree_staleness(manifest, entry=entry, strict_input_files=False)
+    assert not any("_fixture_probe_oracle.mat" in reason for reason in default_reasons)

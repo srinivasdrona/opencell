@@ -1,4 +1,5 @@
 {
+  "_superseded_note": "This report is from the 2026-07-28 pre-hardening sweep (before the Section 13/13.8 sweep_provenance.json completion-sentinel + sentinel-binding/oc_module/oracle-input-manifest hardening in EVIDENCE_INDEX_SPEC.md landed). None of the evidence directories it describes carry a valid completion sentinel under the current schema, so evidence_index.json now honestly reports them as MISSING_EVIDENCE/stale regardless of what this file's per-job 'status'/'exit_code' say. This file is retained for the historical execution timing/failure narrative only; it is never read by generator.py or sweep.py for any verdict/staleness decision, and is overwritten wholesale by the next `sweep.py run --report-out` invocation covering these processes.",
   "generated_at": "2026-07-28T15:05:55.671129+00:00",
   "jobs": [
     {

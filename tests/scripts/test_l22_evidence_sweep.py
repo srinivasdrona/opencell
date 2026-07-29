@@ -13,6 +13,7 @@ Run via `bin\\oc-pytest tests/scripts/test_l22_evidence_sweep.py -v`.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 import time
@@ -28,6 +29,19 @@ from scripts.l22_evidence import schema  # noqa: E402
 from scripts.l22_evidence import sweep  # noqa: E402
 
 from tests.scripts._l22_evidence_fixtures import write_mandatory_sidecars, write_valid_sweep_provenance  # noqa: E402
+
+# A single real, always-tracked repo file used as a stand-in
+# `input_manifest.json["inputs"]` entry throughout this file: since R3, an
+# empty `inputs` list is itself a failure (a real oracle-input reference is
+# mandatory), and `_verify_input_manifest`/`run_job` rehash every entry
+# against the CURRENT tree right after a (fake) run completes -- so this
+# must point at a file that genuinely exists with a genuinely matching hash,
+# never a synthetic/inexistent path.
+_FIXTURE_INPUT_PATH = "tests/vivarium/l2_2_design_a_runner.py"
+_FIXTURE_INPUT_RECORD = {
+    "path": _FIXTURE_INPUT_PATH,
+    "sha256": hashlib.sha256((REPO_ROOT / _FIXTURE_INPUT_PATH).read_bytes()).hexdigest(),
+}
 
 
 # --- plan_sweep against the REAL catalog ---------------------------------------
@@ -84,7 +98,8 @@ def _write_valid_evidence(job: sweep.SweepJob) -> None:
         encoding="utf-8",
     )
     (job.output_dir / "input_manifest.json").write_text(
-        json.dumps({"resolved_seeds": expected_seeds, "m_ticks": job.m_ticks, "inputs": []}), encoding="utf-8"
+        json.dumps({"resolved_seeds": expected_seeds, "m_ticks": job.m_ticks, "inputs": [_FIXTURE_INPUT_RECORD]}),
+        encoding="utf-8",
     )
     (job.output_dir / "provenance.json").write_text(json.dumps({"git_sha": "deadbeef"}), encoding="utf-8")
     write_mandatory_sidecars(job.output_dir)
@@ -166,7 +181,7 @@ def _fake_ok_command(job: sweep.SweepJob) -> list[str]:
         "out.mkdir(parents=True, exist_ok=True)\n"
         f"seeds = list(range({job.seeds}))\n"
         f"(out / 'result.json').write_text(json.dumps(dict(process={job.process!r}, seeds=seeds, ticks={job.m_ticks}, verdict='PASS')))\n"
-        f"(out / 'input_manifest.json').write_text(json.dumps(dict(resolved_seeds=seeds, m_ticks={job.m_ticks}, inputs=[])))\n"
+        f"(out / 'input_manifest.json').write_text(json.dumps(dict(resolved_seeds=seeds, m_ticks={job.m_ticks}, inputs=[{_FIXTURE_INPUT_RECORD!r}])))\n"
         "(out / 'provenance.json').write_text(json.dumps(dict(git_sha='fake')))\n"
         "(out / 'thresholds.json').write_text(json.dumps(dict(channels={})))\n"
         "(out / 'null_calibration.json').write_text(json.dumps(dict(channels={})))\n"
@@ -188,7 +203,7 @@ def _fake_slow_command(job: sweep.SweepJob, delay_s: float = 0.3) -> list[str]:
         "out.mkdir(parents=True, exist_ok=True)\n"
         f"seeds = list(range({job.seeds}))\n"
         f"(out / 'result.json').write_text(json.dumps(dict(process={job.process!r}, seeds=seeds, ticks={job.m_ticks}, verdict='PASS')))\n"
-        f"(out / 'input_manifest.json').write_text(json.dumps(dict(resolved_seeds=seeds, m_ticks={job.m_ticks}, inputs=[])))\n"
+        f"(out / 'input_manifest.json').write_text(json.dumps(dict(resolved_seeds=seeds, m_ticks={job.m_ticks}, inputs=[{_FIXTURE_INPUT_RECORD!r}])))\n"
         "(out / 'provenance.json').write_text(json.dumps(dict(git_sha='fake')))\n"
         "(out / 'thresholds.json').write_text(json.dumps(dict(channels={})))\n"
         "(out / 'null_calibration.json').write_text(json.dumps(dict(channels={})))\n"
@@ -396,7 +411,7 @@ def test_cli_run_with_fake_process_via_monkeypatched_runner_script(tmp_path, mon
         "out.mkdir(parents=True, exist_ok=True)\n"
         "seeds = list(range(int(a.seeds)))\n"
         "(out / 'result.json').write_text(json.dumps(dict(process=a.process, seeds=seeds, ticks=int(a.ticks), verdict='PASS')))\n"
-        "(out / 'input_manifest.json').write_text(json.dumps(dict(resolved_seeds=seeds, m_ticks=int(a.ticks), inputs=[])))\n"
+        f"(out / 'input_manifest.json').write_text(json.dumps(dict(resolved_seeds=seeds, m_ticks=int(a.ticks), inputs=[{_FIXTURE_INPUT_RECORD!r}])))\n"
         "(out / 'provenance.json').write_text(json.dumps(dict(git_sha='fake')))\n"
         "(out / 'thresholds.json').write_text(json.dumps(dict(channels={})))\n"
         "(out / 'null_calibration.json').write_text(json.dumps(dict(channels={})))\n"
@@ -650,3 +665,120 @@ def test_concurrent_lock_released_after_run_allows_next_invocation(tmp_path):
     lock_path = sweep._lock_path_for(job)
     sweep.run_job(job, command_builder=_fake_ok_command)
     assert not lock_path.exists()
+
+
+def test_stale_lock_with_dead_pid_is_silently_reaped_and_job_runs_normally(tmp_path):
+    """A lock file left behind by a PID that is genuinely dead (crashed
+    sweep invocation, no clean unlock) must never permanently block every
+    future rerun of that process. `_acquire_lock` reaps it and this
+    attempt proceeds as an ordinary run -- NOT `JOB_STATUS_LOCKED_SKIPPED`."""
+    import subprocess
+
+    job = _make_job(tmp_path, process="StaleLockReap")
+    lock_path = sweep._lock_path_for(job)
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Spawn and wait for a real child process so its PID is guaranteed to be
+    # a genuinely dead, real (recently-valid) PID rather than a guessed number.
+    proc = subprocess.Popen([sys.executable, "-c", "pass"])
+    dead_pid = proc.pid
+    proc.wait()
+    assert not sweep._pid_is_alive(dead_pid)
+    lock_path.write_text(str(dead_pid), encoding="utf-8")
+
+    result = sweep.run_job(job, command_builder=_fake_ok_command)
+    assert result.status == sweep.JOB_STATUS_RAN_OK
+    assert not lock_path.exists()  # released again after this run's own hold
+
+
+def test_cli_run_returns_nonzero_when_another_invocation_holds_a_live_lock(tmp_path, monkeypatch):
+    """CLI-level: if a concurrently-running `sweep.py run` genuinely holds
+    this process's lock (a live PID -- here, this very test process), `run`
+    must report it as a hard failure (nonzero exit), never a silent
+    no-op/success, and must never touch existing evidence."""
+    fake_runner = _fake_runner_script(tmp_path, body="import sys; sys.exit(0)\n")
+    monkeypatch.setattr(sweep, "RUNNER_SCRIPT", fake_runner)
+
+    evidence_root = tmp_path / "evidence"
+    job = sweep.SweepJob(
+        process="Metabolism",
+        seeds=3,
+        m_ticks=5,
+        output_dir=evidence_root / "Metabolism" / "latest",
+        log_path=tmp_path / "logs" / "Metabolism.log",
+    )
+    lock_path = sweep._lock_path_for(job)
+    lock_fd = sweep._acquire_lock(lock_path)  # this test process itself is alive -> genuinely live lock
+    try:
+        exit_code = sweep.main(
+            [
+                "run",
+                "--processes",
+                "Metabolism",
+                "--max-workers",
+                "1",
+                "--evidence-root",
+                str(evidence_root),
+                "--log-dir",
+                str(tmp_path / "logs"),
+                "--report-out",
+                str(tmp_path / "report.json"),
+            ]
+        )
+    finally:
+        sweep._release_lock(lock_fd, lock_path)
+
+    assert exit_code != 0
+    report = json.loads((tmp_path / "report.json").read_text(encoding="utf-8"))
+    assert report["tally"].get(sweep.JOB_STATUS_LOCKED_SKIPPED) == 1
+    assert not (evidence_root / "Metabolism" / "latest" / "result.json").exists()
+
+
+# --- dangling absolute temp-dir refs are sanitized to logical repo-relative paths
+
+
+def test_sanitize_dangling_temp_refs_rewrites_absolute_paths_to_repo_relative(tmp_path):
+    """Direct unit test of `_sanitize_dangling_temp_refs`: simulate the real
+    production layout (a fake `repo_root` containing both the evidence tree
+    and a `data/` oracle file) so `.resolve().relative_to(repo_root)`
+    actually succeeds, proving the rewritten refs are genuine repo-relative
+    logical paths -- never the (about-to-be-deleted) absolute temp rebuild
+    directory, and never any other absolute filesystem path."""
+    repo_root = tmp_path / "repo"
+    final_output_dir = repo_root / "evidence" / "SomeProc" / "latest"
+    tmp_output_dir = repo_root / "evidence" / "SomeProc" / ".latest.rebuild-123-456"
+    tmp_output_dir.mkdir(parents=True)
+    oracle_file = repo_root / "data" / "oracle.mat"
+    oracle_file.parent.mkdir(parents=True)
+    oracle_file.write_bytes(b"oracle-bytes")
+
+    (tmp_output_dir / "allocator_inputs.json").write_text("{}", encoding="utf-8")
+    (tmp_output_dir / "result.json").write_text(
+        json.dumps(
+            {
+                "allocator_inputs_ref": str(tmp_output_dir / "allocator_inputs.json"),
+                "provenance_ref": str(tmp_output_dir / "provenance.json"),
+            }
+        ),
+        encoding="utf-8",
+    )
+    (tmp_output_dir / "provenance.json").write_text(
+        json.dumps({"git_sha": "fake", "oracle_path": str(oracle_file)}), encoding="utf-8"
+    )
+
+    sweep._sanitize_dangling_temp_refs(tmp_output_dir, final_output_dir=final_output_dir, repo_root=repo_root)
+
+    result_payload = json.loads((tmp_output_dir / "result.json").read_text(encoding="utf-8"))
+    provenance_payload = json.loads((tmp_output_dir / "provenance.json").read_text(encoding="utf-8"))
+
+    for value in (
+        result_payload["allocator_inputs_ref"],
+        result_payload["provenance_ref"],
+        provenance_payload["oracle_path"],
+    ):
+        assert not Path(value).is_absolute(), value
+        assert "rebuild-" not in value, value
+
+    assert result_payload["allocator_inputs_ref"] == "evidence/SomeProc/latest/allocator_inputs.json"
+    assert result_payload["provenance_ref"] == "evidence/SomeProc/latest/provenance.json"
+    assert provenance_payload["oracle_path"] == "data/oracle.mat"

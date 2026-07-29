@@ -370,12 +370,21 @@ None of this is done by this task, and none of it is faked here:
    explicit two-stage requirement.
 6. **Oracle `.mat` file portability across clones** — the raw
    `data/m1_sources/karr_native/` oracle data remains gitignored by
-   pre-existing project convention (large raw data). A genuinely fresh
-   clone can `audit()` the tracked evidence bundle (Section 12) fine, but
-   `_check_current_tree_staleness` cannot verify oracle-content drift there
-   without the oracle data present under that clone's own tree — this is a
-   pre-existing, deliberate large-data-tracking boundary, not something
-   this task's portability fix attempts to close.
+   pre-existing project convention (large raw data). **Partially closed
+   (Section 13.8, R3):** a genuinely fresh clone's `audit()` no longer
+   needs the oracle data physically present — `_check_current_tree_
+   staleness` classifies each `input_manifest.json["inputs"]` entry as
+   `"oracle_data"` vs `"code"` and, by default, trusts the one-time
+   `sweep_provenance.json["inputs_verified"]` attestation (recorded when
+   the data WAS mounted, at generation time) for the oracle-data entries
+   instead of requiring them on disk; `"code"` entries (runner/helpers/
+   projections/catalog) are always rehashed regardless. `--verify-input-
+   files`/`strict_input_files=True` opts back into physically requiring
+   and rehashing the oracle data when it genuinely is mounted (e.g. local
+   dev with the full oracle checked out). What remains open: the *default*
+   audit still cannot prove oracle-content drift when the data is absent —
+   it is trusting the attestation, not re-verifying it; only strict mode
+   re-verifies.
 
 ## 10. Raw oracle population (`scripts/l22_evidence/populate.py`)
 
@@ -933,6 +942,94 @@ surface that mapped to no observed failure mode. Everything else in
 force-rerun, warnings-verbatim, the audit content-hash fix,
 `source_hashes`/`evaluator_schema_version` staleness) is retained
 unchanged.
+
+### 13.8 Sentinel binding, per-process SUT hash, and oracle input-manifest verification (schema v2)
+
+A further review (R1–R3) found `sweep_provenance.json` still had three
+gaps even after 13.1–13.7: (R1) it never checked its OWN `process`/
+`n_seeds`/`m_ticks`/`completion_status` fields, nor hashed the OTHER
+mandatory sidecars (`result.json`/`input_manifest.json`/`provenance.json`/
+`thresholds.json`/`null_calibration.json`/`SUMMARY.json`/
+`analytical_check.json`) it was meant to attest for — so a sentinel
+mechanically copied from a different, already-valid process's evidence
+directory (or a hand-edited stored `process`/verdict field with the
+sentinel left untouched) was not reliably rejected; (R2) `source_hashes`
+covered only the 4 shared runner/helpers/projections/catalog files, never
+the per-process `karr_<process>.py` biology module itself, so editing one
+process's implementation never staled that process's evidence; (R3)
+`_check_current_tree_staleness` never required `input_manifest.json
+["inputs"]` to be non-empty or to cover all `n_seeds`, and — since the raw
+oracle `.mat` files are gitignored — would always report every input
+missing in a fresh clone regardless of whether the evidence was actually
+sound. `SWEEP_PROVENANCE_SCHEMA_VERSION` is bumped 1→2 to force every
+pre-existing sentinel (none of which carry the new fields) to be honestly
+re-evaluated as stale rather than silently grandfathered.
+
+- **R1 — sentinel binds to itself and to every sidecar's bytes.**
+  `sweep_provenance.json` now also records `process`, `n_seeds`,
+  `m_ticks`, `completion_status` (`"COMPLETE"`), and `sidecar_hashes`: a
+  sha256 of every file in `schema.SWEEP_PROVENANCE_SIDECAR_FILES`
+  (`REQUIRED_AUTHORITY_FILES + MANDATORY_SIDECAR_FILES`) as they existed
+  the instant the sentinel was written. `evidence_is_valid()`/
+  `_check_sweep_provenance_staleness()` both check the sentinel's own
+  `process`/`n_seeds`/`m_ticks`/`completion_status` against the job/entry
+  being validated, AND recompute every `sidecar_hashes` entry against the
+  file currently on disk. A sentinel copied verbatim from another process
+  fails on the `process` mismatch (and, if that field is hand-edited to
+  match, on the `result.json` sidecar hash mismatch — that file's real
+  content differs per-process by construction). Any missing/mismatched
+  entry is stale, never silently accepted.
+- **R2 — per-process `oc_module` hash.** `catalog.ProcessEntry.oc_module`
+  (the catalog row's biology-module path, e.g.
+  `opencell/vivarium/karr_dna_repair.py`) is now hashed under a dedicated
+  `"oc_module"` key, kept OUT of the shared 4-entry `SWEEP_PROVENANCE_
+  SOURCE_FILES` dict and merged in per-call instead — so editing one
+  process's `karr_<process>.py` stales ONLY that process's evidence, never
+  all 18.
+- **R3 — oracle input-manifest verification, default vs strict.**
+  `_verify_input_manifest()` (`sweep.py`) rehashes every declared input at
+  RUN TIME (while the oracle data is guaranteed mounted) and requires the
+  list to be non-empty; the result is recorded as `sweep_provenance.json
+  ["inputs_verified"]`. At audit time, `generator._check_current_tree_
+  staleness()` classifies each input as `"oracle_data"` (under
+  `schema.ORACLE_DATA_PATH_PREFIX`, i.e. `data/...`) or `"code"`. In the
+  DEFAULT mode, `"code"` inputs are always rehashed against the current
+  tree (catching a source-file edit); `"oracle_data"` inputs are trusted
+  via the `inputs_verified` attestation instead of being required on disk
+  — this is what makes a fresh clone's `audit()` succeed without the
+  gitignored `.mat` files present. `--verify-input-files` (CLI on both
+  `generate` and `audit`) sets `strict_input_files=True`, which instead
+  requires oracle-data inputs to be physically present and rehashes them
+  for real — for local dev where the oracle data genuinely is mounted and
+  a stronger, no-attestation-trusted guarantee is wanted. An empty
+  `inputs` list, or a manifest missing `path`/`sha256` on any entry, is
+  `schema.STATUS_EMPTY_INPUT_MANIFEST`/stale in BOTH modes. Seed coverage
+  (`resolved_seeds == range(entry.n_seeds)`) is checked the same way in
+  both modes.
+- **Lock handling refinements.** `_acquire_lock` now reads the PID written
+  into an existing lock file and, via `os.kill(pid, 0)`, distinguishes a
+  genuinely live holder (raises `FileExistsError`, unchanged behavior)
+  from a stale lock left by a crashed invocation (silently unlinked and
+  retried once, so a crash can never permanently block all future reruns
+  of that process). `_cmd_run` now treats ANY `JOB_STATUS_LOCKED_SKIPPED`
+  result as a hard failure (nonzero exit) — previously it was excluded
+  from the hard-failure set, which meant a genuinely concurrent, in-
+  progress process could be silently reported as sweep success.
+- **Dangling absolute temp-dir refs.** Because `run_job` always executes
+  the child in a freshly-created temp rebuild directory (Section 13.2),
+  any self-referential absolute path the runner bakes into its own output
+  (`result.json["allocator_inputs_ref"/"provenance_ref"]`,
+  `provenance.json["oracle_path"]`) would otherwise point at a directory
+  deleted the instant the atomic swap completes. `_sanitize_dangling_
+  temp_refs()` rewrites these three fields to repo-relative logical paths
+  (resolved against the FINAL, post-swap location) before the sentinel is
+  written, so no tracked sidecar ever embeds a worktree-specific or
+  already-deleted absolute path.
+
+These checks are duplicated (not shared/imported) between `sweep.py`
+(launcher resume-decisions) and `generator.py` (read-only audit), per the
+pre-existing 13.x precedent of keeping the audit module independent of the
+execution-launcher module.
 
 ## 14. Files
 

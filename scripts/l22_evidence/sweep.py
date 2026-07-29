@@ -22,7 +22,12 @@ SHA is permanently ``"unknown"`` in this project's WSL/Windows-linked-
 worktree environment. All of it must parse as valid JSON, match the
 requested process/seed/tick counts, carry a real (non-"unknown") git SHA,
 match the CURRENT sha256 of the runner/helpers/projections/catalog source
-files, and match the CURRENT evaluator schema version -- any missing,
+files AND the process's own ``oc_module`` implementation file, match the
+CURRENT evaluator schema version, and match the sentinel's OWN recorded
+sha256 of every fixed tracked authority/sidecar file sitting next to it
+(``sidecar_hashes`` -- this is what makes a sentinel copied from a
+DIFFERENT process's evidence directory fail even if its ``process``/
+``n_seeds``/``m_ticks`` fields are hand-edited to match) -- any missing,
 unknown, or mismatched field makes the evidence stale and eligible for
 rerun, never ``DONE_VALID`` / skippable-as-valid. Never existence-only.
 ``--force`` overrides this and reruns unconditionally. This mirrors
@@ -95,6 +100,10 @@ class SweepJob:
     m_ticks: int
     output_dir: Path
     log_path: Path
+    # Repo-relative path to this process's karr_*.py implementation (R2 SUT
+    # hash), e.g. "opencell/vivarium/karr_dna_repair.py"; None if the
+    # catalog declares no implementation for this process.
+    oc_module: str | None = None
 
 
 @dataclass
@@ -159,6 +168,7 @@ def plan_sweep(
                 m_ticks=int(entry.m_ticks),
                 output_dir=evidence_root / name / schema.DESIGN_A_SUBDIR,
                 log_path=log_dir / f"{name}.log",
+                oc_module=entry.oc_module,
             )
         )
     return jobs
@@ -183,14 +193,25 @@ def _sha256_file(path: Path) -> str | None:
     return digest.hexdigest()
 
 
-def current_source_hashes() -> dict[str, str | None]:
+def current_source_hashes(oc_module: str | None = None) -> dict[str, str | None]:
     """sha256 of the runner/helpers/projections/catalog files as they exist
     RIGHT NOW -- both `build_sweep_provenance` (recording what evidence was
     generated against) and `evidence_is_valid` (checking whether that
     recording still matches the current tree) call this, so drift in any of
     these four sources after evidence was generated shows up as an
-    individually-named stale entry rather than a generic mismatch."""
-    return {name: _sha256_file(path) for name, path in schema.SWEEP_PROVENANCE_SOURCE_FILES.items()}
+    individually-named stale entry rather than a generic mismatch.
+
+    `oc_module`, when given (a repo-relative path string, e.g.
+    "opencell/vivarium/karr_dna_repair.py" -- see `catalog.ProcessEntry.
+    oc_module`), additionally hashes that ONE process's own implementation
+    file under the `"oc_module"` key. This is process-specific by
+    construction (unlike the four shared entries above), which is exactly
+    what makes a code change to a single process's `karr_<process>.py`
+    stale only THAT process's row (R2), never all 18."""
+    hashes = {name: _sha256_file(path) for name, path in schema.SWEEP_PROVENANCE_SOURCE_FILES.items()}
+    if oc_module:
+        hashes["oc_module"] = _sha256_file(REPO_ROOT / oc_module)
+    return hashes
 
 
 def _recover_crashed_swap(output_dir: Path) -> None:
@@ -276,6 +297,25 @@ def evidence_is_valid(job: SweepJob) -> tuple[bool, str | None]:
         return False, f"{schema.SWEEP_PROVENANCE_FILE} process={sweep_prov.get('process')!r} != expected {job.process!r}"
     if int(sweep_prov.get("n_seeds", -1)) != job.seeds or int(sweep_prov.get("m_ticks", -1)) != job.m_ticks:
         return False, f"{schema.SWEEP_PROVENANCE_FILE} n_seeds/m_ticks do not match current catalog request"
+    if sweep_prov.get("completion_status") != schema.COMPLETION_STATUS_COMPLETE:
+        return (
+            False,
+            f"{schema.SWEEP_PROVENANCE_FILE} completion_status={sweep_prov.get('completion_status')!r} "
+            f"!= {schema.COMPLETION_STATUS_COMPLETE!r}",
+        )
+    if sweep_prov.get("inputs_verified") is not True:
+        return False, f"{schema.SWEEP_PROVENANCE_FILE} inputs_verified is not True"
+
+    # R1 sentinel binding: the sentinel's OWN recorded hash of every fixed
+    # tracked authority/sidecar file must match what is actually sitting
+    # next to it right now -- catches a sentinel whose identifying fields
+    # were hand-edited to match this process while its hashes still point
+    # at a different process's (or stale) evidence bytes.
+    recorded_sidecar_hashes = sweep_prov.get("sidecar_hashes") or {}
+    for fname in schema.SWEEP_PROVENANCE_SIDECAR_FILES:
+        current_sidecar = _sha256_file(job.output_dir / fname)
+        if current_sidecar is None or recorded_sidecar_hashes.get(fname) != current_sidecar:
+            return False, f"{schema.SWEEP_PROVENANCE_FILE} sidecar_hashes[{fname!r}] is stale/unknown vs current file"
 
     # git_sha/git_dirty are recorded informationally (see build_sweep_provenance)
     # but are NOT gating authority here: source content hashes below are what
@@ -283,7 +323,7 @@ def evidence_is_valid(job: SweepJob) -> tuple[bool, str | None]:
     # linked-worktree git plumbing is fragile enough that an unknown SHA alone
     # must not invalidate otherwise-matching, otherwise-current evidence.
     recorded_hashes = sweep_prov.get("source_hashes") or {}
-    for name, current in current_source_hashes().items():
+    for name, current in current_source_hashes(job.oc_module).items():
         if current is None or recorded_hashes.get(name) != current:
             return False, f"{schema.SWEEP_PROVENANCE_FILE} source hash for {name!r} is stale/unknown vs current tree"
 
@@ -297,32 +337,154 @@ def evidence_is_valid(job: SweepJob) -> tuple[bool, str | None]:
     return True, None
 
 
-def build_sweep_provenance(job: SweepJob, *, output_dir: Path, repo_root: Path = REPO_ROOT) -> dict[str, Any]:
+def build_sweep_provenance(
+    job: SweepJob, *, output_dir: Path, repo_root: Path = REPO_ROOT, inputs_verified: bool
+) -> dict[str, Any]:
     """The independent, sweep-launcher-written provenance record for a
     completed job's `output_dir` -- written ONLY after `run_job` confirms
-    `_authority_and_sidecars_match`, and written LAST (this file's mere
-    presence is the completion sentinel `evidence_is_valid` requires).
+    `_authority_and_sidecars_match` AND `_verify_input_manifest`, and
+    written LAST (this file's mere presence is the completion sentinel
+    `evidence_is_valid` requires).
+
     Records the REAL git SHA + dirty flag (reusing the already-accepted
     worktree-gitdir resolution in `populate.py`, since the runner's own
     `provenance.json["git_sha"]` is permanently "unknown" in this project's
     WSL/Windows-linked-worktree environment) purely informationally --
-    gating authority is `source_hashes` + `evaluator_schema_version` below,
-    since content hashes are what actually prove the evidence was generated
-    against the code now on disk (see `evidence_is_valid`). Deliberately
-    does NOT track `allocator_inputs.json`: it is large diagnostic bulk that
-    no verdict calculation ever reads, so hashing it would be authority
-    theater, not evidence (see `schema.INFORMATIONAL_ONLY_FILES`)."""
+    gating authority is `source_hashes` + `sidecar_hashes` +
+    `evaluator_schema_version` below, since content hashes are what
+    actually prove the evidence was generated against the code now on disk
+    (see `evidence_is_valid`). Deliberately does NOT track
+    `allocator_inputs.json`: it is large diagnostic bulk that no verdict
+    calculation ever reads, so hashing it would be authority theater, not
+    evidence (see `schema.INFORMATIONAL_ONLY_FILES`).
+
+    `sidecar_hashes` (R1) binds this sentinel to the exact bytes of every
+    fixed tracked authority/sidecar file in `output_dir` -- computed HERE,
+    from `output_dir` itself (the about-to-be-final directory), so a
+    sentinel copied into a different process's directory can never pass
+    `evidence_is_valid`/the generator's staleness check even if its
+    `process`/`n_seeds`/`m_ticks` fields are hand-edited to match.
+    `source_hashes["oc_module"]` (R2) is this ONE process's own
+    implementation file, so a code change to a single `karr_<process>.py`
+    stales only that process's row. `inputs_verified` (R3) must be passed
+    in True by the caller ONLY after `_verify_input_manifest` has actually
+    rehashed every `input_manifest.json` input against the tree at
+    generation time (guaranteed available then) -- never fabricated here."""
+    sidecar_hashes = {
+        fname: _sha256_file(output_dir / fname)
+        for fname in schema.SWEEP_PROVENANCE_SIDECAR_FILES
+        if (output_dir / fname).is_file()
+    }
     return {
         "schema_version": schema.SWEEP_PROVENANCE_SCHEMA_VERSION,
         "process": job.process,
         "n_seeds": job.seeds,
         "m_ticks": job.m_ticks,
+        "completion_status": schema.COMPLETION_STATUS_COMPLETE,
         "git_sha": _git_sha(repo_root),
         "git_dirty": _git_dirty(repo_root),
-        "source_hashes": current_source_hashes(),
+        "source_hashes": current_source_hashes(job.oc_module),
+        "sidecar_hashes": sidecar_hashes,
+        "inputs_verified": bool(inputs_verified),
         "evaluator_schema_version": vd.EVALUATOR_SCHEMA_VERSION,
         "written_at": datetime.now(UTC).isoformat(),
     }
+
+
+def _verify_input_manifest(manifest: dict[str, Any] | None, *, repo_root: Path = REPO_ROOT) -> tuple[bool, str | None]:
+    """R3: actually rehash every `input_manifest.json["inputs"]` entry
+    against the CURRENT tree at generation time -- guaranteed available
+    right now (the runner just read these exact files a moment ago) even
+    though the raw oracle `.mat` file it points at is gitignored and will
+    be intentionally absent in a fresh clone later. This one-time
+    attestation is what `sweep_provenance.json["inputs_verified"]` records,
+    so a later portable/fresh-clone audit can trust the recorded hash
+    without needing the raw data re-mounted (see
+    `generator._check_current_tree_staleness`'s `strict_input_files` for
+    the opt-in rehash-when-mounted path instead). Also requires a
+    non-empty `inputs` list -- an empty or missing list is never silently
+    treated as "nothing to verify"."""
+    if not manifest:
+        return False, "input_manifest.json missing or unparseable"
+    inputs = manifest.get("inputs")
+    if not inputs:
+        return False, "input_manifest.json has no non-empty 'inputs' list"
+    for record in inputs:
+        path_str = record.get("path")
+        recorded_sha = record.get("sha256")
+        if not path_str or not recorded_sha:
+            return False, f"malformed input_manifest record {record!r}"
+        path = Path(str(path_str))
+        if not path.is_absolute():
+            path = repo_root / path
+        current = _sha256_file(path)
+        if current is None:
+            return False, f"input {path_str} does not exist right after the run completed"
+        if current != recorded_sha:
+            return (
+                False,
+                f"input {path_str} sha256 mismatch immediately after run "
+                f"(recorded={recorded_sha[:12]}.., current={current[:12]}..)",
+            )
+    return True, None
+
+
+def _sanitize_dangling_temp_refs(tmp_output_dir: Path, *, final_output_dir: Path, repo_root: Path = REPO_ROOT) -> None:
+    """Rewrite the handful of self-referential absolute paths the runner
+    bakes into its own output (`result.json["allocator_inputs_ref"
+    /"provenance_ref"]`, `provenance.json["oracle_path"]`) to a repo-
+    relative LOGICAL path instead.
+
+    `run_job` always runs the child in a TEMP rebuild directory first (see
+    module docstring); the runner has no choice but to record paths rooted
+    in THAT temp directory, which is renamed/removed the instant the atomic
+    swap below completes -- left untouched, `allocator_inputs_ref`/
+    `provenance_ref` would be permanently dangling absolute paths in every
+    worktree, not just a portable/fresh-clone one. `provenance.json`'s
+    `oracle_path` is not dangling (it points at the real, persistent oracle
+    `.mat` file) but is still a worktree-specific absolute path with no
+    place in a tracked, portable bundle -- normalized the same way as
+    `input_manifest.json`'s own paths (see `generator._normalize_input_
+    manifest_paths`). Only touches these three known bookkeeping fields --
+    never anything `verdict.rederive_process` reads (channels/warnings/
+    seeds/ticks/process/verdict are untouched) -- so this is metadata
+    bookkeeping, not "overriding the runner's own output" in any biology/
+    metrics/verdict sense."""
+    result_path = tmp_output_dir / "result.json"
+    result_payload = _load_json_safe(result_path)
+    if result_payload is not None:
+        changed = False
+        for key in ("allocator_inputs_ref", "provenance_ref"):
+            value = result_payload.get(key)
+            if not value:
+                continue
+            fname = Path(str(value)).name
+            try:
+                logical = (final_output_dir / fname).resolve().relative_to(repo_root).as_posix()
+            except ValueError:
+                logical = str(value)
+            if result_payload[key] != logical:
+                result_payload[key] = logical
+                changed = True
+        if changed:
+            result_path.write_text(json.dumps(result_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    provenance_path = tmp_output_dir / "provenance.json"
+    provenance_payload = _load_json_safe(provenance_path)
+    if provenance_payload is not None:
+        oracle_path = provenance_payload.get("oracle_path")
+        if oracle_path:
+            candidate = Path(str(oracle_path))
+            if candidate.is_absolute():
+                try:
+                    logical = candidate.resolve().relative_to(repo_root).as_posix()
+                except ValueError:
+                    logical = str(oracle_path)
+                if provenance_payload["oracle_path"] != logical:
+                    provenance_payload["oracle_path"] = logical
+                    provenance_path.write_text(
+                        json.dumps(provenance_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+                    )
 
 
 def runner_command(job: SweepJob, *, python_exe: str | None = None) -> list[str]:
@@ -344,6 +506,34 @@ def runner_command(job: SweepJob, *, python_exe: str | None = None) -> list[str]
     ]
 
 
+def _read_lock_pid(lock_path: Path) -> int | None:
+    """Best-effort read of the PID a lock file's holder wrote into it (see
+    `_acquire_lock`). Returns None for anything unreadable/non-numeric --
+    treated as "cannot confirm liveness", handled conservatively by callers."""
+    try:
+        return int(lock_path.read_text(encoding="utf-8").strip())
+    except (OSError, ValueError):
+        return None
+
+
+def _pid_is_alive(pid: int) -> bool:
+    """Pure liveness check via `os.kill(pid, 0)` -- sends no signal, never
+    terminates or otherwise touches the target process. `PermissionError`
+    means the PID exists but is owned by someone else: still alive, so
+    treated as live rather than silently reaped."""
+    if pid <= 0:
+        return False
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    except OSError:
+        return False
+    return True
+
+
 def _lock_path_for(job: SweepJob) -> Path:
     """Per-process O_EXCL lock path -- disjoint per process by construction
     (parents differ 1:1 with `job.process`, exactly like `output_dir`/
@@ -358,11 +548,31 @@ def _lock_path_for(job: SweepJob) -> Path:
 
 def _acquire_lock(lock_path: Path) -> int:
     """Atomically create-or-fail `lock_path` (`O_EXCL`); raises
-    `FileExistsError` if another process already holds it. This is the only
-    mechanism that prevents two concurrent sweep invocations from double-
-    launching the same process."""
+    `FileExistsError` if another process ALIVE right now already holds it.
+    This is the only mechanism that prevents two concurrent sweep
+    invocations from double-launching the same process.
+
+    A STALE lock (its recorded PID is no longer alive -- e.g. a prior sweep
+    invocation crashed/was killed without reaching its `finally:
+    _release_lock`) is silently reaped and retried exactly once here,
+    rather than permanently blocking every future rerun of this process.
+    This is intentionally the simplest possible reap policy (no lease
+    timestamps, no lock versioning, no distributed-lock framework) -- a
+    LIVE lock is never touched or signaled beyond the pure `os.kill(pid, 0)`
+    liveness probe in `_pid_is_alive`."""
     lock_path.parent.mkdir(parents=True, exist_ok=True)
-    fd = os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    try:
+        fd = os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except FileExistsError:
+        held_pid = _read_lock_pid(lock_path)
+        if held_pid is not None and not _pid_is_alive(held_pid):
+            try:
+                lock_path.unlink()
+            except FileNotFoundError:
+                pass
+            fd = os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        else:
+            raise
     os.write(fd, str(os.getpid()).encode("utf-8"))
     return fd
 
@@ -419,7 +629,12 @@ def run_job(
     (`_lock_path_for`) held for the duration of the attempt ensures a
     second, concurrently-running `sweep.py run` invocation cannot relaunch
     the SAME process at the same time; it returns JOB_STATUS_LOCKED_SKIPPED
-    immediately instead of blocking or double-running."""
+    immediately instead of blocking or double-running -- `_acquire_lock`
+    only raises for a LIVE holder (a STALE lock is reaped and this attempt
+    proceeds normally instead), so JOB_STATUS_LOCKED_SKIPPED always means
+    "another sweep invocation is genuinely running this process right now"
+    and is treated as a hard failure by `_cmd_run` (nonzero exit), never a
+    silent no-op."""
     _recover_crashed_swap(job.output_dir)
 
     if not force:
@@ -450,7 +665,11 @@ def run_job(
             duration_s=None,
             log_path=cat.relative_to_repo(job.log_path),
             output_dir=cat.relative_to_repo(job.output_dir),
-            reason=f"another sweep invocation holds {cat.relative_to_repo(lock_path)}; not relaunching {job.process} concurrently",
+            reason=(
+                f"another sweep invocation (live PID) holds {cat.relative_to_repo(lock_path)}; "
+                f"not relaunching {job.process} concurrently -- in progress elsewhere, not a failure of THIS "
+                "job, but sweep.py's own exit code is nonzero so this is never silently reported as success"
+            ),
         )
 
     try:
@@ -477,7 +696,14 @@ def run_job(
         tmp_log_path = job.log_path.parent / f".{job.log_path.name}.rebuild-{unique}"
         tmp_output_dir.mkdir(parents=True, exist_ok=False)
         tmp_log_path.parent.mkdir(parents=True, exist_ok=True)
-        tmp_job = SweepJob(process=job.process, seeds=job.seeds, m_ticks=job.m_ticks, output_dir=tmp_output_dir, log_path=tmp_log_path)
+        tmp_job = SweepJob(
+            process=job.process,
+            seeds=job.seeds,
+            m_ticks=job.m_ticks,
+            output_dir=tmp_output_dir,
+            log_path=tmp_log_path,
+            oc_module=job.oc_module,
+        )
         command = command_builder(tmp_job)
         started_at = datetime.now(UTC).isoformat()
         start_perf = time.perf_counter()
@@ -523,8 +749,26 @@ def run_job(
         else:
             fresh_valid = False
 
+        inputs_verified = False
         if exit_code == 0 and fresh_valid:
-            provenance_payload = build_sweep_provenance(job, output_dir=tmp_output_dir, repo_root=REPO_ROOT)
+            # R3: rehash input_manifest.json's own recorded inputs against
+            # the tree RIGHT NOW, before anything is swapped into place --
+            # the one moment the raw oracle .mat file is guaranteed present
+            # regardless of environment (the runner just read it). Failure
+            # here demotes this run to invalid evidence exactly like a
+            # failed _authority_and_sidecars_match check, never silently
+            # recorded as verified.
+            manifest_payload = _load_json_safe(tmp_output_dir / "input_manifest.json")
+            inputs_verified, inputs_reason = _verify_input_manifest(manifest_payload, repo_root=REPO_ROOT)
+            if not inputs_verified:
+                fresh_valid = False
+                invalid_reason = f"input_manifest verification failed: {inputs_reason}"
+
+        if exit_code == 0 and fresh_valid:
+            _sanitize_dangling_temp_refs(tmp_output_dir, final_output_dir=job.output_dir, repo_root=REPO_ROOT)
+            provenance_payload = build_sweep_provenance(
+                job, output_dir=tmp_output_dir, repo_root=REPO_ROOT, inputs_verified=inputs_verified
+            )
             (tmp_output_dir / schema.SWEEP_PROVENANCE_FILE).write_text(
                 json.dumps(provenance_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
             )
@@ -749,14 +993,24 @@ def _cmd_run(args: argparse.Namespace) -> int:
     for status, count in sorted(report["tally"].items()):
         print(f"  {status}: {count}")
     # A child that ran and exited nonzero, ran but produced no valid
-    # evidence, or never started at all are all HARD failures -- nonzero
-    # exit here regardless of which one occurred. JOB_STATUS_SKIPPED_VALID
-    # and JOB_STATUS_LOCKED_SKIPPED are both legitimate "not attempted, and
-    # that's fine" outcomes (already-valid evidence, or a concurrent sweep
-    # already owns this process) and never cause a nonzero exit on their
-    # own.
+    # evidence, never started at all, or was LOCKED_SKIPPED by a live
+    # concurrent sweep invocation are all HARD failures from THIS
+    # invocation's point of view -- nonzero exit regardless of which one
+    # occurred. Only JOB_STATUS_SKIPPED_VALID (evidence already valid,
+    # genuinely nothing to do) never causes a nonzero exit.
+    # JOB_STATUS_LOCKED_SKIPPED specifically means "another invocation is
+    # live and actually working on this process right now": that is neither
+    # a silent success (this invocation did not produce/confirm evidence
+    # for it) nor a hard error in the crashed/broken sense, so it is
+    # reported explicitly here rather than folded into a generic "FAILED"
+    # count -- but it still makes `_cmd_run`'s own exit nonzero, since a
+    # caller that only checks the exit code must never see 0 while some
+    # requested process was not actually handled by this invocation.
     hard_failure_statuses = (JOB_STATUS_START_ERROR, JOB_STATUS_RAN_FAIL, JOB_STATUS_RAN_INVALID_EVIDENCE)
-    any_hard_failure = any(r.status in hard_failure_statuses for r in results)
+    locked_live = [r for r in results if r.status == JOB_STATUS_LOCKED_SKIPPED]
+    for r in locked_live:
+        print(f"  IN-PROGRESS elsewhere (live lock): {r.process} -- {r.reason}")
+    any_hard_failure = any(r.status in hard_failure_statuses for r in results) or bool(locked_live)
     return 1 if any_hard_failure else 0
 
 
