@@ -164,13 +164,19 @@ def test_reaction_subset_produces_identical_substrate_deltas() -> None:
     )
 
     d_min_full, d_max_full = substrate_delta_range_from_fva(
-        v_min=v_min_full, v_max=v_max_full, fixture=fixture,
-        growth_per_s=growth_per_s, step_size_sec=float(fixture.step_size_sec),
+        v_min=v_min_full,
+        v_max=v_max_full,
+        fixture=fixture,
+        growth_per_s=growth_per_s,
+        step_size_sec=float(fixture.step_size_sec),
         pre_state_585x3=pre_sub,
     )
     d_min_sub, d_max_sub = substrate_delta_range_from_fva(
-        v_min=v_min_sub, v_max=v_max_sub, fixture=fixture,
-        growth_per_s=growth_per_s, step_size_sec=float(fixture.step_size_sec),
+        v_min=v_min_sub,
+        v_max=v_max_sub,
+        fixture=fixture,
+        growth_per_s=growth_per_s,
+        step_size_sec=float(fixture.step_size_sec),
         pre_state_585x3=pre_sub,
     )
 
@@ -225,14 +231,25 @@ def test_fva_range_calls_do_not_leak_state_across_samples() -> None:
 
     def solve_1():
         return fva_range(
-            S, rhs, c, lb, ub, biomass_value_star=biomass_value_star,
+            S,
+            rhs,
+            c,
+            lb,
+            ub,
+            biomass_value_star=biomass_value_star,
             reaction_subset=reaction_subset,
         )
 
     def solve_2():
         return fva_range(
-            S, rhs, c, lb, ub, biomass_value_star=biomass_value_star,
-            epsilon_obj=1e-2, reaction_subset=reaction_subset,
+            S,
+            rhs,
+            c,
+            lb,
+            ub,
+            biomass_value_star=biomass_value_star,
+            epsilon_obj=1e-2,
+            reaction_subset=reaction_subset,
         )
 
     # Order A: sample1, then sample2.
@@ -349,14 +366,26 @@ def test_fallback_cascade_skips_same_basis_retry_after_genuine_timeout(monkeypat
 
     fake_glp = _FakeGlp()
     script = [
-        fva_module._SimplexAttempt(ok=False, simplex_exit=9, sol_status=1, iterations=1_000_000, wall_time_s=10.0),
-        fva_module._SimplexAttempt(ok=True, simplex_exit=0, sol_status=5, iterations=10, wall_time_s=0.001),
+        fva_module._SimplexAttempt(
+            ok=False, simplex_exit=9, sol_status=1, iterations=1_000_000, wall_time_s=10.0
+        ),
+        fva_module._SimplexAttempt(
+            ok=True, simplex_exit=0, sol_status=5, iterations=10, wall_time_s=0.001
+        ),
     ]
-    monkeypatch.setattr(fva_module, "_run_simplex_attempt", _scripted_attempt_runner(fake_glp, script))
+    monkeypatch.setattr(
+        fva_module, "_run_simplex_attempt", _scripted_attempt_runner(fake_glp, script)
+    )
 
     telemetry = fva_module.new_fva_solver_telemetry()
     fva_module._solve_direction_with_fallback(
-        fake_glp, lp=None, base_parm=_FakeParm2(), j=0, direction=1, label="test", telemetry=telemetry
+        fake_glp,
+        lp=None,
+        base_parm=_FakeParm2(),
+        j=0,
+        direction=1,
+        label="test",
+        telemetry=telemetry,
     )
 
     # Only 2 attempts made: adv_pse (fails, timeout) then std_pse (succeeds).
@@ -384,14 +413,26 @@ def test_fallback_cascade_does_not_skip_after_fast_nofeas(monkeypatch) -> None:
 
     fake_glp = _FakeGlp()
     script = [
-        fva_module._SimplexAttempt(ok=False, simplex_exit=0, sol_status=4, iterations=500, wall_time_s=0.01),
-        fva_module._SimplexAttempt(ok=True, simplex_exit=0, sol_status=5, iterations=20, wall_time_s=0.002),
+        fva_module._SimplexAttempt(
+            ok=False, simplex_exit=0, sol_status=4, iterations=500, wall_time_s=0.01
+        ),
+        fva_module._SimplexAttempt(
+            ok=True, simplex_exit=0, sol_status=5, iterations=20, wall_time_s=0.002
+        ),
     ]
-    monkeypatch.setattr(fva_module, "_run_simplex_attempt", _scripted_attempt_runner(fake_glp, script))
+    monkeypatch.setattr(
+        fva_module, "_run_simplex_attempt", _scripted_attempt_runner(fake_glp, script)
+    )
 
     telemetry = fva_module.new_fva_solver_telemetry()
     fva_module._solve_direction_with_fallback(
-        fake_glp, lp=None, base_parm=_FakeParm2(), j=0, direction=1, label="test", telemetry=telemetry
+        fake_glp,
+        lp=None,
+        base_parm=_FakeParm2(),
+        j=0,
+        direction=1,
+        label="test",
+        telemetry=telemetry,
     )
 
     # adv_std must NOT be skipped: both adv_pse and adv_std were attempted.
@@ -400,7 +441,9 @@ def test_fallback_cascade_does_not_skip_after_fast_nofeas(monkeypatch) -> None:
     assert telemetry["max_attempts_single_solve"] == 2
 
 
-def test_fallback_cascade_raises_and_records_telemetry_when_all_strategies_fail(monkeypatch) -> None:
+def test_fallback_cascade_raises_and_records_telemetry_when_all_strategies_fail(
+    monkeypatch,
+) -> None:
     """When every strategy fails, `_solve_direction_with_fallback` must still
     raise RuntimeError (never silently return), and telemetry must record
     every attempted (non-skipped) strategy as a failure."""
@@ -409,15 +452,27 @@ def test_fallback_cascade_raises_and_records_telemetry_when_all_strategies_fail(
 
     fake_glp = _FakeGlp()
     script = [
-        fva_module._SimplexAttempt(ok=False, simplex_exit=0, sol_status=4, iterations=100, wall_time_s=0.01),
-        fva_module._SimplexAttempt(ok=False, simplex_exit=0, sol_status=4, iterations=100, wall_time_s=0.01),
+        fva_module._SimplexAttempt(
+            ok=False, simplex_exit=0, sol_status=4, iterations=100, wall_time_s=0.01
+        ),
+        fva_module._SimplexAttempt(
+            ok=False, simplex_exit=0, sol_status=4, iterations=100, wall_time_s=0.01
+        ),
     ]
-    monkeypatch.setattr(fva_module, "_run_simplex_attempt", _scripted_attempt_runner(fake_glp, script))
+    monkeypatch.setattr(
+        fva_module, "_run_simplex_attempt", _scripted_attempt_runner(fake_glp, script)
+    )
 
     telemetry = fva_module.new_fva_solver_telemetry()
     with pytest.raises(RuntimeError, match=r"exhausting 2/2 applicable fallback"):
         fva_module._solve_direction_with_fallback(
-            fake_glp, lp=None, base_parm=_FakeParm2(), j=0, direction=1, label="test", telemetry=telemetry
+            fake_glp,
+            lp=None,
+            base_parm=_FakeParm2(),
+            j=0,
+            direction=1,
+            label="test",
+            telemetry=telemetry,
         )
     assert telemetry["strategies"]["adv_pse"]["failures"] == 1
     assert telemetry["strategies"]["std_pse"]["failures"] == 1
@@ -456,14 +511,26 @@ def test_fallback_cascade_skips_same_basis_retry_after_eitlim_exit_8(monkeypatch
 
     fake_glp = _FakeGlp()
     script = [
-        fva_module._SimplexAttempt(ok=False, simplex_exit=8, sol_status=1, iterations=5_000_000, wall_time_s=10.0),
-        fva_module._SimplexAttempt(ok=True, simplex_exit=0, sol_status=5, iterations=10, wall_time_s=0.001),
+        fva_module._SimplexAttempt(
+            ok=False, simplex_exit=8, sol_status=1, iterations=5_000_000, wall_time_s=10.0
+        ),
+        fva_module._SimplexAttempt(
+            ok=True, simplex_exit=0, sol_status=5, iterations=10, wall_time_s=0.001
+        ),
     ]
-    monkeypatch.setattr(fva_module, "_run_simplex_attempt", _scripted_attempt_runner(fake_glp, script))
+    monkeypatch.setattr(
+        fva_module, "_run_simplex_attempt", _scripted_attempt_runner(fake_glp, script)
+    )
 
     telemetry = fva_module.new_fva_solver_telemetry()
     fva_module._solve_direction_with_fallback(
-        fake_glp, lp=None, base_parm=_FakeParm2(), j=0, direction=1, label="test", telemetry=telemetry
+        fake_glp,
+        lp=None,
+        base_parm=_FakeParm2(),
+        j=0,
+        direction=1,
+        label="test",
+        telemetry=telemetry,
     )
 
     # adv_std must have been SKIPPED (exit=8 is a timeout, same as exit=9).
@@ -485,14 +552,26 @@ def test_fallback_cascade_does_not_skip_after_exit_code_7(monkeypatch) -> None:
 
     fake_glp = _FakeGlp()
     script = [
-        fva_module._SimplexAttempt(ok=False, simplex_exit=7, sol_status=4, iterations=500, wall_time_s=0.01),
-        fva_module._SimplexAttempt(ok=True, simplex_exit=0, sol_status=5, iterations=20, wall_time_s=0.002),
+        fva_module._SimplexAttempt(
+            ok=False, simplex_exit=7, sol_status=4, iterations=500, wall_time_s=0.01
+        ),
+        fva_module._SimplexAttempt(
+            ok=True, simplex_exit=0, sol_status=5, iterations=20, wall_time_s=0.002
+        ),
     ]
-    monkeypatch.setattr(fva_module, "_run_simplex_attempt", _scripted_attempt_runner(fake_glp, script))
+    monkeypatch.setattr(
+        fva_module, "_run_simplex_attempt", _scripted_attempt_runner(fake_glp, script)
+    )
 
     telemetry = fva_module.new_fva_solver_telemetry()
     fva_module._solve_direction_with_fallback(
-        fake_glp, lp=None, base_parm=_FakeParm2(), j=0, direction=1, label="test", telemetry=telemetry
+        fake_glp,
+        lp=None,
+        base_parm=_FakeParm2(),
+        j=0,
+        direction=1,
+        label="test",
+        telemetry=telemetry,
     )
 
     # adv_std must NOT be skipped: exit=7 is not a timeout code.
@@ -531,8 +610,14 @@ def test_fva_range_telemetry_matches_real_solve_and_never_changes_result() -> No
     )
     telemetry = fva_module.new_fva_solver_telemetry()
     v_min_with_telemetry, v_max_with_telemetry = fva_range(
-        S, rhs, c, lb, ub, biomass_value_star=biomass_value_star,
-        reaction_subset=reaction_subset, telemetry=telemetry,
+        S,
+        rhs,
+        c,
+        lb,
+        ub,
+        biomass_value_star=biomass_value_star,
+        reaction_subset=reaction_subset,
+        telemetry=telemetry,
     )
 
     assert np.allclose(v_min_no_telemetry, v_min_with_telemetry, equal_nan=True)
@@ -546,7 +631,11 @@ def test_fva_range_telemetry_matches_real_solve_and_never_changes_result() -> No
     assert "fva_primary_objective_value" in telemetry
     assert abs(telemetry["fva_primary_objective_value"] - biomass_value_star) < 1e-6
     assert set(telemetry["strategies"].keys()) <= {
-        "adv_pse", "adv_std", "std_pse", "std_std", "adv_pse_presolve",
+        "adv_pse",
+        "adv_std",
+        "std_pse",
+        "std_std",
+        "adv_pse_presolve",
     }
     assert "adv_pse" in telemetry["strategies"]
 
@@ -587,8 +676,14 @@ def test_face_mode_fx_converges_and_stays_within_bounds() -> None:
     c = np.asarray(model.obj, dtype=np.float64)
 
     v_min_fx, v_max_fx = fva_range(
-        S, rhs, c, lb, ub, biomass_value_star=biomass_value_star,
-        reaction_subset=reaction_subset, _face_mode="fx",
+        S,
+        rhs,
+        c,
+        lb,
+        ub,
+        biomass_value_star=biomass_value_star,
+        reaction_subset=reaction_subset,
+        _face_mode="fx",
     )
 
     sub = reaction_subset
@@ -664,10 +759,10 @@ def test_different_fallback_strategies_mostly_agree_on_identical_lp_feasibility_
     benchmarks/bench_fva_fallback_strategy_answer_invariance.py and
     docs/phase_f/l2_2_design_a/evidence/
     fva_fallback_strategy_answer_invariance_summary.json) also uses the
-    production tolerance and found ZERO flips (0/252,720 pairs) -- THAT is
-    the actual evidence for the production metric's practical (not
-    absolute) cascade invariance, not a blanket mathematical guarantee
-    derived from strong duality alone.
+    production tolerance and found ZERO flips (0/514,215 all-pairs
+    comparisons) -- THAT is the actual evidence for the production metric's
+    practical (not absolute) cascade invariance, not a blanket mathematical
+    guarantee derived from strong duality alone.
 
     This test locks in both: the bounded diagnostic-tolerance counterexample
     count (useful nuance, no gate impact) and the zero-flip result at the
@@ -702,8 +797,13 @@ def test_different_fallback_strategies_mostly_agree_on_identical_lp_feasibility_
     karr_delta = post_sub - pre_sub
 
     _v_star, info = km.solve_fba(
-        model, use_full_objective=True, sense="max", big=_BIG,
-        lb_override=lb, ub_override=ub, solver="glpk",
+        model,
+        use_full_objective=True,
+        sense="max",
+        big=_BIG,
+        lb_override=lb,
+        ub_override=ub,
+        solver="glpk",
     )
     growth_per_s = float(info["biomass_flux_per_s"])
     # Deliberately ~6 orders of magnitude TIGHTER than the real gate
@@ -721,7 +821,12 @@ def test_different_fallback_strategies_mostly_agree_on_identical_lp_feasibility_
         fva_module._FVA_FALLBACK_STRATEGIES = (strategy,)
         try:
             v_min, v_max = fva_range(
-                S, rhs, c, lb, ub, biomass_value_star=biomass_value_star,
+                S,
+                rhs,
+                c,
+                lb,
+                ub,
+                biomass_value_star=biomass_value_star,
                 reaction_subset=reaction_subset,
             )
         except RuntimeError as exc:
@@ -735,8 +840,11 @@ def test_different_fallback_strategies_mostly_agree_on_identical_lp_feasibility_
         finally:
             fva_module._FVA_FALLBACK_STRATEGIES = original_strategies
         d_min, d_max = substrate_delta_range_from_fva(
-            v_min=v_min, v_max=v_max, fixture=fixture,
-            growth_per_s=growth_per_s, step_size_sec=float(fixture.step_size_sec),
+            v_min=v_min,
+            v_max=v_max,
+            fixture=fixture,
+            growth_per_s=growth_per_s,
+            step_size_sec=float(fixture.step_size_sec),
             pre_state_585x3=pre_sub,
         )
         finite = np.isfinite(d_min) & np.isfinite(d_max)
@@ -811,4 +919,3 @@ def test_different_fallback_strategies_mostly_agree_on_identical_lp_feasibility_
         f"cross-strategy v_min divergence ({max_v_diff}) far exceeds the documented "
         "FX-vs-DB degeneracy scale (~882.6); investigate before trusting 0-flip evidence"
     )
-

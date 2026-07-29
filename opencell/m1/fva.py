@@ -121,7 +121,7 @@ class _SimplexAttempt:
     wall_time_s: float
 
 
-def _run_simplex_attempt(glp: Any, lp: Any, parm: Any) -> _SimplexAttempt:
+def _run_simplex_attempt(glp: Any, lp: Any, parm: Any) -> _SimplexAttempt:  # noqa: ANN401 - swiglpk has no stubs
     t0 = time.perf_counter()
     simplex_exit = int(glp.glp_simplex(lp, parm))
     wall_time_s = time.perf_counter() - t0
@@ -141,7 +141,8 @@ def _solve_checked(glp: Any, lp: Any, parm: Any, *, label: str) -> None:
     attempt = _run_simplex_attempt(glp, lp, parm)
     if not attempt.ok:
         raise RuntimeError(
-            f"{label} failed: simplex_exit={attempt.simplex_exit}, sol_status={attempt.sol_status}, "
+            f"{label} failed: simplex_exit={attempt.simplex_exit}, "
+            f"sol_status={attempt.sol_status}, "
             f"expected simplex_exit=0 and GLP_OPT({glp.GLP_OPT}). "
             f"iterations={attempt.iterations} (it_lim={_FVA_IT_LIM}, tm_lim_ms={_FVA_TM_LIM_MS})"
         )
@@ -242,8 +243,8 @@ def _telemetry_record_solve_complete(telemetry: dict[str, Any] | None, n_attempt
 # the much wider production tolerance); (b) on the systematic,
 # pre-registered, bounded benchmark against the REAL production N50xM20
 # oracle-grid data (50 samples across ticks {0,1,5,9,16}), evaluated at the
-# production tolerance, ZERO such flips were observed (0/252,720 pairs) --
-# see
+# production tolerance, ZERO such flips were observed (0/514,215 all-pairs
+# comparisons) -- see
 # docs/phase_f/l2_2_design_a/evidence/fva_fallback_strategy_answer_invariance_summary.json.
 # The corrected claim: cascade reordering never changes the certified
 # OBJECTIVE VALUE (proven), and empirically leaves the L2.2 gate's
@@ -297,9 +298,9 @@ _FVA_FALLBACK_STRATEGIES: tuple[tuple[str, str, int], ...] = (
 
 
 def _solve_direction_with_fallback(
-    glp: Any,
-    lp: Any,
-    base_parm: Any,
+    glp: Any,  # noqa: ANN401 - swiglpk has no stubs
+    lp: Any,  # noqa: ANN401 - swiglpk has no stubs
+    base_parm: Any,  # noqa: ANN401 - swiglpk has no stubs
     *,
     j: int,
     direction: int,
@@ -727,14 +728,24 @@ def fva_range(
             # actually means here (certified objective value, not every
             # individual column's v_min/v_max on a possibly-degenerate face).
             _solve_direction_with_fallback(
-                glp, lp, parm, j=j, direction=glp.GLP_MAX,
-                label=f"FVA max j={j}", telemetry=telemetry,
+                glp,
+                lp,
+                parm,
+                j=j,
+                direction=glp.GLP_MAX,
+                label=f"FVA max j={j}",
+                telemetry=telemetry,
             )
             v_max[j] = float(glp.glp_get_col_prim(lp, j + 1))
 
             _solve_direction_with_fallback(
-                glp, lp, parm, j=j, direction=glp.GLP_MIN,
-                label=f"FVA min j={j}", telemetry=telemetry,
+                glp,
+                lp,
+                parm,
+                j=j,
+                direction=glp.GLP_MIN,
+                label=f"FVA min j={j}",
+                telemetry=telemetry,
             )
             v_min[j] = float(glp.glp_get_col_prim(lp, j + 1))
 
