@@ -183,10 +183,18 @@ def _current_source_hashes(entry: cat.ProcessEntry | None = None) -> dict[str, s
     `oc_module` implementation file under the `"oc_module"` key (R2) -- the
     same process-specific SUT hash `sweep.current_source_hashes(oc_module=...)`
     computes at generation time, so a code change to a single
-    `karr_<process>.py` stales only that process's row here too."""
+    `karr_<process>.py` stales only that process's row here too. It also
+    hashes `entry.name`'s registered metric-evaluation dependency modules,
+    if any (`schema.METRIC_DEPENDENCY_FILES`, e.g. Metabolism's
+    `fva_module`/`calc_flux_bounds_module`/`m1_karr_metabolism_module`),
+    same stale-only-that-process property, mirroring
+    `sweep.current_source_hashes(process=...)`."""
     hashes = {name: _sha256_file(path) for name, path in schema.SWEEP_PROVENANCE_SOURCE_FILES.items()}
     if entry is not None and entry.oc_module:
         hashes["oc_module"] = _sha256_file(cat.REPO_ROOT / entry.oc_module)
+    if entry is not None:
+        for name, path in schema.METRIC_DEPENDENCY_FILES.get(entry.name, {}).items():
+            hashes[name] = _sha256_file(path)
     return hashes
 
 
@@ -222,7 +230,8 @@ def _check_sweep_provenance_staleness(
     other process's (differently-sized/differently-timestamped) files.
 
     R2 SUT hash -- a source-file (runner/helpers/projections/catalog/
-    oc_module) hash that no longer matches the CURRENT tree.
+    oc_module/metric-dependency-module) hash that no longer matches the
+    CURRENT tree.
 
     R3 input attestation -- `inputs_verified` must be exactly True (the
     sweep launcher only ever sets this after actually rehashing

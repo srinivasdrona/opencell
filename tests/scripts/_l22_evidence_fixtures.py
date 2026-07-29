@@ -106,7 +106,7 @@ def valid_sweep_provenance_payload(
         "completion_status": schema.COMPLETION_STATUS_COMPLETE,
         "git_sha": _git_sha(REPO_ROOT),
         "git_dirty": _git_dirty(REPO_ROOT),
-        "source_hashes": sweep.current_source_hashes(oc_module),
+        "source_hashes": sweep.current_source_hashes(oc_module, process=process),
         "sidecar_hashes": sidecar_hashes or {},
         "inputs_verified": inputs_verified,
         "evaluator_schema_version": vd.EVALUATOR_SCHEMA_VERSION,

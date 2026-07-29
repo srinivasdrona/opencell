@@ -158,6 +158,49 @@ SWEEP_PROVENANCE_SOURCE_FILES = {
     "catalog": CATALOG_PATH,
 }
 
+# --- Per-process metric-evaluation dependency modules (beyond the four
+# shared SWEEP_PROVENANCE_SOURCE_FILES and a process's own oc_module) ------
+#
+# Some processes' metric computation reads modules that are neither one of
+# the four shared files above nor that process's own `oc_module` (its
+# `opencell/vivarium/karr_<process>.py` implementation). Metabolism is the
+# known case: its `fva_feasibility` channel (see
+# `verdict._rederive_fva_channel`) is computed by
+# `_metabolism_fva_sample_feasibility()` in `l2_2_design_a_runner.py`
+# (already hashed as `"runner"`), which calls
+# `opencell.m1.calc_flux_bounds.compute_bounds`,
+# `opencell.m1.fva.fva_range`/`substrate_delta_range_from_fva`, and
+# `opencell.m1.karr_metabolism.solve_fba`/`load_default` (via
+# `_l2_2_design_a_runner_helpers.py`'s `_metabolism_model()`, already
+# hashed as `"helpers"`) -- none of which is itself hashed by any existing
+# key, so a change to one of these three `opencell/m1/*.py` modules would
+# otherwise change Metabolism's actual FVA feasibility computation without
+# staling its evidence at all.
+#
+# PROCESS_CATALOG.yaml does not declare which metric_type/aggregation a
+# process's channels use -- that is an opt-in choice made by the runner's
+# process factory (`process.l2_2_metric_type = "fva_feasibility"`, set only
+# for Metabolism in `_l2_2_design_a_runner_helpers.py`), not a catalog
+# field -- so there is no mechanical rule to derive this registry from the
+# catalog today. This is therefore a small, explicit, hand-maintained
+# by-process-name registry (mirroring the R2 `oc_module` precedent of a
+# process-specific hash), not a generalized dependency-graph scanner. Keep
+# it minimal: only add an entry once a metric evaluator is VERIFIED (by
+# tracing the runner's actual call graph, as above) to read output that
+# module computes -- never speculatively, and never for a module already
+# covered by `SWEEP_PROVENANCE_SOURCE_FILES` or a process's `oc_module`.
+FVA_MODULE = REPO_ROOT / "opencell" / "m1" / "fva.py"
+CALC_FLUX_BOUNDS_MODULE = REPO_ROOT / "opencell" / "m1" / "calc_flux_bounds.py"
+M1_KARR_METABOLISM_MODULE = REPO_ROOT / "opencell" / "m1" / "karr_metabolism.py"
+
+METRIC_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
+    "Metabolism": {
+        "fva_module": FVA_MODULE,
+        "calc_flux_bounds_module": CALC_FLUX_BOUNDS_MODULE,
+        "m1_karr_metabolism_module": M1_KARR_METABOLISM_MODULE,
+    },
+}
+
 # The fixed set of tracked authority/sidecar files R1 binds a
 # sweep_provenance.json sentinel to (via its own `sidecar_hashes` field) --
 # every file `build_process_row` requires unconditionally, minus nothing.

@@ -193,7 +193,7 @@ def _sha256_file(path: Path) -> str | None:
     return digest.hexdigest()
 
 
-def current_source_hashes(oc_module: str | None = None) -> dict[str, str | None]:
+def current_source_hashes(oc_module: str | None = None, *, process: str | None = None) -> dict[str, str | None]:
     """sha256 of the runner/helpers/projections/catalog files as they exist
     RIGHT NOW -- both `build_sweep_provenance` (recording what evidence was
     generated against) and `evidence_is_valid` (checking whether that
@@ -207,10 +207,20 @@ def current_source_hashes(oc_module: str | None = None) -> dict[str, str | None]
     file under the `"oc_module"` key. This is process-specific by
     construction (unlike the four shared entries above), which is exactly
     what makes a code change to a single process's `karr_<process>.py`
-    stale only THAT process's row (R2), never all 18."""
+    stale only THAT process's row (R2), never all 18.
+
+    `process`, when given and present in `schema.METRIC_DEPENDENCY_FILES`,
+    additionally hashes that process's registered metric-evaluation
+    dependency modules (e.g. Metabolism's `fva.py`/`calc_flux_bounds.py`/
+    `karr_metabolism.py`) under their own named keys -- same
+    stale-only-that-process property, for source files that are neither
+    one of the four shared entries nor the process's `oc_module`."""
     hashes = {name: _sha256_file(path) for name, path in schema.SWEEP_PROVENANCE_SOURCE_FILES.items()}
     if oc_module:
         hashes["oc_module"] = _sha256_file(REPO_ROOT / oc_module)
+    if process:
+        for name, path in schema.METRIC_DEPENDENCY_FILES.get(process, {}).items():
+            hashes[name] = _sha256_file(path)
     return hashes
 
 
@@ -323,7 +333,7 @@ def evidence_is_valid(job: SweepJob) -> tuple[bool, str | None]:
     # linked-worktree git plumbing is fragile enough that an unknown SHA alone
     # must not invalidate otherwise-matching, otherwise-current evidence.
     recorded_hashes = sweep_prov.get("source_hashes") or {}
-    for name, current in current_source_hashes(job.oc_module).items():
+    for name, current in current_source_hashes(job.oc_module, process=job.process).items():
         if current is None or recorded_hashes.get(name) != current:
             return False, f"{schema.SWEEP_PROVENANCE_FILE} source hash for {name!r} is stale/unknown vs current tree"
 
@@ -366,7 +376,11 @@ def build_sweep_provenance(
     `process`/`n_seeds`/`m_ticks` fields are hand-edited to match.
     `source_hashes["oc_module"]` (R2) is this ONE process's own
     implementation file, so a code change to a single `karr_<process>.py`
-    stales only that process's row. `inputs_verified` (R3) must be passed
+    stales only that process's row. `source_hashes` additionally carries
+    this process's registered metric-evaluation dependency modules, if any
+    (`schema.METRIC_DEPENDENCY_FILES`, e.g. Metabolism's `fva_module`/
+    `calc_flux_bounds_module`/`m1_karr_metabolism_module`), same
+    stale-only-that-process property. `inputs_verified` (R3) must be passed
     in True by the caller ONLY after `_verify_input_manifest` has actually
     rehashed every `input_manifest.json` input against the tree at
     generation time (guaranteed available then) -- never fabricated here."""
@@ -383,7 +397,7 @@ def build_sweep_provenance(
         "completion_status": schema.COMPLETION_STATUS_COMPLETE,
         "git_sha": _git_sha(repo_root),
         "git_dirty": _git_dirty(repo_root),
-        "source_hashes": current_source_hashes(job.oc_module),
+        "source_hashes": current_source_hashes(job.oc_module, process=job.process),
         "sidecar_hashes": sidecar_hashes,
         "inputs_verified": bool(inputs_verified),
         "evaluator_schema_version": vd.EVALUATOR_SCHEMA_VERSION,

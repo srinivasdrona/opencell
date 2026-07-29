@@ -1049,6 +1049,62 @@ These checks are duplicated (not shared/imported) between `sweep.py`
 pre-existing 13.x precedent of keeping the audit module independent of the
 execution-launcher module.
 
+### 13.9 Per-process metric-evaluation dependency modules (beyond `oc_module`)
+
+R2 (13.8) hashes a process's own `opencell/vivarium/karr_<process>.py`
+implementation under `"oc_module"`, but a further review found this
+insufficient for at least one process: **Metabolism**'s `fva_feasibility`
+channel (`verdict._rederive_fva_channel`) is actually computed by
+`_metabolism_fva_sample_feasibility()` in `l2_2_design_a_runner.py`
+(already hashed as `"runner"`), which calls
+`opencell.m1.calc_flux_bounds.compute_bounds`,
+`opencell.m1.fva.fva_range`/`substrate_delta_range_from_fva`, and
+`opencell.m1.karr_metabolism.solve_fba`/`load_default` (via
+`_l2_2_design_a_runner_helpers.py`'s `_metabolism_model()`, already hashed
+as `"helpers"`) — none of which is `opencell/vivarium/karr_metabolism.py`
+(Metabolism's `oc_module`, already hashed) or one of the four shared
+`SWEEP_PROVENANCE_SOURCE_FILES`. A code change to any of these three
+`opencell/m1/*.py` modules would silently change Metabolism's actual FVA
+feasibility computation without staling its evidence at all.
+
+`PROCESS_CATALOG.yaml` does not declare which metric_type/aggregation a
+process's channels use — that is an opt-in choice made by the runner's
+process factory (`process.l2_2_metric_type = "fva_feasibility"`, set only
+for Metabolism in `_l2_2_design_a_runner_helpers.py`), not a catalog field
+— so there is no mechanical rule to derive this registry from the catalog
+today (unlike `oc_module`, which IS a catalog field). `schema.
+METRIC_DEPENDENCY_FILES` is therefore a small, explicit, hand-maintained
+`dict[process_name, dict[hash_key, Path]]` registry (currently one entry:
+`"Metabolism": {"fva_module": ..., "calc_flux_bounds_module": ...,
+"m1_karr_metabolism_module": ...}`), populated only after tracing the
+runner's actual call graph to confirm a module genuinely feeds a metric
+computation — never speculatively, and never duplicating a module already
+covered by `SWEEP_PROVENANCE_SOURCE_FILES` or `oc_module`.
+
+`sweep.current_source_hashes(oc_module=..., process=...)` and
+`generator._current_source_hashes(entry)` both merge
+`schema.METRIC_DEPENDENCY_FILES.get(<process name>, {})`'s hashes into the
+SAME `source_hashes` dict `oc_module` already lives in — no new gating
+code path was needed: the existing R2 staleness loop (in both
+`evidence_is_valid` and `_check_sweep_provenance_staleness`) already
+iterates `source_hashes.items()` generically and flags any named entry
+whose current hash no longer matches, so adding new named entries to that
+dict is sufficient to gate them, and copying a sentinel from one process
+to another (or a different process's `karr_*.py` module) still fails on
+`oc_module`/`process` mismatch as before. A code change to
+`opencell/m1/fva.py` (or the other two registered modules) now stales only
+Metabolism's row; every other process is unaffected, since none of them
+has an entry in `METRIC_DEPENDENCY_FILES`. See
+`test_l22_evidence_anticheat.py::test_metric_dependency_module_change_stales_only_that_process`
+and `::test_metabolism_source_hashes_include_real_fva_dependency_modules`.
+
+Per the operator's explicit "do not rerun until FVA + generic cache
+commits integrate/freeze" instruction, this is a code-and-tests-only
+commit: no process was rerun, and `evidence_index.json`'s tally/content
+(only `generated_at` differs) is unchanged, since Metabolism currently has
+no `sweep_provenance.json` in this worktree to newly stale or validate
+against the expanded registry.
+
 ## 14. Files
 
 - `scripts/l22_evidence/catalog.py` — catalog access (scope derivation).

@@ -605,6 +605,65 @@ def test_sut_oc_module_change_stales_only_that_process(tmp_path):
     assert row_b_after["green"] is True, row_b_after["reasons"]  # untouched process B remains green
 
 
+# --- Metric-evaluation dependency modules beyond oc_module (e.g. Metabolism's
+# --- opencell/m1/fva.py) -------------------------------------------------------
+
+
+def test_metric_dependency_module_change_stales_only_that_process(tmp_path, monkeypatch):
+    """A change to a process's registered metric-evaluation dependency
+    module (`schema.METRIC_DEPENDENCY_FILES`, e.g. Metabolism's
+    `opencell/m1/fva.py`/`calc_flux_bounds.py`/`karr_metabolism.py`, none of
+    which are hashed by any other existing key) must stale only that
+    process's row, mirroring the R2 `oc_module` property -- exercised here
+    via a synthetic throwaway dependency module (never the real
+    `opencell/m1/fva.py`) monkeypatched into the registry under
+    "Metabolism", so this test never mutates real production biology/metric
+    code. A second, untouched process (DNARepair, which has no entry in
+    `METRIC_DEPENDENCY_FILES`) must remain unaffected -- proving this is not
+    a generic "hash everything" check but genuinely process-scoped."""
+    dep_module = tmp_path / "src" / "fake_fva.py"
+    dep_module.parent.mkdir(parents=True, exist_ok=True)
+    dep_module.write_text("# fake fva dependency v1\n", encoding="utf-8")
+
+    monkeypatch.setitem(schema.METRIC_DEPENDENCY_FILES, "Metabolism", {"fake_metric_dep": dep_module})
+
+    evidence_root = tmp_path / "evidence"
+    _write_evidence_dir(evidence_root, "Metabolism")
+    _write_evidence_dir(evidence_root, "DNARepair")
+
+    row_metab_before = gen.build_process_row(_ENTRIES["Metabolism"], evidence_root)
+    row_dna_before = gen.build_process_row(_ENTRIES["DNARepair"], evidence_root)
+    assert row_metab_before["green"] is True, row_metab_before["reasons"]
+    assert row_dna_before["green"] is True, row_dna_before["reasons"]
+
+    # Simulate a code change to Metabolism's registered metric dependency module.
+    dep_module.write_text("# fake fva dependency v2 -- behavior changed\n", encoding="utf-8")
+
+    row_metab_after = gen.build_process_row(_ENTRIES["Metabolism"], evidence_root)
+    row_dna_after = gen.build_process_row(_ENTRIES["DNARepair"], evidence_root)
+    assert row_metab_after["green"] is False
+    assert any("fake_metric_dep" in reason for reason in row_metab_after["reasons"])
+    assert row_dna_after["green"] is True, row_dna_after["reasons"]  # untouched process remains green
+
+
+def test_metabolism_source_hashes_include_real_fva_dependency_modules(tmp_path):
+    """Sanity check against the REAL (non-monkeypatched) registry: a fresh
+    Metabolism `sweep_provenance.json["source_hashes"]` must actually
+    contain `fva_module`/`calc_flux_bounds_module`/`m1_karr_metabolism_module`
+    keys (not just the four shared + oc_module), and the row must read
+    green today, proving the real `opencell/m1/fva.py` et al. are being
+    hashed for Metabolism right now, not merely in a synthetic test
+    double."""
+    evidence_dir = _write_evidence_dir(tmp_path, "Metabolism")
+    prov = json.loads((evidence_dir / schema.SWEEP_PROVENANCE_FILE).read_text(encoding="utf-8"))
+    for key in ("fva_module", "calc_flux_bounds_module", "m1_karr_metabolism_module"):
+        assert key in prov["source_hashes"], f"missing {key!r} in Metabolism source_hashes"
+        assert prov["source_hashes"][key], f"{key!r} hash is empty/None"
+
+    row = gen.build_process_row(_ENTRIES["Metabolism"], tmp_path)
+    assert row["green"] is True, row["reasons"]
+
+
 # --- R3 oracle input manifest: empty inputs / strict mounted-data rehash -------
 
 

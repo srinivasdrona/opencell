@@ -4,7 +4,7 @@
   "catalog_sha256": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
   "content_hash": "34afddeee1fa5eced1542424bcc3475f09f66de10a1f8e2901b69fdbc5f302ca",
   "evidence_root": "artifacts/l2_2_gates",
-  "generated_at": "2026-07-29T03:46:42.904555+00:00",
+  "generated_at": "2026-07-29T05:01:46.793957+00:00",
   "n_in_scope": 22,
   "rows": [
     {
