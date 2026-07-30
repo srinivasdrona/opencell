@@ -2,7 +2,7 @@
   "process": "ProteinProcessingI",
   "formula_version": "2.0.0",
   "predictor_source_path": "scripts/l22_evidence/h12.py",
-  "predictor_source_sha256_lf_normalized": "1d002cbb14199abcdd59e4aee9a8e027382a17eb9cf658b17435efa66679512a",
+  "predictor_source_sha256_lf_normalized": "aee4b9b89219284c9cd570d4208f39e95a89d657f3604c683a9908fdf883fd10",
   "karr_source_citation": {
     "vendored_path": "data/karr_vendored_source/ProteinProcessingI.m",
     "vendored_sha256_lf_normalized": "5375a0e31236daffd62e849c5e28285eb33fefa96210eed2517d8c64e2ef4833",
@@ -153,7 +153,7 @@
   "raw_prediction_hash": "d968c140e5469f0c455faf4cc816a81e20955ff1986388b3e82641b191fd32d8",
   "verdict": "H12_CONFIRMED",
   "verdict_reason": "nontrivial_sample_count>0, 100% exact match, full required branch coverage",
-  "generated_at": "2026-07-30T17:28:14.635814+00:00",
+  "generated_at": "2026-07-30T21:42:07.281607+00:00",
   "anti_laundering_attestation": {
     "predictor_inputs": [
       "states_before",

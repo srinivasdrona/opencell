@@ -2,7 +2,7 @@
   "process": "ProteinProcessingII",
   "formula_version": "2.0.0",
   "predictor_source_path": "scripts/l22_evidence/h12.py",
-  "predictor_source_sha256_lf_normalized": "1d002cbb14199abcdd59e4aee9a8e027382a17eb9cf658b17435efa66679512a",
+  "predictor_source_sha256_lf_normalized": "aee4b9b89219284c9cd570d4208f39e95a89d657f3604c683a9908fdf883fd10",
   "karr_source_citation": {
     "vendored_path": "data/karr_vendored_source/ProteinProcessingII.m",
     "vendored_sha256_lf_normalized": "2082bd39cf1e0dfba52de7ddf33a5690cf6368ff8f4eca7eaa457eee4d46e0ca",
@@ -156,7 +156,7 @@
   "raw_prediction_hash": "a1d6e30537c2b4d141ce5ee7aee499bca91551eb8c401df4f40a4861bf5f2684",
   "verdict": "H12_OBSERVED_REGIME",
   "verdict_reason": "100% exact match on 560 nontrivial samples but required branch coverage incomplete: missing=['transferase_fires'] (this process may not be used to clear H12_CONFIRMED-gated sentinels until every required regime is independently confirmed)",
-  "generated_at": "2026-07-30T17:26:09.866185+00:00",
+  "generated_at": "2026-07-30T21:39:58.443598+00:00",
   "anti_laundering_attestation": {
     "predictor_inputs": [
       "states_before",
