@@ -1,0 +1,30 @@
+{
+  "completion_status": "COMPLETE",
+  "evaluator_schema_version": 2,
+  "git_dirty": null,
+  "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+  "inputs_verified": true,
+  "m_ticks": 100,
+  "n_seeds": 50,
+  "process": "ProteinModification",
+  "schema_version": 2,
+  "sidecar_hashes": {
+    "SUMMARY.json": "f68a607f82f3e257b2c8da0c2dc946f04e7683ee52dbcbf864f63ea82785cdb9",
+    "analytical_check.json": "dec4518901818fb27944fbb0f7efaec4b2ea389140cd33864cce100c67d8462a",
+    "input_manifest.json": "d7aa2a86a4e3a2cb5724732e490627953977701a0a6fda881a8c8fbc683eb408",
+    "null_calibration.json": "9f63b16569dbf17120ca42065174052df4cae8e79195558437bfc970a43019a1",
+    "provenance.json": "bddce368eb7e2416c50f19f41b50d6e6facd7d0a2268276e626e868b95f442c7",
+    "result.json": "3aa704004de11f1250e81b1e97cade5bc3a49e9529f623f7e3153d2c9609771d",
+    "thresholds.json": "acabe5573118061ff227d116e0232f426fc498a28402c507a251cdadcaeed442"
+  },
+  "source_hashes": {
+    "catalog": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
+    "helpers": "a60a3de8c440029bd8639d5f561dad1a47a18b0a69dee894b9c75b1bbafc7075",
+    "l2_replay_common": "dbc43d5d0850f58bee564da81e410dffce0d05e4572ef0827c49a1c17831cdcb",
+    "oc_module": "c258068d3557bed9983596f5f48ac487527a64980880a5b207a763ac4144d955",
+    "projections": "ff2154045ffad25ab5074103ef96989c336cb3e9d3c63444f292a48ecba2eb3b",
+    "runner": "44af79f2de583dd0e7a9d100cc3bb076f0f251c9276e87f5408de8ba5c6fa0a1",
+    "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
+  },
+  "written_at": "2026-07-30T01:07:06.907985+00:00"
+}

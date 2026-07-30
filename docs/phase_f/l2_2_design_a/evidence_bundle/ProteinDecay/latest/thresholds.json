@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.4",
+  "harness_version": "design_a_v1_3",
+  "process": "ProteinDecay",
+  "bucket": "ALGORITHMIC_SHALLOW",
+  "channels": {
+    "substrates": {
+      "q95_null": 554600.7274575471,
+      "k_eng": 2.0,
+      "absolute_floor": 1.0,
+      "threshold": 1109201.4549150942
+    },
+    "monomers": {
+      "q95_null": 0.21251813278008308,
+      "k_eng": 2.0,
+      "absolute_floor": 1.0,
+      "threshold": 1.0
+    },
+    "complexs": {
+      "q95_null": 0.0010326530612244909,
+      "k_eng": 2.0,
+      "absolute_floor": 1.0,
+      "threshold": 1.0
+    }
+  }
+}

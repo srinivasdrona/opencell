@@ -1,28 +1,34 @@
 {
   "completion_status": "COMPLETE",
-  "evaluator_schema_version": 1,
+  "evaluator_schema_version": 2,
   "git_dirty": null,
-  "git_sha": "593f0359e7b5fdc4ff560349adb9857ff3670b02",
+  "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
   "inputs_verified": true,
   "m_ticks": 200,
   "n_seeds": 50,
   "process": "DNARepair",
   "schema_version": 2,
   "sidecar_hashes": {
-    "SUMMARY.json": "6731ac66641d8d354a9ed9392c6a4c24992085cacbcc3d6a3ead6215bc7858b9",
+    "SUMMARY.json": "37e974bc0a8a34a2d7722514a9e2856aaacdd838f2451adf6aceb636730bfc5c",
     "analytical_check.json": "c37ae0ef71b6663479d1f59b5ee26f798f0eb7846541192f35b7b0f52ea5264c",
-    "input_manifest.json": "84930f517a53ab58186eb0b9ef75b6e4d0d0f6b82fd53c17aea18a7ac7a628cf",
-    "null_calibration.json": "7128ef72d08bc9ed0619122d26fae8d31d8ef578b620af8f4f38d520a351e4e8",
-    "provenance.json": "5025bc848f6898b12a8a8cb5390daf2063be000fac8cb48911e7143eb9af0a54",
-    "result.json": "3df2fc520ff7dd6efa3f221d993b4ba4a1d02fa2465986025b0a0b1fb6a420ae",
+    "input_manifest.json": "94486a6d6ec01230ee61475e0a12e8113207a6c19b83f832a8c921f058b9af58",
+    "null_calibration.json": "a5dc723fa59e88e6bdaefe25d3d523177cb1fc2a26c416b9d730d0886aaeee0f",
+    "provenance.json": "e31fec9878b9c45ada74b1aeb86691438f82467937b9669bb8894c4e6d78afa0",
+    "result.json": "1f91271d556fdffa94ec607c94bce70b63c219b0c804918174ba74f7968ce25c",
     "thresholds.json": "beeba9da08cbc55b29ef3e231904f67e3a4ec6f9e741d00aa4c58b188238051b"
   },
   "source_hashes": {
     "catalog": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
-    "helpers": "b0692aba4b41bd427f498cf9bc46a94642fda044de2ed9b8f48e54ea1215a40e",
+    "chromosome_store_module": "7066d68f8b3a3dfd0a1be6d446800445583f17381779adbb03562510ffdae22a",
+    "chromosome_views_module": "ddc90389b287206a25c53e43a7f68e5484e1f2ecd08bbe2eaa982a1cef95bfc5",
+    "helpers": "a60a3de8c440029bd8639d5f561dad1a47a18b0a69dee894b9c75b1bbafc7075",
+    "l2_replay_common": "dbc43d5d0850f58bee564da81e410dffce0d05e4572ef0827c49a1c17831cdcb",
+    "m_gen_constants_module": "bbfea3ac477e4a3eb93edcfae355350c9d5b8c1501ea574ef9b83acfaebce8ae",
     "oc_module": "10919482d7ed89436739ba53b4d7c36681e2ea67f2b4b785cfe77b1f739293c0",
     "projections": "ff2154045ffad25ab5074103ef96989c336cb3e9d3c63444f292a48ecba2eb3b",
-    "runner": "cceabe79ab2e6d5239d24d39e4dcac9c2560cd75131ef48c64c8f460e59d1d8a"
+    "runner": "44af79f2de583dd0e7a9d100cc3bb076f0f251c9276e87f5408de8ba5c6fa0a1",
+    "state_init_module": "6f1ff7401f505cfcc68d89d912d2af35776adb08643069e176e922ac912b50ec",
+    "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
   },
-  "written_at": "2026-07-29T03:21:58.079973+00:00"
+  "written_at": "2026-07-29T23:50:58.103511+00:00"
 }

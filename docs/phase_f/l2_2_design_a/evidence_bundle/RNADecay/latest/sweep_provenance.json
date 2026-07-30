@@ -1,0 +1,30 @@
+{
+  "completion_status": "COMPLETE",
+  "evaluator_schema_version": 2,
+  "git_dirty": null,
+  "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+  "inputs_verified": true,
+  "m_ticks": 100,
+  "n_seeds": 50,
+  "process": "RNADecay",
+  "schema_version": 2,
+  "sidecar_hashes": {
+    "SUMMARY.json": "a5e31c7419580fc4bee016c586fd3d5ef90ee5d356223458b32386da6e0260ad",
+    "analytical_check.json": "7f609509cd697e8cb411798205cea7f7d07a5a12444d9e18e9daf6d10a38f7be",
+    "input_manifest.json": "4a4c127ec9fd9ce7effe3260c4a8b2097796f7ebd806b04be7ec0cfecba99729",
+    "null_calibration.json": "05a94e20e45e728db0f89de74f6a02168e9e28f829abe96a94199a84b038776a",
+    "provenance.json": "0bfdd728aed214ed77eb8f2be5ca0923d35356524c4689ddce3a5d8abbdeeee1",
+    "result.json": "9bb7b84fa93678736902536869d56c4718a48a49823d8f2f40028a287dd5c573",
+    "thresholds.json": "10ae0c5de9bc6e7643d0b762c9938ba4d0b0c19779969228f812cf4e84953c83"
+  },
+  "source_hashes": {
+    "catalog": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
+    "helpers": "a60a3de8c440029bd8639d5f561dad1a47a18b0a69dee894b9c75b1bbafc7075",
+    "l2_replay_common": "dbc43d5d0850f58bee564da81e410dffce0d05e4572ef0827c49a1c17831cdcb",
+    "oc_module": "6bbb031a90732713caf7c2978e47f869f8aec77e107640f069293ae566955ca5",
+    "projections": "ff2154045ffad25ab5074103ef96989c336cb3e9d3c63444f292a48ecba2eb3b",
+    "runner": "44af79f2de583dd0e7a9d100cc3bb076f0f251c9276e87f5408de8ba5c6fa0a1",
+    "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
+  },
+  "written_at": "2026-07-30T02:03:00.056804+00:00"
+}

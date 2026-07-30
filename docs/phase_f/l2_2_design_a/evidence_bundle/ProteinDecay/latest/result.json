@@ -1,0 +1,191 @@
+{
+  "allocator_inputs_ref": "artifacts/l2_2_gates/ProteinDecay/latest/allocator_inputs.json",
+  "bootstrap_B": 1000,
+  "bucket": "ALGORITHMIC_SHALLOW",
+  "canonical_seed_count": 50,
+  "channels": {
+    "complexs": {
+      "absolute_floor": 1.0,
+      "aggregation": "per_tick_vector_w1_mean",
+      "is_event_channel": false,
+      "is_primary": false,
+      "ks_pvalue": 1.0,
+      "ks_stat": 0.0,
+      "n_nonzero_karr": 792,
+      "n_nonzero_oc": 792,
+      "per_sample_w1_summary": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0
+      },
+      "q95_null": 0.0010326530612244909,
+      "samples_karr": {
+        "kurtosis": 1892.533614622873,
+        "max": 2.0,
+        "mean": 0.0005401360544217687,
+        "min": 0.0,
+        "skew": 43.31546230779081,
+        "stddev": 0.023293033205228048
+      },
+      "samples_oc": {
+        "kurtosis": 1892.533614622873,
+        "max": 2.0,
+        "mean": 0.0005401360544217687,
+        "min": 0.0,
+        "skew": 43.31546230779081,
+        "stddev": 0.023293033205228048
+      },
+      "threshold": 1.0,
+      "verdict": "SEED_NOISE",
+      "w1_oc_vs_karr": 0.0,
+      "w1_oc_vs_karr_ci95": [
+        0.0009102040816326542,
+        0.0010408333333333346
+      ]
+    },
+    "monomers": {
+      "absolute_floor": 1.0,
+      "aggregation": "per_tick_vector_w1_mean",
+      "is_event_channel": false,
+      "is_primary": true,
+      "ks_pvalue": 1.0,
+      "ks_stat": 1.1825726141112547e-05,
+      "n_nonzero_karr": 4147459,
+      "n_nonzero_oc": 4147464,
+      "per_sample_w1_summary": {
+        "max": 0.3962655601659748,
+        "mean": 0.0007800829875518676,
+        "min": 0.0
+      },
+      "q95_null": 0.21251813278008308,
+      "samples_karr": {
+        "kurtosis": 28.366011010884527,
+        "max": 785.0,
+        "mean": 43.57311950207469,
+        "min": 0.0,
+        "skew": 4.133233781087046,
+        "stddev": 74.05972463407163
+      },
+      "samples_oc": {
+        "kurtosis": 28.366141902032023,
+        "max": 785.0,
+        "mean": 43.57341493775934,
+        "min": 0.0,
+        "skew": 4.133240859632974,
+        "stddev": 74.06020095738718
+      },
+      "threshold": 1.0,
+      "verdict": "SEED_NOISE",
+      "w1_oc_vs_karr": 0.0007800829875518676,
+      "w1_oc_vs_karr_ci95": [
+        0.19434256742738598,
+        0.21352673755186724
+      ]
+    },
+    "substrates": {
+      "absolute_floor": 1.0,
+      "aggregation": "per_tick_vector_w1_mean",
+      "is_event_channel": false,
+      "is_primary": false,
+      "ks_pvalue": 0.0,
+      "ks_stat": 0.13958113207547174,
+      "n_nonzero_karr": 93978,
+      "n_nonzero_oc": 20000,
+      "per_sample_w1_summary": {
+        "max": 545.4150943396226,
+        "mean": 10.240258490566037,
+        "min": 0.0
+      },
+      "q95_null": 554600.7274575471,
+      "samples_karr": {
+        "kurtosis": 758.2761361407338,
+        "max": 301049211.0,
+        "mean": 415794.96779622644,
+        "min": 0.0,
+        "skew": 25.746464353424077,
+        "stddev": 6683838.57468813
+      },
+      "samples_oc": {
+        "kurtosis": 758.2751816694814,
+        "max": 301049708.0,
+        "mean": 415793.9098358491,
+        "min": 0.0,
+        "skew": 25.74645395524312,
+        "stddev": 6683895.199749213
+      },
+      "threshold": 1109201.4549150942,
+      "verdict": "SEED_NOISE",
+      "w1_oc_vs_karr": 10.240258490566037,
+      "w1_oc_vs_karr_ci95": [
+        430506.35965891497,
+        563464.4908905659
+      ]
+    }
+  },
+  "harness_version": "design_a_v1_3",
+  "joint_check": null,
+  "k_eng": {
+    "ALGORITHMIC_DEEP": 3.0,
+    "ALGORITHMIC_SHALLOW": 2.0,
+    "TRIVIAL_RNG": 2.0
+  },
+  "n_observations_per_channel": 10000,
+  "process": "ProteinDecay",
+  "provenance_ref": "artifacts/l2_2_gates/ProteinDecay/latest/provenance.json",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49
+  ],
+  "ticks": 200,
+  "timestamp": "2026-07-30T01:14:09.210267+00:00",
+  "verdict": "PASS",
+  "warnings": []
+}

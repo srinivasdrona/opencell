@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.4",
+  "harness_version": "design_a_v1_3",
+  "process": "Metabolism",
+  "bucket": "TRIVIAL_RNG",
+  "channels": {
+    "substrates": {
+      "q95_null": 111.5763617948714,
+      "k_eng": 2.0,
+      "absolute_floor": 1.0,
+      "threshold": 223.1527235897428
+    }
+  }
+}

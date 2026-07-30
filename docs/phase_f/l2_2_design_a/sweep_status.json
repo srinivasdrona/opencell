@@ -1,15 +1,17 @@
 {
-  "generated_at": "2026-07-28T11:20:07.045411+00:00",
+  "generated_at": "2026-07-30T03:37:37.702873+00:00",
   "jobs": [
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/DNARepair.log",
-      "log_tail": "# command: ['/mnt/e/opencell/.venv-wsl/bin/python', '/mnt/e/opencell-worktrees/l22-evidence-gate/tests/vivarium/l2_2_design_a_runner.py', '--process', 'DNARepair', '--seeds', '50', '--ticks', '200', '--output-dir', '/mnt/e/opencell-worktrees/l22-evidence-gate/artifacts/l2_2_gates/DNARepair/latest']\n# started_at: 2026-07-28T06:18:01.888092+00:00\nRequested 200 ticks, but oracle only provides 100.",
       "m_ticks": 200,
       "output_dir": "artifacts/l2_2_gates/DNARepair/latest",
       "process": "DNARepair",
-      "reason": "missing required authority file(s): ['result.json', 'input_manifest.json', 'provenance.json']",
+      "reason": null,
       "seeds": 50,
-      "status": "DONE_NO_VALID_EVIDENCE"
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "ALGORITHMIC_DEEP",
+      "stored_verdict": "PASS",
+      "stored_warnings": []
     },
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/DNASupercoiling.log",
@@ -39,23 +41,27 @@
     },
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/Metabolism.log",
-      "log_tail": " A: min|aij| =  1.000e+00  max|aij| =  3.567e+08  ratio =  3.567e+08\nGM: min|aij| =  3.575e-02  max|aij| =  2.797e+01  ratio =  7.824e+02\nEQ: min|aij| =  1.278e-03  max|aij| =  1.000e+00  ratio =  7.824e+02\nConstructing initial basis...\nSize of triangular part is 360",
       "m_ticks": 20,
       "output_dir": "artifacts/l2_2_gates/Metabolism/latest",
       "process": "Metabolism",
-      "reason": "missing required authority file(s): ['result.json', 'input_manifest.json', 'provenance.json']",
+      "reason": null,
       "seeds": 50,
-      "status": "IN_PROGRESS_OR_UNKNOWN"
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "TRIVIAL_RNG",
+      "stored_verdict": "PASS",
+      "stored_warnings": []
     },
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/ProteinDecay.log",
-      "log_tail": "# command: ['/mnt/e/opencell/.venv-wsl/bin/python', '/mnt/e/opencell-worktrees/l22-evidence-gate/tests/vivarium/l2_2_design_a_runner.py', '--process', 'ProteinDecay', '--seeds', '50', '--ticks', '200', '--output-dir', '/mnt/e/opencell-worktrees/l22-evidence-gate/artifacts/l2_2_gates/ProteinDecay/latest']\n# started_at: 2026-07-28T06:18:42.444418+00:00\nRequested 200 ticks, but oracle only provides 100.",
       "m_ticks": 200,
       "output_dir": "artifacts/l2_2_gates/ProteinDecay/latest",
       "process": "ProteinDecay",
-      "reason": "missing required authority file(s): ['result.json', 'input_manifest.json', 'provenance.json']",
+      "reason": null,
       "seeds": 50,
-      "status": "DONE_NO_VALID_EVIDENCE"
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "ALGORITHMIC_SHALLOW",
+      "stored_verdict": "PASS",
+      "stored_warnings": []
     },
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/ProteinFolding.log",
@@ -173,13 +179,15 @@
     },
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/ReplicationInitiation.log",
-      "log_tail": "# command: ['/mnt/e/opencell/.venv-wsl/bin/python', '/mnt/e/opencell-worktrees/l22-evidence-gate/tests/vivarium/l2_2_design_a_runner.py', '--process', 'ReplicationInitiation', '--seeds', '50', '--ticks', '200', '--output-dir', '/mnt/e/opencell-worktrees/l22-evidence-gate/artifacts/l2_2_gates/ReplicationInitiation/latest']\n# started_at: 2026-07-28T08:06:17.317181+00:00\nRequested 200 ticks, but oracle only provides 100.",
       "m_ticks": 200,
       "output_dir": "artifacts/l2_2_gates/ReplicationInitiation/latest",
       "process": "ReplicationInitiation",
-      "reason": "missing required authority file(s): ['result.json', 'input_manifest.json', 'provenance.json']",
+      "reason": null,
       "seeds": 50,
-      "status": "DONE_NO_VALID_EVIDENCE"
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "ALGORITHMIC_DEEP",
+      "stored_verdict": "PASS",
+      "stored_warnings": []
     },
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/Transcription.log",
@@ -224,8 +232,6 @@
   ],
   "n_jobs": 18,
   "tally": {
-    "DONE_NO_VALID_EVIDENCE": 3,
-    "DONE_VALID_EVIDENCE": 14,
-    "IN_PROGRESS_OR_UNKNOWN": 1
+    "DONE_VALID_EVIDENCE": 18
   }
 }

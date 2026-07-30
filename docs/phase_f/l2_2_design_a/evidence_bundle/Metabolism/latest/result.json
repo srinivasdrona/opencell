@@ -1,0 +1,155 @@
+{
+  "allocator_inputs_ref": "artifacts/l2_2_gates/Metabolism/latest/allocator_inputs.json",
+  "bootstrap_B": 1000,
+  "bucket": "TRIVIAL_RNG",
+  "canonical_seed_count": 50,
+  "channels": {
+    "substrates": {
+      "absolute_floor": 1.0,
+      "aggregation": "fva_feasibility",
+      "fva_feasibility_fraction": 0.9999350427350427,
+      "fva_feasible_pairs": 1754886,
+      "fva_pairs_total": 1755000,
+      "fva_solver_telemetry": {
+        "max_attempts_single_solve": 3,
+        "solves_needing_fallback": 3454,
+        "solves_needing_fallback_fraction": 0.01215974539872981,
+        "strategies": {
+          "adv_pse": {
+            "attempts": 284052,
+            "failures": 3454,
+            "iterations": 107012642,
+            "successes": 280598,
+            "wall_time_s": 1884.0747254358912
+          },
+          "adv_pse_presolve": {
+            "attempts": 8,
+            "failures": 0,
+            "iterations": 1411,
+            "successes": 8,
+            "wall_time_s": 0.022758205001082388
+          },
+          "adv_std": {
+            "attempts": 3392,
+            "failures": 63,
+            "iterations": 21078547,
+            "successes": 3329,
+            "wall_time_s": 653.9181511720176
+          },
+          "std_pse": {
+            "attempts": 125,
+            "failures": 8,
+            "iterations": 3098750,
+            "successes": 117,
+            "wall_time_s": 80.86309200200094
+          }
+        },
+        "total_solves": 284052,
+        "total_wall_time_s": 2618.878726814911
+      },
+      "fva_threshold": 0.99,
+      "fva_tolerance": 2.0,
+      "is_event_channel": false,
+      "is_primary": true,
+      "ks_pvalue": 2.9995744580608198e-176,
+      "ks_stat": 0.026304273504273556,
+      "n_nonzero_karr": 119229,
+      "n_nonzero_oc": 122564,
+      "per_sample_w1_summary": {
+        "max": 223.97435897435824,
+        "mean": 158.5044632478627,
+        "min": 121.19316239316197
+      },
+      "q95_null": 111.5763617948714,
+      "samples_karr": {
+        "kurtosis": 579.9984651653969,
+        "max": 143525205701232.0,
+        "mean": 246903256080.12686,
+        "min": 0.0,
+        "skew": 24.12451797490384,
+        "stddev": 5928919221005.267
+      },
+      "samples_oc": {
+        "kurtosis": 579.9984651653775,
+        "max": 143525205685468.0,
+        "mean": 246903256104.71915,
+        "min": -450.0,
+        "skew": 24.124517974903235,
+        "stddev": 5928919220365.52
+      },
+      "threshold": 223.1527235897428,
+      "verdict": "PASS",
+      "w1_oc_vs_karr": 158.5044632478627,
+      "w1_oc_vs_karr_ci95": [
+        197.55584777777707,
+        217.2822028632471
+      ]
+    }
+  },
+  "harness_version": "design_a_v1_3",
+  "joint_check": null,
+  "k_eng": {
+    "ALGORITHMIC_DEEP": 3.0,
+    "ALGORITHMIC_SHALLOW": 2.0,
+    "TRIVIAL_RNG": 2.0
+  },
+  "n_observations_per_channel": 1000,
+  "process": "Metabolism",
+  "provenance_ref": "artifacts/l2_2_gates/Metabolism/latest/provenance.json",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49
+  ],
+  "ticks": 20,
+  "timestamp": "2026-07-30T00:19:09.122193+00:00",
+  "verdict": "PASS",
+  "warnings": []
+}

@@ -1,0 +1,33 @@
+{
+  "completion_status": "COMPLETE",
+  "evaluator_schema_version": 2,
+  "git_dirty": null,
+  "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+  "inputs_verified": true,
+  "m_ticks": 100,
+  "n_seeds": 50,
+  "process": "DNASupercoiling",
+  "schema_version": 2,
+  "sidecar_hashes": {
+    "SUMMARY.json": "306e87263b5bc46c737aadab5a5e747942ed8b36121cec7b108671ebf8889656",
+    "analytical_check.json": "fe7776df0a449ac6226e4a97dddce8cd8b17225d60ad090c4ed22d459aa01733",
+    "input_manifest.json": "7314c12eeb7db76e6a160bb388162723383b8ef03eac71624eb996a3aa5b2957",
+    "null_calibration.json": "98bc45fe86a58cd6841cac3ca441b3a36bf11a5a237051dd2d4e4dda3c265d01",
+    "provenance.json": "985b32a1d7b23f94caa0287553803b31328edb1299b9cb47d25b129a10f9e6a0",
+    "result.json": "d9aa3c6e4efa1c3ff73744874ebe1a109137674611fa673bb34fc203a18d98a5",
+    "thresholds.json": "49bf0423b5e7bbe588caf3f013cf72d2fd7af96b8267859c52eee7914f8ae0cc"
+  },
+  "source_hashes": {
+    "catalog": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
+    "chromosome_store_module": "7066d68f8b3a3dfd0a1be6d446800445583f17381779adbb03562510ffdae22a",
+    "helpers": "a60a3de8c440029bd8639d5f561dad1a47a18b0a69dee894b9c75b1bbafc7075",
+    "l2_replay_common": "dbc43d5d0850f58bee564da81e410dffce0d05e4572ef0827c49a1c17831cdcb",
+    "m_gen_constants_module": "bbfea3ac477e4a3eb93edcfae355350c9d5b8c1501ea574ef9b83acfaebce8ae",
+    "oc_module": "9e89aea7115960ca5e2237b7f0385b24d2e58f535bbc21a55fe865e94ea85ac1",
+    "projections": "ff2154045ffad25ab5074103ef96989c336cb3e9d3c63444f292a48ecba2eb3b",
+    "runner": "44af79f2de583dd0e7a9d100cc3bb076f0f251c9276e87f5408de8ba5c6fa0a1",
+    "state_init_module": "6f1ff7401f505cfcc68d89d912d2af35776adb08643069e176e922ac912b50ec",
+    "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
+  },
+  "written_at": "2026-07-29T23:26:43.203539+00:00"
+}

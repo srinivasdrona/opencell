@@ -1,0 +1,44 @@
+{
+  "generated_at": "2026-07-30T01:14:09.210267+00:00",
+  "process": "ProteinDecay",
+  "bucket": "ALGORITHMIC_SHALLOW",
+  "channels": {
+    "substrates": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 200,
+      "q95_null": 554600.7274575471,
+      "bootstrap_values_summary": {
+        "mean": 495798.5891227942,
+        "stddev": 33792.739196183626,
+        "min": 389429.4326679244,
+        "max": 600431.1642547168
+      }
+    },
+    "monomers": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 200,
+      "q95_null": 0.21251813278008308,
+      "bootstrap_values_summary": {
+        "mean": 0.2056193545643154,
+        "stddev": 0.004788952860632854,
+        "min": 0.18436680497925317,
+        "max": 0.218841286307054
+      }
+    },
+    "complexs": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 200,
+      "q95_null": 0.0010326530612244909,
+      "bootstrap_values_summary": {
+        "mean": 0.0009786727891156473,
+        "stddev": 3.3726871686480317e-05,
+        "min": 0.0008714285714285724,
+        "max": 0.0010911564625850354
+      }
+    }
+  },
+  "warnings": []
+}

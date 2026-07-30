@@ -1,0 +1,4 @@
+{
+  "applicable": false,
+  "reason": "ProteinDecay has no closed-form per-tick check"
+}

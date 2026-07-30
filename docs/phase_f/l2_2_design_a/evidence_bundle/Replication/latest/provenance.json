@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-07-28T10:14:55.165859+00:00",
+  "generated_at": "2026-07-30T02:09:31.262405+00:00",
   "git_sha": "unknown",
-  "python_version": "3.12.13 (main, Mar  4 2026, 09:23:07) [GCC 11.4.0]",
+  "harness_version": "design_a_v1_3",
+  "oracle_path": "data/m1_sources/karr_native/per_process_traces_v2/Replication_100ticks.mat",
   "platform": "Linux-6.18.35.2-microsoft-standard-WSL2-x86_64-with-glibc2.35",
-  "oracle_path": "/mnt/e/opencell-worktrees/l22-evidence-gate/data/m1_sources/karr_native/per_process_traces_v2/Replication_100ticks.mat",
-  "harness_version": "design_a_v1_3"
+  "python_version": "3.12.13 (main, Mar  4 2026, 09:23:07) [GCC 11.4.0]"
 }

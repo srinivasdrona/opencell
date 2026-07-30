@@ -1,0 +1,31 @@
+{
+  "completion_status": "COMPLETE",
+  "evaluator_schema_version": 2,
+  "git_dirty": null,
+  "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+  "inputs_verified": true,
+  "m_ticks": 20,
+  "n_seeds": 50,
+  "process": "ProteinProcessingI",
+  "schema_version": 2,
+  "sidecar_hashes": {
+    "SUMMARY.json": "8f1b0a32800c7da6ce939422935229c03ae017ffa6238aa882ae4a5fb102dabb",
+    "analytical_check.json": "3141f86a582c7d209a199137ca1795b7d7e9cc0cad1a673eda28079ee33b1c4b",
+    "input_manifest.json": "3761b71fc8e169ab9012c98cada363325a14107052d9a506fa27809daa787462",
+    "null_calibration.json": "2c8e91a75a3f21ed88d342244e8fe991c1038340c3c951f100822b83a30f6c70",
+    "provenance.json": "5107997c57d689e1d9f6b2431f3fed6de69571c01be714b8a9ffb843df3d9f01",
+    "result.json": "3fe3f2a2573baf0d4f06e78b5b24092e2c58a06a013b6534d3f0a3633af5a93a",
+    "thresholds.json": "9a7d816fb435dfa8ca266fb56ae9a85f02c2cbb75c48d6b91e2697bf007fe37b"
+  },
+  "source_hashes": {
+    "catalog": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
+    "helpers": "a60a3de8c440029bd8639d5f561dad1a47a18b0a69dee894b9c75b1bbafc7075",
+    "karr_trna_aminoacylation_module": "075c47e59397bc21ac76943be1e63abf351bec68df559ca61b1564c58eaa8787",
+    "l2_replay_common": "dbc43d5d0850f58bee564da81e410dffce0d05e4572ef0827c49a1c17831cdcb",
+    "oc_module": "9b4f9eebdf010369d5f73c936498a0ce23d1fb0951be20e91b8087b9c6d3a586",
+    "projections": "ff2154045ffad25ab5074103ef96989c336cb3e9d3c63444f292a48ecba2eb3b",
+    "runner": "44af79f2de583dd0e7a9d100cc3bb076f0f251c9276e87f5408de8ba5c6fa0a1",
+    "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
+  },
+  "written_at": "2026-07-30T00:28:04.648927+00:00"
+}

@@ -1,0 +1,30 @@
+{
+  "completion_status": "COMPLETE",
+  "evaluator_schema_version": 2,
+  "git_dirty": null,
+  "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+  "inputs_verified": true,
+  "m_ticks": 100,
+  "n_seeds": 50,
+  "process": "RNAModification",
+  "schema_version": 2,
+  "sidecar_hashes": {
+    "SUMMARY.json": "9ea03b217a8eaea0b8a79e9cf56c736f300de473b742a30e951d7b1ec121dae3",
+    "analytical_check.json": "f1e020adeb86b62ed7c22bfe6a583ba85f3bea9a3e2619bc93e0b3ff7a3d84d4",
+    "input_manifest.json": "fb84fdca0f08b3c95012cf00d632058f394165e93ce23edd878db67b9218a0b8",
+    "null_calibration.json": "331a0a033d6b03533c8dbf18c57881a82146dd080cb572d536b0525b5da4d616",
+    "provenance.json": "c9baf59502570429be8cb7a1e0487d406d9a579eeba46bed223365619bb00c79",
+    "result.json": "98b95d20c17ba14462cb937a160897e81fc1dc9c5221109f28c583eef7fbd285",
+    "thresholds.json": "7604581adf3f814b52af2efb26a92c5120e0e3b8438ef258830eb2585195acbb"
+  },
+  "source_hashes": {
+    "catalog": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
+    "helpers": "a60a3de8c440029bd8639d5f561dad1a47a18b0a69dee894b9c75b1bbafc7075",
+    "l2_replay_common": "dbc43d5d0850f58bee564da81e410dffce0d05e4572ef0827c49a1c17831cdcb",
+    "oc_module": "44477ef6f9245da16b8fe12133571bc08bd93e02a5c58322dff94c9befd17a7e",
+    "projections": "ff2154045ffad25ab5074103ef96989c336cb3e9d3c63444f292a48ecba2eb3b",
+    "runner": "44af79f2de583dd0e7a9d100cc3bb076f0f251c9276e87f5408de8ba5c6fa0a1",
+    "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
+  },
+  "written_at": "2026-07-30T01:35:51.383881+00:00"
+}

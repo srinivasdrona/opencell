@@ -1,8 +1,98 @@
 {
-  "process": "RNAModification",
-  "verdict": "PASS",
-  "timestamp": "2026-07-28T07:47:07.368863+00:00",
+  "allocator_inputs_ref": "artifacts/l2_2_gates/RNAModification/latest/allocator_inputs.json",
+  "bootstrap_B": 1000,
+  "bucket": "ALGORITHMIC_SHALLOW",
+  "canonical_seed_count": 50,
+  "channels": {
+    "RNAs": {
+      "absolute_floor": 1.0,
+      "aggregation": "per_tick_vector_w1_mean",
+      "is_event_channel": false,
+      "is_primary": true,
+      "ks_pvalue": 1.0,
+      "ks_stat": 8.386167146978707e-05,
+      "n_nonzero_karr": 393017,
+      "n_nonzero_oc": 393308,
+      "per_sample_w1_summary": {
+        "max": 0.01729106628242072,
+        "mean": 0.0011515850144092213,
+        "min": 0.0
+      },
+      "q95_null": 0.5242923487031698,
+      "samples_karr": {
+        "kurtosis": 68.68831292643743,
+        "max": 83.0,
+        "mean": 0.8527308357348703,
+        "min": 0.0,
+        "skew": 7.839084988152118,
+        "stddev": 4.860683231424752
+      },
+      "samples_oc": {
+        "kurtosis": 68.68877137735892,
+        "max": 83.0,
+        "mean": 0.8527308357348703,
+        "min": 0.0,
+        "skew": 7.839163381956147,
+        "stddev": 4.860597380376326
+      },
+      "threshold": 1.0485846974063395,
+      "verdict": "SEED_NOISE",
+      "w1_oc_vs_karr": 0.0011515850144092213,
+      "w1_oc_vs_karr_ci95": [
+        0.4815537968299709,
+        0.5265599999999997
+      ]
+    },
+    "substrates": {
+      "absolute_floor": 1.0,
+      "aggregation": "per_tick_vector_w1_mean",
+      "is_event_channel": false,
+      "is_primary": false,
+      "ks_pvalue": 0.9997016975571058,
+      "ks_stat": 0.0012965517241378954,
+      "n_nonzero_karr": 29222,
+      "n_nonzero_oc": 29122,
+      "per_sample_w1_summary": {
+        "max": 0.7241379310344828,
+        "mean": 0.07131724137931035,
+        "min": 0.0
+      },
+      "q95_null": 879198.9655917233,
+      "samples_karr": {
+        "kurtosis": 1443.419438392217,
+        "max": 309737899.0,
+        "mean": 238243.53566206896,
+        "min": 0.0,
+        "skew": 38.007807908553545,
+        "stddev": 8132954.609454417
+      },
+      "samples_oc": {
+        "kurtosis": 1443.419438364334,
+        "max": 309737899.0,
+        "mean": 238243.53533793104,
+        "min": 0.0,
+        "skew": 38.00780790800649,
+        "stddev": 8132954.60950213
+      },
+      "threshold": 1758397.9311834467,
+      "verdict": "SEED_NOISE",
+      "w1_oc_vs_karr": 0.07131724137931035,
+      "w1_oc_vs_karr_ci95": [
+        24578.14070362066,
+        1089177.306066378
+      ]
+    }
+  },
   "harness_version": "design_a_v1_3",
+  "joint_check": null,
+  "k_eng": {
+    "ALGORITHMIC_DEEP": 3.0,
+    "ALGORITHMIC_SHALLOW": 2.0,
+    "TRIVIAL_RNG": 2.0
+  },
+  "n_observations_per_channel": 5000,
+  "process": "RNAModification",
+  "provenance_ref": "artifacts/l2_2_gates/RNAModification/latest/provenance.json",
   "seeds": [
     0,
     1,
@@ -56,97 +146,7 @@
     49
   ],
   "ticks": 100,
-  "n_observations_per_channel": 5000,
-  "bootstrap_B": 1000,
-  "bucket": "ALGORITHMIC_SHALLOW",
-  "canonical_seed_count": 50,
-  "k_eng": {
-    "TRIVIAL_RNG": 2.0,
-    "ALGORITHMIC_SHALLOW": 2.0,
-    "ALGORITHMIC_DEEP": 3.0
-  },
-  "channels": {
-    "substrates": {
-      "verdict": "SEED_NOISE",
-      "w1_oc_vs_karr": 0.07131724137931035,
-      "w1_oc_vs_karr_ci95": [
-        24578.14070362066,
-        1089177.306066378
-      ],
-      "q95_null": 879198.9655917233,
-      "threshold": 1758397.9311834467,
-      "absolute_floor": 1.0,
-      "ks_stat": 0.0012965517241378954,
-      "ks_pvalue": 0.9997016975571058,
-      "n_nonzero_oc": 29122,
-      "n_nonzero_karr": 29222,
-      "samples_oc": {
-        "mean": 238243.53533793104,
-        "stddev": 8132954.60950213,
-        "skew": 38.00780790800649,
-        "kurtosis": 1443.419438364334,
-        "min": 0.0,
-        "max": 309737899.0
-      },
-      "samples_karr": {
-        "mean": 238243.53566206896,
-        "stddev": 8132954.609454417,
-        "skew": 38.007807908553545,
-        "kurtosis": 1443.419438392217,
-        "min": 0.0,
-        "max": 309737899.0
-      },
-      "is_primary": false,
-      "is_event_channel": false,
-      "aggregation": "per_tick_vector_w1_mean",
-      "per_sample_w1_summary": {
-        "mean": 0.07131724137931035,
-        "max": 0.7241379310344828,
-        "min": 0.0
-      }
-    },
-    "RNAs": {
-      "verdict": "SEED_NOISE",
-      "w1_oc_vs_karr": 0.0011515850144092213,
-      "w1_oc_vs_karr_ci95": [
-        0.4815537968299709,
-        0.5265599999999997
-      ],
-      "q95_null": 0.5242923487031698,
-      "threshold": 1.0485846974063395,
-      "absolute_floor": 1.0,
-      "ks_stat": 8.386167146978707e-05,
-      "ks_pvalue": 1.0,
-      "n_nonzero_oc": 393308,
-      "n_nonzero_karr": 393017,
-      "samples_oc": {
-        "mean": 0.8527308357348703,
-        "stddev": 4.860597380376326,
-        "skew": 7.839163381956147,
-        "kurtosis": 68.68877137735892,
-        "min": 0.0,
-        "max": 83.0
-      },
-      "samples_karr": {
-        "mean": 0.8527308357348703,
-        "stddev": 4.860683231424752,
-        "skew": 7.839084988152118,
-        "kurtosis": 68.68831292643743,
-        "min": 0.0,
-        "max": 83.0
-      },
-      "is_primary": true,
-      "is_event_channel": false,
-      "aggregation": "per_tick_vector_w1_mean",
-      "per_sample_w1_summary": {
-        "mean": 0.0011515850144092213,
-        "max": 0.01729106628242072,
-        "min": 0.0
-      }
-    }
-  },
-  "joint_check": null,
-  "warnings": [],
-  "allocator_inputs_ref": "/mnt/e/opencell-worktrees/l22-evidence-gate/artifacts/l2_2_gates/RNAModification/latest/allocator_inputs.json",
-  "provenance_ref": "/mnt/e/opencell-worktrees/l22-evidence-gate/artifacts/l2_2_gates/RNAModification/latest/provenance.json"
+  "timestamp": "2026-07-30T01:35:40.248044+00:00",
+  "verdict": "PASS",
+  "warnings": []
 }

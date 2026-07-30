@@ -1,8 +1,98 @@
 {
-  "process": "ProteinModification",
-  "verdict": "PASS",
-  "timestamp": "2026-07-28T07:37:36.600976+00:00",
+  "allocator_inputs_ref": "artifacts/l2_2_gates/ProteinModification/latest/allocator_inputs.json",
+  "bootstrap_B": 1000,
+  "bucket": "ALGORITHMIC_SHALLOW",
+  "canonical_seed_count": 50,
+  "channels": {
+    "monomers": {
+      "absolute_floor": 1.0,
+      "aggregation": "per_tick_vector_w1_mean",
+      "is_event_channel": false,
+      "is_primary": true,
+      "ks_pvalue": 0.00018534787763601149,
+      "ks_stat": 0.0013879668049793237,
+      "n_nonzero_karr": 2026024,
+      "n_nonzero_oc": 2032714,
+      "per_sample_w1_summary": {
+        "max": 0.022821576763485396,
+        "mean": 0.0028925311203319673,
+        "min": 0.0
+      },
+      "q95_null": 0.05782120331950206,
+      "samples_karr": {
+        "kurtosis": 52.038358504207004,
+        "max": 781.0,
+        "mean": 21.159251037344397,
+        "min": 0.0,
+        "skew": 5.6872762644168064,
+        "stddev": 56.200950521517356
+      },
+      "samples_oc": {
+        "kurtosis": 52.03818532351262,
+        "max": 781.0,
+        "mean": 21.159251037344397,
+        "min": 0.0,
+        "skew": 5.687321035207248,
+        "stddev": 56.19840933074774
+      },
+      "threshold": 1.0,
+      "verdict": "SEED_NOISE",
+      "w1_oc_vs_karr": 0.0028925311203319673,
+      "w1_oc_vs_karr_ci95": [
+        0.05341882261410787,
+        0.0584913070539419
+      ]
+    },
+    "substrates": {
+      "absolute_floor": 1.0,
+      "aggregation": "per_tick_vector_w1_mean",
+      "is_event_channel": false,
+      "is_primary": false,
+      "ks_pvalue": 1.0,
+      "ks_stat": 0.0006266666666666643,
+      "n_nonzero_karr": 5471,
+      "n_nonzero_oc": 5488,
+      "per_sample_w1_summary": {
+        "max": 1.3333333333333335,
+        "mean": 0.03502666666666667,
+        "min": 0.0
+      },
+      "q95_null": 12.896554666666663,
+      "samples_karr": {
+        "kurtosis": 82.4023991270593,
+        "max": 990.0,
+        "mean": 8.21232,
+        "min": 0.0,
+        "skew": 8.238799415692698,
+        "stddev": 48.52187644301212
+      },
+      "samples_oc": {
+        "kurtosis": 82.39516471536301,
+        "max": 990.0,
+        "mean": 8.212946666666667,
+        "min": 0.0,
+        "skew": 8.238551422456885,
+        "stddev": 48.52181283076532
+      },
+      "threshold": 25.793109333333327,
+      "verdict": "SEED_NOISE",
+      "w1_oc_vs_karr": 0.03502666666666667,
+      "w1_oc_vs_karr_ci95": [
+        8.869111999999998,
+        13.168482333333328
+      ]
+    }
+  },
   "harness_version": "design_a_v1_3",
+  "joint_check": null,
+  "k_eng": {
+    "ALGORITHMIC_DEEP": 3.0,
+    "ALGORITHMIC_SHALLOW": 2.0,
+    "TRIVIAL_RNG": 2.0
+  },
+  "n_observations_per_channel": 5000,
+  "process": "ProteinModification",
+  "provenance_ref": "artifacts/l2_2_gates/ProteinModification/latest/provenance.json",
   "seeds": [
     0,
     1,
@@ -56,97 +146,7 @@
     49
   ],
   "ticks": 100,
-  "n_observations_per_channel": 5000,
-  "bootstrap_B": 1000,
-  "bucket": "ALGORITHMIC_SHALLOW",
-  "canonical_seed_count": 50,
-  "k_eng": {
-    "TRIVIAL_RNG": 2.0,
-    "ALGORITHMIC_SHALLOW": 2.0,
-    "ALGORITHMIC_DEEP": 3.0
-  },
-  "channels": {
-    "substrates": {
-      "verdict": "SEED_NOISE",
-      "w1_oc_vs_karr": 0.03502666666666667,
-      "w1_oc_vs_karr_ci95": [
-        8.869111999999998,
-        13.168482333333328
-      ],
-      "q95_null": 12.896554666666663,
-      "threshold": 25.793109333333327,
-      "absolute_floor": 1.0,
-      "ks_stat": 0.0006266666666666643,
-      "ks_pvalue": 1.0,
-      "n_nonzero_oc": 5488,
-      "n_nonzero_karr": 5471,
-      "samples_oc": {
-        "mean": 8.212946666666667,
-        "stddev": 48.52181283076532,
-        "skew": 8.238551422456885,
-        "kurtosis": 82.39516471536301,
-        "min": 0.0,
-        "max": 990.0
-      },
-      "samples_karr": {
-        "mean": 8.21232,
-        "stddev": 48.52187644301212,
-        "skew": 8.238799415692698,
-        "kurtosis": 82.4023991270593,
-        "min": 0.0,
-        "max": 990.0
-      },
-      "is_primary": false,
-      "is_event_channel": false,
-      "aggregation": "per_tick_vector_w1_mean",
-      "per_sample_w1_summary": {
-        "mean": 0.03502666666666667,
-        "max": 1.3333333333333335,
-        "min": 0.0
-      }
-    },
-    "monomers": {
-      "verdict": "SEED_NOISE",
-      "w1_oc_vs_karr": 0.0028925311203319673,
-      "w1_oc_vs_karr_ci95": [
-        0.05341882261410787,
-        0.0584913070539419
-      ],
-      "q95_null": 0.05782120331950206,
-      "threshold": 1.0,
-      "absolute_floor": 1.0,
-      "ks_stat": 0.0013879668049793237,
-      "ks_pvalue": 0.00018534787763601149,
-      "n_nonzero_oc": 2032714,
-      "n_nonzero_karr": 2026024,
-      "samples_oc": {
-        "mean": 21.159251037344397,
-        "stddev": 56.19840933074774,
-        "skew": 5.687321035207248,
-        "kurtosis": 52.03818532351262,
-        "min": 0.0,
-        "max": 781.0
-      },
-      "samples_karr": {
-        "mean": 21.159251037344397,
-        "stddev": 56.200950521517356,
-        "skew": 5.6872762644168064,
-        "kurtosis": 52.038358504207004,
-        "min": 0.0,
-        "max": 781.0
-      },
-      "is_primary": true,
-      "is_event_channel": false,
-      "aggregation": "per_tick_vector_w1_mean",
-      "per_sample_w1_summary": {
-        "mean": 0.0028925311203319673,
-        "max": 0.022821576763485396,
-        "min": 0.0
-      }
-    }
-  },
-  "joint_check": null,
-  "warnings": [],
-  "allocator_inputs_ref": "/mnt/e/opencell-worktrees/l22-evidence-gate/artifacts/l2_2_gates/ProteinModification/latest/allocator_inputs.json",
-  "provenance_ref": "/mnt/e/opencell-worktrees/l22-evidence-gate/artifacts/l2_2_gates/ProteinModification/latest/provenance.json"
+  "timestamp": "2026-07-30T01:06:55.902306+00:00",
+  "verdict": "PASS",
+  "warnings": []
 }

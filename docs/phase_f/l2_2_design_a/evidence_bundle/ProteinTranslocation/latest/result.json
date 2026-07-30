@@ -1,8 +1,98 @@
 {
-  "process": "ProteinTranslocation",
-  "verdict": "PASS",
-  "timestamp": "2026-07-28T07:16:33.776967+00:00",
+  "allocator_inputs_ref": "artifacts/l2_2_gates/ProteinTranslocation/latest/allocator_inputs.json",
+  "bootstrap_B": 1000,
+  "bucket": "ALGORITHMIC_SHALLOW",
+  "canonical_seed_count": 50,
+  "channels": {
+    "monomers": {
+      "absolute_floor": 1.0,
+      "aggregation": "per_tick_vector_w1_mean",
+      "is_event_channel": false,
+      "is_primary": true,
+      "ks_pvalue": 0.9995120010718521,
+      "ks_stat": 0.0003269709543568533,
+      "n_nonzero_karr": 7676,
+      "n_nonzero_oc": 6888,
+      "per_sample_w1_summary": {
+        "max": 0.008298755186722073,
+        "mean": 0.0003443983402489617,
+        "min": 0.0
+      },
+      "q95_null": 0.0038079045643153423,
+      "samples_karr": {
+        "kurtosis": 368.6073549551541,
+        "max": 3.0,
+        "mean": 0.003254356846473029,
+        "min": 0.0,
+        "skew": 18.56315268347656,
+        "stddev": 0.058186551037862605
+      },
+      "samples_oc": {
+        "kurtosis": 401.6752631099645,
+        "max": 3.0,
+        "mean": 0.0029099585062240664,
+        "min": 0.0,
+        "skew": 19.459232792124446,
+        "stddev": 0.054842635915008334
+      },
+      "threshold": 1.0,
+      "verdict": "SEED_NOISE",
+      "w1_oc_vs_karr": 0.0003443983402489617,
+      "w1_oc_vs_karr_ci95": [
+        0.0034285892116182478,
+        0.003768475103734429
+      ]
+    },
+    "substrates": {
+      "absolute_floor": 1.0,
+      "aggregation": "per_tick_vector_w1_mean",
+      "is_event_channel": false,
+      "is_primary": false,
+      "ks_pvalue": 0.4457633861415402,
+      "ks_stat": 0.006514285714285695,
+      "n_nonzero_karr": 4207,
+      "n_nonzero_oc": 3979,
+      "per_sample_w1_summary": {
+        "max": 32.85714285714286,
+        "mean": 0.3271142857142857,
+        "min": 0.0
+      },
+      "q95_null": 71853.90085285716,
+      "samples_karr": {
+        "kurtosis": 104.1923641334762,
+        "max": 6681271.0,
+        "mean": 43278.188428571426,
+        "min": 0.0,
+        "skew": 9.386028713186747,
+        "stddev": 328963.33129402617
+      },
+      "samples_oc": {
+        "kurtosis": 104.19211477164657,
+        "max": 6681271.0,
+        "mean": 43278.18697142857,
+        "min": 0.0,
+        "skew": 9.386019576362647,
+        "stddev": 328963.23031424964
+      },
+      "threshold": 143707.80170571432,
+      "verdict": "SEED_NOISE",
+      "w1_oc_vs_karr": 0.3271142857142857,
+      "w1_oc_vs_karr_ci95": [
+        63974.80337428574,
+        72511.86173428573
+      ]
+    }
+  },
   "harness_version": "design_a_v1_3",
+  "joint_check": null,
+  "k_eng": {
+    "ALGORITHMIC_DEEP": 3.0,
+    "ALGORITHMIC_SHALLOW": 2.0,
+    "TRIVIAL_RNG": 2.0
+  },
+  "n_observations_per_channel": 5000,
+  "process": "ProteinTranslocation",
+  "provenance_ref": "artifacts/l2_2_gates/ProteinTranslocation/latest/provenance.json",
   "seeds": [
     0,
     1,
@@ -56,97 +146,7 @@
     49
   ],
   "ticks": 100,
-  "n_observations_per_channel": 5000,
-  "bootstrap_B": 1000,
-  "bucket": "ALGORITHMIC_SHALLOW",
-  "canonical_seed_count": 50,
-  "k_eng": {
-    "TRIVIAL_RNG": 2.0,
-    "ALGORITHMIC_SHALLOW": 2.0,
-    "ALGORITHMIC_DEEP": 3.0
-  },
-  "channels": {
-    "substrates": {
-      "verdict": "SEED_NOISE",
-      "w1_oc_vs_karr": 0.3271142857142857,
-      "w1_oc_vs_karr_ci95": [
-        63974.80337428574,
-        72511.86173428573
-      ],
-      "q95_null": 71853.90085285716,
-      "threshold": 143707.80170571432,
-      "absolute_floor": 1.0,
-      "ks_stat": 0.006514285714285695,
-      "ks_pvalue": 0.4457633861415402,
-      "n_nonzero_oc": 3979,
-      "n_nonzero_karr": 4207,
-      "samples_oc": {
-        "mean": 43278.18697142857,
-        "stddev": 328963.23031424964,
-        "skew": 9.386019576362647,
-        "kurtosis": 104.19211477164657,
-        "min": 0.0,
-        "max": 6681271.0
-      },
-      "samples_karr": {
-        "mean": 43278.188428571426,
-        "stddev": 328963.33129402617,
-        "skew": 9.386028713186747,
-        "kurtosis": 104.1923641334762,
-        "min": 0.0,
-        "max": 6681271.0
-      },
-      "is_primary": false,
-      "is_event_channel": false,
-      "aggregation": "per_tick_vector_w1_mean",
-      "per_sample_w1_summary": {
-        "mean": 0.3271142857142857,
-        "max": 32.85714285714286,
-        "min": 0.0
-      }
-    },
-    "monomers": {
-      "verdict": "SEED_NOISE",
-      "w1_oc_vs_karr": 0.0003443983402489617,
-      "w1_oc_vs_karr_ci95": [
-        0.0034285892116182478,
-        0.003768475103734429
-      ],
-      "q95_null": 0.0038079045643153423,
-      "threshold": 1.0,
-      "absolute_floor": 1.0,
-      "ks_stat": 0.0003269709543568533,
-      "ks_pvalue": 0.9995120010718521,
-      "n_nonzero_oc": 6888,
-      "n_nonzero_karr": 7676,
-      "samples_oc": {
-        "mean": 0.0029099585062240664,
-        "stddev": 0.054842635915008334,
-        "skew": 19.459232792124446,
-        "kurtosis": 401.6752631099645,
-        "min": 0.0,
-        "max": 3.0
-      },
-      "samples_karr": {
-        "mean": 0.003254356846473029,
-        "stddev": 0.058186551037862605,
-        "skew": 18.56315268347656,
-        "kurtosis": 368.6073549551541,
-        "min": 0.0,
-        "max": 3.0
-      },
-      "is_primary": true,
-      "is_event_channel": false,
-      "aggregation": "per_tick_vector_w1_mean",
-      "per_sample_w1_summary": {
-        "mean": 0.0003443983402489617,
-        "max": 0.008298755186722073,
-        "min": 0.0
-      }
-    }
-  },
-  "joint_check": null,
-  "warnings": [],
-  "allocator_inputs_ref": "/mnt/e/opencell-worktrees/l22-evidence-gate/artifacts/l2_2_gates/ProteinTranslocation/latest/allocator_inputs.json",
-  "provenance_ref": "/mnt/e/opencell-worktrees/l22-evidence-gate/artifacts/l2_2_gates/ProteinTranslocation/latest/provenance.json"
+  "timestamp": "2026-07-30T00:56:31.857413+00:00",
+  "verdict": "PASS",
+  "warnings": []
 }

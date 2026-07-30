@@ -1,8 +1,149 @@
 {
-  "process": "Replication",
-  "verdict": "PASS",
-  "timestamp": "2026-07-28T10:14:55.165859+00:00",
+  "allocator_inputs_ref": "artifacts/l2_2_gates/Replication/latest/allocator_inputs.json",
+  "bootstrap_B": 1000,
+  "bucket": "ALGORITHMIC_SHALLOW",
+  "canonical_seed_count": 50,
+  "channels": {
+    "boundEnzymes": {
+      "absolute_floor": 1.0,
+      "aggregation": "per_tick_vector_w1_mean",
+      "is_event_channel": false,
+      "is_primary": false,
+      "ks_pvalue": 0.7791382327862446,
+      "ks_stat": 0.0036461538461538545,
+      "n_nonzero_karr": 22213,
+      "n_nonzero_oc": 21976,
+      "per_sample_w1_summary": {
+        "max": 0.6153846153846152,
+        "mean": 0.10438461538461534,
+        "min": 0.0
+      },
+      "q95_null": 0.1519084615384614,
+      "samples_karr": {
+        "kurtosis": 11.115410452729552,
+        "max": 33.0,
+        "mean": 2.3905230769230768,
+        "min": 0.0,
+        "skew": 3.5455773921052334,
+        "stddev": 7.0183813192056705
+      },
+      "samples_oc": {
+        "kurtosis": 11.31294921885098,
+        "max": 33.0,
+        "mean": 2.361676923076923,
+        "min": 0.0,
+        "skew": 3.5718076464084816,
+        "stddev": 6.975813530958107
+      },
+      "threshold": 1.0,
+      "verdict": "SEED_NOISE",
+      "w1_oc_vs_karr": 0.10438461538461534,
+      "w1_oc_vs_karr_ci95": [
+        0.1492615384615384,
+        0.16446307692307682
+      ]
+    },
+    "chromosome": {
+      "aggregation": "per_component_scaled",
+      "is_event_channel": false,
+      "is_primary": true,
+      "per_component": {
+        "component_n_nonzero_karr": {
+          "polymerizedRegions.delta_nnz": 420,
+          "polymerizedRegions.delta_value_sum_strand_1": 3118,
+          "polymerizedRegions.delta_value_sum_strand_2": 4155,
+          "polymerizedRegions.delta_value_sum_strand_3": 4265,
+          "polymerizedRegions.delta_value_sum_strand_4": 0
+        },
+        "component_n_nonzero_oc": {
+          "polymerizedRegions.delta_nnz": 0,
+          "polymerizedRegions.delta_value_sum_strand_1": 0,
+          "polymerizedRegions.delta_value_sum_strand_2": 0,
+          "polymerizedRegions.delta_value_sum_strand_3": 0,
+          "polymerizedRegions.delta_value_sum_strand_4": 0
+        },
+        "component_raw_w1": {
+          "polymerizedRegions.delta_nnz": 0.10479999999999999,
+          "polymerizedRegions.delta_value_sum_strand_1": 59.9234,
+          "polymerizedRegions.delta_value_sum_strand_2": 102.5856,
+          "polymerizedRegions.delta_value_sum_strand_3": 135.89999999999998,
+          "polymerizedRegions.delta_value_sum_strand_4": 0.0
+        },
+        "component_scales": {
+          "polymerizedRegions.delta_nnz": 2.0,
+          "polymerizedRegions.delta_value_sum_strand_1": 100.0,
+          "polymerizedRegions.delta_value_sum_strand_2": 200.0,
+          "polymerizedRegions.delta_value_sum_strand_3": 200.0,
+          "polymerizedRegions.delta_value_sum_strand_4": 1.0
+        },
+        "component_verdicts": {
+          "polymerizedRegions.delta_nnz": "PASS",
+          "polymerizedRegions.delta_value_sum_strand_1": "PASS",
+          "polymerizedRegions.delta_value_sum_strand_2": "PASS",
+          "polymerizedRegions.delta_value_sum_strand_3": "PASS",
+          "polymerizedRegions.delta_value_sum_strand_4": "PASS"
+        },
+        "joint_verdict": "PASS",
+        "polymerizedRegions.delta_nnz": 0.052399999999999995,
+        "polymerizedRegions.delta_value_sum_strand_1": 0.599234,
+        "polymerizedRegions.delta_value_sum_strand_2": 0.512928,
+        "polymerizedRegions.delta_value_sum_strand_3": 0.6794999999999999,
+        "polymerizedRegions.delta_value_sum_strand_4": 0.0,
+        "scaled_distance_threshold": 1.0
+      },
+      "verdict": "PASS",
+      "w1_oc_vs_karr": 0.0
+    },
+    "substrates": {
+      "absolute_floor": 1.0,
+      "aggregation": "per_tick_vector_w1_mean",
+      "is_event_channel": false,
+      "is_primary": false,
+      "ks_pvalue": 0.0,
+      "ks_stat": 0.2241125,
+      "n_nonzero_karr": 47918,
+      "n_nonzero_oc": 29989,
+      "per_sample_w1_summary": {
+        "max": 113.125,
+        "mean": 67.938,
+        "min": 0.0
+      },
+      "q95_null": 169082.0404275,
+      "samples_karr": {
+        "kurtosis": 11.992541706189241,
+        "max": 29121910.0,
+        "mean": 1640198.8382875,
+        "min": 0.0,
+        "skew": 3.724467134973426,
+        "stddev": 6418144.368154613
+      },
+      "samples_oc": {
+        "kurtosis": 11.992536323478015,
+        "max": 29122110.0,
+        "mean": 1640190.3353375,
+        "min": 0.0,
+        "skew": 3.724466327543393,
+        "stddev": 6418181.435038287
+      },
+      "threshold": 338164.080855,
+      "verdict": "SEED_NOISE",
+      "w1_oc_vs_karr": 67.938,
+      "w1_oc_vs_karr_ci95": [
+        139052.215206875,
+        171460.0865396875
+      ]
+    }
+  },
   "harness_version": "design_a_v1_3",
+  "joint_check": null,
+  "k_eng": {
+    "ALGORITHMIC_DEEP": 3.0,
+    "ALGORITHMIC_SHALLOW": 2.0,
+    "TRIVIAL_RNG": 2.0
+  },
+  "n_observations_per_channel": 5000,
+  "process": "Replication",
+  "provenance_ref": "artifacts/l2_2_gates/Replication/latest/provenance.json",
   "seeds": [
     0,
     1,
@@ -56,148 +197,7 @@
     49
   ],
   "ticks": 100,
-  "n_observations_per_channel": 5000,
-  "bootstrap_B": 1000,
-  "bucket": "ALGORITHMIC_SHALLOW",
-  "canonical_seed_count": 50,
-  "k_eng": {
-    "TRIVIAL_RNG": 2.0,
-    "ALGORITHMIC_SHALLOW": 2.0,
-    "ALGORITHMIC_DEEP": 3.0
-  },
-  "channels": {
-    "substrates": {
-      "verdict": "SEED_NOISE",
-      "w1_oc_vs_karr": 67.938,
-      "w1_oc_vs_karr_ci95": [
-        139052.215206875,
-        171460.0865396875
-      ],
-      "q95_null": 169082.0404275,
-      "threshold": 338164.080855,
-      "absolute_floor": 1.0,
-      "ks_stat": 0.2241125,
-      "ks_pvalue": 0.0,
-      "n_nonzero_oc": 29989,
-      "n_nonzero_karr": 47918,
-      "samples_oc": {
-        "mean": 1640190.3353375,
-        "stddev": 6418181.435038287,
-        "skew": 3.724466327543393,
-        "kurtosis": 11.992536323478015,
-        "min": 0.0,
-        "max": 29122110.0
-      },
-      "samples_karr": {
-        "mean": 1640198.8382875,
-        "stddev": 6418144.368154613,
-        "skew": 3.724467134973426,
-        "kurtosis": 11.992541706189241,
-        "min": 0.0,
-        "max": 29121910.0
-      },
-      "is_primary": false,
-      "is_event_channel": false,
-      "aggregation": "per_tick_vector_w1_mean",
-      "per_sample_w1_summary": {
-        "mean": 67.938,
-        "max": 113.125,
-        "min": 0.0
-      }
-    },
-    "boundEnzymes": {
-      "verdict": "SEED_NOISE",
-      "w1_oc_vs_karr": 0.10438461538461534,
-      "w1_oc_vs_karr_ci95": [
-        0.1492615384615384,
-        0.16446307692307682
-      ],
-      "q95_null": 0.1519084615384614,
-      "threshold": 1.0,
-      "absolute_floor": 1.0,
-      "ks_stat": 0.0036461538461538545,
-      "ks_pvalue": 0.7791382327862446,
-      "n_nonzero_oc": 21976,
-      "n_nonzero_karr": 22213,
-      "samples_oc": {
-        "mean": 2.361676923076923,
-        "stddev": 6.975813530958107,
-        "skew": 3.5718076464084816,
-        "kurtosis": 11.31294921885098,
-        "min": 0.0,
-        "max": 33.0
-      },
-      "samples_karr": {
-        "mean": 2.3905230769230768,
-        "stddev": 7.0183813192056705,
-        "skew": 3.5455773921052334,
-        "kurtosis": 11.115410452729552,
-        "min": 0.0,
-        "max": 33.0
-      },
-      "is_primary": false,
-      "is_event_channel": false,
-      "aggregation": "per_tick_vector_w1_mean",
-      "per_sample_w1_summary": {
-        "mean": 0.10438461538461534,
-        "max": 0.6153846153846152,
-        "min": 0.0
-      }
-    },
-    "chromosome": {
-      "aggregation": "per_component_scaled",
-      "w1_oc_vs_karr": 0.0,
-      "is_primary": true,
-      "is_event_channel": false,
-      "per_component": {
-        "component_raw_w1": {
-          "polymerizedRegions.delta_value_sum_strand_1": 59.9234,
-          "polymerizedRegions.delta_value_sum_strand_2": 102.5856,
-          "polymerizedRegions.delta_value_sum_strand_3": 135.89999999999998,
-          "polymerizedRegions.delta_value_sum_strand_4": 0.0,
-          "polymerizedRegions.delta_nnz": 0.10479999999999999
-        },
-        "component_scales": {
-          "polymerizedRegions.delta_value_sum_strand_1": 100.0,
-          "polymerizedRegions.delta_value_sum_strand_2": 200.0,
-          "polymerizedRegions.delta_value_sum_strand_3": 200.0,
-          "polymerizedRegions.delta_value_sum_strand_4": 1.0,
-          "polymerizedRegions.delta_nnz": 2.0
-        },
-        "component_verdicts": {
-          "polymerizedRegions.delta_value_sum_strand_1": "PASS",
-          "polymerizedRegions.delta_value_sum_strand_2": "PASS",
-          "polymerizedRegions.delta_value_sum_strand_3": "PASS",
-          "polymerizedRegions.delta_value_sum_strand_4": "PASS",
-          "polymerizedRegions.delta_nnz": "PASS"
-        },
-        "scaled_distance_threshold": 1.0,
-        "component_n_nonzero_oc": {
-          "polymerizedRegions.delta_value_sum_strand_1": 0,
-          "polymerizedRegions.delta_value_sum_strand_2": 0,
-          "polymerizedRegions.delta_value_sum_strand_3": 0,
-          "polymerizedRegions.delta_value_sum_strand_4": 0,
-          "polymerizedRegions.delta_nnz": 0
-        },
-        "component_n_nonzero_karr": {
-          "polymerizedRegions.delta_value_sum_strand_1": 3118,
-          "polymerizedRegions.delta_value_sum_strand_2": 4155,
-          "polymerizedRegions.delta_value_sum_strand_3": 4265,
-          "polymerizedRegions.delta_value_sum_strand_4": 0,
-          "polymerizedRegions.delta_nnz": 420
-        },
-        "polymerizedRegions.delta_value_sum_strand_1": 0.599234,
-        "polymerizedRegions.delta_value_sum_strand_2": 0.512928,
-        "polymerizedRegions.delta_value_sum_strand_3": 0.6794999999999999,
-        "polymerizedRegions.delta_value_sum_strand_4": 0.0,
-        "polymerizedRegions.delta_nnz": 0.052399999999999995,
-        "joint_verdict": "PASS"
-      },
-      "verdict": "PASS"
-    }
-  },
-  "joint_check": null,
-  "warnings": [],
-  "allocator_inputs_ref": "/mnt/e/opencell-worktrees/l22-evidence-gate/artifacts/l2_2_gates/Replication/latest/allocator_inputs.json",
-  "provenance_ref": "/mnt/e/opencell-worktrees/l22-evidence-gate/artifacts/l2_2_gates/Replication/latest/provenance.json"
+  "timestamp": "2026-07-30T02:09:31.262405+00:00",
+  "verdict": "PASS",
+  "warnings": []
 }

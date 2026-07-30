@@ -2,9 +2,9 @@
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
   "catalog_sha256": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
-  "content_hash": "da535198a939358967846dcdcd363cd68f6fc233591a682e64b42d31be8ea292",
+  "content_hash": "212cc49627f4d9bbf02c6e13f602976d32ac7c365d69abdbb181524602fb77c3",
   "evidence_root": "artifacts/l2_2_gates",
-  "generated_at": "2026-07-29T21:01:12.743358+00:00",
+  "generated_at": "2026-07-30T03:09:29.689906+00:00",
   "n_in_scope": 22,
   "rows": [
     {
@@ -51,12 +51,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "6731ac66641d8d354a9ed9392c6a4c24992085cacbcc3d6a3ead6215bc7858b9",
+        "SUMMARY.json": "37e974bc0a8a34a2d7722514a9e2856aaacdd838f2451adf6aceb636730bfc5c",
         "analytical_check.json": "c37ae0ef71b6663479d1f59b5ee26f798f0eb7846541192f35b7b0f52ea5264c",
-        "null_calibration.json": "7128ef72d08bc9ed0619122d26fae8d31d8ef578b620af8f4f38d520a351e4e8",
-        "provenance.json": "5025bc848f6898b12a8a8cb5390daf2063be000fac8cb48911e7143eb9af0a54",
-        "result.json": "3df2fc520ff7dd6efa3f221d993b4ba4a1d02fa2465986025b0a0b1fb6a420ae",
-        "sweep_provenance.json": "d48913d3f9adbcbb8edc2ce605f93a667e79826248cbb9fff74f518de5660099",
+        "null_calibration.json": "a5dc723fa59e88e6bdaefe25d3d523177cb1fc2a26c416b9d730d0886aaeee0f",
+        "provenance.json": "e31fec9878b9c45ada74b1aeb86691438f82467937b9669bb8894c4e6d78afa0",
+        "result.json": "1f91271d556fdffa94ec607c94bce70b63c219b0c804918174ba74f7968ce25c",
+        "sweep_provenance.json": "c81b75fdd72088985acab8144be63d73ec0dbd5589a4529b1cd624fbf9cf30bf",
         "thresholds.json": "beeba9da08cbc55b29ef3e231904f67e3a4ec6f9e741d00aa4c58b188238051b"
       },
       "bucket": "ALGORITHMIC_DEEP",
@@ -74,31 +74,31 @@
         "substrates": "SEED_NOISE"
       },
       "evidence_dir": "artifacts/l2_2_gates/DNARepair/latest",
-      "green": false,
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "FAIL",
+      "mechanical_verdict": "PASS",
       "process": "DNARepair",
       "provenance_git_sha": "unknown",
-      "reasons": [
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'vivarium_init'",
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'chromosome_store_module'",
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'chromosome_views_module'",
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'm_gen_constants_module'",
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'state_init_module'",
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'l2_replay_common'",
-        "STALE_SWEEP_PROVENANCE: evaluator_schema_version 1 != current 2"
-      ],
+      "reasons": [],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
-        "evaluator_schema_version": 1,
+        "evaluator_schema_version": 2,
         "git_dirty": null,
-        "git_sha": "593f0359e7b5fdc4ff560349adb9857ff3670b02",
+        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
         "inputs_verified": true
       },
       "warnings": []
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "306e87263b5bc46c737aadab5a5e747942ed8b36121cec7b108671ebf8889656",
+        "analytical_check.json": "fe7776df0a449ac6226e4a97dddce8cd8b17225d60ad090c4ed22d459aa01733",
+        "null_calibration.json": "98bc45fe86a58cd6841cac3ca441b3a36bf11a5a237051dd2d4e4dda3c265d01",
+        "provenance.json": "985b32a1d7b23f94caa0287553803b31328edb1299b9cb47d25b129a10f9e6a0",
+        "result.json": "d9aa3c6e4efa1c3ff73744874ebe1a109137674611fa673bb34fc203a18d98a5",
+        "sweep_provenance.json": "e383058e74c6b30827aae385430c172da1fa7c9acd168d55941c379502b0fad2",
+        "thresholds.json": "49bf0423b5e7bbe588caf3f013cf72d2fd7af96b8267859c52eee7914f8ae0cc"
+      },
       "bucket": "ALGORITHMIC_SHALLOW",
       "catalog_soft_flags": {
         "M_ticks": 100,
@@ -109,14 +109,25 @@
         "primary_channel": "chromosome",
         "primary_distance": "per_component_scaled"
       },
+      "channel_verdicts": {
+        "chromosome": "PASS",
+        "substrates": "SEED_NOISE"
+      },
       "evidence_dir": "artifacts/l2_2_gates/DNASupercoiling/latest",
-      "green": false,
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "PASS",
       "process": "DNASupercoiling",
-      "reasons": [
-        "MISSING_EVIDENCE: missing required/mandatory file(s) ['sweep_provenance.json'] for process DNASupercoiling"
-      ]
+      "provenance_git_sha": "unknown",
+      "reasons": [],
+      "sweep_provenance": {
+        "completion_status": "COMPLETE",
+        "evaluator_schema_version": 2,
+        "git_dirty": null,
+        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "inputs_verified": true
+      },
+      "warnings": []
     },
     {
       "artifact_hashes": {},
@@ -140,7 +151,15 @@
       ]
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "6e71877217354864aa30487022a88dc201473552cedcd854766e320fbe9ec8e5",
+        "analytical_check.json": "851bafe04f1a87092a83b1f2f9ea2f84cb9cf2fcfcb2b45899ff5a6c10f22a86",
+        "null_calibration.json": "116ee7dc7970443c15457cfcac718f4e391ecf0476f15d57d27c37440669e7f3",
+        "provenance.json": "3ef4a5d9063caf0ad35c014899565ab3c82933b54a8e105b610823e226e41f05",
+        "result.json": "afed7c42d72954491465ece769677ec3a6f85f9aee90f8acadf60684b6578978",
+        "sweep_provenance.json": "fcb6ee9d39a322cb39fce42f8e84f6f6a129884f48438ed573941118466cfdc6",
+        "thresholds.json": "3a3e291235e4d91a90f68fcf684c42dc3c74ede86b0130a58a65aae0f944231a"
+      },
       "bucket": "ALGORITHMIC_SHALLOW",
       "catalog_soft_flags": {
         "M_ticks": 100,
@@ -151,17 +170,41 @@
         "primary_channel": "complexs",
         "primary_distance": "per_tick_vector_w1_mean"
       },
+      "channel_verdicts": {
+        "complexs": "SEED_NOISE",
+        "monomers": "SEED_NOISE",
+        "substrates": "SEED_NOISE"
+      },
       "evidence_dir": "artifacts/l2_2_gates/MacromolecularComplexation/latest",
       "green": false,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "FAIL",
       "process": "MacromolecularComplexation",
+      "provenance_git_sha": "unknown",
       "reasons": [
-        "MISSING_EVIDENCE: missing required/mandatory file(s) ['sweep_provenance.json'] for process MacromolecularComplexation"
+        "SENTINEL_FAIL: PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE demotion claimed without a machine-checked h12_evidence_ref (nontrivial_sample_count > 0); treated as non-green"
+      ],
+      "sweep_provenance": {
+        "completion_status": "COMPLETE",
+        "evaluator_schema_version": 2,
+        "git_dirty": null,
+        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "inputs_verified": true
+      },
+      "warnings": [
+        "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=complexs; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
       ]
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "0cafc9f19138a2bdb36211911082dcef920f9218f4fd838538b4da8459560559",
+        "analytical_check.json": "64e9f45a7d21897111c42017dd901c9baf696c13fce7cdd86d8831788d689fc5",
+        "null_calibration.json": "39948ee547592bf9b01cadad378d5e74f608676d8a231837c4361c88182329af",
+        "provenance.json": "0385a1deb7a671219111c9494d57cf78abcd480cc3b9d4d727b7e46eae34910f",
+        "result.json": "c002a38dd0ac6dcb76818ea24869d5a0f30ade7946cfe87bbd70ac7ae1bdbc79",
+        "sweep_provenance.json": "597b7bee2b1e89165b1af200d4cf24f0f2b7291beb45a36b54712b59cb4e7bff",
+        "thresholds.json": "ef387d2d1ccc0d1aa2e6ba8b251dd3385f465b309be6842a2327649073290751"
+      },
       "bucket": "TRIVIAL_RNG",
       "catalog_soft_flags": {
         "M_ticks": 20,
@@ -172,17 +215,35 @@
         "primary_channel": "substrates",
         "primary_distance": "per_tick_vector_w1_mean"
       },
+      "channel_verdicts": {
+        "substrates": "PASS"
+      },
       "evidence_dir": "artifacts/l2_2_gates/Metabolism/latest",
-      "green": false,
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "PASS",
       "process": "Metabolism",
-      "reasons": [
-        "MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process Metabolism"
-      ]
+      "provenance_git_sha": "unknown",
+      "reasons": [],
+      "sweep_provenance": {
+        "completion_status": "COMPLETE",
+        "evaluator_schema_version": 2,
+        "git_dirty": null,
+        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "inputs_verified": true
+      },
+      "warnings": []
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "914fea4aba21e1e2e7388865c5d8ffbdc94c6a8d987ea5b952dc80e54f1fac76",
+        "analytical_check.json": "2654dd797b75612697b074688d1708a61fd3c46cf50b15cf24ef13918061446b",
+        "null_calibration.json": "94d2d33d04fc973a80ab4fa31f28395e353945303c5dcce0b60f1ed52c54ffd3",
+        "provenance.json": "4f2da52857847a8d89069990d9909db2bf80147f300e6d1ecb93e7d9a0386e24",
+        "result.json": "8a9308924affb121f87e028e5ba85e121df733fd37d8295d38cf6e673cb91ec5",
+        "sweep_provenance.json": "5824138dd52a2bb01d447657178a261aaf2e65618d249ebc3cf1092cdb918973",
+        "thresholds.json": "d3f39cdbc83c5bd6e95713c30bd263c71761bb46e1477e95bee0158dbe85e322"
+      },
       "bucket": "ALGORITHMIC_SHALLOW",
       "catalog_soft_flags": {
         "M_ticks": 200,
@@ -193,17 +254,37 @@
         "primary_channel": "monomers",
         "primary_distance": "per_tick_vector_w1_mean"
       },
+      "channel_verdicts": {
+        "complexs": "SEED_NOISE",
+        "monomers": "SEED_NOISE",
+        "substrates": "SEED_NOISE"
+      },
       "evidence_dir": "artifacts/l2_2_gates/ProteinDecay/latest",
-      "green": false,
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "PASS",
       "process": "ProteinDecay",
-      "reasons": [
-        "MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process ProteinDecay"
-      ]
+      "provenance_git_sha": "unknown",
+      "reasons": [],
+      "sweep_provenance": {
+        "completion_status": "COMPLETE",
+        "evaluator_schema_version": 2,
+        "git_dirty": null,
+        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "inputs_verified": true
+      },
+      "warnings": []
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "e3d3277e9677a02de2d7987677acbaa45b325f4b49f3c6849f12e8e28c01bbd7",
+        "analytical_check.json": "030974782242b9c2037a6286ef5fbb72009f65fa3189ddfa836f54bd0dcbdeb5",
+        "null_calibration.json": "7f59f422ce3e2974d4d2a789a88600f3a465498cd3276b8931a3b663e859258f",
+        "provenance.json": "5ac03fd07201914574fcb3c71583293a0f9bf17bd44098b804ed476d70f57977",
+        "result.json": "6c9031f301a1a29ab43bbcfdb5e812e623bfd185ad1a806e7e0c7a3f2c469b12",
+        "sweep_provenance.json": "038f756df041021722925a0f28bcf708d10ffb5d01f6dc1b29e14f3e8eb011a5",
+        "thresholds.json": "67ad0137cbe88e6927828160e3882c366311cd8ab2f9c58cb47940de500adbf9"
+      },
       "bucket": "ALGORITHMIC_SHALLOW",
       "catalog_soft_flags": {
         "M_ticks": 100,
@@ -213,18 +294,41 @@
         "in_scope_L2_2": true,
         "primary_channel": "monomers",
         "primary_distance": "per_tick_vector_w1_mean"
+      },
+      "channel_verdicts": {
+        "monomers": "SEED_NOISE",
+        "substrates": "SEED_NOISE"
       },
       "evidence_dir": "artifacts/l2_2_gates/ProteinFolding/latest",
       "green": false,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "FAIL",
       "process": "ProteinFolding",
+      "provenance_git_sha": "unknown",
       "reasons": [
-        "MISSING_EVIDENCE: missing required/mandatory file(s) ['sweep_provenance.json'] for process ProteinFolding"
+        "SENTINEL_FAIL: PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE demotion claimed without a machine-checked h12_evidence_ref (nontrivial_sample_count > 0); treated as non-green"
+      ],
+      "sweep_provenance": {
+        "completion_status": "COMPLETE",
+        "evaluator_schema_version": 2,
+        "git_dirty": null,
+        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "inputs_verified": true
+      },
+      "warnings": [
+        "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=monomers; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
       ]
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "f68a607f82f3e257b2c8da0c2dc946f04e7683ee52dbcbf864f63ea82785cdb9",
+        "analytical_check.json": "dec4518901818fb27944fbb0f7efaec4b2ea389140cd33864cce100c67d8462a",
+        "null_calibration.json": "9f63b16569dbf17120ca42065174052df4cae8e79195558437bfc970a43019a1",
+        "provenance.json": "bddce368eb7e2416c50f19f41b50d6e6facd7d0a2268276e626e868b95f442c7",
+        "result.json": "3aa704004de11f1250e81b1e97cade5bc3a49e9529f623f7e3153d2c9609771d",
+        "sweep_provenance.json": "91f80915b8b59895ed07e28e5fa4e410fb7260597a350af0ce221c8acb9c415e",
+        "thresholds.json": "acabe5573118061ff227d116e0232f426fc498a28402c507a251cdadcaeed442"
+      },
       "bucket": "ALGORITHMIC_SHALLOW",
       "catalog_soft_flags": {
         "M_ticks": 100,
@@ -235,17 +339,36 @@
         "primary_channel": "monomers",
         "primary_distance": "per_tick_vector_w1_mean"
       },
+      "channel_verdicts": {
+        "monomers": "SEED_NOISE",
+        "substrates": "SEED_NOISE"
+      },
       "evidence_dir": "artifacts/l2_2_gates/ProteinModification/latest",
-      "green": false,
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "PASS",
       "process": "ProteinModification",
-      "reasons": [
-        "MISSING_EVIDENCE: missing required/mandatory file(s) ['sweep_provenance.json'] for process ProteinModification"
-      ]
+      "provenance_git_sha": "unknown",
+      "reasons": [],
+      "sweep_provenance": {
+        "completion_status": "COMPLETE",
+        "evaluator_schema_version": 2,
+        "git_dirty": null,
+        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "inputs_verified": true
+      },
+      "warnings": []
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "8f1b0a32800c7da6ce939422935229c03ae017ffa6238aa882ae4a5fb102dabb",
+        "analytical_check.json": "3141f86a582c7d209a199137ca1795b7d7e9cc0cad1a673eda28079ee33b1c4b",
+        "null_calibration.json": "2c8e91a75a3f21ed88d342244e8fe991c1038340c3c951f100822b83a30f6c70",
+        "provenance.json": "5107997c57d689e1d9f6b2431f3fed6de69571c01be714b8a9ffb843df3d9f01",
+        "result.json": "3fe3f2a2573baf0d4f06e78b5b24092e2c58a06a013b6534d3f0a3633af5a93a",
+        "sweep_provenance.json": "44d46f787dbac62117bd62e474d284bf6bbe5c3128c37a9d802066317e19d4f3",
+        "thresholds.json": "9a7d816fb435dfa8ca266fb56ae9a85f02c2cbb75c48d6b91e2697bf007fe37b"
+      },
       "bucket": "TRIVIAL_RNG",
       "catalog_soft_flags": {
         "M_ticks": 20,
@@ -255,18 +378,41 @@
         "in_scope_L2_2": true,
         "primary_channel": "monomers",
         "primary_distance": "per_tick_vector_w1_mean"
+      },
+      "channel_verdicts": {
+        "monomers": "SEED_NOISE",
+        "substrates": "SEED_NOISE"
       },
       "evidence_dir": "artifacts/l2_2_gates/ProteinProcessingI/latest",
       "green": false,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "FAIL",
       "process": "ProteinProcessingI",
+      "provenance_git_sha": "unknown",
       "reasons": [
-        "MISSING_EVIDENCE: missing required/mandatory file(s) ['sweep_provenance.json'] for process ProteinProcessingI"
+        "SENTINEL_FAIL: PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE demotion claimed without a machine-checked h12_evidence_ref (nontrivial_sample_count > 0); treated as non-green"
+      ],
+      "sweep_provenance": {
+        "completion_status": "COMPLETE",
+        "evaluator_schema_version": 2,
+        "git_dirty": null,
+        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "inputs_verified": true
+      },
+      "warnings": [
+        "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=monomers; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
       ]
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "3a6851ea08ada6781b9dd54da80c986f4ee79900c2c1b1abdffbae686fc5c1f3",
+        "analytical_check.json": "dd4dc35123a227c3e69526e949c90aefd27317f77634b5e9cea04f6da4091418",
+        "null_calibration.json": "a63a763470db1ca4be7e18000218d666371a9531c2c62db90ad87f502cb65e4c",
+        "provenance.json": "6080ac11fdb2798ccbfc626ecd6943e593a81638bd276168d4eed2140cf5e042",
+        "result.json": "4f56aa15e412995bac47e8ff2fb054ff498a7ae0e90ea8d14c1636aefbefeb85",
+        "sweep_provenance.json": "5d35032e53afd2c5d60941ba2a005ea315e25bc67e426e0ef0e60cd804d0e1f9",
+        "thresholds.json": "4ca257b7fdb276d867d21d7ec7620e03024df612d9cdcb5002391e1ca9aed7be"
+      },
       "bucket": "TRIVIAL_RNG",
       "catalog_soft_flags": {
         "M_ticks": 20,
@@ -277,17 +423,40 @@
         "primary_channel": "monomers",
         "primary_distance": "per_tick_vector_w1_mean"
       },
+      "channel_verdicts": {
+        "monomers": "SEED_NOISE",
+        "substrates": "SEED_NOISE"
+      },
       "evidence_dir": "artifacts/l2_2_gates/ProteinProcessingII/latest",
       "green": false,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "FAIL",
       "process": "ProteinProcessingII",
+      "provenance_git_sha": "unknown",
       "reasons": [
-        "MISSING_EVIDENCE: missing required/mandatory file(s) ['sweep_provenance.json'] for process ProteinProcessingII"
+        "SENTINEL_FAIL: PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE demotion claimed without a machine-checked h12_evidence_ref (nontrivial_sample_count > 0); treated as non-green"
+      ],
+      "sweep_provenance": {
+        "completion_status": "COMPLETE",
+        "evaluator_schema_version": 2,
+        "git_dirty": null,
+        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "inputs_verified": true
+      },
+      "warnings": [
+        "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=monomers; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
       ]
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "e6a2486030332899e43fdcfa182e60a97e486268610153af4154835026a5e80d",
+        "analytical_check.json": "3575e80493317fa383ba9c3a0850b6a4931204ce76bb75d4c805080b12605183",
+        "null_calibration.json": "e588966ec7698df18cbebf83675d58aa6aab748ca795ef0b054ab4bf7a6bd755",
+        "provenance.json": "e5c55dfe66e81f9d22ef846ec4121141550ad3ea6722647dc7f7c7fe974dc5d1",
+        "result.json": "9446fb0273af2ba67a90b5ee9d078f8baf3b63adee6d7142ef25d42df057279e",
+        "sweep_provenance.json": "d2f48ff5bc51b4ae7c60b454ff454c3b9a34ff1f6401a1058df13e3f0f4f41af",
+        "thresholds.json": "3848dfed718368ea5355509c548b2151c4f4881030bee4a28ebf8c809835d87f"
+      },
       "bucket": "ALGORITHMIC_SHALLOW",
       "catalog_soft_flags": {
         "M_ticks": 100,
@@ -298,17 +467,36 @@
         "primary_channel": "monomers",
         "primary_distance": "per_tick_vector_w1_mean"
       },
+      "channel_verdicts": {
+        "monomers": "SEED_NOISE",
+        "substrates": "SEED_NOISE"
+      },
       "evidence_dir": "artifacts/l2_2_gates/ProteinTranslocation/latest",
-      "green": false,
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "PASS",
       "process": "ProteinTranslocation",
-      "reasons": [
-        "MISSING_EVIDENCE: missing required/mandatory file(s) ['sweep_provenance.json'] for process ProteinTranslocation"
-      ]
+      "provenance_git_sha": "unknown",
+      "reasons": [],
+      "sweep_provenance": {
+        "completion_status": "COMPLETE",
+        "evaluator_schema_version": 2,
+        "git_dirty": null,
+        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "inputs_verified": true
+      },
+      "warnings": []
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "a5e31c7419580fc4bee016c586fd3d5ef90ee5d356223458b32386da6e0260ad",
+        "analytical_check.json": "7f609509cd697e8cb411798205cea7f7d07a5a12444d9e18e9daf6d10a38f7be",
+        "null_calibration.json": "05a94e20e45e728db0f89de74f6a02168e9e28f829abe96a94199a84b038776a",
+        "provenance.json": "0bfdd728aed214ed77eb8f2be5ca0923d35356524c4689ddce3a5d8abbdeeee1",
+        "result.json": "9bb7b84fa93678736902536869d56c4718a48a49823d8f2f40028a287dd5c573",
+        "sweep_provenance.json": "b911814f04b32fcbcf959301eeac7117145c4840004a95fa50cf006d6a433bf9",
+        "thresholds.json": "10ae0c5de9bc6e7643d0b762c9938ba4d0b0c19779969228f812cf4e84953c83"
+      },
       "bucket": "ALGORITHMIC_SHALLOW",
       "catalog_soft_flags": {
         "M_ticks": 100,
@@ -318,18 +506,39 @@
         "in_scope_L2_2": true,
         "primary_channel": "rnas",
         "primary_distance": "per_tick_vector_w1_mean"
+      },
+      "channel_verdicts": {
+        "RNAs": "SEED_NOISE",
+        "substrates": "SEED_NOISE"
       },
       "evidence_dir": "artifacts/l2_2_gates/RNADecay/latest",
       "green": false,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "FAIL",
       "process": "RNADecay",
+      "provenance_git_sha": "unknown",
       "reasons": [
-        "MISSING_EVIDENCE: missing required/mandatory file(s) ['sweep_provenance.json'] for process RNADecay"
-      ]
+        "PRIMARY_CHANNEL_VACUOUS: channel 'RNAs' is marked is_primary=true but catalog primary_channel='rnas' is not -- vacuous primary-channel substitution"
+      ],
+      "sweep_provenance": {
+        "completion_status": "COMPLETE",
+        "evaluator_schema_version": 2,
+        "git_dirty": null,
+        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "inputs_verified": true
+      },
+      "warnings": []
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "9ea03b217a8eaea0b8a79e9cf56c736f300de473b742a30e951d7b1ec121dae3",
+        "analytical_check.json": "f1e020adeb86b62ed7c22bfe6a583ba85f3bea9a3e2619bc93e0b3ff7a3d84d4",
+        "null_calibration.json": "331a0a033d6b03533c8dbf18c57881a82146dd080cb572d536b0525b5da4d616",
+        "provenance.json": "c9baf59502570429be8cb7a1e0487d406d9a579eeba46bed223365619bb00c79",
+        "result.json": "98b95d20c17ba14462cb937a160897e81fc1dc9c5221109f28c583eef7fbd285",
+        "sweep_provenance.json": "bf25a3f404d027d2c55511495e3773d637e4e0008acf1f440c726fac592729eb",
+        "thresholds.json": "7604581adf3f814b52af2efb26a92c5120e0e3b8438ef258830eb2585195acbb"
+      },
       "bucket": "ALGORITHMIC_SHALLOW",
       "catalog_soft_flags": {
         "M_ticks": 100,
@@ -339,18 +548,39 @@
         "in_scope_L2_2": true,
         "primary_channel": "rnas",
         "primary_distance": "per_tick_vector_w1_mean"
+      },
+      "channel_verdicts": {
+        "RNAs": "SEED_NOISE",
+        "substrates": "SEED_NOISE"
       },
       "evidence_dir": "artifacts/l2_2_gates/RNAModification/latest",
       "green": false,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "FAIL",
       "process": "RNAModification",
+      "provenance_git_sha": "unknown",
       "reasons": [
-        "MISSING_EVIDENCE: missing required/mandatory file(s) ['sweep_provenance.json'] for process RNAModification"
-      ]
+        "PRIMARY_CHANNEL_VACUOUS: channel 'RNAs' is marked is_primary=true but catalog primary_channel='rnas' is not -- vacuous primary-channel substitution"
+      ],
+      "sweep_provenance": {
+        "completion_status": "COMPLETE",
+        "evaluator_schema_version": 2,
+        "git_dirty": null,
+        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "inputs_verified": true
+      },
+      "warnings": []
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "bf52120c1c73bcae56804359583a0da6c9dd3a745bff592a08f82a92ff7fe6ab",
+        "analytical_check.json": "43f43bf94235670d6aa110ff3def5da7635842f72c7bb4948682515fc23e2c8d",
+        "null_calibration.json": "1e77e416a0fd5a87ddbd9d0f3cbfab94dd6ed787ba068b2796caf0371cbf0ec5",
+        "provenance.json": "0387532c2fcd559604e368b92a97a69d4605bb963c103efb2023f237cff6aefe",
+        "result.json": "e2abfa3d6d9d2ce82a482ca68e98302d5ddf5fd604fc62b09ca64eb9c0e950e7",
+        "sweep_provenance.json": "a00388060764baf8f3a4d227db714ff4e32e58ff942268307e2f2b387cc9a699",
+        "thresholds.json": "e5a23f18e677c15eccac2c8cf6c72261fbd00348f976a330fd0cdbc0e3c02a59"
+      },
       "bucket": "ALGORITHMIC_SHALLOW",
       "catalog_soft_flags": {
         "M_ticks": 100,
@@ -361,17 +591,38 @@
         "primary_channel": "rnas",
         "primary_distance": "per_tick_vector_w1_mean"
       },
+      "channel_verdicts": {
+        "RNAs": "SEED_NOISE",
+        "substrates": "SEED_NOISE"
+      },
       "evidence_dir": "artifacts/l2_2_gates/RNAProcessing/latest",
       "green": false,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "FAIL",
       "process": "RNAProcessing",
+      "provenance_git_sha": "unknown",
       "reasons": [
-        "MISSING_EVIDENCE: missing required/mandatory file(s) ['sweep_provenance.json'] for process RNAProcessing"
-      ]
+        "PRIMARY_CHANNEL_VACUOUS: channel 'RNAs' is marked is_primary=true but catalog primary_channel='rnas' is not -- vacuous primary-channel substitution"
+      ],
+      "sweep_provenance": {
+        "completion_status": "COMPLETE",
+        "evaluator_schema_version": 2,
+        "git_dirty": null,
+        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "inputs_verified": true
+      },
+      "warnings": []
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "b03e846ddcdf37f627acc4678a592ccd78c2091d015a3f95ce065196a51896cc",
+        "analytical_check.json": "6eb241419d463a4fe42c00805e220ec1da51ba380cd5b84cf8fc6d38362b0b01",
+        "null_calibration.json": "8720dc1bd2de18659b29f5f392205c0540ad14d9fa8ab1ad509cc80b2604ba0e",
+        "provenance.json": "653387be8ae276a32c65534974f00dc68f3f9b10a7a0ec5020fedcd3c3db29a1",
+        "result.json": "b1a0d629d983dd2b1276e5af3ddfa6d0060e6dd17eb0cc75d9cfa326111547e2",
+        "sweep_provenance.json": "ff378fe2a1344b01932d17e6f50211acdf12fc4210a71d37747ec99be7a7c9bf",
+        "thresholds.json": "5c399248d78b450c0e78114e2a4ac2ee54cae809b382c2bdb611a1782bed4cf9"
+      },
       "bucket": "ALGORITHMIC_SHALLOW",
       "catalog_soft_flags": {
         "M_ticks": 100,
@@ -382,23 +633,35 @@
         "primary_channel": "chromosome",
         "primary_distance": "per_component_scaled"
       },
+      "channel_verdicts": {
+        "boundEnzymes": "SEED_NOISE",
+        "chromosome": "PASS",
+        "substrates": "SEED_NOISE"
+      },
       "evidence_dir": "artifacts/l2_2_gates/Replication/latest",
-      "green": false,
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "PASS",
       "process": "Replication",
-      "reasons": [
-        "MISSING_EVIDENCE: missing required/mandatory file(s) ['sweep_provenance.json'] for process Replication"
-      ]
+      "provenance_git_sha": "unknown",
+      "reasons": [],
+      "sweep_provenance": {
+        "completion_status": "COMPLETE",
+        "evaluator_schema_version": 2,
+        "git_dirty": null,
+        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "inputs_verified": true
+      },
+      "warnings": []
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "33b0378096eed7685c8c73a48c1404817b187e2644432f3e2395e046d1d682ef",
+        "SUMMARY.json": "0009f39d9e8be573ef4b71fd54651f9d4cb25b7751bb61717f8e8cf9108cb228",
         "analytical_check.json": "d40b24b7383e02c3833fabb799ed0d2e28709559cf7c34245fa9331fefeda6f7",
-        "null_calibration.json": "738b51f3d9d309956840d1962992dadd1a08a5db1f381013a872cd679935bd7b",
-        "provenance.json": "f44e89330fdedebaaa6565dde0e6142ba3a5ab463be11a892e72faa22db07e4f",
-        "result.json": "3819ef1fdacc1c0881a13ad6992b87139c218b73ed701c52f966b4d16039883d",
-        "sweep_provenance.json": "d63820a5eb8a774ba19d5d5d94d4fc8497bc8098e7b99eff5e1f5e6479d79f98",
+        "null_calibration.json": "9b50b6920e8816db2300671bd51261174177e27de43ec46e2270c0fe5a9e7671",
+        "provenance.json": "735337696f5ead9b9b6f0f281f925f638b8c6721987891c6a6c289cd27cc3837",
+        "result.json": "19eae933a94b5bd5ca77a2c3d66a832dd381102ccf2a4d08df3ff7f414ab0566",
+        "sweep_provenance.json": "3cb1efce68717c5528b92ffda9f27b77d7cc4fedad5165ffc5a51f7bb357f303",
         "thresholds.json": "f371d2d65e25e1cf7d577adb812aeb79fa5f5824ede2d7d73628b3e37d33dd6c"
       },
       "bucket": "ALGORITHMIC_DEEP",
@@ -416,24 +679,17 @@
         "substrates": "SEED_NOISE"
       },
       "evidence_dir": "artifacts/l2_2_gates/ReplicationInitiation/latest",
-      "green": false,
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "FAIL",
+      "mechanical_verdict": "PASS",
       "process": "ReplicationInitiation",
       "provenance_git_sha": "unknown",
-      "reasons": [
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'vivarium_init'",
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'chromosome_store_module'",
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'm_gen_constants_module'",
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'state_init_module'",
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'l2_replay_common'",
-        "STALE_SWEEP_PROVENANCE: evaluator_schema_version 1 != current 2"
-      ],
+      "reasons": [],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
-        "evaluator_schema_version": 1,
+        "evaluator_schema_version": 2,
         "git_dirty": null,
-        "git_sha": "593f0359e7b5fdc4ff560349adb9857ff3670b02",
+        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
         "inputs_verified": true
       },
       "warnings": []
@@ -460,7 +716,15 @@
       ]
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "045d2dcf066430f1464b13652d4caf5e8700d453073f15fec2ee0fa416f25339",
+        "analytical_check.json": "8a74b208cdfd2fa3a50ce1a6ea99471bfd657ba3aa918e1c4de159105a114a12",
+        "null_calibration.json": "e1df92579ab1a7fe116638dcedde53d4aedd6b32153134b846a789cf0953188d",
+        "provenance.json": "f0fc6dd22c655674b1fe84d5682375ca0f7fbbfd50ca4032cb107e21d1d649e5",
+        "result.json": "08abebd152f4df6965f0b763dd8cf9bbb22e8fc3e3b2006eb08688fc60144909",
+        "sweep_provenance.json": "f57ee4a6bf4910b5d55a0b56657d70a2ebee1b6dd8ee28c6694d02e4d156b25d",
+        "thresholds.json": "7e0139c961df6278c1a2b951bd86ad360fe1a88f4cad12d5c4b0dbd94021eaa2"
+      },
       "bucket": "ALGORITHMIC_DEEP",
       "catalog_soft_flags": {
         "M_ticks": 100,
@@ -471,17 +735,39 @@
         "primary_channel": "rnas",
         "primary_distance": "per_tick_vector_w1_mean"
       },
+      "channel_verdicts": {
+        "RNAs": "PASS",
+        "boundEnzymes": "SEED_NOISE",
+        "substrates": "SEED_NOISE"
+      },
       "evidence_dir": "artifacts/l2_2_gates/Transcription/latest",
       "green": false,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "FAIL",
       "process": "Transcription",
+      "provenance_git_sha": "unknown",
       "reasons": [
-        "MISSING_EVIDENCE: missing required/mandatory file(s) ['sweep_provenance.json'] for process Transcription"
-      ]
+        "PRIMARY_CHANNEL_VACUOUS: channel 'RNAs' is marked is_primary=true but catalog primary_channel='rnas' is not -- vacuous primary-channel substitution"
+      ],
+      "sweep_provenance": {
+        "completion_status": "COMPLETE",
+        "evaluator_schema_version": 2,
+        "git_dirty": null,
+        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "inputs_verified": true
+      },
+      "warnings": []
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "3742815834bed7b256b96ae6f123611afc04d31d05e2ed6925e5184971c97151",
+        "analytical_check.json": "a26c6baaedf445667a47cb0063e3fdf9567a7995e4b960688339f2680d34f770",
+        "null_calibration.json": "fc616e9a54f6faa3f24be264f11dcbe0537eab145cfca99aa9e76a4c9e67ae1a",
+        "provenance.json": "5edb6a613b338350fc0f28d405d50caee2c31938a58eae990e032e65ceb7d9b3",
+        "result.json": "eeddf74990bd9b8492651ad5f66a1a47ae06e14e6d6b052e5445c29f201feb89",
+        "sweep_provenance.json": "ccd94293269e469a1c6d3c6ccfe9bdea7e673815836f467a4c9832ab50c6a419",
+        "thresholds.json": "336ed5353c949d53ada1ca567556de7c9f987edaee54eb647a139ae1112ddcbe"
+      },
       "bucket": "ALGORITHMIC_DEEP",
       "catalog_soft_flags": {
         "M_ticks": 100,
@@ -492,17 +778,39 @@
         "primary_channel": "monomers",
         "primary_distance": "per_tick_vector_w1_mean"
       },
+      "channel_verdicts": {
+        "boundEnzymes": "SEED_NOISE",
+        "monomers": "PASS",
+        "substrates": "SEED_NOISE"
+      },
       "evidence_dir": "artifacts/l2_2_gates/Translation/latest",
-      "green": false,
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "PASS",
       "process": "Translation",
-      "reasons": [
-        "MISSING_EVIDENCE: missing required/mandatory file(s) ['sweep_provenance.json'] for process Translation"
+      "provenance_git_sha": "unknown",
+      "reasons": [],
+      "sweep_provenance": {
+        "completion_status": "COMPLETE",
+        "evaluator_schema_version": 2,
+        "git_dirty": null,
+        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "inputs_verified": true
+      },
+      "warnings": [
+        "SEED_ALIGNMENT_DIAGNOSTIC: OC outputs align better to a shifted Karr seed index on channel=monomers (shift=+47, observed_w1=0.006671, shifted_w1=0.006165)."
       ]
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "9eebf8a20da10a0f7b167fe61190f72eb5b959636ccf4081174a8a7ff126ec0d",
+        "analytical_check.json": "9a8a426330b338e822497eabc298181dc0518c457c35037365935f7b59f84647",
+        "null_calibration.json": "7e4a735612f89b1c5ae93d689e90c8c75d56a8bc15b876b9ba5d90fe5954d756",
+        "provenance.json": "2ac8ab9dc2ccab424df93402a70b7f441ed211d16c5e78c9c1288ae399029236",
+        "result.json": "cbd4d7cf2654004dfe0be5f2d451958e591ce71b379589643e975349569fd824",
+        "sweep_provenance.json": "9adaca53cc2cb4d92473319fc5997ace6dc89e4bf83696e1be600791abf041a5",
+        "thresholds.json": "f07ff6164266532d8986ad48c8fb9c50700f7503d7f6955e664b2fff51d90f97"
+      },
       "bucket": "ALGORITHMIC_SHALLOW",
       "catalog_soft_flags": {
         "M_ticks": 50,
@@ -513,19 +821,36 @@
         "primary_channel": "rnas",
         "primary_distance": "per_tick_vector_w1_mean"
       },
+      "channel_verdicts": {
+        "RNAs": "SEED_NOISE",
+        "substrates": "SEED_NOISE"
+      },
       "evidence_dir": "artifacts/l2_2_gates/tRNAAminoacylation/latest",
       "green": false,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "FAIL",
       "process": "tRNAAminoacylation",
+      "provenance_git_sha": "unknown",
       "reasons": [
-        "MISSING_EVIDENCE: missing required/mandatory file(s) ['sweep_provenance.json'] for process tRNAAminoacylation"
+        "SENTINEL_FAIL: PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE demotion claimed without a machine-checked h12_evidence_ref (nontrivial_sample_count > 0); treated as non-green",
+        "PRIMARY_CHANNEL_VACUOUS: channel 'RNAs' is marked is_primary=true but catalog primary_channel='rnas' is not -- vacuous primary-channel substitution"
+      ],
+      "sweep_provenance": {
+        "completion_status": "COMPLETE",
+        "evaluator_schema_version": 2,
+        "git_dirty": null,
+        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "inputs_verified": true
+      },
+      "warnings": [
+        "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=RNAs; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
       ]
     }
   ],
   "schema_version": 1,
   "tally": {
-    "FAIL": 2,
-    "MISSING_EVIDENCE": 20
+    "FAIL": 9,
+    "MISSING_EVIDENCE": 4,
+    "PASS": 9
   }
 }

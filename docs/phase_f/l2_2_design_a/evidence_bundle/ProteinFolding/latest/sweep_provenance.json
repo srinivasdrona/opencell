@@ -1,0 +1,30 @@
+{
+  "completion_status": "COMPLETE",
+  "evaluator_schema_version": 2,
+  "git_dirty": null,
+  "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+  "inputs_verified": true,
+  "m_ticks": 100,
+  "n_seeds": 50,
+  "process": "ProteinFolding",
+  "schema_version": 2,
+  "sidecar_hashes": {
+    "SUMMARY.json": "e3d3277e9677a02de2d7987677acbaa45b325f4b49f3c6849f12e8e28c01bbd7",
+    "analytical_check.json": "030974782242b9c2037a6286ef5fbb72009f65fa3189ddfa836f54bd0dcbdeb5",
+    "input_manifest.json": "49ff9b33b3208f99857fa02f7bab594da6275e14c7b85c80d697e8c82378344d",
+    "null_calibration.json": "7f59f422ce3e2974d4d2a789a88600f3a465498cd3276b8931a3b663e859258f",
+    "provenance.json": "5ac03fd07201914574fcb3c71583293a0f9bf17bd44098b804ed476d70f57977",
+    "result.json": "6c9031f301a1a29ab43bbcfdb5e812e623bfd185ad1a806e7e0c7a3f2c469b12",
+    "thresholds.json": "67ad0137cbe88e6927828160e3882c366311cd8ab2f9c58cb47940de500adbf9"
+  },
+  "source_hashes": {
+    "catalog": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
+    "helpers": "a60a3de8c440029bd8639d5f561dad1a47a18b0a69dee894b9c75b1bbafc7075",
+    "l2_replay_common": "dbc43d5d0850f58bee564da81e410dffce0d05e4572ef0827c49a1c17831cdcb",
+    "oc_module": "4e0c360dea3c089cf894ca2bf28be5d12684838bcad78a74d18af69f05c61e1a",
+    "projections": "ff2154045ffad25ab5074103ef96989c336cb3e9d3c63444f292a48ecba2eb3b",
+    "runner": "44af79f2de583dd0e7a9d100cc3bb076f0f251c9276e87f5408de8ba5c6fa0a1",
+    "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
+  },
+  "written_at": "2026-07-30T00:22:38.098601+00:00"
+}

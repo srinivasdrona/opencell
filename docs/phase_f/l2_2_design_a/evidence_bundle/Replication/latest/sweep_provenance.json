@@ -1,0 +1,33 @@
+{
+  "completion_status": "COMPLETE",
+  "evaluator_schema_version": 2,
+  "git_dirty": null,
+  "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+  "inputs_verified": true,
+  "m_ticks": 100,
+  "n_seeds": 50,
+  "process": "Replication",
+  "schema_version": 2,
+  "sidecar_hashes": {
+    "SUMMARY.json": "b03e846ddcdf37f627acc4678a592ccd78c2091d015a3f95ce065196a51896cc",
+    "analytical_check.json": "6eb241419d463a4fe42c00805e220ec1da51ba380cd5b84cf8fc6d38362b0b01",
+    "input_manifest.json": "e2397f08c54ea2ad2fd90b68c3f5b0fc8e08a8dd6f3f5eb7ca76f3c35f3c4e05",
+    "null_calibration.json": "8720dc1bd2de18659b29f5f392205c0540ad14d9fa8ab1ad509cc80b2604ba0e",
+    "provenance.json": "653387be8ae276a32c65534974f00dc68f3f9b10a7a0ec5020fedcd3c3db29a1",
+    "result.json": "b1a0d629d983dd2b1276e5af3ddfa6d0060e6dd17eb0cc75d9cfa326111547e2",
+    "thresholds.json": "5c399248d78b450c0e78114e2a4ac2ee54cae809b382c2bdb611a1782bed4cf9"
+  },
+  "source_hashes": {
+    "catalog": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
+    "chromosome_store_module": "7066d68f8b3a3dfd0a1be6d446800445583f17381779adbb03562510ffdae22a",
+    "helpers": "a60a3de8c440029bd8639d5f561dad1a47a18b0a69dee894b9c75b1bbafc7075",
+    "l2_replay_common": "dbc43d5d0850f58bee564da81e410dffce0d05e4572ef0827c49a1c17831cdcb",
+    "m_gen_constants_module": "bbfea3ac477e4a3eb93edcfae355350c9d5b8c1501ea574ef9b83acfaebce8ae",
+    "oc_module": "e250d519ec35f96f9450d857ad1c08a602732905950d1125cd3884f0ac14ca8c",
+    "projections": "ff2154045ffad25ab5074103ef96989c336cb3e9d3c63444f292a48ecba2eb3b",
+    "runner": "44af79f2de583dd0e7a9d100cc3bb076f0f251c9276e87f5408de8ba5c6fa0a1",
+    "state_init_module": "6f1ff7401f505cfcc68d89d912d2af35776adb08643069e176e922ac912b50ec",
+    "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
+  },
+  "written_at": "2026-07-30T02:09:42.740889+00:00"
+}
