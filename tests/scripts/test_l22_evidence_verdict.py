@@ -127,6 +127,26 @@ def test_channel_primary_vacuous_when_both_sides_zero_nonzero():
     assert verdict == schema.STATUS_PRIMARY_VACUOUS
 
 
+def test_channel_primary_activity_missing_when_oc_zero_karr_nonzero():
+    """P2 zero-activity guard: OC never fired at all while Karr shows real
+    activity -- this is NOT the symmetric both-zero VACUOUS case, and must
+    not be laundered into INSUFFICIENT_SAMPLES (non-gating) either."""
+    payload = _channel(n_nonzero_oc=0, n_nonzero_karr=500)
+    verdict, reasons = vd.rederive_channel("substrates", payload, is_primary=True)
+    assert verdict == schema.STATUS_PRIMARY_ACTIVITY_MISSING
+    assert any("substrates" in reason and "500" in reason for reason in reasons)
+
+
+def test_channel_activity_missing_check_skipped_for_non_primary():
+    """The same OC-zero/Karr-nonzero asymmetry on a non-primary channel is
+    not gated by this guard -- it still falls through to the ordinary
+    MIN_NONZERO_EVENTS/w1 logic (INSUFFICIENT_SAMPLES here, since 0 < 30)."""
+    payload = _channel(n_nonzero_oc=0, n_nonzero_karr=500)
+    verdict, reasons = vd.rederive_channel("secondary", payload, is_primary=False)
+    assert verdict == "INSUFFICIENT_SAMPLES"
+    assert reasons == []
+
+
 def test_channel_insufficient_samples_below_min_nonzero():
     payload = _channel(n_nonzero_oc=5, n_nonzero_karr=5, is_primary=False)
     verdict, reasons = vd.rederive_channel("secondary", payload, is_primary=False)
@@ -266,6 +286,42 @@ def test_per_component_not_vacuous_when_only_one_component_is_zero_nonzero():
     assert verdict == "PASS"
 
 
+def test_per_component_activity_missing_when_one_component_oc_zero_karr_nonzero():
+    """P2 zero-activity guard: comp_a's OC side never fired while Karr's did
+    -- must be non-green (PRIMARY_ACTIVITY_MISSING), not silently passed
+    through a large `component_scales` divisor, and distinct from the
+    both-zero-on-both-sides PRIMARY_CHANNEL_VACUOUS case."""
+    payload = _per_component_payload(
+        component_n_nonzero_oc={"comp_a": 0, "comp_b": 100},
+        component_n_nonzero_karr={"comp_a": 4000, "comp_b": 100},
+    )
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == schema.STATUS_PRIMARY_ACTIVITY_MISSING
+    assert any("comp_a" in reason and "4000" in reason for reason in reasons)
+
+
+def test_per_component_activity_missing_does_not_penalize_both_zero_component():
+    """A component where BOTH sides are genuinely zero must never trip the
+    asymmetric activity-missing guard, only the symmetric vacuous one (and
+    only when ALL components are both-zero, which is not the case here)."""
+    payload = _per_component_payload(
+        component_n_nonzero_oc={"comp_a": 0, "comp_b": 100},
+        component_n_nonzero_karr={"comp_a": 0, "comp_b": 100},
+    )
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == "PASS"
+    assert not any(schema.STATUS_PRIMARY_ACTIVITY_MISSING in reason for reason in reasons)
+
+
+def test_per_component_activity_missing_check_skipped_for_non_primary():
+    payload = _per_component_payload(
+        component_n_nonzero_oc={"comp_a": 0, "comp_b": 100},
+        component_n_nonzero_karr={"comp_a": 4000, "comp_b": 100},
+    )
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=False)
+    assert verdict == "PASS"
+
+
 def test_per_component_vacuous_check_skipped_for_non_primary():
     payload = _per_component_payload(
         component_raw_w1={"comp_a": 0.0, "comp_b": 0.0},
@@ -396,6 +452,22 @@ def test_hurdle_zero_events_vacuity_skipped_for_non_primary():
         n_events_oc=0,
         n_events_karr=0,
     )
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=False)
+    assert verdict == "PASS"
+
+
+def test_hurdle_activity_missing_when_oc_zero_events_karr_nonzero():
+    """P2 zero-activity guard, hurdle flavor: OC recorded zero events across
+    the ensemble while Karr recorded real events -- distinct from the
+    symmetric both-zero VACUOUS case, and must not be silently PASSed."""
+    payload = _hurdle_payload(n_events_oc=0, n_events_karr=42)
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == schema.STATUS_PRIMARY_ACTIVITY_MISSING
+    assert any("42" in reason for reason in reasons)
+
+
+def test_hurdle_activity_missing_check_skipped_for_non_primary():
+    payload = _hurdle_payload(n_events_oc=0, n_events_karr=42)
     verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=False)
     assert verdict == "PASS"
 
@@ -703,6 +775,52 @@ def test_process_primary_channel_matching_catalog_name_exactly_once_is_clean():
     outcome = vd.rederive_process("FakeProcess", entry, result)
     assert outcome.mechanical_verdict == schema.STATUS_PASS
     assert outcome.reasons == []
+
+
+def test_process_primary_channel_name_alias_is_clean_not_vacuous():
+    """P0 fix: the runner normalizes a handful of catalog channel-name
+    aliases (e.g. `"rnas"` -> `"RNAs"`) before ever writing result.json, so
+    the catalog's raw `primary_channel="rnas"` legitimately shows up as
+    result.json key `"RNAs"` with is_primary=true. This is NOT a vacuous
+    substitution and must not demote an otherwise-healthy process."""
+    entry = _entry(primary_channel="rnas", output_channels=("rnas",))
+    result = _result(
+        channels={
+            "RNAs": _channel(is_primary=True),
+        }
+    )
+    outcome = vd.rederive_process("FakeProcess", entry, result)
+    assert outcome.mechanical_verdict == schema.STATUS_PASS
+    assert outcome.reasons == []
+
+
+def test_process_primary_channel_mrnas_alias_is_clean_not_vacuous():
+    """Same alias-normalization guarantee for the other registered alias
+    (`"mrnas"` -> `"mRNAs"`)."""
+    entry = _entry(primary_channel="mrnas", output_channels=("mrnas",))
+    result = _result(
+        channels={
+            "mRNAs": _channel(is_primary=True),
+        }
+    )
+    outcome = vd.rederive_process("FakeProcess", entry, result)
+    assert outcome.mechanical_verdict == schema.STATUS_PASS
+    assert outcome.reasons == []
+
+
+def test_process_primary_channel_genuine_mismatch_still_non_green_after_alias_fix():
+    """A genuine (non-alias) name mismatch must still be caught -- the
+    alias-normalization fix must not accidentally widen the comparison
+    into a fuzzy match."""
+    entry = _entry(primary_channel="rnas", output_channels=("rnas", "decoy"))
+    result = _result(
+        channels={
+            "decoy": _channel(is_primary=True),
+        }
+    )
+    outcome = vd.rederive_process("FakeProcess", entry, result)
+    assert outcome.mechanical_verdict == schema.STATUS_FAIL
+    assert any(schema.STATUS_PRIMARY_VACUOUS in reason for reason in outcome.reasons), outcome.reasons
 
 
 def test_process_empty_catalog_primary_channel_is_non_green_even_with_one_is_primary():

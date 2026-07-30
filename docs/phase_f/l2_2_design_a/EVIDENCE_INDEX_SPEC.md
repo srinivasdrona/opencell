@@ -153,7 +153,7 @@ name them all" convention already used by the L2.2 divergence taxonomy in
 | `MISSING_EVIDENCE` | One or more of the mandatory files (`result.json`/`input_manifest.json`/`provenance.json`/`thresholds.json`/`null_calibration.json`/`SUMMARY.json`/`analytical_check.json`/`sweep_provenance.json`) is absent -- including evidence generated before the provenance hardening landed, which never wrote `sweep_provenance.json` and is therefore honestly demoted here rather than grandfathered in. | no |
 | `SCHEMA_INVALID` | A mandatory file exists but is not parseable JSON, or `result.json` has no channel marked `is_primary`. | no |
 | `NO_GATEABLE_CHANNELS` | Every channel is `EVENT_CHANNEL_DEFERRED` or `INSUFFICIENT_SAMPLES`. | no |
-| `FAIL` | Any other non-green condition (raw `w1 > threshold`, `NM_MISMATCH`, `STALE_VS_TREE`, `STALE_SWEEP_PROVENANCE` (see Section 13), `SENTINEL_FAIL`, `MISSING_EVALUATOR`, `PRIMARY_CHANNEL_VACUOUS`, `PROCESS_NAME_MISMATCH`, `DEFERRED`). See `reasons[]` for exactly which. | no |
+| `FAIL` | Any other non-green condition (raw `w1 > threshold`, `NM_MISMATCH`, `STALE_VS_TREE`, `STALE_SWEEP_PROVENANCE` (see Section 13), `SENTINEL_FAIL`, `MISSING_EVALUATOR`, `PRIMARY_CHANNEL_VACUOUS`, `PRIMARY_ACTIVITY_MISSING` (see Section 13.14), `PROCESS_NAME_MISMATCH`, `DEFERRED`). See `reasons[]` for exactly which. | no |
 
 ## 6. Mechanical verdict re-derivation (`scripts/l22_evidence/verdict.py`)
 
@@ -168,6 +168,10 @@ mechanically re-derivable today:
   `n_nonzero_oc`, `n_nonzero_karr`) → `MISSING_EVALUATOR`.
 - Primary channel with zero nonzero observations on **both** sides →
   `PRIMARY_CHANNEL_VACUOUS` (non-vacuous primary channel requirement).
+- Primary channel with zero nonzero observations on OC while Karr has
+  real (nonzero) activity → `PRIMARY_ACTIVITY_MISSING` (checked BEFORE
+  the `n_nonzero < 30` branch below, so it is never silently absorbed
+  into non-gating `INSUFFICIENT_SAMPLES`; see Section 13.14).
 - `n_nonzero < 30` (either side) → `INSUFFICIENT_SAMPLES` (non-gating).
 - `w1 <= q95_null` → `SEED_NOISE`; `w1 <= threshold` → `PASS`; else `FAIL`.
 
@@ -184,14 +188,21 @@ part of this evaluator so re-derivation never has to trust the runner's own
 component-name sets, or a non-finite/non-positive `raw_w1`/`scale` →
 `MISSING_EVALUATOR`.
 
-For each component: `scaled_w1 = raw_w1 / max(scale, 1e-12)`; component
-verdict is `PASS` iff `scaled_w1 <= scaled_distance_threshold`, else `FAIL`
-(exactly the runner's own formula, independently recomputed here rather than
-read from the stored `component_verdicts` dict). If the channel is primary
-and **every** component has zero nonzero observations on both OC and Karr
-→ `PRIMARY_CHANNEL_VACUOUS` (a single trivial-always-zero component
+For each component: if the channel is primary and that ONE component has
+zero nonzero observations on OC while Karr has real (nonzero) activity,
+the component is marked `PRIMARY_ACTIVITY_MISSING` and its `scaled_w1` is
+never computed/PASSed (Section 13.14) -- this is independent of, and
+checked in addition to, the both-sides-zero channel-level check below, and
+never fires for a component where both sides are genuinely zero. Otherwise:
+`scaled_w1 = raw_w1 / max(scale, 1e-12)`; component verdict is `PASS` iff
+`scaled_w1 <= scaled_distance_threshold`, else `FAIL` (exactly the runner's
+own formula, independently recomputed here rather than read from the
+stored `component_verdicts` dict). If the channel is primary and **every**
+component has zero nonzero observations on both OC and Karr →
+`PRIMARY_CHANNEL_VACUOUS` (a single trivial-always-zero component
 alongside otherwise-real components is not vacuous by itself). Otherwise:
-any component `FAIL` → channel `FAIL`; all components `PASS` → channel
+any component `FAIL`/`PRIMARY_ACTIVITY_MISSING` → channel `FAIL`/
+`PRIMARY_ACTIVITY_MISSING` respectively; all components `PASS` → channel
 `PASS`.
 
 ### 6.3 `hurdle_event_rate_plus_conditional_scaled_distance` (chromosome-primary; `DNARepair`)
@@ -215,8 +226,11 @@ whole ensemble) → `PRIMARY_CHANNEL_VACUOUS`: the runner's own
 `per_component`/`hurdle` calculation forces every conditional distance to a
 trivial `0.0` in that case (there is nothing to compare), so its
 `joint_verdict` is a vacuous `PASS` that this re-derivation refuses to
-launder into green. Otherwise the channel verdict is `PASS` iff the
-event-rate check and every conditional component all pass.
+launder into green. If instead `n_events_oc == 0` while `n_events_karr > 0`
+(OC never fired at all, but Karr did) → `PRIMARY_ACTIVITY_MISSING` (Section
+13.14), distinct from and checked in addition to the symmetric case above.
+Otherwise the channel verdict is `PASS` iff the event-rate check and every
+conditional component all pass.
 
 ### 6.4 `fva_feasibility` (Metabolism substrates, when FVA-gated)
 
@@ -1658,6 +1672,138 @@ source hash for 'vivarium_init'` reasons appear on `DNARepair`'s and
 for that reason plus `generated_at`); the tally
 (`MISSING_EVIDENCE: 20, FAIL: 2`) is unchanged, and no process was
 rerun.
+
+### 13.14 Evaluator-only re-derivation (schema v3): channel-name-alias normalization, zero-activity guard, and decoupling `evaluator_schema_version` from sweep staleness
+
+By the time this section was written, further sweep progress (outside the
+scope of this evaluator-only commit) had populated real, hardened
+`sweep_provenance.json` sentinels for additional processes beyond the two
+in 13.10/13.13, so the tracked tally immediately BEFORE this commit was
+`PASS: 9, FAIL: 9, MISSING_EVIDENCE: 4` (not the `MISSING_EVIDENCE: 20,
+FAIL: 2` recorded in 13.13 -- that number is honestly superseded here, not
+edited in place, per this project's append-only documentation convention
+for tally changes over time). This commit itself performs **zero sweep
+reruns**: it is a pure re-derivation of already-stored raw metrics under
+three fixes to `verdict.py`/`generator.py`/`sweep.py`, none of which touch
+`PROCESS_CATALOG.yaml`, any `result.json`/oracle/sidecar file, or any
+`sweep_provenance.json` sentinel.
+
+**P0: primary-channel-name-alias false `PRIMARY_CHANNEL_VACUOUS`.** The
+runner (`tests/vivarium/l2_2_design_a_runner.py`, off-limits to this
+task) normalizes a small set of catalog channel-name aliases (its own
+`_CHANNEL_NAME_ALIASES = {"mrnas": "mRNAs", "rnas": "RNAs"}` via
+`_normalize_channel_name`) before it ever writes `result.json` -- so a
+process whose catalog `primary_channel` is literally `"rnas"`
+(`Transcription`, `RNAProcessing`, `RNAModification`, `RNADecay`,
+`tRNAAminoacylation`) has its result.json primary channel keyed `"RNAs"`
+instead. `scripts/l22_evidence/catalog.py` deliberately reads
+`primary_channel` raw/un-normalized (so `catalog_soft_flags` stays
+byte-exact to the YAML), and `verdict.rederive_process`'s F3 primary-
+channel-name check (13.10) compared the two byte-exact -- so every one of
+these 5 processes spuriously hit `PRIMARY_CHANNEL_VACUOUS` ("channel
+'RNAs' is marked is_primary=true but catalog primary_channel='rnas' is
+not") regardless of their real numeric evidence. Fix: a new module,
+`scripts/l22_evidence/channel_names.py`, holds a hand-maintained DUPLICATE
+of the runner's alias table (never an import -- the runner pulls in
+numpy/scipy/`opencell.m1.calc_flux_bounds`/`opencell.m1.fva` at module
+scope) plus `normalize_channel_name()`; `rederive_process` now normalizes
+BOTH sides of the comparison through it. A parity test
+(`tests/scripts/test_l22_evidence_channel_names_parity.py`) imports the
+runner directly (test-only cost) and asserts byte-exact equality against
+the duplicate, so future alias drift fails loudly instead of silently
+reintroducing this bug class. Verified against the real stored raw
+metrics in `evidence_bundle/{RNADecay,RNAModification,RNAProcessing,
+Transcription}/latest/result.json`: all four have tens-of-thousands of
+nonzero observations on both OC and Karr on their `RNAs` primary channel
+with `w1_oc_vs_karr` well under `threshold`, so all four flip
+`FAIL -> PASS`. `tRNAAminoacylation` also clears the alias check but
+remains `FAIL`: its `RNAs` channel legitimately warrants
+`PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE` demotion, but has no valid
+`h12_evidence_ref` (Section 6/13.10's H12 requirement), so it stays
+non-green for that unrelated, pre-existing, correct reason.
+
+**P2: zero-activity guard (new status `PRIMARY_ACTIVITY_MISSING`).**
+Every existing "non-vacuous primary channel" check (`w1`/
+`per_component_scaled`/hurdle) only ever demoted the SYMMETRIC case: both
+OC and Karr showing zero activity. An ASYMMETRIC case -- OC shows zero
+activity while Karr shows real activity on a primary channel/component --
+previously fell through to whatever the ordinary distance/threshold
+formula computed, which can PASS if the divisor (`component_scales`,
+etc.) happens to be large: this silently hid a case at least as serious
+as the symmetric one (the SUT provably never exhibited behavior Karr
+genuinely has). Fix: `schema.STATUS_PRIMARY_ACTIVITY_MISSING =
+"PRIMARY_ACTIVITY_MISSING"` (deliberately excluded from
+`GREEN_CHANNEL_VERDICTS`/`NON_GATING_CHANNEL_VERDICTS`, so it gates
+exactly like `PRIMARY_CHANNEL_VACUOUS`) is now returned whenever
+`is_primary and n_oc == 0 and n_karr > 0` (or the per-component/hurdle
+event-count equivalent), checked in `_rederive_w1_channel` BEFORE the
+`MIN_NONZERO_EVENTS` branch (0 < 30 is always true and would otherwise
+silently swallow this case as non-gating `INSUFFICIENT_SAMPLES` first),
+per-component in `_rederive_per_component_scaled_channel` (independent of
+and in addition to the existing all-both-zero check; never fires for a
+component where both sides are genuinely zero), and via `n_events_oc`/
+`n_events_karr` in `_rederive_hurdle_channel`. Never applied to
+non-primary channels/components. Applying this fix against the real
+stored `Replication/latest/result.json` (primary channel `chromosome`,
+`per_component_scaled` aggregation) flips it `PASS -> FAIL`: 4 of its 5
+projection components (`polymerizedRegions.delta_nnz`,
+`delta_value_sum_strand_{1,2,3}`) show `n_nonzero_oc = 0` while Karr shows
+real activity (420/3118/4155/4265 respectively); only `strand_4` is
+genuinely zero on both sides. These components' large hardcoded
+`component_scales` (100/200/200/2) previously made their (spuriously
+computed) `scaled_w1` pass the `<= 1.0` threshold regardless -- exactly
+the hardcoded-scale/null-divisor issue this task explicitly defers as a
+separate, out-of-scope follow-up (`component_scales` themselves are
+unchanged here).
+
+**Staleness-vs-ceremonial-rerun decoupling.** Both fixes above change what
+verdict `rederive_process`/`rederive_channel` can mechanically produce for
+the SAME raw `result.json` payload, so `verdict.EVALUATOR_SCHEMA_VERSION`
+is bumped `2 -> 3` per its own documented convention (13.10). Previously,
+`generator._check_sweep_provenance_staleness` and
+`sweep.evidence_is_valid` both hard-gated on `recorded
+evaluator_schema_version == vd.EVALUATOR_SCHEMA_VERSION`; since every
+existing `sweep_provenance.json` on disk records `evaluator_schema_version:
+2` (untouched by this commit -- sentinels are off-limits), bumping the
+constant to 3 would have instantly `STALE_SWEEP_PROVENANCE`'d every single
+row, making a pure evaluator-side fix look exactly like "every process
+needs a sweep rerun" -- which this task explicitly forbids. Fix: both
+gates now only compare `evaluator_schema_version` for INFORMATIONAL
+recording (unchanged: still surfaced on every row via
+`row["sweep_provenance"]["evaluator_schema_version"]` and written into
+every fresh sentinel by `build_sweep_provenance`), never for staleness/
+rerun-necessity. `source_hashes`/`sidecar_hashes` (content hashes) remain
+the sole gating authority for both "was this evidence produced by the code
+currently on disk" (staleness) and "does this job need a sweep rerun"
+(`evidence_is_valid`) -- whether ALREADY-CURRENT raw evidence can be
+safely RE-SCORED under newer mechanical-verdict logic is a separate
+question, answered per-channel by each `_rederive_*_channel` function's
+own `required_fields`/`missing_fields` check (`MISSING_EVALUATOR`), never
+by the sweep-provenance/launcher staleness gate. Tests
+(`test_evaluator_schema_version_mismatch_alone_does_not_demote`,
+`test_evidence_is_valid_accepts_stale_evaluator_schema_version_when_hashes_match`)
+confirm a `sweep_provenance.json` recorded under v2 with otherwise-current
+hashes still rederives green under v3; a companion test
+(`test_evaluator_schema_version_mismatch_with_missing_raw_field_is_still_non_green`)
+confirms a genuinely missing raw field the new logic needs still
+correctly yields `MISSING_EVALUATOR` regardless of the recorded
+`evaluator_schema_version`. `STATUS_STALE_PROVENANCE`'s docstring in
+`schema.py` is updated to match; `SWEEP_PROVENANCE_SCHEMA_VERSION`
+(sidecar structural-shape version) is untouched, since the sentinel's
+field SHAPE did not change, only which of its already-existing fields
+gate.
+
+**Net result: no sweep rerun, five FAIL rows promoted, one PASS row
+correctly demoted.** With no process/oracle/catalog/threshold change and
+zero sweep reruns, regenerating `evidence_index.json` purely by re-running
+this hardened evaluator against the SAME stored raw bytes moves the tally
+from `PASS: 9, FAIL: 9, MISSING_EVIDENCE: 4` to `PASS: 12, FAIL: 6,
+MISSING_EVIDENCE: 4`: `RNADecay`/`RNAModification`/`RNAProcessing`/
+`Transcription` go `FAIL -> PASS` (P0), `Replication` goes `PASS -> FAIL`
+(P2), and `tRNAAminoacylation` stays `FAIL` (unrelated H12 gap,
+unaffected by either fix). The remaining 4 `MISSING_EVIDENCE` rows
+(`Cytokinesis`, `DNADamage`, `FtsZPolymerization`, `RibosomeAssembly`) are
+untouched -- no evidence directory exists for them either way.
 
 ## 14. Files
 

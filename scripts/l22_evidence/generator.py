@@ -255,12 +255,18 @@ def _check_sweep_provenance_staleness(
     does NOT by itself add a reason here: content hashes are the gating
     authority, since they directly prove the evidence matches the code now
     on disk, whereas git plumbing for a Windows-linked worktree is
-    inherently more fragile. Distinct from `_check_current_tree_staleness`
-    (which checks `input_manifest.json`'s OWN recorded inputs, e.g. the
-    oracle .mat file) -- this checks the sweep-launcher's independent
-    provenance record instead, since the runner's
-    `provenance.json["git_sha"]` can never itself be trusted (see
-    schema.py's SWEEP_PROVENANCE_FILE docstring)."""
+    inherently more fragile. Likewise, `evaluator_schema_version` is
+    recorded on the row informationally but is NOT gating here (as of v3):
+    a mismatch alone never staled this function's result -- see
+    `schema.STATUS_STALE_PROVENANCE`'s docstring for why (re-deriving
+    already-stored raw metrics under newer mechanical-verdict logic,
+    without a sweep rerun, is the entire point of an evaluator-only fix).
+    Distinct from `_check_current_tree_staleness` (which checks
+    `input_manifest.json`'s OWN recorded inputs, e.g. the oracle .mat
+    file) -- this checks the sweep-launcher's independent provenance
+    record instead, since the runner's `provenance.json["git_sha"]` can
+    never itself be trusted (see schema.py's SWEEP_PROVENANCE_FILE
+    docstring)."""
     reasons: list[str] = []
 
     if payload.get("process") != entry.name:
@@ -331,12 +337,21 @@ def _check_sweep_provenance_staleness(
             f"key(s) {extra_keys!r} not part of the current expected dependency set"
         )
 
-    recorded_schema_version = payload.get("evaluator_schema_version")
-    if recorded_schema_version != vd.EVALUATOR_SCHEMA_VERSION:
-        reasons.append(
-            f"{schema.STATUS_STALE_PROVENANCE}: evaluator_schema_version {recorded_schema_version!r} "
-            f"!= current {vd.EVALUATOR_SCHEMA_VERSION!r}"
-        )
+    # NOTE (v3): `evaluator_schema_version` is intentionally NOT compared
+    # against `vd.EVALUATOR_SCHEMA_VERSION` here. It is still recorded on
+    # the row informationally (see `row["sweep_provenance"]` in
+    # `build_process_row`) purely for human inspection/audit trail -- but
+    # gating staleness on it would force every existing evidence directory
+    # to be treated as stale (and therefore look like it needs a sweep
+    # rerun) any time `verdict.py`'s mechanical re-derivation logic is
+    # fixed, even when the raw result.json/sidecars are byte-identical and
+    # every field the new logic needs was already present. Content hashes
+    # (`source_hashes`/`sidecar_hashes`, checked above) are what actually
+    # prove the raw evidence matches the code that PRODUCED it; whether
+    # that raw evidence can be safely re-scored under newer evaluator
+    # logic is a separate question, answered by each `_rederive_*_channel`
+    # function's own `required_fields`/`missing_fields` checks
+    # (`schema.STATUS_MISSING_EVALUATOR`), not by this staleness gate.
     return reasons
 
 

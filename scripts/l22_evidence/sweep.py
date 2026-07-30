@@ -305,14 +305,20 @@ def evidence_is_valid(job: SweepJob) -> tuple[bool, str | None]:
     request-matching runner evidence AND a tracked, current
     `sweep_provenance.json` completion sentinel -- never existence-only, and
     never true for evidence that predates the provenance hardening (missing
-    sweep_provenance.json), was generated against a since-changed
-    runner/helpers/projections/catalog source file, or was scored by a
-    since-changed evaluator schema version. An unknown/missing git SHA does
-    NOT alone invalidate evidence whose source hashes and evaluator schema
-    version all still match (see build_sweep_provenance below). Returns
-    (False, <reason>) for every way it can be invalid, so `--force`-less
-    reruns have an honest, inspectable reason for why a job was (not)
-    skipped."""
+    sweep_provenance.json) or was generated against a since-changed
+    runner/helpers/projections/catalog source file. An unknown/missing git
+    SHA does NOT alone invalidate evidence whose source hashes still match
+    (see build_sweep_provenance below). Nor does a since-changed
+    `evaluator_schema_version` alone invalidate otherwise-current evidence
+    (as of v3): that field is still recorded on the sentinel purely
+    informationally -- whether stored raw evidence needs a sweep RERUN is
+    answered by content hashes (source/sidecar) alone; whether it can be
+    safely re-scored under newer mechanical-verdict logic is a separate,
+    evaluator-side question answered by `verdict.py`'s own per-channel
+    `required_fields` checks, never by this launcher-side rerun gate.
+    Returns (False, <reason>) for every way it can be invalid, so
+    `--force`-less reruns have an honest, inspectable reason for why a job
+    was (not) skipped."""
     _recover_crashed_swap(job.output_dir)
 
     ok, reason = _authority_and_sidecars_match(job.output_dir, process=job.process, seeds=job.seeds, m_ticks=job.m_ticks)
@@ -378,12 +384,15 @@ def evidence_is_valid(job: SweepJob) -> tuple[bool, str | None]:
             "not part of the current expected dependency set",
         )
 
-    if sweep_prov.get("evaluator_schema_version") != vd.EVALUATOR_SCHEMA_VERSION:
-        return (
-            False,
-            f"{schema.SWEEP_PROVENANCE_FILE} evaluator_schema_version="
-            f"{sweep_prov.get('evaluator_schema_version')!r} != current {vd.EVALUATOR_SCHEMA_VERSION!r}",
-        )
+    # NOTE (v3): `evaluator_schema_version` is intentionally NOT compared
+    # against `vd.EVALUATOR_SCHEMA_VERSION` here -- see the function
+    # docstring above for why gating a sweep RERUN on it would be
+    # ceremonial (it would force every process to be re-run any time
+    # `verdict.py`'s mechanical re-derivation logic is fixed, even though
+    # no process/oracle/threshold changed and the stored raw evidence is
+    # already sufficient to re-score). The value is still written into
+    # every sentinel by `build_sweep_provenance` below, purely
+    # informationally.
 
     return True, None
 
@@ -401,8 +410,9 @@ def build_sweep_provenance(
     worktree-gitdir resolution in `populate.py`, since the runner's own
     `provenance.json["git_sha"]` is permanently "unknown" in this project's
     WSL/Windows-linked-worktree environment) purely informationally --
-    gating authority is `source_hashes` + `sidecar_hashes` +
-    `evaluator_schema_version` below, since content hashes are what
+    gating authority is `source_hashes` + `sidecar_hashes` below (as of
+    v3, `evaluator_schema_version` is recorded but no longer gating; see
+    `evidence_is_valid`'s docstring), since content hashes are what
     actually prove the evidence was generated against the code now on disk
     (see `evidence_is_valid`). Deliberately does NOT track
     `allocator_inputs.json`: it is large diagnostic bulk that no verdict

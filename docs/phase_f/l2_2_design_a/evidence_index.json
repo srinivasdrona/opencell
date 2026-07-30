@@ -2,9 +2,9 @@
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
   "catalog_sha256": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
-  "content_hash": "212cc49627f4d9bbf02c6e13f602976d32ac7c365d69abdbb181524602fb77c3",
-  "evidence_root": "artifacts/l2_2_gates",
-  "generated_at": "2026-07-30T03:09:29.689906+00:00",
+  "content_hash": "fe5276c1bb2539f03a7aa0e21619950cb18c596228d24c0d7bf20ca3822461ec",
+  "evidence_root": "docs/phase_f/l2_2_design_a/evidence_bundle",
+  "generated_at": "2026-07-30T07:36:19.027558+00:00",
   "n_in_scope": 22,
   "rows": [
     {
@@ -19,7 +19,7 @@
         "primary_channel": "substrates",
         "primary_distance": "per_tick_vector_w1_mean"
       },
-      "evidence_dir": "artifacts/l2_2_gates/Cytokinesis/latest_event",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/Cytokinesis/latest_event",
       "green": false,
       "harness_type": "event_class",
       "mechanical_verdict": "MISSING_EVIDENCE",
@@ -40,7 +40,7 @@
         "primary_channel": "chromosome",
         "primary_distance": "hurdle_event_rate_plus_conditional_scaled_distance"
       },
-      "evidence_dir": "artifacts/l2_2_gates/DNADamage/latest_event",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/DNADamage/latest_event",
       "green": false,
       "harness_type": "event_class",
       "mechanical_verdict": "MISSING_EVIDENCE",
@@ -73,7 +73,7 @@
         "chromosome": "PASS",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/DNARepair/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/DNARepair/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -113,7 +113,7 @@
         "chromosome": "PASS",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/DNASupercoiling/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/DNASupercoiling/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -141,7 +141,7 @@
         "primary_channel": "monomers",
         "primary_distance": "per_tick_vector_w1_mean"
       },
-      "evidence_dir": "artifacts/l2_2_gates/FtsZPolymerization/latest_event",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/FtsZPolymerization/latest_event",
       "green": false,
       "harness_type": "event_class",
       "mechanical_verdict": "MISSING_EVIDENCE",
@@ -175,7 +175,7 @@
         "monomers": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/MacromolecularComplexation/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/MacromolecularComplexation/latest",
       "green": false,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "FAIL",
@@ -218,7 +218,7 @@
       "channel_verdicts": {
         "substrates": "PASS"
       },
-      "evidence_dir": "artifacts/l2_2_gates/Metabolism/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/Metabolism/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -259,7 +259,7 @@
         "monomers": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/ProteinDecay/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinDecay/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -299,7 +299,7 @@
         "monomers": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/ProteinFolding/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinFolding/latest",
       "green": false,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "FAIL",
@@ -343,7 +343,7 @@
         "monomers": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/ProteinModification/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinModification/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -383,7 +383,7 @@
         "monomers": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/ProteinProcessingI/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingI/latest",
       "green": false,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "FAIL",
@@ -427,7 +427,7 @@
         "monomers": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/ProteinProcessingII/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest",
       "green": false,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "FAIL",
@@ -471,7 +471,7 @@
         "monomers": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/ProteinTranslocation/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -511,15 +511,13 @@
         "RNAs": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/RNADecay/latest",
-      "green": false,
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/RNADecay/latest",
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "FAIL",
+      "mechanical_verdict": "PASS",
       "process": "RNADecay",
       "provenance_git_sha": "unknown",
-      "reasons": [
-        "PRIMARY_CHANNEL_VACUOUS: channel 'RNAs' is marked is_primary=true but catalog primary_channel='rnas' is not -- vacuous primary-channel substitution"
-      ],
+      "reasons": [],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 2,
@@ -553,15 +551,13 @@
         "RNAs": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/RNAModification/latest",
-      "green": false,
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/RNAModification/latest",
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "FAIL",
+      "mechanical_verdict": "PASS",
       "process": "RNAModification",
       "provenance_git_sha": "unknown",
-      "reasons": [
-        "PRIMARY_CHANNEL_VACUOUS: channel 'RNAs' is marked is_primary=true but catalog primary_channel='rnas' is not -- vacuous primary-channel substitution"
-      ],
+      "reasons": [],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 2,
@@ -595,15 +591,13 @@
         "RNAs": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/RNAProcessing/latest",
-      "green": false,
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/RNAProcessing/latest",
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "FAIL",
+      "mechanical_verdict": "PASS",
       "process": "RNAProcessing",
       "provenance_git_sha": "unknown",
-      "reasons": [
-        "PRIMARY_CHANNEL_VACUOUS: channel 'RNAs' is marked is_primary=true but catalog primary_channel='rnas' is not -- vacuous primary-channel substitution"
-      ],
+      "reasons": [],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 2,
@@ -635,16 +629,21 @@
       },
       "channel_verdicts": {
         "boundEnzymes": "SEED_NOISE",
-        "chromosome": "PASS",
+        "chromosome": "PRIMARY_ACTIVITY_MISSING",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/Replication/latest",
-      "green": true,
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/Replication/latest",
+      "green": false,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "PASS",
+      "mechanical_verdict": "FAIL",
       "process": "Replication",
       "provenance_git_sha": "unknown",
-      "reasons": [],
+      "reasons": [
+        "PRIMARY_ACTIVITY_MISSING: channel 'chromosome' component 'polymerizedRegions.delta_nnz' has zero nonzero observations on OC while Karr has 420 (OC never exhibited this primary component's activity at all)",
+        "PRIMARY_ACTIVITY_MISSING: channel 'chromosome' component 'polymerizedRegions.delta_value_sum_strand_1' has zero nonzero observations on OC while Karr has 3118 (OC never exhibited this primary component's activity at all)",
+        "PRIMARY_ACTIVITY_MISSING: channel 'chromosome' component 'polymerizedRegions.delta_value_sum_strand_2' has zero nonzero observations on OC while Karr has 4155 (OC never exhibited this primary component's activity at all)",
+        "PRIMARY_ACTIVITY_MISSING: channel 'chromosome' component 'polymerizedRegions.delta_value_sum_strand_3' has zero nonzero observations on OC while Karr has 4265 (OC never exhibited this primary component's activity at all)"
+      ],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 2,
@@ -678,7 +677,7 @@
         "complexs": "PASS",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/ReplicationInitiation/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ReplicationInitiation/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -706,7 +705,7 @@
         "primary_channel": "complexs",
         "primary_distance": "per_tick_vector_w1_mean"
       },
-      "evidence_dir": "artifacts/l2_2_gates/RibosomeAssembly/latest_event",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/RibosomeAssembly/latest_event",
       "green": false,
       "harness_type": "event_class",
       "mechanical_verdict": "MISSING_EVIDENCE",
@@ -740,15 +739,13 @@
         "boundEnzymes": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/Transcription/latest",
-      "green": false,
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/Transcription/latest",
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "FAIL",
+      "mechanical_verdict": "PASS",
       "process": "Transcription",
       "provenance_git_sha": "unknown",
-      "reasons": [
-        "PRIMARY_CHANNEL_VACUOUS: channel 'RNAs' is marked is_primary=true but catalog primary_channel='rnas' is not -- vacuous primary-channel substitution"
-      ],
+      "reasons": [],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 2,
@@ -783,7 +780,7 @@
         "monomers": "PASS",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/Translation/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/Translation/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -825,15 +822,14 @@
         "RNAs": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/tRNAAminoacylation/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/tRNAAminoacylation/latest",
       "green": false,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "FAIL",
       "process": "tRNAAminoacylation",
       "provenance_git_sha": "unknown",
       "reasons": [
-        "SENTINEL_FAIL: PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE demotion claimed without a machine-checked h12_evidence_ref (nontrivial_sample_count > 0); treated as non-green",
-        "PRIMARY_CHANNEL_VACUOUS: channel 'RNAs' is marked is_primary=true but catalog primary_channel='rnas' is not -- vacuous primary-channel substitution"
+        "SENTINEL_FAIL: PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE demotion claimed without a machine-checked h12_evidence_ref (nontrivial_sample_count > 0); treated as non-green"
       ],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
@@ -849,8 +845,8 @@
   ],
   "schema_version": 1,
   "tally": {
-    "FAIL": 9,
+    "FAIL": 6,
     "MISSING_EVIDENCE": 4,
-    "PASS": 9
+    "PASS": 12
   }
 }

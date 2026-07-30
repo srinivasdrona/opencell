@@ -592,11 +592,17 @@ def test_evidence_is_valid_rejects_extra_source_hash_key(tmp_path):
     assert "extra" in reason
 
 
-def test_evidence_is_valid_rejects_stale_evaluator_schema_version(tmp_path):
+def test_evidence_is_valid_accepts_stale_evaluator_schema_version_when_hashes_match(tmp_path):
+    """v3 policy change: `evaluator_schema_version` is recorded
+    informationally but no longer gates `evidence_is_valid` -- otherwise
+    every already-completed sweep job would spuriously need a rerun any
+    time `verdict.py`'s mechanical re-derivation logic is fixed, even
+    though no process/oracle/threshold changed and the job's own recorded
+    source/sidecar hashes still match the current tree."""
     job = _make_valid_job_with_provenance(tmp_path, evaluator_schema_version=-999)
     valid, reason = sweep.evidence_is_valid(job)
-    assert valid is False
-    assert "evaluator_schema_version" in reason
+    assert valid is True
+    assert reason is None
 
 
 def test_evidence_is_valid_rejects_missing_sweep_provenance_file(tmp_path):

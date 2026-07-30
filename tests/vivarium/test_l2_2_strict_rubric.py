@@ -69,43 +69,59 @@ def test_committed_evidence_index_passes_integrity_audit():
 
 def test_committed_evidence_index_is_honestly_non_green_today():
     """This task MUST report a truthful non-green index, never a fabricated
-    PASS. A real Design-A runner sweep populated evidence for 16/18
-    in-scope design_a_per_tick processes earlier (2026-07-28), producing a
-    real mixed PASS/FAIL/MISSING_EVIDENCE breakdown -- but that evidence
-    predates the Section 13 provenance-hardening requirement that every row
-    carry a `sweep_provenance.json` completion sentinel written atomically
-    by `sweep.py run_job`. None of that evidence was launched through the
-    sentinel-writing code path, so it is unprovable under the hardened
-    rules and honestly reads MISSING_EVIDENCE rather than being trusted by
-    inference. DNARepair and ReplicationInitiation were rerun through the
-    fully R1/R2/R3-hardened sweep (schema_version 2) and, at the time,
-    held real, mechanically re-derived PASS rows. A subsequent review
-    (Section 13.10, F1/F3) found the `source_hashes` registry those two
-    sentinels were recorded against was still incomplete (missing the
-    `l2_replay_common` harness dependency and, for the chromosome-coupled
-    processes, `chromosome_store_module`/`chromosome_views_module`) and
-    strengthened `verdict.rederive_process`'s primary-channel check
-    (bumping `EVALUATOR_SCHEMA_VERSION` 1 -> 2). Both sentinels now
-    correctly fail the staleness check and read FAIL
-    (`STALE_SWEEP_PROVENANCE`, not `MISSING_EVIDENCE`, since real evidence
-    files are present -- they are simply stale relative to the current
-    registry/evaluator) pending a rerun under the expanded requirements.
-    This is a deliberate, honest demotion caused by closing a real
-    staleness-detection gap, not a claim that the underlying raw numbers
-    were ever wrong. ProteinDecay -- also catalog M=200 -- could not
-    complete its (pre-R1/R2/R3) run (its Design-A memory footprint at
-    M=200 grows without plateauing and the run was terminated pre-OOM) and
-    remains MISSING_EVIDENCE pending a separate memory-scaling follow-up.
-    This is a deliberate, evidence-driven promotion/demotion (per this
-    task's "if not provable, mark stale and schedule rerun rather than
-    infer" requirement), not a regression or a fabrication. If this test
-    ever needs to change again, that change must be driven by real
-    sentinel-carrying evidence appearing/changing under
-    artifacts/l2_2_gates/ via a hardened sweep rerun, not by editing this
-    assertion."""
+    PASS. The tally hardcoded here has moved twice since this test was first
+    written (see the historical narrative that used to live in this
+    docstring, now superseded -- the full evaluator-only re-derivation
+    history for the most recent move is
+    docs/phase_f/l2_2_design_a/EVIDENCE_INDEX_SPEC.md Section 13.14):
+
+    As of this commit (evaluator schema v3) the tally is
+    PASS: 12, FAIL: 6, MISSING_EVIDENCE: 4, n_in_scope: 22:
+      - PASS (12): DNARepair, DNASupercoiling, Metabolism, ProteinDecay,
+        ProteinModification, ProteinTranslocation, RNADecay,
+        RNAModification, RNAProcessing, ReplicationInitiation,
+        Transcription, Translation. RNADecay/RNAModification/
+        RNAProcessing/Transcription moved FAIL -> PASS in this commit: their
+        stored `result.json` raw metrics were always PASS-worthy (nonzero
+        n_nonzero_oc/n_nonzero_karr with W1 under threshold), but the
+        evaluator's primary-channel-name check compared the runner's
+        alias-normalized channel name (e.g. `RNAs`) byte-exact against the
+        un-normalized catalog primary channel (`rnas`), so it always fired
+        SENTINEL_FAIL for a vacuous-looking mismatch that was really just a
+        naming-convention difference already handled by the runner. Fixed
+        by `scripts/l22_evidence/channel_names.py` (shared, evaluator-only,
+        parity-tested against the runner's own alias table).
+      - FAIL (6): MacromolecularComplexation, ProteinFolding,
+        ProteinProcessingI, ProteinProcessingII, tRNAAminoacylation (all
+        pre-existing `SENTINEL_FAIL: PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE`
+        H12 gaps, untouched by this task) plus Replication, which moved
+        PASS -> FAIL in this commit: its stored `result.json` shows the OC
+        run never exercised the primary `chromosome` channel's
+        `polymerizedRegions.*` components at all (n_nonzero_oc == 0) while
+        Karr shows real nonzero activity (420-4265 events per component)
+        -- an asymmetric-activity case the pre-v3 evaluator silently
+        treated as vacuously-equal-so-PASS instead of mechanically
+        non-green. Fixed by the new `PRIMARY_ACTIVITY_MISSING` guard in
+        `verdict.py`.
+      - MISSING_EVIDENCE (4): Cytokinesis, DNADamage, FtsZPolymerization,
+        RibosomeAssembly -- no sweep evidence directory exists for these
+        processes at all; unrelated to and untouched by this task.
+
+    This is a deliberate, evidence-driven set of mechanical re-derivations
+    (per this task's "if not provable, mark stale/non-green; if the raw
+    metrics support it, mark PASS -- never infer, never hand-edit" rule),
+    not a regression or a fabrication. If this test ever needs to change
+    again, that change must be driven by real evidence (a sweep rerun
+    populating/changing rows under the evidence tree, or a further
+    evaluator correctness fix with cited raw-metric evidence), not by
+    editing this assertion to make it pass."""
     result = gen.audit()
     assert result.aggregate_verdict == "NON_GREEN"
-    assert result.tally == {schema.STATUS_MISSING_EVIDENCE: 20, schema.STATUS_FAIL: 2}
+    assert result.tally == {
+        schema.STATUS_PASS: 12,
+        schema.STATUS_FAIL: 6,
+        schema.STATUS_MISSING_EVIDENCE: 4,
+    }
 
 
 def test_committed_evidence_index_covers_scope_exactly_once():

@@ -186,6 +186,20 @@ def test_zero_primary_channel_is_non_green(tmp_path):
     assert any("PRIMARY_CHANNEL_VACUOUS" in reason for reason in row["reasons"])
 
 
+def test_asymmetric_zero_primary_channel_is_non_green(tmp_path):
+    """P2 zero-activity guard, end-to-end: OC shows zero activity on the
+    primary channel while Karr shows real activity. This is NOT the
+    symmetric both-zero PRIMARY_CHANNEL_VACUOUS case (that would silently
+    hide an equally serious problem -- OC never exhibiting behavior Karr
+    genuinely has) and must not be laundered into a passing/insufficient
+    verdict via any per-channel scale/threshold."""
+    _write_evidence_dir(tmp_path, "Metabolism", channel_overrides={"n_nonzero_oc": 0, "n_nonzero_karr": 5000})
+    payload = gen.build_evidence_index(evidence_root=tmp_path)
+    row = _row_for(payload, "Metabolism")
+    assert row["green"] is False
+    assert any(schema.STATUS_PRIMARY_ACTIVITY_MISSING in reason for reason in row["reasons"])
+
+
 def test_insufficient_primary_samples_is_non_green(tmp_path):
     _write_evidence_dir(tmp_path, "Metabolism", channel_overrides={"n_nonzero_oc": 3, "n_nonzero_karr": 3})
     payload = gen.build_evidence_index(evidence_root=tmp_path)
@@ -456,19 +470,52 @@ def test_stale_sweep_provenance_source_hash_mismatch_is_non_green(tmp_path):
     assert any(schema.STATUS_STALE_PROVENANCE in reason and "runner" in reason for reason in row["reasons"])
 
 
-def test_stale_sweep_provenance_evaluator_schema_version_mismatch_is_non_green(tmp_path):
+def test_evaluator_schema_version_mismatch_alone_does_not_demote(tmp_path):
+    """v3 policy change (staleness-vs-ceremonial-rerun fix): a
+    `sweep_provenance.json` recorded under an OLDER `evaluator_schema_version`
+    (e.g. the real v2 sentinels on disk today) must NOT be treated as stale
+    provenance by itself -- gating on this field would force a full sweep
+    rerun any time `verdict.py`'s mechanical re-derivation logic is fixed,
+    even though no process/oracle/threshold changed and the stored raw
+    result.json already has every field the new logic needs. The value is
+    still recorded/surfaced on the row informationally."""
+    evidence_dir = _write_evidence_dir(tmp_path, "Metabolism")
+    prov_path = evidence_dir / schema.SWEEP_PROVENANCE_FILE
+    prov = json.loads(prov_path.read_text(encoding="utf-8"))
+    assert prov["evaluator_schema_version"] != -1
+    prov["evaluator_schema_version"] = -1
+    prov_path.write_text(json.dumps(prov), encoding="utf-8")
+
+    payload = gen.build_evidence_index(evidence_root=tmp_path)
+    row = _row_for(payload, "Metabolism")
+    assert row["green"] is True
+    assert not any(schema.STATUS_STALE_PROVENANCE in reason for reason in row["reasons"])
+    assert row["sweep_provenance"]["evaluator_schema_version"] == -1
+
+
+def test_evaluator_schema_version_mismatch_with_missing_raw_field_is_still_non_green(tmp_path):
+    """The staleness gate being removed does NOT mean a genuinely
+    insufficient raw payload is silently accepted: if the stored
+    result.json is missing a raw field the CURRENT evaluator logic
+    requires, the affected channel/process must still come back non-green
+    (`MISSING_EVALUATOR`), independent of whatever `evaluator_schema_version`
+    the sentinel happens to record."""
     evidence_dir = _write_evidence_dir(tmp_path, "Metabolism")
     prov_path = evidence_dir / schema.SWEEP_PROVENANCE_FILE
     prov = json.loads(prov_path.read_text(encoding="utf-8"))
     prov["evaluator_schema_version"] = -1
     prov_path.write_text(json.dumps(prov), encoding="utf-8")
 
+    result_path = evidence_dir / "result.json"
+    result = json.loads(result_path.read_text(encoding="utf-8"))
+    primary_name = next(iter(result["channels"]))
+    del result["channels"][primary_name]["n_nonzero_oc"]
+    result_path.write_text(json.dumps(result), encoding="utf-8")
+
     payload = gen.build_evidence_index(evidence_root=tmp_path)
     row = _row_for(payload, "Metabolism")
     assert row["green"] is False
-    assert any(
-        schema.STATUS_STALE_PROVENANCE in reason and "evaluator_schema_version" in reason for reason in row["reasons"]
-    )
+    assert any(schema.STATUS_MISSING_EVALUATOR in reason for reason in row["reasons"])
 
 
 def test_missing_sweep_provenance_file_is_missing_evidence(tmp_path):

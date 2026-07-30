@@ -78,35 +78,43 @@ def test_index_has_exactly_one_row_per_in_scope_process_no_extras():
     assert payload["n_in_scope"] == 22
 
 
-def test_real_sweep_evidence_today_reflects_hardened_reruns_for_two_processes():
-    """As of the R1/R2/R3 provenance-hardening commit, `sweep_provenance.json`
-    gained new mandatory fields (`completion_status`, `sidecar_hashes` binding
-    every fixed authority/sidecar file's sha256 to the sentinel,
-    `inputs_verified`, and a process-specific `oc_module` source hash --
-    schema_version 1 -> 2). DNARepair and ReplicationInitiation were rerun
-    through the fully v2-hardened `sweep.py run_job` and, at the time,
-    held real, mechanically re-derived PASS rows. A later review (F1/F3)
-    found the `source_hashes` registry those two sentinels were recorded
-    against was still incomplete (missing `l2_replay_common`, and, for the
-    chromosome-coupled processes, `chromosome_store_module`/
-    `chromosome_views_module`) and that `verdict.rederive_process`'s
-    primary-channel check needed strengthening (bumping
-    `EVALUATOR_SCHEMA_VERSION` 1 -> 2). Both processes' existing sentinels
-    now correctly fail `evidence_is_valid`'s staleness check (their
-    recorded `source_hashes` lack the new keys, and their
-    `evaluator_schema_version` is 1, not the current 2) and read FAIL
-    (`STALE_SWEEP_PROVENANCE`, not `MISSING_EVIDENCE`, since real evidence
-    files are present -- they are simply stale relative to the current
-    code) pending a rerun under the expanded registry/evaluator. This is a
-    deliberate, honest demotion caused by closing a real staleness-
-    detection gap, not a claim that the underlying raw numbers were ever
-    wrong. The remaining 16 in-scope processes still only hold evidence
-    from BEFORE the original Phase-A provenance hardening landed -- none
-    of it carries `sweep_provenance.json` at all -- so they correctly read
-    MISSING_EVIDENCE throughout. If this test ever needs to change again,
-    that change must be driven by real sentinel-carrying evidence
-    appearing/changing under artifacts/l2_2_gates/ via a hardened sweep
-    rerun, not by editing this assertion."""
+def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
+    """Evaluator schema v3 (see verdict.EVALUATOR_SCHEMA_VERSION docstring and
+    docs/phase_f/l2_2_design_a/EVIDENCE_INDEX_SPEC.md Section 13.14) is a
+    pure re-derivation from the SAME stored raw evidence tree used by v2 --
+    no process was rerun, no result.json/sidecar/sentinel file changed. Two
+    real evaluator correctness fixes changed the mechanical verdicts of 5
+    rows:
+
+    - P0 (channel-alias byte-exact bug): RNADecay, RNAModification,
+      RNAProcessing, Transcription moved FAIL -> PASS. Their stored raw
+      metrics (nonzero n_nonzero_oc/n_nonzero_karr, W1 under threshold)
+      always warranted PASS; the pre-v3 evaluator compared the runner's
+      alias-normalized primary channel name (e.g. `RNAs`) byte-exact
+      against the catalog's un-normalized name (`rnas`) and always fired a
+      spurious vacuous-substitution SENTINEL_FAIL. Fixed via the shared
+      `scripts/l22_evidence/channel_names.normalize_channel_name`, applied
+      to both sides of the comparison in `verdict.rederive_process`.
+    - P2 (zero-activity guard): Replication moved PASS -> FAIL. Its stored
+      `chromosome` channel's `polymerizedRegions.*` components show
+      n_nonzero_oc == 0 while Karr shows real nonzero activity (420-4265
+      events per component) -- the pre-v3 per-component evaluator treated
+      this asymmetric zero-vs-nonzero case as vacuously equal (both
+      "small") instead of mechanically non-green. Fixed via the new
+      `PRIMARY_ACTIVITY_MISSING` guard added to `_rederive_w1_channel`,
+      `_rederive_per_component_scaled_channel`, and `_rederive_hurdle_channel`.
+
+    The remaining 5 FAIL rows (MacromolecularComplexation, ProteinFolding,
+    ProteinProcessingI, ProteinProcessingII, tRNAAminoacylation) are
+    pre-existing, unrelated `SENTINEL_FAIL:
+    PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE` H12 evidence gaps, untouched
+    by this evaluator-only commit. The 4 MISSING_EVIDENCE rows (Cytokinesis,
+    DNADamage, FtsZPolymerization, RibosomeAssembly) have no evidence
+    directory at all and are likewise untouched. If this test ever needs to
+    change again, that change must be driven by real evidence (a sweep
+    rerun populating/changing rows under the evidence tree, or a further
+    cited evaluator correctness fix), not by editing this assertion to make
+    it pass."""
     payload = gen.build_evidence_index()
     assert payload["aggregate_verdict"] == "NON_GREEN"
     for row in payload["rows"]:
@@ -114,15 +122,38 @@ def test_real_sweep_evidence_today_reflects_hardened_reruns_for_two_processes():
             assert row["mechanical_verdict"] == schema.STATUS_PASS
         else:
             assert row["mechanical_verdict"] != schema.STATUS_PASS
-    assert payload["tally"] == {schema.STATUS_MISSING_EVIDENCE: 20, schema.STATUS_FAIL: 2}
-    stale_rows = {
+    assert payload["tally"] == {
+        schema.STATUS_PASS: 12,
+        schema.STATUS_FAIL: 6,
+        schema.STATUS_MISSING_EVIDENCE: 4,
+    }
+    fail_rows = {
         row["process"]: row["reasons"]
         for row in payload["rows"]
         if row["mechanical_verdict"] == schema.STATUS_FAIL
     }
-    assert set(stale_rows) == {"DNARepair", "ReplicationInitiation"}
-    for reasons in stale_rows.values():
-        assert any("STALE_SWEEP_PROVENANCE" in reason for reason in reasons)
+    assert set(fail_rows) == {
+        "MacromolecularComplexation",
+        "ProteinFolding",
+        "ProteinProcessingI",
+        "ProteinProcessingII",
+        "tRNAAminoacylation",
+        "Replication",
+    }
+    assert any(
+        "PRIMARY_ACTIVITY_MISSING" in reason for reason in fail_rows["Replication"]
+    )
+    for process in (
+        "MacromolecularComplexation",
+        "ProteinFolding",
+        "ProteinProcessingI",
+        "ProteinProcessingII",
+        "tRNAAminoacylation",
+    ):
+        assert any(
+            "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE" in reason
+            for reason in fail_rows[process]
+        )
 
 
 def test_content_hash_is_deterministic_across_regenerations():
@@ -161,7 +192,11 @@ def test_write_index_then_audit_round_trips_cleanly(tmp_path):
     result = gen.audit(index_path=index_path, evidence_root=schema.EVIDENCE_ROOT)
     assert result.ok is True
     assert result.aggregate_verdict == "NON_GREEN"
-    assert result.tally == {schema.STATUS_MISSING_EVIDENCE: 20, schema.STATUS_FAIL: 2}
+    assert result.tally == {
+        schema.STATUS_PASS: 12,
+        schema.STATUS_FAIL: 6,
+        schema.STATUS_MISSING_EVIDENCE: 4,
+    }
 
 
 def test_audit_reports_failure_when_index_file_absent(tmp_path):

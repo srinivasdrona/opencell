@@ -25,6 +25,7 @@ if str(_REPO_ROOT_BOOTSTRAP) not in sys.path:
 
 from scripts.l22_evidence import schema  # noqa: E402
 from scripts.l22_evidence.catalog import REPO_ROOT, ProcessEntry  # noqa: E402
+from scripts.l22_evidence.channel_names import normalize_channel_name  # noqa: E402
 
 # Metadata-only version tag for the mechanical re-derivation logic in this
 # module (channel/process verdict functions below) -- bump this whenever
@@ -45,7 +46,37 @@ from scripts.l22_evidence.catalog import REPO_ROOT, ProcessEntry  # noqa: E402
 # both pass through undetected. This can change the verdict for the SAME
 # raw result.json payload versus v1, so any evidence generated under v1
 # must be treated as stale, not silently re-scored as equivalent.
-EVALUATOR_SCHEMA_VERSION = 2
+# v3 (P0/P2 re-derivation hardening): two independent fixes, both of which
+# can change the mechanical verdict for the SAME raw result.json payload:
+#   (1) P0 channel-name-alias fix -- the primary-channel-name comparison in
+#       `rederive_process` now normalizes BOTH sides through
+#       `channel_names.normalize_channel_name` before comparing, mirroring
+#       the runner's own `_CHANNEL_NAME_ALIASES` (e.g. catalog `"rnas"` vs
+#       result.json key `"RNAs"`). Previously this was a byte-exact
+#       comparison, so every one of the 5 `rnas`-primary processes
+#       (Transcription, RNAProcessing, RNAModification, RNADecay,
+#       tRNAAminoacylation) spuriously hit `PRIMARY_CHANNEL_VACUOUS`
+#       regardless of their real numeric evidence.
+#   (2) P2 zero-activity guard -- `_rederive_w1_channel`,
+#       `_rederive_per_component_scaled_channel`, and
+#       `_rederive_hurdle_channel` now also demote a PRIMARY channel/
+#       component to `schema.STATUS_PRIMARY_ACTIVITY_MISSING` (non-green)
+#       whenever OC shows zero activity while Karr shows real activity
+#       (previously only the SYMMETRIC both-sides-zero case was caught by
+#       `PRIMARY_CHANNEL_VACUOUS`; an asymmetric OC-dead/Karr-alive primary
+#       channel or component silently computed and could PASS on a
+#       scaled/hardcoded distance formula alone).
+# IMPORTANT: this version bump is informational only -- it is NOT used to
+# gate `sweep_provenance.json` staleness (see
+# `generator._check_sweep_provenance_staleness`/`sweep.evidence_is_valid`,
+# which no longer compare it against a recorded sentinel value at all).
+# Content hashes (`source_hashes`/`sidecar_hashes`) are the sole gating
+# authority for whether stored raw evidence is safe to re-derive under
+# newer evaluator logic; bumping this constant therefore re-scores every
+# existing, byte-identical raw result.json under the v3 logic above
+# WITHOUT forcing a sweep rerun, exactly as intended for a pure
+# evaluator-side fix with no process/oracle/threshold changes.
+EVALUATOR_SCHEMA_VERSION = 3
 
 
 @dataclass(frozen=True)
@@ -147,6 +178,25 @@ def _rederive_w1_channel(name: str, payload: dict[str, Any], *, is_primary: bool
             ],
         )
 
+    # P2 zero-activity guard: OC showing literally zero activity while Karr
+    # shows real activity is not "insufficient samples" (that verdict is
+    # non-gating and would silently let the process PASS via its other
+    # channels) -- it means the SUT never exhibited the behavior at all on
+    # a channel the catalog designates as primary. Must be checked BEFORE
+    # the MIN_NONZERO_EVENTS branch below, since 0 < MIN_NONZERO_EVENTS is
+    # always true and would otherwise swallow this case as
+    # INSUFFICIENT_SAMPLES first. Symmetric both-zero is handled above and
+    # is deliberately excluded here (n_nonzero_karr > 0 is required).
+    if is_primary and n_nonzero_oc == 0 and n_nonzero_karr > 0:
+        return (
+            schema.STATUS_PRIMARY_ACTIVITY_MISSING,
+            [
+                f"{schema.STATUS_PRIMARY_ACTIVITY_MISSING}: primary channel {name!r} has zero nonzero "
+                f"observations on OC while Karr has {n_nonzero_karr} (OC never exhibited this primary "
+                "channel's activity at all)"
+            ],
+        )
+
     if n_nonzero_oc < schema.MIN_NONZERO_EVENTS or n_nonzero_karr < schema.MIN_NONZERO_EVENTS:
         return "INSUFFICIENT_SAMPLES", []
 
@@ -241,6 +291,7 @@ def _rederive_per_component_scaled_channel(
     reasons: list[str] = []
     component_verdicts: dict[str, str] = {}
     all_vacuous = True
+    activity_missing_components: list[str] = []
     for component_name in sorted(component_names):
         raw_w1 = raw_w1_by_component[component_name]
         scale = scales_by_component[component_name]
@@ -265,6 +316,21 @@ def _rederive_per_component_scaled_channel(
         if not (float(n_oc) == 0.0 and float(n_karr) == 0.0):
             all_vacuous = False
 
+        # P2 zero-activity guard: this component's OC side never fired at
+        # all while Karr's did -- do not let a hardcoded/hand-tuned
+        # `component_scales` divisor launder that into a passing
+        # scaled_w1. Independent of (and checked in addition to) the
+        # all-both-zero `all_vacuous` check below; does not touch
+        # `component_scales`/`scaled_distance_threshold` themselves.
+        if is_primary and float(n_oc) == 0.0 and float(n_karr) > 0.0:
+            activity_missing_components.append(component_name)
+            reasons.append(
+                f"{schema.STATUS_PRIMARY_ACTIVITY_MISSING}: channel {name!r} component {component_name!r} "
+                f"has zero nonzero observations on OC while Karr has {n_karr} (OC never exhibited this "
+                "primary component's activity at all)"
+            )
+            continue
+
         scaled_w1 = float(raw_w1) / max(float(scale), _SCALED_DISTANCE_EPSILON)
         verdict = "PASS" if scaled_w1 <= threshold else "FAIL"
         component_verdicts[component_name] = verdict
@@ -283,6 +349,9 @@ def _rederive_per_component_scaled_channel(
                 "requirement failed)"
             ],
         )
+
+    if activity_missing_components:
+        return schema.STATUS_PRIMARY_ACTIVITY_MISSING, reasons
 
     if reasons:
         return schema.STATUS_FAIL, reasons
@@ -412,6 +481,20 @@ def _rederive_hurdle_channel(name: str, payload: dict[str, Any], *, is_primary: 
             [
                 f"{schema.STATUS_PRIMARY_VACUOUS}: primary channel {name!r} recorded zero events on both "
                 "OC and Karr across the whole ensemble (non-vacuous primary channel requirement failed)"
+            ],
+        )
+
+    # P2 zero-activity guard, hurdle flavor: OC recorded zero events across
+    # the whole ensemble while Karr recorded real events -- the event mask
+    # never fired on the OC side at all. Distinct from (and checked in
+    # addition to) the symmetric both-zero VACUOUS check above.
+    if is_primary and n_events_oc == 0 and n_events_karr > 0:
+        return (
+            schema.STATUS_PRIMARY_ACTIVITY_MISSING,
+            [
+                f"{schema.STATUS_PRIMARY_ACTIVITY_MISSING}: primary channel {name!r} recorded zero events on "
+                f"OC while Karr recorded {n_events_karr} across the whole ensemble (OC never exhibited this "
+                "primary channel's activity at all)"
             ],
         )
 
@@ -610,7 +693,19 @@ def rederive_process(process_name: str, entry: ProcessEntry, result_payload: dic
                 f"{entry.name!r} -- cannot verify channel {primary_channel_names[0]!r} (is_primary=true) "
                 "is the intended primary channel, not a vacuous substitution"
             )
-        elif primary_channel_names[0] != entry.primary_channel:
+        elif normalize_channel_name(primary_channel_names[0]) != normalize_channel_name(entry.primary_channel):
+            # P0 fix: normalize BOTH sides through the shared
+            # `channel_names.normalize_channel_name` before comparing. The
+            # runner already normalizes channel-name aliases (e.g. catalog
+            # `"rnas"` -> result.json key `"RNAs"`) before ever writing
+            # `result.json`, but `catalog.py` deliberately reads
+            # `entry.primary_channel` raw/un-normalized (so
+            # `catalog_soft_flags` stays byte-exact to the YAML) -- a
+            # byte-exact comparison here therefore spuriously mismatched
+            # every aliased process regardless of its real numeric
+            # evidence. Normalizing both sides (not just the catalog side)
+            # keeps this a no-op for every already-normalized/non-aliased
+            # process name.
             reasons.append(
                 f"{schema.STATUS_PRIMARY_VACUOUS}: channel {primary_channel_names[0]!r} is marked "
                 f"is_primary=true but catalog primary_channel={entry.primary_channel!r} is not -- "

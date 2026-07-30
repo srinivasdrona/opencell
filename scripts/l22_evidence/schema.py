@@ -558,17 +558,37 @@ STATUS_MISSING_EVALUATOR = "MISSING_EVALUATOR"
 STATUS_SENTINEL_FAIL = "SENTINEL_FAIL"
 STATUS_DEFERRED = "DEFERRED"
 STATUS_PRIMARY_VACUOUS = "PRIMARY_CHANNEL_VACUOUS"
+# P2 zero-activity guard: a PRIMARY channel/component whose OC side has
+# zero nonzero observations/events while Karr's side has real (nonzero)
+# activity. Distinct from `STATUS_PRIMARY_VACUOUS` (which only fires when
+# BOTH sides are zero): here the SUT provably never exhibited behavior
+# Karr did on a channel/component the catalog designates as primary, which
+# a scaled/hardcoded-scale distance formula could otherwise silently PASS.
+# Deliberately excluded from `GREEN_CHANNEL_VERDICTS`/
+# `NON_GATING_CHANNEL_VERDICTS` below so it gates as non-green exactly
+# like `STATUS_PRIMARY_VACUOUS`. Never applied to non-primary channels/
+# components, and never applied to a component where both sides are zero.
+STATUS_PRIMARY_ACTIVITY_MISSING = "PRIMARY_ACTIVITY_MISSING"
 STATUS_NO_GATEABLE_CHANNELS = "NO_GATEABLE_CHANNELS"
 STATUS_FAIL = "FAIL"
 STATUS_PASS = "PASS"
 # A row whose runner-produced evidence is otherwise complete/matching but
 # whose sweep_provenance.json shows a source-file (runner/helpers/
-# projections/catalog) hash mismatch versus the CURRENT tree, or an
-# evaluator_schema_version mismatch versus the CURRENT
-# `verdict.EVALUATOR_SCHEMA_VERSION`. An unknown/missing git SHA alone does
-# NOT trigger this status as long as every source hash and the evaluator
-# schema version still match (git SHA is recorded informationally, not
-# gating -- see the SWEEP_PROVENANCE_FILE docstring above). Distinct from
+# projections/catalog) hash mismatch versus the CURRENT tree. An
+# unknown/missing git SHA alone does NOT trigger this status as long as
+# every source hash still matches (git SHA is recorded informationally,
+# not gating -- see the SWEEP_PROVENANCE_FILE docstring above). Likewise,
+# a `evaluator_schema_version` mismatch alone does NOT trigger this status
+# (as of v3): the recorded value is still written and surfaced on every
+# row informationally (`row["sweep_provenance"]["evaluator_schema_version"]`),
+# but re-deriving already-stored, byte-identical raw metrics under newer
+# mechanical-verdict logic is exactly what this evaluator-only hardening
+# is FOR -- gating staleness on it as well would force a full sweep rerun
+# every time `verdict.py`'s logic is fixed, even when no process/oracle/
+# threshold changed and every raw field the new logic needs was already
+# present. A genuinely MISSING raw field a newer evaluator requires is
+# still caught (as `STATUS_MISSING_EVALUATOR` on the affected channel/
+# process, never silently treated as stale-and-skippable). Distinct from
 # STATUS_MISSING_EVIDENCE (nothing was produced at all) and
 # STATUS_STALE_VS_TREE (an `input_manifest` source drifted): this
 # specifically means "this evidence was produced before/without the
