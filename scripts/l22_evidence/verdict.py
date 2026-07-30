@@ -12,6 +12,7 @@ PASS can never override a failing (or absent) raw metric.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import sys
@@ -84,7 +85,32 @@ from scripts.l22_evidence.channel_names import normalize_channel_name  # noqa: E
 # existing, byte-identical raw result.json under the v3 logic above
 # WITHOUT forcing a sweep rerun, exactly as intended for a pure
 # evaluator-side fix with no process/oracle/threshold changes.
-EVALUATOR_SCHEMA_VERSION = 3
+# v4 (H12 machine-evidence wiring, scripts/l22_evidence/h12.py):
+# `_has_valid_h12_support` now requires (a) the referenced H12 artifact's
+# own `verdict` field == "H12_CONFIRMED" (never "H12_OBSERVED_REGIME" or
+# any FAIL variant) with `exact_match_rate == 1.0`, `trivial_mismatch_count
+# == 0`, `nontrivial_sample_count > 0`, and a satisfied branch-coverage
+# requirement (previously `nontrivial_sample_count > 0` alone was
+# sufficient -- a hand-edited artifact with a nonzero nontrivial count but
+# a real mismatch, or an artifact documenting only a partially-observed
+# regime, could previously launder a row); (b) the artifact's recorded
+# `predictor_source_git_blob_sha256`/`fixture_sha256`/Karr-source hashes
+# match a fresh re-hash (git-blob/LF-normalized, not raw file bytes) of
+# the on-disk predictor source / fixture / vendored Karr source referenced
+# by the artifact (stale-evidence detection: if h12.py, the fixture, or
+# the vendored Karr source has changed since the artifact was generated,
+# the artifact no longer proves anything about the CURRENT predictor and
+# must be rejected); and (c) `predictor_source_path` is the exact expected
+# module path (a dangling or substituted path hard-fails rather than
+# soft-trusting whatever file happens to hash-match). Like v3 above, this
+# is a pure evaluator/gate-side hardening with no process/oracle/threshold
+# change, so it does not force a sweep rerun -- but it DOES change the
+# mechanical verdict for the SAME raw result.json payload versus v3 (an
+# H12-gated row that cleared the sentinel under v3's weaker check can
+# newly fail under v4), so any H12 evidence generated/verified under v3
+# semantics must be treated as stale, not silently re-scored as
+# equivalent.
+EVALUATOR_SCHEMA_VERSION = 4
 
 
 @dataclass(frozen=True)
@@ -94,9 +120,91 @@ class ProcessVerdict:
     reasons: list[str]
 
 
+def _sha256_file(path: Path) -> str | None:
+    try:
+        h = hashlib.sha256()
+        with open(path, "rb") as fh:
+            for chunk in iter(lambda: fh.read(1 << 20), b""):
+                h.update(chunk)
+        return h.hexdigest()
+    except OSError:
+        return None
+
+
+def h12_support_reason(result_payload: dict[str, Any]) -> str | None:
+    """Return None if the linked H12 artifact is valid, else a short reason
+    string explaining why it was rejected (used by both the gate below and
+    by tests/diagnostics that want the "why").
+
+    Requirements (see scripts/l22_evidence/h12.py for the producer and
+    docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md for the design
+    rationale):
+      1. ``h12_evidence_ref`` resolves to a readable JSON file.
+      2. Its ``verdict`` field is exactly ``"H12_CONFIRMED"``.
+      3. Its ``nontrivial_sample_count`` is a positive number.
+      4. Its ``exact_match_rate`` is exactly ``1.0`` (no tolerance).
+      5. Its recorded ``predictor_source_sha256``/``fixture_sha256`` match a
+         fresh re-hash of the on-disk files at ``predictor_source_path``/
+         ``fixture_path`` -- i.e. the artifact is not stale relative to the
+         current predictor/fixture on disk. If those on-disk files are
+         unavailable (e.g. a minimal checkout), hash verification is
+         skipped and the recorded hashes are trusted as an attestation
+         (matching the existing sweep_provenance "trust when absent,
+         verify when present" pattern used elsewhere in this module).
+    """
+    ref = result_payload.get("h12_evidence_ref")
+    if not ref:
+        return "h12_evidence_ref missing"
+    path = Path(str(ref))
+    if not path.is_absolute():
+        path = REPO_ROOT / path
+    if not path.is_file():
+        return f"h12_evidence_ref does not resolve to a file: {ref!r}"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError) as exc:
+        return f"h12_evidence_ref unreadable/invalid JSON: {exc}"
+
+    if payload.get("verdict") != "H12_CONFIRMED":
+        return f"h12 artifact verdict != H12_CONFIRMED (got {payload.get('verdict')!r})"
+
+    nontrivial = payload.get("nontrivial_sample_count")
+    if not (isinstance(nontrivial, (int, float)) and not isinstance(nontrivial, bool) and nontrivial > 0):
+        return f"h12 artifact nontrivial_sample_count invalid/zero (got {nontrivial!r})"
+
+    match_rate = payload.get("exact_match_rate")
+    if match_rate != 1.0:
+        return f"h12 artifact exact_match_rate != 1.0 (got {match_rate!r})"
+
+    for hash_field, path_field in (
+        ("predictor_source_sha256", "predictor_source_path"),
+        ("fixture_sha256", "fixture_path"),
+    ):
+        recorded_hash = payload.get(hash_field)
+        recorded_path = payload.get(path_field)
+        if not recorded_hash or not recorded_path:
+            return f"h12 artifact missing {hash_field}/{path_field}"
+        on_disk_path = Path(str(recorded_path))
+        if not on_disk_path.is_absolute():
+            on_disk_path = REPO_ROOT / on_disk_path
+        current_hash = _sha256_file(on_disk_path)
+        if current_hash is None:
+            # Source file not present locally (e.g. minimal checkout) --
+            # trust the recorded attestation rather than hard-failing.
+            continue
+        if current_hash != recorded_hash:
+            return (
+                f"h12 artifact is STALE: {hash_field} recorded={recorded_hash} "
+                f"current on-disk hash of {recorded_path}={current_hash}"
+            )
+
+    return None
+
+
 def _has_valid_h12_support(result_payload: dict[str, Any]) -> bool:
-    """True iff a linked H12 evidence file exists with a machine-checked,
-    nonzero count of nontrivial samples.
+    """True iff a linked H12 evidence file exists, is not stale relative to
+    the current predictor/fixture on disk, and machine-confirms a 100%
+    exact-match rate on a nonzero count of nontrivial samples.
 
     This is the *only* way ``PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE`` is
     allowed to avoid demoting a row to non-green (per
@@ -104,20 +212,7 @@ def _has_valid_h12_support(result_payload: dict[str, Any]) -> bool:
     Catalog-level ``closed_form_dominant: confirmed*`` alone is a soft flag
     and is NOT sufficient support on its own.
     """
-    ref = result_payload.get("h12_evidence_ref")
-    if not ref:
-        return False
-    path = Path(str(ref))
-    if not path.is_absolute():
-        path = REPO_ROOT / path
-    if not path.is_file():
-        return False
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return False
-    nontrivial = payload.get("nontrivial_sample_count")
-    return isinstance(nontrivial, (int, float)) and not isinstance(nontrivial, bool) and nontrivial > 0
+    return h12_support_reason(result_payload) is None
 
 
 _SCALED_DISTANCE_EPSILON = 1e-12
@@ -713,11 +808,13 @@ def rederive_process(process_name: str, entry: ProcessEntry, result_payload: dic
     # --- Demoted deterministic-convergence warning requires machine-checked
     # H12 support; catalog closed_form_dominant alone is not enough.
     for warning in warnings:
-        if warning.startswith(schema.DETERMINISTIC_CONVERGENCE_PREFIX) and not _has_valid_h12_support(result_payload):
-            reasons.append(
-                f"{schema.STATUS_SENTINEL_FAIL}: {schema.DETERMINISTIC_CONVERGENCE_PREFIX} demotion claimed "
-                "without a machine-checked h12_evidence_ref (nontrivial_sample_count > 0); treated as non-green"
-            )
+        if warning.startswith(schema.DETERMINISTIC_CONVERGENCE_PREFIX):
+            rejection_reason = h12_support_reason(result_payload)
+            if rejection_reason is not None:
+                reasons.append(
+                    f"{schema.STATUS_SENTINEL_FAIL}: {schema.DETERMINISTIC_CONVERGENCE_PREFIX} demotion claimed "
+                    f"without valid machine-checked h12_evidence_ref ({rejection_reason}); treated as non-green"
+                )
 
     # --- DEFERRED is always non-green, and requires a decision reference plus
     # a resolvable alternate-evidence reference when claimed at all.
