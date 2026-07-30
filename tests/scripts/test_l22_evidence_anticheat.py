@@ -236,15 +236,23 @@ def test_projection_distance_primary_channel_is_missing_evaluator(tmp_path):
 
 
 def test_closed_form_confirmed_without_h12_support_is_non_green(tmp_path):
-    entry = _ENTRIES["tRNAAminoacylation"]
+    # ProteinTranslocation, not tRNAAminoacylation: this session's H12 repair
+    # produced a real, tracked, H12_CONFIRMED h12_evidence_index.json entry for
+    # tRNAAminoacylation, so any evidence dir for that process now picks up
+    # genuine H12 support via the global side-index regardless of this test's
+    # tmp_path scope. ProteinTranslocation carries the same
+    # closed_form_dominant=confirmed_biology_validated flag but is outside this
+    # remediation's 5-process scope and has no h12_evidence_index.json entry at
+    # all, so it still exercises the "no H12 support" path genuinely.
+    entry = _ENTRIES["ProteinTranslocation"]
     assert entry.closed_form_dominant == "confirmed_biology_validated"
     _write_evidence_dir(
         tmp_path,
-        "tRNAAminoacylation",
+        "ProteinTranslocation",
         warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly"],
     )
     payload = gen.build_evidence_index(evidence_root=tmp_path)
-    row = _row_for(payload, "tRNAAminoacylation")
+    row = _row_for(payload, "ProteinTranslocation")
     assert row["green"] is False
     assert any("h12_evidence_ref" in reason for reason in row["reasons"])
 
