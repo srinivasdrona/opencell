@@ -64,6 +64,54 @@ def _load_json(path: Path) -> tuple[dict[str, Any] | None, str | None]:
         return None, f"unreadable: {exc}"
 
 
+def _load_h12_evidence_index(index_path: Path | None = None) -> dict[str, str]:
+    """Load the tracked H12 evidence-linkage side-index (process name ->
+    repo-relative path of that process's H12 artifact JSON).
+
+    Soft-fails to `{}` when the file is absent or unreadable/malformed --
+    this side-index is a convenience overlay, not an authority file; a
+    missing/broken side-index must never itself raise or crash index
+    generation, it should simply mean no process gets an `h12_evidence_ref`
+    supplied this way (any process whose `result.json` already carries its
+    own `h12_evidence_ref` is unaffected either way).
+    """
+    if index_path is None:
+        # Resolved at CALL time (not as a mutable default argument) so that
+        # tests can `monkeypatch.setattr(schema, "H12_EVIDENCE_INDEX_PATH",
+        # ...)` and have it take effect.
+        index_path = schema.H12_EVIDENCE_INDEX_PATH
+    payload, err = _load_json(index_path)
+    if err or not isinstance(payload, dict):
+        return {}
+    entries = payload.get("entries")
+    if not isinstance(entries, dict):
+        return {}
+    return {str(k): str(v) for k, v in entries.items()}
+
+
+def _with_h12_evidence_ref(process_name: str, result_payload: dict[str, Any]) -> dict[str, Any]:
+    """Return `result_payload` unchanged, OR a shallow copy with
+    `h12_evidence_ref` filled in from the tracked H12 evidence-linkage
+    side-index (`schema.H12_EVIDENCE_INDEX_PATH`).
+
+    `result.json` on disk is the runner's own authority file and is never
+    hand-mutated by this package (see module docstring) -- this function
+    only ever affects the in-memory payload passed to
+    `verdict.rederive_process`, never anything written back to disk. If
+    `result_payload` already defines a (possibly different, e.g.
+    runner-native) `h12_evidence_ref`, that value always wins and the
+    side-index is not consulted.
+    """
+    if result_payload.get("h12_evidence_ref"):
+        return result_payload
+    ref = _load_h12_evidence_index().get(process_name)
+    if not ref:
+        return result_payload
+    merged = dict(result_payload)
+    merged["h12_evidence_ref"] = ref
+    return merged
+
+
 def _evidence_dir_for(entry: cat.ProcessEntry, evidence_root: Path) -> Path:
     subdir = schema.EVENT_CLASS_SUBDIR if entry.harness_type == "event_class" else schema.DESIGN_A_SUBDIR
     return evidence_root / entry.name / subdir
@@ -487,7 +535,7 @@ def build_process_row(entry: cat.ProcessEntry, evidence_root: Path, *, strict_in
     all_reasons.extend(_check_current_tree_staleness(manifest_payload, entry=entry, strict_input_files=strict_input_files))
     all_reasons.extend(_check_sweep_provenance_staleness(sweep_provenance_payload, entry, evidence_dir))
 
-    process_verdict = vd.rederive_process(entry.name, entry, result_payload)
+    process_verdict = vd.rederive_process(entry.name, entry, _with_h12_evidence_ref(entry.name, result_payload))
     all_reasons.extend(process_verdict.reasons)
     row["channel_verdicts"] = process_verdict.channel_verdicts
     # Every warning result.json records verbatim, gating or not (e.g. a

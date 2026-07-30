@@ -62,6 +62,20 @@ BUNDLE_ROOT = REPO_ROOT / "docs" / "phase_f" / "l2_2_design_a" / "evidence_bundl
 
 REQUIRED_AUTHORITY_FILES = ("result.json", "input_manifest.json", "provenance.json")
 
+# --- H12 machine-evidence linkage --------------------------------------------
+#
+# Separate from result.json (the runner's own authority file, never
+# hand-mutated by this package to add H12 support): H12_EVIDENCE_INDEX_PATH
+# is a small tracked side-index mapping process name -> repo-relative path
+# of that process's H12 machine-evidence artifact (produced by
+# scripts/l22_evidence/h12.py). `generator.build_evidence_index` merges this
+# file's entries into an in-memory copy of the loaded `result_payload`
+# (only when `result.json` itself does not already carry an
+# `h12_evidence_ref`) before mechanical re-derivation -- the on-disk
+# result.json is never modified. See EVIDENCE_INDEX_SPEC.md "H12 evidence
+# linkage" section.
+H12_EVIDENCE_INDEX_PATH = REPO_ROOT / "docs" / "phase_f" / "l2_2_design_a" / "h12" / "h12_evidence_index.json"
+
 # The runner (`tests/vivarium/l2_2_design_a_runner.py`) unconditionally
 # writes every one of these for every design_a_per_tick process -- see its
 # `_write_json` calls around evidence emission. A missing one means evidence

@@ -1,0 +1,143 @@
+{
+  "process": "MacromolecularComplexation",
+  "formula_version": "1.0.0",
+  "predictor_source_path": "scripts/l22_evidence/h12.py",
+  "predictor_source_sha256": "a8ecca0dbc3d2a72c7fc49d118bce69873f602abb08d6174c18f65eb8a6c8b9b",
+  "fixture_path": "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat",
+  "fixture_sha256": "658e25f30acd8ea84f7bf4b1b2536bf994ad389d9cb575dfeefbf628fe151f01",
+  "oracle_seed_file_sha256": {
+    "0": "ee6a9ae55e3514dcff98a9efc5ce186bd41cfe46d601119ed64ab5a76618ed68",
+    "1": "9160bed936215aeea134d4220807d37e2c26122dc2b006518c5a4f02146bbd76",
+    "2": "ccf817f0ee0afcb1116143f9c4526aa4c0e08160d45b308a58eeefd3d04104a9",
+    "3": "f18521424175e94ca5bdf094c4ae8059a0e6fb7f34411b5f932f762c781e5ea7",
+    "4": "3748a7713ea5eae25965cef8633523779eefe8c58ebb6595b8328483f9ebc0a4",
+    "5": "b8d74ef13fca6d293baa4cbec1d58d31bc054d38f1653ac16adeb2ea154dda58",
+    "6": "365d3d63b8e38ae03dae78001c39c5f40d1e6c35186d5ee1e668e6f503b43b3e",
+    "7": "763bd2dc7df7b3f8905179fa30681cf4d0ebc5434ca12e99dac5868a578784a3",
+    "8": "06496cf7db5b2d3c1c29d440717df06acfb8362fb9ddec30fe6db8da62228fcf",
+    "9": "367e1099e66f65b1749f9d6d4a1af0cb57c3f2ad88bdc05d20cea31776cf73c3",
+    "10": "ebaf03f1313f4e42363983494efa79c80a8c6d07bf6f296decc08df776dde60e",
+    "11": "fa900edd5b0df22215c933b61b9f07472cafb9bd57826e4b238ecea58a1d2c33",
+    "12": "329b532eaa162e61f4641e2806c1521fa9a6a8323e2184dcc48cdb0dc6833b1a",
+    "13": "f4ca2d06ab1bbc7a0b8a183243a2a17b677d3b39152ec31d9af9bac806a93851",
+    "14": "0421a0625cf1e84f38a0bc054c804dc8a914db1a8480bcfa3820f95ec054d88e",
+    "15": "81a8ec0fa3b1e4424bc746bac3bc8936c2bbd0045a570255206a00a804907618",
+    "16": "096a593aae8d9687421a86611f9ad70ad433da345ada09835a709e597805449e",
+    "17": "7d501c1e52f9c22447f2bc9e25bfb1ead1fa4ed16f9879776dae06e6c375b0d6",
+    "18": "3ed683efa130904c50da1dfea319626c2a217f1d5455e6b8fc04e33171e6a620",
+    "19": "ca451c0f5f5520b5cd6df7788e46f07545ca06110eeeb907097c7c0cb4971c2e",
+    "20": "1069c7473ca2bc0c1a174bda1c29f6062301da06e35b12f0e2934bfea24816ff",
+    "21": "392fde92bee91eee90cf04072bab6c64cf207a06bdadf67a41d8dbb69eef01b2",
+    "22": "b73d112d4ee0ec889122ad05f3d7b1d6cecdacde865b913a6a8e832d8196cea7",
+    "23": "35c1aaaf056ce87b480918b73afa62c11526e0af43667e267bc9876ea43aa6ae",
+    "24": "189c6aba23411991c8e1d45fd0a499f91ff93324902713c6fb9bcc05acbe4d2e",
+    "25": "17f39d81d28aa7e9a5c21daebb3565131c819f5047f6fdeba4393139a6f2589f",
+    "26": "ef82cbd0981198a368c4bba4442ffc2cd4d8935d74e441dd217bf1a36a11a61a",
+    "27": "ebd38f69a73f21274b0bf681527c872ea959ea4465cb14cce49ecd8224965d83",
+    "28": "8fea9a54df8bbaf3ded98e07255b6f00d6376c0f01d73ef7ad28b559da3f1ddd",
+    "29": "f646b9386f2619d0175c8debec34b7f34c66a9409a80e812735b9ccbe9048f84",
+    "30": "cf711c2c66efd5012b317ea368373bbc114f4eb7bc6655f853a5a2334d71e547",
+    "31": "db6779e7ab7db918898e83674f1382abb5d9c101fb028be779ded5eb709ef586",
+    "32": "da522c740645d57c45f975a4309ea1b17f29f159af58275933c37288126737f9",
+    "33": "80a2baa3353438091385d1b2661827b4949074527d406c943e379c736ebcb930",
+    "34": "ec7bfe8fa6c51ebe74cf812ac75472157994057cdf842aacb74bc4f44a354af0",
+    "35": "2ac79e4e817863cf42ecaf94e6ff14468ac86d1aba9db490269344ec18dc62ab",
+    "36": "290571c16a149a2f09d74d24075564b8f48fec544bcd5e5ad5eae97a1876e4bb",
+    "37": "53849bb24589b86f8b3ec727042eda7137a3e2f8f735d9bd2d9ec6ec272f61dd",
+    "38": "5aab860f91a63b693906c68a5a1e9e25396f8a32d85946d91341ed7dab857f3e",
+    "39": "97e7b0104ecf569976ef1f153263fa592a5c7c5122cb27024985924b652d6f7b",
+    "40": "abb031d85321f277655b3e29c2a412b00aeaeda061db8fda83016e8cbc8c46c7",
+    "41": "f8c3781ba5e203a5d1f077f98e2d17a2b06b219ceca171b8658be91fbafca4c8",
+    "42": "26dce7099eac466b05ed1f02d8b0bfbd7136262f25e7ddb2f68065a1c3f0d40e",
+    "43": "eda24b364b52fc5f77709f8e1513b7ab0505742d93e6cdef98c6f7c466b90c95",
+    "44": "7feb6ee35ef402cb554da2433d77f97d2d3a6d3ff1496729954b2bbbd0d6777e",
+    "45": "ec8179a706156862e2636a58ede2f31842cf813827bd332aa68daec7b9d89051",
+    "46": "296a85433a15c12d3b01587c38b4b9e459a005fd67089bc6bb4e875c207b4705",
+    "47": "baf1fd8ba394de38096c47d2ee8cfc4ae795cd1255a40b2394e888987b644a13",
+    "48": "47fdaffcabb1b281d6b152ed93bd5f350e18264af3b4c356831535dbfa5e98bf",
+    "49": "89274629fad555773484eb7aab28e5dc1bb6e5c79b4b187594430bb680fe5d3f"
+  },
+  "n_seeds": 50,
+  "m_ticks": 100,
+  "catalog_n_seeds": 50,
+  "catalog_m_ticks": 100,
+  "total_sample_count": 10000,
+  "nontrivial_sample_count": 814,
+  "exact_match_count": 814,
+  "exact_match_rate": 1.0,
+  "mismatch_examples": [
+    {
+      "seed": 0,
+      "tick": 8,
+      "unit": "network_2",
+      "trivial": true
+    },
+    {
+      "seed": 0,
+      "tick": 10,
+      "unit": "network_2",
+      "trivial": true
+    },
+    {
+      "seed": 0,
+      "tick": 15,
+      "unit": "network_2",
+      "trivial": true
+    },
+    {
+      "seed": 0,
+      "tick": 17,
+      "unit": "network_2",
+      "trivial": true
+    },
+    {
+      "seed": 0,
+      "tick": 20,
+      "unit": "network_2",
+      "trivial": true
+    },
+    {
+      "seed": 0,
+      "tick": 24,
+      "unit": "network_2",
+      "trivial": true
+    },
+    {
+      "seed": 0,
+      "tick": 28,
+      "unit": "network_2",
+      "trivial": true
+    },
+    {
+      "seed": 0,
+      "tick": 29,
+      "unit": "network_2",
+      "trivial": true
+    },
+    {
+      "seed": 0,
+      "tick": 32,
+      "unit": "network_2",
+      "trivial": true
+    },
+    {
+      "seed": 0,
+      "tick": 43,
+      "unit": "network_2",
+      "trivial": true
+    }
+  ],
+  "raw_prediction_hash": "ff9044992976ec9c072edf1ca175abc22d4e8b451fcf3f3cbc5ef8765a7f92a7",
+  "verdict": "H12_CONFIRMED",
+  "verdict_reason": "nontrivial_sample_count>0 and 100% exact match",
+  "generated_at": "2026-07-30T06:41:24.944727+00:00",
+  "anti_laundering_attestation": {
+    "predictor_inputs": [
+      "states_before",
+      "static_fixture_params"
+    ],
+    "states_after_access": "compare_phase_only",
+    "no_sut_import": true,
+    "no_result_json_access": true
+  }
+}

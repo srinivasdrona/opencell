@@ -252,7 +252,25 @@ def test_closed_form_confirmed_without_h12_support_is_non_green(tmp_path):
 def test_closed_form_confirmed_with_valid_h12_support_is_green(tmp_path):
     entry = _ENTRIES["tRNAAminoacylation"]
     h12_path = tmp_path / "h12_evidence.json"
-    _write_json(h12_path, {"nontrivial_sample_count": 7})
+    source_path = tmp_path / "h12_predictor_source.py"
+    source_path.write_text("# fake predictor source\n", encoding="utf-8")
+    fixture_path = tmp_path / "fixture.mat"
+    fixture_path.write_bytes(b"fake fixture bytes")
+    import hashlib
+
+    _write_json(
+        h12_path,
+        {
+            "process": "tRNAAminoacylation",
+            "verdict": "H12_CONFIRMED",
+            "nontrivial_sample_count": 7,
+            "exact_match_rate": 1.0,
+            "predictor_source_path": str(source_path),
+            "predictor_source_sha256": hashlib.sha256(source_path.read_bytes()).hexdigest(),
+            "fixture_path": str(fixture_path),
+            "fixture_sha256": hashlib.sha256(fixture_path.read_bytes()).hexdigest(),
+        },
+    )
     _write_evidence_dir(
         tmp_path,
         "tRNAAminoacylation",

@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "description": "Separate evidence-index linkage mapping process name -> repo-relative path of its H12 machine-evidence artifact (scripts/l22_evidence/h12.py). Consumed by scripts/l22_evidence/generator.py's _with_h12_evidence_ref() to supply h12_evidence_ref for mechanical re-derivation WITHOUT mutating any process's tracked result.json. Hand-editing this file only changes WHICH artifact path a process points at; it can never itself force a green verdict -- verdict.h12_support_reason() independently re-validates the referenced artifact's verdict/nontrivial_sample_count/exact_match_rate/hash-freshness every time.",
+  "generated_at": "2026-07-30T00:00:00+00:00",
+  "entries": {
+    "MacromolecularComplexation": "docs/phase_f/l2_2_design_a/h12/MacromolecularComplexation_h12.json",
+    "ProteinFolding": "docs/phase_f/l2_2_design_a/h12/ProteinFolding_h12.json",
+    "ProteinProcessingI": "docs/phase_f/l2_2_design_a/h12/ProteinProcessingI_h12.json",
+    "ProteinProcessingII": "docs/phase_f/l2_2_design_a/h12/ProteinProcessingII_h12.json",
+    "tRNAAminoacylation": "docs/phase_f/l2_2_design_a/h12/tRNAAminoacylation_h12.json"
+  }
+}
